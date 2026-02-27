@@ -66,11 +66,11 @@ public class TrixCandleStrategy : Strategy
 	/// </summary>
 	public TrixCandleStrategy()
 	{
-		_trixPeriod = Param(nameof(TrixPeriod), 14)
+		_trixPeriod = Param(nameof(TrixPeriod), 5)
 			.SetDisplay("TRIX Period", "Period for triple exponential smoothing", "Indicators")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for processing", "General");
 
 		_buyPosOpen = Param(nameof(BuyPosOpen), true)
@@ -126,26 +126,23 @@ public class TrixCandleStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var openValue = _openTema.Process(candle.OpenPrice).ToNullableDecimal();
-		var closeValue = _closeTema.Process(candle.ClosePrice).ToNullableDecimal();
+		var openResult = _openTema.Process(new DecimalIndicatorValue(_openTema, candle.OpenPrice, candle.OpenTime) { IsFinal = true });
+		var closeResult = _closeTema.Process(new DecimalIndicatorValue(_closeTema, candle.ClosePrice, candle.OpenTime) { IsFinal = true });
 
-		if (openValue is null || closeValue is null)
+		if (!openResult.IsFormed || !closeResult.IsFormed)
 			return;
+
+		var openValue = openResult.ToDecimal();
+		var closeValue = closeResult.ToDecimal();
 
 		var color = 1;
 
-		if (openValue.Value < closeValue.Value)
+		if (openValue < closeValue)
 			color = 2;
-		else if (openValue.Value > closeValue.Value)
+		else if (openValue > closeValue)
 			color = 0;
 
 		if (_prevColor == -1)
-		{
-			_prevColor = color;
-			return;
-		}
-
-		if (!IsFormedAndOnlineAndAllowTrading())
 		{
 			_prevColor = color;
 			return;

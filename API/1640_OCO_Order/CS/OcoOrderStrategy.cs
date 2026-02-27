@@ -1,216 +1,139 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Executes one-cancels-the-other orders using predefined trigger prices.
-/// Monitors best bid and ask to submit market orders when a trigger is hit.
-/// Applies stop-loss and take-profit protection measured in pips.
+/// OCO-style breakout strategy. Calculates dynamic buy-stop and sell-stop levels
+/// from recent high/low and enters on breakout, with ATR-based stop-loss and take-profit.
 /// </summary>
 public class OcoOrderStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _buyLimitPrice;
-	private readonly StrategyParam<decimal> _sellLimitPrice;
-	private readonly StrategyParam<decimal> _buyStopPrice;
-	private readonly StrategyParam<decimal> _sellStopPrice;
-	private readonly StrategyParam<decimal> _stopLossPips;
-	private readonly StrategyParam<decimal> _takeProfitPips;
-	private readonly StrategyParam<bool> _isOco;
-	private readonly StrategyParam<bool> _confirmation;
+	private readonly StrategyParam<int> _lookbackPeriod;
+	private readonly StrategyParam<decimal> _atrMultiplier;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _bestBid;
-	private decimal _bestAsk;
+	private decimal _recentHigh;
+	private decimal _recentLow;
+	private decimal _entryPrice;
+	private int _barCount;
 
-	/// <summary>
-	/// Price that triggers a market buy when the ask drops to or below it.
-	/// </summary>
-	public decimal BuyLimitPrice
-	{
-		get => _buyLimitPrice.Value;
-		set => _buyLimitPrice.Value = value;
-	}
+	public int LookbackPeriod { get => _lookbackPeriod.Value; set => _lookbackPeriod.Value = value; }
+	public decimal AtrMultiplier { get => _atrMultiplier.Value; set => _atrMultiplier.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Price that triggers a market sell when the bid rises to or above it.
-	/// </summary>
-	public decimal SellLimitPrice
-	{
-		get => _sellLimitPrice.Value;
-		set => _sellLimitPrice.Value = value;
-	}
-
-	/// <summary>
-	/// Price that triggers a market buy when the ask rises to or above it.
-	/// </summary>
-	public decimal BuyStopPrice
-	{
-		get => _buyStopPrice.Value;
-		set => _buyStopPrice.Value = value;
-	}
-
-	/// <summary>
-	/// Price that triggers a market sell when the bid falls to or below it.
-	/// </summary>
-	public decimal SellStopPrice
-	{
-		get => _sellStopPrice.Value;
-		set => _sellStopPrice.Value = value;
-	}
-
-	/// <summary>
-	/// Stop-loss distance in pips.
-	/// </summary>
-	public decimal StopLossPips
-	{
-		get => _stopLossPips.Value;
-		set => _stopLossPips.Value = value;
-	}
-
-	/// <summary>
-	/// Take-profit distance in pips.
-	/// </summary>
-	public decimal TakeProfitPips
-	{
-		get => _takeProfitPips.Value;
-		set => _takeProfitPips.Value = value;
-	}
-
-	/// <summary>
-	/// If true, remaining triggers are cleared after the first order.
-	/// </summary>
-	public bool IsOco
-	{
-		get => _isOco.Value;
-		set => _isOco.Value = value;
-	}
-
-	/// <summary>
-	/// Enables order triggers when set to true.
-	/// </summary>
-	public bool Confirmation
-	{
-		get => _confirmation.Value;
-		set => _confirmation.Value = value;
-	}
-
-	/// <summary>
-	/// Constructor.
-	/// </summary>
 	public OcoOrderStrategy()
 	{
-		_buyLimitPrice = Param(nameof(BuyLimitPrice), 0m)
-			.SetDisplay("Buy Limit Price", "Trigger price for limit buy", "General");
-
-		_sellLimitPrice = Param(nameof(SellLimitPrice), 0m)
-			.SetDisplay("Sell Limit Price", "Trigger price for limit sell", "General");
-
-		_buyStopPrice = Param(nameof(BuyStopPrice), 0m)
-			.SetDisplay("Buy Stop Price", "Trigger price for stop buy", "General");
-
-		_sellStopPrice = Param(nameof(SellStopPrice), 0m)
-			.SetDisplay("Sell Stop Price", "Trigger price for stop sell", "General");
-
-		_stopLossPips = Param(nameof(StopLossPips), 300m)
+		_lookbackPeriod = Param(nameof(LookbackPeriod), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss Pips", "Stop-loss distance in pips", "Risk Management");
+			.SetDisplay("Lookback", "Bars for high/low calculation", "General");
 
-		_takeProfitPips = Param(nameof(TakeProfitPips), 300m)
-			.SetGreaterThanZero()
-			.SetDisplay("Take Profit Pips", "Take-profit distance in pips", "Risk Management");
+		_atrMultiplier = Param(nameof(AtrMultiplier), 1.5m)
+			.SetDisplay("ATR Multiplier", "Multiplier for SL/TP distance", "Risk");
 
-		_isOco = Param(nameof(IsOco), true)
-			.SetDisplay("OCO Mode", "Cancel other triggers after first order", "General");
-
-		_confirmation = Param(nameof(Confirmation), false)
-			.SetDisplay("Confirmation", "Enable order triggers", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	protected override void OnReseted()
 	{
-		return [(Security, DataType.Level1)];
+		base.OnReseted();
+		_recentHigh = 0;
+		_recentLow = decimal.MaxValue;
+		_entryPrice = 0;
+		_barCount = 0;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		StartProtection(
-			takeProfit: new Unit(TakeProfitPips * Security.PriceStep, UnitTypes.Absolute),
-			stopLoss: new Unit(StopLossPips * Security.PriceStep, UnitTypes.Absolute)
-		);
+		var atr = new AverageTrueRange { Length = LookbackPeriod };
 
-		SubscribeLevel1()
-			.Bind(ProcessLevel1)
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(atr, ProcessCandle)
 			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, atr);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessLevel1(Level1ChangeMessage level1)
+	private void ProcessCandle(ICandleMessage candle, decimal atrValue)
 	{
-		if (level1.Changes.TryGetValue(Level1Fields.BestBidPrice, out var bid))
-			_bestBid = (decimal)bid;
-
-		if (level1.Changes.TryGetValue(Level1Fields.BestAskPrice, out var ask))
-			_bestAsk = (decimal)ask;
-
-		CheckTriggers();
-	}
-
-	private void CheckTriggers()
-	{
-		if (!Confirmation)
+		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (BuyLimitPrice > 0 && _bestAsk <= BuyLimitPrice)
+		_barCount++;
+
+		// Track rolling high/low
+		if (_barCount <= LookbackPeriod)
 		{
-			BuyMarket(Volume);
-			AfterOrderTriggered(_buyLimitPrice);
-		}
-		else if (SellLimitPrice > 0 && _bestBid >= SellLimitPrice)
-		{
-			SellMarket(Volume);
-			AfterOrderTriggered(_sellLimitPrice);
-		}
-		else if (BuyStopPrice > 0 && _bestAsk >= BuyStopPrice)
-		{
-			BuyMarket(Volume);
-			AfterOrderTriggered(_buyStopPrice);
-		}
-		else if (SellStopPrice > 0 && _bestBid <= SellStopPrice)
-		{
-			SellMarket(Volume);
-			AfterOrderTriggered(_sellStopPrice);
+			if (candle.HighPrice > _recentHigh)
+				_recentHigh = candle.HighPrice;
+			if (candle.LowPrice < _recentLow)
+				_recentLow = candle.LowPrice;
+			return;
 		}
 
-		if (BuyLimitPrice == 0 && SellLimitPrice == 0 && BuyStopPrice == 0 && SellStopPrice == 0)
-			Confirmation = false;
-	}
+		if (atrValue <= 0)
+			return;
 
-	private void AfterOrderTriggered(StrategyParam<decimal> levelParam)
-	{
-		levelParam.Value = 0;
+		var close = candle.ClosePrice;
+		var slDistance = atrValue * AtrMultiplier;
 
-		if (IsOco)
+		// Exit logic: ATR trailing
+		if (Position > 0)
 		{
-			_buyLimitPrice.Value = 0;
-			_sellLimitPrice.Value = 0;
-			_buyStopPrice.Value = 0;
-			_sellStopPrice.Value = 0;
-			Confirmation = false;
+			if (close <= _entryPrice - slDistance || close >= _entryPrice + slDistance * 2)
+			{
+				SellMarket();
+				_entryPrice = 0;
+			}
 		}
+		else if (Position < 0)
+		{
+			if (close >= _entryPrice + slDistance || close <= _entryPrice - slDistance * 2)
+			{
+				BuyMarket();
+				_entryPrice = 0;
+			}
+		}
+
+		// Entry: breakout above recent high or below recent low (OCO style - first one wins)
+		if (Position == 0)
+		{
+			if (close > _recentHigh)
+			{
+				BuyMarket();
+				_entryPrice = close;
+			}
+			else if (close < _recentLow)
+			{
+				SellMarket();
+				_entryPrice = close;
+			}
+		}
+
+		// Update high/low
+		if (candle.HighPrice > _recentHigh)
+			_recentHigh = candle.HighPrice;
+		if (candle.LowPrice < _recentLow)
+			_recentLow = candle.LowPrice;
 	}
 }

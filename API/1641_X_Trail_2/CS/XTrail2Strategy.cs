@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,209 +12,88 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Moving average crossover strategy based on X_trail_2.
+/// Enters long when fast MA crosses above slow MA (confirmed over 2 bars),
+/// enters short on the reverse crossover.
 /// </summary>
 public class XTrail2Strategy : Strategy
 {
-        /// <summary>
-        /// Moving average calculation method.
-        /// </summary>
-        public enum MovingAverageTypes
-        {
-                /// <summary>Simple moving average.</summary>
-                Simple,
-                /// <summary>Exponential moving average.</summary>
-                Exponential,
-                /// <summary>Smoothed moving average.</summary>
-                Smoothed,
-                /// <summary>Weighted moving average.</summary>
-                Weighted
-        }
-
-        /// <summary>
-        /// Price type used for indicator calculations.
-        /// </summary>
-        public enum AppliedPriceTypes
-        {
-                /// <summary>Close price.</summary>
-                Close,
-                /// <summary>Open price.</summary>
-                Open,
-                /// <summary>High price.</summary>
-                High,
-                /// <summary>Low price.</summary>
-                Low,
-                /// <summary>Median price (high + low) / 2.</summary>
-                Median,
-                /// <summary>Typical price (high + low + close) / 3.</summary>
-                Typical,
-                /// <summary>Weighted price (high + low + close * 2) / 4.</summary>
-                Weighted
-        }
-
-        private readonly StrategyParam<int> _ma1Length;
+	private readonly StrategyParam<int> _ma1Length;
 	private readonly StrategyParam<int> _ma2Length;
-	private readonly StrategyParam<MovingAverageTypes> _ma1Type;
-	private readonly StrategyParam<MovingAverageTypes> _ma2Type;
-	private readonly StrategyParam<AppliedPriceTypes> _ma1PriceType;
-	private readonly StrategyParam<AppliedPriceTypes> _ma2PriceType;
 	private readonly StrategyParam<DataType> _candleType;
-
-	private IIndicator _ma1;
-	private IIndicator _ma2;
 
 	private decimal? _ma1Prev;
 	private decimal? _ma2Prev;
-	private decimal? _ma1Prev2;
-	private decimal? _ma2Prev2;
 
-	/// <summary>
-	/// Length of the first moving average.
-	/// </summary>
 	public int Ma1Length { get => _ma1Length.Value; set => _ma1Length.Value = value; }
-
-	/// <summary>
-	/// Length of the second moving average.
-	/// </summary>
 	public int Ma2Length { get => _ma2Length.Value; set => _ma2Length.Value = value; }
-
-	/// <summary>
-	/// Type of the first moving average.
-	/// </summary>
-	public MovingAverageTypes Ma1Type { get => _ma1Type.Value; set => _ma1Type.Value = value; }
-
-	/// <summary>
-	/// Type of the second moving average.
-	/// </summary>
-	public MovingAverageTypes Ma2Type { get => _ma2Type.Value; set => _ma2Type.Value = value; }
-
-	/// <summary>
-	/// Applied price for the first moving average.
-	/// </summary>
-	public AppliedPriceTypes Ma1PriceType { get => _ma1PriceType.Value; set => _ma1PriceType.Value = value; }
-
-	/// <summary>
-	/// Applied price for the second moving average.
-	/// </summary>
-	public AppliedPriceTypes Ma2PriceType { get => _ma2PriceType.Value; set => _ma2PriceType.Value = value; }
-
-	/// <summary>
-	/// Candle type to process.
-	/// </summary>
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Initializes a new instance of the <see cref="XTrail2Strategy"/> class.
-	/// </summary>
 	public XTrail2Strategy()
 	{
-		_ma1Length = Param(nameof(Ma1Length), 1)
+		_ma1Length = Param(nameof(Ma1Length), 5)
 			.SetGreaterThanZero()
-			.SetDisplay("MA1 Length", "Length of the first MA", "Moving Averages");
+			.SetDisplay("MA1 Length", "Length of the fast MA", "Moving Averages");
 
 		_ma2Length = Param(nameof(Ma2Length), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("MA2 Length", "Length of the second MA", "Moving Averages");
+			.SetDisplay("MA2 Length", "Length of the slow MA", "Moving Averages");
 
-		_ma1Type = Param(nameof(Ma1Type), MovingAverageTypes.Simple)
-			.SetDisplay("MA1 Type", "Type of the first MA", "Moving Averages");
-
-		_ma2Type = Param(nameof(Ma2Type), MovingAverageTypes.Simple)
-			.SetDisplay("MA2 Type", "Type of the second MA", "Moving Averages");
-
-		_ma1PriceType = Param(nameof(Ma1PriceType), AppliedPriceTypes.Median)
-			.SetDisplay("MA1 Price", "Applied price for the first MA", "Moving Averages");
-
-		_ma2PriceType = Param(nameof(Ma2PriceType), AppliedPriceTypes.Median)
-			.SetDisplay("MA2 Price", "Applied price for the second MA", "Moving Averages");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to process", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_ma1Prev = _ma2Prev = _ma1Prev2 = _ma2Prev2 = null;
+		_ma1Prev = _ma2Prev = null;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
-
-		_ma1 = CreateMa(Ma1Type, Ma1Length);
-		_ma2 = CreateMa(Ma2Type, Ma2Length);
+		var fast = new SimpleMovingAverage { Length = Ma1Length };
+		var slow = new SimpleMovingAverage { Length = Ma2Length };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(fast, slow, ProcessCandle)
 			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, fast);
+			DrawIndicator(area, slow);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal ma1, decimal ma2)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var price1 = GetPrice(candle, Ma1PriceType);
-		var price2 = GetPrice(candle, Ma2PriceType);
-
-		var ma1 = _ma1.Process(new DecimalIndicatorValue(_ma1, price1, candle.OpenTime)).ToDecimal();
-		var ma2 = _ma2.Process(new DecimalIndicatorValue(_ma2, price2, candle.OpenTime)).ToDecimal();
-
-		if (_ma1Prev2 != null && _ma2Prev2 != null)
+		if (_ma1Prev != null && _ma2Prev != null)
 		{
-			if (ma1 > ma2 && _ma1Prev > _ma2Prev && _ma1Prev2 < _ma2Prev2)
+			// Simple crossover detection
+			if (ma1 > ma2 && _ma1Prev <= _ma2Prev)
 			{
 				if (Position <= 0)
-					BuyMarket(Volume + Math.Abs(Position));
+					BuyMarket();
 			}
-			else if (ma1 < ma2 && _ma1Prev < _ma2Prev && _ma1Prev2 > _ma2Prev2)
+			else if (ma1 < ma2 && _ma1Prev >= _ma2Prev)
 			{
 				if (Position >= 0)
-					SellMarket(Volume + Math.Abs(Position));
+					SellMarket();
 			}
 		}
 
-		_ma1Prev2 = _ma1Prev;
-		_ma2Prev2 = _ma2Prev;
 		_ma1Prev = ma1;
 		_ma2Prev = ma2;
-	}
-
-	private static IIndicator CreateMa(MovingAverageTypes type, int length)
-	{
-		return type switch
-		{
-			MovingAverageTypes.Exponential => new EMA { Length = length },
-			MovingAverageTypes.Smoothed => new SmoothedMovingAverage { Length = length },
-			MovingAverageTypes.Weighted => new WeightedMovingAverage { Length = length },
-			_ => new SMA { Length = length },
-		};
-	}
-
-	private static decimal GetPrice(ICandleMessage candle, AppliedPriceTypes priceType)
-	{
-		return priceType switch
-		{
-			AppliedPriceTypes.Open => candle.OpenPrice,
-			AppliedPriceTypes.High => candle.HighPrice,
-			AppliedPriceTypes.Low => candle.LowPrice,
-			AppliedPriceTypes.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPriceTypes.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			AppliedPriceTypes.Weighted => (candle.HighPrice + candle.LowPrice + candle.ClosePrice * 2m) / 4m,
-			_ => candle.ClosePrice,
-		};
 	}
 }

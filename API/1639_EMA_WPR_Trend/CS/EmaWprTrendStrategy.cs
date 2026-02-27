@@ -190,7 +190,7 @@ public class EmaWprTrendStrategy : Strategy
 
 		StartProtection(null, null);
 
-		_ema = new EMA { Length = EmaPeriod };
+		_ema = new ExponentialMovingAverage { Length = EmaPeriod };
 		_wpr = new WilliamsR { Length = WprPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
@@ -281,9 +281,9 @@ public class EmaWprTrendStrategy : Strategy
 	private void ClosePosition()
 	{
 		if (Position > 0)
-			SellMarket(Position);
+			SellMarket();
 		else if (Position < 0)
-			BuyMarket(-Position);
+			BuyMarket();
 		_entryPrice = null;
 		_unprofitBars = 0;
 	}

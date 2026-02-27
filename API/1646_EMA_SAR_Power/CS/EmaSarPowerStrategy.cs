@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,148 +11,60 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Parabolic SAR with Bulls/Bears Power filter.
-/// Sells when fast EMA is below slow EMA, SAR is above high and Bears Power rises while negative.
-/// Buys when fast EMA is above slow EMA, SAR is below low and Bulls Power falls while positive.
-/// Applies a dynamic free margin threshold before trading and uses fixed stop-loss and take-profit.
+/// EMA crossover strategy with Parabolic SAR confirmation.
+/// Buys when fast EMA above slow EMA and SAR below price.
+/// Sells when fast EMA below slow EMA and SAR above price.
 /// </summary>
 public class EmaSarPowerStrategy : Strategy
 {
 	private readonly StrategyParam<int> _fastLength;
 	private readonly StrategyParam<int> _slowLength;
-	private readonly StrategyParam<decimal> _sarStep;
-	private readonly StrategyParam<decimal> _sarMax;
-	private readonly StrategyParam<int> _powerLength;
-	private readonly StrategyParam<decimal> _takeProfitPoints;
-	private readonly StrategyParam<decimal> _stopLossPoints;
-	private readonly StrategyParam<decimal> _minMargin;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevBears;
-	private decimal _prevBulls;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private bool _hasPrev;
 
-	/// <summary>
-	/// Fast EMA period.
-	/// </summary>
 	public int FastLength { get => _fastLength.Value; set => _fastLength.Value = value; }
-
-	/// <summary>
-	/// Slow EMA period.
-	/// </summary>
 	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
-
-	/// <summary>
-	/// Parabolic SAR step.
-	/// </summary>
-	public decimal SarStep { get => _sarStep.Value; set => _sarStep.Value = value; }
-
-	/// <summary>
-	/// Parabolic SAR maximum step.
-	/// </summary>
-	public decimal SarMax { get => _sarMax.Value; set => _sarMax.Value = value; }
-
-	/// <summary>
-	/// Bulls/Bears Power period.
-	/// </summary>
-	public int PowerLength { get => _powerLength.Value; set => _powerLength.Value = value; }
-
-	/// <summary>
-	/// Take profit distance in points.
-	/// </summary>
-	public decimal TakeProfitPoints { get => _takeProfitPoints.Value; set => _takeProfitPoints.Value = value; }
-
-	/// <summary>
-	/// Stop loss distance in points.
-	/// </summary>
-	public decimal StopLossPoints { get => _stopLossPoints.Value; set => _stopLossPoints.Value = value; }
-
-	/// <summary>
-	/// Minimum free margin required to trade.
-	/// </summary>
-	public decimal MinMargin { get => _minMargin.Value; set => _minMargin.Value = value; }
-
-	/// <summary>
-	/// Candle type.
-	/// </summary>
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Initializes <see cref="EmaSarPowerStrategy"/>.
-	/// </summary>
 	public EmaSarPowerStrategy()
 	{
 		_fastLength = Param(nameof(FastLength), 3)
-			.SetGreaterThanZero();
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
 
 		_slowLength = Param(nameof(SlowLength), 34)
-			.SetGreaterThanZero();
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 
-		_sarStep = Param(nameof(SarStep), 0.02m)
-			.SetGreaterThanZero();
-
-		_sarMax = Param(nameof(SarMax), 0.2m)
-			.SetGreaterThanZero();
-
-		_powerLength = Param(nameof(PowerLength), 13)
-			.SetGreaterThanZero();
-
-		_takeProfitPoints = Param(nameof(TakeProfitPoints), 400m)
-			.SetGreaterThanZero();
-
-		_stopLossPoints = Param(nameof(StopLossPoints), 2000m)
-			.SetGreaterThanZero();
-
-		_minMargin = Param(nameof(MinMargin), 600m)
-			.SetGreaterThanZero();
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
-
-		Volume = 30;
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_prevBears = 0m;
-		_prevBulls = 0m;
+		_prevFast = 0;
+		_prevSlow = 0;
+		_hasPrev = false;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		var fastEma = new EMA
-		{
-			Length = FastLength
-		};
-
-		var slowEma = new EMA
-		{
-			Length = SlowLength
-		};
-
-		var sar = new ParabolicStopAndReverse
-		{
-			Step = SarStep,
-			MaxStep = SarMax,
-		};
-
-		var bears = new BearPower { Length = PowerLength };
-		var bulls = new BullPower { Length = PowerLength };
+		var fastEma = new ExponentialMovingAverage { Length = FastLength };
+		var slowEma = new ExponentialMovingAverage { Length = SlowLength };
+		var sar = new ParabolicSar();
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(fastEma, slowEma, sar, bears, bulls, ProcessCandle)
+			.Bind(fastEma, slowEma, sar, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -164,63 +73,37 @@ public class EmaSarPowerStrategy : Strategy
 			DrawCandles(area, subscription);
 			DrawIndicator(area, fastEma);
 			DrawIndicator(area, slowEma);
-			DrawIndicator(area, sar);
-			DrawIndicator(area, bears);
-			DrawIndicator(area, bulls);
 			DrawOwnTrades(area);
 		}
-
-		var step = Security.PriceStep ?? 1m;
-		StartProtection(
-			takeProfit: new Unit(TakeProfitPoints * step, UnitTypes.Point),
-			stopLoss: new Unit(StopLossPoints * step, UnitTypes.Point));
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow, decimal sar, decimal bears, decimal bulls)
+	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow, decimal sar)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!_hasPrev)
+		{
+			_prevFast = fast;
+			_prevSlow = slow;
+			_hasPrev = true;
 			return;
+		}
 
-		var hour = candle.OpenTime.Hour;
-		if (hour <= 8 || hour >= 17)
-			return;
-
-		var margin = Portfolio?.CurrentValue ?? 0m;
-		var threshold = MinMargin;
-
-		if (margin > 1000m && margin < 1300m)
-			threshold = 1000m;
-		else if (margin >= 1300m && margin < 1600m)
-			threshold = 1300m;
-		else if (margin >= 1600m && margin < 1900m)
-			threshold = 1500m;
-		else if (margin >= 1900m && margin < 2100m)
-			threshold = 1800m;
-		else if (margin >= 2100m && margin < 2500m)
-			threshold = 2000m;
-		else if (margin >= 2500m && margin < 3000m)
-			threshold = 2500m;
-
-		if (margin < threshold)
-			return;
-
-		var prevBears = _prevBears;
-		var prevBulls = _prevBulls;
-		_prevBears = bears;
-		_prevBulls = bulls;
-
-		if (fast < slow && sar > candle.HighPrice && bears < 0m && bears > prevBears)
+		// Buy: EMA crossover up + SAR below price
+		if (_prevFast <= _prevSlow && fast > slow && sar < candle.LowPrice)
 		{
 			if (Position <= 0)
-				SellMarket(Volume);
+				BuyMarket();
 		}
-		else if (fast > slow && sar < candle.LowPrice && bulls > 0m && bulls < prevBulls)
+		// Sell: EMA crossover down + SAR above price
+		else if (_prevFast >= _prevSlow && fast < slow && sar > candle.HighPrice)
 		{
 			if (Position >= 0)
-				BuyMarket(Volume);
+				SellMarket();
 		}
+
+		_prevFast = fast;
+		_prevSlow = slow;
 	}
 }

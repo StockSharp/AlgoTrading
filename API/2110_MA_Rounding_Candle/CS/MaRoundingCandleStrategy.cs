@@ -29,8 +29,7 @@ public class MaRoundingCandleStrategy : Strategy
 	public MaRoundingCandleStrategy()
 	{
 	    _maLength = Param(nameof(MaLength), 12)
-	        .SetDisplay("Moving average length")
-	        .SetCanOptimize(true, 2, 100, 1);
+	        .SetDisplay("MA Length", "Moving average length", "Parameters");
 	    _candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame());
 	}
 
@@ -43,8 +42,8 @@ public class MaRoundingCandleStrategy : Strategy
 	{
 	    base.OnStarted2(time);
 
-	    _openMa = new SMA { Length = MaLength };
-	    _closeMa = new SMA { Length = MaLength };
+	    _openMa = new SimpleMovingAverage { Length = MaLength };
+	    _closeMa = new SimpleMovingAverage { Length = MaLength };
 
 	    var subscription = SubscribeCandles(CandleType);
 	    subscription.Bind(ProcessCandle).Start();
@@ -72,9 +71,15 @@ public class MaRoundingCandleStrategy : Strategy
 	    var color = openVal < closeVal ? 2 : openVal > closeVal ? 0 : 1;
 
 	    if (_prevColor == 2 && color != 2 && Position <= 0)
-	        BuyMarket(Volume + Math.Abs(Position));
+	    {
+	        if (Position < 0) BuyMarket();
+	        BuyMarket();
+	    }
 	    else if (_prevColor == 0 && color != 0 && Position >= 0)
-	        SellMarket(Volume + Position);
+	    {
+	        if (Position > 0) SellMarket();
+	        SellMarket();
+	    }
 
 	    _prevColor = color;
 	}

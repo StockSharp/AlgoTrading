@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -25,119 +22,58 @@ public class ArtificialIntelligenceStrategy : Strategy
 	private readonly StrategyParam<decimal> _stopLoss;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private readonly SimpleMovingAverage _aoSma = new() { Length = 5 };
-	private readonly decimal[] _acBuffer = new decimal[22];
-	private int _acCount;
+	private readonly decimal[] _aoBuffer = new decimal[22];
+	private int _aoCount;
 	private decimal _entryPrice;
 	private decimal _stopPrice;
+	private decimal _prevAo;
 
-	/// <summary>
-	/// First perceptron input weight.
-	/// </summary>
-	public int X1
-	{
-		get => _x1.Value;
-		set => _x1.Value = value;
-	}
+	public int X1 { get => _x1.Value; set => _x1.Value = value; }
+	public int X2 { get => _x2.Value; set => _x2.Value = value; }
+	public int X3 { get => _x3.Value; set => _x3.Value = value; }
+	public int X4 { get => _x4.Value; set => _x4.Value = value; }
+	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Second perceptron input weight.
-	/// </summary>
-	public int X2
-	{
-		get => _x2.Value;
-		set => _x2.Value = value;
-	}
-
-	/// <summary>
-	/// Third perceptron input weight.
-	/// </summary>
-	public int X3
-	{
-		get => _x3.Value;
-		set => _x3.Value = value;
-	}
-
-	/// <summary>
-	/// Fourth perceptron input weight.
-	/// </summary>
-	public int X4
-	{
-		get => _x4.Value;
-		set => _x4.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss in price points.
-	/// </summary>
-	public decimal StopLoss
-	{
-		get => _stopLoss.Value;
-		set => _stopLoss.Value = value;
-	}
-
-	/// <summary>
-	/// Type of candles used for calculations.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="ArtificialIntelligenceStrategy"/>.
-	/// </summary>
 	public ArtificialIntelligenceStrategy()
 	{
 		_x1 = Param(nameof(X1), 135)
 			.SetDisplay("X1", "Perceptron weight 1", "Perceptron")
-			
 			.SetOptimize(0, 200, 5);
 
 		_x2 = Param(nameof(X2), 127)
 			.SetDisplay("X2", "Perceptron weight 2", "Perceptron")
-			
 			.SetOptimize(0, 200, 5);
 
 		_x3 = Param(nameof(X3), 16)
 			.SetDisplay("X3", "Perceptron weight 3", "Perceptron")
-			
 			.SetOptimize(0, 200, 5);
 
 		_x4 = Param(nameof(X4), 93)
 			.SetDisplay("X4", "Perceptron weight 4", "Perceptron")
-			
 			.SetOptimize(0, 200, 5);
 
 		_stopLoss = Param(nameof(StopLoss), 85m)
 			.SetDisplay("Stop Loss", "Stop loss distance in points", "Risk")
-			
 			.SetOptimize(10m, 200m, 5m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
-
-		Volume = 1;
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		Array.Clear(_acBuffer);
-		_acCount = 0;
+		Array.Clear(_aoBuffer);
+		_aoCount = 0;
 		_entryPrice = 0m;
 		_stopPrice = 0m;
+		_prevAo = 0m;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
@@ -146,7 +82,7 @@ public class ArtificialIntelligenceStrategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(ao, ProcessCandle)
+			.Bind(ao, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -158,29 +94,19 @@ public class ArtificialIntelligenceStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue aoValue)
+	private void ProcessCandle(ICandleMessage candle, decimal aoValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!aoValue.IsFormed)
-			return;
+		// Use AO values directly as the perceptron inputs
+		for (var i = _aoBuffer.Length - 1; i > 0; i--)
+			_aoBuffer[i] = _aoBuffer[i - 1];
+		_aoBuffer[0] = aoValue;
+		if (_aoCount < _aoBuffer.Length)
+			_aoCount++;
 
-		var ao = aoValue.GetValue<decimal>();
-		var aoSmaValue = _aoSma.Process(new DecimalIndicatorValue(_aoSma, ao, candle.ServerTime));
-
-		if (!aoSmaValue.IsFormed)
-			return;
-
-		var ac = ao - aoSmaValue.GetValue<decimal>();
-
-		for (var i = _acBuffer.Length - 1; i > 0; i--)
-			_acBuffer[i] = _acBuffer[i - 1];
-		_acBuffer[0] = ac;
-		if (_acCount < _acBuffer.Length)
-			_acCount++;
-
-		if (_acCount < _acBuffer.Length)
+		if (_aoCount < _aoBuffer.Length)
 			return;
 
 		var step = Security?.PriceStep ?? 0.01m;
@@ -190,7 +116,7 @@ public class ArtificialIntelligenceStrategy : Strategy
 		var w3 = X3 - 100m;
 		var w4 = X4 - 100m;
 
-		var perceptron = w1 * _acBuffer[0] + w2 * _acBuffer[7] + w3 * _acBuffer[14] + w4 * _acBuffer[21];
+		var perceptron = w1 * _aoBuffer[0] + w2 * _aoBuffer[7] + w3 * _aoBuffer[14] + w4 * _aoBuffer[21];
 
 		if (Position == 0)
 		{
@@ -213,35 +139,31 @@ public class ArtificialIntelligenceStrategy : Strategy
 		{
 			_stopPrice = Math.Max(_stopPrice, candle.ClosePrice - StopLoss * step);
 
-			if (candle.ClosePrice <= _stopPrice)
+			if (candle.ClosePrice <= _stopPrice || perceptron < 0)
 			{
-				SellMarket(Position);
-				return;
-			}
-
-			if (perceptron < 0)
-			{
-				SellMarket(Volume + Position);
-				_entryPrice = candle.ClosePrice;
-				_stopPrice = _entryPrice + StopLoss * step;
+				SellMarket();
+				if (perceptron < 0)
+				{
+					_entryPrice = candle.ClosePrice;
+					_stopPrice = _entryPrice + StopLoss * step;
+				}
 			}
 		}
 		else if (Position < 0)
 		{
 			_stopPrice = Math.Min(_stopPrice, candle.ClosePrice + StopLoss * step);
 
-			if (candle.ClosePrice >= _stopPrice)
+			if (candle.ClosePrice >= _stopPrice || perceptron > 0)
 			{
-				BuyMarket(-Position);
-				return;
-			}
-
-			if (perceptron > 0)
-			{
-				BuyMarket(Volume + Math.Abs(Position));
-				_entryPrice = candle.ClosePrice;
-				_stopPrice = _entryPrice - StopLoss * step;
+				BuyMarket();
+				if (perceptron > 0)
+				{
+					_entryPrice = candle.ClosePrice;
+					_stopPrice = _entryPrice - StopLoss * step;
+				}
 			}
 		}
+
+		_prevAo = aoValue;
 	}
 }

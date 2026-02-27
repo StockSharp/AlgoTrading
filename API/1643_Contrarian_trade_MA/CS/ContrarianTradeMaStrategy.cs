@@ -24,10 +24,10 @@ public class ContrarianTradeMaStrategy : Strategy
 
 	private Highest _highest = null!;
 	private Lowest _lowest = null!;
-	private SMA _sma = null!;
+	private SimpleMovingAverage _sma = null!;
 
 	private decimal _prevClose;
-	private DateTimeOffset? _entryTime;
+	private int _barsInPosition;
 
 	/// <summary>
 	/// Lookback period for high/low calculations.
@@ -52,7 +52,7 @@ public class ContrarianTradeMaStrategy : Strategy
 		_maPeriod = Param(nameof(MaPeriod), 7)
 			.SetDisplay("MA Period", "Moving average period", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(7).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for candles", "General");
 	}
 
@@ -68,7 +68,7 @@ public class ContrarianTradeMaStrategy : Strategy
 
 		_highest = new Highest { Length = CalcPeriod };
 		_lowest = new Lowest { Length = CalcPeriod };
-		_sma = new SMA { Length = MaPeriod };
+		_sma = new SimpleMovingAverage { Length = MaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(_highest, _lowest, _sma, ProcessCandle).Start();
@@ -93,35 +93,37 @@ public class ContrarianTradeMaStrategy : Strategy
 			if (highest < _prevClose)
 			{
 				BuyMarket();
-				_entryTime = candle.CloseTime;
+				_barsInPosition = 0;
 			}
 			else if (lowest > _prevClose)
 			{
 				SellMarket();
-				_entryTime = candle.CloseTime;
+				_barsInPosition = 0;
 			}
 			else if (sma > candle.OpenPrice)
 			{
 				BuyMarket();
-				_entryTime = candle.CloseTime;
+				_barsInPosition = 0;
 			}
 			else if (sma < candle.OpenPrice)
 			{
 				SellMarket();
-				_entryTime = candle.CloseTime;
+				_barsInPosition = 0;
 			}
 		}
 		else
 		{
-			// Close position after one week
-			if (_entryTime != null && candle.CloseTime - _entryTime.Value >= TimeSpan.FromDays(7))
+			_barsInPosition++;
+
+			// Close position after holding period
+			if (_barsInPosition >= CalcPeriod)
 			{
 				if (Position > 0)
 					SellMarket();
 				else
 					BuyMarket();
 
-				_entryTime = null;
+				_barsInPosition = 0;
 			}
 		}
 

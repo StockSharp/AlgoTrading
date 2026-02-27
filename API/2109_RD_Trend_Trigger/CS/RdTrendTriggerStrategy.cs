@@ -198,14 +198,14 @@ public class RdTrendTriggerStrategy : Strategy
 					if (t3 > _prev1 && _prev1 <= _prev2 && Position <= 0)
 					{
 						if (Position < 0)
-							ClosePosition();
-						BuyMarket(Volume);
+							if (Position > 0) SellMarket(); else if (Position < 0) BuyMarket();
+						BuyMarket();
 					}
 					else if (t3 < _prev1 && _prev1 >= _prev2 && Position >= 0)
 					{
 						if (Position > 0)
-							ClosePosition();
-						SellMarket(Volume);
+							if (Position > 0) SellMarket(); else if (Position < 0) BuyMarket();
+						SellMarket();
 					}
 				}
 
@@ -221,18 +221,18 @@ public class RdTrendTriggerStrategy : Strategy
 					if (t3 > HighLevel && _prev1 <= HighLevel && Position <= 0)
 					{
 						if (Position < 0)
-							ClosePosition();
-						BuyMarket(Volume);
+							if (Position > 0) SellMarket(); else if (Position < 0) BuyMarket();
+						BuyMarket();
 					}
 					else if (t3 < LowLevel && _prev1 >= LowLevel && Position >= 0)
 					{
 						if (Position > 0)
-							ClosePosition();
-						SellMarket(Volume);
+							if (Position > 0) SellMarket(); else if (Position < 0) BuyMarket();
+						SellMarket();
 					}
 					else if (t3 > LowLevel && Position < 0)
 					{
-						ClosePosition();
+						if (Position > 0) SellMarket(); else if (Position < 0) BuyMarket();
 					}
 				}
 
