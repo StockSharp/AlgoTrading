@@ -1,275 +1,47 @@
-namespace StockSharp.Samples.Strategies;
-
 using System;
-using System.Linq;
 using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
+namespace StockSharp.Samples.Strategies;
 
 public class LittleEaStrategy : Strategy
 {
-	public enum MovingAverageTypes
-	{
-		Simple,
-		Exponential,
-		Smoothed,
-		Weighted
-	}
-
-	public enum AppliedPriceTypes
-	{
-		Close,
-		Open,
-		High,
-		Low,
-		Median,
-		Typical,
-		Weighted
-	}
-
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _ohlcBarIndex;
-	private readonly StrategyParam<int> _maxPositionsPerSide;
-	private readonly StrategyParam<int> _maPeriod;
-	private readonly StrategyParam<int> _maShift;
-	private readonly StrategyParam<MovingAverageTypes> _maType;
-	private readonly StrategyParam<AppliedPriceTypes> _appliedPrice;
-	private readonly StrategyParam<decimal> _tradeVolume;
+	private readonly StrategyParam<int> _momentumPeriod;
+	private decimal? _prevMom;
 
-	private DecimalLengthIndicator _movingAverage;
-	private readonly List<decimal> _maHistory = new(); // Stores MA values to support the shift parameter
-	private readonly List<ICandleMessage> _candleHistory = new(); // Keeps finished candles for OHLC indexing
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int MomentumPeriod { get => _momentumPeriod.Value; set => _momentumPeriod.Value = value; }
 
 	public LittleEaStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle type", "Primary timeframe used for signals.", "General");
-
-		_ohlcBarIndex = Param(nameof(OhlcBarIndex), 1)
-			.SetNotNegative()
-			.SetDisplay("OHLC bar index", "Historical bar index used for MA crossover detection.", "Signals");
-
-		_maxPositionsPerSide = Param(nameof(MaxPositionsPerSide), 15)
-			.SetNotNegative()
-			.SetDisplay("Max positions", "Maximum cumulative positions per direction.", "Risk");
-
-		_maPeriod = Param(nameof(MaPeriod), 64)
-			.SetGreaterThanZero()
-			.SetDisplay("MA period", "Moving average length.", "Indicator");
-
-		_maShift = Param(nameof(MaShift), 0)
-			.SetNotNegative()
-			.SetDisplay("MA shift", "Number of bars to shift the moving average.", "Indicator");
-
-		_maType = Param(nameof(MaType), MovingAverageTypes.Smoothed)
-			.SetDisplay("MA type", "Moving average calculation mode.", "Indicator");
-
-		_appliedPrice = Param(nameof(AppliedPrice), AppliedPriceTypes.Close)
-			.SetDisplay("Applied price", "Price source fed into the moving average.", "Indicator");
-
-		_tradeVolume = Param(nameof(TradeVolume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Trade volume", "Order volume used for each entry.", "Risk");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General");
+		_momentumPeriod = Param(nameof(MomentumPeriod), 10).SetGreaterThanZero().SetDisplay("Momentum Period", "Momentum lookback", "Indicators");
 	}
 
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities() => [(Security, CandleType)];
 
-	public int OhlcBarIndex
-	{
-		get => _ohlcBarIndex.Value;
-		set => _ohlcBarIndex.Value = value;
-	}
-
-	public int MaxPositionsPerSide
-	{
-		get => _maxPositionsPerSide.Value;
-		set => _maxPositionsPerSide.Value = value;
-	}
-
-	public int MaPeriod
-	{
-		get => _maPeriod.Value;
-		set => _maPeriod.Value = value;
-	}
-
-	public int MaShift
-	{
-		get => _maShift.Value;
-		set => _maShift.Value = value;
-	}
-
-	public MovingAverageTypes MaType
-	{
-		get => _maType.Value;
-		set => _maType.Value = value;
-	}
-
-	public AppliedPriceTypes AppliedPrice
-	{
-		get => _appliedPrice.Value;
-		set => _appliedPrice.Value = value;
-	}
-
-	public decimal TradeVolume
-	{
-		get => _tradeVolume.Value;
-		set => _tradeVolume.Value = value;
-	}
-
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-		=> [(Security, CandleType)];
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		Volume = TradeVolume; // Align default volume with the configured trade size
-
-		_movingAverage = CreateMovingAverage(MaType, MaPeriod);
-
+		_prevMom = null;
+		var mom = new Momentum { Length = MomentumPeriod };
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
-
+		subscription.Bind(mom, ProcessCandle).Start();
 		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			if (_movingAverage != null)
-				DrawIndicator(area, _movingAverage);
-			DrawOwnTrades(area);
-		}
+		if (area != null) { DrawCandles(area, subscription); DrawOwnTrades(area); }
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal momVal)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (_movingAverage == null)
-			return;
-
-		var price = GetPrice(candle, AppliedPrice);
-		var maValue = _movingAverage.Process(new DecimalIndicatorValue(_movingAverage, price, candle.OpenTime)).ToDecimal();
-
-		_candleHistory.Add(candle);
-		TrimHistory(_candleHistory, GetHistoryLimit());
-
-		if (!_movingAverage.IsFormed)
-			return;
-
-		_maHistory.Add(maValue);
-		TrimHistory(_maHistory, GetHistoryLimit());
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (_maHistory.Count <= MaShift)
-			return;
-
-		if (_candleHistory.Count <= OhlcBarIndex)
-			return;
-
-		var maIndex = _maHistory.Count - 1 - MaShift;
-		var referenceMa = _maHistory[maIndex];
-
-		var candleIndex = _candleHistory.Count - 1 - OhlcBarIndex;
-		var referenceCandle = _candleHistory[candleIndex];
-
-		// Detect a close above or below the shifted moving average
-		var crossUp = referenceCandle.OpenPrice < referenceMa && referenceCandle.ClosePrice > referenceMa;
-		var crossDown = referenceCandle.OpenPrice > referenceMa && referenceCandle.ClosePrice < referenceMa;
-
-		if (TradeVolume <= 0m)
-			return;
-
-		var longExposure = Math.Max(Position, 0m); // Net long quantity in lots
-		var shortExposure = Math.Max(-Position, 0m); // Net short quantity in lots
-		var exposureLimit = TradeVolume * MaxPositionsPerSide;
-
-		if (crossDown && longExposure >= exposureLimit && longExposure > 0m)
-		{
-			// Reverse signal when long positions already reached the maximum limit
-			SellMarket(longExposure);
-			return;
-		}
-
-		if (crossUp && shortExposure >= exposureLimit && shortExposure > 0m)
-		{
-			// Reverse signal when short positions already reached the maximum limit
-			BuyMarket(shortExposure);
-			return;
-		}
-
-		if (crossUp && longExposure < exposureLimit)
-		{
-			// Add a new long tranche while staying below the configured cap
-			BuyMarket(TradeVolume);
-		}
-		else if (crossDown && shortExposure < exposureLimit)
-		{
-			// Add a new short tranche while staying below the configured cap
-			SellMarket(TradeVolume);
-		}
-	}
-
-	private int GetHistoryLimit()
-	{
-		var shift = Math.Max(MaShift, 0);
-		var bars = Math.Max(OhlcBarIndex, 0);
-		return Math.Max(shift, bars) + 5; // Keep a small buffer to avoid frequent reallocations
-	}
-
-	private static void TrimHistory<T>(IList<T> list, int limit)
-	{
-		if (list.Count <= limit)
-			return;
-
-		var removeCount = list.Count - limit;
-		for (var i = 0; i < removeCount; i++)
-		{
-			list.RemoveAt(0);
-		}
-	}
-
-	private static DecimalLengthIndicator CreateMovingAverage(MovingAverageTypes type, int length)
-	{
-		return type switch
-		{
-			MovingAverageTypes.Simple => new SMA { Length = length },
-			MovingAverageTypes.Exponential => new EMA { Length = length },
-			MovingAverageTypes.Smoothed => new SmoothedMovingAverage { Length = length },
-			MovingAverageTypes.Weighted => new WeightedMovingAverage { Length = length },
-			_ => new SMA { Length = length }
-		};
-	}
-
-	private static decimal GetPrice(ICandleMessage candle, AppliedPriceTypes priceType)
-	{
-		return priceType switch
-		{
-			AppliedPriceTypes.Open => candle.OpenPrice,
-			AppliedPriceTypes.High => candle.HighPrice,
-			AppliedPriceTypes.Low => candle.LowPrice,
-			AppliedPriceTypes.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPriceTypes.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			AppliedPriceTypes.Weighted => (candle.HighPrice + candle.LowPrice + candle.ClosePrice + candle.ClosePrice) / 4m,
-			_ => candle.ClosePrice
-		};
+		if (candle.State != CandleStates.Finished) return;
+		if (_prevMom == null) { _prevMom = momVal; return; }
+		if (_prevMom.Value < 100m && momVal >= 100m && Position <= 0) { if (Position < 0) BuyMarket(); BuyMarket(); }
+		else if (_prevMom.Value > 100m && momVal <= 100m && Position >= 0) { if (Position > 0) SellMarket(); SellMarket(); }
+		_prevMom = momVal;
 	}
 }
-
