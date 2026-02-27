@@ -73,23 +73,27 @@ public class CompassLineStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bbVal, decimal rsi)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bbVal, IIndicatorValue rsiVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!bbVal.IsFinal || !rsiVal.IsFinal)
 			return;
 
-		var bbv = bbVal.IsEmpty ? null : (BollingerBandsValue)bbVal;
-		if (bbv == null)
+		if (bbVal.IsEmpty || rsiVal.IsEmpty)
 			return;
 
+		var bb = (BollingerBandsValue)bbVal;
+		if (bb.UpBand is not decimal upper || bb.LowBand is not decimal lower)
+			return;
+
+		var rsi = rsiVal.GetValue<decimal>();
 		var close = candle.ClosePrice;
 
-		if (close < bbv.LowBand && rsi < 45m && Position <= 0)
+		if (close <= lower && rsi < 45m && Position <= 0)
 			BuyMarket();
-		else if (close > bbv.UpBand && rsi > 55m && Position >= 0)
+		else if (close >= upper && rsi > 55m && Position >= 0)
 			SellMarket();
 	}
 }

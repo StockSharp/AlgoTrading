@@ -1,10 +1,5 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,81 +9,14 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Translated XPeriod Candle System strategy with time filter and Bollinger band breakout logic.
+/// XPeriod candle system with Bollinger Bands breakout.
+/// Buys on close above upper band with bullish candle, sells on close below lower band with bearish candle.
 /// </summary>
 public class XPeriodCandleSystemTmPlusStrategy : Strategy
 {
-	private int[] _colorHistory = Array.Empty<int>();
-	private int _historyCount;
-
-	private ExponentialMovingAverage _openMa = null!;
-	private ExponentialMovingAverage _highMa = null!;
-	private ExponentialMovingAverage _lowMa = null!;
-	private ExponentialMovingAverage _closeMa = null!;
-	private BollingerBands _bollinger = null!;
-
-	private DateTimeOffset? _longEntryTime;
-	private DateTimeOffset? _shortEntryTime;
-
-	private readonly StrategyParam<decimal> _orderVolume;
-	private readonly StrategyParam<bool> _buyPosOpen;
-	private readonly StrategyParam<bool> _sellPosOpen;
-	private readonly StrategyParam<bool> _buyPosClose;
-	private readonly StrategyParam<bool> _sellPosClose;
-	private readonly StrategyParam<bool> _timeTrade;
-	private readonly StrategyParam<int> _holdingMinutes;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _period;
-	private readonly StrategyParam<int> _bollingerLength;
-	private readonly StrategyParam<decimal> _bandsDeviation;
-	private readonly StrategyParam<AppliedPrices> _appliedPrice;
-	private readonly StrategyParam<int> _signalBar;
-	private readonly StrategyParam<int> _maxColorHistory;
-	private readonly StrategyParam<decimal> _stopLoss;
-	private readonly StrategyParam<decimal> _takeProfit;
-	private readonly StrategyParam<decimal> _deviation;
-
-	public decimal OrderVolume
-	{
-		get => _orderVolume.Value;
-		set => _orderVolume.Value = value;
-	}
-
-	public bool BuyPosOpen
-	{
-		get => _buyPosOpen.Value;
-		set => _buyPosOpen.Value = value;
-	}
-
-	public bool SellPosOpen
-	{
-		get => _sellPosOpen.Value;
-		set => _sellPosOpen.Value = value;
-	}
-
-	public bool BuyPosClose
-	{
-		get => _buyPosClose.Value;
-		set => _buyPosClose.Value = value;
-	}
-
-	public bool SellPosClose
-	{
-		get => _sellPosClose.Value;
-		set => _sellPosClose.Value = value;
-	}
-
-	public bool TimeTrade
-	{
-		get => _timeTrade.Value;
-		set => _timeTrade.Value = value;
-	}
-
-	public int HoldingMinutes
-	{
-		get => _holdingMinutes.Value;
-		set => _holdingMinutes.Value = value;
-	}
+	private readonly StrategyParam<int> _bbPeriod;
+	private readonly StrategyParam<decimal> _bbWidth;
 
 	public DataType CandleType
 	{
@@ -96,128 +24,30 @@ public class XPeriodCandleSystemTmPlusStrategy : Strategy
 		set => _candleType.Value = value;
 	}
 
-	public int Period
+	public int BbPeriod
 	{
-		get => _period.Value;
-		set => _period.Value = value;
+		get => _bbPeriod.Value;
+		set => _bbPeriod.Value = value;
 	}
 
-	public int BollingerLength
+	public decimal BbWidth
 	{
-		get => _bollingerLength.Value;
-		set => _bollingerLength.Value = value;
-	}
-
-	public decimal BandsDeviation
-	{
-		get => _bandsDeviation.Value;
-		set => _bandsDeviation.Value = value;
-	}
-
-	public AppliedPrices AppliedPriceMode
-	{
-		get => _appliedPrice.Value;
-		set => _appliedPrice.Value = value;
-	}
-
-	public int SignalBar
-	{
-		get => _signalBar.Value;
-		set => _signalBar.Value = value;
-	}
-
-	public int MaxColorHistory
-	{
-		get => _maxColorHistory.Value;
-		set => _maxColorHistory.Value = Math.Max(2, value);
-	}
-
-	public decimal StopLoss
-	{
-		get => _stopLoss.Value;
-		set => _stopLoss.Value = value;
-	}
-
-	public decimal TakeProfit
-	{
-		get => _takeProfit.Value;
-		set => _takeProfit.Value = value;
-	}
-
-	public decimal Deviation
-	{
-		get => _deviation.Value;
-		set => _deviation.Value = value;
+		get => _bbWidth.Value;
+		set => _bbWidth.Value = value;
 	}
 
 	public XPeriodCandleSystemTmPlusStrategy()
 	{
-		_orderVolume = Param(nameof(OrderVolume), 0.1m)
-		.SetGreaterThanZero()
-		.SetDisplay("Order Volume", "Base order size", "Trading")
-		;
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Timeframe", "General");
 
-		_buyPosOpen = Param(nameof(BuyPosOpen), true)
-		.SetDisplay("Allow Buy Open", "Enable long entries", "Trading");
+		_bbPeriod = Param(nameof(BbPeriod), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("BB Period", "Bollinger Bands period", "Indicators");
 
-		_sellPosOpen = Param(nameof(SellPosOpen), true)
-		.SetDisplay("Allow Sell Open", "Enable short entries", "Trading");
-
-		_buyPosClose = Param(nameof(BuyPosClose), true)
-		.SetDisplay("Allow Buy Close", "Allow long exits", "Trading");
-
-		_sellPosClose = Param(nameof(SellPosClose), true)
-		.SetDisplay("Allow Sell Close", "Allow short exits", "Trading");
-
-		_timeTrade = Param(nameof(TimeTrade), true)
-		.SetDisplay("Enable Time Filter", "Close positions after a fixed holding time", "Risk");
-
-		_holdingMinutes = Param(nameof(HoldingMinutes), 960)
-		.SetRange(1, 2000)
-		.SetDisplay("Holding Minutes", "Maximum holding time in minutes", "Risk")
-		;
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
-		.SetDisplay("Candle Type", "Time frame used for signal detection", "Market")
-		;
-
-		_period = Param(nameof(Period), 5)
-		.SetRange(2, 100)
-		.SetDisplay("Smoothing Length", "Length for candle smoothing", "Indicators")
-		;
-
-		_bollingerLength = Param(nameof(BollingerLength), 20)
-		.SetRange(2, 200)
-		.SetDisplay("Bollinger Length", "Number of bars for Bollinger Bands", "Indicators")
-		;
-
-		_bandsDeviation = Param(nameof(BandsDeviation), 1.001m)
-		.SetGreaterThanZero()
-		.SetDisplay("Bands Deviation", "Multiplier for Bollinger Bands width", "Indicators")
-		;
-
-		_appliedPrice = Param(nameof(AppliedPriceMode), AppliedPrices.Close)
-		.SetDisplay("Applied Price", "Price source for the band calculation", "Indicators");
-
-		_maxColorHistory = Param(nameof(MaxColorHistory), 16)
-		.SetRange(4, 200)
-		.SetDisplay("Color History", "Number of recent colors stored for signals", "Trading");
-
-		_signalBar = Param(nameof(SignalBar), 1)
-		.SetRange(1, MaxColorHistory - 2)
-		.SetDisplay("Signal Bar", "Index of the candle used for signals", "Trading");
-
-		_stopLoss = Param(nameof(StopLoss), 1000m)
-		.SetRange(0m, 100000m)
-		.SetDisplay("Stop Loss", "Protective stop distance in price units", "Risk");
-
-		_takeProfit = Param(nameof(TakeProfit), 2000m)
-		.SetRange(0m, 100000m)
-		.SetDisplay("Take Profit", "Protective profit target in price units", "Risk");
-
-		_deviation = Param(nameof(Deviation), 10m)
-		.SetRange(0m, 10000m)
-		.SetDisplay("Breakout Offset", "Additional price offset applied to breakouts", "Indicators");
+		_bbWidth = Param(nameof(BbWidth), 2m)
+			.SetGreaterThanZero()
+			.SetDisplay("BB Width", "Bollinger Bands width", "Indicators");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
@@ -225,248 +55,64 @@ public class XPeriodCandleSystemTmPlusStrategy : Strategy
 		return [(Security, CandleType)];
 	}
 
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		ResetColorHistory();
-		_longEntryTime = null;
-		_shortEntryTime = null;
-	}
-
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		ResetColorHistory();
-		Volume = OrderVolume;
-
-		_openMa = new EMA { Length = Period };
-		_highMa = new EMA { Length = Period };
-		_lowMa = new EMA { Length = Period };
-		_closeMa = new EMA { Length = Period };
-
-		_bollinger = new BollingerBands
-		{
-			Length = BollingerLength,
-			Width = BandsDeviation
-		};
+		var bb = new BollingerBands { Length = BbPeriod, Width = BbWidth };
 
 		var subscription = SubscribeCandles(CandleType);
-
 		subscription
-		.Bind(ProcessCandle)
-		.Start();
+			.BindEx(bb, ProcessCandle)
+			.Start();
 
-		var take = TakeProfit > 0 ? new Unit(TakeProfit, UnitTypes.Absolute) : new Unit(0);
-		var stop = StopLoss > 0 ? new Unit(StopLoss, UnitTypes.Absolute) : new Unit(0);
-
-		StartProtection(takeProfit: take, stopLoss: stop);
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, bb);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue value)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
-		var openValue = _openMa.Process(new DecimalIndicatorValue(_openMa, candle.OpenPrice, candle.OpenTime));
-		var highValue = _highMa.Process(new DecimalIndicatorValue(_highMa, candle.HighPrice, candle.OpenTime));
-		var lowValue = _lowMa.Process(new DecimalIndicatorValue(_lowMa, candle.LowPrice, candle.OpenTime));
-		var closeValue = _closeMa.Process(new DecimalIndicatorValue(_closeMa, candle.ClosePrice, candle.OpenTime));
+		var bb = (BollingerBandsValue)value;
+		if (bb.UpBand is not decimal upper ||
+			bb.LowBand is not decimal lower ||
+			bb.MovingAverage is not decimal middle)
+			return;
 
-		if (!openValue.IsFinal || !highValue.IsFinal || !lowValue.IsFinal || !closeValue.IsFinal)
-		return;
+		var close = candle.ClosePrice;
+		var isBullish = candle.ClosePrice > candle.OpenPrice;
+		var isBearish = candle.ClosePrice < candle.OpenPrice;
 
-		var smoothedOpen = openValue.GetValue<decimal>();
-		var smoothedHigh = highValue.GetValue<decimal>();
-		var smoothedLow = lowValue.GetValue<decimal>();
-		var smoothedClose = closeValue.GetValue<decimal>();
-
-		var price = GetAppliedPrice(AppliedPriceMode, smoothedOpen, smoothedHigh, smoothedLow, smoothedClose);
-		var bbValue = (BollingerBandsValue)_bollinger.Process(new DecimalIndicatorValue(_bollinger, price, candle.OpenTime));
-
-		if (bbValue.UpBand is not decimal upperBand || bbValue.LowBand is not decimal lowerBand)
-		return;
-
-		var color = CalculateColor(smoothedOpen, smoothedClose, upperBand, lowerBand, GetBreakoutOffset());
-		AddColor(color);
-
-		if (_historyCount <= SignalBar)
-		return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
-
-		if (TimeTrade)
-		CheckTimeExit(candle);
-
-		var signalIndex = SignalBar - 1;
-		var previousIndex = SignalBar;
-
-		var currentColor = _colorHistory[signalIndex];
-		var previousColor = _colorHistory[previousIndex];
-
-		if (BuyPosClose && previousColor > 2)
-		CloseLongPosition();
-
-		if (SellPosClose && previousColor < 2)
-		CloseShortPosition();
-
-		if (BuyPosOpen && previousColor == 0 && currentColor != 0 && Position <= 0)
+		// Buy: close above upper band with bullish candle
+		if (close > upper && isBullish && Position <= 0)
 		{
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
-			_longEntryTime = candle.CloseTime;
-			_shortEntryTime = null;
+			if (Position < 0)
+				BuyMarket();
+			BuyMarket();
 		}
-
-		if (SellPosOpen && previousColor == 4 && currentColor != 4 && Position >= 0)
+		// Sell: close below lower band with bearish candle
+		else if (close < lower && isBearish && Position >= 0)
 		{
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
-			_shortEntryTime = candle.CloseTime;
-			_longEntryTime = null;
+			if (Position > 0)
+				SellMarket();
+			SellMarket();
 		}
-	}
-
-	private void CheckTimeExit(ICandleMessage candle)
-	{
-		var holding = TimeSpan.FromMinutes(HoldingMinutes);
-
-		if (Position > 0 && _longEntryTime is DateTimeOffset longTime && candle.CloseTime - longTime >= holding)
-		CloseLongPosition();
-		else if (Position < 0 && _shortEntryTime is DateTimeOffset shortTime && candle.CloseTime - shortTime >= holding)
-		CloseShortPosition();
-	}
-
-	private void CloseLongPosition()
-	{
-		if (Position > 0)
+		// Exit long at middle band
+		else if (Position > 0 && close < middle)
 		{
-			SellMarket(Position);
-			_longEntryTime = null;
+			SellMarket();
 		}
-	}
-
-	private void CloseShortPosition()
-	{
-		if (Position < 0)
+		// Exit short at middle band
+		else if (Position < 0 && close > middle)
 		{
-			BuyMarket(Math.Abs(Position));
-			_shortEntryTime = null;
+			BuyMarket();
 		}
-	}
-
-	private decimal GetBreakoutOffset()
-	{
-		var step = Security?.PriceStep ?? 0m;
-		var offset = Deviation;
-
-		if (step > 0m)
-		offset *= step;
-
-		return Math.Abs(offset);
-	}
-
-	private static int CalculateColor(decimal open, decimal close, decimal upperBand, decimal lowerBand, decimal offset)
-	{
-		var isBullish = close >= open;
-
-		if (isBullish && close > upperBand + offset)
-		return 0;
-
-		if (!isBullish && close < lowerBand - offset)
-		return 4;
-
-		return isBullish ? 1 : 3;
-	}
-
-	private void EnsureColorHistoryCapacity()
-	{
-		var required = Math.Max(MaxColorHistory, SignalBar + 6);
-		if (required < 2)
-		required = 2;
-
-		if (_colorHistory.Length == required)
-		return;
-
-		var newHistory = new int[required];
-		var copy = Math.Min(_historyCount, required);
-
-		if (_colorHistory.Length > 0 && copy > 0)
-		Array.Copy(_colorHistory, 0, newHistory, 0, copy);
-
-		_colorHistory = newHistory;
-		_historyCount = Math.Min(_historyCount, required);
-	}
-
-	private void ResetColorHistory()
-	{
-		EnsureColorHistoryCapacity();
-		Array.Clear(_colorHistory, 0, _colorHistory.Length);
-		_historyCount = 0;
-	}
-
-	private void AddColor(int color)
-	{
-		EnsureColorHistoryCapacity();
-
-		for (var i = _colorHistory.Length - 1; i > 0; i--)
-		_colorHistory[i] = _colorHistory[i - 1];
-
-		_colorHistory[0] = color;
-
-		if (_historyCount < _colorHistory.Length)
-		_historyCount++;
-	}
-
-	private static decimal GetAppliedPrice(AppliedPrices mode, decimal open, decimal high, decimal low, decimal close)
-	{
-		return mode switch
-		{
-			AppliedPrices.Close => close,
-			AppliedPrices.Open => open,
-			AppliedPrices.High => high,
-			AppliedPrices.Low => low,
-			AppliedPrices.Median => (high + low) / 2m,
-			AppliedPrices.Typical => (close + high + low) / 3m,
-			AppliedPrices.Weighted => (2m * close + high + low) / 4m,
-			AppliedPrices.Simpl => (open + close) / 2m,
-			AppliedPrices.Quarter => (open + close + high + low) / 4m,
-			AppliedPrices.TrendFollow0 => close > open ? high : close < open ? low : close,
-			AppliedPrices.TrendFollow1 => close > open ? (high + close) / 2m : close < open ? (low + close) / 2m : close,
-			AppliedPrices.Demark => CalculateDemark(open, high, low, close),
-			_ => close,
-		};
-	}
-
-	private static decimal CalculateDemark(decimal open, decimal high, decimal low, decimal close)
-	{
-		var res = high + low + close;
-
-		if (close < open)
-		res = (res + low) / 2m;
-		else if (close > open)
-		res = (res + high) / 2m;
-		else
-		res = (res + close) / 2m;
-
-		return ((res - low) + (res - high)) / 2m;
-	}
-
-	public enum AppliedPrices
-	{
-		Close = 1,
-		Open,
-		High,
-		Low,
-		Median,
-		Typical,
-		Weighted,
-		Simpl,
-		Quarter,
-		TrendFollow0,
-		TrendFollow1,
-		Demark
 	}
 }

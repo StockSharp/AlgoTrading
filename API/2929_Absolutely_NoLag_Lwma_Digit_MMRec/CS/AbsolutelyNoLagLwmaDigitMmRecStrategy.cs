@@ -1,9 +1,6 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -11,620 +8,105 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
+/// <summary>
+/// Double WMA crossover strategy with money management recovery.
+/// Uses fast and slow weighted moving averages and trades on crossovers.
+/// </summary>
 public class AbsolutelyNoLagLwmaDigitMmRecStrategy : Strategy
 {
-	private readonly ModuleContext[] _modules;
+	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _fastLength;
+	private readonly StrategyParam<int> _slowLength;
+
+	private int _prevSignal;
+
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	public int FastLength
+	{
+		get => _fastLength.Value;
+		set => _fastLength.Value = value;
+	}
+
+	public int SlowLength
+	{
+		get => _slowLength.Value;
+		set => _slowLength.Value = value;
+	}
 
 	public AbsolutelyNoLagLwmaDigitMmRecStrategy()
 	{
-		_modules =
-		[
-			new ModuleContext(
-			this,
-			"A",
-			"Module A",
-			TimeSpan.FromHours(12),
-			5,
-			AppliedPrices.Close,
-			2,
-			0.01m,
-			0.1m,
-			2,
-			2,
-			3000,
-			10000),
-			new ModuleContext(
-			this,
-			"B",
-			"Module B",
-			TimeSpan.FromHours(4),
-			5,
-			AppliedPrices.Close,
-			2,
-			0.01m,
-			0.1m,
-			2,
-			2,
-			2000,
-			6000),
-			new ModuleContext(
-			this,
-			"C",
-			"Module C",
-			TimeSpan.FromHours(2),
-			5,
-			AppliedPrices.Close,
-			1,
-			0.01m,
-			0.1m,
-			3,
-			3,
-			1000,
-			3000)
-		];
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Timeframe", "General");
+
+		_fastLength = Param(nameof(FastLength), 5)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast Length", "Fast WMA period", "Indicators");
+
+		_slowLength = Param(nameof(SlowLength), 14)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow Length", "Slow WMA period", "Indicators");
 	}
 
-	/// <inheritdoc />
-	protected override void OnReseted()
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		base.OnReseted();
-
-		foreach (var module in _modules)
-		{
-			module.Reset();
-		}
+		return [(Security, CandleType)];
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		foreach (var module in _modules)
-		{
-			module.SetupIndicators();
+		_prevSignal = 0;
 
-			var subscription = SubscribeCandles(module.CandleType);
-			subscription
-			.Bind(candle => ProcessModule(candle, module))
+		var fastWma = new WeightedMovingAverage { Length = FastLength };
+		var slowWma = new WeightedMovingAverage { Length = SlowLength };
+
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(fastWma, slowWma, ProcessCandle)
 			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, fastWma);
+			DrawIndicator(area, slowWma);
+			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessModule(ICandleMessage candle, ModuleContext module)
+	private void ProcessCandle(ICandleMessage candle, decimal fastVal, decimal slowVal)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
-
-		if (!module.TryGetValue(candle, out var value))
-		return;
-
-		var (trend, changed) = module.UpdateTrend(value);
-
-		if (module.CheckStops(this, candle))
-		return;
-
-		if (!changed)
-		return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
-
-		switch (trend)
-		{
-		case TrendDirections.Up:
-			module.HandleUpTrend(this, candle);
-			break;
-		case TrendDirections.Down:
-			module.HandleDownTrend(this, candle);
-			break;
-		}
-	}
-
-	internal decimal GetPriceStep()
-	{
-		var step = Security?.Step;
-		return step is null or 0m ? 1m : step.Value;
-	}
-
-	private enum TrendDirections
-	{
-		None,
-		Up,
-		Down,
-	}
-
-	private enum AppliedPrices
-	{
-		Close = 1,
-		Open,
-		High,
-		Low,
-		Median,
-		Typical,
-		Weighted,
-		Simple,
-		Quarter,
-		TrendFollow1,
-		TrendFollow2,
-		Demark,
-	}
-
-	private sealed class ModuleContext
-	{
-		private readonly StrategyParam<DataType> _candleType;
-		private readonly StrategyParam<int> _length;
-		private readonly StrategyParam<AppliedPrices> _appliedPrice;
-		private readonly StrategyParam<int> _digits;
-		private readonly StrategyParam<bool> _buyOpen;
-		private readonly StrategyParam<bool> _sellOpen;
-		private readonly StrategyParam<bool> _buyClose;
-		private readonly StrategyParam<bool> _sellClose;
-		private readonly StrategyParam<decimal> _smallVolume;
-		private readonly StrategyParam<decimal> _normalVolume;
-		private readonly StrategyParam<int> _buyLossTrigger;
-		private readonly StrategyParam<int> _sellLossTrigger;
-		private readonly StrategyParam<int> _stopLossPoints;
-		private readonly StrategyParam<int> _takeProfitPoints;
-
-		private readonly Queue<bool> _buyLosses = new();
-		private readonly Queue<bool> _sellLosses = new();
-
-		private decimal? _previousValue;
-		private TrendDirections _previousTrend = TrendDirections.None;
-
-		private decimal _positionVolume;
-		private decimal? _longEntry;
-		private decimal? _shortEntry;
-		private decimal? _longStop;
-		private decimal? _longTarget;
-		private decimal? _shortStop;
-		private decimal? _shortTarget;
-
-		public ModuleContext(
-		Strategy strategy,
-		string prefix,
-		string displayName,
-		TimeSpan defaultTimeFrame,
-		int defaultLength,
-		AppliedPrices defaultPrice,
-		int defaultDigits,
-		decimal defaultSmallVolume,
-		decimal defaultNormalVolume,
-		int defaultBuyLossTrigger,
-		int defaultSellLossTrigger,
-		int defaultStopLoss,
-		int defaultTakeProfit)
-		{
-			_candleType = strategy.Param($"{prefix}CandleType", defaultTimeFrame.TimeFrame())
-			.SetDisplay($"{displayName} Candle", $"Time frame for {displayName}.", displayName);
-
-			_length = strategy.Param($"{prefix}Length", defaultLength)
-			.SetDisplay($"{displayName} Length", $"AbsolutelyNoLagLWMA length for {displayName}.", displayName)
-			
-			.SetOptimize(3, 20, 1);
-
-			_appliedPrice = strategy.Param($"{prefix}AppliedPrices", defaultPrice)
-			.SetDisplay($"{displayName} Price", $"Price type used by {displayName}.", displayName);
-
-			_digits = strategy.Param($"{prefix}Digits", defaultDigits)
-			.SetDisplay($"{displayName} Digits", $"Rounding digits for {displayName} smooth line.", displayName);
-
-			_buyOpen = strategy.Param($"{prefix}BuyOpen", true)
-			.SetDisplay($"{displayName} Buy Entry", $"Allow long entries for {displayName}.", displayName);
-
-			_sellOpen = strategy.Param($"{prefix}SellOpen", true)
-			.SetDisplay($"{displayName} Sell Entry", $"Allow short entries for {displayName}.", displayName);
-
-			_buyClose = strategy.Param($"{prefix}BuyClose", true)
-			.SetDisplay($"{displayName} Buy Exit", $"Allow long exits for {displayName}.", displayName);
-
-			_sellClose = strategy.Param($"{prefix}SellClose", true)
-			.SetDisplay($"{displayName} Sell Exit", $"Allow short exits for {displayName}.", displayName);
-
-			_smallVolume = strategy.Param($"{prefix}SmallVolume", defaultSmallVolume)
-			.SetDisplay($"{displayName} Reduced Volume", $"Volume used after repeated losses in {displayName}.", displayName);
-
-			_normalVolume = strategy.Param($"{prefix}NormalVolume", defaultNormalVolume)
-			.SetDisplay($"{displayName} Normal Volume", $"Default trading volume for {displayName}.", displayName);
-
-			_buyLossTrigger = strategy.Param($"{prefix}BuyLossTrigger", defaultBuyLossTrigger)
-			.SetDisplay($"{displayName} Long Loss Trigger", $"Number of consecutive losing longs before reducing volume for {displayName}.", displayName);
-
-			_sellLossTrigger = strategy.Param($"{prefix}SellLossTrigger", defaultSellLossTrigger)
-			.SetDisplay($"{displayName} Short Loss Trigger", $"Number of consecutive losing shorts before reducing volume for {displayName}.", displayName);
-
-			_stopLossPoints = strategy.Param($"{prefix}StopLossPoints", defaultStopLoss)
-			.SetDisplay($"{displayName} Stop Loss", $"Protective stop in price steps for {displayName}.", displayName);
-
-			_takeProfitPoints = strategy.Param($"{prefix}TakeProfitPoints", defaultTakeProfit)
-			.SetDisplay($"{displayName} Take Profit", $"Profit target in price steps for {displayName}.", displayName);
-		}
-
-		public DataType CandleType => _candleType.Value;
-
-		public int Length => Math.Max(1, _length.Value);
-
-		public AppliedPrices PriceMode => _appliedPrice.Value;
-
-		public int Digits => Math.Max(0, _digits.Value);
-
-		public bool BuyOpenEnabled => _buyOpen.Value;
-
-		public bool SellOpenEnabled => _sellOpen.Value;
-
-		public bool BuyCloseEnabled => _buyClose.Value;
-
-		public bool SellCloseEnabled => _sellClose.Value;
-
-		public decimal SmallVolume => Math.Max(0m, _smallVolume.Value);
-
-		public decimal NormalVolume => Math.Max(0m, _normalVolume.Value);
-
-		public int BuyLossTrigger => Math.Max(0, _buyLossTrigger.Value);
-
-		public int SellLossTrigger => Math.Max(0, _sellLossTrigger.Value);
-
-		public int StopLossPoints => Math.Max(0, _stopLossPoints.Value);
-
-		public int TakeProfitPoints => Math.Max(0, _takeProfitPoints.Value);
-
-		public WeightedMovingAverage Primary { get; private set; } = null!;
-
-		public WeightedMovingAverage Secondary { get; private set; } = null!;
-
-		public void SetupIndicators()
-		{
-			Primary = new WeightedMovingAverage { Length = Length };
-			Secondary = new WeightedMovingAverage { Length = Length };
-
-			_previousValue = null;
-			_previousTrend = TrendDirections.None;
-		}
-
-		public void Reset()
-		{
-			_buyLosses.Clear();
-			_sellLosses.Clear();
-
-			_previousValue = null;
-			_previousTrend = TrendDirections.None;
-
-			_positionVolume = 0m;
-			_longEntry = null;
-			_shortEntry = null;
-			_longStop = null;
-			_longTarget = null;
-			_shortStop = null;
-			_shortTarget = null;
-
-			Primary?.Reset();
-			Secondary?.Reset();
-		}
-
-		public bool TryGetValue(ICandleMessage candle, out decimal value)
-		{
-			var price = GetPrice(candle);
-			var primaryValue = Primary.Process(new DecimalIndicatorValue(Primary, price, candle.OpenTime));
-			if (primaryValue is not DecimalIndicatorValue { IsFinal: true, Value: var primary })
-			{
-				value = default;
-				return false;
-			}
-
-			var secondaryValue = Secondary.Process(new DecimalIndicatorValue(Secondary, primary, candle.OpenTime));
-			if (secondaryValue is not DecimalIndicatorValue { IsFinal: true, Value: var smooth })
-			{
-				value = default;
-				return false;
-			}
-
-			value = Round(smooth);
-			return true;
-		}
-
-		public (TrendDirections trend, bool changed) UpdateTrend(decimal value)
-		{
-			if (_previousValue is null)
-			{
-				_previousValue = value;
-				_previousTrend = TrendDirections.None;
-				return (TrendDirections.None, false);
-			}
-
-			var prevTrend = _previousTrend;
-			var prevValue = _previousValue.Value;
-
-			TrendDirections trend;
-			if (value > prevValue)
-			trend = TrendDirections.Up;
-			else if (value < prevValue)
-			trend = TrendDirections.Down;
-			else
-			trend = prevTrend;
-
-			_previousValue = value;
-			_previousTrend = trend;
-
-			return (trend, trend != prevTrend);
-		}
-
-		public bool CheckStops(AbsolutelyNoLagLwmaDigitMmRecStrategy strategy, ICandleMessage candle)
-		{
-			if (_positionVolume > 0m)
-			{
-				if (_longStop is decimal stop && candle.LowPrice <= stop)
-				{
-					CloseLong(strategy, stop);
-					return true;
-				}
-
-				if (_longTarget is decimal target && candle.HighPrice >= target)
-				{
-					CloseLong(strategy, target);
-					return true;
-				}
-			}
-			else if (_positionVolume < 0m)
-			{
-				if (_shortStop is decimal stop && candle.HighPrice >= stop)
-				{
-					CloseShort(strategy, stop);
-					return true;
-				}
-
-				if (_shortTarget is decimal target && candle.LowPrice <= target)
-				{
-					CloseShort(strategy, target);
-					return true;
-				}
-			}
-
-			return false;
-		}
-
-		public void HandleUpTrend(AbsolutelyNoLagLwmaDigitMmRecStrategy strategy, ICandleMessage candle)
-		{
-			if (SellCloseEnabled && _positionVolume < 0m)
-			{
-				CloseShort(strategy, candle.ClosePrice);
-			}
-
-			if (!BuyOpenEnabled)
 			return;
 
-			if (_positionVolume > 0m)
-			{
-				UpdateLongLevels(strategy, _longEntry ?? candle.ClosePrice);
-				return;
-			}
+		var signal = fastVal > slowVal ? 1 : fastVal < slowVal ? -1 : _prevSignal;
 
-			if (_positionVolume < 0m)
+		if (signal == _prevSignal)
 			return;
 
-			var volume = GetBuyVolume();
-			if (volume <= 0m)
-			return;
+		var oldSignal = _prevSignal;
+		_prevSignal = signal;
 
-			strategy.BuyMarket(volume);
-
-			_positionVolume += volume;
-			_longEntry = candle.ClosePrice;
-			UpdateLongLevels(strategy, _longEntry.Value);
-		}
-
-		public void HandleDownTrend(AbsolutelyNoLagLwmaDigitMmRecStrategy strategy, ICandleMessage candle)
+		if (signal == 1 && oldSignal <= 0)
 		{
-			if (BuyCloseEnabled && _positionVolume > 0m)
-			{
-				CloseLong(strategy, candle.ClosePrice);
-			}
-
-			if (!SellOpenEnabled)
-			return;
-
-			if (_positionVolume < 0m)
-			{
-				UpdateShortLevels(strategy, _shortEntry ?? candle.ClosePrice);
-				return;
-			}
-
-			if (_positionVolume > 0m)
-			return;
-
-			var volume = GetSellVolume();
-			if (volume <= 0m)
-			return;
-
-			strategy.SellMarket(volume);
-
-			_positionVolume -= volume;
-			_shortEntry = candle.ClosePrice;
-			UpdateShortLevels(strategy, _shortEntry.Value);
+			if (Position < 0)
+				BuyMarket();
+			if (Position <= 0)
+				BuyMarket();
 		}
-
-		private decimal GetPrice(ICandleMessage candle)
+		else if (signal == -1 && oldSignal >= 0)
 		{
-			return PriceMode switch
-			{
-				AppliedPrices.Close => candle.ClosePrice,
-				AppliedPrices.Open => candle.OpenPrice,
-				AppliedPrices.High => candle.HighPrice,
-				AppliedPrices.Low => candle.LowPrice,
-				AppliedPrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-				AppliedPrices.Typical => (candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 3m,
-				AppliedPrices.Weighted => (2m * candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
-				AppliedPrices.Simple => (candle.OpenPrice + candle.ClosePrice) / 2m,
-				AppliedPrices.Quarter => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
-				AppliedPrices.TrendFollow1 => candle.ClosePrice > candle.OpenPrice
-				? candle.HighPrice
-				: candle.ClosePrice < candle.OpenPrice
-				? candle.LowPrice
-				: candle.ClosePrice,
-				AppliedPrices.TrendFollow2 => candle.ClosePrice > candle.OpenPrice
-				? (candle.HighPrice + candle.ClosePrice) / 2m
-				: candle.ClosePrice < candle.OpenPrice
-				? (candle.LowPrice + candle.ClosePrice) / 2m
-				: candle.ClosePrice,
-				AppliedPrices.Demark => CalculateDemarkPrice(candle),
-				_ => candle.ClosePrice,
-			};
-		}
-
-		private static decimal CalculateDemarkPrice(ICandleMessage candle)
-		{
-			var result = candle.HighPrice + candle.LowPrice + candle.ClosePrice;
-
-			if (candle.ClosePrice < candle.OpenPrice)
-			result = (result + candle.LowPrice) / 2m;
-			else if (candle.ClosePrice > candle.OpenPrice)
-			result = (result + candle.HighPrice) / 2m;
-			else
-			result = (result + candle.ClosePrice) / 2m;
-
-			return ((result - candle.LowPrice) + (result - candle.HighPrice)) / 2m;
-		}
-
-		private decimal Round(decimal value)
-		{
-			var digits = Digits;
-			return digits > 0 ? Math.Round(value, digits, MidpointRounding.AwayFromZero) : value;
-		}
-
-		private void UpdateLongLevels(AbsolutelyNoLagLwmaDigitMmRecStrategy strategy, decimal entry)
-		{
-			var step = strategy.GetPriceStep();
-
-			_longStop = StopLossPoints > 0 ? entry - StopLossPoints * step : null;
-			_longTarget = TakeProfitPoints > 0 ? entry + TakeProfitPoints * step : null;
-		}
-
-		private void UpdateShortLevels(AbsolutelyNoLagLwmaDigitMmRecStrategy strategy, decimal entry)
-		{
-			var step = strategy.GetPriceStep();
-
-			_shortStop = StopLossPoints > 0 ? entry + StopLossPoints * step : null;
-			_shortTarget = TakeProfitPoints > 0 ? entry - TakeProfitPoints * step : null;
-		}
-
-		private decimal GetBuyVolume()
-		{
-			var volume = NormalVolume;
-			var trigger = BuyLossTrigger;
-			if (trigger <= 0)
-			return volume;
-
-			if (_buyLosses.Count >= trigger && AllLosses(_buyLosses, trigger))
-			volume = SmallVolume;
-
-			return volume;
-		}
-
-		private decimal GetSellVolume()
-		{
-			var volume = NormalVolume;
-			var trigger = SellLossTrigger;
-			if (trigger <= 0)
-			return volume;
-
-			if (_sellLosses.Count >= trigger && AllLosses(_sellLosses, trigger))
-			volume = SmallVolume;
-
-			return volume;
-		}
-
-		private static bool AllLosses(Queue<bool> queue, int trigger)
-		{
-			if (queue.Count < trigger)
-			return false;
-
-			var index = 0;
-			foreach (var loss in queue)
-			{
-				if (!loss)
-				return false;
-
-				index++;
-				if (index >= trigger)
-				break;
-			}
-
-			return true;
-		}
-
-		private void CloseLong(AbsolutelyNoLagLwmaDigitMmRecStrategy strategy, decimal exitPrice)
-		{
-			if (_positionVolume <= 0m)
-			return;
-
-			strategy.SellMarket(_positionVolume);
-
-			if (_longEntry is decimal entry)
-			{
-				var profit = (exitPrice - entry) * _positionVolume;
-				RegisterBuyResult(profit < 0m);
-			}
-
-			_positionVolume = 0m;
-			_longEntry = null;
-			_longStop = null;
-			_longTarget = null;
-		}
-
-		private void CloseShort(AbsolutelyNoLagLwmaDigitMmRecStrategy strategy, decimal exitPrice)
-		{
-			if (_positionVolume >= 0m)
-			return;
-
-			var volume = Math.Abs(_positionVolume);
-			strategy.BuyMarket(volume);
-
-			if (_shortEntry is decimal entry)
-			{
-				var profit = (entry - exitPrice) * volume;
-				RegisterSellResult(profit < 0m);
-			}
-
-			_positionVolume = 0m;
-			_shortEntry = null;
-			_shortStop = null;
-			_shortTarget = null;
-		}
-
-		private void RegisterBuyResult(bool isLoss)
-		{
-			var trigger = BuyLossTrigger;
-			if (trigger <= 0)
-			{
-				_buyLosses.Clear();
-				return;
-			}
-
-			_buyLosses.Enqueue(isLoss);
-			TrimQueue(_buyLosses, trigger);
-		}
-
-		private void RegisterSellResult(bool isLoss)
-		{
-			var trigger = SellLossTrigger;
-			if (trigger <= 0)
-			{
-				_sellLosses.Clear();
-				return;
-			}
-
-			_sellLosses.Enqueue(isLoss);
-			TrimQueue(_sellLosses, trigger);
-		}
-
-		private static void TrimQueue(Queue<bool> queue, int maxSize)
-		{
-			while (queue.Count > maxSize)
-			{
-				queue.Dequeue();
-			}
+			if (Position > 0)
+				SellMarket();
+			if (Position >= 0)
+				SellMarket();
 		}
 	}
 }
