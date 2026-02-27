@@ -1,325 +1,99 @@
-using System;
-using System.Linq;
-using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
-
-using StockSharp.Algo.Indicators;
-using StockSharp.Algo.Strategies;
-using StockSharp.BusinessEntities;
-using StockSharp.Messages;
-
 namespace StockSharp.Samples.Strategies;
 
+using System;
+using System.Collections.Generic;
+using Ecng.Common;
+using StockSharp.Algo.Indicators;
+using StockSharp.Algo.Strategies;
+using StockSharp.Messages;
+
 /// <summary>
-/// Engulfing candlestick strategy confirmed by the Stochastic oscillator.
-/// The logic mirrors the Expert_ABE_BE_Stoch MetaTrader expert: bullish engulfing + oversold stochastic opens longs,
-/// bearish engulfing + overbought stochastic opens shorts, and stochastic threshold crosses manage exits.
+/// ABE BE Stoch strategy: Engulfing pattern with Stochastic confirmation.
+/// Bullish engulfing + oversold stochastic for long, bearish engulfing + overbought for short.
 /// </summary>
 public class AbeBeStochStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _stochasticPeriodK;
-	private readonly StrategyParam<int> _stochasticPeriodD;
-	private readonly StrategyParam<int> _stochasticPeriodSlow;
-	private readonly StrategyParam<decimal> _entryOversoldLevel;
-	private readonly StrategyParam<decimal> _entryOverboughtLevel;
-	private readonly StrategyParam<decimal> _exitLowerLevel;
-	private readonly StrategyParam<decimal> _exitUpperLevel;
-	private readonly StrategyParam<decimal> _takeProfitPoints;
-	private readonly StrategyParam<decimal> _stopLossPoints;
+	private readonly StrategyParam<int> _stochPeriod;
+	private readonly StrategyParam<decimal> _oversold;
+	private readonly StrategyParam<decimal> _overbought;
 
-	private StochasticOscillator _stochastic;
-	private ICandleMessage _previousCandle;
-	private decimal? _previousSignal;
+	private readonly List<ICandleMessage> _candles = new();
+	private decimal _prevK;
+	private bool _hasPrevK;
 
-	/// <summary>
-	/// Candle type used for signal generation.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int StochPeriod { get => _stochPeriod.Value; set => _stochPeriod.Value = value; }
+	public decimal Oversold { get => _oversold.Value; set => _oversold.Value = value; }
+	public decimal Overbought { get => _overbought.Value; set => _overbought.Value = value; }
 
-	/// <summary>
-	/// %K period of the stochastic oscillator.
-	/// </summary>
-	public int StochasticPeriodK
-	{
-		get => _stochasticPeriodK.Value;
-		set => _stochasticPeriodK.Value = value;
-	}
-
-	/// <summary>
-	/// %D period of the stochastic oscillator.
-	/// </summary>
-	public int StochasticPeriodD
-	{
-		get => _stochasticPeriodD.Value;
-		set => _stochasticPeriodD.Value = value;
-	}
-
-	/// <summary>
-	/// Slowing period applied to the %K line.
-	/// </summary>
-	public int StochasticPeriodSlow
-	{
-		get => _stochasticPeriodSlow.Value;
-		set => _stochasticPeriodSlow.Value = value;
-	}
-
-	/// <summary>
-	/// Oversold level that must be breached together with a bullish engulfing pattern.
-	/// </summary>
-	public decimal EntryOversoldLevel
-	{
-		get => _entryOversoldLevel.Value;
-		set => _entryOversoldLevel.Value = value;
-	}
-
-	/// <summary>
-	/// Overbought level that must be breached together with a bearish engulfing pattern.
-	/// </summary>
-	public decimal EntryOverboughtLevel
-	{
-		get => _entryOverboughtLevel.Value;
-		set => _entryOverboughtLevel.Value = value;
-	}
-
-	/// <summary>
-	/// Lower stochastic threshold used to manage exits.
-	/// </summary>
-	public decimal ExitLowerLevel
-	{
-		get => _exitLowerLevel.Value;
-		set => _exitLowerLevel.Value = value;
-	}
-
-	/// <summary>
-	/// Upper stochastic threshold used to manage exits.
-	/// </summary>
-	public decimal ExitUpperLevel
-	{
-		get => _exitUpperLevel.Value;
-		set => _exitUpperLevel.Value = value;
-	}
-
-	/// <summary>
-	/// Take-profit distance expressed in price points (price steps).
-	/// </summary>
-	public decimal TakeProfitPoints
-	{
-		get => _takeProfitPoints.Value;
-		set => _takeProfitPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Stop-loss distance expressed in price points (price steps).
-	/// </summary>
-	public decimal StopLossPoints
-	{
-		get => _stopLossPoints.Value;
-		set => _stopLossPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="AbeBeStochStrategy"/> class.
-	/// </summary>
 	public AbeBeStochStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
-			.SetDisplay("Candle Type", "Time frame used for analysis", "General");
-
-		_stochasticPeriodK = Param(nameof(StochasticPeriodK), 47)
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle timeframe", "General");
+		_stochPeriod = Param(nameof(StochPeriod), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("%K Period", "Lookback period for stochastic %K", "Indicators")
-			;
-
-		_stochasticPeriodD = Param(nameof(StochasticPeriodD), 9)
-			.SetGreaterThanZero()
-			.SetDisplay("%D Period", "Smoothing period for stochastic %D", "Indicators")
-			;
-
-		_stochasticPeriodSlow = Param(nameof(StochasticPeriodSlow), 13)
-			.SetGreaterThanZero()
-			.SetDisplay("Slowing", "Additional smoothing applied to %K", "Indicators")
-			;
-
-		_entryOversoldLevel = Param(nameof(EntryOversoldLevel), 30m)
-			.SetDisplay("Oversold Threshold", "Maximum %D value for bullish entries", "Signals")
-			;
-
-		_entryOverboughtLevel = Param(nameof(EntryOverboughtLevel), 70m)
-			.SetDisplay("Overbought Threshold", "Minimum %D value for bearish entries", "Signals")
-			;
-
-		_exitLowerLevel = Param(nameof(ExitLowerLevel), 20m)
-			.SetDisplay("Lower Exit Level", "%D level that closes shorts on upward crosses", "Risk")
-			;
-
-		_exitUpperLevel = Param(nameof(ExitUpperLevel), 80m)
-			.SetDisplay("Upper Exit Level", "%D level that closes longs on downward crosses", "Risk")
-			;
-
-		_takeProfitPoints = Param(nameof(TakeProfitPoints), 0m)
-			.SetNotNegative()
-			.SetDisplay("Take Profit", "Take-profit distance in price steps", "Risk");
-
-		_stopLossPoints = Param(nameof(StopLossPoints), 0m)
-			.SetNotNegative()
-			.SetDisplay("Stop Loss", "Stop-loss distance in price steps", "Risk");
+			.SetDisplay("Stoch Period", "Stochastic K period", "Indicators");
+		_oversold = Param(nameof(Oversold), 30m)
+			.SetDisplay("Oversold", "Stochastic oversold level", "Signals");
+		_overbought = Param(nameof(Overbought), 70m)
+			.SetDisplay("Overbought", "Stochastic overbought level", "Signals");
 	}
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_stochastic = null;
-		_previousCandle = null;
-		_previousSignal = null;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_stochastic = new StochasticOscillator
-		{ K = { Length = StochasticPeriodK },
-			K = { Length = StochasticPeriodSlow },
-			D = { Length = StochasticPeriodD },
-		};
-
+		_candles.Clear();
+		_hasPrevK = false;
+		var stoch = new StochasticOscillator { K = { Length = StochPeriod }, D = { Length = 3 } };
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.BindEx(_stochastic, ProcessCandle)
-			.Start();
-
-		var priceStep = Security?.PriceStep ?? 0m;
-		Unit takeProfitUnit = null;
-		Unit stopLossUnit = null;
-
-		if (priceStep > 0m)
-		{
-			if (TakeProfitPoints > 0m)
-			{
-				takeProfitUnit = new Unit(TakeProfitPoints * priceStep, UnitTypes.Absolute);
-			}
-
-			if (StopLossPoints > 0m)
-			{
-				stopLossUnit = new Unit(StopLossPoints * priceStep, UnitTypes.Absolute);
-			}
-		}
-
-		if (takeProfitUnit != null || stopLossUnit != null)
-		{
-			StartProtection(takeProfitUnit, stopLossUnit);
-		}
-		else
-		{
-			StartProtection(null, null);
-		}
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, _stochastic);
-			DrawOwnTrades(area);
-		}
+		subscription.BindEx(stoch, ProcessCandle).Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue indicatorValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue stochValue)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
+		if (candle.State != CandleStates.Finished) return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		var stochTyped = stochValue as StochasticOscillatorValue;
+		if (stochTyped?.K is not decimal kValue) return;
 
-		if (!indicatorValue.IsFinal)
-			return;
+		_candles.Add(candle);
+		if (_candles.Count > 5)
+			_candles.RemoveAt(0);
 
-		var stochasticValue = (StochasticOscillatorValue)indicatorValue;
-		if (stochasticValue.D is not decimal currentSignal)
-			return;
-
-		var previousSignal = _previousSignal;
-		var previous = _previousCandle;
-
-		var bullishEngulfing = IsBullishEngulfing(previous, candle);
-		var bearishEngulfing = IsBearishEngulfing(previous, candle);
-
-		if (bullishEngulfing && currentSignal < EntryOversoldLevel && Position <= 0m)
+		if (_candles.Count >= 2)
 		{
-			// Oversold stochastic confirmed by bullish engulfing -> go long or close short.
-			BuyMarket(Volume + Math.Abs(Position));
-		}
-		else if (bearishEngulfing && currentSignal > EntryOverboughtLevel && Position >= 0m)
-		{
-			// Overbought stochastic confirmed by bearish engulfing -> go short or close long.
-			SellMarket(Volume + Math.Abs(Position));
-		}
+			var curr = _candles[^1];
+			var prev = _candles[^2];
 
-		if (previousSignal.HasValue)
-		{
-			var crossedAboveLower = previousSignal.Value < ExitLowerLevel && currentSignal > ExitLowerLevel;
-			var crossedAboveUpper = previousSignal.Value < ExitUpperLevel && currentSignal > ExitUpperLevel;
-			if (Position < 0m && (crossedAboveLower || crossedAboveUpper))
-			{
-				// Stochastic crossed upwards -> exit short exposure.
-				BuyMarket(Math.Abs(Position));
-			}
+			// Bullish engulfing: prev bearish, curr bullish, curr body engulfs prev body
+			var bullishEngulfing = prev.OpenPrice > prev.ClosePrice
+				&& curr.ClosePrice > curr.OpenPrice
+				&& curr.OpenPrice <= prev.ClosePrice
+				&& curr.ClosePrice >= prev.OpenPrice;
 
-			var crossedBelowUpper = previousSignal.Value > ExitUpperLevel && currentSignal < ExitUpperLevel;
-			var crossedBelowLower = previousSignal.Value > ExitLowerLevel && currentSignal < ExitLowerLevel;
-			if (Position > 0m && (crossedBelowUpper || crossedBelowLower))
-			{
-				// Stochastic crossed downwards -> exit long exposure.
-				SellMarket(Position);
-			}
+			// Bearish engulfing: prev bullish, curr bearish, curr body engulfs prev body
+			var bearishEngulfing = prev.ClosePrice > prev.OpenPrice
+				&& curr.OpenPrice > curr.ClosePrice
+				&& curr.OpenPrice >= prev.ClosePrice
+				&& curr.ClosePrice <= prev.OpenPrice;
+
+			if (bullishEngulfing && kValue < Oversold && Position <= 0)
+				BuyMarket();
+			else if (bearishEngulfing && kValue > Overbought && Position >= 0)
+				SellMarket();
 		}
 
-		_previousSignal = currentSignal;
-		_previousCandle = candle;
-	}
+		// Exit on stochastic cross
+		if (_hasPrevK)
+		{
+			if (Position > 0 && _prevK >= Overbought && kValue < Overbought)
+				SellMarket();
+			else if (Position < 0 && _prevK <= Oversold && kValue > Oversold)
+				BuyMarket();
+		}
 
-	private static bool IsBullishEngulfing(ICandleMessage previous, ICandleMessage current)
-	{
-		if (previous == null)
-			return false;
-
-		var previousBearish = previous.ClosePrice < previous.OpenPrice;
-		var currentBullish = current.ClosePrice > current.OpenPrice;
-		if (!previousBearish || !currentBullish)
-			return false;
-
-		var bodyEngulfed = current.OpenPrice <= previous.ClosePrice && current.ClosePrice >= previous.OpenPrice;
-		return bodyEngulfed;
-	}
-
-	private static bool IsBearishEngulfing(ICandleMessage previous, ICandleMessage current)
-	{
-		if (previous == null)
-			return false;
-
-		var previousBullish = previous.ClosePrice > previous.OpenPrice;
-		var currentBearish = current.ClosePrice < current.OpenPrice;
-		if (!previousBullish || !currentBearish)
-			return false;
-
-		var bodyEngulfed = current.OpenPrice >= previous.ClosePrice && current.ClosePrice <= previous.OpenPrice;
-		return bodyEngulfed;
+		_prevK = kValue;
+		_hasPrevK = true;
 	}
 }
-

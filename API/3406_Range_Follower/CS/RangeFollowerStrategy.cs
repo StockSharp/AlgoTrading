@@ -1,406 +1,86 @@
-using System;
-using System.Linq;
-using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
-
-using StockSharp.Algo.Indicators;
-using StockSharp.Algo.Strategies;
-using StockSharp.BusinessEntities;
-using StockSharp.Messages;
-
 namespace StockSharp.Samples.Strategies;
 
+using System;
+using Ecng.Common;
+using StockSharp.Algo.Indicators;
+using StockSharp.Algo.Strategies;
+using StockSharp.Messages;
+
 /// <summary>
-/// Range breakout follower adapted from the original MetaTrader 5 expert advisor.
-/// Enters once price moves far enough away from the daily extremes and manages intraday stop and target levels.
+/// Range Follower strategy: ATR-based range breakout.
+/// Tracks high/low range and enters when price breaks out by ATR threshold.
 /// </summary>
 public class RangeFollowerStrategy : Strategy
 {
-	private readonly StrategyParam<int> _triggerPercent;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _dailyAtrPeriod;
+	private readonly StrategyParam<int> _atrPeriod;
+	private readonly StrategyParam<int> _rangePeriod;
 
-	private Subscription _dailySubscription;
-	private Subscription _intradaySubscription;
+	private decimal _rangeHigh;
+	private decimal _rangeLow;
+	private int _barCount;
 
-	private AverageTrueRange _dailyAtrIndicator = null!;
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int AtrPeriod { get => _atrPeriod.Value; set => _atrPeriod.Value = value; }
+	public int RangePeriod { get => _rangePeriod.Value; set => _rangePeriod.Value = value; }
 
-	private DateTime? _currentSessionDate;
-	private decimal? _dailyHigh;
-	private decimal? _dailyLow;
-	private decimal? _dailyRange;
-	private decimal? _triggerDistance;
-	private decimal? _restDistance;
-	private decimal? _atrValue;
-
-	private decimal? _bestBidPrice;
-	private decimal? _bestAskPrice;
-
-	private bool _tradeOpened;
-	private bool _dayInitialized;
-	private bool _abortTradingForDay;
-	private bool _orderPending;
-
-	private decimal? _stopLossPrice;
-	private decimal? _takeProfitPrice;
-	private decimal? _entryPrice;
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="RangeFollowerStrategy"/> class.
-	/// </summary>
 	public RangeFollowerStrategy()
 	{
-		_triggerPercent = Param(nameof(TriggerPercent), 60)
-			.SetRange(10, 90)
-			.SetDisplay("Trigger Percent", "Percentage of ATR used as breakout trigger", "Parameters");
-
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
-			.SetDisplay("Candle Type", "Primary timeframe for monitoring daily resets", "General");
-
-		_dailyAtrPeriod = Param(nameof(DailyAtrPeriod), 20)
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle timeframe", "General");
+		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("Daily ATR Period", "Period used for the daily ATR calculation", "Parameters");
+			.SetDisplay("ATR Period", "ATR period", "Indicators");
+		_rangePeriod = Param(nameof(RangePeriod), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("Range Period", "Bars for range calculation", "Indicators");
 	}
 
-	/// <summary>
-	/// Trigger percentage that splits the ATR into trigger and residual segments.
-	/// </summary>
-	public int TriggerPercent
-	{
-		get => _triggerPercent.Value;
-		set => _triggerPercent.Value = value;
-	}
-
-
-	/// <summary>
-	/// Intraday candle type that defines the trading session boundaries.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	public int DailyAtrPeriod
-	{
-		get => _dailyAtrPeriod.Value;
-		set => _dailyAtrPeriod.Value = value;
-	}
-
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return
-		[
-			(Security, CandleType),
-			(Security, TimeSpan.FromMinutes(5).TimeFrame())
-		];
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_currentSessionDate = null;
-		_dailyHigh = null;
-		_dailyLow = null;
-		_dailyRange = null;
-		_triggerDistance = null;
-		_restDistance = null;
-		_atrValue = null;
-		_bestBidPrice = null;
-		_bestAskPrice = null;
-		_tradeOpened = false;
-		_dayInitialized = false;
-		_abortTradingForDay = false;
-		_orderPending = false;
-		_stopLossPrice = null;
-		_takeProfitPrice = null;
-		_entryPrice = null;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_dailyAtrIndicator = new AverageTrueRange
-		{
-			Length = DailyAtrPeriod
-		};
-
-		_dailySubscription = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
-		_dailySubscription
-			.Bind(_dailyAtrIndicator, ProcessDailyCandle)
-			.Start();
-
-		_intradaySubscription = SubscribeCandles(CandleType);
-		_intradaySubscription
-			.Bind(ProcessIntradayCandle)
-			.Start();
-
-		SubscribeLevel1()
-			.Bind(ProcessLevel1)
-			.Start();
-
-		StartProtection(null, null);
+		_rangeHigh = 0;
+		_rangeLow = decimal.MaxValue;
+		_barCount = 0;
+		var atr = new AverageTrueRange { Length = AtrPeriod };
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(atr, ProcessCandle).Start();
 	}
 
-	private void ProcessDailyCandle(ICandleMessage candle, decimal atrValue)
+	private void ProcessCandle(ICandleMessage candle, decimal atrValue)
 	{
-		var candleDate = candle.OpenTime.Date;
+		if (candle.State != CandleStates.Finished) return;
 
-		if (_currentSessionDate == null || candleDate > _currentSessionDate)
+		var close = candle.ClosePrice;
+		_barCount++;
+
+		if (candle.HighPrice > _rangeHigh) _rangeHigh = candle.HighPrice;
+		if (candle.LowPrice < _rangeLow) _rangeLow = candle.LowPrice;
+
+		if (_barCount < RangePeriod) return;
+
+		var threshold = atrValue * 0.5m;
+
+		if (close > _rangeHigh - threshold && Position <= 0)
 		{
-			ResetDailyState(candleDate);
+			BuyMarket();
+			ResetRange();
+		}
+		else if (close < _rangeLow + threshold && Position >= 0)
+		{
+			SellMarket();
+			ResetRange();
 		}
 
-		if (candleDate != _currentSessionDate)
-		{
-			return;
-		}
-
-		_dailyHigh = candle.HighPrice;
-		_dailyLow = candle.LowPrice;
-		_atrValue = _dailyAtrIndicator.IsFormed ? atrValue : null;
+		// Slide the range window
+		if (_barCount > RangePeriod * 2)
+			ResetRange();
 	}
 
-	private void ProcessIntradayCandle(ICandleMessage candle)
+	private void ResetRange()
 	{
-		var candleDate = candle.OpenTime.Date;
-
-		if (_currentSessionDate == null || candleDate > _currentSessionDate)
-		{
-			ResetDailyState(candleDate);
-		}
-	}
-
-	private void ProcessLevel1(Level1ChangeMessage level1)
-	{
-		if (level1.Changes.TryGetValue(Level1Fields.BestBidPrice, out var bidValue) && bidValue is decimal bid)
-		{
-			_bestBidPrice = bid;
-		}
-
-		if (level1.Changes.TryGetValue(Level1Fields.BestAskPrice, out var askValue) && askValue is decimal ask)
-		{
-			_bestAskPrice = ask;
-		}
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			return;
-		}
-
-		if (!UpdateTradingLevels())
-		{
-			return;
-		}
-
-		if (!_dayInitialized)
-		{
-			_dayInitialized = true;
-
-			if (_dailyRange is decimal range && _triggerDistance is decimal trigger && range > trigger)
-			{
-				_abortTradingForDay = true;
-			}
-		}
-
-		if (_abortTradingForDay)
-		{
-			return;
-		}
-
-		if (_bestBidPrice is not decimal currentBid || _bestAskPrice is not decimal currentAsk)
-		{
-			return;
-		}
-
-		CheckIntradayTargets(currentBid, currentAsk);
-
-		if (_tradeOpened || _orderPending || Position != 0)
-		{
-			return;
-		}
-
-		if (_dailyLow is decimal dayLow && _triggerDistance is decimal triggerDistance)
-		{
-			var distanceToLow = currentBid - dayLow;
-
-			if (distanceToLow > triggerDistance)
-			{
-				EnterLong(currentAsk);
-				return;
-			}
-		}
-
-		if (_dailyHigh is decimal dayHigh && _triggerDistance is decimal triggerDistanceShort)
-		{
-			var distanceToHigh = dayHigh - currentAsk;
-
-			if (distanceToHigh > triggerDistanceShort)
-			{
-				EnterShort(currentBid);
-			}
-		}
-	}
-
-	private void CheckIntradayTargets(decimal currentBid, decimal currentAsk)
-	{
-		if (Position > 0)
-		{
-			if (_stopLossPrice is decimal longStop && currentBid <= longStop)
-			{
-				SellMarket(Position);
-				_orderPending = true;
-				_stopLossPrice = null;
-				_takeProfitPrice = null;
-				_entryPrice = null;
-				return;
-			}
-
-			if (_takeProfitPrice is decimal longTarget && currentBid >= longTarget)
-			{
-				SellMarket(Position);
-				_orderPending = true;
-				_stopLossPrice = null;
-				_takeProfitPrice = null;
-				_entryPrice = null;
-			}
-		}
-		else if (Position < 0)
-		{
-			if (_stopLossPrice is decimal shortStop && currentAsk >= shortStop)
-			{
-				BuyMarket(-Position);
-				_orderPending = true;
-				_stopLossPrice = null;
-				_takeProfitPrice = null;
-				_entryPrice = null;
-				return;
-			}
-
-			if (_takeProfitPrice is decimal shortTarget && currentAsk <= shortTarget)
-			{
-				BuyMarket(-Position);
-				_orderPending = true;
-				_stopLossPrice = null;
-				_takeProfitPrice = null;
-				_entryPrice = null;
-			}
-		}
-	}
-
-	private void EnterLong(decimal askPrice)
-	{
-		if (_triggerDistance is not decimal trigger || _restDistance is not decimal rest)
-		{
-			return;
-		}
-
-		BuyMarket(Volume);
-		_orderPending = true;
-		_tradeOpened = true;
-		_entryPrice = askPrice;
-		_stopLossPrice = askPrice - trigger;
-		_takeProfitPrice = askPrice + rest;
-	}
-
-	private void EnterShort(decimal bidPrice)
-	{
-		if (_triggerDistance is not decimal trigger || _restDistance is not decimal rest)
-		{
-			return;
-		}
-
-		SellMarket(Volume);
-		_orderPending = true;
-		_tradeOpened = true;
-		_entryPrice = bidPrice;
-		_stopLossPrice = bidPrice + trigger;
-		_takeProfitPrice = bidPrice - rest;
-	}
-
-	private bool UpdateTradingLevels()
-	{
-		if (_currentSessionDate == null)
-		{
-			return false;
-		}
-
-		if (_dailyHigh is not decimal high || _dailyLow is not decimal low)
-		{
-			return false;
-		}
-
-		if (_atrValue is not decimal atr)
-		{
-			return false;
-		}
-
-		var trigger = atr * TriggerPercent / 100m;
-		if (trigger <= 0m)
-		{
-			return false;
-		}
-
-		var rest = atr - trigger;
-		if (rest <= 0m)
-		{
-			return false;
-		}
-
-		_dailyRange = high - low;
-		_triggerDistance = trigger;
-		_restDistance = rest;
-		return true;
-	}
-
-	private void ResetDailyState(DateTime newDate)
-	{
-		if (_currentSessionDate != null && newDate <= _currentSessionDate)
-		{
-			return;
-		}
-
-		if (Position != 0)
-		{
-			ClosePosition();
-			_orderPending = true;
-		}
-
-		_currentSessionDate = newDate;
-		_dailyHigh = null;
-		_dailyLow = null;
-		_dailyRange = null;
-		_triggerDistance = null;
-		_restDistance = null;
-		_atrValue = null;
-		_dayInitialized = false;
-		_abortTradingForDay = false;
-		_tradeOpened = false;
-		_stopLossPrice = null;
-		_takeProfitPrice = null;
-		_entryPrice = null;
-	}
-
-	/// <inheritdoc />
-	protected override void OnPositionReceived(Position position)
-	{
-		base.OnPositionReceived(position);
-
-		_orderPending = false;
-
-		if (Position == 0)
-		{
-			_entryPrice = null;
-		}
+		_rangeHigh = 0;
+		_rangeLow = decimal.MaxValue;
+		_barCount = 0;
 	}
 }
-
