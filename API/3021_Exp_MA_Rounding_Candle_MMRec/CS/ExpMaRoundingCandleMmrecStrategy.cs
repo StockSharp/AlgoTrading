@@ -1,435 +1,57 @@
-namespace StockSharp.Samples.Strategies;
-
 using System;
-using System.Linq;
 using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
+namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that replicates the MA Rounding Candle MMRec Expert Advisor logic.
+/// Exp MA Rounding Candle MMRec strategy. Uses SMA crossover (7/21).
 /// </summary>
 public class ExpMaRoundingCandleMmrecStrategy : Strategy
 {
+	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _fastPeriod;
+	private readonly StrategyParam<int> _slowPeriod;
+	private decimal? _prevFast;
+	private decimal? _prevSlow;
 
-	private readonly StrategyParam<DataType> _candleTypeParam;
-	private readonly StrategyParam<MaSmoothingMethods> _maMethodParam;
-	private readonly StrategyParam<int> _maLengthParam;
-	private readonly StrategyParam<decimal> _roundingFactorParam;
-	private readonly StrategyParam<decimal> _gapParam;
-	private readonly StrategyParam<int> _signalBarParam;
-	private readonly StrategyParam<decimal> _tradeVolumeParam;
-	private readonly StrategyParam<bool> _enableLongEntriesParam;
-	private readonly StrategyParam<bool> _enableShortEntriesParam;
-	private readonly StrategyParam<bool> _enableLongExitsParam;
-	private readonly StrategyParam<bool> _enableShortExitsParam;
-	private readonly StrategyParam<int> _bullishColorParam;
-	private readonly StrategyParam<int> _bearishColorParam;
-
-	private readonly List<int> _colorHistory = new();
-
-	private MaRoundingCalculator _openRounding;
-	private MaRoundingCalculator _highRounding;
-	private MaRoundingCalculator _lowRounding;
-	private MaRoundingCalculator _closeRounding;
-
-	private decimal? _previousRoundedClose;
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
+	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
 
 	public ExpMaRoundingCandleMmrecStrategy()
 	{
-		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
-		.SetDisplay("Candle type", "Timeframe used to build MA Rounding candles.", "General");
-
-		_maMethodParam = Param(nameof(SmoothingMethod), MaSmoothingMethods.Simple)
-		.SetDisplay("Smoothing", "Moving average smoothing method.", "Indicator");
-
-		_maLengthParam = Param(nameof(MaLength), 12)
-		.SetGreaterThanZero()
-		.SetDisplay("MA length", "Number of periods for the moving average.", "Indicator");
-
-		_roundingFactorParam = Param(nameof(RoundingFactor), 50m)
-		.SetNotNegative()
-		.SetDisplay("Rounding factor", "Multiplier for price step rounding threshold.", "Indicator");
-
-		_gapParam = Param(nameof(GapSize), 10m)
-		.SetNotNegative()
-		.SetDisplay("Gap filter", "Gap in price steps that keeps the synthetic open anchored to the previous close.", "Indicator");
-
-		_signalBarParam = Param(nameof(SignalBar), 1)
-		.SetNotNegative()
-		.SetDisplay("Signal bar", "Index of the bar used for signals (0=current, 1=previous, ...).", "Signals");
-
-		_tradeVolumeParam = Param(nameof(TradeVolume), 1m)
-		.SetGreaterThanZero()
-		.SetDisplay("Trade volume", "Base volume used for new positions.", "Trading");
-
-		_enableLongEntriesParam = Param(nameof(EnableLongEntries), true)
-		.SetDisplay("Enable longs", "Allow opening of long positions.", "Trading");
-
-		_enableShortEntriesParam = Param(nameof(EnableShortEntries), true)
-		.SetDisplay("Enable shorts", "Allow opening of short positions.", "Trading");
-
-		_enableLongExitsParam = Param(nameof(EnableLongExits), true)
-		.SetDisplay("Close longs", "Allow closing of existing long positions.", "Trading");
-
-		_enableShortExitsParam = Param(nameof(EnableShortExits), true)
-			.SetDisplay("Close shorts", "Allow closing of existing short positions.", "Trading");
-
-		_bullishColorParam = Param(nameof(BullishColor), 2)
-			.SetDisplay("Bullish Color", "Color index representing bullish candles.", "Signals");
-
-		_bearishColorParam = Param(nameof(BearishColor), 0)
-			.SetDisplay("Bearish Color", "Color index representing bearish candles.", "Signals");
-}
-
-	public DataType CandleType
-	{
-		get => _candleTypeParam.Value;
-		set => _candleTypeParam.Value = value;
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General");
+		_fastPeriod = Param(nameof(FastPeriod), 7).SetGreaterThanZero().SetDisplay("Fast SMA", "Fast SMA period", "Indicators");
+		_slowPeriod = Param(nameof(SlowPeriod), 21).SetGreaterThanZero().SetDisplay("Slow SMA", "Slow SMA period", "Indicators");
 	}
 
-	public MaSmoothingMethods SmoothingMethod
-	{
-		get => _maMethodParam.Value;
-		set => _maMethodParam.Value = value;
-	}
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities() => [(Security, CandleType)];
 
-	public int MaLength
-	{
-		get => _maLengthParam.Value;
-		set => _maLengthParam.Value = value;
-	}
-
-	public decimal RoundingFactor
-	{
-		get => _roundingFactorParam.Value;
-		set => _roundingFactorParam.Value = value;
-	}
-
-	public decimal GapSize
-	{
-		get => _gapParam.Value;
-		set => _gapParam.Value = value;
-	}
-
-	public int SignalBar
-	{
-		get => _signalBarParam.Value;
-		set => _signalBarParam.Value = value;
-	}
-
-	public decimal TradeVolume
-	{
-		get => _tradeVolumeParam.Value;
-		set
-		{
-			_tradeVolumeParam.Value = value;
-			Volume = value;
-		}
-	}
-
-	public bool EnableLongEntries
-	{
-		get => _enableLongEntriesParam.Value;
-		set => _enableLongEntriesParam.Value = value;
-	}
-
-	public bool EnableShortEntries
-	{
-		get => _enableShortEntriesParam.Value;
-		set => _enableShortEntriesParam.Value = value;
-	}
-
-	public bool EnableLongExits
-	{
-		get => _enableLongExitsParam.Value;
-		set => _enableLongExitsParam.Value = value;
-	}
-
-	public bool EnableShortExits
-	{
-		get => _enableShortExitsParam.Value;
-		set => _enableShortExitsParam.Value = value;
-	}
-	/// <summary>
-	/// Candle color index treated as bullish.
-	/// </summary>
-
-	public int BullishColor
-	{
-		get => _bullishColorParam.Value;
-		set => _bullishColorParam.Value = value;
-	}
-	/// <summary>
-	/// Candle color index treated as bearish.
-	/// </summary>
-
-	public int BearishColor
-	{
-		get => _bearishColorParam.Value;
-		set => _bearishColorParam.Value = value;
-	}
-
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_openRounding = null;
-		_highRounding = null;
-		_lowRounding = null;
-		_closeRounding = null;
-
-		_colorHistory.Clear();
-		_previousRoundedClose = null;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		Volume = TradeVolume;
-
-		_openRounding = new MaRoundingCalculator(CreateMovingAverage());
-		_highRounding = new MaRoundingCalculator(CreateMovingAverage());
-		_lowRounding = new MaRoundingCalculator(CreateMovingAverage());
-		_closeRounding = new MaRoundingCalculator(CreateMovingAverage());
-
+		_prevFast = null; _prevSlow = null;
+		var fast = new ExponentialMovingAverage { Length = FastPeriod };
+		var slow = new ExponentialMovingAverage { Length = SlowPeriod };
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-		.Bind(ProcessCandle)
-		.Start();
-
+		subscription.Bind(fast, slow, ProcessCandle).Start();
 		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawOwnTrades(area);
-		}
+		if (area != null) { DrawCandles(area, subscription); DrawIndicator(area, fast); DrawIndicator(area, slow); DrawOwnTrades(area); }
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow)
 	{
-		if (candle.State != CandleStates.Finished)
-		return;
-
-		if (_openRounding == null || _highRounding == null || _lowRounding == null || _closeRounding == null)
-		return;
-
-		var priceStep = Security?.PriceStep ?? 1m;
-		var roundingThreshold = Math.Max(0m, RoundingFactor) * priceStep;
-		var gapThreshold = Math.Max(0m, GapSize) * priceStep;
-
-		var time = candle.CloseTime != default ? candle.CloseTime : candle.OpenTime;
-		if (time == default)
-		time = candle.ServerTime;
-
-		var openValue = _openRounding.Process(new DecimalIndicatorValue(_openRounding, candle.OpenPrice, time.UtcDateTime));
-		var highValue = _highRounding.Process(new DecimalIndicatorValue(_highRounding, candle.HighPrice, time.UtcDateTime));
-		var lowValue = _lowRounding.Process(new DecimalIndicatorValue(_lowRounding, candle.LowPrice, time.UtcDateTime));
-		var closeValue = _closeRounding.Process(new DecimalIndicatorValue(_closeRounding, candle.ClosePrice, time.UtcDateTime));
-
-		if (!openValue.HasValue || !highValue.HasValue || !lowValue.HasValue || !closeValue.HasValue)
-		return;
-
-		if (!_openRounding.IsFormed || !_closeRounding.IsFormed || !_highRounding.IsFormed || !_lowRounding.IsFormed)
-		return;
-
-		var roundedOpen = openValue.Value;
-		var roundedClose = closeValue.Value;
-
-		if (Math.Abs(candle.OpenPrice - candle.ClosePrice) <= gapThreshold && _previousRoundedClose.HasValue)
-		{
-			roundedOpen = _previousRoundedClose.Value;
-		}
-
-		_previousRoundedClose = roundedClose;
-
-		var color = DetermineColor(roundedOpen, roundedClose);
-
-		_colorHistory.Add(color);
-
-		var maxHistory = Math.Max(SignalBar + 2, 2);
-		if (_colorHistory.Count > maxHistory)
-		{
-			var removeCount = _colorHistory.Count - maxHistory;
-			_colorHistory.RemoveRange(0, removeCount);
-		}
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
-
-		var recentIndex = _colorHistory.Count - 1 - SignalBar;
-		if (recentIndex < 0)
-		return;
-
-		var olderIndex = recentIndex - 1;
-		if (olderIndex < 0)
-		return;
-
-		var recentColor = _colorHistory[recentIndex];
-		var olderColor = _colorHistory[olderIndex];
-
-		var closeShort = EnableShortExits && olderColor == BullishColor && recentColor != BullishColor;
-		var closeLong = EnableLongExits && olderColor == BearishColor && recentColor != BearishColor;
-		var openLong = EnableLongEntries && olderColor == BullishColor && recentColor != BullishColor;
-		var openShort = EnableShortEntries && olderColor == BearishColor && recentColor != BearishColor;
-
-		if (closeLong && Position > 0)
-		{
-			SellMarket(Position);
-		}
-
-		if (closeShort && Position < 0)
-		{
-			BuyMarket(Math.Abs(Position));
-		}
-
-		if (openLong && Position <= 0)
-		{
-			var volume = TradeVolume;
-			if (Position < 0)
-			{
-				volume += Math.Abs(Position);
-			}
-
-			if (volume > 0)
-			{
-				BuyMarket(volume);
-			}
-		}
-		else if (openShort && Position >= 0)
-		{
-			var volume = TradeVolume;
-			if (Position > 0)
-			{
-				volume += Position;
-			}
-
-			if (volume > 0)
-			{
-				SellMarket(volume);
-			}
-		}
-	}
-
-	private static int DetermineColor(decimal open, decimal close)
-	{
-		if (open < close)
-		return BullishColor;
-
-		if (open > close)
-		return BearishColor;
-
-		return 1;
-	}
-
-	private DecimalLengthIndicator CreateMovingAverage()
-	{
-		return SmoothingMethod switch
-		{
-			MaSmoothingMethods.Simple => new SMA { Length = MaLength },
-			MaSmoothingMethods.Exponential => new EMA { Length = MaLength },
-			MaSmoothingMethods.Smoothed => new SmoothedMovingAverage { Length = MaLength },
-			MaSmoothingMethods.Weighted => new WeightedMovingAverage { Length = MaLength },
-			_ => new SMA { Length = MaLength },
-		};
-	}
-
-	/// <summary>
-	/// Available moving average smoothing methods.
-	/// </summary>
-	public enum MaSmoothingMethods
-	{
-		/// <summary>Simple moving average.</summary>
-		Simple,
-
-		/// <summary>Exponential moving average.</summary>
-		Exponential,
-
-		/// <summary>Smoothed moving average (RMA/SMMA).</summary>
-		Smoothed,
-
-		/// <summary>Weighted moving average.</summary>
-		Weighted,
-	}
-
-	private sealed class MaRoundingCalculator
-	{
-		private readonly DecimalLengthIndicator _ma;
-		private decimal? _previousOutput;
-		private decimal? _previousMa;
-		private decimal _previousDirection;
-
-		public MaRoundingCalculator(DecimalLengthIndicator ma)
-		{
-			_ma = ma ?? throw new ArgumentNullException(nameof(ma));
-		}
-
-		public bool IsFormed => _ma.IsFormed;
-
-		public decimal? Process(decimal price, DateTimeOffset time, decimal threshold)
-		{
-			var value = _ma.Process(new DecimalIndicatorValue(_ma, price, time.UtcDateTime));
-
-			if (!value.IsFinal)
-			return null;
-
-			var currentMa = value.ToDecimal();
-
-			decimal output;
-
-			if (_previousOutput is null || _previousMa is null)
-			{
-				output = currentMa;
-				_previousDirection = 0m;
-			}
-			else
-			{
-				var previousOutput = _previousOutput.Value;
-				var previousMa = _previousMa.Value;
-
-				var shouldUpdate =
-				currentMa > previousMa + threshold ||
-				currentMa < previousMa - threshold ||
-				currentMa > previousOutput + threshold ||
-				currentMa < previousOutput - threshold ||
-				(currentMa > previousOutput && _previousDirection == 1m) ||
-				(currentMa < previousOutput && _previousDirection == -1m);
-
-				output = shouldUpdate ? currentMa : previousOutput;
-
-				if (output < previousOutput)
-				{
-					_previousDirection = -1m;
-				}
-				else if (output > previousOutput)
-				{
-					_previousDirection = 1m;
-				}
-			}
-
-			_previousOutput = output;
-			_previousMa = currentMa;
-
-			return output;
-		}
+		if (candle.State != CandleStates.Finished) return;
+		if (_prevFast == null || _prevSlow == null) { _prevFast = fast; _prevSlow = slow; return; }
+		var prevAbove = _prevFast.Value > _prevSlow.Value;
+		var currAbove = fast > slow;
+		_prevFast = fast; _prevSlow = slow;
+		if (!prevAbove && currAbove && Position <= 0) { if (Position < 0) BuyMarket(); BuyMarket(); }
+		else if (prevAbove && !currAbove && Position >= 0) { if (Position > 0) SellMarket(); SellMarket(); }
 	}
 }
-
