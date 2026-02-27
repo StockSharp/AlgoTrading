@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,269 +11,103 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on MACD, EMA crossover, Bollinger Bands, Parabolic SAR and Bulls/Bears Power.
-/// Trades during a predefined session and allows only one position at a time.
+/// Strategy based on MACD histogram, EMA crossover and Parabolic SAR confirmation.
+/// Buys when MACD histogram positive, fast EMA above slow EMA, SAR below price.
+/// Sells on opposite conditions.
 /// </summary>
 public class MacdEmaSarBollingerBullBearStrategy : Strategy
 {
-	private readonly StrategyParam<int> _macdFast;
-	private readonly StrategyParam<int> _macdSlow;
-	private readonly StrategyParam<int> _macdSignal;
 	private readonly StrategyParam<int> _fastMaPeriod;
 	private readonly StrategyParam<int> _slowMaPeriod;
-	private readonly StrategyParam<int> _powerPeriod;
-	private readonly StrategyParam<decimal> _sarStep;
-	private readonly StrategyParam<decimal> _sarMax;
-	private readonly StrategyParam<int> _bollingerPeriod;
-	private readonly StrategyParam<decimal> _bollingerDeviation;
-	private readonly StrategyParam<TimeSpan> _sessionStart;
-	private readonly StrategyParam<TimeSpan> _sessionEnd;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevBearsPower;
-	private decimal _prevBullsPower;
-	private decimal _prevHigh1;
-	private decimal _prevHigh2;
-	private decimal _prevUpper1;
-	private decimal _prevUpper2;
-	private int _candleCount;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private bool _hasPrev;
 
-	/// <summary>
-	/// Fast EMA period for MACD.
-	/// </summary>
-	public int MacdFast
-	{
-		get => _macdFast.Value;
-		set => _macdFast.Value = value;
-	}
+	public int FastMaPeriod { get => _fastMaPeriod.Value; set => _fastMaPeriod.Value = value; }
+	public int SlowMaPeriod { get => _slowMaPeriod.Value; set => _slowMaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Slow EMA period for MACD.
-	/// </summary>
-	public int MacdSlow
-	{
-		get => _macdSlow.Value;
-		set => _macdSlow.Value = value;
-	}
-
-	/// <summary>
-	/// Signal line period for MACD.
-	/// </summary>
-	public int MacdSignal
-	{
-		get => _macdSignal.Value;
-		set => _macdSignal.Value = value;
-	}
-
-	/// <summary>
-	/// Period for the fast EMA crossover.
-	/// </summary>
-	public int FastMaPeriod
-	{
-		get => _fastMaPeriod.Value;
-		set => _fastMaPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Period for the slow EMA crossover.
-	/// </summary>
-	public int SlowMaPeriod
-	{
-		get => _slowMaPeriod.Value;
-		set => _slowMaPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Period for Bulls and Bears Power indicators.
-	/// </summary>
-	public int PowerPeriod
-	{
-		get => _powerPeriod.Value;
-		set => _powerPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Parabolic SAR acceleration step.
-	/// </summary>
-	public decimal SarStep
-	{
-		get => _sarStep.Value;
-		set => _sarStep.Value = value;
-	}
-
-	/// <summary>
-	/// Parabolic SAR maximum step.
-	/// </summary>
-	public decimal SarMax
-	{
-		get => _sarMax.Value;
-		set => _sarMax.Value = value;
-	}
-
-	/// <summary>
-	/// Bollinger Bands period.
-	/// </summary>
-	public int BollingerPeriod
-	{
-		get => _bollingerPeriod.Value;
-		set => _bollingerPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Bollinger Bands deviation multiplier.
-	/// </summary>
-	public decimal BollingerDeviation
-	{
-		get => _bollingerDeviation.Value;
-		set => _bollingerDeviation.Value = value;
-	}
-
-	/// <summary>
-	/// Session start time.
-	/// </summary>
-	public TimeSpan SessionStart
-	{
-		get => _sessionStart.Value;
-		set => _sessionStart.Value = value;
-	}
-
-	/// <summary>
-	/// Session end time.
-	/// </summary>
-	public TimeSpan SessionEnd
-	{
-		get => _sessionEnd.Value;
-		set => _sessionEnd.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type to subscribe.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initialize <see cref="MacdEmaSarBollingerBullBearStrategy"/>.
-	/// </summary>
 	public MacdEmaSarBollingerBullBearStrategy()
 	{
-		_macdFast = Param(nameof(MacdFast), 12).SetDisplay("MACD Fast", "MACD fast EMA period", "MACD");
-		_macdSlow = Param(nameof(MacdSlow), 26).SetDisplay("MACD Slow", "MACD slow EMA period", "MACD");
-		_macdSignal = Param(nameof(MacdSignal), 9).SetDisplay("MACD Signal", "MACD signal line period", "MACD");
-		_fastMaPeriod = Param(nameof(FastMaPeriod), 3).SetDisplay("Fast EMA", "Fast EMA period", "MA");
-		_slowMaPeriod = Param(nameof(SlowMaPeriod), 34).SetDisplay("Slow EMA", "Slow EMA period", "MA");
-		_powerPeriod = Param(nameof(PowerPeriod), 13).SetDisplay("Power Period", "Bulls/Bears Power period", "Power");
-		_sarStep = Param(nameof(SarStep), 0.02m).SetDisplay("SAR Step", "Parabolic SAR step", "SAR");
-		_sarMax = Param(nameof(SarMax), 0.2m).SetDisplay("SAR Max", "Parabolic SAR max", "SAR");
-		_bollingerPeriod = Param(nameof(BollingerPeriod), 20).SetDisplay("BB Period", "Bollinger Bands period", "Bollinger");
-		_bollingerDeviation = Param(nameof(BollingerDeviation), 2m).SetDisplay("BB Deviation", "Bollinger Bands deviation", "Bollinger");
-		_sessionStart = Param(nameof(SessionStart), TimeSpan.FromHours(9)).SetDisplay("Session Start", "Trading session start", "Session");
-		_sessionEnd = Param(nameof(SessionEnd), TimeSpan.FromHours(17)).SetDisplay("Session End", "Trading session end", "Session");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame()).SetDisplay("Candle Type", "Type of candles", "Common");
+		_fastMaPeriod = Param(nameof(FastMaPeriod), 8)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+
+		_slowMaPeriod = Param(nameof(SlowMaPeriod), 21)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
-	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	protected override void OnReseted()
 	{
-		base.OnStarted(time);
+		base.OnReseted();
+		_prevFast = 0;
+		_prevSlow = 0;
+		_hasPrev = false;
+	}
 
-		var macd = new MovingAverageConvergenceDivergenceSignal
-		{
-			Macd =
-			{
-				ShortMa = { Length = MacdFast },
-				LongMa = { Length = MacdSlow },
-			},
-			SignalMa = { Length = MacdSignal }
-		};
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
 
-		var fastMa = new EMA { Length = FastMaPeriod };
-		var slowMa = new EMA { Length = SlowMaPeriod };
-		var sar = new ParabolicSar { AccelerationStep = SarStep, AccelerationMax = SarMax };
-		var bears = new BearPower { Length = PowerPeriod };
-		var bulls = new BullPower { Length = PowerPeriod };
-		var bollinger = new BollingerBands { Length = BollingerPeriod, Width = BollingerDeviation };
+		var fastEma = new ExponentialMovingAverage { Length = FastMaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowMaPeriod };
+		var sar = new ParabolicSar();
+		var macd = new MovingAverageConvergenceDivergence();
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(macd, fastMa, slowMa, sar, bears, bulls, bollinger, ProcessCandle)
+			.Bind(fastEma, slowEma, sar, macd, ProcessCandle)
 			.Start();
-
-		StartProtection();
 	}
 
-	private void ProcessCandle(
-	ICandleMessage candle,
-	IIndicatorValue macdValue,
-	IIndicatorValue fastMaValue,
-	IIndicatorValue slowMaValue,
-	IIndicatorValue sarValue,
-	IIndicatorValue bearsValue,
-	IIndicatorValue bullsValue,
-	IIndicatorValue bollingerValue)
+	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow, decimal sarVal, decimal macdVal)
 	{
-	if (candle.State != CandleStates.Finished)
-	return;
+		if (candle.State != CandleStates.Finished)
+			return;
 
-	var time = candle.OpenTime.TimeOfDay;
-	var boll = (BollingerBandsValue)bollingerValue;
-	var upperBand = boll.UpBand;
-	var bears = bearsValue.GetValue<decimal>();
-	var bulls = bullsValue.GetValue<decimal>();
+		if (!_hasPrev)
+		{
+			_prevFast = fast;
+			_prevSlow = slow;
+			_hasPrev = true;
+			return;
+		}
 
-	if (time < SessionStart || time >= SessionEnd || !IsFormedAndOnlineAndAllowTrading())
-	{
-	UpdateState(candle, upperBand, bears, bulls);
-	return;
-	}
+		var close = candle.ClosePrice;
 
-	var macd = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
-	var macdMain = macd.Macd;
-	var macdSignal = macd.Signal;
-	var emaFast = fastMaValue.GetValue<decimal>();
-	var emaSlow = slowMaValue.GetValue<decimal>();
-	var sar = sarValue.GetValue<decimal>();
+		// Buy: EMA crossover up + SAR below + MACD positive
+		var buySignal = _prevFast <= _prevSlow && fast > slow &&
+			sarVal < close && macdVal > 0;
 
-	var sellSignal = Position == 0 &&
-	macdMain > macdSignal &&
-	emaFast < emaSlow &&
-	sar > candle.HighPrice &&
-	bears < 0m &&
-	bears > _prevBearsPower;
+		// Sell: EMA crossover down + SAR above + MACD negative
+		var sellSignal = _prevFast >= _prevSlow && fast < slow &&
+			sarVal > close && macdVal < 0;
 
-	var buySignal = Position == 0 &&
-	_candleCount >= 2 &&
-	macdMain < macdSignal &&
-	_prevHigh1 < _prevUpper1 &&
-	_prevHigh2 < _prevUpper2 &&
-	emaFast > emaSlow &&
-	sar < candle.LowPrice &&
-	bulls > 0m &&
-	bulls < _prevBullsPower;
+		if (buySignal)
+		{
+			if (Position < 0)
+				BuyMarket();
+			if (Position <= 0)
+				BuyMarket();
+		}
+		else if (sellSignal)
+		{
+			if (Position > 0)
+				SellMarket();
+			if (Position >= 0)
+				SellMarket();
+		}
 
-	var volume = Volume + Math.Abs(Position);
-
-	if (sellSignal)
-	SellMarket(volume);
-	else if (buySignal)
-	BuyMarket(volume);
-
-	UpdateState(candle, upperBand, bears, bulls);
-	}
-
-	private void UpdateState(ICandleMessage candle, decimal upperBand, decimal bears, decimal bulls)
-	{
-	_prevBearsPower = bears;
-	_prevBullsPower = bulls;
-
-	_prevHigh2 = _prevHigh1;
-	_prevUpper2 = _prevUpper1;
-	_prevHigh1 = candle.HighPrice;
-	_prevUpper1 = upperBand;
-
-	_candleCount++;
+		_prevFast = fast;
+		_prevSlow = slow;
 	}
 }

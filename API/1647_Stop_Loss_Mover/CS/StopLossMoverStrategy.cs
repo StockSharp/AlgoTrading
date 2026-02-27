@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,114 +11,147 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Moves stop-loss to break-even when price reaches the specified level.
-/// Designed as a utility to protect an existing position.
+/// Strategy that enters on EMA crossover and moves stop-loss to break-even
+/// when price moves favorably by a specified ATR multiple.
 /// </summary>
 public class StopLossMoverStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _moveSlPrice;
+	private readonly StrategyParam<int> _fastLength;
+	private readonly StrategyParam<int> _slowLength;
+	private readonly StrategyParam<decimal> _stopAtrMult;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _entryPrice;
+	private decimal _stopPrice;
 	private bool _isStopMoved;
 
-	/// <summary>
-	/// Price level at which stop-loss will be moved to the entry price.
-	/// </summary>
-	public decimal MoveSlPrice
-	{
-		get => _moveSlPrice.Value;
-		set => _moveSlPrice.Value = value;
-	}
+	public int FastLength { get => _fastLength.Value; set => _fastLength.Value = value; }
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public decimal StopAtrMult { get => _stopAtrMult.Value; set => _stopAtrMult.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Candle type used to monitor price movement.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes parameters.
-	/// </summary>
 	public StopLossMoverStrategy()
 	{
-		_moveSlPrice = Param(nameof(MoveSlPrice), 0m)
-			.SetDisplay("Move SL Price", "Price level that triggers stop-loss move", "Risk")
-			
-			.SetOptimize(0m, 100m, 1m);
+		_fastLength = Param(nameof(FastLength), 10)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to monitor", "General");
+		_slowLength = Param(nameof(SlowLength), 30)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+
+		_stopAtrMult = Param(nameof(StopAtrMult), 1.5m)
+			.SetDisplay("Stop ATR Mult", "ATR multiplier for initial stop", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_entryPrice = 0m;
+		_entryPrice = 0;
+		_stopPrice = 0;
 		_isStopMoved = false;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		// Subscribe to candles and start data flow
+		var fastEma = new ExponentialMovingAverage { Length = FastLength };
+		var slowEma = new ExponentialMovingAverage { Length = SlowLength };
+		var atr = new AverageTrueRange { Length = 14 };
+
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
-
-		// Start protection mechanism
-		StartProtection(null, null);
-
-		// Open initial long position
-		BuyMarket(Volume);
+		subscription
+			.Bind(fastEma, slowEma, atr, ProcessCandle)
+			.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow, decimal atrVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Stop-loss can be moved only if entry price is known
-		if (_entryPrice == 0m)
+		if (atrVal <= 0)
 			return;
 
-		if (_isStopMoved)
+		var close = candle.ClosePrice;
+
+		// Check stop-loss hit
+		if (Position > 0 && _stopPrice > 0 && close <= _stopPrice)
+		{
+			SellMarket();
+			_entryPrice = 0;
+			_stopPrice = 0;
+			_isStopMoved = false;
 			return;
-
-		// For long positions, move stop when candle high crosses the level
-		if (Position > 0 && candle.HighPrice > MoveSlPrice)
-		{
-			SellStopMarket(Position, _entryPrice);
-			_isStopMoved = true;
-			LogInfo("Stop-loss moved to {0}", _entryPrice);
 		}
-		// For short positions, move stop when candle low crosses the level
-		else if (Position < 0 && candle.LowPrice < MoveSlPrice)
+		else if (Position < 0 && _stopPrice > 0 && close >= _stopPrice)
 		{
-			BuyStopMarket(Math.Abs(Position), _entryPrice);
-			_isStopMoved = true;
-			LogInfo("Stop-loss moved to {0}", _entryPrice);
+			BuyMarket();
+			_entryPrice = 0;
+			_stopPrice = 0;
+			_isStopMoved = false;
+			return;
 		}
-	}
 
-	/// <inheritdoc />
-	protected override void OnOwnTradeReceived(MyTrade trade)
-	{
-		base.OnOwnTradeReceived(trade);
+		// Move stop to break-even when price moves favorably by 2*ATR
+		if (Position > 0 && !_isStopMoved && _entryPrice > 0)
+		{
+			if (close >= _entryPrice + 2 * atrVal)
+			{
+				_stopPrice = _entryPrice;
+				_isStopMoved = true;
+			}
+		}
+		else if (Position < 0 && !_isStopMoved && _entryPrice > 0)
+		{
+			if (close <= _entryPrice - 2 * atrVal)
+			{
+				_stopPrice = _entryPrice;
+				_isStopMoved = true;
+			}
+		}
 
-		// Capture entry price when first trade is executed
-		if (_entryPrice == 0m)
-			_entryPrice = trade.Trade.Price;
+		// Entry signals: EMA crossover
+		if (Position == 0)
+		{
+			if (fast > slow)
+			{
+				BuyMarket();
+				_entryPrice = close;
+				_stopPrice = close - StopAtrMult * atrVal;
+				_isStopMoved = false;
+			}
+			else if (fast < slow)
+			{
+				SellMarket();
+				_entryPrice = close;
+				_stopPrice = close + StopAtrMult * atrVal;
+				_isStopMoved = false;
+			}
+		}
+		// Reverse on crossover
+		else if (Position > 0 && fast < slow)
+		{
+			SellMarket();
+			SellMarket();
+			_entryPrice = close;
+			_stopPrice = close + StopAtrMult * atrVal;
+			_isStopMoved = false;
+		}
+		else if (Position < 0 && fast > slow)
+		{
+			BuyMarket();
+			BuyMarket();
+			_entryPrice = close;
+			_stopPrice = close - StopAtrMult * atrVal;
+			_isStopMoved = false;
+		}
 	}
 }

@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,105 +11,85 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that logs when new bars start for multiple timeframes.
-/// It tracks predefined periods and notifies when a new bar appears.
+/// Strategy that detects new bar openings and trades breakouts.
+/// Enters when price breaks the high/low of the previous bar with EMA confirmation.
 /// </summary>
 public class SymrNewBarStrategy : Strategy
 {
+	private readonly StrategyParam<int> _emaLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	// Supported periods in ascending order.
-	private static readonly TimeSpan[] _periods =
-	{
-		TimeSpan.FromMinutes(1),
-		TimeSpan.FromMinutes(5),
-		TimeSpan.FromMinutes(15),
-		TimeSpan.FromMinutes(30),
-		TimeSpan.FromHours(1),
-		TimeSpan.FromHours(4),
-		TimeSpan.FromDays(1),
-		TimeSpan.FromMinutes(20),
-		TimeSpan.FromMinutes(55),
-	};
+	private decimal _prevHigh;
+	private decimal _prevLow;
+	private bool _hasPrev;
 
-	// Last known open time for each period.
-	private readonly DateTimeOffset[] _times = new DateTimeOffset[_periods.Length];
+	public int EmaLength { get => _emaLength.Value; set => _emaLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	private int _currentIndex;
-
-	/// <summary>
-	/// Base candle type used to detect new bars.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes parameters.
-	/// </summary>
 	public SymrNewBarStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Primary timeframe to monitor", "General");
+		_emaLength = Param(nameof(EmaLength), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("EMA Length", "EMA period for trend filter", "Indicators");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	protected override void OnReseted()
 	{
-		return [(Security, CandleType)];
+		base.OnReseted();
+		_prevHigh = 0;
+		_prevLow = 0;
+		_hasPrev = false;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		// Determine index of the base timeframe.
-		_currentIndex = Array.IndexOf(_periods, ((CandleTimeFrame)CandleType.Arg).TimeSpan);
+		var ema = new ExponentialMovingAverage { Length = EmaLength };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
+		subscription
+			.Bind(ema, ProcessCandle)
+			.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal emaVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var currentTime = candle.OpenTime;
+		var close = candle.ClosePrice;
 
-		if (_times[_currentIndex] != currentTime)
+		if (!_hasPrev)
 		{
-			_times[_currentIndex] = currentTime;
-			OnBar(_periods[_currentIndex], currentTime);
-
-			for (var i = _currentIndex + 1; i < _periods.Length; i++)
-			{
-				var period = _periods[i];
-				var time0 = currentTime - TimeSpan.FromTicks(currentTime.Ticks % period.Ticks);
-
-				if (_times[i] != time0)
-				{
-					_times[i] = time0;
-					OnBar(period, time0);
-				}
-			}
+			_prevHigh = candle.HighPrice;
+			_prevLow = candle.LowPrice;
+			_hasPrev = true;
+			return;
 		}
 
-		OnTick();
-	}
+		// Breakout above previous high with EMA confirmation
+		if (close > _prevHigh && close > emaVal && Position <= 0)
+		{
+			if (Position < 0)
+				BuyMarket();
+			BuyMarket();
+		}
+		// Breakout below previous low with EMA confirmation
+		else if (close < _prevLow && close < emaVal && Position >= 0)
+		{
+			if (Position > 0)
+				SellMarket();
+			SellMarket();
+		}
 
-	private void OnTick()
-	{
-		// Called after each processed candle.
-		// Placeholder for tick-based logic.
-	}
-
-	private void OnBar(TimeSpan period, DateTimeOffset time)
-	{
-		// Log new bar event for the specified period.
-		LogInfo("New bar at {time} for period {period}.");
+		_prevHigh = candle.HighPrice;
+		_prevLow = candle.LowPrice;
 	}
 }

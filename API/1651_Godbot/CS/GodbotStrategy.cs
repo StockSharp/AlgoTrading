@@ -1,11 +1,7 @@
-
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,234 +11,119 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on Bollinger Bands, EMA and DEMA trend confirmation.
-/// Closes positions on band reversals and opens new ones when price
-/// crosses bands with trend alignment.
+/// Strategy based on Bollinger Bands and EMA trend confirmation.
+/// Buys when price crosses below lower band with uptrend, sells when above upper band with downtrend.
 /// </summary>
 public class GodbotStrategy : Strategy
 {
 	private readonly StrategyParam<int> _bollingerPeriod;
 	private readonly StrategyParam<decimal> _bollingerDeviation;
 	private readonly StrategyParam<int> _maPeriod;
-	private readonly StrategyParam<int> _demaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<DataType> _demaCandleType;
 
-	private decimal _emaPrev1;
-	private decimal _emaPrev2;
-	private int _maCount;
+	private decimal _prevEma;
+	private bool _hasPrevEma;
 
-	private decimal _dema0;
-	private decimal _dema1;
-	private decimal _dema2;
-	private int _demaCount;
+	public int BollingerPeriod { get => _bollingerPeriod.Value; set => _bollingerPeriod.Value = value; }
+	public decimal BollingerDeviation { get => _bollingerDeviation.Value; set => _bollingerDeviation.Value = value; }
+	public int MaPeriod { get => _maPeriod.Value; set => _maPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Bollinger Bands period.
-	/// </summary>
-	public int BollingerPeriod
-	{
-		get => _bollingerPeriod.Value;
-		set => _bollingerPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Bollinger Bands deviation.
-	/// </summary>
-	public decimal BollingerDeviation
-	{
-		get => _bollingerDeviation.Value;
-		set => _bollingerDeviation.Value = value;
-	}
-
-	/// <summary>
-	/// EMA period for trend filter.
-	/// </summary>
-	public int MaPeriod
-	{
-		get => _maPeriod.Value;
-		set => _maPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// DEMA period for higher timeframe trend.
-	/// </summary>
-	public int DemaPeriod
-	{
-		get => _demaPeriod.Value;
-		set => _demaPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used for Bollinger Bands and EMA.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used for DEMA calculation.
-	/// </summary>
-	public DataType DemaCandleType
-	{
-		get => _demaCandleType.Value;
-		set => _demaCandleType.Value = value;
-	}
-
-	/// <summary>
-	/// Constructor.
-	/// </summary>
 	public GodbotStrategy()
 	{
-		_bollingerPeriod = Param(nameof(BollingerPeriod), 23)
+		_bollingerPeriod = Param(nameof(BollingerPeriod), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("Bollinger Period", "Bollinger Bands period", "General")
-			
-			.SetOptimize(10, 50, 5);
+			.SetDisplay("BB Period", "Bollinger Bands period", "Indicators");
 
 		_bollingerDeviation = Param(nameof(BollingerDeviation), 2m)
 			.SetGreaterThanZero()
-			.SetDisplay("Bollinger Deviation", "Bollinger Bands deviation", "General");
+			.SetDisplay("BB Deviation", "Bollinger Bands deviation", "Indicators");
 
-		_maPeriod = Param(nameof(MaPeriod), 178)
+		_maPeriod = Param(nameof(MaPeriod), 50)
 			.SetGreaterThanZero()
-			.SetDisplay("EMA Period", "EMA period for trend", "General");
+			.SetDisplay("EMA Period", "EMA period for trend", "Indicators");
 
-		_demaPeriod = Param(nameof(DemaPeriod), 56)
-			.SetGreaterThanZero()
-			.SetDisplay("DEMA Period", "DEMA period for higher timeframe", "General");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
-			.SetDisplay("Candle Type", "Main candle timeframe", "General");
-
-		_demaCandleType = Param(nameof(DemaCandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("DEMA Candle Type", "Candle timeframe for DEMA", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType), (Security, DemaCandleType)];
-	}
+		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_emaPrev1 = 0;
-		_emaPrev2 = 0;
-		_maCount = 0;
-		_dema0 = 0;
-		_dema1 = 0;
-		_dema2 = 0;
-		_demaCount = 0;
+		_prevEma = 0;
+		_hasPrevEma = false;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		var bollinger = new BollingerBands
+		var bb = new BollingerBands
 		{
 			Length = BollingerPeriod,
 			Width = BollingerDeviation
 		};
+		var ema = new ExponentialMovingAverage { Length = MaPeriod };
 
-		var ema = new EMA
-		{
-			Length = MaPeriod
-		};
-
-		var dema = new DEMA
-		{
-			Length = DemaPeriod
-		};
-
-		var mainSubscription = SubscribeCandles(CandleType);
-		mainSubscription
-			.Bind(bollinger, ema, ProcessCandle)
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(ema, ProcessEma);
+		subscription
+			.BindEx(bb, ProcessBB)
 			.Start();
-
-		var demaSubscription = SubscribeCandles(DemaCandleType);
-		demaSubscription
-			.Bind(dema, ProcessDema)
-			.Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, mainSubscription);
-			DrawIndicator(area, bollinger);
-			DrawIndicator(area, ema);
-			DrawOwnTrades(area);
-		}
 	}
 
-	private void ProcessDema(ICandleMessage candle, decimal demaValue)
+	private void ProcessEma(ICandleMessage candle, decimal emaVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		_dema2 = _dema1;
-		_dema1 = _dema0;
-		_dema0 = demaValue;
-		if (_demaCount < 3)
-			_demaCount++;
+		_prevEma = emaVal;
+		_hasPrevEma = true;
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal middleBand, decimal upperBand, decimal lowerBand, decimal emaValue)
+	private void ProcessBB(ICandleMessage candle, IIndicatorValue bbValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!_hasPrevEma)
 			return;
 
-		if (_demaCount < 3)
+		var bb = (BollingerBandsValue)bbValue;
+		if (bb.UpBand is not decimal upper || bb.LowBand is not decimal lower || bb.MovingAverage is not decimal middle)
+			return;
+
+		var close = candle.ClosePrice;
+		var emaRising = close > _prevEma;
+		var emaFalling = close < _prevEma;
+
+		// Buy: price below lower band with uptrend
+		if (close < lower && emaRising && Position <= 0)
 		{
-			// Not enough DEMA data yet
-			_emaPrev2 = _emaPrev1;
-			_emaPrev1 = emaValue;
-			if (_maCount < 2)
-				_maCount++;
-			return;
+			if (Position < 0)
+				BuyMarket();
+			BuyMarket();
 		}
-
-		if (_maCount < 2)
+		// Sell: price above upper band with downtrend
+		else if (close > upper && emaFalling && Position >= 0)
 		{
-			_emaPrev2 = _emaPrev1;
-			_emaPrev1 = emaValue;
-			_maCount++;
-			return;
+			if (Position > 0)
+				SellMarket();
+			SellMarket();
 		}
-
-		var ma1 = _emaPrev1;
-		var ma2 = _emaPrev2;
-
-		var buyClose = candle.ClosePrice < upperBand && candle.OpenPrice > upperBand;
-		var sellClose = candle.ClosePrice > lowerBand && candle.OpenPrice < lowerBand;
-		var buy = candle.ClosePrice > lowerBand && candle.OpenPrice < lowerBand &&
-			_dema0 > _dema1 && _dema1 > _dema2 && ma2 < ma1;
-		var sell = candle.ClosePrice < upperBand && candle.OpenPrice > upperBand &&
-			_dema0 < _dema1 && _dema1 < _dema2 && ma2 > ma1;
-
-		if (sellClose && Position < 0)
-			BuyMarket(Math.Abs(Position));
-
-		if (buyClose && Position > 0)
-			SellMarket(Math.Abs(Position));
-
-		if (buy && Position <= 0)
-			BuyMarket(Volume + Math.Abs(Position));
-
-		if (sell && Position >= 0)
-			SellMarket(Volume + Math.Abs(Position));
-
-		// update EMA history
-		_emaPrev2 = _emaPrev1;
-		_emaPrev1 = emaValue;
+		// Exit long when price crosses above upper band
+		else if (close > upper && Position > 0)
+		{
+			SellMarket();
+		}
+		// Exit short when price crosses below lower band
+		else if (close < lower && Position < 0)
+		{
+			BuyMarket();
+		}
 	}
 }

@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,215 +11,85 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Detects trend reversals using multiple RSI sources and Parabolic SAR.
-/// Buys when RSI values form a bullish sequence and price is above SAR,
-/// sells when RSI values form a bearish sequence and price is below SAR.
+/// RSI trend reversal strategy with Parabolic SAR confirmation.
+/// Buys when RSI crosses above 50 and SAR is below price.
+/// Sells when RSI crosses below 50 and SAR is above price.
 /// </summary>
 public class LiveRSIStrategy : Strategy
 {
 	private readonly StrategyParam<int> _rsiPeriod;
-	private readonly StrategyParam<decimal> _sarStep;
-	private readonly StrategyParam<int> _stopLoss;
-	private readonly StrategyParam<bool> _checkHour;
-	private readonly StrategyParam<int> _startHour;
-	private readonly StrategyParam<int> _endHour;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private RelativeStrengthIndex _rsiClose = null!;
-	private RelativeStrengthIndex _rsiWeighted = null!;
-	private RelativeStrengthIndex _rsiTypical = null!;
-	private RelativeStrengthIndex _rsiMedian = null!;
-	private RelativeStrengthIndex _rsiOpen = null!;
-	private ParabolicSar _sar = null!;
+	private decimal _prevRsi;
+	private bool _hasPrev;
 
-	private TrendDirections _lastTrend;
+	public int RsiPeriod { get => _rsiPeriod.Value; set => _rsiPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// RSI calculation period.
-	/// </summary>
-	public int RsiPeriod
-	{
-		get => _rsiPeriod.Value;
-		set => _rsiPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Step parameter for Parabolic SAR.
-	/// </summary>
-	public decimal SarStep
-	{
-		get => _sarStep.Value;
-		set => _sarStep.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss value in absolute price units.
-	/// </summary>
-	public int StopLoss
-	{
-		get => _stopLoss.Value;
-		set => _stopLoss.Value = value;
-	}
-
-	/// <summary>
-	/// Enable trading only during selected hours.
-	/// </summary>
-	public bool CheckHour
-	{
-		get => _checkHour.Value;
-		set => _checkHour.Value = value;
-	}
-
-	/// <summary>
-	/// Trading session start hour.
-	/// </summary>
-	public int StartHour
-	{
-		get => _startHour.Value;
-		set => _startHour.Value = value;
-	}
-
-	/// <summary>
-	/// Trading session end hour.
-	/// </summary>
-	public int EndHour
-	{
-		get => _endHour.Value;
-		set => _endHour.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes <see cref="LiveRSIStrategy"/>.
-	/// </summary>
 	public LiveRSIStrategy()
 	{
-		_rsiPeriod = Param(nameof(RsiPeriod), 30)
+		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("RSI Period", "Period for RSI", "Parameters");
+			.SetDisplay("RSI Period", "Period for RSI", "Indicators");
 
-		_sarStep = Param(nameof(SarStep), 0.08m)
-			.SetGreaterThanZero()
-			.SetDisplay("SAR Step", "Step for Parabolic SAR", "Parameters");
-
-		_stopLoss = Param(nameof(StopLoss), 40)
-			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss", "Stop loss in price units", "Risk");
-
-		_checkHour = Param(nameof(CheckHour), false)
-			.SetDisplay("Check Hour", "Restrict trading hours", "General");
-
-		_startHour = Param(nameof(StartHour), 17)
-			.SetDisplay("Start Hour", "Trading start hour", "General");
-
-		_endHour = Param(nameof(EndHour), 1)
-			.SetDisplay("End Hour", "Trading end hour", "General");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
-	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevRsi = 0;
+		_hasPrev = false;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_rsiClose = new RelativeStrengthIndex { Length = RsiPeriod };
-		_rsiWeighted = new RelativeStrengthIndex { Length = RsiPeriod };
-		_rsiTypical = new RelativeStrengthIndex { Length = RsiPeriod };
-		_rsiMedian = new RelativeStrengthIndex { Length = RsiPeriod };
-		_rsiOpen = new RelativeStrengthIndex { Length = RsiPeriod };
-		_sar = new ParabolicSar { Acceleration = SarStep, MaxAcceleration = 0.1m };
+		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
+		var sar = new ParabolicSar();
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
-
-		StartProtection(default, new Unit(StopLoss, UnitTypes.Absolute));
-
-		_lastTrend = TrendDirections.None;
+		subscription
+			.Bind(rsi, sar, ProcessCandle)
+			.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal rsi, decimal sar)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		_rsiClose.Process(candle.ClosePrice);
-		_rsiWeighted.Process((candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m);
-		_rsiTypical.Process((candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m);
-		_rsiMedian.Process((candle.HighPrice + candle.LowPrice) / 2m);
-		_rsiOpen.Process(candle.OpenPrice);
-		_sar.Process(candle);
-
-		if (_rsiClose.Last is not decimal rsiClose ||
-			_rsiWeighted.Last is not decimal rsiWeighted ||
-			_rsiTypical.Last is not decimal rsiTypical ||
-			_rsiMedian.Last is not decimal rsiMedian ||
-			_rsiOpen.Last is not decimal rsiOpen ||
-			_sar.Last is not decimal sar)
-			return;
-
-		var trend = DetectTrend(candle, rsiClose, rsiWeighted, rsiTypical, rsiMedian, rsiOpen, sar);
-
-		if (_lastTrend == TrendDirections.None)
+		if (!_hasPrev)
 		{
-			_lastTrend = trend;
+			_prevRsi = rsi;
+			_hasPrev = true;
 			return;
 		}
 
-		if (trend == TrendDirections.Bull && _lastTrend == TrendDirections.Bear && Position <= 0)
-		{
-			BuyMarket();
-			_lastTrend = TrendDirections.Bull;
-		}
-		else if (trend == TrendDirections.Bear && _lastTrend == TrendDirections.Bull && Position >= 0)
-		{
-			SellMarket();
-			_lastTrend = TrendDirections.Bear;
-		}
+		var close = candle.ClosePrice;
 
-		if (Position > 0)
+		// RSI cross above 50 + SAR below price -> buy
+		if (_prevRsi <= 50 && rsi > 50 && sar < close)
 		{
-			SellStop(sar, Position);
+			if (Position < 0)
+				BuyMarket();
+			if (Position <= 0)
+				BuyMarket();
 		}
-		else if (Position < 0)
+		// RSI cross below 50 + SAR above price -> sell
+		else if (_prevRsi >= 50 && rsi < 50 && sar > close)
 		{
-			BuyStop(sar, -Position);
-		}
-	}
-
-	private TrendDirections DetectTrend(ICandleMessage candle, decimal rsiClose, decimal rsiWeighted,
-		decimal rsiTypical, decimal rsiMedian, decimal rsiOpen, decimal sar)
-	{
-		var hourOk = !CheckHour || (candle.OpenTime.Hour > StartHour && candle.OpenTime.Hour < EndHour);
-
-		if (hourOk && rsiClose > rsiWeighted && rsiWeighted > rsiTypical && rsiTypical > rsiMedian &&
-			rsiMedian > rsiOpen && candle.ClosePrice > sar && rsiClose > 50m)
-		{
-			return TrendDirections.Bull;
+			if (Position > 0)
+				SellMarket();
+			if (Position >= 0)
+				SellMarket();
 		}
 
-		if (hourOk && rsiClose < rsiWeighted && rsiWeighted < rsiTypical && rsiTypical < rsiMedian &&
-			rsiMedian < rsiOpen && candle.ClosePrice < sar && rsiClose < 50m)
-		{
-			return TrendDirections.Bear;
-		}
-
-		return TrendDirections.None;
-	}
-
-	private enum TrendDirections
-	{
-		None,
-		Bull,
-		Bear
+		_prevRsi = rsi;
 	}
 }

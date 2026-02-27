@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,122 +11,87 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Intraday mean reversion strategy based on double Bollinger Bands.
+/// Intraday mean reversion strategy using SMA and standard deviation bands.
+/// Buys when price touches lower band, sells when touching upper band.
 /// </summary>
 public class IntradayV2Strategy : Strategy
 {
 	private readonly StrategyParam<int> _bandLength;
-	private readonly StrategyParam<decimal> _entryWidth;
-	private readonly StrategyParam<decimal> _exitWidth;
-	private readonly StrategyParam<decimal> _stopLoss;
-	private readonly StrategyParam<decimal> _takeProfit;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _entryPrice;
+	private readonly List<decimal> _closes = new();
 
 	public int BandLength { get => _bandLength.Value; set => _bandLength.Value = value; }
-	public decimal EntryWidth { get => _entryWidth.Value; set => _entryWidth.Value = value; }
-	public decimal ExitWidth { get => _exitWidth.Value; set => _exitWidth.Value = value; }
-	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
-	public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public IntradayV2Strategy()
 	{
 		_bandLength = Param(nameof(BandLength), 20)
-			.SetDisplay("Band Length", "Bollinger band length", "General")
 			.SetGreaterThanZero()
-			;
-
-		_entryWidth = Param(nameof(EntryWidth), 2.4m)
-			.SetDisplay("Entry Width", "Standard deviation for entries", "General")
-			.SetGreaterThanZero()
-			;
-
-		_exitWidth = Param(nameof(ExitWidth), 1m)
-			.SetDisplay("Exit Width", "Standard deviation for exits", "General")
-			.SetGreaterThanZero()
-			;
-
-		_stopLoss = Param(nameof(StopLoss), 30m)
-			.SetDisplay("Stop Loss", "Price offset for stop loss", "Risk")
-			.SetGreaterThanZero()
-			;
-
-		_takeProfit = Param(nameof(TakeProfit), 60m)
-			.SetDisplay("Take Profit", "Price offset for take profit", "Risk")
-			.SetGreaterThanZero()
-			;
+			.SetDisplay("Band Length", "Band period", "Indicators");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General")
-			;
+			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	protected override void OnReseted()
 	{
-		return [(Security, CandleType)];
+		base.OnReseted();
+		_closes.Clear();
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
-
-		var entryBands = new BollingerBands
-		{
-			Length = BandLength,
-			Width = EntryWidth
-		};
-
-		var exitBands = new BollingerBands
-		{
-			Length = BandLength,
-			Width = ExitWidth
-		};
+		var sma = new SimpleMovingAverage { Length = BandLength };
+		var stdev = new StandardDeviation { Length = BandLength };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(entryBands, exitBands, ProcessCandle).Start();
+		subscription
+			.Bind(sma, stdev, ProcessCandle)
+			.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal entryMiddle, decimal entryUpper, decimal entryLower, decimal exitMiddle, decimal exitUpper, decimal exitLower)
+	private void ProcessCandle(ICandleMessage candle, decimal smaVal, decimal stdevVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Entry rules based on outer bands
-		if (candle.ClosePrice < entryLower && Position <= 0)
+		if (stdevVal <= 0)
+			return;
+
+		var close = candle.ClosePrice;
+		var upper = smaVal + 2m * stdevVal;
+		var lower = smaVal - 2m * stdevVal;
+
+		// Mean reversion: buy at lower band
+		if (close < lower && Position <= 0)
 		{
+			if (Position < 0)
+				BuyMarket();
 			BuyMarket();
-			_entryPrice = candle.ClosePrice;
 		}
-		else if (candle.ClosePrice > entryUpper && Position >= 0)
+		// Mean reversion: sell at upper band
+		else if (close > upper && Position >= 0)
 		{
+			if (Position > 0)
+				SellMarket();
 			SellMarket();
-			_entryPrice = candle.ClosePrice;
 		}
 
-		// Exit rules for long positions
-		if (Position > 0)
+		// Exit long at middle (SMA)
+		if (Position > 0 && close > smaVal)
 		{
-			if (candle.ClosePrice > exitLower ||
-				(StopLoss > 0m && candle.ClosePrice <= _entryPrice - StopLoss) ||
-				(TakeProfit > 0m && candle.ClosePrice >= _entryPrice + TakeProfit))
-			{
-				SellMarket();
-			}
+			SellMarket();
 		}
-		// Exit rules for short positions
-		else if (Position < 0)
+		// Exit short at middle (SMA)
+		else if (Position < 0 && close < smaVal)
 		{
-			if (candle.ClosePrice < exitUpper ||
-				(StopLoss > 0m && candle.ClosePrice >= _entryPrice + StopLoss) ||
-				(TakeProfit > 0m && candle.ClosePrice <= _entryPrice - TakeProfit))
-			{
-				BuyMarket();
-			}
+			BuyMarket();
 		}
 	}
 }

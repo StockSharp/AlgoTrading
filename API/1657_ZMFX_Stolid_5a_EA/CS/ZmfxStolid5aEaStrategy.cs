@@ -1,9 +1,8 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -11,170 +10,108 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-
 /// <summary>
-/// ZMFX Stolid 5a strategy converted from MQL.
-/// Uses multi-timeframe indicators to trade pullbacks within the main trend.
+/// ZMFX Stolid strategy - trades pullbacks within the main trend.
+/// Uses RSI for oversold/overbought, EMA crossover for trend direction.
 /// </summary>
 public class ZmfxStolid5aEaStrategy : Strategy
 {
+	private readonly StrategyParam<int> _rsiLength;
+	private readonly StrategyParam<int> _fastEmaLength;
+	private readonly StrategyParam<int> _slowEmaLength;
 	private readonly StrategyParam<DataType> _candleType;
-	
-	private RelativeStrengthIndex _rsi;
-	private RelativeStrengthIndex _rsi15;
-	private SmoothedMovingAverage _emaFast;
-	private SmoothedMovingAverage _emaSlow;
-	private StochasticOscillator _stoch4h;
-	
-	private decimal? _rsiPrev;
-	private decimal? _rsi15Value;
-	private decimal? _emaFastValue;
-	private decimal? _emaSlowValue;
-	private decimal? _stoch4hValue;
-	
-	private decimal _prevOpen;
-	private decimal _prevClose;
-	private bool _hasPrevCandle;
-	private DateTimeOffset _lastSignalTime;
-	
-	
-	/// <summary>
-	/// Base candle type for main calculations.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-	
-	/// <summary>
-	/// Initializes <see cref="ZmfxStolid5aEaStrategy"/>.
-	/// </summary>
+
+	private decimal _prevRsi;
+	private bool _hasPrevRsi;
+
+	public int RsiLength { get => _rsiLength.Value; set => _rsiLength.Value = value; }
+	public int FastEmaLength { get => _fastEmaLength.Value; set => _fastEmaLength.Value = value; }
+	public int SlowEmaLength { get => _slowEmaLength.Value; set => _slowEmaLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+
 	public ZmfxStolid5aEaStrategy()
 	{
-		
+		_rsiLength = Param(nameof(RsiLength), 11)
+			.SetGreaterThanZero()
+			.SetDisplay("RSI Length", "RSI period", "Indicators");
+
+		_fastEmaLength = Param(nameof(FastEmaLength), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+
+		_slowEmaLength = Param(nameof(SlowEmaLength), 50)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-		.SetDisplay("Candle Type", "Base candle timeframe", "Common");
+			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
-	
-	/// <inheritdoc />
+
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevRsi = 0;
+		_hasPrevRsi = false;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		
-		_rsi = new RelativeStrengthIndex { Length = 11 };
-		_rsi15 = new RelativeStrengthIndex { Length = 11 };
-		_emaFast = new SmoothedMovingAverage { Length = 50 };
-		_emaSlow = new SmoothedMovingAverage { Length = 100 };
-		_stoch4h = new StochasticOscillator
-		{ K = { Length = 30 },
-			K = { Length = 3 },
-			D = { Length = 3 },
-		};
-		
-		var baseSub = SubscribeCandles(CandleType);
-		baseSub.Bind(_rsi, ProcessBase).Start();
-		
-		var rsi15Sub = SubscribeCandles(TimeSpan.FromMinutes(15).TimeFrame());
-		rsi15Sub.Bind(_rsi15, ProcessRsi15).Start();
-		
-		var emaSub = SubscribeCandles(TimeSpan.FromHours(1).TimeFrame());
-		emaSub.Bind(_emaFast, _emaSlow, ProcessEma).Start();
-		
-		var stochSub = SubscribeCandles(TimeSpan.FromHours(4).TimeFrame());
-		stochSub.BindEx(_stoch4h, ProcessStoch).Start();
+
+		var rsi = new RelativeStrengthIndex { Length = RsiLength };
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaLength };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaLength };
+
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(rsi, fastEma, slowEma, ProcessCandle)
+			.Start();
 	}
-	
-	private void ProcessRsi15(ICandleMessage candle, decimal rsi)
+
+	private void ProcessCandle(ICandleMessage candle, decimal rsi, decimal fastEma, decimal slowEma)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
-		
-		_rsi15Value = rsi;
-	}
-	
-	private void ProcessEma(ICandleMessage candle, decimal fast, decimal slow)
-	{
-		if (candle.State != CandleStates.Finished)
-		return;
-		
-		_emaFastValue = fast;
-		_emaSlowValue = slow;
-	}
-	
-	private void ProcessStoch(ICandleMessage candle, IIndicatorValue value)
-	{
-		if (candle.State != CandleStates.Finished)
-		return;
-		
-		var stoch = (StochasticOscillatorValue)value;
-		if (stoch.K is decimal k)
-		_stoch4hValue = k;
-	}
-	
-	private void ProcessBase(ICandleMessage candle, decimal rsi)
-	{
-		if (candle.State != CandleStates.Finished)
-		return;
-		
-		var prevRsi = _rsiPrev;
-		_rsiPrev = rsi;
-		
-		var barUp = _hasPrevCandle && _prevClose > _prevOpen;
-		var barDown = _hasPrevCandle && _prevClose < _prevOpen;
-		
-		var upTrend = false;
-		var downTrend = false;
-		
-		if (_lastSignalTime != candle.OpenTime &&
-		_stoch4hValue is decimal s &&
-		_emaFastValue is decimal ef &&
-		_emaSlowValue is decimal es)
+			return;
+
+		if (!_hasPrevRsi)
 		{
-			if (s < 50m && ef < es)
-			downTrend = true;
-			else if (s > 50m && ef > es)
-			upTrend = true;
+			_prevRsi = rsi;
+			_hasPrevRsi = true;
+			return;
 		}
-		
-		if (upTrend && barDown && prevRsi is decimal rsiPrev && rsiPrev < 30m && Position <= 0)
+
+		var upTrend = fastEma > slowEma;
+		var downTrend = fastEma < slowEma;
+
+		// Buy pullback: uptrend, RSI was oversold, now crossing up
+		if (upTrend && _prevRsi < 35 && rsi >= 35 && Position <= 0)
 		{
-			var vol = Volume;
-			if (_rsi15Value is decimal rsi15 && rsi15 < 30m)
-			BuyMarket(vol * 2);
-			else
-			BuyMarket(vol);
-			
-			_lastSignalTime = candle.OpenTime;
+			if (Position < 0)
+				BuyMarket();
+			BuyMarket();
 		}
-		else if (downTrend && barUp && prevRsi is decimal rsiPrev2 && rsiPrev2 > 70m && Position >= 0)
+		// Sell pullback: downtrend, RSI was overbought, now crossing down
+		else if (downTrend && _prevRsi > 65 && rsi <= 65 && Position >= 0)
 		{
-			var vol = Volume;
-			if (_rsi15Value is decimal rsi15 && rsi15 > 70m)
-			SellMarket(vol * 2);
-			else
-			SellMarket(vol);
-			
-			_lastSignalTime = candle.OpenTime;
+			if (Position > 0)
+				SellMarket();
+			SellMarket();
 		}
-		
-		if (Position > 0 &&
-		(rsi > 70m ||
-		_emaFastValue < _emaSlowValue ||
-		(_stoch4hValue < 50m && rsi > 50m)))
+
+		// Exit long on RSI overbought or trend reversal
+		if (Position > 0 && (rsi > 75 || fastEma < slowEma))
 		{
-			SellMarket(Position);
+			SellMarket();
 		}
-		else if (Position < 0 &&
-		(rsi < 30m ||
-		_emaFastValue > _emaSlowValue ||
-		(_stoch4hValue > 50m && rsi < 50m)))
+		// Exit short on RSI oversold or trend reversal
+		else if (Position < 0 && (rsi < 25 || fastEma > slowEma))
 		{
-			BuyMarket(-Position);
+			BuyMarket();
 		}
-		
-		_prevOpen = candle.OpenPrice;
-		_prevClose = candle.ClosePrice;
-		_hasPrevCandle = true;
+
+		_prevRsi = rsi;
 	}
 }
