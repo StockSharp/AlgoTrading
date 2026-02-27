@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,171 +11,83 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Breakout strategy converted from the MQL4 expert e-PSI@MultiSET.
-/// Opens a position when price moves a specified distance from the candle open.
+/// Breakout strategy. Opens a position when price moves significantly from candle open.
 /// </summary>
 public class EPSIMultiSetStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _minDistance;
-	private readonly StrategyParam<decimal> _takeProfit;
-	private readonly StrategyParam<decimal> _stopLoss;
+	private readonly StrategyParam<int> _atrPeriod;
+	private readonly StrategyParam<decimal> _breakoutMult;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _openHour;
-	private readonly StrategyParam<int> _closeHour;
 
 	private decimal _entryPrice;
-	private bool _isLong;
 
-	/// <summary>
-	/// Distance from candle open in points to trigger a trade.
-	/// </summary>
-	public decimal MinDistance
-	{
-		get => _minDistance.Value;
-		set => _minDistance.Value = value;
-	}
+	public int AtrPeriod { get => _atrPeriod.Value; set => _atrPeriod.Value = value; }
+	public decimal BreakoutMult { get => _breakoutMult.Value; set => _breakoutMult.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Take profit in points from entry price.
-	/// </summary>
-	public decimal TakeProfit
-	{
-		get => _takeProfit.Value;
-		set => _takeProfit.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss in points from entry price.
-	/// </summary>
-	public decimal StopLoss
-	{
-		get => _stopLoss.Value;
-		set => _stopLoss.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type for analysis.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Hour when trading is allowed to start.
-	/// </summary>
-	public int OpenHour
-	{
-		get => _openHour.Value;
-		set => _openHour.Value = value;
-	}
-
-	/// <summary>
-	/// Hour when trading is stopped.
-	/// </summary>
-	public int CloseHour
-	{
-		get => _closeHour.Value;
-		set => _closeHour.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes parameters.
-	/// </summary>
 	public EPSIMultiSetStrategy()
 	{
-		_minDistance = Param(nameof(MinDistance), 20m)
+		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("Min Distance", "Breakout distance in points", "Trading");
-
-		_takeProfit = Param(nameof(TakeProfit), 20m)
-			.SetGreaterThanZero()
-			.SetDisplay("Take Profit", "Profit target in points", "Risk Management");
-
-		_stopLoss = Param(nameof(StopLoss), 200m)
-			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss", "Loss limit in points", "Risk Management");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
-			.SetDisplay("Candle Type", "Timeframe for analysis", "General");
-
-		_openHour = Param(nameof(OpenHour), 2)
-			.SetDisplay("Open Hour", "Start hour for trading", "Schedule");
-
-		_closeHour = Param(nameof(CloseHour), 20)
-			.SetDisplay("Close Hour", "End hour for trading", "Schedule");
+			.SetDisplay("ATR Period", "ATR period", "Indicators");
+		_breakoutMult = Param(nameof(BreakoutMult), 0.5m)
+			.SetDisplay("Breakout Mult", "ATR multiplier for breakout", "Indicators");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Timeframe", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_entryPrice = 0m;
-		_isLong = false;
+		_entryPrice = 0;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
+		var atr = new AverageTrueRange { Length = AtrPeriod };
 
-		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(ProcessCandle)
-			.Start();
+		SubscribeCandles(CandleType).Bind(atr, ProcessCandle).Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal atrValue)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
+		if (candle.State != CandleStates.Finished) return;
+		if (atrValue <= 0) return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var localTime = candle.OpenTime.ToLocalTime();
-		if (localTime.Hour < OpenHour || localTime.Hour >= CloseHour)
-			return;
+		var minDist = atrValue * BreakoutMult;
 
 		if (Position == 0)
 		{
-			if (candle.HighPrice - candle.OpenPrice >= MinDistance * Security.PriceStep)
+			if (candle.HighPrice - candle.OpenPrice >= minDist)
 			{
 				BuyMarket();
 				_entryPrice = candle.ClosePrice;
-				_isLong = true;
 			}
-			else if (candle.OpenPrice - candle.LowPrice >= MinDistance * Security.PriceStep)
+			else if (candle.OpenPrice - candle.LowPrice >= minDist)
 			{
 				SellMarket();
 				_entryPrice = candle.ClosePrice;
-				_isLong = false;
 			}
 		}
-		else
+		else if (Position > 0)
 		{
-			var volume = Math.Abs(Position);
-
-			if (_isLong)
+			if (candle.ClosePrice <= _entryPrice - atrValue * 2 || candle.ClosePrice >= _entryPrice + atrValue * 1.5m)
 			{
-				if (candle.LowPrice <= _entryPrice - StopLoss * Security.PriceStep ||
-					candle.HighPrice >= _entryPrice + TakeProfit * Security.PriceStep)
-					SellMarket(volume);
+				SellMarket();
+				_entryPrice = 0;
 			}
-			else
+		}
+		else if (Position < 0)
+		{
+			if (candle.ClosePrice >= _entryPrice + atrValue * 2 || candle.ClosePrice <= _entryPrice - atrValue * 1.5m)
 			{
-				if (candle.HighPrice >= _entryPrice + StopLoss * Security.PriceStep ||
-					candle.LowPrice <= _entryPrice - TakeProfit * Security.PriceStep)
-					BuyMarket(volume);
+				BuyMarket();
+				_entryPrice = 0;
 			}
 		}
 	}
