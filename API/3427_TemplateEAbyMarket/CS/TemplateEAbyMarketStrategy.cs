@@ -1,209 +1,79 @@
-using System;
-using System.Linq;
-using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
-
-using StockSharp.Algo.Indicators;
-using StockSharp.Algo.Strategies;
-using StockSharp.BusinessEntities;
-using StockSharp.Messages;
-
 namespace StockSharp.Samples.Strategies;
 
+using System;
+using Ecng.Common;
+using StockSharp.Algo.Indicators;
+using StockSharp.Algo.Strategies;
+using StockSharp.Messages;
+
 /// <summary>
-/// Template EA by Market strategy ported from MQL.
-/// Uses MACD to detect bullish and bearish momentum and opens market orders accordingly.
+/// Template EA by Market strategy: MACD histogram crossover with signal line.
 /// </summary>
 public class TemplateEAbyMarketStrategy : Strategy
 {
-	private readonly StrategyParam<int> _macdFastPeriod;
-	private readonly StrategyParam<int> _macdSlowPeriod;
-	private readonly StrategyParam<int> _macdSignalPeriod;
-	private readonly StrategyParam<decimal> _takeProfitPoints;
-	private readonly StrategyParam<decimal> _stopLossPoints;
-	private readonly StrategyParam<decimal> _orderVolume;
-	private readonly StrategyParam<int> _maxOrders;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _fastPeriod;
+	private readonly StrategyParam<int> _slowPeriod;
+	private readonly StrategyParam<int> _signalPeriod;
 
-	private bool _isInitialized;
-	private decimal _prevMacdMain;
-	private decimal _prevMacdSignal;
+	private decimal _prevMacd;
+	private decimal _prevSignal;
+	private bool _hasPrev;
 
-	/// <summary>
-	/// Fast EMA length for MACD calculation.
-	/// </summary>
-	public int MacdFastPeriod { get => _macdFastPeriod.Value; set => _macdFastPeriod.Value = value; }
-
-	/// <summary>
-	/// Slow EMA length for MACD calculation.
-	/// </summary>
-	public int MacdSlowPeriod { get => _macdSlowPeriod.Value; set => _macdSlowPeriod.Value = value; }
-
-	/// <summary>
-	/// Signal line length for MACD.
-	/// </summary>
-	public int MacdSignalPeriod { get => _macdSignalPeriod.Value; set => _macdSignalPeriod.Value = value; }
-
-	/// <summary>
-	/// Take profit distance in price points.
-	/// </summary>
-	public decimal TakeProfitPoints { get => _takeProfitPoints.Value; set => _takeProfitPoints.Value = value; }
-
-	/// <summary>
-	/// Stop loss distance in price points.
-	/// </summary>
-	public decimal StopLossPoints { get => _stopLossPoints.Value; set => _stopLossPoints.Value = value; }
-
-	/// <summary>
-	/// Order volume used for market entries.
-	/// </summary>
-	public decimal OrderVolume { get => _orderVolume.Value; set => _orderVolume.Value = value; }
-
-	/// <summary>
-	/// Maximum number of simultaneous orders expressed in units of <see cref="OrderVolume"/>.
-	/// </summary>
-	public int MaxOrders { get => _maxOrders.Value; set => _maxOrders.Value = value; }
-
-	/// <summary>
-	/// Candle type used for indicator calculations.
-	/// </summary>
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
+	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
+	public int SignalPeriod { get => _signalPeriod.Value; set => _signalPeriod.Value = value; }
 
-	/// <summary>
-	/// Initializes a new instance of <see cref="TemplateEAbyMarketStrategy"/>.
-	/// </summary>
 	public TemplateEAbyMarketStrategy()
 	{
-		_macdFastPeriod = Param(nameof(MacdFastPeriod), 12)
-			.SetDisplay("MACD Fast EMA", "Fast EMA period for the MACD calculation", "Indicators")
-			
-			.SetOptimize(6, 18, 2);
-
-		_macdSlowPeriod = Param(nameof(MacdSlowPeriod), 26)
-			.SetDisplay("MACD Slow EMA", "Slow EMA period for the MACD calculation", "Indicators")
-			
-			.SetOptimize(20, 40, 2);
-
-		_macdSignalPeriod = Param(nameof(MacdSignalPeriod), 9)
-			.SetDisplay("MACD Signal", "Signal period for the MACD calculation", "Indicators")
-			
-			.SetOptimize(5, 15, 1);
-
-		_takeProfitPoints = Param(nameof(TakeProfitPoints), 50m)
-			.SetDisplay("Take Profit", "Take profit distance in price points", "Risk")
-			
-			.SetOptimize(10m, 150m, 10m);
-
-		_stopLossPoints = Param(nameof(StopLossPoints), 100m)
-			.SetDisplay("Stop Loss", "Stop loss distance in price points", "Risk")
-			
-			.SetOptimize(20m, 200m, 20m);
-
-		_orderVolume = Param(nameof(OrderVolume), 0.1m)
-			.SetDisplay("Order Volume", "Volume used when sending market orders", "Trading")
-			
-			.SetOptimize(0.1m, 1m, 0.1m);
-
-		_maxOrders = Param(nameof(MaxOrders), 1)
-			.SetDisplay("Max Orders", "Maximum number of concurrent orders (volume multiples)", "Trading")
-			
-			.SetOptimize(1, 5, 1);
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
-			.SetDisplay("Candle Type", "Candle type used for MACD", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle timeframe", "General");
+		_fastPeriod = Param(nameof(FastPeriod), 12)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast Period", "MACD fast EMA", "Indicators");
+		_slowPeriod = Param(nameof(SlowPeriod), 26)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow Period", "MACD slow EMA", "Indicators");
+		_signalPeriod = Param(nameof(SignalPeriod), 9)
+			.SetGreaterThanZero()
+			.SetDisplay("Signal Period", "MACD signal period", "Indicators");
 	}
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	protected override void OnStarted2(DateTime time)
 	{
-		return [(Security, CandleType)];
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_isInitialized = false;
-		_prevMacdMain = 0m;
-		_prevMacdSignal = 0m;
-	}
-
-	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
-	{
-		base.OnStarted(time);
-
-		var macd = new MovingAverageConvergenceDivergence
+		base.OnStarted2(time);
+		_hasPrev = false;
+		var macd = new MovingAverageConvergenceDivergenceSignal
 		{
-			ShortMa = { Length = MacdFastPeriod },
-			LongMa = { Length = MacdSlowPeriod },
-			SignalPeriod = MacdSignalPeriod
+			Macd = { ShortMa = { Length = FastPeriod }, LongMa = { Length = SlowPeriod } },
+			SignalMa = { Length = SignalPeriod }
 		};
-
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(macd, ProcessCandle)
-			.Start();
-
-		Volume = OrderVolume;
-
-		StartProtection(
-			takeProfit: TakeProfitPoints > 0m ? new Unit(TakeProfitPoints, UnitTypes.Absolute) : null,
-			stopLoss: StopLossPoints > 0m ? new Unit(StopLossPoints, UnitTypes.Absolute) : null);
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, macd);
-			DrawOwnTrades(area);
-		}
+		subscription.BindEx(macd, ProcessCandle).Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal macdMain, decimal macdSignal, decimal macdHistogram)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
+		if (candle.State != CandleStates.Finished) return;
+		if (!macdValue.IsFinal) return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		var v = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
+		if (v.Macd is not decimal macdLine || v.Signal is not decimal signal) return;
 
-		_ = macdHistogram; // Histogram component is not used in the original template.
-
-		if (!_isInitialized)
+		if (_hasPrev)
 		{
-			_prevMacdMain = macdMain;
-			_prevMacdSignal = macdSignal;
-			_isInitialized = true;
-			return;
+			var prevHist = _prevMacd - _prevSignal;
+			var currHist = macdLine - signal;
+
+			if (prevHist <= 0 && currHist > 0 && Position <= 0)
+				BuyMarket();
+			else if (prevHist >= 0 && currHist < 0 && Position >= 0)
+				SellMarket();
 		}
 
-		var wasMacdAbove = _prevMacdMain > _prevMacdSignal;
-		var isMacdAbove = macdMain > macdSignal;
-
-		var crossUp = !wasMacdAbove && isMacdAbove;
-		var crossDown = wasMacdAbove && !isMacdAbove;
-
-		var maxExposure = MaxOrders * OrderVolume;
-
-		if (crossUp && macdMain > 0m && macdSignal > 0m)
-		{
-			// The original template opens a long position when MACD crosses above the signal above zero.
-			if (OrderVolume > 0m && Math.Abs(Position) < maxExposure)
-				BuyMarket(OrderVolume);
-		}
-		else if (crossDown && macdMain < 0m && macdSignal < 0m)
-		{
-			// The original template opens a short position when MACD crosses below the signal below zero.
-			if (OrderVolume > 0m && Math.Abs(Position) < maxExposure)
-				SellMarket(OrderVolume);
-		}
-
-		_prevMacdMain = macdMain;
-		_prevMacdSignal = macdSignal;
+		_prevMacd = macdLine;
+		_prevSignal = signal;
+		_hasPrev = true;
 	}
 }
-

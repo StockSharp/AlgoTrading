@@ -1,174 +1,59 @@
-using System;
-using System.Linq;
-using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
-
-using StockSharp.Algo.Indicators;
-using StockSharp.Algo.Strategies;
-using StockSharp.BusinessEntities;
-using StockSharp.Messages;
-
-using StockSharp.Algo;
-
 namespace StockSharp.Samples.Strategies;
 
+using System;
+using Ecng.Common;
+using StockSharp.Algo.Indicators;
+using StockSharp.Algo.Strategies;
+using StockSharp.Messages;
+
 /// <summary>
-/// Strategy that validates stop and take distances before sending a single market order.
-/// The direction is configured by parameter and every trade is protected by fixed offsets in pips.
+/// ValidateMe strategy: Stochastic crossover.
+/// Buys when %K crosses above %D below 20, sells when %K crosses below %D above 80.
 /// </summary>
 public class ValidateMeStrategy : Strategy
 {
-	private readonly StrategyParam<int> _orderTakePips;
-	private readonly StrategyParam<int> _orderStopPips;
-	private readonly StrategyParam<decimal> _lots;
-	private readonly StrategyParam<TradeDirections> _direction;
+	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _period;
 
-	private decimal _pipSize;
+	private decimal _prevK;
+	private decimal _prevD;
+	private bool _hasPrev;
 
-	/// <summary>
-	/// Requested take-profit distance expressed in pips.
-	/// </summary>
-	public int OrderTakePips
-	{
-		get => _orderTakePips.Value;
-		set => _orderTakePips.Value = value;
-	}
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int Period { get => _period.Value; set => _period.Value = value; }
 
-	/// <summary>
-	/// Requested stop-loss distance expressed in pips.
-	/// </summary>
-	public int OrderStopPips
-	{
-		get => _orderStopPips.Value;
-		set => _orderStopPips.Value = value;
-	}
-
-	/// <summary>
-	/// Order volume in lots.
-	/// </summary>
-	public decimal Lots
-	{
-		get => _lots.Value;
-		set
-		{
-			_lots.Value = value;
-			Volume = value;
-		}
-	}
-
-	/// <summary>
-	/// Trade direction to execute when no open position exists.
-	/// </summary>
-	public TradeDirections Direction
-	{
-		get => _direction.Value;
-		set => _direction.Value = value;
-	}
-
-	/// <summary>
-	/// Available trade directions.
-	/// </summary>
-	public enum TradeDirections
-	{
-		Buy,
-		Sell,
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="ValidateMeStrategy"/> class.
-	/// </summary>
 	public ValidateMeStrategy()
 	{
-		_orderTakePips = Param(nameof(OrderTakePips), 50)
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle timeframe", "General");
+		_period = Param(nameof(Period), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("Take Profit (pips)", "Take-profit offset expressed in pips", "Risk Management");
-
-		_orderStopPips = Param(nameof(OrderStopPips), 50)
-			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss (pips)", "Stop-loss offset expressed in pips", "Risk Management");
-
-		_lots = Param(nameof(Lots), 0.01m)
-			.SetGreaterThanZero()
-			.SetDisplay("Lots", "Order volume in lots", "General");
-
-		_direction = Param(nameof(Direction), TradeDirections.Buy)
-			.SetDisplay("Direction", "Trade direction when signals align", "General");
+			.SetDisplay("Period", "Stochastic period", "Indicators");
 	}
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		yield return (Security, DataType.Ticks);
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		Volume = Lots;
-		_pipSize = CalculatePipSize();
-
-		var takeProfitOffset = OrderTakePips * _pipSize;
-		var stopLossOffset = OrderStopPips * _pipSize;
-
-		StartProtection(new Unit(takeProfitOffset, UnitTypes.Absolute), new Unit(stopLossOffset, UnitTypes.Absolute));
-
-		SubscribeTicks()
-			.Bind(ProcessTrade)
-			.Start();
+		_hasPrev = false;
+		var stoch = new StochasticOscillator { Length = Period };
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(stoch, ProcessCandle).Start();
 	}
 
-	private decimal CalculatePipSize()
+	private void ProcessCandle(ICandleMessage candle, decimal kValue, decimal dValue)
 	{
-		var priceStep = Security?.PriceStep ?? 0m;
+		if (candle.State != CandleStates.Finished) return;
 
-		if (priceStep <= 0m)
-			return 1m;
-
-		var decimals = Security?.Decimals;
-
-		if (decimals == 5 || decimals == 3)
-			return priceStep * 10m;
-
-		return priceStep;
-	}
-
-	private void ProcessTrade(ITickTradeMessage trade)
-	{
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (Position != 0m)
-			return;
-
-		if (HasActiveOrders())
-			return;
-
-		var volume = Lots;
-
-		if (Direction == TradeDirections.Buy)
+		if (_hasPrev)
 		{
-			BuyMarket(volume);
-		}
-		else
-		{
-			SellMarket(volume);
-		}
-	}
-
-	private bool HasActiveOrders()
-	{
-		foreach (var order in Orders)
-		{
-			if (order.State.IsActive())
-				return true;
+			if (_prevK <= _prevD && kValue > dValue && kValue < 30 && Position <= 0)
+				BuyMarket();
+			else if (_prevK >= _prevD && kValue < dValue && kValue > 70 && Position >= 0)
+				SellMarket();
 		}
 
-		return false;
+		_prevK = kValue;
+		_prevD = dValue;
+		_hasPrev = true;
 	}
 }
-

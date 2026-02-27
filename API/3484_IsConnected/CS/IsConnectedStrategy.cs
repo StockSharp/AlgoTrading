@@ -1,186 +1,60 @@
-using System;
-using System.Linq;
-using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
-
-using StockSharp.Algo.Indicators;
-using StockSharp.Algo.Strategies;
-using StockSharp.BusinessEntities;
-using StockSharp.Messages;
-
-using System.Globalization;
-using System.Threading;
-using StockSharp.Algo;
-
 namespace StockSharp.Samples.Strategies;
 
+using System;
+using Ecng.Common;
+using StockSharp.Algo.Indicators;
+using StockSharp.Algo.Strategies;
+using StockSharp.Messages;
+
 /// <summary>
-/// Monitors the connector connection state and logs online/offline transitions.
+/// IsConnected strategy: Parabolic SAR trend following.
+/// Buys when close above SAR, sells when close below SAR.
 /// </summary>
 public class IsConnectedStrategy : Strategy
 {
-	private readonly StrategyParam<int> _checkIntervalSeconds;
+	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<decimal> _acceleration;
+	private readonly StrategyParam<decimal> _accelerationMax;
 
-	private Timer _checkTimer;
-	private bool _previousState;
-	private DateTimeOffset? _lastOnlineStart;
-	private DateTimeOffset? _lastOfflineStart;
+	private decimal _prevSar;
+	private bool _hasPrev;
 
-	/// <summary>
-	/// Initializes a new instance of <see cref="IsConnectedStrategy"/>.
-	/// </summary>
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public decimal Acceleration { get => _acceleration.Value; set => _acceleration.Value = value; }
+	public decimal AccelerationMax { get => _accelerationMax.Value; set => _accelerationMax.Value = value; }
+
 	public IsConnectedStrategy()
 	{
-		_checkIntervalSeconds = Param(nameof(CheckIntervalSeconds), 1)
-		.SetGreaterThanZero()
-		.SetDisplay("Check interval (sec)", "Polling period for connection status", "Monitoring");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle timeframe", "General");
+		_acceleration = Param(nameof(Acceleration), 0.02m)
+			.SetDisplay("Acceleration", "SAR acceleration factor", "Indicators");
+		_accelerationMax = Param(nameof(AccelerationMax), 0.2m)
+			.SetDisplay("Acceleration Max", "SAR max acceleration", "Indicators");
 	}
 
-	/// <summary>
-	/// Interval in seconds between successive connection checks.
-	/// </summary>
-	public int CheckIntervalSeconds
-	{
-		get => _checkIntervalSeconds.Value;
-		set => _checkIntervalSeconds.Value = value;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		// Ensure the connector is available before accessing its state.
-		if (Connector == null)
-		throw new InvalidOperationException("Connector is not assigned.");
-
-		LogInfo("Connection monitor initialized.");
-
-		_previousState = Connector.IsConnected;
-		_lastOnlineStart = _previousState ? time : null;
-		_lastOfflineStart = _previousState ? null : time;
-
-		StartTimer();
-
-		// Report the initial state immediately after startup.
-		LogCurrentState(_previousState, time, null);
+		_hasPrev = false;
+		var sar = new ParabolicSar { Acceleration = Acceleration, AccelerationMax = AccelerationMax };
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(sar, ProcessCandle).Start();
 	}
 
-	/// <inheritdoc />
-	protected override void OnStopped()
+	private void ProcessCandle(ICandleMessage candle, decimal sarValue)
 	{
-		base.OnStopped();
-		// Avoid leaving an active timer when the strategy stops.
-		StopTimer();
+		if (candle.State != CandleStates.Finished) return;
 
-		var now = GetCurrentTime();
-		var stateText = _previousState ? "online" : "offline";
-		LogInfo($"Strategy stopped while {stateText} at {FormatTime(now)}.");
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		StopTimer();
-
-		_previousState = false;
-		_lastOnlineStart = null;
-		_lastOfflineStart = null;
-	}
-
-	private void StartTimer()
-	{
-		// Ensure any previous timer is cancelled before scheduling a new one.
-		StopTimer();
-
-		var interval = TimeSpan.FromSeconds(CheckIntervalSeconds);
-		_checkTimer = new Timer(CheckConnectionState, null, interval, interval);
-	}
-
-	private void StopTimer()
-	{
-		_checkTimer?.Change(Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
-		_checkTimer?.Dispose();
-		_checkTimer = null;
-	}
-
-	private void CheckConnectionState(object state)
-	{
-		DateTimeOffset now;
-		bool? newState = null;
-		TimeSpan? previousDuration = null;
-
-		// Skip processing if the connector reference disappeared.
-		if (Connector == null)
-			return;
-
-		now = GetCurrentTime();
-		var isConnected = Connector.IsConnected;
-
-		if (isConnected == _previousState)
-			return;
-
-		// Detect transitions to the online state and measure downtime.
-		if (isConnected)
+		if (_hasPrev)
 		{
-			if (_lastOfflineStart != null)
-				previousDuration = now - _lastOfflineStart.Value;
-
-			_lastOnlineStart = now;
-			_lastOfflineStart = null;
-		}
-		// Detect transitions to the offline state and measure uptime.
-		else
-		{
-			if (_lastOnlineStart != null)
-				previousDuration = now - _lastOnlineStart.Value;
-
-			_lastOfflineStart = now;
-			_lastOnlineStart = null;
+			if (candle.ClosePrice > sarValue && _prevSar >= candle.ClosePrice && Position <= 0)
+				BuyMarket();
+			else if (candle.ClosePrice < sarValue && _prevSar <= candle.ClosePrice && Position >= 0)
+				SellMarket();
 		}
 
-		_previousState = isConnected;
-		newState = isConnected;
-
-		if (newState.HasValue)
-		LogCurrentState(newState.Value, now, previousDuration);
-	}
-
-	private void LogCurrentState(bool isConnected, DateTimeOffset time, TimeSpan? previousDuration)
-	{
-		var stateText = isConnected ? "Online" : "Offline";
-
-		if (previousDuration != null)
-		{
-			var duration = FormatDuration(previousDuration.Value);
-			var previousStateText = isConnected ? "offline" : "online";
-			LogInfo($"{stateText} at {FormatTime(time)} after being {previousStateText} for {duration}.");
-		}
-		else
-		{
-			LogInfo($"{stateText} at {FormatTime(time)}.");
-		}
-	}
-
-	private static string FormatDuration(TimeSpan duration)
-	{
-		return duration.ToString("c", CultureInfo.InvariantCulture);
-	}
-
-	private static string FormatTime(DateTimeOffset time)
-	{
-		return time.ToString("O", CultureInfo.InvariantCulture);
-	}
-
-	private DateTimeOffset GetCurrentTime()
-	{
-		var time = CurrentTime;
-		return time != default ? time : DateTimeOffset.Now;
+		_prevSar = sarValue;
+		_hasPrev = true;
 	}
 }
-
