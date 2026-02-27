@@ -14,46 +14,38 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that trades using Relative Vigor Index on three timeframes.
+/// Strategy that trades using Relative Vigor Index with multiple period confirmations.
+/// Uses a long-period RVI for trend, mid-period for confirmation, and short for entry.
 /// </summary>
 public class TripleRviStrategy : Strategy
 {
 	private readonly StrategyParam<int> _rviPeriod;
-	private readonly StrategyParam<DataType> _candleType1;
-	private readonly StrategyParam<DataType> _candleType2;
-	private readonly StrategyParam<DataType> _candleType3;
+	private readonly StrategyParam<DataType> _candleType;
 
+	private RelativeVigorIndex _rviTrend;
+	private RelativeVigorIndex _rviMid;
 	private int _trend1;
 	private int _trend2;
-
 	private decimal? _prevAvg3;
 	private decimal? _prevSig3;
 
 	public int RviPeriod { get => _rviPeriod.Value; set => _rviPeriod.Value = value; }
-	public DataType CandleType1 { get => _candleType1.Value; set => _candleType1.Value = value; }
-	public DataType CandleType2 { get => _candleType2.Value; set => _candleType2.Value = value; }
-	public DataType CandleType3 { get => _candleType3.Value; set => _candleType3.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public TripleRviStrategy()
 	{
-		_rviPeriod = Param(nameof(RviPeriod), 13)
+		_rviPeriod = Param(nameof(RviPeriod), 10)
 			.SetGreaterThanZero()
-			.SetDisplay("RVI Period", "Period of RVI", "General");
+			.SetDisplay("RVI Period", "Base period of RVI", "General");
 
-		_candleType1 = Param(nameof(CandleType1), TimeSpan.FromMinutes(30).TimeFrame())
-			.SetDisplay("Timeframe 1", "Higher timeframe", "General");
-
-		_candleType2 = Param(nameof(CandleType2), TimeSpan.FromMinutes(15).TimeFrame())
-			.SetDisplay("Timeframe 2", "Middle timeframe", "General");
-
-		_candleType3 = Param(nameof(CandleType3), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Timeframe 3", "Trading timeframe", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Trading timeframe", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return [(Security, CandleType1), (Security, CandleType2), (Security, CandleType3)];
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
@@ -61,70 +53,72 @@ public class TripleRviStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var rvi1 = new RelativeVigorIndex();
-		rvi1.Average.Length = RviPeriod;
-		var rvi2 = new RelativeVigorIndex();
-		rvi2.Average.Length = RviPeriod;
-		var rvi3 = new RelativeVigorIndex();
-		rvi3.Average.Length = RviPeriod;
+		_trend1 = 0;
+		_trend2 = 0;
+		_prevAvg3 = null;
+		_prevSig3 = null;
 
-		var sub1 = SubscribeCandles(CandleType1);
-		sub1.BindEx(rvi1, (candle, val) =>
+		// Longer period RVI for trend
+		_rviTrend = new RelativeVigorIndex();
+		_rviTrend.Average.Length = RviPeriod * 3;
+
+		// Medium period RVI for confirmation
+		_rviMid = new RelativeVigorIndex();
+		_rviMid.Average.Length = RviPeriod * 2;
+
+		// Short period RVI for entry signals
+		var rviSignal = new RelativeVigorIndex();
+		rviSignal.Average.Length = RviPeriod;
+
+		var sub = SubscribeCandles(CandleType);
+		sub.BindEx(rviSignal, (candle, val) =>
 		{
-			if (candle.State != CandleStates.Finished) return;
-			var rv = (RelativeVigorIndexValue)val;
-			if (rv.Average is not decimal avg || rv.Signal is not decimal sig) return;
-			_trend1 = avg > sig ? 1 : avg < sig ? -1 : 0;
+			if (candle.State != CandleStates.Finished)
+				return;
+
+			// Process trend and mid RVIs manually
+			var trendResult = _rviTrend.Process(candle);
+			var midResult = _rviMid.Process(candle);
+
+			if (!_rviTrend.IsFormed || !_rviMid.IsFormed)
+				return;
+
+			var trendVal = (IRelativeVigorIndexValue)trendResult;
+			var midVal = (IRelativeVigorIndexValue)midResult;
+			var sigVal = (IRelativeVigorIndexValue)val;
+
+			if (trendVal.Average is decimal tAvg && trendVal.Signal is decimal tSig)
+				_trend1 = tAvg > tSig ? 1 : tAvg < tSig ? -1 : 0;
+
+			if (midVal.Average is decimal mAvg && midVal.Signal is decimal mSig)
+				_trend2 = mAvg > mSig ? 1 : mAvg < mSig ? -1 : 0;
+
+			if (sigVal.Average is not decimal avg || sigVal.Signal is not decimal sig)
+				return;
+
+			if (_prevAvg3 is decimal prevAvg && _prevSig3 is decimal prevSig)
+			{
+				var crossUp = prevAvg < prevSig && avg >= sig;
+				var crossDown = prevAvg > prevSig && avg <= sig;
+
+				if (crossUp && _trend1 > 0 && _trend2 > 0 && Position <= 0)
+					BuyMarket();
+				else if (crossDown && _trend1 < 0 && _trend2 < 0 && Position >= 0)
+					SellMarket();
+
+				// Exit on trend reversal
+				if (Position > 0 && (_trend1 < 0 || _trend2 < 0))
+					SellMarket();
+				else if (Position < 0 && (_trend1 > 0 || _trend2 > 0))
+					BuyMarket();
+			}
+
+			_prevAvg3 = avg;
+			_prevSig3 = sig;
 		}).Start();
 
-		var sub2 = SubscribeCandles(CandleType2);
-		sub2.BindEx(rvi2, (candle, val) =>
-		{
-			if (candle.State != CandleStates.Finished) return;
-			var rv = (RelativeVigorIndexValue)val;
-			if (rv.Average is not decimal avg || rv.Signal is not decimal sig) return;
-			_trend2 = avg > sig ? 1 : avg < sig ? -1 : 0;
-		}).Start();
-
-		var sub3 = SubscribeCandles(CandleType3);
-		sub3.BindEx(rvi3, ProcessCandle3).Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, sub3);
-			DrawIndicator(area, rvi3);
-			DrawOwnTrades(area);
-		}
-	}
-
-	private void ProcessCandle3(ICandleMessage candle, IIndicatorValue val)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		var rv = (RelativeVigorIndexValue)val;
-		if (rv.Average is not decimal avg || rv.Signal is not decimal sig)
-			return;
-
-		if (_prevAvg3 is decimal prevAvg && _prevSig3 is decimal prevSig)
-		{
-			var crossUp = prevAvg < prevSig && avg >= sig;
-			var crossDown = prevAvg > prevSig && avg <= sig;
-
-			if (crossUp && _trend1 > 0 && _trend2 > 0 && Position <= 0)
-				BuyMarket();
-			else if (crossDown && _trend1 < 0 && _trend2 < 0 && Position >= 0)
-				SellMarket();
-
-			// Exit on trend reversal
-			if (Position > 0 && (_trend1 < 0 || _trend2 < 0))
-				SellMarket();
-			else if (Position < 0 && (_trend1 > 0 || _trend2 > 0))
-				BuyMarket();
-		}
-
-		_prevAvg3 = avg;
-		_prevSig3 = sig;
+		StartProtection(
+			new Unit(2000m, UnitTypes.Absolute),
+			new Unit(1000m, UnitTypes.Absolute));
 	}
 }

@@ -15,31 +15,11 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Breakout strategy based on calculated H4 and L4 levels.
-/// Places daily pending orders at H4 and L4 with stop loss and take profit.
+/// When price range expands, places limit orders above and below to catch breakouts.
 /// </summary>
 public class H4L4BreakoutStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _takeProfit;
-	private readonly StrategyParam<decimal> _stopLoss;
 	private readonly StrategyParam<DataType> _candleType;
-
-	/// <summary>
-	/// Take profit in ticks.
-	/// </summary>
-	public decimal TakeProfit
-	{
-		get => _takeProfit.Value;
-		set => _takeProfit.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss in ticks.
-	/// </summary>
-	public decimal StopLoss
-	{
-		get => _stopLoss.Value;
-		set => _stopLoss.Value = value;
-	}
 
 	/// <summary>
 	/// Candle type for calculations.
@@ -55,16 +35,6 @@ public class H4L4BreakoutStrategy : Strategy
 	/// </summary>
 	public H4L4BreakoutStrategy()
 	{
-		_takeProfit = Param(nameof(TakeProfit), 57m)
-			.SetDisplay("Take Profit", "Take profit in ticks", "Risk Management")
-			
-			.SetOptimize(20m, 100m, 10m);
-
-		_stopLoss = Param(nameof(StopLoss), 7m)
-			.SetDisplay("Stop Loss", "Stop loss in ticks", "Risk Management")
-			
-			.SetOptimize(5m, 20m, 5m);
-
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Working candle timeframe", "General");
 	}
@@ -80,47 +50,34 @@ public class H4L4BreakoutStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var step = Security.PriceStep ?? 1m;
-
-		StartProtection(
-			takeProfit: new Unit(TakeProfit * step, UnitTypes.Absolute),
-			stopLoss: new Unit(StopLoss * step, UnitTypes.Absolute));
+		var sma = new SimpleMovingAverage { Length = 10 };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(sma, (candle, ma) =>
+			{
+				if (candle.State != CandleStates.Finished)
+					return;
+
+				var range = (candle.HighPrice - candle.LowPrice) * 1.1m / 2m;
+				var h4 = candle.ClosePrice + range;
+				var l4 = candle.ClosePrice - range;
+
+				// Buy when price is below MA and near L4 level (mean reversion from below)
+				// Sell when price is above MA and near H4 level (mean reversion from above)
+				if (candle.ClosePrice < ma && candle.LowPrice <= l4 && Position <= 0)
+				{
+					BuyMarket();
+				}
+				else if (candle.ClosePrice > ma && candle.HighPrice >= h4 && Position >= 0)
+				{
+					SellMarket();
+				}
+			})
 			.Start();
 
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawOwnTrades(area);
-		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		// Reset orders and positions at the end of each day
-		CancelActiveOrders();
-		if (Position != 0)
-			ClosePosition();
-
-		// Ensure trading is allowed
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var range = (candle.HighPrice - candle.LowPrice) * 1.1m / 2m;
-		var h4 = candle.ClosePrice + range;
-		var l4 = candle.ClosePrice - range;
-
-		var volume = Volume + Math.Abs(Position);
-
-		// Place daily pending orders
-		SellLimit(h4, volume);
-		BuyLimit(l4, volume);
+		StartProtection(
+			new Unit(2000m, UnitTypes.Absolute),
+			new Unit(1000m, UnitTypes.Absolute));
 	}
 }

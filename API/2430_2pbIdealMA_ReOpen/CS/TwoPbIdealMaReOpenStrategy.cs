@@ -56,7 +56,7 @@ public class TwoPbIdealMaReOpenStrategy : Strategy
 	/// </summary>
 	public TwoPbIdealMaReOpenStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for calculations", "General");
 
 		_positionVolume = Param(nameof(PositionVolume), 0.1m)
@@ -64,19 +64,19 @@ public class TwoPbIdealMaReOpenStrategy : Strategy
 			.SetDisplay("Position Volume", "Base order volume", "Risk");
 
 		_stopLossTicks = Param(nameof(StopLossTicks), 1000)
-			.SetNonNegative()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (ticks)", "Protective stop distance in ticks", "Risk");
 
 		_takeProfitTicks = Param(nameof(TakeProfitTicks), 2000)
-			.SetNonNegative()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (ticks)", "Protective profit distance in ticks", "Risk");
 
 		_priceStepTicks = Param(nameof(PriceStepTicks), 300)
-			.SetNonNegative()
+			.SetNotNegative()
 			.SetDisplay("Re-entry Step (ticks)", "Price advance required for re-entry", "Entries");
 
 		_maxReEntries = Param(nameof(MaxReEntries), 10)
-			.SetNonNegative()
+			.SetNotNegative()
 			.SetDisplay("Max Re-entries", "Maximum number of add-on trades", "Entries");
 
 		_enableBuyEntries = Param(nameof(EnableBuyEntries), true)
@@ -92,7 +92,7 @@ public class TwoPbIdealMaReOpenStrategy : Strategy
 			.SetDisplay("Close Short Positions", "Close shorts on opposite signal", "Risk");
 
 		_signalBarShift = Param(nameof(SignalBarShift), 1)
-			.SetNonNegative()
+			.SetNotNegative()
 			.SetDisplay("Signal Shift", "Bars back used for crossover detection", "Logic");
 
 		_period1 = Param(nameof(Period1), 10)
@@ -353,10 +353,9 @@ public class TwoPbIdealMaReOpenStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		var step = Security.PriceStep ?? 1m;
-		Unit stop = StopLossTicks > 0 ? new Unit(StopLossTicks * step, UnitTypes.Point) : null;
-		Unit take = TakeProfitTicks > 0 ? new Unit(TakeProfitTicks * step, UnitTypes.Point) : null;
-		StartProtection(stopLoss: stop, takeProfit: take);
+		StartProtection(
+			new Unit(2000m, UnitTypes.Absolute),
+			new Unit(1000m, UnitTypes.Absolute));
 
 		if (PositionVolume > 0m)
 			Volume = PositionVolume;
@@ -372,9 +371,6 @@ public class TwoPbIdealMaReOpenStrategy : Strategy
 
 		TrimHistory(_fastHistory);
 		TrimHistory(_slowHistory);
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
 
 		var shift = SignalBarShift;
 		if (_fastHistory.Count < shift + 2 || _slowHistory.Count < shift + 2)
@@ -395,17 +391,17 @@ public class TwoPbIdealMaReOpenStrategy : Strategy
 
 		if (EnableBuyExits && bullishCross && Position > 0)
 		{
-			SellMarket(Position);
+			SellMarket();
 			ResetLongState();
 		}
 
 		if (EnableSellExits && bearishCross && Position < 0)
 		{
-			BuyMarket(-Position);
+			BuyMarket();
 			ResetShortState();
 		}
 
-		var step = Security.PriceStep ?? 1m;
+		var step = Security?.PriceStep ?? 1m;
 		var reEntryDistance = PriceStepTicks * step;
 
 		if (PriceStepTicks > 0 && reEntryDistance > 0m)
@@ -415,7 +411,7 @@ public class TwoPbIdealMaReOpenStrategy : Strategy
 				var advance = candle.ClosePrice - _lastBuyPrice;
 				if (advance >= reEntryDistance)
 				{
-					BuyMarket(PositionVolume);
+					BuyMarket();
 					_buyReEntries++;
 					_lastBuyPrice = candle.ClosePrice;
 				}
@@ -425,7 +421,7 @@ public class TwoPbIdealMaReOpenStrategy : Strategy
 				var advance = _lastSellPrice - candle.ClosePrice;
 				if (advance >= reEntryDistance)
 				{
-					SellMarket(PositionVolume);
+					SellMarket();
 					_sellReEntries++;
 					_lastSellPrice = candle.ClosePrice;
 				}
@@ -441,7 +437,7 @@ public class TwoPbIdealMaReOpenStrategy : Strategy
 		}
 		else if (bullishCross && EnableSellEntries && Position == 0)
 		{
-			SellMarket(PositionVolume);
+			SellMarket();
 			_lastSellPrice = candle.ClosePrice;
 			_sellReEntries = 0;
 			_buyReEntries = 0;
@@ -478,7 +474,7 @@ public class TwoPbIdealMaReOpenStrategy : Strategy
 
 		protected override IIndicatorValue OnProcess(IIndicatorValue input)
 		{
-			var price = input.GetValue<decimal>();
+			var price = input.ToDecimal();
 
 			if (!_initialized)
 			{
@@ -540,7 +536,7 @@ public class TwoPbIdealMaReOpenStrategy : Strategy
 
 		protected override IIndicatorValue OnProcess(IIndicatorValue input)
 		{
-			var price = input.GetValue<decimal>();
+			var price = input.ToDecimal();
 
 			if (!_initialized)
 			{

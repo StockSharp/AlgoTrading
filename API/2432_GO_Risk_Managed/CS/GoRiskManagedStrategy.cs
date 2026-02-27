@@ -16,58 +16,16 @@ namespace StockSharp.Samples.Strategies;
 /// <summary>
 /// GO strategy based on moving averages of open, high, low and close prices.
 /// Closes opposite positions when the GO value changes sign.
-/// Opens new trades in the direction of the GO value until the maximum
-/// allowed number of positions is reached.
+/// Opens new trades in the direction of the GO value.
 /// </summary>
 public class GoRiskManagedStrategy : Strategy
 {
-	public enum MovingAverageTypes
-	{
-		SMA,
-		EMA,
-		DEMA,
-		TEMA,
-		WMA,
-		VWMA
-	}
-	private readonly StrategyParam<decimal> _risk;
-	private readonly StrategyParam<int> _maxPositions;
-	private readonly StrategyParam<MovingAverageTypes> _maType;
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private DateTimeOffset _lastTime;
-	private IIndicator _openMa;
-	private IIndicator _highMa;
-	private IIndicator _lowMa;
-	private IIndicator _closeMa;
-
-	/// <summary>
-	/// Risk percentage used to calculate trade volume.
-	/// </summary>
-	public decimal Risk
-	{
-		get => _risk.Value;
-		set => _risk.Value = value;
-	}
-
-	/// <summary>
-	/// Maximum number of positions allowed in one direction.
-	/// </summary>
-	public int MaxPositions
-	{
-		get => _maxPositions.Value;
-		set => _maxPositions.Value = value;
-	}
-
-	/// <summary>
-	/// Moving average type used in calculations.
-	/// </summary>
-	public MovingAverageTypes MaType
-	{
-		get => _maType.Value;
-		set => _maType.Value = value;
-	}
+	private SimpleMovingAverage _openMa;
+	private SimpleMovingAverage _highMa;
+	private SimpleMovingAverage _lowMa;
 
 	/// <summary>
 	/// Moving average period.
@@ -92,22 +50,11 @@ public class GoRiskManagedStrategy : Strategy
 	/// </summary>
 	public GoRiskManagedStrategy()
 	{
-		_risk = Param(nameof(Risk), 30m)
-			.SetDisplay("Risk %", "Risk percentage for volume calculation", "General")
-			.SetGreaterThanZero();
-
-		_maxPositions = Param(nameof(MaxPositions), 5)
-			.SetDisplay("Max Positions", "Maximum number of positions", "General")
-			.SetGreaterThanOrEqual(1);
-
-		_maType = Param(nameof(MaType), MovingAverageTypes.SMA)
-			.SetDisplay("MA Type", "Moving average type", "Indicator");
-
-		_maPeriod = Param(nameof(MaPeriod), 174)
+		_maPeriod = Param(nameof(MaPeriod), 20)
 			.SetDisplay("MA Period", "Moving average period", "Indicator")
 			.SetGreaterThanZero();
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -118,127 +65,48 @@ public class GoRiskManagedStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_lastTime = default;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_openMa = CreateMovingAverage(MaType, MaPeriod);
-		_highMa = CreateMovingAverage(MaType, MaPeriod);
-		_lowMa = CreateMovingAverage(MaType, MaPeriod);
-		_closeMa = CreateMovingAverage(MaType, MaPeriod);
+		_openMa = new SimpleMovingAverage { Length = MaPeriod };
+		_highMa = new SimpleMovingAverage { Length = MaPeriod };
+		_lowMa = new SimpleMovingAverage { Length = MaPeriod };
+		var closeMa = new SimpleMovingAverage { Length = MaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(_openMa, _highMa, _lowMa, _closeMa, ProcessCandle).Start();
+		subscription
+			.Bind(closeMa, (candle, close) =>
+			{
+				if (candle.State != CandleStates.Finished)
+					return;
 
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, _openMa);
-			DrawIndicator(area, _highMa);
-			DrawIndicator(area, _lowMa);
-			DrawIndicator(area, _closeMa);
-			DrawOwnTrades(area);
-		}
+				var openResult = _openMa.Process(candle.OpenPrice, candle.CloseTime, true);
+				var highResult = _highMa.Process(candle.HighPrice, candle.CloseTime, true);
+				var lowResult = _lowMa.Process(candle.LowPrice, candle.CloseTime, true);
 
-		StartProtection(null, null);
-	}
+				if (!_openMa.IsFormed || !_highMa.IsFormed || !_lowMa.IsFormed || !closeMa.IsFormed)
+					return;
 
-	private void ProcessCandle(ICandleMessage candle, decimal open, decimal high, decimal low, decimal close)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
+				var open = openResult.ToDecimal();
+				var high = highResult.ToDecimal();
+				var low = lowResult.ToDecimal();
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+				var go = ((close - open) + (high - open) + (low - open) + (close - low) + (close - high)) * candle.TotalVolume;
 
-		var go = ((close - open) + (high - open) + (low - open) + (close - low) + (close - high)) * candle.TotalVolume;
+				if (go > 0 && Position <= 0)
+				{
+					BuyMarket();
+				}
+				else if (go < 0 && Position >= 0)
+				{
+					SellMarket();
+				}
+			})
+			.Start();
 
-		if (go < 0 && Position > 0)
-		{
-			// Close long positions when GO becomes negative
-			SellMarket(Position);
-		}
-		else if (go > 0 && Position < 0)
-		{
-			// Close short positions when GO becomes positive
-			BuyMarket(-Position);
-		}
-
-		if (candle.OpenTime == _lastTime || go == 0)
-			return;
-
-		var volume = CalculateVolume();
-		if (volume <= 0)
-			return;
-
-		if (go > 0 && Position < MaxPositions * volume)
-		{
-			// Open long position
-			BuyMarket(volume);
-			_lastTime = candle.OpenTime;
-		}
-		else if (go < 0 && Position > -MaxPositions * volume)
-		{
-			// Open short position
-			SellMarket(volume);
-			_lastTime = candle.OpenTime;
-		}
-	}
-
-	private decimal CalculateVolume()
-	{
-		if (Portfolio == null)
-			return LotCheck(Volume);
-
-		var lot = Math.Round(Portfolio.CurrentValue * Risk / 100000m, 1);
-		var free = Portfolio.CurrentValue;
-		if (free < 1000m * lot)
-			lot = Math.Round(free * Risk / 100000m, 1);
-
-		lot = LotCheck(lot);
-
-		if (lot <= 0)
-			lot = Volume;
-
-		return lot;
-	}
-
-	private decimal LotCheck(decimal volume)
-	{
-		var step = Security.VolumeStep ?? 1m;
-		if (step > 0)
-			volume = step * Math.Floor(volume / step);
-
-		var min = Security.MinVolume ?? 0m;
-		if (volume < min)
-			return 0m;
-
-		var max = Security.MaxVolume ?? decimal.MaxValue;
-		if (volume > max)
-			volume = max;
-
-		return volume;
-	}
-
-	private static IIndicator CreateMovingAverage(MovingAverageTypes type, int length)
-	{
-		return type switch
-		{
-			MovingAverageTypes.SMA => new SMA { Length = length },
-			MovingAverageTypes.EMA => new EMA { Length = length },
-			MovingAverageTypes.DEMA => new DoubleExponentialMovingAverage { Length = length },
-			MovingAverageTypes.TEMA => new TripleExponentialMovingAverage { Length = length },
-			MovingAverageTypes.WMA => new WeightedMovingAverage { Length = length },
-			MovingAverageTypes.VWMA => new VolumeWeightedMovingAverage { Length = length },
-			_ => new SMA { Length = length }
-		};
+		StartProtection(
+			new Unit(2000m, UnitTypes.Absolute),
+			new Unit(1000m, UnitTypes.Absolute));
 	}
 }

@@ -8,344 +8,121 @@ using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
-using StockSharp.Algo;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
 /// <summary>
-/// Strategy based on Adaptive CG Oscillator crossovers on two timeframes.
-/// Higher timeframe defines the trend; lower timeframe generates entries and exits.
+/// Strategy based on Adaptive Center of Gravity Oscillator.
+/// Computes CG oscillator inline and trades on crossovers of CG with its prior value (signal).
 /// </summary>
 public class AdaptiveCgOscillatorX2Strategy : Strategy
 {
-    private readonly StrategyParam<decimal> _trendAlpha;
-    private readonly StrategyParam<decimal> _signalAlpha;
-    private readonly StrategyParam<DataType> _trendCandleType;
-    private readonly StrategyParam<DataType> _signalCandleType;
-    private readonly StrategyParam<bool> _buyPosOpen;
-    private readonly StrategyParam<bool> _sellPosOpen;
-    private readonly StrategyParam<bool> _buyPosCloseTrend;
-    private readonly StrategyParam<bool> _sellPosCloseTrend;
-    private readonly StrategyParam<bool> _buyPosCloseSignal;
-    private readonly StrategyParam<bool> _sellPosCloseSignal;
+	private readonly StrategyParam<int> _period;
+	private readonly StrategyParam<decimal> _stopLoss;
+	private readonly StrategyParam<decimal> _takeProfit;
+	private readonly StrategyParam<DataType> _candleType;
 
-    private AdaptiveCgOscillator _trendOsc;
-    private AdaptiveCgOscillator _signalOsc;
+	private readonly List<decimal> _prices = new();
+	private decimal _prevCg;
+	private decimal _prevPrevCg;
+	private int _count;
 
-    private int _trend;
+	public int Period { get => _period.Value; set => _period.Value = value; }
+	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
+	public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-    private decimal _prevMain;
-    private decimal _prevSignal;
-    private bool _hasPrevSignal;
+	public AdaptiveCgOscillatorX2Strategy()
+	{
+		_period = Param(nameof(Period), 10)
+			.SetGreaterThanZero()
+			.SetDisplay("Period", "Lookback period for CG oscillator", "Parameters")
+			.SetOptimize(5, 20, 1);
 
-    /// <summary>
-    /// Alpha parameter for trend oscillator.
-    /// </summary>
-    public decimal TrendAlpha
-    {
-        get => _trendAlpha.Value;
-        set => _trendAlpha.Value = value;
-    }
+		_stopLoss = Param(nameof(StopLoss), 1000m)
+			.SetGreaterThanZero()
+			.SetDisplay("Stop Loss", "Stop loss in price units", "Risk");
 
-    /// <summary>
-    /// Alpha parameter for signal oscillator.
-    /// </summary>
-    public decimal SignalAlpha
-    {
-        get => _signalAlpha.Value;
-        set => _signalAlpha.Value = value;
-    }
+		_takeProfit = Param(nameof(TakeProfit), 2000m)
+			.SetGreaterThanZero()
+			.SetDisplay("Take Profit", "Take profit in price units", "Risk");
 
-    /// <summary>
-    /// Higher timeframe used for trend detection.
-    /// </summary>
-    public DataType TrendCandleType
-    {
-        get => _trendCandleType.Value;
-        set => _trendCandleType.Value = value;
-    }
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle timeframe", "General");
+	}
 
-    /// <summary>
-    /// Lower timeframe used for signal generation.
-    /// </summary>
-    public DataType SignalCandleType
-    {
-        get => _signalCandleType.Value;
-        set => _signalCandleType.Value = value;
-    }
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
 
-    /// <summary>
-    /// Enable long entries.
-    /// </summary>
-    public bool BuyPosOpen
-    {
-        get => _buyPosOpen.Value;
-        set => _buyPosOpen.Value = value;
-    }
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prices.Clear();
+		_prevCg = 0m;
+		_prevPrevCg = 0m;
+		_count = 0;
+	}
 
-    /// <summary>
-    /// Enable short entries.
-    /// </summary>
-    public bool SellPosOpen
-    {
-        get => _sellPosOpen.Value;
-        set => _sellPosOpen.Value = value;
-    }
+	/// <inheritdoc />
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
 
-    /// <summary>
-    /// Close long position on opposite trend.
-    /// </summary>
-    public bool BuyPosClose
-    {
-        get => _buyPosCloseTrend.Value;
-        set => _buyPosCloseTrend.Value = value;
-    }
+		SubscribeCandles(CandleType)
+			.Bind(ProcessCandle)
+			.Start();
 
-    /// <summary>
-    /// Close short position on opposite trend.
-    /// </summary>
-    public bool SellPosClose
-    {
-        get => _sellPosCloseTrend.Value;
-        set => _sellPosCloseTrend.Value = value;
-    }
+		StartProtection(
+			new Unit(TakeProfit, UnitTypes.Absolute),
+			new Unit(StopLoss, UnitTypes.Absolute));
+	}
 
-    /// <summary>
-    /// Close long position on indicator signal.
-    /// </summary>
-    public bool BuyPosCloseSignal
-    {
-        get => _buyPosCloseSignal.Value;
-        set => _buyPosCloseSignal.Value = value;
-    }
+	private void ProcessCandle(ICandleMessage candle)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
 
-    /// <summary>
-    /// Close short position on indicator signal.
-    /// </summary>
-    public bool SellPosCloseSignal
-    {
-        get => _sellPosCloseSignal.Value;
-        set => _sellPosCloseSignal.Value = value;
-    }
+		var price = candle.ClosePrice;
+		_prices.Add(price);
 
-    /// <summary>
-    /// Initializes a new instance of <see cref="AdaptiveCgOscillatorX2Strategy"/>.
-    /// </summary>
-    public AdaptiveCgOscillatorX2Strategy()
-    {
-        _trendAlpha = Param(nameof(TrendAlpha), 0.07m)
-            .SetDisplay("Trend Alpha", "Smoothing for trend oscillator", "Parameters");
+		if (_prices.Count > Period)
+			_prices.RemoveAt(0);
 
-        _signalAlpha = Param(nameof(SignalAlpha), 0.07m)
-            .SetDisplay("Signal Alpha", "Smoothing for signal oscillator", "Parameters");
+		if (_prices.Count < Period)
+			return;
 
-        _trendCandleType = Param(nameof(TrendCandleType), TimeSpan.FromHours(6).TimeFrame())
-            .SetDisplay("Trend Candle Type", "Higher timeframe", "General");
+		// Compute Center of Gravity
+		decimal num = 0m;
+		decimal denom = 0m;
+		for (int i = 0; i < _prices.Count; i++)
+		{
+			num += (1 + i) * _prices[i];
+			denom += _prices[i];
+		}
 
-        _signalCandleType = Param(nameof(SignalCandleType), TimeSpan.FromMinutes(30).TimeFrame())
-            .SetDisplay("Signal Candle Type", "Lower timeframe", "General");
+		var cg = denom != 0 ? -num / denom + (Period + 1m) / 2m : 0m;
 
-        _buyPosOpen = Param(nameof(BuyPosOpen), true)
-            .SetDisplay("Buy Entry", "Enable long entries", "Trading");
+		_count++;
+		if (_count < 3)
+		{
+			_prevPrevCg = _prevCg;
+			_prevCg = cg;
+			return;
+		}
 
-        _sellPosOpen = Param(nameof(SellPosOpen), true)
-            .SetDisplay("Sell Entry", "Enable short entries", "Trading");
+		// Signal is just the previous CG value
+		var signal = _prevCg;
 
-        _buyPosCloseTrend = Param(nameof(BuyPosClose), true)
-            .SetDisplay("Close Buy on Trend", "Close longs on opposite trend", "Trading");
+		// Buy: CG crosses above signal (previous CG)
+		if (cg > signal && _prevCg <= _prevPrevCg && Position <= 0)
+			BuyMarket();
+		// Sell: CG crosses below signal
+		else if (cg < signal && _prevCg >= _prevPrevCg && Position >= 0)
+			SellMarket();
 
-        _sellPosCloseTrend = Param(nameof(SellPosClose), true)
-            .SetDisplay("Close Sell on Trend", "Close shorts on opposite trend", "Trading");
-
-        _buyPosCloseSignal = Param(nameof(BuyPosCloseSignal), false)
-            .SetDisplay("Close Buy on Signal", "Close longs on indicator cross", "Trading");
-
-        _sellPosCloseSignal = Param(nameof(SellPosCloseSignal), false)
-            .SetDisplay("Close Sell on Signal", "Close shorts on indicator cross", "Trading");
-    }
-
-    /// <inheritdoc />
-    public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-    {
-        return [(Security, TrendCandleType), (Security, SignalCandleType)];
-    }
-
-    /// <inheritdoc />
-    protected override void OnReseted()
-    {
-        base.OnReseted();
-        _trendOsc?.Reset();
-        _signalOsc?.Reset();
-        _prevMain = _prevSignal = 0m;
-        _hasPrevSignal = false;
-        _trend = 0;
-    }
-
-    /// <inheritdoc />
-    protected override void OnStarted2(DateTime time)
-    {
-        base.OnStarted2(time);
-
-        _trendOsc = new AdaptiveCgOscillator { Alpha = TrendAlpha };
-        _signalOsc = new AdaptiveCgOscillator { Alpha = SignalAlpha };
-
-        var trendSub = SubscribeCandles(TrendCandleType);
-        trendSub
-            .BindEx(_trendOsc, ProcessTrend)
-            .Start();
-
-        var signalSub = SubscribeCandles(SignalCandleType);
-        signalSub
-            .BindEx(_signalOsc, ProcessSignal)
-            .Start();
-
-        var area = CreateChartArea();
-        if (area != null)
-        {
-            DrawCandles(area, trendSub);
-            DrawIndicator(area, _trendOsc);
-            DrawIndicator(area, _signalOsc);
-            DrawOwnTrades(area);
-        }
-    }
-
-    private void ProcessTrend(ICandleMessage candle, IIndicatorValue oscValue)
-    {
-        if (candle.State != CandleStates.Finished)
-            return;
-
-        var val = (AdaptiveCgOscillatorValue)oscValue;
-        if (!val.IsFormed)
-            return;
-
-        _trend = val.Main > val.Signal ? 1 : val.Main < val.Signal ? -1 : 0;
-    }
-
-    private void ProcessSignal(ICandleMessage candle, IIndicatorValue oscValue)
-    {
-        if (candle.State != CandleStates.Finished)
-            return;
-
-        var val = (AdaptiveCgOscillatorValue)oscValue;
-        if (!val.IsFormed)
-            return;
-
-        var main = val.Main;
-        var signal = val.Signal;
-
-        if (_hasPrevSignal)
-        {
-            if (BuyPosCloseSignal && _prevMain < _prevSignal && Position > 0)
-                SellMarket();
-
-            if (SellPosCloseSignal && _prevMain > _prevSignal && Position < 0)
-                BuyMarket();
-
-            if (_trend > 0)
-            {
-                if (BuyPosOpen && main <= signal && _prevMain > _prevSignal && Position <= 0)
-                    BuyMarket();
-                if (SellPosClose && _prevMain > _prevSignal && Position < 0)
-                    BuyMarket();
-            }
-            else if (_trend < 0)
-            {
-                if (SellPosOpen && main >= signal && _prevMain < _prevSignal && Position >= 0)
-                    SellMarket();
-                if (BuyPosClose && _prevMain < _prevSignal && Position > 0)
-                    SellMarket();
-            }
-        }
-
-        _prevMain = main;
-        _prevSignal = signal;
-        _hasPrevSignal = true;
-    }
-
-    private class AdaptiveCgOscillator : Indicator
-    {
-        public decimal Alpha { get; set; } = 0.07m;
-
-        private readonly CyclePeriod _cycle = new();
-        private readonly List<decimal> _prices = new();
-        private decimal _prevCg;
-
-        protected override IIndicatorValue OnProcess(IIndicatorValue input)
-        {
-            _cycle.Alpha = Alpha;
-            var price = input.GetValue<decimal>();
-            var period = _cycle.Process(new DecimalIndicatorValue(_cycle, price, input.Time)).GetValue<decimal>();
-            var intPeriod = Math.Max(1, (int)Math.Floor((double)period / 2.0));
-
-            _prices.Insert(0, price);
-            if (_prices.Count > intPeriod)
-                _prices.RemoveAt(_prices.Count - 1);
-
-            if (_prices.Count < intPeriod)
-            {
-                IsFormed = false;
-                return new AdaptiveCgOscillatorValue(this, 0m, 0m, input.Time);
-            }
-
-            decimal num = 0m;
-            decimal denom = 0m;
-
-            for (var i = 0; i < _prices.Count; i++)
-            {
-                var p = _prices[i];
-                num += (1 + i) * p;
-                denom += p;
-            }
-
-            var cg = denom != 0 ? -num / denom + (intPeriod + 1m) / 2m : 0m;
-
-            var value = new AdaptiveCgOscillatorValue(this, cg, _prevCg, input.Time);
-            _prevCg = cg;
-            IsFormed = true;
-            return value;
-        }
-
-        public override void Reset()
-        {
-            base.Reset();
-            _cycle.Reset();
-            _prices.Clear();
-            _prevCg = 0m;
-        }
-    }
-
-    private class CyclePeriod : BaseIndicator
-    {
-        public decimal Alpha { get; set; } = 0.07m;
-        private decimal _value = 10m;
-
-        protected override IIndicatorValue OnProcess(IIndicatorValue input)
-        {
-            var price = input.GetValue<decimal>();
-            _value = _value + Alpha * (price - _value);
-            return new DecimalIndicatorValue(this, _value, input.Time);
-        }
-
-        public override void Reset()
-        {
-            base.Reset();
-            _value = 10m;
-        }
-    }
-
-    private class AdaptiveCgOscillatorValue : ComplexIndicatorValue
-    {
-        public AdaptiveCgOscillatorValue(IIndicator indicator, decimal main, decimal signal, DateTimeOffset time)
-            : base(indicator, time)
-        {
-            Main = main;
-            Signal = signal;
-        }
-
-        public decimal Main { get; }
-        public decimal Signal { get; }
-        public bool IsFormed => Indicator.IsFormed;
-    }
+		_prevPrevCg = _prevCg;
+		_prevCg = cg;
+	}
 }

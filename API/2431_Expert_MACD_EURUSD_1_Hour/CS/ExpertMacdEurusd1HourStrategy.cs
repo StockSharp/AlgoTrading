@@ -75,7 +75,7 @@ public class ExpertMacdEurusd1HourStrategy : Strategy
 		_trailingPoints = Param(nameof(TrailingPoints), 25m)
 			.SetDisplay("Trailing Points", "Trailing stop distance in points", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Working timeframe", "General");
 	}
 
@@ -96,11 +96,9 @@ public class ExpertMacdEurusd1HourStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
-
-		StartProtection();
+		base.OnStarted2(time);
 
 		var macd = new MovingAverageConvergenceDivergenceSignal
 		{
@@ -134,9 +132,9 @@ public class ExpertMacdEurusd1HourStrategy : Strategy
 		if (!indicatorValue.IsFinal)
 			return;
 
-		var value = (MovingAverageConvergenceDivergenceSignalValue)indicatorValue;
-		var main = value.Macd;
-		var signal = value.Signal;
+		var value = (IMovingAverageConvergenceDivergenceSignalValue)indicatorValue;
+		var main = value.Macd ?? 0m;
+		var signal = value.Signal ?? 0m;
 
 		// shift stored values
 		_main3 = _main2;
@@ -159,23 +157,21 @@ public class ExpertMacdEurusd1HourStrategy : Strategy
 
 		var buySignal = _signal3 > _signal2 && _signal2 > _signal1 && _signal1 < _signal0 &&
 			_main3 > _main2 && _main2 < _main1 && _main1 < _main0 &&
-			_main1 < -0.00020m && _main3 < 0m && _main0 > 0.00020m;
+			_main1 < 0m && _main0 > 0m;
 
 		var sellSignal = _signal3 < _signal2 && _signal2 < _signal1 && _signal1 > _signal0 &&
 			_main3 < _main2 && _main2 > _main1 && _main1 > _main0 &&
-			_main1 > 0.00020m && _main3 > 0m && _main0 < -0.00035m;
+			_main1 > 0m && _main0 < 0m;
 
 		if (buySignal && Position <= 0)
 		{
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
+			BuyMarket();
 			_longStopPrice = candle.ClosePrice - trailOffset;
 			_shortStopPrice = 0m;
 		}
 		else if (sellSignal && Position >= 0)
 		{
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
+			SellMarket();
 			_shortStopPrice = candle.ClosePrice + trailOffset;
 			_longStopPrice = 0m;
 		}
@@ -189,7 +185,7 @@ public class ExpertMacdEurusd1HourStrategy : Strategy
 				_longStopPrice = Math.Max(_longStopPrice, newStop);
 				if (candle.LowPrice <= _longStopPrice)
 				{
-					SellMarket(Math.Abs(Position));
+					SellMarket();
 					_longStopPrice = 0m;
 				}
 			}
@@ -199,7 +195,7 @@ public class ExpertMacdEurusd1HourStrategy : Strategy
 				_shortStopPrice = Math.Min(_shortStopPrice, newStop);
 				if (candle.HighPrice >= _shortStopPrice)
 				{
-					BuyMarket(Math.Abs(Position));
+					BuyMarket();
 					_shortStopPrice = 0m;
 				}
 			}

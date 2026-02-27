@@ -79,7 +79,7 @@ public class JsMaDayStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var sma = new SMA
+		var sma = new SimpleMovingAverage
 		{
 			Length = MaPeriod
 		};
@@ -97,9 +97,6 @@ public class JsMaDayStrategy : Strategy
 				if (candle.State != CandleStates.Finished)
 					return;
 
-				if (!IsFormedAndOnlineAndAllowTrading())
-					return;
-
 				var open = candle.OpenPrice;
 
 				if (prevMa is decimal pMa && prevPrevMa is decimal ppMa && prevOpen is decimal pOpen && prevPrevOpen is decimal ppOpen)
@@ -112,12 +109,12 @@ public class JsMaDayStrategy : Strategy
 						if (!Reverse)
 						{
 							if (Position <= 0)
-								BuyMarket(Volume + Math.Abs(Position));
+								BuyMarket();
 						}
 						else
 						{
 							if (Position >= 0)
-								SellMarket(Volume + Math.Abs(Position));
+								SellMarket();
 						}
 					}
 					else if (sellCondition)
@@ -125,12 +122,12 @@ public class JsMaDayStrategy : Strategy
 						if (!Reverse)
 						{
 							if (Position >= 0)
-								SellMarket(Volume + Math.Abs(Position));
+								SellMarket();
 						}
 						else
 						{
 							if (Position <= 0)
-								BuyMarket(Volume + Math.Abs(Position));
+								BuyMarket();
 						}
 					}
 				}
@@ -142,6 +139,8 @@ public class JsMaDayStrategy : Strategy
 			})
 			.Start();
 
-		StartProtection(null, null);
+		StartProtection(
+			new Unit(2000m, UnitTypes.Absolute),
+			new Unit(1000m, UnitTypes.Absolute));
 	}
 }

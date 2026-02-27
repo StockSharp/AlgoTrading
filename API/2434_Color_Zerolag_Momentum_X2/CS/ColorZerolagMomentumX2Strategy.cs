@@ -128,7 +128,7 @@ public class ColorZerolagMomentumX2Strategy : Strategy
 	/// </summary>
 	public ColorZerolagMomentumX2Strategy()
 	{
-		_trendCandleType = Param(nameof(TrendCandleType), TimeSpan.FromHours(6).TimeFrame())
+		_trendCandleType = Param(nameof(TrendCandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Trend Timeframe", "Candle type for trend", "General");
 
 		_trendMomentumPeriod = Param(nameof(TrendMomentumPeriod), 34)
@@ -141,7 +141,7 @@ public class ColorZerolagMomentumX2Strategy : Strategy
 			.SetDisplay("Trend Smooth Length", "Zero lag MA length for trend", "Parameters")
 			;
 
-		_signalCandleType = Param(nameof(SignalCandleType), TimeSpan.FromMinutes(30).TimeFrame())
+		_signalCandleType = Param(nameof(SignalCandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Signal Timeframe", "Candle type for signals", "General");
 
 		_signalMomentumPeriod = Param(nameof(SignalMomentumPeriod), 34)
@@ -188,7 +188,9 @@ public class ColorZerolagMomentumX2Strategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
+		StartProtection(
+			new Unit(2000m, UnitTypes.Absolute),
+			new Unit(1000m, UnitTypes.Absolute));
 
 		var trendMomentum = new Momentum { Length = TrendMomentumPeriod };
 		var trendMa = new ZeroLagExponentialMovingAverage { Length = TrendMaLength };
@@ -236,10 +238,10 @@ public class ColorZerolagMomentumX2Strategy : Strategy
 		var sellOpen = _trend < 0 && SellPosOpen && _prevSignalMomentum >= _prevSignalMa && mom < ma;
 
 		if (buyClose && Position > 0)
-			SellMarket(Position);
+			SellMarket();
 
 		if (sellClose && Position < 0)
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
 
 		if (buyOpen && Position <= 0)
 			BuyMarket();

@@ -14,7 +14,8 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Opens a single long position and manages fixed take profit, stop loss and breakeven.
+/// Opens positions based on SMA trend direction, manages with fixed take profit,
+/// stop loss and breakeven levels.
 /// </summary>
 public class VRSteals2Strategy : Strategy
 {
@@ -36,11 +37,16 @@ public class VRSteals2Strategy : Strategy
 
 	public VRSteals2Strategy()
 	{
-		_takeProfit = Param(nameof(TakeProfit), 50m).SetDisplay("Take Profit", "Distance to take profit in steps", "General");
-		_stopLoss = Param(nameof(StopLoss), 50m).SetDisplay("Stop Loss", "Distance to stop loss in steps", "General");
-		_breakeven = Param(nameof(Breakeven), 20m).SetDisplay("Breakeven", "Distance to activate breakeven in steps", "General");
-		_breakevenOffset = Param(nameof(BreakevenOffset), 9m).SetDisplay("Breakeven Offset", "Offset applied when breakeven is triggered", "General");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame()).SetDisplay("Candle Type", "Type of candles to process", "General");
+		_takeProfit = Param(nameof(TakeProfit), 50m)
+			.SetDisplay("Take Profit", "Distance to take profit in steps", "General");
+		_stopLoss = Param(nameof(StopLoss), 50m)
+			.SetDisplay("Stop Loss", "Distance to stop loss in steps", "General");
+		_breakeven = Param(nameof(Breakeven), 20m)
+			.SetDisplay("Breakeven", "Distance to activate breakeven in steps", "General");
+		_breakevenOffset = Param(nameof(BreakevenOffset), 9m)
+			.SetDisplay("Breakeven Offset", "Offset applied when breakeven is triggered", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to process", "General");
 	}
 
 	/// <inheritdoc />
@@ -51,7 +57,6 @@ public class VRSteals2Strategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
 		_entryPrice = 0m;
 		_stopPrice = 0m;
 		_breakevenActivated = false;
@@ -62,60 +67,100 @@ public class VRSteals2Strategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
+		_entryPrice = 0m;
+		_breakevenActivated = false;
+
+		var fastSma = new SimpleMovingAverage { Length = 5 };
+		var slowSma = new SimpleMovingAverage { Length = 20 };
 
 		var sub = SubscribeCandles(CandleType);
-		sub.Bind(ProcessCandle).Start();
-
-		BuyMarket();
-	}
-
-	private void ProcessCandle(ICandleMessage candle)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (Position <= 0)
-			return;
-
-		var price = candle.ClosePrice;
-		var step = Security.PriceStep ?? 1m;
-
-		if (!_breakevenActivated && Breakeven > 0m && price >= _entryPrice + Breakeven * step)
+		sub.Bind(fastSma, slowSma, (candle, fast, slow) =>
 		{
-			_stopPrice = _entryPrice + BreakevenOffset * step;
-			_breakevenActivated = true;
-		}
+			if (candle.State != CandleStates.Finished)
+				return;
 
-		if (TakeProfit > 0m && price >= _entryPrice + TakeProfit * step)
-		{
-			SellMarket(Position);
-			return;
-		}
+			var price = candle.ClosePrice;
+			var step = Security?.PriceStep ?? 1m;
 
-		var stop = _breakevenActivated
-			? _stopPrice
-			: (StopLoss > 0m ? _entryPrice - StopLoss * step : decimal.MinValue);
+			// Manage existing long position
+			if (Position > 0)
+			{
+				if (!_breakevenActivated && Breakeven > 0m && price >= _entryPrice + Breakeven * step)
+				{
+					_stopPrice = _entryPrice + BreakevenOffset * step;
+					_breakevenActivated = true;
+				}
 
-		if (price <= stop)
-			SellMarket(Position);
-	}
+				if (TakeProfit > 0m && price >= _entryPrice + TakeProfit * step)
+				{
+					SellMarket();
+					_entryPrice = 0m;
+					_breakevenActivated = false;
+					return;
+				}
 
-	/// <inheritdoc />
-	protected override void OnOwnTradeReceived(MyTrade trade)
-	{
-		base.OnOwnTradeReceived(trade);
+				var stop = _breakevenActivated
+					? _stopPrice
+					: (StopLoss > 0m ? _entryPrice - StopLoss * step : decimal.MinValue);
 
-		if (Position > 0 && _entryPrice == 0m)
-			_entryPrice = trade.Trade.Price;
-		else if (Position == 0)
-		{
-			_entryPrice = 0m;
-			_breakevenActivated = false;
-			_stopPrice = 0m;
-		}
+				if (price <= stop)
+				{
+					SellMarket();
+					_entryPrice = 0m;
+					_breakevenActivated = false;
+					return;
+				}
+			}
+			// Manage existing short position
+			else if (Position < 0)
+			{
+				if (!_breakevenActivated && Breakeven > 0m && price <= _entryPrice - Breakeven * step)
+				{
+					_stopPrice = _entryPrice - BreakevenOffset * step;
+					_breakevenActivated = true;
+				}
+
+				if (TakeProfit > 0m && price <= _entryPrice - TakeProfit * step)
+				{
+					BuyMarket();
+					_entryPrice = 0m;
+					_breakevenActivated = false;
+					return;
+				}
+
+				var stop = _breakevenActivated
+					? _stopPrice
+					: (StopLoss > 0m ? _entryPrice + StopLoss * step : decimal.MaxValue);
+
+				if (price >= stop)
+				{
+					BuyMarket();
+					_entryPrice = 0m;
+					_breakevenActivated = false;
+					return;
+				}
+			}
+
+			// Entry signals based on SMA cross
+			if (Position == 0)
+			{
+				if (fast > slow)
+				{
+					BuyMarket();
+					_entryPrice = price;
+					_breakevenActivated = false;
+				}
+				else if (fast < slow)
+				{
+					SellMarket();
+					_entryPrice = price;
+					_breakevenActivated = false;
+				}
+			}
+		}).Start();
+
+		StartProtection(
+			new Unit(2000m, UnitTypes.Absolute),
+			new Unit(1000m, UnitTypes.Absolute));
 	}
 }

@@ -14,113 +14,33 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that trades using adaptive Fractal RSI indicator.
+/// Strategy that trades using adaptive Fractal RSI indicator computed inline.
 /// </summary>
 public class FractalRsiStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<TrendModes> _trend;
 	private readonly StrategyParam<int> _fractalPeriod;
 	private readonly StrategyParam<int> _normalSpeed;
 	private readonly StrategyParam<decimal> _highLevel;
 	private readonly StrategyParam<decimal> _lowLevel;
-	private readonly StrategyParam<int> _stopLoss;
-	private readonly StrategyParam<int> _takeProfit;
-	private readonly StrategyParam<double> _log2;
+	private readonly StrategyParam<decimal> _stopLoss;
+	private readonly StrategyParam<decimal> _takeProfit;
 
+	private readonly List<decimal> _prices = new();
 	private decimal? _previousValue;
 
-	/// <summary>
-	/// Candle type for indicator calculations.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int FractalPeriod { get => _fractalPeriod.Value; set => _fractalPeriod.Value = value; }
+	public int NormalSpeed { get => _normalSpeed.Value; set => _normalSpeed.Value = value; }
+	public decimal HighLevel { get => _highLevel.Value; set => _highLevel.Value = value; }
+	public decimal LowLevel { get => _lowLevel.Value; set => _lowLevel.Value = value; }
+	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
+	public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
 
-	/// <summary>
-	/// Trade direction mode.
-	/// </summary>
-	public TrendModes Trend
-	{
-		get => _trend.Value;
-		set => _trend.Value = value;
-	}
-
-	/// <summary>
-	/// Period used for fractal dimension calculation.
-	/// </summary>
-	public int FractalPeriod
-	{
-		get => _fractalPeriod.Value;
-		set => _fractalPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Base period for RSI before fractal adjustment.
-	/// </summary>
-	public int NormalSpeed
-	{
-		get => _normalSpeed.Value;
-		set => _normalSpeed.Value = value;
-	}
-
-	/// <summary>
-	/// Upper level for Fractal RSI.
-	/// </summary>
-	public decimal HighLevel
-	{
-		get => _highLevel.Value;
-		set => _highLevel.Value = value;
-	}
-
-	/// <summary>
-	/// Lower level for Fractal RSI.
-	/// </summary>
-	public decimal LowLevel
-	{
-		get => _lowLevel.Value;
-		set => _lowLevel.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss in points.
-	/// </summary>
-	public int StopLoss
-	{
-		get => _stopLoss.Value;
-		set => _stopLoss.Value = value;
-	}
-
-	/// <summary>
-	/// Take profit in points.
-	/// </summary>
-	public int TakeProfit
-	{
-		get => _takeProfit.Value;
-		set => _takeProfit.Value = value;
-	}
-
-	/// <summary>
-	/// Natural logarithm of 2 used in indicator calculations.
-	/// </summary>
-	public double Log2Value
-	{
-		get => _log2.Value;
-		set => _log2.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the strategy.
-	/// </summary>
 	public FractalRsiStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for indicator", "General");
-
-		_trend = Param(nameof(Trend), TrendModes.Direct)
-			.SetDisplay("Trend Mode", "Trade with trend or against it", "Trading");
 
 		_fractalPeriod = Param(nameof(FractalPeriod), 30)
 			.SetGreaterThanZero()
@@ -131,26 +51,30 @@ public class FractalRsiStrategy : Strategy
 			.SetDisplay("Normal Speed", "Base period for RSI", "Indicator");
 
 		_highLevel = Param(nameof(HighLevel), 60m)
-			.SetRange(0m, 100m)
-			.SetDisplay("High Level", "Upper threshold for Fractal RSI", "Indicator");
+			.SetDisplay("High Level", "Upper threshold", "Indicator");
 
 		_lowLevel = Param(nameof(LowLevel), 40m)
-			.SetRange(0m, 100m)
-			.SetDisplay("Low Level", "Lower threshold for Fractal RSI", "Indicator");
+			.SetDisplay("Low Level", "Lower threshold", "Indicator");
 
-		_stopLoss = Param(nameof(StopLoss), 1000)
+		_stopLoss = Param(nameof(StopLoss), 1000m)
 			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss", "Stop loss in points", "Risk Management");
+			.SetDisplay("Stop Loss", "Stop loss in price units", "Risk");
 
-		_takeProfit = Param(nameof(TakeProfit), 2000)
+		_takeProfit = Param(nameof(TakeProfit), 2000m)
 			.SetGreaterThanZero()
-			.SetDisplay("Take Profit", "Take profit in points", "Risk Management");
+			.SetDisplay("Take Profit", "Take profit in price units", "Risk");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	/// <inheritdoc />
+	protected override void OnReseted()
 	{
-		return [(Security, CandleType)];
+		base.OnReseted();
+		_prices.Clear();
+		_previousValue = null;
 	}
 
 	/// <inheritdoc />
@@ -158,38 +82,82 @@ public class FractalRsiStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var indicator = new FractalRsi
-		{
-			Period = FractalPeriod,
-			NormalSpeed = NormalSpeed,
-			Log2 = Log2Value
-		};
-
-		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(indicator, Process)
+		SubscribeCandles(CandleType)
+			.Bind(ProcessCandle)
 			.Start();
 
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, indicator);
-			DrawOwnTrades(area);
-		}
-
 		StartProtection(
-			takeProfit: new Unit(TakeProfit, UnitTypes.Point),
-			stopLoss: new Unit(StopLoss, UnitTypes.Point)
-		);
+			new Unit(TakeProfit, UnitTypes.Absolute),
+			new Unit(StopLoss, UnitTypes.Absolute));
 	}
 
-	private void Process(ICandleMessage candle, decimal value)
+	private decimal? ComputeFractalRsi()
+	{
+		var period = FractalPeriod;
+		if (_prices.Count < period + 1)
+			return null;
+
+		var lastIndex = _prices.Count - 1;
+		var startIndex = lastIndex - period + 1;
+
+		var priceMax = _prices[startIndex];
+		var priceMin = _prices[startIndex];
+		for (var i = startIndex; i <= lastIndex; i++)
+		{
+			if (_prices[i] > priceMax) priceMax = _prices[i];
+			if (_prices[i] < priceMin) priceMin = _prices[i];
+		}
+
+		double length = 0.0;
+		double? priorDiff = null;
+
+		if (priceMax - priceMin > 0m)
+		{
+			for (var k = 0; k < period; k++)
+			{
+				var p = (double)((_prices[lastIndex - k] - priceMin) / (priceMax - priceMin));
+				if (priorDiff != null)
+					length += Math.Sqrt(Math.Pow(p - priorDiff.Value, 2.0) + 1.0 / (period * period));
+				priorDiff = p;
+			}
+		}
+
+		var log2 = Math.Log(2.0);
+		double fdi = length > 0.0 ? 1.0 + (Math.Log(length) + log2) / Math.Log(2.0 * (period - 1)) : 0.0;
+		double hurst = 2.0 - fdi;
+		double trailDim = hurst != 0.0 ? 1.0 / hurst : 0.0;
+		var speed = (int)Math.Max(1, Math.Round(NormalSpeed * trailDim / 2.0));
+
+		if (_prices.Count <= speed)
+			return null;
+
+		decimal sumUp = 0m;
+		decimal sumDown = 0m;
+		for (var i = lastIndex - speed + 1; i <= lastIndex; i++)
+		{
+			var diff = _prices[i] - _prices[i - 1];
+			if (diff > 0) sumUp += diff;
+			else sumDown -= diff;
+		}
+
+		var pos = sumUp / speed;
+		var neg = sumDown / speed;
+
+		if (neg > 0) return 100m - (100m / (1m + pos / neg));
+		return pos > 0 ? 100m : 50m;
+	}
+
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		_prices.Add(candle.ClosePrice);
+		if (_prices.Count > 500)
+			_prices.RemoveAt(0);
+
+		var value = ComputeFractalRsi();
+		if (value == null)
 			return;
 
 		var prev = _previousValue;
@@ -198,132 +166,10 @@ public class FractalRsiStrategy : Strategy
 		if (prev is null)
 			return;
 
-		if (Trend == TrendModes.Direct)
-		{
-			if (prev > LowLevel && value <= LowLevel && Position <= 0)
-			{
-				BuyMarket(Volume + Math.Abs(Position));
-			}
-			else if (prev < HighLevel && value >= HighLevel && Position >= 0)
-			{
-				SellMarket(Volume + Math.Abs(Position));
-			}
-		}
-		else
-		{
-			if (prev > LowLevel && value <= LowLevel && Position >= 0)
-			{
-				SellMarket(Volume + Math.Abs(Position));
-			}
-			else if (prev < HighLevel && value >= HighLevel && Position <= 0)
-			{
-				BuyMarket(Volume + Math.Abs(Position));
-			}
-		}
-	}
-
-	/// <summary>
-	/// Trading direction mode.
-	/// </summary>
-	public enum TrendModes
-	{
-		/// <summary>
-		/// Trade in the direction of indicator signals.
-		/// </summary>
-		Direct,
-		/// <summary>
-		/// Trade opposite to indicator signals.
-		/// </summary>
-		Against
-	}
-
-	private class FractalRsi : BaseIndicator
-	{
-		public int Period { get; set; } = 30;
-		public int NormalSpeed { get; set; } = 30;
-
-		private readonly List<decimal> _prices = new();
-		public double Log2 { get; set; } = Math.Log(2.0);
-
-		protected override IIndicatorValue OnProcess(IIndicatorValue input)
-		{
-			var price = input.GetValue<decimal>();
-			_prices.Add(price);
-
-			if (_prices.Count < Period + 1)
-			{
-				IsFormed = false;
-				return new DecimalIndicatorValue(this, 50m, input.Time);
-			}
-
-			if (_prices.Count > 500)
-				_prices.RemoveAt(0);
-
-			var lastIndex = _prices.Count - 1;
-			var startIndex = lastIndex - Period + 1;
-			var priceMax = _prices[startIndex];
-			var priceMin = _prices[startIndex];
-			for (var i = startIndex; i <= lastIndex; i++)
-			{
-				var p = _prices[i];
-				if (p > priceMax)
-					priceMax = p;
-				if (p < priceMin)
-					priceMin = p;
-			}
-
-			double length = 0.0;
-			double? priorDiff = null;
-
-			if (priceMax - priceMin > 0m)
-			{
-				for (var k = 0; k < Period; k++)
-				{
-					var p = (double)((_prices[lastIndex - k] - priceMin) / (priceMax - priceMin));
-					if (priorDiff != null)
-						length += Math.Sqrt(Math.Pow(p - priorDiff.Value, 2.0) + 1.0 / (Period * Period));
-					priorDiff = p;
-				}
-			}
-
-			double fdi = length > 0.0 ? 1.0 + (Math.Log(length) + Log2) / Math.Log(2.0 * (Period - 1)) : 0.0;
-			double hurst = 2.0 - fdi;
-			double trailDim = hurst != 0.0 ? 1.0 / hurst : 0.0;
-			var speed = (int)Math.Max(1, Math.Round(NormalSpeed * trailDim / 2.0));
-
-			if (_prices.Count <= speed)
-			{
-				IsFormed = false;
-				return new DecimalIndicatorValue(this, 50m, input.Time);
-			}
-
-			decimal sumUp = 0m;
-			decimal sumDown = 0m;
-			for (var i = lastIndex - speed + 1; i <= lastIndex; i++)
-			{
-				var diff = _prices[i] - _prices[i - 1];
-				if (diff > 0)
-					sumUp += diff;
-				else
-					sumDown -= diff;
-			}
-
-			var pos = sumUp / speed;
-			var neg = sumDown / speed;
-			decimal rsi;
-			if (neg > 0)
-				rsi = 100m - (100m / (1m + pos / neg));
-			else
-				rsi = pos > 0 ? 100m : 50m;
-
-			IsFormed = true;
-			return new DecimalIndicatorValue(this, rsi, input.Time);
-		}
-
-		public override void Reset()
-		{
-			base.Reset();
-			_prices.Clear();
-		}
+		// Direct mode: buy on oversold cross down, sell on overbought cross up
+		if (prev > LowLevel && value <= LowLevel && Position <= 0)
+			BuyMarket();
+		else if (prev < HighLevel && value >= HighLevel && Position >= 0)
+			SellMarket();
 	}
 }

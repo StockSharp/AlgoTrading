@@ -84,7 +84,7 @@ public class CrossMAStrategy : Strategy
 		.SetDisplay("ATR Period", "Period of ATR for stop calculation", "Risk");
 
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles for calculations", "General");
 	}
 
@@ -108,74 +108,55 @@ public class CrossMAStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var fastSma = new SMA
+		var fastSma = new SimpleMovingAverage
 		{
 			Length = FastPeriod
 		};
 
-		var slowSma = new SMA
+		var slowSma = new SimpleMovingAverage
 		{
 			Length = SlowPeriod
-		};
-
-		var atr = new AverageTrueRange
-		{
-			Length = AtrPeriod
 		};
 
 		var subscription = SubscribeCandles(CandleType);
 
 		subscription
-		.Bind(fastSma, slowSma, atr, ProcessCandle)
+		.Bind(fastSma, slowSma, ProcessCandle)
 		.Start();
 
-		StartProtection(null, null);
+		StartProtection(
+			new Unit(2000m, UnitTypes.Absolute),
+			new Unit(1000m, UnitTypes.Absolute));
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, fastSma);
+			DrawIndicator(area, slowSma);
+			DrawOwnTrades(area);
+		}
 	}
 
 	/// <summary>
 	/// Process candle and indicator values.
 	/// </summary>
-	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow, decimal atr)
+	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
-
-		if (!_isInitialized)
-		{
-			_isFastBelowSlow = fast < slow;
-			_isInitialized = true;
 			return;
-		}
 
-		if (Position > 0 && _stopPrice is decimal longStop && candle.LowPrice <= longStop)
-		{
-			SellMarket(Position);
-			_stopPrice = null;
-		}
-		else if (Position < 0 && _stopPrice is decimal shortStop && candle.HighPrice >= shortStop)
-		{
-			BuyMarket(-Position);
-			_stopPrice = null;
-		}
+		var fastBelowSlow = fast <= slow;
 
-		var fastBelowSlow = fast < slow;
-
-		if (_isFastBelowSlow && !fastBelowSlow && Position <= 0)
+		if (_isInitialized)
 		{
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
-			_stopPrice = candle.ClosePrice - atr;
-		}
-		else if (!_isFastBelowSlow && fastBelowSlow && Position >= 0)
-		{
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
-			_stopPrice = candle.ClosePrice + atr;
+			if (_isFastBelowSlow && !fastBelowSlow && Position <= 0)
+				BuyMarket();
+			else if (!_isFastBelowSlow && fastBelowSlow && Position >= 0)
+				SellMarket();
 		}
 
 		_isFastBelowSlow = fastBelowSlow;
+		_isInitialized = true;
 	}
 }

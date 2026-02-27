@@ -14,158 +14,70 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Dual timeframe Fisher Transform strategy.
-/// Uses Fisher Transform on a higher timeframe to define trend.
-/// Entries are generated on a lower timeframe when Fisher crosses its previous value.
+/// Fisher Transform strategy using two Fisher indicators (trend + signal).
+/// Trend Fisher defines direction; Signal Fisher generates entries.
+/// Both use same timeframe but different lengths.
 /// </summary>
 public class FisherTransformX2Strategy : Strategy
 {
 	private readonly StrategyParam<int> _trendLength;
 	private readonly StrategyParam<int> _signalLength;
-	private readonly StrategyParam<DataType> _trendCandleType;
-	private readonly StrategyParam<DataType> _signalCandleType;
-	private readonly StrategyParam<decimal> _takeProfitPoints;
-	private readonly StrategyParam<decimal> _stopLossPoints;
-	private readonly StrategyParam<bool> _buyOpen;
-	private readonly StrategyParam<bool> _sellOpen;
-	private readonly StrategyParam<bool> _buyClose;
-	private readonly StrategyParam<bool> _sellClose;
-	private readonly StrategyParam<bool> _buyCloseSignal;
-	private readonly StrategyParam<bool> _sellCloseSignal;
+	private readonly StrategyParam<decimal> _takeProfit;
+	private readonly StrategyParam<decimal> _stopLoss;
+	private readonly StrategyParam<DataType> _candleType;
 
 	private EhlersFisherTransform _trendFisher;
 	private EhlersFisherTransform _signalFisher;
 
-	private decimal _prevTrendFisher;
-	private bool _isFirstTrend = true;
+	private decimal _prevTrend;
+	private decimal _prevSignal;
+	private decimal _prevPrevSignal;
 	private int _trendDirection;
+	private int _count;
 
-	private decimal _prevSignalFisher;
-	private decimal _prevPrevSignalFisher;
-	private int _signalCount;
-
-	/// <summary>
-	/// Length for trend Fisher Transform.
-	/// </summary>
 	public int TrendLength { get => _trendLength.Value; set => _trendLength.Value = value; }
-
-	/// <summary>
-	/// Length for signal Fisher Transform.
-	/// </summary>
 	public int SignalLength { get => _signalLength.Value; set => _signalLength.Value = value; }
+	public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
+	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Candle type for trend calculation.
-	/// </summary>
-	public DataType TrendCandleType { get => _trendCandleType.Value; set => _trendCandleType.Value = value; }
-
-	/// <summary>
-	/// Candle type for signal generation.
-	/// </summary>
-	public DataType SignalCandleType { get => _signalCandleType.Value; set => _signalCandleType.Value = value; }
-
-	/// <summary>
-	/// Take profit in points.
-	/// </summary>
-	public decimal TakeProfit { get => _takeProfitPoints.Value; set => _takeProfitPoints.Value = value; }
-
-	/// <summary>
-	/// Stop loss in points.
-	/// </summary>
-	public decimal StopLoss { get => _stopLossPoints.Value; set => _stopLossPoints.Value = value; }
-
-	/// <summary>
-	/// Enable opening long positions.
-	/// </summary>
-	public bool BuyOpen { get => _buyOpen.Value; set => _buyOpen.Value = value; }
-
-	/// <summary>
-	/// Enable opening short positions.
-	/// </summary>
-	public bool SellOpen { get => _sellOpen.Value; set => _sellOpen.Value = value; }
-
-	/// <summary>
-	/// Close long positions on trend change.
-	/// </summary>
-	public bool BuyClose { get => _buyClose.Value; set => _buyClose.Value = value; }
-
-	/// <summary>
-	/// Close short positions on trend change.
-	/// </summary>
-	public bool SellClose { get => _sellClose.Value; set => _sellClose.Value = value; }
-
-	/// <summary>
-	/// Close long positions on signal timeframe cross.
-	/// </summary>
-	public bool BuyCloseSignal { get => _buyCloseSignal.Value; set => _buyCloseSignal.Value = value; }
-
-	/// <summary>
-	/// Close short positions on signal timeframe cross.
-	/// </summary>
-	public bool SellCloseSignal { get => _sellCloseSignal.Value; set => _sellCloseSignal.Value = value; }
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="FisherTransformX2Strategy"/>.
-	/// </summary>
 	public FisherTransformX2Strategy()
 	{
-		_trendLength = Param(nameof(TrendLength), 10)
-			.SetDisplay("Trend Length", "Fisher length for trend timeframe", "General")
-			
-			.SetOptimize(5, 20, 1);
+		_trendLength = Param(nameof(TrendLength), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("Trend Length", "Fisher length for trend", "Parameters")
+			.SetOptimize(10, 30, 2);
 
 		_signalLength = Param(nameof(SignalLength), 10)
-			.SetDisplay("Signal Length", "Fisher length for signal timeframe", "General")
-			
+			.SetGreaterThanZero()
+			.SetDisplay("Signal Length", "Fisher length for signal", "Parameters")
 			.SetOptimize(5, 20, 1);
 
-		_trendCandleType = Param(nameof(TrendCandleType), TimeSpan.FromHours(6).TimeFrame())
-			.SetDisplay("Trend Timeframe", "Candle type for trend determination", "General");
+		_takeProfit = Param(nameof(TakeProfit), 2000m)
+			.SetGreaterThanZero()
+			.SetDisplay("Take Profit", "Take profit in price units", "Risk");
 
-		_signalCandleType = Param(nameof(SignalCandleType), TimeSpan.FromMinutes(30).TimeFrame())
-			.SetDisplay("Signal Timeframe", "Candle type for entries", "General");
+		_stopLoss = Param(nameof(StopLoss), 1000m)
+			.SetGreaterThanZero()
+			.SetDisplay("Stop Loss", "Stop loss in price units", "Risk");
 
-		_takeProfitPoints = Param(nameof(TakeProfit), 2000m)
-			.SetDisplay("Take Profit", "Take profit in points", "Risk");
-
-		_stopLossPoints = Param(nameof(StopLoss), 1000m)
-			.SetDisplay("Stop Loss", "Stop loss in points", "Risk");
-
-		_buyOpen = Param(nameof(BuyOpen), true)
-			.SetDisplay("Allow Buy", "Enable opening long positions", "Switches");
-
-		_sellOpen = Param(nameof(SellOpen), true)
-			.SetDisplay("Allow Sell", "Enable opening short positions", "Switches");
-
-		_buyClose = Param(nameof(BuyClose), true)
-			.SetDisplay("Close Buy on Trend", "Close longs on opposite trend", "Switches");
-
-		_sellClose = Param(nameof(SellClose), true)
-			.SetDisplay("Close Sell on Trend", "Close shorts on opposite trend", "Switches");
-
-		_buyCloseSignal = Param(nameof(BuyCloseSignal), false)
-			.SetDisplay("Close Buy on Signal", "Close longs on signal cross", "Switches");
-
-		_sellCloseSignal = Param(nameof(SellCloseSignal), false)
-			.SetDisplay("Close Sell on Signal", "Close shorts on signal cross", "Switches");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle timeframe", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, TrendCandleType), (Security, SignalCandleType)];
-	}
+		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevTrendFisher = 0m;
-		_isFirstTrend = true;
+		_prevTrend = 0m;
+		_prevSignal = 0m;
+		_prevPrevSignal = 0m;
 		_trendDirection = 0;
-		_prevSignalFisher = 0m;
-		_prevPrevSignalFisher = 0m;
-		_signalCount = 0;
+		_count = 0;
 	}
 
 	/// <inheritdoc />
@@ -173,85 +85,70 @@ public class FisherTransformX2Strategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		StartProtection(new Unit(TakeProfit, UnitTypes.Point), new Unit(StopLoss, UnitTypes.Point));
-
 		_trendFisher = new EhlersFisherTransform { Length = TrendLength };
 		_signalFisher = new EhlersFisherTransform { Length = SignalLength };
 
-		var trendSub = SubscribeCandles(TrendCandleType);
-		trendSub.Bind(ProcessTrend).Start();
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.BindEx(_signalFisher, ProcessCandle)
+			.Start();
 
-		var signalSub = SubscribeCandles(SignalCandleType);
-		signalSub.Bind(ProcessSignal).Start();
+		StartProtection(
+			new Unit(TakeProfit, UnitTypes.Absolute),
+			new Unit(StopLoss, UnitTypes.Absolute));
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
-			DrawCandles(area, signalSub);
+			DrawCandles(area, subscription);
 			DrawIndicator(area, _signalFisher);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessTrend(ICandleMessage candle, decimal value)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue signalResult)
 	{
-		if (candle.State != CandleStates.Finished || !_trendFisher.IsFormed)
+		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (_isFirstTrend)
+		// Process trend Fisher manually with the candle
+		var trendResult = _trendFisher.Process(candle);
+		if (!_trendFisher.IsFormed || !_signalFisher.IsFormed)
+			return;
+
+		var signalVal = ((IEhlersFisherTransformValue)signalResult).MainLine ?? 0m;
+		var trendVal = ((IEhlersFisherTransformValue)trendResult).MainLine ?? 0m;
+
+		_count++;
+		if (_count < 3)
 		{
-			_prevTrendFisher = value;
-			_isFirstTrend = false;
+			_prevPrevSignal = _prevSignal;
+			_prevSignal = signalVal;
+			_prevTrend = trendVal;
 			return;
 		}
 
-		_trendDirection = value > _prevTrendFisher ? 1 : value < _prevTrendFisher ? -1 : _trendDirection;
-		_prevTrendFisher = value;
-	}
+		// Update trend direction
+		if (trendVal > _prevTrend)
+			_trendDirection = 1;
+		else if (trendVal < _prevTrend)
+			_trendDirection = -1;
 
-	private void ProcessSignal(ICandleMessage candle, decimal value)
-	{
-		if (candle.State != CandleStates.Finished || !_signalFisher.IsFormed)
-			return;
+		// Signal crossover
+		var signalCrossUp = signalVal > _prevSignal && _prevSignal <= _prevPrevSignal;
+		var signalCrossDown = signalVal < _prevSignal && _prevSignal >= _prevPrevSignal;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		if (_trendDirection > 0 && signalCrossUp && Position <= 0)
+			BuyMarket();
+		else if (_trendDirection < 0 && signalCrossDown && Position >= 0)
+			SellMarket();
+		else if (_trendDirection < 0 && Position > 0)
+			SellMarket();
+		else if (_trendDirection > 0 && Position < 0)
+			BuyMarket();
 
-		if (_signalCount < 2)
-		{
-			if (_signalCount == 0)
-				_prevSignalFisher = value;
-			else
-			{
-				_prevPrevSignalFisher = _prevSignalFisher;
-				_prevSignalFisher = value;
-			}
-
-			_signalCount++;
-			return;
-		}
-
-		var buyClose = BuyCloseSignal && _prevSignalFisher < _prevPrevSignalFisher;
-		var sellClose = SellCloseSignal && _prevSignalFisher > _prevPrevSignalFisher;
-
-		if (_trendDirection < 0 && BuyClose)
-			buyClose = true;
-		else if (_trendDirection > 0 && SellClose)
-			sellClose = true;
-
-		if (buyClose && Position > 0)
-			SellMarket(Position);
-
-		if (sellClose && Position < 0)
-			BuyMarket(-Position);
-
-		if (_trendDirection < 0 && SellOpen && value >= _prevSignalFisher && _prevSignalFisher < _prevPrevSignalFisher && Position <= 0)
-			SellMarket(Volume);
-
-		if (_trendDirection > 0 && BuyOpen && value <= _prevSignalFisher && _prevSignalFisher > _prevPrevSignalFisher && Position >= 0)
-			BuyMarket(Volume);
-
-		_prevPrevSignalFisher = _prevSignalFisher;
-		_prevSignalFisher = value;
+		_prevTrend = trendVal;
+		_prevPrevSignal = _prevSignal;
+		_prevSignal = signalVal;
 	}
 }

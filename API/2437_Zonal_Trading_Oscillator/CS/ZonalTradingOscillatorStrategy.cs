@@ -16,169 +16,104 @@ namespace StockSharp.Samples.Strategies;
 /// <summary>
 /// Zone trading strategy based on Bill Williams' Awesome and Accelerator Oscillators.
 /// Buys when both oscillators turn green and sells when both turn red.
-/// Positions are closed once an opposite color appears.
 /// </summary>
 public class ZonalTradingOscillatorStrategy : Strategy
 {
-	private readonly StrategyParam<DataType> _aoCandleType;
-	private readonly StrategyParam<DataType> _acCandleType;
-	private readonly StrategyParam<bool> _buyOpen;
-	private readonly StrategyParam<bool> _sellOpen;
-	private readonly StrategyParam<bool> _buyClose;
-	private readonly StrategyParam<bool> _sellClose;
-	
-	private readonly AwesomeOscillator _aoMain = new() { ShortMa = { Length = 5 }, LongMa = { Length = 34 } };
-	private readonly AwesomeOscillator _aoAc = new() { ShortMa = { Length = 5 }, LongMa = { Length = 34 } };
-	private readonly SimpleMovingAverage _acMa = new() { Length = 5 };
-	
+	private readonly StrategyParam<DataType> _candleType;
+
+	private AwesomeOscillator _ao;
+	private SimpleMovingAverage _acMa;
 	private decimal? _prevAo;
 	private decimal? _prevAc;
 	private int _aoTrend;
 	private int _acTrend;
-	
+
 	/// <summary>
-	/// Candle series used for Awesome Oscillator.
+	/// Candle type for analysis.
 	/// </summary>
-	public DataType AoCandleType { get => _aoCandleType.Value; set => _aoCandleType.Value = value; }
-	
-	/// <summary>
-	/// Candle series used for Accelerator Oscillator.
-	/// </summary>
-	public DataType AcCandleType { get => _acCandleType.Value; set => _acCandleType.Value = value; }
-	
-	/// <summary>
-	/// Allow opening long positions.
-	/// </summary>
-	public bool BuyOpen { get => _buyOpen.Value; set => _buyOpen.Value = value; }
-	
-	/// <summary>
-	/// Allow opening short positions.
-	/// </summary>
-	public bool SellOpen { get => _sellOpen.Value; set => _sellOpen.Value = value; }
-	
-	/// <summary>
-	/// Allow closing long positions.
-	/// </summary>
-	public bool BuyClose { get => _buyClose.Value; set => _buyClose.Value = value; }
-	
-	/// <summary>
-	/// Allow closing short positions.
-	/// </summary>
-	public bool SellClose { get => _sellClose.Value; set => _sellClose.Value = value; }
-	
-	/// <summary>
-/// Initializes a new instance of the <see cref="ZonalTradingOscillatorStrategy"/> class.
-/// </summary>
-public ZonalTradingOscillatorStrategy()
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+
+	public ZonalTradingOscillatorStrategy()
 	{
-		_aoCandleType = Param(nameof(AoCandleType), TimeSpan.FromHours(4).TimeFrame())
-		.SetDisplay("AO Candle Type", "Candle type for Awesome Oscillator", "General");
-		
-		_acCandleType = Param(nameof(AcCandleType), TimeSpan.FromHours(4).TimeFrame())
-		.SetDisplay("AC Candle Type", "Candle type for Accelerator Oscillator", "General");
-		
-		_buyOpen = Param(nameof(BuyOpen), true)
-		.SetDisplay("Allow Long Entry", "Enable long position opening", "Trading");
-		
-		_sellOpen = Param(nameof(SellOpen), true)
-		.SetDisplay("Allow Short Entry", "Enable short position opening", "Trading");
-		
-		_buyClose = Param(nameof(BuyClose), true)
-		.SetDisplay("Allow Long Exit", "Enable closing long positions", "Trading");
-		
-		_sellClose = Param(nameof(SellClose), true)
-		.SetDisplay("Allow Short Exit", "Enable closing short positions", "Trading");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type for oscillators", "General");
 	}
-	
+
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		yield return (Security, AoCandleType);
-		if (AcCandleType != AoCandleType)
-		yield return (Security, AcCandleType);
+		return [(Security, CandleType)];
 	}
-	
+
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		
-		var aoSubscription = SubscribeCandles(AoCandleType);
-		aoSubscription.BindEx(_aoMain, ProcessAo).Start();
-		
-		if (AcCandleType == AoCandleType)
+
+		_ao = new AwesomeOscillator
 		{
-			aoSubscription.BindEx(_aoAc, ProcessAc).Start();
-		}
-		else
-		{
-			var acSubscription = SubscribeCandles(AcCandleType);
-			acSubscription.BindEx(_aoAc, ProcessAc).Start();
-		}
-	}
-	
-	private void ProcessAo(ICandleMessage candle, IIndicatorValue aoValue)
-	{
-		if (candle.State != CandleStates.Finished || !aoValue.IsFinal)
-		return;
-		
-		var ao = aoValue.GetValue<decimal>();
-		if (_prevAo is null)
-		{
-			_prevAo = ao;
-			return;
-		}
-		
-		_aoTrend = ao > _prevAo ? 1 : ao < _prevAo ? -1 : _aoTrend;
-		_prevAo = ao;
-		
-		TryTrade(candle.ServerTime);
-	}
-	
-	private void ProcessAc(ICandleMessage candle, IIndicatorValue aoValue)
-	{
-		if (candle.State != CandleStates.Finished || !aoValue.IsFinal)
-		return;
-		
-		var ao = aoValue.GetValue<decimal>();
-		var aoSma = _acMa.Process(new DecimalIndicatorValue(_acMa, ao, candle.ServerTime));
-		if (!aoSma.IsFormed)
-		return;
-		
-		var ac = ao - aoSma.GetValue<decimal>();
-		if (_prevAc is null)
-		{
-			_prevAc = ac;
-			return;
-		}
-		
-		_acTrend = ac > _prevAc ? 1 : ac < _prevAc ? -1 : _acTrend;
-		_prevAc = ac;
-		
-		TryTrade(candle.ServerTime);
-	}
-	
-	private void TryTrade(DateTimeOffset time)
-	{
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
-		
-		if (BuyClose && Position > 0 && (_aoTrend < 0 || _acTrend < 0))
-		{
-			SellMarket();
-		}
-		else if (SellClose && Position < 0 && (_aoTrend > 0 || _acTrend > 0))
-		{
-			BuyMarket();
-		}
-		
-		if (BuyOpen && Position <= 0 && _aoTrend > 0 && _acTrend > 0)
-		{
-			BuyMarket();
-		}
-		else if (SellOpen && Position >= 0 && _aoTrend < 0 && _acTrend < 0)
-		{
-			SellMarket();
-		}
+			ShortMa = { Length = 5 },
+			LongMa = { Length = 34 }
+		};
+		_acMa = new SimpleMovingAverage { Length = 5 };
+
+		_prevAo = null;
+		_prevAc = null;
+		_aoTrend = 0;
+		_acTrend = 0;
+
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.BindEx(_ao, (candle, aoValue) =>
+			{
+				if (candle.State != CandleStates.Finished || !aoValue.IsFinal)
+					return;
+
+				var ao = aoValue.ToDecimal();
+
+				// Compute AC = AO - SMA(AO, 5)
+				var aoSma = _acMa.Process(ao, candle.CloseTime, true);
+				if (!_acMa.IsFormed)
+				{
+					_prevAo = ao;
+					return;
+				}
+
+				var ac = ao - aoSma.ToDecimal();
+
+				if (_prevAo is not null && _prevAc is not null)
+				{
+					_aoTrend = ao > _prevAo ? 1 : ao < _prevAo ? -1 : _aoTrend;
+					_acTrend = ac > _prevAc ? 1 : ac < _prevAc ? -1 : _acTrend;
+
+					// Close positions on opposite signal
+					if (Position > 0 && (_aoTrend < 0 || _acTrend < 0))
+					{
+						SellMarket();
+					}
+					else if (Position < 0 && (_aoTrend > 0 || _acTrend > 0))
+					{
+						BuyMarket();
+					}
+
+					// Open new positions when both agree
+					if (Position <= 0 && _aoTrend > 0 && _acTrend > 0)
+					{
+						BuyMarket();
+					}
+					else if (Position >= 0 && _aoTrend < 0 && _acTrend < 0)
+					{
+						SellMarket();
+					}
+				}
+
+				_prevAo = ao;
+				_prevAc = ac;
+			})
+			.Start();
+
+		StartProtection(
+			new Unit(2000m, UnitTypes.Absolute),
+			new Unit(1000m, UnitTypes.Absolute));
 	}
 }
