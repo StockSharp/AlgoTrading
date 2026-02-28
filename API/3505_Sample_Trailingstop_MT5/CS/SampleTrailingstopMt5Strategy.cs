@@ -1,371 +1,67 @@
 namespace StockSharp.Samples.Strategies;
 
 using System;
-using System.Linq;
-using System.Collections.Generic;
-
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
-
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
-using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
+/// <summary>
+/// Sample Trailingstop MT5 strategy: EMA + RSI confirmation.
+/// Buys when close above EMA and RSI above 50, sells when close below EMA and RSI below 50.
+/// </summary>
 public class SampleTrailingstopMt5Strategy : Strategy
 {
-	private readonly StrategyParam<decimal> _tradeVolume;
-	private readonly StrategyParam<decimal> _takeProfitPoints;
-	private readonly StrategyParam<decimal> _stopLossPoints;
-	private readonly StrategyParam<decimal> _trailingStopPoints;
+	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _emaPeriod;
+	private readonly StrategyParam<int> _rsiPeriod;
 
-	private Order _buyStopOrder;
-	private Order _sellStopOrder;
-	private Order _exitStopOrder;
-	private Order _exitTakeProfitOrder;
+	private decimal _prevClose;
+	private decimal _prevEma;
+	private decimal _prevRsi;
+	private bool _hasPrev;
 
-	private decimal? _bestBid;
-	private decimal? _bestAsk;
-	private decimal _signedPosition;
-	private decimal _avgEntryPrice;
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int EmaPeriod { get => _emaPeriod.Value; set => _emaPeriod.Value = value; }
+	public int RsiPeriod { get => _rsiPeriod.Value; set => _rsiPeriod.Value = value; }
 
 	public SampleTrailingstopMt5Strategy()
 	{
-		_tradeVolume = Param(nameof(TradeVolume), 0.01m)
-		.SetDisplay("Trade volume", "Lot size used for both stop orders.", "General")
-		.SetGreaterThanZero();
-
-		_takeProfitPoints = Param(nameof(TakeProfitPoints), 900m)
-		.SetDisplay("Take profit (points)", "Distance in points for the protective take-profit. Zero disables it.", "Risk")
-		.SetNotNegative();
-
-		_stopLossPoints = Param(nameof(StopLossPoints), 300m)
-		.SetDisplay("Stop loss (points)", "Distance in points for the protective stop-loss.", "Risk")
-		.SetNotNegative();
-
-		_trailingStopPoints = Param(nameof(TrailingStopPoints), 200m)
-		.SetDisplay("Trailing stop (points)", "Trailing distance maintained once the position is profitable. Zero disables trailing.", "Risk")
-		.SetNotNegative();
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle timeframe", "General");
+		_emaPeriod = Param(nameof(EmaPeriod), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("EMA Period", "EMA period", "Indicators");
+		_rsiPeriod = Param(nameof(RsiPeriod), 14)
+			.SetGreaterThanZero()
+			.SetDisplay("RSI Period", "RSI period", "Indicators");
 	}
 
-	public decimal TradeVolume
-	{
-		get => _tradeVolume.Value;
-		set => _tradeVolume.Value = value;
-	}
-
-	public decimal TakeProfitPoints
-	{
-		get => _takeProfitPoints.Value;
-		set => _takeProfitPoints.Value = value;
-	}
-
-	public decimal StopLossPoints
-	{
-		get => _stopLossPoints.Value;
-		set => _stopLossPoints.Value = value;
-	}
-
-	public decimal TrailingStopPoints
-	{
-		get => _trailingStopPoints.Value;
-		set => _trailingStopPoints.Value = value;
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		CancelOrderSafe(ref _buyStopOrder);
-		CancelOrderSafe(ref _sellStopOrder);
-		CancelOrderSafe(ref _exitStopOrder);
-		CancelOrderSafe(ref _exitTakeProfitOrder);
-
-		_bestBid = null;
-		_bestAsk = null;
-		_signedPosition = 0m;
-		_avgEntryPrice = 0m;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		SubscribeLevel1()
-		.Bind(ProcessLevel1)
-		.Start();
+		_hasPrev = false;
+		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
+		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(ema, rsi, ProcessCandle).Start();
 	}
 
-	private void ProcessLevel1(Level1ChangeMessage message)
+	private void ProcessCandle(ICandleMessage candle, decimal emaValue, decimal rsiValue)
 	{
-		var bid = message.TryGetDecimal(Level1Fields.BestBidPrice);
-		var ask = message.TryGetDecimal(Level1Fields.BestAskPrice);
+		if (candle.State != CandleStates.Finished) return;
 
-		if (bid.HasValue)
-		_bestBid = bid.Value;
-
-		if (ask.HasValue)
-		_bestAsk = ask.Value;
-
-		if (_bestBid is null || _bestAsk is null || _bestBid <= 0m || _bestAsk <= 0m)
-		return;
-
-		var priceStep = Security?.PriceStep ?? 0m;
-		if (priceStep <= 0m)
-		return;
-
-		ManageEntryOrders(priceStep);
-		ManageProtection(priceStep);
-		UpdateTrailingStop(priceStep);
-	}
-
-	private void ManageEntryOrders(decimal priceStep)
-	{
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
-
-		if (!IsOrderActive(_buyStopOrder))
-		_buyStopOrder = null;
-
-		if (!IsOrderActive(_sellStopOrder))
-		_sellStopOrder = null;
-
-		var volume = TradeVolume;
-		if (volume <= 0m)
-		return;
-
-		var bid = _bestBid ?? 0m;
-		var ask = _bestAsk ?? 0m;
-		if (bid <= 0m || ask <= 0m)
-		return;
-
-		var expiration = (CurrentTime == default ? DateTimeOffset.UtcNow : CurrentTime) + TimeSpan.FromDays(1);
-
-		if (_buyStopOrder is null)
+		if (_hasPrev)
 		{
-			var price = Math.Max(ask, bid + priceStep);
-			var stopLoss = StopLossPoints > 0m ? price - StopLossPoints * priceStep : (decimal?)null;
-			var takeProfit = TakeProfitPoints > 0m ? price + TakeProfitPoints * priceStep : (decimal?)null;
-
-			_buyStopOrder = BuyStop(volume, price, stopLoss, takeProfit, expirationTime: expiration);
+			if (_prevClose <= _prevEma && candle.ClosePrice > emaValue && rsiValue > 50 && Position <= 0)
+				BuyMarket();
+			else if (_prevClose >= _prevEma && candle.ClosePrice < emaValue && rsiValue < 50 && Position >= 0)
+				SellMarket();
 		}
 
-		if (_sellStopOrder is null)
-		{
-			var price = Math.Min(bid, ask - priceStep);
-			var stopLoss = StopLossPoints > 0m ? price + StopLossPoints * priceStep : (decimal?)null;
-			var takeProfit = TakeProfitPoints > 0m ? price - TakeProfitPoints * priceStep : (decimal?)null;
-
-			_sellStopOrder = SellStop(volume, price, stopLoss, takeProfit, expirationTime: expiration);
-		}
-	}
-
-	private void ManageProtection(decimal priceStep)
-	{
-		if (!IsOrderActive(_exitStopOrder))
-		_exitStopOrder = null;
-
-		if (!IsOrderActive(_exitTakeProfitOrder))
-		_exitTakeProfitOrder = null;
-
-		var position = _signedPosition;
-		if (position == 0m)
-		{
-			CancelOrderSafe(ref _exitStopOrder);
-			CancelOrderSafe(ref _exitTakeProfitOrder);
-			return;
-		}
-
-		var volume = Math.Abs(position);
-		if (volume <= 0m || _avgEntryPrice <= 0m)
-		{
-			CancelOrderSafe(ref _exitStopOrder);
-			CancelOrderSafe(ref _exitTakeProfitOrder);
-			return;
-		}
-
-		if (TakeProfitPoints > 0m)
-		{
-			var takePrice = position > 0m
-			? _avgEntryPrice + TakeProfitPoints * priceStep
-			: _avgEntryPrice - TakeProfitPoints * priceStep;
-
-			if (_exitTakeProfitOrder is null || _exitTakeProfitOrder.Volume != volume || Math.Abs(_exitTakeProfitOrder.Price - takePrice) > priceStep / 2m)
-			{
-				CancelOrderSafe(ref _exitTakeProfitOrder);
-				_exitTakeProfitOrder = position > 0m
-				? SellLimit(volume, takePrice)
-				: BuyLimit(volume, takePrice);
-			}
-		}
-		else
-		{
-			CancelOrderSafe(ref _exitTakeProfitOrder);
-		}
-
-		if (StopLossPoints > 0m)
-		{
-			var stopPrice = position > 0m
-			? _avgEntryPrice - StopLossPoints * priceStep
-			: _avgEntryPrice + StopLossPoints * priceStep;
-
-			if (_exitStopOrder is null || _exitStopOrder.Volume != volume || Math.Abs(_exitStopOrder.Price - stopPrice) > priceStep / 2m)
-			{
-				CancelOrderSafe(ref _exitStopOrder);
-				_exitStopOrder = position > 0m
-				? SellStop(volume, stopPrice)
-				: BuyStop(volume, stopPrice);
-			}
-		}
-		else
-		{
-			CancelOrderSafe(ref _exitStopOrder);
-		}
-	}
-
-	private void UpdateTrailingStop(decimal priceStep)
-	{
-		var trailingDistance = TrailingStopPoints * priceStep;
-		if (trailingDistance <= 0m || _avgEntryPrice <= 0m)
-		return;
-
-		var position = _signedPosition;
-		if (position == 0m)
-		return;
-
-		var bid = _bestBid ?? 0m;
-		var ask = _bestAsk ?? 0m;
-		var tolerance = Math.Max(priceStep / 2m, priceStep);
-
-		if (position > 0m && bid > 0m && bid - _avgEntryPrice >= trailingDistance)
-		{
-			var desiredStop = bid - trailingDistance;
-			if (desiredStop > _avgEntryPrice)
-			{
-				if (_exitStopOrder == null || desiredStop > _exitStopOrder.Price + tolerance)
-				{
-					CancelOrderSafe(ref _exitStopOrder);
-					_exitStopOrder = SellStop(Math.Abs(position), desiredStop);
-				}
-			}
-		}
-		else if (position < 0m && ask > 0m && _avgEntryPrice - ask >= trailingDistance)
-		{
-			var desiredStop = ask + trailingDistance;
-			if (desiredStop < _avgEntryPrice)
-			{
-				if (_exitStopOrder == null || desiredStop < _exitStopOrder.Price - tolerance)
-				{
-					CancelOrderSafe(ref _exitStopOrder);
-					_exitStopOrder = BuyStop(Math.Abs(position), desiredStop);
-				}
-			}
-		}
-	}
-
-	/// <inheritdoc />
-	protected override void OnOwnTradeReceived(MyTrade trade)
-	{
-		base.OnOwnTradeReceived(trade);
-
-		if (trade.Order == null || trade.Trade == null)
-		return;
-
-		UpdatePositionState(trade);
-	}
-
-	private void UpdatePositionState(MyTrade trade)
-	{
-		var volume = trade.Trade.Volume ?? 0m;
-		var price = trade.Trade.Price ?? 0m;
-		var side = trade.Order.Side;
-		if (volume <= 0m || price <= 0m || side == null)
-		return;
-
-		var signedVolume = side == Sides.Buy ? volume : -volume;
-		var prevPosition = _signedPosition;
-		var newPosition = prevPosition + signedVolume;
-
-		if (prevPosition == 0m)
-		{
-			_avgEntryPrice = price;
-		}
-		else if (prevPosition > 0m)
-		{
-			if (side == Sides.Buy)
-			{
-				if (newPosition > 0m)
-				_avgEntryPrice = (_avgEntryPrice * prevPosition + price * volume) / newPosition;
-				else if (newPosition <= 0m)
-				_avgEntryPrice = price;
-			}
-			else
-			{
-				if (newPosition <= 0m)
-				_avgEntryPrice = newPosition == 0m ? 0m : price;
-			}
-		}
-		else if (prevPosition < 0m)
-		{
-			if (side == Sides.Sell)
-			{
-				if (newPosition < 0m)
-				_avgEntryPrice = (_avgEntryPrice * -prevPosition + price * volume) / -newPosition;
-				else if (newPosition >= 0m)
-				_avgEntryPrice = price;
-			}
-			else
-			{
-				if (newPosition >= 0m)
-				_avgEntryPrice = newPosition == 0m ? 0m : price;
-			}
-		}
-
-		_signedPosition = newPosition;
-
-		if (_signedPosition == 0m)
-		{
-			_avgEntryPrice = 0m;
-			CancelOrderSafe(ref _exitStopOrder);
-			CancelOrderSafe(ref _exitTakeProfitOrder);
-		}
-	}
-
-	/// <inheritdoc />
-	protected override void OnOrderReceived(Order order)
-	{
-		base.OnOrderReceived(order);
-
-		if (order == null)
-		return;
-
-		if (order == _buyStopOrder && order.State.IsFinal())
-		_buyStopOrder = null;
-		else if (order == _sellStopOrder && order.State.IsFinal())
-		_sellStopOrder = null;
-		else if (order == _exitStopOrder && order.State.IsFinal())
-		_exitStopOrder = null;
-		else if (order == _exitTakeProfitOrder && order.State.IsFinal())
-		_exitTakeProfitOrder = null;
-	}
-
-	private static bool IsOrderActive(Order order)
-	{
-		return order != null && order.State == OrderStates.Active;
-	}
-
-	private void CancelOrderSafe(ref Order order)
-	{
-		if (order == null)
-		return;
-
-		if (order.State == OrderStates.Active)
-		CancelOrder(order);
-
-		order = null;
+		_prevClose = candle.ClosePrice;
+		_prevEma = emaValue;
+		_prevRsi = rsiValue;
+		_hasPrev = true;
 	}
 }
-

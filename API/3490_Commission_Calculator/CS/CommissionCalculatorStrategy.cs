@@ -1,279 +1,57 @@
-using System;
-using System.Linq;
-using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
-
-using StockSharp.Algo.Indicators;
-using StockSharp.Algo.Strategies;
-using StockSharp.BusinessEntities;
-using StockSharp.Messages;
-
 namespace StockSharp.Samples.Strategies;
 
+using System;
+using Ecng.Common;
+using StockSharp.Algo.Indicators;
+using StockSharp.Algo.Strategies;
+using StockSharp.Messages;
+
 /// <summary>
-/// Strategy that calculates commission fees for a single discretionary order.
-/// Places the configured order once and reports aggregated fees when the strategy stops.
+/// Commission Calculator strategy: CCI level crossover.
+/// Buys when CCI crosses above -100 (oversold exit), sells when CCI crosses below 100 (overbought exit).
 /// </summary>
 public class CommissionCalculatorStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _quantity;
-	private readonly StrategyParam<decimal> _entryPrice;
-	private readonly StrategyParam<decimal> _stopLossPrice;
-	private readonly StrategyParam<decimal> _takeProfitPrice;
-	private readonly StrategyParam<decimal> _commissionRate;
-	private readonly StrategyParam<OrderModes> _orderMode;
+	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _period;
 
-	private decimal _totalFee;
-	private decimal _lastFee;
-	private decimal? _initialBalance;
-	private bool _orderSent;
+	private decimal _prevCci;
+	private bool _hasPrev;
 
-	/// <summary>
-	/// Available order execution modes.
-	/// </summary>
-	public enum OrderModes
-	{
-		/// <summary>
-		/// Do not send any order.
-		/// </summary>
-		None,
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int Period { get => _period.Value; set => _period.Value = value; }
 
-		/// <summary>
-		/// Send a market buy order.
-		/// </summary>
-		MarketBuy,
-
-		/// <summary>
-		/// Send a market sell order.
-		/// </summary>
-		MarketSell,
-
-		/// <summary>
-		/// Send a buy limit order.
-		/// </summary>
-		BuyLimit,
-
-		/// <summary>
-		/// Send a sell limit order.
-		/// </summary>
-		SellLimit,
-
-		/// <summary>
-		/// Send a buy stop order.
-		/// </summary>
-		BuyStop,
-
-		/// <summary>
-		/// Send a sell stop order.
-		/// </summary>
-		SellStop,
-	}
-
-	/// <summary>
-	/// Order quantity.
-	/// </summary>
-	public decimal Quantity
-	{
-		get => _quantity.Value;
-		set => _quantity.Value = value;
-	}
-
-	/// <summary>
-	/// Price used for pending orders and for calculating protection distances.
-	/// </summary>
-	public decimal EntryPrice
-	{
-		get => _entryPrice.Value;
-		set => _entryPrice.Value = value;
-	}
-
-	/// <summary>
-	/// Stop-loss price that defines the protection distance.
-	/// </summary>
-	public decimal StopLossPrice
-	{
-		get => _stopLossPrice.Value;
-		set => _stopLossPrice.Value = value;
-	}
-
-	/// <summary>
-	/// Take-profit price that defines the protection distance.
-	/// </summary>
-	public decimal TakeProfitPrice
-	{
-		get => _takeProfitPrice.Value;
-		set => _takeProfitPrice.Value = value;
-	}
-
-	/// <summary>
-	/// Commission rate expressed in percent.
-	/// </summary>
-	public decimal CommissionRate
-	{
-		get => _commissionRate.Value;
-		set => _commissionRate.Value = value;
-	}
-
-	/// <summary>
-	/// Selected order execution mode.
-	/// </summary>
-	public OrderModes Mode
-	{
-		get => _orderMode.Value;
-		set => _orderMode.Value = value;
-	}
-
-	/// <summary>
-	/// Constructor.
-	/// </summary>
 	public CommissionCalculatorStrategy()
 	{
-		_quantity = Param(nameof(Quantity), 0.001m)
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle timeframe", "General");
+		_period = Param(nameof(Period), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("Quantity", "Order size to send when the strategy starts", "General");
-
-		_entryPrice = Param(nameof(EntryPrice), 31365m)
-			.SetDisplay("Entry Price", "Price used for limit or stop orders", "Trading");
-
-		_stopLossPrice = Param(nameof(StopLossPrice), 31200m)
-			.SetDisplay("Stop Loss", "Stop-loss price to calculate protection distance", "Risk Management");
-
-		_takeProfitPrice = Param(nameof(TakeProfitPrice), 32100m)
-			.SetDisplay("Take Profit", "Take-profit price to calculate protection distance", "Risk Management");
-
-		_commissionRate = Param(nameof(CommissionRate), 0.04m)
-			.SetGreaterThanZero()
-			.SetDisplay("Commission Rate %", "Commission rate applied to each executed trade", "General");
-
-		_orderMode = Param(nameof(Mode), OrderModes.None)
-			.SetDisplay("Order Mode", "Type of order that should be placed", "Trading");
+			.SetDisplay("Period", "CCI period", "Indicators");
 	}
 
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		// Reset cached values so every new run starts with a clean state.
-		_totalFee = 0m;
-		_lastFee = 0m;
-		_initialBalance = null;
-		_orderSent = false;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		// Store initial balance snapshot for final reporting.
-		_initialBalance = Portfolio?.CurrentValue ?? Portfolio?.BeginValue;
-
-		// Configure default volume for helper methods like BuyMarket().
-		Volume = Quantity;
-
-		// Configure stop-loss and take-profit distances if valid prices are provided.
-		SetupProtection();
-
-		// Place the initial order immediately if a mode is selected.
-		PlaceInitialOrder();
+		_hasPrev = false;
+		var cci = new CommodityChannelIndex { Length = Period };
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(cci, ProcessCandle).Start();
 	}
 
-	/// <inheritdoc />
-	protected override void OnOwnTradeReceived(MyTrade trade)
+	private void ProcessCandle(ICandleMessage candle, decimal cciValue)
 	{
-		base.OnOwnTradeReceived(trade);
+		if (candle.State != CandleStates.Finished) return;
 
-		var tradeInfo = trade.Trade;
-		if (tradeInfo == null)
-			return;
-
-		if (trade.Order.Security != Security)
-			return;
-
-		var price = tradeInfo.Price;
-		var volume = tradeInfo.Volume;
-
-		if (price <= 0m || volume <= 0m)
-			return;
-
-		// Calculate commission using the configured rate.
-		var fee = price * volume * CommissionRate / 100m;
-		_totalFee += fee;
-		_lastFee = fee;
-
-		LogInfo($"Trade executed at {price} for {volume}. Calculated commission: {fee:0.########}");
-	}
-
-	/// <inheritdoc />
-	protected override void OnStopped()
-	{
-		base.OnStopped();
-
-		var currentBalance = Portfolio?.CurrentValue ?? Portfolio?.BeginValue;
-		var initial = _initialBalance ?? currentBalance;
-
-		LogInfo($"Initial Balance: {initial:0.########}, Brokerage Fee: {_totalFee:0.########}, Final Balance (including Fee): {(currentBalance ?? 0m) - _totalFee:0.########}");
-	}
-
-	private void SetupProtection()
-	{
-		if (EntryPrice <= 0m)
-			return;
-
-		Unit takeProfit = null;
-		Unit stopLoss = null;
-
-		var takeDistance = Math.Abs(TakeProfitPrice - EntryPrice);
-		if (takeDistance > 0m)
-			takeProfit = new Unit(takeDistance, UnitTypes.Absolute);
-
-		var stopDistance = Math.Abs(EntryPrice - StopLossPrice);
-		if (stopDistance > 0m)
-			stopLoss = new Unit(stopDistance, UnitTypes.Absolute);
-
-		if (takeProfit != null || stopLoss != null)
+		if (_hasPrev)
 		{
-			// Use market orders for protection to mimic immediate exit when levels are reached.
-			StartProtection(takeProfit: takeProfit, stopLoss: stopLoss, useMarketOrders: true);
-		}
-	}
-
-	private void PlaceInitialOrder()
-	{
-		if (_orderSent)
-			return;
-
-		var volume = Volume;
-
-		if (Mode == OrderModes.None || volume <= 0m)
-		{
-			LogInfo("Order mode is set to None or volume is zero. No order will be sent.");
-			return;
+			if (_prevCci < -100 && cciValue >= -100 && Position <= 0)
+				BuyMarket();
+			else if (_prevCci > 100 && cciValue <= 100 && Position >= 0)
+				SellMarket();
 		}
 
-		Order order = Mode switch
-		{
-			OrderModes.MarketBuy => BuyMarket(volume),
-			OrderModes.MarketSell => SellMarket(volume),
-			OrderModes.BuyLimit => EntryPrice > 0m ? BuyLimit(EntryPrice, volume) : null,
-			OrderModes.SellLimit => EntryPrice > 0m ? SellLimit(EntryPrice, volume) : null,
-			OrderModes.BuyStop => EntryPrice > 0m ? BuyStop(EntryPrice, volume) : null,
-			OrderModes.SellStop => EntryPrice > 0m ? SellStop(EntryPrice, volume) : null,
-			_ => null,
-		};
-
-		if (order == null)
-		{
-			LogInfo("Unable to place the configured order. Check EntryPrice and parameters.");
-			return;
-		}
-
-		_orderSent = true;
-		LogInfo($"Initial order sent. Mode: {Mode}, Volume: {volume}, Price: {order.Price:0.########}");
+		_prevCci = cciValue;
+		_hasPrev = true;
 	}
 }
-

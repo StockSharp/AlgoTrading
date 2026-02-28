@@ -7,16 +7,15 @@ using StockSharp.Algo.Strategies;
 using StockSharp.Messages;
 
 /// <summary>
-/// ValidateMe strategy: Stochastic crossover.
-/// Buys when %K crosses above %D below 20, sells when %K crosses below %D above 80.
+/// ValidateMe strategy: RSI crossover at oversold/overbought levels.
+/// Buys when RSI crosses above 30, sells when RSI crosses below 70.
 /// </summary>
 public class ValidateMeStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _period;
 
-	private decimal _prevK;
-	private decimal _prevD;
+	private decimal _prevRsi;
 	private bool _hasPrev;
 
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
@@ -28,32 +27,31 @@ public class ValidateMeStrategy : Strategy
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 		_period = Param(nameof(Period), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("Period", "Stochastic period", "Indicators");
+			.SetDisplay("Period", "RSI period", "Indicators");
 	}
 
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 		_hasPrev = false;
-		var stoch = new StochasticOscillator { Length = Period };
+		var rsi = new RelativeStrengthIndex { Length = Period };
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(stoch, ProcessCandle).Start();
+		subscription.Bind(rsi, ProcessCandle).Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal kValue, decimal dValue)
+	private void ProcessCandle(ICandleMessage candle, decimal rsiValue)
 	{
 		if (candle.State != CandleStates.Finished) return;
 
 		if (_hasPrev)
 		{
-			if (_prevK <= _prevD && kValue > dValue && kValue < 30 && Position <= 0)
+			if (_prevRsi < 30 && rsiValue >= 30 && Position <= 0)
 				BuyMarket();
-			else if (_prevK >= _prevD && kValue < dValue && kValue > 70 && Position >= 0)
+			else if (_prevRsi > 70 && rsiValue <= 70 && Position >= 0)
 				SellMarket();
 		}
 
-		_prevK = kValue;
-		_prevD = dValue;
+		_prevRsi = rsiValue;
 		_hasPrev = true;
 	}
 }

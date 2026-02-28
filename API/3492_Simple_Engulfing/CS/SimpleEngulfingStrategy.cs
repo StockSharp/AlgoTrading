@@ -1,292 +1,69 @@
-using System;
-using System.Linq;
-using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
-
-using StockSharp.Algo.Indicators;
-using StockSharp.Algo.Strategies;
-using StockSharp.BusinessEntities;
-using StockSharp.Messages;
-
-using StockSharp.Algo.Candles;
-
 namespace StockSharp.Samples.Strategies;
 
+using System;
+using Ecng.Common;
+using StockSharp.Algo.Indicators;
+using StockSharp.Algo.Strategies;
+using StockSharp.Messages;
+
 /// <summary>
-/// Simple engulfing strategy converted from MetaTrader expert advisors.
+/// Simple Engulfing strategy: engulfing candlestick pattern with EMA filter.
+/// Buys on bullish engulfing above EMA, sells on bearish engulfing below EMA.
 /// </summary>
 public class SimpleEngulfingStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<decimal> _tradeVolume;
-	private readonly StrategyParam<decimal> _stopLossPips;
-	private readonly StrategyParam<decimal> _takeProfitPips;
-	private readonly StrategyParam<decimal> _minBodyPips;
-	private readonly StrategyParam<decimal> _maxBodyPips;
-	private readonly StrategyParam<EngulfingTradeDirections> _direction;
+	private readonly StrategyParam<int> _emaPeriod;
 
-	private decimal _pipSize;
-	private CandleSnapshot? _previousCandle;
+	private decimal _prevOpen;
+	private decimal _prevClose;
+	private bool _hasPrev;
 
-	/// <summary>
-	/// Initializes a new instance of <see cref="SimpleEngulfingStrategy"/>.
-	/// </summary>
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int EmaPeriod { get => _emaPeriod.Value; set => _emaPeriod.Value = value; }
+
 	public SimpleEngulfingStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
-			.SetDisplay("Candle Type", "Time frame used for engulfing detection.", "General");
-
-		_tradeVolume = Param(nameof(TradeVolume), 0.01m)
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle timeframe", "General");
+		_emaPeriod = Param(nameof(EmaPeriod), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume replicated from the MetaTrader expert advisor.", "Trading");
-
-		_stopLossPips = Param(nameof(StopLossPips), 20m)
-			.SetNotNegative()
-			.SetDisplay("Stop Loss (pips)", "Distance between entry price and stop loss in pips.", "Risk Management");
-
-		_takeProfitPips = Param(nameof(TakeProfitPips), 20m)
-			.SetNotNegative()
-			.SetDisplay("Take Profit (pips)", "Distance between entry price and take profit in pips.", "Risk Management");
-
-		_minBodyPips = Param(nameof(MinBodyPips), 0m)
-			.SetNotNegative()
-			.SetDisplay("Min Body (pips)", "Minimum candle body size required by the pattern.", "Pattern");
-
-		_maxBodyPips = Param(nameof(MaxBodyPips), 50m)
-			.SetNotNegative()
-			.SetDisplay("Max Body (pips)", "Maximum candle body size accepted by the pattern. Set to zero to disable the filter.", "Pattern");
-
-		_direction = Param(nameof(Direction), EngulfingTradeDirections.BuyOnly)
-			.SetDisplay("Direction", "Defines which side of the original MetaTrader robots should be executed.", "Trading");
+			.SetDisplay("EMA Period", "EMA trend filter period", "Indicators");
 	}
 
-	/// <summary>
-	/// Time frame used to build candles.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Net volume for each entry order.
-	/// </summary>
-	public decimal TradeVolume
-	{
-		get => _tradeVolume.Value;
-		set => _tradeVolume.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss distance expressed in pips.
-	/// </summary>
-	public decimal StopLossPips
-	{
-		get => _stopLossPips.Value;
-		set => _stopLossPips.Value = value;
-	}
-
-	/// <summary>
-	/// Take profit distance expressed in pips.
-	/// </summary>
-	public decimal TakeProfitPips
-	{
-		get => _takeProfitPips.Value;
-		set => _takeProfitPips.Value = value;
-	}
-
-	/// <summary>
-	/// Minimum candle body required to validate an engulfing pattern.
-	/// </summary>
-	public decimal MinBodyPips
-	{
-		get => _minBodyPips.Value;
-		set => _minBodyPips.Value = value;
-	}
-
-	/// <summary>
-	/// Maximum candle body accepted by the pattern.
-	/// </summary>
-	public decimal MaxBodyPips
-	{
-		get => _maxBodyPips.Value;
-		set => _maxBodyPips.Value = value;
-	}
-
-	/// <summary>
-	/// Defines whether the strategy trades buy setups, sell setups, or both.
-	/// </summary>
-	public EngulfingTradeDirections Direction
-	{
-		get => _direction.Value;
-		set => _direction.Value = value;
-	}
-
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_pipSize = 0m;
-		_previousCandle = null;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_pipSize = CalculatePipSize();
-		Volume = TradeVolume;
-		_previousCandle = null;
-
+		_hasPrev = false;
+		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(ProcessCandle)
-			.Start();
+		subscription.Bind(ema, ProcessCandle).Start();
+	}
 
-		var takeUnit = TakeProfitPips > 0m && _pipSize > 0m ? new Unit(TakeProfitPips * _pipSize, UnitTypes.Absolute) : null;
-		var stopUnit = StopLossPips > 0m && _pipSize > 0m ? new Unit(StopLossPips * _pipSize, UnitTypes.Absolute) : null;
+	private void ProcessCandle(ICandleMessage candle, decimal emaValue)
+	{
+		if (candle.State != CandleStates.Finished) return;
 
-		if (takeUnit != null || stopUnit != null)
+		if (_hasPrev)
 		{
-			// Use StockSharp protective orders to emulate MetaTrader stop-loss and take-profit placement.
-			StartProtection(takeProfit: takeUnit, stopLoss: stopUnit, useMarketOrders: true);
+			var prevBearish = _prevClose < _prevOpen;
+			var currBullish = candle.ClosePrice > candle.OpenPrice;
+			var bullishEngulf = prevBearish && currBullish
+				&& candle.OpenPrice <= _prevClose && candle.ClosePrice >= _prevOpen;
+
+			var prevBullish = _prevClose > _prevOpen;
+			var currBearish = candle.ClosePrice < candle.OpenPrice;
+			var bearishEngulf = prevBullish && currBearish
+				&& candle.OpenPrice >= _prevClose && candle.ClosePrice <= _prevOpen;
+
+			if (bullishEngulf && candle.ClosePrice > emaValue && Position <= 0)
+				BuyMarket();
+			else if (bearishEngulf && candle.ClosePrice < emaValue && Position >= 0)
+				SellMarket();
 		}
 
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawOwnTrades(area);
-		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle)
-	{
-		// Only react to completed candles to match MetaTrader behaviour.
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		var current = new CandleSnapshot
-		{
-			Open = candle.OpenPrice,
-			High = candle.HighPrice,
-			Low = candle.LowPrice,
-			Close = candle.ClosePrice
-		};
-
-		var previous = _previousCandle;
-		_previousCandle = current;
-
-		if (previous == null)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (_pipSize <= 0m)
-			_pipSize = CalculatePipSize();
-
-		var bodySize = Math.Abs(current.Close - current.Open);
-		var bodyInPips = _pipSize > 0m ? bodySize / _pipSize : bodySize;
-
-		if (MinBodyPips > 0m && bodyInPips < MinBodyPips)
-			return;
-
-		if (MaxBodyPips > 0m && bodyInPips > MaxBodyPips)
-			return;
-
-		var bullish = current.Close > current.Open && previous.Value.Close < previous.Value.Open &&
-			current.Open <= previous.Value.Close && current.Close >= previous.Value.Open;
-
-		if (bullish && AllowsSide(Sides.Buy) && Position <= 0)
-		{
-			EnterPosition(Sides.Buy);
-			return;
-		}
-
-		var bearish = current.Close < current.Open && previous.Value.Close > previous.Value.Open &&
-			current.Open >= previous.Value.Close && current.Close <= previous.Value.Open;
-
-		if (bearish && AllowsSide(Sides.Sell) && Position >= 0)
-			EnterPosition(Sides.Sell);
-	}
-
-	private void EnterPosition(Sides side)
-	{
-		var volume = Volume;
-
-		if (side == Sides.Buy && Position < 0)
-			volume += Math.Abs(Position);
-		else if (side == Sides.Sell && Position > 0)
-			volume += Math.Abs(Position);
-
-		if (volume <= 0m)
-			return;
-
-		switch (side)
-		{
-			case Sides.Buy:
-				// Enter long when a bullish engulfing pattern appears.
-				BuyMarket(volume);
-				break;
-			case Sides.Sell:
-				// Enter short when a bearish engulfing pattern appears.
-				SellMarket(volume);
-				break;
-		}
-	}
-
-	private bool AllowsSide(Sides side)
-	{
-		return Direction switch
-		{
-			EngulfingTradeDirections.BuyOnly => side == Sides.Buy,
-			EngulfingTradeDirections.SellOnly => side == Sides.Sell,
-			EngulfingTradeDirections.Both => true,
-			_ => false
-		};
-	}
-
-	private decimal CalculatePipSize()
-	{
-		var step = Security?.PriceStep ?? 0m;
-
-		if (step <= 0m)
-			return 1m;
-
-		var decimals = Security?.Decimals ?? 0;
-		var multiplier = decimals is 3 or 5 ? 10m : 1m;
-		return step * multiplier;
-	}
-
-	private struct CandleSnapshot
-	{
-		public decimal Open;
-		public decimal High;
-		public decimal Low;
-		public decimal Close;
-	}
-
-	/// <summary>
-	/// Specifies which signals of the MetaTrader robots should be executed.
-	/// </summary>
-	public enum EngulfingTradeDirections
-	{
-		BuyOnly,
-		SellOnly,
-		Both,
+		_prevOpen = candle.OpenPrice;
+		_prevClose = candle.ClosePrice;
+		_hasPrev = true;
 	}
 }
-
