@@ -1,10 +1,4 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -13,233 +7,44 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-/// <summary>
-/// Strategy converted from the MA S.R Trading MetaTrader expert advisor.
-/// It detects short-term turning points using a short simple moving average
-/// and manages stop levels at nearby swing highs and lows.
-/// </summary>
 public class MaSrTradingStrategy : Strategy
 {
-	private readonly StrategyParam<int> _smaPeriod;
-	private readonly StrategyParam<int> _highLookback;
-	private readonly StrategyParam<int> _lowLookback;
-	private readonly StrategyParam<decimal> _tradeVolume;
+	private readonly StrategyParam<int> _emaPeriod;
+	private readonly StrategyParam<int> _momentumPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private SimpleMovingAverage _sma;
-	private Highest _highestHigh;
-	private Lowest _lowestLow;
+	private decimal _prevClose; private decimal _prevEma; private bool _hasPrev;
 
-	private decimal? _smaPrev1;
-	private decimal? _smaPrev2;
-	private decimal? _smaPrev3;
-	private decimal? _lastSellStop;
-	private decimal? _lastBuyStop;
-	private decimal? _previousClose;
+	public int EmaPeriod { get => _emaPeriod.Value; set => _emaPeriod.Value = value; }
+	public int MomentumPeriod { get => _momentumPeriod.Value; set => _momentumPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Gets or sets the period for the simple moving average.
-	/// </summary>
-	public int SmaPeriod
-	{
-		get => _smaPeriod.Value;
-		set => _smaPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Gets or sets the number of candles used to search for the stop level on shorts.
-	/// </summary>
-	public int HighLookback
-	{
-		get => _highLookback.Value;
-		set => _highLookback.Value = value;
-	}
-
-	/// <summary>
-	/// Gets or sets the number of candles used to search for the stop level on longs.
-	/// </summary>
-	public int LowLookback
-	{
-		get => _lowLookback.Value;
-		set => _lowLookback.Value = value;
-	}
-
-	/// <summary>
-	/// Gets or sets the trading volume.
-	/// </summary>
-	public decimal TradeVolume
-	{
-		get => _tradeVolume.Value;
-		set => _tradeVolume.Value = value;
-	}
-
-	/// <summary>
-	/// Gets or sets the candle type processed by the strategy.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="MaSrTradingStrategy"/> class.
-	/// </summary>
 	public MaSrTradingStrategy()
 	{
-		_smaPeriod = Param(nameof(SmaPeriod), 5)
-			.SetDisplay("SMA Period", "Period of the moving average used for turning points", "Indicators")
-			
-			.SetOptimize(3, 20, 1);
-
-		_highLookback = Param(nameof(HighLookback), 5)
-			.SetDisplay("High Lookback", "Number of candles to evaluate swing highs", "Risk")
-			
-			.SetOptimize(3, 30, 1);
-
-		_lowLookback = Param(nameof(LowLookback), 5)
-			.SetDisplay("Low Lookback", "Number of candles to evaluate swing lows", "Risk")
-			
-			.SetOptimize(3, 30, 1);
-
-		_tradeVolume = Param(nameof(TradeVolume), 1m)
-			.SetDisplay("Volume", "Trading volume in lots", "Trading")
-			.SetGreaterThanZero()
-			
-			.SetOptimize(0.1m, 5m, 0.1m);
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to analyse", "General");
-
-		Volume = TradeVolume;
+		_emaPeriod = Param(nameof(EmaPeriod), 20).SetDisplay("EMA Period", "EMA lookback", "Indicators");
+		_momentumPeriod = Param(nameof(MomentumPeriod), 14).SetDisplay("Momentum", "Momentum period", "Indicators");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Candle timeframe", "General");
 	}
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_sma = null;
-		_highestHigh = null;
-		_lowestLow = null;
-		_smaPrev1 = null;
-		_smaPrev2 = null;
-		_smaPrev3 = null;
-		_lastSellStop = null;
-		_lastBuyStop = null;
-		_previousClose = null;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		Volume = TradeVolume;
-
-		_sma = new SMA { Length = SmaPeriod };
-		_highestHigh = new Highest { Length = HighLookback };
-		_lowestLow = new Lowest { Length = LowLookback };
-
+		_hasPrev = false;
+		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
 		var subscription = SubscribeCandles(CandleType);
-		subscription.WhenCandlesFinished(ProcessCandle).Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, _sma);
-		}
-
-		_previousClose = null;
+		subscription.Bind(ema, ProcessCandle).Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal ema)
 	{
-		if (_sma is null || _highestHigh is null || _lowestLow is null)
-			return;
+		if (candle.State != CandleStates.Finished) return;
+		var close = candle.ClosePrice;
+		if (!_hasPrev) { _prevClose = close; _prevEma = ema; _hasPrev = true; return; }
 
-		var smaValue = _sma.Process(new CandleIndicatorValue(candle, candle.ClosePrice));
-		var highestValue = _highestHigh.Process(new CandleIndicatorValue(candle, candle.HighPrice));
-		var lowestValue = _lowestLow.Process(new CandleIndicatorValue(candle, candle.LowPrice));
-
-		if (!smaValue.IsFinal)
-		{
-			_previousClose = candle.ClosePrice;
-			return;
-		}
-
-		var currentSma = smaValue.GetValue<decimal>();
-
-		if (_smaPrev1 is not decimal prev1 || _smaPrev2 is not decimal prev2 || _smaPrev3 is not decimal prev3)
-		{
-			ShiftSmaHistory(currentSma);
-			_previousClose = candle.ClosePrice;
-			return;
-		}
-
-		var hasHigh = highestValue.IsFinal;
-		var hasLow = lowestValue.IsFinal;
-
-		var isBearishTurn = prev1 < prev2 && prev2 > prev3;
-		var isBullishTurn = prev1 > prev2 && prev2 < prev3;
-
-		if (isBearishTurn && hasHigh && _previousClose is decimal prevCloseForShort)
-		{
-			var candidate = highestValue.GetValue<decimal>();
-			if (candidate > prevCloseForShort)
-			{
-				_lastSellStop = candidate;
-
-				if (IsFormedAndOnlineAndAllowTrading() && Position >= 0)
-				{
-					var volume = Volume + Math.Max(0m, Position);
-					SellMarket(volume);
-				}
-			}
-		}
-
-		if (isBullishTurn && hasLow && _previousClose is decimal prevCloseForLong)
-		{
-			var candidate = lowestValue.GetValue<decimal>();
-			if (candidate < prevCloseForLong)
-			{
-				_lastBuyStop = candidate;
-
-				if (IsFormedAndOnlineAndAllowTrading() && Position <= 0)
-				{
-					var volume = Volume + Math.Max(0m, -Position);
-					BuyMarket(volume);
-				}
-			}
-		}
-
-		if (Position < 0 && _lastSellStop is decimal shortStop && candle.HighPrice >= shortStop)
-		{
-			BuyMarket(Math.Abs(Position));
-			_lastSellStop = null;
-		}
-		else if (Position > 0 && _lastBuyStop is decimal longStop && candle.LowPrice <= longStop)
-		{
-			SellMarket(Position);
-			_lastBuyStop = null;
-		}
-
-		ShiftSmaHistory(currentSma);
-		_previousClose = candle.ClosePrice;
-	}
-
-	private void ShiftSmaHistory(decimal current)
-	{
-		_smaPrev3 = _smaPrev2;
-		_smaPrev2 = _smaPrev1;
-		_smaPrev1 = current;
+		if (_prevClose <= _prevEma && close > ema && Position <= 0)
+		{ if (Position < 0) BuyMarket(); BuyMarket(); }
+		else if (_prevClose >= _prevEma && close < ema && Position >= 0)
+		{ if (Position > 0) SellMarket(); SellMarket(); }
+		_prevClose = close; _prevEma = ema;
 	}
 }
-
