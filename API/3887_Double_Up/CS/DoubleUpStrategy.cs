@@ -1,10 +1,4 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -13,390 +7,44 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-/// <summary>
-/// Port of the MetaTrader expert advisor DoubleUp.mq4.
-/// Combines CCI and MACD filters with martingale position sizing.
-/// </summary>
 public class DoubleUpStrategy : Strategy
 {
-private readonly StrategyParam<decimal> _macdScale;
+	private readonly StrategyParam<int> _fastPeriod;
+	private readonly StrategyParam<int> _slowPeriod;
+	private readonly StrategyParam<DataType> _candleType;
 
-private readonly StrategyParam<int> _cciPeriod;
-private readonly StrategyParam<decimal> _threshold;
-private readonly StrategyParam<int> _macdFastPeriod;
-private readonly StrategyParam<int> _macdSlowPeriod;
-private readonly StrategyParam<int> _macdSignalPeriod;
-private readonly StrategyParam<decimal> _baseVolume;
-private readonly StrategyParam<decimal> _initialWait;
-private readonly StrategyParam<decimal> _preWait;
-private readonly StrategyParam<int> _backShift;
-private readonly StrategyParam<DataType> _candleType;
+	private decimal _prevFast; private decimal _prevSlow; private bool _hasPrev;
 
-private CommodityChannelIndex _cci = null!;
-private MovingAverageConvergenceDivergence _macd = null!;
+	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
+	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-private decimal? _cciValue;
-private decimal? _macdValue;
-private DateTimeOffset? _cciTime;
-private DateTimeOffset? _macdTime;
-private DateTimeOffset? _lastProcessedTime;
+	public DoubleUpStrategy()
+	{
+		_fastPeriod = Param(nameof(FastPeriod), 9).SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+		_slowPeriod = Param(nameof(SlowPeriod), 21).SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Candle timeframe", "General");
+	}
 
-private bool _pendingBuy;
-private bool _pendingSell;
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
+		_hasPrev = false;
+		var fast = new ExponentialMovingAverage { Length = FastPeriod };
+		var slow = new ExponentialMovingAverage { Length = SlowPeriod };
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(fast, slow, ProcessCandle).Start();
+	}
 
-private int _lossCounter;
-private decimal _waitBuffer;
+	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow)
+	{
+		if (candle.State != CandleStates.Finished) return;
+		if (!_hasPrev) { _prevFast = fast; _prevSlow = slow; _hasPrev = true; return; }
 
-private Sides? _activePositionSide;
-private decimal? _entryPrice;
-private Sides? _queuedEntrySide;
-private decimal _lastKnownPosition;
-
-/// <summary>
-/// Period of the Commodity Channel Index indicator.
-/// </summary>
-public int CciPeriod
-{
-get => _cciPeriod.Value;
-set => _cciPeriod.Value = value;
+		if (_prevFast <= _prevSlow && fast > slow && Position <= 0)
+		{ if (Position < 0) BuyMarket(); BuyMarket(); }
+		else if (_prevFast >= _prevSlow && fast < slow && Position >= 0)
+		{ if (Position > 0) SellMarket(); SellMarket(); }
+		_prevFast = fast; _prevSlow = slow;
+	}
 }
-
-/// <summary>
-/// Absolute threshold applied to CCI and scaled MACD values.
-/// </summary>
-public decimal Threshold
-{
-get => _threshold.Value;
-set => _threshold.Value = value;
-}
-
-/// <summary>
-/// Scaling factor applied to the MACD indicator output.
-/// </summary>
-public decimal MacdScale
-{
-get => _macdScale.Value;
-set => _macdScale.Value = value;
-}
-
-/// <summary>
-/// Fast EMA period for the MACD calculation.
-/// </summary>
-public int MacdFastPeriod
-{
-get => _macdFastPeriod.Value;
-set => _macdFastPeriod.Value = value;
-}
-
-/// <summary>
-/// Slow EMA period for the MACD calculation.
-/// </summary>
-public int MacdSlowPeriod
-{
-get => _macdSlowPeriod.Value;
-set => _macdSlowPeriod.Value = value;
-}
-
-/// <summary>
-/// Signal EMA period for the MACD calculation.
-/// </summary>
-public int MacdSignalPeriod
-{
-get => _macdSignalPeriod.Value;
-set => _macdSignalPeriod.Value = value;
-}
-
-/// <summary>
-/// Base order volume before martingale scaling.
-/// </summary>
-public decimal BaseVolume
-{
-get => _baseVolume.Value;
-set => _baseVolume.Value = value;
-}
-
-/// <summary>
-/// Initial value of the wait buffer used by the martingale logic.
-/// </summary>
-public decimal InitialWait
-{
-get => _initialWait.Value;
-set => _initialWait.Value = value;
-}
-
-/// <summary>
-/// Minimum number of losing exits before the wait buffer accumulates the loss counter.
-/// </summary>
-public decimal PreWait
-{
-get => _preWait.Value;
-set => _preWait.Value = value;
-}
-
-/// <summary>
-/// Historical shift for indicator readings. Only zero is supported in this port.
-/// </summary>
-public int BackShift
-{
-get => _backShift.Value;
-set => _backShift.Value = value;
-}
-
-/// <summary>
-/// Candle type requested for indicator calculations.
-/// </summary>
-public DataType CandleType
-{
-get => _candleType.Value;
-set => _candleType.Value = value;
-}
-
-public DoubleUpStrategy()
-{
-_macdScale = Param(nameof(MacdScale), 1_000_000m).SetDisplay("MACD Scale");
-_cciPeriod = Param(nameof(CciPeriod), 8).SetDisplay("CCI Period");
-_threshold = Param(nameof(Threshold), 230m).SetDisplay("Threshold");
-_macdFastPeriod = Param(nameof(MacdFastPeriod), 13).SetDisplay("MACD Fast");
-_macdSlowPeriod = Param(nameof(MacdSlowPeriod), 33).SetDisplay("MACD Slow");
-_macdSignalPeriod = Param(nameof(MacdSignalPeriod), 2).SetDisplay("MACD Signal");
-_baseVolume = Param(nameof(BaseVolume), 0.01m).SetDisplay("Base Volume");
-_initialWait = Param(nameof(InitialWait), 0m).SetDisplay("Initial Wait");
-_preWait = Param(nameof(PreWait), 2m).SetDisplay("Pre Wait");
-_backShift = Param(nameof(BackShift), 0).SetDisplay("Back Shift", "Back Shift", "General");
-_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame()).SetDisplay("Candle Type", "Candle Type", "General");
-}
-
-/// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
-{
-base.OnStarted(time);
-
-if (BackShift != 0)
-throw new InvalidOperationException("BackShift parameter other than zero is not supported in DoubleUpStrategy.");
-
-_lossCounter = 0;
-_waitBuffer = InitialWait;
-_pendingBuy = false;
-_pendingSell = false;
-_activePositionSide = null;
-_entryPrice = null;
-_queuedEntrySide = null;
-_lastProcessedTime = null;
-_cciValue = null;
-_macdValue = null;
-_cciTime = null;
-_macdTime = null;
-_lastKnownPosition = Position;
-
-_cci = new CommodityChannelIndex { Length = CciPeriod };
-_macd = new MovingAverageConvergenceDivergence
-{
-ShortMa = { Length = MacdFastPeriod },
-LongMa = { Length = MacdSlowPeriod },
-SignalPeriod = MacdSignalPeriod,
-};
-
-var subscription = SubscribeCandles(CandleType);
-subscription
-.Bind(_cci, ProcessCci)
-.BindEx(_macd, ProcessMacd)
-.Start();
-}
-
-private void ProcessCci(ICandleMessage candle, decimal value)
-{
-if (candle.State != CandleStates.Finished)
-return;
-
-_cciValue = value;
-_cciTime = candle.CloseTime;
-
-TryProcessSignal(candle);
-}
-
-private void ProcessMacd(ICandleMessage candle, IIndicatorValue indicatorValue)
-{
-if (candle.State != CandleStates.Finished)
-return;
-
-if (!indicatorValue.IsFinal || indicatorValue is not MovingAverageConvergenceDivergenceValue macdData)
-return;
-
-if (macdData.Macd is not decimal macdMain)
-return;
-
-_macdValue = macdMain;
-_macdTime = candle.CloseTime;
-
-TryProcessSignal(candle);
-}
-
-private void TryProcessSignal(ICandleMessage candle)
-{
-if (_cciValue is null || _macdValue is null)
-return;
-
-var time = candle.CloseTime;
-
-if (_cciTime != time || _macdTime != time)
-return;
-
-if (_lastProcessedTime == time)
-return;
-
-if (!IsFormedAndOnlineAndAllowTrading())
-return;
-
-_lastProcessedTime = time;
-
-var cci = _cciValue.Value;
-var macdScaled = _macdValue.Value * MacdScale;
-
-// Replicate the original flagging logic based on simultaneous extremes.
-if (cci > Threshold && macdScaled > Threshold)
-{
-_pendingSell = true;
-_pendingBuy = false;
-}
-else if (cci < -Threshold && macdScaled < -Threshold)
-{
-_pendingBuy = true;
-_pendingSell = false;
-}
-
-// Execute pending entries when the CCI returns toward the midpoint.
-if (_pendingBuy && cci < Threshold)
-{
-RequestEntry(Sides.Buy);
-_pendingBuy = false;
-}
-
-if (_pendingSell && cci < -Threshold)
-{
-RequestEntry(Sides.Sell);
-_pendingSell = false;
-}
-}
-
-private void RequestEntry(Sides side)
-{
-if (side == Sides.Buy)
-{
-// Close any outstanding short position before opening a new long.
-if (Position < 0m)
-{
-BuyMarket(-Position);
-_queuedEntrySide = Sides.Buy;
-return;
-}
-
-if (Position > 0m)
-return;
-
-OpenPosition(Sides.Buy);
-}
-else
-{
-// Close any outstanding long position before opening a new short.
-if (Position > 0m)
-{
-SellMarket(Position);
-_queuedEntrySide = Sides.Sell;
-return;
-}
-
-if (Position < 0m)
-return;
-
-OpenPosition(Sides.Sell);
-}
-}
-
-private void OpenPosition(Sides side)
-{
-var volume = CalculateVolume();
-
-if (volume <= 0m)
-return;
-
-if (side == Sides.Buy)
-BuyMarket(volume);
-else
-SellMarket(volume);
-}
-
-private decimal CalculateVolume()
-{
-var volume = BaseVolume;
-
-for (var i = 0; i < _lossCounter; i++)
-volume *= 2m;
-
-return volume;
-}
-
-private void UpdateMartingaleState(decimal profit)
-{
-if (profit < 0m)
-{
-_lossCounter++;
-
-if (_lossCounter >= PreWait)
-{
-_waitBuffer += _lossCounter;
-_lossCounter = 0;
-}
-}
-else if (profit > 0m)
-{
-var truncated = (int)Math.Truncate(_waitBuffer);
-_lossCounter = truncated;
-_waitBuffer = 0m;
-}
-}
-
-/// <inheritdoc />
-protected override void OnOwnTradeReceived(MyTrade trade)
-{
-var positionBefore = _lastKnownPosition;
-
-base.OnOwnTradeReceived(trade);
-
-var positionAfter = Position;
-_lastKnownPosition = positionAfter;
-
-if (positionAfter > 0m)
-{
-_activePositionSide = Sides.Buy;
-_entryPrice = trade.Trade.Price;
-}
-else if (positionAfter < 0m)
-{
-_activePositionSide = Sides.Sell;
-_entryPrice = trade.Trade.Price;
-}
-else
-{
-if (positionBefore > 0m && _activePositionSide == Sides.Buy && _entryPrice is decimal longEntry)
-{
-var profit = (trade.Trade.Price - longEntry) * trade.Trade.Volume;
-UpdateMartingaleState(profit);
-}
-else if (positionBefore < 0m && _activePositionSide == Sides.Sell && _entryPrice is decimal shortEntry)
-{
-var profit = (shortEntry - trade.Trade.Price) * trade.Trade.Volume;
-UpdateMartingaleState(profit);
-}
-
-_activePositionSide = null;
-_entryPrice = null;
-
-if (_queuedEntrySide is { } side)
-{
-_queuedEntrySide = null;
-OpenPosition(side);
-}
-}
-}
-}
-

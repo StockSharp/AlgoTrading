@@ -1,10 +1,4 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -13,319 +7,46 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-/// <summary>
-/// Midnight pullback strategy converted from the MetaTrader "1_Otkat_Sys" expert advisor.
-/// Trades at the start of the day based on the previous session range and directional bias.
-/// </summary>
 public class OtkatSysStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _longExtraTakeProfit;
+	private readonly StrategyParam<int> _channelPeriod;
+	private readonly StrategyParam<int> _emaPeriod;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private readonly StrategyParam<DataType> _entryCandleType;
-	private readonly StrategyParam<DataType> _dailyCandleType;
-	private readonly StrategyParam<decimal> _takeProfit;
-	private readonly StrategyParam<decimal> _stopLoss;
-	private readonly StrategyParam<decimal> _pullbackThreshold;
-	private readonly StrategyParam<decimal> _corridorThreshold;
-	private readonly StrategyParam<decimal> _toleranceThreshold;
-	private readonly StrategyParam<decimal> _tradeVolume;
+	private decimal _prevClose; private decimal _prevMid; private bool _hasPrev;
 
-	private decimal _dailyOpen;
-	private decimal _dailyClose;
-	private decimal _dailyHigh;
-	private decimal _dailyLow;
-	private bool _hasDailyData;
-	private DateTime? _lastTradeDate;
+	public int ChannelPeriod { get => _channelPeriod.Value; set => _channelPeriod.Value = value; }
+	public int EmaPeriod { get => _emaPeriod.Value; set => _emaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Entry candle type, defaults to one-minute candles.
-	/// </summary>
-	public DataType EntryCandleType
-	{
-		get => _entryCandleType.Value;
-		set => _entryCandleType.Value = value;
-	}
-
-	/// <summary>
-	/// Daily candle type used to gather previous session statistics.
-	/// </summary>
-	public DataType DailyCandleType
-	{
-		get => _dailyCandleType.Value;
-		set => _dailyCandleType.Value = value;
-	}
-
-	/// <summary>
-	/// Take profit distance in points.
-	/// </summary>
-	public decimal TakeProfit
-	{
-		get => _takeProfit.Value;
-		set => _takeProfit.Value = value;
-	}
-
-	/// <summary>
-	/// Extra take profit points added to long positions.
-	/// </summary>
-	public decimal LongExtraTakeProfit
-	{
-		get => _longExtraTakeProfit.Value;
-		set => _longExtraTakeProfit.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss distance in points.
-	/// </summary>
-	public decimal StopLoss
-	{
-		get => _stopLoss.Value;
-		set => _stopLoss.Value = value;
-	}
-
-	/// <summary>
-	/// Pullback trigger (Otkat) in points.
-	/// </summary>
-	public decimal PullbackThreshold
-	{
-		get => _pullbackThreshold.Value;
-		set => _pullbackThreshold.Value = value;
-	}
-
-	/// <summary>
-	/// Corridor trigger (KoridorOC) in points.
-	/// </summary>
-	public decimal CorridorThreshold
-	{
-		get => _corridorThreshold.Value;
-		set => _corridorThreshold.Value = value;
-	}
-
-	/// <summary>
-	/// Corridor tolerance (KoridorOt) in points.
-	/// </summary>
-	public decimal ToleranceThreshold
-	{
-		get => _toleranceThreshold.Value;
-		set => _toleranceThreshold.Value = value;
-	}
-
-	/// <summary>
-	/// Trade volume in lots.
-	/// </summary>
-	public decimal TradeVolume
-	{
-		get => _tradeVolume.Value;
-		set => _tradeVolume.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="OtkatSysStrategy"/>.
-	/// </summary>
 	public OtkatSysStrategy()
 	{
-		_entryCandleType = Param(nameof(EntryCandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Entry Candles", "Primary timeframe", "General");
-
-		_dailyCandleType = Param(nameof(DailyCandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Daily Candles", "Session statistics timeframe", "General");
-
-		_longExtraTakeProfit = Param(nameof(LongExtraTakeProfit), 3m)
-		.SetNotNegative()
-		.SetDisplay("Long Bonus Take Profit", "Additional points added to long take profit", "Risk")
-		
-		.SetOptimize(0m, 10m, 0.5m);
-
-		_takeProfit = Param(nameof(TakeProfit), 5m)
-			.SetGreaterThanZero()
-			.SetDisplay("Take Profit", "Target distance in points", "Risk")
-			
-			.SetOptimize(2m, 20m, 1m);
-
-		_stopLoss = Param(nameof(StopLoss), 51m)
-			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss", "Protection distance in points", "Risk")
-			
-			.SetOptimize(20m, 120m, 5m);
-
-		_pullbackThreshold = Param(nameof(PullbackThreshold), 20m)
-			.SetGreaterThanZero()
-			.SetDisplay("Pullback", "Otkat threshold", "Signals")
-			
-			.SetOptimize(10m, 40m, 1m);
-
-		_corridorThreshold = Param(nameof(CorridorThreshold), 18m)
-			.SetGreaterThanZero()
-			.SetDisplay("Corridor", "KoridorOC threshold", "Signals")
-			
-			.SetOptimize(10m, 30m, 1m);
-
-		_toleranceThreshold = Param(nameof(ToleranceThreshold), 3m)
-			.SetGreaterThanZero()
-			.SetDisplay("Tolerance", "KoridorOt tolerance", "Signals")
-			
-			.SetOptimize(1m, 10m, 1m);
-
-		_tradeVolume = Param(nameof(TradeVolume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Trade Volume", "Lots per entry", "Risk");
+		_channelPeriod = Param(nameof(ChannelPeriod), 24).SetDisplay("Channel Period", "Channel lookback", "Indicators");
+		_emaPeriod = Param(nameof(EmaPeriod), 20).SetDisplay("EMA Period", "EMA filter", "Indicators");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Candle timeframe", "General");
 	}
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return new[]
-		{
-			(Security, EntryCandleType),
-			(Security, DailyCandleType)
-		};
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_dailyOpen = 0m;
-		_dailyClose = 0m;
-		_dailyHigh = 0m;
-		_dailyLow = 0m;
-		_hasDailyData = false;
-		_lastTradeDate = null;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		StartProtection(null, null);
-
-		var entrySubscription = SubscribeCandles(EntryCandleType);
-		entrySubscription
-			.WhenCandlesFinished(ProcessEntryCandle)
-			.Start();
-
-		SubscribeCandles(DailyCandleType)
-			.WhenCandlesFinished(ProcessDailyCandle)
-			.Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, entrySubscription);
-			DrawOwnTrades(area);
-		}
+		_hasPrev = false;
+		var highest = new Highest { Length = ChannelPeriod };
+		var lowest = new Lowest { Length = ChannelPeriod };
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(highest, lowest, ProcessCandle).Start();
 	}
 
-	private void ProcessDailyCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal highest, decimal lowest)
 	{
-		if (candle.State != CandleStates.Finished)
-		return;
+		if (candle.State != CandleStates.Finished) return;
+		var close = candle.ClosePrice;
+		var mid = (highest + lowest) / 2;
+		if (!_hasPrev) { _prevClose = close; _prevMid = mid; _hasPrev = true; return; }
 
-		// Cache the last completed daily candle for the midnight decision.
-		_dailyOpen = candle.OpenPrice;
-		_dailyClose = candle.ClosePrice;
-		_dailyHigh = candle.HighPrice;
-		_dailyLow = candle.LowPrice;
-		_hasDailyData = true;
-	}
-
-	private void ProcessEntryCandle(ICandleMessage candle)
-	{
-		var openTime = candle.OpenTime;
-
-		if (Position != 0m && openTime.Hour == 22 && openTime.Minute >= 45)
-		{
-			CloseOpenPosition();
-			return;
-		}
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
-
-		if (!_hasDailyData || TradeVolume <= 0m)
-		return;
-
-		if (Position != 0m)
-		return;
-
-		if (openTime.Hour != 0 || openTime.Minute > 3)
-		return;
-
-		if (openTime.DayOfWeek is DayOfWeek.Monday or DayOfWeek.Friday)
-		return;
-
-		if (_lastTradeDate == openTime.Date)
-		return;
-
-		var step = Security?.PriceStep ?? 0m;
-		if (step <= 0m)
-		return;
-
-		var openMinusClose = _dailyOpen - _dailyClose;
-		var closeMinusOpen = -openMinusClose;
-		var closeMinusLow = _dailyClose - _dailyLow;
-		var highMinusClose = _dailyHigh - _dailyClose;
-
-		var corridor = CorridorThreshold * step;
-		var tolerance = ToleranceThreshold * step;
-		var pullback = PullbackThreshold * step;
-
-		var longTakeProfit = (TakeProfit + LongExtraTakeProfit) * step;
-		var shortTakeProfit = TakeProfit * step;
-		var stopDistance = StopLoss * step;
-
-		var allowLong = (openMinusClose > corridor && closeMinusLow < pullback - tolerance) ||
-		(closeMinusOpen > corridor && highMinusClose > pullback + tolerance);
-
-		var allowShort = (closeMinusOpen > corridor && highMinusClose < pullback - tolerance) ||
-		(openMinusClose > corridor && closeMinusLow > pullback + tolerance);
-
-		if (!allowLong && !allowShort)
-		return;
-
-		var entryPrice = candle.OpenPrice;
-
-		if (allowLong)
-		{
-			var resultingPosition = Position + TradeVolume;
-			BuyMarket(TradeVolume);
-
-			if (stopDistance > 0m)
-			SetStopLoss(stopDistance, entryPrice, resultingPosition);
-
-			if (TakeProfit > 0m)
-			SetTakeProfit(longTakeProfit, entryPrice, resultingPosition);
-
-			_lastTradeDate = openTime.Date;
-			return;
-		}
-
-		if (allowShort)
-		{
-			var resultingPosition = Position - TradeVolume;
-			SellMarket(TradeVolume);
-
-			if (stopDistance > 0m)
-			SetStopLoss(stopDistance, entryPrice, resultingPosition);
-
-			if (TakeProfit > 0m)
-			SetTakeProfit(shortTakeProfit, entryPrice, resultingPosition);
-
-			_lastTradeDate = openTime.Date;
-		}
-	}
-
-	private void CloseOpenPosition()
-	{
-		if (Position > 0m)
-		{
-			SellMarket(Position);
-		}
-		else if (Position < 0m)
-		{
-			BuyMarket(-Position);
-		}
+		if (_prevClose <= _prevMid && close > mid && Position <= 0)
+		{ if (Position < 0) BuyMarket(); BuyMarket(); }
+		else if (_prevClose >= _prevMid && close < mid && Position >= 0)
+		{ if (Position > 0) SellMarket(); SellMarket(); }
+		_prevClose = close; _prevMid = mid;
 	}
 }
-
