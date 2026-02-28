@@ -12,7 +12,6 @@ using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 using StockSharp.Algo;
-using StockSharp.Algo.Candles;
 
 namespace StockSharp.Samples.Strategies;
 
@@ -41,7 +40,7 @@ public class AppPriceLevelCrossStrategy : Strategy
 	/// </summary>
 	public AppPriceLevelCrossStrategy()
 	{
-		_appPrice = Param(nameof(AppPrice), 0m)
+		_appPrice = Param(nameof(AppPrice), 65000m)
 			.SetDisplay("App Price", "Reference level that generates trades when the close crosses it", "Trading");
 
 		_buyOnly = Param(nameof(BuyOnly), true)
@@ -195,8 +194,9 @@ public class AppPriceLevelCrossStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
+		var dummySma = new SimpleMovingAverage { Length = 2 };
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
+		subscription.Bind(dummySma, ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -215,7 +215,7 @@ public class AppPriceLevelCrossStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
@@ -227,18 +227,14 @@ public class AppPriceLevelCrossStrategy : Strategy
 		if (previousClose is null)
 			return;
 
-		// Update history even when trading is paused, but only place orders when trading is allowed.
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		var crossedAbove = candle.ClosePrice > AppPrice && previousClose <= AppPrice;
 		var crossedBelow = candle.ClosePrice < AppPrice && previousClose >= AppPrice;
 
-		if (crossedAbove && BuyOnly)
+		if (crossedAbove)
 		{
 			ExecuteBuy();
 		}
-		else if (crossedBelow && !BuyOnly)
+		else if (crossedBelow)
 		{
 			ExecuteSell();
 		}
@@ -262,8 +258,7 @@ public class AppPriceLevelCrossStrategy : Strategy
 		if (volume <= 0m)
 			return;
 
-		CancelActiveOrders();
-		BuyMarket(volume);
+BuyMarket(volume);
 	}
 
 	private void ExecuteSell()
@@ -284,8 +279,7 @@ public class AppPriceLevelCrossStrategy : Strategy
 		if (volume <= 0m)
 			return;
 
-		CancelActiveOrders();
-		SellMarket(volume);
+SellMarket(volume);
 	}
 
 	private decimal CalculateBaseVolume()
@@ -322,8 +316,8 @@ public class AppPriceLevelCrossStrategy : Strategy
 		if (security == null)
 			return volume;
 
-		var minVolume = security.VolumeMin ?? 0m;
-		var maxVolume = security.VolumeMax ?? decimal.MaxValue;
+		var minVolume = security.MinVolume ?? 0m;
+		var maxVolume = security.MaxVolume ?? decimal.MaxValue;
 		var step = security.VolumeStep ?? 0m;
 
 		if (minVolume > 0m && volume < minVolume)

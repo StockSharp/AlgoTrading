@@ -279,7 +279,7 @@ public class Starter2005Strategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(_ema, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -291,17 +291,13 @@ public class Starter2005Strategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal ma)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Calculate median price to replicate PRICE_MEDIAN from MetaTrader.
-		var medianPrice = (candle.HighPrice + candle.LowPrice) / 2m;
-		var maValue = _ema.Process(new DecimalIndicatorValue(_ema, medianPrice, candle.OpenTime));
-		var cciValue = _cci.Process(new DecimalIndicatorValue(_cci, candle.ClosePrice, candle.OpenTime));
-
-		var ma = maValue.ToDecimal();
+		// Process CCI manually
+		var cciValue = _cci.Process(candle);
 		var cci = cciValue.ToDecimal();
 
 		if (!_ema.IsFormed || !_cci.IsFormed)
@@ -312,12 +308,6 @@ public class Starter2005Strategy : Strategy
 
 		var laguerre = CalculateLaguerre(candle.ClosePrice);
 		if (!_laguerreFormed)
-		{
-			_previousMa = ma;
-			return;
-		}
-
-		if (!IsFormedAndOnlineAndAllowTrading())
 		{
 			_previousMa = ma;
 			return;
@@ -336,7 +326,7 @@ public class Starter2005Strategy : Strategy
 
 		if (Position == 0m && !HasActiveOrders())
 		{
-			if (maRising && laguerre <= entryTolerance && cci < -CciThreshold && AllowLong())
+			if (maRising && laguerre <= entryTolerance && cci < -CciThreshold)
 			{
 				var volume = CalculateOrderVolume(price);
 				if (volume > 0m)
@@ -348,7 +338,7 @@ public class Starter2005Strategy : Strategy
 					LogInfo($"Opening long. Laguerre={laguerre:F4}, CCI={cci:F2}, EMA rising.");
 				}
 			}
-			else if (maFalling && laguerre >= 1m - entryTolerance && cci > CciThreshold && AllowShort())
+			else if (maFalling && laguerre >= 1m - entryTolerance && cci > CciThreshold)
 			{
 				var volume = CalculateOrderVolume(price);
 				if (volume > 0m)
@@ -518,10 +508,6 @@ public class Starter2005Strategy : Strategy
 
 	private decimal GetDecisionPrice(ICandleMessage candle)
 	{
-		var last = Security?.LastPrice;
-		if (last is decimal lastPrice && lastPrice > 0m)
-			return lastPrice;
-
 		if (candle.ClosePrice > 0m)
 			return candle.ClosePrice;
 
@@ -532,7 +518,7 @@ public class Starter2005Strategy : Strategy
 	{
 		foreach (var order in Orders)
 		{
-			if (order.State.IsActive())
+			if (order.State == OrderStates.Active)
 				return true;
 		}
 

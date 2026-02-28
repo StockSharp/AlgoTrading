@@ -268,7 +268,7 @@ public class CorrectedAverageChannelStrategy : Strategy
 			_lastTradePrice = trade.Trade.Price;
 		}
 
-		_lastTradeSide = trade.Order.Direction;
+		_lastTradeSide = trade.Order.Side;
 	}
 
 	/// <inheritdoc />
@@ -278,7 +278,7 @@ public class CorrectedAverageChannelStrategy : Strategy
 
 		if (_previousPosition == 0m && Position != 0m)
 		{
-			var entryPrice = _lastTradePrice ?? _previousClose ?? Security?.LastPrice;
+			var entryPrice = _lastTradePrice ?? _previousClose;
 			if (entryPrice is decimal price)
 			{
 				if (Position > 0m && _lastTradeSide == Sides.Buy)

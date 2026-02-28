@@ -45,8 +45,10 @@ public class TwentyPipsOnceADayStrategy : Strategy
 	private readonly List<bool> _recentLosses = new(5);
 	private readonly HashSet<int> _allowedHours = new();
 
+	private SimpleMovingAverage _sma;
+
 	private DateTime? _lastTradeBarTime;
-	private DateTimeOffset? _entryTime;
+	private DateTime? _entryTime;
 	private decimal? _entryPrice;
 	private decimal? _stopPrice;
 	private decimal? _takeProfitPrice;
@@ -321,13 +323,15 @@ public class TwentyPipsOnceADayStrategy : Strategy
 		_pipSize = CalculatePipSize();
 		UpdateTradingHours();
 
+		_sma = new SimpleMovingAverage { Length = 2 };
+
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
+		subscription.Bind(_sma, ProcessCandle).Start();
 
 		StartProtection(null, null);
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 		return;
@@ -431,7 +435,7 @@ public class TwentyPipsOnceADayStrategy : Strategy
 			}
 		}
 
-		if (OrderMaxAgeSeconds > 0 && _entryTime is DateTimeOffset entryTime)
+		if (OrderMaxAgeSeconds > 0 && _entryTime is DateTime entryTime)
 		{
 			var age = candle.CloseTime - entryTime;
 			if (age.TotalSeconds >= OrderMaxAgeSeconds)
@@ -462,7 +466,7 @@ public class TwentyPipsOnceADayStrategy : Strategy
 		if (nextHour != TradingHour || !IsHourAllowed(nextHour))
 		return;
 
-		if (_lastTradeBarTime.HasValue && _lastTradeBarTime.Value == candle.CloseTime.DateTime)
+		if (_lastTradeBarTime.HasValue && _lastTradeBarTime.Value == candle.CloseTime)
 		return;
 
 		if (_closeHistory.Count < HoursToCheckTrend)
@@ -499,7 +503,7 @@ public class TwentyPipsOnceADayStrategy : Strategy
 		_entryPrice = entryPrice;
 		_entryTime = candle.CloseTime;
 		_entryVolume = volume;
-		_lastTradeBarTime = candle.CloseTime.DateTime;
+		_lastTradeBarTime = candle.CloseTime;
 
 		var stopDistance = StopLossPips * _pipSize;
 		_stopPrice = stopDistance > 0m
@@ -602,7 +606,7 @@ public class TwentyPipsOnceADayStrategy : Strategy
 		return MinVolume > 0m ? MinVolume : 0m;
 
 		var portfolio = Portfolio;
-		var balance = portfolio?.CurrentValue ?? portfolio?.CurrentBalance ?? 0m;
+		var balance = portfolio?.CurrentValue ?? portfolio?.BeginValue ?? 0m;
 		if (balance <= 0m)
 		return MinVolume > 0m ? MinVolume : 0m;
 
@@ -636,8 +640,8 @@ public class TwentyPipsOnceADayStrategy : Strategy
 		var security = Security;
 		if (security != null)
 		{
-			var min = security.VolumeMin ?? 0m;
-			var max = security.VolumeMax ?? decimal.MaxValue;
+			var min = security.MinVolume ?? 0m;
+			var max = security.MaxVolume ?? decimal.MaxValue;
 			var step = security.VolumeStep ?? 0m;
 
 			if (step > 0m)

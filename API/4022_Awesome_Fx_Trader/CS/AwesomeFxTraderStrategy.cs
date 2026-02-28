@@ -30,11 +30,11 @@ public class AwesomeFxTraderStrategy : Strategy
 	private EMA _fastEma;
 	private EMA _slowEma;
 	private WeightedMovingAverage _trendLwma;
-	private SimpleMovingAverage _trendSmoother;
 
 	private decimal _previousAo;
 	private bool _hasPreviousAo;
 	private bool _isAoIncreasing;
+	private decimal _previousLwma;
 
 	/// <summary>
 	/// Period for the fast EMA used in the oscillator.
@@ -110,7 +110,7 @@ public class AwesomeFxTraderStrategy : Strategy
 			
 			.SetOptimize(3, 10, 1);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Time-frame used for calculations", "General");
 	}
 
@@ -128,10 +128,10 @@ public class AwesomeFxTraderStrategy : Strategy
 		_fastEma = null;
 		_slowEma = null;
 		_trendLwma = null;
-		_trendSmoother = null;
 		_previousAo = 0m;
 		_hasPreviousAo = false;
 		_isAoIncreasing = false;
+		_previousLwma = 0m;
 	}
 
 	/// <inheritdoc />
@@ -142,40 +142,22 @@ public class AwesomeFxTraderStrategy : Strategy
 		_fastEma = new EMA { Length = FastEmaPeriod };
 		_slowEma = new EMA { Length = SlowEmaPeriod };
 		_trendLwma = new WeightedMovingAverage { Length = TrendLwmaPeriod };
-		_trendSmoother = new SMA { Length = TrendSmoothingPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
+		subscription.Bind(_fastEma, _slowEma, _trendLwma, ProcessCandle).Start();
 
 		var priceArea = CreateChartArea();
 		if (priceArea != null)
 		{
 			DrawCandles(priceArea, subscription);
 			DrawIndicator(priceArea, _trendLwma);
-			DrawIndicator(priceArea, _trendSmoother);
 			DrawOwnTrades(priceArea);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEma, decimal slowEma, decimal lwma)
 	{
 		if (candle.State != CandleStates.Finished)
-			return;
-
-		var fastValue = _fastEma!.Process(candle.OpenPrice);
-		var slowValue = _slowEma!.Process(candle.OpenPrice);
-		var lwmaValue = _trendLwma!.Process(candle.OpenPrice);
-
-		if (!fastValue.IsFinal || !slowValue.IsFinal || !lwmaValue.IsFinal)
-			return;
-
-		if (!fastValue.TryGetValue(out var fastEma) ||
-			!slowValue.TryGetValue(out var slowEma) ||
-			!lwmaValue.TryGetValue(out var lwma))
-			return;
-
-		var smoothingValue = _trendSmoother!.Process(lwma);
-		if (!smoothingValue.IsFinal || !smoothingValue.TryGetValue(out var smoothedLwma))
 			return;
 
 		var ao = fastEma - slowEma;
@@ -185,6 +167,7 @@ public class AwesomeFxTraderStrategy : Strategy
 			_previousAo = ao;
 			_hasPreviousAo = true;
 			_isAoIncreasing = ao >= 0m;
+			_previousLwma = lwma;
 			return;
 		}
 
@@ -193,16 +176,10 @@ public class AwesomeFxTraderStrategy : Strategy
 		else if (ao < _previousAo)
 			_isAoIncreasing = false;
 
-		var isTrendBullish = lwma > smoothedLwma;
-		var isTrendBearish = lwma < smoothedLwma;
+		var isTrendBullish = lwma > _previousLwma;
+		var isTrendBearish = lwma < _previousLwma;
 		var bullishSignal = _isAoIncreasing && ao > 0m && isTrendBullish;
 		var bearishSignal = !_isAoIncreasing && ao < 0m && isTrendBearish;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			_previousAo = ao;
-			return;
-		}
 
 		if (bullishSignal && Position <= 0)
 		{
@@ -211,7 +188,6 @@ public class AwesomeFxTraderStrategy : Strategy
 				volume = 1;
 
 			BuyMarket(volume);
-			LogInfo($"Bullish signal: AO={ao:F5} LWMA={lwma:F5} smoother={smoothedLwma:F5}");
 		}
 		else if (bearishSignal && Position >= 0)
 		{
@@ -220,9 +196,9 @@ public class AwesomeFxTraderStrategy : Strategy
 				volume = 1;
 
 			SellMarket(volume);
-			LogInfo($"Bearish signal: AO={ao:F5} LWMA={lwma:F5} smoother={smoothedLwma:F5}");
 		}
 
 		_previousAo = ao;
+		_previousLwma = lwma;
 	}
 }

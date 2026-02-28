@@ -575,11 +575,11 @@ public RabbitM2RegimeSwingStrategy()
 	volume = steps > 0m ? steps * step.Value : step.Value;
 	}
 
-	var min = Security.VolumeMin;
+	var min = Security.MinVolume;
 	if (min.HasValue && min.Value > 0m && volume < min.Value)
 	volume = min.Value;
 
-	var max = Security.VolumeMax;
+	var max = Security.MaxVolume;
 	if (max.HasValue && max.Value > 0m && volume > max.Value)
 	volume = max.Value;
 

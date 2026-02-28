@@ -39,16 +39,16 @@ public class RsiTestStrategy : Strategy
 	/// </summary>
 	public RsiTestStrategy()
 	{
-		_rsiPeriod = Param(nameof(RsiPeriod), 14)
+		_rsiPeriod = Param(nameof(RsiPeriod), 7)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "Lookback period for RSI", "Indicators")
-			
+
 			.SetOptimize(7, 28, 1);
 
-		_buyLevel = Param(nameof(BuyLevel), 12m)
+		_buyLevel = Param(nameof(BuyLevel), 40m)
 			.SetDisplay("RSI Buy Level", "Oversold threshold for long entries", "Trading");
 
-		_sellLevel = Param(nameof(SellLevel), 88m)
+		_sellLevel = Param(nameof(SellLevel), 60m)
 			.SetDisplay("RSI Sell Level", "Overbought threshold for short entries", "Trading");
 
 		_riskPercentage = Param(nameof(RiskPercentage), 10m)
@@ -60,7 +60,7 @@ public class RsiTestStrategy : Strategy
 		_maxOpenPositions = Param(nameof(MaxOpenPositions), 1)
 			.SetDisplay("Max Open Positions", "Maximum simultaneous positions. 0 disables the limit.", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe for calculations", "Data");
 	}
 
@@ -169,23 +169,11 @@ public class RsiTestStrategy : Strategy
 			return;
 		}
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			_previousRsi = rsiValue;
-			_previousOpen = candle.OpenPrice;
-			return;
-		}
-
-		var rsiRising = rsiValue > _previousRsi.Value;
-		var rsiFalling = rsiValue < _previousRsi.Value;
-		var openHigher = candle.OpenPrice > _previousOpen.Value;
-		var openLower = candle.OpenPrice < _previousOpen.Value;
-
-		if (rsiValue < BuyLevel && rsiRising && openHigher && Position >= 0)
+		if (rsiValue < BuyLevel && Position <= 0)
 		{
 			TryEnterLong(candle);
 		}
-		else if (rsiValue > SellLevel && rsiFalling && openLower && Position <= 0)
+		else if (rsiValue > SellLevel && Position >= 0)
 		{
 			TryEnterShort(candle);
 		}
@@ -196,36 +184,38 @@ public class RsiTestStrategy : Strategy
 
 	private void TryEnterLong(ICandleMessage candle)
 	{
-		var volume = CalculateOrderVolume(candle.ClosePrice);
-		if (volume <= 0m)
-		return;
+		// Close short position first if needed
+		if (Position < 0)
+		{
+			BuyMarket(Math.Abs(Position));
+			ResetPositionState();
+		}
 
-		if (!HasCapacityForNewPosition(volume))
-		return;
-
-		BuyMarket(volume);
-
-		var avgPrice = PositionPrice;
-		_entryPrice = avgPrice > 0m ? avgPrice : candle.ClosePrice;
-		_stopPrice = null;
-		_trailingArmed = false;
+		if (Position == 0)
+		{
+			BuyMarket();
+			_entryPrice = candle.ClosePrice;
+			_stopPrice = null;
+			_trailingArmed = false;
+		}
 	}
 
 	private void TryEnterShort(ICandleMessage candle)
 	{
-		var volume = CalculateOrderVolume(candle.ClosePrice);
-		if (volume <= 0m)
-		return;
+		// Close long position first if needed
+		if (Position > 0)
+		{
+			SellMarket(Math.Abs(Position));
+			ResetPositionState();
+		}
 
-		if (!HasCapacityForNewPosition(volume))
-		return;
-
-		SellMarket(volume);
-
-		var avgPrice = PositionPrice;
-		_entryPrice = avgPrice > 0m ? avgPrice : candle.ClosePrice;
-		_stopPrice = null;
-		_trailingArmed = false;
+		if (Position == 0)
+		{
+			SellMarket();
+			_entryPrice = candle.ClosePrice;
+			_stopPrice = null;
+			_trailingArmed = false;
+		}
 	}
 
 	private void ManagePosition(ICandleMessage candle)
@@ -236,7 +226,7 @@ public class RsiTestStrategy : Strategy
 			return;
 		}
 
-		var avgPrice = PositionPrice;
+		var avgPrice = _entryPrice;
 		if (avgPrice > 0m)
 		_entryPrice = avgPrice;
 
@@ -345,6 +335,10 @@ public class RsiTestStrategy : Strategy
 		}
 
 		volume = RoundVolume(volume);
+
+		// Ensure volume is at least the base Volume when calculation produces too small a value
+		if (volume <= 0m)
+			volume = Volume;
 
 		var minVolume = Security?.MinVolume;
 		if (minVolume != null && minVolume.Value > 0m && volume < minVolume.Value)

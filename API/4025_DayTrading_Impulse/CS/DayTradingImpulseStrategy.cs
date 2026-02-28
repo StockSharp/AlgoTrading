@@ -340,9 +340,9 @@ public class DayTradingImpulseStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = LotSize;
 		_pointSize = CalculatePointSize();
@@ -364,12 +364,9 @@ public class DayTradingImpulseStrategy : Strategy
 			SignalMa = { Length = MacdSignalPeriod },
 		};
 
-		_stochastic = new StochasticOscillator
-		{
-			KPeriod = StochasticLength,
-			D = { Length = StochasticSignal },
-			Slowing = StochasticSlow,
-		};
+		_stochastic = new StochasticOscillator();
+		_stochastic.K.Length = StochasticLength;
+		_stochastic.D.Length = StochasticSignal;
 
 		_momentum = new Momentum
 		{
@@ -565,23 +562,11 @@ public class DayTradingImpulseStrategy : Strategy
 
 	private decimal GetBidPrice(ICandleMessage candle)
 	{
-		if (Security?.BestBid?.Price is decimal bid && bid > 0m)
-			return bid;
-
-		if (Security?.LastPrice is decimal last && last > 0m)
-			return last;
-
 		return candle.ClosePrice;
 	}
 
 	private decimal GetAskPrice(ICandleMessage candle)
 	{
-		if (Security?.BestAsk?.Price is decimal ask && ask > 0m)
-			return ask;
-
-		if (Security?.LastPrice is decimal last && last > 0m)
-			return last;
-
 		return candle.ClosePrice;
 	}
 
@@ -593,13 +578,13 @@ public class DayTradingImpulseStrategy : Strategy
 		if (_pointSize > 0m)
 			return points * _pointSize;
 
-		var step = Security?.Step ?? Security?.PriceStep ?? 0m;
+		var step = Security?.PriceStep ?? 0m;
 		return step > 0m ? points * step : points;
 	}
 
 	private decimal CalculatePointSize()
 	{
-		var step = Security?.Step ?? Security?.PriceStep ?? 0m;
+		var step = Security?.PriceStep ?? 0m;
 		return step > 0m ? step : 0.0001m;
 	}
 }

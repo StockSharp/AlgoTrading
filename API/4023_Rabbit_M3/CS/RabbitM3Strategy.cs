@@ -561,30 +561,4 @@ public class RabbitM3Strategy : Strategy
 		_shortTakeProfitPrice = 0m;
 	}
 
-	/// <inheritdoc />
-	protected override void OnPnLChanged(decimal diff)
-	{
-		base.OnPnLChanged(diff);
-
-		if (diff <= 0m)
-			return;
-
-		if (VolumeIncrement <= 0m)
-			return;
-
-		if (_currentBigWinTarget == decimal.MaxValue)
-			return;
-
-		if (Position != 0m)
-			return;
-
-		if (diff > _currentBigWinTarget)
-		{
-			var previousTarget = _currentBigWinTarget;
-			_currentVolume += VolumeIncrement;
-			Volume = _currentVolume;
-			_currentBigWinTarget *= 2m;
-			LogInfo($"Increasing volume to {_currentVolume} after profit {diff:F5} exceeded threshold {previousTarget:F5}.");
-		}
-	}
 }
