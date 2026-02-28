@@ -1,328 +1,76 @@
-namespace StockSharp.Samples.Strategies;
-
 using System;
-using System.Linq;
-using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo.Candles;
+namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Recreates the MO bidirectional expert advisor by opening a hedged pair on each completed candle.
+/// Mo Bidir: EMA crossover with ATR stops.
 /// </summary>
 public class MoBidirStrategy : Strategy
 {
-	private sealed class HedgeLeg
-	{
-		public bool IsLong;
-		public decimal TargetVolume;
-		public Order EntryOrder;
-		public decimal FilledVolume;
-		public decimal EntryCost;
-		public decimal EntryPrice;
-		public decimal? StopPrice;
-		public decimal? TakeProfitPrice;
-
-		public bool IsFilled(decimal tolerance)
-		{
-			return FilledVolume >= TargetVolume - tolerance && FilledVolume > 0m;
-		}
-	}
-
-	private readonly List<HedgeLeg> _legs = new();
-
-	private readonly StrategyParam<decimal> _tradeVolume;
-	private readonly StrategyParam<int> _stopLossPoints;
-	private readonly StrategyParam<int> _takeProfitPoints;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<decimal> _volumeTolerance;
+	private readonly StrategyParam<int> _fastEmaLength;
+	private readonly StrategyParam<int> _slowEmaLength;
+	private readonly StrategyParam<int> _atrLength;
 
-	private decimal _pointSize;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private decimal _entryPrice;
 
-	/// <summary>
-	/// Initializes the strategy parameters.
-	/// </summary>
 	public MoBidirStrategy()
 	{
-		_tradeVolume = Param(nameof(TradeVolume), 1m)
-			.SetDisplay("Trade Volume", "Lot size used for each hedge leg.", "Trading")
-			.SetGreaterThanZero();
-
-		_stopLossPoints = Param(nameof(StopLossPoints), 80)
-			.SetDisplay("Stop Loss (points)", "Distance from the entry price to trigger an exit.", "Risk")
-			.SetNotNegative();
-
-		_takeProfitPoints = Param(nameof(TakeProfitPoints), 750)
-			.SetDisplay("Take Profit (points)", "Target distance from the entry price.", "Risk")
-			.SetNotNegative();
-
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Timeframe used to detect completed bars.", "Data");
-
-		_volumeTolerance = Param(nameof(VolumeTolerance), 0.00000001m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume Tolerance", "Precision threshold used to consider hedge legs filled.", "Execution");
+			.SetDisplay("Candle Type", "Timeframe.", "General");
+		_fastEmaLength = Param(nameof(FastEmaLength), 10)
+			.SetDisplay("Fast EMA", "Fast EMA period.", "Indicators");
+		_slowEmaLength = Param(nameof(SlowEmaLength), 25)
+			.SetDisplay("Slow EMA", "Slow EMA period.", "Indicators");
+		_atrLength = Param(nameof(AtrLength), 14)
+			.SetDisplay("ATR Length", "ATR period.", "Indicators");
 	}
 
-	/// <summary>
-	/// Order size applied to both sides of the hedge.
-	/// </summary>
-	public decimal TradeVolume
-	{
-		get => _tradeVolume.Value;
-		set => _tradeVolume.Value = value;
-	}
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int FastEmaLength { get => _fastEmaLength.Value; set => _fastEmaLength.Value = value; }
+	public int SlowEmaLength { get => _slowEmaLength.Value; set => _slowEmaLength.Value = value; }
+	public int AtrLength { get => _atrLength.Value; set => _atrLength.Value = value; }
 
-	/// <summary>
-	/// Stop-loss distance measured in instrument points.
-	/// </summary>
-	public int StopLossPoints
-	{
-		get => _stopLossPoints.Value;
-		set => _stopLossPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Take-profit distance measured in instrument points.
-	/// </summary>
-	public int TakeProfitPoints
-	{
-		get => _takeProfitPoints.Value;
-		set => _takeProfitPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used to detect new bars.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Precision threshold applied when checking whether a hedge leg is fully filled.
-	/// </summary>
-	public decimal VolumeTolerance
-	{
-		get => _volumeTolerance.Value;
-		set => _volumeTolerance.Value = value;
-	}
-
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		yield return (Security, CandleType);
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_legs.Clear();
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_pointSize = ResolvePointSize();
-
+		_prevFast = 0; _prevSlow = 0; _entryPrice = 0;
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaLength };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaLength };
+		var atr = new AverageTrueRange { Length = AtrLength };
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(ProcessCandle)
-			.Start();
-
+		subscription.Bind(fastEma, slowEma, atr, ProcessCandle).Start();
 		var area = CreateChartArea();
-		if (area != null)
+		if (area != null) { DrawCandles(area, subscription); DrawIndicator(area, fastEma); DrawIndicator(area, slowEma); DrawOwnTrades(area); }
+	}
+
+	private void ProcessCandle(ICandleMessage candle, decimal fastVal, decimal slowVal, decimal atrVal)
+	{
+		if (candle.State != CandleStates.Finished) return;
+		if (_prevFast == 0 || _prevSlow == 0 || atrVal <= 0) { _prevFast = fastVal; _prevSlow = slowVal; return; }
+		var close = candle.ClosePrice;
+
+		if (Position > 0)
 		{
-			DrawCandles(area, subscription);
-			DrawOwnTrades(area);
+			if ((fastVal < slowVal && _prevFast >= _prevSlow) || close <= _entryPrice - atrVal * 2m) { SellMarket(); _entryPrice = 0; }
 		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		UpdateProtection(candle);
-
-		if (_legs.Count > 0)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var volume = TradeVolume;
-		if (volume <= 0m)
-			return;
-
-		Volume = volume;
-
-		OpenHedgePair(volume);
-	}
-
-	private void UpdateProtection(ICandleMessage candle)
-	{
-		if (_legs.Count == 0)
-			return;
-
-		for (var i = _legs.Count - 1; i >= 0; i--)
+		else if (Position < 0)
 		{
-			var leg = _legs[i];
-
-			if (!leg.IsFilled(VolumeTolerance))
-				continue;
-
-			var stopTriggered = false;
-			var takeTriggered = false;
-
-			if (leg.IsLong)
-			{
-				if (leg.StopPrice is decimal stop && candle.LowPrice <= stop)
-				{
-					stopTriggered = true;
-				}
-				else if (leg.TakeProfitPrice is decimal take && candle.HighPrice >= take)
-				{
-					takeTriggered = true;
-				}
-			}
-			else
-			{
-				if (leg.StopPrice is decimal stop && candle.HighPrice >= stop)
-				{
-					stopTriggered = true;
-				}
-				else if (leg.TakeProfitPrice is decimal take && candle.LowPrice <= take)
-				{
-					takeTriggered = true;
-				}
-			}
-
-			if (!stopTriggered && !takeTriggered)
-				continue;
-
-			CloseLeg(leg);
-			_legs.RemoveAt(i);
-		}
-	}
-
-	private void OpenHedgePair(decimal volume)
-	{
-		var longOrder = BuyMarket(volume);
-		if (longOrder != null)
-		{
-			// Track the long leg until its protective exits are hit.
-			_legs.Add(new HedgeLeg
-			{
-				IsLong = true,
-				TargetVolume = volume,
-				EntryOrder = longOrder,
-			});
+			if ((fastVal > slowVal && _prevFast <= _prevSlow) || close >= _entryPrice + atrVal * 2m) { BuyMarket(); _entryPrice = 0; }
 		}
 
-		var shortOrder = SellMarket(volume);
-		if (shortOrder != null)
+		if (Position == 0)
 		{
-			// Track the short leg until the stop or target is triggered.
-			_legs.Add(new HedgeLeg
-			{
-				IsLong = false,
-				TargetVolume = volume,
-				EntryOrder = shortOrder,
-			});
+			if (fastVal > slowVal && _prevFast <= _prevSlow) { _entryPrice = close; BuyMarket(); }
+			else if (fastVal < slowVal && _prevFast >= _prevSlow) { _entryPrice = close; SellMarket(); }
 		}
-	}
-
-	private void CloseLeg(HedgeLeg leg)
-	{
-		var volume = leg.FilledVolume > 0m ? leg.FilledVolume : leg.TargetVolume;
-		if (volume <= 0m)
-			return;
-
-		if (leg.IsLong)
-		{
-			// Exit the long leg with a market sell order.
-			SellMarket(volume);
-		}
-		else
-		{
-			// Exit the short leg with a market buy order.
-			BuyMarket(volume);
-		}
-	}
-
-	/// <inheritdoc />
-	protected override void OnOwnTradeReceived(MyTrade trade)
-	{
-		base.OnOwnTradeReceived(trade);
-
-		var order = trade.Order;
-		if (order == null)
-			return;
-
-		foreach (var leg in _legs)
-		{
-			if (order != leg.EntryOrder)
-				continue;
-
-			// Aggregate fills to compute the average entry price.
-			leg.FilledVolume += trade.Volume;
-			leg.EntryCost += trade.Price * trade.Volume;
-
-			if (leg.FilledVolume > 0m)
-				leg.EntryPrice = leg.EntryCost / leg.FilledVolume;
-
-			if (leg.IsFilled(VolumeTolerance))
-			{
-				leg.EntryOrder = null;
-				leg.StopPrice = CalculateStopPrice(leg);
-				leg.TakeProfitPrice = CalculateTakeProfitPrice(leg);
-			}
-
-			break;
-		}
-	}
-
-	private decimal? CalculateStopPrice(HedgeLeg leg)
-	{
-		if (StopLossPoints <= 0 || _pointSize <= 0m)
-			return null;
-
-		var offset = StopLossPoints * _pointSize;
-		return leg.IsLong ? leg.EntryPrice - offset : leg.EntryPrice + offset;
-	}
-
-	private decimal? CalculateTakeProfitPrice(HedgeLeg leg)
-	{
-		if (TakeProfitPoints <= 0 || _pointSize <= 0m)
-			return null;
-
-		var offset = TakeProfitPoints * _pointSize;
-		return leg.IsLong ? leg.EntryPrice + offset : leg.EntryPrice - offset;
-	}
-
-	private decimal ResolvePointSize()
-	{
-		var security = Security;
-		if (security?.PriceStep is decimal step && step > 0m)
-			return step;
-
-		if (security?.MinPriceStep is decimal minStep && minStep > 0m)
-			return minStep;
-
-		return 0m;
+		_prevFast = fastVal; _prevSlow = slowVal;
 	}
 }
