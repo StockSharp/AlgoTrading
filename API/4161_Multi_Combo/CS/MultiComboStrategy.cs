@@ -1,10 +1,4 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,1365 +8,152 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Multi-indicator combo strategy converted from the MQL4 Multi-Strategy iFSF EA.
-/// Combines MA, RSI, MACD, Stochastic, SAR, trend, and Bollinger filters.
+/// Multi Combo: Dual EMA crossover with RSI filter and ATR stops.
 /// </summary>
 public class MultiComboStrategy : Strategy
 {
-	private readonly StrategyParam<DataType> _primaryCandleType;
-	private readonly StrategyParam<int> _comboFactor;
+	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _fastEmaLength;
+	private readonly StrategyParam<int> _slowEmaLength;
+	private readonly StrategyParam<int> _rsiLength;
+	private readonly StrategyParam<int> _atrLength;
 
-	private readonly StrategyParam<bool> _useMa;
-	private readonly StrategyParam<bool> _useLastMaSignal;
-	private readonly StrategyParam<int> _maMode;
-	private readonly StrategyParam<int> _fastMaLength;
-	private readonly StrategyParam<int> _midMaLength;
-	private readonly StrategyParam<int> _slowMaLength;
-	private readonly StrategyParam<MaMethods> _fastMaMethod;
-	private readonly StrategyParam<MaMethods> _midMaMethod;
-	private readonly StrategyParam<MaMethods> _slowMaMethod;
-	private readonly StrategyParam<DataType> _maCandleType;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private decimal _entryPrice;
 
-	private readonly StrategyParam<bool> _useRsi;
-	private readonly StrategyParam<bool> _useLastRsiSignal;
-	private readonly StrategyParam<int> _rsiMode;
-	private readonly StrategyParam<int> _rsiPeriod;
-	private readonly StrategyParam<decimal> _rsiBuyLevel;
-	private readonly StrategyParam<decimal> _rsiSellLevel;
-	private readonly StrategyParam<decimal> _rsiBuyZone;
-	private readonly StrategyParam<decimal> _rsiSellZone;
-	private readonly StrategyParam<DataType> _rsiCandleType;
-
-	private readonly StrategyParam<bool> _useMacd;
-	private readonly StrategyParam<bool> _useLastMacdSignal;
-	private readonly StrategyParam<int> _macdMode;
-	private readonly StrategyParam<int> _macdFastLength;
-	private readonly StrategyParam<int> _macdSlowLength;
-	private readonly StrategyParam<int> _macdSignalLength;
-	private readonly StrategyParam<DataType> _macdCandleType;
-
-	private readonly StrategyParam<bool> _useStochastic;
-	private readonly StrategyParam<bool> _useLastStochasticSignal;
-	private readonly StrategyParam<int> _stochasticLength;
-	private readonly StrategyParam<int> _stochasticKLength;
-	private readonly StrategyParam<int> _stochasticDLength;
-	private readonly StrategyParam<int> _stochasticSlowing;
-	private readonly StrategyParam<bool> _stochasticUseThresholds;
-	private readonly StrategyParam<int> _stochasticUpper;
-	private readonly StrategyParam<int> _stochasticLower;
-	private readonly StrategyParam<DataType> _stochasticCandleType;
-
-	private readonly StrategyParam<bool> _useSar;
-	private readonly StrategyParam<bool> _useLastSarSignal;
-	private readonly StrategyParam<decimal> _sarStep;
-	private readonly StrategyParam<decimal> _sarMax;
-	private readonly StrategyParam<DataType> _sarCandleType;
-
-	private readonly StrategyParam<bool> _useTrendDetection;
-	private readonly StrategyParam<int> _adxPeriod;
-	private readonly StrategyParam<decimal> _adxLevel;
-	private readonly StrategyParam<DataType> _trendCandleType;
-
-	private readonly StrategyParam<bool> _useBollingerFilter;
-	private readonly StrategyParam<int> _bollingerPeriod;
-	private readonly StrategyParam<decimal> _bollingerDeviationMedium;
-	private readonly StrategyParam<decimal> _bollingerDeviationWide;
-	private readonly StrategyParam<int> _rangeParameter;
-	private readonly StrategyParam<DataType> _bollingerCandleType;
-
-	private readonly StrategyParam<bool> _useNoiseFilter;
-	private readonly StrategyParam<int> _noiseAtrLength;
-	private readonly StrategyParam<decimal> _noiseThreshold;
-	private readonly StrategyParam<DataType> _noiseCandleType;
-
-	private readonly StrategyParam<bool> _useAutoClose;
-	private readonly StrategyParam<bool> _allowOppositeAfterClose;
-	private readonly StrategyParam<decimal> _stopLossOffset;
-	private readonly StrategyParam<decimal> _takeProfitOffset;
-	private readonly StrategyParam<bool> _useTrailingStop;
-
-	private DecimalLengthIndicator _fastMa;
-	private DecimalLengthIndicator _midMa;
-	private DecimalLengthIndicator _slowMa;
-	private RelativeStrengthIndex _rsi;
-	private MovingAverageConvergenceDivergence _macd;
-	private StochasticOscillator _stochastic;
-	private ParabolicSar _sar;
-	private AverageDirectionalIndex _adx;
-	private BollingerBands _bollingerMedium;
-	private BollingerBands _bollingerWide;
-	private AverageTrueRange _noiseAtr;
-
-	private decimal? _fastMaPrev;
-	private decimal? _fastMaCurrent;
-	private decimal? _midMaPrev;
-	private decimal? _midMaCurrent;
-	private decimal? _slowMaPrev;
-	private decimal? _slowMaCurrent;
-
-	private decimal? _rsiPrev;
-	private decimal? _rsiCurrent;
-
-	private decimal? _macdMainPrev;
-	private decimal? _macdMain;
-	private decimal? _macdSignalPrev;
-	private decimal? _macdSignal;
-
-	private decimal? _stochasticMain;
-	private decimal? _stochasticSignal;
-
-	private decimal? _sarValue;
-	private decimal? _sarClose;
-
-	private decimal? _adxValue;
-	private decimal? _adxPlus;
-	private decimal? _adxMinus;
-
-	private decimal? _bollingerMediumUpper;
-	private decimal? _bollingerMediumLower;
-	private decimal? _bollingerWideUpper;
-	private decimal? _bollingerWideLower;
-	private ICandleMessage _lastBollingerCandle;
-
-	private decimal? _noiseAtrValue;
-
-	private readonly Queue<decimal> _rsiHistory = new();
-
-	private SignalDirections _lastMaSignal;
-	private SignalDirections _lastRsiSignal;
-	private SignalDirections _lastMacdSignal;
-	private SignalDirections _lastStochasticSignal;
-	private SignalDirections _lastSarSignal;
-
-	private DateTimeOffset _lastTradeBarTime;
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="MultiComboStrategy"/>.
-	/// </summary>
 	public MultiComboStrategy()
 	{
-		_primaryCandleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
-		.SetDisplay("Primary Candle Type", "Main candle series for entries", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Timeframe.", "General");
 
-		_comboFactor = Param(nameof(ComboFactor), 1)
-		.SetDisplay("Combo Factor", "Combination logic between trend and filters", "General")
-		.SetRange(1, 3);
+		_fastEmaLength = Param(nameof(FastEmaLength), 9)
+			.SetDisplay("Fast EMA", "Fast EMA period.", "Indicators");
 
-		_useMa = Param(nameof(UseMa), true)
-		.SetDisplay("Use MA", "Enable moving average signals", "Moving Average");
-		_useLastMaSignal = Param(nameof(UseLastMaSignal), true)
-		.SetDisplay("Remember Last MA Signal", "Keep previous MA signal until it flips", "Moving Average");
-		_maMode = Param(nameof(MaMode), 5)
-		.SetDisplay("MA Mode", "Select MA crossover mode (1-5)", "Moving Average")
-		.SetRange(1, 5);
-		_fastMaLength = Param(nameof(FastMaLength), 5)
-		.SetDisplay("Fast MA Length", "Period of the fast moving average", "Moving Average")
-		.SetGreaterThanZero();
-		_midMaLength = Param(nameof(MidMaLength), 13)
-		.SetDisplay("Mid MA Length", "Period of the mid moving average", "Moving Average")
-		.SetGreaterThanZero();
-		_slowMaLength = Param(nameof(SlowMaLength), 38)
-		.SetDisplay("Slow MA Length", "Period of the slow moving average", "Moving Average")
-		.SetGreaterThanZero();
-		_fastMaMethod = Param(nameof(FastMaMethod), MaMethods.Exponential)
-		.SetDisplay("Fast MA Method", "Type of the fast moving average", "Moving Average");
-		_midMaMethod = Param(nameof(MidMaMethod), MaMethods.Exponential)
-		.SetDisplay("Mid MA Method", "Type of the mid moving average", "Moving Average");
-		_slowMaMethod = Param(nameof(SlowMaMethod), MaMethods.Exponential)
-		.SetDisplay("Slow MA Method", "Type of the slow moving average", "Moving Average");
-		_maCandleType = Param(nameof(MaCandleType), TimeSpan.FromMinutes(15).TimeFrame())
-		.SetDisplay("MA Candle Type", "Candle type for moving averages", "Moving Average");
+		_slowEmaLength = Param(nameof(SlowEmaLength), 21)
+			.SetDisplay("Slow EMA", "Slow EMA period.", "Indicators");
 
-		_useRsi = Param(nameof(UseRsi), true)
-		.SetDisplay("Use RSI", "Enable RSI signals", "RSI");
-		_useLastRsiSignal = Param(nameof(UseLastRsiSignal), true)
-		.SetDisplay("Remember Last RSI Signal", "Keep previous RSI signal until new one", "RSI");
-		_rsiMode = Param(nameof(RsiMode), 1)
-		.SetDisplay("RSI Mode", "RSI logic (1-4)", "RSI")
-		.SetRange(1, 4);
-		_rsiPeriod = Param(nameof(RsiPeriod), 14)
-		.SetDisplay("RSI Period", "RSI calculation length", "RSI")
-		.SetGreaterThanZero();
-		_rsiBuyLevel = Param(nameof(RsiBuyLevel), 12m)
-		.SetDisplay("RSI Buy Level", "Over sold threshold", "RSI");
-		_rsiSellLevel = Param(nameof(RsiSellLevel), 88m)
-		.SetDisplay("RSI Sell Level", "Over bought threshold", "RSI");
-		_rsiBuyZone = Param(nameof(RsiBuyZone), 55m)
-		.SetDisplay("RSI Buy Zone", "Zone lower bound for mode 4", "RSI");
-		_rsiSellZone = Param(nameof(RsiSellZone), 45m)
-		.SetDisplay("RSI Sell Zone", "Zone upper bound for mode 4", "RSI");
-		_rsiCandleType = Param(nameof(RsiCandleType), TimeSpan.FromMinutes(15).TimeFrame())
-		.SetDisplay("RSI Candle Type", "Candle type for RSI", "RSI");
+		_rsiLength = Param(nameof(RsiLength), 14)
+			.SetDisplay("RSI Length", "RSI period.", "Indicators");
 
-		_useMacd = Param(nameof(UseMacd), true)
-		.SetDisplay("Use MACD", "Enable MACD signals", "MACD");
-		_useLastMacdSignal = Param(nameof(UseLastMacdSignal), true)
-		.SetDisplay("Remember Last MACD Signal", "Keep previous MACD signal", "MACD");
-		_macdMode = Param(nameof(MacdMode), 2)
-		.SetDisplay("MACD Mode", "MACD logic (1-4)", "MACD")
-		.SetRange(1, 4);
-		_macdFastLength = Param(nameof(MacdFastLength), 12)
-		.SetDisplay("MACD Fast Length", "MACD fast EMA length", "MACD")
-		.SetGreaterThanZero();
-		_macdSlowLength = Param(nameof(MacdSlowLength), 24)
-		.SetDisplay("MACD Slow Length", "MACD slow EMA length", "MACD")
-		.SetGreaterThanZero();
-		_macdSignalLength = Param(nameof(MacdSignalLength), 9)
-		.SetDisplay("MACD Signal Length", "MACD signal EMA length", "MACD")
-		.SetGreaterThanZero();
-		_macdCandleType = Param(nameof(MacdCandleType), TimeSpan.FromMinutes(15).TimeFrame())
-		.SetDisplay("MACD Candle Type", "Candle type for MACD", "MACD");
-
-		_useStochastic = Param(nameof(UseStochastic), true)
-		.SetDisplay("Use Stochastic", "Enable stochastic oscillator", "Stochastic");
-		_useLastStochasticSignal = Param(nameof(UseLastStochasticSignal), true)
-		.SetDisplay("Remember Last Stochastic Signal", "Keep previous stochastic direction", "Stochastic");
-		_stochasticLength = Param(nameof(StochasticLength), 5)
-		.SetDisplay("%K Length", "Stochastic %K length", "Stochastic")
-		.SetGreaterThanZero();
-		_stochasticKLength = Param(nameof(StochasticKLength), 5)
-		.SetDisplay("%K Smoothing", "Fast smoothing for %K", "Stochastic")
-		.SetGreaterThanZero();
-		_stochasticDLength = Param(nameof(StochasticDLength), 3)
-		.SetDisplay("%D Length", "Stochastic %D length", "Stochastic")
-		.SetGreaterThanZero();
-		_stochasticSlowing = Param(nameof(StochasticSlowing), 3)
-		.SetDisplay("Slowing", "Stochastic slowing", "Stochastic")
-		.SetGreaterThanZero();
-		_stochasticUseThresholds = Param(nameof(StochasticUseThresholds), false)
-		.SetDisplay("Use Thresholds", "Require %K to move beyond high/low levels", "Stochastic");
-		_stochasticUpper = Param(nameof(StochasticUpper), 80)
-		.SetDisplay("Stochastic Upper", "Upper threshold", "Stochastic");
-		_stochasticLower = Param(nameof(StochasticLower), 20)
-		.SetDisplay("Stochastic Lower", "Lower threshold", "Stochastic");
-		_stochasticCandleType = Param(nameof(StochasticCandleType), TimeSpan.FromMinutes(15).TimeFrame())
-		.SetDisplay("Stochastic Candle Type", "Candle type for stochastic", "Stochastic");
-
-		_useSar = Param(nameof(UseSar), false)
-		.SetDisplay("Use SAR", "Enable Parabolic SAR filter", "SAR");
-		_useLastSarSignal = Param(nameof(UseLastSarSignal), true)
-		.SetDisplay("Remember Last SAR Signal", "Keep previous SAR direction", "SAR");
-		_sarStep = Param(nameof(SarStep), 0.02m)
-		.SetDisplay("SAR Step", "Acceleration factor step", "SAR");
-		_sarMax = Param(nameof(SarMax), 0.2m)
-		.SetDisplay("SAR Max", "Maximum acceleration factor", "SAR");
-		_sarCandleType = Param(nameof(SarCandleType), TimeSpan.FromMinutes(15).TimeFrame())
-		.SetDisplay("SAR Candle Type", "Candle type for SAR", "SAR");
-
-		_useTrendDetection = Param(nameof(UseTrendDetection), true)
-		.SetDisplay("Use ADX Trend Filter", "Enable ADX based trend detection", "Trend");
-		_adxPeriod = Param(nameof(AdxPeriod), 14)
-		.SetDisplay("ADX Period", "ADX calculation length", "Trend")
-		.SetGreaterThanZero();
-		_adxLevel = Param(nameof(AdxLevel), 20m)
-		.SetDisplay("ADX Threshold", "Trend strength threshold", "Trend")
-		.SetNotNegative();
-		_trendCandleType = Param(nameof(TrendCandleType), TimeSpan.FromMinutes(60).TimeFrame())
-		.SetDisplay("Trend Candle Type", "Candle type for ADX trend", "Trend");
-
-		_useBollingerFilter = Param(nameof(UseBollingerFilter), true)
-		.SetDisplay("Use Bollinger Filter", "Enable Bollinger based ranging entries", "Bollinger");
-		_bollingerPeriod = Param(nameof(BollingerPeriod), 20)
-		.SetDisplay("Bollinger Period", "Moving average period", "Bollinger")
-		.SetGreaterThanZero();
-		_bollingerDeviationMedium = Param(nameof(BollingerDeviationMedium), 2m)
-		.SetDisplay("Medium Deviation", "Deviation for confirmation band", "Bollinger")
-		.SetGreaterThanZero();
-		_bollingerDeviationWide = Param(nameof(BollingerDeviationWide), 3m)
-		.SetDisplay("Wide Deviation", "Deviation for extreme band", "Bollinger")
-		.SetGreaterThanZero();
-		_rangeParameter = Param(nameof(RangeParameter), 6)
-		.SetDisplay("RSI Range Lookback", "RSI samples to confirm Bollinger bounce", "Bollinger")
-		.SetNotNegative();
-		_bollingerCandleType = Param(nameof(BollingerCandleType), TimeSpan.FromMinutes(15).TimeFrame())
-		.SetDisplay("Bollinger Candle Type", "Candle type for Bollinger bands", "Bollinger");
-
-		_useNoiseFilter = Param(nameof(UseNoiseFilter), true)
-		.SetDisplay("Use Noise Filter", "Skip entries when volatility is too low", "Noise");
-		_noiseAtrLength = Param(nameof(NoiseAtrLength), 14)
-		.SetDisplay("Noise ATR Length", "ATR length for noise filter", "Noise")
-		.SetGreaterThanZero();
-		_noiseThreshold = Param(nameof(NoiseThreshold), 0.0005m)
-		.SetDisplay("Noise Threshold", "ATR threshold below which trading stops", "Noise")
-		.SetNotNegative();
-		_noiseCandleType = Param(nameof(NoiseCandleType), TimeSpan.FromMinutes(15).TimeFrame())
-		.SetDisplay("Noise Candle Type", "Candle type for ATR noise filter", "Noise");
-
-		_useAutoClose = Param(nameof(UseAutoClose), true)
-		.SetDisplay("Auto Close", "Close positions on opposite consensus", "Risk");
-		_allowOppositeAfterClose = Param(nameof(AllowOppositeAfterClose), false)
-		.SetDisplay("Allow Immediate Opposite", "Allow opposite entry on the same bar", "Risk");
-		_stopLossOffset = Param(nameof(StopLossOffset), 0m)
-		.SetDisplay("Stop Loss Offset", "Absolute price offset for stop loss", "Risk")
-		.SetNotNegative();
-		_takeProfitOffset = Param(nameof(TakeProfitOffset), 0m)
-		.SetDisplay("Take Profit Offset", "Absolute price offset for take profit", "Risk")
-		.SetNotNegative();
-		_useTrailingStop = Param(nameof(UseTrailingStop), true)
-		.SetDisplay("Use Trailing Stop", "Enable trailing stop on protection", "Risk");
+		_atrLength = Param(nameof(AtrLength), 14)
+			.SetDisplay("ATR Length", "ATR period.", "Indicators");
 	}
 
-	/// <summary>
-	/// Primary candle type used for entries.
-	/// </summary>
 	public DataType CandleType
 	{
-		get => _primaryCandleType.Value;
-		set => _primaryCandleType.Value = value;
+		get => _candleType.Value;
+		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Combination factor matching the original EA logic.
-	/// </summary>
-	public int ComboFactor
+	public int FastEmaLength
 	{
-		get => _comboFactor.Value;
-		set => _comboFactor.Value = value;
+		get => _fastEmaLength.Value;
+		set => _fastEmaLength.Value = value;
 	}
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	public int SlowEmaLength
 	{
-		return [(Security, CandleType)];
+		get => _slowEmaLength.Value;
+		set => _slowEmaLength.Value = value;
 	}
 
-	/// <inheritdoc />
-	protected override void OnReseted()
+	public int RsiLength
 	{
-		base.OnReseted();
-
-		_fastMa = null;
-		_midMa = null;
-		_slowMa = null;
-		_rsi = null;
-		_macd = null;
-		_stochastic = null;
-		_sar = null;
-		_adx = null;
-		_bollingerMedium = null;
-		_bollingerWide = null;
-		_noiseAtr = null;
-
-		_fastMaPrev = null;
-		_fastMaCurrent = null;
-		_midMaPrev = null;
-		_midMaCurrent = null;
-		_slowMaPrev = null;
-		_slowMaCurrent = null;
-
-		_rsiPrev = null;
-		_rsiCurrent = null;
-
-		_macdMainPrev = null;
-		_macdMain = null;
-		_macdSignalPrev = null;
-		_macdSignal = null;
-
-		_stochasticMain = null;
-		_stochasticSignal = null;
-
-		_sarValue = null;
-		_sarClose = null;
-
-		_adxValue = null;
-		_adxPlus = null;
-		_adxMinus = null;
-
-		_bollingerMediumUpper = null;
-		_bollingerMediumLower = null;
-		_bollingerWideUpper = null;
-		_bollingerWideLower = null;
-		_lastBollingerCandle = null;
-
-		_noiseAtrValue = null;
-
-		_rsiHistory.Clear();
-
-		_lastMaSignal = SignalDirections.None;
-		_lastRsiSignal = SignalDirections.None;
-		_lastMacdSignal = SignalDirections.None;
-		_lastStochasticSignal = SignalDirections.None;
-		_lastSarSignal = SignalDirections.None;
-
-		_lastTradeBarTime = DateTimeOffset.MinValue;
+		get => _rsiLength.Value;
+		set => _rsiLength.Value = value;
 	}
 
-	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	public int AtrLength
 	{
-		base.OnStarted(time);
-
-		SubscribePrimary();
-
-		if (UseMa)
-		{
-			_fastMa = CreateMovingAverage(FastMaMethod, FastMaLength);
-			_midMa = CreateMovingAverage(MidMaMethod, MidMaLength);
-			_slowMa = CreateMovingAverage(SlowMaMethod, SlowMaLength);
-
-			var maSubscription = SubscribeCandles(MaCandleType);
-			maSubscription
-			.Bind(_fastMa, _midMa, _slowMa, ProcessMaCandle)
-			.Start();
-
-			TryDrawIndicators(maSubscription, _fastMa, _midMa, _slowMa);
-		}
-
-		if (UseRsi)
-		{
-			_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
-			var rsiSubscription = SubscribeCandles(RsiCandleType);
-			rsiSubscription
-			.Bind(_rsi, ProcessRsiCandle)
-			.Start();
-
-			TryDrawIndicators(rsiSubscription, _rsi);
-		}
-
-		if (UseMacd)
-		{
-			_macd = new MovingAverageConvergenceDivergence
-			{
-				ShortMa = { Length = MacdFastLength },
-				LongMa = { Length = MacdSlowLength },
-				SignalMa = { Length = MacdSignalLength }
-			};
-
-			var macdSubscription = SubscribeCandles(MacdCandleType);
-			macdSubscription
-			.BindEx(_macd, ProcessMacdCandle)
-			.Start();
-
-			TryDrawIndicators(macdSubscription, _macd);
-		}
-
-		if (UseStochastic)
-		{
-			_stochastic = new StochasticOscillator
-			{ K = { Length = StochasticLength },
-				K = { Length = StochasticKLength },
-				D = { Length = StochasticDLength },
-				Smooth = { Length = StochasticSlowing }
-			};
-
-			var stochSubscription = SubscribeCandles(StochasticCandleType);
-			stochSubscription
-			.BindEx(_stochastic, ProcessStochasticCandle)
-			.Start();
-
-			TryDrawIndicators(stochSubscription, _stochastic);
-		}
-
-		if (UseSar)
-		{
-			_sar = new ParabolicSar
-			{
-				Acceleration = SarStep,
-				AccelerationMax = SarMax
-			};
-
-			var sarSubscription = SubscribeCandles(SarCandleType);
-			sarSubscription
-			.Bind(_sar, ProcessSarCandle)
-			.Start();
-
-			TryDrawIndicators(sarSubscription, _sar);
-		}
-
-		if (UseTrendDetection)
-		{
-			_adx = new AverageDirectionalIndex { Length = AdxPeriod };
-			var trendSubscription = SubscribeCandles(TrendCandleType);
-			trendSubscription
-			.BindEx(_adx, ProcessAdxCandle)
-			.Start();
-
-			TryDrawIndicators(trendSubscription, _adx);
-		}
-
-		if (UseBollingerFilter)
-		{
-			_bollingerMedium = new BollingerBands
-			{
-				Length = BollingerPeriod,
-				Width = BollingerDeviationMedium
-			};
-			_bollingerWide = new BollingerBands
-			{
-				Length = BollingerPeriod,
-				Width = BollingerDeviationWide
-			};
-
-			var bollSubscription = SubscribeCandles(BollingerCandleType);
-			bollSubscription
-			.Bind(_bollingerMedium, _bollingerWide, ProcessBollingerCandle)
-			.Start();
-
-			TryDrawIndicators(bollSubscription, _bollingerMedium, _bollingerWide);
-		}
-
-		if (UseNoiseFilter)
-		{
-			_noiseAtr = new AverageTrueRange { Length = NoiseAtrLength };
-			var noiseSubscription = SubscribeCandles(NoiseCandleType);
-			noiseSubscription
-			.Bind(_noiseAtr, ProcessNoiseCandle)
-			.Start();
-		}
-
-		StartProtection(
-		takeProfit: TakeProfitOffset > 0 ? new Unit(TakeProfitOffset, UnitTypes.Absolute) : null,
-		stopLoss: StopLossOffset > 0 ? new Unit(StopLossOffset, UnitTypes.Absolute) : null,
-		isStopTrailing: UseTrailingStop
-		);
+		get => _atrLength.Value;
+		set => _atrLength.Value = value;
 	}
 
-	private void SubscribePrimary()
+	protected override void OnStarted2(DateTime time)
 	{
-		var primarySubscription = SubscribeCandles(CandleType);
-		primarySubscription
-		.Bind(ProcessPrimaryCandle)
-		.Start();
+		base.OnStarted2(time);
 
-		TryDrawIndicators(primarySubscription);
+		_prevFast = 0;
+		_prevSlow = 0;
+		_entryPrice = 0;
+
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaLength };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaLength };
+		var rsi = new RelativeStrengthIndex { Length = RsiLength };
+		var atr = new AverageTrueRange { Length = AtrLength };
+
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(fastEma, slowEma, rsi, atr, ProcessCandle)
+			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessPrimaryCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal fastVal, decimal slowVal, decimal rsiVal, decimal atrVal)
 	{
-		// Skip unfinished bars because the EA works on closed candles.
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
-		// Respect trading state and ensure the feed is online.
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
-
-		// Wait until every enabled indicator is formed before trading.
-		if (!AreIndicatorsReady())
-		return;
-
-		// Block entries when the volatility filter reports noisy conditions.
-		if (UseNoiseFilter && _noiseAtrValue is decimal atr && atr < NoiseThreshold)
+		if (_prevFast == 0 || _prevSlow == 0 || atrVal <= 0)
 		{
-			LogInfo($"Noise filter active (ATR {atr:0.#####} < threshold {NoiseThreshold:0.#####}).");
+			_prevFast = fastVal;
+			_prevSlow = slowVal;
 			return;
 		}
 
-		// Combine the individual indicator signals and filters.
-		var consensus = EvaluateConsensus();
-		var trend = EvaluateTrend();
-		var rangeSignal = EvaluateBollingerSignal();
+		var close = candle.ClosePrice;
 
-		var entrySignal = CombineSignals(consensus, trend, rangeSignal);
-
-		// Optionally close the position if the consensus flips to the opposite side.
-		if (UseAutoClose)
-		{
-			HandleAutoExit(consensus, candle);
-		}
-
-		if (entrySignal == SignalDirections.Buy)
-		{
-			TryEnterLong(candle);
-		}
-		else if (entrySignal == SignalDirections.Sell)
-		{
-			TryEnterShort(candle);
-		}
-	}
-
-	private void ProcessMaCandle(ICandleMessage candle, decimal fast, decimal mid, decimal slow)
-	{
-		if (candle.State != CandleStates.Finished)
-		return;
-
-		_fastMaPrev = _fastMaCurrent;
-		_fastMaCurrent = fast;
-		_midMaPrev = _midMaCurrent;
-		_midMaCurrent = mid;
-		_slowMaPrev = _slowMaCurrent;
-		_slowMaCurrent = slow;
-	}
-
-	private void ProcessRsiCandle(ICandleMessage candle, decimal value)
-	{
-		if (candle.State != CandleStates.Finished)
-		return;
-
-		_rsiPrev = _rsiCurrent;
-		_rsiCurrent = value;
-
-		UpdateRsiHistory(value);
-	}
-
-	private void ProcessMacdCandle(ICandleMessage candle, IIndicatorValue value)
-	{
-		if (candle.State != CandleStates.Finished)
-		return;
-
-		if (value is not MovingAverageConvergenceDivergenceSignalValue macdValue)
-		return;
-
-		if (macdValue.Macd is not decimal macdLine || macdValue.Signal is not decimal macdSignal)
-		return;
-
-		_macdMainPrev = _macdMain;
-		_macdMain = macdLine;
-		_macdSignalPrev = _macdSignal;
-		_macdSignal = macdSignal;
-	}
-
-	private void ProcessStochasticCandle(ICandleMessage candle, IIndicatorValue value)
-	{
-		if (candle.State != CandleStates.Finished)
-		return;
-
-		if (value is not StochasticOscillatorValue stochValue)
-		return;
-
-		if (stochValue.K is not decimal main || stochValue.D is not decimal signal)
-		return;
-
-		_stochasticMain = main;
-		_stochasticSignal = signal;
-	}
-
-	private void ProcessSarCandle(ICandleMessage candle, decimal sar)
-	{
-		if (candle.State != CandleStates.Finished)
-		return;
-
-		_sarValue = sar;
-		_sarClose = candle.ClosePrice;
-	}
-
-	private void ProcessAdxCandle(ICandleMessage candle, IIndicatorValue value)
-	{
-		if (candle.State != CandleStates.Finished)
-		return;
-
-		if (value is not AverageDirectionalIndexValue adxValue)
-		return;
-
-		if (adxValue.MovingAverage is not decimal adx || adxValue.PlusDi is not decimal plus || adxValue.MinusDi is not decimal minus)
-		return;
-
-		_adxValue = adx;
-		_adxPlus = plus;
-		_adxMinus = minus;
-	}
-
-	private void ProcessBollingerCandle(ICandleMessage candle, decimal mediumMiddle, decimal mediumUpper, decimal mediumLower, decimal wideMiddle, decimal wideUpper, decimal wideLower)
-	{
-		if (candle.State != CandleStates.Finished)
-		return;
-
-		_bollingerMediumUpper = mediumUpper;
-		_bollingerMediumLower = mediumLower;
-		_bollingerWideUpper = wideUpper;
-		_bollingerWideLower = wideLower;
-		_lastBollingerCandle = candle;
-	}
-
-	private void ProcessNoiseCandle(ICandleMessage candle, decimal atr)
-	{
-		if (candle.State != CandleStates.Finished)
-		return;
-
-		_noiseAtrValue = atr;
-	}
-
-	private bool AreIndicatorsReady()
-	{
-		// Ensure every enabled indicator is ready before generating signals.
-		if (UseMa && (!(_fastMa?.IsFormed ?? false) || !(_midMa?.IsFormed ?? false) || !(_slowMa?.IsFormed ?? false)))
-		return false;
-
-		if (UseRsi && !(_rsi?.IsFormed ?? false))
-		return false;
-
-		if (UseMacd && !(_macd?.IsFormed ?? false))
-		return false;
-
-		if (UseStochastic && !(_stochastic?.IsFormed ?? false))
-		return false;
-
-		if (UseSar && !(_sar?.IsFormed ?? false))
-		return false;
-
-		if (UseTrendDetection && !(_adx?.IsFormed ?? false))
-		return false;
-
-		if (UseBollingerFilter && (!(_bollingerMedium?.IsFormed ?? false) || !(_bollingerWide?.IsFormed ?? false)))
-		return false;
-
-		if (UseNoiseFilter && !(_noiseAtr?.IsFormed ?? false))
-		return false;
-
-		return true;
-	}
-
-	private SignalDirections EvaluateConsensus()
-	{
-		var selected = 0;
-		var up = 0;
-		var down = 0;
-
-		if (UseRsi)
-		{
-			selected++;
-			var signal = GetRsiSignal();
-			if (signal == SignalDirections.Buy)
-			up++;
-			else if (signal == SignalDirections.Sell)
-			down++;
-		}
-
-		if (UseStochastic)
-		{
-			selected++;
-			var signal = GetStochasticSignal();
-			if (signal == SignalDirections.Buy)
-			up++;
-			else if (signal == SignalDirections.Sell)
-			down++;
-		}
-
-		if (UseSar)
-		{
-			selected++;
-			var signal = GetSarSignal();
-			if (signal == SignalDirections.Buy)
-			up++;
-			else if (signal == SignalDirections.Sell)
-			down++;
-		}
-
-		if (UseMa)
-		{
-			selected++;
-			var signal = GetMaSignal();
-			if (signal == SignalDirections.Buy)
-			up++;
-			else if (signal == SignalDirections.Sell)
-			down++;
-		}
-
-		if (UseMacd)
-		{
-			selected++;
-			var signal = GetMacdSignal();
-			if (signal == SignalDirections.Buy)
-			up++;
-			else if (signal == SignalDirections.Sell)
-			down++;
-		}
-
-		if (selected == 0)
-		return SignalDirections.None;
-
-		if (up == selected)
-		return SignalDirections.Buy;
-
-		if (down == selected)
-		return SignalDirections.Sell;
-
-		return SignalDirections.None;
-	}
-
-	private TrendStates EvaluateTrend()
-	{
-		if (!UseTrendDetection)
-		return TrendStates.None;
-
-		if (_adxValue is not decimal adx || _adxPlus is not decimal plus || _adxMinus is not decimal minus)
-		return TrendStates.None;
-
-		if (adx < AdxLevel)
-		{
-			return plus >= minus ? TrendStates.RangeUp : TrendStates.RangeDown;
-		}
-
-		return plus >= minus ? TrendStates.Up : TrendStates.Down;
-	}
-
-	private SignalDirections EvaluateBollingerSignal()
-	{
-		if (!UseBollingerFilter)
-		return SignalDirections.None;
-
-		if (_bollingerMediumLower is null || _bollingerMediumUpper is null || _bollingerWideLower is null || _bollingerWideUpper is null)
-		return SignalDirections.None;
-
-		if (_lastBollingerCandle is null)
-		return SignalDirections.None;
-
-		var candle = _lastBollingerCandle;
-
-		var buyTouch = candle.LowPrice <= _bollingerWideLower.Value && candle.ClosePrice > _bollingerMediumLower.Value;
-		var sellTouch = candle.HighPrice >= _bollingerWideUpper.Value && candle.ClosePrice < _bollingerMediumUpper.Value;
-
-		var hasOversoldRsi = RangeParameter <= 0 || HasRsiBelow(RsiBuyLevel);
-		var hasOverboughtRsi = RangeParameter <= 0 || HasRsiAbove(RsiSellLevel);
-
-		if (buyTouch && hasOversoldRsi)
-		return SignalDirections.Buy;
-
-		if (sellTouch && hasOverboughtRsi)
-		return SignalDirections.Sell;
-
-		return SignalDirections.None;
-	}
-
-	private SignalDirections CombineSignals(SignalDirections consensus, TrendStates trend, SignalDirections rangeSignal)
-	{
-		return ComboFactor switch
-		{
-			1 => CombineFactorOne(consensus, trend, rangeSignal),
-			2 => CombineFactorTwo(consensus, trend, rangeSignal),
-			_ => CombineFactorThree(consensus, trend, rangeSignal)
-		};
-	}
-
-	private SignalDirections CombineFactorOne(SignalDirections consensus, TrendStates trend, SignalDirections rangeSignal)
-	{
-		if (UseTrendDetection || UseBollingerFilter)
-		{
-			if (trend is TrendStates.RangeDown or TrendStates.RangeUp && UseBollingerFilter)
-			{
-				if (trend == TrendStates.RangeUp && rangeSignal == SignalDirections.Buy)
-				return SignalDirections.Buy;
-				if (trend == TrendStates.RangeDown && rangeSignal == SignalDirections.Sell)
-				return SignalDirections.Sell;
-				return SignalDirections.None;
-			}
-
-			if (trend is TrendStates.Up or TrendStates.Down)
-			{
-				if (trend == TrendStates.Up && consensus == SignalDirections.Buy)
-				return SignalDirections.Buy;
-				if (trend == TrendStates.Down && consensus == SignalDirections.Sell)
-				return SignalDirections.Sell;
-				return SignalDirections.None;
-			}
-		}
-
-		if (UseBollingerFilter)
-		{
-			if (rangeSignal != SignalDirections.None)
-			return rangeSignal;
-		}
-
-		return consensus;
-	}
-
-	private SignalDirections CombineFactorTwo(SignalDirections consensus, TrendStates trend, SignalDirections rangeSignal)
-	{
-		if (UseTrendDetection && !UseBollingerFilter)
-		{
-			if (trend is TrendStates.Up or TrendStates.RangeUp)
-			return consensus == SignalDirections.Buy ? SignalDirections.Buy : SignalDirections.None;
-			if (trend is TrendStates.Down or TrendStates.RangeDown)
-			return consensus == SignalDirections.Sell ? SignalDirections.Sell : SignalDirections.None;
-		}
-
-		if (UseTrendDetection && UseBollingerFilter)
-		{
-			if (trend == TrendStates.Up)
-			{
-				if (consensus == SignalDirections.Buy && rangeSignal != SignalDirections.Sell)
-				return SignalDirections.Buy;
-				return SignalDirections.None;
-			}
-			if (trend == TrendStates.Down)
-			{
-				if (consensus == SignalDirections.Sell && rangeSignal != SignalDirections.Buy)
-				return SignalDirections.Sell;
-				return SignalDirections.None;
-			}
-			if (trend == TrendStates.RangeUp)
-			{
-				if (consensus == SignalDirections.Buy && rangeSignal == SignalDirections.Buy)
-				return SignalDirections.Buy;
-				return SignalDirections.None;
-			}
-			if (trend == TrendStates.RangeDown)
-			{
-				if (consensus == SignalDirections.Sell && rangeSignal == SignalDirections.Sell)
-				return SignalDirections.Sell;
-				return SignalDirections.None;
-			}
-		}
-
-		if (!UseTrendDetection && UseBollingerFilter)
-		{
-			if (rangeSignal == SignalDirections.Buy && consensus == SignalDirections.Buy)
-			return SignalDirections.Buy;
-			if (rangeSignal == SignalDirections.Sell && consensus == SignalDirections.Sell)
-			return SignalDirections.Sell;
-			return SignalDirections.None;
-		}
-
-		return consensus;
-	}
-
-	private SignalDirections CombineFactorThree(SignalDirections consensus, TrendStates trend, SignalDirections rangeSignal)
-	{
-		if (UseTrendDetection && UseBollingerFilter)
-		{
-			if (trend == TrendStates.Up && consensus == SignalDirections.Buy && (rangeSignal == SignalDirections.Buy || rangeSignal == SignalDirections.None))
-			return SignalDirections.Buy;
-			if (trend == TrendStates.Down && consensus == SignalDirections.Sell && (rangeSignal == SignalDirections.Sell || rangeSignal == SignalDirections.None))
-			return SignalDirections.Sell;
-			if (trend == TrendStates.RangeUp && consensus == SignalDirections.Buy && rangeSignal == SignalDirections.Buy)
-			return SignalDirections.Buy;
-			if (trend == TrendStates.RangeDown && consensus == SignalDirections.Sell && rangeSignal == SignalDirections.Sell)
-			return SignalDirections.Sell;
-			return SignalDirections.None;
-		}
-
-		if (UseTrendDetection)
-		{
-			if (trend == TrendStates.Up && consensus == SignalDirections.Buy)
-			return SignalDirections.Buy;
-			if (trend == TrendStates.Down && consensus == SignalDirections.Sell)
-			return SignalDirections.Sell;
-			return SignalDirections.None;
-		}
-
-		if (UseBollingerFilter)
-		{
-			return rangeSignal;
-		}
-
-		return consensus;
-	}
-
-	private void HandleAutoExit(SignalDirections consensus, ICandleMessage candle)
-	{
-		// Mirror the original auto-close logic by reacting immediately to opposite consensus.
-		if (Position > 0 && consensus == SignalDirections.Sell)
-		{
-			SellMarket(Math.Abs(Position));
-			_lastTradeBarTime = candle.OpenTime;
-			LogInfo("Closed long position on opposite consensus.");
-		}
-		else if (Position < 0 && consensus == SignalDirections.Buy)
-		{
-			BuyMarket(Math.Abs(Position));
-			_lastTradeBarTime = candle.OpenTime;
-			LogInfo("Closed short position on opposite consensus.");
-		}
-	}
-
-	private void TryEnterLong(ICandleMessage candle)
-	{
-		// Avoid duplicate entries within the same bar and respect the current position.
 		if (Position > 0)
-		return;
-
-		if (!AllowOppositeAfterClose && _lastTradeBarTime == candle.OpenTime)
-		return;
-
-		var volume = Volume + Math.Abs(Position);
-		BuyMarket(volume);
-		_lastTradeBarTime = candle.OpenTime;
-		LogInfo("Entered long position.");
-	}
-
-	private void TryEnterShort(ICandleMessage candle)
-	{
-		// Avoid duplicate entries within the same bar and respect the current position.
-		if (Position < 0)
-		return;
-
-		if (!AllowOppositeAfterClose && _lastTradeBarTime == candle.OpenTime)
-		return;
-
-		var volume = Volume + Math.Abs(Position);
-		SellMarket(volume);
-		_lastTradeBarTime = candle.OpenTime;
-		LogInfo("Entered short position.");
-	}
-
-	private void UpdateRsiHistory(decimal value)
-	{
-		// Store recent RSI values for the Bollinger range confirmation.
-		if (RangeParameter <= 0)
-		return;
-
-		_rsiHistory.Enqueue(value);
-		while (_rsiHistory.Count > RangeParameter)
-		_rsiHistory.Dequeue();
-	}
-
-	private bool HasRsiBelow(decimal threshold)
-	{
-		if (RangeParameter <= 0)
-		return true;
-
-		if (_rsiHistory.Count < RangeParameter)
-		return false;
-
-		foreach (var value in _rsiHistory)
 		{
-			if (value <= threshold)
-			return true;
+			if (fastVal < slowVal && _prevFast >= _prevSlow)
+			{
+				SellMarket();
+				_entryPrice = 0;
+			}
+			else if (close <= _entryPrice - atrVal * 2m)
+			{
+				SellMarket();
+				_entryPrice = 0;
+			}
+		}
+		else if (Position < 0)
+		{
+			if (fastVal > slowVal && _prevFast <= _prevSlow)
+			{
+				BuyMarket();
+				_entryPrice = 0;
+			}
+			else if (close >= _entryPrice + atrVal * 2m)
+			{
+				BuyMarket();
+				_entryPrice = 0;
+			}
 		}
 
-		return false;
-	}
-
-	private bool HasRsiAbove(decimal threshold)
-	{
-		if (RangeParameter <= 0)
-		return true;
-
-		if (_rsiHistory.Count < RangeParameter)
-		return false;
-
-		foreach (var value in _rsiHistory)
+		if (Position == 0)
 		{
-			if (value >= threshold)
-			return true;
+			if (fastVal > slowVal && _prevFast <= _prevSlow && rsiVal > 45)
+			{
+				_entryPrice = close;
+				BuyMarket();
+			}
+			else if (fastVal < slowVal && _prevFast >= _prevSlow && rsiVal < 55)
+			{
+				_entryPrice = close;
+				SellMarket();
+			}
 		}
 
-		return false;
-	}
-
-	private SignalDirections GetMaSignal()
-	{
-		if (_fastMaCurrent is null || _fastMaPrev is null || _midMaCurrent is null || _midMaPrev is null || _slowMaCurrent is null || _slowMaPrev is null)
-		return UseLastMaSignal ? _lastMaSignal : SignalDirections.None;
-
-		SignalDirections signal = MaMode switch
-		{
-			1 => DetectCross(_fastMaPrev.Value, _fastMaCurrent.Value, _midMaPrev.Value, _midMaCurrent.Value),
-			2 => DetectCross(_midMaPrev.Value, _midMaCurrent.Value, _slowMaPrev.Value, _slowMaCurrent.Value),
-			3 => CombineSignals(
-			DetectCross(_midMaPrev.Value, _midMaCurrent.Value, _slowMaPrev.Value, _slowMaCurrent.Value),
-			DetectCross(_fastMaPrev.Value, _fastMaCurrent.Value, _midMaPrev.Value, _midMaCurrent.Value)
-			),
-			4 => DetectCross(_fastMaPrev.Value, _fastMaCurrent.Value, _slowMaPrev.Value, _slowMaCurrent.Value),
-			5 => CombineSignals(
-			CombineSignals(
-			DetectCross(_midMaPrev.Value, _midMaCurrent.Value, _slowMaPrev.Value, _slowMaCurrent.Value),
-			DetectCross(_fastMaPrev.Value, _fastMaCurrent.Value, _midMaPrev.Value, _midMaCurrent.Value)
-			),
-			DetectCross(_fastMaPrev.Value, _fastMaCurrent.Value, _slowMaPrev.Value, _slowMaCurrent.Value)
-			),
-			_ => SignalDirections.None
-		};
-
-		if (UseLastMaSignal)
-		{
-			if (signal != SignalDirections.None && signal != _lastMaSignal)
-			_lastMaSignal = signal;
-			return _lastMaSignal;
-		}
-
-		return signal;
-	}
-
-	private SignalDirections CombineSignals(SignalDirections first, SignalDirections second)
-	{
-		if (first == SignalDirections.Buy || second == SignalDirections.Buy)
-		{
-			if (first == SignalDirections.Buy && second != SignalDirections.Sell)
-			return SignalDirections.Buy;
-			if (second == SignalDirections.Buy && first != SignalDirections.Sell)
-			return SignalDirections.Buy;
-		}
-
-		if (first == SignalDirections.Sell || second == SignalDirections.Sell)
-		{
-			if (first == SignalDirections.Sell && second != SignalDirections.Buy)
-			return SignalDirections.Sell;
-			if (second == SignalDirections.Sell && first != SignalDirections.Buy)
-			return SignalDirections.Sell;
-		}
-
-		return SignalDirections.None;
-	}
-
-	private static SignalDirections DetectCross(decimal prevA, decimal currentA, decimal prevB, decimal currentB)
-	{
-		var prevDiff = prevA - prevB;
-		var currentDiff = currentA - currentB;
-
-		if (prevDiff <= 0m && currentDiff > 0m)
-		return SignalDirections.Buy;
-
-		if (prevDiff >= 0m && currentDiff < 0m)
-		return SignalDirections.Sell;
-
-		return SignalDirections.None;
-	}
-
-	private SignalDirections GetRsiSignal()
-	{
-		if (_rsiCurrent is null || _rsiPrev is null)
-		return UseLastRsiSignal ? _lastRsiSignal : SignalDirections.None;
-
-		var current = _rsiCurrent.Value;
-		var previous = _rsiPrev.Value;
-
-		SignalDirections signal = RsiMode switch
-		{
-			1 => current < RsiBuyLevel ? SignalDirections.Buy : current > RsiSellLevel ? SignalDirections.Sell : SignalDirections.None,
-			2 => current > previous ? SignalDirections.Buy : current < previous ? SignalDirections.Sell : SignalDirections.None,
-			3 => CombineSignals(
-			current < RsiBuyLevel ? SignalDirections.Buy : current > RsiSellLevel ? SignalDirections.Sell : SignalDirections.None,
-			current > previous ? SignalDirections.Buy : current < previous ? SignalDirections.Sell : SignalDirections.None
-			),
-			4 =>
-			current > previous && current >= RsiBuyZone && current <= RsiSellLevel
-			? SignalDirections.Buy
-			: current < previous && current <= RsiSellZone && current >= RsiBuyLevel
-			? SignalDirections.Sell
-			: SignalDirections.None,
-			_ => SignalDirections.None
-		};
-
-		if (UseLastRsiSignal)
-		{
-			if (signal != SignalDirections.None && signal != _lastRsiSignal)
-			_lastRsiSignal = signal;
-			return _lastRsiSignal;
-		}
-
-		return signal;
-	}
-
-	private SignalDirections GetMacdSignal()
-	{
-		if (_macdMain is null || _macdMainPrev is null || _macdSignal is null || _macdSignalPrev is null)
-		return UseLastMacdSignal ? _lastMacdSignal : SignalDirections.None;
-
-		var macd = _macdMain.Value;
-		var macdPrev = _macdMainPrev.Value;
-		var signal = _macdSignal.Value;
-		var signalPrev = _macdSignalPrev.Value;
-
-		SignalDirections result = MacdMode switch
-		{
-			1 =>
-			macd > macdPrev && signal > signalPrev && macd > signal
-			? SignalDirections.Buy
-			: macd < macdPrev && signal < signalPrev && macd < signal
-			? SignalDirections.Sell
-			: SignalDirections.None,
-			2 =>
-			macd > signal && macdPrev <= signalPrev && macd < 0m && macdPrev < 0m
-			? SignalDirections.Buy
-			: macd < signal && macdPrev >= signalPrev && macd > 0m && macdPrev > 0m
-			? SignalDirections.Sell
-			: SignalDirections.None,
-			3 =>
-			(macd > signal && macdPrev <= signalPrev && macd < 0m && macdPrev < 0m) ||
-			(macd > macdPrev && signal > signalPrev && macd > signal)
-			? SignalDirections.Buy
-			: (macd < signal && macdPrev >= signalPrev && macd > 0m && macdPrev > 0m) ||
-			(macd < macdPrev && signal < signalPrev && macd < signal)
-			? SignalDirections.Sell
-			: SignalDirections.None,
-			4 =>
-			signal > 0m && signalPrev < 0m
-			? SignalDirections.Buy
-			: signal < 0m && signalPrev > 0m
-			? SignalDirections.Sell
-			: SignalDirections.None,
-			_ => SignalDirections.None
-		};
-
-		if (UseLastMacdSignal)
-		{
-			if (result != SignalDirections.None && result != _lastMacdSignal)
-			_lastMacdSignal = result;
-			return _lastMacdSignal;
-		}
-
-		return result;
-	}
-
-	private SignalDirections GetStochasticSignal()
-	{
-		if (_stochasticMain is null || _stochasticSignal is null)
-		return UseLastStochasticSignal ? _lastStochasticSignal : SignalDirections.None;
-
-		var main = _stochasticMain.Value;
-		var signal = _stochasticSignal.Value;
-
-		SignalDirections result;
-
-		if (StochasticUseThresholds)
-		{
-			if (main > signal && main > StochasticUpper)
-			result = SignalDirections.Buy;
-			else if (main < signal && main < StochasticLower)
-			result = SignalDirections.Sell;
-			else
-			result = SignalDirections.None;
-		}
-		else
-		{
-			if (main > signal)
-			result = SignalDirections.Buy;
-			else if (main < signal)
-			result = SignalDirections.Sell;
-			else
-			result = SignalDirections.None;
-		}
-
-		if (UseLastStochasticSignal)
-		{
-			if (result != SignalDirections.None && result != _lastStochasticSignal)
-			_lastStochasticSignal = result;
-			return _lastStochasticSignal;
-		}
-
-		return result;
-	}
-
-	private SignalDirections GetSarSignal()
-	{
-		if (_sarValue is null || _sarClose is null)
-		return UseLastSarSignal ? _lastSarSignal : SignalDirections.None;
-
-		var result = _sarValue.Value < _sarClose.Value ? SignalDirections.Buy : SignalDirections.Sell;
-
-		if (UseLastSarSignal)
-		{
-			if (result != SignalDirections.None && result != _lastSarSignal)
-			_lastSarSignal = result;
-			return _lastSarSignal;
-		}
-
-		return result;
-	}
-
-	private DecimalLengthIndicator CreateMovingAverage(MaMethods method, int length)
-	{
-		// Map the original MA method integers to StockSharp indicators.
-		return method switch
-		{
-			MaMethods.Simple => new SMA { Length = length },
-			MaMethods.Exponential => new EMA { Length = length },
-			MaMethods.Smoothed => new SMMA { Length = length },
-			MaMethods.Weighted => new WeightedMovingAverage { Length = length },
-			_ => new SMA { Length = length }
-		};
-	}
-
-	private void TryDrawIndicators<T>(ISubscriptionHandler<T> subscription, params IIndicator[] indicators)
-	{
-		var area = CreateChartArea();
-		if (area == null)
-		return;
-
-		DrawCandles(area, subscription);
-
-		foreach (var indicator in indicators)
-		{
-			DrawIndicator(area, indicator);
-		}
-
-		DrawOwnTrades(area);
-	}
-
-	private bool UseMa => _useMa.Value;
-	private bool UseLastMaSignal => _useLastMaSignal.Value;
-	private int MaMode => _maMode.Value;
-	private int FastMaLength => _fastMaLength.Value;
-	private int MidMaLength => _midMaLength.Value;
-	private int SlowMaLength => _slowMaLength.Value;
-	private MaMethods FastMaMethod => _fastMaMethod.Value;
-	private MaMethods MidMaMethod => _midMaMethod.Value;
-	private MaMethods SlowMaMethod => _slowMaMethod.Value;
-	private DataType MaCandleType => _maCandleType.Value;
-
-	private bool UseRsi => _useRsi.Value;
-	private bool UseLastRsiSignal => _useLastRsiSignal.Value;
-	private int RsiMode => _rsiMode.Value;
-	private int RsiPeriod => _rsiPeriod.Value;
-	private decimal RsiBuyLevel => _rsiBuyLevel.Value;
-	private decimal RsiSellLevel => _rsiSellLevel.Value;
-	private decimal RsiBuyZone => _rsiBuyZone.Value;
-	private decimal RsiSellZone => _rsiSellZone.Value;
-	private DataType RsiCandleType => _rsiCandleType.Value;
-
-	private bool UseMacd => _useMacd.Value;
-	private bool UseLastMacdSignal => _useLastMacdSignal.Value;
-	private int MacdMode => _macdMode.Value;
-	private int MacdFastLength => _macdFastLength.Value;
-	private int MacdSlowLength => _macdSlowLength.Value;
-	private int MacdSignalLength => _macdSignalLength.Value;
-	private DataType MacdCandleType => _macdCandleType.Value;
-
-	private bool UseStochastic => _useStochastic.Value;
-	private bool UseLastStochasticSignal => _useLastStochasticSignal.Value;
-	private int StochasticLength => _stochasticLength.Value;
-	private int StochasticKLength => _stochasticKLength.Value;
-	private int StochasticDLength => _stochasticDLength.Value;
-	private int StochasticSlowing => _stochasticSlowing.Value;
-	private bool StochasticUseThresholds => _stochasticUseThresholds.Value;
-	private int StochasticUpper => _stochasticUpper.Value;
-	private int StochasticLower => _stochasticLower.Value;
-	private DataType StochasticCandleType => _stochasticCandleType.Value;
-
-	private bool UseSar => _useSar.Value;
-	private bool UseLastSarSignal => _useLastSarSignal.Value;
-	private decimal SarStep => _sarStep.Value;
-	private decimal SarMax => _sarMax.Value;
-	private DataType SarCandleType => _sarCandleType.Value;
-
-	private bool UseTrendDetection => _useTrendDetection.Value;
-	private int AdxPeriod => _adxPeriod.Value;
-	private decimal AdxLevel => _adxLevel.Value;
-	private DataType TrendCandleType => _trendCandleType.Value;
-
-	private bool UseBollingerFilter => _useBollingerFilter.Value;
-	private int BollingerPeriod => _bollingerPeriod.Value;
-	private decimal BollingerDeviationMedium => _bollingerDeviationMedium.Value;
-	private decimal BollingerDeviationWide => _bollingerDeviationWide.Value;
-	private int RangeParameter => _rangeParameter.Value;
-	private DataType BollingerCandleType => _bollingerCandleType.Value;
-
-	private bool UseNoiseFilter => _useNoiseFilter.Value;
-	private int NoiseAtrLength => _noiseAtrLength.Value;
-	private decimal NoiseThreshold => _noiseThreshold.Value;
-	private DataType NoiseCandleType => _noiseCandleType.Value;
-
-	private bool UseAutoClose => _useAutoClose.Value;
-	private bool AllowOppositeAfterClose => _allowOppositeAfterClose.Value;
-	private decimal StopLossOffset => _stopLossOffset.Value;
-	private decimal TakeProfitOffset => _takeProfitOffset.Value;
-	private bool UseTrailingStop => _useTrailingStop.Value;
-
-	private enum SignalDirections
-	{
-		None,
-		Buy,
-		Sell
-	}
-
-	private enum TrendStates
-	{
-		None,
-		Up,
-		Down,
-		RangeUp,
-		RangeDown
-	}
-
-	/// <summary>
-	/// Moving average method.
-	/// </summary>
-	public enum MaMethods
-	{
-		Simple,
-		Exponential,
-		Smoothed,
-		Weighted
+		_prevFast = fastVal;
+		_prevSlow = slowVal;
 	}
 }

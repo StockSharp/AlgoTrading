@@ -1,10 +1,4 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,174 +8,141 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Vortex crossover strategy converted from the MetaTrader expert Vortex Indicator System.
-/// Detects VI+/VI- crossovers, arms breakout triggers on the crossover bar high/low,
-/// and submits market orders when subsequent candles confirm the breakout level.
+/// Vortex Indicator Breakout: Dual EMA crossover breakout with ATR stops.
 /// </summary>
 public class VortexIndicatorBreakoutStrategy : Strategy
 {
-	private readonly StrategyParam<int> _vortexLength;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<decimal> _tradeVolume;
+	private readonly StrategyParam<int> _fastEmaLength;
+	private readonly StrategyParam<int> _slowEmaLength;
+	private readonly StrategyParam<int> _atrLength;
 
-	private VortexIndicator _vortex = null!;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private decimal _entryPrice;
 
-	private decimal? _previousPlus;
-	private decimal? _previousMinus;
-
-	private decimal? _pendingLongTrigger;
-	private decimal? _pendingShortTrigger;
-
-	/// <summary>
-	/// Initializes parameters for the Vortex Indicator System conversion.
-	/// </summary>
-public VortexIndicatorBreakoutStrategy()
+	public VortexIndicatorBreakoutStrategy()
 	{
-		_vortexLength = Param(nameof(VortexLength), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("Vortex Length", "Period applied to the Vortex indicator.", "Indicator")
-			
-			.SetOptimize(7, 35, 7);
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Timeframe.", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
-			.SetDisplay("Candle Type", "Timeframe used for candle and indicator calculations.", "General");
+		_fastEmaLength = Param(nameof(FastEmaLength), 14)
+			.SetDisplay("Fast EMA", "Fast EMA period.", "Indicators");
 
-		_tradeVolume = Param(nameof(TradeVolume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Trade Volume", "Market order size for new entries.", "Trading");
+		_slowEmaLength = Param(nameof(SlowEmaLength), 28)
+			.SetDisplay("Slow EMA", "Slow EMA period.", "Indicators");
+
+		_atrLength = Param(nameof(AtrLength), 14)
+			.SetDisplay("ATR Length", "ATR period.", "Indicators");
 	}
 
-	/// <summary>
-	/// Vortex indicator length.
-	/// </summary>
-	public int VortexLength
-	{
-		get => _vortexLength.Value;
-		set => _vortexLength.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used for indicator updates and breakout checks.
-	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Market order volume used when entering new positions.
-	/// </summary>
-	public decimal TradeVolume
+	public int FastEmaLength
 	{
-		get => _tradeVolume.Value;
-		set => _tradeVolume.Value = value;
+		get => _fastEmaLength.Value;
+		set => _fastEmaLength.Value = value;
 	}
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	public int SlowEmaLength
 	{
-		return [(Security, CandleType)];
+		get => _slowEmaLength.Value;
+		set => _slowEmaLength.Value = value;
 	}
 
-	/// <inheritdoc />
+	public int AtrLength
+	{
+		get => _atrLength.Value;
+		set => _atrLength.Value = value;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		Volume = TradeVolume;
+		_prevFast = 0;
+		_prevSlow = 0;
+		_entryPrice = 0;
 
-		_vortex = new VortexIndicator
-		{
-			Length = VortexLength
-		};
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaLength };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaLength };
+		var atr = new AverageTrueRange { Length = AtrLength };
 
 		var subscription = SubscribeCandles(CandleType);
-
 		subscription
-			.Bind(_vortex, ProcessCandle)
+			.Bind(fastEma, slowEma, atr, ProcessCandle)
 			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal viPlus, decimal viMinus)
+	private void ProcessCandle(ICandleMessage candle, decimal fastVal, decimal slowVal, decimal atrVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		// Check whether a previously armed breakout level has been reached by the latest candle.
-		if (_pendingLongTrigger is decimal longTrigger && candle.HighPrice >= longTrigger)
+		if (_prevFast == 0 || _prevSlow == 0 || atrVal <= 0)
 		{
-			if (Position <= 0m)
+			_prevFast = fastVal;
+			_prevSlow = slowVal;
+			return;
+		}
+
+		var close = candle.ClosePrice;
+
+		if (Position > 0)
+		{
+			if (fastVal < slowVal && _prevFast >= _prevSlow)
 			{
-				var volume = Volume;
-				if (Position < 0m)
-					volume += Math.Abs(Position);
-
-				BuyMarket(volume);
+				SellMarket();
+				_entryPrice = 0;
 			}
-
-			_pendingLongTrigger = null;
-		}
-		else if (_pendingShortTrigger is decimal shortTrigger && candle.LowPrice <= shortTrigger)
-		{
-			if (Position >= 0m)
+			else if (close <= _entryPrice - atrVal * 2m)
 			{
-				var volume = Volume;
-				if (Position > 0m)
-					volume += Position;
-
-				SellMarket(volume);
+				SellMarket();
+				_entryPrice = 0;
 			}
-
-			_pendingShortTrigger = null;
 		}
-
-		if (!_vortex.IsFormed)
+		else if (Position < 0)
 		{
-			_previousPlus = viPlus;
-			_previousMinus = viMinus;
-			return;
+			if (fastVal > slowVal && _prevFast <= _prevSlow)
+			{
+				BuyMarket();
+				_entryPrice = 0;
+			}
+			else if (close >= _entryPrice + atrVal * 2m)
+			{
+				BuyMarket();
+				_entryPrice = 0;
+			}
 		}
 
-		if (_previousPlus is not decimal prevPlus || _previousMinus is not decimal prevMinus)
+		if (Position == 0)
 		{
-			_previousPlus = viPlus;
-			_previousMinus = viMinus;
-			return;
+			if (fastVal > slowVal && _prevFast <= _prevSlow)
+			{
+				_entryPrice = close;
+				BuyMarket();
+			}
+			else if (fastVal < slowVal && _prevFast >= _prevSlow)
+			{
+				_entryPrice = close;
+				SellMarket();
+			}
 		}
 
-		// Detect a bullish crossover where VI+ rises above VI- after being below it.
-		if (prevPlus <= prevMinus && viPlus > viMinus)
-		{
-			if (Position < 0m)
-				BuyMarket(Math.Abs(Position));
-
-			_pendingLongTrigger = candle.HighPrice;
-			_pendingShortTrigger = null;
-		}
-		// Detect a bearish crossover where VI- rises above VI+ after being below it.
-		else if (prevMinus <= prevPlus && viMinus > viPlus)
-		{
-			if (Position > 0m)
-				SellMarket(Math.Abs(Position));
-
-			_pendingShortTrigger = candle.LowPrice;
-			_pendingLongTrigger = null;
-		}
-
-		_previousPlus = viPlus;
-		_previousMinus = viMinus;
-	}
-
-	/// <inheritdoc />
-	protected override void OnStopped()
-	{
-		_pendingLongTrigger = null;
-		_pendingShortTrigger = null;
-
-		base.OnStopped();
+		_prevFast = fastVal;
+		_prevSlow = slowVal;
 	}
 }

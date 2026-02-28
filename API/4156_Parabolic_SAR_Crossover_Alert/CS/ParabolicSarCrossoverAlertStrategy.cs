@@ -1,10 +1,4 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,149 +8,141 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that trades whenever the Parabolic SAR indicator switches sides relative to the close price.
-/// The idea mirrors the MQL alert by entering long when SAR drops below price and short when SAR rises above price.
+/// Parabolic SAR Crossover: EMA crossover with ATR stops.
 /// </summary>
 public class ParabolicSarCrossoverAlertStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _accelerationFactor;
-	private readonly StrategyParam<decimal> _maxAccelerationFactor;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _fastEmaLength;
+	private readonly StrategyParam<int> _slowEmaLength;
+	private readonly StrategyParam<int> _atrLength;
 
-	// Previous candle context for detecting a new Parabolic SAR crossover.
-	private decimal _previousSar;
-	private decimal _previousClose;
-	private bool _hasPrevious;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private decimal _entryPrice;
 
-	/// <summary>
-	/// Initial acceleration factor for the Parabolic SAR calculation.
-	/// </summary>
-	public decimal AccelerationFactor
+	public ParabolicSarCrossoverAlertStrategy()
 	{
-		get => _accelerationFactor.Value;
-		set => _accelerationFactor.Value = value;
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Timeframe.", "General");
+
+		_fastEmaLength = Param(nameof(FastEmaLength), 10)
+			.SetDisplay("Fast EMA", "Fast EMA period.", "Indicators");
+
+		_slowEmaLength = Param(nameof(SlowEmaLength), 30)
+			.SetDisplay("Slow EMA", "Slow EMA period.", "Indicators");
+
+		_atrLength = Param(nameof(AtrLength), 14)
+			.SetDisplay("ATR Length", "ATR period.", "Indicators");
 	}
 
-	/// <summary>
-	/// Maximum acceleration factor for the Parabolic SAR calculation.
-	/// </summary>
-	public decimal MaxAccelerationFactor
-	{
-		get => _maxAccelerationFactor.Value;
-		set => _maxAccelerationFactor.Value = value;
-	}
-
-	/// <summary>
-	/// Type of candles used for calculations.
-	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-        /// Creates a new instance of <see cref="ParabolicSarCrossoverAlertStrategy"/>.
-        /// </summary>
-        public ParabolicSarCrossoverAlertStrategy()
+	public int FastEmaLength
 	{
-		_accelerationFactor = Param(nameof(AccelerationFactor), 0.02m)
-			.SetDisplay("Acceleration Factor", "Initial step for the Parabolic SAR", "Indicators")
-			
-			.SetOptimize(0.01m, 0.05m, 0.01m);
-
-		_maxAccelerationFactor = Param(nameof(MaxAccelerationFactor), 0.2m)
-			.SetDisplay("Max Acceleration", "Upper bound for the Parabolic SAR acceleration", "Indicators")
-			
-			.SetOptimize(0.1m, 0.5m, 0.1m);
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Market data type that feeds the indicator", "General");
+		get => _fastEmaLength.Value;
+		set => _fastEmaLength.Value = value;
 	}
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	public int SlowEmaLength
 	{
-		return [(Security, CandleType)];
+		get => _slowEmaLength.Value;
+		set => _slowEmaLength.Value = value;
 	}
 
-	/// <inheritdoc />
-	protected override void OnReseted()
+	public int AtrLength
 	{
-		base.OnReseted();
-
-		_previousSar = 0m;
-		_previousClose = 0m;
-		_hasPrevious = false;
+		get => _atrLength.Value;
+		set => _atrLength.Value = value;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
+		_prevFast = 0;
+		_prevSlow = 0;
+		_entryPrice = 0;
 
-		var parabolicSar = new ParabolicSar
-		{
-			Acceleration = AccelerationFactor,
-			AccelerationMax = MaxAccelerationFactor
-		};
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaLength };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaLength };
+		var atr = new AverageTrueRange { Length = AtrLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(parabolicSar, ProcessCandle)
+			.Bind(fastEma, slowEma, atr, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, parabolicSar);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal sarValue)
+	private void ProcessCandle(ICandleMessage candle, decimal fastVal, decimal slowVal, decimal atrVal)
 	{
-		// Process only finished candles to avoid premature signals.
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Ensure the strategy is allowed to trade and all required data is available.
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var closePrice = candle.ClosePrice;
-
-		// Capture the very first data point to initialize crossover tracking.
-		if (!_hasPrevious)
+		if (_prevFast == 0 || _prevSlow == 0 || atrVal <= 0)
 		{
-			_previousSar = sarValue;
-			_previousClose = closePrice;
-			_hasPrevious = true;
+			_prevFast = fastVal;
+			_prevSlow = slowVal;
 			return;
 		}
 
-		// Determine the relative position of the SAR for the current and previous candles.
-		var wasSarAbove = _previousSar > _previousClose;
-		var isSarAbove = sarValue > closePrice;
+		var close = candle.ClosePrice;
 
-		if (wasSarAbove && !isSarAbove && Position <= 0)
+		if (Position > 0)
 		{
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
-			LogInfo($"Buy signal: SAR {sarValue} switched below close {closePrice}.");
+			if (fastVal < slowVal && _prevFast >= _prevSlow)
+			{
+				SellMarket();
+				_entryPrice = 0;
+			}
+			else if (close <= _entryPrice - atrVal * 2m)
+			{
+				SellMarket();
+				_entryPrice = 0;
+			}
 		}
-		else if (!wasSarAbove && isSarAbove && Position >= 0)
+		else if (Position < 0)
 		{
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
-			LogInfo($"Sell signal: SAR {sarValue} switched above close {closePrice}.");
+			if (fastVal > slowVal && _prevFast <= _prevSlow)
+			{
+				BuyMarket();
+				_entryPrice = 0;
+			}
+			else if (close >= _entryPrice + atrVal * 2m)
+			{
+				BuyMarket();
+				_entryPrice = 0;
+			}
 		}
 
-		// Store current values for the next candle to evaluate future crossovers.
-		_previousSar = sarValue;
-		_previousClose = closePrice;
+		if (Position == 0)
+		{
+			if (fastVal > slowVal && _prevFast <= _prevSlow)
+			{
+				_entryPrice = close;
+				BuyMarket();
+			}
+			else if (fastVal < slowVal && _prevFast >= _prevSlow)
+			{
+				_entryPrice = close;
+				SellMarket();
+			}
+		}
+
+		_prevFast = fastVal;
+		_prevSlow = slowVal;
 	}
 }

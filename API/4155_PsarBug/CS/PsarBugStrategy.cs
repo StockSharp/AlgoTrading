@@ -1,10 +1,4 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,223 +8,126 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Parabolic SAR flip strategy converted from the MetaTrader expert.
-/// Reacts to the first dot that crosses the close and reverses the position.
+/// PsarBug: EMA trend with RSI confirmation and ATR stops.
 /// </summary>
 public class PsarBugStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _tradeVolume;
-	private readonly StrategyParam<int> _stopLossPoints;
-	private readonly StrategyParam<int> _takeProfitPoints;
-	private readonly StrategyParam<decimal> _sarAccelerationStep;
-	private readonly StrategyParam<decimal> _sarAccelerationMax;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _emaLength;
+	private readonly StrategyParam<int> _rsiLength;
+	private readonly StrategyParam<int> _atrLength;
 
-	private decimal? _previousSar;
-	private decimal? _previousClose;
+	private decimal _prevClose;
+	private decimal _entryPrice;
 
-	/// <summary>
-	/// Initializes a new instance of the <see cref="PsarBugStrategy"/> class.
-	/// </summary>
 	public PsarBugStrategy()
 	{
-		_tradeVolume = Param(nameof(TradeVolume), 0.1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Trade Volume", "Order volume expressed in lots", "General")
-			
-			.SetOptimize(0.05m, 1m, 0.05m);
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Timeframe.", "General");
 
-		_stopLossPoints = Param(nameof(StopLossPoints), 40)
-			.SetDisplay("Stop Loss Points", "Stop-loss distance expressed in price steps", "Risk")
-			.SetRange(0, 10000)
-			
-			.SetOptimize(0, 120, 10);
+		_emaLength = Param(nameof(EmaLength), 30)
+			.SetDisplay("EMA Length", "Trend filter.", "Indicators");
 
-		_takeProfitPoints = Param(nameof(TakeProfitPoints), 70)
-			.SetDisplay("Take Profit Points", "Take-profit distance expressed in price steps", "Risk")
-			.SetRange(0, 10000)
-			
-			.SetOptimize(20, 200, 10);
+		_rsiLength = Param(nameof(RsiLength), 14)
+			.SetDisplay("RSI Length", "RSI period.", "Indicators");
 
-		_sarAccelerationStep = Param(nameof(SarAccelerationStep), 0.02m)
-			.SetDisplay("SAR Step", "Initial acceleration factor for Parabolic SAR", "Indicator")
-			.SetRange(0.01m, 0.1m)
-			
-			.SetOptimize(0.01m, 0.05m, 0.01m);
-
-		_sarAccelerationMax = Param(nameof(SarAccelerationMax), 0.2m)
-			.SetDisplay("SAR Max", "Maximum acceleration factor for Parabolic SAR", "Indicator")
-			.SetRange(0.1m, 0.5m)
-			
-			.SetOptimize(0.1m, 0.4m, 0.05m);
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
-			.SetDisplay("Candle Type", "Candle timeframe used for calculations", "General");
-
-		Volume = _tradeVolume.Value;
+		_atrLength = Param(nameof(AtrLength), 14)
+			.SetDisplay("ATR Length", "ATR period.", "Indicators");
 	}
 
-	/// <summary>
-	/// Base order volume in lots.
-	/// </summary>
-	public decimal TradeVolume
-	{
-		get => _tradeVolume.Value;
-		set
-		{
-			_tradeVolume.Value = value;
-			Volume = value;
-		}
-	}
-
-	/// <summary>
-	/// Stop-loss distance expressed in price steps.
-	/// </summary>
-	public int StopLossPoints
-	{
-		get => _stopLossPoints.Value;
-		set => _stopLossPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Take-profit distance expressed in price steps.
-	/// </summary>
-	public int TakeProfitPoints
-	{
-		get => _takeProfitPoints.Value;
-		set => _takeProfitPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Initial acceleration factor for Parabolic SAR.
-	/// </summary>
-	public decimal SarAccelerationStep
-	{
-		get => _sarAccelerationStep.Value;
-		set => _sarAccelerationStep.Value = value;
-	}
-
-	/// <summary>
-	/// Maximum acceleration factor for Parabolic SAR.
-	/// </summary>
-	public decimal SarAccelerationMax
-	{
-		get => _sarAccelerationMax.Value;
-		set => _sarAccelerationMax.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used for data subscriptions.
-	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	public int EmaLength
 	{
-		return [(Security, CandleType)];
+		get => _emaLength.Value;
+		set => _emaLength.Value = value;
 	}
 
-	/// <inheritdoc />
-	protected override void OnReseted()
+	public int RsiLength
 	{
-		base.OnReseted();
-
-		_previousSar = null;
-		_previousClose = null;
-		Volume = _tradeVolume.Value;
+		get => _rsiLength.Value;
+		set => _rsiLength.Value = value;
 	}
 
-	/// <inheritdoc />
+	public int AtrLength
+	{
+		get => _atrLength.Value;
+		set => _atrLength.Value = value;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		Volume = _tradeVolume.Value;
+		_prevClose = 0;
+		_entryPrice = 0;
 
-		var priceStep = GetPriceStep();
-		var stopLoss = CreateProtectionUnit(StopLossPoints, priceStep);
-		var takeProfit = CreateProtectionUnit(TakeProfitPoints, priceStep);
-
-		StartProtection(stopLoss: stopLoss, takeProfit: takeProfit, useMarketOrders: true);
-
-		var parabolicSar = new ParabolicSar
-		{
-			Acceleration = SarAccelerationStep,
-			AccelerationMax = SarAccelerationMax
-		};
+		var ema = new ExponentialMovingAverage { Length = EmaLength };
+		var rsi = new RelativeStrengthIndex { Length = RsiLength };
+		var atr = new AverageTrueRange { Length = AtrLength };
 
 		var subscription = SubscribeCandles(CandleType);
-
 		subscription
-			.Bind(parabolicSar, ProcessCandle)
+			.Bind(ema, rsi, atr, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, parabolicSar);
+			DrawIndicator(area, ema);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal sarValue)
+	private void ProcessCandle(ICandleMessage candle, decimal emaVal, decimal rsiVal, decimal atrVal)
 	{
-		// Work strictly with completed candles to mirror the MetaTrader implementation.
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Store the very first values and wait for the next candle to evaluate a flip.
-		if (_previousSar is null || _previousClose is null)
+		var close = candle.ClosePrice;
+
+		if (_prevClose == 0 || atrVal <= 0)
 		{
-			_previousSar = sarValue;
-			_previousClose = candle.ClosePrice;
+			_prevClose = close;
 			return;
 		}
 
-		// Determine whether the Parabolic SAR crossed the close between the last two candles.
-		var buySignal = sarValue < candle.ClosePrice && _previousSar > _previousClose;
-		var sellSignal = sarValue > candle.ClosePrice && _previousSar < _previousClose;
-
-		_previousSar = sarValue;
-		_previousClose = candle.ClosePrice;
-
-		if (!buySignal && !sellSignal)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (buySignal && Position <= 0m)
+		if (Position > 0)
 		{
-			var volume = Volume + Math.Abs(Position);
-			if (volume > 0m)
+			if (close >= _entryPrice + atrVal * 2.5m || close <= _entryPrice - atrVal * 1.5m || close < emaVal)
 			{
-				// Reverse any short exposure and establish a long position when SAR flips below price.
-				BuyMarket(volume);
+				SellMarket();
+				_entryPrice = 0;
 			}
 		}
-		else if (sellSignal && Position >= 0m)
+		else if (Position < 0)
 		{
-			var volume = Volume + Math.Abs(Position);
-			if (volume > 0m)
+			if (close <= _entryPrice - atrVal * 2.5m || close >= _entryPrice + atrVal * 1.5m || close > emaVal)
 			{
-				// Reverse any long exposure and establish a short position when SAR jumps above price.
-				SellMarket(volume);
+				BuyMarket();
+				_entryPrice = 0;
 			}
 		}
-	}
 
-	private static Unit CreateProtectionUnit(int points, decimal priceStep)
-	{
-		if (points <= 0 || priceStep <= 0m)
-			return null;
+		if (Position == 0)
+		{
+			if (close > emaVal && _prevClose <= emaVal && rsiVal > 50)
+			{
+				_entryPrice = close;
+				BuyMarket();
+			}
+			else if (close < emaVal && _prevClose >= emaVal && rsiVal < 50)
+			{
+				_entryPrice = close;
+				SellMarket();
+			}
+		}
 
-		var offset = priceStep * points;
-		return new Unit(offset, UnitTypes.Absolute);
+		_prevClose = close;
 	}
 }
