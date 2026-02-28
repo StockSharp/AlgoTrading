@@ -1,561 +1,146 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Port of the "SendCloseOrder" MetaTrader 4 expert advisor.
-/// The strategy rebuilds fractal-based trendlines and trades their touch events.
+/// SendCloseOrder: Fractal high/low breakout with EMA filter and ATR stops.
 /// </summary>
 public class SendCloseOrderStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _closeOffsetPoints;
-	private readonly StrategyParam<decimal> _volumeTolerance;
-	private readonly StrategyParam<int> _maxStoredFractals;
-	private readonly StrategyParam<decimal> _defaultPriceStep;
-
-	private readonly StrategyParam<bool> _enableSellLine;
-	private readonly StrategyParam<bool> _enableBuyLine;
-	private readonly StrategyParam<bool> _enableCloseLongLine;
-	private readonly StrategyParam<bool> _enableCloseShortLine;
-	private readonly StrategyParam<int> _maxOrders;
-	private readonly StrategyParam<decimal> _tradeVolume;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _emaLength;
+	private readonly StrategyParam<int> _atrLength;
 
-	private readonly List<FractalPoint> _fractals = new();
+	private decimal _entryPrice;
+	private decimal _fractalHigh;
+	private decimal _fractalLow;
+	private decimal _prev2High;
+	private decimal _prev1High;
+	private decimal _prev2Low;
+	private decimal _prev1Low;
+	private int _barCount;
 
-	private LineInfo _sellLine;
-	private LineInfo _buyLine;
-	private LineInfo _closeLongLine;
-	private LineInfo _closeShortLine;
-
-	private decimal _h1;
-	private decimal _h2;
-	private decimal _h3;
-	private decimal _h4;
-	private decimal _h5;
-	private decimal _l1;
-	private decimal _l2;
-	private decimal _l3;
-	private decimal _l4;
-	private decimal _l5;
-	private DateTimeOffset _t1;
-	private DateTimeOffset _t2;
-	private DateTimeOffset _t3;
-	private DateTimeOffset _t4;
-	private DateTimeOffset _t5;
-
-	private enum FractalKinds
-	{
-		Up,
-		Down,
-	}
-
-	private enum LineTypes
-	{
-		Sell,
-		Buy,
-		CloseLong,
-		CloseShort,
-	}
-
-	private sealed class FractalPoint
-	{
-		public FractalPoint(FractalKinds type, DateTimeOffset time, decimal price)
-		{
-			Type = type;
-			Time = time;
-			Price = price;
-		}
-
-		public FractalKinds Type { get; }
-
-		public DateTimeOffset Time { get; }
-
-		public decimal Price { get; set; }
-	}
-
-	private sealed class LineInfo
-	{
-		public LineInfo(LineTypes type, DateTimeOffset firstTime, decimal firstPrice, DateTimeOffset secondTime, decimal secondPrice)
-		{
-			Type = type;
-			FirstTime = firstTime;
-			FirstPrice = firstPrice;
-			SecondTime = secondTime;
-			SecondPrice = secondPrice;
-		}
-
-		public LineTypes Type { get; }
-
-		public DateTimeOffset FirstTime { get; }
-
-		public decimal FirstPrice { get; }
-
-		public DateTimeOffset SecondTime { get; }
-
-		public decimal SecondPrice { get; }
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="SendCloseOrderStrategy"/> class.
-	/// </summary>
 	public SendCloseOrderStrategy()
 	{
-		_enableSellLine = Param(nameof(EnableSellLine), true)
-			.SetDisplay("Enable Sell Line", "Allow sell signals generated from the resistance trendline.", "Signals");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Timeframe.", "General");
 
-		_enableBuyLine = Param(nameof(EnableBuyLine), true)
-			.SetDisplay("Enable Buy Line", "Allow buy signals generated from the support trendline.", "Signals");
+		_emaLength = Param(nameof(EmaLength), 50)
+			.SetDisplay("EMA Length", "Trend filter.", "Indicators");
 
-		_enableCloseLongLine = Param(nameof(EnableCloseLongLine), true)
-			.SetDisplay("Enable Close #1", "Allow closing positions when the upper exit line is touched.", "Signals");
-
-		_enableCloseShortLine = Param(nameof(EnableCloseShortLine), true)
-			.SetDisplay("Enable Close #2", "Allow closing positions when the lower exit line is touched.", "Signals");
-
-		_maxOrders = Param(nameof(MaxOrders), 1)
-			.SetGreaterThanZero()
-			.SetDisplay("Max Orders", "Maximum stacked entries allowed at the same time.", "Risk")
-			
-			.SetOptimize(1, 5, 1);
-
-		_tradeVolume = Param(nameof(TradeVolume), 0.1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Trade Volume", "Volume per individual entry.", "Trading");
-
-		_closeOffsetPoints = Param(nameof(CloseOffsetPoints), 15m)
-			.SetNotNegative()
-			.SetDisplay("Close Offset", "Offset in points added when projecting close lines.", "Lines");
-
-		_volumeTolerance = Param(nameof(VolumeTolerance), 0.0000001m)
-			.SetNotNegative()
-			.SetDisplay("Volume Tolerance", "Tolerance when comparing calculated volume against broker limits.", "Trading");
-
-		_maxStoredFractals = Param(nameof(MaxStoredFractals), 64)
-			.SetGreaterThanZero()
-			.SetDisplay("Fractal Cache", "Maximum number of historical fractal points kept for trendline construction.", "Lines");
-
-		_defaultPriceStep = Param(nameof(DefaultPriceStep), 0.0001m)
-			.SetGreaterThanZero()
-			.SetDisplay("Price Step Fallback", "Fallback price step used when the security does not provide one.", "Trading");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
-			.SetDisplay("Candle Type", "Candle series used for fractal detection.", "Data");
+		_atrLength = Param(nameof(AtrLength), 14)
+			.SetDisplay("ATR Length", "ATR period.", "Indicators");
 	}
 
-	/// <summary>
-	/// Enables sell entries triggered by the resistance line.
-	/// </summary>
-	public bool EnableSellLine
-	{
-		get => _enableSellLine.Value;
-		set => _enableSellLine.Value = value;
-	}
-
-	/// <summary>
-	/// Enables buy entries triggered by the support line.
-	/// </summary>
-	public bool EnableBuyLine
-	{
-		get => _enableBuyLine.Value;
-		set => _enableBuyLine.Value = value;
-	}
-
-	/// <summary>
-	/// Enables the upper exit line that closes long positions.
-	/// </summary>
-	public bool EnableCloseLongLine
-	{
-		get => _enableCloseLongLine.Value;
-		set => _enableCloseLongLine.Value = value;
-	}
-
-	/// <summary>
-	/// Enables the lower exit line that closes short positions.
-	/// </summary>
-	public bool EnableCloseShortLine
-	{
-		get => _enableCloseShortLine.Value;
-		set => _enableCloseShortLine.Value = value;
-	}
-
-	/// <summary>
-	/// Maximum number of stacked entries allowed simultaneously.
-	/// </summary>
-	public int MaxOrders
-	{
-		get => _maxOrders.Value;
-		set => _maxOrders.Value = value;
-	}
-
-	/// <summary>
-	/// Volume of a single trade when opening a new position.
-	/// </summary>
-	public decimal TradeVolume
-	{
-		get => _tradeVolume.Value;
-		set => _tradeVolume.Value = value;
-	}
-
-	/// <summary>
-	/// Offset in points applied when drawing the close lines.
-	/// </summary>
-	public decimal CloseOffsetPoints
-	{
-		get => _closeOffsetPoints.Value;
-		set => _closeOffsetPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Tolerance when comparing calculated volume with broker limits.
-	/// </summary>
-	public decimal VolumeTolerance
-	{
-		get => _volumeTolerance.Value;
-		set => _volumeTolerance.Value = value;
-	}
-
-	/// <summary>
-	/// Maximum number of stored fractals used to build trendlines.
-	/// </summary>
-	public int MaxStoredFractals
-	{
-		get => _maxStoredFractals.Value;
-		set => _maxStoredFractals.Value = value;
-	}
-
-	/// <summary>
-	/// Fallback price step used when the security does not define one.
-	/// </summary>
-	public decimal DefaultPriceStep
-	{
-		get => _defaultPriceStep.Value;
-		set => _defaultPriceStep.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used to build the fractal structure.
-	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	public int EmaLength
 	{
-		return [(Security, CandleType)];
+		get => _emaLength.Value;
+		set => _emaLength.Value = value;
 	}
 
-	/// <inheritdoc />
-	protected override void OnReseted()
+	public int AtrLength
 	{
-		base.OnReseted();
-
-		_fractals.Clear();
-		_sellLine = null;
-		_buyLine = null;
-		_closeLongLine = null;
-		_closeShortLine = null;
-
-		_h1 = _h2 = _h3 = _h4 = _h5 = 0m;
-		_l1 = _l2 = _l3 = _l4 = _l5 = 0m;
-		_t1 = _t2 = _t3 = _t4 = _t5 = default;
+		get => _atrLength.Value;
+		set => _atrLength.Value = value;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		var subscription = SubscribeCandles(CandleType);
+		_entryPrice = 0;
+		_fractalHigh = 0;
+		_fractalLow = 0;
+		_prev2High = 0;
+		_prev1High = 0;
+		_prev2Low = 0;
+		_prev1Low = 0;
+		_barCount = 0;
 
+		var ema = new ExponentialMovingAverage { Length = EmaLength };
+		var atr = new AverageTrueRange { Length = AtrLength };
+
+		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(ema, atr, ProcessCandle)
 			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, ema);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal emaVal, decimal atrVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Shift the five-candle window used for Bill Williams fractals.
-		ShiftWindow(candle);
-		DetectFractals();
+		_barCount++;
 
-		var priceStep = GetPriceStep();
-		UpdateLines(priceStep);
+		var high = candle.HighPrice;
+		var low = candle.LowPrice;
+		var close = candle.ClosePrice;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		// Detect fractal high: prev1High > prev2High and prev1High > current high
+		if (_barCount > 3 && _prev1High > _prev2High && _prev1High > high)
+			_fractalHigh = _prev1High;
+
+		// Detect fractal low: prev1Low < prev2Low and prev1Low < current low
+		if (_barCount > 3 && _prev1Low < _prev2Low && _prev1Low < low)
+			_fractalLow = _prev1Low;
+
+		_prev2High = _prev1High;
+		_prev1High = high;
+		_prev2Low = _prev1Low;
+		_prev1Low = low;
+
+		if (_fractalHigh == 0 || _fractalLow == 0 || atrVal <= 0)
 			return;
 
-		var signal = GetTriggeredLine(candle, priceStep);
-		if (signal is null)
-			return;
-
-		if (signal == LineTypes.CloseLong || signal == LineTypes.CloseShort)
+		if (Position > 0)
 		{
-			if (Position != 0m)
+			if (close >= _entryPrice + atrVal * 3m || close <= _entryPrice - atrVal * 1.5m)
 			{
-				// Flatten any existing position when a close line is touched.
-				ClosePosition();
-			}
-
-			return;
-		}
-
-		if (TradeVolume <= 0m)
-			return;
-
-		var maxVolume = MaxOrders * TradeVolume;
-		if (maxVolume <= 0m)
-			return;
-
-		var absPosition = Math.Abs(Position);
-
-		if (signal == LineTypes.Buy)
-		{
-			var hasShort = Position < 0m;
-			var hasCapacity = Position >= 0m && absPosition + TradeVolume <= maxVolume + VolumeTolerance;
-
-			if (!hasShort && !hasCapacity)
-				return;
-
-			var volume = TradeVolume + (hasShort ? absPosition : 0m);
-			if (volume > 0m)
-			{
-				// Offset shorts first, then stack the requested long entry.
-				BuyMarket(volume);
+				SellMarket();
+				_entryPrice = 0;
 			}
 		}
-		else if (signal == LineTypes.Sell)
+		else if (Position < 0)
 		{
-			var hasLong = Position > 0m;
-			var hasCapacity = Position <= 0m && absPosition + TradeVolume <= maxVolume + VolumeTolerance;
-
-			if (!hasLong && !hasCapacity)
-				return;
-
-			var volume = TradeVolume + (hasLong ? absPosition : 0m);
-			if (volume > 0m)
+			if (close <= _entryPrice - atrVal * 3m || close >= _entryPrice + atrVal * 1.5m)
 			{
-				// Offset longs first, then stack the requested short entry.
-				SellMarket(volume);
-			}
-		}
-	}
-
-	private void ShiftWindow(ICandleMessage candle)
-	{
-		_h1 = _h2;
-		_h2 = _h3;
-		_h3 = _h4;
-		_h4 = _h5;
-		_h5 = candle.HighPrice;
-
-		_l1 = _l2;
-		_l2 = _l3;
-		_l3 = _l4;
-		_l4 = _l5;
-		_l5 = candle.LowPrice;
-
-		_t1 = _t2;
-		_t2 = _t3;
-		_t3 = _t4;
-		_t4 = _t5;
-		_t5 = candle.OpenTime;
-	}
-
-	private void DetectFractals()
-	{
-		if (_t1 == default || _t2 == default || _t3 == default || _t4 == default || _t5 == default)
-			return;
-
-		// Bill Williams fractal requires the middle candle to dominate both sides.
-		var upFractal = _h3 >= _h2 && _h3 > _h1 && _h3 >= _h4 && _h3 > _h5;
-		if (upFractal)
-			RegisterFractal(FractalKinds.Up, _t3, _h3);
-
-		var downFractal = _l3 <= _l2 && _l3 < _l1 && _l3 <= _l4 && _l3 < _l5;
-		if (downFractal)
-			RegisterFractal(FractalKinds.Down, _t3, _l3);
-	}
-
-	private void RegisterFractal(FractalKinds kind, DateTimeOffset time, decimal price)
-	{
-		if (_fractals.Count > 0)
-		{
-			var last = _fractals[^1];
-			if (last.Time == time && last.Type == kind)
-			{
-				// Update the price if the same candle produced another evaluation.
-				last.Price = price;
-				return;
+				BuyMarket();
+				_entryPrice = 0;
 			}
 		}
 
-		_fractals.Add(new FractalPoint(kind, time, price));
-
-		if (_fractals.Count > MaxStoredFractals)
-			_fractals.RemoveAt(0);
-	}
-
-	private void UpdateLines(decimal priceStep)
-	{
-		if (EnableSellLine || EnableCloseLongLine)
+		if (Position == 0)
 		{
-			if (TryBuildLine(FractalKinds.Up, FractalKinds.Down, out var first, out var last))
+			if (close > _fractalHigh && close > emaVal)
 			{
-				_sellLine = EnableSellLine ? new LineInfo(LineTypes.Sell, first.Time, first.Price, last.Time, last.Price) : null;
-
-				var offset = CloseOffsetPoints * priceStep;
-				_closeLongLine = EnableCloseLongLine
-					? new LineInfo(LineTypes.CloseLong, first.Time, first.Price + offset, last.Time, last.Price + offset)
-					: null;
+				_entryPrice = close;
+				BuyMarket();
 			}
-			else
+			else if (close < _fractalLow && close < emaVal)
 			{
-				_sellLine = null;
-				_closeLongLine = null;
+				_entryPrice = close;
+				SellMarket();
 			}
 		}
-		else
-		{
-			_sellLine = null;
-			_closeLongLine = null;
-		}
-
-		if (EnableBuyLine || EnableCloseShortLine)
-		{
-			if (TryBuildLine(FractalKinds.Down, FractalKinds.Up, out var first, out var last))
-			{
-				_buyLine = EnableBuyLine ? new LineInfo(LineTypes.Buy, first.Time, first.Price, last.Time, last.Price) : null;
-
-				var offset = CloseOffsetPoints * priceStep;
-				_closeShortLine = EnableCloseShortLine
-					? new LineInfo(LineTypes.CloseShort, first.Time, first.Price - offset, last.Time, last.Price - offset)
-					: null;
-			}
-			else
-			{
-				_buyLine = null;
-				_closeShortLine = null;
-			}
-		}
-		else
-		{
-			_buyLine = null;
-			_closeShortLine = null;
-		}
-	}
-
-	private bool TryBuildLine(FractalKinds outerKind, FractalKinds middleKind, out FractalPoint first, out FractalPoint last)
-	{
-		first = default!;
-		last = default!;
-
-		for (var i = _fractals.Count - 1; i >= 0; i--)
-		{
-			var candidateLast = _fractals[i];
-			if (candidateLast.Type != outerKind)
-				continue;
-
-			var middleIndex = i - 1;
-			while (middleIndex >= 0 && _fractals[middleIndex].Type != middleKind)
-				middleIndex--;
-
-			if (middleIndex < 0)
-				continue;
-
-			var firstIndex = middleIndex - 1;
-			while (firstIndex >= 0 && _fractals[firstIndex].Type != outerKind)
-				firstIndex--;
-
-			if (firstIndex < 0)
-				continue;
-
-			var candidateFirst = _fractals[firstIndex];
-
-			if (candidateFirst.Time >= candidateLast.Time)
-				continue;
-
-			first = candidateFirst;
-			last = candidateLast;
-			return true;
-		}
-
-		return false;
-	}
-
-	private LineTypes? GetTriggeredLine(ICandleMessage candle, decimal priceStep)
-	{
-		var evaluationTime = candle.CloseTime != default ? candle.CloseTime : candle.OpenTime;
-		var tolerance = priceStep * 2m;
-		if (tolerance <= 0m)
-			tolerance = priceStep > 0m ? priceStep : DefaultPriceStep;
-
-		foreach (var line in EnumerateLinesByPriority())
-		{
-			if (line is null)
-				continue;
-
-			var projectedPrice = ProjectPrice(line, evaluationTime);
-			if (projectedPrice is null)
-				continue;
-
-			var price = projectedPrice.Value;
-
-			// Treat the touch as valid when the candle's range envelops the projected price.
-			if (price >= candle.LowPrice - tolerance && price <= candle.HighPrice + tolerance)
-				return line.Type;
-		}
-
-		return null;
-	}
-
-	private IEnumerable<LineInfo> EnumerateLinesByPriority()
-	{
-		yield return _closeLongLine;
-		yield return _closeShortLine;
-		yield return _sellLine;
-		yield return _buyLine;
-	}
-
-	private decimal? ProjectPrice(LineInfo line, DateTimeOffset time)
-	{
-		var start = line.FirstTime;
-		var end = line.SecondTime;
-
-		var totalTicks = end.Ticks - start.Ticks;
-		if (totalTicks == 0)
-			return null;
-
-		var offsetTicks = time.Ticks - start.Ticks;
-		var slope = (line.SecondPrice - line.FirstPrice) / totalTicks;
-		return line.FirstPrice + slope * offsetTicks;
-	}
-
-	private decimal GetPriceStep()
-	{
-		var step = Security?.PriceStep ?? 0m;
-		if (step <= 0m)
-			step = DefaultPriceStep;
-
-		return step;
 	}
 }

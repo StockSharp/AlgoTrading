@@ -1,10 +1,4 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,299 +8,141 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// EMA/WMA crossover strategy converted from MetaTrader 4 expert advisor.
-/// Uses exponential and weighted moving averages of candle open prices
-/// and applies stop-loss/take-profit management similar to the original robot.
+/// EMA WMA Crossover Risk: Dual EMA crossover with ATR stops.
 /// </summary>
 public class EmaWmaRiskStrategy : Strategy
 {
-	private readonly StrategyParam<int> _emaPeriod;
-	private readonly StrategyParam<int> _wmaPeriod;
-	private readonly StrategyParam<decimal> _stopLossPoints;
-	private readonly StrategyParam<decimal> _takeProfitPoints;
-	private readonly StrategyParam<decimal> _riskPercent;
-	private readonly StrategyParam<decimal> _orderVolume;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _fastEmaLength;
+	private readonly StrategyParam<int> _slowEmaLength;
+	private readonly StrategyParam<int> _atrLength;
 
-	private ExponentialMovingAverage _ema = null!;
-	private WeightedMovingAverage _wma = null!;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private decimal _entryPrice;
 
-	private decimal? _previousEma;
-	private decimal? _previousWma;
-
-	/// <summary>
-/// Initializes a new instance of the <see cref="EmaWmaRiskStrategy"/> class.
-/// </summary>
-public EmaWmaRiskStrategy()
+	public EmaWmaRiskStrategy()
 	{
-		_emaPeriod = Param(nameof(EmaPeriod), 28)
-			.SetGreaterThanZero()
-			.SetDisplay("EMA Period", "Period for the exponential moving average", "Indicators")
-			
-			.SetOptimize(10, 60, 2);
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Timeframe.", "General");
 
-		_wmaPeriod = Param(nameof(WmaPeriod), 8)
-			.SetGreaterThanZero()
-			.SetDisplay("WMA Period", "Period for the weighted moving average", "Indicators")
-			
-			.SetOptimize(5, 30, 1);
+		_fastEmaLength = Param(nameof(FastEmaLength), 10)
+			.SetDisplay("Fast EMA", "Fast EMA period.", "Indicators");
 
-		_stopLossPoints = Param(nameof(StopLossPoints), 50m)
-			.SetNotNegative()
-			.SetDisplay("Stop Loss (points)", "Protective stop distance expressed in price steps", "Risk")
-			
-			.SetOptimize(10m, 150m, 10m);
+		_slowEmaLength = Param(nameof(SlowEmaLength), 21)
+			.SetDisplay("Slow EMA", "Slow EMA period.", "Indicators");
 
-		_takeProfitPoints = Param(nameof(TakeProfitPoints), 50m)
-			.SetNotNegative()
-			.SetDisplay("Take Profit (points)", "Profit target distance expressed in price steps", "Risk")
-			
-			.SetOptimize(10m, 150m, 10m);
-
-		_riskPercent = Param(nameof(RiskPercent), 10m)
-			.SetNotNegative()
-			.SetDisplay("Risk %", "Capital percentage risked per trade", "Money Management")
-			
-			.SetOptimize(1m, 20m, 1m);
-
-		_orderVolume = Param(nameof(OrderVolume), 0m)
-			.SetNotNegative()
-			.SetDisplay("Fixed Volume", "Optional fixed order volume override", "Money Management");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
-			.SetDisplay("Candle Type", "Primary timeframe used for calculations", "General");
+		_atrLength = Param(nameof(AtrLength), 14)
+			.SetDisplay("ATR Length", "ATR period.", "Indicators");
 	}
 
-	/// <summary>
-	/// EMA length.
-	/// </summary>
-	public int EmaPeriod
-	{
-		get => _emaPeriod.Value;
-		set => _emaPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// WMA length.
-	/// </summary>
-	public int WmaPeriod
-	{
-		get => _wmaPeriod.Value;
-		set => _wmaPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Stop-loss distance in instrument steps.
-	/// </summary>
-	public decimal StopLossPoints
-	{
-		get => _stopLossPoints.Value;
-		set => _stopLossPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Take-profit distance in instrument steps.
-	/// </summary>
-	public decimal TakeProfitPoints
-	{
-		get => _takeProfitPoints.Value;
-		set => _takeProfitPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Risk percentage used for position sizing.
-	/// </summary>
-	public decimal RiskPercent
-	{
-		get => _riskPercent.Value;
-		set => _riskPercent.Value = value;
-	}
-
-	/// <summary>
-	/// Fixed volume override. When zero the size is computed from <see cref="RiskPercent"/> and the stop distance.
-	/// </summary>
-	public decimal OrderVolume
-	{
-		get => _orderVolume.Value;
-		set => _orderVolume.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used by the strategy.
-	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	public int FastEmaLength
 	{
-		return [(Security, CandleType)];
+		get => _fastEmaLength.Value;
+		set => _fastEmaLength.Value = value;
 	}
 
-	/// <inheritdoc />
-	protected override void OnReseted()
+	public int SlowEmaLength
 	{
-		base.OnReseted();
-
-		_previousEma = null;
-		_previousWma = null;
+		get => _slowEmaLength.Value;
+		set => _slowEmaLength.Value = value;
 	}
 
-	/// <inheritdoc />
+	public int AtrLength
+	{
+		get => _atrLength.Value;
+		set => _atrLength.Value = value;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_ema = new EMA { Length = EmaPeriod };
-		_wma = new WeightedMovingAverage { Length = WmaPeriod };
+		_prevFast = 0;
+		_prevSlow = 0;
+		_entryPrice = 0;
 
-		var stopLossUnit = StopLossPoints > 0m ? new Unit(StopLossPoints, UnitTypes.Step) : null;
-		var takeProfitUnit = TakeProfitPoints > 0m ? new Unit(TakeProfitPoints, UnitTypes.Step) : null;
-
-		// Enable automatic stop-loss and take-profit handling similar to the MT4 implementation.
-		StartProtection(takeProfit: takeProfitUnit, stopLoss: stopLossUnit, useMarketOrders: true);
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaLength };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaLength };
+		var atr = new AverageTrueRange { Length = AtrLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(fastEma, slowEma, atr, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _ema);
-			DrawIndicator(area, _wma);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal fastVal, decimal slowVal, decimal atrVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var emaValue = _ema.Process(new DecimalIndicatorValue(_ema, candle.OpenPrice, candle.OpenTime));
-		var wmaValue = _wma.Process(new DecimalIndicatorValue(_wma, candle.OpenPrice, candle.OpenTime));
-
-		if (!emaValue.IsFormed || !wmaValue.IsFormed)
-			return;
-
-		var currentEma = emaValue.ToDecimal();
-		var currentWma = wmaValue.ToDecimal();
-
-		if (_previousEma is decimal prevEma && _previousWma is decimal prevWma)
+		if (_prevFast == 0 || _prevSlow == 0 || atrVal <= 0)
 		{
-			var buySignal = prevEma > prevWma && currentEma < currentWma;
-			var sellSignal = prevEma < prevWma && currentEma > currentWma;
-
-			if (buySignal)
-				TryEnterLong();
-			else if (sellSignal)
-				TryEnterShort();
+			_prevFast = fastVal;
+			_prevSlow = slowVal;
+			return;
 		}
 
-		_previousEma = currentEma;
-		_previousWma = currentWma;
-	}
+		var close = candle.ClosePrice;
 
-	private void TryEnterLong()
-	{
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var volume = CalculateOrderVolume();
-		if (volume <= 0m)
-			return;
-
-		// Close existing short exposure before opening a new long position.
-		if (Position < 0m)
-			BuyMarket(-Position);
-
-		BuyMarket(volume);
-	}
-
-	private void TryEnterShort()
-	{
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var volume = CalculateOrderVolume();
-		if (volume <= 0m)
-			return;
-
-		// Close existing long exposure before opening a new short position.
-		if (Position > 0m)
-			SellMarket(Position);
-
-		SellMarket(volume);
-	}
-
-	private decimal CalculateOrderVolume()
-	{
-		if (OrderVolume > 0m)
-			return OrderVolume;
-
-		if (RiskPercent <= 0m)
-			return 0m;
-
-		var stopDistance = GetStopDistance();
-		if (stopDistance <= 0m)
-			return 0m;
-
-		var portfolio = Portfolio;
-		if (portfolio is null)
-			return 0m;
-
-		var equity = portfolio.CurrentValue ?? portfolio.BeginValue ?? 0m;
-		if (equity <= 0m)
-			return 0m;
-
-		var priceStep = Security?.PriceStep ?? 0m;
-		var stepPrice = Security?.StepPrice ?? 0m;
-
-		decimal perUnitRisk;
-		if (priceStep > 0m && stepPrice > 0m)
+		if (Position > 0)
 		{
-			perUnitRisk = stopDistance / priceStep * stepPrice;
+			if (fastVal < slowVal && _prevFast >= _prevSlow)
+			{
+				SellMarket();
+				_entryPrice = 0;
+			}
+			else if (close <= _entryPrice - atrVal * 2m)
+			{
+				SellMarket();
+				_entryPrice = 0;
+			}
 		}
-		else
+		else if (Position < 0)
 		{
-			// Fallback when exchange-specific step information is unavailable.
-			perUnitRisk = stopDistance;
+			if (fastVal > slowVal && _prevFast <= _prevSlow)
+			{
+				BuyMarket();
+				_entryPrice = 0;
+			}
+			else if (close >= _entryPrice + atrVal * 2m)
+			{
+				BuyMarket();
+				_entryPrice = 0;
+			}
 		}
 
-		if (perUnitRisk <= 0m)
-			return 0m;
-
-		var riskAmount = equity * RiskPercent / 100m;
-		if (riskAmount <= 0m)
-			return 0m;
-
-		var rawVolume = riskAmount / perUnitRisk;
-		var volumeStep = Security?.VolumeStep ?? 0m;
-
-		if (volumeStep > 0m)
+		if (Position == 0)
 		{
-			var steps = Math.Max(1m, Math.Floor(rawVolume / volumeStep));
-			return steps * volumeStep;
+			if (fastVal > slowVal && _prevFast <= _prevSlow)
+			{
+				_entryPrice = close;
+				BuyMarket();
+			}
+			else if (fastVal < slowVal && _prevFast >= _prevSlow)
+			{
+				_entryPrice = close;
+				SellMarket();
+			}
 		}
 
-		return Math.Max(rawVolume, 0m);
-	}
-
-	private decimal GetStopDistance()
-	{
-		if (StopLossPoints <= 0m)
-			return 0m;
-
-		var priceStep = Security?.PriceStep ?? 0m;
-		if (priceStep > 0m)
-			return StopLossPoints * priceStep;
-
-		return StopLossPoints;
+		_prevFast = fastVal;
+		_prevSlow = slowVal;
 	}
 }

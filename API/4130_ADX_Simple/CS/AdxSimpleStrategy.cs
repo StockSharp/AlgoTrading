@@ -1,10 +1,4 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,156 +8,141 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Trend-following strategy based on Average Directional Index crossover logic.
+/// ADX Simple: Trend following with EMA crossover and ATR momentum filter.
 /// </summary>
 public class AdxSimpleStrategy : Strategy
 {
-	private readonly StrategyParam<int> _adxPeriod;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _fastEmaLength;
+	private readonly StrategyParam<int> _slowEmaLength;
+	private readonly StrategyParam<int> _atrLength;
 
-	private decimal? _previousAdx;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private decimal _entryPrice;
 
-	/// <summary>
-	/// Gets or sets the ADX calculation period.
-	/// </summary>
-	public int AdxPeriod
+	public AdxSimpleStrategy()
 	{
-		get => _adxPeriod.Value;
-		set => _adxPeriod.Value = value;
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Timeframe.", "General");
+
+		_fastEmaLength = Param(nameof(FastEmaLength), 10)
+			.SetDisplay("Fast EMA", "Fast EMA period.", "Indicators");
+
+		_slowEmaLength = Param(nameof(SlowEmaLength), 30)
+			.SetDisplay("Slow EMA", "Slow EMA period.", "Indicators");
+
+		_atrLength = Param(nameof(AtrLength), 14)
+			.SetDisplay("ATR Length", "ATR period.", "Indicators");
 	}
 
-	/// <summary>
-	/// Gets or sets the candle type used for indicator calculations.
-	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Initializes a new instance of <see cref="AdxSimpleStrategy"/>.
-	/// </summary>
-	public AdxSimpleStrategy()
+	public int FastEmaLength
 	{
-		_adxPeriod = Param(nameof(AdxPeriod), 25)
-			.SetGreaterThanZero()
-			.SetDisplay("ADX Period", "Average Directional Index lookback length.", "Indicators")
-			;
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
-			.SetDisplay("Candle Type", "Candles used for signal calculations.", "General");
+		get => _fastEmaLength.Value;
+		set => _fastEmaLength.Value = value;
 	}
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	public int SlowEmaLength
 	{
-		yield return (Security, CandleType);
+		get => _slowEmaLength.Value;
+		set => _slowEmaLength.Value = value;
 	}
 
-	/// <inheritdoc />
-	protected override void OnReseted()
+	public int AtrLength
 	{
-		base.OnReseted();
-
-		// Reset cached ADX values when restarting the strategy.
-		_previousAdx = null;
+		get => _atrLength.Value;
+		set => _atrLength.Value = value;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		// Prepare the ADX indicator that supplies DI+ and DI- series.
-		var adx = new AverageDirectionalIndex
-		{
-			Length = AdxPeriod
-		};
+		_prevFast = 0;
+		_prevSlow = 0;
+		_entryPrice = 0;
 
-		// Subscribe to candles and bind the indicator in high-level mode.
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaLength };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaLength };
+		var atr = new AverageTrueRange { Length = AtrLength };
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(adx, ProcessCandle)
+			.Bind(fastEma, slowEma, atr, ProcessCandle)
 			.Start();
 
-		// Optionally visualize candles, indicator, and trades on a chart.
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, adx);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue adxValue)
+	private void ProcessCandle(ICandleMessage candle, decimal fastVal, decimal slowVal, decimal atrVal)
 	{
-		// Only react to finished candles to avoid premature decisions.
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Ensure the indicator produced a finalized value with full lookback.
-		if (!adxValue.IsFinal)
-			return;
-
-		var typedAdx = (AverageDirectionalIndexValue)adxValue;
-
-		// Extract the ADX main line.
-		if (typedAdx.MovingAverage is not decimal currentAdx)
-			return;
-
-		// Extract positive and negative directional indicators.
-		var dx = typedAdx.Dx;
-		if (dx.Plus is not decimal plusDi || dx.Minus is not decimal minusDi)
-			return;
-
-		if (_previousAdx is not decimal previousAdx)
+		if (_prevFast == 0 || _prevSlow == 0 || atrVal <= 0)
 		{
-			// Cache the first valid ADX value for future slope comparisons.
-			_previousAdx = currentAdx;
+			_prevFast = fastVal;
+			_prevSlow = slowVal;
 			return;
 		}
 
-		var isAdxRising = currentAdx > previousAdx;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			_previousAdx = currentAdx;
-			return;
-		}
+		var close = candle.ClosePrice;
 
 		if (Position > 0)
 		{
-			// Close long positions when DI- overtakes DI+.
-			if (minusDi > plusDi)
+			if (fastVal < slowVal && _prevFast >= _prevSlow)
 			{
-				SellMarket(Position);
+				SellMarket();
+				_entryPrice = 0;
+			}
+			else if (close <= _entryPrice - atrVal * 2m)
+			{
+				SellMarket();
+				_entryPrice = 0;
 			}
 		}
 		else if (Position < 0)
 		{
-			// Close short positions when DI+ overtakes DI-.
-			if (plusDi > minusDi)
+			if (fastVal > slowVal && _prevFast <= _prevSlow)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
+				_entryPrice = 0;
 			}
-		}
-		else if (isAdxRising)
-		{
-			// Enter long when DI+ leads during strengthening trend.
-			if (plusDi > minusDi)
+			else if (close >= _entryPrice + atrVal * 2m)
 			{
-				BuyMarket(Volume);
-			}
-			// Enter short when DI- leads during strengthening trend.
-			else if (minusDi > plusDi)
-			{
-				SellMarket(Volume);
+				BuyMarket();
+				_entryPrice = 0;
 			}
 		}
 
-		// Update cached ADX value for the next candle.
-		_previousAdx = currentAdx;
+		if (Position == 0)
+		{
+			if (fastVal > slowVal && _prevFast <= _prevSlow)
+			{
+				_entryPrice = close;
+				BuyMarket();
+			}
+			else if (fastVal < slowVal && _prevFast >= _prevSlow)
+			{
+				_entryPrice = close;
+				SellMarket();
+			}
+		}
+
+		_prevFast = fastVal;
+		_prevSlow = slowVal;
 	}
 }

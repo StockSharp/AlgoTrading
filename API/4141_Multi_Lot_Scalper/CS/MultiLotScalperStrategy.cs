@@ -1,10 +1,4 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,861 +8,139 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Multi-position scalping strategy converted from the MetaTrader "Multi Lot Scalper" expert advisor.
+/// Multi Lot Scalper: MACD slope scalping with EMA filter and ATR stops.
 /// </summary>
 public class MultiLotScalperStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _takeProfitPips;
-	private readonly StrategyParam<decimal> _lotSize;
-	private readonly StrategyParam<decimal> _initialStopPips;
-	private readonly StrategyParam<decimal> _trailingStopPips;
-	private readonly StrategyParam<int> _maxTrades;
-	private readonly StrategyParam<decimal> _entryDistancePips;
-	private readonly StrategyParam<decimal> _secureProfit;
-	private readonly StrategyParam<bool> _useAccountProtection;
-	private readonly StrategyParam<int> _ordersToProtect;
-	private readonly StrategyParam<bool> _reverseSignals;
-	private readonly StrategyParam<bool> _useMoneyManagement;
-	private readonly StrategyParam<decimal> _riskPercent;
-	private readonly StrategyParam<bool> _isStandardAccount;
-	private readonly StrategyParam<decimal> _eurUsdPipValue;
-	private readonly StrategyParam<decimal> _gbpUsdPipValue;
-	private readonly StrategyParam<decimal> _usdChfPipValue;
-	private readonly StrategyParam<decimal> _usdJpyPipValue;
-	private readonly StrategyParam<decimal> _defaultPipValue;
-	private readonly StrategyParam<int> _startYear;
-	private readonly StrategyParam<int> _startMonth;
-	private readonly StrategyParam<int> _endYear;
-	private readonly StrategyParam<int> _endMonth;
-	private readonly StrategyParam<int> _endHour;
-	private readonly StrategyParam<int> _endMinute;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _macdFastLength;
-	private readonly StrategyParam<int> _macdSlowLength;
-	private readonly StrategyParam<int> _macdSignalLength;
+	private readonly StrategyParam<int> _fastEmaLength;
+	private readonly StrategyParam<int> _slowEmaLength;
+	private readonly StrategyParam<int> _emaFilterLength;
+	private readonly StrategyParam<int> _atrLength;
 
-	private MovingAverageConvergenceDivergenceSignal _macd = null!;
-	private decimal? _previousMacd;
-	private decimal _pipSize;
-	private decimal _pipValue;
-	private decimal _baseVolume;
-	private decimal _openVolume;
-	private decimal _averagePrice;
-	private int _openTrades;
-	private bool _isLongPosition;
-	private decimal _lastEntryPrice;
-	private decimal _lastEntryVolume;
-	private decimal? _stopLossPrice;
-	private decimal? _takeProfitPrice;
-	private bool _continueOpening;
-	private Sides? _currentDirection;
+	private decimal _prevMacd;
+	private decimal _entryPrice;
 
-	/// <summary>
-	/// Initializes a new instance of <see cref="MultiLotScalperStrategy"/>.
-	/// </summary>
 	public MultiLotScalperStrategy()
 	{
-		_takeProfitPips = Param(nameof(TakeProfitPips), 40m)
-		.SetDisplay("Take Profit (pips)", "Distance of the take profit for each entry in pips", "Risk")
-		;
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Timeframe.", "General");
 
-		_lotSize = Param(nameof(LotSize), 0.1m)
-		.SetGreaterThanZero()
-		.SetDisplay("Base Lot Size", "Fixed lot size used when balance based sizing is disabled", "Risk")
-		;
+		_fastEmaLength = Param(nameof(FastEmaLength), 12)
+			.SetDisplay("Fast EMA", "Fast EMA period.", "Indicators");
 
-		_initialStopPips = Param(nameof(InitialStopPips), 0m)
-		.SetDisplay("Initial Stop (pips)", "Initial protective stop distance in pips", "Risk")
-		;
+		_slowEmaLength = Param(nameof(SlowEmaLength), 26)
+			.SetDisplay("Slow EMA", "Slow EMA period.", "Indicators");
 
-		_trailingStopPips = Param(nameof(TrailingStopPips), 20m)
-		.SetDisplay("Trailing Stop (pips)", "Trailing stop distance that activates after the threshold", "Risk")
-		;
+		_emaFilterLength = Param(nameof(EmaFilterLength), 50)
+			.SetDisplay("EMA Filter", "Trend filter.", "Indicators");
 
-		_maxTrades = Param(nameof(MaxTrades), 10)
-		.SetGreaterThanZero()
-		.SetDisplay("Max Trades", "Maximum number of simultaneously open martingale trades", "General")
-		;
-
-		_entryDistancePips = Param(nameof(EntryDistancePips), 15m)
-		.SetGreaterThanZero()
-		.SetDisplay("Entry Distance (pips)", "Minimum adverse movement required before adding a new position", "General")
-		;
-
-		_secureProfit = Param(nameof(SecureProfit), 10m)
-		.SetDisplay("Secure Profit", "Floating profit in currency units required to protect the account", "Risk")
-		;
-
-		_useAccountProtection = Param(nameof(UseAccountProtection), true)
-		.SetDisplay("Use Account Protection", "Enable partial liquidation when floating profit exceeds the threshold", "Risk");
-
-		_ordersToProtect = Param(nameof(OrdersToProtect), 3)
-		.SetGreaterThanZero()
-		.SetDisplay("Orders To Protect", "Number of final trades guarded by the secure profit rule", "Risk")
-		;
-
-		_reverseSignals = Param(nameof(ReverseSignals), false)
-		.SetDisplay("Reverse Signals", "Reverse the MACD slope interpretation", "Filters");
-
-		_useMoneyManagement = Param(nameof(UseMoneyManagement), false)
-		.SetDisplay("Use Money Management", "Enable balance based position sizing", "Risk");
-
-		_riskPercent = Param(nameof(RiskPercent), 12m)
-		.SetGreaterThanZero()
-		.SetDisplay("Risk Percent", "Risk percentage used to derive the base lot size", "Risk")
-		;
-
-		_isStandardAccount = Param(nameof(IsStandardAccount), false)
-		.SetDisplay("Standard Account", "Use standard lot calculations instead of mini account scaling", "Risk");
-
-		_eurUsdPipValue = Param(nameof(EurUsdPipValue), 10m)
-		.SetDisplay("EURUSD Pip Value", "Monetary value of one pip for EURUSD", "Currency")
-		;
-
-		_gbpUsdPipValue = Param(nameof(GbpUsdPipValue), 10m)
-		.SetDisplay("GBPUSD Pip Value", "Monetary value of one pip for GBPUSD", "Currency")
-		;
-
-		_usdChfPipValue = Param(nameof(UsdChfPipValue), 10m)
-		.SetDisplay("USDCHF Pip Value", "Monetary value of one pip for USDCHF", "Currency")
-		;
-
-		_usdJpyPipValue = Param(nameof(UsdJpyPipValue), 9.715m)
-		.SetDisplay("USDJPY Pip Value", "Monetary value of one pip for USDJPY", "Currency")
-		;
-
-		_defaultPipValue = Param(nameof(DefaultPipValue), 5m)
-		.SetDisplay("Default Pip Value", "Fallback pip value used for other symbols", "Currency")
-		;
-
-		_startYear = Param(nameof(StartYear), 2005)
-		.SetDisplay("Start Year", "First year when new trades are allowed", "Schedule")
-		;
-
-		_startMonth = Param(nameof(StartMonth), 1)
-		.SetDisplay("Start Month", "First month when new trades are allowed", "Schedule")
-		;
-
-		_endYear = Param(nameof(EndYear), 2006)
-		.SetDisplay("End Year", "Last year when new trades are allowed", "Schedule")
-		;
-
-		_endMonth = Param(nameof(EndMonth), 12)
-		.SetDisplay("End Month", "Last month when new trades are allowed", "Schedule")
-		;
-
-		_endHour = Param(nameof(EndHour), 22)
-		.SetDisplay("End Hour", "Hour after which new trades are blocked", "Schedule")
-		;
-
-		_endMinute = Param(nameof(EndMinute), 30)
-		.SetDisplay("End Minute", "Minute after which new trades are blocked", "Schedule")
-		;
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
-		.SetDisplay("Candle Type", "Timeframe used for signal generation", "General");
-
-		_macdFastLength = Param(nameof(MacdFastLength), 14)
-		.SetGreaterThanZero()
-		.SetDisplay("MACD Fast", "Fast EMA period used in MACD", "Filters")
-		;
-
-		_macdSlowLength = Param(nameof(MacdSlowLength), 26)
-		.SetGreaterThanZero()
-		.SetDisplay("MACD Slow", "Slow EMA period used in MACD", "Filters")
-		;
-
-		_macdSignalLength = Param(nameof(MacdSignalLength), 9)
-		.SetGreaterThanZero()
-		.SetDisplay("MACD Signal", "Signal EMA period used in MACD", "Filters")
-		;
+		_atrLength = Param(nameof(AtrLength), 14)
+			.SetDisplay("ATR Length", "ATR period.", "Indicators");
 	}
 
-	/// <summary>
-	/// Take profit distance in pips applied to every entry.
-	/// </summary>
-	public decimal TakeProfitPips
-	{
-		get => _takeProfitPips.Value;
-		set => _takeProfitPips.Value = value;
-	}
-
-	/// <summary>
-	/// Fixed lot size used when balance based sizing is disabled.
-	/// </summary>
-	public decimal LotSize
-	{
-		get => _lotSize.Value;
-		set => _lotSize.Value = value;
-	}
-
-	/// <summary>
-	/// Initial stop loss distance expressed in pips.
-	/// </summary>
-	public decimal InitialStopPips
-	{
-		get => _initialStopPips.Value;
-		set => _initialStopPips.Value = value;
-	}
-
-	/// <summary>
-	/// Trailing stop distance expressed in pips.
-	/// </summary>
-	public decimal TrailingStopPips
-	{
-		get => _trailingStopPips.Value;
-		set => _trailingStopPips.Value = value;
-	}
-
-	/// <summary>
-	/// Maximum number of martingale entries allowed at the same time.
-	/// </summary>
-	public int MaxTrades
-	{
-		get => _maxTrades.Value;
-		set => _maxTrades.Value = value;
-	}
-
-	/// <summary>
-	/// Required adverse movement before averaging into the position.
-	/// </summary>
-	public decimal EntryDistancePips
-	{
-		get => _entryDistancePips.Value;
-		set => _entryDistancePips.Value = value;
-	}
-
-	/// <summary>
-	/// Floating profit threshold that triggers protective liquidation.
-	/// </summary>
-	public decimal SecureProfit
-	{
-		get => _secureProfit.Value;
-		set => _secureProfit.Value = value;
-	}
-
-	/// <summary>
-	/// Enables protective liquidation when floating profit is high enough.
-	/// </summary>
-	public bool UseAccountProtection
-	{
-		get => _useAccountProtection.Value;
-		set => _useAccountProtection.Value = value;
-	}
-
-	/// <summary>
-	/// Number of final martingale positions guarded by the secure profit rule.
-	/// </summary>
-	public int OrdersToProtect
-	{
-		get => _ordersToProtect.Value;
-		set => _ordersToProtect.Value = value;
-	}
-
-	/// <summary>
-	/// Reverses the MACD slope interpretation used for signals.
-	/// </summary>
-	public bool ReverseSignals
-	{
-		get => _reverseSignals.Value;
-		set => _reverseSignals.Value = value;
-	}
-
-	/// <summary>
-	/// Enables balance based position sizing logic.
-	/// </summary>
-	public bool UseMoneyManagement
-	{
-		get => _useMoneyManagement.Value;
-		set => _useMoneyManagement.Value = value;
-	}
-
-	/// <summary>
-	/// Risk percentage used to compute the base lot size when money management is active.
-	/// </summary>
-	public decimal RiskPercent
-	{
-		get => _riskPercent.Value;
-		set => _riskPercent.Value = value;
-	}
-
-	/// <summary>
-	/// Indicates whether the account uses standard lot sizing (as opposed to mini).
-	/// </summary>
-	public bool IsStandardAccount
-	{
-		get => _isStandardAccount.Value;
-		set => _isStandardAccount.Value = value;
-	}
-
-	/// <summary>
-	/// Monetary value of one pip for EURUSD.
-	/// </summary>
-	public decimal EurUsdPipValue
-	{
-		get => _eurUsdPipValue.Value;
-		set => _eurUsdPipValue.Value = value;
-	}
-
-	/// <summary>
-	/// Monetary value of one pip for GBPUSD.
-	/// </summary>
-	public decimal GbpUsdPipValue
-	{
-		get => _gbpUsdPipValue.Value;
-		set => _gbpUsdPipValue.Value = value;
-	}
-
-	/// <summary>
-	/// Monetary value of one pip for USDCHF.
-	/// </summary>
-	public decimal UsdChfPipValue
-	{
-		get => _usdChfPipValue.Value;
-		set => _usdChfPipValue.Value = value;
-	}
-
-	/// <summary>
-	/// Monetary value of one pip for USDJPY.
-	/// </summary>
-	public decimal UsdJpyPipValue
-	{
-		get => _usdJpyPipValue.Value;
-		set => _usdJpyPipValue.Value = value;
-	}
-
-	/// <summary>
-	/// Default pip value for other instruments.
-	/// </summary>
-	public decimal DefaultPipValue
-	{
-		get => _defaultPipValue.Value;
-		set => _defaultPipValue.Value = value;
-	}
-
-	/// <summary>
-	/// First calendar year when new trades may be opened.
-	/// </summary>
-	public int StartYear
-	{
-		get => _startYear.Value;
-		set => _startYear.Value = value;
-	}
-
-	/// <summary>
-	/// First calendar month when new trades may be opened.
-	/// </summary>
-	public int StartMonth
-	{
-		get => _startMonth.Value;
-		set => _startMonth.Value = value;
-	}
-
-	/// <summary>
-	/// Last calendar year when new trades may be opened.
-	/// </summary>
-	public int EndYear
-	{
-		get => _endYear.Value;
-		set => _endYear.Value = value;
-	}
-
-	/// <summary>
-	/// Last calendar month when new trades may be opened.
-	/// </summary>
-	public int EndMonth
-	{
-		get => _endMonth.Value;
-		set => _endMonth.Value = value;
-	}
-
-	/// <summary>
-	/// Last trading hour allowed for opening new positions.
-	/// </summary>
-	public int EndHour
-	{
-		get => _endHour.Value;
-		set => _endHour.Value = value;
-	}
-
-	/// <summary>
-	/// Last trading minute allowed for opening new positions.
-	/// </summary>
-	public int EndMinute
-	{
-		get => _endMinute.Value;
-		set => _endMinute.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used for signal generation.
-	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Fast EMA length of the MACD indicator.
-	/// </summary>
-	public int MacdFastLength
+	public int FastEmaLength
 	{
-		get => _macdFastLength.Value;
-		set => _macdFastLength.Value = value;
+		get => _fastEmaLength.Value;
+		set => _fastEmaLength.Value = value;
 	}
 
-	/// <summary>
-	/// Slow EMA length of the MACD indicator.
-	/// </summary>
-	public int MacdSlowLength
+	public int SlowEmaLength
 	{
-		get => _macdSlowLength.Value;
-		set => _macdSlowLength.Value = value;
+		get => _slowEmaLength.Value;
+		set => _slowEmaLength.Value = value;
 	}
 
-	/// <summary>
-	/// Signal EMA length of the MACD indicator.
-	/// </summary>
-	public int MacdSignalLength
+	public int EmaFilterLength
 	{
-		get => _macdSignalLength.Value;
-		set => _macdSignalLength.Value = value;
+		get => _emaFilterLength.Value;
+		set => _emaFilterLength.Value = value;
 	}
 
-	/// <inheritdoc />
-	protected override void OnReseted()
+	public int AtrLength
 	{
-		base.OnReseted();
-
-		_previousMacd = null;
-		_pipSize = 0m;
-		_pipValue = 0m;
-		_baseVolume = 0m;
-		_openVolume = 0m;
-		_averagePrice = 0m;
-		_openTrades = 0;
-		_isLongPosition = false;
-		_lastEntryPrice = 0m;
-		_lastEntryVolume = 0m;
-		_stopLossPrice = null;
-		_takeProfitPrice = null;
-		_continueOpening = true;
-		_currentDirection = null;
+		get => _atrLength.Value;
+		set => _atrLength.Value = value;
 	}
 
-	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_pipSize = Security?.PriceStep ?? 0m;
-		if (_pipSize <= 0m)
-		_pipSize = 0.0001m;
+		_prevMacd = 0;
+		_entryPrice = 0;
 
-		_pipValue = DeterminePipValue();
-		_baseVolume = CalculateBaseVolume();
-
-		_macd = new MovingAverageConvergenceDivergenceSignal
-		{
-			ShortMa = { Length = MacdFastLength },
-			LongMa = { Length = MacdSlowLength },
-			SignalPeriod = MacdSignalLength
-		};
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaLength };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaLength };
+		var emaFilter = new ExponentialMovingAverage { Length = EmaFilterLength };
+		var atr = new AverageTrueRange { Length = AtrLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-		.BindEx(_macd, ProcessCandle)
-		.Start();
+			.Bind(fastEma, slowEma, emaFilter, atr, ProcessCandle)
+			.Start();
 
-		StartProtection();
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, emaFilter);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue indicatorValue)
+	private void ProcessCandle(ICandleMessage candle, decimal fastVal, decimal slowVal, decimal emaVal, decimal atrVal)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
-		if (indicatorValue is not MovingAverageConvergenceDivergenceSignalValue macdValue)
-		return;
+		var macd = fastVal - slowVal;
 
-		var macdCurrent = macdValue.Macd;
-		var macdPrevious = _previousMacd;
-		_previousMacd = macdCurrent;
-
-		var time = candle.CloseTime;
-		if (!IsTradingWindowOpen(time))
-		return;
-
-		var currentPrice = candle.ClosePrice;
-
-		if (_openTrades > 0)
+		if (_prevMacd == 0 || atrVal <= 0)
 		{
-			ManageOpenPosition(currentPrice);
-			if (_openTrades == 0)
+			_prevMacd = macd;
 			return;
 		}
 
-		_continueOpening = _openTrades < MaxTrades;
-		if (!_continueOpening)
-		return;
+		var close = candle.ClosePrice;
 
-		if (_openTrades == 0)
+		if (Position > 0)
 		{
-			_currentDirection = DetermineDirection(macdCurrent, macdPrevious);
-			if (_currentDirection.HasValue)
-			TryOpenPosition(_currentDirection.Value);
-		}
-		else if (_currentDirection.HasValue)
-		{
-			TryAddPosition(_currentDirection.Value, currentPrice);
-		}
-	}
-
-	private void ManageOpenPosition(decimal currentPrice)
-	{
-		if (_openVolume <= 0m)
-		return;
-
-		// Check protective stop loss first to limit downside.
-		if (_stopLossPrice.HasValue)
-		{
-			if (_isLongPosition && currentPrice <= _stopLossPrice.Value)
+			if (close >= _entryPrice + atrVal * 2m || close <= _entryPrice - atrVal * 1.5m || macd < _prevMacd && macd < 0)
 			{
-				SellMarket(_openVolume);
-				return;
+				SellMarket();
+				_entryPrice = 0;
 			}
-			if (!_isLongPosition && currentPrice >= _stopLossPrice.Value)
+		}
+		else if (Position < 0)
+		{
+			if (close <= _entryPrice - atrVal * 2m || close >= _entryPrice + atrVal * 1.5m || macd > _prevMacd && macd > 0)
 			{
-				BuyMarket(_openVolume);
-				return;
+				BuyMarket();
+				_entryPrice = 0;
 			}
 		}
 
-		// Close the basket when the aggregated take profit is reached.
-		if (_takeProfitPrice.HasValue)
+		if (Position == 0)
 		{
-			if (_isLongPosition && currentPrice >= _takeProfitPrice.Value)
+			if (macd > 0 && _prevMacd <= 0 && close > emaVal)
 			{
-				SellMarket(_openVolume);
-				return;
+				_entryPrice = close;
+				BuyMarket();
 			}
-			if (!_isLongPosition && currentPrice <= _takeProfitPrice.Value)
+			else if (macd < 0 && _prevMacd >= 0 && close < emaVal)
 			{
-				BuyMarket(_openVolume);
-				return;
-			}
-		}
-
-		// Update trailing logic once the move exceeds the activation threshold.
-		if (TrailingStopPips > 0m)
-		UpdateTrailingStop(currentPrice);
-
-		if (UseAccountProtection && _openTrades >= Math.Max(1, MaxTrades - OrdersToProtect))
-		{
-			var profit = CalculateFloatingProfit(currentPrice);
-			if (profit >= SecureProfit && _lastEntryVolume > 0m)
-			{
-				// Exit the most recent entry to lock in the secured profit.
-				if (_isLongPosition)
-				SellMarket(_lastEntryVolume);
-				else
-				BuyMarket(_lastEntryVolume);
-
-				_continueOpening = false;
-			}
-		}
-	}
-
-	private void UpdateTrailingStop(decimal currentPrice)
-	{
-		var trailingDistance = ToPrice(TrailingStopPips);
-		var activationDistance = trailingDistance + ToPrice(EntryDistancePips);
-
-		if (_isLongPosition)
-		{
-			var profit = currentPrice - _averagePrice;
-			if (profit >= activationDistance)
-			{
-				var newStop = currentPrice - trailingDistance;
-				if (!_stopLossPrice.HasValue || newStop > _stopLossPrice.Value)
-				_stopLossPrice = newStop;
-			}
-		}
-		else
-		{
-			var profit = _averagePrice - currentPrice;
-			if (profit >= activationDistance)
-			{
-				var newStop = currentPrice + trailingDistance;
-				if (!_stopLossPrice.HasValue || newStop < _stopLossPrice.Value)
-				_stopLossPrice = newStop;
-			}
-		}
-	}
-
-	private void TryOpenPosition(Sides direction)
-	{
-		var volume = CalculateNextVolume();
-		if (volume <= 0m)
-		return;
-
-		// Market orders are used just like in the original expert advisor.
-		if (direction == Sides.Buy)
-		BuyMarket(volume);
-		else if (direction == Sides.Sell)
-		SellMarket(volume);
-	}
-
-	private void TryAddPosition(Sides direction, decimal currentPrice)
-	{
-		var distance = ToPrice(EntryDistancePips);
-		if (_lastEntryPrice <= 0m)
-		return;
-
-		var canAdd = direction == Sides.Buy
-		? (_lastEntryPrice - currentPrice) >= distance
-		: (currentPrice - _lastEntryPrice) >= distance;
-
-		if (!canAdd)
-		return;
-
-		TryOpenPosition(direction);
-	}
-
-	private Sides? DetermineDirection(decimal? macdCurrent, decimal? macdPrevious)
-	{
-		if (!macdCurrent.HasValue || !macdPrevious.HasValue)
-		return null;
-
-		if (macdCurrent.Value == macdPrevious.Value)
-		return null;
-
-		var isBullish = macdCurrent.Value > macdPrevious.Value;
-		var isBearish = macdCurrent.Value < macdPrevious.Value;
-
-		if (!isBullish && !isBearish)
-		return null;
-
-		if (ReverseSignals)
-		return isBullish ? Sides.Sell : Sides.Buy;
-
-		return isBullish ? Sides.Buy : Sides.Sell;
-	}
-
-	private bool IsTradingWindowOpen(DateTimeOffset time)
-	{
-		if (_openTrades > 0)
-		return true;
-
-		if (time.Year < StartYear)
-		return false;
-
-		if (time.Year == StartYear && time.Month < StartMonth)
-		return false;
-
-		if (time.Year > EndYear)
-		return false;
-
-		if (time.Year == EndYear && time.Month > EndMonth)
-		return false;
-
-		var hour = Math.Clamp(EndHour, 0, 23);
-		var minute = Math.Clamp(EndMinute, 0, 59);
-		var cutoff = new TimeSpan(hour, minute, 0);
-		if (time.TimeOfDay > cutoff)
-		return false;
-
-		return true;
-	}
-
-	private decimal CalculateFloatingProfit(decimal currentPrice)
-	{
-		if (_openVolume <= 0m)
-		return 0m;
-
-		if (_pipSize <= 0m)
-		return 0m;
-
-		var profitPips = _isLongPosition
-		? (currentPrice - _averagePrice) / _pipSize * _openVolume
-		: (_averagePrice - currentPrice) / _pipSize * _openVolume;
-
-		return profitPips * _pipValue;
-	}
-
-	private decimal CalculateBaseVolume()
-	{
-		var volume = LotSize;
-
-		if (UseMoneyManagement)
-		{
-			var balance = Portfolio?.CurrentValue ?? 0m;
-			if (balance > 0m)
-			{
-				var riskValue = balance * RiskPercent / 10000m;
-				var rounded = Math.Ceiling(riskValue);
-				volume = IsStandardAccount ? rounded : rounded / 10m;
+				_entryPrice = close;
+				SellMarket();
 			}
 		}
 
-		if (volume > 100m)
-		volume = 100m;
-
-		return volume;
-	}
-
-	private decimal CalculateNextVolume()
-	{
-		var volume = _baseVolume > 0m ? _baseVolume : CalculateBaseVolume();
-
-		if (_openTrades > 0)
-		{
-			for (var i = 0; i < _openTrades; i++)
-			{
-				volume = MaxTrades > 12
-				? Math.Round(volume * 1.5m, 1, MidpointRounding.AwayFromZero)
-				: Math.Round(volume * 2m, 1, MidpointRounding.AwayFromZero);
-			}
-		}
-
-		if (volume > 100m)
-		volume = 100m;
-
-		return volume;
-	}
-
-	private decimal DeterminePipValue()
-	{
-		var code = Security?.Code?.ToUpperInvariant();
-		return code switch
-		{
-			"EURUSD" => EurUsdPipValue,
-			"GBPUSD" => GbpUsdPipValue,
-			"USDCHF" => UsdChfPipValue,
-			"USDJPY" => UsdJpyPipValue,
-			_ => DefaultPipValue,
-		};
-	}
-
-	private decimal ToPrice(decimal pips)
-	{
-		return pips * _pipSize;
-	}
-
-	private void ResetPositionState()
-	{
-		_openVolume = 0m;
-		_averagePrice = 0m;
-		_openTrades = 0;
-		_stopLossPrice = null;
-		_takeProfitPrice = null;
-		_lastEntryPrice = 0m;
-		_lastEntryVolume = 0m;
-		_continueOpening = true;
-		_currentDirection = null;
-	}
-
-	private decimal? UpdateStopAfterEntry(bool isLong, decimal price)
-	{
-		if (InitialStopPips <= 0m)
-		return _stopLossPrice;
-
-		var stopOffset = ToPrice(InitialStopPips);
-		if (isLong)
-		{
-			var candidate = price - stopOffset;
-			return !_stopLossPrice.HasValue || candidate < _stopLossPrice.Value ? candidate : _stopLossPrice;
-		}
-
-		var candidateShort = price + stopOffset;
-		return !_stopLossPrice.HasValue || candidateShort > _stopLossPrice.Value ? candidateShort : _stopLossPrice;
-	}
-
-	private decimal? UpdateTakeProfitAfterEntry(bool isLong, decimal price)
-	{
-		if (TakeProfitPips <= 0m)
-		return _takeProfitPrice;
-
-		var takeOffset = ToPrice(TakeProfitPips);
-		if (isLong)
-		{
-			var candidate = price + takeOffset;
-			return !_takeProfitPrice.HasValue || candidate > _takeProfitPrice.Value ? candidate : _takeProfitPrice;
-		}
-
-		var candidateShort = price - takeOffset;
-		return !_takeProfitPrice.HasValue || candidateShort < _takeProfitPrice.Value ? candidateShort : _takeProfitPrice;
-	}
-
-	/// <inheritdoc />
-	protected override void OnOwnTradeReceived(MyTrade trade)
-	{
-		base.OnOwnTradeReceived(trade);
-
-		if (trade.Order == null || trade.Trade.Security != Security)
-		return;
-
-		var volume = trade.Trade.Volume;
-		var price = trade.Trade.Price;
-		var side = trade.Order.Side;
-
-		if (side == Sides.Buy)
-		{
-			if (_openVolume > 0m && !_isLongPosition)
-			{
-				HandlePositionReduction(volume);
-				return;
-			}
-
-			var newVolume = _openVolume + volume;
-			_averagePrice = newVolume == 0m ? 0m : (_averagePrice * _openVolume + price * volume) / newVolume;
-			_openVolume = newVolume;
-			_isLongPosition = true;
-			_openTrades++;
-			_lastEntryPrice = price;
-			_lastEntryVolume = volume;
-			_stopLossPrice = UpdateStopAfterEntry(true, price);
-			_takeProfitPrice = UpdateTakeProfitAfterEntry(true, price);
-			_baseVolume = CalculateBaseVolume();
-			_currentDirection = Sides.Buy;
-		}
-		else if (side == Sides.Sell)
-		{
-			if (_openVolume > 0m && _isLongPosition)
-			{
-				HandlePositionReduction(volume);
-				return;
-			}
-
-			var newVolume = _openVolume + volume;
-			_averagePrice = newVolume == 0m ? 0m : (_averagePrice * _openVolume + price * volume) / newVolume;
-			_openVolume = newVolume;
-			_isLongPosition = false;
-			_openTrades++;
-			_lastEntryPrice = price;
-			_lastEntryVolume = volume;
-			_stopLossPrice = UpdateStopAfterEntry(false, price);
-			_takeProfitPrice = UpdateTakeProfitAfterEntry(false, price);
-			_baseVolume = CalculateBaseVolume();
-			_currentDirection = Sides.Sell;
-		}
-
-		_continueOpening = _openTrades < MaxTrades;
-	}
-
-	private void HandlePositionReduction(decimal volume)
-	{
-		var closingVolume = Math.Min(_openVolume, volume);
-		_openVolume -= closingVolume;
-
-		if (_openVolume <= 0m)
-		{
-			ResetPositionState();
-		}
-		else if (_openTrades > 0)
-		{
-			_openTrades--;
-		}
+		_prevMacd = macd;
 	}
 }
