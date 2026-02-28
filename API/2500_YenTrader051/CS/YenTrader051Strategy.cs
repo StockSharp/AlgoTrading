@@ -1072,7 +1072,7 @@ public class YenTrader051Strategy : Strategy
 		ref decimal? rviMain,
 		ref decimal? rviSignalValue)
 	{
-		var rsiVal = rsi.Process(new DecimalIndicatorValue(rsi, candle);
+		var rsiVal = rsi.Process(new DecimalIndicatorValue(rsi, candle));
 		if (rsiVal.IsFinal)
 			rsiValue = rsiVal.ToDecimal();
 
@@ -1086,7 +1086,7 @@ public class YenTrader051Strategy : Strategy
 			var main = rviVal.ToDecimal();
 			rviMain = main;
 
-			var signalVal = rviSignal.Process(main, candle.CloseTime));
+			var signalVal = rviSignal.Process(new DecimalIndicatorValue(rviSignal, main));
 			if (signalVal.IsFinal)
 				rviSignalValue = signalVal.ToDecimal();
 		}

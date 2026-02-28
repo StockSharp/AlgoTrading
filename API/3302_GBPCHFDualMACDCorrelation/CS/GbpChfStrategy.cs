@@ -233,11 +233,11 @@ public class GbpChfStrategy : Strategy
 			.SetDisplay("Trade Volume", "Order volume when opening trades", "General")
 			.SetGreaterThanZero();
 
-		_macdShortMa = { Length = Param }(nameof(MacdShortPeriod), 12)
+		_macdShortMa = Param(nameof(MacdShortPeriod), 12)
 			.SetDisplay("MACD Fast", "Fast EMA length for MACD", "Indicator")
 			.SetGreaterThanZero();
 
-		_macdLongMa = { Length = Param }(nameof(MacdLongPeriod), 26)
+		_macdLongMa = Param(nameof(MacdLongPeriod), 26)
 			.SetDisplay("MACD Slow", "Slow EMA length for MACD", "Indicator")
 			.SetGreaterThanZero();
 

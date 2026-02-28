@@ -301,7 +301,7 @@ public class KstSkyrexioStrategy : Strategy
 		}
 	}
 
-	private IndicatorBase<decimal> CreateFilterMa()
+	private IIndicator CreateFilterMa()
 	{
 		return FilterMaType switch
 		{
