@@ -1,10 +1,4 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,128 +8,39 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// RSI Trader strategy combining price and RSI trend filters.
-/// The strategy compares short and long moving averages of both price and RSI to detect trend alignment.
+/// RSI Trader strategy combining price SMA crossover with RSI trend confirmation.
+/// Buy when short SMA crosses above long SMA with RSI above 50.
+/// Sell when short SMA crosses below long SMA with RSI below 50.
 /// </summary>
 public class RsiTraderAlignedAveragesStrategy : Strategy
 {
 	private readonly StrategyParam<int> _rsiPeriod;
-	private readonly StrategyParam<int> _shortPriceMaPeriod;
-	private readonly StrategyParam<int> _longPriceMaPeriod;
-	private readonly StrategyParam<int> _shortRsiMaPeriod;
-	private readonly StrategyParam<int> _longRsiMaPeriod;
+	private readonly StrategyParam<int> _shortMaPeriod;
+	private readonly StrategyParam<int> _longMaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private RelativeStrengthIndex _rsi;
-	private SimpleMovingAverage _shortRsiMa;
-	private SimpleMovingAverage _longRsiMa;
-	private SimpleMovingAverage _shortPriceMa;
-	private WeightedMovingAverage _longPriceMa;
+	private decimal _prevShort;
+	private decimal _prevLong;
+	private bool _hasPrev;
 
-	/// <summary>
-	/// RSI calculation period.
-	/// </summary>
-	public int RsiPeriod
-	{
-		get => _rsiPeriod.Value;
-		set => _rsiPeriod.Value = value;
-	}
+	public int RsiPeriod { get => _rsiPeriod.Value; set => _rsiPeriod.Value = value; }
+	public int ShortMaPeriod { get => _shortMaPeriod.Value; set => _shortMaPeriod.Value = value; }
+	public int LongMaPeriod { get => _longMaPeriod.Value; set => _longMaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Period for the short simple moving average of price.
-	/// </summary>
-	public int ShortPriceMaPeriod
-	{
-		get => _shortPriceMaPeriod.Value;
-		set => _shortPriceMaPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Period for the long linear weighted moving average of price.
-	/// </summary>
-	public int LongPriceMaPeriod
-	{
-		get => _longPriceMaPeriod.Value;
-		set => _longPriceMaPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Period for the short smoothing moving average applied to RSI.
-	/// </summary>
-	public int ShortRsiMaPeriod
-	{
-		get => _shortRsiMaPeriod.Value;
-		set => _shortRsiMaPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Period for the long smoothing moving average applied to RSI.
-	/// </summary>
-	public int LongRsiMaPeriod
-	{
-		get => _longRsiMaPeriod.Value;
-		set => _longRsiMaPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used for generating signals.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-/// Initializes strategy parameters.
-/// </summary>
-public RsiTraderAlignedAveragesStrategy()
+	public RsiTraderAlignedAveragesStrategy()
 	{
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
-			.SetDisplay("RSI Period", "RSI calculation period", "Trend")
-			
-			.SetOptimize(7, 28, 1);
+			.SetDisplay("RSI Period", "RSI calculation period", "Indicators");
 
-		_shortPriceMaPeriod = Param(nameof(ShortPriceMaPeriod), 9)
-			.SetDisplay("Short Price MA", "Short period for price moving average", "Trend")
-			
-			.SetOptimize(5, 20, 1);
+		_shortMaPeriod = Param(nameof(ShortMaPeriod), 9)
+			.SetDisplay("Short MA", "Short moving average period", "Indicators");
 
-		_longPriceMaPeriod = Param(nameof(LongPriceMaPeriod), 45)
-			.SetDisplay("Long Price MA", "Long period for price moving average", "Trend")
-			
-			.SetOptimize(30, 90, 5);
+		_longMaPeriod = Param(nameof(LongMaPeriod), 26)
+			.SetDisplay("Long MA", "Long moving average period", "Indicators");
 
-		_shortRsiMaPeriod = Param(nameof(ShortRsiMaPeriod), 9)
-			.SetDisplay("Short RSI MA", "Short smoothing period for RSI", "Momentum")
-			
-			.SetOptimize(5, 20, 1);
-
-		_longRsiMaPeriod = Param(nameof(LongRsiMaPeriod), 45)
-			.SetDisplay("Long RSI MA", "Long smoothing period for RSI", "Momentum")
-			
-			.SetOptimize(30, 90, 5);
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
-			.SetDisplay("Candle Type", "Candle type used for analysis", "General");
-	}
-
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_rsi = null;
-		_shortRsiMa = null;
-		_longRsiMa = null;
-		_shortPriceMa = null;
-		_longPriceMa = null;
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle timeframe", "General");
 	}
 
 	/// <inheritdoc />
@@ -143,93 +48,48 @@ public RsiTraderAlignedAveragesStrategy()
 	{
 		base.OnStarted2(time);
 
-		// Initialize indicators for price and RSI smoothing.
-		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
-		_shortRsiMa = new SimpleMovingAverage { Length = ShortRsiMaPeriod };
-		_longRsiMa = new SimpleMovingAverage { Length = LongRsiMaPeriod };
-		_shortPriceMa = new SimpleMovingAverage { Length = ShortPriceMaPeriod };
-		_longPriceMa = new WeightedMovingAverage { Length = LongPriceMaPeriod };
+		_hasPrev = false;
+
+		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
+		var shortMa = new SimpleMovingAverage { Length = ShortMaPeriod };
+		var longMa = new SimpleMovingAverage { Length = LongMaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(_rsi, ProcessCandle)
+			.Bind(rsi, shortMa, longMa, ProcessCandle)
 			.Start();
-
-		var priceArea = CreateChartArea();
-		if (priceArea != null)
-		{
-			DrawCandles(priceArea, subscription);
-			DrawIndicator(priceArea, _shortPriceMa);
-			DrawIndicator(priceArea, _longPriceMa);
-			DrawOwnTrades(priceArea);
-
-			var rsiArea = CreateChartArea();
-			if (rsiArea != null)
-			{
-				DrawIndicator(rsiArea, _rsi);
-				DrawIndicator(rsiArea, _shortRsiMa);
-				DrawIndicator(rsiArea, _longRsiMa);
-			}
-		}
-
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue rsiValue)
+	private void ProcessCandle(ICandleMessage candle, decimal rsiValue, decimal shortMa, decimal longMa)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		
-
-		if (!rsiValue.IsFinal)
+		if (!_hasPrev)
+		{
+			_prevShort = shortMa;
+			_prevLong = longMa;
+			_hasPrev = true;
 			return;
+		}
 
-		var rsi = rsiValue.ToDecimal();
-		var shortRsi = _shortRsiMa.Process(new DecimalIndicatorValue(_shortRsiMa, rsi, candle.OpenTime)).ToDecimal();
-		var longRsi = _longRsiMa.Process(new DecimalIndicatorValue(_longRsiMa, rsi, candle.OpenTime)).ToDecimal();
-		var shortPrice = _shortPriceMa.Process(new DecimalIndicatorValue(_shortPriceMa, candle.ClosePrice, candle.OpenTime)).ToDecimal();
-		var longPrice = _longPriceMa.Process(new DecimalIndicatorValue(_longPriceMa, candle.ClosePrice, candle.OpenTime)).ToDecimal();
+		var bullCross = _prevShort <= _prevLong && shortMa > longMa;
+		var bearCross = _prevShort >= _prevLong && shortMa < longMa;
 
-		if (!_shortRsiMa.IsFormed || !_longRsiMa.IsFormed || !_shortPriceMa.IsFormed || !_longPriceMa.IsFormed)
-			return;
-
-		var isLong = shortPrice > longPrice && shortRsi > longRsi;
-		var isShort = shortPrice < longPrice && shortRsi < longRsi;
-		var isSideways = (shortPrice > longPrice && shortRsi < longRsi) || (shortPrice < longPrice && shortRsi > longRsi);
-
-		if (isLong)
+		if (Position <= 0 && bullCross && rsiValue > 50)
 		{
 			if (Position < 0)
-			{
 				BuyMarket();
-				return;
-			}
-
-			if (Position == 0)
-				BuyMarket();
+			BuyMarket();
 		}
-		else if (isShort)
+		else if (Position >= 0 && bearCross && rsiValue < 50)
 		{
 			if (Position > 0)
-			{
 				SellMarket();
-				return;
-			}
+			SellMarket();
+		}
 
-			if (Position == 0)
-				SellMarket();
-		}
-		else if (isSideways && Position != 0)
-		{
-			if (Position > 0)
-			{
-				SellMarket();
-			}
-			else
-			{
-				BuyMarket();
-			}
-		}
+		_prevShort = shortMa;
+		_prevLong = longMa;
 	}
 }
-

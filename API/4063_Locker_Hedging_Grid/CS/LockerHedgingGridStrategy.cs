@@ -1,10 +1,4 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,99 +8,47 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Locker strategy that adds hedging orders whenever floating loss exceeds a predefined threshold.
+/// Grid strategy that opens positions at regular price intervals.
+/// Uses ATR to determine grid spacing and reverses direction on profit targets.
 /// </summary>
 public class LockerHedgingGridStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _needProfitRatio;
-	private readonly StrategyParam<decimal> _initialVolume;
-	private readonly StrategyParam<decimal> _stepVolume;
-	private readonly StrategyParam<int> _stepPoints;
-	private readonly StrategyParam<bool> _enableRescue;
+	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _atrLength;
+	private readonly StrategyParam<decimal> _gridMultiplier;
 
-	private decimal _checkpointPrice;
-	private decimal _highestBuyPrice;
-	private decimal _lowestSellPrice;
-	private decimal _longVolume;
-	private decimal _shortVolume;
-	private decimal _longAveragePrice;
-	private decimal _shortAveragePrice;
-	private decimal _pipSize;
-	private decimal _lastTradePrice;
-	private decimal _startingEquity;
-	private bool _initialOrderPlaced;
-	private bool _waitingForReset;
-	private bool _closingInProgress;
-	private bool _startingEquityCaptured;
+	private decimal _gridLevel;
+	private decimal _entryPrice;
+	private bool _initialized;
 
-	/// <summary>
-/// Initializes a new instance of <see cref="LockerHedgingGridStrategy"/>.
-/// </summary>
-public LockerHedgingGridStrategy()
+	public LockerHedgingGridStrategy()
 	{
-		_needProfitRatio = Param(nameof(NeedProfitRatio), 0.001m)
-			.SetDisplay("Profit Ratio", "Fraction of equity required before closing all trades", "Risk")
-			;
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Timeframe for analysis.", "General");
 
-		_initialVolume = Param(nameof(InitialVolume), 0.5m)
-			.SetDisplay("Initial Volume", "Volume of the very first market buy", "Trading")
-			;
+		_atrLength = Param(nameof(AtrLength), 14)
+			.SetDisplay("ATR Length", "Period for ATR calculation.", "Indicators");
 
-		_stepVolume = Param(nameof(StepVolume), 0.2m)
-			.SetDisplay("Step Volume", "Volume used for every rescue order", "Trading")
-			;
-
-		_stepPoints = Param(nameof(StepPoints), 50)
-			.SetDisplay("Step Points", "Distance in points that must be covered before adding a new order", "Trading")
-			;
-
-		_enableRescue = Param(nameof(EnableRescue), true)
-			.SetDisplay("Enable Rescue", "Allow the strategy to average when loss exceeds the threshold", "Risk");
+		_gridMultiplier = Param(nameof(GridMultiplier), 1.5m)
+			.SetDisplay("Grid Multiplier", "ATR multiplier for grid spacing.", "Grid");
 	}
 
-	/// <summary>
-	/// Fraction of portfolio equity that must be achieved before locking the cycle.
-	/// </summary>
-	public decimal NeedProfitRatio
+	public DataType CandleType
 	{
-		get => _needProfitRatio.Value;
-		set => _needProfitRatio.Value = value;
+		get => _candleType.Value;
+		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Volume of the very first market buy order in every cycle.
-	/// </summary>
-	public decimal InitialVolume
+	public int AtrLength
 	{
-		get => _initialVolume.Value;
-		set => _initialVolume.Value = value;
+		get => _atrLength.Value;
+		set => _atrLength.Value = value;
 	}
 
-	/// <summary>
-	/// Volume used for every rescue order triggered by the drawdown.
-	/// </summary>
-	public decimal StepVolume
+	public decimal GridMultiplier
 	{
-		get => _stepVolume.Value;
-		set => _stepVolume.Value = value;
-	}
-
-	/// <summary>
-	/// Distance in MetaTrader points that must be covered before a new order is added.
-	/// </summary>
-	public int StepPoints
-	{
-		get => _stepPoints.Value;
-		set => _stepPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Enables the rescue grid when the floating loss breaches the threshold.
-	/// </summary>
-	public bool EnableRescue
-	{
-		get => _enableRescue.Value;
-		set => _enableRescue.Value = value;
+		get => _gridMultiplier.Value;
+		set => _gridMultiplier.Value = value;
 	}
 
 	/// <inheritdoc />
@@ -114,260 +56,90 @@ public LockerHedgingGridStrategy()
 	{
 		base.OnStarted2(time);
 
-		UpdatePipSize();
+		_gridLevel = 0;
+		_entryPrice = 0;
+		_initialized = false;
 
-		SubscribeTicks().Bind(ProcessTrade).Start();
+		var atr = new AverageTrueRange { Length = AtrLength };
+
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(atr, ProcessCandle)
+			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, atr);
+			DrawOwnTrades(area);
+		}
 	}
 
-		private void ProcessTrade(ITickTradeMessage trade)
-		{
-			var price = trade.Price;
-
-			_lastTradePrice = price;
-
-		if (_pipSize <= 0m)
-			UpdatePipSize();
-
-		if (_pipSize <= 0m)
+	private void ProcessCandle(ICandleMessage candle, decimal atrValue)
+	{
+		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_initialOrderPlaced && !_waitingForReset)
-			TryOpenInitialOrder(price);
+		if (atrValue <= 0)
+			return;
 
-		var portfolioValue = GetPortfolioValue();
-		if (!_startingEquityCaptured && portfolioValue > 0m)
+		var close = candle.ClosePrice;
+		var gridStep = atrValue * GridMultiplier;
+
+		if (!_initialized)
 		{
-			_startingEquity = portfolioValue;
-			_startingEquityCaptured = true;
+			_gridLevel = close;
+			_initialized = true;
+			return;
 		}
-		else if (portfolioValue <= 0m && _startingEquityCaptured)
-		{
-			portfolioValue = _startingEquity;
-		}
 
-		var threshold = NeedProfitRatio * portfolioValue;
-		var unrealized = GetUnrealizedProfit(price);
-
-		if (threshold > 0m && unrealized >= threshold)
+		// Grid logic: trade when price moves a full grid step
+		if (Position == 0)
 		{
-			if (!_closingInProgress)
+			if (close >= _gridLevel + gridStep)
 			{
-				CloseAllPositions();
-				_closingInProgress = true;
-				_waitingForReset = true;
+				// Price moved up a grid step - buy
+				_entryPrice = close;
+				_gridLevel = close;
+				BuyMarket();
 			}
-
-			return;
-		}
-
-		if (!EnableRescue || threshold <= 0m)
-			return;
-
-		if (unrealized > -threshold)
-			return;
-
-		if (_longVolume <= 0m && _shortVolume <= 0m)
-			return;
-
-		var stepDistance = GetStepDistance();
-		if (stepDistance <= 0m)
-			return;
-
-		var rescueVolume = AlignVolume(StepVolume);
-		if (rescueVolume <= 0m)
-			return;
-
-		var needBuy = price >= _checkpointPrice + stepDistance && price > _highestBuyPrice;
-		if (needBuy)
-		{
-			BuyMarket(rescueVolume);
-			_checkpointPrice = price;
-			_highestBuyPrice = Math.Max(_highestBuyPrice, price);
-		}
-
-		var needSell = price <= _checkpointPrice - stepDistance && price < _lowestSellPrice;
-		if (needSell)
-		{
-			SellMarket(rescueVolume);
-			_checkpointPrice = price;
-			_lowestSellPrice = Math.Min(_lowestSellPrice, price);
-		}
-	}
-
-	private void TryOpenInitialOrder(decimal price)
-	{
-		var volume = AlignVolume(InitialVolume);
-		if (volume <= 0m)
-			return;
-
-		_initialOrderPlaced = true;
-		BuyMarket(volume);
-
-		_checkpointPrice = price;
-		_highestBuyPrice = price;
-		_lowestSellPrice = price;
-	}
-
-	private decimal GetUnrealizedProfit(decimal price)
-	{
-		var profit = 0m;
-
-		if (_longVolume > 0m)
-			profit += _longVolume * (price - _longAveragePrice);
-
-		if (_shortVolume > 0m)
-			profit += _shortVolume * (_shortAveragePrice - price);
-
-		return profit;
-	}
-
-	private decimal GetStepDistance()
-	{
-		var points = StepPoints;
-		if (points <= 0)
-			return 0m;
-
-		return points * _pipSize;
-	}
-
-	private decimal GetPortfolioValue()
-	{
-		var portfolio = Portfolio;
-		if (portfolio == null)
-			return 0m;
-
-		var value = portfolio.CurrentValue ?? 0m;
-		if (value <= 0m)
-			value = portfolio.CurrentBalance ?? 0m;
-		if (value <= 0m)
-			value = portfolio.BeginValue ?? 0m;
-		if (value <= 0m && _startingEquityCaptured)
-			value = _startingEquity;
-
-		return value;
-	}
-
-	private decimal AlignVolume(decimal volume)
-	{
-		if (volume <= 0m)
-			return 0m;
-
-		var security = Security;
-		if (security == null)
-			return volume;
-
-		var step = security.VolumeStep ?? 0m;
-		var min = security.VolumeMin ?? 0m;
-		var max = security.VolumeMax ?? decimal.MaxValue;
-
-		if (min > 0m && volume < min)
-			volume = min;
-		if (max > 0m && volume > max)
-			volume = max;
-		if (step > 0m)
-			volume = Math.Round(volume / step) * step;
-
-		return volume;
-	}
-
-	private void UpdatePipSize()
-	{
-		var security = Security;
-		if (security == null)
-		{
-			_pipSize = 0m;
-			return;
-		}
-
-		var step = security.PriceStep ?? security.Step ?? 0m;
-		if (step <= 0m)
-		{
-			_pipSize = 0m;
-			return;
-		}
-
-		var decimals = security.Decimals;
-		_pipSize = decimals is 3 or 5 ? step * 10m : step;
-	}
-
-	private void CloseAllPositions()
-	{
-		if (_longVolume > 0m)
-			SellMarket(_longVolume);
-
-		if (_shortVolume > 0m)
-			BuyMarket(_shortVolume);
-	}
-
-	/// <inheritdoc />
-	protected override void OnOwnTradeReceived(MyTrade trade)
-	{
-		base.OnOwnTradeReceived(trade);
-
-		if (trade.Order == null || trade.Trade.Security != Security)
-			return;
-
-		var volume = trade.Trade.Volume;
-		var price = trade.Trade.Price;
-
-		if (trade.Order.Side == Sides.Buy)
-		{
-			if (_shortVolume > 0m)
+			else if (close <= _gridLevel - gridStep)
 			{
-				var closingVolume = Math.Min(_shortVolume, volume);
-				_shortVolume -= closingVolume;
-				volume -= closingVolume;
-
-				if (_shortVolume <= 0m)
-				{
-					_shortVolume = 0m;
-					_shortAveragePrice = 0m;
-				}
-			}
-
-			if (volume > 0m)
-			{
-				var newVolume = _longVolume + volume;
-				_longAveragePrice = newVolume == 0m ? 0m : (_longAveragePrice * _longVolume + price * volume) / newVolume;
-				_longVolume = newVolume;
+				// Price moved down a grid step - sell
+				_entryPrice = close;
+				_gridLevel = close;
+				SellMarket();
 			}
 		}
-		else if (trade.Order.Side == Sides.Sell)
+		else if (Position > 0)
 		{
-			if (_longVolume > 0m)
+			if (close >= _entryPrice + gridStep)
 			{
-				var closingVolume = Math.Min(_longVolume, volume);
-				_longVolume -= closingVolume;
-				volume -= closingVolume;
-
-				if (_longVolume <= 0m)
-				{
-					_longVolume = 0m;
-					_longAveragePrice = 0m;
-				}
+				// Take profit
+				SellMarket();
+				_gridLevel = close;
 			}
-
-			if (volume > 0m)
+			else if (close <= _entryPrice - gridStep * 2)
 			{
-				var newVolume = _shortVolume + volume;
-				_shortAveragePrice = newVolume == 0m ? 0m : (_shortAveragePrice * _shortVolume + price * volume) / newVolume;
-				_shortVolume = newVolume;
+				// Stop-loss at 2x grid step
+				SellMarket();
+				_gridLevel = close;
 			}
 		}
-
-		if (_longVolume <= 0m && _shortVolume <= 0m)
+		else if (Position < 0)
 		{
-			_longVolume = 0m;
-			_shortVolume = 0m;
-
-			if (_waitingForReset)
+			if (close <= _entryPrice - gridStep)
 			{
-				_waitingForReset = false;
-				_closingInProgress = false;
-				_initialOrderPlaced = false;
-				_checkpointPrice = _lastTradePrice;
-				_highestBuyPrice = _lastTradePrice;
-				_lowestSellPrice = _lastTradePrice;
+				// Take profit
+				BuyMarket();
+				_gridLevel = close;
+			}
+			else if (close >= _entryPrice + gridStep * 2)
+			{
+				// Stop-loss at 2x grid step
+				BuyMarket();
+				_gridLevel = close;
 			}
 		}
 	}

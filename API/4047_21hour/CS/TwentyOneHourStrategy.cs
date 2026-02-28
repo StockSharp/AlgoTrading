@@ -1,82 +1,39 @@
-namespace StockSharp.Samples.Strategies;
-
 using System;
-using System.Linq;
-using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
+namespace StockSharp.Samples.Strategies;
 
+/// <summary>
+/// Time-based breakout strategy. At start hour, detects breakout direction from previous candle range.
+/// At stop hour, closes all positions.
+/// </summary>
 public class TwentyOneHourStrategy : Strategy
 {
-	// Parameter that controls the order volume in lots.
-
-	// Parameter defining the hour when pending orders are created.
 	private readonly StrategyParam<int> _startHour;
-
-	// Parameter defining the hour when positions are closed and pending orders removed.
 	private readonly StrategyParam<int> _stopHour;
-
-	// Parameter that stores the distance in points between market price and stop entries.
-	private readonly StrategyParam<int> _stepPoints;
-
-	// Parameter that stores the take-profit distance in points.
-	private readonly StrategyParam<int> _takeProfitPoints;
-
-	// Parameter that configures the candle type used for time tracking.
 	private readonly StrategyParam<DataType> _candleType;
 
-	// Cached best bid price from level1 updates.
-	private decimal? _bestBid;
-
-	// Cached best ask price from level1 updates.
-	private decimal? _bestAsk;
-
-	// Reference to the currently active buy stop order.
-	private Order _buyStopOrder;
-
-	// Reference to the currently active sell stop order.
-	private Order _sellStopOrder;
-
-	// Cached price step that converts point distances to absolute prices.
-	private decimal _priceStep;
-
-	// Date when pending orders were last placed.
-	private DateTime? _lastPlacementDate;
-
-	// Date when the daily cleanup was last executed.
-	private DateTime? _lastCleanupDate;
+	private decimal _prevHigh;
+	private decimal _prevLow;
+	private bool _hasPrev;
+	private bool _tradedToday;
+	private int _lastTradeDay;
 
 	public TwentyOneHourStrategy()
 	{
-
 		_startHour = Param(nameof(StartHour), 10)
-			.SetRange(0, 23)
-			.SetDisplay("Start Hour", "Hour to place pending orders", "Schedule");
+			.SetDisplay("Start Hour", "Hour to look for breakout entries.", "Schedule");
 
 		_stopHour = Param(nameof(StopHour), 22)
-			.SetRange(0, 23)
-			.SetDisplay("Stop Hour", "Hour to close positions", "Schedule");
+			.SetDisplay("Stop Hour", "Hour to close positions.", "Schedule");
 
-		_stepPoints = Param(nameof(StepPoints), 15)
-			.SetGreaterThanZero()
-			.SetDisplay("Entry Offset (points)", "Distance from bid/ask to place stops", "Trading");
-
-		_takeProfitPoints = Param(nameof(TakeProfitPoints), 200)
-			.SetDisplay("Take Profit (points)", "Target distance from entry in points", "Risk");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Candles used for time tracking", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candles used for time tracking.", "General");
 	}
-
 
 	public int StartHour
 	{
@@ -90,18 +47,6 @@ public class TwentyOneHourStrategy : Strategy
 		set => _stopHour.Value = value;
 	}
 
-	public int StepPoints
-	{
-		get => _stepPoints.Value;
-		set => _stepPoints.Value = value;
-	}
-
-	public int TakeProfitPoints
-	{
-		get => _takeProfitPoints.Value;
-		set => _takeProfitPoints.Value = value;
-	}
-
 	public DataType CandleType
 	{
 		get => _candleType.Value;
@@ -109,54 +54,27 @@ public class TwentyOneHourStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType), (Security, DataType.Level1)];
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_bestBid = null;
-		_bestAsk = null;
-		_buyStopOrder = null;
-		_sellStopOrder = null;
-		_lastPlacementDate = null;
-		_lastCleanupDate = null;
-		_priceStep = 0m;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_priceStep = Security?.PriceStep ?? 1m;
+		_prevHigh = 0;
+		_prevLow = 0;
+		_hasPrev = false;
+		_tradedToday = false;
+		_lastTradeDay = -1;
 
-		if (TakeProfitPoints > 0)
-		{
-			StartProtection(takeProfit: new Unit(TakeProfitPoints * _priceStep, UnitTypes.Point));
-		}
-
-		var candleSubscription = SubscribeCandles(CandleType);
-		candleSubscription.Bind(ProcessCandle).Start();
-
-		SubscribeLevel1()
-			.Bind(ProcessLevel1)
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(ProcessCandle)
 			.Start();
-	}
 
-	private void ProcessLevel1(Level1ChangeMessage level1)
-	{
-		var bid = level1.TryGetDecimal(Level1Fields.BestBidPrice);
-		if (bid != null)
-			_bestBid = bid;
-
-		var ask = level1.TryGetDecimal(Level1Fields.BestAskPrice);
-		if (ask != null)
-			_bestAsk = ask;
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawOwnTrades(area);
+		}
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -164,148 +82,42 @@ public class TwentyOneHourStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		EnsurePendingConsistency();
+		var hour = candle.OpenTime.Hour;
+		var day = candle.OpenTime.DayOfYear;
 
-		var candleTime = candle.OpenTime;
-
-		if (candleTime.Hour == StartHour && candleTime.Minute == 0)
-			TryPlacePendingOrders(candle);
-
-		if (candleTime.Hour == StopHour && candleTime.Minute == 0)
-			HandleStopWindow(candleTime);
-	}
-
-	private void TryPlacePendingOrders(ICandleMessage candle)
-	{
-		var date = candle.OpenTime.Date;
-
-		if (_lastPlacementDate == date)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (Volume <= 0m)
-			return;
-
-		var ask = _bestAsk ?? Security?.BestAskPrice ?? candle.ClosePrice;
-		var bid = _bestBid ?? Security?.BestBidPrice ?? candle.ClosePrice;
-
-		if (ask <= 0m || bid <= 0m)
-			return;
-
-		var stepDistance = StepPoints * _priceStep;
-
-		if (stepDistance <= 0m)
-			return;
-
-		var buyPrice = RoundPrice(ask + stepDistance);
-		var sellPrice = RoundPrice(bid - stepDistance);
-
-		if (buyPrice <= 0m || sellPrice <= 0m)
-			return;
-
-		CancelPendingOrders();
-
-		var buyOrder = BuyStop(Volume, buyPrice);
-		if (buyOrder != null)
-			_buyStopOrder = buyOrder;
-
-		var sellOrder = SellStop(Volume, sellPrice);
-		if (sellOrder != null)
-			_sellStopOrder = sellOrder;
-
-		if (_buyStopOrder != null || _sellStopOrder != null)
-			_lastPlacementDate = date;
-	}
-
-	private void HandleStopWindow(DateTimeOffset time)
-	{
-		var date = time.Date;
-
-		if (_lastCleanupDate == date)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		ClosePositions();
-		CancelPendingOrders();
-		_lastCleanupDate = date;
-	}
-
-	private void ClosePositions()
-	{
-		var position = Position;
-
-		if (position > 0m)
+		// Reset daily flag
+		if (day != _lastTradeDay)
 		{
-			SellMarket(position);
-		}
-		else if (position < 0m)
-		{
-			BuyMarket(Math.Abs(position));
-		}
-	}
-
-	private void CancelPendingOrders()
-	{
-		if (_buyStopOrder != null)
-		{
-			if (_buyStopOrder.State.IsActive())
-				CancelOrder(_buyStopOrder);
-
-			_buyStopOrder = null;
+			_tradedToday = false;
+			_lastTradeDay = day;
 		}
 
-		if (_sellStopOrder != null)
+		// Close at stop hour
+		if (hour >= StopHour && Position != 0)
 		{
-			if (_sellStopOrder.State.IsActive())
-				CancelOrder(_sellStopOrder);
-
-			_sellStopOrder = null;
+			if (Position > 0)
+				SellMarket();
+			else
+				BuyMarket();
 		}
-	}
 
-	private void EnsurePendingConsistency()
-	{
-		if (_buyStopOrder != null && !_buyStopOrder.State.IsActive())
-			_buyStopOrder = null;
+		// Entry at start hour window
+		if (hour >= StartHour && hour < StopHour && !_tradedToday && _hasPrev && Position == 0)
+		{
+			if (candle.ClosePrice > _prevHigh)
+			{
+				BuyMarket();
+				_tradedToday = true;
+			}
+			else if (candle.ClosePrice < _prevLow)
+			{
+				SellMarket();
+				_tradedToday = true;
+			}
+		}
 
-		if (_sellStopOrder != null && !_sellStopOrder.State.IsActive())
-			_sellStopOrder = null;
-
-		var buyActive = _buyStopOrder != null && _buyStopOrder.State.IsActive();
-		var sellActive = _sellStopOrder != null && _sellStopOrder.State.IsActive();
-
-		if (buyActive == sellActive)
-			return;
-
-		CancelPendingOrders();
-	}
-
-	private decimal RoundPrice(decimal price)
-	{
-		var step = Security?.PriceStep;
-
-		if (step == null || step.Value <= 0m)
-			return price;
-
-		return Math.Round(price / step.Value, 0, MidpointRounding.AwayFromZero) * step.Value;
-	}
-
-	/// <inheritdoc />
-	protected override void OnOrderReceived(Order order)
-	{
-		base.OnOrderReceived(order);
-
-		if (order == null || order.Security != Security)
-			return;
-
-		if (_buyStopOrder != null && order == _buyStopOrder && !_buyStopOrder.State.IsActive())
-			_buyStopOrder = null;
-
-		if (_sellStopOrder != null && order == _sellStopOrder && !_sellStopOrder.State.IsActive())
-			_sellStopOrder = null;
+		_prevHigh = candle.HighPrice;
+		_prevLow = candle.LowPrice;
+		_hasPrev = true;
 	}
 }

@@ -264,7 +264,7 @@ public class Russian20TimeFilterMomentumStrategy : Strategy
 
 			if (exitByMomentum || exitByTake)
 			{
-				ClosePosition();
+				if (Position > 0) SellMarket(); else if (Position < 0) BuyMarket();
 				_entryPrice = null;
 			}
 		}
@@ -276,7 +276,7 @@ public class Russian20TimeFilterMomentumStrategy : Strategy
 
 			if (exitByMomentum || exitByTake)
 			{
-				ClosePosition();
+				if (Position > 0) SellMarket(); else if (Position < 0) BuyMarket();
 				_entryPrice = null;
 			}
 		}

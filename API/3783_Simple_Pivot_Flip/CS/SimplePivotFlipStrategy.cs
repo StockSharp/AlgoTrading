@@ -56,7 +56,7 @@ public class SimplePivotFlipStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Order Volume", "Market order volume used for entries.", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles used for pivot calculation.", "Data");
 	}
 
@@ -126,19 +126,18 @@ public class SimplePivotFlipStrategy : Strategy
 			return;
 		}
 
-		if (Position != 0)
-		{
-			// Close the current exposure before opening a new trade.
-			ClosePosition();
-		}
+		if (Position > 0)
+			SellMarket();
+		else if (Position < 0)
+			BuyMarket();
 
 		if (desiredSide == Sides.Buy)
 		{
-			BuyMarket(OrderVolume);
+			BuyMarket();
 		}
 		else
 		{
-			SellMarket(OrderVolume);
+			SellMarket();
 		}
 
 		// Update reference range for the next candle.

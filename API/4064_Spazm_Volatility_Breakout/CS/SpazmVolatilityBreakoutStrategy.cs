@@ -1,10 +1,4 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,154 +8,48 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Volatility breakout strategy converted from the MetaTrader 4 expert advisor "Spazm".
-/// Tracks swing extremes and reverses direction when price moves beyond an adaptive volatility band.
+/// Volatility breakout strategy that tracks swing extremes and reverses
+/// when price breaks beyond an ATR-based volatility band.
 /// </summary>
 public class SpazmVolatilityBreakoutStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volatilityMultiplier;
-	private readonly StrategyParam<int> _volatilityPeriod;
-	private readonly StrategyParam<bool> _useWeightedVolatility;
-	private readonly StrategyParam<bool> _useOpenCloseRange;
-	private readonly StrategyParam<decimal> _stopLossMultiplier;
-	private readonly StrategyParam<bool> _drawSwingLines;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _atrLength;
+	private readonly StrategyParam<decimal> _multiplier;
 
-	private DecimalLengthIndicator _volatilityIndicator;
-	private decimal _priceStep;
-	private decimal _threshold;
-	private decimal _highestPrice;
-	private decimal _lowestPrice;
-	private DateTimeOffset _highestTime;
-	private DateTimeOffset _lowestTime;
-	private int _processedCandles;
-	private bool _trendInitialized;
-	private bool _isTrendUp;
-	private decimal? _longStopPrice;
-	private decimal? _shortStopPrice;
-	private (DateTimeOffset time, decimal price)? _lastRecordedHigh;
-	private (DateTimeOffset time, decimal price)? _lastRecordedLow;
+	private decimal _swingHigh;
+	private decimal _swingLow;
+	private bool _trendUp;
+	private bool _initialized;
 
-
-	/// <summary>
-	/// Multiplier applied to the averaged volatility to size the breakout threshold.
-	/// </summary>
-	public decimal VolatilityMultiplier
+	public SpazmVolatilityBreakoutStrategy()
 	{
-		get => _volatilityMultiplier.Value;
-		set => _volatilityMultiplier.Value = value;
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Timeframe for analysis.", "General");
+
+		_atrLength = Param(nameof(AtrLength), 14)
+			.SetDisplay("ATR Length", "Period for ATR volatility.", "Indicators");
+
+		_multiplier = Param(nameof(Multiplier), 2.0m)
+			.SetDisplay("Multiplier", "ATR multiplier for breakout threshold.", "Indicators");
 	}
 
-	/// <summary>
-	/// Number of candles used when estimating volatility and seeding the initial swings.
-	/// </summary>
-	public int VolatilityPeriod
-	{
-		get => _volatilityPeriod.Value;
-		set => _volatilityPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Enables the linear weighted moving average instead of the simple mean for volatility.
-	/// </summary>
-	public bool UseWeightedVolatility
-	{
-		get => _useWeightedVolatility.Value;
-		set => _useWeightedVolatility.Value = value;
-	}
-
-	/// <summary>
-	/// Uses the absolute open-close move as range input instead of the high-low span when enabled.
-	/// </summary>
-	public bool UseOpenCloseRange
-	{
-		get => _useOpenCloseRange.Value;
-		set => _useOpenCloseRange.Value = value;
-	}
-
-	/// <summary>
-	/// Multiplier applied to the volatility threshold when computing protective stops.
-	/// </summary>
-	public decimal StopLossMultiplier
-	{
-		get => _stopLossMultiplier.Value;
-		set => _stopLossMultiplier.Value = value;
-	}
-
-	/// <summary>
-	/// Enables drawing of trend lines that connect the latest bullish and bearish pivots.
-	/// </summary>
-	public bool DrawSwingLines
-	{
-		get => _drawSwingLines.Value;
-		set => _drawSwingLines.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type providing the working data series.
-	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Initializes a new instance of the <see cref="SpazmVolatilityBreakoutStrategy"/> class.
-	/// </summary>
-	public SpazmVolatilityBreakoutStrategy()
+	public int AtrLength
 	{
-
-		_volatilityMultiplier = Param(nameof(VolatilityMultiplier), 5m)
-			.SetDisplay("Volatility Multiplier", "Multiplier applied to the averaged range", "Trading")
-			.SetGreaterThanZero();
-
-		_volatilityPeriod = Param(nameof(VolatilityPeriod), 24)
-			.SetDisplay("Volatility Period", "Number of candles used for volatility estimation", "Indicators")
-			.SetGreaterThanZero();
-
-		_useWeightedVolatility = Param(nameof(UseWeightedVolatility), false)
-			.SetDisplay("Weighted Volatility", "Use linear weighted moving average instead of the simple mean", "Indicators");
-
-		_useOpenCloseRange = Param(nameof(UseOpenCloseRange), false)
-			.SetDisplay("Open-Close Range", "Use absolute open-close difference instead of high-low range", "Indicators");
-
-		_stopLossMultiplier = Param(nameof(StopLossMultiplier), 0m)
-			.SetDisplay("Stop Loss Multiplier", "Multiplier applied to the threshold for stop calculation", "Risk")
-			.SetNotNegative();
-
-		_drawSwingLines = Param(nameof(DrawSwingLines), true)
-			.SetDisplay("Draw Swing Lines", "Draw lines connecting the latest bullish and bearish pivots", "Visualization");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
-			.SetDisplay("Candle Type", "Timeframe used for analysis", "General");
+		get => _atrLength.Value;
+		set => _atrLength.Value = value;
 	}
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	public decimal Multiplier
 	{
-		return [(Security, CandleType)];
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_volatilityIndicator = null;
-		_priceStep = 0m;
-		_threshold = 0m;
-		_highestPrice = 0m;
-		_lowestPrice = 0m;
-		_highestTime = default;
-		_lowestTime = default;
-		_processedCandles = 0;
-		_trendInitialized = false;
-		_isTrendUp = false;
-		_longStopPrice = null;
-		_shortStopPrice = null;
-		_lastRecordedHigh = null;
-		_lastRecordedLow = null;
+		get => _multiplier.Value;
+		set => _multiplier.Value = value;
 	}
 
 	/// <inheritdoc />
@@ -169,223 +57,85 @@ public class SpazmVolatilityBreakoutStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_priceStep = Security?.PriceStep ?? 1m;
-		if (_priceStep <= 0m)
-			_priceStep = 1m;
+		_swingHigh = 0;
+		_swingLow = decimal.MaxValue;
+		_trendUp = true;
+		_initialized = false;
 
-		_volatilityIndicator = CreateVolatilityIndicator();
+		var atr = new AverageTrueRange { Length = AtrLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(atr, ProcessCandle)
 			.Start();
-
-		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawIndicator(area, atr);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private DecimalLengthIndicator CreateVolatilityIndicator()
-	{
-		return UseWeightedVolatility
-			? new WeightedMovingAverage { Length = VolatilityPeriod }
-			: new SMA { Length = VolatilityPeriod };
-	}
-
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal atrValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (_volatilityIndicator == null)
+		if (atrValue <= 0)
 			return;
 
-		if (_volatilityIndicator.Length != VolatilityPeriod)
-			_volatilityIndicator.Length = VolatilityPeriod;
+		var close = candle.ClosePrice;
+		var high = candle.HighPrice;
+		var low = candle.LowPrice;
+		var threshold = atrValue * Multiplier;
 
-		_processedCandles++;
-
-		UpdateExtremeBounds(candle);
-
-		var range = UseOpenCloseRange
-			? Math.Abs(candle.OpenPrice - candle.ClosePrice)
-			: candle.HighPrice - candle.LowPrice;
-
-		if (range < 0m)
-			range = 0m;
-
-		var rangePoints = range / _priceStep;
-		var averagePoints = _volatilityIndicator.Process(new DecimalIndicatorValue(_volatilityIndicator, rangePoints, candle.OpenTime)).ToDecimal();
-
-		if (!_volatilityIndicator.IsFormed)
-			return;
-
-		_threshold = CalculateThreshold(averagePoints);
-		if (_threshold <= 0m)
-			return;
-
-		if (!_trendInitialized)
+		if (!_initialized)
 		{
-			InitializeTrendIfReady();
+			_swingHigh = high;
+			_swingLow = low;
+			_initialized = true;
 			return;
 		}
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		ManageStops(candle);
-
-		var close = candle.ClosePrice;
-
-		if (_isTrendUp)
+		if (_trendUp)
 		{
-			if (close < _highestPrice - _threshold)
-				SwitchToShort(candle);
+			// Track swing high
+			if (high > _swingHigh)
+				_swingHigh = high;
+
+			// Reversal: price breaks below swing high minus threshold
+			if (close < _swingHigh - threshold)
+			{
+				_trendUp = false;
+				_swingLow = low;
+
+				// Enter short on trend reversal
+				if (Position > 0)
+					SellMarket();
+				if (Position == 0)
+					SellMarket();
+			}
 		}
 		else
 		{
-			if (close > _lowestPrice + _threshold)
-				SwitchToLong(candle);
+			// Track swing low
+			if (low < _swingLow)
+				_swingLow = low;
+
+			// Reversal: price breaks above swing low plus threshold
+			if (close > _swingLow + threshold)
+			{
+				_trendUp = true;
+				_swingHigh = high;
+
+				// Enter long on trend reversal
+				if (Position < 0)
+					BuyMarket();
+				if (Position == 0)
+					BuyMarket();
+			}
 		}
-	}
-
-	private void UpdateExtremeBounds(ICandleMessage candle)
-	{
-		if (_processedCandles == 1)
-		{
-			_highestPrice = candle.HighPrice;
-			_lowestPrice = candle.LowPrice;
-			_highestTime = candle.OpenTime;
-			_lowestTime = candle.OpenTime;
-			return;
-		}
-
-		if (candle.HighPrice >= _highestPrice)
-		{
-			_highestPrice = candle.HighPrice;
-			_highestTime = candle.OpenTime;
-		}
-
-		if (candle.LowPrice <= _lowestPrice)
-		{
-			_lowestPrice = candle.LowPrice;
-			_lowestTime = candle.OpenTime;
-		}
-	}
-
-	private void InitializeTrendIfReady()
-	{
-		var required = Math.Max(VolatilityPeriod * 3, 1);
-		if (_processedCandles < required)
-			return;
-
-		_trendInitialized = true;
-		_isTrendUp = _lowestTime >= _highestTime;
-		_lastRecordedHigh = (_highestTime, _highestPrice);
-		_lastRecordedLow = (_lowestTime, _lowestPrice);
-	}
-
-	private decimal CalculateThreshold(decimal averagePoints)
-	{
-		if (averagePoints <= 0m)
-			averagePoints = 1m;
-
-		var scaledPoints = averagePoints * VolatilityMultiplier;
-		if (scaledPoints <= 0m)
-			scaledPoints = 1m;
-
-		return scaledPoints * _priceStep;
-	}
-
-	private void ManageStops(ICandleMessage candle)
-	{
-		if (StopLossMultiplier <= 0m)
-		{
-			_longStopPrice = null;
-			_shortStopPrice = null;
-			return;
-		}
-
-		if (Position > 0 && _longStopPrice is decimal longStop && candle.LowPrice <= longStop)
-		{
-			SellMarket(Position);
-			_longStopPrice = null;
-		}
-		else if (Position < 0 && _shortStopPrice is decimal shortStop && candle.HighPrice >= shortStop)
-		{
-			BuyMarket(Math.Abs(Position));
-			_shortStopPrice = null;
-		}
-	}
-
-	private void SwitchToShort(ICandleMessage candle)
-	{
-		_lastRecordedHigh = (_highestTime, _highestPrice);
-
-		if (DrawSwingLines && _lastRecordedLow.HasValue && _lastRecordedHigh.HasValue)
-		{
-			var low = _lastRecordedLow.Value;
-			var high = _lastRecordedHigh.Value;
-			DrawLine(low.time, low.price, high.time, high.price);
-		}
-
-		var volume = Volume + Math.Abs(Position);
-		if (volume > 0m)
-			SellMarket(volume);
-
-		_isTrendUp = false;
-		_lowestPrice = candle.ClosePrice;
-		_lowestTime = candle.OpenTime;
-		_longStopPrice = null;
-		_shortStopPrice = CalculateStopPrice(candle.ClosePrice, false);
-	}
-
-	private void SwitchToLong(ICandleMessage candle)
-	{
-		_lastRecordedLow = (_lowestTime, _lowestPrice);
-
-		if (DrawSwingLines && _lastRecordedLow.HasValue && _lastRecordedHigh.HasValue)
-		{
-			var low = _lastRecordedLow.Value;
-			var high = _lastRecordedHigh.Value;
-			DrawLine(low.time, low.price, high.time, high.price);
-		}
-
-		var volume = Volume + Math.Abs(Position);
-		if (volume > 0m)
-			BuyMarket(volume);
-
-		_isTrendUp = true;
-		_highestPrice = candle.ClosePrice;
-		_highestTime = candle.OpenTime;
-		_shortStopPrice = null;
-		_longStopPrice = CalculateStopPrice(candle.ClosePrice, true);
-	}
-
-	private decimal? CalculateStopPrice(decimal entryPrice, bool isLong)
-	{
-		if (StopLossMultiplier <= 0m || _threshold <= 0m)
-			return null;
-
-		var thresholdPoints = _threshold / _priceStep;
-		if (thresholdPoints <= 0m)
-			return null;
-
-		var stopPoints = thresholdPoints * StopLossMultiplier;
-		if (stopPoints <= 0m)
-			return null;
-
-		var offset = stopPoints * _priceStep;
-		var minOffset = 3m * _priceStep;
-		if (offset < minOffset)
-			offset = minOffset;
-
-		var stopPrice = isLong ? entryPrice - offset : entryPrice + offset;
-		return stopPrice < 0m ? 0m : stopPrice;
 	}
 }

@@ -1,12 +1,6 @@
 namespace StockSharp.Samples.Strategies;
 
 using System;
-using System.Linq;
-using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,137 +8,48 @@ using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 /// <summary>
-/// Strategy that mirrors the "Steve Cartwright Trader Camel CCI MACD" expert advisor.
-/// Uses EMA envelopes on highs and lows together with MACD and CCI filters.
+/// Strategy combining CCI and MACD signal crossover with EMA trend filter.
+/// Buy when MACD crosses above signal with CCI positive and price above EMA.
+/// Sell when MACD crosses below signal with CCI negative and price below EMA.
 /// </summary>
 public class SmcTraderCamelCciMacd1Strategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _camelLength;
-	private readonly StrategyParam<int> _cciPeriod;
+	private readonly StrategyParam<int> _emaLength;
 	private readonly StrategyParam<int> _macdFastPeriod;
 	private readonly StrategyParam<int> _macdSlowPeriod;
 	private readonly StrategyParam<int> _macdSignalPeriod;
-	private readonly StrategyParam<decimal> _cciThreshold;
+	private readonly StrategyParam<int> _cciPeriod;
 
-	private ExponentialMovingAverage _camelHighEma;
-	private ExponentialMovingAverage _camelLowEma;
-	private CommodityChannelIndex _cci;
-	private MovingAverageConvergenceDivergence _macd;
+	private decimal? _prevMacdMain;
+	private decimal? _prevMacdSignal;
 
-	private decimal? _previousClose;
-	private decimal? _previousCamelHigh;
-	private decimal? _previousCamelLow;
-	private decimal? _previousMacdMain;
-	private decimal? _previousMacdSignal;
-	private decimal? _previousCci;
-
-	private TimeSpan? _timeFrame;
-	private DateTimeOffset? _lastExitTime;
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int EmaLength { get => _emaLength.Value; set => _emaLength.Value = value; }
+	public int MacdFastPeriod { get => _macdFastPeriod.Value; set => _macdFastPeriod.Value = value; }
+	public int MacdSlowPeriod { get => _macdSlowPeriod.Value; set => _macdSlowPeriod.Value = value; }
+	public int MacdSignalPeriod { get => _macdSignalPeriod.Value; set => _macdSignalPeriod.Value = value; }
+	public int CciPeriod { get => _cciPeriod.Value; set => _cciPeriod.Value = value; }
 
 	public SmcTraderCamelCciMacd1Strategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
-			.SetDisplay("Candle Type", "Candles used for indicator calculations", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle timeframe", "General");
 
-		_camelLength = Param(nameof(CamelLength), 34)
-			.SetGreaterThanZero()
-			.SetDisplay("Camel EMA Length", "Period for exponential moving averages of highs and lows", "Indicators")
-			
-			.SetOptimize(10, 80, 2);
-
-		_cciPeriod = Param(nameof(CciPeriod), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("CCI Period", "Commodity Channel Index period", "Indicators")
-			
-			.SetOptimize(10, 40, 2);
+		_emaLength = Param(nameof(EmaLength), 34)
+			.SetDisplay("EMA Length", "Trend EMA period", "Indicators");
 
 		_macdFastPeriod = Param(nameof(MacdFastPeriod), 12)
-			.SetGreaterThanZero()
-			.SetDisplay("MACD Fast Period", "Short EMA length for MACD", "Indicators")
-			
-			.SetOptimize(6, 18, 1);
+			.SetDisplay("MACD Fast", "Fast EMA for MACD", "Indicators");
 
 		_macdSlowPeriod = Param(nameof(MacdSlowPeriod), 26)
-			.SetGreaterThanZero()
-			.SetDisplay("MACD Slow Period", "Long EMA length for MACD", "Indicators")
-			
-			.SetOptimize(16, 40, 2);
+			.SetDisplay("MACD Slow", "Slow EMA for MACD", "Indicators");
 
 		_macdSignalPeriod = Param(nameof(MacdSignalPeriod), 9)
-			.SetGreaterThanZero()
-			.SetDisplay("MACD Signal Period", "Signal line smoothing period", "Indicators")
-			
-			.SetOptimize(4, 18, 1);
+			.SetDisplay("MACD Signal", "Signal line period", "Indicators");
 
-		_cciThreshold = Param(nameof(CciThreshold), 100m)
-			.SetGreaterThanZero()
-			.SetDisplay("CCI Threshold", "Absolute CCI level required for entries", "Trading")
-			
-			.SetOptimize(60m, 160m, 10m);
-	}
-
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	public int CamelLength
-	{
-		get => _camelLength.Value;
-		set => _camelLength.Value = value;
-	}
-
-	public int CciPeriod
-	{
-		get => _cciPeriod.Value;
-		set => _cciPeriod.Value = value;
-	}
-
-	public int MacdFastPeriod
-	{
-		get => _macdFastPeriod.Value;
-		set => _macdFastPeriod.Value = value;
-	}
-
-	public int MacdSlowPeriod
-	{
-		get => _macdSlowPeriod.Value;
-		set => _macdSlowPeriod.Value = value;
-	}
-
-	public int MacdSignalPeriod
-	{
-		get => _macdSignalPeriod.Value;
-		set => _macdSignalPeriod.Value = value;
-	}
-
-	public decimal CciThreshold
-	{
-		get => _cciThreshold.Value;
-		set => _cciThreshold.Value = value;
-	}
-
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_previousClose = null;
-		_previousCamelHigh = null;
-		_previousCamelLow = null;
-		_previousMacdMain = null;
-		_previousMacdSignal = null;
-		_previousCci = null;
-		_lastExitTime = null;
-		_timeFrame = null;
+		_cciPeriod = Param(nameof(CciPeriod), 20)
+			.SetDisplay("CCI Period", "CCI period", "Indicators");
 	}
 
 	/// <inheritdoc />
@@ -152,120 +57,70 @@ public class SmcTraderCamelCciMacd1Strategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_timeFrame = CandleType.Arg as TimeSpan?;
+		_prevMacdMain = null;
+		_prevMacdSignal = null;
 
-		_camelHighEma = new ExponentialMovingAverage
+		var ema = new ExponentialMovingAverage { Length = EmaLength };
+		var macd = new MovingAverageConvergenceDivergenceSignal
 		{
-			Length = CamelLength
+			Macd =
+			{
+				ShortMa = { Length = MacdFastPeriod },
+				LongMa = { Length = MacdSlowPeriod }
+			},
+			SignalMa = { Length = MacdSignalPeriod }
 		};
-
-		_camelLowEma = new ExponentialMovingAverage
-		{
-			Length = CamelLength
-		};
-
-		_cci = new CommodityChannelIndex
-		{
-			Length = CciPeriod
-		};
-
-		_macd = new MovingAverageConvergenceDivergence
-		{
-			ShortMa = { Length = MacdFastPeriod },
-			LongMa = { Length = MacdSlowPeriod },
-			SignalPeriod = MacdSignalPeriod
-		};
+		var cci = new CommodityChannelIndex { Length = CciPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_camelHighEma, _camelLowEma, _macd, _cci, ProcessCandle)
+			.BindEx(macd, cci, ema, ProcessCandle)
 			.Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, _camelHighEma);
-			DrawIndicator(area, _camelLowEma);
-			DrawIndicator(area, _macd);
-			DrawOwnTrades(area);
-
-			var cciArea = CreateChartArea();
-			if (cciArea != null)
-				DrawIndicator(cciArea, _cci);
-		}
-
-		StartProtection();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal camelHigh, decimal camelLow, decimal macdMain, decimal macdSignal, decimal macdHistogram, decimal cciValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue, IIndicatorValue cciValue, IIndicatorValue emaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var previousMacdMain = _previousMacdMain;
-		var previousMacdSignal = _previousMacdSignal;
-		var previousCci = _previousCci;
-		var previousClose = _previousClose;
-		var previousCamelHigh = _previousCamelHigh;
-		var previousCamelLow = _previousCamelLow;
+		if (!macdValue.IsFinal || !cciValue.IsFinal || !emaValue.IsFinal)
+			return;
 
-		var exitExecuted = false;
+		if (macdValue is not MovingAverageConvergenceDivergenceSignalValue macdData)
+			return;
 
-		if (previousMacdMain is decimal prevMain && previousMacdSignal is decimal prevSignal && previousCci is decimal prevCci)
+		if (macdData.Macd is not decimal macdMain || macdData.Signal is not decimal macdSignal)
+			return;
+
+		var cci = cciValue.ToDecimal();
+		var emaVal = emaValue.ToDecimal();
+
+		if (_prevMacdMain is not decimal prevMain || _prevMacdSignal is not decimal prevSignal)
 		{
-			if (Position > 0m && (prevMain < prevSignal || prevCci < CciThreshold))
-			{
-				SellMarket();
-				_lastExitTime = candle.CloseTime;
-				exitExecuted = true;
-			}
-			else if (Position < 0m && prevMain > prevSignal)
-			{
+			_prevMacdMain = macdMain;
+			_prevMacdSignal = macdSignal;
+			return;
+		}
+
+		var macdBullCross = prevMain <= prevSignal && macdMain > macdSignal;
+		var macdBearCross = prevMain >= prevSignal && macdMain < macdSignal;
+
+		// Long: MACD bullish cross + CCI > 0 + price above EMA
+		if (Position <= 0 && macdBullCross && cci > 0 && candle.ClosePrice > emaVal)
+		{
+			if (Position < 0)
 				BuyMarket();
-				_lastExitTime = candle.CloseTime;
-				exitExecuted = true;
-			}
+			BuyMarket();
 		}
-
-		if (!exitExecuted && Position == 0m && IsFormedAndOnlineAndAllowTrading() &&
-			previousMacdMain is decimal entryMain && previousMacdSignal is decimal entrySignal &&
-			previousCci is decimal entryCci && previousClose is decimal entryClose &&
-			previousCamelHigh is decimal entryCamelHigh && previousCamelLow is decimal entryCamelLow)
+		// Short: MACD bearish cross + CCI < 0 + price below EMA
+		else if (Position >= 0 && macdBearCross && cci < 0 && candle.ClosePrice < emaVal)
 		{
-			var enoughTimePassed = true;
-
-			if (_timeFrame is TimeSpan frame && _lastExitTime is DateTimeOffset exitTime)
-			{
-				var timeSinceExit = candle.CloseTime - exitTime;
-				if (timeSinceExit < frame)
-					enoughTimePassed = false;
-			}
-
-			if (enoughTimePassed)
-			{
-				if (entryCci > CciThreshold && entryMain > 0m && entryMain > entrySignal && entryClose > entryCamelHigh)
-				{
-					BuyMarket();
-					exitExecuted = true;
-				}
-				else if (entryCci < -CciThreshold && entryMain < 0m && entryMain < entrySignal && entryClose < entryCamelLow)
-				{
-					SellMarket();
-					exitExecuted = true;
-				}
-			}
+			if (Position > 0)
+				SellMarket();
+			SellMarket();
 		}
 
-		_previousClose = candle.ClosePrice;
-		_previousCamelHigh = camelHigh;
-		_previousCamelLow = camelLow;
-		_previousMacdMain = macdMain;
-		_previousMacdSignal = macdSignal;
-		_previousCci = cciValue;
-
-		if (exitExecuted && Position == 0m)
-			_lastExitTime = candle.CloseTime;
+		_prevMacdMain = macdMain;
+		_prevMacdSignal = macdSignal;
 	}
 }
-

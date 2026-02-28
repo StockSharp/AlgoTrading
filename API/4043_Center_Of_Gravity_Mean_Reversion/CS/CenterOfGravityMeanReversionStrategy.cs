@@ -41,7 +41,7 @@ public class CenterOfGravityMeanReversionStrategy : Strategy
 	/// </summary>
 	public CenterOfGravityMeanReversionStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used to build the regression channel", "General");
 
 		_barsBack = Param(nameof(BarsBack), 125)
@@ -195,18 +195,33 @@ public class CenterOfGravityMeanReversionStrategy : Strategy
 		if (CheckLongExit(candle))
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (lower < candle.LowPrice && Position <= 0)
+		// Exit long at upper band
+		if (Position > 0 && candle.ClosePrice >= upper)
 		{
-			// Combine the order volume with any short exposure to fully reverse.
-			var volume = Volume + Math.Abs(Position);
-			if (volume > 0m)
-			{
-				BuyMarket(volume);
-				_entryPrice = candle.ClosePrice;
-			}
+			SellMarket();
+			_entryPrice = null;
+			return;
+		}
+
+		// Exit short at lower band
+		if (Position < 0 && candle.ClosePrice <= lower)
+		{
+			BuyMarket();
+			_entryPrice = null;
+			return;
+		}
+
+		if (candle.ClosePrice <= lower && Position <= 0)
+		{
+			// Buy at lower band - mean reversion
+			BuyMarket();
+			_entryPrice = candle.ClosePrice;
+		}
+		else if (candle.ClosePrice >= upper && Position >= 0)
+		{
+			// Sell at upper band - mean reversion
+			SellMarket();
+			_entryPrice = candle.ClosePrice;
 		}
 	}
 

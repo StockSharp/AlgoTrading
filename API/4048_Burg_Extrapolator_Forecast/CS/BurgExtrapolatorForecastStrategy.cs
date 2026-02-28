@@ -55,7 +55,7 @@ public class BurgExtrapolatorForecastStrategy : Strategy
 /// </summary>
 public BurgExtrapolatorForecastStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe used for forecasting", "General");
 
 		_maxRisk = Param(nameof(MaxRisk), 0.5m)
@@ -242,7 +242,7 @@ public BurgExtrapolatorForecastStrategy()
 		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.WhenCandlesFinished(ProcessCandle).Start();
+		subscription.Bind(ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -283,9 +283,6 @@ public BurgExtrapolatorForecastStrategy()
 		}
 
 		HandleSignalClosures(openSignal, closeSignal);
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
 
 		if (openSignal == 1)
 		{
@@ -429,10 +426,10 @@ public BurgExtrapolatorForecastStrategy()
 		for (var i = 0; i < _np; i++)
 		{
 			var value = _samples[i];
-			ten += value * value;
+			den += value * value;
 		}
 
-		ten *= 2.0;
+		den *= 2.0;
 
 		var df = new double[_np];
 		var db = new double[_np];
@@ -479,7 +476,7 @@ public BurgExtrapolatorForecastStrategy()
 				}
 			}
 
-			ten = denominator;
+			den = denominator;
 		}
 
 		for (var n = _np - 1; n < _np + _nf; n++)

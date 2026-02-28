@@ -1,236 +1,88 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Simple FX trend-following strategy converted from the MetaTrader 4 expert advisor Simple FX 2.0.
-/// Uses fast and slow simple moving averages to detect bullish/bearish regimes and flips the position when the trend reverses.
+/// Simple FX crossover strategy.
+/// Uses fast and slow SMA crossover for trend detection.
+/// Buys on golden cross, sells on death cross.
 /// </summary>
 public class SimpleFxCrossoverStrategy : Strategy
 {
-	private enum TrendDirections
-	{
-		None,
-		Bullish,
-		Bearish,
-	}
-
 	private readonly StrategyParam<int> _shortPeriod;
 	private readonly StrategyParam<int> _longPeriod;
-	private readonly StrategyParam<decimal> _stopLossPoints;
-	private readonly StrategyParam<decimal> _takeProfitPoints;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private SimpleMovingAverage _shortMa = null!;
-	private SimpleMovingAverage _longMa = null!;
+	private decimal _prevShort;
+	private decimal _prevLong;
+	private bool _hasPrev;
 
-	private decimal? _previousShortValue;
-	private decimal? _previousLongValue;
-	private TrendDirections _lastTrend = TrendDirections.None;
+	public int ShortPeriod { get => _shortPeriod.Value; set => _shortPeriod.Value = value; }
+	public int LongPeriod { get => _longPeriod.Value; set => _longPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-/// Initializes a new instance of the <see cref="SimpleFxCrossoverStrategy"/> class.
-/// </summary>
-public SimpleFxCrossoverStrategy()
+	public SimpleFxCrossoverStrategy()
 	{
-		_shortPeriod = Param(nameof(ShortPeriod), 50)
-			.SetGreaterThanZero()
-			.SetDisplay("Short MA Period", "Length of the fast moving average", "Moving Averages")
-			
-			.SetOptimize(10, 150, 5);
+		_shortPeriod = Param(nameof(ShortPeriod), 10)
+			.SetDisplay("Fast SMA", "Fast SMA period", "Indicators");
 
-		_longPeriod = Param(nameof(LongPeriod), 200)
-			.SetGreaterThanZero()
-			.SetDisplay("Long MA Period", "Length of the slow moving average", "Moving Averages")
-			
-			.SetOptimize(50, 400, 10);
+		_longPeriod = Param(nameof(LongPeriod), 30)
+			.SetDisplay("Slow SMA", "Slow SMA period", "Indicators");
 
-
-		_stopLossPoints = Param(nameof(StopLossPoints), 0m)
-			.SetNotNegative()
-			.SetDisplay("Stop Loss (points)", "Protective stop distance expressed in price steps", "Risk");
-
-		_takeProfitPoints = Param(nameof(TakeProfitPoints), 0m)
-			.SetNotNegative()
-			.SetDisplay("Take Profit (points)", "Profit target distance expressed in price steps", "Risk");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
-			.SetDisplay("Candle Type", "Time frame used to build candles for the moving averages", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle timeframe", "General");
 	}
 
-	/// <summary>
-	/// Period for the fast simple moving average.
-	/// </summary>
-	public int ShortPeriod
-	{
-		get => _shortPeriod.Value;
-		set => _shortPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Period for the slow simple moving average.
-	/// </summary>
-	public int LongPeriod
-	{
-		get => _longPeriod.Value;
-		set => _longPeriod.Value = value;
-	}
-
-
-	/// <summary>
-	/// Stop-loss distance measured in instrument steps. Set to zero to disable.
-	/// </summary>
-	public decimal StopLossPoints
-	{
-		get => _stopLossPoints.Value;
-		set => _stopLossPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Take-profit distance measured in instrument steps. Set to zero to disable.
-	/// </summary>
-	public decimal TakeProfitPoints
-	{
-		get => _takeProfitPoints.Value;
-		set => _takeProfitPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used for all calculations.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_previousShortValue = null;
-		_previousLongValue = null;
-		_lastTrend = TrendDirections.None;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_shortMa = new SMA { Length = ShortPeriod };
-		_longMa = new SMA { Length = LongPeriod };
+		_hasPrev = false;
 
-		var stopLossUnit = StopLossPoints > 0m ? new Unit(StopLossPoints, UnitTypes.Step) : null;
-		var takeProfitUnit = TakeProfitPoints > 0m ? new Unit(TakeProfitPoints, UnitTypes.Step) : null;
-
-		// Enable risk management identical to the original stop-loss/take-profit settings.
-		StartProtection(takeProfit: takeProfitUnit, stopLoss: stopLossUnit, useMarketOrders: true);
+		var fast = new SimpleMovingAverage { Length = ShortPeriod };
+		var slow = new SimpleMovingAverage { Length = LongPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_shortMa, _longMa, ProcessCandles)
+			.Bind(fast, slow, ProcessCandle)
 			.Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, _shortMa);
-			DrawIndicator(area, _longMa);
-			DrawOwnTrades(area);
-		}
 	}
 
-	private void ProcessCandles(ICandleMessage candle, decimal shortMaValue, decimal longMaValue)
+	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var previousShort = _previousShortValue;
-		var previousLong = _previousLongValue;
-
-		TrendDirections currentTrend = TrendDirections.None;
-
-		if (previousShort is decimal prevShort && previousLong is decimal prevLong)
+		if (!_hasPrev)
 		{
-			if (shortMaValue > longMaValue && prevShort > prevLong)
-			{
-				currentTrend = TrendDirections.Bullish;
-			}
-			else if (shortMaValue < longMaValue && prevShort < prevLong)
-			{
-				currentTrend = TrendDirections.Bearish;
-			}
-		}
-
-		_previousShortValue = shortMaValue;
-		_previousLongValue = longMaValue;
-
-		if (currentTrend == TrendDirections.None)
-			return;
-
-		if (_lastTrend == TrendDirections.None)
-		{
-			_lastTrend = currentTrend;
+			_prevShort = fast;
+			_prevLong = slow;
+			_hasPrev = true;
 			return;
 		}
 
-		if (currentTrend == _lastTrend)
-			return;
+		var crossUp = _prevShort <= _prevLong && fast > slow;
+		var crossDown = _prevShort >= _prevLong && fast < slow;
 
-		// Close the opposite position before opening a new trade.
-		if (Position > 0 && currentTrend == TrendDirections.Bearish)
+		if (crossUp && Position <= 0)
 		{
-			ClosePosition();
+			if (Position < 0)
+				BuyMarket();
+			BuyMarket();
 		}
-		else if (Position < 0 && currentTrend == TrendDirections.Bullish)
+		else if (crossDown && Position >= 0)
 		{
-			ClosePosition();
-		}
-
-		if (currentTrend == TrendDirections.Bullish && Position <= 0)
-		{
-			// Fast MA crossed above the slow MA for at least two candles -> open long.
-			BuyMarket(Volume);
-			_lastTrend = currentTrend;
-			LogInfo($"Bullish crossover detected at {candle.ClosePrice}. Opening long position.");
-			return;
+			if (Position > 0)
+				SellMarket();
+			SellMarket();
 		}
 
-		if (currentTrend == TrendDirections.Bearish && Position >= 0)
-		{
-			// Fast MA crossed below the slow MA for at least two candles -> open short.
-			SellMarket(Volume);
-			_lastTrend = currentTrend;
-			LogInfo($"Bearish crossover detected at {candle.ClosePrice}. Opening short position.");
-			return;
-		}
-
-		_lastTrend = currentTrend;
+		_prevShort = fast;
+		_prevLong = slow;
 	}
 }
-

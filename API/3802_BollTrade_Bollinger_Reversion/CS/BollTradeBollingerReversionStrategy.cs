@@ -1,10 +1,4 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,308 +8,82 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Bollinger Bands reversion strategy that sells above the upper band and buys below the lower band.
+/// Bollinger Bands reversion strategy.
+/// Buys when price closes below lower band, sells when above upper band.
+/// Uses middle band as exit target.
 /// </summary>
 public class BollTradeBollingerReversionStrategy : Strategy
 {
-
-	private readonly StrategyParam<decimal> _takeProfit;
-	private readonly StrategyParam<decimal> _stopLoss;
-	private readonly StrategyParam<decimal> _bandOffset;
 	private readonly StrategyParam<int> _bollingerPeriod;
-	private readonly StrategyParam<decimal> _bollingerDeviation;
-	private readonly StrategyParam<decimal> _lots;
-	private readonly StrategyParam<bool> _lotIncrease;
+	private readonly StrategyParam<decimal> _bollingerWidth;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<decimal> _maxVolume;
 
-	private decimal _lotBaseline;
-	private decimal _pipSize;
-	private decimal? _longStop;
-	private decimal? _longTarget;
-	private decimal? _shortStop;
-	private decimal? _shortTarget;
+	public int BollingerPeriod { get => _bollingerPeriod.Value; set => _bollingerPeriod.Value = value; }
+	public decimal BollingerWidth { get => _bollingerWidth.Value; set => _bollingerWidth.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Take profit distance expressed in pip units.
-	/// </summary>
-	public decimal TakeProfit
-	{
-		get => _takeProfit.Value;
-		set => _takeProfit.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss distance expressed in pip units.
-	/// </summary>
-	public decimal StopLoss
-	{
-		get => _stopLoss.Value;
-		set => _stopLoss.Value = value;
-	}
-
-	/// <summary>
-	/// Additional pip offset beyond Bollinger Bands.
-	/// </summary>
-	public decimal BollingerDistance
-	{
-		get => _bandOffset.Value;
-		set => _bandOffset.Value = value;
-	}
-
-	/// <summary>
-	/// Bollinger Bands period.
-	/// </summary>
-	public int BollingerPeriod
-	{
-		get => _bollingerPeriod.Value;
-		set => _bollingerPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Bollinger Bands deviation multiplier.
-	/// </summary>
-	public decimal BollingerDeviation
-	{
-		get => _bollingerDeviation.Value;
-		set => _bollingerDeviation.Value = value;
-	}
-
-	/// <summary>
-	/// Base trade volume in lots.
-	/// </summary>
-	public decimal Lots
-	{
-		get => _lots.Value;
-		set => _lots.Value = value;
-	}
-
-	/// <summary>
-	/// Increase volume proportionally to balance growth.
-	/// </summary>
-	public bool LotIncrease
-	{
-		get => _lotIncrease.Value;
-		set => _lotIncrease.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used for signal generation.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-	/// <summary>
-	/// Maximum volume allowed when scaling trades.
-	/// </summary>
-	public decimal MaxVolume
-	{
-		get => _maxVolume.Value;
-		set => _maxVolume.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="BollTradeBollingerReversionStrategy"/> class.
-	/// </summary>
 	public BollTradeBollingerReversionStrategy()
 	{
-		_takeProfit = Param(nameof(TakeProfit), 3m)
-			.SetNotNegative()
-			.SetDisplay("Take Profit (pips)", "Distance to take profit expressed in pip units.", "Orders")
-			.SetCanOptimize(true, 1m, 20m, 1m);
+		_bollingerPeriod = Param(nameof(BollingerPeriod), 20)
+			.SetDisplay("BB Period", "Bollinger Bands period", "Indicators");
 
-		_stopLoss = Param(nameof(StopLoss), 20m)
-			.SetNotNegative()
-			.SetDisplay("Stop Loss (pips)", "Distance to stop loss expressed in pip units.", "Orders")
-			.SetCanOptimize(true, 5m, 100m, 5m);
+		_bollingerWidth = Param(nameof(BollingerWidth), 0.5m)
+			.SetDisplay("BB Width", "Bollinger Bands width", "Indicators");
 
-		_bandOffset = Param(nameof(BollingerDistance), 3m)
-			.SetNotNegative()
-			.SetDisplay("Band Offset", "Extra pip offset beyond Bollinger Bands.", "Signals")
-			.SetCanOptimize(true, 0m, 10m, 1m);
-
-		_bollingerPeriod = Param(nameof(BollingerPeriod), 4)
-			.SetGreaterThanZero()
-			.SetDisplay("Bollinger Period", "Length of the Bollinger Bands.", "Signals")
-			.SetCanOptimize(true, 2, 30, 1);
-
-		_bollingerDeviation = Param(nameof(BollingerDeviation), 2m)
-			.SetGreaterThanZero()
-			.SetDisplay("Bollinger Deviation", "Width multiplier of the Bollinger Bands.", "Signals")
-			.SetCanOptimize(true, 1m, 4m, 0.5m);
-
-		_lots = Param(nameof(Lots), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Base Volume", "Default trade volume in lots.", "Money Management");
-
-		_lotIncrease = Param(nameof(LotIncrease), true)
-			.SetDisplay("Scale Volume", "Increase volume with balance growth.", "Money Management");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
-			.SetDisplay("Candle Type", "Primary timeframe for signals.", "General");
-		_maxVolume = Param(nameof(MaxVolume), 500m)
-			.SetDisplay("Max Volume", "Upper cap applied after balance-based scaling.", "Money Management")
-			.SetGreaterThanZero();
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle timeframe", "General");
 	}
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		yield return (Security, CandleType);
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		Volume = Lots;
-
-		_pipSize = CalculatePipSize();
-		_lotBaseline = 0m;
-
-		if (LotIncrease && Lots > 0m)
-		{
-			var balance = Portfolio?.CurrentValue ?? 0m;
-
-			if (balance > 0m)
-				_lotBaseline = balance / Lots;
-		}
-
-		var bollinger = new BollingerBands
+		var bb = new BollingerBands
 		{
 			Length = BollingerPeriod,
-			Width = BollingerDeviation
+			Width = BollingerWidth
 		};
 
 		var subscription = SubscribeCandles(CandleType);
-
 		subscription
-			.Bind(bollinger, ProcessCandle)
+			.BindEx(bb, ProcessCandle)
 			.Start();
-
-		StartProtection(null, null);
 	}
 
-	private decimal CalculatePipSize()
-	{
-		var step = Security?.PriceStep ?? 1m;
-
-		if (step <= 0m)
-			step = 1m;
-
-		if (step < 0.01m)
-			step *= 10m;
-
-		return step;
-	}
-
-	private decimal CalculateVolume()
-	{
-		var baseVolume = Lots;
-
-		if (!LotIncrease || _lotBaseline <= 0m)
-			return baseVolume;
-
-		var balance = Portfolio?.CurrentValue ?? 0m;
-
-		if (balance <= 0m)
-			return baseVolume;
-
-		var scaled = baseVolume * (balance / _lotBaseline);
-
-		return Math.Min(scaled, MaxVolume);
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal middleBand, decimal upperBand, decimal lowerBand)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bbValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var offset = _pipSize * BollingerDistance;
-		var upperThreshold = upperBand + offset;
-		var lowerThreshold = lowerBand - offset;
-
-		var shouldBuy = candle.ClosePrice < lowerThreshold;
-		var shouldSell = candle.ClosePrice > upperThreshold;
-
-		if (Position == 0)
-		{
-			if (shouldBuy)
-			{
-				EnterLong(candle);
-			}
-			else if (shouldSell)
-			{
-				EnterShort(candle);
-			}
-
-			return;
-		}
-
-		if (Position > 0)
-		{
-			// Close long positions when stop loss or take profit levels are hit.
-			if ((_longStop.HasValue && candle.LowPrice <= _longStop.Value) ||
-				(_longTarget.HasValue && candle.HighPrice >= _longTarget.Value))
-			{
-				SellMarket(Math.Abs(Position));
-				ResetStops();
-			}
-		}
-		else if (Position < 0)
-		{
-			// Close short positions when stop loss or take profit levels are hit.
-			if ((_shortStop.HasValue && candle.HighPrice >= _shortStop.Value) ||
-				(_shortTarget.HasValue && candle.LowPrice <= _shortTarget.Value))
-			{
-				BuyMarket(Math.Abs(Position));
-				ResetStops();
-			}
-		}
-	}
-
-	private void EnterLong(ICandleMessage candle)
-	{
-		var volume = CalculateVolume();
-
-		if (volume <= 0m)
+		if (!bbValue.IsFinal)
 			return;
 
-		BuyMarket(volume);
+		var bb = (BollingerBandsValue)bbValue;
+		var upper = bb.UpBand;
+		var lower = bb.LowBand;
+		var middle = bb.MovingAverage;
 
-		// Store exit targets for the newly opened long trade.
-		_longStop = StopLoss > 0m ? candle.ClosePrice - _pipSize * StopLoss : null;
-		_longTarget = TakeProfit > 0m ? candle.ClosePrice + _pipSize * TakeProfit : null;
-		_shortStop = null;
-		_shortTarget = null;
-	}
-
-	private void EnterShort(ICandleMessage candle)
-	{
-		var volume = CalculateVolume();
-
-		if (volume <= 0m)
+		if (upper == null || lower == null || middle == null)
 			return;
 
-		SellMarket(volume);
+		var close = candle.ClosePrice;
+		var upperVal = upper.Value;
+		var lowerVal = lower.Value;
+		var midVal = middle.Value;
 
-		// Store exit targets for the newly opened short trade.
-		_shortStop = StopLoss > 0m ? candle.ClosePrice + _pipSize * StopLoss : null;
-		_shortTarget = TakeProfit > 0m ? candle.ClosePrice - _pipSize * TakeProfit : null;
-		_longStop = null;
-		_longTarget = null;
-	}
-
-	private void ResetStops()
-	{
-		// Clear cached exit levels after a position is closed.
-		_longStop = null;
-		_longTarget = null;
-		_shortStop = null;
-		_shortTarget = null;
+		// Buy when close below lower band (oversold)
+		if (close < lowerVal && Position <= 0)
+		{
+			if (Position < 0)
+				BuyMarket();
+			BuyMarket();
+		}
+		// Sell when close above upper band (overbought)
+		else if (close > upperVal && Position >= 0)
+		{
+			if (Position > 0)
+				SellMarket();
+			SellMarket();
+		}
 	}
 }
-
