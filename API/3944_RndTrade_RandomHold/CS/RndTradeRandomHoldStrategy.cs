@@ -1,10 +1,4 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -13,134 +7,45 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-/// <summary>
-/// Randomly enters a market position and keeps it open for a fixed duration.
-/// </summary>
 public class RndTradeRandomHoldStrategy : Strategy
 {
+	private readonly StrategyParam<int> _emaPeriod;
+	private readonly StrategyParam<int> _momentumPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<decimal> _tradeVolume;
-	private readonly StrategyParam<TimeSpan> _holdDuration;
 
-	private readonly Random _random = new();
-	private DateTimeOffset? _entryTime;
+	private decimal _prevMom; private bool _hasPrev;
 
-	/// <summary>
-	/// Candle type that drives random decision making.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
+	public int EmaPeriod { get => _emaPeriod.Value; set => _emaPeriod.Value = value; }
+	public int MomentumPeriod { get => _momentumPeriod.Value; set => _momentumPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Volume used when placing market orders.
-	/// </summary>
-	public decimal TradeVolume
-	{
-		get => _tradeVolume.Value;
-		set => _tradeVolume.Value = value;
-	}
-
-	/// <summary>
-	/// Holding duration for an opened position.
-	/// </summary>
-	public TimeSpan HoldDuration
-	{
-		get => _holdDuration.Value;
-		set => _holdDuration.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="RndTradeRandomHoldStrategy"/>.
-	/// </summary>
 	public RndTradeRandomHoldStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Candles that trigger random entries", "General");
-
-		_tradeVolume = Param(nameof(TradeVolume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Trade Volume", "Volume used for each random trade", "Parameters");
-
-		_holdDuration = Param(nameof(HoldDuration), TimeSpan.FromHours(4))
-			.SetDisplay("Hold Duration", "Time to keep a random trade open", "Risk");
+		_emaPeriod = Param(nameof(EmaPeriod), 14).SetDisplay("EMA Period", "EMA filter", "Indicators");
+		_momentumPeriod = Param(nameof(MomentumPeriod), 10).SetDisplay("Momentum", "Momentum period", "Indicators");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Candle timeframe", "General");
 	}
 
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_entryTime = null;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_random.Next();
-
+		_hasPrev = false;
+		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
+		var mom = new Momentum { Length = MomentumPeriod };
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(ProcessCandle)
-			.Start();
+		subscription.Bind(ema, mom, ProcessCandle).Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal ema, decimal mom)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
+		if (candle.State != CandleStates.Finished) return;
+		var close = candle.ClosePrice;
+		if (!_hasPrev) { _prevMom = mom; _hasPrev = true; return; }
 
-		var candleTime = candle.CloseTime;
-
-		if (Position == 0)
-		{
-			TryOpenPosition(candleTime);
-		}
-		else
-		{
-			TryClosePosition(candleTime);
-		}
-	}
-
-	private void TryOpenPosition(DateTimeOffset candleTime)
-	{
-		var direction = _random.NextDouble();
-
-		// Place a random buy or sell trade using the configured volume.
-		var order = direction > 0.5
-			? BuyMarket(TradeVolume)
-			: SellMarket(TradeVolume);
-
-		if (order == null)
-			return;
-
-		_entryTime = candleTime;
-	}
-
-	private void TryClosePosition(DateTimeOffset candleTime)
-	{
-		if (_entryTime is null)
-			return;
-
-		var elapsed = candleTime - _entryTime.Value;
-		if (elapsed < HoldDuration)
-			return;
-
-		// Close the open position after the holding period expires.
-		if (Position > 0)
-		{
-			if (SellMarket(Position) != null)
-				_entryTime = null;
-		}
-		else if (Position < 0)
-		{
-			if (BuyMarket(-Position) != null)
-				_entryTime = null;
-		}
+		if (close > ema && _prevMom <= 0 && mom > 0 && Position <= 0)
+		{ if (Position < 0) BuyMarket(); BuyMarket(); }
+		else if (close < ema && _prevMom >= 0 && mom < 0 && Position >= 0)
+		{ if (Position > 0) SellMarket(); SellMarket(); }
+		_prevMom = mom;
 	}
 }
-
