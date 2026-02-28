@@ -1,255 +1,108 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Dual MACD confirmation strategy converted from the original AG.mq4 expert.
-/// The first MACD pair acts as the trigger, while the second (slower) pair filters entries and exits.
+/// AG MACD Dual strategy - MACD histogram crossover with EMA trend filter.
+/// Buys when MACD histogram crosses above zero while price is above EMA.
+/// Sells when MACD histogram crosses below zero while price is below EMA.
 /// </summary>
 public class AgMacdDualStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _orderVolume;
-	private readonly StrategyParam<int> _fastEmaLength;
-	private readonly StrategyParam<int> _slowEmaLength;
-	private readonly StrategyParam<int> _signalSmaLength;
-	private readonly StrategyParam<int> _maxOpenOrders;
+	private readonly StrategyParam<int> _emaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private MovingAverageConvergenceDivergenceSignal _primaryMacd = null!;
-	private MovingAverageConvergenceDivergenceSignal _secondaryMacd = null!;
+	private decimal _prevMacd;
+	private decimal _prevSignal;
+	private bool _hasPrev;
+	private decimal _currentEma;
 
-	/// <summary>
-	/// Initializes strategy parameters.
-	/// </summary>
+	public int EmaPeriod { get => _emaPeriod.Value; set => _emaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+
 	public AgMacdDualStrategy()
 	{
-		_orderVolume = Param(nameof(OrderVolume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Order Volume", "Base lot size used for market orders", "Execution");
+		_emaPeriod = Param(nameof(EmaPeriod), 50)
+			.SetDisplay("EMA Period", "EMA trend filter", "Indicators");
 
-		_fastEmaLength = Param(nameof(FastEmaLength), 15)
-			.SetGreaterThanZero()
-			.SetDisplay("Fast EMA", "Fast EMA length of the primary MACD", "Indicators");
-
-		_slowEmaLength = Param(nameof(SlowEmaLength), 18)
-			.SetGreaterThanZero()
-			.SetDisplay("Slow EMA", "Slow EMA length of the primary MACD", "Indicators");
-
-		_signalSmaLength = Param(nameof(SignalSmaLength), 30)
-			.SetGreaterThanZero()
-			.SetDisplay("Signal SMA", "Signal smoothing length for both MACD calculations", "Indicators");
-
-		_maxOpenOrders = Param(nameof(MaxOpenOrders), 10)
-			.SetNotNegative()
-			.SetDisplay("Max Open Orders", "Maximum number of simultaneous orders and positions (0 disables the limit)", "Risk");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Time frame used to build the MACD inputs", "Data");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle timeframe", "General");
 	}
 
-	/// <summary>
-	/// Target volume for entries and scaling.
-	/// </summary>
-	public decimal OrderVolume
+	protected override void OnStarted2(DateTime time)
 	{
-		get => _orderVolume.Value;
-		set => _orderVolume.Value = value;
-	}
+		base.OnStarted2(time);
 
-	/// <summary>
-	/// Fast EMA length used by the primary MACD.
-	/// </summary>
-	public int FastEmaLength
-	{
-		get => _fastEmaLength.Value;
-		set => _fastEmaLength.Value = value;
-	}
+		_hasPrev = false;
 
-	/// <summary>
-	/// Slow EMA length used by the primary MACD.
-	/// </summary>
-	public int SlowEmaLength
-	{
-		get => _slowEmaLength.Value;
-		set => _slowEmaLength.Value = value;
-	}
-
-	/// <summary>
-	/// Signal SMA length shared by both MACD calculations.
-	/// </summary>
-	public int SignalSmaLength
-	{
-		get => _signalSmaLength.Value;
-		set => _signalSmaLength.Value = value;
-	}
-
-	/// <summary>
-	/// Maximum number of open orders (0 means unlimited).
-	/// </summary>
-	public int MaxOpenOrders
-	{
-		get => _maxOpenOrders.Value;
-		set => _maxOpenOrders.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type supplying the MACD indicators.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_primaryMacd = null!;
-		_secondaryMacd = null!;
-	}
-
-	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
-	{
-		base.OnStarted(time);
-
-		Volume = OrderVolume;
-
-		_primaryMacd = new MovingAverageConvergenceDivergenceSignal
-		{
-			Macd =
-			{
-				ShortMa = new EMA { Length = FastEmaLength },
-				LongMa = new EMA { Length = SlowEmaLength }
-			},
-			SignalMa = new EMA { Length = SignalSmaLength }
-		};
-
-		var secondaryFast = Math.Max(1, SlowEmaLength * 2);
-		var secondarySlow = Math.Max(1, FastEmaLength * 2);
-		var secondarySignal = Math.Max(1, SignalSmaLength * 2);
-
-		_secondaryMacd = new MovingAverageConvergenceDivergenceSignal
-		{
-			Macd =
-			{
-				ShortMa = new EMA { Length = secondaryFast },
-				LongMa = new EMA { Length = secondarySlow }
-			},
-			SignalMa = new EMA { Length = secondarySignal }
-		};
+		var macd = new MovingAverageConvergenceDivergenceSignal();
+		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(_primaryMacd, _secondaryMacd, ProcessCandle)
+			.BindEx(macd, ProcessMacd)
+			.Bind(ema, ProcessEma)
 			.Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, _primaryMacd);
-			DrawOwnTrades(area);
-
-			var secondaryArea = CreateChartArea();
-			if (secondaryArea != null)
-			{
-				DrawIndicator(secondaryArea, _secondaryMacd);
-			}
-		}
-
-		StartProtection();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue primaryValue, IIndicatorValue secondaryValue)
+	private void ProcessEma(ICandleMessage candle, decimal ema)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var primaryTyped = (MovingAverageConvergenceDivergenceSignalValue)primaryValue;
-		if (primaryTyped.Macd is not decimal primaryMacd || primaryTyped.Signal is not decimal primarySignal)
+		_currentEma = ema;
+	}
+
+	private void ProcessMacd(ICandleMessage candle, IIndicatorValue value)
+	{
+		if (candle.State != CandleStates.Finished)
 			return;
 
-		var secondaryTyped = (MovingAverageConvergenceDivergenceSignalValue)secondaryValue;
-		if (secondaryTyped.Macd is not decimal secondaryMacd || secondaryTyped.Signal is not decimal secondarySignal)
+		if (!value.IsFinal || value.IsEmpty)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		var macdVal = value as MovingAverageConvergenceDivergenceSignalValue;
+		if (macdVal == null)
 			return;
 
-		if (Position > 0)
+		var macdLine = macdVal.Macd;
+		var signalLine = macdVal.Signal;
+
+		if (macdLine == null || signalLine == null)
+			return;
+
+		var histogram = macdLine.Value - signalLine.Value;
+
+		if (!_hasPrev)
 		{
-			var exitLong = secondaryMacd < secondarySignal && primarySignal > 0m;
-			if (exitLong)
-			{
-				SellMarket(Position);
-			}
+			_prevMacd = macdLine.Value;
+			_prevSignal = signalLine.Value;
+			_hasPrev = true;
 			return;
 		}
 
-		if (Position < 0)
-		{
-			var exitShort = secondaryMacd > secondarySignal && primarySignal < 0m;
-			if (exitShort)
-			{
-				BuyMarket(Math.Abs(Position));
-			}
-			return;
-		}
+		var prevHist = _prevMacd - _prevSignal;
+		var close = candle.ClosePrice;
 
-		if (!HasCapacityForEntry())
-			return;
-
-		var shortSetup = primaryMacd < primarySignal && primarySignal > 0m && secondaryMacd < secondarySignal && secondarySignal > 0m;
-		var longSetup = primaryMacd > primarySignal && primarySignal < 0m && secondaryMacd > secondarySignal && secondarySignal < 0m;
-
-		if (shortSetup)
+		if (prevHist <= 0 && histogram > 0 && close > _currentEma && Position <= 0)
 		{
-			SellMarket();
-		}
-		else if (longSetup)
-		{
+			if (Position < 0)
+				BuyMarket();
 			BuyMarket();
 		}
-	}
-
-	private bool HasCapacityForEntry()
-	{
-		if (MaxOpenOrders <= 0)
-			return true;
-
-		var activeOrders = 0;
-		foreach (var order in Orders)
+		else if (prevHist >= 0 && histogram < 0 && close < _currentEma && Position >= 0)
 		{
-			if (order.State.IsActive())
-			{
-				activeOrders++;
-			}
+			if (Position > 0)
+				SellMarket();
+			SellMarket();
 		}
 
-		var openPositions = Position != 0m ? 1 : 0;
-		return activeOrders + openPositions < MaxOpenOrders;
+		_prevMacd = macdLine.Value;
+		_prevSignal = signalLine.Value;
 	}
 }
-

@@ -1,154 +1,77 @@
-namespace StockSharp.Samples.Strategies;
-
 using System;
-using System.Linq;
-using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
+namespace StockSharp.Samples.Strategies;
+
+/// <summary>
+/// Bad Orders strategy - ATR breakout with EMA filter.
+/// Buys when price breaks above EMA + ATR threshold.
+/// Sells when price breaks below EMA - ATR threshold.
+/// </summary>
 public class BadOrdersStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _distancePoints;
+	private readonly StrategyParam<int> _emaPeriod;
+	private readonly StrategyParam<int> _atrPeriod;
+	private readonly StrategyParam<decimal> _atrMultiplier;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private Order _stopOrder;
-	private decimal _bestBid;
-	private bool _hasBid;
-	private decimal _pointValue;
-
-	public decimal DistancePoints
-	{
-		get => _distancePoints.Value;
-		set => _distancePoints.Value = value;
-	}
+	public int EmaPeriod { get => _emaPeriod.Value; set => _emaPeriod.Value = value; }
+	public int AtrPeriod { get => _atrPeriod.Value; set => _atrPeriod.Value = value; }
+	public decimal AtrMultiplier { get => _atrMultiplier.Value; set => _atrMultiplier.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public BadOrdersStrategy()
 	{
-		_distancePoints = Param(nameof(DistancePoints), 100m)
-			.SetGreaterThanZero()
-			.SetDisplay("Distance (points)", "Offset in points applied around the current bid", "General");
-	}
+		_emaPeriod = Param(nameof(EmaPeriod), 20)
+			.SetDisplay("EMA Period", "EMA lookback", "Indicators");
 
-	protected override void OnReseted()
-	{
-		base.OnReseted();
+		_atrPeriod = Param(nameof(AtrPeriod), 14)
+			.SetDisplay("ATR Period", "ATR lookback", "Indicators");
 
-		_stopOrder = null;
-		_bestBid = 0m;
-		_hasBid = false;
-		_pointValue = 0m;
+		_atrMultiplier = Param(nameof(AtrMultiplier), 1.5m)
+			.SetDisplay("ATR Multiplier", "ATR breakout multiplier", "Indicators");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle timeframe", "General");
 	}
 
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_pointValue = CalculatePointValue();
+		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
+		var atr = new AverageTrueRange { Length = AtrPeriod };
 
-		SubscribeLevel1()
-			.Bind(ProcessLevel1)
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(ema, atr, ProcessCandle)
 			.Start();
 	}
 
-	private void ProcessLevel1(Level1ChangeMessage message)
+	private void ProcessCandle(ICandleMessage candle, decimal ema, decimal atr)
 	{
-		if (message.Changes.TryGetValue(Level1Fields.BestBidPrice, out var bidValue))
-		{
-			var bid = (decimal)bidValue;
-			if (bid > 0m)
-			{
-				_bestBid = bid;
-				_hasBid = true;
-			}
-		}
-
-		if (_hasBid)
-			ManageOrders();
-	}
-
-	private void ManageOrders()
-	{
-		if (_pointValue <= 0m)
+		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (Position != 0 && !HasClosingOrder())
-			ClosePosition();
+		var close = candle.ClosePrice;
+		var upper = ema + atr * AtrMultiplier;
+		var lower = ema - atr * AtrMultiplier;
 
-		var upperPrice = NormalizePrice(_bestBid + _pointValue * DistancePoints);
-		var lowerPrice = NormalizePrice(_bestBid - _pointValue * DistancePoints);
-
-		if (upperPrice <= 0m || lowerPrice <= 0m)
-			return;
-
-		if (_stopOrder == null)
+		if (close > upper && Position <= 0)
 		{
-			_stopOrder = BuyStop(Volume, upperPrice);
-			return;
+			if (Position < 0)
+				BuyMarket();
+			BuyMarket();
 		}
-
-		if (_stopOrder.State is OrderStates.Done or OrderStates.Failed or OrderStates.Canceled)
+		else if (close < lower && Position >= 0)
 		{
-			_stopOrder = null;
-			ManageOrders();
-			return;
+			if (Position > 0)
+				SellMarket();
+			SellMarket();
 		}
-
-		if (_stopOrder.Price != lowerPrice)
-			ReRegisterOrder(_stopOrder, lowerPrice, Volume);
-	}
-
-	private bool HasClosingOrder()
-	{
-		if (Position > 0)
-		{
-			foreach (var order in ActiveOrders)
-			{
-				if (order.Direction == Sides.Sell)
-					return true;
-			}
-		}
-		else if (Position < 0)
-		{
-			foreach (var order in ActiveOrders)
-			{
-				if (order.Direction == Sides.Buy)
-					return true;
-			}
-		}
-
-		return false;
-	}
-
-	private decimal NormalizePrice(decimal price)
-	{
-		var security = Security;
-		if (security == null)
-			return price;
-
-		return security.ShrinkPrice(price);
-	}
-
-	private decimal CalculatePointValue()
-	{
-		var security = Security;
-		if (security == null)
-			return 0.0001m;
-
-		var step = security.PriceStep ?? 0m;
-		if (step <= 0m)
-		{
-			var decimals = security.Decimals;
-			if (decimals != null && decimals.Value > 0)
-				step = (decimal)Math.Pow(10, -decimals.Value);
-		}
-
-		return step > 0m ? step : 0.0001m;
 	}
 }
-
