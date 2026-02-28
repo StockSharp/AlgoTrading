@@ -137,7 +137,7 @@ public class ParabolicSarFirstDotStrategy : Strategy
 			
 			.SetOptimize(0.1m, 0.4m, 0.05m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type used for calculations", "General");
 
 		Volume = _tradeVolume.Value;
@@ -196,9 +196,7 @@ public class ParabolicSarFirstDotStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Verify that the strategy is allowed to trade and subscriptions are active.
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		// Wait for Parabolic SAR indicator to be ready.
 
 		// Check whether existing positions should be closed by protective levels.
 		CheckProtectiveLevels(candle);

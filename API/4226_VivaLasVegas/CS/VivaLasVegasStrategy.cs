@@ -119,7 +119,18 @@ InitializeMoneyManagement();
 			StartProtection(null, null);
 		}
 
-		TryOpenPosition();
+		// Use candle subscription to pace trades
+		var subscription = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
+		subscription.Bind(ProcessCandle).Start();
+	}
+
+	private void ProcessCandle(ICandleMessage candle)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
+
+		if (Position == 0m && !_orderInFlight)
+			TryOpenPosition();
 	}
 
 	/// <inheritdoc />
@@ -157,9 +168,7 @@ InitializeMoneyManagement();
 				_management.Update(result, closedVolume, BaseVolume);
 			}
 
-			// The slot is free again; schedule the next random wager.
 			_orderInFlight = false;
-			TryOpenPosition();
 		}
 
 		_previousPosition = Position;
@@ -167,7 +176,7 @@ InitializeMoneyManagement();
 
 	private void TryOpenPosition()
 	{
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (ProcessState != ProcessStates.Started)
 			return;
 
 		if (Position != 0m || _orderInFlight)
@@ -201,20 +210,20 @@ InitializeMoneyManagement();
 		if (security == null)
 			return volume;
 
-		var step = security.VolumeStep;
+		var step = security.VolumeStep ?? 0m;
 		if (step > 0m)
 		{
 			var steps = Math.Max(1m, Math.Round(volume / step, MidpointRounding.AwayFromZero));
 			volume = steps * step;
 		}
 
-		var minVolume = security.MinVolume;
+		var minVolume = security.MinVolume ?? 0m;
 		if (minVolume > 0m && volume < minVolume)
-			volume = minVolume.Value;
+			volume = minVolume;
 
-		var maxVolume = security.MaxVolume;
+		var maxVolume = security.MaxVolume ?? 0m;
 		if (maxVolume > 0m && volume > maxVolume)
-			volume = maxVolume.Value;
+			volume = maxVolume;
 
 		return volume;
 	}

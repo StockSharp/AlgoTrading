@@ -254,7 +254,7 @@ public class DailyTrendReversalStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("CCI Period", "Length of the Commodity Channel Index", "Trend Filter");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Primary timeframe for calculations", "General");
 	}
 
@@ -345,7 +345,7 @@ public class DailyTrendReversalStrategy : Strategy
 		if (!CanOpenPositions(candle))
 		return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!_cci.IsFormed)
 		return;
 
 		EvaluateEntries(candle, trend, rangeTrend, cciTrend);
@@ -512,15 +512,15 @@ public class DailyTrendReversalStrategy : Strategy
 		var realized = PnL - _dayPnLBase;
 		var floating = 0m;
 
-		if (Position != 0m && PositionPrice is decimal entryPrice)
-		floating = Position * (_lastClose - entryPrice);
-
 		var total = realized + floating;
 
 		if (total >= ProfitStop)
 		{
 			_tradingSuspended = true;
-			CloseAll("Daily profit stop reached");
+			if (Position > 0)
+				SellMarket();
+			else if (Position < 0)
+				BuyMarket();
 			LogInfo($"Trading suspended after reaching daily profit stop of {ProfitStop}.");
 		}
 	}
@@ -683,7 +683,7 @@ public class DailyTrendReversalStrategy : Strategy
 
 		if (Position > 0m)
 		{
-			_longEntryPrice = PositionPrice ?? _lastClose;
+			_longEntryPrice = _lastClose;
 			_longEntryTime = _lastCandleTime;
 			_longTakeProfitPrice = TakeProfitPips > 0m ? _longEntryPrice + TakeProfitPips * _pipSize : 0m;
 			_longStopPrice = StopLossPips > 0m ? _longEntryPrice - StopLossPips * _pipSize : 0m;
@@ -700,7 +700,7 @@ public class DailyTrendReversalStrategy : Strategy
 
 		if (Position < 0m)
 		{
-			_shortEntryPrice = PositionPrice ?? _lastClose;
+			_shortEntryPrice = _lastClose;
 			_shortEntryTime = _lastCandleTime;
 			_shortTakeProfitPrice = TakeProfitPips > 0m ? _shortEntryPrice - TakeProfitPips * _pipSize : 0m;
 			_shortStopPrice = StopLossPips > 0m ? _shortEntryPrice + StopLossPips * _pipSize : 0m;

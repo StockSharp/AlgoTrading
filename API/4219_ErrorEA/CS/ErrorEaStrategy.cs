@@ -252,16 +252,16 @@ public class ErrorEaStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Wait until all subscriptions are online and indicators formed.
-		if (!IsFormedAndOnlineAndAllowTrading())
+		// Wait until ADX indicator is formed.
+		if (!_adx.IsFormed)
 			return;
 
 		// Ensure ADX produced a final value for this bar.
 		if (adxValue is not AverageDirectionalIndexValue adx || !adxValue.IsFinal)
 			return;
 
-		var plusDi = adx.Dx.Plus;
-		var minusDi = adx.Dx.Minus;
+		var plusDi = adx.Dx.Plus ?? 0m;
+		var minusDi = adx.Dx.Minus ?? 0m;
 
 		// Compare +DI and -DI components to determine the signal.
 		var direction = CalculateDirection(plusDi, minusDi);

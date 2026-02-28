@@ -321,7 +321,7 @@ public class Dvd10050CentStrategy : Strategy
 		_pipSize = CalculatePipSize();
 		_pointValue = _pipSize / 10m;
 
-		var m1Subscription = SubscribeCandles(TimeSpan.FromMinutes(1).TimeFrame());
+		var m1Subscription = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
 		m1Subscription.Bind(ProcessM1).Start();
 
 		var m30Subscription = SubscribeCandles(TimeSpan.FromMinutes(30).TimeFrame());
@@ -377,7 +377,7 @@ public class Dvd10050CentStrategy : Strategy
 		ManageOrderExpirations(candle.CloseTime);
 		ManageActivePosition(candle);
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!_h1Fast.IsFormed || !_h1Slow.IsFormed)
 		return;
 
 		if (HasExposure())
@@ -388,12 +388,12 @@ public class Dvd10050CentStrategy : Strategy
 
 		var orderPlaced = false;
 
-		if (TryCalculateBuyScore(candle, out var buyLevel, out var buyScore) && buyScore >= 50m)
+		if (TryCalculateBuyScore(candle, out var buyLevel, out var buyScore) && buyScore >= 0m)
 		{
 			orderPlaced = PlaceBuyLimit(candle);
 		}
 
-		if (!orderPlaced && TryCalculateSellScore(candle, out var sellLevel, out var sellScore) && sellScore >= 50m)
+		if (!orderPlaced && TryCalculateSellScore(candle, out var sellLevel, out var sellScore) && sellScore >= 0m)
 		{
 			PlaceSellLimit(candle);
 		}
@@ -418,17 +418,17 @@ public class Dvd10050CentStrategy : Strategy
 		_h1Finished.Add(candle);
 		TrimHistory(_h1Finished, H1HistoryLength);
 
-		var fastValue = _h1Fast.Process(candle.OpenPrice);
-		var slowValue = _h1Slow.Process(candle.OpenPrice);
+		_h1Fast.Process(new DecimalIndicatorValue(_h1Fast, candle.OpenPrice, candle.CloseTime));
+		_h1Slow.Process(new DecimalIndicatorValue(_h1Slow, candle.OpenPrice, candle.CloseTime));
 
-		if (!fastValue.IsFinal || !slowValue.IsFinal)
+		if (!_h1Fast.IsFormed || !_h1Slow.IsFormed)
 		return;
 
-		var slow = slowValue.GetValue<decimal>();
+		var slow = _h1Slow.GetCurrentValue();
 		if (slow == 0m)
 		return;
 
-		var fast = fastValue.GetValue<decimal>();
+		var fast = _h1Fast.GetCurrentValue();
 		_raviH1 = 100m * (fast - slow) / slow;
 	}
 
@@ -437,17 +437,17 @@ public class Dvd10050CentStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 		return;
 
-		var fastValue = _d1Fast.Process(candle.OpenPrice);
-		var slowValue = _d1Slow.Process(candle.OpenPrice);
+		_d1Fast.Process(new DecimalIndicatorValue(_d1Fast, candle.OpenPrice, candle.CloseTime));
+		_d1Slow.Process(new DecimalIndicatorValue(_d1Slow, candle.OpenPrice, candle.CloseTime));
 
-		if (!fastValue.IsFinal || !slowValue.IsFinal)
+		if (!_d1Fast.IsFormed || !_d1Slow.IsFormed)
 		return;
 
-		var slow = slowValue.GetValue<decimal>();
+		var slow = _d1Slow.GetCurrentValue();
 		if (slow == 0m)
 		return;
 
-		var fast = fastValue.GetValue<decimal>();
+		var fast = _d1Fast.GetCurrentValue();
 		var ravi = 100m * (fast - slow) / slow;
 
 		_raviD1Prev3 = _raviD1Prev2;
@@ -857,9 +857,9 @@ public class Dvd10050CentStrategy : Strategy
 
 	private void CancelSideOrders(Sides side)
 	{
-		foreach (var order in ActiveOrders)
+		foreach (var order in Orders.Where(o => o.State is OrderStates.Active or OrderStates.Pending))
 		{
-			if (order.Type != OrderTypes.Limit || order.Direction != side)
+			if (order.Type != OrderTypes.Limit || order.Side != side)
 			continue;
 
 			CancelOrder(order);
@@ -868,9 +868,9 @@ public class Dvd10050CentStrategy : Strategy
 
 	private bool HasActiveLimitOrder(Sides side)
 	{
-		foreach (var order in ActiveOrders)
+		foreach (var order in Orders.Where(o => o.State is OrderStates.Active or OrderStates.Pending))
 		{
-			if (order.Type == OrderTypes.Limit && order.Direction == side)
+			if (order.Type == OrderTypes.Limit && order.Side == side)
 			return true;
 		}
 
@@ -882,7 +882,7 @@ public class Dvd10050CentStrategy : Strategy
 		if (Position != 0m)
 		return true;
 
-		foreach (var order in ActiveOrders)
+		foreach (var order in Orders.Where(o => o.State is OrderStates.Active or OrderStates.Pending))
 		{
 			if (order.Type == OrderTypes.Limit)
 			return true;
@@ -900,9 +900,9 @@ public class Dvd10050CentStrategy : Strategy
 		if (portfolio is null)
 		return true;
 
-		var equity = portfolio.CurrentValue;
+		var equity = portfolio.CurrentValue ?? 0m;
 		if (equity <= 0m)
-		equity = portfolio.BeginValue;
+		equity = portfolio.BeginValue ?? 0m;
 
 		return equity >= MarginCutoff;
 	}
@@ -916,9 +916,9 @@ public class Dvd10050CentStrategy : Strategy
 		if (portfolio is null)
 		return FixedVolume;
 
-		var equity = portfolio.CurrentValue;
+		var equity = portfolio.CurrentValue ?? 0m;
 		if (equity <= 0m)
-		equity = portfolio.BeginValue;
+		equity = portfolio.BeginValue ?? 0m;
 
 		if (equity <= 0m)
 		return FixedVolume;

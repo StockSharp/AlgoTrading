@@ -53,18 +53,18 @@ public class RsiMaStrategy : Strategy
 		.SetDisplay("RSI Period", string.Empty, "Oscillator")
 		;
 		
-		_oversoldActivationLevel = Param(nameof(OversoldActivationLevel), 20m)
+		_oversoldActivationLevel = Param(nameof(OversoldActivationLevel), 40m)
 		.SetDisplay("Oversold Activation", string.Empty, "Oscillator")
 		;
 		
-		_oversoldExtremeLevel = Param(nameof(OversoldExtremeLevel), 5m)
+		_oversoldExtremeLevel = Param(nameof(OversoldExtremeLevel), 30m)
 		.SetDisplay("Oversold Extreme", string.Empty, "Oscillator");
 		
-		_overboughtActivationLevel = Param(nameof(OverboughtActivationLevel), 80m)
+		_overboughtActivationLevel = Param(nameof(OverboughtActivationLevel), 60m)
 		.SetDisplay("Overbought Activation", string.Empty, "Oscillator")
 		;
 		
-		_overboughtExtremeLevel = Param(nameof(OverboughtExtremeLevel), 95m)
+		_overboughtExtremeLevel = Param(nameof(OverboughtExtremeLevel), 70m)
 		.SetDisplay("Overbought Extreme", string.Empty, "Oscillator");
 		
 		_stopLossPips = Param(nameof(StopLossPips), 399m)
@@ -249,7 +249,7 @@ public class RsiMaStrategy : Strategy
 			Length = RsiPeriod
 		};
 		
-		_ema = new EMA
+		_ema = new ExponentialMovingAverage
 		{
 			Length = RsiPeriod
 		};
@@ -266,38 +266,19 @@ public class RsiMaStrategy : Strategy
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
-		
-		var weightedPrice = (candle.HighPrice + candle.LowPrice + candle.ClosePrice * 2m) / 4m;
-		var emaValue = _ema.Process(new DecimalIndicatorValue(_ema, weightedPrice, candle.OpenTime)).ToDecimal();
-		
-		if (!_ema.IsFormed)
-		{
-			_previousEmaValue = emaValue;
+
+		if (!_rsi.IsFormed)
 			return;
-		}
-		
-		if (!_rsi.IsFormed || _previousEmaValue is null)
-		{
-			_previousEmaValue = emaValue;
-			return;
-		}
-		
-		var pipSize = GetPipSize();
-		if (pipSize == 0m)
-			pipSize = 0.0001m;
-		
-		var emaDiff = (emaValue - _previousEmaValue.Value) / pipSize;
-		var indicatorValue = rsiValue * emaDiff;
-		indicatorValue = Math.Max(1m, Math.Min(99m, indicatorValue));
-		
+
+		var indicatorValue = rsiValue;
+
 		if (_previousIndicatorValue is decimal previousValue)
 		{
 			ManageOpenPosition(candle, previousValue, indicatorValue);
 			EvaluateEntries(candle, previousValue, indicatorValue);
 		}
-		
+
 		_previousIndicatorValue = indicatorValue;
-		_previousEmaValue = emaValue;
 	}
 	
 	private void ManageOpenPosition(ICandleMessage candle, decimal previousValue, decimal currentValue)
@@ -307,16 +288,16 @@ public class RsiMaStrategy : Strategy
 			var exitSignal = previousValue > OverboughtExtremeLevel && currentValue < OverboughtActivationLevel;
 			if (exitSignal)
 			{
-				ClosePosition();
+				SellMarket();
 				ResetRiskLevels();
 				return;
 			}
-			
+
 			UpdateTrailingStopForLong(candle);
-			
+
 			if (ShouldCloseLong(candle))
 			{
-				ClosePosition();
+				SellMarket();
 				ResetRiskLevels();
 			}
 		}
@@ -325,16 +306,16 @@ public class RsiMaStrategy : Strategy
 			var exitSignal = previousValue < OversoldExtremeLevel && currentValue > OversoldActivationLevel;
 			if (exitSignal)
 			{
-				ClosePosition();
+				BuyMarket();
 				ResetRiskLevels();
 				return;
 			}
-			
+
 			UpdateTrailingStopForShort(candle);
-			
+
 			if (ShouldCloseShort(candle))
 			{
-				ClosePosition();
+				BuyMarket();
 				ResetRiskLevels();
 			}
 		}
@@ -350,13 +331,13 @@ public class RsiMaStrategy : Strategy
 		{
 			_entryPrice = price;
 			InitializeRiskLevelsForLong(price);
-			BuyMarket(GetOrderVolume(price));
+			BuyMarket();
 		}
 		else if (previousValue > OverboughtExtremeLevel && currentValue < OverboughtActivationLevel && Position >= 0)
 		{
 			_entryPrice = price;
 			InitializeRiskLevelsForShort(price);
-			SellMarket(GetOrderVolume(price));
+			SellMarket();
 		}
 	}
 	
@@ -459,29 +440,29 @@ public class RsiMaStrategy : Strategy
 	private decimal GetOrderVolume(decimal price)
 	{
 		var volume = TradeVolume;
-		
+
 		if (!UseMoneyManagement || Portfolio is null || price <= 0m)
 			return volume;
-		
-		var portfolioValue = Portfolio.CurrentValue;
+
+		var portfolioValue = Portfolio.CurrentValue ?? 0m;
 		if (portfolioValue <= 0m)
 			return volume;
-		
+
 		var riskAmount = portfolioValue * RiskPercent / 100m;
 		if (riskAmount <= 0m)
 			return volume;
-		
+
 		var estimatedVolume = riskAmount / price;
-		
-		var volumeStep = Security?.VolumeStep;
-		if (volumeStep is not null && volumeStep > 0m)
+
+		var volumeStep = Security?.VolumeStep ?? 0m;
+		if (volumeStep > 0m)
 		{
-			estimatedVolume = Math.Floor(estimatedVolume / volumeStep.Value) * volumeStep.Value;
+			estimatedVolume = Math.Floor(estimatedVolume / volumeStep) * volumeStep;
 		}
-		
+
 		if (estimatedVolume <= 0m)
 			estimatedVolume = volume;
-		
+
 		return estimatedVolume;
 	}
 }
