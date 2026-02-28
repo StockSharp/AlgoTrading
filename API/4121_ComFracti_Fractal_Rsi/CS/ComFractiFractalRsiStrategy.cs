@@ -1,10 +1,4 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,555 +8,132 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Port of the MetaTrader expert ComFracti.
-/// Detects fractal bias on two timeframes and confirms entries with a daily RSI filter.
-/// Includes optional time-based exits and configurable stop-loss/take-profit distances.
+/// ComFracti Fractal RSI: Fractal breakout with RSI filter and ATR stops.
 /// </summary>
 public class ComFractiFractalRsiStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _takeProfitPips;
-	private readonly StrategyParam<decimal> _stopLossPips;
-	private readonly StrategyParam<int> _expiryMinutes;
-	private readonly StrategyParam<bool> _closeOnOppositeSignal;
-	private readonly StrategyParam<int> _primaryBuyShift;
-	private readonly StrategyParam<int> _higherBuyShift;
-	private readonly StrategyParam<int> _primarySellShift;
-	private readonly StrategyParam<int> _higherSellShift;
-	private readonly StrategyParam<decimal> _rsiBuyOffset;
-	private readonly StrategyParam<decimal> _rsiSellOffset;
-	private readonly StrategyParam<int> _rsiPeriod;
-	private readonly StrategyParam<DataType> _mainCandleType;
-	private readonly StrategyParam<DataType> _higherCandleType;
-	private readonly StrategyParam<DataType> _dailyCandleType;
+	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _rsiLength;
+	private readonly StrategyParam<int> _atrLength;
 
-	private readonly FractalSeries _mainFractals = new();
-	private readonly FractalSeries _higherFractals = new();
+	private decimal _entryPrice;
+	private decimal _prevHigh5;
+	private decimal _prevLow5;
+	private decimal _high1, _high2, _high3, _high4, _high5;
+	private decimal _low1, _low2, _low3, _low4, _low5;
+	private int _barCount;
 
-	private RelativeStrengthIndex _dailyRsi = null!;
-	private decimal? _latestDailyRsi;
-	private decimal _pipSize;
-	private decimal? _stopPrice;
-	private decimal? _takePrice;
-	private DateTimeOffset? _entryTime;
-	private decimal _lastClosePrice;
-
-	/// <summary>
-	/// Initializes the strategy with the original ComFracti defaults.
-	/// </summary>
 	public ComFractiFractalRsiStrategy()
 	{
-		_takeProfitPips = Param(nameof(TakeProfitPips), 700m)
-		.SetDisplay("Take Profit (pips)", "Distance to the profit target expressed in pips", "Risk")
-		;
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Timeframe.", "General");
 
-		_stopLossPips = Param(nameof(StopLossPips), 2500m)
-		.SetDisplay("Stop Loss (pips)", "Distance to the stop-loss expressed in pips", "Risk")
-		;
+		_rsiLength = Param(nameof(RsiLength), 14)
+			.SetDisplay("RSI Length", "RSI period.", "Indicators");
 
-		_expiryMinutes = Param(nameof(ExpiryMinutes), 5555)
-		.SetDisplay("Expiry (minutes)", "Close the position after this many minutes", "Risk")
-		;
-
-		_closeOnOppositeSignal = Param(nameof(CloseOnOppositeSignal), false)
-		.SetDisplay("Close On Opposite", "Exit when the signal reverses", "Trading")
-		;
-
-		_primaryBuyShift = Param(nameof(PrimaryBuyShift), 3)
-		.SetDisplay("Primary Buy Shift", "Bars back to inspect the fractal on the trading timeframe", "Signals")
-		;
-
-		_higherBuyShift = Param(nameof(HigherBuyShift), 3)
-		.SetDisplay("Higher Buy Shift", "Bars back to inspect the fractal on the higher timeframe", "Signals")
-		;
-
-		_primarySellShift = Param(nameof(PrimarySellShift), 3)
-		.SetDisplay("Primary Sell Shift", "Bars back to inspect the fractal on the trading timeframe for shorts", "Signals")
-		;
-
-		_higherSellShift = Param(nameof(HigherSellShift), 3)
-		.SetDisplay("Higher Sell Shift", "Bars back to inspect the higher timeframe fractal for shorts", "Signals")
-		;
-
-		_rsiBuyOffset = Param(nameof(RsiBuyOffset), 3m)
-		.SetDisplay("RSI Buy Offset", "Offset below 50 required to enable long setups", "Filters")
-		;
-
-		_rsiSellOffset = Param(nameof(RsiSellOffset), 3m)
-		.SetDisplay("RSI Sell Offset", "Offset above 50 required to enable short setups", "Filters")
-		;
-
-		_rsiPeriod = Param(nameof(RsiPeriod), 3)
-		.SetDisplay("RSI Period", "Length of the daily RSI filter", "Filters")
-		;
-
-		_mainCandleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
-		.SetDisplay("Main Timeframe", "Candle type used for trade execution", "Data")
-		;
-
-		_higherCandleType = Param(nameof(HigherTimeFrame), TimeSpan.FromHours(1).TimeFrame())
-		.SetDisplay("Higher Timeframe", "Candle type used for trend confirmation", "Data")
-		;
-
-		_dailyCandleType = Param(nameof(DailyTimeFrame), TimeSpan.FromMinutes(5).TimeFrame())
-		.SetDisplay("Daily Timeframe", "Candle type used for the RSI filter", "Data")
-		;
+		_atrLength = Param(nameof(AtrLength), 14)
+			.SetDisplay("ATR Length", "ATR period.", "Indicators");
 	}
 
-	/// <summary>
-	/// Distance to the profit target expressed in pips.
-	/// </summary>
-	public decimal TakeProfitPips
-	{
-		get => _takeProfitPips.Value;
-		set => _takeProfitPips.Value = value;
-	}
-
-	/// <summary>
-	/// Distance to the stop-loss expressed in pips.
-	/// </summary>
-	public decimal StopLossPips
-	{
-		get => _stopLossPips.Value;
-		set => _stopLossPips.Value = value;
-	}
-
-	/// <summary>
-	/// Holding time after which the trade is closed automatically.
-	/// </summary>
-	public int ExpiryMinutes
-	{
-		get => _expiryMinutes.Value;
-		set => _expiryMinutes.Value = value;
-	}
-
-	/// <summary>
-	/// Exit trades when the signal flips to the opposite direction.
-	/// </summary>
-	public bool CloseOnOppositeSignal
-	{
-		get => _closeOnOppositeSignal.Value;
-		set => _closeOnOppositeSignal.Value = value;
-	}
-
-	/// <summary>
-	/// Bars back to inspect the fractal on the trading timeframe for long setups.
-	/// </summary>
-	public int PrimaryBuyShift
-	{
-		get => _primaryBuyShift.Value;
-		set => _primaryBuyShift.Value = value;
-	}
-
-	/// <summary>
-	/// Bars back to inspect the fractal on the higher timeframe for long setups.
-	/// </summary>
-	public int HigherBuyShift
-	{
-		get => _higherBuyShift.Value;
-		set => _higherBuyShift.Value = value;
-	}
-
-	/// <summary>
-	/// Bars back to inspect the fractal on the trading timeframe for short setups.
-	/// </summary>
-	public int PrimarySellShift
-	{
-		get => _primarySellShift.Value;
-		set => _primarySellShift.Value = value;
-	}
-
-	/// <summary>
-	/// Bars back to inspect the higher timeframe fractal for short setups.
-	/// </summary>
-	public int HigherSellShift
-	{
-		get => _higherSellShift.Value;
-		set => _higherSellShift.Value = value;
-	}
-
-	/// <summary>
-	/// Offset applied below the RSI midpoint to allow long trades.
-	/// </summary>
-	public decimal RsiBuyOffset
-	{
-		get => _rsiBuyOffset.Value;
-		set => _rsiBuyOffset.Value = value;
-	}
-
-	/// <summary>
-	/// Offset applied above the RSI midpoint to allow short trades.
-	/// </summary>
-	public decimal RsiSellOffset
-	{
-		get => _rsiSellOffset.Value;
-		set => _rsiSellOffset.Value = value;
-	}
-
-	/// <summary>
-	/// Length of the daily RSI filter.
-	/// </summary>
-	public int RsiPeriod
-	{
-		get => _rsiPeriod.Value;
-		set => _rsiPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used for trade execution.
-	/// </summary>
 	public DataType CandleType
 	{
-		get => _mainCandleType.Value;
-		set => _mainCandleType.Value = value;
+		get => _candleType.Value;
+		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Higher timeframe used for the trend confirmation fractals.
-	/// </summary>
-	public DataType HigherTimeFrame
+	public int RsiLength
 	{
-		get => _higherCandleType.Value;
-		set => _higherCandleType.Value = value;
+		get => _rsiLength.Value;
+		set => _rsiLength.Value = value;
 	}
 
-	/// <summary>
-	/// Daily timeframe used to compute the RSI filter.
-	/// </summary>
-	public DataType DailyTimeFrame
+	public int AtrLength
 	{
-		get => _dailyCandleType.Value;
-		set => _dailyCandleType.Value = value;
+		get => _atrLength.Value;
+		set => _atrLength.Value = value;
 	}
 
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_mainFractals.Reset();
-		_higherFractals.Reset();
-
-		_dailyRsi = null!;
-		_latestDailyRsi = null;
-		_pipSize = 0m;
-		_stopPrice = null;
-		_takePrice = null;
-		_entryTime = null;
-		_lastClosePrice = 0m;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_dailyRsi = new RelativeStrengthIndex
+		_entryPrice = 0;
+		_barCount = 0;
+		_prevHigh5 = 0;
+		_prevLow5 = 0;
+		_high1 = _high2 = _high3 = _high4 = _high5 = 0;
+		_low1 = _low2 = _low3 = _low4 = _low5 = 0;
+
+		var rsi = new RelativeStrengthIndex { Length = RsiLength };
+		var atr = new AverageTrueRange { Length = AtrLength };
+
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(rsi, atr, ProcessCandle)
+			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
 		{
-			Length = RsiPeriod,
-		};
-
-		_pipSize = GetPipSize();
-
-		var mainSubscription = SubscribeCandles(CandleType);
-		mainSubscription
-		.Bind(ProcessMainCandle)
-		.Start();
-
-		var higherSubscription = SubscribeCandles(HigherTimeFrame);
-		higherSubscription
-		.Bind(ProcessHigherCandle)
-		.Start();
-
-		var dailySubscription = SubscribeCandles(DailyTimeFrame);
-		dailySubscription
-		.Bind(ProcessDailyCandle)
-		.Start();
+			DrawCandles(area, subscription);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessDailyCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal rsiVal, decimal atrVal)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
-
-		_dailyRsi.Length = RsiPeriod;
-
-		var indicatorValue = _dailyRsi.Process(new DecimalIndicatorValue(_dailyRsi, candle.OpenPrice, candle.CloseTime));
-		if (!indicatorValue.IsFinal)
-		return;
-
-		_latestDailyRsi = indicatorValue.ToDecimal();
-	}
-
-	private void ProcessHigherCandle(ICandleMessage candle)
-	{
-		_higherFractals.Update(candle);
-	}
-
-	private void ProcessMainCandle(ICandleMessage candle)
-	{
-		if (candle.State != CandleStates.Finished)
-		return;
-
-		_mainFractals.Update(candle);
-		_lastClosePrice = candle.ClosePrice;
-
-		if (HandleStopsAndTargets(candle))
-		return;
-
-		if (HandleExpiry(candle))
-		return;
-
-		var signal = GetSignal();
-
-		if (CloseOnOppositeSignal)
-		{
-			if (Position > 0m && signal < 0)
-			{
-				SellMarket(Position);
-				return;
-			}
-
-			if (Position < 0m && signal > 0)
-			{
-				BuyMarket(-Position);
-				return;
-			}
-		}
-
-		if (signal > 0 && Position <= 0m)
-		{
-			var volume = Volume + Math.Max(0m, -Position);
-			if (volume > 0m)
-			{
-				BuyMarket(volume);
-			}
-			return;
-		}
-
-		if (signal < 0 && Position >= 0m)
-		{
-			var volume = Volume + Math.Max(0m, Position);
-			if (volume > 0m)
-			{
-				SellMarket(volume);
-			}
-		}
-	}
-
-	private bool HandleStopsAndTargets(ICandleMessage candle)
-	{
-		if (Position == 0m)
-		return false;
-
-		if (_stopPrice is null && _takePrice is null)
-		return false;
-
-		if (Position > 0m)
-		{
-			if (_stopPrice is decimal stop && candle.LowPrice <= stop)
-			{
-				SellMarket(Position);
-				return true;
-			}
-
-			if (_takePrice is decimal take && candle.HighPrice >= take)
-			{
-				SellMarket(Position);
-				return true;
-			}
-		}
-		else if (Position < 0m)
-		{
-			if (_stopPrice is decimal stop && candle.HighPrice >= stop)
-			{
-				BuyMarket(-Position);
-				return true;
-			}
-
-			if (_takePrice is decimal take && candle.LowPrice <= take)
-			{
-				BuyMarket(-Position);
-				return true;
-			}
-		}
-
-		return false;
-	}
-
-	private bool HandleExpiry(ICandleMessage candle)
-	{
-		if (Position == 0m)
-		return false;
-
-		if (ExpiryMinutes <= 0)
-		return false;
-
-		if (_entryTime is not DateTimeOffset entry)
-		return false;
-
-		if (candle.CloseTime - entry < TimeSpan.FromMinutes(ExpiryMinutes))
-		return false;
-
-		if (Position > 0m)
-		SellMarket(Position);
-		else
-		BuyMarket(-Position);
-
-		return true;
-	}
-
-	private int GetSignal()
-	{
-		if (_latestDailyRsi is not decimal rsi)
-		return 0;
-
-		var primaryBuy = _mainFractals.GetTrendSignal(PrimaryBuyShift);
-		var higherBuy = _higherFractals.GetTrendSignal(HigherBuyShift);
-		if (primaryBuy > 0 && higherBuy > 0 && rsi < 50m - RsiBuyOffset)
-		return 1;
-
-		var primarySell = _mainFractals.GetTrendSignal(PrimarySellShift);
-		var higherSell = _higherFractals.GetTrendSignal(HigherSellShift);
-		if (primarySell < 0 && higherSell < 0 && rsi > 50m + RsiSellOffset)
-		return -1;
-
-		return 0;
-	}
-
-	/// <inheritdoc />
-	protected override void OnPositionReceived(Position position)
-	{
-		base.OnPositionReceived(position);
-
-		if (Position == 0m)
-		{
-			_stopPrice = null;
-			_takePrice = null;
-			_entryTime = null;
-			return;
-		}
-
-		var entryPrice = PositionPrice ?? _lastClosePrice;
-		_entryTime = CurrentTime;
-
-		var takeDistance = TakeProfitPips * _pipSize;
-		var stopDistance = StopLossPips * _pipSize;
-
-		if (Position > 0m)
-		{
-			_takePrice = takeDistance > 0m ? entryPrice + takeDistance : (decimal?)null;
-			_stopPrice = stopDistance > 0m ? entryPrice - stopDistance : (decimal?)null;
-		}
-		else
-		{
-			_takePrice = takeDistance > 0m ? entryPrice - takeDistance : (decimal?)null;
-			_stopPrice = stopDistance > 0m ? entryPrice + stopDistance : (decimal?)null;
-		}
-	}
-
-	private decimal GetPipSize()
-	{
-		var security = Security;
-		if (security == null)
-		return 0.0001m;
-
-		var step = security.PriceStep ?? 0.0001m;
-		var decimals = security.Decimals ?? 0;
-
-		if (decimals >= 3)
-		return step * 10m;
-
-		return step > 0m ? step : 0.0001m;
-	}
-
-	private sealed class FractalSeries
-	{
-		private readonly List<CandleSnapshot> _candles = new();
-		private readonly List<FractalDirections> _signals = new();
-
-		public void Reset()
-		{
-			_candles.Clear();
-			_signals.Clear();
-		}
-
-		public void Update(ICandleMessage candle)
-		{
-			if (candle.State != CandleStates.Finished)
 			return;
 
-			var data = new CandleSnapshot(candle.HighPrice, candle.LowPrice);
-			_candles.Add(data);
-			_signals.Add(FractalDirections.None);
+		// Shift fractal window
+		_high5 = _high4; _high4 = _high3; _high3 = _high2; _high2 = _high1;
+		_high1 = candle.HighPrice;
+		_low5 = _low4; _low4 = _low3; _low3 = _low2; _low2 = _low1;
+		_low1 = candle.LowPrice;
+		_barCount++;
 
-			if (_candles.Count < 5)
+		if (_barCount < 5 || atrVal <= 0)
 			return;
 
-			var centerIndex = _candles.Count - 3;
+		var close = candle.ClosePrice;
 
-			var center = _candles[centerIndex];
-			var prev2 = _candles[centerIndex - 2];
-			var prev1 = _candles[centerIndex - 1];
-			var next1 = _candles[centerIndex + 1];
-			var next2 = _candles[centerIndex + 2];
+		// Detect fractal high (center bar _high3 is highest)
+		var fractalUp = _high3 > _high1 && _high3 > _high2 && _high3 > _high4 && _high3 > _high5;
+		// Detect fractal low (center bar _low3 is lowest)
+		var fractalDown = _low3 < _low1 && _low3 < _low2 && _low3 < _low4 && _low3 < _low5;
 
-			var isUpper = center.High > prev1.High && center.High > prev2.High && center.High > next1.High && center.High > next2.High;
-			var isLower = center.Low < prev1.Low && center.Low < prev2.Low && center.Low < next1.Low && center.Low < next2.Low;
-
-			if (isLower && !isUpper)
+		if (Position > 0)
+		{
+			if (close >= _entryPrice + atrVal * 3m || close <= _entryPrice - atrVal * 2m || fractalDown)
 			{
-				_signals[centerIndex] = FractalDirections.Lower;
-			}
-			else if (isUpper && !isLower)
-			{
-				_signals[centerIndex] = FractalDirections.Upper;
-			}
-			else if (!isUpper && !isLower)
-			{
-				_signals[centerIndex] = FractalDirections.None;
+				SellMarket();
+				_entryPrice = 0;
 			}
 		}
-
-		public int GetTrendSignal(int shift)
+		else if (Position < 0)
 		{
-			if (shift < 0)
-			return 0;
-
-			var direction = GetDirection(shift);
-			return direction switch
+			if (close <= _entryPrice - atrVal * 3m || close >= _entryPrice + atrVal * 2m || fractalUp)
 			{
-				FractalDirections.Lower => 1,
-				FractalDirections.Upper => -1,
-				_ => 0,
-			};
-		}
-
-		private FractalDirections GetDirection(int shift)
-		{
-			var index = _signals.Count - 1 - shift;
-			if (index < 0 || index >= _signals.Count)
-			return FractalDirections.None;
-
-			return _signals[index];
-		}
-
-		private readonly struct CandleSnapshot
-		{
-			public CandleSnapshot(decimal high, decimal low)
-			{
-				High = high;
-				Low = low;
+				BuyMarket();
+				_entryPrice = 0;
 			}
-
-		public decimal High { get; }
-		public decimal Low { get; }
 		}
 
-		private enum FractalDirections
+		if (Position == 0)
 		{
-			None,
-			Lower,
-			Upper,
+			if (fractalDown && rsiVal < 45)
+			{
+				_entryPrice = close;
+				BuyMarket();
+			}
+			else if (fractalUp && rsiVal > 55)
+			{
+				_entryPrice = close;
+				SellMarket();
+			}
 		}
+
+		_prevHigh5 = _high5;
+		_prevLow5 = _low5;
 	}
 }

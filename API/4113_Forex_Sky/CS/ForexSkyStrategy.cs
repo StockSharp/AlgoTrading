@@ -1,304 +1,148 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Port of the "Forex Sky" MetaTrader strategy that trades MACD swings with daily trade limits.
+/// Forex Sky: MACD zero-line cross with EMA trend filter.
 /// </summary>
 public class ForexSkyStrategy : Strategy
 {
-	private readonly StrategyParam<int> _fastPeriod;
-	private readonly StrategyParam<int> _slowPeriod;
-	private readonly StrategyParam<int> _signalPeriod;
-	private readonly StrategyParam<int> _takeProfitPoints;
-	private readonly StrategyParam<int> _stopLossPoints;
-	private readonly StrategyParam<decimal> _tradeVolume;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _fastLength;
+	private readonly StrategyParam<int> _slowLength;
+	private readonly StrategyParam<int> _emaLength;
+	private readonly StrategyParam<int> _atrLength;
 
-	private MovingAverageConvergenceDivergence _macd;
-	private decimal? _macdPrev1;
-	private decimal? _macdPrev2;
-	private decimal? _macdPrev3;
-	private decimal? _macdPrev4;
-	private DateTime? _lastTradeDay;
-	private DateTimeOffset? _lastTradeBarTime;
-	private decimal _pointValue;
+	private decimal _prevMacd;
+	private decimal _entryPrice;
 
-	/// <summary>
-	/// Initializes a new instance of the <see cref="ForexSkyStrategy"/> class.
-	/// </summary>
 	public ForexSkyStrategy()
 	{
-		_fastPeriod = Param(nameof(FastPeriod), 12)
-			.SetGreaterThanZero()
-			.SetDisplay("MACD Fast Period", "Fast EMA length used by the MACD indicator.", "MACD");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Timeframe.", "General");
 
-		_slowPeriod = Param(nameof(SlowPeriod), 26)
-			.SetGreaterThanZero()
-			.SetDisplay("MACD Slow Period", "Slow EMA length used by the MACD indicator.", "MACD");
+		_fastLength = Param(nameof(FastLength), 12)
+			.SetDisplay("Fast EMA", "MACD fast period.", "Indicators");
 
-		_signalPeriod = Param(nameof(SignalPeriod), 9)
-			.SetGreaterThanZero()
-			.SetDisplay("MACD Signal Period", "Signal EMA length used by the MACD indicator.", "MACD");
+		_slowLength = Param(nameof(SlowLength), 26)
+			.SetDisplay("Slow EMA", "MACD slow period.", "Indicators");
 
-		_takeProfitPoints = Param(nameof(TakeProfitPoints), 100)
-			.SetNotNegative()
-			.SetDisplay("Take Profit (points)", "Distance to the take-profit target expressed in instrument points.", "Risk management");
+		_emaLength = Param(nameof(EmaLength), 50)
+			.SetDisplay("EMA Length", "Trend filter.", "Indicators");
 
-		_stopLossPoints = Param(nameof(StopLossPoints), 3000)
-			.SetNotNegative()
-			.SetDisplay("Stop Loss (points)", "Distance to the stop-loss order expressed in instrument points.", "Risk management");
-
-		_tradeVolume = Param(nameof(TradeVolume), 0.1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Trade Volume", "Base market order volume measured in lots.", "Trading");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
-			.SetDisplay("Candle Type", "Primary timeframe used for MACD calculations.", "General");
+		_atrLength = Param(nameof(AtrLength), 14)
+			.SetDisplay("ATR Length", "ATR period.", "Indicators");
 	}
 
-	/// <summary>
-	/// Fast EMA period used by the MACD indicator.
-	/// </summary>
-	public int FastPeriod
-	{
-		get => _fastPeriod.Value;
-		set => _fastPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Slow EMA period used by the MACD indicator.
-	/// </summary>
-	public int SlowPeriod
-	{
-		get => _slowPeriod.Value;
-		set => _slowPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Signal EMA period used by the MACD indicator.
-	/// </summary>
-	public int SignalPeriod
-	{
-		get => _signalPeriod.Value;
-		set => _signalPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Take-profit distance measured in instrument points.
-	/// </summary>
-	public int TakeProfitPoints
-	{
-		get => _takeProfitPoints.Value;
-		set => _takeProfitPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Stop-loss distance measured in instrument points.
-	/// </summary>
-	public int StopLossPoints
-	{
-		get => _stopLossPoints.Value;
-		set => _stopLossPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Base market order size.
-	/// </summary>
-	public decimal TradeVolume
-	{
-		get => _tradeVolume.Value;
-		set => _tradeVolume.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used to feed the MACD indicator.
-	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	public int FastLength
 	{
-		return [(Security, CandleType)];
+		get => _fastLength.Value;
+		set => _fastLength.Value = value;
 	}
 
-	/// <inheritdoc />
-	protected override void OnReseted()
+	public int SlowLength
 	{
-		base.OnReseted();
-
-		_macd = null;
-		_macdPrev1 = null;
-		_macdPrev2 = null;
-		_macdPrev3 = null;
-		_macdPrev4 = null;
-		_lastTradeDay = null;
-		_lastTradeBarTime = null;
-		_pointValue = 0m;
-
-		Volume = TradeVolume;
+		get => _slowLength.Value;
+		set => _slowLength.Value = value;
 	}
 
-	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	public int EmaLength
 	{
-		base.OnStarted(time);
+		get => _emaLength.Value;
+		set => _emaLength.Value = value;
+	}
 
-		Volume = TradeVolume;
-		_pointValue = CalculatePointValue();
+	public int AtrLength
+	{
+		get => _atrLength.Value;
+		set => _atrLength.Value = value;
+	}
 
-		Unit takeProfitUnit = null;
-		if (TakeProfitPoints > 0 && _pointValue > 0m)
-			takeProfitUnit = new Unit(TakeProfitPoints * _pointValue, UnitTypes.Absolute);
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
 
-		Unit stopLossUnit = null;
-		if (StopLossPoints > 0 && _pointValue > 0m)
-			stopLossUnit = new Unit(StopLossPoints * _pointValue, UnitTypes.Absolute);
+		_prevMacd = 0;
+		_entryPrice = 0;
 
-		if (takeProfitUnit != null || stopLossUnit != null)
-		{
-			StartProtection(
-				takeProfit: takeProfitUnit,
-				stopLoss: stopLossUnit,
-				isStopTrailing: false,
-				useMarketOrders: true);
-		}
-
-		_macd = new MovingAverageConvergenceDivergence
-		{
-			ShortMa = { Length = FastPeriod },
-			LongMa = { Length = SlowPeriod },
-			SignalPeriod = SignalPeriod
-		};
+		var fastEma = new ExponentialMovingAverage { Length = FastLength };
+		var slowEma = new ExponentialMovingAverage { Length = SlowLength };
+		var ema = new ExponentialMovingAverage { Length = EmaLength };
+		var atr = new AverageTrueRange { Length = AtrLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_macd, ProcessCandle)
+			.Bind(fastEma, slowEma, ema, atr, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _macd);
+			DrawIndicator(area, ema);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal macdLine, decimal macdSignal, decimal macdHistogram)
+	private void ProcessCandle(ICandleMessage candle, decimal fastVal, decimal slowVal, decimal emaVal, decimal atrVal)
 	{
-		_ = macdSignal;
-		_ = macdHistogram;
-
 		if (candle.State != CandleStates.Finished)
+			return;
+
+		if (atrVal <= 0)
+			return;
+
+		var macd = fastVal - slowVal;
+		var close = candle.ClosePrice;
+
+		if (_prevMacd == 0)
 		{
-			UpdateMacdHistory(macdLine);
+			_prevMacd = macd;
 			return;
 		}
 
-		if (_macd == null || !_macd.IsFormed)
+		if (Position > 0)
 		{
-			UpdateMacdHistory(macdLine);
-			return;
+			if (close >= _entryPrice + atrVal * 3m || close <= _entryPrice - atrVal * 2m || (macd < 0 && _prevMacd >= 0))
+			{
+				SellMarket();
+				_entryPrice = 0;
+			}
+		}
+		else if (Position < 0)
+		{
+			if (close <= _entryPrice - atrVal * 3m || close >= _entryPrice + atrVal * 2m || (macd > 0 && _prevMacd <= 0))
+			{
+				BuyMarket();
+				_entryPrice = 0;
+			}
 		}
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (Position == 0)
 		{
-			UpdateMacdHistory(macdLine);
-			return;
+			if (macd > 0 && _prevMacd <= 0 && close > emaVal)
+			{
+				_entryPrice = close;
+				BuyMarket();
+			}
+			else if (macd < 0 && _prevMacd >= 0 && close < emaVal)
+			{
+				_entryPrice = close;
+				SellMarket();
+			}
 		}
 
-		var prev1 = _macdPrev1;
-		var prev2 = _macdPrev2;
-		var prev3 = _macdPrev3;
-		var prev4 = _macdPrev4;
-
-		if (prev1 == null || prev2 == null || prev3 == null || prev4 == null)
-		{
-			UpdateMacdHistory(macdLine);
-			return;
-		}
-
-		var tradeDate = candle.OpenTime.Date;
-
-		if (_lastTradeDay.HasValue && _lastTradeDay.Value == tradeDate)
-		{
-			UpdateMacdHistory(macdLine);
-			return;
-		}
-
-		if (_lastTradeBarTime.HasValue && _lastTradeBarTime.Value == candle.OpenTime)
-		{
-			UpdateMacdHistory(macdLine);
-			return;
-		}
-
-		var bullishSignal = macdLine > 0m
-			&& macdLine > 0.00009m
-			&& (prev1 <= 0m || prev2 <= 0m || prev3 <= 0m);
-
-		var bearishSignal = (macdLine < 0m
-			&& macdLine < -0.0004m
-			&& (prev1 >= 0m || prev2 >= 0m || prev3 >= 0m)
-			&& prev4 >= 0.001m)
-			|| prev4 >= 0.003m;
-
-		if (Volume <= 0m)
-		{
-			UpdateMacdHistory(macdLine);
-			return;
-		}
-
-		if (bullishSignal && Position == 0)
-		{
-			// Enter long once per day when the MACD flips from negative to positive with momentum confirmation.
-			BuyMarket(Volume);
-			_lastTradeBarTime = candle.OpenTime;
-			_lastTradeDay = tradeDate;
-		}
-		else if (bearishSignal && Position == 0)
-		{
-			// Enter short once per day when the MACD turns negative after a positive stretch.
-			SellMarket(Volume);
-			_lastTradeBarTime = candle.OpenTime;
-			_lastTradeDay = tradeDate;
-		}
-
-		UpdateMacdHistory(macdLine);
-	}
-
-	private void UpdateMacdHistory(decimal macdValue)
-	{
-		// Shift the stored MACD history to maintain the last four completed values.
-		_macdPrev4 = _macdPrev3;
-		_macdPrev3 = _macdPrev2;
-		_macdPrev2 = _macdPrev1;
-		_macdPrev1 = macdValue;
-	}
-
-	private decimal CalculatePointValue()
-	{
-		if (Security == null)
-			return 0m;
-
-		var step = Security.PriceStep ?? Security.Step ?? 0m;
-		return step > 0m ? step : 0m;
+		_prevMacd = macd;
 	}
 }
