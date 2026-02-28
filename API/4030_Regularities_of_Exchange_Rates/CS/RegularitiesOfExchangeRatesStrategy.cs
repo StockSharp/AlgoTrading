@@ -3,21 +3,18 @@ using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Time-based breakout strategy converted from the "Strategy of Regularities of Exchange Rates" MQL expert advisor.
-/// Places symmetric stop orders at a scheduled hour and manages them until the daily closing hour.
+/// At a scheduled hour captures reference price, then enters on breakout above/below offset levels.
+/// Exits at a closing hour or on take-profit/stop-loss hit.
 /// </summary>
 public class RegularitiesOfExchangeRatesStrategy : Strategy
 {
@@ -26,297 +23,182 @@ public class RegularitiesOfExchangeRatesStrategy : Strategy
 	private readonly StrategyParam<decimal> _entryOffsetPoints;
 	private readonly StrategyParam<decimal> _takeProfitPoints;
 	private readonly StrategyParam<decimal> _stopLossPoints;
-	private readonly StrategyParam<decimal> _orderVolume;
 	private readonly StrategyParam<DataType> _candleType;
 
+	private SimpleMovingAverage _dummySma;
 	private decimal _pointSize;
 	private DateTime? _lastEntryDate;
-	private Order _buyStopOrder;
-	private Order _sellStopOrder;
+	private decimal _referencePrice;
+	private decimal _entryPrice;
+	private bool _waitingForBreakout;
 
-	/// <summary>
-	/// Hour (0-23) when the pending stop orders are placed.
-	/// </summary>
 	public int OpeningHour
 	{
 		get => _openingHour.Value;
 		set => _openingHour.Value = value;
 	}
 
-	/// <summary>
-	/// Hour (0-23) when the strategy cancels pending orders and exits trades.
-	/// </summary>
 	public int ClosingHour
 	{
 		get => _closingHour.Value;
 		set => _closingHour.Value = value;
 	}
 
-	/// <summary>
-	/// Distance in broker points between the reference price and the stop orders.
-	/// </summary>
 	public decimal EntryOffsetPoints
 	{
 		get => _entryOffsetPoints.Value;
 		set => _entryOffsetPoints.Value = value;
 	}
 
-	/// <summary>
-	/// Profit target distance measured in broker points.
-	/// </summary>
 	public decimal TakeProfitPoints
 	{
 		get => _takeProfitPoints.Value;
 		set => _takeProfitPoints.Value = value;
 	}
 
-	/// <summary>
-	/// Stop-loss distance measured in broker points.
-	/// </summary>
 	public decimal StopLossPoints
 	{
 		get => _stopLossPoints.Value;
 		set => _stopLossPoints.Value = value;
 	}
 
-	/// <summary>
-	/// Volume of each pending stop order.
-	/// </summary>
-	public decimal OrderVolume
-	{
-		get => _orderVolume.Value;
-		set => _orderVolume.Value = value;
-	}
-
-	/// <summary>
-	/// Candle series used to evaluate the trading schedule.
-	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Creates the strategy parameters and sets their defaults.
-	/// </summary>
 	public RegularitiesOfExchangeRatesStrategy()
 	{
 		_openingHour = Param(nameof(OpeningHour), 9)
-			.SetDisplay("Opening Hour", "Hour (0-23) when new pending orders are submitted", "Schedule")
+			.SetDisplay("Opening Hour", "Hour (0-23) when breakout levels are set", "Schedule")
 			.SetRange(0, 23);
 
 		_closingHour = Param(nameof(ClosingHour), 2)
-			.SetDisplay("Closing Hour", "Hour (0-23) when the strategy exits and cancels", "Schedule")
+			.SetDisplay("Closing Hour", "Hour (0-23) when the strategy exits", "Schedule")
 			.SetRange(0, 23);
 
 		_entryOffsetPoints = Param(nameof(EntryOffsetPoints), 20m)
-			.SetDisplay("Entry Offset (points)", "Distance from bid/ask to place stop orders", "Orders")
+			.SetDisplay("Entry Offset (points)", "Distance from reference price for breakout", "Orders")
 			.SetGreaterThanZero();
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 20m)
-			.SetDisplay("Take Profit (points)", "Profit target distance measured in broker points", "Risk")
+			.SetDisplay("Take Profit (points)", "Profit target distance in points", "Risk")
 			.SetNotNegative();
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 500m)
-			.SetDisplay("Stop Loss (points)", "Protective stop distance attached to filled trades", "Risk")
+			.SetDisplay("Stop Loss (points)", "Stop-loss distance in points", "Risk")
 			.SetGreaterThanZero();
 
-		_orderVolume = Param(nameof(OrderVolume), 0.1m)
-			.SetDisplay("Order Volume", "Volume for each stop order", "Orders")
-			.SetGreaterThanZero();
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used to evaluate trading hours", "General");
 	}
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
-
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
 		_pointSize = 0m;
 		_lastEntryDate = null;
-		_buyStopOrder = null;
-		_sellStopOrder = null;
+		_referencePrice = 0m;
+		_entryPrice = 0m;
+		_waitingForBreakout = false;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_pointSize = CalculatePointSize();
+		_pointSize = Security?.PriceStep ?? 0.01m;
+		if (_pointSize <= 0m)
+			_pointSize = 0.01m;
 
-		var stopLossUnit = StopLossPoints > 0m
-			? new Unit(StopLossPoints * _pointSize, UnitTypes.Absolute)
-			: new Unit();
-
-		// Attach a platform-managed protective stop that mirrors the original MQL stop-loss parameter.
-		StartProtection(stopLoss: stopLossUnit, useMarketOrders: true);
+		_dummySma = new SimpleMovingAverage { Length = 2 };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(_dummySma, ProcessCandle)
 			.Start();
 	}
 
-	private decimal CalculatePointSize()
-	{
-		var step = Security?.PriceStep ?? 1m;
-
-		if (step <= 0m)
-			return 1m;
-
-		var digits = 0;
-		var temp = step;
-
-		// Count decimals to emulate MetaTrader's Point-to-pip conversion on 3/5 digit quotes.
-		while (temp < 1m && digits < 10)
-		{
-			temp *= 10m;
-			digits++;
-		}
-
-		if (digits == 3 || digits == 5)
-			step *= 10m;
-
-		return step;
-	}
-
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		var hour = candle.OpenTime.Hour;
+		var close = candle.ClosePrice;
+		var high = candle.HighPrice;
+		var low = candle.LowPrice;
 
-		var isClosingHour = candle.OpenTime.Hour == ClosingHour;
-
-		// Evaluate the take-profit logic first to avoid missing fast moves.
-		ManageTakeProfit(candle.ClosePrice, isClosingHour);
-
-		if (isClosingHour)
+		// At closing hour: flatten position and cancel breakout watch
+		if (hour == ClosingHour)
 		{
-			// Closing hour: cancel pending orders and flatten any remaining position.
-			CancelPendingOrders();
-			CloseActivePosition();
-		}
-
-		if (candle.OpenTime.Hour == OpeningHour && ShouldPlaceOrders(candle.OpenTime))
-		{
-			if (PlacePendingOrders(candle.ClosePrice))
-				_lastEntryDate = candle.OpenTime.Date;
-		}
-	}
-
-	private void ManageTakeProfit(decimal closePrice, bool forceExit)
-	{
-		if (Position == 0m || _pointSize <= 0m)
-			return;
-
-		var takeProfitDistance = TakeProfitPoints * _pointSize;
-
-		if (Position > 0m)
-		{
-			// Close the long position when the profit target is reached or at the scheduled close hour.
-			if (forceExit || (takeProfitDistance > 0m && closePrice - PositionPrice >= takeProfitDistance))
+			if (Position > 0)
 				SellMarket(Position);
-		}
-		else if (Position < 0m)
-		{
-			// Close the short position when the profit target is reached or at the scheduled close hour.
-			if (forceExit || (takeProfitDistance > 0m && PositionPrice - closePrice >= takeProfitDistance))
+			else if (Position < 0)
 				BuyMarket(-Position);
-		}
-	}
 
-	private void CloseActivePosition()
-	{
-		if (Position > 0m)
+			_waitingForBreakout = false;
+			_entryPrice = 0m;
+		}
+
+		// Manage take-profit and stop-loss for existing position
+		if (Position != 0 && _entryPrice > 0m)
 		{
-			SellMarket(Position);
+			var tp = TakeProfitPoints * _pointSize;
+			var sl = StopLossPoints * _pointSize;
+
+			if (Position > 0)
+			{
+				if ((tp > 0m && close - _entryPrice >= tp) || (sl > 0m && _entryPrice - close >= sl))
+				{
+					SellMarket(Position);
+					_entryPrice = 0m;
+					_waitingForBreakout = false;
+				}
+			}
+			else if (Position < 0)
+			{
+				if ((tp > 0m && _entryPrice - close >= tp) || (sl > 0m && close - _entryPrice >= sl))
+				{
+					BuyMarket(-Position);
+					_entryPrice = 0m;
+					_waitingForBreakout = false;
+				}
+			}
 		}
-		else if (Position < 0m)
+
+		// At opening hour: set reference price for breakout
+		if (hour == OpeningHour && Position == 0)
 		{
-			BuyMarket(-Position);
+			var date = candle.OpenTime.Date;
+			if (!_lastEntryDate.HasValue || _lastEntryDate.Value != date)
+			{
+				_referencePrice = close;
+				_waitingForBreakout = true;
+				_lastEntryDate = date;
+			}
 		}
-	}
 
-	private bool ShouldPlaceOrders(DateTimeOffset time)
-	{
-		var date = time.Date;
-		return !_lastEntryDate.HasValue || _lastEntryDate.Value != date;
-	}
-
-	private bool PlacePendingOrders(decimal referencePrice)
-	{
-		CancelPendingOrders();
-
-		if (_pointSize <= 0m || EntryOffsetPoints <= 0m || OrderVolume <= 0m)
-			return false;
-
-		var offset = EntryOffsetPoints * _pointSize;
-
-		var bestBid = Security?.BestBid?.Price;
-		var bestAsk = Security?.BestAsk?.Price;
-
-		if (bestBid is null || bestBid <= 0m)
-			bestBid = referencePrice;
-
-		if (bestAsk is null || bestAsk <= 0m)
-			bestAsk = referencePrice;
-
-		var sellPrice = NormalizePrice(bestBid.Value - offset);
-		var buyPrice = NormalizePrice(bestAsk.Value + offset);
-
-		if (sellPrice <= 0m || buyPrice <= 0m)
-			return false;
-
-		// Register symmetric stop orders around the current spread.
-		_sellStopOrder = SellStop(OrderVolume, sellPrice);
-		_buyStopOrder = BuyStop(OrderVolume, buyPrice);
-
-		return true;
-	}
-
-	private decimal NormalizePrice(decimal price)
-	{
-		var security = Security;
-
-		if (security?.PriceStep > 0m)
-			return security.ShrinkPrice(price);
-
-		return price;
-	}
-
-	private void CancelPendingOrders()
-	{
-		if (_buyStopOrder != null)
+		// Check for breakout entry
+		if (_waitingForBreakout && Position == 0 && _referencePrice > 0m)
 		{
-			CancelOrder(_buyStopOrder);
-			_buyStopOrder = null;
+			var offset = EntryOffsetPoints * _pointSize;
+			var buyLevel = _referencePrice + offset;
+			var sellLevel = _referencePrice - offset;
+
+			if (high >= buyLevel)
+			{
+				BuyMarket();
+				_entryPrice = close;
+				_waitingForBreakout = false;
+			}
+			else if (low <= sellLevel)
+			{
+				SellMarket();
+				_entryPrice = close;
+				_waitingForBreakout = false;
+			}
 		}
-
-		if (_sellStopOrder != null)
-		{
-			CancelOrder(_sellStopOrder);
-			_sellStopOrder = null;
-		}
-	}
-
-	/// <inheritdoc />
-	protected override void OnStopped()
-	{
-		CancelPendingOrders();
-
-		base.OnStopped();
 	}
 }

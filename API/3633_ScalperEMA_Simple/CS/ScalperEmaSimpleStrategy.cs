@@ -75,12 +75,11 @@ public class ScalperEmaSimpleStrategy : Strategy
 
 		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
 		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
-		var stoch = new StochasticOscillator();
-		stoch.K.Length = 14;
+		var stochK = new StochasticK { Length = 14 };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(fastEma, slowEma, stoch, ProcessCandle)
+			.Bind(fastEma, slowEma, stochK, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();

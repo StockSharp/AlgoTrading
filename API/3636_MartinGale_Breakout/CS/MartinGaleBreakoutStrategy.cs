@@ -1,12 +1,6 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
-
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -14,178 +8,101 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Breakout strategy with martingale-style recovery converted from the MT4 expert advisor "MartinGaleBreakout".
+/// Breakout strategy with martingale-style recovery.
+/// Detects abnormally large candles relative to recent history and enters in the breakout direction.
+/// After a stop-loss, enters recovery mode with a wider take-profit target.
 /// </summary>
 public class MartinGaleBreakoutStrategy : Strategy
 {
 	private readonly StrategyParam<int> _requiredHistory;
-
-	private readonly StrategyParam<int> _takeProfitPoints;
-	private readonly StrategyParam<decimal> _balancePercentageAvailable;
-	private readonly StrategyParam<decimal> _takeProfitBalancePercent;
-	private readonly StrategyParam<decimal> _stopLossBalancePercent;
-	private readonly StrategyParam<decimal> _startRecoveryFactor;
-	private readonly StrategyParam<decimal> _takeProfitPointsMultiplier;
+	private readonly StrategyParam<decimal> _breakoutFactor;
+	private readonly StrategyParam<decimal> _takeProfitPct;
+	private readonly StrategyParam<decimal> _stopLossPct;
+	private readonly StrategyParam<decimal> _recoveryMultiplier;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private readonly List<ICandleMessage> _history = new();
-
-	private decimal _takeProfit;
-	private decimal _stopLoss;
+	private readonly List<decimal> _ranges = new();
+	private decimal _entryPrice;
+	private Sides? _entrySide;
 	private bool _recovering;
-	private decimal _pointSize;
-	private decimal _stepPrice;
 
-	/// <summary>
-	/// Initializes a new instance of the <see cref="MartinGaleBreakoutStrategy"/> class.
-	/// </summary>
-	public MartinGaleBreakoutStrategy()
-	{
-		_requiredHistory = Param(nameof(RequiredHistory), 11)
-			.SetDisplay("Required History", "Number of finished candles kept for breakout evaluation", "General")
-			.SetGreaterThanZero();
-
-		_takeProfitPoints = Param(nameof(TakeProfitPoints), 50)
-			.SetDisplay("Take Profit Points", "Base take-profit distance in price points", "Risk")
-			.SetGreaterThanZero();
-
-		_balancePercentageAvailable = Param(nameof(BalancePercentageAvailable), 50m)
-			.SetDisplay("Balance Allocation (%)", "Maximum share of balance available for new positions", "Risk")
-			.SetRange(0m, 100m)
-			;
-
-		_takeProfitBalancePercent = Param(nameof(TakeProfitBalancePercent), 0.1m)
-			.SetDisplay("TP Balance (%)", "Target profit as a percentage of balance", "Risk")
-			.SetRange(0m, 100m)
-			;
-
-		_stopLossBalancePercent = Param(nameof(StopLossBalancePercent), 10m)
-			.SetDisplay("SL Balance (%)", "Maximum drawdown per recovery cycle", "Risk")
-			.SetRange(0m, 100m)
-			;
-
-		_startRecoveryFactor = Param(nameof(StartRecoveryFactor), 0.2m)
-			.SetDisplay("Recovery Factor", "Portion of the stop-loss used to start recovery", "Risk")
-			.SetRange(0m, 1m)
-			;
-
-		_takeProfitPointsMultiplier = Param(nameof(TakeProfitPointsMultiplier), 1m)
-			.SetDisplay("Recovery TP Multiplier", "Increase in take-profit distance while recovering", "Risk")
-			.SetRange(0m, 10m)
-			;
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
-			.SetDisplay("Candle Type", "Working candle series", "General");
-	}
-
-	/// <summary>
-	/// Gets or sets the base take-profit distance in price points.
-	/// </summary>
-	public int TakeProfitPoints
-	{
-		get => _takeProfitPoints.Value;
-		set => _takeProfitPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Gets or sets the maximum share of balance available for opening new positions.
-	/// </summary>
-	public decimal BalancePercentageAvailable
-	{
-		get => _balancePercentageAvailable.Value;
-		set => _balancePercentageAvailable.Value = value;
-	}
-
-	/// <summary>
-	/// Gets or sets the desired profit target as a percentage of balance.
-	/// </summary>
-	public decimal TakeProfitBalancePercent
-	{
-		get => _takeProfitBalancePercent.Value;
-		set => _takeProfitBalancePercent.Value = value;
-	}
-
-	/// <summary>
-	/// Gets or sets the stop-loss limit as a percentage of balance.
-	/// </summary>
-	public decimal StopLossBalancePercent
-	{
-		get => _stopLossBalancePercent.Value;
-		set => _stopLossBalancePercent.Value = value;
-	}
-
-	/// <summary>
-	/// Gets or sets the coefficient that reduces the initial stop-loss during recovery.
-	/// </summary>
-	public decimal StartRecoveryFactor
-	{
-		get => _startRecoveryFactor.Value;
-		set => _startRecoveryFactor.Value = value;
-	}
-
-	/// <summary>
-	/// Gets or sets the multiplier applied to the take-profit distance while recovering losses.
-	/// </summary>
-	public decimal TakeProfitPointsMultiplier
-	{
-		get => _takeProfitPointsMultiplier.Value;
-		set => _takeProfitPointsMultiplier.Value = value;
-	}
-
-	/// <summary>
-	/// Gets or sets the candle series used for breakout detection.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Gets or sets the number of finished candles stored for breakout evaluation.
-	/// </summary>
 	public int RequiredHistory
 	{
 		get => _requiredHistory.Value;
 		set => _requiredHistory.Value = value;
 	}
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	public decimal BreakoutFactor
 	{
-		if (Security is null)
-			yield break;
-
-		yield return (Security, CandleType);
+		get => _breakoutFactor.Value;
+		set => _breakoutFactor.Value = value;
 	}
 
-	/// <inheritdoc />
+	public decimal TakeProfitPct
+	{
+		get => _takeProfitPct.Value;
+		set => _takeProfitPct.Value = value;
+	}
+
+	public decimal StopLossPct
+	{
+		get => _stopLossPct.Value;
+		set => _stopLossPct.Value = value;
+	}
+
+	public decimal RecoveryMultiplier
+	{
+		get => _recoveryMultiplier.Value;
+		set => _recoveryMultiplier.Value = value;
+	}
+
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	public MartinGaleBreakoutStrategy()
+	{
+		_requiredHistory = Param(nameof(RequiredHistory), 10)
+			.SetDisplay("Lookback", "Number of candles for average range", "General");
+
+		_breakoutFactor = Param(nameof(BreakoutFactor), 2.5m)
+			.SetDisplay("Breakout Factor", "Multiplier for abnormal candle detection", "General");
+
+		_takeProfitPct = Param(nameof(TakeProfitPct), 0.5m)
+			.SetDisplay("TP %", "Take profit percent of entry", "Trading");
+
+		_stopLossPct = Param(nameof(StopLossPct), 0.3m)
+			.SetDisplay("SL %", "Stop loss percent of entry", "Trading");
+
+		_recoveryMultiplier = Param(nameof(RecoveryMultiplier), 1.5m)
+			.SetDisplay("Recovery Mult", "TP multiplier during recovery", "Trading");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle series", "General");
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_history.Clear();
-
-		_pointSize = Security?.PriceStep ?? 0m;
-		if (_pointSize <= 0m)
-			_pointSize = 1m;
-
-		_stepPrice = Security?.StepPrice ?? 0m;
-		if (_stepPrice <= 0m)
-			_stepPrice = _pointSize;
-
-		InitializeTargets();
+		_ranges.Clear();
+		_entryPrice = 0;
+		_entrySide = null;
+		_recovering = false;
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
-	}
+		subscription
+			.Bind(ProcessCandle)
+			.Start();
 
-	private void InitializeTargets()
-	{
-		var balance = GetPortfolioValue();
-		_takeProfit = balance * TakeProfitBalancePercent / 100m;
-		_stopLoss = balance * StopLossBalancePercent / 100m * StartRecoveryFactor;
-		_recovering = false;
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawOwnTrades(area);
+		}
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -193,238 +110,78 @@ public class MartinGaleBreakoutStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		UpdateHistory(candle);
+		var close = candle.ClosePrice;
+		var range = candle.HighPrice - candle.LowPrice;
 
-		var currentProfit = GetUnrealizedPnL(candle.ClosePrice);
-		var balance = GetPortfolioValue();
-
-		if (balance <= 0m)
-			return;
-
-		if (currentProfit <= -_stopLoss || currentProfit >= _takeProfit)
+		// Check exit
+		if (Position != 0 && _entryPrice > 0)
 		{
-			var maxStopLoss = balance * StopLossBalancePercent / 100m;
+			var tpPct = _recovering ? TakeProfitPct * RecoveryMultiplier : TakeProfitPct;
 
-			if (currentProfit <= -_stopLoss && _stopLoss < maxStopLoss)
+			if (_entrySide == Sides.Buy)
 			{
-				CloseAllPositions();
-				_takeProfit -= currentProfit;
-				_stopLoss = maxStopLoss;
-				_recovering = true;
-				return;
+				var pnl = (close - _entryPrice) / _entryPrice * 100m;
+				if (pnl >= tpPct || pnl <= -StopLossPct)
+				{
+					var wasLoss = pnl < 0;
+					SellMarket();
+					_entryPrice = 0;
+					_entrySide = null;
+					_recovering = wasLoss;
+					AddRange(range);
+					return;
+				}
 			}
-
-			CloseAllPositions();
-			_takeProfit = balance * TakeProfitBalancePercent / 100m;
-			_stopLoss = balance * StopLossBalancePercent / 100m * StartRecoveryFactor;
-			_recovering = false;
-			return;
+			else if (_entrySide == Sides.Sell)
+			{
+				var pnl = (_entryPrice - close) / _entryPrice * 100m;
+				if (pnl >= tpPct || pnl <= -StopLossPct)
+				{
+					var wasLoss = pnl < 0;
+					BuyMarket();
+					_entryPrice = 0;
+					_entrySide = null;
+					_recovering = wasLoss;
+					AddRange(range);
+					return;
+				}
+			}
 		}
 
-		if (Position != 0m)
-			return;
-
-		if (_history.Count < RequiredHistory)
-			return;
-
-		var current = _history[^1];
-		var baseOffset = TakeProfitPoints * _pointSize;
-		var offsetMultiplier = _recovering ? TakeProfitPointsMultiplier : 1m;
-		var targetOffset = baseOffset * offsetMultiplier;
-
-		if (IsBullBreakout())
+		// Entry - only when flat
+		if (Position == 0 && _ranges.Count >= RequiredHistory)
 		{
-			var entryPrice = current.ClosePrice;
-			var volume = CalculateVolumeForTarget(_takeProfit, entryPrice, entryPrice + targetOffset);
+			decimal sum = 0;
+			for (int i = 0; i < _ranges.Count; i++)
+				sum += _ranges[i];
+			var avgRange = sum / _ranges.Count;
 
-			if (volume <= 0m)
-				return;
+			if (avgRange > 0 && range > avgRange * BreakoutFactor)
+			{
+				var body = candle.ClosePrice - candle.OpenPrice;
 
-			var exposureLimit = balance * BalancePercentageAvailable / 100m;
-			var requiredCapital = EstimateRequiredCapital(entryPrice, volume);
-
-			if (requiredCapital > exposureLimit)
-				return;
-
-			BuyMarket(volume);
-		}
-		else if (IsBearBreakout())
-		{
-			var entryPrice = current.ClosePrice;
-			var volume = CalculateVolumeForTarget(_takeProfit, entryPrice, entryPrice - targetOffset);
-
-			if (volume <= 0m)
-				return;
-
-			var exposureLimit = balance * BalancePercentageAvailable / 100m;
-			var requiredCapital = EstimateRequiredCapital(entryPrice, volume);
-
-			if (requiredCapital > exposureLimit)
-				return;
-
-			SellMarket(volume);
-		}
-	}
-
-	private void UpdateHistory(ICandleMessage candle)
-	{
-		_history.Add(candle);
-
-		if (_history.Count > RequiredHistory)
-			_history.RemoveAt(0);
-	}
-
-	private bool IsBullBreakout()
-	{
-		var candle = _history[^1];
-		var body = candle.ClosePrice - candle.OpenPrice;
-		var range = candle.HighPrice - candle.LowPrice;
-
-		if (body <= 0m)
-			return false;
-
-		return IsAbnormalCandle(range) && body > 0.5m * range;
-	}
-
-	private bool IsBearBreakout()
-	{
-		var candle = _history[^1];
-		var body = candle.OpenPrice - candle.ClosePrice;
-		var range = candle.HighPrice - candle.LowPrice;
-
-		if (body <= 0m)
-			return false;
-
-		return IsAbnormalCandle(range) && body > 0.5m * range;
-	}
-
-	private bool IsAbnormalCandle(decimal currentRange)
-	{
-		decimal sum = 0m;
-
-		for (var i = 0; i < _history.Count - 1; i++)
-		{
-			var previous = _history[i];
-			sum += previous.HighPrice - previous.LowPrice;
+				if (body > 0 && body > range * 0.4m)
+				{
+					BuyMarket();
+					_entryPrice = close;
+					_entrySide = Sides.Buy;
+				}
+				else if (body < 0 && Math.Abs(body) > range * 0.4m)
+				{
+					SellMarket();
+					_entryPrice = close;
+					_entrySide = Sides.Sell;
+				}
+			}
 		}
 
-		var count = _history.Count - 1;
-		if (count <= 0)
-			return false;
-
-		var averageRange = sum / count;
-		if (averageRange <= 0m)
-			return false;
-
-		return currentRange > averageRange * 3m;
+		AddRange(range);
 	}
 
-	private void CloseAllPositions()
+	private void AddRange(decimal range)
 	{
-		if (Position > 0m)
-		{
-			SellMarket(Position);
-		}
-		else if (Position < 0m)
-		{
-			BuyMarket(-Position);
-		}
-	}
-
-	private decimal CalculateVolumeForTarget(decimal targetProfit, decimal startPrice, decimal endPrice)
-	{
-		if (targetProfit <= 0m)
-			return 0m;
-
-		var distance = Math.Abs(endPrice - startPrice);
-		if (distance <= 0m)
-			return 0m;
-
-		decimal profitPerUnit;
-
-		if (_pointSize > 0m && _stepPrice > 0m)
-		{
-			profitPerUnit = distance / _pointSize * _stepPrice;
-		}
-		else
-		{
-			profitPerUnit = distance;
-		}
-
-		if (profitPerUnit <= 0m)
-			return 0m;
-
-		var rawVolume = targetProfit / profitPerUnit;
-		return NormalizeVolume(rawVolume);
-	}
-
-	private decimal NormalizeVolume(decimal volume)
-	{
-		if (volume <= 0m)
-			return 0m;
-
-		var security = Security;
-		if (security is null)
-			return volume;
-
-		var step = security.VolumeStep ?? 0m;
-		if (step > 0m)
-		{
-			var steps = Math.Ceiling((double)(volume / step));
-			volume = (decimal)steps * step;
-		}
-
-		var min = security.VolumeMin ?? 0m;
-		if (min > 0m && volume < min)
-			volume = min;
-
-		var max = security.VolumeMax ?? 0m;
-		if (max > 0m && volume > max)
-			volume = max;
-
-		return volume;
-	}
-
-	private decimal EstimateRequiredCapital(decimal price, decimal volume)
-	{
-		if (price <= 0m || volume <= 0m)
-			return 0m;
-
-		var multiplier = Security?.Multiplier ?? 1m;
-		return price * volume * multiplier;
-	}
-
-	private decimal GetUnrealizedPnL(decimal price)
-	{
-		if (Position == 0m)
-			return 0m;
-
-		var entryPrice = PositionPrice;
-		if (entryPrice <= 0m)
-			return 0m;
-
-		var volume = Position;
-		var diff = price - entryPrice;
-
-		if (_pointSize > 0m && _stepPrice > 0m)
-		{
-			var steps = diff / _pointSize;
-			return steps * _stepPrice * volume;
-		}
-
-		return diff * volume;
-	}
-
-	private decimal GetPortfolioValue()
-	{
-		var portfolio = Portfolio;
-		if (portfolio?.CurrentValue > 0m)
-			return portfolio.CurrentValue;
-
-		if (portfolio?.BeginValue > 0m)
-			return portfolio.BeginValue;
-
-		return 0m;
+		_ranges.Add(range);
+		while (_ranges.Count > RequiredHistory)
+			_ranges.RemoveAt(0);
 	}
 }
-

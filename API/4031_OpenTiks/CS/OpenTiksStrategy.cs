@@ -47,6 +47,7 @@ public class OpenTiksStrategy : Strategy
 	private decimal? _longTrailingStop;
 	private decimal? _shortTrailingStop;
 
+	private SimpleMovingAverage _dummySma;
 	private decimal _previousPosition;
 	private decimal? _lastTradePrice;
 
@@ -177,9 +178,11 @@ public class OpenTiksStrategy : Strategy
 
 		Volume = NormalizeEntryVolume(OrderVolume);
 
+		_dummySma = new SimpleMovingAverage { Length = 2 };
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(_dummySma, ProcessCandle)
 			.Start();
 	}
 
@@ -196,56 +199,46 @@ public class OpenTiksStrategy : Strategy
 	{
 		base.OnPositionReceived(position);
 
+		var delta = Position - _previousPosition;
+
 		if (Position > 0m)
 		{
 			if (_previousPosition <= 0m)
 			{
-			_longEntryPrice = _lastTradePrice;
-			_longTrailingStop = null;
-			_shortEntryPrice = null;
-			_shortTrailingStop = null;
+				_longEntryPrice = _lastTradePrice;
+				_longTrailingStop = null;
+				_shortEntryPrice = null;
+				_shortTrailingStop = null;
 			}
 			else if (delta > 0m && _lastTradePrice is decimal priceLong)
 			{
-			var previousVolume = Math.Max(0m, _previousPosition);
-			var currentVolume = Math.Max(0m, Position);
-			if (currentVolume > 0m)
-			{
-			var currentEntry = _longEntryPrice ?? priceLong;
-			_longEntryPrice = (currentEntry * previousVolume + priceLong * delta) / currentVolume;
-			}
-			}
-
-			if (Position <= 0m)
-			{
-			_longEntryPrice = null;
-			_longTrailingStop = null;
+				var previousVolume = Math.Max(0m, _previousPosition);
+				var currentVolume = Math.Max(0m, Position);
+				if (currentVolume > 0m)
+				{
+					var currentEntry = _longEntryPrice ?? priceLong;
+					_longEntryPrice = (currentEntry * previousVolume + priceLong * delta) / currentVolume;
+				}
 			}
 		}
 		else if (Position < 0m)
 		{
 			if (_previousPosition >= 0m)
 			{
-			_shortEntryPrice = _lastTradePrice;
-			_shortTrailingStop = null;
-			_longEntryPrice = null;
-			_longTrailingStop = null;
+				_shortEntryPrice = _lastTradePrice;
+				_shortTrailingStop = null;
+				_longEntryPrice = null;
+				_longTrailingStop = null;
 			}
 			else if (delta < 0m && _lastTradePrice is decimal priceShort)
 			{
-			var previousVolume = Math.Max(0m, Math.Abs(_previousPosition));
-			var currentVolume = Math.Max(0m, Math.Abs(Position));
-			if (currentVolume > 0m)
-			{
-			var currentEntry = _shortEntryPrice ?? priceShort;
-			_shortEntryPrice = (currentEntry * previousVolume + priceShort * Math.Abs(delta)) / currentVolume;
-			}
-			}
-
-			if (Position >= 0m)
-			{
-			_shortEntryPrice = null;
-			_shortTrailingStop = null;
+				var previousVolume = Math.Max(0m, Math.Abs(_previousPosition));
+				var currentVolume = Math.Max(0m, Math.Abs(Position));
+				if (currentVolume > 0m)
+				{
+					var currentEntry = _shortEntryPrice ?? priceShort;
+					_shortEntryPrice = (currentEntry * previousVolume + priceShort * Math.Abs(delta)) / currentVolume;
+				}
 			}
 		}
 		else
@@ -259,7 +252,7 @@ public class OpenTiksStrategy : Strategy
 		_previousPosition = Position;
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
@@ -289,9 +282,6 @@ public class OpenTiksStrategy : Strategy
 		_open3 = _open2;
 		_open2 = _open1;
 		_open1 = candle.OpenPrice;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
 
 		if (buySignal)
 			TryEnterLong();

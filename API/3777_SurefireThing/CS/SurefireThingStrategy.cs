@@ -1,136 +1,64 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
 
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
-
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Port of the MetaTrader expert advisor "Surefirething".
-/// Places daily limit orders calculated from the previous session range and closes exposure at the end of each trading day.
+/// Daily range breakout strategy.
+/// Calculates buy/sell levels from previous day's range.
+/// Buys when price drops below the lower level, sells when above the upper level.
+/// Closes position at end of day.
 /// </summary>
 public class SurefireThingStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _orderVolume;
-	private readonly StrategyParam<decimal> _takeProfitPoints;
-	private readonly StrategyParam<decimal> _stopLossPoints;
 	private readonly StrategyParam<decimal> _rangeMultiplier;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private DateTime? _lastPreparedDay;
-	private Order _buyLimitOrder;
-	private Order _sellLimitOrder;
-	private ICandleMessage _previousCandle;
+	private DateTime? _currentDay;
+	private decimal _buyLevel;
+	private decimal _sellLevel;
+	private bool _levelsReady;
+	private decimal _prevDayClose;
+	private decimal _prevDayHigh;
+	private decimal _prevDayLow;
+	private decimal _dayHigh;
+	private decimal _dayLow;
+	private decimal _dayClose;
+	private bool _hasPrevDay;
+	private bool _tradedToday;
 
-	/// <summary>
-	/// Initializes a new instance of the <see cref="SurefireThingStrategy"/> class.
-	/// </summary>
-	public SurefireThingStrategy()
-	{
-		_orderVolume = Param(nameof(OrderVolume), 0.1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Order Volume", "Volume submitted with each pending order.", "General")
-			;
-
-		_takeProfitPoints = Param(nameof(TakeProfitPoints), 10m)
-			.SetNotNegative()
-			.SetDisplay("Take-Profit Points", "Distance in price steps used for take-profit orders.", "Risk Management")
-			;
-
-		_stopLossPoints = Param(nameof(StopLossPoints), 15m)
-			.SetNotNegative()
-			.SetDisplay("Stop-Loss Points", "Distance in price steps used for stop-loss orders.", "Risk Management")
-			;
-
-		_rangeMultiplier = Param(nameof(RangeMultiplier), 1.1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Range Multiplier", "Multiplier applied to the previous candle range (1.1 in the original EA).", "General")
-			;
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Primary timeframe processed by the strategy.", "General");
-	}
-
-	/// <summary>
-	/// Volume submitted with each pending order.
-	/// </summary>
-	public decimal OrderVolume
-	{
-		get => _orderVolume.Value;
-		set => _orderVolume.Value = value;
-	}
-
-	/// <summary>
-	/// Distance in price steps used for take-profit orders.
-	/// </summary>
-	public decimal TakeProfitPoints
-	{
-		get => _takeProfitPoints.Value;
-		set => _takeProfitPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Distance in price steps used for stop-loss orders.
-	/// </summary>
-	public decimal StopLossPoints
-	{
-		get => _stopLossPoints.Value;
-		set => _stopLossPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Multiplier applied to the previous candle range.
-	/// </summary>
 	public decimal RangeMultiplier
 	{
 		get => _rangeMultiplier.Value;
 		set => _rangeMultiplier.Value = value;
 	}
 
-	/// <summary>
-	/// Type of candles used to monitor the market.
-	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	public SurefireThingStrategy()
 	{
-		return [(Security, CandleType)];
+		_rangeMultiplier = Param(nameof(RangeMultiplier), 0.5m)
+			.SetDisplay("Range Mult", "Multiplier for range-based levels", "General");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle series", "General");
 	}
 
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_lastPreparedDay = null;
-		_buyLimitOrder = null;
-		_sellLimitOrder = null;
-		_previousCandle = null;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		Volume = OrderVolume;
-
-		ConfigureProtection();
+		_currentDay = null;
+		_levelsReady = false;
+		_hasPrevDay = false;
+		_tradedToday = false;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -145,118 +73,75 @@ public class SurefireThingStrategy : Strategy
 		}
 	}
 
-	private void ConfigureProtection()
-	{
-		var step = Security?.Step ?? 0m;
-
-		Unit stopLossUnit = null;
-		Unit takeProfitUnit = null;
-
-		if (StopLossPoints > 0m && step > 0m)
-			stopLossUnit = new Unit(StopLossPoints * step, UnitTypes.Absolute);
-
-		if (TakeProfitPoints > 0m && step > 0m)
-			takeProfitUnit = new Unit(TakeProfitPoints * step, UnitTypes.Absolute);
-
-		StartProtection(
-			takeProfit: takeProfitUnit,
-			stopLoss: stopLossUnit,
-			useMarketOrders: true);
-	}
-
 	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var currentDay = candle.OpenTime.Date;
+		var day = candle.OpenTime.Date;
 
-		if (_previousCandle != null)
+		// New day detected
+		if (_currentDay == null || day > _currentDay.Value)
 		{
-			var previousDay = _previousCandle.OpenTime.Date;
+			// Close position at end of previous day
+			if (Position > 0)
+				SellMarket();
+			else if (Position < 0)
+				BuyMarket();
 
-			if (currentDay > previousDay)
+			// Save previous day stats
+			if (_currentDay != null)
 			{
-				CloseForNewDay();
-
-				if (IsFormedAndOnlineAndAllowTrading())
-					PlaceDailyOrders(currentDay, _previousCandle);
+				_prevDayClose = _dayClose;
+				_prevDayHigh = _dayHigh;
+				_prevDayLow = _dayLow;
+				_hasPrevDay = true;
 			}
+
+			// Calculate new levels
+			if (_hasPrevDay)
+			{
+				var range = _prevDayHigh - _prevDayLow;
+				if (range > 0)
+				{
+					var halfRange = range * RangeMultiplier;
+					_buyLevel = _prevDayClose - halfRange;
+					_sellLevel = _prevDayClose + halfRange;
+					_levelsReady = true;
+				}
+			}
+
+			_currentDay = day;
+			_dayHigh = candle.HighPrice;
+			_dayLow = candle.LowPrice;
+			_dayClose = candle.ClosePrice;
+			_tradedToday = false;
+		}
+		else
+		{
+			if (candle.HighPrice > _dayHigh) _dayHigh = candle.HighPrice;
+			if (candle.LowPrice < _dayLow) _dayLow = candle.LowPrice;
+			_dayClose = candle.ClosePrice;
 		}
 
-		_previousCandle = candle;
-	}
-
-	private void CloseForNewDay()
-	{
-		if (Position != 0)
-			ClosePosition();
-
-		CancelPendingOrder(ref _buyLimitOrder);
-		CancelPendingOrder(ref _sellLimitOrder);
-
-		_lastPreparedDay = null;
-	}
-
-	private void PlaceDailyOrders(DateTime newDay, ICandleMessage referenceCandle)
-	{
-		if (_lastPreparedDay == newDay)
+		if (!_levelsReady)
 			return;
 
-		var range = referenceCandle.HighPrice - referenceCandle.LowPrice;
-		if (range <= 0m)
-			return;
+		var price = candle.ClosePrice;
 
-		var adjustedRange = range * RangeMultiplier;
-		if (adjustedRange <= 0m)
-			return;
-
-		var halfRange = adjustedRange / 2m;
-
-		var sellPrice = NormalizePrice(referenceCandle.ClosePrice + halfRange);
-		var buyPrice = NormalizePrice(referenceCandle.ClosePrice - halfRange);
-
-		if (sellPrice <= 0m || buyPrice <= 0m)
-			return;
-
-		var volume = OrderVolume > 0m ? OrderVolume : Volume;
-		if (volume <= 0m)
-			return;
-
-		_buyLimitOrder = BuyLimit(volume, buyPrice);
-		_sellLimitOrder = SellLimit(volume, sellPrice);
-
-		_lastPreparedDay = newDay;
-
-		LogInfo($"New day detected. BuyLimit={buyPrice:0.#####}, SellLimit={sellPrice:0.#####}, Range={range:0.#####}.");
-	}
-
-	private decimal NormalizePrice(decimal price)
-	{
-		return Security?.ShrinkPrice(price) ?? price;
-	}
-
-	private void CancelPendingOrder(ref Order order)
-	{
-		if (order == null)
-			return;
-
-		if (order.State is OrderStates.Pending or OrderStates.Active)
-			CancelOrder(order);
-
-		order = null;
-	}
-
-	/// <inheritdoc />
-	protected override void OnOrderReceived(Order order)
-	{
-		base.OnOrderReceived(order);
-
-		if (_buyLimitOrder != null && order == _buyLimitOrder && order.State is OrderStates.Done or OrderStates.Failed or OrderStates.Canceled)
-			_buyLimitOrder = null;
-
-		if (_sellLimitOrder != null && order == _sellLimitOrder && order.State is OrderStates.Done or OrderStates.Failed or OrderStates.Canceled)
-			_sellLimitOrder = null;
+		// Only one trade per day per direction
+		if (!_tradedToday && Position == 0)
+		{
+			if (price <= _buyLevel)
+			{
+				BuyMarket();
+				_tradedToday = true;
+			}
+			else if (price >= _sellLevel)
+			{
+				SellMarket();
+				_tradedToday = true;
+			}
+		}
 	}
 }
-

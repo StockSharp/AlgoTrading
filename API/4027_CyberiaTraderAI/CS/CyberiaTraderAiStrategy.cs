@@ -268,9 +268,9 @@ public class CyberiaTraderAiStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Prepare indicator instances used by the optional filters.
 		_macd = new MovingAverageConvergenceDivergenceSignal
@@ -535,8 +535,8 @@ public class CyberiaTraderAiStrategy : Strategy
 
 		if (EnableMacd && macdValue != null)
 		{
-			var macdMain = macdValue.Value.Macd;
-			var macdSignal = macdValue.Value.Signal;
+			var macdMain = macdValue.Macd;
+			var macdSignal = macdValue.Signal;
 
 			if (macdMain > macdSignal)
 			{

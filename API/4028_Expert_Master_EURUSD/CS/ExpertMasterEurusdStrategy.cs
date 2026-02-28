@@ -159,11 +159,11 @@ public class ExpertMasterEurusdStrategy : Strategy
 		_macdSignalPeriod = Param(nameof(MacdSignalPeriod), 3)
 			.SetDisplay("MACD Signal", "Signal EMA period", "Indicators")
 			.SetGreaterThanZero();
-		_upperMacdThreshold = Param(nameof(UpperMacdThreshold), 0.00020m)
+		_upperMacdThreshold = Param(nameof(UpperMacdThreshold), 10m)
 			.SetDisplay("Upper MACD", "Positive MACD threshold", "Logic");
-		_lowerMacdThreshold = Param(nameof(LowerMacdThreshold), -0.00020m)
+		_lowerMacdThreshold = Param(nameof(LowerMacdThreshold), -10m)
 			.SetDisplay("Lower MACD", "Negative MACD threshold for longs", "Logic");
-		_shortCurrentThreshold = Param(nameof(ShortCurrentThreshold), -0.00035m)
+		_shortCurrentThreshold = Param(nameof(ShortCurrentThreshold), -20m)
 			.SetDisplay("Short MACD", "Negative MACD threshold for shorts", "Logic");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type for MACD", "Data");
@@ -360,7 +360,7 @@ public class ExpertMasterEurusdStrategy : Strategy
 
 		if (RiskPercent > 0m && Portfolio is not null)
 		{
-			var equity = Portfolio.CurrentValue;
+			var equity = Portfolio.CurrentValue ?? 0m;
 			if (equity > 0m)
 			{
 				var riskVolume = equity * (RiskPercent / 100m);
