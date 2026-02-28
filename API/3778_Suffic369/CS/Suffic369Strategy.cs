@@ -280,9 +280,10 @@ public class Suffic369Strategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var fastCloseValue = _fastCloseSma.Process(new CandleIndicatorValue(candle, candle.ClosePrice));
-		var highMaValue = _highPriceSma.Process(new CandleIndicatorValue(candle, candle.HighPrice));
-		var lowMaValue = _lowPriceSma.Process(new CandleIndicatorValue(candle, candle.LowPrice));
+		var time = candle.OpenTime;
+		var fastCloseValue = _fastCloseSma.Process(new DecimalIndicatorValue(_fastCloseSma, candle.ClosePrice, time));
+		var highMaValue = _highPriceSma.Process(new DecimalIndicatorValue(_highPriceSma, candle.HighPrice, time));
+		var lowMaValue = _lowPriceSma.Process(new DecimalIndicatorValue(_lowPriceSma, candle.LowPrice, time));
 
 		if (!bollingerValue.IsFinal)
 		{
@@ -358,7 +359,7 @@ public class Suffic369Strategy : Strategy
 			return;
 		}
 
-		if (Position == 0 && IsFormedAndOnlineAndAllowTrading())
+		if (Position == 0)
 		{
 			if (longSignal)
 			{
