@@ -1,10 +1,4 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,221 +8,68 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// AIS3 breakout template converted from MetaTrader with range based stop and trailing rules.
+/// AIS3 Trading Robot: breakout strategy with ATR-based stops and trailing.
+/// Enters on breakout above/below previous candle range with EMA filter.
 /// </summary>
 public class Ais3TradingRobotTemplateStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _accountReserve;
-	private readonly StrategyParam<decimal> _orderReserve;
-	private readonly StrategyParam<DataType> _primaryCandleType;
-	private readonly StrategyParam<DataType> _secondaryCandleType;
+	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _emaLength;
+	private readonly StrategyParam<int> _atrLength;
 	private readonly StrategyParam<decimal> _takeMultiplier;
 	private readonly StrategyParam<decimal> _stopMultiplier;
-	private readonly StrategyParam<decimal> _trailMultiplier;
-	private readonly StrategyParam<decimal> _baseVolume;
-	private readonly StrategyParam<decimal> _stopBufferTicks;
-	private readonly StrategyParam<decimal> _freezeBufferTicks;
-	private readonly StrategyParam<decimal> _trailStepMultiplier;
 
-	private decimal _bestBid;
-	private decimal _bestAsk;
-	private decimal _quoteSpread;
-	private decimal _quoteStopsBuffer;
-	private decimal _quoteFreezeBuffer;
-	private decimal _trailStepDistance;
-	private decimal _quoteTakeDistance;
-	private decimal _quoteStopDistance;
-	private decimal _quoteTrailDistance;
+	private decimal _prevHigh;
+	private decimal _prevLow;
+	private decimal _entryPrice;
+	private decimal _stopPrice;
 
-	private decimal _primaryAverage;
-	private decimal _longEntryPrice;
-	private decimal _shortEntryPrice;
-
-	private decimal? _longStopPrice;
-	private decimal? _longTargetPrice;
-	private decimal? _shortStopPrice;
-	private decimal? _shortTargetPrice;
-
-	/// <summary>
-	/// Fraction of equity reserved for drawdowns (0-1).
-	/// </summary>
-	public decimal AccountReserve
+	public Ais3TradingRobotTemplateStrategy()
 	{
-		get => _accountReserve.Value;
-		set => _accountReserve.Value = value;
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Timeframe.", "General");
+
+		_emaLength = Param(nameof(EmaLength), 20)
+			.SetDisplay("EMA Length", "EMA period for trend filter.", "Indicators");
+
+		_atrLength = Param(nameof(AtrLength), 14)
+			.SetDisplay("ATR Length", "ATR period.", "Indicators");
+
+		_takeMultiplier = Param(nameof(TakeMultiplier), 2.0m)
+			.SetDisplay("Take Multiplier", "ATR multiplier for TP.", "Risk");
+
+		_stopMultiplier = Param(nameof(StopMultiplier), 1.5m)
+			.SetDisplay("Stop Multiplier", "ATR multiplier for SL.", "Risk");
 	}
 
-	/// <summary>
-	/// Fraction of equity allocated per trade (0-1).
-	/// </summary>
-	public decimal OrderReserve
+	public DataType CandleType
 	{
-		get => _orderReserve.Value;
-		set => _orderReserve.Value = value;
+		get => _candleType.Value;
+		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Primary candle type used for breakout detection.
-	/// </summary>
-	public DataType PrimaryCandleType
+	public int EmaLength
 	{
-		get => _primaryCandleType.Value;
-		set => _primaryCandleType.Value = value;
+		get => _emaLength.Value;
+		set => _emaLength.Value = value;
 	}
 
-	/// <summary>
-	/// Secondary candle type used for trailing distance measurement.
-	/// </summary>
-	public DataType SecondaryCandleType
+	public int AtrLength
 	{
-		get => _secondaryCandleType.Value;
-		set => _secondaryCandleType.Value = value;
+		get => _atrLength.Value;
+		set => _atrLength.Value = value;
 	}
 
-	/// <summary>
-	/// Take-profit multiplier relative to the primary candle range.
-	/// </summary>
 	public decimal TakeMultiplier
 	{
 		get => _takeMultiplier.Value;
 		set => _takeMultiplier.Value = value;
 	}
 
-	/// <summary>
-	/// Stop-loss multiplier relative to the primary candle range.
-	/// </summary>
 	public decimal StopMultiplier
 	{
 		get => _stopMultiplier.Value;
 		set => _stopMultiplier.Value = value;
-	}
-
-	/// <summary>
-	/// Trailing distance multiplier relative to the secondary candle range.
-	/// </summary>
-	public decimal TrailMultiplier
-	{
-		get => _trailMultiplier.Value;
-		set => _trailMultiplier.Value = value;
-	}
-
-	/// <summary>
-	/// Fallback volume used when portfolio metrics are not accessible.
-	/// </summary>
-	public decimal BaseVolume
-	{
-		get => _baseVolume.Value;
-		set => _baseVolume.Value = value;
-	}
-
-	/// <summary>
-	/// Additional safety buffer expressed in ticks for stop checks.
-	/// </summary>
-	public decimal StopBufferTicks
-	{
-		get => _stopBufferTicks.Value;
-		set => _stopBufferTicks.Value = value;
-	}
-
-	/// <summary>
-	/// Additional freeze buffer expressed in ticks to avoid rapid stop updates.
-	/// </summary>
-	public decimal FreezeBufferTicks
-	{
-		get => _freezeBufferTicks.Value;
-		set => _freezeBufferTicks.Value = value;
-	}
-
-	/// <summary>
-	/// Spread multiplier that defines the minimum trailing step distance.
-	/// </summary>
-	public decimal TrailStepMultiplier
-	{
-		get => _trailStepMultiplier.Value;
-		set => _trailStepMultiplier.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="Ais3TradingRobotTemplateStrategy"/> class.
-	/// </summary>
-	public Ais3TradingRobotTemplateStrategy()
-	{
-		_accountReserve = Param(nameof(AccountReserve), 0.20m)
-		.SetDisplay("Account Reserve", "Fraction of equity kept as reserve", "Risk")
-		.SetNotNegative()
-		.SetLessOrEquals(0.95m);
-
-		_orderReserve = Param(nameof(OrderReserve), 0.04m)
-		.SetDisplay("Order Reserve", "Fraction of equity allocated per trade", "Risk")
-		.SetNotNegative()
-		.SetLessOrEquals(0.50m);
-
-		_primaryCandleType = Param(nameof(PrimaryCandleType), TimeSpan.FromMinutes(15).TimeFrame())
-		.SetDisplay("Primary Candle", "Primary timeframe for breakout detection", "General");
-
-		_secondaryCandleType = Param(nameof(SecondaryCandleType), TimeSpan.FromMinutes(1).TimeFrame())
-		.SetDisplay("Secondary Candle", "Secondary timeframe for trailing logic", "General");
-
-		_takeMultiplier = Param(nameof(TakeMultiplier), 1.0m)
-		.SetDisplay("Take Multiplier", "Take-profit multiplier of the primary range", "Targets")
-		.SetGreaterThanZero();
-
-		_stopMultiplier = Param(nameof(StopMultiplier), 2.0m)
-		.SetDisplay("Stop Multiplier", "Stop-loss multiplier of the primary range", "Targets")
-		.SetGreaterThanZero();
-
-		_trailMultiplier = Param(nameof(TrailMultiplier), 3.0m)
-		.SetDisplay("Trail Multiplier", "Trailing distance multiplier of the secondary range", "Targets")
-		.SetGreaterThanZero();
-
-		_baseVolume = Param(nameof(BaseVolume), 1m)
-		.SetDisplay("Base Volume", "Fallback volume when risk sizing fails", "Risk")
-		.SetGreaterThanZero();
-
-		_stopBufferTicks = Param(nameof(StopBufferTicks), 0m)
-		.SetDisplay("Stop Buffer Ticks", "Extra ticks added on top of broker stop limits", "Execution")
-		.SetNotNegative();
-
-		_freezeBufferTicks = Param(nameof(FreezeBufferTicks), 0m)
-		.SetDisplay("Freeze Buffer Ticks", "Extra ticks preventing frequent stop updates", "Execution")
-		.SetNotNegative();
-
-		_trailStepMultiplier = Param(nameof(TrailStepMultiplier), 1m)
-		.SetDisplay("Trail Step Mult", "Spread multiplier for minimal trailing step", "Execution")
-		.SetGreaterThanZero();
-	}
-
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return new[]
-		{
-			(Security, PrimaryCandleType),
-			(Security, SecondaryCandleType)
-		};
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_bestBid = 0m;
-		_bestAsk = 0m;
-		_quoteSpread = 0m;
-		_quoteStopsBuffer = 0m;
-		_quoteFreezeBuffer = 0m;
-		_trailStepDistance = 0m;
-		_quoteTakeDistance = 0m;
-		_quoteStopDistance = 0m;
-		_quoteTrailDistance = 0m;
-		_primaryAverage = 0m;
-		_longEntryPrice = 0m;
-		_shortEntryPrice = 0m;
-		_longStopPrice = null;
-		_longTargetPrice = null;
-		_shortStopPrice = null;
-		_shortTargetPrice = null;
 	}
 
 	/// <inheritdoc />
@@ -236,336 +77,104 @@ public class Ais3TradingRobotTemplateStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		OnReseted();
+		_prevHigh = 0;
+		_prevLow = 0;
+		_entryPrice = 0;
+		_stopPrice = 0;
 
-		// Subscribe to the primary timeframe candles that drive breakout detection.
-		var primarySubscription = SubscribeCandles(PrimaryCandleType);
-		primarySubscription
-		.Bind(ProcessPrimaryCandle)
-		.Start();
+		var ema = new ExponentialMovingAverage { Length = EmaLength };
+		var atr = new AverageTrueRange { Length = AtrLength };
 
-		// Subscribe to the secondary timeframe candles used for trailing distance.
-		var secondarySubscription = SubscribeCandles(SecondaryCandleType);
-		secondarySubscription
-		.Bind(ProcessSecondaryCandle)
-		.Start();
-
-		// Keep track of the best bid/ask prices to mimic the original MetaTrader feed usage.
-		SubscribeOrderBook()
-		.Bind(depth =>
-		{
-			_bestBid = depth.GetBestBid()?.Price ?? _bestBid;
-			_bestAsk = depth.GetBestAsk()?.Price ?? _bestAsk;
-		})
-		.Start();
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(ema, atr, ProcessCandle)
+			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
-			DrawCandles(area, primarySubscription);
+			DrawCandles(area, subscription);
+			DrawIndicator(area, ema);
 			DrawOwnTrades(area);
 		}
-
-		StartProtection(null, null);
 	}
 
-	private void ProcessPrimaryCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal emaVal, decimal atrVal)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
-		UpdatePrimaryMetrics(candle);
-		TryManagePosition(candle);
-		TryEnterTrade(candle);
-	}
-
-	private void ProcessSecondaryCandle(ICandleMessage candle)
-	{
-		if (candle.State != CandleStates.Finished)
-		return;
-
-		UpdateSecondaryMetrics(candle);
-		TryManagePosition(candle);
-	}
-
-	private void UpdatePrimaryMetrics(ICandleMessage candle)
-	{
-		// Compute candle midpoint and range for entry calculations.
-		_primaryAverage = (candle.HighPrice + candle.LowPrice) / 2m;
-		var range = Math.Max(0m, candle.HighPrice - candle.LowPrice);
-		_quoteTakeDistance = range * TakeMultiplier;
-		_quoteStopDistance = range * StopMultiplier;
-
-		// Estimate current spread from best bid/ask or fall back to the price step.
-		var priceStep = Security?.PriceStep ?? 0m;
-		var spread = _bestAsk > 0m && _bestBid > 0m ? _bestAsk - _bestBid : priceStep;
-		if (spread <= 0m && priceStep > 0m)
-		spread = priceStep;
-		_quoteSpread = Math.Max(0m, spread);
-
-		// Translate stop and freeze buffers from ticks into price units.
-		_quoteStopsBuffer = StopBufferTicks * priceStep;
-		_quoteFreezeBuffer = FreezeBufferTicks * priceStep;
-
-		// Minimal trail step is proportional to the spread as in the MetaTrader template.
-		_trailStepDistance = _quoteSpread * TrailStepMultiplier;
-	}
-
-	private void UpdateSecondaryMetrics(ICandleMessage candle)
-	{
-		// Secondary range defines the trailing distance.
-		var range = Math.Max(0m, candle.HighPrice - candle.LowPrice);
-		_quoteTrailDistance = range * TrailMultiplier;
-	}
-
-	private void TryEnterTrade(ICandleMessage candle)
-	{
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
-
-		var ask = _bestAsk > 0m ? _bestAsk : candle.ClosePrice;
-		var bid = _bestBid > 0m ? _bestBid : candle.ClosePrice;
-
-		if (ask <= 0m || bid <= 0m)
-		return;
-
-		var stopBuffer = _quoteStopsBuffer;
-
-		// Long breakout: close above midpoint and ask breaking previous high plus spread.
-		var longCondition = candle.ClosePrice > _primaryAverage && ask > candle.HighPrice + _quoteSpread;
-		if (longCondition && Position <= 0)
+		if (_prevHigh == 0 || atrVal <= 0)
 		{
-			var stopPrice = candle.HighPrice + _quoteSpread - _quoteStopDistance;
-			var takePrice = ask + _quoteTakeDistance;
-
-			if (stopPrice <= 0m || takePrice <= 0m)
+			_prevHigh = candle.HighPrice;
+			_prevLow = candle.LowPrice;
 			return;
-
-			// Replicate MetaTrader safety checks against broker stop limitations.
-			if (takePrice - ask <= stopBuffer)
-			return;
-
-			if (ask - _quoteSpread - stopPrice <= stopBuffer)
-			return;
-
-			if (stopPrice >= ask)
-			return;
-
-			var volume = CalculatePositionVolume(ask, stopPrice) + Math.Max(0m, -Position);
-			if (volume <= 0m)
-			return;
-
-			BuyMarket(volume);
-			_longEntryPrice = ask;
-			_longStopPrice = stopPrice;
-			_longTargetPrice = takePrice;
-			_shortStopPrice = null;
-			_shortTargetPrice = null;
 		}
 
-		// Short breakout: close below midpoint and bid taking out the previous low.
-		var shortCondition = candle.ClosePrice < _primaryAverage && bid < candle.LowPrice;
-		if (shortCondition && Position >= 0)
-		{
-			var stopPrice = candle.LowPrice + _quoteStopDistance;
-			var takePrice = bid - _quoteTakeDistance;
+		var close = candle.ClosePrice;
+		var takeDistance = atrVal * TakeMultiplier;
+		var stopDistance = atrVal * StopMultiplier;
 
-			if (stopPrice <= 0m || takePrice <= 0m)
-			return;
-
-			if (bid - takePrice <= stopBuffer)
-			return;
-
-			if (stopPrice - bid - _quoteSpread <= stopBuffer)
-			return;
-
-			if (stopPrice <= bid)
-			return;
-
-			var volume = CalculatePositionVolume(bid, stopPrice) + Math.Max(0m, Position);
-			if (volume <= 0m)
-			return;
-
-			SellMarket(volume);
-			_shortEntryPrice = bid;
-			_shortStopPrice = stopPrice;
-			_shortTargetPrice = takePrice;
-			_longStopPrice = null;
-			_longTargetPrice = null;
-		}
-	}
-
-	private void TryManagePosition(ICandleMessage candle)
-	{
-		var bid = _bestBid > 0m ? _bestBid : candle.ClosePrice;
-		var ask = _bestAsk > 0m ? _bestAsk : candle.ClosePrice;
-
+		// Manage position
 		if (Position > 0)
 		{
-			UpdateLongTrailing(bid);
-
-			if (_longStopPrice is decimal longStop && bid <= longStop)
+			if (close - _entryPrice >= takeDistance)
 			{
-				SellMarket(Math.Abs(Position));
-				ResetPositionState();
-				return;
+				SellMarket();
+				_entryPrice = 0;
+				_stopPrice = 0;
 			}
-
-			if (_longTargetPrice is decimal longTarget && bid >= longTarget)
+			else if (_stopPrice > 0 && close <= _stopPrice)
 			{
-				SellMarket(Math.Abs(Position));
-				ResetPositionState();
+				SellMarket();
+				_entryPrice = 0;
+				_stopPrice = 0;
+			}
+			else
+			{
+				var trail = close - stopDistance;
+				if (trail > _stopPrice) _stopPrice = trail;
 			}
 		}
 		else if (Position < 0)
 		{
-			UpdateShortTrailing(ask);
-
-			if (_shortStopPrice is decimal shortStop && ask >= shortStop)
+			if (_entryPrice - close >= takeDistance)
 			{
-				BuyMarket(Math.Abs(Position));
-				ResetPositionState();
-				return;
+				BuyMarket();
+				_entryPrice = 0;
+				_stopPrice = 0;
 			}
-
-			if (_shortTargetPrice is decimal shortTarget && ask <= shortTarget)
+			else if (_stopPrice > 0 && close >= _stopPrice)
 			{
-				BuyMarket(Math.Abs(Position));
-				ResetPositionState();
+				BuyMarket();
+				_entryPrice = 0;
+				_stopPrice = 0;
+			}
+			else
+			{
+				var trail = close + stopDistance;
+				if (trail < _stopPrice || _stopPrice == 0) _stopPrice = trail;
 			}
 		}
-	}
 
-	private void UpdateLongTrailing(decimal bid)
-	{
-		if (_quoteTrailDistance <= 0m)
-		return;
-
-		if (bid <= 0m || _longEntryPrice <= 0m)
-		return;
-
-		if (bid <= _longEntryPrice)
-		return;
-
-		if (_quoteTrailDistance <= _quoteStopsBuffer || _quoteTrailDistance <= _quoteFreezeBuffer)
-		return;
-
-		var newStop = bid - _quoteTrailDistance;
-		if (_longStopPrice is decimal currentStop)
+		// Entry on breakout + EMA filter
+		if (Position == 0)
 		{
-			if (newStop <= currentStop)
-			return;
-
-			if (newStop - currentStop <= _trailStepDistance)
-			return;
+			if (close > _prevHigh && close > emaVal)
+			{
+				_entryPrice = close;
+				_stopPrice = close - stopDistance;
+				BuyMarket();
+			}
+			else if (close < _prevLow && close < emaVal)
+			{
+				_entryPrice = close;
+				_stopPrice = close + stopDistance;
+				SellMarket();
+			}
 		}
 
-		_longStopPrice = newStop;
-	}
-
-	private void UpdateShortTrailing(decimal ask)
-	{
-		if (_quoteTrailDistance <= 0m)
-		return;
-
-		if (ask <= 0m || _shortEntryPrice <= 0m)
-		return;
-
-		if (ask >= _shortEntryPrice)
-		return;
-
-		if (_quoteTrailDistance <= _quoteStopsBuffer || _quoteTrailDistance <= _quoteFreezeBuffer)
-		return;
-
-		var newStop = ask + _quoteTrailDistance;
-		if (_shortStopPrice is decimal currentStop)
-		{
-			if (newStop >= currentStop)
-			return;
-
-			if (currentStop - newStop <= _trailStepDistance)
-			return;
-		}
-
-		_shortStopPrice = newStop;
-	}
-
-	private decimal CalculatePositionVolume(decimal entryPrice, decimal stopPrice)
-	{
-		var riskPerUnit = Math.Abs(entryPrice - stopPrice);
-		if (riskPerUnit <= 0m)
-		return BaseVolume;
-
-		if (Portfolio == null)
-		return BaseVolume;
-
-		var equity = Portfolio.CurrentValue;
-		if (equity <= 0m)
-		return BaseVolume;
-
-		var reserve = AccountReserve;
-		if (reserve < 0m)
-		reserve = 0m;
-		else if (reserve > 0.95m)
-		reserve = 0.95m;
-
-		var allocation = OrderReserve;
-		if (allocation < 0m)
-		allocation = 0m;
-		else if (allocation > 1m)
-		allocation = 1m;
-
-		var reservedEquity = equity * reserve;
-		var tradableEquity = equity - reservedEquity;
-		if (tradableEquity <= 0m)
-		return 0m;
-
-		var varLimit = equity * allocation;
-		if (reservedEquity < varLimit)
-		return 0m;
-
-		var riskBudget = tradableEquity * allocation;
-		if (riskBudget <= 0m)
-		return 0m;
-
-		var volume = riskBudget / riskPerUnit;
-		volume = AdjustVolume(volume);
-
-		return volume > 0m ? volume : 0m;
-	}
-
-	private decimal AdjustVolume(decimal volume)
-	{
-		if (Security == null)
-		return Math.Max(volume, 0m);
-
-		var minVolume = Security.MinVolume ?? 0m;
-		var maxVolume = Security.MaxVolume ?? decimal.MaxValue;
-		var step = Security.VolumeStep ?? 0m;
-
-		if (maxVolume > 0m && volume > maxVolume)
-		volume = maxVolume;
-
-		if (step > 0m)
-		{
-			var offset = minVolume > 0m ? minVolume : 0m;
-			var steps = Math.Floor((volume - offset) / step);
-			volume = offset + step * steps;
-		}
-
-		if (minVolume > 0m && volume < minVolume)
-		volume = minVolume;
-
-		return Math.Max(volume, 0m);
-	}
-
-	private void ResetPositionState()
-	{
-		_longEntryPrice = 0m;
-		_shortEntryPrice = 0m;
-		_longStopPrice = null;
-		_longTargetPrice = null;
-		_shortStopPrice = null;
-		_shortTargetPrice = null;
+		_prevHigh = candle.HighPrice;
+		_prevLow = candle.LowPrice;
 	}
 }

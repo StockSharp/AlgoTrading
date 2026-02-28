@@ -1,10 +1,4 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,461 +8,186 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Grid strategy converted from the MetaTrader "Stairs" expert.
-/// The algorithm maintains symmetric stop orders around the latest fill and
-/// closes the basket when accumulated profit exceeds configured thresholds.
+/// Stairs grid strategy: places trades at regular ATR-based intervals,
+/// adding to position on trending moves, closing on profit target.
 /// </summary>
 public class StairsStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volumeEpsilon;
-
-	private readonly StrategyParam<int> _channelSteps;
-	private readonly StrategyParam<int> _profitSteps;
-	private readonly StrategyParam<int> _commonProfitSteps;
-	private readonly StrategyParam<bool> _addLots;
-	private readonly StrategyParam<decimal> _baseVolume;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _atrLength;
+	private readonly StrategyParam<decimal> _gridMultiplier;
+	private readonly StrategyParam<int> _maxLayers;
+	private readonly StrategyParam<decimal> _profitMultiplier;
+	private readonly StrategyParam<int> _emaLength;
 
-	private readonly List<PositionEntry> _longEntries = new();
-	private readonly List<PositionEntry> _shortEntries = new();
+	private decimal _entryPrice;
+	private decimal _lastGridPrice;
+	private int _gridCount;
+	private decimal _prevEma;
 
-	private decimal _priceStep;
-	private decimal _initialVolume;
-	private decimal? _lastEntryPrice;
-	private decimal _lastEntryVolume;
-	private decimal _pendingCloseLongVolume;
-	private decimal _pendingCloseShortVolume;
-	private bool _closeAllRequested;
-
-	/// <summary>
-	/// Distance between pending stop orders expressed in price steps.
-	/// </summary>
-	public int ChannelSteps
-	{
-	get => _channelSteps.Value;
-	set => _channelSteps.Value = value;
-	}
-
-	/// <summary>
-	/// Profit threshold in price steps that liquidates the local basket.
-	/// </summary>
-	public int ProfitSteps
-	{
-	get => _profitSteps.Value;
-	set => _profitSteps.Value = value;
-	}
-
-	/// <summary>
-	/// Global profit threshold in price steps triggering a full liquidation.
-	/// </summary>
-	public int CommonProfitSteps
-	{
-	get => _commonProfitSteps.Value;
-	set => _commonProfitSteps.Value = value;
-	}
-
-	/// <summary>
-	/// When enabled the next pending orders increase their volume by the base lot.
-	/// </summary>
-	public bool AddLots
-	{
-	get => _addLots.Value;
-	set => _addLots.Value = value;
-	}
-
-	/// <summary>
-	/// Base volume used for the very first pending orders.
-	/// </summary>
-	public decimal BaseVolume
-	{
-	get => _baseVolume.Value;
-	set => _baseVolume.Value = value;
-	}
-
-	/// <summary>
-	/// Minimum volume threshold that treats values as zero when closing orders.
-	/// </summary>
-	public decimal VolumeEpsilon
-	{
-	get => _volumeEpsilon.Value;
-	set => _volumeEpsilon.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used for trade management.
-	/// </summary>
-	public DataType CandleType
-	{
-	get => _candleType.Value;
-	set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes <see cref="StairsStrategy"/> parameters.
-	/// </summary>
 	public StairsStrategy()
 	{
-	_channelSteps = Param(nameof(ChannelSteps), 1000)
-	.SetGreaterThanZero()
-	.SetDisplay("Channel (points)", "Distance between symmetric stop orders", "Grid");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Timeframe.", "General");
 
-	_profitSteps = Param(nameof(ProfitSteps), 1500)
-	.SetGreaterThanZero()
-	.SetDisplay("Profit Threshold", "Points required to close the local basket", "Risk");
+		_atrLength = Param(nameof(AtrLength), 14)
+			.SetDisplay("ATR Length", "ATR period for grid step.", "Indicators");
 
-	_commonProfitSteps = Param(nameof(CommonProfitSteps), 1000)
-	.SetGreaterThanZero()
-	.SetDisplay("Common Profit", "Global profit target across all directions", "Risk");
+		_gridMultiplier = Param(nameof(GridMultiplier), 1.5m)
+			.SetDisplay("Grid Multiplier", "ATR multiplier for grid step.", "Grid");
 
-	_addLots = Param(nameof(AddLots), true)
-	.SetDisplay("Add Lots", "Increase stop order volume after each fill", "Position Sizing");
+		_maxLayers = Param(nameof(MaxLayers), 5)
+			.SetDisplay("Max Layers", "Maximum grid layers.", "Grid");
 
-	_baseVolume = Param(nameof(BaseVolume), 0.1m)
-	.SetGreaterThanZero()
-	.SetDisplay("Base Volume", "Initial volume submitted to the grid", "Position Sizing");
+		_profitMultiplier = Param(nameof(ProfitMultiplier), 2.0m)
+			.SetDisplay("Profit Multiplier", "ATR multiplier for profit target.", "Grid");
 
-	_volumeEpsilon = Param(nameof(VolumeEpsilon), 1e-6m)
-	.SetGreaterThanZero()
-	.SetDisplay("Volume Epsilon", "Volumes below this threshold are treated as zero", "Position Sizing");
-
-	_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-	.SetDisplay("Candle Type", "Primary timeframe used to supervise the grid", "General");
+		_emaLength = Param(nameof(EmaLength), 20)
+			.SetDisplay("EMA Length", "EMA for trend direction.", "Indicators");
 	}
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	public DataType CandleType
 	{
-	return [(Security, CandleType)];
+		get => _candleType.Value;
+		set => _candleType.Value = value;
 	}
 
-	/// <inheritdoc />
-	protected override void OnReseted()
+	public int AtrLength
 	{
-	base.OnReseted();
+		get => _atrLength.Value;
+		set => _atrLength.Value = value;
+	}
 
-	_longEntries.Clear();
-	_shortEntries.Clear();
-	_priceStep = 0m;
-	_initialVolume = 0m;
-	_lastEntryPrice = null;
-	_lastEntryVolume = 0m;
-	_pendingCloseLongVolume = 0m;
-	_pendingCloseShortVolume = 0m;
-	_closeAllRequested = false;
+	public decimal GridMultiplier
+	{
+		get => _gridMultiplier.Value;
+		set => _gridMultiplier.Value = value;
+	}
+
+	public int MaxLayers
+	{
+		get => _maxLayers.Value;
+		set => _maxLayers.Value = value;
+	}
+
+	public decimal ProfitMultiplier
+	{
+		get => _profitMultiplier.Value;
+		set => _profitMultiplier.Value = value;
+	}
+
+	public int EmaLength
+	{
+		get => _emaLength.Value;
+		set => _emaLength.Value = value;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
-	base.OnStarted2(time);
+		base.OnStarted2(time);
 
-	_priceStep = Security.PriceStep ?? 0m;
-	if (_priceStep <= 0m)
-	_priceStep = 1m;
+		_entryPrice = 0;
+		_lastGridPrice = 0;
+		_gridCount = 0;
+		_prevEma = 0;
 
-	_initialVolume = NormalizeVolume(BaseVolume);
+		var atr = new AverageTrueRange { Length = AtrLength };
+		var ema = new ExponentialMovingAverage { Length = EmaLength };
 
-	SubscribeCandles(CandleType)
-	.Bind(ProcessCandle)
-	.Start();
-	}
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(atr, ema, ProcessCandle)
+			.Start();
 
-	private void ProcessCandle(ICandleMessage candle)
-	{
-	if (candle.State != CandleStates.Finished)
-	return;
-
-	if (!IsFormedAndOnlineAndAllowTrading())
-	return;
-
-	var bestBid = Security.BestBid?.Price ?? candle.ClosePrice;
-	var bestAsk = Security.BestAsk?.Price ?? candle.ClosePrice;
-
-	if (_closeAllRequested)
-	{
-		CancelStopOrders();
-
-		if (CloseAllPositions())
+		var area = CreateChartArea();
+		if (area != null)
 		{
-			_closeAllRequested = false;
-		}
-
-		return;
-	}
-
-	UpdatePendingOrders(bestBid, bestAsk);
-
-	var symbolProfit = CalculateProfit(bestBid, bestAsk);
-	if (symbolProfit > ProfitSteps)
-	{
-	_closeAllRequested = true;
-	}
-
-	var combinedProfit = CalculateCombinedProfit(bestBid, bestAsk);
-	if (combinedProfit > CommonProfitSteps)
-	{
-	_closeAllRequested = true;
-	}
-
-	if (_closeAllRequested)
-	{
-		CancelStopOrders();
-
-		if (CloseAllPositions())
-		{
-			_closeAllRequested = false;
+			DrawCandles(area, subscription);
+			DrawIndicator(area, ema);
+			DrawOwnTrades(area);
 		}
 	}
-	}
 
-	private void UpdatePendingOrders(decimal bestBid, decimal bestAsk)
+	private void ProcessCandle(ICandleMessage candle, decimal atrVal, decimal emaVal)
 	{
-	var stopOrders = GetActiveStopOrders().ToArray();
+		if (candle.State != CandleStates.Finished)
+			return;
 
-	if (_longEntries.Count == 0 && _shortEntries.Count == 0)
-	{
-	if (!IsStartConfigurationValid(stopOrders))
-	{
-	CancelOrders(stopOrders);
-	PlaceInitialGrid(bestAsk);
+		if (atrVal <= 0 || _prevEma == 0)
+		{
+			_prevEma = emaVal;
+			return;
+		}
+
+		var close = candle.ClosePrice;
+		var gridStep = atrVal * GridMultiplier;
+		var profitTarget = atrVal * ProfitMultiplier;
+
+		// Check profit target
+		if (Position > 0 && _entryPrice > 0)
+		{
+			if (close - _entryPrice >= profitTarget || close < emaVal)
+			{
+				SellMarket();
+				_gridCount = 0;
+				_entryPrice = 0;
+				_lastGridPrice = 0;
+			}
+		}
+		else if (Position < 0 && _entryPrice > 0)
+		{
+			if (_entryPrice - close >= profitTarget || close > emaVal)
+			{
+				BuyMarket();
+				_gridCount = 0;
+				_entryPrice = 0;
+				_lastGridPrice = 0;
+			}
+		}
+
+		// Grid: add to winning direction
+		if (Position > 0 && _lastGridPrice > 0 && _gridCount < MaxLayers)
+		{
+			if (close - _lastGridPrice >= gridStep)
+			{
+				BuyMarket();
+				_lastGridPrice = close;
+				_gridCount++;
+			}
+		}
+		else if (Position < 0 && _lastGridPrice > 0 && _gridCount < MaxLayers)
+		{
+			if (_lastGridPrice - close >= gridStep)
+			{
+				SellMarket();
+				_lastGridPrice = close;
+				_gridCount++;
+			}
+		}
+
+		// Initial entry based on trend
+		if (Position == 0)
+		{
+			var emaRising = emaVal > _prevEma;
+			var emaFalling = emaVal < _prevEma;
+
+			if (emaRising && close > emaVal)
+			{
+				_entryPrice = close;
+				_lastGridPrice = close;
+				_gridCount = 0;
+				BuyMarket();
+			}
+			else if (emaFalling && close < emaVal)
+			{
+				_entryPrice = close;
+				_lastGridPrice = close;
+				_gridCount = 0;
+				SellMarket();
+			}
+		}
+
+		_prevEma = emaVal;
 	}
-
-	return;
-	}
-
-	if (stopOrders.Length >= 2)
-	return;
-
-	CancelOrders(stopOrders);
-
-	if (_lastEntryPrice is not decimal lastPrice || _lastEntryVolume <= 0m)
-	return;
-
-	var halfChannel = ChannelSteps / 2m;
-	if (halfChannel <= 0m)
-	return;
-
-	var distanceFromLast = Math.Abs(lastPrice - bestBid) / _priceStep;
-	if (distanceFromLast >= halfChannel)
-	return;
-
-	var nextVolume = _lastEntryVolume;
-	if (AddLots && _initialVolume > 0m)
-	{
-	nextVolume = NormalizeVolume(nextVolume + _initialVolume);
-	}
-
-	PlaceFollowUpGrid(lastPrice, nextVolume);
-	}
-
-	private void PlaceInitialGrid(decimal referenceAsk)
-	{
-	var halfChannel = ChannelSteps / 2m;
-	if (halfChannel <= 0m || _priceStep <= 0m)
-	return;
-
-	var volume = _initialVolume > 0m ? _initialVolume : NormalizeVolume(BaseVolume);
-	if (volume <= 0m)
-	return;
-
-	_initialVolume = volume;
-
-	var distance = halfChannel * _priceStep;
-	var buyPrice = NormalizePrice(referenceAsk + distance);
-	var sellPrice = NormalizePrice(referenceAsk - distance);
-
-	if (buyPrice <= 0m || sellPrice <= 0m)
-	return;
-
-	BuyStop(volume, buyPrice);
-	SellStop(volume, sellPrice);
-	}
-
-	private void PlaceFollowUpGrid(decimal lastPrice, decimal volume)
-	{
-	if (ChannelSteps <= 0 || _priceStep <= 0m)
-	return;
-
-	var normalizedVolume = NormalizeVolume(volume);
-	if (normalizedVolume <= 0m)
-	return;
-
-	var offset = ChannelSteps * _priceStep;
-	var buyPrice = NormalizePrice(lastPrice + offset);
-	var sellPrice = NormalizePrice(lastPrice - offset);
-
-	if (buyPrice <= 0m || sellPrice <= 0m)
-	return;
-
-	BuyStop(normalizedVolume, buyPrice);
-	SellStop(normalizedVolume, sellPrice);
-	}
-
-	private IEnumerable<Order> GetActiveStopOrders()
-	{
-	foreach (var order in Orders)
-	{
-	if (order.State == OrderStates.Active && order.Type == OrderTypes.Stop)
-	yield return order;
-	}
-	}
-
-	private void CancelOrders(IEnumerable<Order> orders)
-	{
-	foreach (var order in orders)
-	{
-	if (order.State.IsActive())
-	CancelOrder(order);
-	}
-	}
-
-	private bool IsStartConfigurationValid(IReadOnlyCollection<Order> stopOrders)
-	{
-	if (stopOrders.Count < 2)
-	return false;
-
-	var buyOrder = stopOrders.FirstOrDefault(o => o.Direction == Sides.Buy);
-	var sellOrder = stopOrders.FirstOrDefault(o => o.Direction == Sides.Sell);
-
-	if (buyOrder?.Price is not decimal buyPrice || sellOrder?.Price is not decimal sellPrice)
-	return false;
-
-	var distanceSteps = Math.Abs(buyPrice - sellPrice) / _priceStep;
-	var minDistance = ChannelSteps * 0.5m;
-	var maxDistance = ChannelSteps * 1.5m;
-
-	return distanceSteps > minDistance && distanceSteps < maxDistance;
-	}
-
-	private decimal CalculateProfit(decimal bestBid, decimal bestAsk)
-	{
-	if (_priceStep <= 0m)
-	return 0m;
-
-	decimal profit = 0m;
-
-	foreach (var entry in _longEntries)
-	{
-	profit += (bestBid - entry.Price) / _priceStep;
-	}
-
-	foreach (var entry in _shortEntries)
-	{
-	profit += (entry.Price - bestAsk) / _priceStep;
-	}
-
-	return profit;
-	}
-
-	private decimal CalculateCombinedProfit(decimal bestBid, decimal bestAsk)
-	{
-	return CalculateProfit(bestBid, bestAsk);
-	}
-
-	private bool CloseAllPositions()
-	{
-	var hasLongs = _longEntries.Count > 0;
-	var hasShorts = _shortEntries.Count > 0;
-
-	if (hasLongs && _pendingCloseLongVolume <= VolumeEpsilon)
-	{
-	var longVolume = NormalizeVolume(_longEntries.Sum(e => e.Volume));
-	if (longVolume > VolumeEpsilon)
-	{
-	SellMarket(longVolume);
-	_pendingCloseLongVolume = longVolume;
-	}
-	}
-
-	if (hasShorts && _pendingCloseShortVolume <= VolumeEpsilon)
-	{
-	var shortVolume = NormalizeVolume(_shortEntries.Sum(e => e.Volume));
-	if (shortVolume > VolumeEpsilon)
-	{
-	BuyMarket(shortVolume);
-	_pendingCloseShortVolume = shortVolume;
-	}
-	}
-
-	var closingLongs = hasLongs || _pendingCloseLongVolume > VolumeEpsilon;
-	var closingShorts = hasShorts || _pendingCloseShortVolume > VolumeEpsilon;
-
-	return !closingLongs && !closingShorts;
-	}
-
-	/// <inheritdoc />
-	protected override void OnOwnTradeReceived(MyTrade trade)
-	{
-	base.OnOwnTradeReceived(trade);
-
-	if (trade.Order == null)
-	return;
-
-	var direction = trade.Order.Side;
-	var price = trade.Trade.Price;
-	var volume = trade.Trade.Volume;
-
-	if (direction == Sides.Buy)
-	{
-	if (_pendingCloseShortVolume > VolumeEpsilon)
-	{
-	ReduceEntries(_shortEntries, volume);
-	_pendingCloseShortVolume = Math.Max(0m, _pendingCloseShortVolume - volume);
-	}
-	else
-	{
-	_lastEntryPrice = price;
-	_lastEntryVolume = volume;
-	_longEntries.Add(new PositionEntry(volume, price));
-	}
-	}
-	else if (direction == Sides.Sell)
-	{
-	if (_pendingCloseLongVolume > VolumeEpsilon)
-	{
-	ReduceEntries(_longEntries, volume);
-	_pendingCloseLongVolume = Math.Max(0m, _pendingCloseLongVolume - volume);
-	}
-	else
-	{
-	_lastEntryPrice = price;
-	_lastEntryVolume = volume;
-	_shortEntries.Add(new PositionEntry(volume, price));
-	}
-	}
-
-	if (_longEntries.Count == 0 && _shortEntries.Count == 0)
-	{
-	_lastEntryPrice = null;
-	_lastEntryVolume = 0m;
-	}
-	}
-
-	private static void ReduceEntries(List<PositionEntry> entries, decimal volume)
-	{
-	var remaining = volume;
-
-	for (var i = 0; i < entries.Count && remaining > VolumeEpsilon;)
-	{
-	var entry = entries[i];
-
-	if (entry.Volume <= remaining + VolumeEpsilon)
-	{
-	remaining -= entry.Volume;
-	entries.RemoveAt(i);
-	}
-	else
-	{
-	entries[i] = entry with { Volume = entry.Volume - remaining };
-	remaining = 0m;
-	}
-	}
-	}
-
-	private void CancelStopOrders()
-	{
-	CancelOrders(GetActiveStopOrders());
-	}
-
-	private sealed record PositionEntry(decimal Volume, decimal Price);
 }

@@ -1,10 +1,4 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,196 +8,70 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Trend-following strategy inspired by TrueSort_1001 expert advisor.
-/// Requires a strict moving average alignment and a rising ADX before entering trades.
-/// Implements trailing stops measured in price steps and exits when the moving averages lose alignment.
+/// Trend-following strategy requiring strict moving average alignment
+/// and rising volatility (ATR) before entering trades.
+/// Exits when alignment is lost.
 /// </summary>
 public class TrueSort1001Strategy : Strategy
 {
-	private readonly StrategyParam<int> _stopLossPoints;
-	private readonly StrategyParam<int> _sma10Length;
-	private readonly StrategyParam<int> _sma20Length;
-	private readonly StrategyParam<int> _sma50Length;
-	private readonly StrategyParam<int> _sma100Length;
-	private readonly StrategyParam<int> _sma200Length;
-	private readonly StrategyParam<int> _adxPeriod;
-	private readonly StrategyParam<decimal> _adxThreshold;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _fastLength;
+	private readonly StrategyParam<int> _midLength;
+	private readonly StrategyParam<int> _slowLength;
+	private readonly StrategyParam<int> _atrLength;
 
-	private readonly decimal[] _ma10History = new decimal[3];
-	private readonly decimal[] _ma20History = new decimal[3];
-	private readonly decimal[] _ma50History = new decimal[3];
-	private readonly decimal[] _ma100History = new decimal[3];
-	private readonly decimal[] _ma200History = new decimal[3];
+	private decimal _prevFast;
+	private decimal _prevMid;
+	private decimal _prevSlow;
+	private decimal _prevAtr;
+	private decimal _entryPrice;
 
-	private int _historyCount;
-	private bool _hasPreviousAdx;
-	private decimal _previousAdx;
-	private decimal _longStop;
-	private decimal _shortStop;
-
-
-	/// <summary>
-	/// Trailing stop distance expressed in price steps.
-	/// </summary>
-	public int StopLossPoints
+	public TrueSort1001Strategy()
 	{
-		get => _stopLossPoints.Value;
-		set => _stopLossPoints.Value = value;
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Timeframe.", "General");
+
+		_fastLength = Param(nameof(FastLength), 10)
+			.SetDisplay("Fast SMA", "Fast SMA period.", "Indicators");
+
+		_midLength = Param(nameof(MidLength), 50)
+			.SetDisplay("Mid SMA", "Medium SMA period.", "Indicators");
+
+		_slowLength = Param(nameof(SlowLength), 200)
+			.SetDisplay("Slow SMA", "Slow SMA period.", "Indicators");
+
+		_atrLength = Param(nameof(AtrLength), 14)
+			.SetDisplay("ATR Length", "ATR period for volatility filter.", "Indicators");
 	}
 
-	/// <summary>
-	/// Length of the fastest SMA.
-	/// </summary>
-	public int Sma10Length
-	{
-		get => _sma10Length.Value;
-		set => _sma10Length.Value = value;
-	}
-
-	/// <summary>
-	/// Length of the second SMA.
-	/// </summary>
-	public int Sma20Length
-	{
-		get => _sma20Length.Value;
-		set => _sma20Length.Value = value;
-	}
-
-	/// <summary>
-	/// Length of the medium SMA.
-	/// </summary>
-	public int Sma50Length
-	{
-		get => _sma50Length.Value;
-		set => _sma50Length.Value = value;
-	}
-
-	/// <summary>
-	/// Length of the long-term SMA used for stop placement.
-	/// </summary>
-	public int Sma100Length
-	{
-		get => _sma100Length.Value;
-		set => _sma100Length.Value = value;
-	}
-
-	/// <summary>
-	/// Length of the slowest SMA used for trend confirmation.
-	/// </summary>
-	public int Sma200Length
-	{
-		get => _sma200Length.Value;
-		set => _sma200Length.Value = value;
-	}
-
-	/// <summary>
-	/// ADX calculation period.
-	/// </summary>
-	public int AdxPeriod
-	{
-		get => _adxPeriod.Value;
-		set => _adxPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Minimum ADX value required for entries.
-	/// </summary>
-	public decimal AdxThreshold
-	{
-		get => _adxThreshold.Value;
-		set => _adxThreshold.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used for indicator calculations.
-	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Initializes strategy parameters.
-	/// </summary>
-	public TrueSort1001Strategy()
+	public int FastLength
 	{
-
-		_stopLossPoints = Param(nameof(StopLossPoints), 100)
-		.SetNotNegative()
-		.SetDisplay("Stop Loss Points", "Trailing stop distance in price steps", "Risk")
-		
-		.SetOptimize(20, 200, 20);
-
-		_sma10Length = Param(nameof(Sma10Length), 10)
-		.SetGreaterThanZero()
-		.SetDisplay("SMA 10", "Fastest moving average length", "Trend")
-		
-		.SetOptimize(5, 20, 1);
-
-		_sma20Length = Param(nameof(Sma20Length), 20)
-		.SetGreaterThanZero()
-		.SetDisplay("SMA 20", "Second moving average length", "Trend")
-		
-		.SetOptimize(10, 40, 2);
-
-		_sma50Length = Param(nameof(Sma50Length), 50)
-		.SetGreaterThanZero()
-		.SetDisplay("SMA 50", "Medium moving average length", "Trend")
-		
-		.SetOptimize(30, 80, 5);
-
-		_sma100Length = Param(nameof(Sma100Length), 100)
-		.SetGreaterThanZero()
-		.SetDisplay("SMA 100", "Long moving average length", "Trend")
-		
-		.SetOptimize(80, 150, 5);
-
-		_sma200Length = Param(nameof(Sma200Length), 200)
-		.SetGreaterThanZero()
-		.SetDisplay("SMA 200", "Slow moving average length", "Trend")
-		
-		.SetOptimize(150, 250, 10);
-
-		_adxPeriod = Param(nameof(AdxPeriod), 14)
-		.SetGreaterThanZero()
-		.SetDisplay("ADX Period", "ADX calculation length", "Trend")
-		
-		.SetOptimize(10, 30, 2);
-
-		_adxThreshold = Param(nameof(AdxThreshold), 25m)
-		.SetGreaterThanZero()
-		.SetDisplay("ADX Threshold", "Minimum ADX value for trades", "Trend")
-		
-		.SetOptimize(15m, 35m, 5m);
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
-		.SetDisplay("Candle Type", "Candles used for calculations", "General");
+		get => _fastLength.Value;
+		set => _fastLength.Value = value;
 	}
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	public int MidLength
 	{
-		return [(Security, CandleType)];
+		get => _midLength.Value;
+		set => _midLength.Value = value;
 	}
 
-	/// <inheritdoc />
-	protected override void OnReseted()
+	public int SlowLength
 	{
-		base.OnReseted();
+		get => _slowLength.Value;
+		set => _slowLength.Value = value;
+	}
 
-		Array.Clear(_ma10History, 0, _ma10History.Length);
-		Array.Clear(_ma20History, 0, _ma20History.Length);
-		Array.Clear(_ma50History, 0, _ma50History.Length);
-		Array.Clear(_ma100History, 0, _ma100History.Length);
-		Array.Clear(_ma200History, 0, _ma200History.Length);
-
-		_historyCount = 0;
-		_hasPreviousAdx = false;
-		_previousAdx = 0m;
-		_longStop = 0m;
-		_shortStop = 0m;
+	public int AtrLength
+	{
+		get => _atrLength.Value;
+		set => _atrLength.Value = value;
 	}
 
 	/// <inheritdoc />
@@ -211,194 +79,80 @@ public class TrueSort1001Strategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var sma10 = new SMA { Length = Sma10Length };
-		var sma20 = new SMA { Length = Sma20Length };
-		var sma50 = new SMA { Length = Sma50Length };
-		var sma100 = new SMA { Length = Sma100Length };
-		var sma200 = new SMA { Length = Sma200Length };
-		var adx = new AverageDirectionalIndex { Length = AdxPeriod };
+		_prevFast = 0;
+		_prevMid = 0;
+		_prevSlow = 0;
+		_prevAtr = 0;
+		_entryPrice = 0;
+
+		var fast = new SimpleMovingAverage { Length = FastLength };
+		var mid = new SimpleMovingAverage { Length = MidLength };
+		var slow = new SimpleMovingAverage { Length = SlowLength };
+		var atr = new AverageTrueRange { Length = AtrLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-		.BindEx(sma10, sma20, sma50, sma100, sma200, adx, ProcessCandle)
-		.Start();
+			.Bind(fast, mid, slow, atr, ProcessCandle)
+			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, sma10);
-			DrawIndicator(area, sma20);
-			DrawIndicator(area, sma50);
-			DrawIndicator(area, sma100);
-			DrawIndicator(area, sma200);
-			DrawIndicator(area, adx);
+			DrawIndicator(area, fast);
+			DrawIndicator(area, mid);
+			DrawIndicator(area, slow);
 			DrawOwnTrades(area);
 		}
-
-		StartProtection(null, null);
 	}
 
-	private void ProcessCandle(
-	ICandleMessage candle,
-	IIndicatorValue sma10Value,
-	IIndicatorValue sma20Value,
-	IIndicatorValue sma50Value,
-	IIndicatorValue sma100Value,
-	IIndicatorValue sma200Value,
-	IIndicatorValue adxValue)
+	private void ProcessCandle(ICandleMessage candle, decimal fastVal, decimal midVal, decimal slowVal, decimal atrVal)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
-		if (!sma10Value.IsFinal || !sma20Value.IsFinal || !sma50Value.IsFinal || !sma100Value.IsFinal || !sma200Value.IsFinal || !adxValue.IsFinal)
-		return;
-
-		var sma10 = sma10Value.ToDecimal();
-		var sma20 = sma20Value.ToDecimal();
-		var sma50 = sma50Value.ToDecimal();
-		var sma100 = sma100Value.ToDecimal();
-		var sma200 = sma200Value.ToDecimal();
-
-		var adxData = (AverageDirectionalIndexValue)adxValue;
-		if (adxData.MovingAverage is not decimal currentAdx)
-		return;
-
-		var previousAdx = _previousAdx;
-		var hadPreviousAdx = _hasPreviousAdx;
-		_previousAdx = currentAdx;
-		_hasPreviousAdx = true;
-
-		var step = Security?.Step ?? 1m;
-		var stopDistance = StopLossPoints > 0 ? StopLossPoints * step : 0m;
-		var hasHistory = _historyCount >= 3;
-		var canTrade = IsFormedAndOnlineAndAllowTrading();
-
-		if (Position == 0 && canTrade && hasHistory && hadPreviousAdx)
+		if (_prevFast == 0 || _prevMid == 0 || _prevSlow == 0)
 		{
-			var adxRising = currentAdx > AdxThreshold && currentAdx > previousAdx;
-			if (adxRising)
-			{
-				var bullishAligned = IsStrictlyDescending(_ma10History, _ma20History, _ma50History, _ma100History, _ma200History);
-				var bearishAligned = IsStrictlyAscending(_ma10History, _ma20History, _ma50History, _ma100History, _ma200History);
+			_prevFast = fastVal;
+			_prevMid = midVal;
+			_prevSlow = slowVal;
+			_prevAtr = atrVal;
+			return;
+		}
 
-				if (bullishAligned)
-				{
-					BuyMarket(Volume);
-					_longStop = CalculateInitialLongStop(candle.ClosePrice, sma100, stopDistance);
-					_shortStop = 0m;
-				}
-				else if (bearishAligned)
-				{
-					SellMarket(Volume);
-					_shortStop = CalculateInitialShortStop(candle.ClosePrice, sma100, stopDistance);
-					_longStop = 0m;
-				}
+		var close = candle.ClosePrice;
+		var bullishAligned = fastVal > midVal && midVal > slowVal;
+		var bearishAligned = fastVal < midVal && midVal < slowVal;
+		var atrRising = atrVal > _prevAtr;
+
+		// Exit on alignment lost
+		if (Position > 0 && !bullishAligned)
+		{
+			SellMarket();
+		}
+		else if (Position < 0 && !bearishAligned)
+		{
+			BuyMarket();
+		}
+
+		// Entry on alignment + rising ATR
+		if (Position == 0)
+		{
+			if (bullishAligned && atrRising && close > fastVal)
+			{
+				_entryPrice = close;
+				BuyMarket();
+			}
+			else if (bearishAligned && atrRising && close < fastVal)
+			{
+				_entryPrice = close;
+				SellMarket();
 			}
 		}
 
-		if (Position > 0)
-		{
-			var alignmentLost = sma10 <= sma20 || sma20 <= sma50 || sma50 <= sma100 || sma100 <= sma200;
-			if (alignmentLost)
-			{
-				SellMarket(Math.Abs(Position));
-				_longStop = 0m;
-			}
-			else if (stopDistance > 0m)
-			{
-				var candidate = candle.ClosePrice - stopDistance;
-				if (candidate > _longStop)
-				_longStop = candidate;
-
-				if (_longStop != 0m && candle.ClosePrice <= _longStop)
-				{
-					SellMarket(Math.Abs(Position));
-					_longStop = 0m;
-				}
-			}
-		}
-		else if (Position < 0)
-		{
-			var alignmentLost = sma10 >= sma20 || sma20 >= sma50 || sma50 >= sma100 || sma100 >= sma200;
-			if (alignmentLost)
-			{
-				BuyMarket(Math.Abs(Position));
-				_shortStop = 0m;
-			}
-			else if (stopDistance > 0m)
-			{
-				var candidate = candle.ClosePrice + stopDistance;
-				if (_shortStop == 0m || candidate < _shortStop)
-				_shortStop = candidate;
-
-				if (_shortStop != 0m && candle.ClosePrice >= _shortStop)
-				{
-					BuyMarket(Math.Abs(Position));
-					_shortStop = 0m;
-				}
-			}
-		}
-
-		UpdateHistory(sma10, sma20, sma50, sma100, sma200);
-	}
-
-	private static decimal CalculateInitialLongStop(decimal entryPrice, decimal sma100, decimal stopDistance)
-	{
-		var stop = sma100;
-		if (stopDistance > 0m)
-		{
-			var distanceStop = entryPrice - stopDistance;
-			if (stop == 0m || distanceStop > stop)
-			stop = distanceStop;
-		}
-
-		return stop;
-	}
-
-	private static decimal CalculateInitialShortStop(decimal entryPrice, decimal sma100, decimal stopDistance)
-	{
-		var stop = sma100;
-		if (stopDistance > 0m)
-		{
-			var distanceStop = entryPrice + stopDistance;
-			if (stop == 0m || distanceStop < stop)
-			stop = distanceStop;
-		}
-
-		return stop;
-	}
-
-	private void UpdateHistory(decimal sma10, decimal sma20, decimal sma50, decimal sma100, decimal sma200)
-	{
-		ShiftHistory(_ma10History, sma10);
-		ShiftHistory(_ma20History, sma20);
-		ShiftHistory(_ma50History, sma50);
-		ShiftHistory(_ma100History, sma100);
-		ShiftHistory(_ma200History, sma200);
-
-		if (_historyCount < 3)
-		_historyCount++;
-	}
-
-	private static void ShiftHistory(decimal[] buffer, decimal value)
-	{
-		buffer[2] = buffer[1];
-		buffer[1] = buffer[0];
-		buffer[0] = value;
-	}
-
-	private static bool IsStrictlyDescending(decimal[] series1, decimal[] series2, decimal[] series3, decimal[] series4, decimal[] series5)
-	{
-		return series1[0] > series2[0] && series2[0] > series3[0] && series3[0] > series4[0] && series4[0] > series5[0]
-		&& series1[1] > series2[1] && series2[1] > series3[1] && series3[1] > series4[1] && series4[1] > series5[1]
-		&& series1[2] > series2[2] && series2[2] > series3[2] && series3[2] > series4[2] && series4[2] > series5[2];
-	}
-
-	private static bool IsStrictlyAscending(decimal[] series1, decimal[] series2, decimal[] series3, decimal[] series4, decimal[] series5)
-	{
-		return series1[0] < series2[0] && series2[0] < series3[0] && series3[0] < series4[0] && series4[0] < series5[0]
-		&& series1[1] < series2[1] && series2[1] < series3[1] && series3[1] < series4[1] && series4[1] < series5[1]
-		&& series1[2] < series2[2] && series2[2] < series3[2] && series3[2] < series4[2] && series4[2] < series5[2];
+		_prevFast = fastVal;
+		_prevMid = midVal;
+		_prevSlow = slowVal;
+		_prevAtr = atrVal;
 	}
 }

@@ -1,181 +1,62 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Sidus EMA + RSI strategy converted from the original MetaTrader 4 expert advisor.
-/// The strategy waits for a fast EMA to cross a slow EMA and confirms the move with RSI relative to the 50 level.
-/// Orders are executed on completed candles only and duplicate entries on the same signal candle are prevented.
+/// Sidus EMA + RSI strategy: fast EMA crosses slow EMA confirmed by RSI above/below 50.
 /// </summary>
 public class SidusEmaRsiStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _takeProfitPoints;
-	private readonly StrategyParam<decimal> _stopLossPoints;
-	private readonly StrategyParam<decimal> _tradeVolume;
+	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _fastPeriod;
 	private readonly StrategyParam<int> _slowPeriod;
 	private readonly StrategyParam<int> _rsiPeriod;
-	private readonly StrategyParam<int> _signalShift;
-	private readonly StrategyParam<DataType> _candleType;
 
-	private ExponentialMovingAverage _fastEma;
-	private ExponentialMovingAverage _slowEma;
-	private RelativeStrengthIndex _rsi;
+	private decimal _prevFast;
+	private decimal _prevSlow;
 
-	private readonly Queue<(DateTimeOffset time, decimal fast, decimal slow, decimal rsi)> _history = new();
-
-	private decimal _pointValue;
-	private DateTimeOffset? _lastSignalTime;
-
-	/// <summary>
-	/// Take-profit distance expressed in price points (PriceStep multiples).
-	/// </summary>
-	public decimal TakeProfitPoints
+	public SidusEmaRsiStrategy()
 	{
-		get => _takeProfitPoints.Value;
-		set => _takeProfitPoints.Value = value;
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Timeframe.", "General");
+
+		_fastPeriod = Param(nameof(FastPeriod), 5)
+			.SetDisplay("Fast EMA", "Fast EMA period.", "Indicators");
+
+		_slowPeriod = Param(nameof(SlowPeriod), 12)
+			.SetDisplay("Slow EMA", "Slow EMA period.", "Indicators");
+
+		_rsiPeriod = Param(nameof(RsiPeriod), 21)
+			.SetDisplay("RSI Period", "RSI period.", "Indicators");
 	}
 
-	/// <summary>
-	/// Stop-loss distance expressed in price points (PriceStep multiples).
-	/// </summary>
-	public decimal StopLossPoints
-	{
-		get => _stopLossPoints.Value;
-		set => _stopLossPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Trade volume sent to the exchange.
-	/// </summary>
-	public decimal TradeVolume
-	{
-		get => _tradeVolume.Value;
-		set => _tradeVolume.Value = value;
-	}
-
-	/// <summary>
-	/// Fast EMA period.
-	/// </summary>
-	public int FastPeriod
-	{
-		get => _fastPeriod.Value;
-		set => _fastPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Slow EMA period.
-	/// </summary>
-	public int SlowPeriod
-	{
-		get => _slowPeriod.Value;
-		set => _slowPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// RSI period used for the confirmation filter.
-	/// </summary>
-	public int RsiPeriod
-	{
-		get => _rsiPeriod.Value;
-		set => _rsiPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Number of completed candles to shift the signal evaluation (equivalent of the MT4 <c>shif</c> input).
-	/// </summary>
-	public int SignalShift
-	{
-		get => _signalShift.Value;
-		set => _signalShift.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type consumed by the strategy.
-	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Initializes strategy parameters with defaults derived from the original expert advisor.
-	/// </summary>
-	public SidusEmaRsiStrategy()
+	public int FastPeriod
 	{
-		_takeProfitPoints = Param(nameof(TakeProfitPoints), 80m)
-			.SetNotNegative()
-			.SetDisplay("Take Profit (points)", "Take-profit distance expressed in price steps", "Risk Management")
-			
-			.SetOptimize(20m, 160m, 20m);
-
-		_stopLossPoints = Param(nameof(StopLossPoints), 20m)
-			.SetNotNegative()
-			.SetDisplay("Stop Loss (points)", "Stop-loss distance expressed in price steps", "Risk Management")
-			
-			.SetOptimize(10m, 60m, 10m);
-
-		_tradeVolume = Param(nameof(TradeVolume), 0.1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume expressed in lots or contracts", "Trading");
-
-		_fastPeriod = Param(nameof(FastPeriod), 5)
-			.SetGreaterThanZero()
-			.SetDisplay("Fast EMA", "Fast EMA calculation period", "Indicators")
-			
-			.SetOptimize(3, 15, 1);
-
-		_slowPeriod = Param(nameof(SlowPeriod), 12)
-			.SetGreaterThanZero()
-			.SetDisplay("Slow EMA", "Slow EMA calculation period", "Indicators")
-			
-			.SetOptimize(10, 30, 2);
-
-		_rsiPeriod = Param(nameof(RsiPeriod), 21)
-			.SetGreaterThanZero()
-			.SetDisplay("RSI Period", "RSI calculation period", "Indicators")
-			
-			.SetOptimize(14, 28, 2);
-
-		_signalShift = Param(nameof(SignalShift), 1)
-			.SetNotNegative()
-			.SetDisplay("Signal Shift", "Number of closed candles used for signal evaluation", "Signals");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
-			.SetDisplay("Candle Type", "Source candle series", "General");
+		get => _fastPeriod.Value;
+		set => _fastPeriod.Value = value;
 	}
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	public int SlowPeriod
 	{
-		return [(Security, CandleType)];
+		get => _slowPeriod.Value;
+		set => _slowPeriod.Value = value;
 	}
 
-	/// <inheritdoc />
-	protected override void OnReseted()
+	public int RsiPeriod
 	{
-		base.OnReseted();
-
-		_history.Clear();
-		_fastEma = null;
-		_slowEma = null;
-		_rsi = null;
-		_pointValue = 0m;
-		_lastSignalTime = null;
+		get => _rsiPeriod.Value;
+		set => _rsiPeriod.Value = value;
 	}
 
 	/// <inheritdoc />
@@ -183,30 +64,24 @@ public class SidusEmaRsiStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_pointValue = ResolvePointValue();
-		Volume = TradeVolume;
+		_prevFast = 0;
+		_prevSlow = 0;
 
-		_fastEma = new EMA { Length = FastPeriod };
-		_slowEma = new EMA { Length = SlowPeriod };
-		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
+		var fastEma = new ExponentialMovingAverage { Length = FastPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowPeriod };
+		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_fastEma, _slowEma, _rsi, ProcessCandle)
+			.Bind(fastEma, slowEma, rsi, ProcessCandle)
 			.Start();
-
-		var takeDistance = TakeProfitPoints * _pointValue;
-		var stopDistance = StopLossPoints * _pointValue;
-		Unit takeProfitUnit = takeDistance > 0m ? new Unit(takeDistance, UnitTypes.Absolute) : null;
-		Unit stopLossUnit = stopDistance > 0m ? new Unit(stopDistance, UnitTypes.Absolute) : null;
-		StartProtection(takeProfit: takeProfitUnit, stopLoss: stopLossUnit);
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _fastEma);
-			DrawIndicator(area, _slowEma);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
@@ -216,79 +91,40 @@ public class SidusEmaRsiStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (_fastEma is null || _slowEma is null || _rsi is null)
-			return;
-
-		if (!_fastEma.IsFormed || !_slowEma.IsFormed || !_rsi.IsFormed)
-			return;
-
-		_history.Enqueue((candle.OpenTime, fastValue, slowValue, rsiValue));
-
-		var maxNeeded = SignalShift + 2;
-		while (_history.Count > maxNeeded)
-			_history.Dequeue();
-
-		if (_history.Count <= SignalShift + 1)
-			return;
-
-		var snapshot = _history.ToArray();
-		var currentIndex = snapshot.Length - SignalShift - 1;
-		if (currentIndex <= 0)
-			return;
-
-		var current = snapshot[currentIndex];
-		var previous = snapshot[currentIndex - 1];
-
-		var bullish = previous.fast <= previous.slow && current.fast > current.slow && current.rsi > 50m;
-		var bearish = previous.fast >= previous.slow && current.fast < current.slow && current.rsi < 50m;
-		var signalTime = current.time;
-
-		if (bullish)
+		if (_prevFast == 0 || _prevSlow == 0)
 		{
-			if (Position < 0)
-			{
-				LogInfo($"Closing short position due to bullish crossover at {candle.ClosePrice}.");
-				ClosePosition();
-				return;
-			}
-
-			if (Position == 0 && _lastSignalTime != signalTime)
-			{
-				LogInfo($"Opening long position at {candle.ClosePrice}. Fast EMA {current.fast}, Slow EMA {current.slow}, RSI {current.rsi}.");
-				BuyMarket(Volume);
-				_lastSignalTime = signalTime;
-			}
-
+			_prevFast = fastValue;
+			_prevSlow = slowValue;
 			return;
 		}
 
-		if (bearish)
-		{
-			if (Position > 0)
-			{
-				LogInfo($"Closing long position due to bearish crossover at {candle.ClosePrice}.");
-				ClosePosition();
-				return;
-			}
+		var bullishCross = _prevFast <= _prevSlow && fastValue > slowValue;
+		var bearishCross = _prevFast >= _prevSlow && fastValue < slowValue;
 
-			if (Position == 0 && _lastSignalTime != signalTime)
+		// Exit existing positions on opposite cross
+		if (Position > 0 && bearishCross)
+		{
+			SellMarket();
+		}
+		else if (Position < 0 && bullishCross)
+		{
+			BuyMarket();
+		}
+
+		// Entry on crossover confirmed by RSI
+		if (Position == 0)
+		{
+			if (bullishCross && rsiValue > 50)
 			{
-				LogInfo($"Opening short position at {candle.ClosePrice}. Fast EMA {current.fast}, Slow EMA {current.slow}, RSI {current.rsi}.");
-				SellMarket(Volume);
-				_lastSignalTime = signalTime;
+				BuyMarket();
+			}
+			else if (bearishCross && rsiValue < 50)
+			{
+				SellMarket();
 			}
 		}
-	}
 
-	private decimal ResolvePointValue()
-	{
-		var priceStep = Security?.PriceStep;
-		if (priceStep is null || priceStep == 0m)
-			return 1m;
-
-		return priceStep.Value;
+		_prevFast = fastValue;
+		_prevSlow = slowValue;
 	}
 }
