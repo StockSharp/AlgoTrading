@@ -1,292 +1,86 @@
-namespace StockSharp.Samples.Strategies;
-
 using System;
-using System.Linq;
-using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
+namespace StockSharp.Samples.Strategies;
+
+/// <summary>
+/// Firebird MA Envelope Exhaustion strategy - Bollinger Bands mean reversion.
+/// Buys when close drops below lower band (exhaustion).
+/// Sells when close rises above upper band (exhaustion).
+/// Exits at the middle band.
+/// </summary>
 public class FirebirdMaEnvelopeExhaustionStrategy : Strategy
 {
+	private readonly StrategyParam<int> _bbPeriod;
+	private readonly StrategyParam<decimal> _bbWidth;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _maLength;
-	private readonly StrategyParam<decimal> _percent;
-	private readonly StrategyParam<bool> _tradeOnFriday;
-	private readonly StrategyParam<bool> _useHighLow;
-	private readonly StrategyParam<int> _pipStep;
-	private readonly StrategyParam<decimal> _increasementPower;
-	private readonly StrategyParam<decimal> _takeProfit;
-	private readonly StrategyParam<decimal> _stopLoss;
-	private readonly StrategyParam<decimal> _volume;
 
-	private SimpleMovingAverage _sma;
-
-	private readonly List<decimal> _longEntries = new();
-	private readonly List<decimal> _shortEntries = new();
-
-	private bool _blockLong;
-	private bool _blockShort;
+	public int BbPeriod { get => _bbPeriod.Value; set => _bbPeriod.Value = value; }
+	public decimal BbWidth { get => _bbWidth.Value; set => _bbWidth.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public FirebirdMaEnvelopeExhaustionStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Candle Type", "General");
-		_maLength = Param(nameof(MaLength), 10).SetDisplay("MA Length", "MA Length", "General");
-		_percent = Param(nameof(Percent), 0.3m).SetDisplay("Percent Envelope", "Percent Envelope", "General");
-		_tradeOnFriday = Param(nameof(TradeOnFriday), true).SetDisplay("Trade On Friday", "Trade On Friday", "General");
-		_useHighLow = Param(nameof(UseHighLow), false).SetDisplay("Use High/Low Source", "Use High/Low Source", "General");
-		_pipStep = Param(nameof(PipStep), 30).SetDisplay("Pip Step", "Pip Step", "General");
-		_increasementPower = Param(nameof(IncreasementPower), 0m).SetDisplay("Increasement Power", "Increasement Power", "General");
-		_takeProfit = Param(nameof(TakeProfit), 30m).SetDisplay("Take Profit (pips)", "Take Profit (pips)", "General");
-		_stopLoss = Param(nameof(StopLoss), 200m).SetDisplay("Stop Loss (pips)", "Stop Loss (pips)", "General");
-		_volume = Param(nameof(Volume), 1m).SetDisplay("Trade Volume", "Trade Volume", "General");
+		_bbPeriod = Param(nameof(BbPeriod), 10)
+			.SetDisplay("BB Period", "Bollinger Bands period", "Indicators");
+
+		_bbWidth = Param(nameof(BbWidth), 2m)
+			.SetDisplay("BB Width", "Bollinger Bands width", "Indicators");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle timeframe", "General");
 	}
 
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	public int MaLength
-	{
-		get => _maLength.Value;
-		set => _maLength.Value = value;
-	}
-
-	public decimal Percent
-	{
-		get => _percent.Value;
-		set => _percent.Value = value;
-	}
-
-	public bool TradeOnFriday
-	{
-		get => _tradeOnFriday.Value;
-		set => _tradeOnFriday.Value = value;
-	}
-
-	public bool UseHighLow
-	{
-		get => _useHighLow.Value;
-		set => _useHighLow.Value = value;
-	}
-
-	public int PipStep
-	{
-		get => _pipStep.Value;
-		set => _pipStep.Value = value;
-	}
-
-	public decimal IncreasementPower
-	{
-		get => _increasementPower.Value;
-		set => _increasementPower.Value = value;
-	}
-
-	public decimal TakeProfit
-	{
-		get => _takeProfit.Value;
-		set => _takeProfit.Value = value;
-	}
-
-	public decimal StopLoss
-	{
-		get => _stopLoss.Value;
-		set => _stopLoss.Value = value;
-	}
-
-	public decimal TradeVolume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_sma = new() { Length = MaLength };
-
-		Volume = TradeVolume;
+		var bb = new BollingerBands { Length = BbPeriod, Width = BbWidth };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-		.WhenCandlesFinished(ProcessCandle)
-		.Start();
-
-		StartProtection(null, null);
+			.BindEx(bb, ProcessCandle)
+			.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue value)
 	{
-		var point = GetPoint();
+		if (candle.State != CandleStates.Finished)
+			return;
 
-		if (point == 0m)
-		return;
+		if (!value.IsFinal || value.IsEmpty)
+			return;
 
-		var time = candle.CloseTime;
+		var bbVal = value as BollingerBandsValue;
+		if (bbVal == null)
+			return;
 
-		if (!TradeOnFriday && time.DayOfWeek == DayOfWeek.Friday)
-		return;
+		var upper = bbVal.UpBand;
+		var lower = bbVal.LowBand;
+		var middle = bbVal.MovingAverage;
 
-		var priceSource = UseHighLow ? (candle.HighPrice + candle.LowPrice) / 2m : candle.OpenPrice;
-		var smaValue = _sma.Process(new DecimalIndicatorValue(_sma, priceSource));
-
-		if (!smaValue.IsFinal)
-		return;
-
-		var sma = smaValue.GetValue<decimal>();
-		var upperBand = sma * (1m + Percent / 100m);
-		var lowerBand = sma * (1m - Percent / 100m);
+		if (upper == null || lower == null || middle == null)
+			return;
 
 		var close = candle.ClosePrice;
 
-		var longCount = _longEntries.Count;
-		var shortCount = _shortEntries.Count;
-
-		var currentPipStep = GetCurrentPipStep(longCount, shortCount);
-		var stepDistance = currentPipStep * point;
-
-		if (close <= lowerBand)
-		TryOpenLong(close, stepDistance);
-		else if (close >= upperBand)
-		TryOpenShort(close, stepDistance);
-
-		if (_longEntries.Count > 0)
-		CheckLongExit(close, point);
-		else if (_shortEntries.Count > 0)
-		CheckShortExit(close, point);
-	}
-
-	private decimal GetCurrentPipStep(int longCount, int shortCount)
-	{
-		var activeCount = Math.Max(longCount, shortCount);
-
-		var baseStep = PipStep;
-
-		if (IncreasementPower > 0m && activeCount > 0)
+		// Close below lower band = exhaustion, buy
+		if (close < lower.Value && Position <= 0)
 		{
-			var power = (decimal)Math.Pow(activeCount, (double)IncreasementPower);
-			return baseStep * power;
+			if (Position < 0)
+				BuyMarket();
+			BuyMarket();
 		}
-
-		return baseStep;
-	}
-
-	private void TryOpenLong(decimal price, decimal stepDistance)
-	{
-		if (_blockLong)
-		return;
-
-		if (Position < 0)
+		// Close above upper band = exhaustion, sell
+		else if (close > upper.Value && Position >= 0)
 		{
-			ClosePosition();
-			ClearShortState();
-			_blockShort = false;
+			if (Position > 0)
+				SellMarket();
+			SellMarket();
 		}
-
-		if (_longEntries.Count > 0 && price > _longEntries[^1] - stepDistance)
-		return;
-
-		BuyMarket();
-		_longEntries.Add(price);
-		_blockShort = false;
-	}
-
-	private void TryOpenShort(decimal price, decimal stepDistance)
-	{
-		if (_blockShort)
-		return;
-
-		if (Position > 0)
-		{
-			ClosePosition();
-			ClearLongState();
-			_blockLong = false;
-		}
-
-		if (_shortEntries.Count > 0 && price < _shortEntries[^1] + stepDistance)
-		return;
-
-		SellMarket();
-		_shortEntries.Add(price);
-		_blockLong = false;
-	}
-
-	private void CheckLongExit(decimal price, decimal point)
-	{
-		if (_longEntries.Count == 0)
-		return;
-
-		var averagePrice = _longEntries.Average();
-		var takeProfitPrice = averagePrice + TakeProfit * point;
-		var stopLossPrice = averagePrice - (StopLoss * point) / _longEntries.Count;
-
-		if (price >= takeProfitPrice)
-		{
-			ClosePosition();
-			ClearLongState();
-			return;
-		}
-
-		if (price <= stopLossPrice)
-		{
-			ClosePosition();
-			ClearLongState();
-			_blockLong = true;
-		}
-	}
-
-	private void CheckShortExit(decimal price, decimal point)
-	{
-		if (_shortEntries.Count == 0)
-		return;
-
-		var averagePrice = _shortEntries.Average();
-		var takeProfitPrice = averagePrice - TakeProfit * point;
-		var stopLossPrice = averagePrice + (StopLoss * point) / _shortEntries.Count;
-
-		if (price <= takeProfitPrice)
-		{
-			ClosePosition();
-			ClearShortState();
-			return;
-		}
-
-		if (price >= stopLossPrice)
-		{
-			ClosePosition();
-			ClearShortState();
-			_blockShort = true;
-		}
-	}
-
-	private decimal GetPoint()
-	{
-		var step = Security?.PriceStep;
-
-		if (step is null || step == 0m)
-		return 0.0001m;
-
-		return step.Value;
-	}
-
-	private void ClearLongState()
-	{
-		_longEntries.Clear();
-	}
-
-	private void ClearShortState()
-	{
-		_shortEntries.Clear();
 	}
 }
-
