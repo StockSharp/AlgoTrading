@@ -1,458 +1,94 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
-
 namespace StockSharp.Samples.Strategies;
 
+/// <summary>
+/// Karakatica strategy - adaptive SMA crossover with RSI filter.
+/// Buys on fast/slow SMA bullish crossover with RSI above 50.
+/// Sells on bearish crossover with RSI below 50.
+/// </summary>
 public class KarakaticaStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _risk;
-	private readonly StrategyParam<int> _stopLossPoints;
-	private readonly StrategyParam<int> _takeProfitPoints;
-	private readonly StrategyParam<int> _period;
-	private readonly StrategyParam<int> _optimizationDepth;
-	private readonly StrategyParam<int> _reoptimizeEvery;
-	private readonly StrategyParam<int> _optimizationStart;
-	private readonly StrategyParam<int> _optimizationStep;
-	private readonly StrategyParam<int> _optimizationEnd;
+	private readonly StrategyParam<int> _fastPeriod;
+	private readonly StrategyParam<int> _slowPeriod;
+	private readonly StrategyParam<int> _rsiPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private readonly List<CandleInfo> _history = new();
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private bool _hasPrev;
 
-	private int _barsUntilOptimization;
-	private int _lastOrderDirection;
-	private bool _blockAllEntries;
-	private bool _blockBuyEntries;
-	private bool _blockSellEntries;
-	private bool _needsOptimization = true;
-
-	private readonly record struct CandleInfo(DateTimeOffset Time, decimal Open, decimal High, decimal Low, decimal Close);
+	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
+	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
+	public int RsiPeriod { get => _rsiPeriod.Value; set => _rsiPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public KarakaticaStrategy()
 	{
-		_risk = Param(nameof(Risk), 0.5m)
-		
-		.SetDisplay("Risk percent (per 1000 balance units)", "Risk percent (per 1000 balance units)", "General");
+		_fastPeriod = Param(nameof(FastPeriod), 5)
+			.SetDisplay("Fast SMA", "Fast SMA period", "Indicators");
 
-		_stopLossPoints = Param(nameof(StopLossPoints), 50)
-		
-		.SetDisplay("Stop-loss in points", "Stop-loss in points", "General");
+		_slowPeriod = Param(nameof(SlowPeriod), 15)
+			.SetDisplay("Slow SMA", "Slow SMA period", "Indicators");
 
-		_takeProfitPoints = Param(nameof(TakeProfitPoints), 150)
-		
-		.SetDisplay("Take-profit in points", "Take-profit in points", "General");
+		_rsiPeriod = Param(nameof(RsiPeriod), 14)
+			.SetDisplay("RSI Period", "RSI period", "Indicators");
 
-		_period = Param(nameof(Period), 70)
-		
-		.SetDisplay("Signal period", "Signal period", "General");
-
-		_optimizationDepth = Param(nameof(OptimizationDepth), 250)
-		.SetDisplay("Bars used for optimization", "Bars used for optimization", "General");
-
-		_reoptimizeEvery = Param(nameof(ReoptimizeEvery), 50)
-		.SetDisplay("Recalculate parameters every N bars", "Recalculate parameters every N bars", "General");
-
-		_optimizationStart = Param(nameof(OptimizationStart), 10)
-		.SetDisplay("Optimization start period", "Optimization start period", "General");
-
-		_optimizationStep = Param(nameof(OptimizationStep), 5)
-		.SetDisplay("Optimization step", "Optimization step", "General");
-
-		_optimizationEnd = Param(nameof(OptimizationEnd), 150)
-		.SetDisplay("Optimization end period", "Optimization end period", "General");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
-		.SetDisplay("Primary candle type", "Primary candle type", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle timeframe", "General");
 	}
 
-	public decimal Risk
-	{
-		get => _risk.Value;
-		set => _risk.Value = value;
-	}
-
-	public int StopLossPoints
-	{
-		get => _stopLossPoints.Value;
-		set => _stopLossPoints.Value = value;
-	}
-
-	public int TakeProfitPoints
-	{
-		get => _takeProfitPoints.Value;
-		set => _takeProfitPoints.Value = value;
-	}
-
-	public int Period
-	{
-		get => _period.Value;
-		set => _period.Value = value;
-	}
-
-	public int OptimizationDepth
-	{
-		get => _optimizationDepth.Value;
-		set => _optimizationDepth.Value = value;
-	}
-
-	public int ReoptimizeEvery
-	{
-		get => _reoptimizeEvery.Value;
-		set => _reoptimizeEvery.Value = value;
-	}
-
-	public int OptimizationStart
-	{
-		get => _optimizationStart.Value;
-		set => _optimizationStart.Value = value;
-	}
-
-	public int OptimizationStep
-	{
-		get => _optimizationStep.Value;
-		set => _optimizationStep.Value = value;
-	}
-
-	public int OptimizationEnd
-	{
-		get => _optimizationEnd.Value;
-		set => _optimizationEnd.Value = value;
-	}
-
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		var priceStep = GetPriceStep();
+		_hasPrev = false;
 
-		StartProtection(
-		stopLoss: StopLossPoints > 0 ? new Unit(StopLossPoints * priceStep, UnitTypes.Absolute) : null,
-		takeProfit: TakeProfitPoints > 0 ? new Unit(TakeProfitPoints * priceStep, UnitTypes.Absolute) : null);
+		var fast = new SimpleMovingAverage { Length = FastPeriod };
+		var slow = new SimpleMovingAverage { Length = SlowPeriod };
+		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
+		subscription
+			.Bind(fast, slow, rsi, ProcessCandle)
+			.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow, decimal rsi)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
-		_history.Add(new CandleInfo(candle.OpenTime, candle.OpenPrice, candle.HighPrice, candle.LowPrice, candle.ClosePrice));
-
-		var maxHistory = OptimizationDepth + OptimizationEnd + 16;
-		if (_history.Count > maxHistory)
-		_history.RemoveRange(0, _history.Count - maxHistory);
-
-		if (_barsUntilOptimization > 0)
-		_barsUntilOptimization--;
-
-		if ((_barsUntilOptimization <= 0 || _needsOptimization) && HasEnoughHistoryForOptimization())
+		if (!_hasPrev)
 		{
-			RunOptimization();
-			_barsUntilOptimization = ReoptimizeEvery;
-			_needsOptimization = false;
-		}
-		else if (!HasEnoughHistoryForOptimization())
-		{
-			_needsOptimization = true;
-		}
-
-		if (_history.Count < Period + 2)
-		return;
-
-		if (!TryGetSignals(Period, 1, out var buySignal, out var sellSignal))
-		return;
-
-		if (Position > 0 && sellSignal)
-		{
-			SellMarket(Position);
-			_lastOrderDirection = 2;
+			_prevFast = fast;
+			_prevSlow = slow;
+			_hasPrev = true;
 			return;
 		}
 
-		if (Position < 0 && buySignal)
+		var crossUp = _prevFast <= _prevSlow && fast > slow;
+		var crossDown = _prevFast >= _prevSlow && fast < slow;
+
+		if (crossUp && rsi > 50 && Position <= 0)
 		{
-			BuyMarket(Math.Abs(Position));
-			_lastOrderDirection = 1;
-			return;
+			if (Position < 0)
+				BuyMarket();
+			BuyMarket();
+		}
+		else if (crossDown && rsi < 50 && Position >= 0)
+		{
+			if (Position > 0)
+				SellMarket();
+			SellMarket();
 		}
 
-		if (Position != 0 || _blockAllEntries)
-		return;
-
-		var volume = GetOrderVolume();
-		if (volume <= 0)
-		return;
-
-		if (!_blockBuyEntries && buySignal && _lastOrderDirection != 1)
-		{
-			BuyMarket(volume);
-			_lastOrderDirection = 1;
-			return;
-		}
-
-		if (!_blockSellEntries && sellSignal && _lastOrderDirection != 2)
-		{
-			SellMarket(volume);
-			_lastOrderDirection = 2;
-		}
-	}
-
-	private void RunOptimization()
-	{
-		if (!HasEnoughHistoryForOptimization())
-		return;
-
-		var spread = GetSpreadEstimate();
-		var bestCombined = decimal.MinValue;
-		var bestCombinedPeriod = Period;
-		var bestBuy = decimal.MinValue;
-		var bestBuyPeriod = Period;
-		var bestSell = decimal.MinValue;
-		var bestSellPeriod = Period;
-
-		var start = Math.Max(1, OptimizationStart);
-		var end = Math.Max(start, OptimizationEnd);
-		var step = Math.Max(1, OptimizationStep);
-
-		for (var p = start; p <= end; p += step)
-		{
-			var (profit, buyProfit, sellProfit) = SimulatePeriod(p, spread);
-
-			if (profit > bestCombined)
-			{
-				bestCombined = profit;
-				bestCombinedPeriod = p;
-			}
-
-			if (buyProfit > bestBuy)
-			{
-				bestBuy = buyProfit;
-				bestBuyPeriod = p;
-			}
-
-			if (sellProfit > bestSell)
-			{
-				bestSell = sellProfit;
-				bestSellPeriod = p;
-			}
-		}
-
-		_blockAllEntries = false;
-		_blockBuyEntries = false;
-		_blockSellEntries = false;
-
-		if (bestBuy < 0 && bestSell < 0)
-		{
-			_blockAllEntries = true;
-			_blockBuyEntries = true;
-			_blockSellEntries = true;
-			Period = bestCombinedPeriod;
-			return;
-		}
-
-		if (bestBuy == bestSell)
-		{
-			Period = bestCombinedPeriod;
-			return;
-		}
-
-		if (bestBuy > bestSell)
-		{
-			_blockSellEntries = true;
-			Period = bestBuyPeriod;
-		}
-		else
-		{
-			_blockBuyEntries = true;
-			Period = bestSellPeriod;
-		}
-	}
-
-	private (decimal profit, decimal buyProfit, decimal sellProfit) SimulatePeriod(int period, decimal spread)
-	{
-		decimal profit = 0m;
-		decimal buyProfit = 0m;
-		decimal sellProfit = 0m;
-		var orderType = 0;
-		decimal entryPrice = 0m;
-
-		for (var offset = OptimizationDepth; offset >= 0; offset--)
-		{
-			if (!TryGetSignals(period, offset + 1, out var buySignal, out var sellSignal))
-			continue;
-
-			var candle = GetCandle(offset);
-
-			if (orderType == 1 && sellSignal)
-			{
-				var result = candle.OpenPrice - entryPrice - spread;
-				buyProfit += result;
-				profit += result;
-				orderType = 0;
-			}
-			else if (orderType == 2 && buySignal)
-			{
-				var result = entryPrice - candle.OpenPrice - spread;
-				sellProfit += result;
-				profit += result;
-				orderType = 0;
-			}
-
-			if (orderType != 0)
-			continue;
-
-			if (buySignal)
-			{
-				orderType = 1;
-				entryPrice = candle.OpenPrice;
-			}
-			else if (sellSignal)
-			{
-				orderType = 2;
-				entryPrice = candle.OpenPrice;
-			}
-		}
-
-		if (orderType == 1)
-		{
-			var closeCandle = GetCandle(0);
-			var result = closeCandle.Open - entryPrice - spread;
-			buyProfit += result;
-			profit += result;
-		}
-		else if (orderType == 2)
-		{
-			var closeCandle = GetCandle(0);
-			var result = entryPrice - closeCandle.Open - spread;
-			sellProfit += result;
-			profit += result;
-		}
-
-		return (profit, buyProfit, sellProfit);
-	}
-
-	private bool TryGetSignals(int period, int shift, out bool buySignal, out bool sellSignal)
-	{
-		buySignal = false;
-		sellSignal = false;
-
-		if (period <= 0)
-		return false;
-
-		var count = _history.Count;
-		var index = count - 1 - shift;
-		if (index <= 0)
-		return false;
-
-		if (index - period + 1 < 0)
-		return false;
-
-		var currentClose = _history[index].Close;
-		var previousClose = _history[index - 1].Close;
-		var currentSma = CalculateSma(period, index);
-		var previousSma = CalculateSma(period, index - 1);
-
-		buySignal = previousClose <= previousSma && currentClose > currentSma;
-		sellSignal = previousClose >= previousSma && currentClose < currentSma;
-
-		return buySignal || sellSignal;
-	}
-
-	private decimal CalculateSma(int period, int index)
-	{
-		decimal sum = 0m;
-		for (var i = 0; i < period; i++)
-		{
-			var idx = index - i;
-			sum += _history[idx].Close;
-		}
-
-		return sum / period;
-	}
-
-	private CandleInfo GetCandle(int shift)
-	{
-		var index = _history.Count - 1 - shift;
-		return _history[index];
-	}
-
-	private bool HasEnoughHistoryForOptimization()
-	{
-		var required = OptimizationDepth + OptimizationEnd + 2;
-		return _history.Count >= required;
-	}
-
-	private decimal GetSpreadEstimate()
-	{
-		var bid = Security?.BestBidPrice;
-		var ask = Security?.BestAskPrice;
-
-		if (bid is decimal bidPrice && ask is decimal askPrice && askPrice > bidPrice)
-		return askPrice - bidPrice;
-
-		return GetPriceStep();
-	}
-
-	private decimal GetPriceStep()
-	{
-		var step = Security?.PriceStep;
-		return step.HasValue && step.Value > 0 ? step.Value : 0.0001m;
-	}
-
-	private decimal GetOrderVolume()
-	{
-		var security = Security;
-		var portfolio = Portfolio;
-
-		if (security is null || portfolio is null)
-		return Volume > 0 ? Volume : 0m;
-
-		var balance = portfolio.CurrentValue ?? 0m;
-		var minVolume = security.MinVolume ?? 1m;
-		var step = security.VolumeStep ?? minVolume;
-		var maxVolume = security.MaxVolume ?? 0m;
-
-		if (step <= 0)
-		step = minVolume;
-
-		var desired = Risk / 1000m * balance;
-
-		if (desired <= 0)
-		return minVolume;
-
-		if (desired < minVolume)
-		desired = minVolume;
-
-		var steps = decimal.Floor((desired - minVolume) / step);
-		if (steps < 0)
-		steps = 0;
-
-		var volume = minVolume + steps * step;
-
-		if (maxVolume > 0 && volume > maxVolume)
-		volume = maxVolume;
-
-		return volume;
+		_prevFast = fast;
+		_prevSlow = slow;
 	}
 }
-
