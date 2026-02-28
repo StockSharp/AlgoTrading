@@ -1,399 +1,81 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
-using StockSharp.Algo.Candles;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Port of the MetaTrader 4 expert advisor located in MQL/9826 that trades based on the daily open trend.
+/// Early Open Trend: EMA crossover with RSI filter and ATR stops.
 /// </summary>
 public class EarlyOpenTrendStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _orderVolume;
-	private readonly StrategyParam<int> _orderType;
-	private readonly StrategyParam<int> _rangeFilterPips;
-	private readonly StrategyParam<int> _takeProfitPips;
-	private readonly StrategyParam<int> _stopLossPips;
-	private readonly StrategyParam<int> _startHour;
-	private readonly StrategyParam<int> _endHour;
-	private readonly StrategyParam<int> _closingHour;
-	private readonly StrategyParam<int> _holdingHours;
-	private readonly StrategyParam<int> _summerTimeStartDay;
-	private readonly StrategyParam<int> _winterTimeStartDay;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _fastEmaLength;
+	private readonly StrategyParam<int> _slowEmaLength;
+	private readonly StrategyParam<int> _rsiLength;
+	private readonly StrategyParam<int> _atrLength;
 
-	private decimal _pipSize;
-	private decimal _dailyOpen;
-	private decimal _dailyHigh;
-	private decimal _dailyLow;
-	private DateTime _currentDay;
-	private bool _longTradeTaken;
-	private bool _shortTradeTaken;
-	private DateTimeOffset? _lastEntryTime;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private decimal _entryPrice;
 
-	/// <summary>
-	/// Initializes a new instance of the <see cref="EarlyOpenTrendStrategy"/> class.
-	/// </summary>
 	public EarlyOpenTrendStrategy()
 	{
-		_orderVolume = Param(nameof(OrderVolume), 0.1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Order Volume", "Market order size used for entries", "Trading")
-			;
-
-		_orderType = Param(nameof(OrderType), 0)
-			.SetDisplay("Order Type", "0 = long & short, 1 = long only, 2 = short only", "Trading")
-			;
-
-		_rangeFilterPips = Param(nameof(RangeFilterPips), 1)
-			.SetNotNegative()
-			.SetDisplay("Range Filter (pips)", "Minimum wick size from the daily open", "Filters")
-			;
-
-		_takeProfitPips = Param(nameof(TakeProfitPips), 100)
-			.SetNotNegative()
-			.SetDisplay("Take Profit (pips)", "Optional take-profit distance in pips", "Risk")
-			;
-
-		_stopLossPips = Param(nameof(StopLossPips), 1000)
-			.SetNotNegative()
-			.SetDisplay("Stop Loss (pips)", "Optional stop-loss distance in pips", "Risk")
-			;
-
-		_startHour = Param(nameof(StartHour), 7)
-			.SetDisplay("Session Start Hour", "Hour of day (local exchange time) when entries become valid", "Session")
-			;
-
-		_endHour = Param(nameof(EndHour), 18)
-			.SetDisplay("Session End Hour", "Hour of day (local exchange time) when new entries stop", "Session")
-			;
-
-		_closingHour = Param(nameof(ClosingHour), 20)
-			.SetDisplay("Forced Close Hour", "Hour of day to flatten positions", "Session")
-			;
-
-		_holdingHours = Param(nameof(HoldingHours), 0)
-			.SetNotNegative()
-			.SetDisplay("Holding Limit (hours)", "Maximum holding time before forcing an exit", "Risk")
-			;
-
-		_summerTimeStartDay = Param(nameof(SummerTimeStartDay), 87)
-			.SetDisplay("DST Start Day", "Day of year when the summer offset becomes active", "Session");
-
-		_winterTimeStartDay = Param(nameof(WinterTimeStartDay), 297)
-			.SetDisplay("DST End Day", "Day of year when the winter offset resumes", "Session");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
-			.SetDisplay("Candle Type", "Intraday candle series used for calculations", "Data");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Timeframe.", "General");
+		_fastEmaLength = Param(nameof(FastEmaLength), 12)
+			.SetDisplay("Fast EMA Length", "Fast EMA period.", "Indicators");
+		_slowEmaLength = Param(nameof(SlowEmaLength), 26)
+			.SetDisplay("Slow EMA Length", "Slow EMA period.", "Indicators");
+		_rsiLength = Param(nameof(RsiLength), 14)
+			.SetDisplay("RSI Length", "RSI period.", "Indicators");
+		_atrLength = Param(nameof(AtrLength), 14)
+			.SetDisplay("ATR Length", "ATR period.", "Indicators");
 	}
 
-	/// <summary>
-	/// Market order size applied to generated signals.
-	/// </summary>
-	public decimal OrderVolume
-	{
-		get => _orderVolume.Value;
-		set => _orderVolume.Value = value;
-	}
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int FastEmaLength { get => _fastEmaLength.Value; set => _fastEmaLength.Value = value; }
+	public int SlowEmaLength { get => _slowEmaLength.Value; set => _slowEmaLength.Value = value; }
+	public int RsiLength { get => _rsiLength.Value; set => _rsiLength.Value = value; }
+	public int AtrLength { get => _atrLength.Value; set => _atrLength.Value = value; }
 
-	/// <summary>
-	/// Directional filter: 0 = both sides, 1 = long only, 2 = short only.
-	/// </summary>
-	public int OrderType
-	{
-		get => _orderType.Value;
-		set => _orderType.Value = value;
-	}
-
-	/// <summary>
-	/// Minimum wick distance from the daily open expressed in pips.
-	/// </summary>
-	public int RangeFilterPips
-	{
-		get => _rangeFilterPips.Value;
-		set => _rangeFilterPips.Value = value;
-	}
-
-	/// <summary>
-	/// Take-profit distance in pips. Zero disables the target.
-	/// </summary>
-	public int TakeProfitPips
-	{
-		get => _takeProfitPips.Value;
-		set => _takeProfitPips.Value = value;
-	}
-
-	/// <summary>
-	/// Stop-loss distance in pips. Zero disables the stop.
-	/// </summary>
-	public int StopLossPips
-	{
-		get => _stopLossPips.Value;
-		set => _stopLossPips.Value = value;
-	}
-
-	/// <summary>
-	/// First hour when the strategy is allowed to open new trades.
-	/// </summary>
-	public int StartHour
-	{
-		get => _startHour.Value;
-		set => _startHour.Value = value;
-	}
-
-	/// <summary>
-	/// Last hour (exclusive) when the strategy can open new trades.
-	/// </summary>
-	public int EndHour
-	{
-		get => _endHour.Value;
-		set => _endHour.Value = value;
-	}
-
-	/// <summary>
-	/// Hour when open positions are forcefully closed.
-	/// </summary>
-	public int ClosingHour
-	{
-		get => _closingHour.Value;
-		set => _closingHour.Value = value;
-	}
-
-	/// <summary>
-	/// Maximum holding duration expressed in hours (0 disables the limit).
-	/// </summary>
-	public int HoldingHours
-	{
-		get => _holdingHours.Value;
-		set => _holdingHours.Value = value;
-	}
-
-	/// <summary>
-	/// Day of year when the summer daylight-saving offset activates.
-	/// </summary>
-	public int SummerTimeStartDay
-	{
-		get => _summerTimeStartDay.Value;
-		set => _summerTimeStartDay.Value = value;
-	}
-
-	/// <summary>
-	/// Day of year when the winter offset resumes.
-	/// </summary>
-	public int WinterTimeStartDay
-	{
-		get => _winterTimeStartDay.Value;
-		set => _winterTimeStartDay.Value = value;
-	}
-
-	/// <summary>
-	/// Candle series used to evaluate intraday signals.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_dailyOpen = 0m;
-		_dailyHigh = 0m;
-		_dailyLow = 0m;
-		_currentDay = default;
-		_longTradeTaken = false;
-		_shortTradeTaken = false;
-		_lastEntryTime = null;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		// Pre-calculate the pip size to convert pip-based parameters into absolute prices.
-		_pipSize = CalculatePipSize();
-		Volume = OrderVolume;
-
-		Unit stopLoss = StopLossPips > 0 ? new Unit(StopLossPips * _pipSize, UnitTypes.Absolute) : null;
-		Unit takeProfit = TakeProfitPips > 0 ? new Unit(TakeProfitPips * _pipSize, UnitTypes.Absolute) : null;
-
-		if (stopLoss != null || takeProfit != null)
-		{
-			StartProtection(stopLoss: stopLoss, takeProfit: takeProfit, useMarketOrders: true);
-		}
-
+		_prevFast = 0; _prevSlow = 0; _entryPrice = 0;
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaLength };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaLength };
+		var rsi = new RelativeStrengthIndex { Length = RsiLength };
+		var atr = new AverageTrueRange { Length = AtrLength };
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(ProcessCandle)
-			.Start();
+		subscription.Bind(fastEma, slowEma, rsi, atr, ProcessCandle).Start();
+		var area = CreateChartArea();
+		if (area != null) { DrawCandles(area, subscription); DrawIndicator(area, fastEma); DrawIndicator(area, slowEma); DrawOwnTrades(area); }
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal fastVal, decimal slowVal, decimal rsiVal, decimal atrVal)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
+		if (candle.State != CandleStates.Finished) return;
+		if (_prevFast == 0 || _prevSlow == 0 || atrVal <= 0) { _prevFast = fastVal; _prevSlow = slowVal; return; }
+		var close = candle.ClosePrice;
 
-		UpdateDailyProfile(candle);
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		// Manage existing positions before evaluating new entries.
-		if (HandleOpenPosition(candle))
-			return;
-
-		if (Position != 0)
-			return;
-
-		if (!IsWithinTradingSession(candle.OpenTime))
-			return;
-
-		if (_dailyOpen <= 0m)
-			return;
-
-		var closePrice = candle.ClosePrice;
-		var wickBelowOpen = _dailyOpen - _dailyLow;
-		var wickAboveOpen = _dailyHigh - _dailyOpen;
-		var minimumWick = RangeFilterPips * _pipSize;
-
-		// Long entry: price trades above the daily open after forming a downside wick of configurable size.
-		if (OrderType != 2 && !_longTradeTaken && closePrice > _dailyOpen && wickBelowOpen > minimumWick)
+		if (Position > 0)
 		{
-			BuyMarket();
-			_longTradeTaken = true;
-			_lastEntryTime = candle.CloseTime;
-			return;
+			if ((fastVal < slowVal && _prevFast >= _prevSlow) || close <= _entryPrice - atrVal * 2m) { SellMarket(); _entryPrice = 0; }
+		}
+		else if (Position < 0)
+		{
+			if ((fastVal > slowVal && _prevFast <= _prevSlow) || close >= _entryPrice + atrVal * 2m) { BuyMarket(); _entryPrice = 0; }
 		}
 
-		// Short entry: price trades below the daily open after forming an upside wick of configurable size.
-		if (OrderType != 1 && !_shortTradeTaken && closePrice < _dailyOpen && wickAboveOpen > minimumWick)
-		{
-			SellMarket();
-			_shortTradeTaken = true;
-			_lastEntryTime = candle.CloseTime;
-		}
-	}
-
-	private void UpdateDailyProfile(ICandleMessage candle)
-	{
-		var date = candle.OpenTime.Date;
-
-		if (date != _currentDay)
-		{
-			_currentDay = date;
-			_dailyOpen = candle.OpenPrice;
-			_dailyHigh = candle.HighPrice;
-			_dailyLow = candle.LowPrice;
-			_longTradeTaken = false;
-			_shortTradeTaken = false;
-			if (Position == 0)
-				_lastEntryTime = null;
-			return;
-		}
-
-		_dailyHigh = Math.Max(_dailyHigh, candle.HighPrice);
-		_dailyLow = Math.Min(_dailyLow, candle.LowPrice);
-	}
-
-	private bool HandleOpenPosition(ICandleMessage candle)
-	{
 		if (Position == 0)
-			return false;
-
-		var time = candle.CloseTime;
-
-		var shouldCloseByTime = HasReachedClosingTime(time);
-
-		if (!shouldCloseByTime && HoldingHours > 0 && _lastEntryTime is DateTimeOffset entryTime)
 		{
-			var holdingLimit = entryTime + TimeSpan.FromHours(HoldingHours);
-			if (time >= holdingLimit)
-				shouldCloseByTime = true;
+			if (fastVal > slowVal && _prevFast <= _prevSlow && rsiVal > 50) { _entryPrice = close; BuyMarket(); }
+			else if (fastVal < slowVal && _prevFast >= _prevSlow && rsiVal < 50) { _entryPrice = close; SellMarket(); }
 		}
-
-		if (!shouldCloseByTime)
-			return false;
-
-		ClosePosition();
-		_lastEntryTime = null;
-		return true;
-	}
-
-	private bool HasReachedClosingTime(DateTimeOffset time)
-	{
-		if (ClosingHour <= 0)
-			return false;
-
-		var offset = GetDstOffset(time);
-		var closingHour = ClosingHour - offset;
-
-		return time.Hour >= closingHour;
-	}
-
-	private bool IsWithinTradingSession(DateTimeOffset time)
-	{
-		var offset = GetDstOffset(time);
-		var startHour = Math.Max(0, StartHour - offset);
-		var endHour = Math.Max(0, EndHour - offset);
-
-		if (endHour <= startHour)
-			return false;
-
-		var hour = time.Hour;
-		return hour >= startHour && hour < endHour;
-	}
-
-	private int GetDstOffset(DateTimeOffset time)
-	{
-		var dayOfYear = time.DayOfYear;
-		return dayOfYear >= SummerTimeStartDay && dayOfYear <= WinterTimeStartDay ? 2 : 1;
-	}
-
-	private decimal CalculatePipSize()
-	{
-		var priceStep = Security?.PriceStep ?? 0m;
-
-		if (priceStep <= 0m)
-			return 1m;
-
-		var decimals = CountDecimals(priceStep);
-		return decimals is 3 or 5 ? priceStep * 10m : priceStep;
-	}
-
-	private static int CountDecimals(decimal value)
-	{
-		value = Math.Abs(value);
-
-		var decimals = 0;
-
-		while (value != Math.Truncate(value) && decimals < 8)
-		{
-			value *= 10m;
-			decimals++;
-		}
-
-		return decimals;
+		_prevFast = fastVal; _prevSlow = slowVal;
 	}
 }

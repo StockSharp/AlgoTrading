@@ -1,10 +1,4 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,208 +8,63 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Simple day-trading strategy converted from the MetaTrader "Easiest ever" robot.
-/// Follows the previous daily candle direction and closes positions at a configured hour.
+/// Easiest Ever Daytrade: EMA trend following with ATR stops.
 /// </summary>
 public class EasiestEverDaytradeStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _tradeVolume;
-	private readonly StrategyParam<int> _entryHourLimit;
-	private readonly StrategyParam<int> _marketCloseHour;
-	private readonly StrategyParam<DataType> _intradayCandleType;
-	private readonly StrategyParam<DataType> _dailyCandleType;
+	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _emaLength;
+	private readonly StrategyParam<int> _atrLength;
 
-	private decimal? _previousDailyOpen;
-	private decimal? _previousDailyClose;
-	private DateTime? _lastDailyCandleDate;
+	private decimal _prevClose;
+	private decimal _entryPrice;
 
-	/// <summary>
-	/// Order volume used for market entries.
-	/// </summary>
-	public decimal TradeVolume
-	{
-		get => _tradeVolume.Value;
-		set => _tradeVolume.Value = value;
-	}
-
-	/// <summary>
-	/// Latest hour (exclusive) when new trades can be opened.
-	/// </summary>
-	public int EntryHourLimit
-	{
-		get => _entryHourLimit.Value;
-		set => _entryHourLimit.Value = value;
-	}
-
-	/// <summary>
-	/// Hour when open positions are forcefully closed.
-	/// </summary>
-	public int MarketCloseHour
-	{
-		get => _marketCloseHour.Value;
-		set => _marketCloseHour.Value = value;
-	}
-
-	/// <summary>
-	/// Timeframe that drives entries and intraday management.
-	/// </summary>
-	public DataType IntradayCandleType
-	{
-		get => _intradayCandleType.Value;
-		set => _intradayCandleType.Value = value;
-	}
-
-	/// <summary>
-	/// Timeframe used to obtain the previous day open and close.
-	/// </summary>
-	public DataType DailyCandleType
-	{
-		get => _dailyCandleType.Value;
-		set => _dailyCandleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="EasiestEverDaytradeStrategy"/> class.
-	/// </summary>
 	public EasiestEverDaytradeStrategy()
 	{
-		_tradeVolume = Param(nameof(TradeVolume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Trade Volume", "Order volume used for market entries", "Trading")
-			;
-
-		_entryHourLimit = Param(nameof(EntryHourLimit), 1)
-			.SetRange(0, 23)
-			.SetDisplay("Entry Hour Limit", "Latest hour (exclusive) when new trades can be opened", "Schedule")
-			;
-
-		_marketCloseHour = Param(nameof(MarketCloseHour), 20)
-			.SetRange(0, 23)
-			.SetDisplay("Market Close Hour", "Hour when open positions are closed", "Schedule")
-			;
-
-		_intradayCandleType = Param(nameof(IntradayCandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Intraday Candles", "Timeframe that drives entries and exits", "Timeframes");
-
-		_dailyCandleType = Param(nameof(DailyCandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Daily Candles", "Timeframe used to detect previous day direction", "Timeframes");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Timeframe.", "General");
+		_emaLength = Param(nameof(EmaLength), 20)
+			.SetDisplay("EMA Length", "Trend filter.", "Indicators");
+		_atrLength = Param(nameof(AtrLength), 14)
+			.SetDisplay("ATR Length", "ATR period.", "Indicators");
 	}
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		yield return (Security, IntradayCandleType);
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int EmaLength { get => _emaLength.Value; set => _emaLength.Value = value; }
+	public int AtrLength { get => _atrLength.Value; set => _atrLength.Value = value; }
 
-		if (DailyCandleType != IntradayCandleType)
-			yield return (Security, DailyCandleType);
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_previousDailyOpen = null;
-		_previousDailyClose = null;
-		_lastDailyCandleDate = null;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		StartProtection(null, null);
-
-		var intradaySubscription = SubscribeCandles(IntradayCandleType);
-		intradaySubscription.Bind(ProcessIntradayCandle);
-
-		if (DailyCandleType == IntradayCandleType)
-		{
-			intradaySubscription.Bind(ProcessDailyCandle);
-			intradaySubscription.Start();
-		}
-		else
-		{
-			intradaySubscription.Start();
-
-			var dailySubscription = SubscribeCandles(DailyCandleType);
-			dailySubscription
-				.Bind(ProcessDailyCandle)
-				.Start();
-		}
-
+		_prevClose = 0; _entryPrice = 0;
+		var ema = new ExponentialMovingAverage { Length = EmaLength };
+		var atr = new AverageTrueRange { Length = AtrLength };
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(ema, atr, ProcessCandle).Start();
 		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, intradaySubscription);
-			DrawOwnTrades(area);
-		}
+		if (area != null) { DrawCandles(area, subscription); DrawIndicator(area, ema); DrawOwnTrades(area); }
 	}
 
-	private void ProcessDailyCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal emaVal, decimal atrVal)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
+		if (candle.State != CandleStates.Finished) return;
+		var close = candle.ClosePrice;
+		if (_prevClose == 0 || atrVal <= 0) { _prevClose = close; return; }
 
-		// Store the previous day open and close to drive next session entries.
-		_previousDailyOpen = candle.OpenPrice;
-		_previousDailyClose = candle.ClosePrice;
-		_lastDailyCandleDate = candle.OpenTime.Date;
-	}
-
-	private void ProcessIntradayCandle(ICandleMessage candle)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		var candleTime = candle.OpenTime;
-		var currentHour = candleTime.Hour;
-
-		if (Position != 0m && currentHour >= MarketCloseHour)
+		if (Position > 0)
 		{
-			ClosePosition();
-			return;
+			if (close >= _entryPrice + atrVal * 2.5m || close <= _entryPrice - atrVal * 1.5m || close < emaVal) { SellMarket(); _entryPrice = 0; }
+		}
+		else if (Position < 0)
+		{
+			if (close <= _entryPrice - atrVal * 2.5m || close >= _entryPrice + atrVal * 1.5m || close > emaVal) { BuyMarket(); _entryPrice = 0; }
 		}
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (TradeVolume <= 0m)
-			return;
-
-		if (_previousDailyOpen == null || _previousDailyClose == null || _lastDailyCandleDate == null)
-			return;
-
-		if (candleTime.Date <= _lastDailyCandleDate.Value)
-			return;
-
-		if (currentHour >= EntryHourLimit)
-			return;
-
-		if (Position != 0m)
-			return;
-
-		if (_previousDailyClose > _previousDailyOpen)
+		if (Position == 0)
 		{
-			// Follow previous day's bullish direction with a market buy.
-			BuyMarket(TradeVolume);
+			if (close > emaVal && _prevClose <= emaVal) { _entryPrice = close; BuyMarket(); }
+			else if (close < emaVal && _prevClose >= emaVal) { _entryPrice = close; SellMarket(); }
 		}
-		else if (_previousDailyClose < _previousDailyOpen)
-		{
-			// Follow previous day's bearish direction with a market sell.
-			SellMarket(TradeVolume);
-		}
-	}
-
-	private void ClosePosition()
-	{
-		// Exit any open exposure at the configured closing hour.
-		var position = Position;
-
-		if (position > 0m)
-			SellMarket(position);
-		else if (position < 0m)
-			BuyMarket(Math.Abs(position));
+		_prevClose = close;
 	}
 }
