@@ -12,7 +12,7 @@ using StockSharp.Algo.Strategies;
 using StockSharp.Samples.Strategies;
 
 [TestClass]
-public class CSharpTests
+public partial class CSharpTests
 {
 	public static Task RunStrategy<T>(Action<T, Security> extra = null)
 		where T : Strategy
