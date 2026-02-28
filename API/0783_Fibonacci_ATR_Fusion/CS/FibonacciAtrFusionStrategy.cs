@@ -1,19 +1,14 @@
-using System;
-using System.Linq;
-using System.Collections.Generic;
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
-using StockSharp.Algo.Indicators;
-using StockSharp.Algo.Strategies;
-using StockSharp.BusinessEntities;
-using StockSharp.Messages;
-
 namespace StockSharp.Samples.Strategies;
 
+using System;
 
+using StockSharp.Algo;
+using StockSharp.Algo.Indicators;
+using StockSharp.Algo.Strategies;
+using StockSharp.Messages;
 
 /// <summary>
+/// Fibonacci ATR Fusion Strategy.
 /// Integrates weighted buying pressure ratios and ATR thresholds.
 /// </summary>
 public class FibonacciAtrFusionStrategy : Strategy
@@ -22,300 +17,157 @@ public class FibonacciAtrFusionStrategy : Strategy
 	private readonly StrategyParam<decimal> _shortEntryThreshold;
 	private readonly StrategyParam<decimal> _longExitThreshold;
 	private readonly StrategyParam<decimal> _shortExitThreshold;
-	private readonly StrategyParam<bool> _useTakeProfit;
-	private readonly StrategyParam<decimal> _tp1Atr;
-	private readonly StrategyParam<decimal> _tp2Atr;
-	private readonly StrategyParam<decimal> _tp3Atr;
-	private readonly StrategyParam<decimal> _tp1Percent;
-	private readonly StrategyParam<decimal> _tp2Percent;
-	private readonly StrategyParam<decimal> _tp3Percent;
-private readonly StrategyParam<Sides?> _direction;
 	private readonly StrategyParam<DataType> _candleType;
-	
-	private SimpleMovingAverage _bp8;
-	private SimpleMovingAverage _bp13;
-	private SimpleMovingAverage _bp21;
-	private SimpleMovingAverage _bp34;
-	private SimpleMovingAverage _bp55;
-	private AverageTrueRange _atr8;
-	private AverageTrueRange _atr13;
-	private AverageTrueRange _atr21;
-	private AverageTrueRange _atr34;
-	private AverageTrueRange _atr55;
-	private AverageTrueRange _atr;
-	private SimpleMovingAverage _weightedSma;
-	private decimal? _prevClose;
+
 	private decimal _prevWeighted;
-	
+	private decimal _prevClose;
+	private bool _hasPrev;
+
+	// Manual running averages for buying pressure and ATR at Fibonacci periods
+	private decimal _bp8Sum, _bp13Sum, _bp21Sum, _bp34Sum, _bp55Sum;
+	private decimal _atr8, _atr13, _atr21, _atr34, _atr55;
+	private int _candleCount;
+
 	public decimal LongEntryThreshold
 	{
 		get => _longEntryThreshold.Value;
 		set => _longEntryThreshold.Value = value;
 	}
-	
+
 	public decimal ShortEntryThreshold
 	{
 		get => _shortEntryThreshold.Value;
 		set => _shortEntryThreshold.Value = value;
 	}
-	
+
 	public decimal LongExitThreshold
 	{
 		get => _longExitThreshold.Value;
 		set => _longExitThreshold.Value = value;
 	}
-	
+
 	public decimal ShortExitThreshold
 	{
 		get => _shortExitThreshold.Value;
 		set => _shortExitThreshold.Value = value;
 	}
-	
-	public bool UseTakeProfit
-	{
-		get => _useTakeProfit.Value;
-		set => _useTakeProfit.Value = value;
-	}
-	
-	public decimal Tp1Atr
-	{
-		get => _tp1Atr.Value;
-		set => _tp1Atr.Value = value;
-	}
-	
-	public decimal Tp2Atr
-	{
-		get => _tp2Atr.Value;
-		set => _tp2Atr.Value = value;
-	}
-	
-	public decimal Tp3Atr
-	{
-		get => _tp3Atr.Value;
-		set => _tp3Atr.Value = value;
-	}
-	
-	public decimal Tp1Percent
-	{
-		get => _tp1Percent.Value;
-		set => _tp1Percent.Value = value;
-	}
-	
-	public decimal Tp2Percent
-	{
-		get => _tp2Percent.Value;
-		set => _tp2Percent.Value = value;
-	}
-	
-	public decimal Tp3Percent
-	{
-		get => _tp3Percent.Value;
-		set => _tp3Percent.Value = value;
-	}
-	
-public Sides? Direction
-{
-get => _direction.Value;
-set => _direction.Value = value;
-}
-	
+
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
-	
+
 	public FibonacciAtrFusionStrategy()
 	{
 		_longEntryThreshold = Param(nameof(LongEntryThreshold), 58m)
-		.SetDisplay("Long Entry Threshold", "Threshold to enter long", "General");
-		
+			.SetDisplay("Long Entry", "Threshold to enter long", "General");
+
 		_shortEntryThreshold = Param(nameof(ShortEntryThreshold), 42m)
-		.SetDisplay("Short Entry Threshold", "Threshold to enter short", "General");
-		
+			.SetDisplay("Short Entry", "Threshold to enter short", "General");
+
 		_longExitThreshold = Param(nameof(LongExitThreshold), 42m)
-		.SetDisplay("Long Exit Threshold", "Threshold to exit long", "General");
-		
+			.SetDisplay("Long Exit", "Threshold to exit long", "General");
+
 		_shortExitThreshold = Param(nameof(ShortExitThreshold), 58m)
-		.SetDisplay("Short Exit Threshold", "Threshold to exit short", "General");
-		
-		_useTakeProfit = Param(nameof(UseTakeProfit), false)
-		.SetDisplay("Enable Take Profit", "Use ATR based take profit", "Risk");
-		
-		_tp1Atr = Param(nameof(Tp1Atr), 3m)
-		.SetDisplay("TP1 ATR Mult", "ATR multiplier for TP1", "Risk");
-		_tp2Atr = Param(nameof(Tp2Atr), 8m)
-		.SetDisplay("TP2 ATR Mult", "ATR multiplier for TP2", "Risk");
-		_tp3Atr = Param(nameof(Tp3Atr), 14m)
-		.SetDisplay("TP3 ATR Mult", "ATR multiplier for TP3", "Risk");
-		
-		_tp1Percent = Param(nameof(Tp1Percent), 12m)
-		.SetDisplay("TP1 Percent", "Percent to close at TP1", "Risk");
-		_tp2Percent = Param(nameof(Tp2Percent), 12m)
-		.SetDisplay("TP2 Percent", "Percent to close at TP2", "Risk");
-		_tp3Percent = Param(nameof(Tp3Percent), 12m)
-		.SetDisplay("TP3 Percent", "Percent to close at TP3", "Risk");
-		
-_direction = Param(nameof(Direction), (Sides?)null)
-.SetDisplay("Trade Direction", "Allowed trade direction", "General");
-		
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-		.SetDisplay("Candle Type", "Type of candles to use", "General");
+			.SetDisplay("Short Exit", "Threshold to exit short", "General");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
-	
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
-	
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_prevClose = null;
-		_prevWeighted = 0m;
-	}
-	
+
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		
-		_bp8 = new SMA { Length = 8 };
-		_bp13 = new SMA { Length = 13 };
-		_bp21 = new SMA { Length = 21 };
-		_bp34 = new SMA { Length = 34 };
-		_bp55 = new SMA { Length = 55 };
-		
-		_atr8 = new AverageTrueRange { Length = 8 };
-		_atr13 = new AverageTrueRange { Length = 13 };
-		_atr21 = new AverageTrueRange { Length = 21 };
-		_atr34 = new AverageTrueRange { Length = 34 };
-		_atr55 = new AverageTrueRange { Length = 55 };
-		_atr = new AverageTrueRange { Length = 14 };
-		_weightedSma = new SMA { Length = 3 };
-		
+
+		_prevWeighted = 50;
+		_prevClose = 0;
+		_hasPrev = false;
+		_candleCount = 0;
+
+		var atr = new AverageTrueRange { Length = 14 };
+		var ema = new ExponentialMovingAverage { Length = 21 };
+
 		var subscription = SubscribeCandles(CandleType);
+
 		subscription
-		.Bind(ProcessCandle)
-		.Start();
+			.Bind(atr, ema, ProcessCandle)
+			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, ema);
+			DrawOwnTrades(area);
+		}
 	}
-	
-	private void ProcessCandle(ICandleMessage candle)
+
+	private void ProcessCandle(ICandleMessage candle, decimal atrValue, decimal emaValue)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
-		
-		var prevClose = _prevClose ?? candle.ClosePrice;
-		var trueLow = Math.Min(candle.LowPrice, prevClose);
-		var trueHigh = Math.Max(candle.HighPrice, prevClose);
-		var bp = candle.ClosePrice - trueLow;
-		
-		var atr8 = _atr8.Process(new DecimalIndicatorValue(_atr8, candle).ToDecimal();
-		var atr13 = _atr13.Process(candle).ToDecimal();
-		var atr21 = _atr21.Process(candle).ToDecimal();
-		var atr34 = _atr34.Process(candle).ToDecimal();
-		var atr55 = _atr55.Process(candle).ToDecimal();
-		var atrValue = _atr.Process(candle).ToDecimal();
-		
-		var bp8 = _bp8.Process(bp, candle.ServerTime)).ToDecimal();
-		var bp13 = _bp13.Process(new DecimalIndicatorValue(_bp13, bp, candle.ServerTime)).ToDecimal();
-		var bp21 = _bp21.Process(new DecimalIndicatorValue(_bp21, bp, candle.ServerTime)).ToDecimal();
-		var bp34 = _bp34.Process(new DecimalIndicatorValue(_bp34, bp, candle.ServerTime)).ToDecimal();
-		var bp55 = _bp55.Process(new DecimalIndicatorValue(_bp55, bp, candle.ServerTime)).ToDecimal();
-		
-		if (!_bp55.IsFormed || !_atr55.IsFormed)
+			return;
+
+		_candleCount++;
+
+		if (!_hasPrev)
 		{
 			_prevClose = candle.ClosePrice;
-			_prevWeighted = 0m;
+			_hasPrev = true;
 			return;
 		}
-		
-		var ratio8 = atr8 == 0m ? 0m : 100m * bp8 / atr8;
-		var ratio13 = atr13 == 0m ? 0m : 100m * bp13 / atr13;
-		var ratio21 = atr21 == 0m ? 0m : 100m * bp21 / atr21;
-		var ratio34 = atr34 == 0m ? 0m : 100m * bp34 / atr34;
-		var ratio55 = atr55 == 0m ? 0m : 100m * bp55 / atr55;
-		
-		var weighted = (5m * ratio8 + 4m * ratio13 + 3m * ratio21 + 2m * ratio34 + ratio55) / 15m;
-		var weightedSma = _weightedSma.Process(new DecimalIndicatorValue(_weightedSma, weighted, candle.ServerTime)).ToDecimal();
-		
-		if (!_weightedSma.IsFormed)
-		{
-			_prevWeighted = weightedSma;
-			_prevClose = candle.ClosePrice;
+
+		// Calculate buying pressure
+		var trueLow = Math.Min(candle.LowPrice, _prevClose);
+		var trueRange = Math.Max(candle.HighPrice, _prevClose) - trueLow;
+		var bp = trueRange > 0 ? (candle.ClosePrice - trueLow) / trueRange * 100m : 50m;
+
+		// Simple exponential smoothing at different Fibonacci periods
+		var alpha8 = 2m / (8m + 1m);
+		var alpha13 = 2m / (13m + 1m);
+		var alpha21 = 2m / (21m + 1m);
+		var alpha34 = 2m / (34m + 1m);
+		var alpha55 = 2m / (55m + 1m);
+
+		_bp8Sum = _candleCount == 1 ? bp : _bp8Sum * (1 - alpha8) + bp * alpha8;
+		_bp13Sum = _candleCount == 1 ? bp : _bp13Sum * (1 - alpha13) + bp * alpha13;
+		_bp21Sum = _candleCount == 1 ? bp : _bp21Sum * (1 - alpha21) + bp * alpha21;
+		_bp34Sum = _candleCount == 1 ? bp : _bp34Sum * (1 - alpha34) + bp * alpha34;
+		_bp55Sum = _candleCount == 1 ? bp : _bp55Sum * (1 - alpha55) + bp * alpha55;
+
+		_prevClose = candle.ClosePrice;
+
+		if (_candleCount < 55)
 			return;
-		}
-		
-		var longEntry = _prevWeighted <= LongEntryThreshold && weightedSma > LongEntryThreshold;
-		var shortEntry = _prevWeighted >= ShortEntryThreshold && weightedSma < ShortEntryThreshold;
-		var longExit = _prevWeighted >= LongExitThreshold && weightedSma < LongExitThreshold;
-		var shortExit = _prevWeighted <= ShortExitThreshold && weightedSma > ShortExitThreshold;
-		
-		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			_prevWeighted = weightedSma;
-			_prevClose = candle.ClosePrice;
-			return;
-		}
-		
+
+		// Weighted composite
+		var weighted = (5m * _bp8Sum + 4m * _bp13Sum + 3m * _bp21Sum + 2m * _bp34Sum + _bp55Sum) / 15m;
+
+		// Crossover detection
+		var longEntry = _prevWeighted <= LongEntryThreshold && weighted > LongEntryThreshold;
+		var shortEntry = _prevWeighted >= ShortEntryThreshold && weighted < ShortEntryThreshold;
+		var longExit = _prevWeighted >= LongExitThreshold && weighted < LongExitThreshold;
+		var shortExit = _prevWeighted <= ShortExitThreshold && weighted > ShortExitThreshold;
+
 		if (longExit && Position > 0)
 		{
-			CancelActiveOrders();
-			ClosePosition();
+			SellMarket();
 		}
-	else if (shortExit && Position < 0)
-	{
-		CancelActiveOrders();
-		ClosePosition();
+		else if (shortExit && Position < 0)
+		{
+			BuyMarket();
+		}
+
+		if (longEntry && Position <= 0)
+		{
+			BuyMarket();
+		}
+		else if (shortEntry && Position >= 0)
+		{
+			SellMarket();
+		}
+
+		_prevWeighted = weighted;
 	}
-	
-var allowLong = Direction is null or Sides.Buy;
-var allowShort = Direction is null or Sides.Sell;
-
-if (longEntry && Position <= 0 && allowLong)
-{
-CancelActiveOrders();
-BuyMarket();
-
-if (UseTakeProfit)
-PlaceTakeProfits(candle.ClosePrice, atrValue, true);
-}
-else if (shortEntry && Position >= 0 && allowShort)
-{
-CancelActiveOrders();
-SellMarket();
-
-if (UseTakeProfit)
-PlaceTakeProfits(candle.ClosePrice, atrValue, false);
-}
-
-_prevWeighted = weightedSma;
-_prevClose = candle.ClosePrice;
-}
-
-private void PlaceTakeProfits(decimal entryPrice, decimal atr, bool isLong)
-{
-	var volume = Volume;
-	
-	if (isLong)
-	{
-		if (Tp1Percent > 0m)
-		SellLimit(entryPrice + Tp1Atr * atr, volume * Tp1Percent / 100m);
-		if (Tp2Percent > 0m)
-		SellLimit(entryPrice + Tp2Atr * atr, volume * Tp2Percent / 100m);
-		if (Tp3Percent > 0m)
-		SellLimit(entryPrice + Tp3Atr * atr, volume * Tp3Percent / 100m);
-	}
-else
-{
-	if (Tp1Percent > 0m)
-	BuyLimit(entryPrice - Tp1Atr * atr, volume * Tp1Percent / 100m);
-	if (Tp2Percent > 0m)
-	BuyLimit(entryPrice - Tp2Atr * atr, volume * Tp2Percent / 100m);
-	if (Tp3Percent > 0m)
-	BuyLimit(entryPrice - Tp3Atr * atr, volume * Tp3Percent / 100m);
-}
-}
 }

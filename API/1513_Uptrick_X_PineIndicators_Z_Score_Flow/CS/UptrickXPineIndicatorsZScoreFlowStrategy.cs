@@ -1,318 +1,127 @@
-using System;
-using System.Linq;
-using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
-
-using StockSharp.Algo.Indicators;
-using StockSharp.Algo.Strategies;
-using StockSharp.BusinessEntities;
-using StockSharp.Messages;
-
 namespace StockSharp.Samples.Strategies;
 
+using System;
+using System.Collections.Generic;
+
+using StockSharp.Algo;
+using StockSharp.Algo.Indicators;
+using StockSharp.Algo.Strategies;
+using StockSharp.Messages;
+
 /// <summary>
-/// Uptrick X PineIndicators: Z-Score Flow Strategy.
+/// Z-Score Flow Strategy.
+/// Trades based on Z-score of price relative to moving average with RSI confirmation.
 /// </summary>
 public class UptrickXPineIndicatorsZScoreFlowStrategy : Strategy
 {
-        public enum TradeModes
-        {
-                Standard,
-                ZeroCross,
-                TrendReversal
-        }
+	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _zScorePeriod;
+	private readonly StrategyParam<decimal> _zBuyLevel;
+	private readonly StrategyParam<decimal> _zSellLevel;
 
-private readonly StrategyParam<DataType> _candleType;
-private readonly StrategyParam<int> _zScorePeriod;
-private readonly StrategyParam<int> _emaTrendLen;
-private readonly StrategyParam<int> _rsiLen;
-private readonly StrategyParam<int> _rsiEmaLen;
-private readonly StrategyParam<decimal> _zBuyLevel;
-private readonly StrategyParam<decimal> _zSellLevel;
-private readonly StrategyParam<int> _cooldownBars;
-private readonly StrategyParam<int> _slopeIndex;
-private readonly StrategyParam<bool> _enableLong;
-private readonly StrategyParam<bool> _enableShort;
-private readonly StrategyParam<TradeModes> _tradeMode;
+	private decimal _priceSum;
+	private decimal _priceSqSum;
+	private int _priceCount;
+	private readonly Queue<decimal> _priceQueue = new();
 
-private SMA _basis;
-private StandardDeviation _stdev;
-private EMA _emaTrend;
-private RSI _rsi;
-private EMA _rsiEma;
-private Shift _basisShift;
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int ZScorePeriod { get => _zScorePeriod.Value; set => _zScorePeriod.Value = value; }
+	public decimal ZBuyLevel { get => _zBuyLevel.Value; set => _zBuyLevel.Value = value; }
+	public decimal ZSellLevel { get => _zSellLevel.Value; set => _zSellLevel.Value = value; }
 
-private bool _canBuy = true;
-private bool _canSell = true;
-private decimal _prevRsiEma;
-private decimal _prevZscore;
-private bool _prevBullish;
-private bool _prevBearish;
-private int? _lastBuyBar;
-private int? _lastSellBar;
-private int _barIndex;
+	public UptrickXPineIndicatorsZScoreFlowStrategy()
+	{
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles", "General");
 
-/// <summary>
-/// Candle type for calculations.
-/// </summary>
-public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+		_zScorePeriod = Param(nameof(ZScorePeriod), 50)
+			.SetDisplay("Z-Score Period", "Period for z-score", "Indicators");
 
-/// <summary>
-/// Z-score period length.
-/// </summary>
-public int ZScorePeriod { get => _zScorePeriod.Value; set => _zScorePeriod.Value = value; }
+		_zBuyLevel = Param(nameof(ZBuyLevel), -1.5m)
+			.SetDisplay("Z-Score Buy", "Buy threshold", "Strategy");
 
-/// <summary>
-/// EMA trend filter length.
-/// </summary>
-public int EmaTrendLen { get => _emaTrendLen.Value; set => _emaTrendLen.Value = value; }
+		_zSellLevel = Param(nameof(ZSellLevel), 1.5m)
+			.SetDisplay("Z-Score Sell", "Sell threshold", "Strategy");
+	}
 
-/// <summary>
-/// RSI length.
-/// </summary>
-public int RsiLen { get => _rsiLen.Value; set => _rsiLen.Value = value; }
+	/// <inheritdoc />
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
 
-/// <summary>
-/// EMA of RSI length.
-/// </summary>
-public int RsiEmaLen { get => _rsiEmaLen.Value; set => _rsiEmaLen.Value = value; }
+		_priceSum = 0;
+		_priceSqSum = 0;
+		_priceCount = 0;
+		_priceQueue.Clear();
 
-/// <summary>
-/// Z-score buy threshold.
-/// </summary>
-public decimal ZBuyLevel { get => _zBuyLevel.Value; set => _zBuyLevel.Value = value; }
+		var rsi = new RelativeStrengthIndex { Length = 14 };
+		var ema = new ExponentialMovingAverage { Length = 50 };
 
-/// <summary>
-/// Z-score sell threshold.
-/// </summary>
-public decimal ZSellLevel { get => _zSellLevel.Value; set => _zSellLevel.Value = value; }
+		var subscription = SubscribeCandles(CandleType);
 
-/// <summary>
-/// Cooldown bars between opposite trades.
-/// </summary>
-public int CooldownBars { get => _cooldownBars.Value; set => _cooldownBars.Value = value; }
+		subscription
+			.Bind(rsi, ema, ProcessCandle)
+			.Start();
 
-/// <summary>
-/// Bars back for slope comparison.
-/// </summary>
-public int SlopeIndex { get => _slopeIndex.Value; set => _slopeIndex.Value = value; }
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, ema);
+			DrawOwnTrades(area);
+		}
+	}
 
-/// <summary>
-/// Enable long trades.
-/// </summary>
-public bool EnableLong { get => _enableLong.Value; set => _enableLong.Value = value; }
+	private void ProcessCandle(ICandleMessage candle, decimal rsiValue, decimal emaValue)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
 
-/// <summary>
-/// Enable short trades.
-/// </summary>
-public bool EnableShort { get => _enableShort.Value; set => _enableShort.Value = value; }
+		var close = candle.ClosePrice;
 
-/// <summary>
-/// Trade execution mode.
-/// </summary>
-public TradeModes Mode { get => _tradeMode.Value; set => _tradeMode.Value = value; }
+		// Maintain running statistics for Z-score
+		_priceQueue.Enqueue(close);
+		_priceSum += close;
+		_priceSqSum += close * close;
+		_priceCount++;
 
-public UptrickXPineIndicatorsZScoreFlowStrategy()
-{
-_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-.SetDisplay("Candle Type", "Type of candles", "General");
+		if (_priceCount > ZScorePeriod)
+		{
+			var removed = _priceQueue.Dequeue();
+			_priceSum -= removed;
+			_priceSqSum -= removed * removed;
+			_priceCount = ZScorePeriod;
+		}
 
-_zScorePeriod = Param(nameof(ZScorePeriod), 100)
-.SetGreaterThanZero()
-.SetDisplay("Z-Score Period", "Period for z-score", "Indicators");
+		if (_priceCount < ZScorePeriod)
+			return;
 
-_emaTrendLen = Param(nameof(EmaTrendLen), 50)
-.SetGreaterThanZero()
-.SetDisplay("EMA Trend", "EMA trend length", "Indicators");
+		var mean = _priceSum / _priceCount;
+		var variance = (_priceSqSum / _priceCount) - (mean * mean);
+		var stdDev = variance <= 0 ? 0m : (decimal)Math.Sqrt((double)variance);
 
-_rsiLen = Param(nameof(RsiLen), 14)
-.SetGreaterThanZero()
-.SetDisplay("RSI Length", "RSI period", "Indicators");
+		if (stdDev == 0)
+			return;
 
-_rsiEmaLen = Param(nameof(RsiEmaLen), 8)
-.SetGreaterThanZero()
-.SetDisplay("RSI EMA Length", "EMA of RSI length", "Indicators");
+		var zscore = (close - mean) / stdDev;
 
-_zBuyLevel = Param(nameof(ZBuyLevel), -2m)
-.SetDisplay("Z-Score Buy", "Buy threshold", "Strategy");
-
-_zSellLevel = Param(nameof(ZSellLevel), 2m)
-.SetDisplay("Z-Score Sell", "Sell threshold", "Strategy");
-
-_cooldownBars = Param(nameof(CooldownBars), 10)
-.SetGreaterThanZero()
-.SetDisplay("Cooldown", "Bars between trades", "Strategy");
-
-_slopeIndex = Param(nameof(SlopeIndex), 30)
-.SetGreaterThanZero()
-.SetDisplay("Slope Index", "Bars for slope", "Strategy");
-
-_enableLong = Param(nameof(EnableLong), true)
-.SetDisplay("Enable Long", "Allow long trades", "Trading");
-
-_enableShort = Param(nameof(EnableShort), true)
-.SetDisplay("Enable Short", "Allow short trades", "Trading");
-
-_tradeMode = Param(nameof(Mode), TradeModes.Standard)
-.SetDisplay("Trade Mode", "Execution mode", "Trading");
-}
-
-/// <inheritdoc />
-protected override void OnReseted()
-{
-base.OnReseted();
-_canBuy = true;
-_canSell = true;
-_prevRsiEma = 0m;
-_prevZscore = 0m;
-_prevBullish = false;
-_prevBearish = false;
-_lastBuyBar = null;
-_lastSellBar = null;
-_barIndex = 0;
-}
-
-/// <inheritdoc />
-protected override void OnStarted2(DateTime time)
-{
-base.OnStarted2(time);
-
-_basis = new SMA { Length = ZScorePeriod };
-_stdev = new StandardDeviation { Length = ZScorePeriod };
-_emaTrend = new EMA { Length = EmaTrendLen };
-_rsi = new RSI { Length = RsiLen };
-_rsiEma = new EMA { Length = RsiEmaLen };
-_basisShift = new Shift { Length = SlopeIndex };
-
-var subscription = SubscribeCandles(CandleType);
-subscription.Bind(ProcessCandle).Start();
-}
-
-private void ProcessCandle(ICandleMessage candle)
-{
-if (candle.State != CandleStates.Finished)
-return;
-
-_barIndex++;
-
-var basisValue = _basis.Process(new DecimalIndicatorValue(_basis, candle).ToDecimal();
-var stdevValue = _stdev.Process(candle).ToDecimal();
-var emaTrend = _emaTrend.Process(candle).ToDecimal();
-var rsiValue = _rsi.Process(candle).ToDecimal();
-var rsiEmaValue = _rsiEma.Process(rsiValue, candle.OpenTime)).ToDecimal();
-var basisShift = _basisShift.Process(new DecimalIndicatorValue(_basisShift, basisValue, candle.OpenTime)).ToDecimal();
-
-var zscore = stdevValue == 0 ? 0 : (candle.ClosePrice - basisValue) / stdevValue;
-
-var isUptrend = candle.ClosePrice > emaTrend;
-var isDowntrend = candle.ClosePrice < emaTrend;
-
-if (rsiEmaValue > 30)
-_canBuy = true;
-if (rsiEmaValue < 70)
-_canSell = true;
-
-var rsiEmaSlope = rsiEmaValue - _prevRsiEma;
-_prevRsiEma = rsiEmaValue;
-
-var rsiBuyConfirm = rsiEmaValue < 30 && rsiEmaSlope > 0 && _canBuy;
-var rsiSellConfirm = rsiEmaValue > 70 && rsiEmaSlope < 0 && _canSell;
-
-var rawBuy = zscore < ZBuyLevel && isDowntrend && rsiBuyConfirm;
-var rawSell = zscore > ZSellLevel && isUptrend && rsiSellConfirm;
-
-if (rawBuy)
-_canBuy = false;
-if (rawSell)
-_canSell = false;
-
-var buySignal = rawBuy && (_lastSellBar is null || _barIndex - _lastSellBar > CooldownBars);
-var sellSignal = rawSell && (_lastBuyBar is null || _barIndex - _lastBuyBar > CooldownBars);
-
-if (buySignal)
-_lastBuyBar = _barIndex;
-if (sellSignal)
-_lastSellBar = _barIndex;
-
-var bullishCondition = basisValue > basisShift;
-var bearishCondition = basisValue < basisShift;
-
-var trendBullishReversal = _prevBearish && bullishCondition;
-var trendBearishReversal = _prevBullish && bearishCondition;
-
-_prevBullish = bullishCondition;
-_prevBearish = bearishCondition;
-
-switch (Mode)
-{
-case TradeModes.Standard:
-StandardMode(buySignal, sellSignal);
-break;
-case TradeModes.ZeroCross:
-ZeroCrossMode(zscore);
-break;
-case TradeModes.TrendReversal:
-TrendReversalMode(trendBullishReversal, trendBearishReversal);
-break;
-}
-
-_prevZscore = zscore;
-}
-
-private void StandardMode(bool buySignal, bool sellSignal)
-{
-if (EnableShort && buySignal && Position < 0)
-BuyMarket(Math.Abs(Position));
-if (EnableLong && buySignal && Position <= 0)
-BuyMarket();
-
-if (EnableLong && sellSignal && Position > 0)
-SellMarket(Position);
-if (EnableShort && sellSignal && Position >= 0)
-SellMarket();
-}
-
-private void ZeroCrossMode(decimal zscore)
-{
-var crossUp = _prevZscore <= 0 && zscore > 0;
-var crossDown = _prevZscore >= 0 && zscore < 0;
-
-if (crossUp)
-{
-if (EnableShort && Position < 0)
-BuyMarket(Math.Abs(Position));
-if (EnableLong && Position <= 0)
-BuyMarket();
-}
-
-if (crossDown)
-{
-if (EnableLong && Position > 0)
-SellMarket(Position);
-if (EnableShort && Position >= 0)
-SellMarket();
-}
-}
-
-private void TrendReversalMode(bool bullishReversal, bool bearishReversal)
-{
-if (bullishReversal)
-{
-if (EnableShort && Position < 0)
-BuyMarket(Math.Abs(Position));
-if (EnableLong && Position <= 0)
-BuyMarket();
-}
-
-if (bearishReversal)
-{
-if (EnableLong && Position > 0)
-SellMarket(Position);
-if (EnableShort && Position >= 0)
-SellMarket();
-}
-}
+		// Trading logic
+		if (zscore < ZBuyLevel && rsiValue < 40 && Position <= 0)
+		{
+			BuyMarket();
+		}
+		else if (zscore > ZSellLevel && rsiValue > 60 && Position >= 0)
+		{
+			SellMarket();
+		}
+		// Exit when z-score returns to zero
+		else if (Position > 0 && zscore > 0)
+		{
+			SellMarket();
+		}
+		else if (Position < 0 && zscore < 0)
+		{
+			BuyMarket();
+		}
+	}
 }

@@ -1,44 +1,33 @@
-using System;
-using System.Linq;
-using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
-
-using StockSharp.Algo.Indicators;
-using StockSharp.Algo.Strategies;
-using StockSharp.BusinessEntities;
-using StockSharp.Messages;
-
 namespace StockSharp.Samples.Strategies;
 
+using System;
+using System.Collections.Generic;
+
+using StockSharp.Algo;
+using StockSharp.Algo.Indicators;
+using StockSharp.Algo.Strategies;
+using StockSharp.Messages;
+
 /// <summary>
-/// Volume Slope Breakout Strategy
+/// Volume Slope Breakout Strategy.
+/// Trades when volume slope breaks out, using price/EMA for direction.
 /// </summary>
 public class VolumeSlopeBreakoutStrategy : Strategy
 {
-	private readonly StrategyParam<int> _volumeSmaPeriod;
+	private readonly StrategyParam<int> _volumeAvgPeriod;
 	private readonly StrategyParam<int> _slopePeriod;
 	private readonly StrategyParam<decimal> _breakoutMultiplier;
-	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
-	
-	private VolumeIndicator _volumeIndicator;
-	private SimpleMovingAverage _volumeSma;
-	private ExponentialMovingAverage _priceEma;
-	private LinearRegression _volumeSlope;
-	private decimal _prevSlopeValue;
-	private decimal _slopeAvg;
-	private decimal _slopeStdDev;
-	private decimal _sumSlope;
-	private decimal _sumSlopeSquared;
-	private readonly Queue<decimal> _slopeValues = [];
 
-	public int VolumeSMAPeriod
+	private decimal _prevVolume;
+	private decimal _slopeSum;
+	private int _slopeCount;
+	private readonly Queue<decimal> _slopeQueue = new();
+
+	public int VolumeAvgPeriod
 	{
-		get => _volumeSmaPeriod.Value;
-		set => _volumeSmaPeriod.Value = value;
+		get => _volumeAvgPeriod.Value;
+		set => _volumeAvgPeriod.Value = value;
 	}
 
 	public int SlopePeriod
@@ -53,201 +42,109 @@ public class VolumeSlopeBreakoutStrategy : Strategy
 		set => _breakoutMultiplier.Value = value;
 	}
 
-	public decimal StopLossPercent
-	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
-	}
-
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
-	
+
 	public VolumeSlopeBreakoutStrategy()
 	{
-		_volumeSmaPeriod = Param(nameof(VolumeSMAPeriod), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume SMA Period", "Period for volume SMA calculation", "Indicator")
-			
-			.SetOptimize(10, 30, 5);
-			
+		_volumeAvgPeriod = Param(nameof(VolumeAvgPeriod), 20)
+			.SetDisplay("Volume Avg Period", "Period for volume averaging", "Indicator");
+
 		_slopePeriod = Param(nameof(SlopePeriod), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("Slope Period", "Period for slope average and standard deviation", "Indicator")
-			
-			.SetOptimize(10, 30, 5);
-			
-		_breakoutMultiplier = Param(nameof(BreakoutMultiplier), 2.0m)
-			.SetGreaterThanZero()
-			.SetDisplay("Breakout Multiplier", "Standard deviation multiplier for breakout", "Signal")
-			
-			.SetOptimize(1.0m, 3.0m, 0.5m);
-			
-		_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
-			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management")
-			
-			.SetOptimize(1.0m, 3.0m, 0.5m);
-			
+			.SetDisplay("Slope Period", "Period for slope statistics", "Indicator");
+
+		_breakoutMultiplier = Param(nameof(BreakoutMultiplier), 1.5m)
+			.SetDisplay("Breakout Multiplier", "Multiplier for breakout threshold", "Signal");
+
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
-	}
-	
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
-	
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_prevSlopeValue = 0;
-		_slopeAvg = 0;
-		_slopeStdDev = 0;
-		_sumSlope = 0;
-		_sumSlopeSquared = 0;
-		_slopeValues.Clear();
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		
-		// Initialize indicators
-		_volumeIndicator = new VolumeIndicator();
-		_volumeSma = new SMA { Length = VolumeSMAPeriod };
-		_priceEma = new EMA { Length = 20 }; // For trend direction
-		_volumeSlope = new LinearRegression { Length = 2 }; // For calculating slope
-		
-		
-		// Create subscription
+
+		_prevVolume = 0;
+		_slopeSum = 0;
+		_slopeCount = 0;
+		_slopeQueue.Clear();
+
+		var ema = new ExponentialMovingAverage { Length = 20 };
+
 		var subscription = SubscribeCandles(CandleType);
-		
-		// Bind indicators and processing logic using event handlers
-		// since we need to track multiple indicator values
+
 		subscription
-			.Bind(_volumeIndicator, ProcessCandle)
+			.Bind(ema, ProcessCandle)
 			.Start();
-		
-		// Setup chart visualization
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _volumeIndicator);
-			DrawIndicator(area, _volumeSma);
-			DrawIndicator(area, _priceEma);
+			DrawIndicator(area, ema);
 			DrawOwnTrades(area);
 		}
-		
-		// Enable position protection
-		StartProtection(new(), new Unit(StopLossPercent, UnitTypes.Percent));
 	}
-	
-	private void ProcessCandle(ICandleMessage candle, decimal volumeValue)
+
+	private void ProcessCandle(ICandleMessage candle, decimal emaValue)
 	{
-		// Check if strategy is ready to trade
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (candle.State != CandleStates.Finished)
 			return;
-		
-		// Process volume SMA
-		decimal volumeSma = _volumeSma.Process(new DecimalIndicatorValue(_volumeSma, volumeValue, candle.ServerTime)).ToDecimal();
-		
-		// Process price EMA for trend direction
-		decimal priceEma = _priceEma.Process(new DecimalIndicatorValue(_priceEma, candle).ToDecimal();
-		bool priceAboveEma = candle.ClosePrice > priceEma;
-		
-		// Calculate volume slope (current volume relative to SMA)
-		decimal volumeRatio = volumeValue / volumeSma;
-		
-		// We use LinearRegression to calculate slope of this ratio
-		var currentSlopeTyped = (LinearRegressionValue)_volumeSlope.Process(volumeRatio, candle.ServerTime));
 
-		if (currentSlopeTyped.LinearReg is not decimal currentSlopeValue)
-			return; // Skip if slope is not available
+		var vol = candle.TotalVolume;
 
-		// Update slope stats when we have 2 values to calculate slope
-		if (_prevSlopeValue != 0)
+		if (_prevVolume == 0)
 		{
-			// Calculate simple slope from current and previous values
-			decimal slope = currentSlopeValue - _prevSlopeValue;
-			
-			// Update running statistics
-			_slopeValues.Enqueue(slope);
-			_sumSlope += slope;
-			_sumSlopeSquared += slope * slope;
-			
-			// Remove oldest value if we have enough
-			if (_slopeValues.Count > SlopePeriod)
+			_prevVolume = vol;
+			return;
+		}
+
+		// Calculate volume slope (change)
+		var slope = vol - _prevVolume;
+		_prevVolume = vol;
+
+		_slopeQueue.Enqueue(slope);
+		_slopeSum += slope;
+		_slopeCount++;
+
+		if (_slopeCount > SlopePeriod)
+		{
+			_slopeSum -= _slopeQueue.Dequeue();
+			_slopeCount = SlopePeriod;
+		}
+
+		if (_slopeCount < SlopePeriod)
+			return;
+
+		var slopeAvg = _slopeSum / _slopeCount;
+		var absAvgSlope = Math.Abs(slopeAvg);
+		var threshold = absAvgSlope > 0 ? absAvgSlope * BreakoutMultiplier : vol * 0.1m;
+
+		var priceAboveEma = candle.ClosePrice > emaValue;
+
+		// Volume slope breakout
+		if (slope > slopeAvg + threshold)
+		{
+			if (priceAboveEma && Position <= 0)
 			{
-				var oldSlope = _slopeValues.Dequeue();
-				_sumSlope -= oldSlope;
-				_sumSlopeSquared -= oldSlope * oldSlope;
+				BuyMarket();
 			}
-			
-			// Calculate average and standard deviation
-			_slopeAvg = _sumSlope / _slopeValues.Count;
-			decimal variance = (_sumSlopeSquared / _slopeValues.Count) - (_slopeAvg * _slopeAvg);
-			_slopeStdDev = variance <= 0 ? 0 : (decimal)Math.Sqrt((double)variance);
-			
-			// Generate signals if we have enough data for statistics
-			if (_slopeValues.Count >= SlopePeriod && volumeValue > volumeSma)
+			else if (!priceAboveEma && Position >= 0)
 			{
-				// Breakout logic - Volume slope increase with price confirmation
-				if (slope > _slopeAvg + BreakoutMultiplier * _slopeStdDev)
-				{
-					if (priceAboveEma && Position <= 0)
-					{
-						// Go long on volume spike with price above EMA
-						BuyMarket(Volume + Math.Abs(Position));
-						LogInfo($"Long entry: Volume slope breakout above {_slopeAvg + BreakoutMultiplier * _slopeStdDev:F3} with price above EMA");
-					}
-					else if (!priceAboveEma && Position >= 0)
-					{
-						// Go short on volume spike with price below EMA
-						SellMarket(Volume + Math.Abs(Position));
-						LogInfo($"Short entry: Volume slope breakout above {_slopeAvg + BreakoutMultiplier * _slopeStdDev:F3} with price below EMA");
-					}
-				}
-				
-				// Exit logic - Volume spike down (unusual activity ending)
-				if (slope < _slopeAvg - BreakoutMultiplier * _slopeStdDev)
-				{
-					if (Position > 0)
-					{
-						SellMarket(Math.Abs(Position));
-						LogInfo("Long exit: Volume activity declining");
-					}
-					else if (Position < 0)
-					{
-						BuyMarket(Math.Abs(Position));
-						LogInfo("Short exit: Volume activity declining");
-					}
-				}
-			}
-			
-			// Additional exit rule - Return to mean with lower volume
-			if (volumeValue < volumeSma && slope < _slopeAvg)
-			{
-				if (Position > 0)
-				{
-					SellMarket(Math.Abs(Position));
-					LogInfo("Long exit: Volume returned to normal levels");
-				}
-				else if (Position < 0)
-				{
-					BuyMarket(Math.Abs(Position));
-					LogInfo("Short exit: Volume returned to normal levels");
-				}
+				SellMarket();
 			}
 		}
-		
-		// Update previous value for next iteration
-		_prevSlopeValue = currentSlopeValue;
+		// Volume declining - exit
+		else if (slope < slopeAvg - threshold)
+		{
+			if (Position > 0)
+				SellMarket();
+			else if (Position < 0)
+				BuyMarket();
+		}
 	}
 }

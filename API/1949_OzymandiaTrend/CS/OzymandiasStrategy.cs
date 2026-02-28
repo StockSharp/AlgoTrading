@@ -1,19 +1,13 @@
+namespace StockSharp.Samples.Strategies;
+
 using System;
-using System.Linq;
 using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
-
-using StockSharp.Algo.Indicators;
-using StockSharp.Algo.Strategies;
-using StockSharp.BusinessEntities;
-using StockSharp.Messages;
+using System.Linq;
 
 using StockSharp.Algo;
-
-namespace StockSharp.Samples.Strategies;
+using StockSharp.Algo.Indicators;
+using StockSharp.Algo.Strategies;
+using StockSharp.Messages;
 
 /// <summary>
 /// Strategy based on the Ozymandias indicator.
@@ -23,19 +17,7 @@ public class OzymandiasStrategy : Strategy
 {
 	private readonly StrategyParam<int> _length;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<bool> _buyEntry;
-	private readonly StrategyParam<bool> _sellEntry;
-	private readonly StrategyParam<bool> _buyExit;
-	private readonly StrategyParam<bool> _sellExit;
-	private readonly StrategyParam<decimal> _takeProfitPoints;
-	private readonly StrategyParam<decimal> _stopLossPoints;
-	
-	private Highest _highest = null!;
-	private Lowest _lowest = null!;
-	private SimpleMovingAverage _hma = null!;
-	private SimpleMovingAverage _lma = null!;
-	private AverageTrueRange _atr = null!;
-	
+
 	private int _trend;
 	private int _nextTrend;
 	private decimal _maxl;
@@ -44,207 +26,213 @@ public class OzymandiasStrategy : Strategy
 	private decimal _prevHigh;
 	private decimal _prevLow;
 	private int? _prevDirection;
-	
+
+	// Rolling window for high prices (for highest calculation)
+	private readonly Queue<decimal> _highWindow = new();
+	// Rolling window for low prices (for lowest calculation)
+	private readonly Queue<decimal> _lowWindow = new();
+	// Rolling window for hh values (for SMA of highest)
+	private readonly Queue<decimal> _hhQueue = new();
+	private decimal _hhSum;
+	// Rolling window for ll values (for SMA of lowest)
+	private readonly Queue<decimal> _llQueue = new();
+	private decimal _llSum;
+	// ATR manual calculation
+	private readonly Queue<decimal> _trQueue = new();
+	private decimal _trSum;
+	private decimal _prevClose;
+	private bool _hasPrevClose;
+	private int _candleCount;
+
 	/// <summary>
 	/// Lookback length for calculations.
 	/// </summary>
 	public int Length { get => _length.Value; set => _length.Value = value; }
-	
+
 	/// <summary>
 	/// Candle type.
 	/// </summary>
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
-	
-	/// <summary>
-	/// Allow opening long positions.
-	/// </summary>
-	public bool BuyEntry { get => _buyEntry.Value; set => _buyEntry.Value = value; }
-	
-	/// <summary>
-	/// Allow opening short positions.
-	/// </summary>
-	public bool SellEntry { get => _sellEntry.Value; set => _sellEntry.Value = value; }
-	
-	/// <summary>
-	/// Allow closing long positions on signal.
-	/// </summary>
-	public bool BuyExit { get => _buyExit.Value; set => _buyExit.Value = value; }
-	
-	/// <summary>
-	/// Allow closing short positions on signal.
-	/// </summary>
-	public bool SellExit { get => _sellExit.Value; set => _sellExit.Value = value; }
-	
-	/// <summary>
-	/// Take profit distance in price points.
-	/// </summary>
-	public decimal TakeProfitPoints { get => _takeProfitPoints.Value; set => _takeProfitPoints.Value = value; }
-	
-	/// <summary>
-	/// Stop loss distance in price points.
-	/// </summary>
-	public decimal StopLossPoints { get => _stopLossPoints.Value; set => _stopLossPoints.Value = value; }
-	
+
 	/// <summary>
 	/// Initialize the strategy parameters.
 	/// </summary>
 	public OzymandiasStrategy()
 	{
-	_length = Param(nameof(Length), 2)
-	.SetGreaterThanZero()
-	.SetDisplay("Length", "Lookback period", "Indicator")
-	;
-	
-	_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
-	.SetDisplay("Candle Type", "Timeframe for candles", "General");
-	
-	_buyEntry = Param(nameof(BuyEntry), true)
-	.SetDisplay("Buy Entry", "Allow opening long positions", "Trading");
-	
-	_sellEntry = Param(nameof(SellEntry), true)
-	.SetDisplay("Sell Entry", "Allow opening short positions", "Trading");
-	
-	_buyExit = Param(nameof(BuyExit), true)
-	.SetDisplay("Buy Exit", "Allow closing long positions", "Trading");
-	
-	_sellExit = Param(nameof(SellExit), true)
-	.SetDisplay("Sell Exit", "Allow closing short positions", "Trading");
-	
-	_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000m)
-	.SetDisplay("Take Profit", "Take profit distance", "Risk");
-	
-	_stopLossPoints = Param(nameof(StopLossPoints), 1000m)
-	.SetDisplay("Stop Loss", "Stop loss distance", "Risk");
+		_length = Param(nameof(Length), 8)
+			.SetDisplay("Length", "Lookback period", "Indicator");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Timeframe for candles", "General");
 	}
-	
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-	return [(Security, CandleType)];
-	}
-	
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-	base.OnReseted();
-	
-	_trend = 0;
-	_nextTrend = 0;
-	_maxl = 0m;
-	_minh = decimal.MaxValue;
-	_baseLine = 0m;
-	_prevHigh = 0m;
-	_prevLow = 0m;
-	_prevDirection = null;
-	}
-	
+
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
-	base.OnStarted2(time);
-	
-	_highest = new Highest { Length = Length };
-	_lowest = new Lowest { Length = Length };
-	_hma = new SMA { Length = Length };
-	_lma = new SMA { Length = Length };
-	_atr = new AverageTrueRange { Length = 100 };
-	
-	var subscription = SubscribeCandles(CandleType);
-	subscription
-	.Bind(ProcessCandle)
-	.Start();
-	
-	StartProtection(new Unit(TakeProfitPoints, UnitTypes.Absolute), new Unit(StopLossPoints, UnitTypes.Absolute));
-	
-	var area = CreateChartArea();
-	if (area != null)
-	{
-	DrawCandles(area, subscription);
-	DrawIndicator(area, _highest);
-	DrawIndicator(area, _lowest);
-	DrawOwnTrades(area);
+		base.OnStarted2(time);
+
+		_trend = 0;
+		_nextTrend = 0;
+		_maxl = 0m;
+		_minh = decimal.MaxValue;
+		_baseLine = 0m;
+		_prevHigh = 0m;
+		_prevLow = 0m;
+		_prevDirection = null;
+		_candleCount = 0;
+
+		_highWindow.Clear();
+		_lowWindow.Clear();
+		_hhQueue.Clear();
+		_hhSum = 0;
+		_llQueue.Clear();
+		_llSum = 0;
+		_trQueue.Clear();
+		_trSum = 0;
+		_prevClose = 0;
+		_hasPrevClose = false;
+
+		var subscription = SubscribeCandles(CandleType);
+
+		subscription
+			.Bind(ProcessCandle)
+			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawOwnTrades(area);
+		}
 	}
-	}
-	
+
 	private void ProcessCandle(ICandleMessage candle)
 	{
-	if (candle.State != CandleStates.Finished)
-	return;
-	
-	var hh = _highest.Process(new DecimalIndicatorValue(_highest, candle).ToDecimal();
-	var ll = _lowest.Process(candle).ToDecimal();
-	var hma = _hma.Process(candle.HighPrice, candle.OpenTime)).ToDecimal();
-	var lma = _lma.Process(new DecimalIndicatorValue(_lma, candle.LowPrice, candle.OpenTime)).ToDecimal();
-	var atrHalf = _atr.Process(candle).ToDecimal() / 2m;
-	
-	if (_prevHigh == 0m && _prevLow == 0m)
-	{
-	_prevHigh = candle.HighPrice;
-	_prevLow = candle.LowPrice;
-	_baseLine = candle.ClosePrice;
-	return;
+		if (candle.State != CandleStates.Finished)
+			return;
+
+		var high = candle.HighPrice;
+		var low = candle.LowPrice;
+		var close = candle.ClosePrice;
+		var len = Length;
+		var atrLen = 14;
+
+		_candleCount++;
+
+		// Update high rolling window
+		_highWindow.Enqueue(high);
+		if (_highWindow.Count > len)
+			_highWindow.Dequeue();
+
+		// Update low rolling window
+		_lowWindow.Enqueue(low);
+		if (_lowWindow.Count > len)
+			_lowWindow.Dequeue();
+
+		// ATR calculation
+		decimal tr;
+		if (_hasPrevClose)
+			tr = Math.Max(high - low, Math.Max(Math.Abs(high - _prevClose), Math.Abs(low - _prevClose)));
+		else
+			tr = high - low;
+
+		_trQueue.Enqueue(tr);
+		_trSum += tr;
+		if (_trQueue.Count > atrLen)
+			_trSum -= _trQueue.Dequeue();
+
+		_prevClose = close;
+		_hasPrevClose = true;
+
+		// Need at least Length candles for highest/lowest
+		if (_highWindow.Count < len)
+			return;
+
+		// Compute highest high and lowest low over window
+		var hh = _highWindow.Max();
+		var ll = _lowWindow.Min();
+
+		// Accumulate hh/ll values for SMA computation
+		_hhQueue.Enqueue(hh);
+		_hhSum += hh;
+		if (_hhQueue.Count > len)
+			_hhSum -= _hhQueue.Dequeue();
+
+		_llQueue.Enqueue(ll);
+		_llSum += ll;
+		if (_llQueue.Count > len)
+			_llSum -= _llQueue.Dequeue();
+
+		// Need len hh/ll values for SMA and atrLen for ATR
+		if (_hhQueue.Count < len || _trQueue.Count < atrLen)
+			return;
+
+		// SMA of highest values
+		var hma = _hhSum / _hhQueue.Count;
+		// SMA of lowest values
+		var lma = _llSum / _llQueue.Count;
+		// ATR / 2
+		var atrHalf = (_trSum / _trQueue.Count) / 2m;
+
+		if (_prevHigh == 0m && _prevLow == 0m)
+		{
+			_prevHigh = high;
+			_prevLow = low;
+			_baseLine = close;
+			return;
+		}
+
+		var trend0 = _trend;
+
+		if (_nextTrend == 1)
+		{
+			_maxl = Math.Max(ll, _maxl);
+			if (hma < _maxl && close < _prevLow)
+			{
+				trend0 = 1;
+				_nextTrend = 0;
+				_minh = hh;
+			}
+		}
+
+		if (_nextTrend == 0)
+		{
+			_minh = Math.Min(hh, _minh);
+			if (lma > _minh && close > _prevHigh)
+			{
+				trend0 = 0;
+				_nextTrend = 1;
+				_maxl = ll;
+			}
+		}
+
+		int direction;
+		if (trend0 == 0)
+		{
+			_baseLine = _trend != 0 ? _baseLine : Math.Max(_maxl, _baseLine);
+			direction = 1;
+		}
+		else
+		{
+			_baseLine = _trend != 1 ? _baseLine : Math.Min(_minh, _baseLine);
+			direction = 0;
+		}
+
+		if (_prevDirection is int prevDir && direction != prevDir)
+		{
+			if (direction == 1 && Position <= 0)
+			{
+				BuyMarket();
+			}
+			else if (direction == 0 && Position >= 0)
+			{
+				SellMarket();
+			}
+		}
+
+		_prevDirection = direction;
+		_trend = trend0;
+		_prevHigh = high;
+		_prevLow = low;
 	}
-	
-	var trend0 = _trend;
-	
-	if (_nextTrend == 1)
-	{
-	_maxl = Math.Max(ll, _maxl);
-	if (hma < _maxl && candle.ClosePrice < _prevLow)
-	{
-	trend0 = 1;
-	_nextTrend = 0;
-	_minh = hh;
-	}
-	}
-	
-	if (_nextTrend == 0)
-	{
-	_minh = Math.Min(hh, _minh);
-	if (lma > _minh && candle.ClosePrice > _prevHigh)
-	{
-	trend0 = 0;
-	_nextTrend = 1;
-	_maxl = ll;
-	}
-	}
-	
-	int direction;
-	if (trend0 == 0)
-	{
-	_baseLine = _trend != 0 ? _baseLine : Math.Max(_maxl, _baseLine);
-	direction = 1;
-	}
-	else
-	{
-	_baseLine = _trend != 1 ? _baseLine : Math.Min(_minh, _baseLine);
-	direction = 0;
-	}
-	
-	var upLine = _baseLine + atrHalf;
-	var downLine = _baseLine - atrHalf;
-	
-	if (_prevDirection is int prevDir)
-	{
-	if (direction == 1)
-	{
-	if (SellExit && Position < 0)
-	BuyMarket(Math.Abs(Position));
-	if (BuyEntry && prevDir == 0 && Position <= 0)
-	BuyMarket(Volume + Math.Abs(Position));
-	}
-	else
-	{
-	if (BuyExit && Position > 0)
-	SellMarket(Position);
-	if (SellEntry && prevDir == 1 && Position >= 0)
-	SellMarket(Volume + Math.Abs(Position));
-	}
-	}
-	
-	_prevDirection = direction;
-	_trend = trend0;
-	_prevHigh = candle.HighPrice;
-	_prevLow = candle.LowPrice;
-	}
-	}
+}

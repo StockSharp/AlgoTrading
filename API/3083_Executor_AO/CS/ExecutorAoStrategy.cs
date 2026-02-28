@@ -1,17 +1,9 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
 
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
-
+using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
-using StockSharp.BusinessEntities;
 using StockSharp.Messages;
-
-using StockSharp.Algo.Candles;
 
 namespace StockSharp.Samples.Strategies;
 
@@ -57,13 +49,11 @@ public class ExecutorAoStrategy : Strategy
 			.SetDisplay("Trade Volume", "Fixed order size", "Risk")
 			;
 
-		_aoShortMa = { Length = Param }(nameof(AoShortPeriod), 5)
-			.SetGreaterThanZero()
+		_aoShortPeriod = Param(nameof(AoShortPeriod), 5)
 			.SetDisplay("AO Short Period", "Fast period for Awesome Oscillator", "Indicators")
 			;
 
-		_aoLongMa = { Length = Param }(nameof(AoLongPeriod), 34)
-			.SetGreaterThanZero()
+		_aoLongPeriod = Param(nameof(AoLongPeriod), 34)
 			.SetDisplay("AO Long Period", "Slow period for Awesome Oscillator", "Indicators")
 			;
 

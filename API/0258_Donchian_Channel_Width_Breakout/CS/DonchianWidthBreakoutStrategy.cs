@@ -1,39 +1,26 @@
+namespace StockSharp.Samples.Strategies;
+
 using System;
-using System.Linq;
-using System.Collections.Generic;
 
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
-
+using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
-using StockSharp.BusinessEntities;
 using StockSharp.Messages;
-
-namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Strategy that trades on Donchian Channel width breakouts.
-/// When Donchian Channel width increases significantly above its average, 
+/// When Donchian Channel width increases significantly above its average,
 /// it enters position in the direction determined by price movement.
 /// </summary>
 public class DonchianWidthBreakoutStrategy : Strategy
 {
 	private readonly StrategyParam<int> _donchianPeriod;
-	private readonly StrategyParam<int> _avgPeriod;
-	private readonly StrategyParam<decimal> _multiplier;
+	private readonly StrategyParam<decimal> _widthThreshold;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<decimal> _stopLoss;
-	
-	private Highest _highest;
-	private Lowest _lowest;
-	private SimpleMovingAverage _widthAverage;
-	
-	// Track channel width values
-	private decimal _lastWidth;
-	private decimal _lastAvgWidth;
-	
+
+	private decimal _prevAvgWidth;
+	private bool _hasPrev;
+
 	/// <summary>
 	/// Donchian Channel period.
 	/// </summary>
@@ -42,25 +29,16 @@ public class DonchianWidthBreakoutStrategy : Strategy
 		get => _donchianPeriod.Value;
 		set => _donchianPeriod.Value = value;
 	}
-	
+
 	/// <summary>
-	/// Period for width average calculation.
+	/// Width threshold multiplier for breakout detection.
 	/// </summary>
-	public int AvgPeriod
+	public decimal WidthThreshold
 	{
-		get => _avgPeriod.Value;
-		set => _avgPeriod.Value = value;
+		get => _widthThreshold.Value;
+		set => _widthThreshold.Value = value;
 	}
-	
-	/// <summary>
-	/// Standard deviation multiplier for breakout detection.
-	/// </summary>
-	public decimal Multiplier
-	{
-		get => _multiplier.Value;
-		set => _multiplier.Value = value;
-	}
-	
+
 	/// <summary>
 	/// Candle type for strategy.
 	/// </summary>
@@ -69,89 +47,39 @@ public class DonchianWidthBreakoutStrategy : Strategy
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
-	
-	/// <summary>
-	/// Stop-loss percentage.
-	/// </summary>
-	public decimal StopLoss
-	{
-		get => _stopLoss.Value;
-		set => _stopLoss.Value = value;
-	}
-	
+
 	/// <summary>
 	/// Initialize <see cref="DonchianWidthBreakoutStrategy"/>.
 	/// </summary>
 	public DonchianWidthBreakoutStrategy()
 	{
 		_donchianPeriod = Param(nameof(DonchianPeriod), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("Donchian Period", "Period for the Donchian Channel", "Indicators")
-			
-			.SetOptimize(10, 50, 5);
-			
-		_avgPeriod = Param(nameof(AvgPeriod), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("Average Period", "Period for width average calculation", "Indicators")
-			
-			.SetOptimize(10, 50, 5);
-		
-		_multiplier = Param(nameof(Multiplier), 2.0m)
-			.SetGreaterThanZero()
-			.SetDisplay("Multiplier", "Standard deviation multiplier for breakout detection", "Indicators")
-			
-			.SetOptimize(1.0m, 3.0m, 0.5m);
-		
+			.SetDisplay("Donchian Period", "Period for the Donchian Channel", "Indicators");
+
+		_widthThreshold = Param(nameof(WidthThreshold), 1.2m)
+			.SetDisplay("Width Threshold", "Threshold multiplier for width breakout", "Trading");
+
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
-		
-		_stopLoss = Param(nameof(StopLoss), 2.0m)
-			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss %", "Stop Loss percentage", "Risk Management")
-			
-			.SetOptimize(1.0m, 5.0m, 0.5m);
-	}
-	
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
-	
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_lastWidth = 0;
-		_lastAvgWidth = 0;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		
-		
-		// Create indicators for Donchian Channel components
-		_highest = new Highest { Length = DonchianPeriod };
-		_lowest = new Lowest { Length = DonchianPeriod };
-		_widthAverage = new SMA { Length = AvgPeriod };
-		
-		// Create subscription
+
+		_prevAvgWidth = 0;
+		_hasPrev = false;
+
+		var highest = new Highest { Length = DonchianPeriod };
+		var lowest = new Lowest { Length = DonchianPeriod };
+
 		var subscription = SubscribeCandles(CandleType);
-		
-		// Bind to candle processing
+
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(highest, lowest, ProcessCandle)
 			.Start();
-			
-		// Enable stop loss protection
-		StartProtection(
-			takeProfit: new Unit(0, UnitTypes.Absolute),
-			stopLoss: new Unit(StopLoss, UnitTypes.Percent)
-		);
-		
-		// Create chart area for visualization
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -159,81 +87,48 @@ public class DonchianWidthBreakoutStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 	}
-	
-	private void ProcessCandle(ICandleMessage candle)
+
+	private void ProcessCandle(ICandleMessage candle, decimal highestValue, decimal lowestValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
-		
-		// Process candle through Highest and Lowest indicators
-		var highestValue = _highest.Process(new DecimalIndicatorValue(_highest, candle).ToDecimal();
-		var lowestValue = _lowest.Process(candle).ToDecimal();
-		
-		// Calculate Donchian Channel width
+
 		var width = highestValue - lowestValue;
-		
-		// Process width through average
-		var widthAvgValue = _widthAverage.Process(width, candle.ServerTime));
-		var avgWidth = widthAvgValue.ToDecimal();
-		
-		// For first values, just save and skip
-		if (_lastWidth == 0)
+
+		if (width <= 0)
+			return;
+
+		if (!_hasPrev)
 		{
-			_lastWidth = width;
-			_lastAvgWidth = avgWidth;
+			_prevAvgWidth = width;
+			_hasPrev = true;
 			return;
 		}
-		
-		// Calculate width standard deviation (simplified approach)
-		var stdDev = Math.Abs(width - avgWidth) * 1.5m; // Simplified approximation
-		
-		// Skip if indicators are not formed yet
-		if (!_highest.IsFormed || !_lowest.IsFormed || !_widthAverage.IsFormed)
+
+		// Exponential smoothing of width average
+		_prevAvgWidth = _prevAvgWidth * 0.9m + width * 0.1m;
+
+		var middleChannel = (highestValue + lowestValue) / 2;
+
+		// Width breakout detection
+		if (width > _prevAvgWidth * WidthThreshold)
 		{
-			_lastWidth = width;
-			_lastAvgWidth = avgWidth;
-			return;
-		}
-		
-		// Check if trading is allowed
-		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			_lastWidth = width;
-			_lastAvgWidth = avgWidth;
-			return;
-		}
-		
-		// Donchian Channel width breakout detection
-		if (width > avgWidth + Multiplier * stdDev)
-		{
-			// Determine direction based on price and channel
-			var middleChannel = (highestValue + lowestValue) / 2;
-			var bullish = candle.ClosePrice > middleChannel;
-			
-			// Cancel active orders before placing new ones
-			CancelActiveOrders();
-			
-			// Trade in the direction determined by price position in the channel
-			if (bullish && Position <= 0)
+			if (candle.ClosePrice > middleChannel && Position <= 0)
 			{
-				// Bullish breakout - Buy
-				BuyMarket(Volume + Math.Abs(Position));
+				BuyMarket();
 			}
-			else if (!bullish && Position >= 0)
+			else if (candle.ClosePrice < middleChannel && Position >= 0)
 			{
-				// Bearish breakout - Sell
-				SellMarket(Volume + Math.Abs(Position));
+				SellMarket();
 			}
 		}
-		// Check for exit condition - width returns to average
-		else if ((Position > 0 || Position < 0) && width < avgWidth)
+		// Exit when width contracts
+		else if (width < _prevAvgWidth * 0.8m)
 		{
-			// Exit position when channel width returns to normal
-			ClosePosition();
+			if (Position > 0)
+				SellMarket();
+			else if (Position < 0)
+				BuyMarket();
 		}
-		
-		// Update last values
-		_lastWidth = width;
-		_lastAvgWidth = avgWidth;
 	}
 }

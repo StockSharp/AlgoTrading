@@ -1,508 +1,61 @@
-using System;
-using System.Linq;
-using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
-
-using StockSharp.Algo.Indicators;
-using StockSharp.Algo.Strategies;
-using StockSharp.BusinessEntities;
-using StockSharp.Messages;
-
 namespace StockSharp.Samples.Strategies;
 
+using System;
+using System.Collections.Generic;
+
+using StockSharp.Algo;
+using StockSharp.Algo.Indicators;
+using StockSharp.Algo.Strategies;
+using StockSharp.Messages;
+
 /// <summary>
-/// Recreates the Exp_ColorMaRsi-Trigger_Duplex.mq5 expert advisor using the high level StockSharp API.
-/// The strategy runs two independent MaRsi-Trigger blocks: one dedicated to long signals and another to short signals.
-/// Each block evaluates the colour code (+1 / 0 / -1) produced by combining moving average and RSI comparisons on a configurable timeframe.
+/// Recreates the Exp_ColorMaRsi-Trigger_Duplex expert advisor.
+/// Combines fast/slow MA and fast/slow RSI comparisons into a color code (+1/0/-1).
+/// Trades based on color code transitions.
 /// </summary>
 public class ColorMaRsiTriggerDuplexStrategy : Strategy
 {
-	private readonly StrategyParam<DataType> _longCandleType;
-	private readonly StrategyParam<decimal> _longVolume;
-	private readonly StrategyParam<bool> _longAllowOpen;
-	private readonly StrategyParam<bool> _longAllowClose;
-	private readonly StrategyParam<int> _longStopLossPoints;
-	private readonly StrategyParam<int> _longTakeProfitPoints;
-	private readonly StrategyParam<int> _longSignalBar;
-	private readonly StrategyParam<int> _longRsiPeriod;
-	private readonly StrategyParam<int> _longRsiLongPeriod;
-	private readonly StrategyParam<int> _longMaPeriod;
-	private readonly StrategyParam<int> _longMaLongPeriod;
-	private readonly StrategyParam<AppliedPriceTypes> _longRsiPrice;
-	private readonly StrategyParam<AppliedPriceTypes> _longRsiLongPrice;
-	private readonly StrategyParam<AppliedPriceTypes> _longMaPrice;
-	private readonly StrategyParam<AppliedPriceTypes> _longMaLongPrice;
-	private readonly StrategyParam<MovingAverageMethods> _longMaType;
-	private readonly StrategyParam<MovingAverageMethods> _longMaLongType;
+	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _fastMaPeriod;
+	private readonly StrategyParam<int> _slowMaPeriod;
+	private readonly StrategyParam<int> _fastRsiPeriod;
+	private readonly StrategyParam<int> _slowRsiPeriod;
+	private readonly StrategyParam<int> _signalBar;
 
-	private readonly StrategyParam<DataType> _shortCandleType;
-	private readonly StrategyParam<decimal> _shortVolume;
-	private readonly StrategyParam<bool> _shortAllowOpen;
-	private readonly StrategyParam<bool> _shortAllowClose;
-	private readonly StrategyParam<int> _shortStopLossPoints;
-	private readonly StrategyParam<int> _shortTakeProfitPoints;
-	private readonly StrategyParam<int> _shortSignalBar;
-	private readonly StrategyParam<int> _shortRsiPeriod;
-	private readonly StrategyParam<int> _shortRsiLongPeriod;
-	private readonly StrategyParam<int> _shortMaPeriod;
-	private readonly StrategyParam<int> _shortMaLongPeriod;
-	private readonly StrategyParam<AppliedPriceTypes> _shortRsiPrice;
-	private readonly StrategyParam<AppliedPriceTypes> _shortRsiLongPrice;
-	private readonly StrategyParam<AppliedPriceTypes> _shortMaPrice;
-	private readonly StrategyParam<AppliedPriceTypes> _shortMaLongPrice;
-	private readonly StrategyParam<MovingAverageMethods> _shortMaType;
-	private readonly StrategyParam<MovingAverageMethods> _shortMaLongType;
+	private readonly List<decimal> _colorHistory = new();
 
-	private ColorMaRsiTriggerCalculator _longCalculator = null!;
-	private ColorMaRsiTriggerCalculator _shortCalculator = null!;
+	/// <summary>Candle type.</summary>
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	/// <summary>Fast MA period.</summary>
+	public int FastMaPeriod { get => _fastMaPeriod.Value; set => _fastMaPeriod.Value = value; }
+	/// <summary>Slow MA period.</summary>
+	public int SlowMaPeriod { get => _slowMaPeriod.Value; set => _slowMaPeriod.Value = value; }
+	/// <summary>Fast RSI period.</summary>
+	public int FastRsiPeriod { get => _fastRsiPeriod.Value; set => _fastRsiPeriod.Value = value; }
+	/// <summary>Slow RSI period.</summary>
+	public int SlowRsiPeriod { get => _slowRsiPeriod.Value; set => _slowRsiPeriod.Value = value; }
+	/// <summary>Signal bar shift.</summary>
+	public int SignalBar { get => _signalBar.Value; set => _signalBar.Value = value; }
 
-	private readonly List<decimal> _longHistory = new();
-	private readonly List<decimal> _shortHistory = new();
-
-	private decimal? _longEntryPrice;
-	private decimal? _shortEntryPrice;
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="ColorMaRsiTriggerDuplexStrategy"/> class.
-	/// </summary>
 	public ColorMaRsiTriggerDuplexStrategy()
 	{
-		_longCandleType = Param(nameof(LongCandleType), TimeSpan.FromHours(4).TimeFrame())
-			.SetDisplay("Long Candle Type", "Time-frame used by the long MaRsi-Trigger block", "Long Block");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Timeframe for candles", "General");
 
-		_longVolume = Param(nameof(LongVolume), 0.1m)
-			.SetDisplay("Long Volume", "Market volume opened by the long block", "Long Block");
+		_fastMaPeriod = Param(nameof(FastMaPeriod), 5)
+			.SetDisplay("Fast MA Period", "Fast moving average length", "Indicators");
 
-		_longAllowOpen = Param(nameof(LongAllowOpen), true)
-			.SetDisplay("Allow Long Entries", "Enable opening new long positions", "Long Block");
+		_slowMaPeriod = Param(nameof(SlowMaPeriod), 10)
+			.SetDisplay("Slow MA Period", "Slow moving average length", "Indicators");
 
-		_longAllowClose = Param(nameof(LongAllowClose), true)
-			.SetDisplay("Allow Long Closes", "Enable closing long positions on opposite signals", "Long Block");
+		_fastRsiPeriod = Param(nameof(FastRsiPeriod), 3)
+			.SetDisplay("Fast RSI Period", "Fast RSI length", "Indicators");
 
-		_longStopLossPoints = Param(nameof(LongStopLossPoints), 1000)
-			.SetDisplay("Long Stop Loss", "Protective stop in price steps for long positions", "Long Block");
+		_slowRsiPeriod = Param(nameof(SlowRsiPeriod), 13)
+			.SetDisplay("Slow RSI Period", "Slow RSI length", "Indicators");
 
-		_longTakeProfitPoints = Param(nameof(LongTakeProfitPoints), 2000)
-			.SetDisplay("Long Take Profit", "Profit target in price steps for long positions", "Long Block");
-
-		_longSignalBar = Param(nameof(LongSignalBar), 1)
-			.SetDisplay("Long Signal Bar", "Shift applied when reading the MaRsi-Trigger buffer", "Long Block");
-
-		_longRsiPeriod = Param(nameof(LongRsiPeriod), 3)
-			.SetGreaterThanZero()
-			.SetDisplay("Long RSI Period", "Fast RSI length for the long block", "Long Block");
-
-		_longRsiLongMa = { Length = Param }(nameof(LongRsiLongPeriod), 13)
-			.SetGreaterThanZero()
-			.SetDisplay("Long RSI Slow Period", "Slow RSI length for the long block", "Long Block");
-
-		_longMaPeriod = Param(nameof(LongMaPeriod), 5)
-			.SetGreaterThanZero()
-			.SetDisplay("Long MA Period", "Fast moving average length for the long block", "Long Block");
-
-		_longMaLongMa = { Length = Param }(nameof(LongMaLongPeriod), 10)
-			.SetGreaterThanZero()
-			.SetDisplay("Long MA Slow Period", "Slow moving average length for the long block", "Long Block");
-
-		_longRsiPrice = Param(nameof(LongRsiPrice), AppliedPriceTypes.Weighted)
-			.SetDisplay("Long RSI Price", "Price mode fed into the fast RSI", "Long Block");
-
-		_longRsiLongPrice = Param(nameof(LongRsiLongPrice), AppliedPriceTypes.Median)
-			.SetDisplay("Long RSI Slow Price", "Price mode fed into the slow RSI", "Long Block");
-
-		_longMaPrice = Param(nameof(LongMaPrice), AppliedPriceTypes.Close)
-			.SetDisplay("Long MA Price", "Price mode fed into the fast moving average", "Long Block");
-
-		_longMaLongPrice = Param(nameof(LongMaLongPrice), AppliedPriceTypes.Close)
-			.SetDisplay("Long MA Slow Price", "Price mode fed into the slow moving average", "Long Block");
-
-		_longMaType = Param(nameof(LongMaType), MovingAverageMethods.Exponential)
-			.SetDisplay("Long MA Type", "Smoothing algorithm for the fast moving average", "Long Block");
-
-		_longMaLongType = Param(nameof(LongMaLongType), MovingAverageMethods.Exponential)
-			.SetDisplay("Long MA Slow Type", "Smoothing algorithm for the slow moving average", "Long Block");
-
-		_shortCandleType = Param(nameof(ShortCandleType), TimeSpan.FromHours(4).TimeFrame())
-			.SetDisplay("Short Candle Type", "Time-frame used by the short MaRsi-Trigger block", "Short Block");
-
-		_shortVolume = Param(nameof(ShortVolume), 0.1m)
-			.SetDisplay("Short Volume", "Market volume opened by the short block", "Short Block");
-
-		_shortAllowOpen = Param(nameof(ShortAllowOpen), true)
-			.SetDisplay("Allow Short Entries", "Enable opening new short positions", "Short Block");
-
-		_shortAllowClose = Param(nameof(ShortAllowClose), true)
-			.SetDisplay("Allow Short Closes", "Enable closing short positions on opposite signals", "Short Block");
-
-		_shortStopLossPoints = Param(nameof(ShortStopLossPoints), 1000)
-			.SetDisplay("Short Stop Loss", "Protective stop in price steps for short positions", "Short Block");
-
-		_shortTakeProfitPoints = Param(nameof(ShortTakeProfitPoints), 2000)
-			.SetDisplay("Short Take Profit", "Profit target in price steps for short positions", "Short Block");
-
-		_shortSignalBar = Param(nameof(ShortSignalBar), 1)
-			.SetDisplay("Short Signal Bar", "Shift applied when reading the MaRsi-Trigger buffer", "Short Block");
-
-		_shortRsiPeriod = Param(nameof(ShortRsiPeriod), 3)
-			.SetGreaterThanZero()
-			.SetDisplay("Short RSI Period", "Fast RSI length for the short block", "Short Block");
-
-		_shortRsiLongMa = { Length = Param }(nameof(ShortRsiLongPeriod), 13)
-			.SetGreaterThanZero()
-			.SetDisplay("Short RSI Slow Period", "Slow RSI length for the short block", "Short Block");
-
-		_shortMaPeriod = Param(nameof(ShortMaPeriod), 5)
-			.SetGreaterThanZero()
-			.SetDisplay("Short MA Period", "Fast moving average length for the short block", "Short Block");
-
-		_shortMaLongMa = { Length = Param }(nameof(ShortMaLongPeriod), 10)
-			.SetGreaterThanZero()
-			.SetDisplay("Short MA Slow Period", "Slow moving average length for the short block", "Short Block");
-
-		_shortRsiPrice = Param(nameof(ShortRsiPrice), AppliedPriceTypes.Weighted)
-			.SetDisplay("Short RSI Price", "Price mode fed into the fast RSI", "Short Block");
-
-		_shortRsiLongPrice = Param(nameof(ShortRsiLongPrice), AppliedPriceTypes.Median)
-			.SetDisplay("Short RSI Slow Price", "Price mode fed into the slow RSI", "Short Block");
-
-		_shortMaPrice = Param(nameof(ShortMaPrice), AppliedPriceTypes.Close)
-			.SetDisplay("Short MA Price", "Price mode fed into the fast moving average", "Short Block");
-
-		_shortMaLongPrice = Param(nameof(ShortMaLongPrice), AppliedPriceTypes.Close)
-			.SetDisplay("Short MA Slow Price", "Price mode fed into the slow moving average", "Short Block");
-
-		_shortMaType = Param(nameof(ShortMaType), MovingAverageMethods.Exponential)
-			.SetDisplay("Short MA Type", "Smoothing algorithm for the fast moving average", "Short Block");
-
-		_shortMaLongType = Param(nameof(ShortMaLongType), MovingAverageMethods.Exponential)
-			.SetDisplay("Short MA Slow Type", "Smoothing algorithm for the slow moving average", "Short Block");
-	}
-	/// <summary>
-	/// Candle type that feeds the long MaRsi-Trigger block.
-	/// </summary>
-	public DataType LongCandleType
-	{
-		get => _longCandleType.Value;
-		set => _longCandleType.Value = value;
-	}
-
-	/// <summary>
-	/// Volume used when opening long positions.
-	/// </summary>
-	public decimal LongVolume
-	{
-		get => _longVolume.Value;
-		set => _longVolume.Value = value;
-	}
-
-	/// <summary>
-	/// Enables opening of new long positions.
-	/// </summary>
-	public bool LongAllowOpen
-	{
-		get => _longAllowOpen.Value;
-		set => _longAllowOpen.Value = value;
-	}
-
-	/// <summary>
-	/// Enables closing of existing long positions.
-	/// </summary>
-	public bool LongAllowClose
-	{
-		get => _longAllowClose.Value;
-		set => _longAllowClose.Value = value;
-	}
-
-	/// <summary>
-	/// Stop-loss distance in price steps for long trades.
-	/// </summary>
-	public int LongStopLossPoints
-	{
-		get => _longStopLossPoints.Value;
-		set => _longStopLossPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Take-profit distance in price steps for long trades.
-	/// </summary>
-	public int LongTakeProfitPoints
-	{
-		get => _longTakeProfitPoints.Value;
-		set => _longTakeProfitPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Number of completed bars used when sampling the indicator value for long signals.
-	/// </summary>
-	public int LongSignalBar
-	{
-		get => _longSignalBar.Value;
-		set => _longSignalBar.Value = value;
-	}
-
-	/// <summary>
-	/// Fast RSI length for the long block.
-	/// </summary>
-	public int LongRsiPeriod
-	{
-		get => _longRsiPeriod.Value;
-		set => _longRsiPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Slow RSI length for the long block.
-	/// </summary>
-	public int LongRsiLongPeriod
-	{
-		get => _longRsiLongPeriod.Value;
-		set => _longRsiLongPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Fast moving average length for the long block.
-	/// </summary>
-	public int LongMaPeriod
-	{
-		get => _longMaPeriod.Value;
-		set => _longMaPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Slow moving average length for the long block.
-	/// </summary>
-	public int LongMaLongPeriod
-	{
-		get => _longMaLongPeriod.Value;
-		set => _longMaLongPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Price source used by the fast RSI in the long block.
-	/// </summary>
-	public AppliedPriceTypes LongRsiPrice
-	{
-		get => _longRsiPrice.Value;
-		set => _longRsiPrice.Value = value;
-	}
-
-	/// <summary>
-	/// Price source used by the slow RSI in the long block.
-	/// </summary>
-	public AppliedPriceTypes LongRsiLongPrice
-	{
-		get => _longRsiLongPrice.Value;
-		set => _longRsiLongPrice.Value = value;
-	}
-
-	/// <summary>
-	/// Price source used by the fast moving average in the long block.
-	/// </summary>
-	public AppliedPriceTypes LongMaPrice
-	{
-		get => _longMaPrice.Value;
-		set => _longMaPrice.Value = value;
-	}
-
-	/// <summary>
-	/// Price source used by the slow moving average in the long block.
-	/// </summary>
-	public AppliedPriceTypes LongMaLongPrice
-	{
-		get => _longMaLongPrice.Value;
-		set => _longMaLongPrice.Value = value;
-	}
-
-	/// <summary>
-	/// Moving average method applied to the fast moving average in the long block.
-	/// </summary>
-	public MovingAverageMethods LongMaType
-	{
-		get => _longMaType.Value;
-		set => _longMaType.Value = value;
-	}
-
-	/// <summary>
-	/// Moving average method applied to the slow moving average in the long block.
-	/// </summary>
-	public MovingAverageMethods LongMaLongType
-	{
-		get => _longMaLongType.Value;
-		set => _longMaLongType.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type that feeds the short MaRsi-Trigger block.
-	/// </summary>
-	public DataType ShortCandleType
-	{
-		get => _shortCandleType.Value;
-		set => _shortCandleType.Value = value;
-	}
-
-	/// <summary>
-	/// Volume used when opening short positions.
-	/// </summary>
-	public decimal ShortVolume
-	{
-		get => _shortVolume.Value;
-		set => _shortVolume.Value = value;
-	}
-
-	/// <summary>
-	/// Enables opening of new short positions.
-	/// </summary>
-	public bool ShortAllowOpen
-	{
-		get => _shortAllowOpen.Value;
-		set => _shortAllowOpen.Value = value;
-	}
-
-	/// <summary>
-	/// Enables closing of existing short positions.
-	/// </summary>
-	public bool ShortAllowClose
-	{
-		get => _shortAllowClose.Value;
-		set => _shortAllowClose.Value = value;
-	}
-
-	/// <summary>
-	/// Stop-loss distance in price steps for short trades.
-	/// </summary>
-	public int ShortStopLossPoints
-	{
-		get => _shortStopLossPoints.Value;
-		set => _shortStopLossPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Take-profit distance in price steps for short trades.
-	/// </summary>
-	public int ShortTakeProfitPoints
-	{
-		get => _shortTakeProfitPoints.Value;
-		set => _shortTakeProfitPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Number of completed bars used when sampling the indicator value for short signals.
-	/// </summary>
-	public int ShortSignalBar
-	{
-		get => _shortSignalBar.Value;
-		set => _shortSignalBar.Value = value;
-	}
-
-	/// <summary>
-	/// Fast RSI length for the short block.
-	/// </summary>
-	public int ShortRsiPeriod
-	{
-		get => _shortRsiPeriod.Value;
-		set => _shortRsiPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Slow RSI length for the short block.
-	/// </summary>
-	public int ShortRsiLongPeriod
-	{
-		get => _shortRsiLongPeriod.Value;
-		set => _shortRsiLongPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Fast moving average length for the short block.
-	/// </summary>
-	public int ShortMaPeriod
-	{
-		get => _shortMaPeriod.Value;
-		set => _shortMaPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Slow moving average length for the short block.
-	/// </summary>
-	public int ShortMaLongPeriod
-	{
-		get => _shortMaLongPeriod.Value;
-		set => _shortMaLongPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Price source used by the fast RSI in the short block.
-	/// </summary>
-	public AppliedPriceTypes ShortRsiPrice
-	{
-		get => _shortRsiPrice.Value;
-		set => _shortRsiPrice.Value = value;
-	}
-
-	/// <summary>
-	/// Price source used by the slow RSI in the short block.
-	/// </summary>
-	public AppliedPriceTypes ShortRsiLongPrice
-	{
-		get => _shortRsiLongPrice.Value;
-		set => _shortRsiLongPrice.Value = value;
-	}
-
-	/// <summary>
-	/// Price source used by the fast moving average in the short block.
-	/// </summary>
-	public AppliedPriceTypes ShortMaPrice
-	{
-		get => _shortMaPrice.Value;
-		set => _shortMaPrice.Value = value;
-	}
-
-	/// <summary>
-	/// Price source used by the slow moving average in the short block.
-	/// </summary>
-	public AppliedPriceTypes ShortMaLongPrice
-	{
-		get => _shortMaLongPrice.Value;
-		set => _shortMaLongPrice.Value = value;
-	}
-
-	/// <summary>
-	/// Moving average method applied to the fast moving average in the short block.
-	/// </summary>
-	public MovingAverageMethods ShortMaType
-	{
-		get => _shortMaType.Value;
-		set => _shortMaType.Value = value;
-	}
-
-	/// <summary>
-	/// Moving average method applied to the slow moving average in the short block.
-	/// </summary>
-	public MovingAverageMethods ShortMaLongType
-	{
-		get => _shortMaLongType.Value;
-		set => _shortMaLongType.Value = value;
-	}
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		yield return (Security, LongCandleType);
-
-		if (LongCandleType != ShortCandleType)
-			yield return (Security, ShortCandleType);
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_longHistory.Clear();
-		_shortHistory.Clear();
-		_longEntryPrice = null;
-		_shortEntryPrice = null;
+		_signalBar = Param(nameof(SignalBar), 1)
+			.SetDisplay("Signal Bar", "History shift for signal evaluation", "Strategy");
 	}
 
 	/// <inheritdoc />
@@ -510,346 +63,83 @@ public class ColorMaRsiTriggerDuplexStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_longCalculator = new ColorMaRsiTriggerCalculator(
-			CreateMovingAverage(LongMaType, LongMaPeriod),
-			CreateMovingAverage(LongMaLongType, LongMaLongPeriod),
-			new RelativeStrengthIndex { Length = LongRsiPeriod },
-			new RelativeStrengthIndex { Length = LongRsiLongPeriod },
-			LongMaPrice,
-			LongMaLongPrice,
-			LongRsiPrice,
-			LongRsiLongPrice);
+		_colorHistory.Clear();
 
-		_shortCalculator = new ColorMaRsiTriggerCalculator(
-			CreateMovingAverage(ShortMaType, ShortMaPeriod),
-			CreateMovingAverage(ShortMaLongType, ShortMaLongPeriod),
-			new RelativeStrengthIndex { Length = ShortRsiPeriod },
-			new RelativeStrengthIndex { Length = ShortRsiLongPeriod },
-			ShortMaPrice,
-			ShortMaLongPrice,
-			ShortRsiPrice,
-			ShortRsiLongPrice);
+		var fastMa = new ExponentialMovingAverage { Length = FastMaPeriod };
+		var slowMa = new ExponentialMovingAverage { Length = SlowMaPeriod };
+		var fastRsi = new RelativeStrengthIndex { Length = FastRsiPeriod };
+		var slowRsi = new RelativeStrengthIndex { Length = SlowRsiPeriod };
 
-		SubscribeCandles(LongCandleType)
-			.WhenCandlesFinished(ProcessLongCandle)
+		var subscription = SubscribeCandles(CandleType);
+
+		subscription
+			.Bind(fastMa, slowMa, fastRsi, slowRsi, ProcessCandle)
 			.Start();
 
-		if (LongCandleType == ShortCandleType)
-			return;
-
-		SubscribeCandles(ShortCandleType)
-			.WhenCandlesFinished(ProcessShortCandle)
-			.Start();
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, fastMa);
+			DrawIndicator(area, slowMa);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessLongCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal fastMaVal, decimal slowMaVal, decimal fastRsiVal, decimal slowRsiVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var value = _longCalculator.Process(candle);
-		if (value is null)
+		// Calculate color code from MA and RSI comparisons
+		var score = 0m;
+
+		if (fastMaVal > slowMaVal)
+			score = 1m;
+		else if (fastMaVal < slowMaVal)
+			score = -1m;
+
+		if (fastRsiVal > slowRsiVal)
+			score += 1m;
+		else if (fastRsiVal < slowRsiVal)
+			score -= 1m;
+
+		// Clamp to [-1, 1]
+		if (score > 1m) score = 1m;
+		else if (score < -1m) score = -1m;
+
+		// Update history (most recent at index 0)
+		_colorHistory.Insert(0, score);
+		var maxHistory = Math.Max(2, SignalBar + 2);
+		while (_colorHistory.Count > maxHistory)
+			_colorHistory.RemoveAt(_colorHistory.Count - 1);
+
+		// Need enough history
+		if (_colorHistory.Count <= SignalBar + 1)
 			return;
 
-		UpdateHistory(_longHistory, value.Value, LongSignalBar);
+		var recent = _colorHistory[SignalBar];
+		var older = _colorHistory[SignalBar + 1];
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		EvaluateLongSignals(candle);
-		UpdateRiskManagement(candle);
-	}
-
-	private void ProcessShortCandle(ICandleMessage candle)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		var value = _shortCalculator.Process(candle);
-		if (value is null)
-			return;
-
-		UpdateHistory(_shortHistory, value.Value, ShortSignalBar);
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		EvaluateShortSignals(candle);
-		UpdateRiskManagement(candle);
-	}
-
-	private void EvaluateLongSignals(ICandleMessage candle)
-	{
-		if (_longHistory.Count <= LongSignalBar + 1)
-			return;
-
-		var recent = _longHistory[LongSignalBar];
-		var older = _longHistory[LongSignalBar + 1];
-
-		if (LongAllowClose && Position > 0 && older < 0m)
-			CloseLong();
-
-		if (LongAllowOpen && Position <= 0 && older > 0m && recent <= 0m)
-			OpenLong(candle.ClosePrice);
-	}
-
-	private void EvaluateShortSignals(ICandleMessage candle)
-	{
-		if (_shortHistory.Count <= ShortSignalBar + 1)
-			return;
-
-		var recent = _shortHistory[ShortSignalBar];
-		var older = _shortHistory[ShortSignalBar + 1];
-
-		if (ShortAllowClose && Position < 0 && older > 0m)
-			CloseShort();
-
-		if (ShortAllowOpen && Position >= 0 && older < 0m && recent >= 0m)
-			OpenShort(candle.ClosePrice);
-	}
-
-	private void OpenLong(decimal entryPrice)
-	{
-		if (LongVolume <= 0m)
-			return;
-
-		if (Position < 0m)
+		// Long signal: color transitions from negative to positive/neutral
+		if (older > 0m && recent <= 0m && Position <= 0)
 		{
-			if (!ShortAllowClose)
-				return;
-
-			var coverVolume = Math.Abs(Position);
-			if (coverVolume > 0m)
-			{
-				BuyMarket(coverVolume);
-				_shortEntryPrice = null;
-			}
+			BuyMarket();
 		}
-
-		BuyMarket(LongVolume);
-		_longEntryPrice = entryPrice;
-	}
-
-	private void OpenShort(decimal entryPrice)
-	{
-		if (ShortVolume <= 0m)
-			return;
-
-		if (Position > 0m)
+		// Short signal: color transitions from positive to negative/neutral
+		else if (older < 0m && recent >= 0m && Position >= 0)
 		{
-			if (!LongAllowClose)
-				return;
-
-			var coverVolume = Position;
-			if (coverVolume > 0m)
-			{
-				SellMarket(coverVolume);
-				_longEntryPrice = null;
-			}
+			SellMarket();
 		}
-
-		SellMarket(ShortVolume);
-		_shortEntryPrice = entryPrice;
-	}
-
-	private void CloseLong()
-	{
-		if (Position <= 0m)
-			return;
-
-		SellMarket(Position);
-		_longEntryPrice = null;
-	}
-
-	private void CloseShort()
-	{
-		if (Position >= 0m)
-			return;
-
-		BuyMarket(Math.Abs(Position));
-		_shortEntryPrice = null;
-	}
-
-	private void UpdateRiskManagement(ICandleMessage candle)
-	{
-		var step = Security?.PriceStep ?? 1m;
-
-		if (Position > 0m && _longEntryPrice.HasValue)
+		// Exit long if color turns negative
+		else if (Position > 0 && recent < 0m)
 		{
-			var stop = LongStopLossPoints > 0 ? _longEntryPrice.Value - LongStopLossPoints * step : (decimal?)null;
-			var take = LongTakeProfitPoints > 0 ? _longEntryPrice.Value + LongTakeProfitPoints * step : (decimal?)null;
-
-			if (stop.HasValue && candle.LowPrice <= stop.Value)
-			{
-				CloseLong();
-				return;
-			}
-
-			if (take.HasValue && candle.HighPrice >= take.Value)
-				CloseLong();
+			SellMarket();
 		}
-		else if (Position < 0m && _shortEntryPrice.HasValue)
+		// Exit short if color turns positive
+		else if (Position < 0 && recent > 0m)
 		{
-			var stop = ShortStopLossPoints > 0 ? _shortEntryPrice.Value + ShortStopLossPoints * step : (decimal?)null;
-			var take = ShortTakeProfitPoints > 0 ? _shortEntryPrice.Value - ShortTakeProfitPoints * step : (decimal?)null;
-
-			if (stop.HasValue && candle.HighPrice >= stop.Value)
-			{
-				CloseShort();
-				return;
-			}
-
-			if (take.HasValue && candle.LowPrice <= take.Value)
-				CloseShort();
-		}
-	}
-	private static void UpdateHistory(List<decimal> history, decimal value, int signalBar)
-	{
-		history.Insert(0, value);
-
-		var maxHistory = Math.Max(2, signalBar + 2);
-		if (history.Count > maxHistory)
-			history.RemoveAt(history.Count - 1);
-	}
-
-	private static DecimalLengthIndicator CreateMovingAverage(MovingAverageMethods method, int length)
-	{
-		return method switch
-		{
-			MovingAverageMethods.Simple => new SMA { Length = length },
-			MovingAverageMethods.Exponential => new EMA { Length = length },
-			MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = length },
-			MovingAverageMethods.Weighted => new WeightedMovingAverage { Length = length },
-			_ => new SMA { Length = length },
-		};
-	}
-
-	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPriceTypes priceType)
-	{
-		return priceType switch
-		{
-			AppliedPriceTypes.Close => candle.ClosePrice,
-			AppliedPriceTypes.Open => candle.OpenPrice,
-			AppliedPriceTypes.High => candle.HighPrice,
-			AppliedPriceTypes.Low => candle.LowPrice,
-			AppliedPriceTypes.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPriceTypes.Typical => (candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 3m,
-			AppliedPriceTypes.Weighted => (candle.HighPrice + candle.LowPrice + candle.ClosePrice * 2m) / 4m,
-			_ => candle.ClosePrice,
-		};
-	}
-
-	/// <summary>
-	/// Supported moving average smoothing algorithms.
-	/// </summary>
-	public enum MovingAverageMethods
-	{
-		/// <summary>Simple moving average.</summary>
-		Simple,
-		/// <summary>Exponential moving average.</summary>
-		Exponential,
-		/// <summary>Smoothed moving average (SMMA).</summary>
-		Smoothed,
-		/// <summary>Linear weighted moving average.</summary>
-		Weighted,
-	}
-
-	/// <summary>
-	/// Price selection modes compatible with MetaTrader's ENUM_APPLIED_PRICE.
-	/// </summary>
-	public enum AppliedPriceTypes
-	{
-		/// <summary>Use the candle close price.</summary>
-		Close,
-		/// <summary>Use the candle open price.</summary>
-		Open,
-		/// <summary>Use the candle high price.</summary>
-		High,
-		/// <summary>Use the candle low price.</summary>
-		Low,
-		/// <summary>Use the median price (high + low) / 2.</summary>
-		Median,
-		/// <summary>Use the typical price (close + high + low) / 3.</summary>
-		Typical,
-		/// <summary>Use the weighted price (high + low + 2 * close) / 4.</summary>
-		Weighted,
-	}
-
-	private sealed class ColorMaRsiTriggerCalculator
-	{
-		private readonly DecimalLengthIndicator _fastMa;
-		private readonly DecimalLengthIndicator _slowMa;
-		private readonly RelativeStrengthIndex _fastRsi;
-		private readonly RelativeStrengthIndex _slowRsi;
-		private readonly AppliedPriceTypes _fastMaPrice;
-		private readonly AppliedPriceTypes _slowMaPrice;
-		private readonly AppliedPriceTypes _fastRsiPrice;
-		private readonly AppliedPriceTypes _slowRsiPrice;
-
-		public ColorMaRsiTriggerCalculator(
-			DecimalLengthIndicator fastMa,
-			DecimalLengthIndicator slowMa,
-			RelativeStrengthIndex fastRsi,
-			RelativeStrengthIndex slowRsi,
-			AppliedPriceTypes fastMaPrice,
-			AppliedPriceTypes slowMaPrice,
-			AppliedPriceTypes fastRsiPrice,
-			AppliedPriceTypes slowRsiPrice)
-		{
-			_fastMa = fastMa ?? throw new ArgumentNullException(nameof(fastMa));
-			_slowMa = slowMa ?? throw new ArgumentNullException(nameof(slowMa));
-			_fastRsi = fastRsi ?? throw new ArgumentNullException(nameof(fastRsi));
-			_slowRsi = slowRsi ?? throw new ArgumentNullException(nameof(slowRsi));
-			_fastMaPrice = fastMaPrice;
-			_slowMaPrice = slowMaPrice;
-			_fastRsiPrice = fastRsiPrice;
-			_slowRsiPrice = slowRsiPrice;
-		}
-
-		public decimal? Process(ICandleMessage candle)
-		{
-			var time = candle.CloseTime;
-
-			var fastMaValue = _fastMa.Process(GetAppliedPrice(candle, _fastMaPrice), time, true);
-			if (!fastMaValue.IsFinal)
-				return null;
-
-			var slowMaValue = _slowMa.Process(GetAppliedPrice(candle, _slowMaPrice), time, true);
-			if (!slowMaValue.IsFinal)
-				return null;
-
-			var fastRsiValue = _fastRsi.Process(GetAppliedPrice(candle, _fastRsiPrice), time, true);
-			if (!fastRsiValue.IsFinal)
-				return null;
-
-			var slowRsiValue = _slowRsi.Process(GetAppliedPrice(candle, _slowRsiPrice), time, true);
-			if (!slowRsiValue.IsFinal)
-				return null;
-
-			var maFast = fastMaValue.ToDecimal();
-			var maSlow = slowMaValue.ToDecimal();
-			var rsiFast = fastRsiValue.ToDecimal();
-			var rsiSlow = slowRsiValue.ToDecimal();
-
-			var score = 0m;
-
-			if (maFast > maSlow)
-				score = 1m;
-			else if (maFast < maSlow)
-				score = -1m;
-
-			if (rsiFast > rsiSlow)
-				score += 1m;
-			else if (rsiFast < rsiSlow)
-				score -= 1m;
-
-			if (score > 1m)
-				score = 1m;
-			else if (score < -1m)
-				score = -1m;
-
-			return score;
+			BuyMarket();
 		}
 	}
 }
-

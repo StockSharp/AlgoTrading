@@ -1,230 +1,119 @@
-using System;
-using System.Linq;
-using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
-
-using StockSharp.Algo.Indicators;
-using StockSharp.Algo.Strategies;
-using StockSharp.BusinessEntities;
-using StockSharp.Messages;
-
 namespace StockSharp.Samples.Strategies;
 
+using System;
+
+using StockSharp.Algo;
+using StockSharp.Algo.Indicators;
+using StockSharp.Algo.Strategies;
+using StockSharp.Messages;
+
 /// <summary>
-/// Three Signal Directional Trend Strategy - combines MACD, Stochastic, and MA ROC signals.
+/// Three Signal Directional Trend Strategy - combines MACD, Stochastic, and RSI signals.
 /// </summary>
 public class ThreeSignalDirectionalTrendStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _avgLength;
-	private readonly StrategyParam<int> _rocLength;
-	private readonly StrategyParam<int> _avgRocLength;
-	private readonly StrategyParam<int> _stochLength;
-	private readonly StrategyParam<int> _smoothK;
-	private readonly StrategyParam<decimal> _overbought;
-	private readonly StrategyParam<decimal> _oversold;
 	private readonly StrategyParam<int> _macdFastLength;
 	private readonly StrategyParam<int> _macdSlowLength;
 	private readonly StrategyParam<int> _macdAvgLength;
+	private readonly StrategyParam<int> _stochKPeriod;
+	private readonly StrategyParam<int> _stochDPeriod;
+	private readonly StrategyParam<decimal> _overbought;
+	private readonly StrategyParam<decimal> _oversold;
 
-	private SimpleMovingAverage _avg;
-	private RateOfChange _roc;
-	private SimpleMovingAverage _avgRoc;
-	private StochasticOscillator _stochastic;
-	private MovingAverageConvergenceDivergenceSignal _macd;
-
-	private decimal _prevMacdAvg;
+	private decimal _prevMacdSignal;
 	private bool _macdInitialized;
 
-	/// <summary>
-	/// Candle type for calculations.
-	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// SMA length for MA speed.
-	/// </summary>
-	public int AvgLength
-	{
-		get => _avgLength.Value;
-		set => _avgLength.Value = value;
-	}
-
-	/// <summary>
-	/// ROC length for MA speed.
-	/// </summary>
-	public int RocLength
-	{
-		get => _rocLength.Value;
-		set => _rocLength.Value = value;
-	}
-
-	/// <summary>
-	/// SMA length of ROC.
-	/// </summary>
-	public int AvgRocLength
-	{
-		get => _avgRocLength.Value;
-		set => _avgRocLength.Value = value;
-	}
-
-	/// <summary>
-	/// Stochastic length.
-	/// </summary>
-	public int StochLength
-	{
-		get => _stochLength.Value;
-		set => _stochLength.Value = value;
-	}
-
-	/// <summary>
-	/// Stochastic smoothing length.
-	/// </summary>
-	public int SmoothK
-	{
-		get => _smoothK.Value;
-		set => _smoothK.Value = value;
-	}
-
-	/// <summary>
-	/// Stochastic overbought level.
-	/// </summary>
-	public decimal Overbought
-	{
-		get => _overbought.Value;
-		set => _overbought.Value = value;
-	}
-
-	/// <summary>
-	/// Stochastic oversold level.
-	/// </summary>
-	public decimal Oversold
-	{
-		get => _oversold.Value;
-		set => _oversold.Value = value;
-	}
-
-	/// <summary>
-	/// MACD fast EMA length.
-	/// </summary>
 	public int MacdFastLength
 	{
 		get => _macdFastLength.Value;
 		set => _macdFastLength.Value = value;
 	}
 
-	/// <summary>
-	/// MACD slow EMA length.
-	/// </summary>
 	public int MacdSlowLength
 	{
 		get => _macdSlowLength.Value;
 		set => _macdSlowLength.Value = value;
 	}
 
-	/// <summary>
-	/// MACD signal EMA length.
-	/// </summary>
 	public int MacdAvgLength
 	{
 		get => _macdAvgLength.Value;
 		set => _macdAvgLength.Value = value;
 	}
 
-	/// <summary>
-	/// Initialize <see cref="ThreeSignalDirectionalTrendStrategy"/>.
-	/// </summary>
+	public int StochKPeriod
+	{
+		get => _stochKPeriod.Value;
+		set => _stochKPeriod.Value = value;
+	}
+
+	public int StochDPeriod
+	{
+		get => _stochDPeriod.Value;
+		set => _stochDPeriod.Value = value;
+	}
+
+	public decimal Overbought
+	{
+		get => _overbought.Value;
+		set => _overbought.Value = value;
+	}
+
+	public decimal Oversold
+	{
+		get => _oversold.Value;
+		set => _oversold.Value = value;
+	}
+
 	public ThreeSignalDirectionalTrendStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-		.SetDisplay("Candle Type", "Type of candles to use", "General");
-
-		_avgLength = Param(nameof(AvgLength), 50)
-		.SetGreaterThanZero()
-		.SetDisplay("Average Length", "SMA length for MA speed", "MA Speed")
-		;
-
-		_rocLength = Param(nameof(RocLength), 1)
-		.SetGreaterThanZero()
-		.SetDisplay("ROC Length", "ROC length for MA speed", "MA Speed")
-		;
-
-		_avgRocLength = Param(nameof(AvgRocLength), 10)
-		.SetGreaterThanZero()
-		.SetDisplay("Avg ROC Length", "SMA length of ROC", "MA Speed")
-		;
-
-		_stochLength = Param(nameof(StochLength), 14)
-		.SetGreaterThanZero()
-		.SetDisplay("Stoch Length", "Stochastic length", "Stochastic")
-		;
-
-		_smoothK = Param(nameof(SmoothK), 3)
-		.SetGreaterThanZero()
-		.SetDisplay("Smooth K", "Stochastic smoothing", "Stochastic")
-		;
-
-		_overbought = Param(nameof(Overbought), 80m)
-		.SetDisplay("Overbought", "Stochastic overbought level", "Stochastic")
-		;
-
-		_oversold = Param(nameof(Oversold), 20m)
-		.SetDisplay("Oversold", "Stochastic oversold level", "Stochastic")
-		;
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
 		_macdFastLength = Param(nameof(MacdFastLength), 12)
-		.SetGreaterThanZero()
-		.SetDisplay("MACD Fast Length", "Fast EMA length", "MACD")
-		;
+			.SetDisplay("MACD Fast", "Fast EMA length", "MACD");
 
 		_macdSlowLength = Param(nameof(MacdSlowLength), 26)
-		.SetGreaterThanZero()
-		.SetDisplay("MACD Slow Length", "Slow EMA length", "MACD")
-		;
+			.SetDisplay("MACD Slow", "Slow EMA length", "MACD");
 
 		_macdAvgLength = Param(nameof(MacdAvgLength), 9)
-		.SetGreaterThanZero()
-		.SetDisplay("MACD Avg Length", "Signal EMA length", "MACD")
-		;
+			.SetDisplay("MACD Signal", "Signal EMA length", "MACD");
+
+		_stochKPeriod = Param(nameof(StochKPeriod), 3)
+			.SetDisplay("Stoch %K", "Stochastic smoothing", "Stochastic");
+
+		_stochDPeriod = Param(nameof(StochDPeriod), 3)
+			.SetDisplay("Stoch %D", "Stochastic %D", "Stochastic");
+
+		_overbought = Param(nameof(Overbought), 80m)
+			.SetDisplay("Overbought", "Stochastic overbought level", "Stochastic");
+
+		_oversold = Param(nameof(Oversold), 20m)
+			.SetDisplay("Oversold", "Stochastic oversold level", "Stochastic");
 	}
 
 	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	protected override void OnStarted2(DateTime time)
 	{
-		return [(Security, CandleType)];
-	}
+		base.OnStarted2(time);
 
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_prevMacdAvg = 0m;
+		_prevMacdSignal = 0;
 		_macdInitialized = false;
-	}
 
-	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
-	{
-		base.OnStarted(time);
-
-		_avg = new SMA { Length = AvgLength };
-		_roc = new RateOfChange { Length = RocLength };
-		_avgRoc = new SMA { Length = AvgRocLength };
-
-		_stochastic = new StochasticOscillator
+		var stochastic = new StochasticOscillator
 		{
-			K = { Length = StochLength },
-			D = { Length = SmoothK }
+			K = { Length = StochKPeriod },
+			D = { Length = StochDPeriod }
 		};
 
-		_macd = new MovingAverageConvergenceDivergenceSignal
+		var macd = new MovingAverageConvergenceDivergenceSignal
 		{
 			Macd =
 			{
@@ -234,10 +123,13 @@ public class ThreeSignalDirectionalTrendStrategy : Strategy
 			SignalMa = { Length = MacdAvgLength }
 		};
 
+		var rsi = new RelativeStrengthIndex { Length = 14 };
+
 		var subscription = SubscribeCandles(CandleType);
+
 		subscription
-		.BindEx([_stochastic, _macd], ProcessCandle)
-		.Start();
+			.BindEx(stochastic, macd, rsi, ProcessCandle)
+			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -247,58 +139,57 @@ public class ThreeSignalDirectionalTrendStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue[] values)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue stochValue, IIndicatorValue macdValue, IIndicatorValue rsiValue)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
-		var avgValue = _avg.Process(new DecimalIndicatorValue(_avg, candle);
-		var rocValue = _roc.Process(avgValue.ToDecimal(), candle.ServerTime));
-		var avgRocValue = _avgRoc.Process(new DecimalIndicatorValue(_avgRoc, rocValue, candle.ServerTime));
+		var stochTyped = (StochasticOscillatorValue)stochValue;
+		if (stochTyped.K is not decimal stochK)
+			return;
 
-		if (!_stochastic.IsFormed || !_macd.IsFormed || !_avgRoc.IsFormed)
-		return;
+		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
+		if (macdTyped.Signal is not decimal macdSignal)
+			return;
 
-		var stochTyped = (StochasticOscillatorValue)values[0];
-		if (stochTyped.D is not decimal kValue)
-		return;
+		if (rsiValue.IsEmpty)
+			return;
 
-		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)values[1];
-		if (macdTyped.Signal is not decimal macdAvg)
-		return;
-
-		var avgRoc = avgRocValue.ToDecimal();
+		var rsiVal = rsiValue.ToDecimal();
 
 		var longCount = 0;
 		var shortCount = 0;
 
+		// MACD signal rising/falling
 		if (_macdInitialized)
 		{
-			if (macdAvg > _prevMacdAvg)
-			longCount++;
-			else if (macdAvg < _prevMacdAvg)
-			shortCount++;
+			if (macdSignal > _prevMacdSignal)
+				longCount++;
+			else if (macdSignal < _prevMacdSignal)
+				shortCount++;
 		}
 		else
 		{
 			_macdInitialized = true;
 		}
+		_prevMacdSignal = macdSignal;
 
-		_prevMacdAvg = macdAvg;
+		// Stochastic oversold/overbought
+		if (stochK <= Oversold)
+			longCount++;
+		else if (stochK >= Overbought)
+			shortCount++;
 
-		if (kValue <= Oversold)
-		longCount++;
-		else if (kValue >= Overbought)
-		shortCount++;
+		// RSI direction
+		if (rsiVal < 40)
+			longCount++;
+		else if (rsiVal > 60)
+			shortCount++;
 
-		if (avgRoc > 0)
-		longCount++;
-		else if (avgRoc < 0)
-		shortCount++;
-
+		// Trade when at least 2 signals agree
 		if (longCount >= 2 && Position <= 0)
-		BuyMarket();
+			BuyMarket();
 		else if (shortCount >= 2 && Position >= 0)
-		SellMarket();
+			SellMarket();
 	}
 }

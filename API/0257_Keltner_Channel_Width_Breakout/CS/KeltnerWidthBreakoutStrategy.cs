@@ -1,21 +1,15 @@
+namespace StockSharp.Samples.Strategies;
+
 using System;
-using System.Linq;
-using System.Collections.Generic;
 
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
-
+using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
-using StockSharp.BusinessEntities;
 using StockSharp.Messages;
-
-namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Strategy that trades on Keltner Channel width breakouts.
-/// When Keltner Channel width increases significantly above its average, 
+/// When Keltner Channel width increases significantly above its average,
 /// it enters position in the direction determined by price movement.
 /// </summary>
 public class KeltnerWidthBreakoutStrategy : Strategy
@@ -23,26 +17,13 @@ public class KeltnerWidthBreakoutStrategy : Strategy
 	private readonly StrategyParam<int> _emaPeriod;
 	private readonly StrategyParam<int> _atrPeriod;
 	private readonly StrategyParam<decimal> _atrMultiplier;
-	private readonly StrategyParam<int> _avgPeriod;
-	private readonly StrategyParam<decimal> _multiplier;
+	private readonly StrategyParam<decimal> _widthThreshold;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _stopMultiplier;
-	
-	private ExponentialMovingAverage _ema;
-	private AverageTrueRange _atr;
-	private SimpleMovingAverage _widthAverage;
-	
-	// Track channel width values
-	private decimal _lastWidth;
-	private decimal _lastAvgWidth;
-	
-	// Track EMA and ATR values to calculate channel
-	private decimal _currentEma;
-	private decimal _currentAtr;
 
-	private decimal _lastBid;
-	private decimal _lastAsk;
-	
+	private decimal _prevWidth;
+	private decimal _prevAvgWidth;
+	private bool _hasPrev;
+
 	/// <summary>
 	/// EMA period for Keltner Channel.
 	/// </summary>
@@ -51,7 +32,7 @@ public class KeltnerWidthBreakoutStrategy : Strategy
 		get => _emaPeriod.Value;
 		set => _emaPeriod.Value = value;
 	}
-	
+
 	/// <summary>
 	/// ATR period for Keltner Channel.
 	/// </summary>
@@ -60,7 +41,7 @@ public class KeltnerWidthBreakoutStrategy : Strategy
 		get => _atrPeriod.Value;
 		set => _atrPeriod.Value = value;
 	}
-	
+
 	/// <summary>
 	/// ATR multiplier for Keltner Channel.
 	/// </summary>
@@ -69,25 +50,16 @@ public class KeltnerWidthBreakoutStrategy : Strategy
 		get => _atrMultiplier.Value;
 		set => _atrMultiplier.Value = value;
 	}
-	
+
 	/// <summary>
-	/// Period for width average calculation.
+	/// Width threshold multiplier for breakout detection.
 	/// </summary>
-	public int AvgPeriod
+	public decimal WidthThreshold
 	{
-		get => _avgPeriod.Value;
-		set => _avgPeriod.Value = value;
+		get => _widthThreshold.Value;
+		set => _widthThreshold.Value = value;
 	}
-	
-	/// <summary>
-	/// Standard deviation multiplier for breakout detection.
-	/// </summary>
-	public decimal Multiplier
-	{
-		get => _multiplier.Value;
-		set => _multiplier.Value = value;
-	}
-	
+
 	/// <summary>
 	/// Candle type for strategy.
 	/// </summary>
@@ -96,224 +68,103 @@ public class KeltnerWidthBreakoutStrategy : Strategy
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
-	
-	/// <summary>
-	/// Stop-loss ATR multiplier.
-	/// </summary>
-	public int StopMultiplier
-	{
-		get => _stopMultiplier.Value;
-		set => _stopMultiplier.Value = value;
-	}
-	
+
 	/// <summary>
 	/// Initialize <see cref="KeltnerWidthBreakoutStrategy"/>.
 	/// </summary>
 	public KeltnerWidthBreakoutStrategy()
 	{
 		_emaPeriod = Param(nameof(EMAPeriod), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("EMA Period", "Period of EMA for Keltner Channel", "Indicators")
-			
-			.SetOptimize(10, 50, 5);
-			
+			.SetDisplay("EMA Period", "Period of EMA for Keltner Channel", "Indicators");
+
 		_atrPeriod = Param(nameof(ATRPeriod), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("ATR Period", "Period of ATR for Keltner Channel", "Indicators")
-			
-			.SetOptimize(10, 30, 2);
-		
+			.SetDisplay("ATR Period", "Period of ATR for Keltner Channel", "Indicators");
+
 		_atrMultiplier = Param(nameof(ATRMultiplier), 2.0m)
-			.SetGreaterThanZero()
-			.SetDisplay("ATR Multiplier", "Multiplier for ATR in Keltner Channel", "Indicators")
-			
-			.SetOptimize(1.0m, 3.0m, 0.5m);
-		
-		_avgPeriod = Param(nameof(AvgPeriod), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("Average Period", "Period for Keltner width average calculation", "Indicators")
-			
-			.SetOptimize(10, 50, 5);
-		
-		_multiplier = Param(nameof(Multiplier), 2.0m)
-			.SetGreaterThanZero()
-			.SetDisplay("Multiplier", "Standard deviation multiplier for breakout detection", "Indicators")
-			
-			.SetOptimize(1.0m, 3.0m, 0.5m);
-		
+			.SetDisplay("ATR Multiplier", "Multiplier for ATR in Keltner Channel", "Indicators");
+
+		_widthThreshold = Param(nameof(WidthThreshold), 1.2m)
+			.SetDisplay("Width Threshold", "Threshold multiplier for width breakout detection", "Trading");
+
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
-		
-		_stopMultiplier = Param(nameof(StopMultiplier), 2)
-			.SetGreaterThanZero()
-			.SetDisplay("Stop Multiplier", "ATR multiplier for stop-loss", "Risk Management")
-			
-			.SetOptimize(1, 5, 1);
-	}
-	
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
-	
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_lastWidth = 0;
-		_lastAvgWidth = 0;
-		_currentEma = 0;
-		_currentAtr = 0;
-		_lastBid = 0;
-		_lastAsk = 0;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		
 
-		// Create indicators
-		_ema = new EMA { Length = EMAPeriod };
-		_atr = new AverageTrueRange { Length = ATRPeriod };
-		_widthAverage = new SMA { Length = AvgPeriod };
-		
-		// Create subscription
+		_prevWidth = 0;
+		_prevAvgWidth = 0;
+		_hasPrev = false;
+
+		var ema = new ExponentialMovingAverage { Length = EMAPeriod };
+		var atr = new AverageTrueRange { Length = ATRPeriod };
+
 		var subscription = SubscribeCandles(CandleType);
-		
-		// Bind to candle processing
+
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(ema, atr, ProcessCandle)
 			.Start();
-		
-		// Create chart area for visualization
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawIndicator(area, ema);
 			DrawOwnTrades(area);
 		}
-
-		// Subscribe to market depth (order book)
-		SubscribeOrderBook()
-			.Bind(OnOrderBookReceived)
-			.Start();
 	}
 
-	private void OnOrderBookReceived(IOrderBookMessage orderBook)
-	{
-		// Get best bid and ask from order book
-		var bestBid = orderBook.Bids != null && orderBook.Bids.Length > 0 ? orderBook.Bids[0].Price : 0;
-		var bestAsk = orderBook.Asks != null && orderBook.Asks.Length > 0 ? orderBook.Asks[0].Price : 0;
-		_lastBid = bestBid;
-		_lastAsk = bestAsk;
-	}
-	
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal emaValue, decimal atrValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
-		
-		// Process candle through EMA and ATR
-		var emaValue = _ema.Process(new DecimalIndicatorValue(_ema, candle);
-		var atrValue = _atr.Process(candle);
-		
-		_currentEma = emaValue.ToDecimal();
-		_currentAtr = atrValue.ToDecimal();
-		
+
+		if (atrValue <= 0)
+			return;
+
 		// Calculate Keltner Channel boundaries
-		var upperBand = _currentEma + ATRMultiplier * _currentAtr;
-		var lowerBand = _currentEma - ATRMultiplier * _currentAtr;
-		
+		var upperBand = emaValue + ATRMultiplier * atrValue;
+		var lowerBand = emaValue - ATRMultiplier * atrValue;
+
 		// Calculate Channel width
 		var width = upperBand - lowerBand;
-		
-		// Process width through average
-		var widthAvgValue = _widthAverage.Process(width, candle.ServerTime));
-		var avgWidth = widthAvgValue.ToDecimal();
-		
-		// For first values, just save and skip
-		if (_lastWidth == 0)
+
+		if (!_hasPrev)
 		{
-			_lastWidth = width;
-			_lastAvgWidth = avgWidth;
+			_prevWidth = width;
+			_prevAvgWidth = width;
+			_hasPrev = true;
 			return;
 		}
-		
-		// Calculate width standard deviation (simplified approach)
-		var stdDev = Math.Abs(width - avgWidth) * 1.5m; // Simplified approximation
-		
-		// Skip if indicators are not formed yet
-		if (!_ema.IsFormed || !_atr.IsFormed || !_widthAverage.IsFormed)
+
+		// Simple exponential smoothing of width for average
+		_prevAvgWidth = _prevAvgWidth * 0.9m + width * 0.1m;
+
+		// Width breakout detection
+		if (width > _prevAvgWidth * WidthThreshold)
 		{
-			_lastWidth = width;
-			_lastAvgWidth = avgWidth;
-			return;
-		}
-		
-		// Check if trading is allowed
-		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			_lastWidth = width;
-			_lastAvgWidth = avgWidth;
-			return;
-		}
-		
-		// Keltner width breakout detection
-		if (width > avgWidth + Multiplier * stdDev)
-		{
-			// Determine direction based on price and bands
-			var priceDirection = false;
-			
-			// If price is closer to upper band, go long. If closer to lower band, go short.
-			var upperDistance = Math.Abs(candle.ClosePrice - upperBand);
-			var lowerDistance = Math.Abs(candle.ClosePrice - lowerBand);
-			
-			if (upperDistance < lowerDistance)
+			// Determine direction based on price relative to EMA
+			if (candle.ClosePrice > emaValue && Position <= 0)
 			{
-				// Price is closer to upper band, likely bullish
-				priceDirection = true;
+				BuyMarket();
 			}
-			
-			// Cancel active orders before placing new ones
-			CancelActiveOrders();
-			
-			// Calculate stop-loss based on current ATR
-			var stopOffset = StopMultiplier * _currentAtr;
-			
-			// Trade in the determined direction
-			if (priceDirection && Position <= 0)
+			else if (candle.ClosePrice < emaValue && Position >= 0)
 			{
-				// Bullish direction - Buy
-				var buyPrice = _lastAsk;
-				BuyMarket(Volume + Math.Abs(Position));
-				
-				// Set stop-loss order
-				var stopLoss = buyPrice - stopOffset;
-				RegisterOrder(CreateOrder(Sides.Sell, stopLoss, Math.Abs(Position)));
-			}
-			else if (!priceDirection && Position >= 0)
-			{
-				// Bearish direction - Sell
-				var sellPrice = _lastBid;
-				SellMarket(Volume + Math.Abs(Position));
-				
-				// Set stop-loss order
-				var stopLoss = sellPrice + stopOffset;
-				RegisterOrder(CreateOrder(Sides.Buy, stopLoss, Math.Abs(Position)));
+				SellMarket();
 			}
 		}
-		// Check for exit condition - width returns to average
-		else if ((Position > 0 || Position < 0) && width < avgWidth)
+		// Exit when width contracts back
+		else if (width < _prevAvgWidth * 0.8m)
 		{
-			// Exit position
-			ClosePosition();
+			if (Position > 0)
+				SellMarket();
+			else if (Position < 0)
+				BuyMarket();
 		}
-		
-		// Update last values
-		_lastWidth = width;
-		_lastAvgWidth = avgWidth;
+
+		_prevWidth = width;
 	}
 }

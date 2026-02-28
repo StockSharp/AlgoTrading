@@ -1,161 +1,73 @@
 namespace StockSharp.Samples.Strategies;
 
 using System;
-using System.Collections.Generic;
+
 using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
-using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 /// <summary>
 /// Keltner Width Mean Reversion Strategy.
-/// Strategy trades based on mean reversion of Keltner Channel width.
+/// Trades based on mean reversion of Keltner Channel width.
 /// </summary>
 public class KeltnerWidthMeanReversionStrategy : Strategy
 {
-	private ExponentialMovingAverage _ema;
-	private AverageTrueRange _atr;
-	private decimal _lastEma;
-	private decimal _lastAtr;
-	private decimal _lastChannelWidth;
-	
-	private SimpleMovingAverage _widthAvg;
-	private StandardDeviation _widthStdDev;
-	private decimal _lastWidthAvg;
-	private decimal _lastWidthStdDev;
-
 	private readonly StrategyParam<int> _emaPeriod;
 	private readonly StrategyParam<int> _atrPeriod;
 	private readonly StrategyParam<decimal> _keltnerMultiplier;
-	private readonly StrategyParam<int> _widthLookbackPeriod;
 	private readonly StrategyParam<decimal> _widthDeviationMultiplier;
-	private readonly StrategyParam<decimal> _atrStopMultiplier;
 	private readonly StrategyParam<DataType> _candleType;
 
-	/// <summary>
-	/// Period for EMA calculation.
-	/// </summary>
+	private decimal _widthAvg;
+	private bool _hasPrev;
+
 	public int EmaPeriod
 	{
 		get => _emaPeriod.Value;
 		set => _emaPeriod.Value = value;
 	}
 
-	/// <summary>
-	/// Period for ATR calculation.
-	/// </summary>
 	public int AtrPeriod
 	{
 		get => _atrPeriod.Value;
 		set => _atrPeriod.Value = value;
 	}
 
-	/// <summary>
-	/// Multiplier for Keltner Channel bands.
-	/// </summary>
 	public decimal KeltnerMultiplier
 	{
 		get => _keltnerMultiplier.Value;
 		set => _keltnerMultiplier.Value = value;
 	}
 
-	/// <summary>
-	/// Lookback period for width's mean and standard deviation.
-	/// </summary>
-	public int WidthLookbackPeriod
-	{
-		get => _widthLookbackPeriod.Value;
-		set => _widthLookbackPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Multiplier for width's standard deviation to determine entry threshold.
-	/// </summary>
 	public decimal WidthDeviationMultiplier
 	{
 		get => _widthDeviationMultiplier.Value;
 		set => _widthDeviationMultiplier.Value = value;
 	}
 
-	/// <summary>
-	/// Multiplier for ATR to determine stop-loss distance.
-	/// </summary>
-	public decimal AtrStopMultiplier
-	{
-		get => _atrStopMultiplier.Value;
-		set => _atrStopMultiplier.Value = value;
-	}
-
-	/// <summary>
-	/// Type of candles to use in the strategy.
-	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Initializes a new instance of <see cref="KeltnerWidthMeanReversionStrategy"/>.
-	/// </summary>
 	public KeltnerWidthMeanReversionStrategy()
 	{
 		_emaPeriod = Param(nameof(EmaPeriod), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("EMA Period", "Period for EMA calculation", "Indicators")
-			
-			.SetOptimize(10, 50, 5);
+			.SetDisplay("EMA Period", "Period for EMA calculation", "Indicators");
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("ATR Period", "Period for ATR calculation", "Indicators")
-			
-			.SetOptimize(7, 21, 7);
+			.SetDisplay("ATR Period", "Period for ATR calculation", "Indicators");
 
 		_keltnerMultiplier = Param(nameof(KeltnerMultiplier), 2.0m)
-			.SetGreaterThanZero()
-			.SetDisplay("Keltner Multiplier", "Multiplier for Keltner Channel bands", "Indicators")
-			
-			.SetOptimize(1.0m, 3.0m, 0.5m);
+			.SetDisplay("Keltner Multiplier", "Multiplier for Keltner Channel bands", "Indicators");
 
-		_widthLookbackPeriod = Param(nameof(WidthLookbackPeriod), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("Width Lookback", "Lookback period for width's mean and standard deviation", "Strategy Parameters")
-			
-			.SetOptimize(10, 50, 5);
-
-		_widthDeviationMultiplier = Param(nameof(WidthDeviationMultiplier), 2.0m)
-			.SetGreaterThanZero()
-			.SetDisplay("Width Deviation Multiplier", "Multiplier for width's standard deviation", "Strategy Parameters")
-			
-			.SetOptimize(1.0m, 3.0m, 0.5m);
-
-		_atrStopMultiplier = Param(nameof(AtrStopMultiplier), 2.0m)
-			.SetGreaterThanZero()
-			.SetDisplay("ATR Stop Multiplier", "Multiplier for ATR to determine stop-loss distance", "Risk Management")
-			
-			.SetOptimize(1.0m, 3.0m, 0.5m);
+		_widthDeviationMultiplier = Param(nameof(WidthDeviationMultiplier), 1.5m)
+			.SetDisplay("Width Dev Multiplier", "Multiplier for width deviation threshold", "Strategy");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use in the strategy", "General");
-	}
-
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_lastEma = default;
-		_lastAtr = default;
-		_lastChannelWidth = default;
-		_lastWidthAvg = default;
-		_lastWidthStdDev = default;
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -163,98 +75,69 @@ public class KeltnerWidthMeanReversionStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
+		_widthAvg = 0;
+		_hasPrev = false;
 
+		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
+		var atr = new AverageTrueRange { Length = AtrPeriod };
 
-		// Initialize indicators
-		_ema = new EMA { Length = EmaPeriod };
-		_atr = new AverageTrueRange { Length = AtrPeriod };
-		_widthAvg = new SMA { Length = WidthLookbackPeriod };
-		_widthStdDev = new StandardDeviation { Length = WidthLookbackPeriod };
-
-		// Create subscription
 		var subscription = SubscribeCandles(CandleType);
-		
-		// Setup candle processing
+
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(ema, atr, ProcessCandle)
 			.Start();
 
-		// Create chart visualization if available
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawIndicator(area, ema);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal emaValue, decimal atrValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Process EMA
-		var emaValue = _ema.Process(new DecimalIndicatorValue(_ema, candle);
-		if (emaValue.IsFinal)
-			_lastEma = emaValue.ToDecimal();
+		if (atrValue <= 0)
+			return;
 
-		// Process ATR
-		var atrValue = _atr.Process(candle);
-		if (atrValue.IsFinal)
-			_lastAtr = atrValue.ToDecimal();
+		var upperBand = emaValue + KeltnerMultiplier * atrValue;
+		var lowerBand = emaValue - KeltnerMultiplier * atrValue;
+		var width = upperBand - lowerBand;
 
-		// Calculate Keltner Channel
-		if (_lastEma > 0 && _lastAtr > 0)
+		if (!_hasPrev)
 		{
-			// Calculate upper and lower bands
-			var upperBand = _lastEma + KeltnerMultiplier * _lastAtr;
-			var lowerBand = _lastEma - KeltnerMultiplier * _lastAtr;
-			
-			// Calculate channel width
-			var channelWidth = upperBand - lowerBand;
-			_lastChannelWidth = channelWidth;
-			
-			// Process width's average and standard deviation
-			var widthAvgValue = _widthAvg.Process(channelWidth, candle.ServerTime));
-			var widthStdDevValue = _widthStdDev.Process(new DecimalIndicatorValue(_widthStdDev, channelWidth, candle.ServerTime));
-			
-			if (widthAvgValue.IsFinal && widthStdDevValue.IsFinal)
-			{
-				_lastWidthAvg = widthAvgValue.ToDecimal();
-				_lastWidthStdDev = widthStdDevValue.ToDecimal();
-				
-				// Check if strategy is ready to trade
-				if (!IsFormedAndOnlineAndAllowTrading())
-					return;
-				
-				// Calculate thresholds
-				var lowerThreshold = _lastWidthAvg - WidthDeviationMultiplier * _lastWidthStdDev;
-				var upperThreshold = _lastWidthAvg + WidthDeviationMultiplier * _lastWidthStdDev;
-				
-				// Trading logic
-				if (_lastChannelWidth < lowerThreshold && Position <= 0)
-				{
-					// Channel width is compressed - Long signal (expecting expansion)
-					BuyMarket(Volume + Math.Abs(Position));
-				}
-				else if (_lastChannelWidth > upperThreshold && Position >= 0)
-				{
-					// Channel width is expanded - Short signal (expecting contraction)
-					SellMarket(Volume + Math.Abs(Position));
-				}
-				// Exit logic
-				else if (_lastChannelWidth > _lastWidthAvg && Position > 0)
-				{
-					// Width returned to average - Exit long position
-					SellMarket(Position);
-				}
-				else if (_lastChannelWidth < _lastWidthAvg && Position < 0)
-				{
-					// Width returned to average - Exit short position
-					BuyMarket(Math.Abs(Position));
-				}
-			}
+			_widthAvg = width;
+			_hasPrev = true;
+			return;
+		}
+
+		// Exponential smoothing of width average
+		_widthAvg = _widthAvg * 0.9m + width * 0.1m;
+
+		var lowerThreshold = _widthAvg * (1m - WidthDeviationMultiplier * 0.1m);
+		var upperThreshold = _widthAvg * (1m + WidthDeviationMultiplier * 0.1m);
+
+		// Mean reversion: compressed width -> expect expansion
+		if (width < lowerThreshold && Position <= 0)
+		{
+			BuyMarket();
+		}
+		else if (width > upperThreshold && Position >= 0)
+		{
+			SellMarket();
+		}
+		// Exit when width returns to average
+		else if (width > _widthAvg && Position > 0)
+		{
+			SellMarket();
+		}
+		else if (width < _widthAvg && Position < 0)
+		{
+			BuyMarket();
 		}
 	}
 }
