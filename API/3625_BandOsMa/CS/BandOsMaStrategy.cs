@@ -256,9 +256,9 @@ public class BandOsMaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = LotSize;
 		_pipSize = Security?.PriceStep ?? 0.0001m;
@@ -312,13 +312,15 @@ public class BandOsMaStrategy : Strategy
 
 		var price = GetAppliedPrice(candle, PriceType);
 		var macdValue = (MovingAverageConvergenceDivergenceSignalValue)_macd.Process(new DecimalIndicatorValue(_macd, price, candle.CloseTime));
-		if (!macdValue.IsFinal || macdValue.Histogram is not decimal osma)
+		if (!macdValue.IsFinal || macdValue.Macd is not decimal macdLine || macdValue.Signal is not decimal signalLine)
 		{
 			return;
 		}
 
+		var osma = macdLine - signalLine;
+
 		var bollingerValue = (BollingerBandsValue)_bollinger.Process(new DecimalIndicatorValue(_bollinger, osma, candle.CloseTime));
-		if (!bollingerValue.IsFinal || bollingerValue.UpperBand is not decimal upper || bollingerValue.LowerBand is not decimal lower)
+		if (!bollingerValue.IsFinal || bollingerValue.UpBand is not decimal upper || bollingerValue.LowBand is not decimal lower)
 		{
 			return;
 		}
@@ -329,7 +331,7 @@ public class BandOsMaStrategy : Strategy
 			return;
 		}
 
-		var ma = maValue.ToDecimal();
+		var ma = maValue.GetValue<decimal>();
 
 		_osmaHistory.Add(osma);
 		_upperBandHistory.Add(upper);
@@ -391,7 +393,7 @@ public class BandOsMaStrategy : Strategy
 
 	private void ManagePosition(ICandleMessage candle)
 	{
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!_macd.IsFormed || !_bollinger.IsFormed || !_osmaAverage.IsFormed)
 		{
 			return;
 		}
@@ -403,7 +405,7 @@ public class BandOsMaStrategy : Strategy
 		{
 			if (_activeSignal != 1)
 			{
-				SellMarket(Position);
+				SellMarket();
 				ResetStops();
 			}
 			else
@@ -415,7 +417,7 @@ public class BandOsMaStrategy : Strategy
 		{
 			if (_activeSignal != -1)
 			{
-				BuyMarket(-Position);
+				BuyMarket();
 				ResetStops();
 			}
 			else
@@ -429,7 +431,7 @@ public class BandOsMaStrategy : Strategy
 
 			if (_activeSignal == 1)
 			{
-				BuyMarket(Volume);
+				BuyMarket();
 				_longEntryPrice = candle.ClosePrice;
 				if (stopDistance > 0m)
 				{
@@ -438,7 +440,7 @@ public class BandOsMaStrategy : Strategy
 			}
 			else if (_activeSignal == -1)
 			{
-				SellMarket(Volume);
+				SellMarket();
 				_shortEntryPrice = candle.ClosePrice;
 				if (stopDistance > 0m)
 				{
@@ -465,7 +467,7 @@ public class BandOsMaStrategy : Strategy
 
 		if (_longStop.HasValue && candle.LowPrice <= _longStop.Value)
 		{
-			SellMarket(Position);
+			SellMarket();
 			ResetStops();
 		}
 	}
@@ -487,7 +489,7 @@ public class BandOsMaStrategy : Strategy
 
 		if (_shortStop.HasValue && candle.HighPrice >= _shortStop.Value)
 		{
-			BuyMarket(-Position);
+			BuyMarket();
 			ResetStops();
 		}
 	}

@@ -537,7 +537,7 @@ public class BullVsMedvedWindowStrategy : Strategy
 			if (order.State != OrderStates.Active)
 				continue;
 
-			var timestamp = order.LastChangeTime ?? order.Time;
+			var timestamp = order.Time;
 			if (timestamp == default)
 				continue;
 
@@ -627,7 +627,7 @@ public class BullVsMedvedWindowStrategy : Strategy
 		{
 			_entryOrder = order;
 
-			if (order.State is OrderStates.Failed or OrderStates.Done or OrderStates.Cancelled)
+			if (order.State is OrderStates.Failed or OrderStates.Done)
 			{
 				if (order.State != OrderStates.Done || order.Balance == 0m)
 				{
@@ -651,7 +651,7 @@ public class BullVsMedvedWindowStrategy : Strategy
 
 		if (_entryOrderId != 0 && trade.Order.TransactionId == _entryOrderId)
 		{
-			var entryPrice = PositionPrice != 0m ? PositionPrice : trade.Trade.Price;
+			var entryPrice = trade.Trade.Price != 0m ? trade.Trade.Price : trade.Trade.Price;
 
 			if (_pendingOrderSide == Sides.Buy)
 			{

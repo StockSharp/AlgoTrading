@@ -142,7 +142,7 @@ public class MatrixMachineLearningStrategy : Strategy
 			
 			.SetOptimize(5, 20, 1);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles requested from the market data source.", "Data");
 
 		_enableDebugLog = Param(nameof(EnableDebugLog), false)
@@ -206,15 +206,11 @@ public class MatrixMachineLearningStrategy : Strategy
 		var direction = forecast[0];
 		if (direction > 0 && Position <= 0m)
 		{
-			var volume = Volume + Math.Abs(Position);
-			if (volume > 0m)
-				BuyMarket(volume);
+			BuyMarket();
 		}
 		else if (direction < 0 && Position >= 0m)
 		{
-			var volume = Volume + Math.Abs(Position);
-			if (volume > 0m)
-				SellMarket(volume);
+			SellMarket();
 		}
 	}
 

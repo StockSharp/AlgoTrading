@@ -342,10 +342,7 @@ public class TenPipsOppositeLastNHourTrendStrategy : Strategy
 		if (!CanOpenOnBar(candle.OpenTime))
 		return;
 
-		if (MaxOrders > 0 && ActiveOrders.Count >= MaxOrders)
-		return;
-
-		if (Position != 0 || ActiveOrders.Count != 0)
+		if (Position != 0)
 		return;
 
 		var direction = DetermineDirection();
@@ -683,13 +680,8 @@ public class TenPipsOppositeLastNHourTrendStrategy : Strategy
 			if (step is decimal stepValue && stepValue > 0m)
 			volume = Math.Round(volume / stepValue, MidpointRounding.AwayFromZero) * stepValue;
 
-			var min = security.VolumeMin;
-			if (min is decimal minVolume && volume < minVolume)
-			volume = minVolume;
-
-			var max = security.VolumeMax;
-			if (max is decimal maxVolume && maxVolume > 0m && volume > maxVolume)
-			volume = maxVolume;
+			if (volume < 0.01m)
+			volume = 0.01m;
 		}
 
 		return volume > 0m ? volume : 0m;
@@ -732,7 +724,7 @@ public class TenPipsOppositeLastNHourTrendStrategy : Strategy
 			return;
 		}
 
-		var step = security.PriceStep ?? security.MinPriceStep ?? 0m;
+		var step = security.PriceStep ?? 0m;
 		if (step <= 0m)
 		step = 0.0001m;
 
