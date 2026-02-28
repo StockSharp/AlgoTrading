@@ -1,10 +1,4 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,84 +8,47 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Conversion of the MetaTrader "exp_Amstell-SL" averaging strategy.
-/// Opens both directions, layers additional orders on adverse moves, and
-/// closes positions with virtual take-profit and stop-loss thresholds.
+/// Amstell SL: Grid averaging strategy with ATR-based take profit and stop loss.
+/// Adds positions on adverse moves and exits on profit/stop targets.
 /// </summary>
 public class AmstellSlStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _takeProfitPoints;
-	private readonly StrategyParam<decimal> _stopLossPoints;
-	private readonly StrategyParam<decimal> _reentryPoints;
+	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _atrLength;
+	private readonly StrategyParam<int> _emaLength;
 
-	private readonly List<(decimal price, decimal volume)> _buyPositions = new();
-	private readonly List<(decimal price, decimal volume)> _sellPositions = new();
+	private decimal _entryPrice;
+	private decimal _prevEma;
+	private int _gridCount;
 
-	private decimal? _currentBid;
-	private decimal? _currentAsk;
-
-	/// <summary>
-	/// Take-profit distance expressed in points (price steps).
-	/// </summary>
-	public decimal TakeProfitPoints
-	{
-		get => _takeProfitPoints.Value;
-		set => _takeProfitPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Stop-loss distance expressed in points (price steps).
-	/// </summary>
-	public decimal StopLossPoints
-	{
-		get => _stopLossPoints.Value;
-		set => _stopLossPoints.Value = value;
-	}
-
-
-	/// <summary>
-	/// Distance that price must move against the last trade to add another order.
-	/// </summary>
-	public decimal ReentryPoints
-	{
-		get => _reentryPoints.Value;
-		set => _reentryPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="AmstellSlStrategy"/>.
-	/// </summary>
 	public AmstellSlStrategy()
 	{
-		_takeProfitPoints = Param(nameof(TakeProfitPoints), 30m)
-			.SetNotNegative()
-			.SetDisplay("Take Profit", "Take-profit distance in points", "Risk");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Timeframe.", "General");
 
-		_stopLossPoints = Param(nameof(StopLossPoints), 30m)
-			.SetNotNegative()
-			.SetDisplay("Stop Loss", "Stop-loss distance in points", "Risk");
+		_atrLength = Param(nameof(AtrLength), 14)
+			.SetDisplay("ATR Length", "ATR period.", "Indicators");
 
-
-		_reentryPoints = Param(nameof(ReentryPoints), 10m)
-			.SetNotNegative()
-			.SetDisplay("Reentry Step", "Adverse move needed to add orders", "Trading");
+		_emaLength = Param(nameof(EmaLength), 20)
+			.SetDisplay("EMA Length", "EMA trend filter.", "Indicators");
 	}
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	public DataType CandleType
 	{
-		return [(Security, DataType.Level1)];
+		get => _candleType.Value;
+		set => _candleType.Value = value;
 	}
 
-	/// <inheritdoc />
-	protected override void OnReseted()
+	public int AtrLength
 	{
-		base.OnReseted();
+		get => _atrLength.Value;
+		set => _atrLength.Value = value;
+	}
 
-		_buyPositions.Clear();
-		_sellPositions.Clear();
-		_currentBid = null;
-		_currentAsk = null;
+	public int EmaLength
+	{
+		get => _emaLength.Value;
+		set => _emaLength.Value = value;
 	}
 
 	/// <inheritdoc />
@@ -99,123 +56,101 @@ public class AmstellSlStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Listen to best bid/ask updates to reproduce tick-based MetaTrader logic.
-		SubscribeLevel1()
-			.Bind(ProcessLevel1)
+		_entryPrice = 0;
+		_prevEma = 0;
+		_gridCount = 0;
+
+		var atr = new AverageTrueRange { Length = AtrLength };
+		var ema = new ExponentialMovingAverage { Length = EmaLength };
+
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(atr, ema, ProcessCandle)
 			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, ema);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessLevel1(Level1ChangeMessage level1)
+	private void ProcessCandle(ICandleMessage candle, decimal atrVal, decimal emaVal)
 	{
-		// Update cached best prices from incoming level1 snapshot.
-		if (level1.Changes.TryGetValue(Level1Fields.BestBidPrice, out var bid))
-			_currentBid = (decimal)bid;
-
-		if (level1.Changes.TryGetValue(Level1Fields.BestAskPrice, out var ask))
-			_currentAsk = (decimal)ask;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (candle.State != CandleStates.Finished)
 			return;
 
-		var point = Security.PriceStep ?? 1m;
-		var takeProfitOffset = TakeProfitPoints * point;
-		var stopLossOffset = StopLossPoints * point;
-		var reentryOffset = ReentryPoints * point;
-
-		// The original expert closes positions before evaluating new entries.
-		if (TryClosePositions(takeProfitOffset, stopLossOffset))
+		if (atrVal <= 0 || _prevEma == 0)
+		{
+			_prevEma = emaVal;
 			return;
+		}
 
-		TryOpenPositions(reentryOffset);
-	}
+		var close = candle.ClosePrice;
 
-	private bool TryClosePositions(decimal takeProfitOffset, decimal stopLossOffset)
-	{
-		var hasBid = _currentBid is decimal bid;
-		var hasAsk = _currentAsk is decimal ask;
-
-		if (_buyPositions.Count > 0 && hasBid && hasAsk)
+		// Position management with grid and stops
+		if (Position > 0)
 		{
-			for (var i = 0; i < _buyPositions.Count; i++)
+			if (close >= _entryPrice + atrVal * 1.5m)
 			{
-				var (price, volume) = _buyPositions[i];
-				var profit = bid - price;
-				var loss = price - ask;
-
-				// Close long trades once either virtual target or stop is reached.
-				if ((takeProfitOffset > 0m && profit >= takeProfitOffset) ||
-					(stopLossOffset > 0m && loss >= stopLossOffset))
-				{
-					SellMarket(volume);
-					_buyPositions.RemoveAt(i);
-					return true;
-				}
+				SellMarket();
+				_entryPrice = 0;
+				_gridCount = 0;
+			}
+			else if (close <= _entryPrice - atrVal * 3m)
+			{
+				SellMarket();
+				_entryPrice = 0;
+				_gridCount = 0;
+			}
+			else if (_gridCount < 2 && close <= _entryPrice - atrVal * 1.2m)
+			{
+				_entryPrice = (_entryPrice + close) / 2m;
+				_gridCount++;
+				BuyMarket();
+			}
+		}
+		else if (Position < 0)
+		{
+			if (close <= _entryPrice - atrVal * 1.5m)
+			{
+				BuyMarket();
+				_entryPrice = 0;
+				_gridCount = 0;
+			}
+			else if (close >= _entryPrice + atrVal * 3m)
+			{
+				BuyMarket();
+				_entryPrice = 0;
+				_gridCount = 0;
+			}
+			else if (_gridCount < 2 && close >= _entryPrice + atrVal * 1.2m)
+			{
+				_entryPrice = (_entryPrice + close) / 2m;
+				_gridCount++;
+				SellMarket();
 			}
 		}
 
-		if (_sellPositions.Count > 0 && hasBid && hasAsk)
+		// Entry on EMA trend
+		if (Position == 0)
 		{
-			for (var i = 0; i < _sellPositions.Count; i++)
+			if (close > emaVal && emaVal > _prevEma)
 			{
-				var (price, volume) = _sellPositions[i];
-				var profit = price - ask;
-				var loss = bid - price;
-
-				// Close short trades when their synthetic take-profit or stop-loss triggers.
-				if ((takeProfitOffset > 0m && profit >= takeProfitOffset) ||
-					(stopLossOffset > 0m && loss >= stopLossOffset))
-				{
-					BuyMarket(volume);
-					_sellPositions.RemoveAt(i);
-					return true;
-				}
+				_entryPrice = close;
+				_gridCount = 0;
+				BuyMarket();
+			}
+			else if (close < emaVal && emaVal < _prevEma)
+			{
+				_entryPrice = close;
+				_gridCount = 0;
+				SellMarket();
 			}
 		}
 
-		return false;
-	}
-
-	private void TryOpenPositions(decimal reentryOffset)
-	{
-		if (Volume <= 0m)
-			return;
-
-		if (_currentAsk is decimal ask)
-		{
-			var shouldOpenBuy = _buyPositions.Count == 0;
-
-			if (!shouldOpenBuy && reentryOffset > 0m)
-			{
-				var lastBuyPrice = _buyPositions[^1].price;
-				if (lastBuyPrice - ask >= reentryOffset)
-					shouldOpenBuy = true;
-			}
-
-			if (shouldOpenBuy)
-			{
-				// MetaTrader executes buy orders at the ask price.
-				BuyMarket(Volume);
-				_buyPositions.Add((ask, Volume));
-			}
-		}
-
-		if (_currentBid is decimal bid)
-		{
-			var shouldOpenSell = _sellPositions.Count == 0;
-
-			if (!shouldOpenSell && reentryOffset > 0m)
-			{
-				var lastSellPrice = _sellPositions[^1].price;
-				if (bid - lastSellPrice >= reentryOffset)
-					shouldOpenSell = true;
-			}
-
-			if (shouldOpenSell)
-			{
-				// MetaTrader executes sell orders at the bid price.
-				SellMarket(Volume);
-				_sellPositions.Add((bid, Volume));
-			}
-		}
+		_prevEma = emaVal;
 	}
 }

@@ -1,10 +1,4 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,103 +8,47 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Grid-style strategy translated from the MQL4 expert "exp_Amstell".
-/// Scales into both directions when the market moves by a configurable distance.
-/// Closes individual layers once the profit target measured in points is reached.
+/// Exp Amstell: Grid-style strategy that scales into positions
+/// on ATR-based price movements and closes on profit targets.
 /// </summary>
 public class ExpAmstellStrategy : Strategy
 {
-	private sealed class PositionEntry
-	{
-		public PositionEntry(decimal price, decimal volume)
-		{
-			Price = price;
-			Volume = volume;
-		}
+	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _atrLength;
+	private readonly StrategyParam<int> _emaLength;
 
-		public decimal Price { get; set; }
+	private decimal _entryPrice;
+	private decimal _prevEma;
+	private int _gridCount;
 
-		public decimal Volume { get; set; }
-
-		public bool IsClosing { get; set; }
-	}
-
-	private readonly StrategyParam<decimal> _tradeVolume;
-	private readonly StrategyParam<int> _takeProfitPoints;
-	private readonly StrategyParam<int> _reentryDistancePoints;
-
-	private readonly List<PositionEntry> _longEntries = new();
-	private readonly List<PositionEntry> _shortEntries = new();
-
-	private decimal _bestBid;
-	private decimal _bestAsk;
-	private bool _hasBestBid;
-	private bool _hasBestAsk;
-	private decimal _pointSize;
-
-	/// <summary>
-	/// Volume of a single market order.
-	/// </summary>
-	public decimal TradeVolume
-	{
-		get => _tradeVolume.Value;
-		set => _tradeVolume.Value = value;
-	}
-
-	/// <summary>
-	/// Profit target expressed in MetaTrader points.
-	/// </summary>
-	public int TakeProfitPoints
-	{
-		get => _takeProfitPoints.Value;
-		set => _takeProfitPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Minimal distance from the last entry before another layer can be added.
-	/// </summary>
-	public int ReentryDistancePoints
-	{
-		get => _reentryDistancePoints.Value;
-		set => _reentryDistancePoints.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="ExpAmstellStrategy"/> class.
-	/// </summary>
 	public ExpAmstellStrategy()
 	{
-		_tradeVolume = Param(nameof(TradeVolume), 0.1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume for each grid leg.", "Trading");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Timeframe.", "General");
 
-		_takeProfitPoints = Param(nameof(TakeProfitPoints), 30)
-			.SetGreaterThanZero()
-			.SetDisplay("Take Profit (points)", "Distance in points to close profitable trades.", "Risk");
+		_atrLength = Param(nameof(AtrLength), 14)
+			.SetDisplay("ATR Length", "ATR period for grid distance.", "Indicators");
 
-		_reentryDistancePoints = Param(nameof(ReentryDistancePoints), 10)
-			.SetGreaterThanZero()
-			.SetDisplay("Re-entry Distance (points)", "Minimal distance from the last entry before adding a new layer.", "Grid");
+		_emaLength = Param(nameof(EmaLength), 20)
+			.SetDisplay("EMA Length", "EMA period for trend.", "Indicators");
 	}
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	public DataType CandleType
 	{
-		return [(Security, DataType.Level1)];
+		get => _candleType.Value;
+		set => _candleType.Value = value;
 	}
 
-	/// <inheritdoc />
-	protected override void OnReseted()
+	public int AtrLength
 	{
-		base.OnReseted();
+		get => _atrLength.Value;
+		set => _atrLength.Value = value;
+	}
 
-		_longEntries.Clear();
-		_shortEntries.Clear();
-		_bestBid = 0m;
-		_bestAsk = 0m;
-		_hasBestBid = false;
-		_hasBestAsk = false;
-		_pointSize = 0m;
+	public int EmaLength
+	{
+		get => _emaLength.Value;
+		set => _emaLength.Value = value;
 	}
 
 	/// <inheritdoc />
@@ -118,245 +56,102 @@ public class ExpAmstellStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Calculate the MetaTrader-like point size once trading begins.
-		_pointSize = CalculatePointSize();
+		_entryPrice = 0;
+		_prevEma = 0;
+		_gridCount = 0;
 
-		// Enable default protection to close remaining positions on stop.
-		StartProtection(null, null);
+		var atr = new AverageTrueRange { Length = AtrLength };
+		var ema = new ExponentialMovingAverage { Length = EmaLength };
 
-		// React to best bid/ask updates exactly like the MQL tick handler.
-		SubscribeLevel1()
-			.Bind(ProcessLevel1)
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(atr, ema, ProcessCandle)
 			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, ema);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessLevel1(Level1ChangeMessage message)
+	private void ProcessCandle(ICandleMessage candle, decimal atrVal, decimal emaVal)
 	{
-		// Capture best bid updates.
-		if (message.Changes.TryGetValue(Level1Fields.BestBidPrice, out var bidObj))
-		{
-			var bid = (decimal)bidObj;
-			if (bid > 0m)
-			{
-				_bestBid = bid;
-				_hasBestBid = true;
-			}
-		}
-
-		// Capture best ask updates.
-		if (message.Changes.TryGetValue(Level1Fields.BestAskPrice, out var askObj))
-		{
-			var ask = (decimal)askObj;
-			if (ask > 0m)
-			{
-				_bestAsk = ask;
-				_hasBestAsk = true;
-			}
-		}
-
-		// Run trading logic only when both sides are known.
-		if (_hasBestBid && _hasBestAsk)
-			ProcessPrices();
-	}
-
-	private void ProcessPrices()
-	{
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (candle.State != CandleStates.Finished)
 			return;
 
-		var volume = TradeVolume;
-		if (volume <= 0m)
-			return;
-
-		var takeProfitDistance = GetTakeProfitDistance();
-		if (takeProfitDistance > 0m && TryClosePositions(takeProfitDistance))
-			return;
-
-		var reentryDistance = GetReentryDistance();
-
-		var ask = _bestAsk;
-		if (CanOpenBuy(ask, reentryDistance))
+		if (atrVal <= 0 || _prevEma == 0)
 		{
-			BuyMarket(volume);
+			_prevEma = emaVal;
 			return;
 		}
 
-		var bid = _bestBid;
-		if (CanOpenSell(bid, reentryDistance))
-			SellMarket(volume);
-	}
+		var close = candle.ClosePrice;
 
-	private bool TryClosePositions(decimal takeProfitDistance)
-	{
-		var bid = _bestBid;
-		foreach (var entry in _longEntries)
+		// Grid exit: take profit at 1.5 ATR or stop at 3 ATR
+		if (Position > 0)
 		{
-			if (entry.IsClosing)
-				continue;
-
-			// Close long layers when the bid advanced by the configured profit distance.
-			if (bid - entry.Price >= takeProfitDistance)
+			if (close >= _entryPrice + atrVal * 1.5m)
 			{
-				entry.IsClosing = true;
-				SellMarket(entry.Volume);
-				return true;
+				SellMarket();
+				_entryPrice = 0;
+				_gridCount = 0;
+			}
+			else if (close <= _entryPrice - atrVal * 3m)
+			{
+				SellMarket();
+				_entryPrice = 0;
+				_gridCount = 0;
+			}
+			else if (_gridCount < 3 && close <= _entryPrice - atrVal)
+			{
+				// Scale in: add to position on pullback
+				_entryPrice = (_entryPrice + close) / 2m;
+				_gridCount++;
+				BuyMarket();
+			}
+		}
+		else if (Position < 0)
+		{
+			if (close <= _entryPrice - atrVal * 1.5m)
+			{
+				BuyMarket();
+				_entryPrice = 0;
+				_gridCount = 0;
+			}
+			else if (close >= _entryPrice + atrVal * 3m)
+			{
+				BuyMarket();
+				_entryPrice = 0;
+				_gridCount = 0;
+			}
+			else if (_gridCount < 3 && close >= _entryPrice + atrVal)
+			{
+				_entryPrice = (_entryPrice + close) / 2m;
+				_gridCount++;
+				SellMarket();
 			}
 		}
 
-		var ask = _bestAsk;
-		foreach (var entry in _shortEntries)
+		// Entry: EMA direction determines initial direction
+		if (Position == 0)
 		{
-			if (entry.IsClosing)
-				continue;
-
-			// Close short layers symmetrically using the ask price.
-			if (entry.Price - ask >= takeProfitDistance)
+			if (close > emaVal && emaVal > _prevEma)
 			{
-				entry.IsClosing = true;
-				BuyMarket(entry.Volume);
-				return true;
+				_entryPrice = close;
+				_gridCount = 0;
+				BuyMarket();
+			}
+			else if (close < emaVal && emaVal < _prevEma)
+			{
+				_entryPrice = close;
+				_gridCount = 0;
+				SellMarket();
 			}
 		}
 
-		return false;
-	}
-
-	private bool CanOpenBuy(decimal ask, decimal reentryDistance)
-	{
-		if (_longEntries.Count == 0)
-			return true;
-
-		if (reentryDistance <= 0m)
-			return true;
-
-		var lastEntry = _longEntries[^1];
-		return lastEntry.Price - ask >= reentryDistance;
-	}
-
-	private bool CanOpenSell(decimal bid, decimal reentryDistance)
-	{
-		if (_shortEntries.Count == 0)
-			return true;
-
-		if (reentryDistance <= 0m)
-			return true;
-
-		var lastEntry = _shortEntries[^1];
-		return bid - lastEntry.Price >= reentryDistance;
-	}
-
-	/// <inheritdoc />
-	protected override void OnOwnTradeReceived(MyTrade trade)
-	{
-		base.OnOwnTradeReceived(trade);
-
-		if (trade?.Order == null || trade.Order.Security != Security)
-			return;
-
-		var volume = trade.Trade.Volume;
-		if (volume <= 0m)
-			return;
-
-		if (trade.Order.Side == Sides.Buy)
-		{
-			// Buy trades first offset active short layers.
-			var remainder = ReduceEntries(_shortEntries, volume);
-
-			if (remainder > 0m)
-			{
-				// Remaining volume becomes a new long layer.
-				_longEntries.Add(new PositionEntry(trade.Trade.Price, remainder));
-			}
-		}
-		else if (trade.Order.Side == Sides.Sell)
-		{
-			// Sell trades first offset active long layers.
-			var remainder = ReduceEntries(_longEntries, volume);
-
-			if (remainder > 0m)
-			{
-				// Remaining volume becomes a new short layer.
-				_shortEntries.Add(new PositionEntry(trade.Trade.Price, remainder));
-			}
-		}
-
-		ResetClosingFlags();
-	}
-
-	private static decimal ReduceEntries(List<PositionEntry> entries, decimal volume)
-	{
-		var remaining = volume;
-
-		// Consume volume using FIFO to emulate ticket-based position accounting.
-		while (remaining > 0m && entries.Count > 0)
-		{
-			var entry = entries[0];
-			var used = Math.Min(entry.Volume, remaining);
-			entry.Volume -= used;
-			remaining -= used;
-
-			if (entry.Volume <= 0m)
-			{
-				entries.RemoveAt(0);
-			}
-			else
-			{
-				entry.IsClosing = false;
-			}
-		}
-
-		return remaining;
-	}
-
-	private void ResetClosingFlags()
-	{
-		for (var i = 0; i < _longEntries.Count; i++)
-		{
-			_longEntries[i].IsClosing = false;
-		}
-
-		for (var i = 0; i < _shortEntries.Count; i++)
-		{
-			_shortEntries[i].IsClosing = false;
-		}
-	}
-
-	private decimal GetTakeProfitDistance()
-	{
-		var point = EnsurePointSize();
-		return TakeProfitPoints > 0 ? TakeProfitPoints * point : 0m;
-	}
-
-	private decimal GetReentryDistance()
-	{
-		var point = EnsurePointSize();
-		return ReentryDistancePoints > 0 ? ReentryDistancePoints * point : 0m;
-	}
-
-	private decimal EnsurePointSize()
-	{
-		if (_pointSize > 0m)
-			return _pointSize;
-
-		_pointSize = CalculatePointSize();
-		return _pointSize;
-	}
-
-	private decimal CalculatePointSize()
-	{
-		var step = Security?.PriceStep ?? 0m;
-		if (step <= 0m)
-			return 1m;
-
-		var scaled = step;
-		var digits = 0;
-		while (scaled < 1m && digits < 10)
-		{
-			scaled *= 10m;
-			digits++;
-		}
-
-		var adjust = (digits == 3 || digits == 5) ? 10m : 1m;
-		return step * adjust;
+		_prevEma = emaVal;
 	}
 }

@@ -1,10 +1,4 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,141 +8,36 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Randomized "Pinball Machine" strategy translated from MetaTrader.
-/// Opens market trades whenever two independent random draws return the same value.
+/// Pinball Machine: Pseudo-random entry with ATR-based risk management.
+/// Uses candle hash to generate deterministic random signals.
 /// </summary>
 public class PinballMachineRandomDrawStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _tradeVolume;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _randomMaxValue;
-	private readonly StrategyParam<int> _minStopLossPoints;
-	private readonly StrategyParam<int> _maxStopLossPoints;
-	private readonly StrategyParam<int> _minTakeProfitPoints;
-	private readonly StrategyParam<int> _maxTakeProfitPoints;
-	private readonly StrategyParam<int> _randomSeed;
+	private readonly StrategyParam<int> _atrLength;
 
-	private Random _random;
+	private decimal _entryPrice;
+	private int _candleCount;
 
-	/// <summary>
-	/// Trade size used for every random entry.
-	/// </summary>
-	public decimal TradeVolume
+	public PinballMachineRandomDrawStrategy()
 	{
-		get => _tradeVolume.Value;
-		set => _tradeVolume.Value = value;
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Timeframe.", "General");
+
+		_atrLength = Param(nameof(AtrLength), 14)
+			.SetDisplay("ATR Length", "ATR period for stops.", "Indicators");
 	}
 
-	/// <summary>
-	/// Candle type that triggers each pseudo-random evaluation.
-	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Upper bound (inclusive) for the random draws.
-	/// </summary>
-	public int RandomMaxValue
+	public int AtrLength
 	{
-		get => _randomMaxValue.Value;
-		set => _randomMaxValue.Value = value;
-	}
-
-	/// <summary>
-	/// Lower bound for stop-loss distance in price steps.
-	/// </summary>
-	public int MinStopLossPoints
-	{
-		get => _minStopLossPoints.Value;
-		set => _minStopLossPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Upper bound for stop-loss distance in price steps.
-	/// </summary>
-	public int MaxStopLossPoints
-	{
-		get => _maxStopLossPoints.Value;
-		set => _maxStopLossPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Lower bound for take-profit distance in price steps.
-	/// </summary>
-	public int MinTakeProfitPoints
-	{
-		get => _minTakeProfitPoints.Value;
-		set => _minTakeProfitPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Upper bound for take-profit distance in price steps.
-	/// </summary>
-	public int MaxTakeProfitPoints
-	{
-		get => _maxTakeProfitPoints.Value;
-		set => _maxTakeProfitPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Seed for the pseudo-random number generator.
-	/// </summary>
-	public int RandomSeed
-	{
-		get => _randomSeed.Value;
-		set => _randomSeed.Value = value;
-	}
-
-	/// <summary>
-/// Initializes a new instance of the <see cref="PinballMachineRandomDrawStrategy"/> class.
-/// </summary>
-public PinballMachineRandomDrawStrategy()
-	{
-		_tradeVolume = Param(nameof(TradeVolume), 0.1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Trade Volume", "Order size for each random entry", "Trading");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Timeframe used to trigger random draws", "Data");
-
-		_randomMaxValue = Param(nameof(RandomMaxValue), 100)
-			.SetGreaterOrEqual(1)
-			.SetDisplay("Random Max Value", "Upper bound (inclusive) for random draws", "Randomization");
-
-		_minStopLossPoints = Param(nameof(MinStopLossPoints), 100)
-			.SetNotNegative()
-			.SetDisplay("Min Stop Loss (points)", "Minimum distance for stop-loss in price steps", "Risk");
-
-		_maxStopLossPoints = Param(nameof(MaxStopLossPoints), 1000)
-			.SetNotNegative()
-			.SetDisplay("Max Stop Loss (points)", "Maximum distance for stop-loss in price steps", "Risk");
-
-		_minTakeProfitPoints = Param(nameof(MinTakeProfitPoints), 100)
-			.SetNotNegative()
-			.SetDisplay("Min Take Profit (points)", "Minimum distance for take-profit in price steps", "Risk");
-
-		_maxTakeProfitPoints = Param(nameof(MaxTakeProfitPoints), 1000)
-			.SetNotNegative()
-			.SetDisplay("Max Take Profit (points)", "Maximum distance for take-profit in price steps", "Risk");
-
-		_randomSeed = Param(nameof(RandomSeed), 0)
-			.SetDisplay("Random Seed", "Seed for the pseudo-random generator (0 = time-based)", "Randomization");
-	}
-
-	/// <inheritdoc />
-	public override IEnumerable<(Security, DataType)> GetWorkingSecurities()
-	{
-		yield return (Security, CandleType);
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_random = null;
+		get => _atrLength.Value;
+		set => _atrLength.Value = value;
 	}
 
 	/// <inheritdoc />
@@ -156,99 +45,69 @@ public PinballMachineRandomDrawStrategy()
 	{
 		base.OnStarted2(time);
 
-		// Initialize the pseudo-random generator either from a fixed seed or from the current time.
-		_random = RandomSeed == 0
-			? new Random(Environment.TickCount ^ GetHashCode())
-			: new Random(RandomSeed);
+		_entryPrice = 0;
+		_candleCount = 0;
 
-		StartProtection(null, null);
+		var atr = new AverageTrueRange { Length = AtrLength };
 
-		// Subscribe to candle data to trigger the random decision logic on every finished bar.
-		SubscribeCandles(CandleType)
-			.Bind(ProcessCandle)
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(atr, ProcessCandle)
 			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal atrVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (atrVal <= 0)
 			return;
 
-		var random = _random;
-		if (random == null)
-			return;
+		_candleCount++;
+		var close = candle.ClosePrice;
 
-		// Draw four random integers in the inclusive range [0, RandomMaxValue].
-		var maxValue = RandomMaxValue;
-		if (maxValue < 0)
-			maxValue = 0;
+		// Exit management
+		if (Position > 0)
+		{
+			if (close >= _entryPrice + atrVal * 2m || close <= _entryPrice - atrVal * 1.5m)
+			{
+				SellMarket();
+				_entryPrice = 0;
+			}
+		}
+		else if (Position < 0)
+		{
+			if (close <= _entryPrice - atrVal * 2m || close >= _entryPrice + atrVal * 1.5m)
+			{
+				BuyMarket();
+				_entryPrice = 0;
+			}
+		}
 
-		var first = random.Next(maxValue + 1);
-		var second = random.Next(maxValue + 1);
-		var third = random.Next(maxValue + 1);
-		var fourth = random.Next(maxValue + 1);
+		// Pseudo-random entry based on candle price hash
+		if (Position == 0)
+		{
+			var hash = (int)(close * 100m) ^ _candleCount;
+			var mod = Math.Abs(hash) % 10;
 
-		// Generate the shared stop-loss and take-profit distances for this evaluation cycle.
-		var stopLossPoints = NextPoints(random, MinStopLossPoints, MaxStopLossPoints);
-		var takeProfitPoints = NextPoints(random, MinTakeProfitPoints, MaxTakeProfitPoints);
-
-		if (first == second)
-			TryEnterLong(candle.ClosePrice, stopLossPoints, takeProfitPoints);
-
-		if (third == fourth)
-			TryEnterShort(candle.ClosePrice, stopLossPoints, takeProfitPoints);
-	}
-
-	private void TryEnterLong(decimal referencePrice, int stopLossPoints, int takeProfitPoints)
-	{
-		var volume = TradeVolume;
-		if (volume <= 0m)
-			return;
-
-		// Remember the current net position before submitting the market order.
-		var currentPosition = Position;
-		BuyMarket(volume);
-		var resultingPosition = currentPosition + volume;
-
-		// Attach take-profit and stop-loss in terms of price points if they are enabled.
-		if (takeProfitPoints > 0)
-			SetTakeProfit(takeProfitPoints, referencePrice, resultingPosition);
-
-		if (stopLossPoints > 0)
-			SetStopLoss(stopLossPoints, referencePrice, resultingPosition);
-	}
-
-	private void TryEnterShort(decimal referencePrice, int stopLossPoints, int takeProfitPoints)
-	{
-		var volume = TradeVolume;
-		if (volume <= 0m)
-			return;
-
-		var currentPosition = Position;
-		SellMarket(volume);
-		var resultingPosition = currentPosition - volume;
-
-		if (takeProfitPoints > 0)
-			SetTakeProfit(takeProfitPoints, referencePrice, resultingPosition);
-
-		if (stopLossPoints > 0)
-			SetStopLoss(stopLossPoints, referencePrice, resultingPosition);
-	}
-
-	private static int NextPoints(Random random, int minPoints, int maxPoints)
-	{
-		if (maxPoints < minPoints)
-			(minPoints, maxPoints) = (maxPoints, minPoints);
-
-		if (maxPoints <= 0)
-			return 0;
-
-		if (minPoints < 0)
-			minPoints = 0;
-
-		return random.Next(minPoints, maxPoints + 1);
+			if (mod < 3)
+			{
+				_entryPrice = close;
+				BuyMarket();
+			}
+			else if (mod > 6)
+			{
+				_entryPrice = close;
+				SellMarket();
+			}
+		}
 	}
 }

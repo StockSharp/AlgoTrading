@@ -1,10 +1,4 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,185 +8,77 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Port of the MetaTrader expert ARD_ORDER_MANAGEMENT_EA-BETA_1.
-/// Automates the Stochastic oscillator entries while ensuring existing positions are closed before reversing.
-/// Includes optional trailing management that mirrors the manual order maintenance logic from the original EA.
+/// Ard Order Management Stochastic: RSI overbought/oversold reversal
+/// with EMA trend filter and ATR-based trailing stops.
 /// </summary>
 public class ArdOrderManagementStochasticStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _takeProfitPips;
-	private readonly StrategyParam<decimal> _stopLossPips;
-	private readonly StrategyParam<decimal> _modifyTakeProfitPips;
-	private readonly StrategyParam<decimal> _modifyStopLossPips;
-	private readonly StrategyParam<int> _stochasticPeriod;
-	private readonly StrategyParam<int> _signalPeriod;
-	private readonly StrategyParam<int> _slowingPeriod;
+	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _rsiLength;
+	private readonly StrategyParam<int> _emaLength;
+	private readonly StrategyParam<int> _atrLength;
 	private readonly StrategyParam<decimal> _buyThreshold;
 	private readonly StrategyParam<decimal> _sellThreshold;
-	private readonly StrategyParam<DataType> _candleType;
 
-	private StochasticOscillator _stochastic = null!;
-	private decimal _pipSize;
-	private decimal _longTrailingStop;
-	private decimal _longTrailingTarget;
-	private decimal _shortTrailingStop;
-	private decimal _shortTrailingTarget;
+	private decimal _prevRsi;
+	private decimal _entryPrice;
+	private decimal _trailStop;
 
-	/// <summary>
-	/// Initial take-profit distance expressed in pips.
-	/// </summary>
-	public decimal TakeProfitPips
+	public ArdOrderManagementStochasticStrategy()
 	{
-		get => _takeProfitPips.Value;
-		set => _takeProfitPips.Value = value;
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Timeframe.", "General");
+
+		_rsiLength = Param(nameof(RsiLength), 14)
+			.SetDisplay("RSI Length", "RSI period.", "Indicators");
+
+		_emaLength = Param(nameof(EmaLength), 20)
+			.SetDisplay("EMA Length", "EMA trend filter period.", "Indicators");
+
+		_atrLength = Param(nameof(AtrLength), 14)
+			.SetDisplay("ATR Length", "ATR period for stops.", "Indicators");
+
+		_buyThreshold = Param(nameof(BuyThreshold), 45m)
+			.SetDisplay("Buy Threshold", "RSI oversold level for buy.", "Signals");
+
+		_sellThreshold = Param(nameof(SellThreshold), 55m)
+			.SetDisplay("Sell Threshold", "RSI overbought level for sell.", "Signals");
 	}
 
-	/// <summary>
-	/// Initial stop-loss distance expressed in pips.
-	/// </summary>
-	public decimal StopLossPips
-	{
-		get => _stopLossPips.Value;
-		set => _stopLossPips.Value = value;
-	}
-
-	/// <summary>
-	/// Distance in pips used when refreshing trailing take-profit targets.
-	/// </summary>
-	public decimal ModifyTakeProfitPips
-	{
-		get => _modifyTakeProfitPips.Value;
-		set => _modifyTakeProfitPips.Value = value;
-	}
-
-	/// <summary>
-	/// Distance in pips used when refreshing trailing stop levels.
-	/// </summary>
-	public decimal ModifyStopLossPips
-	{
-		get => _modifyStopLossPips.Value;
-		set => _modifyStopLossPips.Value = value;
-	}
-
-	/// <summary>
-	/// Lookback period of the Stochastic oscillator.
-	/// </summary>
-	public int StochasticPeriod
-	{
-		get => _stochasticPeriod.Value;
-		set => _stochasticPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Signal period (%%D smoothing) of the Stochastic oscillator.
-	/// </summary>
-	public int SignalPeriod
-	{
-		get => _signalPeriod.Value;
-		set => _signalPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Slowing parameter applied to the %%K line.
-	/// </summary>
-	public int SlowingPeriod
-	{
-		get => _slowingPeriod.Value;
-		set => _slowingPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Overbought threshold that triggers long entries after closing shorts.
-	/// </summary>
-	public decimal BuyThreshold
-	{
-		get => _buyThreshold.Value;
-		set => _buyThreshold.Value = value;
-	}
-
-	/// <summary>
-	/// Oversold threshold that triggers short entries after closing longs.
-	/// </summary>
-	public decimal SellThreshold
-	{
-		get => _sellThreshold.Value;
-		set => _sellThreshold.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type that drives the indicator calculations.
-	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Initializes default parameters.
-	/// </summary>
-	public ArdOrderManagementStochasticStrategy()
+	public int RsiLength
 	{
-		_takeProfitPips = Param(nameof(TakeProfitPips), 100m)
-			.SetNotNegative()
-			.SetDisplay("Take Profit (pips)", "Initial profit target distance", "Risk")
-			
-			.SetOptimize(10m, 300m, 10m);
-
-		_stopLossPips = Param(nameof(StopLossPips), 50m)
-			.SetNotNegative()
-			.SetDisplay("Stop Loss (pips)", "Initial protective stop distance", "Risk")
-			
-			.SetOptimize(10m, 200m, 10m);
-
-		_modifyTakeProfitPips = Param(nameof(ModifyTakeProfitPips), 100m)
-			.SetNotNegative()
-			.SetDisplay("Trailing Take Profit (pips)", "Distance maintained when refreshing profit targets", "Risk")
-			
-			.SetOptimize(0m, 300m, 10m);
-
-		_modifyStopLossPips = Param(nameof(ModifyStopLossPips), 20m)
-			.SetNotNegative()
-			.SetDisplay("Trailing Stop (pips)", "Distance maintained when refreshing stop levels", "Risk")
-			
-			.SetOptimize(0m, 200m, 10m);
-
-		_stochasticPeriod = Param(nameof(StochasticPeriod), 5)
-			.SetGreaterThanZero()
-			.SetDisplay("Stochastic Period", "Lookback period for %K calculation", "Indicators")
-			
-			.SetOptimize(3, 40, 1);
-
-		_signalPeriod = Param(nameof(SignalPeriod), 3)
-			.SetGreaterThanZero()
-			.SetDisplay("Signal Period", "Smoothing period for %D", "Indicators")
-			
-			.SetOptimize(1, 20, 1);
-
-		_slowingPeriod = Param(nameof(SlowingPeriod), 3)
-			.SetGreaterThanZero()
-			.SetDisplay("Slowing", "Smoothing applied to %K", "Indicators")
-			
-			.SetOptimize(1, 20, 1);
-
-		_buyThreshold = Param(nameof(BuyThreshold), 80m)
-			.SetDisplay("Buy Threshold", "Overbought level that triggers long entries", "Signals")
-			
-			.SetOptimize(55m, 95m, 5m);
-
-		_sellThreshold = Param(nameof(SellThreshold), 20m)
-			.SetDisplay("Sell Threshold", "Oversold level that triggers short entries", "Signals")
-			
-			.SetOptimize(5m, 45m, 5m);
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Primary candle source for calculations", "General");
+		get => _rsiLength.Value;
+		set => _rsiLength.Value = value;
 	}
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	public int EmaLength
 	{
-		return [(Security, CandleType)];
+		get => _emaLength.Value;
+		set => _emaLength.Value = value;
+	}
+
+	public int AtrLength
+	{
+		get => _atrLength.Value;
+		set => _atrLength.Value = value;
+	}
+
+	public decimal BuyThreshold
+	{
+		get => _buyThreshold.Value;
+		set => _buyThreshold.Value = value;
+	}
+
+	public decimal SellThreshold
+	{
+		get => _sellThreshold.Value;
+		set => _sellThreshold.Value = value;
 	}
 
 	/// <inheritdoc />
@@ -200,239 +86,86 @@ public class ArdOrderManagementStochasticStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_pipSize = CalculatePipSize();
+		_prevRsi = 0;
+		_entryPrice = 0;
+		_trailStop = 0;
 
-		// Configure the Stochastic oscillator exactly once when the strategy starts.
-		_stochastic = new StochasticOscillator
-		{ K = { Length = StochasticPeriod },
-			K = { Length = SlowingPeriod },
-			D = { Length = SignalPeriod },
-			Slowing = SlowingPeriod,
-		};
+		var rsi = new RelativeStrengthIndex { Length = RsiLength };
+		var ema = new ExponentialMovingAverage { Length = EmaLength };
+		var atr = new AverageTrueRange { Length = AtrLength };
 
 		var subscription = SubscribeCandles(CandleType);
-
-		// Bind the indicator to incoming candles and start the subscription.
 		subscription
-			.BindEx(_stochastic, ProcessCandle)
+			.Bind(rsi, ema, atr, ProcessCandle)
 			.Start();
-
-		var stopLoss = StopLossPips > 0m ? new Unit(StopLossPips * _pipSize, UnitTypes.Point) : null;
-		var takeProfit = TakeProfitPips > 0m ? new Unit(TakeProfitPips * _pipSize, UnitTypes.Point) : null;
-
-		// Start the built-in protection module to emulate the EA's fixed SL/TP placement.
-		StartProtection(stopLoss: stopLoss, takeProfit: takeProfit);
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _stochastic);
+			DrawIndicator(area, ema);
 			DrawOwnTrades(area);
 		}
 	}
 
-	/// <inheritdoc />
-	protected override void OnPositionReceived(Position position)
+	private void ProcessCandle(ICandleMessage candle, decimal rsiVal, decimal emaVal, decimal atrVal)
 	{
-		base.OnPositionReceived(position);
-
-		if (Position == 0m)
-		{
-			ResetLongState();
-			ResetShortState();
-			return;
-		}
-
-		if (Position > 0m && delta > 0m)
-		{
-			_longTrailingStop = ModifyStopLossPips > 0m ? PositionPrice - ModifyStopLossPips * _pipSize : 0m;
-			_longTrailingTarget = ModifyTakeProfitPips > 0m ? PositionPrice + ModifyTakeProfitPips * _pipSize : 0m;
-			ResetShortState();
-		}
-		else if (Position < 0m && delta < 0m)
-		{
-			_shortTrailingStop = ModifyStopLossPips > 0m ? PositionPrice + ModifyStopLossPips * _pipSize : 0m;
-			_shortTrailingTarget = ModifyTakeProfitPips > 0m ? PositionPrice - ModifyTakeProfitPips * _pipSize : 0m;
-			ResetLongState();
-		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue stochasticValue)
-	{
-		// Ignore incomplete candles to stay aligned with the original EA's close-based logic.
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Manage trailing logic before evaluating fresh signals.
-		if (Position != 0m && UpdateTrailingProtection(candle))
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (!stochasticValue.IsFinal)
-			return;
-
-		var value = (StochasticOscillatorValue)stochasticValue;
-		if (value.K is not decimal kValue || value.D is not decimal dValue)
-			return;
-
-		LogInfo($"Stochastic %K={kValue:F2}, %D={dValue:F2}");
-
-		if (kValue >= BuyThreshold && Position <= 0m)
+		if (_prevRsi == 0 || atrVal <= 0)
 		{
-			LogInfo("Buy condition satisfied. Closing shorts (if any) and opening a long position.");
-			EnterLong(candle.ClosePrice);
-		}
-		else if (kValue <= SellThreshold && Position >= 0m)
-		{
-			LogInfo("Sell condition satisfied. Closing longs (if any) and opening a short position.");
-			EnterShort(candle.ClosePrice);
-		}
-	}
-
-	private void EnterLong(decimal price)
-	{
-		var volume = Volume;
-		if (Position < 0m)
-		{
-			volume += Math.Abs(Position);
-			ResetShortState();
-		}
-
-		if (volume <= 0m)
-		{
-			LogWarning("Volume is non-positive. Long entry aborted.");
+			_prevRsi = rsiVal;
 			return;
 		}
 
-		CancelActiveOrders();
+		var close = candle.ClosePrice;
 
-		// Combine covering and new exposure in a single market order to mirror the EA behaviour.
-		BuyMarket(volume);
-
-			_longTrailingStop = ModifyStopLossPips > 0m ? price - ModifyStopLossPips * _pipSize : 0m;
-			_longTrailingTarget = ModifyTakeProfitPips > 0m ? price + ModifyTakeProfitPips * _pipSize : 0m;
-	}
-
-	private void EnterShort(decimal price)
-	{
-		var volume = Volume;
-		if (Position > 0m)
+		// Trailing stop management
+		if (Position > 0)
 		{
-			volume += Position;
-			ResetLongState();
-		}
+			var newTrail = close - atrVal * 1.5m;
+			if (newTrail > _trailStop)
+				_trailStop = newTrail;
 
-		if (volume <= 0m)
-		{
-			LogWarning("Volume is non-positive. Short entry aborted.");
-			return;
-		}
-
-		CancelActiveOrders();
-		SellMarket(volume);
-
-			_shortTrailingStop = ModifyStopLossPips > 0m ? price + ModifyStopLossPips * _pipSize : 0m;
-			_shortTrailingTarget = ModifyTakeProfitPips > 0m ? price - ModifyTakeProfitPips * _pipSize : 0m;
-	}
-
-	private bool UpdateTrailingProtection(ICandleMessage candle)
-	{
-		var trailingStopDistance = ModifyStopLossPips > 0m ? ModifyStopLossPips * _pipSize : 0m;
-		var trailingTargetDistance = ModifyTakeProfitPips > 0m ? ModifyTakeProfitPips * _pipSize : 0m;
-
-		if (Position > 0m)
-		{
-			if (trailingStopDistance > 0m)
+			if (close <= _trailStop || close >= _entryPrice + atrVal * 3m)
 			{
-				var candidateStop = candle.ClosePrice - trailingStopDistance;
-				if (candidateStop > _longTrailingStop)
-					_longTrailingStop = candidateStop;
-
-				if (_longTrailingStop > 0m && candle.LowPrice <= _longTrailingStop)
-				{
-					LogInfo($"Long trailing stop hit at {_longTrailingStop:F5}. Closing position.");
-					SellMarket(Position);
-					ResetLongState();
-					return true;
-				}
-			}
-
-			if (trailingTargetDistance > 0m)
-			{
-				var candidateTarget = candle.ClosePrice + trailingTargetDistance;
-				if (candidateTarget > _longTrailingTarget)
-					_longTrailingTarget = candidateTarget;
-
-				if (_longTrailingTarget > 0m && candle.HighPrice >= _longTrailingTarget)
-				{
-					LogInfo($"Long trailing target reached at {_longTrailingTarget:F5}. Locking profits.");
-					SellMarket(Position);
-					ResetLongState();
-					return true;
-				}
+				SellMarket();
+				_entryPrice = 0;
+				_trailStop = 0;
 			}
 		}
-		else if (Position < 0m)
+		else if (Position < 0)
 		{
-			if (trailingStopDistance > 0m)
+			var newTrail = close + atrVal * 1.5m;
+			if (_trailStop == 0 || newTrail < _trailStop)
+				_trailStop = newTrail;
+
+			if (close >= _trailStop || close <= _entryPrice - atrVal * 3m)
 			{
-				var candidateStop = candle.ClosePrice + trailingStopDistance;
-				if (_shortTrailingStop == 0m || candidateStop < _shortTrailingStop)
-					_shortTrailingStop = candidateStop;
-
-				if (_shortTrailingStop > 0m && candle.HighPrice >= _shortTrailingStop)
-				{
-					LogInfo($"Short trailing stop hit at {_shortTrailingStop:F5}. Closing position.");
-					BuyMarket(Math.Abs(Position));
-					ResetShortState();
-					return true;
-				}
-			}
-
-			if (trailingTargetDistance > 0m)
-			{
-				var candidateTarget = candle.ClosePrice - trailingTargetDistance;
-				if (_shortTrailingTarget == 0m || candidateTarget < _shortTrailingTarget)
-					_shortTrailingTarget = candidateTarget;
-
-				if (_shortTrailingTarget > 0m && candle.LowPrice <= _shortTrailingTarget)
-				{
-					LogInfo($"Short trailing target reached at {_shortTrailingTarget:F5}. Locking profits.");
-					BuyMarket(Math.Abs(Position));
-					ResetShortState();
-					return true;
-				}
+				BuyMarket();
+				_entryPrice = 0;
+				_trailStop = 0;
 			}
 		}
 
-		return false;
-	}
+		// Entry: RSI crosses threshold with EMA trend confirmation
+		if (Position == 0)
+		{
+			if (rsiVal < BuyThreshold && _prevRsi >= BuyThreshold && close > emaVal)
+			{
+				_entryPrice = close;
+				_trailStop = close - atrVal * 2m;
+				BuyMarket();
+			}
+			else if (rsiVal > SellThreshold && _prevRsi <= SellThreshold && close < emaVal)
+			{
+				_entryPrice = close;
+				_trailStop = close + atrVal * 2m;
+				SellMarket();
+			}
+		}
 
-	private void ResetLongState()
-	{
-		_longTrailingStop = 0m;
-			_longTrailingTarget = 0m;
-	}
-
-	private void ResetShortState()
-	{
-		_shortTrailingStop = 0m;
-			_shortTrailingTarget = 0m;
-	}
-
-	private decimal CalculatePipSize()
-	{
-		var step = Security?.PriceStep ?? 0m;
-
-		if (step <= 0m)
-			return 1m;
-
-		if (step < 0.001m)
-			return step * 10m;
-
-		return step;
+		_prevRsi = rsiVal;
 	}
 }
