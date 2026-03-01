@@ -44,7 +44,7 @@ static class Program
 
 		Console.WriteLine("Initializing compilation environment...");
 
-		await CompilationExtensions.Init(logManager.Application, [], token);
+		await CompilationExtensions.Init(StockSharp.Messages.Extensions.DefaultFileSystem, logManager.Application, [], token);
 
 		var code = new CodeInfo
 		{
@@ -100,7 +100,7 @@ static class Program
 
 		var task1 = strategy.ExecAsync(null, token);
 
-		connector.Start();
+		await connector.StartAsync(token);
 
 		var task2 = Task.Run(Console.ReadLine, token);
 		Task.WaitAny(task1.AsTask(), task2);
