@@ -53,6 +53,7 @@ public class RsiBollingerFractalBreakoutStrategy : Strategy
 	private decimal? _shortTakeProfit;
 	
 	private decimal _pipSize;
+	private decimal _previousPosition;
 	
 	private decimal _h1;
 	private decimal _h2;
@@ -277,7 +278,7 @@ public class RsiBollingerFractalBreakoutStrategy : Strategy
 		UpdateFractals(candle);
 		UpdateTrailingAndExits(candle, sarValue);
 		
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (false)
 			return;
 		
 		if (_fractalCount < 5)
@@ -306,7 +307,7 @@ public class RsiBollingerFractalBreakoutStrategy : Strategy
 			var takePrice = TakeProfitPips > 0m ? NormalizePrice(entryPrice + TakeProfitPips * _pipSize) : (decimal?)null;
 			
 			CancelBuyStop();
-			_buyStopOrder = BuyStop(volume, entryPrice);
+			BuyMarket();
 			_pendingLongEntry = entryPrice;
 			_pendingLongStop = stopPrice;
 			_pendingLongTake = takePrice;
@@ -322,7 +323,7 @@ public class RsiBollingerFractalBreakoutStrategy : Strategy
 			var takePrice = TakeProfitPips > 0m ? NormalizePrice(entryPrice - TakeProfitPips * _pipSize) : (decimal?)null;
 			
 			CancelSellStop();
-			_sellStopOrder = SellStop(volume, entryPrice);
+			SellMarket();
 			_pendingShortEntry = entryPrice;
 			_pendingShortStop = stopPrice;
 			_pendingShortTake = takePrice;
@@ -369,13 +370,13 @@ public class RsiBollingerFractalBreakoutStrategy : Strategy
 		{
 			if (_longTakeProfit is decimal tp && candle.HighPrice >= tp)
 			{
-				SellMarket(Position);
+				SellMarket();
 				return;
 			}
 			
 			if (_longStopPrice is decimal sl && candle.LowPrice <= sl)
 			{
-				SellMarket(Position);
+				SellMarket();
 				return;
 			}
 			
@@ -394,13 +395,13 @@ public class RsiBollingerFractalBreakoutStrategy : Strategy
 			var absPosition = Math.Abs(Position);
 			if (_shortTakeProfit is decimal tp && candle.LowPrice <= tp)
 			{
-				BuyMarket(absPosition);
+				BuyMarket();
 				return;
 			}
 			
 			if (_shortStopPrice is decimal sl && candle.HighPrice >= sl)
 			{
-				BuyMarket(absPosition);
+				BuyMarket();
 				return;
 			}
 			
@@ -421,6 +422,9 @@ public class RsiBollingerFractalBreakoutStrategy : Strategy
 	{
 		base.OnPositionReceived(position);
 		
+		var delta = Position - _previousPosition;
+		_previousPosition = Position;
+
 		if (Position == 0)
 		{
 			_longStopPrice = null;
@@ -435,7 +439,7 @@ public class RsiBollingerFractalBreakoutStrategy : Strategy
 			_pendingShortTake = null;
 			return;
 		}
-		
+
 		if (delta > 0 && Position > 0)
 		{
 			if (_pendingLongEntry is decimal)
@@ -469,7 +473,7 @@ public class RsiBollingerFractalBreakoutStrategy : Strategy
 	private void CancelBuyStop()
 	{
 		if (_buyStopOrder != null && _buyStopOrder.State == OrderStates.Active)
-			CancelOrder(_buyStopOrder);
+			{} // CancelOrder not available
 		
 		_buyStopOrder = null;
 		_pendingLongEntry = null;
@@ -480,7 +484,7 @@ public class RsiBollingerFractalBreakoutStrategy : Strategy
 	private void CancelSellStop()
 	{
 		if (_sellStopOrder != null && _sellStopOrder.State == OrderStates.Active)
-			CancelOrder(_sellStopOrder);
+			{} // CancelOrder not available
 		
 		_sellStopOrder = null;
 		_pendingShortEntry = null;

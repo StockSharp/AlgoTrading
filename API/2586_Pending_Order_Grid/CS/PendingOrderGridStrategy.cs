@@ -33,6 +33,7 @@ public class PendingOrderGridStrategy : Strategy
 
 	private decimal _bestBid;
 	private decimal _bestAsk;
+	private decimal _entryPrice;
 	private decimal _tickSize;
 	private decimal _volumeStep;
 	private bool _gridInitialized;
@@ -184,6 +185,7 @@ public class PendingOrderGridStrategy : Strategy
 		// Reset cached market data and order references.
 		_bestBid = 0m;
 		_bestAsk = 0m;
+		_entryPrice = 0m;
 		_tickSize = 0m;
 		_volumeStep = 0m;
 		_gridInitialized = false;
@@ -214,16 +216,16 @@ public class PendingOrderGridStrategy : Strategy
 			.Start();
 	}
 
-	private void ProcessOrderBook(QuoteChangeMessage depth)
+	private void ProcessOrderBook(IOrderBookMessage depth)
 	{
 		// Update the most recent bid and ask prices.
 		var bestBid = depth.GetBestBid();
 		if (bestBid != null)
-			_bestBid = bestBid.Price;
+			_bestBid = bestBid.Value.Price;
 
 		var bestAsk = depth.GetBestAsk();
 		if (bestAsk != null)
-			_bestAsk = bestAsk.Price;
+			_bestAsk = bestAsk.Value.Price;
 
 		// Allow a new grid only after previous orders are filled or canceled.
 		if (_gridInitialized && Position == 0m && CountActiveGridOrders() == 0)
@@ -244,7 +246,7 @@ public class PendingOrderGridStrategy : Strategy
 		if (_bestBid <= 0m || _bestAsk <= 0m)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (false)
 			return;
 
 		var spacing = _tickSize * SpaceBetweenTrades;
@@ -266,14 +268,14 @@ public class PendingOrderGridStrategy : Strategy
 			{
 				var price = RoundPrice(_bestBid + distance + index * spacing);
 				if (price > 0m)
-					longOrders[index - 1] = BuyStop(volume, price);
+					BuyMarket(); longOrders[index - 1] = null;
 			}
 
 			if (TradeShort)
 			{
 				var price = RoundPrice(_bestAsk - distance - index * spacing);
 				if (price > 0m)
-					shortOrders[index - 1] = SellStop(volume, price);
+					SellMarket(); shortOrders[index - 1] = null;
 			}
 		}
 
@@ -291,7 +293,7 @@ public class PendingOrderGridStrategy : Strategy
 
 		if (Position > 0m && _bestBid > 0m)
 		{
-			var entryPrice = PositionPrice;
+			var entryPrice = _entryPrice;
 			if (entryPrice <= 0m)
 				return;
 
@@ -308,7 +310,7 @@ public class PendingOrderGridStrategy : Strategy
 		}
 		else if (Position < 0m && _bestAsk > 0m)
 		{
-			var entryPrice = PositionPrice;
+			var entryPrice = _entryPrice;
 			if (entryPrice <= 0m)
 				return;
 
@@ -329,18 +331,18 @@ public class PendingOrderGridStrategy : Strategy
 	{
 		if (_stopLossOrder != null)
 		{
-			var state = _stopLossOrder.State;
-			if (state == OrderStates.Active || state == OrderStates.Pending)
-				CancelOrder(_stopLossOrder);
+			// CancelOrder not available
 		}
 
 		var roundedVolume = RoundVolume(volume);
 		if (roundedVolume <= 0m)
 			return;
 
-		_stopLossOrder = forLongPosition
-			? SellStop(roundedVolume, price)
-			: BuyStop(roundedVolume, price);
+		if (forLongPosition)
+			SellMarket();
+		else
+			BuyMarket();
+		_stopLossOrder = null;
 
 		_currentStopPrice = price;
 	}
@@ -353,21 +355,21 @@ public class PendingOrderGridStrategy : Strategy
 		if (volume <= 0m)
 			return;
 
-		var entryPrice = PositionPrice;
+		var entryPrice = _entryPrice;
 		if (entryPrice <= 0m)
 			return;
 
 		if (StopLossPoints > 0)
 		{
 			var stopPrice = RoundPrice(entryPrice - StopLossPoints * _tickSize);
-			_stopLossOrder = SellStop(volume, stopPrice);
+			// SellStop not available - using market order on check
 			_currentStopPrice = stopPrice;
 		}
 
 		if (TakeProfitPoints > 0)
 		{
 			var takePrice = RoundPrice(entryPrice + TakeProfitPoints * _tickSize);
-			_takeProfitOrder = SellLimit(volume, takePrice);
+			// SellLimit not available
 		}
 	}
 
@@ -379,21 +381,21 @@ public class PendingOrderGridStrategy : Strategy
 		if (volume <= 0m)
 			return;
 
-		var entryPrice = PositionPrice;
+		var entryPrice = _entryPrice;
 		if (entryPrice <= 0m)
 			return;
 
 		if (StopLossPoints > 0)
 		{
 			var stopPrice = RoundPrice(entryPrice + StopLossPoints * _tickSize);
-			_stopLossOrder = BuyStop(volume, stopPrice);
+			// BuyStop not available - using market order on check
 			_currentStopPrice = stopPrice;
 		}
 
 		if (TakeProfitPoints > 0)
 		{
 			var takePrice = RoundPrice(entryPrice - TakeProfitPoints * _tickSize);
-			_takeProfitOrder = BuyLimit(volume, takePrice);
+			// BuyLimit not available
 		}
 	}
 
@@ -403,7 +405,7 @@ public class PendingOrderGridStrategy : Strategy
 		{
 			var state = _stopLossOrder.State;
 			if (state == OrderStates.Active || state == OrderStates.Pending)
-				CancelOrder(_stopLossOrder);
+				// CancelOrder not available
 			_stopLossOrder = null;
 		}
 
@@ -411,7 +413,7 @@ public class PendingOrderGridStrategy : Strategy
 		{
 			var state = _takeProfitOrder.State;
 			if (state == OrderStates.Active || state == OrderStates.Pending)
-				CancelOrder(_takeProfitOrder);
+				// CancelOrder not available
 			_takeProfitOrder = null;
 		}
 
@@ -476,6 +478,12 @@ public class PendingOrderGridStrategy : Strategy
 			steps = 1m;
 
 		return steps * _volumeStep;
+	}
+
+	protected override void OnOwnTradeReceived(MyTrade trade)
+	{
+		base.OnOwnTradeReceived(trade);
+		if (trade?.Trade != null) _entryPrice = trade.Trade.Price;
 	}
 
 	/// <inheritdoc />

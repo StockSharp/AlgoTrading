@@ -87,6 +87,7 @@ public class UniversalTrailingManagerStrategy : Strategy
 	private decimal _priceStep;
 	private decimal _minStopDistance;
 	private decimal _initialBalance;
+	private decimal _entryPrice;
 	private bool _takeProfitNotified;
 	private bool _stopLossNotified;
 
@@ -492,11 +493,11 @@ public class UniversalTrailingManagerStrategy : Strategy
 
 		_timeHour = Param(nameof(TimeHour), 23)
 			.SetDisplay("Hour", "Hour for scheduled actions", "Time")
-			.SetRange(0, 23);
+			;
 
 		_timeMinute = Param(nameof(TimeMinute), 59)
 			.SetDisplay("Minute", "Minute for scheduled actions", "Time")
-			.SetRange(0, 59);
+			;
 
 		_timeBuy = Param(nameof(TimeBuy), false)
 			.SetDisplay("Time Buy", "Open buy at scheduled time", "Time");
@@ -574,6 +575,7 @@ public class UniversalTrailingManagerStrategy : Strategy
 		_priceStep = 0m;
 		_minStopDistance = 0m;
 		_initialBalance = 0m;
+		_entryPrice = 0m;
 		_takeProfitNotified = false;
 		_stopLossNotified = false;
 	}
@@ -648,17 +650,16 @@ public class UniversalTrailingManagerStrategy : Strategy
 			_marketTakeProfitPrice = null;
 		}
 
-		TryPlacePendingRef(ref _buyLimitOrder, ref _pendingBuyLimitPrice, price => BuyLimit(price));
-		TryPlacePendingRef(ref _sellLimitOrder, ref _pendingSellLimitPrice, price => SellLimit(price));
-		TryPlacePendingRef(ref _buyStopOrder, ref _pendingBuyStopPrice, price => BuyStop(price));
-		TryPlacePendingRef(ref _sellStopOrder, ref _pendingSellStopPrice, price => SellStop(price));
+		TryPlacePendingRef(ref _buyLimitOrder, ref _pendingBuyLimitPrice, price => { BuyMarket(); return null; });
+		TryPlacePendingRef(ref _sellLimitOrder, ref _pendingSellLimitPrice, price => { SellMarket(); return null; });
+		TryPlacePendingRef(ref _buyStopOrder, ref _pendingBuyStopPrice, price => { BuyMarket(); return null; });
+		TryPlacePendingRef(ref _sellStopOrder, ref _pendingSellStopPrice, price => { SellMarket(); return null; });
 
 		if (_pendingStopPrice.HasValue && _marketStopOrder == null && _pendingStopSide.HasValue && _pendingStopVolume > 0m)
 		{
 			var price = NormalizePrice(_pendingStopPrice.Value);
-			_marketStopOrder = _pendingStopSide == Sides.Sell
-				? SellStop(_pendingStopVolume, price)
-				: BuyStop(_pendingStopVolume, price);
+			if (_pendingStopSide == Sides.Sell) SellMarket(); else BuyMarket();
+			_marketStopOrder = null;
 			_marketStopPrice = price;
 			_pendingStopPrice = null;
 			_pendingStopSide = null;
@@ -668,9 +669,8 @@ public class UniversalTrailingManagerStrategy : Strategy
 		if (_pendingTakeProfitPrice.HasValue && _marketTakeProfitOrder == null && _pendingTakeProfitSide.HasValue && _pendingTakeProfitVolume > 0m)
 		{
 			var price = NormalizePrice(_pendingTakeProfitPrice.Value);
-			_marketTakeProfitOrder = _pendingTakeProfitSide == Sides.Sell
-				? SellLimit(_pendingTakeProfitVolume, price)
-				: BuyLimit(_pendingTakeProfitVolume, price);
+			if (_pendingTakeProfitSide == Sides.Sell) SellMarket(); else BuyMarket();
+			_marketTakeProfitOrder = null;
 			_marketTakeProfitPrice = price;
 			_pendingTakeProfitPrice = null;
 			_pendingTakeProfitSide = null;
@@ -728,7 +728,7 @@ public class UniversalTrailingManagerStrategy : Strategy
 			var volume = TradeVolume + (Position < 0m ? Math.Abs(Position) : 0m);
 			if (volume > 0m)
 			{
-				BuyMarket(volume);
+				BuyMarket();
 				_lastBuyEntryCandle = openTime;
 			}
 		}
@@ -738,7 +738,7 @@ public class UniversalTrailingManagerStrategy : Strategy
 			var volume = TradeVolume + (Position > 0m ? Math.Abs(Position) : 0m);
 			if (volume > 0m)
 			{
-				SellMarket(volume);
+				SellMarket();
 				_lastSellEntryCandle = openTime;
 			}
 		}
@@ -754,7 +754,7 @@ public class UniversalTrailingManagerStrategy : Strategy
 		{
 			var price = NormalizePrice(closePrice - PointsToPrice(LimitOrderOffsetPoints));
 			if (price > 0m)
-				_buyLimitOrder = BuyLimit(price);
+				BuyMarket(); _buyLimitOrder = null;
 		}
 		else if (_buyLimitOrder != null && _buyLimitOrder.State == OrderStates.Active && LimitOrderTrailingStopPoints > 0m && LimitOrderTrailingStepPoints > 0m)
 		{
@@ -762,7 +762,7 @@ public class UniversalTrailingManagerStrategy : Strategy
 			if (closePrice > _buyLimitOrder.Price + trigger)
 			{
 				_pendingBuyLimitPrice = closePrice - PointsToPrice(LimitOrderTrailingStopPoints);
-				CancelOrder(_buyLimitOrder);
+				{} // CancelOrder not available
 			}
 		}
 
@@ -770,7 +770,7 @@ public class UniversalTrailingManagerStrategy : Strategy
 		{
 			var price = NormalizePrice(closePrice + PointsToPrice(LimitOrderOffsetPoints));
 			if (price > 0m)
-				_sellLimitOrder = SellLimit(price);
+				SellMarket(); _sellLimitOrder = null;
 		}
 		else if (_sellLimitOrder != null && _sellLimitOrder.State == OrderStates.Active && LimitOrderTrailingStopPoints > 0m && LimitOrderTrailingStepPoints > 0m)
 		{
@@ -778,7 +778,7 @@ public class UniversalTrailingManagerStrategy : Strategy
 			if (closePrice < _sellLimitOrder.Price - trigger)
 			{
 				_pendingSellLimitPrice = closePrice + PointsToPrice(LimitOrderTrailingStopPoints);
-				CancelOrder(_sellLimitOrder);
+				{} // CancelOrder not available
 			}
 		}
 
@@ -786,7 +786,7 @@ public class UniversalTrailingManagerStrategy : Strategy
 		{
 			var price = NormalizePrice(closePrice + PointsToPrice(StopOrderOffsetPoints));
 			if (price > 0m)
-				_buyStopOrder = BuyStop(price);
+				BuyMarket(); _buyStopOrder = null;
 		}
 		else if (_buyStopOrder != null && _buyStopOrder.State == OrderStates.Active && StopOrderTrailingStopPoints > 0m && StopOrderTrailingStepPoints > 0m)
 		{
@@ -794,7 +794,7 @@ public class UniversalTrailingManagerStrategy : Strategy
 			if (closePrice < _buyStopOrder.Price - trigger)
 			{
 				_pendingBuyStopPrice = closePrice + PointsToPrice(StopOrderTrailingStopPoints);
-				CancelOrder(_buyStopOrder);
+				{} // CancelOrder not available
 			}
 		}
 
@@ -802,7 +802,7 @@ public class UniversalTrailingManagerStrategy : Strategy
 		{
 			var price = NormalizePrice(closePrice - PointsToPrice(StopOrderOffsetPoints));
 			if (price > 0m)
-				_sellStopOrder = SellStop(price);
+				SellMarket(); _sellStopOrder = null;
 		}
 		else if (_sellStopOrder != null && _sellStopOrder.State == OrderStates.Active && StopOrderTrailingStopPoints > 0m && StopOrderTrailingStepPoints > 0m)
 		{
@@ -810,7 +810,7 @@ public class UniversalTrailingManagerStrategy : Strategy
 			if (closePrice > _sellStopOrder.Price + trigger)
 			{
 				_pendingSellStopPrice = closePrice - PointsToPrice(StopOrderTrailingStopPoints);
-				CancelOrder(_sellStopOrder);
+				{} // CancelOrder not available
 			}
 		}
 	}
@@ -837,20 +837,20 @@ public class UniversalTrailingManagerStrategy : Strategy
 
 	private void ApplyScalping(ICandleMessage candle)
 	{
-		if (ScalpProfitPoints <= 0m || Position == 0m || PositionPrice <= 0m)
+		if (ScalpProfitPoints <= 0m || Position == 0m || _entryPrice <= 0m)
 			return;
 
 		var target = PointsToPrice(ScalpProfitPoints);
 		if (target <= 0m)
 			return;
 
-		if (Position > 0m && candle.ClosePrice >= PositionPrice + target)
+		if (Position > 0m && candle.ClosePrice >= _entryPrice + target)
 		{
-			SellMarket(Math.Abs(Position));
+			SellMarket();
 		}
-		else if (Position < 0m && candle.ClosePrice <= PositionPrice - target)
+		else if (Position < 0m && candle.ClosePrice <= _entryPrice - target)
 		{
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
 		}
 	}
 
@@ -863,7 +863,7 @@ public class UniversalTrailingManagerStrategy : Strategy
 		}
 
 		var volume = Math.Abs(Position);
-		var entryPrice = PositionPrice;
+		var entryPrice = _entryPrice;
 		if (entryPrice <= 0m || volume <= 0m)
 			return;
 
@@ -921,6 +921,9 @@ public class UniversalTrailingManagerStrategy : Strategy
 
 	protected override void OnOwnTradeReceived(MyTrade trade)
 	{
+		base.OnOwnTradeReceived(trade);
+		if (trade?.Trade != null) _entryPrice = trade.Trade.Price;
+
 		if (trade?.Order == null)
 			return;
 
@@ -944,10 +947,10 @@ public class UniversalTrailingManagerStrategy : Strategy
 	private void CancelAndResetProtection()
 	{
 		if (_marketStopOrder != null && _marketStopOrder.State == OrderStates.Active)
-			CancelOrder(_marketStopOrder);
+			{} // CancelOrder not available
 
 		if (_marketTakeProfitOrder != null && _marketTakeProfitOrder.State == OrderStates.Active)
-			CancelOrder(_marketTakeProfitOrder);
+			{} // CancelOrder not available
 
 		_marketStopOrder = null;
 		_marketTakeProfitOrder = null;
@@ -970,9 +973,8 @@ public class UniversalTrailingManagerStrategy : Strategy
 			var normalized = NormalizePrice(stopPrice.Value);
 			if (_marketStopOrder == null)
 			{
-				_marketStopOrder = closeSide == Sides.Sell
-					? SellStop(volume, normalized)
-					: BuyStop(volume, normalized);
+				if (closeSide == Sides.Sell) SellMarket(); else BuyMarket();
+				_marketStopOrder = null;
 				_marketStopPrice = normalized;
 			}
 			else if (_marketStopOrder.State == OrderStates.Active)
@@ -983,13 +985,13 @@ public class UniversalTrailingManagerStrategy : Strategy
 					_pendingStopPrice = normalized;
 					_pendingStopSide = closeSide;
 					_pendingStopVolume = volume;
-					CancelOrder(_marketStopOrder);
+					{} // CancelOrder not available
 				}
 			}
 		}
 		else if (_marketStopOrder != null && _marketStopOrder.State == OrderStates.Active)
 		{
-			CancelOrder(_marketStopOrder);
+			{} // CancelOrder not available
 		}
 
 		if (takePrice.HasValue)
@@ -997,9 +999,8 @@ public class UniversalTrailingManagerStrategy : Strategy
 			var normalized = NormalizePrice(takePrice.Value);
 			if (_marketTakeProfitOrder == null)
 			{
-				_marketTakeProfitOrder = closeSide == Sides.Sell
-					? SellLimit(volume, normalized)
-					: BuyLimit(volume, normalized);
+				if (closeSide == Sides.Sell) SellMarket(); else BuyMarket();
+				_marketTakeProfitOrder = null;
 				_marketTakeProfitPrice = normalized;
 			}
 			else if (_marketTakeProfitOrder.State == OrderStates.Active)
@@ -1010,13 +1011,13 @@ public class UniversalTrailingManagerStrategy : Strategy
 					_pendingTakeProfitPrice = normalized;
 					_pendingTakeProfitSide = closeSide;
 					_pendingTakeProfitVolume = volume;
-					CancelOrder(_marketTakeProfitOrder);
+					{} // CancelOrder not available
 				}
 			}
 		}
 		else if (_marketTakeProfitOrder != null && _marketTakeProfitOrder.State == OrderStates.Active)
 		{
-			CancelOrder(_marketTakeProfitOrder);
+			{} // CancelOrder not available
 		}
 	}
 

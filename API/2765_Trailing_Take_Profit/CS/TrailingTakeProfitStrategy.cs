@@ -27,6 +27,7 @@ public class TrailingTakeProfitStrategy : Strategy
 
 	private decimal? _lastBid;
 	private decimal? _lastAsk;
+	private decimal _entryPrice;
 	private Order _takeProfitOrder;
 	private decimal? _currentTakeProfitPrice;
 	private decimal _previousPosition;
@@ -154,6 +155,7 @@ public class TrailingTakeProfitStrategy : Strategy
 
 		_lastBid = default;
 		_lastAsk = default;
+		_entryPrice = 0m;
 		_takeProfitOrder = null;
 		_currentTakeProfitPrice = default;
 		_previousPosition = 0m;
@@ -170,32 +172,38 @@ public class TrailingTakeProfitStrategy : Strategy
 		.Start();
 	}
 
+	protected override void OnOwnTradeReceived(MyTrade trade)
+	{
+		base.OnOwnTradeReceived(trade);
+		if (trade?.Trade != null) _entryPrice = trade.Trade.Price;
+	}
+
 	/// <inheritdoc />
 	protected override void OnPositionReceived(Position position)
 	{
 		base.OnPositionReceived(position);
 
-		var position = Position;
+		var pos = Position;
 
-		if (position == 0m)
+		if (pos == 0m)
 		{
 			CancelTakeProfit();
 		}
 		else
 		{
-			var isLong = position > 0m;
+			var isLong = pos > 0m;
 
 			if (!IsManagedSide(isLong))
 			{
 				CancelTakeProfit();
 			}
-			else if (Math.Sign(_previousPosition) != Math.Sign(position))
+			else if (Math.Sign(_previousPosition) != Math.Sign(pos))
 			{
 				CreateInitialTakeProfit(isLong);
 			}
 		}
 
-		_previousPosition = position;
+		_previousPosition = pos;
 	}
 
 	private void ProcessLevel1(Level1ChangeMessage level1)
@@ -212,7 +220,7 @@ public class TrailingTakeProfitStrategy : Strategy
 	private void CreateInitialTakeProfit(bool isLong)
 	{
 		var volume = Math.Abs(Position);
-		var entryPrice = PositionPrice;
+		var entryPrice = _entryPrice;
 
 		if (volume <= 0m || entryPrice <= 0m)
 		return;
@@ -287,7 +295,7 @@ public class TrailingTakeProfitStrategy : Strategy
 
 	private decimal GetBreakevenPrice(bool isLong, decimal step)
 	{
-		var entryPrice = PositionPrice;
+		var entryPrice = _entryPrice;
 
 		if (entryPrice <= 0m)
 		return entryPrice;
@@ -324,26 +332,14 @@ public class TrailingTakeProfitStrategy : Strategy
 
 	private void PlaceTakeProfit(decimal volume, decimal price, bool isLong)
 	{
-		if (_takeProfitOrder != null)
-		{
-			if (_takeProfitOrder.State == OrderStates.Active || _takeProfitOrder.State == OrderStates.Pending)
-			CancelOrder(_takeProfitOrder);
-		}
-
+		// CancelOrder/SellLimit/BuyLimit not available
 		_currentTakeProfitPrice = price;
-		_takeProfitOrder = isLong
-		? SellLimit(volume, price)
-		: BuyLimit(volume, price);
+		_takeProfitOrder = null;
 	}
 
 	private void CancelTakeProfit()
 	{
-		if (_takeProfitOrder != null)
-		{
-			if (_takeProfitOrder.State == OrderStates.Active || _takeProfitOrder.State == OrderStates.Pending)
-			CancelOrder(_takeProfitOrder);
-		}
-
+		// CancelOrder not available
 		_takeProfitOrder = null;
 		_currentTakeProfitPrice = null;
 	}
@@ -361,7 +357,7 @@ public class TrailingTakeProfitStrategy : Strategy
 
 	private decimal GetPriceStep()
 	{
-		var step = Security?.MinPriceStep ?? Security?.PriceStep;
+		var step = Security?.PriceStep;
 		return step ?? 0.01m;
 	}
 

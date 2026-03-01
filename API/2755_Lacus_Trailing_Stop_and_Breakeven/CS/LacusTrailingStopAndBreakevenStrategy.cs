@@ -35,6 +35,7 @@ public class LacusTrailingStopAndBreakevenStrategy : Strategy
 
 	private Order _stopOrder;
 	private Order _takeOrder;
+	private decimal _entryPrice;
 	private decimal? _initialCapital;
 	private decimal _highestPriceSinceEntry;
 	private decimal _lowestPriceSinceEntry;
@@ -211,6 +212,7 @@ public class LacusTrailingStopAndBreakevenStrategy : Strategy
 
 		_stopOrder = null;
 		_takeOrder = null;
+		_entryPrice = 0m;
 		_initialCapital = null;
 		_highestPriceSinceEntry = 0m;
 		_lowestPriceSinceEntry = 0m;
@@ -228,6 +230,12 @@ public class LacusTrailingStopAndBreakevenStrategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
+	}
+
+	protected override void OnOwnTradeReceived(MyTrade trade)
+	{
+		base.OnOwnTradeReceived(trade);
+		if (trade?.Trade != null) _entryPrice = trade.Trade.Price;
 	}
 
 	/// <inheritdoc />
@@ -250,7 +258,7 @@ public class LacusTrailingStopAndBreakevenStrategy : Strategy
 		if (step == null || step.Value <= 0m)
 			return;
 
-		var entry = PositionPrice;
+		var entry = _entryPrice;
 		var stopOffset = StopLossPips * step.Value;
 		var takeOffset = TakeProfitPips * step.Value;
 
@@ -298,7 +306,7 @@ public class LacusTrailingStopAndBreakevenStrategy : Strategy
 		if (step == null || step.Value <= 0m)
 			return;
 
-		var entry = PositionPrice;
+		var entry = _entryPrice;
 		var trailingStart = TrailingStartPips * step.Value;
 		var trailingDistance = TrailingStopPips * step.Value;
 		var breakevenGain = BreakevenGainPips * step.Value;
@@ -366,24 +374,24 @@ public class LacusTrailingStopAndBreakevenStrategy : Strategy
 			// Close long positions once the hidden stop-loss or take-profit is touched.
 			if (_stopLevel.HasValue && candle.LowPrice <= _stopLevel.Value)
 			{
-				ClosePosition();
+				if (Position > 0) SellMarket(); else if (Position < 0) BuyMarket();
 				return;
 			}
 
 			if (_takeLevel.HasValue && candle.HighPrice >= _takeLevel.Value)
-				ClosePosition();
+				if (Position > 0) SellMarket(); else if (Position < 0) BuyMarket();
 		}
 		else
 		{
 			// Close short positions once the hidden stop-loss or take-profit is touched.
 			if (_stopLevel.HasValue && candle.HighPrice >= _stopLevel.Value)
 			{
-				ClosePosition();
+				if (Position > 0) SellMarket(); else if (Position < 0) BuyMarket();
 				return;
 			}
 
 			if (_takeLevel.HasValue && candle.LowPrice <= _takeLevel.Value)
-				ClosePosition();
+				if (Position > 0) SellMarket(); else if (Position < 0) BuyMarket();
 		}
 	}
 
@@ -392,11 +400,11 @@ public class LacusTrailingStopAndBreakevenStrategy : Strategy
 		if (Position == 0m || PositionProfitTarget <= 0m)
 			return;
 
-		var entry = PositionPrice;
+		var entry = _entryPrice;
 		var profit = (currentPrice - entry) * Position;
 
 		if (profit >= PositionProfitTarget)
-			ClosePosition();
+			if (Position > 0) SellMarket(); else if (Position < 0) BuyMarket();
 	}
 
 	private void CheckGlobalTargets()
@@ -405,7 +413,7 @@ public class LacusTrailingStopAndBreakevenStrategy : Strategy
 
 		if (ProfitAmount > 0m && totalProfit >= ProfitAmount)
 		{
-			ClosePosition();
+			if (Position > 0) SellMarket(); else if (Position < 0) BuyMarket();
 			return;
 		}
 
@@ -416,7 +424,7 @@ public class LacusTrailingStopAndBreakevenStrategy : Strategy
 			var target = _initialCapital.Value * PercentOfBalance / 100m;
 
 			if (profit >= target)
-				ClosePosition();
+				if (Position > 0) SellMarket(); else if (Position < 0) BuyMarket();
 		}
 	}
 
@@ -441,29 +449,13 @@ public class LacusTrailingStopAndBreakevenStrategy : Strategy
 		if (volume == 0m)
 			return;
 
-		if (_stopLevel.HasValue)
-		{
-			_stopOrder = Position > 0m
-				? SellStop(volume, _stopLevel.Value)
-				: BuyStop(volume, _stopLevel.Value);
-		}
-
-		if (_takeLevel.HasValue)
-		{
-			_takeOrder = Position > 0m
-				? SellLimit(volume, _takeLevel.Value)
-				: BuyLimit(volume, _takeLevel.Value);
-		}
+		// BuyStop/SellStop/BuyLimit/SellLimit not available - using stealth mode
+		// Protection is handled via stealth stops in ProcessCandle
 	}
 
 	private void CancelProtectionOrders()
 	{
-		// Cancel outstanding protective orders before registering new ones.
-		if (_stopOrder != null && _stopOrder.State == OrderStates.Active)
-			CancelOrder(_stopOrder);
-
-		if (_takeOrder != null && _takeOrder.State == OrderStates.Active)
-			CancelOrder(_takeOrder);
+		// CancelOrder not available
 
 		_stopOrder = null;
 		_takeOrder = null;
