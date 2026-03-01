@@ -146,14 +146,14 @@ public class HsiFirst30mCandleStrategy : Strategy
 
 		if (candle.HighPrice >= _firstHigh.Value)
 		{
-			BuyStop(Volume, _firstHigh.Value);
+			BuyMarket();
 			_stopPrice = _firstLow.Value;
 			_takePrice = _firstHigh.Value + range * RiskReward;
 			_tradedToday = true;
 		}
 		else if (candle.LowPrice <= _firstLow.Value)
 		{
-			SellStop(Volume, _firstLow.Value);
+			SellMarket();
 			_stopPrice = _firstHigh.Value;
 			_takePrice = _firstLow.Value - range * RiskReward;
 			_tradedToday = true;

@@ -133,7 +133,7 @@ public class StochasticExitAlertsStrategy : Strategy
 		base.OnStarted2(time);
 
 		var stochastic = new StochasticOscillator
-		{ K = { Length = StochLength },
+		{
 			K = { Length = KLength },
 			D = { Length = DLength },
 		};

@@ -22,7 +22,7 @@ public class HtfCandlesLibStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<DataType> _higherCandleType;
 
-	private DateTimeOffset _currentStart;
+	private DateTime _currentStart;
 	private decimal _open;
 	private decimal _high;
 	private decimal _low;
@@ -99,17 +99,17 @@ public class HtfCandlesLibStrategy : Strategy
 		if (candle.HighPrice > _high)
 		{
 			_high = candle.HighPrice;
-			_highIndex = candle.OpenTime.ToUnixTimeMilliseconds();
+			_highIndex = candle.OpenTime.Ticks;
 		}
 
 		if (candle.LowPrice < _low)
 		{
 			_low = candle.LowPrice;
-			_lowIndex = candle.OpenTime.ToUnixTimeMilliseconds();
+			_lowIndex = candle.OpenTime.Ticks;
 		}
 
 		_close = candle.ClosePrice;
-		_closeIndex = candle.OpenTime.ToUnixTimeMilliseconds();
+		_closeIndex = candle.OpenTime.Ticks;
 	}
 
 	private void StartNew(ICandleMessage candle)
@@ -119,7 +119,7 @@ public class HtfCandlesLibStrategy : Strategy
 		_high = candle.HighPrice;
 		_low = candle.LowPrice;
 		_close = candle.ClosePrice;
-		_openIndex = candle.OpenTime.ToUnixTimeMilliseconds();
+		_openIndex = candle.OpenTime.Ticks;
 		_highIndex = _openIndex;
 		_lowIndex = _openIndex;
 		_closeIndex = _openIndex;
@@ -127,6 +127,6 @@ public class HtfCandlesLibStrategy : Strategy
 
 	private void LogCurrent()
 	{
-		Log.Info("O:{0} H:{1} L:{2} C:{3} ({4},{5},{6},{7})", _open, _high, _low, _close, _openIndex, _highIndex, _lowIndex, _closeIndex);
+		LogInfo("O:{0} H:{1} L:{2} C:{3} ({4},{5},{6},{7})", _open, _high, _low, _close, _openIndex, _highIndex, _lowIndex, _closeIndex);
 	}
 }

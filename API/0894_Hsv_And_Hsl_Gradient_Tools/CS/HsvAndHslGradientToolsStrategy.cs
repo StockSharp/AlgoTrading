@@ -11,7 +11,6 @@ using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using System.Drawing;
 
 namespace StockSharp.Samples.Strategies;
 
@@ -85,7 +84,7 @@ public class HsvAndHslGradientToolsStrategy : Strategy
 		return Limit(hue, sat, lum, alpha);
 	}
 
-	public static Color Hsv(decimal h, decimal s = 1m, decimal v = 1m, decimal a = 1m)
+	public static int Hsv(decimal h, decimal s = 1m, decimal v = 1m, decimal a = 1m)
 	{
 		var data = Limit(h, s, v, a);
 		var hue = data.H / 60m;
@@ -103,18 +102,21 @@ public class HsvAndHslGradientToolsStrategy : Strategy
 			case 4: r = sec; g = 0m; b = chroma; break;
 			default: r = chroma; g = 0m; b = sec; break;
 		}
-		var alpha = (int)Math.Round((1m - data.A) * 100m);
-		return Color.FromArgb(alpha, (int)Math.Round((m + r) * 255m), (int)Math.Round((m + g) * 255m), (int)Math.Round((m + b) * 255m));
+		var alpha = (int)Math.Round(data.A * 255m);
+		var ri = (int)Math.Round((m + r) * 255m);
+		var gi = (int)Math.Round((m + g) * 255m);
+		var bi = (int)Math.Round((m + b) * 255m);
+		return (alpha << 24) | (ri << 16) | (gi << 8) | bi;
 	}
 
-	public static Color Hsl(decimal h, decimal s = 1m, decimal l = 0.5m, decimal a = 1m)
+	public static int Hsl(decimal h, decimal s = 1m, decimal l = 0.5m, decimal a = 1m)
 	{
 		var data = Limit(h, s, l, a);
 		if (data.S == 0m)
 		{
 			var gray = (int)Math.Round(data.V * 255m);
-			var alpha = (int)Math.Round((1m - data.A) * 100m);
-			return Color.FromArgb(alpha, gray, gray, gray);
+			var alpha = (int)Math.Round(data.A * 255m);
+			return (alpha << 24) | (gray << 16) | (gray << 8) | gray;
 		}
 		var q = data.V < 0.5m ? data.V * (1m + data.S) : data.V + data.S - data.V * data.S;
 		var p = 2m * data.V - q;
@@ -135,8 +137,11 @@ public class HsvAndHslGradientToolsStrategy : Strategy
 		var r = Hue2Rgb((data.H / 360m) + 1m / 3m);
 		var g = Hue2Rgb(data.H / 360m);
 		var b = Hue2Rgb((data.H / 360m) - 1m / 3m);
-		var alpha = (int)Math.Round((1m - data.A) * 100m);
-		return Color.FromArgb(alpha, (int)Math.Round(r * 255m), (int)Math.Round(g * 255m), (int)Math.Round(b * 255m));
+		var alpha2 = (int)Math.Round(data.A * 255m);
+		var ri = (int)Math.Round(r * 255m);
+		var gi = (int)Math.Round(g * 255m);
+		var bi = (int)Math.Round(b * 255m);
+		return (alpha2 << 24) | (ri << 16) | (gi << 8) | bi;
 	}
 
 	private static decimal EaseBoth(decimal v)
@@ -164,22 +169,22 @@ public class HsvAndHslGradientToolsStrategy : Strategy
 		return (value - start) / range;
 	}
 
-	public static Color HsvInvert(Color color)
+	public static int HsvInvert(int color)
 	{
-		var (h, s, v, a) = RgbToHsv(color.R, color.G, color.B, color.A);
+		var (h, s, v, a) = RgbToHsv((byte)((color >> 16) & 0xFF), (byte)((color >> 8) & 0xFF), (byte)(color & 0xFF), (byte)((color >> 24) & 0xFF));
 		return Hsv(h, s, 1m - EaseBoth(v), a);
 	}
 
-	public static Color HslInvert(Color color)
+	public static int HslInvert(int color)
 	{
-		var (h, s, l, a) = RgbToHsl(color.R, color.G, color.B, color.A);
+		var (h, s, l, a) = RgbToHsl((byte)((color >> 16) & 0xFF), (byte)((color >> 8) & 0xFF), (byte)(color & 0xFF), (byte)((color >> 24) & 0xFF));
 		return Hsl(h, s, 1m - EaseBoth(l), a);
 	}
 
-	public static Color HsvGradient(decimal signal, decimal startVal, decimal endVal, Color startCol, Color endCol)
+	public static int HsvGradient(decimal signal, decimal startVal, decimal endVal, int startCol, int endCol)
 	{
-		var (h1, s1, v1, a1) = RgbToHsv(startCol.R, startCol.G, startCol.B, startCol.A);
-		var (h2, s2, v2, a2) = RgbToHsv(endCol.R, endCol.G, endCol.B, endCol.A);
+		var (h1, s1, v1, a1) = RgbToHsv((byte)((startCol >> 16) & 0xFF), (byte)((startCol >> 8) & 0xFF), (byte)(startCol & 0xFF), (byte)((startCol >> 24) & 0xFF));
+		var (h2, s2, v2, a2) = RgbToHsv((byte)((endCol >> 16) & 0xFF), (byte)((endCol >> 8) & 0xFF), (byte)(endCol & 0xFF), (byte)((endCol >> 24) & 0xFF));
 		var pos = PercentOfDistance(signal, startVal, endVal);
 		var hue = h1 + 360m + pos * ((h2 - h1 + 540m) % 360m - 180m);
 		var sat = s1 + (s2 - s1) * pos;
@@ -188,10 +193,10 @@ public class HsvAndHslGradientToolsStrategy : Strategy
 		return Hsv(hue, sat, val, alpha);
 	}
 
-	public static Color HslGradient(decimal signal, decimal startVal, decimal endVal, Color startCol, Color endCol)
+	public static int HslGradient(decimal signal, decimal startVal, decimal endVal, int startCol, int endCol)
 	{
-		var (h1, s1, l1, a1) = RgbToHsl(startCol.R, startCol.G, startCol.B, startCol.A);
-		var (h2, s2, l2, a2) = RgbToHsl(endCol.R, endCol.G, endCol.B, endCol.A);
+		var (h1, s1, l1, a1) = RgbToHsl((byte)((startCol >> 16) & 0xFF), (byte)((startCol >> 8) & 0xFF), (byte)(startCol & 0xFF), (byte)((startCol >> 24) & 0xFF));
+		var (h2, s2, l2, a2) = RgbToHsl((byte)((endCol >> 16) & 0xFF), (byte)((endCol >> 8) & 0xFF), (byte)(endCol & 0xFF), (byte)((endCol >> 24) & 0xFF));
 		var pos = PercentOfDistance(signal, startVal, endVal);
 		var hue = h1 + 360m + pos * ((h2 - h1 + 540m) % 360m - 180m);
 		var sat = s1 + (s2 - s1) * pos;

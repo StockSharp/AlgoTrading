@@ -128,7 +128,7 @@ public class HowToUseLeverageAndMarginStrategy : Strategy
 		base.OnStarted2(time);
 
 		var stochastic = new StochasticOscillator
-		{ K = { Length = StochPeriod },
+		{
 			K = { Length = KPeriod },
 			D = { Length = DPeriod },
 		};
