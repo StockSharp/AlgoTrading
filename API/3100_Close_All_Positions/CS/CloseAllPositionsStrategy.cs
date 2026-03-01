@@ -14,18 +14,20 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Flattens all open positions once the floating profit reaches the configured threshold.
-/// Replicates the behaviour of the "Close all positions" MQL utility expert.
+/// Opens positions based on SMA trend and closes when floating PnL reaches a profit threshold.
+/// Simplified from the "Close all positions" utility expert.
 /// </summary>
 public class CloseAllPositionsStrategy : Strategy
 {
 	private readonly StrategyParam<decimal> _profitThreshold;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _smaPeriod;
 
-	private bool _closeAllRequested;
+	private SimpleMovingAverage _sma;
+	private decimal _entryPrice;
 
 	/// <summary>
-	/// Minimum floating profit that triggers the closing routine.
+	/// Minimum floating profit that triggers position close.
 	/// </summary>
 	public decimal ProfitThreshold
 	{
@@ -43,17 +45,29 @@ public class CloseAllPositionsStrategy : Strategy
 	}
 
 	/// <summary>
+	/// SMA period for entry signals.
+	/// </summary>
+	public int SmaPeriod
+	{
+		get => _smaPeriod.Value;
+		set => _smaPeriod.Value = value;
+	}
+
+	/// <summary>
 	/// Initializes strategy parameters.
 	/// </summary>
 	public CloseAllPositionsStrategy()
 	{
 		_profitThreshold = Param(nameof(ProfitThreshold), 10m)
-			.SetDisplay("Profit Threshold", "Floating profit required to close every position", "General")
-			
+			.SetDisplay("Profit Threshold", "Floating profit required to close position", "General")
 			.SetOptimize(5m, 50m, 5m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candle series used for periodic checks", "General");
+
+		_smaPeriod = Param(nameof(SmaPeriod), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("SMA Period", "Moving average period for entry signals", "Indicators");
 	}
 
 	/// <inheritdoc />
@@ -66,8 +80,8 @@ public class CloseAllPositionsStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_closeAllRequested = false;
+		_sma = null;
+		_entryPrice = 0m;
 	}
 
 	/// <inheritdoc />
@@ -75,121 +89,69 @@ public class CloseAllPositionsStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var subscription = SubscribeCandles(CandleType);
+		_sma = new SimpleMovingAverage { Length = SmaPeriod };
 
-		subscription
-			.Bind(ProcessCandle)
+		SubscribeCandles(CandleType)
+			.Bind(_sma, ProcessCandle)
 			.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
 	{
-		// Work only with completed candles to emulate the new-bar trigger from the EA.
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!IsFormed)
 			return;
 
-		// Keep sending exit orders until all positions are closed.
-		if (_closeAllRequested)
+		var price = candle.ClosePrice;
+
+		// Check profit threshold for exit
+		if (Position != 0 && _entryPrice > 0m)
 		{
-			CloseAllPositions();
+			var pnl = Position > 0
+				? price - _entryPrice
+				: _entryPrice - price;
 
-			if (!HasAnyOpenPosition())
-				_closeAllRequested = false;
-
-			return;
-		}
-
-		var totalProfit = CalculateTotalProfit();
-
-		if (totalProfit < ProfitThreshold)
-			return;
-
-		LogInfo($"Floating profit {totalProfit:0.##} reached threshold {ProfitThreshold:0.##}. Closing all positions.");
-
-		_closeAllRequested = true;
-		CloseAllPositions();
-	}
-
-	private decimal CalculateTotalProfit()
-	{
-		var portfolio = Portfolio;
-		if (portfolio == null)
-			return 0m;
-
-		// Prefer the aggregated floating profit provided by the portfolio when available.
-		if (portfolio.CurrentProfit is decimal currentProfit)
-			return currentProfit;
-
-		decimal total = 0m;
-
-		// Fallback: accumulate the reported PnL of each open position.
-		foreach (var position in portfolio.Positions)
-			total += position.PnL ?? 0m;
-
-		return total;
-	}
-
-	private void CloseAllPositions()
-	{
-		var portfolio = Portfolio;
-		if (portfolio == null)
-			return;
-
-		var securities = new HashSet<Security>();
-
-		if (Security != null)
-			securities.Add(Security);
-
-		// Include securities from child strategies that might hold independent positions.
-		foreach (var position in Positions)
-		{
-			if (position.Security != null)
-				securities.Add(position.Security);
-		}
-
-		// Include all securities that have positions inside the portfolio.
-		foreach (var position in portfolio.Positions)
-		{
-			if (position.Security != null)
-				securities.Add(position.Security);
-		}
-
-		foreach (var security in securities)
-		{
-			var volume = GetPositionValue(security, portfolio) ?? 0m;
-			if (volume > 0m)
+			if (ProfitThreshold > 0m && pnl >= ProfitThreshold)
 			{
-				// Send a sell market order to flatten long exposure.
-				SellMarket(volume, security);
+				LogInfo($"Floating profit {pnl:F2} reached threshold {ProfitThreshold:F2}. Closing position.");
+
+				if (Position > 0)
+					SellMarket(Math.Abs(Position));
+				else
+					BuyMarket(Math.Abs(Position));
+
+				_entryPrice = 0m;
+				return;
 			}
-			else if (volume < 0m)
+
+			// Also exit on large loss
+			if (pnl <= -ProfitThreshold * 2m)
 			{
-				// Send a buy market order to offset short exposure.
-				BuyMarket(-volume, security);
+				if (Position > 0)
+					SellMarket(Math.Abs(Position));
+				else
+					BuyMarket(Math.Abs(Position));
+
+				_entryPrice = 0m;
+				return;
 			}
 		}
-	}
 
-	private bool HasAnyOpenPosition()
-	{
-		var portfolio = Portfolio;
-		if (portfolio == null)
-			return false;
-
-		if (Position != 0m)
-			return true;
-
-		foreach (var position in portfolio.Positions)
+		// Entry: trend following
+		if (Position == 0)
 		{
-			var volume = position.CurrentValue ?? 0m;
-			if (volume != 0m)
-				return true;
+			if (price > smaValue)
+			{
+				BuyMarket();
+				_entryPrice = price;
+			}
+			else if (price < smaValue)
+			{
+				SellMarket();
+				_entryPrice = price;
+			}
 		}
-
-		return false;
 	}
 }
-

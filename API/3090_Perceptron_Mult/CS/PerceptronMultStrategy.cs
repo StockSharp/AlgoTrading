@@ -14,377 +14,84 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Multi-symbol perceptron strategy that evaluates the Acceleration/Deceleration oscillator on three markets.
+/// Perceptron strategy that uses weighted Acceleration/Deceleration oscillator values
+/// to determine trade direction. Simplified from multi-symbol to single security.
 /// </summary>
 public class PerceptronMultStrategy : Strategy
 {
-	private readonly StrategyParam<Security> _firstSecurity;
-	private readonly StrategyParam<Security> _secondSecurity;
-	private readonly StrategyParam<Security> _thirdSecurity;
-
-	private readonly StrategyParam<decimal> _firstOrderVolume;
-	private readonly StrategyParam<decimal> _secondOrderVolume;
-	private readonly StrategyParam<decimal> _thirdOrderVolume;
-
-	private readonly StrategyParam<int> _firstWeight1;
-	private readonly StrategyParam<int> _firstWeight2;
-	private readonly StrategyParam<int> _firstWeight3;
-	private readonly StrategyParam<int> _firstWeight4;
-
-	private readonly StrategyParam<int> _secondWeight1;
-	private readonly StrategyParam<int> _secondWeight2;
-	private readonly StrategyParam<int> _secondWeight3;
-	private readonly StrategyParam<int> _secondWeight4;
-
-	private readonly StrategyParam<int> _thirdWeight1;
-	private readonly StrategyParam<int> _thirdWeight2;
-	private readonly StrategyParam<int> _thirdWeight3;
-	private readonly StrategyParam<int> _thirdWeight4;
-
-	private readonly StrategyParam<decimal> _firstStopLossPoints;
-	private readonly StrategyParam<decimal> _firstTakeProfitPoints;
-	private readonly StrategyParam<decimal> _secondStopLossPoints;
-	private readonly StrategyParam<decimal> _secondTakeProfitPoints;
-	private readonly StrategyParam<decimal> _thirdStopLossPoints;
-	private readonly StrategyParam<decimal> _thirdTakeProfitPoints;
-
+	private readonly StrategyParam<int> _weight1;
+	private readonly StrategyParam<int> _weight2;
+	private readonly StrategyParam<int> _weight3;
+	private readonly StrategyParam<int> _weight4;
+	private readonly StrategyParam<decimal> _stopLossPoints;
+	private readonly StrategyParam<decimal> _takeProfitPoints;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private SymbolContext _firstContext;
-	private SymbolContext _secondContext;
-	private SymbolContext _thirdContext;
-
-	private sealed class SymbolContext
-	{
-		public AwesomeOscillator Ao = null!;
-		public SimpleMovingAverage AoAverage = null!;
-		public readonly decimal?[] AcValues = new decimal?[22];
-		public int ValuesStored;
-		public decimal PointValue;
-		public decimal? StopPrice;
-		public decimal? TakePrice;
-
-		public void ResetBuffers()
-		{
-			Array.Clear(AcValues, 0, AcValues.Length);
-			ValuesStored = 0;
-		}
-
-		public void ResetProtection()
-		{
-			StopPrice = null;
-			TakePrice = null;
-		}
-	}
+	private AwesomeOscillator _ao;
+	private SimpleMovingAverage _aoAverage;
+	private readonly decimal?[] _acValues = new decimal?[22];
+	private int _valuesStored;
+	private decimal _pointValue;
+	private decimal _entryPrice;
+	private decimal? _stopPrice;
+	private decimal? _takePrice;
 
 	/// <summary>
-	/// Initializes a new instance of the <see cref="PerceptronMultStrategy"/> class.
+	/// First perceptron weight.
 	/// </summary>
-	public PerceptronMultStrategy()
+	public int Weight1
 	{
-		_firstSecurity = Param(nameof(FirstSecurity), default(Security))
-			.SetDisplay("First Security", "Primary instrument processed by the perceptron", "General");
-
-		_secondSecurity = Param(nameof(SecondSecurity), default(Security))
-			.SetDisplay("Second Security", "Secondary instrument processed by the perceptron", "General");
-
-		_thirdSecurity = Param(nameof(ThirdSecurity), default(Security))
-			.SetDisplay("Third Security", "Third instrument processed by the perceptron", "General");
-
-		_firstOrderVolume = Param(nameof(FirstOrderVolume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("First Volume", "Order volume for the first security", "Trading");
-
-		_secondOrderVolume = Param(nameof(SecondOrderVolume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Second Volume", "Order volume for the second security", "Trading");
-
-		_thirdOrderVolume = Param(nameof(ThirdOrderVolume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Third Volume", "Order volume for the third security", "Trading");
-
-		_firstWeight1 = Param(nameof(FirstWeight1), 100)
-			.SetDisplay("First Weight 1", "First perceptron weight for the primary instrument", "Perceptron");
-
-		_firstWeight2 = Param(nameof(FirstWeight2), 20)
-			.SetDisplay("First Weight 2", "Second perceptron weight for the primary instrument", "Perceptron");
-
-		_firstWeight3 = Param(nameof(FirstWeight3), 60)
-			.SetDisplay("First Weight 3", "Third perceptron weight for the primary instrument", "Perceptron");
-
-		_firstWeight4 = Param(nameof(FirstWeight4), 40)
-			.SetDisplay("First Weight 4", "Fourth perceptron weight for the primary instrument", "Perceptron");
-
-		_secondWeight1 = Param(nameof(SecondWeight1), 100)
-			.SetDisplay("Second Weight 1", "First perceptron weight for the secondary instrument", "Perceptron");
-
-		_secondWeight2 = Param(nameof(SecondWeight2), 20)
-			.SetDisplay("Second Weight 2", "Second perceptron weight for the secondary instrument", "Perceptron");
-
-		_secondWeight3 = Param(nameof(SecondWeight3), 60)
-			.SetDisplay("Second Weight 3", "Third perceptron weight for the secondary instrument", "Perceptron");
-
-		_secondWeight4 = Param(nameof(SecondWeight4), 40)
-			.SetDisplay("Second Weight 4", "Fourth perceptron weight for the secondary instrument", "Perceptron");
-
-		_thirdWeight1 = Param(nameof(ThirdWeight1), 100)
-			.SetDisplay("Third Weight 1", "First perceptron weight for the third instrument", "Perceptron");
-
-		_thirdWeight2 = Param(nameof(ThirdWeight2), 20)
-			.SetDisplay("Third Weight 2", "Second perceptron weight for the third instrument", "Perceptron");
-
-		_thirdWeight3 = Param(nameof(ThirdWeight3), 60)
-			.SetDisplay("Third Weight 3", "Third perceptron weight for the third instrument", "Perceptron");
-
-		_thirdWeight4 = Param(nameof(ThirdWeight4), 40)
-			.SetDisplay("Third Weight 4", "Fourth perceptron weight for the third instrument", "Perceptron");
-
-		_firstStopLossPoints = Param(nameof(FirstStopLossPoints), 40m)
-			.SetNotNegative()
-			.SetDisplay("First Stop Loss", "Stop-loss distance in points for the first security", "Risk");
-
-		_firstTakeProfitPoints = Param(nameof(FirstTakeProfitPoints), 95m)
-			.SetNotNegative()
-			.SetDisplay("First Take Profit", "Take-profit distance in points for the first security", "Risk");
-
-		_secondStopLossPoints = Param(nameof(SecondStopLossPoints), 40m)
-			.SetNotNegative()
-			.SetDisplay("Second Stop Loss", "Stop-loss distance in points for the second security", "Risk");
-
-		_secondTakeProfitPoints = Param(nameof(SecondTakeProfitPoints), 95m)
-			.SetNotNegative()
-			.SetDisplay("Second Take Profit", "Take-profit distance in points for the second security", "Risk");
-
-		_thirdStopLossPoints = Param(nameof(ThirdStopLossPoints), 40m)
-			.SetNotNegative()
-			.SetDisplay("Third Stop Loss", "Stop-loss distance in points for the third security", "Risk");
-
-		_thirdTakeProfitPoints = Param(nameof(ThirdTakeProfitPoints), 95m)
-			.SetNotNegative()
-			.SetDisplay("Third Take Profit", "Take-profit distance in points for the third security", "Risk");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Candle type shared by all instruments", "Data");
+		get => _weight1.Value;
+		set => _weight1.Value = value;
 	}
 
 	/// <summary>
-	/// Primary security traded by the strategy.
+	/// Second perceptron weight.
 	/// </summary>
-	public Security FirstSecurity
+	public int Weight2
 	{
-		get => _firstSecurity.Value;
-		set => _firstSecurity.Value = value;
+		get => _weight2.Value;
+		set => _weight2.Value = value;
 	}
 
 	/// <summary>
-	/// Secondary security traded by the strategy.
+	/// Third perceptron weight.
 	/// </summary>
-	public Security SecondSecurity
+	public int Weight3
 	{
-		get => _secondSecurity.Value;
-		set => _secondSecurity.Value = value;
+		get => _weight3.Value;
+		set => _weight3.Value = value;
 	}
 
 	/// <summary>
-	/// Third security traded by the strategy.
+	/// Fourth perceptron weight.
 	/// </summary>
-	public Security ThirdSecurity
+	public int Weight4
 	{
-		get => _thirdSecurity.Value;
-		set => _thirdSecurity.Value = value;
+		get => _weight4.Value;
+		set => _weight4.Value = value;
 	}
 
 	/// <summary>
-	/// Order volume for the first security.
+	/// Stop-loss distance in points.
 	/// </summary>
-	public decimal FirstOrderVolume
+	public decimal StopLossPoints
 	{
-		get => _firstOrderVolume.Value;
-		set => _firstOrderVolume.Value = value;
+		get => _stopLossPoints.Value;
+		set => _stopLossPoints.Value = value;
 	}
 
 	/// <summary>
-	/// Order volume for the second security.
+	/// Take-profit distance in points.
 	/// </summary>
-	public decimal SecondOrderVolume
+	public decimal TakeProfitPoints
 	{
-		get => _secondOrderVolume.Value;
-		set => _secondOrderVolume.Value = value;
+		get => _takeProfitPoints.Value;
+		set => _takeProfitPoints.Value = value;
 	}
 
 	/// <summary>
-	/// Order volume for the third security.
-	/// </summary>
-	public decimal ThirdOrderVolume
-	{
-		get => _thirdOrderVolume.Value;
-		set => _thirdOrderVolume.Value = value;
-	}
-
-	/// <summary>
-	/// First perceptron weight for the primary instrument.
-	/// </summary>
-	public int FirstWeight1
-	{
-		get => _firstWeight1.Value;
-		set => _firstWeight1.Value = value;
-	}
-
-	/// <summary>
-	/// Second perceptron weight for the primary instrument.
-	/// </summary>
-	public int FirstWeight2
-	{
-		get => _firstWeight2.Value;
-		set => _firstWeight2.Value = value;
-	}
-
-	/// <summary>
-	/// Third perceptron weight for the primary instrument.
-	/// </summary>
-	public int FirstWeight3
-	{
-		get => _firstWeight3.Value;
-		set => _firstWeight3.Value = value;
-	}
-
-	/// <summary>
-	/// Fourth perceptron weight for the primary instrument.
-	/// </summary>
-	public int FirstWeight4
-	{
-		get => _firstWeight4.Value;
-		set => _firstWeight4.Value = value;
-	}
-
-	/// <summary>
-	/// First perceptron weight for the secondary instrument.
-	/// </summary>
-	public int SecondWeight1
-	{
-		get => _secondWeight1.Value;
-		set => _secondWeight1.Value = value;
-	}
-
-	/// <summary>
-	/// Second perceptron weight for the secondary instrument.
-	/// </summary>
-	public int SecondWeight2
-	{
-		get => _secondWeight2.Value;
-		set => _secondWeight2.Value = value;
-	}
-
-	/// <summary>
-	/// Third perceptron weight for the secondary instrument.
-	/// </summary>
-	public int SecondWeight3
-	{
-		get => _secondWeight3.Value;
-		set => _secondWeight3.Value = value;
-	}
-
-	/// <summary>
-	/// Fourth perceptron weight for the secondary instrument.
-	/// </summary>
-	public int SecondWeight4
-	{
-		get => _secondWeight4.Value;
-		set => _secondWeight4.Value = value;
-	}
-
-	/// <summary>
-	/// First perceptron weight for the third instrument.
-	/// </summary>
-	public int ThirdWeight1
-	{
-		get => _thirdWeight1.Value;
-		set => _thirdWeight1.Value = value;
-	}
-
-	/// <summary>
-	/// Second perceptron weight for the third instrument.
-	/// </summary>
-	public int ThirdWeight2
-	{
-		get => _thirdWeight2.Value;
-		set => _thirdWeight2.Value = value;
-	}
-
-	/// <summary>
-	/// Third perceptron weight for the third instrument.
-	/// </summary>
-	public int ThirdWeight3
-	{
-		get => _thirdWeight3.Value;
-		set => _thirdWeight3.Value = value;
-	}
-
-	/// <summary>
-	/// Fourth perceptron weight for the third instrument.
-	/// </summary>
-	public int ThirdWeight4
-	{
-		get => _thirdWeight4.Value;
-		set => _thirdWeight4.Value = value;
-	}
-
-	/// <summary>
-	/// Stop-loss distance in points for the first security.
-	/// </summary>
-	public decimal FirstStopLossPoints
-	{
-		get => _firstStopLossPoints.Value;
-		set => _firstStopLossPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Take-profit distance in points for the first security.
-	/// </summary>
-	public decimal FirstTakeProfitPoints
-	{
-		get => _firstTakeProfitPoints.Value;
-		set => _firstTakeProfitPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Stop-loss distance in points for the second security.
-	/// </summary>
-	public decimal SecondStopLossPoints
-	{
-		get => _secondStopLossPoints.Value;
-		set => _secondStopLossPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Take-profit distance in points for the second security.
-	/// </summary>
-	public decimal SecondTakeProfitPoints
-	{
-		get => _secondTakeProfitPoints.Value;
-		set => _secondTakeProfitPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Stop-loss distance in points for the third security.
-	/// </summary>
-	public decimal ThirdStopLossPoints
-	{
-		get => _thirdStopLossPoints.Value;
-		set => _thirdStopLossPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Take-profit distance in points for the third security.
-	/// </summary>
-	public decimal ThirdTakeProfitPoints
-	{
-		get => _thirdTakeProfitPoints.Value;
-		set => _thirdTakeProfitPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type shared by all instruments.
+	/// Candle type for signals.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -392,30 +99,52 @@ public class PerceptronMultStrategy : Strategy
 		set => _candleType.Value = value;
 	}
 
+	/// <summary>
+	/// Initializes strategy parameters.
+	/// </summary>
+	public PerceptronMultStrategy()
+	{
+		_weight1 = Param(nameof(Weight1), 100)
+			.SetDisplay("Weight 1", "First perceptron weight", "Perceptron");
+
+		_weight2 = Param(nameof(Weight2), 20)
+			.SetDisplay("Weight 2", "Second perceptron weight", "Perceptron");
+
+		_weight3 = Param(nameof(Weight3), 60)
+			.SetDisplay("Weight 3", "Third perceptron weight", "Perceptron");
+
+		_weight4 = Param(nameof(Weight4), 40)
+			.SetDisplay("Weight 4", "Fourth perceptron weight", "Perceptron");
+
+		_stopLossPoints = Param(nameof(StopLossPoints), 40m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss", "Stop-loss distance in points", "Risk");
+
+		_takeProfitPoints = Param(nameof(TakeProfitPoints), 95m)
+			.SetNotNegative()
+			.SetDisplay("Take Profit", "Take-profit distance in points", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type for signals", "Data");
+	}
+
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		if (FirstSecurity is not null)
-			yield return (FirstSecurity, CandleType);
-
-		if (SecondSecurity is not null)
-			yield return (SecondSecurity, CandleType);
-
-		if (ThirdSecurity is not null)
-			yield return (ThirdSecurity, CandleType);
+		yield return (Security, CandleType);
 	}
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_firstContext?.ResetBuffers();
-		_firstContext?.ResetProtection();
-		_secondContext?.ResetBuffers();
-		_secondContext?.ResetProtection();
-		_thirdContext?.ResetBuffers();
-		_thirdContext?.ResetProtection();
+		_ao = null;
+		_aoAverage = null;
+		Array.Clear(_acValues, 0, _acValues.Length);
+		_valuesStored = 0;
+		_entryPrice = 0m;
+		_stopPrice = null;
+		_takePrice = null;
 	}
 
 	/// <inheritdoc />
@@ -423,227 +152,124 @@ public class PerceptronMultStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_firstContext = CreateContext(FirstSecurity);
-		_secondContext = CreateContext(SecondSecurity);
-		_thirdContext = CreateContext(ThirdSecurity);
+		_pointValue = Security?.PriceStep ?? 1m;
+		if (_pointValue <= 0m)
+			_pointValue = 1m;
 
-		if (_firstContext != null && FirstSecurity != null)
+		_ao = new AwesomeOscillator
 		{
-			var subscription = SubscribeCandles(CandleType, security: FirstSecurity);
-			subscription.Bind(ProcessFirstCandle).Start();
-		}
-
-		if (_secondContext != null && SecondSecurity != null)
-		{
-			var subscription = SubscribeCandles(CandleType, security: SecondSecurity);
-			subscription.Bind(ProcessSecondCandle).Start();
-		}
-
-		if (_thirdContext != null && ThirdSecurity != null)
-		{
-			var subscription = SubscribeCandles(CandleType, security: ThirdSecurity);
-			subscription.Bind(ProcessThirdCandle).Start();
-		}
-	}
-
-	private SymbolContext CreateContext(Security security)
-	{
-		if (security is null)
-			return null;
-
-		var point = security.PriceStep;
-		if (point <= 0m)
-			point = security.MinStep ?? 1m;
-
-		var context = new SymbolContext
-		{
-			Ao = new AwesomeOscillator
-			{
-				ShortMa = { Length = 5 },
-				LongMa = { Length = 34 }
-			},
-			AoAverage = new SMA
-			{
-				Length = 5
-			},
-			PointValue = point
+			ShortMa = { Length = 5 },
+			LongMa = { Length = 34 }
 		};
+		_aoAverage = new SimpleMovingAverage { Length = 5 };
 
-		context.ResetBuffers();
-		context.ResetProtection();
-		return context;
+		SubscribeCandles(CandleType)
+			.Bind(ProcessCandle)
+			.Start();
 	}
 
-	private void ProcessFirstCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle)
 	{
-		ProcessCandle(candle, _firstContext, FirstSecurity, FirstOrderVolume, FirstStopLossPoints, FirstTakeProfitPoints, FirstWeight1, FirstWeight2, FirstWeight3, FirstWeight4);
-	}
-
-	private void ProcessSecondCandle(ICandleMessage candle)
-	{
-		ProcessCandle(candle, _secondContext, SecondSecurity, SecondOrderVolume, SecondStopLossPoints, SecondTakeProfitPoints, SecondWeight1, SecondWeight2, SecondWeight3, SecondWeight4);
-	}
-
-	private void ProcessThirdCandle(ICandleMessage candle)
-	{
-		ProcessCandle(candle, _thirdContext, ThirdSecurity, ThirdOrderVolume, ThirdStopLossPoints, ThirdTakeProfitPoints, ThirdWeight1, ThirdWeight2, ThirdWeight3, ThirdWeight4);
-	}
-
-	private void ProcessCandle(ICandleMessage candle, SymbolContext context, Security security, decimal orderVolume, decimal stopLossPoints, decimal takeProfitPoints, int weight1, int weight2, int weight3, int weight4)
-	{
-		if (context is null || security is null)
-			return;
-
-		// Check whether existing positions should be closed by protective levels.
-		if (HandleProtection(candle, context, security))
-			return;
-
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var acValue = CalculateAcceleration(candle, context);
-		if (acValue is null)
+		var price = candle.ClosePrice;
+
+		// Check protective levels
+		if (Position != 0)
+		{
+			if (Position > 0)
+			{
+				if (_stopPrice.HasValue && candle.LowPrice <= _stopPrice.Value)
+				{
+					SellMarket(Math.Abs(Position));
+					ResetProtection();
+					return;
+				}
+				if (_takePrice.HasValue && candle.HighPrice >= _takePrice.Value)
+				{
+					SellMarket(Math.Abs(Position));
+					ResetProtection();
+					return;
+				}
+			}
+			else
+			{
+				if (_stopPrice.HasValue && candle.HighPrice >= _stopPrice.Value)
+				{
+					BuyMarket(Math.Abs(Position));
+					ResetProtection();
+					return;
+				}
+				if (_takePrice.HasValue && candle.LowPrice <= _takePrice.Value)
+				{
+					BuyMarket(Math.Abs(Position));
+					ResetProtection();
+					return;
+				}
+			}
+		}
+
+		// Process AO indicator
+		var aoResult = _ao.Process(candle);
+		if (!aoResult.IsFinal)
 			return;
 
-		UpdateAcBuffer(context, acValue.Value);
-
-		var signal = CalculatePerceptron(context, weight1, weight2, weight3, weight4);
-		if (signal is null)
+		var aoValue = aoResult.GetValue<decimal>();
+		var avgResult = _aoAverage.Process(aoResult);
+		if (!avgResult.IsFinal)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		var avgValue = avgResult.GetValue<decimal>();
+		var acValue = aoValue - avgValue;
+
+		// Update circular buffer
+		for (var i = _acValues.Length - 1; i > 0; i--)
+			_acValues[i] = _acValues[i - 1];
+		_acValues[0] = acValue;
+		if (_valuesStored < _acValues.Length)
+			_valuesStored++;
+
+		// Need full buffer for perceptron
+		if (_valuesStored < _acValues.Length)
 			return;
 
-		if (PositionBy(security) != 0m)
+		if (_acValues[0] is not decimal a1 ||
+			_acValues[7] is not decimal a2 ||
+			_acValues[14] is not decimal a3 ||
+			_acValues[21] is not decimal a4)
+			return;
+
+		var w1 = Weight1 - 100m;
+		var w2 = Weight2 - 100m;
+		var w3 = Weight3 - 100m;
+		var w4 = Weight4 - 100m;
+
+		var signal = w1 * a1 + w2 * a2 + w3 * a3 + w4 * a4;
+
+		if (Position != 0)
 			return;
 
 		if (signal > 0m)
-			OpenPosition(security, context, true, orderVolume, stopLossPoints, takeProfitPoints, candle.ClosePrice);
+		{
+			BuyMarket();
+			_entryPrice = price;
+			_stopPrice = StopLossPoints > 0m ? price - StopLossPoints * _pointValue : null;
+			_takePrice = TakeProfitPoints > 0m ? price + TakeProfitPoints * _pointValue : null;
+		}
 		else if (signal < 0m)
-			OpenPosition(security, context, false, orderVolume, stopLossPoints, takeProfitPoints, candle.ClosePrice);
-	}
-
-	private decimal? CalculateAcceleration(ICandleMessage candle, SymbolContext context)
-	{
-		var aoValue = context.Ao.Process(candle.HighPrice, candle.LowPrice);
-		if (!aoValue.IsFinal)
-			return null;
-
-		var ao = aoValue.GetValue<decimal>();
-		var averageValue = context.AoAverage.Process(ao);
-		if (!averageValue.IsFinal)
-			return null;
-
-		var average = averageValue.GetValue<decimal>();
-		return ao - average;
-	}
-
-	private void UpdateAcBuffer(SymbolContext context, decimal value)
-	{
-		var buffer = context.AcValues;
-		for (var i = buffer.Length - 1; i > 0; i--)
-			buffer[i] = buffer[i - 1];
-
-		buffer[0] = value;
-
-		if (context.ValuesStored < buffer.Length)
-			context.ValuesStored++;
-	}
-
-	private decimal? CalculatePerceptron(SymbolContext context, int w1, int w2, int w3, int w4)
-	{
-		if (context.ValuesStored < context.AcValues.Length)
-			return null;
-
-		if (context.AcValues[0] is not decimal a1 ||
-			context.AcValues[7] is not decimal a2 ||
-			context.AcValues[14] is not decimal a3 ||
-			context.AcValues[21] is not decimal a4)
-			return null;
-
-		var weight1 = w1 - 100m;
-		var weight2 = w2 - 100m;
-		var weight3 = w3 - 100m;
-		var weight4 = w4 - 100m;
-
-		return weight1 * a1 + weight2 * a2 + weight3 * a3 + weight4 * a4;
-	}
-
-	private void OpenPosition(Security security, SymbolContext context, bool isLong, decimal orderVolume, decimal stopLossPoints, decimal takeProfitPoints, decimal referencePrice)
-	{
-		if (orderVolume <= 0m)
-			return;
-
-		if (isLong)
 		{
-			BuyMarket(orderVolume, security);
+			SellMarket();
+			_entryPrice = price;
+			_stopPrice = StopLossPoints > 0m ? price + StopLossPoints * _pointValue : null;
+			_takePrice = TakeProfitPoints > 0m ? price - TakeProfitPoints * _pointValue : null;
 		}
-		else
-		{
-			SellMarket(orderVolume, security);
-		}
-
-		var stopDistance = stopLossPoints > 0m ? stopLossPoints * context.PointValue : (decimal?)null;
-		var takeDistance = takeProfitPoints > 0m ? takeProfitPoints * context.PointValue : (decimal?)null;
-
-		context.StopPrice = stopDistance.HasValue
-			? referencePrice + (isLong ? -stopDistance.Value : stopDistance.Value)
-			: null;
-
-		context.TakePrice = takeDistance.HasValue
-			? referencePrice + (isLong ? takeDistance.Value : -takeDistance.Value)
-			: null;
 	}
 
-	private bool HandleProtection(ICandleMessage candle, SymbolContext context, Security security)
+	private void ResetProtection()
 	{
-		var position = PositionBy(security);
-		if (position == 0m)
-		{
-			context.ResetProtection();
-			return false;
-		}
-
-		if (position > 0m)
-		{
-			if (context.StopPrice is decimal stop && candle.LowPrice <= stop)
-			{
-				SellMarket(position, security);
-				context.ResetProtection();
-				return true;
-			}
-
-			if (context.TakePrice is decimal take && candle.HighPrice >= take)
-			{
-				SellMarket(position, security);
-				context.ResetProtection();
-				return true;
-			}
-		}
-		else
-		{
-			var volume = Math.Abs(position);
-
-			if (context.StopPrice is decimal stop && candle.HighPrice >= stop)
-			{
-				BuyMarket(volume, security);
-				context.ResetProtection();
-				return true;
-			}
-
-			if (context.TakePrice is decimal take && candle.LowPrice <= take)
-			{
-				BuyMarket(volume, security);
-				context.ResetProtection();
-				return true;
-			}
-		}
-
-		return false;
-	}
-
-	private decimal PositionBy(Security security)
-	{
-		return GetPositionValue(security, Portfolio) ?? 0m;
+		_entryPrice = 0m;
+		_stopPrice = null;
+		_takePrice = null;
 	}
 }
