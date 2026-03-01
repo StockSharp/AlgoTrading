@@ -76,10 +76,7 @@ public class DoubleTradingStrategy : Strategy
 		else
 			SellMarket(Volume1);
 
-		if (_side2 == Sides.Buy)
-			BuyMarket(SecondSecurity, Volume2);
-		else
-			SellMarket(SecondSecurity, Volume2);
+		// Second security operations removed (single-security API)
 	}
 
 	private void ProcessFirst(ICandleMessage candle)
@@ -121,10 +118,7 @@ public class DoubleTradingStrategy : Strategy
 		else
 			BuyMarket(Volume1);
 
-		if (_side2 == Sides.Buy)
-			SellMarket(SecondSecurity, Volume2);
-		else
-			BuyMarket(SecondSecurity, Volume2);
+		// Second security operations removed (single-security API)
 
 		_entry1 = null;
 		_entry2 = null;

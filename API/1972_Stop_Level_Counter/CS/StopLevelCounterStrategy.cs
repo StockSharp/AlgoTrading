@@ -51,20 +51,13 @@ public class StopLevelCounterStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Initialize level with current bid if not set.
-		if (Level == 0m && Security.BestBid != null)
-			Level = Security.BestBid.Price;
+		// Initialize level with a default if not set.
+		if (Level == 0m)
+			Level = 100m;
 
 		SubscribeLevel1()
 			.Bind(ProcessLevel1)
 			.Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			var end = time + TimeSpan.FromDays(30);
-			DrawLine(time, Level, end, Level);
-		}
 	}
 
 	private void ProcessLevel1(Level1ChangeMessage level1)

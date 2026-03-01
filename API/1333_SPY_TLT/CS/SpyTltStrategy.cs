@@ -87,11 +87,11 @@ public class SpyTltStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_tltSecurity = SecurityProvider.LookupById(TltSymbol);
+		_tltSecurity = this.LookupById(TltSymbol);
 		if (_tltSecurity == null)
 			throw new InvalidOperationException($"Security '{TltSymbol}' not found.");
 
-		var sma = new SMA { Length = SmaLength };
+		var sma = new SimpleMovingAverage { Length = SmaLength };
 
 		var subscription = SubscribeCandles(CandleType, true, _tltSecurity);
 

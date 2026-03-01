@@ -20,15 +20,12 @@ public class GridStrategy : Strategy
 {
 	private readonly StrategyParam<int> _gridStep;
 	private readonly StrategyParam<decimal> _baseVolume;
-	private readonly StrategyParam<int> _takeProfitPoints;
 	private readonly StrategyParam<decimal> _profitTarget;
 	private readonly StrategyParam<bool> _useMartingale;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private Order _buyStop;
-	private Order _sellStop;
-	private decimal _nextBuyVolume;
-	private decimal _nextSellVolume;
+	private decimal _lastGridLevel;
+	private decimal _entryPrice;
 
 	/// <summary>
 	/// Grid step in price points.
@@ -39,11 +36,6 @@ public class GridStrategy : Strategy
 	/// Base volume for initial orders.
 	/// </summary>
 	public decimal BaseVolume { get => _baseVolume.Value; set => _baseVolume.Value = value; }
-
-	/// <summary>
-	/// Take profit distance for each trade in price points.
-	/// </summary>
-	public int TakeProfitPoints { get => _takeProfitPoints.Value; set => _takeProfitPoints.Value = value; }
 
 	/// <summary>
 	/// Profit threshold to reset the grid.
@@ -73,10 +65,6 @@ public class GridStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Base Volume", "Initial order volume", "General");
 
-		_takeProfitPoints = Param(nameof(TakeProfitPoints), 200)
-			.SetGreaterThanZero()
-			.SetDisplay("Take Profit Points", "Take profit distance in points", "General");
-
 		_profitTarget = Param(nameof(ProfitTarget), 1m)
 			.SetDisplay("Profit Target", "Total profit to reset grid", "General");
 
@@ -85,9 +73,6 @@ public class GridStrategy : Strategy
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type for price feed", "General");
-
-		_nextBuyVolume = BaseVolume;
-		_nextSellVolume = BaseVolume;
 	}
 
 	/// <inheritdoc />
@@ -101,10 +86,10 @@ public class GridStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
+		StartProtection(null, null);
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
-
-		StartProtection(new Unit(TakeProfitPoints * (Security.PriceStep ?? 1m), UnitTypes.Absolute));
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -113,42 +98,40 @@ public class GridStrategy : Strategy
 			return;
 
 		var step = (Security.PriceStep ?? 1m) * GridStep;
-		var sellPrice = Math.Floor(candle.ClosePrice / step) * step;
-		var buyPrice = sellPrice + step;
+		var currentLevel = Math.Floor(candle.ClosePrice / step) * step;
 
-		if (_buyStop?.State == OrderStates.Active && _buyStop.Price != buyPrice)
-			Cancel(_buyStop);
-
-		if (_sellStop?.State == OrderStates.Active && _sellStop.Price != sellPrice)
-			Cancel(_sellStop);
-
-		if (_buyStop == null || _buyStop.State != OrderStates.Active)
-			_buyStop = BuyStop(_nextBuyVolume, buyPrice);
-
-		if (_sellStop == null || _sellStop.State != OrderStates.Active)
-			_sellStop = SellStop(_nextSellVolume, sellPrice);
-
-		if (UseMartingale)
+		if (_lastGridLevel == 0)
 		{
-			var longVolume = Position > 0 ? Position : 0m;
-			var shortVolume = Position < 0 ? -Position : 0m;
-			_nextBuyVolume = shortVolume + BaseVolume;
-			_nextSellVolume = longVolume + BaseVolume;
-		}
-		else
-		{
-			_nextBuyVolume = BaseVolume;
-			_nextSellVolume = BaseVolume;
+			_lastGridLevel = currentLevel;
+			return;
 		}
 
-		var unrealized = Position * (candle.ClosePrice - PositionPrice);
-		var totalProfit = PnL + unrealized;
-
-		if (totalProfit >= ProfitTarget)
+		if (currentLevel > _lastGridLevel)
 		{
-			CloseAll();
-			_nextBuyVolume = BaseVolume;
-			_nextSellVolume = BaseVolume;
+			// Price moved up - buy
+			var vol = UseMartingale && Position < 0 ? Math.Abs(Position) + BaseVolume : BaseVolume;
+			BuyMarket();
+			if (Position == 0) _entryPrice = candle.ClosePrice;
+		}
+		else if (currentLevel < _lastGridLevel)
+		{
+			// Price moved down - sell
+			var vol = UseMartingale && Position > 0 ? Position + BaseVolume : BaseVolume;
+			SellMarket();
+			if (Position == 0) _entryPrice = candle.ClosePrice;
+		}
+
+		_lastGridLevel = currentLevel;
+
+		// Check profit target
+		if (Position != 0 && _entryPrice > 0)
+		{
+			var unrealized = Position * (candle.ClosePrice - _entryPrice);
+			if (unrealized >= ProfitTarget)
+			{
+				if (Position > 0) SellMarket(); else BuyMarket();
+				_entryPrice = 0;
+			}
 		}
 	}
 }

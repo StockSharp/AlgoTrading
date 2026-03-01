@@ -92,7 +92,7 @@ public class UltraFatlStrategy : Strategy
 
 		StartProtection(null, null);
 
-		var ultraFatl = new UltraFatl
+		var ultraFatl = new ExponentialMovingAverage
 		{
 			Length = Length
 		};
@@ -108,7 +108,7 @@ public class UltraFatlStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!IsFormed)
 			return;
 
 		var current = ultraFatlValue;
