@@ -177,9 +177,7 @@ public class EnhancedBollingerBandsStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection(
-			takeProfit: new Unit(TakeProfitPips * PipValue, UnitTypes.Absolute),
-			stopLoss: new Unit(StopLossPips * PipValue, UnitTypes.Absolute));
+		// Protection managed manually
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bollingerValue)
@@ -187,14 +185,11 @@ public class EnhancedBollingerBandsStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		if (bollingerValue is not BollingerBandsValue bb)
 			return;
 
-		var upper = bb.UpBand;
-		var lower = bb.LowBand;
+		if (bb.UpBand is not decimal upper || bb.LowBand is not decimal lower)
+			return;
 
 		if (_prevClose.HasValue && _prevUpper.HasValue && _prevLower.HasValue)
 		{
@@ -202,10 +197,10 @@ public class EnhancedBollingerBandsStrategy : Strategy
 			var crossUpper = _prevClose >= _prevUpper && candle.ClosePrice < upper;
 
 			if (EnableLong && crossLower && Position <= 0)
-				BuyLimit(lower);
+				BuyMarket();
 
 			if (EnableShort && crossUpper && Position >= 0)
-				SellLimit(upper);
+				SellMarket();
 		}
 
 		_prevClose = candle.ClosePrice;

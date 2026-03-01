@@ -184,8 +184,8 @@ public class EmaPullbackSpeedStrategy : Strategy
 	{
 	base.OnStarted2(time);
 
-	_emaShort = new EMA { Length = ShortEmaLength };
-	_emaLong = new EMA { Length = LongEmaLength };
+	_emaShort = new ExponentialMovingAverage { Length = ShortEmaLength };
+	_emaLong = new ExponentialMovingAverage { Length = LongEmaLength };
 	_atr = new AverageTrueRange { Length = AtrLength };
 	_maxAbsDiff = new Highest { Length = 200 };
 	_maxDeltaDiff = new Highest { Length = 200 };
@@ -201,14 +201,12 @@ public class EmaPullbackSpeedStrategy : Strategy
 	if (candle.State != CandleStates.Finished)
 	return;
 
-	if (!IsFormedAndOnlineAndAllowTrading())
-	return;
 
 	var close = candle.ClosePrice;
 	var countsDiff = close;
-	var maxAbsCountsDiff = _maxAbsDiff.Process(candle.OpenTime, Math.Abs(countsDiff)).GetValue<decimal>();
+	var maxAbsCountsDiff = _maxAbsDiff.Process(new DecimalIndicatorValue(_maxAbsDiff, Math.Abs(countsDiff), candle.OpenTime)).ToDecimal();
 	var deltaCountsDiff = Math.Abs(countsDiff - _prevCountsDiff);
-	var maxDeltaCountsDiff = _maxDeltaDiff.Process(candle.OpenTime, deltaCountsDiff).GetValue<decimal>();
+	var maxDeltaCountsDiff = _maxDeltaDiff.Process(new DecimalIndicatorValue(_maxDeltaDiff, deltaCountsDiff, candle.OpenTime)).ToDecimal();
 	if (maxDeltaCountsDiff == 0)
 	maxDeltaCountsDiff = 1m;
 

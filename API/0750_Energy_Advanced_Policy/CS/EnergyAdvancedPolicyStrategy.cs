@@ -73,29 +73,33 @@ protected override void OnStarted2(DateTime time)
 base.OnStarted2(time);
 
 _rsi = new RelativeStrengthIndex { Length = RsiLength };
-_fastMa = new EMA { Length = FastLength };
-_slowMa = new EMA { Length = SlowLength };
+_fastMa = new ExponentialMovingAverage { Length = FastLength };
+_slowMa = new ExponentialMovingAverage { Length = SlowLength };
 _bb = new BollingerBands { Length = BbLength, Width = BbMult };
 
 var subscription = SubscribeCandles(CandleType);
-subscription.Bind(_rsi, _fastMa, _slowMa, _bb, Process).Start();
+subscription.BindEx(new IIndicator[] { _rsi, _fastMa, _slowMa, _bb }, Process).Start();
 }
 
-private void Process(ICandleMessage candle, decimal rsi, decimal fast, decimal slow, decimal middle, decimal upper, decimal lower)
+private void Process(ICandleMessage candle, IIndicatorValue[] values)
 {
 if (candle.State != CandleStates.Finished)
 return;
 
-if (!IsFormedAndOnlineAndAllowTrading())
-return;
+var rsi = values[0].ToDecimal();
+var fast = values[1].ToDecimal();
+var slow = values[2].ToDecimal();
+var bb = (BollingerBandsValue)values[3];
+if (bb.UpBand is not decimal upper || bb.LowBand is not decimal lower || bb.MovingAverage is not decimal middle)
+	return;
 
 var maBullish = fast > slow;
 var bbSqueeze = (upper - lower) / middle < 0.1m;
 var longCond = maBullish && rsi < RsiOverbought && !bbSqueeze;
 
 if (longCond && Position == 0)
-BuyMarket(Volume);
+BuyMarket();
 else if (Position > 0 && (rsi > RsiOverbought || !maBullish))
-SellMarket(Position);
+SellMarket();
 }
 }

@@ -167,7 +167,7 @@ public class EnhancedBarUpDnStrategy : Strategy
 			Width = BbMultiplier
 		};
 
-		_trendMa = new SMA
+		_trendMa = new SimpleMovingAverage
 		{
 			Length = MaLength
 		};
@@ -179,7 +179,7 @@ public class EnhancedBarUpDnStrategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_bollinger, _trendMa, _atr, ProcessCandle)
+			.BindEx(new IIndicator[] { _bollinger, _trendMa, _atr }, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -192,10 +192,16 @@ public class EnhancedBarUpDnStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal middle, decimal upper, decimal lower, decimal trendValue, decimal atrValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue[] values)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
+
+		var bb = (BollingerBandsValue)values[0];
+		if (bb.UpBand is not decimal upper || bb.LowBand is not decimal lower || bb.MovingAverage is not decimal middle)
+			return;
+		var trendValue = values[1].ToDecimal();
+		var atrValue = values[2].ToDecimal();
 
 		if (!_bollinger.IsFormed || !_trendMa.IsFormed || !_atr.IsFormed)
 		{
@@ -234,7 +240,7 @@ public class EnhancedBarUpDnStrategy : Strategy
 
 			if (low <= stop || high >= target)
 			{
-				SellMarket(Position);
+				SellMarket();
 				_entryPrice = default;
 			}
 		}
@@ -245,7 +251,7 @@ public class EnhancedBarUpDnStrategy : Strategy
 
 			if (high >= stop || low <= target)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				_entryPrice = default;
 			}
 		}

@@ -150,22 +150,21 @@ _direction = Param(nameof(Direction), (Sides?)null)
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var fastEma = new EMA { Length = FastEmaLength };
-		var slowEma = new EMA { Length = SlowEmaLength };
-		var macd = new MovingAverageConvergenceDivergence
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaLength };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaLength };
+		var macd = new MovingAverageConvergenceDivergenceSignal
 		{
-			ShortMa = { Length = MacdFastLength },
-			LongMa = { Length = MacdSlowLength },
-			SignalPeriod = MacdSignalLength
+			Macd = { ShortMa = { Length = MacdFastLength }, LongMa = { Length = MacdSlowLength } },
+			SignalMa = { Length = MacdSignalLength }
 		};
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(macd, fastEma, slowEma, ProcessCandle)
+			.BindEx(new IIndicator[] { macd, fastEma, slowEma }, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -174,24 +173,24 @@ _direction = Param(nameof(Direction), (Sides?)null)
 			DrawCandles(area, subscription);
 			DrawIndicator(area, fastEma);
 			DrawIndicator(area, slowEma);
-
-			var macdArea = CreateChartArea();
-			DrawIndicator(macdArea, macd);
-
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal macd, decimal signal, decimal histogram, decimal fastEma, decimal slowEma)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue[] values)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)values[0];
+		if (macdTyped.Macd is not decimal macdLine || macdTyped.Signal is not decimal signalLine)
 			return;
+		var histogram = macdLine - signalLine;
+		var fastEma = values[1].ToDecimal();
+		var slowEma = values[2].ToDecimal();
 
 		var time = candle.OpenTime;
-		var inDateRange = time >= StartDate && time < EndDate;
+		var inDateRange = time >= StartDate.DateTime && time < EndDate.DateTime;
 
 		ParseSession(Session, out var start, out var end);
 		var t = time.TimeOfDay;
@@ -216,9 +215,9 @@ var shortAllowed = Direction is null or Sides.Sell;
 		}
 
 		if (Position > 0 && (shortSignal || !inSession))
-			SellMarket(Position);
+			SellMarket();
 		else if (Position < 0 && (longSignal || !inSession))
-			BuyMarket(-Position);
+			BuyMarket();
 
 		_prevFast = fastEma;
 		_prevSlow = slowEma;

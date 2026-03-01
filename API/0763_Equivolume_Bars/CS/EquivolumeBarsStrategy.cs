@@ -11,9 +11,6 @@ using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
-using StockSharp.Algo.Candles;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
@@ -99,7 +96,7 @@ public class EquivolumeBarsStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_volumeSma = new SMA { Length = Lookback };
+		_volumeSma = new SimpleMovingAverage { Length = Lookback };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
@@ -110,7 +107,7 @@ public class EquivolumeBarsStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var currentAvg = _volumeSma.Process(candle.TotalVolume).ToDecimal();
+		var currentAvg = _volumeSma.Process(new DecimalIndicatorValue(_volumeSma, candle.TotalVolume, candle.OpenTime)).ToDecimal();
 
 		if (!_volumeSma.IsFormed)
 			return;
@@ -122,17 +119,14 @@ public class EquivolumeBarsStrategy : Strategy
 		var isBear = candle.ClosePrice < candle.OpenPrice;
 		var highVolume = ratio > VolumeThreshold;
 
-		if (IsFormedAndOnlineAndAllowTrading())
-		{
-			if (highVolume && isBull && Position <= 0)
-				BuyMarket(Volume + Math.Abs(Position));
-			else if (highVolume && isBear && Position >= 0)
-				SellMarket(Volume + Math.Abs(Position));
-			else if (Position > 0 && (!highVolume || isBear))
-				SellMarket(Math.Abs(Position));
-			else if (Position < 0 && (!highVolume || isBull))
-				BuyMarket(Math.Abs(Position));
-		}
+		if (highVolume && isBull && Position <= 0)
+			BuyMarket();
+		else if (highVolume && isBear && Position >= 0)
+			SellMarket();
+		else if (Position > 0 && (!highVolume || isBear))
+			SellMarket();
+		else if (Position < 0 && (!highVolume || isBull))
+			BuyMarket();
 
 		_prevVolumeSum = currentSum;
 	}

@@ -128,12 +128,12 @@ public class EquivolumeOverlayVolumeBarsStrategy : Strategy
     {
         base.OnStarted2(time);
 
-        var volumeSma = new SMA { Length = VolumeLookback };
-        Indicator volumeMa = MaType switch
+        var volumeSma = new SimpleMovingAverage { Length = VolumeLookback };
+        IIndicator volumeMa = MaType switch
         {
-            MaTypes.SMA => new SMA { Length = MaLength },
-            MaTypes.EMA => new EMA { Length = MaLength },
-            _ => new WMA { Length = MaLength },
+            MaTypes.SMA => new SimpleMovingAverage { Length = MaLength },
+            MaTypes.EMA => new ExponentialMovingAverage { Length = MaLength },
+            _ => new WeightedMovingAverage { Length = MaLength },
         };
 
         var subscription = SubscribeCandles(CandleType);

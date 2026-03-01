@@ -101,7 +101,7 @@ public class Ema5AlertCandleShortStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var ema = new EMA { Length = EmaPeriod };
+		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
 		var subscription = SubscribeCandles(CandleType);
 
 		subscription
@@ -140,11 +140,7 @@ public class Ema5AlertCandleShortStrategy : Strategy
 				var range = _validAlertHigh - _validAlertLow;
 				if (range > 0)
 				{
-					var positionSize = RiskPerTrade / range;
-					CancelActiveOrders();
-					SellMarket(positionSize);
-					BuyLimit(positionSize, _validAlertLow - range);
-					BuyStop(positionSize, _validAlertHigh);
+					SellMarket();
 				}
 
 				_isAlertActive = false;

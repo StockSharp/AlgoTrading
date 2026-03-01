@@ -152,7 +152,7 @@ public class EquilibriumCandlesPatternStrategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(donchian, atr, ProcessCandle)
+			.BindEx(new IIndicator[] { donchian, atr }, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -163,10 +163,16 @@ public class EquilibriumCandlesPatternStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal middleBand, decimal upperBand, decimal lowerBand, decimal atrValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue[] values)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
+
+		var dc = (DonchianChannelsValue)values[0];
+		if (dc.UpperBand is not decimal upperBand || dc.LowerBand is not decimal lowerBand)
+			return;
+		var middleBand = (upperBand + lowerBand) / 2m;
+		var atrValue = values[1].ToDecimal();
 
 		var equilibrium = middleBand;
 		var equTop = equilibrium + atrValue * BigCandleMultiplier;
@@ -227,11 +233,11 @@ public class EquilibriumCandlesPatternStrategy : Strategy
 				var stop = _entryPrice - atrValue * StopMultiplier;
 				var take = _entryPrice + atrValue * StopMultiplier;
 				if (candle.ClosePrice <= stop || candle.ClosePrice >= take)
-					ClosePosition();
+					SellMarket();
 			}
 
 			if (_bearCandleCount >= MaxPullbackCandles)
-				ClosePosition();
+				SellMarket();
 		}
 		else if (Position < 0)
 		{
@@ -240,17 +246,19 @@ public class EquilibriumCandlesPatternStrategy : Strategy
 				var stop = _entryPrice + atrValue * StopMultiplier;
 				var take = _entryPrice - atrValue * StopMultiplier;
 				if (candle.ClosePrice >= stop || candle.ClosePrice <= take)
-					ClosePosition();
+					BuyMarket();
 			}
 
 			if (_bullCandleCount >= MaxPullbackCandles)
-				ClosePosition();
+				BuyMarket();
 		}
 
 		if (UseBigCandleExit && Position != 0)
 		{
 			if (candle.ClosePrice > equTop || candle.ClosePrice < equBottom)
-				ClosePosition();
+			{
+				if (Position > 0) SellMarket(); else if (Position < 0) BuyMarket();
+			}
 		}
 	}
 }

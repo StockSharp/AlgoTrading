@@ -173,11 +173,11 @@ public class EmaTrendHeikinAshiEntryStrategy : Strategy
 			Width = BollingerDeviation
 		};
 		
-		var fastEma = new EMA { Length = FastEmaPeriod };
-		var slowEma = new EMA { Length = SlowEmaPeriod };
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 		
 		var mainSub = SubscribeCandles(CandleType);
-		mainSub.Bind(bb, ProcessCandle).Start();
+		mainSub.BindEx(bb, ProcessCandle).Start();
 		
 		SubscribeCandles(HigherTimeframe)
 		.Bind(fastEma, slowEma, ProcessHigherTimeframe)
@@ -200,13 +200,14 @@ public class EmaTrendHeikinAshiEntryStrategy : Strategy
 		_isBearishHtf = fast < slow;
 	}
 	
-	private void ProcessCandle(ICandleMessage candle, decimal middle, decimal upper, decimal lower)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bbValue)
 	{
 		if (candle.State != CandleStates.Finished)
 		return;
-		
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
+
+		var bb = (BollingerBandsValue)bbValue;
+		if (bb.UpBand is not decimal upper || bb.LowBand is not decimal lower || bb.MovingAverage is not decimal middle)
+			return;
 		
 		var haClose = (candle.OpenPrice + candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 4m;
 		decimal haOpen;
@@ -261,7 +262,7 @@ public class EmaTrendHeikinAshiEntryStrategy : Strategy
 			{
 				if (candle.HighPrice >= _firstTarget)
 				{
-					ClosePosition(Position / 2m);
+					SellMarket();
 					_firstTargetReached = true;
 					_trailStop = _entryPrice;
 				}
@@ -271,7 +272,7 @@ public class EmaTrendHeikinAshiEntryStrategy : Strategy
 			
 			var currentStop = _firstTargetReached ? _trailStop : _initialStop;
 			if (candle.LowPrice <= currentStop)
-			ClosePosition();
+			if (Position > 0) SellMarket(); else if (Position < 0) BuyMarket();
 		}
 		else if (Position < 0)
 		{
@@ -279,7 +280,7 @@ public class EmaTrendHeikinAshiEntryStrategy : Strategy
 			{
 				if (candle.LowPrice <= _firstTarget)
 				{
-					ClosePosition(Math.Abs(Position) / 2m);
+					BuyMarket();
 					_firstTargetReached = true;
 					_trailStop = _entryPrice;
 				}
@@ -289,7 +290,7 @@ public class EmaTrendHeikinAshiEntryStrategy : Strategy
 			
 			var currentStop = _firstTargetReached ? _trailStop : _initialStop;
 			if (candle.HighPrice >= currentStop)
-			ClosePosition();
+			if (Position > 0) SellMarket(); else if (Position < 0) BuyMarket();
 		}
 		
 		_haOpen3 = _haOpen2;

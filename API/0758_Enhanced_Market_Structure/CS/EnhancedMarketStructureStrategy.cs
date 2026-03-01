@@ -254,9 +254,9 @@ public class EnhancedMarketStructureStrategy : Strategy
 		_lowest = new Lowest { Length = StructurePeriod };
 		_atr = new AverageTrueRange { Length = AtrLength };
 		_rsi = new RelativeStrengthIndex { Length = RsiLength };
-		_ema = new EMA { Length = EmaLength };
+		_ema = new ExponentialMovingAverage { Length = EmaLength };
 		_macd = new MovingAverageConvergenceDivergenceSignal { Macd = { ShortMa = { Length = MacdFast }, LongMa = { Length = MacdSlow } }, SignalMa = { Length = MacdSignal } };
-		_volumeSma = new SMA { Length = VolumeLength };
+		_volumeSma = new SimpleMovingAverage { Length = VolumeLength };
 		
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -276,9 +276,9 @@ public class EnhancedMarketStructureStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 		return;
 		
-		var volumeAvg = _volumeSma.Process(new DecimalIndicatorValue(_volumeSma, candle.TotalVolume, candle.ServerTime)).ToDecimal();
-		
-		if (!IsFormedAndOnlineAndAllowTrading() || !_highest.IsFormed || !_lowest.IsFormed || !_atr.IsFormed || !_rsi.IsFormed || !_ema.IsFormed || !_macd.IsFormed || (UseVolumeFilter && !_volumeSma.IsFormed))
+		var volumeAvg = _volumeSma.Process(new DecimalIndicatorValue(_volumeSma, candle.TotalVolume, candle.OpenTime)).ToDecimal();
+
+		if (!_highest.IsFormed || !_lowest.IsFormed || !_atr.IsFormed || !_rsi.IsFormed || !_ema.IsFormed || !_macd.IsFormed || (UseVolumeFilter && !_volumeSma.IsFormed))
 		return;
 		
 		var swingHigh = values[0].ToDecimal();
@@ -288,44 +288,42 @@ public class EnhancedMarketStructureStrategy : Strategy
 		var emaValue = values[4].ToDecimal();
 		
 		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)values[5];
-		var macdLine = macdTyped.Macd;
-		var macdSignal = macdTyped.Signal;
-		
+		if (macdTyped.Macd is not decimal macdLine || macdTyped.Signal is not decimal macdSignalVal)
+			return;
+
 		var rsiLong = !UseRsiFilter || (rsiValue < RsiOverbought && rsiValue > 40m);
 		var rsiShort = !UseRsiFilter || (rsiValue > RsiOversold && rsiValue < 60m);
 		var highVolume = !UseVolumeFilter || candle.TotalVolume > volumeAvg * VolumeThreshold;
-		var macdBullish = !UseMacdFilter || (macdLine > macdSignal && macdLine > _prevMacd);
-		var macdBearish = !UseMacdFilter || (macdLine < macdSignal && macdLine < _prevMacd);
+		var macdBullish = !UseMacdFilter || (macdLine > macdSignalVal && macdLine > _prevMacd);
+		var macdBearish = !UseMacdFilter || (macdLine < macdSignalVal && macdLine < _prevMacd);
 		var emaBullish = !UseEmaFilter || (candle.ClosePrice > emaValue && emaValue > _prevEma);
 		var emaBearish = !UseEmaFilter || (candle.ClosePrice < emaValue && emaValue < _prevEma);
-		
+
 		var longFilters = rsiLong && highVolume && macdBullish && emaBullish;
 		var shortFilters = rsiShort && highVolume && macdBearish && emaBearish;
-		
+
 		var longBreakout = candle.ClosePrice > swingHigh;
 		var shortBreakout = candle.ClosePrice < swingLow;
 		var longSweep = candle.HighPrice > swingHigh && candle.ClosePrice < swingHigh;
 		var shortSweep = candle.LowPrice < swingLow && candle.ClosePrice > swingLow;
-		
-		var volume = Volume + Math.Abs(Position);
-		
+
 		if (EnableLongs && Position <= 0 && longBreakout && longFilters)
 		{
-			BuyMarket(volume);
+			BuyMarket();
 		}
 		else if (EnableShorts && Position >= 0 && shortBreakout && shortFilters)
 		{
-			SellMarket(volume);
+			SellMarket();
 		}
 		else if (EnableLongs && Position <= 0 && longSweep && longFilters)
 		{
-			BuyMarket(volume);
+			BuyMarket();
 		}
 		else if (EnableShorts && Position >= 0 && shortSweep && shortFilters)
 		{
-			SellMarket(volume);
+			SellMarket();
 		}
-		
+
 		_prevEma = emaValue;
 		_prevMacd = macdLine;
 	}

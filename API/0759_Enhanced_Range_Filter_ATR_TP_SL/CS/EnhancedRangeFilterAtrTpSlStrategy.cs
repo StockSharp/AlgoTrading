@@ -11,8 +11,6 @@ using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo.Candles;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
@@ -294,28 +292,27 @@ protected override void OnStarted2(DateTime time)
 {
 base.OnStarted2(time);
 
-_emaFast = new EMA { Length = EmaFastLength };
-_emaSlow = new EMA { Length = EmaSlowLength };
+_emaFast = new ExponentialMovingAverage { Length = EmaFastLength };
+_emaSlow = new ExponentialMovingAverage { Length = EmaSlowLength };
 _atr = new AverageTrueRange { Length = AtrLength };
 _rsi = new RelativeStrengthIndex { Length = RsiLength };
-_volumeSma = new SMA { Length = 20 };
+_volumeSma = new SimpleMovingAverage { Length = 20 };
 _highest = new Highest { Length = 14 };
 _lowest = new Lowest { Length = 14 };
 
-_avrng = new EMA { Length = Period };
-_smooth = new EMA { Length = Period * 2 - 1 };
+_avrng = new ExponentialMovingAverage { Length = Period };
+_smooth = new ExponentialMovingAverage { Length = Period * 2 - 1 };
 
 var subscription = SubscribeCandles(CandleType);
 subscription
-.BindEx([
+.BindEx(new IIndicator[] {
 _emaFast,
 _emaSlow,
 _atr,
 _rsi,
-_volumeSma,
 _highest,
 _lowest
-], ProcessCandle)
+}, ProcessCandle)
 .Start();
 
 var area = CreateChartArea();
@@ -333,21 +330,21 @@ private void ProcessCandle(ICandleMessage candle, IIndicatorValue[] values)
 if (candle.State != CandleStates.Finished)
 return;
 
-if (!IsFormedAndOnlineAndAllowTrading())
+if (!_emaFast.IsFormed || !_emaSlow.IsFormed)
 return;
 
 var emaFast = values[0].ToDecimal();
 var emaSlow = values[1].ToDecimal();
 var atr = values[2].ToDecimal();
 var rsi = values[3].ToDecimal();
-var avgVolume = values[4].ToDecimal();
-var highest = values[5].ToDecimal();
-var lowest = values[6].ToDecimal();
+var highest = values[4].ToDecimal();
+var lowest = values[5].ToDecimal();
+var avgVolume = _volumeSma.Process(new DecimalIndicatorValue(_volumeSma, candle.TotalVolume, candle.OpenTime)).ToDecimal();
 
 var price = candle.ClosePrice;
 
-var avrng = _avrng.Process(Math.Abs(price - _prevPrice)).ToDecimal();
-var smooth = _smooth.Process(avrng).ToDecimal();
+var avrng = _avrng.Process(new DecimalIndicatorValue(_avrng, Math.Abs(price - _prevPrice), candle.OpenTime)).ToDecimal();
+var smooth = _smooth.Process(new DecimalIndicatorValue(_smooth, avrng, candle.OpenTime)).ToDecimal();
 var smrng = smooth * Multiplier;
 
 var prevFilt = _filter;
@@ -408,19 +405,19 @@ var finalLong = longCondition && volumeOk && rsiOk && trendOk && !isRanging;
 var finalShort = shortCondition && volumeOk && rsiOk && trendOk && !isRanging;
 
 if (finalLong && Position <= 0)
-BuyMarket(Volume);
+BuyMarket();
 else if (finalShort && Position >= 0)
-SellMarket(Volume);
+SellMarket();
 
 if (Position > 0)
 {
 if (price <= _stopLoss || price >= _takeProfit)
-SellMarket(Math.Abs(Position));
+SellMarket();
 }
 else if (Position < 0)
 {
 if (price >= _stopLoss || price <= _takeProfit)
-BuyMarket(Math.Abs(Position));
+BuyMarket();
 }
 
 _prevPrice = price;
