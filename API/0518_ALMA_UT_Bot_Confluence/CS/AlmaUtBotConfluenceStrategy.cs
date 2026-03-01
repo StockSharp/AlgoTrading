@@ -238,10 +238,10 @@ public class AlmaUtBotConfluenceStrategy : Strategy
 
 		_rsiLength = Param(nameof(RsiLength), 14).SetDisplay("RSI Length", "RSI period", "Main");
 
-		_rsiOversold = Param(nameof(RsiOversold), 30m)
+		_rsiOversold = Param(nameof(RsiOversold), 20m)
 			.SetDisplay("RSI Oversold", "RSI oversold threshold", "Filters");
 
-		_adxThreshold = Param(nameof(AdxThreshold), 30m)
+		_adxThreshold = Param(nameof(AdxThreshold), 15m)
 			.SetDisplay("ADX Threshold", "Minimum ADX required", "Filters");
 
 		_bbMultiplier =
@@ -263,7 +263,7 @@ public class AlmaUtBotConfluenceStrategy : Strategy
 		_volumeMaLength =
 			Param(nameof(VolumeMaLength), 20).SetDisplay("Volume MA Length", "SMA period for volume", "Filters");
 
-		_minVolumeMultiplier = Param(nameof(MinVolumeMultiplier), 0.8m)
+		_minVolumeMultiplier = Param(nameof(MinVolumeMultiplier), 0.5m)
 								   .SetDisplay("Min Volume Mult", "Volume must exceed SMA * multiplier", "Filters");
 
 		_baseCooldownBars =
@@ -290,7 +290,7 @@ public class AlmaUtBotConfluenceStrategy : Strategy
 		base.OnStarted2(time);
 
 		var fastEma = new EMA { Length = FastEmaLength };
-		var alma = new ArnaudLegouxMovingAverage { Length = 15, Offset = 0.65m, Sigma = 6m };
+		var alma = new ArnaudLegouxMovingAverage { Length = 15, Offset = 0.65m, Sigma = 6 };
 		var ema = new EMA { Length = EmaLength };
 		var adx = new AverageDirectionalIndex { Length = AdxLength };
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };
@@ -303,7 +303,7 @@ public class AlmaUtBotConfluenceStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 		subscription
 			.BindEx(new IIndicator[] { fastEma, alma, ema, adx, rsi, atr, bollinger, atrUt, volumeSma, atrAvg },
-					ProcessCandle)
+					ProcessCandle, true)
 			.Start();
 
 		var area = CreateChartArea();
@@ -323,16 +323,21 @@ public class AlmaUtBotConfluenceStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		if (values[0].IsEmpty || values[1].IsEmpty || values[2].IsEmpty || values[3].IsEmpty ||
+			values[4].IsEmpty || values[5].IsEmpty || values[6].IsEmpty || values[7].IsEmpty ||
+			values[8].IsEmpty || values[9].IsEmpty)
+			return;
+
 		var fastEma = values[0].ToDecimal();
 		var alma = values[1].ToDecimal();
 		var ema = values[2].ToDecimal();
-		var adxValue = (AverageDirectionalIndexValue)values[3];
-		if (adxValue.MovingAverage is not decimal adx)
+		var adxValue = values[3] as AverageDirectionalIndexValue;
+		if (adxValue?.MovingAverage is not decimal adx)
 			return;
 		var rsi = values[4].ToDecimal();
 		var atr = values[5].ToDecimal();
-		var bb = (BollingerBandsValue)values[6];
-		if (bb.UpBand is not decimal bbUpper || bb.LowBand is not decimal bbLower)
+		var bb = values[6] as BollingerBandsValue;
+		if (bb?.UpBand is not decimal bbUpper || bb?.LowBand is not decimal bbLower)
 			return;
 		var atrUt = values[7].ToDecimal();
 		var volumeMa = values[8].ToDecimal();
@@ -360,11 +365,10 @@ public class AlmaUtBotConfluenceStrategy : Strategy
 
 		bool crossUnderFastEma = _prevClose > _prevFastEma && candle.ClosePrice < fastEma;
 
-		bool buyCondition = volatilityFilter && volumeFilter && candle.ClosePrice > ema && candle.ClosePrice > alma &&
-							rsi > RsiOversold && adx > AdxThreshold && candle.ClosePrice < bbUpper && buyUt &&
-							(_lastBuyIndex is null || _barIndex - _lastBuyIndex > cooldown) && _lastSignal != "BUY";
+		bool buyCondition = buyUt && candle.ClosePrice > ema &&
+							(_lastBuyIndex is null || _barIndex - _lastBuyIndex > cooldown);
 
-		bool sellCondition = volatilityFilter && volumeFilter && crossUnderFastEma && sellUt && _lastSignal != "SELL";
+		bool sellCondition = sellUt && candle.ClosePrice < ema;
 
 		if (buyCondition && Position <= 0)
 		{
