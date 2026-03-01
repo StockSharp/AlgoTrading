@@ -1,14 +1,11 @@
 using System;
-using System.Collections.Generic;
-
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
-using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-public class PinbarReversalStrategy : Strategy
+public class PinbarReversal2Strategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _fastPeriod;
@@ -19,14 +16,12 @@ public class PinbarReversalStrategy : Strategy
 	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
 	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
 
-	public PinbarReversalStrategy()
+	public PinbarReversal2Strategy()
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General");
 		_fastPeriod = Param(nameof(FastPeriod), 6).SetGreaterThanZero().SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
 		_slowPeriod = Param(nameof(SlowPeriod), 25).SetGreaterThanZero().SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 	}
-
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities() => [(Security, CandleType)];
 
 	protected override void OnStarted2(DateTime time)
 	{

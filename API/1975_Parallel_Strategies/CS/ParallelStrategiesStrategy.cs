@@ -1,14 +1,7 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
-using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
@@ -24,13 +17,14 @@ public class ParallelStrategiesStrategy : Strategy
 	private readonly StrategyParam<int> _macdSignal;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private DonchianChannels _donchian;
-	private HeikinAshi _heikin;
-	private MovingAverageConvergenceDivergenceSignal _macd;
-
-	private decimal? _prevHigh;
-	private decimal? _prevLow;
+	private decimal? _prevUpper;
+	private decimal? _prevLower;
 	private int? _prevTrend;
+
+	// Heikin Ashi state
+	private decimal _haOpen;
+	private decimal _haClose;
+	private bool _haInitialized;
 
 	/// <summary>
 	/// Donchian channel period for breakout detection.
@@ -80,75 +74,91 @@ public class ParallelStrategiesStrategy : Strategy
 	public ParallelStrategiesStrategy()
 	{
 		_donchianPeriod = Param("DonchianPeriod", 5)
-			.SetDisplay("Donchian Period", "Lookback for breakout calculation", "Indicators")
-			.SetCanOptimize(true, 1, 20);
+			.SetDisplay("Donchian Period", "Lookback for breakout calculation", "Indicators");
 		_macdFast = Param("MacdFast", 12)
-			.SetDisplay("MACD Fast", "Fast EMA period", "Indicators")
-			.SetCanOptimize(true, 5, 30);
+			.SetDisplay("MACD Fast", "Fast EMA period", "Indicators");
 		_macdSlow = Param("MacdSlow", 26)
-			.SetDisplay("MACD Slow", "Slow EMA period", "Indicators")
-			.SetCanOptimize(true, 10, 60);
+			.SetDisplay("MACD Slow", "Slow EMA period", "Indicators");
 		_macdSignal = Param("MacdSignal", 9)
-			.SetDisplay("MACD Signal", "Signal line period", "Indicators")
-			.SetCanOptimize(true, 5, 30);
+			.SetDisplay("MACD Signal", "Signal line period", "Indicators");
 		_candleType = Param("CandleType", TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for candles", "Common");
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_donchian = new DonchianChannels { Length = DonchianPeriod };
-		_heikin = new HeikinAshi();
-		_macd = new MovingAverageConvergenceDivergenceSignal
-		{
-			ShortMa = { Length = MacdFast },
-			LongMa = { Length = MacdSlow },
-			SignalPeriod = MacdSignal
-		};
+		_prevUpper = null;
+		_prevLower = null;
+		_prevTrend = null;
+		_haInitialized = false;
+
+		var donchian = new DonchianChannels { Length = DonchianPeriod };
+		var macd = new MovingAverageConvergenceDivergenceSignal(
+			new MovingAverageConvergenceDivergence(
+				new ExponentialMovingAverage { Length = MacdSlow },
+				new ExponentialMovingAverage { Length = MacdFast }),
+			new ExponentialMovingAverage { Length = MacdSignal });
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(_donchian, _heikin, _macd, ProcessCandle)
+			.BindEx(donchian, macd, ProcessCandle)
 			.Start();
 
-		StartProtection();
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, donchian);
+			DrawIndicator(area, macd);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue donchianValue, IIndicatorValue heikinValue, IIndicatorValue macdValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue donchianValue, IIndicatorValue macdValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		var dc = (IDonchianChannelsValue)donchianValue;
+		var macdV = (IMovingAverageConvergenceDivergenceSignalValue)macdValue;
+
+		if (dc.UpperBand is not decimal upper || dc.LowerBand is not decimal lower)
 			return;
 
-		var dc = (DonchianChannelsValue)donchianValue;
-		var ha = (HeikinAshiValue)heikinValue;
-		var macd = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
+		if (macdV.Macd is not decimal macdLine || macdV.Signal is not decimal signalLine)
+			return;
 
-		var trend = ha.Open < ha.Close ? 1 : -1;
-
-		if (_prevHigh is decimal prevHigh && _prevLow is decimal prevLow && _prevTrend is int prevTrend)
+		// Compute Heikin Ashi manually
+		var haCloseNew = (candle.OpenPrice + candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 4m;
+		decimal haOpenNew;
+		if (!_haInitialized)
 		{
-			if (trend > 0 && prevTrend < 0 && candle.ClosePrice > prevHigh && macd.Macd > macd.Signal && Position <= 0)
-			{
-				CancelActiveOrders();
-				var volume = Volume + Math.Abs(Position);
-				BuyMarket(volume);
-			}
-			else if (trend < 0 && prevTrend > 0 && candle.ClosePrice < prevLow && macd.Macd < macd.Signal && Position >= 0)
-			{
-				CancelActiveOrders();
-				var volume = Volume + Math.Abs(Position);
-				SellMarket(volume);
-			}
+			haOpenNew = (candle.OpenPrice + candle.ClosePrice) / 2m;
+			_haInitialized = true;
+		}
+		else
+		{
+			haOpenNew = (_haOpen + _haClose) / 2m;
 		}
 
-		_prevHigh = dc.Upper;
-		_prevLow = dc.Lower;
+		_haOpen = haOpenNew;
+		_haClose = haCloseNew;
+
+		var trend = haOpenNew < haCloseNew ? 1 : -1;
+
+		if (_prevUpper is decimal prevHigh && _prevLower is decimal prevLow && _prevTrend is int prevTrend)
+		{
+			if (trend > 0 && prevTrend < 0 && candle.ClosePrice > prevHigh && macdLine > signalLine && Position <= 0)
+				BuyMarket();
+			else if (trend < 0 && prevTrend > 0 && candle.ClosePrice < prevLow && macdLine < signalLine && Position >= 0)
+				SellMarket();
+		}
+
+		_prevUpper = upper;
+		_prevLower = lower;
 		_prevTrend = trend;
 	}
 }

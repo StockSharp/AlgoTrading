@@ -1,319 +1,35 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
-using StockSharp.BusinessEntities;
 using StockSharp.Messages;
-
-using StockSharp.Algo;
 
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Trend Direction Index re-entry strategy converted from the MQL5 expert "Exp_TDI-2_ReOpen".
-/// Trades based on crossings between the TDI momentum line and the TDI index line, with optional scale-in logic.
+/// Trend Direction Index re-entry strategy.
+/// Trades based on crossings between the TDI momentum line and the TDI index line.
 /// </summary>
 public class Tdi2ReOpenStrategy : Strategy
 {
-	public enum SmoothMethods
-	{
-		Sma,
-		Ema,
-		Smma,
-		Lwma
-	}
-
-	public enum AppliedPrices
-	{
-		Close,
-		Open,
-		High,
-		Low,
-		Median,
-		Typical,
-		Weighted,
-		Simple,
-		Quarter,
-		TrendFollow0,
-		TrendFollow1,
-		Demark
-	}
-
-	private readonly StrategyParam<decimal> _moneyManagement;
-	private readonly StrategyParam<int> _maxEntries;
-	private readonly StrategyParam<int> _stopLossPoints;
-	private readonly StrategyParam<int> _takeProfitPoints;
-	private readonly StrategyParam<int> _slippagePoints;
-	private readonly StrategyParam<decimal> _priceStepPoints;
-	private readonly StrategyParam<bool> _buyOpenAllowed;
-	private readonly StrategyParam<bool> _sellOpenAllowed;
-	private readonly StrategyParam<bool> _buyCloseAllowed;
-	private readonly StrategyParam<bool> _sellCloseAllowed;
-	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<SmoothMethods> _tdiMethod;
 	private readonly StrategyParam<int> _tdiPeriod;
-	private readonly StrategyParam<int> _tdiPhase;
-	private readonly StrategyParam<AppliedPrices> _appliedPrice;
-	private readonly StrategyParam<int> _signalBar;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal?[] _directionalHistory = Array.Empty<decimal?>();
-	private decimal?[] _indexHistory = Array.Empty<decimal?>();
-	private int _historyCount;
+	private decimal? _prevDirectional;
+	private decimal? _prevIndex;
 
-	private decimal _lastPosition;
-	private int _longEntries;
-	private int _shortEntries;
-	private decimal _lastLongEntryPrice;
-	private decimal _lastShortEntryPrice;
+	public int TdiPeriod { get => _tdiPeriod.Value; set => _tdiPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Initializes a new instance of the <see cref="Tdi2ReOpenStrategy"/> class.
-	/// </summary>
 	public Tdi2ReOpenStrategy()
 	{
-		_moneyManagement = Param(nameof(MoneyManagement), 0.1m)
-		.SetGreaterThanZero()
-		.SetDisplay("Money Management", "Volume used for each market order", "Trading")
-		
-		.SetOptimize(0.05m, 1m, 0.05m);
+		_tdiPeriod = Param(nameof(TdiPeriod), 10)
+			.SetGreaterThanZero()
+			.SetDisplay("TDI Period", "Momentum lookback period", "Indicator")
+			.SetOptimize(5, 30, 5);
 
-		_maxEntries = Param(nameof(MaxEntries), 10)
-		.SetGreaterThanZero()
-		.SetDisplay("Max Entries", "Maximum number of scale-in trades per direction", "Trading")
-		
-		.SetOptimize(1, 10, 1);
-
-		_stopLossPoints = Param(nameof(StopLossPoints), 1000)
-		.SetNotNegative()
-		.SetDisplay("Stop Loss (points)", "Protective stop distance expressed in instrument points", "Risk Management")
-		
-		.SetOptimize(100, 2000, 100);
-
-		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000)
-		.SetNotNegative()
-		.SetDisplay("Take Profit (points)", "Take profit distance expressed in instrument points", "Risk Management")
-		
-		.SetOptimize(200, 3000, 100);
-
-		_slippagePoints = Param(nameof(SlippagePoints), 10)
-		.SetNotNegative()
-		.SetDisplay("Slippage (points)", "Maximum acceptable slippage when submitting market orders", "Trading");
-
-		_priceStepPoints = Param(nameof(PriceStepPoints), 300m)
-		.SetNotNegative()
-		.SetDisplay("Re-entry Step (points)", "Minimum favorable price movement (in points) before adding to an open position", "Trading")
-		
-		.SetOptimize(50m, 500m, 50m);
-
-		_buyOpenAllowed = Param(nameof(BuyOpenAllowed), true)
-		.SetDisplay("Allow Long Entries", "Enable opening of long positions", "Permissions");
-
-		_sellOpenAllowed = Param(nameof(SellOpenAllowed), true)
-		.SetDisplay("Allow Short Entries", "Enable opening of short positions", "Permissions");
-
-		_buyCloseAllowed = Param(nameof(BuyCloseAllowed), true)
-		.SetDisplay("Allow Long Exits", "Enable closing of existing long positions", "Permissions");
-
-		_sellCloseAllowed = Param(nameof(SellCloseAllowed), true)
-		.SetDisplay("Allow Short Exits", "Enable closing of existing short positions", "Permissions");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
-		.SetDisplay("Candle Type", "Data series used for indicator calculations", "Data")
-		;
-
-		_tdiMethod = Param(nameof(TdiMethod), SmoothMethods.Sma)
-		.SetDisplay("TDI Smoothing", "Smoothing method used inside the TDI-2 indicator", "Indicator")
-		;
-
-		_tdiPeriod = Param(nameof(TdiPeriod), 20)
-		.SetGreaterThanZero()
-		.SetDisplay("TDI Period", "Momentum lookback period", "Indicator")
-		
-		.SetOptimize(5, 50, 5);
-
-		_tdiPhase = Param(nameof(TdiPhase), 15)
-		.SetDisplay("TDI Phase", "Phase parameter used by advanced smoothing modes", "Indicator")
-		;
-
-		_appliedPrice = Param(nameof(AppliedPrice), AppliedPrices.Close)
-		.SetDisplay("Applied Price", "Price source used by the TDI-2 indicator", "Indicator")
-		;
-
-		_signalBar = Param(nameof(SignalBar), 1)
-		.SetGreaterThanZero()
-		.SetDisplay("Signal Bar", "Number of closed candles to look back when evaluating crosses", "Indicator")
-		;
-	}
-
-	/// <summary>
-	/// Gets or sets the money management value (per order volume).
-	/// </summary>
-	public decimal MoneyManagement
-	{
-		get => _moneyManagement.Value;
-		set => _moneyManagement.Value = value;
-	}
-
-	/// <summary>
-	/// Gets or sets the maximum number of entries per direction (including the initial trade).
-	/// </summary>
-	public int MaxEntries
-	{
-		get => _maxEntries.Value;
-		set => _maxEntries.Value = value;
-	}
-
-	/// <summary>
-	/// Gets or sets the stop loss distance in instrument points.
-	/// </summary>
-	public int StopLossPoints
-	{
-		get => _stopLossPoints.Value;
-		set => _stopLossPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Gets or sets the take profit distance in instrument points.
-	/// </summary>
-	public int TakeProfitPoints
-	{
-		get => _takeProfitPoints.Value;
-		set => _takeProfitPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Gets or sets the slippage tolerance in points.
-	/// </summary>
-	public int SlippagePoints
-	{
-		get => _slippagePoints.Value;
-		set => _slippagePoints.Value = value;
-	}
-
-	/// <summary>
-	/// Gets or sets the favorable movement (in points) required before scaling into an existing position.
-	/// </summary>
-	public decimal PriceStepPoints
-	{
-		get => _priceStepPoints.Value;
-		set => _priceStepPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Gets or sets a value indicating whether long entries are allowed.
-	/// </summary>
-	public bool BuyOpenAllowed
-	{
-		get => _buyOpenAllowed.Value;
-		set => _buyOpenAllowed.Value = value;
-	}
-
-	/// <summary>
-	/// Gets or sets a value indicating whether short entries are allowed.
-	/// </summary>
-	public bool SellOpenAllowed
-	{
-		get => _sellOpenAllowed.Value;
-		set => _sellOpenAllowed.Value = value;
-	}
-
-	/// <summary>
-	/// Gets or sets a value indicating whether long exits are allowed.
-	/// </summary>
-	public bool BuyCloseAllowed
-	{
-		get => _buyCloseAllowed.Value;
-		set => _buyCloseAllowed.Value = value;
-	}
-
-	/// <summary>
-	/// Gets or sets a value indicating whether short exits are allowed.
-	/// </summary>
-	public bool SellCloseAllowed
-	{
-		get => _sellCloseAllowed.Value;
-		set => _sellCloseAllowed.Value = value;
-	}
-
-	/// <summary>
-	/// Gets or sets the candle type used for calculations.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Gets or sets the smoothing method used by the TDI-2 indicator.
-	/// </summary>
-	public SmoothMethods TdiMethod
-	{
-		get => _tdiMethod.Value;
-		set => _tdiMethod.Value = value;
-	}
-
-	/// <summary>
-	/// Gets or sets the momentum lookback period.
-	/// </summary>
-	public int TdiPeriod
-	{
-		get => _tdiPeriod.Value;
-		set => _tdiPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Gets or sets the smoothing phase parameter.
-	/// </summary>
-	public int TdiPhase
-	{
-		get => _tdiPhase.Value;
-		set => _tdiPhase.Value = value;
-	}
-
-	/// <summary>
-	/// Gets or sets the applied price used by the indicator.
-	/// </summary>
-	public AppliedPrices AppliedPrice
-	{
-		get => _appliedPrice.Value;
-		set => _appliedPrice.Value = value;
-	}
-
-	/// <summary>
-	/// Gets or sets the signal bar offset (number of closed candles used for cross evaluation).
-	/// </summary>
-	public int SignalBar
-	{
-		get => _signalBar.Value;
-		set => _signalBar.Value = value;
-	}
-
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_directionalHistory = Array.Empty<decimal?>();
-		_indexHistory = Array.Empty<decimal?>();
-		_historyCount = 0;
-		_lastPosition = 0m;
-		_longEntries = 0;
-		_shortEntries = 0;
-		_lastLongEntryPrice = 0m;
-		_lastShortEntryPrice = 0m;
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Data series", "General");
 	}
 
 	/// <inheritdoc />
@@ -321,372 +37,72 @@ public class Tdi2ReOpenStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		Volume = MoneyManagement;
+		_prevDirectional = null;
+		_prevIndex = null;
 
-		AllocateHistoryBuffers();
-
-		var tdiIndicator = new Tdi2Indicator
-		{
-			Method = TdiMethod,
-			Period = TdiPeriod,
-			Phase = TdiPhase,
-			AppliedPrice = AppliedPrice
-		};
+		var momentum = new Momentum { Length = TdiPeriod };
+		var momSmoother = new SimpleMovingAverage { Length = TdiPeriod };
+		var absSmoother = new SimpleMovingAverage { Length = TdiPeriod };
+		var absDoubleSmoother = new SimpleMovingAverage { Length = TdiPeriod * 2 };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-		.BindEx(tdiIndicator, ProcessCandle)
-		.Start();
+		subscription.Bind(ProcessCandle).Start();
 
-		var priceStep = Security?.PriceStep ?? 1m;
-		var stopLoss = StopLossPoints > 0 ? StopLossPoints * priceStep : (decimal?)null;
-		var takeProfit = TakeProfitPoints > 0 ? TakeProfitPoints * priceStep : (decimal?)null;
-
-		if (stopLoss.HasValue || takeProfit.HasValue)
+		var area = CreateChartArea();
+		if (area != null)
 		{
-			var slUnit = stopLoss.HasValue ? new Unit(stopLoss.Value) : null;
-			var tpUnit = takeProfit.HasValue ? new Unit(takeProfit.Value) : null;
-			StartProtection(slUnit, tpUnit);
-		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue value)
-	{
-		if (candle.State != CandleStates.Finished)
-		return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
-
-		if (!value.IsFinal || value is not Tdi2IndicatorValue tdiValue)
-		return;
-
-		var directional = tdiValue.Directional;
-		var index = tdiValue.Index;
-
-		StoreIndicatorValues(directional, index);
-
-		if (!HasSufficientHistory())
-		return;
-
-		var previousDirectional = GetHistoryValue(_directionalHistory, SignalBar + 1);
-		var previousIndex = GetHistoryValue(_indexHistory, SignalBar + 1);
-		var currentDirectional = GetHistoryValue(_directionalHistory, SignalBar);
-		var currentIndex = GetHistoryValue(_indexHistory, SignalBar);
-
-		if (previousDirectional is null || previousIndex is null || currentDirectional is null || currentIndex is null)
-		return;
-
-		var exitShort = false;
-		var exitLong = false;
-		var openLong = false;
-		var openShort = false;
-
-		if (previousDirectional > previousIndex)
-		{
-			if (SellCloseAllowed && Position < 0)
-			exitShort = true;
-
-			if (BuyOpenAllowed && Position <= 0 && currentDirectional <= currentIndex)
-			openLong = true;
+			DrawCandles(area, subscription);
+			DrawOwnTrades(area);
 		}
 
-		if (previousDirectional < previousIndex)
+		void ProcessCandle(ICandleMessage candle)
 		{
-			if (BuyCloseAllowed && Position > 0)
-			exitLong = true;
+			if (candle.State != CandleStates.Finished)
+				return;
 
-			if (SellOpenAllowed && Position >= 0 && currentDirectional >= currentIndex)
-			openShort = true;
-		}
+			var t = candle.OpenTime;
+			var close = candle.ClosePrice;
 
-		if (exitLong)
-		{
-			SellMarket();
-		}
+			var momVal = momentum.Process(new DecimalIndicatorValue(momentum, close, t) { IsFinal = true });
+			if (!momentum.IsFormed)
+				return;
 
-		if (exitShort)
-		{
-			BuyMarket();
-		}
+			var mom = momVal.ToDecimal();
+			var absMom = Math.Abs(mom);
 
-		var priceStep = (Security?.PriceStep ?? 1m) * PriceStepPoints;
-		var closePrice = candle.ClosePrice;
+			var momSmooth = momSmoother.Process(new DecimalIndicatorValue(momSmoother, mom, t) { IsFinal = true });
+			var absSmooth = absSmoother.Process(new DecimalIndicatorValue(absSmoother, absMom, t) { IsFinal = true });
+			var absDoubleSmooth = absDoubleSmoother.Process(new DecimalIndicatorValue(absDoubleSmoother, absMom, t) { IsFinal = true });
 
-		var scaleInLong = false;
-		var scaleInShort = false;
+			if (!momSmoother.IsFormed || !absSmoother.IsFormed || !absDoubleSmoother.IsFormed)
+				return;
 
-		if (priceStep > 0m)
-		{
-			if (Position > 0m && _longEntries > 0 && _longEntries < MaxEntries && _lastLongEntryPrice > 0m)
+			var momSum = TdiPeriod * momSmooth.ToDecimal();
+			var momAbsSum = TdiPeriod * absSmooth.ToDecimal();
+			var momAbsSum2 = 2 * TdiPeriod * absDoubleSmooth.ToDecimal();
+
+			var directional = momSum;
+			var index = Math.Abs(momSum) - (momAbsSum2 - absMom);
+
+			if (_prevDirectional is not decimal prevDir || _prevIndex is not decimal prevIdx)
 			{
-				var move = closePrice - _lastLongEntryPrice;
-				if (move >= priceStep)
-				scaleInLong = true;
+				_prevDirectional = directional;
+				_prevIndex = index;
+				return;
 			}
 
-			if (Position < 0m && _shortEntries > 0 && _shortEntries < MaxEntries && _lastShortEntryPrice > 0m)
-			{
-				var move = _lastShortEntryPrice - closePrice;
-				if (move >= priceStep)
-				scaleInShort = true;
-			}
-		}
+			// Buy on cross: directional crosses above index
+			var crossUp = prevDir <= prevIdx && directional > index;
+			// Sell on cross: directional crosses below index
+			var crossDown = prevDir >= prevIdx && directional < index;
 
-		if (scaleInLong)
-		{
-			BuyMarket();
-		}
+			if (crossUp && Position <= 0)
+				BuyMarket();
+			else if (crossDown && Position >= 0)
+				SellMarket();
 
-		if (scaleInShort)
-		{
-			SellMarket();
-		}
-
-		if (openLong)
-		{
-			BuyMarket();
-		}
-
-		if (openShort)
-		{
-			SellMarket();
+			_prevDirectional = directional;
+			_prevIndex = index;
 		}
 	}
-
-	/// <inheritdoc />
-	protected override void OnOwnTradeReceived(MyTrade trade)
-	{
-		base.OnOwnTradeReceived(trade);
-
-		var currentPosition = Position;
-
-		if (currentPosition > 0m)
-		{
-			if (_lastPosition <= 0m)
-			{
-				_longEntries = 1;
-				_lastLongEntryPrice = trade.Trade.Price;
-			}
-			else if (currentPosition > _lastPosition)
-			{
-				_longEntries++;
-				_lastLongEntryPrice = trade.Trade.Price;
-			}
-		}
-		else if (currentPosition < 0m)
-		{
-			if (_lastPosition >= 0m)
-			{
-				_shortEntries = 1;
-				_lastShortEntryPrice = trade.Trade.Price;
-			}
-			else if (currentPosition < _lastPosition)
-			{
-				_shortEntries++;
-				_lastShortEntryPrice = trade.Trade.Price;
-			}
-		}
-		else
-		{
-			_longEntries = 0;
-			_shortEntries = 0;
-			_lastLongEntryPrice = 0m;
-			_lastShortEntryPrice = 0m;
-		}
-
-		_lastPosition = currentPosition;
-	}
-
-	private void AllocateHistoryBuffers()
-	{
-		var size = Math.Max(2, SignalBar + 2);
-		_directionalHistory = new decimal?[size];
-		_indexHistory = new decimal?[size];
-		_historyCount = 0;
-	}
-
-	private void StoreIndicatorValues(decimal directional, decimal index)
-	{
-		var size = _directionalHistory.Length;
-		var position = _historyCount % size;
-		_directionalHistory[position] = directional;
-		_indexHistory[position] = index;
-		_historyCount++;
-	}
-
-	private bool HasSufficientHistory()
-	{
-		return _historyCount >= SignalBar + 2;
-	}
-
-	private decimal? GetHistoryValue(decimal?[] buffer, int shift)
-	{
-		if (buffer.Length == 0 || _historyCount <= shift)
-		{
-			return null;
-		}
-
-		var size = buffer.Length;
-		var position = (_historyCount - 1 - shift) % size;
-		if (position < 0)
-		{
-			position += size;
-		}
-
-		return buffer[position];
-	}
-}
-
-/// <summary>
-/// Custom implementation of the TDI-2 indicator.
-/// Produces the directional momentum line and the TDI index line.
-/// </summary>
-public class Tdi2Indicator : BaseIndicator
-{
-	private Momentum _momentum;
-	private IIndicator _momentumSmoother;
-	private IIndicator _absMomentumSmoother;
-	private IIndicator _absMomentumDoubleSmoother;
-
-	/// <summary>
-	/// Gets or sets the smoothing method.
-	/// </summary>
-	public Tdi2ReOpenStrategy.SmoothMethods Method { get; set; } = Tdi2ReOpenStrategy.SmoothMethods.Sma;
-
-	/// <summary>
-	/// Gets or sets the momentum period.
-	/// </summary>
-	public int Period { get; set; } = 20;
-
-	/// <summary>
-	/// Gets or sets the smoothing phase parameter (reserved for compatibility).
-	/// </summary>
-	public int Phase { get; set; } = 15;
-
-	/// <summary>
-	/// Gets or sets the price source used by the indicator.
-	/// </summary>
-	public Tdi2ReOpenStrategy.AppliedPrices AppliedPrice { get; set; } = Tdi2ReOpenStrategy.AppliedPrices.Close;
-
-	/// <inheritdoc />
-	protected override IIndicatorValue OnProcess(IIndicatorValue input)
-	{
-		if (input is not ICandleMessage candle || candle.State != CandleStates.Finished)
-		return new DecimalIndicatorValue(this, default, input.Time);
-
-		EnsureIndicators();
-
-		var price = GetAppliedPrice(candle);
-		var momentumValue = _momentum.Process(new DecimalIndicatorValue(_momentum, price, input.Time));
-
-		if (!momentumValue.IsFinal)
-		return new DecimalIndicatorValue(this, default, input.Time);
-
-		var momentum = momentumValue.ToDecimal();
-		var absMomentum = Math.Abs(momentum);
-
-		var momSmooth = _momentumSmoother.Process(new DecimalIndicatorValue(_momentumSmoother, momentum, input.Time));
-		var absSmooth = _absMomentumSmoother.Process(new DecimalIndicatorValue(_absMomentumSmoother, absMomentum, input.Time));
-		var absDoubleSmooth = _absMomentumDoubleSmoother.Process(new DecimalIndicatorValue(_absMomentumDoubleSmoother, absMomentum, input.Time));
-
-		if (!momSmooth.IsFinal || !absSmooth.IsFinal || !absDoubleSmooth.IsFinal)
-		return new DecimalIndicatorValue(this, default, input.Time);
-
-		var momSum = Period * momSmooth.ToDecimal();
-		var momAbsSum = Period * absSmooth.ToDecimal();
-		var momAbsSum2 = 2 * Period * absDoubleSmooth.ToDecimal();
-
-		var directional = momSum;
-		var index = Math.Abs(momSum) - (momAbsSum2 - absMomentum);
-
-		return new Tdi2IndicatorValue(this, input, directional, index);
-	}
-
-	private void EnsureIndicators()
-	{
-		if (_momentum != null && _momentum.Length == Period && _momentumSmoother != null && _absMomentumSmoother != null && _absMomentumDoubleSmoother != null)
-		return;
-
-		_momentum = new Momentum { Length = Period };
-		_momentumSmoother = CreateMovingAverage(Period);
-		_absMomentumSmoother = CreateMovingAverage(Period);
-		_absMomentumDoubleSmoother = CreateMovingAverage(Period * 2);
-	}
-
-	private IIndicator CreateMovingAverage(int length)
-	{
-		return Method switch
-		{
-			Tdi2ReOpenStrategy.SmoothMethods.Sma => new SMA { Length = length },
-			Tdi2ReOpenStrategy.SmoothMethods.Ema => new EMA { Length = length },
-			Tdi2ReOpenStrategy.SmoothMethods.Smma => new SmoothedMovingAverage { Length = length },
-			Tdi2ReOpenStrategy.SmoothMethods.Lwma => new WeightedMovingAverage { Length = length },
-			_ => throw new NotSupportedException($"Smoothing method {Method} is not supported."),
-		};
-	}
-
-	private static decimal CalculateDemarkPrice(ICandleMessage candle)
-	{
-		var res = candle.HighPrice + candle.LowPrice + candle.ClosePrice;
-
-		if (candle.ClosePrice < candle.OpenPrice)
-		{
-			res = (res + candle.LowPrice) / 2m;
-		}
-		else if (candle.ClosePrice > candle.OpenPrice)
-		{
-			res = (res + candle.HighPrice) / 2m;
-		}
-		else
-		{
-			res = (res + candle.ClosePrice) / 2m;
-		}
-
-		return ((res - candle.LowPrice) + (res - candle.HighPrice)) / 2m;
-	}
-
-	private decimal GetAppliedPrice(ICandleMessage candle)
-	{
-		return AppliedPrice switch
-		{
-			Tdi2ReOpenStrategy.AppliedPrices.Close => candle.ClosePrice,
-			Tdi2ReOpenStrategy.AppliedPrices.Open => candle.OpenPrice,
-			Tdi2ReOpenStrategy.AppliedPrices.High => candle.HighPrice,
-			Tdi2ReOpenStrategy.AppliedPrices.Low => candle.LowPrice,
-			Tdi2ReOpenStrategy.AppliedPrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			Tdi2ReOpenStrategy.AppliedPrices.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			Tdi2ReOpenStrategy.AppliedPrices.Weighted => (2m * candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
-			Tdi2ReOpenStrategy.AppliedPrices.Simple => (candle.OpenPrice + candle.ClosePrice) / 2m,
-			Tdi2ReOpenStrategy.AppliedPrices.Quarter => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
-			Tdi2ReOpenStrategy.AppliedPrices.TrendFollow0 => candle.ClosePrice > candle.OpenPrice ? candle.HighPrice : candle.ClosePrice < candle.OpenPrice ? candle.LowPrice : candle.ClosePrice,
-			Tdi2ReOpenStrategy.AppliedPrices.TrendFollow1 => candle.ClosePrice > candle.OpenPrice ? (candle.HighPrice + candle.ClosePrice) / 2m : candle.ClosePrice < candle.OpenPrice ? (candle.LowPrice + candle.ClosePrice) / 2m : candle.ClosePrice,
-			Tdi2ReOpenStrategy.AppliedPrices.Demark => CalculateDemarkPrice(candle),
-			_ => candle.ClosePrice,
-		};
-	}
-}
-
-/// <summary>
-/// Complex indicator value holding the TDI-2 components.
-/// </summary>
-public class Tdi2IndicatorValue : ComplexIndicatorValue
-{
-	/// <summary>
-	/// Initializes a new instance of the <see cref="Tdi2IndicatorValue"/> class.
-	/// </summary>
-	public Tdi2IndicatorValue(IIndicator indicator, IIndicatorValue input, decimal directional, decimal index)
-	: base(indicator, input, (nameof(Directional), directional), (nameof(Index), index))
-	{
-	}
-
-	/// <summary>
-	/// Gets the directional momentum line value.
-	/// </summary>
-	public decimal Directional => (decimal)GetValue(nameof(Directional));
-
-	/// <summary>
-	/// Gets the TDI index line value.
-	/// </summary>
-	public decimal Index => (decimal)GetValue(nameof(Index));
 }

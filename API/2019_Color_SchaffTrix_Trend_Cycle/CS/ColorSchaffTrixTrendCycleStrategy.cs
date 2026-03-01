@@ -148,18 +148,16 @@ public class ColorSchaffTrixTrendCycleStrategy : Strategy {
 	/// </summary>
 	public ColorSchaffTrixTrendCycleStrategy() {
 	_fastTrixLength =
-		Param(nameof(FastTrixLength), 23)
+		Param(nameof(FastTrixLength), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("Fast TRIX", "Fast TRIX length", "Indicator")
-		
-		.SetOptimize(10, 40, 5);
+		.SetOptimize(3, 15, 2);
 
 	_slowTrixLength =
-		Param(nameof(SlowTrixLength), 50)
+		Param(nameof(SlowTrixLength), 12)
 		.SetGreaterThanZero()
 		.SetDisplay("Slow TRIX", "Slow TRIX length", "Indicator")
-		
-		.SetOptimize(40, 100, 5);
+		.SetOptimize(8, 30, 3);
 
 	_cycle = Param(nameof(Cycle), 10)
 			 .SetGreaterThanZero()
@@ -168,15 +166,15 @@ public class ColorSchaffTrixTrendCycleStrategy : Strategy {
 			 .SetOptimize(5, 20, 1);
 
 	_highLevel =
-		Param(nameof(HighLevel), 60)
+		Param(nameof(HighLevel), 20)
 		.SetDisplay("High Level", "Upper threshold", "Indicator");
 
 	_lowLevel =
-		Param(nameof(LowLevel), -60)
+		Param(nameof(LowLevel), -20)
 		.SetDisplay("Low Level", "Lower threshold", "Indicator");
 
 	_candleType =
-		Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe for candles", "General");
 
 	_stopLoss =
@@ -253,44 +251,52 @@ public class ColorSchaffTrixTrendCycleStrategy : Strategy {
 	/// <summary>
 	/// Schaff Trend Cycle indicator based on TRIX MACD.
 	/// </summary>
-	private sealed class SchaffTrixTrendCycle : IndicatorBase<decimal> {
+	private sealed class SchaffTrixTrendCycle : BaseIndicator {
 	public int FastLength { get; set; }
 	public int SlowLength { get; set; }
 	public int Cycle { get; set; }
 	public decimal Factor { get; set; } = 0.5m;
 
-	private readonly Trix _fast = new();
-	private readonly Trix _slow = new();
-	private readonly Highest _macdHigh = new();
-	private readonly Lowest _macdLow = new();
-	private readonly Highest _stHigh = new();
-	private readonly Lowest _stLow = new();
+	private Trix _fast;
+	private Trix _slow;
+	private Highest _macdHigh;
+	private Lowest _macdLow;
+	private Highest _stHigh;
+	private Lowest _stLow;
 	private decimal _stPrev;
 	private decimal _stcPrev;
 	private bool _stPass;
 	private bool _stcPass;
+	private bool _inited;
 
-	public override bool IsFormed => _slow.IsFormed && _stcPass;
+	public override int NumValuesToInitialize => 1;
+
+	protected override bool CalcIsFormed() => _inited && _slow.IsFormed && _stcPass;
+
+	private void EnsureInit()
+	{
+		if (_inited) return;
+		_fast = new Trix(FastLength);
+		_slow = new Trix(SlowLength);
+		_macdHigh = new Highest { Length = Cycle };
+		_macdLow = new Lowest { Length = Cycle };
+		_stHigh = new Highest { Length = Cycle };
+		_stLow = new Lowest { Length = Cycle };
+		_inited = true;
+	}
 
 	protected override IIndicatorValue OnProcess(IIndicatorValue input) {
-		_fast.Length = FastLength;
-		_slow.Length = SlowLength;
-		_macdHigh.Length = Cycle;
-		_macdLow.Length = Cycle;
-		_stHigh.Length = Cycle;
-		_stLow.Length = Cycle;
+		EnsureInit();
 
-		var fast = _fast.Process(input).GetValue<decimal>();
-		var slow = _slow.Process(input).GetValue<decimal>();
+		var t = input.Time;
+
+		var fast = _fast.Process(input).ToDecimal();
+		var slow = _slow.Process(input).ToDecimal();
 
 		var macd = fast - slow;
 
-		var macdHigh =
-		_macdHigh.Process(new DecimalIndicatorValue(this, macd))
-			.GetValue<decimal>();
-		var macdLow =
-		_macdLow.Process(new DecimalIndicatorValue(this, macd))
-			.GetValue<decimal>();
+		var macdHigh = _macdHigh.Process(new DecimalIndicatorValue(_macdHigh, macd, t) { IsFinal = input.IsFinal }).ToDecimal();
+		var macdLow = _macdLow.Process(new DecimalIndicatorValue(_macdLow, macd, t) { IsFinal = input.IsFinal }).ToDecimal();
 
 		decimal st;
 		if (macdHigh - macdLow != 0)
@@ -304,10 +310,8 @@ public class ColorSchaffTrixTrendCycleStrategy : Strategy {
 		_stPrev = st;
 		_stPass = true;
 
-		var stHigh = _stHigh.Process(new DecimalIndicatorValue(this, st))
-				 .GetValue<decimal>();
-		var stLow = _stLow.Process(new DecimalIndicatorValue(this, st))
-				.GetValue<decimal>();
+		var stHigh = _stHigh.Process(new DecimalIndicatorValue(_stHigh, st, t) { IsFinal = input.IsFinal }).ToDecimal();
+		var stLow = _stLow.Process(new DecimalIndicatorValue(_stLow, st, t) { IsFinal = input.IsFinal }).ToDecimal();
 
 		decimal stc;
 		if (stHigh - stLow != 0)
@@ -321,20 +325,21 @@ public class ColorSchaffTrixTrendCycleStrategy : Strategy {
 		_stcPrev = stc;
 		_stcPass = true;
 
-		return new DecimalIndicatorValue(this, stc);
+		return new DecimalIndicatorValue(this, stc, t) { IsFinal = input.IsFinal };
 	}
 
 	public override void Reset() {
-		_fast.Reset();
-		_slow.Reset();
-		_macdHigh.Reset();
-		_macdLow.Reset();
-		_stHigh.Reset();
-		_stLow.Reset();
+		_fast?.Reset();
+		_slow?.Reset();
+		_macdHigh?.Reset();
+		_macdLow?.Reset();
+		_stHigh?.Reset();
+		_stLow?.Reset();
 		_stPrev = 0m;
 		_stcPrev = 0m;
 		_stPass = false;
 		_stcPass = false;
+		_inited = false;
 		base.Reset();
 	}
 	}
@@ -342,26 +347,29 @@ public class ColorSchaffTrixTrendCycleStrategy : Strategy {
 	/// <summary>
 	/// TRIX oscillator implementation.
 	/// </summary>
-	private sealed class Trix : IndicatorBase<decimal> {
-	private readonly ExponentialMovingAverage _ema1 = new();
-	private readonly ExponentialMovingAverage _ema2 = new();
-	private readonly ExponentialMovingAverage _ema3 = new();
+	private sealed class Trix : BaseIndicator {
+	private readonly ExponentialMovingAverage _ema1;
+	private readonly ExponentialMovingAverage _ema2;
+	private readonly ExponentialMovingAverage _ema3;
 	private decimal? _prev;
 
-	public int Length { get; set; }
+	public Trix(int length)
+	{
+		_ema1 = new ExponentialMovingAverage { Length = length };
+		_ema2 = new ExponentialMovingAverage { Length = length };
+		_ema3 = new ExponentialMovingAverage { Length = length };
+	}
 
-	public override bool IsFormed => _ema3.IsFormed && _prev != null;
+	public override int NumValuesToInitialize => 1;
+
+	protected override bool CalcIsFormed() => _ema3.IsFormed && _prev != null;
 
 	protected override IIndicatorValue OnProcess(IIndicatorValue input) {
-		_ema1.Length = Length;
-		_ema2.Length = Length;
-		_ema3.Length = Length;
-
 		var ema1 = _ema1.Process(input);
 		var ema2 = _ema2.Process(ema1);
 		var ema3 = _ema3.Process(ema2);
 
-		var value = ema3.GetValue<decimal>();
+		var value = ema3.ToDecimal();
 		decimal trix = 0m;
 
 		if (_prev != null && _prev != 0)
@@ -369,7 +377,7 @@ public class ColorSchaffTrixTrendCycleStrategy : Strategy {
 
 		_prev = value;
 
-		return new DecimalIndicatorValue(this, trix);
+		return new DecimalIndicatorValue(this, trix, input.Time) { IsFinal = input.IsFinal };
 	}
 
 	public override void Reset() {

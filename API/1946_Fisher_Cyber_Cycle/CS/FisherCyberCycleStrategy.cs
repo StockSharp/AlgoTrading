@@ -1,14 +1,7 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
-using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
@@ -23,10 +16,16 @@ public class FisherCyberCycleStrategy : Strategy
 	private readonly StrategyParam<int> _length;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private FisherCyberCycleIndicator _indicator = null!;
 	private decimal _prevFisher;
 	private decimal _prevTrigger;
 	private bool _initialized;
+
+	// Cyber cycle state
+	private readonly decimal[] _price = new decimal[4];
+	private readonly decimal[] _smooth = new decimal[4];
+	private readonly decimal[] _cycle = new decimal[3];
+	private decimal _prevFish;
+	private int _count;
 
 	/// <summary>
 	/// Smoothing factor for cycle calculation.
@@ -62,32 +61,15 @@ public class FisherCyberCycleStrategy : Strategy
 	{
 		_alpha = Param(nameof(Alpha), 0.07m)
 			.SetDisplay("Alpha", "Smoothing factor", "Indicators")
-			.SetRange(0.01m, 0.5m)
-			;
+			.SetRange(0.01m, 0.5m);
 
 		_length = Param(nameof(Length), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("Length", "Normalization window", "Indicators")
-			
 			.SetOptimize(5, 20, 1);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
-	}
-
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_prevFisher = 0m;
-		_prevTrigger = 0m;
-		_initialized = false;
 	}
 
 	/// <inheritdoc />
@@ -95,156 +77,101 @@ public class FisherCyberCycleStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
+		_prevFisher = 0;
+		_prevTrigger = 0;
+		_initialized = false;
+		_prevFish = 0;
+		_count = 0;
+		Array.Clear(_price, 0, _price.Length);
+		Array.Clear(_smooth, 0, _smooth.Length);
+		Array.Clear(_cycle, 0, _cycle.Length);
 
-		_indicator = new FisherCyberCycleIndicator
-		{
-			Alpha = Alpha,
-			Length = Length
-		};
+		var highest = new Highest { Length = Length };
+		var lowest = new Lowest { Length = Length };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(_indicator, ProcessCandle).Start();
+		subscription.Bind(ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _indicator);
 			DrawOwnTrades(area);
 		}
-	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal fisher, decimal trigger)
-	{
-		if (candle.State != CandleStates.Finished || !_indicator.IsFormed)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (!_initialized)
+		void ProcessCandle(ICandleMessage candle)
 		{
-			_prevFisher = fisher;
+			if (candle.State != CandleStates.Finished)
+				return;
+
+			var price = (candle.HighPrice + candle.LowPrice) / 2m;
+			var t = candle.OpenTime;
+
+			// Shift stored values
+			_price[3] = _price[2];
+			_price[2] = _price[1];
+			_price[1] = _price[0];
+			_price[0] = price;
+
+			_smooth[3] = _smooth[2];
+			_smooth[2] = _smooth[1];
+			_smooth[1] = _smooth[0];
+			_smooth[0] = (_price[0] + 2m * _price[1] + 2m * _price[2] + _price[3]) / 6m;
+
+			_cycle[2] = _cycle[1];
+			_cycle[1] = _cycle[0];
+
+			if (_count < 3)
+				_cycle[0] = (_price[0] + 2m * _price[1] + _price[2]) / 4m;
+			else
+			{
+				var k0 = (decimal)Math.Pow((double)(1m - 0.5m * Alpha), 2);
+				var k1 = 2m;
+				var k2 = 2m * (1m - Alpha);
+				var k3 = (decimal)Math.Pow((double)(1m - Alpha), 2);
+				_cycle[0] = k0 * (_smooth[0] - k1 * _smooth[1] + _smooth[2]) + k2 * _cycle[1] - k3 * _cycle[2];
+			}
+
+			_count++;
+
+			var hhResult = highest.Process(new DecimalIndicatorValue(highest, _cycle[0], t) { IsFinal = true });
+			var llResult = lowest.Process(new DecimalIndicatorValue(lowest, _cycle[0], t) { IsFinal = true });
+
+			if (!highest.IsFormed || !lowest.IsFormed)
+				return;
+
+			var hh = hhResult.ToDecimal();
+			var ll = llResult.ToDecimal();
+
+			var value1 = hh != ll ? (_cycle[0] - ll) / (hh - ll) : 0m;
+
+			// Clamp to avoid log domain error
+			var normalized = 1.98m * (value1 - 0.5m);
+			if (normalized >= 0.999m) normalized = 0.999m;
+			if (normalized <= -0.999m) normalized = -0.999m;
+
+			var fish = 0.5m * (decimal)Math.Log((double)((1m + normalized) / (1m - normalized)));
+			var trigger = _prevFish;
+			_prevFish = fish;
+
+			if (!_initialized)
+			{
+				_prevFisher = fish;
+				_prevTrigger = trigger;
+				_initialized = true;
+				return;
+			}
+
+			var crossUp = _prevFisher <= _prevTrigger && fish > trigger;
+			var crossDown = _prevFisher >= _prevTrigger && fish < trigger;
+
+			if (crossUp && Position <= 0)
+				BuyMarket();
+			else if (crossDown && Position >= 0)
+				SellMarket();
+
+			_prevFisher = fish;
 			_prevTrigger = trigger;
-			_initialized = true;
-			return;
 		}
-
-		var crossUp = _prevFisher <= _prevTrigger && fisher > trigger;
-		var crossDown = _prevFisher >= _prevTrigger && fisher < trigger;
-
-		if (crossUp && Position <= 0)
-		{
-			var volume = Position < 0 ? Math.Abs(Position) + Volume : Volume;
-			BuyMarket(volume);
-		}
-		else if (crossDown && Position >= 0)
-		{
-			var volume = Position > 0 ? Math.Abs(Position) + Volume : Volume;
-			SellMarket(volume);
-		}
-
-		_prevFisher = fisher;
-		_prevTrigger = trigger;
 	}
-}
-
-/// <summary>
-/// Indicator calculating Fisher Transform of Ehlers' Cyber Cycle.
-/// </summary>
-public class FisherCyberCycleIndicator : DecimalLengthIndicator
-{
-	public decimal Alpha { get; set; } = 0.07m;
-
-	private readonly decimal[] _price = new decimal[4];
-	private readonly decimal[] _smooth = new decimal[4];
-	private readonly decimal[] _cycle = new decimal[3];
-	private readonly Highest _highest = new();
-	private readonly Lowest _lowest = new();
-	private decimal _prevFish;
-	private int _count;
-
-	/// <inheritdoc />
-	protected override IIndicatorValue OnProcess(IIndicatorValue input)
-	{
-		if (input is not ICandleMessage candle || candle.State != CandleStates.Finished)
-			return new DecimalIndicatorValue(this, default, input.Time);
-
-		// Median price of the candle.
-		var price = (candle.HighPrice + candle.LowPrice) / 2m;
-
-		// Shift stored values.
-		_price[3] = _price[2];
-		_price[2] = _price[1];
-		_price[1] = _price[0];
-		_price[0] = price;
-
-		_smooth[3] = _smooth[2];
-		_smooth[2] = _smooth[1];
-		_smooth[1] = _smooth[0];
-		_smooth[0] = (_price[0] + 2m * _price[1] + 2m * _price[2] + _price[3]) / 6m;
-
-		_cycle[2] = _cycle[1];
-		_cycle[1] = _cycle[0];
-
-		if (_count < 3)
-			_cycle[0] = (_price[0] + 2m * _price[1] + _price[2]) / 4m;
-		else
-		{
-			var k0 = (decimal)Math.Pow((double)(1m - 0.5m * Alpha), 2);
-			var k1 = 2m;
-			var k2 = 2m * (1m - Alpha);
-			var k3 = (decimal)Math.Pow((double)(1m - Alpha), 2);
-			_cycle[0] = k0 * (_smooth[0] - k1 * _smooth[1] + _smooth[2]) + k2 * _cycle[1] - k3 * _cycle[2];
-		}
-
-		_count++;
-
-		_highest.Length = Length;
-		_lowest.Length = Length;
-		var hh = _highest.Process(_cycle[0]).ToDecimal();
-		var ll = _lowest.Process(_cycle[0]).ToDecimal();
-
-		var value1 = hh != ll ? (_cycle[0] - ll) / (hh - ll) : 0m;
-		var fish = 0.5m * (decimal)Math.Log((double)((1m + 1.98m * (value1 - 0.5m)) / (1m - 1.98m * (value1 - 0.5m))));
-		var trigger = _prevFish;
-		_prevFish = fish;
-
-		return new FisherCyberCycleValue(this, input, fish, trigger);
-	}
-
-	/// <inheritdoc />
-	public override void Reset()
-	{
-		base.Reset();
-		Array.Clear(_price, 0, _price.Length);
-		Array.Clear(_smooth, 0, _smooth.Length);
-		Array.Clear(_cycle, 0, _cycle.Length);
-		_prevFish = 0m;
-		_highest.Reset();
-		_lowest.Reset();
-		_count = 0;
-	}
-}
-
-/// <summary>
-/// Indicator value for <see cref="FisherCyberCycleIndicator"/>.
-/// </summary>
-public class FisherCyberCycleValue : ComplexIndicatorValue
-{
-	public FisherCyberCycleValue(IIndicator indicator, IIndicatorValue input, decimal fisher, decimal trigger)
-		: base(indicator, input, (nameof(Fisher), fisher), (nameof(Trigger), trigger))
-	{
-	}
-
-	/// <summary>
-	/// Fisher line value.
-	/// </summary>
-	public decimal Fisher => (decimal)GetValue(nameof(Fisher));
-
-	/// <summary>
-	/// Trigger line value.
-	/// </summary>
-	public decimal Trigger => (decimal)GetValue(nameof(Trigger));
 }

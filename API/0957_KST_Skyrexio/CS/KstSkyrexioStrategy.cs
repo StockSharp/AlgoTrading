@@ -1,14 +1,7 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
-using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
@@ -213,12 +206,6 @@ public class KstSkyrexioStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
@@ -241,15 +228,12 @@ public class KstSkyrexioStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
 
-		StartProtection(null, null);
-
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
 			DrawIndicator(area, filter);
 			DrawIndicator(area, jaw);
-			DrawIndicator(area, choppiness);
 			DrawOwnTrades(area);
 		}
 
@@ -260,29 +244,30 @@ public class KstSkyrexioStrategy : Strategy
 
 			var close = candle.ClosePrice;
 			var median = (candle.HighPrice + candle.LowPrice) / 2m;
+			var t = candle.OpenTime;
 
-			var r1 = sma1.Process(roc1.Process(close));
-			var r2 = sma2.Process(roc2.Process(close));
-			var r3 = sma3.Process(roc3.Process(close));
-			var r4 = sma4.Process(roc4.Process(close));
-			var jawVal = jawShift.Process(jaw.Process(median));
-			var filterVal = filter.Process(close);
+			var r1 = sma1.Process(roc1.Process(new DecimalIndicatorValue(roc1, close, t) { IsFinal = true }));
+			var r2 = sma2.Process(roc2.Process(new DecimalIndicatorValue(roc2, close, t) { IsFinal = true }));
+			var r3 = sma3.Process(roc3.Process(new DecimalIndicatorValue(roc3, close, t) { IsFinal = true }));
+			var r4 = sma4.Process(roc4.Process(new DecimalIndicatorValue(roc4, close, t) { IsFinal = true }));
+			var jawVal = jawShift.Process(jaw.Process(new DecimalIndicatorValue(jaw, median, t) { IsFinal = true }));
+			var filterVal = filter.Process(new DecimalIndicatorValue(filter, close, t) { IsFinal = true });
 			var atrVal = atr.Process(candle);
 			var chopVal = choppiness.Process(candle);
 
-			if (!r1.IsFinal || !r2.IsFinal || !r3.IsFinal || !r4.IsFinal || !jawVal.IsFinal || !filterVal.IsFinal || !atrVal.IsFinal || !chopVal.IsFinal)
+			if (!sma1.IsFormed || !sma2.IsFormed || !sma3.IsFormed || !sma4.IsFormed || !jaw.IsFormed || !filter.IsFormed || !atr.IsFormed || !choppiness.IsFormed)
 				return;
 
-			var kst = r1.GetValue<decimal>() + 2m * r2.GetValue<decimal>() + 3m * r3.GetValue<decimal>() + 4m * r4.GetValue<decimal>();
-			var sigVal = signal.Process(kst);
-			if (!sigVal.IsFinal)
+			var kst = r1.ToDecimal() + 2m * r2.ToDecimal() + 3m * r3.ToDecimal() + 4m * r4.ToDecimal();
+			var sigVal = signal.Process(new DecimalIndicatorValue(signal, kst, t) { IsFinal = true });
+			if (!signal.IsFormed)
 				return;
 
-			var sig = sigVal.GetValue<decimal>();
-			var jawValue = jawVal.GetValue<decimal>();
-			var filterValue = filterVal.GetValue<decimal>();
-			var atrValue = atrVal.GetValue<decimal>();
-			var chop = chopVal.GetValue<decimal>();
+			var sig = sigVal.ToDecimal();
+			var jawValue = jawVal.ToDecimal();
+			var filterValue = filterVal.ToDecimal();
+			var atrValue = atrVal.ToDecimal();
+			var chop = chopVal.ToDecimal();
 			var chopCond = !EnableChopFilter || chop < ChopThreshold;
 
 			var crossUp = _prevKst <= _prevSig && kst > sig;
@@ -294,7 +279,7 @@ public class KstSkyrexioStrategy : Strategy
 			}
 
 			if (Position > 0 && (candle.LowPrice <= _stopLoss || candle.HighPrice >= _takeProfit))
-				SellMarket(Position);
+				SellMarket();
 
 			_prevKst = kst;
 			_prevSig = sig;
@@ -311,7 +296,7 @@ public class KstSkyrexioStrategy : Strategy
 			MaTypes.HMA => new HullMovingAverage { Length = FilterMaLength },
 			MaTypes.SMMA => new SmoothedMovingAverage { Length = FilterMaLength },
 			MaTypes.ALMA => new ArnaudLegouxMovingAverage { Length = FilterMaLength },
-			MaTypes.LSMA => new LinearRegression { Length = FilterMaLength },
+			MaTypes.LSMA => new LinearRegressionForecast { Length = FilterMaLength },
 			MaTypes.VWMA => new VolumeWeightedMovingAverage { Length = FilterMaLength },
 			_ => new SMA { Length = FilterMaLength }
 		};
