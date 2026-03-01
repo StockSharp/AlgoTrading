@@ -87,9 +87,9 @@ public class BitcoinIntradaySeasonalityStrategy : Strategy
 		_latestPrices.Clear();
 	}
 
-	protected override void OnStarted(DateTimeOffset t)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(t);
+		base.OnStarted2(time);
 
 		if (HoursLong == null || HoursLong.Length == 0)
 			throw new InvalidOperationException("HoursLong cannot be empty.");

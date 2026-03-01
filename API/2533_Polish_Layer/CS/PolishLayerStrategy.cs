@@ -299,8 +299,8 @@ public class PolishLayerStrategy : Strategy
 
 		// Enable automatic stop-loss and take-profit protection.
 		StartProtection(
-			new Unit(StopLossPoints * step, UnitTypes.Point),
-			new Unit(TakeProfitPoints * step, UnitTypes.Point));
+			new Unit(StopLossPoints * step, UnitTypes.Absolute),
+			new Unit(TakeProfitPoints * step, UnitTypes.Absolute));
 	}
 
 	private void ProcessMainIndicators(

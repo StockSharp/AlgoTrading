@@ -127,11 +127,11 @@ public class PairsTradingStocksStrategy : Strategy
 		_latestPrices.Clear();
 	}
 
-	protected override void OnStarted(DateTimeOffset t)
+	protected override void OnStarted2(DateTime time)
 	{
 		if (Pairs == null || !Pairs.Any())
 			throw new InvalidOperationException("Pairs must be set.");
-		base.OnStarted(t);
+		base.OnStarted2(time);
 		foreach (var (a, b) in Pairs)
 		{
 			_hist[(a, b)] = new Win();

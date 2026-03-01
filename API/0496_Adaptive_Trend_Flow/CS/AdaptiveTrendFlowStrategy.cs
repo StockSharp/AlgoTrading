@@ -194,9 +194,9 @@ public class AdaptiveTrendFlowStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_fastEma = new EMA { Length = Length };
 		_slowEma = new EMA { Length = Length * 2 };

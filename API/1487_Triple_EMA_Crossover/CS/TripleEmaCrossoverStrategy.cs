@@ -121,8 +121,8 @@ public class TripleEmaCrossoverStrategy : Strategy
 
 		var step = Security.PriceStep ?? 1m;
 		StartProtection(
-			takeProfit: new Unit(TakeProfitTicks * step, UnitTypes.Point),
-			stopLoss: new Unit(StopLossTicks * step, UnitTypes.Point));
+			takeProfit: new Unit(TakeProfitTicks * step, UnitTypes.Absolute),
+			stopLoss: new Unit(StopLossTicks * step, UnitTypes.Absolute));
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal sma1, decimal sma2, decimal sma3)

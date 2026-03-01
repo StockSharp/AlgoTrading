@@ -76,7 +76,7 @@ public class LiquidexV1Strategy : Strategy
 			.SetDisplay("MA Period", "Period of weighted moving average", "Indicators")
 			.SetGreaterThanZero();
 
-		_stopLoss = Param(nameof(StopLoss), new Unit(30, UnitTypes.Point))
+		_stopLoss = Param(nameof(StopLoss), new Unit(30, UnitTypes.Absolute))
 			.SetDisplay("Stop Loss", "Stop loss size in points", "Risk Management");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())

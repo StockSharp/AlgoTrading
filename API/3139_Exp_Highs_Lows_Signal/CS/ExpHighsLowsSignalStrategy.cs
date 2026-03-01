@@ -206,8 +206,8 @@ public class ExpHighsLowsSignalStrategy : Strategy
 		// Configure default protective orders using pip distances converted to absolute points.
 		var step = Security.PriceStep ?? 1m;
 		StartProtection(
-		new Unit(TakeProfitTicks * step, UnitTypes.Point),
-		new Unit(StopLossTicks * step, UnitTypes.Point));
+		new Unit(TakeProfitTicks * step, UnitTypes.Absolute),
+		new Unit(StopLossTicks * step, UnitTypes.Absolute));
 
 		var area = CreateChartArea();
 		if (area != null)

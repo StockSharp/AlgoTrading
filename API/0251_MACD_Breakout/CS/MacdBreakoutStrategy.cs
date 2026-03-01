@@ -156,7 +156,7 @@ public class MacdBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
 
 		// Initialize indicators
@@ -194,7 +194,7 @@ public class MacdBreakoutStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		base.OnStarted(time);
+		base.OnStarted2(time);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue)

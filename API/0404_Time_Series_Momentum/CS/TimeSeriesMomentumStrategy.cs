@@ -116,12 +116,12 @@ public class TimeSeriesMomentumStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset t)
+	protected override void OnStarted2(DateTime time)
 	{
 		if (Universe == null || !Universe.Any())
 			throw new InvalidOperationException("Universe cannot be empty.");
 
-		base.OnStarted(t);
+		base.OnStarted2(time);
 
 		foreach (var (s, tf) in GetWorkingSecurities())
 		{

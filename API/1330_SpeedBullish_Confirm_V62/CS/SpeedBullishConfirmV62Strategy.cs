@@ -222,9 +222,9 @@ public class SpeedBullishConfirmV62Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_ema10 = new EMA { Length = 10 };
 		_ema15 = new EMA { Length = 15 };

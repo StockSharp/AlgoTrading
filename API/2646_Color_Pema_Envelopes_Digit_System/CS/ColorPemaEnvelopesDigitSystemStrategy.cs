@@ -278,8 +278,8 @@ public class ColorPemaEnvelopesDigitSystemStrategy : Strategy
 
 		var step = Security?.PriceStep ?? 1m;
 		StartProtection(
-		takeProfit: new Unit(TakeProfitPoints * step, UnitTypes.Point),
-		stopLoss: new Unit(StopLossPoints * step, UnitTypes.Point));
+		takeProfit: new Unit(TakeProfitPoints * step, UnitTypes.Absolute),
+		stopLoss: new Unit(StopLossPoints * step, UnitTypes.Absolute));
 	}
 
 	private void ProcessCandle(ICandleMessage candle)

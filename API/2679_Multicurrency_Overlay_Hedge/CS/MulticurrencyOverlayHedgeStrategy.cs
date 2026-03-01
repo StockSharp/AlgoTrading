@@ -643,8 +643,8 @@ public class MulticurrencyOverlayHedgeStrategy : Strategy
 		if (stepSecond == 0m)
 			stepSecond = 1m;
 
-		var priceStepFirst = first.Security.StepPrice ?? stepFirst;
-		var priceStepSecond = second.Security.StepPrice ?? stepSecond;
+		var priceStepFirst = this.GetSecurityValue<decimal?>(first.Security, Level1Fields.StepPrice) ?? stepFirst;
+		var priceStepSecond = this.GetSecurityValue<decimal?>(second.Security, Level1Fields.StepPrice) ?? stepSecond;
 
 		var pnlFirst = state.Dir1 * (first.LastClose - state.Entry1) / stepFirst * priceStepFirst * state.Volume1;
 		var pnlSecond = state.Dir2 * (second.LastClose - state.Entry2) / stepSecond * priceStepSecond * state.Volume2;

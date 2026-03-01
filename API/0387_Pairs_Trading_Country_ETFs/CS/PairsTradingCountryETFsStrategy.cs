@@ -138,11 +138,11 @@ public class PairsTradingCountryETFsStrategy : Strategy
 		_last = default;
 	}
 
-	protected override void OnStarted(DateTimeOffset t)
+	protected override void OnStarted2(DateTime time)
 	{
 		if (Universe == null || Universe.Count() != 2)
 			throw new InvalidOperationException("Universe must contain exactly two ETFs.");
-		base.OnStarted(t);
+		base.OnStarted2(time);
 
 		_a = Universe.ElementAt(0);
 		_b = Universe.ElementAt(1);

@@ -285,8 +285,8 @@ public class ExpXwprHistogramVolDirectStrategy : Strategy
 		.Bind(_williams, ProcessCandle)
 		.Start();
 
-		var stopLossUnit = StopLossPoints > 0 ? new Unit(StopLossPoints, UnitTypes.Step) : null;
-		var takeProfitUnit = TakeProfitPoints > 0 ? new Unit(TakeProfitPoints, UnitTypes.Step) : null;
+		var stopLossUnit = StopLossPoints > 0 ? new Unit(StopLossPoints, UnitTypes.Absolute) : null;
+		var takeProfitUnit = TakeProfitPoints > 0 ? new Unit(TakeProfitPoints, UnitTypes.Absolute) : null;
 		if (stopLossUnit != null || takeProfitUnit != null)
 		{
 			StartProtection(

@@ -126,8 +126,8 @@ public class PsarTraderTicksStrategy : Strategy
 		var step = Security.PriceStep ?? 1m;
 		// Enable stop-loss and take-profit protection
 		StartProtection(
-				takeProfit: new Unit(TakeProfitTicks * step, UnitTypes.Point),
-				stopLoss: new Unit(StopLossTicks * step, UnitTypes.Point));
+				takeProfit: new Unit(TakeProfitTicks * step, UnitTypes.Absolute),
+				stopLoss: new Unit(StopLossTicks * step, UnitTypes.Absolute));
 		var area = CreateChartArea();
 		if (area != null)
 		{

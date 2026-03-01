@@ -102,9 +102,9 @@ public class MacdVsSignalStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_macd = new MovingAverageConvergenceDivergenceSignal
 		{
@@ -128,9 +128,9 @@ public class MacdVsSignalStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		Unit tp = TakeProfit > 0 ? new Unit(TakeProfit, UnitTypes.Point) : null;
-		Unit sl = StopLoss > 0 ? new Unit(StopLoss, UnitTypes.Point) :
-			TrailingStop > 0 ? new Unit(TrailingStop, UnitTypes.Point) : null;
+		Unit tp = TakeProfit > 0 ? new Unit(TakeProfit, UnitTypes.Absolute) : null;
+		Unit sl = StopLoss > 0 ? new Unit(StopLoss, UnitTypes.Absolute) :
+			TrailingStop > 0 ? new Unit(TrailingStop, UnitTypes.Absolute) : null;
 
 		if (tp != null || sl != null)
 			StartProtection(tp, sl, isStopTrailing: TrailingStop > 0);

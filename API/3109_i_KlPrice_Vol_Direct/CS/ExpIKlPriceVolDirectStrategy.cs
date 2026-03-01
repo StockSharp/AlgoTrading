@@ -364,8 +364,8 @@ public class ExpIKlPriceVolDirectStrategy : Strategy
 		}
 
 		var step = Security?.PriceStep ?? 1m;
-		var takeProfit = TakeProfitPoints > 0m ? new Unit(TakeProfitPoints * step, UnitTypes.Point) : null;
-		var stopLoss = StopLossPoints > 0m ? new Unit(StopLossPoints * step, UnitTypes.Point) : null;
+		var takeProfit = TakeProfitPoints > 0m ? new Unit(TakeProfitPoints * step, UnitTypes.Absolute) : null;
+		var stopLoss = StopLossPoints > 0m ? new Unit(StopLossPoints * step, UnitTypes.Absolute) : null;
 
 		StartProtection(takeProfit, stopLoss);
 	}

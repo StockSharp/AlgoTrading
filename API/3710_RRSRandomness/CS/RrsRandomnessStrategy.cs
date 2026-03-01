@@ -302,7 +302,7 @@ public class RrsRandomnessStrategy : Strategy
 			return;
 
 		var priceStep = Security.PriceStep ?? 0m;
-		var stepPrice = Security.StepPrice ?? 0m;
+		var stepPrice = GetSecurityValue<decimal?>(Level1Fields.StepPrice) ?? 0m;
 		if (priceStep <= 0m || stepPrice <= 0m)
 			return;
 
@@ -414,7 +414,7 @@ public class RrsRandomnessStrategy : Strategy
 			return;
 
 		var priceStep = Security.PriceStep ?? 0m;
-		var stepPrice = Security.StepPrice ?? 0m;
+		var stepPrice = GetSecurityValue<decimal?>(Level1Fields.StepPrice) ?? 0m;
 		if (priceStep <= 0m || stepPrice <= 0m)
 			return;
 

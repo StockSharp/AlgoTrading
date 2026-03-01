@@ -7,6 +7,7 @@ using Ecng.Collections;
 using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
+using StockSharp.Algo;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -193,7 +194,7 @@ public class BitexOneMarketMakerStrategy : Strategy
 
 		_leadSecurity = PriceSource == LeadPriceSources.OrderBook ? Security : LeadSecurity ?? Security;
 
-		var initialLeadBid = _leadSecurity?.BestBid?.Price ?? Security.BestBid?.Price;
+		var initialLeadBid = (_leadSecurity != null ? this.GetSecurityValue<decimal?>(_leadSecurity, Level1Fields.BestBidPrice) : null) ?? GetSecurityValue<decimal?>(Level1Fields.BestBidPrice);
 		if (initialLeadBid is decimal bid && bid > 0m)
 		{
 			_leadPrice = bid;

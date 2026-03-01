@@ -76,9 +76,9 @@ public class MutualFundMomentumStrategy : Strategy
 		_lastDay = default;
 	}
 
-	protected override void OnStarted(DateTimeOffset t)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(t);
+		base.OnStarted2(time);
 
 		if (Funds == null || !Funds.Any())
 			throw new InvalidOperationException("Funds cannot be empty.");

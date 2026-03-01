@@ -94,9 +94,9 @@ public class CryptoRebalancingPremiumStrategy : Strategy
 		_last = default;
 	}
 
-	protected override void OnStarted(DateTimeOffset t)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(t);
+		base.OnStarted2(time);
 
 		var securities = GetWorkingSecurities().ToArray();
 		if (securities.Length == 0 || securities.Any(p => p.sec == null))

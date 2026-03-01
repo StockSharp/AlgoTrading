@@ -458,7 +458,7 @@ private decimal CalculateFloatingProfit(decimal price)
 	return 0m;
 
 	var priceStep = Security.PriceStep ?? 0m;
-	var stepPrice = Security.StepPrice ?? priceStep;
+	var stepPrice = GetSecurityValue<decimal?>(Level1Fields.StepPrice) ?? priceStep;
 
 	if (priceStep <= 0m || stepPrice <= 0m)
 	return 0m;

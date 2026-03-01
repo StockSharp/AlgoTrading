@@ -240,8 +240,8 @@ public class ElliIchimokuAdxStrategy : Strategy
 		if (TakeProfitPoints > 0m || StopLossPoints > 0m)
 		{
 			StartProtection(
-				StopLossPoints > 0m ? new Unit(StopLossPoints, UnitTypes.Step) : null,
-				TakeProfitPoints > 0m ? new Unit(TakeProfitPoints, UnitTypes.Step) : null);
+				StopLossPoints > 0m ? new Unit(StopLossPoints, UnitTypes.Absolute) : null,
+				TakeProfitPoints > 0m ? new Unit(TakeProfitPoints, UnitTypes.Absolute) : null);
 		}
 
 		var priceArea = CreateChartArea();

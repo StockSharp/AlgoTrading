@@ -158,10 +158,10 @@ public class YtgAdxLevelCrossStrategy : Strategy
 		Unit stopLoss = null;
 
 		if (TakeProfitPoints > 0)
-			takeProfit = new Unit(TakeProfitPoints * step, UnitTypes.Point);
+			takeProfit = new Unit(TakeProfitPoints * step, UnitTypes.Absolute);
 
 		if (StopLossPoints > 0)
-			stopLoss = new Unit(StopLossPoints * step, UnitTypes.Point);
+			stopLoss = new Unit(StopLossPoints * step, UnitTypes.Absolute);
 
 		if (takeProfit != null || stopLoss != null)
 		{

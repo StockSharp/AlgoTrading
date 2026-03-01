@@ -153,8 +153,8 @@ public class ExpPricePositionStrategy : Strategy
 		if (UseTrailingStop)
 		{
 			StartProtection(
-				stopLoss: new Unit(TrailingStopPips, UnitTypes.Point),
-				takeProfit: new Unit(TrailingStopPips * TpSlRatio, UnitTypes.Point));
+				stopLoss: new Unit(TrailingStopPips, UnitTypes.Absolute),
+				takeProfit: new Unit(TrailingStopPips * TpSlRatio, UnitTypes.Absolute));
 		}
 
 		var fast = new SmoothedMovingAverage { Length = FastPeriod };

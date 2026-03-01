@@ -184,7 +184,7 @@ public class StopLossTakeProfitMoneyStrategy : Strategy
 	private void CheckTargets(decimal currentPrice)
 	{
 		var priceStep = Security.PriceStep ?? 1m;
-		var stepPrice = Security.StepPrice ?? 1m;
+		var stepPrice = GetSecurityValue<decimal?>(Level1Fields.StepPrice) ?? 1m;
 		if (priceStep == 0m || stepPrice == 0m)
 		return;
 		

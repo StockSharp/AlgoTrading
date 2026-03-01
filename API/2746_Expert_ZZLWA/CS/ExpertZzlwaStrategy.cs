@@ -247,8 +247,8 @@ public class ExpertZzlwaStrategy : Strategy
 		base.OnStarted2(time);
 
 		StartProtection(
-		stopLoss: new Unit(StopLossPoints * GetPriceStep(), UnitTypes.Point),
-		takeProfit: new Unit(TakeProfitPoints * GetPriceStep(), UnitTypes.Point));
+		stopLoss: new Unit(StopLossPoints * GetPriceStep(), UnitTypes.Absolute),
+		takeProfit: new Unit(TakeProfitPoints * GetPriceStep(), UnitTypes.Absolute));
 
 		_originalBuyReady = true;
 		_originalSellReady = true;

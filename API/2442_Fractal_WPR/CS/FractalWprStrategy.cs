@@ -149,7 +149,7 @@ public class FractalWprStrategy : Strategy
 			.BindEx(_wpr, ProcessCandle)
 			.Start();
 
-		var step = Security.StepPrice ?? 1m;
+		var step = GetSecurityValue<decimal?>(Level1Fields.StepPrice) ?? 1m;
 		StartProtection(
 			stopLoss: new Unit(step * StopLossTicks, UnitTypes.Absolute),
 			takeProfit: new Unit(step * TakeProfitTicks, UnitTypes.Absolute));

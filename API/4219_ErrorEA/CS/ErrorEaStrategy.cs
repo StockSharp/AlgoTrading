@@ -220,10 +220,10 @@ public class ErrorEaStrategy : Strategy
 			.Start();
 
 		var takeProfitUnit = EnableTakeProfit && TakeProfitPoints > 0
-			? new Unit(TakeProfitPoints, UnitTypes.Step)
+			? new Unit(TakeProfitPoints, UnitTypes.Absolute)
 			: null;
 		var stopLossUnit = StopLossPoints > 0
-			? new Unit(StopLossPoints, UnitTypes.Step)
+			? new Unit(StopLossPoints, UnitTypes.Absolute)
 			: null;
 
 		// Mirror the original stop-loss and scalping take-profit distances.

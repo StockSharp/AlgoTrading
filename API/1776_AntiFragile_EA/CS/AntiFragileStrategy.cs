@@ -140,8 +140,8 @@ protected override void OnStarted2(DateTime time)
 base.OnStarted2(time);
 
 var step = Security.PriceStep ?? 1m;
-var bid = Security.BestBid?.Price ?? Security.LastTick?.Price ?? 0m;
-var ask = Security.BestAsk?.Price ?? Security.LastTick?.Price ?? 0m;
+var bid = GetSecurityValue<decimal?>(Level1Fields.BestBidPrice) ?? GetSecurityValue<decimal?>(Level1Fields.LastTradePrice) ?? 0m;
+var ask = GetSecurityValue<decimal?>(Level1Fields.BestAskPrice) ?? GetSecurityValue<decimal?>(Level1Fields.LastTradePrice) ?? 0m;
 
 for (var i = 1; i <= NumberOfTrades; i++)
 {

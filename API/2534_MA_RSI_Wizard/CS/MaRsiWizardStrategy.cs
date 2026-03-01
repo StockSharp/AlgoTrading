@@ -309,11 +309,11 @@ public class MaRsiWizardStrategy : Strategy
 		var step = Security.PriceStep ?? 1m;
 
 		Unit takeProfit = TakeLevelPoints > 0
-			? new Unit(TakeLevelPoints * step, UnitTypes.Point)
+			? new Unit(TakeLevelPoints * step, UnitTypes.Absolute)
 			: null;
 
 		Unit stopLoss = StopLevelPoints > 0
-			? new Unit(StopLevelPoints * step, UnitTypes.Point)
+			? new Unit(StopLevelPoints * step, UnitTypes.Absolute)
 			: null;
 
 		if (stopLoss != null || takeProfit != null)

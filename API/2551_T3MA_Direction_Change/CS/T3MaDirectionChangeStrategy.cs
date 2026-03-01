@@ -181,8 +181,8 @@ public class T3MaDirectionChangeStrategy : Strategy
 		}
 
 		// Initialize protective orders based on configured distances.
-		var slUnit = StopLossPoints > 0m ? new Unit(StopLossPoints, UnitTypes.Step) : null;
-		var tpUnit = TakeProfitPoints > 0m ? new Unit(TakeProfitPoints, UnitTypes.Step) : null;
+		var slUnit = StopLossPoints > 0m ? new Unit(StopLossPoints, UnitTypes.Absolute) : null;
+		var tpUnit = TakeProfitPoints > 0m ? new Unit(TakeProfitPoints, UnitTypes.Absolute) : null;
 		StartProtection(slUnit, tpUnit);
 	}
 

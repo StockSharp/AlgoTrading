@@ -80,12 +80,12 @@ public class SyntheticLendingRatesStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset t)
+	protected override void OnStarted2(DateTime time)
 	{
 		if (Security == null)
 			throw new InvalidOperationException("Security not set");
 
-		base.OnStarted(t);
+		base.OnStarted2(time);
 		SubscribeCandles(CandleType, true, Security).Bind(c => ProcessCandle(c, Security)).Start();
 	}
 

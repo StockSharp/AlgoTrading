@@ -208,8 +208,8 @@ public class AppPriceLevelCrossStrategy : Strategy
 		var step = Security?.PriceStep ?? 1m;
 		if (TakeProfitPoints > 0 || StopLossPoints > 0)
 		{
-			var takeDistance = TakeProfitPoints > 0 ? new Unit(TakeProfitPoints * step, UnitTypes.Point) : new Unit(0m);
-			var stopDistance = StopLossPoints > 0 ? new Unit(StopLossPoints * step, UnitTypes.Point) : new Unit(0m);
+			var takeDistance = TakeProfitPoints > 0 ? new Unit(TakeProfitPoints * step, UnitTypes.Absolute) : new Unit(0m);
+			var stopDistance = StopLossPoints > 0 ? new Unit(StopLossPoints * step, UnitTypes.Absolute) : new Unit(0m);
 
 			StartProtection(takeProfit: takeDistance, stopLoss: stopDistance);
 		}

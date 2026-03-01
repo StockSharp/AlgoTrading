@@ -97,12 +97,12 @@ public class PairedSwitchingStrategy : Strategy
 		_last = default;
 	}
 
-	protected override void OnStarted(DateTimeOffset t)
+	protected override void OnStarted2(DateTime time)
 	{
 		if (FirstETF == null || SecondETF == null)
 			throw new InvalidOperationException("FirstETF and SecondETF must be set.");
 
-		base.OnStarted(t);
+		base.OnStarted2(time);
 
 		SubscribeCandles(CandleType, true, FirstETF)
 			.Bind(c => ProcessCandle(c, FirstETF, true))

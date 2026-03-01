@@ -162,7 +162,7 @@ public class ETurboFxStepsStrategy : Strategy
 		if (steps <= 0)
 			return null;
 
-		return new Unit(steps, UnitTypes.Step);
+		return new Unit(steps, UnitTypes.Absolute);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)

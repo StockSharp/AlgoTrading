@@ -172,7 +172,7 @@ public class AutotradePendingStopsStrategy : Strategy
 
 		// Cache price step and tick value for fast profit calculations.
 		_tickSize = Security.PriceStep ?? 1m;
-		_tickValue = Security.StepPrice ?? _tickSize;
+		_tickValue = GetSecurityValue<decimal?>(Level1Fields.StepPrice) ?? _tickSize;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

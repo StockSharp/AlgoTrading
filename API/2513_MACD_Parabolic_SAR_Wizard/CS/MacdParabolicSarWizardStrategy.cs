@@ -244,8 +244,8 @@ public class MacdParabolicSarWizardStrategy : Strategy
 
 		// Configure risk management using point-based distances.
 		var step = Security?.PriceStep ?? 1m;
-		var takeProfit = TakeProfitPoints > 0m ? new Unit(TakeProfitPoints * step, UnitTypes.Point) : new Unit();
-		var stopLoss = StopLossPoints > 0m ? new Unit(StopLossPoints * step, UnitTypes.Point) : new Unit();
+		var takeProfit = TakeProfitPoints > 0m ? new Unit(TakeProfitPoints * step, UnitTypes.Absolute) : new Unit();
+		var stopLoss = StopLossPoints > 0m ? new Unit(StopLossPoints * step, UnitTypes.Absolute) : new Unit();
 
 		StartProtection(takeProfit, stopLoss, useMarketOrders: true);
 

@@ -711,7 +711,7 @@ public class ButterflyPatternStrategy : Strategy
 		{
 		var portfolioValue = Portfolio?.CurrentValue ?? 0m;
 		var riskAmount = portfolioValue * RiskPercent / 100m;
-		var stepPrice = Security.StepPrice ?? 1m;
+		var stepPrice = GetSecurityValue<decimal?>(Level1Fields.StepPrice) ?? 1m;
 		var priceStep = Security.PriceStep ?? 1m;
 		var distance = Math.Abs(entryPrice - stopPrice);
 		if (distance <= 0m || priceStep <= 0m || stepPrice <= 0m)

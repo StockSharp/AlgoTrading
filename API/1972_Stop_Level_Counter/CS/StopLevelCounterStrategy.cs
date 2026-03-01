@@ -70,7 +70,7 @@ public class StopLevelCounterStrategy : Strategy
 			return;
 
 		var step = Security.PriceStep ?? 1m;
-		var stepPrice = Security.StepPrice ?? step;
+		var stepPrice = GetSecurityValue<decimal?>(Level1Fields.StepPrice) ?? step;
 
 		var buyProfit = (Level - ask) / step * stepPrice * Volume;
 		var sellProfit = (bid - Level) / step * stepPrice * Volume;

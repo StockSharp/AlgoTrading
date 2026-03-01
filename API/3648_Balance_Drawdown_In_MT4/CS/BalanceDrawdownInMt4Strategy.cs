@@ -113,8 +113,8 @@ public class BalanceDrawdownInMt4Strategy : Strategy
 		base.OnStarted2(time);
 
 		StartProtection(
-			stopLoss: new Unit(StopLossPoints * GetPriceStep(), UnitTypes.Point),
-			takeProfit: new Unit(TakeProfitPoints * GetPriceStep(), UnitTypes.Point));
+			stopLoss: new Unit(StopLossPoints * GetPriceStep(), UnitTypes.Absolute),
+			takeProfit: new Unit(TakeProfitPoints * GetPriceStep(), UnitTypes.Absolute));
 
 		_maxBalance = StartBalance;
 

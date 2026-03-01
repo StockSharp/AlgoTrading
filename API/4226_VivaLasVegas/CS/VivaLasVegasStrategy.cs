@@ -111,7 +111,7 @@ InitializeMoneyManagement();
 		var steps = StopTakePips * GetPipMultiplier();
 		if (StopTakePips > 0 && steps > 0m)
 		{
-			var unit = new Unit(steps, UnitTypes.Step);
+			var unit = new Unit(steps, UnitTypes.Absolute);
 			StartProtection(unit, unit);
 		}
 		else

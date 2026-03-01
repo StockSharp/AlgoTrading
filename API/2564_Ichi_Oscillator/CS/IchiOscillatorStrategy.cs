@@ -269,8 +269,8 @@ public class IchiOscillatorStrategy : Strategy
 		}
 
 		StartProtection(
-			StopLossPoints > 0 ? new Unit(StopLossPoints, UnitTypes.Step) : null,
-			TakeProfitPoints > 0 ? new Unit(TakeProfitPoints, UnitTypes.Step) : null);
+			StopLossPoints > 0 ? new Unit(StopLossPoints, UnitTypes.Absolute) : null,
+			TakeProfitPoints > 0 ? new Unit(TakeProfitPoints, UnitTypes.Absolute) : null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue ichimokuValue)

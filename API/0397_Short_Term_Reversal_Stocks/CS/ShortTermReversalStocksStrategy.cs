@@ -103,9 +103,9 @@ public class ShortTermReversalStocksStrategy : Strategy
 		_last = default;
 	}
 
-	protected override void OnStarted(DateTimeOffset t)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(t);
+		base.OnStarted2(time);
 
 		if (Universe == null || !Universe.Any())
 			throw new InvalidOperationException("Universe is empty");

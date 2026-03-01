@@ -292,9 +292,9 @@ public class BigMoverCatcherStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var bollinger = new BollingerBands { Length = BollingerLength, Width = 2m };
 		var rsi = new RSI { Length = RsiLength };

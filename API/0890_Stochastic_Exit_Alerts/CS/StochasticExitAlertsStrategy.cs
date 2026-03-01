@@ -143,7 +143,7 @@ public class StochasticExitAlertsStrategy : Strategy
 			.BindEx(stochastic, ProcessCandle)
 			.Start();
 
-		var step = Security.StepPrice ?? 1m;
+		var step = GetSecurityValue<decimal?>(Level1Fields.StepPrice) ?? 1m;
 		StartProtection(
 			takeProfit: new Unit(step * TakeProfitTicks, UnitTypes.Absolute),
 			stopLoss: new Unit(step * StopLossTicks, UnitTypes.Absolute)

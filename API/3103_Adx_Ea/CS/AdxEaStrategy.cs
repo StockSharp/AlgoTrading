@@ -466,9 +466,9 @@ public class AdxEaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = TradeVolume;
 
@@ -500,8 +500,8 @@ public class AdxEaStrategy : Strategy
 			.BindEx(_macd, ProcessMacd)
 			.Start();
 
-		var takeProfitUnit = TakeProfitSteps > 0m ? new Unit(TakeProfitSteps, UnitTypes.Step) : null;
-		var stopLossUnit = StopLossSteps > 0m ? new Unit(StopLossSteps, UnitTypes.Step) : null;
+		var takeProfitUnit = TakeProfitSteps > 0m ? new Unit(TakeProfitSteps, UnitTypes.Absolute) : null;
+		var stopLossUnit = StopLossSteps > 0m ? new Unit(StopLossSteps, UnitTypes.Absolute) : null;
 
 		if (takeProfitUnit != null || stopLossUnit != null)
 		{

@@ -89,12 +89,12 @@ public class JanuaryBarometerStrategy : Strategy
 		_janOpenPrice = default;
 	}
 
-	protected override void OnStarted(DateTimeOffset t)
+	protected override void OnStarted2(DateTime time)
 	{
 		if (EquityETF == null || CashETF == null)
 			throw new InvalidOperationException("Both equity and cash ETFs must be set.");
 
-		base.OnStarted(t);
+		base.OnStarted2(time);
 
 		SubscribeCandles(CandleType, true, EquityETF)
 			.Bind(c => ProcessCandle(c, EquityETF))

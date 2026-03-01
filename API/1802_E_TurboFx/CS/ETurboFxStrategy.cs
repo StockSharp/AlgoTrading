@@ -119,8 +119,8 @@ public class ETurboFxStrategy : Strategy
 
 		var step = Security.PriceStep ?? 1m;
 		StartProtection(
-			takeProfit: TakeProfitPoints > 0 ? new Unit(TakeProfitPoints * step, UnitTypes.Point) : null,
-			stopLoss: StopLossPoints > 0 ? new Unit(StopLossPoints * step, UnitTypes.Point) : null);
+			takeProfit: TakeProfitPoints > 0 ? new Unit(TakeProfitPoints * step, UnitTypes.Absolute) : null,
+			stopLoss: StopLossPoints > 0 ? new Unit(StopLossPoints * step, UnitTypes.Absolute) : null);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

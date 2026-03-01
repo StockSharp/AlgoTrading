@@ -399,8 +399,8 @@ public class WeightOscillatorDirectStrategy : Strategy
 		}
 
 		var step = Security?.PriceStep ?? 1m;
-		var takeProfit = TakeProfitPoints > 0 ? new Unit(TakeProfitPoints * step, UnitTypes.Point) : null;
-		var stopLoss = StopLossPoints > 0 ? new Unit(StopLossPoints * step, UnitTypes.Point) : null;
+		var takeProfit = TakeProfitPoints > 0 ? new Unit(TakeProfitPoints * step, UnitTypes.Absolute) : null;
+		var stopLoss = StopLossPoints > 0 ? new Unit(StopLossPoints * step, UnitTypes.Absolute) : null;
 
 		StartProtection(stopLoss, takeProfit);
 	}

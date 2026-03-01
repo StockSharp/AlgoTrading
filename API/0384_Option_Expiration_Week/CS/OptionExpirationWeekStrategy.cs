@@ -69,9 +69,9 @@ public class OptionExpirationWeekStrategy : Strategy
 		_latestPrices.Clear();
 	}
 
-	protected override void OnStarted(DateTimeOffset t)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(t);
+		base.OnStarted2(time);
 
 		if (Security == null)
 			throw new InvalidOperationException("ETF cannot be null.");

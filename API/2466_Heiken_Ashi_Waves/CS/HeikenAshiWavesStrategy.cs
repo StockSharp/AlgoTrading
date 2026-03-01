@@ -97,7 +97,7 @@ public class HeikenAshiWavesStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles for calculations", "General");
 
-		_stopLoss = Param(nameof(StopLoss), new Unit(20, UnitTypes.Point))
+		_stopLoss = Param(nameof(StopLoss), new Unit(20, UnitTypes.Absolute))
 		.SetDisplay("Stop Loss", "Trailing stop distance in points", "Risk Management")
 		
 		.SetOptimize(10m, 50m, 10m);

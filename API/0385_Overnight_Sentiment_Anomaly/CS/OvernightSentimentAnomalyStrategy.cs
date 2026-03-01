@@ -105,9 +105,9 @@ public class OvernightSentimentAnomalyStrategy : Strategy
 		_latestPrices.Clear();
 	}
 
-	protected override void OnStarted(DateTimeOffset t)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(t);
+		base.OnStarted2(time);
 
 		if (EquityETF == null)
 			throw new InvalidOperationException("EquityETF cannot be null.");

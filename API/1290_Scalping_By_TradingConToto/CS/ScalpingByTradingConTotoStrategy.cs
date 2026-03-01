@@ -122,7 +122,7 @@ public class ScalpingByTradingConTotoStrategy : Strategy
 		sub.Bind(slowEma, fastEma, ProcessCandle)
 			.Start();
 
-		StartProtection(new Unit(Pips + Spread, UnitTypes.Step), new Unit(Pips, UnitTypes.Step));
+		StartProtection(new Unit(Pips + Spread, UnitTypes.Absolute), new Unit(Pips, UnitTypes.Absolute));
 
 		var area = CreateChartArea();
 		if (area != null)

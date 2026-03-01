@@ -88,7 +88,7 @@ public class CalcProfitLossOnLinePriceStrategy : Strategy
 			return;
 
 		var priceStep = Security.PriceStep ?? 1m;
-		var stepPrice = Security.StepPrice ?? 1m;
+		var stepPrice = GetSecurityValue<decimal?>(Level1Fields.StepPrice) ?? 1m;
 		if (priceStep == 0m || stepPrice == 0m)
 			return;
 

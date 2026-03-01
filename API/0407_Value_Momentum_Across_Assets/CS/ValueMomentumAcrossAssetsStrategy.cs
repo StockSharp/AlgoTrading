@@ -75,12 +75,12 @@ public class ValueMomentumAcrossAssetsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset t)
+	protected override void OnStarted2(DateTime time)
 	{
 		if (Universe == null || !Universe.Any())
 			throw new InvalidOperationException("Universe empty");
 
-		base.OnStarted(t);
+		base.OnStarted2(time);
 
 		var trig = Universe.First();
 

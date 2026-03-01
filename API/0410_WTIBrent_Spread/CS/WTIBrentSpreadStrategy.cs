@@ -105,12 +105,12 @@ public class WTIBrentSpreadStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset t)
+	protected override void OnStarted2(DateTime time)
 	{
 		if (WTI == null || Brent == null)
 			throw new InvalidOperationException("WTI and Brent must be set.");
 
-		base.OnStarted(t);
+		base.OnStarted2(time);
 		SubscribeCandles(CandleType, true, WTI).Bind(c => ProcessCandle(c, WTI)).Start();
 		SubscribeCandles(CandleType, true, Brent).Bind(c => ProcessCandle(c, Brent)).Start();
 	}

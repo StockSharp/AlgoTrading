@@ -138,8 +138,8 @@ public class XTraderV2Strategy : Strategy
 
 		var step = Security.PriceStep ?? 1m;
 		StartProtection(
-			takeProfit: new Unit(TakeProfitTicks * step, UnitTypes.Point),
-			stopLoss: new Unit(StopLossTicks * step, UnitTypes.Point));
+			takeProfit: new Unit(TakeProfitTicks * step, UnitTypes.Absolute),
+			stopLoss: new Unit(StopLossTicks * step, UnitTypes.Absolute));
 	}
 	private void ProcessCandle(ICandleMessage candle, decimal ma1, decimal ma2)
 	{

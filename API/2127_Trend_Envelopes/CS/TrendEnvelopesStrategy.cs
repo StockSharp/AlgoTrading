@@ -203,8 +203,8 @@ public class TrendEnvelopesStrategy : Strategy
 
 		var step = Security.PriceStep ?? 1m;
 		StartProtection(
-		takeProfit: new Unit(TakeProfit * step, UnitTypes.Point),
-		stopLoss: new Unit(StopLoss * step, UnitTypes.Point));
+		takeProfit: new Unit(TakeProfit * step, UnitTypes.Absolute),
+		stopLoss: new Unit(StopLoss * step, UnitTypes.Absolute));
 
 		var area = CreateChartArea();
 		if (area != null)
