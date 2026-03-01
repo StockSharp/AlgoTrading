@@ -158,8 +158,8 @@ public class GoldProStrategy : Strategy
 		var slow = emaSlowValue.ToDecimal();
 		
 		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
-		var macdLine = macdTyped.Macd;
-		var signalLine = macdTyped.Signal;
+		var macdLine = macdTyped.Macd ?? 0m;
+		var signalLine = macdTyped.Signal ?? 0m;
 		
 		var rsi = rsiValue.ToDecimal();
 		var atr = atrValue.ToDecimal();
@@ -177,13 +177,13 @@ public class GoldProStrategy : Strategy
 		
 		if (bullishTrend && macdBullish && rsiBullish && Position <= 0)
 		{
-			CancelActiveOrders();
+			// market orders only
 			BuyMarket(Volume + Math.Abs(Position));
 			_longStop = candle.ClosePrice - trailOffset;
 		}
 		else if (bearishTrend && macdBearish && rsiBearish && Position >= 0)
 		{
-			CancelActiveOrders();
+			// market orders only
 			SellMarket(Volume + Math.Abs(Position));
 			_shortStop = candle.ClosePrice + trailOffset;
 		}

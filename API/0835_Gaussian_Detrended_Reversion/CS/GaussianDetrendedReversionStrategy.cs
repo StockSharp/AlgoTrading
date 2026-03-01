@@ -24,7 +24,7 @@ public class GaussianDetrendedReversionStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 
 	private readonly ExponentialMovingAverage _ema = new();
-	private readonly ArnaudLegouxMovingAverage _alma = new() { Offset = 0.85m, Sigma = 6m };
+	private readonly ArnaudLegouxMovingAverage _alma = new() { Offset = 0.85m, Sigma = 6 };
 
 	private readonly Queue<decimal> _emaValues = new();
 	private readonly Queue<decimal> _almaValues = new();
@@ -142,7 +142,7 @@ public class GaussianDetrendedReversionStrategy : Strategy
 		var emaLag = _emaValues.Peek();
 		var dpo = candle.ClosePrice - emaLag;
 
-		var almaValue = _alma.Process(new DecimalIndicatorValue(_alma, dpo)).ToDecimal();
+		var almaValue = _alma.Process(new DecimalIndicatorValue(_alma, dpo, candle.ServerTime)).ToDecimal();
 
 		_almaValues.Enqueue(almaValue);
 		if (_almaValues.Count > LagLength + 1)

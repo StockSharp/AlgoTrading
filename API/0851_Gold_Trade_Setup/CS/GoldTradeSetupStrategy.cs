@@ -154,8 +154,10 @@ public class GoldTradeSetupStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		if (amaVal is not { IsFinal: true, Value: decimal ama })
+		if (!amaVal.IsFinal)
 			return;
+
+		var ama = amaVal.ToDecimal();
 
 		var st = (SuperTrendIndicatorValue)stVal;
 		var isUpTrend = st.IsUpTrend;

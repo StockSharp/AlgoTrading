@@ -191,7 +191,7 @@ _smartMoneySma.Length = 20;
 
 var rsi = new RelativeStrengthIndex { Length = RsiLength };
 var momentum = new Momentum { Length = 10 };
-var ad = new AccumulationDistribution();
+var ad = new AccumulationDistributionLine();
 var priceMean = new SMA { Length = NashPeriod };
 var stdDev = new StandardDeviation { Length = NashPeriod };
 var highest = new Highest { Length = LiquidityLookback };

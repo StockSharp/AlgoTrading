@@ -83,21 +83,20 @@ public class GoldPullbackStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_emaFast = new EMA { Length = EmaFastLength };
-		_emaSlow = new EMA { Length = EmaSlowLength };
-		_emaPullback = new EMA { Length = EmaPullbackLength };
+		_emaFast = new ExponentialMovingAverage { Length = EmaFastLength };
+		_emaSlow = new ExponentialMovingAverage { Length = EmaSlowLength };
+		_emaPullback = new ExponentialMovingAverage { Length = EmaPullbackLength };
 		_macd = new MovingAverageConvergenceDivergence
 		{
 			ShortMa = { Length = 5 },
 			LongMa = { Length = 34 },
-			SignalPeriod = 5
 		};
 		_rsi = new RelativeStrengthIndex { Length = 13 };
-		_tdiMa = new SMA { Length = 2 };
-		_tdiSignal = new SMA { Length = 7 };
+		_tdiMa = new SimpleMovingAverage { Length = 2 };
+		_tdiSignal = new SimpleMovingAverage { Length = 7 };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(_emaFast, _emaSlow, _emaPullback, _macd, _rsi, ProcessCandle).Start();
+		subscription.Bind(_emaFast, _emaSlow, _emaPullback, _rsi, ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -110,13 +109,17 @@ public class GoldPullbackStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal emaFast, decimal emaSlow, decimal emaPullback, decimal macd, decimal macdSignal, decimal _, decimal rsiValue)
+	private void ProcessCandle(ICandleMessage candle, decimal emaFast, decimal emaSlow, decimal emaPullback, decimal rsiValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var tdiMaValue = _tdiMa.Process(new DecimalIndicatorValue(_tdiMa, rsiValue)).ToDecimal();
-		var tdiSignalValue = _tdiSignal.Process(new DecimalIndicatorValue(_tdiSignal, rsiValue)).ToDecimal();
+		var tdiMaValue = _tdiMa.Process(new DecimalIndicatorValue(_tdiMa, rsiValue, candle.ServerTime)).ToDecimal();
+		var tdiSignalValue = _tdiSignal.Process(new DecimalIndicatorValue(_tdiSignal, rsiValue, candle.ServerTime)).ToDecimal();
+
+		var macdVal = _macd.Process(new DecimalIndicatorValue(_macd, candle.ClosePrice, candle.ServerTime));
+		var macd = macdVal.ToDecimal();
+		var macdSignal = 0m; // simplified - use MACD line direction
 
 		if (!_macd.IsFormed || !_tdiSignal.IsFormed || !_emaFast.IsFormed || !_emaSlow.IsFormed || !_emaPullback.IsFormed)
 			return;

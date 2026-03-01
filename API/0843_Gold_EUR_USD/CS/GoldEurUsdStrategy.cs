@@ -179,8 +179,8 @@ public class GoldEurUsdStrategy : Strategy
 		var k = stoch.K;
 		var d = stoch.D;
 
-		var highestPrevVal = _prevHighIndicator.Process(_prevHigh);
-		var lowestPrevVal = _prevLowIndicator.Process(_prevLow);
+		var highestPrevVal = _prevHighIndicator.Process(new DecimalIndicatorValue(_prevHighIndicator, _prevHigh, candle.ServerTime));
+		var lowestPrevVal = _prevLowIndicator.Process(new DecimalIndicatorValue(_prevLowIndicator, _prevLow, candle.ServerTime));
 		_prevHigh = candle.HighPrice;
 		_prevLow = candle.LowPrice;
 

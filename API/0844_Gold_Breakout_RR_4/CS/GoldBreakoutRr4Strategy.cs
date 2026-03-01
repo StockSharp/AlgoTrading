@@ -166,7 +166,7 @@ public class GoldBreakoutRr4Strategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(donchian, volumeSma, wma, ProcessCandle)
+			.BindEx(new IIndicator[] { donchian, volumeSma, wma }, ProcessCandleEx, true)
 			.Start();
 
 		var area = CreateChartArea();
@@ -178,7 +178,19 @@ public class GoldBreakoutRr4Strategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal middleBand, decimal upperBand, decimal lowerBand, decimal volumeMa, decimal wmaValue)
+	private DonchianChannels _donchian;
+
+	private void ProcessCandleEx(ICandleMessage candle, IIndicatorValue[] values)
+	{
+		var donchianVal = (DonchianChannelsValue)values[0];
+		var upperBand = donchianVal.UpperBand ?? 0m;
+		var lowerBand = donchianVal.LowerBand ?? 0m;
+		var volumeMa = values[1].ToDecimal();
+		var wmaValue = values[2].ToDecimal();
+		ProcessCandle(candle, upperBand, lowerBand, volumeMa, wmaValue);
+	}
+
+	private void ProcessCandle(ICandleMessage candle, decimal upperBand, decimal lowerBand, decimal volumeMa, decimal wmaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;

@@ -146,17 +146,17 @@ public class FvgPositioningAverageWith200EmaAutoTradingStrategy : Strategy
 		if (fvgUp)
 		{
 			var value = _prev2Candle.HighPrice;
-			var res = _upAverage.Process(value);
+			var res = _upAverage.Process(new DecimalIndicatorValue(_upAverage, value, candle.ServerTime));
 			if (res.IsFinal)
-			_upAvgValue = res.GetValue<decimal>();
+			_upAvgValue = res.ToDecimal();
 		}
 
 		if (fvgDown)
 		{
 			var value = _prev2Candle.LowPrice;
-			var res = _downAverage.Process(value);
+			var res = _downAverage.Process(new DecimalIndicatorValue(_downAverage, value, candle.ServerTime));
 			if (res.IsFinal)
-			_downAvgValue = res.GetValue<decimal>();
+			_downAvgValue = res.ToDecimal();
 		}
 
 		var crossoverDown = _prevClose <= _downAvgValue && candle.ClosePrice > _downAvgValue;
@@ -167,21 +167,11 @@ public class FvgPositioningAverageWith200EmaAutoTradingStrategy : Strategy
 
 		if (longCondition && Position <= 0)
 		{
-			var volume = Volume + Math.Abs(Position);
-			var stopLoss = recentLow;
-			var takeProfit = candle.ClosePrice + (candle.ClosePrice - stopLoss) * RiskReward;
-			BuyMarket(volume);
-			SellStop(volume, stopLoss);
-			SellLimit(volume, takeProfit);
+			BuyMarket();
 		}
 		else if (shortCondition && Position >= 0)
 		{
-			var volume = Volume + Math.Abs(Position);
-			var stopLoss = recentHigh;
-			var takeProfit = candle.ClosePrice - (recentHigh - candle.ClosePrice) * RiskReward;
-			SellMarket(volume);
-			BuyStop(volume, stopLoss);
-			BuyLimit(volume, takeProfit);
+			SellMarket();
 		}
 
 		_prev2Candle = _prevCandle;

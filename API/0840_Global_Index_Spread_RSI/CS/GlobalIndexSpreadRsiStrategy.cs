@@ -159,7 +159,7 @@ public class GlobalIndexSpreadRsiStrategy : Strategy
 			return;
 
 		var spread = (candle.ClosePrice - globalClose) / globalClose * 100m;
-		var rsiValue = _rsi.Process(new DecimalIndicatorValue(_rsi, spread));
+		var rsiValue = _rsi.Process(new DecimalIndicatorValue(_rsi, spread, candle.ServerTime));
 		if (!rsiValue.IsFinal)
 			return;
 
@@ -182,8 +182,6 @@ public class GlobalIndexSpreadRsiStrategy : Strategy
 		if (Position > 0 && _entryPrice > 0m)
 		{
 			var profit = (candle.ClosePrice - _entryPrice) / _entryPrice * 100m;
-			if (_prevTime != default)
-				DrawLine(_prevTime, _prevProfit, candle.CloseTime, profit);
 			_prevTime = candle.CloseTime;
 			_prevProfit = profit;
 		}

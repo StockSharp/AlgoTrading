@@ -173,15 +173,16 @@ public class GoldenTransformStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var rocVal = _roc.Process(candle.ClosePrice);
-		var hmaEntryVal = _hmaEntry.Process(candle.ClosePrice);
+		var t = candle.ServerTime;
+		var rocVal = _roc.Process(new DecimalIndicatorValue(_roc, candle.ClosePrice, t));
+		var hmaEntryVal = _hmaEntry.Process(new DecimalIndicatorValue(_hmaEntry, candle.ClosePrice, t));
 		var logClose = (decimal)Math.Log((double)candle.ClosePrice);
-		var hull1Val = _hull1.Process(logClose);
-		var hull2Val = _hull2.Process(hull1Val.ToDecimal());
-		var hull3Val = _hull3.Process(hull2Val.ToDecimal());
+		var hull1Val = _hull1.Process(new DecimalIndicatorValue(_hull1, logClose, t));
+		var hull2Val = _hull2.Process(new DecimalIndicatorValue(_hull2, hull1Val.ToDecimal(), t));
+		var hull3Val = _hull3.Process(new DecimalIndicatorValue(_hull3, hull2Val.ToDecimal(), t));
 		var hl2 = (candle.HighPrice + candle.LowPrice) / 2m;
-		var fish0Val = _fisher.Process(hl2);
-		var fish1Val = _fisherSmooth.Process(fish0Val.ToDecimal());
+		var fish0Val = _fisher.Process(new DecimalIndicatorValue(_fisher, hl2, t));
+		var fish1Val = _fisherSmooth.Process(new DecimalIndicatorValue(_fisherSmooth, fish0Val.ToDecimal(), t));
 
 		if (!rocVal.IsFinal || !_hull3.IsFormed || !fish0Val.IsFinal || !_fisherSmooth.IsFormed || !hmaEntryVal.IsFinal)
 			return;
