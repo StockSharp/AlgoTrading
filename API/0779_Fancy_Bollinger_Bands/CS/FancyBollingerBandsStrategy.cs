@@ -106,7 +106,7 @@ public class FancyBollingerBandsStrategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_bands, OnProcessCandle)
+			.BindEx(_bands, OnProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -118,18 +118,17 @@ public class FancyBollingerBandsStrategy : Strategy
 		}
 	}
 
-	private void OnProcessCandle(ICandleMessage candle, decimal middle, decimal upper, decimal lower)
+	private void OnProcessCandle(ICandleMessage candle, IIndicatorValue bollingerValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
 		if (!_bands.IsFormed)
-		{
-			_prevClose = candle.ClosePrice;
-			_prevUpper = upper;
-			_prevLower = lower;
 			return;
-		}
+
+		var bbValue = (ComplexIndicatorValue<BollingerBands>)bollingerValue;
+		var upper = bbValue.InnerValues[_bands.UpBand].ToDecimal();
+		var lower = bbValue.InnerValues[_bands.LowBand].ToDecimal();
 
 		if (!_initialized)
 		{
@@ -152,9 +151,9 @@ public class FancyBollingerBandsStrategy : Strategy
 		var crossBelow = _prevClose >= _prevLower && candle.ClosePrice < lower;
 
 		if (crossAbove && Position <= 0)
-			BuyMarket(Volume + Math.Abs(Position));
+			BuyMarket();
 		else if (crossBelow && Position >= 0)
-			SellMarket(Volume + Math.Abs(Position));
+			SellMarket();
 
 		_prevClose = candle.ClosePrice;
 		_prevUpper = upper;

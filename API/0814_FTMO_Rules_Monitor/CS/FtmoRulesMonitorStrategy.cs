@@ -211,7 +211,10 @@ public class FtmoRulesMonitorStrategy : Strategy
 
 		if (isProfitTargetMet && isMinTradingDaysMet && isDailyLossOk && isTotalLossOk)
 		{
-			CloseAll("Challenge Complete");
+			if (Position > 0)
+				SellMarket();
+			else if (Position < 0)
+				BuyMarket();
 		}
 	}
 

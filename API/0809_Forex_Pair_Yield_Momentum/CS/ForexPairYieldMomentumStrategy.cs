@@ -167,18 +167,23 @@ public class ForexPairYieldMomentumStrategy : Strategy
 		var spread = a - b;
 		var spreadValue = _spreadSma.Process(new DecimalIndicatorValue(_spreadSma, spread, candle.ServerTime));
 
-		if (!spreadValue.IsFinal || spreadValue.GetValue<decimal>() is not decimal spreadAvg)
+		if (!spreadValue.IsFinal)
 			return;
 
+		var spreadAvg = spreadValue.ToDecimal();
 		var momentum = spread - spreadAvg;
 
 		var middleVal = _momentumSma.Process(new DecimalIndicatorValue(_momentumSma, momentum, candle.ServerTime));
-		if (!middleVal.IsFinal || middleVal.GetValue<decimal>() is not decimal middle)
+		if (!middleVal.IsFinal)
 			return;
 
-		var stdVal = (StandardDeviationValue)_momentumStd.Process(new DecimalIndicatorValue(_momentumStd, momentum, candle.ServerTime));
-		if (!stdVal.IsFinal || stdVal.IndicatorValue is not decimal std)
+		var middle = middleVal.ToDecimal();
+
+		var stdVal = _momentumStd.Process(new DecimalIndicatorValue(_momentumStd, momentum, candle.ServerTime));
+		if (!stdVal.IsFinal)
 			return;
+
+		var std = stdVal.ToDecimal();
 
 		var upper = middle + BollingerStdDev * std;
 		var lower = middle - BollingerStdDev * std;
@@ -188,16 +193,14 @@ public class ForexPairYieldMomentumStrategy : Strategy
 
 		if (longCond && Position <= 0)
 		{
-			CancelActiveOrders();
-			BuyMarket(Volume + Math.Abs(Position));
+			BuyMarket();
 			_barsInPosition = 0;
 			return;
 		}
 
 		if (shortCond && Position >= 0)
 		{
-			CancelActiveOrders();
-			SellMarket(Volume + Math.Abs(Position));
+			SellMarket();
 			_barsInPosition = 0;
 			return;
 		}
@@ -208,12 +211,10 @@ public class ForexPairYieldMomentumStrategy : Strategy
 
 			if (_barsInPosition >= HoldPeriods)
 			{
-				CancelActiveOrders();
-
 				if (Position > 0)
-					SellMarket(Position);
+					SellMarket();
 				else
-					BuyMarket(-Position);
+					BuyMarket();
 
 				_barsInPosition = 0;
 			}

@@ -147,7 +147,7 @@ public class FlexiSuperTrendStrategy : Strategy
 			return;
 
 		var deviation = candle.ClosePrice - superTrendValue;
-		var smaValue = _sma.Process(new DecimalIndicatorValue(_sma, deviation));
+		var smaValue = _sma.Process(new DecimalIndicatorValue(_sma, deviation, candle.ServerTime));
 
 		if (!smaValue.IsFinal || smaValue is not DecimalIndicatorValue smaResult)
 			return;

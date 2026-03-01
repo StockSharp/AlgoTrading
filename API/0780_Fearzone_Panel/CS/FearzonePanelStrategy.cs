@@ -194,21 +194,23 @@ public class FearzonePanelStrategy : Strategy
 
 		var ohlc4 = (candle.OpenPrice + candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 4m;
 
-		var highestVal = _highest.Process(ohlc4);
-		var smaVal = _lookbackSma.Process(ohlc4);
-		var maVal = _ma.Process(candle.ClosePrice);
-		var rocVal = _roc.Process(candle.ClosePrice);
+		var highestVal = _highest.Process(new DecimalIndicatorValue(_highest, ohlc4, candle.ServerTime)).ToDecimal();
+		var smaVal = _lookbackSma.Process(new DecimalIndicatorValue(_lookbackSma, ohlc4, candle.ServerTime)).ToDecimal();
+		var maVal = _ma.Process(new DecimalIndicatorValue(_ma, candle.ClosePrice, candle.ServerTime)).ToDecimal();
+		var rocVal = _roc.Process(new DecimalIndicatorValue(_roc, candle.ClosePrice, candle.ServerTime)).ToDecimal();
 
 		if (!_highest.IsFormed || !_lookbackSma.IsFormed || !_ma.IsFormed || !_roc.IsFormed)
 		return;
 
-		var fz1 = (highestVal - ohlc4) / highestVal;
-		var fz1BandsVal = (BollingerBandsValue)_fz1Bands.Process(fz1);
-		var inFz1 = _fz1Bands.IsFormed && fz1BandsVal.UpBand is decimal up1 && fz1 > up1;
+		var fz1 = highestVal != 0 ? (highestVal - ohlc4) / highestVal : 0m;
+		var fz1BandsResult = _fz1Bands.Process(new DecimalIndicatorValue(_fz1Bands, fz1, candle.ServerTime));
+		var fz1BandsVal = (ComplexIndicatorValue<BollingerBands>)fz1BandsResult;
+		var inFz1 = _fz1Bands.IsFormed && fz1 > fz1BandsVal.InnerValues[_fz1Bands.UpBand].ToDecimal();
 
 		var fz2 = ohlc4 - smaVal;
-		var fz2BandsVal = (BollingerBandsValue)_fz2Bands.Process(fz2);
-		var inFz2 = _fz2Bands.IsFormed && fz2BandsVal.LowBand is decimal low2 && fz2 < low2;
+		var fz2BandsResult = _fz2Bands.Process(new DecimalIndicatorValue(_fz2Bands, fz2, candle.ServerTime));
+		var fz2BandsVal = (ComplexIndicatorValue<BollingerBands>)fz2BandsResult;
+		var inFz2 = _fz2Bands.IsFormed && fz2 < fz2BandsVal.InnerValues[_fz2Bands.LowBand].ToDecimal();
 
 		var isDown = rocVal <= -ImpulsePercent;
 
@@ -220,12 +222,11 @@ public class FearzonePanelStrategy : Strategy
 
 		if (inFz1 && inFz2 && isAboveMa && (isDown || inRicochet || isMagic) && Position <= 0)
 		{
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
+			BuyMarket();
 		}
 		else if (Position > 0 && !isAboveMa)
 		{
-			SellMarket(Math.Abs(Position));
+			SellMarket();
 		}
 	}
 }

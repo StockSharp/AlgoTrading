@@ -143,10 +143,10 @@ public class ExtrapolatedPivotConnectorStrategy : Strategy
 
 		var c = _candles[i];
 
-		if (c.HighPrice >= pivotCandle.High)
+		if (c.HighPrice >= pivotCandle.HighPrice)
 		isHigh = false;
 
-		if (c.LowPrice <= pivotCandle.Low)
+		if (c.LowPrice <= pivotCandle.LowPrice)
 		isLow = false;
 		}
 
@@ -154,7 +154,7 @@ public class ExtrapolatedPivotConnectorStrategy : Strategy
 
 		if (isHigh)
 		{
-		_highPivots.Add((pivotBarIndex, pivotCandle.High));
+		_highPivots.Add((pivotBarIndex, pivotCandle.HighPrice));
 
 		if (_highPivots.Count > 100)
 		_highPivots.RemoveAt(0);
@@ -162,7 +162,7 @@ public class ExtrapolatedPivotConnectorStrategy : Strategy
 
 		if (isLow)
 		{
-		_lowPivots.Add((pivotBarIndex, pivotCandle.Low));
+		_lowPivots.Add((pivotBarIndex, pivotCandle.LowPrice));
 
 		if (_lowPivots.Count > 100)
 		_lowPivots.RemoveAt(0);

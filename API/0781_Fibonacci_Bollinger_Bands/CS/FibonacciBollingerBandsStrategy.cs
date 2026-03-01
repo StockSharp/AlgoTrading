@@ -23,6 +23,7 @@ public class FibonacciBollingerBandsStrategy : Strategy
 	private readonly StrategyParam<decimal> _bollingerMultiplier;
 	private readonly StrategyParam<int> _fibPeriod;
 
+	private BollingerBands _bollinger;
 	private decimal? _fibHigh;
 	private decimal? _fibLow;
 	private decimal _prevClose;
@@ -43,19 +44,19 @@ public class FibonacciBollingerBandsStrategy : Strategy
 		_bollingerLength = Param(nameof(BollingerLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Bollinger Length", "Period of Bollinger Bands", "Indicators")
-			
+
 			.SetOptimize(10, 50, 5);
 
 		_bollingerMultiplier = Param(nameof(BollingerMultiplier), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Bollinger Multiplier", "Standard deviation multiplier", "Indicators")
-			
+
 			.SetOptimize(1m, 4m, 0.5m);
 
 		_fibPeriod = Param(nameof(FibPeriod), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Fibonacci Lookback", "Bars for Fibonacci levels", "Indicators")
-			
+
 			.SetOptimize(20, 100, 10);
 	}
 
@@ -69,7 +70,7 @@ public class FibonacciBollingerBandsStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var bollinger = new BollingerBands
+		_bollinger = new BollingerBands
 		{
 			Length = BollingerLength,
 			Width = BollingerMultiplier
@@ -80,24 +81,28 @@ public class FibonacciBollingerBandsStrategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(bollinger, highest, lowest, ProcessCandle)
+			.BindEx(new IIndicator[] { _bollinger, highest, lowest }, ProcessCandle, true)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, bollinger);
-			DrawIndicator(area, highest);
-			DrawIndicator(area, lowest);
+			DrawIndicator(area, _bollinger);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal middle, decimal upper, decimal lower, decimal highest, decimal lowest)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue[] values)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
+
+		var bbValue = (ComplexIndicatorValue<BollingerBands>)values[0];
+		var upper = bbValue.InnerValues[_bollinger.UpBand].ToDecimal();
+		var lower = bbValue.InnerValues[_bollinger.LowBand].ToDecimal();
+		var highest = values[1].ToDecimal();
+		var lowest = values[2].ToDecimal();
 
 		if (!_isInitialized)
 		{

@@ -106,7 +106,7 @@ public class WeightedStandardDeviationStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var weight = candle.TotalVolume ?? 0m;
+		var weight = candle.TotalVolume;
 
 		_values.Enqueue((candle.ClosePrice, weight));
 		if (_values.Count > Length)

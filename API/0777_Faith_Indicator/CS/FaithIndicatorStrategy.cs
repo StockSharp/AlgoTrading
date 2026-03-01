@@ -103,7 +103,7 @@ public class FaithIndicatorStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var highestValue = _volumeHighest.Process(candle.TotalVolume);
+		var highestValue = _volumeHighest.Process(new DecimalIndicatorValue(_volumeHighest, candle.TotalVolume, candle.ServerTime));
 		if (!highestValue.IsFinal)
 		{
 			_prevHigh = candle.HighPrice;
@@ -112,7 +112,7 @@ public class FaithIndicatorStrategy : Strategy
 			return;
 		}
 
-		var highestVolume = (decimal)highestValue;
+		var highestVolume = highestValue.ToDecimal();
 		if (highestVolume == 0)
 			return;
 
@@ -124,8 +124,8 @@ public class FaithIndicatorStrategy : Strategy
 		var volUp = up ? vproc : 0m;
 		var volDown = down ? vproc : 0m;
 
-		var maUpValue = _maUp.Process(volUp);
-		var maDownValue = _maDown.Process(volDown);
+		var maUpValue = _maUp.Process(new DecimalIndicatorValue(_maUp, volUp, candle.ServerTime));
+		var maDownValue = _maDown.Process(new DecimalIndicatorValue(_maDown, volDown, candle.ServerTime));
 
 		if (!_maUp.IsFormed || !_maDown.IsFormed)
 		{
@@ -135,8 +135,8 @@ public class FaithIndicatorStrategy : Strategy
 			return;
 		}
 
-		var maup = (decimal)maUpValue;
-		var madown = (decimal)maDownValue;
+		var maup = maUpValue.ToDecimal();
+		var madown = maDownValue.ToDecimal();
 
 		var difVol = maup - madown;
 

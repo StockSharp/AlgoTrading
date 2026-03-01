@@ -136,23 +136,26 @@ public class FollowLineStrategy : Strategy
 		_trendHtf = 0;
 	}
 
+	private BollingerBands _bb;
+	private BollingerBands _bbHtf;
+
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		var bb = new BollingerBands { Length = BbPeriod, Width = BbDeviation };
+		_bb = new BollingerBands { Length = BbPeriod, Width = BbDeviation };
 		var atr = new AverageTrueRange { Length = AtrPeriod };
 
 		var sub = SubscribeCandles(CandleType);
-		sub.Bind(bb, atr, ProcessTrade).Start();
+		sub.BindEx(new IIndicator[] { _bb, atr }, ProcessTradeEx, true).Start();
 
 		if (UseHtfConfirmation)
 		{
-			var bbHtf = new BollingerBands { Length = BbPeriod, Width = BbDeviation };
+			_bbHtf = new BollingerBands { Length = BbPeriod, Width = BbDeviation };
 			var atrHtf = new AverageTrueRange { Length = AtrPeriod };
 			SubscribeCandles(HtfCandleType)
-				.Bind(bbHtf, atrHtf, ProcessHtf)
+				.BindEx(new IIndicator[] { _bbHtf, atrHtf }, ProcessHtfEx, true)
 				.Start();
 		}
 
@@ -166,7 +169,16 @@ public class FollowLineStrategy : Strategy
 		}
 	}
 
-	private void ProcessTrade(ICandleMessage candle, decimal middle, decimal upper, decimal lower, decimal atr)
+	private void ProcessTradeEx(ICandleMessage candle, IIndicatorValue[] values)
+	{
+		var bbValue = (ComplexIndicatorValue<BollingerBands>)values[0];
+		var upper = bbValue.InnerValues[_bb.UpBand].ToDecimal();
+		var lower = bbValue.InnerValues[_bb.LowBand].ToDecimal();
+		var atr = values[1].ToDecimal();
+		ProcessTrade(candle, upper, lower, atr);
+	}
+
+	private void ProcessTrade(ICandleMessage candle, decimal upper, decimal lower, decimal atr)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
@@ -236,7 +248,16 @@ public class FollowLineStrategy : Strategy
 		_prevFollowLine = _followLine;
 	}
 
-	private void ProcessHtf(ICandleMessage candle, decimal middle, decimal upper, decimal lower, decimal atr)
+	private void ProcessHtfEx(ICandleMessage candle, IIndicatorValue[] values)
+	{
+		var bbValue = (ComplexIndicatorValue<BollingerBands>)values[0];
+		var upper = bbValue.InnerValues[_bbHtf.UpBand].ToDecimal();
+		var lower = bbValue.InnerValues[_bbHtf.LowBand].ToDecimal();
+		var atr = values[1].ToDecimal();
+		ProcessHtf(candle, upper, lower, atr);
+	}
+
+	private void ProcessHtf(ICandleMessage candle, decimal upper, decimal lower, decimal atr)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;

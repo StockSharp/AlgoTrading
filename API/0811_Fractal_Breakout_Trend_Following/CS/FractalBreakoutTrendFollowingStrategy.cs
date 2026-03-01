@@ -43,6 +43,7 @@ private readonly StrategyParam<decimal> _stopLossPercent;
 	private decimal? _downFractalActivation;
 	
 	private decimal _prevHigh;
+	private decimal _entryPrice;
 	
 	private readonly Queue<decimal> _atrQueue = new();
 	private readonly Queue<decimal> _atrNormQueue = new();
@@ -283,15 +284,18 @@ private readonly StrategyParam<decimal> _stopLossPercent;
 		if (_upFractalActivation is decimal activation && atrAvg <= AtrThreshold &&
 		candle.ServerTime >= TradeStart && candle.ServerTime <= TradeStop && Position <= 0)
 		{
-			CancelActiveOrders();
-			BuyStop(Volume + Math.Abs(Position), activation);
+			if (candle.ClosePrice >= activation)
+			{
+				BuyMarket();
+				_entryPrice = candle.ClosePrice;
+			}
 		}
-		
+
 		if (Position > 0)
 		{
-			var stopPrice = Math.Max(PositionPrice * (1m - StopLossPercent), _downFractalActivation ?? decimal.MinValue);
+			var stopPrice = Math.Max(_entryPrice * (1m - StopLossPercent), _downFractalActivation ?? decimal.MinValue);
 			if (candle.LowPrice <= stopPrice)
-			SellMarket(Position);
+				SellMarket();
 		}
 		
 		_prevHigh = candle.HighPrice;

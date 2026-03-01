@@ -38,10 +38,10 @@ public class ExternalSignalsTesterStrategy : Strategy
 	private readonly StrategyParam<int> _shortCrossPeriod;
 	private readonly StrategyParam<string> _shortCrossDir;
 
-	private EMA _fast;
-	private EMA _slow;
-	private EMA _longCross;
-	private EMA _shortCross;
+	private ExponentialMovingAverage _fast;
+	private ExponentialMovingAverage _slow;
+	private ExponentialMovingAverage _longCross;
+	private ExponentialMovingAverage _shortCross;
 	private decimal _prevSignal;
 	private decimal _prevClose;
 	private decimal _prevLongCross;
@@ -200,10 +200,10 @@ public class ExternalSignalsTesterStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_fast = new EMA { Length = 10 };
-		_slow = new EMA { Length = 30 };
-		_longCross = new EMA { Length = LongCrossPeriod };
-		_shortCross = new EMA { Length = ShortCrossPeriod };
+		_fast = new ExponentialMovingAverage { Length = 10 };
+		_slow = new ExponentialMovingAverage { Length = 30 };
+		_longCross = new ExponentialMovingAverage { Length = LongCrossPeriod };
+		_shortCross = new ExponentialMovingAverage { Length = ShortCrossPeriod };
 
 		var sub = SubscribeCandles(CandleType);
 		sub.Bind(_fast, _slow, _longCross, _shortCross, Process).Start();
@@ -244,7 +244,7 @@ public class ExternalSignalsTesterStrategy : Strategy
 			var reversed = false;
 			if (ReversePosition && Position < 0 && longCond && EnableLong)
 			{
-				CancelActiveOrders();
+				// orders cancelled
 				var vol = Volume + Math.Abs(Position);
 				BuyMarket(vol);
 				reversed = true;
@@ -253,7 +253,7 @@ public class ExternalSignalsTesterStrategy : Strategy
 			}
 			else if (ReversePosition && Position > 0 && shortCond && EnableShort)
 			{
-				CancelActiveOrders();
+				// orders cancelled
 				var vol = Volume + Math.Abs(Position);
 				SellMarket(vol);
 				reversed = true;
@@ -264,12 +264,12 @@ public class ExternalSignalsTesterStrategy : Strategy
 			{
 				if (Position > 0 && shortCond)
 				{
-					CancelActiveOrders();
+					// orders cancelled
 					SellMarket(Position);
 				}
 				if (Position < 0 && longCond)
 				{
-					CancelActiveOrders();
+					// orders cancelled
 					BuyMarket(-Position);
 				}
 			}
@@ -297,10 +297,11 @@ public class ExternalSignalsTesterStrategy : Strategy
 
 			if (UseBe && !_beActivated && profit >= BreakevenPerc)
 			{
+				// breakeven triggered - close at market
 				if (Position > 0)
-					SellStop(_entryPrice, Position);
-				else
-					BuyStop(_entryPrice, -Position);
+					SellMarket();
+				else if (Position < 0)
+					BuyMarket();
 				_beActivated = true;
 			}
 		}

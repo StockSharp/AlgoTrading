@@ -132,19 +132,15 @@ public class FunctionLinearRegressionStrategy : Strategy
 			{
 				var (a, b, maxDev, minDev, avgDev) = ComputeRegression(_x, _prices);
 
-				var firstX = _x.Peek();
-				var firstTime = _times.Peek();
 				var lastX = _barIndex - 2;
-				var lastTime = c2.OpenTime;
-
-				var firstY = a + b * firstX;
 				var lastY = a + b * lastX;
+				var upperChannel = lastY + avgDev;
+				var lowerChannel = lastY - avgDev;
 
-				DrawLine(firstTime, firstY, lastTime, lastY);
-				DrawLine(firstTime, firstY + maxDev, lastTime, lastY + maxDev);
-				DrawLine(firstTime, firstY + minDev, lastTime, lastY + minDev);
-				DrawLine(firstTime, firstY + avgDev, lastTime, lastY + avgDev);
-				DrawLine(firstTime, firstY - avgDev, lastTime, lastY - avgDev);
+				if (candle.ClosePrice < lowerChannel && Position <= 0)
+					BuyMarket();
+				else if (candle.ClosePrice > upperChannel && Position >= 0)
+					SellMarket();
 			}
 		}
 

@@ -38,7 +38,7 @@ public class FinishRenamingStrategy : Strategy
 		_start = Param(nameof(StartNumber), 2888)
 		.SetGreaterThanZero()
 		.SetDisplay("Start Number", "Initial counter value", "Renaming");
-		_path = Param(nameof(DirectoryPath), Path.Combine(Environment.CurrentDirectory, "TradingView"))
+		_path = Param(nameof(DirectoryPath), "TradingView")
 		.SetDisplay("Directory Path", "Path containing text files", "Renaming");
 	}
 

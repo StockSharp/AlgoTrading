@@ -38,8 +38,6 @@ public class ExpressGeneratorStrategy : Strategy
 
 	private decimal _prevFast;
 	private decimal _prevSlow;
-	private decimal _prevMacd;
-	private decimal _prevSignal;
 	private decimal _trailingLong;
 	private decimal _trailingShort;
 
@@ -182,19 +180,17 @@ public class ExpressGeneratorStrategy : Strategy
 		base.OnReseted();
 		_prevFast = 0m;
 		_prevSlow = 0m;
-		_prevMacd = 0m;
-		_prevSignal = 0m;
 		_trailingLong = 0m;
 		_trailingShort = 0m;
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var fast = new SMA { Length = FastMa };
-		var slow = new SMA { Length = SlowMa };
+		var fast = new SimpleMovingAverage { Length = FastMa };
+		var slow = new SimpleMovingAverage { Length = SlowMa };
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };
 		var macd = new MovingAverageConvergenceDivergenceSignal
 		{
@@ -209,7 +205,7 @@ public class ExpressGeneratorStrategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(macd, fast, slow, rsi, atr, ProcessCandle)
+			.Bind(fast, slow, rsi, atr, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -221,12 +217,11 @@ public class ExpressGeneratorStrategy : Strategy
 
 			var rsiArea = CreateChartArea();
 			DrawIndicator(rsiArea, rsi);
-			DrawIndicator(rsiArea, macd);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue, IIndicatorValue fastValue, IIndicatorValue slowValue, IIndicatorValue rsiValue, IIndicatorValue atrValue)
+	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow, decimal rsi, decimal atr)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
@@ -234,54 +229,44 @@ public class ExpressGeneratorStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var fast = fastValue.ToDecimal();
-		var slow = slowValue.ToDecimal();
-		var rsi = rsiValue.ToDecimal();
-		var atr = atrValue.ToDecimal();
-		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
-		var macd = macdTyped.Macd;
-		var signal = macdTyped.Signal;
-
 		var longMaCross = fast > slow && _prevFast <= _prevSlow;
 		var shortMaCross = fast < slow && _prevFast >= _prevSlow;
-		var longMacdCross = macd > signal && _prevMacd <= _prevSignal;
-		var shortMacdCross = macd < signal && _prevMacd >= _prevSignal;
 
-		var longCondition = longMaCross && rsi < Overbought && longMacdCross;
-		var shortCondition = shortMaCross && rsi > Oversold && shortMacdCross;
+		var longCondition = longMaCross && rsi < Overbought;
+		var shortCondition = shortMaCross && rsi > Oversold;
 
-		var volume = CalculateQty(atr);
+		var step = Security.PriceStep ?? 0.01m;
 
-		if (longCondition && Position <= 0 && volume > 0m)
+		if (longCondition && Position <= 0)
 		{
-			BuyMarket(volume + Math.Abs(Position));
+			BuyMarket();
 			if (UseTrailing)
-				_trailingLong = candle.ClosePrice - TrailingPips * Security.PriceStep;
+				_trailingLong = candle.ClosePrice - TrailingPips * step;
 		}
-		else if (shortCondition && Position >= 0 && volume > 0m)
+		else if (shortCondition && Position >= 0)
 		{
-			SellMarket(volume + Math.Abs(Position));
+			SellMarket();
 			if (UseTrailing)
-				_trailingShort = candle.ClosePrice + TrailingPips * Security.PriceStep;
+				_trailingShort = candle.ClosePrice + TrailingPips * step;
 		}
 
 		if (UseTrailing)
 		{
 			if (Position > 0)
 			{
-				_trailingLong = Math.Max(_trailingLong, candle.ClosePrice - TrailingPips * Security.PriceStep);
+				_trailingLong = Math.Max(_trailingLong, candle.ClosePrice - TrailingPips * step);
 				if (candle.ClosePrice <= _trailingLong)
 				{
-					SellMarket(Math.Abs(Position));
+					SellMarket();
 					_trailingLong = 0m;
 				}
 			}
 			else if (Position < 0)
 			{
-				_trailingShort = Math.Min(_trailingShort, candle.ClosePrice + TrailingPips * Security.PriceStep);
+				_trailingShort = Math.Min(_trailingShort, candle.ClosePrice + TrailingPips * step);
 				if (candle.ClosePrice >= _trailingShort)
 				{
-					BuyMarket(Math.Abs(Position));
+					BuyMarket();
 					_trailingShort = 0m;
 				}
 			}
@@ -289,16 +274,5 @@ public class ExpressGeneratorStrategy : Strategy
 
 		_prevFast = fast;
 		_prevSlow = slow;
-		_prevMacd = macd;
-		_prevSignal = signal;
-	}
-
-	private decimal CalculateQty(decimal atr)
-	{
-		var equity = Portfolio?.CurrentValue ?? 0m;
-		var riskAmount = equity * RiskPercent / 100m;
-		var tradeRisk = StopLossPips * Security.PriceStep;
-		var volFactor = atr / (Security.PriceStep * 100m);
-		return tradeRisk > 0m && volFactor > 0m ? riskAmount / tradeRisk / volFactor : 0m;
 	}
 }
