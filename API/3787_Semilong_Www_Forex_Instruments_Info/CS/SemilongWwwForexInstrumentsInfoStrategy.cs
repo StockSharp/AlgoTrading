@@ -475,7 +475,7 @@ public class SemilongWwwForexInstrumentsInfoStrategy : Strategy
 	{
 		foreach (var order in Orders)
 		{
-			if (order.State.IsActive())
+			if (order.State == OrderStates.Active)
 				return true;
 		}
 

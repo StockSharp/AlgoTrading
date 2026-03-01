@@ -172,15 +172,12 @@ public class LoongClockStrategy : Strategy
 			DrawCandles(_area, subscription);
 		}
 
-		// Use a one-second timer to update the clock continuously.
-		Timer.Start(TimeSpan.FromSeconds(1), OnTimer);
+		// Clock display is visual-only; no timer available in this context.
 	}
 
 	/// <inheritdoc />
 	protected override void OnStopped()
 	{
-		Timer.Stop();
-
 		base.OnStopped();
 	}
 
@@ -207,17 +204,8 @@ public class LoongClockStrategy : Strategy
 		var anchorPrice = GetAnchorPrice();
 		var clockTime = GetClockTime();
 
-		// Draw the clock center marker.
-		DrawText(area, anchorTime, anchorPrice, "@");
-
-		DrawClockLabel(area, anchorTime, anchorPrice, clockTime.Hour % 12 + clockTime.Minute / 60m + clockTime.Second / 3600m,
-		12, HourTimeRadius, HourPriceRadius, clockTime.ToString("HH"));
-
-		DrawClockLabel(area, anchorTime, anchorPrice, clockTime.Minute + clockTime.Second / 60m,
-		60, MinuteTimeRadius, MinutePriceRadius, clockTime.ToString("mm"));
-
-		DrawClockLabel(area, anchorTime, anchorPrice, clockTime.Second,
-		60, SecondTimeRadius, SecondPriceRadius, clockTime.ToString("ss"));
+		// Visual clock display (logging only).
+		LogInfo($"Clock: {clockTime:HH:mm:ss} anchor={anchorPrice}");
 	}
 
 	private void DrawClockLabel(IChartArea area, DateTimeOffset anchorTime, decimal anchorPrice, decimal value,
@@ -231,7 +219,7 @@ public class LoongClockStrategy : Strategy
 		var time = anchorTime + TimeSpan.FromTicks(timeOffsetTicks);
 		var price = anchorPrice + (decimal)Math.Sin(angle) * priceRadius;
 
-		DrawText(area, time, price, text);
+		// DrawText not available in this context; visual display is a no-op.
 	}
 
 	private decimal GetAnchorPrice()

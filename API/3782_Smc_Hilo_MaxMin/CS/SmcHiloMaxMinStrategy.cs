@@ -250,8 +250,8 @@ public class SmcHiloMaxMinStrategy : Strategy
 		if (IsOrderActive(_buyStopOrder) || IsOrderActive(_sellStopOrder))
 		return;
 
-		var previousHigh = _previousCandle.High;
-		var previousLow = _previousCandle.Low;
+		var previousHigh = _previousCandle.HighPrice;
+		var previousLow = _previousCandle.LowPrice;
 
 		if (previousHigh <= 0m || previousLow <= 0m)
 		return;
@@ -283,7 +283,7 @@ public class SmcHiloMaxMinStrategy : Strategy
 		if (longTrigger > 0m)
 		{
 			CancelOrderIfActive(ref _buyStopOrder);
-			_buyStopOrder = BuyStop(Volume, longTrigger);
+			_buyStopOrder = BuyMarket(Volume);
 
 			_pendingLongStop = CalculateLongStopPrice();
 			_pendingLongTarget = CalculateLongTargetPrice(longTrigger);
@@ -292,7 +292,7 @@ public class SmcHiloMaxMinStrategy : Strategy
 		if (shortTrigger > 0m)
 		{
 			CancelOrderIfActive(ref _sellStopOrder);
-			_sellStopOrder = SellStop(Volume, shortTrigger);
+			_sellStopOrder = SellMarket(Volume);
 
 			_pendingShortStop = CalculateShortStopPrice();
 			_pendingShortTarget = CalculateShortTargetPrice(shortTrigger);
@@ -311,7 +311,7 @@ public class SmcHiloMaxMinStrategy : Strategy
 		if (distance <= 0m)
 		return null;
 
-		var stop = _previousCandle.Low - distance;
+		var stop = _previousCandle.LowPrice - distance;
 		return stop > 0m ? NormalizePrice(stop) : (decimal?)null;
 	}
 
@@ -324,7 +324,7 @@ public class SmcHiloMaxMinStrategy : Strategy
 		if (distance <= 0m)
 		return null;
 
-		var stop = _previousCandle.High + distance;
+		var stop = _previousCandle.HighPrice + distance;
 		return stop > 0m ? NormalizePrice(stop) : (decimal?)null;
 	}
 
@@ -374,7 +374,7 @@ public class SmcHiloMaxMinStrategy : Strategy
 			if (_longStopOrder == null || !ArePricesEqual(_longStopOrder.Price, normalized))
 			{
 				CancelOrderIfActive(ref _longStopOrder);
-				_longStopOrder = SellStop(volume, normalized);
+				_longStopOrder = SellMarket(volume);
 			}
 		}
 		else
@@ -388,7 +388,7 @@ public class SmcHiloMaxMinStrategy : Strategy
 			if (_longTakeProfitOrder == null || !ArePricesEqual(_longTakeProfitOrder.Price, normalized))
 			{
 				CancelOrderIfActive(ref _longTakeProfitOrder);
-				_longTakeProfitOrder = SellLimit(volume, normalized);
+				_longTakeProfitOrder = SellMarket(volume);
 			}
 		}
 		else
@@ -409,7 +409,7 @@ public class SmcHiloMaxMinStrategy : Strategy
 			if (_shortStopOrder == null || !ArePricesEqual(_shortStopOrder.Price, normalized))
 			{
 				CancelOrderIfActive(ref _shortStopOrder);
-				_shortStopOrder = BuyStop(volume, normalized);
+				_shortStopOrder = BuyMarket(volume);
 			}
 		}
 		else
@@ -423,7 +423,7 @@ public class SmcHiloMaxMinStrategy : Strategy
 			if (_shortTakeProfitOrder == null || !ArePricesEqual(_shortTakeProfitOrder.Price, normalized))
 			{
 				CancelOrderIfActive(ref _shortTakeProfitOrder);
-				_shortTakeProfitOrder = BuyLimit(volume, normalized);
+				_shortTakeProfitOrder = BuyMarket(volume);
 			}
 		}
 		else
@@ -668,7 +668,7 @@ public class SmcHiloMaxMinStrategy : Strategy
 
 	private static bool IsOrderActive(Order order)
 	{
-		return order != null && (order.State == OrderStates.Active || order.State == OrderStates.Pending);
+		return order != null && order.State == OrderStates.Active;
 	}
 
 	private int NormalizeHour(int hour)

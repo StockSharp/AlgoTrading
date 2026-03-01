@@ -47,6 +47,7 @@ public class ExpertClor2MaStopAtrStrategy : Strategy
 	private int _longShiftCounter;
 	private int _shortShiftCounter;
 	private decimal _previousPosition;
+	private decimal _entryPrice;
 
 	public bool MaCloseEnabled
 	{
@@ -197,6 +198,7 @@ public class ExpertClor2MaStopAtrStrategy : Strategy
 		_slowPrev2 = null;
 		ResetStops();
 		_previousPosition = 0m;
+		_entryPrice = 0m;
 	}
 
 	/// <inheritdoc />
@@ -227,6 +229,18 @@ public class ExpertClor2MaStopAtrStrategy : Strategy
 			if (_slowMa != null)
 				DrawIndicator(area, _slowMa);
 		}
+	}
+
+	/// <inheritdoc />
+	protected override void OnOwnTradeReceived(MyTrade trade)
+	{
+		base.OnOwnTradeReceived(trade);
+
+		if (Position != 0m && _entryPrice == 0m)
+			_entryPrice = trade.Trade.Price;
+
+		if (Position == 0m)
+			_entryPrice = 0m;
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -294,7 +308,7 @@ public class ExpertClor2MaStopAtrStrategy : Strategy
 
 	private void ManageLongPosition(ICandleMessage candle, decimal atrValue, bool atrFormed)
 	{
-		var entry = PositionPrice;
+		var entry = _entryPrice;
 		// Skip management until the average entry price is available.
 		if (entry == 0m)
 		{
@@ -360,7 +374,7 @@ public class ExpertClor2MaStopAtrStrategy : Strategy
 
 	private void ManageShortPosition(ICandleMessage candle, decimal atrValue, bool atrFormed)
 	{
-		var entry = PositionPrice;
+		var entry = _entryPrice;
 		// Skip management until the average entry price is available.
 		if (entry == 0m)
 		{
