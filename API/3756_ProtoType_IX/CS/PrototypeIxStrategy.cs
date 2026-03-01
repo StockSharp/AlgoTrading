@@ -39,7 +39,6 @@ public class PrototypeIxStrategy : Strategy
 	private decimal? _previousSwingLow;
 	private bool _trackingUpSwing;
 	private bool _trackingDownSwing;
-	private int _wprTrend;
 	private int _barsSinceEntry;
 	private decimal _entryPrice;
 	private decimal _initialStopPrice;
@@ -228,7 +227,6 @@ public class PrototypeIxStrategy : Strategy
 		_previousSwingLow = null;
 		_trackingUpSwing = false;
 		_trackingDownSwing = false;
-		_wprTrend = 0;
 		_barsSinceEntry = 0;
 		_entryPrice = 0m;
 		_initialStopPrice = 0m;
@@ -298,8 +296,6 @@ public class PrototypeIxStrategy : Strategy
 
 		if (wprValue >= upperThreshold)
 			{
-			_wprTrend = 1;
-
 			if (!_trackingUpSwing)
 				{
 				_previousSwingHigh = _lastSwingHigh;
@@ -314,8 +310,6 @@ public class PrototypeIxStrategy : Strategy
 		}
 		else if (wprValue <= lowerThreshold)
 			{
-			_wprTrend = -1;
-
 			if (!_trackingDownSwing)
 				{
 				_previousSwingLow = _lastSwingLow;
@@ -330,7 +324,6 @@ public class PrototypeIxStrategy : Strategy
 		}
 		else
 		{
-			_wprTrend = 0;
 			_trackingUpSwing = false;
 			_trackingDownSwing = false;
 		}

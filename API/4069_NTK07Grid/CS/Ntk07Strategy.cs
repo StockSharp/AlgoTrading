@@ -20,7 +20,6 @@ public class Ntk07Strategy : Strategy
 	private decimal _referencePrice;
 	private decimal _entryPrice;
 	private bool _initialized;
-	private int _gridLevel;
 
 	public Ntk07Strategy()
 	{
@@ -60,7 +59,6 @@ public class Ntk07Strategy : Strategy
 		_referencePrice = 0;
 		_entryPrice = 0;
 		_initialized = false;
-		_gridLevel = 0;
 
 		var atr = new AverageTrueRange { Length = AtrLength };
 		var ema = new ExponentialMovingAverage { Length = 20 };
@@ -105,14 +103,12 @@ public class Ntk07Strategy : Strategy
 			{
 				SellMarket();
 				_referencePrice = close;
-				_gridLevel = 0;
 			}
 			// Stop-loss at 1.5x grid step from entry
 			else if (_entryPrice > 0 && close <= _entryPrice - gridStep * 1.5m)
 			{
 				SellMarket();
 				_referencePrice = close;
-				_gridLevel = 0;
 			}
 		}
 		else if (Position < 0)
@@ -121,13 +117,11 @@ public class Ntk07Strategy : Strategy
 			{
 				BuyMarket();
 				_referencePrice = close;
-				_gridLevel = 0;
 			}
 			else if (_entryPrice > 0 && close >= _entryPrice + gridStep * 1.5m)
 			{
 				BuyMarket();
 				_referencePrice = close;
-				_gridLevel = 0;
 			}
 		}
 
@@ -138,14 +132,12 @@ public class Ntk07Strategy : Strategy
 			{
 				_entryPrice = close;
 				_referencePrice = close;
-				_gridLevel = 1;
 				BuyMarket();
 			}
 			else if (close < _referencePrice - gridStep && close < emaValue)
 			{
 				_entryPrice = close;
 				_referencePrice = close;
-				_gridLevel = 1;
 				SellMarket();
 			}
 		}

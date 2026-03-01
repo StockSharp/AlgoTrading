@@ -1,5 +1,3 @@
-#nullable enable
-
 namespace StockSharp.Samples.Strategies;
 
 using System;
@@ -490,7 +488,7 @@ public class MaMacdPositionAveragingV2Strategy : Strategy
 		if (_stepLossOffset <= 0m)
 			return;
 
-		PositionLeg? candidate = null;
+		PositionLeg candidate = null;
 
 		foreach (var leg in _longLegs)
 		{
@@ -514,7 +512,7 @@ public class MaMacdPositionAveragingV2Strategy : Strategy
 		if (_stepLossOffset <= 0m)
 			return;
 
-		PositionLeg? candidate = null;
+		PositionLeg candidate = null;
 
 		foreach (var leg in _shortLegs)
 		{

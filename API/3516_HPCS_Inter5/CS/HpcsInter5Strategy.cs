@@ -28,7 +28,6 @@ public class HpcsInter5Strategy : Strategy
 
 	private readonly decimal?[] _recentCloses = new decimal?[6];
 	private decimal _pipSize;
-	private bool _tradePlaced;
 
 	/// <summary>
 	/// Candle type used to evaluate the closing prices.
@@ -92,7 +91,6 @@ public class HpcsInter5Strategy : Strategy
 
 		Array.Clear(_recentCloses, 0, _recentCloses.Length);
 		_pipSize = 0m;
-		_tradePlaced = false;
 	}
 
 	/// <inheritdoc />

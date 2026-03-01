@@ -25,7 +25,6 @@ public class SimpleTradeFlipStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 
 	private readonly List<decimal> _openHistory = new();
-	private DateTimeOffset _lastProcessedOpenTime;
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="SimpleTradeFlipStrategy"/> class.
@@ -90,7 +89,6 @@ public class SimpleTradeFlipStrategy : Strategy
 		base.OnReseted();
 
 		_openHistory.Clear();
-		_lastProcessedOpenTime = default;
 	}
 
 	/// <inheritdoc />

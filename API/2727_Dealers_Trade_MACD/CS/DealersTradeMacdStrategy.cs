@@ -1,5 +1,3 @@
-#nullable enable
-
 using System;
 using System.Linq;
 using System.Collections.Generic;
@@ -521,7 +519,7 @@ public class DealersTradeMacdStrategy : Strategy
 
 	private void CloseMostProfitablePosition(decimal currentPrice)
 	{
-		PositionState? best = null;
+		PositionState best = null;
 		var bestIsLong = false;
 		decimal bestProfit = 0m;
 

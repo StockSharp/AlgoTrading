@@ -21,9 +21,6 @@ public class Lavika100Strategy : Strategy
 	private readonly StrategyParam<int> _slowPeriod;
 	private readonly StrategyParam<int> _rsiPeriod;
 
-	private decimal? _prevFast;
-	private decimal? _prevSlow;
-
 	public DataType CandleType
 	{
 		get => _candleType.Value;
@@ -69,9 +66,6 @@ public class Lavika100Strategy : Strategy
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_prevFast = null;
-		_prevSlow = null;
 
 		var fastSma = new SimpleMovingAverage { Length = FastPeriod };
 		var slowSma = new SimpleMovingAverage { Length = SlowPeriod };

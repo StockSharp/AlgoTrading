@@ -18,9 +18,6 @@ public class MartingaleSmartStrategy : Strategy
 	private readonly StrategyParam<int> _fastPeriod;
 	private readonly StrategyParam<int> _slowPeriod;
 
-	private decimal? _prevFast;
-	private decimal? _prevSlow;
-
 	public DataType CandleType
 	{
 		get => _candleType.Value;
@@ -57,9 +54,6 @@ public class MartingaleSmartStrategy : Strategy
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_prevFast = null;
-		_prevSlow = null;
 
 		var fast = new SimpleMovingAverage { Length = FastPeriod };
 		var slow = new SimpleMovingAverage { Length = SlowPeriod };

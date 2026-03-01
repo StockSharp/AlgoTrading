@@ -1,5 +1,3 @@
-#nullable enable
-
 using System;
 using System.Linq;
 using System.Collections.Generic;
@@ -370,7 +368,7 @@ public class MaGridStrategy : Strategy
 		if (_orderIntents.Count == 0)
 		return;
 
-		List<Order>? completed = null;
+		List<Order> completed = null;
 
 		foreach (var pair in _orderIntents)
 		{

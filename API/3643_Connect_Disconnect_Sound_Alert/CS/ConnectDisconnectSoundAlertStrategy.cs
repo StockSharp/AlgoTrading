@@ -24,7 +24,6 @@ public class ConnectDisconnectSoundAlertStrategy : Strategy
 	private readonly StrategyParam<bool> _logDurations;
 
 	private Timer _timer;
-	private bool? _previousState;
 	private bool _isFirstNotification;
 	private DateTimeOffset? _lastConnectionMoment;
 	private DateTimeOffset? _lastDisconnectionMoment;
@@ -70,7 +69,6 @@ public class ConnectDisconnectSoundAlertStrategy : Strategy
 		StopTimer();
 
 		// Reset internal tracking variables to initial state.
-		_previousState = null;
 		_isFirstNotification = true;
 		_lastConnectionMoment = null;
 		_lastDisconnectionMoment = null;
@@ -102,7 +100,6 @@ public class ConnectDisconnectSoundAlertStrategy : Strategy
 			.Bind(_smaFast, _smaSlow, ProcessCandle)
 			.Start();
 
-		_previousState = true;
 		_isFirstNotification = true;
 	}
 

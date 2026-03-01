@@ -37,9 +37,7 @@ public class AdaptiveTraderProStrategy : Strategy
 	private decimal? _bestBidPrice;
 	private decimal? _bestAskPrice;
 	private decimal _lastHigherTrendValue;
-	private bool _hasHigherTrend;
 
-	private int _entryDirection;
 	private decimal _entryPrice;
 	private decimal _entryVolume;
 	private decimal _entryAtr;
@@ -245,7 +243,6 @@ public class AdaptiveTraderProStrategy : Strategy
 		_bestBidPrice = null;
 		_bestAskPrice = null;
 		_lastHigherTrendValue = 0m;
-		_hasHigherTrend = false;
 	}
 
 	/// <inheritdoc />
@@ -273,7 +270,6 @@ public class AdaptiveTraderProStrategy : Strategy
 			return;
 
 		_lastHigherTrendValue = higherTrend;
-		_hasHigherTrend = true;
 	}
 
 	private void ProcessMainCandle(ICandleMessage candle, decimal rsiValue, decimal atrValue, decimal trendValue)
@@ -454,7 +450,6 @@ public class AdaptiveTraderProStrategy : Strategy
 
 	private void InitializeTradeState(int direction, decimal entryPrice, decimal atrValue, decimal volume)
 	{
-		_entryDirection = direction;
 		_entryPrice = entryPrice;
 		_entryVolume = volume;
 		_entryAtr = atrValue;
@@ -467,7 +462,6 @@ public class AdaptiveTraderProStrategy : Strategy
 
 	private void ResetTradeState()
 	{
-		_entryDirection = 0;
 		_entryPrice = 0m;
 		_entryVolume = 0m;
 		_entryAtr = 0m;

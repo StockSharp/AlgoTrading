@@ -17,8 +17,6 @@ public class ProfitHunterHsiWithFibonacciStrategy : Strategy
 	private readonly StrategyParam<int> _lookbackPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _rangeHigh;
-	private decimal _rangeLow;
 	private int _barCount;
 
 	public ProfitHunterHsiWithFibonacciStrategy()
@@ -56,8 +54,6 @@ public class ProfitHunterHsiWithFibonacciStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_rangeHigh = 0;
-		_rangeLow = decimal.MaxValue;
 		_barCount = 0;
 
 		var ema = new ExponentialMovingAverage { Length = EmaPeriod };

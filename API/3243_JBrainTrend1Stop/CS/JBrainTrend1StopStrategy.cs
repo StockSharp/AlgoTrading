@@ -23,7 +23,6 @@ public class JBrainTrend1StopStrategy : Strategy
 	private readonly StrategyParam<decimal> _stochLower;
 
 	private decimal _prevClose;
-	private bool _hasPrev;
 
 	/// <summary>
 	/// Constructor.
@@ -93,8 +92,6 @@ public class JBrainTrend1StopStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_hasPrev = false;
-
 		var atr = new AverageTrueRange { Length = AtrPeriod };
 		var stoch = new StochasticOscillator
 		{
@@ -147,6 +144,5 @@ public class JBrainTrend1StopStrategy : Strategy
 		}
 
 		_prevClose = candle.ClosePrice;
-		_hasPrev = true;
 	}
 }

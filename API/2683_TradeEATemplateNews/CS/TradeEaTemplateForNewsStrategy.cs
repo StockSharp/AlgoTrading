@@ -1,5 +1,3 @@
-#nullable enable
-
 using System;
 using System.Linq;
 using System.Collections.Generic;
@@ -287,8 +285,8 @@ public class TradeEaTemplateForNewsStrategy : Strategy
 			return;
 		}
 
-		NewsEvent? blockingEvent = null;
-		NewsEvent? upcomingEvent = null;
+		NewsEvent blockingEvent = null;
+		NewsEvent upcomingEvent = null;
 
 		for (var i = 0; i < _newsEvents.Count; i++)
 		{

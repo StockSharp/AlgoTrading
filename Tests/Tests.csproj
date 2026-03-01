@@ -3,6 +3,7 @@
   <PropertyGroup>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
+    <NoWarn>RS1036;RS1038</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Ecng.UnitTesting" Version="$(EcngVer)" />

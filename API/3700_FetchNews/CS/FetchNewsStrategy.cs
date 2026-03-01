@@ -47,7 +47,6 @@ public class FetchNewsStrategy : Strategy
 	private decimal? _lastBid;
 	private decimal? _lastAsk;
 	private decimal? _entryPrice;
-	private Sides? _positionSide;
 	private decimal? _stopLossPrice;
 	private decimal? _takeProfitPrice;
 
@@ -285,7 +284,6 @@ public class FetchNewsStrategy : Strategy
 			_pendingSellPrice = null;
 			_pendingBuyPrice = null;
 			_pendingExpiration = null;
-			_positionSide = Sides.Buy;
 			SetProtection(Sides.Buy, buyPrice);
 			return;
 		}
@@ -296,7 +294,6 @@ public class FetchNewsStrategy : Strategy
 			_pendingBuyPrice = null;
 			_pendingSellPrice = null;
 			_pendingExpiration = null;
-			_positionSide = Sides.Sell;
 			SetProtection(Sides.Sell, sellPrice);
 		}
 	}
@@ -361,7 +358,6 @@ public class FetchNewsStrategy : Strategy
 		_stopLossPrice = null;
 		_takeProfitPrice = null;
 		_entryPrice = null;
-		_positionSide = null;
 	}
 
 	private void ProcessCalendar(DateTimeOffset now)
@@ -490,7 +486,6 @@ public class FetchNewsStrategy : Strategy
 		_lastBid = null;
 		_lastAsk = null;
 		_entryPrice = null;
-		_positionSide = null;
 		_stopLossPrice = null;
 		_takeProfitPrice = null;
 	}

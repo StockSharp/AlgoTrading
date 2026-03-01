@@ -52,7 +52,6 @@ public class SvDailyBreakoutStrategy : Strategy
 	private decimal? _takeProfitPrice;
 	private decimal? _trailingStopPrice;
 	private DateTime? _currentDay;
-	private bool _hasTradedToday;
 	private decimal _pipSize;
 
 	/// <summary>
@@ -322,7 +321,6 @@ public class SvDailyBreakoutStrategy : Strategy
 		_takeProfitPrice = null;
 		_trailingStopPrice = null;
 		_currentDay = null;
-		_hasTradedToday = false;
 	}
 
 	/// <inheritdoc />
@@ -416,7 +414,6 @@ public class SvDailyBreakoutStrategy : Strategy
 		}
 
 		_trailingStopPrice = TrailingStopPips > 0 ? _stopPrice : null;
-		_hasTradedToday = true;
 	}
 
 	private void UpdateDailyState(DateTimeOffset time)
@@ -425,7 +422,6 @@ public class SvDailyBreakoutStrategy : Strategy
 		if (_currentDay != day)
 		{
 			_currentDay = day;
-			_hasTradedToday = false;
 		}
 	}
 

@@ -52,8 +52,6 @@ public class SmcHiloMaxMinStrategy : Strategy
 	private decimal? _pendingShortTarget;
 
 	private decimal _pipSize;
-	private bool _isClosing;
-
 
 	/// <summary>
 	/// Terminal hour when the breakout straddle is placed.
@@ -174,7 +172,6 @@ public class SmcHiloMaxMinStrategy : Strategy
 		_pendingShortTarget = null;
 
 		_pipSize = 0m;
-		_isClosing = false;
 	}
 
 	/// <inheritdoc />
@@ -542,7 +539,6 @@ public class SmcHiloMaxMinStrategy : Strategy
 			ResetShortState();
 		}
 
-		_isClosing = false;
 	}
 
 	/// <inheritdoc />
@@ -554,7 +550,6 @@ public class SmcHiloMaxMinStrategy : Strategy
 		{
 			ResetLongState();
 			ResetShortState();
-			_isClosing = false;
 		}
 	}
 
