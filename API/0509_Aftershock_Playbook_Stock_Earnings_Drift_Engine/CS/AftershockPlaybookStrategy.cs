@@ -35,6 +35,7 @@ public class AftershockPlaybookStrategy : Strategy
 	private bool _waitNext;
 	private bool _reenter;
 	private int _lastDir;
+	private decimal _prevClose;
 
 	public decimal PositiveSurprise { get => _posSurprise.Value; set => _posSurprise.Value = value; }
 	public decimal NegativeSurprise { get => _negSurprise.Value; set => _negSurprise.Value = value; }
@@ -69,12 +70,13 @@ public class AftershockPlaybookStrategy : Strategy
 		_waitNext = false;
 		_reenter = false;
 		_lastDir = 0;
+		_prevClose = 0;
 	}
 
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		var atr = new Atr { Length = AtrLength };
+		var atr = new AverageTrueRange { Length = AtrLength };
 		SubscribeCandles(CandleType).Bind(atr, ProcessCandle).Start();
 	}
 
@@ -85,7 +87,7 @@ public class AftershockPlaybookStrategy : Strategy
 
 		_atr = atr;
 
-		if (TryGetEarningsSurprise(candle.OpenTime, out var surprise))
+		if (TryGetEarningsSurprise(candle, out var surprise))
 		{
 			_waitNext = false;
 			_reenter = false;
@@ -106,14 +108,14 @@ public class AftershockPlaybookStrategy : Strategy
 			{
 				BuyMarket();
 				_entry = candle.ClosePrice;
-				_entryTime = candle.OpenTime.DateTime;
+				_entryTime = candle.OpenTime;
 				_lastDir = 1;
 			}
 			else if (shortOk && !_waitNext)
 			{
 				SellMarket();
 				_entry = candle.ClosePrice;
-				_entryTime = candle.OpenTime.DateTime;
+				_entryTime = candle.OpenTime;
 				_lastDir = -1;
 			}
 		}
@@ -146,9 +148,11 @@ public class AftershockPlaybookStrategy : Strategy
 				SellMarket();
 
 			_entry = candle.ClosePrice;
-			_entryTime = candle.OpenTime.DateTime;
+			_entryTime = candle.OpenTime;
 			_reenter = false;
 		}
+
+		_prevClose = candle.ClosePrice;
 	}
 
 	private void Exit(decimal price, bool ignore = false)
@@ -171,9 +175,23 @@ public class AftershockPlaybookStrategy : Strategy
 		_entryTime = DateTime.MinValue;
 	}
 
-	private bool TryGetEarningsSurprise(DateTimeOffset date, out decimal surprise)
+	private bool TryGetEarningsSurprise(ICandleMessage candle, out decimal surprise)
 	{
 		surprise = 0m;
-		return false; // TODO
+
+		if (_prevClose == 0 || _atr == 0)
+			return false;
+
+		// Use large price move relative to ATR as proxy for earnings surprise
+		var change = candle.ClosePrice - _prevClose;
+		var threshold = _atr * 1.5m;
+
+		if (Math.Abs(change) >= threshold)
+		{
+			surprise = change / _prevClose * 100m;
+			return true;
+		}
+
+		return false;
 	}
 }
