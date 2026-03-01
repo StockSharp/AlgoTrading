@@ -43,7 +43,7 @@ public class RelativeStrengthRsmkPlusPerkStrategy : Strategy
 	}
 
 	/// <summary>
-	/// EMA smoothing for RSMK.
+	/// ExponentialMovingAverage smoothing for RSMK.
 	/// </summary>
 	public int Smooth
 	{
@@ -89,12 +89,12 @@ public class RelativeStrengthRsmkPlusPerkStrategy : Strategy
 			.SetOptimize(30, 150, 10);
 
 		_smooth = Param(nameof(Smooth), 3)
-			.SetDisplay("Smooth", "EMA smoothing for RSMK", "RSMK")
+			.SetDisplay("Smooth", "ExponentialMovingAverage smoothing for RSMK", "RSMK")
 			
 			.SetOptimize(1, 10, 1);
 
 		_signalPeriod = Param(nameof(SignalPeriod), 20)
-			.SetDisplay("Signal Period", "EMA period for signal line", "RSMK")
+			.SetDisplay("Signal Period", "ExponentialMovingAverage period for signal line", "RSMK")
 			
 			.SetOptimize(5, 40, 5);
 
@@ -131,8 +131,8 @@ public class RelativeStrengthRsmkPlusPerkStrategy : Strategy
 		base.OnStarted2(time);
 
 		_momentum = new Momentum { Length = Period };
-		_rsmkEma = new EMA { Length = Smooth };
-		_signalEma = new EMA { Length = SignalPeriod };
+		_rsmkEma = new ExponentialMovingAverage { Length = Smooth };
+		_signalEma = new ExponentialMovingAverage { Length = SignalPeriod };
 
 		var mainSub = SubscribeCandles(CandleType);
 		mainSub
@@ -168,8 +168,6 @@ public class RelativeStrengthRsmkPlusPerkStrategy : Strategy
 		if (candle.State != CandleStates.Finished || !_indexReady)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
 
 		if (_indexClose == 0m)
 			return;
@@ -177,21 +175,21 @@ public class RelativeStrengthRsmkPlusPerkStrategy : Strategy
 		var ratio = candle.ClosePrice / _indexClose;
 		var ratioLog = (decimal)Math.Log((double)ratio);
 
-		var momentumValue = _momentum.Process(candle.ServerTime, ratioLog);
+		var momentumValue = _momentum.Process(new DecimalIndicatorValue(_momentum, ratioLog, candle.ServerTime));
 		if (!momentumValue.IsFinal)
 			return;
 
-		var rsmkValue = _rsmkEma.Process(candle.ServerTime, momentumValue).GetValue<decimal>() * 100m;
-		var signalValue = _signalEma.Process(candle.ServerTime, rsmkValue).GetValue<decimal>();
+		var rsmkValue = _rsmkEma.Process(momentumValue).GetValue<decimal>() * 100m;
+		var signalValue = _signalEma.Process(new DecimalIndicatorValue(_signalEma, rsmkValue, candle.ServerTime)).GetValue<decimal>();
 
 		var isAbove = rsmkValue > signalValue;
 		var crossedUp = isAbove && !_prevAbove;
 		var crossedDown = !isAbove && _prevAbove;
 
 		if (crossedUp && Position <= 0)
-			BuyMarket(Volume + Math.Abs(Position));
+			BuyMarket();
 		else if (crossedDown && Position >= 0)
-			SellMarket(Volume + Math.Abs(Position));
+			SellMarket();
 
 		_prevAbove = isAbove;
 	}

@@ -31,7 +31,7 @@ private decimal _idxHigh;
 private decimal _idxLow;
 private decimal _idxClose;
 
-private SMA _averageRelativeClose;
+private SimpleMovingAverage _averageRelativeClose;
 
 public string IndexSymbol { get => _indexSymbol.Value; set => _indexSymbol.Value = value; }
 public int AverageCloseLength { get => _averageCloseLength.Value; set => _averageCloseLength.Value = value; }
@@ -77,9 +77,9 @@ protected override void OnStarted2(DateTime time)
 {
 base.OnStarted2(time);
 
-_averageRelativeClose = new SMA { Length = AverageCloseLength };
+_averageRelativeClose = new SimpleMovingAverage { Length = AverageCloseLength };
 
-var indexSubscription = SubscribeCandles(_indexSecurity, CandleType);
+var indexSubscription = SubscribeCandles(CandleType, security: _indexSecurity);
 indexSubscription.Bind(ProcessIndex).Start();
 
 var subscription = SubscribeCandles(CandleType);
@@ -133,9 +133,10 @@ var relativeLow = relativeCloseRange >= 0m
 ? Math.Min(relativeOpen, relativeClose) - relativeCloseRange
 : Math.Min(relativeOpen, relativeClose);
 
-var avgValue = _averageRelativeClose.Process(relativeClose);
-if (avgValue.IsFinal && avgValue.TryGetValue(out var avg))
+var avgValue = _averageRelativeClose.Process(new DecimalIndicatorValue(_averageRelativeClose, relativeClose, candle.ServerTime));
+if (avgValue.IsFinal)
 {
+var avg = avgValue.GetValue<decimal>();
 var scaled = avg * AverageZoomFactor;
 LogInfo($"RelO={relativeOpen:F2} RelH={relativeHigh:F2} RelL={relativeLow:F2} RelC={relativeClose:F2} AvgRelC={scaled:F2}");
 }

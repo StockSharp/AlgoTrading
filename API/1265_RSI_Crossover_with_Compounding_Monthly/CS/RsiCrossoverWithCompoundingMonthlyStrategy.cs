@@ -14,7 +14,7 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that buys when monthly RSI crosses above its SMA and sells when it drops below.
+/// Strategy that buys when monthly RSI crosses above its SimpleMovingAverage and sells when it drops below.
 /// Reinvests profits to compound capital.
 /// </summary>
 public class RsiCrossoverWithCompoundingMonthlyStrategy : Strategy
@@ -24,7 +24,7 @@ public class RsiCrossoverWithCompoundingMonthlyStrategy : Strategy
 	private readonly StrategyParam<decimal> _initialCapital;
 
 	private RelativeStrengthIndex _rsi;
-	private SMA _rsiSma;
+	private SimpleMovingAverage _rsiSma;
 	private decimal _capital;
 	private decimal _investedCapital;
 
@@ -96,7 +96,7 @@ public class RsiCrossoverWithCompoundingMonthlyStrategy : Strategy
 
 		_capital = InitialCapital;
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
-		_rsiSma = new SMA { Length = RsiPeriod };
+		_rsiSma = new SimpleMovingAverage { Length = RsiPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -118,30 +118,19 @@ public class RsiCrossoverWithCompoundingMonthlyStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		var smaVal = _rsiSma.Process(new DecimalIndicatorValue(_rsiSma, rsiValue, candle.ServerTime));
+		if (!smaVal.IsFinal)
 			return;
 
-		var smaVal = _rsiSma.Process(new DecimalIndicatorValue(_rsiSma, rsiValue));
-		if (!smaVal.IsFinal || smaVal is not DecimalIndicatorValue smaResult)
-			return;
+		var rsiSmaValue = smaVal.GetValue<decimal>();
 
-		var rsiSmaValue = smaResult.Value;
-
-		var maxQty = _capital > 0 ? Math.Floor(_capital / candle.ClosePrice) : 0m;
-
-		if (rsiValue > rsiSmaValue && Position == 0 && maxQty > 0)
+		if (rsiValue > rsiSmaValue && Position <= 0)
 		{
-			BuyMarket(maxQty);
-			_investedCapital = maxQty * candle.ClosePrice;
+			BuyMarket();
 		}
 		else if (rsiValue < rsiSmaValue && Position > 0)
 		{
-			var volume = Math.Abs(Position);
-			SellMarket(volume);
-
-			var currentValue = candle.ClosePrice * volume;
-			var profit = currentValue - _investedCapital;
-			_capital += profit;
+			SellMarket();
 			_investedCapital = 0m;
 		}
 	}

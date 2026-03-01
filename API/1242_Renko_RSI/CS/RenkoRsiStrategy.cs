@@ -11,8 +11,6 @@ using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo.Candles;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
@@ -82,11 +80,7 @@ public class RenkoRsiStrategy : Strategy
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		_renkoType ??= DataType.Create(typeof(RenkoCandleMessage), new RenkoCandleArg
-		{
-			BuildFrom = RenkoBuildFrom.Atr,
-			Length = RenkoAtrLength
-		});
+		_renkoType ??= DataType.Create(typeof(RenkoCandleMessage), new Unit(RenkoAtrLength));
 
 		return [(Security, _renkoType)];
 	}
