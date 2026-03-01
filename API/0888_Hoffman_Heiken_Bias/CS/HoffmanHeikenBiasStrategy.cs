@@ -169,17 +169,25 @@ public class HoffmanHeikenBiasStrategy : Strategy
 		return [(Security, CandleType)];
 	}
 
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_haOpenPrev = 0;
+		_haClosePrev = 0;
+		_isFirstHa = true;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_fastSma = new SMA { Length = FastSmaLength };
-		_fastEma = new EMA { Length = FastEmaLength };
-		_ema20 = new EMA { Length = Ema20Length };
-		_sma50 = new SMA { Length = Sma50Length };
-		_sma89 = new SMA { Length = Sma89Length };
-		_ema144 = new EMA { Length = Ema144Length };
-		_ema35 = new EMA { Length = Ema35Length };
+		_fastSma = new SimpleMovingAverage { Length = FastSmaLength };
+		_fastEma = new ExponentialMovingAverage { Length = FastEmaLength };
+		_ema20 = new ExponentialMovingAverage { Length = Ema20Length };
+		_sma50 = new SimpleMovingAverage { Length = Sma50Length };
+		_sma89 = new SimpleMovingAverage { Length = Sma89Length };
+		_ema144 = new ExponentialMovingAverage { Length = Ema144Length };
+		_ema35 = new ExponentialMovingAverage { Length = Ema35Length };
 		_atr = new AverageTrueRange { Length = AtrLength };
 		_netVolumeReg = new LinearRegression { Length = NetVolumeLength };
 
@@ -201,13 +209,15 @@ public class HoffmanHeikenBiasStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var bVal = _fastSma.Process(candle).ToDecimal();
-		var cVal = _fastEma.Process(candle).ToDecimal();
-		var dVal = _ema20.Process(candle).ToDecimal();
-		var eVal = _sma50.Process(candle).ToDecimal();
-		var fVal = _sma89.Process(candle).ToDecimal();
-		var gVal = _ema144.Process(candle).ToDecimal();
-		var kVal = _ema35.Process(candle).ToDecimal();
+		var t = candle.ServerTime;
+		var cp = candle.ClosePrice;
+		var bVal = _fastSma.Process(new DecimalIndicatorValue(_fastSma, cp, t)).ToDecimal();
+		var cVal = _fastEma.Process(new DecimalIndicatorValue(_fastEma, cp, t)).ToDecimal();
+		var dVal = _ema20.Process(new DecimalIndicatorValue(_ema20, cp, t)).ToDecimal();
+		var eVal = _sma50.Process(new DecimalIndicatorValue(_sma50, cp, t)).ToDecimal();
+		var fVal = _sma89.Process(new DecimalIndicatorValue(_sma89, cp, t)).ToDecimal();
+		var gVal = _ema144.Process(new DecimalIndicatorValue(_ema144, cp, t)).ToDecimal();
+		var kVal = _ema35.Process(new DecimalIndicatorValue(_ema35, cp, t)).ToDecimal();
 		var atrVal = _atr.Process(candle).ToDecimal();
 
 		var kuVal = kVal + atrVal * 0.5m;
@@ -244,14 +254,15 @@ public class HoffmanHeikenBiasStrategy : Strategy
 		var volumeDown = candle.TotalVolume * fractionDown * ohcl4;
 		var netVolume = volumeUp - volumeDown;
 
-		var netRegTyped = (LinearRegressionValue)_netVolumeReg.Process(new DecimalIndicatorValue(_netVolumeReg, netVolume));
-		if (netRegTyped.LinearReg is not decimal netPlot || !_netVolumeReg.IsFormed)
+		var netRegResult = _netVolumeReg.Process(new DecimalIndicatorValue(_netVolumeReg, netVolume, t));
+		if (!_netVolumeReg.IsFormed)
 		{
 			_haOpenPrev = haOpen;
 			_haClosePrev = haClose;
 			_isFirstHa = false;
 			return;
 		}
+		var netPlot = netRegResult.ToDecimal();
 
 		var longSignal = bVal > cVal && uptrend && netPlot > 0m;
 		var shortSignal = bVal < cVal && downtrend && netPlot < 0m;

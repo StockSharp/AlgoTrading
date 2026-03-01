@@ -213,9 +213,9 @@ public class HmaCrossoverRsiStochasticTrailingStopStrategy : Strategy
 		var slowHma = new HullMovingAverage { Length = SlowHmaLength };
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 		var stochastic = new StochasticOscillator
-		{ K = { Length = StochLength },
-			K = { Length = StochSmooth },
-			D = { Length = 1 }
+		{
+			K = { Length = StochLength },
+			D = { Length = StochSmooth }
 		};
 
 		var subscription = SubscribeCandles(CandleType);

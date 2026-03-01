@@ -258,9 +258,9 @@ public class HierarchicalKMeansClusteringStrategy : Strategy
 
 		StartProtection(null, null);
 
-		var atr = new ATR { Length = AtrLength };
-		var supertrend = new SuperTrend { Period = AtrLength, Multiplier = SuperTrendFactor };
-		var ma = new SMA { Length = MaLength };
+		var atr = new AverageTrueRange { Length = AtrLength };
+		var supertrend = new SuperTrend { Length = AtrLength, Multiplier = SuperTrendFactor };
+		var ma = new SimpleMovingAverage { Length = MaLength };
 		var adx = new AverageDirectionalIndex { Length = TrendStrengthPeriod };
 
 		_atrHighest = new Highest { Length = TrainingDataLength };
@@ -298,27 +298,22 @@ public class HierarchicalKMeansClusteringStrategy : Strategy
 
 		_barIndex++;
 
-		if (atrVal is not DecimalIndicatorValue atrValue ||
-		maVal is not DecimalIndicatorValue maValue ||
-		supertrendVal is not SuperTrendIndicatorValue stValue ||
-		adxVal is not AverageDirectionalIndexValue adxValue)
-		return;
+		var stValue = (SuperTrendIndicatorValue)supertrendVal;
 
-		var volatility = atrValue.Value;
-		var maLine = maValue.Value;
-		var isStrongTrend = adxValue.MovingAverage > TrendStrengthThreshold;
+		var volatility = atrVal.ToDecimal();
+		var maLine = maVal.ToDecimal();
+		var adxDecimal = adxVal.ToDecimal();
+		var isStrongTrend = adxDecimal > TrendStrengthThreshold;
 
-		var highVal = _atrHighest.Process(atrValue);
-		var lowVal = _atrLowest.Process(atrValue);
-
-		if (highVal is not DecimalIndicatorValue high || lowVal is not DecimalIndicatorValue low)
-		return;
+		var atrDecVal = new DecimalIndicatorValue(_atrHighest, volatility, candle.ServerTime);
+		var highVal = _atrHighest.Process(atrDecVal);
+		var lowVal = _atrLowest.Process(new DecimalIndicatorValue(_atrLowest, volatility, candle.ServerTime));
 
 		if (!highVal.IsFinal || !lowVal.IsFinal)
 		return;
 
-		var upper = high.Value;
-		var lower = low.Value;
+		var upper = highVal.ToDecimal();
+		var lower = lowVal.ToDecimal();
 		var range = (upper - lower) / 3m;
 		var lowCenter = lower + range / 2m;
 		var midCenter = lower + range * 1.5m;
@@ -351,8 +346,8 @@ public class HierarchicalKMeansClusteringStrategy : Strategy
 		var maConditionShort = !MaFilter || candle.ClosePrice < maLine;
 		var trendStrengthCondition = !UseTrendStrength || isStrongTrend;
 
-		var bullVolume = candle.Volume * (candle.ClosePrice > candle.OpenPrice ? 1m : 0m);
-		var bearVolume = candle.Volume * (candle.ClosePrice < candle.OpenPrice ? 1m : 0m);
+		var bullVolume = candle.TotalVolume * (candle.ClosePrice > candle.OpenPrice ? 1m : 0m);
+		var bearVolume = candle.TotalVolume * (candle.ClosePrice < candle.OpenPrice ? 1m : 0m);
 		_bullVolumes[_volumeIndex % 3] = bullVolume;
 		_bearVolumes[_volumeIndex % 3] = bearVolume;
 		_volumeIndex++;

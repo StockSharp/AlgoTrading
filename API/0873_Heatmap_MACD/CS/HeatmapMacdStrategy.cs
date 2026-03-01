@@ -273,10 +273,10 @@ public class HeatmapMacdStrategy : Strategy
                 {
                         Macd =
                         {
-                                ShortMa = new EMA { Length = FastLength },
-                                LongMa = new EMA { Length = SlowLength }
+                                ShortMa = { Length = FastLength },
+                                LongMa = { Length = SlowLength }
                         },
-                        SignalMa = new EMA { Length = SignalLength }
+                        SignalMa = { Length = SignalLength }
                 };
         }
 }

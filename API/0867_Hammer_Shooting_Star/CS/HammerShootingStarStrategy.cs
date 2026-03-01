@@ -29,6 +29,10 @@ public class HammerShootingStarStrategy : Strategy
 	private bool _prevShootingStar;
 	private decimal _prevHigh;
 	private decimal _prevLow;
+	private decimal _longStop;
+	private decimal _longTake;
+	private decimal _shortStop;
+	private decimal _shortTake;
 
 	/// <summary>
 	/// Minimum wick to body ratio for the main wick.
@@ -105,6 +109,8 @@ public class HammerShootingStarStrategy : Strategy
 		_prevShootingStar = false;
 		_prevHigh = 0m;
 		_prevLow = 0m;
+		_longStop = _longTake = 0m;
+		_shortStop = _shortTake = 0m;
 	}
 
 	/// <inheritdoc />
@@ -123,19 +129,44 @@ public class HammerShootingStarStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		if (Position > 0)
+		{
+			if (_longStop > 0 && candle.LowPrice <= _longStop)
+			{
+				SellMarket(Math.Abs(Position));
+				_longStop = _longTake = 0m;
+			}
+			else if (_longTake > 0 && candle.HighPrice >= _longTake)
+			{
+				SellMarket(Math.Abs(Position));
+				_longStop = _longTake = 0m;
+			}
+		}
+		else if (Position < 0)
+		{
+			if (_shortStop > 0 && candle.HighPrice >= _shortStop)
+			{
+				BuyMarket(Math.Abs(Position));
+				_shortStop = _shortTake = 0m;
+			}
+			else if (_shortTake > 0 && candle.LowPrice <= _shortTake)
+			{
+				BuyMarket(Math.Abs(Position));
+				_shortStop = _shortTake = 0m;
+			}
+		}
+
 		if (_prevHammer && Position <= 0)
 		{
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
-			SellStop(volume, _prevLow);
-			SellLimit(volume, _prevHigh);
+			BuyMarket(Volume + Math.Abs(Position));
+			_longStop = _prevLow;
+			_longTake = _prevHigh;
 		}
 		else if (_prevShootingStar && Position >= 0)
 		{
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
-			BuyStop(volume, _prevHigh);
-			BuyLimit(volume, _prevLow);
+			SellMarket(Volume + Math.Abs(Position));
+			_shortStop = _prevHigh;
+			_shortTake = _prevLow;
 		}
 
 		var body = Math.Abs(candle.ClosePrice - candle.OpenPrice);

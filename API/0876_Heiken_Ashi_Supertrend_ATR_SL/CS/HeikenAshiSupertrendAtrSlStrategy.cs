@@ -182,7 +182,7 @@ public class HeikenAshiSupertrendAtrSlStrategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_supertrend, _atr, ProcessCandle)
+			.BindEx(_supertrend, _atr, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -194,13 +194,17 @@ public class HeikenAshiSupertrendAtrSlStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal supertrendValue, decimal atrValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue supertrendInd, IIndicatorValue atrInd)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
+
+		var stVal = (SuperTrendIndicatorValue)supertrendInd;
+		var supertrendValue = supertrendInd.ToDecimal();
+		var atrValue = atrInd.ToDecimal();
 
 		decimal haOpen, haClose, haHigh, haLow;
 
@@ -222,12 +226,12 @@ public class HeikenAshiSupertrendAtrSlStrategy : Strategy
 		var isGreen = haClose > haOpen;
 		var isRed = haClose < haOpen;
 
-		var threshold = Security.MinPriceStep * 0.1m;
+		var threshold = (Security.PriceStep ?? 0.01m) * 0.1m;
 		var noBottomWick = Math.Abs(Math.Min(haOpen, haClose) - haLow) <= threshold;
 		var noTopWick = Math.Abs(haHigh - Math.Max(haOpen, haClose)) <= threshold;
 
-		var isUptrend = candle.ClosePrice > supertrendValue;
-		var isDowntrend = candle.ClosePrice < supertrendValue;
+		var isUptrend = stVal.IsUpTrend;
+		var isDowntrend = !stVal.IsUpTrend;
 
 		var longCondition = isGreen && noBottomWick && (!UseSupertrend || isUptrend);
 		var shortCondition = isRed && noTopWick && (!UseSupertrend || isDowntrend);

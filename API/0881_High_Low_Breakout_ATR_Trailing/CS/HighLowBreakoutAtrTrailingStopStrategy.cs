@@ -147,7 +147,7 @@ public Sides? Direction
 		_accountSize = Param(nameof(AccountSize), 10000m)
 			.SetDisplay("Account Size", "Total account size", "Risk")
 			.SetGreaterThanZero();
-	 _direction = Param(nameof(Direction), null)
+	 _direction = Param(nameof(Direction), (Sides?)null)
 	        .SetDisplay("Trade Direction", "Allowed trading direction", "General");
 
 		_sessionStartHour = Param(nameof(SessionStartHour), 9)
@@ -255,14 +255,14 @@ public Sides? Direction
 			_entryPrice = candle.ClosePrice;
 			_stopPrice = _entryPrice - stopDistance;
 			_takePrice = _entryPrice + stopDistance;
-			BuyMarket(positionSize);
+			BuyMarket(Volume + Math.Abs(Position));
 		}
 		else if (shortBreak)
 		{
 			_entryPrice = candle.ClosePrice;
 			_stopPrice = _entryPrice + stopDistance;
 			_takePrice = _entryPrice - stopDistance;
-			SellMarket(positionSize);
+			SellMarket(Volume + Math.Abs(Position));
 		}
 		else if (Position > 0)
 		{
@@ -271,9 +271,9 @@ public Sides? Direction
 				_stopPrice = trail;
 
 			if (candle.LowPrice <= _stopPrice)
-				SellMarket(Position);
+				SellMarket(Math.Abs(Position));
 			else if (candle.HighPrice >= _takePrice)
-				SellMarket(Position);
+				SellMarket(Math.Abs(Position));
 		}
 		else if (Position < 0)
 		{
@@ -282,9 +282,9 @@ public Sides? Direction
 				_stopPrice = trail;
 
 			if (candle.HighPrice >= _stopPrice)
-				BuyMarket(-Position);
+				BuyMarket(Math.Abs(Position));
 			else if (candle.LowPrice <= _takePrice)
-				BuyMarket(-Position);
+				BuyMarket(Math.Abs(Position));
 		}
 
 		_prevClose = candle.ClosePrice;
@@ -292,10 +292,9 @@ public Sides? Direction
 
 	private void CloseAll()
 	{
-		CancelActiveOrders();
 		if (Position > 0)
-			SellMarket(Position);
+			SellMarket(Math.Abs(Position));
 		else if (Position < 0)
-			BuyMarket(-Position);
+			BuyMarket(Math.Abs(Position));
 	}
 }
