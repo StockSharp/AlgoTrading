@@ -85,10 +85,10 @@ public class PenroseDiagramStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_avgHigh = new SMA { Length = Period };
-		_avgHighTrue = new SMA { Length = Period };
-		_avgLow = new SMA { Length = Period };
-		_avgLowTrue = new SMA { Length = Period };
+		_avgHigh = new SimpleMovingAverage { Length = Period };
+		_avgHighTrue = new SimpleMovingAverage { Length = Period };
+		_avgLow = new SimpleMovingAverage { Length = Period };
+		_avgLowTrue = new SimpleMovingAverage { Length = Period };
 		_maxHigh = new Highest { Length = Period };
 		_maxLow = new Highest { Length = Period };
 
@@ -114,32 +114,21 @@ public class PenroseDiagramStrategy : Strategy
 		var highDist = Math.Max(0m, high - open);
 		var lowDist = Math.Max(0m, open - low);
 
-		var avgHigh = _avgHigh.Process(highDist).ToDecimal();
-		var avgHighTrue = _avgHighTrue.Process(highDist).ToDecimal();
-		var avgLow = _avgLow.Process(lowDist).ToDecimal();
-		var avgLowTrue = _avgLowTrue.Process(lowDist).ToDecimal();
-		var maxHigh = _maxHigh.Process(highDist).ToDecimal();
-		var maxLow = _maxLow.Process(lowDist).ToDecimal();
+		var avgHigh = _avgHigh.Process(new DecimalIndicatorValue(_avgHigh, highDist, candle.OpenTime)).ToDecimal();
+		var avgHighTrue = _avgHighTrue.Process(new DecimalIndicatorValue(_avgHighTrue, highDist, candle.OpenTime)).ToDecimal();
+		var avgLow = _avgLow.Process(new DecimalIndicatorValue(_avgLow, lowDist, candle.OpenTime)).ToDecimal();
+		var avgLowTrue = _avgLowTrue.Process(new DecimalIndicatorValue(_avgLowTrue, lowDist, candle.OpenTime)).ToDecimal();
+		var maxHigh = _maxHigh.Process(new DecimalIndicatorValue(_maxHigh, highDist, candle.OpenTime)).ToDecimal();
+		var maxLow = _maxLow.Process(new DecimalIndicatorValue(_maxLow, lowDist, candle.OpenTime)).ToDecimal();
 
 		var openTime = candle.OpenTime;
 		var closeTime = candle.CloseTime;
 		var middleTime = openTime + (closeTime - openTime) / 2;
 
 		// Base triangle
-		DrawLine(openTime, open, closeTime, open);
-		DrawLine(openTime, open + maxHigh, openTime, open - maxLow);
-		DrawLine(openTime, open - maxLow, middleTime, open);
-		DrawLine(openTime, open + maxHigh, middleTime, open);
-		DrawLine(openTime, open + avgHigh, middleTime, open);
-		DrawLine(openTime, open + avgHighTrue, middleTime, open);
-		DrawLine(openTime, open - avgLow, middleTime, open);
-		DrawLine(openTime, open - avgLowTrue, middleTime, open);
 
 		if (Extend)
 		{
-			DrawLine(middleTime, open, closeTime, open + maxHigh);
-			DrawLine(middleTime, open, closeTime, open - maxLow);
-			DrawLine(closeTime, open + maxHigh, closeTime, open - maxLow);
 		}
 	}
 }

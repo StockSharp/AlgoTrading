@@ -24,6 +24,7 @@ public class MovingAverageCrossoverSwingStrategy : Strategy
 
 	private decimal _prevFast;
 	private decimal _prevMedium;
+	private decimal _entryPrice;
 	private decimal _entryAtr;
 	private bool _hasPrev;
 
@@ -51,8 +52,8 @@ public class MovingAverageCrossoverSwingStrategy : Strategy
 		_hasPrev = false;
 		_entryAtr = 0;
 
-		var fastEma = new EMA { Length = FastPeriod };
-		var mediumEma = new EMA { Length = MediumPeriod };
+		var fastEma = new ExponentialMovingAverage { Length = FastPeriod };
+		var mediumEma = new ExponentialMovingAverage { Length = MediumPeriod };
 		var atr = new AverageTrueRange { Length = AtrPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
@@ -84,26 +85,26 @@ public class MovingAverageCrossoverSwingStrategy : Strategy
 		{
 			if (Position < 0) BuyMarket(Math.Abs(Position));
 			BuyMarket();
-			_entryAtr = atr;
+			_entryPrice = candle.ClosePrice; _entryAtr = atr;
 		}
 		else if (shortCross && Position >= 0)
 		{
 			if (Position > 0) SellMarket(Position);
 			SellMarket();
-			_entryAtr = atr;
+			_entryPrice = candle.ClosePrice; _entryAtr = atr;
 		}
 
 		if (Position > 0 && _entryAtr > 0)
 		{
-			var stop = PositionPrice - _entryAtr * AtrStopMult;
-			var take = PositionPrice + _entryAtr * AtrTakeMult;
+			var stop = _entryPrice - _entryAtr * AtrStopMult;
+			var take = _entryPrice + _entryAtr * AtrTakeMult;
 			if (candle.LowPrice <= stop || candle.HighPrice >= take)
 				SellMarket();
 		}
 		else if (Position < 0 && _entryAtr > 0)
 		{
-			var stop = PositionPrice + _entryAtr * AtrStopMult;
-			var take = PositionPrice - _entryAtr * AtrTakeMult;
+			var stop = _entryPrice + _entryAtr * AtrStopMult;
+			var take = _entryPrice - _entryAtr * AtrTakeMult;
 			if (candle.HighPrice >= stop || candle.LowPrice <= take)
 				BuyMarket();
 		}

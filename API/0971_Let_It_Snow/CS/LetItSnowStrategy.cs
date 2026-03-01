@@ -12,7 +12,6 @@ using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 using StockSharp.Algo;
-using StockSharp.Charting;
 
 namespace StockSharp.Samples.Strategies;
 
@@ -22,7 +21,7 @@ namespace StockSharp.Samples.Strategies;
 public class LetItSnowStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private IChartArea _area;
+	
 
 	/// <summary>
 	/// Candle type used by the strategy.
@@ -58,9 +57,6 @@ public class LetItSnowStrategy : Strategy
 			.Bind(ProcessCandle)
 			.Start();
 
-		_area = CreateChartArea();
-		if (_area != null)
-			DrawCandles(_area, subscription);
 	}
 	private void ProcessCandle(ICandleMessage candle)
 	{
@@ -71,7 +67,5 @@ public class LetItSnowStrategy : Strategy
 		var snowTime = candle.OpenTime.AddSeconds(barSec);
 		var price = candle.LowPrice;
 
-		if (_area != null)
-			DrawText(_area, snowTime, price, "❄");
 	}
 }

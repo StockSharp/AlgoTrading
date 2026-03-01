@@ -98,8 +98,8 @@ public class MultiTimeFrameCandlesWithVolumeInfo3DStrategy : Strategy
 		var tf = (TimeSpan)CandleType.Arg;
 		var timeToClose = candle.OpenTime + tf - CurrentTime;
 
-		AddInfo($"HTF Candle O:{candle.OpenPrice} H:{candle.HighPrice} L:{candle.LowPrice} C:{candle.ClosePrice} V:{v}{unit}");
-		AddInfo($"Time to close: {TimeToString(timeToClose)}");
+		LogInfo($"HTF Candle O:{candle.OpenPrice} H:{candle.HighPrice} L:{candle.LowPrice} C:{candle.ClosePrice} V:{v}{unit}");
+		LogInfo($"Time to close: {TimeToString(timeToClose)}");
 	}
 
 	private static (decimal value, string unit) GetVolume(decimal volume)

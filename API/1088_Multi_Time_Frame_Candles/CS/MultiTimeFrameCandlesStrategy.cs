@@ -78,7 +78,7 @@ public class MultiTimeFrameCandlesStrategy : Strategy
 	var subscription = SubscribeCandles(CandleType);
 
 	subscription
-		.Do(ProcessCandle)
+		.Bind(ProcessCandle)
 		.Start();
 
 	var area = CreateChartArea();
