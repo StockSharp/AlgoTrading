@@ -84,9 +84,9 @@ public class PositionsChangeInformerStrategy : Strategy
 	/// </summary>
 	public PositionsChangeInformerStrategy()
 	{
-		_alertType = Param(AlertTypes.Alert, nameof(Alert)).SetDisplay("Alert type", "Alert type", "General");
-		_soundName = Param("alert.wav", nameof(SoundName)).SetDisplay("Sound filename", "Sound filename", "General");
-		_language = Param(MessageLanguages.Russian, nameof(Language)).SetDisplay("Language", "Language", "General");
+		_alertType = Param(nameof(Alert), AlertTypes.Alert).SetDisplay("Alert type", "Alert type", "General");
+		_soundName = Param(nameof(SoundName), "alert.wav").SetDisplay("Sound filename", "Sound filename", "General");
+		_language = Param(nameof(Language), MessageLanguages.Russian).SetDisplay("Language", "Language", "General");
 	}
 
 	/// <inheritdoc />
@@ -115,17 +115,17 @@ public class PositionsChangeInformerStrategy : Strategy
 
 		if (oldPosition == 0)
 		{
-			msg = $"{trade.Security}: {GetSideName(side)} opened at {price:0.####}. Volume: {volume}";
+			msg = $"{Security}: {GetSideName(side)} opened at {price:0.####}. Volume: {volume}";
 			_avgPrice = price;
 		}
 		else if (Math.Sign(oldPosition) != Math.Sign(newPosition))
 		{
-			msg = $"{trade.Security}: reverse {GetSideName(side)} at {price:0.####}. Volume: {volume}";
+			msg = $"{Security}: reverse {GetSideName(side)} at {price:0.####}. Volume: {volume}";
 			_avgPrice = price;
 		}
 		else if (Math.Abs(newPosition) > Math.Abs(oldPosition))
 		{
-			msg = $"{trade.Security}: {GetSideName(side)} added at {price:0.####}. Volume: {volume}";
+			msg = $"{Security}: {GetSideName(side)} added at {price:0.####}. Volume: {volume}";
 			_avgPrice = (Math.Abs(oldPosition) * _avgPrice + price * volume) / Math.Abs(newPosition);
 		}
 		else
@@ -135,7 +135,7 @@ public class PositionsChangeInformerStrategy : Strategy
 				? (price - _avgPrice) * closed
 				: (_avgPrice - price) * closed;
 
-			msg = $"{trade.Security}: closed at {price:0.####}. Result: {profit:0.##}";
+			msg = $"{Security}: closed at {price:0.####}. Result: {profit:0.##}";
 			if (newPosition == 0)
 				_avgPrice = 0m;
 		}

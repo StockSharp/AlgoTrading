@@ -19,6 +19,8 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class ZakryvatorStrategy : Strategy
 {
+	private decimal _entryPrice;
+
 	private readonly StrategyParam<decimal> _min001002;
 	private readonly StrategyParam<decimal> _min002005;
 	private readonly StrategyParam<decimal> _min00501;
@@ -88,7 +90,7 @@ public class ZakryvatorStrategy : Strategy
 
 		var price = trade.Price;
 		// Calculate unrealized PnL based on current price and average entry price.
-		var openPnL = Position * (price - PositionPrice);
+		var openPnL = Position * (price - _entryPrice);
 
 		// Exit if there is no loss.
 		if (openPnL >= 0m)
@@ -110,6 +112,8 @@ public class ZakryvatorStrategy : Strategy
 
 		// Close the position if loss exceeds the threshold.
 		if (openPnL <= -threshold)
-			ClosePosition();
+		{
+			if (Position > 0) SellMarket(); else if (Position < 0) BuyMarket();
+		}
 	}
 }

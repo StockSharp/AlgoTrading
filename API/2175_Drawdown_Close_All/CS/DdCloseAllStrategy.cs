@@ -112,7 +112,8 @@ public class DdCloseAllStrategy : Strategy
 		if (!_drawdownTriggered && dd >= MaxDrawdownPercent && MaxDrawdownPercent < 100m)
 		{
 			_drawdownTriggered = true;
-			CloseAll("Drawdown limit reached");
+			LogInfo("Drawdown limit reached");
+			if (Position > 0) SellMarket(); else if (Position < 0) BuyMarket();
 		}
 	}
 }

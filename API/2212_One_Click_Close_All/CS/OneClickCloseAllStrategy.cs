@@ -92,40 +92,12 @@ protected override void OnStarted2(DateTime time)
 
 	StartProtection(null, null);
 
-	var securities = new HashSet<Security>();
-
-	if (RunOnCurrentSecurity)
-	{
-		securities.Add(Security);
-	}
-	else
-	{
-		foreach (var position in Portfolio.Positions)
-			securities.Add(position.Security);
-	}
-
-	foreach (var sec in securities)
-		CloseFor(sec);
+	// Close position for current security
+	if (Position > 0)
+		SellMarket();
+	else if (Position < 0)
+		BuyMarket();
 
 	Stop();
-}
-
-private void CloseFor(Security security)
-{
-	var positionValue = GetPositionValue(security, Portfolio) ?? 0m;
-
-	if (positionValue > 0)
-	{
-		SellMarket(positionValue, security);
-	}
-	else if (positionValue < 0)
-	{
-		BuyMarket(-positionValue, security);
-	}
-
-	if (DeletePendingOrders)
-	{
-		CancelActiveOrders(security);
-	}
 }
 }

@@ -72,6 +72,17 @@ public class DroneoxEquityGuardianStrategy : Strategy
 		set => _disableTrading.Value = value;
 	}
 
+	/// <summary>
+	/// Candle type for periodic checks.
+	/// </summary>
+	public DataType CandleType { get; set; } = TimeSpan.FromMinutes(1).TimeFrame();
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
@@ -79,7 +90,7 @@ public class DroneoxEquityGuardianStrategy : Strategy
 
 		StartProtection(null, null);
 
-		Timer.Start(TimeSpan.FromSeconds(1), CheckEquity);
+		SubscribeCandles(CandleType).Bind(c => { if (c.State == CandleStates.Finished) CheckEquity(); }).Start();
 	}
 
 	private void CheckEquity()
@@ -107,21 +118,15 @@ public class DroneoxEquityGuardianStrategy : Strategy
 		if (DisableTrading)
 			Stop();
 
-		AddInfo(message);
+		LogInfo(message);
 		_triggered = true;
 	}
 
 	private void CloseAll()
 	{
-		CancelActiveOrders();
-
 		if (Position > 0)
-		{
-			SellMarket(Position);
-		}
+			SellMarket();
 		else if (Position < 0)
-		{
-			BuyMarket(-Position);
-		}
+			BuyMarket();
 	}
 }
