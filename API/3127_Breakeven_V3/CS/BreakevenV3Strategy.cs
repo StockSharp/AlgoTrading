@@ -14,40 +14,25 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Recreates the "Breakeven v3" trade manager from MetaTrader.
-/// The strategy does not open positions and instead adjusts protective exit orders
-/// for the already opened long and short trades on the selected instrument.
+/// Break-even management strategy that enters on SMA crossover and moves
+/// the exit level to break-even once price moves a configurable distance in favor.
+/// Simplified from the MetaTrader "Breakeven v3" utility.
 /// </summary>
 public class BreakevenV3Strategy : Strategy
 {
 	private readonly StrategyParam<int> _deltaPoints;
-	private readonly StrategyParam<bool> _enableLogging;
+	private readonly StrategyParam<int> _activationPoints;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private readonly List<PositionLot> _openLots = new();
-
-	private Order _longExitOrder;
-	private Order _shortExitOrder;
+	private SimpleMovingAverage _fastMa;
+	private SimpleMovingAverage _slowMa;
+	private decimal _entryPrice;
+	private decimal _breakEvenPrice;
+	private bool _breakEvenActivated;
 	private decimal _pointValue;
-	private decimal? _lastBid;
-	private decimal? _lastAsk;
 
 	/// <summary>
-	/// Initializes strategy parameters.
-	/// </summary>
-	public BreakevenV3Strategy()
-	{
-		_deltaPoints = Param(nameof(DeltaPoints), 100)
-		.SetNotNegative()
-		.SetDisplay("Delta (points)", "Offset in MetaTrader points applied around the break-even price.", "General")
-		
-		.SetOptimize(10, 300, 10);
-
-		_enableLogging = Param(nameof(EnableLogging), true)
-		.SetDisplay("Enable Logging", "Write diagnostic messages whenever protective orders change.", "Diagnostics");
-	}
-
-	/// <summary>
-	/// Extra offset from the break-even price expressed in MetaTrader points.
+	/// Extra offset from break-even price in points.
 	/// </summary>
 	public int DeltaPoints
 	{
@@ -56,30 +41,57 @@ public class BreakevenV3Strategy : Strategy
 	}
 
 	/// <summary>
-	/// Enable verbose logging about recalculated break-even levels.
+	/// Distance in points price must move in favor before break-even activates.
 	/// </summary>
-	public bool EnableLogging
+	public int ActivationPoints
 	{
-		get => _enableLogging.Value;
-		set => _enableLogging.Value = value;
+		get => _activationPoints.Value;
+		set => _activationPoints.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type for signals.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Initializes strategy parameters.
+	/// </summary>
+	public BreakevenV3Strategy()
+	{
+		_deltaPoints = Param(nameof(DeltaPoints), 100)
+			.SetNotNegative()
+			.SetDisplay("Delta (points)", "Offset from entry for break-even stop", "General")
+			.SetOptimize(10, 300, 10);
+
+		_activationPoints = Param(nameof(ActivationPoints), 200)
+			.SetNotNegative()
+			.SetDisplay("Activation (points)", "Distance price must move before break-even activates", "General");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle series for signals", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		yield return (Security, DataType.Level1);
+		yield return (Security, CandleType);
 	}
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_openLots.Clear();
-		CancelExitOrders();
+		_fastMa = null;
+		_slowMa = null;
+		_entryPrice = 0m;
+		_breakEvenPrice = 0m;
+		_breakEvenActivated = false;
 		_pointValue = 0m;
-		_lastBid = null;
-		_lastAsk = null;
 	}
 
 	/// <inheritdoc />
@@ -87,405 +99,90 @@ public class BreakevenV3Strategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_pointValue = CalculatePointSize();
+		_pointValue = Security?.PriceStep ?? 1m;
+		if (_pointValue <= 0m)
+			_pointValue = 1m;
 
-		LoadExistingPositions();
+		_fastMa = new SimpleMovingAverage { Length = 10 };
+		_slowMa = new SimpleMovingAverage { Length = 30 };
 
-		SubscribeLevel1()
-		.Bind(ProcessLevel1)
-		.Start();
-
-		UpdateProtectionOrders();
+		SubscribeCandles(CandleType)
+			.Bind(_fastMa, _slowMa, ProcessCandle)
+			.Start();
 	}
 
-	/// <inheritdoc />
-	protected override void OnOwnTradeReceived(MyTrade trade)
+	private void ProcessCandle(ICandleMessage candle, decimal fastValue, decimal slowValue)
 	{
-		base.OnOwnTradeReceived(trade);
-
-		if (trade?.Order.Security != Security)
-		{
+		if (candle.State != CandleStates.Finished)
 			return;
-		}
 
-		var tradeInfo = trade.Trade;
-		if (tradeInfo == null)
-		{
+		if (!IsFormed)
 			return;
-		}
 
-		var price = tradeInfo.Price ?? 0m;
-		var volume = tradeInfo.Volume;
-		if (price <= 0m || volume <= 0m)
+		var price = candle.ClosePrice;
+
+		// Manage break-even for open position
+		if (Position != 0 && _entryPrice > 0m)
 		{
-			return;
-		}
+			var activationDistance = ActivationPoints * _pointValue;
+			var deltaOffset = DeltaPoints * _pointValue;
 
-		var commission = trade.Commission ?? 0m;
-
-		ProcessExecution(trade.Order.Side, volume, price, commission);
-
-		UpdateProtectionOrders();
-	}
-
-	private void ProcessLevel1(Level1ChangeMessage level1)
-	{
-		if (level1.Changes.TryGetValue(Level1Fields.BestBidPrice, out var bid))
-		{
-			_lastBid = (decimal)bid;
-		}
-
-		if (level1.Changes.TryGetValue(Level1Fields.BestAskPrice, out var ask))
-		{
-			_lastAsk = (decimal)ask;
-		}
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			return;
-		}
-
-		UpdateProtectionOrders();
-	}
-
-	private void UpdateProtectionOrders()
-	{
-		if (!TryBuildSummary(out var summary))
-		{
-			CancelExitOrders();
-			return;
-		}
-
-		if (summary.NetVolume == 0m)
-		{
-			CancelExitOrders();
-			return;
-		}
-
-		var breakEven = summary.GetBreakEvenPrice();
-		if (breakEven <= 0m || _pointValue <= 0m)
-		{
-			CancelExitOrders();
-			return;
-		}
-
-		var offset = DeltaPoints * _pointValue;
-		var targetPrice = summary.NetVolume > 0m ? breakEven + offset : breakEven - offset;
-
-		if (summary.LongVolume > 0m)
-		{
-			if (summary.NetVolume > 0m)
+			if (Position > 0)
 			{
-				UpdateOrRegisterOrder(ref _longExitOrder, Sides.Sell, OrderTypes.Limit, targetPrice, summary.LongVolume);
+				// Activate break-even when price moves sufficiently in our favor
+				if (!_breakEvenActivated && activationDistance > 0m && price >= _entryPrice + activationDistance)
+				{
+					_breakEvenActivated = true;
+					_breakEvenPrice = _entryPrice + deltaOffset;
+				}
+
+				// Check break-even exit
+				if (_breakEvenActivated && price <= _breakEvenPrice)
+				{
+					SellMarket(Math.Abs(Position));
+					ResetPosition();
+					return;
+				}
 			}
-			else if (summary.NetVolume < 0m)
+			else if (Position < 0)
 			{
-				UpdateOrRegisterOrder(ref _longExitOrder, Sides.Sell, OrderTypes.Stop, targetPrice, summary.LongVolume);
-			}
-			else
-			{
-				CancelOrder(ref _longExitOrder);
+				if (!_breakEvenActivated && activationDistance > 0m && price <= _entryPrice - activationDistance)
+				{
+					_breakEvenActivated = true;
+					_breakEvenPrice = _entryPrice - deltaOffset;
+				}
+
+				if (_breakEvenActivated && price >= _breakEvenPrice)
+				{
+					BuyMarket(Math.Abs(Position));
+					ResetPosition();
+					return;
+				}
 			}
 		}
-		else
-		{
-			CancelOrder(ref _longExitOrder);
-		}
 
-		if (summary.ShortVolume > 0m)
+		// Entry: MA crossover
+		if (Position == 0)
 		{
-			if (summary.NetVolume > 0m)
+			if (fastValue > slowValue)
 			{
-				UpdateOrRegisterOrder(ref _shortExitOrder, Sides.Buy, OrderTypes.Stop, targetPrice, summary.ShortVolume);
+				BuyMarket();
+				_entryPrice = price;
+				_breakEvenActivated = false;
 			}
-			else if (summary.NetVolume < 0m)
+			else if (fastValue < slowValue)
 			{
-				UpdateOrRegisterOrder(ref _shortExitOrder, Sides.Buy, OrderTypes.Limit, targetPrice, summary.ShortVolume);
+				SellMarket();
+				_entryPrice = price;
+				_breakEvenActivated = false;
 			}
-			else
-			{
-				CancelOrder(ref _shortExitOrder);
-			}
-		}
-		else
-		{
-			CancelOrder(ref _shortExitOrder);
-		}
-
-		if (EnableLogging)
-		{
-			LogSummary(summary, breakEven, targetPrice);
 		}
 	}
 
-	private void LogSummary(PositionSummary summary, decimal breakEven, decimal targetPrice)
+	private void ResetPosition()
 	{
-		var bid = _lastBid ?? 0m;
-		var ask = _lastAsk ?? bid;
-
-		var distancePoints = _pointValue > 0m
-		? Math.Abs(targetPrice - (summary.NetVolume > 0m ? bid : ask)) / _pointValue
-		: 0m;
-
-		var floatingProfit = CalculateFloatingProfit(summary, bid, ask);
-
-		LogInfo(
-		$"Break-even {breakEven:0.#####}, target {targetPrice:0.#####}, distance {distancePoints:0.##} pts, net volume {summary.NetVolume:0.###}, floating profit {floatingProfit:0.##}");
-	}
-
-	private decimal CalculateFloatingProfit(PositionSummary summary, decimal bid, decimal ask)
-	{
-		decimal profit = 0m;
-
-		if (summary.LongVolume > 0m && bid > 0m)
-		{
-			profit += (bid - summary.LongAveragePrice) * summary.LongVolume + summary.LongCharges;
-		}
-		else
-		{
-			profit += summary.LongCharges;
-		}
-
-		if (summary.ShortVolume > 0m && ask > 0m)
-		{
-			profit += (summary.ShortAveragePrice - ask) * summary.ShortVolume + summary.ShortCharges;
-		}
-		else
-		{
-			profit += summary.ShortCharges;
-		}
-
-		return profit;
-	}
-
-	private bool TryBuildSummary(out PositionSummary summary)
-	{
-		decimal longVolume = 0m;
-		decimal shortVolume = 0m;
-		decimal longCost = 0m;
-		decimal shortCost = 0m;
-		decimal longCharges = 0m;
-		decimal shortCharges = 0m;
-
-		foreach (var lot in _openLots)
-		{
-			var volume = lot.Volume;
-			if (volume <= 0m)
-			{
-				continue;
-			}
-
-			if (lot.Side == Sides.Buy)
-			{
-				longVolume += volume;
-				longCost += lot.Price * volume;
-				longCharges += lot.Charges;
-			}
-			else
-			{
-				shortVolume += volume;
-				shortCost += lot.Price * volume;
-				shortCharges += lot.Charges;
-			}
-		}
-
-		var longAverage = longVolume > 0m ? longCost / longVolume : 0m;
-		var shortAverage = shortVolume > 0m ? shortCost / shortVolume : 0m;
-
-		summary = new PositionSummary(longVolume, shortVolume, longAverage, shortAverage, longCharges, shortCharges);
-		return summary.HasPositions;
-	}
-
-	private void ProcessExecution(Sides side, decimal volume, decimal price, decimal commission)
-	{
-		if (volume <= 0m)
-		{
-			return;
-		}
-
-		var opposite = side == Sides.Buy ? Sides.Sell : Sides.Buy;
-		var remaining = volume;
-
-		for (var i = 0; i < _openLots.Count && remaining > 0m; i++)
-		{
-			var lot = _openLots[i];
-			if (lot.Side != opposite)
-			{
-				continue;
-			}
-
-			var closable = Math.Min(lot.Volume, remaining);
-			if (closable <= 0m)
-			{
-				continue;
-			}
-
-			lot.Volume -= closable;
-			remaining -= closable;
-
-			if (lot.Volume <= 0m)
-			{
-				_openLots.RemoveAt(i);
-				i--;
-			}
-		}
-
-		if (remaining <= 0m)
-		{
-			return;
-		}
-
-		var chargesPerUnit = volume > 0m ? commission / volume : 0m;
-		_openLots.Add(new PositionLot(side, remaining, price, chargesPerUnit));
-	}
-
-	private void LoadExistingPositions()
-	{
-		var portfolio = Portfolio;
-		if (portfolio == null)
-		{
-			return;
-		}
-
-		foreach (var position in portfolio.Positions)
-		{
-			if (position.Security != Security)
-			{
-				continue;
-			}
-
-			var currentValue = position.CurrentValue ?? 0m;
-			if (currentValue == 0m)
-			{
-				continue;
-			}
-
-			var volume = Math.Abs(currentValue);
-			var side = currentValue > 0m ? Sides.Buy : Sides.Sell;
-			var price = position.AveragePrice ?? Security?.LastPrice ?? 0m;
-			if (price <= 0m)
-			{
-				continue;
-			}
-
-			_openLots.Add(new PositionLot(side, volume, price, 0m));
-		}
-	}
-
-	private decimal CalculatePointSize()
-	{
-		var step = Security?.PriceStep ?? 0m;
-		if (step <= 0m)
-		{
-			return 1m;
-		}
-
-		return step;
-	}
-
-	private void CancelExitOrders()
-	{
-		CancelOrder(ref _longExitOrder);
-		CancelOrder(ref _shortExitOrder);
-	}
-
-	private void CancelOrder(ref Order order)
-	{
-		if (order != null && order.State == OrderStates.Active)
-		{
-			CancelOrder(order);
-		}
-
-		order = null;
-	}
-
-	private void UpdateOrRegisterOrder(ref Order order, Sides side, OrderTypes type, decimal price, decimal volume)
-	{
-		if (price <= 0m || volume <= 0m)
-		{
-			CancelOrder(ref order);
-			return;
-		}
-
-		if (order != null && order.State == OrderStates.Active && order.Price == price && order.Volume == volume && order.Type == type && order.Direction == side)
-		{
-			return;
-		}
-
-		CancelOrder(ref order);
-
-		order = type switch
-		{
-			OrderTypes.Limit when side == Sides.Sell => SellLimit(volume, price),
-			OrderTypes.Limit when side == Sides.Buy => BuyLimit(volume, price),
-			OrderTypes.Stop when side == Sides.Sell => SellStop(volume, price),
-			OrderTypes.Stop when side == Sides.Buy => BuyStop(volume, price),
-			_ => throw new InvalidOperationException("Unsupported order configuration.")
-		};
-	}
-
-	private sealed class PositionLot
-	{
-		public PositionLot(Sides side, decimal volume, decimal price, decimal chargesPerUnit)
-		{
-			Side = side;
-			Volume = volume;
-			Price = price;
-			ChargesPerUnit = chargesPerUnit;
-		}
-
-		public Sides Side { get; }
-
-		public decimal Volume { get; set; }
-
-		public decimal Price { get; }
-
-		public decimal ChargesPerUnit { get; }
-
-		public decimal Charges => ChargesPerUnit * Volume;
-	}
-
-	private readonly struct PositionSummary
-	{
-		public PositionSummary(decimal longVolume, decimal shortVolume, decimal longAveragePrice, decimal shortAveragePrice, decimal longCharges, decimal shortCharges)
-		{
-			LongVolume = longVolume;
-			ShortVolume = shortVolume;
-			LongAveragePrice = longAveragePrice;
-			ShortAveragePrice = shortAveragePrice;
-			LongCharges = longCharges;
-			ShortCharges = shortCharges;
-		}
-
-		public decimal LongVolume { get; }
-
-		public decimal ShortVolume { get; }
-
-		public decimal LongAveragePrice { get; }
-
-		public decimal ShortAveragePrice { get; }
-
-		public decimal LongCharges { get; }
-
-		public decimal ShortCharges { get; }
-
-		public decimal NetVolume => LongVolume - ShortVolume;
-
-		public bool HasPositions => LongVolume > 0m || ShortVolume > 0m;
-
-		public decimal TotalCharges => LongCharges + ShortCharges;
-
-		public decimal GetBreakEvenPrice()
-		{
-			var denominator = NetVolume;
-			if (denominator == 0m)
-			{
-				return 0m;
-			}
-
-			var numerator = LongAveragePrice * LongVolume - ShortAveragePrice * ShortVolume - TotalCharges;
-			return numerator / denominator;
-		}
+		_entryPrice = 0m;
+		_breakEvenPrice = 0m;
+		_breakEvenActivated = false;
 	}
 }
-

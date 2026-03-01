@@ -11,42 +11,23 @@ using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Market data monitor converted from the "Symbol Swap Panel" MQL panel.
-/// It allows switching the watched security on demand and logs real-time price metrics
-/// similar to the original chart widget that displayed symbol information.
+/// Price monitoring strategy that logs OHLC metrics and trades on candle patterns.
+/// Simplified from the "Symbol Swap Panel" MQL display widget.
 /// </summary>
 public class SymbolSwapPanelStrategy : Strategy
 {
-	private readonly StrategyParam<string> _targetSecurityId;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<bool> _swapRequested;
+	private readonly StrategyParam<int> _maPeriod;
 
-	private ISubscriptionHandler<ICandleMessage> _candleSubscription;
-	private ISubscriptionHandler<Level1ChangeMessage> _level1Subscription;
-
-	private Security _activeSecurity;
-	private string _appliedSecurityId;
-
-	private decimal? _lastBid;
-	private decimal? _lastAsk;
-	private decimal? _lastSpread;
+	private SimpleMovingAverage _sma;
+	private decimal _entryPrice;
+	private decimal _prevClose;
 
 	/// <summary>
-	/// Security identifier that should replace the current chart when a swap is requested.
-	/// </summary>
-	public string TargetSecurityId
-	{
-		get => _targetSecurityId.Value;
-		set => _targetSecurityId.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used to sample price snapshots that emulate the MQL panel updates.
+	/// Candle type for monitoring.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -55,56 +36,40 @@ public class SymbolSwapPanelStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Manual flag that triggers switching to <see cref="TargetSecurityId"/>.
-	/// It automatically resets to <c>false</c> after the request is processed.
+	/// Moving average period for trend signals.
 	/// </summary>
-	public bool SwapRequested
+	public int MaPeriod
 	{
-		get => _swapRequested.Value;
-		set => _swapRequested.Value = value;
+		get => _maPeriod.Value;
+		set => _maPeriod.Value = value;
 	}
 
 	/// <summary>
-	/// Initializes a new instance of the <see cref="SymbolSwapPanelStrategy"/> class.
+	/// Initializes strategy parameters.
 	/// </summary>
 	public SymbolSwapPanelStrategy()
 	{
-		_targetSecurityId = Param(nameof(TargetSecurityId), string.Empty)
-			.SetDisplay("Target Security", "Security ID that will be monitored after the swap", "Panel")
-			;
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle series for monitoring and signals", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
-			.SetDisplay("Candle Type", "Candle aggregation used to refresh panel metrics", "Panel");
-
-		_swapRequested = Param(nameof(SwapRequested), false)
-			.SetDisplay("Swap Request", "Set to true to apply the target security", "Panel")
-			;
+		_maPeriod = Param(nameof(MaPeriod), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("MA Period", "Moving average period for entry signals", "Indicators");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		var security = _activeSecurity ?? Security;
-
-		if (security != null)
-		{
-			yield return (security, CandleType);
-			yield return (security, DataType.Level1);
-		}
+		yield return (Security, CandleType);
 	}
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_candleSubscription = null;
-		_level1Subscription = null;
-		_activeSecurity = null;
-		_appliedSecurityId = null;
-		_lastBid = null;
-		_lastAsk = null;
-		_lastSpread = null;
+		_sma = null;
+		_entryPrice = 0m;
+		_prevClose = 0m;
 	}
 
 	/// <inheritdoc />
@@ -112,132 +77,67 @@ public class SymbolSwapPanelStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_activeSecurity = Security ?? ResolveTargetSecurity(TargetSecurityId);
+		_sma = new SimpleMovingAverage { Length = MaPeriod };
 
-		if (_activeSecurity == null)
-			throw new InvalidOperationException("No security assigned to SymbolSwapPanelStrategy. Provide Strategy.Security or TargetSecurityId.");
-
-		SubscribeToSecurity(_activeSecurity);
-
-		TryHandleSwapRequest("initialization");
+		SubscribeCandles(CandleType)
+			.Bind(_sma, ProcessCandle)
+			.Start();
 	}
 
-	private void SubscribeToSecurity(Security security)
-	{
-		if (Security != security)
-			Security = security;
-
-		var candleSubscription = SubscribeCandles(CandleType, security: security);
-		candleSubscription
-			.Bind(ProcessCandle)
-			.Start();
-		_candleSubscription = candleSubscription;
-
-		var level1Subscription = SubscribeLevel1(security);
-		level1Subscription
-			.Bind(ProcessLevel1)
-			.Start();
-		_level1Subscription = level1Subscription;
-
-		_appliedSecurityId = security.Id;
-		_activeSecurity = security;
-
-		LogInfo($"Monitoring security '{security.Id}' using candle type {CandleType}.");
-	}
-
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		TryHandleSwapRequest("candle update");
+		if (!IsFormed)
+			return;
 
-		var totalVolume = candle.TotalVolume ?? 0m;
-		var spread = _lastSpread ?? CalculateSpread();
+		var price = candle.ClosePrice;
+		var high = candle.HighPrice;
+		var low = candle.LowPrice;
 
-		_lastSpread = spread;
-
+		// Log price info
 		LogInfo(
-			$"Time: {candle.CloseTime:O}, Symbol: {_activeSecurity?.Id ?? "N/A"}, " +
-			$"Open: {candle.OpenPrice}, High: {candle.HighPrice}, Low: {candle.LowPrice}, Close: {candle.ClosePrice}, " +
-			$"Volume: {totalVolume}, Spread: {(spread.HasValue ? spread.Value.ToString() : "n/a")}."
-		);
-	}
+			$"Time: {candle.CloseTime:O}, O: {candle.OpenPrice}, H: {high}, L: {low}, C: {price}, " +
+			$"Vol: {candle.TotalVolume}, SMA: {smaValue:F5}");
 
-	private void ProcessLevel1(Level1ChangeMessage message)
-	{
-		var bid = message.TryGetDecimal(Level1Fields.BidPrice);
-		if (bid is decimal bidPrice && bidPrice > 0m)
-			_lastBid = bidPrice;
-
-		var ask = message.TryGetDecimal(Level1Fields.AskPrice);
-		if (ask is decimal askPrice && askPrice > 0m)
-			_lastAsk = askPrice;
-
-		TryHandleSwapRequest("level1 update");
-	}
-
-	private void TryHandleSwapRequest(string reason)
-	{
-		var requested = SwapRequested;
-		var target = TargetSecurityId?.Trim();
-
-		if (!requested)
-			return;
-
-		if (target.IsEmpty())
+		// Exit: reversal or profit target
+		if (Position != 0 && _entryPrice > 0m)
 		{
-			LogWarning("Swap requested but the target security ID is empty.");
+			var pnl = Position > 0
+				? price - _entryPrice
+				: _entryPrice - price;
 
-			SwapRequested = false;
-			return;
+			// Exit on trend reversal
+			if ((Position > 0 && price < smaValue) ||
+				(Position < 0 && price > smaValue))
+			{
+				if (Position > 0)
+					SellMarket(Math.Abs(Position));
+				else
+					BuyMarket(Math.Abs(Position));
+
+				_entryPrice = 0m;
+				_prevClose = price;
+				return;
+			}
 		}
 
-		var security = ResolveTargetSecurity(target);
-
-		if (security == null)
+		// Entry: follow MA trend with momentum confirmation
+		if (Position == 0 && _prevClose > 0m)
 		{
-			LogWarning($"Security '{target}' cannot be resolved.");
-
-			SwapRequested = false;
-			return;
+			if (price > smaValue && _prevClose <= smaValue)
+			{
+				BuyMarket();
+				_entryPrice = price;
+			}
+			else if (price < smaValue && _prevClose >= smaValue)
+			{
+				SellMarket();
+				_entryPrice = price;
+			}
 		}
 
-		if (_appliedSecurityId != null && _appliedSecurityId.EqualsIgnoreCase(security.Id))
-		{
-			LogInfo($"Security '{security.Id}' is already active; swap request was ignored.");
-			SwapRequested = false;
-			return;
-		}
-
-		SubscribeToSecurity(security);
-		LogInfo($"Switched to '{security.Id}' due to {reason}.");
-
-		SwapRequested = false;
-	}
-
-	private Security ResolveTargetSecurity(string securityId)
-	{
-		var security = this.GetSecurity(securityId);
-
-		if (security != null)
-			return security;
-
-		security = SecurityProvider?.LookupById(securityId);
-
-		return security;
-	}
-
-	private decimal? CalculateSpread()
-	{
-		if (_lastBid is not decimal bid || _lastAsk is not decimal ask)
-			return null;
-
-		if (bid <= 0m || ask <= 0m)
-			return null;
-
-		var spread = ask - bid;
-		return spread >= 0m ? spread : null;
+		_prevClose = price;
 	}
 }
-

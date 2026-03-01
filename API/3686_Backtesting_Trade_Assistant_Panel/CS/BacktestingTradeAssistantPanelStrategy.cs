@@ -1,5 +1,3 @@
-namespace StockSharp.Samples.Strategies;
-
 using System;
 using System.Linq;
 using System.Collections.Generic;
@@ -13,58 +11,26 @@ using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
+namespace StockSharp.Samples.Strategies;
+
 /// <summary>
-/// Manual trade assistant converted from the MetaTrader backtesting panel.
-/// Provides public helpers to adjust volume, risk parameters, and trigger market orders.
+/// Trade assistant strategy with configurable stop-loss and take-profit.
+/// Simplified from the backtesting trade assistant panel.
 /// </summary>
 public class BacktestingTradeAssistantPanelStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _orderVolume;
 	private readonly StrategyParam<decimal> _stopLossPips;
 	private readonly StrategyParam<decimal> _takeProfitPips;
-	private readonly StrategyParam<int> _magicNumber;
+	private readonly StrategyParam<DataType> _candleType;
 
+	private SimpleMovingAverage _sma;
 	private decimal _pipSize;
-	private decimal? _bestBid;
-	private decimal? _bestAsk;
+	private decimal _entryPrice;
+	private decimal? _stopPrice;
+	private decimal? _takePrice;
 
 	/// <summary>
-	/// Initializes a new instance of <see cref="BacktestingTradeAssistantPanelStrategy"/>.
-	/// </summary>
-	public BacktestingTradeAssistantPanelStrategy()
-	{
-		_orderVolume = Param(nameof(OrderVolume), 0.1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Order Volume", "Volume used when manual entries are triggered.", "Trading");
-
-		_stopLossPips = Param(nameof(StopLossPips), 50m)
-			.SetNotNegative()
-			.SetDisplay("Stop Loss (pips)", "Distance to the stop loss expressed in MetaTrader points.", "Risk");
-
-		_takeProfitPips = Param(nameof(TakeProfitPips), 100m)
-			.SetNotNegative()
-			.SetDisplay("Take Profit (pips)", "Distance to the take profit expressed in MetaTrader points.", "Risk");
-
-		_magicNumber = Param(nameof(MagicNumber), 99)
-			.SetDisplay("Magic Number", "Identifier kept for compatibility with the MT4 version.", "General");
-	}
-
-	/// <summary>
-	/// Trading volume sent with market orders.
-	/// </summary>
-	public decimal OrderVolume
-	{
-		get => _orderVolume.Value;
-		set
-		{
-			_orderVolume.Value = value;
-			if (value > 0m)
-				Volume = value;
-		}
-	}
-
-	/// <summary>
-	/// Stop loss distance measured in MetaTrader points.
+	/// Stop loss distance in pips.
 	/// </summary>
 	public decimal StopLossPips
 	{
@@ -73,7 +39,7 @@ public class BacktestingTradeAssistantPanelStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Take profit distance measured in MetaTrader points.
+	/// Take profit distance in pips.
 	/// </summary>
 	public decimal TakeProfitPips
 	{
@@ -82,26 +48,46 @@ public class BacktestingTradeAssistantPanelStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Preserved magic number that identifies manual trades.
+	/// Candle type for signals.
 	/// </summary>
-	public int MagicNumber
+	public DataType CandleType
 	{
-		get => _magicNumber.Value;
-		set => _magicNumber.Value = value;
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Initializes strategy parameters.
+	/// </summary>
+	public BacktestingTradeAssistantPanelStrategy()
+	{
+		_stopLossPips = Param(nameof(StopLossPips), 50m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss (pips)", "Stop-loss distance in pips", "Risk");
+
+		_takeProfitPips = Param(nameof(TakeProfitPips), 100m)
+			.SetNotNegative()
+			.SetDisplay("Take Profit (pips)", "Take-profit distance in pips", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle series for trading signals", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-		=> [(Security, DataType.Level1)];
+	{
+		yield return (Security, CandleType);
+	}
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
+		_sma = null;
 		_pipSize = 0m;
-		_bestBid = null;
-		_bestAsk = null;
+		_entryPrice = 0m;
+		_stopPrice = null;
+		_takePrice = null;
 	}
 
 	/// <inheritdoc />
@@ -109,161 +95,96 @@ public class BacktestingTradeAssistantPanelStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		Volume = OrderVolume;
 		_pipSize = CalculatePipSize();
 
-		SubscribeLevel1()
-			.Bind(ProcessLevel1)
+		_sma = new SimpleMovingAverage { Length = 20 };
+
+		SubscribeCandles(CandleType)
+			.Bind(_sma, ProcessCandle)
 			.Start();
 	}
 
-	private void ProcessLevel1(Level1ChangeMessage message)
+	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
 	{
-		if (message.TryGetDecimal(Level1Fields.BestBidPrice) is decimal bid)
-			_bestBid = bid;
-
-		if (message.TryGetDecimal(Level1Fields.BestAskPrice) is decimal ask)
-			_bestAsk = ask;
-	}
-
-	/// <summary>
-	/// Updates the trading volume and synchronizes it with the internal <see cref="Strategy.Volume"/> property.
-	/// </summary>
-	/// <param name="volume">Volume in lots.</param>
-	public void SetOrderVolume(decimal volume)
-	{
-		OrderVolume = volume;
-	}
-
-	/// <summary>
-	/// Applies a new stop-loss distance in MetaTrader points.
-	/// </summary>
-	/// <param name="pips">Distance measured in MetaTrader points.</param>
-	public void SetStopLoss(decimal pips)
-	{
-		StopLossPips = pips;
-	}
-
-	/// <summary>
-	/// Applies a new take-profit distance in MetaTrader points.
-	/// </summary>
-	/// <param name="pips">Distance measured in MetaTrader points.</param>
-	public void SetTakeProfit(decimal pips)
-	{
-		TakeProfitPips = pips;
-	}
-
-	/// <summary>
-	/// Opens a long position with the configured volume and attaches protective orders.
-	/// </summary>
-	public void ManualBuy()
-	{
-		var volume = NormalizeVolume(OrderVolume);
-		if (volume <= 0m)
+		if (candle.State != CandleStates.Finished)
 			return;
 
-		var currentPosition = Position;
-		var referencePrice = GetReferencePrice(isLong: true);
-
-		BuyMarket(volume);
-
-		if (referencePrice is decimal price)
-		{
-			var resultingPosition = currentPosition + volume;
-			AttachProtection(price, resultingPosition);
-		}
-	}
-
-	/// <summary>
-	/// Opens a short position with the configured volume and attaches protective orders.
-	/// </summary>
-	public void ManualSell()
-	{
-		var volume = NormalizeVolume(OrderVolume);
-		if (volume <= 0m)
+		if (!IsFormed)
 			return;
 
-		var currentPosition = Position;
-		var referencePrice = GetReferencePrice(isLong: false);
+		var price = candle.ClosePrice;
 
-		SellMarket(volume);
-
-		if (referencePrice is decimal price)
+		// Check stop-loss and take-profit
+		if (Position != 0 && _entryPrice > 0m)
 		{
-			var resultingPosition = currentPosition - volume;
-			AttachProtection(price, resultingPosition);
+			if (Position > 0)
+			{
+				if (_stopPrice.HasValue && price <= _stopPrice.Value)
+				{
+					SellMarket(Math.Abs(Position));
+					ResetPosition();
+					return;
+				}
+				if (_takePrice.HasValue && price >= _takePrice.Value)
+				{
+					SellMarket(Math.Abs(Position));
+					ResetPosition();
+					return;
+				}
+			}
+			else if (Position < 0)
+			{
+				if (_stopPrice.HasValue && price >= _stopPrice.Value)
+				{
+					BuyMarket(Math.Abs(Position));
+					ResetPosition();
+					return;
+				}
+				if (_takePrice.HasValue && price <= _takePrice.Value)
+				{
+					BuyMarket(Math.Abs(Position));
+					ResetPosition();
+					return;
+				}
+			}
+		}
+
+		// Entry: SMA crossover
+		if (Position == 0)
+		{
+			var pip = _pipSize > 0m ? _pipSize : 1m;
+
+			if (price > smaValue)
+			{
+				BuyMarket();
+				_entryPrice = price;
+				_stopPrice = StopLossPips > 0m ? price - StopLossPips * pip : null;
+				_takePrice = TakeProfitPips > 0m ? price + TakeProfitPips * pip : null;
+			}
+			else if (price < smaValue)
+			{
+				SellMarket();
+				_entryPrice = price;
+				_stopPrice = StopLossPips > 0m ? price + StopLossPips * pip : null;
+				_takePrice = TakeProfitPips > 0m ? price - TakeProfitPips * pip : null;
+			}
 		}
 	}
 
-	/// <summary>
-	/// Closes any open position at market price.
-	/// </summary>
-	public void CloseAllPositions()
+	private void ResetPosition()
 	{
-		var position = Position;
-		if (position > 0m)
-		{
-			SellMarket(position);
-		}
-		else if (position < 0m)
-		{
-			BuyMarket(-position);
-		}
-	}
-
-	private void AttachProtection(decimal referencePrice, decimal resultingPosition)
-	{
-		var stopDistance = ConvertPipsToPrice(StopLossPips);
-		if (stopDistance > 0m)
-			SetStopLoss(stopDistance, referencePrice, resultingPosition);
-
-		var takeDistance = ConvertPipsToPrice(TakeProfitPips);
-		if (takeDistance > 0m)
-			SetTakeProfit(takeDistance, referencePrice, resultingPosition);
-	}
-
-	private decimal? GetReferencePrice(bool isLong)
-	{
-		if (isLong)
-		{
-			if (_bestAsk is decimal ask)
-				return ask;
-		}
-		else
-		{
-			if (_bestBid is decimal bid)
-				return bid;
-		}
-
-		var security = Security;
-		return security?.LastTradePrice;
-	}
-
-	private decimal ConvertPipsToPrice(decimal pips)
-	{
-		if (pips <= 0m)
-			return 0m;
-
-		var pipSize = _pipSize;
-		if (pipSize <= 0m)
-			pipSize = _pipSize = CalculatePipSize();
-
-		return pips * pipSize;
+		_entryPrice = 0m;
+		_stopPrice = null;
+		_takePrice = null;
 	}
 
 	private decimal CalculatePipSize()
 	{
-		var security = Security;
-		if (security == null)
+		var step = Security?.PriceStep ?? 0m;
+		if (step <= 0m)
 			return 0.0001m;
 
-		var priceStep = security.PriceStep ?? 0m;
-		if (priceStep <= 0m)
-			priceStep = 0.0001m;
-
-		var decimals = security.Decimals ?? 0;
-		var multiplier = decimals is 5 or 3 ? 10m : 1m;
-		return priceStep * multiplier;
+		var decimals = Security?.Decimals ?? 0;
+		return decimals is 5 or 3 ? step * 10m : step;
 	}
 }
-
