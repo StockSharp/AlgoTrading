@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using Ecng.Common;
 using Ecng.Collections;
 using Ecng.Serialization;
+using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -99,7 +100,7 @@ public class BollingerBandsRsiStrategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(bollinger, rsi, Process)
+			.BindEx(new IIndicator[] { bollinger, rsi }, Process, true)
 			.Start();
 
 		var area = CreateChartArea();
@@ -112,13 +113,18 @@ public class BollingerBandsRsiStrategy : Strategy
 		}
 	}
 
-	private void Process(ICandleMessage candle, decimal middle, decimal upper, decimal lower, decimal rsi)
+	private void Process(ICandleMessage candle, IIndicatorValue[] values)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (values.Any(v => v.IsEmpty))
 			return;
+
+		var bb = (BollingerBandsValue)values[0];
+		var upper = bb.UpBand ?? 0m;
+		var lower = bb.LowBand ?? 0m;
+		var rsi = values[1].ToDecimal();
 
 		if (candle.ClosePrice < lower && rsi < RsiOversold && Position <= 0)
 		{

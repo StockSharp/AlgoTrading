@@ -6,6 +6,7 @@ using Ecng.Common;
 using Ecng.Collections;
 using Ecng.Serialization;
 
+using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -59,7 +60,7 @@ public class BollingerBandsMeanReversionStrategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(bollinger, ProcessCandle)
+			.BindEx(bollinger, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -71,10 +72,17 @@ public class BollingerBandsMeanReversionStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal middle, decimal upper, decimal lower)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bbValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
+
+		if (bbValue.IsEmpty)
+			return;
+
+		var bb = (BollingerBandsValue)bbValue;
+		var upper = bb.UpBand ?? 0m;
+		var lower = bb.LowBand ?? 0m;
 
 		if (candle.ClosePrice < lower && Position <= 0)
 			BuyMarket();

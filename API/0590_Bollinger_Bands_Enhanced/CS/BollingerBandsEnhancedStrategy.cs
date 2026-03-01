@@ -6,6 +6,7 @@ using Ecng.Common;
 using Ecng.Collections;
 using Ecng.Serialization;
 
+using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -66,11 +67,11 @@ public class BollingerBandsEnhancedStrategy : Strategy
 		base.OnStarted2(time);
 
 		var bb = new BollingerBands { Length = BbPeriod, Width = BbWidth };
-		var ema = new EMA { Length = EmaPeriod };
-		var atr = new ATR { Length = AtrPeriod };
+		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
+		var atr = new AverageTrueRange { Length = AtrPeriod };
 
 		var sub = SubscribeCandles(CandleType);
-		sub.Bind(bb, ema, atr, Process).Start();
+		sub.BindEx(new IIndicator[] { bb, ema, atr }, Process, true).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -82,10 +83,20 @@ public class BollingerBandsEnhancedStrategy : Strategy
 		}
 	}
 
-	private void Process(ICandleMessage c, decimal mid, decimal up, decimal low, decimal emaVal, decimal atrVal)
+	private void Process(ICandleMessage c, IIndicatorValue[] values)
 	{
-		if (c.State != CandleStates.Finished || !IsFormedAndOnlineAndAllowTrading())
+		if (c.State != CandleStates.Finished)
 			return;
+
+		if (values.Any(v => v.IsEmpty))
+			return;
+
+		var bb = (BollingerBandsValue)values[0];
+		var mid = values[0].ToDecimal();
+		var up = bb.UpBand ?? 0m;
+		var low = bb.LowBand ?? 0m;
+		var emaVal = values[1].ToDecimal();
+		var atrVal = values[2].ToDecimal();
 
 		if (Position > 0)
 		{

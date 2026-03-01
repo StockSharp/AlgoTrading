@@ -46,7 +46,6 @@ public class CandleBodyShapesStrategy : Strategy
 	{
 		_bodyThreshold = Param(nameof(BodyThreshold), 0.2m)
 			.SetGreaterThanZero()
-			.SetLessOrEqual(0.5m)
 			.SetDisplay("Body Threshold", "Fraction of range to detect large bodies", "Trading");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -83,9 +82,6 @@ public class CandleBodyShapesStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		var range = candle.HighPrice - candle.LowPrice;
 		if (range <= 0)
 			return;
@@ -95,11 +91,11 @@ public class CandleBodyShapesStrategy : Strategy
 
 		if (openPos < BodyThreshold && closePos > 1 - BodyThreshold && Position <= 0)
 		{
-			BuyMarket(Volume + Math.Abs(Position));
+			BuyMarket();
 		}
 		else if (openPos > 1 - BodyThreshold && closePos < BodyThreshold && Position >= 0)
 		{
-			SellMarket(Volume + Math.Abs(Position));
+			SellMarket();
 		}
 	}
 }
