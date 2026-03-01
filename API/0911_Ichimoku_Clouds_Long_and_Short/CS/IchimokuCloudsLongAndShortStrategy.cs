@@ -32,6 +32,7 @@ public class IchimokuCloudsLongAndShortStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _prevTenkan;
+	private decimal _entryPrice;
 	private decimal _prevKijun;
 
 	/// <summary>
@@ -290,7 +291,7 @@ public class IchimokuCloudsLongAndShortStrategy : Strategy
 			if (TradingMode == "Long" && IsSignalAllowed(EntrySignalOptionsLong, strength, true) && Position <= 0)
 			{
 				var volume = Volume + Math.Abs(Position);
-				BuyMarket(volume);
+				BuyMarket(volume); _entryPrice = candle.ClosePrice;
 			}
 			else if (TradingMode == "Short" && IsSignalAllowed(ExitSignalOptionsShort, strength, true) && Position < 0)
 			{
@@ -304,7 +305,7 @@ public class IchimokuCloudsLongAndShortStrategy : Strategy
 			if (TradingMode == "Short" && IsSignalAllowed(EntrySignalOptionsShort, strength, false) && Position >= 0)
 			{
 				var volume = Volume + Math.Abs(Position);
-				SellMarket(volume);
+				SellMarket(volume); _entryPrice = candle.ClosePrice;
 			}
 			else if (TradingMode == "Long" && IsSignalAllowed(ExitSignalOptionsLong, strength, false) && Position > 0)
 			{
@@ -314,17 +315,17 @@ public class IchimokuCloudsLongAndShortStrategy : Strategy
 
 		if (Position > 0)
 		{
-			if (TakeProfitPct > 0 && candle.ClosePrice >= PositionPrice * (1 + TakeProfitPct / 100m))
+			if (TakeProfitPct > 0 && candle.ClosePrice >= _entryPrice * (1 + TakeProfitPct / 100m))
 				SellMarket(Position);
-			else if (StopLossPct > 0 && candle.ClosePrice <= PositionPrice * (1 - StopLossPct / 100m))
+			else if (StopLossPct > 0 && candle.ClosePrice <= _entryPrice * (1 - StopLossPct / 100m))
 				SellMarket(Position);
 		}
 		else if (Position < 0)
 		{
 			var shortPos = Math.Abs(Position);
-			if (TakeProfitPct > 0 && candle.ClosePrice <= PositionPrice * (1 - TakeProfitPct / 100m))
+			if (TakeProfitPct > 0 && candle.ClosePrice <= _entryPrice * (1 - TakeProfitPct / 100m))
 				BuyMarket(shortPos);
-			else if (StopLossPct > 0 && candle.ClosePrice >= PositionPrice * (1 + StopLossPct / 100m))
+			else if (StopLossPct > 0 && candle.ClosePrice >= _entryPrice * (1 + StopLossPct / 100m))
 				BuyMarket(shortPos);
 		}
 

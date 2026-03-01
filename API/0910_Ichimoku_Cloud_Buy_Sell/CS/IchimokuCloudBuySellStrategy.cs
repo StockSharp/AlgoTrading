@@ -201,8 +201,8 @@ public class IchimokuCloudBuySellStrategy : Strategy
 			SenkouB = { Length = SenkouSpanBPeriod }
 		};
 
-		var ema = new EMA { Length = EmaPeriod };
-		var volumeMa = new SMA { Length = AvgVolumeLength };
+		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
+		var volumeMa = new SimpleMovingAverage { Length = AvgVolumeLength };
 
 		var subscription = SubscribeCandles(CandleType);
 
@@ -211,7 +211,7 @@ public class IchimokuCloudBuySellStrategy : Strategy
 			.Start();
 
 		if (UseStopLoss)
-			StartProtection(stopLoss: new Unit(StopLossPercent, UnitTypes.Percent));
+			StartProtection(takeProfit: default, stopLoss: new Unit(StopLossPercent, UnitTypes.Percent));
 
 		var area = CreateChartArea();
 		if (area != null)

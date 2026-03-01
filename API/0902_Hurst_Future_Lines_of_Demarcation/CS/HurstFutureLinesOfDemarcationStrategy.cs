@@ -47,7 +47,9 @@ private StrategyParam<int> _tradeCycleLength;
 private StrategyParam<int> _trendCycleLength;
 private StrategyParam<CloseTriggers> _closeTrigger1;
 private StrategyParam<CloseTriggers> _closeTrigger2;
+private StrategyParam<DataType> _candleType;
 
+public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 public bool SmoothFld { get => _smoothFld.Value; set => _smoothFld.Value = value; }
 public int FldSmoothing { get => _fldSmoothing.Value; set => _fldSmoothing.Value = value; }
 public int SignalCycleLength { get => _signalCycleLength.Value; set => _signalCycleLength.Value = value; }
@@ -72,6 +74,8 @@ _closeTrigger1 = Param(nameof(CloseTrigger1), CloseTriggers.Price)
 .SetDisplay("Close Trigger 1", "First value for exit cross", "Exit");
 _closeTrigger2 = Param(nameof(CloseTrigger2), CloseTriggers.Trade)
 .SetDisplay("Close Trigger 2", "Second value for exit cross", "Exit");
+_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+.SetDisplay("Candle Type", "Type of candles", "General");
 }
 
 /// <inheritdoc />
@@ -94,7 +98,7 @@ protected override void OnStarted2(DateTime time)
 base.OnStarted2(time);
 
 var length = SmoothFld ? FldSmoothing : 1;
-_sma = new SMA { Length = length };
+_sma = new SimpleMovingAverage { Length = length };
 
 _signalOffset = (int)Math.Round(SignalCycleLength / 2m);
 _tradeOffset = (int)Math.Round(TradeCycleLength / 2m);
@@ -146,9 +150,9 @@ var crossUnder = _prevClose1 >= _prevClose2 && close1.Value < close2.Value;
 var crossOver = _prevClose1 <= _prevClose2 && close1.Value > close2.Value;
 
 if (Position > 0 && crossUnder)
-ClosePosition();
+{ if (Position > 0) SellMarket(); else if (Position < 0) BuyMarket(); }
 else if (Position < 0 && crossOver)
-ClosePosition();
+{ if (Position > 0) SellMarket(); else if (Position < 0) BuyMarket(); }
 }
 
 _prevClose1 = close1;

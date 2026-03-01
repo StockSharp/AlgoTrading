@@ -116,9 +116,9 @@ public class HullSuite1RiskNoSlTpStrategy : Strategy
 			_hullIndicator = _hma;
 			break;
 		case HullVariations.Ehma:
-			_ehmaFull = new EMA { Length = HullLength };
-			_ehmaHalf = new EMA { Length = HullLength / 2 };
-			_ehmaResult = new EMA { Length = (int)Math.Round(Math.Sqrt(HullLength)) };
+			_ehmaFull = new ExponentialMovingAverage { Length = HullLength };
+			_ehmaHalf = new ExponentialMovingAverage { Length = HullLength / 2 };
+			_ehmaResult = new ExponentialMovingAverage { Length = (int)Math.Round(Math.Sqrt(HullLength)) };
 			_hullIndicator = _ehmaResult;
 			break;
 		case HullVariations.Thma:
@@ -178,27 +178,27 @@ public class HullSuite1RiskNoSlTpStrategy : Strategy
 		{
 			case HullVariations.Hma:
 			{
-				return _hma.Process(price).ToNullableDecimal();
+				return _hma.Process(new DecimalIndicatorValue(_hma, price, default)).ToNullableDecimal();
 			}
 			case HullVariations.Ehma:
 			{
-				var emaFull = _ehmaFull.Process(price).ToNullableDecimal();
-				var emaHalf = _ehmaHalf.Process(price).ToNullableDecimal();
+				var emaFull = _ehmaFull.Process(new DecimalIndicatorValue(_ehmaFull, price, default)).ToNullableDecimal();
+				var emaHalf = _ehmaHalf.Process(new DecimalIndicatorValue(_ehmaHalf, price, default)).ToNullableDecimal();
 				if (emaFull is not decimal full || emaHalf is not decimal half)
 					return null;
 				var diff = 2m * half - full;
-				return _ehmaResult.Process(diff).ToNullableDecimal();
+				return _ehmaResult.Process(new DecimalIndicatorValue(_ehmaResult, diff, default)).ToNullableDecimal();
 			}
 			case HullVariations.Thma:
 			{
-				var wmaFull = _thmaFull.Process(price).ToNullableDecimal();
-				var wmaHalf = _thmaHalf.Process(price).ToNullableDecimal();
-				var wmaThird = _thmaThird.Process(price).ToNullableDecimal();
+				var wmaFull = _thmaFull.Process(new DecimalIndicatorValue(_thmaFull, price, default)).ToNullableDecimal();
+				var wmaHalf = _thmaHalf.Process(new DecimalIndicatorValue(_thmaHalf, price, default)).ToNullableDecimal();
+				var wmaThird = _thmaThird.Process(new DecimalIndicatorValue(_thmaThird, price, default)).ToNullableDecimal();
 				if (wmaFull is not decimal full || wmaHalf is not decimal half ||
 					wmaThird is not decimal third)
 					return null;
 				var diff = 3m * third - half - full;
-				return _thmaResult.Process(diff).ToNullableDecimal();
+				return _thmaResult.Process(new DecimalIndicatorValue(_thmaResult, diff, default)).ToNullableDecimal();
 			}
 			default:
 				throw new InvalidOperationException(Mode.ToString());

@@ -87,7 +87,7 @@ public class HullCandlesStrategy : Strategy
 		base.OnStarted2(time);
 
 		_bodyHma = new HullMovingAverage { Length = BodyLength };
-		_sma = new SMA { Length = SmaLength };
+		_sma = new SimpleMovingAverage { Length = SmaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -115,7 +115,7 @@ public class HullCandlesStrategy : Strategy
 			return;
 
 		var avgPrice = (candle.OpenPrice + candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 4m;
-		var hmaValue = _bodyHma.Process(new DecimalIndicatorValue(_bodyHma, avgPrice));
+		var hmaValue = _bodyHma.Process(new DecimalIndicatorValue(_bodyHma, avgPrice, candle.OpenTime));
 
 		if (!hmaValue.IsFinal || hmaValue is not DecimalIndicatorValue hmaResult)
 			return;
