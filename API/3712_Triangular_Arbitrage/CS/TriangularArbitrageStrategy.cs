@@ -254,7 +254,7 @@ public class TriangularArbitrageStrategy : Strategy
 		if (!_hasOpenCycle && !_closeRequested)
 		{
 			var portfolio = Portfolio;
-			var balance = portfolio?.CurrentValue ?? portfolio?.CurrentBalance ?? 0m;
+			var balance = portfolio?.CurrentValue ?? portfolio?.BeginValue ?? 0m;
 
 			if (balance < MinimumBalance)
 			return;
@@ -403,12 +403,12 @@ public class TriangularArbitrageStrategy : Strategy
 	{
 		base.OnOwnTradeReceived(trade);
 
-		var security = trade?.Trade?.Security;
+		var security = trade?.Order?.Security;
 		var order = trade?.Order;
 		if (security == null || order == null)
 		return;
 
-		var direction = order.Direction;
+		var direction = order.Side;
 		if (direction == null)
 		return;
 

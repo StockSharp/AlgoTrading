@@ -312,8 +312,8 @@ public class RmStochasticBandStrategy : Strategy
 	private StochasticOscillator CreateStochastic()
 	{
 		return new StochasticOscillator
-		{ K = { Length = StochasticLength },
-			K = { Length = StochasticSmoothing },
+		{
+			K = { Length = StochasticLength },
 			D = { Length = StochasticSignalLength }
 		};
 	}

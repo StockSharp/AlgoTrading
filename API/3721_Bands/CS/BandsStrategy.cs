@@ -195,32 +195,38 @@ public class BandsStrategy : Strategy
 			Length = AtrPeriod
 		};
 
-		var donchian = new DonchianChannel
+		var donchian = new DonchianChannels
 		{
 			Length = DonchianPeriod
 		};
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(bollinger, atr, donchian, ProcessCandle)
+			.BindEx(bollinger, atr, donchian, ProcessCandle)
 			.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal middle, decimal upper, decimal lower, decimal atrValue, decimal donchUpper, decimal donchLower)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bollingerVal, IIndicatorValue atrVal, IIndicatorValue donchianVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
+
+		if (!bollingerVal.IsFormed || !atrVal.IsFormed || !donchianVal.IsFormed)
+			return;
+
+		var bollingerComplex = (ComplexIndicatorValue<BollingerBands>)bollingerVal;
+		var middle = bollingerComplex.InnerValues.ElementAt(0).Value.GetValue<decimal>();
+		var upper = bollingerComplex.InnerValues.ElementAt(1).Value.GetValue<decimal>();
+		var lower = bollingerComplex.InnerValues.ElementAt(2).Value.GetValue<decimal>();
+		var atrValue = atrVal.GetValue<decimal>();
+		var donchianComplex = (ComplexIndicatorValue<DonchianChannels>)donchianVal;
+		var donchUpper = donchianComplex.InnerValues.ElementAt(0).Value.GetValue<decimal>();
+		var donchLower = donchianComplex.InnerValues.ElementAt(1).Value.GetValue<decimal>();
 
 		var lowerTrendLength = CalculateLowerTrendLength(donchLower);
 		var upperTrendLength = CalculateUpperTrendLength(donchUpper);
 
 		if (!_prevOpen.HasValue)
-		{
-			CachePreviousValues(candle, lower, upper, donchLower, donchUpper, atrValue, lowerTrendLength, upperTrendLength);
-			return;
-		}
-
-		if (!IsFormedAndOnlineAndAllowTrading())
 		{
 			CachePreviousValues(candle, lower, upper, donchLower, donchUpper, atrValue, lowerTrendLength, upperTrendLength);
 			return;
@@ -365,7 +371,7 @@ public class BandsStrategy : Strategy
 		if (portfolio == null)
 			return;
 
-		UpdateEquityStatistics(portfolio.CurrentValue);
+		UpdateEquityStatistics(portfolio.CurrentValue ?? 0m);
 	}
 
 	private void UpdateEquityStatistics(decimal equity)

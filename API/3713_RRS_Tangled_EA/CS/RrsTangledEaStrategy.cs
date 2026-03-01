@@ -52,7 +52,7 @@ public class RrsTangledEaStrategy : Strategy
 	private readonly List<TradeEntry> _buyEntries = new();
 	private readonly List<TradeEntry> _sellEntries = new();
 
-	private Random _random = new(Environment.TickCount);
+	private Random _random = new(42);
 	private decimal _point;
 	private decimal? _buyTrailingStop;
 	private decimal? _sellTrailingStop;
@@ -256,7 +256,7 @@ public class RrsTangledEaStrategy : Strategy
 
 		_point = GetPointValue();
 		_initialBalance = GetCurrentBalance();
-		_random = new Random(Environment.TickCount ^ GetHashCode());
+		_random = new Random(System.Environment.TickCount ^ GetHashCode());
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
@@ -287,7 +287,7 @@ public class RrsTangledEaStrategy : Strategy
 		if (floating <= riskLimit && (_buyEntries.Count > 0 || _sellEntries.Count > 0))
 		{
 			CloseAllTrades();
-			StatusInfo = $"Risk management triggered. Floating={floating:F2} Threshold={riskLimit:F2}";
+			LogInfo($"Risk management triggered. Floating={floating:F2} Threshold={riskLimit:F2}");
 			return;
 		}
 
@@ -555,11 +555,11 @@ public class RrsTangledEaStrategy : Strategy
 	private decimal GetCurrentBalance()
 	{
 		var portfolio = Portfolio;
-		if (portfolio?.CurrentValue > 0m)
-			return portfolio.CurrentValue;
+		if ((portfolio?.CurrentValue ?? 0m) > 0m)
+			return portfolio.CurrentValue.Value;
 
-		if (portfolio?.BeginValue > 0m)
-			return portfolio.BeginValue;
+		if ((portfolio?.BeginValue ?? 0m) > 0m)
+			return portfolio.BeginValue.Value;
 
 		return _initialBalance;
 	}
@@ -573,8 +573,8 @@ public class RrsTangledEaStrategy : Strategy
 
 		var spreadText = _lastSpread.HasValue ? (_lastSpread.Value / _point).ToString("F2") : "n/a";
 
-		StatusInfo = $"Balance={balance:F2} FloatingPnL={floating:F2} Trades(Buy={_buyEntries.Count}, Sell={_sellEntries.Count}) " +
-			$"Risk={modeDescription} Spread(pips)={spreadText} Notes={Notes}";
+		LogInfo($"Balance={balance:F2} FloatingPnL={floating:F2} Trades(Buy={_buyEntries.Count}, Sell={_sellEntries.Count}) " +
+			$"Risk={modeDescription} Spread(pips)={spreadText} Notes={Notes}");
 	}
 
 	private decimal GetPointValue()
