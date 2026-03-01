@@ -9,7 +9,7 @@
     <MsTestVer>4.*</MsTestVer>
     <MsTestSdkVer>18.*</MsTestSdkVer>
 
-    <RoslynVer>4.3.0</RoslynVer>
-    <RoslynAnalyzersVer>3.3.4</RoslynAnalyzersVer>
+    <RoslynVer>4.*</RoslynVer>
+    <RoslynAnalyzersVer>3.*</RoslynAnalyzersVer>
   </PropertyGroup>
 </Project>
