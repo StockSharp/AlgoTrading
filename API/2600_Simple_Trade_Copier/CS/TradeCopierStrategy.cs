@@ -295,8 +295,8 @@ public class TradeCopierStrategy : Strategy
 	{
 		var trade = myTrade.Trade;
 		var order = myTrade.Order;
-		var tradeId = trade?.Id ?? trade?.StringId ?? string.Empty;
-		return $"{order?.TransactionId}:{tradeId}:{trade?.ServerTime.UtcTicks}";
+		var tradeId = trade?.StringId ?? trade?.Id.ToString() ?? string.Empty;
+		return $"{order?.TransactionId}:{tradeId}:{trade?.ServerTime.Ticks}";
 	}
 
 	private void CleanProcessedTrades(DateTimeOffset now)

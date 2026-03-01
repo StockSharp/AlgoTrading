@@ -124,7 +124,7 @@ public class PianoMultiTimeframeBarStateStrategy : Strategy
 
 			var subscription = SubscribeCandles(frame.Type);
 			subscription
-				.Do(candle => ProcessCandle(index, frame.Label, candle))
+				.Bind(candle => ProcessCandle(index, frame.Label, candle))
 				.Start();
 		}
 

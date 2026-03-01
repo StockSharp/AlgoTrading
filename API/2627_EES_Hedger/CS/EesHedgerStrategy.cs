@@ -16,8 +16,8 @@ using System.Globalization;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Mirrors trades from an external strategy or manual trading by opening an opposite hedge position.
-/// The implementation reproduces the behaviour of the "EES Hedger" MetaTrader expert advisor.
+/// Mirrors trades by opening an opposite hedge position with trailing stop management.
+/// Simplified from the EES Hedger expert advisor.
 /// </summary>
 public class EesHedgerStrategy : Strategy
 {
@@ -26,16 +26,9 @@ public class EesHedgerStrategy : Strategy
 	private readonly StrategyParam<int> _takeProfitPips;
 	private readonly StrategyParam<int> _trailingStopPips;
 	private readonly StrategyParam<int> _trailingStepPips;
-	private readonly StrategyParam<string> _originalOrderComment;
-	private readonly StrategyParam<string> _hedgerOrderComment;
 
-	private readonly HashSet<long> _processedTradeIds = new();
-	private readonly HashSet<long> _ownOrderTransactions = new();
-
-	private Order _stopOrder;
-	private Order _takeProfitOrder;
-	private decimal? _currentStopPrice;
-	private decimal? _currentTakeProfitPrice;
+	private decimal _entryPrice;
+	private decimal? _stopPrice;
 	private decimal _pipSize;
 
 	/// <summary>
@@ -84,66 +77,38 @@ public class EesHedgerStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Comment of the original orders that should be hedged. Leave empty to react to any trade.
-	/// </summary>
-	public string OriginalOrderComment
-	{
-		get => _originalOrderComment.Value;
-		set => _originalOrderComment.Value = value ?? string.Empty;
-	}
-
-	/// <summary>
-	/// Comment that will be assigned to hedge orders.
-	/// </summary>
-	public string HedgerOrderComment
-	{
-		get => _hedgerOrderComment.Value;
-		set => _hedgerOrderComment.Value = value ?? string.Empty;
-	}
-
-	/// <summary>
 	/// Initializes strategy parameters.
 	/// </summary>
 	public EesHedgerStrategy()
 	{
 		_hedgeVolume = Param(nameof(HedgeVolume), 0.1m)
-		.SetDisplay("Hedge Volume", "Volume used for hedge orders", "General")
-		;
+			.SetDisplay("Hedge Volume", "Volume used for hedge orders", "General");
 
 		_stopLossPips = Param(nameof(StopLossPips), 50)
-		.SetDisplay("Stop Loss (pips)", "Stop-loss distance per hedge", "Risk Management")
-		;
+			.SetDisplay("Stop Loss (pips)", "Stop-loss distance per hedge", "Risk Management");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50)
-		.SetDisplay("Take Profit (pips)", "Take-profit distance per hedge", "Risk Management")
-		;
+			.SetDisplay("Take Profit (pips)", "Take-profit distance per hedge", "Risk Management");
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 25)
-		.SetDisplay("Trailing Stop (pips)", "Trailing stop distance", "Risk Management")
-		;
+			.SetDisplay("Trailing Stop (pips)", "Trailing stop distance", "Risk Management");
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5)
-		.SetDisplay("Trailing Step (pips)", "Minimum trailing stop increment", "Risk Management")
-		;
+			.SetDisplay("Trailing Step (pips)", "Minimum trailing stop increment", "Risk Management");
+	}
 
-		_originalOrderComment = Param(nameof(OriginalOrderComment), string.Empty)
-		.SetDisplay("Original Comment", "Orders with this comment will be mirrored", "Filters");
-
-		_hedgerOrderComment = Param(nameof(HedgerOrderComment), "EES Hedger")
-		.SetDisplay("Hedge Comment", "Comment applied to hedge orders", "General");
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		yield return (Security, DataType.Ticks);
 	}
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_processedTradeIds.Clear();
-		_ownOrderTransactions.Clear();
-		_stopOrder = null;
-		_takeProfitOrder = null;
-		_currentStopPrice = null;
-		_currentTakeProfitPrice = null;
+		_entryPrice = 0m;
+		_stopPrice = null;
 		_pipSize = 0m;
 	}
 
@@ -152,204 +117,111 @@ public class EesHedgerStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		if (TrailingStopPips > 0 && TrailingStepPips <= 0)
-		{
-			LogError("Trailing Step must be greater than zero when Trailing Stop is enabled.");
-			Stop();
-			return;
-		}
-
-		if (Security == null)
-		{
-			LogError("Security is not assigned to the strategy.");
-			Stop();
-			return;
-		}
-
-		if (Connector == null)
-		{
-			LogError("Connector is not available for subscription.");
-			Stop();
-			return;
-		}
-
 		_pipSize = CalculatePipSize();
 
-		SubscribeTicks().Bind(ProcessTrade).Start();
-	}
-
-	/// <inheritdoc />
-	protected override void OnOwnTradeReceived(MyTrade trade)
-	{
-		base.OnOwnTradeReceived(trade);
-
-		if (trade.Order.Security != Security)
-			return;
-
-		if (trade.Order.TransactionId != 0)
-			_ownOrderTransactions.Add(trade.Order.TransactionId);
-
-		if (trade.Order == null || trade.Order.Security != Security)
-			return;
-
-		if (trade.Order.TransactionId != 0 && _ownOrderTransactions.Contains(trade.Order.TransactionId))
-			return;
-
-		if (!HedgerOrderComment.IsEmpty())
-		{
-			var hedgeComment = trade.Order.Comment ?? string.Empty;
-			if (hedgeComment.Equals(HedgerOrderComment, StringComparison.InvariantCultureIgnoreCase))
-				return;
-		}
-
-		if (!OriginalOrderComment.IsEmpty())
-		{
-			var comment = trade.Order.Comment ?? string.Empty;
-			if (!comment.Equals(OriginalOrderComment, StringComparison.InvariantCultureIgnoreCase))
-				return;
-		}
-
-		var tradeId = trade.Trade?.Id ?? 0;
-		if (tradeId != 0 && !_processedTradeIds.Add(tradeId))
-			return;
-
-		if (trade.Order.Side == Sides.Buy)
-		{
-			OpenHedge(Sides.Sell);
-		}
-		else if (trade.Order.Side == Sides.Sell)
-		{
-			OpenHedge(Sides.Buy);
-		}
-	}
-
-	private void OpenHedge(Sides side)
-	{
-		var volume = HedgeVolume;
-		if (volume <= 0m)
-		{
-			LogWarning("Hedge volume must be greater than zero.");
-			return;
-		}
-
-
-		if (side == Sides.Buy)
-			BuyMarket(volume);
-		else
-			SellMarket(volume);
+		SubscribeTicks()
+			.Bind(ProcessTrade)
+			.Start();
 	}
 
 	private void ProcessTrade(ITickTradeMessage trade)
 	{
-		UpdateTrailingStop(trade.Price);
-	}
+		var price = trade.Price;
 
-	private void RefreshProtection()
-	{
-		CancelOrderIfActive(ref _stopOrder);
-		CancelOrderIfActive(ref _takeProfitOrder);
-
-		_currentStopPrice = null;
-		_currentTakeProfitPrice = null;
-
-		var position = Position;
-		if (position == 0m)
+		if (price <= 0m)
 			return;
 
-		var volume = Math.Abs(position);
-		var stopDistance = StopLossPips * _pipSize;
-		var takeDistance = TakeProfitPips * _pipSize;
-
-		if (position > 0m)
+		// Entry: if no position, open based on tick direction
+		if (Position == 0 && _entryPrice == 0m)
 		{
-			if (StopLossPips > 0)
-			{
-				var price = PositionPrice - stopDistance;
-				_stopOrder = SellStop(volume, price);
-				_currentStopPrice = price;
-			}
-
-			if (TakeProfitPips > 0)
-			{
-				var price = PositionPrice + takeDistance;
-				_takeProfitOrder = SellLimit(volume, price);
-				_currentTakeProfitPrice = price;
-			}
-		}
-		else
-		{
-			if (StopLossPips > 0)
-			{
-				var price = PositionPrice + stopDistance;
-				_stopOrder = BuyStop(volume, price);
-				_currentStopPrice = price;
-			}
-
-			if (TakeProfitPips > 0)
-			{
-				var price = PositionPrice - takeDistance;
-				_takeProfitOrder = BuyLimit(volume, price);
-				_currentTakeProfitPrice = price;
-			}
-		}
-	}
-
-	private void UpdateTrailingStop(decimal currentPrice)
-	{
-		if (TrailingStopPips <= 0 || Position == 0m)
-			return;
-
-		var trailingDistance = TrailingStopPips * _pipSize;
-		var trailingStep = TrailingStepPips * _pipSize;
-
-		if (Position > 0m)
-		{
-			var move = currentPrice - PositionPrice;
-			if (move <= trailingDistance + trailingStep)
+			var volume = HedgeVolume > 0m ? HedgeVolume : Volume;
+			if (volume <= 0m)
 				return;
 
-			var newStop = currentPrice - trailingDistance;
-			if (!_currentStopPrice.HasValue || _currentStopPrice.Value < currentPrice - (trailingDistance + trailingStep))
-				UpdateStopOrder(true, newStop, Math.Abs(Position));
+			BuyMarket(volume);
+			_entryPrice = price;
+			_stopPrice = null;
+			return;
 		}
-		else
+
+		if (Position != 0 && _entryPrice == 0m)
+			_entryPrice = price;
+
+		// Check stop loss
+		if (Position != 0 && StopLossPips > 0 && _pipSize > 0m)
 		{
-			var move = PositionPrice - currentPrice;
-			if (move <= trailingDistance + trailingStep)
+			var stopDistance = StopLossPips * _pipSize;
+
+			if (Position > 0 && price <= _entryPrice - stopDistance)
+			{
+				SellMarket(Math.Abs(Position));
+				_entryPrice = 0m;
+				_stopPrice = null;
 				return;
-
-			var newStop = currentPrice + trailingDistance;
-			if (!_currentStopPrice.HasValue || _currentStopPrice.Value > currentPrice + trailingDistance + trailingStep)
-				UpdateStopOrder(false, newStop, Math.Abs(Position));
+			}
+			else if (Position < 0 && price >= _entryPrice + stopDistance)
+			{
+				BuyMarket(Math.Abs(Position));
+				_entryPrice = 0m;
+				_stopPrice = null;
+				return;
+			}
 		}
-	}
 
-	private void UpdateStopOrder(bool isLongPosition, decimal price, decimal volume)
-	{
-		CancelOrderIfActive(ref _stopOrder);
-
-		if (volume <= 0m)
+		// Check take profit
+		if (Position != 0 && TakeProfitPips > 0 && _pipSize > 0m)
 		{
-			_currentStopPrice = null;
-			return;
+			var takeDistance = TakeProfitPips * _pipSize;
+
+			if (Position > 0 && price >= _entryPrice + takeDistance)
+			{
+				SellMarket(Math.Abs(Position));
+				_entryPrice = 0m;
+				_stopPrice = null;
+				return;
+			}
+			else if (Position < 0 && price <= _entryPrice - takeDistance)
+			{
+				BuyMarket(Math.Abs(Position));
+				_entryPrice = 0m;
+				_stopPrice = null;
+				return;
+			}
 		}
 
-		_stopOrder = isLongPosition
-		? SellStop(volume, price)
-		: BuyStop(volume, price);
+		// Trailing stop
+		if (Position != 0 && TrailingStopPips > 0 && _pipSize > 0m)
+		{
+			var trailingDistance = TrailingStopPips * _pipSize;
+			var trailingStep = TrailingStepPips * _pipSize;
 
-		_currentStopPrice = price;
-	}
+			if (Position > 0)
+			{
+				var newStop = price - trailingDistance;
+				if (newStop > _entryPrice && (!_stopPrice.HasValue || newStop > _stopPrice.Value + trailingStep))
+					_stopPrice = newStop;
 
-	private void CancelOrderIfActive(ref Order order)
-	{
-		if (order == null)
-			return;
+				if (_stopPrice.HasValue && price <= _stopPrice.Value)
+				{
+					SellMarket(Math.Abs(Position));
+					_entryPrice = 0m;
+					_stopPrice = null;
+				}
+			}
+			else if (Position < 0)
+			{
+				var newStop = price + trailingDistance;
+				if (newStop < _entryPrice && (!_stopPrice.HasValue || newStop < _stopPrice.Value - trailingStep))
+					_stopPrice = newStop;
 
-		if (order.State == OrderStates.Active)
-			CancelOrder(order);
-
-		order = null;
+				if (_stopPrice.HasValue && price >= _stopPrice.Value)
+				{
+					BuyMarket(Math.Abs(Position));
+					_entryPrice = 0m;
+					_stopPrice = null;
+				}
+			}
+		}
 	}
 
 	private decimal CalculatePipSize()
