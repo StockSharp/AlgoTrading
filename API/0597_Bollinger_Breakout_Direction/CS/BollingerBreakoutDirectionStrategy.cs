@@ -6,6 +6,7 @@ using Ecng.Common;
 using Ecng.Collections;
 using Ecng.Serialization;
 
+using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -127,7 +128,7 @@ public class BollingerBreakoutDirectionStrategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_bollinger, _rsi, ProcessCandle)
+			.BindEx(new IIndicator[] { _bollinger, _rsi }, ProcessCandle, true)
 			.Start();
 
 		var area = CreateChartArea();
@@ -138,13 +139,19 @@ public class BollingerBreakoutDirectionStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal middleBand, decimal upperBand, decimal lowerBand, decimal rsiValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue[] values)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_bollinger.IsFormed || !_rsi.IsFormed)
+		if (values.Any(v => v.IsEmpty))
 			return;
+
+		var bb = (BollingerBandsValue)values[0];
+		var upperBand = bb.UpBand ?? 0m;
+		var lowerBand = bb.LowBand ?? 0m;
+		var rsiValue = values[1].ToDecimal();
+
 		var longAllowed = Direction is null or Sides.Buy;
 		var shortAllowed = Direction is null or Sides.Sell;
 

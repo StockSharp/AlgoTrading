@@ -6,6 +6,7 @@ using Ecng.Common;
 using Ecng.Collections;
 using Ecng.Serialization;
 
+using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -99,7 +100,7 @@ public class BollingerBandsSma202Strategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(bollinger, ProcessCandle)
+			.BindEx(bollinger, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -111,13 +112,17 @@ public class BollingerBandsSma202Strategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal middle, decimal upper, decimal lower)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bbValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (bbValue.IsEmpty)
 			return;
+
+		var bb = (BollingerBandsValue)bbValue;
+		var upper = bb.UpBand ?? 0m;
+		var lower = bb.LowBand ?? 0m;
 
 		if (_prevClose.HasValue && _prevUpper.HasValue && _prevLower.HasValue)
 		{

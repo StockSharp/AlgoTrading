@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using Ecng.Common;
 using Ecng.Collections;
 using Ecng.Serialization;
+using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -114,13 +115,13 @@ public class BollingerBandsModifiedStrategy : Strategy
 			Width = BollingerDeviation
 		};
 		
-		var ema = new EMA { Length = EmaLength };
+		var ema = new ExponentialMovingAverage { Length = EmaLength };
 		var highest = new Highest { Length = HighestLength };
 		var lowest = new Lowest { Length = LowestLength };
-		
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-		.Bind(bb, ema, highest, lowest, ProcessCandle)
+		.BindEx(new IIndicator[] { bb, ema, highest, lowest }, ProcessCandle, true)
 		.Start();
 		
 		var area = CreateChartArea();
@@ -133,11 +134,21 @@ public class BollingerBandsModifiedStrategy : Strategy
 		}
 	}
 	
-	private void ProcessCandle(ICandleMessage candle, decimal middle, decimal upper, decimal lower, decimal ema, decimal highest, decimal lowest)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue[] values)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
-		
+			return;
+
+		if (values.Any(v => v.IsEmpty))
+			return;
+
+		var bb = (BollingerBandsValue)values[0];
+		var upper = bb.UpBand ?? 0m;
+		var lower = bb.LowBand ?? 0m;
+		var ema = values[1].ToDecimal();
+		var highest = values[2].ToDecimal();
+		var lowest = values[3].ToDecimal();
+
 		if (!_hasPrev)
 		{
 			_prevClose = candle.ClosePrice;
@@ -146,27 +157,27 @@ public class BollingerBandsModifiedStrategy : Strategy
 			_hasPrev = true;
 			return;
 		}
-		
+
 		var isCrossover = _prevClose <= _prevUpper && candle.ClosePrice > upper;
 		var isCrossunder = _prevClose >= _prevLower && candle.ClosePrice < lower;
-		
+
 		var isBarLong = candle.ClosePrice > candle.OpenPrice;
 		var isBarShort = candle.ClosePrice < candle.OpenPrice;
-		
+
 		var isLongCross = CrossoverCheck
-		? (isBarLong && candle.OpenPrice < upper && candle.ClosePrice > upper)
-		: isCrossover;
-		
+			? (isBarLong && candle.OpenPrice < upper && candle.ClosePrice > upper)
+			: isCrossover;
+
 		var isShortCross = CrossunderCheck
-		? (isBarShort && candle.ClosePrice < lower && candle.OpenPrice > lower)
-		: isCrossunder;
-		
+			? (isBarShort && candle.ClosePrice < lower && candle.OpenPrice > lower)
+			: isCrossunder;
+
 		var isCandleAboveEma = candle.ClosePrice > ema;
 		var isCandleBelowEma = candle.ClosePrice < ema;
-		
+
 		var isLongCondition = EmaTrend ? isLongCross && isCandleAboveEma : isLongCross;
 		var isShortCondition = EmaTrend ? isShortCross && isCandleBelowEma : isShortCross;
-		
+
 		if (isLongCondition && Position <= 0 && !_isLongEntry)
 		{
 			_isLongEntry = true;
@@ -185,12 +196,12 @@ public class BollingerBandsModifiedStrategy : Strategy
 			_targetPrice = _entryPrice - Math.Abs(_entryPrice - _stopPrice) * TargetFactor;
 			SellMarket();
 		}
-		
+
 		if (Position > 0)
 		{
 			if (candle.LowPrice <= _stopPrice || candle.HighPrice >= _targetPrice)
 			{
-				ClosePosition();
+				SellMarket();
 				_isLongEntry = false;
 			}
 		}
@@ -198,11 +209,11 @@ public class BollingerBandsModifiedStrategy : Strategy
 		{
 			if (candle.HighPrice >= _stopPrice || candle.LowPrice <= _targetPrice)
 			{
-				ClosePosition();
+				BuyMarket();
 				_isShortEntry = false;
 			}
 		}
-		
+
 		_prevClose = candle.ClosePrice;
 		_prevUpper = upper;
 		_prevLower = lower;

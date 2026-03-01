@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using Ecng.Common;
 using Ecng.Collections;
 using Ecng.Serialization;
+using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -127,14 +128,14 @@ public class BollingerBandsStrategy : Strategy
 			Width = BbDeviation
 		};
 
-		var sma = new SMA
+		var sma = new SimpleMovingAverage
 		{
 			Length = SmaLength
 		};
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(bb, sma, ProcessCandle)
+			.BindEx(new IIndicator[] { bb, sma }, ProcessCandle, true)
 			.Start();
 
 		var area = CreateChartArea();
@@ -145,35 +146,42 @@ public class BollingerBandsStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal middle, decimal upper, decimal lower, decimal smaExit)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue[] values)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
+
+		if (values.Any(v => v.IsEmpty))
+			return;
+
+		var bb = (BollingerBandsValue)values[0];
+		var upper = bb.UpBand ?? 0m;
+		var lower = bb.LowBand ?? 0m;
+		var smaExit = values[1].ToDecimal();
 
 		var time = candle.OpenTime;
 		var inRange = time >= StartDate && time <= EndDate;
 
 		if (!inRange)
 		{
-			if (Position != 0)
-				ClosePosition();
+			if (Position > 0)
+				SellMarket();
+			else if (Position < 0)
+				BuyMarket();
 			return;
 		}
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
 
 		var close = candle.ClosePrice;
 
 		if (Position > 0)
 		{
 			if (close < smaExit || candle.LowPrice <= _stopPrice)
-				ClosePosition();
+				SellMarket();
 		}
 		else if (Position < 0)
 		{
 			if (close > smaExit || candle.HighPrice >= _stopPrice)
-				ClosePosition();
+				BuyMarket();
 		}
 		else
 		{
