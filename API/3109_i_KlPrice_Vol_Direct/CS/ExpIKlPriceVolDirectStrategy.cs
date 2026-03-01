@@ -347,7 +347,7 @@ public class ExpIKlPriceVolDirectStrategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-		.WhenCandlesFinished(ProcessCandle)
+		.Bind(ProcessCandle)
 		.Start();
 
 		var priceArea = CreateChartArea();
@@ -372,6 +372,9 @@ public class ExpIKlPriceVolDirectStrategy : Strategy
 
 	private void ProcessCandle(ICandleMessage candle)
 	{
+		if (candle.State != CandleStates.Finished)
+		return;
+
 		if (!IsFormedAndOnlineAndAllowTrading())
 		return;
 
@@ -379,13 +382,15 @@ public class ExpIKlPriceVolDirectStrategy : Strategy
 		var range = candle.HighPrice - candle.LowPrice;
 		var volume = GetVolume(candle);
 
-		var priceValue = _priceSmoother.Process(candle.OpenTime, appliedPrice);
-		if (!priceValue.IsFinal || priceValue.Value is not decimal smoothedPrice)
+		var priceValue = _priceSmoother.Process(new DecimalIndicatorValue(_priceSmoother, appliedPrice, candle.OpenTime));
+		if (!priceValue.IsFinal || !_priceSmoother.IsFormed)
 		return;
+		var smoothedPrice = priceValue.ToDecimal();
 
-		var rangeValue = _rangeSmoother.Process(candle.OpenTime, range);
-		if (!rangeValue.IsFinal || rangeValue.Value is not decimal smoothedRange)
+		var rangeValue = _rangeSmoother.Process(new DecimalIndicatorValue(_rangeSmoother, range, candle.OpenTime));
+		if (!rangeValue.IsFinal || !_rangeSmoother.IsFormed)
 		return;
+		var smoothedRange = rangeValue.ToDecimal();
 
 		if (smoothedRange == 0m)
 		{
@@ -398,14 +403,13 @@ public class ExpIKlPriceVolDirectStrategy : Strategy
 		var oscillator = (appliedPrice - dwBand) / (2m * smoothedRange) * 100m - 50m;
 		var weightedOscillator = oscillator * volume;
 
-		var oscValue = _resultSmoother.Process(candle.OpenTime, weightedOscillator);
-		var volValue = _volumeSmoother.Process(candle.OpenTime, volume);
+		var oscValue = _resultSmoother.Process(new DecimalIndicatorValue(_resultSmoother, weightedOscillator, candle.OpenTime));
+		var volValue = _volumeSmoother.Process(new DecimalIndicatorValue(_volumeSmoother, volume, candle.OpenTime));
 
 		if (!oscValue.IsFinal || !volValue.IsFinal)
 		return;
 
-		if (oscValue.Value is not decimal smoothedOscillator)
-		return;
+		var smoothedOscillator = oscValue.ToDecimal();
 
 		var color = CalculateColor(smoothedOscillator);
 		AppendColor(color);
@@ -547,7 +551,7 @@ public class ExpIKlPriceVolDirectStrategy : Strategy
 			SmoothingMethods.Lwma => new WeightedMovingAverage { Length = normalizedLength },
 			SmoothingMethods.Jjma => CreateJurik(normalizedLength, phase),
 			SmoothingMethods.Jurx => new ZeroLagExponentialMovingAverage { Length = normalizedLength },
-			SmoothingMethods.Parma => new ArnaudLegouxMovingAverage { Length = normalizedLength, Offset = offset, Sigma = 6m },
+			SmoothingMethods.Parma => new ArnaudLegouxMovingAverage { Length = normalizedLength, Offset = (int)(offset * 100), Sigma = 6 },
 			SmoothingMethods.T3 => new TripleExponentialMovingAverage { Length = normalizedLength },
 			SmoothingMethods.Vidya => new EMA { Length = normalizedLength },
 			SmoothingMethods.Ama => new KaufmanAdaptiveMovingAverage { Length = normalizedLength },

@@ -427,7 +427,8 @@ public class ExpIKlPriceVolStrategy : Strategy
 			return;
 
 		var signalTime = GetSignalTime(candle);
-		AddColorSample(new ColorSample(signalTime, result.Value, result.Volume, result.Color));
+		var r = result.Value;
+		AddColorSample(new ColorSample(signalTime, r.Value, r.Volume, r.Color));
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
@@ -509,7 +510,7 @@ public class ExpIKlPriceVolStrategy : Strategy
 	private DateTimeOffset GetSignalTime(ICandleMessage candle)
 	{
 		var timeFrame = CandleType.Arg is TimeSpan span ? span : TimeSpan.Zero;
-		var closeTime = candle.CloseTime ?? candle.OpenTime + timeFrame;
+		var closeTime = candle.CloseTime;
 		return closeTime;
 	}
 
@@ -752,14 +753,14 @@ public class ExpIKlPriceVolStrategy : Strategy
 
 		public KlPriceVolResult? Process(ICandleMessage candle)
 		{
-			var time = candle.CloseTime ?? candle.OpenTime;
+			var time = candle.CloseTime;
 			var price = GetAppliedPrice(candle, _appliedPrice);
-			var priceValue = _priceMa.Process(new DecimalIndicatorValue(_priceMa, price, time.UtcDateTime)).ToNullableDecimal();
+			var priceValue = _priceMa.Process(new DecimalIndicatorValue(_priceMa, price, time)).ToNullableDecimal();
 			if (priceValue is null)
 				return null;
 
 			var range = candle.HighPrice - candle.LowPrice;
-			var rangeValue = _rangeMa.Process(new DecimalIndicatorValue(_rangeMa, range, time.UtcDateTime)).ToNullableDecimal();
+			var rangeValue = _rangeMa.Process(new DecimalIndicatorValue(_rangeMa, range, time)).ToNullableDecimal();
 			if (rangeValue is null || rangeValue.Value == 0m)
 				return null;
 
@@ -769,8 +770,8 @@ public class ExpIKlPriceVolStrategy : Strategy
 			var volume = GetVolume(candle);
 			var scaled = oscillator * volume;
 
-			var smoothedValue = _valueSmoother.Process(new DecimalIndicatorValue(_valueSmoother, scaled, time.UtcDateTime)).ToNullableDecimal();
-			var smoothedVolume = _volumeSmoother.Process(new DecimalIndicatorValue(_volumeSmoother, volume, time.UtcDateTime)).ToNullableDecimal();
+			var smoothedValue = _valueSmoother.Process(new DecimalIndicatorValue(_valueSmoother, scaled, time)).ToNullableDecimal();
+			var smoothedVolume = _volumeSmoother.Process(new DecimalIndicatorValue(_volumeSmoother, volume, time)).ToNullableDecimal();
 
 			if (smoothedValue is null || smoothedVolume is null)
 				return null;
@@ -805,9 +806,9 @@ public class ExpIKlPriceVolStrategy : Strategy
 		{
 			return _volumeType switch
 			{
-				AppliedVolumes.Tick => candle.TotalTicks.HasValue ? (decimal)candle.TotalTicks.Value : candle.TotalVolume ?? 0m,
-				AppliedVolumes.Real => candle.TotalVolume ?? (candle.TotalTicks.HasValue ? (decimal)candle.TotalTicks.Value : 0m),
-				_ => candle.TotalVolume ?? 0m,
+				AppliedVolumes.Tick => candle.TotalTicks.HasValue ? (decimal)candle.TotalTicks.Value : candle.TotalVolume,
+				AppliedVolumes.Real => candle.TotalVolume > 0 ? candle.TotalVolume : (candle.TotalTicks.HasValue ? (decimal)candle.TotalTicks.Value : 0m),
+				_ => candle.TotalVolume,
 			};
 		}
 

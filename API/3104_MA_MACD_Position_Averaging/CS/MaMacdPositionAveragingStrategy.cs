@@ -52,7 +52,7 @@ public class MaMacdPositionAveragingStrategy : Strategy
 	private readonly StrategyParam<int> _bufferCapacity;
 
 	private DecimalLengthIndicator _ma = null!;
-	private MovingAverageConvergenceDivergence _macd = null!;
+	private MovingAverageConvergenceDivergenceSignal _macd = null!;
 
 	private readonly List<decimal> _maValues = new();
 	private readonly List<(decimal Macd, decimal Signal)> _macdValues = new();
@@ -365,9 +365,9 @@ public class MaMacdPositionAveragingStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (TrailingStopPips > 0 && TrailingStepPips <= 0)
 			throw new InvalidOperationException("Trailing step must be positive when trailing stop is enabled.");
@@ -381,9 +381,11 @@ public class MaMacdPositionAveragingStrategy : Strategy
 		_indentOffset = IndentPips > 0 ? IndentPips * _pipSize : 0m;
 
 		_ma = CreateMovingAverage(MaMethod, MaPeriod);
-		_macd = new MovingAverageConvergenceDivergence(
-			new ExponentialMovingAverage { Length = MacdSlowPeriod },
-			new ExponentialMovingAverage { Length = MacdFastPeriod });
+		_macd = new MovingAverageConvergenceDivergenceSignal(
+			new MovingAverageConvergenceDivergence(
+				new ExponentialMovingAverage { Length = MacdSlowPeriod },
+				new ExponentialMovingAverage { Length = MacdFastPeriod }),
+			new ExponentialMovingAverage { Length = MacdSignalPeriod });
 
 		_ma.Reset();
 		_macd.Reset();
@@ -430,12 +432,14 @@ public class MaMacdPositionAveragingStrategy : Strategy
 
 		var macdInput = GetAppliedPrice(candle, MacdAppliedPrice);
 		var macdResult = _macd.Process(new DecimalIndicatorValue(_macd, macdInput, candle.OpenTime));
-		var macdValue = macdResult.ToDecimal();
 
 		if (!_macd.IsFormed)
 			return;
 
-		PushValue(_macdValues, (macdValue.Macd, macdValue.Signal));
+		var complexMacd = (ComplexIndicatorValue<MovingAverageConvergenceDivergenceSignal>)macdResult;
+		var macdMainVal = complexMacd.InnerValues[_macd.Macd].ToDecimal();
+		var macdSignalVal = complexMacd.InnerValues[_macd.SignalMa].ToDecimal();
+		PushValue(_macdValues, (macdMainVal, macdSignalVal));
 
 		if (!TryGetValue(_maValues, SignalBar + MaShift, out var sampledMa))
 			return;
