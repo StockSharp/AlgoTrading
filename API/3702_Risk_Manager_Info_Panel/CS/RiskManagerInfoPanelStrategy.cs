@@ -3,6 +3,7 @@ using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
+using Ecng.Logging;
 using Ecng.Collections;
 using Ecng.Serialization;
 
@@ -111,7 +112,6 @@ public class RiskManagerInfoPanelStrategy : Strategy
 		set
 		{
 			_updateIntervalSeconds.Value = value;
-			RestartTimer();
 		}
 	}
 
@@ -201,7 +201,6 @@ public class RiskManagerInfoPanelStrategy : Strategy
 		_currentDay = default;
 		_lastSnapshot = string.Empty;
 		_isDailyLimitBreached = false;
-		Comment = string.Empty;
 	}
 
 	/// <inheritdoc />
@@ -213,7 +212,6 @@ public class RiskManagerInfoPanelStrategy : Strategy
 		_dailyRealizedPnL = 0m;
 		_isDailyLimitBreached = false;
 
-		RestartTimer();
 		UpdateRiskSnapshot(time);
 	}
 
@@ -221,9 +219,6 @@ public class RiskManagerInfoPanelStrategy : Strategy
 	protected override void OnStopped()
 	{
 		base.OnStopped();
-
-		Timer.Stop();
-		Comment = string.Empty;
 	}
 
 	/// <inheritdoc />
@@ -247,17 +242,6 @@ public class RiskManagerInfoPanelStrategy : Strategy
 		UpdateRiskSnapshot(trade.Trade.ServerTime);
 	}
 
-	private void RestartTimer()
-	{
-		if (ProcessState != ProcessStates.Started)
-			return;
-
-		Timer.Stop();
-
-		var seconds = Math.Max(1, UpdateIntervalSeconds);
-		Timer.Start(TimeSpan.FromSeconds(seconds), UpdateRiskSnapshot);
-	}
-
 	private void UpdateRiskSnapshot()
 	{
 		var time = CurrentTime != default ? CurrentTime : DateTimeOffset.UtcNow;
@@ -278,7 +262,7 @@ public class RiskManagerInfoPanelStrategy : Strategy
 		}
 
 		var portfolio = Portfolio;
-		var balance = portfolio?.CurrentBalance ?? portfolio?.BeginValue ?? 0m;
+		var balance = portfolio?.CurrentValue ?? portfolio?.BeginValue ?? 0m;
 		var equity = portfolio?.CurrentValue ?? balance;
 		var floatingPnL = PnL;
 		var login = portfolio?.Name ?? "-";
@@ -337,7 +321,7 @@ public class RiskManagerInfoPanelStrategy : Strategy
 		}
 
 		_lastSnapshot = builder.ToString();
-		Comment = _lastSnapshot;
+		this.AddInfoLog(_lastSnapshot);
 	}
 
 	private decimal CalculateStopPrice()

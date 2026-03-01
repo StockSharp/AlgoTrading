@@ -136,7 +136,7 @@ public class MagicNumberWiseEaProfitLossDashboardStrategy : Strategy
 	{
 		var identifier = GetIdentifier(trade.Order);
 		var order = trade.Order;
-		var tradeSecurity = trade.Trade?.Security?.Id;
+		var tradeSecurity = order?.Security?.Id;
 		var orderSecurity = order?.Security?.Id;
 		var comment = order?.Comment;
 
@@ -236,21 +236,13 @@ public class MagicNumberWiseEaProfitLossDashboardStrategy : Strategy
 		if (!IncludeOpenPositions)
 			return;
 
-		var portfolio = Portfolio;
-		if (portfolio == null)
-			return;
-
-		foreach (var position in portfolio.Positions)
+		// Floating PnL from strategy level
+		var floatingPnL = PnL;
+		if (floatingPnL != 0m && _summaries.Count > 0)
 		{
-			var symbol = position.Security?.Id;
-			if (symbol.IsEmpty())
-				continue;
-
-			if (!_symbolMap.TryGetValue(symbol, out var summary))
-				continue;
-
-			summary.HasFloatingPnL = true;
-			summary.FloatingPnL = position.PnL ?? 0m;
+			var first = _summaries.Values.First();
+			first.HasFloatingPnL = true;
+			first.FloatingPnL = floatingPnL;
 		}
 	}
 

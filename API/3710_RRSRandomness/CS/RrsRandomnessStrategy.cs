@@ -39,6 +39,7 @@ public class RrsRandomnessStrategy : Strategy
 	private decimal? _bestBidPrice;
 	private decimal? _bestAskPrice;
 	private decimal? _lastTradePrice;
+	private decimal _entryPrice;
 
 	/// <summary>
 	/// Trading direction selection logic.
@@ -234,14 +235,10 @@ public class RrsRandomnessStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_random = new Random(Environment.TickCount);
+		_random = new Random(System.Environment.TickCount);
 
 		SubscribeLevel1()
 			.Bind(ProcessLevel1)
-			.Start();
-
-		SubscribeTicks()
-			.Bind(ProcessTrade)
 			.Start();
 
 		SubscribeCandles(CandleType)
@@ -264,12 +261,13 @@ public class RrsRandomnessStrategy : Strategy
 			if (ask > 0m)
 				_bestAskPrice = ask;
 		}
-	}
 
-	private void ProcessTrade(ITickTradeMessage trade)
-	{
-		if (trade.Price > 0m)
-			_lastTradePrice = trade.Price;
+		if (message.Changes.TryGetValue(Level1Fields.LastTradePrice, out var lastPriceValue))
+		{
+			var lastPrice = (decimal)lastPriceValue;
+			if (lastPrice > 0m)
+				_lastTradePrice = lastPrice;
+		}
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -308,7 +306,7 @@ public class RrsRandomnessStrategy : Strategy
 		if (priceStep <= 0m || stepPrice <= 0m)
 			return;
 
-		var entryPrice = PositionPrice;
+		var entryPrice = _entryPrice;
 		if (entryPrice <= 0m)
 			return;
 
@@ -369,7 +367,7 @@ public class RrsRandomnessStrategy : Strategy
 		if (priceStep <= 0m)
 			return;
 
-		var entryPrice = PositionPrice;
+		var entryPrice = _entryPrice;
 		if (entryPrice <= 0m)
 			return;
 
@@ -420,7 +418,7 @@ public class RrsRandomnessStrategy : Strategy
 		if (priceStep <= 0m || stepPrice <= 0m)
 			return;
 
-		var entryPrice = PositionPrice;
+		var entryPrice = _entryPrice;
 		if (entryPrice <= 0m)
 			return;
 
@@ -438,6 +436,18 @@ public class RrsRandomnessStrategy : Strategy
 			ClosePosition();
 			_trailingStopPrice = null;
 		}
+	}
+
+	/// <inheritdoc />
+	protected override void OnOwnTradeReceived(MyTrade trade)
+	{
+		base.OnOwnTradeReceived(trade);
+
+		if (Position != 0m && _entryPrice == 0m)
+			_entryPrice = trade.Trade.Price;
+
+		if (Position == 0m)
+			_entryPrice = 0m;
 	}
 
 	private void ClosePosition()

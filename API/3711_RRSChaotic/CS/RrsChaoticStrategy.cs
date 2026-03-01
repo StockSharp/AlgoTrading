@@ -31,13 +31,14 @@ public class RrsChaoticStrategy : Strategy
 	private readonly StrategyParam<decimal> _riskValue;
 	private readonly StrategyParam<string> _tradeComment;
 
-	private readonly Random _random = new(Environment.TickCount);
+	private readonly Random _random = new(System.Environment.TickCount);
 
 	private decimal? _longStopPrice;
 	private decimal? _shortStopPrice;
 	private decimal? _longTakePrice;
 	private decimal? _shortTakePrice;
 	private decimal _initialEquity;
+	private decimal _entryPrice;
 
 	/// <summary>
 	/// Trade direction for risk sizing.
@@ -218,7 +219,6 @@ public class RrsChaoticStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
 		_initialEquity = GetPortfolioValue();
 
 		var subscription = SubscribeCandles(CandleType);
@@ -233,23 +233,30 @@ public class RrsChaoticStrategy : Strategy
 		base.OnOwnTradeReceived(trade);
 
 		// Update protective levels based on the latest execution price.
-		if (Position > 0m && trade.OrderDirection == Sides.Buy)
+		var tradePrice = trade.Trade.Price;
+		var direction = trade.Order.Side;
+
+		if (Position != 0m && _entryPrice == 0m)
+			_entryPrice = tradePrice;
+
+		if (Position > 0m && direction == Sides.Buy)
 		{
-			_longStopPrice = CalculateStopPrice(true, trade.Price);
-			_longTakePrice = CalculateTakePrice(true, trade.Price);
+			_longStopPrice = CalculateStopPrice(true, tradePrice);
+			_longTakePrice = CalculateTakePrice(true, tradePrice);
 			_shortStopPrice = null;
 			_shortTakePrice = null;
 		}
-		else if (Position < 0m && trade.OrderDirection == Sides.Sell)
+		else if (Position < 0m && direction == Sides.Sell)
 		{
-			_shortStopPrice = CalculateStopPrice(false, trade.Price);
-			_shortTakePrice = CalculateTakePrice(false, trade.Price);
+			_shortStopPrice = CalculateStopPrice(false, tradePrice);
+			_shortTakePrice = CalculateTakePrice(false, tradePrice);
 			_longStopPrice = null;
 			_longTakePrice = null;
 		}
 
 		if (Position == 0m)
 		{
+			_entryPrice = 0m;
 			_longStopPrice = null;
 			_longTakePrice = null;
 			_shortStopPrice = null;
@@ -263,14 +270,7 @@ public class RrsChaoticStrategy : Strategy
 			return;
 
 		HandleRiskControl(candle);
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		ApplyExitRules(candle);
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
 
 		if (!IsSpreadAcceptable())
 			return;
@@ -296,7 +296,7 @@ public class RrsChaoticStrategy : Strategy
 		if (!CanIncreaseExposure(volume))
 			return;
 
-		BuyMarket(volume, comment: TradeComment);
+		BuyMarket(volume);
 	}
 
 	private void TryOpenShort(decimal volume)
@@ -304,7 +304,7 @@ public class RrsChaoticStrategy : Strategy
 		if (!CanIncreaseExposure(volume))
 			return;
 
-		SellMarket(volume, comment: TradeComment);
+		SellMarket(volume);
 	}
 
 	private bool CanIncreaseExposure(decimal volume)
@@ -325,26 +325,26 @@ public class RrsChaoticStrategy : Strategy
 		{
 			if (_longTakePrice.HasValue && candle.HighPrice >= _longTakePrice.Value)
 			{
-				SellMarket(Position, comment: TradeComment + " TP");
+				SellMarket(Math.Abs(Position));
 				return;
 			}
 
 			if (_longStopPrice.HasValue && candle.LowPrice <= _longStopPrice.Value)
 			{
-				SellMarket(Position, comment: TradeComment + " SL");
+				SellMarket(Math.Abs(Position));
 			}
 		}
 		else if (Position < 0m)
 		{
 			if (_shortTakePrice.HasValue && candle.LowPrice <= _shortTakePrice.Value)
 			{
-				BuyMarket(-Position, comment: TradeComment + " TP");
+				BuyMarket(Math.Abs(Position));
 				return;
 			}
 
 			if (_shortStopPrice.HasValue && candle.HighPrice >= _shortStopPrice.Value)
 			{
-				BuyMarket(-Position, comment: TradeComment + " SL");
+				BuyMarket(Math.Abs(Position));
 			}
 		}
 	}
@@ -358,7 +358,6 @@ public class RrsChaoticStrategy : Strategy
 		var unrealized = GetUnrealizedPnL(candle.ClosePrice);
 		if (unrealized <= threshold.Value)
 		{
-			CancelActiveOrders();
 			ClosePosition();
 		}
 	}
@@ -413,11 +412,11 @@ public class RrsChaoticStrategy : Strategy
 		if (security == null)
 			return 1m;
 
-		if (security.VolumeStep > 0m)
-			return security.VolumeStep;
+		if ((security.VolumeStep ?? 0m) > 0m)
+			return security.VolumeStep.Value;
 
-		if (security.MinVolume > 0m)
-			return security.MinVolume;
+		if ((security.MinVolume ?? 0m) > 0m)
+			return security.MinVolume.Value;
 
 		return 1m;
 	}
@@ -428,11 +427,8 @@ public class RrsChaoticStrategy : Strategy
 		if (security == null)
 			return 0.0001m;
 
-		if (security.PriceStep > 0m)
-			return security.PriceStep;
-
-		if (security.MinStep > 0m)
-			return security.MinStep;
+		if ((security.PriceStep ?? 0m) > 0m)
+			return security.PriceStep.Value;
 
 		return 0.0001m;
 	}
@@ -461,14 +457,13 @@ public class RrsChaoticStrategy : Strategy
 			return true;
 
 		var security = Security;
-		var bid = security?.BestBid?.Price ?? 0m;
-		var ask = security?.BestAsk?.Price ?? 0m;
-
-		if (bid <= 0m || ask <= 0m)
-			return true;
-
+		var lastPrice = Security?.LastTick?.Price ?? 0m;
 		var step = GetPriceStep();
-		if (step <= 0m)
+		var halfSpread = step * 5;
+		var bid = lastPrice > 0m ? lastPrice - halfSpread : 0m;
+		var ask = lastPrice > 0m ? lastPrice + halfSpread : 0m;
+
+		if (bid <= 0m || ask <= 0m || step <= 0m)
 			return true;
 
 		var spread = (ask - bid) / step;
@@ -480,7 +475,7 @@ public class RrsChaoticStrategy : Strategy
 		if (Position == 0m)
 			return 0m;
 
-		var entry = PositionPrice;
+		var entry = _entryPrice;
 		if (entry == 0m)
 			return 0m;
 
@@ -491,11 +486,11 @@ public class RrsChaoticStrategy : Strategy
 	private decimal GetPortfolioValue()
 	{
 		var portfolio = Portfolio;
-		if (portfolio?.CurrentValue > 0m)
-			return portfolio.CurrentValue;
+		if ((portfolio?.CurrentValue ?? 0m) > 0m)
+			return portfolio.CurrentValue.Value;
 
-		if (portfolio?.BeginValue > 0m)
-			return portfolio.BeginValue;
+		if ((portfolio?.BeginValue ?? 0m) > 0m)
+			return portfolio.BeginValue.Value;
 
 		return _initialEquity <= 0m ? 10000m : _initialEquity;
 	}
@@ -504,11 +499,11 @@ public class RrsChaoticStrategy : Strategy
 	{
 		if (Position > 0m)
 		{
-			SellMarket(Position, comment: TradeComment + " Risk");
+			SellMarket(Math.Abs(Position));
 		}
 		else if (Position < 0m)
 		{
-			BuyMarket(-Position, comment: TradeComment + " Risk");
+			BuyMarket(Math.Abs(Position));
 		}
 	}
 }

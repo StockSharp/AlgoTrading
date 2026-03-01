@@ -41,6 +41,7 @@ public class RrsNonDirectionalStrategy : Strategy
 	private decimal? _lastAsk;
 	private decimal _pointSize;
 	private decimal _tickValue;
+	private decimal _entryPrice;
 	private decimal? _longStopPrice;
 	private decimal? _shortStopPrice;
 	private decimal? _longTakePrice;
@@ -303,7 +304,6 @@ public class RrsNonDirectionalStrategy : Strategy
 		.Bind(ProcessLevel1)
 		.Start();
 
-		StartProtection(null, null);
 	}
 
 	private void InitializeAutoSwap()
@@ -340,18 +340,18 @@ public class RrsNonDirectionalStrategy : Strategy
 		if (Position > 0m)
 		{
 			if (_longStopPrice is not null && bid <= _longStopPrice)
-			ClosePosition("Stop-loss hit");
+			ClosePositionManual("Stop-loss hit");
 			else if (_longTakePrice is not null && bid >= _longTakePrice)
-			ClosePosition("Take-profit hit");
+			ClosePositionManual("Take-profit hit");
 			else
 			UpdateTrailingForLong(bid.Value);
 		}
 		else if (Position < 0m)
 		{
 			if (_shortStopPrice is not null && ask >= _shortStopPrice)
-			ClosePosition("Stop-loss hit");
+			ClosePositionManual("Stop-loss hit");
 			else if (_shortTakePrice is not null && ask <= _shortTakePrice)
-			ClosePosition("Take-profit hit");
+			ClosePositionManual("Take-profit hit");
 			else
 			UpdateTrailingForShort(ask.Value);
 		}
@@ -367,7 +367,7 @@ public class RrsNonDirectionalStrategy : Strategy
 		if (activation <= 0m || gap <= 0m)
 		return;
 
-		var entryPrice = PositionPrice ?? 0m;
+		var entryPrice = _entryPrice;
 		if (entryPrice <= 0m)
 		return;
 
@@ -382,7 +382,7 @@ public class RrsNonDirectionalStrategy : Strategy
 		}
 
 		if (_longTrailingStop is not null && bid <= _longTrailingStop)
-		ClosePosition("Trailing stop");
+		ClosePositionManual("Trailing stop");
 	}
 
 	private void UpdateTrailingForShort(decimal ask)
@@ -395,7 +395,7 @@ public class RrsNonDirectionalStrategy : Strategy
 		if (activation <= 0m || gap <= 0m)
 		return;
 
-		var entryPrice = PositionPrice ?? 0m;
+		var entryPrice = _entryPrice;
 		if (entryPrice <= 0m)
 		return;
 
@@ -410,7 +410,7 @@ public class RrsNonDirectionalStrategy : Strategy
 		}
 
 		if (_shortTrailingStop is not null && ask >= _shortTrailingStop)
-		ClosePosition("Trailing stop");
+		ClosePositionManual("Trailing stop");
 	}
 
 	private void ApplyRiskCut()
@@ -427,7 +427,7 @@ public class RrsNonDirectionalStrategy : Strategy
 		var threshold = GetRiskThreshold();
 		if (unrealized <= threshold)
 		{
-			ClosePosition("Risk control");
+			ClosePositionManual("Risk control");
 			_statusMessage = "Risk stop activated";
 		}
 	}
@@ -437,7 +437,7 @@ public class RrsNonDirectionalStrategy : Strategy
 		if (Position == 0m)
 		return 0m;
 
-		var entryPrice = PositionPrice ?? 0m;
+		var entryPrice = _entryPrice;
 		if (entryPrice <= 0m)
 		return 0m;
 
@@ -531,7 +531,7 @@ public class RrsNonDirectionalStrategy : Strategy
 
 	private void OpenLong()
 	{
-		var order = BuyMarket(TradeVolume, comment: TradeComment);
+		var order = BuyMarket(TradeVolume);
 		if (order != null)
 		{
 			_statusMessage = "Opened long";
@@ -541,7 +541,7 @@ public class RrsNonDirectionalStrategy : Strategy
 
 	private void OpenShort()
 	{
-		var order = SellMarket(TradeVolume, comment: TradeComment);
+		var order = SellMarket(TradeVolume);
 		if (order != null)
 		{
 			_statusMessage = "Opened short";
@@ -551,7 +551,7 @@ public class RrsNonDirectionalStrategy : Strategy
 
 	private void PrepareProtectionForLong()
 	{
-		var entryPrice = PositionPrice ?? Security?.LastPrice ?? 0m;
+		var entryPrice = _entryPrice;
 		if (entryPrice <= 0m)
 		return;
 
@@ -565,7 +565,7 @@ public class RrsNonDirectionalStrategy : Strategy
 
 	private void PrepareProtectionForShort()
 	{
-		var entryPrice = PositionPrice ?? Security?.LastPrice ?? 0m;
+		var entryPrice = _entryPrice;
 		if (entryPrice <= 0m)
 		return;
 
@@ -607,6 +607,28 @@ public class RrsNonDirectionalStrategy : Strategy
 			_longTrailingStop = null;
 			_shortTrailingStop = null;
 		}
+	}
+
+	private void ClosePositionManual(string reason)
+	{
+		if (Position > 0m)
+			SellMarket(Math.Abs(Position));
+		else if (Position < 0m)
+			BuyMarket(Math.Abs(Position));
+
+		_statusMessage = reason;
+	}
+
+	/// <inheritdoc />
+	protected override void OnOwnTradeReceived(MyTrade trade)
+	{
+		base.OnOwnTradeReceived(trade);
+
+		if (Position != 0m && _entryPrice == 0m)
+			_entryPrice = trade.Trade.Price;
+
+		if (Position == 0m)
+			_entryPrice = 0m;
 	}
 
 	private decimal GetPortfolioValue()
