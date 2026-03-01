@@ -12,7 +12,6 @@ using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 using StockSharp.Algo;
-using StockSharp.Charting;
 
 namespace StockSharp.Samples.Strategies;
 
@@ -28,7 +27,6 @@ public class ProfitLabelsStrategy : Strategy
 	private readonly StrategyParam<bool> _placingTrade;
 	private readonly StrategyParam<decimal> _labelOffset;
 
-	private IChartArea _chartArea;
 	private DateTimeOffset? _lastSignalTime;
 	private bool _previousTradeBuy;
 	private bool _previousTradeSell;
@@ -55,7 +53,7 @@ public class ProfitLabelsStrategy : Strategy
 		_tradeVolume = Param(nameof(TradeVolume), 0.1m)
 			.SetDisplay("Trade Volume", "Volume used for each position", "Trading");
 
-		_placingTrade = Param(nameof(PlacingTrade), false)
+		_placingTrade = Param(nameof(PlacingTrade), true)
 			.SetDisplay("Enable Trading", "Place live orders on signals", "Trading")
 			;
 
@@ -132,11 +130,11 @@ public class ProfitLabelsStrategy : Strategy
 			.Bind(tema, ProcessCandle)
 			.Start();
 
-		_chartArea = CreateChartArea();
-		if (_chartArea != null)
+		var area = CreateChartArea();
+		if (area != null)
 		{
-			DrawCandles(_chartArea, subscription);
-			DrawIndicator(_chartArea, tema, subscription);
+			DrawCandles(area, subscription);
+			DrawIndicator(area, tema);
 		}
 	}
 
@@ -251,13 +249,13 @@ public class ProfitLabelsStrategy : Strategy
 			return 0m;
 
 		var priceStep = Security?.PriceStep;
-		var stepValue = Security?.StepValue;
+		var stepPrice = Security?.StepPrice;
 
-		if (priceStep.HasValue && priceStep.Value > 0m && stepValue.HasValue && stepValue.Value > 0m)
+		if (priceStep.HasValue && priceStep.Value > 0m && stepPrice.HasValue && stepPrice.Value > 0m)
 		{
 			var points = (exitPrice - entryPrice) / priceStep.Value;
 			var direction = entrySide == Sides.Buy ? 1m : -1m;
-			return points * stepValue.Value * volume * direction;
+			return points * stepPrice.Value * volume * direction;
 		}
 
 		var rawDifference = entrySide == Sides.Buy
@@ -270,47 +268,8 @@ public class ProfitLabelsStrategy : Strategy
 	// Draw a label with realized profit information.
 	private void DrawProfitLabel(decimal profit, DateTimeOffset time, decimal price)
 	{
-		if (_chartArea is null)
-			return;
-
-		var labelText = $"{GetCurrencySymbol()}{profit:F2}";
-		var targetPrice = price + LabelOffset;
-
-		DrawText(_chartArea, time, targetPrice, labelText);
-	}
-
-	// Return a simple currency prefix based on the security currency.
-	private string GetCurrencySymbol()
-	{
-		var currency = Security?.Currency?.ToUpperInvariant();
-		return currency switch
-		{
-			"USD" => "$",
-			"EUR" => "€",
-			"GBP" => "£",
-			"JPY" => "¥",
-			"AUD" => "A$",
-			"CAD" => "C$",
-			"CHF" => "CHF",
-			"CNY" => "¥",
-			"HKD" => "HK$",
-			"NZD" => "NZ$",
-			"SEK" => "kr",
-			"SGD" => "S$",
-			"NOK" => "kr",
-			"MXN" => "Mex$",
-			"INR" => "₹",
-			"RUB" => "₽",
-			"BRL" => "R$",
-			"ZAR" => "R",
-			"TRY" => "₺",
-			"KRW" => "₩",
-			"THB" => "฿",
-			"IDR" => "Rp",
-			"MYR" => "RM",
-			"PHP" => "₱",
-			_ => currency ?? string.Empty
-		};
+		// DrawText not available, log instead
+		LogInfo($"Profit: {profit:F2} at {time:yyyy-MM-dd HH:mm} price {price}");
 	}
 }
 

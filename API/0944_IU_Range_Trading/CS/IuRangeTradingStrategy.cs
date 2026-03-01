@@ -24,18 +24,11 @@ public class IuRangeTradingStrategy : Strategy
 	private readonly StrategyParam<decimal> _atrRangeFactor;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private Highest _highest;
-	private Lowest _lowest;
-	private AverageTrueRange _atr;
-
 	private bool _previousRangeCond;
 	private decimal _rangeHigh;
 	private decimal _rangeLow;
-
 	private decimal? _sl0;
-	private decimal? _sl1;
 	private decimal? _trailingSl;
-	private int _prevPosition;
 	private decimal _entryPrice;
 
 	/// <summary>
@@ -89,51 +82,19 @@ public class IuRangeTradingStrategy : Strategy
 	public IuRangeTradingStrategy()
 	{
 		_rangeLength = Param(nameof(RangeLength), 10)
-			.SetGreaterThanZero()
-			.SetDisplay("Range Length", "Lookback period for range detection", "Parameters")
-			
-			.SetOptimize(5, 20, 5);
+			.SetDisplay("Range Length", "Lookback period for range detection.", "Parameters");
 
 		_atrLength = Param(nameof(AtrLength), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("ATR Length", "ATR period", "Parameters")
-			
-			.SetOptimize(7, 28, 7);
+			.SetDisplay("ATR Length", "ATR period.", "Parameters");
 
 		_atrTargetFactor = Param(nameof(AtrTargetFactor), 2.0m)
-			.SetGreaterThanZero()
-			.SetDisplay("ATR Target Factor", "Multiplier for trailing stop step", "Parameters")
-			
-			.SetOptimize(1.0m, 3.0m, 0.5m);
+			.SetDisplay("ATR Target Factor", "Multiplier for trailing stop step.", "Parameters");
 
 		_atrRangeFactor = Param(nameof(AtrRangeFactor), 1.75m)
-			.SetGreaterThanZero()
-			.SetDisplay("ATR Range Factor", "ATR multiplier to validate range", "Parameters")
-			
-			.SetOptimize(1.0m, 3.0m, 0.25m);
+			.SetDisplay("ATR Range Factor", "ATR multiplier to validate range.", "Parameters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
-	}
-
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_previousRangeCond = false;
-		_rangeHigh = 0;
-		_rangeLow = 0;
-		_sl0 = null;
-		_sl1 = null;
-		_trailingSl = null;
-		_prevPosition = 0;
-		_entryPrice = 0;
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use.", "General");
 	}
 
 	/// <inheritdoc />
@@ -141,22 +102,27 @@ public class IuRangeTradingStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_highest = new Highest { Length = RangeLength };
-		_lowest = new Lowest { Length = RangeLength };
-		_atr = new AverageTrueRange { Length = AtrLength };
+		_previousRangeCond = false;
+		_rangeHigh = 0m;
+		_rangeLow = 0m;
+		_sl0 = null;
+		_trailingSl = null;
+		_entryPrice = 0m;
+
+
+		var highest = new Highest { Length = RangeLength };
+		var lowest = new Lowest { Length = RangeLength };
+		var atr = new AverageTrueRange { Length = AtrLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_highest, _lowest, _atr, ProcessCandle)
+			.Bind(highest, lowest, atr, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _highest);
-			DrawIndicator(area, _lowest);
-			DrawIndicator(area, _atr);
 			DrawOwnTrades(area);
 		}
 	}
@@ -166,14 +132,9 @@ public class IuRangeTradingStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_atr.IsFormed || !_highest.IsFormed || !_lowest.IsFormed)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		var rangeCond = (highestValue - lowestValue) <= atrValue * AtrRangeFactor;
 
+		// Track range boundaries
 		if (rangeCond && !_previousRangeCond && Position == 0)
 		{
 			_rangeHigh = highestValue;
@@ -185,74 +146,61 @@ public class IuRangeTradingStrategy : Strategy
 			_rangeLow = Math.Min(_rangeLow, lowestValue);
 		}
 
+		// Entry logic: breakout from range
 		if (Position == 0 && _rangeHigh != 0 && _rangeLow != 0)
 		{
-			if (candle.HighPrice >= _rangeHigh)
-				BuyMarket(Volume + Math.Abs(Position));
-			else if (candle.LowPrice <= _rangeLow)
-				SellMarket(Volume + Math.Abs(Position));
-		}
-
-		var currentPosition = Position;
-
-		if (currentPosition != 0 && _prevPosition == 0)
-		{
-			_entryPrice = candle.ClosePrice;
-			var atrStop = atrValue * AtrTargetFactor;
-
-			if (currentPosition > 0)
+			if (candle.ClosePrice > _rangeHigh)
 			{
-				_sl0 = _entryPrice - atrStop;
-				_sl1 = _entryPrice;
-				_trailingSl = _entryPrice + atrStop;
+				BuyMarket();
+				_entryPrice = candle.ClosePrice;
+				_sl0 = _entryPrice - atrValue * AtrTargetFactor;
+				_trailingSl = _entryPrice + atrValue * AtrTargetFactor;
 			}
-			else
+			else if (candle.ClosePrice < _rangeLow)
 			{
-				_sl0 = _entryPrice + atrStop;
-				_sl1 = _entryPrice;
-				_trailingSl = _entryPrice - atrStop;
+				SellMarket();
+				_entryPrice = candle.ClosePrice;
+				_sl0 = _entryPrice + atrValue * AtrTargetFactor;
+				_trailingSl = _entryPrice - atrValue * AtrTargetFactor;
 			}
 		}
 
-		if (currentPosition > 0 && _sl0.HasValue && _sl1.HasValue && _trailingSl.HasValue)
+		// Exit logic with trailing stop
+		if (Position > 0 && _sl0.HasValue && _trailingSl.HasValue)
 		{
 			if (candle.HighPrice > _trailingSl.Value)
 			{
 				var step = atrValue * AtrTargetFactor;
-				_sl0 = _sl1;
-				_sl1 = _trailingSl;
+				_sl0 = _trailingSl - step;
 				_trailingSl += step;
 			}
 
 			if (candle.LowPrice <= _sl0.Value)
 			{
-				SellMarket(Math.Abs(currentPosition));
-				_sl0 = _sl1 = _trailingSl = null;
+				SellMarket();
+				_sl0 = _trailingSl = null;
+				_rangeHigh = 0m;
+				_rangeLow = 0m;
 			}
 		}
-		else if (currentPosition < 0 && _sl0.HasValue && _sl1.HasValue && _trailingSl.HasValue)
+		else if (Position < 0 && _sl0.HasValue && _trailingSl.HasValue)
 		{
 			if (candle.LowPrice < _trailingSl.Value)
 			{
 				var step = atrValue * AtrTargetFactor;
-				_sl0 = _sl1;
-				_sl1 = _trailingSl;
+				_sl0 = _trailingSl + step;
 				_trailingSl -= step;
 			}
 
 			if (candle.HighPrice >= _sl0.Value)
 			{
-				BuyMarket(Math.Abs(currentPosition));
-				_sl0 = _sl1 = _trailingSl = null;
+				BuyMarket();
+				_sl0 = _trailingSl = null;
+				_rangeHigh = 0m;
+				_rangeLow = 0m;
 			}
 		}
 
-		if (currentPosition == 0 && _prevPosition != 0)
-		{
-			_sl0 = _sl1 = _trailingSl = null;
-		}
-
 		_previousRangeCond = rangeCond;
-		_prevPosition = currentPosition;
 	}
 }

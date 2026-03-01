@@ -16,38 +16,24 @@ using StockSharp.Algo;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Breakout strategy with fair value gap detection and multiple take-profit targets.
+/// Breakout strategy with fair value gap detection and ATR-based stop/target.
 /// </summary>
 public class JohnBobTradingBotStrategy : Strategy
 {
 	private readonly StrategyParam<decimal> _atrMultiplier;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private AverageTrueRange _atr;
-	private Highest _highest;
-	private Lowest _lowest;
-
 	private decimal _prevClose;
-	private decimal _prevPdHigh;
-	private decimal _prevPdLow;
-	private decimal _prev1High;
-	private decimal _prev1Low;
+	private decimal _prevHigh;
+	private decimal _prevLow;
 	private decimal _prev2High;
 	private decimal _prev2Low;
-	private bool _initialized;
-
-	private decimal _longStop;
-	private decimal _shortStop;
-	private decimal _tp1;
-	private decimal _tp2;
-	private decimal _tp3;
-	private decimal _tp4;
-	private decimal _tp5;
-	private bool _tp1Hit;
-	private bool _tp2Hit;
-	private bool _tp3Hit;
-	private bool _tp4Hit;
-	private bool _tp5Hit;
+	private decimal _highestHigh;
+	private decimal _lowestLow;
+	private int _barCount;
+	private decimal _entryPrice;
+	private decimal _stopPrice;
+	private decimal _targetPrice;
 
 	/// <summary>
 	/// ATR multiplier for stop-loss calculation.
@@ -73,31 +59,10 @@ public class JohnBobTradingBotStrategy : Strategy
 	public JohnBobTradingBotStrategy()
 	{
 		_atrMultiplier = Param(nameof(AtrMultiplier), 2m)
-			.SetDisplay("ATR Mult", "ATR stop multiplier", "Risk");
+			.SetDisplay("ATR Mult", "ATR stop multiplier.", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
-	}
-
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_prevClose = default;
-		_prevPdHigh = default;
-		_prevPdLow = default;
-		_prev1High = default;
-		_prev1Low = default;
-		_prev2High = default;
-		_prev2Low = default;
-		_initialized = false;
+			.SetDisplay("Candle Type", "Type of candles.", "General");
 	}
 
 	/// <inheritdoc />
@@ -105,13 +70,23 @@ public class JohnBobTradingBotStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_atr = new AverageTrueRange { Length = 14 };
-		_highest = new Highest { Length = 50 };
-		_lowest = new Lowest { Length = 50 };
+		_prevClose = 0m;
+		_prevHigh = 0m;
+		_prevLow = 0m;
+		_prev2High = 0m;
+		_prev2Low = 0m;
+		_highestHigh = 0m;
+		_lowestLow = decimal.MaxValue;
+		_barCount = 0;
+		_entryPrice = 0m;
+		_stopPrice = 0m;
+		_targetPrice = 0m;
+
+		var atr = new AverageTrueRange { Length = 14 };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_atr, ProcessCandle)
+			.Bind(atr, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -120,148 +95,83 @@ public class JohnBobTradingBotStrategy : Strategy
 			DrawCandles(area, subscription);
 			DrawOwnTrades(area);
 		}
-
-		StartProtection(null, null);
 	}
+
 	private void ProcessCandle(ICandleMessage candle, decimal atrValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var highestValue = _highest.Process(candle.HighPrice).ToDecimal();
-		var lowestValue = _lowest.Process(candle.LowPrice).ToDecimal();
+		_barCount++;
+		if (candle.HighPrice > _highestHigh) _highestHigh = candle.HighPrice;
+		if (candle.LowPrice < _lowestLow) _lowestLow = candle.LowPrice;
 
-		if (!_atr.IsFormed || !_highest.IsFormed || !_lowest.IsFormed)
+		if (_barCount < 50)
 		{
+			_prev2High = _prevHigh;
+			_prev2Low = _prevLow;
+			_prevHigh = candle.HighPrice;
+			_prevLow = candle.LowPrice;
 			_prevClose = candle.ClosePrice;
-			_prevPdHigh = highestValue;
-			_prevPdLow = lowestValue;
-			_prev1High = candle.HighPrice;
-			_prev1Low = candle.LowPrice;
-			_prev2High = candle.HighPrice;
-			_prev2Low = candle.LowPrice;
-			_initialized = true;
 			return;
 		}
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		var close = candle.ClosePrice;
 
-		var crossUp = _prevClose <= _prevPdLow && close > lowestValue;
-		var crossDown = _prevClose >= _prevPdHigh && close < highestValue;
-
+		// Fair value gap detection
 		var fvgUp = _prev2Low > candle.HighPrice;
 		var fvgDown = _prev2High < candle.LowPrice;
+
+		// Breakout detection
+		var crossUp = _prevClose <= _lowestLow && close > _lowestLow;
+		var crossDown = _prevClose >= _highestHigh && close < _highestHigh;
 
 		var buySignal = crossUp || fvgUp;
 		var sellSignal = crossDown || fvgDown;
 
-		if (buySignal && Position <= 0)
-		{
-			for (var i = 0; i < 5; i++)
-				BuyMarket();
-
-			_longStop = close - atrValue * AtrMultiplier;
-			_tp1 = close + atrValue * 1m;
-			_tp2 = close + atrValue * 1.5m;
-			_tp3 = close + atrValue * 2m;
-			_tp4 = close + atrValue * 2.5m;
-			_tp5 = close + atrValue * 3m;
-			_tp1Hit = _tp2Hit = _tp3Hit = _tp4Hit = _tp5Hit = false;
-		}
-		else if (sellSignal && Position >= 0)
-		{
-			for (var i = 0; i < 5; i++)
-				SellMarket();
-
-			_shortStop = close + atrValue * AtrMultiplier;
-			_tp1 = close - atrValue * 1m;
-			_tp2 = close - atrValue * 1.5m;
-			_tp3 = close - atrValue * 2m;
-			_tp4 = close - atrValue * 2.5m;
-			_tp5 = close - atrValue * 3m;
-			_tp1Hit = _tp2Hit = _tp3Hit = _tp4Hit = _tp5Hit = false;
-		}
-
+		// Exit logic
 		if (Position > 0)
 		{
-			if (candle.LowPrice <= _longStop)
+			if (candle.LowPrice <= _stopPrice || candle.HighPrice >= _targetPrice)
 			{
-				SellMarket(Position);
-			}
-			else
-			{
-				if (!_tp1Hit && candle.HighPrice >= _tp1)
-				{
-					SellMarket(1);
-					_tp1Hit = true;
-				}
-				if (!_tp2Hit && candle.HighPrice >= _tp2)
-				{
-					SellMarket(1);
-					_tp2Hit = true;
-				}
-				if (!_tp3Hit && candle.HighPrice >= _tp3)
-				{
-					SellMarket(1);
-					_tp3Hit = true;
-				}
-				if (!_tp4Hit && candle.HighPrice >= _tp4)
-				{
-					SellMarket(1);
-					_tp4Hit = true;
-				}
-				if (!_tp5Hit && candle.HighPrice >= _tp5)
-				{
-					SellMarket(1);
-					_tp5Hit = true;
-				}
+				SellMarket();
+				_stopPrice = 0m;
+				_targetPrice = 0m;
 			}
 		}
 		else if (Position < 0)
 		{
-			if (candle.HighPrice >= _shortStop)
+			if (candle.HighPrice >= _stopPrice || candle.LowPrice <= _targetPrice)
 			{
-				BuyMarket(Math.Abs(Position));
-			}
-			else
-			{
-				if (!_tp1Hit && candle.LowPrice <= _tp1)
-				{
-					BuyMarket(1);
-					_tp1Hit = true;
-				}
-				if (!_tp2Hit && candle.LowPrice <= _tp2)
-				{
-					BuyMarket(1);
-					_tp2Hit = true;
-				}
-				if (!_tp3Hit && candle.LowPrice <= _tp3)
-				{
-					BuyMarket(1);
-					_tp3Hit = true;
-				}
-				if (!_tp4Hit && candle.LowPrice <= _tp4)
-				{
-					BuyMarket(1);
-					_tp4Hit = true;
-				}
-				if (!_tp5Hit && candle.LowPrice <= _tp5)
-				{
-					BuyMarket(1);
-					_tp5Hit = true;
-				}
+				BuyMarket();
+				_stopPrice = 0m;
+				_targetPrice = 0m;
 			}
 		}
 
-		_prev2High = _prev1High;
-		_prev2Low = _prev1Low;
-		_prev1High = candle.HighPrice;
-		_prev1Low = candle.LowPrice;
+		// Entry logic
+		if (Position == 0)
+		{
+			if (buySignal)
+			{
+				BuyMarket();
+				_entryPrice = close;
+				_stopPrice = close - atrValue * AtrMultiplier;
+				_targetPrice = close + atrValue * AtrMultiplier * 2m;
+			}
+			else if (sellSignal)
+			{
+				SellMarket();
+				_entryPrice = close;
+				_stopPrice = close + atrValue * AtrMultiplier;
+				_targetPrice = close - atrValue * AtrMultiplier * 2m;
+			}
+		}
+
+		_prev2High = _prevHigh;
+		_prev2Low = _prevLow;
+		_prevHigh = candle.HighPrice;
+		_prevLow = candle.LowPrice;
 		_prevClose = close;
-		_prevPdHigh = highestValue;
-		_prevPdLow = lowestValue;
 	}
 }

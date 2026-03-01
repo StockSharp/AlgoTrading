@@ -18,26 +18,10 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class IuBiggerThanRangeStrategy : Strategy
 {
-	public enum StopLossMethods
-	{
-		PreviousHighLow,
-		Atr,
-		SwingHighLow
-	}
-
 	private readonly StrategyParam<int> _lookbackPeriod;
 	private readonly StrategyParam<int> _riskToReward;
-	private readonly StrategyParam<StopLossMethods> _stopLossMethod;
-	private readonly StrategyParam<int> _atrLength;
 	private readonly StrategyParam<decimal> _atrFactor;
-	private readonly StrategyParam<int> _swingLength;
 	private readonly StrategyParam<DataType> _candleType;
-
-	private Highest _rangeHigh;
-	private Lowest _rangeLow;
-	private ATR _atr;
-	private Highest _swingHigh;
-	private Lowest _swingLow;
 
 	private decimal _prevRangeSize;
 	private decimal _prevCandleHigh;
@@ -45,7 +29,9 @@ public class IuBiggerThanRangeStrategy : Strategy
 	private decimal _stopPrice;
 	private decimal _targetPrice;
 	private decimal _entryPrice;
-	private bool _isLong;
+	private decimal _highestHigh;
+	private decimal _lowestLow;
+	private int _barCount;
 
 	/// <summary>
 	/// Lookback period for range calculation.
@@ -66,39 +52,12 @@ public class IuBiggerThanRangeStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stop loss calculation method.
-	/// </summary>
-	public StopLossMethods StopLoss
-	{
-		get => _stopLossMethod.Value;
-		set => _stopLossMethod.Value = value;
-	}
-
-	/// <summary>
-	/// ATR indicator length.
-	/// </summary>
-	public int AtrLength
-	{
-		get => _atrLength.Value;
-		set => _atrLength.Value = value;
-	}
-
-	/// <summary>
 	/// ATR multiplier factor.
 	/// </summary>
 	public decimal AtrFactor
 	{
 		get => _atrFactor.Value;
 		set => _atrFactor.Value = value;
-	}
-
-	/// <summary>
-	/// Swing high/low lookback length.
-	/// </summary>
-	public int SwingLength
-	{
-		get => _swingLength.Value;
-		set => _swingLength.Value = value;
 	}
 
 	/// <summary>
@@ -116,59 +75,16 @@ public class IuBiggerThanRangeStrategy : Strategy
 	public IuBiggerThanRangeStrategy()
 	{
 		_lookbackPeriod = Param(nameof(LookbackPeriod), 22)
-			.SetGreaterThanZero()
-			.SetDisplay("Lookback Period", "Length for range calculation", "Parameters")
-			;
+			.SetDisplay("Lookback Period", "Length for range calculation.", "Parameters");
 
 		_riskToReward = Param(nameof(RiskToReward), 3)
-			.SetGreaterThanZero()
-			.SetDisplay("Risk To Reward", "Risk to reward ratio", "Parameters")
-			;
-
-		_stopLossMethod = Param(nameof(StopLoss), StopLossMethods.PreviousHighLow)
-			.SetDisplay("Stop Loss Method", "Stop loss calculation method", "Risk Management");
-
-		_atrLength = Param(nameof(AtrLength), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("ATR Length", "ATR indicator length", "Risk Management")
-			;
+			.SetDisplay("Risk To Reward", "Risk to reward ratio.", "Parameters");
 
 		_atrFactor = Param(nameof(AtrFactor), 2m)
-			.SetGreaterThanZero()
-			.SetDisplay("ATR Factor", "ATR multiplier", "Risk Management")
-			;
+			.SetDisplay("ATR Factor", "ATR multiplier.", "Risk Management");
 
-		_swingLength = Param(nameof(SwingLength), 10)
-			.SetGreaterThanZero()
-			.SetDisplay("Swing Length", "Swing high/low lookback", "Risk Management")
-			;
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
-	}
-
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_prevRangeSize = 0m;
-		_prevCandleHigh = 0m;
-		_prevCandleLow = 0m;
-		_stopPrice = 0m;
-		_targetPrice = 0m;
-		_entryPrice = 0m;
-		_isLong = false;
-		_rangeHigh = null;
-		_rangeLow = null;
-		_atr = null;
-		_swingHigh = null;
-		_swingLow = null;
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles.", "General");
 	}
 
 	/// <inheritdoc />
@@ -176,15 +92,21 @@ public class IuBiggerThanRangeStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_rangeHigh = new Highest { Length = LookbackPeriod };
-		_rangeLow = new Lowest { Length = LookbackPeriod };
-		_atr = new ATR { Length = AtrLength };
-		_swingHigh = new Highest { Length = SwingLength };
-		_swingLow = new Lowest { Length = SwingLength };
+		_prevRangeSize = 0m;
+		_prevCandleHigh = 0m;
+		_prevCandleLow = 0m;
+		_stopPrice = 0m;
+		_targetPrice = 0m;
+		_entryPrice = 0m;
+		_highestHigh = 0m;
+		_lowestLow = decimal.MaxValue;
+		_barCount = 0;
+
+		var atr = new AverageTrueRange { Length = 14 };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(atr, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -195,22 +117,21 @@ public class IuBiggerThanRangeStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal atrValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var maxOc = Math.Max(candle.ClosePrice, candle.OpenPrice);
-		var minOc = Math.Min(candle.ClosePrice, candle.OpenPrice);
-		var highest = _rangeHigh.Process(maxOc).ToDecimal();
-		var lowest = _rangeLow.Process(minOc).ToDecimal();
-		var rangeSize = highest - lowest;
-		var candleRange = Math.Abs(candle.ClosePrice - candle.OpenPrice);
-		var atrValue = _atr.Process(candle).ToDecimal();
-		var swingHigh = _swingHigh.Process(candle.HighPrice).ToDecimal();
-		var swingLow = _swingLow.Process(candle.LowPrice).ToDecimal();
+		_barCount++;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		// Track highest/lowest manually
+		if (candle.HighPrice > _highestHigh) _highestHigh = candle.HighPrice;
+		if (candle.LowPrice < _lowestLow) _lowestLow = candle.LowPrice;
+
+		var rangeSize = _highestHigh - _lowestLow;
+		var candleBody = Math.Abs(candle.ClosePrice - candle.OpenPrice);
+
+		if (_barCount < LookbackPeriod)
 		{
 			_prevRangeSize = rangeSize;
 			_prevCandleHigh = candle.HighPrice;
@@ -218,74 +139,49 @@ public class IuBiggerThanRangeStrategy : Strategy
 			return;
 		}
 
-		var cond = candleRange > _prevRangeSize;
-
-		if (cond && Position == 0)
-		{
-			if (candle.ClosePrice > candle.OpenPrice)
-			{
-				BuyMarket(Volume);
-				_entryPrice = candle.ClosePrice;
-				_isLong = true;
-				_stopPrice = GetStopPrice(true, atrValue, swingHigh, swingLow);
-				_targetPrice = (_entryPrice - _stopPrice) * RiskToReward + _entryPrice;
-			}
-			else if (candle.ClosePrice < candle.OpenPrice)
-			{
-				SellMarket(Volume);
-				_entryPrice = candle.ClosePrice;
-				_isLong = false;
-				_stopPrice = GetStopPrice(false, atrValue, swingHigh, swingLow);
-				_targetPrice = _entryPrice - (_stopPrice - _entryPrice) * RiskToReward;
-			}
-		}
-
+		// Exit logic first
 		if (Position > 0)
 		{
-			if (candle.LowPrice <= _stopPrice || candle.ClosePrice <= _stopPrice)
+			if (candle.LowPrice <= _stopPrice || candle.ClosePrice >= _targetPrice)
 			{
-				SellMarket(Math.Abs(Position));
-				ResetTradeState();
-			}
-			else if (candle.HighPrice >= _targetPrice || candle.ClosePrice >= _targetPrice)
-			{
-				SellMarket(Math.Abs(Position));
-				ResetTradeState();
+				SellMarket();
+				_stopPrice = 0m;
+				_targetPrice = 0m;
+				_entryPrice = 0m;
 			}
 		}
 		else if (Position < 0)
 		{
-			if (candle.HighPrice >= _stopPrice || candle.ClosePrice >= _stopPrice)
+			if (candle.HighPrice >= _stopPrice || candle.ClosePrice <= _targetPrice)
 			{
-				BuyMarket(Math.Abs(Position));
-				ResetTradeState();
+				BuyMarket();
+				_stopPrice = 0m;
+				_targetPrice = 0m;
+				_entryPrice = 0m;
 			}
-			else if (candle.LowPrice <= _targetPrice || candle.ClosePrice <= _targetPrice)
+		}
+
+		// Entry logic
+		if (Position == 0 && candleBody > _prevRangeSize * 0.5m)
+		{
+			if (candle.ClosePrice > candle.OpenPrice)
 			{
-				BuyMarket(Math.Abs(Position));
-				ResetTradeState();
+				BuyMarket();
+				_entryPrice = candle.ClosePrice;
+				_stopPrice = _entryPrice - atrValue * AtrFactor;
+				_targetPrice = _entryPrice + (_entryPrice - _stopPrice) * RiskToReward;
+			}
+			else if (candle.ClosePrice < candle.OpenPrice)
+			{
+				SellMarket();
+				_entryPrice = candle.ClosePrice;
+				_stopPrice = _entryPrice + atrValue * AtrFactor;
+				_targetPrice = _entryPrice - (_stopPrice - _entryPrice) * RiskToReward;
 			}
 		}
 
 		_prevRangeSize = rangeSize;
 		_prevCandleHigh = candle.HighPrice;
 		_prevCandleLow = candle.LowPrice;
-	}
-
-	private decimal GetStopPrice(bool isLong, decimal atrValue, decimal swingHigh, decimal swingLow)
-	{
-		return StopLoss switch
-		{
-			StopLossMethods.PreviousHighLow => isLong ? _prevCandleLow : _prevCandleHigh,
-			StopLossMethods.Atr => isLong ? _entryPrice - atrValue * AtrFactor : _entryPrice + atrValue * AtrFactor,
-			_ => isLong ? swingLow : swingHigh,
-		};
-	}
-
-	private void ResetTradeState()
-	{
-		_stopPrice = 0m;
-		_targetPrice = 0m;
-		_entryPrice = 0m;
 	}
 }

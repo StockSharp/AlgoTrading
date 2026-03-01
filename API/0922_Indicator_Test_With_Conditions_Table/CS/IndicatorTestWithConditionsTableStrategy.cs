@@ -160,39 +160,35 @@ public class IndicatorTestWithConditionsTableStrategy : Strategy
 	public IndicatorTestWithConditionsTableStrategy()
 	{
 		_enableLongCond = Param(nameof(EnableLongCond), true)
-			.SetDisplay("Enable Long Condition", group: "Long Entry");
+			.SetDisplay("Enable Long Condition", "Enable long entry condition.", "Long Entry");
 		_longOperator = Param(nameof(LongOperator), ">")
-			.SetDisplay("Long Operator", group: "Long Entry");
+			.SetDisplay("Long Operator", "Operator for long entry.", "Long Entry");
 		_longValue = Param(nameof(LongValue), 0m)
-			.SetDisplay("Long Value", group: "Long Entry")
-			;
+			.SetDisplay("Long Value", "Comparison value for long entry.", "Long Entry");
 
 		_enableCloseLongCond = Param(nameof(EnableCloseLongCond), false)
-			.SetDisplay("Enable Close Long", group: "Close Long");
+			.SetDisplay("Enable Close Long", "Enable close long condition.", "Close Long");
 		_closeLongOperator = Param(nameof(CloseLongOperator), "<")
-			.SetDisplay("Close Long Operator", group: "Close Long");
+			.SetDisplay("Close Long Operator", "Operator for closing long.", "Close Long");
 		_closeLongValue = Param(nameof(CloseLongValue), 0m)
-			.SetDisplay("Close Long Value", group: "Close Long")
-			;
+			.SetDisplay("Close Long Value", "Value for closing long.", "Close Long");
 
 		_enableShortCond = Param(nameof(EnableShortCond), false)
-			.SetDisplay("Enable Short Condition", group: "Short Entry");
+			.SetDisplay("Enable Short Condition", "Enable short entry condition.", "Short Entry");
 		_shortOperator = Param(nameof(ShortOperator), "<")
-			.SetDisplay("Short Operator", group: "Short Entry");
+			.SetDisplay("Short Operator", "Operator for short entry.", "Short Entry");
 		_shortValue = Param(nameof(ShortValue), 0m)
-			.SetDisplay("Short Value", group: "Short Entry")
-			;
+			.SetDisplay("Short Value", "Comparison value for short entry.", "Short Entry");
 
 		_enableCloseShortCond = Param(nameof(EnableCloseShortCond), false)
-			.SetDisplay("Enable Close Short", group: "Close Short");
+			.SetDisplay("Enable Close Short", "Enable close short condition.", "Close Short");
 		_closeShortOperator = Param(nameof(CloseShortOperator), ">")
-			.SetDisplay("Close Short Operator", group: "Close Short");
+			.SetDisplay("Close Short Operator", "Operator for closing short.", "Close Short");
 		_closeShortValue = Param(nameof(CloseShortValue), 0m)
-			.SetDisplay("Close Short Value", group: "Close Short")
-			;
+			.SetDisplay("Close Short Value", "Value for closing short.", "Close Short");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", group: "General");
+			.SetDisplay("Candle Type", "Candle type for strategy.", "General");
 	}
 
 	/// <inheritdoc />

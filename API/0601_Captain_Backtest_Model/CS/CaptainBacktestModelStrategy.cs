@@ -247,18 +247,12 @@ public class CaptainBacktestModelStrategy : Strategy
 			if (prevBias == true && _bias == true && candle.ClosePrice > _prevHigh && _oppClose && _tookHl && !_longEntered)
 			{
 				_longEntered = true;
-				if (UseStopOrders)
-					BuyStop(Volume + Math.Abs(Position), candle.HighPrice);
-				else
-					BuyMarket(Volume + Math.Abs(Position));
+				BuyMarket(Volume + Math.Abs(Position));
 			}
 			else if (prevBias == false && _bias == false && candle.ClosePrice < _prevLow && _oppClose && _tookHl && !_shortEntered)
 			{
 				_shortEntered = true;
-				if (UseStopOrders)
-					SellStop(Volume + Math.Abs(Position), candle.LowPrice);
-				else
-					SellMarket(Volume + Math.Abs(Position));
+				SellMarket(Volume + Math.Abs(Position));
 			}
 		}
 

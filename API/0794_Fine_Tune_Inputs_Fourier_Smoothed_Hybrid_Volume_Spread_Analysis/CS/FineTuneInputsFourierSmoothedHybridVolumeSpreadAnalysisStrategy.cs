@@ -103,10 +103,10 @@ public class FineTuneInputsFourierSmoothedHybridVolumeSpreadAnalysisStrategy : S
 	{
 		base.OnStarted2(time);
 
-		_closeEma = new EMA { Length = PriceLength };
-		_openEma = new EMA { Length = PriceLength };
-		_volumeEma = new EMA { Length = VolumeLength };
-		_vdma = new EMA { Length = VdmaLength };
+		_closeEma = new ExponentialMovingAverage { Length = PriceLength };
+		_openEma = new ExponentialMovingAverage { Length = PriceLength };
+		_volumeEma = new ExponentialMovingAverage { Length = VolumeLength };
+		_vdma = new ExponentialMovingAverage { Length = VdmaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -119,18 +119,18 @@ public class FineTuneInputsFourierSmoothedHybridVolumeSpreadAnalysisStrategy : S
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var openEmaValue = _openEma!.Process(candle.OpenPrice);
-		if (!openEmaValue.IsFinal || !openEmaValue.TryGetValue(out decimal openEma))
+		var openEma = _openEma!.Process(new DecimalIndicatorValue(_openEma, candle.OpenPrice, candle.ServerTime)).ToNullableDecimal();
+		if (openEma is null)
 			return;
 
 		decimal volumeFactor;
 		if (UseSmoothedVolume)
 		{
-			var volEmaValue = _volumeEma!.Process(candle.TotalVolume);
-			if (!volEmaValue.IsFinal || !volEmaValue.TryGetValue(out decimal volEma) || volEma == 0m)
+			var volEma = _volumeEma!.Process(new DecimalIndicatorValue(_volumeEma, candle.TotalVolume, candle.ServerTime)).ToNullableDecimal();
+			if (volEma is null || volEma.Value == 0m)
 				return;
 
-			volumeFactor = candle.TotalVolume / volEma;
+			volumeFactor = candle.TotalVolume / volEma.Value;
 		}
 		else
 		{
@@ -144,22 +144,24 @@ public class FineTuneInputsFourierSmoothedHybridVolumeSpreadAnalysisStrategy : S
 			_prevVolume = candle.TotalVolume;
 		}
 
-		var vd = closeEmaValue * volumeFactor - openEma * volumeFactor;
-		var vdmaValue = _vdma!.Process(vd);
-		if (!vdmaValue.IsFinal || !vdmaValue.TryGetValue(out decimal vdma))
+		var vd = closeEmaValue * volumeFactor - openEma.Value * volumeFactor;
+		var vdma = _vdma!.Process(new DecimalIndicatorValue(_vdma, vd, candle.ServerTime)).ToNullableDecimal();
+		if (vdma is null)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var longCondition = vdma > 0m && vd > 0m;
-		var shortCondition = vdma < 0m && vd < 0m;
+		var longCondition = vdma.Value > 0m && vd > 0m;
+		var shortCondition = vdma.Value < 0m && vd < 0m;
 
 		if (longCondition && Position <= 0)
 			BuyMarket();
 		else if (shortCondition && Position >= 0)
 			SellMarket();
 		else if (!longCondition && !shortCondition && EnableCloseAll && Position != 0)
-			ClosePosition();
+		{
+			if (Position > 0)
+				SellMarket();
+			else
+				BuyMarket();
+		}
 	}
 }

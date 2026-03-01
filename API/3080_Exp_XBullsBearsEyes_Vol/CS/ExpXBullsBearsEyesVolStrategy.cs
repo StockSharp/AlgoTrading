@@ -382,7 +382,8 @@ public class ExpXBullsBearsEyesVolStrategy : Strategy
 			return;
 
 		var signalTime = GetSignalTime(candle);
-		AddColorSample(new ColorSample(signalTime, result.Value, result.Volume, result.Color));
+		var r = result.Value;
+		AddColorSample(new ColorSample(signalTime, r.Value, r.Volume, r.Color));
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;

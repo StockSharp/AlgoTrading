@@ -153,8 +153,10 @@ public class ColorSchaffRviTrendCycleStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_fastRvi = new RelativeVigorIndex { Length = FastRviLength };
-		_slowRvi = new RelativeVigorIndex { Length = SlowRviLength };
+		_fastRvi = new RelativeVigorIndex();
+		_fastRvi.Average.Length = FastRviLength;
+		_slowRvi = new RelativeVigorIndex();
+		_slowRvi.Average.Length = SlowRviLength;
 
 		_macd = new decimal[CycleLength];
 		_st = new decimal[CycleLength];
@@ -179,16 +181,17 @@ public class ColorSchaffRviTrendCycleStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var fastValue = _fastRvi.Process(candle);
-		var slowValue = _slowRvi.Process(candle);
+		var fastResult = _fastRvi.Process(candle);
+		var slowResult = _slowRvi.Process(candle);
 
-		if (!fastValue.IsFinal || !slowValue.IsFinal || fastValue.IsEmpty || slowValue.IsEmpty)
-			return;
 		if (!_fastRvi.IsFormed || !_slowRvi.IsFormed)
 			return;
 
-		var fast = fastValue.ToDecimal();
-		var slow = slowValue.ToDecimal();
+		var fastRviVal = (IRelativeVigorIndexValue)fastResult;
+		var slowRviVal = (IRelativeVigorIndexValue)slowResult;
+
+		if (fastRviVal.Average is not decimal fast || slowRviVal.Average is not decimal slow)
+			return;
 		var macd = fast - slow;
 
 		_macd[_index] = macd;

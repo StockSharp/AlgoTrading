@@ -8,11 +8,8 @@ using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
-using StockSharp.Algo;
 
 namespace StockSharp.Samples.Strategies;
-
-
 
 /// <summary>
 /// Strategy based on True Strength Index crossovers of the signal line.
@@ -20,76 +17,35 @@ namespace StockSharp.Samples.Strategies;
 public class ErgodicTicksVolumeIndicatorStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _shortLength;
-	private readonly StrategyParam<int> _longLength;
+	private readonly StrategyParam<int> _firstLength;
+	private readonly StrategyParam<int> _secondLength;
 	private readonly StrategyParam<int> _signalLength;
 
-	private TrueStrengthIndex _tsi;
-	private ExponentialMovingAverage _signal;
 	private decimal _prevTsi;
 	private decimal _prevSignal;
+	private bool _prevReady;
 
-	/// <summary>
-	/// Candle type used for indicator calculation.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int FirstLength { get => _firstLength.Value; set => _firstLength.Value = value; }
+	public int SecondLength { get => _secondLength.Value; set => _secondLength.Value = value; }
+	public int SignalLength { get => _signalLength.Value; set => _signalLength.Value = value; }
 
-	/// <summary>
-	/// Fast smoothing length of TSI.
-	/// </summary>
-	public int ShortLength
-	{
-		get => _shortLength.Value;
-		set => _shortLength.Value = value;
-	}
-
-	/// <summary>
-	/// Slow smoothing length of TSI.
-	/// </summary>
-	public int LongLength
-	{
-		get => _longLength.Value;
-		set => _longLength.Value = value;
-	}
-
-	/// <summary>
-	/// Length of EMA used as signal line.
-	/// </summary>
-	public int SignalLength
-	{
-		get => _signalLength.Value;
-		set => _signalLength.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="ErgodicTicksVolumeIndicatorStrategy"/> class.
-	/// </summary>
 	public ErgodicTicksVolumeIndicatorStrategy()
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-		.SetDisplay("Candle Type", "Type of candles", "General");
+			.SetDisplay("Candle Type", "Type of candles", "General");
 
-		_shortLength = Param(nameof(ShortLength), 12)
-		.SetGreaterThanZero()
-		.SetDisplay("Short Length", "Fast smoothing length", "Indicator")
-		
-		.SetOptimize(5, 20, 1);
+		_firstLength = Param(nameof(FirstLength), 25)
+			.SetGreaterThanZero()
+			.SetDisplay("First Length", "First smoothing length", "Indicator");
 
-		_longLength = Param(nameof(LongLength), 12)
-		.SetGreaterThanZero()
-		.SetDisplay("Long Length", "Slow smoothing length", "Indicator")
-		
-		.SetOptimize(5, 20, 1);
+		_secondLength = Param(nameof(SecondLength), 13)
+			.SetGreaterThanZero()
+			.SetDisplay("Second Length", "Second smoothing length", "Indicator");
 
-		_signalLength = Param(nameof(SignalLength), 5)
-		.SetGreaterThanZero()
-		.SetDisplay("Signal Length", "EMA length for signal line", "Indicator")
-		
-		.SetOptimize(2, 15, 1);
+		_signalLength = Param(nameof(SignalLength), 7)
+			.SetGreaterThanZero()
+			.SetDisplay("Signal Length", "Signal line length", "Indicator");
 	}
 
 	/// <inheritdoc />
@@ -104,6 +60,7 @@ public class ErgodicTicksVolumeIndicatorStrategy : Strategy
 		base.OnReseted();
 		_prevTsi = default;
 		_prevSignal = default;
+		_prevReady = false;
 	}
 
 	/// <inheritdoc />
@@ -111,50 +68,61 @@ public class ErgodicTicksVolumeIndicatorStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_tsi = new TrueStrengthIndex
+		var tsi = new TrueStrengthIndex
 		{
-				ShortLength = ShortLength,
-				LongLength = LongLength
+			FirstLength = FirstLength,
+			SecondLength = SecondLength,
+			SignalLength = SignalLength
 		};
-
-		_signal = new EMA { Length = SignalLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-				.Bind(_tsi, ProcessCandle)
-				.Start();
+			.BindEx(tsi, ProcessCandle)
+			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
-				DrawCandles(area, subscription);
-				DrawIndicator(area, _tsi);
-				DrawIndicator(area, _signal);
-				DrawOwnTrades(area);
+			DrawCandles(area, subscription);
+			DrawIndicator(area, tsi);
+			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal tsiValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue value)
 	{
 		if (candle.State != CandleStates.Finished)
-				return;
+			return;
 
-		var signalValue = _signal.Process(new DecimalIndicatorValue(_signal, tsiValue, candle.ServerTime));
-		if (!signalValue.IsFormed)
-				return;
+		var tsiVal = (ITrueStrengthIndexValue)value;
 
-		var signal = signalValue.ToDecimal();
+		if (tsiVal.Tsi is not decimal tsi || tsiVal.Signal is not decimal signal)
+			return;
 
-		if (_prevTsi <= _prevSignal && tsiValue > signal && Position <= 0)
+		if (!_prevReady)
 		{
-				BuyMarket(Volume + Math.Abs(Position));
-		}
-		else if (_prevTsi >= _prevSignal && tsiValue < signal && Position >= 0)
-		{
-				SellMarket(Volume + Math.Abs(Position));
+			_prevTsi = tsi;
+			_prevSignal = signal;
+			_prevReady = true;
+			return;
 		}
 
-		_prevTsi = tsiValue;
+		// TSI crosses above signal - buy
+		if (_prevTsi <= _prevSignal && tsi > signal && Position <= 0)
+		{
+			if (Position < 0)
+				BuyMarket();
+			BuyMarket();
+		}
+		// TSI crosses below signal - sell
+		else if (_prevTsi >= _prevSignal && tsi < signal && Position >= 0)
+		{
+			if (Position > 0)
+				SellMarket();
+			SellMarket();
+		}
+
+		_prevTsi = tsi;
 		_prevSignal = signal;
 	}
 }

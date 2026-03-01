@@ -334,29 +334,29 @@ protected override void OnOwnTradeReceived(MyTrade trade)
 		if (Position > 0m)
 		{
 			// Long exposure established, compute fresh protective levels.
-			_longEntryPrice = trade.Price;
-			InitializeLongRiskLevels(trade.Price);
+			_longEntryPrice = trade.Trade.Price;
+			InitializeLongRiskLevels(trade.Trade.Price);
 		}
-	else if (Position >= 0m)
-	{
-		// Short exposure was reduced or closed.
-		ResetShortRiskLevels();
+		else if (Position >= 0m)
+		{
+			// Short exposure was reduced or closed.
+			ResetShortRiskLevels();
+		}
 	}
-}
-else if (order.Side == Sides.Sell)
-{
-	if (Position < 0m)
+	else if (order.Side == Sides.Sell)
 	{
-		// Short exposure established, compute protective levels.
-		_shortEntryPrice = trade.Price;
-		InitializeShortRiskLevels(trade.Price);
+		if (Position < 0m)
+		{
+			// Short exposure established, compute protective levels.
+			_shortEntryPrice = trade.Trade.Price;
+			InitializeShortRiskLevels(trade.Trade.Price);
+		}
+		else if (Position <= 0m)
+		{
+			// Long exposure was reduced or closed.
+			ResetLongRiskLevels();
+		}
 	}
-else if (Position <= 0m)
-{
-	// Long exposure was reduced or closed.
-	ResetLongRiskLevels();
-}
-}
 }
 
 /// <inheritdoc />
@@ -439,7 +439,7 @@ private void TryOpenLong(decimal price)
 	if (Position < 0m)
 	{
 		// Close the opposing short exposure before flipping direction.
-		ClosePosition();
+		BuyMarket(Math.Abs(Position));
 		return;
 	}
 
@@ -462,7 +462,7 @@ private void TryOpenShort(decimal price)
 	if (Position > 0m)
 	{
 		// Close the opposing long exposure before flipping direction.
-		ClosePosition();
+		SellMarket(Math.Abs(Position));
 		return;
 	}
 
@@ -545,19 +545,19 @@ private decimal GetTradeVolume()
 	return volume;
 
 	var step = security.VolumeStep;
-	if (step > 0m)
+	if (step != null && step.Value > 0m)
 	{
-		var steps = Math.Max(1m, Math.Round(volume / step, MidpointRounding.AwayFromZero));
-		volume = steps * step;
+		var steps = Math.Max(1m, Math.Round(volume / step.Value, MidpointRounding.AwayFromZero));
+		volume = steps * step.Value;
 	}
 
-var minVolume = security.MinVolume;
-if (minVolume.HasValue && volume < minVolume.Value)
-volume = minVolume.Value;
+	var minVolume = security.MinVolume;
+	if (minVolume.HasValue && volume < minVolume.Value)
+		volume = minVolume.Value;
 
-var maxVolume = security.MaxVolume;
-if (maxVolume.HasValue && volume > maxVolume.Value)
-volume = maxVolume.Value;
+	var maxVolume = security.MaxVolume;
+	if (maxVolume.HasValue && volume > maxVolume.Value)
+		volume = maxVolume.Value;
 
 return volume;
 }
@@ -579,8 +579,8 @@ private void UpdateAverageBody(ICandleMessage candle)
 {
 	var body = Math.Abs(candle.ClosePrice - candle.OpenPrice);
 	var value = _bodyAverage.Process(new DecimalIndicatorValue(_bodyAverage, body, candle.OpenTime));
-	if (value.IsFinal && value.TryGetValue(out decimal average))
-	_averageBodyValue = average;
+	if (value.IsFinal)
+		_averageBodyValue = value.GetValue<decimal>();
 }
 
 private void InitializePipSize()
@@ -596,8 +596,8 @@ private decimal GetPipSize()
 	return 0.0001m;
 
 	var step = security.PriceStep;
-	if (step > 0m)
-	return step;
+	if (step != null && step.Value > 0m)
+		return step.Value;
 
 	var decimals = security.Decimals;
 	if (decimals.HasValue)

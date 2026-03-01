@@ -104,7 +104,7 @@ public class FlexibleMovingAverageStrategy : Strategy
 			"EMA" => new EMA { Length = MaLength },
 			"WMA" => new WeightedMovingAverage { Length = MaLength },
 			"HMA" => new HullMovingAverage { Length = MaLength },
-			"SMMA" => new ModifiedMovingAverage { Length = MaLength },
+			"SMMA" => new SmoothedMovingAverage { Length = MaLength },
 			_ => new SMA { Length = MaLength }
 		};
 

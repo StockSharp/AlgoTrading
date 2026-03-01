@@ -108,7 +108,7 @@ public class ExpUltraFatlDuplexStrategy : Strategy
 		_allowLongExits = Param(nameof(AllowLongExits), true)
 			.SetDisplay("Allow Long Exits", "Enable closing long positions on opposite signals.", "Long");
 
-		_longCandleType = Param(nameof(LongCandleType), TimeSpan.FromHours(12).TimeFrame())
+		_longCandleType = Param(nameof(LongCandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Long Candle Type", "Timeframe used by the long UltraFATL block.", "Long");
 
 		_longAppliedPrice = Param(nameof(LongAppliedPrice), AppliedPrices.Close)
@@ -124,11 +124,11 @@ public class ExpUltraFatlDuplexStrategy : Strategy
 		_longPhase = Param(nameof(LongPhase), 100)
 			.SetDisplay("Long Phase", "Phase parameter applied to Jurik-based smoothers.", "Long");
 
-		_longStep = Param(nameof(LongStep), 5)
+		_longStep = Param(nameof(LongStep), 1)
 			.SetGreaterThanZero()
 			.SetDisplay("Long Step", "Increment between ladder lengths.", "Long");
 
-		_longStepsTotal = Param(nameof(LongStepsTotal), 10)
+		_longStepsTotal = Param(nameof(LongStepsTotal), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Long Steps", "Number of smoothing steps for the ladder.", "Long");
 
@@ -142,7 +142,7 @@ public class ExpUltraFatlDuplexStrategy : Strategy
 		_longSmoothPhase = Param(nameof(LongSmoothPhase), 100)
 			.SetDisplay("Long Counter Phase", "Phase parameter for the counter smoother.", "Long");
 
-		_longSignalBar = Param(nameof(LongSignalBar), 1)
+		_longSignalBar = Param(nameof(LongSignalBar), 0)
 			.SetNotNegative()
 			.SetDisplay("Long Signal Bar", "Closed-bar offset used when evaluating long signals.", "Long");
 
@@ -164,7 +164,7 @@ public class ExpUltraFatlDuplexStrategy : Strategy
 		_allowShortExits = Param(nameof(AllowShortExits), true)
 			.SetDisplay("Allow Short Exits", "Enable closing short positions on opposite signals.", "Short");
 
-		_shortCandleType = Param(nameof(ShortCandleType), TimeSpan.FromHours(12).TimeFrame())
+		_shortCandleType = Param(nameof(ShortCandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Short Candle Type", "Timeframe used by the short UltraFATL block.", "Short");
 
 		_shortAppliedPrice = Param(nameof(ShortAppliedPrice), AppliedPrices.Close)
@@ -180,11 +180,11 @@ public class ExpUltraFatlDuplexStrategy : Strategy
 		_shortPhase = Param(nameof(ShortPhase), 100)
 			.SetDisplay("Short Phase", "Phase parameter applied to the short Jurik-based smoothers.", "Short");
 
-		_shortStep = Param(nameof(ShortStep), 5)
+		_shortStep = Param(nameof(ShortStep), 1)
 			.SetGreaterThanZero()
 			.SetDisplay("Short Step", "Increment between smoothing lengths for the short ladder.", "Short");
 
-		_shortStepsTotal = Param(nameof(ShortStepsTotal), 10)
+		_shortStepsTotal = Param(nameof(ShortStepsTotal), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Short Steps", "Number of smoothing steps for the short ladder.", "Short");
 
@@ -198,7 +198,7 @@ public class ExpUltraFatlDuplexStrategy : Strategy
 		_shortSmoothPhase = Param(nameof(ShortSmoothPhase), 100)
 			.SetDisplay("Short Counter Phase", "Phase parameter for the short counter smoother.", "Short");
 
-		_shortSignalBar = Param(nameof(ShortSignalBar), 1)
+		_shortSignalBar = Param(nameof(ShortSignalBar), 0)
 			.SetNotNegative()
 			.SetDisplay("Short Signal Bar", "Closed-bar offset used when evaluating short signals.", "Short");
 
@@ -383,20 +383,17 @@ public class ExpUltraFatlDuplexStrategy : Strategy
 
 	private void ProcessDirectionalSignal(bool isLong, bool openSignal, bool closeSignal, UltraFatlSnapshot snapshot)
 	{
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		if (isLong)
 		{
 			if (closeSignal && AllowLongExits && Position > 0m)
 			{
-				SellMarket(Position);
+				SellMarket();
 				_longEntryPrice = null;
 			}
 
-			if (openSignal && AllowLongEntries && Position <= 0m && LongVolume > 0m)
+			if (openSignal && AllowLongEntries && Position <= 0m)
 			{
-				BuyMarket(LongVolume);
+				BuyMarket();
 				_longEntryPrice = snapshot.ClosePrice;
 			}
 		}
@@ -404,13 +401,13 @@ public class ExpUltraFatlDuplexStrategy : Strategy
 		{
 			if (closeSignal && AllowShortExits && Position < 0m)
 			{
-				BuyMarket(-Position);
+				BuyMarket();
 				_shortEntryPrice = null;
 			}
 
-			if (openSignal && AllowShortEntries && Position >= 0m && ShortVolume > 0m)
+			if (openSignal && AllowShortEntries && Position >= 0m)
 			{
-				SellMarket(ShortVolume);
+				SellMarket();
 				_shortEntryPrice = snapshot.ClosePrice;
 			}
 		}
@@ -418,9 +415,6 @@ public class ExpUltraFatlDuplexStrategy : Strategy
 
 	private void CheckStops(bool isLong, ICandleMessage candle, int stopLossPoints, int takeProfitPoints, decimal priceStep)
 	{
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		if (priceStep <= 0m)
 			return;
 
@@ -434,14 +428,14 @@ public class ExpUltraFatlDuplexStrategy : Strategy
 
 			if (stopLossPrice.HasValue && candle.LowPrice <= stopLossPrice.Value)
 			{
-				SellMarket(Position);
+				SellMarket();
 				_longEntryPrice = null;
 				return;
 			}
 
 			if (takeProfitPrice.HasValue && candle.HighPrice >= takeProfitPrice.Value)
 			{
-				SellMarket(Position);
+				SellMarket();
 				_longEntryPrice = null;
 			}
 		}
@@ -455,14 +449,14 @@ public class ExpUltraFatlDuplexStrategy : Strategy
 
 			if (stopLossPrice.HasValue && candle.HighPrice >= stopLossPrice.Value)
 			{
-				BuyMarket(-Position);
+				BuyMarket();
 				_shortEntryPrice = null;
 				return;
 			}
 
 			if (takeProfitPrice.HasValue && candle.LowPrice <= takeProfitPrice.Value)
 			{
-				BuyMarket(-Position);
+				BuyMarket();
 				_shortEntryPrice = null;
 			}
 		}
@@ -669,31 +663,31 @@ public class ExpUltraFatlDuplexStrategy : Strategy
 
 			for (var i = 0; i < _ladder.Count; i++)
 			{
-				var indicatorValue = _ladder[i].Process(fatlValue.Value, candle.OpenTime);
+				var indicatorValue = _ladder[i].Process(new DecimalIndicatorValue(_ladder[i], fatlValue.Value, candle.OpenTime));
 				if (!indicatorValue.IsFinal)
 					return;
 
-				var current = indicatorValue.GetValue<decimal>();
+				var curVal = indicatorValue.GetValue<decimal>();
 
-				if (_previousValues[i] is not decimal previous)
+				if (_previousValues[i] is not decimal prevVal)
 				{
-					_previousValues[i] = current;
+					_previousValues[i] = curVal;
 					return;
 				}
 
-				if (current > previous)
+				if (curVal > prevVal)
 					upCount += 1m;
 				else
 					downCount += 1m;
 
-				_previousValues[i] = current;
+				_previousValues[i] = curVal;
 			}
 
 			if (_bullsSmoother is null || _bearsSmoother is null)
 				return;
 
-			var bullsValue = _bullsSmoother.Process(upCount);
-			var bearsValue = _bearsSmoother.Process(downCount);
+			var bullsValue = _bullsSmoother.Process(new DecimalIndicatorValue(_bullsSmoother, upCount, candle.OpenTime));
+			var bearsValue = _bearsSmoother.Process(new DecimalIndicatorValue(_bearsSmoother, downCount, candle.OpenTime));
 
 			if (!bullsValue.IsFinal || !bearsValue.IsFinal)
 				return;

@@ -23,8 +23,10 @@ public class IuBbbBigBodyBarStrategy : Strategy
 	private readonly StrategyParam<int> _atrLength;
 	private readonly StrategyParam<decimal> _atrFactor;
 
-	private SimpleMovingAverage _bodySma;
+	private decimal _sumBody;
+	private int _bodyCount;
 	private decimal? _atrStop;
+	private decimal _entryPrice;
 
 	/// <summary>
 	/// Candle type.
@@ -52,35 +54,16 @@ public class IuBbbBigBodyBarStrategy : Strategy
 	public IuBbbBigBodyBarStrategy()
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
+			.SetDisplay("Candle Type", "Type of candles to use.", "General");
 
-		_bigBodyThreshold = Param(nameof(BigBodyThreshold), 4m)
-			.SetDisplay("Big Body Threshold", "Multiplier of average body", "Parameters")
-			
-			.SetOptimize(2m, 6m, 1m);
+		_bigBodyThreshold = Param(nameof(BigBodyThreshold), 1.5m)
+			.SetDisplay("Big Body Threshold", "Multiplier of average body.", "Parameters");
 
 		_atrLength = Param(nameof(AtrLength), 14)
-			.SetDisplay("ATR Period", "ATR indicator period", "Indicators")
-			
-			.SetOptimize(7, 28, 7);
+			.SetDisplay("ATR Period", "ATR indicator period.", "Indicators");
 
 		_atrFactor = Param(nameof(AtrFactor), 2m)
-			.SetDisplay("ATR Factor", "ATR multiplier for trailing stop", "Risk Management")
-			
-			.SetOptimize(1m, 3m, 0.5m);
-	}
-
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-		=> [(Security, CandleType)];
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_bodySma?.Reset();
-		_atrStop = null;
+			.SetDisplay("ATR Factor", "ATR multiplier for trailing stop.", "Risk Management");
 	}
 
 	/// <inheritdoc />
@@ -88,7 +71,10 @@ public class IuBbbBigBodyBarStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_bodySma = new SMA { Length = 20 };
+		_sumBody = 0m;
+		_bodyCount = 0;
+		_atrStop = null;
+		_entryPrice = 0m;
 
 		var atr = new AverageTrueRange { Length = AtrLength };
 
@@ -96,6 +82,14 @@ public class IuBbbBigBodyBarStrategy : Strategy
 		subscription
 			.Bind(atr, ProcessCandle)
 			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, atr);
+			DrawOwnTrades(area);
+		}
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal atr)
@@ -104,52 +98,58 @@ public class IuBbbBigBodyBarStrategy : Strategy
 			return;
 
 		var body = Math.Abs(candle.ClosePrice - candle.OpenPrice);
-		var avgBody = _bodySma.Process(new DecimalIndicatorValue(_bodySma, body, candle.ServerTime)).ToDecimal();
 
-		if (!_bodySma.IsFormed)
+		// Track running average of body sizes
+		_sumBody += body;
+		_bodyCount++;
+		var avgBody = _sumBody / _bodyCount;
+
+		if (_bodyCount < 20 || avgBody <= 0m)
 			return;
 
 		var longCond = body > avgBody * BigBodyThreshold && candle.ClosePrice > candle.OpenPrice;
 		var shortCond = body > avgBody * BigBodyThreshold && candle.ClosePrice < candle.OpenPrice;
 
-		if (Position == 0)
-		{
-			if (longCond)
-				BuyMarket(Volume);
-			else if (shortCond)
-				SellMarket(Volume);
-		}
-
+		// Exit logic first
 		if (Position > 0)
 		{
 			if (_atrStop is null)
-				_atrStop = PositionPrice - atr * AtrFactor;
+				_atrStop = _entryPrice - atr * AtrFactor;
 			else
 				_atrStop = Math.Max(_atrStop.Value, candle.ClosePrice - atr * AtrFactor);
 
 			if (candle.LowPrice <= _atrStop)
 			{
-				SellMarket(Position);
+				SellMarket();
 				_atrStop = null;
 			}
+			return;
 		}
 		else if (Position < 0)
 		{
 			if (_atrStop is null)
-				_atrStop = PositionPrice + atr * AtrFactor;
+				_atrStop = _entryPrice + atr * AtrFactor;
 			else
 				_atrStop = Math.Min(_atrStop.Value, candle.ClosePrice + atr * AtrFactor);
 
 			if (candle.HighPrice >= _atrStop)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				_atrStop = null;
 			}
+			return;
 		}
-		else
+
+		// Entry logic
+		if (longCond)
 		{
-			_atrStop = null;
+			BuyMarket();
+			_entryPrice = candle.ClosePrice;
+		}
+		else if (shortCond)
+		{
+			SellMarket();
+			_entryPrice = candle.ClosePrice;
 		}
 	}
 }
-

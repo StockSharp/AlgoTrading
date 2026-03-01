@@ -11,8 +11,6 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
 /// <summary>
 /// Trades when a session gap of a given size is filled.
 /// </summary>
@@ -30,6 +28,7 @@ public class IUGapFillStrategy : Strategy
 	private bool _validGap;
 	private bool _isFirstBar;
 	private decimal? _atrTsl;
+	private decimal _entryPrice;
 
 	/// <summary>
 	/// Percentage difference for a valid gap.
@@ -72,36 +71,24 @@ public class IUGapFillStrategy : Strategy
 	/// </summary>
 	public IUGapFillStrategy()
 	{
-		_gapPercent = Param(nameof(GapPercent), 0.2m)
-			.SetGreaterThanZero()
-			.SetDisplay("Gap %", "Minimum percentage gap", "General");
+		_gapPercent = Param(nameof(GapPercent), 0.1m)
+			.SetDisplay("Gap %", "Minimum percentage gap.", "General");
 
 		_atrLength = Param(nameof(AtrLength), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("ATR Length", "ATR calculation period", "ATR")
-			
-			.SetOptimize(5, 50, 5);
+			.SetDisplay("ATR Length", "ATR calculation period.", "ATR");
 
 		_atrFactor = Param(nameof(AtrFactor), 2m)
-			.SetGreaterThanZero()
-			.SetDisplay("ATR Factor", "ATR multiplier", "ATR")
-			
-			.SetOptimize(1m, 5m, 1m);
+			.SetDisplay("ATR Factor", "ATR multiplier.", "ATR");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use.", "General");
 	}
 
 	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	protected override void OnStarted2(DateTime time)
 	{
-		return [(Security, CandleType)];
-	}
+		base.OnStarted2(time);
 
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
 		_currentDay = default;
 		_lastSessionClose = 0m;
 		_gapUp = false;
@@ -109,13 +96,7 @@ public class IUGapFillStrategy : Strategy
 		_validGap = false;
 		_isFirstBar = false;
 		_atrTsl = null;
-	}
-
-	/// <inheritdoc />
-	protected override void OnStarted2(DateTime time)
-	{
-		base.OnStarted2(time);
-		StartProtection(null, null);
+		_entryPrice = 0m;
 
 		var atr = new AverageTrueRange { Length = AtrLength };
 		var subscription = SubscribeCandles(CandleType);
@@ -141,9 +122,12 @@ public class IUGapFillStrategy : Strategy
 		{
 			_currentDay = day;
 
-			_gapUp = candle.OpenPrice > _lastSessionClose;
-			_gapDown = candle.OpenPrice < _lastSessionClose;
-			_validGap = Math.Abs(_lastSessionClose - candle.OpenPrice) >= candle.OpenPrice * GapPercent / 100m;
+			if (_lastSessionClose > 0)
+			{
+				_gapUp = candle.OpenPrice > _lastSessionClose;
+				_gapDown = candle.OpenPrice < _lastSessionClose;
+				_validGap = Math.Abs(_lastSessionClose - candle.OpenPrice) >= candle.OpenPrice * GapPercent / 100m;
+			}
 			_isFirstBar = true;
 		}
 
@@ -153,35 +137,43 @@ public class IUGapFillStrategy : Strategy
 		}
 		else if (_validGap && Position == 0)
 		{
+			// Gap fill logic: price returns to previous close level
 			if (_gapUp && candle.LowPrice < _lastSessionClose && candle.ClosePrice > _lastSessionClose)
+			{
 				BuyMarket();
+				_entryPrice = candle.ClosePrice;
+			}
 			else if (_gapDown && candle.HighPrice > _lastSessionClose && candle.ClosePrice < _lastSessionClose)
+			{
 				SellMarket();
+				_entryPrice = candle.ClosePrice;
+			}
 		}
 
+		// Trailing stop management
 		if (Position > 0)
 		{
 			if (_atrTsl is null)
-				_atrTsl = Position.AveragePrice - atr * AtrFactor;
+				_atrTsl = _entryPrice - atr * AtrFactor;
 			else
 				_atrTsl = Math.Max(_atrTsl.Value, candle.ClosePrice - atr * AtrFactor);
 
 			if (_atrTsl.HasValue && candle.LowPrice <= _atrTsl)
 			{
-				SellMarket(Position);
+				SellMarket();
 				_atrTsl = null;
 			}
 		}
 		else if (Position < 0)
 		{
 			if (_atrTsl is null)
-				_atrTsl = Position.AveragePrice + atr * AtrFactor;
+				_atrTsl = _entryPrice + atr * AtrFactor;
 			else
 				_atrTsl = Math.Min(_atrTsl.Value, candle.ClosePrice + atr * AtrFactor);
 
 			if (_atrTsl.HasValue && candle.HighPrice >= _atrTsl)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				_atrTsl = null;
 			}
 		}

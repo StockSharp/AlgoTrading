@@ -14,12 +14,12 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Martingale strategy for Bitcoin with optional entry signals.
+/// Martingale strategy for Bitcoin with MACD entry signal.
+/// Enters long on MACD histogram crossover, averages down on price drops,
+/// and exits on take profit.
 /// </summary>
-public class InwCoinMartingaleStrategy : Strategy {
-	public enum StartLogics { MacdLine, StochasticRsi, AtrChannel }
-
-	private readonly StrategyParam<StartLogics> _startLogic;
+public class InwCoinMartingaleStrategy : Strategy
+{
 	private readonly StrategyParam<decimal> _takeProfitPercent;
 	private readonly StrategyParam<decimal> _martingalePercent;
 	private readonly StrategyParam<decimal> _martingaleMultiplier;
@@ -27,186 +27,136 @@ public class InwCoinMartingaleStrategy : Strategy {
 
 	private decimal _avgPrice;
 	private int _martingaleCount;
-	private decimal _prevMacd;
-	private decimal _prevD;
-	private bool _isFirst;
-
-	/// <summary>
-	/// Entry logic selector.
-	/// </summary>
-	public StartLogics EntryLogic {
-	  get => _startLogic.Value;
-	  set => _startLogic.Value = value;
-	}
+	private decimal _prevHistogram;
+	private bool _isFirst = true;
 
 	/// <summary>
 	/// Take profit percent.
 	/// </summary>
-	public decimal TakeProfitPercent {
-	  get => _takeProfitPercent.Value;
-	  set => _takeProfitPercent.Value = value;
+	public decimal TakeProfitPercent
+	{
+		get => _takeProfitPercent.Value;
+		set => _takeProfitPercent.Value = value;
 	}
 
 	/// <summary>
 	/// Percent drop to trigger martingale.
 	/// </summary>
-	public decimal MartingalePercent {
-	  get => _martingalePercent.Value;
-	  set => _martingalePercent.Value = value;
+	public decimal MartingalePercent
+	{
+		get => _martingalePercent.Value;
+		set => _martingalePercent.Value = value;
 	}
 
 	/// <summary>
 	/// Multiplier for each martingale step.
 	/// </summary>
-	public decimal MartingaleMultiplier {
-	  get => _martingaleMultiplier.Value;
-	  set => _martingaleMultiplier.Value = value;
+	public decimal MartingaleMultiplier
+	{
+		get => _martingaleMultiplier.Value;
+		set => _martingaleMultiplier.Value = value;
 	}
 
 	/// <summary>
 	/// Candle type.
 	/// </summary>
-	public DataType CandleType {
-	  get => _candleType.Value;
-	  set => _candleType.Value = value;
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
 	}
 
 	/// <summary>
 	/// Initializes a new instance of <see cref="InwCoinMartingaleStrategy"/>.
 	/// </summary>
-	public InwCoinMartingaleStrategy() {
-	  _startLogic =
-	Param(nameof(EntryLogic), StartLogics.MacdLine)
-	    .SetDisplay("Start Logic", "Entry signal selector", "Parameters");
+	public InwCoinMartingaleStrategy()
+	{
+		_takeProfitPercent = Param(nameof(TakeProfitPercent), 2m)
+			.SetDisplay("Take Profit %", "Profit percent to exit.", "Parameters");
 
-	  _takeProfitPercent =
-	Param(nameof(TakeProfitPercent), 5m)
-	    .SetRange(1m, 20m)
-	    .SetDisplay("Take Profit %", "Profit percent to exit",
-			"Parameters");
+		_martingalePercent = Param(nameof(MartingalePercent), 5m)
+			.SetDisplay("Martingale %", "Price drop percent for averaging.", "Parameters");
 
-	  _martingalePercent =
-	Param(nameof(MartingalePercent), 10m)
-	    .SetRange(1m, 50m)
-	    .SetDisplay("Martingale %", "Price drop percent for averaging",
-			"Parameters");
+		_martingaleMultiplier = Param(nameof(MartingaleMultiplier), 2m)
+			.SetDisplay("Multiplier", "Volume multiplier for martingale.", "Parameters");
 
-	  _martingaleMultiplier =
-	Param(nameof(MartingaleMultiplier), 2m)
-	    .SetRange(1m, 5m)
-	    .SetDisplay("Multiplier", "Volume multiplier for martingale",
-			"Parameters");
-
-	  _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-		      .SetDisplay("Candle Type", "Type of candles", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles.", "General");
 	}
 
 	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)>
-	GetWorkingSecurities() {
-	  return [(Security, CandleType)];
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
+
+		_avgPrice = 0m;
+		_martingaleCount = 0;
+		_prevHistogram = 0m;
+		_isFirst = true;
+
+		var emaShort = new ExponentialMovingAverage { Length = 12 };
+		var emaLong = new ExponentialMovingAverage { Length = 26 };
+
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(emaShort, emaLong, ProcessCandle)
+			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, emaShort);
+			DrawIndicator(area, emaLong);
+			DrawOwnTrades(area);
+		}
 	}
 
-	/// <inheritdoc />
-	protected override void OnReseted() {
-	  base.OnReseted();
-	  _avgPrice = 0m;
-	  _martingaleCount = 0;
-	  _prevMacd = 0m;
-	  _prevD = 0m;
-	  _isFirst = true;
-	}
+	private void ProcessCandle(ICandleMessage candle, decimal emaShortVal, decimal emaLongVal)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
 
-	/// <inheritdoc />
-	protected override void OnStarted2(DateTime time) {
-	  base.OnStarted2(time);
+		var price = candle.ClosePrice;
+		var histogram = emaShortVal - emaLongVal;
 
-	  var macd = new MovingAverageConvergenceDivergenceSignal {
-	    Macd =
-	  {
-	    ShortMa = { Length = 12 },
-	    LongMa = { Length = 26 },
-	  },
-	    SignalMa = { Length = 9 }
-	  };
+		if (_isFirst)
+		{
+			_prevHistogram = histogram;
+			_isFirst = false;
+			return;
+		}
 
-	  var rsi = new RelativeStrengthIndex { Length = 14 };
-	  var stoch = new StochasticOscillator { K = { Length = 14 }, K = { Length = 3 },
-					   D = { Length = 3 } };
+		// MACD histogram crossover as entry signal
+		var buySignal = _prevHistogram <= 0 && histogram > 0;
 
-	  var ema = new EMA { Length = 10 };
-	  var atr = new AverageTrueRange { Length = 14 };
+		if (buySignal && Position <= 0 && _martingaleCount == 0)
+		{
+			BuyMarket();
+			_avgPrice = price;
+			_martingaleCount = 1;
+		}
+		else if (Position > 0)
+		{
+			// Check for martingale averaging down
+			var drop = (price - _avgPrice) / _avgPrice * 100m;
+			if (drop <= -MartingalePercent && _martingaleCount < 5)
+			{
+				BuyMarket();
+				_avgPrice = ((_avgPrice * (Position)) + price) / (Position + 1);
+				_martingaleCount++;
+			}
 
-	  var subscription = SubscribeCandles(CandleType);
-	  subscription.BindEx(macd, stoch, rsi, ema, atr, ProcessCandle).Start();
+			// Check take profit
+			var profit = (price - _avgPrice) / _avgPrice * 100m;
+			if (profit >= TakeProfitPercent)
+			{
+				SellMarket();
+				_martingaleCount = 0;
+				_avgPrice = 0m;
+			}
+		}
 
-	  StartProtection(useMarketOrders: true);
-	}
-
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdVal,
-			     IIndicatorValue stochVal, IIndicatorValue rsiVal,
-			     IIndicatorValue emaVal, IIndicatorValue atrVal) {
-	  if (candle.State != CandleStates.Finished)
-	    return;
-
-	  if (!IsFormedAndOnlineAndAllowTrading())
-	    return;
-
-	  var price = candle.ClosePrice;
-
-	  bool buySignal = false;
-
-	  switch (EntryLogic) {
-	  case StartLogics.MacdLine: {
-	    var macd = (MovingAverageConvergenceDivergenceSignalValue)macdVal;
-	    if (macd.Macd is decimal m && macd.Signal is decimal s) {
-	var hist = m - s;
-	buySignal = _prevMacd <= 0 && hist > 0;
-	_prevMacd = hist;
-	    }
-	    break;
-	  }
-	  case StartLogics.StochasticRsi: {
-	    var stoch = (StochasticOscillatorValue)stochVal;
-	    if (stoch.D is decimal d && stoch.K is decimal k) {
-	if (_isFirst) {
-	  _prevD = d;
-	  _isFirst = false;
-	}
-	buySignal = _prevD <= 20m && d > 20m && k > 20m;
-	_prevD = d;
-	    }
-	    break;
-	  }
-	  case StartLogics.AtrChannel: {
-	    if (emaVal.GetValue<decimal>() is decimal e && atrVal.GetValue<decimal>()
-							 is decimal a) {
-	var upper = e + a;
-	buySignal = candle.OpenPrice <= upper && price > upper;
-	    }
-	    break;
-	  }
-	  }
-
-	  if (buySignal && Position <= 0 && _martingaleCount == 0) {
-	    BuyMarket(Volume);
-	    _avgPrice = price;
-	    _martingaleCount = 1;
-	  } else if (Position > 0) {
-	    var drop = (price - _avgPrice) / _avgPrice * 100m;
-	    if (drop <= -MartingalePercent) {
-	var vol = Volume * (decimal)Math.Pow((double)MartingaleMultiplier,
-					     _martingaleCount);
-	BuyMarket(vol);
-	_avgPrice = ((_avgPrice * Position) + price * vol) / (Position + vol);
-	_martingaleCount++;
-	    }
-
-	    var profit = (price - _avgPrice) / _avgPrice * 100m;
-	    if (profit >= TakeProfitPercent) {
-	SellMarket(Position);
-	_martingaleCount = 0;
-	    }
-	  }
+		_prevHistogram = histogram;
 	}
 }

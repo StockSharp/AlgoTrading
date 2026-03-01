@@ -1,17 +1,13 @@
+namespace StockSharp.Samples.Strategies;
+
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
-
+using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
-
-namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Alligator + MA Trend Catcher strategy.
@@ -28,44 +24,14 @@ public class AlligatorMaTrendCatcherStrategy : Strategy
 	private readonly StrategyParam<bool> _enableShort;
 	private readonly StrategyParam<DataType> _candleType;
 
-	/// <summary>
-	/// Jaw length.
-	/// </summary>
 	public int JawLength { get => _jawLength.Value; set => _jawLength.Value = value; }
-
-	/// <summary>
-	/// Teeth length.
-	/// </summary>
 	public int TeethLength { get => _teethLength.Value; set => _teethLength.Value = value; }
-
-	/// <summary>
-	/// Lips length.
-	/// </summary>
 	public int LipsLength { get => _lipsLength.Value; set => _lipsLength.Value = value; }
-
-	/// <summary>
-	/// EMA trendline length.
-	/// </summary>
 	public int TrendlineLength { get => _trendlineLength.Value; set => _trendlineLength.Value = value; }
-
-	/// <summary>
-	/// Enable long entries.
-	/// </summary>
 	public bool EnableLong { get => _enableLong.Value; set => _enableLong.Value = value; }
-
-	/// <summary>
-	/// Enable short entries.
-	/// </summary>
 	public bool EnableShort { get => _enableShort.Value; set => _enableShort.Value = value; }
-
-	/// <summary>
-	/// Candle type used by the strategy.
-	/// </summary>
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Constructor.
-	/// </summary>
 	public AlligatorMaTrendCatcherStrategy()
 	{
 		_jawLength = Param(nameof(JawLength), 8)
@@ -90,7 +56,7 @@ public class AlligatorMaTrendCatcherStrategy : Strategy
 		_enableShort = Param(nameof(EnableShort), true)
 			.SetDisplay("Enable Short", "Allow short trades", "Trading");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -108,13 +74,12 @@ public class AlligatorMaTrendCatcherStrategy : Strategy
 		var jaw = new SmoothedMovingAverage { Length = JawLength };
 		var teeth = new SmoothedMovingAverage { Length = TeethLength };
 		var lips = new SmoothedMovingAverage { Length = LipsLength };
-		var trend = new EMA { Length = TrendlineLength };
+		var trend = new ExponentialMovingAverage { Length = TrendlineLength };
 
 		var subscription = SubscribeCandles(CandleType);
-
-		subscription.Bind(ProcessCandle);
-
-		subscription.Start();
+		subscription
+			.Bind(jaw, teeth, lips, trend, ProcessCandle)
+			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -126,43 +91,28 @@ public class AlligatorMaTrendCatcherStrategy : Strategy
 			DrawIndicator(area, lips);
 			DrawOwnTrades(area);
 		}
+	}
 
-		void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal jawMa, decimal teethMa, decimal lipsMa, decimal trendline)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
+
+		if (Position > 0 && candle.ClosePrice < trendline && lipsMa < teethMa && teethMa < jawMa)
 		{
-			if (candle.State != CandleStates.Finished)
-				return;
-
-			var median = (candle.HighPrice + candle.LowPrice) / 2m;
-
-			var jawValue = jaw.Process(median);
-			var teethValue = teeth.Process(median);
-			var lipsValue = lips.Process(median);
-			var trendValue = trend.Process(candle.ClosePrice);
-
-			if (!jawValue.IsFinal || !teethValue.IsFinal || !lipsValue.IsFinal || !trendValue.IsFinal)
-				return;
-
-			var jawMa = jawValue.GetValue<decimal>();
-			var teethMa = teethValue.GetValue<decimal>();
-			var lipsMa = lipsValue.GetValue<decimal>();
-			var trendline = trendValue.GetValue<decimal>();
-
-			if (Position > 0 && candle.ClosePrice < trendline && lipsMa < teethMa && teethMa < jawMa)
-			{
-				SellMarket(Position);
-			}
-			else if (Position < 0 && candle.ClosePrice > trendline && lipsMa > teethMa && teethMa > jawMa)
-			{
-				BuyMarket(Math.Abs(Position));
-			}
-			else if (EnableLong && Position == 0 && candle.ClosePrice > trendline && lipsMa > teethMa && teethMa > jawMa)
-			{
-				BuyMarket(Volume);
-			}
-			else if (EnableShort && Position == 0 && candle.ClosePrice < trendline && lipsMa < teethMa && teethMa < jawMa)
-			{
-				SellMarket(Volume);
-			}
+			SellMarket();
+		}
+		else if (Position < 0 && candle.ClosePrice > trendline && lipsMa > teethMa && teethMa > jawMa)
+		{
+			BuyMarket();
+		}
+		else if (EnableLong && Position == 0 && candle.ClosePrice > trendline && lipsMa > teethMa && teethMa > jawMa)
+		{
+			BuyMarket();
+		}
+		else if (EnableShort && Position == 0 && candle.ClosePrice < trendline && lipsMa < teethMa && teethMa < jawMa)
+		{
+			SellMarket();
 		}
 	}
 }

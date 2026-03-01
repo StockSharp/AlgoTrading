@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -37,11 +34,9 @@ public class AlligatorSimpleStrategy : Strategy
 	private SmoothedMovingAverage _teeth = null!;
 	private SmoothedMovingAverage _lips = null!;
 
-	private decimal?[] _jawHistory = Array.Empty<decimal?>();
-	private decimal?[] _teethHistory = Array.Empty<decimal?>();
-	private decimal?[] _lipsHistory = Array.Empty<decimal?>();
-
 	private decimal _pipSize;
+	private decimal _entryPrice;
+	private decimal _prevPosition;
 
 	private decimal? _longStopPrice;
 	private decimal? _longTakePrice;
@@ -200,7 +195,7 @@ public class AlligatorSimpleStrategy : Strategy
 		_lipsShift = Param(nameof(LipsShift), 3)
 			.SetDisplay("Lips Shift", "Forward shift for the lips", "Alligator");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for candle subscription", "General");
 	}
 
@@ -215,11 +210,9 @@ public class AlligatorSimpleStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_jawHistory = Array.Empty<decimal?>();
-		_teethHistory = Array.Empty<decimal?>();
-		_lipsHistory = Array.Empty<decimal?>();
-
 		_pipSize = 0m;
+		_entryPrice = 0m;
+		_prevPosition = 0m;
 
 		_longStopPrice = null;
 		_longTakePrice = null;
@@ -240,10 +233,6 @@ public class AlligatorSimpleStrategy : Strategy
 		_jaw = new SmoothedMovingAverage { Length = JawPeriod };
 		_teeth = new SmoothedMovingAverage { Length = TeethPeriod };
 		_lips = new SmoothedMovingAverage { Length = LipsPeriod };
-
-		_jawHistory = CreateHistoryBuffer(JawShift);
-		_teethHistory = CreateHistoryBuffer(TeethShift);
-		_lipsHistory = CreateHistoryBuffer(LipsShift);
 
 		_pipSize = CalculatePipSize();
 
@@ -268,6 +257,9 @@ public class AlligatorSimpleStrategy : Strategy
 	{
 		base.OnPositionReceived(position);
 
+		var delta = Position - _prevPosition;
+		_prevPosition = Position;
+
 		if (Position == 0)
 		{
 			_longStopPrice = null;
@@ -279,7 +271,7 @@ public class AlligatorSimpleStrategy : Strategy
 			return;
 		}
 
-		var entryPrice = PositionPrice;
+		var entryPrice = _entryPrice;
 
 		if (Position > 0 && delta > 0)
 		{
@@ -315,42 +307,32 @@ public class AlligatorSimpleStrategy : Strategy
 			ManageShort(candle);
 		}
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		var median = (candle.HighPrice + candle.LowPrice) / 2m;
 
-		var jawValue = _jaw.Process(new DecimalIndicatorValue(_jaw, median, candle.OpenTime));
-		var teethValue = _teeth.Process(new DecimalIndicatorValue(_teeth, median, candle.OpenTime));
-		var lipsValue = _lips.Process(new DecimalIndicatorValue(_lips, median, candle.OpenTime));
-
-		if (!jawValue.IsFinal || !teethValue.IsFinal || !lipsValue.IsFinal)
-			return;
+		var jawValue = _jaw.Process(new DecimalIndicatorValue(_jaw, median, candle.OpenTime) { IsFinal = true });
+		var teethValue = _teeth.Process(new DecimalIndicatorValue(_teeth, median, candle.OpenTime) { IsFinal = true });
+		var lipsValue = _lips.Process(new DecimalIndicatorValue(_lips, median, candle.OpenTime) { IsFinal = true });
 
 		var jaw = jawValue.ToDecimal();
 		var teeth = teethValue.ToDecimal();
 		var lips = lipsValue.ToDecimal();
 
-		UpdateHistory(_jawHistory, jaw);
-		UpdateHistory(_teethHistory, teeth);
-		UpdateHistory(_lipsHistory, lips);
-
-		if (!TryGetShiftedValue(_jawHistory, JawShift + 2, out var jawPrev) ||
-			!TryGetShiftedValue(_teethHistory, TeethShift + 2, out var teethPrev) ||
-			!TryGetShiftedValue(_lipsHistory, LipsShift + 2, out var lipsPrev))
-		{
+		if (!_jaw.IsFormed || !_teeth.IsFormed || !_lips.IsFormed)
 			return;
-		}
 
 		if (Position != 0)
 			return;
 
-		if (lipsPrev > teethPrev && teethPrev > jawPrev)
+		// Buy when lips > teeth > jaw (Alligator opening upward)
+		if (lips > teeth && teeth > jaw)
 		{
+			_entryPrice = candle.ClosePrice;
 			BuyMarket(volume: OrderVolume);
 		}
-		else if (lipsPrev < teethPrev && teethPrev < jawPrev)
+		// Sell when lips < teeth < jaw (Alligator opening downward)
+		else if (lips < teeth && teeth < jaw)
 		{
+			_entryPrice = candle.ClosePrice;
 			SellMarket(volume: OrderVolume);
 		}
 	}
@@ -371,7 +353,7 @@ public class AlligatorSimpleStrategy : Strategy
 				var stepDistance = TrailingStepPips > 0 ? TrailingStepPips * _pipSize : 0m;
 				var referencePrice = Math.Max(candle.HighPrice, candle.ClosePrice);
 
-				if (referencePrice - PositionPrice > trailDistance + stepDistance)
+				if (referencePrice - _entryPrice > trailDistance + stepDistance)
 				{
 					var desiredStop = referencePrice - trailDistance;
 					var threshold = stepDistance > 0m ? desiredStop - stepDistance : desiredStop;
@@ -406,7 +388,7 @@ public class AlligatorSimpleStrategy : Strategy
 				var stepDistance = TrailingStepPips > 0 ? TrailingStepPips * _pipSize : 0m;
 				var referencePrice = Math.Min(candle.LowPrice, candle.ClosePrice);
 
-				if (PositionPrice - referencePrice > trailDistance + stepDistance)
+				if (_entryPrice - referencePrice > trailDistance + stepDistance)
 				{
 					var desiredStop = referencePrice + trailDistance;
 					var threshold = stepDistance > 0m ? desiredStop + stepDistance : desiredStop;
@@ -441,39 +423,6 @@ public class AlligatorSimpleStrategy : Strategy
 
 		_shortExitRequested = true;
 		BuyMarket(volume: Math.Abs(Position));
-	}
-
-	private static decimal?[] CreateHistoryBuffer(int shift)
-	{
-		var size = Math.Max(shift + 3, 3);
-		return new decimal?[size];
-	}
-
-	private static void UpdateHistory(decimal?[] buffer, decimal value)
-	{
-		if (buffer.Length == 0)
-			return;
-
-		Array.Copy(buffer, 1, buffer, 0, buffer.Length - 1);
-		buffer[^1] = value;
-	}
-
-	private static bool TryGetShiftedValue(decimal?[] buffer, int offsetFromEnd, out decimal value)
-	{
-		value = 0m;
-
-		if (buffer.Length < offsetFromEnd)
-			return false;
-
-		var index = buffer.Length - offsetFromEnd;
-		if (index < 0)
-			return false;
-
-		if (buffer[index] is not decimal stored)
-			return false;
-
-		value = stored;
-		return true;
 	}
 
 	private decimal CalculatePipSize()

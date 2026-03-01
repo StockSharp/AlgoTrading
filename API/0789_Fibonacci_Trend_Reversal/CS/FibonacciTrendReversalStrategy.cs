@@ -170,8 +170,8 @@ _direction = Param(nameof(Direction), (Sides?)null)
 		if (candle.State != CandleStates.Finished)
 		return;
 		
-		var highLine = _highest.Process(candle.HighPrice).ToNullableDecimal();
-		var lowLine = _lowest.Process(candle.LowPrice).ToNullableDecimal();
+		var highLine = _highest.Process(new DecimalIndicatorValue(_highest, candle.HighPrice, candle.ServerTime)).ToNullableDecimal();
+		var lowLine = _lowest.Process(new DecimalIndicatorValue(_lowest, candle.LowPrice, candle.ServerTime)).ToNullableDecimal();
 		
 		if (highLine is null || lowLine is null)
 		return;

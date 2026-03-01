@@ -15,123 +15,32 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// DiNapoli Stochastic cross strategy.
-/// Opens a long position when the %K line crosses below %D and
-/// a short position when %K crosses above %D.
+/// Opens a long position when the %K line crosses above %D and
+/// a short position when %K crosses below %D.
 /// </summary>
 public class DiNapoliStochasticStrategy : Strategy
 {
 	private readonly StrategyParam<int> _fastK;
-	private readonly StrategyParam<int> _slowK;
 	private readonly StrategyParam<int> _slowD;
-	private readonly StrategyParam<bool> _buyOpen;
-	private readonly StrategyParam<bool> _sellOpen;
-	private readonly StrategyParam<bool> _buyClose;
-	private readonly StrategyParam<bool> _sellClose;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _prevK;
 	private decimal _prevD;
+	private bool _prevReady;
 
-	/// <summary>
-	/// Base period for %K calculation.
-	/// </summary>
-	public int FastK
-	{
-		get => _fastK.Value;
-		set => _fastK.Value = value;
-	}
+	public int FastK { get => _fastK.Value; set => _fastK.Value = value; }
+	public int SlowD { get => _slowD.Value; set => _slowD.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Smoothing period for %K.
-	/// </summary>
-	public int SlowK
-	{
-		get => _slowK.Value;
-		set => _slowK.Value = value;
-	}
-
-	/// <summary>
-	/// Smoothing period for %D.
-	/// </summary>
-	public int SlowD
-	{
-		get => _slowD.Value;
-		set => _slowD.Value = value;
-	}
-
-	/// <summary>
-	/// Allow opening long positions.
-	/// </summary>
-	public bool BuyOpen
-	{
-		get => _buyOpen.Value;
-		set => _buyOpen.Value = value;
-	}
-
-	/// <summary>
-	/// Allow opening short positions.
-	/// </summary>
-	public bool SellOpen
-	{
-		get => _sellOpen.Value;
-		set => _sellOpen.Value = value;
-	}
-
-	/// <summary>
-	/// Allow closing long positions.
-	/// </summary>
-	public bool BuyClose
-	{
-		get => _buyClose.Value;
-		set => _buyClose.Value = value;
-	}
-
-	/// <summary>
-	/// Allow closing short positions.
-	/// </summary>
-	public bool SellClose
-	{
-		get => _sellClose.Value;
-		set => _sellClose.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type to use.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="DiNapoliStochasticStrategy"/>.
-	/// </summary>
 	public DiNapoliStochasticStrategy()
 	{
 		_fastK = Param(nameof(FastK), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast %K", "Base period for %K", "DiNapoli");
 
-		_slowK = Param(nameof(SlowK), 3)
-			.SetGreaterThanZero()
-			.SetDisplay("Slow %K", "%K smoothing period", "DiNapoli");
-
 		_slowD = Param(nameof(SlowD), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow %D", "%D smoothing period", "DiNapoli");
-
-		_buyOpen = Param(nameof(BuyOpen), true)
-			.SetDisplay("Buy Open", "Allow opening long positions", "Trading");
-
-		_sellOpen = Param(nameof(SellOpen), true)
-			.SetDisplay("Sell Open", "Allow opening short positions", "Trading");
-
-		_buyClose = Param(nameof(BuyClose), true)
-			.SetDisplay("Buy Close", "Allow closing long positions", "Trading");
-
-		_sellClose = Param(nameof(SellClose), true)
-			.SetDisplay("Sell Close", "Allow closing short positions", "Trading");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(6).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for calculation", "General");
@@ -149,6 +58,7 @@ public class DiNapoliStochasticStrategy : Strategy
 		base.OnReseted();
 		_prevK = 0m;
 		_prevD = 0m;
+		_prevReady = false;
 	}
 
 	/// <inheritdoc />
@@ -158,11 +68,9 @@ public class DiNapoliStochasticStrategy : Strategy
 
 		StartProtection(null, null);
 
-		var stochastic = new StochasticOscillator
-		{ K = { Length = FastK },
-			K = { Length = SlowK },
-			D = { Length = SlowD },
-		};
+		var stochastic = new StochasticOscillator();
+		stochastic.K.Length = FastK;
+		stochastic.D.Length = SlowD;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -183,32 +91,32 @@ public class DiNapoliStochasticStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var stoch = (StochasticOscillatorValue)stochValue;
-		var k = stoch.K;
-		var d = stoch.D;
+		var stoch = (IStochasticOscillatorValue)stochValue;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (stoch.K is not decimal k || stoch.D is not decimal d)
+			return;
+
+		if (!_prevReady)
 		{
 			_prevK = k;
 			_prevD = d;
+			_prevReady = true;
 			return;
 		}
 
-		if (_prevK > _prevD)
+		// %K crosses above %D - buy signal
+		if (_prevK <= _prevD && k > d && Position <= 0)
 		{
-			if (SellClose && Position < 0)
-				BuyMarket(Math.Abs(Position));
-
-			if (BuyOpen && k <= d && Position <= 0)
-				BuyMarket(Volume + Math.Abs(Position));
+			if (Position < 0)
+				BuyMarket();
+			BuyMarket();
 		}
-		else if (_prevK < _prevD)
+		// %K crosses below %D - sell signal
+		else if (_prevK >= _prevD && k < d && Position >= 0)
 		{
-			if (BuyClose && Position > 0)
-				SellMarket(Math.Abs(Position));
-
-			if (SellOpen && k >= d && Position >= 0)
-				SellMarket(Volume + Math.Abs(Position));
+			if (Position > 0)
+				SellMarket();
+			SellMarket();
 		}
 
 		_prevK = k;

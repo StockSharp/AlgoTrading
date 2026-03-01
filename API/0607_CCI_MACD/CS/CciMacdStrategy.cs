@@ -33,10 +33,11 @@ public class CciMacdStrategy : Strategy
 
 	private CommodityChannelIndex _cci = null!;
 	private MovingAverageConvergenceDivergenceSignal _macd = null!;
-	private ExponentialMovingAverage _ema125 = null!;
-	private ExponentialMovingAverage _ema750 = null!;
+	private ExponentialMovingAverage _ema125;
+	private ExponentialMovingAverage _ema750;
 	private AverageTrueRange _atr = null!;
 	private decimal _prevCci;
+	private decimal _lastMacdLine;
 	private bool _initialized;
 
 	/// <summary>
@@ -104,7 +105,7 @@ public class CciMacdStrategy : Strategy
 	/// </summary>
 	public CciMacdStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 
 		_cciPeriod = Param(nameof(CciPeriod), 14)
@@ -126,15 +127,15 @@ public class CciMacdStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Signal", "MACD signal length", "Indicators");
 
-		_ema125Period = Param(nameof(Ema125Period), 125)
+		_ema125Period = Param(nameof(Ema125Period), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA125 Period", "EMA 125 length", "Indicators");
 
-		_ema750Period = Param(nameof(Ema750Period), 750)
+		_ema750Period = Param(nameof(Ema750Period), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA750 Period", "EMA 750 length", "Indicators");
 
-		_atrMultiplier = Param(nameof(AtrMultiplier), 18m)
+		_atrMultiplier = Param(nameof(AtrMultiplier), 3m)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Multiplier", "ATR band multiplier", "Indicators");
 
@@ -155,9 +156,9 @@ public class CciMacdStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_cci = new CommodityChannelIndex { Length = CciPeriod };
 		_macd = new MovingAverageConvergenceDivergenceSignal
@@ -169,13 +170,15 @@ public class CciMacdStrategy : Strategy
 			},
 			SignalMa = { Length = MacdSignalLength }
 		};
-		_ema125 = new EMA { Length = Ema125Period };
-		_ema750 = new EMA { Length = Ema750Period };
-		_atr = new AverageTrueRange { Length = Ema750Period, Type = MovingAverageType.Exponential };
+		_ema125 = new ExponentialMovingAverage { Length = Ema125Period };
+		_ema750 = new ExponentialMovingAverage { Length = Ema750Period };
+		_atr = new AverageTrueRange { Length = Ema750Period };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(_macd, _ema125, _ema750, _atr, _cci, ProcessCandle)
+			.BindEx(_macd, OnMacdProcess);
+		subscription
+			.Bind(_cci, _ema125, _ema750, _atr, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -195,7 +198,16 @@ public class CciMacdStrategy : Strategy
 		return StartTime <= EndTime ? t >= StartTime && t <= EndTime : t >= StartTime || t <= EndTime;
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue, decimal ema125Value, decimal ema750Value, decimal atrValue, decimal cciValue)
+	private void OnMacdProcess(ICandleMessage candle, IIndicatorValue value)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
+
+		var macd = (MovingAverageConvergenceDivergenceSignalValue)value;
+		_lastMacdLine = macd.Macd ?? 0m;
+	}
+
+	private void ProcessCandle(ICandleMessage candle, decimal cciValue, decimal ema125Value, decimal ema750Value, decimal atrValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
@@ -203,16 +215,13 @@ public class CciMacdStrategy : Strategy
 		if (!_macd.IsFormed || !_ema125.IsFormed || !_ema750.IsFormed || !_atr.IsFormed || !_cci.IsFormed)
 			return;
 
-		var macd = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
-		var macdLine = macd.Macd;
-
 		var cciCrossAbove = _initialized && _prevCci <= 0m && cciValue > 0m;
 		var cciCrossBelow = _initialized && _prevCci >= 0m && cciValue < 0m;
 		_prevCci = cciValue;
 		_initialized = true;
 
-		var macdBullish = macdLine > 0m;
-		var macdBearish = macdLine < 0m;
+		var macdBullish = _lastMacdLine > 0m;
+		var macdBearish = _lastMacdLine < 0m;
 
 		var cciSignalUp = cciCrossAbove && (!UseMacdFilter || macdBullish);
 		var cciSignalDown = cciCrossBelow && (!UseMacdFilter || macdBearish);
@@ -220,23 +229,19 @@ public class CciMacdStrategy : Strategy
 		var upperBand = ema750Value + AtrMultiplier * atrValue;
 		var lowerBand = ema750Value - AtrMultiplier * atrValue;
 
-		string currentSignalColor = null;
+		var longCondition = false;
+		var shortCondition = false;
+
 		if (candle.ClosePrice > ema125Value && candle.ClosePrice > ema750Value && candle.ClosePrice < upperBand && cciSignalUp)
-		{
-			currentSignalColor = "aqua";
-		}
+			longCondition = true;
 		else if (candle.ClosePrice < ema125Value && candle.ClosePrice < ema750Value && candle.ClosePrice > lowerBand && cciSignalDown)
-		{
-			currentSignalColor = "red";
-		}
+			shortCondition = true;
 
 		var timeOk = IsInTimeRange(candle.OpenTime);
-		var longCondition = cciSignalUp && currentSignalColor == "aqua" && timeOk;
-		var shortCondition = cciSignalDown && currentSignalColor == "red" && timeOk;
 
-		if (longCondition && Position <= 0)
+		if (longCondition && timeOk && Position <= 0)
 			BuyMarket();
-		else if (shortCondition && Position >= 0)
+		else if (shortCondition && timeOk && Position >= 0)
 			SellMarket();
 	}
 }

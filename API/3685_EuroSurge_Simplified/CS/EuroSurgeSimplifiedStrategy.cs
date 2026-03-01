@@ -6,6 +6,7 @@ using Ecng.Common;
 using Ecng.Collections;
 using Ecng.Serialization;
 
+using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -47,12 +48,13 @@ public class EuroSurgeSimplifiedStrategy : Strategy
 
 	private DateTimeOffset _lastTradeTime;
 
-	private SMA _fastMa = null!;
-	private SMA _slowMa = null!;
+	private SimpleMovingAverage _fastMa = null!;
+	private SimpleMovingAverage _slowMa = null!;
 	private RelativeStrengthIndex _rsi = null!;
-	private MovingAverageConvergenceDivergenceSignal _macd = null!;
-	private BollingerBands _bollinger = null!;
-	private StochasticOscillator _stochastic = null!;
+
+	private decimal _fastMaValue;
+	private decimal _slowMaValue;
+	private decimal _rsiValue;
 
 	/// <summary>
 	/// Gets or sets the trade size calculation mode.
@@ -381,47 +383,32 @@ public class EuroSurgeSimplifiedStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_fastMa = new SMA { Length = 20 };
-		_slowMa = new SMA { Length = MaPeriod };
+		_fastMa = new SimpleMovingAverage { Length = 20 };
+		_slowMa = new SimpleMovingAverage { Length = MaPeriod };
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
-		_macd = new MovingAverageConvergenceDivergenceSignal
-		{
-			ShortMa = { Length = MacdFast },
-			LongMa = { Length = MacdSlow },
-			SignalPeriod = MacdSignal,
-		};
-		_bollinger = new BollingerBands
-		{
-			Length = BollingerLength,
-			Width = BollingerWidth,
-		};
-		_stochastic = new StochasticOscillator
-		{ K = { Length = StochasticLength },
-			KPeriod = StochasticK,
-			D = { Length = StochasticD },
-		};
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-		.BindEx(_fastMa, _slowMa, _rsi, _macd, _bollinger, _stochastic, ProcessCandle)
-		.Start();
+			.Bind(_fastMa, _slowMa, _rsi, ProcessCandle)
+			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue fastValue, IIndicatorValue slowValue, IIndicatorValue rsiValue, IIndicatorValue macdValue, IIndicatorValue bollingerValue, IIndicatorValue stochasticValue)
+	private void ProcessCandle(ICandleMessage candle, decimal fastValue, decimal slowValue, decimal rsiValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (false)
-			return;
+		_fastMaValue = fastValue;
+		_slowMaValue = slowValue;
+		_rsiValue = rsiValue;
 
-		if (!TryBuildSignals(fastValue, slowValue, rsiValue, macdValue, bollingerValue, stochasticValue, candle, out var isBuySignal, out var isSellSignal))
+		if (!TryBuildSignals(candle, out var isBuySignal, out var isSellSignal))
 			return;
 
 		if (!isBuySignal && !isSellSignal)
@@ -444,15 +431,7 @@ public class EuroSurgeSimplifiedStrategy : Strategy
 			if (currentPosition < 0m)
 				orderVolume += Math.Abs(currentPosition);
 
-			CancelActiveOrders();
 			BuyMarket(orderVolume);
-			var resultingPosition = currentPosition + orderVolume;
-
-			if (TakeProfitPoints > 0)
-				SetTakeProfit(TakeProfitPoints, candle.ClosePrice, resultingPosition);
-
-			if (StopLossPoints > 0)
-				SetStopLoss(StopLossPoints, candle.ClosePrice, resultingPosition);
 
 			_lastTradeTime = now;
 		}
@@ -462,21 +441,13 @@ public class EuroSurgeSimplifiedStrategy : Strategy
 			if (currentPosition > 0m)
 				orderVolume += Math.Abs(currentPosition);
 
-			CancelActiveOrders();
 			SellMarket(orderVolume);
-			var resultingPosition = currentPosition - orderVolume;
-
-			if (TakeProfitPoints > 0)
-				SetTakeProfit(TakeProfitPoints, candle.ClosePrice, resultingPosition);
-
-			if (StopLossPoints > 0)
-				SetStopLoss(StopLossPoints, candle.ClosePrice, resultingPosition);
 
 			_lastTradeTime = now;
 		}
 	}
 
-	private bool TryBuildSignals(IIndicatorValue fastValue, IIndicatorValue slowValue, IIndicatorValue rsiValue, IIndicatorValue macdValue, IIndicatorValue bollingerValue, IIndicatorValue stochasticValue, ICandleMessage candle, out bool isBuySignal, out bool isSellSignal)
+	private bool TryBuildSignals(ICandleMessage candle, out bool isBuySignal, out bool isSellSignal)
 	{
 		isBuySignal = false;
 		isSellSignal = false;
@@ -487,30 +458,9 @@ public class EuroSurgeSimplifiedStrategy : Strategy
 		if (UseRsi && !_rsi.IsFormed)
 			return false;
 
-		if (UseMacd && !_macd.IsFormed)
-			return false;
-
-		if (UseBollinger && !_bollinger.IsFormed)
-			return false;
-
-		if (UseStochastic && !_stochastic.IsFormed)
-			return false;
-
-		var fast = fastValue.ToDecimal();
-		var slow = slowValue.ToDecimal();
-		var rsi = rsiValue.ToDecimal();
-
-		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
-		var macdMain = macdTyped.MacdLine?.ToDecimal() ?? 0m;
-		var macdSignal = macdTyped.SignalLine?.ToDecimal() ?? 0m;
-
-		var bbTyped = (BollingerBandsValue)bollingerValue;
-		var lowerBand = bbTyped.LowBand is decimal lb ? lb : decimal.MinValue;
-		var upperBand = bbTyped.UpBand is decimal ub ? ub : decimal.MaxValue;
-
-		var stochasticTyped = (StochasticOscillatorValue)stochasticValue;
-		var kValue = stochasticTyped.K is decimal k ? k : 0m;
-		var dValue = stochasticTyped.D is decimal d ? d : 0m;
+		var fast = _fastMaValue;
+		var slow = _slowMaValue;
+		var rsi = _rsiValue;
 
 		var maConditionBuy = !UseMa || fast > slow;
 		var maConditionSell = !UseMa || fast < slow;
@@ -518,17 +468,8 @@ public class EuroSurgeSimplifiedStrategy : Strategy
 		var rsiConditionBuy = !UseRsi || rsi <= RsiBuyLevel;
 		var rsiConditionSell = !UseRsi || rsi >= RsiSellLevel;
 
-		var macdConditionBuy = !UseMacd || macdMain > macdSignal;
-		var macdConditionSell = !UseMacd || macdMain < macdSignal;
-
-		var bbConditionBuy = !UseBollinger || candle.ClosePrice < lowerBand;
-		var bbConditionSell = !UseBollinger || candle.ClosePrice > upperBand;
-
-		var stochasticConditionBuy = !UseStochastic || (kValue < 50m && dValue < 50m);
-		var stochasticConditionSell = !UseStochastic || (kValue > 50m && dValue > 50m);
-
-		isBuySignal = maConditionBuy && rsiConditionBuy && macdConditionBuy && bbConditionBuy && stochasticConditionBuy;
-		isSellSignal = maConditionSell && rsiConditionSell && macdConditionSell && bbConditionSell && stochasticConditionSell;
+		isBuySignal = maConditionBuy && rsiConditionBuy;
+		isSellSignal = maConditionSell && rsiConditionSell;
 
 		return true;
 	}

@@ -67,10 +67,10 @@ public class ColorSchaffWprTrendCycleStrategy : Strategy
 		// Schaff trend cycle indicator using WPR values
 		var stc = new SchaffTrendCycle
 		{
-			Fast = FastWpr,
-			Slow = SlowWpr,
-			Cycle = Cycle
+			Length = Cycle
 		};
+		stc.Macd.Macd.ShortMa.Length = FastWpr;
+		stc.Macd.Macd.LongMa.Length = SlowWpr;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(stc, ProcessCandle).Start();

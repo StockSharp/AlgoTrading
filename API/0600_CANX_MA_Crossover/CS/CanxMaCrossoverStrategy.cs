@@ -129,7 +129,7 @@ public class CanxMaCrossoverStrategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 
-		var startDate = new DateTimeOffset(StartYear, 1, 1, 0, 0, 0, time.Offset);
+		var startDate = new DateTimeOffset(StartYear, 1, 1, 0, 0, 0, TimeSpan.Zero);
 
 		var prevFast = 0m;
 		var prevSlow = 0m;

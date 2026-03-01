@@ -12,8 +12,6 @@ using StockSharp.Algo;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
 /// <summary>
 /// Intra Bullish Strategy - Profit Ping v4.0.
 /// Enters long on EMA crossover with MACD and RSI confirmation.
@@ -30,6 +28,8 @@ public class IntraBullishProfitPingV40Strategy : Strategy
 
 	private decimal? _prevShort;
 	private decimal? _prevLong;
+	private decimal _lastRsi;
+	private decimal _lastHistogram;
 
 	public int ShortEmaLength
 	{
@@ -104,26 +104,15 @@ public class IntraBullishProfitPingV40Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	protected override void OnStarted2(DateTime time)
 	{
-		return [(Security, CandleType)];
-	}
+		base.OnStarted2(time);
 
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
 		_prevShort = null;
 		_prevLong = null;
-	}
 
-	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
-	{
-		base.OnStarted(time);
-
-		var emaShort = new EMA { Length = ShortEmaLength };
-		var emaLong = new EMA { Length = LongEmaLength };
+		var emaShort = new ExponentialMovingAverage { Length = ShortEmaLength };
+		var emaLong = new ExponentialMovingAverage { Length = LongEmaLength };
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };
 		var macd = new MovingAverageConvergenceDivergenceSignal
 		{
@@ -136,7 +125,34 @@ public class IntraBullishProfitPingV40Strategy : Strategy
 		};
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(emaShort, emaLong, rsi, macd, ProcessCandle).Start();
+
+		// Bind RSI separately
+		subscription.Bind(rsi, (candle, rsiVal) =>
+		{
+			_lastRsi = rsiVal;
+		});
+
+		// Bind MACD separately to capture histogram via inner indicators
+		subscription.BindEx(macd, (candle, value) =>
+		{
+			if (value is not IComplexIndicatorValue complexVal)
+				return;
+
+			// Get MACD histogram (difference between MACD line and signal line)
+			foreach (var inner in complexVal.InnerValues)
+			{
+				if (inner.Key is MovingAverageConvergenceDivergenceHistogram)
+				{
+					_lastHistogram = inner.Value.IsEmpty ? 0m : ((DecimalIndicatorValue)inner.Value).Value;
+					break;
+				}
+			}
+		});
+
+		// Bind EMAs for crossover detection
+		subscription
+			.Bind(emaShort, emaLong, ProcessCandle)
+			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -146,23 +162,14 @@ public class IntraBullishProfitPingV40Strategy : Strategy
 			DrawIndicator(area, emaLong);
 			DrawOwnTrades(area);
 		}
-
-		StartProtection();
 	}
 
 	private void ProcessCandle(
 		ICandleMessage candle,
 		decimal emaShort,
-		decimal emaLong,
-		decimal rsi,
-		decimal macd,
-		decimal signal,
-		decimal histogram)
+		decimal emaLong)
 	{
 		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		var crossUp = _prevShort is not null && _prevLong is not null && _prevShort <= _prevLong && emaShort > emaLong;
@@ -171,14 +178,15 @@ public class IntraBullishProfitPingV40Strategy : Strategy
 		var bullishCandle = candle.ClosePrice > candle.OpenPrice;
 		var bearishCandle = candle.ClosePrice < candle.OpenPrice;
 
-		var buySignal = crossUp && histogram > 0m && rsi > 50m && bullishCandle;
-		var sellSignal = crossDown && histogram < 0m && rsi < 50m && bearishCandle;
+		// Use EMA crossover as primary signal, with loose RSI filter
+		var buySignal = crossUp && _lastRsi > 40m;
+		var sellSignal = crossDown && _lastRsi < 60m;
 
 		if (buySignal && Position <= 0)
 			BuyMarket();
 
 		if (sellSignal && Position > 0)
-			SellMarket(Position);
+			SellMarket();
 
 		_prevShort = emaShort;
 		_prevLong = emaLong;

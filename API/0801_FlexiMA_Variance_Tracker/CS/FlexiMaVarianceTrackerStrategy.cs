@@ -95,15 +95,15 @@ _direction = Param(nameof(Direction), (Sides?)null)
 
 		var diff = candle.ClosePrice - ma;
 
-		var diffAvg = _diffAvg.Process(diff).GetValue<decimal>();
-		var std = _stdDev.Process(diff).GetValue<decimal>();
+		var diffAvg = _diffAvg.Process(new DecimalIndicatorValue(_diffAvg, diff, candle.ServerTime)).GetValue<decimal>();
+		var std = _stdDev.Process(new DecimalIndicatorValue(_stdDev, diff, candle.ServerTime)).GetValue<decimal>();
 		var threshold = diffAvg + StdMultiplier * std;
 
 var allowLong = Direction is null or Sides.Buy;
 var allowShort = Direction is null or Sides.Sell;
 
 		var longCond = st.IsUpTrend && diff > threshold;
-		var shortCond = st.IsDownTrend && diff < -threshold;
+		var shortCond = !st.IsUpTrend && diff < -threshold;
 
 		if (allowLong && longCond && Position <= 0)
 			BuyMarket(Volume + Math.Abs(Position));
@@ -111,7 +111,7 @@ var allowShort = Direction is null or Sides.Sell;
 		if (allowShort && shortCond && Position >= 0)
 			SellMarket(Volume + Math.Abs(Position));
 
-		if (Position > 0 && (st.IsDownTrend || diff < 0))
+		if (Position > 0 && (!st.IsUpTrend || diff < 0))
 			SellMarket();
 
 		if (Position < 0 && (st.IsUpTrend || diff > 0))

@@ -245,15 +245,15 @@ public class NeuralNetworkAtrStrategy : Strategy
 		
 		.SetOptimize(3, 9, 2);
 
-		_buyThreshold = Param(nameof(BuyThreshold), 0.6m)
+		_buyThreshold = Param(nameof(BuyThreshold), 0.502m)
 		.SetDisplay("Buy Threshold", "Prediction level to open long trades", "Signal")
-		
-		.SetOptimize(0.55m, 0.75m, 0.05m);
 
-		_sellThreshold = Param(nameof(SellThreshold), 0.4m)
+		.SetOptimize(0.50m, 0.55m, 0.005m);
+
+		_sellThreshold = Param(nameof(SellThreshold), 0.498m)
 		.SetDisplay("Sell Threshold", "Prediction level to open short trades", "Signal")
-		
-		.SetOptimize(0.25m, 0.45m, 0.05m);
+
+		.SetOptimize(0.45m, 0.50m, 0.005m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 		.SetDisplay("Candle Type", "Candles used for signal calculations", "General");
@@ -333,7 +333,7 @@ public class NeuralNetworkAtrStrategy : Strategy
 	InitializeNetwork();
 
 	// Enable protective order handling once at startup.
-	StartProtection(new());
+	StartProtection(null, null);
 
 	// Prepare ATR indicator and candle subscription.
 	var atr = new ATR { Length = AtrPeriod };
@@ -528,39 +528,39 @@ public class NeuralNetworkAtrStrategy : Strategy
 	if (portfolio is null)
 	return Volume;
 
-	var equity = portfolio.CurrentValue;
+	var equity = portfolio.CurrentValue ?? 0m;
 	if (equity <= 0m)
-	return Volume;
+		return Volume;
 
 	var stopLossPoints = CalculateStopLossPoints(atrValue);
 	if (stopLossPoints <= 0)
-	return Volume;
+		return Volume;
 
 	var stepPrice = Security?.StepPrice ?? 0m;
 	if (stepPrice <= 0m)
-	return Volume;
+		return Volume;
 
 	var riskAmount = equity * (MaxRiskPerTrade / 100m);
 	if (riskAmount <= 0m)
-	return Volume;
+		return Volume;
 
 	var riskPerContract = stopLossPoints * stepPrice;
 	if (riskPerContract <= 0m)
-	return Volume;
+		return Volume;
 
 	var rawVolume = riskAmount / riskPerContract;
 
 	var volumeStep = Security?.VolumeStep ?? 0m;
 	if (volumeStep > 0m)
-	rawVolume = Math.Floor(rawVolume / volumeStep) * volumeStep;
+		rawVolume = Math.Floor(rawVolume / volumeStep) * volumeStep;
 
 	var minVolume = Security?.MinVolume ?? 0m;
 	if (minVolume > 0m && rawVolume < minVolume)
-	rawVolume = minVolume;
+		rawVolume = minVolume;
 
 	var maxVolume = Security?.MaxVolume ?? 0m;
 	if (maxVolume > 0m && rawVolume > maxVolume)
-	rawVolume = maxVolume;
+		rawVolume = maxVolume;
 
 	return rawVolume > 0m ? rawVolume : Volume;
 	}
@@ -581,16 +581,7 @@ public class NeuralNetworkAtrStrategy : Strategy
 
 	private void AttachProtection(decimal referencePrice, decimal atrValue, decimal resultingPosition)
 	{
-	var stopLossPoints = CalculateStopLossPoints(atrValue);
-	if (stopLossPoints <= 0)
-	return;
-
-	var takeProfitPoints = (int)Math.Round(stopLossPoints * (double)RiskRewardRatio);
-	if (takeProfitPoints <= 0)
-	takeProfitPoints = stopLossPoints * 2;
-
-	SetStopLoss(stopLossPoints, referencePrice, resultingPosition);
-	SetTakeProfit(takeProfitPoints, referencePrice, resultingPosition);
+	// Protection handled by StartProtection; no manual stop/take-profit setting needed.
 	}
 
 	private bool UpdateEquity(DateTimeOffset time)
@@ -599,9 +590,9 @@ public class NeuralNetworkAtrStrategy : Strategy
 	if (portfolio is null)
 	return true;
 
-	var equity = portfolio.CurrentValue;
+	var equity = portfolio.CurrentValue ?? 0m;
 	if (equity <= 0m)
-	return true;
+		return true;
 
 	var currentDay = time.Date;
 
