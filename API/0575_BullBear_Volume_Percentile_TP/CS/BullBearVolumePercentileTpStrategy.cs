@@ -197,10 +197,10 @@ public class BullBearVolumePercentileTpStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_ema = new EMA { Length = EmaLength };
+		_ema = new ExponentialMovingAverage { Length = EmaLength };
 		_atr = new AverageTrueRange { Length = AtrPeriod };
-		_volSma = new SMA { Length = VolPeriod };
-		_bbpMean = new SMA { Length = ZLength };
+		_volSma = new SimpleMovingAverage { Length = VolPeriod };
+		_bbpMean = new SimpleMovingAverage { Length = ZLength };
 		_bbpStd = new StandardDeviation { Length = ZLength };
 
 		var subscription = SubscribeCandles(CandleType);
@@ -221,8 +221,6 @@ public class BullBearVolumePercentileTpStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 		return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
 
 		var emaValue = _ema.Process(new DecimalIndicatorValue(_ema, candle.ClosePrice, candle.ServerTime)).ToDecimal();
 		var bullPower = candle.HighPrice - emaValue;
@@ -239,7 +237,7 @@ public class BullBearVolumePercentileTpStrategy : Strategy
 
 		var zscore = (bbp - bbpMean) / bbpStd;
 
-		var volume = candle.TotalVolume ?? 0m;
+		var volume = candle.TotalVolume;
 		var volMa = _volSma.Process(new DecimalIndicatorValue(_volSma, volume, candle.ServerTime)).ToDecimal();
 		var volMult = volMa == 0 ? 0 : volume / volMa;
 
@@ -258,24 +256,22 @@ public class BullBearVolumePercentileTpStrategy : Strategy
 		var priceScore = pricePerc > PercHigh ? PercHighFactor : pricePerc > PercMed ? PercMedFactor : pricePerc > PercLow ? PercLowFactor : 0.8m;
 		var tpFactor = (volScore + priceScore) / 2m;
 
-		var atrValue = _atr.Process(candle).ToDecimal();
+		var atrValue = _atr.Process(new CandleIndicatorValue(_atr, candle)).ToDecimal();
 
 		if (Position == 0)
 		{
 			if (zscore < -ZThreshold && _prevZScore >= -ZThreshold)
 			{
-				var qty = Volume + Math.Abs(Position);
-				BuyMarket(qty);
+				BuyMarket();
 				_entryPrice = candle.ClosePrice;
-				_entryVolume = qty;
+				_entryVolume = Volume;
 				PrepareTpLevels(true, atrValue, tpFactor);
 			}
 			else if (zscore > ZThreshold && _prevZScore <= ZThreshold)
 			{
-				var qty = Volume + Math.Abs(Position);
-				SellMarket(qty);
+				SellMarket();
 				_entryPrice = candle.ClosePrice;
-				_entryVolume = qty;
+				_entryVolume = Volume;
 				PrepareTpLevels(false, atrValue, tpFactor);
 			}
 		}
@@ -283,12 +279,12 @@ public class BullBearVolumePercentileTpStrategy : Strategy
 		{
 			if (Position > 0 && _prevZScore > 0 && zscore <= 0)
 			{
-				SellMarket(Position);
+				SellMarket();
 				ResetTp();
 			}
 			else if (Position < 0 && _prevZScore < 0 && zscore >= 0)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				ResetTp();
 			}
 			else if (UseTakeProfit)
@@ -330,41 +326,39 @@ public class BullBearVolumePercentileTpStrategy : Strategy
 		{
 			if (!_tp1Done && candle.HighPrice >= _tp1Price)
 			{
-				SellMarket(Math.Min(_tp1Qty, Position));
+				SellMarket();
 				_tp1Done = true;
 			}
 
 			if (!_tp2Done && candle.HighPrice >= _tp2Price)
 			{
-				SellMarket(Math.Min(_tp2Qty, Position));
+				SellMarket();
 				_tp2Done = true;
 			}
 
 			if (!_tp3Done && candle.HighPrice >= _tp3Price)
 			{
-				SellMarket(Math.Abs(Position));
+				SellMarket();
 				ResetTp();
 			}
 		}
 		else if (Position < 0)
 		{
-			var absPos = Math.Abs(Position);
-
 			if (!_tp1Done && candle.LowPrice <= _tp1Price)
 			{
-				BuyMarket(Math.Min(_tp1Qty, absPos));
+				BuyMarket();
 				_tp1Done = true;
 			}
 
 			if (!_tp2Done && candle.LowPrice <= _tp2Price)
 			{
-				BuyMarket(Math.Min(_tp2Qty, Math.Abs(Position)));
+				BuyMarket();
 				_tp2Done = true;
 			}
 
 			if (!_tp3Done && candle.LowPrice <= _tp3Price)
 			{
-				BuyMarket(absPos);
+				BuyMarket();
 				ResetTp();
 			}
 		}

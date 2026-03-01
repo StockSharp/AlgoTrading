@@ -265,7 +265,7 @@ public class BullishDivergenceShortTermLongTradeFinderStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection(stopLoss: new Unit(StopLossPercent, UnitTypes.Percent));
+		StartProtection(new Unit(StopLossPercent, UnitTypes.Percent), null);
 	}
 
 	private void ProcessHourCandle(ICandleMessage candle, decimal rsi)
@@ -358,19 +358,16 @@ public class BullishDivergenceShortTermLongTradeFinderStrategy : Strategy
 			_barsSincePrevPivotHigh = 0;
 		}
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		if (bullCond && Position == 0 &&
 			_prevPivotLowPrice != 0 &&
 			candle.ClosePrice < _prevPivotLowPrice &&
 			_rsiHourValue is decimal rsiHour && rsiHour < RsiHourEntryThreshold)
 		{
-			BuyMarket(Volume);
+			BuyMarket();
 		}
 		else if (Position > 0 && (rsi > SellWhenRsi || bearCond))
 		{
-			SellMarket(Position);
+			SellMarket();
 		}
 	}
 }

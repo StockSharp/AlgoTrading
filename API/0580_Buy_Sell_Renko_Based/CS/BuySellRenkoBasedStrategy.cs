@@ -11,30 +11,27 @@ using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo.Candles;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that trades on renko brick direction changes.
-/// Buys when the renko close crosses above its open and sells on the opposite cross.
+/// Strategy that trades on candle direction changes.
+/// Buys when the candle close crosses above its open and sells on the opposite cross.
 /// </summary>
 public class BuySellRenkoBasedStrategy : Strategy
 {
-	private readonly StrategyParam<int> _renkoAtrLength;
-	private DataType _renkoType;
+	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _prevOpen;
 	private decimal _prevClose;
 	private bool _hasPrev;
 
 	/// <summary>
-	/// ATR period used to calculate renko brick size.
+	/// Candle type.
 	/// </summary>
-	public int RenkoAtrLength
+	public DataType CandleType
 	{
-		get => _renkoAtrLength.Value;
-		set => _renkoAtrLength.Value = value;
+		get => _candleType.Value;
+		set => _candleType.Value = value;
 	}
 
 	/// <summary>
@@ -42,23 +39,14 @@ public class BuySellRenkoBasedStrategy : Strategy
 	/// </summary>
 	public BuySellRenkoBasedStrategy()
 	{
-		_renkoAtrLength = Param(nameof(RenkoAtrLength), 10)
-			.SetGreaterThanZero()
-			.SetDisplay("ATR Length", "ATR period for renko brick size", "Renko")
-			
-			.SetOptimize(5, 20, 1);
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		_renkoType ??= DataType.Create(typeof(RenkoCandleMessage), new RenkoCandleArg
-		{
-			BuildFrom = RenkoBuildFrom.Atr,
-			Length = RenkoAtrLength
-		});
-
-		return [(Security, _renkoType)];
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
@@ -66,7 +54,7 @@ public class BuySellRenkoBasedStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var subscription = SubscribeCandles(_renkoType);
+		var subscription = SubscribeCandles(CandleType);
 		subscription
 			.Bind(ProcessCandle)
 			.Start();

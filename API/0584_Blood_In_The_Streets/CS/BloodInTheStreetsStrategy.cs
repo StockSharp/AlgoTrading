@@ -135,7 +135,7 @@ public class BloodInTheStreetsStrategy : Strategy
 
 	    _highest = new Highest { Length = LookbackPeriod };
 	    _drawdownStdDev = new StandardDeviation { Length = StdDevLength };
-	    _drawdownSma = new SMA { Length = StdDevLength };
+	    _drawdownSma = new SimpleMovingAverage { Length = StdDevLength };
 
 	    var subscription = SubscribeCandles(CandleType);
 	    subscription
@@ -155,7 +155,7 @@ public class BloodInTheStreetsStrategy : Strategy
 	    if (candle.State != CandleStates.Finished)
 	        return;
 
-	    var highestValue = _highest.Process(candle.HighPrice);
+	    var highestValue = _highest.Process(new DecimalIndicatorValue(_highest, candle.HighPrice, candle.ServerTime));
 	    if (!highestValue.IsFinal)
 	    {
 	        _barIndex++;
@@ -166,8 +166,8 @@ public class BloodInTheStreetsStrategy : Strategy
 
 	    var drawdown = (candle.ClosePrice - peakHigh) / peakHigh * 100m;
 
-	    var meanValue = _drawdownSma.Process(drawdown);
-	    var stdDevValue = _drawdownStdDev.Process(drawdown);
+	    var meanValue = _drawdownSma.Process(new DecimalIndicatorValue(_drawdownSma, drawdown, candle.ServerTime));
+	    var stdDevValue = _drawdownStdDev.Process(new DecimalIndicatorValue(_drawdownStdDev, drawdown, candle.ServerTime));
 
 	    if (!meanValue.IsFinal || !stdDevValue.IsFinal)
 	    {
@@ -180,14 +180,14 @@ public class BloodInTheStreetsStrategy : Strategy
 
 	    var goLong = drawdown <= mean + StdDevThreshold * stdDev;
 
-	    if (goLong && Position == 0 && IsFormedAndOnlineAndAllowTrading())
+	    if (goLong && Position == 0)
 	    {
-	        BuyMarket(Volume);
+	        BuyMarket();
 	        _entryBarIndex = _barIndex;
 	    }
 	    else if (Position > 0 && _entryBarIndex >= 0 && _barIndex - _entryBarIndex >= ExitBars)
 	    {
-	        SellMarket(Position);
+	        SellMarket();
 	        _entryBarIndex = -1;
 	    }
 
