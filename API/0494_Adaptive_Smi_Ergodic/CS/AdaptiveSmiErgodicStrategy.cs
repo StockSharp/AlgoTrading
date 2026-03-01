@@ -3,8 +3,6 @@ namespace StockSharp.Samples.Strategies;
 using System;
 using System.Collections.Generic;
 
-using Ecng.Common;
-
 using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -12,106 +10,80 @@ using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 /// <summary>
-/// Adaptive SMI Ergodic Strategy - uses True Strength Index crossovers with signal line confirmation
+/// Adaptive SMI Ergodic Strategy - uses True Strength Index crossovers with signal line confirmation.
 /// </summary>
 public class AdaptiveSmiErgodicStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _longLength;
-	private readonly StrategyParam<int> _shortLength;
+	private readonly StrategyParam<int> _firstLength;
+	private readonly StrategyParam<int> _secondLength;
 	private readonly StrategyParam<int> _signalLength;
 	private readonly StrategyParam<decimal> _oversoldThreshold;
 	private readonly StrategyParam<decimal> _overboughtThreshold;
 
-	private TrueStrengthIndex _tsi;
-	private ExponentialMovingAverage _signal;
 	private decimal _previousTsi;
 
-	/// <summary>
-	/// Candle type for strategy calculation.
-	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Long smoothing length for TSI.
-	/// </summary>
-	public int LongLength
+	public int FirstLength
 	{
-		get => _longLength.Value;
-		set => _longLength.Value = value;
+		get => _firstLength.Value;
+		set => _firstLength.Value = value;
 	}
 
-	/// <summary>
-	/// Short smoothing length for TSI.
-	/// </summary>
-	public int ShortLength
+	public int SecondLength
 	{
-		get => _shortLength.Value;
-		set => _shortLength.Value = value;
+		get => _secondLength.Value;
+		set => _secondLength.Value = value;
 	}
 
-	/// <summary>
-	/// Signal line EMA length.
-	/// </summary>
 	public int SignalLength
 	{
 		get => _signalLength.Value;
 		set => _signalLength.Value = value;
 	}
 
-	/// <summary>
-	/// Oversold threshold.
-	/// </summary>
 	public decimal OversoldThreshold
 	{
 		get => _oversoldThreshold.Value;
 		set => _oversoldThreshold.Value = value;
 	}
 
-	/// <summary>
-	/// Overbought threshold.
-	/// </summary>
 	public decimal OverboughtThreshold
 	{
 		get => _overboughtThreshold.Value;
 		set => _overboughtThreshold.Value = value;
 	}
 
-	/// <summary>
-	/// Constructor.
-	/// </summary>
 	public AdaptiveSmiErgodicStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
-		_longLength = Param(nameof(LongLength), 12)
+		_firstLength = Param(nameof(FirstLength), 25)
 			.SetGreaterThanZero()
-			.SetDisplay("Long Length", "Long smoothing length", "TSI")
-			
-			.SetOptimize(5, 20, 1);
+			.SetDisplay("First Length", "First smoothing length for TSI", "TSI")
+			.SetOptimize(10, 30, 5);
 
-		_shortLength = Param(nameof(ShortLength), 5)
+		_secondLength = Param(nameof(SecondLength), 13)
 			.SetGreaterThanZero()
-			.SetDisplay("Short Length", "Short smoothing length", "TSI")
-			
-			.SetOptimize(2, 15, 1);
+			.SetDisplay("Second Length", "Second smoothing length for TSI", "TSI")
+			.SetOptimize(5, 20, 3);
 
-		_signalLength = Param(nameof(SignalLength), 5)
+		_signalLength = Param(nameof(SignalLength), 7)
 			.SetGreaterThanZero()
 			.SetDisplay("Signal Length", "Signal EMA length", "TSI")
-			
-			.SetOptimize(2, 15, 1);
+			.SetOptimize(3, 15, 2);
 
-		_oversoldThreshold = Param(nameof(OversoldThreshold), -0.4m)
-			.SetDisplay("Oversold Threshold", "Oversold level", "TSI");
+		_oversoldThreshold = Param(nameof(OversoldThreshold), -10m)
+			.SetDisplay("Oversold Threshold", "Oversold level for TSI", "TSI");
 
-		_overboughtThreshold = Param(nameof(OverboughtThreshold), 0.4m)
-			.SetDisplay("Overbought Threshold", "Overbought level", "TSI");
+		_overboughtThreshold = Param(nameof(OverboughtThreshold), 10m)
+			.SetDisplay("Overbought Threshold", "Overbought level for TSI", "TSI");
 	}
 
 	/// <inheritdoc />
@@ -121,72 +93,55 @@ public class AdaptiveSmiErgodicStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_previousTsi = default;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_tsi = new TrueStrengthIndex
-		{
-			ShortLength = ShortLength,
-			LongLength = LongLength
-		};
+		_previousTsi = 0;
 
-		_signal = new EMA { Length = SignalLength };
+		var tsi = new TrueStrengthIndex
+		{
+			FirstLength = FirstLength,
+			SecondLength = SecondLength,
+			SignalLength = SignalLength
+		};
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_tsi, ProcessCandle)
+			.BindEx(tsi, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _tsi);
-			DrawIndicator(area, _signal);
+			DrawIndicator(area, tsi);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal tsiValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue tsiValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_tsi.IsFormed)
-		{
-			_previousTsi = tsiValue;
+		var tv = (ITrueStrengthIndexValue)tsiValue;
+
+		if (tv.Tsi is not decimal tsiVal || tv.Signal is not decimal signalVal)
 			return;
-		}
 
-		var signalValue = _signal.Process(new DecimalIndicatorValue(_signal, tsiValue, candle.ServerTime));
+		var crossAboveOversold = _previousTsi <= OversoldThreshold && tsiVal > OversoldThreshold;
+		var crossBelowOverbought = _previousTsi >= OverboughtThreshold && tsiVal < OverboughtThreshold;
 
-		if (!signalValue.IsFormed)
+		if (crossAboveOversold && tsiVal > signalVal && Position <= 0)
 		{
-			_previousTsi = tsiValue;
-			return;
+			BuyMarket();
 		}
-
-		var signal = signalValue.ToDecimal();
-		var crossAboveOversold = _previousTsi <= OversoldThreshold && tsiValue > OversoldThreshold;
-		var crossBelowOverbought = _previousTsi >= OverboughtThreshold && tsiValue < OverboughtThreshold;
-
-		if (crossAboveOversold && tsiValue > signal && Position <= 0)
+		else if (crossBelowOverbought && tsiVal < signalVal && Position >= 0)
 		{
-			BuyMarket(Volume + Math.Abs(Position));
-		}
-		else if (crossBelowOverbought && tsiValue < signal && Position >= 0)
-		{
-			SellMarket(Volume + Math.Abs(Position));
+			SellMarket();
 		}
 
-		_previousTsi = tsiValue;
+		_previousTsi = tsiVal;
 	}
 }

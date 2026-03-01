@@ -1,20 +1,17 @@
+namespace StockSharp.Samples.Strategies;
+
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
-
+using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-namespace StockSharp.Samples.Strategies;
-
 /// <summary>
-/// Strategy that combines KDJ signals from multiple timeframes.
+/// Strategy that combines KDJ (Stochastic-based) signals from multiple timeframes.
+/// Uses weighted combination of K, D values from 3 timeframes with smoothing.
 /// </summary>
 public class AdaptiveKdjMtfStrategy : Strategy
 {
@@ -23,28 +20,25 @@ public class AdaptiveKdjMtfStrategy : Strategy
 	private readonly StrategyParam<DataType> _timeFrame3;
 	private readonly StrategyParam<int> _kdjLength;
 	private readonly StrategyParam<int> _smoothingLength;
-	private readonly StrategyParam<int> _trendLength;
-	private readonly StrategyParam<int> _weightOption;
+	private readonly StrategyParam<decimal> _buyLevel;
+	private readonly StrategyParam<decimal> _sellLevel;
 
 	private decimal _k1, _d1, _j1;
 	private decimal _k2, _d2, _j2;
 	private decimal _k3, _d3, _j3;
 	private decimal _prevSmoothK;
 	private decimal _prevSmoothD;
-
-	private readonly ExponentialMovingAverage _emaK = new();
-	private readonly ExponentialMovingAverage _emaD = new();
-	private readonly ExponentialMovingAverage _emaJ = new();
-	private readonly ExponentialMovingAverage _emaTotal = new();
-	private readonly SimpleMovingAverage _trendSma = new();
+	private decimal _smoothK;
+	private decimal _smoothD;
+	private int _processCount;
 
 	public DataType TimeFrame1 { get => _timeFrame1.Value; set => _timeFrame1.Value = value; }
 	public DataType TimeFrame2 { get => _timeFrame2.Value; set => _timeFrame2.Value = value; }
 	public DataType TimeFrame3 { get => _timeFrame3.Value; set => _timeFrame3.Value = value; }
 	public int KdjLength { get => _kdjLength.Value; set => _kdjLength.Value = value; }
 	public int SmoothingLength { get => _smoothingLength.Value; set => _smoothingLength.Value = value; }
-	public int TrendLength { get => _trendLength.Value; set => _trendLength.Value = value; }
-	public int WeightOption { get => _weightOption.Value; set => _weightOption.Value = value; }
+	public decimal BuyLevel { get => _buyLevel.Value; set => _buyLevel.Value = value; }
+	public decimal SellLevel { get => _sellLevel.Value; set => _sellLevel.Value = value; }
 
 	public AdaptiveKdjMtfStrategy()
 	{
@@ -57,23 +51,19 @@ public class AdaptiveKdjMtfStrategy : Strategy
 
 		_kdjLength = Param(nameof(KdjLength), 9)
 			.SetDisplay("KDJ Length", "Base length for KDJ", "Parameters")
-			
 			.SetOptimize(3, 15, 3);
 
 		_smoothingLength = Param(nameof(SmoothingLength), 5)
 			.SetDisplay("Smoothing Length", "EMA smoothing length", "Parameters")
-			
 			.SetOptimize(3, 15, 2);
 
-		_trendLength = Param(nameof(TrendLength), 40)
-			.SetDisplay("Trend Length", "Periods for trend definition", "Parameters")
-			
-			.SetOptimize(20, 60, 10);
+		_buyLevel = Param(nameof(BuyLevel), 30m)
+			.SetDisplay("Buy Level", "J value threshold for buy signal", "Parameters")
+			.SetOptimize(15m, 40m, 5m);
 
-		_weightOption = Param(nameof(WeightOption), 1)
-			.SetDisplay("Weight Option", "Weight distribution between timeframes", "Parameters")
-			
-			.SetOptimize(1, 5, 1);
+		_sellLevel = Param(nameof(SellLevel), 70m)
+			.SetDisplay("Sell Level", "J value threshold for sell signal", "Parameters")
+			.SetOptimize(60m, 85m, 5m);
 	}
 
 	/// <inheritdoc />
@@ -83,35 +73,30 @@ public class AdaptiveKdjMtfStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_k1 = _d1 = _j1 = 0m;
-		_k2 = _d2 = _j2 = 0m;
-		_k3 = _d3 = _j3 = 0m;
-		_prevSmoothK = 0m;
-		_prevSmoothD = 0m;
-		_emaK.Reset();
-		_emaD.Reset();
-		_emaJ.Reset();
-		_emaTotal.Reset();
-		_trendSma.Reset();
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_emaK.Length = SmoothingLength;
-		_emaD.Length = SmoothingLength;
-		_emaJ.Length = SmoothingLength;
-		_emaTotal.Length = SmoothingLength;
-		_trendSma.Length = TrendLength;
+		_k1 = _d1 = _j1 = 50m;
+		_k2 = _d2 = _j2 = 50m;
+		_k3 = _d3 = _j3 = 50m;
+		_prevSmoothK = 50m;
+		_prevSmoothD = 50m;
+		_smoothK = 50m;
+		_smoothD = 50m;
+		_processCount = 0;
 
-		var stoch1 = new Stochastic { Length = KdjLength, D = { Length = 3 } };
-		var stoch2 = new Stochastic { Length = KdjLength, D = { Length = 3 } };
-		var stoch3 = new Stochastic { Length = KdjLength, D = { Length = 3 } };
+		var stoch1 = new StochasticOscillator();
+		stoch1.K.Length = KdjLength;
+		stoch1.D.Length = 3;
+
+		var stoch2 = new StochasticOscillator();
+		stoch2.K.Length = KdjLength;
+		stoch2.D.Length = 3;
+
+		var stoch3 = new StochasticOscillator();
+		stoch3.K.Length = KdjLength;
+		stoch3.D.Length = 3;
 
 		var sub1 = SubscribeCandles(TimeFrame1);
 		var sub2 = SubscribeCandles(TimeFrame2);
@@ -120,6 +105,13 @@ public class AdaptiveKdjMtfStrategy : Strategy
 		sub1.BindEx(stoch1, ProcessTf1).Start();
 		sub2.BindEx(stoch2, ProcessTf2).Start();
 		sub3.BindEx(stoch3, ProcessTf3).Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, sub1);
+			DrawOwnTrades(area);
+		}
 	}
 
 	private void ProcessTf1(ICandleMessage candle, IIndicatorValue stochValue)
@@ -127,7 +119,7 @@ public class AdaptiveKdjMtfStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var sv = (StochasticValue)stochValue;
+		var sv = (IStochasticOscillatorValue)stochValue;
 		if (sv.K is not decimal k || sv.D is not decimal d)
 			return;
 
@@ -142,7 +134,7 @@ public class AdaptiveKdjMtfStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var sv = (StochasticValue)stochValue;
+		var sv = (IStochasticOscillatorValue)stochValue;
 		if (sv.K is not decimal k || sv.D is not decimal d)
 			return;
 
@@ -157,7 +149,7 @@ public class AdaptiveKdjMtfStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var sv = (StochasticValue)stochValue;
+		var sv = (IStochasticOscillatorValue)stochValue;
 		if (sv.K is not decimal k || sv.D is not decimal d)
 			return;
 
@@ -169,60 +161,39 @@ public class AdaptiveKdjMtfStrategy : Strategy
 
 	private void ProcessCombined()
 	{
-		var w1 = WeightOption switch
+		_processCount++;
+
+		// Weighted average of K, D, J values from 3 timeframes
+		var avgK = _k1 * 0.5m + _k2 * 0.3m + _k3 * 0.2m;
+		var avgD = _d1 * 0.5m + _d2 * 0.3m + _d3 * 0.2m;
+		var avgJ = _j1 * 0.5m + _j2 * 0.3m + _j3 * 0.2m;
+
+		// Simple EMA smoothing
+		var alpha = 2m / (SmoothingLength + 1m);
+		_smoothK = alpha * avgK + (1m - alpha) * _smoothK;
+		_smoothD = alpha * avgD + (1m - alpha) * _smoothD;
+		var smoothJ = alpha * avgJ + (1m - alpha) * avgJ;
+
+		// Need some warmup
+		if (_processCount < SmoothingLength * 3)
 		{
-			1 => 0.5m,
-			2 => 0.4m,
-			3 => 0.33m,
-			4 => 0.2m,
-			_ => 0.1m
-		};
-		var w2 = 0.33m;
-		var w3 = 1m - (w1 + w2);
-
-		var avgK = _k1 * w1 + _k2 * w2 + _k3 * w3;
-		var avgD = _d1 * w1 + _d2 * w2 + _d3 * w3;
-		var avgJ = _j1 * w1 + _j2 * w2 + _j3 * w3;
-
-		var kVal = _emaK.Process(new DecimalIndicatorValue(_emaK, avgK));
-		var dVal = _emaD.Process(new DecimalIndicatorValue(_emaD, avgD));
-		var jVal = _emaJ.Process(new DecimalIndicatorValue(_emaJ, avgJ));
-		var totalVal = _emaTotal.Process(new DecimalIndicatorValue(_emaTotal, (avgK + avgD + avgJ) / 3m));
-
-		if (!kVal.IsFinal || !dVal.IsFinal || !jVal.IsFinal || !totalVal.IsFinal)
+			_prevSmoothK = _smoothK;
+			_prevSmoothD = _smoothD;
 			return;
+		}
 
-		var smoothK = kVal.ToDecimal();
-		var smoothD = dVal.ToDecimal();
-		var smoothJ = jVal.ToDecimal();
-		var smoothTotal = totalVal.ToDecimal();
+		var crossUp = _prevSmoothK <= _prevSmoothD && _smoothK > _smoothD;
+		var crossDown = _prevSmoothK >= _prevSmoothD && _smoothK < _smoothD;
 
-		var trendVal = _trendSma.Process(new DecimalIndicatorValue(_trendSma, smoothTotal));
-		if (!trendVal.IsFinal)
-			return;
-
-		var trendAvg = trendVal.ToDecimal();
-		var isUptrend = trendAvg > 60m;
-		var isDowntrend = trendAvg < 40m;
-
-		var buyLevel = isUptrend ? 40m : isDowntrend ? 15m : 25m;
-		var sellLevel = isUptrend ? 85m : isDowntrend ? 60m : 75m;
-
-		var crossUp = _prevSmoothK <= _prevSmoothD && smoothK > smoothD;
-		var crossDown = _prevSmoothK >= _prevSmoothD && smoothK < smoothD;
-
-		var buySignal = smoothJ < buyLevel && crossUp;
-		var sellSignal = smoothJ > sellLevel && crossDown;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		var buySignal = smoothJ < BuyLevel && crossUp;
+		var sellSignal = smoothJ > SellLevel && crossDown;
 
 		if (Position <= 0 && buySignal)
 			BuyMarket();
 		else if (Position >= 0 && sellSignal)
 			SellMarket();
 
-		_prevSmoothK = smoothK;
-		_prevSmoothD = smoothD;
+		_prevSmoothK = _smoothK;
+		_prevSmoothD = _smoothD;
 	}
 }

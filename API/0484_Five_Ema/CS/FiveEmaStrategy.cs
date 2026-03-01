@@ -1,11 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
-
+using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -46,8 +42,6 @@ public class FiveEmaStrategy : Strategy
 	private decimal? _longTarget;
 	private decimal? _shortStop;
 	private decimal? _shortTarget;
-
-	private static readonly TimeSpan _istOffset = TimeSpan.FromHours(5.5);
 
 	/// <summary>
 	/// Candle type for strategy calculation.
@@ -284,14 +278,13 @@ public class FiveEmaStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading() || !_ema.IsFormed)
+		if (!_ema.IsFormed)
 			return;
 
 		_barIndex++;
 
-		var istTime = candle.CloseTime.ToOffset(_istOffset);
-		var hour = istTime.Hour;
-		var minute = istTime.Minute;
+		var hour = candle.CloseTime.Hour;
+		var minute = candle.CloseTime.Minute;
 
 		var exitNow = EnableCustomExitTime && hour == ExitHour && minute == ExitMinute;
 		var afterBlockStart = hour > BlockStartHour || (hour == BlockStartHour && minute >= BlockStartMinute);
@@ -301,9 +294,9 @@ public class FiveEmaStrategy : Strategy
 		if (exitNow && Position != 0)
 		{
 			if (Position > 0)
-				SellMarket(Math.Abs(Position));
+				SellMarket();
 			else
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 			_longStop = _longTarget = null;
 			_shortStop = _shortTarget = null;
 		}
@@ -343,7 +336,7 @@ public class FiveEmaStrategy : Strategy
 				var risk = entry - sl;
 				_longStop = sl;
 				_longTarget = entry + risk * TargetRR;
-				BuyMarket(Volume + Math.Abs(Position));
+				BuyMarket();
 				_isBuySignal = false;
 				_signalHigh = _signalLow = null;
 				_signalIndex = null;
@@ -358,7 +351,7 @@ public class FiveEmaStrategy : Strategy
 				var risk = sl - entry;
 				_shortStop = sl;
 				_shortTarget = entry - risk * TargetRR;
-				SellMarket(Volume + Math.Abs(Position));
+				SellMarket();
 				_isSellSignal = false;
 				_signalHigh = _signalLow = null;
 				_signalIndex = null;
@@ -369,7 +362,7 @@ public class FiveEmaStrategy : Strategy
 		{
 			if (low <= ls || high >= lt)
 			{
-				SellMarket(Math.Abs(Position));
+				SellMarket();
 				_longStop = null;
 				_longTarget = null;
 			}
@@ -378,7 +371,7 @@ public class FiveEmaStrategy : Strategy
 		{
 			if (high >= ss || low <= st)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				_shortStop = null;
 				_shortTarget = null;
 			}

@@ -1,11 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
-
+using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -102,7 +98,7 @@ public class AdjustableMaAlternatingExtremitiesStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 
 		subscription
-			.Bind(bands, ProcessCandle)
+			.BindEx(bands, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -114,12 +110,15 @@ public class AdjustableMaAlternatingExtremitiesStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal middle, decimal upper, decimal lower)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bbValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		var bb = (BollingerBandsValue)bbValue;
+
+		if (bb.UpBand is not decimal upper ||
+			bb.LowBand is not decimal lower)
 			return;
 
 		if (candle.HighPrice > upper && _isUpper != true)
