@@ -154,8 +154,8 @@ public class BuySellBullishEngulfingStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var sma50 = new SMA { Length = 50 };
-		var sma200 = new SMA { Length = 200 };
+		var sma50 = new SimpleMovingAverage { Length = 50 };
+		var sma200 = new SimpleMovingAverage { Length = 200 };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -180,9 +180,6 @@ public class BuySellBullishEngulfingStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		var body = Math.Abs(candle.ClosePrice - candle.OpenPrice);
 		if (_bodyEma == 0m)
 			_bodyEma = body;
@@ -198,7 +195,7 @@ public class BuySellBullishEngulfingStrategy : Strategy
 			var prevBear = _previousCandle.ClosePrice < _previousCandle.OpenPrice;
 			var currBull = candle.ClosePrice > candle.OpenPrice;
 
-			var downTrend = TrendModes switch
+			var downTrend = TrendMode switch
 			{
 				TrendModes.Sma50 => candle.ClosePrice < sma50,
 				TrendModes.Sma50And200 => candle.ClosePrice < sma50 && sma50 < sma200,
@@ -212,8 +209,7 @@ public class BuySellBullishEngulfingStrategy : Strategy
 
 			if (engulf)
 			{
-				var volume = CalculateVolume(candle.ClosePrice);
-				BuyMarket(volume);
+				BuyMarket();
 			}
 		}
 

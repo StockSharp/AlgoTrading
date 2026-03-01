@@ -179,8 +179,8 @@ public class BollingerStochasticTrailingStopStrategy : Strategy
 		};
 
 		var stochastic = new StochasticOscillator
-		{ K = { Length = StochLength },
-			K = { Length = StochSmooth },
+		{
+			K = { Length = StochLength },
 			D = { Length = StochSmooth },
 		};
 
@@ -214,9 +214,6 @@ public class BollingerStochasticTrailingStopStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		var bb = (BollingerBandsValue)bollingerValue;
 		if (bb.UpBand is not decimal upper || bb.LowBand is not decimal lower)
 			return;
@@ -230,12 +227,12 @@ public class BollingerStochasticTrailingStopStrategy : Strategy
 
 		if (price < lower && k < StochOversold && Position <= 0)
 		{
-			BuyMarket(Volume + Math.Abs(Position));
+			BuyMarket();
 			_trailingStopLong = price - atr * AtrMultiplier;
 		}
 		else if (price > upper && k > StochOverbought && Position >= 0)
 		{
-			SellMarket(Volume + Math.Abs(Position));
+			SellMarket();
 			_trailingStopShort = price + atr * AtrMultiplier;
 		}
 
@@ -244,7 +241,7 @@ public class BollingerStochasticTrailingStopStrategy : Strategy
 			_trailingStopLong = Math.Max(_trailingStopLong, price - atr * AtrMultiplier);
 			if (price <= _trailingStopLong)
 			{
-				SellMarket(Math.Abs(Position));
+				SellMarket();
 				_trailingStopLong = 0m;
 			}
 		}
@@ -253,7 +250,7 @@ public class BollingerStochasticTrailingStopStrategy : Strategy
 			_trailingStopShort = Math.Min(_trailingStopShort, price + atr * AtrMultiplier);
 			if (price >= _trailingStopShort)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				_trailingStopShort = 0m;
 			}
 		}

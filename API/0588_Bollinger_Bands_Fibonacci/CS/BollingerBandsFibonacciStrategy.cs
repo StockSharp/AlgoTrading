@@ -6,6 +6,7 @@ using Ecng.Common;
 using Ecng.Collections;
 using Ecng.Serialization;
 
+using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -133,7 +134,7 @@ public class BollingerBandsFibonacciStrategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_bollinger, ProcessCandle)
+			.BindEx(_bollinger, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -144,13 +145,21 @@ public class BollingerBandsFibonacciStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal middleBand, decimal upperBand, decimal lowerBand)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bbValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var highestVal = _highest.Process(candle.HighPrice).ToNullableDecimal();
-		var lowestVal = _lowest.Process(candle.LowPrice).ToNullableDecimal();
+		if (bbValue.IsEmpty)
+			return;
+
+		var bb = (BollingerBandsValue)bbValue;
+		var upperBand = bb.UpBand ?? 0m;
+		var lowerBand = bb.LowBand ?? 0m;
+		var middleBand = bbValue.ToDecimal();
+
+		var highestVal = _highest.Process(new DecimalIndicatorValue(_highest, candle.HighPrice, candle.ServerTime)).ToNullableDecimal();
+		var lowestVal = _lowest.Process(new DecimalIndicatorValue(_lowest, candle.LowPrice, candle.ServerTime)).ToNullableDecimal();
 
 		if (!_bollinger.IsFormed || !_highest.IsFormed || !_lowest.IsFormed || highestVal is not decimal high || lowestVal is not decimal low)
 		{

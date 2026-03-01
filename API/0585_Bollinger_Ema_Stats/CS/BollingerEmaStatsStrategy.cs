@@ -6,6 +6,7 @@ using Ecng.Common;
 using Ecng.Collections;
 using Ecng.Serialization;
 
+using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -128,11 +129,11 @@ public class BollingerEmaStatsStrategy : Strategy
 
 		var bbEntry = new BollingerBands { Length = BbLength, Width = EntryMultiplier };
 		var bbStop = new BollingerBands { Length = BbLength, Width = StopMultiplier };
-		var ema = new EMA { Length = EmaPeriod };
+		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(bbEntry, bbStop, ema, ProcessCandle)
+			.BindEx(new IIndicator[] { bbEntry, bbStop, ema }, ProcessCandle, true)
 			.Start();
 
 		var area = CreateChartArea();
@@ -145,15 +146,21 @@ public class BollingerEmaStatsStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle,
-		decimal entryMiddle, decimal entryUpper, decimal entryLower,
-		decimal stopMiddle, decimal stopUpper, decimal stopLower,
-		decimal emaValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue[] values)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (values[0].IsEmpty || values[1].IsEmpty || values[2].IsEmpty)
+			return;
+
+		var bbEntry = (BollingerBandsValue)values[0];
+		var bbStop = (BollingerBandsValue)values[1];
+		var emaValue = values[2].ToDecimal();
+
+		if (bbEntry.UpBand is not decimal entryUpper || bbEntry.LowBand is not decimal entryLower)
+			return;
+		if (bbStop.UpBand is not decimal stopUpper || bbStop.LowBand is not decimal stopLower)
 			return;
 
 		if (Position == 0)
@@ -176,7 +183,7 @@ public class BollingerEmaStatsStrategy : Strategy
 			if (_targetPrice != 0m &&
 				(candle.ClosePrice >= _targetPrice || candle.ClosePrice <= _stopPrice))
 			{
-				SellMarket(Position);
+				SellMarket();
 				_stopPrice = 0m;
 				_targetPrice = 0m;
 			}
@@ -186,7 +193,7 @@ public class BollingerEmaStatsStrategy : Strategy
 			if (_targetPrice != 0m &&
 				(candle.ClosePrice <= _targetPrice || candle.ClosePrice >= _stopPrice))
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				_stopPrice = 0m;
 				_targetPrice = 0m;
 			}

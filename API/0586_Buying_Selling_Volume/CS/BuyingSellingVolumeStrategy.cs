@@ -200,7 +200,7 @@ public class BuyingSellingVolumeStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_sma = new SMA { Length = Length };
+		_sma = new SimpleMovingAverage { Length = Length };
 		_stdev = new StandardDeviation { Length = Length };
 		_atr = new AverageTrueRange { Length = 14 };
 		_weeklyVwap = new VolumeWeightedMovingAverage();
@@ -256,21 +256,18 @@ public class BuyingSellingVolumeStrategy : Strategy
 		var spcon = spv > bpv ? spv : -Math.Abs(spv);
 		var minus = bpcon + spcon;
 
-		var basis = _sma.Process(minus).ToDecimal();
-		var dev = _stdev.Process(minus).ToDecimal() * Multiplier;
+		var basis = _sma.Process(new DecimalIndicatorValue(_sma, minus, candle.ServerTime)).ToDecimal();
+		var dev = _stdev.Process(new DecimalIndicatorValue(_stdev, minus, candle.ServerTime)).ToDecimal() * Multiplier;
 		var upper = basis + dev;
 
 		var longSignal = minus > upper && bpcon > spcon && close > _weeklyVwapValue;
 		var shortSignal = minus > upper && bpcon < spcon && close < _weeklyVwapValue;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		if (AllowLong && longSignal && Position <= 0 && !_longOpened)
 		{
 			_tpLong = close + close * (_atrPercent * ProfitTargetLong) / 100m;
 			_slLong = close - close * (_atrPercent * StopLossLong) / 100m;
-			BuyMarket(Volume + Math.Abs(Position));
+			BuyMarket();
 			_longOpened = true;
 			_shortOpened = false;
 		}
@@ -278,7 +275,7 @@ public class BuyingSellingVolumeStrategy : Strategy
 		{
 			_tpShort = close - close * (_atrPercent * ProfitTargetShort) / 100m;
 			_slShort = close + close * (_atrPercent * StopLossShort) / 100m;
-			SellMarket(Volume + Math.Abs(Position));
+			SellMarket();
 			_shortOpened = true;
 			_longOpened = false;
 		}
@@ -289,7 +286,7 @@ public class BuyingSellingVolumeStrategy : Strategy
 
 		if (Position > 0 && longExit)
 		{
-			ClosePosition();
+			if (Position > 0) SellMarket(); else if (Position < 0) BuyMarket();
 			_longOpened = false;
 		}
 
@@ -299,7 +296,7 @@ public class BuyingSellingVolumeStrategy : Strategy
 
 		if (Position < 0 && shortExit)
 		{
-			ClosePosition();
+			if (Position > 0) SellMarket(); else if (Position < 0) BuyMarket();
 			_shortOpened = false;
 		}
 	}
