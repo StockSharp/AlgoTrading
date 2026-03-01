@@ -457,7 +457,7 @@ public class RrsChaoticStrategy : Strategy
 			return true;
 
 		var security = Security;
-		var lastPrice = Security?.LastTick?.Price ?? 0m;
+		var lastPrice = GetSecurityValue<decimal?>(Level1Fields.LastTradePrice) ?? 0m;
 		var step = GetPriceStep();
 		var halfSpread = step * 5;
 		var bid = lastPrice > 0m ? lastPrice - halfSpread : 0m;

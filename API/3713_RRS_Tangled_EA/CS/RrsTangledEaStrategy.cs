@@ -316,8 +316,8 @@ public class RrsTangledEaStrategy : Strategy
 
 	private void UpdateSpread()
 	{
-		var bid = Security?.BestBid?.Price;
-		var ask = Security?.BestAsk?.Price;
+		var bid = GetSecurityValue<decimal?>(Level1Fields.BestBidPrice);
+		var ask = GetSecurityValue<decimal?>(Level1Fields.BestAskPrice);
 		if (bid.HasValue && ask.HasValue)
 			_lastSpread = ask.Value - bid.Value;
 	}
@@ -331,8 +331,8 @@ public class RrsTangledEaStrategy : Strategy
 			return;
 		}
 
-		var bid = Security?.BestBid?.Price ?? candle.ClosePrice;
-		var ask = Security?.BestAsk?.Price ?? candle.ClosePrice;
+		var bid = GetSecurityValue<decimal?>(Level1Fields.BestBidPrice) ?? candle.ClosePrice;
+		var ask = GetSecurityValue<decimal?>(Level1Fields.BestAskPrice) ?? candle.ClosePrice;
 
 		var startDistance = TrailingStartPips * _point;
 		var gapDistance = TrailingGapPips * _point;
@@ -518,7 +518,7 @@ public class RrsTangledEaStrategy : Strategy
 		if (_point <= 0m)
 			return 0m;
 
-		var stepPrice = Security?.StepPrice ?? 1m;
+		var stepPrice = GetSecurityValue<decimal?>(Level1Fields.StepPrice) ?? 1m;
 		decimal total = 0m;
 
 		for (var i = 0; i < _buyEntries.Count; i++)

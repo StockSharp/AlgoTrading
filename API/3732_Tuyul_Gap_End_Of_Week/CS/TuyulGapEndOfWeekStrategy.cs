@@ -372,7 +372,7 @@ public class TuyulGapEndOfWeekStrategy : Strategy
 		}
 
 		// Virtual stop-loss: check price against stop level
-		var lastPrice = Security?.LastTick?.Price ?? 0m;
+		var lastPrice = GetSecurityValue<decimal?>(Level1Fields.LastTradePrice) ?? 0m;
 		if (lastPrice > 0m)
 		{
 			if (volume > 0m && lastPrice <= stopPrice)

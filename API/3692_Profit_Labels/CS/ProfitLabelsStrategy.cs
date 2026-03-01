@@ -249,7 +249,7 @@ public class ProfitLabelsStrategy : Strategy
 			return 0m;
 
 		var priceStep = Security?.PriceStep;
-		var stepPrice = Security?.StepPrice;
+		var stepPrice = GetSecurityValue<decimal?>(Level1Fields.StepPrice);
 
 		if (priceStep.HasValue && priceStep.Value > 0m && stepPrice.HasValue && stepPrice.Value > 0m)
 		{

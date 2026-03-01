@@ -242,8 +242,8 @@ public class SemilongWwwForexInstrumentsInfoStrategy : Strategy
 		if (!_shiftCloseOne.IsFormed || !_shiftCloseTwo.IsFormed)
 			return;
 
-		var bidPrice = Security?.BestBid?.Price ?? candle.ClosePrice;
-		var askPrice = Security?.BestAsk?.Price ?? candle.ClosePrice;
+		var bidPrice = GetSecurityValue<decimal?>(Level1Fields.BestBidPrice) ?? candle.ClosePrice;
+		var askPrice = GetSecurityValue<decimal?>(Level1Fields.BestAskPrice) ?? candle.ClosePrice;
 		var spreadPoints = 0m;
 
 		if (_pipSize > 0m)

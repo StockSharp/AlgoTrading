@@ -321,7 +321,7 @@ public class RsiTestStrategy : Strategy
 
 			if (riskCapital > 0m)
 			{
-				var margin = Security?.MarginBuy ?? Security?.MarginSell ?? 0m;
+				var margin = GetSecurityValue<decimal?>(Level1Fields.MarginBuy) ?? GetSecurityValue<decimal?>(Level1Fields.MarginSell) ?? 0m;
 
 				if (margin > 0m)
 				{

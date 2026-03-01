@@ -293,7 +293,7 @@ public class RrsNonDirectionalStrategy : Strategy
 		if (_pointSize <= 0m)
 		_pointSize = 0.0001m;
 
-		_tickValue = Security?.StepPrice ?? 0m;
+		_tickValue = GetSecurityValue<decimal?>(Level1Fields.StepPrice) ?? 0m;
 		if (_tickValue <= 0m)
 		_tickValue = 1m;
 

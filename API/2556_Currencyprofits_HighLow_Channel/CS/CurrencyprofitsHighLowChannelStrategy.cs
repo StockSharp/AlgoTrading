@@ -287,7 +287,7 @@ public class CurrencyprofitsHighLowChannelStrategy : Strategy
 
 		var riskCapital = portfolioValue.Value * RiskPercent;
 		var priceStep = Security?.PriceStep ?? 0m;
-		var stepPrice = Security?.StepPrice ?? 0m;
+		var stepPrice = GetSecurityValue<decimal?>(Level1Fields.StepPrice) ?? 0m;
 
 		decimal riskPerContract;
 

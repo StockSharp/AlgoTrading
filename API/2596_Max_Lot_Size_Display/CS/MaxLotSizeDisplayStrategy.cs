@@ -182,7 +182,7 @@ public class MaxLotSizeDisplayStrategy : Strategy
 
 	private decimal GetMarginPerVolume(Security security, decimal price)
 	{
-		var margin = TradeDirection == Sides.Buy ? security.MarginBuy : security.MarginSell;
+		var margin = TradeDirection == Sides.Buy ? GetSecurityValue<decimal?>(Level1Fields.MarginBuy) : GetSecurityValue<decimal?>(Level1Fields.MarginSell);
 		if (margin is decimal directMargin && directMargin > 0m)
 			return directMargin;
 

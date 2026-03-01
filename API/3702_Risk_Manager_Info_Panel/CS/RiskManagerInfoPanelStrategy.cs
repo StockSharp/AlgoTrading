@@ -270,7 +270,7 @@ public class RiskManagerInfoPanelStrategy : Strategy
 		var computedSl = CalculateStopPrice();
 		var computedTp = CalculateTakeProfit();
 		var tickSize = Security?.PriceStep ?? 0m;
-		var tickValue = Security?.StepPrice ?? 0m;
+		var tickValue = GetSecurityValue<decimal?>(Level1Fields.StepPrice) ?? 0m;
 		var riskPips = tickSize > 0m ? Math.Abs(EntryPrice - computedSl) / tickSize : 0m;
 		var riskMoney = equity * (RiskPercent / 100m);
 		var recommendedLots = CalculateRecommendedVolume(riskPips, tickSize, tickValue, riskMoney);

@@ -442,7 +442,7 @@ public class BuildYourGridStrategy : Strategy
 
 		_pointSize = CalculatePointSize();
 		_priceStep = Security?.PriceStep ?? 0m;
-		_stepPrice = Security?.StepPrice ?? 0m;
+		_stepPrice = GetSecurityValue<decimal?>(Level1Fields.StepPrice) ?? 0m;
 		_barReady = !UseCompletedBar;
 
 		if (UseCompletedBar)

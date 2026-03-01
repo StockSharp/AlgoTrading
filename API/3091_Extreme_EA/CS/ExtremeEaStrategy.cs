@@ -478,8 +478,7 @@ public class ExtremeEaStrategy : Strategy
 
 	private decimal GetDecisionPrice(ICandleMessage candle)
 	{
-		var security = Security;
-		if (security?.LastTick?.Price is decimal lastPrice && lastPrice > 0m)
+		if (GetSecurityValue<decimal?>(Level1Fields.LastTradePrice) is decimal lastPrice && lastPrice > 0m)
 			return lastPrice;
 
 		if (candle.ClosePrice > 0m)

@@ -473,7 +473,7 @@ public class LbsStrategy : Strategy
 		if (priceStep <= 0m)
 			priceStep = 1m;
 
-		var stepPrice = Security?.StepPrice ?? priceStep;
+		var stepPrice = GetSecurityValue<decimal?>(Level1Fields.StepPrice) ?? priceStep;
 		var steps = stopDistance / priceStep;
 		if (steps <= 0m)
 			return 0m;

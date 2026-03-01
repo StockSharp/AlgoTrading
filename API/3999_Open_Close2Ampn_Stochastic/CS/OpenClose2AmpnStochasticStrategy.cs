@@ -382,7 +382,7 @@ public class OpenClose2AmpnStochasticStrategy : Strategy
 
 		var priceMove = price - entryPrice;
 		var priceStep = Security?.PriceStep ?? 0m;
-		var stepPrice = Security?.StepPrice ?? 0m;
+		var stepPrice = GetSecurityValue<decimal?>(Level1Fields.StepPrice) ?? 0m;
 
 		if (priceStep > 0m && stepPrice > 0m)
 		{

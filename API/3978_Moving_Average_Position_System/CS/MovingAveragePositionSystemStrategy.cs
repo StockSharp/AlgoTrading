@@ -324,7 +324,7 @@ public class MovingAveragePositionSystemStrategy : Strategy
 		var realizedPnL = PnLManager?.RealizedPnL ?? 0m;
 		var realizedDiff = realizedPnL - _cycleStartRealizedPnL;
 
-		var stepPrice = _stepPrice != 0m ? _stepPrice : Security?.StepPrice ?? 1m;
+		var stepPrice = _stepPrice != 0m ? _stepPrice : GetSecurityValue<decimal?>(Level1Fields.StepPrice) ?? 1m;
 		var priceStep = _priceStep != 0m ? _priceStep : Security?.PriceStep ?? 1m;
 
 		var resultInSteps = stepPrice != 0m ? realizedDiff / stepPrice : 0m;

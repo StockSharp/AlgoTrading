@@ -282,7 +282,7 @@ public class MpCandlestickStrategy : Strategy
 		if (priceStep <= 0m)
 			priceStep = 1m;
 
-		var stepPrice = security.StepPrice ?? priceStep;
+		var stepPrice = GetSecurityValue<decimal?>(Level1Fields.StepPrice) ?? priceStep;
 		if (stepPrice <= 0m)
 			stepPrice = priceStep;
 
@@ -353,7 +353,7 @@ public class MpCandlestickStrategy : Strategy
 		if (volumeStep <= 0m)
 			volumeStep = 1m;
 
-		var marginPerVolume = isLong ? security.MarginBuy : security.MarginSell;
+		var marginPerVolume = isLong ? GetSecurityValue<decimal?>(Level1Fields.MarginBuy) : GetSecurityValue<decimal?>(Level1Fields.MarginSell);
 
 		decimal margin;
 		if (marginPerVolume is decimal direct && direct > 0m)

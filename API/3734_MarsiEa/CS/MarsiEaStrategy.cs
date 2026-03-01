@@ -208,7 +208,7 @@ public class MarsiEaStrategy : Strategy
 	{
 		var portfolioValue = Portfolio?.CurrentValue ?? 0m;
 		var priceStep = Security?.PriceStep ?? 0m;
-		var stepPrice = Security?.StepPrice ?? 0m;
+		var stepPrice = GetSecurityValue<decimal?>(Level1Fields.StepPrice) ?? 0m;
 		var pipSize = GetPipSize();
 
 		if (RiskPercent <= 0m || portfolioValue <= 0m || priceStep <= 0m || stepPrice <= 0m || pipSize <= 0m)

@@ -536,7 +536,7 @@ public class NeuralNetworkAtrStrategy : Strategy
 	if (stopLossPoints <= 0)
 		return Volume;
 
-	var stepPrice = Security?.StepPrice ?? 0m;
+	var stepPrice = GetSecurityValue<decimal?>(Level1Fields.StepPrice) ?? 0m;
 	if (stepPrice <= 0m)
 		return Volume;
 

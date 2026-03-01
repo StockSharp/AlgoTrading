@@ -77,7 +77,7 @@ public class OpenPendingorderAfterPositionGetStopLossStrategy : Strategy
 		_takeProfitPct = Param(nameof(TakeProfitPct), 3m)
 			.SetDisplay("Take Profit %", "Take-profit as percentage of entry price", "Risk");
 
-		_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(5)))
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for indicator", "General");
 	}
 

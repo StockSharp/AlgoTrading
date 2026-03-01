@@ -11,6 +11,8 @@ using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
+using StockSharp.Algo;
+
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
@@ -269,7 +271,7 @@ public class TradeCopierStrategy : Strategy
 		if (Slippage <= 0m)
 		return true;
 
-		var lastTradePrice = security.LastTick?.Price;
+		var lastTradePrice = this.GetSecurityValue<decimal?>(security, Level1Fields.LastTradePrice);
 
 		if (lastTradePrice is null)
 		return true;

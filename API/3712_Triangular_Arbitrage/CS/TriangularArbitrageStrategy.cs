@@ -11,6 +11,8 @@ using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
+using StockSharp.Algo;
+
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
@@ -343,7 +345,7 @@ public class TriangularArbitrageStrategy : Strategy
 		return profit;
 	}
 
-	private static decimal CalculateOpenPnL(Security security, decimal position, decimal averagePrice, decimal? bid, decimal? ask)
+	private decimal CalculateOpenPnL(Security security, decimal position, decimal averagePrice, decimal? bid, decimal? ask)
 	{
 		if (security == null || position == 0m || averagePrice <= 0m)
 		return 0m;
@@ -362,7 +364,7 @@ public class TriangularArbitrageStrategy : Strategy
 		var volume = Math.Abs(position);
 
 		var step = security.PriceStep ?? 0m;
-		var stepPrice = security.StepPrice ?? 0m;
+		var stepPrice = this.GetSecurityValue<decimal?>(security, Level1Fields.StepPrice) ?? 0m;
 
 		if (step > 0m && stepPrice > 0m)
 		return priceDiff / step * stepPrice * volume;

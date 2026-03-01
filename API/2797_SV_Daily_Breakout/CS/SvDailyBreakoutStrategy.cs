@@ -611,7 +611,7 @@ public class SvDailyBreakoutStrategy : Strategy
 		if (step <= 0m)
 			step = _pipSize > 0m ? _pipSize : 1m;
 
-		var stepValue = Security?.StepPrice ?? step;
+		var stepValue = GetSecurityValue<decimal?>(Level1Fields.StepPrice) ?? step;
 		if (stepValue <= 0m)
 			stepValue = step;
 

@@ -97,7 +97,7 @@ public class PersonalAssistantStrategy : Strategy
 	{
 		var spread = 0m;
 
-		var tickValue = Security?.StepPrice * LotVolume ?? 0m;
+		var tickValue = GetSecurityValue<decimal?>(Level1Fields.StepPrice) * LotVolume ?? 0m;
 		var openPositionCounter = Position != 0 ? 1 : 0;
 
 		return $"ID={Id}; Symbol={Security?.Id}; OpenPositions={openPositionCounter}; Profit={PnL}; Volume={LotVolume}; TickValue={tickValue}; Spread={spread}";

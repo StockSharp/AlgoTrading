@@ -807,7 +807,7 @@ public class StellarLiteIctEaStrategy : Strategy
 			return false;
 
 		var priceStep = _priceStep;
-		var stepValue = security.StepPrice ?? priceStep;
+		var stepValue = GetSecurityValue<decimal?>(Level1Fields.StepPrice) ?? priceStep;
 		if (priceStep <= 0m)
 			priceStep = 1m;
 		if (stepValue <= 0m)

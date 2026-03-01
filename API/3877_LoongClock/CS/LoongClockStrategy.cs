@@ -227,10 +227,10 @@ public class LoongClockStrategy : Strategy
 		if (_anchorPrice != null)
 		return _anchorPrice.Value;
 
-		var lastTrade = Security?.LastTick;
+		var lastTradePrice = GetSecurityValue<decimal?>(Level1Fields.LastTradePrice);
 
-		if (lastTrade != null)
-		return lastTrade.Price;
+		if (lastTradePrice != null)
+		return lastTradePrice.Value;
 
 		// Fallback value keeps the clock visible even when no market data arrived yet.
 		return 0m;

@@ -712,7 +712,7 @@ public class ScalpWiz9001Strategy : Strategy
 		}
 
 		var priceStep = Security?.PriceStep ?? 0m;
-		var stepPrice = Security?.StepPrice ?? 0m;
+		var stepPrice = GetSecurityValue<decimal?>(Level1Fields.StepPrice) ?? 0m;
 		if (priceStep <= 0m || stepPrice <= 0m)
 		{
 			return 0m;
@@ -776,12 +776,12 @@ public class ScalpWiz9001Strategy : Strategy
 
 	private decimal GetBidPrice(ICandleMessage candle)
 	{
-		if (Security?.BestBid?.Price is decimal bid && bid > 0m)
+		if (GetSecurityValue<decimal?>(Level1Fields.BestBidPrice) is decimal bid && bid > 0m)
 		{
 			return bid;
 		}
 
-		if (Security?.LastTick?.Price is decimal last && last > 0m)
+		if (GetSecurityValue<decimal?>(Level1Fields.LastTradePrice) is decimal last && last > 0m)
 		{
 			return last;
 		}
@@ -791,12 +791,12 @@ public class ScalpWiz9001Strategy : Strategy
 
 	private decimal GetAskPrice(ICandleMessage candle)
 	{
-		if (Security?.BestAsk?.Price is decimal ask && ask > 0m)
+		if (GetSecurityValue<decimal?>(Level1Fields.BestAskPrice) is decimal ask && ask > 0m)
 		{
 			return ask;
 		}
 
-		if (Security?.LastTick?.Price is decimal last && last > 0m)
+		if (GetSecurityValue<decimal?>(Level1Fields.LastTradePrice) is decimal last && last > 0m)
 		{
 			return last;
 		}

@@ -43,11 +43,11 @@ public static class AsmInit
 
 		await CompilationExtensions.Init(Paths.FileSystem, _logManager.Application, [], default);
 
-		var drive = new LocalMarketDataDrive(Paths.HistoryDataPath);
+		var drive = new LocalMarketDataDrive(Paths.FileSystem, Paths.HistoryDataPath);
 		var storageRegistry = new StorageRegistry { DefaultDrive = drive };
 
 		SecurityId[] secIds = [Paths.HistoryDefaultSecurity.ToSecurityId(), Paths.HistoryDefaultSecurity2.ToSecurityId()];
-		var dts = secIds.SelectMany(id => drive.GetAvailableDataTypes(id, StorageFormats.Binary)).Where(dt => dt.IsTFCandles).ToArray();
+		var dts = (await secIds.ToAsyncEnumerable().SelectMany(id => drive.GetAvailableDataTypesAsync(id, StorageFormats.Binary)).ToListAsync()).Where(dt => dt.IsTFCandles).ToArray();
 		var days = Paths.HistoryBeginDate.Range(Paths.HistoryEndDate, TimeSpan.FromDays(1)).ToArray();
 
 		foreach (var day in days)
@@ -81,7 +81,7 @@ public static class AsmInit
 	{
 		var token = CancellationToken.None;
 
-		var storageRegistry = new StorageRegistry { DefaultDrive = new LocalMarketDataDrive(Paths.HistoryDataPath) };
+		var storageRegistry = new StorageRegistry { DefaultDrive = new LocalMarketDataDrive(Paths.FileSystem, Paths.HistoryDataPath) };
 
 		var startTime = Paths.HistoryBeginDate;
 		var stopTime = Paths.HistoryEndDate;

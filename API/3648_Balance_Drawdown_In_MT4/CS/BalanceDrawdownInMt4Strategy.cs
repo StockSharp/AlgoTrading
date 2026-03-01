@@ -174,7 +174,7 @@ public class BalanceDrawdownInMt4Strategy : Strategy
 			return 0m;
 
 		var step = Security?.PriceStep ?? 0m;
-		var stepPrice = Security?.StepPrice ?? 0m;
+		var stepPrice = GetSecurityValue<decimal?>(Level1Fields.StepPrice) ?? 0m;
 		if (step <= 0m || stepPrice <= 0m)
 			return 0m;
 

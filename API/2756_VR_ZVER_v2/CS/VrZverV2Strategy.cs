@@ -609,7 +609,7 @@ public class VrZverV2Strategy : Strategy
 		return 0m;
 
 		var priceStep = Security?.PriceStep ?? 0m;
-		var stepPrice = Security?.StepPrice ?? 0m;
+		var stepPrice = GetSecurityValue<decimal?>(Level1Fields.StepPrice) ?? 0m;
 
 		if (priceStep <= 0m || stepPrice <= 0m)
 		return 0m;

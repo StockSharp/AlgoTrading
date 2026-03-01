@@ -398,7 +398,7 @@ public class TrendRdsStrategy : Strategy
 			return baseVolume;
 
 		var step = Security?.PriceStep ?? 0m;
-		var stepPrice = Security?.StepPrice ?? 1m;
+		var stepPrice = GetSecurityValue<decimal?>(Level1Fields.StepPrice) ?? 1m;
 
 		if (step <= 0m)
 			return baseVolume;

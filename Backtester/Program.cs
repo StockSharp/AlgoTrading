@@ -69,7 +69,7 @@ static class Program
 		var secId = Paths.HistoryDefaultSecurity;
 		var security = new Security { Id = secId };
 
-		var storageRegistry = new StorageRegistry { DefaultDrive = new LocalMarketDataDrive(Paths.HistoryDataPath) };
+		var storageRegistry = new StorageRegistry { DefaultDrive = new LocalMarketDataDrive(Paths.FileSystem, Paths.HistoryDataPath) };
 
 		var startTime = Paths.HistoryBeginDate;
 		var stopTime = Paths.HistoryEndDate;

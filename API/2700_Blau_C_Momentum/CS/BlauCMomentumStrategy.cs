@@ -554,7 +554,7 @@ public class BlauCMomentumStrategy : Strategy
 				case MarginModes.BalanceRisk:
 				{
 					var riskCapital = capital * moneyManagement;
-					var stepPrice = Security?.StepPrice ?? 1m;
+					var stepPrice = GetSecurityValue<decimal?>(Level1Fields.StepPrice) ?? 1m;
 					var stopLoss = StopLossPoints > 0 ? StopLossPoints * stepPrice : price;
 					volume = stopLoss > 0m ? riskCapital / stopLoss : riskCapital / price;
 					break;

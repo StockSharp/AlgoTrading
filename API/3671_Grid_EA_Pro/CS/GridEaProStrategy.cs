@@ -462,7 +462,7 @@ public class GridEaProStrategy : Strategy
 
 		_tickSize = Security?.PriceStep ?? 0.0001m;
 		_stepValue = _tickSize;
-		_tickValue = Security?.StepPrice ?? 1m;
+		_tickValue = GetSecurityValue<decimal?>(Level1Fields.StepPrice) ?? 1m;
 		Volume = InitialVolume;
 
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };

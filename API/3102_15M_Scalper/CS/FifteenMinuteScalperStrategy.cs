@@ -484,7 +484,7 @@ public class FifteenMinuteScalperStrategy : Strategy
 		);
 
 		_pipSize = GetPipSize();
-		_stepPrice = Security?.StepPrice ?? 0m;
+		_stepPrice = GetSecurityValue<decimal?>(Level1Fields.StepPrice) ?? 0m;
 		_initialCapital = Portfolio?.BeginValue ?? Portfolio?.CurrentValue ?? 0m;
 		_equityPeak = _initialCapital;
 		_previousRealizedPnL = PnL;
