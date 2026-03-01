@@ -39,6 +39,7 @@ public class AlmaOptimizedStrategy : Strategy
 	private decimal _takePrice;
 	private decimal _prevClose;
 	private decimal _prevFastEma;
+	private BollingerBands _bollinger;
 
 	private enum SignalTypes
 	{
@@ -263,7 +264,8 @@ public class AlmaOptimizedStrategy : Strategy
 		var adx = new AverageDirectionalIndex { Length = AdxLength };
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };
 		var atr = new AverageTrueRange { Length = AtrLength };
-		var bollinger = new BollingerBands { Length = 20, Width = BbMultiplier };
+		_bollinger = new BollingerBands { Length = 20, Width = BbMultiplier };
+		var bollinger = _bollinger;
 
 		var subscription = SubscribeCandles(CandleType);
 
@@ -283,7 +285,7 @@ public class AlmaOptimizedStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue, decimal almaValue, decimal adxValue, decimal rsiValue, decimal atrValue, decimal middleBand, decimal upperBand, decimal lowerBand)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue, decimal almaValue, decimal adxValue, decimal rsiValue, decimal atrValue, decimal middleBand)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
@@ -291,6 +293,8 @@ public class AlmaOptimizedStrategy : Strategy
 		_barIndex++;
 
 		var volatility = atrValue > MinAtr;
+		var upperBand = _bollinger.UpBand.GetCurrentValue();
+		var lowerBand = _bollinger.LowBand.GetCurrentValue();
 
 		if (_prevClose != 0m || _prevFastEma != 0m)
 		{

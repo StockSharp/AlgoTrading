@@ -46,6 +46,7 @@ public class StrategyTestGenerator : IIncrementalGenerator
 			sb.AppendLine();
 			sb.AppendLine("using System.Threading.Tasks;");
 			sb.AppendLine("using Microsoft.VisualStudio.TestTools.UnitTesting;");
+			sb.AppendLine("using StockSharp.Samples.Strategies;");
 			sb.AppendLine();
 			sb.AppendLine("namespace StockSharp.Tests;");
 			sb.AppendLine();
