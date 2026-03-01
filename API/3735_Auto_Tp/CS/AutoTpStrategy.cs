@@ -36,6 +36,7 @@ public class AutoTpStrategy : Strategy
 	private decimal? _currentAsk;
 	private decimal _pipSize;
 	private decimal _pointSize;
+	private decimal _entryPrice;
 	private bool _equityProtectionTriggered;
 
 	/// <summary>
@@ -139,6 +140,18 @@ public class AutoTpStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	/// <inheritdoc />
+	protected override void OnOwnTradeReceived(MyTrade trade)
+	{
+		base.OnOwnTradeReceived(trade);
+
+		if (Position != 0m && _entryPrice == 0m)
+			_entryPrice = trade.Trade.Price;
+
+		if (Position == 0m)
+			_entryPrice = 0m;
+	}
+
 	protected override void OnReseted()
 	{
 		base.OnReseted();
@@ -217,7 +230,8 @@ public class AutoTpStrategy : Strategy
 
 	private void ApplyInitialProtection()
 	{
-		if (PositionPrice is not decimal entryPrice || entryPrice <= 0m)
+		var entryPrice = _entryPrice;
+		if (entryPrice <= 0m)
 			return;
 
 		var volume = Math.Abs(Position);
@@ -269,7 +283,8 @@ public class AutoTpStrategy : Strategy
 		if (_currentBid is not decimal bid || bid <= 0m)
 			return;
 
-		if (PositionPrice is not decimal entryPrice || entryPrice <= 0m)
+		var entryPrice = _entryPrice;
+		if (entryPrice <= 0m)
 			return;
 
 		var volume = Math.Abs(Position);
@@ -319,7 +334,8 @@ public class AutoTpStrategy : Strategy
 		if (_currentAsk is not decimal ask || ask <= 0m)
 			return;
 
-		if (PositionPrice is not decimal entryPrice || entryPrice <= 0m)
+		var entryPrice = _entryPrice;
+		if (entryPrice <= 0m)
 			return;
 
 		var volume = Math.Abs(Position);
@@ -385,7 +401,8 @@ public class AutoTpStrategy : Strategy
 
 			_equityProtectionTriggered = true;
 			LogInfo($"Equity protection triggered. Equity={equity:0.##}, Balance={balance:0.##}.");
-			CloseAll("Equity protection");
+			if (Position > 0m) SellMarket(Math.Abs(Position));
+			else if (Position < 0m) BuyMarket(Math.Abs(Position));
 		}
 		else
 		{
@@ -406,9 +423,8 @@ public class AutoTpStrategy : Strategy
 			CancelOrder(_stopOrder);
 		}
 
-		_stopOrder = isLong
-			? SellStop(price: stopPrice, volume: volume)
-			: BuyStop(price: stopPrice, volume: volume);
+		// Virtual stop - will be checked in ProcessLevel1
+		_stopOrder = null;
 
 		_currentStopPrice = stopPrice;
 	}
@@ -426,9 +442,8 @@ public class AutoTpStrategy : Strategy
 			CancelOrder(_takeProfitOrder);
 		}
 
-		_takeProfitOrder = isLong
-			? SellLimit(price: takeProfitPrice, volume: volume)
-			: BuyLimit(price: takeProfitPrice, volume: volume);
+		// Virtual TP - checked in ProcessLevel1
+		_takeProfitOrder = null;
 
 		_currentTakeProfitPrice = takeProfitPrice;
 	}

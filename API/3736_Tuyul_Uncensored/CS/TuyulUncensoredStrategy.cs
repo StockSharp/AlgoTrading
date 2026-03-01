@@ -288,9 +288,7 @@ public class TuyulUncensoredStrategy : Strategy
 
 		_zigZag = new ZigZag
 		{
-			Depth = ZigZagDepth,
-			Deviation = ZigZagDeviation,
-			BackStep = ZigZagBackstep
+			Deviation = ZigZagDeviation
 		};
 
 		_fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
@@ -322,16 +320,13 @@ public class TuyulUncensoredStrategy : Strategy
 			switch (order.State)
 			{
 				case OrderStates.Done:
-				case OrderStates.DonePartially:
 					_activeStop = _plannedStop;
 					_activeTake = _plannedTake;
 					_activeDirection = _plannedDirection;
-					if (order.State == OrderStates.Done)
-						ResetPendingOrderState();
+					ResetPendingOrderState();
 					break;
 
 				case OrderStates.Failed:
-				case OrderStates.Cancelled:
 					ResetPendingOrderState();
 					break;
 			}

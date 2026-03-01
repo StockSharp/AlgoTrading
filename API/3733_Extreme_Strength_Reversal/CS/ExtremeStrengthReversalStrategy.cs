@@ -339,7 +339,7 @@ public class ExtremeStrengthReversalStrategy : Strategy
 		if (portfolio is null)
 			return 0m;
 
-		var equity = portfolio.CurrentValue ?? portfolio.CurrentBalance ?? portfolio.BeginValue ?? 0m;
+		var equity = portfolio.CurrentValue ?? portfolio.BeginValue ?? 0m;
 		if (equity <= 0m)
 			return 0m;
 

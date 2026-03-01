@@ -35,6 +35,7 @@ public class AutoTpManagerStrategy : Strategy
 	private bool _protectionInitialized;
 	private decimal? _currentBid;
 	private decimal? _currentAsk;
+	private decimal _entryPrice;
 	private decimal? _lastTradePrice;
 
 	/// <summary>
@@ -188,6 +189,13 @@ public class AutoTpManagerStrategy : Strategy
 
 		// Store the last trade price to estimate the entry when necessary.
 		_lastTradePrice = trade.Trade?.Price ?? _lastTradePrice;
+
+		if (Position != 0m && _entryPrice == 0m)
+			_entryPrice = trade.Trade.Price;
+
+		if (Position == 0m)
+			_entryPrice = 0m;
+
 		EnsureProtection();
 	}
 
@@ -224,7 +232,7 @@ public class AutoTpManagerStrategy : Strategy
 		if (volume <= 0m)
 		return;
 
-		var entryPrice = PositionPrice;
+		var entryPrice = _entryPrice;
 		if (entryPrice == 0m)
 		entryPrice = _lastTradePrice ?? _currentBid ?? _currentAsk ?? 0m;
 
@@ -274,7 +282,7 @@ public class AutoTpManagerStrategy : Strategy
 		if (trailingDistance <= 0m)
 		return;
 
-		var entryPrice = PositionPrice;
+		var entryPrice = _entryPrice;
 		if (entryPrice == 0m)
 		return;
 
@@ -346,9 +354,8 @@ public class AutoTpManagerStrategy : Strategy
 		if (_stopOrder != null && _stopOrder.State == OrderStates.Active)
 		CancelOrder(_stopOrder);
 
-		_stopOrder = isLong
-		? SellStop(price: stopPrice, volume: volume)
-		: BuyStop(price: stopPrice, volume: volume);
+		// Virtual stop - checked in ProcessLevel1
+		_stopOrder = null;
 
 		_currentStopPrice = stopPrice;
 	}
@@ -361,9 +368,8 @@ public class AutoTpManagerStrategy : Strategy
 		if (_takeProfitOrder != null && _takeProfitOrder.State == OrderStates.Active)
 		CancelOrder(_takeProfitOrder);
 
-		_takeProfitOrder = isLong
-		? SellLimit(price: takeProfitPrice, volume: volume)
-		: BuyLimit(price: takeProfitPrice, volume: volume);
+		// Virtual TP - checked in ProcessLevel1
+		_takeProfitOrder = null;
 
 		_currentTakeProfitPrice = takeProfitPrice;
 	}
