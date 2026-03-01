@@ -122,18 +122,18 @@ public class WaddahAttarWinStrategy : Strategy
 	{
 		var bestBid = depth.GetBestBid();
 		if (bestBid != null)
-			_bestBid = bestBid.Price;
+			_bestBid = bestBid.Value.Price;
 
 		var bestAsk = depth.GetBestAsk();
 		if (bestAsk != null)
-			_bestAsk = bestAsk.Price;
+			_bestAsk = bestAsk.Value.Price;
 
 		ProcessTrading();
 	}
 
 	private void ProcessTrading()
 	{
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!IsFormed)
 			return;
 
 		if (_bestBid is not decimal bid || _bestAsk is not decimal ask)
@@ -143,8 +143,7 @@ public class WaddahAttarWinStrategy : Strategy
 
 		if (MinProfit > 0m && equity >= _referenceBalance + MinProfit && (_hasInitialOrders || Position != 0))
 		{
-			CancelActiveOrders();
-			CloseAll();
+			if (Position > 0) SellMarket(); else if (Position < 0) BuyMarket();
 			ResetLastOrderInfo();
 			_hasInitialOrders = false;
 			_referenceBalance = equity;

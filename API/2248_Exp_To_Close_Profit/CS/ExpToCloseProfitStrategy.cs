@@ -20,6 +20,7 @@ public class ExpToCloseProfitStrategy : Strategy
 {
 	private readonly StrategyParam<decimal> _maxProfit;
 	private bool _triggered;
+	private decimal _entryPrice;
 
 	/// <summary>
 	/// Profit threshold that triggers position closing.
@@ -56,7 +57,7 @@ public class ExpToCloseProfitStrategy : Strategy
 		{
 			var price = trade.Price;
 
-		var unrealized = Position * (price - PositionPrice);
+		var unrealized = Position * (price - _entryPrice);
 		var totalProfit = PnL + unrealized;
 
 		LogInfo($"Profit = {totalProfit:0.##}; MaxProfit = {MaxProfit:0.##};");

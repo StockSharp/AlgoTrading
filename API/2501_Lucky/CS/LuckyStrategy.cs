@@ -24,6 +24,7 @@ public class LuckyStrategy : Strategy
 	private readonly StrategyParam<int> _limitPoints;
 	private readonly StrategyParam<bool> _reverse;
 
+	private decimal _entryPrice;
 	private decimal? _previousAsk;
 	private decimal? _previousBid;
 	private decimal? _currentAsk;
@@ -111,7 +112,7 @@ public class LuckyStrategy : Strategy
 		if (points <= 0)
 			return 0m;
 
-		var step = Security?.PriceStep ?? Security?.Step ?? 0m;
+		var step = Security?.PriceStep ?? 0m;
 
 		if (step <= 0m)
 			return 0m;
@@ -174,7 +175,7 @@ public class LuckyStrategy : Strategy
 
 	private void OpenLong(decimal price, string reason)
 	{
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!IsFormed)
 			return;
 
 		var volume = CalculateOrderVolume(price);
@@ -188,7 +189,7 @@ public class LuckyStrategy : Strategy
 
 	private void OpenShort(decimal price, string reason)
 	{
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!IsFormed)
 			return;
 
 		var volume = CalculateOrderVolume(price);
@@ -220,7 +221,7 @@ public class LuckyStrategy : Strategy
 		if (Position == 0)
 			return;
 
-		var avgPrice = Position.AveragePrice;
+		var avgPrice = _entryPrice;
 
 		if (avgPrice <= 0m)
 			return;

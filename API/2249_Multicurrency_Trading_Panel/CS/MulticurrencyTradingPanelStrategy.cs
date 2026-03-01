@@ -14,46 +14,13 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that imitates a multicurrency trading panel and trades three pairs.
+/// Strategy that compares consecutive candle metrics and trades based on majority direction.
 /// </summary>
 public class MulticurrencyTradingPanelStrategy : Strategy
 {
-	private readonly StrategyParam<Security> _eurUsdParam;
-	private readonly StrategyParam<Security> _usdJpyParam;
-	private readonly StrategyParam<Security> _gbpUsdParam;
 	private readonly StrategyParam<DataType> _candleTypeParam;
-	private readonly StrategyParam<bool> _autoTradeParam;
 
-	private ICandleMessage _eurUsdPrev;
-	private ICandleMessage _usdJpyPrev;
-	private ICandleMessage _gbpUsdPrev;
-
-	/// <summary>
-	/// EURUSD trading instrument.
-	/// </summary>
-	public Security EurUsd
-	{
-		get => _eurUsdParam.Value;
-		set => _eurUsdParam.Value = value;
-	}
-
-	/// <summary>
-	/// USDJPY trading instrument.
-	/// </summary>
-	public Security UsdJpy
-	{
-		get => _usdJpyParam.Value;
-		set => _usdJpyParam.Value = value;
-	}
-
-	/// <summary>
-	/// GBPUSD trading instrument.
-	/// </summary>
-	public Security GbpUsd
-	{
-		get => _gbpUsdParam.Value;
-		set => _gbpUsdParam.Value = value;
-	}
+	private ICandleMessage _prev;
 
 	/// <summary>
 	/// Candle type used for signal calculation.
@@ -65,46 +32,19 @@ public class MulticurrencyTradingPanelStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Enable automatic trading decisions.
-	/// </summary>
-	public bool AutoTrade
-	{
-		get => _autoTradeParam.Value;
-		set => _autoTradeParam.Value = value;
-	}
-
-	/// <summary>
 	/// Initializes a new instance of the strategy.
 	/// </summary>
 	public MulticurrencyTradingPanelStrategy()
 	{
-		_eurUsdParam = Param<Security>(nameof(EurUsd))
-			.SetDisplay("EURUSD", "First currency pair", "Instruments");
-
-		_usdJpyParam = Param<Security>(nameof(UsdJpy))
-			.SetDisplay("USDJPY", "Second currency pair", "Instruments");
-
-		_gbpUsdParam = Param<Security>(nameof(GbpUsd))
-			.SetDisplay("GBPUSD", "Third currency pair", "Instruments");
-
 		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for analysis", "General");
-
-		_autoTradeParam = Param(nameof(AutoTrade), false)
-			.SetDisplay("Auto Trade", "Enable automatic trading", "Trading");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		if (EurUsd != null && CandleType != null)
-			yield return (EurUsd, CandleType);
-
-		if (UsdJpy != null && CandleType != null)
-			yield return (UsdJpy, CandleType);
-
-		if (GbpUsd != null && CandleType != null)
-			yield return (GbpUsd, CandleType);
+		if (CandleType != null)
+			yield return (Security, CandleType);
 	}
 
 	/// <inheritdoc />
@@ -112,28 +52,29 @@ public class MulticurrencyTradingPanelStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		if (EurUsd != null)
-			SubscribeCandles(CandleType, EurUsd).Bind(ProcessEurUsd).Start();
-
-		if (UsdJpy != null)
-			SubscribeCandles(CandleType, UsdJpy).Bind(ProcessUsdJpy).Start();
-
-		if (GbpUsd != null)
-			SubscribeCandles(CandleType, GbpUsd).Bind(ProcessGbpUsd).Start();
+		SubscribeCandles(CandleType)
+			.Bind(ProcessCandle)
+			.Start();
 	}
 
-	private void ProcessEurUsd(ICandleMessage candle) => Process(EurUsd, ref _eurUsdPrev, candle);
-	private void ProcessUsdJpy(ICandleMessage candle) => Process(UsdJpy, ref _usdJpyPrev, candle);
-	private void ProcessGbpUsd(ICandleMessage candle) => Process(GbpUsd, ref _gbpUsdPrev, candle);
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prev = null;
+	}
 
-	private void Process(Security security, ref ICandleMessage prev, ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (prev == null)
+		if (!IsFormed)
+			return;
+
+		if (_prev == null)
 		{
-			prev = candle;
+			_prev = candle;
 			return;
 		}
 
@@ -148,31 +89,21 @@ public class MulticurrencyTradingPanelStrategy : Strategy
 				sell++;
 		}
 
-		Compare(candle.OpenPrice, prev.OpenPrice);
-		Compare(candle.HighPrice, prev.HighPrice);
-		Compare(candle.LowPrice, prev.LowPrice);
-		Compare((candle.HighPrice + candle.LowPrice) / 2m, (prev.HighPrice + prev.LowPrice) / 2m);
-		Compare(candle.ClosePrice, prev.ClosePrice);
+		Compare(candle.OpenPrice, _prev.OpenPrice);
+		Compare(candle.HighPrice, _prev.HighPrice);
+		Compare(candle.LowPrice, _prev.LowPrice);
+		Compare((candle.HighPrice + candle.LowPrice) / 2m, (_prev.HighPrice + _prev.LowPrice) / 2m);
+		Compare(candle.ClosePrice, _prev.ClosePrice);
 		Compare((candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			(prev.HighPrice + prev.LowPrice + prev.ClosePrice) / 3m);
+			(_prev.HighPrice + _prev.LowPrice + _prev.ClosePrice) / 3m);
 		Compare((candle.HighPrice + candle.LowPrice + candle.ClosePrice + candle.ClosePrice) / 4m,
-			(prev.HighPrice + prev.LowPrice + prev.ClosePrice + prev.ClosePrice) / 4m);
+			(_prev.HighPrice + _prev.LowPrice + _prev.ClosePrice + _prev.ClosePrice) / 4m);
 
-		if (AutoTrade)
-		{
-			var pos = GetPosition(security);
+		if (buy > sell && Position <= 0)
+			BuyMarket();
+		else if (sell > buy && Position >= 0)
+			SellMarket();
 
-			if (buy > sell && pos <= 0)
-				BuyMarket(Volume + Math.Abs(pos), security);
-			else if (sell > buy && pos >= 0)
-				SellMarket(Volume + Math.Abs(pos), security);
-		}
-
-		prev = candle;
-	}
-
-	private decimal GetPosition(Security security)
-	{
-		return security == null ? 0 : GetPositionValue(security, Portfolio) ?? 0;
+		_prev = candle;
 	}
 }

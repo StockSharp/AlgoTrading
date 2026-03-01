@@ -575,7 +575,7 @@ public class YenTrader051Strategy : Strategy
 
 		UpdateRiskManagement(candle);
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!IsFormed)
 			return;
 
 		if (!IsSignalReady())
@@ -864,14 +864,14 @@ public class YenTrader051Strategy : Strategy
 		{
 			if (!_breakEvenActivated && breakEvenDistance > 0m && candle.HighPrice >= _entryPrice + breakEvenDistance)
 			{
-				var newStop = _entryPrice + breakEvenDistance;
+				var newStop = (_entryPrice + breakEvenDistance).Value;
 				_stopPrice = _stopPrice.HasValue ? Math.Max(_stopPrice.Value, newStop) : newStop;
 				_breakEvenActivated = true;
 			}
 
 			if (!_profitLockActivated && profitLockDistance > 0m && candle.HighPrice >= _entryPrice + profitLockDistance)
 			{
-				var newStop = _entryPrice + profitLockDistance;
+				var newStop = (_entryPrice + profitLockDistance).Value;
 				_stopPrice = _stopPrice.HasValue ? Math.Max(_stopPrice.Value, newStop) : newStop;
 				_profitLockActivated = true;
 			}
@@ -887,14 +887,14 @@ public class YenTrader051Strategy : Strategy
 		{
 			if (!_breakEvenActivated && breakEvenDistance > 0m && candle.LowPrice <= _entryPrice - breakEvenDistance)
 			{
-				var newStop = _entryPrice - breakEvenDistance;
+				var newStop = (_entryPrice - breakEvenDistance).Value;
 				_stopPrice = _stopPrice.HasValue ? Math.Min(_stopPrice.Value, newStop) : newStop;
 				_breakEvenActivated = true;
 			}
 
 			if (!_profitLockActivated && profitLockDistance > 0m && candle.LowPrice <= _entryPrice - profitLockDistance)
 			{
-				var newStop = _entryPrice - profitLockDistance;
+				var newStop = (_entryPrice - profitLockDistance).Value;
 				_stopPrice = _stopPrice.HasValue ? Math.Min(_stopPrice.Value, newStop) : newStop;
 				_profitLockActivated = true;
 			}
@@ -950,7 +950,7 @@ public class YenTrader051Strategy : Strategy
 
 	private decimal ConvertPipsToPrice(int pips)
 	{
-		var step = Security?.MinPriceStep ?? 0m;
+		var step = Security?.PriceStep ?? 0m;
 		return step > 0m ? pips * step : pips;
 	}
 
@@ -1037,16 +1037,16 @@ public class YenTrader051Strategy : Strategy
 		_majorLowest = new Lowest { Length = breakoutLength };
 		_majorRsi = new RelativeStrengthIndex { Length = 14 };
 		_majorCci = new CommodityChannelIndex { Length = 14 };
-		_majorRvi = new RelativeVigorIndex { Length = 10 };
-		_majorRviSignal = new SMA { Length = 4 };
+		_majorRvi = new RelativeVigorIndex();
+		_majorRviSignal = new SimpleMovingAverage { Length = 4 };
 		_majorMa = CreateMovingAverage(MaMode, MaPeriod);
 
 		_usdJpyHighest = new Highest { Length = breakoutLength };
 		_usdJpyLowest = new Lowest { Length = breakoutLength };
 		_usdJpyRsi = new RelativeStrengthIndex { Length = 14 };
 		_usdJpyCci = new CommodityChannelIndex { Length = 14 };
-		_usdJpyRvi = new RelativeVigorIndex { Length = 10 };
-		_usdJpyRviSignal = new SMA { Length = 4 };
+		_usdJpyRvi = new RelativeVigorIndex();
+		_usdJpyRviSignal = new SimpleMovingAverage { Length = 4 };
 		_usdJpyMa = CreateMovingAverage(MaMode, MaPeriod);
 	}
 
@@ -1072,7 +1072,7 @@ public class YenTrader051Strategy : Strategy
 		ref decimal? rviMain,
 		ref decimal? rviSignalValue)
 	{
-		var rsiVal = rsi.Process(new DecimalIndicatorValue(rsi, candle));
+		var rsiVal = rsi.Process(new DecimalIndicatorValue(rsi, candle.ClosePrice, candle.CloseTime));
 		if (rsiVal.IsFinal)
 			rsiValue = rsiVal.ToDecimal();
 
@@ -1086,7 +1086,7 @@ public class YenTrader051Strategy : Strategy
 			var main = rviVal.ToDecimal();
 			rviMain = main;
 
-			var signalVal = rviSignal.Process(new DecimalIndicatorValue(rviSignal, main));
+			var signalVal = rviSignal.Process(new DecimalIndicatorValue(rviSignal, main, candle.CloseTime));
 			if (signalVal.IsFinal)
 				rviSignalValue = signalVal.ToDecimal();
 		}
@@ -1125,11 +1125,11 @@ public class YenTrader051Strategy : Strategy
 
 		return mode switch
 		{
-			MovingAverageModes.Simple => new SMA { Length = length },
-			MovingAverageModes.Exponential => new EMA { Length = length },
+			MovingAverageModes.Simple => new SimpleMovingAverage { Length = length },
+			MovingAverageModes.Exponential => new ExponentialMovingAverage { Length = length },
 			MovingAverageModes.Smoothed => new SmoothedMovingAverage { Length = length },
 			MovingAverageModes.LinearWeighted => new WeightedMovingAverage { Length = length },
-			_ => new SMA { Length = length },
+			_ => new SimpleMovingAverage { Length = length },
 		};
 	}
 
