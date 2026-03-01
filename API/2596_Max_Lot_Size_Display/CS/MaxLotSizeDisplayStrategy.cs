@@ -73,7 +73,6 @@ public class MaxLotSizeDisplayStrategy : Strategy
 			.SetDisplay("Trade Direction", "Direction to evaluate for maximum volume", "General");
 
 		_riskFraction = Param(nameof(RiskFraction), 1m)
-			.SetRange(0m, 10m)
 			.SetDisplay("Risk Fraction", "Fraction of free funds to allocate", "Risk Management");
 
 		_labelPrefix = Param(nameof(LabelPrefix), "MAX_LOT_Label_")
@@ -131,7 +130,7 @@ public class MaxLotSizeDisplayStrategy : Strategy
 		}
 		else
 		{
-			LogWarn($"{LabelPrefix}Not enough free funds to open {TradeDirection} position.");
+			LogWarning($"{LabelPrefix}Not enough free funds to open {TradeDirection} position.");
 		}
 	}
 

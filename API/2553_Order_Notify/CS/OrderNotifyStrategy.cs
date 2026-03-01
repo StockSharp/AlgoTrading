@@ -248,7 +248,7 @@ public class OrderNotifyStrategy : Strategy
 	{
 		var sb = new StringBuilder();
 
-		var securityId = trade.Order.Security?.Id?.SecurityCode ?? trade.Order.Security?.Id ?? Security?.Id?.SecurityCode ?? Security?.Id ?? "Unknown";
+		var securityId = trade.Order.Security?.Id ?? Security?.Id ?? "Unknown";
 		var sideText = trade.Order.Side == Sides.Buy ? "BUY" : "SELL";
 		sb.AppendLine($"{securityId} {sideText} {volume:0.####} @ {price:0.####}");
 
@@ -276,7 +276,7 @@ public class OrderNotifyStrategy : Strategy
 
 	private void SendNotification(string subject, string body)
 	{
-		LogInfo($"{subject}: {body.Replace(Environment.NewLine, " | ")}");
+		LogInfo($"{subject}: {body.Replace(System.Environment.NewLine, " | ")}");
 
 		if (!SendEmails)
 			return;

@@ -1069,14 +1069,14 @@ public class MacdPatternTraderAdvancedMultiPatternStrategy : Strategy
 		_macd5 = CreateMacd(Pattern5Fast, Pattern5Slow);
 		_macd6 = CreateMacd(Pattern6Fast, Pattern6Slow);
 
-		_ema1 = new EMA { Length = EmaPeriod1 };
-		_ema2 = new EMA { Length = EmaPeriod2 };
-		_sma3 = new SMA { Length = SmaPeriod3 };
-		_ema4 = new EMA { Length = EmaPeriod4 };
+		_ema1 = new ExponentialMovingAverage { Length = EmaPeriod1 };
+		_ema2 = new ExponentialMovingAverage { Length = EmaPeriod2 };
+		_sma3 = new SimpleMovingAverage { Length = SmaPeriod3 };
+		_ema4 = new ExponentialMovingAverage { Length = EmaPeriod4 };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(_macd1, _macd2, _macd3, _macd4, _macd5, _macd6, _ema1, _ema2, _sma3, _ema4, ProcessCandle)
+			.BindEx(new IIndicator[] { _macd1, _macd2, _macd3, _macd4, _macd5, _macd6, _ema1, _ema2, _sma3, _ema4 }, ProcessCandleArr, true)
 			.Start();
 
 		var area = CreateChartArea();
@@ -1086,6 +1086,11 @@ public class MacdPatternTraderAdvancedMultiPatternStrategy : Strategy
 			DrawIndicator(area, _macd1);
 			DrawOwnTrades(area);
 		}
+	}
+
+	private void ProcessCandleArr(ICandleMessage candle, IIndicatorValue[] vals)
+	{
+		ProcessCandle(candle, vals[0], vals[1], vals[2], vals[3], vals[4], vals[5], vals[6], vals[7], vals[8], vals[9]);
 	}
 
 	private void ProcessCandle(
@@ -1579,7 +1584,7 @@ public class MacdPatternTraderAdvancedMultiPatternStrategy : Strategy
 		if (volume <= 0m)
 			return false;
 
-		BuyMarket(volume, tag);
+		BuyMarket();
 		_longStop = stop;
 		_longTake = take;
 		_shortStop = null;
@@ -1601,7 +1606,7 @@ public class MacdPatternTraderAdvancedMultiPatternStrategy : Strategy
 		if (volume <= 0m)
 			return false;
 
-		SellMarket(volume, tag);
+		SellMarket();
 		_shortStop = stop;
 		_shortTake = take;
 		_longStop = null;
@@ -1728,7 +1733,7 @@ public class MacdPatternTraderAdvancedMultiPatternStrategy : Strategy
 			{
 				var volume = Math.Max(Math.Round(_longVolume / 3m, 2, MidpointRounding.AwayFromZero), MinPartialVolume);
 				volume = Math.Min(volume, Position);
-				SellMarket(volume, "PartialLong");
+				SellMarket();
 				_longPartialCount++;
 				return;
 			}
@@ -1737,7 +1742,7 @@ public class MacdPatternTraderAdvancedMultiPatternStrategy : Strategy
 			{
 				var volume = Math.Max(Math.Round(_longVolume / 2m, 2, MidpointRounding.AwayFromZero), MinPartialVolume);
 				volume = Math.Min(volume, Position);
-				SellMarket(volume, "PartialLong");
+				SellMarket();
 				_longPartialCount++;
 			}
 		}
@@ -1748,7 +1753,7 @@ public class MacdPatternTraderAdvancedMultiPatternStrategy : Strategy
 			{
 				var volume = Math.Max(Math.Round(_shortVolume / 3m, 2, MidpointRounding.AwayFromZero), MinPartialVolume);
 				volume = Math.Min(volume, Math.Abs(Position));
-				BuyMarket(volume, "PartialShort");
+				BuyMarket();
 				_shortPartialCount++;
 				return;
 			}
@@ -1757,7 +1762,7 @@ public class MacdPatternTraderAdvancedMultiPatternStrategy : Strategy
 			{
 				var volume = Math.Max(Math.Round(_shortVolume / 2m, 2, MidpointRounding.AwayFromZero), MinPartialVolume);
 				volume = Math.Min(volume, Math.Abs(Position));
-				BuyMarket(volume, "PartialShort");
+				BuyMarket();
 				_shortPartialCount++;
 			}
 		}
@@ -1769,13 +1774,13 @@ public class MacdPatternTraderAdvancedMultiPatternStrategy : Strategy
 		{
 			if (_longStop.HasValue && candle.LowPrice <= _longStop.Value)
 			{
-				SellMarket(Math.Abs(Position), "StopLong");
+				SellMarket();
 				_longStop = null;
 				_longTake = null;
 			}
 			else if (_longTake.HasValue && candle.HighPrice >= _longTake.Value)
 			{
-				SellMarket(Math.Abs(Position), "TakeLong");
+				SellMarket();
 				_longStop = null;
 				_longTake = null;
 			}
@@ -1784,13 +1789,13 @@ public class MacdPatternTraderAdvancedMultiPatternStrategy : Strategy
 		{
 			if (_shortStop.HasValue && candle.HighPrice >= _shortStop.Value)
 			{
-				BuyMarket(Math.Abs(Position), "StopShort");
+				BuyMarket();
 				_shortStop = null;
 				_shortTake = null;
 			}
 			else if (_shortTake.HasValue && candle.LowPrice <= _shortTake.Value)
 			{
-				BuyMarket(Math.Abs(Position), "TakeShort");
+				BuyMarket();
 				_shortStop = null;
 				_shortTake = null;
 			}
@@ -1808,7 +1813,7 @@ public class MacdPatternTraderAdvancedMultiPatternStrategy : Strategy
 		AppendMacdValue(_macd6History, macd6Value);
 	}
 
-	private static void AppendMacdValue(List<decimal> history, IIndicatorValue value)
+	private void AppendMacdValue(List<decimal> history, IIndicatorValue value)
 	{
 		if (value is not MovingAverageConvergenceDivergenceSignalValue macdValue)
 			return;

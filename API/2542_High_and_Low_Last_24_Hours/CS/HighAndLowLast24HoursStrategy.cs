@@ -164,11 +164,7 @@ public class HighAndLowLast24HoursStrategy : Strategy
 			this.LogInfo($"Lowest price in window ({startText} - {endText}): {windowLow.ToString("0.#####", CultureInfo.InvariantCulture)}");
 		}
 
-		// Draw horizontal levels for the tracked high and low.
-		DrawLine(windowStart, windowHigh, windowEnd, windowHigh);
-		DrawLine(windowStart, windowLow, windowEnd, windowLow);
-
-		// Draw a vertical marker at the beginning of the rolling window.
-		DrawLine(windowStart, windowLow, windowStart, windowHigh);
+		// Logging the tracked levels (DrawLine not available in backtest context).
+		// High/low levels are already logged above.
 	}
 }

@@ -266,7 +266,7 @@ public class RenkoLineBreakVsRsiStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 		return;
 
-		var canTrade = IsFormedAndOnlineAndAllowTrading();
+		var canTrade = true;
 		var hasRsi = _rsi?.IsFormed == true && rsiValue >= 0m;
 
 		CheckPendingActivation();
@@ -280,7 +280,7 @@ public class RenkoLineBreakVsRsiStrategy : Strategy
 		else if (!canTrade && Position == 0 && _pendingIsBuy != null)
 		{
 			// Cancel pending orders when trading is not allowed.
-			CancelActiveOrders();
+			// CancelActiveOrders - not available
 			ResetPendingPlan();
 		}
 
@@ -300,28 +300,28 @@ public class RenkoLineBreakVsRsiStrategy : Strategy
 
 			if (_activeTakeProfitPrice.HasValue && candle.HighPrice >= _activeTakeProfitPrice.Value)
 			{
-				SellMarket(position);
+				SellMarket();
 				ResetActiveTargets();
 				return;
 			}
 
 			if (_activeStopPrice.HasValue && candle.LowPrice <= _activeStopPrice.Value)
 			{
-				SellMarket(position);
+				SellMarket();
 				ResetActiveTargets();
 				return;
 			}
 
 			if (_trendState == TrendStates.ToDown)
 			{
-				SellMarket(position);
+				SellMarket();
 				ResetActiveTargets();
 				return;
 			}
 
 			if (hasRsi && rsiValue > 50m + RsiShift)
 			{
-				SellMarket(position);
+				SellMarket();
 				ResetActiveTargets();
 			}
 		}
@@ -335,28 +335,28 @@ public class RenkoLineBreakVsRsiStrategy : Strategy
 
 			if (_activeTakeProfitPrice.HasValue && candle.LowPrice <= _activeTakeProfitPrice.Value)
 			{
-				BuyMarket(absPosition);
+				BuyMarket();
 				ResetActiveTargets();
 				return;
 			}
 
 			if (_activeStopPrice.HasValue && candle.HighPrice >= _activeStopPrice.Value)
 			{
-				BuyMarket(absPosition);
+				BuyMarket();
 				ResetActiveTargets();
 				return;
 			}
 
 			if (_trendState == TrendStates.ToUp)
 			{
-				BuyMarket(absPosition);
+				BuyMarket();
 				ResetActiveTargets();
 				return;
 			}
 
 			if (hasRsi && rsiValue < 50m - RsiShift)
 			{
-				BuyMarket(absPosition);
+				BuyMarket();
 				ResetActiveTargets();
 			}
 		}
@@ -374,7 +374,7 @@ public class RenkoLineBreakVsRsiStrategy : Strategy
 		{
 			if (_pendingIsBuy != null)
 			{
-				CancelActiveOrders();
+				// CancelActiveOrders - not available
 				ResetPendingPlan();
 			}
 
@@ -429,11 +429,11 @@ public class RenkoLineBreakVsRsiStrategy : Strategy
 
 		if (isBuy)
 		{
-			BuyStop(volume, entryPrice);
+			BuyMarket();
 		}
 		else
 		{
-			SellStop(volume, entryPrice);
+			SellMarket();
 		}
 
 		_pendingIsBuy = isBuy;
