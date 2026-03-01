@@ -6,9 +6,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="StockSharp.Algo" Version="$(StockSharpVer)" />
-    <PackageReference Include="StockSharp.Algo.Compilation" Version="$(StockSharpVer)" />
     <PackageReference Include="StockSharp.Samples.HistoryData" Version="$(StockSharpVer)" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\StockSharp (GitHub)\Algo\Algo.csproj" />
+    <ProjectReference Include="..\..\StockSharp (GitHub)\Algo.Indicators\Algo.Indicators.csproj" />
+    <ProjectReference Include="..\..\StockSharp (GitHub)\Algo.Strategies\Algo.Strategies.csproj" />
+    <ProjectReference Include="..\..\StockSharp (GitHub)\Algo.Compilation\Algo.Compilation.csproj" />
   </ItemGroup>
 
 </Project>
