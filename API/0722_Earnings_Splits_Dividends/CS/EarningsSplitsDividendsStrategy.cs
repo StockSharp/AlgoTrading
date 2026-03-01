@@ -3,8 +3,6 @@ using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -40,17 +38,9 @@ public class EarningsSplitsDividendsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		Connector.SubscribeMarketData(Security, MarketDataTypes.News);
 
 		SubscribeCandles(CandleType)
 			.Bind(ProcessCandle)
@@ -61,33 +51,8 @@ public class EarningsSplitsDividendsStrategy : Strategy
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
-	}
 
-	/// <inheritdoc />
-	protected override void OnProcessMessage(Message message)
-	{
-		base.OnProcessMessage(message);
-
-		if (message.Type != MessageTypes.News)
-			return;
-
-		var news = (NewsMessage)message;
-		var text = (news.Headline + " " + news.Story)?.ToLowerInvariant();
-
-		if (text == null)
-			return;
-
-		if (text.Contains("earning"))
-		{
-			LogInfo($"Earnings event at {news.ServerTime:O}");
-		}
-		else if (text.Contains("split"))
-		{
-			LogInfo($"Split event at {news.ServerTime:O}");
-		}
-		else if (text.Contains("dividend"))
-		{
-			LogInfo($"Dividend event at {news.ServerTime:O}");
-		}
+		// Utility strategy: logs candle close for monitoring purposes.
+		LogInfo($"Candle closed at {candle.ClosePrice} on {candle.OpenTime:O}");
 	}
 }

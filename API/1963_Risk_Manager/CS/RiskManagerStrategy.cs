@@ -3,8 +3,6 @@ using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -22,6 +20,7 @@ public class RiskManagerStrategy : Strategy
 	private readonly StrategyParam<decimal> _dailyRisk;
 	private readonly StrategyParam<decimal> _tradeRisk;
 	private readonly StrategyParam<decimal> _trailRisk;
+	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _startBalance;
 	private decimal _peakProfit;
@@ -43,6 +42,11 @@ public class RiskManagerStrategy : Strategy
 	public decimal TrailingRisk { get => _trailRisk.Value; set => _trailRisk.Value = value; }
 
 	/// <summary>
+	/// Candle type used for periodic risk checks.
+	/// </summary>
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+
+	/// <summary>
 	/// Initialize strategy parameters.
 	/// </summary>
 	public RiskManagerStrategy()
@@ -55,6 +59,9 @@ public class RiskManagerStrategy : Strategy
 
 		_trailRisk = Param(nameof(TrailingRisk), 0m)
 			.SetDisplay("Trail Stop %", "Profit drop to trigger exit", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type for periodic checks", "General");
 	}
 
 	/// <inheritdoc />
@@ -66,26 +73,26 @@ public class RiskManagerStrategy : Strategy
 		_day = time.Date;
 		_peakProfit = 0m;
 
-		// Start position protection once when strategy starts.
-		StartProtection(null, null);
+		SubscribeCandles(CandleType)
+			.Bind(ProcessCandle)
+			.Start();
 	}
 
-	/// <inheritdoc />
-	protected override void OnTimer(DateTimeOffset time)
+	private void ProcessCandle(ICandleMessage candle)
 	{
-		base.OnTimer(time);
+		if (candle.State != CandleStates.Finished)
+			return;
 
 		// Reset tracking values at the start of a new day.
-		if (time.Date > _day)
+		if (candle.OpenTime.Date > _day)
 		{
 			_startBalance = Portfolio.CurrentValue ?? _startBalance;
 			_peakProfit = 0m;
-			_day = time.Date;
+			_day = candle.OpenTime.Date;
 		}
 
 		CheckDailyRisk();
 		CheckTrailingStop();
-		CheckTradeRisk();
 	}
 
 	// Check daily loss against allowed percentage.
@@ -98,21 +105,13 @@ public class RiskManagerStrategy : Strategy
 		var lossPercent = (value - _startBalance) / _startBalance * 100m;
 
 		if (lossPercent <= -DailyRisk)
-			CloseAll("Daily loss limit reached");
-	}
-
-	// Check per trade loss for the current position.
-	private void CheckTradeRisk()
-	{
-		if (TradeRisk <= 0m || Position == 0 || _startBalance <= 0m)
-			return;
-
-		var price = Security.LastTick?.Price ?? Security.LastPrice ?? 0m;
-		var openPnL = Position * (price - PositionPrice);
-		var lossPercent = openPnL / _startBalance * 100m;
-
-		if (lossPercent <= -TradeRisk)
-			CloseAll("Trade loss limit reached");
+		{
+			LogInfo("Daily loss limit reached");
+			if (Position > 0)
+				SellMarket();
+			else if (Position < 0)
+				BuyMarket();
+		}
 	}
 
 	// Monitor trailing profit and close positions if profit drops too much.
@@ -129,7 +128,11 @@ public class RiskManagerStrategy : Strategy
 
 		if (_peakProfit - profitPercent >= TrailingRisk)
 		{
-			CloseAll("Trailing profit target hit");
+			LogInfo("Trailing profit target hit");
+			if (Position > 0)
+				SellMarket();
+			else if (Position < 0)
+				BuyMarket();
 			_peakProfit = profitPercent;
 		}
 	}

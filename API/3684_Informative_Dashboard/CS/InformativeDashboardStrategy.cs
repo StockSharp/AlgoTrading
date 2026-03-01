@@ -3,17 +3,14 @@ namespace StockSharp.Samples.Strategies;
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using System.Globalization;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
-
-using System.Globalization;
 
 /// <summary>
 /// Dashboard strategy that mirrors the "Informative Dashboard" MetaTrader panel.
@@ -23,8 +20,6 @@ using System.Globalization;
 public class InformativeDashboardStrategy : Strategy
 {
 	private readonly StrategyParam<int> _refreshIntervalSeconds;
-
-	private readonly HashSet<Order> _activeOrders = new();
 
 	private DateTime _currentDay;
 	private decimal _dailyPnLBase;
@@ -57,12 +52,11 @@ public class InformativeDashboardStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_activeOrders.Clear();
 		_hasOpenPosition = false;
 		_bestBid = null;
 		_bestAsk = null;
 		_lastComment = string.Empty;
-		Comment = string.Empty;
+		_lastComment = string.Empty;
 	}
 
 	/// <inheritdoc />
@@ -74,20 +68,13 @@ public class InformativeDashboardStrategy : Strategy
 		_dailyPnLBase = PnL;
 		_hasOpenPosition = Position != 0m;
 
-		SubscribeLevel1()
-			.Bind(ProcessLevel1)
-			.Start();
-
+		// Subscribe to candles for periodic dashboard refresh.
 		if (RefreshIntervalSeconds > 0 && Security != null)
 		{
 			var candleType = TimeSpan.FromSeconds(RefreshIntervalSeconds).TimeFrame();
 			SubscribeCandles(candleType)
 				.Bind(OnTimerCandle)
 				.Start();
-		}
-		else if (Security == null)
-		{
-			LogWarning("Security is not assigned. Timer-based refresh is disabled.");
 		}
 
 		UpdateDashboard();
@@ -98,60 +85,7 @@ public class InformativeDashboardStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		UpdateDashboard();
-	}
-
-	private void ProcessLevel1(Level1ChangeMessage message)
-	{
-		var bid = message.TryGetDecimal(Level1Fields.BestBidPrice);
-		if (bid != null)
-			_bestBid = bid.Value;
-
-		var ask = message.TryGetDecimal(Level1Fields.BestAskPrice);
-		if (ask != null)
-			_bestAsk = ask.Value;
-
-		UpdateDashboard();
-	}
-
-	/// <inheritdoc />
-	protected override void OnOrderReceived(Order order)
-	{
-		base.OnOrderReceived(order);
-
-		if (order == null)
-			return;
-
-		switch (order.State)
-		{
-			case OrderStates.None:
-			case OrderStates.Pending:
-			case OrderStates.Active:
-				_activeOrders.Add(order);
-				break;
-			default:
-				_activeOrders.Remove(order);
-				break;
-		}
-
-		UpdateDashboard();
-	}
-
-	/// <inheritdoc />
-	protected override void OnPositionReceived(Position position)
-	{
-		base.OnPositionReceived(position);
-
 		_hasOpenPosition = Position != 0m;
-
-		UpdateDashboard();
-	}
-
-	/// <inheritdoc />
-	protected override void OnPnLChanged(decimal diff)
-	{
-		base.OnPnLChanged(diff);
-
 		UpdateDashboard();
 	}
 
@@ -160,14 +94,12 @@ public class InformativeDashboardStrategy : Strategy
 	{
 		base.OnStopped();
 
-		Comment = string.Empty;
+		_lastComment = string.Empty;
 	}
 
 	private void UpdateDashboard()
 	{
 		var now = CurrentTime;
-		if (now == default)
-			now = DateTimeOffset.UtcNow;
 
 		if (now.Date != _currentDay)
 		{
@@ -188,9 +120,7 @@ public class InformativeDashboardStrategy : Strategy
 		if (balance != 0m)
 			drawdownPercent = (equity - balance) / balance * 100m;
 
-		var openOrders = CountActiveOrders();
 		var openPositions = _hasOpenPosition ? 1 : 0;
-		var posAndOrders = openPositions + openOrders;
 
 		var spreadText = GetSpreadText();
 		var accountName = portfolio?.Name;
@@ -198,30 +128,18 @@ public class InformativeDashboardStrategy : Strategy
 			accountName = "Unknown";
 
 		var comment = string.Format(CultureInfo.InvariantCulture,
-			"Account: {0} | Daily PL: {1:0.00} | Drawdown: {2:0.00}% | Pos & Orders: {3} | Spread: {4}",
+			"Account: {0} | Daily PL: {1:0.00} | Drawdown: {2:0.00}% | Pos: {3} | Spread: {4}",
 			accountName,
 			dailyPnL,
 			drawdownPercent,
-			posAndOrders,
+			openPositions,
 			spreadText);
 
 		if (comment == _lastComment)
 			return;
 
 		_lastComment = comment;
-		Comment = comment;
-	}
-
-	private int CountActiveOrders()
-	{
-		var count = 0;
-		foreach (var order in _activeOrders)
-		{
-			if (order.State is OrderStates.None or OrderStates.Pending or OrderStates.Active)
-				count++;
-		}
-
-		return count;
+		LogInfo(comment);
 	}
 
 	private string GetSpreadText()
@@ -236,4 +154,3 @@ public class InformativeDashboardStrategy : Strategy
 		return spread.ToString("0.#####", CultureInfo.InvariantCulture);
 	}
 }
-

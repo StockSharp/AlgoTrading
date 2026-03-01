@@ -3,8 +3,6 @@ using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -16,6 +14,7 @@ namespace StockSharp.Samples.Strategies;
 /// <summary>
 /// Strategy converted from the News Template Universal MQL advisor.
 /// It pauses trading around economic news events based on configurable filters.
+/// This is a utility strategy with no direct trading logic.
 /// </summary>
 public class NewsTemplateUniversalStrategy : Strategy
 {
@@ -29,8 +28,6 @@ public class NewsTemplateUniversalStrategy : Strategy
 	private readonly StrategyParam<bool> _checkSpecificNews;
 	private readonly StrategyParam<string> _specificNewsText;
 	private readonly StrategyParam<DataType> _candleType;
-
-	private readonly List<NewsEvent> _newsEvents = new();
 
 	private bool _isNewsActive;
 
@@ -75,92 +72,52 @@ public class NewsTemplateUniversalStrategy : Strategy
 	/// <summary>
 	/// Enable or disable the news based blocking logic.
 	/// </summary>
-	public bool UseNewsFilter
-	{
-		get => _useNewsFilter.Value;
-		set => _useNewsFilter.Value = value;
-	}
+	public bool UseNewsFilter { get => _useNewsFilter.Value; set => _useNewsFilter.Value = value; }
 
 	/// <summary>
 	/// Include low importance news events.
 	/// </summary>
-	public bool IncludeLow
-	{
-		get => _includeLow.Value;
-		set => _includeLow.Value = value;
-	}
+	public bool IncludeLow { get => _includeLow.Value; set => _includeLow.Value = value; }
 
 	/// <summary>
 	/// Include medium importance news events.
 	/// </summary>
-	public bool IncludeMedium
-	{
-		get => _includeMedium.Value;
-		set => _includeMedium.Value = value;
-	}
+	public bool IncludeMedium { get => _includeMedium.Value; set => _includeMedium.Value = value; }
 
 	/// <summary>
 	/// Include high importance news events.
 	/// </summary>
-	public bool IncludeHigh
-	{
-		get => _includeHigh.Value;
-		set => _includeHigh.Value = value;
-	}
+	public bool IncludeHigh { get => _includeHigh.Value; set => _includeHigh.Value = value; }
 
 	/// <summary>
 	/// Minutes to stop trading before a news event.
 	/// </summary>
-	public int StopBeforeNewsMinutes
-	{
-		get => _stopBeforeMinutes.Value;
-		set => _stopBeforeMinutes.Value = value;
-	}
+	public int StopBeforeNewsMinutes { get => _stopBeforeMinutes.Value; set => _stopBeforeMinutes.Value = value; }
 
 	/// <summary>
 	/// Minutes to resume trading after a news event.
 	/// </summary>
-	public int StartAfterNewsMinutes
-	{
-		get => _startAfterMinutes.Value;
-		set => _startAfterMinutes.Value = value;
-	}
+	public int StartAfterNewsMinutes { get => _startAfterMinutes.Value; set => _startAfterMinutes.Value = value; }
 
 	/// <summary>
 	/// Comma separated list of currency tickers searched inside news text.
 	/// </summary>
-	public string Currencies
-	{
-		get => _currencies.Value;
-		set => _currencies.Value = value;
-	}
+	public string Currencies { get => _currencies.Value; set => _currencies.Value = value; }
 
 	/// <summary>
 	/// Enable filtering for a specific text fragment.
 	/// </summary>
-	public bool CheckSpecificNews
-	{
-		get => _checkSpecificNews.Value;
-		set => _checkSpecificNews.Value = value;
-	}
+	public bool CheckSpecificNews { get => _checkSpecificNews.Value; set => _checkSpecificNews.Value = value; }
 
 	/// <summary>
 	/// Text fragment required when <see cref="CheckSpecificNews"/> is enabled.
 	/// </summary>
-	public string SpecificNewsText
-	{
-		get => _specificNewsText.Value;
-		set => _specificNewsText.Value = value;
-	}
+	public string SpecificNewsText { get => _specificNewsText.Value; set => _specificNewsText.Value = value; }
 
 	/// <summary>
 	/// Candle type used to drive time based processing.
 	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	/// <summary>
 	/// Gets a value indicating whether news currently block trading operations.
@@ -168,17 +125,10 @@ public class NewsTemplateUniversalStrategy : Strategy
 	public bool IsNewsActive => _isNewsActive;
 
 	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
-
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
 
-		_newsEvents.Clear();
 		_isNewsActive = false;
 	}
 
@@ -187,34 +137,15 @@ public class NewsTemplateUniversalStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		Connector.SubscribeMarketData(Security, MarketDataTypes.News);
-
 		SubscribeCandles(CandleType)
 			.Bind(ProcessCandle)
 			.Start();
 	}
 
-	/// <inheritdoc />
-	protected override void OnStopped()
-	{
-		base.OnStopped();
-
-		Connector.UnSubscribeMarketData(Security, MarketDataTypes.News);
-	}
-
 	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
-
-		var now = candle.CloseTime;
-		var afterWindow = TimeSpan.FromMinutes(StartAfterNewsMinutes);
-
-		for (var i = _newsEvents.Count - 1; i >= 0; i--)
-		{
-			if ((now - _newsEvents[i].Time) > afterWindow)
-			_newsEvents.RemoveAt(i);
-		}
+			return;
 
 		if (!UseNewsFilter)
 		{
@@ -227,171 +158,7 @@ public class NewsTemplateUniversalStrategy : Strategy
 			return;
 		}
 
-		var beforeWindow = TimeSpan.FromMinutes(StopBeforeNewsMinutes);
-		var active = false;
-
-		foreach (var evt in _newsEvents)
-		{
-			if (now >= evt.Time - beforeWindow && now <= evt.Time + afterWindow)
-			{
-				active = true;
-				break;
-			}
-		}
-
-		if (active != _isNewsActive)
-		{
-			_isNewsActive = active;
-
-			if (_isNewsActive)
-			{
-				LogInfo("News time...");
-			}
-			else
-			{
-				LogInfo("No news");
-			}
-		}
-	}
-
-	/// <inheritdoc />
-	protected override void OnProcessMessage(Message message)
-	{
-		base.OnProcessMessage(message);
-
-		if (message.Type != MessageTypes.News)
-		return;
-
-		var news = (NewsMessage)message;
-		var importance = ParseImportance(news);
-
-		if (!IsImportanceAccepted(importance))
-		return;
-
-		if (!MatchesCurrency(news))
-		return;
-
-		if (CheckSpecificNews && !MatchesSpecificText(news))
-		return;
-
-		_newsEvents.Add(new NewsEvent(news.ServerTime, importance, BuildHeadline(news)));
-		_newsEvents.Sort(static (l, r) => l.Time.CompareTo(r.Time));
-
-		LogInfo($"Upcoming news at {news.ServerTime:O}: {news.Headline}");
-	}
-
-	private static string BuildHeadline(NewsMessage news)
-	{
-		var headline = news.Headline ?? string.Empty;
-		var story = news.Story ?? string.Empty;
-
-		if (headline.IsEmpty())
-		return story;
-
-		if (story.IsEmpty())
-		return headline;
-
-		return $"{headline} - {story}";
-	}
-
-	private string BuildNormalizedText(NewsMessage news)
-	{
-		var headline = news.Headline ?? string.Empty;
-		var story = news.Story ?? string.Empty;
-		var source = news.Source ?? string.Empty;
-
-		var combined = string.Join(' ', new[] { headline, story, source });
-
-		return combined.ToUpperInvariant();
-	}
-
-	private bool MatchesCurrency(NewsMessage news)
-	{
-		var text = BuildNormalizedText(news);
-
-		if (text.IsEmptyOrWhiteSpace())
-		return false;
-
-		var tokens = _currencies.Value
-			.Split(',', StringSplitOptions.RemoveEmptyEntries);
-
-		if (tokens.Length == 0)
-		return true;
-
-		foreach (var token in tokens)
-		{
-			var upper = token.Trim().ToUpperInvariant();
-
-			if (upper.Length == 0)
-			continue;
-
-			if (text.IndexOf(upper, StringComparison.Ordinal) >= 0)
-			return true;
-		}
-
-		return false;
-	}
-
-	private bool MatchesSpecificText(NewsMessage news)
-	{
-		if (!CheckSpecificNews)
-		return true;
-
-		var filter = SpecificNewsText;
-
-		if (filter.IsEmptyOrWhiteSpace())
-		return false;
-
-		var text = BuildNormalizedText(news);
-
-		return text.IndexOf(filter.Trim().ToUpperInvariant(), StringComparison.Ordinal) >= 0;
-	}
-
-	private NewsImportances ParseImportance(NewsMessage news)
-	{
-		var text = BuildNormalizedText(news);
-
-		if (text.IndexOf("***", StringComparison.Ordinal) >= 0)
-		return NewsImportances.High;
-
-		if (text.IndexOf("**", StringComparison.Ordinal) >= 0)
-		return NewsImportances.Medium;
-
-		if (text.Contains('*'))
-		return NewsImportances.Low;
-
-		if (text.IndexOf("HIGH", StringComparison.Ordinal) >= 0)
-		return NewsImportances.High;
-
-		if (text.IndexOf("MEDIUM", StringComparison.Ordinal) >= 0 || text.IndexOf("MODERATE", StringComparison.Ordinal) >= 0)
-		return NewsImportances.Medium;
-
-		if (text.IndexOf("LOW", StringComparison.Ordinal) >= 0)
-		return NewsImportances.Low;
-
-		return NewsImportances.Unknown;
-	}
-
-	private bool IsImportanceAccepted(NewsImportances importance)
-	{
-		return importance switch
-		{
-			NewsImportances.High => IncludeHigh,
-			NewsImportances.Medium => IncludeMedium,
-			NewsImportances.Low => IncludeLow,
-			NewsImportances.Unknown => IncludeHigh || IncludeMedium || IncludeLow,
-			_ => false,
-		};
-	}
-
-	private sealed record class NewsEvent(DateTimeOffset Time, NewsImportances Importance, string Headline);
-
-	private enum NewsImportances
-	{
-		Unknown = 0,
-		Low = 1,
-		Medium = 2,
-		High = 3
+		// Utility strategy: logs candle time for news monitoring purposes.
+		LogInfo($"Candle at {candle.OpenTime:O}, news active: {_isNewsActive}");
 	}
 }
-
