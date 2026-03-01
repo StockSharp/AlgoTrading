@@ -51,6 +51,7 @@ public class SimpleEaMaPlusMacdStrategy : Strategy
 	private decimal? _lastClosedLow;
 
 	private decimal _pipSize;
+	private decimal? _entryPrice;
 	private decimal? _longEntryPrice;
 	private decimal? _shortEntryPrice;
 	private decimal _longHighest;
@@ -314,13 +315,23 @@ public class SimpleEaMaPlusMacdStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnOwnTradeReceived(MyTrade trade)
+	{
+		base.OnOwnTradeReceived(trade);
+		if (Position != 0)
+			_entryPrice = trade.Trade.Price;
+		else
+			_entryPrice = null;
+	}
+
+	/// <inheritdoc />
 	protected override void OnPositionReceived(Position position)
 	{
 		base.OnPositionReceived(position);
 
 		if (Position > 0)
 		{
-			_longEntryPrice = Position.AveragePrice ?? _longEntryPrice;
+			_longEntryPrice = _entryPrice ?? _longEntryPrice;
 			_longHighest = _longEntryPrice ?? 0m;
 			_longTrailingLevel = null;
 			_longExitRequested = false;
@@ -331,7 +342,7 @@ public class SimpleEaMaPlusMacdStrategy : Strategy
 		}
 		else if (Position < 0)
 		{
-			_shortEntryPrice = Position.AveragePrice ?? _shortEntryPrice;
+			_shortEntryPrice = _entryPrice ?? _shortEntryPrice;
 			_shortLowest = _shortEntryPrice ?? 0m;
 			_shortTrailingLevel = null;
 			_shortExitRequested = false;
@@ -368,8 +379,9 @@ public class SimpleEaMaPlusMacdStrategy : Strategy
 
 		var macdInput = GetAppliedPrice(candle, MacdAppliedPrice);
 		var macdRaw = _macdIndicator.Process(new DecimalIndicatorValue(_macdIndicator, macdInput, candle.OpenTime));
-		if (macdRaw is MovingAverageConvergenceDivergenceValue macdValue && macdValue.Macd is decimal macdLine)
+		if (macdRaw.IsFinal && _macdIndicator.IsFormed)
 		{
+			var macdLine = macdRaw.ToDecimal();
 			UpdateMacdSeries(macdLine);
 		}
 
@@ -399,7 +411,7 @@ public class SimpleEaMaPlusMacdStrategy : Strategy
 			if (volume <= 0m)
 				return false;
 
-			var entryPrice = _longEntryPrice ?? Position.AveragePrice ?? candle.ClosePrice;
+			var entryPrice = _longEntryPrice ?? _entryPrice ?? candle.ClosePrice;
 			_longEntryPrice ??= entryPrice;
 
 			if (_longHighest < entryPrice)
@@ -447,7 +459,7 @@ public class SimpleEaMaPlusMacdStrategy : Strategy
 			if (volume <= 0m)
 				return false;
 
-			var entryPrice = _shortEntryPrice ?? Position.AveragePrice ?? candle.ClosePrice;
+			var entryPrice = _shortEntryPrice ?? _entryPrice ?? candle.ClosePrice;
 			_shortEntryPrice ??= entryPrice;
 
 			if (_shortLowest <= 0m || _shortLowest > entryPrice)

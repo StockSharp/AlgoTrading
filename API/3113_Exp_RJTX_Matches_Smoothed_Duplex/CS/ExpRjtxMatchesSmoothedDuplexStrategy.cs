@@ -376,14 +376,14 @@ public class ExpRjtxMatchesSmoothedDuplexStrategy : Strategy
 
 		if (LongCandleType == ShortCandleType)
 		{
-			longSubscription.WhenCandlesFinished(ProcessCombinedCandle).Start();
+			longSubscription.Bind(ProcessCombinedCandle).Start();
 		}
 		else
 		{
-			longSubscription.WhenCandlesFinished(ProcessLongCandle).Start();
+			longSubscription.Bind(ProcessLongCandle).Start();
 
 			SubscribeCandles(ShortCandleType)
-			.WhenCandlesFinished(ProcessShortCandle)
+			.Bind(ProcessShortCandle)
 			.Start();
 		}
 
@@ -617,7 +617,7 @@ public class ExpRjtxMatchesSmoothedDuplexStrategy : Strategy
 			SmoothingMethods.Lwma => new WeightedMovingAverage { Length = normalizedLength },
 			SmoothingMethods.Jjma => CreateJurik(normalizedLength, phase),
 			SmoothingMethods.Jurx => new ZeroLagExponentialMovingAverage { Length = normalizedLength },
-			SmoothingMethods.Parma => new ArnaudLegouxMovingAverage { Length = normalizedLength, Offset = offset, Sigma = 6m },
+			SmoothingMethods.Parma => new ArnaudLegouxMovingAverage { Length = normalizedLength, Offset = (int)(offset * 100), Sigma = 6 },
 			SmoothingMethods.T3 => new TripleExponentialMovingAverage { Length = normalizedLength },
 			SmoothingMethods.Vidya => new EMA { Length = normalizedLength },
 			SmoothingMethods.Ama => new KaufmanAdaptiveMovingAverage { Length = normalizedLength },

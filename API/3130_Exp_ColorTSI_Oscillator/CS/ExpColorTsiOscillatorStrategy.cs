@@ -288,8 +288,8 @@ var step = Security?.PriceStep ?? 1m;
 if (step <= 0m)
 step = 1m;
 
-var takeProfit = TakeProfitPoints > 0m ? new Unit(TakeProfitPoints * step, UnitTypes.Point) : null;
-var stopLoss = StopLossPoints > 0m ? new Unit(StopLossPoints * step, UnitTypes.Point) : null;
+var takeProfit = TakeProfitPoints > 0m ? new Unit(TakeProfitPoints * step, UnitTypes.Absolute) : null;
+var stopLoss = StopLossPoints > 0m ? new Unit(StopLossPoints * step, UnitTypes.Absolute) : null;
 
 StartProtection(takeProfit, stopLoss);
 
@@ -318,29 +318,38 @@ var diff = price - _previousPrice.Value;
 var absDiff = Math.Abs(diff);
 var time = candle.OpenTime;
 
-var firstMomentum = _firstMomentumSmoother.Process(time, diff);
-if (!firstMomentum.IsFinal || firstMomentum.Value is not decimal firstMomentumValue)
+var firstMomentum = _firstMomentumSmoother.Process(new DecimalIndicatorValue(_firstMomentumSmoother, diff, time));
+if (!firstMomentum.IsFinal)
 {
 _previousPrice = price;
 return;
 }
+var firstMomentumValue = firstMomentum.ToDecimal();
 
-var firstAbsolute = _firstAbsoluteSmoother.Process(time, absDiff);
-if (!firstAbsolute.IsFinal || firstAbsolute.Value is not decimal firstAbsoluteValue)
+var firstAbsolute = _firstAbsoluteSmoother.Process(new DecimalIndicatorValue(_firstAbsoluteSmoother, absDiff, time));
+if (!firstAbsolute.IsFinal)
 {
 _previousPrice = price;
 return;
 }
+var firstAbsoluteValue = firstAbsolute.ToDecimal();
 
-var secondMomentum = _secondMomentumSmoother.Process(time, firstMomentumValue);
-if (!secondMomentum.IsFinal || secondMomentum.Value is not decimal secondMomentumValue)
+var secondMomentum = _secondMomentumSmoother.Process(new DecimalIndicatorValue(_secondMomentumSmoother, firstMomentumValue, time));
+if (!secondMomentum.IsFinal)
 {
 _previousPrice = price;
 return;
 }
+var secondMomentumValue = secondMomentum.ToDecimal();
 
-var secondAbsolute = _secondAbsoluteSmoother.Process(time, firstAbsoluteValue);
-if (!secondAbsolute.IsFinal || secondAbsolute.Value is not decimal secondAbsoluteValue || secondAbsoluteValue == 0m)
+var secondAbsolute = _secondAbsoluteSmoother.Process(new DecimalIndicatorValue(_secondAbsoluteSmoother, firstAbsoluteValue, time));
+if (!secondAbsolute.IsFinal)
+{
+_previousPrice = price;
+return;
+}
+var secondAbsoluteValue = secondAbsolute.ToDecimal();
+if (secondAbsoluteValue == 0m)
 {
 _previousPrice = price;
 return;
@@ -492,17 +501,17 @@ offset = Math.Max(0m, Math.Min(1m, offset));
 
 return method switch
 {
-ColorTsiSmoothingMethods.Sma => new SMA { Length = normalizedLength },
-ColorTsiSmoothingMethods.Ema => new EMA { Length = normalizedLength },
+ColorTsiSmoothingMethods.Sma => new SimpleMovingAverage { Length = normalizedLength },
+ColorTsiSmoothingMethods.Ema => new ExponentialMovingAverage { Length = normalizedLength },
 ColorTsiSmoothingMethods.Smma => new SmoothedMovingAverage { Length = normalizedLength },
 ColorTsiSmoothingMethods.Lwma => new WeightedMovingAverage { Length = normalizedLength },
 ColorTsiSmoothingMethods.Jjma => CreateJurik(normalizedLength, phase),
 ColorTsiSmoothingMethods.Jurx => new ZeroLagExponentialMovingAverage { Length = normalizedLength },
-ColorTsiSmoothingMethods.Parma => new ArnaudLegouxMovingAverage { Length = normalizedLength, Offset = offset, Sigma = 6m },
+ColorTsiSmoothingMethods.Parma => new ArnaudLegouxMovingAverage { Length = normalizedLength, Offset = (int)(offset * 100), Sigma = 6 },
 ColorTsiSmoothingMethods.T3 => new TripleExponentialMovingAverage { Length = normalizedLength },
-ColorTsiSmoothingMethods.Vidya => new EMA { Length = normalizedLength },
+ColorTsiSmoothingMethods.Vidya => new ExponentialMovingAverage { Length = normalizedLength },
 ColorTsiSmoothingMethods.Ama => new KaufmanAdaptiveMovingAverage { Length = normalizedLength },
-_ => new SMA { Length = normalizedLength },
+_ => new SimpleMovingAverage { Length = normalizedLength },
 };
 }
 

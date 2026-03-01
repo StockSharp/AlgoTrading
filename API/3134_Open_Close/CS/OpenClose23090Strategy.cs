@@ -150,7 +150,7 @@ public class OpenClose23090Strategy : Strategy
 	{
 		base.OnOwnTradeReceived(trade);
 
-		if (trade.Order == null || trade.Trade.Security != Security)
+		if (trade.Order == null || trade.Order.Security != Security)
 			return;
 
 		var volume = trade.Trade.Volume;

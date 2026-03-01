@@ -277,7 +277,7 @@ public class BronzeWarrioirStrategy : Strategy
 		if (_pipSize > 0m && TakeProfitPips > 0)
 			takeProfitUnit = new Unit(TakeProfitPips * _pipSize, UnitTypes.Absolute);
 
-		if (stopLossUnit.HasValue || takeProfitUnit.HasValue)
+		if (stopLossUnit != null || takeProfitUnit != null)
 			StartProtection(stopLoss: stopLossUnit, takeProfit: takeProfitUnit);
 	}
 
@@ -500,11 +500,11 @@ public class BronzeWarrioirStrategy : Strategy
 				return new DecimalIndicatorValue(this, 0m, input.Time);
 
 			var raw = (candle.ClosePrice - candle.OpenPrice) / PointValue;
-			var firstValue = _first.Process(raw, input.Time);
+			var firstValue = _first.Process(new DecimalIndicatorValue(_first, raw, input.Time));
 			if (!firstValue.IsFinal)
 				return new DecimalIndicatorValue(this, 0m, input.Time);
 
-			var secondValue = _second.Process(firstValue.ToDecimal(), input.Time);
+			var secondValue = _second.Process(new DecimalIndicatorValue(_second, firstValue.ToDecimal(), input.Time));
 			if (!secondValue.IsFinal)
 				return new DecimalIndicatorValue(this, 0m, input.Time);
 
