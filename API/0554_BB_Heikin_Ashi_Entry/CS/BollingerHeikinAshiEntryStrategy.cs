@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using Ecng.Common;
 using Ecng.Collections;
 using Ecng.Serialization;
+using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -124,7 +125,7 @@ public class BollingerHeikinAshiEntryStrategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(bb, ProcessCandle)
+			.BindEx(bb, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -135,13 +136,17 @@ public class BollingerHeikinAshiEntryStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal middle, decimal upper, decimal lower)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bbValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (bbValue.IsEmpty)
 			return;
+
+		var bb = (BollingerBandsValue)bbValue;
+		var upper = bb.UpBand ?? 0m;
+		var lower = bb.LowBand ?? 0m;
 
 		var haClose = (candle.OpenPrice + candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 4m;
 		decimal haOpen;
@@ -190,7 +195,7 @@ public class BollingerHeikinAshiEntryStrategy : Strategy
 			{
 				if (candle.HighPrice >= _firstTarget)
 				{
-					SellMarket(Position / 2m);
+					SellMarket();
 					_firstTargetReached = true;
 					_trailStop = _entryPrice;
 				}
@@ -202,7 +207,10 @@ public class BollingerHeikinAshiEntryStrategy : Strategy
 
 			var currentStop = _firstTargetReached ? _trailStop : _initialStop;
 			if (candle.LowPrice <= currentStop)
-				ClosePosition();
+			{
+				if (Position > 0) SellMarket();
+				else if (Position < 0) BuyMarket();
+			}
 		}
 		else if (Position < 0)
 		{
@@ -210,7 +218,7 @@ public class BollingerHeikinAshiEntryStrategy : Strategy
 			{
 				if (candle.LowPrice <= _firstTarget)
 				{
-					BuyMarket(Math.Abs(Position) / 2m);
+					BuyMarket();
 					_firstTargetReached = true;
 					_trailStop = _entryPrice;
 				}
@@ -222,7 +230,10 @@ public class BollingerHeikinAshiEntryStrategy : Strategy
 
 			var currentStop = _firstTargetReached ? _trailStop : _initialStop;
 			if (candle.HighPrice >= currentStop)
-				ClosePosition();
+			{
+				if (Position > 0) SellMarket();
+				else if (Position < 0) BuyMarket();
+			}
 		}
 
 		_haOpen2 = _haOpen1;

@@ -171,7 +171,7 @@ public class BabySharkVwapStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection(stopLoss: new Unit(StopLossPercent, UnitTypes.Percent));
+		StartProtection(new Unit(StopLossPercent, UnitTypes.Percent), null);
 	}
 
 	private void ProcessIndicators(ICandleMessage candle, IIndicatorValue obvValue)
@@ -182,7 +182,7 @@ public class BabySharkVwapStrategy : Strategy
 		var time = candle.ServerTime;
 		var obv = obvValue.ToDecimal();
 		var rsi = _rsi.Process(new DecimalIndicatorValue(_rsi, obv, time)).ToDecimal();
-		var vwap = _vwap.Process(new CandleIndicatorValue(candle, candle.ClosePrice)).ToDecimal();
+		var vwap = _vwap.Process(new CandleIndicatorValue(_vwap, candle)).ToDecimal();
 		var dev = _std.Process(new DecimalIndicatorValue(_std, candle.ClosePrice, time)).ToDecimal();
 
 		ProcessCandle(candle, vwap, dev, rsi);

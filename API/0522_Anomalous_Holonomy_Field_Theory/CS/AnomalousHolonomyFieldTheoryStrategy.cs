@@ -104,12 +104,9 @@ public class AnomalousHolonomyFieldTheoryStrategy : Strategy
 
 	private void ProcessCandle(ICandleMessage candle,
 		decimal ema20, decimal ema50, decimal rsi, decimal atr, decimal roc,
-		decimal macdValue, decimal macdSignal, decimal macdHist)
+		decimal macdValue)
 	{
 		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		var close = candle.ClosePrice;
@@ -145,9 +142,9 @@ public class AnomalousHolonomyFieldTheoryStrategy : Strategy
 		else if (rsi > 60m && signal < 0m)
 			signal -= 0.5m;
 
-		if (macdValue > macdSignal && signal > 0m)
+		if (macdValue > 0 && signal > 0m)
 			signal += 0.5m;
-		else if (macdValue < macdSignal && signal < 0m)
+		else if (macdValue < 0 && signal < 0m)
 			signal -= 0.5m;
 
 		var threshold = SignalThreshold;
@@ -155,17 +152,17 @@ public class AnomalousHolonomyFieldTheoryStrategy : Strategy
 		if (signal >= threshold && Position <= 0)
 		{
 			_entryPrice = close;
-			BuyMarket(Volume + Math.Abs(Position));
+			BuyMarket();
 		}
 		else if (signal <= -threshold && Position >= 0)
 		{
 			_entryPrice = close;
-			SellMarket(Volume + Math.Abs(Position));
+			SellMarket();
 		}
 
 		if (Position > 0 && close <= _entryPrice - atr * 1.5m)
-			SellMarket(Position);
+			SellMarket();
 		else if (Position < 0 && close >= _entryPrice + atr * 1.5m)
-			BuyMarket(-Position);
+			BuyMarket();
 	}
 }

@@ -6,6 +6,7 @@ using Ecng.Common;
 using Ecng.Collections;
 using Ecng.Serialization;
 
+using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -130,7 +131,7 @@ public class ArpitBollingerBandStrategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(bollinger, ProcessCandle)
+			.BindEx(bollinger, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -142,10 +143,17 @@ public class ArpitBollingerBandStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal middle, decimal upper, decimal lower)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bbValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
+
+		if (bbValue.IsEmpty)
+			return;
+
+		var bb = (BollingerBandsValue)bbValue;
+		var upper = bb.UpBand ?? 0m;
+		var lower = bb.LowBand ?? 0m;
 
 		if (_prevClose2.HasValue && _prevUpper2.HasValue && _prevLow2.HasValue && _prevClose2 > _prevUpper2)
 			_twoCandlesAgoUpperCrossLow = _prevLow2;
@@ -157,12 +165,12 @@ public class ArpitBollingerBandStrategy : Strategy
 		{
 			if (_longStop.HasValue && candle.LowPrice <= _longStop)
 			{
-				RegisterOrder(CreateOrder(Sides.Sell, _longStop.Value, Volume));
+				SellMarket();
 				_longStop = _longTarget = null;
 			}
 			else if (_longTarget.HasValue && candle.HighPrice >= _longTarget)
 			{
-				RegisterOrder(CreateOrder(Sides.Sell, _longTarget.Value, Volume));
+				SellMarket();
 				_longStop = _longTarget = null;
 			}
 		}
@@ -170,12 +178,12 @@ public class ArpitBollingerBandStrategy : Strategy
 		{
 			if (_shortStop.HasValue && candle.HighPrice >= _shortStop)
 			{
-				RegisterOrder(CreateOrder(Sides.Buy, _shortStop.Value, Volume));
+				BuyMarket();
 				_shortStop = _shortTarget = null;
 			}
 			else if (_shortTarget.HasValue && candle.LowPrice <= _shortTarget)
 			{
-				RegisterOrder(CreateOrder(Sides.Buy, _shortTarget.Value, Volume));
+				BuyMarket();
 				_shortStop = _shortTarget = null;
 			}
 		}
@@ -185,14 +193,14 @@ public class ArpitBollingerBandStrategy : Strategy
 
 		if (longCondition && Position <= 0)
 		{
-			RegisterOrder(CreateOrder(Sides.Buy, candle.ClosePrice, Volume));
+			BuyMarket();
 			var stopLoss = candle.LowPrice - (candle.HighPrice - candle.LowPrice) * StopRangePercent;
 			_longStop = stopLoss;
 			_longTarget = candle.ClosePrice + (candle.ClosePrice - stopLoss) * RiskReward;
 		}
 		else if (shortCondition && Position >= 0)
 		{
-			RegisterOrder(CreateOrder(Sides.Sell, candle.ClosePrice, Volume));
+			SellMarket();
 			var stopLoss = candle.HighPrice + (candle.HighPrice - candle.LowPrice) * StopRangePercent;
 			_shortStop = stopLoss;
 			_shortTarget = candle.ClosePrice - (stopLoss - candle.ClosePrice) * RiskReward;

@@ -121,7 +121,8 @@ public class AoAcTradingZonesStrategy : Strategy
 
 		var hl2 = (candle.HighPrice + candle.LowPrice) / 2m;
 
-		var smmaValue = _teeth.Process(hl2);
+		var time = candle.ServerTime;
+		var smmaValue = _teeth.Process(new DecimalIndicatorValue(_teeth, hl2, time));
 		if (!smmaValue.IsFinal)
 			return;
 
@@ -135,13 +136,13 @@ public class AoAcTradingZonesStrategy : Strategy
 		else
 			_bufferCount++;
 
-		var aoFastValue = _aoFast.Process(hl2);
-		var aoSlowValue = _aoSlow.Process(hl2);
+		var aoFastValue = _aoFast.Process(new DecimalIndicatorValue(_aoFast, hl2, time));
+		var aoSlowValue = _aoSlow.Process(new DecimalIndicatorValue(_aoSlow, hl2, time));
 		if (!aoFastValue.IsFinal || !aoSlowValue.IsFinal || teeth is null)
 			return;
 
 		var ao = aoFastValue.GetValue<decimal>() - aoSlowValue.GetValue<decimal>();
-		var acMaValue = _acMa.Process(ao);
+		var acMaValue = _acMa.Process(new DecimalIndicatorValue(_acMa, ao, time));
 		if (!acMaValue.IsFinal)
 			return;
 		var ac = ao - acMaValue.GetValue<decimal>();
