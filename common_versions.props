@@ -1,12 +1,13 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <LangVersion>12.0</LangVersion>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
 
-    <EcngVer>1.0.*</EcngVer>
+    <EcngVer>1.*</EcngVer>
     <StockSharpVer>5.*</StockSharpVer>
-    <IronPythonVer>3.4.2</IronPythonVer>
+    <IronPythonVer>3.*</IronPythonVer>
 
-    <MsTestVer>3.*</MsTestVer>
-    <MsTestSdkVer>17.*</MsTestSdkVer>
+    <MsTestVer>4.*</MsTestVer>
+    <MsTestSdkVer>18.*</MsTestSdkVer>
   </PropertyGroup>
 </Project>
