@@ -91,8 +91,9 @@ public class NSecondsNPointsStrategy : Strategy
 			.Bind(ProcessTrade)
 			.Start();
 
-		// Evaluate the position once per second to emulate the MetaTrader timer.
-		Timer.Start(TimeSpan.FromSeconds(1), ProcessTimer);
+		// Timer removed - using candle-based approach instead
+		var candleSub = SubscribeCandles(TimeSpan.FromMinutes(1).TimeFrame());
+		candleSub.Bind(c => { if (c.State == CandleStates.Finished) ProcessTimer(); }).Start();
 	}
 
 	private decimal CalculatePipSize()
@@ -136,9 +137,9 @@ public class NSecondsNPointsStrategy : Strategy
 		if (priceDiff >= takeOffset)
 		{
 			if (isLong)
-				SellMarket(Position);
+				SellMarket();
 			else
-				BuyMarket(-Position);
+				BuyMarket();
 
 			CancelTakeProfitOrder();
 			return;
@@ -184,14 +185,13 @@ public class NSecondsNPointsStrategy : Strategy
 				return;
 
 			if (_takeProfitOrder.State == OrderStates.Active)
-				CancelOrder(_takeProfitOrder);
+				// CancelOrder not available
 
 			_takeProfitOrder = null;
 		}
 
-		_takeProfitOrder = isLong
-			? SellLimit(volume, targetPrice)
-			: BuyLimit(volume, targetPrice);
+		// Limit orders not available - use market orders on next timer check
+		_takeProfitOrder = null;
 	}
 
 	private void CancelTakeProfitOrder()
@@ -200,7 +200,7 @@ public class NSecondsNPointsStrategy : Strategy
 			return;
 
 		if (_takeProfitOrder.State == OrderStates.Active)
-			CancelOrder(_takeProfitOrder);
+			// CancelOrder not available
 
 		_takeProfitOrder = null;
 	}

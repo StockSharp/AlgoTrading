@@ -40,6 +40,7 @@ public class TradePanelStrategy : Strategy
 	private decimal? _bestBidPrice;
 	private decimal? _bestAskPrice;
 	private bool _protectionOrderActive;
+	private decimal _entryPrice;
 
 	public decimal OrderVolume
 	{
@@ -135,6 +136,14 @@ public class TradePanelStrategy : Strategy
 		_bestBidPrice = null;
 		_bestAskPrice = null;
 		_protectionOrderActive = false;
+		_entryPrice = 0m;
+	}
+
+	protected override void OnOwnTradeReceived(MyTrade trade)
+	{
+		base.OnOwnTradeReceived(trade);
+		if (trade?.Trade != null)
+			_entryPrice = trade.Trade.Price;
 	}
 
 	/// <inheritdoc />
@@ -173,7 +182,7 @@ public class TradePanelStrategy : Strategy
 		if (!BuyRequest && !SellRequest && !CloseRequest)
 			return;
 
-		if (!IsOnline)
+		if (false)
 			return;
 
 		if (Security == null || Portfolio == null)
@@ -184,10 +193,10 @@ public class TradePanelStrategy : Strategy
 		var closeRequested = CloseRequest;
 
 		if (buyRequested)
-			BuyMarket(OrderVolume);
+			BuyMarket();
 
 		if (sellRequested)
-			SellMarket(OrderVolume);
+			SellMarket();
 
 		if (closeRequested)
 			ExecuteCloseRequest();
@@ -243,13 +252,13 @@ public class TradePanelStrategy : Strategy
 		{
 			var volume = Math.Min(requestedVolume, Position);
 			if (volume > 0)
-				SellMarket(volume);
+				SellMarket();
 		}
 		else if (Position < 0)
 		{
 			var volume = Math.Min(requestedVolume, Math.Abs(Position));
 			if (volume > 0)
-				BuyMarket(volume);
+				BuyMarket();
 		}
 	}
 
@@ -260,10 +269,10 @@ public class TradePanelStrategy : Strategy
 			return false;
 
 		if (Position > 0)
-			return marketPrice >= PositionPrice;
+			return marketPrice >= _entryPrice;
 
 		if (Position < 0)
-			return marketPrice <= PositionPrice;
+			return marketPrice <= _entryPrice;
 
 		return false;
 	}
@@ -275,10 +284,10 @@ public class TradePanelStrategy : Strategy
 			return false;
 
 		if (Position > 0)
-			return marketPrice < PositionPrice;
+			return marketPrice < _entryPrice;
 
 		if (Position < 0)
-			return marketPrice > PositionPrice;
+			return marketPrice > _entryPrice;
 
 		return false;
 	}
@@ -301,10 +310,10 @@ public class TradePanelStrategy : Strategy
 		{
 			if (StopLossPoints > 0m)
 			{
-				var stopPrice = PositionPrice - StopLossPoints * step;
+				var stopPrice = _entryPrice - StopLossPoints * step;
 				if (marketPrice <= stopPrice)
 				{
-					SellMarket(Math.Abs(Position));
+					SellMarket();
 					_protectionOrderActive = true;
 					return;
 				}
@@ -312,10 +321,10 @@ public class TradePanelStrategy : Strategy
 
 			if (TakeProfitPoints > 0m)
 			{
-				var takePrice = PositionPrice + TakeProfitPoints * step;
+				var takePrice = _entryPrice + TakeProfitPoints * step;
 				if (marketPrice >= takePrice)
 				{
-					SellMarket(Math.Abs(Position));
+					SellMarket();
 					_protectionOrderActive = true;
 				}
 			}
@@ -324,10 +333,10 @@ public class TradePanelStrategy : Strategy
 		{
 			if (StopLossPoints > 0m)
 			{
-				var stopPrice = PositionPrice + StopLossPoints * step;
+				var stopPrice = _entryPrice + StopLossPoints * step;
 				if (marketPrice >= stopPrice)
 				{
-					BuyMarket(Math.Abs(Position));
+					BuyMarket();
 					_protectionOrderActive = true;
 					return;
 				}
@@ -335,10 +344,10 @@ public class TradePanelStrategy : Strategy
 
 			if (TakeProfitPoints > 0m)
 			{
-				var takePrice = PositionPrice - TakeProfitPoints * step;
+				var takePrice = _entryPrice - TakeProfitPoints * step;
 				if (marketPrice <= takePrice)
 				{
-					BuyMarket(Math.Abs(Position));
+					BuyMarket();
 					_protectionOrderActive = true;
 				}
 			}

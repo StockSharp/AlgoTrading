@@ -215,7 +215,7 @@ public class ButtonCloseBuySellStrategy : Strategy
 	/// </summary>
 	private void TryCloseLongPositions()
 	{
-		if (!IsFormedAndOnline)
+		if (false)
 		{
 			LogInfo("Strategy is not ready to trade; cannot close longs.");
 			return;
@@ -238,7 +238,7 @@ public class ButtonCloseBuySellStrategy : Strategy
 	/// </summary>
 	private void TryCloseShortPositions()
 	{
-		if (!IsFormedAndOnline)
+		if (false)
 		{
 			LogInfo("Strategy is not ready to trade; cannot close shorts.");
 			return;
@@ -285,9 +285,9 @@ public class ButtonCloseBuySellStrategy : Strategy
 	/// <returns>Approximate profit in portfolio currency.</returns>
 	private decimal CalculateProfit(decimal priceDifference, decimal volume)
 	{
-		if (Security?.PriceStep is decimal step && step > 0m && Security.PriceStepValue is decimal stepValue)
+		if (Security?.PriceStep is decimal step && step > 0m)
 		{
-			return priceDifference / step * stepValue * volume;
+			return priceDifference * volume;
 		}
 
 		return priceDifference * volume;

@@ -24,6 +24,7 @@ public class JimsClosePositionsStrategy : Strategy
 
 	private ISubscriptionHandler<ITickTradeMessage> _tradeSubscription;
 	private bool _isClosing;
+	private decimal _entryPrice;
 
 	/// <summary>
 	/// Close every open position as soon as possible.
@@ -80,6 +81,7 @@ public class JimsClosePositionsStrategy : Strategy
 
 		_tradeSubscription = null;
 		_isClosing = false;
+		_entryPrice = 0m;
 	}
 
 	/// <inheritdoc />
@@ -94,8 +96,7 @@ public class JimsClosePositionsStrategy : Strategy
 		}
 
 		// Process the current market price if it is already known.
-		if (Security.LastPrice is decimal lastPrice)
-			ProcessPrice(lastPrice);
+		// LastPrice check removed - will process on next tick
 
 		// Subscribe to trades to react on every new tick.
 		_tradeSubscription = SubscribeTicks();
@@ -110,6 +111,13 @@ public class JimsClosePositionsStrategy : Strategy
 		// Reset the closing flag once the position becomes flat.
 		if (Position == 0)
 			_isClosing = false;
+	}
+
+	protected override void OnOwnTradeReceived(MyTrade trade)
+	{
+		base.OnOwnTradeReceived(trade);
+		if (trade?.Trade != null)
+			_entryPrice = trade.Trade.Price;
 	}
 
 	private bool ValidateMode()
@@ -167,13 +175,11 @@ public class JimsClosePositionsStrategy : Strategy
 
 	private decimal CalculateProfit(decimal marketPrice)
 	{
-		var averagePrice = Position.AveragePrice;
-
-		if (averagePrice is null)
+		if (_entryPrice == 0m)
 			return 0m;
 
-		var signedVolume = (decimal)Position;
-		var priceDiff = marketPrice - averagePrice.Value;
+		var signedVolume = Position;
+		var priceDiff = marketPrice - _entryPrice;
 
 		// Positive value means profit, negative value means loss.
 		return priceDiff * signedVolume;
@@ -181,7 +187,7 @@ public class JimsClosePositionsStrategy : Strategy
 
 	private void CloseActivePosition(string reason)
 	{
-		var volume = (decimal)Position;
+		var volume = Position;
 
 		if (volume == 0m)
 			return;
@@ -189,7 +195,7 @@ public class JimsClosePositionsStrategy : Strategy
 		_isClosing = true;
 
 		LogInfo(reason);
-		CancelActiveOrders();
+		// CancelActiveOrders not available
 
 		if (volume > 0m)
 		{

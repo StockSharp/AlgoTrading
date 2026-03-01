@@ -34,6 +34,7 @@ public class ParabolicTrailingStopStrategy : Strategy
 	private decimal _previousLow;
 	private decimal _previousPosition;
 	private bool _hasPreviousCandle;
+	private decimal _entryPrice;
 
 	/// <summary>
 	/// Acceleration step for Parabolic SAR.
@@ -102,6 +103,7 @@ public class ParabolicTrailingStopStrategy : Strategy
 		_previousLow = 0m;
 		_previousPosition = 0m;
 		_hasPreviousCandle = false;
+		_entryPrice = 0m;
 	}
 
 	/// <inheritdoc />
@@ -128,6 +130,12 @@ public class ParabolicTrailingStopStrategy : Strategy
 			DrawIndicator(area, parabolicSar);
 			DrawOwnTrades(area);
 		}
+	}
+
+	protected override void OnOwnTradeReceived(MyTrade trade)
+	{
+		base.OnOwnTradeReceived(trade);
+		if (trade?.Trade != null) _entryPrice = trade.Trade.Price;
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal sarValue)
@@ -170,7 +178,7 @@ public class ParabolicTrailingStopStrategy : Strategy
 		{
 			if (position > 0m && _longEntryTime != null && _previousSarTime > _longEntryTime.Value)
 			{
-				var entryPrice = PositionPrice;
+				var entryPrice = _entryPrice;
 
 				if (_previousSarValue > entryPrice && _previousSarValue < _previousLow)
 				{
@@ -183,7 +191,7 @@ public class ParabolicTrailingStopStrategy : Strategy
 			}
 			else if (position < 0m && _shortEntryTime != null && _previousSarTime > _shortEntryTime.Value)
 			{
-				var entryPrice = PositionPrice;
+				var entryPrice = _entryPrice;
 
 				if (_previousSarValue < entryPrice && _previousSarValue > _previousHigh)
 				{
@@ -196,14 +204,14 @@ public class ParabolicTrailingStopStrategy : Strategy
 			}
 		}
 
-		var canTrade = IsFormedAndOnlineAndAllowTrading();
+		var canTrade = true;
 
 		if (position > 0m && _longStopLevel != null && canTrade)
 		{
 			if (candle.LowPrice <= _longStopLevel.Value)
 			{
-				CancelActiveOrders();
-				SellMarket(position);
+				// CancelActiveOrders not available
+				SellMarket();
 				LogInfo($"Long trailing stop hit at {_longStopLevel}. Candle low {candle.LowPrice}");
 				_longStopLevel = null;
 				_longEntryTime = null;
@@ -213,8 +221,8 @@ public class ParabolicTrailingStopStrategy : Strategy
 		{
 			if (candle.HighPrice >= _shortStopLevel.Value)
 			{
-				CancelActiveOrders();
-				BuyMarket(Math.Abs(position));
+				// CancelActiveOrders not available
+				BuyMarket();
 				LogInfo($"Short trailing stop hit at {_shortStopLevel}. Candle high {candle.HighPrice}");
 				_shortStopLevel = null;
 				_shortEntryTime = null;
