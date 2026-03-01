@@ -2,6 +2,7 @@ using System;
 
 using Ecng.Common;
 
+using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -52,6 +53,9 @@ public class CryptoAnalysisStrategy : Strategy
 			.SetDisplay("Momentum Period", "Momentum period", "Indicators");
 	}
 
+	private decimal _momValue;
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
@@ -61,7 +65,10 @@ public class CryptoAnalysisStrategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(bb, mom, ProcessCandle)
+			.Bind(mom, OnMomentum);
+
+		subscription
+			.BindEx(bb, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -73,27 +80,27 @@ public class CryptoAnalysisStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bbVal, decimal mom)
+	private void OnMomentum(ICandleMessage candle, decimal momValue)
+	{
+		_momValue = momValue;
+	}
+
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bbVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		var bb = (BollingerBandsValue)bbVal;
+		if (bb.UpBand is not decimal upper || bb.LowBand is not decimal lower)
 			return;
 
-		var bbv = bbVal.IsEmpty ? null : (BollingerBandsValue)bbVal;
-		if (bbv == null)
-			return;
-
-		var upper = bbv.UpBand;
-		var lower = bbv.LowBand;
 		var close = candle.ClosePrice;
 
-		if (close > upper && mom > 100m && Position <= 0)
+		if (close > upper && _momValue > 100m && Position <= 0)
 		{
 			BuyMarket();
 		}
-		else if (close < lower && mom < 100m && Position >= 0)
+		else if (close < lower && _momValue < 100m && Position >= 0)
 		{
 			SellMarket();
 		}

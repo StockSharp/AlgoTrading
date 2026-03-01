@@ -845,7 +845,7 @@ public class GridEaProStrategy : Strategy
 		if (order == null)
 		return;
 
-		if (order.Direction == Sides.Buy)
+		if (order.Side == Sides.Buy)
 		{
 			if (Position > 0)
 			{
@@ -860,7 +860,7 @@ public class GridEaProStrategy : Strategy
 				ResetShortState();
 			}
 		}
-		else if (order.Direction == Sides.Sell)
+		else if (order.Side == Sides.Sell)
 		{
 			if (Position < 0)
 			{

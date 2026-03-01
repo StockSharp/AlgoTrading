@@ -2,6 +2,7 @@ using System;
 
 using Ecng.Common;
 
+using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -52,6 +53,9 @@ public class JbStrategy : Strategy
 			.SetDisplay("SMA Period", "SMA period", "Indicators");
 	}
 
+	private decimal _smaValue;
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
@@ -61,7 +65,10 @@ public class JbStrategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(bb, sma, ProcessCandle)
+			.Bind(sma, OnSma);
+
+		subscription
+			.BindEx(bb, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -74,20 +81,20 @@ public class JbStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bbVal, decimal sma)
+	private void OnSma(ICandleMessage candle, decimal smaValue)
+	{
+		_smaValue = smaValue;
+	}
+
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bbVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		var bb = (BollingerBandsValue)bbVal;
+		if (bb.UpBand is not decimal upper || bb.LowBand is not decimal lower)
 			return;
 
-		var bbv = bbVal.IsEmpty ? null : (BollingerBandsValue)bbVal;
-		if (bbv == null)
-			return;
-
-		var upper = bbv.UpBand;
-		var lower = bbv.LowBand;
 		var close = candle.ClosePrice;
 
 		if (close < lower && Position <= 0)
