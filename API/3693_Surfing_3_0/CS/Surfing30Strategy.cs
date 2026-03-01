@@ -32,8 +32,8 @@ public class Surfing30Strategy : Strategy
 	private readonly StrategyParam<int> _tradeEndHour;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private EMA _emaHigh = null!;
-	private EMA _emaLow = null!;
+	private ExponentialMovingAverage _emaHigh = null!;
+	private ExponentialMovingAverage _emaLow = null!;
 	private RelativeStrengthIndex _rsi = null!;
 
 	private decimal? _previousClose;
@@ -219,8 +219,8 @@ public class Surfing30Strategy : Strategy
 
 		Volume = OrderVolume;
 
-		_emaHigh = new EMA { Length = MaPeriod };
-		_emaLow = new EMA { Length = MaPeriod };
+		_emaHigh = new ExponentialMovingAverage { Length = MaPeriod };
+		_emaLow = new ExponentialMovingAverage { Length = MaPeriod };
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
@@ -239,7 +239,7 @@ public class Surfing30Strategy : Strategy
 		{
 			if (Position != 0)
 			{
-				ClosePosition();
+				CloseCurrentPosition();
 				ResetTargets();
 			}
 
@@ -247,20 +247,20 @@ public class Surfing30Strategy : Strategy
 			return;
 		}
 
-		var emaHighValue = _emaHigh.Process(new CandleIndicatorValue(candle, candle.HighPrice));
-		var emaLowValue = _emaLow.Process(new CandleIndicatorValue(candle, candle.LowPrice));
-		var rsiValue = _rsi.Process(new CandleIndicatorValue(candle, candle.ClosePrice));
+		var emaHighValue = _emaHigh.Process(new DecimalIndicatorValue(_emaHigh, candle.HighPrice, candle.OpenTime));
+		var emaLowValue = _emaLow.Process(new DecimalIndicatorValue(_emaLow, candle.LowPrice, candle.OpenTime));
+		var rsiValue = _rsi.Process(new DecimalIndicatorValue(_rsi, candle.ClosePrice, candle.OpenTime));
 
 		if (!_emaHigh.IsFormed || !_emaLow.IsFormed || !_rsi.IsFormed)
 		{
-			UpdateHistory(candle.ClosePrice, emaHighValue.GetValue<decimal>(), emaLowValue.GetValue<decimal>());
+			UpdateHistory(candle.ClosePrice, emaHighValue.ToDecimal(), emaLowValue.ToDecimal());
 			return;
 		}
 
 		var currentClose = candle.ClosePrice;
-		var currentHighEma = emaHighValue.GetValue<decimal>();
-		var currentLowEma = emaLowValue.GetValue<decimal>();
-		var rsi = rsiValue.GetValue<decimal>();
+		var currentHighEma = emaHighValue.ToDecimal();
+		var currentLowEma = emaLowValue.ToDecimal();
+		var rsi = rsiValue.ToDecimal();
 
 		if (ManageActivePosition(candle))
 		{
@@ -291,7 +291,7 @@ public class Surfing30Strategy : Strategy
 		{
 			if (Position < 0)
 			{
-				ClosePosition();
+				CloseCurrentPosition();
 				ResetTargets();
 			}
 
@@ -302,7 +302,7 @@ public class Surfing30Strategy : Strategy
 		{
 			if (Position > 0)
 			{
-				ClosePosition();
+				CloseCurrentPosition();
 				ResetTargets();
 			}
 
@@ -319,14 +319,14 @@ public class Surfing30Strategy : Strategy
 		{
 			if (_stopLossPrice is not null && candle.LowPrice <= _stopLossPrice)
 			{
-				ClosePosition();
+				CloseCurrentPosition();
 				ResetTargets();
 				return true;
 			}
 
 			if (_takeProfitPrice is not null && candle.HighPrice >= _takeProfitPrice)
 			{
-				ClosePosition();
+				CloseCurrentPosition();
 				ResetTargets();
 				return true;
 			}
@@ -335,20 +335,28 @@ public class Surfing30Strategy : Strategy
 		{
 			if (_stopLossPrice is not null && candle.HighPrice >= _stopLossPrice)
 			{
-				ClosePosition();
+				CloseCurrentPosition();
 				ResetTargets();
 				return true;
 			}
 
 			if (_takeProfitPrice is not null && candle.LowPrice <= _takeProfitPrice)
 			{
-				ClosePosition();
+				CloseCurrentPosition();
 				ResetTargets();
 				return true;
 			}
 		}
 
 		return false;
+	}
+
+	private void CloseCurrentPosition()
+	{
+		if (Position > 0m)
+			SellMarket(Position);
+		else if (Position < 0m)
+			BuyMarket(Math.Abs(Position));
 	}
 
 	private void SetTargets(decimal entryPrice, bool isLong)

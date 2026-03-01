@@ -37,6 +37,7 @@ public class FitFul13Strategy : Strategy
 	private decimal? _shortStopPrice;
 	private decimal? _shortTakePrice;
 
+	private decimal? _entryPrice;
 	private decimal _pipSize;
 
 	/// <summary>
@@ -150,6 +151,7 @@ public class FitFul13Strategy : Strategy
 		_shortStopPrice = null;
 		_shortTakePrice = null;
 
+		_entryPrice = null;
 		_pipSize = 0m;
 	}
 
@@ -294,7 +296,7 @@ public class FitFul13Strategy : Strategy
 		if (TrailingStopPips <= 0m || TrailingStepPips <= 0m)
 			return;
 
-		if (PositionPrice is not decimal entry || Position <= 0m)
+		if (_entryPrice is not decimal entry || Position <= 0m)
 			return;
 
 		var trailingDistance = TrailingStopPips * _pipSize;
@@ -317,7 +319,7 @@ public class FitFul13Strategy : Strategy
 		if (TrailingStopPips <= 0m || TrailingStepPips <= 0m)
 			return;
 
-		if (PositionPrice is not decimal entry || Position >= 0m)
+		if (_entryPrice is not decimal entry || Position >= 0m)
 			return;
 
 		var trailingDistance = TrailingStopPips * _pipSize;
@@ -511,12 +513,12 @@ public class FitFul13Strategy : Strategy
 
 	private static bool BodyCrossesUp(CandleSnapshot bar, decimal level)
 	{
-		return bar.OpenPrice <= level && bar.ClosePrice >= level;
+		return bar.Open <= level && bar.Close >= level;
 	}
 
 	private static bool BodyCrossesDown(CandleSnapshot bar, decimal level)
 	{
-		return bar.OpenPrice >= level && bar.ClosePrice <= level;
+		return bar.Open >= level && bar.Close <= level;
 	}
 
 	private static bool LowsCrossUp(CandleSnapshot older, CandleSnapshot newer, decimal level)
@@ -529,12 +531,20 @@ public class FitFul13Strategy : Strategy
 		return older.High >= level && older.Close <= level && newer.High >= level && newer.Close <= level;
 	}
 
+	/// <inheritdoc />
+	protected override void OnOwnTradeReceived(MyTrade trade)
+	{
+		base.OnOwnTradeReceived(trade);
+		_entryPrice = trade.Trade.Price;
+	}
+
 	private void ResetTargets()
 	{
 		_longStopPrice = null;
 		_longTakePrice = null;
 		_shortStopPrice = null;
 		_shortTakePrice = null;
+		_entryPrice = null;
 	}
 
 	private decimal CalculatePipSize()
@@ -608,23 +618,6 @@ public class FitFul13Strategy : Strategy
 			);
 		}
 
-		public decimal PriceTypical => Item1;
-		public decimal R05 => Item2;
-		public decimal R1 => Item3;
-		public decimal R15 => Item4;
-		public decimal R2 => Item5;
-		public decimal R25 => Item6;
-		public decimal R3 => Item7;
-		public decimal S05 => Item8;
-		public decimal S1 => Item9;
-		public decimal S15 => Item10;
-		public decimal S2 => Item11;
-		public decimal S25 => Item12;
-		public decimal S3 => Item13;
-		public decimal PriceTypicalMinusIndent => Item14;
-		public decimal PriceTypicalPlusIndent => Item15;
-		public decimal R1AbovePivot => Item16;
-		public decimal S1BelowPivot => Item17;
 	}
 
 	private readonly record struct SignalParameters(decimal StopPrice, decimal TakePrice);

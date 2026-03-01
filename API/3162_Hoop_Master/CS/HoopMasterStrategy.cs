@@ -33,13 +33,14 @@ public class HoopMasterStrategy : Strategy
 	private decimal? _lastTradePrice;
 	private decimal? _lastClosePrice;
 
-	private Order _buyStopOrder;
-	private Order _sellStopOrder;
-	private Order _stopLossOrder;
-	private Order _takeProfitOrder;
+	private decimal? _pendingBuyPrice;
+	private decimal? _pendingSellPrice;
+	private decimal _pendingVolume;
 
 	private decimal? _stopLossPrice;
 	private decimal? _takeProfitPrice;
+	private decimal? _entryPrice;
+	private Sides? _positionSide;
 
 	/// <summary>
 	/// Initializes a new instance of <see cref="HoopMasterStrategy"/>.
@@ -168,8 +169,13 @@ public class HoopMasterStrategy : Strategy
 		_lastTradePrice = null;
 		_lastClosePrice = null;
 
-		CancelEntryOrders();
-		CancelProtectionOrders();
+		_pendingBuyPrice = null;
+		_pendingSellPrice = null;
+		_pendingVolume = 0m;
+		_stopLossPrice = null;
+		_takeProfitPrice = null;
+		_entryPrice = null;
+		_positionSide = null;
 
 		_pipSize = 0m;
 	}
@@ -220,12 +226,63 @@ public class HoopMasterStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
+		// Check protective stops/takes for active position
+		if (Position > 0m)
+		{
+			if (_stopLossPrice is decimal sl && candle.LowPrice <= sl)
+			{
+				SellMarket(Math.Abs(Position));
+				ResetPosition();
+				return;
+			}
+			if (_takeProfitPrice is decimal tp && candle.HighPrice >= tp)
+			{
+				SellMarket(Math.Abs(Position));
+				ResetPosition();
+				return;
+			}
+		}
+		else if (Position < 0m)
+		{
+			if (_stopLossPrice is decimal sl && candle.HighPrice >= sl)
+			{
+				BuyMarket(Math.Abs(Position));
+				ResetPosition();
+				return;
+			}
+			if (_takeProfitPrice is decimal tp && candle.LowPrice <= tp)
+			{
+				BuyMarket(Math.Abs(Position));
+				ResetPosition();
+				return;
+			}
+		}
+
 		UpdateTrailing(candle.ClosePrice);
 
-		if (Position != 0m)
-			return;
+		// Check pending breakout entries
+		if (_pendingBuyPrice is decimal buyTrigger && candle.HighPrice >= buyTrigger && Position <= 0m)
+		{
+			if (Position < 0m)
+				BuyMarket(Math.Abs(Position));
 
-		ReplaceEntryOrders(OrderVolume);
+			BuyMarket(_pendingVolume);
+			HandleEntryFill(Sides.Buy, buyTrigger);
+			return;
+		}
+
+		if (_pendingSellPrice is decimal sellTrigger && candle.LowPrice <= sellTrigger && Position >= 0m)
+		{
+			if (Position > 0m)
+				SellMarket(Math.Abs(Position));
+
+			SellMarket(_pendingVolume);
+			HandleEntryFill(Sides.Sell, sellTrigger);
+			return;
+		}
+
+		if (Position == 0m)
+			SetPendingEntries(OrderVolume);
 	}
 
 	/// <inheritdoc />
@@ -234,69 +291,32 @@ public class HoopMasterStrategy : Strategy
 		base.OnPositionReceived(position);
 
 		if (Position == 0m)
-		{
-			CancelProtectionOrders();
-			_stopLossPrice = null;
-			_takeProfitPrice = null;
-		}
+			ResetPosition();
 	}
 
-	/// <inheritdoc />
-	protected override void OnOwnTradeReceived(MyTrade trade)
+	private void ResetPosition()
 	{
-		base.OnOwnTradeReceived(trade);
-
-		var order = trade.Order;
-		if (order == null || order.Security != Security)
-			return;
-
-		if (order == _buyStopOrder)
-		{
-			_buyStopOrder = null;
-			HandleEntryFill(Sides.Buy, trade);
-			return;
-		}
-
-		if (order == _sellStopOrder)
-		{
-			_sellStopOrder = null;
-			HandleEntryFill(Sides.Sell, trade);
-			return;
-		}
-
-		if (order == _stopLossOrder)
-		{
-			_stopLossOrder = null;
-			_stopLossPrice = null;
-			return;
-		}
-
-		if (order == _takeProfitOrder)
-		{
-			_takeProfitOrder = null;
-			_takeProfitPrice = null;
-		}
+		_stopLossPrice = null;
+		_takeProfitPrice = null;
+		_entryPrice = null;
+		_positionSide = null;
 	}
 
-	private void HandleEntryFill(Sides side, MyTrade trade)
+	private void HandleEntryFill(Sides side, decimal entryPrice)
 	{
-		var entryPrice = trade.Trade.Price;
-		var volume = Math.Abs(Position);
+		_entryPrice = entryPrice;
+		_positionSide = side;
+		_pendingBuyPrice = null;
+		_pendingSellPrice = null;
 
-		if (volume <= 0m)
-			volume = OrderVolume;
-
-		CancelProtectionOrders();
-		EnsureProtectiveOrders(side, entryPrice, volume);
+		SetProtection(side, entryPrice);
 
 		var martingaleVolume = Math.Max(OrderVolume * 2m, OrderVolume);
-		ReplaceEntryOrders(martingaleVolume);
+		SetPendingEntries(martingaleVolume);
 	}
 
-	private void ReplaceEntryOrders(decimal volume)
+	private void SetPendingEntries(decimal volume)
 	{
-		CancelEntryOrders();
-
 		if (volume <= 0m)
 			return;
 
@@ -308,55 +328,32 @@ public class HoopMasterStrategy : Strategy
 		var buyPriceBase = ask > 0m ? ask : bid;
 		var sellPriceBase = bid > 0m ? bid : ask;
 
-		var buyPrice = AlignPrice(buyPriceBase + indent);
-		var sellPrice = AlignPrice(sellPriceBase - indent);
-
-		if (buyPrice > 0m)
-			_buyStopOrder = BuyStop(volume, buyPrice);
-
-		if (sellPrice > 0m)
-			_sellStopOrder = SellStop(volume, sellPrice);
+		_pendingBuyPrice = AlignPrice(buyPriceBase + indent);
+		_pendingSellPrice = AlignPrice(sellPriceBase - indent);
+		_pendingVolume = volume;
 	}
 
-	private void EnsureProtectiveOrders(Sides side, decimal entryPrice, decimal volume)
+	private void SetProtection(Sides side, decimal entryPrice)
 	{
-		CancelProtectionOrders();
-
 		var stopDistance = StopLossPips * _pipSize;
 		var takeDistance = TakeProfitPips * _pipSize;
 
-		if (stopDistance > 0m && volume > 0m)
+		if (stopDistance > 0m)
 		{
-			var stopPrice = side == Sides.Buy
+			_stopLossPrice = side == Sides.Buy
 				? AlignPrice(entryPrice - stopDistance)
 				: AlignPrice(entryPrice + stopDistance);
-
-			if (stopPrice > 0m)
-			{
-				_stopLossOrder = side == Sides.Buy
-					? SellStop(volume, stopPrice)
-					: BuyStop(volume, stopPrice);
-				_stopLossPrice = stopPrice;
-			}
 		}
 		else
 		{
 			_stopLossPrice = null;
 		}
 
-		if (takeDistance > 0m && volume > 0m)
+		if (takeDistance > 0m)
 		{
-			var takePrice = side == Sides.Buy
+			_takeProfitPrice = side == Sides.Buy
 				? AlignPrice(entryPrice + takeDistance)
 				: AlignPrice(entryPrice - takeDistance);
-
-			if (takePrice > 0m)
-			{
-				_takeProfitOrder = side == Sides.Buy
-					? SellLimit(volume, takePrice)
-					: BuyLimit(volume, takePrice);
-				_takeProfitPrice = takePrice;
-			}
 		}
 		else
 		{
@@ -447,11 +444,6 @@ public class HoopMasterStrategy : Strategy
 		if (volume <= 0m)
 			return;
 
-		CancelOrderIfActive(ref _stopLossOrder);
-
-		_stopLossOrder = side == Sides.Sell
-			? SellStop(volume, price)
-			: BuyStop(volume, price);
 		_stopLossPrice = price;
 	}
 
@@ -490,27 +482,5 @@ public class HoopMasterStrategy : Strategy
 		return decimals is 3 or 5 ? priceStep * 10m : priceStep;
 	}
 
-	private void CancelEntryOrders()
-	{
-		CancelOrderIfActive(ref _buyStopOrder);
-		CancelOrderIfActive(ref _sellStopOrder);
-	}
-
-	private void CancelProtectionOrders()
-	{
-		CancelOrderIfActive(ref _stopLossOrder);
-		CancelOrderIfActive(ref _takeProfitOrder);
-	}
-
-	private void CancelOrderIfActive(ref Order order)
-	{
-		if (order == null)
-			return;
-
-		if (order.State == OrderStates.Active)
-			CancelOrder(order);
-
-		order = null;
-	}
 }
 

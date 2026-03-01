@@ -40,11 +40,16 @@ public class FetchNewsStrategy : Strategy
 	private readonly HashSet<string> _instrumentCurrencies = new(StringComparer.OrdinalIgnoreCase);
 	private readonly List<string> _keywordList = new();
 
-	private Order _buyStopOrder;
-	private Order _sellStopOrder;
+	private decimal? _pendingBuyPrice;
+	private decimal? _pendingSellPrice;
+	private decimal _pendingVolume;
 	private DateTimeOffset? _pendingExpiration;
 	private decimal? _lastBid;
 	private decimal? _lastAsk;
+	private decimal? _entryPrice;
+	private Sides? _positionSide;
+	private decimal? _stopLossPrice;
+	private decimal? _takeProfitPrice;
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="FetchNewsStrategy"/> class.
@@ -228,34 +233,9 @@ public class FetchNewsStrategy : Strategy
 	{
 		base.OnOwnTradeReceived(trade);
 
-		if (trade?.Order == null || trade.Trade?.Price is not decimal price)
-		return;
-
-		if (trade.Order == _buyStopOrder)
+		if (trade.Trade?.Price is decimal price)
 		{
-			// Cancel opposite pending order after the long entry is triggered.
-			if (_sellStopOrder != null)
-			{
-				CancelOrder(_sellStopOrder);
-				_sellStopOrder = null;
-			}
-
-			ApplyProtection(Sides.Buy, price);
-			_buyStopOrder = null;
-			_pendingExpiration = null;
-		}
-	else if (trade.Order == _sellStopOrder)
-		{
-			// Cancel opposite pending order after the short entry is triggered.
-			if (_buyStopOrder != null)
-			{
-				CancelOrder(_buyStopOrder);
-				_buyStopOrder = null;
-			}
-
-			ApplyProtection(Sides.Sell, price);
-			_sellStopOrder = null;
-			_pendingExpiration = null;
+			_entryPrice = price;
 		}
 	}
 
@@ -284,8 +264,104 @@ public class FetchNewsStrategy : Strategy
 
 		var currentTime = level1.ServerTime != default ? level1.ServerTime : CurrentTime;
 
+		// Check pending straddle triggers
+		CheckPendingTriggers();
+
+		// Check stop/take for active position
+		CheckProtection();
+
 		CancelExpiredPending(currentTime);
 		ProcessCalendar(currentTime);
+	}
+
+	private void CheckPendingTriggers()
+	{
+		if (_lastAsk is not decimal ask || _lastBid is not decimal bid)
+			return;
+
+		if (_pendingBuyPrice is decimal buyPrice && ask >= buyPrice && Position <= 0m)
+		{
+			BuyMarket(_pendingVolume);
+			_pendingSellPrice = null;
+			_pendingBuyPrice = null;
+			_pendingExpiration = null;
+			_positionSide = Sides.Buy;
+			SetProtection(Sides.Buy, buyPrice);
+			return;
+		}
+
+		if (_pendingSellPrice is decimal sellPrice && bid <= sellPrice && Position >= 0m)
+		{
+			SellMarket(_pendingVolume);
+			_pendingBuyPrice = null;
+			_pendingSellPrice = null;
+			_pendingExpiration = null;
+			_positionSide = Sides.Sell;
+			SetProtection(Sides.Sell, sellPrice);
+		}
+	}
+
+	private void CheckProtection()
+	{
+		if (_lastBid is not decimal bid || _lastAsk is not decimal ask)
+			return;
+
+		if (Position > 0m)
+		{
+			if (_stopLossPrice is decimal sl && bid <= sl)
+			{
+				SellMarket(Math.Abs(Position));
+				ResetProtection();
+				return;
+			}
+			if (_takeProfitPrice is decimal tp && bid >= tp)
+			{
+				SellMarket(Math.Abs(Position));
+				ResetProtection();
+			}
+		}
+		else if (Position < 0m)
+		{
+			if (_stopLossPrice is decimal sl && ask >= sl)
+			{
+				BuyMarket(Math.Abs(Position));
+				ResetProtection();
+				return;
+			}
+			if (_takeProfitPrice is decimal tp && ask <= tp)
+			{
+				BuyMarket(Math.Abs(Position));
+				ResetProtection();
+			}
+		}
+	}
+
+	private void SetProtection(Sides side, decimal entryPrice)
+	{
+		var step = Security?.PriceStep ?? 1m;
+		if (step <= 0m) step = 1m;
+
+		if (TakeProfitPoints > 0)
+		{
+			_takeProfitPrice = side == Sides.Buy
+				? entryPrice + TakeProfitPoints * step
+				: entryPrice - TakeProfitPoints * step;
+		}
+
+		if (StopLossPoints > 0)
+		{
+			_stopLossPrice = side == Sides.Buy
+				? entryPrice - StopLossPoints * step
+				: entryPrice + StopLossPoints * step;
+		}
+	}
+
+	private void ResetProtection()
+	{
+		_stopLossPrice = null;
+		_takeProfitPrice = null;
+		_entryPrice = null;
+		_positionSide = null;
 	}
 
 	private void ProcessCalendar(DateTimeOffset now)
@@ -340,7 +416,7 @@ public class FetchNewsStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 		return false;
 
-		if (_buyStopOrder != null || _sellStopOrder != null)
+		if (_pendingBuyPrice != null || _pendingSellPrice != null)
 		return false;
 
 		if (Position != 0m)
@@ -371,14 +447,9 @@ public class FetchNewsStrategy : Strategy
 		if (buyPrice <= 0m || sellPrice <= 0m)
 		return false;
 
-		_buyStopOrder = BuyStop(volume, buyPrice);
-		_sellStopOrder = SellStop(volume, sellPrice);
-
-		if (_buyStopOrder == null && _sellStopOrder == null)
-		{
-			LogWarning("Failed to register pending orders for the news straddle.");
-			return false;
-		}
+		_pendingBuyPrice = buyPrice;
+		_pendingSellPrice = sellPrice;
+		_pendingVolume = volume;
 
 		_pendingExpiration = OrderLifetimeSeconds > 0
 		? now + TimeSpan.FromSeconds(OrderLifetimeSeconds)
@@ -387,22 +458,6 @@ public class FetchNewsStrategy : Strategy
 		// Provide feedback about the scheduled trade in the journal.
 		LogInfo($"Placed news straddle around {calendarEvent.Name} at {calendarEvent.Time:O}.");
 		return true;
-	}
-
-	private void ApplyProtection(Sides side, decimal entryPrice)
-	{
-		var resultingPosition = Position;
-		if (side == Sides.Buy && resultingPosition <= 0m)
-		return;
-
-		if (side == Sides.Sell && resultingPosition >= 0m)
-		return;
-
-		if (TakeProfitPoints > 0)
-		SetTakeProfit(TakeProfitPoints, entryPrice, resultingPosition);
-
-		if (StopLossPoints > 0)
-		SetStopLoss(StopLossPoints, entryPrice, resultingPosition);
 	}
 
 	private void CancelExpiredPending(DateTimeOffset now)
@@ -419,17 +474,9 @@ public class FetchNewsStrategy : Strategy
 
 	private void CancelPendingOrders()
 	{
-		if (_buyStopOrder != null)
-		{
-			CancelOrder(_buyStopOrder);
-			_buyStopOrder = null;
-		}
-
-		if (_sellStopOrder != null)
-		{
-			CancelOrder(_sellStopOrder);
-			_sellStopOrder = null;
-		}
+		_pendingBuyPrice = null;
+		_pendingSellPrice = null;
+		_pendingVolume = 0m;
 	}
 
 	private void ResetState()
@@ -442,6 +489,10 @@ public class FetchNewsStrategy : Strategy
 		_pendingExpiration = null;
 		_lastBid = null;
 		_lastAsk = null;
+		_entryPrice = null;
+		_positionSide = null;
+		_stopLossPrice = null;
+		_takeProfitPrice = null;
 	}
 
 	private void LoadInstrumentCurrencies()
@@ -465,8 +516,8 @@ public class FetchNewsStrategy : Strategy
 		}
 
 		var currency = Security?.Currency;
-		if (!currency.IsEmptyOrWhiteSpace())
-		_instrumentCurrencies.Add(currency!.ToUpperInvariant());
+		if (currency != null)
+		_instrumentCurrencies.Add(currency.Value.ToString().ToUpperInvariant());
 	}
 
 	private void LoadKeywords()
