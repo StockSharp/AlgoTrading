@@ -262,9 +262,9 @@ public class IndicatorPanelStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		_rsi = new RelativeStrengthIndex { Length = RsiLength };
 		_macd = new MovingAverageConvergenceDivergenceSignal
@@ -281,15 +281,15 @@ public class IndicatorPanelStrategy : Strategy
 		_cci = new CommodityChannelIndex { Length = CciLength };
 		_mfi = new MoneyFlowIndex { Length = MfiLength };
 		_momentum = new Momentum { Length = MomentumLength };
-		_ma1 = Ma1IsEma ? new EMA { Length = Ma1Length } : new SMA { Length = Ma1Length };
-		_ma2 = Ma2IsEma ? new EMA { Length = Ma2Length } : new SMA { Length = Ma2Length };
+		_ma1 = Ma1IsEma ? new ExponentialMovingAverage { Length = Ma1Length } : new SimpleMovingAverage { Length = Ma1Length };
+		_ma2 = Ma2IsEma ? new ExponentialMovingAverage { Length = Ma2Length } : new SimpleMovingAverage { Length = Ma2Length };
 		
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-		.BindEx(_macd, _dmi, _adx, _rsi, _cci, _mfi, _momentum, _ma1, _ma2, OnProcess)
+		.BindEx(_macd, _dmi, _adx, _rsi, _cci, _mfi, _momentum, _ma1, OnProcess)
 		.Start();
 	}
-	
+
 	private void OnProcess(
 	ICandleMessage candle,
 	IIndicatorValue macdValue,
@@ -299,32 +299,29 @@ public class IndicatorPanelStrategy : Strategy
 	IIndicatorValue cciValue,
 	IIndicatorValue mfiValue,
 	IIndicatorValue momentumValue,
-	IIndicatorValue ma1Value,
-	IIndicatorValue ma2Value)
+	IIndicatorValue ma1Value)
 	{
 		if (candle.State != CandleStates.Finished)
 		return;
-		
+
 		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
 		var dmiTyped = (DirectionalIndexValue)dmiValue;
-		var adxTyped = (AverageDirectionalIndexValue)adxValue;
-		
+
 		var rsi = rsiValue.ToDecimal();
 		var cci = cciValue.ToDecimal();
 		var mfi = mfiValue.ToDecimal();
 		var momentum = momentumValue.ToDecimal();
 		var ma1 = ma1Value.ToDecimal();
-		var ma2 = ma2Value.ToDecimal();
-		
+		var ma2Val = _ma2.Process(new DecimalIndicatorValue(_ma2, candle.ClosePrice, candle.OpenTime));
+		var ma2 = ma2Val.ToDecimal();
+
 		LogInfo(
-		"RSI={0:F2}, MACD={1:F4}, Signal={2:F4}, Hist={3:F4}, +DI={4:F2}, -DI={5:F2}, ADX={6:F2}, CCI={7:F2}, MFI={8:F2}, Momentum={9:F2}, MA1={10:F2}, MA2={11:F2}",
+		"RSI={0:F2}, MACD={1:F4}, Signal={2:F4}, +DI={3:F2}, -DI={4:F2}, CCI={5:F2}, MFI={6:F2}, Momentum={7:F2}, MA1={8:F2}, MA2={9:F2}",
 		rsi,
 		macdTyped.Macd,
 		macdTyped.Signal,
-		macdTyped.Histogram,
 		dmiTyped.Plus,
 		dmiTyped.Minus,
-		adxTyped.MovingAverage,
 		cci,
 		mfi,
 		momentum,

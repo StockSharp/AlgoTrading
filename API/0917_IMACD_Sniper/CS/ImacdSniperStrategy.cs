@@ -212,23 +212,22 @@ public class ImacdSniperStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_rangeMa = new SMA { Length = RangeLength };
+		_rangeMa = new SimpleMovingAverage { Length = RangeLength };
 
-		var ema = new EMA { Length = EmaLength };
-		var macd = new MovingAverageConvergenceDivergence
+		var ema = new ExponentialMovingAverage { Length = EmaLength };
+		var macd = new MovingAverageConvergenceDivergenceSignal
 		{
-			ShortMa = { Length = FastLength },
-			LongMa = { Length = SlowLength },
-			SignalPeriod = SignalLength
+			Macd = { ShortMa = { Length = FastLength }, LongMa = { Length = SlowLength } },
+			SignalMa = { Length = SignalLength }
 		};
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(macd, ema, ProcessCandle)
+			.BindEx(macd, ema, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -243,10 +242,15 @@ public class ImacdSniperStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal macd, decimal signal, decimal histogram, decimal ema)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue, IIndicatorValue emaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
+
+		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
+		if (macdTyped.Macd is not decimal macd || macdTyped.Signal is not decimal signal)
+			return;
+		var ema = emaValue.ToDecimal();
 
 		var volumeValue = _volumeMa.Process(new DecimalIndicatorValue(_volumeMa, candle.TotalVolume, candle.OpenTime));
 		if (!volumeValue.IsFinal)

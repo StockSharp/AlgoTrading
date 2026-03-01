@@ -106,19 +106,18 @@ public class ImprovedEmaCdcTrailingStopStrategy : Strategy
 		base.OnStarted2(time);
 		StartProtection(null, null);
 
-		var ema60 = new EMA { Length = Ema60Period };
-		var ema90 = new EMA { Length = Ema90Period };
+		var ema60 = new ExponentialMovingAverage { Length = Ema60Period };
+		var ema90 = new ExponentialMovingAverage { Length = Ema90Period };
 		var atr = new AverageTrueRange { Length = AtrPeriod };
 		var macd = new MovingAverageConvergenceDivergenceSignal
 		{
-			ShortMa = { Length = 12 },
-			LongMa = { Length = 26 },
-			SignalPeriod = 9
+			Macd = { ShortMa = { Length = 12 }, LongMa = { Length = 26 } },
+			SignalMa = { Length = 9 }
 		};
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(macd, ema60, ema90, atr, ProcessCandle)
+			.BindEx(macd, ema60, ema90, atr, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -134,10 +133,17 @@ public class ImprovedEmaCdcTrailingStopStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal macd, decimal signal, decimal histogram, decimal ema60, decimal ema90, decimal atr)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue, IIndicatorValue ema60Value, IIndicatorValue ema90Value, IIndicatorValue atrValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
+
+		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
+		if (macdTyped.Macd is not decimal macd || macdTyped.Signal is not decimal signal)
+			return;
+		var ema60 = ema60Value.ToDecimal();
+		var ema90 = ema90Value.ToDecimal();
+		var atr = atrValue.ToDecimal();
 
 		var longStop = candle.ClosePrice - Multiplier * atr;
 		var shortStop = candle.ClosePrice + Multiplier * atr;

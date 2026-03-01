@@ -183,12 +183,12 @@ public class IctBreadAndButterSellSetupStrategy : Strategy
 		var time = candle.OpenTime;
 		var date = time.Date;
 
-		var sessionNyOpen = new DateTimeOffset(date.Year, date.Month, date.Day, 8, 20, 0, time.Offset);
-		var sessionLondon = new DateTimeOffset(date.Year, date.Month, date.Day, 2, 0, 0, time.Offset);
-		var sessionAsia = new DateTimeOffset(date.Year, date.Month, date.Day, 19, 0, 0, time.Offset);
-		var sessionEnd = new DateTimeOffset(date.Year, date.Month, date.Day, 16, 0, 0, time.Offset);
-		var londonCloseStart = new DateTimeOffset(date.Year, date.Month, date.Day, 10, 30, 0, time.Offset);
-		var londonCloseEnd = new DateTimeOffset(date.Year, date.Month, date.Day, 13, 0, 0, time.Offset);
+		var sessionNyOpen = new DateTime(date.Year, date.Month, date.Day, 8, 20, 0);
+		var sessionLondon = new DateTime(date.Year, date.Month, date.Day, 2, 0, 0);
+		var sessionAsia = new DateTime(date.Year, date.Month, date.Day, 19, 0, 0);
+		var sessionEnd = new DateTime(date.Year, date.Month, date.Day, 16, 0, 0);
+		var londonCloseStart = new DateTime(date.Year, date.Month, date.Day, 10, 30, 0);
+		var londonCloseEnd = new DateTime(date.Year, date.Month, date.Day, 13, 0, 0);
 
 		if (time >= sessionLondon && time < sessionNyOpen)
 		{
@@ -247,7 +247,7 @@ public class IctBreadAndButterSellSetupStrategy : Strategy
 			_inAsia = false;
 		}
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (false)
 			return;
 
 		var judasSwing = candle.HighPrice >= _londonHigh && time >= sessionNyOpen && time < sessionEnd;
@@ -255,36 +255,24 @@ public class IctBreadAndButterSellSetupStrategy : Strategy
 
 		if (shortEntry && Position >= 0)
 		{
-			var stopLoss = candle.HighPrice + ShortStopTicks * Security.PriceStep;
-			var profitTarget = candle.LowPrice - ShortTakeTicks * Security.PriceStep;
 
 			SellMarket();
-			BuyLimit(profitTarget);
-			BuyStop(stopLoss);
 		}
 
 		var londonCloseBuy = time >= londonCloseStart && time <= londonCloseEnd && candle.ClosePrice < _londonLow;
 
 		if (londonCloseBuy && Position <= 0)
 		{
-			var stopBuy = candle.LowPrice - BuyStopTicks * Security.PriceStep;
-			var takeBuy = candle.ClosePrice + BuyTakeTicks * Security.PriceStep;
 
 			BuyMarket();
-			SellLimit(takeBuy);
-			SellStop(stopBuy);
 		}
 
 		var asiaSell = time >= sessionAsia && time < sessionLondon && candle.ClosePrice > _asiaHigh;
 
 		if (asiaSell && Position >= 0)
 		{
-			var stopAsia = candle.HighPrice + AsiaStopTicks * Security.PriceStep;
-			var takeAsia = candle.ClosePrice - AsiaTakeTicks * Security.PriceStep;
 
 			SellMarket();
-			BuyLimit(takeAsia);
-			BuyStop(stopAsia);
 		}
 	}
 }

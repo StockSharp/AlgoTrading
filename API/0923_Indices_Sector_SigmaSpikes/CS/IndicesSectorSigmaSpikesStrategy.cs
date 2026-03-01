@@ -315,7 +315,7 @@ public class IndicesSectorSigmaSpikesStrategy : Strategy
 			if (_prevClose is not null)
 			{
 				ret = (close - _prevClose.Value) / _prevClose.Value;
-				var sd = _stdDev.Process(ret.Value).GetValue<decimal>();
+				var sd = _stdDev.Process(new DecimalIndicatorValue(_stdDev, ret.Value, default)).GetValue<decimal>();
 				var sigma = _stdDev.IsFormed && sd != 0m ? ret.Value / sd : (decimal?)null;
 
 				_closeBuffer.Enqueue(close);
