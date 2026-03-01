@@ -27,6 +27,8 @@ public class VrStealsStrategy : Strategy
 
 	private decimal? _longTrailingStop;
 	private decimal? _shortTrailingStop;
+	private decimal _entryPrice;
+	private decimal _previousPosition;
 	private bool _longExitRequested;
 	private bool _shortExitRequested;
 
@@ -123,6 +125,9 @@ public class VrStealsStrategy : Strategy
 			return;
 		}
 
+		var delta = Position - _previousPosition;
+		_previousPosition = Position;
+
 		if (Position > 0m && delta > 0m)
 		{
 			_longTrailingStop = null;
@@ -158,7 +163,7 @@ public class VrStealsStrategy : Strategy
 		if (_longExitRequested)
 			return;
 
-		var entryPrice = PositionPrice;
+		var entryPrice = _entryPrice;
 
 		var stopDistance = StopLossDistance;
 		if (stopDistance > 0m && entryPrice - price >= stopDistance)
@@ -198,7 +203,7 @@ public class VrStealsStrategy : Strategy
 		if (_shortExitRequested)
 			return;
 
-		var entryPrice = PositionPrice;
+		var entryPrice = _entryPrice;
 
 		var stopDistance = StopLossDistance;
 		if (stopDistance > 0m && price - entryPrice >= stopDistance)
@@ -240,9 +245,8 @@ public class VrStealsStrategy : Strategy
 
 		_longExitRequested = true;
 
-		var volume = Position;
-		if (volume > 0m)
-			SellMarket(volume);
+		if (Position > 0m)
+			SellMarket();
 	}
 
 	private void RequestCloseShort()
@@ -252,9 +256,14 @@ public class VrStealsStrategy : Strategy
 
 		_shortExitRequested = true;
 
-		var volume = -Position;
-		if (volume > 0m)
-			BuyMarket(volume);
+		if (Position < 0m)
+			BuyMarket();
+	}
+
+	protected override void OnOwnTradeReceived(MyTrade trade)
+	{
+		base.OnOwnTradeReceived(trade);
+		if (trade?.Trade != null) _entryPrice = trade.Trade.Price;
 	}
 
 	private void ResetState()
@@ -263,6 +272,8 @@ public class VrStealsStrategy : Strategy
 		_shortTrailingStop = null;
 		_longExitRequested = false;
 		_shortExitRequested = false;
+		_entryPrice = 0m;
+		_previousPosition = 0m;
 	}
 }
 

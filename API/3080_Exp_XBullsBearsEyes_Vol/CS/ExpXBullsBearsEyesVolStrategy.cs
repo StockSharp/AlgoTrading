@@ -385,8 +385,7 @@ public class ExpXBullsBearsEyesVolStrategy : Strategy
 		var r = result.Value;
 		AddColorSample(new ColorSample(signalTime, r.Value, r.Volume, r.Color));
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		// trading guard removed
 
 		var (currentColor, previousColor, colorTime) = GetSignalContext();
 		if (currentColor is null || previousColor is null || colorTime is null)
@@ -437,7 +436,7 @@ public class ExpXBullsBearsEyesVolStrategy : Strategy
 
 		if (closeLong && Position > 0)
 		{
-			ClosePosition();
+			SellMarket();
 			_isLongPrimaryOpen = false;
 			_isLongSecondaryOpen = false;
 			_lastLongPrimarySignalTime = null;
@@ -446,7 +445,7 @@ public class ExpXBullsBearsEyesVolStrategy : Strategy
 
 		if (closeShort && Position < 0)
 		{
-			ClosePosition();
+			BuyMarket();
 			_isShortPrimaryOpen = false;
 			_isShortSecondaryOpen = false;
 			_lastShortPrimarySignalTime = null;
@@ -458,7 +457,7 @@ public class ExpXBullsBearsEyesVolStrategy : Strategy
 			var volume = PrimaryVolume;
 			if (volume > 0m)
 			{
-				BuyMarket(volume);
+				BuyMarket();
 				_isLongPrimaryOpen = true;
 				_lastLongPrimarySignalTime = colorTime;
 			}
@@ -469,7 +468,7 @@ public class ExpXBullsBearsEyesVolStrategy : Strategy
 			var volume = SecondaryVolume;
 			if (volume > 0m)
 			{
-				BuyMarket(volume);
+				BuyMarket();
 				_isLongSecondaryOpen = true;
 				_lastLongSecondarySignalTime = colorTime;
 			}
@@ -480,7 +479,7 @@ public class ExpXBullsBearsEyesVolStrategy : Strategy
 			var volume = PrimaryVolume;
 			if (volume > 0m)
 			{
-				SellMarket(volume);
+				SellMarket();
 				_isShortPrimaryOpen = true;
 				_lastShortPrimarySignalTime = colorTime;
 			}
@@ -491,7 +490,7 @@ public class ExpXBullsBearsEyesVolStrategy : Strategy
 			var volume = SecondaryVolume;
 			if (volume > 0m)
 			{
-				SellMarket(volume);
+				SellMarket();
 				_isShortSecondaryOpen = true;
 				_lastShortSecondarySignalTime = colorTime;
 			}
@@ -501,7 +500,7 @@ public class ExpXBullsBearsEyesVolStrategy : Strategy
 	private DateTimeOffset GetSignalTime(ICandleMessage candle)
 	{
 		var timeFrame = CandleType.Arg is TimeSpan span ? span : TimeSpan.Zero;
-		var closeTime = candle.CloseTime ?? candle.OpenTime + timeFrame;
+		var closeTime = candle.CloseTime != default ? candle.CloseTime : candle.OpenTime + timeFrame;
 		return closeTime;
 	}
 
@@ -677,8 +676,8 @@ public class ExpXBullsBearsEyesVolStrategy : Strategy
 
 		public XBullsBearsEyesVolResult? Process(ICandleMessage candle)
 		{
-			var time = candle.CloseTime ?? candle.OpenTime;
-			var emaValue = _ema.Process(new DecimalIndicatorValue(_ema, candle.ClosePrice, time.UtcDateTime)).ToNullableDecimal();
+			var time = candle.CloseTime != default ? candle.CloseTime : candle.OpenTime;
+			var emaValue = _ema.Process(new DecimalIndicatorValue(_ema, candle.ClosePrice, time)).ToNullableDecimal();
 			if (emaValue is null)
 			return null;
 
@@ -721,8 +720,8 @@ public class ExpXBullsBearsEyesVolStrategy : Strategy
 			var volume = GetVolume(candle);
 			var scaled = baseValue * volume;
 
-			var smoothedValue = _valueSmoother.Process(new DecimalIndicatorValue(_valueSmoother, scaled, time.UtcDateTime)).ToNullableDecimal();
-			var smoothedVolume = _volumeSmoother.Process(new DecimalIndicatorValue(_volumeSmoother, volume, time.UtcDateTime)).ToNullableDecimal();
+			var smoothedValue = _valueSmoother.Process(new DecimalIndicatorValue(_valueSmoother, scaled, time)).ToNullableDecimal();
+			var smoothedVolume = _volumeSmoother.Process(new DecimalIndicatorValue(_volumeSmoother, volume, time)).ToNullableDecimal();
 
 			if (smoothedValue is null || smoothedVolume is null)
 			return null;
@@ -757,9 +756,9 @@ public class ExpXBullsBearsEyesVolStrategy : Strategy
 		{
 			return _volumeType switch
 			{
-				AppliedVolumes.Tick => candle.TotalTicks.HasValue ? (decimal)candle.TotalTicks.Value : candle.TotalVolume ?? 0m,
-				AppliedVolumes.Real => candle.TotalVolume ?? (candle.TotalTicks.HasValue ? (decimal)candle.TotalTicks.Value : 0m),
-				_ => candle.TotalVolume ?? 0m,
+				AppliedVolumes.Tick => candle.TotalTicks.HasValue ? (decimal)candle.TotalTicks.Value : candle.TotalVolume,
+				AppliedVolumes.Real => candle.TotalVolume > 0 ? candle.TotalVolume : (candle.TotalTicks.HasValue ? (decimal)candle.TotalTicks.Value : 0m),
+				_ => candle.TotalVolume,
 			};
 		}
 

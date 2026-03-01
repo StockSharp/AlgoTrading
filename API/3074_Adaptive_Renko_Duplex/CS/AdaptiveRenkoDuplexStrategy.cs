@@ -91,11 +91,11 @@ public class AdaptiveRenkoDuplexStrategy : Strategy
 			.SetDisplay("Short Price Mode", "Price source used when building short bricks", "Short Side");
 
 		_longMinimumBrickPoints = Param(nameof(LongMinimumBrickPoints), 2m)
-			.SetGreaterThanOrEqualsZero()
+			.SetNotNegative()
 			.SetDisplay("Long Minimum Brick", "Minimal brick height in points for long bricks", "Long Side");
 
 		_shortMinimumBrickPoints = Param(nameof(ShortMinimumBrickPoints), 2m)
-			.SetGreaterThanOrEqualsZero()
+			.SetNotNegative()
 			.SetDisplay("Short Minimum Brick", "Minimal brick height in points for short bricks", "Short Side");
 
 		_longSignalBarOffset = Param(nameof(LongSignalBarOffset), 1)
@@ -119,19 +119,19 @@ public class AdaptiveRenkoDuplexStrategy : Strategy
 			.SetDisplay("Enable Short Exits", "Allow short-side exits triggered by Renko", "Short Side");
 
 		_longStopLossPoints = Param(nameof(LongStopLossPoints), 1000m)
-			.SetGreaterThanOrEqualsZero()
+			.SetNotNegative()
 			.SetDisplay("Long Stop Loss", "Protective stop distance in points for long trades", "Risk");
 
 		_longTakeProfitPoints = Param(nameof(LongTakeProfitPoints), 2000m)
-			.SetGreaterThanOrEqualsZero()
+			.SetNotNegative()
 			.SetDisplay("Long Take Profit", "Profit target distance in points for long trades", "Risk");
 
 		_shortStopLossPoints = Param(nameof(ShortStopLossPoints), 1000m)
-			.SetGreaterThanOrEqualsZero()
+			.SetNotNegative()
 			.SetDisplay("Short Stop Loss", "Protective stop distance in points for short trades", "Risk");
 
 		_shortTakeProfitPoints = Param(nameof(ShortTakeProfitPoints), 2000m)
-			.SetGreaterThanOrEqualsZero()
+			.SetNotNegative()
 			.SetDisplay("Short Take Profit", "Profit target distance in points for short trades", "Risk");
 	}
 
@@ -397,7 +397,7 @@ public class AdaptiveRenkoDuplexStrategy : Strategy
 
 		var step = GetPriceStep();
 		var volatility = volatilityValue.ToDecimal();
-		var snapshot = _longProcessor.Process(new DecimalIndicatorValue(_longProcessor, candle, volatility));
+		var snapshot = _longProcessor.Process(candle, volatility, LongSensitivity, LongMinimumBrickPoints, LongPriceMode, LongSignalBarOffset, step);
 
 		if (snapshot == null)
 			return;
@@ -410,9 +410,6 @@ public class AdaptiveRenkoDuplexStrategy : Strategy
 		{
 			TryCloseLong("Adaptive Renko bearish reversal", candle);
 		}
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
 
 		if (LongEntriesEnabled && signal.Value.Trend == RenkoTrends.Up)
 		{
@@ -432,7 +429,7 @@ public class AdaptiveRenkoDuplexStrategy : Strategy
 
 		var step = GetPriceStep();
 		var volatility = volatilityValue.ToDecimal();
-		var snapshot = _shortProcessor.Process(new DecimalIndicatorValue(_shortProcessor, candle, volatility));
+		var snapshot = _shortProcessor.Process(candle, volatility, ShortSensitivity, ShortMinimumBrickPoints, ShortPriceMode, ShortSignalBarOffset, step);
 
 		if (snapshot == null)
 			return;
@@ -445,9 +442,6 @@ public class AdaptiveRenkoDuplexStrategy : Strategy
 		{
 			TryCloseShort("Adaptive Renko bullish reversal", candle);
 		}
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
 
 		if (ShortEntriesEnabled && signal.Value.Trend == RenkoTrends.Down)
 		{
@@ -601,9 +595,6 @@ public class AdaptiveRenkoDuplexStrategy : Strategy
 
 		if (security.PriceStep != null && security.PriceStep.Value > 0m)
 			return security.PriceStep.Value;
-
-		if (security.MinStep != null && security.MinStep.Value > 0m)
-			return security.MinStep.Value;
 
 		return 1m;
 	}

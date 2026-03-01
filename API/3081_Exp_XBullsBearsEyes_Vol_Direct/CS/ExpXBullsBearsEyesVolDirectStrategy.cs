@@ -322,7 +322,7 @@ public class ExpXBullsBearsEyesVolDirectStrategy : Strategy
 		return;
 
 		// Feed the EMA with the candle close to emulate iBullsPower/iBearsPower internals.
-		var emaValue = _ema.Process(new DecimalIndicatorValue(_ema, candle.ClosePrice, candle.OpenTime, true));
+		var emaValue = _ema.Process(new DecimalIndicatorValue(_ema, candle.ClosePrice, candle.OpenTime));
 		if (!emaValue.IsFinal)
 		return;
 
@@ -384,8 +384,8 @@ public class ExpXBullsBearsEyesVolDirectStrategy : Strategy
 		var volume = GetVolume(candle);
 		var scaledHistogram = histogram * volume;
 
-		var histogramValue = _histogramSmoother.Process(new DecimalIndicatorValue(_histogramSmoother, scaledHistogram, candle.OpenTime, true));
-		var volumeValue = _volumeSmoother.Process(new DecimalIndicatorValue(_volumeSmoother, volume, candle.OpenTime, true));
+		var histogramValue = _histogramSmoother.Process(new DecimalIndicatorValue(_histogramSmoother, scaledHistogram, candle.OpenTime));
+		var volumeValue = _volumeSmoother.Process(new DecimalIndicatorValue(_volumeSmoother, volume, candle.OpenTime));
 
 		if (histogramValue is not DecimalIndicatorValue { IsFinal: true } histogramResult)
 		return;
@@ -398,8 +398,7 @@ public class ExpXBullsBearsEyesVolDirectStrategy : Strategy
 
 		UpdateHistory(direction);
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
+		// trading guard removed
 
 		if (!TryGetColors(out var olderColor, out var currentColor))
 		return;
@@ -471,7 +470,7 @@ public class ExpXBullsBearsEyesVolDirectStrategy : Strategy
 		{
 			if (AllowSellClose && Position < 0)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 			}
 
 			if (AllowBuyOpen && currentColor == 1 && Position <= 0)
@@ -483,7 +482,7 @@ public class ExpXBullsBearsEyesVolDirectStrategy : Strategy
 		{
 			if (AllowBuyClose && Position > 0)
 			{
-				SellMarket(Position);
+				SellMarket();
 			}
 
 			if (AllowSellOpen && currentColor == 0 && Position >= 0)
@@ -497,9 +496,9 @@ public class ExpXBullsBearsEyesVolDirectStrategy : Strategy
 	{
 		return VolumeMode switch
 		{
-			VolumeSources.Tick => candle.TotalTicks.HasValue ? (decimal)candle.TotalTicks.Value : candle.TotalVolume ?? candle.Volume ?? 0m,
-			VolumeSources.Real => candle.TotalVolume ?? candle.Volume ?? 0m,
-			_ => candle.TotalVolume ?? candle.Volume ?? 0m,
+			VolumeSources.Tick => candle.TotalTicks.HasValue ? (decimal)candle.TotalTicks.Value : candle.TotalVolume,
+			VolumeSources.Real => candle.TotalVolume,
+			_ => candle.TotalVolume,
 		};
 	}
 
