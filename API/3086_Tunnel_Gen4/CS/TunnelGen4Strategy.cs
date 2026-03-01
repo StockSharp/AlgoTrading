@@ -415,8 +415,7 @@ public class TunnelGen4Strategy : Strategy
 	private static bool IsOrderCompleted(Order order)
 	{
 		return order.State == OrderStates.Done
-		|| order.State == OrderStates.Failed
-		|| order.State == OrderStates.Cancelled;
+		|| order.State == OrderStates.Failed;
 	}
 }
 

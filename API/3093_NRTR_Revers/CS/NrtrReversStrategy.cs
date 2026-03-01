@@ -35,6 +35,7 @@ public class NrtrReversStrategy : Strategy
 
 	private AverageTrueRange _atr = null!;
 
+	private decimal _entryPrice;
 	private decimal _adjustedPoint;
 	private decimal _stopLossDistance;
 	private decimal _takeProfitDistance;
@@ -438,7 +439,7 @@ public class NrtrReversStrategy : Strategy
 		if (_trailingStopDistance <= 0m)
 		return;
 
-		var entryPrice = PositionPrice;
+		var entryPrice = _entryPrice;
 		if (entryPrice == 0m)
 		return;
 
@@ -457,7 +458,7 @@ public class NrtrReversStrategy : Strategy
 		if (_trailingStopDistance <= 0m)
 		return;
 
-		var entryPrice = PositionPrice;
+		var entryPrice = _entryPrice;
 		if (entryPrice == 0m)
 		return;
 
@@ -469,6 +470,15 @@ public class NrtrReversStrategy : Strategy
 		var threshold = candle.ClosePrice + activation;
 		if (!_shortStopPrice.HasValue || _shortStopPrice.Value > threshold)
 		_shortStopPrice = candle.ClosePrice + _trailingStopDistance;
+	}
+
+	protected override void OnOwnTradeReceived(MyTrade trade)
+	{
+		base.OnOwnTradeReceived(trade);
+		if (Position != 0)
+			_entryPrice = trade.Trade.Price;
+		else
+			_entryPrice = 0;
 	}
 
 	private void ClearLongState()

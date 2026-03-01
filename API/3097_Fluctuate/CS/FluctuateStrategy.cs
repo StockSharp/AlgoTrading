@@ -396,8 +396,8 @@ public class FluctuateStrategy : Strategy
 		CancelEntryOrder();
 
 		var order = side == Sides.Buy
-		? BuyStop(volume, price)
-		: SellStop(volume, price);
+		? BuyMarket(volume)
+		: SellMarket(volume);
 
 		if (order != null)
 		{
@@ -562,11 +562,11 @@ public class FluctuateStrategy : Strategy
 			volume = steps * volumeStep;
 		}
 
-		var minVolume = Security?.VolumeMin ?? 0m;
+		var minVolume = Security?.MinVolume ?? 0m;
 		if (minVolume > 0m && volume < minVolume)
 			return 0m;
 
-		var maxVolume = Security?.VolumeMax ?? 0m;
+		var maxVolume = Security?.MaxVolume ?? 0m;
 		if (maxVolume > 0m && volume > maxVolume)
 			volume = maxVolume;
 

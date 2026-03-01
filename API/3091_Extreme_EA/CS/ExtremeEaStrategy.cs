@@ -311,7 +311,7 @@ public class ExtremeEaStrategy : Strategy
 			DrawOwnTrades(priceArea);
 		}
 
-		var cciArea = CreateChartArea("CCI");
+		var cciArea = CreateChartArea();
 		if (cciArea != null && _cci != null)
 			DrawIndicator(cciArea, _cci);
 	}
@@ -479,7 +479,7 @@ public class ExtremeEaStrategy : Strategy
 	private decimal GetDecisionPrice(ICandleMessage candle)
 	{
 		var security = Security;
-		if (security?.LastPrice is decimal lastPrice && lastPrice > 0m)
+		if (security?.LastTick?.Price is decimal lastPrice && lastPrice > 0m)
 			return lastPrice;
 
 		if (candle.ClosePrice > 0m)
@@ -533,7 +533,7 @@ public class ExtremeEaStrategy : Strategy
 		if (order == null)
 			return;
 
-		var delta = trade.Volume * (order.Side == Sides.Buy ? 1m : -1m);
+		var delta = trade.Trade.Volume * (order.Side == Sides.Buy ? 1m : -1m);
 		var previousPosition = _signedPosition;
 		_signedPosition += delta;
 

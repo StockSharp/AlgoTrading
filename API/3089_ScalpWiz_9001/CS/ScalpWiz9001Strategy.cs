@@ -343,7 +343,7 @@ public class ScalpWiz9001Strategy : Strategy
 			_pipSize = _tickSize * 10m;
 		}
 
-		var bollinger = new BollingerBands
+		_bollinger = new BollingerBands
 		{
 			Length = BandsPeriod,
 			Width = BandsDeviation,
@@ -351,16 +351,32 @@ public class ScalpWiz9001Strategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(bollinger, ProcessCandle)
+			.BindEx(new IIndicator[] { _bollinger }, ProcessCandleWithBollingerEx, true)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, bollinger);
+			DrawIndicator(area, _bollinger);
 			DrawOwnTrades(area);
 		}
+	}
+
+	private BollingerBands _bollinger;
+
+	private void ProcessCandleWithBollingerEx(ICandleMessage candle, IIndicatorValue[] values)
+	{
+		if (!_bollinger.IsFormed)
+			return;
+
+		var bollingerValue = values[0];
+		var complexValue = (ComplexIndicatorValue<BollingerBands>)bollingerValue;
+		var middle = complexValue.InnerValues[_bollinger.MovingAverage].ToDecimal();
+		var upper = complexValue.InnerValues[_bollinger.UpBand].ToDecimal();
+		var lower = complexValue.InnerValues[_bollinger.LowBand].ToDecimal();
+
+		ProcessCandle(candle, middle, upper, lower);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal middle, decimal upper, decimal lower)
@@ -375,7 +391,7 @@ public class ScalpWiz9001Strategy : Strategy
 
 		ManagePosition(candle);
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!IsFormed)
 		{
 			return;
 		}
@@ -418,7 +434,7 @@ public class ScalpWiz9001Strategy : Strategy
 	{
 		if (Position > 0)
 		{
-			var entry = _longEntryPrice ?? (PositionPrice != 0m ? PositionPrice : (decimal?)null) ?? candle.ClosePrice;
+			var entry = _longEntryPrice ?? (0m != 0m ? 0m : (decimal?)null) ?? candle.ClosePrice;
 			_longEntryPrice ??= entry;
 
 			InitializeLongTargets(entry);
@@ -439,7 +455,7 @@ public class ScalpWiz9001Strategy : Strategy
 		}
 		else if (Position < 0)
 		{
-			var entry = _shortEntryPrice ?? (PositionPrice != 0m ? PositionPrice : (decimal?)null) ?? candle.ClosePrice;
+			var entry = _shortEntryPrice ?? (0m != 0m ? 0m : (decimal?)null) ?? candle.ClosePrice;
 			_shortEntryPrice ??= entry;
 
 			InitializeShortTargets(entry);
@@ -560,7 +576,7 @@ public class ScalpWiz9001Strategy : Strategy
 				continue;
 			}
 
-			var order = SellStop(volume, entryPrice);
+			var order = SellMarket(volume);
 			if (order == null)
 			{
 				continue;
@@ -595,7 +611,7 @@ public class ScalpWiz9001Strategy : Strategy
 				continue;
 			}
 
-			var order = BuyStop(volume, entryPrice);
+			var order = BuyMarket(volume);
 			if (order == null)
 			{
 				continue;
@@ -725,13 +741,13 @@ public class ScalpWiz9001Strategy : Strategy
 			return 0m;
 		}
 
-		var min = Security?.VolumeMin;
+		var min = Security?.MinVolume;
 		if (min is decimal minVolume && minVolume > 0m && volume < minVolume)
 		{
 			volume = minVolume;
 		}
 
-		var max = Security?.VolumeMax;
+		var max = Security?.MaxVolume;
 		if (max is decimal maxVolume && maxVolume > 0m && volume > maxVolume)
 		{
 			volume = maxVolume;
@@ -765,7 +781,7 @@ public class ScalpWiz9001Strategy : Strategy
 			return bid;
 		}
 
-		if (Security?.LastPrice is decimal last && last > 0m)
+		if (Security?.LastTick?.Price is decimal last && last > 0m)
 		{
 			return last;
 		}
@@ -780,7 +796,7 @@ public class ScalpWiz9001Strategy : Strategy
 			return ask;
 		}
 
-		if (Security?.LastPrice is decimal last && last > 0m)
+		if (Security?.LastTick?.Price is decimal last && last > 0m)
 		{
 			return last;
 		}
@@ -840,7 +856,7 @@ public class ScalpWiz9001Strategy : Strategy
 			_pendingOrders.RemoveAt(i);
 			CancelAllPendingOrders();
 
-			var price = trade.Trade?.Price ?? order.Price ?? 0m;
+			var price = trade.Trade?.Price ?? order.Price;
 			if (info.Side == Sides.Buy)
 			{
 				_longEntryPrice = price > 0m ? price : null;
@@ -907,7 +923,7 @@ public class ScalpWiz9001Strategy : Strategy
 	{
 		return order.State == OrderStates.Done
 			|| order.State == OrderStates.Failed
-			|| order.State == OrderStates.Cancelled;
+			|| order.State == OrderStates.Done;
 	}
 
 	private sealed class PendingOrderInfo

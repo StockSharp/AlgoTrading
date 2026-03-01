@@ -38,6 +38,7 @@ public class RsiRftlStrategy : Strategy
 
 	private decimal? _longTrailingStop;
 	private decimal? _shortTrailingStop;
+	private decimal _entryPrice;
 
 	private readonly StrategyParam<int> _maxHistoryLength;
 
@@ -225,7 +226,7 @@ public class RsiRftlStrategy : Strategy
 		if (_rsiHistory.Count < 4 || _rftlHistory.Count < 2 || _closeHistory.Count < 2)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!IsFormed)
 			return;
 
 		var rsi0 = GetSeriesValue(_rsiHistory, 0);
@@ -234,13 +235,13 @@ public class RsiRftlStrategy : Strategy
 
 		if (rsi0 > 70m && Position > 0m)
 		{
-			ClosePosition();
+			CloseCurrentPosition();
 			ResetTrailing();
 		}
 
 		if (rsi0 < 30m && Position < 0m)
 		{
-			ClosePosition();
+			CloseCurrentPosition();
 			ResetTrailing();
 		}
 
@@ -404,7 +405,7 @@ public class RsiRftlStrategy : Strategy
 	{
 		if (Position > 0m)
 		{
-			var entry = PositionPrice;
+			var entry = _entryPrice;
 			if (entry <= 0m)
 				return false;
 
@@ -416,7 +417,7 @@ public class RsiRftlStrategy : Strategy
 					var stopPrice = entry - stopOffset;
 					if (candle.LowPrice <= stopPrice)
 					{
-						ClosePosition();
+						CloseCurrentPosition();
 						ResetTrailing();
 						return true;
 					}
@@ -431,7 +432,7 @@ public class RsiRftlStrategy : Strategy
 					var takePrice = entry + takeOffset;
 					if (candle.HighPrice >= takePrice)
 					{
-						ClosePosition();
+						CloseCurrentPosition();
 						ResetTrailing();
 						return true;
 					}
@@ -457,7 +458,7 @@ public class RsiRftlStrategy : Strategy
 
 					if (_longTrailingStop is decimal trail && candle.LowPrice <= trail)
 					{
-						ClosePosition();
+						CloseCurrentPosition();
 						ResetTrailing();
 						return true;
 					}
@@ -466,7 +467,7 @@ public class RsiRftlStrategy : Strategy
 		}
 		else if (Position < 0m)
 		{
-			var entry = PositionPrice;
+			var entry = _entryPrice;
 			if (entry <= 0m)
 				return false;
 
@@ -478,7 +479,7 @@ public class RsiRftlStrategy : Strategy
 					var stopPrice = entry + stopOffset;
 					if (candle.HighPrice >= stopPrice)
 					{
-						ClosePosition();
+						CloseCurrentPosition();
 						ResetTrailing();
 						return true;
 					}
@@ -493,7 +494,7 @@ public class RsiRftlStrategy : Strategy
 					var takePrice = entry - takeOffset;
 					if (candle.LowPrice <= takePrice)
 					{
-						ClosePosition();
+						CloseCurrentPosition();
 						ResetTrailing();
 						return true;
 					}
@@ -519,7 +520,7 @@ public class RsiRftlStrategy : Strategy
 
 					if (_shortTrailingStop is decimal trail && candle.HighPrice >= trail)
 					{
-						ClosePosition();
+						CloseCurrentPosition();
 						ResetTrailing();
 						return true;
 					}
@@ -534,7 +535,7 @@ public class RsiRftlStrategy : Strategy
 		return false;
 	}
 
-	private static void AddSeriesValue(List<decimal> target, decimal value)
+	private void AddSeriesValue(List<decimal> target, decimal value)
 	{
 		target.Add(value);
 		if (target.Count > MaxHistoryLength)
@@ -545,6 +546,23 @@ public class RsiRftlStrategy : Strategy
 	{
 		var index = values.Count - 1 - shift;
 		return index >= 0 ? values[index] : 0m;
+	}
+
+	private void CloseCurrentPosition()
+	{
+		if (Position > 0)
+			SellMarket(Position);
+		else if (Position < 0)
+			BuyMarket(Math.Abs(Position));
+	}
+
+	protected override void OnOwnTradeReceived(MyTrade trade)
+	{
+		base.OnOwnTradeReceived(trade);
+		if (Position != 0)
+			_entryPrice = trade.Trade.Price;
+		else
+			_entryPrice = 0;
 	}
 
 	private void ResetTrailing()
