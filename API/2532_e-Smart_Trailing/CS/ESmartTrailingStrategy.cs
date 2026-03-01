@@ -21,6 +21,7 @@ public class ESmartTrailingStrategy : Strategy
 	private readonly StrategyParam<decimal> _trailingStop;
 	private readonly StrategyParam<decimal> _trailingStep;
 
+	private decimal _entryPrice;
 	private decimal? _longStopPrice;
 	private decimal? _shortStopPrice;
 
@@ -71,6 +72,7 @@ public class ESmartTrailingStrategy : Strategy
 	{
 		base.OnReseted();
 
+		_entryPrice = 0m;
 		_longStopPrice = null;
 		_shortStopPrice = null;
 	}
@@ -87,12 +89,13 @@ public class ESmartTrailingStrategy : Strategy
 
 	private void ProcessTrade(ITickTradeMessage trade)
 	{
-		var tradePrice = trade.Price;
+		var price = trade.Price;
 
-		if (tradePrice is null)
+		if (price <= 0m)
 			return;
 
-		var price = tradePrice.Value;
+		if (Position != 0 && _entryPrice == 0m)
+			_entryPrice = price;
 		var pipSize = CalculateAdjustedPoint();
 		var stopDistance = TrailingStop * pipSize;
 		var stepDistance = TrailingStep * pipSize;
@@ -118,7 +121,7 @@ public class ESmartTrailingStrategy : Strategy
 
 	private void ProcessLong(decimal price, decimal stopDistance, decimal stepDistance)
 	{
-		var entryPrice = PositionPrice;
+		var entryPrice = _entryPrice;
 
 		if (price >= entryPrice)
 		{
@@ -148,7 +151,7 @@ public class ESmartTrailingStrategy : Strategy
 
 	private void ProcessShort(decimal price, decimal stopDistance, decimal stepDistance)
 	{
-		var entryPrice = PositionPrice;
+		var entryPrice = _entryPrice;
 
 		if (price <= entryPrice)
 		{

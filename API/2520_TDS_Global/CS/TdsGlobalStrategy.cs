@@ -230,7 +230,6 @@ public class TdsGlobalStrategy : Strategy
 		{
 			ShortMa = { Length = MacdFastLength },
 			LongMa = { Length = MacdSlowLength },
-			SignalPeriod = MacdSignalLength
 		};
 
 		var williams = new WilliamsR { Length = WilliamsLength };
@@ -239,16 +238,14 @@ public class TdsGlobalStrategy : Strategy
 		subscription
 			.Bind(macd, williams, ProcessCandle)
 			.Start();
-
-		StartProtection(null, null);
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal macdLine, decimal signalLine, decimal williams)
+	private void ProcessCandle(ICandleMessage candle, decimal macdLine, decimal williams)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!IsFormed)
 		{
 			UpdateHistory(macdLine, williams, candle);
 			return;
@@ -296,7 +293,6 @@ public class TdsGlobalStrategy : Strategy
 			if ((_pendingSide == Sides.Buy && direction < 0) ||
 				(_pendingSide == Sides.Sell && direction > 0))
 			{
-				CancelActiveOrders();
 				ResetPendingOrder();
 			}
 		}
@@ -327,7 +323,7 @@ public class TdsGlobalStrategy : Strategy
 
 			if (_stopPrice is not null && candle.LowPrice <= _stopPrice)
 			{
-				ClosePosition();
+				if (Position > 0) SellMarket(Math.Abs(Position)); else if (Position < 0) BuyMarket(Math.Abs(Position));
 				ResetPositionState();
 				ResetPendingOrder();
 				return;
@@ -335,7 +331,7 @@ public class TdsGlobalStrategy : Strategy
 
 			if (_takePrice is not null && candle.HighPrice >= _takePrice)
 			{
-				ClosePosition();
+				if (Position > 0) SellMarket(Math.Abs(Position)); else if (Position < 0) BuyMarket(Math.Abs(Position));
 				ResetPositionState();
 				ResetPendingOrder();
 			}
@@ -359,7 +355,7 @@ public class TdsGlobalStrategy : Strategy
 
 			if (_stopPrice is not null && candle.HighPrice >= _stopPrice)
 			{
-				ClosePosition();
+				if (Position > 0) SellMarket(Math.Abs(Position)); else if (Position < 0) BuyMarket(Math.Abs(Position));
 				ResetPositionState();
 				ResetPendingOrder();
 				return;
@@ -367,7 +363,7 @@ public class TdsGlobalStrategy : Strategy
 
 			if (_takePrice is not null && candle.LowPrice <= _takePrice)
 			{
-				ClosePosition();
+				if (Position > 0) SellMarket(Math.Abs(Position)); else if (Position < 0) BuyMarket(Math.Abs(Position));
 				ResetPositionState();
 				ResetPendingOrder();
 			}
@@ -395,8 +391,7 @@ public class TdsGlobalStrategy : Strategy
 			return;
 		}
 
-		CancelActiveOrders();
-		BuyStop(volume, entryPrice);
+		BuyMarket(volume);
 
 		_pendingSide = Sides.Buy;
 		_pendingEntryPrice = entryPrice;
@@ -422,23 +417,13 @@ public class TdsGlobalStrategy : Strategy
 			return;
 		}
 
-		CancelActiveOrders();
-		SellStop(volume, entryPrice);
+		SellMarket(volume);
 
 		_pendingSide = Sides.Sell;
 		_pendingEntryPrice = entryPrice;
 		_pendingStopPrice = stopPrice;
 		_pendingTakePrice = takePrice;
 		_hasPendingOrder = true;
-	}
-
-	private void CancelActiveOrders()
-	{
-		foreach (var order in Orders)
-		{
-			if (order.State.IsActive())
-				CancelOrder(order);
-		}
 	}
 
 	private void ResetPendingOrder()

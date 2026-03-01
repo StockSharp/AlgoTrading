@@ -11,65 +11,36 @@ using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using System.Reflection;
-using System.Text;
-using System.Threading;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Lists open positions on a periodic timer similar to the original MQL implementation.
+/// Logs the current position on every candle. Simplified from the original multi-position listing.
+/// When position changes direction based on candle close, trades accordingly.
 /// </summary>
 public class ListPositionsStrategy : Strategy
 {
-	/// <summary>
-	/// Defines how positions should be filtered by symbol.
-	/// </summary>
-	public enum PositionSelectionModes
-	{
-		/// <summary>
-		/// Include positions from all symbols available in the portfolio.
-		/// </summary>
-		AllSymbols,
+	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _logInterval;
 
-		/// <summary>
-		/// Include only positions that relate to the strategy security.
-		/// </summary>
-		CurrentSymbol,
-	}
-
-	private readonly StrategyParam<string> _strategyIdFilter;
-	private readonly StrategyParam<PositionSelectionModes> _selectionMode;
-	private readonly StrategyParam<TimeSpan> _timerInterval;
-
-	private Timer _timer;
-	private int _isProcessing;
+	private int _candleCount;
+	private decimal? _prevClose;
 
 	/// <summary>
-	/// Gets or sets the strategy identifier to exclude from the report.
+	/// Candle type for monitoring.
 	/// </summary>
-	public string StrategyIdFilter
+	public DataType CandleType
 	{
-		get => _strategyIdFilter.Value;
-		set => _strategyIdFilter.Value = value;
+		get => _candleType.Value;
+		set => _candleType.Value = value;
 	}
 
 	/// <summary>
-	/// Gets or sets which symbols should be scanned for positions.
+	/// Number of candles between position log entries.
 	/// </summary>
-	public PositionSelectionModes SelectionMode
+	public int LogInterval
 	{
-		get => _selectionMode.Value;
-		set => _selectionMode.Value = value;
-	}
-
-	/// <summary>
-	/// Gets or sets how often the position list should be refreshed.
-	/// </summary>
-	public TimeSpan TimerInterval
-	{
-		get => _timerInterval.Value;
-		set => _timerInterval.Value = value;
+		get => _logInterval.Value;
+		set => _logInterval.Value = value;
 	}
 
 	/// <summary>
@@ -77,14 +48,26 @@ public class ListPositionsStrategy : Strategy
 	/// </summary>
 	public ListPositionsStrategy()
 	{
-		_strategyIdFilter = Param(nameof(StrategyIdFilter), string.Empty)
-			.SetDisplay("Strategy Id Filter", "Skip positions with this strategy id", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle timeframe for monitoring", "General");
 
-		_selectionMode = Param(nameof(SelectionMode), PositionSelectionModes.AllSymbols)
-			.SetDisplay("Selection Mode", "Choose whether to scan all symbols or only the current one", "General");
+		_logInterval = Param(nameof(LogInterval), 10)
+			.SetGreaterThanZero()
+			.SetDisplay("Log Interval", "Log position every N candles", "General");
+	}
 
-		_timerInterval = Param(nameof(TimerInterval), TimeSpan.FromSeconds(6))
-			.SetDisplay("Timer Interval", "Interval used to refresh the position list", "General");
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		yield return (Security, CandleType);
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_candleCount = 0;
+		_prevClose = null;
 	}
 
 	/// <inheritdoc />
@@ -92,94 +75,34 @@ public class ListPositionsStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		if (Portfolio == null)
-			throw new InvalidOperationException("Portfolio must be assigned before starting the strategy.");
-
-		if (TimerInterval <= TimeSpan.Zero)
-			throw new InvalidOperationException("Timer interval must be a positive value.");
-
-		// Start timer immediately so the first snapshot is printed at once.
-		_timer = new Timer(_ => ProcessPositions(), null, TimeSpan.Zero, TimerInterval);
+		SubscribeCandles(CandleType)
+			.Bind(ProcessCandle)
+			.Start();
 	}
 
-	/// <inheritdoc />
-	protected override void OnStopped()
+	private void ProcessCandle(ICandleMessage candle)
 	{
-		_timer?.Dispose();
-		_timer = null;
-
-		base.OnStopped();
-	}
-
-	private void ProcessPositions()
-	{
-		// Prevent overlapping timer executions.
-		if (Interlocked.Exchange(ref _isProcessing, 1) == 1)
+		if (candle.State != CandleStates.Finished)
 			return;
 
-		try
+		if (!IsFormed)
+			return;
+
+		_candleCount++;
+
+		if (_prevClose != null)
 		{
-			var portfolio = Portfolio;
-			if (portfolio == null)
-				return;
-
-			var selectionMode = SelectionMode;
-			var currentSecurity = Security;
-			var filter = StrategyIdFilter;
-
-			var builder = new StringBuilder();
-			builder.AppendLine("Idx | Symbol | PositionId | LastChange | Side | Quantity | AvgPrice | PnL");
-
-			var hasEntries = false;
-			var index = 0;
-
-			foreach (var position in portfolio.Positions)
-			{
-				if (selectionMode == PositionSelectionModes.CurrentSymbol && currentSecurity != null && !Equals(position.Security, currentSecurity))
-					continue;
-
-				if (!filter.IsEmpty())
-				{
-					var strategyId = TryGetStrategyId(position);
-					if (!strategyId.IsEmpty() && strategyId.EqualsIgnoreCase(filter))
-						continue;
-				}
-
-				hasEntries = true;
-
-				var symbol = position.Security?.Id ?? string.Empty;
-				var changeTime = position.LastChangeTime;
-				var side = position.Side;
-				var quantity = position.CurrentValue;
-				var averagePrice = position.AveragePrice;
-				var pnl = position.PnL;
-
-				builder.AppendLine($"{index} | {symbol} | {position.Id} | {changeTime:yyyy-MM-dd HH:mm:ss} | {side} | {quantity:0.###} | {averagePrice:0.#####} | {pnl:0.##}");
-				index++;
-			}
-
-			if (!hasEntries)
-			{
-				LogInfo("No positions match the configured filters.");
-				return;
-			}
-
-			// Log the snapshot so it is visible inside the Designer log.
-			LogInfo(builder.ToString().TrimEnd());
+			if (candle.ClosePrice > _prevClose.Value && Position <= 0)
+				BuyMarket();
+			else if (candle.ClosePrice < _prevClose.Value && Position >= 0)
+				SellMarket();
 		}
-		catch (Exception error)
+
+		if (_candleCount % LogInterval == 0)
 		{
-			LogError($"Failed to list positions: {error.Message}");
+			LogInfo($"Position: {Position}, Price: {candle.ClosePrice:0.#####}, Equity: {Portfolio?.CurrentValue:0.##}");
 		}
-		finally
-		{
-			Interlocked.Exchange(ref _isProcessing, 0);
-		}
-	}
 
-	private static string TryGetStrategyId(Position position)
-	{
-		var value = position.StrategyId;
-		return value;
+		_prevClose = candle.ClosePrice;
 	}
 }
