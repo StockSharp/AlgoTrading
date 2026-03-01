@@ -92,7 +92,7 @@ public class CalcProfitLossOnLinePriceStrategy : Strategy
 		if (priceStep == 0m || stepPrice == 0m)
 			return;
 
-		var diff = LinePrice - PositionPrice;
+		var diff = LinePrice - candle.ClosePrice;
 		var pnl = diff / priceStep * stepPrice * Position;
 
 		LogInfo($"Profit/Loss at {LinePrice} = {pnl:0.##} {Portfolio?.Currency}");

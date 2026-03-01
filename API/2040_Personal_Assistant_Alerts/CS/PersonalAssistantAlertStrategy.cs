@@ -123,21 +123,8 @@ public class PersonalAssistantAlertStrategy : Strategy
 			return;
 
 		var openPositions = Position != 0 ? 1 : 0;
-		var stopCount = 0;
-		var takeCount = 0;
 
-		foreach (var order in Orders)
-		{
-			if (order.Security != Security)
-				continue;
-
-			if (order.Type == OrderTypes.Stop)
-				stopCount++;
-			else if (order.Type == OrderTypes.TakeProfit)
-				takeCount++;
-		}
-
-		LogInfo($"PnL={PnL}, Position={Position}, Orders={Orders.Count}, Stops={stopCount}, TPs={takeCount}");
+		LogInfo($"PnL={PnL}, Position={Position}, OpenPositions={openPositions}");
 	}
 
 	/// <summary>Open a long position using market order.</summary>
@@ -175,99 +162,4 @@ public class PersonalAssistantAlertStrategy : Strategy
 		LogInfo($"Volume decreased to {OrderVolume}");
 	}
 
-	/// <summary>Place a buy stop pending order.</summary>
-	public void BuyStop(decimal price, decimal? stopLoss = null, decimal? takeProfit = null)
-	{
-		if (!AllowPending)
-		{
-			LogWarning("Pending orders are disabled.");
-			return;
-		}
-
-		if (RequireStopLoss && stopLoss is null)
-		{
-			LogWarning("Stop loss is required.");
-			return;
-		}
-
-		if (RequireTakeProfit && takeProfit is null)
-		{
-			LogWarning("Take profit is required.");
-			return;
-		}
-
-		BuyStop(OrderVolume, price, stopLoss, takeProfit);
-	}
-
-	/// <summary>Place a sell stop pending order.</summary>
-	public void SellStop(decimal price, decimal? stopLoss = null, decimal? takeProfit = null)
-	{
-		if (!AllowPending)
-		{
-			LogWarning("Pending orders are disabled.");
-			return;
-		}
-
-		if (RequireStopLoss && stopLoss is null)
-		{
-			LogWarning("Stop loss is required.");
-			return;
-		}
-
-		if (RequireTakeProfit && takeProfit is null)
-		{
-			LogWarning("Take profit is required.");
-			return;
-		}
-
-		SellStop(OrderVolume, price, stopLoss, takeProfit);
-	}
-
-	/// <summary>Place a buy limit pending order.</summary>
-	public void BuyLimit(decimal price, decimal? stopLoss = null, decimal? takeProfit = null)
-	{
-		if (!AllowPending)
-		{
-			LogWarning("Pending orders are disabled.");
-			return;
-		}
-
-		if (RequireStopLoss && stopLoss is null)
-		{
-			LogWarning("Stop loss is required.");
-			return;
-		}
-
-		if (RequireTakeProfit && takeProfit is null)
-		{
-			LogWarning("Take profit is required.");
-			return;
-		}
-
-		BuyLimit(OrderVolume, price, stopLoss, takeProfit);
-	}
-
-	/// <summary>Place a sell limit pending order.</summary>
-	public void SellLimit(decimal price, decimal? stopLoss = null, decimal? takeProfit = null)
-	{
-		if (!AllowPending)
-		{
-			LogWarning("Pending orders are disabled.");
-			return;
-		}
-
-		if (RequireStopLoss && stopLoss is null)
-		{
-			LogWarning("Stop loss is required.");
-			return;
-		}
-
-		if (RequireTakeProfit && takeProfit is null)
-		{
-			LogWarning("Take profit is required.");
-			return;
-		}
-
-		SellLimit(OrderVolume, price, stopLoss, takeProfit);
-	}
 }

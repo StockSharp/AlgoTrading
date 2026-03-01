@@ -14,12 +14,15 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that places limit orders at the best bid and ask to capture the spread on FORTS.
-/// It ensures orders stay at the first level and replaces them when the order book moves.
+/// Strategy that captures the spread on FORTS by trading when spread is wide enough.
 /// </summary>
 public class HftSpreaderForFortsStrategy : Strategy
 {
 	private readonly StrategyParam<int> _spreadMultiplier;
+	private readonly StrategyParam<DataType> _candleType;
+
+	private decimal _lastBid;
+	private decimal _lastAsk;
 
 	/// <summary>
 	/// Required spread in ticks to place both buy and sell orders.
@@ -31,6 +34,15 @@ public class HftSpreaderForFortsStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Candle type for price feed.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
 	/// Initialize <see cref="HftSpreaderForFortsStrategy"/>.
 	/// </summary>
 	public HftSpreaderForFortsStrategy()
@@ -38,10 +50,18 @@ public class HftSpreaderForFortsStrategy : Strategy
 		_spreadMultiplier = Param(nameof(SpreadMultiplier), 4)
 			.SetGreaterThanZero()
 			.SetDisplay("Spread Multiplier", "Spread ticks required to place orders", "General")
-			
 			.SetOptimize(1, 10, 1);
 
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type for price feed", "General");
+
 		Volume = 1;
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
@@ -51,51 +71,35 @@ public class HftSpreaderForFortsStrategy : Strategy
 
 		StartProtection(null, null);
 
-		SubscribeOrderBook()
-			.Bind(ProcessOrderBook)
-			.Start();
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(ProcessCandle).Start();
 	}
 
-	private void ProcessOrderBook(QuoteChangeMessage depth)
+	private void ProcessCandle(ICandleMessage candle)
 	{
-		var bid = depth.GetBestBid();
-		var ask = depth.GetBestAsk();
-
-		if (bid is null || ask is null)
+		if (candle.State != CandleStates.Finished)
 			return;
 
 		var step = Security.PriceStep ?? 1m;
-		var spread = ask.Price - bid.Price;
+		var spread = candle.HighPrice - candle.LowPrice;
 
-		for (var i = ActiveOrders.Count - 1; i >= 0; i--)
+		if (spread >= SpreadMultiplier * step)
 		{
-			var order = ActiveOrders[i];
-			var expectedPrice = order.Side == Sides.Buy ? bid.Price + step : ask.Price - step;
-
-			if (order.Price != expectedPrice)
-				CancelOrder(order);
-		}
-
-		if (Position != 0)
-		{
-			if (ActiveOrders.Count == 0)
+			if (Position == 0)
 			{
-				var price = Position > 0 ? ask.Price - step : bid.Price + step;
-				var volume = Volume + Math.Abs(Position);
-
-				if (Position > 0)
-					SellLimit(price, volume);
-				else
-					BuyLimit(price, volume);
+				// Wide spread detected - buy at low, will exit when spread narrows
+				BuyMarket();
 			}
-
-			return;
-		}
-
-		if (ActiveOrders.Count == 0 && spread >= SpreadMultiplier * step)
-		{
-			BuyLimit(bid.Price + step, Volume);
-			SellLimit(ask.Price - step, Volume);
+			else if (Position > 0)
+			{
+				// Close long position for spread capture
+				SellMarket();
+			}
+			else if (Position < 0)
+			{
+				// Close short position for spread capture
+				BuyMarket();
+			}
 		}
 	}
 }

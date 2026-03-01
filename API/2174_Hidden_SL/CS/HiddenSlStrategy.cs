@@ -21,6 +21,8 @@ public class HiddenSlStrategy : Strategy
 	private readonly StrategyParam<decimal> _takeProfit;
 	private readonly StrategyParam<decimal> _stopLoss;
 
+	private decimal _entryPrice;
+
 	public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
 	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
 
@@ -56,7 +58,7 @@ public class HiddenSlStrategy : Strategy
 		if (pos == 0)
 			return;
 
-		var entryPrice = Position.AveragePrice;
+		var entryPrice = _entryPrice;
 		if (entryPrice == 0m)
 			return;
 

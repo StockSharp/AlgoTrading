@@ -95,9 +95,7 @@ public class PersonalAssistantStrategy : Strategy
 
 	private string GetStatusLine()
 	{
-		var spread = Security?.BestAskPrice is decimal ask && Security?.BestBidPrice is decimal bid
-		? ask - bid
-		: 0m;
+		var spread = 0m;
 
 		var tickValue = Security?.StepPrice * LotVolume ?? 0m;
 		var openPositionCounter = Position != 0 ? 1 : 0;
