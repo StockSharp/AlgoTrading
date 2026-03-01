@@ -170,6 +170,10 @@ public class VortexIndicatorMmrecDuplexStrategy : Strategy
 		_shortSlippageSteps = Param(nameof(ShortSlippageSteps), 10m)
 		.SetNotNegative()
 		.SetDisplay("Short Slippage", "Expected slippage for short trades in price steps (informational).", "Trading");
+
+		_maxHistory = Param(nameof(MaxHistory), 50)
+		.SetGreaterThanZero()
+		.SetDisplay("Max History", "Maximum number of indicator points stored.", "Indicator");
 	}
 
 	/// <summary>
@@ -450,18 +454,36 @@ public class VortexIndicatorMmrecDuplexStrategy : Strategy
 		_longVortex = new VortexIndicator { Length = LongLength };
 		var longSubscription = SubscribeCandles(LongCandleType);
 		longSubscription
-		.Bind(_longVortex, ProcessLongCandle)
+		.BindEx(new IIndicator[] { _longVortex }, ProcessLongCandleEx)
 		.Start();
 
 		_shortVortex = new VortexIndicator { Length = ShortLength };
 		var shortSubscription = SubscribeCandles(ShortCandleType);
 		shortSubscription
-		.Bind(_shortVortex, ProcessShortCandle)
+		.BindEx(new IIndicator[] { _shortVortex }, ProcessShortCandleEx)
 		.Start();
 
 		StartProtection(null, null);
 
 		base.OnStarted2(time);
+	}
+
+	private void ProcessLongCandleEx(ICandleMessage candle, IIndicatorValue[] values)
+	{
+		if (!_longVortex.IsFormed) return;
+		var complex = (ComplexIndicatorValue<VortexIndicator>)values[0];
+		var viPlus = complex.InnerValues[_longVortex.PlusVi].ToDecimal();
+		var viMinus = complex.InnerValues[_longVortex.MinusVi].ToDecimal();
+		ProcessLongCandle(candle, viPlus, viMinus);
+	}
+
+	private void ProcessShortCandleEx(ICandleMessage candle, IIndicatorValue[] values)
+	{
+		if (!_shortVortex.IsFormed) return;
+		var complex = (ComplexIndicatorValue<VortexIndicator>)values[0];
+		var viPlus = complex.InnerValues[_shortVortex.PlusVi].ToDecimal();
+		var viMinus = complex.InnerValues[_shortVortex.MinusVi].ToDecimal();
+		ProcessShortCandle(candle, viPlus, viMinus);
 	}
 
 	private void ProcessLongCandle(ICandleMessage candle, decimal viPlus, decimal viMinus)

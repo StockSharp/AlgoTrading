@@ -227,7 +227,7 @@ public class CycleMarketOrderStrategy : Strategy
 	/// <inheritdoc />
 	protected override void OnStopped()
 	{
-		CancelAllOrders();
+		_orderIntents.Clear();
 		base.OnStopped();
 	}
 
@@ -287,6 +287,7 @@ public class CycleMarketOrderStrategy : Strategy
 	{
 		base.OnOrderRegisterFailed(fail, calcRisk);
 
+		var order = fail.Order;
 		if (!_orderIntents.TryGetValue(order, out var intent))
 			return;
 
@@ -488,7 +489,7 @@ public class CycleMarketOrderStrategy : Strategy
 		slot.PendingExitVolume += slot.OpenVolume;
 		_orderIntents[order] = new OrderIntent(index, true, slot.Direction);
 
-		LogInfo($"Slot {slot.MagicNumber} closing at trailing stop {slot.TrailingStopPrice ?? "n/a"}.");
+		LogInfo($"Slot {slot.MagicNumber} closing at trailing stop {(slot.TrailingStopPrice.HasValue ? slot.TrailingStopPrice.Value.ToString("F5") : "n/a")}.");
 	}
 
 	private void InitializeSlots()

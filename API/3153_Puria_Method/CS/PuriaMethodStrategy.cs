@@ -456,9 +456,9 @@ public class PuriaMethodStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_ma0 = CreateMovingAverage(Ma0Method, Ma0Period, Ma0Price);
 		_ma1 = CreateMovingAverage(Ma1Method, Ma1Period, Ma1Price);
@@ -472,8 +472,8 @@ public class PuriaMethodStrategy : Strategy
 		{
 			Macd =
 			{
-				ShortMa = { Length = Math.Max(1, MacdFastPeriod), CandlePrice = MacdPrice },
-				LongMa = { Length = Math.Max(1, MacdSlowPeriod), CandlePrice = MacdPrice },
+				ShortMa = { Length = Math.Max(1, MacdFastPeriod) },
+				LongMa = { Length = Math.Max(1, MacdSlowPeriod) },
 			},
 			SignalMa = { Length = Math.Max(1, MacdSignalPeriod) }
 		};
@@ -508,15 +508,15 @@ public class PuriaMethodStrategy : Strategy
 		var ma2 = ProcessMovingAverage(_ma2, _ma2ShiftIndicator, candle);
 
 		// Evaluate MACD and keep the auxiliary history in sync.
-		var macdValue = _macd.Process(candle);
+		var macdInput = GetAppliedPrice(candle, MacdPrice);
+		var macdValue = _macd.Process(new DecimalIndicatorValue(_macd, macdInput, candle.OpenTime));
 		if (!macdValue.IsFinal)
 		{
 			StorePreviousValues(ma0, ma1, ma2, null);
 			return;
 		}
 
-		var macdSignal = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
-		var macdCurrent = macdSignal.Macd;
+		var macdCurrent = macdValue.ToDecimal();
 
 		// Store the latest MACD value to validate monotonic trends.
 		UpdateMacdHistory(macdCurrent);
@@ -835,7 +835,7 @@ public class PuriaMethodStrategy : Strategy
 
 		var step = Security.VolumeStep ?? 0m;
 		var min = Security.MinVolume ?? step;
-		var max = Security.VolumeMax;
+		var max = Security.MaxVolume;
 
 		var adjusted = step > 0m ? Math.Floor(volume / step) * step : volume;
 		if (adjusted < min)
@@ -893,17 +893,31 @@ public class PuriaMethodStrategy : Strategy
 		_shortLowestPrice = null;
 	}
 
+	private static decimal GetAppliedPrice(ICandleMessage candle, CandlePrices priceMode)
+	{
+		return priceMode switch
+		{
+			CandlePrices.Open => candle.OpenPrice,
+			CandlePrices.High => candle.HighPrice,
+			CandlePrices.Low => candle.LowPrice,
+			CandlePrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			CandlePrices.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			CandlePrices.WClose => (candle.HighPrice + candle.LowPrice + candle.ClosePrice + candle.ClosePrice) / 4m,
+			_ => candle.ClosePrice
+		};
+	}
+
 	private static DecimalLengthIndicator CreateMovingAverage(MaMethods method, int length, CandlePrices price)
 	{
 		var maLength = Math.Max(1, length);
 
 		return method switch
 		{
-			MaMethods.Simple => new SMA { Length = maLength, CandlePrice = price },
-			MaMethods.Exponential => new EMA { Length = maLength, CandlePrice = price },
-			MaMethods.Smoothed => new SmoothedMovingAverage { Length = maLength, CandlePrice = price },
-			MaMethods.LinearWeighted => new WeightedMovingAverage { Length = maLength, CandlePrice = price },
-			_ => new SMA { Length = maLength, CandlePrice = price }
+			MaMethods.Simple => new SimpleMovingAverage { Length = maLength },
+			MaMethods.Exponential => new ExponentialMovingAverage { Length = maLength },
+			MaMethods.Smoothed => new SmoothedMovingAverage { Length = maLength },
+			MaMethods.LinearWeighted => new WeightedMovingAverage { Length = maLength },
+			_ => new SimpleMovingAverage { Length = maLength }
 		};
 	}
 

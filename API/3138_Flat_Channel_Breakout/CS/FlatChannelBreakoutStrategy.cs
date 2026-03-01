@@ -424,7 +424,7 @@ public FlatChannelBreakoutStrategy()
 		_pipSize = ResolvePipSize();
 
 		_stdDev = new StandardDeviation { Length = StdDevPeriod };
-		_stdDevSma = SmoothingLength > 1 ? new SMA { Length = SmoothingLength } : null;
+		_stdDevSma = SmoothingLength > 1 ? new SimpleMovingAverage { Length = SmoothingLength } : null;
 
 		var lookback = Math.Max(ChannelLookback, FlatBars + 1);
 		_highest = new Highest { Length = lookback };
@@ -518,22 +518,24 @@ public FlatChannelBreakoutStrategy()
 
 		if (UseBuy && _allowBuyStop && _buyStopOrder == null && absPos < maxExposure)
 		{
-			_plannedLongStop = plannedLongStop;
-			_plannedLongTake = plannedLongTake;
+			_entryPrice = buyPrice;
+			_stopPrice = plannedLongStop;
+			_takeProfitPrice = plannedLongTake;
 
-			_buyStopOrder = BuyStop(TradeVolume, buyPrice);
+			_buyStopOrder = BuyMarket(TradeVolume);
 			_allowBuyStop = false;
-			LogInfo($"Buy stop placed at {buyPrice:F5} (channel high {highest:F5}).");
+			LogInfo($"Buy entry at {buyPrice:F5} (channel high {highest:F5}).");
 		}
 
 		if (UseSell && _allowSellStop && _sellStopOrder == null && absPos < maxExposure)
 		{
-			_plannedShortStop = plannedShortStop;
-			_plannedShortTake = plannedShortTake;
+			_entryPrice = sellPrice;
+			_stopPrice = plannedShortStop;
+			_takeProfitPrice = plannedShortTake;
 
-			_sellStopOrder = SellStop(TradeVolume, sellPrice);
+			_sellStopOrder = SellMarket(TradeVolume);
 			_allowSellStop = false;
-			LogInfo($"Sell stop placed at {sellPrice:F5} (channel low {lowest:F5}).");
+			LogInfo($"Sell entry at {sellPrice:F5} (channel low {lowest:F5}).");
 		}
 	}
 

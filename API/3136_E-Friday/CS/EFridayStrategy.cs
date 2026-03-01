@@ -173,6 +173,17 @@ public class EFridayStrategy : Strategy
 		}
 	}
 
+	/// <inheritdoc />
+	protected override void OnOwnTradeReceived(MyTrade trade)
+	{
+		base.OnOwnTradeReceived(trade);
+
+		if (trade.Order.Side == Sides.Buy && Position > 0m)
+			_longEntryPrice ??= trade.Trade.Price;
+		else if (trade.Order.Side == Sides.Sell && Position < 0m)
+			_shortEntryPrice ??= trade.Trade.Price;
+	}
+
 	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
@@ -410,11 +421,9 @@ public class EFridayStrategy : Strategy
 	{
 		if (Position > 0m)
 		{
-			var averagePrice = Position.AveragePrice;
+			var averagePrice = _longEntryPrice ?? 0m;
 			if (averagePrice > 0m)
 			{
-				_longEntryPrice = averagePrice;
-
 				if (StopLossPips > 0m && _pipSize > 0m)
 				{
 					_longStopPrice ??= averagePrice - StopLossPips * _pipSize;
@@ -441,11 +450,9 @@ public class EFridayStrategy : Strategy
 
 		if (Position < 0m)
 		{
-			var averagePrice = Position.AveragePrice;
+			var averagePrice = _shortEntryPrice ?? 0m;
 			if (averagePrice > 0m)
 			{
-				_shortEntryPrice = averagePrice;
-
 				if (StopLossPips > 0m && _pipSize > 0m)
 				{
 					_shortStopPrice ??= averagePrice + StopLossPips * _pipSize;
