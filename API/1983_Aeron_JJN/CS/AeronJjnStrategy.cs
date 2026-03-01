@@ -34,8 +34,10 @@ public class AeronJjnStrategy : Strategy
 	private decimal _lastBullishOpen;
 	private decimal _lastBearishOpen;
 
-	private Order _buyStopOrder;
-	private Order _sellStopOrder;
+	private decimal _buyStopLevel;
+	private decimal _sellStopLevel;
+	private bool _hasBuyStop;
+	private bool _hasSellStop;
 	private DateTimeOffset _buyStopTime;
 	private DateTimeOffset _sellStopTime;
 
@@ -121,7 +123,8 @@ public class AeronJjnStrategy : Strategy
 		_prevOpen = _prevClose = 0m;
 		_hasPrev = false;
 		_lastBullishOpen = _lastBearishOpen = 0m;
-		_buyStopOrder = _sellStopOrder = null;
+		_hasBuyStop = _hasSellStop = false;
+		_buyStopLevel = _sellStopLevel = 0m;
 		_entryPrice = _stopPrice = _targetPrice = _pendingAtr = 0m;
 	}
 
@@ -145,9 +148,7 @@ public class AeronJjnStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
+		CheckStopOrders(candle);
 		ManagePosition(candle);
 		CancelExpiredOrders(candle.OpenTime);
 
@@ -161,18 +162,34 @@ public class AeronJjnStrategy : Strategy
 		_hasPrev = true;
 	}
 
+	private void CheckStopOrders(ICandleMessage candle)
+	{
+		if (_hasBuyStop && candle.HighPrice >= _buyStopLevel && Position <= 0)
+		{
+			BuyMarket();
+			_entryPrice = _buyStopLevel;
+			_stopPrice = _entryPrice - _pendingAtr;
+			_targetPrice = _entryPrice + _pendingAtr;
+			_pendingAtr = 0m;
+			_hasBuyStop = false;
+			_hasSellStop = false;
+		}
+		else if (_hasSellStop && candle.LowPrice <= _sellStopLevel && Position >= 0)
+		{
+			SellMarket();
+			_entryPrice = _sellStopLevel;
+			_stopPrice = _entryPrice + _pendingAtr;
+			_targetPrice = _entryPrice - _pendingAtr;
+			_pendingAtr = 0m;
+			_hasSellStop = false;
+			_hasBuyStop = false;
+		}
+	}
+
 	private void ManagePosition(ICandleMessage candle)
 	{
 		if (Position > 0)
 		{
-			if (_entryPrice == 0m)
-			{
-				_entryPrice = _buyStopOrder?.Price ?? candle.ClosePrice;
-				_stopPrice = _entryPrice - _pendingAtr;
-				_targetPrice = _entryPrice + _pendingAtr;
-				_pendingAtr = 0m;
-			}
-
 			if (TrailSl)
 			{
 				var trail = candle.ClosePrice - TrailPips * _tickSize;
@@ -188,14 +205,6 @@ public class AeronJjnStrategy : Strategy
 		}
 		else if (Position < 0)
 		{
-			if (_entryPrice == 0m)
-			{
-				_entryPrice = _sellStopOrder?.Price ?? candle.ClosePrice;
-				_stopPrice = _entryPrice + _pendingAtr;
-				_targetPrice = _entryPrice - _pendingAtr;
-				_pendingAtr = 0m;
-			}
-
 			if (TrailSl)
 			{
 				var trail = candle.ClosePrice + TrailPips * _tickSize;
@@ -216,40 +225,20 @@ public class AeronJjnStrategy : Strategy
 
 		if (Position != 0)
 		{
-			if (_buyStopOrder != null)
-			{
-				CancelOrder(_buyStopOrder);
-				_buyStopOrder = null;
-			}
-			if (_sellStopOrder != null)
-			{
-				CancelOrder(_sellStopOrder);
-				_sellStopOrder = null;
-			}
+			_hasBuyStop = false;
+			_hasSellStop = false;
 		}
-
-		if (_buyStopOrder != null && _buyStopOrder.State != OrderStates.Active)
-			_buyStopOrder = null;
-
-		if (_sellStopOrder != null && _sellStopOrder.State != OrderStates.Active)
-			_sellStopOrder = null;
 	}
 
 	private void CancelExpiredOrders(DateTimeOffset time)
 	{
 		var life = TimeSpan.FromMinutes(ResetTime);
 
-		if (_buyStopOrder != null && _buyStopOrder.State == OrderStates.Active && time - _buyStopTime >= life)
-		{
-			CancelOrder(_buyStopOrder);
-			_buyStopOrder = null;
-		}
+		if (_hasBuyStop && time - _buyStopTime >= life)
+			_hasBuyStop = false;
 
-		if (_sellStopOrder != null && _sellStopOrder.State == OrderStates.Active && time - _sellStopTime >= life)
-		{
-			CancelOrder(_sellStopOrder);
-			_sellStopOrder = null;
-		}
+		if (_hasSellStop && time - _sellStopTime >= life)
+			_hasSellStop = false;
 	}
 
 	private void TryEnter(ICandleMessage candle, decimal atrValue)
@@ -260,18 +249,20 @@ public class AeronJjnStrategy : Strategy
 
 		if (candle.ClosePrice > candle.OpenPrice && prevBearish && prevBody > DojiDiff1)
 		{
-			if (candle.ClosePrice < _lastBearishOpen && Position <= 0 && _buyStopOrder == null)
+			if (candle.ClosePrice < _lastBearishOpen && Position <= 0 && !_hasBuyStop)
 			{
-				_buyStopOrder = BuyStop(Volume + Math.Abs(Position), _lastBearishOpen);
+				_buyStopLevel = _lastBearishOpen;
+				_hasBuyStop = true;
 				_buyStopTime = candle.OpenTime;
 				_pendingAtr = atrValue;
 			}
 		}
 		else if (candle.ClosePrice < candle.OpenPrice && prevBullish && prevBody > DojiDiff1)
 		{
-			if (candle.ClosePrice > _lastBullishOpen && Position >= 0 && _sellStopOrder == null)
+			if (candle.ClosePrice > _lastBullishOpen && Position >= 0 && !_hasSellStop)
 			{
-				_sellStopOrder = SellStop(Volume + Math.Abs(Position), _lastBullishOpen);
+				_sellStopLevel = _lastBullishOpen;
+				_hasSellStop = true;
 				_sellStopTime = candle.OpenTime;
 				_pendingAtr = atrValue;
 			}

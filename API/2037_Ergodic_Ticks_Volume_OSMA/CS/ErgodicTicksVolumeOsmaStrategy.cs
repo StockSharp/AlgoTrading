@@ -23,6 +23,7 @@ public class ErgodicTicksVolumeOsmaStrategy : Strategy
 	private readonly StrategyParam<int> _signalLength;
 	private readonly StrategyParam<DataType> _candleType;
 
+	private MovingAverageConvergenceDivergenceSignal _macd;
 	private decimal _prevHist;
 	private decimal _prevPrevHist;
 
@@ -33,9 +34,9 @@ public class ErgodicTicksVolumeOsmaStrategy : Strategy
 
 	public ErgodicTicksVolumeOsmaStrategy()
 	{
-		_fastLength = Param(nameof(FastLength), 12).SetDisplay("Fast EMA");
-		_slowLength = Param(nameof(SlowLength), 26).SetDisplay("Slow EMA");
-		_signalLength = Param(nameof(SignalLength), 9).SetDisplay("Signal EMA");
+		_fastLength = Param(nameof(FastLength), 12).SetDisplay("Fast EMA", "Fast EMA length", "Indicators");
+		_slowLength = Param(nameof(SlowLength), 26).SetDisplay("Slow EMA", "Slow EMA length", "Indicators");
+		_signalLength = Param(nameof(SignalLength), 9).SetDisplay("Signal EMA", "Signal EMA length", "Indicators");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame()).SetDisplay("Timeframe", "Timeframe", "General");
 	}
 
@@ -54,35 +55,40 @@ public class ErgodicTicksVolumeOsmaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_prevHist = 0m;
 		_prevPrevHist = 0m;
 
-		var macd = new MovingAverageConvergenceDivergenceSignal
-		{
-			Macd =
+		_macd = new MovingAverageConvergenceDivergenceSignal(
+			new MovingAverageConvergenceDivergence
 			{
 				ShortMa = { Length = FastLength },
 				LongMa = { Length = SlowLength },
 			},
-			SignalMa = { Length = SignalLength }
-		};
+			new ExponentialMovingAverage { Length = SignalLength }
+		);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(macd, ProcessCandle)
+			.Bind(_macd, ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal macd, decimal signal, decimal hist)
+	private void ProcessCandle(ICandleMessage candle, decimal macdVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
+
+		if (!_macd.IsFormed)
+			return;
+
+		var signalVal = _macd.SignalMa.GetCurrentValue();
+		var hist = macdVal - signalVal;
 
 		if (_prevPrevHist == 0m)
 		{
@@ -99,31 +105,13 @@ public class ErgodicTicksVolumeOsmaStrategy : Strategy
 		var rising = _prevHist >= _prevPrevHist && hist >= _prevHist;
 		var falling = _prevHist <= _prevPrevHist && hist <= _prevHist;
 
-		if (rising)
+		if (rising && Position <= 0)
 		{
-			if (Position > 0)
-			{
-				// Already long, nothing to do.
-			}
-			else
-			{
-				if (Position < 0)
-					ClosePosition();
-				BuyMarket();
-			}
+			BuyMarket();
 		}
-		else if (falling)
+		else if (falling && Position >= 0)
 		{
-			if (Position < 0)
-			{
-				// Already short, nothing to do.
-			}
-			else
-			{
-				if (Position > 0)
-					ClosePosition();
-				SellMarket();
-			}
+			SellMarket();
 		}
 
 		_prevPrevHist = _prevHist;
