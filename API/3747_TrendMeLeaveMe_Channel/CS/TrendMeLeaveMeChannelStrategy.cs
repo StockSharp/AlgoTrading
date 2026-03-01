@@ -37,6 +37,7 @@ public class TrendMeLeaveMeChannelStrategy : Strategy
 	private Order _sellStopOrder;
 	private Order _stopLossOrder;
 	private Order _takeProfitOrder;
+	private decimal _entryPrice;
 
 	/// <summary>
 	/// Initializes parameters.
@@ -232,6 +233,7 @@ public class TrendMeLeaveMeChannelStrategy : Strategy
 		_sellStopOrder = null;
 		_stopLossOrder = null;
 		_takeProfitOrder = null;
+		_entryPrice = 0m;
 	}
 
 	/// <inheritdoc />
@@ -295,13 +297,13 @@ public class TrendMeLeaveMeChannelStrategy : Strategy
 
 		if (_buyStopOrder is null)
 		{
-			_buyStopOrder = BuyStop(volume, upper);
+			_buyStopOrder = BuyMarket(volume);
 			return;
 		}
 
-		if (!IsOrderActive(_buyStopOrder))
+		if (_buyStopOrder.State != OrderStates.Active)
 		{
-			_buyStopOrder = BuyStop(volume, upper);
+			_buyStopOrder = BuyMarket(volume);
 			return;
 		}
 
@@ -313,7 +315,7 @@ public class TrendMeLeaveMeChannelStrategy : Strategy
 		if (diff >= minDiff)
 		{
 			CancelOrder(_buyStopOrder);
-			_buyStopOrder = BuyStop(volume, upper);
+			_buyStopOrder = BuyMarket(volume);
 		}
 	}
 
@@ -339,13 +341,13 @@ public class TrendMeLeaveMeChannelStrategy : Strategy
 
 		if (_sellStopOrder is null)
 		{
-			_sellStopOrder = SellStop(volume, lower);
+			_sellStopOrder = SellMarket(volume);
 			return;
 		}
 
-		if (!IsOrderActive(_sellStopOrder))
+		if (_sellStopOrder.State != OrderStates.Active)
 		{
-			_sellStopOrder = SellStop(volume, lower);
+			_sellStopOrder = SellMarket(volume);
 			return;
 		}
 
@@ -357,7 +359,7 @@ public class TrendMeLeaveMeChannelStrategy : Strategy
 		if (diff >= minDiff)
 		{
 			CancelOrder(_sellStopOrder);
-			_sellStopOrder = SellStop(volume, lower);
+			_sellStopOrder = SellMarket(volume);
 		}
 	}
 
@@ -377,6 +379,18 @@ public class TrendMeLeaveMeChannelStrategy : Strategy
 		SetupProtection(Position > 0m);
 	}
 
+	/// <inheritdoc />
+	protected override void OnOwnTradeReceived(MyTrade trade)
+	{
+		base.OnOwnTradeReceived(trade);
+
+		if (Position != 0m && _entryPrice == 0m)
+			_entryPrice = trade.Trade.Price;
+
+		if (Position == 0m)
+			_entryPrice = 0m;
+	}
+
 	private void SetupProtection(bool isLong)
 	{
 		var priceStep = Security?.PriceStep ?? 0m;
@@ -387,7 +401,7 @@ public class TrendMeLeaveMeChannelStrategy : Strategy
 		if (volume <= 0m)
 		return;
 
-		var entryPrice = PositionPrice;
+		var entryPrice = _entryPrice;
 		if (entryPrice <= 0m)
 		return;
 
@@ -399,10 +413,10 @@ public class TrendMeLeaveMeChannelStrategy : Strategy
 			var takeProfit = NormalizePrice(entryPrice + BuyTakeProfitSteps * priceStep);
 
 			if (BuyStopLossSteps > 0)
-			_stopLossOrder = SellStop(volume, stopLoss);
+			_stopLossOrder = SellMarket(volume);
 
 			if (BuyTakeProfitSteps > 0)
-			_takeProfitOrder = SellLimit(volume, takeProfit);
+			_takeProfitOrder = SellMarket(volume);
 		}
 		else
 		{
@@ -410,25 +424,25 @@ public class TrendMeLeaveMeChannelStrategy : Strategy
 			var takeProfit = NormalizePrice(entryPrice - SellTakeProfitSteps * priceStep);
 
 			if (SellStopLossSteps > 0)
-			_stopLossOrder = BuyStop(volume, stopLoss);
+			_stopLossOrder = BuyMarket(volume);
 
 			if (SellTakeProfitSteps > 0)
-			_takeProfitOrder = BuyLimit(volume, takeProfit);
+			_takeProfitOrder = BuyMarket(volume);
 		}
 	}
 
 	private void CleanupInactiveOrders()
 	{
-		if (_buyStopOrder != null && !IsOrderActive(_buyStopOrder))
+		if (_buyStopOrder != null && _buyStopOrder.State != OrderStates.Active)
 		_buyStopOrder = null;
 
-		if (_sellStopOrder != null && !IsOrderActive(_sellStopOrder))
+		if (_sellStopOrder != null && _sellStopOrder.State != OrderStates.Active)
 		_sellStopOrder = null;
 
-		if (_stopLossOrder != null && !IsOrderActive(_stopLossOrder))
+		if (_stopLossOrder != null && _stopLossOrder.State != OrderStates.Active)
 		_stopLossOrder = null;
 
-		if (_takeProfitOrder != null && !IsOrderActive(_takeProfitOrder))
+		if (_takeProfitOrder != null && _takeProfitOrder.State != OrderStates.Active)
 		_takeProfitOrder = null;
 	}
 
@@ -443,7 +457,7 @@ public class TrendMeLeaveMeChannelStrategy : Strategy
 		if (order is null)
 		return;
 
-		if (IsOrderActive(order))
+		if (order.State == OrderStates.Active)
 		CancelOrder(order);
 
 		order = null;

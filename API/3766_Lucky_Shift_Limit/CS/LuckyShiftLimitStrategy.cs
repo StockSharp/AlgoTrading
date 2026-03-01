@@ -30,6 +30,7 @@ public class LuckyShiftLimitStrategy : Strategy
 
 	private decimal _shiftOffset;
 	private decimal _limitOffset;
+	private decimal _entryPrice;
 
 	/// <summary>
 	/// Minimum number of MetaTrader points separating consecutive asks before a fade-in sell order is sent.
@@ -78,6 +79,7 @@ public class LuckyShiftLimitStrategy : Strategy
 		_currentBid = null;
 		_shiftOffset = 0m;
 		_limitOffset = 0m;
+		_entryPrice = 0m;
 	}
 
 	/// <inheritdoc />
@@ -98,7 +100,7 @@ public class LuckyShiftLimitStrategy : Strategy
 		if (points <= 0)
 			return 0m;
 
-		var step = Security?.PriceStep ?? Security?.Step ?? 0m;
+		var step = Security?.PriceStep ?? 0m;
 
 		if (step <= 0m)
 			return 0m;
@@ -203,12 +205,24 @@ public class LuckyShiftLimitStrategy : Strategy
 		return baseVolume;
 	}
 
+	/// <inheritdoc />
+	protected override void OnOwnTradeReceived(MyTrade trade)
+	{
+		base.OnOwnTradeReceived(trade);
+
+		if (Position != 0m && _entryPrice == 0m)
+			_entryPrice = trade.Trade.Price;
+
+		if (Position == 0m)
+			_entryPrice = 0m;
+	}
+
 	private void TryClosePosition()
 	{
 		if (Position == 0)
 			return;
 
-		var avgPrice = Position.AveragePrice;
+		var avgPrice = _entryPrice;
 
 		if (avgPrice <= 0m)
 			return;

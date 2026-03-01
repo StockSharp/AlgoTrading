@@ -277,7 +277,8 @@ public class FrankUdMinimalStrategy : Strategy
 		if (order == null)
 		return;
 
-		_orderActions[order.Id] = action;
+		if (order.Id is long id)
+			_orderActions[id] = action;
 	}
 
 	/// <inheritdoc />
@@ -285,7 +286,7 @@ public class FrankUdMinimalStrategy : Strategy
 	{
 		base.OnOwnTradeReceived(trade);
 
-		if (!_orderActions.TryGetValue(trade.Order.Id, out var action))
+		if (trade.Order.Id is not long tradeOrderId || !_orderActions.TryGetValue(tradeOrderId, out var action))
 		return;
 
 		var price = trade.Trade.Price;
@@ -316,8 +317,8 @@ public class FrankUdMinimalStrategy : Strategy
 	{
 		base.OnOrderReceived(order);
 
-		if (order.State is OrderStates.Done or OrderStates.Failed or OrderStates.Canceled)
-		_orderActions.Remove(order.Id);
+		if (order.Id is long oid && order.State is OrderStates.Done or OrderStates.Failed)
+		_orderActions.Remove(oid);
 	}
 
 	/// <inheritdoc />
@@ -325,7 +326,8 @@ public class FrankUdMinimalStrategy : Strategy
 	{
 		base.OnOrderRegisterFailed(fail, calcRisk);
 
-		_orderActions.Remove(order.Id);
+		if (fail.Order.Id is long foid)
+			_orderActions.Remove(foid);
 	}
 
 	private decimal DetermineNextVolume(List<PositionEntry> entries)
@@ -371,12 +373,12 @@ public class FrankUdMinimalStrategy : Strategy
 		if (portfolio == null)
 		return true;
 
-		var balance = portfolio.CurrentBalance ?? portfolio.BeginBalance ?? portfolio.CurrentValue ?? 0m;
+		var balance = portfolio.CurrentValue ?? portfolio.BeginValue ?? 0m;
 		if (balance <= 0m)
 		return true;
 
-		var blocked = portfolio.BlockedValue ?? 0m;
-		var baseValue = portfolio.CurrentValue ?? portfolio.CurrentBalance ?? portfolio.BeginBalance;
+		var blocked = portfolio.Commission ?? 0m;
+		var baseValue = portfolio.CurrentValue ?? portfolio.BeginValue;
 		if (baseValue == null)
 		return true;
 

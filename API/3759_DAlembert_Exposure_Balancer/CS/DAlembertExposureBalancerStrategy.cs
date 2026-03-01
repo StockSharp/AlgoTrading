@@ -66,7 +66,7 @@ public class DAlembertExposureBalancerStrategy : Strategy
 			.SetDisplay("Lot Multiplier", "Multiplier applied to the base volume", "Money Management");
 
 		_startLevelParam = Param(nameof(StartLevel), 1)
-			.SetGreaterOrEqual(1)
+			.SetGreaterThanZero()
 			.SetDisplay("Start Level", "Initial d'Alembert betting step", "Money Management");
 
 		_maxPositionParam = Param(nameof(MaxPositionPerSymbol), 2.5m)
@@ -267,7 +267,7 @@ public class DAlembertExposureBalancerStrategy : Strategy
 
 		foreach (var state in _states.Values)
 		{
-			var subscription = SubscribeCandles(CandleType, state.Security);
+			var subscription = SubscribeCandles(CandleType);
 			subscription.Bind((candle) => ProcessCandle(state, candle)).Start();
 		}
 	}
@@ -508,12 +508,12 @@ public class DAlembertExposureBalancerStrategy : Strategy
 		if (!_states.TryGetValue(security, out var state))
 		return;
 
-		var direction = order.Direction;
-		var volume = trade.Trade?.Volume ?? order.Volume ?? 0m;
+		var direction = order.Side;
+		var volume = trade.Trade?.Volume ?? order.Volume;
 		if (volume <= 0m)
 		return;
 
-		var price = trade.Trade?.Price ?? order.Price ?? 0m;
+		var price = trade.Trade?.Price ?? order.Price;
 		var signedVolume = direction == Sides.Buy ? volume : -volume;
 
 		var previousPosition = state.Position;
@@ -557,7 +557,7 @@ public class DAlembertExposureBalancerStrategy : Strategy
 			state.LastClosedPnL = 0m;
 		}
 
-		state.LastTradeTime = trade.Trade?.Time ?? CurrentTime;
+		state.LastTradeTime = trade.Trade?.ServerTime ?? CurrentTime;
 
 		RecalculateExposure();
 	}
