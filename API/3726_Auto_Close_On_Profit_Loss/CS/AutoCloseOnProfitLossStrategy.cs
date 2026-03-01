@@ -194,81 +194,20 @@ public class AutoCloseOnProfitLossStrategy : Strategy
 
 	private decimal CalculateTotalProfit()
 	{
-		var portfolio = Portfolio;
-		if (portfolio == null)
-			return 0m;
-
-		// Prefer the aggregated floating profit provided by the portfolio when available.
-		if (portfolio.CurrentProfit is decimal currentProfit)
-			return currentProfit;
-
-		var total = 0m;
-
-		// Fallback: accumulate the reported PnL of each open position.
-		foreach (var position in portfolio.Positions)
-			total += position.PnL ?? 0m;
-
-		return total;
+		return PnL;
 	}
 
 	private void CloseAllPositions()
 	{
-		var portfolio = Portfolio;
-		if (portfolio == null)
-			return;
-
-		var securities = new HashSet<Security>();
-
-		if (Security != null)
-			securities.Add(Security);
-
-		// Include securities from child strategies that might manage independent positions.
-		foreach (var position in Positions)
-		{
-			if (position.Security != null)
-				securities.Add(position.Security);
-		}
-
-		// Include all securities that have positions inside the portfolio.
-		foreach (var position in portfolio.Positions)
-		{
-			if (position.Security != null)
-				securities.Add(position.Security);
-		}
-
-		foreach (var security in securities)
-		{
-			var volume = GetPositionValue(security, portfolio) ?? 0m;
-			if (volume > 0m)
-			{
-				// Send a sell market order to flatten long exposure.
-				SellMarket(volume, security);
-			}
-			else if (volume < 0m)
-			{
-				// Send a buy market order to offset short exposure.
-				BuyMarket(-volume, security);
-			}
-		}
+		if (Position > 0m)
+			SellMarket(Math.Abs(Position));
+		else if (Position < 0m)
+			BuyMarket(Math.Abs(Position));
 	}
 
 	private bool HasAnyOpenPosition()
 	{
-		var portfolio = Portfolio;
-		if (portfolio == null)
-			return false;
-
-		if (Position != 0m)
-			return true;
-
-		foreach (var position in portfolio.Positions)
-		{
-			var volume = position.CurrentValue ?? 0m;
-			if (volume != 0m)
-				return true;
-		}
-
-		return false;
+		return Position != 0m;
 	}
 }
 

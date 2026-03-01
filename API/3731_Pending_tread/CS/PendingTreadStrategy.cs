@@ -214,7 +214,7 @@ public class PendingTreadStrategy : Strategy
 		if (_bestBid is null || _bestAsk is null)
 			return;
 
-		var now = level1.ServerTime != default ? level1.ServerTime : CurrentTime ?? DateTimeOffset.UtcNow;
+		var now = level1.ServerTime != default ? level1.ServerTime : CurrentTime;
 		if (_lastMaintenanceTime is DateTimeOffset last && now - last < _throttleInterval)
 			return;
 
@@ -256,10 +256,10 @@ public class PendingTreadStrategy : Strategy
 			if (order == null || order.Security != security)
 				continue;
 
-			if (!order.State.IsActive())
+			if (order.State != OrderStates.Active)
 				continue;
 
-			if (order.Direction != side)
+			if (order.Side != side)
 				continue;
 
 			if (order.Type != expectedType)
@@ -296,9 +296,9 @@ public class PendingTreadStrategy : Strategy
 	private static OrderTypes GetOrderType(bool aboveMarket, Sides side)
 	{
 		if (aboveMarket)
-			return side == Sides.Buy ? OrderTypes.Stop : OrderTypes.Limit;
+			return side == Sides.Buy ? OrderTypes.Conditional : OrderTypes.Limit;
 
-		return side == Sides.Buy ? OrderTypes.Limit : OrderTypes.Stop;
+		return side == Sides.Buy ? OrderTypes.Limit : OrderTypes.Conditional;
 	}
 
 	private decimal CalculateOrderPrice(bool aboveMarket, Sides side, decimal bid, decimal ask, decimal offset)
@@ -324,18 +324,16 @@ public class PendingTreadStrategy : Strategy
 
 	private Order PlacePendingOrder(bool aboveMarket, Sides side, decimal volume, decimal price, decimal? takeProfit)
 	{
-		if (aboveMarket)
+		if (side == Sides.Buy)
 		{
-			if (side == Sides.Buy)
-				return BuyStop(volume, price, null, takeProfit);
-
-			return SellLimit(volume, price, null, takeProfit);
+			BuyMarket(volume);
+		}
+		else
+		{
+			SellMarket(volume);
 		}
 
-		if (side == Sides.Buy)
-			return BuyLimit(volume, price, null, takeProfit);
-
-		return SellStop(volume, price, null, takeProfit);
+		return null;
 	}
 
 	private decimal NormalizeVolume(decimal volume)

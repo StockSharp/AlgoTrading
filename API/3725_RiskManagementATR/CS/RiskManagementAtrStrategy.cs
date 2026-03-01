@@ -31,6 +31,7 @@ public class RiskManagementAtrStrategy : Strategy
 	private decimal? _lastAtrValue;
 	private Order _stopLossOrder;
 	private decimal _priceStep;
+	private decimal? _virtualStopPrice;
 
 	public RiskManagementAtrStrategy()
 	{
@@ -167,8 +168,16 @@ public class RiskManagementAtrStrategy : Strategy
 
 		_lastAtrValue = atrValue;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return; // Wait until the strategy is running in real time and trading is allowed
+		// Check virtual stop-loss
+		if (_virtualStopPrice.HasValue && Position > 0m && candle.LowPrice <= _virtualStopPrice.Value)
+		{
+			SellMarket(Math.Abs(Position));
+			_virtualStopPrice = null;
+			return;
+		}
+
+		if (Position == 0m)
+			_virtualStopPrice = null;
 
 		if (_atr == null || _fastMovingAverage == null || _slowMovingAverage == null)
 			return;
@@ -329,7 +338,8 @@ public class RiskManagementAtrStrategy : Strategy
 
 		CancelStopLossOrder();
 
-		_stopLossOrder = SellStop(volume, stopPrice);
+		// Use virtual stop-loss instead of SellStop order
+		_virtualStopPrice = stopPrice;
 	}
 }
 

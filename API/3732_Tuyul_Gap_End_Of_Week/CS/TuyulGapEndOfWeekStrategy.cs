@@ -38,6 +38,7 @@ public class TuyulGapEndOfWeekStrategy : Strategy
 	private DateTime? _lastPlacementDate;
 
 	private decimal _tickSize;
+	private decimal _entryPrice;
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="TuyulGapEndOfWeekStrategy"/> class.
@@ -217,26 +218,20 @@ public class TuyulGapEndOfWeekStrategy : Strategy
 		if (portfolio == null || security == null)
 		return;
 
-		foreach (var position in portfolio.Positions.ToArray())
-		{
-			if (position.Security != security)
-			continue;
+		var currentPos = Position;
+		if (currentPos == 0m)
+			return;
 
-			var volume = position.CurrentValue ?? 0m;
-			if (volume == 0m)
-			continue;
+		var profit = PnL;
+		if (profit < SecureProfitTarget)
+			return;
 
-			var profit = position.PnL ?? 0m;
-			if (profit < SecureProfitTarget)
-			continue;
+		if (currentPos > 0m)
+			SellMarket(Math.Abs(currentPos));
+		else
+			BuyMarket(Math.Abs(currentPos));
 
-			if (volume > 0m)
-			SellMarket(volume);
-			else
-			BuyMarket(-volume);
-
-			CancelIfActive(ref _protectiveStopOrder);
-		}
+		CancelIfActive(ref _protectiveStopOrder);
 	}
 
 	private void TryPlaceWeeklyOrders(DateTimeOffset time, decimal highestValue, decimal lowestValue)
@@ -277,10 +272,10 @@ public class TuyulGapEndOfWeekStrategy : Strategy
 		return;
 
 		if (!IsActive(_buyStopOrder))
-		_buyStopOrder = BuyStop(volume, buyPrice);
+			BuyMarket(volume);
 
 		if (!IsActive(_sellStopOrder))
-		_sellStopOrder = SellStop(volume, sellPrice);
+			SellMarket(volume);
 
 		_ordersPlacedForSession = true;
 	}
@@ -352,21 +347,14 @@ public class TuyulGapEndOfWeekStrategy : Strategy
 		if (portfolio == null || security == null)
 		return;
 
-		var position = portfolio.Positions.FirstOrDefault(p => p.Security == security);
-		if (position == null)
-		{
-			CancelIfActive(ref _protectiveStopOrder);
-			return;
-		}
-
-		var volume = position.CurrentValue ?? 0m;
+		var volume = Position;
 		if (volume == 0m)
 		{
 			CancelIfActive(ref _protectiveStopOrder);
 			return;
 		}
 
-		var averagePrice = position.AveragePrice ?? 0m;
+		var averagePrice = _entryPrice;
 		if (averagePrice <= 0m)
 		{
 			CancelIfActive(ref _protectiveStopOrder);
@@ -383,19 +371,33 @@ public class TuyulGapEndOfWeekStrategy : Strategy
 			return;
 		}
 
-		var desiredVolume = Math.Abs(volume);
-
-		if (_protectiveStopOrder != null)
+		// Virtual stop-loss: check price against stop level
+		var lastPrice = Security?.LastTick?.Price ?? 0m;
+		if (lastPrice > 0m)
 		{
-			if (_protectiveStopOrder.State == OrderStates.Active && _protectiveStopOrder.Price == stopPrice && _protectiveStopOrder.Volume == desiredVolume)
-			return;
-
-			CancelIfActive(ref _protectiveStopOrder);
+			if (volume > 0m && lastPrice <= stopPrice)
+			{
+				SellMarket(Math.Abs(volume));
+				_protectiveStopOrder = null;
+			}
+			else if (volume < 0m && lastPrice >= stopPrice)
+			{
+				BuyMarket(Math.Abs(volume));
+				_protectiveStopOrder = null;
+			}
 		}
+	}
 
-		_protectiveStopOrder = volume > 0m
-		? SellStop(desiredVolume, stopPrice)
-		: BuyStop(desiredVolume, stopPrice);
+	/// <inheritdoc />
+	protected override void OnOwnTradeReceived(MyTrade trade)
+	{
+		base.OnOwnTradeReceived(trade);
+
+		if (Position != 0m && _entryPrice == 0m)
+			_entryPrice = trade.Trade.Price;
+
+		if (Position == 0m)
+			_entryPrice = 0m;
 	}
 
 	private decimal GetStopLossDistance()
