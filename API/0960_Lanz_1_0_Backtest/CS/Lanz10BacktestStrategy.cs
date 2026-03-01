@@ -150,7 +150,7 @@ public class Lanz10BacktestStrategy : Strategy
 
 		if (nyClose.Hour == ManualCloseHour && nyClose.Minute == 0 && Position != 0)
 		{
-			CloseAll();
+			if (Position > 0) SellMarket(); else if (Position < 0) BuyMarket();
 			_orderSent = false;
 			_entryOrder = null;
 			return;
@@ -158,7 +158,6 @@ public class Lanz10BacktestStrategy : Strategy
 
 		if (nyClose.Hour == 8 && nyClose.Minute == 0 && Position == 0 && _orderSent && _entryOrder is not null)
 		{
-			CancelOrder(_entryOrder);
 			_orderSent = false;
 			_entryOrder = null;
 		}
@@ -178,12 +177,12 @@ public class Lanz10BacktestStrategy : Strategy
 
 			if (isLong && EnableBuy)
 			{
-				_entryOrder = BuyLimit(_baseLevel, qty);
+				BuyMarket();
 				_orderSent = true;
 			}
 			else if (!isLong && EnableSell)
 			{
-				_entryOrder = SellLimit(_baseLevel, qty);
+				SellMarket();
 				_orderSent = true;
 			}
 		}

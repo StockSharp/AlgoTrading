@@ -157,13 +157,13 @@ public class KeltnerChannelStrategy : Strategy
 			Multiplier = Multiplier
 		};
 		
-		var emaFast = new EMA { Length = FastEmaPeriod };
-		var emaSlow = new EMA { Length = SlowEmaPeriod };
-		var emaTrend = new EMA { Length = TrendEmaPeriod };
+		var emaFast = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var emaSlow = new ExponentialMovingAverage { Length = SlowEmaPeriod };
+		var emaTrend = new ExponentialMovingAverage { Length = TrendEmaPeriod };
 		var atr = new AverageTrueRange { Length = Length };
-		
+
 		var sub = SubscribeCandles(CandleType);
-		sub.Bind(kc, emaFast, emaSlow, emaTrend, atr, ProcessCandle).Start();
+		sub.BindEx(kc, emaFast, emaSlow, emaTrend, atr, ProcessCandle).Start();
 		
 		StartProtection(null, null);
 		
@@ -176,13 +176,21 @@ public class KeltnerChannelStrategy : Strategy
 		}
 	}
 	
-	private void ProcessCandle(ICandleMessage candle, decimal middle, decimal upper, decimal lower, decimal emaFast, decimal emaSlow, decimal emaTrend, decimal atr)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue kcValue, IIndicatorValue emaFastValue, IIndicatorValue emaSlowValue, IIndicatorValue emaTrendValue, IIndicatorValue atrValue)
 	{
 		if (candle.State != CandleStates.Finished)
 		return;
-		
+
+		var kcTyped = (KeltnerChannelsValue)kcValue;
+		if (kcTyped.Middle is not decimal middle || kcTyped.Upper is not decimal upper || kcTyped.Lower is not decimal lower)
+			return;
+		var emaFast = emaFastValue.ToDecimal();
+		var emaSlow = emaSlowValue.ToDecimal();
+		var emaTrend = emaTrendValue.ToDecimal();
+		var atr = atrValue.ToDecimal();
+
 		var price = candle.ClosePrice;
-		
+
 		var crossUnderLower = _prevClose >= lower && price < lower;
 		var crossOverUpper = _prevClose <= upper && price > upper;
 		

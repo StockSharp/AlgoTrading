@@ -217,15 +217,11 @@ public class Lanz60BacktestStrategy : Strategy
 
 		if (isBull && EnableBuy && Position <= 0)
 		{
-		BuyLimit(volume, entryPrice);
-		SellStop(volume, slPrice);
-		SellLimit(volume, tpPrice);
+		BuyMarket(volume);
 		}
 		else if (isBear && EnableSell && Position >= 0)
 		{
-		SellLimit(volume, entryPrice);
-		BuyStop(volume, slPrice);
-		BuyLimit(volume, tpPrice);
+		SellMarket(volume);
 		}
 	}
 }

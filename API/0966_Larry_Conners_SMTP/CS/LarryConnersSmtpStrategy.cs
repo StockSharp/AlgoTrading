@@ -92,13 +92,13 @@ public class LarryConnersSmtpStrategy : Strategy
 			return;
 
 		var range = candle.HighPrice - candle.LowPrice;
-		var maxRange = _rangeHighest.Process(range);
+		var maxRangeValue = _rangeHighest.Process(new DecimalIndicatorValue(_rangeHighest, range, candle.OpenTime)); var maxRange = maxRangeValue.ToDecimal();
 
 		if (!_rangeHighest.IsFormed || !IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		var is10PeriodLow = candle.LowPrice == low10;
-		var isLargestRange = range == maxRange;
+		var isLargestRange = range >= maxRange;
 		var isCloseInTop25 = range > 0m && (candle.ClosePrice - candle.LowPrice) / range >= 0.75m;
 
 		var buyCondition = is10PeriodLow && isLargestRange && isCloseInTop25;
@@ -107,13 +107,13 @@ public class LarryConnersSmtpStrategy : Strategy
 		{
 			var buyPrice = candle.HighPrice + TickSize;
 			_stopLoss = candle.LowPrice;
-			BuyStop(Volume, buyPrice);
+			BuyMarket();
 		}
 
 		if (Position > 0)
 		{
 			_stopLoss = Math.Max(_stopLoss, candle.LowPrice);
-			SellStop(Position, _stopLoss);
+			SellMarket(Position);
 		}
 	}
 }

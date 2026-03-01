@@ -157,7 +157,7 @@ public class LarryConnorsPercentBStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var sma = new SMA { Length = SmaPeriod };
+		var sma = new SimpleMovingAverage { Length = SmaPeriod };
 		var bollinger = new BollingerBands
 		{
 			Length = BollingerPeriod,
@@ -166,7 +166,7 @@ public class LarryConnorsPercentBStrategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(sma, bollinger, ProcessCandle)
+			.BindEx(sma, bollinger, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -183,12 +183,17 @@ public class LarryConnorsPercentBStrategy : Strategy
 			new Unit(StopLossPercent, UnitTypes.Percent));
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal smaValue, decimal middle, decimal upper, decimal lower)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue smaInd, IIndicatorValue bollingerInd)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		var smaValue = smaInd.ToDecimal();
+		var bb = (BollingerBandsValue)bollingerInd;
+		if (bb.UpBand is not decimal upper || bb.LowBand is not decimal lower)
 			return;
 
 		if (upper == lower)
