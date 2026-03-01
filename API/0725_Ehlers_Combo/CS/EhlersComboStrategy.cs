@@ -68,7 +68,7 @@ public class EhlersComboStrategy : Strategy
 
 		_stdDev = new StandardDeviation { Length = Length };
 		_atr = new AverageTrueRange { Length = Length };
-		_rmsMa = new EMA { Length = RmsLength };
+		_rmsMa = new ExponentialMovingAverage { Length = RmsLength };
 		_ssWma = new WeightedMovingAverage { Length = Length };
 
 		var pi = Math.PI;
@@ -102,13 +102,13 @@ public class EhlersComboStrategy : Strategy
 		var trigger = 2m * itrend - _iTrendPrev2;
 
 		var deriv = close - _prevPrevClose;
-		_rmsMa.Process(deriv * deriv);
+		_rmsMa.Process(new DecimalIndicatorValue(_rmsMa, deriv * deriv, candle.OpenTime));
 		var rms = (decimal)Math.Sqrt((double)_rmsMa.GetCurrentValue<decimal>());
 		var nDeriv = rms != 0m ? deriv / rms : 0m;
 		var exp = (decimal)Math.Exp(2.0 * (double)nDeriv);
 		var iFish = nDeriv != 0m ? (exp - 1m) / (exp + 1m) : 0m;
 		var ss = (_c1 * ((iFish + _prevIFish) / 2m)) + (_c2 * _prevSs) + (_c3 * _prevSs2);
-		_ssWma.Process(ss);
+		_ssWma.Process(new DecimalIndicatorValue(_ssWma, ss, candle.OpenTime));
 		var ssSig = _ssWma.GetCurrentValue<decimal>();
 		var slo = ss - ssSig;
 		var sig = slo > 0m ? (slo > _prevSlo ? 2 : 1) : slo < 0m ? (slo < _prevSlo ? -2 : -1) : 0;
@@ -132,9 +132,9 @@ public class EhlersComboStrategy : Strategy
 			SellMarket();
 
 		if (exitLong && Position > 0)
-			SellMarket(Position);
+			SellMarket();
 		else if (exitShort && Position < 0)
-			BuyMarket(-Position);
+			BuyMarket();
 
 		_prevSs2 = _prevSs;
 		_prevSs = ss;

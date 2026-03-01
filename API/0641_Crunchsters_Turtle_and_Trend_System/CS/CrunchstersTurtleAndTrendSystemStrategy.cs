@@ -155,8 +155,8 @@ public class CrunchstersTurtleAndTrendSystemStrategy : Strategy
 	{
 		base.OnStarted2(time);
 		
-		_fastEma = new EMA { Length = FastEmaPeriod };
-		_slowEma = new EMA { Length = FastEmaPeriod * 5 };
+		_fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		_slowEma = new ExponentialMovingAverage { Length = FastEmaPeriod * 5 };
 		_breakDonchian = new DonchianChannels { Length = BreakoutPeriod };
 		_trailDonchian = new DonchianChannels { Length = TrailPeriod };
 		_atr = new AverageTrueRange { Length = 14 };
@@ -180,7 +180,7 @@ public class CrunchstersTurtleAndTrendSystemStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 		return;
 		
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!_fastEma.IsFormed || !_slowEma.IsFormed || !_atr.IsFormed)
 		return;
 		
 		var fastVal = _fastEma.Process(candle);
@@ -201,7 +201,7 @@ public class CrunchstersTurtleAndTrendSystemStrategy : Strategy
 		var atr = atrVal.ToDecimal();
 		
 		var ret = _prevClose == 0m ? 0m : candle.ClosePrice - _prevClose;
-		var stdevVal = _stdev.Process(ret);
+		var stdevVal = _stdev.Process(new DecimalIndicatorValue(_stdev, ret, candle.OpenTime));
 		if (!stdevVal.IsFinal)
 		{
 			_prevClose = candle.ClosePrice;
@@ -220,59 +220,51 @@ public class CrunchstersTurtleAndTrendSystemStrategy : Strategy
 		var tbasis = (trailUpper + trailLower) / 2m;
 		var tsignal = 20m * (candle.ClosePrice - tbasis) / (trailUpper - trailLower);
 		
-		var volume = CalculateVolume(candle.ClosePrice);
-		
 		if (TrendEnabled)
 		{
 			if (LongEnabled && nemadiff > 2.5m && _prevNemadiff <= 2.5m && Position <= 0)
 			{
-				BuyMarket(volume + Math.Abs(Position));
+				BuyMarket();
 				_stopPrice = candle.ClosePrice - atr * StopAtrMultiple;
 			}
 			else if (ShortEnabled && nemadiff < -2.5m && _prevNemadiff >= -2.5m && Position >= 0)
 			{
-				SellMarket(volume + Math.Abs(Position));
+				SellMarket();
 				_stopPrice = candle.ClosePrice + atr * StopAtrMultiple;
 			}
 			
 			if (Position > 0 && (tsignal <= -10m || (nemadiff < 2.5m && _prevNemadiff >= 2.5m)))
-			SellMarket(Position);
+			SellMarket();
 			else if (Position < 0 && (tsignal >= 10m || (nemadiff > -2.5m && _prevNemadiff <= -2.5m)))
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
 		}
 		
 		if (BreakoutEnabled)
 		{
 			if (LongEnabled && signal >= 10m && Position <= 0)
 			{
-				BuyMarket(volume + Math.Abs(Position));
+				BuyMarket();
 				_stopPrice = candle.ClosePrice - atr * StopAtrMultiple;
 			}
 			else if (ShortEnabled && signal <= -10m && Position >= 0)
 			{
-				SellMarket(volume + Math.Abs(Position));
+				SellMarket();
 				_stopPrice = candle.ClosePrice + atr * StopAtrMultiple;
 			}
 			
 			if (Position > 0 && tsignal <= -10m)
-			SellMarket(Position);
+			SellMarket();
 			else if (Position < 0 && tsignal >= 10m)
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
 		}
 		
 		if (Position > 0 && candle.ClosePrice <= _stopPrice)
-		SellMarket(Position);
+		SellMarket();
 		else if (Position < 0 && candle.ClosePrice >= _stopPrice)
-		BuyMarket(Math.Abs(Position));
+		BuyMarket();
 		
 		_prevNemadiff = nemadiff;
 		_prevSignal = signal;
 	}
 	
-	private decimal CalculateVolume(decimal price)
-	{
-		var portfolioValue = Portfolio.CurrentValue ?? 0m;
-		var size = portfolioValue * (OrderPercent / 100m) / price;
-		return size > 0 ? size : Volume;
-	}
 }

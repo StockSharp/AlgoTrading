@@ -110,7 +110,7 @@ public class DominanceTagcloudStrategy : Strategy
 
 			rectangles.Add(rect);
 
-			this.AddInfoLog(rect.Text);
+			this.LogInfo(rect.Text);
 		}
 	}
 

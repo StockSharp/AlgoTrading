@@ -134,16 +134,16 @@ public class DcaMeanReversionBollingerBandStrategy : Strategy
 			_ => false
 		};
 		
-		var candleTime = candle.OpenTime.DateTime;
+		var candleTime = candle.OpenTime;
 		
 		if (buyCondition && candleTime >= OpenDate && candleTime <= CloseDate)
 		{
 			var quantity = InvestmentAmount / candle.ClosePrice;
-			BuyMarket(quantity);
+			BuyMarket();
 		}
 		
 		if (candleTime >= CloseDate && Position != 0)
-		ClosePosition();
+		if (Position > 0) SellMarket(); else if (Position < 0) BuyMarket();
 		
 		_prevClose = candle.ClosePrice;
 		_prevLower = lower;

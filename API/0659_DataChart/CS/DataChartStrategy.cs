@@ -84,8 +84,8 @@ public class DataChartStrategy : Strategy
 		return;
 
 		var atrValue = _atr.Process(candle).ToNullableDecimal();
-		var highest = _highest.Process(candle.HighPrice).ToNullableDecimal();
-		var lowest = _lowest.Process(candle.LowPrice).ToNullableDecimal();
+		var highest = _highest.Process(new DecimalIndicatorValue(_highest, candle.HighPrice, candle.OpenTime)).ToNullableDecimal();
+		var lowest = _lowest.Process(new DecimalIndicatorValue(_lowest, candle.LowPrice, candle.OpenTime)).ToNullableDecimal();
 
 		if (atrValue is null || highest is null || lowest is null)
 		return;

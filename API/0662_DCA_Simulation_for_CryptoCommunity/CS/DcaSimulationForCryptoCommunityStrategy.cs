@@ -229,7 +229,6 @@ public class DcaSimulationForCryptoCommunityStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
 
-		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -257,7 +256,7 @@ public class DcaSimulationForCryptoCommunityStrategy : Strategy
 			var qty = BaseOrder / price;
 			if (qty > 0)
 				{
-				BuyMarket(qty);
+				BuyMarket();
 				_currentSo = 1;
 				_lastHigh = candle.HighPrice;
 				_entryBarIndex = _barIndex;
@@ -284,7 +283,7 @@ public class DcaSimulationForCryptoCommunityStrategy : Strategy
 			{
 			var qty = DcaAmount / price;
 			if (qty > 0)
-				BuyMarket(qty);
+				BuyMarket();
 
 			_nextDcaBar += DcaFrequency;
 		}
@@ -307,7 +306,7 @@ public class DcaSimulationForCryptoCommunityStrategy : Strategy
 			var qty = SafeOrder * volumeMultiplier / price;
 			if (qty > 0)
 				{
-				BuyMarket(qty);
+				BuyMarket();
 				_currentSo++;
 			}
 		}
@@ -315,7 +314,7 @@ public class DcaSimulationForCryptoCommunityStrategy : Strategy
 		if (!TakeProfitEnable)
 			return;
 
-		var baseLevel = PositionPrice * (1m + TakeProfitPercent / 100m);
+		var baseLevel = candle.ClosePrice * (1m + TakeProfitPercent / 100m);
 		var takeProfitLevel = baseLevel + baseLevel * _currentSo * (TakeProfitGrowPercent / 100m);
 
 		if (price >= takeProfitLevel || _previousHighValue.HasValue)
@@ -348,7 +347,7 @@ public class DcaSimulationForCryptoCommunityStrategy : Strategy
 
 	private void CloseAll()
 	{
-		ClosePosition();
+		if (Position > 0) SellMarket(); else if (Position < 0) BuyMarket();
 
 		_currentSo = 0;
 		_previousHighValue = null;

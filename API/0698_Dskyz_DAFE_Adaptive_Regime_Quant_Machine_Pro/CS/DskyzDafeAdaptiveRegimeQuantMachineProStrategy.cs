@@ -76,38 +76,36 @@ public class DskyzDafeAdaptiveRegimeQuantMachineProStrategy : Strategy
 		base.OnStarted2(time);
 
 		var atr = new AverageTrueRange { Length = AtrPeriod };
-		var fastMa = new EMA { Length = FastMaLength };
-		var slowMa = new EMA { Length = SlowMaLength };
+		var fastMa = new ExponentialMovingAverage { Length = FastMaLength };
+		var slowMa = new ExponentialMovingAverage { Length = SlowMaLength };
 		var boll = new BollingerBands { Length = 20, Width = 2m };
 		var adx = new AverageDirectionalIndex { Length = 14 };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.BindEx(atr, fastMa, slowMa, boll, adx, ProcessCandle).Start();
-
-		StartProtection(null, null);
+		subscription.BindEx(new IIndicator[] { atr, fastMa, slowMa, boll, adx }, ProcessCandle).Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue atrValue, IIndicatorValue fastMaValue, IIndicatorValue slowMaValue, IIndicatorValue bollValue, IIndicatorValue adxValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue[] values)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var atr = atrValue.ToDecimal();
-		var fastMa = fastMaValue.ToDecimal();
-		var slowMa = slowMaValue.ToDecimal();
-		var adx = adxValue.ToDecimal();
+		var atr = values[0].ToDecimal();
+		var fastMa = values[1].ToDecimal();
+		var slowMa = values[2].ToDecimal();
+		var adx = values[4].ToDecimal();
 
-		var boll = (BollingerBandsValue)bollValue;
-		if (boll.UpBand is not decimal upper || boll.LowBand is not decimal lower || boll.Mid is not decimal middle)
+		var boll = (BollingerBandsValue)values[3];
+		if (boll.UpBand is not decimal upper || boll.LowBand is not decimal lower || boll.MovingAverage is not decimal middle)
 			return;
 
-		var atrAvg = _atrAvg.Process(atr).GetValue<decimal>();
+		var atrAvg = _atrAvg.Process(new DecimalIndicatorValue(_atrAvg, atr, candle.OpenTime)).ToDecimal();
 		var width = (upper - lower) / middle;
-		var widthAvg = _bollWidthAvg.Process(width).GetValue<decimal>();
-		var volAvg = _volAvg.Process(candle.TotalVolume).GetValue<decimal>();
+		var widthAvg = _bollWidthAvg.Process(new DecimalIndicatorValue(_bollWidthAvg, width, candle.OpenTime)).ToDecimal();
+		var volAvg = _volAvg.Process(new DecimalIndicatorValue(_volAvg, candle.TotalVolume, candle.OpenTime)).ToDecimal();
 		var volSpike = candle.TotalVolume > volAvg * 1.5m;
-		var recentHigh = _highest.Process(candle.HighPrice).GetValue<decimal>();
-		var recentLow = _lowest.Process(candle.LowPrice).GetValue<decimal>();
+		var recentHigh = _highest.Process(new DecimalIndicatorValue(_highest, candle.HighPrice, candle.OpenTime)).ToDecimal();
+		var recentLow = _lowest.Process(new DecimalIndicatorValue(_lowest, candle.LowPrice, candle.OpenTime)).ToDecimal();
 		var isNearSupport = candle.LowPrice <= recentLow * 1.01m;
 		var isNearResistance = candle.HighPrice >= recentHigh * 0.99m;
 

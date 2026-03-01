@@ -134,9 +134,9 @@ _lastCvdLow = 0m;
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 _hmaFast = new HullMovingAverage { Length = HmaFastLength };
 _hmaSlow = new HullMovingAverage { Length = HmaSlowLength };
@@ -146,8 +146,8 @@ _macd = new MovingAverageConvergenceDivergenceSignal
 Macd = { ShortMa = { Length = MacdFast }, LongMa = { Length = MacdSlow } },
 SignalMa = { Length = MacdSignal }
 };
-_volumeMa = new SMA { Length = VolumeMaLength };
-_cvdMa = new SMA { Length = CvdLength };
+_volumeMa = new SimpleMovingAverage { Length = VolumeMaLength };
+_cvdMa = new SimpleMovingAverage { Length = CvdLength };
 _priceHighest = new Highest { Length = DivergenceLookback };
 _priceLowest = new Lowest { Length = DivergenceLookback };
 
@@ -156,7 +156,6 @@ subscription
 .BindEx(_hmaFast, _hmaSlow, _rsi, _macd, ProcessCandle)
 .Start();
 
-StartProtection(null, null);
 
 var area = CreateChartArea();
 if (area != null)
@@ -175,8 +174,6 @@ private void ProcessCandle(ICandleMessage candle, IIndicatorValue hmaFastValue, 
 if (candle.State != CandleStates.Finished)
 return;
 
-if (!IsFormedAndOnlineAndAllowTrading())
-return;
 
 var hmaFast = hmaFastValue.ToDecimal();
 var hmaSlow = hmaSlowValue.ToDecimal();
@@ -187,17 +184,17 @@ if (macdTyped.Macd is not decimal macdLine || macdTyped.Signal is not decimal ma
 return;
 var macdHist = macdLine - macdSignal;
 
-var volMaValue = _volumeMa.Process(candle.TotalVolume);
+var volMaValue = _volumeMa.Process(new DecimalIndicatorValue(_volumeMa, candle.TotalVolume, candle.OpenTime));
 if (!volMaValue.IsFinal)
 return;
 var volumeMa = volMaValue.ToDecimal();
 var highVolume = candle.TotalVolume > volumeMa * VolumeMultiplier;
 
 var sign = candle.ClosePrice > candle.OpenPrice ? 1m : candle.ClosePrice < candle.OpenPrice ? -1m : 0m;
-var cvd = _cvdMa.Process(candle.TotalVolume * sign).ToDecimal();
+var cvd = _cvdMa.Process(new DecimalIndicatorValue(_cvdMa, candle.TotalVolume * sign, candle.OpenTime)).ToDecimal();
 
-var priceHigh = _priceHighest.Process(candle.HighPrice).ToDecimal();
-var priceLow = _priceLowest.Process(candle.LowPrice).ToDecimal();
+var priceHigh = _priceHighest.Process(new DecimalIndicatorValue(_priceHighest, candle.HighPrice, candle.OpenTime)).ToDecimal();
+var priceLow = _priceLowest.Process(new DecimalIndicatorValue(_priceLowest, candle.LowPrice, candle.OpenTime)).ToDecimal();
 
 var bullishDiv = priceLow < _lastPriceLow && cvd > _lastCvdLow;
 var bearishDiv = priceHigh > _lastPriceHigh && cvd < _lastCvdHigh;
@@ -232,22 +229,22 @@ var shortExit = candle.ClosePrice > hmaFast || rsi < RsiOversold || macdLine > m
 if (longCond && Position <= 0)
 {
 if (Position < 0)
-BuyMarket(Math.Abs(Position));
-BuyMarket(Volume + Math.Abs(Position));
+BuyMarket();
+BuyMarket();
 }
 else if (shortCond && Position >= 0)
 {
 if (Position > 0)
-SellMarket(Position);
-SellMarket(Volume + Math.Abs(Position));
+SellMarket();
+SellMarket();
 }
 else if (Position > 0 && longExit)
 {
-SellMarket(Position);
+SellMarket();
 }
 else if (Position < 0 && shortExit)
 {
-BuyMarket(Math.Abs(Position));
+BuyMarket();
 }
 
 _prevMacdHist = macdHist;

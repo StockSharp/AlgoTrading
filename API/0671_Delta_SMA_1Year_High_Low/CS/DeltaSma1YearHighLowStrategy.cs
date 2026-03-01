@@ -25,7 +25,7 @@ public class DeltaSma1YearHighLowStrategy : Strategy
 	private readonly StrategyParam<int> _deltaSmaLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private SMA _deltaSma;
+	private SimpleMovingAverage _deltaSma;
 	private Highest _highest;
 	private Lowest _lowest;
 
@@ -103,7 +103,7 @@ public class DeltaSma1YearHighLowStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_deltaSma = new SMA { Length = DeltaSmaLength };
+		_deltaSma = new SimpleMovingAverage { Length = DeltaSmaLength };
 		_highest = new Highest { Length = LookbackBars };
 		_lowest = new Lowest { Length = LookbackBars };
 
@@ -126,7 +126,7 @@ public class DeltaSma1YearHighLowStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var volume = candle.TotalVolume ?? 0m;
+		var volume = candle.TotalVolume;
 		var delta = 0m;
 		if (candle.ClosePrice > candle.OpenPrice)
 			delta = volume;
@@ -143,11 +143,6 @@ public class DeltaSma1YearHighLowStrategy : Strategy
 			return;
 		}
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			_previousDeltaSma = deltaSmaValue;
-			return;
-		}
 
 		var veryLowThreshold = lowestValue * 0.7m;
 		var above70Threshold = highestValue * 0.9m;
@@ -173,7 +168,7 @@ public class DeltaSma1YearHighLowStrategy : Strategy
 			_crossedAbove70 = false;
 
 		if (_crossedAbove70 && deltaSmaValue < below60Threshold && Position > 0)
-			SellMarket(Math.Abs(Position));
+			SellMarket();
 
 		_previousDeltaSma = deltaSmaValue;
 	}

@@ -285,7 +285,7 @@ public class DskyzDafeMatrixAtrPrecisionStrategy : Strategy
 		_trend15m = 0;
 		_entryPrice = 0;
 		_trailingStop = 0;
-		_volumeSma = new SMA { Length = 10 };
+		_volumeSma = new SimpleMovingAverage { Length = 10 };
 	}
 
 	/// <inheritdoc />
@@ -296,9 +296,9 @@ public class DskyzDafeMatrixAtrPrecisionStrategy : Strategy
 		_fastMa = CreateMovingAverage(FastMaType, FastLength);
 		_slowMa = CreateMovingAverage(SlowMaType, SlowLength);
 		_atr = new AverageTrueRange { Length = AtrPeriod };
-		_volumeSma = new SMA { Length = 10 };
-		_fastMa15 = new SMA { Length = FastLength };
-		_slowMa15 = new SMA { Length = SlowLength };
+		_volumeSma = new SimpleMovingAverage { Length = 10 };
+		_fastMa15 = new SimpleMovingAverage { Length = FastLength };
+		_slowMa15 = new SimpleMovingAverage { Length = SlowLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(_fastMa, _slowMa, _atr, ProcessCandle).Start();
@@ -318,8 +318,8 @@ public class DskyzDafeMatrixAtrPrecisionStrategy : Strategy
 
 	private static IIndicator CreateMovingAverage(MovingAverageTypes type, int length)
 	{
-		return type switch { MovingAverageTypes.SMA => new SMA { Length = length },
-							 MovingAverageTypes.EMA => new EMA { Length = length },
+		return type switch { MovingAverageTypes.SMA => new SimpleMovingAverage { Length = length },
+							 MovingAverageTypes.EMA => new ExponentialMovingAverage { Length = length },
 							 MovingAverageTypes.SMMA => new SmoothedMovingAverage { Length = length },
 							 MovingAverageTypes.HMA => new HullMovingAverage { Length = length },
 							 MovingAverageTypes.TEMA => new TripleExponentialMovingAverage { Length = length },
@@ -329,7 +329,7 @@ public class DskyzDafeMatrixAtrPrecisionStrategy : Strategy
 							 MovingAverageTypes.ALMA => new ArnaudLegouxMovingAverage { Length = length },
 							 MovingAverageTypes.KAMA => new KaufmanAdaptiveMovingAverage { Length = length },
 							 MovingAverageTypes.DEMA => new DoubleExponentialMovingAverage { Length = length },
-							 _ => new SMA { Length = length } };
+							 _ => new SimpleMovingAverage { Length = length } };
 	}
 
 	private void ProcessTrend(ICandleMessage candle, decimal fast15, decimal slow15)
@@ -345,11 +345,9 @@ public class DskyzDafeMatrixAtrPrecisionStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var volValue = _volumeSma.Process(candle.TotalVolume);
+		var volValue = _volumeSma.Process(new DecimalIndicatorValue(_volumeSma, candle.TotalVolume, candle.OpenTime));
 		var volumeAvg = volValue.ToDecimal();
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
 
 		var volumeOk = candle.TotalVolume >= MinVolume;
 		var volumeSpike = candle.TotalVolume > 1.2m * volumeAvg;
@@ -370,13 +368,13 @@ public class DskyzDafeMatrixAtrPrecisionStrategy : Strategy
 		{
 			if (maAbove && trendLongOk && atrFilterLong && volumeOk && volumeSpike && timeWindow && volatilityOk)
 			{
-				BuyMarket(TradeQuantity);
+				BuyMarket();
 				_entryPrice = candle.ClosePrice;
 				_trailingStop = _entryPrice - atrValue * TrailOffset;
 			}
 			else if (maBelow && trendShortOk && atrFilterShort && volumeOk && volumeSpike && timeWindow && volatilityOk)
 			{
-				SellMarket(TradeQuantity);
+				SellMarket();
 				_entryPrice = candle.ClosePrice;
 				_trailingStop = _entryPrice + atrValue * TrailOffset;
 			}
@@ -390,7 +388,7 @@ public class DskyzDafeMatrixAtrPrecisionStrategy : Strategy
 				_trailingStop = newTrail;
 
 			if (candle.LowPrice <= _trailingStop || candle.LowPrice <= stopPrice || candle.HighPrice >= targetPrice)
-				SellMarket(Position);
+				SellMarket();
 		}
 		else
 		{
@@ -401,7 +399,7 @@ public class DskyzDafeMatrixAtrPrecisionStrategy : Strategy
 				_trailingStop = newTrail;
 
 			if (candle.HighPrice >= _trailingStop || candle.HighPrice >= stopPrice || candle.LowPrice <= targetPrice)
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 		}
 	}
 }

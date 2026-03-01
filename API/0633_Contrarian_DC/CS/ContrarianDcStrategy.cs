@@ -31,6 +31,7 @@ public class ContrarianDcStrategy : Strategy
 	private long _longSlBar;
 	private long _shortSlBar;
 	private int _lastDirection;
+	private decimal _entryPrice;
 
 	/// <summary>
 	/// Donchian Channel period.
@@ -105,6 +106,7 @@ public class ContrarianDcStrategy : Strategy
 		_longSlBar = 0;
 		_shortSlBar = 0;
 		_lastDirection = 0;
+		_entryPrice = 0;
 		_highest = null;
 		_lowest = null;
 	}
@@ -137,12 +139,6 @@ public class ContrarianDcStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			_barIndex++;
-			return;
-		}
-
 		var high = candle.HighPrice;
 		var low = candle.LowPrice;
 
@@ -154,52 +150,54 @@ public class ContrarianDcStrategy : Strategy
 			if (longCondition)
 			{
 				BuyMarket();
+				_entryPrice = candle.ClosePrice;
 			}
 			else if (shortCondition)
 			{
 				SellMarket();
+				_entryPrice = candle.ClosePrice;
 			}
 		}
 		else if (Position > 0)
 		{
-			var entry = PositionPrice;
+			var entry = _entryPrice;
 			var stop = entry * (1m - StopLossPercent / 100m);
 			var take = entry * (1m + StopLossPercent * RiskRewardRatio / 100m);
 
 			if (low <= stop)
 			{
-				SellMarket(Position);
+				SellMarket();
 				_longSlBar = _barIndex;
 				_lastDirection = 1;
 			}
 			else if (high >= take)
 			{
-				SellMarket(Position);
+				SellMarket();
 			}
 			else if (high >= upper)
 			{
-				SellMarket(Position);
+				SellMarket();
 			}
 		}
 		else if (Position < 0)
 		{
-			var entry = PositionPrice;
+			var entry = _entryPrice;
 			var stop = entry * (1m + StopLossPercent / 100m);
 			var take = entry * (1m - StopLossPercent * RiskRewardRatio / 100m);
 
 			if (high >= stop)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				_shortSlBar = _barIndex;
 				_lastDirection = -1;
 			}
 			else if (low <= take)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 			}
 			else if (low <= lower)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 			}
 		}
 

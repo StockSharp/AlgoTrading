@@ -123,7 +123,6 @@ public class DslStrategy : Strategy
 		.Bind(_sma, _highest, _lowest, _atr, _rsi, ProcessCandle)
 		.Start();
 
-		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal smaValue, decimal highestValue, decimal lowestValue, decimal atrValue, decimal rsiValue)
@@ -143,7 +142,7 @@ public class DslStrategy : Strategy
 		var dslUp1 = _dslUp is decimal up ? up - atrValue * BandsWidth : (decimal?)null;
 		var dslDn1 = _dslDn is decimal dn ? dn + atrValue * BandsWidth : (decimal?)null;
 
-		var smaRsiValue = _belugaSma.Process(new DecimalIndicatorValue(_belugaSma, rsiValue));
+		var smaRsiValue = _belugaSma.Process(new DecimalIndicatorValue(_belugaSma, rsiValue, candle.OpenTime));
 		var mode = DslFastMode ? 2m : 1m;
 
 		if (smaRsiValue.IsFinal)
@@ -156,12 +155,12 @@ public class DslStrategy : Strategy
 				_lvld += mode / BelugaLength * (rsiValue - _lvld);
 
 			var avg = (_lvlu + _lvld) / 2m;
-			var zlemaValue = _zlema.Process(new DecimalIndicatorValue(_zlema, avg));
+			var zlemaValue = _zlema.Process(new DecimalIndicatorValue(_zlema, avg, candle.OpenTime));
 
 			if (zlemaValue.IsFinal)
 			{
 				var osc = zlemaValue.GetValue<decimal>();
-				var smaOscValue = _oscSma.Process(new DecimalIndicatorValue(_oscSma, osc));
+				var smaOscValue = _oscSma.Process(new DecimalIndicatorValue(_oscSma, osc, candle.OpenTime));
 
 				if (smaOscValue.IsFinal)
 				{
@@ -221,7 +220,7 @@ public class DslStrategy : Strategy
 					{
 						if (close <= ls || close >= lt)
 						{
-							SellMarket(Position);
+							SellMarket();
 							_longStop = null;
 							_longTake = null;
 						}
@@ -230,7 +229,7 @@ public class DslStrategy : Strategy
 					{
 						if (close >= ss || close <= st)
 						{
-							BuyMarket(-Position);
+							BuyMarket();
 							_shortStop = null;
 							_shortTake = null;
 						}

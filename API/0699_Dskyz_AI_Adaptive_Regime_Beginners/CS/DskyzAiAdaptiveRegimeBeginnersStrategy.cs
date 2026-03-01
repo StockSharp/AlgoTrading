@@ -125,8 +125,8 @@ public class DskyzAiAdaptiveRegimeBeginnersStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var fastMa = new EMA { Length = FastMaLength };
-		var slowMa = new EMA { Length = SlowMaLength };
+		var fastMa = new ExponentialMovingAverage { Length = FastMaLength };
+		var slowMa = new ExponentialMovingAverage { Length = SlowMaLength };
 		var atr = new AverageTrueRange { Length = AtrPeriod };
 		var adx = new AverageDirectionalIndex { Length = AdxPeriod };
 
@@ -143,7 +143,6 @@ public class DskyzAiAdaptiveRegimeBeginnersStrategy : Strategy
 			DrawIndicator(area, slowMa);
 		}
 
-		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal fastMa, decimal slowMa, decimal atr, decimal adx)
@@ -151,8 +150,6 @@ public class DskyzAiAdaptiveRegimeBeginnersStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
 
 		var trendDir = fastMa > slowMa + atr * 0.5m ? 1 : fastMa < slowMa - atr * 0.5m ? -1 : 0;
 
@@ -161,40 +158,28 @@ public class DskyzAiAdaptiveRegimeBeginnersStrategy : Strategy
 
 		if (longCondition && Position <= 0)
 		{
-			var stop = candle.ClosePrice - atr * AtrMultiplier;
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
-			SellLimit(candle.ClosePrice + (candle.ClosePrice - stop) * 2m, volume);
-			SellStop(stop, volume);
-			_trailStop = stop;
+			BuyMarket();
+			_trailStop = candle.ClosePrice - atr * AtrMultiplier;
 		}
 		else if (shortCondition && Position >= 0)
 		{
-			var stop = candle.ClosePrice + atr * AtrMultiplier;
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
-			BuyLimit(candle.ClosePrice - (stop - candle.ClosePrice) * 2m, volume);
-			BuyStop(stop, volume);
-			_trailStop = stop;
+			SellMarket();
+			_trailStop = candle.ClosePrice + atr * AtrMultiplier;
 		}
 
 		if (Position > 0)
 		{
 			var newStop = Math.Max(_trailStop, candle.ClosePrice - atr * AtrMultiplier);
-			if (newStop > _trailStop)
-			{
-				SellStop(newStop, Position);
-				_trailStop = newStop;
-			}
+			_trailStop = newStop;
+			if (candle.LowPrice <= _trailStop)
+				SellMarket();
 		}
 		else if (Position < 0)
 		{
 			var newStop = Math.Min(_trailStop, candle.ClosePrice + atr * AtrMultiplier);
-			if (newStop < _trailStop)
-			{
-				BuyStop(newStop, Math.Abs(Position));
-				_trailStop = newStop;
-			}
+			_trailStop = newStop;
+			if (candle.HighPrice >= _trailStop)
+				BuyMarket();
 		}
 	}
 }

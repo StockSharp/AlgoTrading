@@ -69,7 +69,7 @@ public class DualSelectorV2CryptogyaniStrategy : Strategy
 		_s1TakeProfitMode = Param(nameof(S1TakeProfitMode), "Percentage")
 			.SetDisplay("Take Profit Mode (S1)", "Take profit mode: Percentage or Pips.", "Strategy 1");
 
-		_s1TakeProfitPerc = Param(nameof(S1TakeProfitPerc), 7m.Percents())
+		_s1TakeProfitPerc = Param(nameof(S1TakeProfitPerc), 0.07m)
 			.SetDisplay("Take Profit % (S1)", "Take profit percentage for strategy 1.", "Strategy 1");
 
 		_s1TakeProfitPips = Param(nameof(S1TakeProfitPips), 50m)
@@ -189,12 +189,12 @@ public class DualSelectorV2CryptogyaniStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var s1Fast = new SMA { Length = S1FastLength };
-		var s1Slow = new SMA { Length = S1SlowLength };
-		var s2Fast = new SMA { Length = S2FastLength };
-		var s2Slow = new SMA { Length = S2SlowLength };
+		var s1Fast = new SimpleMovingAverage { Length = S1FastLength };
+		var s1Slow = new SimpleMovingAverage { Length = S1SlowLength };
+		var s2Fast = new SimpleMovingAverage { Length = S2FastLength };
+		var s2Slow = new SimpleMovingAverage { Length = S2SlowLength };
 		var s2Atr = new AverageTrueRange { Length = S2AtrLength };
-		var trendSma = new SMA { Length = S2SlowLength };
+		var trendSma = new SimpleMovingAverage { Length = S2SlowLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -241,11 +241,11 @@ public class DualSelectorV2CryptogyaniStrategy : Strategy
 				if (S1TakeProfitMode == "Percentage")
 					_takeProfitPrice = candle.ClosePrice * (1 + S1TakeProfitPerc);
 				else
-					_takeProfitPrice = candle.ClosePrice + S1TakeProfitPips * Security.PriceStep;
+					_takeProfitPrice = candle.ClosePrice + S1TakeProfitPips * (Security.PriceStep ?? 0.01m);
 
 				if (S1TrailingTakeProfitEnabled)
 				{
-					var trail = candle.HighPrice - S1TakeProfitPips * Security.PriceStep;
+					var trail = candle.HighPrice - S1TakeProfitPips * (Security.PriceStep ?? 0.01m);
 					if (trail > _trailingStopPrice)
 						_trailingStopPrice = trail;
 
@@ -276,7 +276,7 @@ public class DualSelectorV2CryptogyaniStrategy : Strategy
 			{
 				if (!_hasPartialExit && candle.HighPrice >= _takeProfitPrice)
 				{
-					SellMarket(Position * S2PartialTakeProfitPerc / 100m);
+					SellMarket();
 					_hasPartialExit = true;
 				}
 

@@ -28,9 +28,10 @@ public class DonchianWmaCrossoverStrategy : Strategy
 	private bool _initialized;
 	private decimal _prevDonLow;
 	private decimal _prevWma;
-	
-	private static readonly DateTimeOffset _startDate = new(new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc));
-	private static readonly DateTimeOffset _endDate = new(new DateTime(2025, 12, 31, 23, 59, 0, DateTimeKind.Utc));
+	private decimal _entryPrice;
+
+	private static readonly DateTime _startDate = new(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+	private static readonly DateTime _endDate = new(2025, 12, 31, 23, 59, 0, DateTimeKind.Utc);
 	
 	/// <summary>
 	/// Donchian channel length.
@@ -122,8 +123,6 @@ public class DonchianWmaCrossoverStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 		return;
 		
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
 		
 		var dc = (DonchianChannelsValue)donchianValue;
 		if (dc.LowerBand is not decimal donLow)
@@ -147,16 +146,17 @@ public class DonchianWmaCrossoverStrategy : Strategy
 		
 		if (crossUp && in2025 && Position <= 0)
 		{
-			BuyMarket(Volume + Math.Abs(Position));
+			BuyMarket();
+			_entryPrice = candle.ClosePrice;
 		}
 		else if (Position > 0)
 		{
-			var exitTp = candle.ClosePrice >= PositionPrice * (1 + TakeProfitPercent);
+			var exitTp = candle.ClosePrice >= _entryPrice * (1 + TakeProfitPercent);
 			var exitX = crossDown && !wmaUp;
 			var exitAll = exitTp || exitX || !in2025;
-			
+
 			if (exitAll)
-			SellMarket(Position);
+			SellMarket();
 		}
 		
 		_prevDonLow = donLow;

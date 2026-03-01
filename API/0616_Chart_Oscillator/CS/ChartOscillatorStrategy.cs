@@ -201,8 +201,8 @@ public class ChartOscillatorStrategy : Strategy
 
 		var stoch = (StochasticOscillatorValue)stochValue;
 
-		var k = stoch.K;
-		var d = stoch.D;
+		if (stoch.K is not decimal k || stoch.D is not decimal d)
+			return;
 
 		if (_hasPrev)
 		{
@@ -211,18 +211,18 @@ public class ChartOscillatorStrategy : Strategy
 
 			if (crossUp && Position <= 0)
 			{
-				BuyMarket(Volume + Math.Abs(Position));
+				BuyMarket();
 			}
 			else if (crossDown && Position >= 0)
 			{
-				SellMarket(Volume + Math.Abs(Position));
+				SellMarket();
 			}
 		}
 
 		if (Position > 0 && k >= 50m)
-			SellMarket(Position);
+			SellMarket();
 		else if (Position < 0 && k <= 50m)
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
 
 		_prevK = k;
 		_prevD = d;

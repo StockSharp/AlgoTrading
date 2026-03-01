@@ -162,7 +162,7 @@ public class DailyPlayAceSpectrumStrategy : Strategy
 			
 			var width = (decimal)i / (LinesCount / (Scale == 0 ? 1m : Scale)) + ThicknessOffset;
 			
-			DrawLine(candleA.OpenTime, candleA.OpenPrice, candleB.OpenTime, candleB.OpenPrice, thickness: (int)Math.Round(width));
+			// Line drawing removed (not available in API)
 		}
 	}
 }
