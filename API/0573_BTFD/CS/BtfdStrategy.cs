@@ -211,7 +211,7 @@ public class BtfdStrategy : Strategy
 	{
 		base.OnStarted2(time);
 		
-		_volumeSma = new SMA { Length = VolumeLength };
+		_volumeSma = new SimpleMovingAverage { Length = VolumeLength };
 		_rsi = new RelativeStrengthIndex { Length = RsiLength };
 		
 		var subscription = SubscribeCandles(CandleType);
@@ -232,7 +232,7 @@ public class BtfdStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 		return;
 		
-		var volValue = _volumeSma.Process(candle.TotalVolume);
+		var volValue = _volumeSma.Process(new DecimalIndicatorValue(_volumeSma, candle.TotalVolume, candle.ServerTime));
 		if (!_volumeSma.IsFormed || volValue.ToNullableDecimal() is not decimal volAvg)
 		return;
 		
@@ -255,7 +255,7 @@ public class BtfdStrategy : Strategy
 		var slPrice = _entryPrice * (1m - StopLossPercent / 100m);
 		if (price <= slPrice)
 		{
-			SellMarket(Position);
+			SellMarket();
 			_soldPercent = 100;
 			return;
 		}
@@ -284,7 +284,7 @@ public class BtfdStrategy : Strategy
 			{
 				var part = qty - _soldPercent;
 				var volumeToSell = _initialVolume * part / 100m;
-				SellMarket(volumeToSell);
+				SellMarket();
 				_soldPercent = qty;
 			}
 		}

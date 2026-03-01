@@ -38,6 +38,7 @@ public class BtcusdAdjustableSltpStrategy : Strategy
 	private bool _longSignalActive;
 	private decimal? _pullHigh;
 	private decimal? _retraceLevel;
+	private decimal _entryPrice;
 
 	private bool _beLong;
 	private bool _beShort;
@@ -159,9 +160,9 @@ public class BtcusdAdjustableSltpStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var fastSma = new SMA { Length = FastSmaLength };
-		var slowSma = new SMA { Length = SlowSmaLength };
-		var ema = new EMA { Length = EmaFilterLength };
+		var fastSma = new SimpleMovingAverage { Length = FastSmaLength };
+		var slowSma = new SimpleMovingAverage { Length = SlowSmaLength };
+		var ema = new ExponentialMovingAverage { Length = EmaFilterLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -216,20 +217,24 @@ public class BtcusdAdjustableSltpStrategy : Strategy
 				if (close > _retraceLevel && _prevClose <= _retraceLevel)
 				{
 					BuyMarket();
+					_entryPrice = close;
 					_longSignalActive = false;
 				}
 			}
 
 			if (shortCondition && shortValid)
+			{
 				SellMarket();
+				_entryPrice = close;
+			}
 		}
 		else if (Position > 0)
 		{
-			var entry = PositionPrice;
+			var entry = _entryPrice;
 
 			if (shortCondition && shortValid)
 			{
-				SellMarket(Position);
+				SellMarket();
 			}
 			else
 			{
@@ -239,17 +244,17 @@ public class BtcusdAdjustableSltpStrategy : Strategy
 				var effectiveLongStop = _beLong ? entry : entry - StopLossDistance;
 				if (close <= effectiveLongStop)
 				{
-					SellMarket(Position);
+					SellMarket();
 				}
 				else if (close >= entry + TakeProfitDistance)
 				{
-					SellMarket(Position);
+					SellMarket();
 				}
 			}
 		}
 		else if (Position < 0)
 		{
-			var entry = PositionPrice;
+			var entry = _entryPrice;
 
 			if (close <= entry - BreakEvenTrigger)
 				_beShort = true;
@@ -257,11 +262,11 @@ public class BtcusdAdjustableSltpStrategy : Strategy
 			var effectiveShortStop = _beShort ? entry : entry + StopLossDistance;
 			if (close >= effectiveShortStop)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 			}
 			else if (close <= entry - TakeProfitDistance)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 			}
 		}
 

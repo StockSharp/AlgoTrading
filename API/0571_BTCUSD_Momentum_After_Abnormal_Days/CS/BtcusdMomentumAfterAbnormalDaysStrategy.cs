@@ -101,7 +101,7 @@ public class BtcusdMomentumAfterAbnormalDaysStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_sma = new SMA { Length = LookbackPeriod };
+		_sma = new SimpleMovingAverage { Length = LookbackPeriod };
 		_stdDev = new StandardDeviation { Length = LookbackPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
@@ -124,17 +124,17 @@ public class BtcusdMomentumAfterAbnormalDaysStrategy : Strategy
 		if (_positionOpened)
 		{
 			if (Position > 0)
-				SellMarket(Position);
+				SellMarket();
 			else if (Position < 0)
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 
 			_positionOpened = false;
 		}
 
 		var dayReturn = (candle.ClosePrice - candle.OpenPrice) / candle.OpenPrice * 100m;
 
-		var meanValue = _sma.Process(dayReturn);
-		var stdValue = _stdDev.Process(dayReturn);
+		var meanValue = _sma.Process(new DecimalIndicatorValue(_sma, dayReturn, candle.ServerTime));
+		var stdValue = _stdDev.Process(new DecimalIndicatorValue(_stdDev, dayReturn, candle.ServerTime));
 
 		if (!meanValue.IsFinal || !stdValue.IsFinal)
 			return;
@@ -149,12 +149,12 @@ public class BtcusdMomentumAfterAbnormalDaysStrategy : Strategy
 
 		if (dayReturn > upper && Position <= 0)
 		{
-			BuyMarket(volume + Math.Abs(Position));
+			BuyMarket();
 			_positionOpened = true;
 		}
 		else if (dayReturn < lower && Position >= 0)
 		{
-			SellMarket(volume + Math.Abs(Position));
+			SellMarket();
 			_positionOpened = true;
 		}
 	}

@@ -148,8 +148,6 @@ public class BigCandleRsiDivergenceStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
 
 		var body0 = Math.Abs(candle.ClosePrice - candle.OpenPrice);
 
@@ -164,13 +162,13 @@ public class BigCandleRsiDivergenceStrategy : Strategy
 
 			if (bullishBigCandle)
 			{
-				BuyMarket(Volume);
+				BuyMarket();
 				_entryPrice = candle.ClosePrice;
 				_trailStop = _entryPrice - _initialStopLossPrice;
 			}
 			else if (bearishBigCandle)
 			{
-				SellMarket(Volume);
+				SellMarket();
 				_entryPrice = candle.ClosePrice;
 				_trailStop = _entryPrice + _initialStopLossPrice;
 			}
@@ -188,7 +186,7 @@ public class BigCandleRsiDivergenceStrategy : Strategy
 			var stop = _trailStop ?? (_entryPrice - _initialStopLossPrice);
 			if (candle.LowPrice <= stop)
 			{
-				SellMarket(Position);
+				SellMarket();
 				_trailStop = null;
 			}
 		}
@@ -205,15 +203,15 @@ public class BigCandleRsiDivergenceStrategy : Strategy
 			var stop = _trailStop ?? (_entryPrice + _initialStopLossPrice);
 			if (candle.HighPrice >= stop)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				_trailStop = null;
 			}
 		}
 
-		body5 = _body4;
-		body4 = _body3;
-		body3 = _body2;
-		body2 = _body1;
-		body1 = body0;
+		_body5 = _body4;
+		_body4 = _body3;
+		_body3 = _body2;
+		_body2 = _body1;
+		_body1 = body0;
 	}
 }
