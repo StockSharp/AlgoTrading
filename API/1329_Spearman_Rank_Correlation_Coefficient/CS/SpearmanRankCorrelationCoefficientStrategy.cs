@@ -222,26 +222,23 @@ public class SpearmanRankCorrelationCoefficientStrategy : Strategy
 
 	private void CheckSignal()
 	{
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!IsFormed)
 			return;
 
-		if (GetPositionValue(Security1) <= 0 && GetPositionValue(Security2) >= 0 && _currentCorrelation > Threshold)
+		if (Position <= 0 && _currentCorrelation > Threshold)
 		{
-			SellMarket(Security1);
-			BuyMarket(Security2);
-			LogInfo($"SHORT {Security1.Code}, LONG {Security2.Code}: correlation {_currentCorrelation:F2}");
+			BuyMarket();
+			LogInfo($"LONG {Security1.Code}: correlation {_currentCorrelation:F2}");
 		}
-		else if (GetPositionValue(Security1) >= 0 && GetPositionValue(Security2) <= 0 && _currentCorrelation < -Threshold)
+		else if (Position >= 0 && _currentCorrelation < -Threshold)
 		{
-			BuyMarket(Security1);
-			SellMarket(Security2);
-			LogInfo($"LONG {Security1.Code}, SHORT {Security2.Code}: correlation {_currentCorrelation:F2}");
+			SellMarket();
+			LogInfo($"SHORT {Security1.Code}: correlation {_currentCorrelation:F2}");
 		}
-		else if (Math.Abs(_currentCorrelation) < Threshold / 2)
+		else if (Math.Abs(_currentCorrelation) < Threshold / 2 && Position != 0)
 		{
-			ClosePosition(Security1);
-			ClosePosition(Security2);
-			LogInfo($"CLOSE PAIR: correlation {_currentCorrelation:F2}");
+			if (Position > 0) SellMarket(); else BuyMarket();
+			LogInfo($"CLOSE: correlation {_currentCorrelation:F2}");
 		}
 	}
 }

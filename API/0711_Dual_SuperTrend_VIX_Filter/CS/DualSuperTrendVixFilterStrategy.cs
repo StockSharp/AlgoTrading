@@ -182,9 +182,9 @@ public class DualSuperTrendVixFilterStrategy : Strategy
 
 		if (UseVixFilter)
 		{
-			_vixSma = new SMA { Length = VixLookback };
+			_vixSma = new SimpleMovingAverage { Length = VixLookback };
 			_vixStd = new StandardDeviation { Length = VixLookback };
-			_vixEma = new EMA { Length = VixTrendPeriod };
+			_vixEma = new ExponentialMovingAverage { Length = VixTrendPeriod };
 
 			var vixSubscription = SubscribeCandles(CandleType, security: VixSecurity);
 			vixSubscription
@@ -218,7 +218,7 @@ public class DualSuperTrendVixFilterStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!IsFormed)
 			return;
 
 		var st1 = (SuperTrendIndicatorValue)st1Value;
@@ -228,9 +228,9 @@ public class DualSuperTrendVixFilterStrategy : Strategy
 		var shortFilter = !UseVixFilter || (_vixClose > _vixMean + _vixStdValue * StdDevMultiplier && _vixClose > _vixTrend);
 
 		var longCondition = st1.IsUpTrend && st2.IsUpTrend && longFilter;
-		var shortCondition = st1.IsDownTrend && st2.IsDownTrend && shortFilter;
+		var shortCondition = !st1.IsUpTrend && !st2.IsUpTrend && shortFilter;
 
-		var exitLong = st1.IsDownTrend || st2.IsDownTrend;
+		var exitLong = !st1.IsUpTrend || !st2.IsUpTrend;
 		var exitShort = st1.IsUpTrend || st2.IsUpTrend;
 
 		if (EnableLong && longCondition && Position <= 0)

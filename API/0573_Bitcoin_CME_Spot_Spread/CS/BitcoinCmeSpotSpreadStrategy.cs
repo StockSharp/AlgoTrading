@@ -293,7 +293,7 @@ public class BitcoinCmeSpotSpreadStrategy : Strategy
 			return;
 
 		var spread = _cmePrice.Value - _spotPrice.Value;
-		var bbVal = (BollingerBandsValue)_bb.Process(spread);
+		var bbVal = (BollingerBandsValue)_bb.Process(new DecimalIndicatorValue(_bb, spread, candle.OpenTime));
 
 		if (bbVal.UpBand is not decimal up || bbVal.LowBand is not decimal low)
 			return;

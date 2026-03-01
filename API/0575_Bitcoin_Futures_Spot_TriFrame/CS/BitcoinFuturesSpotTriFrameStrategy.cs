@@ -204,7 +204,7 @@ public class BitcoinFuturesSpotTriFrameStrategy : Strategy
 	/// </summary>
 	public BitcoinFuturesSpotTriFrameStrategy()
 	{
-		_spot = Param(nameof(Spot));
+		_spot = Param<Security>(nameof(Spot));
 		_candleType1 = Param(nameof(CandleType1), TimeSpan.FromMinutes(60).TimeFrame())
 		.SetDisplay("Candle Type 1", "First timeframe", "Parameters");
 		_candleType2 = Param(nameof(CandleType2), TimeSpan.FromMinutes(120).TimeFrame())
@@ -280,9 +280,9 @@ public class BitcoinFuturesSpotTriFrameStrategy : Strategy
 		if (Security == null || Spot == null)
 		throw new InvalidOperationException("Securities are not specified.");
 		
-		_sma1 = new SMA { Length = SmaPeriod };
-		_sma2 = new SMA { Length = SmaPeriod };
-		_sma3 = new SMA { Length = SmaPeriod };
+		_sma1 = new SimpleMovingAverage { Length = SmaPeriod };
+		_sma2 = new SimpleMovingAverage { Length = SmaPeriod };
+		_sma3 = new SimpleMovingAverage { Length = SmaPeriod };
 		_std1 = new StandardDeviation { Length = SmaPeriod };
 		_std2 = new StandardDeviation { Length = SmaPeriod };
 		_std3 = new StandardDeviation { Length = SmaPeriod };
@@ -369,7 +369,7 @@ public class BitcoinFuturesSpotTriFrameStrategy : Strategy
 	
 	private void CheckSignal(DateTimeOffset time)
 	{
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!IsFormed)
 		return;
 		if (_z1 is not decimal z1 || _z2 is not decimal z2 || _z3 is not decimal z3)
 		return;
