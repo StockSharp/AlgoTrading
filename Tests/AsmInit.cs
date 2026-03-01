@@ -41,7 +41,7 @@ public static class AsmInit
 		_logManager = new();
 		_logManager.Listeners.Add(new ConsoleLogListener());
 
-		await CompilationExtensions.Init(_logManager.Application, [], default);
+		await CompilationExtensions.Init(Paths.FileSystem, _logManager.Application, [], default);
 
 		var drive = new LocalMarketDataDrive(Paths.HistoryDataPath);
 		var storageRegistry = new StorageRegistry { DefaultDrive = drive };
@@ -56,7 +56,9 @@ public static class AsmInit
 			{
 				foreach (var dt in dts)
 				{
-					_cache.GetMessages(secId, dt, day, date => [.. storageRegistry.GetStorage(secId, dt).Load(date)]);
+					await foreach (var msg in _cache.GetMessagesAsync(secId, dt, day, date => storageRegistry.GetStorage(secId, dt).LoadAsync(date)))
+					{
+					}
 				}
 			}
 		}
@@ -131,7 +133,7 @@ public static class AsmInit
 		strategy.OwnTradeReceived += (s, t) => tradesCount++;
 
 		var task = strategy.ExecAsync(null, timeout);
-		connector.Start();
+		await connector.StartAsync(timeout);
 		await task.AsTask();
 
 		if (error is not null)

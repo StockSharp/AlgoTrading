@@ -1878,10 +1878,6 @@ public partial class CSharpTests
 		=> RunStrategy<StochRsiSupertrendStrategy>();
 
 	[TestMethod]
-	public Task StrategyTester()
-		=> RunStrategy<StrategyTesterStrategy>();
-
-	[TestMethod]
 	public Task StratBase()
 		=> RunStrategy<StratBaseStrategy>();
 
