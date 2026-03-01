@@ -194,11 +194,11 @@ public class PurePriceActionBreakoutWith15RRStrategy : Strategy
 		if (CandleType.Arg is TimeSpan tf && tf != TimeSpan.FromMinutes(5) && tf != TimeSpan.FromMinutes(15))
 		throw new ArgumentException("Only 5 or 15 minute candles are supported.");
 
-		_fastEma = new EMA { Length = FastPeriod };
-		_slowEma = new EMA { Length = SlowPeriod };
+		_fastEma = new ExponentialMovingAverage { Length = FastPeriod };
+		_slowEma = new ExponentialMovingAverage { Length = SlowPeriod };
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 		_atr = new AverageTrueRange { Length = AtrPeriod };
-		_volumeSma = new SMA { Length = VolumePeriod };
+		_volumeSma = new SimpleMovingAverage { Length = VolumePeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -220,7 +220,7 @@ public class PurePriceActionBreakoutWith15RRStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 		return;
 
-		var volAvg = _volumeSma.Process(new DecimalIndicatorValue(_volumeSma, candle.TotalVolume, candle.ServerTime)).ToDecimal();
+		var volAvg = _volumeSma.Process(new DecimalIndicatorValue(_volumeSma, candle.TotalVolume, candle.OpenTime)).ToDecimal();
 
 		if (!_fastEma.IsFormed || !_slowEma.IsFormed || !_rsi.IsFormed || !_atr.IsFormed || !_volumeSma.IsFormed)
 		{
@@ -239,12 +239,9 @@ public class PurePriceActionBreakoutWith15RRStrategy : Strategy
 		if (_tradesToday >= MaxTradesPerDay)
 		{
 		if (Position != 0)
-		CloseAll();
+		if (Position > 0) SellMarket(Position); else if (Position < 0) BuyMarket(Math.Abs(Position));
 		return;
 		}
-
-		if (Position == 0)
-		CancelActiveOrders();
 
 		var volCondition = candle.TotalVolume > volAvg;
 		var longCross = _prevFast <= _prevSlow && fast > slow;
@@ -252,24 +249,18 @@ public class PurePriceActionBreakoutWith15RRStrategy : Strategy
 
 		if (longCross && rsi > 50m && volCondition && Position <= 0)
 		{
-		CancelActiveOrders();
 		var volume = Volume + Math.Abs(Position);
 		BuyMarket(volume);
 		var stopPrice = candle.ClosePrice - atr * StopLossFactor;
 		var takePrice = candle.ClosePrice + (candle.ClosePrice - stopPrice) * RiskRewardRatio;
-		SellStop(volume, stopPrice);
-		SellLimit(volume, takePrice);
 		_tradesToday++;
 		}
 		else if (shortCross && rsi < 50m && volCondition && Position >= 0)
 		{
-		CancelActiveOrders();
 		var volume = Volume + Math.Abs(Position);
 		SellMarket(volume);
 		var stopPrice = candle.ClosePrice + atr * StopLossFactor;
 		var takePrice = candle.ClosePrice - (stopPrice - candle.ClosePrice) * RiskRewardRatio;
-		BuyStop(volume, stopPrice);
-		BuyLimit(volume, takePrice);
 		_tradesToday++;
 		}
 

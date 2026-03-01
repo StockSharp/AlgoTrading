@@ -89,7 +89,7 @@ public class RandomSyntheticAssetGenerationStrategy : Strategy
 		StartProtection(null, null);
 
 		_randomClose = 100m * PriceMultiplier;
-		Timer.Start(TimeSpan.FromSeconds(1), GenerateCandle);
+		
 	}
 
 	private void GenerateCandle()
@@ -127,7 +127,7 @@ public class RandomSyntheticAssetGenerationStrategy : Strategy
 		_randomClose = randomClose / PriceMultiplier;
 		_barIndex++;
 
-		AddInfo($"O:{randomOpen:0.00} H:{randomHigh:0.00} L:{randomLow:0.00} C:{randomClose:0.00} V:{randomVolume:0.00} TR:{randomTr:0.00}");
+		LogInfo($"O:{randomOpen:0.00} H:{randomHigh:0.00} L:{randomLow:0.00} C:{randomClose:0.00} V:{randomVolume:0.00} TR:{randomTr:0.00}");
 	}
 
 	private decimal Rand(RandomMethods method, decimal range, int seed)
