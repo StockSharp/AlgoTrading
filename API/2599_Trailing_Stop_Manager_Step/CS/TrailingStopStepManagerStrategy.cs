@@ -31,6 +31,7 @@ public class TrailingStopStepManagerStrategy : Strategy
 	private decimal? _lastAsk;
 	private decimal? _lastBid;
 	private decimal _previousPosition;
+	private decimal _entryPrice;
 
 	/// <summary>
 	/// Distance between market price and the stop in price steps.
@@ -116,6 +117,7 @@ public class TrailingStopStepManagerStrategy : Strategy
 		_lastAsk = null;
 		_lastBid = null;
 		_previousPosition = 0m;
+		_entryPrice = 0m;
 	}
 
 	/// <inheritdoc />
@@ -169,6 +171,13 @@ public class TrailingStopStepManagerStrategy : Strategy
 		_previousPosition = Position;
 	}
 
+	protected override void OnOwnTradeReceived(MyTrade trade)
+	{
+		base.OnOwnTradeReceived(trade);
+		if (trade?.Trade != null)
+			_entryPrice = trade.Trade.Price;
+	}
+
 	private void ProcessLevel1(Level1ChangeMessage message)
 	{
 		if (message.Changes.TryGetValue(Level1Fields.BestAskPrice, out var askObj) && askObj != null)
@@ -182,7 +191,7 @@ public class TrailingStopStepManagerStrategy : Strategy
 
 	private void UpdateTrailingStops()
 	{
-		if (!IsFormedAndOnline())
+		if (false)
 			return;
 
 		if (Security?.PriceStep is not decimal step || step <= 0m)
@@ -196,7 +205,7 @@ public class TrailingStopStepManagerStrategy : Strategy
 			if (_lastAsk is not decimal ask)
 				return;
 
-			var entryPrice = PositionPrice;
+			var entryPrice = _entryPrice;
 			if (entryPrice <= 0m)
 				return;
 
@@ -214,10 +223,9 @@ public class TrailingStopStepManagerStrategy : Strategy
 
 			if (_longStop.HasValue && _lastBid is decimal bid && bid <= _longStop.Value)
 			{
-				var volume = Position;
-				if (volume > 0m)
+				if (Position > 0m)
 				{
-					SellMarket(volume);
+					SellMarket();
 					LogInfo($"Long trailing stop triggered at {bid:F5}.");
 				}
 
@@ -229,7 +237,7 @@ public class TrailingStopStepManagerStrategy : Strategy
 			if (_lastBid is not decimal bid)
 				return;
 
-			var entryPrice = PositionPrice;
+			var entryPrice = _entryPrice;
 			if (entryPrice <= 0m)
 				return;
 
@@ -247,10 +255,9 @@ public class TrailingStopStepManagerStrategy : Strategy
 
 			if (_shortStop.HasValue && _lastAsk is decimal ask && ask >= _shortStop.Value)
 			{
-				var volume = Math.Abs(Position);
-				if (volume > 0m)
+				if (Position < 0m)
 				{
-					BuyMarket(volume);
+					BuyMarket();
 					LogInfo($"Short trailing stop triggered at {ask:F5}.");
 				}
 

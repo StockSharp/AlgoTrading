@@ -83,8 +83,8 @@ public class TypePendingOrderTriggeredStrategy : Strategy
 		if (order is null)
 			return default;
 
-		if (order.Id != 0)
-			return order.Id;
+		if (order.Id != null && order.Id != 0)
+			return order.Id.Value;
 
 		if (order.TransactionId != 0)
 			return order.TransactionId;

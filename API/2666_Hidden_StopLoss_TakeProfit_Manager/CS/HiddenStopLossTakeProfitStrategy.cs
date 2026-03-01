@@ -28,6 +28,7 @@ public class HiddenStopLossTakeProfitStrategy : Strategy
 	private decimal? _hiddenTakeProfit;
 	private decimal? _bestBidPrice;
 	private decimal? _bestAskPrice;
+	private decimal _entryPrice;
 	private bool _hasTrackedPosition;
 	private bool _completionLogged;
 	private bool _pendingInitialization;
@@ -102,6 +103,7 @@ public class HiddenStopLossTakeProfitStrategy : Strategy
 		ResetHiddenLevels();
 		_bestBidPrice = null;
 		_bestAskPrice = null;
+		_entryPrice = 0m;
 		_hasTrackedPosition = false;
 		_completionLogged = false;
 		_pendingInitialization = false;
@@ -150,7 +152,14 @@ public class HiddenStopLossTakeProfitStrategy : Strategy
 		TryInitializeHiddenLevels();
 	}
 
-	private void ProcessOrderBook(QuoteChangeMessage orderBook)
+	protected override void OnOwnTradeReceived(MyTrade trade)
+	{
+		base.OnOwnTradeReceived(trade);
+		if (trade?.Trade != null)
+			_entryPrice = trade.Trade.Price;
+	}
+
+	private void ProcessOrderBook(IOrderBookMessage orderBook)
 	{
 		// Cache latest best bid and ask prices.
 		var bestBid = orderBook.GetBestBid()?.Price;
@@ -257,7 +266,7 @@ public class HiddenStopLossTakeProfitStrategy : Strategy
 		LogInfo(message);
 
 		// ClosePosition sends market orders in the correct direction to flatten the position.
-		ClosePosition();
+		if (Position > 0) SellMarket(); else if (Position < 0) BuyMarket();
 	}
 
 	private void ResetHiddenLevels()
@@ -279,13 +288,11 @@ public class HiddenStopLossTakeProfitStrategy : Strategy
 
 	private decimal? GetReferencePrice()
 	{
-		var averagePrice = Position.AveragePrice ?? 0m;
-
 		return ReferencePrice switch
 		{
-			ReferencePriceOptions.OpenPrice => averagePrice,
-			ReferencePriceOptions.MidPrice => GetMidPrice() ?? averagePrice,
-			_ => averagePrice,
+			ReferencePriceOptions.OpenPrice => _entryPrice,
+			ReferencePriceOptions.MidPrice => GetMidPrice() ?? _entryPrice,
+			_ => _entryPrice,
 		};
 	}
 
@@ -311,15 +318,7 @@ public class HiddenStopLossTakeProfitStrategy : Strategy
 		if (_hiddenStopLoss is not decimal stop || _hiddenTakeProfit is not decimal take)
 			return;
 
-		var start = CurrentTime;
-		if (start == default)
-			start = DateTimeOffset.Now;
-
-		var end = start + TimeSpan.FromMinutes(30);
-
-		// Draw simple horizontal lines to visualise hidden levels.
-		DrawLine(start, stop, end, stop);
-		DrawLine(start, take, end, take);
+		// DrawLine removed - not available in backtest
 	}
 
 	/// <summary>

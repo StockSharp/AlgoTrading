@@ -99,10 +99,7 @@ public class SoundAlertEntryOutStrategy : Strategy
 		if (positionBeforeTrade == 0m)
 			return;
 
-		var orderDirection = trade.Order.Direction;
-
-		if (orderDirection is null)
-			return;
+		var orderDirection = trade.Order.Side;
 
 		var isClosingLong = positionBeforeTrade > 0m && orderDirection == Sides.Sell;
 		var isClosingShort = positionBeforeTrade < 0m && orderDirection == Sides.Buy;
@@ -116,12 +113,13 @@ public class SoundAlertEntryOutStrategy : Strategy
 			return;
 
 		var tradeId = trade.Trade?.Id;
-		var tradeVolume = trade.Trade?.Volume ?? trade.Order.Volume ?? 0m;
-		var symbol = trade.Trade?.Security?.Id ?? Security?.Id.ToString() ?? "UNKNOWN";
+		var tradeVolume = trade.Trade?.Volume ?? 0m;
+		var symbol = Security?.Id.ToString() ?? "UNKNOWN";
 		var profit = _previousPnL - pnlBeforeTrade;
 		var directionText = orderDirection == Sides.Buy ? "buy" : "sell";
+		var tradeIdStr = tradeId?.ToString() ?? "N/A";
 
-		LogInfo($"Deal #{tradeId ?? "N/A"} {directionText} {tradeVolume:F2} {symbol}, profit: {profit:F2}");
+		LogInfo($"Deal #{tradeIdStr} {directionText} {tradeVolume:F2} {symbol}, profit: {profit:F2}");
 	}
 
 	private static string GetSoundFileName(NotificationSounds sound)

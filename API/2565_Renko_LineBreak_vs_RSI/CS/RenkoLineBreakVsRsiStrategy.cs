@@ -162,11 +162,7 @@ public class RenkoLineBreakVsRsiStrategy : Strategy
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		_renkoType ??= DataType.Create(typeof(RenkoCandleMessage), new RenkoCandleArg
-		{
-			BuildFrom = RenkoBuildFrom.Points,
-			BoxSize = BoxSize
-		});
+		_renkoType ??= DataType.Create(typeof(RenkoCandleMessage), new Unit(BoxSize));
 
 		return [(Security, CandleType), (Security, _renkoType)];
 	}
