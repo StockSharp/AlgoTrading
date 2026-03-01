@@ -107,39 +107,39 @@ public class PinBarReversalStrategy : Strategy
 	/// </summary>
 	public PinBarReversalStrategy()
 	{
-		trendLength = Param(nameof(TrendLength), 50)
+			_trendLength = Param(nameof(TrendLength), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Trend SMA Length", "Period for trend SMA", "General")
 			;
 
-		maxBodyPct = Param(nameof(MaxBodyPct), 0.30m)
+			_maxBodyPct = Param(nameof(MaxBodyPct), 0.30m)
 			.SetRange(0.1m, 0.5m)
 			.SetDisplay("Max Body %", "Maximum body as % of range", "Pattern")
 			;
 
-		minWickPct = Param(nameof(MinWickPct), 0.66m)
+			_minWickPct = Param(nameof(MinWickPct), 0.66m)
 			.SetRange(0.5m, 0.9m)
 			.SetDisplay("Min Wick %", "Minimum wick as % of range", "Pattern")
 			;
 
-		_atrLength = Param(nameof(AtrLength), 14)
+		__atrLength = Param(nameof(AtrLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Length", "ATR period", "Risk")
 			;
 
-		_stopMultiplier = Param(nameof(StopMultiplier), 1m)
+		__stopMultiplier = Param(nameof(StopMultiplier), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Stop Mult", "Stop loss ATR multiplier", "Risk");
 
-		_takeMultiplier = Param(nameof(TakeMultiplier), 1.5m)
+		__takeMultiplier = Param(nameof(TakeMultiplier), 1.5m)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Take Mult", "Take profit ATR multiplier", "Risk");
 
-		_minAtr = Param(nameof(MinAtr), 0.0015m)
+		__minAtr = Param(nameof(MinAtr), 0.0015m)
 			.SetGreaterThanZero()
 			.SetDisplay("Min ATR", "Minimum ATR to allow entry", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		__candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Working candle timeframe", "General");
 	}
 
@@ -153,8 +153,8 @@ public class PinBarReversalStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_stopLevel = 0m;
-		_profitLevel = 0m;
+		__stopLevel = 0m;
+		__profitLevel = 0m;
 	}
 
 	/// <inheritdoc />
@@ -162,7 +162,7 @@ public class PinBarReversalStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var trendSma = new SMA { Length = TrendLength };
+		var trendSma = new SimpleMovingAverage { Length = TrendLength };
 		var atr = new AverageTrueRange { Length = AtrLength };
 
 		var subscription = SubscribeCandles(CandleType);
@@ -207,24 +207,24 @@ public class PinBarReversalStrategy : Strategy
 			if (bullPin)
 			{
 				BuyMarket();
-				_stopLevel = candle.LowPrice - atrValue * StopMultiplier;
-				_profitLevel = candle.ClosePrice + atrValue * TakeMultiplier;
+				__stopLevel = candle.LowPrice - atrValue * StopMultiplier;
+				__profitLevel = candle.ClosePrice + atrValue * TakeMultiplier;
 			}
 			else if (bearPin)
 			{
 				SellMarket();
-				_stopLevel = candle.HighPrice + atrValue * StopMultiplier;
-				_profitLevel = candle.ClosePrice - atrValue * TakeMultiplier;
+				__stopLevel = candle.HighPrice + atrValue * StopMultiplier;
+				__profitLevel = candle.ClosePrice - atrValue * TakeMultiplier;
 			}
 		}
 		else if (Position > 0)
 		{
-			if (candle.LowPrice <= _stopLevel || candle.HighPrice >= _profitLevel)
+			if (candle.LowPrice <= __stopLevel || candle.HighPrice >= __profitLevel)
 			SellMarket(Position);
 		}
 		else if (Position < 0)
 		{
-			if (candle.HighPrice >= _stopLevel || candle.LowPrice <= _profitLevel)
+			if (candle.HighPrice >= __stopLevel || candle.LowPrice <= __profitLevel)
 			BuyMarket(Math.Abs(Position));
 		}
 	}

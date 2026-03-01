@@ -72,8 +72,8 @@ public class PhaseCrossWithZoneStrategy : Strategy
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		var sma = new Sma { Length = Length };
-		var ema = new Ema { Length = Length };
+		var sma = new SimpleMovingAverage { Length = Length };
+		var ema = new ExponentialMovingAverage { Length = Length };
 		var subscription = SubscribeCandles(CandleType);
 		subscription
 			.Bind(sma, ema, ProcessCandle)

@@ -131,8 +131,8 @@ public class PowertrendVolumeRangeFilterStrategy : Strategy
 
 		_smoothRng = new AverageTrueRange { Length = Length };
 		_adx = new AverageDirectionalIndex { Length = LengthAdx };
-		_adxSma = new SMA { Length = LengthAdx };
-		_vwma = new SMA { Length = LengthVwma };
+		_adxSma = new SimpleMovingAverage { Length = LengthAdx };
+		_vwma = new SimpleMovingAverage { Length = LengthVwma };
 		_highBandTrend = new Highest { Length = LengthHl };
 		_lowBandTrend = new Lowest { Length = LengthHl };
 
@@ -160,7 +160,7 @@ public class PowertrendVolumeRangeFilterStrategy : Strategy
 
 		var uprng = _prevBase is decimal pb && volRng > pb;
 
-		var adxSmaValue = _adxSma.Process(new DecimalIndicatorValue(adxValue)).ToNullableDecimal();
+		var adxSmaValue = _adxSma.Process(new DecimalIndicatorValue(_adxSma, adxValue, candle.OpenTime)).ToNullableDecimal();
 		if (UseAdx && adxSmaValue is null)
 		{
 			UpdateState(close, volume, volRng, hband, lowband, null, null);
@@ -168,8 +168,8 @@ public class PowertrendVolumeRangeFilterStrategy : Strategy
 		}
 		var adxFilter = !UseAdx || adxValue > adxSmaValue;
 
-		var highBandTrendFollow = _highBandTrend.Process(new DecimalIndicatorValue(hband)).ToNullableDecimal();
-		var lowBandTrendFollow = _lowBandTrend.Process(new DecimalIndicatorValue(lowband)).ToNullableDecimal();
+		var highBandTrendFollow = _highBandTrend.Process(new DecimalIndicatorValue(_highBandTrend, hband, candle.OpenTime)).ToNullableDecimal();
+		var lowBandTrendFollow = _lowBandTrend.Process(new DecimalIndicatorValue(_lowBandTrend, lowband, candle.OpenTime)).ToNullableDecimal();
 		if (UseHl && (highBandTrendFollow is null || lowBandTrendFollow is null))
 		{
 			UpdateState(close, volume, volRng, hband, lowband, highBandTrendFollow, lowBandTrendFollow);
@@ -201,7 +201,7 @@ public class PowertrendVolumeRangeFilterStrategy : Strategy
 		var iguFilterPositive = !UseHl || inGeneralUptrend;
 		var iguFilterNegative = !UseHl || !inGeneralUptrend;
 
-		var vwmaValue = _vwma.Process(new DecimalIndicatorValue(volRng)).ToNullableDecimal();
+		var vwmaValue = _vwma.Process(new DecimalIndicatorValue(_vwma, volRng, candle.OpenTime)).ToNullableDecimal();
 		if (UseVwma && vwmaValue is null)
 		{
 			UpdateState(close, volume, volRng, hband, lowband, highBandTrendFollow, lowBandTrendFollow);

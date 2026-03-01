@@ -29,7 +29,7 @@ public class PriceAndVolumeBreakoutBuyStrategy : Strategy
 	private Highest _priceHighest = null!;
 	private Lowest _priceLowest = null!;
 	private Highest _volumeHighest = null!;
-	private SMA _sma = null!;
+	private SimpleMovingAverage _sma = null!;
 
 	private decimal _prevPriceHigh;
 	private decimal _prevPriceLow;
@@ -138,7 +138,7 @@ public class PriceAndVolumeBreakoutBuyStrategy : Strategy
 		_priceHighest = new Highest { Length = PriceBreakoutPeriod };
 		_priceLowest = new Lowest { Length = PriceBreakoutPeriod };
 		_volumeHighest = new Highest { Length = VolumeBreakoutPeriod };
-		_sma = new SMA { Length = TrendlineLength };
+		_sma = new SimpleMovingAverage { Length = TrendlineLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -159,7 +159,7 @@ public class PriceAndVolumeBreakoutBuyStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var volumeHigh = _volumeHighest.Process(candle.TotalVolume).ToDecimal();
+		var volumeHigh = _volumeHighest.Process(new DecimalIndicatorValue(_volumeHighest, candle.TotalVolume, candle.OpenTime)).ToDecimal();
 
 		if (!_priceHighest.IsFormed || !_priceLowest.IsFormed || !_volumeHighest.IsFormed || !_sma.IsFormed)
 		{

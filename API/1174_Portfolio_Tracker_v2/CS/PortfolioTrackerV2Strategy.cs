@@ -126,7 +126,7 @@ public class PortfolioTrackerV2Strategy : Strategy
 				if (!p.Enabled.Value)
 						continue;
 
-				p.Security = SecurityProvider.LookupById(p.Symbol.Value);
+				p.Security = this.LookupById(p.Symbol.Value);
 				if (p.Security == null)
 						throw new InvalidOperationException($"Security '{p.Symbol.Value}' not found.");
 
