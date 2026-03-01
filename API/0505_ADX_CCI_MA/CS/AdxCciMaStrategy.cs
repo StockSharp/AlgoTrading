@@ -1,63 +1,37 @@
+namespace StockSharp.Samples.Strategies;
+
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
-
+using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
-using StockSharp.Algo.Candles;
-
-namespace StockSharp.Samples.Strategies;
-
 /// <summary>
 /// Strategy combining ADX, CCI and moving average trend filter.
 /// Enters when +DI crosses -DI and CCI confirms extreme values.
-/// Optional MA risk management closes position after consecutive closes against MA.
 /// </summary>
 public class AdxCciMaStrategy : Strategy
 {
 	private readonly StrategyParam<bool> _enableLong;
 	private readonly StrategyParam<bool> _enableShort;
-	private readonly StrategyParam<decimal> _takeProfitPercent;
-	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<int> _cciPeriod;
 	private readonly StrategyParam<int> _adxLength;
 	private readonly StrategyParam<decimal> _adxThreshold;
-	private readonly StrategyParam<bool> _useMaTrend;
 	private readonly StrategyParam<int> _maLength;
-	private readonly StrategyParam<MovingAverageTypes> _maType;
-	private readonly StrategyParam<bool> _useMaRisk;
-	private readonly StrategyParam<int> _maRiskExitCandles;
 	private readonly StrategyParam<DataType> _candleType;
-
-	private CommodityChannelIndex _cci;
-	private AverageDirectionalIndex _adx;
-	private IIndicator _ma;
 
 	private decimal _prevPlusDi;
 	private decimal _prevMinusDi;
-	private int _longAgainstCount;
-	private int _shortAgainstCount;
 
 	public bool EnableLong { get => _enableLong.Value; set => _enableLong.Value = value; }
 	public bool EnableShort { get => _enableShort.Value; set => _enableShort.Value = value; }
-	public decimal TakeProfitPercent { get => _takeProfitPercent.Value; set => _takeProfitPercent.Value = value; }
-	public decimal StopLossPercent { get => _stopLossPercent.Value; set => _stopLossPercent.Value = value; }
 	public int CciPeriod { get => _cciPeriod.Value; set => _cciPeriod.Value = value; }
 	public int AdxLength { get => _adxLength.Value; set => _adxLength.Value = value; }
 	public decimal AdxThreshold { get => _adxThreshold.Value; set => _adxThreshold.Value = value; }
-	public bool UseMaTrend { get => _useMaTrend.Value; set => _useMaTrend.Value = value; }
 	public int MaLength { get => _maLength.Value; set => _maLength.Value = value; }
-	public MovingAverageTypes MaType { get => _maType.Value; set => _maType.Value = value; }
-	public bool UseMaRiskManagement { get => _useMaRisk.Value; set => _useMaRisk.Value = value; }
-	public int MaRiskExitCandles { get => _maRiskExitCandles.Value; set => _maRiskExitCandles.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public AdxCciMaStrategy()
@@ -66,97 +40,47 @@ public class AdxCciMaStrategy : Strategy
 			.SetDisplay("Enable Long", "Allow long trades", "General");
 		_enableShort = Param(nameof(EnableShort), true)
 			.SetDisplay("Enable Short", "Allow short trades", "General");
-
-		_takeProfitPercent = Param(nameof(TakeProfitPercent), 2m)
-			.SetDisplay("Take Profit %", "Take profit percentage", "Risk Management")
-			.SetNotNegative();
-		_stopLossPercent = Param(nameof(StopLossPercent), 1m)
-			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management")
-			.SetNotNegative();
-
 		_cciPeriod = Param(nameof(CciPeriod), 15)
-			.SetDisplay("CCI Period", "Period for Commodity Channel Index", "Indicators")
-			;
+			.SetDisplay("CCI Period", "Period for CCI", "Indicators");
 		_adxLength = Param(nameof(AdxLength), 10)
-			.SetDisplay("ADX Length", "Length for Average Directional Index", "Indicators")
-			;
+			.SetDisplay("ADX Length", "Length for ADX", "Indicators");
 		_adxThreshold = Param(nameof(AdxThreshold), 20m)
-			.SetDisplay("ADX Threshold", "ADX level to confirm trend", "Indicators")
-			;
-
-		_useMaTrend = Param(nameof(UseMaTrend), true)
-			.SetDisplay("Use MA Trend", "Enable moving average trend filter", "MA Trend");
-		_maLength = Param(nameof(MaLength), 200)
-			.SetDisplay("MA Length", "Length of moving average", "MA Trend")
-			;
-		_maType = Param(nameof(MaType), MovingAverageTypes.Simple)
-			.SetDisplay("MA Type", "Type of moving average", "MA Trend");
-		_useMaRisk = Param(nameof(UseMaRiskManagement), false)
-			.SetDisplay("Use MA Risk Management", "Exit after candles against MA", "Risk Management");
-		_maRiskExitCandles = Param(nameof(MaRiskExitCandles), 2)
-			.SetDisplay("MA Risk Exit Candles", "Number of closes against MA to exit", "Risk Management");
+			.SetDisplay("ADX Threshold", "ADX level to confirm trend", "Indicators");
+		_maLength = Param(nameof(MaLength), 50)
+			.SetDisplay("MA Length", "Length of moving average", "MA Trend");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for candles", "General");
 	}
 
-	public override IEnumerable<(Security, DataType)> GetWorkingSecurities()
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
 
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_cci?.Reset();
-		_adx?.Reset();
-		_ma?.Reset();
-
-		_prevPlusDi = 0;
-		_prevMinusDi = 0;
-		_longAgainstCount = 0;
-		_shortAgainstCount = 0;
-	}
-
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_cci = new() { Length = CciPeriod };
-		_adx = new() { Length = AdxLength };
-		_ma = MaType switch
-		{
-			MovingAverageTypes.Hull => new HullMovingAverage(),
-			MovingAverageTypes.Exponential => new EMA(),
-			MovingAverageTypes.Smoothed => new SmoothedMovingAverage(),
-			MovingAverageTypes.Weighted => new WeightedMovingAverage(),
-			MovingAverageTypes.VolumeWeighted => new VolumeWeightedMovingAverage(),
-			_ => new SMA()
-		};
-		_ma.Length = MaLength;
+		_prevPlusDi = 0;
+		_prevMinusDi = 0;
+
+		var cci = new CommodityChannelIndex { Length = CciPeriod };
+		var adx = new AverageDirectionalIndex { Length = AdxLength };
+		var ma = new SimpleMovingAverage { Length = MaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(_adx, _cci, _ma, ProcessCandle)
+			.BindEx(adx, cci, ma, ProcessCandle)
 			.Start();
-
-		StartProtection(
-			new Unit(TakeProfitPercent, UnitTypes.Percent),
-			new Unit(StopLossPercent, UnitTypes.Percent));
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _ma);
-			DrawIndicator(area, _cci);
+			DrawIndicator(area, ma);
 			DrawOwnTrades(area);
-
-			var adxArea = CreateChartArea();
-			if (adxArea != null)
-			{
-				DrawIndicator(adxArea, _adx);
-			}
 		}
 	}
 
@@ -165,81 +89,26 @@ public class AdxCciMaStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var adxTyped = (AverageDirectionalIndexValue)adxValue;
-		var plusDi = adxTyped.Dx.Plus;
-		var minusDi = adxTyped.Dx.Minus;
-		var adx = adxTyped.MovingAverage;
+		var adxTyped = (IAverageDirectionalIndexValue)adxValue;
+		if (adxTyped.MovingAverage is not decimal adx)
+			return;
+
+		var dx = adxTyped.Dx;
+		if (dx.Plus is not decimal plusDi || dx.Minus is not decimal minusDi)
+			return;
 
 		var cci = cciValue.ToDecimal();
 		var ma = maValue.ToDecimal();
 
-		var longSignal = plusDi > minusDi && _prevPlusDi <= _prevMinusDi;
-		var shortSignal = minusDi > plusDi && _prevMinusDi <= _prevPlusDi;
+		var longSignal = plusDi > minusDi && _prevPlusDi > 0 && _prevPlusDi <= _prevMinusDi;
+		var shortSignal = minusDi > plusDi && _prevMinusDi > 0 && _prevMinusDi <= _prevPlusDi;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			_prevPlusDi = plusDi;
-			_prevMinusDi = minusDi;
-			return;
-		}
-
-		if (EnableLong && longSignal && cci > 100m && adx >= AdxThreshold && (!UseMaTrend || candle.ClosePrice > ma) && Position <= 0)
-			BuyMarket(Volume + Math.Abs(Position));
-		else if (EnableShort && shortSignal && cci < -100m && adx >= AdxThreshold && (!UseMaTrend || candle.ClosePrice < ma) && Position >= 0)
-			SellMarket(Volume + Math.Abs(Position));
-
-		if (UseMaRiskManagement)
-		{
-			if (Position > 0)
-			{
-				if (candle.ClosePrice < ma)
-				{
-					_longAgainstCount += 1;
-					if (_longAgainstCount >= MaRiskExitCandles)
-					{
-						SellMarket(Math.Abs(Position));
-						_longAgainstCount = 0;
-					}
-				}
-				else
-				{
-					_longAgainstCount = 0;
-				}
-			}
-			else if (Position < 0)
-			{
-				if (candle.ClosePrice > ma)
-				{
-					_shortAgainstCount += 1;
-					if (_shortAgainstCount >= MaRiskExitCandles)
-					{
-						BuyMarket(Math.Abs(Position));
-						_shortAgainstCount = 0;
-					}
-				}
-				else
-				{
-					_shortAgainstCount = 0;
-				}
-			}
-			else
-			{
-				_longAgainstCount = 0;
-				_shortAgainstCount = 0;
-			}
-		}
+		if (EnableLong && longSignal && cci > 100m && adx >= AdxThreshold && candle.ClosePrice > ma && Position <= 0)
+			BuyMarket();
+		else if (EnableShort && shortSignal && cci < -100m && adx >= AdxThreshold && candle.ClosePrice < ma && Position >= 0)
+			SellMarket();
 
 		_prevPlusDi = plusDi;
 		_prevMinusDi = minusDi;
-	}
-
-	public enum MovingAverageTypes
-	{
-		Simple,
-		Hull,
-		Exponential,
-		Smoothed,
-		Weighted,
-		VolumeWeighted
 	}
 }
