@@ -48,7 +48,6 @@ public class IiOutbreakStrategy : Strategy
 	private decimal _sellPyramidLevel;
 	private decimal _currentVolatilityThreshold;
 	private decimal _currentSpreadLimit;
-	private decimal _lastVolatilityValue;
 
 	private decimal? _longTrailingStop;
 	private decimal? _shortTrailingStop;
@@ -235,7 +234,6 @@ public class IiOutbreakStrategy : Strategy
 		_sellPyramidLevel = 0m;
 		_currentVolatilityThreshold = 0m;
 		_currentSpreadLimit = 0m;
-		_lastVolatilityValue = 0m;
 
 		_longTrailingStop = null;
 		_shortTrailingStop = null;

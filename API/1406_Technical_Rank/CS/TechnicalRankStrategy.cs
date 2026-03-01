@@ -23,15 +23,11 @@ public class TechnicalRankStrategy : Strategy
 	private decimal _ema12Val;
 	private decimal _ema26Val;
 	private decimal _rsiVal;
-	private decimal _prevPpoHist;
-	private decimal _ppoHistVal;
-	private int _ppoHistCount;
 	private bool _sma200Formed;
 	private bool _sma50Formed;
 	private bool _ema12Formed;
 	private bool _ema26Formed;
 	private bool _rsiFormed;
-	private bool _ppoSignalFormed;
 
 	/// <summary>
 	/// Upper rank threshold.

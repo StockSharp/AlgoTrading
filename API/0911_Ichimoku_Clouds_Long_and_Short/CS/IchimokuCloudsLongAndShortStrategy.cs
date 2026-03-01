@@ -83,7 +83,7 @@ public class IchimokuCloudsLongAndShortStrategy : Strategy
 	/// <summary>
 	/// Trading mode (Long or Short).
 	/// </summary>
-	public string TradingMode
+	public new string TradingMode
 	{
 		get => _tradingMode.Value;
 		set => _tradingMode.Value = value;

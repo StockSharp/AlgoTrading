@@ -289,7 +289,9 @@ public class FollowLineStrategy : Strategy
 			else if (_followLineHtf < _prevFollowLineHtf)
 				_trendHtf = -1;
 			else
-				_trendHtf = _trendHtf;
+			{
+				// trend unchanged, keep current value
+			}
 		}
 		else if (_followLineHtf.HasValue && !_prevFollowLineHtf.HasValue)
 		{

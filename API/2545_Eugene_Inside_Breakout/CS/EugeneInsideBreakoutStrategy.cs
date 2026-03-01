@@ -22,10 +22,12 @@ public class EugeneInsideBreakoutStrategy : Strategy
 	private readonly StrategyParam<int> _activationHour;
 
 	private decimal _prevOpen1;
+	private decimal _prevClose1;
 	private decimal _prevHigh1;
 	private decimal _prevLow1;
 
 	private decimal _prevOpen2;
+	private decimal _prevClose2;
 	private decimal _prevHigh2;
 	private decimal _prevLow2;
 
@@ -111,7 +113,9 @@ public class EugeneInsideBreakoutStrategy : Strategy
 		}
 
 		var open1 = _prevOpen1;
+		var close1 = _prevClose1;
 		var open2 = _prevOpen2;
+		var close2 = _prevClose2;
 		var high0 = candle.HighPrice;
 		var high1 = _prevHigh1;
 		var high2 = _prevHigh2;
@@ -120,18 +124,18 @@ public class EugeneInsideBreakoutStrategy : Strategy
 		var low2 = _prevLow2;
 
 		// Replicate the original expert advisor checks for inside bars.
-		var blackInsider = high1 <= high2 && low1 >= low2 && open1 <= open1;
-		var whiteInsider = high1 <= high2 && low1 >= low2 && open1 > open1;
-		var whiteBird = whiteInsider && open2 > open2;
-		var blackBird = blackInsider && open2 < open2;
+		var blackInsider = high1 <= high2 && low1 >= low2 && close1 <= open1;
+		var whiteInsider = high1 <= high2 && low1 >= low2 && close1 > open1;
+		var whiteBird = whiteInsider && close2 > open2;
+		var blackBird = blackInsider && close2 < open2;
 
 		// ZigZag style confirmation levels based on the previous candle body.
-		var zigLevelBuy = open1 < open1
-			? open1 - (open1 - open1) / 3m
+		var zigLevelBuy = close1 < open1
+			? open1 - (close1 - open1) / 3m
 			: open1 - (open1 - low1) / 3m;
 
-		var zigLevelSell = open1 > open1
-			? open1 + (open1 - open1) / 3m
+		var zigLevelSell = close1 > open1
+			? open1 + (close1 - open1) / 3m
 			: open1 + (high1 - open1) / 3m;
 
 		var confirmBuy = (low0 <= zigLevelBuy || candle.CloseTime.Hour >= ActivationHour) && !blackBird && !whiteInsider;
@@ -169,11 +173,13 @@ public class EugeneInsideBreakoutStrategy : Strategy
 	{
 		// Keep the two most recent completed candles for decision making.
 		_prevOpen2 = _prevOpen1;
+		_prevClose2 = _prevClose1;
 		_prevHigh2 = _prevHigh1;
 		_prevLow2 = _prevLow1;
 		_hasPrev2 = _hasPrev1;
 
 		_prevOpen1 = candle.OpenPrice;
+		_prevClose1 = candle.ClosePrice;
 		_prevHigh1 = candle.HighPrice;
 		_prevLow1 = candle.LowPrice;
 		_hasPrev1 = true;
@@ -182,9 +188,11 @@ public class EugeneInsideBreakoutStrategy : Strategy
 	private void ResetHistory()
 	{
 		_prevOpen1 = default;
+		_prevClose1 = default;
 		_prevHigh1 = default;
 		_prevLow1 = default;
 		_prevOpen2 = default;
+		_prevClose2 = default;
 		_prevHigh2 = default;
 		_prevLow2 = default;
 		_hasPrev1 = false;

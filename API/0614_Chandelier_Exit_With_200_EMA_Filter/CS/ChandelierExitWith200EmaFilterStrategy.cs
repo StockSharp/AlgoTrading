@@ -24,8 +24,6 @@ public class ChandelierExitWith200EmaFilterStrategy : Strategy
 	private decimal _shortStop;
 	private decimal _prevClose;
 	private int _dir = 1;
-	private decimal _highestHigh;
-	private decimal _lowestLow;
 	private readonly List<decimal> _highs = new();
 	private readonly List<decimal> _lows = new();
 

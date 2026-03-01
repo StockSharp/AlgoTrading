@@ -259,8 +259,6 @@ public class TradingLabBestMacdStrategy : Strategy
 			_macdUpCounter--;
 
 		var point = GetPointValue();
-		var triggeredResistance = false;
-		var triggeredSupport = false;
 
 		if (_hasPreviousCandle)
 		{
@@ -268,13 +266,11 @@ public class TradingLabBestMacdStrategy : Strategy
 			if (_previousHigh.HasValue && resistanceValue > 0m && _previousHigh.Value > resistanceValue)
 			{
 				_resistanceCounter = SignalValidity;
-				triggeredResistance = true;
 			}
 
 			if (_previousLow.HasValue && supportValue > 0m && _previousLow.Value < supportValue)
 			{
 				_supportCounter = SignalValidity;
-				triggeredSupport = true;
 			}
 		}
 

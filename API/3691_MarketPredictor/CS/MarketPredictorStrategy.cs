@@ -183,9 +183,6 @@ public class MarketPredictorStrategy : Strategy
 			return;
 
 		// Confirm that the strategy is allowed to trade and all prerequisites are met.
-		if (false)
-			return;
-
 		// Update adaptive mean when the moving average is formed.
 		if (sma.IsFormed)
 		{

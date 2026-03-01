@@ -45,7 +45,6 @@ public class MadTraderStrategy : Strategy
 
 	private decimal _entryPrice;
 	private decimal _stopPrice;
-	private bool _isLongPosition;
 	private bool _trailingActive;
 
 	private decimal _startBalance;
@@ -289,7 +288,6 @@ public class MadTraderStrategy : Strategy
 
 		_entryPrice = 0m;
 		_stopPrice = 0m;
-		_isLongPosition = false;
 		_trailingActive = false;
 
 		_startBalance = 0m;
@@ -360,7 +358,6 @@ public class MadTraderStrategy : Strategy
 		{
 			BuyMarket(Volume + Math.Abs(Position));
 			_entryPrice = candle.ClosePrice;
-			_isLongPosition = true;
 			_lastTradeTime = now;
 			_trailingActive = false;
 		}
@@ -368,7 +365,6 @@ public class MadTraderStrategy : Strategy
 		{
 			SellMarket(Volume + Math.Abs(Position));
 			_entryPrice = candle.ClosePrice;
-			_isLongPosition = false;
 			_lastTradeTime = now;
 			_trailingActive = false;
 		}

@@ -191,9 +191,6 @@ public class TrailingStopStepManagerStrategy : Strategy
 
 	private void UpdateTrailingStops()
 	{
-		if (false)
-			return;
-
 		if (Security?.PriceStep is not decimal step || step <= 0m)
 			return;
 

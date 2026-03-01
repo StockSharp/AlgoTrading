@@ -40,7 +40,6 @@ public class RsiMaStrategy : Strategy
 	private RelativeStrengthIndex _rsi;
 	private ExponentialMovingAverage _ema;
 	
-	private decimal? _previousEmaValue;
 	private decimal? _previousIndicatorValue;
 	
 	private decimal? _stopLossPrice;

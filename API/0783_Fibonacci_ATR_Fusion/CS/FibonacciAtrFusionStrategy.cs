@@ -23,9 +23,8 @@ public class FibonacciAtrFusionStrategy : Strategy
 	private decimal _prevClose;
 	private bool _hasPrev;
 
-	// Manual running averages for buying pressure and ATR at Fibonacci periods
+	// Manual running averages for buying pressure at Fibonacci periods
 	private decimal _bp8Sum, _bp13Sum, _bp21Sum, _bp34Sum, _bp55Sum;
-	private decimal _atr8, _atr13, _atr21, _atr34, _atr55;
 	private int _candleCount;
 
 	public decimal LongEntryThreshold

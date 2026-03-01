@@ -25,7 +25,6 @@ public class RandomAtrBybitStrategy : Strategy
 	private decimal _entryPrice;
 	private decimal _stopOffset;
 	private decimal _takeOffset;
-	private bool _isLong;
 
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 	public int AtrLength { get => _atrLength.Value; set => _atrLength.Value = value; }
@@ -95,13 +94,11 @@ public class RandomAtrBybitStrategy : Strategy
 			{
 				BuyMarket();
 				_entryPrice = candle.ClosePrice;
-				_isLong = true;
 			}
 			else
 			{
 				SellMarket();
 				_entryPrice = candle.ClosePrice;
-				_isLong = false;
 			}
 		}
 

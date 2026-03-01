@@ -26,7 +26,6 @@ public class NevalyashkaFlipStrategy : Strategy
 	private decimal _entryPrice;
 	private Sides? _currentSide;
 	private Sides? _lastCompletedSide;
-	private bool _initialized;
 
 	/// <summary>
 	/// Stop loss distance in price steps.
@@ -85,7 +84,6 @@ public class NevalyashkaFlipStrategy : Strategy
 		_entryPrice = 0m;
 		_currentSide = null;
 		_lastCompletedSide = null;
-		_initialized = false;
 	}
 
 	/// <inheritdoc />

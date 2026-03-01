@@ -245,9 +245,6 @@ public class AtrStepTraderStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (false)
-			return;
-
 		if (atrValue <= 0m)
 			return;
 

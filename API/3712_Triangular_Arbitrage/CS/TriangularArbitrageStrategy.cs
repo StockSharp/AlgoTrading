@@ -411,8 +411,6 @@ public class TriangularArbitrageStrategy : Strategy
 		return;
 
 		var direction = order.Side;
-		if (direction == null)
-		return;
 
 		var volume = trade.Trade.Volume;
 		if (volume <= 0m)

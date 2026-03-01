@@ -28,7 +28,6 @@ public class AutotradePendingStopsStrategy : Strategy
 	private readonly StrategyParam<decimal> _orderVolume;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private Order _buyStopOrder;
 	private Order _sellStopOrder;
 	private DateTimeOffset? _buyExpiry;
 	private DateTimeOffset? _sellExpiry;
@@ -154,7 +153,6 @@ public class AutotradePendingStopsStrategy : Strategy
 		base.OnReseted();
 
 		// Reset runtime state when the strategy is reloaded.
-		_buyStopOrder = null;
 		_sellStopOrder = null;
 		_buyExpiry = null;
 		_sellExpiry = null;

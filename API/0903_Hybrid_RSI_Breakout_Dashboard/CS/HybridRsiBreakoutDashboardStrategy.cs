@@ -49,8 +49,6 @@ public class HybridRsiBreakoutDashboardStrategy : Strategy
 	private decimal _prevLowest;
 	private decimal _breakoutStop;
 	private TradeTypes _currentTrade;
-	private string _lastTradeType = "None";
-	private string _lastDirection = "None";
 	private int _barIndex;
 
 	/// <summary>
@@ -186,8 +184,6 @@ public class HybridRsiBreakoutDashboardStrategy : Strategy
 		_prevLowest = 0m;
 		_breakoutStop = 0m;
 		_currentTrade = TradeTypes.None;
-		_lastTradeType = "None";
-		_lastDirection = "None";
 		_barIndex = 0;
 	}
 
@@ -262,30 +258,30 @@ public class HybridRsiBreakoutDashboardStrategy : Strategy
 		{
 			BuyMarket(Volume + Math.Abs(Position));
 			_currentTrade = TradeTypes.Rsi;
-			_lastTradeType = "RSI";
-			_lastDirection = "Long";
+
+
 		}
 		else if (rsiShort && Position >= 0)
 		{
 			SellMarket(Volume + Math.Abs(Position));
 			_currentTrade = TradeTypes.Rsi;
-			_lastTradeType = "RSI";
-			_lastDirection = "Short";
+
+
 		}
 		else if (longBreak && Position <= 0)
 		{
 			BuyMarket(Volume + Math.Abs(Position));
 			_currentTrade = TradeTypes.Breakout;
-			_lastTradeType = "Breakout";
-			_lastDirection = "Long";
+
+
 			_breakoutStop = candle.ClosePrice - atrValue * AtrMultiplier;
 		}
 		else if (shortBreak && Position >= 0)
 		{
 			SellMarket(Volume + Math.Abs(Position));
 			_currentTrade = TradeTypes.Breakout;
-			_lastTradeType = "Breakout";
-			_lastDirection = "Short";
+
+
 			_breakoutStop = candle.ClosePrice + atrValue * AtrMultiplier;
 		}
 

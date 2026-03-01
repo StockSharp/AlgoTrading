@@ -178,8 +178,6 @@ public class GoldBreakoutRr4Strategy : Strategy
 		}
 	}
 
-	private DonchianChannels _donchian;
-
 	private void ProcessCandleEx(ICandleMessage candle, IIndicatorValue[] values)
 	{
 		var donchianVal = (DonchianChannelsValue)values[0];

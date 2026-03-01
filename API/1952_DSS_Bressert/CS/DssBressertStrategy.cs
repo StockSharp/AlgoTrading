@@ -26,7 +26,6 @@ public class DssBressertStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _prevDss;
-	private decimal _prevMit;
 
 	/// <summary>
 	/// EMA period used for smoothing.
@@ -117,7 +116,6 @@ public class DssBressertStrategy : Strategy
 	{
 		base.OnReseted();
 		_prevDss = 0m;
-		_prevMit = 0m;
 	}
 
 	/// <inheritdoc />

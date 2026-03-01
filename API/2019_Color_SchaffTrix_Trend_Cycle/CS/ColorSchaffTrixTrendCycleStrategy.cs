@@ -199,6 +199,10 @@ public class ColorSchaffTrixTrendCycleStrategy : Strategy {
 	_sellClose =
 		Param(nameof(SellClose), true)
 		.SetDisplay("Sell Close", "Allow closing short", "Trading");
+
+	_factor =
+		Param(nameof(Factor), 0.5m)
+		.SetDisplay("Factor", "Smoothing factor for STC calculations", "Indicator");
 	}
 
 	/// <inheritdoc />

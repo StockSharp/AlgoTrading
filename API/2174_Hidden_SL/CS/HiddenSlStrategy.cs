@@ -56,11 +56,15 @@ public class HiddenSlStrategy : Strategy
 
 		var pos = Position;
 		if (pos == 0)
+		{
+			_entryPrice = 0m;
 			return;
+		}
+
+		if (_entryPrice == 0m)
+			_entryPrice = price;
 
 		var entryPrice = _entryPrice;
-		if (entryPrice == 0m)
-			return;
 
 		var profit = (price - entryPrice) * pos;
 

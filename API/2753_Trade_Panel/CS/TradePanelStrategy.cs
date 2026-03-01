@@ -182,9 +182,6 @@ public class TradePanelStrategy : Strategy
 		if (!BuyRequest && !SellRequest && !CloseRequest)
 			return;
 
-		if (false)
-			return;
-
 		if (Security == null || Portfolio == null)
 			return;
 

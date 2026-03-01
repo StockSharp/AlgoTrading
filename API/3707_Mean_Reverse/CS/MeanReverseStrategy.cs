@@ -200,9 +200,6 @@ public class MeanReverseStrategy : Strategy
 
 		// indicators checked via Bind
 
-		if (false)
-		return;
-
 		var step = Security?.PriceStep ?? 1m;
 
 		if (_prevFastMa is null || _prevSlowMa is null)

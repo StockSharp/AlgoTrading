@@ -41,8 +41,6 @@ private readonly StrategyParam<Sides?> _direction;
 	private decimal _target1;
 	private decimal _target2;
 	private decimal _stop;
-	private decimal _tradeVolume;
-	private bool _tp1Done;
 
 	public int LeftBars { get => _leftBars.Value; set => _leftBars.Value = value; }
 	public int RightBars { get => _rightBars.Value; set => _rightBars.Value = value; }
@@ -117,8 +115,6 @@ private readonly StrategyParam<Sides?> _direction;
 		_target1 = 0m;
 		_target2 = 0m;
 		_stop = 0m;
-		_tradeVolume = 0m;
-		_tp1Done = false;
 	}
 
 	/// <inheritdoc />
@@ -219,7 +215,7 @@ private readonly StrategyParam<Sides?> _direction;
 		_stop = price * (1 - LongSlPercent / 100m);
 		_target1 = price * (1 + LongTp1Percent / 100m);
 		_target2 = price * (1 + LongTp2Percent / 100m);
-		_tp1Done = false;
+
 	}
 
 	private void EnterShort(decimal price)
@@ -229,7 +225,7 @@ private readonly StrategyParam<Sides?> _direction;
 		_stop = price * (1 + ShortSlPercent / 100m);
 		_target1 = price * (1 - ShortTp1Percent / 100m);
 		_target2 = price * (1 - ShortTp2Percent / 100m);
-		_tp1Done = false;
+
 	}
 
 	private void ManagePosition(ICandleMessage candle)
@@ -258,7 +254,5 @@ private readonly StrategyParam<Sides?> _direction;
 		_target1 = 0m;
 		_target2 = 0m;
 		_stop = 0m;
-		_tradeVolume = 0m;
-		_tp1Done = false;
 	}
 }

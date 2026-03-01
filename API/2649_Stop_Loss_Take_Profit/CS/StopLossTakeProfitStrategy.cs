@@ -23,7 +23,6 @@ public class StopLossTakeProfitStrategy : Strategy
 
 	private decimal _currentVolume;
 	private decimal _entryPrice;
-	private bool _entryIsLong;
 
 	public DataType CandleType
 	{
@@ -139,12 +138,10 @@ public class StopLossTakeProfitStrategy : Strategy
 			if (goShort)
 			{
 				SellMarket();
-				_entryIsLong = false;
 			}
 			else
 			{
 				BuyMarket();
-				_entryIsLong = true;
 			}
 
 			_entryPrice = candle.ClosePrice;

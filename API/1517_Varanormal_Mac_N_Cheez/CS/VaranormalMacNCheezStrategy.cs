@@ -35,7 +35,6 @@ public class VaranormalMacNCheezStrategy : Strategy
 	private decimal _entryPrice;
 	private decimal _highestPrice;
 	private decimal _lowestPrice;
-	private bool _isLong;
 	
 	/// <summary>
 	/// Fast moving average period.
@@ -94,7 +93,7 @@ public class VaranormalMacNCheezStrategy : Strategy
 		_entryPrice = 0m;
 		_highestPrice = 0m;
 		_lowestPrice = 0m;
-		_isLong = false;
+		
 	}
 
 /// <inheritdoc />
@@ -157,7 +156,7 @@ BuyMarket(Volume + Math.Abs(Position));
 _entryPrice = candle.ClosePrice;
 _highestPrice = candle.HighPrice;
 _lowestPrice = candle.LowPrice;
-_isLong = true;
+
 }
 else if (shortCondition && Position >= 0)
 {
@@ -165,7 +164,7 @@ SellMarket(Volume + Math.Abs(Position));
 _entryPrice = candle.ClosePrice;
 _highestPrice = candle.HighPrice;
 _lowestPrice = candle.LowPrice;
-_isLong = false;
+
 }
 }
 
@@ -215,6 +214,6 @@ private void ResetPositionData()
 _entryPrice = 0m;
 _highestPrice = 0m;
 _lowestPrice = 0m;
-_isLong = false;
+
 }
 }

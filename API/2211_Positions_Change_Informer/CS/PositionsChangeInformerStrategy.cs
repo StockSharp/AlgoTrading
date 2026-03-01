@@ -55,7 +55,7 @@ public class PositionsChangeInformerStrategy : Strategy
 	/// <summary>
 	/// Selected alert type.
 	/// </summary>
-	public AlertTypes Alert
+	public new AlertTypes Alert
 	{
 		get => _alertType.Value;
 		set => _alertType.Value = value;

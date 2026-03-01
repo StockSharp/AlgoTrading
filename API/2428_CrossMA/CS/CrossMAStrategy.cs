@@ -25,7 +25,6 @@ public class CrossMAStrategy : Strategy
 	private readonly StrategyParam<int> _atrPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal? _stopPrice;
 	private bool _isFastBelowSlow;
 	private bool _isInitialized;
 
@@ -99,7 +98,6 @@ public class CrossMAStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_stopPrice = null;
 		_isInitialized = false;
 	}
 

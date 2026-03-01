@@ -109,8 +109,6 @@ public class GannSwingMultiLayerStrategy : Strategy
 			newDir = candle.ClosePrice > candle.OpenPrice ? 1 : -1;
 		else if (candle.HighPrice <= _prevHigh && candle.LowPrice >= _prevLow)
 		{
-			_prevHigh = _prevHigh;
-			_prevLow = _prevLow;
 			return;
 		}
 

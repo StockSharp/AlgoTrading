@@ -35,7 +35,6 @@ public class ImacdSniperStrategy : Strategy
 
 	private decimal _prevMacd;
 	private decimal _prevSignal;
-	private bool _isFirst = true;
 	private decimal _targetPrice;
 	private decimal _stopPrice;
 
@@ -206,7 +205,6 @@ public class ImacdSniperStrategy : Strategy
 		_rangeMa?.Reset();
 		_prevMacd = default;
 		_prevSignal = default;
-		_isFirst = true;
 		_targetPrice = default;
 		_stopPrice = default;
 	}

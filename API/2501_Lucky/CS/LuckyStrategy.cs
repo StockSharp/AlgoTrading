@@ -184,6 +184,7 @@ public class LuckyStrategy : Strategy
 			return;
 
 		BuyMarket(volume);
+		_entryPrice = price;
 		LogInfo($"{reason}. Price={price:0.#####}, Volume={volume:0.###}");
 	}
 
@@ -198,6 +199,7 @@ public class LuckyStrategy : Strategy
 			return;
 
 		SellMarket(volume);
+		_entryPrice = price;
 		LogInfo($"{reason}. Price={price:0.#####}, Volume={volume:0.###}");
 	}
 

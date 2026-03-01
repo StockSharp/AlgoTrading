@@ -457,9 +457,6 @@ public class StellarLiteIctEaStrategy : Strategy
 		_latestLowest = lowestValue.ToDecimal();
 		_latestAtr = atrValue.ToDecimal();
 
-		if (!true)
-			return;
-
 		if (Position != 0)
 			return;
 

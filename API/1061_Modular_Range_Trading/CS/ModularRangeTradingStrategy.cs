@@ -48,10 +48,8 @@ public class ModularRangeTradingStrategy : Strategy
 	private decimal _prevBbMiddle;
 	private decimal _prevRsi;
 	private decimal _prevRsiMa;
-	private decimal _entryPrice;
 	private bool _isLogic1Active;
 	private bool _isLogic2Active;
-	private bool _isLong;
 
 	/// <summary>
 	/// Bollinger Bands period.
@@ -340,10 +338,8 @@ public class ModularRangeTradingStrategy : Strategy
 		_prevBbMiddle = 0m;
 		_prevRsi = 0m;
 		_prevRsiMa = 0m;
-		_entryPrice = 0m;
 		_isLogic1Active = false;
 		_isLogic2Active = false;
-		_isLong = false;
 	}
 
 	/// <inheritdoc />
@@ -428,32 +424,24 @@ public class ModularRangeTradingStrategy : Strategy
 		if (logic1Long && Position <= 0)
 		{
 			BuyMarket(Volume + Math.Abs(Position));
-			_entryPrice = candle.ClosePrice;
-			_isLong = true;
 			_isLogic1Active = true;
 			_isLogic2Active = false;
 		}
 		else if (logic1Short && Position >= 0)
 		{
 			SellMarket(Volume + Math.Abs(Position));
-			_entryPrice = candle.ClosePrice;
-			_isLong = false;
 			_isLogic1Active = true;
 			_isLogic2Active = false;
 		}
 		else if (logic2Long && Position <= 0)
 		{
 			BuyMarket(Volume + Math.Abs(Position));
-			_entryPrice = candle.ClosePrice;
-			_isLong = true;
 			_isLogic1Active = false;
 			_isLogic2Active = true;
 		}
 		else if (logic2Short && Position >= 0)
 		{
 			SellMarket(Volume + Math.Abs(Position));
-			_entryPrice = candle.ClosePrice;
-			_isLong = false;
 			_isLogic1Active = false;
 			_isLogic2Active = true;
 		}

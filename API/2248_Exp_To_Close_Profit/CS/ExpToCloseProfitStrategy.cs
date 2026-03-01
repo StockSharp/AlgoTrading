@@ -57,6 +57,11 @@ public class ExpToCloseProfitStrategy : Strategy
 		{
 			var price = trade.Price;
 
+		if (Position != 0 && _entryPrice == 0m)
+			_entryPrice = price;
+		else if (Position == 0)
+			_entryPrice = 0m;
+
 		var unrealized = Position * (price - _entryPrice);
 		var totalProfit = PnL + unrealized;
 

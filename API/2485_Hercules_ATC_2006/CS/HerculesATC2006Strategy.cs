@@ -58,7 +58,6 @@ public class HerculesATC2006Strategy : Strategy
 	private readonly Queue<decimal> _recentLows = new();
 	private decimal _rollingHigh;
 	private decimal _rollingLow;
-	private bool _highLowReady;
 
 	private decimal _priceStep;
 	private decimal _pipSize;
@@ -388,7 +387,6 @@ public class HerculesATC2006Strategy : Strategy
 		_recentLows.Clear();
 		_rollingHigh = 0m;
 		_rollingLow = 0m;
-		_highLowReady = false;
 
 		_lastRsi = 0m;
 		_rsiReady = false;
@@ -584,13 +582,11 @@ public class HerculesATC2006Strategy : Strategy
 
 		if (_recentHighs.Count < _highLowLength || _recentLows.Count < _highLowLength)
 		{
-			_highLowReady = false;
 			return;
 		}
 
 		_rollingHigh = GetExtreme(_recentHighs, true);
 		_rollingLow = GetExtreme(_recentLows, false);
-		_highLowReady = true;
 	}
 	private void EvaluateEntry(ICandleMessage candle)
 	{

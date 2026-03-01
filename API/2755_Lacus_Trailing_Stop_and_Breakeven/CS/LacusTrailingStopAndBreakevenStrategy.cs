@@ -33,8 +33,6 @@ public class LacusTrailingStopAndBreakevenStrategy : Strategy
 	private readonly StrategyParam<bool> _useStealthStops;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private Order _stopOrder;
-	private Order _takeOrder;
 	private decimal _entryPrice;
 	private decimal? _initialCapital;
 	private decimal _highestPriceSinceEntry;
@@ -210,8 +208,6 @@ public class LacusTrailingStopAndBreakevenStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_stopOrder = null;
-		_takeOrder = null;
 		_entryPrice = 0m;
 		_initialCapital = null;
 		_highestPriceSinceEntry = 0m;
@@ -457,7 +453,5 @@ public class LacusTrailingStopAndBreakevenStrategy : Strategy
 	{
 		// CancelOrder not available
 
-		_stopOrder = null;
-		_takeOrder = null;
 	}
 }

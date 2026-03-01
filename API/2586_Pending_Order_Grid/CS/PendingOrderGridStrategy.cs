@@ -246,9 +246,6 @@ public class PendingOrderGridStrategy : Strategy
 		if (_bestBid <= 0m || _bestAsk <= 0m)
 			return;
 
-		if (false)
-			return;
-
 		var spacing = _tickSize * SpaceBetweenTrades;
 		var distance = DistanceFromPrice;
 

@@ -121,7 +121,7 @@ public class RrsNonDirectionalStrategy : Strategy
 	/// <summary>
 	/// Selected entry mode from the original EA.
 	/// </summary>
-	public RrsTradingModes TradingMode
+	public new RrsTradingModes TradingMode
 	{
 		get => _tradingMode.Value;
 		set => _tradingMode.Value = value;

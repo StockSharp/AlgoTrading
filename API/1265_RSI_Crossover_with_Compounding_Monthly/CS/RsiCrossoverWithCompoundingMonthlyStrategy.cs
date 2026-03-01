@@ -26,7 +26,6 @@ public class RsiCrossoverWithCompoundingMonthlyStrategy : Strategy
 	private RelativeStrengthIndex _rsi;
 	private SimpleMovingAverage _rsiSma;
 	private decimal _capital;
-	private decimal _investedCapital;
 
 	/// <summary>
 	/// Candle type for calculations.
@@ -86,7 +85,6 @@ public class RsiCrossoverWithCompoundingMonthlyStrategy : Strategy
 		_rsi = null;
 		_rsiSma = null;
 		_capital = InitialCapital;
-		_investedCapital = 0m;
 	}
 
 	/// <inheritdoc />
@@ -131,7 +129,6 @@ public class RsiCrossoverWithCompoundingMonthlyStrategy : Strategy
 		else if (rsiValue < rsiSmaValue && Position > 0)
 		{
 			SellMarket();
-			_investedCapital = 0m;
 		}
 	}
 }

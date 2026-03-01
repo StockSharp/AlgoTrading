@@ -28,7 +28,6 @@ public class LinearMeanReversionStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _entryPrice;
-	private bool _isLong;
 
 	/// <summary>
 	/// Lookback window for moving average and standard deviation.
@@ -110,7 +109,6 @@ public class LinearMeanReversionStrategy : Strategy
 	{
 		base.OnReseted();
 		_entryPrice = 0;
-		_isLong = false;
 	}
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)

@@ -22,7 +22,6 @@ public class LiquidityGrabVolumeTrapStrategy : Strategy
 
 	private SimpleMovingAverage _volumeSma;
 	private decimal _prevRangeHigh;
-	private decimal _prevRangeLow;
 	private readonly System.Collections.Generic.List<decimal> _highs = new();
 	private readonly System.Collections.Generic.List<decimal> _lows = new();
 
@@ -55,7 +54,6 @@ public class LiquidityGrabVolumeTrapStrategy : Strategy
 		_highs.Clear();
 		_lows.Clear();
 		_prevRangeHigh = 0;
-		_prevRangeLow = 0;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

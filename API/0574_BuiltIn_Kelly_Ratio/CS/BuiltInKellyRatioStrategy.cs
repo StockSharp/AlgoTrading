@@ -40,7 +40,6 @@ public class BuiltInKellyRatioStrategy : Strategy
 	private decimal _takeProfitPrice;
 	private decimal _stopLossPrice;
 	private decimal _positionQty;
-	private bool _isLong;
 
 	private int _winTrades;
 	private int _lossTrades;
@@ -111,7 +110,6 @@ public class BuiltInKellyRatioStrategy : Strategy
 		_prevClose = _prevUpper = _prevLower = 0m;
 		_entryPrice = _takeProfitPrice = _stopLossPrice = 0m;
 		_positionQty = 0m;
-		_isLong = default;
 
 		_winTrades = _lossTrades = 0;
 		_grossProfit = _grossLoss = 0m;
@@ -160,7 +158,6 @@ public class BuiltInKellyRatioStrategy : Strategy
 			var qty = CalculateVolume(candle.ClosePrice);
 			_entryPrice = candle.ClosePrice;
 			_positionQty = qty;
-			_isLong = true;
 			if (UseTakeProfit)
 				_takeProfitPrice = _entryPrice * (1 + TakeProfit / 100m);
 			if (UseStopLoss)
@@ -172,7 +169,6 @@ public class BuiltInKellyRatioStrategy : Strategy
 			var qty = CalculateVolume(candle.ClosePrice);
 			_entryPrice = candle.ClosePrice;
 			_positionQty = qty;
-			_isLong = false;
 			if (UseTakeProfit)
 				_takeProfitPrice = _entryPrice * (1 - TakeProfit / 100m);
 			if (UseStopLoss)

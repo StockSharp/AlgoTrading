@@ -26,8 +26,6 @@ public class ZeroLagMacdKijunSenEomStrategy : Strategy
 	private readonly StrategyParam<decimal> _riskReward;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevFast;
-	private decimal _prevSlow;
 	private decimal _prevMacd;
 	private decimal _prevSignalEma;
 	private decimal _prevMid;
@@ -79,8 +77,6 @@ public class ZeroLagMacdKijunSenEomStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevFast = 0;
-		_prevSlow = 0;
 		_prevMacd = 0;
 		_prevSignalEma = 0;
 		_prevMid = 0;
@@ -99,8 +95,6 @@ public class ZeroLagMacdKijunSenEomStrategy : Strategy
 		var slowEma = new ExponentialMovingAverage { Length = SlowLength };
 		var baseline = new SimpleMovingAverage { Length = 26 };
 
-		_prevFast = 0;
-		_prevSlow = 0;
 		_prevMacd = 0;
 		_prevSignalEma = 0;
 		_prevMid = 0;

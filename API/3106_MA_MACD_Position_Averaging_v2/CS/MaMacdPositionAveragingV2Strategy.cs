@@ -1,3 +1,5 @@
+#nullable enable
+
 namespace StockSharp.Samples.Strategies;
 
 using System;

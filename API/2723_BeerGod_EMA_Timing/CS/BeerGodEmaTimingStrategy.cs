@@ -28,8 +28,6 @@ public class BeerGodEmaTimingStrategy : Strategy
 	private decimal _previousEma;
 	private decimal _currentClose;
 	private decimal _previousClose;
-	private bool _hasPreviousBar;
-	private bool _signalProcessed;
 
 
 	/// <summary>
@@ -97,8 +95,6 @@ public class BeerGodEmaTimingStrategy : Strategy
 		_previousEma = 0m;
 		_currentClose = 0m;
 		_previousClose = 0m;
-		_hasPreviousBar = false;
-		_signalProcessed = false;
 	}
 
 	/// <inheritdoc />

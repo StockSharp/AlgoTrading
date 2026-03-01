@@ -41,7 +41,6 @@ public class JBrainUltraRsiStrategy : Strategy
 	
 	private RelativeStrengthIndex _rsi;
 	private StochasticOscillator _stochastic;
-	private decimal? _currentRsi;
 	private decimal? _prevRsi;
 	private decimal? _prevK;
 	private decimal? _prevD;
@@ -179,7 +178,6 @@ public class JBrainUltraRsiStrategy : Strategy
 		
 		_rsi = default;
 		_stochastic = default;
-		_currentRsi = default;
 		_prevRsi = default;
 		_prevK = default;
 		_prevD = default;

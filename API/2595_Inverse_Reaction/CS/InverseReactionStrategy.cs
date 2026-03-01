@@ -25,7 +25,6 @@ public class InverseReactionStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 
 	private readonly List<decimal> _absChanges = new();
-	private decimal _entryPrice;
 
 	public decimal StopLossPoints { get => _stopLossPoints.Value; set => _stopLossPoints.Value = value; }
 	public decimal TakeProfitPoints { get => _takeProfitPoints.Value; set => _takeProfitPoints.Value = value; }
@@ -64,7 +63,6 @@ public class InverseReactionStrategy : Strategy
 	{
 		base.OnReseted();
 		_absChanges.Clear();
-		_entryPrice = 0m;
 	}
 
 	protected override void OnStarted2(DateTime time)

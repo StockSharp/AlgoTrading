@@ -32,7 +32,6 @@ public class AdxStopOrderTemplateStrategy : Strategy
 	private decimal _prevMinus;
 	private decimal _prevPrevPlus;
 	private decimal _prevPrevMinus;
-	private int _lastOrder; // 1 buy, 0 sell, 2 none
 	
 	/// <summary>
 	/// Constructor.
@@ -123,7 +122,6 @@ public class AdxStopOrderTemplateStrategy : Strategy
 		base.OnReseted();
 		
 		_prevPlus = _prevMinus = _prevPrevPlus = _prevPrevMinus = 0m;
-		_lastOrder = 2;
 	}
 	
 	/// <inheritdoc />

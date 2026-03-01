@@ -1,6 +1,5 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
     <LangVersion>latest</LangVersion>
 
     <EcngVer>1.*</EcngVer>
@@ -9,5 +8,8 @@
 
     <MsTestVer>4.*</MsTestVer>
     <MsTestSdkVer>18.*</MsTestSdkVer>
+
+    <RoslynVer>4.3.0</RoslynVer>
+    <RoslynAnalyzersVer>3.3.4</RoslynAnalyzersVer>
   </PropertyGroup>
 </Project>

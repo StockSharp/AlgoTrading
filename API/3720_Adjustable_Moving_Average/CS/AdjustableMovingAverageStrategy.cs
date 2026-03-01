@@ -346,9 +346,6 @@ public class AdjustableMovingAverageStrategy : Strategy
 		if (!_fastMa.IsFormed || !_slowMa.IsFormed)
 			return;
 
-		if (!true)
-			return;
-
 		var gapUp = fast - slow;
 		var gapDown = slow - fast;
 
@@ -403,9 +400,6 @@ public class AdjustableMovingAverageStrategy : Strategy
 
 	private void OpenLong(decimal price)
 	{
-		if (!true)
-			return;
-
 		var volume = CalculateOrderVolume(price);
 		if (volume <= 0m)
 			return;
@@ -416,9 +410,6 @@ public class AdjustableMovingAverageStrategy : Strategy
 
 	private void OpenShort(decimal price)
 	{
-		if (!true)
-			return;
-
 		var volume = CalculateOrderVolume(price);
 		if (volume <= 0m)
 			return;

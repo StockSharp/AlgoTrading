@@ -32,8 +32,6 @@ public class PostOpenLongAtrStopLossTakeProfitStrategy : Strategy
 	private readonly StrategyParam<decimal> _atrTakeProfitMultiplier;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private Highest _highest = null!;
-
 	private decimal _resistanceLevel;
 	private int _resistanceTouches;
 
@@ -160,7 +158,6 @@ public class PostOpenLongAtrStopLossTakeProfitStrategy : Strategy
 		var lowerBand = emaValue;
 		var emaLongValue = emaValue;
 		var rsiValue = 50m;
-		var adxValue = 20m;
 		var highestValue = candle.HighPrice;
 
 		var time = candle.OpenTime;

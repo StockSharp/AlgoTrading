@@ -141,8 +141,14 @@ public class GoldRsiDivergenceStrategy : Strategy
 		_stopLossPips = Param(nameof(StopLossPips), 11m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss (pips)", "Stop loss in pips", "Risk")
-			
+
 			.SetOptimize(5m, 20m, 1m);
+
+		_takeProfitPips = Param(nameof(TakeProfitPips), 22m)
+			.SetGreaterThanZero()
+			.SetDisplay("Take Profit (pips)", "Take profit in pips", "Risk")
+
+			.SetOptimize(10m, 40m, 2m);
 
 		_lookbackLeft = Param(nameof(LookbackLeft), 5)
 			.SetGreaterThanZero()

@@ -278,9 +278,6 @@ public class RsiBollingerFractalBreakoutStrategy : Strategy
 		UpdateFractals(candle);
 		UpdateTrailingAndExits(candle, sarValue);
 		
-		if (false)
-			return;
-		
 		if (_fractalCount < 5)
 			return;
 		

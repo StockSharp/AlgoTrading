@@ -343,9 +343,6 @@ public class ExpTrendMagicStrategy : Strategy
 
 	private void TryEnterLong(ICandleMessage candle)
 	{
-		if (!true)
-			return;
-
 		if (_nextLongTradeAllowed.HasValue && candle.OpenTime < _nextLongTradeAllowed.Value)
 			return;
 
@@ -368,9 +365,6 @@ public class ExpTrendMagicStrategy : Strategy
 
 	private void TryEnterShort(ICandleMessage candle)
 	{
-		if (!true)
-			return;
-
 		if (_nextShortTradeAllowed.HasValue && candle.OpenTime < _nextShortTradeAllowed.Value)
 			return;
 

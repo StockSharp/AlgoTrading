@@ -28,7 +28,6 @@ public class TwoMaBunnyCrossStrategy : Strategy
 
 	private decimal _prevFast;
 	private decimal _prevSlow;
-	private bool _isFormed;
 
 	/// <summary>
 	/// Candle type for calculations.
@@ -76,7 +75,6 @@ public class TwoMaBunnyCrossStrategy : Strategy
 		base.OnReseted();
 		_prevFast = 0m;
 		_prevSlow = 0m;
-		_isFormed = false;
 	}
 
 	/// <inheritdoc />

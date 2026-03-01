@@ -30,10 +30,6 @@ public class SwingFxProPanelV1Strategy : Strategy
 	private EMA _emaFast = null!;
 	private EMA _emaSlow = null!;
 	private decimal _entryPrice;
-	private int _totalTrades;
-	private int _winTrades;
-	private decimal _maxEquity;
-	private decimal _maxDrawdown;
 
 	/// <summary>
 	/// Initial capital for statistics.
@@ -118,9 +114,6 @@ public class SwingFxProPanelV1Strategy : Strategy
 	{
 		base.OnReseted();
 		_entryPrice = 0m;
-		_totalTrades = _winTrades = 0;
-		_maxEquity = InitialCapital;
-		_maxDrawdown = 0m;
 	}
 
 	/// <inheritdoc />
@@ -145,9 +138,6 @@ public class SwingFxProPanelV1Strategy : Strategy
 			if (candle.ClosePrice - _entryPrice >= ProfitTarget || _entryPrice - candle.ClosePrice >= StopLoss)
 			{
 				SellMarket();
-				_totalTrades++;
-				if (candle.ClosePrice - _entryPrice >= ProfitTarget)
-					_winTrades++;
 				_entryPrice = 0;
 				return;
 			}
@@ -157,9 +147,6 @@ public class SwingFxProPanelV1Strategy : Strategy
 			if (_entryPrice - candle.ClosePrice >= ProfitTarget || candle.ClosePrice - _entryPrice >= StopLoss)
 			{
 				BuyMarket();
-				_totalTrades++;
-				if (_entryPrice - candle.ClosePrice >= ProfitTarget)
-					_winTrades++;
 				_entryPrice = 0;
 				return;
 			}

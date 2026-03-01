@@ -21,9 +21,6 @@ public class HftSpreaderForFortsStrategy : Strategy
 	private readonly StrategyParam<int> _spreadMultiplier;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _lastBid;
-	private decimal _lastAsk;
-
 	/// <summary>
 	/// Required spread in ticks to place both buy and sell orders.
 	/// </summary>

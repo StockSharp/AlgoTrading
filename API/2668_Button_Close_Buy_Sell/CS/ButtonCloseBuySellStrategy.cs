@@ -215,12 +215,6 @@ public class ButtonCloseBuySellStrategy : Strategy
 	/// </summary>
 	private void TryCloseLongPositions()
 	{
-		if (false)
-		{
-			LogInfo("Strategy is not ready to trade; cannot close longs.");
-			return;
-		}
-
 		var volume = _longVolume > 0m ? _longVolume : Math.Max(Position, 0m);
 
 		if (volume <= 0m)
@@ -238,12 +232,6 @@ public class ButtonCloseBuySellStrategy : Strategy
 	/// </summary>
 	private void TryCloseShortPositions()
 	{
-		if (false)
-		{
-			LogInfo("Strategy is not ready to trade; cannot close shorts.");
-			return;
-		}
-
 		var volume = _shortVolume > 0m ? _shortVolume : Math.Max(-Position, 0m);
 
 		if (volume <= 0m)

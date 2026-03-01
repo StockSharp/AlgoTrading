@@ -14,9 +14,6 @@ public class XManStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _smaPeriod;
 
-	private decimal _prevK;
-	private bool _hasPrev;
-
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 	public int SmaPeriod { get => _smaPeriod.Value; set => _smaPeriod.Value = value; }
 

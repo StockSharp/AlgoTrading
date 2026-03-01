@@ -32,7 +32,6 @@ public class MovingUpStrategy : Strategy
 	private decimal _entryPrice;
 	private decimal _maxPrice;
 	private decimal _minPrice;
-	private bool _isLong;
 	
 	/// <summary>
 	/// Fast moving average length.
@@ -176,7 +175,6 @@ public class MovingUpStrategy : Strategy
 		_entryPrice = 0m;
 		_maxPrice = 0m;
 		_minPrice = 0m;
-		_isLong = false;
 	}
 	
 	/// <inheritdoc />
@@ -225,7 +223,6 @@ public class MovingUpStrategy : Strategy
 					{
 						_entryPrice = candle.ClosePrice;
 						_maxPrice = _entryPrice;
-						_isLong = true;
 						BuyMarket(Volume + Math.Abs(Position));
 					}
 				}
@@ -235,7 +232,6 @@ public class MovingUpStrategy : Strategy
 					{
 						_entryPrice = candle.ClosePrice;
 						_minPrice = _entryPrice;
-						_isLong = false;
 						SellMarket(Volume + Math.Abs(Position));
 					}
 				}

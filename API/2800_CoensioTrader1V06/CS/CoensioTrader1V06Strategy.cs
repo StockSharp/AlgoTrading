@@ -175,7 +175,6 @@ public class CoensioTrader1V06Strategy : Strategy
 	/// <inheritdoc />
 	private BollingerBands _bollinger;
 	private DoubleExponentialMovingAverage _dema;
-	private decimal _entryPrice;
 
 	protected override void OnStarted2(DateTime time)
 	{

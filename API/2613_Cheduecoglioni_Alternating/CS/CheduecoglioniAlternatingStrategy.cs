@@ -28,8 +28,6 @@ public class CheduecoglioniAlternatingStrategy : Strategy
 	private decimal _pipSize;
 	private Sides _nextSide;
 	private Sides? _activeSide;
-	private bool _waitingForEntry;
-	private Order _entryOrder;
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="CheduecoglioniAlternatingStrategy"/> class.
@@ -102,8 +100,6 @@ public class CheduecoglioniAlternatingStrategy : Strategy
 		Volume = TradeVolume;
 		_nextSide = Sides.Sell; // Start with a short position like the original expert advisor.
 		_activeSide = null;
-		_waitingForEntry = false;
-		_entryOrder = null;
 	}
 
 	/// <inheritdoc />
@@ -166,8 +162,6 @@ public class CheduecoglioniAlternatingStrategy : Strategy
 		if (order == null)
 			return;
 
-		_entryOrder = order;
-		_waitingForEntry = true; // Prevent duplicate submissions until the order is filled or rejected.
 	}
 
 	/// <inheritdoc />
@@ -178,16 +172,12 @@ public class CheduecoglioniAlternatingStrategy : Strategy
 		if (Position > 0)
 		{
 			_activeSide = Sides.Buy;
-			_waitingForEntry = false;
-			_entryOrder = null;
 			return;
 		}
 
 		if (Position < 0)
 		{
 			_activeSide = Sides.Sell;
-			_waitingForEntry = false;
-			_entryOrder = null;
 			return;
 		}
 
@@ -197,8 +187,6 @@ public class CheduecoglioniAlternatingStrategy : Strategy
 			_activeSide = null;
 		}
 
-		_waitingForEntry = false;
-		_entryOrder = null;
 	}
 
 }

@@ -30,7 +30,6 @@ public class IctMasterSuiteTradingIqStrategy : Strategy
 	private DateTime _sessionDate;
 	private decimal _entryPrice;
 	private decimal _stopPrice;
-	private bool _isLong;
 
 	/// <summary>
 	/// ATR period.
@@ -120,7 +119,6 @@ public class IctMasterSuiteTradingIqStrategy : Strategy
 		_sessionDate = default;
 		_entryPrice = 0m;
 		_stopPrice = 0m;
-		_isLong = false;
 	}
 
 	/// <inheritdoc />
@@ -155,7 +153,6 @@ public class IctMasterSuiteTradingIqStrategy : Strategy
 			{
 				_entryPrice = candle.ClosePrice;
 				_stopPrice = _entryPrice - atrValue * AtrMultiplier;
-				_isLong = true;
 				BuyMarket(Volume + Math.Abs(Position));
 				return;
 			}
@@ -164,7 +161,6 @@ public class IctMasterSuiteTradingIqStrategy : Strategy
 			{
 				_entryPrice = candle.ClosePrice;
 				_stopPrice = _entryPrice + atrValue * AtrMultiplier;
-				_isLong = false;
 				SellMarket(Volume + Math.Abs(Position));
 				return;
 			}

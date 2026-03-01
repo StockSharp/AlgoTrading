@@ -86,9 +86,16 @@ public class ZakryvatorStrategy : Strategy
 	{
 		// Only act when there is an open position.
 		if (Position == 0)
+		{
+			_entryPrice = 0m;
 			return;
+		}
 
 		var price = trade.Price;
+
+		if (_entryPrice == 0m)
+			_entryPrice = price;
+
 		// Calculate unrealized PnL based on current price and average entry price.
 		var openPnL = Position * (price - _entryPrice);
 

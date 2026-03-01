@@ -32,7 +32,6 @@ public class HybridScalpingBotStrategy : Strategy
 	private decimal _lowestPrice;
 	private int _tradesToday;
 	private DateTime _lastDate;
-	private bool _isLong;
 
 	/// <summary>
 	/// Maximum trades per day.
@@ -208,7 +207,6 @@ public class HybridScalpingBotStrategy : Strategy
 	        _tradesToday++;
 	        _entryPrice = candle.ClosePrice;
 	        _highestPrice = candle.ClosePrice;
-	        _isLong = true;
 	    }
 	    else if (sellSignal && canTrade)
 	    {
@@ -216,7 +214,6 @@ public class HybridScalpingBotStrategy : Strategy
 	        _tradesToday++;
 	        _entryPrice = candle.ClosePrice;
 	        _lowestPrice = candle.ClosePrice;
-	        _isLong = false;
 	    }
 
 	    if (Position > 0)

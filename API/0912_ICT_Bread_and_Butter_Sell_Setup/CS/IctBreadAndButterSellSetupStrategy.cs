@@ -247,9 +247,6 @@ public class IctBreadAndButterSellSetupStrategy : Strategy
 			_inAsia = false;
 		}
 
-		if (false)
-			return;
-
 		var judasSwing = candle.HighPrice >= _londonHigh && time >= sessionNyOpen && time < sessionEnd;
 		var shortEntry = judasSwing && candle.ClosePrice < candle.OpenPrice;
 

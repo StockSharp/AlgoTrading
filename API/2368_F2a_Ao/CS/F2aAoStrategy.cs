@@ -21,9 +21,6 @@ public class F2aAoStrategy : Strategy
 	private readonly StrategyParam<int> _slowPeriod;
 	private readonly StrategyParam<int> _filterLength;
 
-	private decimal _prevFilteredAo;
-	private bool _isFirst = true;
-
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
 	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
