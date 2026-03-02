@@ -132,36 +132,37 @@ public static class AsmInit
 		var tradesCount = 0;
 		strategy.OwnTradeReceived += (s, t) => tradesCount++;
 
-		var task = strategy.ExecAsync(null, timeout);
-		await connector.StartAsync(timeout);
-		await task.AsTask();
+		var (completed, execError) = await strategy.ExecAsync(ct => connector.StartAsync(ct), timeout);
 
 		if (error is not null)
 			throw error;
 
-		//var ordersCount = orders.Count;
-		//ordersCount.AssertGreater(0, "No orders were created by the strategy.");
-		//ordersCount.AssertLess(100, "Too many orders were created by the strategy.");
+		if (execError is not null)
+			throw execError;
 
-		//tradesCount.AssertGreater(0, "No trades were created by the strategy.");
-		//tradesCount.AssertLess(300, "Too many trades were created by the strategy.");
+		var ordersCount = orders.Count;
+		ordersCount.AssertGreater(0, "No orders were created by the strategy.");
+		ordersCount.AssertLess(100, "Too many orders were created by the strategy.");
 
-		//// Check the distribution of trades over the entire period
-		//var firstTradeTime = strategy.MyTrades.Min(t => t.Trade.ServerTime);
-		//var lastTradeTime = strategy.MyTrades.Max(t => t.Trade.ServerTime);
+		tradesCount.AssertGreater(0, "No trades were created by the strategy.");
+		tradesCount.AssertLess(300, "Too many trades were created by the strategy.");
 
-		//// The time of the first and last trade should not be too close to the start/end of the period
-		//var totalPeriod = (stopTime - startTime).TotalSeconds;
-		//var firstOffset = (firstTradeTime - startTime).TotalSeconds / totalPeriod;
-		//var lastOffset = (stopTime - lastTradeTime).TotalSeconds / totalPeriod;
+		// Check the distribution of trades over the entire period
+		var firstTradeTime = strategy.MyTrades.Min(t => t.Trade.ServerTime);
+		var lastTradeTime = strategy.MyTrades.Max(t => t.Trade.ServerTime);
 
-		//// The first trade should not be later than 15% from the start, the last not earlier than 15% before the end
-		//(firstOffset < 0.85).AssertTrue($"First trade too late: {firstTradeTime}");
-		//(lastOffset < 0.85).AssertTrue($"Last trade too early: {lastTradeTime}");
+		// The time of the first and last trade should not be too close to the start/end of the period
+		var totalPeriod = (stopTime - startTime).TotalSeconds;
+		var firstOffset = (firstTradeTime - startTime).TotalSeconds / totalPeriod;
+		var lastOffset = (stopTime - lastTradeTime).TotalSeconds / totalPeriod;
 
-		//// Trades should be distributed over at least 70% of the period
-		//var tradesSpan = (lastTradeTime - firstTradeTime).TotalSeconds / totalPeriod;
-		//(tradesSpan > 0.7).AssertTrue($"Trades are not distributed enough: {tradesSpan:P0}");
+		// The first trade should not be later than 15% from the start, the last not earlier than 15% before the end
+		(firstOffset < 0.85).AssertTrue($"First trade too late: {firstTradeTime}");
+		(lastOffset < 0.85).AssertTrue($"Last trade too early: {lastTradeTime}");
+
+		// Trades should be distributed over at least 70% of the period
+		var tradesSpan = (lastTradeTime - firstTradeTime).TotalSeconds / totalPeriod;
+		(tradesSpan > 0.7).AssertTrue($"Trades are not distributed enough: {tradesSpan:P0}");
 
 		strategy.Reset();
 		clone.Reset();
