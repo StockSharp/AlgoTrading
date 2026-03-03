@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -114,9 +111,6 @@ public class IctNyKillZoneAutoTradingStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		if (_prev1 != null && _prev2 != null)
 		{
 			var isKillZone = IsKillZone(candle.OpenTime);
@@ -125,9 +119,9 @@ public class IctNyKillZoneAutoTradingStrategy : Strategy
 			var bearishOb = _prev2.ClosePrice > _prev2.OpenPrice && _prev1.ClosePrice < _prev1.OpenPrice && candle.ClosePrice < candle.OpenPrice;
 
 			if (isKillZone && isFvg && bullishOb && Position <= 0)
-				BuyMarket(Volume);
+				BuyMarket();
 			else if (isKillZone && isFvg && bearishOb && Position >= 0)
-				SellMarket(Volume);
+				SellMarket();
 		}
 
 		_prev2 = _prev1;

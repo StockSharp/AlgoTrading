@@ -1,41 +1,31 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
-using StockSharp.Algo;
-using StockSharp.Algo.Candles;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
-
 /// <summary>
-/// Strategy that combines Bollinger Bands and Stochastic oscillator to identify
-/// potential mean-reversion trading opportunities when price is at extremes.
+/// Strategy combining Bollinger Bands and Stochastic oscillator for mean-reversion.
+/// Buys when price touches lower band with oversold stochastic, sells at upper band with overbought.
 /// </summary>
 public class BollingerStochasticStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _bollingerPeriod;
 	private readonly StrategyParam<decimal> _bollingerDeviation;
-	private readonly StrategyParam<int> _stochPeriod;
-	private readonly StrategyParam<int> _stochK;
-	private readonly StrategyParam<int> _stochD;
-	private readonly StrategyParam<int> _stochOversold;
-	private readonly StrategyParam<int> _stochOverbought;
-	private readonly StrategyParam<decimal> _atrMultiplier;
-	
-	private StochasticOscillator _stochastic;
-	private BollingerBands _bollinger;
-	private AverageTrueRange _atr;
-	
+	private readonly StrategyParam<decimal> _stochOversold;
+	private readonly StrategyParam<decimal> _stochOverbought;
+	private readonly StrategyParam<int> _cooldownBars;
+
+	private decimal _stochK;
+	private int _cooldown;
+
 	/// <summary>
 	/// Data type for candles.
 	/// </summary>
@@ -44,7 +34,7 @@ public class BollingerStochasticStrategy : Strategy
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
-	
+
 	/// <summary>
 	/// Period for Bollinger Bands calculation.
 	/// </summary>
@@ -53,7 +43,7 @@ public class BollingerStochasticStrategy : Strategy
 		get => _bollingerPeriod.Value;
 		set => _bollingerPeriod.Value = value;
 	}
-	
+
 	/// <summary>
 	/// Standard deviation multiplier for Bollinger Bands.
 	/// </summary>
@@ -62,238 +52,163 @@ public class BollingerStochasticStrategy : Strategy
 		get => _bollingerDeviation.Value;
 		set => _bollingerDeviation.Value = value;
 	}
-	
-	/// <summary>
-	/// Period for Stochastic oscillator calculation.
-	/// </summary>
-	public int StochPeriod
-	{
-		get => _stochPeriod.Value;
-		set => _stochPeriod.Value = value;
-	}
-	
-	/// <summary>
-	/// K period for Stochastic oscillator.
-	/// </summary>
-	public int StochK
-	{
-		get => _stochK.Value;
-		set => _stochK.Value = value;
-	}
-	
-	/// <summary>
-	/// D period for Stochastic oscillator.
-	/// </summary>
-	public int StochD
-	{
-		get => _stochD.Value;
-		set => _stochD.Value = value;
-	}
-	
+
 	/// <summary>
 	/// Stochastic oversold level.
 	/// </summary>
-	public int StochOversold
+	public decimal StochOversold
 	{
 		get => _stochOversold.Value;
 		set => _stochOversold.Value = value;
 	}
-	
+
 	/// <summary>
 	/// Stochastic overbought level.
 	/// </summary>
-	public int StochOverbought
+	public decimal StochOverbought
 	{
 		get => _stochOverbought.Value;
 		set => _stochOverbought.Value = value;
 	}
-	
+
 	/// <summary>
-	/// ATR multiplier for stop-loss calculation.
+	/// Cooldown bars between trades.
 	/// </summary>
-	public decimal AtrMultiplier
+	public int CooldownBars
 	{
-		get => _atrMultiplier.Value;
-		set => _atrMultiplier.Value = value;
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
-	
+
 	/// <summary>
 	/// Initializes a new instance of the <see cref="BollingerStochasticStrategy"/>.
 	/// </summary>
 	public BollingerStochasticStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
-					  .SetDisplay("Candle Type", "Type of candles to use", "General");
-					  
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
+
 		_bollingerPeriod = Param(nameof(BollingerPeriod), 20)
-						   .SetRange(10, 50)
-						   .SetDisplay("BB Period", "Period for Bollinger Bands calculation", "Bollinger Settings")
-						   ;
-						   
+			.SetRange(10, 50)
+			.SetDisplay("BB Period", "Period for Bollinger Bands", "Bollinger Settings");
+
 		_bollingerDeviation = Param(nameof(BollingerDeviation), 2.0m)
-							  .SetRange(1.0m, 3.0m)
-							  .SetDisplay("BB Deviation", "Standard deviation multiplier for Bollinger Bands", "Bollinger Settings")
-							  ;
-							  
-		_stochPeriod = Param(nameof(StochPeriod), 14)
-					   .SetRange(5, 30)
-					   .SetDisplay("Stoch Period", "Period for Stochastic oscillator calculation", "Stochastic Settings")
-					   ;
-					   
-		_stochK = Param(nameof(StochK), 3)
-				  .SetRange(1, 10)
-				  .SetDisplay("Stoch %K", "K period for Stochastic oscillator", "Stochastic Settings")
-				  ;
-				  
-		_stochD = Param(nameof(StochD), 3)
-				  .SetRange(1, 10)
-				  .SetDisplay("Stoch %D", "D period for Stochastic oscillator", "Stochastic Settings")
-				  ;
-				  
-		_stochOversold = Param(nameof(StochOversold), 20)
-						 .SetRange(5, 30)
-						 .SetDisplay("Oversold Level", "Stochastic oversold level", "Stochastic Settings")
-						 ;
-						 
-		_stochOverbought = Param(nameof(StochOverbought), 80)
-						   .SetRange(70, 95)
-						   .SetDisplay("Overbought Level", "Stochastic overbought level", "Stochastic Settings")
-						   ;
-						   
-		_atrMultiplier = Param(nameof(AtrMultiplier), 2.0m)
-						.SetRange(1.0m, 5.0m)
-						.SetDisplay("ATR Multiplier", "ATR multiplier for stop-loss calculation", "Risk Management");
+			.SetDisplay("BB Deviation", "Standard deviation multiplier", "Bollinger Settings");
+
+		_stochOversold = Param(nameof(StochOversold), 20m)
+			.SetDisplay("Oversold Level", "Stochastic oversold level", "Stochastic Settings");
+
+		_stochOverbought = Param(nameof(StochOverbought), 80m)
+			.SetDisplay("Overbought Level", "Stochastic overbought level", "Stochastic Settings");
+
+		_cooldownBars = Param(nameof(CooldownBars), 50)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "General")
+			.SetRange(5, 500);
 	}
-	
+
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
-	
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_stochK = 50;
+		_cooldown = 0;
+	}
+
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		
-		// Initialize indicators
-		_bollinger = new()
+
+		var bollinger = new BollingerBands
 		{
 			Length = BollingerPeriod,
 			Width = BollingerDeviation
 		};
-		
-		_stochastic = new()
-		{
-			K = { Length = StochPeriod },
-			D = { Length = StochD },
-		};
-		
-		_atr = new AverageTrueRange
-		{
-			Length = 14
-		};
-		
-		// Create candle subscription
+
+		var stochastic = new StochasticOscillator();
+
 		var subscription = SubscribeCandles(CandleType);
-		
-		// Bind the indicators and candle processor
+
+		// Bind stochastic with BindEx
+		subscription.BindEx(stochastic, OnStochastic);
+
+		// Bind bollinger bands with BindEx
 		subscription
-			.BindEx(_bollinger, _stochastic, _atr, ProcessCandle)
+			.BindEx(bollinger, ProcessCandle)
 			.Start();
-			
-		// Set up chart if available
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _bollinger);
-			
-			// Draw Stochastic in a separate area
-			var stochArea = CreateChartArea();
-			DrawIndicator(stochArea, _stochastic);
-			
+			DrawIndicator(area, bollinger);
 			DrawOwnTrades(area);
+
+			var stochArea = CreateChartArea();
+			if (stochArea != null)
+				DrawIndicator(stochArea, stochastic);
 		}
 	}
-	
-	/// <summary>
-	/// Process incoming candle with indicator values.
-	/// </summary>
-	/// <param name="candle">Candle to process.</param>
-	/// <param name="bollingerValue">Bollinger Bands value.</param>
-	/// <param name="stochasticValue">Stochastic oscillator value.</param>
-	/// <param name="atrValue">ATR value.</param>
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bollingerValue, IIndicatorValue stochasticValue, IIndicatorValue atrValue)
+
+	private void OnStochastic(ICandleMessage candle, IIndicatorValue stochValue)
+	{
+		var stoch = (IStochasticOscillatorValue)stochValue;
+		if (stoch.K is decimal k)
+			_stochK = k;
+	}
+
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bbValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
-			
+
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// Extract values from indicators
-		var bb = (BollingerBandsValue)bollingerValue;
-		var middleBand = bb.MovingAverage;
-		var upperBand = bb.UpBand;
-		var lowerBand = bb.LowBand;
+		var bb = (BollingerBandsValue)bbValue;
+		if (bb.UpBand is not decimal upper ||
+			bb.LowBand is not decimal lower ||
+			bb.MovingAverage is not decimal middle)
+			return;
 
-		var stochasticTyped = (StochasticOscillatorValue)stochasticValue;
-		var k = stochasticTyped.K;
-		var d = stochasticTyped.D;
-		
-		var atrValue_ = atrValue.ToDecimal();
-		
-		// Calculate stop loss distance based on ATR
-		var stopLossDistance = atrValue_ * AtrMultiplier;
-		
-		// Trading logic for long positions
-		if (candle.ClosePrice < lowerBand && k < StochOversold)
+		var close = candle.ClosePrice;
+
+		if (_cooldown > 0)
 		{
-			// Price below lower Bollinger Band and Stochastic in oversold region - Long signal
-			if (Position <= 0)
-			{
-				BuyMarket(Volume + Math.Abs(Position));
-				LogInfo($"Buy signal: Price ({candle.ClosePrice}) below lower BB ({lowerBand:F4}) with oversold Stochastic ({k:F2})");
-				
-				// Set stop loss
-				var stopPrice = candle.ClosePrice - stopLossDistance;
-				RegisterOrder(CreateOrder(Sides.Sell, stopPrice, Math.Abs(Position + Volume).Max(Volume)));
-			}
+			_cooldown--;
+			return;
 		}
-		// Trading logic for short positions
-		else if (candle.ClosePrice > upperBand && k > StochOverbought)
+
+		// Buy: price at lower band + stochastic oversold
+		if (close <= lower && _stochK < StochOversold && Position == 0)
 		{
-			// Price above upper Bollinger Band and Stochastic in overbought region - Short signal
-			if (Position >= 0)
-			{
-				SellMarket(Volume + Math.Abs(Position));
-				LogInfo($"Sell signal: Price ({candle.ClosePrice}) above upper BB ({upperBand:F4}) with overbought Stochastic ({k:F2})");
-				
-				// Set stop loss
-				var stopPrice = candle.ClosePrice + stopLossDistance;
-				RegisterOrder(CreateOrder(Sides.Buy, stopPrice, Math.Abs(Position + Volume).Max(Volume)));
-			}
+			BuyMarket();
+			_cooldown = CooldownBars;
 		}
-		
-		// Exit conditions
-		if (Position > 0)
+		// Sell: price at upper band + stochastic overbought
+		else if (close >= upper && _stochK > StochOverbought && Position == 0)
 		{
-			// Exit long when price crosses above middle band
-			if (candle.ClosePrice > middleBand)
-			{
-				SellMarket(Math.Abs(Position));
-				LogInfo($"Exit long: Price ({candle.ClosePrice}) crossed above middle BB ({middleBand:F4})");
-			}
+			SellMarket();
+			_cooldown = CooldownBars;
 		}
-		else if (Position < 0)
+
+		// Exit long at middle band
+		if (Position > 0 && close > middle)
 		{
-			// Exit short when price crosses below middle band
-			if (candle.ClosePrice < middleBand)
-			{
-				BuyMarket(Math.Abs(Position));
-				LogInfo($"Exit short: Price ({candle.ClosePrice}) crossed below middle BB ({middleBand:F4})");
-			}
+			SellMarket();
+			_cooldown = CooldownBars;
+		}
+		// Exit short at middle band
+		else if (Position < 0 && close < middle)
+		{
+			BuyMarket();
+			_cooldown = CooldownBars;
 		}
 	}
 }

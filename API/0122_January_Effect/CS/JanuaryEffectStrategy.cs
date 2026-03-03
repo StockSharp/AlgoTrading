@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,22 +12,19 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Implementation of January Effect trading strategy.
-/// The strategy enters long position in January and exits in February.
+/// Generalizes the seasonal effect: buys at the start of each month if above MA,
+/// exits mid-month. Goes short mid-month if below MA, covers at end of month.
 /// </summary>
 public class JanuaryEffectStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _cooldownBars;
 
-	/// <summary>
-	/// Stop loss percentage from entry price.
-	/// </summary>
-	public decimal StopLossPercent
-	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
-	}
+	private SimpleMovingAverage _ma;
+
+	private int _cooldown;
+	private int _prevDayOfMonth;
 
 	/// <summary>
 	/// Moving average period.
@@ -51,20 +45,29 @@ public class JanuaryEffectStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Cooldown bars between trades.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Initializes a new instance of the <see cref="JanuaryEffectStrategy"/>.
 	/// </summary>
 	public JanuaryEffectStrategy()
 	{
-		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
-			.SetNotNegative()
-			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Protection");
-		
 		_maPeriod = Param(nameof(MaPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "Moving average period for trend confirmation", "Strategy");
-		
+
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for strategy", "Strategy");
+
+		_cooldownBars = Param(nameof(CooldownBars), 50)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "General")
+			.SetRange(5, 500);
 	}
 
 	/// <inheritdoc />
@@ -74,61 +77,86 @@ public class JanuaryEffectStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_ma = default;
+		_cooldown = 0;
+		_prevDayOfMonth = 0;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		
-		// Create a simple moving average indicator
-		var sma = new SMA { Length = MaPeriod };
-		
-		// Create subscription and bind indicator
+
+		_ma = new SimpleMovingAverage { Length = MaPeriod };
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(sma, ProcessCandle)
+			.Bind(_ma, ProcessCandle)
 			.Start();
-		
-		// Setup chart visualization if available
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, sma);
+			DrawIndicator(area, _ma);
 			DrawOwnTrades(area);
 		}
-		
-		// Start position protection
-		StartProtection(
-			takeProfit: new Unit(0), // No take profit
-			stopLoss: new Unit(StopLossPercent, UnitTypes.Percent)
-		);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal maValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
-		
-		// Skip if strategy is not ready
+
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
-		
-		var date = candle.OpenTime;
-		var month = date.Month;
-		
-		// January - BUY signal (Month = 1)
-		if (month == 1 && Position <= 0 && candle.ClosePrice > maValue)
+
+		var close = candle.ClosePrice;
+		var dayOfMonth = candle.OpenTime.Day;
+		var isNewDay = dayOfMonth != _prevDayOfMonth;
+
+		if (_cooldown > 0)
 		{
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
-			
-			LogInfo($"Buy signal in January: Date={date:yyyy-MM-dd}, Price={candle.ClosePrice}, MA={maValue}, Volume={volume}");
+			_cooldown--;
+			_prevDayOfMonth = dayOfMonth;
+			return;
 		}
-		// February - EXIT signal (Month = 2)
-		else if (month == 2 && Position > 0)
+
+		// Start of month: day 1-5 buy zone
+		var isStartOfMonth = dayOfMonth >= 1 && dayOfMonth <= 5;
+		// Mid-month exit zone: day 14-17
+		var isMidMonth = dayOfMonth >= 14 && dayOfMonth <= 17;
+		// End-of-month short exit zone: day 26+
+		var isEndOfMonth = dayOfMonth >= 26;
+
+		// Buy at start of month if above MA
+		if (isStartOfMonth && isNewDay && Position == 0 && close > maValue)
 		{
-			ClosePosition();
-			LogInfo($"Closing position in February: Date={date:yyyy-MM-dd}, Position={Position}");
+			BuyMarket();
+			_cooldown = CooldownBars;
 		}
+		// Exit long mid-month
+		else if (isMidMonth && isNewDay && Position > 0)
+		{
+			SellMarket();
+			_cooldown = CooldownBars;
+		}
+		// Short mid-month if below MA
+		else if (isMidMonth && isNewDay && Position == 0 && close < maValue)
+		{
+			SellMarket();
+			_cooldown = CooldownBars;
+		}
+		// Cover short at end of month
+		else if (isEndOfMonth && isNewDay && Position < 0)
+		{
+			BuyMarket();
+			_cooldown = CooldownBars;
+		}
+
+		_prevDayOfMonth = dayOfMonth;
 	}
 }

@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -37,25 +34,25 @@ public class IntelleCityWorldCycleAthAtlLogarithmicStrategy : Strategy
 
 	public IntelleCityWorldCycleAthAtlLogarithmicStrategy()
 	{
-		_athLongLength = Param(nameof(AthLongLength), 350)
+		_athLongLength = Param(nameof(AthLongLength), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("ATH Long MA", "Length for ATH long moving average", "Strategy Parameters")
 			
 			.SetOptimize(200, 500, 50);
 
-		_athShortLength = Param(nameof(AthShortLength), 111)
+		_athShortLength = Param(nameof(AthShortLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("ATH Short MA", "Length for ATH short moving average", "Strategy Parameters")
 			
 			.SetOptimize(50, 200, 10);
 
-		_atlLongLength = Param(nameof(AtlLongLength), 471)
+		_atlLongLength = Param(nameof(AtlLongLength), 70)
 			.SetGreaterThanZero()
 			.SetDisplay("ATL Long MA", "Length for ATL long moving average", "Strategy Parameters")
 			
 			.SetOptimize(300, 600, 50);
 
-		_atlShortLength = Param(nameof(AtlShortLength), 150)
+		_atlShortLength = Param(nameof(AtlShortLength), 30)
 			.SetGreaterThanZero()
 			.SetDisplay("ATL Short MA", "Length for ATL short moving average", "Strategy Parameters")
 			
@@ -81,43 +78,47 @@ public class IntelleCityWorldCycleAthAtlLogarithmicStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var maAthLong = new SMA { Length = AthLongLength };
-		var maAthShort = new SMA { Length = AthShortLength };
-		var maAtlLong = new SMA { Length = AtlLongLength };
-		var maAtlShort = new EMA { Length = AtlShortLength };
+		var maAthLong = new SimpleMovingAverage { Length = AthLongLength };
+		var maAthShort = new SimpleMovingAverage { Length = AthShortLength };
+		var maAtlLong = new SimpleMovingAverage { Length = AtlLongLength };
+		var maAtlShort = new ExponentialMovingAverage { Length = AtlShortLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(maAthLong, maAthShort, maAtlLong, maAtlShort, ProcessCandle)
+			.BindEx(maAthLong, maAthShort, maAtlLong, maAtlShort, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, maAthLong);
-			DrawIndicator(area, maAthShort);
-			DrawIndicator(area, maAtlLong);
-			DrawIndicator(area, maAtlShort);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal athLong, decimal athShort, decimal atlLong, decimal atlShort)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue athLongVal, IIndicatorValue athShortVal, IIndicatorValue atlLongVal, IIndicatorValue atlShortVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var scaledAthLong = athLong * 2m;
-		var scaledAtlLong = atlLong * 0.745m;
+		if (athLongVal.IsEmpty || athShortVal.IsEmpty || atlLongVal.IsEmpty || atlShortVal.IsEmpty)
+			return;
 
-		if (IsFormedAndOnlineAndAllowTrading())
+		var athLong = athLongVal.ToDecimal();
+		var athShort = athShortVal.ToDecimal();
+		var atlLong = atlLongVal.ToDecimal();
+		var atlShort = atlShortVal.ToDecimal();
+
+		var scaledAthLong = athLong * 1.05m;
+		var scaledAtlLong = atlLong * 0.95m;
+
+		if (_prevAthLong != 0 && _prevAthShort != 0)
 		{
 			if (_prevAthLong >= _prevAthShort && scaledAthLong < athShort && Position >= 0)
-				SellMarket(Volume + Math.Abs(Position));
+				SellMarket();
 
 			if (_prevAtlLong <= _prevAtlShort && scaledAtlLong > atlShort && Position <= 0)
-				BuyMarket(Volume + Math.Abs(Position));
+				BuyMarket();
 		}
 
 		_prevAthLong = scaledAthLong;

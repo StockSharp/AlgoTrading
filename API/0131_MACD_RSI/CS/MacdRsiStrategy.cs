@@ -1,36 +1,32 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
-using StockSharp.Algo;
-using StockSharp.Algo.Candles;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
-
 /// <summary>
-/// Strategy that combines MACD and RSI indicators to identify potential trading opportunities.
-/// It looks for trend direction with MACD and enters on extreme RSI values in the trend direction.
+/// Strategy combining MACD and RSI indicators.
+/// Uses MACD for trend direction and RSI for entry timing at extreme levels.
 /// </summary>
 public class MacdRsiStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _macdFast;
-	private readonly StrategyParam<int> _macdSlow;
-	private readonly StrategyParam<int> _macdSignal;
 	private readonly StrategyParam<int> _rsiPeriod;
-	private readonly StrategyParam<int> _rsiOversold;
-	private readonly StrategyParam<int> _rsiOverbought;
-	private readonly StrategyParam<decimal> _stopLossPercent;
-	
+	private readonly StrategyParam<decimal> _rsiOversold;
+	private readonly StrategyParam<decimal> _rsiOverbought;
+	private readonly StrategyParam<int> _cooldownBars;
+
+	private decimal _rsiValue;
+	private decimal _prevMacdLine;
+	private decimal _prevSignalLine;
+	private int _cooldown;
+
 	/// <summary>
 	/// Data type for candles.
 	/// </summary>
@@ -39,34 +35,7 @@ public class MacdRsiStrategy : Strategy
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
-	
-	/// <summary>
-	/// Fast period for MACD calculation.
-	/// </summary>
-	public int MacdFast
-	{
-		get => _macdFast.Value;
-		set => _macdFast.Value = value;
-	}
-	
-	/// <summary>
-	/// Slow period for MACD calculation.
-	/// </summary>
-	public int MacdSlow
-	{
-		get => _macdSlow.Value;
-		set => _macdSlow.Value = value;
-	}
-	
-	/// <summary>
-	/// Signal period for MACD calculation.
-	/// </summary>
-	public int MacdSignal
-	{
-		get => _macdSignal.Value;
-		set => _macdSignal.Value = value;
-	}
-	
+
 	/// <summary>
 	/// Period for RSI calculation.
 	/// </summary>
@@ -75,190 +44,160 @@ public class MacdRsiStrategy : Strategy
 		get => _rsiPeriod.Value;
 		set => _rsiPeriod.Value = value;
 	}
-	
+
 	/// <summary>
 	/// RSI oversold level.
 	/// </summary>
-	public int RsiOversold
+	public decimal RsiOversold
 	{
 		get => _rsiOversold.Value;
 		set => _rsiOversold.Value = value;
 	}
-	
+
 	/// <summary>
 	/// RSI overbought level.
 	/// </summary>
-	public int RsiOverbought
+	public decimal RsiOverbought
 	{
 		get => _rsiOverbought.Value;
 		set => _rsiOverbought.Value = value;
 	}
-	
+
 	/// <summary>
-	/// Stop loss percentage from entry price.
+	/// Cooldown bars between trades.
 	/// </summary>
-	public decimal StopLossPercent
+	public int CooldownBars
 	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
-	
+
 	/// <summary>
 	/// Initializes a new instance of the <see cref="MacdRsiStrategy"/>.
 	/// </summary>
 	public MacdRsiStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
-					  .SetDisplay("Candle Type", "Type of candles to use", "General");
-					  
-		_macdFast = Param(nameof(MacdFast), 12)
-					.SetRange(5, 30)
-					.SetDisplay("MACD Fast", "Fast period for MACD calculation", "MACD Settings")
-					;
-					
-		_macdSlow = Param(nameof(MacdSlow), 26)
-					.SetRange(10, 50)
-					.SetDisplay("MACD Slow", "Slow period for MACD calculation", "MACD Settings")
-					;
-					
-		_macdSignal = Param(nameof(MacdSignal), 9)
-					  .SetRange(3, 20)
-					  .SetDisplay("MACD Signal", "Signal period for MACD calculation", "MACD Settings")
-					  ;
-					  
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
+
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
-					 .SetRange(5, 30)
-					 .SetDisplay("RSI Period", "Period for RSI calculation", "RSI Settings")
-					 ;
-					 
-		_rsiOversold = Param(nameof(RsiOversold), 30)
-					   .SetRange(10, 40)
-					   .SetDisplay("RSI Oversold", "RSI oversold level", "RSI Settings")
-					   ;
-					   
-		_rsiOverbought = Param(nameof(RsiOverbought), 70)
-						 .SetRange(60, 90)
-						 .SetDisplay("RSI Overbought", "RSI overbought level", "RSI Settings")
-						 ;
-						 
-		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
-						   .SetRange(0.5m, 5m)
-						   .SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management");
+			.SetRange(5, 30)
+			.SetDisplay("RSI Period", "Period for RSI calculation", "RSI Settings");
+
+		_rsiOversold = Param(nameof(RsiOversold), 30m)
+			.SetDisplay("RSI Oversold", "RSI oversold level", "RSI Settings");
+
+		_rsiOverbought = Param(nameof(RsiOverbought), 70m)
+			.SetDisplay("RSI Overbought", "RSI overbought level", "RSI Settings");
+
+		_cooldownBars = Param(nameof(CooldownBars), 150)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "General")
+			.SetRange(5, 500);
 	}
-	
+
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
-	
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_rsiValue = 50;
+		_prevMacdLine = 0;
+		_prevSignalLine = 0;
+		_cooldown = 0;
+	}
+
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		
-		// Set up stop loss protection
-		StartProtection(
-			new Unit(0), // No take profit
-			new Unit(StopLossPercent, UnitTypes.Percent) // Stop loss based on parameter
-		);
-		
-		// Create indicators
-		
-		var macd = new MovingAverageConvergenceDivergenceSignal
-		{
-			Macd =
-			{
-				ShortMa = { Length = MacdFast },
-				LongMa = { Length = MacdSlow },
-			},
-			SignalMa = { Length = MacdSignal }
-		};
+
+		var macd = new MovingAverageConvergenceDivergenceSignal();
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
-		
-		// Create candle subscription
+
 		var subscription = SubscribeCandles(CandleType);
-		
-		// When both indicators are ready, process the candle
+
+		// Bind RSI separately to capture its value
+		subscription.Bind(rsi, OnRsi);
+
+		// Bind MACD with BindEx to get signal+macd
 		subscription
-			.BindEx(macd, rsi, ProcessCandle)
+			.BindEx(macd, ProcessCandle)
 			.Start();
-			
-		// Set up chart if available
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			
-			// Draw MACD in a separate area
-			var macdArea = CreateChartArea();
-			DrawIndicator(macdArea, macd);
-			
-			// Draw RSI in a separate area
-			var rsiArea = CreateChartArea();
-			DrawIndicator(rsiArea, rsi);
-			
 			DrawOwnTrades(area);
+
+			var macdArea = CreateChartArea();
+			if (macdArea != null)
+				DrawIndicator(macdArea, macd);
+
+			var rsiArea = CreateChartArea();
+			if (rsiArea != null)
+				DrawIndicator(rsiArea, rsi);
 		}
 	}
-	
-	/// <summary>
-	/// Process incoming candle with MACD and RSI values.
-	/// </summary>
-	/// <param name="candle">Candle to process.</param>
-	/// <param name="macdValue">MACD line value.</param>
-	/// <param name="signalValue">MACD signal line value.</param>
-	/// <param name="rsiValue">RSI value.</param>
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue, IIndicatorValue rsiValue)
+
+	private void OnRsi(ICandleMessage candle, decimal rsi)
+	{
+		_rsiValue = rsi;
+	}
+
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
-			
+
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
-		var macdDec = macdTyped.Macd;
-		var signalValue = macdTyped.Signal;
-		var rsiDec = rsiValue.ToDecimal();
+		if (macdTyped.Macd is not decimal macdLine || macdTyped.Signal is not decimal signalLine)
+			return;
 
-		// Trading logic: Combine MACD trend with RSI extreme values
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+			_prevMacdLine = macdLine;
+			_prevSignalLine = signalLine;
+			return;
+		}
 
-		// MACD above signal line indicates uptrend
-		bool isUptrend = macdDec > signalValue;
-		
-		// Check for entry conditions
-		if (isUptrend && rsiDec < RsiOversold)
+		var isUptrend = macdLine > signalLine;
+
+		// Entry: uptrend + oversold RSI = buy
+		if (isUptrend && _rsiValue < RsiOversold && Position == 0)
 		{
-			// Bullish trend with oversold RSI - Long signal
-			if (Position <= 0)
-			{
-				BuyMarket(Volume + Math.Abs(Position));
-				LogInfo($"Buy signal: MACD uptrend ({macdDec:F4} > {signalValue:F4}) with oversold RSI ({rsiDec:F2})");
-			}
+			BuyMarket();
+			_cooldown = CooldownBars;
 		}
-		else if (!isUptrend && rsiDec > RsiOverbought)
+		// Entry: downtrend + overbought RSI = sell
+		else if (!isUptrend && _rsiValue > RsiOverbought && Position == 0)
 		{
-			// Bearish trend with overbought RSI - Short signal
-			if (Position >= 0)
-			{
-				SellMarket(Volume + Math.Abs(Position));
-				LogInfo($"Sell signal: MACD downtrend ({macdDec:F4} < {signalValue:F4}) with overbought RSI ({rsiDec:F2})");
-			}
+			SellMarket();
+			_cooldown = CooldownBars;
 		}
-		
-		// Check for exit conditions
+
+		// Exit: trend reversal
 		if (Position > 0 && !isUptrend)
 		{
-			// Exit long when MACD crosses below signal line
-			SellMarket(Math.Abs(Position));
-			LogInfo($"Exit long: MACD crossed below signal ({macdDec:F4} < {signalValue:F4})");
+			SellMarket();
+			_cooldown = CooldownBars;
 		}
 		else if (Position < 0 && isUptrend)
 		{
-			// Exit short when MACD crosses above signal line
-			BuyMarket(Math.Abs(Position));
-			LogInfo($"Exit short: MACD crossed above signal ({macdDec:F4} > {signalValue:F4})");
+			BuyMarket();
+			_cooldown = CooldownBars;
 		}
+
+		_prevMacdLine = macdLine;
+		_prevSignalLine = signalLine;
 	}
 }

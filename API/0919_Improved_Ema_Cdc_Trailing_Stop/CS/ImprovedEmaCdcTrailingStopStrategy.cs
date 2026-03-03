@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -90,7 +87,7 @@ public class ImprovedEmaCdcTrailingStopStrategy : Strategy
 			
 			.SetOptimize(1m, 5m, 1m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -138,29 +135,27 @@ public class ImprovedEmaCdcTrailingStopStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
+		if (macdValue is not MovingAverageConvergenceDivergenceSignalValue macdTyped)
+			return;
+
 		if (macdTyped.Macd is not decimal macd || macdTyped.Signal is not decimal signal)
 			return;
+
+		if (ema60Value.IsEmpty || ema90Value.IsEmpty || atrValue.IsEmpty)
+			return;
+
 		var ema60 = ema60Value.ToDecimal();
 		var ema90 = ema90Value.ToDecimal();
 		var atr = atrValue.ToDecimal();
 
-		var longStop = candle.ClosePrice - Multiplier * atr;
-		var shortStop = candle.ClosePrice + Multiplier * atr;
-		var longProfitTarget = candle.ClosePrice + ProfitTargetMultiplier * atr;
-		var shortProfitTarget = candle.ClosePrice - ProfitTargetMultiplier * atr;
+		if (atr <= 0) return;
 
-		var longCondition = candle.ClosePrice > ema60 && ema60 > ema90 && macd > signal && candle.ClosePrice > longStop;
-		var shortCondition = candle.ClosePrice < ema60 && ema60 < ema90 && macd < signal && candle.ClosePrice < shortStop;
+		var longCondition = candle.ClosePrice > ema60 && ema60 > ema90 && macd > signal;
+		var shortCondition = candle.ClosePrice < ema60 && ema60 < ema90 && macd < signal;
 
 		if (longCondition && Position <= 0)
-			BuyMarket(Volume + Math.Abs(Position));
+			BuyMarket();
 		else if (shortCondition && Position >= 0)
-			SellMarket(Volume + Math.Abs(Position));
-
-		if (Position > 0 && (candle.ClosePrice >= longProfitTarget || candle.ClosePrice < longStop))
-			SellMarket(Math.Abs(Position));
-		else if (Position < 0 && (candle.ClosePrice <= shortProfitTarget || candle.ClosePrice > shortStop))
-			BuyMarket(Math.Abs(Position));
+			SellMarket();
 	}
 }

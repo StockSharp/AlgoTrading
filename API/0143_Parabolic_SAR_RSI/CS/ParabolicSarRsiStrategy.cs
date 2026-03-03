@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,34 +11,27 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that combines Parabolic SAR for trend direction
-/// and RSI for entry confirmation with oversold/overbought conditions.
+/// Strategy combining Parabolic SAR for trend direction
+/// and RSI for entry confirmation.
 /// </summary>
 public class ParabolicSarRsiStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _sarAf;
-	private readonly StrategyParam<decimal> _sarMaxAf;
+	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _rsiPeriod;
 	private readonly StrategyParam<decimal> _rsiOversold;
 	private readonly StrategyParam<decimal> _rsiOverbought;
-	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _cooldownBars;
+
+	private decimal _sarValue;
+	private int _cooldown;
 
 	/// <summary>
-	/// Parabolic SAR acceleration factor.
+	/// Candle type for strategy calculation.
 	/// </summary>
-	public decimal SarAf
+	public DataType CandleType
 	{
-		get => _sarAf.Value;
-		set => _sarAf.Value = value;
-	}
-
-	/// <summary>
-	/// Parabolic SAR maximum acceleration factor.
-	/// </summary>
-	public decimal SarMaxAf
-	{
-		get => _sarMaxAf.Value;
-		set => _sarMaxAf.Value = value;
+		get => _candleType.Value;
+		set => _candleType.Value = value;
 	}
 
 	/// <summary>
@@ -72,12 +62,12 @@ public class ParabolicSarRsiStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Candle type for strategy calculation.
+	/// Cooldown bars between trades.
 	/// </summary>
-	public DataType CandleType
+	public int CooldownBars
 	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	/// <summary>
@@ -85,38 +75,22 @@ public class ParabolicSarRsiStrategy : Strategy
 	/// </summary>
 	public ParabolicSarRsiStrategy()
 	{
-		_sarAf = Param(nameof(SarAf), 0.02m)
-			.SetRange(0.01m, 0.1m)
-			.SetDisplay("SAR Acceleration Factor", "Initial acceleration factor for Parabolic SAR", "Indicators")
-			
-			.SetOptimize(0.01m, 0.05m, 0.01m);
-
-		_sarMaxAf = Param(nameof(SarMaxAf), 0.2m)
-			.SetRange(0.1m, 0.5m)
-			.SetDisplay("SAR Max Acceleration", "Maximum acceleration factor for Parabolic SAR", "Indicators")
-			
-			.SetOptimize(0.1m, 0.3m, 0.1m);
-
-		_rsiPeriod = Param(nameof(RsiPeriod), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("RSI Period", "Period of the RSI indicator", "Indicators")
-			
-			.SetOptimize(7, 21, 7);
-
-		_rsiOversold = Param(nameof(RsiOversold), 30m)
-			.SetNotNegative()
-			.SetDisplay("RSI Oversold", "RSI level considered oversold", "Indicators")
-			
-			.SetOptimize(20m, 40m, 5m);
-
-		_rsiOverbought = Param(nameof(RsiOverbought), 70m)
-			.SetNotNegative()
-			.SetDisplay("RSI Overbought", "RSI level considered overbought", "Indicators")
-			
-			.SetOptimize(60m, 80m, 5m);
-
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
+
+		_rsiPeriod = Param(nameof(RsiPeriod), 14)
+			.SetRange(7, 21)
+			.SetDisplay("RSI Period", "Period of the RSI indicator", "Indicators");
+
+		_rsiOversold = Param(nameof(RsiOversold), 30m)
+			.SetDisplay("RSI Oversold", "RSI oversold level", "Indicators");
+
+		_rsiOverbought = Param(nameof(RsiOverbought), 70m)
+			.SetDisplay("RSI Overbought", "RSI overbought level", "Indicators");
+
+		_cooldownBars = Param(nameof(CooldownBars), 130)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "General")
+			.SetRange(5, 500);
 	}
 
 	/// <inheritdoc />
@@ -126,81 +100,93 @@ public class ParabolicSarRsiStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_sarValue = 0;
+		_cooldown = 0;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		// Create indicators
-		var parabolicSar = new ParabolicSar
-		{
-			Acceleration = SarAf,
-			AccelerationMax = SarMaxAf,
-			AccelerationStep = SarAf // Using initial AF as the step
-		};
+		var parabolicSar = new ParabolicSar();
+		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 
-		var rsi = new RelativeStrengthIndex
-		{
-			Length = RsiPeriod
-		};
-
-		// Create subscription and bind indicators
 		var subscription = SubscribeCandles(CandleType);
 
+		// ParabolicSar takes candle input - use BindEx
+		subscription.BindEx(parabolicSar, OnSar);
+
+		// RSI for main logic
 		subscription
-			.Bind(parabolicSar, rsi, ProcessCandles)
+			.Bind(rsi, ProcessCandle)
 			.Start();
 
-		// Enable dynamic stop-loss using Parabolic SAR
-		StartProtection(
-			takeProfit: new Unit(0, UnitTypes.Absolute), // No take profit
-			stopLoss: new Unit(0, UnitTypes.Absolute) // No fixed stop loss - using dynamic SAR
-		);
-
-		// Setup chart visualization if available
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
 			DrawIndicator(area, parabolicSar);
-			DrawIndicator(area, rsi);
 			DrawOwnTrades(area);
+
+			var rsiArea = CreateChartArea();
+			if (rsiArea != null)
+				DrawIndicator(rsiArea, rsi);
 		}
 	}
 
-	/// <summary>
-	/// Process candles and indicator values.
-	/// </summary>
-	private void ProcessCandles(ICandleMessage candle, decimal sarValue, decimal rsiValue)
+	private void OnSar(ICandleMessage candle, IIndicatorValue sarValue)
 	{
-		// Skip unfinished candles
+		if (sarValue.IsFormed)
+			_sarValue = sarValue.ToDecimal();
+	}
+
+	private void ProcessCandle(ICandleMessage candle, decimal rsiValue)
+	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// Long entry: price above SAR and RSI oversold
-		if (candle.ClosePrice > sarValue && rsiValue < RsiOversold && Position <= 0)
+		if (_sarValue == 0)
+			return;
+
+		var close = candle.ClosePrice;
+
+		if (_cooldown > 0)
 		{
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
+			_cooldown--;
+			return;
 		}
-		// Short entry: price below SAR and RSI overbought
-		else if (candle.ClosePrice < sarValue && rsiValue > RsiOverbought && Position >= 0)
+
+		// Long: price above SAR + RSI not overbought
+		if (close > _sarValue && rsiValue < RsiOverbought && Position == 0)
 		{
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
+			BuyMarket();
+			_cooldown = CooldownBars;
 		}
-		// Long exit: price falls below SAR (trend change)
-		else if (Position > 0 && candle.ClosePrice < sarValue)
+		// Short: price below SAR + RSI not oversold
+		else if (close < _sarValue && rsiValue > RsiOversold && Position == 0)
 		{
-			SellMarket(Math.Abs(Position));
+			SellMarket();
+			_cooldown = CooldownBars;
 		}
-		// Short exit: price rises above SAR (trend change)
-		else if (Position < 0 && candle.ClosePrice > sarValue)
+
+		// Exit long: SAR flips above price
+		if (Position > 0 && close < _sarValue)
 		{
-			BuyMarket(Math.Abs(Position));
+			SellMarket();
+			_cooldown = CooldownBars;
+		}
+		// Exit short: SAR flips below price
+		else if (Position < 0 && close > _sarValue)
+		{
+			BuyMarket();
+			_cooldown = CooldownBars;
 		}
 	}
 }

@@ -142,7 +142,7 @@ public class IctBreadAndButterSellSetupStrategy : Strategy
 			
 			.SetOptimize(5, 40, 5);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 

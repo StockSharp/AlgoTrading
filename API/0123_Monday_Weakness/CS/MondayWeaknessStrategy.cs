@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,23 +12,20 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Implementation of Monday Weakness trading strategy.
-/// The strategy enters short position on Monday when price is below MA,
-/// and exits on Wednesday.
+/// Sells short on Monday if price below MA, covers on Wednesday.
+/// Buys on Thursday if price above MA, exits Friday.
 /// </summary>
 public class MondayWeaknessStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _cooldownBars;
 
-	/// <summary>
-	/// Stop loss percentage from entry price.
-	/// </summary>
-	public decimal StopLossPercent
-	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
-	}
+	private SimpleMovingAverage _ma;
+
+	private int _cooldown;
+	private DayOfWeek _prevDayOfWeek;
+	private bool _enteredThisDay;
 
 	/// <summary>
 	/// Moving average period.
@@ -52,20 +46,29 @@ public class MondayWeaknessStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Cooldown bars between trades.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Initializes a new instance of the <see cref="MondayWeaknessStrategy"/>.
 	/// </summary>
 	public MondayWeaknessStrategy()
 	{
-		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
-			.SetNotNegative()
-			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Protection");
-		
 		_maPeriod = Param(nameof(MaPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "Moving average period for trend confirmation", "Strategy");
-		
+
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for strategy", "Strategy");
+
+		_cooldownBars = Param(nameof(CooldownBars), 30)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "General")
+			.SetRange(5, 500);
 	}
 
 	/// <inheritdoc />
@@ -75,60 +78,87 @@ public class MondayWeaknessStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_ma = default;
+		_cooldown = 0;
+		_prevDayOfWeek = DayOfWeek.Sunday;
+		_enteredThisDay = false;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		
-		// Create a simple moving average indicator
-		var sma = new SMA { Length = MaPeriod };
-		
-		// Create subscription and bind indicator
+
+		_ma = new SimpleMovingAverage { Length = MaPeriod };
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(sma, ProcessCandle)
+			.Bind(_ma, ProcessCandle)
 			.Start();
-		
-		// Setup chart visualization if available
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, sma);
+			DrawIndicator(area, _ma);
 			DrawOwnTrades(area);
 		}
-		
-		// Start position protection
-		StartProtection(
-			takeProfit: new Unit(0), // No take profit
-			stopLoss: new Unit(StopLossPercent, UnitTypes.Percent)
-		);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal maValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
-		
-		// Skip if strategy is not ready
+
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
-		
-		var day = candle.OpenTime.DayOfWeek;
-		
-		// Monday - SELL signal if price is below MA
-		if (day == DayOfWeek.Monday && candle.ClosePrice < maValue && Position >= 0)
+
+		var close = candle.ClosePrice;
+		var dayOfWeek = candle.OpenTime.DayOfWeek;
+
+		// Reset entry flag on new day
+		if (dayOfWeek != _prevDayOfWeek)
+			_enteredThisDay = false;
+
+		if (_cooldown > 0)
 		{
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
-			
-			LogInfo($"Sell signal on Monday: Price={candle.ClosePrice}, MA={maValue}, Volume={volume}");
+			_cooldown--;
+			_prevDayOfWeek = dayOfWeek;
+			return;
 		}
-		// Wednesday - Close short position
-		else if (day == DayOfWeek.Wednesday && Position < 0)
+
+		// Monday: sell short if price below MA
+		if (dayOfWeek == DayOfWeek.Monday && !_enteredThisDay && Position == 0 && close < maValue)
 		{
-			ClosePosition();
-			LogInfo($"Closing position on Wednesday: Position={Position}");
+			SellMarket();
+			_cooldown = CooldownBars;
+			_enteredThisDay = true;
 		}
+		// Wednesday: cover short
+		else if (dayOfWeek == DayOfWeek.Wednesday && Position < 0 && !_enteredThisDay)
+		{
+			BuyMarket();
+			_cooldown = CooldownBars;
+			_enteredThisDay = true;
+		}
+		// Thursday: buy if above MA
+		else if (dayOfWeek == DayOfWeek.Thursday && !_enteredThisDay && Position == 0 && close > maValue)
+		{
+			BuyMarket();
+			_cooldown = CooldownBars;
+			_enteredThisDay = true;
+		}
+		// Friday: exit long
+		else if (dayOfWeek == DayOfWeek.Friday && Position > 0 && !_enteredThisDay)
+		{
+			SellMarket();
+			_cooldown = CooldownBars;
+			_enteredThisDay = true;
+		}
+
+		_prevDayOfWeek = dayOfWeek;
 	}
 }

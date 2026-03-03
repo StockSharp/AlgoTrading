@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -81,7 +78,7 @@ public class InnocentHeikinAshiEthereumStrategy : Strategy {
 			    "General");
 
 	_candleType =
-	    Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+	    Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles to use", "General");
     }
 
@@ -167,8 +164,8 @@ public class InnocentHeikinAshiEthereumStrategy : Strategy {
 	base.OnStarted2(time);
 	StartProtection(null, null);
 
-	_ema50 = new EMA { Length = 50 };
-	_ema200 = new EMA { Length = 200 };
+	_ema50 = new ExponentialMovingAverage { Length = 50 };
+	_ema200 = new ExponentialMovingAverage { Length = 200 };
 	_lowest = new Lowest { Length = 28 };
 
 	var subscription = SubscribeCandles(CandleType);

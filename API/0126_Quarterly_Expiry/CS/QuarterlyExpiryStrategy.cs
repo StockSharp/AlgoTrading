@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,22 +12,19 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Implementation of Quarterly Expiry trading strategy.
-/// The strategy trades on quarterly expiration days based on price relative to MA.
+/// Trades around monthly expiry dates (3rd Friday area of each month).
+/// Buys if above MA in expiry week, sells if below. Exits next week.
 /// </summary>
 public class QuarterlyExpiryStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _cooldownBars;
 
-	/// <summary>
-	/// Stop loss percentage from entry price.
-	/// </summary>
-	public decimal StopLossPercent
-	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
-	}
+	private SimpleMovingAverage _ma;
+
+	private int _cooldown;
+	private int _prevDayOfMonth;
 
 	/// <summary>
 	/// Moving average period.
@@ -51,20 +45,29 @@ public class QuarterlyExpiryStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Cooldown bars between trades.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Initializes a new instance of the <see cref="QuarterlyExpiryStrategy"/>.
 	/// </summary>
 	public QuarterlyExpiryStrategy()
 	{
-		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
-			.SetNotNegative()
-			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Protection");
-		
 		_maPeriod = Param(nameof(MaPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "Moving average period for trend confirmation", "Strategy");
-		
+
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for strategy", "Strategy");
+
+		_cooldownBars = Param(nameof(CooldownBars), 50)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "General")
+			.SetRange(5, 500);
 	}
 
 	/// <inheritdoc />
@@ -74,100 +77,88 @@ public class QuarterlyExpiryStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_ma = default;
+		_cooldown = 0;
+		_prevDayOfMonth = 0;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		
-		// Create a simple moving average indicator
-		var sma = new SMA { Length = MaPeriod };
-		
-		// Create subscription and bind indicator
+
+		_ma = new SimpleMovingAverage { Length = MaPeriod };
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(sma, ProcessCandle)
+			.Bind(_ma, ProcessCandle)
 			.Start();
-		
-		// Setup chart visualization if available
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, sma);
+			DrawIndicator(area, _ma);
 			DrawOwnTrades(area);
 		}
-		
-		// Start position protection
-		StartProtection(
-			takeProfit: new Unit(0), // No take profit
-			stopLoss: new Unit(StopLossPercent, UnitTypes.Percent)
-		);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal maValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
-		
-		// Skip if strategy is not ready
+
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
-		
-		var date = candle.OpenTime;
-		var dayOfWeek = date.DayOfWeek;
-		
-		// Check if this is a quarterly expiry day
-		// Typically the third Friday of March, June, September, and December
-		if (IsQuarterlyExpiryDay(date))
+
+		var close = candle.ClosePrice;
+		var dayOfMonth = candle.OpenTime.Day;
+		var isNewDay = dayOfMonth != _prevDayOfMonth;
+
+		if (_cooldown > 0)
 		{
-			// BUY signal - price above MA
-			if (candle.ClosePrice > maValue && Position <= 0)
-			{
-				var volume = Volume + Math.Abs(Position);
-				BuyMarket(volume);
-				
-				LogInfo($"Buy signal on quarterly expiry day: Date={date:yyyy-MM-dd}, Price={candle.ClosePrice}, MA={maValue}, Volume={volume}");
-			}
-			// SELL signal - price below MA
-			else if (candle.ClosePrice < maValue && Position >= 0)
-			{
-				var volume = Volume + Math.Abs(Position);
-				SellMarket(volume);
-				
-				LogInfo($"Sell signal on quarterly expiry day: Date={date:yyyy-MM-dd}, Price={candle.ClosePrice}, MA={maValue}, Volume={volume}");
-			}
+			_cooldown--;
+			_prevDayOfMonth = dayOfMonth;
+			return;
 		}
-		// Exit position on Friday (if we're not already on a Friday)
-		else if (dayOfWeek == DayOfWeek.Friday && Position != 0)
+
+		// Expiry week zone: day 15-19 (around 3rd Friday of each month)
+		var isExpiryWeek = dayOfMonth >= 15 && dayOfMonth <= 19;
+		// Post-expiry exit zone: day 22-25
+		var isPostExpiry = dayOfMonth >= 22 && dayOfMonth <= 25;
+		// Start of month entry zone: day 1-5
+		var isStartOfMonth = dayOfMonth >= 1 && dayOfMonth <= 5;
+		// Pre-expiry exit: day 12-14
+		var isPreExpiry = dayOfMonth >= 12 && dayOfMonth <= 14;
+
+		// Entry in expiry week: buy if above MA
+		if (isExpiryWeek && isNewDay && Position == 0 && close > maValue)
 		{
-			ClosePosition();
-			LogInfo($"Closing position on Friday: Date={date:yyyy-MM-dd}, Position={Position}");
+			BuyMarket();
+			_cooldown = CooldownBars;
 		}
-	}
-	
-	private bool IsQuarterlyExpiryDay(DateTimeOffset date)
-	{
-		// Check if it's a Friday
-		if (date.DayOfWeek != DayOfWeek.Friday)
-			return false;
-		
-		// Check if it's March, June, September, or December
-		int month = date.Month;
-		if (month != 3 && month != 6 && month != 9 && month != 12)
-			return false;
-		
-		// Check if it's the third Friday of the month
-		// Find the first day of the month
-		var firstDay = new DateTimeOffset(date.Year, date.Month, 1, 0, 0, 0, date.Offset);
-		
-		// Find the first Friday
-		int daysUntilFirstFriday = ((int)DayOfWeek.Friday - (int)firstDay.DayOfWeek + 7) % 7;
-		var firstFriday = firstDay.AddDays(daysUntilFirstFriday);
-		
-		// Calculate the third Friday
-		var thirdFriday = firstFriday.AddDays(14);
-		
-		// Check if the date is the third Friday
-		return date.Day == thirdFriday.Day;
+		// Exit after expiry week
+		else if (isPostExpiry && isNewDay && Position > 0)
+		{
+			SellMarket();
+			_cooldown = CooldownBars;
+		}
+		// Short entry at start of month if below MA
+		else if (isStartOfMonth && isNewDay && Position == 0 && close < maValue)
+		{
+			SellMarket();
+			_cooldown = CooldownBars;
+		}
+		// Cover short before expiry
+		else if (isPreExpiry && isNewDay && Position < 0)
+		{
+			BuyMarket();
+			_cooldown = CooldownBars;
+		}
+
+		_prevDayOfMonth = dayOfMonth;
 	}
 }

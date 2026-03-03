@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,55 +11,18 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that uses Donchian Channels to identify breakouts
-/// and volume confirmation to filter signals.
-/// Enters positions when price breaks above/below Donchian Channel with increased volume.
+/// Strategy that uses Donchian Channels for breakout detection.
+/// Enters when price breaks above/below the channel.
 /// </summary>
 public class DonchianVolumeStrategy : Strategy
 {
-	private readonly StrategyParam<int> _donchianPeriod;
-	private readonly StrategyParam<int> _volumePeriod;
-	private readonly StrategyParam<decimal> _volumeMultiplier;
-	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _donchianPeriod;
+	private readonly StrategyParam<int> _cooldownBars;
 
-	private decimal _averageVolume;
-
-	/// <summary>
-	/// Donchian Channels period.
-	/// </summary>
-	public int DonchianPeriod
-	{
-		get => _donchianPeriod.Value;
-		set => _donchianPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Volume averaging period.
-	/// </summary>
-	public int VolumePeriod
-	{
-		get => _volumePeriod.Value;
-		set => _volumePeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Volume multiplier for breakout confirmation.
-	/// </summary>
-	public decimal VolumeMultiplier
-	{
-		get => _volumeMultiplier.Value;
-		set => _volumeMultiplier.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss percentage.
-	/// </summary>
-	public decimal StopLossPercent
-	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
-	}
+	private int _cooldown;
+	private readonly List<decimal> _highs = new();
+	private readonly List<decimal> _lows = new();
 
 	/// <summary>
 	/// Candle type for strategy calculation.
@@ -74,36 +34,38 @@ public class DonchianVolumeStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Donchian Channels period.
+	/// </summary>
+	public int DonchianPeriod
+	{
+		get => _donchianPeriod.Value;
+		set => _donchianPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Cooldown bars between trades.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Strategy constructor.
 	/// </summary>
 	public DonchianVolumeStrategy()
 	{
-		_donchianPeriod = Param(nameof(DonchianPeriod), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("Donchian Period", "Period of the Donchian Channel", "Indicators")
-			
-			.SetOptimize(10, 50, 10);
-
-		_volumePeriod = Param(nameof(VolumePeriod), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume Period", "Period for volume averaging", "Indicators")
-			
-			.SetOptimize(10, 30, 5);
-
-		_volumeMultiplier = Param(nameof(VolumeMultiplier), 1.5m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume Multiplier", "Multiplier for average volume to confirm breakout", "Indicators")
-			
-			.SetOptimize(1.0m, 2.0m, 0.5m);
-
-		_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
-			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss %", "Stop loss as percentage of entry price", "Risk Management")
-			
-			.SetOptimize(1.0m, 3.0m, 0.5m);
-
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
+
+		_donchianPeriod = Param(nameof(DonchianPeriod), 20)
+			.SetRange(10, 50)
+			.SetDisplay("Donchian Period", "Period of the Donchian Channel", "Indicators");
+
+		_cooldownBars = Param(nameof(CooldownBars), 100)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "General")
+			.SetRange(5, 500);
 	}
 
 	/// <inheritdoc />
@@ -116,110 +78,98 @@ public class DonchianVolumeStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_averageVolume = 0;
+		_cooldown = 0;
+		_highs.Clear();
+		_lows.Clear();
 	}
 
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		// Create indicators
-		var donchianHigh = new Highest
-		{
-			Length = DonchianPeriod
-		};
 
-		var donchianLow = new Lowest
-		{
-			Length = DonchianPeriod
-		};
+		// Use a simple SMA as a binding indicator (we use it for middle line reference)
+		var sma = new SimpleMovingAverage { Length = DonchianPeriod };
 
-		var volumeAverage = new SMA
-		{
-			Length = VolumePeriod
-		};
-
-		// Create subscription and bind indicators
 		var subscription = SubscribeCandles(CandleType);
 
 		subscription
-			.BindEx(volumeAverage, donchianHigh, donchianLow, ProcessDonchian)
+			.Bind(sma, ProcessCandle)
 			.Start();
 
-		// Setup position protection
-		StartProtection(
-			takeProfit: new Unit(0, UnitTypes.Absolute), // No take profit
-			stopLoss: new Unit(StopLossPercent, UnitTypes.Percent) // Stop loss as percentage
-		);
-
-		// Setup chart visualization if available
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			
-			// Create a composite indicator for visualization purposes
-			var donchian = new DonchianChannels
-			{
-				Length = DonchianPeriod
-			};
-			
-			DrawIndicator(area, donchian);
+			DrawIndicator(area, sma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	/// <summary>
-	/// Process Donchian Channel values.
-	/// </summary>
-	private void ProcessDonchian(ICandleMessage candle, IIndicatorValue volumeAvgValue, IIndicatorValue highestValue, IIndicatorValue lowestValue)
+	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (volumeAvgValue.IsFinal)
-		{
-			_averageVolume = volumeAvgValue.ToDecimal();
-		}
-
-		// Check if strategy is ready to trade
-		if (!IsFormedAndOnlineAndAllowTrading() || _averageVolume <= 0)
+		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var highestDec = highestValue.ToDecimal();
-		var lowestDec = lowestValue.ToDecimal();
+		_highs.Add(candle.HighPrice);
+		_lows.Add(candle.LowPrice);
 
-		// Calculate middle line of Donchian Channel
-		var middleLine = (highestDec + lowestDec) / 2;
-
-		// Check if volume condition is met
-		var isVolumeHighEnough = candle.TotalVolume > _averageVolume * VolumeMultiplier;
-
-		if (isVolumeHighEnough)
+		var maxBuf = DonchianPeriod * 2;
+		if (_highs.Count > maxBuf)
 		{
-			// Long entry: price breaks above highest high with increased volume
-			if (candle.ClosePrice > highestDec && Position <= 0)
-			{
-				var volume = Volume + Math.Abs(Position);
-				BuyMarket(volume);
-			}
-			// Short entry: price breaks below lowest low with increased volume
-			else if (candle.ClosePrice < lowestDec && Position >= 0)
-			{
-				var volume = Volume + Math.Abs(Position);
-				SellMarket(volume);
-			}
+			_highs.RemoveRange(0, _highs.Count - maxBuf);
+			_lows.RemoveRange(0, _lows.Count - maxBuf);
 		}
 
-		// Exit conditions based on middle line
-		if (Position > 0 && candle.ClosePrice < middleLine)
+		if (_highs.Count < DonchianPeriod)
+			return;
+
+		// Calculate Donchian Channel
+		var start = _highs.Count - DonchianPeriod;
+		var highestHigh = decimal.MinValue;
+		var lowestLow = decimal.MaxValue;
+		for (var i = start; i < _highs.Count; i++)
 		{
-			SellMarket(Math.Abs(Position));
+			if (_highs[i] > highestHigh) highestHigh = _highs[i];
+			if (_lows[i] < lowestLow) lowestLow = _lows[i];
 		}
-		else if (Position < 0 && candle.ClosePrice > middleLine)
+
+		var middleLine = (highestHigh + lowestLow) / 2;
+		var close = candle.ClosePrice;
+
+		if (_cooldown > 0)
 		{
-			BuyMarket(Math.Abs(Position));
+			_cooldown--;
+			return;
+		}
+
+		// Long entry: price breaks above channel
+		if (close >= highestHigh && Position == 0)
+		{
+			BuyMarket();
+			_cooldown = CooldownBars;
+		}
+		// Short entry: price breaks below channel
+		else if (close <= lowestLow && Position == 0)
+		{
+			SellMarket();
+			_cooldown = CooldownBars;
+		}
+
+		// Exit long: price crosses below middle line
+		if (Position > 0 && close < middleLine)
+		{
+			SellMarket();
+			_cooldown = CooldownBars;
+		}
+		// Exit short: price crosses above middle line
+		else if (Position < 0 && close > middleLine)
+		{
+			BuyMarket();
+			_cooldown = CooldownBars;
 		}
 	}
 }

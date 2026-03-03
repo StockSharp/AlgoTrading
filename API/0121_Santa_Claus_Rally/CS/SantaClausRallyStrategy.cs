@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,23 +12,19 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Implementation of Santa Claus Rally trading strategy.
-/// The strategy enters long position between December 20 and December 31,
-/// and exits on January 5 of the following year.
+/// Buys at end of each month (seasonal rally pattern) and exits early next month.
+/// Also applies trend following via MA filter for short positions in mid-month.
 /// </summary>
 public class SantaClausRallyStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _cooldownBars;
 
-	/// <summary>
-	/// Stop loss percentage from entry price.
-	/// </summary>
-	public decimal StopLossPercent
-	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
-	}
+	private SimpleMovingAverage _ma;
+
+	private int _cooldown;
+	private int _prevDayOfMonth;
 
 	/// <summary>
 	/// Moving average period.
@@ -52,20 +45,29 @@ public class SantaClausRallyStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Cooldown bars between trades.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Initializes a new instance of the <see cref="SantaClausRallyStrategy"/>.
 	/// </summary>
 	public SantaClausRallyStrategy()
 	{
-		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
-			.SetNotNegative()
-			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Protection");
-		
 		_maPeriod = Param(nameof(MaPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "Moving average period for trend confirmation", "Strategy");
-		
+
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for strategy", "Strategy");
+
+		_cooldownBars = Param(nameof(CooldownBars), 50)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "General")
+			.SetRange(5, 500);
 	}
 
 	/// <inheritdoc />
@@ -75,62 +77,86 @@ public class SantaClausRallyStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_ma = default;
+		_cooldown = 0;
+		_prevDayOfMonth = 0;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		
-		// Create a simple moving average indicator
-		var sma = new SMA { Length = MaPeriod };
-		
-		// Create subscription and bind indicator
+
+		_ma = new SimpleMovingAverage { Length = MaPeriod };
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(sma, ProcessCandle)
+			.Bind(_ma, ProcessCandle)
 			.Start();
-		
-		// Setup chart visualization if available
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, sma);
+			DrawIndicator(area, _ma);
 			DrawOwnTrades(area);
 		}
-		
-		// Start position protection
-		StartProtection(
-			takeProfit: new Unit(0), // No take profit
-			stopLoss: new Unit(StopLossPercent, UnitTypes.Percent)
-		);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal maValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
-		
-		// Skip if strategy is not ready
+
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
-		
-		var date = candle.OpenTime;
-		var month = date.Month;
-		var day = date.Day;
-		
-		// Santa Claus Rally period - Dec 20 to Dec 31
-		if (month == 12 && day >= 20 && day <= 31 && Position <= 0 && candle.ClosePrice > maValue)
+
+		var close = candle.ClosePrice;
+		var dayOfMonth = candle.OpenTime.Day;
+		var isNewDay = dayOfMonth != _prevDayOfMonth;
+
+		if (_cooldown > 0)
 		{
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
-			
-			LogInfo($"Buy signal for Santa Claus Rally: Date={date:yyyy-MM-dd}, Price={candle.ClosePrice}, MA={maValue}, Volume={volume}");
+			_cooldown--;
+			_prevDayOfMonth = dayOfMonth;
+			return;
 		}
-		// Exit position on January 5
-		else if (month == 1 && day == 5 && Position > 0)
+
+		// Rally zone: last week of month (day >= 25)
+		var isRallyZone = dayOfMonth >= 25;
+		// Exit zone: first week of month (day 3-7)
+		var isExitZone = dayOfMonth >= 3 && dayOfMonth <= 7;
+		// Mid-month short zone: day 12-18
+		var isShortZone = dayOfMonth >= 12 && dayOfMonth <= 18;
+
+		// Buy at end of month for rally
+		if (isRallyZone && isNewDay && Position == 0)
 		{
-			ClosePosition();
-			LogInfo($"Closing position on January 5: Position={Position}");
+			BuyMarket();
+			_cooldown = CooldownBars;
 		}
+		// Exit long in early next month
+		else if (isExitZone && isNewDay && Position > 0)
+		{
+			SellMarket();
+			_cooldown = CooldownBars;
+		}
+		// Short mid-month if below MA
+		else if (isShortZone && isNewDay && Position == 0 && close < maValue)
+		{
+			SellMarket();
+			_cooldown = CooldownBars;
+		}
+		// Cover short before rally zone
+		else if (isRallyZone && isNewDay && Position < 0)
+		{
+			BuyMarket();
+			_cooldown = CooldownBars;
+		}
+
+		_prevDayOfMonth = dayOfMonth;
 	}
 }

@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,20 +11,26 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that uses Bollinger Bands breakouts with volume confirmation.
-/// Enters positions when price breaks above/below Bollinger Bands with increased volume.
+/// Strategy that uses Bollinger Bands for mean reversion.
+/// Enters when price touches/breaks bands, exits at middle band.
 /// </summary>
 public class BollingerVolumeStrategy : Strategy
 {
+	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _bollingerPeriod;
 	private readonly StrategyParam<decimal> _bollingerDeviation;
-	private readonly StrategyParam<int> _volumePeriod;
-	private readonly StrategyParam<decimal> _volumeMultiplier;
-	private readonly StrategyParam<decimal> _stopLossAtr;
-	private readonly StrategyParam<int> _atrPeriod;
-	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _cooldownBars;
 
-	private decimal _avgVolume;
+	private int _cooldown;
+
+	/// <summary>
+	/// Candle type for strategy calculation.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
 
 	/// <summary>
 	/// Bollinger Bands period.
@@ -48,48 +51,12 @@ public class BollingerVolumeStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Volume averaging period.
+	/// Cooldown bars between trades.
 	/// </summary>
-	public int VolumePeriod
+	public int CooldownBars
 	{
-		get => _volumePeriod.Value;
-		set => _volumePeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Volume multiplier for confirmation.
-	/// </summary>
-	public decimal VolumeMultiplier
-	{
-		get => _volumeMultiplier.Value;
-		set => _volumeMultiplier.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss in ATR multiples.
-	/// </summary>
-	public decimal StopLossAtr
-	{
-		get => _stopLossAtr.Value;
-		set => _stopLossAtr.Value = value;
-	}
-
-	/// <summary>
-	/// ATR period.
-	/// </summary>
-	public int AtrPeriod
-	{
-		get => _atrPeriod.Value;
-		set => _atrPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type for strategy calculation.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	/// <summary>
@@ -97,44 +64,19 @@ public class BollingerVolumeStrategy : Strategy
 	/// </summary>
 	public BollingerVolumeStrategy()
 	{
-		_bollingerPeriod = Param(nameof(BollingerPeriod), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("Bollinger Period", "Period of the Bollinger Bands", "Indicators")
-			
-			.SetOptimize(10, 30, 5);
-
-		_bollingerDeviation = Param(nameof(BollingerDeviation), 2.0m)
-			.SetGreaterThanZero()
-			.SetDisplay("Bollinger Deviation", "Standard deviation multiplier for Bollinger Bands", "Indicators")
-			
-			.SetOptimize(1.5m, 3.0m, 0.5m);
-
-		_volumePeriod = Param(nameof(VolumePeriod), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume Period", "Period for volume averaging", "Indicators")
-			
-			.SetOptimize(10, 30, 5);
-
-		_volumeMultiplier = Param(nameof(VolumeMultiplier), 1.5m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume Multiplier", "Multiplier for average volume to confirm breakouts", "Indicators")
-			
-			.SetOptimize(1.0m, 2.0m, 0.5m);
-
-		_stopLossAtr = Param(nameof(StopLossAtr), 2.0m)
-			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss ATR", "Stop loss as ATR multiplier", "Risk Management")
-			
-			.SetOptimize(1.0m, 3.0m, 0.5m);
-
-		_atrPeriod = Param(nameof(AtrPeriod), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("ATR Period", "Period of the ATR for stop loss calculation", "Risk Management")
-			
-			.SetOptimize(7, 21, 7);
-
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
+
+		_bollingerPeriod = Param(nameof(BollingerPeriod), 20)
+			.SetRange(10, 50)
+			.SetDisplay("Bollinger Period", "Period of the Bollinger Bands", "Indicators");
+
+		_bollingerDeviation = Param(nameof(BollingerDeviation), 2.0m)
+			.SetDisplay("Bollinger Deviation", "Standard deviation multiplier", "Indicators");
+
+		_cooldownBars = Param(nameof(CooldownBars), 100)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "General")
+			.SetRange(5, 500);
 	}
 
 	/// <inheritdoc />
@@ -147,9 +89,7 @@ public class BollingerVolumeStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		// Initialize variables
-		_avgVolume = 0;
+		_cooldown = 0;
 	}
 
 	/// <inheritdoc />
@@ -157,97 +97,74 @@ public class BollingerVolumeStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Create indicators
 		var bollinger = new BollingerBands
 		{
 			Length = BollingerPeriod,
 			Width = BollingerDeviation
 		};
 
-		var volumeAvg = new SMA
-		{
-			Length = VolumePeriod
-		};
-
-		var atr = new AverageTrueRange
-		{
-			Length = AtrPeriod
-		};
-
-		// Create subscription and bind indicators
 		var subscription = SubscribeCandles(CandleType);
 
 		subscription
-			.BindEx(volumeAvg, bollinger, atr, ProcessIndicators)
+			.BindEx(bollinger, ProcessCandle)
 			.Start();
 
-		// Setup position protection with ATR-based stop loss
-		StartProtection(
-			takeProfit: new Unit(0, UnitTypes.Absolute), // No take profit
-			stopLoss: new Unit(StopLossAtr, UnitTypes.Absolute) // ATR-based stop loss
-		);
-
-		// Setup chart visualization if available
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
 			DrawIndicator(area, bollinger);
-			DrawIndicator(area, atr);
 			DrawOwnTrades(area);
 		}
 	}
 
-	/// <summary>
-	/// Process Bollinger Bands and ATR indicator values.
-	/// </summary>
-	private void ProcessIndicators(ICandleMessage candle, IIndicatorValue volumeAvgValue, IIndicatorValue bollingerValue, IIndicatorValue atrValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bollingerValue)
 	{
-		if (volumeAvgValue.IsFinal)
-			_avgVolume = volumeAvgValue.ToDecimal();
-
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
-		if (!IsFormedAndOnlineAndAllowTrading() || _avgVolume <= 0)
-		return;
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
 
 		var bb = (BollingerBandsValue)bollingerValue;
-		var middleBand = bb.MovingAverage;
-		var upperBand = bb.UpBand;
-		var lowerBand = bb.LowBand;
 
-		var atr = atrValue.ToDecimal();
+		if (bb.UpBand is not decimal upperBand ||
+			bb.LowBand is not decimal lowerBand ||
+			bb.MovingAverage is not decimal middleBand)
+			return;
 
-		// Check volume confirmation
-		var isVolumeHighEnough = candle.TotalVolume > _avgVolume * VolumeMultiplier;
+		var close = candle.ClosePrice;
 
-		if (isVolumeHighEnough)
+		if (_cooldown > 0)
 		{
-			// Long entry: price breaks above upper Bollinger Band with increased volume
-			if (candle.ClosePrice > upperBand && Position <= 0)
-			{
-				var volume = Volume + Math.Abs(Position);
-				BuyMarket(volume);
-			}
-			// Short entry: price breaks below lower Bollinger Band with increased volume
-			else if (candle.ClosePrice < lowerBand && Position >= 0)
-			{
-				var volume = Volume + Math.Abs(Position);
-				SellMarket(volume);
-			}
+			_cooldown--;
+			return;
 		}
 
-		// Exit logic - price returns to middle band
-		if (Position > 0 && candle.ClosePrice < middleBand)
+		// Long: price below lower band (mean reversion buy)
+		if (close < lowerBand && Position == 0)
 		{
-			SellMarket(Math.Abs(Position));
+			BuyMarket();
+			_cooldown = CooldownBars;
 		}
-		else if (Position < 0 && candle.ClosePrice > middleBand)
+		// Short: price above upper band (mean reversion sell)
+		else if (close > upperBand && Position == 0)
 		{
-			BuyMarket(Math.Abs(Position));
+			SellMarket();
+			_cooldown = CooldownBars;
+		}
+
+		// Exit long: price returns to middle band
+		if (Position > 0 && close > middleBand)
+		{
+			SellMarket();
+			_cooldown = CooldownBars;
+		}
+		// Exit short: price returns to middle band
+		else if (Position < 0 && close < middleBand)
+		{
+			BuyMarket();
+			_cooldown = CooldownBars;
 		}
 	}
 }

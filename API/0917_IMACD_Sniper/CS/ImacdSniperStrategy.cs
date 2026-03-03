@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -30,13 +27,9 @@ public class ImacdSniperStrategy : Strategy
 	private readonly StrategyParam<int> _emaLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private readonly SimpleMovingAverage _volumeMa = new() { Length = 20 };
-	private SimpleMovingAverage _rangeMa;
-
 	private decimal _prevMacd;
 	private decimal _prevSignal;
-	private decimal _targetPrice;
-	private decimal _stopPrice;
+	private decimal _entryPrice;
 
 	/// <summary>
 	/// MACD fast length.
@@ -187,7 +180,7 @@ public class ImacdSniperStrategy : Strategy
 			
 			.SetOptimize(10, 50, 5);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -201,20 +194,15 @@ public class ImacdSniperStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_volumeMa.Reset();
-		_rangeMa?.Reset();
 		_prevMacd = default;
 		_prevSignal = default;
-		_targetPrice = default;
-		_stopPrice = default;
+		_entryPrice = default;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_rangeMa = new SimpleMovingAverage { Length = RangeLength };
 
 		var ema = new ExponentialMovingAverage { Length = EmaLength };
 		var macd = new MovingAverageConvergenceDivergenceSignal
@@ -245,78 +233,39 @@ public class ImacdSniperStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
+		if (macdValue is not MovingAverageConvergenceDivergenceSignalValue macdTyped)
+			return;
+
 		if (macdTyped.Macd is not decimal macd || macdTyped.Signal is not decimal signal)
 			return;
+
+		if (emaValue.IsEmpty)
+			return;
+
 		var ema = emaValue.ToDecimal();
 
-		var volumeValue = _volumeMa.Process(new DecimalIndicatorValue(_volumeMa, candle.TotalVolume, candle.OpenTime));
-		if (!volumeValue.IsFinal)
-		{
-			_prevMacd = macd;
-			_prevSignal = signal;
-			return;
-		}
-		var volumeAvg = volumeValue.GetValue<decimal>();
-
-		var range = candle.HighPrice - candle.LowPrice;
-		var rangeValue = _rangeMa.Process(new DecimalIndicatorValue(_rangeMa, range, candle.OpenTime));
-		if (!rangeValue.IsFinal)
-		{
-			_prevMacd = macd;
-			_prevSignal = signal;
-			return;
-		}
-		var avgRange = rangeValue.GetValue<decimal>();
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			_prevMacd = macd;
-			_prevSignal = signal;
-			return;
-		}
-
 		var macdDelta = Math.Abs(macd - signal);
-		var macdFarFromZero = Math.Abs(macd) > MacdZeroLimit && Math.Abs(signal) > MacdZeroLimit;
 
-		var body = Math.Abs(candle.ClosePrice - candle.OpenPrice);
-		var isStrongBullish = candle.ClosePrice > candle.OpenPrice && body > 0.6m * range;
-		var isStrongBearish = candle.ClosePrice < candle.OpenPrice && body > 0.6m * range;
-
-		var longCondition = _prevMacd <= _prevSignal && macd > signal && candle.ClosePrice > ema && macdDelta > MacdDeltaMin && macdFarFromZero && candle.TotalVolume > volumeAvg && isStrongBullish;
-		var shortCondition = _prevMacd >= _prevSignal && macd < signal && candle.ClosePrice < ema && macdDelta > MacdDeltaMin && macdFarFromZero && candle.TotalVolume > volumeAvg && isStrongBearish;
+		var longCondition = _prevMacd != 0 && _prevMacd <= _prevSignal && macd > signal && candle.ClosePrice > ema && macdDelta > MacdDeltaMin;
+		var shortCondition = _prevMacd != 0 && _prevMacd >= _prevSignal && macd < signal && candle.ClosePrice < ema && macdDelta > MacdDeltaMin;
 
 		if (longCondition && Position <= 0)
 		{
-			BuyMarket(Volume + Math.Abs(Position));
-			_targetPrice = candle.ClosePrice + avgRange * RangeMultiplierTp;
-			_stopPrice = candle.ClosePrice - avgRange * RangeMultiplierSl;
+			BuyMarket();
+			_entryPrice = candle.ClosePrice;
 		}
 		else if (shortCondition && Position >= 0)
 		{
-			SellMarket(Volume + Math.Abs(Position));
-			_targetPrice = candle.ClosePrice - avgRange * RangeMultiplierTp;
-			_stopPrice = candle.ClosePrice + avgRange * RangeMultiplierSl;
+			SellMarket();
+			_entryPrice = candle.ClosePrice;
 		}
-
-		var closeLong = Position > 0 && _prevMacd >= _prevSignal && macd < signal;
-		var closeShort = Position < 0 && _prevMacd <= _prevSignal && macd > signal;
-
-		if (closeLong)
-			SellMarket(Position);
-
-		if (closeShort)
-			BuyMarket(-Position);
-
-		if (Position > 0)
+		else if (Position > 0 && _prevMacd >= _prevSignal && macd < signal)
 		{
-			if (candle.ClosePrice >= _targetPrice || candle.ClosePrice <= _stopPrice)
-				SellMarket(Position);
+			SellMarket();
 		}
-		else if (Position < 0)
+		else if (Position < 0 && _prevMacd <= _prevSignal && macd > signal)
 		{
-			if (candle.ClosePrice <= _targetPrice || candle.ClosePrice >= _stopPrice)
-				BuyMarket(-Position);
+			BuyMarket();
 		}
 
 		_prevMacd = macd;

@@ -1,10 +1,13 @@
 namespace StockSharp.Samples.Strategies;
 
 using System;
+using System.Collections.Generic;
 
-using StockSharp.Algo;
+using Ecng.Common;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
+using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 /// <summary>
@@ -25,6 +28,9 @@ public class IdEmarsiOnChartStrategy : Strategy
 	public int EmaLength { get => _emaLength.Value; set => _emaLength.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
 	public IdEmarsiOnChartStrategy()
 	{
 		_rsiLength = Param(nameof(RsiLength), 16)
@@ -33,18 +39,22 @@ public class IdEmarsiOnChartStrategy : Strategy
 		_emaLength = Param(nameof(EmaLength), 42)
 			.SetDisplay("EMA Length", "EMA of RSI length", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type", "General");
+	}
+
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevRsi = 0;
+		_prevEma = 0;
+		_isInitialized = false;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_prevRsi = 0;
-		_prevEma = 0;
-		_isInitialized = false;
 
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };
 

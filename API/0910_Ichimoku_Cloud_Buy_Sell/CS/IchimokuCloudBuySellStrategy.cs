@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -31,6 +28,7 @@ public class IchimokuCloudBuySellStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _prevAvgVolume;
+	private int _cooldown;
 
 	/// <summary>
 	/// Tenkan-sen period.
@@ -172,7 +170,7 @@ public class IchimokuCloudBuySellStrategy : Strategy
 		_requireBelowEma = Param(nameof(RequireBelowEma), true)
 			.SetDisplay("Only Sell Below EMA", "Require price below EMA for short entries", "Filters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -187,6 +185,7 @@ public class IchimokuCloudBuySellStrategy : Strategy
 	{
 		base.OnReseted();
 		_prevAvgVolume = 0;
+		_cooldown = 0;
 	}
 
 	/// <inheritdoc />
@@ -217,7 +216,6 @@ public class IchimokuCloudBuySellStrategy : Strategy
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, ichimoku);
 			DrawIndicator(area, ema);
 			DrawOwnTrades(area);
 		}
@@ -228,19 +226,22 @@ public class IchimokuCloudBuySellStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (_cooldown > 0)
+		{
+			_cooldown--;
 			return;
+		}
 
-		if (!emaValue.IsFinal || !volumeValue.IsFinal)
+		if (emaValue.IsEmpty || volumeValue.IsEmpty || ichimokuValue.IsEmpty)
 			return;
 
 		var ema = emaValue.ToDecimal();
 		var avgVol = volumeValue.ToDecimal();
 
-		var volCondition = _prevAvgVolume > 0 && candle.TotalVolume > _prevAvgVolume;
 		_prevAvgVolume = avgVol;
 
-		var ichi = (IchimokuValue)ichimokuValue;
+		if (ichimokuValue is not IchimokuValue ichi)
+			return;
 
 		if (ichi.SenkouA is not decimal senkouA ||
 			ichi.SenkouB is not decimal senkouB)
@@ -249,25 +250,28 @@ public class IchimokuCloudBuySellStrategy : Strategy
 		var upperKumo = Math.Max(senkouA, senkouB);
 		var lowerKumo = Math.Min(senkouA, senkouB);
 
-		var buyCondition = candle.ClosePrice > upperKumo && volCondition && (!RequireAboveEma || candle.ClosePrice > ema);
-		var sellCondition = candle.ClosePrice < lowerKumo && volCondition && (!RequireBelowEma || candle.ClosePrice < ema);
+		var buyCondition = candle.ClosePrice > upperKumo && (!RequireAboveEma || candle.ClosePrice > ema);
+		var sellCondition = candle.ClosePrice < lowerKumo && (!RequireBelowEma || candle.ClosePrice < ema);
 
 		if (buyCondition && Position <= 0)
 		{
-			BuyMarket(Volume + Math.Abs(Position));
+			BuyMarket();
+			_cooldown = 5;
 		}
 		else if (sellCondition && Position >= 0)
 		{
-			SellMarket(Volume + Math.Abs(Position));
+			SellMarket();
+			_cooldown = 5;
 		}
-
-		if (Position > 0 && candle.ClosePrice < ema)
+		else if (Position > 0 && candle.ClosePrice < ema)
 		{
-			SellMarket(Math.Abs(Position));
+			SellMarket();
+			_cooldown = 5;
 		}
 		else if (Position < 0 && candle.ClosePrice > ema)
 		{
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
+			_cooldown = 5;
 		}
 	}
 }

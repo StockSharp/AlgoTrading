@@ -1,12 +1,8 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -187,7 +183,7 @@ public class IndicatorTestWithConditionsTableStrategy : Strategy
 		_closeShortValue = Param(nameof(CloseShortValue), 0m)
 			.SetDisplay("Close Short Value", "Value for closing short.", "Close Short");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type for strategy.", "General");
 	}
 
@@ -213,9 +209,6 @@ public class IndicatorTestWithConditionsTableStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		var close = candle.ClosePrice;
 
 		var longEntry = _enableLongCond.Value && CheckCondition(close, _longOperator.Value, _longValue.Value);
@@ -224,13 +217,13 @@ public class IndicatorTestWithConditionsTableStrategy : Strategy
 		var closeShort = _enableCloseShortCond.Value && CheckCondition(close, _closeShortOperator.Value, _closeShortValue.Value);
 
 		if (closeLong && Position > 0)
-			SellMarket(Math.Abs(Position));
+			SellMarket();
 		else if (closeShort && Position < 0)
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
 		else if (longEntry && Position <= 0)
-			BuyMarket(Volume + Math.Abs(Position));
+			BuyMarket();
 		else if (shortEntry && Position >= 0)
-			SellMarket(Volume + Math.Abs(Position));
+			SellMarket();
 	}
 
 	private static bool CheckCondition(decimal left, string op, decimal right)

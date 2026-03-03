@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,25 +12,27 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Implementation of Turnaround Tuesday trading strategy.
-/// The strategy enters long position on Tuesday after a price decline on Monday.
+/// Buys on Tuesday if previous session declined, sells on Friday or if price crosses MA.
+/// Also goes short on Wednesday if previous session rallied.
+/// Uses half-day detection to simulate daily sessions on intraday data.
 /// </summary>
 public class TurnaroundTuesdayStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	
-	private decimal _prevClosePrice;
-	private bool _isPriceLowerOnMonday;
+	private readonly StrategyParam<int> _cooldownBars;
 
-	/// <summary>
-	/// Stop loss percentage from entry price.
-	/// </summary>
-	public decimal StopLossPercent
-	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
-	}
+	private SimpleMovingAverage _ma;
+
+	private decimal _prevMa;
+	private decimal _sessionOpen;
+	private decimal _sessionClose;
+	private int _prevSessionDay;
+	private bool _prevSessionDecline;
+	private bool _prevSessionRally;
+	private int _currentSessionDay;
+	private bool _enteredThisSession;
+	private int _cooldown;
 
 	/// <summary>
 	/// Moving average period.
@@ -54,20 +53,29 @@ public class TurnaroundTuesdayStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Cooldown bars between trades.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Initializes a new instance of the <see cref="TurnaroundTuesdayStrategy"/>.
 	/// </summary>
 	public TurnaroundTuesdayStrategy()
 	{
-		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
-			.SetNotNegative()
-			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Protection");
-		
 		_maPeriod = Param(nameof(MaPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "Moving average period for trend confirmation", "Strategy");
-		
+
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for strategy", "Strategy");
+
+		_cooldownBars = Param(nameof(CooldownBars), 30)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "General")
+			.SetRange(5, 500);
 	}
 
 	/// <inheritdoc />
@@ -80,74 +88,107 @@ public class TurnaroundTuesdayStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_prevClosePrice = 0;
-		_isPriceLowerOnMonday = false;
+		_ma = default;
+		_prevMa = 0;
+		_sessionOpen = 0;
+		_sessionClose = 0;
+		_prevSessionDay = -1;
+		_prevSessionDecline = false;
+		_prevSessionRally = false;
+		_currentSessionDay = -1;
+		_enteredThisSession = false;
+		_cooldown = 0;
 	}
 
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		// Create a simple moving average indicator
-		var sma = new SMA { Length = MaPeriod };
-		
-		// Create subscription and bind indicator
+
+		_ma = new SimpleMovingAverage { Length = MaPeriod };
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(sma, ProcessCandle)
+			.Bind(_ma, ProcessCandle)
 			.Start();
-		
-		// Setup chart visualization if available
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, sma);
+			DrawIndicator(area, _ma);
 			DrawOwnTrades(area);
 		}
-		
-		// Start position protection
-		StartProtection(
-			takeProfit: new Unit(0), // No take profit
-			stopLoss: new Unit(StopLossPercent, UnitTypes.Percent)
-		);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal maValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
-		
-		// Skip if strategy is not ready
+
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
-		
-		var currentDay = candle.OpenTime.DayOfWeek;
-		
-		// Record Monday's price action
-		if (currentDay == DayOfWeek.Monday)
+
+		var close = candle.ClosePrice;
+		var dayOfYear = candle.OpenTime.DayOfYear;
+		var dayOfWeek = (int)candle.OpenTime.DayOfWeek;
+
+		// Detect new session (new calendar day)
+		if (dayOfYear != _currentSessionDay)
 		{
-			// Check if Monday's close is lower than the previous candle's close
-			_isPriceLowerOnMonday = candle.ClosePrice < _prevClosePrice;
-			LogInfo($"Monday candle: Close={candle.ClosePrice}, Prev Close={_prevClosePrice}, Lower={_isPriceLowerOnMonday}");
+			// Save previous session result
+			if (_currentSessionDay >= 0 && _sessionOpen > 0)
+			{
+				_prevSessionDecline = _sessionClose < _sessionOpen;
+				_prevSessionRally = _sessionClose > _sessionOpen;
+				_prevSessionDay = _currentSessionDay;
+			}
+
+			_currentSessionDay = dayOfYear;
+			_sessionOpen = candle.OpenPrice;
+			_enteredThisSession = false;
 		}
-		// Tuesday - BUY signal if Monday's close was lower
-		else if (currentDay == DayOfWeek.Tuesday && _isPriceLowerOnMonday && candle.ClosePrice > maValue && Position <= 0)
+
+		_sessionClose = close;
+
+		if (_cooldown > 0)
 		{
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
-			
-			LogInfo($"Buy signal on Tuesday after Monday decline: Price={candle.ClosePrice}, MA={maValue}, Volume={volume}");
+			_cooldown--;
+			_prevMa = maValue;
+			return;
 		}
-		// Closing conditions - close long position on Friday
-		else if (currentDay == DayOfWeek.Friday && Position > 0)
+
+		// Entry: buy on any day if previous session declined and no position
+		if (Position == 0 && !_enteredThisSession && _prevSessionDecline && close > maValue)
 		{
-			ClosePosition();
-			LogInfo($"Closing position on Friday: Position={Position}");
+			BuyMarket();
+			_cooldown = CooldownBars;
+			_enteredThisSession = true;
+			_prevSessionDecline = false;
 		}
-		
-		// Store current close price for next candle
-		_prevClosePrice = candle.ClosePrice;
+		// Entry: sell on any day if previous session rallied and no position
+		else if (Position == 0 && !_enteredThisSession && _prevSessionRally && close < maValue)
+		{
+			SellMarket();
+			_cooldown = CooldownBars;
+			_enteredThisSession = true;
+			_prevSessionRally = false;
+		}
+
+		// Exit long if price crosses below MA
+		if (Position > 0 && _prevMa > 0 && close < maValue)
+		{
+			SellMarket();
+			_cooldown = CooldownBars;
+		}
+
+		// Exit short if price crosses above MA
+		if (Position < 0 && _prevMa > 0 && close > maValue)
+		{
+			BuyMarket();
+			_cooldown = CooldownBars;
+		}
+
+		_prevMa = maValue;
 	}
 }

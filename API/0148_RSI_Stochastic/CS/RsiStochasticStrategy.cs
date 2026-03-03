@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,21 +11,32 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that combines RSI and Stochastic Oscillator for double confirmation
-/// of oversold and overbought conditions.
+/// Strategy combining RSI and manual Stochastic %K for double confirmation
+/// of oversold/overbought conditions.
 /// </summary>
 public class RsiStochasticStrategy : Strategy
 {
+	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _rsiPeriod;
 	private readonly StrategyParam<decimal> _rsiOversold;
 	private readonly StrategyParam<decimal> _rsiOverbought;
-	private readonly StrategyParam<int> _stochPeriod;
-	private readonly StrategyParam<int> _stochK;
-	private readonly StrategyParam<int> _stochD;
 	private readonly StrategyParam<decimal> _stochOversold;
 	private readonly StrategyParam<decimal> _stochOverbought;
-	private readonly StrategyParam<decimal> _stopLossPercent;
-	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _cooldownBars;
+
+	private int _cooldown;
+	private readonly List<decimal> _highs = new();
+	private readonly List<decimal> _lows = new();
+	private const int StochPeriod = 14;
+
+	/// <summary>
+	/// Candle type for strategy calculation.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
 
 	/// <summary>
 	/// RSI period.
@@ -58,33 +66,6 @@ public class RsiStochasticStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stochastic period.
-	/// </summary>
-	public int StochPeriod
-	{
-		get => _stochPeriod.Value;
-		set => _stochPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Stochastic %K period.
-	/// </summary>
-	public int StochK
-	{
-		get => _stochK.Value;
-		set => _stochK.Value = value;
-	}
-
-	/// <summary>
-	/// Stochastic %D period.
-	/// </summary>
-	public int StochD
-	{
-		get => _stochD.Value;
-		set => _stochD.Value = value;
-	}
-
-	/// <summary>
 	/// Stochastic oversold level.
 	/// </summary>
 	public decimal StochOversold
@@ -103,21 +84,12 @@ public class RsiStochasticStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stop loss percentage.
+	/// Cooldown bars between trades.
 	/// </summary>
-	public decimal StopLossPercent
+	public int CooldownBars
 	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type for strategy calculation.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	/// <summary>
@@ -125,62 +97,28 @@ public class RsiStochasticStrategy : Strategy
 	/// </summary>
 	public RsiStochasticStrategy()
 	{
-		_rsiPeriod = Param(nameof(RsiPeriod), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("RSI Period", "Period of the RSI indicator", "Indicators")
-			
-			.SetOptimize(7, 21, 7);
-
-		_rsiOversold = Param(nameof(RsiOversold), 30m)
-			.SetNotNegative()
-			.SetDisplay("RSI Oversold", "RSI level considered oversold", "Indicators")
-			
-			.SetOptimize(20m, 40m, 5m);
-
-		_rsiOverbought = Param(nameof(RsiOverbought), 70m)
-			.SetNotNegative()
-			.SetDisplay("RSI Overbought", "RSI level considered overbought", "Indicators")
-			
-			.SetOptimize(60m, 80m, 5m);
-
-		_stochPeriod = Param(nameof(StochPeriod), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("Stochastic Period", "Period of the Stochastic Oscillator", "Indicators")
-			
-			.SetOptimize(5, 20, 5);
-
-		_stochK = Param(nameof(StochK), 3)
-			.SetGreaterThanZero()
-			.SetDisplay("Stochastic %K", "Smoothing of the %K line", "Indicators")
-			
-			.SetOptimize(1, 5, 1);
-
-		_stochD = Param(nameof(StochD), 3)
-			.SetGreaterThanZero()
-			.SetDisplay("Stochastic %D", "Smoothing of the %D line", "Indicators")
-			
-			.SetOptimize(1, 5, 1);
-
-		_stochOversold = Param(nameof(StochOversold), 20m)
-			.SetNotNegative()
-			.SetDisplay("Stochastic Oversold", "Level considered oversold", "Indicators")
-			
-			.SetOptimize(10m, 30m, 5m);
-
-		_stochOverbought = Param(nameof(StochOverbought), 80m)
-			.SetNotNegative()
-			.SetDisplay("Stochastic Overbought", "Level considered overbought", "Indicators")
-			
-			.SetOptimize(70m, 90m, 5m);
-
-		_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
-			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss %", "Stop loss as percentage of entry price", "Risk Management")
-			
-			.SetOptimize(1.0m, 3.0m, 0.5m);
-
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
+
+		_rsiPeriod = Param(nameof(RsiPeriod), 14)
+			.SetRange(7, 21)
+			.SetDisplay("RSI Period", "Period of the RSI indicator", "Indicators");
+
+		_rsiOversold = Param(nameof(RsiOversold), 30m)
+			.SetDisplay("RSI Oversold", "RSI oversold level", "Indicators");
+
+		_rsiOverbought = Param(nameof(RsiOverbought), 70m)
+			.SetDisplay("RSI Overbought", "RSI overbought level", "Indicators");
+
+		_stochOversold = Param(nameof(StochOversold), 20m)
+			.SetDisplay("Stochastic Oversold", "Stochastic oversold level", "Indicators");
+
+		_stochOverbought = Param(nameof(StochOverbought), 80m)
+			.SetDisplay("Stochastic Overbought", "Stochastic overbought level", "Indicators");
+
+		_cooldownBars = Param(nameof(CooldownBars), 100)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "General")
+			.SetRange(5, 500);
 	}
 
 	/// <inheritdoc />
@@ -190,83 +128,104 @@ public class RsiStochasticStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_cooldown = 0;
+		_highs.Clear();
+		_lows.Clear();
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		// Create indicators
-		var rsi = new RelativeStrengthIndex
-		{
-			Length = RsiPeriod
-		};
+		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 
-		var stochastic = new StochasticOscillator
-		{
-			K = { Length = StochK },
-			D = { Length = StochD },
-		};
-
-		// Create subscription and bind indicators
 		var subscription = SubscribeCandles(CandleType);
 
 		subscription
-			.BindEx(rsi, stochastic, ProcessIndicators)
+			.Bind(rsi, ProcessCandle)
 			.Start();
 
-		// Setup position protection
-		StartProtection(
-			takeProfit: new Unit(0, UnitTypes.Absolute), // No take profit
-			stopLoss: new Unit(StopLossPercent, UnitTypes.Percent) // Percentage-based stop loss
-		);
-
-		// Setup chart visualization if available
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, rsi);
-			DrawIndicator(area, stochastic);
 			DrawOwnTrades(area);
+
+			var rsiArea = CreateChartArea();
+			if (rsiArea != null)
+				DrawIndicator(rsiArea, rsi);
 		}
 	}
 
-	/// <summary>
-	/// Process indicator values.
-	/// </summary>
-	private void ProcessIndicators(ICandleMessage candle, IIndicatorValue rsiValue, IIndicatorValue stochValue)
+	private void ProcessCandle(ICandleMessage candle, decimal rsiValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var rsi = rsiValue.ToDecimal();
-		var stochTyped = (StochasticOscillatorValue)stochValue;
-		var stochK = stochTyped.K;
-		// Long entry: double confirmation of oversold condition
-		if (rsi < RsiOversold && stochK < StochOversold && Position <= 0)
+		// Track highs/lows for manual stochastic
+		_highs.Add(candle.HighPrice);
+		_lows.Add(candle.LowPrice);
+
+		var maxBuf = StochPeriod * 2;
+		if (_highs.Count > maxBuf)
 		{
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
+			_highs.RemoveRange(0, _highs.Count - maxBuf);
+			_lows.RemoveRange(0, _lows.Count - maxBuf);
 		}
-		// Short entry: double confirmation of overbought condition
-		else if (rsi > RsiOverbought && stochK > StochOverbought && Position >= 0)
+
+		if (_highs.Count < StochPeriod)
+			return;
+
+		// Manual Stochastic %K
+		var start = _highs.Count - StochPeriod;
+		var highestHigh = decimal.MinValue;
+		var lowestLow = decimal.MaxValue;
+		for (var i = start; i < _highs.Count; i++)
 		{
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
+			if (_highs[i] > highestHigh) highestHigh = _highs[i];
+			if (_lows[i] < lowestLow) lowestLow = _lows[i];
 		}
-		// Long exit: RSI returns to neutral zone
-		else if (Position > 0 && rsi > 50)
+		var diff = highestHigh - lowestLow;
+		if (diff == 0) return;
+		var stochK = 100m * (candle.ClosePrice - lowestLow) / diff;
+
+		if (_cooldown > 0)
 		{
-			SellMarket(Math.Abs(Position));
+			_cooldown--;
+			return;
 		}
-		// Short exit: RSI returns to neutral zone
-		else if (Position < 0 && rsi < 50)
+
+		// Long: both RSI and Stochastic oversold
+		if (rsiValue < RsiOversold && stochK < StochOversold && Position == 0)
 		{
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
+			_cooldown = CooldownBars;
+		}
+		// Short: both RSI and Stochastic overbought
+		else if (rsiValue > RsiOverbought && stochK > StochOverbought && Position == 0)
+		{
+			SellMarket();
+			_cooldown = CooldownBars;
+		}
+
+		// Exit long: RSI leaves oversold zone
+		if (Position > 0 && rsiValue > 50)
+		{
+			SellMarket();
+			_cooldown = CooldownBars;
+		}
+		// Exit short: RSI leaves overbought zone
+		else if (Position < 0 && rsiValue < 50)
+		{
+			BuyMarket();
+			_cooldown = CooldownBars;
 		}
 	}
 }

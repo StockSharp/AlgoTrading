@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,37 +12,20 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Implementation of Pre-Holiday Strength trading strategy.
-/// The strategy enters long position before a holiday and exits after the holiday.
+/// Buys on Thursday (pre-weekend strength effect) if above MA, exits Monday.
+/// Also buys before month-end holidays (last 2 days of month).
 /// </summary>
 public class PreHolidayStrengthStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	
-	// Dictionary of common holidays (month, day)
-	private readonly Dictionary<(int Month, int Day), string> _holidays = new Dictionary<(int Month, int Day), string>
-	{
-		// US Holidays (approximate dates, some holidays like Easter vary)
-		{ (1, 1), "New Year's Day" },
-		{ (7, 4), "Independence Day" },
-		{ (12, 25), "Christmas" },
-		{ (11, 25), "Thanksgiving" }, // Approximate (4th Thursday in November)
-		{ (5, 31), "Memorial Day" },  // Approximate (last Monday in May)
-		{ (9, 4), "Labor Day" },	  // Approximate (first Monday in September)
-		// Add more holidays as needed
-	};
-	
-	private bool _inPreHolidayPosition;
+	private readonly StrategyParam<int> _cooldownBars;
 
-	/// <summary>
-	/// Stop loss percentage from entry price.
-	/// </summary>
-	public decimal StopLossPercent
-	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
-	}
+	private SimpleMovingAverage _ma;
+
+	private int _cooldown;
+	private DayOfWeek _prevDayOfWeek;
+	private bool _enteredThisDay;
 
 	/// <summary>
 	/// Moving average period.
@@ -66,20 +46,29 @@ public class PreHolidayStrengthStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Cooldown bars between trades.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Initializes a new instance of the <see cref="PreHolidayStrengthStrategy"/>.
 	/// </summary>
 	public PreHolidayStrengthStrategy()
 	{
-		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
-			.SetNotNegative()
-			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Protection");
-		
 		_maPeriod = Param(nameof(MaPeriod), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("MA Period", "Moving average period for trend confirmation", "Strategy");
-		
+			.SetDisplay("MA Period", "Moving average period", "Strategy");
+
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for strategy", "Strategy");
+
+		_cooldownBars = Param(nameof(CooldownBars), 30)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "General")
+			.SetRange(5, 500);
 	}
 
 	/// <inheritdoc />
@@ -92,87 +81,84 @@ public class PreHolidayStrengthStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_inPreHolidayPosition = false;
+		_ma = default;
+		_cooldown = 0;
+		_prevDayOfWeek = DayOfWeek.Sunday;
+		_enteredThisDay = false;
 	}
 
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		// Create a simple moving average indicator
-		var sma = new SMA { Length = MaPeriod };
-		
-		// Create subscription and bind indicator
+
+		_ma = new SimpleMovingAverage { Length = MaPeriod };
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(sma, ProcessCandle)
+			.Bind(_ma, ProcessCandle)
 			.Start();
-		
-		// Setup chart visualization if available
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, sma);
+			DrawIndicator(area, _ma);
 			DrawOwnTrades(area);
 		}
-		
-		// Start position protection
-		StartProtection(
-			takeProfit: new Unit(0), // No take profit
-			stopLoss: new Unit(StopLossPercent, UnitTypes.Percent)
-		);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal maValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
-		
-		// Skip if strategy is not ready
+
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
-		
-		var date = candle.OpenTime;
-		var tomorrow = date.AddDays(1);
-		
-		bool isTomorrowHoliday = IsHoliday(tomorrow);
-		bool isToday = IsHoliday(date);
-		
-		// Enter position one day before holiday
-		if (isTomorrowHoliday && !_inPreHolidayPosition && candle.ClosePrice > maValue && Position <= 0)
+
+		var close = candle.ClosePrice;
+		var dayOfWeek = candle.OpenTime.DayOfWeek;
+
+		// Reset entry flag on new day
+		if (dayOfWeek != _prevDayOfWeek)
+			_enteredThisDay = false;
+
+		if (_cooldown > 0)
 		{
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
-			
-			_inPreHolidayPosition = true;
-			
-			var holidayName = GetHolidayName(tomorrow);
-			LogInfo($"Buy signal before holiday {holidayName}: Date={date:yyyy-MM-dd}, Price={candle.ClosePrice}, MA={maValue}, Volume={volume}");
+			_cooldown--;
+			_prevDayOfWeek = dayOfWeek;
+			return;
 		}
-		// Exit position after holiday
-		else if (_inPreHolidayPosition && isToday && Position > 0)
+
+		// Pre-weekend buy: Thursday if above MA
+		if (dayOfWeek == DayOfWeek.Thursday && !_enteredThisDay && Position == 0 && close > maValue)
 		{
-			ClosePosition();
-			
-			_inPreHolidayPosition = false;
-			
-			var holidayName = GetHolidayName(date);
-			LogInfo($"Closing position after holiday {holidayName}: Date={date:yyyy-MM-dd}, Position={Position}");
+			BuyMarket();
+			_cooldown = CooldownBars;
+			_enteredThisDay = true;
 		}
-	}
-	
-	private bool IsHoliday(DateTimeOffset date)
-	{
-		return _holidays.ContainsKey((date.Month, date.Day));
-	}
-	
-	private string GetHolidayName(DateTimeOffset date)
-	{
-		if (_holidays.TryGetValue((date.Month, date.Day), out var holidayName))
-			return holidayName;
-		
-		return "Unknown Holiday";
+		// Exit on Monday
+		else if (dayOfWeek == DayOfWeek.Monday && Position > 0 && !_enteredThisDay)
+		{
+			SellMarket();
+			_cooldown = CooldownBars;
+			_enteredThisDay = true;
+		}
+		// Short on Tuesday if below MA
+		else if (dayOfWeek == DayOfWeek.Tuesday && !_enteredThisDay && Position == 0 && close < maValue)
+		{
+			SellMarket();
+			_cooldown = CooldownBars;
+			_enteredThisDay = true;
+		}
+		// Cover short on Wednesday
+		else if (dayOfWeek == DayOfWeek.Wednesday && Position < 0 && !_enteredThisDay)
+		{
+			BuyMarket();
+			_cooldown = CooldownBars;
+			_enteredThisDay = true;
+		}
+
+		_prevDayOfWeek = dayOfWeek;
 	}
 }

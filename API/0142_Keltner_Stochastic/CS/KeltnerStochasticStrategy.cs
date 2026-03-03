@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,22 +11,32 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that combines Keltner Channels and Stochastic Oscillator.
-/// Enters positions when price reaches Keltner Channel boundaries
-/// and Stochastic confirms oversold/overbought conditions.
+/// Strategy that combines Keltner Channels (EMA + ATR) and manual Stochastic %K.
+/// Enters when price reaches Keltner bands and Stochastic confirms oversold/overbought.
 /// </summary>
 public class KeltnerStochasticStrategy : Strategy
 {
+	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _emaPeriod;
-	private readonly StrategyParam<int> _atrPeriod;
 	private readonly StrategyParam<decimal> _keltnerMultiplier;
-	private readonly StrategyParam<int> _stochPeriod;
-	private readonly StrategyParam<int> _stochK;
-	private readonly StrategyParam<int> _stochD;
 	private readonly StrategyParam<decimal> _stochOversold;
 	private readonly StrategyParam<decimal> _stochOverbought;
-	private readonly StrategyParam<decimal> _stopLossAtr;
-	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _cooldownBars;
+
+	private decimal _atrValue;
+	private int _cooldown;
+	private readonly List<decimal> _highs = new();
+	private readonly List<decimal> _lows = new();
+	private const int StochPeriod = 14;
+
+	/// <summary>
+	/// Candle type for strategy calculation.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
 
 	/// <summary>
 	/// EMA period for Keltner Channel.
@@ -41,48 +48,12 @@ public class KeltnerStochasticStrategy : Strategy
 	}
 
 	/// <summary>
-	/// ATR period for Keltner Channel.
-	/// </summary>
-	public int AtrPeriod
-	{
-		get => _atrPeriod.Value;
-		set => _atrPeriod.Value = value;
-	}
-
-	/// <summary>
 	/// Keltner Channel multiplier.
 	/// </summary>
 	public decimal KeltnerMultiplier
 	{
 		get => _keltnerMultiplier.Value;
 		set => _keltnerMultiplier.Value = value;
-	}
-
-	/// <summary>
-	/// Stochastic period.
-	/// </summary>
-	public int StochPeriod
-	{
-		get => _stochPeriod.Value;
-		set => _stochPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Stochastic %K period.
-	/// </summary>
-	public int StochK
-	{
-		get => _stochK.Value;
-		set => _stochK.Value = value;
-	}
-
-	/// <summary>
-	/// Stochastic %D period.
-	/// </summary>
-	public int StochD
-	{
-		get => _stochD.Value;
-		set => _stochD.Value = value;
 	}
 
 	/// <summary>
@@ -104,21 +75,12 @@ public class KeltnerStochasticStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stop loss in ATR multiples.
+	/// Cooldown bars between trades.
 	/// </summary>
-	public decimal StopLossAtr
+	public int CooldownBars
 	{
-		get => _stopLossAtr.Value;
-		set => _stopLossAtr.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type for strategy calculation.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	/// <summary>
@@ -126,62 +88,25 @@ public class KeltnerStochasticStrategy : Strategy
 	/// </summary>
 	public KeltnerStochasticStrategy()
 	{
-		_emaPeriod = Param(nameof(EmaPeriod), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("EMA Period", "Period of the EMA for Keltner Channel", "Indicators")
-			
-			.SetOptimize(10, 30, 5);
-
-		_atrPeriod = Param(nameof(AtrPeriod), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("ATR Period", "Period of the ATR for Keltner Channel", "Indicators")
-			
-			.SetOptimize(7, 21, 7);
-
-		_keltnerMultiplier = Param(nameof(KeltnerMultiplier), 2.0m)
-			.SetGreaterThanZero()
-			.SetDisplay("Keltner Multiplier", "Multiplier for ATR in Keltner Channel", "Indicators")
-			
-			.SetOptimize(1.5m, 3.0m, 0.5m);
-
-		_stochPeriod = Param(nameof(StochPeriod), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("Stochastic Period", "Period of the Stochastic Oscillator", "Indicators")
-			
-			.SetOptimize(5, 20, 5);
-
-		_stochK = Param(nameof(StochK), 3)
-			.SetGreaterThanZero()
-			.SetDisplay("Stochastic %K", "Smoothing of the %K line", "Indicators")
-			
-			.SetOptimize(1, 5, 1);
-
-		_stochD = Param(nameof(StochD), 3)
-			.SetGreaterThanZero()
-			.SetDisplay("Stochastic %D", "Smoothing of the %D line", "Indicators")
-			
-			.SetOptimize(1, 5, 1);
-
-		_stochOversold = Param(nameof(StochOversold), 20m)
-			.SetNotNegative()
-			.SetDisplay("Stochastic Oversold", "Level considered oversold", "Indicators")
-			
-			.SetOptimize(10m, 30m, 5m);
-
-		_stochOverbought = Param(nameof(StochOverbought), 80m)
-			.SetNotNegative()
-			.SetDisplay("Stochastic Overbought", "Level considered overbought", "Indicators")
-			
-			.SetOptimize(70m, 90m, 5m);
-
-		_stopLossAtr = Param(nameof(StopLossAtr), 2.0m)
-			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss ATR", "Stop loss as ATR multiplier", "Risk Management")
-			
-			.SetOptimize(1.0m, 3.0m, 0.5m);
-
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
+
+		_emaPeriod = Param(nameof(EmaPeriod), 20)
+			.SetRange(10, 30)
+			.SetDisplay("EMA Period", "Period of the EMA for Keltner Channel", "Indicators");
+
+		_keltnerMultiplier = Param(nameof(KeltnerMultiplier), 2.0m)
+			.SetDisplay("Keltner Multiplier", "Multiplier for ATR in Keltner Channel", "Indicators");
+
+		_stochOversold = Param(nameof(StochOversold), 20m)
+			.SetDisplay("Stochastic Oversold", "Level considered oversold", "Indicators");
+
+		_stochOverbought = Param(nameof(StochOverbought), 80m)
+			.SetDisplay("Stochastic Overbought", "Level considered overbought", "Indicators");
+
+		_cooldownBars = Param(nameof(CooldownBars), 100)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "General")
+			.SetRange(5, 500);
 	}
 
 	/// <inheritdoc />
@@ -191,93 +116,121 @@ public class KeltnerStochasticStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_atrValue = 0;
+		_cooldown = 0;
+		_highs.Clear();
+		_lows.Clear();
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		// Create indicators
-		// Create a full Keltner Channel indicator for visualization
-		var keltner = new KeltnerChannels
-		{
-			Length = EmaPeriod,
-			Multiplier = KeltnerMultiplier
-		};
+		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
+		var atr = new AverageTrueRange { Length = 14 };
 
-		var stochastic = new StochasticOscillator
-		{
-			K = { Length = StochK },
-			D = { Length = StochD },
-		};
-
-		// Create subscription and bind indicators
 		var subscription = SubscribeCandles(CandleType);
 
+		// Bind ATR to capture value
+		subscription.BindEx(atr, OnAtr);
+
+		// Bind EMA for main logic
 		subscription
-			.BindEx(keltner, stochastic, ProcessStochastic)
+			.Bind(ema, ProcessCandle)
 			.Start();
 
-		// Setup position protection
-		StartProtection(
-			takeProfit: new Unit(0, UnitTypes.Absolute), // No take profit
-			stopLoss: new Unit(StopLossAtr, UnitTypes.Absolute) // Stop loss as ATR multiplier
-		);
-
-		// Setup chart visualization if available
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			
-			DrawIndicator(area, keltner);
-			DrawIndicator(area, stochastic);
+			DrawIndicator(area, ema);
 			DrawOwnTrades(area);
 		}
 	}
 
-	/// <summary>
-	/// Process Stochastic indicator values.
-	/// </summary>
-	private void ProcessStochastic(ICandleMessage candle, IIndicatorValue keltnerValue, IIndicatorValue stochValue)
+	private void OnAtr(ICandleMessage candle, IIndicatorValue atrValue)
 	{
-		// Skip unfinished candles
+		if (atrValue.IsFormed)
+			_atrValue = atrValue.ToDecimal();
+	}
+
+	private void ProcessCandle(ICandleMessage candle, decimal emaValue)
+	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var keltnerTyped = (KeltnerChannelsValue)keltnerValue;
-		var emaValue = keltnerTyped.Middle;
-		var atrValue = keltnerTyped.Upper - keltnerTyped.Middle; // ATR is the distance from middle to upper band
+		if (_atrValue <= 0)
+			return;
 
-		var stochTyped = (StochasticOscillatorValue)stochValue;
+		// Track highs/lows for stochastic
+		_highs.Add(candle.HighPrice);
+		_lows.Add(candle.LowPrice);
 
-		// Calculate Keltner Channel bands
-		var upperBand = emaValue + (atrValue * KeltnerMultiplier);
-		var lowerBand = emaValue - (atrValue * KeltnerMultiplier);
+		var maxBuf = StochPeriod * 2;
+		if (_highs.Count > maxBuf)
+		{
+			_highs.RemoveRange(0, _highs.Count - maxBuf);
+			_lows.RemoveRange(0, _lows.Count - maxBuf);
+		}
 
-		// Long entry: price below lower Keltner band and Stochastic oversold
-		if (candle.ClosePrice < lowerBand && stochTyped.K < StochOversold && Position <= 0)
+		if (_highs.Count < StochPeriod)
+			return;
+
+		// Manual Stochastic %K
+		var start = _highs.Count - StochPeriod;
+		var highestHigh = decimal.MinValue;
+		var lowestLow = decimal.MaxValue;
+		for (var i = start; i < _highs.Count; i++)
 		{
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
+			if (_highs[i] > highestHigh) highestHigh = _highs[i];
+			if (_lows[i] < lowestLow) lowestLow = _lows[i];
 		}
-		// Short entry: price above upper Keltner band and Stochastic overbought
-		else if (candle.ClosePrice > upperBand && stochTyped.K > StochOverbought && Position >= 0)
+		var diff = highestHigh - lowestLow;
+		if (diff == 0) return;
+		var stochK = 100m * (candle.ClosePrice - lowestLow) / diff;
+
+		// Keltner Channel
+		var upperBand = emaValue + (KeltnerMultiplier * _atrValue);
+		var lowerBand = emaValue - (KeltnerMultiplier * _atrValue);
+		var close = candle.ClosePrice;
+
+		if (_cooldown > 0)
 		{
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
+			_cooldown--;
+			return;
 		}
-		// Long exit: price returns to EMA line (middle band)
-		else if (Position > 0 && candle.ClosePrice > emaValue)
+
+		// Long: price below lower Keltner + Stochastic oversold
+		if (close < lowerBand && stochK < StochOversold && Position == 0)
 		{
-			SellMarket(Math.Abs(Position));
+			BuyMarket();
+			_cooldown = CooldownBars;
 		}
-		// Short exit: price returns to EMA line (middle band)
-		else if (Position < 0 && candle.ClosePrice < emaValue)
+		// Short: price above upper Keltner + Stochastic overbought
+		else if (close > upperBand && stochK > StochOverbought && Position == 0)
 		{
-			BuyMarket(Math.Abs(Position));
+			SellMarket();
+			_cooldown = CooldownBars;
+		}
+
+		// Exit long: price above EMA
+		if (Position > 0 && close > emaValue)
+		{
+			SellMarket();
+			_cooldown = CooldownBars;
+		}
+		// Exit short: price below EMA
+		else if (Position < 0 && close < emaValue)
+		{
+			BuyMarket();
+			_cooldown = CooldownBars;
 		}
 	}
 }

@@ -1,12 +1,8 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -52,7 +48,7 @@ public class InsideCandleStrategy : Strategy
 	/// </summary>
 	public InsideCandleStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
 		_riskReward = Param(nameof(RiskReward), 2m)
@@ -74,6 +70,8 @@ public class InsideCandleStrategy : Strategy
 
 		_previousCandle = null;
 		_waitingForBreakout = false;
+		_insideHigh = 0m;
+		_insideLow = 0m;
 		_stopPrice = 0m;
 		_takeProfitPrice = 0m;
 	}
@@ -103,14 +101,11 @@ public class InsideCandleStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		if (Position > 0 && _stopPrice != 0m && _takeProfitPrice != 0m)
 		{
 			if (candle.LowPrice <= _stopPrice || candle.HighPrice >= _takeProfitPrice)
 			{
-				SellMarket(Math.Abs(Position));
+				SellMarket();
 				_stopPrice = 0m;
 				_takeProfitPrice = 0m;
 			}
@@ -119,7 +114,7 @@ public class InsideCandleStrategy : Strategy
 		{
 			if (candle.HighPrice >= _stopPrice || candle.LowPrice <= _takeProfitPrice)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				_stopPrice = 0m;
 				_takeProfitPrice = 0m;
 			}
@@ -131,7 +126,7 @@ public class InsideCandleStrategy : Strategy
 			{
 				if (candle.ClosePrice > _insideHigh)
 				{
-					BuyMarket(Volume + Math.Abs(Position));
+					BuyMarket();
 					var entry = candle.ClosePrice;
 					_stopPrice = _insideLow;
 					_takeProfitPrice = entry + (entry - _insideLow) * RiskReward;
@@ -139,7 +134,7 @@ public class InsideCandleStrategy : Strategy
 				}
 				else if (candle.ClosePrice < _insideLow)
 				{
-					SellMarket(Volume + Math.Abs(Position));
+					SellMarket();
 					var entry = candle.ClosePrice;
 					_stopPrice = _insideHigh;
 					_takeProfitPrice = entry - (_insideHigh - entry) * RiskReward;

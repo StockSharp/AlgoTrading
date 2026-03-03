@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -99,7 +96,7 @@ public class IctMasterSuiteTradingIqStrategy : Strategy
 		_allowShort = Param(nameof(AllowShort), true)
 			.SetDisplay("Allow Short", "Enable short trades", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -135,9 +132,6 @@ public class IctMasterSuiteTradingIqStrategy : Strategy
 			if (candle.State != CandleStates.Finished)
 				return;
 
-			if (!IsFormedAndOnlineAndAllowTrading())
-				return;
-
 			if (_sessionDate != candle.OpenTime.Date)
 			{
 				_sessionDate = candle.OpenTime.Date;
@@ -146,14 +140,11 @@ public class IctMasterSuiteTradingIqStrategy : Strategy
 				return;
 			}
 
-			_sessionHigh = Math.Max(_sessionHigh, candle.HighPrice);
-			_sessionLow = Math.Min(_sessionLow, candle.LowPrice);
-
 			if (Position <= 0 && AllowLong && candle.ClosePrice > _sessionHigh)
 			{
 				_entryPrice = candle.ClosePrice;
 				_stopPrice = _entryPrice - atrValue * AtrMultiplier;
-				BuyMarket(Volume + Math.Abs(Position));
+				BuyMarket();
 				return;
 			}
 
@@ -161,9 +152,12 @@ public class IctMasterSuiteTradingIqStrategy : Strategy
 			{
 				_entryPrice = candle.ClosePrice;
 				_stopPrice = _entryPrice + atrValue * AtrMultiplier;
-				SellMarket(Volume + Math.Abs(Position));
+				SellMarket();
 				return;
 			}
+
+			_sessionHigh = Math.Max(_sessionHigh, candle.HighPrice);
+			_sessionLow = Math.Min(_sessionLow, candle.LowPrice);
 
 			if (Position > 0)
 			{
@@ -172,7 +166,7 @@ public class IctMasterSuiteTradingIqStrategy : Strategy
 					_stopPrice = newStop;
 
 				if (candle.LowPrice <= _stopPrice)
-					SellMarket(Position);
+					SellMarket();
 			}
 			else if (Position < 0)
 			{
@@ -181,7 +175,7 @@ public class IctMasterSuiteTradingIqStrategy : Strategy
 					_stopPrice = newStop;
 
 				if (candle.HighPrice >= _stopPrice)
-					BuyMarket(-Position);
+					BuyMarket();
 			}
 		}).Start();
 

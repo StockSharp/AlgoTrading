@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,20 +11,32 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that combines ADX (Average Directional Index) for trend strength
-/// and Stochastic Oscillator for entry timing with oversold/overbought conditions.
+/// Strategy combining ADX for trend strength and manual Stochastic %K for entry timing.
+/// Enters when ADX shows strong trend and Stochastic is oversold/overbought.
 /// </summary>
 public class AdxStochasticStrategy : Strategy
 {
+	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _adxPeriod;
 	private readonly StrategyParam<decimal> _adxThreshold;
-	private readonly StrategyParam<int> _stochPeriod;
-	private readonly StrategyParam<int> _stochK;
-	private readonly StrategyParam<int> _stochD;
 	private readonly StrategyParam<decimal> _stochOversold;
 	private readonly StrategyParam<decimal> _stochOverbought;
-	private readonly StrategyParam<decimal> _stopLossPercent;
-	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _cooldownBars;
+
+	private decimal _adxValue;
+	private int _cooldown;
+	private readonly List<decimal> _highs = new();
+	private readonly List<decimal> _lows = new();
+	private const int StochPeriod = 14;
+
+	/// <summary>
+	/// Candle type for strategy calculation.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
 
 	/// <summary>
 	/// ADX period.
@@ -45,33 +54,6 @@ public class AdxStochasticStrategy : Strategy
 	{
 		get => _adxThreshold.Value;
 		set => _adxThreshold.Value = value;
-	}
-
-	/// <summary>
-	/// Stochastic period.
-	/// </summary>
-	public int StochPeriod
-	{
-		get => _stochPeriod.Value;
-		set => _stochPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Stochastic %K period.
-	/// </summary>
-	public int StochK
-	{
-		get => _stochK.Value;
-		set => _stochK.Value = value;
-	}
-
-	/// <summary>
-	/// Stochastic %D period.
-	/// </summary>
-	public int StochD
-	{
-		get => _stochD.Value;
-		set => _stochD.Value = value;
 	}
 
 	/// <summary>
@@ -93,21 +75,12 @@ public class AdxStochasticStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stop loss percentage.
+	/// Cooldown bars between trades.
 	/// </summary>
-	public decimal StopLossPercent
+	public int CooldownBars
 	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type for strategy calculation.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	/// <summary>
@@ -115,56 +88,25 @@ public class AdxStochasticStrategy : Strategy
 	/// </summary>
 	public AdxStochasticStrategy()
 	{
-		_adxPeriod = Param(nameof(AdxPeriod), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("ADX Period", "Period of the ADX indicator", "Indicators")
-			
-			.SetOptimize(7, 21, 7);
-
-		_adxThreshold = Param(nameof(AdxThreshold), 25m)
-			.SetNotNegative()
-			.SetDisplay("ADX Threshold", "ADX level considered strong trend", "Indicators")
-			
-			.SetOptimize(15m, 35m, 5m);
-
-		_stochPeriod = Param(nameof(StochPeriod), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("Stochastic Period", "Period of the Stochastic Oscillator", "Indicators")
-			
-			.SetOptimize(5, 20, 5);
-
-		_stochK = Param(nameof(StochK), 3)
-			.SetGreaterThanZero()
-			.SetDisplay("Stochastic %K", "Smoothing of the %K line", "Indicators")
-			
-			.SetOptimize(1, 5, 1);
-
-		_stochD = Param(nameof(StochD), 3)
-			.SetGreaterThanZero()
-			.SetDisplay("Stochastic %D", "Smoothing of the %D line", "Indicators")
-			
-			.SetOptimize(1, 5, 1);
-
-		_stochOversold = Param(nameof(StochOversold), 20m)
-			.SetNotNegative()
-			.SetDisplay("Stochastic Oversold", "Level considered oversold", "Indicators")
-			
-			.SetOptimize(10m, 30m, 5m);
-
-		_stochOverbought = Param(nameof(StochOverbought), 80m)
-			.SetNotNegative()
-			.SetDisplay("Stochastic Overbought", "Level considered overbought", "Indicators")
-			
-			.SetOptimize(70m, 90m, 5m);
-
-		_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
-			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss %", "Stop loss as percentage of entry price", "Risk Management")
-			
-			.SetOptimize(1.0m, 3.0m, 0.5m);
-
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
+
+		_adxPeriod = Param(nameof(AdxPeriod), 14)
+			.SetRange(7, 21)
+			.SetDisplay("ADX Period", "Period of the ADX indicator", "Indicators");
+
+		_adxThreshold = Param(nameof(AdxThreshold), 25m)
+			.SetDisplay("ADX Threshold", "ADX level for strong trend", "Indicators");
+
+		_stochOversold = Param(nameof(StochOversold), 20m)
+			.SetDisplay("Stochastic Oversold", "Level considered oversold", "Indicators");
+
+		_stochOverbought = Param(nameof(StochOverbought), 80m)
+			.SetDisplay("Stochastic Overbought", "Level considered overbought", "Indicators");
+
+		_cooldownBars = Param(nameof(CooldownBars), 100)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "General")
+			.SetRange(5, 500);
 	}
 
 	/// <inheritdoc />
@@ -174,99 +116,113 @@ public class AdxStochasticStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_adxValue = 0;
+		_cooldown = 0;
+		_highs.Clear();
+		_lows.Clear();
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		// Create ADX indicator with all components
-		var adx = new AverageDirectionalIndex
-		{
-			Length = AdxPeriod
-		};
+		var adx = new AverageDirectionalIndex { Length = AdxPeriod };
 
-		// Create Stochastic indicator
-		var stochastic = new StochasticOscillator
-		{
-			K = { Length = StochK },
-			D = { Length = StochD }
-		};
-
-		// Create subscription and bind indicators
 		var subscription = SubscribeCandles(CandleType);
 
 		subscription
-			.BindEx(adx, stochastic, ProcessIndicators)
+			.BindEx(adx, ProcessCandle)
 			.Start();
 
-		// Setup position protection
-		StartProtection(
-			takeProfit: new Unit(0, UnitTypes.Absolute), // No take profit
-			stopLoss: new Unit(StopLossPercent, UnitTypes.Percent) // Percentage-based stop loss
-		);
-
-		// Setup chart visualization if available
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, adx);
-			DrawIndicator(area, stochastic);
 			DrawOwnTrades(area);
+
+			var adxArea = CreateChartArea();
+			if (adxArea != null)
+				DrawIndicator(adxArea, adx);
 		}
 	}
 
-	/// <summary>
-	/// Process indicator values.
-	/// </summary>
-	private void ProcessIndicators(ICandleMessage candle, IIndicatorValue adxValue, IIndicatorValue stochValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue adxValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var typedAdx = (AverageDirectionalIndexValue)adxValue;
+		// Extract ADX value
+		if (adxValue is AverageDirectionalIndexValue typedAdx && typedAdx.MovingAverage is decimal adx)
+			_adxValue = adx;
 
-		if (typedAdx.MovingAverage is not decimal adx)
+		if (_adxValue == 0)
 			return;
 
-		var stoch = (StochasticOscillatorValue)stochValue;
-		var stochK = stoch.K;
+		// Track highs/lows for manual stochastic
+		_highs.Add(candle.HighPrice);
+		_lows.Add(candle.LowPrice);
 
-		// Check if ADX indicates strong trend
-		var isStrongTrend = adx > AdxThreshold;
-
-		if (isStrongTrend)
+		var maxBuf = StochPeriod * 2;
+		if (_highs.Count > maxBuf)
 		{
-			// Determine trend direction using DI+ and DI- (using candle direction as a simple proxy)
-			var isBullishTrend = candle.OpenPrice < candle.ClosePrice;
-			var isBearishTrend = candle.OpenPrice > candle.ClosePrice;
-
-			// Long entry: strong bullish trend with Stochastic oversold
-			if (isBullishTrend && stochK < StochOversold && Position <= 0)
-			{
-				var volume = Volume + Math.Abs(Position);
-				BuyMarket(volume);
-			}
-			// Short entry: strong bearish trend with Stochastic overbought
-			else if (isBearishTrend && stochK > StochOverbought && Position >= 0)
-			{
-				var volume = Volume + Math.Abs(Position);
-				SellMarket(volume);
-			}
+			_highs.RemoveRange(0, _highs.Count - maxBuf);
+			_lows.RemoveRange(0, _lows.Count - maxBuf);
 		}
 
-		// Exit conditions
-		if (adx < AdxThreshold)
+		if (_highs.Count < StochPeriod)
+			return;
+
+		// Manual Stochastic %K
+		var start = _highs.Count - StochPeriod;
+		var highestHigh = decimal.MinValue;
+		var lowestLow = decimal.MaxValue;
+		for (var i = start; i < _highs.Count; i++)
 		{
-			// Exit all positions when trend weakens (ADX below threshold)
-			if (Position != 0)
-			{
-				ClosePosition();
-			}
+			if (_highs[i] > highestHigh) highestHigh = _highs[i];
+			if (_lows[i] < lowestLow) lowestLow = _lows[i];
+		}
+		var diff = highestHigh - lowestLow;
+		if (diff == 0) return;
+		var stochK = 100m * (candle.ClosePrice - lowestLow) / diff;
+
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+			return;
+		}
+
+		var strongTrend = _adxValue > AdxThreshold;
+
+		// Long: strong trend + stochastic oversold
+		if (strongTrend && stochK < StochOversold && Position == 0)
+		{
+			BuyMarket();
+			_cooldown = CooldownBars;
+		}
+		// Short: strong trend + stochastic overbought
+		else if (strongTrend && stochK > StochOverbought && Position == 0)
+		{
+			SellMarket();
+			_cooldown = CooldownBars;
+		}
+
+		// Exit when trend weakens
+		if (!strongTrend && Position > 0)
+		{
+			SellMarket();
+			_cooldown = CooldownBars;
+		}
+		else if (!strongTrend && Position < 0)
+		{
+			BuyMarket();
+			_cooldown = CooldownBars;
 		}
 	}
 }

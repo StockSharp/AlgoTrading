@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -24,7 +21,7 @@ public class IchimokuCloudsLongAndShortStrategy : Strategy
 	private readonly StrategyParam<int> _senkouSpanPeriod;
 	private readonly StrategyParam<decimal> _takeProfitPct;
 	private readonly StrategyParam<decimal> _stopLossPct;
-	private readonly StrategyParam<string> _tradingMode;
+	private readonly StrategyParam<string> _tradeDirection;
 	private readonly StrategyParam<string> _entrySignalOptionsLong;
 	private readonly StrategyParam<string> _exitSignalOptionsLong;
 	private readonly StrategyParam<string> _entrySignalOptionsShort;
@@ -83,10 +80,10 @@ public class IchimokuCloudsLongAndShortStrategy : Strategy
 	/// <summary>
 	/// Trading mode (Long or Short).
 	/// </summary>
-	public new string TradingMode
+	public string TradeDirection
 	{
-		get => _tradingMode.Value;
-		set => _tradingMode.Value = value;
+		get => _tradeDirection.Value;
+		set => _tradeDirection.Value = value;
 	}
 
 	/// <summary>
@@ -157,7 +154,7 @@ public class IchimokuCloudsLongAndShortStrategy : Strategy
 		_stopLossPct = Param(nameof(StopLossPct), 0m)
 		.SetDisplay("Stop Loss %", "Stop loss percentage (0 - disabled)", "Risk Management");
 
-		_tradingMode = Param(nameof(TradingMode), "Long")
+		_tradeDirection = Param(nameof(TradeDirection), "Long")
 		.SetDisplay("Trading Mode", "Trade direction: Long or Short", "General");
 
 		_entrySignalOptionsLong = Param(nameof(EntrySignalOptionsLong), "Bullish All")
@@ -172,7 +169,7 @@ public class IchimokuCloudsLongAndShortStrategy : Strategy
 		_exitSignalOptionsShort = Param(nameof(ExitSignalOptionsShort), "None")
 		.SetDisplay("Exit Signal (Short)", "Exit signal filter for short mode", "Short Mode Signals");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 		.SetDisplay("Candle Type", "Candle type for the strategy", "General");
 	}
 
@@ -188,6 +185,7 @@ public class IchimokuCloudsLongAndShortStrategy : Strategy
 		base.OnReseted();
 		_prevTenkan = 0;
 		_prevKijun = 0;
+		_entryPrice = 0;
 	}
 
 	/// <inheritdoc />
@@ -211,7 +209,6 @@ public class IchimokuCloudsLongAndShortStrategy : Strategy
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, ichimoku);
 			DrawOwnTrades(area);
 		}
 	}
@@ -261,10 +258,8 @@ public class IchimokuCloudsLongAndShortStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (ichimokuValue is not IchimokuValue ichimoku)
 			return;
-
-		var ichimoku = (IchimokuValue)ichimokuValue;
 
 		if (ichimoku.Tenkan is not decimal tenkan)
 			return;
@@ -288,45 +283,44 @@ public class IchimokuCloudsLongAndShortStrategy : Strategy
 		{
 			var strength = tenkan > upperCloud ? SignalStrengths.Strong : tenkan < lowerCloud ? SignalStrengths.Weak : SignalStrengths.Neutral;
 
-			if (TradingMode == "Long" && IsSignalAllowed(EntrySignalOptionsLong, strength, true) && Position <= 0)
+			if (TradeDirection == "Long" && IsSignalAllowed(EntrySignalOptionsLong, strength, true) && Position <= 0)
 			{
-				var volume = Volume + Math.Abs(Position);
-				BuyMarket(volume); _entryPrice = candle.ClosePrice;
+				BuyMarket();
+				_entryPrice = candle.ClosePrice;
 			}
-			else if (TradingMode == "Short" && IsSignalAllowed(ExitSignalOptionsShort, strength, true) && Position < 0)
+			else if (TradeDirection == "Short" && IsSignalAllowed(ExitSignalOptionsShort, strength, true) && Position < 0)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 			}
 		}
 		else if (crossDown)
 		{
 			var strength = tenkan < lowerCloud ? SignalStrengths.Strong : tenkan > upperCloud ? SignalStrengths.Weak : SignalStrengths.Neutral;
 
-			if (TradingMode == "Short" && IsSignalAllowed(EntrySignalOptionsShort, strength, false) && Position >= 0)
+			if (TradeDirection == "Short" && IsSignalAllowed(EntrySignalOptionsShort, strength, false) && Position >= 0)
 			{
-				var volume = Volume + Math.Abs(Position);
-				SellMarket(volume); _entryPrice = candle.ClosePrice;
+				SellMarket();
+				_entryPrice = candle.ClosePrice;
 			}
-			else if (TradingMode == "Long" && IsSignalAllowed(ExitSignalOptionsLong, strength, false) && Position > 0)
+			else if (TradeDirection == "Long" && IsSignalAllowed(ExitSignalOptionsLong, strength, false) && Position > 0)
 			{
-				SellMarket(Position);
+				SellMarket();
 			}
 		}
 
 		if (Position > 0)
 		{
 			if (TakeProfitPct > 0 && candle.ClosePrice >= _entryPrice * (1 + TakeProfitPct / 100m))
-				SellMarket(Position);
+				SellMarket();
 			else if (StopLossPct > 0 && candle.ClosePrice <= _entryPrice * (1 - StopLossPct / 100m))
-				SellMarket(Position);
+				SellMarket();
 		}
 		else if (Position < 0)
 		{
-			var shortPos = Math.Abs(Position);
 			if (TakeProfitPct > 0 && candle.ClosePrice <= _entryPrice * (1 - TakeProfitPct / 100m))
-				BuyMarket(shortPos);
+				BuyMarket();
 			else if (StopLossPct > 0 && candle.ClosePrice >= _entryPrice * (1 + StopLossPct / 100m))
-				BuyMarket(shortPos);
+				BuyMarket();
 		}
 
 		_prevTenkan = tenkan;
