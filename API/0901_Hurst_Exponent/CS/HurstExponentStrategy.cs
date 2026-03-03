@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -13,135 +10,73 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-/// <summary>
-/// Strategy based on smoothed Hurst exponent.
-/// Buys when the smoothed Hurst value is above the threshold and sells when it drops below.
-/// </summary>
 public class HurstExponentStrategy : Strategy
 {
-	private readonly StrategyParam<int> _hurstPeriod;
-	private readonly StrategyParam<int> _smoothLength;
-	private readonly StrategyParam<decimal> _threshold;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	private HurstExponent _hurst;
-	private ExponentialMovingAverage _smoother;
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Hurst exponent calculation period.
-	/// </summary>
-	public int HurstPeriod
-	{
-		get => _hurstPeriod.Value;
-		set => _hurstPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// EMA length for smoothing the Hurst exponent.
-	/// </summary>
-	public int SmoothLength
-	{
-		get => _smoothLength.Value;
-		set => _smoothLength.Value = value;
-	}
-
-	/// <summary>
-	/// Threshold separating trending and mean-reverting markets.
-	/// </summary>
-	public decimal Threshold
-	{
-		get => _threshold.Value;
-		set => _threshold.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type for strategy calculations.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="HurstExponentStrategy"/>.
-	/// </summary>
 	public HurstExponentStrategy()
 	{
-		_hurstPeriod = Param(nameof(HurstPeriod), 100)
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
 			.SetGreaterThanZero()
-			.SetDisplay("Hurst Period", "Lookback period for Hurst exponent", "Parameters")
-			
-			.SetOptimize(50, 150, 25);
-
-		_smoothLength = Param(nameof(SmoothLength), 10)
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
 			.SetGreaterThanZero()
-			.SetDisplay("Smooth Length", "EMA period for smoothing Hurst", "Parameters")
-			
-			.SetOptimize(5, 20, 5);
-
-		_threshold = Param(nameof(Threshold), 0.5m)
-			.SetRange(0.1m, 0.9m)
-			.SetDisplay("Threshold", "Hurst threshold", "Parameters")
-			
-			.SetOptimize(0.45m, 0.65m, 0.05m);
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "Parameters");
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
-	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_hurst = null;
-		_smoother = null;
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_hurst = new HurstExponent { Length = HurstPeriod };
-		_smoother = new EMA { Length = SmoothLength };
-
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(_hurst, ProcessCandle)
-			.Start();
-
+		subscription.Bind(fastEma, slowEma, ProcessCandle).Start();
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _hurst);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
-		StartProtection(
-			takeProfit: new Unit(0, UnitTypes.Absolute),
-			stopLoss: new Unit(2, UnitTypes.Percent)
-		);
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal hurstValue)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		var smoothed = _smoother.Process(new DecimalIndicatorValue(_smoother, hurstValue, candle.ServerTime)).ToDecimal();
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (smoothed > Threshold && Position <= 0)
+		if (candle.State != CandleStates.Finished) return;
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-			BuyMarket(Volume + Math.Abs(Position));
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
+			return;
 		}
-		else if (smoothed < Threshold && Position >= 0)
-		{
-			SellMarket(Volume + Math.Abs(Position));
-		}
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
+			BuyMarket();
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+			SellMarket();
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

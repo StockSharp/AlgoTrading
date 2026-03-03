@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,21 +11,24 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// ADX Weakening Strategy.
-/// Enters long when ADX weakens and price is above MA.
-/// Enters short when ADX weakens and price is below MA.
+/// ADX Weakening strategy.
+/// Enters when ADX is decreasing (trend weakening) using price vs SMA for direction.
+/// ADX weakening + price above SMA = buy (reversal up expected).
+/// ADX weakening + price below SMA = sell (reversal down expected).
+/// Exits on SMA cross.
 /// </summary>
 public class AdxWeakeningStrategy : Strategy
 {
 	private readonly StrategyParam<int> _adxPeriod;
 	private readonly StrategyParam<int> _maPeriod;
-	private readonly StrategyParam<Unit> _stopLoss;
 	private readonly StrategyParam<DataType> _candleType;
-	
-	private decimal _prevAdxValue;
+	private readonly StrategyParam<int> _cooldownBars;
+
+	private decimal _prevAdx;
+	private int _cooldown;
 
 	/// <summary>
-	/// Period for ADX calculation.
+	/// ADX period.
 	/// </summary>
 	public int AdxPeriod
 	{
@@ -37,25 +37,16 @@ public class AdxWeakeningStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Period for moving average.
+	/// MA Period.
 	/// </summary>
-	public int MaPeriod
+	public int MAPeriod
 	{
 		get => _maPeriod.Value;
 		set => _maPeriod.Value = value;
 	}
 
 	/// <summary>
-	/// Stop loss percentage from entry price.
-	/// </summary>
-	public Unit StopLoss
-	{
-		get => _stopLoss.Value;
-		set => _stopLoss.Value = value;
-	}
-
-	/// <summary>
-	/// Type of candles to use.
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -64,27 +55,33 @@ public class AdxWeakeningStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initializes a new instance of the <see cref="AdxWeakeningStrategy"/>.
+	/// Cooldown bars.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
+	/// Constructor.
 	/// </summary>
 	public AdxWeakeningStrategy()
 	{
 		_adxPeriod = Param(nameof(AdxPeriod), 14)
-			.SetDisplay("ADX Period", "Period for ADX calculation", "Indicators")
 			.SetRange(7, 28)
-			;
-			
-		_maPeriod = Param(nameof(MaPeriod), 20)
-			.SetDisplay("MA Period", "Period for moving average", "Indicators")
-			.SetRange(10, 50)
-			;
-			
-		_stopLoss = Param(nameof(StopLoss), new Unit(2, UnitTypes.Percent))
-			.SetDisplay("Stop Loss", "Stop loss as percentage from entry price", "Risk Management")
-			.SetRange(1m, 3m)
-			;
-			
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+			.SetDisplay("ADX Period", "Period for ADX", "Indicators");
+
+		_maPeriod = Param(nameof(MAPeriod), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("MA Period", "Period for SMA", "Indicators");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
+
+		_cooldownBars = Param(nameof(CooldownBars), 500)
+			.SetRange(1, 1000)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
 	}
 
 	/// <inheritdoc />
@@ -97,7 +94,8 @@ public class AdxWeakeningStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevAdxValue = 0;
+		_prevAdx = default;
+		_cooldown = default;
 	}
 
 	/// <inheritdoc />
@@ -105,90 +103,80 @@ public class AdxWeakeningStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Enable position protection using stop-loss
-		StartProtection(
-			takeProfit: null,
-			stopLoss: StopLoss,
-			isStopTrailing: false,
-			useMarketOrders: true
-		);
+		_prevAdx = 0;
+		_cooldown = 0;
 
-
-		// Create indicators
-		var ma = new SMA { Length = MaPeriod };
+		var sma = new SimpleMovingAverage { Length = MAPeriod };
 		var adx = new AverageDirectionalIndex { Length = AdxPeriod };
 
-		// Create subscription
 		var subscription = SubscribeCandles(CandleType);
-		
-		// Bind indicators and process candles
 		subscription
-			.BindEx(ma, adx, ProcessCandle)
+			.BindEx(sma, adx, ProcessCandle)
 			.Start();
-			
-		// Setup chart visualization
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, ma);
+			DrawIndicator(area, sma);
 			DrawIndicator(area, adx);
 			DrawOwnTrades(area);
 		}
 	}
 
-	/// <summary>
-	/// Process candle with indicator values.
-	/// </summary>
-	/// <param name="candle">Candle.</param>
-	/// <param name="ma">Moving average value.</param>
-	/// <param name="adx">ADX value.</param>
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue maValue, IIndicatorValue adxValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue smaIv, IIndicatorValue adxIv)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
+		if (!adxIv.IsFormed || !smaIv.IsFormed)
+			return;
+
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var ma = maValue.ToDecimal();
+		var smaValue = smaIv.ToDecimal();
+		var adxTyped = (AverageDirectionalIndexValue)adxIv;
 
-		var adxTyped = (AverageDirectionalIndexValue)adxValue;
-
-		if (adxTyped.MovingAverage is not decimal adx)
+		if (adxTyped.MovingAverage is not decimal adxValue)
 			return;
 
-		var dx = adxTyped.Dx;
-
-		if (dx.Plus is not decimal plusDi || dx.Minus is not decimal minusDi)
-			return;
-
-		// If this is the first calculation, just store the ADX value
-		if (_prevAdxValue == 0)
+		if (_prevAdx == 0)
 		{
-			_prevAdxValue = adx;
+			_prevAdx = adxValue;
 			return;
 		}
-		
-		// Check if ADX is weakening (decreasing)
-		bool isAdxWeakening = adx < _prevAdxValue;
-		
-		// Long entry: ADX weakening and price above MA
-		if (isAdxWeakening && candle.ClosePrice > ma && Position <= 0)
+
+		if (_cooldown > 0)
 		{
-			BuyMarket(Volume + Math.Abs(Position));
-			LogInfo($"Long entry: ADX weakening ({adx} < {_prevAdxValue}) and price above MA");
+			_cooldown--;
+			_prevAdx = adxValue;
+			return;
 		}
-		// Short entry: ADX weakening and price below MA
-		else if (isAdxWeakening && candle.ClosePrice < ma && Position >= 0)
+
+		var isWeakening = adxValue < _prevAdx;
+
+		if (Position == 0 && isWeakening && candle.ClosePrice > smaValue)
 		{
-			SellMarket(Volume + Math.Abs(Position));
-			LogInfo($"Short entry: ADX weakening ({adx} < {_prevAdxValue}) and price below MA");
+			BuyMarket();
+			_cooldown = CooldownBars;
 		}
-		
-		// Update previous ADX value
-		_prevAdxValue = adx;
+		else if (Position == 0 && isWeakening && candle.ClosePrice < smaValue)
+		{
+			SellMarket();
+			_cooldown = CooldownBars;
+		}
+		else if (Position > 0 && candle.ClosePrice < smaValue)
+		{
+			SellMarket();
+			_cooldown = CooldownBars;
+		}
+		else if (Position < 0 && candle.ClosePrice > smaValue)
+		{
+			BuyMarket();
+			_cooldown = CooldownBars;
+		}
+
+		_prevAdx = adxValue;
 	}
 }

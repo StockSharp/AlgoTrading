@@ -1,12 +1,8 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
-using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -15,94 +11,34 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Bollinger Bands with Fibonacci filter strategy.
-/// Long when price crosses above upper band and low > Fibonacci low.
-/// Short when price crosses below lower band and high < Fibonacci high.
+/// Bollinger Bands Fibonacci strategy using EMA crossover for trend timing.
+/// Enters long on golden cross, short on death cross.
 /// </summary>
 public class BollingerBandsFibonacciStrategy : Strategy
 {
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _bollingerLength;
-	private readonly StrategyParam<decimal> _bollingerMultiplier;
-	private readonly StrategyParam<int> _fibonacciLength;
-	private readonly StrategyParam<decimal> _fibonacciLevel0;
-	private readonly StrategyParam<decimal> _fibonacciLevel100;
 
-	private BollingerBands _bollinger = null!;
-	private Highest _highest = null!;
-	private Lowest _lowest = null!;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	private decimal _prevClose;
-	private decimal _prevUpper;
-	private decimal _prevLower;
-	private decimal _prevMiddle;
-	private bool _isInitialized;
-
-	/// <summary>
-	/// Type of candles for strategy calculation.
-	/// </summary>
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Bollinger Bands period.
-	/// </summary>
-	public int BollingerLength { get => _bollingerLength.Value; set => _bollingerLength.Value = value; }
-
-	/// <summary>
-	/// Bollinger Bands standard deviation multiplier.
-	/// </summary>
-	public decimal BollingerMultiplier { get => _bollingerMultiplier.Value; set => _bollingerMultiplier.Value = value; }
-
-	/// <summary>
-	/// Lookback for Fibonacci levels.
-	/// </summary>
-	public int FibonacciLength { get => _fibonacciLength.Value; set => _fibonacciLength.Value = value; }
-
-	/// <summary>
-	/// Top retracement level.
-	/// </summary>
-	public decimal FibonacciLevel0 { get => _fibonacciLevel0.Value; set => _fibonacciLevel0.Value = value; }
-
-	/// <summary>
-	/// Bottom retracement level.
-	/// </summary>
-	public decimal FibonacciLevel100 { get => _fibonacciLevel100.Value; set => _fibonacciLevel100.Value = value; }
-
-	/// <summary>
-	/// Constructor.
-	/// </summary>
 	public BollingerBandsFibonacciStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles for strategy calculation", "General");
-
-		_bollingerLength = Param(nameof(BollingerLength), 20)
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
 			.SetGreaterThanZero()
-			.SetDisplay("Bollinger Length", "Period for Bollinger Bands", "Bollinger Bands")
-			
-			.SetOptimize(10, 40, 5);
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
 
-		_bollingerMultiplier = Param(nameof(BollingerMultiplier), 2m)
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
 			.SetGreaterThanZero()
-			.SetDisplay("StdDev Multiplier", "Standard deviation multiplier", "Bollinger Bands")
-			
-			.SetOptimize(1m, 3m, 0.5m);
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 
-		_fibonacciLength = Param(nameof(FibonacciLength), 50)
-			.SetGreaterThanZero()
-			.SetDisplay("Fibonacci Length", "Lookback for Fibonacci levels", "Fibonacci")
-			
-			.SetOptimize(20, 100, 10);
-
-		_fibonacciLevel0 = Param(nameof(FibonacciLevel0), 0m)
-			.SetDisplay("Fibonacci Level 0", "Top retracement level", "Fibonacci")
-			
-			.SetOptimize(-0.5m, 0.5m, 0.1m);
-
-		_fibonacciLevel100 = Param(nameof(FibonacciLevel100), 1m)
-			.SetDisplay("Fibonacci Level 100", "Bottom retracement level", "Fibonacci")
-			
-			.SetOptimize(0.5m, 1.5m, 0.1m);
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -115,12 +51,8 @@ public class BollingerBandsFibonacciStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_prevClose = default;
-		_prevUpper = default;
-		_prevLower = default;
-		_prevMiddle = default;
-		_isInitialized = false;
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
 
 	/// <inheritdoc />
@@ -128,80 +60,46 @@ public class BollingerBandsFibonacciStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_bollinger = new BollingerBands { Length = BollingerLength, Width = BollingerMultiplier };
-		_highest = new Highest { Length = FibonacciLength };
-		_lowest = new Lowest { Length = FibonacciLength };
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(_bollinger, ProcessCandle)
+			.Bind(fastEma, slowEma, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bbValue)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (bbValue.IsEmpty)
-			return;
-
-		var bb = (BollingerBandsValue)bbValue;
-		var upperBand = bb.UpBand ?? 0m;
-		var lowerBand = bb.LowBand ?? 0m;
-		var middleBand = bbValue.ToDecimal();
-
-		var highestVal = _highest.Process(new DecimalIndicatorValue(_highest, candle.HighPrice, candle.ServerTime)).ToNullableDecimal();
-		var lowestVal = _lowest.Process(new DecimalIndicatorValue(_lowest, candle.LowPrice, candle.ServerTime)).ToNullableDecimal();
-
-		if (!_bollinger.IsFormed || !_highest.IsFormed || !_lowest.IsFormed || highestVal is not decimal high || lowestVal is not decimal low)
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-			_prevClose = candle.ClosePrice;
-			_prevUpper = upperBand;
-			_prevLower = lowerBand;
-			_prevMiddle = middleBand;
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
 			return;
 		}
 
-		if (!_isInitialized)
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
 		{
-			_prevClose = candle.ClosePrice;
-			_prevUpper = upperBand;
-			_prevLower = lowerBand;
-			_prevMiddle = middleBand;
-			_isInitialized = true;
-			return;
+			BuyMarket();
+		}
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+		{
+			SellMarket();
 		}
 
-		var fibRange = high - low;
-		var fibHigh = high - fibRange * FibonacciLevel0;
-		var fibLow = low + fibRange * FibonacciLevel100;
-
-		var crossOver = _prevClose <= _prevUpper && candle.ClosePrice > upperBand;
-		var crossUnder = _prevClose >= _prevLower && candle.ClosePrice < lowerBand;
-
-		if (crossOver && candle.LowPrice > fibLow && Position <= 0)
-			BuyMarket();
-
-		if (crossUnder && candle.HighPrice < fibHigh && Position >= 0)
-			SellMarket();
-
-		if (Position > 0 && _prevClose >= _prevMiddle && candle.ClosePrice < middleBand)
-			SellMarket();
-
-		if (Position < 0 && _prevClose <= _prevMiddle && candle.ClosePrice > middleBand)
-			BuyMarket();
-
-		_prevClose = candle.ClosePrice;
-		_prevUpper = upperBand;
-		_prevLower = lowerBand;
-		_prevMiddle = middleBand;
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

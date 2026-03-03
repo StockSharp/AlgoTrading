@@ -14,7 +14,7 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Implementation of Turn of the Month Strategy on Steroids.
+/// Turn of the Month strategy using RSI momentum with EMA trend filter.
 /// </summary>
 public class TurnOfTheMonthOnSteroidsStrategy : Strategy
 {
@@ -25,42 +25,18 @@ public class TurnOfTheMonthOnSteroidsStrategy : Strategy
 	private readonly StrategyParam<decimal> _rsiThreshold;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevClose1;
-	private decimal _prevClose2;
+	private decimal _prevRsi;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private int _cooldown;
 
-	/// <summary>
-	/// Start date for analysis window.
-	/// </summary>
 	public DateTimeOffset StartDate { get => _startDate.Value; set => _startDate.Value = value; }
-
-	/// <summary>
-	/// End date for analysis window.
-	/// </summary>
 	public DateTimeOffset EndDate { get => _endDate.Value; set => _endDate.Value = value; }
-
-	/// <summary>
-	/// Minimum day of month to allow entries.
-	/// </summary>
 	public int DayOfMonth { get => _dayOfMonth.Value; set => _dayOfMonth.Value = value; }
-
-	/// <summary>
-	/// RSI indicator length.
-	/// </summary>
 	public int RsiLength { get => _rsiLength.Value; set => _rsiLength.Value = value; }
-
-	/// <summary>
-	/// RSI exit threshold.
-	/// </summary>
 	public decimal RsiThreshold { get => _rsiThreshold.Value; set => _rsiThreshold.Value = value; }
-
-	/// <summary>
-	/// Candle type for strategy.
-	/// </summary>
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Initializes a new instance of the <see cref="TurnOfTheMonthOnSteroidsStrategy"/>.
-	/// </summary>
 	public TurnOfTheMonthOnSteroidsStrategy()
 	{
 		_startDate = Param(nameof(StartDate), new DateTimeOffset(new DateTime(2014, 1, 1)))
@@ -72,7 +48,7 @@ public class TurnOfTheMonthOnSteroidsStrategy : Strategy
 		_dayOfMonth = Param(nameof(DayOfMonth), 25)
 			.SetDisplay("Day Of Month", "Minimum day for entries", "Strategy");
 
-		_rsiLength = Param(nameof(RsiLength), 2)
+		_rsiLength = Param(nameof(RsiLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "RSI indicator length", "Strategy");
 
@@ -93,9 +69,10 @@ public class TurnOfTheMonthOnSteroidsStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_prevClose1 = 0m;
-		_prevClose2 = 0m;
+		_prevRsi = 0;
+		_prevFast = 0;
+		_prevSlow = 0;
+		_cooldown = 0;
 	}
 
 	/// <inheritdoc />
@@ -104,46 +81,80 @@ public class TurnOfTheMonthOnSteroidsStrategy : Strategy
 		base.OnStarted2(time);
 
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };
+		var emaFast = new ExponentialMovingAverage { Length = 8 };
+		var emaSlow = new ExponentialMovingAverage { Length = 21 };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(rsi, ProcessCandle)
-			.Start();
+		subscription.Bind(rsi, emaFast, emaSlow, ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, rsi);
+			DrawIndicator(area, emaFast);
+			DrawIndicator(area, emaSlow);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal rsi)
+	private void ProcessCandle(ICandleMessage candle, decimal rsiVal, decimal emaFast, decimal emaSlow)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (_prevRsi == 0 || _prevFast == 0 || _prevSlow == 0)
+		{
+			_prevRsi = rsiVal;
+			_prevFast = emaFast;
+			_prevSlow = emaSlow;
 			return;
-
-		var dom = candle.OpenTime.Day;
-		var inWindow = candle.OpenTime >= StartDate && candle.OpenTime <= EndDate;
-
-		var longCondition = inWindow && dom >= DayOfMonth && candle.ClosePrice < _prevClose1 && _prevClose1 < _prevClose2;
-		var exitCondition = rsi > RsiThreshold;
-
-		if (longCondition && Position <= 0)
-		{
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
-		}
-		else if (exitCondition && Position > 0)
-		{
-			ClosePosition();
 		}
 
-		_prevClose2 = _prevClose1;
-		_prevClose1 = candle.ClosePrice;
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+			_prevRsi = rsiVal;
+			_prevFast = emaFast;
+			_prevSlow = emaSlow;
+			return;
+		}
+
+		var hist = emaFast - emaSlow;
+		var histUp = hist > 0m;
+		var histDown = hist < 0m;
+
+		var rsiCrossUp = _prevRsi <= 50m && rsiVal > 50m;
+		var rsiCrossDown = _prevRsi >= 50m && rsiVal < 50m;
+
+		// Exit
+		if (Position > 0 && rsiCrossDown)
+		{
+			SellMarket();
+			_cooldown = 70;
+		}
+		else if (Position < 0 && rsiCrossUp)
+		{
+			BuyMarket();
+			_cooldown = 70;
+		}
+
+		// Entry
+		if (Position == 0)
+		{
+			if (rsiCrossUp && histUp)
+			{
+				BuyMarket();
+				_cooldown = 70;
+			}
+			else if (rsiCrossDown && histDown)
+			{
+				SellMarket();
+				_cooldown = 70;
+			}
+		}
+
+		_prevRsi = rsiVal;
+		_prevFast = emaFast;
+		_prevSlow = emaSlow;
 	}
 }

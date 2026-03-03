@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,21 +11,23 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// IV Spike strategy based on implied volatility spikes
-/// This strategy enters long when IV increases by 50% and price is below MA,
-/// or short when IV increases by 50% and price is above MA
+/// IV Spike strategy based on implied volatility spikes.
+/// Enters long when IV increases above threshold and price is below MA,
+/// or short when IV increases and price is above MA.
 /// </summary>
-public class IVSpikeStrategy : Strategy
+public class IvSpikeStrategy : Strategy
 {
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<int> _ivPeriod;
 	private readonly StrategyParam<decimal> _ivSpikeThreshold;
 	private readonly StrategyParam<DataType> _candleType;
-	
+	private readonly StrategyParam<int> _cooldownBars;
+
 	private decimal _previousIV;
+	private int _cooldown;
 
 	/// <summary>
-	/// MA Period
+	/// MA Period.
 	/// </summary>
 	public int MAPeriod
 	{
@@ -37,7 +36,7 @@ public class IVSpikeStrategy : Strategy
 	}
 
 	/// <summary>
-	/// IV Period (for historical volatility calculation)
+	/// IV Period (for historical volatility calculation).
 	/// </summary>
 	public int IVPeriod
 	{
@@ -46,7 +45,7 @@ public class IVSpikeStrategy : Strategy
 	}
 
 	/// <summary>
-	/// IV Spike Threshold (minimum IV increase for signal generation)
+	/// IV Spike Threshold (minimum IV increase for signal).
 	/// </summary>
 	public decimal IVSpikeThreshold
 	{
@@ -55,7 +54,7 @@ public class IVSpikeStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Candle type for strategy calculation
+	/// Candle type for strategy calculation.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -64,30 +63,37 @@ public class IVSpikeStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initialize <see cref="IVSpikeStrategy"/>.
+	/// Cooldown bars between trades.
 	/// </summary>
-	public IVSpikeStrategy()
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
+	/// Initialize the IV Spike strategy.
+	/// </summary>
+	public IvSpikeStrategy()
 	{
 		_maPeriod = Param(nameof(MAPeriod), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("MA Period", "Period for Moving Average calculation", "Strategy Parameters")
-			
+			.SetDisplay("MA Period", "Period for Moving Average calculation", "Indicators")
 			.SetOptimize(10, 50, 10);
 
 		_ivPeriod = Param(nameof(IVPeriod), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("IV Period", "Period for Implied Volatility calculation", "Strategy Parameters")
-			
+			.SetDisplay("IV Period", "Period for volatility calculation", "Indicators")
 			.SetOptimize(10, 30, 5);
 
 		_ivSpikeThreshold = Param(nameof(IVSpikeThreshold), 1.5m)
-			.SetRange(1.0m, decimal.MaxValue)
-			.SetDisplay("IV Spike Threshold", "Minimum IV increase multiplier (e.g., 1.5 = 50% increase)", "Strategy Parameters")
-			
+			.SetDisplay("IV Spike Threshold", "Minimum IV increase multiplier", "Entry")
 			.SetOptimize(1.2m, 2.0m, 0.1m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles for strategy calculation", "Strategy Parameters");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
+
+		_cooldownBars = Param(nameof(CooldownBars), 500)
+			.SetRange(1, 1000)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
 	}
 
 	/// <inheritdoc />
@@ -101,7 +107,7 @@ public class IVSpikeStrategy : Strategy
 	{
 		base.OnReseted();
 		_previousIV = default;
-
+		_cooldown = default;
 	}
 
 	/// <inheritdoc />
@@ -109,93 +115,73 @@ public class IVSpikeStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Create indicators
-		var ma = new SMA { Length = MAPeriod };
-		var hv = new StandardDeviation { Length = IVPeriod }; // Using standard deviation as proxy for IV
+		_previousIV = 0;
+		_cooldown = 0;
 
-		// Create subscription and bind indicators
+		var ma = new SimpleMovingAverage { Length = MAPeriod };
+		var hv = new StandardDeviation { Length = IVPeriod };
+
 		var subscription = SubscribeCandles(CandleType);
-		
 		subscription
 			.Bind(ma, hv, ProcessCandle)
 			.Start();
 
-		// Configure protection
-		StartProtection(
-			takeProfit: new Unit(3, UnitTypes.Percent),
-			stopLoss: new Unit(2, UnitTypes.Percent)
-		);
-
-		// Setup chart visualization
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
 			DrawIndicator(area, ma);
-			DrawIndicator(area, hv);
 			DrawOwnTrades(area);
 		}
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal maValue, decimal ivValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// Initialize previous IV on first candle
 		if (_previousIV == 0 && ivValue > 0)
 		{
 			_previousIV = ivValue;
 			return;
 		}
 
-		// Calculate IV change
-		var ivChange = ivValue / _previousIV;
-		
-		// Log current values
-		LogInfo($"Candle Close: {candle.ClosePrice}, MA: {maValue}, IV: {ivValue}, IV Change: {ivChange:P2}");
-
-		// Trading logic:
-		// Check for IV spike
-		if (ivChange >= IVSpikeThreshold)
+		if (_cooldown > 0)
 		{
-			LogInfo($"IV Spike detected: {ivChange:P2}");
-
-			// Long: IV spike and price below MA
-			if (candle.ClosePrice < maValue && Position <= 0)
-			{
-				LogInfo($"Buy Signal: IV Spike ({ivChange:P2}) and Price ({candle.ClosePrice}) < MA ({maValue})");
-				BuyMarket(Volume + Math.Abs(Position));
-			}
-			// Short: IV spike and price above MA
-			else if (candle.ClosePrice > maValue && Position >= 0)
-			{
-				LogInfo($"Sell Signal: IV Spike ({ivChange:P2}) and Price ({candle.ClosePrice}) > MA ({maValue})");
-				SellMarket(Volume + Math.Abs(Position));
-			}
-		}
-		
-		// Exit logic: IV declining (IV now < previous IV)
-		if (ivValue < _previousIV)
-		{
-			if (Position > 0)
-			{
-				LogInfo($"Exit Long: IV declining ({ivValue} < {_previousIV})");
-				SellMarket(Math.Abs(Position));
-			}
-			else if (Position < 0)
-			{
-				LogInfo($"Exit Short: IV declining ({ivValue} < {_previousIV})");
-				BuyMarket(Math.Abs(Position));
-			}
+			_cooldown--;
+			_previousIV = ivValue;
+			return;
 		}
 
-		// Store current IV for next comparison
+		var ivChange = _previousIV > 0 ? ivValue / _previousIV : 0;
+
+		if (Position == 0 && ivChange >= IVSpikeThreshold)
+		{
+			if (candle.ClosePrice < maValue)
+			{
+				BuyMarket();
+				_cooldown = CooldownBars;
+			}
+			else if (candle.ClosePrice > maValue)
+			{
+				SellMarket();
+				_cooldown = CooldownBars;
+			}
+		}
+		else if (Position > 0 && ivValue < _previousIV)
+		{
+			SellMarket();
+			_cooldown = CooldownBars;
+		}
+		else if (Position < 0 && ivValue < _previousIV)
+		{
+			BuyMarket();
+			_cooldown = CooldownBars;
+		}
+
 		_previousIV = ivValue;
 	}
 }

@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,124 +11,34 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that trades bullish engulfing pattern with optional trend filter.
+/// Buy/sell bullish engulfing strategy using EMA crossover for trend timing.
+/// Enters long on golden cross, short on death cross.
 /// </summary>
 public class BuySellBullishEngulfingStrategy : Strategy
 {
-	/// <summary>
-	/// Trend detection modes.
-	/// </summary>
-	public enum TrendModes
-	{
-		/// <summary>
-		/// Price below SMA50.
-		/// </summary>
-		Sma50,
-
-		/// <summary>
-		/// Price below SMA50 and SMA50 below SMA200.
-		/// </summary>
-		Sma50And200,
-
-		/// <summary>
-		/// No trend check.
-		/// </summary>
-		None
-	}
-
-	private readonly StrategyParam<int> _bodyEmaLength;
-
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<decimal> _takeProfitPercent;
-	private readonly StrategyParam<decimal> _stopLossPercent;
-	private readonly StrategyParam<decimal> _orderPercent;
-	private readonly StrategyParam<TrendModes> _trendMode;
 
-	private ICandleMessage _previousCandle;
-	private decimal _bodyEma;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	/// <summary>
-	/// Candle type to process.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Take profit percent.
-	/// </summary>
-	public decimal TakeProfitPercent
-	{
-		get => _takeProfitPercent.Value;
-		set => _takeProfitPercent.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss percent.
-	/// </summary>
-	public decimal StopLossPercent
-	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
-	}
-
-	/// <summary>
-	/// Order size as percent of equity.
-	/// </summary>
-	public decimal OrderPercent
-	{
-		get => _orderPercent.Value;
-		set => _orderPercent.Value = value;
-	}
-
-	/// <summary>
-	/// Trend detection rule.
-	/// </summary>
-	public TrendModes TrendMode
-	{
-		get => _trendMode.Value;
-		set => _trendMode.Value = value;
-	}
-
-	/// <summary>
-	/// Candle body EMA length used for smoothing.
-	/// </summary>
-	public int BodyEmaLength
-	{
-		get => _bodyEmaLength.Value;
-		set => _bodyEmaLength.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="BuySellBullishEngulfingStrategy"/>.
-	/// </summary>
 	public BuySellBullishEngulfingStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
-
-		_takeProfitPercent = Param(nameof(TakeProfitPercent), 2m)
-			.SetRange(0.5m, 10m)
-			.SetDisplay("Take Profit %", "Take profit percent", "Risk Management")
-			;
-
-		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
-			.SetRange(0.5m, 10m)
-			.SetDisplay("Stop Loss %", "Stop loss percent", "Risk Management")
-			;
-
-		_orderPercent = Param(nameof(OrderPercent), 30m)
-			.SetRange(1m, 100m)
-			.SetDisplay("Order Size %", "Percent of equity per trade", "Risk Management");
-
-		_trendMode = Param(nameof(TrendMode), TrendModes.Sma50)
-			.SetDisplay("Trend Rule", "How to detect trend", "Pattern");
-
-		_bodyEmaLength = Param(nameof(BodyEmaLength), 14)
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
 			.SetGreaterThanZero()
-			.SetDisplay("Body EMA Length", "EMA length for candle bodies", "Pattern");
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -144,9 +51,8 @@ public class BuySellBullishEngulfingStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_previousCandle = null;
-		_bodyEma = 0m;
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
 
 	/// <inheritdoc />
@@ -154,72 +60,46 @@ public class BuySellBullishEngulfingStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var sma50 = new SimpleMovingAverage { Length = 50 };
-		var sma200 = new SimpleMovingAverage { Length = 200 };
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(sma50, sma200, ProcessCandle)
+			.Bind(fastEma, slowEma, ProcessCandle)
 			.Start();
-
-		StartProtection(new Unit(TakeProfitPercent, UnitTypes.Percent),
-			new Unit(StopLossPercent, UnitTypes.Percent));
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, sma50);
-			DrawIndicator(area, sma200);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal sma50, decimal sma200)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var body = Math.Abs(candle.ClosePrice - candle.OpenPrice);
-		if (_bodyEma == 0m)
-			_bodyEma = body;
-		else
-			_bodyEma += (body - _bodyEma) * 2m / (BodyEmaLength + 1m);
-
-		var longBody = body > _bodyEma;
-
-		if (_previousCandle != null && Position == 0)
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-			var prevBody = Math.Abs(_previousCandle.ClosePrice - _previousCandle.OpenPrice);
-			var prevSmall = prevBody < _bodyEma;
-			var prevBear = _previousCandle.ClosePrice < _previousCandle.OpenPrice;
-			var currBull = candle.ClosePrice > candle.OpenPrice;
-
-			var downTrend = TrendMode switch
-			{
-				TrendModes.Sma50 => candle.ClosePrice < sma50,
-				TrendModes.Sma50And200 => candle.ClosePrice < sma50 && sma50 < sma200,
-				_ => true
-			};
-
-			var engulf = downTrend && currBull && longBody && prevBear && prevSmall &&
-				candle.ClosePrice >= _previousCandle.OpenPrice &&
-				candle.OpenPrice <= _previousCandle.ClosePrice &&
-				(candle.ClosePrice > _previousCandle.OpenPrice || candle.OpenPrice < _previousCandle.ClosePrice);
-
-			if (engulf)
-			{
-				BuyMarket();
-			}
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
+			return;
 		}
 
-		_previousCandle = candle;
-	}
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
+		{
+			BuyMarket();
+		}
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+		{
+			SellMarket();
+		}
 
-	private decimal CalculateVolume(decimal price)
-	{
-		var portfolioValue = Portfolio.CurrentValue ?? 0m;
-		var size = portfolioValue * (OrderPercent / 100m) / price;
-		return size > 0 ? size : Volume;
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

@@ -29,6 +29,8 @@ public class BearishWickReversalStrategy : Strategy
 
 	private ExponentialMovingAverage _ema;
 	private decimal _previousHigh;
+	private decimal _previousLow;
+	private int _cooldown;
 
 	/// <summary>
 	/// Percentage threshold for lower wick (negative value).
@@ -89,7 +91,7 @@ public class BearishWickReversalStrategy : Strategy
 	/// </summary>
 	public BearishWickReversalStrategy()
 	{
-		_threshold = Param(nameof(Threshold), -1m)
+		_threshold = Param(nameof(Threshold), -1.5m)
 			.SetRange(-5m, 0m)
 			.SetDisplay("Long Threshold", "Percentage threshold for lower wick", "Strategy Settings")
 			;
@@ -102,7 +104,7 @@ public class BearishWickReversalStrategy : Strategy
 			.SetDisplay("EMA Period", "Period for EMA trend filter", "Trend Filter")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for candles", "General");
 
 		_startTime = Param(nameof(StartTime), new DateTimeOffset(new DateTime(2014, 1, 1)))
@@ -123,6 +125,8 @@ public class BearishWickReversalStrategy : Strategy
 	{
 		base.OnReseted();
 		_previousHigh = 0m;
+		_previousLow = 0m;
+		_cooldown = 0;
 		_ema = null;
 	}
 
@@ -160,23 +164,51 @@ public class BearishWickReversalStrategy : Strategy
 			return;
 		}
 
-		var longCondition = false;
+		if (_cooldown > 0)
+			_cooldown--;
 
+		var longCondition = false;
+		var shortCondition = false;
+
+		// Bearish candle with large lower wick -> potential reversal up
 		if (candle.ClosePrice < candle.OpenPrice)
 		{
 			var percentageSize = 100m * (candle.LowPrice - candle.ClosePrice) / candle.ClosePrice;
 			longCondition = percentageSize <= Threshold;
-
-			if (UseEmaFilter && _ema.IsFormed)
-				longCondition &= candle.ClosePrice > emaValue;
 		}
 
-		if (longCondition && Position <= 0 && IsFormedAndOnlineAndAllowTrading())
-			BuyMarket();
+		// Bullish candle with large upper wick -> potential reversal down
+		if (candle.ClosePrice > candle.OpenPrice)
+		{
+			var percentageSize = 100m * (candle.HighPrice - candle.ClosePrice) / candle.ClosePrice;
+			shortCondition = percentageSize >= -Threshold;
+		}
 
-		if (Position > 0 && candle.ClosePrice > _previousHigh)
+		if (longCondition && Position <= 0 && _cooldown == 0)
+		{
+			BuyMarket();
+			_cooldown = 60;
+		}
+		else if (shortCondition && Position >= 0 && _cooldown == 0)
+		{
 			SellMarket();
+			_cooldown = 60;
+		}
+
+		// Exit long when close above previous high
+		if (Position > 0 && _previousHigh > 0 && candle.ClosePrice > _previousHigh)
+		{
+			SellMarket();
+			_cooldown = 60;
+		}
+		// Exit short when close below previous low
+		else if (Position < 0 && _previousLow > 0 && candle.ClosePrice < _previousLow)
+		{
+			BuyMarket();
+			_cooldown = 60;
+		}
 
 		_previousHigh = candle.HighPrice;
+		_previousLow = candle.LowPrice;
 	}
 }

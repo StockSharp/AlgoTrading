@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,32 +12,48 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// BTC outperform strategy.
-/// Compares weekly and quarterly closes.
-/// Goes long when weekly price is above quarterly price, otherwise short.
+/// Uses fast and slow EMA crossover to detect momentum outperformance.
+/// Goes long on golden cross, short on death cross.
 /// </summary>
 public class BtcOutperformStrategy : Strategy
 {
-	private readonly StrategyParam<DataType> _weeklyCandleType;
-	private readonly StrategyParam<DataType> _quarterlyCandleType;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal? _weeklyPrice;
-	private decimal? _quarterlyPrice;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	public DataType WeeklyCandleType { get => _weeklyCandleType.Value; set => _weeklyCandleType.Value = value; }
-	public DataType QuarterlyCandleType { get => _quarterlyCandleType.Value; set => _quarterlyCandleType.Value = value; }
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public BtcOutperformStrategy()
 	{
-		_weeklyCandleType = Param(nameof(WeeklyCandleType), TimeSpan.FromDays(7).TimeFrame())
-			.SetDisplay("Weekly Candle", "Weekly timeframe", "General");
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
 
-		_quarterlyCandleType = Param(nameof(QuarterlyCandleType), TimeSpan.FromDays(90).TimeFrame())
-			.SetDisplay("Quarterly Candle", "Quarterly timeframe", "General");
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
+	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return [(Security, WeeklyCandleType), (Security, QuarterlyCandleType)];
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
 
 	/// <inheritdoc />
@@ -48,54 +61,46 @@ public class BtcOutperformStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var weeklySubscription = SubscribeCandles(WeeklyCandleType);
-		weeklySubscription
-			.Bind(ProcessWeekly)
-			.Start();
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 
-		var quarterlySubscription = SubscribeCandles(QuarterlyCandleType);
-		quarterlySubscription
-			.Bind(ProcessQuarterly)
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(fastEma, slowEma, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
-			DrawCandles(area, weeklySubscription);
+			DrawCandles(area, subscription);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessWeekly(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		_weeklyPrice = candle.ClosePrice;
-		TryTrade();
-	}
-
-	private void ProcessQuarterly(ICandleMessage candle)
-	{
-		if (candle.State != CandleStates.Finished)
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
+		{
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
 			return;
+		}
 
-		_quarterlyPrice = candle.ClosePrice;
-		TryTrade();
-	}
-
-	private void TryTrade()
-	{
-		if (_weeklyPrice is not decimal weekly || _quarterlyPrice is not decimal quarterly)
-			return;
-
-		if (weekly > quarterly && Position <= 0)
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
 		{
 			BuyMarket();
 		}
-		else if (quarterly > weekly && Position >= 0)
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
 		{
 			SellMarket();
 		}
+
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

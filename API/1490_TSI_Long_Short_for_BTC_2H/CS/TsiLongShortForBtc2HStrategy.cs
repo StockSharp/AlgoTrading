@@ -15,8 +15,7 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// True Strength Index-inspired breakout strategy.
-/// Uses RSI as momentum oscillator, tracks its rolling highest/lowest.
-/// Opens long when RSI breaks above prior high, short when breaks below prior low.
+/// Uses RSI as momentum oscillator with EMA trend filter.
 /// </summary>
 public class TsiLongShortForBtc2HStrategy : Strategy
 {
@@ -24,10 +23,10 @@ public class TsiLongShortForBtc2HStrategy : Strategy
 	private readonly StrategyParam<int> _rsiLength;
 	private readonly StrategyParam<int> _lookback;
 
-	private readonly List<decimal> _rsiHistory = new();
 	private decimal _prevRsi;
-	private decimal _prevHigh;
-	private decimal _prevLow;
+	private decimal _prevEmaFast;
+	private decimal _prevEmaSlow;
+	private int _cooldown;
 
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 	public int RsiLength { get => _rsiLength.Value; set => _rsiLength.Value = value; }
@@ -39,8 +38,8 @@ public class TsiLongShortForBtc2HStrategy : Strategy
 			.SetDisplay("Candle Type", "Type of candles", "General");
 		_rsiLength = Param(nameof(RsiLength), 14)
 			.SetDisplay("RSI Length", "RSI period", "Indicators");
-		_lookback = Param(nameof(Lookback), 50)
-			.SetDisplay("Lookback", "Bars for highest/lowest RSI", "Indicators");
+		_lookback = Param(nameof(Lookback), 21)
+			.SetDisplay("Lookback", "EMA slow period", "Indicators");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
@@ -51,10 +50,10 @@ public class TsiLongShortForBtc2HStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_rsiHistory.Clear();
 		_prevRsi = 0;
-		_prevHigh = 0;
-		_prevLow = 100;
+		_prevEmaFast = 0;
+		_prevEmaSlow = 0;
+		_cooldown = 0;
 	}
 
 	protected override void OnStarted2(DateTime time)
@@ -62,57 +61,81 @@ public class TsiLongShortForBtc2HStrategy : Strategy
 		base.OnStarted2(time);
 
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };
+		var emaFast = new ExponentialMovingAverage { Length = 10 };
+		var emaSlow = new ExponentialMovingAverage { Length = Lookback };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(rsi, ProcessCandle).Start();
+		subscription.Bind(rsi, emaFast, emaSlow, ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawIndicator(area, emaFast);
+			DrawIndicator(area, emaSlow);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal rsiVal)
+	private void ProcessCandle(ICandleMessage candle, decimal rsiVal, decimal emaFast, decimal emaSlow)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		_rsiHistory.Add(rsiVal);
-		if (_rsiHistory.Count > Lookback)
-			_rsiHistory.RemoveAt(0);
-
-		if (_rsiHistory.Count < Lookback)
+		if (_prevRsi == 0 || _prevEmaFast == 0 || _prevEmaSlow == 0)
 		{
 			_prevRsi = rsiVal;
+			_prevEmaFast = emaFast;
+			_prevEmaSlow = emaSlow;
 			return;
 		}
 
-		// Calculate rolling highest and lowest RSI
-		var high = decimal.MinValue;
-		var low = decimal.MaxValue;
-		for (var i = 0; i < _rsiHistory.Count - 1; i++)
+		if (_cooldown > 0)
 		{
-			if (_rsiHistory[i] > high) high = _rsiHistory[i];
-			if (_rsiHistory[i] < low) low = _rsiHistory[i];
+			_cooldown--;
+			_prevRsi = rsiVal;
+			_prevEmaFast = emaFast;
+			_prevEmaSlow = emaSlow;
+			return;
 		}
 
-		// Breakout conditions
-		var longCond = _prevRsi <= _prevHigh && rsiVal > high;
-		var shortCond = _prevRsi >= _prevLow && rsiVal < low;
+		// RSI cross 50
+		var rsiCrossUp = _prevRsi <= 50m && rsiVal > 50m;
+		var rsiCrossDown = _prevRsi >= 50m && rsiVal < 50m;
 
-		if (longCond && Position <= 0)
-		{
-			BuyMarket();
-		}
-		else if (shortCond && Position >= 0)
+		// EMA trend
+		var trendUp = emaFast > emaSlow;
+		var trendDown = emaFast < emaSlow;
+
+		// Exit
+		if (Position > 0 && rsiCrossDown)
 		{
 			SellMarket();
+			_cooldown = 80;
+		}
+		else if (Position < 0 && rsiCrossUp)
+		{
+			BuyMarket();
+			_cooldown = 80;
+		}
+
+		// Entry
+		if (Position == 0)
+		{
+			if (rsiCrossUp && trendUp)
+			{
+				BuyMarket();
+				_cooldown = 80;
+			}
+			else if (rsiCrossDown && trendDown)
+			{
+				SellMarket();
+				_cooldown = 80;
+			}
 		}
 
 		_prevRsi = rsiVal;
-		_prevHigh = high;
-		_prevLow = low;
+		_prevEmaFast = emaFast;
+		_prevEmaSlow = emaSlow;
 	}
 }

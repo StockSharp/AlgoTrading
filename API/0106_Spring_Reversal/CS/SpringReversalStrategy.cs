@@ -1,48 +1,35 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
-using StockSharp.Algo.Candles;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on Spring Reversal pattern, which occurs when price makes a new low below support 
-/// but immediately reverses and closes above the support level, indicating a bullish reversal.
+/// Spring Reversal strategy (Wyckoff).
+/// Enters long when price dips below recent support then closes back above it.
+/// Enters short when price spikes above recent resistance then closes back below it.
+/// Uses SMA for exit confirmation.
+/// Uses cooldown to control trade frequency.
 /// </summary>
 public class SpringReversalStrategy : Strategy
 {
-	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _lookbackPeriod;
 	private readonly StrategyParam<int> _maPeriod;
-	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _cooldownBars;
 
-	private SimpleMovingAverage _ma;
-	private Lowest _lowest;
-	
-	private decimal _lastLowestValue;
-
-	/// <summary>
-	/// Candle type and timeframe for the strategy.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
+	private readonly List<decimal> _lows = new();
+	private readonly List<decimal> _highs = new();
+	private int _cooldown;
 
 	/// <summary>
-	/// Period for low range detection.
+	/// Lookback period.
 	/// </summary>
 	public int LookbackPeriod
 	{
@@ -51,7 +38,7 @@ public class SpringReversalStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Period for moving average calculation.
+	/// MA period for exit.
 	/// </summary>
 	public int MaPeriod
 	{
@@ -60,33 +47,42 @@ public class SpringReversalStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stop-loss percentage from entry price.
+	/// Candle type.
 	/// </summary>
-	public decimal StopLossPercent
+	public DataType CandleType
 	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
+		get => _candleType.Value;
+		set => _candleType.Value = value;
 	}
 
 	/// <summary>
-	/// Initializes a new instance of the <see cref="SpringReversalStrategy"/>.
+	/// Cooldown bars.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
+	/// Constructor.
 	/// </summary>
 	public SpringReversalStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-					 .SetDisplay("Candle Type", "Type of candles to use for analysis", "General");
-		
 		_lookbackPeriod = Param(nameof(LookbackPeriod), 20)
-						 .SetDisplay("Lookback Period", "Period for support level detection", "Range")
-						 .SetRange(5, 50);
-		
+			.SetRange(5, 50)
+			.SetDisplay("Lookback", "Period for support/resistance", "Range");
+
 		_maPeriod = Param(nameof(MaPeriod), 20)
-				   .SetDisplay("MA Period", "Period for moving average calculation", "Trend")
-				   .SetRange(5, 50);
-		
-		_stopLossPercent = Param(nameof(StopLossPercent), 1m)
-						  .SetDisplay("Stop Loss %", "Stop-loss percentage from entry price", "Protection")
-						  .SetRange(0.5m, 3m);
+			.SetRange(5, 50)
+			.SetDisplay("MA Period", "Period for SMA exit", "Indicators");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
+
+		_cooldownBars = Param(nameof(CooldownBars), 500)
+			.SetRange(1, 1000)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
 	}
 
 	/// <inheritdoc />
@@ -99,81 +95,96 @@ public class SpringReversalStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_lastLowestValue = 0;
+		_lows.Clear();
+		_highs.Clear();
+		_cooldown = default;
 	}
 
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		// Initialize indicators
-		_ma = new SMA { Length = MaPeriod };
-		_lowest = new Lowest { Length = LookbackPeriod };
-		
-		// Create and setup subscription for candles
+
+		_lows.Clear();
+		_highs.Clear();
+		_cooldown = 0;
+
+		var sma = new SimpleMovingAverage { Length = MaPeriod };
+
 		var subscription = SubscribeCandles(CandleType);
-		
-		// Bind indicators and processor
 		subscription
-			.Bind(_ma, _lowest, ProcessCandle)
+			.Bind(sma, ProcessCandle)
 			.Start();
-		
-		// Enable stop-loss protection
-		StartProtection(new Unit(0), new Unit(StopLossPercent, UnitTypes.Percent));
-		
-		// Setup chart if available
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _ma);
+			DrawIndicator(area, sma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal ma, decimal lowest)
+	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
-		
-		// Store the last lowest value
-		_lastLowestValue = lowest;
-		
-		// Determine candle characteristics
-		bool isBullish = candle.ClosePrice > candle.OpenPrice;
-		bool piercesBelowSupport = candle.LowPrice < _lastLowestValue;
-		bool closeAboveSupport = candle.ClosePrice > _lastLowestValue;
-		
-		// Spring pattern:
-		// 1. Price dips below recent low (support level)
-		// 2. But closes above the support level (bullish rejection)
-		if (piercesBelowSupport && closeAboveSupport && isBullish)
+
+		// Maintain rolling window of lows and highs
+		_lows.Add(candle.LowPrice);
+		_highs.Add(candle.HighPrice);
+		if (_lows.Count > LookbackPeriod + 1)
 		{
-			// Enter long position only if we're not already long
-			if (Position <= 0)
-			{
-				var volume = Volume + Math.Abs(Position);
-				BuyMarket(volume);
-				
-				LogInfo($"Spring Reversal detected. Support level: {_lastLowestValue}, Low: {candle.LowPrice}. Long entry at {candle.ClosePrice}");
-			}
+			_lows.RemoveAt(0);
+			_highs.RemoveAt(0);
 		}
-		
-		// Exit conditions
-		if (Position > 0)
+
+		if (_lows.Count < LookbackPeriod + 1)
+			return;
+
+		if (_cooldown > 0)
 		{
-			// Exit when price rises above the moving average (take profit)
-			if (candle.ClosePrice > ma)
-			{
-				SellMarket(Math.Abs(Position));
-				
-				LogInfo($"Exit signal: Price above MA. Closed long position at {candle.ClosePrice}");
-			}
+			_cooldown--;
+			return;
+		}
+
+		// Find support (lowest low) and resistance (highest high) of previous N bars
+		decimal support = decimal.MaxValue;
+		decimal resistance = decimal.MinValue;
+		for (int i = 0; i < _lows.Count - 1; i++)
+		{
+			if (_lows[i] < support) support = _lows[i];
+			if (_highs[i] > resistance) resistance = _highs[i];
+		}
+
+		// Spring: price dips below support but closes above it (bullish)
+		var isSpring = candle.LowPrice < support && candle.ClosePrice > support && candle.ClosePrice > candle.OpenPrice;
+
+		// Upthrust: price spikes above resistance but closes below it (bearish)
+		var isUpthrust = candle.HighPrice > resistance && candle.ClosePrice < resistance && candle.ClosePrice < candle.OpenPrice;
+
+		if (Position == 0 && isSpring)
+		{
+			BuyMarket();
+			_cooldown = CooldownBars;
+		}
+		else if (Position == 0 && isUpthrust)
+		{
+			SellMarket();
+			_cooldown = CooldownBars;
+		}
+		else if (Position > 0 && candle.ClosePrice < smaValue)
+		{
+			SellMarket();
+			_cooldown = CooldownBars;
+		}
+		else if (Position < 0 && candle.ClosePrice > smaValue)
+		{
+			BuyMarket();
+			_cooldown = CooldownBars;
 		}
 	}
 }

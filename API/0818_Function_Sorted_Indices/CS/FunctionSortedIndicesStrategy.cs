@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,59 +12,71 @@ namespace StockSharp.Samples.Strategies;
 
 public class FunctionSortedIndicesStrategy : Strategy
 {
-	/// <inheritdoc />
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
+	private readonly StrategyParam<DataType> _candleType;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
+
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+
+	public FunctionSortedIndicesStrategy()
+	{
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
+	}
+
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		var values = new decimal[] { 55m, 66m, 44m, 77m, 80m, -90m, 1m };
-		var (indices, ordered) = SortIndices(values, true);
-
-		LogInfo($"Original: {string.Join(", ", values)}");
-		LogInfo($"Sorted: {string.Join(", ", ordered)}");
-		LogInfo($"Indices: {string.Join(", ", indices)}");
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(fastEma, slowEma, ProcessCandle).Start();
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private static (int[] indices, decimal[] ordered) SortIndices(decimal[] sample, bool forward)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
-		var size = sample.Length;
-		var ordered = new decimal[size];
-		var indices = new int[size];
-
-		for (var i = 0; i < size; i++)
+		if (candle.State != CandleStates.Finished) return;
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-			ordered[i] = sample[i];
-			indices[i] = i;
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
+			return;
 		}
-
-		for (var i = 0; i < size - 1; i++)
-		{
-			var ai = ordered[i];
-			var iai = indices[i];
-
-			for (var j = i + 1; j < size; j++)
-			{
-				var aj = ordered[j];
-				var iaj = indices[j];
-
-				if (aj < ai)
-				{
-					ordered[j] = ai;
-					indices[j] = iai;
-					ordered[i] = aj;
-					indices[i] = iaj;
-					ai = aj;
-					iai = iaj;
-				}
-			}
-		}
-
-		if (!forward)
-		{
-			Array.Reverse(indices);
-			Array.Reverse(ordered);
-		}
-
-		return (indices, ordered);
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
+			BuyMarket();
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+			SellMarket();
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

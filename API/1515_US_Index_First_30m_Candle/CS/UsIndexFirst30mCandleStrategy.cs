@@ -14,132 +14,122 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// US Index First 30m Candle Strategy.
+/// US Index First 30m Candle strategy using RSI momentum with EMA trend filter.
 /// </summary>
 public class UsIndexFirst30mCandleStrategy : Strategy
 {
-private readonly StrategyParam<DataType> _candleType;
-private readonly StrategyParam<decimal> _riskReward;
+	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<decimal> _riskReward;
 
-private decimal? _firstHigh;
-private decimal? _firstLow;
-private decimal _carryHigh;
-private decimal _carryLow;
-private bool _rangeLocked;
-private bool _tradedToday;
-private DateTime _currentDate;
-private decimal _entryPrice;
-private decimal _stop;
-private decimal _take;
+	private decimal _prevRsi;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private int _cooldown;
 
-/// <summary>
-/// Candle type for trading.
-/// </summary>
-public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public decimal RiskReward { get => _riskReward.Value; set => _riskReward.Value = value; }
 
-/// <summary>
-/// Risk reward ratio.
-/// </summary>
-public decimal RiskReward { get => _riskReward.Value; set => _riskReward.Value = value; }
+	public UsIndexFirst30mCandleStrategy()
+	{
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles", "General");
 
-public UsIndexFirst30mCandleStrategy()
-{
-_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(10).TimeFrame())
-.SetDisplay("Candle Type", "Trading timeframe", "General");
+		_riskReward = Param(nameof(RiskReward), 2m)
+			.SetGreaterThanZero()
+			.SetDisplay("Risk Reward", "Risk reward ratio", "General");
+	}
 
-_riskReward = Param(nameof(RiskReward), 1m)
-.SetGreaterThanZero()
-.SetDisplay("Risk Reward", "Risk reward ratio", "Risk");
-}
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
 
-/// <inheritdoc />
-protected override void OnReseted()
-{
-base.OnReseted();
-_firstHigh = null;
-_firstLow = null;
-_rangeLocked = false;
-_tradedToday = false;
-_currentDate = DateTime.MinValue;
-_entryPrice = 0m;
-}
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevRsi = 0;
+		_prevFast = 0;
+		_prevSlow = 0;
+		_cooldown = 0;
+	}
 
-/// <inheritdoc />
-protected override void OnStarted2(DateTime time)
-{
-base.OnStarted2(time);
-var sub = SubscribeCandles(CandleType);
-sub.Bind(ProcessCandle).Start();
-}
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
 
-private void ProcessCandle(ICandleMessage candle)
-{
-if (candle.State != CandleStates.Finished)
-return;
+		var rsi = new RelativeStrengthIndex { Length = 14 };
+		var emaFast = new ExponentialMovingAverage { Length = 8 };
+		var emaSlow = new ExponentialMovingAverage { Length = 21 };
 
-var date = candle.OpenTime.Date;
-if (date != _currentDate)
-{
-_currentDate = date;
-_firstHigh = null;
-_firstLow = null;
-_rangeLocked = false;
-_tradedToday = false;
-}
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(rsi, emaFast, emaSlow, ProcessCandle).Start();
 
-var time = candle.OpenTime.TimeOfDay;
-var start = new TimeSpan(9, 30, 0);
-var end = new TimeSpan(10, 0, 0);
-var sessionEnd = new TimeSpan(16, 0, 0);
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, emaFast);
+			DrawIndicator(area, emaSlow);
+			DrawOwnTrades(area);
+		}
+	}
 
-if (time >= start && time < end)
-{
-_firstHigh = _firstHigh is null ? candle.HighPrice : Math.Max(_firstHigh.Value, candle.HighPrice);
-_firstLow = _firstLow is null ? candle.LowPrice : Math.Min(_firstLow.Value, candle.LowPrice);
-}
+	private void ProcessCandle(ICandleMessage candle, decimal rsiVal, decimal emaFast, decimal emaSlow)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
 
-if (!_rangeLocked && time >= end && _firstHigh is decimal fh && _firstLow is decimal fl)
-{
-_rangeLocked = true;
-_carryHigh = fh;
-_carryLow = fl;
-}
+		if (_prevRsi == 0 || _prevFast == 0 || _prevSlow == 0)
+		{
+			_prevRsi = rsiVal;
+			_prevFast = emaFast;
+			_prevSlow = emaSlow;
+			return;
+		}
 
-if (time > sessionEnd)
-return;
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+			_prevRsi = rsiVal;
+			_prevFast = emaFast;
+			_prevSlow = emaSlow;
+			return;
+		}
 
-if (_rangeLocked && !_tradedToday)
-{
-if (Position == 0)
-{
-if (candle.HighPrice >= _carryHigh)
-{
-BuyMarket();
-_entryPrice = candle.ClosePrice;
-_stop = _carryLow;
-_take = _carryHigh + (_carryHigh - _carryLow) * RiskReward;
-_tradedToday = true;
-}
-else if (candle.LowPrice <= _carryLow)
-{
-SellMarket();
-_entryPrice = candle.ClosePrice;
-_stop = _carryHigh;
-_take = _carryLow - (_carryHigh - _carryLow) * RiskReward;
-_tradedToday = true;
-}
-}
-}
+		var hist = emaFast - emaSlow;
+		var histUp = hist > 0m;
+		var histDown = hist < 0m;
 
-if (Position > 0)
-{
-if (candle.LowPrice <= _stop || candle.HighPrice >= _take)
-SellMarket(Position);
-}
-else if (Position < 0)
-{
-if (candle.HighPrice >= _stop || candle.LowPrice <= _take)
-BuyMarket(Math.Abs(Position));
-}
-}
+		var rsiCrossUp = _prevRsi <= 50m && rsiVal > 50m;
+		var rsiCrossDown = _prevRsi >= 50m && rsiVal < 50m;
+
+		if (Position > 0 && rsiCrossDown)
+		{
+			SellMarket();
+			_cooldown = 80;
+		}
+		else if (Position < 0 && rsiCrossUp)
+		{
+			BuyMarket();
+			_cooldown = 80;
+		}
+
+		if (Position == 0)
+		{
+			if (rsiCrossUp && histUp)
+			{
+				BuyMarket();
+				_cooldown = 80;
+			}
+			else if (rsiCrossDown && histDown)
+			{
+				SellMarket();
+				_cooldown = 80;
+			}
+		}
+
+		_prevRsi = rsiVal;
+		_prevFast = emaFast;
+		_prevSlow = emaSlow;
+	}
 }

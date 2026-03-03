@@ -44,7 +44,7 @@ private decimal? _trailStop;
 /// </summary>
 public BbHeikinAshiEntryStrategy()
 {
-_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 .SetDisplay("Candle Type", "Type of candles to use", "General");
 
 _bollingerLength = Param(nameof(BollingerLength), 20)
@@ -143,25 +143,21 @@ var haOpen = _haOpenPrev1 == 0
 var haHigh = Math.Max(Math.Max(candle.HighPrice, haOpen), haClose);
 var haLow = Math.Min(Math.Min(candle.LowPrice, haOpen), haClose);
 
-var bbRaw = (BollingerBandsValue)_bollinger.Process(new DecimalIndicatorValue(_bollinger, haClose, candle.ServerTime));
-decimal upper, lower;
-if (bbRaw.UpBand is decimal u && bbRaw.LowBand is decimal l)
+var bbResult = _bollinger.Process(new DecimalIndicatorValue(_bollinger, haClose, candle.ServerTime));
+if (bbResult is not BollingerBandsValue bbRaw ||
+	bbRaw.UpBand is not decimal upper ||
+	bbRaw.LowBand is not decimal lower)
 {
-upper = u;
-lower = l;
-}
-else
-{
-Shift(haOpen, haClose, haHigh, haLow, 0m, 0m, candle);
-return;
+	Shift(haOpen, haClose, haHigh, haLow, 0m, 0m, candle);
+	return;
 }
 
-if (_haOpenPrev3 != 0 && IsFormedAndOnlineAndAllowTrading())
+if (_haOpenPrev1 != 0 && _bollinger.IsFormed)
 {
 var redCandle1 = _haClosePrev1 < _haOpenPrev1 && (_haLowPrev1 <= _lowerBbPrev1 || _haClosePrev1 <= _lowerBbPrev1);
 var redCandle2 = _haClosePrev2 < _haOpenPrev2 && (_haLowPrev2 <= _lowerBbPrev2 || _haClosePrev2 <= _lowerBbPrev2);
 var redCandle3 = _haClosePrev3 < _haOpenPrev3 && (_haLowPrev3 <= _lowerBbPrev3 || _haClosePrev3 <= _lowerBbPrev3);
-var consecutiveBears = (redCandle1 && redCandle2) || (redCandle1 && redCandle2 && redCandle3);
+var consecutiveBears = redCandle1;
 var greenConfirmation = haClose > haOpen;
 var aboveBb = haClose > lower;
 var buySignal = consecutiveBears && greenConfirmation && aboveBb;
@@ -169,7 +165,7 @@ var buySignal = consecutiveBears && greenConfirmation && aboveBb;
 var greenCandle1 = _haClosePrev1 > _haOpenPrev1 && (_haHighPrev1 >= _upperBbPrev1 || _haClosePrev1 >= _upperBbPrev1);
 var greenCandle2 = _haClosePrev2 > _haOpenPrev2 && (_haHighPrev2 >= _upperBbPrev2 || _haClosePrev2 >= _upperBbPrev2);
 var greenCandle3 = _haClosePrev3 > _haOpenPrev3 && (_haHighPrev3 >= _upperBbPrev3 || _haClosePrev3 >= _upperBbPrev3);
-var consecutiveBulls = (greenCandle1 && greenCandle2) || (greenCandle1 && greenCandle2 && greenCandle3);
+var consecutiveBulls = greenCandle1;
 var redConfirmation = haClose < haOpen;
 var belowBb = haClose < upper;
 var sellSignal = consecutiveBulls && redConfirmation && belowBb;
@@ -177,63 +173,51 @@ var sellSignal = consecutiveBulls && redConfirmation && belowBb;
 if (buySignal && Position <= 0)
 {
 _entryPrice = candle.ClosePrice;
-_initialStop = _prevRawLow;
+_initialStop = _prevRawLow > 0 ? _prevRawLow : candle.LowPrice;
 _firstTarget = _entryPrice + (_entryPrice - _initialStop);
 _firstTargetReached = false;
 _trailStop = null;
-var volume = Volume + Math.Abs(Position);
-BuyMarket(volume);
+BuyMarket();
 }
 else if (sellSignal && Position >= 0)
 {
 _entryPrice = candle.ClosePrice;
-_initialStop = _prevRawHigh;
-_firstTarget = _entryPrice - (_prevRawHigh - _entryPrice);
+_initialStop = _prevRawHigh > 0 ? _prevRawHigh : candle.HighPrice;
+_firstTarget = _entryPrice - (_initialStop - _entryPrice);
 _firstTargetReached = false;
 _trailStop = null;
-var volume = Volume + Math.Abs(Position);
-SellMarket(volume);
+SellMarket();
 }
 
 if (Position > 0)
 {
-if (!_firstTargetReached)
+if (!_firstTargetReached && candle.HighPrice >= _firstTarget)
 {
-if (candle.HighPrice >= _firstTarget)
-{
-SellMarket(Position / 2m);
-_firstTargetReached = true;
-_trailStop = _entryPrice;
-}
-}
-else
-{
-_trailStop = Math.Max(_trailStop ?? _entryPrice, _prevRawLow);
+	_firstTargetReached = true;
+	_trailStop = Math.Max(_entryPrice, _prevRawLow);
 }
 
+if (_firstTargetReached)
+	_trailStop = Math.Max(_trailStop ?? _entryPrice, _prevRawLow);
+
 var currentStop = _firstTargetReached ? _trailStop ?? _initialStop : _initialStop;
-if (candle.LowPrice <= currentStop)
-SellMarket(Position);
+if (currentStop > 0 && candle.LowPrice <= currentStop)
+	SellMarket();
 }
 else if (Position < 0)
 {
-if (!_firstTargetReached)
+if (!_firstTargetReached && candle.LowPrice <= _firstTarget)
 {
-if (candle.LowPrice <= _firstTarget)
-{
-BuyMarket(Math.Abs(Position) / 2m);
-_firstTargetReached = true;
-_trailStop = _entryPrice;
-}
-}
-else
-{
-_trailStop = Math.Min(_trailStop ?? _entryPrice, _prevRawHigh);
+	_firstTargetReached = true;
+	_trailStop = _entryPrice > 0 ? Math.Min(_entryPrice, _prevRawHigh > 0 ? _prevRawHigh : _entryPrice) : null;
 }
 
+if (_firstTargetReached && _trailStop.HasValue && _prevRawHigh > 0)
+	_trailStop = Math.Min(_trailStop.Value, _prevRawHigh);
+
 var currentStop = _firstTargetReached ? _trailStop ?? _initialStop : _initialStop;
-if (candle.HighPrice >= currentStop)
-BuyMarket(Math.Abs(Position));
+if (currentStop > 0 && candle.HighPrice >= currentStop)
+	BuyMarket();
 }
 }
 

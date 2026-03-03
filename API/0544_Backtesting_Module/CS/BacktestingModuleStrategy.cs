@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,21 +11,20 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on 50/200 SMA crossover with optional time interval.
+/// Strategy based on SMA crossover with cooldown.
+/// Buys when fast SMA crosses above slow SMA, sells on cross below.
 /// </summary>
 public class BacktestingModuleStrategy : Strategy
 {
 	private readonly StrategyParam<int> _fastLength;
 	private readonly StrategyParam<int> _slowLength;
-	private readonly StrategyParam<bool> _allowLong;
-	private readonly StrategyParam<bool> _allowShort;
-	private readonly StrategyParam<DateTimeOffset> _startTime;
-	private readonly StrategyParam<DateTimeOffset> _endTime;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _prevFast;
 	private decimal _prevSlow;
-	private bool _initialized;
+	private int _barIndex;
+	private int _lastTradeBar;
 
 	/// <summary>
 	/// Fast SMA period.
@@ -49,39 +45,12 @@ public class BacktestingModuleStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Allow long trades.
+	/// Cooldown bars between trades.
 	/// </summary>
-	public bool AllowLong
+	public int CooldownBars
 	{
-		get => _allowLong.Value;
-		set => _allowLong.Value = value;
-	}
-
-	/// <summary>
-	/// Allow short trades.
-	/// </summary>
-	public bool AllowShort
-	{
-		get => _allowShort.Value;
-		set => _allowShort.Value = value;
-	}
-
-	/// <summary>
-	/// Start of trading interval.
-	/// </summary>
-	public DateTimeOffset StartTime
-	{
-		get => _startTime.Value;
-		set => _startTime.Value = value;
-	}
-
-	/// <summary>
-	/// End of trading interval.
-	/// </summary>
-	public DateTimeOffset EndTime
-	{
-		get => _endTime.Value;
-		set => _endTime.Value = value;
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	/// <summary>
@@ -94,33 +63,20 @@ public class BacktestingModuleStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initializes a new instance of <see cref="BacktestingModuleStrategy"/>.
+	/// Constructor.
 	/// </summary>
 	public BacktestingModuleStrategy()
 	{
-		_fastLength = Param(nameof(FastLength), 50)
+		_fastLength = Param(nameof(FastLength), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("Fast SMA", "Period for fast SMA", "General")
-			
-			.SetOptimize(20, 100, 10);
+			.SetDisplay("Fast SMA", "Period for fast SMA", "Indicators");
 
-		_slowLength = Param(nameof(SlowLength), 200)
+		_slowLength = Param(nameof(SlowLength), 50)
 			.SetGreaterThanZero()
-			.SetDisplay("Slow SMA", "Period for slow SMA", "General")
-			
-			.SetOptimize(100, 400, 20);
+			.SetDisplay("Slow SMA", "Period for slow SMA", "Indicators");
 
-		_allowLong = Param(nameof(AllowLong), true)
-			.SetDisplay("Allow Long", "Enable long trades", "Trading");
-
-		_allowShort = Param(nameof(AllowShort), true)
-			.SetDisplay("Allow Short", "Enable short trades", "Trading");
-
-		_startTime = Param(nameof(StartTime), new DateTimeOffset(1980, 1, 1, 0, 0, 0, TimeSpan.Zero))
-			.SetDisplay("Start Time", "Start of trading interval", "Trading");
-
-		_endTime = Param(nameof(EndTime), new DateTimeOffset(2050, 12, 31, 0, 0, 0, TimeSpan.Zero))
-			.SetDisplay("End Time", "End of trading interval", "Trading");
+		_cooldownBars = Param(nameof(CooldownBars), 350)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "Trading");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -138,7 +94,8 @@ public class BacktestingModuleStrategy : Strategy
 		base.OnReseted();
 		_prevFast = 0;
 		_prevSlow = 0;
-		_initialized = false;
+		_barIndex = 0;
+		_lastTradeBar = 0;
 	}
 
 	/// <inheritdoc />
@@ -146,8 +103,8 @@ public class BacktestingModuleStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var fastSma = new SMA { Length = FastLength };
-		var slowSma = new SMA { Length = SlowLength };
+		var fastSma = new SimpleMovingAverage { Length = FastLength };
+		var slowSma = new SimpleMovingAverage { Length = SlowLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -169,34 +126,22 @@ public class BacktestingModuleStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		_barIndex++;
 
-		if (candle.OpenTime < StartTime || candle.OpenTime > EndTime)
+		var cooldownOk = _barIndex - _lastTradeBar > CooldownBars;
+
+		var crossUp = _prevFast > 0 && _prevFast <= _prevSlow && fast > slow;
+		var crossDown = _prevFast > 0 && _prevFast >= _prevSlow && fast < slow;
+
+		if (crossUp && Position <= 0 && cooldownOk)
 		{
-			if (Position != 0)
-				ClosePosition();
-
-			return;
+			BuyMarket();
+			_lastTradeBar = _barIndex;
 		}
-
-		if (!_initialized)
+		else if (crossDown && Position >= 0 && cooldownOk)
 		{
-			_prevFast = fast;
-			_prevSlow = slow;
-			_initialized = true;
-			return;
-		}
-
-		var volume = Volume + Math.Abs(Position);
-
-		if (_prevFast <= _prevSlow && fast > slow && Position <= 0 && AllowLong)
-		{
-			BuyMarket(volume);
-		}
-		else if (_prevFast >= _prevSlow && fast < slow && Position >= 0 && AllowShort)
-		{
-			SellMarket(volume);
+			SellMarket();
+			_lastTradeBar = _barIndex;
 		}
 
 		_prevFast = fast;

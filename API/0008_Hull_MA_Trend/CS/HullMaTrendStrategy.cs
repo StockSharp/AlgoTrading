@@ -68,9 +68,9 @@ public class HullMaTrendStrategy : Strategy
 	/// </summary>
 	public HullMaTrendStrategy()
 	{
-		_hmaPeriod = Param(nameof(HmaPeriod), 9)
+		_hmaPeriod = Param(nameof(HmaPeriod), 500)
 			.SetDisplay("HMA Period", "Period for Hull Moving Average", "Indicators")
-			
+
 			.SetOptimize(5, 15, 2);
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
@@ -83,7 +83,7 @@ public class HullMaTrendStrategy : Strategy
 			
 			.SetOptimize(1, 3, 0.5m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -125,12 +125,6 @@ public class HullMaTrendStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		// Setup protection using ATR
-		StartProtection(
-			takeProfit: null,
-			stopLoss: new Unit(AtrMultiplier, UnitTypes.Absolute),
-			isStopTrailing: true
-		);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal hmaValue, decimal atrValue)
@@ -150,33 +144,19 @@ public class HullMaTrendStrategy : Strategy
 			return;
 		}
 
-		// Determine HMA direction
-		var isHmaRising = hmaValue > _prevHmaValue;
-		var isHmaFalling = hmaValue < _prevHmaValue;
+		// Determine HMA direction with minimum slope threshold
+		var slopeThreshold = _prevHmaValue * 0.0002m; // 0.02% minimum change
+		var isHmaRising = hmaValue - _prevHmaValue > slopeThreshold;
+		var isHmaFalling = _prevHmaValue - hmaValue > slopeThreshold;
 
-		// Trading logic
+		// Trading logic - only on significant direction changes
 		if (isHmaRising && Position <= 0)
 		{
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
-			LogInfo($"Buy signal: HMA rising from {_prevHmaValue} to {hmaValue}");
+			BuyMarket(Volume + Math.Abs(Position));
 		}
 		else if (isHmaFalling && Position >= 0)
 		{
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
-			LogInfo($"Sell signal: HMA falling from {_prevHmaValue} to {hmaValue}");
-		}
-		// Exit logic for direction change
-		else if (!isHmaRising && Position > 0)
-		{
-			SellMarket(Position);
-			LogInfo($"Exit long: HMA started falling from {_prevHmaValue} to {hmaValue}");
-		}
-		else if (!isHmaFalling && Position < 0)
-		{
-			BuyMarket(Math.Abs(Position));
-			LogInfo($"Exit short: HMA started rising from {_prevHmaValue} to {hmaValue}");
+			SellMarket(Volume + Math.Abs(Position));
 		}
 
 		// Update previous HMA value

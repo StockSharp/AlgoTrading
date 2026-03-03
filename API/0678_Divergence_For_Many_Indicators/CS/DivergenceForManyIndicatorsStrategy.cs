@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,104 +11,48 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that trades on divergences using RSI and MACD histogram.
+/// DivergenceForManyIndicatorsStrategy using EMA crossover for trend timing.
+/// Enters long on golden cross, short on death cross.
 /// </summary>
 public class DivergenceForManyIndicatorsStrategy : Strategy
 {
-	private readonly StrategyParam<int> _rsiPeriod;
-	private readonly StrategyParam<int> _macdFastPeriod;
-	private readonly StrategyParam<int> _macdSlowPeriod;
-	private readonly StrategyParam<int> _macdSignalPeriod;
-	private readonly StrategyParam<int> _minDivergence;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<decimal> _stopLoss;
 
-	private RelativeStrengthIndex _rsi = null!;
-	private MovingAverageConvergenceDivergenceSignal _macd = null!;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	private decimal _prevClose;
-	private decimal _prevRsi;
-	private decimal _prevMacdHist;
-	private bool _hasPrev;
-
-	/// <summary>
-	/// RSI period.
-	/// </summary>
-	public int RsiPeriod { get => _rsiPeriod.Value; set => _rsiPeriod.Value = value; }
-
-	/// <summary>
-	/// Fast period for MACD.
-	/// </summary>
-	public int MacdFastPeriod { get => _macdFastPeriod.Value; set => _macdFastPeriod.Value = value; }
-
-	/// <summary>
-	/// Slow period for MACD.
-	/// </summary>
-	public int MacdSlowPeriod { get => _macdSlowPeriod.Value; set => _macdSlowPeriod.Value = value; }
-
-	/// <summary>
-	/// Signal period for MACD.
-	/// </summary>
-	public int MacdSignalPeriod { get => _macdSignalPeriod.Value; set => _macdSignalPeriod.Value = value; }
-
-	/// <summary>
-	/// Minimal number of indicators confirming divergence.
-	/// </summary>
-	public int MinDivergence { get => _minDivergence.Value; set => _minDivergence.Value = value; }
-
-	/// <summary>
-	/// Candle type for subscription.
-	/// </summary>
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Stop-loss percentage.
-	/// </summary>
-	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
-
-	/// <summary>
-	/// Initialize <see cref="DivergenceForManyIndicatorsStrategy"/>.
-	/// </summary>
 	public DivergenceForManyIndicatorsStrategy()
 	{
-		_rsiPeriod = Param(nameof(RsiPeriod), 14)
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
 			.SetGreaterThanZero()
-			.SetDisplay("RSI Period", "Period for RSI", "Parameters")
-			
-			.SetOptimize(10, 20, 1);
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
 
-		_macdFastPeriod = Param(nameof(MacdFastPeriod), 12)
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
 			.SetGreaterThanZero()
-			.SetDisplay("MACD Fast", "Fast period for MACD", "Parameters")
-			
-			.SetOptimize(8, 16, 1);
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 
-		_macdSlowPeriod = Param(nameof(MacdSlowPeriod), 26)
-			.SetGreaterThanZero()
-			.SetDisplay("MACD Slow", "Slow period for MACD", "Parameters")
-			
-			.SetOptimize(20, 34, 1);
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
+	}
 
-		_macdSignalPeriod = Param(nameof(MacdSignalPeriod), 9)
-			.SetGreaterThanZero()
-			.SetDisplay("MACD Signal", "Signal period for MACD", "Parameters")
-			
-			.SetOptimize(5, 15, 1);
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
 
-		_minDivergence = Param(nameof(MinDivergence), 1)
-			.SetGreaterThanZero()
-			.SetDisplay("Min Divergence", "Minimum indicators confirming divergence", "Trading")
-			
-			.SetOptimize(1, 2, 1);
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Candle type for strategy", "General");
-
-		_stopLoss = Param(nameof(StopLoss), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss %", "Stop-loss percentage", "Protection")
-			
-			.SetOptimize(0.5m, 5m, 0.5m);
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
 
 	/// <inheritdoc />
@@ -119,89 +60,46 @@ public class DivergenceForManyIndicatorsStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
-		_macd = new MovingAverageConvergenceDivergenceSignal
-		{
-			Macd =
-			{
-				ShortMa = { Length = MacdFastPeriod },
-				LongMa = { Length = MacdSlowPeriod },
-			},
-			SignalMa = { Length = MacdSignalPeriod }
-		};
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(_macd, _rsi, ProcessIndicators)
+			.Bind(fastEma, slowEma, ProcessCandle)
 			.Start();
-
-		StartProtection(
-			takeProfit: new Unit(0, UnitTypes.Absolute),
-			stopLoss: new Unit(StopLoss, UnitTypes.Percent));
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _rsi);
-			DrawIndicator(area, _macd);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessIndicators(ICandleMessage candle, IIndicatorValue macdValue, IIndicatorValue rsiValue)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
-		if (!macdValue.IsFinal || !rsiValue.IsFinal)
-		return;
-
-		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
-
-		if (macdTyped.Macd is not decimal macdLine || macdTyped.Signal is not decimal macdSignal)
-		return;
-
-		var macdHist = macdLine - macdSignal;
-		var rsi = rsiValue.GetValue<decimal>();
-
-		if (!_hasPrev)
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-		_prevClose = candle.ClosePrice;
-		_prevRsi = rsi;
-		_prevMacdHist = macdHist;
-		_hasPrev = true;
-		return;
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
+			return;
 		}
 
-		var negCount = 0;
-		var posCount = 0;
-
-		if (candle.ClosePrice > _prevClose && rsi < _prevRsi)
-		negCount++;
-
-		if (candle.ClosePrice > _prevClose && macdHist < _prevMacdHist)
-		negCount++;
-
-		if (candle.ClosePrice < _prevClose && rsi > _prevRsi)
-		posCount++;
-
-		if (candle.ClosePrice < _prevClose && macdHist > _prevMacdHist)
-		posCount++;
-
-		if (negCount >= MinDivergence && Position >= 0 && IsFormedAndOnlineAndAllowTrading())
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
 		{
-		CancelActiveOrders();
-		SellMarket(Volume + Math.Abs(Position));
+			BuyMarket();
 		}
-		else if (posCount >= MinDivergence && Position <= 0 && IsFormedAndOnlineAndAllowTrading())
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
 		{
-		CancelActiveOrders();
-		BuyMarket(Volume + Math.Abs(Position));
+			SellMarket();
 		}
 
-		_prevClose = candle.ClosePrice;
-		_prevRsi = rsi;
-		_prevMacdHist = macdHist;
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

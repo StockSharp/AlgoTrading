@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -13,184 +10,73 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-/// <summary>
-/// Strategy based on Hull Suite with selectable moving average type.
-/// </summary>
 public class HullSuiteByMRSStrategy : Strategy
 {
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _length;
-	private readonly StrategyParam<HullModes> _mode;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	private IIndicator _finalMa;
-	private ExponentialMovingAverage _emaFast;
-	private ExponentialMovingAverage _emaSlow;
-	private ExponentialMovingAverage _emaFinal;
-	private WeightedMovingAverage _wma1;
-	private WeightedMovingAverage _wma2;
-	private WeightedMovingAverage _wma3;
-	private WeightedMovingAverage _wmaFinal;
-
-	private decimal _prev1;
-	private decimal _prev2;
-	private bool _hasPrev1;
-	private bool _hasPrev2;
-
-	/// <summary>
-	/// Candle type for calculations.
-	/// </summary>
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Moving average length.
-	/// </summary>
-	public int Length { get => _length.Value; set => _length.Value = value; }
-
-	/// <summary>
-	/// Hull variation.
-	/// </summary>
-	public HullModes Mode { get => _mode.Value; set => _mode.Value = value; }
-
-	/// <summary>
-	/// Hull variation options.
-	/// </summary>
-	public enum HullModes
-	{
-		Hma,
-		Ehma,
-		Thma
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="HullSuiteByMRSStrategy"/> class.
-	/// </summary>
 	public HullSuiteByMRSStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
-
-		_length = Param(nameof(Length), 55)
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
 			.SetGreaterThanZero()
-			.SetDisplay("Length", "MA length", "Parameters");
-
-		_mode = Param(nameof(Mode), HullModes.Hma)
-			.SetDisplay("Mode", "Hull variation", "Parameters");
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prev1 = 0m;
-		_prev2 = 0m;
-		_hasPrev1 = false;
-		_hasPrev2 = false;
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 		var subscription = SubscribeCandles(CandleType);
-
-		switch (Mode)
-		{
-			case HullModes.Hma:
-			{
-				_finalMa = new HullMovingAverage { Length = Length };
-				subscription.Bind(_finalMa, ProcessHma).Start();
-				break;
-			}
-			case HullModes.Ehma:
-			{
-				_emaFast = new EMA { Length = Math.Max(1, Length / 2) };
-				_emaSlow = new EMA { Length = Length };
-				_emaFinal = new EMA { Length = (int)Math.Round(Math.Sqrt(Length)) };
-				_finalMa = _emaFinal;
-				subscription.Bind(_emaFast, _emaSlow, ProcessEhma).Start();
-				break;
-			}
-			case HullModes.Thma:
-			{
-				_wma1 = new WeightedMovingAverage { Length = Math.Max(1, Length / 3) };
-				_wma2 = new WeightedMovingAverage { Length = Math.Max(1, Length / 2) };
-				_wma3 = new WeightedMovingAverage { Length = Length };
-				_wmaFinal = new WeightedMovingAverage { Length = Length };
-				_finalMa = _wmaFinal;
-				subscription.Bind(_wma1, _wma2, _wma3, ProcessThma).Start();
-				break;
-			}
-		}
-
+		subscription.Bind(fastEma, slowEma, ProcessCandle).Start();
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _finalMa);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessHma(ICandleMessage candle, decimal hma)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!_finalMa.IsFormed || !IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		HandleSignal(hma);
-	}
-
-	private void ProcessEhma(ICandleMessage candle, decimal emaFast, decimal emaSlow)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		var raw = 2m * emaFast - emaSlow;
-		var value = _emaFinal.Process(new DecimalIndicatorValue(_emaFinal, raw, candle.ServerTime)).ToDecimal();
-
-		if (!_emaFinal.IsFormed || !IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		HandleSignal(value);
-	}
-
-	private void ProcessThma(ICandleMessage candle, decimal w1, decimal w2, decimal w3)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		var raw = w1 * 3m - w2 - w3;
-		var value = _wmaFinal.Process(new DecimalIndicatorValue(_wmaFinal, raw, candle.ServerTime)).ToDecimal();
-
-		if (!_wmaFinal.IsFormed || !IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		HandleSignal(value);
-	}
-
-	private void HandleSignal(decimal value)
-	{
-		if (_hasPrev2)
+		if (candle.State != CandleStates.Finished) return;
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-			if (value > _prev2 && Position <= 0)
-				BuyMarket();
-
-			if (value < _prev2 && Position >= 0)
-				SellMarket();
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
+			return;
 		}
-
-		_prev2 = _prev1;
-		_prev1 = value;
-		_hasPrev2 = _hasPrev1;
-		_hasPrev1 = true;
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
+			BuyMarket();
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+			SellMarket();
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

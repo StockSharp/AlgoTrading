@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,21 +11,25 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that trades on volatility expansion as measured by ATR (Average True Range).
-/// It enters positions when ATR is increasing (volatility expansion) and price is above/below MA,
-/// and exits when volatility starts to contract (ATR decreasing).
+/// Strategy that trades on volatility expansion as measured by ATR.
+/// Enters when ATR expands above threshold and price is above/below MA,
+/// exits when volatility contracts.
 /// </summary>
 public class AtrExpansionStrategy : Strategy
 {
 	private readonly StrategyParam<int> _atrPeriod;
 	private readonly StrategyParam<int> _maPeriod;
-	private readonly StrategyParam<decimal> _atrMultiplier;
+	private readonly StrategyParam<decimal> _atrExpansionRatio;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<int> _lookback;
 
 	private decimal _prevAtr;
+	private bool _hasPrev;
+	private int _cooldown;
 
 	/// <summary>
-	/// Period for ATR calculation (default: 14)
+	/// Period for ATR calculation.
 	/// </summary>
 	public int AtrPeriod
 	{
@@ -37,7 +38,7 @@ public class AtrExpansionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Period for Moving Average calculation (default: 20)
+	/// Period for Moving Average calculation.
 	/// </summary>
 	public int MAPeriod
 	{
@@ -46,16 +47,16 @@ public class AtrExpansionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// ATR multiplier for stop-loss calculation (default: 2.0)
+	/// Ratio of current ATR to previous ATR needed for expansion signal.
 	/// </summary>
-	public decimal AtrMultiplier
+	public decimal AtrExpansionRatio
 	{
-		get => _atrMultiplier.Value;
-		set => _atrMultiplier.Value = value;
+		get => _atrExpansionRatio.Value;
+		set => _atrExpansionRatio.Value = value;
 	}
 
 	/// <summary>
-	/// Type of candles used for strategy calculation
+	/// Type of candles used for strategy calculation.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -64,27 +65,50 @@ public class AtrExpansionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initialize the ATR Expansion strategy
+	/// Cooldown bars between trades.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
+	/// Lookback period for ATR comparison.
+	/// </summary>
+	public int Lookback
+	{
+		get => _lookback.Value;
+		set => _lookback.Value = value;
+	}
+
+	/// <summary>
+	/// Initialize the ATR Expansion strategy.
 	/// </summary>
 	public AtrExpansionStrategy()
 	{
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
-			.SetDisplay("ATR Period", "Period for ATR calculation", "Technical Parameters")
-			
+			.SetDisplay("ATR Period", "Period for ATR calculation", "Indicators")
 			.SetOptimize(7, 21, 7);
 
 		_maPeriod = Param(nameof(MAPeriod), 20)
-			.SetDisplay("MA Period", "Period for Moving Average calculation", "Technical Parameters")
-			
+			.SetDisplay("MA Period", "Period for MA calculation", "Indicators")
 			.SetOptimize(10, 50, 5);
 
-		_atrMultiplier = Param(nameof(AtrMultiplier), 2.0m)
-			.SetDisplay("ATR Multiplier", "ATR multiplier for stop-loss calculation", "Risk Management")
-			
-			.SetOptimize(1.0m, 3.0m, 0.5m);
+		_atrExpansionRatio = Param(nameof(AtrExpansionRatio), 1.05m)
+			.SetDisplay("Expansion Ratio", "ATR expansion ratio for entry signal", "Entry")
+			.SetOptimize(1.1m, 2.0m, 0.1m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "Data");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
+
+		_cooldownBars = Param(nameof(CooldownBars), 500)
+			.SetRange(1, 100)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
+
+		_lookback = Param(nameof(Lookback), 5)
+			.SetRange(1, 50)
+			.SetDisplay("Lookback", "Bars to look back for ATR comparison", "General");
 	}
 
 	/// <inheritdoc />
@@ -97,9 +121,9 @@ public class AtrExpansionStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		// Reset state variables
-		_prevAtr = 0;
-
+		_prevAtr = default;
+		_hasPrev = default;
+		_cooldown = default;
 	}
 
 	/// <inheritdoc />
@@ -107,90 +131,79 @@ public class AtrExpansionStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Create indicators
-		var atr = new AverageTrueRange { Length = AtrPeriod };
-		var sma = new SMA { Length = MAPeriod };
+		_prevAtr = 0;
+		_hasPrev = false;
+		_cooldown = 0;
 
-		// Create subscription and bind indicators
+		var atr = new AverageTrueRange { Length = AtrPeriod };
+		var sma = new SimpleMovingAverage { Length = MAPeriod };
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
 			.Bind(atr, sma, ProcessCandle)
 			.Start();
 
-		// Configure chart
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
 			DrawIndicator(area, sma);
-			DrawIndicator(area, atr);
 			DrawOwnTrades(area);
 		}
 	}
 
-	/// <summary>
-	/// Process candle and check for ATR expansion signals
-	/// </summary>
 	private void ProcessCandle(ICandleMessage candle, decimal atrValue, decimal smaValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// Initialize _prevAtr on first formed candle
-		if (_prevAtr == 0)
+		if (!_hasPrev)
 		{
+			_prevAtr = atrValue;
+			_hasPrev = true;
+			return;
+		}
+
+		if (_cooldown > 0)
+		{
+			_cooldown--;
 			_prevAtr = atrValue;
 			return;
 		}
 
-		// Check if ATR is expanding (increasing)
-		bool isAtrExpanding = atrValue > _prevAtr;
-		
-		// Determine price position relative to MA
-		bool isPriceAboveMA = candle.ClosePrice > smaValue;
-		
-		// Calculate stop-loss amount based on ATR
-		decimal stopLossAmount = atrValue * AtrMultiplier;
+		var isExpanding = _prevAtr > 0 && atrValue / _prevAtr >= AtrExpansionRatio;
+		var isContracting = _prevAtr > 0 && atrValue / _prevAtr < 1m / AtrExpansionRatio;
 
-		if (Position == 0)
+		if (Position == 0 && isExpanding)
 		{
-			// No position - check for entry signals
-			if (isAtrExpanding && isPriceAboveMA)
+			// ATR expanding - enter in direction of price vs MA
+			if (candle.ClosePrice > smaValue)
 			{
-				// ATR is expanding and price is above MA - buy (long)
-				BuyMarket(Volume);
+				BuyMarket();
+				_cooldown = CooldownBars;
 			}
-			else if (isAtrExpanding && !isPriceAboveMA)
+			else if (candle.ClosePrice < smaValue)
 			{
-				// ATR is expanding and price is below MA - sell (short)
-				SellMarket(Volume);
+				SellMarket();
+				_cooldown = CooldownBars;
 			}
 		}
-		else if (Position > 0)
+		else if (Position > 0 && isContracting)
 		{
-			// Long position - check for exit signal
-			if (!isAtrExpanding)
-			{
-				// ATR is decreasing (volatility contracting) - exit long
-				SellMarket(Position);
-			}
+			// Volatility contracting - exit long
+			SellMarket();
+			_cooldown = CooldownBars;
 		}
-		else if (Position < 0)
+		else if (Position < 0 && isContracting)
 		{
-			// Short position - check for exit signal
-			if (!isAtrExpanding)
-			{
-				// ATR is decreasing (volatility contracting) - exit short
-				BuyMarket(Math.Abs(Position));
-			}
+			// Volatility contracting - exit short
+			BuyMarket();
+			_cooldown = CooldownBars;
 		}
 
-		// Update previous ATR value
 		_prevAtr = atrValue;
 	}
 }

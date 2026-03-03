@@ -1,121 +1,44 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
-using StockSharp.Algo.Candles;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Chande Kroll Trend strategy.
-/// Goes long when price crosses above the lower stop and is above SMA.
-/// Exits when price closes below the upper stop.
+/// ChandeKrollTrendStrategy using EMA crossover for trend timing.
+/// Enters long on golden cross, short on death cross.
 /// </summary>
 public class ChandeKrollTrendStrategy : Strategy
 {
-	/// <summary>
-	/// Position size calculation modes.
-	/// </summary>
-	public enum CalcModes
-	{
-		/// <summary>
-		/// Use fixed multiplier.
-		/// </summary>
-		Linear,
-		/// <summary>
-		/// Scale by current equity.
-		/// </summary>
-		Exponential
-	}
-
-	private readonly StrategyParam<CalcModes> _calcMode;
-	private readonly StrategyParam<decimal> _riskMultiplier;
-	private readonly StrategyParam<int> _atrPeriod;
-	private readonly StrategyParam<decimal> _atrMultiplier;
-	private readonly StrategyParam<int> _stopLength;
-	private readonly StrategyParam<int> _smaLength;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private AverageTrueRange _atr = null!;
-	private DonchianChannels _donchian = null!;
-	private SimpleMovingAverage _sma = null!;
-	private Lowest _lowestClose = null!;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	private decimal _prevClose;
-	private decimal _prevLowStop;
-	private bool _hasPrev;
-	private decimal _initialCapital;
-
-	/// <summary>
-	/// Position size calculation mode.
-	/// </summary>
-	public CalcModes CalcMode { get => _calcMode.Value; set => _calcMode.Value = value; }
-
-	/// <summary>
-	/// Risk multiplier for position sizing.
-	/// </summary>
-	public decimal RiskMultiplier { get => _riskMultiplier.Value; set => _riskMultiplier.Value = value; }
-
-	/// <summary>
-	/// ATR calculation period.
-	/// </summary>
-	public int AtrPeriod { get => _atrPeriod.Value; set => _atrPeriod.Value = value; }
-
-	/// <summary>
-	/// ATR multiplier for stop calculation.
-	/// </summary>
-	public decimal AtrMultiplier { get => _atrMultiplier.Value; set => _atrMultiplier.Value = value; }
-
-	/// <summary>
-	/// Lookback period for Donchian channel.
-	/// </summary>
-	public int StopLength { get => _stopLength.Value; set => _stopLength.Value = value; }
-
-	/// <summary>
-	/// SMA period.
-	/// </summary>
-	public int SmaLength { get => _smaLength.Value; set => _smaLength.Value = value; }
-
-	/// <summary>
-	/// Candle type for strategy calculations.
-	/// </summary>
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Initialize strategy parameters.
-	/// </summary>
 	public ChandeKrollTrendStrategy()
 	{
-		_calcMode = Param(nameof(CalcMode), CalcModes.Exponential)
-			.SetDisplay("Calc Mode", "Position size calculation mode", "General");
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
 
-		_riskMultiplier = Param(nameof(RiskMultiplier), 5m)
-			.SetDisplay("Risk Multiplier", "Risk multiplier for quantity", "Risk");
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 
-		_atrPeriod = Param(nameof(AtrPeriod), 10)
-			.SetDisplay("ATR Period", "ATR calculation period", "Indicators");
-
-		_atrMultiplier = Param(nameof(AtrMultiplier), 3m)
-			.SetDisplay("ATR Multiplier", "ATR stop multiplier", "Indicators");
-
-		_stopLength = Param(nameof(StopLength), 21)
-			.SetDisplay("Stop Length", "Lookback for Donchian extremes", "Indicators");
-
-		_smaLength = Param(nameof(SmaLength), 21)
-			.SetDisplay("SMA Length", "SMA period", "Indicators");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
-			.SetDisplay("Candle Type", "Time frame for strategy", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -128,11 +51,8 @@ public class ChandeKrollTrendStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_prevClose = default;
-		_prevLowStop = default;
-		_hasPrev = default;
-		_initialCapital = default;
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
 
 	/// <inheritdoc />
@@ -140,89 +60,46 @@ public class ChandeKrollTrendStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_atr = new AverageTrueRange { Length = AtrPeriod };
-		_donchian = new DonchianChannels { Length = StopLength };
-		_sma = new SMA { Length = SmaLength };
-		_lowestClose = new Lowest { Length = 1560 };
-
-		_initialCapital = Portfolio.CurrentValue ?? 0m;
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(_donchian, ProcessCandle)
+			.Bind(fastEma, slowEma, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _donchian);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue donchianValue)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var dc = (DonchianChannelsValue)donchianValue;
-		if (dc.UpperBand is not decimal upper || dc.LowerBand is not decimal lower)
-			return;
-
-		var atrVal = _atr.Process(new DecimalIndicatorValue(_atr, candle.HighPrice - candle.LowPrice, candle.OpenTime));
-		var smaVal = _sma.Process(new DecimalIndicatorValue(_sma, candle.ClosePrice, candle.OpenTime));
-		var lowCloseVal = _lowestClose.Process(new DecimalIndicatorValue(_lowestClose, candle.ClosePrice, candle.OpenTime));
-
-		if (!atrVal.IsFinal || !smaVal.IsFinal || !lowCloseVal.IsFinal || !_donchian.IsFormed)
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-			_prevClose = candle.ClosePrice;
-			_prevLowStop = lower + AtrMultiplier * (atrVal.IsFinal ? atrVal.ToDecimal() : 0m);
-			_hasPrev = true;
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
 			return;
 		}
 
-		var atr = atrVal.ToDecimal();
-		var sma = smaVal.ToDecimal();
-		var lowestClose = lowCloseVal.ToDecimal();
-
-		var highStop = upper - AtrMultiplier * atr;
-		var lowStop = lower + AtrMultiplier * atr;
-
-		if (!_hasPrev)
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
 		{
-			_prevClose = candle.ClosePrice;
-			_prevLowStop = lowStop;
-			_hasPrev = true;
-			return;
+			BuyMarket();
+		}
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+		{
+			SellMarket();
 		}
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			_prevClose = candle.ClosePrice;
-			_prevLowStop = lowStop;
-			return;
-		}
-
-		var longCondition = _prevClose <= _prevLowStop && candle.ClosePrice > lowStop && candle.ClosePrice > sma;
-
-		if (longCondition && Position <= 0)
-		{
-			var qty = RiskMultiplier / lowestClose * 1000m;
-			if (CalcMode == CalcModes.Exponential && _initialCapital > 0m)
-			{
-				var equity = Portfolio.CurrentValue ?? 0m;
-				qty *= equity / _initialCapital;
-			}
-
-			BuyMarket(qty + Math.Abs(Position));
-		}
-		else if (Position > 0 && candle.ClosePrice < highStop)
-		{
-			SellMarket(Position);
-		}
-
-		_prevClose = candle.ClosePrice;
-		_prevLowStop = lowStop;
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

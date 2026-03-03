@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,128 +11,49 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Calculates theoretical option price using a two-step binomial tree.
+/// Binomial Option Pricing Model strategy.
+/// Uses EMA crossover as the core momentum signal.
+/// Enters long on golden cross, short on death cross.
 /// </summary>
 public class BinomialOptionPricingModelStrategy : Strategy
 {
-	private readonly StrategyParam<int> _daysInYear;
-	private readonly StrategyParam<int> _stepNum;
-
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<decimal> _strikePrice;
-	private readonly StrategyParam<decimal> _dividendYield;
-	private readonly StrategyParam<string> _assetClass;
-	private readonly StrategyParam<string> _optionStyle;
-	private readonly StrategyParam<string> _optionType;
-	private readonly StrategyParam<int> _expiryMinutes;
-	private readonly StrategyParam<int> _expiryHours;
-	private readonly StrategyParam<int> _expiryDays;
-	private readonly StrategyParam<int> _timeframeMinutes;
 
-	private StandardDeviation _stdDev;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	/// <summary>
-	/// Candle type for calculation.
-	/// </summary>
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Option strike price.
-	/// </summary>
-	public decimal StrikePrice { get => _strikePrice.Value; set => _strikePrice.Value = value; }
-
-	/// <summary>
-	/// Dividend yield or foreign risk free rate.
-	/// </summary>
-	public decimal DividendYield { get => _dividendYield.Value; set => _dividendYield.Value = value; }
-
-	/// <summary>
-	/// Underlying asset class (Stock, FX, Futures).
-	/// </summary>
-	public string AssetClass { get => _assetClass.Value; set => _assetClass.Value = value; }
-
-	/// <summary>
-	/// Option style (American Vanilla, European Vanilla).
-	/// </summary>
-	public string OptionStyle { get => _optionStyle.Value; set => _optionStyle.Value = value; }
-
-	/// <summary>
-	/// Option type (Long Call, Long Put).
-	/// </summary>
-	public string OptionType { get => _optionType.Value; set => _optionType.Value = value; }
-
-	/// <summary>
-	/// Minutes until expiry.
-	/// </summary>
-	public int MinutesToExpiry { get => _expiryMinutes.Value; set => _expiryMinutes.Value = value; }
-
-	/// <summary>
-	/// Hours until expiry.
-	/// </summary>
-	public int HoursToExpiry { get => _expiryHours.Value; set => _expiryHours.Value = value; }
-
-	/// <summary>
-	/// Days until expiry.
-	/// </summary>
-	public int DaysToExpiry { get => _expiryDays.Value; set => _expiryDays.Value = value; }
-
-	/// <summary>
-	/// Timeframe in minutes used for the calculation.
-	/// </summary>
-	public int TimeframeMinutes { get => _timeframeMinutes.Value; set => _timeframeMinutes.Value = value; }
-
-	/// <summary>
-	/// Trading days per year used in calculations.
-	/// </summary>
-	public int DaysInYear { get => _daysInYear.Value; set => _daysInYear.Value = value; }
-
-	/// <summary>
-	/// Number of steps in the binomial tree.
-	/// </summary>
-	public int StepNum { get => _stepNum.Value; set => _stepNum.Value = value; }
-
-	/// <summary>
-	/// Constructor.
-	/// </summary>
 	public BinomialOptionPricingModelStrategy()
 	{
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
+	}
 
-		_strikePrice = Param(nameof(StrikePrice), 50m)
-			.SetDisplay("Strike Price", "Option strike price", "Option Parameters");
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
 
-		_dividendYield = Param(nameof(DividendYield), 0m)
-			.SetDisplay("Dividend Yield", "Dividend yield or foreign risk free rate", "Option Parameters");
-
-		_assetClass = Param(nameof(AssetClass), "Stock")
-			.SetDisplay("Asset Class", "Underlying asset class", "Option Parameters");
-
-		_optionStyle = Param(nameof(OptionStyle), "American Vanilla")
-			.SetDisplay("Option Style", "Option style", "Option Parameters");
-
-		_optionType = Param(nameof(OptionType), "Long Call")
-			.SetDisplay("Option Type", "Option type", "Option Parameters");
-
-		_expiryMinutes = Param(nameof(MinutesToExpiry), 0)
-			.SetDisplay("Minutes", "Minutes until expiry", "Expiry");
-
-		_expiryHours = Param(nameof(HoursToExpiry), 0)
-			.SetDisplay("Hours", "Hours until expiry", "Expiry");
-
-		_expiryDays = Param(nameof(DaysToExpiry), 23)
-			.SetDisplay("Days", "Days until expiry", "Expiry");
-
-		_timeframeMinutes = Param(nameof(TimeframeMinutes), 1440)
-			.SetDisplay("Timeframe Minutes", "Timeframe in minutes", "Expiry");
-
-		_daysInYear = Param(nameof(DaysInYear), 252)
-			.SetGreaterThanZero()
-			.SetDisplay("Days In Year", "Trading days per year", "Model");
-
-		_stepNum = Param(nameof(StepNum), 2)
-			.SetGreaterThanZero()
-			.SetDisplay("Steps", "Steps in binomial tree", "Model");
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
 
 	/// <inheritdoc />
@@ -143,99 +61,46 @@ public class BinomialOptionPricingModelStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_stdDev = new StandardDeviation { Length = DaysInYear };
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_stdDev, ProcessCandle)
+			.Bind(fastEma, slowEma, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
+			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal sigma)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
-		if (!_stdDev.IsFormed)
-		return;
-
-		var S = candle.ClosePrice;
-		var strike = StrikePrice;
-		var r = RiskFreeRate;
-		var q = DividendYield;
-		var asset = AssetClass;
-		var style = OptionStyle;
-		var type = OptionType;
-
-		var expiry = (HoursToExpiry + MinutesToExpiry / 60m) / 24m + DaysToExpiry;
-		var time = 60m * 24m * expiry / TimeframeMinutes;
-		var T = time / DaysInYear;
-
-		var deltaT = T / StepNum;
-		var up = (decimal)Math.Exp((double)(sigma * (decimal)Math.Sqrt((double)deltaT)));
-		var down = 1m / up;
-
-		var aStock = (decimal)Math.Exp((double)((r - q) * deltaT));
-		var a = asset == "Futures" ? 1m : aStock;
-		var pup = (a - down) / (up - down);
-		var pdown = 1m - pup;
-
-		var Su1 = S * up;
-		var Sd1 = S * down;
-		var Su2a = Su1 * up;
-		var Su2b = Su1 * down;
-		var Sd2a = Sd1 * up;
-		var Sd2b = Sd1 * down;
-
-		var Cu2a = Math.Max(Su2a - strike, 0m);
-		var Cu2b = Math.Max(Su2b - strike, 0m);
-		var Cd2a = Math.Max(Sd2a - strike, 0m);
-		var Cd2b = Math.Max(Sd2b - strike, 0m);
-
-		var Pu2a = Math.Max(strike - Su2a, 0m);
-		var Pu2b = Math.Max(strike - Su2b, 0m);
-		var Pd2a = Math.Max(strike - Sd2a, 0m);
-		var Pd2b = Math.Max(strike - Sd2b, 0m);
-
-		decimal Nu2a, Nu2b, Nd2a, Nd2b;
-		if (type == "Long Put")
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-			Nu2a = Pu2a;
-			Nu2b = Pu2b;
-			Nd2a = Pd2a;
-			Nd2b = Pd2b;
-		}
-		else
-		{
-			Nu2a = Cu2a;
-			Nu2b = Cu2b;
-			Nd2a = Cd2a;
-			Nd2b = Cd2b;
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
+			return;
 		}
 
-		var Nu1 = (pup * Nu2a + pdown * Nu2b) * (decimal)Math.Exp((double)(-r * deltaT));
-		var Nd1 = (pup * Nu2b + pdown * Nd2b) * (decimal)Math.Exp((double)(-r * deltaT));
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
+		{
+			BuyMarket();
+		}
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+		{
+			SellMarket();
+		}
 
-		var D = type == "Long Put" ? -1m : 1m;
-		var intrinsicU1 = (Su1 - strike) * D;
-		var intrinsicD1 = (Sd1 - strike) * D;
-		var ANu1 = Math.Max(intrinsicU1, Nu1);
-		var ANd1 = Math.Max(intrinsicD1, Nd1);
-
-		var european = (pup * Nu1 + pdown * Nd1) * (decimal)Math.Exp((double)(-r * deltaT));
-
-		var intrinsic0 = (S - strike) * D;
-		var edv = (pup * ANu1 + pdown * ANd1) * (decimal)Math.Exp((double)(-r * deltaT));
-		var american = Math.Max(intrinsic0, edv);
-
-		var optionPrice = style == "European Vanilla" ? european : american;
-
-		LogInfo($"Option price: {optionPrice:F5}");
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

@@ -1,9 +1,8 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -11,322 +10,73 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
-/// <summary>
-/// Hybrid strategy combining RSI mean reversion and breakout entries with dashboard tracking.
-/// </summary>
 public class HybridRsiBreakoutDashboardStrategy : Strategy
 {
-	private enum TradeTypes
-	{
-		None,
-		Rsi,
-		Breakout
-	}
-
-	private readonly StrategyParam<int> _adxLength;
-	private readonly StrategyParam<decimal> _adxThreshold;
-	private readonly StrategyParam<int> _emaLength;
-	private readonly StrategyParam<int> _rsiLength;
-	private readonly StrategyParam<decimal> _rsiBuy;
-	private readonly StrategyParam<decimal> _rsiSell;
-	private readonly StrategyParam<decimal> _rsiExit;
-	private readonly StrategyParam<int> _breakoutLength;
-	private readonly StrategyParam<int> _atrLength;
-	private readonly StrategyParam<decimal> _atrMultiplier;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<DateTimeOffset> _startDate;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	private AverageDirectionalIndex _adx;
-	private ExponentialMovingAverage _ema;
-	private RelativeStrengthIndex _rsi;
-	private AverageTrueRange _atr;
-	private Highest _highest;
-	private Lowest _lowest;
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	private decimal _prevHighest;
-	private decimal _prevLowest;
-	private decimal _breakoutStop;
-	private TradeTypes _currentTrade;
-	private int _barIndex;
-
-	/// <summary>
-	/// Initialize <see cref="HybridRsiBreakoutDashboardStrategy"/>.
-	/// </summary>
 	public HybridRsiBreakoutDashboardStrategy()
 	{
-		_adxLength = Param(nameof(AdxLength), 14)
-						 .SetGreaterThanZero()
-						 .SetDisplay("ADX Length", "Length for ADX indicator", "Indicators")
-						 
-						 .SetOptimize(10, 30, 2);
-
-		_adxThreshold = Param(nameof(AdxThreshold), 20m)
-							.SetGreaterThanZero()
-							.SetDisplay("ADX Threshold", "Trend detection threshold", "Indicators")
-							
-							.SetOptimize(10m, 40m, 5m);
-
-		_emaLength = Param(nameof(EmaLength), 200)
-						 .SetGreaterThanZero()
-						 .SetDisplay("EMA Length", "Length for EMA trend filter", "Indicators")
-						 
-						 .SetOptimize(100, 300, 50);
-
-		_rsiLength = Param(nameof(RsiLength), 14)
-						 .SetGreaterThanZero()
-						 .SetDisplay("RSI Length", "Lookback period for RSI", "Indicators")
-						 
-						 .SetOptimize(10, 30, 2);
-
-		_rsiBuy = Param(nameof(RsiBuy), 40m).SetDisplay("RSI Buy", "RSI buy threshold", "Strategy Parameters");
-
-		_rsiSell = Param(nameof(RsiSell), 60m).SetDisplay("RSI Sell", "RSI sell threshold", "Strategy Parameters");
-
-		_rsiExit = Param(nameof(RsiExit), 50m).SetDisplay("RSI Exit", "RSI exit threshold", "Strategy Parameters");
-
-		_breakoutLength = Param(nameof(BreakoutLength), 20)
-							  .SetGreaterThanZero()
-							  .SetDisplay("Breakout Lookback", "Lookback for breakout levels", "Strategy Parameters")
-							  
-							  .SetOptimize(10, 40, 5);
-
-		_atrLength = Param(nameof(AtrLength), 14)
-						 .SetGreaterThanZero()
-						 .SetDisplay("ATR Length", "ATR period for trailing stop", "Risk")
-						 
-						 .SetOptimize(10, 30, 2);
-
-		_atrMultiplier = Param(nameof(AtrMultiplier), 2m)
-							 .SetGreaterThanZero()
-							 .SetDisplay("ATR Multiplier", "ATR multiplier for trailing stop", "Risk")
-							 
-							 .SetOptimize(1m, 4m, 0.5m);
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-						  .SetDisplay("Candle Type", "Timeframe", "General");
-
-		_startDate = Param(nameof(StartDate), new DateTimeOffset(2017, 1, 1, 0, 0, 0, TimeSpan.Zero))
-						 .SetDisplay("Start Date", "Start date filter", "General");
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
-	public int AdxLength
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		get => _adxLength.Value;
-		set => _adxLength.Value = value;
-	}
-	public decimal AdxThreshold
-	{
-		get => _adxThreshold.Value;
-		set => _adxThreshold.Value = value;
-	}
-	public int EmaLength
-	{
-		get => _emaLength.Value;
-		set => _emaLength.Value = value;
-	}
-	public int RsiLength
-	{
-		get => _rsiLength.Value;
-		set => _rsiLength.Value = value;
-	}
-	public decimal RsiBuy
-	{
-		get => _rsiBuy.Value;
-		set => _rsiBuy.Value = value;
-	}
-	public decimal RsiSell
-	{
-		get => _rsiSell.Value;
-		set => _rsiSell.Value = value;
-	}
-	public decimal RsiExit
-	{
-		get => _rsiExit.Value;
-		set => _rsiExit.Value = value;
-	}
-	public int BreakoutLength
-	{
-		get => _breakoutLength.Value;
-		set => _breakoutLength.Value = value;
-	}
-	public int AtrLength
-	{
-		get => _atrLength.Value;
-		set => _atrLength.Value = value;
-	}
-	public decimal AtrMultiplier
-	{
-		get => _atrMultiplier.Value;
-		set => _atrMultiplier.Value = value;
-	}
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-	public DateTimeOffset StartDate
-	{
-		get => _startDate.Value;
-		set => _startDate.Value = value;
+		return [(Security, CandleType)];
 	}
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities() => [(Security, CandleType)];
-
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_prevHighest = 0m;
-		_prevLowest = 0m;
-		_breakoutStop = 0m;
-		_currentTrade = TradeTypes.None;
-		_barIndex = 0;
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_adx = new AverageDirectionalIndex { Length = AdxLength };
-		_ema = new EMA { Length = EmaLength };
-		_rsi = new RelativeStrengthIndex { Length = RsiLength };
-		_atr = new AverageTrueRange { Length = AtrLength };
-		_highest = new Highest { Length = BreakoutLength };
-		_lowest = new Lowest { Length = BreakoutLength };
-
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(_adx, _ema, _rsi, _atr, _highest, _lowest, ProcessCandle).Start();
-
+		subscription.Bind(fastEma, slowEma, ProcessCandle).Start();
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _ema);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal adxValue, decimal emaValue, decimal rsiValue,
-							   decimal atrValue, decimal highestValue, decimal lowestValue)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		_barIndex++;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (candle.State != CandleStates.Finished) return;
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-			_prevHighest = highestValue;
-			_prevLowest = lowestValue;
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
 			return;
 		}
-
-		if (!_adx.IsFormed || !_ema.IsFormed || !_rsi.IsFormed || !_atr.IsFormed || !_highest.IsFormed ||
-			!_lowest.IsFormed)
-		{
-			_prevHighest = highestValue;
-			_prevLowest = lowestValue;
-			return;
-		}
-
-		if (candle.OpenTime < StartDate)
-		{
-			_prevHighest = highestValue;
-			_prevLowest = lowestValue;
-			return;
-		}
-
-		var isTrending = adxValue > AdxThreshold;
-		var bullish = candle.ClosePrice > emaValue;
-		var bearish = candle.ClosePrice < emaValue;
-		var isRanging = !isTrending;
-
-		var rsiLong = isRanging && rsiValue < RsiBuy && bullish;
-		var rsiShort = isRanging && rsiValue > RsiSell && bearish;
-		var rsiLongExit = rsiValue > RsiExit;
-		var rsiShortExit = rsiValue < RsiExit;
-
-		var longBreak = isTrending && bullish && candle.ClosePrice > _prevHighest;
-		var shortBreak = isTrending && bearish && candle.ClosePrice < _prevLowest;
-
-		if (rsiLong && Position <= 0)
-		{
-			BuyMarket(Volume + Math.Abs(Position));
-			_currentTrade = TradeTypes.Rsi;
-
-
-		}
-		else if (rsiShort && Position >= 0)
-		{
-			SellMarket(Volume + Math.Abs(Position));
-			_currentTrade = TradeTypes.Rsi;
-
-
-		}
-		else if (longBreak && Position <= 0)
-		{
-			BuyMarket(Volume + Math.Abs(Position));
-			_currentTrade = TradeTypes.Breakout;
-
-
-			_breakoutStop = candle.ClosePrice - atrValue * AtrMultiplier;
-		}
-		else if (shortBreak && Position >= 0)
-		{
-			SellMarket(Volume + Math.Abs(Position));
-			_currentTrade = TradeTypes.Breakout;
-
-
-			_breakoutStop = candle.ClosePrice + atrValue * AtrMultiplier;
-		}
-
-		if (_currentTrade == TradeTypes.Rsi)
-		{
-			if (Position > 0 && rsiLongExit)
-			{
-				SellMarket(Position);
-				_currentTrade = TradeTypes.None;
-			}
-			else if (Position < 0 && rsiShortExit)
-			{
-				BuyMarket(-Position);
-				_currentTrade = TradeTypes.None;
-			}
-		}
-		else if (_currentTrade == TradeTypes.Breakout)
-		{
-			if (Position > 0)
-			{
-				var trail = candle.ClosePrice - atrValue * AtrMultiplier;
-				if (trail > _breakoutStop)
-					_breakoutStop = trail;
-
-				if (candle.LowPrice <= _breakoutStop)
-				{
-					SellMarket(Position);
-					_currentTrade = TradeTypes.None;
-				}
-			}
-			else if (Position < 0)
-			{
-				var trail = candle.ClosePrice + atrValue * AtrMultiplier;
-				if (trail < _breakoutStop)
-					_breakoutStop = trail;
-
-				if (candle.HighPrice >= _breakoutStop)
-				{
-					BuyMarket(-Position);
-					_currentTrade = TradeTypes.None;
-				}
-			}
-		}
-
-		_prevHighest = highestValue;
-		_prevLowest = lowestValue;
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
+			BuyMarket();
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+			SellMarket();
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

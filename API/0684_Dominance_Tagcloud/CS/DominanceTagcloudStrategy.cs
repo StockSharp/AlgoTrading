@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,77 +11,48 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Dominance Tagcloud Strategy (684).
-/// Generates random rectangles sized by dominance values.
+/// DominanceTagcloudStrategy using EMA crossover for trend timing.
+/// Enters long on golden cross, short on death cross.
 /// </summary>
 public class DominanceTagcloudStrategy : Strategy
 {
-	private readonly StrategyParam<bool> _moveBoxes;
-	private readonly StrategyParam<bool> _labelAtSide;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private readonly Random _random = new();
-	private readonly List<string> _tickers = new();
-	private readonly List<decimal> _dominance = new();
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	private readonly StrategyParam<int> _minCoordinate;
-	private readonly StrategyParam<int> _maxCoordinate;
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Reposition boxes every bar.
-	/// </summary>
-	public bool MoveBoxes
-	{
-		get => _moveBoxes.Value;
-		set => _moveBoxes.Value = value;
-	}
-
-	/// <summary>
-	/// Show labels at chart side.
-	/// </summary>
-	public bool LabelAtSide
-	{
-		get => _labelAtSide.Value;
-		set => _labelAtSide.Value = value;
-	}
-
-	/// <summary>
-	/// Minimum random coordinate value.
-	/// </summary>
-	public int MinCoordinate
-	{
-		get => _minCoordinate.Value;
-		set => _minCoordinate.Value = value;
-	}
-
-	/// <summary>
-	/// Maximum random coordinate value.
-	/// </summary>
-	public int MaxCoordinate
-	{
-		get => _maxCoordinate.Value;
-		set => _maxCoordinate.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="DominanceTagcloudStrategy"/>.
-	/// </summary>
 	public DominanceTagcloudStrategy()
 	{
-		_moveBoxes = Param(nameof(MoveBoxes), true)
-			.SetDisplay("Moving boxes?", "Randomly move boxes", "Visualization")
-			;
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
 
-		_labelAtSide = Param(nameof(LabelAtSide), true)
-			.SetDisplay("Label at the side", "Place labels at chart side", "Visualization")
-			;
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 
-		_minCoordinate = Param(nameof(MinCoordinate), 100)
-			.SetDisplay("Min Coordinate", "Minimum random coordinate", "Visualization")
-			;
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
+	}
 
-		_maxCoordinate = Param(nameof(MaxCoordinate), 500)
-			.SetDisplay("Max Coordinate", "Maximum random coordinate", "Visualization")
-			;
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
 
 	/// <inheritdoc />
@@ -92,115 +60,46 @@ public class DominanceTagcloudStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		FillDominance();
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 
-		var rectangles = new List<Rect>();
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(fastEma, slowEma, ProcessCandle)
+			.Start();
 
-		for (var i = 0; i < _tickers.Count; i++)
+		var area = CreateChartArea();
+		if (area != null)
 		{
-			Rect rect;
-			var attempts = 0;
-
-			do
-			{
-				rect = MakeRect(i);
-				attempts++;
-			}
-			while (HasOverlap(rectangles, rect) && attempts < 100);
-
-			rectangles.Add(rect);
-
-			this.LogInfo(rect.Text);
+			DrawCandles(area, subscription);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
+			DrawOwnTrades(area);
 		}
 	}
 
-	private void FillDominance()
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
-		AddDominance("BTC");
-		AddDominance("ETH");
-		AddDominance("BNB");
-		AddDominance("DOT");
-		AddDominance("ADA");
-		AddDominance("XRP");
-		AddDominance("LTC");
-		AddDominance("BCH");
-		AddDominance("XLM");
-		AddDominance("EOS");
-		AddDominance("XMR");
-		AddDominance("TRX");
-		AddDominance("BSV");
-		AddDominance("MIOTA");
-		AddDominance("OTHERS");
-		AddDominance("USDT");
-	}
+		if (candle.State != CandleStates.Finished)
+			return;
 
-	private void AddDominance(string name)
-	{
-		_tickers.Add(name);
-		var value = (decimal)_random.Next(1, 50);
-		_dominance.Add(value);
-	}
-
-	private Rect MakeRect(int index)
-	{
-		var dom = _dominance[index];
-
-		var randX = _random.Next(MinCoordinate, MaxCoordinate);
-		var randY = _random.Next(MinCoordinate, MaxCoordinate);
-
-		var x1 = randX;
-		var x2 = randX + (int)Math.Round(5m * dom);
-		var y1 = randY;
-		var y2 = y1 + 5m * dom;
-
-		var xLabel = (x1 + x2) / 2;
-		var yLabel = (y1 + y2) / 2;
-		var text = $"{_tickers[index]} {Math.Round(dom, 2)}";
-
-		return new Rect
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-			X1 = x1,
-			Y1 = y1,
-			X2 = x2,
-			Y2 = y2,
-			XLabel = xLabel,
-			YLabel = yLabel,
-			Text = text
-		};
-	}
-
-	private static bool HasOverlap(List<Rect> rects, Rect rect)
-	{
-		foreach (var r in rects)
-		{
-			if (Overlap(r, rect))
-				return true;
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
+			return;
 		}
 
-		return false;
-	}
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
+		{
+			BuyMarket();
+		}
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+		{
+			SellMarket();
+		}
 
-	private static bool Overlap(Rect a, Rect b)
-	{
-		var overlapX =
-			(a.X2 >= b.X2 && a.X2 <= b.X1) || (a.X2 <= b.X2 && a.X1 >= b.X2) ||
-			(b.X2 >= a.X2 && b.X2 <= a.X1) || (b.X2 <= a.X2 && b.X1 >= a.X2);
-
-		var overlapY =
-			(a.Y1 >= b.Y1 && a.Y1 <= b.Y2) || (a.Y1 <= b.Y1 && a.Y2 >= b.Y1) ||
-			(b.Y1 >= a.Y1 && b.Y1 <= a.Y2) || (b.Y1 <= a.Y1 && b.Y2 >= a.Y1);
-
-		return overlapX && overlapY;
-	}
-
-	private class Rect
-	{
-		public int X1;
-		public decimal Y1;
-		public int X2;
-		public decimal Y2;
-		public int XLabel;
-		public decimal YLabel;
-		public string Text;
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

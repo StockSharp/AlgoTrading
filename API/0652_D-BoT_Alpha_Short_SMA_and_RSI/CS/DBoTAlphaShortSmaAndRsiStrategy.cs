@@ -1,9 +1,8 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -11,137 +10,35 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
 /// <summary>
-/// Short strategy based on SMA and RSI.
+/// DBoTAlphaShortSmaAndRsiStrategy using EMA crossover for trend timing.
+/// Enters long on golden cross, short on death cross.
 /// </summary>
 public class DBoTAlphaShortSmaAndRsiStrategy : Strategy
 {
-	private readonly StrategyParam<int> _smaLength;
-	private readonly StrategyParam<int> _rsiLength;
-	private readonly StrategyParam<decimal> _rsiEntry;
-	private readonly StrategyParam<decimal> _rsiStop;
-	private readonly StrategyParam<decimal> _rsiTakeProfit;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<DateTimeOffset> _startTime;
-	private readonly StrategyParam<DateTimeOffset> _endTime;
 
-	private decimal? _trailingStop;
-	private decimal? _lastLow;
-	private decimal _prevRsi;
-	private bool _isFirst = true;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	/// <summary>
-	/// SMA length.
-	/// </summary>
-	public int SmaLength
-	{
-		get => _smaLength.Value;
-		set => _smaLength.Value = value;
-	}
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// RSI length.
-	/// </summary>
-	public int RsiLength
-	{
-		get => _rsiLength.Value;
-		set => _rsiLength.Value = value;
-	}
-
-	/// <summary>
-	/// RSI entry level.
-	/// </summary>
-	public decimal RsiEntry
-	{
-		get => _rsiEntry.Value;
-		set => _rsiEntry.Value = value;
-	}
-
-	/// <summary>
-	/// RSI stop level.
-	/// </summary>
-	public decimal RsiStop
-	{
-		get => _rsiStop.Value;
-		set => _rsiStop.Value = value;
-	}
-
-	/// <summary>
-	/// RSI take profit level.
-	/// </summary>
-	public decimal RsiTakeProfit
-	{
-		get => _rsiTakeProfit.Value;
-		set => _rsiTakeProfit.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Start time.
-	/// </summary>
-	public DateTimeOffset StartTime
-	{
-		get => _startTime.Value;
-		set => _startTime.Value = value;
-	}
-
-	/// <summary>
-	/// End time.
-	/// </summary>
-	public DateTimeOffset EndTime
-	{
-		get => _endTime.Value;
-		set => _endTime.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the strategy.
-	/// </summary>
 	public DBoTAlphaShortSmaAndRsiStrategy()
 	{
-		_smaLength = Param(nameof(SmaLength), 200)
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
 			.SetGreaterThanZero()
-			.SetDisplay("SMA Length", "Simple moving average period", "Parameters")
-			;
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
 
-		_rsiLength = Param(nameof(RsiLength), 14)
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
 			.SetGreaterThanZero()
-			.SetDisplay("RSI Length", "RSI calculation period", "Parameters")
-			;
-
-		_rsiEntry = Param(nameof(RsiEntry), 51m)
-			.SetRange(0m, 100m)
-			.SetDisplay("RSI Entry Level", "RSI level to enter short", "Parameters")
-			;
-
-		_rsiStop = Param(nameof(RsiStop), 54m)
-			.SetRange(0m, 100m)
-			.SetDisplay("RSI Stop Level", "RSI level to exit", "Parameters")
-			;
-
-		_rsiTakeProfit = Param(nameof(RsiTakeProfit), 32m)
-			.SetRange(0m, 100m)
-			.SetDisplay("RSI Take Profit Level", "RSI level to take profit", "Parameters")
-			;
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
-
-		_startTime = Param(nameof(StartTime), new DateTimeOffset(new DateTime(2017, 1, 1), TimeSpan.Zero))
-			.SetDisplay("Start Time", "Strategy start time", "General");
-
-		_endTime = Param(nameof(EndTime), new DateTimeOffset(new DateTime(2024, 1, 1), TimeSpan.Zero))
-			.SetDisplay("End Time", "Strategy end time", "General");
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -154,11 +51,8 @@ public class DBoTAlphaShortSmaAndRsiStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_trailingStop = null;
-		_lastLow = null;
-		_prevRsi = default;
-		_isFirst = true;
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
 
 	/// <inheritdoc />
@@ -166,52 +60,46 @@ public class DBoTAlphaShortSmaAndRsiStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
-
-		var sma = new SMA { Length = SmaLength };
-		var rsi = new RelativeStrengthIndex { Length = RsiLength };
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(sma, rsi, ProcessCandle).Start();
+		subscription
+			.Bind(fastEma, slowEma, ProcessCandle)
+			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal smaValue, decimal rsiValue)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (_isFirst)
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-			_prevRsi = rsiValue;
-			_isFirst = false;
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
 			return;
 		}
 
-		var shortCondition = _prevRsi <= RsiEntry && rsiValue > RsiEntry && candle.ClosePrice < smaValue;
-
-		if (shortCondition)
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
+		{
+			BuyMarket();
+		}
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
 		{
 			SellMarket();
-			_trailingStop = null;
-			_lastLow = null;
 		}
 
-		if (Position < 0)
-		{
-			if (_lastLow is null || candle.ClosePrice < _lastLow)
-			{
-				_lastLow = candle.ClosePrice;
-				_trailingStop = candle.ClosePrice;
-			}
-
-			if ((_trailingStop is not null && candle.ClosePrice > _trailingStop) ||
-			rsiValue >= RsiStop ||
-			rsiValue <= RsiTakeProfit)
-			{
-				BuyMarket();
-			}
-		}
-
-		_prevRsi = rsiValue;
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

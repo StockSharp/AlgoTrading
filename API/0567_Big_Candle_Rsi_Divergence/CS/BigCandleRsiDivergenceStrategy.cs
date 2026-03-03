@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,86 +11,47 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Big Candle Identifier with RSI divergence and delayed trailing stops.
+/// Big Candle Identifier with RSI divergence and trailing stops.
+/// Enters when the current candle body is the largest of the last N candles.
+/// Uses RSI fast/slow divergence as confirmation.
 /// </summary>
 public class BigCandleRsiDivergenceStrategy : Strategy
 {
-	private readonly StrategyParam<int> _trailStartTicks;
-	private readonly StrategyParam<int> _trailDistanceTicks;
-	private readonly StrategyParam<int> _initialStopLossTicks;
+	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<decimal> _trailStartPercent;
+	private readonly StrategyParam<decimal> _trailDistancePercent;
+	private readonly StrategyParam<int> _lookbackBars;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private RelativeStrengthIndex _rsiFast;
-	private RelativeStrengthIndex _rsiSlow;
-
-	private decimal _body1;
-	private decimal _body2;
-	private decimal _body3;
-	private decimal _body4;
-	private decimal _body5;
-
+	private readonly List<decimal> _bodies = new();
 	private decimal _entryPrice;
-	private decimal? _trailStop;
+	private decimal _highestSinceEntry;
+	private decimal _lowestSinceEntry;
+	private bool _trailingActive;
 
-	private decimal _trailStartPrice;
-	private decimal _trailDistancePrice;
-	private decimal _initialStopLossPrice;
+	public decimal StopLossPercent { get => _stopLossPercent.Value; set => _stopLossPercent.Value = value; }
+	public decimal TrailStartPercent { get => _trailStartPercent.Value; set => _trailStartPercent.Value = value; }
+	public decimal TrailDistancePercent { get => _trailDistancePercent.Value; set => _trailDistancePercent.Value = value; }
+	public int LookbackBars { get => _lookbackBars.Value; set => _lookbackBars.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Ticks before trailing stop activation.
-	/// </summary>
-	public int TrailStartTicks
-	{
-		get => _trailStartTicks.Value;
-		set => _trailStartTicks.Value = value;
-	}
-
-	/// <summary>
-	/// Distance in ticks between price and trailing stop.
-	/// </summary>
-	public int TrailDistanceTicks
-	{
-		get => _trailDistanceTicks.Value;
-		set => _trailDistanceTicks.Value = value;
-	}
-
-	/// <summary>
-	/// Initial stop loss in ticks.
-	/// </summary>
-	public int InitialStopLossTicks
-	{
-		get => _initialStopLossTicks.Value;
-		set => _initialStopLossTicks.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initialize the strategy.
-	/// </summary>
 	public BigCandleRsiDivergenceStrategy()
 	{
-		_trailStartTicks = Param(nameof(TrailStartTicks), 200)
-			.SetDisplay("Trailing Start Ticks", "Ticks before trailing stop activates", "Risk Management")
-			
-			.SetOptimize(100, 300, 50);
+		_stopLossPercent = Param(nameof(StopLossPercent), 0.3m)
+			.SetGreaterThanZero()
+			.SetDisplay("Stop Loss %", "Initial stop loss percent", "Risk");
 
-		_trailDistanceTicks = Param(nameof(TrailDistanceTicks), 150)
-			.SetDisplay("Trailing Distance Ticks", "Trailing stop distance in ticks", "Risk Management")
-			
-			.SetOptimize(50, 250, 50);
+		_trailStartPercent = Param(nameof(TrailStartPercent), 0.5m)
+			.SetGreaterThanZero()
+			.SetDisplay("Trail Start %", "Profit percent to activate trailing", "Risk");
 
-		_initialStopLossTicks = Param(nameof(InitialStopLossTicks), 200)
-			.SetDisplay("Initial Stop Loss Ticks", "Initial stop loss distance in ticks", "Risk Management")
-			
-			.SetOptimize(100, 300, 50);
+		_trailDistancePercent = Param(nameof(TrailDistancePercent), 0.2m)
+			.SetGreaterThanZero()
+			.SetDisplay("Trail Distance %", "Trailing stop distance percent", "Risk");
+
+		_lookbackBars = Param(nameof(LookbackBars), 3)
+			.SetGreaterThanZero()
+			.SetDisplay("Lookback Bars", "Number of bars for big candle comparison", "Strategy");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -109,10 +67,11 @@ public class BigCandleRsiDivergenceStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_body1 = _body2 = _body3 = _body4 = _body5 = 0;
-		_entryPrice = 0;
-		_trailStop = null;
+		_bodies.Clear();
+		_entryPrice = 0m;
+		_highestSinceEntry = 0m;
+		_lowestSinceEntry = 0m;
+		_trailingActive = false;
 	}
 
 	/// <inheritdoc />
@@ -120,25 +79,18 @@ public class BigCandleRsiDivergenceStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var tick = Security?.PriceStep ?? 1m;
-		_trailStartPrice = TrailStartTicks * tick;
-		_trailDistancePrice = TrailDistanceTicks * tick;
-		_initialStopLossPrice = InitialStopLossTicks * tick;
-
-		_rsiFast = new RelativeStrengthIndex { Length = 5 };
-		_rsiSlow = new RelativeStrengthIndex { Length = 14 };
+		var rsiFast = new RelativeStrengthIndex { Length = 5 };
+		var rsiSlow = new RelativeStrengthIndex { Length = 14 };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_rsiFast, _rsiSlow, ProcessCandle)
+			.Bind(rsiFast, rsiSlow, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _rsiFast);
-			DrawIndicator(area, _rsiSlow);
 			DrawOwnTrades(area);
 		}
 	}
@@ -148,70 +100,104 @@ public class BigCandleRsiDivergenceStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		var body = Math.Abs(candle.ClosePrice - candle.OpenPrice);
 
-		var body0 = Math.Abs(candle.ClosePrice - candle.OpenPrice);
+		_bodies.Add(body);
+		if (_bodies.Count > LookbackBars + 1)
+			_bodies.RemoveAt(0);
 
-		var bullishBigCandle = body0 > _body1 && body0 > _body2 && body0 > _body3 && body0 > _body4 && body0 > _body5 && candle.OpenPrice < candle.ClosePrice;
-		var bearishBigCandle = body0 > _body1 && body0 > _body2 && body0 > _body3 && body0 > _body4 && body0 > _body5 && candle.OpenPrice > candle.ClosePrice;
+		if (_bodies.Count <= LookbackBars)
+			return;
 
-		var _ = rsiFast - rsiSlow; // Divergence for visualization
+		// Check if current body is the largest in lookback window
+		var isBiggest = true;
+		for (var i = 0; i < _bodies.Count - 1; i++)
+		{
+			if (_bodies[i] >= body)
+			{
+				isBiggest = false;
+				break;
+			}
+		}
+
+		var isBullish = candle.ClosePrice > candle.OpenPrice;
+		var isBearish = candle.ClosePrice < candle.OpenPrice;
+		var rsiDivergence = rsiFast - rsiSlow;
 
 		if (Position == 0)
 		{
-			_trailStop = null;
-
-			if (bullishBigCandle)
+			if (isBiggest && isBullish && rsiDivergence > 0)
 			{
 				BuyMarket();
 				_entryPrice = candle.ClosePrice;
-				_trailStop = _entryPrice - _initialStopLossPrice;
+				_highestSinceEntry = candle.ClosePrice;
+				_trailingActive = false;
 			}
-			else if (bearishBigCandle)
+			else if (isBiggest && isBearish && rsiDivergence < 0)
 			{
 				SellMarket();
 				_entryPrice = candle.ClosePrice;
-				_trailStop = _entryPrice + _initialStopLossPrice;
+				_lowestSinceEntry = candle.ClosePrice;
+				_trailingActive = false;
 			}
 		}
-		else if (Position > 0)
+		else if (Position > 0 && _entryPrice > 0)
 		{
-			var profit = candle.ClosePrice - _entryPrice;
-			if (profit >= _trailStartPrice)
-			{
-				var newStop = candle.ClosePrice - _trailDistancePrice;
-				if (_trailStop == null || newStop > _trailStop)
-					_trailStop = newStop;
-			}
+			_highestSinceEntry = Math.Max(_highestSinceEntry, candle.ClosePrice);
 
-			var stop = _trailStop ?? (_entryPrice - _initialStopLossPrice);
-			if (candle.LowPrice <= stop)
+			var profitPercent = (candle.ClosePrice - _entryPrice) / _entryPrice * 100m;
+
+			if (!_trailingActive && profitPercent >= TrailStartPercent)
+				_trailingActive = true;
+
+			if (_trailingActive)
 			{
-				SellMarket();
-				_trailStop = null;
+				var stop = _highestSinceEntry * (1 - TrailDistancePercent / 100m);
+				if (candle.ClosePrice <= stop)
+				{
+					SellMarket();
+					_entryPrice = 0m;
+					_trailingActive = false;
+				}
+			}
+			else
+			{
+				var stop = _entryPrice * (1 - StopLossPercent / 100m);
+				if (candle.ClosePrice <= stop)
+				{
+					SellMarket();
+					_entryPrice = 0m;
+				}
 			}
 		}
-		else
+		else if (Position < 0 && _entryPrice > 0)
 		{
-			var profit = _entryPrice - candle.ClosePrice;
-			if (profit >= _trailStartPrice)
-			{
-				var newStop = candle.ClosePrice + _trailDistancePrice;
-				if (_trailStop == null || newStop < _trailStop)
-					_trailStop = newStop;
-			}
+			_lowestSinceEntry = Math.Min(_lowestSinceEntry, candle.ClosePrice);
 
-			var stop = _trailStop ?? (_entryPrice + _initialStopLossPrice);
-			if (candle.HighPrice >= stop)
+			var profitPercent = (_entryPrice - candle.ClosePrice) / _entryPrice * 100m;
+
+			if (!_trailingActive && profitPercent >= TrailStartPercent)
+				_trailingActive = true;
+
+			if (_trailingActive)
 			{
-				BuyMarket();
-				_trailStop = null;
+				var stop = _lowestSinceEntry * (1 + TrailDistancePercent / 100m);
+				if (candle.ClosePrice >= stop)
+				{
+					BuyMarket();
+					_entryPrice = 0m;
+					_trailingActive = false;
+				}
+			}
+			else
+			{
+				var stop = _entryPrice * (1 + StopLossPercent / 100m);
+				if (candle.ClosePrice >= stop)
+				{
+					BuyMarket();
+					_entryPrice = 0m;
+				}
 			}
 		}
-
-		_body5 = _body4;
-		_body4 = _body3;
-		_body3 = _body2;
-		_body2 = _body1;
-		_body1 = body0;
 	}
 }

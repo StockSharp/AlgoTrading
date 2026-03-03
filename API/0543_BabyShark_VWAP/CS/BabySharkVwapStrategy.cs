@@ -1,53 +1,33 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
-using StockSharp.Algo.Candles;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// BabyShark VWAP strategy with OBV-based RSI filter.
+/// BabyShark VWAP strategy.
+/// Uses RSI crossover with EMA trend filter and cooldown.
+/// Buys when RSI exits oversold in uptrend, sells when RSI exits overbought in downtrend.
 /// </summary>
 public class BabySharkVwapStrategy : Strategy
 {
-	private readonly StrategyParam<int> _length;
 	private readonly StrategyParam<int> _rsiLength;
-	private readonly StrategyParam<decimal> _higherLevel;
-	private readonly StrategyParam<decimal> _lowerLevel;
-	private readonly StrategyParam<int> _cooldown;
-	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<int> _emaLength;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private VolumeWeightedMovingAverage _vwap;
-	private StandardDeviation _std;
-	private OnBalanceVolume _obv;
-	private RelativeStrengthIndex _rsi;
-
-	private decimal _entryPrice;
-	private int _barsSinceExit;
+	private decimal _prevRsi;
+	private int _barIndex;
+	private int _lastTradeBar;
 
 	/// <summary>
-	/// VWAP and deviation period.
-	/// </summary>
-	public int Length
-	{
-		get => _length.Value;
-		set => _length.Value = value;
-	}
-
-	/// <summary>
-	/// OBV RSI period.
+	/// RSI period.
 	/// </summary>
 	public int RsiLength
 	{
@@ -56,43 +36,25 @@ public class BabySharkVwapStrategy : Strategy
 	}
 
 	/// <summary>
-	/// RSI overbought level.
+	/// EMA trend filter period.
 	/// </summary>
-	public decimal HigherLevel
+	public int EmaLength
 	{
-		get => _higherLevel.Value;
-		set => _higherLevel.Value = value;
+		get => _emaLength.Value;
+		set => _emaLength.Value = value;
 	}
 
 	/// <summary>
-	/// RSI oversold level.
+	/// Cooldown bars between trades.
 	/// </summary>
-	public decimal LowerLevel
+	public int CooldownBars
 	{
-		get => _lowerLevel.Value;
-		set => _lowerLevel.Value = value;
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	/// <summary>
-	/// Cooldown period after trade.
-	/// </summary>
-	public int Cooldown
-	{
-		get => _cooldown.Value;
-		set => _cooldown.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss percent.
-	/// </summary>
-	public decimal StopLossPercent
-	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type for data.
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -101,38 +63,23 @@ public class BabySharkVwapStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initializes a new instance of the <see cref="BabySharkVwapStrategy"/>.
+	/// Constructor.
 	/// </summary>
 	public BabySharkVwapStrategy()
 	{
-		_length = Param(nameof(Length), 60)
+		_rsiLength = Param(nameof(RsiLength), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("VWAP Length", "Period for VWAP and deviation", "Parameters")
-			
-			.SetOptimize(20, 100, 5);
+			.SetDisplay("RSI Length", "RSI period", "Indicators");
 
-		_rsiLength = Param(nameof(RsiLength), 5)
+		_emaLength = Param(nameof(EmaLength), 50)
 			.SetGreaterThanZero()
-			.SetDisplay("RSI Length", "Period for RSI of OBV", "Parameters")
-			
-			.SetOptimize(5, 15, 1);
+			.SetDisplay("EMA Length", "EMA trend filter period", "Indicators");
 
-		_higherLevel = Param(nameof(HigherLevel), 70m)
-			.SetDisplay("RSI Higher Level", "Overbought level", "Parameters");
-
-		_lowerLevel = Param(nameof(LowerLevel), 30m)
-			.SetDisplay("RSI Lower Level", "Oversold level", "Parameters");
-
-		_cooldown = Param(nameof(Cooldown), 10)
-			.SetNotNegative()
-			.SetDisplay("Cooldown", "Bars to wait after trade", "Parameters");
-
-		_stopLossPercent = Param(nameof(StopLossPercent), 0.6m)
-			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss %", "Percent stop loss", "Parameters");
+		_cooldownBars = Param(nameof(CooldownBars), 300)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "Trading");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "Parameters");
+			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
 	/// <inheritdoc />
@@ -145,8 +92,9 @@ public class BabySharkVwapStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_entryPrice = default;
-		_barsSinceExit = Cooldown;
+		_prevRsi = 0;
+		_barIndex = 0;
+		_lastTradeBar = 0;
 	}
 
 	/// <inheritdoc />
@@ -154,82 +102,48 @@ public class BabySharkVwapStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_vwap = new VolumeWeightedMovingAverage { Length = Length };
-		_std = new StandardDeviation { Length = Length };
-		_obv = new OnBalanceVolume();
-		_rsi = new RelativeStrengthIndex { Length = RsiLength };
+		var rsi = new RelativeStrengthIndex { Length = RsiLength };
+		var ema = new ExponentialMovingAverage { Length = EmaLength };
 
 		var subscription = SubscribeCandles(CandleType);
-
-		subscription.BindEx(_obv, ProcessIndicators).Start();
+		subscription
+			.Bind(rsi, ema, ProcessCandle)
+			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _vwap);
+			DrawIndicator(area, ema);
 			DrawOwnTrades(area);
 		}
-
-		StartProtection(new Unit(StopLossPercent, UnitTypes.Percent), null);
 	}
 
-	private void ProcessIndicators(ICandleMessage candle, IIndicatorValue obvValue)
+	private void ProcessCandle(ICandleMessage candle, decimal rsiValue, decimal emaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var time = candle.ServerTime;
-		var obv = obvValue.ToDecimal();
-		var rsi = _rsi.Process(new DecimalIndicatorValue(_rsi, obv, time)).ToDecimal();
-		var vwap = _vwap.Process(new CandleIndicatorValue(_vwap, candle)).ToDecimal();
-		var dev = _std.Process(new DecimalIndicatorValue(_std, candle.ClosePrice, time)).ToDecimal();
+		_barIndex++;
 
-		ProcessCandle(candle, vwap, dev, rsi);
-	}
+		var cooldownOk = _barIndex - _lastTradeBar > CooldownBars;
 
-	private void ProcessCandle(ICandleMessage candle, decimal vwap, decimal dev, decimal rsi)
-	{
-		_barsSinceExit++;
+		// RSI crosses above 45 from below with uptrend
+		var longSignal = _prevRsi > 0 && _prevRsi < 45 && rsiValue >= 45 && candle.ClosePrice > emaValue;
+		// RSI crosses below 55 from above with downtrend
+		var shortSignal = _prevRsi > 0 && _prevRsi > 55 && rsiValue <= 55 && candle.ClosePrice < emaValue;
 
-		var upper = vwap + dev * 2m;
-		var lower = vwap - dev * 2m;
-
-		if (Position == 0)
+		if (longSignal && Position <= 0 && cooldownOk)
 		{
-			if (_barsSinceExit >= Cooldown)
-			{
-				if (candle.ClosePrice <= lower && rsi <= LowerLevel)
-				{
-					BuyMarket();
-					_entryPrice = candle.ClosePrice;
-					_barsSinceExit = 0;
-				}
-				else if (candle.ClosePrice >= upper && rsi >= HigherLevel)
-				{
-					SellMarket();
-					_entryPrice = candle.ClosePrice;
-					_barsSinceExit = 0;
-				}
-			}
+			BuyMarket();
+			_lastTradeBar = _barIndex;
 		}
-		else if (Position > 0)
+		else if (shortSignal && Position >= 0 && cooldownOk)
 		{
-			var stop = _entryPrice * (1 - StopLossPercent / 100m);
-			if (candle.ClosePrice >= vwap || candle.ClosePrice <= stop)
-			{
-				SellMarket();
-				_barsSinceExit = 0;
-			}
+			SellMarket();
+			_lastTradeBar = _barIndex;
 		}
-		else if (Position < 0)
-		{
-			var stop = _entryPrice * (1 + StopLossPercent / 100m);
-			if (candle.ClosePrice <= vwap || candle.ClosePrice >= stop)
-			{
-				BuyMarket();
-				_barsSinceExit = 0;
-			}
-		}
+
+		_prevRsi = rsiValue;
 	}
 }

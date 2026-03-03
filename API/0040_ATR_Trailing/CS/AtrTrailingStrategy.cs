@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,7 +11,7 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that uses ATR (Average True Range) for trailing stop management.
+/// Strategy that uses ATR for trailing stop management.
 /// It enters positions using a simple moving average and manages exits with a dynamic
 /// trailing stop calculated as a multiple of ATR.
 /// </summary>
@@ -24,12 +21,14 @@ public class AtrTrailingStrategy : Strategy
 	private readonly StrategyParam<decimal> _atrMultiplier;
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _cooldownBars;
 
 	private decimal _entryPrice;
 	private decimal _trailingStopLevel;
+	private int _cooldown;
 
 	/// <summary>
-	/// Period for ATR calculation (default: 14)
+	/// Period for ATR calculation.
 	/// </summary>
 	public int AtrPeriod
 	{
@@ -38,7 +37,7 @@ public class AtrTrailingStrategy : Strategy
 	}
 
 	/// <summary>
-	/// ATR multiplier for trailing stop calculation (default: 3.0)
+	/// ATR multiplier for trailing stop calculation.
 	/// </summary>
 	public decimal AtrMultiplier
 	{
@@ -47,7 +46,7 @@ public class AtrTrailingStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Period for Moving Average calculation for entry (default: 20)
+	/// Period for Moving Average calculation for entry.
 	/// </summary>
 	public int MAPeriod
 	{
@@ -56,7 +55,7 @@ public class AtrTrailingStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Type of candles used for strategy calculation
+	/// Type of candles used for strategy calculation.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -65,27 +64,37 @@ public class AtrTrailingStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initialize the ATR Trailing strategy
+	/// Cooldown bars between trades.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
+	/// Initialize the ATR Trailing strategy.
 	/// </summary>
 	public AtrTrailingStrategy()
 	{
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
-			.SetDisplay("ATR Period", "Period for ATR calculation", "Technical Parameters")
-			
+			.SetDisplay("ATR Period", "Period for ATR calculation", "Indicators")
 			.SetOptimize(7, 21, 7);
 
 		_atrMultiplier = Param(nameof(AtrMultiplier), 3.0m)
-			.SetDisplay("ATR Multiplier", "ATR multiplier for trailing stop calculation", "Risk Management")
-			
+			.SetDisplay("ATR Multiplier", "ATR multiplier for trailing stop", "Risk")
 			.SetOptimize(2.0m, 4.0m, 0.5m);
 
 		_maPeriod = Param(nameof(MAPeriod), 20)
-			.SetDisplay("MA Period", "Period for Moving Average calculation for entry", "Entry Parameters")
-			
+			.SetDisplay("MA Period", "Period for Moving Average calculation for entry", "Indicators")
 			.SetOptimize(10, 50, 5);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "Data");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
+
+		_cooldownBars = Param(nameof(CooldownBars), 500)
+			.SetRange(1, 1000)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
 	}
 
 	/// <inheritdoc />
@@ -98,10 +107,9 @@ public class AtrTrailingStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		// Reset state variables
-		_entryPrice = 0;
-		_trailingStopLevel = 0;
-
+		_entryPrice = default;
+		_trailingStopLevel = default;
+		_cooldown = default;
 	}
 
 	/// <inheritdoc />
@@ -109,107 +117,82 @@ public class AtrTrailingStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Create indicators
-		var atr = new AverageTrueRange { Length = AtrPeriod };
-		var sma = new SMA { Length = MAPeriod };
+		_entryPrice = 0;
+		_trailingStopLevel = 0;
+		_cooldown = 0;
 
-		// Create subscription and bind indicators
+		var atr = new AverageTrueRange { Length = AtrPeriod };
+		var sma = new SimpleMovingAverage { Length = MAPeriod };
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
 			.Bind(atr, sma, ProcessCandle)
 			.Start();
 
-		// Configure chart
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
 			DrawIndicator(area, sma);
-			DrawIndicator(area, atr);
 			DrawOwnTrades(area);
 		}
 	}
 
-	/// <summary>
-	/// Process candle and manage positions with ATR-based trailing stops
-	/// </summary>
 	private void ProcessCandle(ICandleMessage candle, decimal atrValue, decimal smaValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// Calculate trailing stop distance based on ATR
-		decimal trailingStopDistance = atrValue * AtrMultiplier;
+		var trailingStopDistance = atrValue * AtrMultiplier;
+
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+			return;
+		}
 
 		if (Position == 0)
 		{
-			// No position - check for entry signals
 			if (candle.ClosePrice > smaValue)
 			{
-				// Price above MA - buy (long)
-				BuyMarket(Volume);
-				
-				// Record entry price
+				BuyMarket();
 				_entryPrice = candle.ClosePrice;
-				
-				// Set initial trailing stop
 				_trailingStopLevel = _entryPrice - trailingStopDistance;
+				_cooldown = CooldownBars;
 			}
 			else if (candle.ClosePrice < smaValue)
 			{
-				// Price below MA - sell (short)
-				SellMarket(Volume);
-				
-				// Record entry price
+				SellMarket();
 				_entryPrice = candle.ClosePrice;
-				
-				// Set initial trailing stop
 				_trailingStopLevel = _entryPrice + trailingStopDistance;
+				_cooldown = CooldownBars;
 			}
 		}
 		else if (Position > 0)
 		{
-			// Long position - update and check trailing stop
-			
-			// Calculate potential new trailing stop level
-			decimal newTrailingStopLevel = candle.ClosePrice - trailingStopDistance;
-			
-			// Only move the trailing stop up, never down (for long positions)
+			var newTrailingStopLevel = candle.ClosePrice - trailingStopDistance;
 			if (newTrailingStopLevel > _trailingStopLevel)
-			{
 				_trailingStopLevel = newTrailingStopLevel;
-			}
-			
-			// Check if price hit the trailing stop
+
 			if (candle.LowPrice <= _trailingStopLevel)
 			{
-				// Trailing stop hit - exit long
-				SellMarket(Position);
+				SellMarket();
+				_cooldown = CooldownBars;
 			}
 		}
 		else if (Position < 0)
 		{
-			// Short position - update and check trailing stop
-			
-			// Calculate potential new trailing stop level
-			decimal newTrailingStopLevel = candle.ClosePrice + trailingStopDistance;
-			
-			// Only move the trailing stop down, never up (for short positions)
+			var newTrailingStopLevel = candle.ClosePrice + trailingStopDistance;
 			if (newTrailingStopLevel < _trailingStopLevel || _trailingStopLevel == 0)
-			{
 				_trailingStopLevel = newTrailingStopLevel;
-			}
-			
-			// Check if price hit the trailing stop
+
 			if (candle.HighPrice >= _trailingStopLevel)
 			{
-				// Trailing stop hit - exit short
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
+				_cooldown = CooldownBars;
 			}
 		}
 	}

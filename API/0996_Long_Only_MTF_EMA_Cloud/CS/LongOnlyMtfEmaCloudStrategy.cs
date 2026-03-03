@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 using Ecng.Common;
 
@@ -10,7 +11,8 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// EMA cloud crossover strategy that trades long when short EMA crosses above long EMA.
+/// EMA cloud crossover strategy that trades long when short EMA crosses above long EMA
+/// and short when short EMA crosses below long EMA.
 /// </summary>
 public class LongOnlyMtfEmaCloudStrategy : Strategy
 {
@@ -24,9 +26,9 @@ public class LongOnlyMtfEmaCloudStrategy : Strategy
 	private EMA _longEma;
 	private decimal _prevShort;
 	private decimal _prevLong;
-	private decimal _stopPrice;
-	private decimal _takeProfit;
+	private decimal _entryPrice;
 	private bool _isInitialized;
+	private int _cooldown;
 
 	public int ShortLength { get => _shortLength.Value; set => _shortLength.Value = value; }
 	public int LongLength { get => _longLength.Value; set => _longLength.Value = value; }
@@ -36,29 +38,44 @@ public class LongOnlyMtfEmaCloudStrategy : Strategy
 
 	public LongOnlyMtfEmaCloudStrategy()
 	{
-		_shortLength = Param(nameof(ShortLength), 21)
+		_shortLength = Param(nameof(ShortLength), 25)
 			.SetGreaterThanZero()
 			.SetDisplay("Short EMA", "Short EMA period", "Indicators");
-		_longLength = Param(nameof(LongLength), 50)
+		_longLength = Param(nameof(LongLength), 65)
 			.SetGreaterThanZero()
 			.SetDisplay("Long EMA", "Long EMA period", "Indicators");
-		_stopLossPercent = Param(nameof(StopLossPercent), 1m)
+		_stopLossPercent = Param(nameof(StopLossPercent), 7m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss %", "Stop loss percent", "Risk");
-		_takeProfitPercent = Param(nameof(TakeProfitPercent), 2m)
+		_takeProfitPercent = Param(nameof(TakeProfitPercent), 12m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit %", "Take profit percent", "Risk");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(10).TimeFrame())
 			.SetDisplay("Candle Type", "Candles", "General");
 	}
 
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_prevShort = default;
+		_prevLong = default;
+		_entryPrice = default;
+		_isInitialized = false;
+		_cooldown = default;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_prevShort = 0;
-		_prevLong = 0;
-		_isInitialized = false;
 
 		_shortEma = new EMA { Length = ShortLength };
 		_longEma = new EMA { Length = LongLength };
@@ -94,20 +111,62 @@ public class LongOnlyMtfEmaCloudStrategy : Strategy
 			return;
 		}
 
-		var crossedUp = _prevShort <= _prevLong && shortValue > longValue;
-
-		if (crossedUp && Position <= 0)
+		if (_cooldown > 0)
 		{
-			BuyMarket(Volume + Math.Abs(Position));
-			var entry = candle.ClosePrice;
-			_stopPrice = entry * (1m - StopLossPercent / 100m);
-			_takeProfit = entry * (1m + TakeProfitPercent / 100m);
+			_cooldown--;
+			_prevShort = shortValue;
+			_prevLong = longValue;
+			return;
 		}
 
-		if (Position > 0)
+		var crossedUp = _prevShort <= _prevLong && shortValue > longValue;
+		var crossedDown = _prevShort >= _prevLong && shortValue < longValue;
+
+		// Close short and go long on bullish cross
+		if (crossedUp && Position <= 0)
 		{
-			if (candle.ClosePrice <= _stopPrice || candle.ClosePrice >= _takeProfit)
+			if (Position < 0)
+				BuyMarket(Math.Abs(Position));
+
+			BuyMarket();
+			_entryPrice = candle.ClosePrice;
+			_cooldown = 10;
+		}
+		// Close long and go short on bearish cross
+		else if (crossedDown && Position >= 0)
+		{
+			if (Position > 0)
 				SellMarket(Math.Abs(Position));
+
+			SellMarket();
+			_entryPrice = candle.ClosePrice;
+			_cooldown = 10;
+		}
+
+		// Stop loss / take profit for long
+		if (Position > 0 && _entryPrice > 0)
+		{
+			var sl = _entryPrice * (1m - StopLossPercent / 100m);
+			var tp = _entryPrice * (1m + TakeProfitPercent / 100m);
+
+			if (candle.ClosePrice <= sl || candle.ClosePrice >= tp)
+			{
+				SellMarket(Math.Abs(Position));
+				_cooldown = 20;
+			}
+		}
+
+		// Stop loss / take profit for short
+		if (Position < 0 && _entryPrice > 0)
+		{
+			var sl = _entryPrice * (1m + StopLossPercent / 100m);
+			var tp = _entryPrice * (1m - TakeProfitPercent / 100m);
+
+			if (candle.ClosePrice >= sl || candle.ClosePrice <= tp)
+			{
+				BuyMarket(Math.Abs(Position));
+				_cooldown = 20;
+			}
 		}
 
 		_prevShort = shortValue;

@@ -77,16 +77,16 @@ public class NdayBreakoutStrategy : Strategy
 	/// </summary>
 	public NdayBreakoutStrategy()
 	{
-		_lookbackPeriod = Param(nameof(LookbackPeriod), 20)
+		_lookbackPeriod = Param(nameof(LookbackPeriod), 1500)
 			.SetGreaterThanZero()
-			.SetDisplay("Lookback Period", "Number of days to determine the high/low range", "Strategy Parameters")
-			
+			.SetDisplay("Lookback Period", "Number of bars to determine the high/low range", "Strategy Parameters")
+
 			.SetOptimize(10, 30, 5);
 
-		_maPeriod = Param(nameof(MaPeriod), 20)
+		_maPeriod = Param(nameof(MaPeriod), 300)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "Period for the moving average used as exit signal", "Strategy Parameters")
-			
+
 			.SetOptimize(10, 30, 5);
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
@@ -95,7 +95,7 @@ public class NdayBreakoutStrategy : Strategy
 			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "Strategy Parameters");
 	}
 
@@ -173,32 +173,16 @@ public class NdayBreakoutStrategy : Strategy
 		LogInfo($"Processing candle: High={candle.HighPrice}, Low={candle.LowPrice}, Close={candle.ClosePrice}");
 		LogInfo($"Current N-day high: {_nDayHigh}, N-day low: {_nDayLow}, MA: {maValue}");
 
-		// Entry logic - only trigger on breakouts
+		// Entry logic - only trigger on breakouts (reversal style)
 		if (candle.HighPrice > _nDayHigh && Position <= 0)
 		{
 			// Long entry - price breaks above the N-day high
-			LogInfo($"Long entry signal: Price {candle.HighPrice} broke above N-day high {_nDayHigh}");
 			BuyMarket(Volume + Math.Abs(Position));
 		}
 		else if (candle.LowPrice < _nDayLow && Position >= 0)
 		{
 			// Short entry - price breaks below the N-day low
-			LogInfo($"Short entry signal: Price {candle.LowPrice} broke below N-day low {_nDayLow}");
 			SellMarket(Volume + Math.Abs(Position));
-		}
-
-		// Exit logic
-		if (Position > 0 && candle.ClosePrice < maValue)
-		{
-			// Exit long position when price crosses below MA
-			LogInfo($"Long exit signal: Price {candle.ClosePrice} crossed below MA {maValue}");
-			SellMarket(Math.Abs(Position));
-		}
-		else if (Position < 0 && candle.ClosePrice > maValue)
-		{
-			// Exit short position when price crosses above MA
-			LogInfo($"Short exit signal: Price {candle.ClosePrice} crossed above MA {maValue}");
-			BuyMarket(Math.Abs(Position));
 		}
 
 		// Update N-day high and low values for next candle

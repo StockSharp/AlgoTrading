@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,13 +12,19 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Strategy based on price momentum percentage change.
+/// Uses Momentum indicator with SMA trend filter.
+/// Buys when momentum crosses above zero and price is above SMA.
+/// Sells when momentum crosses below zero and price is below SMA.
 /// </summary>
 public class MomentumPercentageStrategy : Strategy
 {
 	private readonly StrategyParam<int> _momentumPeriod;
-	private readonly StrategyParam<decimal> _thresholdPercent;
-	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<int> _smaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
+
+	private decimal _prevMom;
+	private bool _hasPrevValues;
+	private int _cooldown;
 
 	/// <summary>
 	/// Momentum period.
@@ -33,21 +36,12 @@ public class MomentumPercentageStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Threshold percentage for entry.
+	/// SMA period.
 	/// </summary>
-	public decimal ThresholdPercent
+	public int SmaPeriod
 	{
-		get => _thresholdPercent.Value;
-		set => _thresholdPercent.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss percentage.
-	/// </summary>
-	public decimal StopLossPercent
-	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
+		get => _smaPeriod.Value;
+		set => _smaPeriod.Value = value;
 	}
 
 	/// <summary>
@@ -65,19 +59,12 @@ public class MomentumPercentageStrategy : Strategy
 	public MomentumPercentageStrategy()
 	{
 		_momentumPeriod = Param(nameof(MomentumPeriod), 10)
-			.SetRange(5, 30)
 			.SetDisplay("Momentum Period", "Period for momentum calculation", "Indicators")
-			;
+			.SetOptimize(8, 20, 4);
 
-		_thresholdPercent = Param(nameof(ThresholdPercent), 5m)
-			.SetRange(1m, 10m)
-			.SetDisplay("Threshold %", "Momentum percentage threshold for entry", "Strategy")
-			;
-
-		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
-			.SetRange(0.5m, 5m)
-			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management")
-			;
+		_smaPeriod = Param(nameof(SmaPeriod), 20)
+			.SetDisplay("SMA Period", "Period for SMA trend filter", "Indicators")
+			.SetOptimize(15, 30, 5);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -90,28 +77,27 @@ public class MomentumPercentageStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevMom = default;
+		_hasPrevValues = default;
+		_cooldown = default;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		// Create indicators
 		var momentum = new Momentum { Length = MomentumPeriod };
-		var sma = new SMA { Length = 20 };
+		var sma = new SimpleMovingAverage { Length = SmaPeriod };
 
-		// Subscribe to candles and bind the indicators
 		var subscription = SubscribeCandles(CandleType);
 		subscription
 			.Bind(momentum, sma, ProcessCandle)
 			.Start();
 
-		// Enable stop loss protection
-		StartProtection(
-			takeProfit: null,
-			stopLoss: new Unit(StopLossPercent, UnitTypes.Percent),
-			useMarketOrders: true
-		);
-
-		// Setup chart visualization
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -122,55 +108,48 @@ public class MomentumPercentageStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal momentumValue, decimal smaValue)
+	private void ProcessCandle(ICandleMessage candle, decimal momValue, decimal smaValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// Calculate the percentage change
-		// Momentum indicator returns the difference between current price and price N periods ago
-		// To get percentage change: (momentum / (close - momentum)) * 100
-		decimal closePrice = candle.ClosePrice;
-		decimal previousPrice = closePrice - momentumValue;
-		
-		if (previousPrice == 0)
-			return;  // Avoid division by zero
-			
-		decimal percentChange = (momentumValue / previousPrice) * 100;
+		if (smaValue == 0)
+			return;
 
-		// Entry logic
-		if (percentChange > ThresholdPercent && candle.ClosePrice > smaValue && Position <= 0)
+		if (!_hasPrevValues)
 		{
-			// Price increased by more than threshold percentage and is above MA - buy signal
+			_hasPrevValues = true;
+			_prevMom = momValue;
+			return;
+		}
+
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+			_prevMom = momValue;
+			return;
+		}
+
+		var price = candle.ClosePrice;
+
+		// Momentum crosses above zero + price above SMA = buy
+		if (_prevMom <= 0 && momValue > 0 && price > smaValue && Position <= 0)
+		{
 			var volume = Volume + Math.Abs(Position);
 			BuyMarket(volume);
-			LogInfo($"Buy signal: Momentum {percentChange:F2}% increase over {MomentumPeriod} periods");
+			_cooldown = 30;
 		}
-		else if (percentChange < -ThresholdPercent && candle.ClosePrice < smaValue && Position >= 0)
+		// Momentum crosses below zero + price below SMA = sell
+		else if (_prevMom >= 0 && momValue < 0 && price < smaValue && Position >= 0)
 		{
-			// Price decreased by more than threshold percentage and is below MA - sell signal
 			var volume = Volume + Math.Abs(Position);
 			SellMarket(volume);
-			LogInfo($"Sell signal: Momentum {Math.Abs(percentChange):F2}% decrease over {MomentumPeriod} periods");
+			_cooldown = 30;
 		}
 
-		// Exit logic
-		if (Position > 0 && candle.ClosePrice < smaValue)
-		{
-			// Exit long position when price falls below MA
-			SellMarket(Math.Abs(Position));
-			LogInfo($"Exiting long position: Price fell below MA. Price: {candle.ClosePrice}, MA: {smaValue}");
-		}
-		else if (Position < 0 && candle.ClosePrice > smaValue)
-		{
-			// Exit short position when price rises above MA
-			BuyMarket(Math.Abs(Position));
-			LogInfo($"Exiting short position: Price rose above MA. Price: {candle.ClosePrice}, MA: {smaValue}");
-		}
+		_prevMom = momValue;
 	}
 }

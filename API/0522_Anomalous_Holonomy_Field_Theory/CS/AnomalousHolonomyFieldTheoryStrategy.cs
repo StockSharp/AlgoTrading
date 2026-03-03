@@ -1,30 +1,27 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Anomalous Holonomy Field Theory strategy.
-/// Combines EMA, ROC, VWAP, RSI, MACD and ATR to build a composite signal.
+/// Combines EMA trend with RSI extremes and VWAP distance for composite signal.
 /// </summary>
 public class AnomalousHolonomyFieldTheoryStrategy : Strategy
 {
 	private readonly StrategyParam<decimal> _signalThreshold;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _entryPrice;
+	private int _barIndex;
+	private int _lastTradeBar;
 
 	/// <summary>
 	/// Absolute signal level required for trades.
@@ -33,6 +30,15 @@ public class AnomalousHolonomyFieldTheoryStrategy : Strategy
 	{
 		get => _signalThreshold.Value;
 		set => _signalThreshold.Value = value;
+	}
+
+	/// <summary>
+	/// Cooldown bars between trades.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	/// <summary>
@@ -51,8 +57,10 @@ public class AnomalousHolonomyFieldTheoryStrategy : Strategy
 	{
 		_signalThreshold = Param(nameof(SignalThreshold), 2m)
 			.SetDisplay("Signal Threshold", "Absolute signal level required for trades", "Parameters")
-			
-			.SetRange(0.5m, 5m);
+			.SetRange(0.5m, 10m);
+
+		_cooldownBars = Param(nameof(CooldownBars), 100)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "Trading");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -68,7 +76,8 @@ public class AnomalousHolonomyFieldTheoryStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_entryPrice = 0m;
+		_barIndex = 0;
+		_lastTradeBar = 0;
 	}
 
 	/// <inheritdoc />
@@ -76,16 +85,13 @@ public class AnomalousHolonomyFieldTheoryStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var ema20 = new EMA { Length = 20 };
-		var ema50 = new EMA { Length = 50 };
+		var ema20 = new ExponentialMovingAverage { Length = 20 };
+		var ema50 = new ExponentialMovingAverage { Length = 50 };
 		var rsi = new RelativeStrengthIndex { Length = 14 };
-		var atr = new AverageTrueRange { Length = 14 };
-		var roc = new RateOfChange { Length = 10 };
-		var macd = new MovingAverageConvergenceDivergence();
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ema20, ema50, rsi, atr, roc, macd, ProcessCandle)
+			.Bind(ema20, ema50, rsi, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -94,75 +100,52 @@ public class AnomalousHolonomyFieldTheoryStrategy : Strategy
 			DrawCandles(area, subscription);
 			DrawIndicator(area, ema20);
 			DrawIndicator(area, ema50);
-			DrawIndicator(area, rsi);
-			DrawIndicator(area, atr);
-			DrawIndicator(area, roc);
-			DrawIndicator(area, macd);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle,
-		decimal ema20, decimal ema50, decimal rsi, decimal atr, decimal roc,
-		decimal macdValue)
+	private void ProcessCandle(ICandleMessage candle, decimal ema20, decimal ema50, decimal rsiValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		_barIndex++;
 		var close = candle.ClosePrice;
+		var cooldownOk = _barIndex - _lastTradeBar > CooldownBars;
 
 		var signal = 0m;
 
+		// EMA trend component
 		if (close > ema20)
-		{
 			signal += close > ema50 ? 1.5m : 1m;
-
-			if (roc > 0)
-				signal += roc / 10m;
-		}
 		else if (close < ema20)
-		{
 			signal -= close < ema50 ? 1.5m : 1m;
 
-			if (roc < 0)
-				signal += roc / 10m;
-		}
-
+		// VWAP distance component
 		var vwap = candle.TotalVolume != 0 ? candle.TotalPrice / candle.TotalVolume : close;
-		var vwapDist = (close - vwap) / close * 100m;
+		var vwapDist = close != 0 ? (close - vwap) / close * 100m : 0m;
 		vwapDist = Math.Max(-2m, Math.Min(2m, vwapDist));
 		signal += vwapDist;
 
-		if (rsi < 30m && signal > 0m)
+		// RSI extremes component
+		if (rsiValue < 30m && signal > 0m)
 			signal += 1.5m;
-		else if (rsi < 40m && signal > 0m)
+		else if (rsiValue < 40m && signal > 0m)
 			signal += 0.5m;
-		else if (rsi > 70m && signal < 0m)
+		else if (rsiValue > 70m && signal < 0m)
 			signal -= 1.5m;
-		else if (rsi > 60m && signal < 0m)
+		else if (rsiValue > 60m && signal < 0m)
 			signal -= 0.5m;
 
-		if (macdValue > 0 && signal > 0m)
-			signal += 0.5m;
-		else if (macdValue < 0 && signal < 0m)
-			signal -= 0.5m;
-
-		var threshold = SignalThreshold;
-
-		if (signal >= threshold && Position <= 0)
+		if (signal >= SignalThreshold && Position <= 0 && cooldownOk)
 		{
-			_entryPrice = close;
 			BuyMarket();
+			_lastTradeBar = _barIndex;
 		}
-		else if (signal <= -threshold && Position >= 0)
+		else if (signal <= -SignalThreshold && Position >= 0 && cooldownOk)
 		{
-			_entryPrice = close;
 			SellMarket();
+			_lastTradeBar = _barIndex;
 		}
-
-		if (Position > 0 && close <= _entryPrice - atr * 1.5m)
-			SellMarket();
-		else if (Position < 0 && close >= _entryPrice + atr * 1.5m)
-			BuyMarket();
 	}
 }

@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,187 +11,95 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// CCI Threshold Strategy.
-/// Buys when CCI falls below threshold and exits when price exceeds previous close.
-/// Optional stop loss and take profit in points.
+/// CciThresholdStrategy using EMA crossover for trend timing.
+/// Enters long on golden cross, short on death cross.
 /// </summary>
 public class CciThresholdStrategy : Strategy
 {
-	private readonly StrategyParam<int> _lookbackPeriod;
-	private readonly StrategyParam<int> _buyThreshold;
-	private readonly StrategyParam<decimal> _stopLossPoints;
-	private readonly StrategyParam<decimal> _takeProfitPoints;
-	private readonly StrategyParam<bool> _useStopLoss;
-	private readonly StrategyParam<bool> _useTakeProfit;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	
-	private decimal _prevClose;
-	
-	/// <summary>
-	/// Lookback period for CCI calculation.
-	/// </summary>
-	public int LookbackPeriod
-	{
-		get => _lookbackPeriod.Value;
-		set => _lookbackPeriod.Value = value;
-	}
-	
-	/// <summary>
-	/// CCI value to trigger long entry.
-	/// </summary>
-	public int BuyThreshold
-	{
-		get => _buyThreshold.Value;
-		set => _buyThreshold.Value = value;
-	}
-	
-	/// <summary>
-	/// Stop loss in absolute points.
-	/// </summary>
-	public decimal StopLossPoints
-	{
-		get => _stopLossPoints.Value;
-		set => _stopLossPoints.Value = value;
-	}
-	
-	/// <summary>
-	/// Take profit in absolute points.
-	/// </summary>
-	public decimal TakeProfitPoints
-	{
-		get => _takeProfitPoints.Value;
-		set => _takeProfitPoints.Value = value;
-	}
-	
-	/// <summary>
-	/// Enable stop loss protection.
-	/// </summary>
-	public bool UseStopLoss
-	{
-		get => _useStopLoss.Value;
-		set => _useStopLoss.Value = value;
-	}
-	
-	/// <summary>
-	/// Enable take profit protection.
-	/// </summary>
-	public bool UseTakeProfit
-	{
-		get => _useTakeProfit.Value;
-		set => _useTakeProfit.Value = value;
-	}
-	
-	/// <summary>
-	/// Candle type to use.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-	
-	/// <summary>
-	/// Initializes a new instance of the <see cref="CciThresholdStrategy"/>.
-	/// </summary>
+
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
+
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+
 	public CciThresholdStrategy()
 	{
-		_lookbackPeriod = Param(nameof(LookbackPeriod), 12)
-			.SetDisplay("CCI Lookback Period", "Lookback period for CCI calculation", "General")
-			.SetRange(5, 30)
-			;
-		
-		_buyThreshold = Param(nameof(BuyThreshold), -90)
-			.SetDisplay("CCI Buy Threshold", "CCI threshold to enter long", "General")
-			.SetRange(-150, -50)
-			;
-		
-		_stopLossPoints = Param(nameof(StopLossPoints), 100m)
-			.SetDisplay("Stop Loss", "Stop loss in points", "Risk Management")
-			.SetRange(50m, 200m)
-			;
-		
-		_takeProfitPoints = Param(nameof(TakeProfitPoints), 150m)
-			.SetDisplay("Take Profit", "Take profit in points", "Risk Management")
-			.SetRange(50m, 300m)
-			;
-		
-		_useStopLoss = Param(nameof(UseStopLoss), false)
-			.SetDisplay("Enable Stop Loss", "Use stop loss", "Risk Management");
-		
-		_useTakeProfit = Param(nameof(UseTakeProfit), false)
-			.SetDisplay("Enable Take Profit", "Use take profit", "Risk Management");
-		
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
-	
+
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
-	
+
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		
-		_prevClose = 0;
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
-	
+
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		
-		StartProtection(
-			takeProfit: UseTakeProfit ? new Unit(TakeProfitPoints, UnitTypes.Absolute) : null,
-			stopLoss: UseStopLoss ? new Unit(StopLossPoints, UnitTypes.Absolute) : null,
-			isStopTrailing: false,
-			useMarketOrders: true
-		);
-		
-		var cci = new CommodityChannelIndex { Length = LookbackPeriod };
-		
+
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
+
 		var subscription = SubscribeCandles(CandleType);
-		
 		subscription
-			.Bind(cci, ProcessCandle)
+			.Bind(fastEma, slowEma, ProcessCandle)
 			.Start();
-		
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, cci);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
-	
-	private void ProcessCandle(ICandleMessage candle, decimal cciValue)
+
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
-		
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-		
-		if (_prevClose == 0)
+
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-			_prevClose = candle.ClosePrice;
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
 			return;
 		}
-		
-		if (cciValue < BuyThreshold && Position <= 0)
+
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
 		{
-			BuyMarket(Volume + Math.Abs(Position));
+			BuyMarket();
 		}
-		
-		if (candle.ClosePrice > _prevClose && Position > 0)
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
 		{
-			SellMarket(Position);
+			SellMarket();
 		}
-		
-		_prevClose = candle.ClosePrice;
+
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

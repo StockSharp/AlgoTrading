@@ -1,34 +1,47 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Anand's breakout strategy based on daily trend and 15-minute levels.
+/// Anand's breakout strategy based on short-term trend and price level breakouts.
+/// Uses EMA for trend and breakout of previous candle high/low for entry.
 /// </summary>
 public class AnandsStrategy : Strategy
 {
+	private readonly StrategyParam<int> _emaLength;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private ICandleMessage _prevCandle1;
-	private ICandleMessage _prevCandle2;
+	private decimal _prevHigh;
+	private decimal _prevLow;
+	private int _barIndex;
+	private int _lastTradeBar;
 
-	private decimal _prevHighDay;
-	private decimal _prevLowDay;
-	private decimal _prevCloseDay;
-	private bool _hasDaily;
+	/// <summary>
+	/// EMA period for trend filter.
+	/// </summary>
+	public int EmaLength
+	{
+		get => _emaLength.Value;
+		set => _emaLength.Value = value;
+	}
+
+	/// <summary>
+	/// Cooldown bars between trades.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
 
 	/// <summary>
 	/// Trading candle type.
@@ -44,6 +57,12 @@ public class AnandsStrategy : Strategy
 	/// </summary>
 	public AnandsStrategy()
 	{
+		_emaLength = Param(nameof(EmaLength), 20)
+			.SetDisplay("EMA Length", "EMA trend filter period", "Indicator");
+
+		_cooldownBars = Param(nameof(CooldownBars), 15)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "Trading");
+
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Trading timeframe", "General");
 	}
@@ -51,24 +70,17 @@ public class AnandsStrategy : Strategy
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return
-		[
-			(Security, CandleType),
-			(Security, TimeSpan.FromMinutes(5).TimeFrame())
-		];
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_prevCandle1 = null;
-		_prevCandle2 = null;
-		_prevHighDay = default;
-		_prevLowDay = default;
-		_prevCloseDay = default;
-		_hasDaily = false;
+		_prevHigh = 0;
+		_prevLow = 0;
+		_barIndex = 0;
+		_lastTradeBar = 0;
 	}
 
 	/// <inheritdoc />
@@ -76,65 +88,52 @@ public class AnandsStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var daySubscription = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
-		daySubscription.Bind(ProcessDaily).Start();
+		var ema = new ExponentialMovingAverage { Length = EmaLength };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
+		subscription.Bind(ema, ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawIndicator(area, ema);
 			DrawOwnTrades(area);
 		}
-
-		StartProtection(null, null);
 	}
 
-	private void ProcessDaily(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal emaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		_prevHighDay = candle.HighPrice;
-		_prevLowDay = candle.LowPrice;
-		_prevCloseDay = candle.ClosePrice;
-		_hasDaily = true;
-	}
+		_barIndex++;
 
-	private void ProcessCandle(ICandleMessage candle)
-	{
-		if (candle.State != CandleStates.Finished)
+		if (_prevHigh == 0 || _prevLow == 0)
 		{
-			ShiftCandles(candle);
+			_prevHigh = candle.HighPrice;
+			_prevLow = candle.LowPrice;
 			return;
 		}
 
-		if (!_hasDaily || _prevCandle1 == null || _prevCandle2 == null)
+		var cooldownOk = _barIndex - _lastTradeBar > CooldownBars;
+		var upTrend = candle.ClosePrice > emaValue;
+		var downTrend = candle.ClosePrice < emaValue;
+
+		// Breakout above previous candle high in uptrend
+		if (upTrend && candle.ClosePrice > _prevHigh && Position <= 0 && cooldownOk)
 		{
-			ShiftCandles(candle);
-			return;
-		}
-
-		var tradeDirection = _prevCloseDay > _prevHighDay ? 1 : _prevCloseDay < _prevLowDay ? -1 : 0;
-
-		var currentClose = _prevCandle1.ClosePrice;
-		var prevHigh15m = _prevCandle2.HighPrice;
-		var prevLow15m = _prevCandle2.LowPrice;
-
-		if (tradeDirection == 1 && currentClose > prevHigh15m && Position <= 0)
 			BuyMarket();
-		else if (tradeDirection == -1 && currentClose < prevLow15m && Position >= 0)
+			_lastTradeBar = _barIndex;
+		}
+		// Breakout below previous candle low in downtrend
+		else if (downTrend && candle.ClosePrice < _prevLow && Position >= 0 && cooldownOk)
+		{
 			SellMarket();
+			_lastTradeBar = _barIndex;
+		}
 
-		ShiftCandles(candle);
-	}
-
-	private void ShiftCandles(ICandleMessage candle)
-	{
-		_prevCandle2 = _prevCandle1;
-		_prevCandle1 = candle;
+		_prevHigh = candle.HighPrice;
+		_prevLow = candle.LowPrice;
 	}
 }
-

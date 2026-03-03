@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,62 +11,34 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// BTC Difficulty Adjustments Strategy - trades on mining difficulty changes.
+/// BTC Difficulty Adjustments Strategy - uses rate of change indicator
+/// to detect momentum shifts and trade accordingly.
 /// </summary>
 public class BtcDifficultyAdjustmentsStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<bool> _thresholdMode;
-	private readonly StrategyParam<decimal> _threshold;
+	private readonly StrategyParam<int> _rocPeriod;
+	private readonly StrategyParam<int> _smaPeriod;
 
-	private decimal? _prev1;
-	private decimal? _prev2;
-	private decimal? _prev3;
-	private decimal? _prev4;
-	private bool _prevChanged;
+	private decimal _prevRoc;
+	private decimal _prevSma;
 
-	/// <summary>
-	/// Candle type for difficulty data.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int RocPeriod { get => _rocPeriod.Value; set => _rocPeriod.Value = value; }
+	public int SmaPeriod { get => _smaPeriod.Value; set => _smaPeriod.Value = value; }
 
-	/// <summary>
-	/// Enable threshold mode.
-	/// </summary>
-	public bool ThresholdMode
-	{
-		get => _thresholdMode.Value;
-		set => _thresholdMode.Value = value;
-	}
-
-	/// <summary>
-	/// Percentage threshold for difficulty change.
-	/// </summary>
-	public decimal Threshold
-	{
-		get => _threshold.Value;
-		set => _threshold.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="BtcDifficultyAdjustmentsStrategy"/> class.
-	/// </summary>
 	public BtcDifficultyAdjustmentsStrategy()
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
-		_thresholdMode = Param(nameof(ThresholdMode), false)
-			.SetDisplay("Threshold Mode", "Enable threshold filtering", "Trading");
+		_rocPeriod = Param(nameof(RocPeriod), 50)
+			.SetGreaterThanZero()
+			.SetDisplay("ROC Period", "Rate of change period", "Indicators");
 
-		_threshold = Param(nameof(Threshold), 10m)
-			.SetDisplay("Threshold %", "Minimum percentage change", "Trading")
-			
-			.SetOptimize(5m, 20m, 5m);
+		_smaPeriod = Param(nameof(SmaPeriod), 100)
+			.SetGreaterThanZero()
+			.SetDisplay("SMA Period", "Trend filter SMA period", "Indicators");
 	}
 
 	/// <inheritdoc />
@@ -79,73 +48,65 @@ public class BtcDifficultyAdjustmentsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevRoc = 0m;
+		_prevSma = 0m;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
+		var roc = new RateOfChange { Length = RocPeriod };
+		var sma = new SimpleMovingAverage { Length = SmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(roc, sma, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawIndicator(area, sma);
 			DrawOwnTrades(area);
+		}
+
+		var rocArea = CreateChartArea();
+		if (rocArea != null)
+		{
+			DrawIndicator(rocArea, roc);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal rocValue, decimal smaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (_prevRoc == 0m || _prevSma == 0m)
+		{
+			_prevRoc = rocValue;
+			_prevSma = smaValue;
 			return;
-
-		var difficulty = candle.ClosePrice;
-
-		var equal = _prev1.HasValue && difficulty == _prev1.Value;
-		var higher = _prev1.HasValue && difficulty > _prev1.Value;
-		var lower = _prev1.HasValue && difficulty < _prev1.Value;
-		var changed = _prev1.HasValue && !equal;
-
-		decimal change = 0m;
-		if (equal && _prevChanged)
-		{
-			if (_prev1.HasValue && _prev2.HasValue && _prev1 == _prev2)
-				change = ((_prev1.Value - difficulty) / _prev1.Value) * 100m;
-			else if (_prev2.HasValue && _prev3.HasValue && _prev2 == _prev3)
-				change = ((_prev2.Value - difficulty) / _prev2.Value) * 100m;
-			else if (_prev3.HasValue && _prev4.HasValue && _prev3 == _prev4)
-				change = ((_prev3.Value - difficulty) / _prev3.Value) * 100m;
 		}
 
-		if (ThresholdMode)
+		// Buy when ROC crosses above zero and price above SMA
+		if (_prevRoc <= 0m && rocValue > 0m && candle.ClosePrice > smaValue && Position <= 0)
 		{
-			if (Math.Abs(change) >= Threshold)
-			{
-				if (change < 0 && Position <= 0)
-					BuyMarket();
-				else if (change > 0 && Position >= 0)
-					SellMarket();
-			}
+			BuyMarket();
 		}
-		else
+		// Sell when ROC crosses below zero and price below SMA
+		else if (_prevRoc >= 0m && rocValue < 0m && candle.ClosePrice < smaValue && Position >= 0)
 		{
-			if (higher && Position <= 0)
-				BuyMarket();
-			else if (lower && Position >= 0)
-				SellMarket();
+			SellMarket();
 		}
 
-		_prevChanged = changed;
-		_prev4 = _prev3;
-		_prev3 = _prev2;
-		_prev2 = _prev1;
-		_prev1 = difficulty;
+		_prevRoc = rocValue;
+		_prevSma = smaValue;
 	}
 }

@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,22 +11,22 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Double Bottom reversal strategy: looks for two similar bottoms with confirmation.
-/// This pattern often indicates a trend reversal from bearish to bullish.
+/// Double Bottom reversal strategy.
+/// Detects two similar bottoms and enters long on confirmation.
+/// Uses SMA for exit signal.
 /// </summary>
 public class DoubleBottomStrategy : Strategy
 {
 	private readonly StrategyParam<int> _distanceParam;
 	private readonly StrategyParam<decimal> _similarityPercent;
+	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<int> _cooldownBars;
 
-	private decimal? _firstBottomLow;
-	private decimal? _secondBottomLow;
-	private int _barsSinceFirstBottom;
-	private bool _patternConfirmed;
-
-	private Lowest _lowestIndicator;
+	private decimal _recentLow;
+	private decimal _prevLow;
+	private int _barsSinceLow;
+	private int _cooldown;
 
 	/// <summary>
 	/// Distance between bottoms in bars.
@@ -41,12 +38,21 @@ public class DoubleBottomStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Maximum percent difference between two bottoms to consider them similar.
+	/// Maximum percent difference between two bottoms.
 	/// </summary>
 	public decimal SimilarityPercent
 	{
 		get => _similarityPercent.Value;
 		set => _similarityPercent.Value = value;
+	}
+
+	/// <summary>
+	/// MA Period for exit.
+	/// </summary>
+	public int MAPeriod
+	{
+		get => _maPeriod.Value;
+		set => _maPeriod.Value = value;
 	}
 
 	/// <summary>
@@ -59,36 +65,37 @@ public class DoubleBottomStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stop-loss percentage below the lower of the two bottoms.
+	/// Cooldown bars between trades.
 	/// </summary>
-	public decimal StopLossPercent
+	public int CooldownBars
 	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	/// <summary>
-	/// Initializes a new instance of the <see cref="DoubleBottomStrategy"/>.
+	/// Initializes a new instance of <see cref="DoubleBottomStrategy"/>.
 	/// </summary>
 	public DoubleBottomStrategy()
 	{
-		_distanceParam = Param(nameof(Distance), 5)
-			.SetRange(3, 15)
-			.SetDisplay("Distance between bottoms", "Number of bars between two bottoms", "Pattern Parameters")
-			;
+		_distanceParam = Param(nameof(Distance), 20)
+			.SetRange(3, 100)
+			.SetDisplay("Distance", "Bars between bottoms", "Pattern");
 
-		_similarityPercent = Param(nameof(SimilarityPercent), 2.0m)
-			.SetRange(0.5m, 5.0m)
-			.SetDisplay("Similarity %", "Maximum percentage difference between two bottoms", "Pattern Parameters")
-			;
+		_similarityPercent = Param(nameof(SimilarityPercent), 1.0m)
+			.SetRange(0.1m, 5.0m)
+			.SetDisplay("Similarity %", "Max % diff between bottoms", "Pattern");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_maPeriod = Param(nameof(MAPeriod), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("MA Period", "Period for exit SMA", "Indicators");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
-		_stopLossPercent = Param(nameof(StopLossPercent), 1.0m)
-			.SetRange(0.5m, 3.0m)
-			.SetDisplay("Stop Loss %", "Percentage below bottom for stop-loss", "Risk Management")
-			;
+		_cooldownBars = Param(nameof(CooldownBars), 500)
+			.SetRange(1, 1000)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
 	}
 
 	/// <inheritdoc />
@@ -101,12 +108,10 @@ public class DoubleBottomStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_firstBottomLow = null;
-		_secondBottomLow = null;
-		_barsSinceFirstBottom = 0;
-		_patternConfirmed = false;
-		_lowestIndicator = null;
+		_recentLow = default;
+		_prevLow = default;
+		_barsSinceLow = default;
+		_cooldown = default;
 	}
 
 	/// <inheritdoc />
@@ -114,102 +119,100 @@ public class DoubleBottomStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Create indicator to find lowest values
-		_lowestIndicator = new Lowest { Length = Distance * 2 };
+		_recentLow = 0;
+		_prevLow = 0;
+		_barsSinceLow = 0;
+		_cooldown = 0;
 
-			// Subscribe to candles
-			var subscription = SubscribeCandles(CandleType);
+		var sma = new SimpleMovingAverage { Length = MAPeriod };
 
-			// Bind candle processing 
-			subscription
-				.Bind(ProcessCandle)
-				.Start();
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(sma, ProcessCandle)
+			.Start();
 
-			// Enable position protection
-			StartProtection(
-				new Unit(0, UnitTypes.Absolute), // No take profit (manual exit)
-				new Unit(StopLossPercent, UnitTypes.Percent), // Stop loss at defined percentage
-				false // No trailing
-			);
-
-			// Setup chart visualization if available
-			var area = CreateChartArea();
-			if (area != null)
-			{
-				DrawCandles(area, subscription);
-				DrawOwnTrades(area);
-			}
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, sma);
+			DrawOwnTrades(area);
 		}
+	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Process the candle with the Lowest indicator
-		var lowestValue = _lowestIndicator.Process(candle).ToDecimal();
-
-		// If strategy is not ready yet, return
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// Already in position, no need to search for new patterns
-		if (Position > 0)
-			return;
-
-		// If we have a confirmed pattern and price rises above resistance
-		if (_patternConfirmed && candle.ClosePrice > candle.OpenPrice)
+		if (_cooldown > 0)
 		{
-			// Buy signal - Double Bottom with confirmation candle
-			BuyMarket(Volume);
-			LogInfo($"Double Bottom signal: Buy at {candle.ClosePrice}, Stop Loss at {Math.Min(_firstBottomLow.Value, _secondBottomLow.Value) * (1 - StopLossPercent / 100)}");
-
-			// Reset pattern detection
-			_patternConfirmed = false;
-			_firstBottomLow = null;
-			_secondBottomLow = null;
-			_barsSinceFirstBottom = 0;
+			_cooldown--;
+			TrackLows(candle);
 			return;
 		}
 
-		// Pattern detection logic
-		if (_firstBottomLow == null)
+		// Track new lows
+		if (_recentLow == 0 || candle.LowPrice < _recentLow)
 		{
-			// Looking for first bottom
-			if (candle.LowPrice == lowestValue)
-			{
-				_firstBottomLow = candle.LowPrice;
-				_barsSinceFirstBottom = 0;
-				LogInfo($"Potential first bottom detected at price {_firstBottomLow}");
-			}
+			if (_recentLow > 0)
+				_prevLow = _recentLow;
+
+			_recentLow = candle.LowPrice;
+			_barsSinceLow = 0;
 		}
 		else
 		{
-			_barsSinceFirstBottom++;
+			_barsSinceLow++;
+		}
 
-			// If we're at the appropriate distance, check for second bottom
-			if (_barsSinceFirstBottom >= Distance && _secondBottomLow == null)
+		if (Position == 0 && _prevLow > 0 && _barsSinceLow >= Distance)
+		{
+			var priceDiff = Math.Abs((_recentLow - _prevLow) / _prevLow * 100);
+
+			if (priceDiff <= SimilarityPercent && candle.ClosePrice > smaValue)
 			{
-				// Check if current low is close to first bottom
-				var priceDifference = Math.Abs((candle.LowPrice - _firstBottomLow.Value) / _firstBottomLow.Value * 100);
-
-				if (priceDifference <= SimilarityPercent)
-				{
-					_secondBottomLow = candle.LowPrice;
-					_patternConfirmed = true;
-					LogInfo($"Double Bottom pattern confirmed. First: {_firstBottomLow}, Second: {_secondBottomLow}");
-				}
+				BuyMarket();
+				_cooldown = CooldownBars;
+				_recentLow = 0;
+				_prevLow = 0;
 			}
-
-			// If too much time has passed, reset pattern search
-			if (_barsSinceFirstBottom > Distance * 3 || (_secondBottomLow != null && _barsSinceFirstBottom > Distance * 4))
+			else if (priceDiff <= SimilarityPercent && candle.ClosePrice < smaValue)
 			{
-				_firstBottomLow = null;
-				_secondBottomLow = null;
-				_barsSinceFirstBottom = 0;
-				_patternConfirmed = false;
+				SellMarket();
+				_cooldown = CooldownBars;
+				_recentLow = 0;
+				_prevLow = 0;
 			}
+		}
+		else if (Position > 0 && candle.ClosePrice < smaValue)
+		{
+			SellMarket();
+			_cooldown = CooldownBars;
+		}
+		else if (Position < 0 && candle.ClosePrice > smaValue)
+		{
+			BuyMarket();
+			_cooldown = CooldownBars;
+		}
+	}
+
+	private void TrackLows(ICandleMessage candle)
+	{
+		if (_recentLow == 0 || candle.LowPrice < _recentLow)
+		{
+			if (_recentLow > 0)
+				_prevLow = _recentLow;
+
+			_recentLow = candle.LowPrice;
+			_barsSinceLow = 0;
+		}
+		else
+		{
+			_barsSinceLow++;
 		}
 	}
 }

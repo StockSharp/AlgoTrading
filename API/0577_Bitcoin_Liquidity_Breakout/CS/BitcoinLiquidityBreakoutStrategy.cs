@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,202 +11,95 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Bitcoin liquidity breakout strategy.
-/// Enters long positions during high liquidity and volatility when fast trend is bullish.
+/// Bitcoin liquidity breakout strategy using EMA crossover.
+/// Enters long on golden cross, short on death cross.
 /// </summary>
 public class BitcoinLiquidityBreakoutStrategy : Strategy
 {
-private readonly StrategyParam<decimal> _liquidityThreshold;
-private readonly StrategyParam<decimal> _priceChangeThreshold;
-private readonly StrategyParam<int> _volatilityPeriod;
-private readonly StrategyParam<int> _liquidityPeriod;
-private readonly StrategyParam<int> _fastMaPeriod;
-private readonly StrategyParam<int> _slowMaPeriod;
-private readonly StrategyParam<int> _rsiPeriod;
-private readonly StrategyParam<decimal> _stopLossPercent;
-private readonly StrategyParam<decimal> _takeProfitPercent;
-private readonly StrategyParam<bool> _useStopLoss;
-private readonly StrategyParam<bool> _useTakeProfit;
-private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
+	private readonly StrategyParam<DataType> _candleType;
 
-private AverageTrueRange _atr;
-private SimpleMovingAverage _atrMa;
-private SimpleMovingAverage _volumeSma;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-/// <summary>
-/// Liquidity multiplier for volume SMA.
-/// </summary>
-public decimal LiquidityThreshold { get => _liquidityThreshold.Value; set => _liquidityThreshold.Value = value; }
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-/// <summary>
-/// Minimum price change percentage.
-/// </summary>
-public decimal PriceChangeThreshold { get => _priceChangeThreshold.Value; set => _priceChangeThreshold.Value = value; }
+	public BitcoinLiquidityBreakoutStrategy()
+	{
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
 
-/// <summary>
-/// ATR calculation period.
-/// </summary>
-public int VolatilityPeriod { get => _volatilityPeriod.Value; set => _volatilityPeriod.Value = value; }
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 
-/// <summary>
-/// Volume SMA period.
-/// </summary>
-public int LiquidityPeriod { get => _liquidityPeriod.Value; set => _liquidityPeriod.Value = value; }
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
+	}
 
-/// <summary>
-/// Fast moving average period.
-/// </summary>
-public int FastMaPeriod { get => _fastMaPeriod.Value; set => _fastMaPeriod.Value = value; }
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
 
-/// <summary>
-/// Slow moving average period.
-/// </summary>
-public int SlowMaPeriod { get => _slowMaPeriod.Value; set => _slowMaPeriod.Value = value; }
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
+	}
 
-/// <summary>
-/// RSI period.
-/// </summary>
-public int RsiPeriod { get => _rsiPeriod.Value; set => _rsiPeriod.Value = value; }
+	/// <inheritdoc />
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
 
-/// <summary>
-/// Stop loss percentage.
-/// </summary>
-public decimal StopLossPercent { get => _stopLossPercent.Value; set => _stopLossPercent.Value = value; }
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 
-/// <summary>
-/// Take profit percentage.
-/// </summary>
-public decimal TakeProfitPercent { get => _takeProfitPercent.Value; set => _takeProfitPercent.Value = value; }
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(fastEma, slowEma, ProcessCandle)
+			.Start();
 
-/// <summary>
-/// Enable stop loss.
-/// </summary>
-public bool UseStopLoss { get => _useStopLoss.Value; set => _useStopLoss.Value = value; }
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
+			DrawOwnTrades(area);
+		}
+	}
 
-/// <summary>
-/// Enable take profit.
-/// </summary>
-public bool UseTakeProfit { get => _useTakeProfit.Value; set => _useTakeProfit.Value = value; }
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
 
-/// <summary>
-/// Candle type for strategy.
-/// </summary>
-public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
+		{
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
+			return;
+		}
 
-public BitcoinLiquidityBreakoutStrategy()
-{
-_liquidityThreshold = Param(nameof(LiquidityThreshold), 1.3m)
-.SetGreaterThanZero()
-.SetDisplay("Liquidity Threshold", "Multiplier for volume SMA", "Indicators");
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
+		{
+			BuyMarket();
+		}
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+		{
+			SellMarket();
+		}
 
-_priceChangeThreshold = Param(nameof(PriceChangeThreshold), 1.5m)
-.SetGreaterThanZero()
-.SetDisplay("Price Change %", "Minimum price change percentage", "Indicators");
-
-_volatilityPeriod = Param(nameof(VolatilityPeriod), 14)
-.SetGreaterThanZero()
-.SetDisplay("ATR Period", "ATR calculation length", "Indicators");
-
-_liquidityPeriod = Param(nameof(LiquidityPeriod), 20)
-.SetGreaterThanZero()
-.SetDisplay("Volume SMA Period", "Volume average length", "Indicators");
-
-_fastMaPeriod = Param(nameof(FastMaPeriod), 9)
-.SetGreaterThanZero()
-.SetDisplay("Fast MA", "Fast moving average period", "Indicators");
-
-_slowMaPeriod = Param(nameof(SlowMaPeriod), 21)
-.SetGreaterThanZero()
-.SetDisplay("Slow MA", "Slow moving average period", "Indicators");
-
-_rsiPeriod = Param(nameof(RsiPeriod), 14)
-.SetGreaterThanZero()
-.SetDisplay("RSI Period", "RSI calculation length", "Indicators");
-
-_stopLossPercent = Param(nameof(StopLossPercent), 0.5m)
-.SetGreaterThanZero()
-.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management");
-
-_takeProfitPercent = Param(nameof(TakeProfitPercent), 7m)
-.SetGreaterThanZero()
-.SetDisplay("Take Profit %", "Take profit percentage", "Risk Management");
-
-_useStopLoss = Param(nameof(UseStopLoss), true)
-.SetDisplay("Use Stop Loss", "Enable stop loss", "Risk Management");
-
-_useTakeProfit = Param(nameof(UseTakeProfit), true)
-.SetDisplay("Use Take Profit", "Enable take profit", "Risk Management");
-
-_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
-.SetDisplay("Candle Type", "Time frame for strategy", "General");
-}
-
-/// <inheritdoc />
-public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-{
-return [(Security, CandleType)];
-}
-
-/// <inheritdoc />
-protected override void OnStarted2(DateTime time)
-{
-base.OnStarted2(time);
-
-_atr = new AverageTrueRange { Length = VolatilityPeriod };
-_atrMa = new SMA { Length = 10 };
-_volumeSma = new SMA { Length = LiquidityPeriod };
-
-var fastMa = new SMA { Length = FastMaPeriod };
-var slowMa = new SMA { Length = SlowMaPeriod };
-var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
-
-var subscription = SubscribeCandles(CandleType);
-subscription
-.Bind(_atr, fastMa, slowMa, rsi, ProcessCandle)
-.Start();
-
-StartProtection(
-UseTakeProfit ? new Unit(TakeProfitPercent, UnitTypes.Percent) : new(),
-UseStopLoss ? new Unit(StopLossPercent, UnitTypes.Percent) : new());
-
-var area = CreateChartArea();
-if (area != null)
-{
-DrawCandles(area, subscription);
-DrawIndicator(area, fastMa);
-DrawIndicator(area, slowMa);
-DrawIndicator(area, rsi);
-DrawIndicator(area, _atr);
-DrawOwnTrades(area);
-}
-}
-
-private void ProcessCandle(ICandleMessage candle, decimal atrValue, decimal fastMaValue, decimal slowMaValue, decimal rsiValue)
-{
-if (candle.State != CandleStates.Finished)
-return;
-
-if (!IsFormedAndOnlineAndAllowTrading())
-return;
-
-var atrMaValue = _atrMa.Process(new DecimalIndicatorValue(_atrMa, atrValue, candle.ServerTime)).ToDecimal();
-var volumeSmaValue = _volumeSma.Process(new DecimalIndicatorValue(_volumeSma, candle.TotalVolume, candle.ServerTime)).ToDecimal();
-
-var priceChange = 100m * (candle.HighPrice - candle.LowPrice) / candle.LowPrice;
-var highLiquidity = candle.TotalVolume > volumeSmaValue * LiquidityThreshold;
-var highPriceChange = priceChange > PriceChangeThreshold;
-var highVolatility = atrValue > atrMaValue;
-
-var buyCondition = highLiquidity && highPriceChange && fastMaValue > slowMaValue && rsiValue < 65m && highVolatility;
-var sellCondition = fastMaValue < slowMaValue || rsiValue > 70m;
-
-if (buyCondition && Position <= 0)
-{
-BuyMarket();
-}
-else if (sellCondition && Position > 0)
-{
-ClosePosition();
-}
-}
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
+	}
 }

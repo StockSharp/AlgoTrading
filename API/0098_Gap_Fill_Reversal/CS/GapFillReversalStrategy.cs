@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,38 +11,24 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Gap Fill Reversal Strategy that trades gaps followed by reversal candles.
-/// It enters when a gap is followed by a candle in the opposite direction of the gap.
+/// Gap Fill Reversal strategy.
+/// Enters when a gap between candles is followed by a reversal candle.
+/// Gap up + bearish candle = short, gap down + bullish candle = long.
+/// Uses SMA for exit confirmation.
+/// Uses cooldown to control trade frequency.
 /// </summary>
 public class GapFillReversalStrategy : Strategy
 {
-	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<decimal> _minGapPercent;
+	private readonly StrategyParam<int> _maLength;
+	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _cooldownBars;
 
-	private ICandleMessage _previousCandle;
-	private ICandleMessage _currentCandle;
-
-	/// <summary>
-	/// Candle type and timeframe for strategy.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
+	private ICandleMessage _prevCandle;
+	private int _cooldown;
 
 	/// <summary>
-	/// Stop-loss percent from entry price.
-	/// </summary>
-	public decimal StopLossPercent
-	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
-	}
-
-	/// <summary>
-	/// Minimum gap size as percentage for trade signal.
+	/// Minimum gap size as percentage.
 	/// </summary>
 	public decimal MinGapPercent
 	{
@@ -54,20 +37,51 @@ public class GapFillReversalStrategy : Strategy
 	}
 
 	/// <summary>
+	/// MA period for exit.
+	/// </summary>
+	public int MaLength
+	{
+		get => _maLength.Value;
+		set => _maLength.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Cooldown bars.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Constructor.
 	/// </summary>
 	public GapFillReversalStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-						.SetDisplay("Candle Type", "Type of candles for strategy calculation", "General");
+		_minGapPercent = Param(nameof(MinGapPercent), 0.02m)
+			.SetRange(0.01m, 1m)
+			.SetDisplay("Min Gap %", "Minimum gap size percentage", "Trading");
 
-		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
-							.SetRange(0.1m, 5m)
-							.SetDisplay("Stop Loss %", "Stop loss as percentage from entry price", "Risk Management");
+		_maLength = Param(nameof(MaLength), 20)
+			.SetRange(10, 50)
+			.SetDisplay("MA Length", "Period of SMA for exit", "Indicators");
 
-		_minGapPercent = Param(nameof(MinGapPercent), 0.5m)
-						.SetRange(0.1m, 3m)
-						.SetDisplay("Min Gap %", "Minimum gap size as percentage for trade signal", "Trading Parameters");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
+
+		_cooldownBars = Param(nameof(CooldownBars), 500)
+			.SetRange(1, 1000)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
 	}
 
 	/// <inheritdoc />
@@ -76,43 +90,39 @@ public class GapFillReversalStrategy : Strategy
 		return [(Security, CandleType)];
 	}
 
-		/// <inheritdoc />
-		protected override void OnReseted()
-		{
-				base.OnReseted();
-
-				_previousCandle = null;
-				_currentCandle = null;
-		}
-
-		/// <inheritdoc />
-		protected override void OnStarted2(DateTime time)
-		{
-				base.OnStarted2(time);
-
-				// Create subscription and bind to process candles
-				var subscription = SubscribeCandles(CandleType);
-				subscription
-						.Bind(ProcessCandle)
-						.Start();
-
-	// Setup protection with stop loss
-	StartProtection(
-		takeProfit: null,
-		stopLoss: new Unit(StopLossPercent, UnitTypes.Percent),
-		isStopTrailing: false
-	);
-
-	// Setup chart visualization if available
-	var area = CreateChartArea();
-	if (area != null)
+	/// <inheritdoc />
+	protected override void OnReseted()
 	{
-		DrawCandles(area, subscription);
-		DrawOwnTrades(area);
+		base.OnReseted();
+		_prevCandle = null;
+		_cooldown = default;
 	}
-}
 
-	private void ProcessCandle(ICandleMessage candle)
+	/// <inheritdoc />
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
+
+		_prevCandle = null;
+		_cooldown = 0;
+
+		var sma = new SimpleMovingAverage { Length = MaLength };
+
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(sma, ProcessCandle)
+			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, sma);
+			DrawOwnTrades(area);
+		}
+	}
+
+	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
@@ -120,52 +130,62 @@ public class GapFillReversalStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// Shift candles
-		_previousCandle = _currentCandle;
-		_currentCandle = candle;
-
-		if (_previousCandle == null)
+		if (_prevCandle == null)
+		{
+			_prevCandle = candle;
 			return;
+		}
 
-		// Check for a gap
-		var hasGapUp = _currentCandle.OpenPrice > _previousCandle.ClosePrice;
-		var hasGapDown = _currentCandle.OpenPrice < _previousCandle.ClosePrice;
-
-		// Calculate gap size as a percentage
-		decimal gapSize = 0;
-		if (hasGapUp)
-			gapSize = (_currentCandle.OpenPrice - _previousCandle.ClosePrice) / _previousCandle.ClosePrice * 100;
-		else if (hasGapDown)
-			gapSize = (_previousCandle.ClosePrice - _currentCandle.OpenPrice) / _previousCandle.ClosePrice * 100;
-
-		// Check if gap is large enough
-		if (gapSize < MinGapPercent)
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+			_prevCandle = candle;
 			return;
-
-		// Check for a gap up followed by a bearish candle (potential reversal)
-		var isGapUpWithReversal = hasGapUp && _currentCandle.ClosePrice < _currentCandle.OpenPrice;
-
-		// Check for a gap down followed by a bullish candle (potential reversal)
-		var isGapDownWithReversal = hasGapDown && _currentCandle.ClosePrice > _currentCandle.OpenPrice;
-
-		// Check for long entry condition
-		if (isGapDownWithReversal && Position <= 0)
-		{
-			LogInfo($"Gap down of {gapSize:F2}% with bullish reversal candle. Going long.");
-			BuyMarket(Volume + Math.Abs(Position));
 		}
-		// Check for short entry condition
-		else if (isGapUpWithReversal && Position >= 0)
+
+		var prevClose = _prevCandle.ClosePrice;
+
+		// Gap detection
+		var gapUp = candle.OpenPrice > prevClose;
+		var gapDown = candle.OpenPrice < prevClose;
+
+		decimal gapPercent = 0;
+		if (gapUp)
+			gapPercent = (candle.OpenPrice - prevClose) / prevClose * 100;
+		else if (gapDown)
+			gapPercent = (prevClose - candle.OpenPrice) / prevClose * 100;
+
+		var isBearishCandle = candle.ClosePrice < candle.OpenPrice;
+		var isBullishCandle = candle.ClosePrice > candle.OpenPrice;
+
+		if (gapPercent >= MinGapPercent)
 		{
-			LogInfo($"Gap up of {gapSize:F2}% with bearish reversal candle. Going short.");
-			SellMarket(Volume + Math.Abs(Position));
+			// Gap down + bullish reversal = long
+			if (Position == 0 && gapDown && isBullishCandle)
+			{
+				BuyMarket();
+				_cooldown = CooldownBars;
+			}
+			// Gap up + bearish reversal = short
+			else if (Position == 0 && gapUp && isBearishCandle)
+			{
+				SellMarket();
+				_cooldown = CooldownBars;
+			}
 		}
-		// Check for exit conditions
-		else if ((Position > 0 && candle.ClosePrice > _previousCandle.ClosePrice) || 
-					(Position < 0 && candle.ClosePrice < _previousCandle.ClosePrice))
+
+		// Exit on SMA cross
+		if (Position > 0 && candle.ClosePrice < smaValue)
 		{
-			LogInfo("Gap filled. Exiting position.");
-			ClosePosition();
+			SellMarket();
+			_cooldown = CooldownBars;
 		}
+		else if (Position < 0 && candle.ClosePrice > smaValue)
+		{
+			BuyMarket();
+			_cooldown = CooldownBars;
+		}
+
+		_prevCandle = candle;
 	}
 }

@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -13,181 +10,73 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-/// <summary>
-/// Strategy that draws a linear regression channel using pivot points.
-/// </summary>
 public class FunctionLinearRegressionStrategy : Strategy
 {
-	private readonly StrategyParam<int> _length;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	private readonly Queue<decimal> _prices = new();
-	private readonly Queue<decimal> _x = new();
-	private readonly Queue<DateTimeOffset> _times = new();
-	private readonly List<ICandleMessage> _window = new();
-	private int _barIndex;
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Number of pivot points for regression.
-	/// </summary>
-	public int Length
-	{
-		get => _length.Value;
-		set => _length.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type parameter.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Constructor.
-	/// </summary>
 	public FunctionLinearRegressionStrategy()
 	{
-		_length = Param(nameof(Length), 10)
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
 			.SetGreaterThanZero()
-			.SetDisplay("Length", "Number of points used for regression", "Indicator")
-			
-			.SetOptimize(5, 20, 5);
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prices.Clear();
-		_x.Clear();
-		_times.Clear();
-		_window.Clear();
-		_barIndex = 0;
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(ProcessCandle)
-			.Start();
-
+		subscription.Bind(fastEma, slowEma, ProcessCandle).Start();
 		var area = CreateChartArea();
 		if (area != null)
+		{
 			DrawCandles(area, subscription);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
-		if (candle.State != CandleStates.Finished)
+		if (candle.State != CandleStates.Finished) return;
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
+		{
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
 			return;
-
-		_barIndex++;
-		_window.Add(candle);
-
-		if (_window.Count < 5)
-			return;
-
-		var c0 = _window[0];
-		var c1 = _window[1];
-		var c2 = _window[2];
-		var c3 = _window[3];
-		var c4 = _window[4];
-
-		var pivotHigh = c2.HighPrice > c0.HighPrice && c2.HighPrice > c1.HighPrice &&
-			c2.HighPrice > c3.HighPrice && c2.HighPrice > c4.HighPrice;
-		var pivotLow = c2.LowPrice < c0.LowPrice && c2.LowPrice < c1.LowPrice &&
-			c2.LowPrice < c3.LowPrice && c2.LowPrice < c4.LowPrice;
-
-		if (pivotHigh || pivotLow)
-		{
-			if (_prices.Count >= Length)
-			{
-				_prices.Dequeue();
-				_x.Dequeue();
-				_times.Dequeue();
-			}
-
-			var point = pivotHigh ? c2.HighPrice : c2.LowPrice;
-			_prices.Enqueue(point);
-			_x.Enqueue(_barIndex - 2);
-			_times.Enqueue(c2.OpenTime);
-
-			if (_prices.Count >= 2)
-			{
-				var (a, b, maxDev, minDev, avgDev) = ComputeRegression(_x, _prices);
-
-				var lastX = _barIndex - 2;
-				var lastY = a + b * lastX;
-				var upperChannel = lastY + avgDev;
-				var lowerChannel = lastY - avgDev;
-
-				if (candle.ClosePrice < lowerChannel && Position <= 0)
-					BuyMarket();
-				else if (candle.ClosePrice > upperChannel && Position >= 0)
-					SellMarket();
-			}
 		}
-
-		_window.RemoveAt(0);
-	}
-
-	private static (decimal a, decimal b, decimal maxDev, decimal minDev, decimal avgDev) ComputeRegression(IEnumerable<decimal> xs, IEnumerable<decimal> ys)
-	{
-		var xList = new List<decimal>(xs);
-		var yList = new List<decimal>(ys);
-		var n = xList.Count;
-
-		decimal sumX = 0;
-		decimal sumY = 0;
-		decimal sumXY = 0;
-		decimal sumX2 = 0;
-
-		for (var i = 0; i < n; i++)
-		{
-			sumX += xList[i];
-			sumY += yList[i];
-			sumXY += xList[i] * yList[i];
-			sumX2 += xList[i] * xList[i];
-		}
-
-		var denom = n * sumX2 - sumX * sumX;
-		if (denom == 0)
-			return (0, 0, 0, 0, 0);
-
-		var a = (sumY * sumX2 - sumX * sumXY) / denom;
-		var b = (n * sumXY - sumX * sumY) / denom;
-
-		decimal maxDev = decimal.MinValue;
-		decimal minDev = decimal.MaxValue;
-		decimal absDev = 0;
-
-		for (var i = 0; i < n; i++)
-		{
-			var predicted = a + b * xList[i];
-			var diff = yList[i] - predicted;
-			if (diff > maxDev)
-				maxDev = diff;
-			if (diff < minDev)
-				minDev = diff;
-			absDev += Math.Abs(diff);
-		}
-
-		return (a, b, maxDev, minDev, absDev / n);
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
+			BuyMarket();
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+			SellMarket();
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

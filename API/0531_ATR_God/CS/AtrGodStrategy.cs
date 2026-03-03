@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,20 +12,20 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Strategy based on Supertrend indicator with ATR-based risk management.
+/// Trades supertrend direction changes with cooldown.
 /// </summary>
 public class AtrGodStrategy : Strategy
 {
 	private readonly StrategyParam<int> _period;
 	private readonly StrategyParam<decimal> _multiplier;
-	private readonly StrategyParam<decimal> _riskMultiplier;
-	private readonly StrategyParam<decimal> _rewardRisk;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
-	
+
 	private bool _prevIsPriceAboveSupertrend;
 	private decimal _prevSupertrendValue;
-	private decimal _stopPrice;
-	private decimal _takeProfitPrice;
-	
+	private int _barIndex;
+	private int _lastTradeBar;
+
 	/// <summary>
 	/// ATR period for Supertrend calculation.
 	/// </summary>
@@ -37,7 +34,7 @@ public class AtrGodStrategy : Strategy
 		get => _period.Value;
 		set => _period.Value = value;
 	}
-	
+
 	/// <summary>
 	/// ATR multiplier for Supertrend.
 	/// </summary>
@@ -46,25 +43,16 @@ public class AtrGodStrategy : Strategy
 		get => _multiplier.Value;
 		set => _multiplier.Value = value;
 	}
-	
+
 	/// <summary>
-	/// ATR multiplier for stop loss.
+	/// Cooldown bars between trades.
 	/// </summary>
-	public decimal RiskMultiplier
+	public int CooldownBars
 	{
-		get => _riskMultiplier.Value;
-		set => _riskMultiplier.Value = value;
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
-	
-	/// <summary>
-	/// Risk to reward ratio for take profit.
-	/// </summary>
-	public decimal RewardRiskRatio
-	{
-		get => _rewardRisk.Value;
-		set => _rewardRisk.Value = value;
-	}
-	
+
 	/// <summary>
 	/// Candle type.
 	/// </summary>
@@ -73,65 +61,54 @@ public class AtrGodStrategy : Strategy
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
-	
+
 	/// <summary>
 	/// Initialize strategy parameters.
 	/// </summary>
 	public AtrGodStrategy()
 	{
 		_period = Param(nameof(Period), 10)
-		.SetDisplay("Period", "ATR period for Supertrend", "Indicators")
-		
-		.SetOptimize(7, 21, 2);
-		
+			.SetDisplay("Period", "ATR period for Supertrend", "Indicators");
+
 		_multiplier = Param(nameof(Multiplier), 3m)
-		.SetDisplay("Multiplier", "ATR multiplier for Supertrend", "Indicators")
-		
-		.SetOptimize(1m, 5m, 0.5m);
-		
-		_riskMultiplier = Param(nameof(RiskMultiplier), 4.5m)
-		.SetDisplay("Risk Multiplier", "ATR multiplier for stop loss", "Risk")
-		
-		.SetOptimize(2m, 6m, 0.5m);
-		
-		_rewardRisk = Param(nameof(RewardRiskRatio), 1.5m)
-		.SetDisplay("RR Ratio", "Risk to reward ratio", "Risk")
-		
-		.SetOptimize(1m, 3m, 0.5m);
-		
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-		.SetDisplay("Candle Type", "Type of candles", "General");
+			.SetDisplay("Multiplier", "ATR multiplier for Supertrend", "Indicators");
+
+		_cooldownBars = Param(nameof(CooldownBars), 350)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "Trading");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
-	
+
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
-	
+
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		
+
 		_prevIsPriceAboveSupertrend = false;
 		_prevSupertrendValue = 0m;
-		_stopPrice = 0m;
-		_takeProfitPrice = 0m;
+		_barIndex = 0;
+		_lastTradeBar = 0;
 	}
-	
+
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		
+
 		var atr = new AverageTrueRange { Length = Period };
-		
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-		.Bind(atr, ProcessCandle)
-		.Start();
-		
+			.Bind(atr, ProcessCandle)
+			.Start();
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -139,21 +116,20 @@ public class AtrGodStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 	}
-	
+
 	private void ProcessCandle(ICandleMessage candle, decimal atrValue)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
-		
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
-		
+			return;
+
+		_barIndex++;
+
 		var medianPrice = (candle.HighPrice + candle.LowPrice) / 2;
 		var basicUpper = medianPrice + Multiplier * atrValue;
 		var basicLower = medianPrice - Multiplier * atrValue;
-		
+
 		decimal supertrendValue;
-		
+
 		if (_prevSupertrendValue == 0m)
 		{
 			supertrendValue = candle.ClosePrice > medianPrice ? basicLower : basicUpper;
@@ -161,7 +137,7 @@ public class AtrGodStrategy : Strategy
 			_prevIsPriceAboveSupertrend = candle.ClosePrice > supertrendValue;
 			return;
 		}
-		
+
 		if (_prevSupertrendValue <= candle.HighPrice)
 		{
 			supertrendValue = Math.Max(basicLower, _prevSupertrendValue);
@@ -174,46 +150,25 @@ public class AtrGodStrategy : Strategy
 		{
 			supertrendValue = candle.ClosePrice > _prevSupertrendValue ? basicLower : basicUpper;
 		}
-		
+
 		var isPriceAboveSupertrend = candle.ClosePrice > supertrendValue;
 		var crossedAbove = isPriceAboveSupertrend && !_prevIsPriceAboveSupertrend;
 		var crossedBelow = !isPriceAboveSupertrend && _prevIsPriceAboveSupertrend;
-		
-		if (crossedAbove && Position <= 0)
+
+		var cooldownOk = _barIndex - _lastTradeBar > CooldownBars;
+
+		if (crossedAbove && Position <= 0 && cooldownOk)
 		{
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
-			_stopPrice = candle.ClosePrice - atrValue * RiskMultiplier;
-			_takeProfitPrice = candle.ClosePrice + atrValue * RiskMultiplier * RewardRiskRatio;
+			BuyMarket();
+			_lastTradeBar = _barIndex;
 		}
-		else if (crossedBelow && Position >= 0)
+		else if (crossedBelow && Position >= 0 && cooldownOk)
 		{
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
-			_stopPrice = candle.ClosePrice + atrValue * RiskMultiplier;
-			_takeProfitPrice = candle.ClosePrice - atrValue * RiskMultiplier * RewardRiskRatio;
+			SellMarket();
+			_lastTradeBar = _barIndex;
 		}
-		else if (Position > 0)
-		{
-			if (candle.LowPrice <= _stopPrice || candle.HighPrice >= _takeProfitPrice)
-			{
-				SellMarket(Position);
-				_stopPrice = 0m;
-				_takeProfitPrice = 0m;
-			}
-		}
-		else if (Position < 0)
-		{
-			if (candle.HighPrice >= _stopPrice || candle.LowPrice <= _takeProfitPrice)
-			{
-				BuyMarket(Math.Abs(Position));
-				_stopPrice = 0m;
-				_takeProfitPrice = 0m;
-			}
-		}
-		
+
 		_prevSupertrendValue = supertrendValue;
 		_prevIsPriceAboveSupertrend = isPriceAboveSupertrend;
 	}
 }
-

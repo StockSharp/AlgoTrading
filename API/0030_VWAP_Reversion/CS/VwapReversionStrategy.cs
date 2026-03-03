@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,17 +12,18 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// VWAP Reversion strategy that trades on deviations from Volume Weighted Average Price.
-/// It opens positions when price deviates by a specified percentage from VWAP
-/// and exits when price returns to VWAP.
+/// Opens positions when price deviates from VWAP and exits when price returns.
 /// </summary>
 public class VwapReversionStrategy : Strategy
 {
 	private readonly StrategyParam<decimal> _deviationPercent;
-	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _cooldownBars;
+
+	private int _cooldown;
 
 	/// <summary>
-	/// Deviation percentage from VWAP required for entry (default: 2%)
+	/// Deviation percentage from VWAP required for entry.
 	/// </summary>
 	public decimal DeviationPercent
 	{
@@ -34,16 +32,7 @@ public class VwapReversionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stop-loss as percentage from entry price (default: 2%)
-	/// </summary>
-	public decimal StopLossPercent
-	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
-	}
-
-	/// <summary>
-	/// Type of candles used for strategy calculation
+	/// Type of candles used for strategy calculation.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -52,22 +41,29 @@ public class VwapReversionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initialize the VWAP Reversion strategy
+	/// Cooldown bars between trades.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
+	/// Initialize the VWAP Reversion strategy.
 	/// </summary>
 	public VwapReversionStrategy()
 	{
-		_deviationPercent = Param(nameof(DeviationPercent), 2.0m)
-			.SetDisplay("Deviation %", "Deviation percentage from VWAP required for entry", "Entry Parameters")
-			
-			.SetOptimize(1.0m, 5.0m, 0.5m);
+		_deviationPercent = Param(nameof(DeviationPercent), 0.5m)
+			.SetDisplay("Deviation %", "Deviation from VWAP for entry", "Entry")
+			.SetOptimize(0.2m, 2.0m, 0.2m);
 
-		_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
-			.SetDisplay("Stop Loss %", "Stop loss as percentage from entry price", "Risk Management")
-			
-			.SetOptimize(1.0m, 5.0m, 0.5m);
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "Data");
+		_cooldownBars = Param(nameof(CooldownBars), 500)
+			.SetRange(1, 1000)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
 	}
 
 	/// <inheritdoc />
@@ -77,20 +73,26 @@ public class VwapReversionStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_cooldown = default;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		// Create the VWAP indicator
+		_cooldown = 0;
+
 		var vwap = new VolumeWeightedMovingAverage();
 
-		// Create subscription and bind VWAP indicator
 		var subscription = SubscribeCandles(CandleType);
 		subscription
 			.Bind(vwap, ProcessCandle)
 			.Start();
 
-		// Configure chart
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -98,70 +100,55 @@ public class VwapReversionStrategy : Strategy
 			DrawIndicator(area, vwap);
 			DrawOwnTrades(area);
 		}
-
-		// Setup protection with stop-loss
-		StartProtection(
-			new Unit(0), // No take profit
-			new Unit(StopLossPercent, UnitTypes.Percent) // Stop loss as percentage of entry price
-		);
 	}
 
-	/// <summary>
-	/// Process candle and check for VWAP deviation signals
-	/// </summary>
 	private void ProcessCandle(ICandleMessage candle, decimal vwapValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// Calculate deviation from VWAP
-		decimal deviationRatio = 0;
-		
-		if (vwapValue > 0)
+		if (vwapValue <= 0)
+			return;
+
+		if (_cooldown > 0)
 		{
-			deviationRatio = (candle.ClosePrice - vwapValue) / vwapValue;
+			_cooldown--;
+			return;
 		}
 
-		// Convert ratio to percentage
-		decimal deviationPercent = deviationRatio * 100;
-		
-		var deviationThreshold = DeviationPercent / 100; // Convert percentage to ratio for comparison
+		var deviationRatio = (candle.ClosePrice - vwapValue) / vwapValue;
+		var threshold = DeviationPercent / 100m;
 
 		if (Position == 0)
 		{
-			// No position - check for entry signals
-			if (deviationRatio < -deviationThreshold)
+			if (deviationRatio < -threshold)
 			{
-				// Price is below VWAP by required percentage - buy (long)
-				BuyMarket(Volume);
+				BuyMarket();
+				_cooldown = CooldownBars;
 			}
-			else if (deviationRatio > deviationThreshold)
+			else if (deviationRatio > threshold)
 			{
-				// Price is above VWAP by required percentage - sell (short)
-				SellMarket(Volume);
+				SellMarket();
+				_cooldown = CooldownBars;
 			}
 		}
 		else if (Position > 0)
 		{
-			// Long position - check for exit signal
-			if (candle.ClosePrice > vwapValue)
+			if (candle.ClosePrice >= vwapValue)
 			{
-				// Price has returned to or above VWAP - exit long
-				SellMarket(Position);
+				SellMarket();
+				_cooldown = CooldownBars;
 			}
 		}
 		else if (Position < 0)
 		{
-			// Short position - check for exit signal
-			if (candle.ClosePrice < vwapValue)
+			if (candle.ClosePrice <= vwapValue)
 			{
-				// Price has returned to or below VWAP - exit short
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
+				_cooldown = CooldownBars;
 			}
 		}
 	}

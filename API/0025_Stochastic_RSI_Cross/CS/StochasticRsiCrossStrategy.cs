@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,42 +11,23 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on Stochastic RSI crossover.
+/// Strategy based on Stochastic Oscillator K/D crossover.
+/// Buys when %K crosses above %D in oversold zone.
+/// Sells when %K crosses below %D in overbought zone.
 /// </summary>
 public class StochasticRsiCrossStrategy : Strategy
 {
-	private readonly StrategyParam<int> _rsiPeriod;
-	private readonly StrategyParam<int> _stochPeriod;
 	private readonly StrategyParam<int> _kPeriod;
 	private readonly StrategyParam<int> _dPeriod;
-	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
 
-	// Cache for K and D values
 	private decimal _prevK;
 	private decimal _prevD;
-	private bool _isFirstCandle = true;
+	private bool _hasPrevValues;
+	private int _cooldown;
 
 	/// <summary>
-	/// RSI period.
-	/// </summary>
-	public int RsiPeriod
-	{
-		get => _rsiPeriod.Value;
-		set => _rsiPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Stochastic period.
-	/// </summary>
-	public int StochPeriod
-	{
-		get => _stochPeriod.Value;
-		set => _stochPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// K period (fast).
+	/// K period.
 	/// </summary>
 	public int KPeriod
 	{
@@ -58,21 +36,12 @@ public class StochasticRsiCrossStrategy : Strategy
 	}
 
 	/// <summary>
-	/// D period (slow).
+	/// D period.
 	/// </summary>
 	public int DPeriod
 	{
 		get => _dPeriod.Value;
 		set => _dPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss percentage.
-	/// </summary>
-	public decimal StopLossPercent
-	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
 	}
 
 	/// <summary>
@@ -89,32 +58,15 @@ public class StochasticRsiCrossStrategy : Strategy
 	/// </summary>
 	public StochasticRsiCrossStrategy()
 	{
-		_rsiPeriod = Param(nameof(RsiPeriod), 14)
-			.SetRange(7, 30)
-			.SetDisplay("RSI Period", "Period for RSI calculation", "Indicators")
-			;
-
-		_stochPeriod = Param(nameof(StochPeriod), 14)
-			.SetRange(5, 30)
-			.SetDisplay("Stochastic Period", "Period for Stochastic", "Indicators")
-			;
-
-		_kPeriod = Param(nameof(KPeriod), 3)
-			.SetRange(1, 10)
+		_kPeriod = Param(nameof(KPeriod), 14)
 			.SetDisplay("K Period", "Period for %K line", "Indicators")
-			;
+			.SetOptimize(10, 20, 2);
 
 		_dPeriod = Param(nameof(DPeriod), 3)
-			.SetRange(1, 10)
 			.SetDisplay("D Period", "Period for %D line", "Indicators")
-			;
+			.SetOptimize(3, 5, 1);
 
-		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
-			.SetRange(0.5m, 5m)
-			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management")
-			;
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -128,11 +80,10 @@ public class StochasticRsiCrossStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		// Reset state variables
-		_prevK = 0;
-		_prevD = 0;
-		_isFirstCandle = true;
-
+		_prevK = default;
+		_prevD = default;
+		_hasPrevValues = default;
+		_cooldown = default;
 	}
 
 	/// <inheritdoc />
@@ -140,103 +91,71 @@ public class StochasticRsiCrossStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Create a StochRsi indicator
-		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 		var stoch = new StochasticOscillator
 		{
 			K = { Length = KPeriod },
 			D = { Length = DPeriod }
 		};
 
-		// Subscribe to candles
 		var subscription = SubscribeCandles(CandleType);
-		
-		// Create a custom binding to simulate Stochastic RSI since it's not built-in
 		subscription
-			.BindEx(stoch, rsi, ProcessCandle)
+			.BindEx(stoch, ProcessCandle)
 			.Start();
 
-		// Enable position protection
-		StartProtection(
-			takeProfit: null,
-			stopLoss: new Unit(StopLossPercent, UnitTypes.Percent),
-			useMarketOrders: true
-		);
-
-		// Setup chart visualization
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, rsi);
 			DrawIndicator(area, stoch);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue stochValue, IIndicatorValue rsiValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue stochValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var stochTyped = (StochasticOscillatorValue)stochValue;
+		var stoch = (IStochasticOscillatorValue)stochValue;
 
-		if (stochTyped.K is not decimal kValue)
+		if (stoch.K is not decimal k || stoch.D is not decimal d)
 			return;
 
-		if (stochTyped.D is not decimal dValue)
-			return;
-
-		// For the first candle, just store values and return
-		if (_isFirstCandle)
+		if (!_hasPrevValues)
 		{
-			_prevK = kValue;
-			_prevD = dValue;
-			_isFirstCandle = false;
+			_hasPrevValues = true;
+			_prevK = k;
+			_prevD = d;
 			return;
 		}
 
-		// Check for crossovers
-		bool kCrossedAboveD = _prevK <= _prevD && kValue > dValue;
-		bool kCrossedBelowD = _prevK >= _prevD && kValue < dValue;
-
-		// Entry logic
-		if (kCrossedAboveD && kValue < 20 && Position <= 0)
+		if (_cooldown > 0)
 		{
-			// Buy when %K crosses above %D in oversold territory (below 20)
+			_cooldown--;
+			_prevK = k;
+			_prevD = d;
+			return;
+		}
+
+		// %K crosses above %D in oversold zone (< 20) - buy
+		if (_prevK <= _prevD && k > d && k < 20 && Position <= 0)
+		{
 			var volume = Volume + Math.Abs(Position);
 			BuyMarket(volume);
-			LogInfo($"Buy signal: Stochastic RSI %K ({kValue:F2}) crossed above %D ({dValue:F2}) in oversold zone");
+			_cooldown = 5;
 		}
-		else if (kCrossedBelowD && kValue > 80 && Position >= 0)
+		// %K crosses below %D in overbought zone (> 80) - sell
+		else if (_prevK >= _prevD && k < d && k > 80 && Position >= 0)
 		{
-			// Sell when %K crosses below %D in overbought territory (above 80)
 			var volume = Volume + Math.Abs(Position);
 			SellMarket(volume);
-			LogInfo($"Sell signal: Stochastic RSI %K ({kValue:F2}) crossed below %D ({dValue:F2}) in overbought zone");
+			_cooldown = 5;
 		}
 
-		// Exit logic
-		if (Position > 0 && kValue > 50)
-		{
-			// Exit long when %K rises above 50 (middle zone)
-			SellMarket(Math.Abs(Position));
-			LogInfo($"Exiting long position: Stochastic RSI %K reached {kValue:F2}");
-		}
-		else if (Position < 0 && kValue < 50)
-		{
-			// Exit short when %K falls below 50 (middle zone)
-			BuyMarket(Math.Abs(Position));
-			LogInfo($"Exiting short position: Stochastic RSI %K reached {kValue:F2}");
-		}
-
-		// Update previous values for next comparison
-		_prevK = kValue;
-		_prevD = dValue;
+		_prevK = k;
+		_prevD = d;
 	}
 }

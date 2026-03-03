@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -23,13 +20,14 @@ public class AtrReversionStrategy : Strategy
 	private readonly StrategyParam<int> _atrPeriod;
 	private readonly StrategyParam<decimal> _atrMultiplier;
 	private readonly StrategyParam<int> _maPeriod;
-	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _cooldownBars;
 
 	private decimal _prevClose;
+	private int _cooldown;
 
 	/// <summary>
-	/// Period for ATR calculation (default: 14)
+	/// Period for ATR calculation.
 	/// </summary>
 	public int AtrPeriod
 	{
@@ -38,7 +36,7 @@ public class AtrReversionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// ATR multiplier for entry signal (default: 2.0)
+	/// ATR multiplier for entry signal.
 	/// </summary>
 	public decimal AtrMultiplier
 	{
@@ -47,7 +45,7 @@ public class AtrReversionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Period for Moving Average calculation for exit (default: 20)
+	/// Period for Moving Average calculation for exit.
 	/// </summary>
 	public int MAPeriod
 	{
@@ -56,16 +54,7 @@ public class AtrReversionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stop-loss as percentage from entry price (default: 2%)
-	/// </summary>
-	public decimal StopLossPercent
-	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
-	}
-
-	/// <summary>
-	/// Type of candles used for strategy calculation
+	/// Type of candles used for strategy calculation.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -74,32 +63,37 @@ public class AtrReversionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initialize the ATR Reversion strategy
+	/// Cooldown bars between trades.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
+	/// Initialize the ATR Reversion strategy.
 	/// </summary>
 	public AtrReversionStrategy()
 	{
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
-			.SetDisplay("ATR Period", "Period for ATR calculation", "Technical Parameters")
-			
+			.SetDisplay("ATR Period", "Period for ATR calculation", "Indicators")
 			.SetOptimize(7, 21, 7);
 
 		_atrMultiplier = Param(nameof(AtrMultiplier), 2.0m)
-			.SetDisplay("ATR Multiplier", "ATR multiplier for entry signal", "Entry Parameters")
-			
+			.SetDisplay("ATR Multiplier", "ATR multiplier for entry signal", "Entry")
 			.SetOptimize(1.5m, 3.0m, 0.5m);
 
 		_maPeriod = Param(nameof(MAPeriod), 20)
-			.SetDisplay("MA Period", "Period for Moving Average calculation for exit", "Exit Parameters")
-			
+			.SetDisplay("MA Period", "Period for MA calculation for exit", "Indicators")
 			.SetOptimize(10, 50, 5);
 
-		_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
-			.SetDisplay("Stop Loss %", "Stop loss as percentage from entry price", "Risk Management")
-			
-			.SetOptimize(1.0m, 5.0m, 0.5m);
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "Data");
+		_cooldownBars = Param(nameof(CooldownBars), 500)
+			.SetRange(1, 1000)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
 	}
 
 	/// <inheritdoc />
@@ -112,9 +106,8 @@ public class AtrReversionStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		// Reset state variables
-		_prevClose = 0;
-
+		_prevClose = default;
+		_cooldown = default;
 	}
 
 	/// <inheritdoc />
@@ -122,97 +115,83 @@ public class AtrReversionStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Create indicators
-		var atr = new AverageTrueRange { Length = AtrPeriod };
-		var sma = new SMA { Length = MAPeriod };
+		_prevClose = 0;
+		_cooldown = 0;
 
-		// Create subscription and bind indicators
+		var atr = new AverageTrueRange { Length = AtrPeriod };
+		var sma = new SimpleMovingAverage { Length = MAPeriod };
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
 			.Bind(atr, sma, ProcessCandle)
 			.Start();
 
-		// Configure chart
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
 			DrawIndicator(area, sma);
-			DrawIndicator(area, atr);
 			DrawOwnTrades(area);
 		}
-
-		// Setup protection with stop-loss
-		StartProtection(
-			new Unit(0), // No take profit
-			new Unit(StopLossPercent, UnitTypes.Percent) // Stop loss as percentage of entry price
-		);
 	}
 
-	/// <summary>
-	/// Process candle and check for ATR-based signals
-	/// </summary>
 	private void ProcessCandle(ICandleMessage candle, decimal atrValue, decimal smaValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// Initialize _prevClose on first formed candle
 		if (_prevClose == 0)
 		{
 			_prevClose = candle.ClosePrice;
 			return;
 		}
 
-		// Calculate price change from previous candle
-		decimal priceChange = candle.ClosePrice - _prevClose;
-		
-		// Normalize price change by ATR
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+			_prevClose = candle.ClosePrice;
+			return;
+		}
+
+		var priceChange = candle.ClosePrice - _prevClose;
+
 		decimal normalizedChange = 0;
 		if (atrValue > 0)
-		{
 			normalizedChange = priceChange / atrValue;
-		}
 
 		if (Position == 0)
 		{
-			// No position - check for entry signals
 			if (normalizedChange < -AtrMultiplier)
 			{
-				// Price dropped significantly (N*ATR) - buy (long) expecting reversion
-				BuyMarket(Volume);
+				BuyMarket();
+				_cooldown = CooldownBars;
 			}
 			else if (normalizedChange > AtrMultiplier)
 			{
-				// Price jumped significantly (N*ATR) - sell (short) expecting reversion
-				SellMarket(Volume);
+				SellMarket();
+				_cooldown = CooldownBars;
 			}
 		}
 		else if (Position > 0)
 		{
-			// Long position - check for exit signal
 			if (candle.ClosePrice > smaValue)
 			{
-				// Price has reverted to above MA - exit long
-				SellMarket(Position);
+				SellMarket();
+				_cooldown = CooldownBars;
 			}
 		}
 		else if (Position < 0)
 		{
-			// Short position - check for exit signal
 			if (candle.ClosePrice < smaValue)
 			{
-				// Price has reverted to below MA - exit short
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
+				_cooldown = CooldownBars;
 			}
 		}
 
-		// Update previous close price
 		_prevClose = candle.ClosePrice;
 	}
 }

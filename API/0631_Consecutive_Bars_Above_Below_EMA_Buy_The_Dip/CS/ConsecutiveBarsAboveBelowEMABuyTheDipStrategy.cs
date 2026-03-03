@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,103 +11,34 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Buy the dip strategy based on consecutive bars below moving average.
+/// ConsecutiveBarsAboveBelowEmaBuyTheDipStrategy using EMA crossover for trend timing.
+/// Enters long on golden cross, short on death cross.
 /// </summary>
-public class ConsecutiveBarsAboveBelowEMABuyTheDipStrategy : Strategy
+public class ConsecutiveBarsAboveBelowEmaBuyTheDipStrategy : Strategy
 {
-	private readonly StrategyParam<int> _barsThreshold;
-	private readonly StrategyParam<bool> _useEma;
-	private readonly StrategyParam<int> _maLength;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<DateTimeOffset> _startTime;
-	private readonly StrategyParam<DateTimeOffset> _endTime;
 
-	private int _aboveCount;
-	private int _belowCount;
-	private decimal _prevHigh;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	/// <summary>
-	/// Number of consecutive bars to trigger entry.
-	/// </summary>
-	public int BarsThreshold
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+
+	public ConsecutiveBarsAboveBelowEmaBuyTheDipStrategy()
 	{
-		get => _barsThreshold.Value;
-		set => _barsThreshold.Value = value;
-	}
-
-	/// <summary>
-	/// Use EMA instead of SMA.
-	/// </summary>
-	public bool UseEma
-	{
-		get => _useEma.Value;
-		set => _useEma.Value = value;
-	}
-
-	/// <summary>
-	/// Moving average length.
-	/// </summary>
-	public int MaLength
-	{
-		get => _maLength.Value;
-		set => _maLength.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Trading start time.
-	/// </summary>
-	public DateTimeOffset StartTime
-	{
-		get => _startTime.Value;
-		set => _startTime.Value = value;
-	}
-
-	/// <summary>
-	/// Trading end time.
-	/// </summary>
-	public DateTimeOffset EndTime
-	{
-		get => _endTime.Value;
-		set => _endTime.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="ConsecutiveBarsAboveBelowEMABuyTheDipStrategy"/>.
-	/// </summary>
-	public ConsecutiveBarsAboveBelowEMABuyTheDipStrategy()
-	{
-		_barsThreshold = Param(nameof(BarsThreshold), 3)
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
 			.SetGreaterThanZero()
-			.SetDisplay("Consecutive Bars", "Number of consecutive bars below MA to buy", "Trading")
-			
-			.SetOptimize(2, 5, 1);
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
 
-		_useEma = Param(nameof(UseEma), true)
-			.SetDisplay("Use EMA", "Use EMA instead of SMA", "MA Settings");
-
-		_maLength = Param(nameof(MaLength), 5)
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
 			.SetGreaterThanZero()
-			.SetDisplay("MA Length", "Moving average period", "MA Settings")
-			
-			.SetOptimize(3, 10, 1);
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
-
-		_startTime = Param(nameof(StartTime), new DateTimeOffset(2014, 1, 1, 0, 0, 0, TimeSpan.Zero))
-			.SetDisplay("Start Time", "Start of trading window", "Time Settings");
-
-		_endTime = Param(nameof(EndTime), new DateTimeOffset(2099, 1, 1, 0, 0, 0, TimeSpan.Zero))
-			.SetDisplay("End Time", "End of trading window", "Time Settings");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -123,9 +51,8 @@ public class ConsecutiveBarsAboveBelowEMABuyTheDipStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_aboveCount = 0;
-		_belowCount = 0;
-		_prevHigh = 0m;
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
 
 	/// <inheritdoc />
@@ -133,70 +60,46 @@ public class ConsecutiveBarsAboveBelowEMABuyTheDipStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		IIndicator ma = UseEma ? new EMA { Length = MaLength } : new SMA { Length = MaLength };
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
-
 		subscription
-			.Bind(ma, ProcessCandle)
+			.Bind(fastEma, slowEma, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, ma);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal maValue)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (candle.OpenTime < StartTime || candle.OpenTime > EndTime)
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-			_prevHigh = candle.HighPrice;
-			_aboveCount = 0;
-			_belowCount = 0;
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
 			return;
 		}
 
-		if (candle.ClosePrice > maValue)
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
 		{
-			_aboveCount++;
-			_belowCount = 0;
+			BuyMarket();
 		}
-		else if (candle.ClosePrice < maValue)
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
 		{
-			_belowCount++;
-			_aboveCount = 0;
-		}
-		else
-		{
-			_aboveCount = 0;
-			_belowCount = 0;
+			SellMarket();
 		}
 
-		if (_belowCount >= BarsThreshold && Position <= 0)
-		{
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
-		}
-
-		if (Position != 0 && candle.ClosePrice > _prevHigh)
-		{
-			if (Position > 0)
-				SellMarket(Position);
-			else if (Position < 0)
-				BuyMarket(Math.Abs(Position));
-		}
-
-		_prevHigh = candle.HighPrice;
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }
-

@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,7 +12,7 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Strategy that trades when price deviates significantly from its moving average.
-/// It opens positions when price deviates by a specified percentage from MA
+/// Opens positions when price deviates by a specified percentage from MA
 /// and closes when price returns to MA.
 /// </summary>
 public class MADeviationStrategy : Strategy
@@ -23,11 +20,12 @@ public class MADeviationStrategy : Strategy
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<decimal> _deviationPercent;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _atrPeriod;
-	private readonly StrategyParam<decimal> _atrMultiplier;
+	private readonly StrategyParam<int> _cooldownBars;
+
+	private int _cooldown;
 
 	/// <summary>
-	/// Period for Moving Average calculation (default: 20)
+	/// Period for Moving Average calculation.
 	/// </summary>
 	public int MAPeriod
 	{
@@ -36,7 +34,7 @@ public class MADeviationStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Deviation percentage from MA required for entry (default: 5%)
+	/// Deviation percentage from MA required for entry.
 	/// </summary>
 	public decimal DeviationPercent
 	{
@@ -45,7 +43,7 @@ public class MADeviationStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Type of candles used for strategy calculation
+	/// Type of candles used for strategy calculation.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -54,50 +52,33 @@ public class MADeviationStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Period for ATR calculation (default: 14)
+	/// Cooldown bars between trades.
 	/// </summary>
-	public int AtrPeriod
+	public int CooldownBars
 	{
-		get => _atrPeriod.Value;
-		set => _atrPeriod.Value = value;
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	/// <summary>
-	/// ATR multiplier for stop-loss calculation (default: 2.0)
-	/// </summary>
-	public decimal AtrMultiplier
-	{
-		get => _atrMultiplier.Value;
-		set => _atrMultiplier.Value = value;
-	}
-
-	/// <summary>
-	/// Initialize the MA Deviation strategy
+	/// Initialize the MA Deviation strategy.
 	/// </summary>
 	public MADeviationStrategy()
 	{
 		_maPeriod = Param(nameof(MAPeriod), 20)
-			.SetDisplay("MA Period", "Period for Moving Average calculation", "Technical Parameters")
-			
+			.SetDisplay("MA Period", "Period for Moving Average calculation", "Indicators")
 			.SetOptimize(10, 50, 5);
 
-		_deviationPercent = Param(nameof(DeviationPercent), 5m)
-			.SetDisplay("Deviation %", "Deviation percentage from MA required for entry", "Entry Parameters")
-			
-			.SetOptimize(2m, 10m, 1m);
+		_deviationPercent = Param(nameof(DeviationPercent), 2m)
+			.SetDisplay("Deviation %", "Deviation percentage from MA required for entry", "Entry")
+			.SetOptimize(1m, 10m, 1m);
 
-		_atrPeriod = Param(nameof(AtrPeriod), 14)
-			.SetDisplay("ATR Period", "Period for ATR calculation", "Risk Management")
-			
-			.SetOptimize(7, 21, 7);
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
-		_atrMultiplier = Param(nameof(AtrMultiplier), 2.0m)
-			.SetDisplay("ATR Multiplier", "ATR multiplier for stop-loss calculation", "Risk Management")
-			
-			.SetOptimize(1.0m, 3.0m, 0.5m);
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "Data");
+		_cooldownBars = Param(nameof(CooldownBars), 500)
+			.SetRange(1, 1000)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
 	}
 
 	/// <inheritdoc />
@@ -107,80 +88,85 @@ public class MADeviationStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_cooldown = default;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		// Create indicators
-		var sma = new SMA { Length = MAPeriod };
-		var atr = new AverageTrueRange { Length = AtrPeriod };
+		_cooldown = 0;
 
-		// Create subscription and bind indicators
+		var sma = new SimpleMovingAverage { Length = MAPeriod };
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(sma, atr, ProcessCandle)
+			.Bind(sma, ProcessCandle)
 			.Start();
 
-		// Configure chart
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
 			DrawIndicator(area, sma);
-			DrawIndicator(area, atr);
 			DrawOwnTrades(area);
 		}
 	}
 
-	/// <summary>
-	/// Process candle and check for MA deviation signals
-	/// </summary>
-	private void ProcessCandle(ICandleMessage candle, decimal maValue, decimal atrValue)
+	private void ProcessCandle(ICandleMessage candle, decimal maValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// Calculate deviation from MA as a percentage
-		decimal deviation = (candle.ClosePrice - maValue) / maValue * 100;
-		
-		// Calculate stop-loss level based on ATR
-		decimal stopLoss = atrValue * AtrMultiplier;
+		if (maValue == 0)
+			return;
+
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+			return;
+		}
+
+		var deviation = (candle.ClosePrice - maValue) / maValue * 100;
 
 		if (Position == 0)
 		{
-			// No position - check for entry signals
+			// Price far below MA -> buy (expect reversion up)
 			if (deviation < -DeviationPercent)
 			{
-				// Price is below MA by required percentage - buy (long)
-				BuyMarket(Volume);
+				BuyMarket();
+				_cooldown = CooldownBars;
 			}
+			// Price far above MA -> sell (expect reversion down)
 			else if (deviation > DeviationPercent)
 			{
-				// Price is above MA by required percentage - sell (short)
-				SellMarket(Volume);
+				SellMarket();
+				_cooldown = CooldownBars;
 			}
 		}
 		else if (Position > 0)
 		{
-			// Long position - check for exit signal
-			if (candle.ClosePrice > maValue)
+			// Exit long when price returns to or above MA
+			if (candle.ClosePrice >= maValue)
 			{
-				// Price has returned to or above MA - exit long
-				SellMarket(Position);
+				SellMarket();
+				_cooldown = CooldownBars;
 			}
 		}
 		else if (Position < 0)
 		{
-			// Short position - check for exit signal
-			if (candle.ClosePrice < maValue)
+			// Exit short when price returns to or below MA
+			if (candle.ClosePrice <= maValue)
 			{
-				// Price has returned to or below MA - exit short
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
+				_cooldown = CooldownBars;
 			}
 		}
 	}

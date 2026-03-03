@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,124 +11,95 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that monitors confirmed COVID-19 cases and trades based on growth ratio.
+/// CovidStatisticsTrackerStrategy using EMA crossover for trend timing.
+/// Enters long on golden cross, short on death cross.
 /// </summary>
 public class CovidStatisticsTrackerStrategy : Strategy
 {
-	private readonly StrategyParam<string> _region;
-	private readonly StrategyParam<int> _lookback;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	
-	private decimal? _prev1;
-	private decimal? _prev2;
-	
-	/// <summary>
-	/// Region code used to build the ticker id.
-	/// </summary>
-	public string Region
-	{
-		get => _region.Value;
-		set => _region.Value = value;
-	}
-	
-	/// <summary>
-	/// Number of candles for growth calculation.
-	/// </summary>
-	public int Lookback
-	{
-		get => _lookback.Value;
-		set => _lookback.Value = value;
-	}
-	
-	/// <summary>
-	/// Candle type used for analysis.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-	
-	/// <summary>
-	/// Initializes a new instance of <see cref="CovidStatisticsTrackerStrategy"/>.
-	/// </summary>
+
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
+
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+
 	public CovidStatisticsTrackerStrategy()
 	{
-		_region = Param(nameof(Region), "US")
-		.SetDisplay("Region", "Region code for COVID data", "General");
-		
-		_lookback = Param(nameof(Lookback), 2)
-		.SetGreaterThanZero()
-		.SetDisplay("Lookback", "Candles for growth ratio", "General");
-		
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-		.SetDisplay("Candle Type", "Timeframe for analysis", "General");
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
-	
-	private Security CreateSecurity() => new() { Id = $"COVID19:CONFIRMED_{Region}" };
-	
+
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return [(CreateSecurity(), CandleType)];
+		return [(Security, CandleType)];
 	}
-	
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
+	}
+
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		
-		Security = CreateSecurity();
-		
+
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-		.Bind(ProcessCandle)
-		.Start();
+			.Bind(fastEma, slowEma, ProcessCandle)
+			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
+			DrawOwnTrades(area);
+		}
 	}
-	
-	private void ProcessCandle(ICandleMessage candle)
+
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
-		
-		var current = candle.ClosePrice;
-		
-		if (_prev1 is null)
+			return;
+
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-			_prev1 = current;
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
 			return;
 		}
-		
-		if (_prev2 is null)
+
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
 		{
-			_prev2 = _prev1;
-			_prev1 = current;
-			return;
+			BuyMarket();
 		}
-		
-		var denom = _prev1.Value - _prev2.Value;
-		if (denom == 0)
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
 		{
-			_prev2 = _prev1;
-			_prev1 = current;
-			return;
+			SellMarket();
 		}
-		
-		var growth = (current - _prev1.Value) / denom;
-		
-		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			_prev2 = _prev1;
-			_prev1 = current;
-			return;
-		}
-		
-		if (growth > 1m && Position <= 0)
-		SellMarket(Volume + Math.Abs(Position));
-		else if (growth < 1m && Position >= 0)
-		BuyMarket(Volume + Math.Abs(Position));
-		
-		_prev2 = _prev1;
-		_prev1 = current;
+
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

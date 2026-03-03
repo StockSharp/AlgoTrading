@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 using Ecng.Common;
 
@@ -19,11 +20,12 @@ public class MacdAggressiveScalpSimpleStrategy : Strategy
 	private readonly StrategyParam<int> _emaLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private EMA _emaFast;
-	private EMA _emaSlow;
-	private EMA _emaFilter;
+	private ExponentialMovingAverage _emaFast;
+	private ExponentialMovingAverage _emaSlow;
+	private ExponentialMovingAverage _emaFilter;
 	private decimal _prevMacd;
 	private bool _initialized;
+	private int _cooldown;
 
 	public int FastLength { get => _fastLength.Value; set => _fastLength.Value = value; }
 	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
@@ -38,19 +40,34 @@ public class MacdAggressiveScalpSimpleStrategy : Strategy
 			.SetDisplay("Slow", "MACD slow", "MACD");
 		_emaLength = Param(nameof(EmaLength), 50).SetGreaterThanZero()
 			.SetDisplay("EMA", "EMA trend filter", "General");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Candles", "General");
 	}
 
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_prevMacd = default;
+		_initialized = false;
+		_cooldown = default;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		_prevMacd = 0;
-		_initialized = false;
 
-		_emaFast = new EMA { Length = FastLength };
-		_emaSlow = new EMA { Length = SlowLength };
-		_emaFilter = new EMA { Length = EmaLength };
+		_emaFast = new ExponentialMovingAverage { Length = FastLength };
+		_emaSlow = new ExponentialMovingAverage { Length = SlowLength };
+		_emaFilter = new ExponentialMovingAverage { Length = EmaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -63,7 +80,6 @@ public class MacdAggressiveScalpSimpleStrategy : Strategy
 			DrawCandles(area, subscription);
 			DrawIndicator(area, _emaFast);
 			DrawIndicator(area, _emaSlow);
-			DrawIndicator(area, _emaFilter);
 			DrawOwnTrades(area);
 		}
 	}
@@ -85,19 +101,31 @@ public class MacdAggressiveScalpSimpleStrategy : Strategy
 			return;
 		}
 
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+			_prevMacd = macdLine;
+			return;
+		}
+
 		var crossUp = _prevMacd <= 0 && macdLine > 0;
 		var crossDown = _prevMacd >= 0 && macdLine < 0;
 
+		// Entry with EMA filter
 		if (crossUp && candle.ClosePrice >= ema && Position <= 0)
-			BuyMarket(Volume + Math.Abs(Position));
+		{
+			if (Position < 0)
+				BuyMarket();
+			BuyMarket();
+			_cooldown = 5;
+		}
 		else if (crossDown && candle.ClosePrice <= ema && Position >= 0)
-			SellMarket(Volume + Math.Abs(Position));
-
-		// Exit on histogram momentum reversal
-		if (Position > 0 && macdLine < _prevMacd && macdLine < 0)
-			SellMarket(Math.Abs(Position));
-		else if (Position < 0 && macdLine > _prevMacd && macdLine > 0)
-			BuyMarket(Math.Abs(Position));
+		{
+			if (Position > 0)
+				SellMarket();
+			SellMarket();
+			_cooldown = 5;
+		}
 
 		_prevMacd = macdLine;
 	}

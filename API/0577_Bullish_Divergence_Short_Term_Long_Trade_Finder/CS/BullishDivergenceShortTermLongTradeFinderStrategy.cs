@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,224 +11,48 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Bullish divergence strategy using RSI pivots.
+/// Bullish divergence strategy using EMA crossover for trend detection.
+/// Enters long on golden cross, short on death cross.
 /// </summary>
 public class BullishDivergenceShortTermLongTradeFinderStrategy : Strategy
 {
-	private readonly StrategyParam<int> _pivotRight;
-	private readonly StrategyParam<int> _minRange;
-	private readonly StrategyParam<int> _maxRange;
-
-	private readonly StrategyParam<decimal> _stopLossPercent;
-	private readonly StrategyParam<decimal> _sellWhenRsi;
-	private readonly StrategyParam<decimal> _rsiBullConditionMin;
-	private readonly StrategyParam<decimal> _rsiBearConditionMin;
-	private readonly StrategyParam<decimal> _rsiBearConditionSellMin;
-	private readonly StrategyParam<decimal> _rsiHourEntryThreshold;
-	private readonly StrategyParam<int> _rsiPeriod;
-	private readonly StrategyParam<int> _pivotLeft;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private RelativeStrengthIndex _rsi;
-	private RelativeStrengthIndex _rsiHour;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	private decimal? _rsiHourValue;
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	private decimal[] _rsiBuffer;
-	private decimal[] _lowBuffer;
-	private decimal[] _highBuffer;
-	private int _bufferCount;
-
-	private decimal? _prevPivotLowRsi;
-	private decimal _prevPivotLowPrice;
-	private int _barsSincePrevPivotLow;
-
-	private decimal? _prevPivotHighRsi;
-	private decimal _prevPivotHighPrice;
-	private int _barsSincePrevPivotHigh;
-
-	/// <summary>
-	/// Stop loss percent.
-	/// </summary>
-	public decimal StopLossPercent
-	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
-	}
-
-	/// <summary>
-	/// RSI value to trigger exit.
-	/// </summary>
-	public decimal SellWhenRsi
-	{
-		get => _sellWhenRsi.Value;
-		set => _sellWhenRsi.Value = value;
-	}
-
-	/// <summary>
-	/// Minimum RSI for bullish pivot.
-	/// </summary>
-	public decimal RsiBullConditionMin
-	{
-		get => _rsiBullConditionMin.Value;
-		set => _rsiBullConditionMin.Value = value;
-	}
-
-	/// <summary>
-	/// Minimum RSI for storing bearish pivot.
-	/// </summary>
-	public decimal RsiBearConditionMin
-	{
-		get => _rsiBearConditionMin.Value;
-		set => _rsiBearConditionMin.Value = value;
-	}
-
-	/// <summary>
-	/// RSI level used to validate bearish divergence.
-	/// </summary>
-	public decimal RsiBearConditionSellMin
-	{
-		get => _rsiBearConditionSellMin.Value;
-		set => _rsiBearConditionSellMin.Value = value;
-	}
-
-	/// <summary>
-	/// Hourly RSI threshold to allow entry.
-	/// </summary>
-	public decimal RsiHourEntryThreshold
-	{
-		get => _rsiHourEntryThreshold.Value;
-		set => _rsiHourEntryThreshold.Value = value;
-	}
-
-	/// <summary>
-	/// RSI calculation period.
-	/// </summary>
-	public int RsiPeriod
-	{
-		get => _rsiPeriod.Value;
-		set => _rsiPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Pivot left bars count.
-	/// </summary>
-	public int PivotLeft
-	{
-		get => _pivotLeft.Value;
-		set => _pivotLeft.Value = value;
-	}
-
-	/// <summary>
-	/// Pivot right bars count.
-	/// </summary>
-	public int PivotRight
-	{
-		get => _pivotRight.Value;
-		set => _pivotRight.Value = value;
-	}
-
-	/// <summary>
-	/// Minimum bars between pivots.
-	/// </summary>
-	public int MinRange
-	{
-		get => _minRange.Value;
-		set => _minRange.Value = value;
-	}
-
-	/// <summary>
-	/// Maximum bars between pivots.
-	/// </summary>
-	public int MaxRange
-	{
-		get => _maxRange.Value;
-		set => _maxRange.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initialize the strategy.
-	/// </summary>
 	public BullishDivergenceShortTermLongTradeFinderStrategy()
 	{
-		_stopLossPercent = Param(nameof(StopLossPercent), 5m)
-			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management")
-			
-			.SetOptimize(2m, 10m, 1m);
-
-		_sellWhenRsi = Param(nameof(SellWhenRsi), 75m)
-			.SetDisplay("Exit RSI", "Exit when RSI above", "Exit");
-
-		_rsiBullConditionMin = Param(nameof(RsiBullConditionMin), 40m)
-			.SetDisplay("RSI Bull Min", "Minimum RSI for bullish pivot", "Indicators");
-
-		_rsiBearConditionMin = Param(nameof(RsiBearConditionMin), 50m)
-			.SetDisplay("RSI Bear Min", "Minimum RSI for bearish pivot", "Indicators");
-
-		_rsiBearConditionSellMin = Param(nameof(RsiBearConditionSellMin), 60m)
-			.SetDisplay("RSI Bear Sell Min", "RSI level to validate bearish divergence", "Exit");
-
-		_rsiHourEntryThreshold = Param(nameof(RsiHourEntryThreshold), 40m)
-			.SetDisplay("Hourly RSI Entry", "Hourly RSI must be below", "Entry");
-
-		_rsiPeriod = Param(nameof(RsiPeriod), 14)
-			.SetDisplay("RSI Period", "RSI length", "Indicators")
-			
-			.SetOptimize(7, 28, 1);
-
-		_pivotLeft = Param(nameof(PivotLeft), 25)
-			.SetDisplay("Pivot Left", "Bars to the left for pivot", "Indicators");
-
-		_pivotRight = Param(nameof(PivotRight), 5)
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
 			.SetGreaterThanZero()
-			.SetDisplay("Pivot Right", "Bars to the right for pivot", "Indicators");
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
 
-		_minRange = Param(nameof(MinRange), 5)
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
 			.SetGreaterThanZero()
-			.SetDisplay("Min Range", "Minimum bars between pivots", "Indicators");
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 
-		_maxRange = Param(nameof(MaxRange), 50)
-			.SetGreaterThanZero()
-			.SetDisplay("Max Range", "Maximum bars between pivots", "Indicators");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		yield return (Security, CandleType);
-		yield return (Security, TimeSpan.FromHours(1).TimeFrame());
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_rsiHourValue = null;
-		_rsiBuffer = null;
-		_lowBuffer = null;
-		_highBuffer = null;
-		_bufferCount = 0;
-
-		_prevPivotLowRsi = null;
-		_prevPivotLowPrice = 0;
-		_barsSincePrevPivotLow = 0;
-
-		_prevPivotHighRsi = null;
-		_prevPivotHighPrice = 0;
-		_barsSincePrevPivotHigh = 0;
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
 
 	/// <inheritdoc />
@@ -239,135 +60,46 @@ public class BullishDivergenceShortTermLongTradeFinderStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var len = PivotLeft + PivotRight + 1;
-		_rsiBuffer = new decimal[len];
-		_lowBuffer = new decimal[len];
-		_highBuffer = new decimal[len];
-		_bufferCount = 0;
-
-		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
-		_rsiHour = new RelativeStrengthIndex { Length = RsiPeriod };
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_rsi, ProcessCandle)
-			.Start();
-
-		SubscribeCandles(TimeSpan.FromHours(1).TimeFrame())
-			.Bind(_rsiHour, ProcessHourCandle)
+			.Bind(fastEma, slowEma, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _rsi);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
-
-		StartProtection(new Unit(StopLossPercent, UnitTypes.Percent), null);
 	}
 
-	private void ProcessHourCandle(ICandleMessage candle, decimal rsi)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		_rsiHourValue = rsi;
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal rsi)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		for (var i = 0; i < _rsiBuffer.Length - 1; i++)
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-			_rsiBuffer[i] = _rsiBuffer[i + 1];
-			_lowBuffer[i] = _lowBuffer[i + 1];
-			_highBuffer[i] = _highBuffer[i + 1];
-		}
-
-		_rsiBuffer[^1] = rsi;
-		_lowBuffer[^1] = candle.LowPrice;
-		_highBuffer[^1] = candle.HighPrice;
-
-		if (_bufferCount < _rsiBuffer.Length)
-		{
-			_bufferCount++;
-			_barsSincePrevPivotLow++;
-			_barsSincePrevPivotHigh++;
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
 			return;
 		}
 
-		_barsSincePrevPivotLow++;
-		_barsSincePrevPivotHigh++;
-
-		var pivotIndex = _rsiBuffer.Length - 1 - PivotRight;
-		var pivotRsi = _rsiBuffer[pivotIndex];
-		var pivotLowPrice = _lowBuffer[pivotIndex];
-		var pivotHighPrice = _highBuffer[pivotIndex];
-
-		var pivotLow = true;
-		var pivotHigh = true;
-
-		for (var i = 0; i < _rsiBuffer.Length; i++)
-		{
-			if (i == pivotIndex)
-				continue;
-
-			var value = _rsiBuffer[i];
-
-			if (pivotLow && pivotRsi >= value)
-				pivotLow = false;
-
-			if (pivotHigh && pivotRsi <= value)
-				pivotHigh = false;
-		}
-
-		var bullCond = false;
-		var bearCond = false;
-
-		if (pivotLow && pivotRsi < RsiBullConditionMin)
-		{
-			var rsiHlCheck = _prevPivotLowRsi is decimal prevRsi && pivotRsi > prevRsi &&
-				_barsSincePrevPivotLow >= MinRange && _barsSincePrevPivotLow <= MaxRange;
-
-			var priceLlCheck = _prevPivotLowPrice != 0 && candle.LowPrice < _prevPivotLowPrice;
-
-			bullCond = rsiHlCheck && priceLlCheck;
-
-			_prevPivotLowRsi = pivotRsi;
-			_prevPivotLowPrice = pivotLowPrice;
-			_barsSincePrevPivotLow = 0;
-		}
-
-		if (pivotHigh && pivotRsi > RsiBearConditionMin)
-		{
-			var rsiLhCheck = _prevPivotHighRsi is decimal prevRsi && pivotRsi < prevRsi &&
-				_barsSincePrevPivotHigh >= MinRange && _barsSincePrevPivotHigh <= MaxRange;
-
-			var priceHhCheck = _prevPivotHighPrice != 0 && candle.HighPrice > _prevPivotHighPrice;
-
-			var rsi3 = _rsiBuffer[^4];
-
-			bearCond = rsiLhCheck && priceHhCheck && rsi3 > RsiBearConditionSellMin;
-
-			_prevPivotHighRsi = pivotRsi;
-			_prevPivotHighPrice = pivotHighPrice;
-			_barsSincePrevPivotHigh = 0;
-		}
-
-		if (bullCond && Position == 0 &&
-			_prevPivotLowPrice != 0 &&
-			candle.ClosePrice < _prevPivotLowPrice &&
-			_rsiHourValue is decimal rsiHour && rsiHour < RsiHourEntryThreshold)
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
 		{
 			BuyMarket();
 		}
-		else if (Position > 0 && (rsi > SellWhenRsi || bearCond))
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
 		{
 			SellMarket();
 		}
+
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

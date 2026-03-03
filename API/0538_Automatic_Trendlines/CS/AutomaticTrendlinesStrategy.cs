@@ -1,87 +1,101 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
-using StockSharp.Algo;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
 /// <summary>
-/// Automatic Trendlines Strategy
+/// Automatic Trendlines Strategy.
+/// Uses Highest/Lowest channel breakouts with EMA trend filter.
 /// </summary>
 public class AutomaticTrendlinesStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _leftBars;
-	private readonly StrategyParam<int> _rightBars;
+	private readonly StrategyParam<int> _channelLength;
+	private readonly StrategyParam<int> _emaLength;
+	private readonly StrategyParam<int> _cooldownBars;
 
-	private readonly List<ICandleMessage> _candles = [];
+	private decimal _prevHighest;
+	private decimal _prevLowest;
 	private int _barIndex;
+	private int _lastTradeBar;
 
-	private int? _resX1;
-	private int? _resX2;
-	private decimal? _resY1;
-	private decimal? _resY2;
-
-	private int? _supX1;
-	private int? _supX2;
-	private decimal? _supY1;
-	private decimal? _supY2;
-
-	private decimal? _prevClose;
-	private decimal? _prevResY;
-	private decimal? _prevSupY;
-
-	public AutomaticTrendlinesStrategy()
-	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle type", "Candle type for strategy calculation.", "General");
-
-		_leftBars = Param(nameof(LeftBars), 100)
-			.SetDisplay("Left bars", "Pivot detection: left bars.", "General");
-
-		_rightBars = Param(nameof(RightBars), 15)
-			.SetDisplay("Right bars", "Pivot detection: right bars.", "General");
-	}
-
+	/// <summary>
+	/// Candle type.
+	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	public int LeftBars
+	/// <summary>
+	/// Channel lookback length.
+	/// </summary>
+	public int ChannelLength
 	{
-		get => _leftBars.Value;
-		set => _leftBars.Value = value;
+		get => _channelLength.Value;
+		set => _channelLength.Value = value;
 	}
 
-	public int RightBars
+	/// <summary>
+	/// EMA trend filter period.
+	/// </summary>
+	public int EmaLength
 	{
-		get => _rightBars.Value;
-		set => _rightBars.Value = value;
+		get => _emaLength.Value;
+		set => _emaLength.Value = value;
+	}
+
+	/// <summary>
+	/// Cooldown bars between trades.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
+	/// Constructor.
+	/// </summary>
+	public AutomaticTrendlinesStrategy()
+	{
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle type", "Candle type for strategy calculation", "General");
+
+		_channelLength = Param(nameof(ChannelLength), 30)
+			.SetGreaterThanZero()
+			.SetDisplay("Channel Length", "Lookback for Highest/Lowest", "Indicators");
+
+		_emaLength = Param(nameof(EmaLength), 50)
+			.SetGreaterThanZero()
+			.SetDisplay("EMA Length", "EMA trend filter period", "Indicators");
+
+		_cooldownBars = Param(nameof(CooldownBars), 350)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "Trading");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_candles.Clear();
-		_barIndex = default;
-
-		_resX1 = _resX2 = _supX1 = _supX2 = null;
-		_resY1 = _resY2 = _supY1 = _supY2 = null;
-
-		_prevClose = _prevResY = _prevSupY = null;
+		_prevHighest = 0;
+		_prevLowest = 0;
+		_barIndex = 0;
+		_lastTradeBar = 0;
 	}
 
 	/// <inheritdoc />
@@ -89,98 +103,50 @@ public class AutomaticTrendlinesStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		SubscribeCandles(CandleType)
-			.Bind(ProcessCandle)
+		var highest = new Highest { Length = ChannelLength };
+		var lowest = new Lowest { Length = ChannelLength };
+		var ema = new ExponentialMovingAverage { Length = EmaLength };
+
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(highest, lowest, ema, ProcessCandle)
 			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, ema);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal highestValue, decimal lowestValue, decimal emaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
 		_barIndex++;
 
-		_candles.Add(candle);
-		var maxCount = LeftBars + RightBars + 1;
+		var cooldownOk = _barIndex - _lastTradeBar > CooldownBars;
 
-		if (_candles.Count > maxCount)
-			_candles.RemoveAt(0);
+		// Breakout above resistance trendline with uptrend
+		var breakUp = _prevHighest > 0 && candle.ClosePrice > _prevHighest && candle.ClosePrice > emaValue;
+		// Breakdown below support trendline with downtrend
+		var breakDown = _prevLowest > 0 && candle.ClosePrice < _prevLowest && candle.ClosePrice < emaValue;
 
-		if (_candles.Count == maxCount)
+		if (breakUp && Position <= 0 && cooldownOk)
 		{
-			var pivotIndex = LeftBars;
-			var pivotCandle = _candles[pivotIndex];
-
-			var isHigh = true;
-			var isLow = true;
-
-			for (var i = 0; i < maxCount; i++)
-			{
-				if (i == pivotIndex)
-					continue;
-
-				if (_candles[i].HighPrice >= pivotCandle.HighPrice)
-					isHigh = false;
-
-				if (_candles[i].LowPrice <= pivotCandle.LowPrice)
-					isLow = false;
-			}
-
-			var pivotBarIndex = _barIndex - RightBars - 1;
-
-			if (isHigh)
-			{
-				_resX2 = _resX1;
-				_resY2 = _resY1;
-				_resX1 = pivotBarIndex;
-				_resY1 = pivotCandle.HighPrice;
-			}
-
-			if (isLow)
-			{
-				_supX2 = _supX1;
-				_supY2 = _supY1;
-				_supX1 = pivotBarIndex;
-				_supY1 = pivotCandle.LowPrice;
-			}
+			BuyMarket();
+			_lastTradeBar = _barIndex;
+		}
+		else if (breakDown && Position >= 0 && cooldownOk)
+		{
+			SellMarket();
+			_lastTradeBar = _barIndex;
 		}
 
-		decimal? resY = null;
-
-		if (_resX1.HasValue && _resX2.HasValue && _resY1.HasValue && _resY2.HasValue && _resX2 != _resX1)
-		{
-			var m = (_resY2.Value - _resY1.Value) / (_resX2.Value - _resX1.Value);
-			var b = _resY1.Value - m * _resX1.Value;
-			resY = m * _barIndex + b;
-		}
-
-		decimal? supY = null;
-
-		if (_supX1.HasValue && _supX2.HasValue && _supY1.HasValue && _supY2.HasValue && _supX2 != _supX1)
-		{
-			var m = (_supY2.Value - _supY1.Value) / (_supX2.Value - _supX1.Value);
-			var b = _supY1.Value - m * _supX1.Value;
-			supY = m * _barIndex + b;
-		}
-
-		if (IsFormedAndOnlineAndAllowTrading())
-		{
-			if (_prevClose is decimal pc)
-			{
-				if (resY is decimal r && _prevResY is decimal pr && pc <= pr && candle.ClosePrice > r && Position <= 0)
-				{
-					BuyMarket();
-				}
-				else if (supY is decimal s && _prevSupY is decimal ps && pc >= ps && candle.ClosePrice < s && Position >= 0)
-				{
-					SellMarket();
-				}
-			}
-		}
-
-		_prevClose = candle.ClosePrice;
-		_prevResY = resY;
-		_prevSupY = supY;
+		_prevHighest = highestValue;
+		_prevLowest = lowestValue;
 	}
 }

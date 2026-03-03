@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,22 +11,24 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// MACD Histogram Reversal Strategy.
-/// Enters long when MACD histogram crosses above zero.
+/// MACD Histogram Reversal strategy.
+/// Enters long when MACD histogram (MACD - Signal) crosses above zero.
 /// Enters short when MACD histogram crosses below zero.
+/// Uses cooldown to control trade frequency.
 /// </summary>
 public class MacdHistogramReversalStrategy : Strategy
 {
 	private readonly StrategyParam<int> _fastPeriod;
 	private readonly StrategyParam<int> _slowPeriod;
 	private readonly StrategyParam<int> _signalPeriod;
-	private readonly StrategyParam<Unit> _stopLoss;
 	private readonly StrategyParam<DataType> _candleType;
-	
+	private readonly StrategyParam<int> _cooldownBars;
+
 	private decimal? _prevHistogram;
+	private int _cooldown;
 
 	/// <summary>
-	/// Fast period for MACD calculation.
+	/// Fast EMA period.
 	/// </summary>
 	public int FastPeriod
 	{
@@ -38,7 +37,7 @@ public class MacdHistogramReversalStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Slow period for MACD calculation.
+	/// Slow EMA period.
 	/// </summary>
 	public int SlowPeriod
 	{
@@ -47,7 +46,7 @@ public class MacdHistogramReversalStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Signal period for MACD calculation.
+	/// Signal line period.
 	/// </summary>
 	public int SignalPeriod
 	{
@@ -56,16 +55,7 @@ public class MacdHistogramReversalStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stop loss percentage from entry price.
-	/// </summary>
-	public Unit StopLoss
-	{
-		get => _stopLoss.Value;
-		set => _stopLoss.Value = value;
-	}
-
-	/// <summary>
-	/// Type of candles to use.
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -74,32 +64,37 @@ public class MacdHistogramReversalStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initializes a new instance of the <see cref="MacdHistogramReversalStrategy"/>.
+	/// Cooldown bars.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
+	/// Constructor.
 	/// </summary>
 	public MacdHistogramReversalStrategy()
 	{
 		_fastPeriod = Param(nameof(FastPeriod), 12)
-			.SetDisplay("Fast Period", "Fast period for MACD calculation", "MACD Settings")
 			.SetRange(8, 16)
-			;
-			
+			.SetDisplay("Fast Period", "Fast EMA period for MACD", "MACD");
+
 		_slowPeriod = Param(nameof(SlowPeriod), 26)
-			.SetDisplay("Slow Period", "Slow period for MACD calculation", "MACD Settings")
 			.SetRange(20, 30)
-			;
-			
+			.SetDisplay("Slow Period", "Slow EMA period for MACD", "MACD");
+
 		_signalPeriod = Param(nameof(SignalPeriod), 9)
-			.SetDisplay("Signal Period", "Signal period for MACD calculation", "MACD Settings")
 			.SetRange(7, 13)
-			;
-			
-		_stopLoss = Param(nameof(StopLoss), new Unit(2, UnitTypes.Percent))
-			.SetDisplay("Stop Loss", "Stop loss as percentage from entry price", "Risk Management")
-			.SetRange(1m, 3m)
-			;
-			
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+			.SetDisplay("Signal Period", "Signal line period", "MACD");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
+
+		_cooldownBars = Param(nameof(CooldownBars), 500)
+			.SetRange(1, 1000)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
 	}
 
 	/// <inheritdoc />
@@ -108,100 +103,98 @@ public class MacdHistogramReversalStrategy : Strategy
 		return [(Security, CandleType)];
 	}
 
-		/// <inheritdoc />
-		protected override void OnReseted()
-		{
-				base.OnReseted();
-
-				_prevHistogram = null;
-		}
-
-		/// <inheritdoc />
-		protected override void OnStarted2(DateTime time)
-		{
-				base.OnStarted2(time);
-
-				// Enable position protection using stop-loss
-				StartProtection(
-						takeProfit: null,
-						stopLoss: StopLoss,
-						isStopTrailing: false,
-						useMarketOrders: true
-				);
-
-				// Create MACD histogram indicator
-				var macdHistogram = new MovingAverageConvergenceDivergenceHistogram
-				{
-						Macd =
-						{
-								ShortMa = { Length = FastPeriod },
-								LongMa = { Length = SlowPeriod },
-						},
-						SignalMa = { Length = SignalPeriod }
-				};
-
-	// Create subscription
-	var subscription = SubscribeCandles(CandleType);
-	
-	// Bind indicator and process candles
-	subscription
-		.BindEx(macdHistogram, ProcessCandle)
-		.Start();
-		
-	// Setup chart visualization
-	var area = CreateChartArea();
-	if (area != null)
+	/// <inheritdoc />
+	protected override void OnReseted()
 	{
-		DrawCandles(area, subscription);
-		DrawIndicator(area, macdHistogram);
-		DrawOwnTrades(area);
+		base.OnReseted();
+		_prevHistogram = null;
+		_cooldown = default;
 	}
-}
 
-	/// <summary>
-	/// Process candle with MACD histogram value.
-	/// </summary>
-	/// <param name="candle">Candle.</param>
-	/// <param name="histogramValue">MACD histogram value.</param>
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue)
+	/// <inheritdoc />
+	protected override void OnStarted2(DateTime time)
 	{
-		// Skip unfinished candles
+		base.OnStarted2(time);
+
+		_prevHistogram = null;
+		_cooldown = 0;
+
+		var macdHist = new MovingAverageConvergenceDivergenceHistogram
+		{
+			Macd =
+			{
+				ShortMa = { Length = FastPeriod },
+				LongMa = { Length = SlowPeriod },
+			},
+			SignalMa = { Length = SignalPeriod }
+		};
+
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.BindEx(macdHist, ProcessCandle)
+			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, macdHist);
+			DrawOwnTrades(area);
+		}
+	}
+
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdIv)
+	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!macdIv.IsFormed)
 			return;
 
-		var macdTyped = (MovingAverageConvergenceDivergenceHistogramValue)macdValue;
-		var macd = macdTyped.Macd;
-		var signal = macdTyped.Signal;
+		var mv = (IMacdHistogramValue)macdIv;
 
-		// If this is the first calculation, just store the value
+		if (mv.Macd is not decimal macdVal || mv.Signal is not decimal signalVal)
+			return;
+
+		var histogram = macdVal - signalVal;
+
 		if (_prevHistogram == null)
 		{
-			_prevHistogram = macd;
+			_prevHistogram = histogram;
 			return;
 		}
 
-		// Check for zero-line crossovers
-		bool crossedAboveZero = _prevHistogram < 0 && macd > 0;
-		bool crossedBelowZero = _prevHistogram > 0 && macd < 0;
-		
-		// Long entry: MACD histogram crossed above zero
-		if (crossedAboveZero && Position <= 0)
+		if (_cooldown > 0)
 		{
-			BuyMarket(Volume + Math.Abs(Position));
-			LogInfo($"Long entry: MACD histogram crossed above zero ({_prevHistogram} -> {macd})");
+			_cooldown--;
+			_prevHistogram = histogram;
+			return;
 		}
-		// Short entry: MACD histogram crossed below zero
-		else if (crossedBelowZero && Position >= 0)
+
+		var crossedAboveZero = _prevHistogram < 0 && histogram >= 0;
+		var crossedBelowZero = _prevHistogram > 0 && histogram <= 0;
+
+		if (Position == 0 && crossedAboveZero)
 		{
-			SellMarket(Volume + Math.Abs(Position));
-			LogInfo($"Short entry: MACD histogram crossed below zero ({_prevHistogram} -> {macd})");
+			BuyMarket();
+			_cooldown = CooldownBars;
 		}
-		
-		// Update previous value
-		_prevHistogram = macd;
+		else if (Position == 0 && crossedBelowZero)
+		{
+			SellMarket();
+			_cooldown = CooldownBars;
+		}
+		else if (Position > 0 && crossedBelowZero)
+		{
+			SellMarket();
+			_cooldown = CooldownBars;
+		}
+		else if (Position < 0 && crossedAboveZero)
+		{
+			BuyMarket();
+			_cooldown = CooldownBars;
+		}
+
+		_prevHistogram = histogram;
 	}
 }

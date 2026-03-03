@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,23 +11,23 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Volume Divergence strategy
-/// Long entry: Price falls but volume increases (possible accumulation)
-/// Short entry: Price rises but volume increases (possible distribution)
-/// Exit: Price crosses MA
+/// Volume Divergence strategy.
+/// Long entry: Price falls but volume increases (possible accumulation).
+/// Short entry: Price rises but volume increases (possible distribution).
+/// Exit: Price crosses MA.
 /// </summary>
 public class VolumeDivergenceStrategy : Strategy
 {
 	private readonly StrategyParam<int> _maPeriod;
-	private readonly StrategyParam<int> _atrPeriod;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _cooldownBars;
 
 	private decimal _previousClose;
 	private decimal _previousVolume;
-	private bool _isFirstCandle;
+	private int _cooldown;
 
 	/// <summary>
-	/// MA Period
+	/// MA Period.
 	/// </summary>
 	public int MAPeriod
 	{
@@ -39,21 +36,21 @@ public class VolumeDivergenceStrategy : Strategy
 	}
 
 	/// <summary>
-	/// ATR Period
-	/// </summary>
-	public int ATRPeriod
-	{
-		get => _atrPeriod.Value;
-		set => _atrPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type for strategy calculation
+	/// Candle type for strategy calculation.
 	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Cooldown bars between trades.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	/// <summary>
@@ -63,18 +60,15 @@ public class VolumeDivergenceStrategy : Strategy
 	{
 		_maPeriod = Param(nameof(MAPeriod), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("MA Period", "Period for Moving Average calculation", "Strategy Parameters")
-			
+			.SetDisplay("MA Period", "Period for Moving Average", "Indicators")
 			.SetOptimize(10, 50, 10);
 
-		_atrPeriod = Param(nameof(ATRPeriod), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("ATR Period", "Period for Average True Range calculation", "Strategy Parameters")
-			
-			.SetOptimize(7, 28, 7);
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles for strategy calculation", "Strategy Parameters");
+		_cooldownBars = Param(nameof(CooldownBars), 500)
+			.SetRange(1, 1000)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
 	}
 
 	/// <inheritdoc />
@@ -87,10 +81,9 @@ public class VolumeDivergenceStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_previousClose = 0;
-		_previousVolume = 0;
-		_isFirstCandle = true;
+		_previousClose = default;
+		_previousVolume = default;
+		_cooldown = default;
 	}
 
 	/// <inheritdoc />
@@ -98,94 +91,80 @@ public class VolumeDivergenceStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Create indicators
-		var ma = new SMA { Length = MAPeriod };
-		var atr = new AverageTrueRange { Length = ATRPeriod };
+		_previousClose = 0;
+		_previousVolume = 0;
+		_cooldown = 0;
 
-			// Create subscription and bind indicators
-			var subscription = SubscribeCandles(CandleType);
+		var ma = new SimpleMovingAverage { Length = MAPeriod };
 
-			subscription
-				.Bind(ma, atr, ProcessCandle)
-				.Start();
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(ma, ProcessCandle)
+			.Start();
 
-			// Configure protection
-			StartProtection(
-				takeProfit: new Unit(3, UnitTypes.Percent),
-				stopLoss: new Unit(2, UnitTypes.Percent)
-			);
-
-			// Setup chart visualization
-			var area = CreateChartArea();
-			if (area != null)
-			{
-				DrawCandles(area, subscription);
-				DrawIndicator(area, ma);
-				DrawIndicator(area, atr);
-				DrawOwnTrades(area);
-			}
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, ma);
+			DrawOwnTrades(area);
 		}
+	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal maValue, decimal atrValue)
+	private void ProcessCandle(ICandleMessage candle, decimal maValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// Skip the first candle, just initialize values
-		if (_isFirstCandle)
+		if (_previousClose == 0)
 		{
 			_previousClose = candle.ClosePrice;
 			_previousVolume = candle.TotalVolume;
-			_isFirstCandle = false;
 			return;
 		}
 
-		// Calculate price change and volume change
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+			_previousClose = candle.ClosePrice;
+			_previousVolume = candle.TotalVolume;
+			return;
+		}
+
 		var priceDown = candle.ClosePrice < _previousClose;
 		var priceUp = candle.ClosePrice > _previousClose;
 		var volumeUp = candle.TotalVolume > _previousVolume;
 
-		// Identify divergences
-		var bullishDivergence = priceDown && volumeUp;  // Price down but volume up (accumulation)
-		var bearishDivergence = priceUp && volumeUp;	// Price up but volume up too much (distribution)
+		var bullishDivergence = priceDown && volumeUp;
+		var bearishDivergence = priceUp && volumeUp;
 
-		// Log current values
-		LogInfo($"Candle Close: {candle.ClosePrice}, Previous Close: {_previousClose}, MA: {maValue}");
-		LogInfo($"Volume: {candle.TotalVolume}, Previous Volume: {_previousVolume}");
-		LogInfo($"Bullish Divergence: {bullishDivergence}, Bearish Divergence: {bearishDivergence}");
-
-		// Trading logic:
-		// Long: Price down but volume up (accumulation)
-		if (bullishDivergence && Position <= 0)
+		if (Position == 0)
 		{
-			LogInfo($"Buy Signal: Price down but volume up (possible accumulation)");
-			BuyMarket(Volume + Math.Abs(Position));
+			if (bullishDivergence && candle.ClosePrice < maValue)
+			{
+				BuyMarket();
+				_cooldown = CooldownBars;
+			}
+			else if (bearishDivergence && candle.ClosePrice > maValue)
+			{
+				SellMarket();
+				_cooldown = CooldownBars;
+			}
 		}
-		// Short: Price up but volume up too much (distribution)
-		else if (bearishDivergence && Position >= 0)
+		else if (Position > 0 && candle.ClosePrice < maValue && !bullishDivergence)
 		{
-			LogInfo($"Sell Signal: Price up but volume up too much (possible distribution)");
-			SellMarket(Volume + Math.Abs(Position));
+			SellMarket();
+			_cooldown = CooldownBars;
 		}
-
-		// Exit logic: Price crosses MA
-		if (Position > 0 && candle.ClosePrice < maValue)
+		else if (Position < 0 && candle.ClosePrice > maValue && !bearishDivergence)
 		{
-			LogInfo($"Exit Long: Price ({candle.ClosePrice}) < MA ({maValue})");
-			SellMarket(Math.Abs(Position));
-		}
-		else if (Position < 0 && candle.ClosePrice > maValue)
-		{
-			LogInfo($"Exit Short: Price ({candle.ClosePrice}) > MA ({maValue})");
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
+			_cooldown = CooldownBars;
 		}
 
-		// Store current values for next comparison
 		_previousClose = candle.ClosePrice;
 		_previousVolume = candle.TotalVolume;
 	}

@@ -27,8 +27,9 @@ public class TrippleMacdStrategy : Strategy
 	private readonly StrategyParam<int> _fast2;
 	private readonly StrategyParam<int> _slow2;
 
-	private readonly List<decimal> _closes = new();
 	private decimal _prevHist;
+	private decimal _prevRsi;
+	private int _cooldown;
 
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 	public int RsiPeriod { get => _rsiPeriod.Value; set => _rsiPeriod.Value = value; }
@@ -60,8 +61,9 @@ public class TrippleMacdStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_closes.Clear();
 		_prevHist = 0;
+		_prevRsi = 0;
+		_cooldown = 0;
 	}
 
 	protected override void OnStarted2(DateTime time)
@@ -73,11 +75,6 @@ public class TrippleMacdStrategy : Strategy
 		var emaFast2 = new ExponentialMovingAverage { Length = Fast2 };
 		var emaSlow2 = new ExponentialMovingAverage { Length = Slow2 };
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
-
-		StartProtection(
-			new Unit(TakeProfitPercent, UnitTypes.Percent),
-			new Unit(TakeProfitPercent * 2, UnitTypes.Percent),
-			useMarketOrders: true);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(emaFast1, emaSlow1, emaFast2, emaSlow2, rsi, ProcessCandle).Start();
@@ -102,32 +99,57 @@ public class TrippleMacdStrategy : Strategy
 		var macd2 = f2 - s2;
 		var hist = (macd1 + macd2) / 2m;
 
-		if (_prevHist == 0)
+		if (_prevHist == 0 || _prevRsi == 0)
 		{
 			_prevHist = hist;
+			_prevRsi = rsiVal;
 			return;
 		}
 
-		// Buy: histogram crosses above zero, bullish candle, RSI not overbought
-		if (_prevHist <= 0m && hist > 0m && candle.ClosePrice > candle.OpenPrice && rsiVal < 55m && Position <= 0)
+		if (_cooldown > 0)
 		{
-			BuyMarket();
+			_cooldown--;
+			_prevHist = hist;
+			_prevRsi = rsiVal;
+			return;
 		}
-		// Sell: histogram crosses below zero, bearish candle
-		else if (Position > 0 && _prevHist > 0m && hist < 0m && candle.OpenPrice > candle.ClosePrice)
+
+		// histogram trend direction
+		var histUp = hist > 0m;
+		var histDown = hist < 0m;
+
+		// RSI cross 50
+		var rsiUp = _prevRsi <= 50m && rsiVal > 50m;
+		var rsiDown = _prevRsi >= 50m && rsiVal < 50m;
+
+		// Exit on opposite RSI cross
+		if (Position > 0 && rsiDown)
 		{
 			SellMarket();
+			_cooldown = 80;
 		}
-		// Short: histogram crosses below zero, bearish candle, RSI not oversold
-		else if (_prevHist >= 0m && hist < 0m && candle.ClosePrice < candle.OpenPrice && rsiVal > 45m && Position >= 0)
-		{
-			SellMarket();
-		}
-		// Cover short: histogram crosses above zero
-		else if (Position < 0 && _prevHist < 0m && hist > 0m && candle.ClosePrice > candle.OpenPrice)
+		else if (Position < 0 && rsiUp)
 		{
 			BuyMarket();
+			_cooldown = 80;
 		}
+
+		// Entry: RSI cross 50 + histogram confirms
+		if (Position == 0)
+		{
+			if (rsiUp && histUp)
+			{
+				BuyMarket();
+				_cooldown = 80;
+			}
+			else if (rsiDown && histDown)
+			{
+				SellMarket();
+				_cooldown = 80;
+			}
+		}
+
+		_prevRsi = rsiVal;
 
 		_prevHist = hist;
 	}

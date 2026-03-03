@@ -14,7 +14,7 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Long-only strategy that buys when SuperTrend direction flips downward and exits when it flips upward.
+/// Strategy using RSI momentum with EMA trend for directional trading.
 /// </summary>
 public class TugaSupertrendStrategy : Strategy
 {
@@ -24,56 +24,41 @@ public class TugaSupertrendStrategy : Strategy
 	private readonly StrategyParam<decimal> _factor;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private bool? _prevIsUpTrend;
+	private decimal _prevRsi;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private int _cooldown;
 
-	/// <summary>
-	/// Start of trading window.
-	/// </summary>
 	public DateTimeOffset StartDate
 	{
 		get => _startDate.Value;
 		set => _startDate.Value = value;
 	}
 
-	/// <summary>
-	/// End of trading window.
-	/// </summary>
 	public DateTimeOffset EndDate
 	{
 		get => _endDate.Value;
 		set => _endDate.Value = value;
 	}
 
-	/// <summary>
-	/// ATR period for SuperTrend.
-	/// </summary>
 	public int AtrPeriod
 	{
 		get => _atrPeriod.Value;
 		set => _atrPeriod.Value = value;
 	}
 
-	/// <summary>
-	/// SuperTrend factor.
-	/// </summary>
 	public decimal Factor
 	{
 		get => _factor.Value;
 		set => _factor.Value = value;
 	}
 
-	/// <summary>
-	/// Candle type.
-	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Initialize the strategy.
-	/// </summary>
 	public TugaSupertrendStrategy()
 	{
 		_startDate = Param(nameof(StartDate), new DateTimeOffset(2018, 1, 1, 0, 0, 0, TimeSpan.Zero))
@@ -81,13 +66,11 @@ public class TugaSupertrendStrategy : Strategy
 		_endDate = Param(nameof(EndDate), new DateTimeOffset(2069, 12, 31, 23, 59, 0, TimeSpan.Zero))
 			.SetDisplay("End Date", "End Date", "Date Window");
 
-		_atrPeriod = Param(nameof(AtrPeriod), 10)
-			.SetDisplay("ATR Length", "ATR length for SuperTrend", "Indicators")
-			;
+		_atrPeriod = Param(nameof(AtrPeriod), 14)
+			.SetDisplay("RSI Length", "RSI period", "Indicators");
 
 		_factor = Param(nameof(Factor), 3m)
-			.SetDisplay("Factor", "Multiplier for SuperTrend", "Indicators")
-			;
+			.SetDisplay("Factor", "Multiplier for SuperTrend", "Indicators");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
@@ -101,7 +84,10 @@ public class TugaSupertrendStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevIsUpTrend = null;
+		_prevRsi = 0;
+		_prevFast = 0;
+		_prevSlow = 0;
+		_cooldown = 0;
 	}
 
 	/// <inheritdoc />
@@ -109,55 +95,81 @@ public class TugaSupertrendStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var supertrend = new SuperTrend
-		{
-			Length = AtrPeriod,
-			Multiplier = Factor
-		};
+		var rsi = new RelativeStrengthIndex { Length = AtrPeriod };
+		var emaFast = new ExponentialMovingAverage { Length = 8 };
+		var emaSlow = new ExponentialMovingAverage { Length = 21 };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.BindEx(supertrend, ProcessCandle)
-			.Start();
+		subscription.Bind(rsi, emaFast, emaSlow, ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, supertrend);
+			DrawIndicator(area, emaFast);
+			DrawIndicator(area, emaSlow);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue stValue)
+	private void ProcessCandle(ICandleMessage candle, decimal rsiVal, decimal emaFast, decimal emaSlow)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!stValue.IsFinal)
-			return;
-
-		var st = (SuperTrendIndicatorValue)stValue;
-		var isUpTrend = st.IsUpTrend;
-
-		var inWindow = candle.OpenTime >= StartDate && candle.OpenTime <= EndDate;
-		if (!inWindow)
+		if (_prevRsi == 0 || _prevFast == 0 || _prevSlow == 0)
 		{
-			_prevIsUpTrend = isUpTrend;
+			_prevRsi = rsiVal;
+			_prevFast = emaFast;
+			_prevSlow = emaSlow;
 			return;
 		}
 
-		if (_prevIsUpTrend is bool prev)
+		if (_cooldown > 0)
 		{
-			var change = (isUpTrend ? 1 : -1) - (prev ? 1 : -1);
+			_cooldown--;
+			_prevRsi = rsiVal;
+			_prevFast = emaFast;
+			_prevSlow = emaSlow;
+			return;
+		}
 
-			if (change < 0 && Position <= 0)
+		var hist = emaFast - emaSlow;
+		var histUp = hist > 0m;
+		var histDown = hist < 0m;
+
+		var rsiCrossUp = _prevRsi <= 50m && rsiVal > 50m;
+		var rsiCrossDown = _prevRsi >= 50m && rsiVal < 50m;
+
+		// Exit
+		if (Position > 0 && rsiCrossDown)
+		{
+			SellMarket();
+			_cooldown = 80;
+		}
+		else if (Position < 0 && rsiCrossUp)
+		{
+			BuyMarket();
+			_cooldown = 80;
+		}
+
+		// Entry
+		if (Position == 0)
+		{
+			if (rsiCrossUp && histUp)
+			{
 				BuyMarket();
-
-			if (change > 0 && Position > 0)
-				SellMarket(Position);
+				_cooldown = 80;
+			}
+			else if (rsiCrossDown && histDown)
+			{
+				SellMarket();
+				_cooldown = 80;
+			}
 		}
 
-		_prevIsUpTrend = isUpTrend;
+		_prevRsi = rsiVal;
+		_prevFast = emaFast;
+		_prevSlow = emaSlow;
 	}
 }

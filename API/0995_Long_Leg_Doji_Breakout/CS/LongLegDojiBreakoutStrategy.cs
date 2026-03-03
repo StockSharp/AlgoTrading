@@ -16,14 +16,14 @@ namespace StockSharp.Samples.Strategies;
 /// <summary>
 /// Long-Leg Doji breakout strategy.
 /// Detects long-legged doji candles and trades breakouts above or below the pattern.
+/// Uses SMA trend filter for entries and exits.
 /// </summary>
 public class LongLegDojiBreakoutStrategy : Strategy
 {
 	private readonly StrategyParam<decimal> _dojiBodyThreshold;
 	private readonly StrategyParam<decimal> _minWickRatio;
-	private readonly StrategyParam<bool> _useAtrFilter;
 	private readonly StrategyParam<int> _atrPeriod;
-	private readonly StrategyParam<decimal> _atrMultiplier;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private AverageTrueRange _atr;
@@ -34,6 +34,8 @@ public class LongLegDojiBreakoutStrategy : Strategy
 	private bool _waitingForBreakout;
 	private decimal _prevClose;
 	private decimal _prevSma;
+	private int _cooldown;
+	private decimal _entryPrice;
 
 	/// <summary>
 	/// Maximum body size as percentage of total range.
@@ -54,15 +56,6 @@ public class LongLegDojiBreakoutStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Use ATR filter for wick length.
-	/// </summary>
-	public bool UseAtrFilter
-	{
-		get => _useAtrFilter.Value;
-		set => _useAtrFilter.Value = value;
-	}
-
-	/// <summary>
 	/// ATR period.
 	/// </summary>
 	public int AtrPeriod
@@ -72,12 +65,12 @@ public class LongLegDojiBreakoutStrategy : Strategy
 	}
 
 	/// <summary>
-	/// ATR multiplier for minimum wick length.
+	/// Cooldown bars between trades.
 	/// </summary>
-	public decimal AtrMultiplier
+	public int CooldownBars
 	{
-		get => _atrMultiplier.Value;
-		set => _atrMultiplier.Value = value;
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	/// <summary>
@@ -91,26 +84,23 @@ public class LongLegDojiBreakoutStrategy : Strategy
 
 	public LongLegDojiBreakoutStrategy()
 	{
-		_dojiBodyThreshold = Param(nameof(DojiBodyThreshold), 0.1m)
-			.SetRange(0.01m, 1m)
+		_dojiBodyThreshold = Param(nameof(DojiBodyThreshold), 15m)
+			.SetRange(0.01m, 100m)
 			.SetDisplay("Doji Body Threshold %", "Body size as % of range", "Pattern");
 
-		_minWickRatio = Param(nameof(MinWickRatio), 2m)
-			.SetRange(1m, 10m)
+		_minWickRatio = Param(nameof(MinWickRatio), 1.2m)
+			.SetRange(0.5m, 10m)
 			.SetDisplay("Minimum Wick Ratio", "Minimum wick to body ratio", "Pattern");
-
-		_useAtrFilter = Param(nameof(UseAtrFilter), true)
-			.SetDisplay("Use ATR Filter", "Require ATR-based wick size", "Filter");
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "ATR calculation period", "Filter");
 
-		_atrMultiplier = Param(nameof(AtrMultiplier), 0.5m)
-			.SetRange(0.1m, 2m)
-			.SetDisplay("ATR Multiplier", "ATR multiplier for wick length", "Filter");
+		_cooldownBars = Param(nameof(CooldownBars), 70)
+			.SetGreaterThanZero()
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -130,6 +120,8 @@ public class LongLegDojiBreakoutStrategy : Strategy
 		_waitingForBreakout = false;
 		_prevClose = default;
 		_prevSma = default;
+		_cooldown = default;
+		_entryPrice = default;
 	}
 
 	/// <inheritdoc />
@@ -138,7 +130,7 @@ public class LongLegDojiBreakoutStrategy : Strategy
 		base.OnStarted2(time);
 
 		_atr = new AverageTrueRange { Length = AtrPeriod };
-		_sma = new SMA { Length = 20 };
+		_sma = new SMA { Length = 10 };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -158,52 +150,89 @@ public class LongLegDojiBreakoutStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var bodySize = Math.Abs(candle.ClosePrice - candle.OpenPrice);
-		var candleRange = candle.HighPrice - candle.LowPrice;
-		if (candleRange == 0)
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+			_prevClose = candle.ClosePrice;
+			_prevSma = smaValue;
+			return;
+		}
+
+		if (atrValue <= 0 || _prevSma == 0)
 		{
 			_prevClose = candle.ClosePrice;
 			_prevSma = smaValue;
 			return;
 		}
 
-		var upperWick = candle.HighPrice - Math.Max(candle.OpenPrice, candle.ClosePrice);
-		var lowerWick = Math.Min(candle.OpenPrice, candle.ClosePrice) - candle.LowPrice;
+		var bodySize = Math.Abs(candle.ClosePrice - candle.OpenPrice);
+		var candleRange = candle.HighPrice - candle.LowPrice;
 
-		var threshold = DojiBodyThreshold / 100m;
-		var isSmallBody = bodySize <= candleRange * threshold;
-		var hasLongWicks = upperWick >= bodySize * MinWickRatio && lowerWick >= bodySize * MinWickRatio;
-		var atrCondition = !UseAtrFilter || (upperWick >= atrValue * AtrMultiplier && lowerWick >= atrValue * AtrMultiplier);
-		var isDoji = isSmallBody && hasLongWicks && atrCondition;
-
-		if (isDoji && !_waitingForBreakout)
+		// Detect doji
+		if (candleRange > 0)
 		{
-			_dojiHigh = candle.HighPrice;
-			_dojiLow = candle.LowPrice;
-			_waitingForBreakout = true;
+			var upperWick = candle.HighPrice - Math.Max(candle.OpenPrice, candle.ClosePrice);
+			var lowerWick = Math.Min(candle.OpenPrice, candle.ClosePrice) - candle.LowPrice;
+
+			var threshold = DojiBodyThreshold / 100m;
+			var isSmallBody = bodySize <= candleRange * threshold;
+			var hasLongWicks = upperWick >= bodySize * MinWickRatio && lowerWick >= bodySize * MinWickRatio;
+
+			if (isSmallBody && hasLongWicks)
+			{
+				_dojiHigh = candle.HighPrice;
+				_dojiLow = candle.LowPrice;
+				_waitingForBreakout = true;
+			}
 		}
 
-		var longSignal = _waitingForBreakout && candle.ClosePrice > _dojiHigh && _prevClose <= _dojiHigh;
-		var shortSignal = _waitingForBreakout && candle.ClosePrice < _dojiLow && _prevClose >= _dojiLow;
-
-		if (longSignal)
+		// Entry: doji breakout with SMA confirmation, or SMA cross fallback
+		if (Position == 0 && _prevClose > 0)
 		{
-			BuyMarket(Volume + Math.Abs(Position));
-			_waitingForBreakout = false;
+			var dojiLong = _waitingForBreakout && candle.ClosePrice > _dojiHigh && candle.ClosePrice > smaValue;
+			var dojiShort = _waitingForBreakout && candle.ClosePrice < _dojiLow && candle.ClosePrice < smaValue;
+			var smaCrossUp = _prevClose < _prevSma && candle.ClosePrice > smaValue;
+			var smaCrossDown = _prevClose > _prevSma && candle.ClosePrice < smaValue;
+
+			if (dojiLong || smaCrossUp)
+			{
+				BuyMarket();
+				_entryPrice = candle.ClosePrice;
+				_waitingForBreakout = false;
+				_cooldown = CooldownBars;
+			}
+			else if (dojiShort || smaCrossDown)
+			{
+				SellMarket();
+				_entryPrice = candle.ClosePrice;
+				_waitingForBreakout = false;
+				_cooldown = CooldownBars;
+			}
 		}
-		else if (shortSignal)
+
+		// Exit: SMA cross or ATR-based stop
+		if (Position > 0)
 		{
-			SellMarket(Volume + Math.Abs(Position));
-			_waitingForBreakout = false;
+			var smaCross = _prevClose >= _prevSma && candle.ClosePrice < smaValue;
+			var atrStop = _entryPrice > 0 && candle.ClosePrice < _entryPrice - atrValue * 2;
+
+			if (smaCross || atrStop)
+			{
+				SellMarket(Math.Abs(Position));
+				_cooldown = CooldownBars;
+			}
 		}
+		else if (Position < 0)
+		{
+			var smaCross = _prevClose <= _prevSma && candle.ClosePrice > smaValue;
+			var atrStop = _entryPrice > 0 && candle.ClosePrice > _entryPrice + atrValue * 2;
 
-		var crossedDown = Position > 0 && _prevClose >= _prevSma && candle.ClosePrice < smaValue;
-		var crossedUp = Position < 0 && _prevClose <= _prevSma && candle.ClosePrice > smaValue;
-
-		if (crossedDown)
-			SellMarket(Math.Abs(Position));
-		else if (crossedUp)
-			BuyMarket(Math.Abs(Position));
+			if (smaCross || atrStop)
+			{
+				BuyMarket(Math.Abs(Position));
+				_cooldown = CooldownBars;
+			}
+		}
 
 		_prevClose = candle.ClosePrice;
 		_prevSma = smaValue;

@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,60 +11,32 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Volume Exhaustion Strategy.
-/// Looks for volume spikes with corresponding bullish/bearish candles.
+/// Volume Exhaustion strategy.
+/// Looks for volume spikes (current volume much higher than previous) with directional candles.
+/// High volume + bullish above SMA = buy.
+/// High volume + bearish below SMA = sell.
+/// Exits when price crosses SMA in opposite direction.
 /// </summary>
 public class VolumeExhaustionStrategy : Strategy
 {
-	private readonly StrategyParam<int> _volumePeriod;
-	private readonly StrategyParam<decimal> _volumeMultiplier;
 	private readonly StrategyParam<int> _maPeriod;
-	private readonly StrategyParam<Unit> _atrMultiplier;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<int> _cooldownBars;
 
-	private SimpleMovingAverage _ma;
-	private AverageTrueRange _atr;
-	private SimpleMovingAverage _volumeAvg;
-
-	/// <summary>
-	/// Period for volume average calculation.
-	/// </summary>
-	public int VolumePeriod
-	{
-		get => _volumePeriod.Value;
-		set => _volumePeriod.Value = value;
-	}
+	private decimal _prevVolume;
+	private int _cooldown;
 
 	/// <summary>
-	/// Multiplier to determine volume spike.
+	/// MA Period.
 	/// </summary>
-	public decimal VolumeMultiplier
-	{
-		get => _volumeMultiplier.Value;
-		set => _volumeMultiplier.Value = value;
-	}
-
-	/// <summary>
-	/// Period for moving average.
-	/// </summary>
-	public int MaPeriod
+	public int MAPeriod
 	{
 		get => _maPeriod.Value;
 		set => _maPeriod.Value = value;
 	}
 
 	/// <summary>
-	/// ATR multiplier for stop-loss calculation.
-	/// </summary>
-	public Unit AtrMultiplier
-	{
-		get => _atrMultiplier.Value;
-		set => _atrMultiplier.Value = value;
-	}
-
-	/// <summary>
-	/// Type of candles to use.
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -76,46 +45,29 @@ public class VolumeExhaustionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stop-loss percentage.
+	/// Cooldown bars.
 	/// </summary>
-	public decimal StopLossPercent
+	public int CooldownBars
 	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	/// <summary>
-	/// Initializes a new instance of the <see cref="VolumeExhaustionStrategy"/>.
+	/// Constructor.
 	/// </summary>
 	public VolumeExhaustionStrategy()
 	{
-		_volumePeriod = Param(nameof(VolumePeriod), 20)
-			.SetDisplay("Volume Average Period", "Period for volume average calculation", "Volume Settings")
-			.SetRange(5, 50)
-			;
-			
-		_volumeMultiplier = Param(nameof(VolumeMultiplier), 2.0m)
-			.SetDisplay("Volume Multiplier", "Multiplier to determine volume spike", "Volume Settings")
-			.SetRange(1.5m, 3.0m)
-			;
-			
-		_maPeriod = Param(nameof(MaPeriod), 20)
-			.SetDisplay("MA Period", "Period for moving average", "Trend Settings")
-			.SetRange(10, 50)
-			;
-			
-		_atrMultiplier = Param(nameof(AtrMultiplier), new Unit(2, UnitTypes.Absolute))
-			.SetDisplay("ATR Multiplier", "Multiplier for ATR stop-loss", "Risk Management")
-			;
-			
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_maPeriod = Param(nameof(MAPeriod), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("MA Period", "Period for SMA", "Indicators");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
-		_stopLossPercent = Param(nameof(StopLossPercent), 1.0m)
-			.SetNotNegative()
-			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management")
-			
-			.SetOptimize(0.5m, 2.0m, 0.5m);
+		_cooldownBars = Param(nameof(CooldownBars), 500)
+			.SetRange(1, 1000)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
 	}
 
 	/// <inheritdoc />
@@ -128,7 +80,8 @@ public class VolumeExhaustionStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
+		_prevVolume = default;
+		_cooldown = default;
 	}
 
 	/// <inheritdoc />
@@ -136,72 +89,76 @@ public class VolumeExhaustionStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_ma = new SMA { Length = MaPeriod };
-		_atr = new AverageTrueRange { Length = 14 };
-		_volumeAvg = new SMA { Length = VolumePeriod };
+		_prevVolume = 0;
+		_cooldown = 0;
 
-		// Create subscription
+		var sma = new SimpleMovingAverage { Length = MAPeriod };
+
 		var subscription = SubscribeCandles(CandleType);
-		
-		// Bind indicators and process candles
 		subscription
-			.Bind(_ma, _atr, _volumeAvg, ProcessCandle)
+			.Bind(sma, ProcessCandle)
 			.Start();
-			
-		// Setup chart visualization
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _ma);
+			DrawIndicator(area, sma);
 			DrawOwnTrades(area);
 		}
-
-		StartProtection(
-			new(),
-			new Unit(StopLossPercent, UnitTypes.Percent),
-			useMarketOrders: true
-		);
 	}
 
-	/// <summary>
-	/// Process candle with indicator values.
-	/// </summary>
-	/// <param name="candle">Candle.</param>
-	/// <param name="maValue">Moving average value.</param>
-	/// <param name="atrValue">ATR value.</param>
-	/// <param name="volumeAvgValue">Volume average value.</param>
-	private void ProcessCandle(ICandleMessage candle, decimal maValue, decimal atrValue, decimal volumeAvgValue)
+	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
 		if (!IsFormedAndOnlineAndAllowTrading())
+		{
+			_prevVolume = candle.TotalVolume;
 			return;
+		}
 
-		// Determine candle direction
-		bool isBullishCandle = candle.ClosePrice > candle.OpenPrice;
-		bool isBearishCandle = candle.ClosePrice < candle.OpenPrice;
-		
-		// Check for volume spike
-		bool isVolumeSpike = candle.TotalVolume > volumeAvgValue * VolumeMultiplier;
-		
-		if (!isVolumeSpike)
+		if (_prevVolume == 0)
+		{
+			_prevVolume = candle.TotalVolume;
 			return;
-			
-		// Long entry: Volume spike with bullish candle
-		if (isVolumeSpike && isBullishCandle && candle.ClosePrice > maValue && Position <= 0)
-		{
-			BuyMarket(Volume + Math.Abs(Position));
-			LogInfo($"Long entry: Volume spike ({candle.TotalVolume} > {volumeAvgValue * VolumeMultiplier}) with bullish candle");
 		}
-		// Short entry: Volume spike with bearish candle
-		else if (isVolumeSpike && isBearishCandle && candle.ClosePrice < maValue && Position >= 0)
+
+		if (_cooldown > 0)
 		{
-			SellMarket(Volume + Math.Abs(Position));
-			LogInfo($"Short entry: Volume spike ({candle.TotalVolume} > {volumeAvgValue * VolumeMultiplier}) with bearish candle");
+			_cooldown--;
+			_prevVolume = candle.TotalVolume;
+			return;
 		}
+
+		// Volume spike: current volume significantly higher than previous
+		var volumeSpike = _prevVolume > 0 && candle.TotalVolume > _prevVolume * 1.5m;
+
+		var isBullish = candle.ClosePrice > candle.OpenPrice;
+		var isBearish = candle.ClosePrice < candle.OpenPrice;
+
+		if (Position == 0 && volumeSpike && isBullish && candle.ClosePrice > smaValue)
+		{
+			BuyMarket();
+			_cooldown = CooldownBars;
+		}
+		else if (Position == 0 && volumeSpike && isBearish && candle.ClosePrice < smaValue)
+		{
+			SellMarket();
+			_cooldown = CooldownBars;
+		}
+		else if (Position > 0 && candle.ClosePrice < smaValue)
+		{
+			SellMarket();
+			_cooldown = CooldownBars;
+		}
+		else if (Position < 0 && candle.ClosePrice > smaValue)
+		{
+			BuyMarket();
+			_cooldown = CooldownBars;
+		}
+
+		_prevVolume = candle.TotalVolume;
 	}
 }

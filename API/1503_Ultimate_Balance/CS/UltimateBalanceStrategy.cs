@@ -14,8 +14,7 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Ultimate Balance Strategy combines RSI and momentum into a weighted oscillator.
-/// Opens long when the smoothed oscillator crosses above the oversold level and exits on overbought.
+/// Ultimate Balance strategy using RSI momentum with EMA trend filter.
 /// </summary>
 public class UltimateBalanceStrategy : Strategy
 {
@@ -26,10 +25,10 @@ public class UltimateBalanceStrategy : Strategy
 	private readonly StrategyParam<bool> _enableShort;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private readonly List<decimal> _closes = new();
-	private readonly List<decimal> _oscillators = new();
-	private decimal _prevSmoothed;
-	private bool _initialized;
+	private decimal _prevRsi;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private int _cooldown;
 
 	public decimal OverboughtLevel { get => _overboughtLevel.Value; set => _overboughtLevel.Value = value; }
 	public decimal OversoldLevel { get => _oversoldLevel.Value; set => _oversoldLevel.Value = value; }
@@ -69,10 +68,10 @@ public class UltimateBalanceStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_closes.Clear();
-		_oscillators.Clear();
-		_prevSmoothed = 0m;
-		_initialized = false;
+		_prevRsi = 0;
+		_prevFast = 0;
+		_prevSlow = 0;
+		_cooldown = 0;
 	}
 
 	protected override void OnStarted2(DateTime time)
@@ -80,88 +79,80 @@ public class UltimateBalanceStrategy : Strategy
 		base.OnStarted2(time);
 
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };
-
-		_closes.Clear();
-		_oscillators.Clear();
-		_prevSmoothed = 0m;
-		_initialized = false;
+		var emaFast = new ExponentialMovingAverage { Length = 8 };
+		var emaSlow = new ExponentialMovingAverage { Length = 21 };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(rsi, ProcessCandle)
-			.Start();
+		subscription.Bind(rsi, emaFast, emaSlow, ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, rsi);
+			DrawIndicator(area, emaFast);
+			DrawIndicator(area, emaSlow);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal rsiValue)
+	private void ProcessCandle(ICandleMessage candle, decimal rsiVal, decimal emaFast, decimal emaSlow)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		_closes.Add(candle.ClosePrice);
-
-		// Calculate momentum component (rate of change)
-		var rocLen = 20;
-		decimal normRoc = 0.5m;
-		if (_closes.Count > rocLen)
+		if (_prevRsi == 0 || _prevFast == 0 || _prevSlow == 0)
 		{
-			var prevPrice = _closes[_closes.Count - 1 - rocLen];
-			if (prevPrice > 0)
+			_prevRsi = rsiVal;
+			_prevFast = emaFast;
+			_prevSlow = emaSlow;
+			return;
+		}
+
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+			_prevRsi = rsiVal;
+			_prevFast = emaFast;
+			_prevSlow = emaSlow;
+			return;
+		}
+
+		var hist = emaFast - emaSlow;
+		var histUp = hist > 0m;
+		var histDown = hist < 0m;
+
+		var rsiCrossUp = _prevRsi <= 50m && rsiVal > 50m;
+		var rsiCrossDown = _prevRsi >= 50m && rsiVal < 50m;
+
+		// Exit
+		if (Position > 0 && rsiCrossDown)
+		{
+			SellMarket();
+			_cooldown = 80;
+		}
+		else if (Position < 0 && rsiCrossUp)
+		{
+			BuyMarket();
+			_cooldown = 80;
+		}
+
+		// Entry
+		if (Position == 0)
+		{
+			if (rsiCrossUp && histUp)
 			{
-				var roc = (candle.ClosePrice - prevPrice) / prevPrice * 100m;
-				// Normalize ROC to 0-100 range (roughly)
-				normRoc = Math.Max(0, Math.Min(100, 50m + roc * 5m));
+				BuyMarket();
+				_cooldown = 80;
+			}
+			else if (rsiCrossDown && histDown)
+			{
+				SellMarket();
+				_cooldown = 80;
 			}
 		}
 
-		// Weighted oscillator: RSI (60%) + normalized ROC (40%)
-		var oscillator = rsiValue * 0.6m + normRoc * 0.4m;
-		_oscillators.Add(oscillator);
-
-		// Keep buffer
-		while (_closes.Count > 200)
-			_closes.RemoveAt(0);
-		while (_oscillators.Count > SmoothLength + 5)
-			_oscillators.RemoveAt(0);
-
-		if (_oscillators.Count < SmoothLength)
-			return;
-
-		// Smooth the oscillator with SMA
-		decimal sum = 0;
-		for (int i = _oscillators.Count - SmoothLength; i < _oscillators.Count; i++)
-			sum += _oscillators[i];
-		var smoothed = sum / SmoothLength;
-
-		if (!_initialized)
-		{
-			_prevSmoothed = smoothed;
-			_initialized = true;
-			return;
-		}
-
-		// Crossover signals
-		var buySignal = _prevSmoothed <= OversoldLevel && smoothed > OversoldLevel;
-		var sellSignal = _prevSmoothed >= OverboughtLevel && smoothed < OverboughtLevel;
-
-		if (buySignal && Position <= 0)
-			BuyMarket();
-
-		if (sellSignal && Position >= 0)
-		{
-			if (EnableShort)
-				SellMarket();
-			else if (Position > 0)
-				SellMarket();
-		}
-
-		_prevSmoothed = smoothed;
+		_prevRsi = rsiVal;
+		_prevFast = emaFast;
+		_prevSlow = emaSlow;
 	}
 }

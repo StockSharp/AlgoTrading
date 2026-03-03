@@ -1,132 +1,82 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
-using StockSharp.Algo;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
-/// <summary>
-/// Utility strategy that reconstructs higher timeframe candles from lower timeframe data.
-/// </summary>
 public class HtfCandlesLibStrategy : Strategy
 {
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<DataType> _higherCandleType;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	private DateTime _currentStart;
-	private decimal _open;
-	private decimal _high;
-	private decimal _low;
-	private decimal _close;
-	private long _openIndex;
-	private long _highIndex;
-	private long _lowIndex;
-	private long _closeIndex;
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Lower timeframe candle type.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Higher timeframe candle type.
-	/// </summary>
-	public DataType HigherCandleType
-	{
-		get => _higherCandleType.Value;
-		set => _higherCandleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="HtfCandlesLibStrategy"/>.
-	/// </summary>
 	public HtfCandlesLibStrategy()
 	{
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("LTF Candle", "Lower timeframe candle type", "General");
-		_higherCandleType = Param(nameof(HigherCandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("HTF Candle", "Higher timeframe candle type", "General");
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-		=> [(Security, CandleType)];
+	{
+		return [(Security, CandleType)];
+	}
 
-	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
-
+		subscription.Bind(fastEma, slowEma, ProcessCandle).Start();
 		var area = CreateChartArea();
 		if (area != null)
+		{
 			DrawCandles(area, subscription);
-
-		StartProtection(null, null);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		var frame = (TimeSpan)HigherCandleType.Arg;
-
-		if (_currentStart == default || candle.OpenTime >= _currentStart + frame)
+		if (candle.State != CandleStates.Finished) return;
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-			if (_currentStart != default)
-				LogCurrent();
-
-			StartNew(candle);
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
 			return;
 		}
-
-		if (candle.HighPrice > _high)
-		{
-			_high = candle.HighPrice;
-			_highIndex = candle.OpenTime.Ticks;
-		}
-
-		if (candle.LowPrice < _low)
-		{
-			_low = candle.LowPrice;
-			_lowIndex = candle.OpenTime.Ticks;
-		}
-
-		_close = candle.ClosePrice;
-		_closeIndex = candle.OpenTime.Ticks;
-	}
-
-	private void StartNew(ICandleMessage candle)
-	{
-		_currentStart = candle.OpenTime;
-		_open = candle.OpenPrice;
-		_high = candle.HighPrice;
-		_low = candle.LowPrice;
-		_close = candle.ClosePrice;
-		_openIndex = candle.OpenTime.Ticks;
-		_highIndex = _openIndex;
-		_lowIndex = _openIndex;
-		_closeIndex = _openIndex;
-	}
-
-	private void LogCurrent()
-	{
-		LogInfo("O:{0} H:{1} L:{2} C:{3} ({4},{5},{6},{7})", _open, _high, _low, _close, _openIndex, _highIndex, _lowIndex, _closeIndex);
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
+			BuyMarket();
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+			SellMarket();
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

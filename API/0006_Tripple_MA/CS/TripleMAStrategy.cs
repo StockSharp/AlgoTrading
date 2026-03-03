@@ -27,6 +27,8 @@ public class TripleMAStrategy : Strategy
 
 	// Current state
 	private bool _prevIsShortAboveMiddle;
+	private bool _prevIsBullish;
+	private bool _prevIsBearish;
 
 	/// <summary>
 	/// Period for short moving average.
@@ -78,19 +80,19 @@ public class TripleMAStrategy : Strategy
 	/// </summary>
 	public TripleMAStrategy()
 	{
-		_shortMaPeriod = Param(nameof(ShortMaPeriod), 5)
+		_shortMaPeriod = Param(nameof(ShortMaPeriod), 100)
 			.SetDisplay("Short MA Period", "Period for short moving average", "Indicators")
-			
+
 			.SetOptimize(3, 10, 1);
 
-		_middleMaPeriod = Param(nameof(MiddleMaPeriod), 20)
+		_middleMaPeriod = Param(nameof(MiddleMaPeriod), 250)
 			.SetDisplay("Middle MA Period", "Period for middle moving average", "Indicators")
-			
+
 			.SetOptimize(15, 30, 5);
 
-		_longMaPeriod = Param(nameof(LongMaPeriod), 50)
+		_longMaPeriod = Param(nameof(LongMaPeriod), 500)
 			.SetDisplay("Long MA Period", "Period for long moving average", "Indicators")
-			
+
 			.SetOptimize(40, 100, 10);
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
@@ -98,7 +100,7 @@ public class TripleMAStrategy : Strategy
 			
 			.SetOptimize(1, 3, 0.5m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -113,6 +115,8 @@ public class TripleMAStrategy : Strategy
 	{
 		base.OnReseted();
 		_prevIsShortAboveMiddle = default;
+		_prevIsBullish = default;
+		_prevIsBearish = default;
 
 	}
 
@@ -122,9 +126,9 @@ public class TripleMAStrategy : Strategy
 		base.OnStarted2(time);
 
 		// Create indicators
-		var shortMa = new SMA { Length = ShortMaPeriod };
-		var middleMa = new SMA { Length = MiddleMaPeriod };
-		var longMa = new SMA { Length = LongMaPeriod };
+		var shortMa = new ExponentialMovingAverage { Length = ShortMaPeriod };
+		var middleMa = new ExponentialMovingAverage { Length = MiddleMaPeriod };
+		var longMa = new ExponentialMovingAverage { Length = LongMaPeriod };
 
 		// Create subscription and bind indicators
 		var subscription = SubscribeCandles(CandleType);
@@ -143,11 +147,6 @@ public class TripleMAStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		// Start protection with stop loss
-		StartProtection(
-			takeProfit: null,
-			stopLoss: new Unit(StopLossPercent, UnitTypes.Percent)
-		);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal shortMaValue, decimal middleMaValue, decimal longMaValue)
@@ -171,35 +170,19 @@ public class TripleMAStrategy : Strategy
 		var isBullishAlignment = isShortAboveMiddle && isMiddleAboveLong;
 		var isBearishAlignment = !isShortAboveMiddle && !isMiddleAboveLong;
 
-		// Entry logic based on three MA alignment
-		if (isBullishAlignment && Position <= 0)
+		// Entry logic based on three MA alignment change
+		if (isBullishAlignment && !_prevIsBullish && Position <= 0)
 		{
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
-			LogInfo($"Buy signal: Short MA={shortMaValue} > Middle MA={middleMaValue} > Long MA={longMaValue}");
+			BuyMarket(Volume + Math.Abs(Position));
 		}
-		else if (isBearishAlignment && Position >= 0)
+		else if (isBearishAlignment && !_prevIsBearish && Position >= 0)
 		{
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
-			LogInfo($"Sell signal: Short MA={shortMaValue} < Middle MA={middleMaValue} < Long MA={longMaValue}");
-		}
-		// Exit logic based on short MA crossing middle MA
-		else if (isShortCrossedMiddle)
-		{
-			if (!isShortAboveMiddle && Position > 0)
-			{
-				SellMarket(Position);
-				LogInfo($"Exit long: Short MA crossed below Middle MA (Short={shortMaValue}, Middle={middleMaValue})");
-			}
-			else if (isShortAboveMiddle && Position < 0)
-			{
-				BuyMarket(Math.Abs(Position));
-				LogInfo($"Exit short: Short MA crossed above Middle MA (Short={shortMaValue}, Middle={middleMaValue})");
-			}
+			SellMarket(Volume + Math.Abs(Position));
 		}
 
 		// Update previous state
 		_prevIsShortAboveMiddle = isShortAboveMiddle;
+		_prevIsBullish = isBullishAlignment;
+		_prevIsBearish = isBearishAlignment;
 	}
 }

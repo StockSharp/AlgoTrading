@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,27 +11,24 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Supertrend Reversal Strategy.
-/// Enters long when Supertrend switches from above to below price.
-/// Enters short when Supertrend switches from below to above price.
+/// Supertrend Reversal strategy.
+/// Uses the built-in SuperTrend indicator.
+/// Enters long when SuperTrend flips to uptrend (below price).
+/// Enters short when SuperTrend flips to downtrend (above price).
+/// Uses cooldown to control trade frequency.
 /// </summary>
 public class SupertrendReversalStrategy : Strategy
 {
 	private readonly StrategyParam<int> _period;
 	private readonly StrategyParam<decimal> _multiplier;
 	private readonly StrategyParam<DataType> _candleType;
-	
-	private bool? _prevIsSupertrendAbovePrice;
-	
-	private AverageTrueRange _atr;
-	private decimal _prevHighest;
-	private decimal _prevLowest;
-	private decimal _prevSupertrend;
-	private decimal _prevClose;
-	private bool _isFirstUpdate = true;
+	private readonly StrategyParam<int> _cooldownBars;
+
+	private bool? _prevIsUpTrend;
+	private int _cooldown;
 
 	/// <summary>
-	/// Period for Supertrend calculation.
+	/// ATR period for SuperTrend.
 	/// </summary>
 	public int Period
 	{
@@ -43,7 +37,7 @@ public class SupertrendReversalStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Multiplier for Supertrend calculation.
+	/// ATR multiplier for SuperTrend.
 	/// </summary>
 	public decimal Multiplier
 	{
@@ -52,7 +46,7 @@ public class SupertrendReversalStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Type of candles to use.
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -61,22 +55,33 @@ public class SupertrendReversalStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initializes a new instance of the <see cref="SupertrendReversalStrategy"/>.
+	/// Cooldown bars.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
+	/// Constructor.
 	/// </summary>
 	public SupertrendReversalStrategy()
 	{
 		_period = Param(nameof(Period), 10)
-			.SetDisplay("Period", "Period for Supertrend calculation", "Supertrend Settings")
 			.SetRange(7, 20)
-			;
-			
+			.SetDisplay("Period", "ATR period for SuperTrend", "SuperTrend");
+
 		_multiplier = Param(nameof(Multiplier), 3.0m)
-			.SetDisplay("Multiplier", "Multiplier for Supertrend calculation", "Supertrend Settings")
 			.SetRange(2.0m, 4.0m)
-			;
-			
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+			.SetDisplay("Multiplier", "ATR multiplier for SuperTrend", "SuperTrend");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
+
+		_cooldownBars = Param(nameof(CooldownBars), 500)
+			.SetRange(1, 1000)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
 	}
 
 	/// <inheritdoc />
@@ -89,12 +94,8 @@ public class SupertrendReversalStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevIsSupertrendAbovePrice = null;
-		_isFirstUpdate = true;
-		_prevHighest = 0;
-		_prevLowest = 0;
-		_prevSupertrend = 0;
-		_prevClose = 0;
+		_prevIsUpTrend = null;
+		_cooldown = default;
 	}
 
 	/// <inheritdoc />
@@ -102,127 +103,79 @@ public class SupertrendReversalStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_atr = new AverageTrueRange { Length = Period };
+		_prevIsUpTrend = null;
+		_cooldown = 0;
 
-		// Create subscription
+		var superTrend = new SuperTrend
+		{
+			Length = Period,
+			Multiplier = Multiplier
+		};
+
 		var subscription = SubscribeCandles(CandleType);
-		
-		// Bind ATR indicator and process candles
 		subscription
-			.Bind(_atr, ProcessCandle)
+			.BindEx(superTrend, ProcessCandle)
 			.Start();
-			
-		// Setup chart visualization
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawIndicator(area, superTrend);
 			DrawOwnTrades(area);
 		}
 	}
 
-	/// <summary>
-	/// Process candle with ATR value.
-	/// </summary>
-	/// <param name="candle">Candle.</param>
-	/// <param name="atrValue">ATR value.</param>
-	private void ProcessCandle(ICandleMessage candle, decimal atrValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue stValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!stValue.IsFormed)
 			return;
 
-		// Calculate Supertrend value
-		decimal medianPrice = (candle.HighPrice + candle.LowPrice) / 2;
-		decimal upperBand = medianPrice + (Multiplier * atrValue);
-		decimal lowerBand = medianPrice - (Multiplier * atrValue);
-		
-		decimal supertrend;
-		
-		if (_isFirstUpdate)
+		var stTyped = (SuperTrendIndicatorValue)stValue;
+		var isUpTrend = stTyped.IsUpTrend;
+
+		if (_prevIsUpTrend == null)
 		{
-			_prevHighest = upperBand;
-			_prevLowest = lowerBand;
-			_prevSupertrend = (candle.ClosePrice <= upperBand) ? upperBand : lowerBand;
-			_prevClose = candle.ClosePrice;
-			_isFirstUpdate = false;
+			_prevIsUpTrend = isUpTrend;
 			return;
 		}
-		
-		// Calculate current upper and lower limits
-		decimal currentUpperBand = upperBand;
-		decimal currentLowerBand = lowerBand;
-		
-		// Adjust upper band
-		if (currentUpperBand < _prevHighest || _prevClose > _prevHighest)
-			currentUpperBand = upperBand;
-		else
-			currentUpperBand = _prevHighest;
-			
-		// Adjust lower band
-		if (currentLowerBand > _prevLowest || _prevClose < _prevLowest)
-			currentLowerBand = lowerBand;
-		else
-			currentLowerBand = _prevLowest;
-			
-		// Calculate Supertrend
-		if (_prevSupertrend == _prevHighest)
+
+		if (_cooldown > 0)
 		{
-			if (candle.ClosePrice <= currentUpperBand)
-				supertrend = currentUpperBand;
-			else
-				supertrend = currentLowerBand;
-		}
-		else
-		{
-			if (candle.ClosePrice >= currentLowerBand)
-				supertrend = currentLowerBand;
-			else
-				supertrend = currentUpperBand;
-		}
-		
-		// Determine if Supertrend is above or below price
-		bool isSupertrendAbovePrice = supertrend > candle.ClosePrice;
-		
-		// If this is the first valid calculation, just store the state
-		if (_prevIsSupertrendAbovePrice == null)
-		{
-			_prevIsSupertrendAbovePrice = isSupertrendAbovePrice;
-			
-			// Update previous values for next calculation
-			_prevHighest = currentUpperBand;
-			_prevLowest = currentLowerBand;
-			_prevSupertrend = supertrend;
-			_prevClose = candle.ClosePrice;
+			_cooldown--;
+			_prevIsUpTrend = isUpTrend;
 			return;
 		}
-		
-		// Check for Supertrend reversal
-		bool supertrendSwitchedBelow = _prevIsSupertrendAbovePrice.Value && !isSupertrendAbovePrice;
-		bool supertrendSwitchedAbove = !_prevIsSupertrendAbovePrice.Value && isSupertrendAbovePrice;
-		
-		// Long entry: Supertrend switched from above to below price
-		if (supertrendSwitchedBelow && Position <= 0)
+
+		// SuperTrend flipped to uptrend = bullish
+		var flippedUp = _prevIsUpTrend == false && isUpTrend;
+		// SuperTrend flipped to downtrend = bearish
+		var flippedDown = _prevIsUpTrend == true && !isUpTrend;
+
+		if (Position == 0 && flippedUp)
 		{
-			BuyMarket(Volume + Math.Abs(Position));
-			LogInfo($"Long entry: Supertrend switched below price");
+			BuyMarket();
+			_cooldown = CooldownBars;
 		}
-		// Short entry: Supertrend switched from below to above price
-		else if (supertrendSwitchedAbove && Position >= 0)
+		else if (Position == 0 && flippedDown)
 		{
-			SellMarket(Volume + Math.Abs(Position));
-			LogInfo($"Short entry: Supertrend switched above price");
+			SellMarket();
+			_cooldown = CooldownBars;
 		}
-		
-		// Update the previous state and values
-		_prevIsSupertrendAbovePrice = isSupertrendAbovePrice;
-		_prevHighest = currentUpperBand;
-		_prevLowest = currentLowerBand;
-		_prevSupertrend = supertrend;
-		_prevClose = candle.ClosePrice;
+		else if (Position > 0 && flippedDown)
+		{
+			SellMarket();
+			_cooldown = CooldownBars;
+		}
+		else if (Position < 0 && flippedUp)
+		{
+			BuyMarket();
+			_cooldown = CooldownBars;
+		}
+
+		_prevIsUpTrend = isUpTrend;
 	}
 }

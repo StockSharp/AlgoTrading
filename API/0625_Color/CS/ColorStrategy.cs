@@ -1,60 +1,44 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using System.Drawing;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Dummy strategy based on luminance of a configured color.
-/// Buys when the color is light, sells when it is dark.
+/// ColorStrategy using EMA crossover for trend timing.
+/// Enters long on golden cross, short on death cross.
 /// </summary>
 public class ColorStrategy : Strategy
 {
-	private readonly StrategyParam<string> _colorHex;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private Color _baseColor;
-	private decimal _luminance;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	/// <summary>
-	/// Color in HEX format used for decision making.
-	/// </summary>
-	public string ColorHex
-	{
-		get => _colorHex.Value;
-		set => _colorHex.Value = value;
-	}
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Candle type for calculations.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the strategy.
-	/// </summary>
 	public ColorStrategy()
 	{
-		_colorHex = Param(nameof(ColorHex), "#f23645")
-			.SetDisplay("Color HEX", "Base color in HEX format", "General");
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Timeframe for strategy", "General");
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -64,64 +48,58 @@ public class ColorStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_baseColor = HexStringToColor(ColorHex);
-		_luminance = GetLuminance(_baseColor);
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
-
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(fastEma, slowEma, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
+		{
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
 			return;
-
-		if (_luminance > 0.5m && Position <= 0)
-		{
-			BuyMarket(Volume + Math.Abs(Position));
 		}
-		else if (_luminance <= 0.5m && Position >= 0)
+
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
 		{
-			SellMarket(Volume + Math.Abs(Position));
+			BuyMarket();
 		}
-	}
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+		{
+			SellMarket();
+		}
 
-	private static Color HexStringToColor(string hex)
-	{
-		if (hex.IsEmptyOrWhiteSpace())
-			return Color.Black;
-
-		if (!hex.StartsWith("#", StringComparison.Ordinal))
-			hex = "#" + hex;
-
-		return ColorTranslator.FromHtml(hex);
-	}
-
-	private static string GetHexString(Color color)
-	{
-		return $"#{color.R:X2}{color.G:X2}{color.B:X2}";
-	}
-
-	private static decimal GetLuminance(Color color)
-	{
-		return (0.2126m * color.R + 0.7152m * color.G + 0.0722m * color.B) / 255m;
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }
-

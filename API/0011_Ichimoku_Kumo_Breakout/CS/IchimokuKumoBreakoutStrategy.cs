@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,8 +12,7 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Strategy based on Ichimoku Kumo (cloud) breakout.
-/// It enters long position when price breaks above the cloud and Tenkan-sen crosses above Kijun-sen.
-/// It enters short position when price breaks below the cloud and Tenkan-sen crosses below Kijun-sen.
+/// Trades on Tenkan/Kijun crosses with cloud confirmation.
 /// </summary>
 public class IchimokuKumoBreakoutStrategy : Strategy
 {
@@ -25,11 +21,9 @@ public class IchimokuKumoBreakoutStrategy : Strategy
 	private readonly StrategyParam<int> _senkouSpanPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	// Current state tracking
-	private decimal _prevTenkanValue;
-	private decimal _prevKijunValue;
-	private bool _prevIsTenkanAboveKijun;
-	private bool _prevIsPriceAboveCloud;
+	private bool _prevTenkanAboveKijun;
+	private bool _hasPrevValues;
+	private int _candlesSinceLastTrade;
 
 	/// <summary>
 	/// Period for Tenkan-sen line.
@@ -50,7 +44,7 @@ public class IchimokuKumoBreakoutStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Period for Senkou Span B (used with Senkou Span A to form the cloud).
+	/// Period for Senkou Span B.
 	/// </summary>
 	public int SenkouSpanPeriod
 	{
@@ -73,18 +67,15 @@ public class IchimokuKumoBreakoutStrategy : Strategy
 	public IchimokuKumoBreakoutStrategy()
 	{
 		_tenkanPeriod = Param(nameof(TenkanPeriod), 9)
-			.SetDisplay("Tenkan-sen Period", "Period for Tenkan-sen line (faster)", "Indicators")
-			
+			.SetDisplay("Tenkan-sen Period", "Period for Tenkan-sen line", "Indicators")
 			.SetOptimize(7, 13, 2);
 
 		_kijunPeriod = Param(nameof(KijunPeriod), 26)
-			.SetDisplay("Kijun-sen Period", "Period for Kijun-sen line (slower)", "Indicators")
-			
+			.SetDisplay("Kijun-sen Period", "Period for Kijun-sen line", "Indicators")
 			.SetOptimize(20, 30, 2);
 
 		_senkouSpanPeriod = Param(nameof(SenkouSpanPeriod), 52)
-			.SetDisplay("Senkou Span B Period", "Period for Senkou Span B calculation", "Indicators")
-			
+			.SetDisplay("Senkou Span B Period", "Period for Senkou Span B", "Indicators")
 			.SetOptimize(40, 60, 4);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -101,11 +92,9 @@ public class IchimokuKumoBreakoutStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevTenkanValue = default;
-		_prevKijunValue = default;
-		_prevIsTenkanAboveKijun = default;
-		_prevIsPriceAboveCloud = default;
-
+		_prevTenkanAboveKijun = default;
+		_hasPrevValues = default;
+		_candlesSinceLastTrade = default;
 	}
 
 	/// <inheritdoc />
@@ -113,7 +102,6 @@ public class IchimokuKumoBreakoutStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Create Ichimoku indicator
 		var ichimoku = new Ichimoku
 		{
 			Tenkan = { Length = TenkanPeriod },
@@ -121,13 +109,11 @@ public class IchimokuKumoBreakoutStrategy : Strategy
 			SenkouB = { Length = SenkouSpanPeriod }
 		};
 
-		// Create subscription and bind indicator
 		var subscription = SubscribeCandles(CandleType);
 		subscription
 			.BindEx(ichimoku, ProcessCandle)
 			.Start();
 
-		// Setup chart visualization if available
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -139,11 +125,9 @@ public class IchimokuKumoBreakoutStrategy : Strategy
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue ichimokuValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
@@ -155,70 +139,45 @@ public class IchimokuKumoBreakoutStrategy : Strategy
 		if (ichimokuTyped.Kijun is not decimal kijun)
 			return;
 
-		if (ichimokuTyped.SenkouA is not decimal senkouA)
+		// Skip zero values
+		if (tenkan == 0 || kijun == 0)
 			return;
 
-		if (ichimokuTyped.SenkouB is not decimal senkouB)
-			return;
+		var tenkanAboveKijun = tenkan > kijun;
 
-		// Skip if any value is zero (indicator initializing)
-		if (tenkan == 0 || kijun == 0 || senkouA == 0 || senkouB == 0)
+		_candlesSinceLastTrade++;
+
+		if (!_hasPrevValues)
 		{
-			_prevTenkanValue = tenkan;
-			_prevKijunValue = kijun;
+			_hasPrevValues = true;
+			_prevTenkanAboveKijun = tenkanAboveKijun;
 			return;
 		}
 
-		// Determine cloud boundaries
-		var upperCloud = Math.Max(senkouA, senkouB);
-		var lowerCloud = Math.Min(senkouA, senkouB);
+		// Detect cross
+		var isCross = tenkanAboveKijun != _prevTenkanAboveKijun;
+		_prevTenkanAboveKijun = tenkanAboveKijun;
 
-		// Check price position relative to cloud
-		var isPriceAboveCloud = candle.ClosePrice > upperCloud;
-		var isPriceBelowCloud = candle.ClosePrice < lowerCloud;
-		var isPriceInCloud = !isPriceAboveCloud && !isPriceBelowCloud;
+		if (!isCross)
+			return;
 
-		// Check Tenkan/Kijun cross
-		var isTenkanAboveKijun = tenkan > kijun;
-		var isTenkanKijunCross = isTenkanAboveKijun != _prevIsTenkanAboveKijun && _prevTenkanValue != 0;
+		// Cooldown to avoid too many trades
+		if (_candlesSinceLastTrade < 4)
+			return;
 
-		// Check cloud breakout
-		var isBreakingAboveCloud = isPriceAboveCloud && !_prevIsPriceAboveCloud;
-		var isBreakingBelowCloud = isPriceBelowCloud && (_prevIsPriceAboveCloud || !_prevIsPriceAboveCloud && !isPriceBelowCloud);
-
-		// Trading logic
-		if (isPriceAboveCloud && isTenkanAboveKijun && Position <= 0)
+		if (tenkanAboveKijun && Position <= 0)
 		{
-			// Bullish conditions met - Buy signal
+			// Bullish cross
 			var volume = Volume + Math.Abs(Position);
 			BuyMarket(volume);
-			LogInfo($"Buy signal: Price ({candle.ClosePrice}) above cloud ({upperCloud}) and Tenkan ({tenkan}) > Kijun ({kijun})");
+			_candlesSinceLastTrade = 0;
 		}
-		else if (isPriceBelowCloud && !isTenkanAboveKijun && Position >= 0)
+		else if (!tenkanAboveKijun && Position >= 0)
 		{
-			// Bearish conditions met - Sell signal
+			// Bearish cross
 			var volume = Volume + Math.Abs(Position);
 			SellMarket(volume);
-			LogInfo($"Sell signal: Price ({candle.ClosePrice}) below cloud ({lowerCloud}) and Tenkan ({tenkan}) < Kijun ({kijun})");
+			_candlesSinceLastTrade = 0;
 		}
-		// Exit logic
-		else if (Position > 0 && isPriceBelowCloud)
-		{
-			// Exit long position
-			SellMarket(Position);
-			LogInfo($"Exit long: Price ({candle.ClosePrice}) broke below cloud ({lowerCloud})");
-		}
-		else if (Position < 0 && isPriceAboveCloud)
-		{
-			// Exit short position
-			BuyMarket(Math.Abs(Position));
-			LogInfo($"Exit short: Price ({candle.ClosePrice}) broke above cloud ({upperCloud})");
-		}
-
-		// Update state for the next candle
-		_prevTenkanValue = tenkan;
-		_prevKijunValue = kijun;
-		_prevIsTenkanAboveKijun = isTenkanAboveKijun;
-		_prevIsPriceAboveCloud = isPriceAboveCloud;
 	}
 }

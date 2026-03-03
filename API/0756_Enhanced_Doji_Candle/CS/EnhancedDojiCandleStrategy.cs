@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -13,144 +10,73 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-/// <summary>
-/// Doji candle strategy with risk-reward based protection.
-/// </summary>
 public class EnhancedDojiCandleStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _riskRewardRatio;
-	private readonly StrategyParam<int> _stopLossPips;
-	private readonly StrategyParam<int> _smaPeriod;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	private bool _prevBullishConfirm;
-	private bool _prevBearishConfirm;
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Risk-reward multiplier for take-profit.
-	/// </summary>
-	public decimal RiskRewardRatio
-	{
-		get => _riskRewardRatio.Value;
-		set => _riskRewardRatio.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss in pips.
-	/// </summary>
-	public int StopLossPips
-	{
-		get => _stopLossPips.Value;
-		set => _stopLossPips.Value = value;
-	}
-
-	/// <summary>
-	/// SMA period.
-	/// </summary>
-	public int SmaPeriod
-	{
-		get => _smaPeriod.Value;
-		set => _smaPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type for calculations.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Constructor.
-	/// </summary>
 	public EnhancedDojiCandleStrategy()
 	{
-		_riskRewardRatio = Param(nameof(RiskRewardRatio), 2m)
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
 			.SetGreaterThanZero()
-			.SetDisplay("Risk-Reward Ratio", "Reward to risk multiplier", "Risk");
-
-		_stopLossPips = Param(nameof(StopLossPips), 5)
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
 			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss (pips)", "Stop loss in pips", "Risk");
-
-		_smaPeriod = Param(nameof(SmaPeriod), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("SMA Period", "Period of SMA", "Indicators");
-
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Time frame for candles", "General");
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
 
-	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		var step = Security?.PriceStep ?? 1m;
-		var stopDiff = StopLossPips * step;
-		var takeDiff = stopDiff * RiskRewardRatio;
-		StartProtection(new Unit(takeDiff, UnitTypes.Absolute), new Unit(stopDiff, UnitTypes.Absolute));
-
-		var sma = new SMA { Length = SmaPeriod };
-
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(sma, ProcessCandle)
-			.Start();
-
+		subscription.Bind(fastEma, slowEma, ProcessCandle).Start();
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, sma);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var body = Math.Abs(candle.ClosePrice - candle.OpenPrice);
-		var range = candle.HighPrice - candle.LowPrice;
-		var doji = range > 0m && body <= range * 0.3m;
-
-		var bullishConfirm = candle.ClosePrice > candle.OpenPrice && candle.LowPrice >= candle.OpenPrice * 0.99m;
-		var bearishConfirm = candle.ClosePrice < candle.OpenPrice && candle.HighPrice <= candle.OpenPrice * 1.01m;
-
-		if (doji)
+		if (candle.State != CandleStates.Finished) return;
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-			if (Position > 0)
-			{
-				SellMarket(Position);
-			}
-			else if (Position < 0)
-			{
-				BuyMarket(-Position);
-			}
-			else if (bullishConfirm || _prevBullishConfirm)
-			{
-				BuyMarket();
-			}
-			else if (bearishConfirm || _prevBearishConfirm)
-			{
-				SellMarket();
-			}
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
+			return;
 		}
-
-		_prevBullishConfirm = bullishConfirm;
-		_prevBearishConfirm = bearishConfirm;
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
+			BuyMarket();
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+			SellMarket();
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

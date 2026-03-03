@@ -15,224 +15,95 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Berlin Range Index strategy.
-/// Uses filtered choppiness index to detect trending and ranging markets.
+/// Uses choppiness index to detect trending vs ranging markets.
+/// Enters in trend direction when choppiness is low (strong trend).
+/// Exits when choppiness is high (choppy/ranging market).
 /// </summary>
-public class BerlinRangeIndexStrategy : Strategy {
+public class BerlinRangeIndexStrategy : Strategy
+{
 	private readonly StrategyParam<int> _length;
-	private readonly StrategyParam<decimal> _chopMax;
-	private readonly StrategyParam<decimal> _chopMin;
-	private readonly StrategyParam<int> _atrLength;
-	private readonly StrategyParam<int> _lowLookback;
-	private readonly StrategyParam<bool> _useNormalized;
-	private readonly StrategyParam<int> _stdDevLength;
+	private readonly StrategyParam<decimal> _chopThreshold;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private readonly StandardDeviation _stdDev;
-	private readonly Lowest _stdDevLow;
+	private decimal _prevChop;
 
-	private decimal _prevRangeIndex;
+	public int Length { get => _length.Value; set => _length.Value = value; }
+	public decimal ChopThreshold { get => _chopThreshold.Value; set => _chopThreshold.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Choppiness index period.
-	/// </summary>
-	public int Length {
-	get => _length.Value;
-	set => _length.Value = value;
+	public BerlinRangeIndexStrategy()
+	{
+		_length = Param(nameof(Length), 7)
+			.SetGreaterThanZero()
+			.SetDisplay("Length", "Choppiness index period", "General")
+			.SetOptimize(5, 30, 5);
+
+		_chopThreshold = Param(nameof(ChopThreshold), 55m)
+			.SetDisplay("Chop Threshold", "Threshold for trend vs range", "General");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
-	/// <summary>
-	/// Maximum value for trend threshold.
-	/// </summary>
-	public decimal ChopMax {
-	get => _chopMax.Value;
-	set => _chopMax.Value = value;
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
 	}
 
-	/// <summary>
-	/// Minimum value for exhausted trend threshold.
-	/// </summary>
-	public decimal ChopMin {
-	get => _chopMin.Value;
-	set => _chopMin.Value = value;
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevChop = 0;
 	}
 
-	/// <summary>
-	/// ATR filter period.
-	/// </summary>
-	public int AtrLength {
-	get => _atrLength.Value;
-	set => _atrLength.Value = value;
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
+
+		var choppiness = new ChoppinessIndex { Length = Length };
+
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(choppiness, ProcessCandle)
+			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, choppiness);
+			DrawOwnTrades(area);
+		}
 	}
 
-	/// <summary>
-	/// Lookback period for lowest standard deviation.
-	/// </summary>
-	public int LowLookback {
-	get => _lowLookback.Value;
-	set => _lowLookback.Value = value;
-	}
+	private void ProcessCandle(ICandleMessage candle, decimal chopValue)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
 
-	/// <summary>
-	/// Use normalized true range for ATR filter.
-	/// </summary>
-	public bool UseNormalized {
-	get => _useNormalized.Value;
-	set => _useNormalized.Value = value;
-	}
+		if (_prevChop == 0)
+		{
+			_prevChop = chopValue;
+			return;
+		}
 
-	/// <summary>
-	/// Standard deviation calculation length.
-	/// </summary>
-	public int StdDevLength {
-	get => _stdDevLength.Value;
-	set => _stdDevLength.Value = value;
-	}
+		// Low choppiness = strong trend; enter in candle direction
+		if (chopValue < ChopThreshold && _prevChop >= ChopThreshold)
+		{
+			if (candle.ClosePrice > candle.OpenPrice && Position <= 0)
+				BuyMarket();
+			else if (candle.ClosePrice < candle.OpenPrice && Position >= 0)
+				SellMarket();
+		}
+		// High choppiness = choppy market; exit positions
+		else if (chopValue > ChopThreshold && _prevChop <= ChopThreshold)
+		{
+			if (Position > 0)
+				SellMarket();
+			else if (Position < 0)
+				BuyMarket();
+		}
 
-	/// <summary>
-	/// Candle type for calculations.
-	/// </summary>
-	public DataType CandleType {
-	get => _candleType.Value;
-	set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initialize <see cref="BerlinRangeIndexStrategy"/>.
-	/// </summary>
-	public BerlinRangeIndexStrategy() {
-	_length =
-		Param(nameof(Length), 9)
-		.SetGreaterThanZero()
-		.SetDisplay("Length", "Choppiness index period", "General")
-		
-		.SetOptimize(5, 20, 1);
-
-	_chopMax = Param(nameof(ChopMax), 40m)
-			   .SetRange(1m, 100m)
-			   .SetDisplay("Trend Threshold",
-				   "Maximum choppiness value considered trend",
-				   "General")
-			   
-			   .SetOptimize(30m, 60m, 5m);
-
-	_chopMin =
-		Param(nameof(ChopMin), 10m)
-		.SetRange(0m, 99m)
-		.SetDisplay(
-			"Exhausted Threshold",
-			"Minimum choppiness value considered exhausted trend",
-			"General")
-		
-		.SetOptimize(5m, 20m, 5m);
-
-	_atrLength =
-		Param(nameof(AtrLength), 14)
-		.SetGreaterThanZero()
-		.SetDisplay("ATR Length", "ATR filter period", "General")
-		
-		.SetOptimize(10, 20, 2);
-
-	_lowLookback =
-		Param(nameof(LowLookback), 14)
-		.SetGreaterThanZero()
-		.SetDisplay("Low Lookback", "Lookback period for lowest StdDev",
-				"General")
-		
-		.SetOptimize(10, 30, 5);
-
-	_useNormalized =
-		Param(nameof(UseNormalized), true)
-		.SetDisplay("Use Normalized TR",
-				"Divide ATR by price for normalization", "General");
-
-	_stdDevLength =
-		Param(nameof(StdDevLength), 14)
-		.SetGreaterThanZero()
-		.SetDisplay("StdDev Length",
-				"Length for ATR standard deviation", "General")
-		
-		.SetOptimize(10, 30, 5);
-
-	_candleType =
-		Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-		.SetDisplay("Candle Type", "Type of candles for strategy",
-				"General");
-
-	_stdDev = new StandardDeviation { Length = StdDevLength };
-	_stdDevLow = new Lowest { Length = LowLookback };
-	}
-
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)>
-	GetWorkingSecurities() {
-	return [(Security, CandleType)];
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted() {
-	base.OnReseted();
-	_prevRangeIndex = 50m;
-	}
-
-	/// <inheritdoc />
-	protected override void OnStarted2(DateTime time) {
-	base.OnStarted2(time);
-
-	var atr = new AverageTrueRange { Length = AtrLength };
-	var choppiness = new ChoppinessIndex { Length = Length };
-
-	var subscription = SubscribeCandles(CandleType);
-	subscription.Bind(atr, choppiness, ProcessCandle).Start();
-
-	var area = CreateChartArea();
-	if (area != null) {
-		DrawCandles(area, subscription);
-		DrawIndicator(area, choppiness);
-		DrawOwnTrades(area);
-	}
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal atrValue,
-				   decimal chopValue) {
-	if (candle.State != CandleStates.Finished)
-		return;
-
-	var atrVal = UseNormalized ? atrValue / candle.ClosePrice : atrValue;
-
-	var stdDevValue = _stdDev.Process(new DecimalIndicatorValue(_stdDev, atrVal, candle.ServerTime));
-	var stdDev = stdDevValue.ToDecimal();
-
-	var lowValue = _stdDevLow.Process(new DecimalIndicatorValue(_stdDevLow, stdDev, candle.ServerTime));
-	var stdDevLow = lowValue.ToDecimal();
-
-	if (!_stdDev.IsFormed || !_stdDevLow.IsFormed)
-		return;
-
-	var stdDevFactor = stdDev == 0m ? 0m : stdDevLow / stdDev;
-	var rangeIndex = chopValue * stdDevFactor;
-
-	var chopCondition = rangeIndex > ChopMax;
-	var trendCondition = _prevRangeIndex > ChopMin &&
-				 rangeIndex < ChopMax && rangeIndex > ChopMin;
-	var strongTrendCondition = rangeIndex < ChopMin;
-	var weakeningTrendCondition =
-		_prevRangeIndex < ChopMin && rangeIndex > ChopMin;
-
-	_prevRangeIndex = rangeIndex;
-
-	if (!IsFormedAndOnlineAndAllowTrading())
-		return;
-
-	if (strongTrendCondition) {
-		if (candle.ClosePrice > candle.OpenPrice && Position <= 0)
-		BuyMarket(Volume + Math.Abs(Position));
-		else if (candle.ClosePrice < candle.OpenPrice && Position >= 0)
-		SellMarket(Volume + Math.Abs(Position));
-	} else if (chopCondition || weakeningTrendCondition) {
-		if (Position > 0)
-		SellMarket(Math.Abs(Position));
-		else if (Position < 0)
-		BuyMarket(Math.Abs(Position));
-	}
+		_prevChop = chopValue;
 	}
 }

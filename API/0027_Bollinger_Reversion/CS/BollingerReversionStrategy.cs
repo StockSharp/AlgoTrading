@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,13 +12,18 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Strategy based on Bollinger Bands mean reversion.
+/// Enters when price touches bands, exits when price returns to middle.
 /// </summary>
 public class BollingerReversionStrategy : Strategy
 {
 	private readonly StrategyParam<int> _bollingerPeriod;
 	private readonly StrategyParam<decimal> _bollingerDeviation;
-	private readonly StrategyParam<decimal> _atrMultiplier;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<int> _maxHoldBars;
+
+	private int _cooldown;
+	private int _holdBars;
 
 	/// <summary>
 	/// Bollinger Bands period.
@@ -42,15 +44,6 @@ public class BollingerReversionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// ATR multiplier for stop-loss.
-	/// </summary>
-	public decimal AtrMultiplier
-	{
-		get => _atrMultiplier.Value;
-		set => _atrMultiplier.Value = value;
-	}
-
-	/// <summary>
 	/// Candle type.
 	/// </summary>
 	public DataType CandleType
@@ -60,27 +53,48 @@ public class BollingerReversionStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Cooldown bars between trades.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
+	/// Maximum bars to hold position before forced exit.
+	/// </summary>
+	public int MaxHoldBars
+	{
+		get => _maxHoldBars.Value;
+		set => _maxHoldBars.Value = value;
+	}
+
+	/// <summary>
 	/// Initializes a new instance of the <see cref="BollingerReversionStrategy"/>.
 	/// </summary>
 	public BollingerReversionStrategy()
 	{
 		_bollingerPeriod = Param(nameof(BollingerPeriod), 20)
-			.SetRange(10, 50)
+			.SetRange(5, 50)
 			.SetDisplay("Bollinger Period", "Period for Bollinger Bands calculation", "Indicators")
 			;
 
-		_bollingerDeviation = Param(nameof(BollingerDeviation), 2m)
-			.SetRange(1m, 3m)
+		_bollingerDeviation = Param(nameof(BollingerDeviation), 2.0m)
+			.SetRange(0.5m, 4m)
 			.SetDisplay("Bollinger Deviation", "Standard deviation multiplier for Bollinger Bands", "Indicators")
 			;
 
-		_atrMultiplier = Param(nameof(AtrMultiplier), 2m)
-			.SetRange(1m, 5m)
-			.SetDisplay("ATR Multiplier", "Multiplier for ATR stop loss", "Risk Management")
-			;
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
+
+		_cooldownBars = Param(nameof(CooldownBars), 500)
+			.SetRange(1, 1000)
+			.SetDisplay("Cooldown Bars", "Number of bars to wait between trades", "General");
+
+		_maxHoldBars = Param(nameof(MaxHoldBars), 300)
+			.SetRange(1, 1000)
+			.SetDisplay("Max Hold Bars", "Maximum bars to hold a position", "General");
 	}
 
 	/// <inheritdoc />
@@ -90,31 +104,31 @@ public class BollingerReversionStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_cooldown = default;
+		_holdBars = default;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		// Create indicators
+		_cooldown = 0;
+		_holdBars = 0;
+
 		var bollingerBands = new BollingerBands
 		{
 			Length = BollingerPeriod,
 			Width = BollingerDeviation
 		};
-		
-		var atr = new AverageTrueRange { Length = 14 };
 
-		// Subscribe to candles
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(bollingerBands, atr, ProcessCandle)
+			.BindEx(bollingerBands, ProcessCandle)
 			.Start();
-
-		// Enable position protection with ATR-based stop loss
-		StartProtection(
-			takeProfit: null,
-			stopLoss: new Unit(AtrMultiplier, UnitTypes.Absolute),
-			useMarketOrders: true
-		);
 
 		// Setup chart visualization
 		var area = CreateChartArea();
@@ -122,57 +136,66 @@ public class BollingerReversionStrategy : Strategy
 		{
 			DrawCandles(area, subscription);
 			DrawIndicator(area, bollingerBands);
-			DrawIndicator(area, atr);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bollingerValue, IIndicatorValue atrValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bollingerValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!bollingerValue.IsFormed)
 			return;
 
-		var bollingerTyped = (BollingerBandsValue)bollingerValue;
-		var upper = bollingerTyped.UpBand;
-		var lower = bollingerTyped.LowBand;
-		var middle = bollingerTyped.MovingAverage;
+		// Track hold duration
+		if (Position != 0)
+			_holdBars++;
+		else
+			_holdBars = 0;
 
-		// Get Bollinger Bands values
-		decimal closePrice = candle.ClosePrice;
-
-		// Entry logic
-		if (closePrice < lower && Position <= 0)
+		if (_cooldown > 0)
 		{
-			// Buy when price falls below lower band
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
-			LogInfo($"Buy signal: Price {closePrice} below lower band {lower:F2}");
-		}
-		else if (closePrice > upper && Position >= 0)
-		{
-			// Sell when price rises above upper band
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
-			LogInfo($"Sell signal: Price {closePrice} above upper band {upper:F2}");
+			_cooldown--;
+			return;
 		}
 
-		// Exit logic
-		if (Position > 0 && closePrice > middle)
+		var bb = (BollingerBandsValue)bollingerValue;
+
+		if (bb.UpBand is not decimal upper ||
+			bb.LowBand is not decimal lower ||
+			bb.MovingAverage is not decimal middle)
+			return;
+
+		var close = candle.ClosePrice;
+
+		// Exit logic: revert to middle or time-based forced exit
+		if (Position > 0 && (close >= middle || _holdBars >= MaxHoldBars))
 		{
-			// Exit long position when price returns to middle band
-			SellMarket(Math.Abs(Position));
-			LogInfo($"Exiting long position: Price {closePrice} returned to middle band {middle:F2}");
+			SellMarket();
+			_cooldown = CooldownBars;
+			_holdBars = 0;
+			return;
 		}
-		else if (Position < 0 && closePrice < middle)
+
+		if (Position < 0 && (close <= middle || _holdBars >= MaxHoldBars))
 		{
-			// Exit short position when price returns to middle band
-			BuyMarket(Math.Abs(Position));
-			LogInfo($"Exiting short position: Price {closePrice} returned to middle band {middle:F2}");
+			BuyMarket();
+			_cooldown = CooldownBars;
+			_holdBars = 0;
+			return;
+		}
+
+		// Entry logic - buy below lower band, sell above upper band
+		if (Position == 0 && close < lower)
+		{
+			BuyMarket();
+			_cooldown = CooldownBars;
+		}
+		else if (Position == 0 && close > upper)
+		{
+			SellMarket();
+			_cooldown = CooldownBars;
 		}
 	}
 }

@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,27 +12,29 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Pivot Point Reversal strategy.
-/// The strategy calculates daily pivot points and their support/resistance levels,
-/// and enters positions when price bounces off these levels with confirmation.
+/// Calculates pivot points from a rolling window of highs, lows, closes.
+/// P = (H + L + C) / 3, S1 = 2*P - H, R1 = 2*P - L
+/// Buys on bounce off S1, sells on bounce off R1, exits at pivot.
 /// </summary>
 public class PivotPointReversalStrategy : Strategy
 {
+	private readonly StrategyParam<int> _lookback;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<decimal> _stopLossPercent;
-	
-	// Store pivot points
-	private decimal _pivot;
-	private decimal _r1;  // Resistance level 1
-	private decimal _r2;  // Resistance level 2
-	private decimal _s1;  // Support level 1
-	private decimal _s2;  // Support level 2
-	
-	// Previous day's OHLC
-	private decimal _prevHigh;
-	private decimal _prevLow;
-	private decimal _prevClose;
-	private DateTimeOffset _currentDay;
-	private bool _newDayStarted;
+	private readonly StrategyParam<int> _cooldownBars;
+
+	private readonly List<decimal> _highs = new();
+	private readonly List<decimal> _lows = new();
+	private readonly List<decimal> _closes = new();
+	private int _cooldown;
+
+	/// <summary>
+	/// Lookback period for pivot calculation.
+	/// </summary>
+	public int Lookback
+	{
+		get => _lookback.Value;
+		set => _lookback.Value = value;
+	}
 
 	/// <summary>
 	/// Candle type.
@@ -47,12 +46,12 @@ public class PivotPointReversalStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stop-loss percentage.
+	/// Cooldown bars.
 	/// </summary>
-	public decimal StopLossPercent
+	public int CooldownBars
 	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	/// <summary>
@@ -60,14 +59,16 @@ public class PivotPointReversalStrategy : Strategy
 	/// </summary>
 	public PivotPointReversalStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_lookback = Param(nameof(Lookback), 60)
+			.SetGreaterThanZero()
+			.SetDisplay("Lookback", "Lookback for pivot calc", "Indicators");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
-		_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
-			.SetNotNegative()
-			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management")
-			
-			.SetOptimize(1.0m, 3.0m, 0.5m);
+		_cooldownBars = Param(nameof(CooldownBars), 500)
+			.SetRange(1, 1000)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
 	}
 
 	/// <inheritdoc />
@@ -80,17 +81,10 @@ public class PivotPointReversalStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_prevHigh = 0;
-		_prevLow = 0;
-		_prevClose = 0;
-		_pivot = 0;
-		_r1 = 0;
-		_r2 = 0;
-		_s1 = 0;
-		_s2 = 0;
-		_currentDay = DateTimeOffset.MinValue;
-		_newDayStarted = false;
+		_highs.Clear();
+		_lows.Clear();
+		_closes.Clear();
+		_cooldown = default;
 	}
 
 	/// <inheritdoc />
@@ -98,162 +92,97 @@ public class PivotPointReversalStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Create subscription
+		_highs.Clear();
+		_lows.Clear();
+		_closes.Clear();
+		_cooldown = 0;
+
+		var sma = new SimpleMovingAverage { Length = 20 };
+
 		var subscription = SubscribeCandles(CandleType);
-		
-		// Subscribe to the previous day's candles to get OHLC data
-		var dailySubscription = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
-		
-		// Process daily candles to get previous day's data
-		dailySubscription
-			.Bind(ProcessDailyCandle)
-			.Start();
-		
-		// Process regular candles for trading signals
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(sma, ProcessCandle)
 			.Start();
 
-		// Setup chart visualization if available
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawIndicator(area, sma);
 			DrawOwnTrades(area);
 		}
-
-		// Start position protection
-		StartProtection(
-			takeProfit: new Unit(0, UnitTypes.Absolute), // No take profit, rely on exit logic
-			stopLoss: new Unit(StopLossPercent, UnitTypes.Percent)
-		);
 	}
 
-	private void ProcessDailyCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
-		
-		// Store previous day's OHLC for pivot point calculation
-		_prevHigh = candle.HighPrice;
-		_prevLow = candle.LowPrice;
-		_prevClose = candle.ClosePrice;
-		
-		// Calculate pivot points for the new day
-		CalculatePivotPoints();
-		
-		LogInfo($"New daily candle: High={_prevHigh}, Low={_prevLow}, Close={_prevClose}");
-		LogInfo($"Pivot Points: P={_pivot}, R1={_r1}, R2={_r2}, S1={_s1}, S2={_s2}");
-	}
 
-	private void CalculatePivotPoints()
-	{
-		// Only calculate if we have valid data
-		if (_prevHigh == 0 || _prevLow == 0 || _prevClose == 0)
-			return;
-		
-		// Calculate pivot point (standard formula)
-		_pivot = (_prevHigh + _prevLow + _prevClose) / 3;
-		
-		// Calculate resistance levels
-		_r1 = (2 * _pivot) - _prevLow;
-		_r2 = _pivot + (_prevHigh - _prevLow);
-		
-		// Calculate support levels
-		_s1 = (2 * _pivot) - _prevHigh;
-		_s2 = _pivot - (_prevHigh - _prevLow);
-	}
+		_highs.Add(candle.HighPrice);
+		_lows.Add(candle.LowPrice);
+		_closes.Add(candle.ClosePrice);
 
-	private void CheckForNewDay(DateTimeOffset time)
-	{
-		if (_currentDay == DateTimeOffset.MinValue)
+		if (_highs.Count > Lookback)
 		{
-			_currentDay = time.Date;
-			_newDayStarted = true;
-			return;
+			_highs.RemoveAt(0);
+			_lows.RemoveAt(0);
+			_closes.RemoveAt(0);
 		}
-		
-		if (time.Date > _currentDay)
-		{
-			_currentDay = time.Date;
-			_newDayStarted = true;
-			
-			// If new day started but we don't have daily candle data yet,
-			// we can still use the previous day's high, low, and close
-			if (_prevHigh > 0 && _prevLow > 0 && _prevClose > 0)
-			{
-				CalculatePivotPoints();
-			}
-		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
-		
-		// Check if a new day started
-		CheckForNewDay(candle.OpenTime);
-		
-		// Clear positions at the start of a new day
-		if (_newDayStarted)
-		{
-			if (Position != 0)
-			{
-				if (Position > 0)
-					SellMarket(Math.Abs(Position));
-				else
-					BuyMarket(Math.Abs(Position));
-				
-				LogInfo($"New day started, closing position at {candle.ClosePrice}");
-			}
-			_newDayStarted = false;
-		}
-		
-		// Skip trading if pivot points are not calculated yet
-		if (_pivot == 0)
+
+		if (_highs.Count < Lookback)
 			return;
-		
-		// Determine if candle is bullish or bearish
-		bool isBullish = candle.ClosePrice > candle.OpenPrice;
-		bool isBearish = candle.ClosePrice < candle.OpenPrice;
-		
-		// Calculate proximity to pivot points
-		decimal priceThreshold = candle.ClosePrice * 0.001m; // 0.1% threshold
-		
-		// Check if price is near S1 and bullish
-		bool nearS1 = Math.Abs(candle.LowPrice - _s1) <= priceThreshold;
-		if (nearS1 && isBullish && Position <= 0)
+
+		if (_cooldown > 0)
 		{
-			// Bullish candle bouncing off S1 - go long
-			CancelActiveOrders();
-			BuyMarket(Volume + Math.Abs(Position));
-			LogInfo($"Long entry at {candle.ClosePrice} on S1 bounce at {_s1}");
+			_cooldown--;
+			return;
 		}
-		
-		// Check if price is near R1 and bearish
-		bool nearR1 = Math.Abs(candle.HighPrice - _r1) <= priceThreshold;
-		if (nearR1 && isBearish && Position >= 0)
+
+		// Calculate pivot points from lookback window
+		decimal high = decimal.MinValue, low = decimal.MaxValue, close = 0;
+		for (int i = 0; i < _highs.Count; i++)
 		{
-			// Bearish candle bouncing off R1 - go short
-			CancelActiveOrders();
-			SellMarket(Volume + Math.Abs(Position));
-			LogInfo($"Short entry at {candle.ClosePrice} on R1 bounce at {_r1}");
+			if (_highs[i] > high) high = _highs[i];
+			if (_lows[i] < low) low = _lows[i];
 		}
-		
-		// Exit logic - target pivot point
-		if (Position > 0 && candle.ClosePrice > _pivot)
+		close = _closes[_closes.Count - 1];
+
+		var pivot = (high + low + close) / 3;
+		var r1 = 2 * pivot - low;
+		var s1 = 2 * pivot - high;
+		var buffer = (r1 - s1) * 0.02m;
+
+		if (buffer <= 0)
+			return;
+
+		var isBullish = candle.ClosePrice > candle.OpenPrice;
+		var isBearish = candle.ClosePrice < candle.OpenPrice;
+
+		// Bounce off S1 (buy)
+		if (Position == 0 && candle.LowPrice <= s1 + buffer && isBullish)
 		{
-			SellMarket(Math.Abs(Position));
-			LogInfo($"Long exit at {candle.ClosePrice} (price above pivot {_pivot})");
+			BuyMarket();
+			_cooldown = CooldownBars;
 		}
-		else if (Position < 0 && candle.ClosePrice < _pivot)
+		// Bounce off R1 (sell)
+		else if (Position == 0 && candle.HighPrice >= r1 - buffer && isBearish)
 		{
-			BuyMarket(Math.Abs(Position));
-			LogInfo($"Short exit at {candle.ClosePrice} (price below pivot {_pivot})");
+			SellMarket();
+			_cooldown = CooldownBars;
+		}
+		// Exit at pivot
+		else if (Position > 0 && candle.ClosePrice > pivot)
+		{
+			SellMarket();
+			_cooldown = CooldownBars;
+		}
+		else if (Position < 0 && candle.ClosePrice < pivot)
+		{
+			BuyMarket();
+			_cooldown = CooldownBars;
 		}
 	}
 }

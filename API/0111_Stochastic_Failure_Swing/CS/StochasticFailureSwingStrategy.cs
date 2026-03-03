@@ -1,44 +1,37 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
-using StockSharp.Algo.Candles;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Strategy that trades based on Stochastic Oscillator Failure Swing pattern.
 /// A failure swing occurs when Stochastic reverses direction without crossing through centerline.
+/// Uses cooldown to control trade frequency.
 /// </summary>
 public class StochasticFailureSwingStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _kPeriod;
 	private readonly StrategyParam<int> _dPeriod;
-	private readonly StrategyParam<int> _slowing;
 	private readonly StrategyParam<decimal> _oversoldLevel;
 	private readonly StrategyParam<decimal> _overboughtLevel;
-	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<int> _cooldownBars;
 
 	private StochasticOscillator _stochastic;
-	
-	private decimal _prevKValue;
-	private decimal _prevPrevKValue;
-	private bool _inPosition;
-	private Sides _positionSide;
+
+	private decimal _prevK;
+	private decimal _prevPrevK;
+	private int _cooldown;
 
 	/// <summary>
-	/// Candle type and timeframe for the strategy.
+	/// Candle type and timeframe.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -47,7 +40,7 @@ public class StochasticFailureSwingStrategy : Strategy
 	}
 
 	/// <summary>
-	/// K period for Stochastic calculation.
+	/// K period.
 	/// </summary>
 	public int KPeriod
 	{
@@ -56,7 +49,7 @@ public class StochasticFailureSwingStrategy : Strategy
 	}
 
 	/// <summary>
-	/// D period for Stochastic calculation.
+	/// D period.
 	/// </summary>
 	public int DPeriod
 	{
@@ -65,16 +58,7 @@ public class StochasticFailureSwingStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Slowing period for Stochastic calculation.
-	/// </summary>
-	public int Slowing
-	{
-		get => _slowing.Value;
-		set => _slowing.Value = value;
-	}
-
-	/// <summary>
-	/// Oversold level for Stochastic.
+	/// Oversold level.
 	/// </summary>
 	public decimal OversoldLevel
 	{
@@ -83,7 +67,7 @@ public class StochasticFailureSwingStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Overbought level for Stochastic.
+	/// Overbought level.
 	/// </summary>
 	public decimal OverboughtLevel
 	{
@@ -92,45 +76,41 @@ public class StochasticFailureSwingStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stop-loss percentage from entry price.
+	/// Cooldown bars between trades.
 	/// </summary>
-	public decimal StopLossPercent
+	public int CooldownBars
 	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	/// <summary>
-	/// Initializes a new instance of the <see cref="StochasticFailureSwingStrategy"/>.
+	/// Constructor.
 	/// </summary>
 	public StochasticFailureSwingStrategy()
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-					 .SetDisplay("Candle Type", "Type of candles to use for analysis", "General");
-		
+			.SetDisplay("Candle Type", "Candle timeframe", "General");
+
 		_kPeriod = Param(nameof(KPeriod), 14)
-				  .SetDisplay("K Period", "Period for %K line calculation", "Stochastic Settings")
-				  .SetRange(5, 30);
-		
+			.SetDisplay("K Period", "%K period", "Stochastic")
+			.SetRange(5, 30);
+
 		_dPeriod = Param(nameof(DPeriod), 3)
-				  .SetDisplay("D Period", "Period for %D line calculation", "Stochastic Settings")
-				  .SetRange(2, 10);
-		
-		_slowing = Param(nameof(Slowing), 3)
-				 .SetDisplay("Slowing", "Slowing period for Stochastic calculation", "Stochastic Settings")
-				 .SetRange(1, 5);
-		
-		_oversoldLevel = Param(nameof(OversoldLevel), 20m)
-					   .SetDisplay("Oversold Level", "Stochastic level considered oversold", "Stochastic Settings")
-					   .SetRange(10m, 30m);
-		
-		_overboughtLevel = Param(nameof(OverboughtLevel), 80m)
-						 .SetDisplay("Overbought Level", "Stochastic level considered overbought", "Stochastic Settings")
-						 .SetRange(70m, 90m);
-		
-		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
-						  .SetDisplay("Stop Loss %", "Stop-loss percentage from entry price", "Protection")
-						  .SetRange(0.5m, 5m);
+			.SetDisplay("D Period", "%D period", "Stochastic")
+			.SetRange(2, 10);
+
+		_oversoldLevel = Param(nameof(OversoldLevel), 30m)
+			.SetDisplay("Oversold Level", "Stochastic oversold", "Stochastic")
+			.SetRange(10m, 40m);
+
+		_overboughtLevel = Param(nameof(OverboughtLevel), 70m)
+			.SetDisplay("Overbought Level", "Stochastic overbought", "Stochastic")
+			.SetRange(60m, 90m);
+
+		_cooldownBars = Param(nameof(CooldownBars), 250)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "General")
+			.SetRange(10, 2000);
 	}
 
 	/// <inheritdoc />
@@ -143,37 +123,28 @@ public class StochasticFailureSwingStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_prevKValue = 0;
-		_prevPrevKValue = 0;
-		_inPosition = false;
-		_positionSide = default;
+		_stochastic = default;
+		_prevK = 0;
+		_prevPrevK = 0;
+		_cooldown = 0;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		
-		// Initialize indicators
+
 		_stochastic = new StochasticOscillator
 		{
 			K = { Length = KPeriod },
 			D = { Length = DPeriod },
 		};
-		
-		// Create and setup subscription for candles
+
 		var subscription = SubscribeCandles(CandleType);
-		
-		// Bind indicator and processor
 		subscription
 			.BindEx(_stochastic, ProcessCandle)
 			.Start();
-		
-		// Enable stop-loss protection
-		StartProtection(new Unit(0), new Unit(StopLossPercent, UnitTypes.Percent));
-		
-		// Setup chart if available
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -183,99 +154,79 @@ public class StochasticFailureSwingStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue stochasticValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue stochValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
-		
-		// Get current K value (we use %K for the strategy, not %D)
-		var stochTyped = (StochasticOscillatorValue)stochasticValue;
-		
-		if (stochTyped.K is not decimal kValue)
+
+		var stoch = (StochasticOscillatorValue)stochValue;
+		if (stoch.K is not decimal kValue)
 			return;
 
-		// Need at least 3 Stochastic values to detect failure swing
-		if (_prevKValue == 0 || _prevPrevKValue == 0)
+		// Need at least 2 previous values
+		if (_prevK == 0 || _prevPrevK == 0)
 		{
-			_prevPrevKValue = _prevKValue;
-			_prevKValue = kValue;
+			_prevPrevK = _prevK;
+			_prevK = kValue;
 			return;
 		}
-		
-		// Detect Bullish Failure Swing:
-		// 1. Stochastic falls below oversold level
-		// 2. Stochastic rises without crossing centerline
-		// 3. Stochastic pulls back but stays above previous low
-		// 4. Stochastic breaks above the high point of first rise
-		bool isBullishFailureSwing = _prevPrevKValue < OversoldLevel &&
-									_prevKValue > _prevPrevKValue &&
-									kValue < _prevKValue &&
-									kValue > _prevPrevKValue;
-		
-		// Detect Bearish Failure Swing:
-		// 1. Stochastic rises above overbought level
-		// 2. Stochastic falls without crossing centerline
-		// 3. Stochastic bounces up but stays below previous high
-		// 4. Stochastic breaks below the low point of first decline
-		bool isBearishFailureSwing = _prevPrevKValue > OverboughtLevel &&
-									 _prevKValue < _prevPrevKValue &&
-									 kValue > _prevKValue &&
-									 kValue < _prevPrevKValue;
-		
-		// Trading logic
-		if (isBullishFailureSwing && !_inPosition)
+
+		if (_cooldown > 0)
 		{
-			// Enter long position
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
-			
-			_inPosition = true;
-			_positionSide = Sides.Buy;
-			
-			LogInfo($"Bullish Stochastic Failure Swing detected. %K values: {_prevPrevKValue:F2} -> {_prevKValue:F2} -> {kValue:F2}. Long entry at {candle.ClosePrice}");
+			_cooldown--;
+			_prevPrevK = _prevK;
+			_prevK = kValue;
+			return;
 		}
-		else if (isBearishFailureSwing && !_inPosition)
+
+		// Bullish Failure Swing: K was oversold, rose, pulled back but stayed above prior low
+		var isBullish = _prevPrevK < OversoldLevel &&
+			_prevK > _prevPrevK &&
+			kValue < _prevK &&
+			kValue > _prevPrevK;
+
+		// Bearish Failure Swing: K was overbought, fell, bounced but stayed below prior high
+		var isBearish = _prevPrevK > OverboughtLevel &&
+			_prevK < _prevPrevK &&
+			kValue > _prevK &&
+			kValue < _prevPrevK;
+
+		if (Position == 0)
 		{
-			// Enter short position
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
-			
-			_inPosition = true;
-			_positionSide = Sides.Sell;
-			
-			LogInfo($"Bearish Stochastic Failure Swing detected. %K values: {_prevPrevKValue:F2} -> {_prevKValue:F2} -> {kValue:F2}. Short entry at {candle.ClosePrice}");
-		}
-		
-		// Exit conditions
-		if (_inPosition)
-		{
-			// For long positions: exit when Stochastic crosses above 50
-			if (_positionSide == Sides.Buy && kValue > 50)
+			if (isBullish)
 			{
-				SellMarket(Math.Abs(Position));
-				_inPosition = false;
-				_positionSide = default;
-				
-				LogInfo($"Exit signal for long position: Stochastic %K ({kValue:F2}) crossed above 50. Closing at {candle.ClosePrice}");
+				BuyMarket();
+				_cooldown = CooldownBars;
 			}
-			// For short positions: exit when Stochastic crosses below 50
-			else if (_positionSide == Sides.Sell && kValue < 50)
+			else if (isBearish)
 			{
-				BuyMarket(Math.Abs(Position));
-				_inPosition = false;
-				_positionSide = default;
-				
-				LogInfo($"Exit signal for short position: Stochastic %K ({kValue:F2}) crossed below 50. Closing at {candle.ClosePrice}");
+				SellMarket();
+				_cooldown = CooldownBars;
 			}
 		}
-		
-		// Update Stochastic values for next iteration
-		_prevPrevKValue = _prevKValue;
-		_prevKValue = kValue;
+		else if (Position > 0)
+		{
+			// Exit long when K crosses above overbought
+			if (kValue > OverboughtLevel)
+			{
+				SellMarket();
+				_cooldown = CooldownBars;
+			}
+		}
+		else if (Position < 0)
+		{
+			// Exit short when K crosses below oversold
+			if (kValue < OversoldLevel)
+			{
+				BuyMarket();
+				_cooldown = CooldownBars;
+			}
+		}
+
+		_prevPrevK = _prevK;
+		_prevK = kValue;
 	}
 }

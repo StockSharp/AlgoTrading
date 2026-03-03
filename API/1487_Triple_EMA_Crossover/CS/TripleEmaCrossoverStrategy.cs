@@ -14,7 +14,7 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Triple EMA crossover with stop loss and take profit.
+/// Triple SMA crossover with stop loss and take profit.
 /// </summary>
 public class TripleEmaCrossoverStrategy : Strategy
 {
@@ -25,25 +25,23 @@ public class TripleEmaCrossoverStrategy : Strategy
 	private readonly StrategyParam<int> _takeProfitTicks;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private SimpleMovingAverage _sma1;
-	private SimpleMovingAverage _sma2;
-	private SimpleMovingAverage _sma3;
-
 	private decimal _prevSma1;
 	private decimal _prevSma2;
+	private decimal _prevSma3;
+	private int _cooldown;
 
 	public TripleEmaCrossoverStrategy()
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 
-		_sma1Period = Param(nameof(Sma1Period), 9)
+		_sma1Period = Param(nameof(Sma1Period), 5)
 			.SetDisplay("SMA1 Period", "Period for short SMA", "Indicators");
 
-		_sma2Period = Param(nameof(Sma2Period), 21)
+		_sma2Period = Param(nameof(Sma2Period), 13)
 			.SetDisplay("SMA2 Period", "Period for middle SMA", "Indicators");
 
-		_sma3Period = Param(nameof(Sma3Period), 55)
+		_sma3Period = Param(nameof(Sma3Period), 21)
 			.SetDisplay("SMA3 Period", "Period for long SMA", "Indicators");
 
 		_stopLossTicks = Param(nameof(StopLossTicks), 200)
@@ -96,33 +94,38 @@ public class TripleEmaCrossoverStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevSma1 = 0;
+		_prevSma2 = 0;
+		_prevSma3 = 0;
+		_cooldown = 0;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_sma1 = new SMA { Length = Sma1Period };
-		_sma2 = new SMA { Length = Sma2Period };
-		_sma3 = new SMA { Length = Sma3Period };
+		var sma1 = new SimpleMovingAverage { Length = Sma1Period };
+		var sma2 = new SimpleMovingAverage { Length = Sma2Period };
+		var sma3 = new SimpleMovingAverage { Length = Sma3Period };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_sma1, _sma2, _sma3, ProcessCandle)
+			.Bind(sma1, sma2, sma3, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _sma1);
-			DrawIndicator(area, _sma2);
-			DrawIndicator(area, _sma3);
+			DrawIndicator(area, sma1);
+			DrawIndicator(area, sma2);
+			DrawIndicator(area, sma3);
 			DrawOwnTrades(area);
 		}
-
-		var step = Security.PriceStep ?? 1m;
-		StartProtection(
-			takeProfit: new Unit(TakeProfitTicks * step, UnitTypes.Absolute),
-			stopLoss: new Unit(StopLossTicks * step, UnitTypes.Absolute));
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal sma1, decimal sma2, decimal sma3)
@@ -130,22 +133,56 @@ public class TripleEmaCrossoverStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var uptrend = sma1 > sma2 && sma2 > sma3;
-		var downtrend = sma1 < sma2 && sma2 < sma3;
+		if (_prevSma1 == 0 || _prevSma2 == 0 || _prevSma3 == 0)
+		{
+			_prevSma1 = sma1;
+			_prevSma2 = sma2;
+			_prevSma3 = sma3;
+			return;
+		}
 
-		var longCross = _prevSma1 <= _prevSma2 && sma1 > sma2 && uptrend;
-		var shortCross = _prevSma1 >= _prevSma2 && sma1 < sma2 && downtrend;
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+			_prevSma1 = sma1;
+			_prevSma2 = sma2;
+			_prevSma3 = sma3;
+			return;
+		}
 
-		if (longCross && Position <= 0)
-			BuyMarket(Volume + Math.Abs(Position));
-		else if (shortCross && Position >= 0)
-			SellMarket(Volume + Math.Abs(Position));
-		else if (Position > 0 && candle.ClosePrice < sma1)
-			SellMarket(Position);
-		else if (Position < 0 && candle.ClosePrice > sma1)
-			BuyMarket(-Position);
+		// SMA1 cross SMA2 — entry signal
+		var crossUp = _prevSma1 <= _prevSma2 && sma1 > sma2;
+		var crossDown = _prevSma1 >= _prevSma2 && sma1 < sma2;
+
+		// Exit on opposite cross
+		if (Position > 0 && crossDown)
+		{
+			SellMarket();
+			_cooldown = 50;
+		}
+		else if (Position < 0 && crossUp)
+		{
+			BuyMarket();
+			_cooldown = 50;
+		}
+
+		// Entry on SMA1/SMA2 cross
+		if (Position == 0)
+		{
+			if (crossUp)
+			{
+				BuyMarket();
+				_cooldown = 50;
+			}
+			else if (crossDown)
+			{
+				SellMarket();
+				_cooldown = 50;
+			}
+		}
 
 		_prevSma1 = sma1;
 		_prevSma2 = sma2;
+		_prevSma3 = sma3;
 	}
 }

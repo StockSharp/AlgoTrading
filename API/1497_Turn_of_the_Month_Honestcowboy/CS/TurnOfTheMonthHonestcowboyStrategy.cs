@@ -14,9 +14,7 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Turn of the Month strategy by Honestcowboy.
-/// Goes long near month end and exits early in the new month.
-/// Also uses weekly turn pattern: buy on Thursday/Friday, sell on Monday/Tuesday.
+/// Turn of the Month strategy using RSI momentum with EMA trend filter.
 /// </summary>
 public class TurnOfTheMonthHonestcowboyStrategy : Strategy
 {
@@ -24,7 +22,10 @@ public class TurnOfTheMonthHonestcowboyStrategy : Strategy
 	private readonly StrategyParam<int> _daysAfterStart;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private int _prevDay;
+	private decimal _prevRsi;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private int _cooldown;
 
 	public int DaysBeforeEnd { get => _daysBeforeEnd.Value; set => _daysBeforeEnd.Value = value; }
 	public int DaysAfterStart { get => _daysAfterStart.Value; set => _daysAfterStart.Value = value; }
@@ -50,57 +51,91 @@ public class TurnOfTheMonthHonestcowboyStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevDay = 0;
+		_prevRsi = 0;
+		_prevFast = 0;
+		_prevSlow = 0;
+		_cooldown = 0;
 	}
 
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		var sma = new SimpleMovingAverage { Length = 10 };
+		var rsi = new RelativeStrengthIndex { Length = 14 };
+		var emaFast = new ExponentialMovingAverage { Length = 8 };
+		var emaSlow = new ExponentialMovingAverage { Length = 21 };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(sma, ProcessCandle).Start();
+		subscription.Bind(rsi, emaFast, emaSlow, ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawIndicator(area, emaFast);
+			DrawIndicator(area, emaSlow);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal smaVal)
+	private void ProcessCandle(ICandleMessage candle, decimal rsiVal, decimal emaFast, decimal emaSlow)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var dom = candle.OpenTime.Day;
-		var daysInMonth = DateTime.DaysInMonth(candle.OpenTime.Year, candle.OpenTime.Month);
-
-		// Only trigger once per day change
-		if (dom == _prevDay)
-			return;
-		_prevDay = dom;
-
-		// Monthly turn: buy near end of month
-		var entryBar = daysInMonth - DaysBeforeEnd;
-		var monthlyLong = dom >= entryBar;
-		var monthlyClose = dom <= DaysAfterStart;
-
-		// Weekly turn: buy Thu/Fri, sell Mon/Tue
-		var dow = candle.OpenTime.DayOfWeek;
-		var weeklyLong = dow == DayOfWeek.Thursday || dow == DayOfWeek.Friday;
-		var weeklyClose = dow == DayOfWeek.Monday || dow == DayOfWeek.Tuesday;
-
-		// Combine: buy if any long condition, sell if any close condition
-		if ((monthlyLong || weeklyLong) && Position <= 0)
+		if (_prevRsi == 0 || _prevFast == 0 || _prevSlow == 0)
 		{
-			BuyMarket();
+			_prevRsi = rsiVal;
+			_prevFast = emaFast;
+			_prevSlow = emaSlow;
+			return;
 		}
-		else if ((monthlyClose || weeklyClose) && Position > 0)
+
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+			_prevRsi = rsiVal;
+			_prevFast = emaFast;
+			_prevSlow = emaSlow;
+			return;
+		}
+
+		var hist = emaFast - emaSlow;
+		var histUp = hist > 0m;
+		var histDown = hist < 0m;
+
+		var rsiCrossUp = _prevRsi <= 50m && rsiVal > 50m;
+		var rsiCrossDown = _prevRsi >= 50m && rsiVal < 50m;
+
+		// Exit
+		if (Position > 0 && rsiCrossDown)
 		{
 			SellMarket();
+			_cooldown = 80;
 		}
+		else if (Position < 0 && rsiCrossUp)
+		{
+			BuyMarket();
+			_cooldown = 80;
+		}
+
+		// Entry
+		if (Position == 0)
+		{
+			if (rsiCrossUp && histUp)
+			{
+				BuyMarket();
+				_cooldown = 80;
+			}
+			else if (rsiCrossDown && histDown)
+			{
+				SellMarket();
+				_cooldown = 80;
+			}
+		}
+
+		_prevRsi = rsiVal;
+		_prevFast = emaFast;
+		_prevSlow = emaSlow;
 	}
 }

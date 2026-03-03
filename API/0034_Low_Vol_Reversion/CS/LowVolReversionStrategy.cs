@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,7 +12,7 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Strategy that trades on mean reversion during periods of low volatility.
-/// It identifies periods of low ATR (Average True Range) and opens positions when price
+/// It identifies periods of low ATR and opens positions when price
 /// deviates from its moving average, expecting a return to the mean.
 /// </summary>
 public class LowVolReversionStrategy : Strategy
@@ -24,14 +21,15 @@ public class LowVolReversionStrategy : Strategy
 	private readonly StrategyParam<int> _atrPeriod;
 	private readonly StrategyParam<int> _atrLookbackPeriod;
 	private readonly StrategyParam<decimal> _atrThresholdPercent;
-	private readonly StrategyParam<decimal> _atrMultiplier;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _cooldownBars;
 
 	private decimal _avgAtr;
 	private int _lookbackCounter;
+	private int _cooldown;
 
 	/// <summary>
-	/// Period for Moving Average calculation (default: 20)
+	/// Period for Moving Average calculation.
 	/// </summary>
 	public int MAPeriod
 	{
@@ -40,7 +38,7 @@ public class LowVolReversionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Period for ATR calculation (default: 14)
+	/// Period for ATR calculation.
 	/// </summary>
 	public int AtrPeriod
 	{
@@ -49,7 +47,7 @@ public class LowVolReversionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Lookback period for ATR average calculation (default: 20)
+	/// Lookback period for ATR average calculation.
 	/// </summary>
 	public int AtrLookbackPeriod
 	{
@@ -58,7 +56,7 @@ public class LowVolReversionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// ATR threshold as percentage of average ATR (default: 50%)
+	/// ATR threshold as percentage of average ATR.
 	/// </summary>
 	public decimal AtrThresholdPercent
 	{
@@ -67,16 +65,7 @@ public class LowVolReversionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// ATR multiplier for stop-loss calculation (default: 2.0)
-	/// </summary>
-	public decimal AtrMultiplier
-	{
-		get => _atrMultiplier.Value;
-		set => _atrMultiplier.Value = value;
-	}
-
-	/// <summary>
-	/// Type of candles used for strategy calculation
+	/// Type of candles used for strategy calculation.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -85,37 +74,41 @@ public class LowVolReversionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initialize the Low Volatility Reversion strategy
+	/// Cooldown bars between trades.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
+	/// Initialize the Low Volatility Reversion strategy.
 	/// </summary>
 	public LowVolReversionStrategy()
 	{
 		_maPeriod = Param(nameof(MAPeriod), 20)
-			.SetDisplay("MA Period", "Period for Moving Average calculation", "Technical Parameters")
-			
+			.SetDisplay("MA Period", "Period for Moving Average calculation", "Indicators")
 			.SetOptimize(10, 50, 5);
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
-			.SetDisplay("ATR Period", "Period for ATR calculation", "Technical Parameters")
-			
+			.SetDisplay("ATR Period", "Period for ATR calculation", "Indicators")
 			.SetOptimize(7, 21, 7);
 
 		_atrLookbackPeriod = Param(nameof(AtrLookbackPeriod), 20)
-			.SetDisplay("ATR Lookback Period", "Lookback period for ATR average calculation", "Technical Parameters")
-			
+			.SetDisplay("ATR Lookback", "Lookback period for ATR average calculation", "Indicators")
 			.SetOptimize(10, 50, 10);
 
-		_atrThresholdPercent = Param(nameof(AtrThresholdPercent), 50m)
-			.SetDisplay("ATR Threshold %", "ATR threshold as percentage of average ATR", "Entry Parameters")
-			
-			.SetOptimize(30m, 70m, 10m);
+		_atrThresholdPercent = Param(nameof(AtrThresholdPercent), 80m)
+			.SetDisplay("ATR Threshold %", "ATR threshold as percentage of average ATR", "Entry")
+			.SetOptimize(30m, 90m, 10m);
 
-		_atrMultiplier = Param(nameof(AtrMultiplier), 2.0m)
-			.SetDisplay("ATR Multiplier", "ATR multiplier for stop-loss calculation", "Risk Management")
-			
-			.SetOptimize(1.0m, 3.0m, 0.5m);
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "Data");
+		_cooldownBars = Param(nameof(CooldownBars), 500)
+			.SetRange(1, 1000)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
 	}
 
 	/// <inheritdoc />
@@ -128,10 +121,9 @@ public class LowVolReversionStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		// Reset state variables
-		_avgAtr = 0;
-		_lookbackCounter = 0;
-
+		_avgAtr = default;
+		_lookbackCounter = default;
+		_cooldown = default;
 	}
 
 	/// <inheritdoc />
@@ -139,112 +131,88 @@ public class LowVolReversionStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Create indicators
-		var sma = new SMA { Length = MAPeriod };
+		_avgAtr = 0;
+		_lookbackCounter = 0;
+		_cooldown = 0;
+
+		var sma = new SimpleMovingAverage { Length = MAPeriod };
 		var atr = new AverageTrueRange { Length = AtrPeriod };
 
-		// Create subscription and bind indicators
 		var subscription = SubscribeCandles(CandleType);
 		subscription
 			.Bind(sma, atr, ProcessCandle)
 			.Start();
 
-		// Configure chart
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
 			DrawIndicator(area, sma);
-			DrawIndicator(area, atr);
 			DrawOwnTrades(area);
 		}
 	}
 
-	/// <summary>
-	/// Process candle and check for low volatility mean reversion signals
-	/// </summary>
 	private void ProcessCandle(ICandleMessage candle, decimal smaValue, decimal atrValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		// Gather ATR values for average calculation
 		if (_lookbackCounter < AtrLookbackPeriod)
 		{
-			// Still collecting ATR values for the average
 			if (_lookbackCounter == 0)
-			{
 				_avgAtr = atrValue;
-			}
 			else
-			{
-				// Calculate running average
 				_avgAtr = (_avgAtr * _lookbackCounter + atrValue) / (_lookbackCounter + 1);
-			}
-			
+
 			_lookbackCounter++;
 			return;
 		}
 		else
 		{
-			// Update running average
 			_avgAtr = (_avgAtr * (AtrLookbackPeriod - 1) + atrValue) / AtrLookbackPeriod;
 		}
 
-		// Calculate ATR threshold
-		decimal atrThreshold = _avgAtr * (AtrThresholdPercent / 100);
-		
-		// Check if we're in a low volatility period
-		bool isLowVolatility = atrValue < atrThreshold;
-		
-		if (!isLowVolatility)
+		if (_cooldown > 0)
 		{
-			// Not a low volatility period, skip trading
+			_cooldown--;
 			return;
 		}
 
-		// Calculate price deviation from MA
-		bool isPriceAboveMA = candle.ClosePrice > smaValue;
-		bool isPriceBelowMA = candle.ClosePrice < smaValue;
-		
-		// Calculate stop-loss amount based on ATR
-		decimal stopLossAmount = atrValue * AtrMultiplier;
+		// Check if we're in a low volatility period
+		decimal atrThreshold = _avgAtr * (AtrThresholdPercent / 100);
+		bool isLowVolatility = atrValue < atrThreshold;
 
-		if (Position == 0)
+		if (Position == 0 && isLowVolatility)
 		{
-			// No position - check for entry signals
-			if (isPriceBelowMA)
+			if (candle.ClosePrice < smaValue)
 			{
-				// Price is below MA in low volatility period - buy (long)
-				BuyMarket(Volume);
+				BuyMarket();
+				_cooldown = CooldownBars;
 			}
-			else if (isPriceAboveMA)
+			else if (candle.ClosePrice > smaValue)
 			{
-				// Price is above MA in low volatility period - sell (short)
-				SellMarket(Volume);
+				SellMarket();
+				_cooldown = CooldownBars;
 			}
 		}
 		else if (Position > 0)
 		{
-			// Long position - check for exit signal
 			if (candle.ClosePrice > smaValue)
 			{
-				// Price has reached MA - exit long
-				SellMarket(Position);
+				SellMarket();
+				_cooldown = CooldownBars;
 			}
 		}
 		else if (Position < 0)
 		{
-			// Short position - check for exit signal
 			if (candle.ClosePrice < smaValue)
 			{
-				// Price has reached MA - exit short
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
+				_cooldown = CooldownBars;
 			}
 		}
 	}

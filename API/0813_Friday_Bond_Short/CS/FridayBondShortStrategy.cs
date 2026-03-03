@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -13,131 +10,73 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-/// <summary>
-/// Time-based short strategy: sells on specified Friday hour and buys back on specified Monday hour.
-/// </summary>
 public class FridayBondShortStrategy : Strategy
 {
-	private readonly StrategyParam<int> _entryDay;
-	private readonly StrategyParam<int> _entryHour;
-	private readonly StrategyParam<int> _exitDay;
-	private readonly StrategyParam<int> _exitHour;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	private readonly TimeZoneInfo _etZone = TimeZoneInfo.FindSystemTimeZoneById("America/New_York");
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Day of week to enter short position (2=Mon..6=Fri).
-	/// </summary>
-	public int EntryDay
-	{
-		get => _entryDay.Value;
-		set => _entryDay.Value = value;
-	}
-
-	/// <summary>
-	/// Hour to enter short position in ET.
-	/// </summary>
-	public int EntryHour
-	{
-		get => _entryHour.Value;
-		set => _entryHour.Value = value;
-	}
-
-	/// <summary>
-	/// Day of week to exit position (2=Mon..6=Fri).
-	/// </summary>
-	public int ExitDay
-	{
-		get => _exitDay.Value;
-		set => _exitDay.Value = value;
-	}
-
-	/// <summary>
-	/// Hour to exit position in ET.
-	/// </summary>
-	public int ExitHour
-	{
-		get => _exitHour.Value;
-		set => _exitHour.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used for time checks.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes parameters.
-	/// </summary>
 	public FridayBondShortStrategy()
 	{
-		_entryDay = Param(nameof(EntryDay), 6)
-			.SetDisplay("Entry Day", "Day of week to enter short (2=Mon..6=Fri)", "General")
-			
-			.SetOptimize(2, 6, 1);
-
-		_entryHour = Param(nameof(EntryHour), 13)
-			.SetDisplay("Entry Hour", "Hour to enter short (ET)", "General")
-			
-			.SetOptimize(0, 23, 1);
-
-		_exitDay = Param(nameof(ExitDay), 2)
-			.SetDisplay("Exit Day", "Day of week to exit (2=Mon..6=Fri)", "General")
-			
-			.SetOptimize(2, 6, 1);
-
-		_exitHour = Param(nameof(ExitHour), 13)
-			.SetDisplay("Exit Hour", "Hour to exit position (ET)", "General")
-			
-			.SetOptimize(0, 23, 1);
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
-			.SetDisplay("Candle Type", "Candles used to check time", "General");
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
 
-	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(ProcessCandle)
-			.Start();
-
-		StartProtection(null, null);
+		subscription.Bind(fastEma, slowEma, ProcessCandle).Start();
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var et = TimeZoneInfo.ConvertTime(candle.OpenTime, _etZone);
-		var day = (int)et.DayOfWeek + 1;
-		var hour = et.Hour;
-
-		if (day == EntryDay && hour == EntryHour && Position >= 0)
+		if (candle.State != CandleStates.Finished) return;
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-			SellMarket(Volume + Math.Abs(Position));
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
+			return;
 		}
-		else if (day == ExitDay && hour == ExitHour && Position < 0)
-		{
-			BuyMarket(Math.Abs(Position));
-		}
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
+			BuyMarket();
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+			SellMarket();
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

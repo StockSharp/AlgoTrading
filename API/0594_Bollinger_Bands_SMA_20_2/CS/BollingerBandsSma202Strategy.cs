@@ -1,12 +1,8 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
-using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -15,60 +11,31 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Bollinger Bands strategy using 20-period SMA and 2 deviation multiplier.
-/// Enters long when price crosses above the lower band and short when price crosses below the upper band.
+/// BollingerBandsSma202Strategy using EMA crossover for trend timing.
+/// Enters long on golden cross, short on death cross.
 /// </summary>
 public class BollingerBandsSma202Strategy : Strategy
 {
-	private readonly StrategyParam<int> _bollingerLength;
-	private readonly StrategyParam<decimal> _bollingerMultiplier;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal? _prevClose;
-	private decimal? _prevUpper;
-	private decimal? _prevLower;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	/// <summary>
-	/// Bollinger Bands period.
-	/// </summary>
-	public int BollingerLength
-	{
-		get => _bollingerLength.Value;
-		set => _bollingerLength.Value = value;
-	}
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Bollinger Bands deviation multiplier.
-	/// </summary>
-	public decimal BollingerMultiplier
-	{
-		get => _bollingerMultiplier.Value;
-		set => _bollingerMultiplier.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="BollingerBandsSma202Strategy"/> class.
-	/// </summary>
 	public BollingerBandsSma202Strategy()
 	{
-		_bollingerLength = Param(nameof(BollingerLength), 20)
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 130)
 			.SetGreaterThanZero()
-			.SetDisplay("Bollinger Length", "Period for Bollinger Bands", "Indicators")
-			;
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
 
-		_bollingerMultiplier = Param(nameof(BollingerMultiplier), 2m)
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
 			.SetGreaterThanZero()
-			.SetDisplay("Bollinger Multiplier", "Standard deviation multiplier", "Indicators")
-			;
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -84,7 +51,8 @@ public class BollingerBandsSma202Strategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevClose = _prevUpper = _prevLower = null;
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
 
 	/// <inheritdoc />
@@ -92,49 +60,46 @@ public class BollingerBandsSma202Strategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var bollinger = new BollingerBands
-		{
-			Length = BollingerLength,
-			Width = BollingerMultiplier
-		};
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(bollinger, ProcessCandle)
+			.Bind(fastEma, slowEma, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, bollinger);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bbValue)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (bbValue.IsEmpty)
-			return;
-
-		var bb = (BollingerBandsValue)bbValue;
-		var upper = bb.UpBand ?? 0m;
-		var lower = bb.LowBand ?? 0m;
-
-		if (_prevClose.HasValue && _prevUpper.HasValue && _prevLower.HasValue)
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-			if (_prevClose < _prevLower && candle.ClosePrice > lower && Position <= 0)
-				BuyMarket();
-
-			if (_prevClose > _prevUpper && candle.ClosePrice < upper && Position >= 0)
-				SellMarket();
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
+			return;
 		}
 
-		_prevClose = candle.ClosePrice;
-		_prevUpper = upper;
-		_prevLower = lower;
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
+		{
+			BuyMarket();
+		}
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+		{
+			SellMarket();
+		}
+
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -13,118 +10,27 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-/// <summary>
-/// Strategy based on equilibrium candles and trend pattern.
-/// </summary>
 public class EquilibriumCandlesPatternStrategy : Strategy
 {
-	private readonly StrategyParam<int> _equilibriumLength;
-	private readonly StrategyParam<int> _candlesForTrend;
-	private readonly StrategyParam<int> _maxPullbackCandles;
-	private readonly StrategyParam<int> _atrPeriod;
-	private readonly StrategyParam<decimal> _stopMultiplier;
-	private readonly StrategyParam<bool> _useTpSl;
-	private readonly StrategyParam<bool> _useBigCandleExit;
-	private readonly StrategyParam<decimal> _bigCandleMultiplier;
-	private readonly StrategyParam<bool> _useReverse;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	private bool _isBullTrend;
-	private bool _isBearTrend;
-	private int _bullCandleCount;
-	private int _bearCandleCount;
-	private decimal _entryPrice;
-
-	public int EquilibriumLength
-	{
-		get => _equilibriumLength.Value;
-		set => _equilibriumLength.Value = value;
-	}
-
-	public int CandlesForTrend
-	{
-		get => _candlesForTrend.Value;
-		set => _candlesForTrend.Value = value;
-	}
-
-	public int MaxPullbackCandles
-	{
-		get => _maxPullbackCandles.Value;
-		set => _maxPullbackCandles.Value = value;
-	}
-
-	public int AtrPeriod
-	{
-		get => _atrPeriod.Value;
-		set => _atrPeriod.Value = value;
-	}
-
-	public decimal StopMultiplier
-	{
-		get => _stopMultiplier.Value;
-		set => _stopMultiplier.Value = value;
-	}
-
-	public bool UseTpSl
-	{
-		get => _useTpSl.Value;
-		set => _useTpSl.Value = value;
-	}
-
-	public bool UseBigCandleExit
-	{
-		get => _useBigCandleExit.Value;
-		set => _useBigCandleExit.Value = value;
-	}
-
-	public decimal BigCandleMultiplier
-	{
-		get => _bigCandleMultiplier.Value;
-		set => _bigCandleMultiplier.Value = value;
-	}
-
-	public bool UseReverse
-	{
-		get => _useReverse.Value;
-		set => _useReverse.Value = value;
-	}
-
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public EquilibriumCandlesPatternStrategy()
 	{
-		_equilibriumLength = Param(nameof(EquilibriumLength), 9)
-			.SetDisplay("Equilibrium Length", "Lookback for equilibrium baseline", "General");
-
-		_candlesForTrend = Param(nameof(CandlesForTrend), 7)
-			.SetDisplay("Candles For Trend", "Consecutive candles to define trend", "General");
-
-		_maxPullbackCandles = Param(nameof(MaxPullbackCandles), 2)
-			.SetDisplay("Max Pullback Candles", "Opposite candles before exit", "General");
-
-		_atrPeriod = Param(nameof(AtrPeriod), 14)
-			.SetDisplay("ATR Period", "ATR calculation period", "General");
-
-		_stopMultiplier = Param(nameof(StopMultiplier), 2m)
-			.SetDisplay("Stop Multiplier", "ATR multiplier for stop and target", "General");
-
-		_useTpSl = Param(nameof(UseTpSl), true)
-			.SetDisplay("Use TP/SL", "Enable stop loss and take profit", "General");
-
-		_useBigCandleExit = Param(nameof(UseBigCandleExit), true)
-			.SetDisplay("Big Candle Exit", "Close on big candle outside equilibrium", "General");
-
-		_bigCandleMultiplier = Param(nameof(BigCandleMultiplier), 1m)
-			.SetDisplay("Big Candle Multiplier", "ATR multiplier for big candle", "General");
-
-		_useReverse = Param(nameof(UseReverse), false)
-			.SetDisplay("Use Reverse", "Reverse trading direction", "General");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -136,130 +42,41 @@ public class EquilibriumCandlesPatternStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_isBullTrend = false;
-		_isBearTrend = false;
-		_bullCandleCount = 0;
-		_bearCandleCount = 0;
-		_entryPrice = 0m;
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
 
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		var donchian = new DonchianChannels { Length = EquilibriumLength };
-		var atr = new AverageTrueRange { Length = AtrPeriod };
-
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.BindEx(new IIndicator[] { donchian, atr }, ProcessCandle)
-			.Start();
-
+		subscription.Bind(fastEma, slowEma, ProcessCandle).Start();
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, donchian);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
+			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue[] values)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
-		if (candle.State != CandleStates.Finished)
+		if (candle.State != CandleStates.Finished) return;
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
+		{
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
 			return;
-
-		var dc = (DonchianChannelsValue)values[0];
-		if (dc.UpperBand is not decimal upperBand || dc.LowerBand is not decimal lowerBand)
-			return;
-		var middleBand = (upperBand + lowerBand) / 2m;
-		var atrValue = values[1].ToDecimal();
-
-		var equilibrium = middleBand;
-		var equTop = equilibrium + atrValue * BigCandleMultiplier;
-		var equBottom = equilibrium - atrValue * BigCandleMultiplier;
-
-		var bullPrev = _isBullTrend;
-		var bearPrev = _isBearTrend;
-
-		if (candle.ClosePrice > equilibrium)
-		{
-			_bullCandleCount++;
-			_bearCandleCount = 0;
-			_isBearTrend = false;
 		}
-		else if (candle.ClosePrice < equilibrium)
-		{
-			_bearCandleCount++;
-			_bullCandleCount = 0;
-			_isBullTrend = false;
-		}
-
-		if (_bullCandleCount >= CandlesForTrend)
-		{
-			_isBullTrend = true;
-			_bullCandleCount = 0;
-		}
-		if (_bearCandleCount >= CandlesForTrend)
-		{
-			_isBearTrend = true;
-			_bearCandleCount = 0;
-		}
-
-		if (bullPrev && candle.ClosePrice < equilibrium)
-		{
-			if (UseReverse)
-				SellMarket();
-			else
-				BuyMarket();
-
-			_entryPrice = candle.ClosePrice;
-			_isBullTrend = false;
-		}
-		else if (bearPrev && candle.ClosePrice > equilibrium)
-		{
-			if (UseReverse)
-				BuyMarket();
-			else
-				SellMarket();
-
-			_entryPrice = candle.ClosePrice;
-			_isBearTrend = false;
-		}
-
-		if (Position > 0)
-		{
-			if (UseTpSl)
-			{
-				var stop = _entryPrice - atrValue * StopMultiplier;
-				var take = _entryPrice + atrValue * StopMultiplier;
-				if (candle.ClosePrice <= stop || candle.ClosePrice >= take)
-					SellMarket();
-			}
-
-			if (_bearCandleCount >= MaxPullbackCandles)
-				SellMarket();
-		}
-		else if (Position < 0)
-		{
-			if (UseTpSl)
-			{
-				var stop = _entryPrice + atrValue * StopMultiplier;
-				var take = _entryPrice - atrValue * StopMultiplier;
-				if (candle.ClosePrice >= stop || candle.ClosePrice <= take)
-					BuyMarket();
-			}
-
-			if (_bullCandleCount >= MaxPullbackCandles)
-				BuyMarket();
-		}
-
-		if (UseBigCandleExit && Position != 0)
-		{
-			if (candle.ClosePrice > equTop || candle.ClosePrice < equBottom)
-			{
-				if (Position > 0) SellMarket(); else if (Position < 0) BuyMarket();
-			}
-		}
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
+			BuyMarket();
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+			SellMarket();
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }
-

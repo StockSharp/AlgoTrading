@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -13,119 +10,73 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-/// <summary>
-/// Strategy using HMA 200 and EMA 20 crossover of price.
-/// </summary>
 public class Hma200Ema20CrossoverStrategy : Strategy
 {
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _hmaLength;
-	private readonly StrategyParam<int> _emaLength;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	private HullMovingAverage _hma;
-	private ExponentialMovingAverage _ema;
-	private decimal _prevClose;
-	private decimal _prevEma;
-	private bool _hasPrev;
-
-	/// <summary>
-	/// Candle type to subscribe.
-	/// </summary>
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// HMA period length.
-	/// </summary>
-	public int HmaLength { get => _hmaLength.Value; set => _hmaLength.Value = value; }
-
-	/// <summary>
-	/// EMA period length.
-	/// </summary>
-	public int EmaLength { get => _emaLength.Value; set => _emaLength.Value = value; }
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="Hma200Ema20CrossoverStrategy"/> class.
-	/// </summary>
 	public Hma200Ema20CrossoverStrategy()
 	{
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
-
-		_hmaLength = Param(nameof(HmaLength), 200)
-			.SetGreaterThanZero()
-			.SetDisplay("HMA Length", "Hull MA length", "Parameters");
-
-		_emaLength = Param(nameof(EmaLength), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("EMA Length", "Exponential MA length", "Parameters");
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevClose = 0m;
-		_prevEma = 0m;
-		_hasPrev = false;
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_hma = new HullMovingAverage { Length = HmaLength };
-		_ema = new EMA { Length = EmaLength };
-
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(_hma, _ema, ProcessCandle)
-			.Start();
-
+		subscription.Bind(fastEma, slowEma, ProcessCandle).Start();
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _hma);
-			DrawIndicator(area, _ema);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal hmaValue, decimal emaValue)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!_hma.IsFormed || !_ema.IsFormed || !IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var close = candle.ClosePrice;
-
-		var crossUp = false;
-		var crossDown = false;
-
-		if (_hasPrev)
+		if (candle.State != CandleStates.Finished) return;
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-			crossUp = _prevClose <= _prevEma && close > emaValue;
-			crossDown = _prevClose >= _prevEma && close < emaValue;
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
+			return;
 		}
-
-		if (crossUp && close > hmaValue && Position <= 0)
-			BuyMarket(Volume + Math.Abs(Position));
-
-		if (crossDown && close < hmaValue && Position >= 0)
-			SellMarket(Volume + Math.Abs(Position));
-
-		_prevClose = close;
-		_prevEma = emaValue;
-		_hasPrev = true;
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
+			BuyMarket();
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+			SellMarket();
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }
-

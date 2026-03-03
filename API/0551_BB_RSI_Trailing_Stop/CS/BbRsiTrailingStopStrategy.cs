@@ -32,6 +32,7 @@ public class BbRsiTrailingStopStrategy : Strategy
 	private decimal _stopPrice;
 	private decimal _trailingPrice;
 	private bool _trailingActive;
+	private int _cooldown;
 
 	/// <summary>
 	/// Bollinger Bands period.
@@ -119,12 +120,12 @@ public class BbRsiTrailingStopStrategy : Strategy
 	/// </summary>
 	public BbRsiTrailingStopStrategy()
 	{
-		_bollingerPeriod = Param(nameof(BollingerPeriod), 25)
+		_bollingerPeriod = Param(nameof(BollingerPeriod), 40)
 			.SetDisplay("Bollinger Period", "Period for Bollinger Bands", "Indicators")
 			
 			.SetOptimize(10, 50, 5);
 
-		_bollingerDeviation = Param(nameof(BollingerDeviation), 2m)
+		_bollingerDeviation = Param(nameof(BollingerDeviation), 2.5m)
 			.SetDisplay("Bollinger Deviation", "Deviation multiplier", "Indicators")
 			
 			.SetOptimize(1m, 3m, 0.5m);
@@ -134,29 +135,29 @@ public class BbRsiTrailingStopStrategy : Strategy
 			
 			.SetOptimize(7, 21, 7);
 
-		_rsiOverbought = Param(nameof(RsiOverbought), 60m)
+		_rsiOverbought = Param(nameof(RsiOverbought), 70m)
 			.SetDisplay("RSI Overbought", "Overbought level", "Indicators")
-			
+
 			.SetOptimize(50m, 80m, 5m);
 
-		_rsiOversold = Param(nameof(RsiOversold), 33m)
+		_rsiOversold = Param(nameof(RsiOversold), 30m)
 			.SetDisplay("RSI Oversold", "Oversold level", "Indicators")
-			
+
 			.SetOptimize(20m, 40m, 5m);
 
-		_stopLossPoints = Param(nameof(StopLossPoints), 50m)
+		_stopLossPoints = Param(nameof(StopLossPoints), 200m)
 			.SetDisplay("Stop Loss Points", "Initial stop loss in points", "Risk Management")
-			
+
 			.SetOptimize(20m, 100m, 10m);
 
-		_trailOffsetPoints = Param(nameof(TrailOffsetPoints), 99m)
+		_trailOffsetPoints = Param(nameof(TrailOffsetPoints), 150m)
 			.SetDisplay("Trail Offset Points", "Profit to activate trailing stop", "Risk Management")
-			
+
 			.SetOptimize(50m, 150m, 10m);
 
-		_trailStopPoints = Param(nameof(TrailStopPoints), 40m)
+		_trailStopPoints = Param(nameof(TrailStopPoints), 100m)
 			.SetDisplay("Trail Stop Points", "Trailing stop distance", "Risk Management")
-			
+
 			.SetOptimize(20m, 80m, 10m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -177,6 +178,7 @@ public class BbRsiTrailingStopStrategy : Strategy
 		_stopPrice = 0;
 		_trailingPrice = 0;
 		_trailingActive = false;
+		_cooldown = 0;
 	}
 
 	/// <inheritdoc />
@@ -203,10 +205,10 @@ public class BbRsiTrailingStopStrategy : Strategy
 		var area = CreateChartArea();
 		if (area != null)
 		{
-		DrawCandles(area, subscription);
-		DrawIndicator(area, bollinger);
-		DrawIndicator(area, rsi);
-		DrawOwnTrades(area);
+			DrawCandles(area, subscription);
+			DrawIndicator(area, bollinger);
+			DrawIndicator(area, rsi);
+			DrawOwnTrades(area);
 		}
 	}
 
@@ -216,77 +218,85 @@ public class BbRsiTrailingStopStrategy : Strategy
 		_stopPrice = 0;
 		_trailingPrice = 0;
 		_trailingActive = false;
+		_cooldown = 100;
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bollingerValue, IIndicatorValue rsiValue)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
+		if (bollingerValue is not BollingerBandsValue bb ||
+			bb.UpBand is not decimal upper ||
+			bb.LowBand is not decimal lower ||
+			!rsiValue.IsFormed)
+			return;
 
-		var bb = (BollingerBandsValue)bollingerValue;
-		var upper = bb.UpBand;
-		var lower = bb.LowBand;
-		var rsi = rsiValue.ToDecimal();
+		var rsi = rsiValue.GetValue<decimal>();
 
-		if (Position == 0)
+		if (_cooldown > 0)
+			_cooldown--;
+
+		if (Position == 0 && _cooldown == 0)
 		{
-		if (candle.LowPrice < lower && rsi < RsiOversold)
-		{
-		BuyMarket(Volume);
-		_entryPrice = candle.ClosePrice;
-		_stopPrice = _entryPrice - StopLossPoints;
-		}
-		else if (candle.HighPrice > upper && rsi > RsiOverbought)
-		{
-		SellMarket(Volume);
-		_entryPrice = candle.ClosePrice;
-		_stopPrice = _entryPrice + StopLossPoints;
-		}
+			if (candle.LowPrice < lower && rsi < RsiOversold)
+			{
+				BuyMarket();
+				_entryPrice = candle.ClosePrice;
+				_stopPrice = _entryPrice - StopLossPoints;
+				_cooldown = 100;
+			}
+			else if (candle.HighPrice > upper && rsi > RsiOverbought)
+			{
+				SellMarket();
+				_entryPrice = candle.ClosePrice;
+				_stopPrice = _entryPrice + StopLossPoints;
+				_cooldown = 100;
+			}
 		}
 		else if (Position > 0)
 		{
-		if (!_trailingActive && candle.ClosePrice - _entryPrice >= TrailOffsetPoints)
-		{
-		_trailingActive = true;
-		_trailingPrice = candle.ClosePrice - TrailStopPoints;
-		}
+			if (!_trailingActive && candle.ClosePrice - _entryPrice >= TrailOffsetPoints)
+			{
+				_trailingActive = true;
+				_trailingPrice = candle.ClosePrice - TrailStopPoints;
+			}
 
-		if (_trailingActive)
-		{
-		var newLevel = candle.ClosePrice - TrailStopPoints;
-		if (newLevel > _trailingPrice)
-		_trailingPrice = newLevel;
-		}
+			if (_trailingActive)
+			{
+				var newLevel = candle.ClosePrice - TrailStopPoints;
+				if (newLevel > _trailingPrice)
+					_trailingPrice = newLevel;
+			}
 
-		if (candle.LowPrice <= _stopPrice || (_trailingActive && candle.LowPrice <= _trailingPrice))
-		{
-		SellMarket(Position);
-		ResetStops();
-		}
+			// Exit on stop or trailing stop
+			if (candle.LowPrice <= _stopPrice || (_trailingActive && candle.LowPrice <= _trailingPrice))
+			{
+				SellMarket();
+				ResetStops();
+			}
 		}
 		else
 		{
-		if (!_trailingActive && _entryPrice - candle.ClosePrice >= TrailOffsetPoints)
-		{
-		_trailingActive = true;
-		_trailingPrice = candle.ClosePrice + TrailStopPoints;
-		}
+			if (!_trailingActive && _entryPrice - candle.ClosePrice >= TrailOffsetPoints)
+			{
+				_trailingActive = true;
+				_trailingPrice = candle.ClosePrice + TrailStopPoints;
+			}
 
-		if (_trailingActive)
-		{
-		var newLevel = candle.ClosePrice + TrailStopPoints;
-		if (newLevel < _trailingPrice || _trailingPrice == 0)
-		_trailingPrice = newLevel;
-		}
+			if (_trailingActive)
+			{
+				var newLevel = candle.ClosePrice + TrailStopPoints;
+				if (newLevel < _trailingPrice || _trailingPrice == 0)
+					_trailingPrice = newLevel;
+			}
 
-		if (candle.HighPrice >= _stopPrice || (_trailingActive && candle.HighPrice >= _trailingPrice))
-		{
-		BuyMarket(Math.Abs(Position));
-		ResetStops();
-		}
+			// Exit on stop or trailing stop
+			if (candle.HighPrice >= _stopPrice || (_trailingActive && candle.HighPrice >= _trailingPrice))
+			{
+				BuyMarket();
+				ResetStops();
+			}
 		}
 	}
 }

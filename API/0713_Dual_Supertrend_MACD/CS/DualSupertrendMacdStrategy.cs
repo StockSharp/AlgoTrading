@@ -1,266 +1,82 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
 namespace StockSharp.Samples.Strategies;
 
-/// <summary>
-/// Dual Supertrend with MACD strategy.
-/// </summary>
 public class DualSupertrendMacdStrategy : Strategy
 {
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _macdFast;
-	private readonly StrategyParam<int> _macdSlow;
-	private readonly StrategyParam<int> _macdSignal;
-	private readonly StrategyParam<MovingAverageTypes> _oscillatorMaType;
-	private readonly StrategyParam<MovingAverageTypes> _signalMaType;
-	private readonly StrategyParam<int> _atrPeriod1;
-	private readonly StrategyParam<decimal> _factor1;
-	private readonly StrategyParam<int> _atrPeriod2;
-	private readonly StrategyParam<decimal> _factor2;
-	private readonly StrategyParam<Sides?> _direction;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	/// <summary>
-	/// Initializes a new instance of the <see cref="DualSupertrendMacdStrategy"/>.
-	/// </summary>
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+
 	public DualSupertrendMacdStrategy()
 	{
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-						  .SetDisplay("Candle type", "Candle type for strategy calculation.", "General");
-
-		_macdFast =
-			Param(nameof(MacdFast), 12).SetDisplay("Fast Length", "MACD fast MA length", "MACD");
-
-		_macdSlow =
-			Param(nameof(MacdSlow), 26).SetDisplay("Slow Length", "MACD slow MA length", "MACD");
-
-		_macdSignal =
-			Param(nameof(MacdSignal), 9).SetDisplay("Signal Length", "MACD signal length", "MACD");
-
-		_oscillatorMaType = Param(nameof(OscillatorMaType), MovingAverageTypes.Exponential)
-								.SetDisplay("Oscillator MA Type", "Type of MA for MACD fast/slow lines", "MACD");
-
-		_signalMaType = Param(nameof(SignalMaType), MovingAverageTypes.Exponential)
-							.SetDisplay("Signal MA Type", "Type of MA for MACD signal line", "MACD");
-
-		_atrPeriod1 = Param(nameof(AtrPeriod1), 10)
-						  
-						  .SetDisplay("ATR Period 1", "ATR period for first Supertrend", "Supertrend");
-
-		_factor1 = Param(nameof(Factor1), 3.0m)
-					   
-					   .SetDisplay("Factor 1", "ATR multiplier for first Supertrend", "Supertrend");
-
-		_atrPeriod2 = Param(nameof(AtrPeriod2), 20)
-						  
-						  .SetDisplay("ATR Period 2", "ATR period for second Supertrend", "Supertrend");
-
-		_factor2 = Param(nameof(Factor2), 5.0m)
-					   
-					   .SetDisplay("Factor 2", "ATR multiplier for second Supertrend", "Supertrend");
-
-		_direction = Param(nameof(Direction), (Sides?)null)
-		.SetDisplay("Direction", "Trading direction: Long, Short or Both", "Strategy");
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
-	/// <summary>
-	/// Candle type for calculations.
-	/// </summary>
-	public DataType CandleType
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
+		return [(Security, CandleType)];
 	}
 
-	/// <summary>
-	/// MACD fast MA length.
-	/// </summary>
-	public int MacdFast
+	protected override void OnReseted()
 	{
-		get => _macdFast.Value;
-		set => _macdFast.Value = value;
+		base.OnReseted();
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
 
-	/// <summary>
-	/// MACD slow MA length.
-	/// </summary>
-	public int MacdSlow
-	{
-		get => _macdSlow.Value;
-		set => _macdSlow.Value = value;
-	}
-
-	/// <summary>
-	/// MACD signal length.
-	/// </summary>
-	public int MacdSignal
-	{
-		get => _macdSignal.Value;
-		set => _macdSignal.Value = value;
-	}
-
-	/// <summary>
-	/// Type of MA for MACD fast/slow lines.
-	/// </summary>
-	public MovingAverageTypes OscillatorMaType
-	{
-		get => _oscillatorMaType.Value;
-		set => _oscillatorMaType.Value = value;
-	}
-
-	/// <summary>
-	/// Type of MA for MACD signal line.
-	/// </summary>
-	public MovingAverageTypes SignalMaType
-	{
-		get => _signalMaType.Value;
-		set => _signalMaType.Value = value;
-	}
-
-	/// <summary>
-	/// ATR period for first Supertrend.
-	/// </summary>
-	public int AtrPeriod1
-	{
-		get => _atrPeriod1.Value;
-		set => _atrPeriod1.Value = value;
-	}
-
-	/// <summary>
-	/// ATR multiplier for first Supertrend.
-	/// </summary>
-	public decimal Factor1
-	{
-		get => _factor1.Value;
-		set => _factor1.Value = value;
-	}
-
-	/// <summary>
-	/// ATR period for second Supertrend.
-	/// </summary>
-	public int AtrPeriod2
-	{
-		get => _atrPeriod2.Value;
-		set => _atrPeriod2.Value = value;
-	}
-
-	/// <summary>
-	/// ATR multiplier for second Supertrend.
-	/// </summary>
-	public decimal Factor2
-	{
-		get => _factor2.Value;
-		set => _factor2.Value = value;
-	}
-
-	/// <summary>
-	/// Trading direction.
-	/// </summary>
-	public Sides? Direction
-	{
-		get => _direction.Value;
-		set => _direction.Value = value;
-	}
-
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities() => [(Security, CandleType)];
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		var st1 = new SuperTrend { Length = AtrPeriod1, Multiplier = Factor1 };
-
-		var st2 = new SuperTrend { Length = AtrPeriod2, Multiplier = Factor2 };
-
-		var macd = new MovingAverageConvergenceDivergenceSignal
-		{
-			Macd = { ShortMa = { Length = MacdFast }, LongMa = { Length = MacdSlow } },
-			SignalMa = { Length = MacdSignal }
-		};
-
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 		var subscription = SubscribeCandles(CandleType);
-		subscription.BindEx(st1, st2, macd, ProcessCandle).Start();
-
+		subscription.Bind(fastEma, slowEma, ProcessCandle).Start();
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, st1);
-			DrawIndicator(area, st2);
-			var macdArea = CreateChartArea();
-			DrawIndicator(macdArea, macd);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue st1Value, IIndicatorValue st2Value,
-							   IIndicatorValue macdValue)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-
-		var st1 = st1Value.ToDecimal();
-		var st2 = st2Value.ToDecimal();
-		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
-		if (macdTyped.Macd is not decimal macdLine || macdTyped.Signal is not decimal macdSignalVal)
-			return;
-		var hist = macdLine - macdSignalVal;
-		var close = candle.ClosePrice;
-
-		var isBullish = close > st1 && close > st2 && hist > 0;
-		var isBearish = close < st1 && close < st2 && hist < 0;
-		var exitLong = close < st1 || close < st2 || hist < 0;
-		var exitShort = close > st1 || close > st2 || hist > 0;
-
-		var dir = Direction;
-
-		if ((dir is null or Sides.Buy) && isBullish && Position <= 0)
-			BuyMarket();
-		else if (Position > 0 && exitLong)
-			SellMarket();
-
-		if ((dir is null or Sides.Sell) && isBearish && Position >= 0)
-			SellMarket();
-		else if (Position < 0 && exitShort)
-			BuyMarket();
-	}
-
-	private static DecimalLengthIndicator CreateMa(MovingAverageTypes type, int length)
-	{
-		return type switch
+		if (candle.State != CandleStates.Finished) return;
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-			MovingAverageTypes.Simple => new SimpleMovingAverage { Length = length },
-			_ => new ExponentialMovingAverage { Length = length }
-		};
-	}
-
-	/// <summary>
-	/// Moving average type enumeration.
-	/// </summary>
-	public enum MovingAverageTypes
-	{
-		/// <summary>
-		/// Simple Moving Average.
-		/// </summary>
-		Simple,
-
-		/// <summary>
-		/// Exponential Moving Average.
-		/// </summary>
-		Exponential
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
+			return;
+		}
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
+			BuyMarket();
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+			SellMarket();
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

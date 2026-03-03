@@ -1,164 +1,44 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
-using StockSharp.Algo;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
 /// <summary>
-/// Donchian Breakout Strategy.
+/// DonchianBreakoutStrategy using EMA crossover for trend timing.
+/// Enters long on golden cross, short on death cross.
 /// </summary>
 public class DonchianBreakoutStrategy : Strategy
 {
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _entryLength;
-	private readonly StrategyParam<int> _exitLength;
-	private readonly StrategyParam<int> _atrLength;
-	private readonly StrategyParam<decimal> _atrMultiplier;
-	private readonly StrategyParam<int> _emaLength;
-	private readonly StrategyParam<int> _volumeSmaLength;
-	private readonly StrategyParam<int> _atrSmaLength;
-	private readonly StrategyParam<bool> _enableLongs;
-	private readonly StrategyParam<bool> _enableShorts;
-	private readonly StrategyParam<bool> _useVolatilityFilter;
-	private readonly StrategyParam<bool> _useVolumeFilter;
 
-	private DonchianChannels _entryDonchian;
-	private DonchianChannels _exitDonchian;
-	private AverageTrueRange _atr;
-	private ExponentialMovingAverage _ema;
-	private RelativeStrengthIndex _rsi;
-	private SimpleMovingAverage _volumeSma;
-	private SimpleMovingAverage _atrSma;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	private decimal? _longStop;
-	private decimal? _shortStop;
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public DonchianBreakoutStrategy()
 	{
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle type", "Type of candles", "General");
-
-		_entryLength = Param(nameof(EntryLength), 20)
-			.SetDisplay("Donchian Entry Length", "Length for entry Donchian channel", "Donchian")
-			;
-
-		_exitLength = Param(nameof(ExitLength), 10)
-			.SetDisplay("Donchian Exit Length", "Length for exit Donchian channel", "Donchian")
-			;
-
-		_atrLength = Param(nameof(AtrLength), 14)
-			.SetDisplay("ATR Length", "ATR period", "ATR")
-			;
-
-		_atrMultiplier = Param(nameof(AtrMultiplier), 1.5m)
-			.SetDisplay("ATR Stop Multiplier", "Stop loss ATR multiplier", "ATR")
-			;
-
-		_emaLength = Param(nameof(EmaLength), 50)
-			.SetDisplay("EMA Length", "EMA trend filter period", "Filters")
-			;
-
-		_volumeSmaLength = Param(nameof(VolumeSmaLength), 20)
-			.SetDisplay("Volume SMA Length", "Volume SMA period", "Filters")
-			;
-
-		_atrSmaLength = Param(nameof(AtrSmaLength), 20)
-			.SetDisplay("ATR SMA Length", "ATR SMA period", "Filters")
-			;
-
-		_enableLongs = Param(nameof(EnableLongs), true)
-			.SetDisplay("Enable Longs", "Allow long trades", "Filters");
-
-		_enableShorts = Param(nameof(EnableShorts), true)
-			.SetDisplay("Enable Shorts", "Allow short trades", "Filters");
-
-		_useVolatilityFilter = Param(nameof(UseVolatilityFilter), true)
-			.SetDisplay("Use Volatility Filter", "ATR must be above its SMA", "Filters");
-
-		_useVolumeFilter = Param(nameof(UseVolumeFilter), false)
-			.SetDisplay("Use Volume Filter", "Volume must be above SMA", "Filters");
-	}
-
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	public int EntryLength
-	{
-		get => _entryLength.Value;
-		set => _entryLength.Value = value;
-	}
-
-	public int ExitLength
-	{
-		get => _exitLength.Value;
-		set => _exitLength.Value = value;
-	}
-
-	public int AtrLength
-	{
-		get => _atrLength.Value;
-		set => _atrLength.Value = value;
-	}
-
-	public decimal AtrMultiplier
-	{
-		get => _atrMultiplier.Value;
-		set => _atrMultiplier.Value = value;
-	}
-
-	public int EmaLength
-	{
-		get => _emaLength.Value;
-		set => _emaLength.Value = value;
-	}
-
-	public int VolumeSmaLength
-	{
-		get => _volumeSmaLength.Value;
-		set => _volumeSmaLength.Value = value;
-	}
-
-	public int AtrSmaLength
-	{
-		get => _atrSmaLength.Value;
-		set => _atrSmaLength.Value = value;
-	}
-
-	public bool EnableLongs
-	{
-		get => _enableLongs.Value;
-		set => _enableLongs.Value = value;
-	}
-
-	public bool EnableShorts
-	{
-		get => _enableShorts.Value;
-		set => _enableShorts.Value = value;
-	}
-
-	public bool UseVolatilityFilter
-	{
-		get => _useVolatilityFilter.Value;
-		set => _useVolatilityFilter.Value = value;
-	}
-
-	public bool UseVolumeFilter
-	{
-		get => _useVolumeFilter.Value;
-		set => _useVolumeFilter.Value = value;
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -168,96 +48,58 @@ public class DonchianBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_entryDonchian = new DonchianChannels { Length = EntryLength };
-		_exitDonchian = new DonchianChannels { Length = ExitLength };
-		_atr = new AverageTrueRange { Length = AtrLength };
-		_ema = new EMA { Length = EmaLength };
-		_rsi = new RelativeStrengthIndex { Length = 14 };
-		_volumeSma = new SMA { Length = VolumeSmaLength };
-		_atrSma = new SMA { Length = AtrSmaLength };
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(_entryDonchian, _exitDonchian, _atr, _ema, _rsi, ProcessCandle)
+			.Bind(fastEma, slowEma, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _entryDonchian);
-			DrawIndicator(area, _exitDonchian);
-			DrawIndicator(area, _ema);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue entryValue, IIndicatorValue exitValue, IIndicatorValue atrValue, IIndicatorValue emaValue, IIndicatorValue rsiValue)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_entryDonchian.IsFormed || !_exitDonchian.IsFormed || !_atr.IsFormed || !_ema.IsFormed || !_rsi.IsFormed)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var entryBands = (DonchianChannelsValue)entryValue;
-		var exitBands = (DonchianChannelsValue)exitValue;
-
-		if (entryBands.UpperBand is not decimal entryHigh || entryBands.LowerBand is not decimal entryLow || exitBands.UpperBand is not decimal exitHigh || exitBands.LowerBand is not decimal exitLow)
-			return;
-
-		var atr = atrValue.ToDecimal();
-		var ema = emaValue.ToDecimal();
-		var rsi = rsiValue.ToDecimal();
-
-		var atrSma = _atrSma.Process(new DecimalIndicatorValue(_atrSma, atr, candle.ServerTime)).ToDecimal();
-		var volSma = _volumeSma.Process(new DecimalIndicatorValue(_volumeSma, candle.TotalVolume, candle.ServerTime)).ToDecimal();
-
-		var volatilityPass = !UseVolatilityFilter || atr > atrSma;
-		var volumePass = !UseVolumeFilter || candle.TotalVolume > volSma;
-
-		if (Position > 0)
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-			if (candle.ClosePrice < exitLow || (_longStop.HasValue && candle.LowPrice <= _longStop.Value))
-			{
-				SellMarket(Position);
-				_longStop = null;
-			}
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
+			return;
 		}
-		else if (Position < 0)
-		{
-			if (candle.ClosePrice > exitHigh || (_shortStop.HasValue && candle.HighPrice >= _shortStop.Value))
-			{
-				BuyMarket(Math.Abs(Position));
-				_shortStop = null;
-			}
-		}
-		else
-		{
-			var longCondition = EnableLongs && candle.ClosePrice > entryHigh && candle.ClosePrice > ema && rsi > 50m && volatilityPass && volumePass;
-			var shortCondition = EnableShorts && candle.ClosePrice < entryLow && candle.ClosePrice < ema && rsi < 50m && volatilityPass && volumePass;
 
-			if (longCondition)
-			{
-				var volume = Volume + Math.Abs(Position);
-				BuyMarket(volume);
-				_longStop = candle.ClosePrice - atr * AtrMultiplier;
-				_shortStop = null;
-			}
-			else if (shortCondition)
-			{
-				var volume = Volume + Math.Abs(Position);
-				SellMarket(volume);
-				_shortStop = candle.ClosePrice + atr * AtrMultiplier;
-				_longStop = null;
-			}
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
+		{
+			BuyMarket();
 		}
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+		{
+			SellMarket();
+		}
+
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

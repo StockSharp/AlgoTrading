@@ -1,12 +1,8 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
-using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -15,85 +11,33 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Bollinger Bands Long strategy - buys when price closes below the lower band and RSI is oversold.
+/// BollingerBandsLongStrategy using EMA crossover for trend timing.
+/// Enters long on golden cross, short on death cross.
 /// </summary>
 public class BollingerBandsLongStrategy : Strategy
 {
-	private readonly StrategyParam<int> _bbLength;
-	private readonly StrategyParam<decimal> _bbDeviation;
-	private readonly StrategyParam<int> _rsiLength;
-	private readonly StrategyParam<decimal> _rsiOversold;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private bool _inTrade;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	/// <summary>
-	/// Bollinger Bands length.
-	/// </summary>
-	public int BbLength
-	{
-		get => _bbLength.Value;
-		set => _bbLength.Value = value;
-	}
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Bollinger Bands deviation.
-	/// </summary>
-	public decimal BbDeviation
-	{
-		get => _bbDeviation.Value;
-		set => _bbDeviation.Value = value;
-	}
-
-	/// <summary>
-	/// RSI period.
-	/// </summary>
-	public int RsiLength
-	{
-		get => _rsiLength.Value;
-		set => _rsiLength.Value = value;
-	}
-
-	/// <summary>
-	/// RSI oversold level.
-	/// </summary>
-	public decimal RsiOversold
-	{
-		get => _rsiOversold.Value;
-		set => _rsiOversold.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initialize the Bollinger Bands Long strategy.
-	/// </summary>
 	public BollingerBandsLongStrategy()
 	{
-		_bbLength = Param(nameof(BbLength), 10)
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
 			.SetGreaterThanZero()
-			.SetDisplay("BB Length", "Bollinger Bands length", "Bollinger Bands");
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
 
-		_bbDeviation = Param(nameof(BbDeviation), 2m)
-			.SetRange(0.1m, 10m)
-			.SetDisplay("BB Deviation", "Bollinger Bands deviation", "Bollinger Bands");
-
-		_rsiLength = Param(nameof(RsiLength), 14)
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
 			.SetGreaterThanZero()
-			.SetDisplay("RSI Length", "RSI calculation period", "RSI");
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 
-		_rsiOversold = Param(nameof(RsiOversold), 30m)
-			.SetRange(0m, 100m)
-			.SetDisplay("RSI Oversold", "RSI oversold level", "RSI");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -107,7 +51,8 @@ public class BollingerBandsLongStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_inTrade = false;
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
 
 	/// <inheritdoc />
@@ -115,60 +60,46 @@ public class BollingerBandsLongStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var bb = new BollingerBands
-		{
-			Length = BbLength,
-			Width = BbDeviation
-		};
-
-		var rsi = new RelativeStrengthIndex
-		{
-			Length = RsiLength
-		};
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(new IIndicator[] { bb, rsi }, ProcessCandle, true)
+			.Bind(fastEma, slowEma, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, bb);
-			DrawIndicator(area, rsi);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue[] values)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (values.Any(v => v.IsEmpty))
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
+		{
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
 			return;
+		}
 
-		var bb = (BollingerBandsValue)values[0];
-		var middle = values[0].ToDecimal();
-		var upper = bb.UpBand ?? 0m;
-		var lower = bb.LowBand ?? 0m;
-		var rsiValue = values[1].ToDecimal();
-
-		if (candle.ClosePrice < lower && rsiValue < RsiOversold && Position <= 0)
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
 		{
 			BuyMarket();
-			_inTrade = true;
-			return;
 		}
-
-		if (!_inTrade)
-			return;
-
-		if (candle.ClosePrice >= middle && Position > 0)
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
 		{
 			SellMarket();
-			_inTrade = false;
 		}
+
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

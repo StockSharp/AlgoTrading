@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -13,177 +10,73 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-/// <summary>
-/// Strategy based on Gaussian detrended price oscillator with ALMA smoothing.
-/// </summary>
 public class GaussianDetrendedReversionStrategy : Strategy
 {
-	private readonly StrategyParam<int> _priceLength;
-	private readonly StrategyParam<int> _smoothingLength;
-	private readonly StrategyParam<int> _lagLength;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	private readonly ExponentialMovingAverage _ema = new();
-	private readonly ArnaudLegouxMovingAverage _alma = new() { Offset = 0.85m, Sigma = 6 };
-
-	private readonly Queue<decimal> _emaValues = new();
-	private readonly Queue<decimal> _almaValues = new();
-
-	private decimal _prevAlma;
-	private decimal _prevAlmaLag;
-	private bool _isInitialized;
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public GaussianDetrendedReversionStrategy()
 	{
-		_priceLength = Param(nameof(PriceLength), 52)
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
 			.SetGreaterThanZero()
-			.SetDisplay("Price Length", "EMA length for DPO calculation", "Parameters");
-
-		_smoothingLength = Param(nameof(SmoothingLength), 52)
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
 			.SetGreaterThanZero()
-			.SetDisplay("Smoothing Length", "ALMA smoothing length", "Parameters");
-
-		_lagLength = Param(nameof(LagLength), 26)
-			.SetGreaterThanZero()
-			.SetDisplay("Lag Length", "Lag for ALMA line", "Parameters");
-
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Candle type for strategy calculation", "General");
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
-	/// <summary>
-	/// EMA length used in detrended price oscillator.
-	/// </summary>
-	public int PriceLength
-	{
-		get => _priceLength.Value;
-		set => _priceLength.Value = value;
-	}
-
-	/// <summary>
-	/// ALMA smoothing length.
-	/// </summary>
-	public int SmoothingLength
-	{
-		get => _smoothingLength.Value;
-		set => _smoothingLength.Value = value;
-	}
-
-	/// <summary>
-	/// Lag length for ALMA line.
-	/// </summary>
-	public int LagLength
-	{
-		get => _lagLength.Value;
-		set => _lagLength.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type for analysis.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-		=> [(Security, CandleType)];
+	{
+		return [(Security, CandleType)];
+	}
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_emaValues.Clear();
-		_almaValues.Clear();
-		_prevAlma = 0m;
-		_prevAlmaLag = 0m;
-		_isInitialized = false;
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_ema.Length = PriceLength;
-		_alma.Length = SmoothingLength;
-
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(_ema, ProcessCandle)
-			.Start();
-
+		subscription.Bind(fastEma, slowEma, ProcessCandle).Start();
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _alma);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal emaValue)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		var barsBack = PriceLength / 2 + 1;
-
-		_emaValues.Enqueue(emaValue);
-		if (_emaValues.Count > barsBack + 1)
-			_emaValues.Dequeue();
-
-		if (_emaValues.Count <= barsBack)
-			return;
-
-		var emaLag = _emaValues.Peek();
-		var dpo = candle.ClosePrice - emaLag;
-
-		var almaValue = _alma.Process(new DecimalIndicatorValue(_alma, dpo, candle.ServerTime)).ToDecimal();
-
-		_almaValues.Enqueue(almaValue);
-		if (_almaValues.Count > LagLength + 1)
-			_almaValues.Dequeue();
-
-		if (_almaValues.Count <= LagLength)
-			return;
-
-		var almaLag = _almaValues.Peek();
-
-		if (!_isInitialized)
+		if (candle.State != CandleStates.Finished) return;
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-			_prevAlma = almaValue;
-			_prevAlmaLag = almaLag;
-			_isInitialized = true;
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
 			return;
 		}
-
-		var crossOverLag = _prevAlma < _prevAlmaLag && almaValue > almaLag;
-		var crossUnderLag = _prevAlma > _prevAlmaLag && almaValue < almaLag;
-		var crossOverZero = _prevAlma < 0 && almaValue > 0;
-		var crossUnderZero = _prevAlma > 0 && almaValue < 0;
-
-		var entryLong = crossOverLag && almaValue < 0;
-		var exitLong = crossUnderLag || crossUnderZero;
-		var entryShort = crossUnderLag && almaValue > 0;
-		var exitShort = crossOverLag || crossOverZero;
-
-		if (exitLong && Position > 0)
-			SellMarket(Position);
-
-		if (exitShort && Position < 0)
-			BuyMarket(Math.Abs(Position));
-
-		if (entryLong && Position <= 0)
-			BuyMarket(Volume + Math.Abs(Position));
-		else if (entryShort && Position >= 0)
-			SellMarket(Volume + Math.Abs(Position));
-
-		_prevAlma = almaValue;
-		_prevAlmaLag = almaLag;
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
+			BuyMarket();
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+			SellMarket();
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }
-

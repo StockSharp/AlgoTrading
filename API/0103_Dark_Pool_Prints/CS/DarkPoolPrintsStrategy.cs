@@ -1,67 +1,34 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
-using StockSharp.Algo.Candles;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that detects unusually high volume (dark pool prints) and enters positions based on that.
+/// Dark Pool Prints strategy.
+/// Detects unusually high volume candles and trades in the direction of the candle
+/// when confirmed by SMA trend direction.
+/// Uses cooldown to control trade frequency.
 /// </summary>
 public class DarkPoolPrintsStrategy : Strategy
 {
-	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _volumePeriod;
-	private readonly StrategyParam<decimal> _volumeMultiplier;
 	private readonly StrategyParam<int> _maPeriod;
-	private readonly StrategyParam<decimal> _atrMultiplier;
+	private readonly StrategyParam<int> _volumeLookback;
+	private readonly StrategyParam<decimal> _volumeMultiplier;
+	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _cooldownBars;
 
-	private SimpleMovingAverage _ma;
-	private SimpleMovingAverage _volumeAverage;
-	private AverageDirectionalIndex _adx; // To ensure we're in a trending market
-	private AverageTrueRange _atr;
-
-	/// <summary>
-	/// Candle type and timeframe for the strategy.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
+	private readonly List<decimal> _volumeHistory = new();
+	private int _cooldown;
 
 	/// <summary>
-	/// Period for volume average calculation.
-	/// </summary>
-	public int VolumePeriod
-	{
-		get => _volumePeriod.Value;
-		set => _volumePeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Multiplier to determine significant volume.
-	/// Volume > Average(Volume) * VolumeMultiplier is considered significant.
-	/// </summary>
-	public decimal VolumeMultiplier
-	{
-		get => _volumeMultiplier.Value;
-		set => _volumeMultiplier.Value = value;
-	}
-
-	/// <summary>
-	/// Period for moving average calculation.
+	/// MA period.
 	/// </summary>
 	public int MaPeriod
 	{
@@ -70,37 +37,64 @@ public class DarkPoolPrintsStrategy : Strategy
 	}
 
 	/// <summary>
-	/// ATR multiplier for stop-loss calculation.
+	/// Volume lookback.
 	/// </summary>
-	public decimal AtrMultiplier
+	public int VolumeLookback
 	{
-		get => _atrMultiplier.Value;
-		set => _atrMultiplier.Value = value;
+		get => _volumeLookback.Value;
+		set => _volumeLookback.Value = value;
 	}
 
 	/// <summary>
-	/// Initializes a new instance of the <see cref="DarkPoolPrintsStrategy"/>.
+	/// Volume multiplier threshold.
+	/// </summary>
+	public decimal VolumeMultiplier
+	{
+		get => _volumeMultiplier.Value;
+		set => _volumeMultiplier.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Cooldown bars.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
+	/// Constructor.
 	/// </summary>
 	public DarkPoolPrintsStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use for analysis", "General");
-
-		_volumePeriod = Param(nameof(VolumePeriod), 20)
-			.SetDisplay("Volume Period", "Period for volume average calculation", "Volume")
-			.SetRange(5, 50);
-
-		_volumeMultiplier = Param(nameof(VolumeMultiplier), 2m)
-			.SetDisplay("Volume Multiplier", "Trigger multiplier for volume significance", "Volume")
-			.SetRange(1.5m, 5m);
-
 		_maPeriod = Param(nameof(MaPeriod), 20)
-			.SetDisplay("MA Period", "Period for moving average calculation", "Trend")
-			.SetRange(5, 50);
+			.SetRange(5, 50)
+			.SetDisplay("MA Period", "Period for trend SMA", "Indicators");
 
-		_atrMultiplier = Param(nameof(AtrMultiplier), 2m)
-			.SetDisplay("ATR Multiplier", "Multiplier for ATR-based stop-loss", "Protection")
-			.SetRange(1m, 5m);
+		_volumeLookback = Param(nameof(VolumeLookback), 20)
+			.SetRange(5, 50)
+			.SetDisplay("Volume Lookback", "Bars for volume average", "Volume");
+
+		_volumeMultiplier = Param(nameof(VolumeMultiplier), 1.5m)
+			.SetRange(1.2m, 5m)
+			.SetDisplay("Volume Multiplier", "Threshold multiplier for high volume", "Volume");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
+
+		_cooldownBars = Param(nameof(CooldownBars), 500)
+			.SetRange(1, 1000)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
 	}
 
 	/// <inheritdoc />
@@ -113,11 +107,8 @@ public class DarkPoolPrintsStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_ma = default;
-		_volumeAverage = default;
-		_adx = default;
-		_atr = default;
+		_volumeHistory.Clear();
+		_cooldown = default;
 	}
 
 	/// <inheritdoc />
@@ -125,79 +116,81 @@ public class DarkPoolPrintsStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Initialize indicators
-		_ma = new SMA { Length = MaPeriod };
-		_volumeAverage = new SMA { Length = VolumePeriod };
-		_adx = new AverageDirectionalIndex { Length = 14 }; // Standard ADX period
-		_atr = new AverageTrueRange { Length = 14 }; // Standard ATR period
+		_volumeHistory.Clear();
+		_cooldown = 0;
 
-		// Create subscription for candles
+		var sma = new SimpleMovingAverage { Length = MaPeriod };
+
 		var subscription = SubscribeCandles(CandleType);
-
-		// Bind indicators and processor
 		subscription
-			.BindEx(_ma, _volumeAverage, _adx, _atr, ProcessCandle)
+			.Bind(sma, ProcessCandle)
 			.Start();
 
-		// Enable stop-loss protection
-		StartProtection(new Unit(0), new Unit(AtrMultiplier, UnitTypes.Absolute));
-
-		// Setup chart if available
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _ma);
-			DrawIndicator(area, _adx);
+			DrawIndicator(area, sma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue ma, IIndicatorValue volumeAvg, IIndicatorValue adx, IIndicatorValue atr)
+	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var adxTyped = (AverageDirectionalIndexValue)adx;
-		var maDecimal = ma.ToDecimal();
+		// Track volume history
+		_volumeHistory.Add(candle.TotalVolume);
+		if (_volumeHistory.Count > VolumeLookback)
+			_volumeHistory.RemoveAt(0);
 
-		// Check if we have a strong trend (ADX > 25)
-		bool isStrongTrend = adxTyped.MovingAverage > 25;
-		
-		// Check if current volume is significantly higher than average
-		bool isHighVolume = candle.TotalVolume > volumeAvg.ToDecimal() * VolumeMultiplier;
-		
-		if (!isHighVolume || !isStrongTrend)
+		if (_volumeHistory.Count < VolumeLookback)
 			return;
 
-		// Determine if the candle is bullish or bearish
-		bool isBullish = candle.ClosePrice > candle.OpenPrice;
-		
-		// Determine if price is above or below the moving average
-		bool isAboveMA = candle.ClosePrice > maDecimal;
-		bool isBelowMA = candle.ClosePrice < maDecimal;
-
-		// Entry rules for long or short positions
-		if (isBullish && isAboveMA && Position <= 0)
+		if (_cooldown > 0)
 		{
-			// Bullish candle + high volume + price above MA = Long signal
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
-			
-			LogInfo($"Dark Pool Print detected. Bullish candle with volume {candle.TotalVolume} (avg: {volumeAvg}). Buying at {candle.ClosePrice}");
+			_cooldown--;
+			return;
 		}
-		else if (!isBullish && isBelowMA && Position >= 0)
+
+		// Calculate average volume
+		decimal avgVolume = 0;
+		for (int i = 0; i < _volumeHistory.Count - 1; i++)
+			avgVolume += _volumeHistory[i];
+		avgVolume /= (_volumeHistory.Count - 1);
+
+		var isHighVolume = candle.TotalVolume > avgVolume * VolumeMultiplier;
+		if (!isHighVolume)
+			return;
+
+		var isBullish = candle.ClosePrice > candle.OpenPrice;
+		var isBearish = candle.ClosePrice < candle.OpenPrice;
+		var isAboveSma = candle.ClosePrice > smaValue;
+		var isBelowSma = candle.ClosePrice < smaValue;
+
+		if (Position == 0 && isBullish && isAboveSma)
 		{
-			// Bearish candle + high volume + price below MA = Short signal
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
-			
-			LogInfo($"Dark Pool Print detected. Bearish candle with volume {candle.TotalVolume} (avg: {volumeAvg}). Selling at {candle.ClosePrice}");
+			BuyMarket();
+			_cooldown = CooldownBars;
+		}
+		else if (Position == 0 && isBearish && isBelowSma)
+		{
+			SellMarket();
+			_cooldown = CooldownBars;
+		}
+		else if (Position > 0 && isBelowSma)
+		{
+			SellMarket();
+			_cooldown = CooldownBars;
+		}
+		else if (Position < 0 && isAboveSma)
+		{
+			BuyMarket();
+			_cooldown = CooldownBars;
 		}
 	}
 }

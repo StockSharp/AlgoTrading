@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,43 +11,54 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Volume MA Cross strategy
-/// Long entry: Fast volume MA crosses above slow volume MA
-/// Short entry: Fast volume MA crosses below slow volume MA
-/// Exit: Reverse crossover
+/// Volume MA Cross strategy.
+/// Uses fast/slow volume MA crossover with price MA for direction.
+/// Long: Volume expanding and price above SMA.
+/// Short: Volume expanding and price below SMA.
 /// </summary>
 public class VolumeMAXrossStrategy : Strategy
 {
-	private readonly StrategyParam<int> _fastVolumeMALength;
-	private readonly StrategyParam<int> _slowVolumeMALength;
+	private readonly StrategyParam<int> _priceMaPeriod;
+	private readonly StrategyParam<int> _fastVolPeriod;
+	private readonly StrategyParam<int> _slowVolPeriod;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _cooldownBars;
 
-	private decimal _previousFastVolumeMA;
-	private decimal _previousSlowVolumeMA;
-	private bool _isFirstValue;
-	private SimpleMovingAverage _fastVolumeMA;
-	private SimpleMovingAverage _slowVolumeMA;
+	private SimpleMovingAverage _fastVolMA;
+	private SimpleMovingAverage _slowVolMA;
+	private decimal _prevClose;
+	private decimal _prevMa;
+	private int _cooldown;
 
 	/// <summary>
-	/// Fast Volume MA Length
+	/// Price MA Period.
 	/// </summary>
-	public int FastVolumeMALength
+	public int PriceMaPeriod
 	{
-		get => _fastVolumeMALength.Value;
-		set => _fastVolumeMALength.Value = value;
+		get => _priceMaPeriod.Value;
+		set => _priceMaPeriod.Value = value;
 	}
 
 	/// <summary>
-	/// Slow Volume MA Length
+	/// Fast Volume MA Period.
 	/// </summary>
-	public int SlowVolumeMALength
+	public int FastVolPeriod
 	{
-		get => _slowVolumeMALength.Value;
-		set => _slowVolumeMALength.Value = value;
+		get => _fastVolPeriod.Value;
+		set => _fastVolPeriod.Value = value;
 	}
 
 	/// <summary>
-	/// Candle type for strategy calculation
+	/// Slow Volume MA Period.
+	/// </summary>
+	public int SlowVolPeriod
+	{
+		get => _slowVolPeriod.Value;
+		set => _slowVolPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type for strategy calculation.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -59,24 +67,37 @@ public class VolumeMAXrossStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Cooldown bars between trades.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Initialize <see cref="VolumeMAXrossStrategy"/>.
 	/// </summary>
 	public VolumeMAXrossStrategy()
 	{
-		_fastVolumeMALength = Param(nameof(FastVolumeMALength), 10)
+		_priceMaPeriod = Param(nameof(PriceMaPeriod), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("Fast Volume MA Length", "Period for Fast Volume Moving Average", "Strategy Parameters")
-			
-			.SetOptimize(5, 20, 5);
+			.SetDisplay("Price MA Period", "Period for price SMA", "Indicators");
 
-		_slowVolumeMALength = Param(nameof(SlowVolumeMALength), 50)
+		_fastVolPeriod = Param(nameof(FastVolPeriod), 10)
 			.SetGreaterThanZero()
-			.SetDisplay("Slow Volume MA Length", "Period for Slow Volume Moving Average", "Strategy Parameters")
-			
-			.SetOptimize(30, 100, 10);
+			.SetDisplay("Fast Vol Period", "Period for fast volume MA", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles for strategy calculation", "Strategy Parameters");
+		_slowVolPeriod = Param(nameof(SlowVolPeriod), 30)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow Vol Period", "Period for slow volume MA", "Indicators");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
+
+		_cooldownBars = Param(nameof(CooldownBars), 500)
+			.SetRange(1, 1000)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
 	}
 
 	/// <inheritdoc />
@@ -89,12 +110,11 @@ public class VolumeMAXrossStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_fastVolumeMA = null;
-		_slowVolumeMA = null;
-		_previousFastVolumeMA = 0;
-		_previousSlowVolumeMA = 0;
-		_isFirstValue = true;
+		_fastVolMA = null;
+		_slowVolMA = null;
+		_prevClose = default;
+		_prevMa = default;
+		_cooldown = default;
 	}
 
 	/// <inheritdoc />
@@ -102,96 +122,82 @@ public class VolumeMAXrossStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Create indicators
-		_fastVolumeMA = new SMA { Length = FastVolumeMALength };
-		_slowVolumeMA = new SMA { Length = SlowVolumeMALength };
-		var priceMA = new SMA { Length = FastVolumeMALength }; // Use same period as fast Volume MA
+		_prevClose = 0;
+		_prevMa = 0;
+		_cooldown = 0;
 
-			// Create subscription
-			var subscription = SubscribeCandles(CandleType);
+		_fastVolMA = new SimpleMovingAverage { Length = FastVolPeriod };
+		_slowVolMA = new SimpleMovingAverage { Length = SlowVolPeriod };
 
-			// Regular price MA binding for chart visualization
-			subscription
-				.Bind(priceMA, ProcessCandle)
-				.Start();
+		var sma = new SimpleMovingAverage { Length = PriceMaPeriod };
 
-			// Configure protection
-			StartProtection(
-				takeProfit: new Unit(3, UnitTypes.Percent),
-				stopLoss: new Unit(2, UnitTypes.Percent)
-			);
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(sma, ProcessCandle)
+			.Start();
 
-			// Setup chart visualization
-			var area = CreateChartArea();
-			if (area != null)
-			{
-				DrawCandles(area, subscription);
-				DrawIndicator(area, priceMA);
-				DrawOwnTrades(area);
-			}
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, sma);
+			DrawOwnTrades(area);
 		}
+	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal priceMAValue)
+	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Process volume through MAs
-		var fastMAValue = _fastVolumeMA.Process(new DecimalIndicatorValue(_fastVolumeMA, candle.TotalVolume, candle.ServerTime)).ToDecimal();
-		var slowMAValue = _slowVolumeMA.Process(new DecimalIndicatorValue(_slowVolumeMA, candle.TotalVolume, candle.ServerTime)).ToDecimal();
-
-		// Process the volume MAs
-
-		// Check if strategy is ready to trade
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// Skip the first values to initialize previous values
-		if (_isFirstValue)
+		// Process volume through manual MAs
+		var fastVol = _fastVolMA.Process(new DecimalIndicatorValue(_fastVolMA, candle.TotalVolume, candle.ServerTime)).ToDecimal();
+		var slowVol = _slowVolMA.Process(new DecimalIndicatorValue(_slowVolMA, candle.TotalVolume, candle.ServerTime)).ToDecimal();
+
+		if (_prevClose == 0)
 		{
-			_previousFastVolumeMA = fastMAValue;
-			_previousSlowVolumeMA = slowMAValue;
-			_isFirstValue = false;
+			_prevClose = candle.ClosePrice;
+			_prevMa = smaValue;
 			return;
 		}
 
-		// Check for crossovers
-		var crossAbove = _previousFastVolumeMA <= _previousSlowVolumeMA && fastMAValue > slowMAValue;
-		var crossBelow = _previousFastVolumeMA >= _previousSlowVolumeMA && fastMAValue < slowMAValue;
-
-		// Log current values
-		LogInfo($"Candle Close: {candle.ClosePrice}, Price MA: {priceMAValue}");
-		LogInfo($"Fast Volume MA: {fastMAValue}, Slow Volume MA: {slowMAValue}");
-		LogInfo($"Cross Above: {crossAbove}, Cross Below: {crossBelow}");
-
-		// Trading logic:
-		// Long: Fast volume MA crosses above slow volume MA
-		if (crossAbove && Position <= 0)
+		if (_cooldown > 0)
 		{
-			LogInfo($"Buy Signal: Fast Volume MA crossing above Slow Volume MA");
-			BuyMarket(Volume + Math.Abs(Position));
-		}
-		// Short: Fast volume MA crosses below slow volume MA
-		else if (crossBelow && Position >= 0)
-		{
-			LogInfo($"Sell Signal: Fast Volume MA crossing below Slow Volume MA");
-			SellMarket(Volume + Math.Abs(Position));
+			_cooldown--;
+			_prevClose = candle.ClosePrice;
+			_prevMa = smaValue;
+			return;
 		}
 
-		// Exit logic: Reverse crossover
-		if (Position > 0 && crossBelow)
+		var crossUp = _prevClose <= _prevMa && candle.ClosePrice > smaValue;
+		var crossDown = _prevClose >= _prevMa && candle.ClosePrice < smaValue;
+		var volumeExpanding = _slowVolMA.IsFormed && fastVol > slowVol;
+
+		if (Position == 0 && crossUp)
 		{
-			LogInfo($"Exit Long: Fast Volume MA crossing below Slow Volume MA");
-			SellMarket(Math.Abs(Position));
+			BuyMarket();
+			_cooldown = CooldownBars;
 		}
-		else if (Position < 0 && crossAbove)
+		else if (Position == 0 && crossDown)
 		{
-			LogInfo($"Exit Short: Fast Volume MA crossing above Slow Volume MA");
-			BuyMarket(Math.Abs(Position));
+			SellMarket();
+			_cooldown = CooldownBars;
+		}
+		else if (Position > 0 && (crossDown || (volumeExpanding && candle.ClosePrice < smaValue)))
+		{
+			SellMarket();
+			_cooldown = CooldownBars;
+		}
+		else if (Position < 0 && (crossUp || (volumeExpanding && candle.ClosePrice > smaValue)))
+		{
+			BuyMarket();
+			_cooldown = CooldownBars;
 		}
 
-		// Store current values for next comparison
-		_previousFastVolumeMA = fastMAValue;
-		_previousSlowVolumeMA = slowMAValue;
+		_prevClose = candle.ClosePrice;
+		_prevMa = smaValue;
 	}
 }

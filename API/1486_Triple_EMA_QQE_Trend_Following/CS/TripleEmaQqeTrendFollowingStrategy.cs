@@ -28,7 +28,9 @@ public class TripleEmaQqeTrendFollowingStrategy : Strategy
 	private decimal _prevFast;
 	private decimal _prevSlow;
 	private decimal _prevRsi;
-	private decimal _stopLoss;
+	private decimal _entryPrice;
+	private int _cooldown;
+	private int _candleCount;
 
 	public int RsiPeriod { get => _rsiPeriod.Value; set => _rsiPeriod.Value = value; }
 	public int FastEmaLength { get => _fastEmaLength.Value; set => _fastEmaLength.Value = value; }
@@ -42,15 +44,15 @@ public class TripleEmaQqeTrendFollowingStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "RSI period", "Indicators");
 
-		_fastEmaLength = Param(nameof(FastEmaLength), 20)
+		_fastEmaLength = Param(nameof(FastEmaLength), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
 
-		_slowEmaLength = Param(nameof(SlowEmaLength), 40)
+		_slowEmaLength = Param(nameof(SlowEmaLength), 30)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 
-		_trailPct = Param(nameof(TrailPct), 1.5m)
+		_trailPct = Param(nameof(TrailPct), 4m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trail %", "Trailing stop percent", "Risk");
 
@@ -69,7 +71,9 @@ public class TripleEmaQqeTrendFollowingStrategy : Strategy
 		_prevFast = 0;
 		_prevSlow = 0;
 		_prevRsi = 0;
-		_stopLoss = 0;
+		_entryPrice = 0;
+		_cooldown = 0;
+		_candleCount = 0;
 	}
 
 	protected override void OnStarted2(DateTime time)
@@ -98,6 +102,8 @@ public class TripleEmaQqeTrendFollowingStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		_candleCount++;
+
 		if (_prevFast == 0 || _prevSlow == 0 || _prevRsi == 0)
 		{
 			_prevFast = fastVal;
@@ -106,49 +112,61 @@ public class TripleEmaQqeTrendFollowingStrategy : Strategy
 			return;
 		}
 
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+			_prevFast = fastVal;
+			_prevSlow = slowVal;
+			_prevRsi = rsiVal;
+			return;
+		}
+
 		var price = candle.ClosePrice;
+		var trail = TrailPct / 100m;
 
-		// QQE-inspired: RSI crossing above 50 = momentum long, below 50 = momentum short
-		var rsiLong = _prevRsi <= 50m && rsiVal > 50m;
-		var rsiShort = _prevRsi >= 50m && rsiVal < 50m;
+		// EMA trend direction
+		var trendUp = fastVal > slowVal;
+		var trendDown = fastVal < slowVal;
 
-		// TEMA-inspired: fast EMA trending above slow
-		var trendUp = price > fastVal && fastVal > slowVal && slowVal > _prevSlow;
-		var trendDown = price < fastVal && fastVal < slowVal && slowVal < _prevSlow;
+		// RSI crosses
+		var rsiCrossUp = _prevRsi <= 50m && rsiVal > 50m;
+		var rsiCrossDown = _prevRsi >= 50m && rsiVal < 50m;
 
-		// Trailing stop management
+		// Exit conditions
 		if (Position > 0)
 		{
-			var newStop = price * (1m - TrailPct / 100m);
-			_stopLoss = Math.Max(_stopLoss, newStop);
-			if (price < _stopLoss)
+			if (price < _entryPrice * (1m - trail) || rsiCrossDown)
 			{
 				SellMarket();
-				_stopLoss = 0;
+				_entryPrice = 0;
+				_cooldown = 80;
 			}
 		}
 		else if (Position < 0)
 		{
-			var newStop = price * (1m + TrailPct / 100m);
-			if (_stopLoss == 0) _stopLoss = newStop;
-			_stopLoss = Math.Min(_stopLoss, newStop);
-			if (price > _stopLoss)
+			if (price > _entryPrice * (1m + trail) || rsiCrossUp)
 			{
 				BuyMarket();
-				_stopLoss = 0;
+				_entryPrice = 0;
+				_cooldown = 80;
 			}
 		}
 
-		// Entry signals
-		if (trendUp && (rsiLong || rsiVal > 55m) && Position <= 0)
+		// Entry: RSI cross + EMA trend confirmation
+		if (Position == 0)
 		{
-			BuyMarket();
-			_stopLoss = price * (1m - TrailPct / 100m);
-		}
-		else if (trendDown && (rsiShort || rsiVal < 45m) && Position >= 0)
-		{
-			SellMarket();
-			_stopLoss = price * (1m + TrailPct / 100m);
+			if (rsiCrossUp && trendUp)
+			{
+				BuyMarket();
+				_entryPrice = price;
+				_cooldown = 80;
+			}
+			else if (rsiCrossDown && trendDown)
+			{
+				SellMarket();
+				_entryPrice = price;
+				_cooldown = 80;
+			}
 		}
 
 		_prevFast = fastVal;

@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -13,235 +10,73 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-/// <summary>
-/// Gold scalping strategy with precise entries.
-/// </summary>
 public class GoldScalpingWithPreciseEntriesStrategy : Strategy
 {
-	private readonly StrategyParam<int> _emaFastPeriod;
-	private readonly StrategyParam<int> _emaSlowPeriod;
-	private readonly StrategyParam<int> _rsiPeriod;
-	private readonly StrategyParam<int> _atrPeriod;
-	private readonly StrategyParam<decimal> _rsiLower;
-	private readonly StrategyParam<decimal> _rsiUpper;
-	private readonly StrategyParam<decimal> _pipTarget;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	private ICandleMessage _prevCandle;
-	private decimal _longStop;
-	private decimal _longTarget;
-	private decimal _shortStop;
-	private decimal _shortTarget;
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Fast EMA period.
-	/// </summary>
-	public int EmaFastPeriod
-	{
-		get => _emaFastPeriod.Value;
-		set => _emaFastPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Slow EMA period.
-	/// </summary>
-	public int EmaSlowPeriod
-	{
-		get => _emaSlowPeriod.Value;
-		set => _emaSlowPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// RSI period.
-	/// </summary>
-	public int RsiPeriod
-	{
-		get => _rsiPeriod.Value;
-		set => _rsiPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// ATR period.
-	/// </summary>
-	public int AtrPeriod
-	{
-		get => _atrPeriod.Value;
-		set => _atrPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Lower RSI bound.
-	/// </summary>
-	public decimal RsiLower
-	{
-		get => _rsiLower.Value;
-		set => _rsiLower.Value = value;
-	}
-
-	/// <summary>
-	/// Upper RSI bound.
-	/// </summary>
-	public decimal RsiUpper
-	{
-		get => _rsiUpper.Value;
-		set => _rsiUpper.Value = value;
-	}
-
-	/// <summary>
-	/// Profit target in price points.
-	/// </summary>
-	public decimal PipTarget
-	{
-		get => _pipTarget.Value;
-		set => _pipTarget.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used by the strategy.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="GoldScalpingWithPreciseEntriesStrategy"/>.
-	/// </summary>
 	public GoldScalpingWithPreciseEntriesStrategy()
 	{
-		_emaFastPeriod = Param(nameof(EmaFastPeriod), 50)
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
 			.SetGreaterThanZero()
-			.SetDisplay("EMA Fast", "Fast EMA period", "Indicators")
-			;
-
-		_emaSlowPeriod = Param(nameof(EmaSlowPeriod), 200)
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
 			.SetGreaterThanZero()
-			.SetDisplay("EMA Slow", "Slow EMA period", "Indicators")
-			;
-
-		_rsiPeriod = Param(nameof(RsiPeriod), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("RSI Period", "RSI period", "Indicators")
-			;
-
-		_atrPeriod = Param(nameof(AtrPeriod), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("ATR Period", "ATR period", "Indicators")
-			;
-
-		_rsiLower = Param(nameof(RsiLower), 45m)
-			.SetDisplay("RSI Lower", "Lower RSI bound", "Indicators");
-
-		_rsiUpper = Param(nameof(RsiUpper), 55m)
-			.SetDisplay("RSI Upper", "Upper RSI bound", "Indicators");
-
-		_pipTarget = Param(nameof(PipTarget), 2m)
-			.SetGreaterThanZero()
-			.SetDisplay("Profit Target", "Profit target in price points", "Risk");
-
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to process", "General");
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-		=> [(Security, CandleType)];
+	{
+		return [(Security, CandleType)];
+	}
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevCandle = null;
-		_longStop = 0m;
-		_longTarget = 0m;
-		_shortStop = 0m;
-		_shortTarget = 0m;
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		var emaFast = new EMA { Length = EmaFastPeriod };
-		var emaSlow = new EMA { Length = EmaSlowPeriod };
-		var atr = new AverageTrueRange { Length = AtrPeriod };
-		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
-
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(emaFast, emaSlow, atr, rsi, ProcessCandle)
-			.Start();
-
+		subscription.Bind(fastEma, slowEma, ProcessCandle).Start();
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, emaFast);
-			DrawIndicator(area, emaSlow);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal emaFast, decimal emaSlow, decimal atr, decimal rsi)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
-		if (candle.State != CandleStates.Finished)
+		if (candle.State != CandleStates.Finished) return;
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
+		{
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
 			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			_prevCandle = candle;
-			return;
 		}
-
-		if (Position > 0)
-		{
-			if (candle.LowPrice <= _longStop || candle.HighPrice >= _longTarget)
-			{
-				SellMarket(Position);
-				_longStop = 0m;
-				_longTarget = 0m;
-			}
-		}
-		else if (Position < 0)
-		{
-			if (candle.HighPrice >= _shortStop || candle.LowPrice <= _shortTarget)
-			{
-				BuyMarket(-Position);
-				_shortStop = 0m;
-				_shortTarget = 0m;
-			}
-		}
-
-		var bullishEngulfing = _prevCandle is not null &&
-			candle.ClosePrice > candle.OpenPrice &&
-			_prevCandle.ClosePrice < _prevCandle.OpenPrice &&
-			candle.ClosePrice > _prevCandle.ClosePrice &&
-			candle.OpenPrice < _prevCandle.ClosePrice;
-
-		var bearishEngulfing = _prevCandle is not null &&
-			candle.ClosePrice < candle.OpenPrice &&
-			_prevCandle.ClosePrice > _prevCandle.OpenPrice &&
-			candle.ClosePrice < _prevCandle.ClosePrice &&
-			candle.OpenPrice > _prevCandle.ClosePrice;
-
-		var longCondition = emaFast > emaSlow && rsi >= RsiLower && rsi <= RsiUpper && bullishEngulfing && candle.ClosePrice > emaFast;
-		var shortCondition = emaFast < emaSlow && rsi >= RsiLower && rsi <= RsiUpper && bearishEngulfing && candle.ClosePrice < emaFast;
-
-		if (longCondition && Position <= 0)
-		{
-			BuyMarket(Volume + Math.Abs(Position));
-			_longStop = candle.ClosePrice - atr;
-			_longTarget = candle.ClosePrice + PipTarget;
-		}
-		else if (shortCondition && Position >= 0)
-		{
-			SellMarket(Volume + Math.Abs(Position));
-			_shortStop = candle.ClosePrice + atr;
-			_shortTarget = candle.ClosePrice - PipTarget;
-		}
-
-		_prevCandle = candle;
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
+			BuyMarket();
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+			SellMarket();
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

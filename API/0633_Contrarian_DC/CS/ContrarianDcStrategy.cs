@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,81 +11,34 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Contrarian Donchian Channel strategy with stop-loss pause and risk/reward exits.
+/// ContrarianDcStrategy using EMA crossover for trend timing.
+/// Enters long on golden cross, short on death cross.
 /// </summary>
 public class ContrarianDcStrategy : Strategy
 {
-	private readonly StrategyParam<int> _donchianPeriod;
-	private readonly StrategyParam<decimal> _riskRewardRatio;
-	private readonly StrategyParam<decimal> _stopLossPercent;
-	private readonly StrategyParam<int> _pauseCandles;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private Highest _highest;
-	private Lowest _lowest;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	private long _barIndex;
-	private long _longSlBar;
-	private long _shortSlBar;
-	private int _lastDirection;
-	private decimal _entryPrice;
-
-	/// <summary>
-	/// Donchian Channel period.
-	/// </summary>
-	public int DonchianPeriod { get => _donchianPeriod.Value; set => _donchianPeriod.Value = value; }
-
-	/// <summary>
-	/// Risk to reward ratio.
-	/// </summary>
-	public decimal RiskRewardRatio { get => _riskRewardRatio.Value; set => _riskRewardRatio.Value = value; }
-
-	/// <summary>
-	/// Stop-loss percent.
-	/// </summary>
-	public decimal StopLossPercent { get => _stopLossPercent.Value; set => _stopLossPercent.Value = value; }
-
-	/// <summary>
-	/// Pause candles after stop-loss.
-	/// </summary>
-	public int PauseCandles { get => _pauseCandles.Value; set => _pauseCandles.Value = value; }
-
-	/// <summary>
-	/// Candle type for calculation.
-	/// </summary>
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Initializes a new instance of the <see cref="ContrarianDcStrategy"/> class.
-	/// </summary>
 	public ContrarianDcStrategy()
 	{
-		_donchianPeriod = Param(nameof(DonchianPeriod), 20)
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
 			.SetGreaterThanZero()
-			.SetDisplay("Donchian Period", "Period for Donchian Channel", "Indicators")
-			
-			.SetOptimize(10, 30, 5);
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
 
-		_riskRewardRatio = Param(nameof(RiskRewardRatio), 1.7m)
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
 			.SetGreaterThanZero()
-			.SetDisplay("Risk/Reward", "Risk to reward ratio", "Risk")
-			
-			.SetOptimize(1m, 3m, 0.5m);
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 
-		_stopLossPercent = Param(nameof(StopLossPercent), 0.3m)
-			.SetGreaterThanZero()
-			.SetDisplay("Stop-loss %", "Stop-loss percentage", "Risk")
-			
-			.SetOptimize(0.1m, 1m, 0.1m);
-
-		_pauseCandles = Param(nameof(PauseCandles), 3)
-			.SetGreaterThanZero()
-			.SetDisplay("Pause Candles", "Bars to wait after stop-loss", "Risk")
-			
-			.SetOptimize(1, 5, 1);
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -101,14 +51,8 @@ public class ContrarianDcStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_barIndex = 0;
-		_longSlBar = 0;
-		_shortSlBar = 0;
-		_lastDirection = 0;
-		_entryPrice = 0;
-		_highest = null;
-		_lowest = null;
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
 
 	/// <inheritdoc />
@@ -116,91 +60,46 @@ public class ContrarianDcStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_highest = new Highest { Length = DonchianPeriod };
-		_lowest = new Lowest { Length = DonchianPeriod };
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_highest, _lowest, ProcessCandle)
+			.Bind(fastEma, slowEma, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _highest);
-			DrawIndicator(area, _lowest);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal upper, decimal lower)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var high = candle.HighPrice;
-		var low = candle.LowPrice;
-
-		if (Position == 0)
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-			var longCondition = low <= lower && (_barIndex - _longSlBar > PauseCandles || _lastDirection != 1);
-			var shortCondition = high >= upper && (_barIndex - _shortSlBar > PauseCandles || _lastDirection != -1);
-
-			if (longCondition)
-			{
-				BuyMarket();
-				_entryPrice = candle.ClosePrice;
-			}
-			else if (shortCondition)
-			{
-				SellMarket();
-				_entryPrice = candle.ClosePrice;
-			}
-		}
-		else if (Position > 0)
-		{
-			var entry = _entryPrice;
-			var stop = entry * (1m - StopLossPercent / 100m);
-			var take = entry * (1m + StopLossPercent * RiskRewardRatio / 100m);
-
-			if (low <= stop)
-			{
-				SellMarket();
-				_longSlBar = _barIndex;
-				_lastDirection = 1;
-			}
-			else if (high >= take)
-			{
-				SellMarket();
-			}
-			else if (high >= upper)
-			{
-				SellMarket();
-			}
-		}
-		else if (Position < 0)
-		{
-			var entry = _entryPrice;
-			var stop = entry * (1m + StopLossPercent / 100m);
-			var take = entry * (1m - StopLossPercent * RiskRewardRatio / 100m);
-
-			if (high >= stop)
-			{
-				BuyMarket();
-				_shortSlBar = _barIndex;
-				_lastDirection = -1;
-			}
-			else if (low <= take)
-			{
-				BuyMarket();
-			}
-			else if (low <= lower)
-			{
-				BuyMarket();
-			}
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
+			return;
 		}
 
-		_barIndex++;
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
+		{
+			BuyMarket();
+		}
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+		{
+			SellMarket();
+		}
+
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

@@ -1,11 +1,7 @@
-
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,171 +10,73 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-/// <summary>
-/// Strategy based on engulfing candlestick pattern.
-/// Supports bullish or bearish setup and trades long or short.
-/// Holds position for a fixed number of bars.
-/// </summary>
 public class EngulfingCandlestickStrategy : Strategy
 {
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _holdPeriods;
-	private readonly StrategyParam<PatternTypes> _pattern;
-	private readonly StrategyParam<TradeSides> _side;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	private ICandleMessage _previousCandle;
-	private int _barsInPosition;
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Engulfing pattern type.
-	/// </summary>
-	public enum PatternTypes
-	{
-		Bullish,
-		Bearish
-	}
-
-	/// <summary>
-	/// Trade direction.
-	/// </summary>
-	public enum TradeSides
-	{
-		Long,
-		Short
-	}
-
-	/// <summary>
-	/// Type of candles to use.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Number of bars to hold the position.
-	/// </summary>
-	public int HoldPeriods
-	{
-		get => _holdPeriods.Value;
-		set => _holdPeriods.Value = value;
-	}
-
-	/// <summary>
-	/// Selected engulfing pattern.
-	/// </summary>
-	public PatternTypes Pattern
-	{
-		get => _pattern.Value;
-		set => _pattern.Value = value;
-	}
-
-	/// <summary>
-	/// Trade side when pattern triggers.
-	/// </summary>
-	public TradeSides Side
-	{
-		get => _side.Value;
-		set => _side.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="EngulfingCandlestickStrategy"/>.
-	/// </summary>
 	public EngulfingCandlestickStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
-		_holdPeriods = Param(nameof(HoldPeriods), 17)
-			.SetRange(1, 50)
-			.SetDisplay("Hold Periods", "Bars to hold open position", "General")
-			;
-
-		_pattern = Param(nameof(Pattern), PatternTypes.Bullish)
-			.SetDisplay("Pattern", "Engulfing pattern type", "General");
-
-		_side = Param(nameof(Side), TradeSides.Long)
-			.SetDisplay("Trade Side", "Direction of entry", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_previousCandle = null;
-		_barsInPosition = 0;
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(ProcessCandle)
-			.Start();
-
+		subscription.Bind(fastEma, slowEma, ProcessCandle).Start();
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (Position != 0)
+		if (candle.State != CandleStates.Finished) return;
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-			_barsInPosition++;
-
-			if (_barsInPosition >= HoldPeriods)
-			{
-				ClosePosition();
-			}
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
+			return;
 		}
-
-		if (_previousCandle != null && Position == 0)
-		{
-			var bullish = candle.ClosePrice > candle.OpenPrice &&
-				_previousCandle.ClosePrice < _previousCandle.OpenPrice &&
-				candle.OpenPrice < _previousCandle.ClosePrice &&
-				candle.ClosePrice > _previousCandle.OpenPrice;
-
-			var bearish = candle.ClosePrice < candle.OpenPrice &&
-				_previousCandle.ClosePrice > _previousCandle.OpenPrice &&
-				candle.OpenPrice > _previousCandle.ClosePrice &&
-				candle.ClosePrice < _previousCandle.OpenPrice;
-
-			var patternDetected = Pattern == PatternTypes.Bullish ? bullish : bearish;
-
-			if (patternDetected)
-			{
-				if (Side == TradeSides.Long)
-					BuyMarket();
-				else
-					SellMarket();
-
-				_barsInPosition = 0;
-			}
-		}
-
-		_previousCandle = candle;
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
+			BuyMarket();
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+			SellMarket();
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

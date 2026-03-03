@@ -1,10 +1,5 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,94 +9,54 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Trades when VIX spikes above its mean by a multiple of standard deviation.
-/// Enters long on the main security and exits after a fixed number of bars.
+/// VIX Spike Strategy.
+/// Uses Bollinger Bands to detect price spikes and trades mean reversion.
 /// </summary>
 public class VixSpikeStrategy : Strategy
 {
-	private readonly StrategyParam<int> _stdDevLength;
-	private readonly StrategyParam<decimal> _stdDevMultiplier;
+	private readonly StrategyParam<int> _bbLength;
+	private readonly StrategyParam<decimal> _bbWidth;
 	private readonly StrategyParam<int> _exitPeriods;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<Security> _vixSecurity;
 
 	private int _barsSinceEntry;
+	private int _cooldown;
 
-	/// <summary>
-	/// Standard deviation length.
-	/// </summary>
-	public int StdDevLength
-	{
-		get => _stdDevLength.Value;
-		set => _stdDevLength.Value = value;
-	}
-
-	/// <summary>
-	/// Standard deviation multiplier.
-	/// </summary>
-	public decimal StdDevMultiplier
-	{
-		get => _stdDevMultiplier.Value;
-		set => _stdDevMultiplier.Value = value;
-	}
-
-	/// <summary>
-	/// Number of bars to hold after entry.
-	/// </summary>
-	public int ExitPeriods
-	{
-		get => _exitPeriods.Value;
-		set => _exitPeriods.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// VIX security.
-	/// </summary>
-	public Security VixSecurity
-	{
-		get => _vixSecurity.Value;
-		set => _vixSecurity.Value = value;
-	}
+	public int BbLength { get => _bbLength.Value; set => _bbLength.Value = value; }
+	public decimal BbWidth { get => _bbWidth.Value; set => _bbWidth.Value = value; }
+	public int ExitPeriods { get => _exitPeriods.Value; set => _exitPeriods.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public VixSpikeStrategy()
 	{
-		_stdDevLength = Param(nameof(StdDevLength), 15)
+		_bbLength = Param(nameof(BbLength), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("StdDev Length", "Length for VIX calculations", "Parameters");
+			.SetDisplay("BB Length", "Bollinger Bands length", "Parameters");
 
-		_stdDevMultiplier = Param(nameof(StdDevMultiplier), 2m)
+		_bbWidth = Param(nameof(BbWidth), 2m)
 			.SetGreaterThanZero()
-			.SetDisplay("StdDev Mult", "StdDev multiplier", "Parameters");
+			.SetDisplay("BB Width", "Bollinger Bands width multiplier", "Parameters");
 
-		_exitPeriods = Param(nameof(ExitPeriods), 10)
+		_exitPeriods = Param(nameof(ExitPeriods), 15)
 			.SetGreaterThanZero()
 			.SetDisplay("Exit Bars", "Bars to hold position", "Parameters");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "Parameters");
-
-		_vixSecurity = Param(nameof(VixSecurity), new Security { Id = "CBOE:VIX" })
-			.SetDisplay("VIX Security", "Security representing VIX", "Parameters");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-		=> [(Security, CandleType), (VixSecurity, CandleType)];
+	{
+		return [(Security, CandleType)];
+	}
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
 		_barsSinceEntry = 0;
+		_cooldown = 0;
 	}
 
 	/// <inheritdoc />
@@ -109,51 +64,60 @@ public class VixSpikeStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		StartProtection(new Unit(3, UnitTypes.Percent), new Unit(2, UnitTypes.Percent));
+		var bb = new BollingerBands
+		{
+			Length = BbLength,
+			Width = BbWidth
+		};
 
-		var ma = new SMA { Length = StdDevLength };
-		var std = new StandardDeviation { Length = StdDevLength };
+		_barsSinceEntry = 0;
+		_cooldown = 0;
 
-		var mainSub = SubscribeCandles(CandleType);
-		mainSub.Bind(ProcessMain).Start();
+		var subscription = SubscribeCandles(CandleType);
 
-		var vixSub = SubscribeCandles(CandleType, security: VixSecurity);
-		vixSub.Bind(ma, std, ProcessVix).Start();
+		subscription
+			.BindEx(bb, ProcessCandle)
+			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
-			DrawCandles(area, mainSub);
+			DrawCandles(area, subscription);
+			DrawIndicator(area, bb);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessVix(ICandleMessage candle, decimal maValue, decimal stdValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue value)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		var bb = value as BollingerBandsValue;
+		if (bb == null)
 			return;
 
-		var threshold = maValue + StdDevMultiplier * stdValue;
-		if (candle.ClosePrice > threshold && Position <= 0)
+		if (bb.UpBand is not decimal upper ||
+			bb.LowBand is not decimal lower)
+			return;
+
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+			return;
+		}
+
+		// Spike down below lower band - buy (mean reversion)
+		if (candle.ClosePrice < lower && Position <= 0)
 		{
 			BuyMarket();
-			_barsSinceEntry = 0;
+			_cooldown = 60;
 		}
-	}
-
-	private void ProcessMain(ICandleMessage candle)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (Position > 0)
+		// Spike up above upper band - sell (mean reversion)
+		else if (candle.ClosePrice > upper && Position >= 0)
 		{
-			_barsSinceEntry++;
-			if (_barsSinceEntry >= ExitPeriods)
-				SellMarket();
+			SellMarket();
+			_cooldown = 60;
 		}
 	}
 }

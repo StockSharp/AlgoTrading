@@ -14,7 +14,7 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// EMA crossover scalping strategy with ATR-based exits.
+/// Ultimate Scalping v2 strategy using RSI momentum with EMA trend filter.
 /// </summary>
 public class UltimateScalpingV2Strategy : Strategy
 {
@@ -24,9 +24,10 @@ public class UltimateScalpingV2Strategy : Strategy
 	private readonly StrategyParam<decimal> _tpPct;
 	private readonly StrategyParam<DataType> _candleType;
 
+	private decimal _prevRsi;
 	private decimal _prevFast;
 	private decimal _prevSlow;
-	private decimal _entryPrice;
+	private int _cooldown;
 
 	public int FastEmaLength { get => _fastEmaLength.Value; set => _fastEmaLength.Value = value; }
 	public int SlowEmaLength { get => _slowEmaLength.Value; set => _slowEmaLength.Value = value; }
@@ -64,24 +65,22 @@ public class UltimateScalpingV2Strategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
+		_prevRsi = 0;
 		_prevFast = 0;
 		_prevSlow = 0;
-		_entryPrice = 0;
+		_cooldown = 0;
 	}
 
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		var emaFast = new ExponentialMovingAverage { Length = FastEmaLength };
-		var emaSlow = new ExponentialMovingAverage { Length = SlowEmaLength };
-
-		_prevFast = 0;
-		_prevSlow = 0;
-		_entryPrice = 0;
+		var rsi = new RelativeStrengthIndex { Length = 14 };
+		var emaFast = new ExponentialMovingAverage { Length = 8 };
+		var emaSlow = new ExponentialMovingAverage { Length = 21 };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(emaFast, emaSlow, ProcessCandle).Start();
+		subscription.Bind(rsi, emaFast, emaSlow, ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -93,62 +92,64 @@ public class UltimateScalpingV2Strategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow)
+	private void ProcessCandle(ICandleMessage candle, decimal rsiVal, decimal emaFast, decimal emaSlow)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (_prevFast == 0)
+		if (_prevRsi == 0 || _prevFast == 0 || _prevSlow == 0)
 		{
-			_prevFast = fast;
-			_prevSlow = slow;
+			_prevRsi = rsiVal;
+			_prevFast = emaFast;
+			_prevSlow = emaSlow;
 			return;
 		}
 
-		var longCross = _prevFast <= _prevSlow && fast > slow;
-		var shortCross = _prevFast >= _prevSlow && fast < slow;
-
-		// Check SL/TP for existing positions
-		if (Position > 0 && _entryPrice > 0)
+		if (_cooldown > 0)
 		{
-			var sl = _entryPrice * (1m - SlPct / 100m);
-			var tp = _entryPrice * (1m + TpPct / 100m);
-			if (candle.ClosePrice <= sl || candle.ClosePrice >= tp || shortCross)
-			{
-				SellMarket();
-				_entryPrice = 0;
-				_prevFast = fast;
-				_prevSlow = slow;
-				return;
-			}
-		}
-		else if (Position < 0 && _entryPrice > 0)
-		{
-			var sl = _entryPrice * (1m + SlPct / 100m);
-			var tp = _entryPrice * (1m - TpPct / 100m);
-			if (candle.ClosePrice >= sl || candle.ClosePrice <= tp || longCross)
-			{
-				BuyMarket();
-				_entryPrice = 0;
-				_prevFast = fast;
-				_prevSlow = slow;
-				return;
-			}
+			_cooldown--;
+			_prevRsi = rsiVal;
+			_prevFast = emaFast;
+			_prevSlow = emaSlow;
+			return;
 		}
 
-		// Entry signals
-		if (longCross && Position <= 0)
-		{
-			BuyMarket();
-			_entryPrice = candle.ClosePrice;
-		}
-		else if (shortCross && Position >= 0)
+		var hist = emaFast - emaSlow;
+		var histUp = hist > 0m;
+		var histDown = hist < 0m;
+
+		var rsiCrossUp = _prevRsi <= 50m && rsiVal > 50m;
+		var rsiCrossDown = _prevRsi >= 50m && rsiVal < 50m;
+
+		// Exit
+		if (Position > 0 && rsiCrossDown)
 		{
 			SellMarket();
-			_entryPrice = candle.ClosePrice;
+			_cooldown = 80;
+		}
+		else if (Position < 0 && rsiCrossUp)
+		{
+			BuyMarket();
+			_cooldown = 80;
 		}
 
-		_prevFast = fast;
-		_prevSlow = slow;
+		// Entry
+		if (Position == 0)
+		{
+			if (rsiCrossUp && histUp)
+			{
+				BuyMarket();
+				_cooldown = 80;
+			}
+			else if (rsiCrossDown && histDown)
+			{
+				SellMarket();
+				_cooldown = 80;
+			}
+		}
+
+		_prevRsi = rsiVal;
+		_prevFast = emaFast;
+		_prevSlow = emaSlow;
 	}
 }

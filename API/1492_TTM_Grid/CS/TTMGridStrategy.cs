@@ -15,7 +15,7 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// TTM-based grid trading strategy.
-/// Uses fast and slow EMA to define a channel, places grid trades within the channel.
+/// Uses fast and slow EMA with RSI momentum for directional trading.
 /// </summary>
 public class TTMGridStrategy : Strategy
 {
@@ -25,8 +25,10 @@ public class TTMGridStrategy : Strategy
 	private readonly StrategyParam<decimal> _gridSpacing;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _gridBasePrice;
-	private int _gridDirection = -1;
+	private decimal _prevRsi;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private int _cooldown;
 
 	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
 	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
@@ -36,16 +38,16 @@ public class TTMGridStrategy : Strategy
 
 	public TTMGridStrategy()
 	{
-		_fastPeriod = Param(nameof(FastPeriod), 6)
+		_fastPeriod = Param(nameof(FastPeriod), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast Period", "Fast EMA period", "Indicators");
 
-		_slowPeriod = Param(nameof(SlowPeriod), 18)
+		_slowPeriod = Param(nameof(SlowPeriod), 21)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow Period", "Slow EMA period", "Indicators");
 
-		_gridLevels = Param(nameof(GridLevels), 5)
-			.SetDisplay("Grid Levels", "Number of price levels in the grid", "Strategy");
+		_gridLevels = Param(nameof(GridLevels), 14)
+			.SetDisplay("RSI Period", "RSI period for momentum", "Strategy");
 
 		_gridSpacing = Param(nameof(GridSpacing), 0.005m)
 			.SetDisplay("Grid Spacing", "Distance between grid levels (fraction)", "Strategy");
@@ -62,8 +64,10 @@ public class TTMGridStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_gridBasePrice = 0m;
-		_gridDirection = -1;
+		_prevRsi = 0;
+		_prevFast = 0;
+		_prevSlow = 0;
+		_cooldown = 0;
 	}
 
 	protected override void OnStarted2(DateTime time)
@@ -72,9 +76,10 @@ public class TTMGridStrategy : Strategy
 
 		var fastEma = new ExponentialMovingAverage { Length = FastPeriod };
 		var slowEma = new ExponentialMovingAverage { Length = SlowPeriod };
+		var rsi = new RelativeStrengthIndex { Length = GridLevels };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(fastEma, slowEma, OnProcess).Start();
+		subscription.Bind(fastEma, slowEma, rsi, OnProcess).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -86,60 +91,66 @@ public class TTMGridStrategy : Strategy
 		}
 	}
 
-	private void OnProcess(ICandleMessage candle, decimal fastMa, decimal slowMa)
+	private void OnProcess(ICandleMessage candle, decimal fastMa, decimal slowMa, decimal rsiVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Use fast/slow EMA as channel boundaries
-		var lowMa = Math.Min(fastMa, slowMa);
-		var highMa = Math.Max(fastMa, slowMa);
-
-		var range = highMa - lowMa;
-		if (range <= 0) return;
-
-		var lowThird = lowMa + range / 3m;
-		var highThird = lowMa + 2m * range / 3m;
-
-		var currentState = candle.ClosePrice > highThird
-			? 1
-			: candle.ClosePrice < lowThird ? 0 : -1;
-
-		if (currentState != -1 && currentState != _gridDirection)
+		if (_prevRsi == 0 || _prevFast == 0 || _prevSlow == 0)
 		{
-			_gridBasePrice = candle.ClosePrice;
-			_gridDirection = currentState;
-		}
-
-		if (_gridDirection == -1 || _gridBasePrice == 0)
+			_prevRsi = rsiVal;
+			_prevFast = fastMa;
+			_prevSlow = slowMa;
 			return;
+		}
 
-		for (var i = 1; i <= GridLevels; i++)
+		if (_cooldown > 0)
 		{
-			var multiplier = i * GridSpacing;
+			_cooldown--;
+			_prevRsi = rsiVal;
+			_prevFast = fastMa;
+			_prevSlow = slowMa;
+			return;
+		}
 
-			if (_gridDirection == 1)
+		// EMA histogram
+		var hist = fastMa - slowMa;
+		var histUp = hist > 0m;
+		var histDown = hist < 0m;
+
+		// RSI cross 50
+		var rsiCrossUp = _prevRsi <= 50m && rsiVal > 50m;
+		var rsiCrossDown = _prevRsi >= 50m && rsiVal < 50m;
+
+		// Exit
+		if (Position > 0 && rsiCrossDown)
+		{
+			SellMarket();
+			_cooldown = 80;
+		}
+		else if (Position < 0 && rsiCrossUp)
+		{
+			BuyMarket();
+			_cooldown = 80;
+		}
+
+		// Entry
+		if (Position == 0)
+		{
+			if (rsiCrossUp && histUp)
 			{
-				var buyLevel = _gridBasePrice * (1 - multiplier);
-				var sellLevel = _gridBasePrice * (1 + multiplier);
-
-				if (candle.LowPrice <= buyLevel)
-					BuyMarket();
-
-				if (candle.HighPrice >= sellLevel && Position > 0)
-					SellMarket();
+				BuyMarket();
+				_cooldown = 80;
 			}
-			else
+			else if (rsiCrossDown && histDown)
 			{
-				var sellLevel = _gridBasePrice * (1 - multiplier);
-				var buyLevel = _gridBasePrice * (1 + multiplier);
-
-				if (candle.LowPrice <= sellLevel)
-					SellMarket();
-
-				if (candle.HighPrice >= buyLevel && Position < 0)
-					BuyMarket();
+				SellMarket();
+				_cooldown = 80;
 			}
 		}
+
+		_prevRsi = rsiVal;
+		_prevFast = fastMa;
+		_prevSlow = slowMa;
 	}
 }

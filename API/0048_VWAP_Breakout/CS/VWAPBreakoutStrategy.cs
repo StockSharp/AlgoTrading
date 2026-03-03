@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,20 +11,20 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// VWAP Breakout strategy
-/// Long entry: Price breaks above VWAP
-/// Short entry: Price breaks below VWAP
-/// Exit when price crosses back through VWAP
+/// VWAP Breakout strategy.
+/// Enters long when price breaks above VWAP, short when below.
 /// </summary>
 public class VWAPBreakoutStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _cooldownBars;
+
 	private decimal _previousClosePrice;
 	private decimal _previousVWAP;
-	private bool _isFirstCandle;
+	private int _cooldown;
 
 	/// <summary>
-	/// Candle type for strategy calculation
+	/// Candle type for strategy calculation.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -36,12 +33,25 @@ public class VWAPBreakoutStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initialize <see cref="VWAPBreakoutStrategy"/>.
+	/// Cooldown bars between trades.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
+	/// Initialize the VWAP Breakout strategy.
 	/// </summary>
 	public VWAPBreakoutStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles for strategy calculation", "Strategy Parameters");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
+
+		_cooldownBars = Param(nameof(CooldownBars), 500)
+			.SetRange(1, 1000)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
 	}
 
 	/// <inheritdoc />
@@ -54,10 +64,9 @@ public class VWAPBreakoutStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_previousClosePrice = 0;
-		_previousVWAP = 0;
-		_isFirstCandle = true;
-
+		_previousClosePrice = default;
+		_previousVWAP = default;
+		_cooldown = default;
 	}
 
 	/// <inheritdoc />
@@ -65,23 +74,17 @@ public class VWAPBreakoutStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Create VWAP indicator
+		_previousClosePrice = 0;
+		_previousVWAP = 0;
+		_cooldown = 0;
+
 		var vwap = new VolumeWeightedMovingAverage();
 
-		// Create subscription and bind indicators
 		var subscription = SubscribeCandles(CandleType);
-		
 		subscription
-			.BindEx(vwap, ProcessCandle)
+			.Bind(vwap, ProcessCandle)
 			.Start();
 
-		// Configure protection
-		StartProtection(
-			takeProfit: new Unit(3, UnitTypes.Percent),
-			stopLoss: new Unit(2, UnitTypes.Percent)
-		);
-
-		// Setup chart visualization
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -91,64 +94,53 @@ public class VWAPBreakoutStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue vwapValue)
+	private void ProcessCandle(ICandleMessage candle, decimal vwapPrice)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// Extract VWAP value from indicator result
-		var vwapPrice = vwapValue.ToDecimal();
-		
-		// Skip the first candle, just initialize values
-		if (_isFirstCandle)
+		if (_previousClosePrice == 0)
 		{
 			_previousClosePrice = candle.ClosePrice;
 			_previousVWAP = vwapPrice;
-			_isFirstCandle = false;
 			return;
 		}
-		
-		// Check for VWAP breakouts
+
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+			_previousClosePrice = candle.ClosePrice;
+			_previousVWAP = vwapPrice;
+			return;
+		}
+
 		var breakoutUp = _previousClosePrice <= _previousVWAP && candle.ClosePrice > vwapPrice;
 		var breakoutDown = _previousClosePrice >= _previousVWAP && candle.ClosePrice < vwapPrice;
-		
-		// Log current values
-		LogInfo($"Candle Close: {candle.ClosePrice}, VWAP: {vwapPrice}");
-		LogInfo($"Previous Close: {_previousClosePrice}, Previous VWAP: {_previousVWAP}");
-		LogInfo($"Breakout Up: {breakoutUp}, Breakout Down: {breakoutDown}");
 
-		// Trading logic:
-		// Long: Price breaks above VWAP
-		if (breakoutUp && Position <= 0)
+		if (Position == 0 && breakoutUp)
 		{
-			LogInfo($"Buy Signal: Price ({candle.ClosePrice}) breaking above VWAP ({vwapPrice})");
-			BuyMarket(Volume + Math.Abs(Position));
+			BuyMarket();
+			_cooldown = CooldownBars;
 		}
-		// Short: Price breaks below VWAP
-		else if (breakoutDown && Position >= 0)
+		else if (Position == 0 && breakoutDown)
 		{
-			LogInfo($"Sell Signal: Price ({candle.ClosePrice}) breaking below VWAP ({vwapPrice})");
-			SellMarket(Volume + Math.Abs(Position));
+			SellMarket();
+			_cooldown = CooldownBars;
 		}
-		
-		// Exit logic: Price crosses back through VWAP
-		if (Position > 0 && candle.ClosePrice < vwapPrice)
+		else if (Position > 0 && candle.ClosePrice < vwapPrice)
 		{
-			LogInfo($"Exit Long: Price ({candle.ClosePrice}) < VWAP ({vwapPrice})");
-			SellMarket(Math.Abs(Position));
+			SellMarket();
+			_cooldown = CooldownBars;
 		}
 		else if (Position < 0 && candle.ClosePrice > vwapPrice)
 		{
-			LogInfo($"Exit Short: Price ({candle.ClosePrice}) > VWAP ({vwapPrice})");
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
+			_cooldown = CooldownBars;
 		}
 
-		// Store current values for next comparison
 		_previousClosePrice = candle.ClosePrice;
 		_previousVWAP = vwapPrice;
 	}

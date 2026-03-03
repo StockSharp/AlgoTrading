@@ -1,181 +1,82 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
-
 namespace StockSharp.Samples.Strategies;
 
-/// <summary>
-/// EMA crossover with Dow Theory trend filter.
-/// Trades long when fast EMA is above slow EMA and price breaks last swing high.
-/// Trades short when fast EMA is below slow EMA and price breaks last swing low.
-/// </summary>
 public class EmaDowTheoryStrategy : Strategy
 {
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _fastLength;
-	private readonly StrategyParam<int> _slowLength;
-	private readonly StrategyParam<int> _swingLength;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	private ExponentialMovingAverage _fastEma;
-	private ExponentialMovingAverage _slowEma;
-	private Highest _highest;
-	private Lowest _lowest;
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	private decimal _lastSwingHigh;
-	private decimal _lastSwingLow;
-	private int _trend;
-
-	/// <summary>
-	/// Candle type for strategy calculation.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Fast EMA length.
-	/// </summary>
-	public int FastLength
-	{
-		get => _fastLength.Value;
-		set => _fastLength.Value = value;
-	}
-
-	/// <summary>
-	/// Slow EMA length.
-	/// </summary>
-	public int SlowLength
-	{
-		get => _slowLength.Value;
-		set => _slowLength.Value = value;
-	}
-
-	/// <summary>
-	/// Swing detection length.
-	/// </summary>
-	public int SwingLength
-	{
-		get => _swingLength.Value;
-		set => _swingLength.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="EmaDowTheoryStrategy"/>.
-	/// </summary>
 	public EmaDowTheoryStrategy()
 	{
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
-
-		_fastLength = Param(nameof(FastLength), 47)
-			.SetGreaterThanZero()
-			.SetDisplay("Fast EMA", "Fast EMA length", "Indicators")
-			
-			.SetOptimize(10, 100, 5);
-
-		_slowLength = Param(nameof(SlowLength), 50)
-			.SetGreaterThanZero()
-			.SetDisplay("Slow EMA", "Slow EMA length", "Indicators")
-			
-			.SetOptimize(20, 200, 10);
-
-		_swingLength = Param(nameof(SwingLength), 6)
-			.SetGreaterThanZero()
-			.SetDisplay("Swing Length", "Bars for swing detection", "Dow Theory")
-			
-			.SetOptimize(3, 20, 1);
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_lastSwingHigh = 0m;
-		_lastSwingLow = 0m;
-		_trend = 0;
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_fastEma = new EMA { Length = FastLength };
-		_slowEma = new EMA { Length = SlowLength };
-		_highest = new Highest { Length = SwingLength };
-		_lowest = new Lowest { Length = SwingLength };
-
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 		var subscription = SubscribeCandles(CandleType);
-
-		subscription
-			.Bind(_fastEma, _slowEma, _highest, _lowest, ProcessCandle)
-			.Start();
-
+		subscription.Bind(fastEma, slowEma, ProcessCandle).Start();
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _fastEma);
-			DrawIndicator(area, _slowEma);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
-
-		StartProtection(new(), new());
 	}
 
-	private void ProcessCandle(
-		ICandleMessage candle,
-		decimal fastValue,
-		decimal slowValue,
-		decimal highestValue,
-		decimal lowestValue)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (_highest.IsFormed && candle.HighPrice == highestValue)
-			_lastSwingHigh = candle.HighPrice;
-
-		if (_lowest.IsFormed && candle.LowPrice == lowestValue)
-			_lastSwingLow = candle.LowPrice;
-
-		if (_lastSwingHigh != 0m && candle.ClosePrice > _lastSwingHigh)
-			_trend = 1;
-		else if (_lastSwingLow != 0m && candle.ClosePrice < _lastSwingLow)
-			_trend = -1;
-
-		var goLong = fastValue >= slowValue;
-		var goShort = fastValue < slowValue;
-
-		if (goLong && _trend == 1 && Position <= 0)
+		if (candle.State != CandleStates.Finished) return;
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-			BuyMarket(Volume + Math.Abs(Position));
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
+			return;
 		}
-		else if (goShort && _trend == -1 && Position >= 0)
-		{
-			SellMarket(Volume + Math.Abs(Position));
-		}
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
+			BuyMarket();
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+			SellMarket();
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

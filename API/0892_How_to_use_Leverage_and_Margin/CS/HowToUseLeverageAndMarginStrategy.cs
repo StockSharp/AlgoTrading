@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -13,177 +10,73 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-/// <summary>
-/// Strategy based on Stochastic oscillator crossovers.
-/// Enters long when %K crosses above %D below 80.
-/// Enters short when %K crosses below %D above 20.
-/// Uses take-profit defined in ticks.
-/// </summary>
 public class HowToUseLeverageAndMarginStrategy : Strategy
 {
-	private readonly StrategyParam<int> _stochPeriod;
-	private readonly StrategyParam<int> _kPeriod;
-	private readonly StrategyParam<int> _dPeriod;
-	private readonly StrategyParam<int> _takeProfitTicks;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	private decimal _prevK;
-	private decimal _prevD;
-	private bool _isInitialized;
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Stochastic period.
-	/// </summary>
-	public int StochPeriod
-	{
-		get => _stochPeriod.Value;
-		set => _stochPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// %K smoothing period.
-	/// </summary>
-	public int KPeriod
-	{
-		get => _kPeriod.Value;
-		set => _kPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// %D period.
-	/// </summary>
-	public int DPeriod
-	{
-		get => _dPeriod.Value;
-		set => _dPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Take profit distance in ticks.
-	/// </summary>
-	public int TakeProfitTicks
-	{
-		get => _takeProfitTicks.Value;
-		set => _takeProfitTicks.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type to process.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="HowToUseLeverageAndMarginStrategy"/> class.
-	/// </summary>
 	public HowToUseLeverageAndMarginStrategy()
 	{
-		_stochPeriod = Param(nameof(StochPeriod), 13)
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
 			.SetGreaterThanZero()
-			.SetDisplay("Stochastic Period", "Lookback period for Stochastic", "Indicators")
-			
-			.SetOptimize(5, 30, 1);
-
-		_kPeriod = Param(nameof(KPeriod), 4)
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
 			.SetGreaterThanZero()
-			.SetDisplay("%K Period", "Smoothing period for %K line", "Indicators")
-			
-			.SetOptimize(1, 10, 1);
-
-		_dPeriod = Param(nameof(DPeriod), 3)
-			.SetGreaterThanZero()
-			.SetDisplay("%D Period", "Smoothing period for %D line", "Indicators")
-			
-			.SetOptimize(1, 10, 1);
-
-		_takeProfitTicks = Param(nameof(TakeProfitTicks), 100)
-			.SetRange(10, 500)
-			.SetDisplay("Take Profit Ticks", "Take profit distance in ticks", "Risk Management");
-
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevK = 0m;
-		_prevD = 0m;
-		_isInitialized = false;
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		var stochastic = new StochasticOscillator
-		{
-			K = { Length = KPeriod },
-			D = { Length = DPeriod },
-		};
-
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.BindEx(stochastic, ProcessCandle)
-			.Start();
-
-		var step = Security?.PriceStep ?? 1m;
-		StartProtection(
-			takeProfit: new Unit(TakeProfitTicks * step, UnitTypes.Absolute),
-			stopLoss: default);
-
+		subscription.Bind(fastEma, slowEma, ProcessCandle).Start();
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, stochastic);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue stochValue)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var stoch = (StochasticOscillatorValue)stochValue;
-		if (stoch.K is not decimal kValue || stoch.D is not decimal dValue)
-			return;
-
-		if (!_isInitialized)
+		if (candle.State != CandleStates.Finished) return;
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-			_prevK = kValue;
-			_prevD = dValue;
-			_isInitialized = true;
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
 			return;
 		}
-
-		var crossAbove = _prevK <= _prevD && kValue > dValue;
-		var crossBelow = _prevK >= _prevD && kValue < dValue;
-
-		var volume = Volume + Math.Abs(Position);
-
-		if (crossAbove && kValue < 80 && Position <= 0)
-			BuyMarket(volume);
-		else if (crossBelow && kValue > 20 && Position >= 0)
-			SellMarket(volume);
-
-		_prevK = kValue;
-		_prevD = dValue;
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
+			BuyMarket();
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+			SellMarket();
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }
-

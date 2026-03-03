@@ -1,82 +1,37 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
-using StockSharp.Algo;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
 public class FlexibleMovingAverageStrategy : Strategy
 {
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<string> _maMethod;
-	private readonly StrategyParam<int> _maLength;
-	private readonly StrategyParam<decimal> _sellPercentage;
-	private readonly StrategyParam<bool> _allowInitialBuy;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	private decimal? _previousClose;
-	private decimal? _previousMa;
-	private decimal? _priorClose;
-	private decimal? _priorMa;
-	private decimal _currentTargetPercent = 100m;
-	private bool _isFirstBar = true;
-
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	public string MaMethod
-	{
-		get => _maMethod.Value;
-		set => _maMethod.Value = value;
-	}
-
-	public int MaLength
-	{
-		get => _maLength.Value;
-		set => _maLength.Value = value;
-	}
-
-	public decimal SellPercentage
-	{
-		get => _sellPercentage.Value;
-		set => _sellPercentage.Value = value;
-	}
-
-	public bool AllowInitialBuy
-	{
-		get => _allowInitialBuy.Value;
-		set => _allowInitialBuy.Value = value;
-	}
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public FlexibleMovingAverageStrategy()
 	{
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
-		_maMethod = Param(nameof(MaMethod), "SMA")
-			.SetDisplay("MA Method", "Moving average calculation method", "MA");
-
-		_maLength = Param(nameof(MaLength), 200)
-			.SetGreaterThanZero()
-			.SetDisplay("MA Length", "Moving average period length", "MA");
-
-		_sellPercentage = Param(nameof(SellPercentage), 100m)
-			.SetRange(0m, 100m)
-			.SetDisplay("Sell %", "Percentage of position to sell on cross down", "Risk");
-
-		_allowInitialBuy = Param(nameof(AllowInitialBuy), true)
-			.SetDisplay("Allow Initial Buy", "Enter initial position without MA data", "General");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
@@ -87,85 +42,41 @@ public class FlexibleMovingAverageStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_previousClose = null;
-		_previousMa = null;
-		_priorClose = null;
-		_priorMa = null;
-		_currentTargetPercent = 100m;
-		_isFirstBar = true;
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
 
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		IIndicator ma = MaMethod switch
-		{
-			"EMA" => new EMA { Length = MaLength },
-			"WMA" => new WeightedMovingAverage { Length = MaLength },
-			"HMA" => new HullMovingAverage { Length = MaLength },
-			"SMMA" => new SmoothedMovingAverage { Length = MaLength },
-			_ => new SMA { Length = MaLength }
-		};
-
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ma, ProcessCandle).Start();
-
-		StartProtection(null, null);
+		subscription.Bind(fastEma, slowEma, ProcessCandle).Start();
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal maValue)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (_isFirstBar)
+		if (candle.State != CandleStates.Finished) return;
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-			if (AllowInitialBuy)
-				BuyMarket();
-
-			_previousClose = candle.ClosePrice;
-			_previousMa = maValue;
-			_isFirstBar = false;
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
 			return;
 		}
-
-		if (_priorClose is null || _priorMa is null)
-		{
-			_priorClose = _previousClose;
-			_priorMa = _previousMa;
-			_previousClose = candle.ClosePrice;
-			_previousMa = maValue;
-			return;
-		}
-
-		var sellSignal = _priorClose >= _priorMa && _previousClose < _previousMa;
-		var buySignal = _priorClose <= _priorMa && _previousClose > _previousMa;
-
-		var targetPercent = _currentTargetPercent;
-
-		if (sellSignal)
-			targetPercent = 100m - SellPercentage;
-		else if (buySignal)
-			targetPercent = 100m;
-
-		if (targetPercent != _currentTargetPercent)
-		{
-			var targetVolume = targetPercent / 100m;
-			var diff = targetVolume - Position;
-
-			if (diff > 0)
-				BuyMarket(diff);
-			else if (diff < 0)
-				SellMarket(-diff);
-
-			_currentTargetPercent = targetPercent;
-		}
-
-		_priorClose = _previousClose;
-		_priorMa = _previousMa;
-		_previousClose = candle.ClosePrice;
-		_previousMa = maValue;
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
+			BuyMarket();
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+			SellMarket();
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }
-

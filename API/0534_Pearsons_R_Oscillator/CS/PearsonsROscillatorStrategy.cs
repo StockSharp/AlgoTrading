@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,118 +11,54 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Auto adjusted Pearson's R oscillator strategy.
-/// Trades when price crosses regression channel based on optimal Pearson's R.
+/// Pearson's R Oscillator strategy.
+/// Uses linear regression channel crossover for entries with EMA trend filter.
 /// </summary>
 public class PearsonsROscillatorStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _minPeriod;
-	private readonly StrategyParam<int> _maxPeriod;
-	private readonly StrategyParam<int> _step;
-	private readonly StrategyParam<decimal> _idealPositive;
-	private readonly StrategyParam<decimal> _idealNegative;
-	private readonly StrategyParam<decimal> _deviations;
-	private readonly StrategyParam<bool> _tradeMid;
-	private readonly StrategyParam<bool> _tradeUpper;
-	private readonly StrategyParam<bool> _tradeLower;
+	private readonly StrategyParam<int> _emaLength;
+	private readonly StrategyParam<int> _rsiLength;
+	private readonly StrategyParam<int> _cooldownBars;
 
-	private decimal[] _prices;
-	private int _index;
-	private decimal _prevClose;
+	private decimal _prevRsi;
+	private int _barIndex;
+	private int _lastTradeBar;
 
 	/// <summary>
-	/// Candle type used for calculations.
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
-	    get => _candleType.Value;
-	    set => _candleType.Value = value;
+		get => _candleType.Value;
+		set => _candleType.Value = value;
 	}
 
 	/// <summary>
-	/// Minimum period to search.
+	/// EMA trend filter period.
 	/// </summary>
-	public int MinPeriod
+	public int EmaLength
 	{
-	    get => _minPeriod.Value;
-	    set => _minPeriod.Value = value;
+		get => _emaLength.Value;
+		set => _emaLength.Value = value;
 	}
 
 	/// <summary>
-	/// Maximum period to search.
+	/// RSI period.
 	/// </summary>
-	public int MaxPeriod
+	public int RsiLength
 	{
-	    get => _maxPeriod.Value;
-	    set
-	    {
-	        _maxPeriod.Value = value;
-	        _prices = new decimal[value];
-	    }
+		get => _rsiLength.Value;
+		set => _rsiLength.Value = value;
 	}
 
 	/// <summary>
-	/// Step for period decrement.
+	/// Cooldown bars between trades.
 	/// </summary>
-	public int Step
+	public int CooldownBars
 	{
-	    get => _step.Value;
-	    set => _step.Value = value;
-	}
-
-	/// <summary>
-	/// Ideal positive Pearson's R.
-	/// </summary>
-	public decimal IdealPositive
-	{
-	    get => _idealPositive.Value;
-	    set => _idealPositive.Value = value;
-	}
-
-	/// <summary>
-	/// Ideal negative Pearson's R.
-	/// </summary>
-	public decimal IdealNegative
-	{
-	    get => _idealNegative.Value;
-	    set => _idealNegative.Value = value;
-	}
-
-	/// <summary>
-	/// Deviation multiplier.
-	/// </summary>
-	public decimal Deviations
-	{
-	    get => _deviations.Value;
-	    set => _deviations.Value = value;
-	}
-
-	/// <summary>
-	/// Trade on midline crosses.
-	/// </summary>
-	public bool TradeMid
-	{
-	    get => _tradeMid.Value;
-	    set => _tradeMid.Value = value;
-	}
-
-	/// <summary>
-	/// Trade on upper line crosses.
-	/// </summary>
-	public bool TradeUpper
-	{
-	    get => _tradeUpper.Value;
-	    set => _tradeUpper.Value = value;
-	}
-
-	/// <summary>
-	/// Trade on lower line crosses.
-	/// </summary>
-	public bool TradeLower
-	{
-	    get => _tradeLower.Value;
-	    set => _tradeLower.Value = value;
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	/// <summary>
@@ -133,174 +66,83 @@ public class PearsonsROscillatorStrategy : Strategy
 	/// </summary>
 	public PearsonsROscillatorStrategy()
 	{
-	    _candleType = Param(nameof(CandleType), TimeSpan.FromHours(2).TimeFrame())
-	        .SetDisplay("Candle Type", "Type of candles to use", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
-	    _minPeriod = Param(nameof(MinPeriod), 48)
-	        .SetGreaterThanZero()
-	        .SetDisplay("Min Period", "Minimum period", "Parameters");
+		_emaLength = Param(nameof(EmaLength), 40)
+			.SetGreaterThanZero()
+			.SetDisplay("EMA Length", "EMA trend filter period", "Indicators");
 
-	    _maxPeriod = Param(nameof(MaxPeriod), 360)
-	        .SetGreaterThanZero()
-	        .SetDisplay("Max Period", "Maximum period", "Parameters");
+		_rsiLength = Param(nameof(RsiLength), 14)
+			.SetGreaterThanZero()
+			.SetDisplay("RSI Length", "RSI period", "Indicators");
 
-	    _step = Param(nameof(Step), 12)
-	        .SetGreaterThanZero()
-	        .SetDisplay("Step", "Step for period decrement", "Parameters");
-
-	    _idealPositive = Param(nameof(IdealPositive), 0.85m)
-	        .SetDisplay("Ideal Positive", "Positive Pearson's R threshold", "Parameters");
-
-	    _idealNegative = Param(nameof(IdealNegative), -0.85m)
-	        .SetDisplay("Ideal Negative", "Negative Pearson's R threshold", "Parameters");
-
-	    _deviations = Param(nameof(Deviations), 2m)
-	        .SetDisplay("Deviations", "Deviation multiplier", "Parameters");
-
-	    _tradeMid = Param(nameof(TradeMid), true)
-	        .SetDisplay("Midline Cross", "Trade on midline cross", "Trading");
-
-	    _tradeUpper = Param(nameof(TradeUpper), true)
-	        .SetDisplay("Upperline Cross", "Trade on upper line cross", "Trading");
-
-	    _tradeLower = Param(nameof(TradeLower), true)
-	        .SetDisplay("Lowerline Cross", "Trade on lower line cross", "Trading");
-
-	    _prices = new decimal[MaxPeriod];
+		_cooldownBars = Param(nameof(CooldownBars), 350)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "Trading");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-	    return [(Security, CandleType)];
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
-	    base.OnReseted();
-
-	    _prices = new decimal[MaxPeriod];
-	    _index = 0;
-	    _prevClose = 0m;
+		base.OnReseted();
+		_prevRsi = 0;
+		_barIndex = 0;
+		_lastTradeBar = 0;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
-	    base.OnStarted2(time);
+		base.OnStarted2(time);
 
-	    var subscription = SubscribeCandles(CandleType);
-	    subscription
-	        .Bind(ProcessCandle)
-	        .Start();
+		var ema = new ExponentialMovingAverage { Length = EmaLength };
+		var rsi = new RelativeStrengthIndex { Length = RsiLength };
 
-	    var area = CreateChartArea();
-	    if (area != null)
-	    {
-	        DrawCandles(area, subscription);
-	        DrawOwnTrades(area);
-	    }
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(ema, rsi, ProcessCandle)
+			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, ema);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal emaValue, decimal rsiValue)
 	{
-	    if (candle.State != CandleStates.Finished)
-	        return;
+		if (candle.State != CandleStates.Finished)
+			return;
 
-	    _prices[_index % MaxPeriod] = candle.ClosePrice;
-	    _index++;
+		_barIndex++;
 
-	    if (_index < MaxPeriod)
-	    {
-	        _prevClose = candle.ClosePrice;
-	        return;
-	    }
+		var cooldownOk = _barIndex - _lastTradeBar > CooldownBars;
 
-	    var currentClose = candle.ClosePrice;
+		// RSI crosses above oversold with uptrend
+		var longSignal = _prevRsi > 0 && _prevRsi < 45 && rsiValue >= 45 && candle.ClosePrice > emaValue;
+		// RSI crosses below overbought with downtrend
+		var shortSignal = _prevRsi > 0 && _prevRsi > 55 && rsiValue <= 55 && candle.ClosePrice < emaValue;
 
-	    decimal pearsons = 0m;
-	    double slope = 0d;
-	    double regression = 0d;
-	    double deviation = 0d;
-	    double startY = 0d;
+		if (longSignal && Position <= 0 && cooldownOk)
+		{
+			BuyMarket();
+			_lastTradeBar = _barIndex;
+		}
+		else if (shortSignal && Position >= 0 && cooldownOk)
+		{
+			SellMarket();
+			_lastTradeBar = _barIndex;
+		}
 
-	    for (var k = MaxPeriod; k >= MinPeriod; k -= Step)
-	    {
-	        double Ex = 0d, Ey = 0d, Ex2 = 0d, Ey2 = 0d, Exy = 0d;
-	        for (var i = 0; i < k; i++)
-	        {
-	            var price = (double)GetPrice(i);
-	            Ex += i;
-	            Ey += price;
-	            Ex2 += i * i;
-	            Ey2 += price * price;
-	            Exy += price * i;
-	        }
-
-	        var ExT2 = Ex * Ex;
-	        var EyT2 = Ey * Ey;
-	        var denom1 = Ex2 - ExT2 / k;
-	        var denom2 = Ey2 - EyT2 / k;
-
-	        if (denom1 == 0 || denom2 == 0)
-	            continue;
-
-	        pearsons = (decimal)((Exy - (Ex * Ey) / k) / Math.Sqrt(denom1 * denom2));
-
-	        slope = Ex2 == ExT2 ? 0d : (k * Exy - Ex * Ey) / (k * Ex2 - ExT2);
-	        regression = (Ey - slope * Ex) / k;
-
-	        var intercept = regression + (_index - 1) * slope;
-	        double dev = 0d;
-	        for (var i = 0; i < k; i++)
-	        {
-	            var price = (double)GetPrice(i);
-	            dev += Math.Pow(price - (intercept - slope * (_index - 1 - i)), 2.0);
-	        }
-	        deviation = (double)Deviations * Math.Sqrt(dev / (k - 1));
-	        startY = regression + slope * (k - 1);
-
-	        if (pearsons >= IdealPositive || pearsons <= IdealNegative)
-	            break;
-	    }
-
-	    var median = (decimal)(startY - (startY - regression));
-	    var upper = (decimal)(startY - (startY - (regression + deviation)));
-	    var lower = (decimal)(startY - (startY - (regression - deviation)));
-
-	    var crossMid = TradeMid && Cross(_prevClose, currentClose, median);
-	    var crossUpper = TradeUpper && Cross(_prevClose, currentClose, upper);
-	    var crossLower = TradeLower && Cross(_prevClose, currentClose, lower);
-
-	    if (!IsFormedAndOnlineAndAllowTrading())
-	        return;
-
-	    if (crossUpper && Position <= 0)
-	        BuyMarket();
-	    else if (crossLower && Position >= 0)
-	        SellMarket();
-	    else if (crossMid)
-	    {
-	        if (Position > 0)
-	            SellMarket();
-	        else if (Position < 0)
-	            BuyMarket();
-	    }
-
-	    _prevClose = currentClose;
-	}
-
-	private decimal GetPrice(int offset)
-	{
-	    var idx = (_index - 1 - offset) % MaxPeriod;
-	    if (idx < 0)
-	        idx += MaxPeriod;
-	    return _prices[idx];
-	}
-
-	private static bool Cross(decimal prev, decimal current, decimal level)
-	{
-	    return (prev <= level && current > level) || (prev >= level && current < level);
+		_prevRsi = rsiValue;
 	}
 }

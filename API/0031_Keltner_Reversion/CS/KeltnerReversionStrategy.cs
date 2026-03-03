@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -25,6 +22,9 @@ public class KeltnerReversionStrategy : Strategy
 	private readonly StrategyParam<decimal> _atrMultiplier;
 	private readonly StrategyParam<decimal> _stopLossAtrMultiplier;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _cooldownBars;
+
+	private int _cooldown;
 
 	/// <summary>
 	/// Period for EMA calculation (middle band) (default: 20)
@@ -72,6 +72,15 @@ public class KeltnerReversionStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Cooldown bars between trades.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Initialize the Keltner Reversion strategy
 	/// </summary>
 	public KeltnerReversionStrategy()
@@ -96,8 +105,12 @@ public class KeltnerReversionStrategy : Strategy
 			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "Technical Parameters");
+
+		_cooldownBars = Param(nameof(CooldownBars), 500)
+			.SetRange(1, 1000)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
 	}
 
 	/// <inheritdoc />
@@ -107,12 +120,21 @@ public class KeltnerReversionStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_cooldown = default;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
+		_cooldown = 0;
+
 		// Create indicators
-		var ema = new EMA { Length = EmaPeriod };
+		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
 		var atr = new AverageTrueRange { Length = AtrPeriod };
 
 		// Create subscription and bind indicators
@@ -145,43 +167,43 @@ public class KeltnerReversionStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+			return;
+		}
+
 		// Calculate Keltner Channel bands
 		decimal upperBand = emaValue + (atrValue * AtrMultiplier);
 		decimal lowerBand = emaValue - (atrValue * AtrMultiplier);
-		
-		// Calculate stop-loss amount based on ATR
-		decimal stopLossAmount = atrValue * StopLossAtrMultiplier;
 
 		if (Position == 0)
 		{
-			// No position - check for entry signals
 			if (candle.ClosePrice < lowerBand)
 			{
-				// Price is below lower band - buy (long)
-				BuyMarket(Volume);
+				BuyMarket();
+				_cooldown = CooldownBars;
 			}
 			else if (candle.ClosePrice > upperBand)
 			{
-				// Price is above upper band - sell (short)
-				SellMarket(Volume);
+				SellMarket();
+				_cooldown = CooldownBars;
 			}
 		}
 		else if (Position > 0)
 		{
-			// Long position - check for exit signal
 			if (candle.ClosePrice > emaValue)
 			{
-				// Price has returned to or above EMA - exit long
-				SellMarket(Position);
+				SellMarket();
+				_cooldown = CooldownBars;
 			}
 		}
 		else if (Position < 0)
 		{
-			// Short position - check for exit signal
 			if (candle.ClosePrice < emaValue)
 			{
-				// Price has returned to or below EMA - exit short
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
+				_cooldown = CooldownBars;
 			}
 		}
 	}

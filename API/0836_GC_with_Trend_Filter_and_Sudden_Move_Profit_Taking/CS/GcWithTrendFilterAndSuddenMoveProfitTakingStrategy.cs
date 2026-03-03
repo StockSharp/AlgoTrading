@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -13,198 +10,73 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-/// <summary>
-/// 5SMA-25SMA crossover with 75SMA trend filter and ADX confirmation.
-/// Closes the position on sudden price moves.
-/// </summary>
 public class GcWithTrendFilterAndSuddenMoveProfitTakingStrategy : Strategy
 {
-	private readonly StrategyParam<int> _fastLength;
-	private readonly StrategyParam<int> _slowLength;
-	private readonly StrategyParam<int> _trendLength;
-	private readonly StrategyParam<int> _adxLength;
-	private readonly StrategyParam<decimal> _adxThreshold;
-	private readonly StrategyParam<decimal> _suddenMovePercent;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	private decimal _prevClose;
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Fast SMA length.
-	/// </summary>
-	public int FastLength
-	{
-		get => _fastLength.Value;
-		set => _fastLength.Value = value;
-	}
-
-	/// <summary>
-	/// Slow SMA length.
-	/// </summary>
-	public int SlowLength
-	{
-		get => _slowLength.Value;
-		set => _slowLength.Value = value;
-	}
-
-	/// <summary>
-	/// Trend SMA length.
-	/// </summary>
-	public int TrendLength
-	{
-		get => _trendLength.Value;
-		set => _trendLength.Value = value;
-	}
-
-	/// <summary>
-	/// ADX calculation length.
-	/// </summary>
-	public int AdxLength
-	{
-		get => _adxLength.Value;
-		set => _adxLength.Value = value;
-	}
-
-	/// <summary>
-	/// Minimum ADX value to allow trades.
-	/// </summary>
-	public decimal AdxThreshold
-	{
-		get => _adxThreshold.Value;
-		set => _adxThreshold.Value = value;
-	}
-
-	/// <summary>
-	/// Sudden move percentage (e.g. 0.006 = 0.6%).
-	/// </summary>
-	public decimal SuddenMovePercent
-	{
-		get => _suddenMovePercent.Value;
-		set => _suddenMovePercent.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes parameters.
-	/// </summary>
 	public GcWithTrendFilterAndSuddenMoveProfitTakingStrategy()
 	{
-		_fastLength = Param(nameof(FastLength), 5)
-						  .SetDisplay("Fast SMA", "Period of the fast moving average", "Indicators")
-						  .SetGreaterThanZero();
-
-		_slowLength = Param(nameof(SlowLength), 25)
-						  .SetDisplay("Slow SMA", "Period of the slow moving average", "Indicators")
-						  .SetGreaterThanZero();
-
-		_trendLength = Param(nameof(TrendLength), 75)
-						   .SetDisplay("Trend SMA", "Period of the trend moving average", "Indicators")
-						   .SetGreaterThanZero();
-
-		_adxLength = Param(nameof(AdxLength), 14)
-						 .SetDisplay("ADX Length", "Period of ADX indicator", "Indicators")
-						 .SetGreaterThanZero();
-
-		_adxThreshold = Param(nameof(AdxThreshold), 20m)
-							.SetDisplay("ADX Threshold", "Minimum ADX value to trade", "Filters")
-							.SetGreaterThanZero();
-
-		_suddenMovePercent =
-			Param(nameof(SuddenMovePercent), 0.006m)
-				.SetDisplay("Sudden Move %", "Exit when move exceeds this fraction of previous close", "Risk")
-				.SetGreaterThanZero();
-
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-						  .SetDisplay("Candle Type", "Type of candles", "General");
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevClose = default;
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		var smaFast = new SMA { Length = FastLength };
-		var smaSlow = new SMA { Length = SlowLength };
-		var smaTrend = new SMA { Length = TrendLength };
-		var adx = new AverageDirectionalIndex { Length = AdxLength };
-
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 		var subscription = SubscribeCandles(CandleType);
-		subscription.BindEx(smaFast, smaSlow, smaTrend, adx, ProcessCandle).Start();
-
+		subscription.Bind(fastEma, slowEma, ProcessCandle).Start();
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, smaFast);
-			DrawIndicator(area, smaSlow);
-			DrawIndicator(area, smaTrend);
-			DrawIndicator(area, adx);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue fastVal, IIndicatorValue slowVal,
-							   IIndicatorValue trendVal, IIndicatorValue adxVal)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var adxTyped = (AverageDirectionalIndexValue)adxVal;
-		if (adxTyped.MovingAverage is not decimal adxMa)
-			return;
-
-		var fast = fastVal.ToDecimal();
-		var slow = slowVal.ToDecimal();
-		var trend = trendVal.ToDecimal();
-
-		if (_prevClose != 0m)
+		if (candle.State != CandleStates.Finished) return;
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-			var move = Math.Abs(candle.ClosePrice - _prevClose) / _prevClose;
-			if (move > SuddenMovePercent && Position != 0)
-			{
-				ClosePosition();
-				_prevClose = candle.ClosePrice;
-				return;
-			}
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
+			return;
 		}
-
-		var longCond = fast > slow && candle.ClosePrice > trend && adxMa > AdxThreshold;
-		var shortCond = fast < slow && candle.ClosePrice < trend && adxMa > AdxThreshold;
-
-		if (longCond && Position <= 0)
-			BuyMarket(Volume + Math.Abs(Position));
-		else if (shortCond && Position >= 0)
-			SellMarket(Volume + Math.Abs(Position));
-
-		if (Position > 0 && shortCond)
-			SellMarket(Position);
-		else if (Position < 0 && longCond)
-			BuyMarket(-Position);
-
-		_prevClose = candle.ClosePrice;
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
+			BuyMarket();
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+			SellMarket();
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

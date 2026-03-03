@@ -1,20 +1,15 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
-using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Long and Short strategy with RSI, ROC, selectable moving average and ATR trailing stop.
+/// Long and Short strategy with RSI, ROC and EMA trend filter.
 /// </summary>
 public class LongAndShortWithMultiIndicatorsStrategy : Strategy
 {
@@ -23,137 +18,58 @@ public class LongAndShortWithMultiIndicatorsStrategy : Strategy
 	private readonly StrategyParam<int> _rsiOversold;
 	private readonly StrategyParam<int> _rocLength;
 	private readonly StrategyParam<int> _maLength;
-	private readonly StrategyParam<MaTypes> _maType;
-	private readonly StrategyParam<int> _atrLength;
-	private readonly StrategyParam<decimal> _atrMultiplier;
-	private readonly StrategyParam<int> _bearishMaLength;
-	private readonly StrategyParam<int> _bearishTrendDuration;
-	private readonly StrategyParam<TimeSpan> _tradeStart;
-	private readonly StrategyParam<TimeSpan> _tradeEnd;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _cooldownBars;
 
-	private decimal _stopLossLong;
-	private decimal _trailingStopLong;
-	private decimal _stopLossShort;
-	private decimal _trailingStopShort;
-	private int _bearishCount;
+	private RelativeStrengthIndex _rsi;
+	private RateOfChange _roc;
+	private ExponentialMovingAverage _ma;
+	private int _barsSinceSignal;
 
-	/// <summary>
-	/// RSI length.
-	/// </summary>
 	public int RsiLength { get => _rsiLength.Value; set => _rsiLength.Value = value; }
-
-	/// <summary>
-	/// RSI overbought level.
-	/// </summary>
 	public int RsiOverbought { get => _rsiOverbought.Value; set => _rsiOverbought.Value = value; }
-
-	/// <summary>
-	/// RSI oversold level.
-	/// </summary>
 	public int RsiOversold { get => _rsiOversold.Value; set => _rsiOversold.Value = value; }
-
-	/// <summary>
-	/// ROC length.
-	/// </summary>
 	public int RocLength { get => _rocLength.Value; set => _rocLength.Value = value; }
-
-	/// <summary>
-	/// Moving average length.
-	/// </summary>
 	public int MaLength { get => _maLength.Value; set => _maLength.Value = value; }
-
-	/// <summary>
-	/// Moving average type.
-	/// </summary>
-	public MaTypes MaTypeParam { get => _maType.Value; set => _maType.Value = value; }
-
-	/// <summary>
-	/// ATR length.
-	/// </summary>
-	public int AtrLength { get => _atrLength.Value; set => _atrLength.Value = value; }
-
-	/// <summary>
-	/// ATR multiplier for stops.
-	/// </summary>
-	public decimal AtrMultiplier { get => _atrMultiplier.Value; set => _atrMultiplier.Value = value; }
-
-	/// <summary>
-	/// Length of MA used to detect bear trend.
-	/// </summary>
-	public int BearishMaLength { get => _bearishMaLength.Value; set => _bearishMaLength.Value = value; }
-
-	/// <summary>
-	/// Number of consecutive bearish bars to confirm trend.
-	/// </summary>
-	public int BearishTrendDuration { get => _bearishTrendDuration.Value; set => _bearishTrendDuration.Value = value; }
-
-	/// <summary>
-	/// Trading start time of day.
-	/// </summary>
-	public TimeSpan TradeStart { get => _tradeStart.Value; set => _tradeStart.Value = value; }
-
-	/// <summary>
-	/// Trading end time of day.
-	/// </summary>
-	public TimeSpan TradeEnd { get => _tradeEnd.Value; set => _tradeEnd.Value = value; }
-
-	/// <summary>
-	/// Candle type used by the strategy.
-	/// </summary>
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int CooldownBars { get => _cooldownBars.Value; set => _cooldownBars.Value = value; }
 
-	/// <summary>
-	/// Initializes <see cref="LongAndShortWithMultiIndicatorsStrategy"/>.
-	/// </summary>
 	public LongAndShortWithMultiIndicatorsStrategy()
 	{
-		_rsiLength = Param(nameof(RsiLength), 5)
+		_rsiLength = Param(nameof(RsiLength), 14)
 			.SetDisplay("RSI Length", "Length of RSI", "Indicators")
-			
-			.SetGreaterThanZero()
-			.SetOptimize(2, 20, 1);
+			.SetGreaterThanZero();
 
 		_rsiOverbought = Param(nameof(RsiOverbought), 70)
 			.SetDisplay("RSI Overbought", "RSI overbought level", "Indicators");
 
-		_rsiOversold = Param(nameof(RsiOversold), 44)
+		_rsiOversold = Param(nameof(RsiOversold), 30)
 			.SetDisplay("RSI Oversold", "RSI oversold level", "Indicators");
 
-		_rocLength = Param(nameof(RocLength), 4)
+		_rocLength = Param(nameof(RocLength), 10)
 			.SetDisplay("ROC Length", "Length of ROC", "Indicators")
 			.SetGreaterThanZero();
 
-		_maLength = Param(nameof(MaLength), 24)
+		_maLength = Param(nameof(MaLength), 20)
 			.SetDisplay("MA Length", "Length of moving average", "Indicators")
 			.SetGreaterThanZero();
 
-		_maType = Param(nameof(MaTypeParam), MaTypes.Tema)
-			.SetDisplay("MA Type", "Type of moving average", "Indicators");
-
-		_atrLength = Param(nameof(AtrLength), 14)
-			.SetDisplay("ATR Length", "Length of ATR", "Risk")
-			.SetGreaterThanZero();
-
-		_atrMultiplier = Param(nameof(AtrMultiplier), 2m)
-			.SetDisplay("ATR Multiplier", "ATR multiplier", "Risk");
-
-		_bearishMaLength = Param(nameof(BearishMaLength), 200)
-			.SetDisplay("Bear MA Length", "Length for bearish MA", "Bear Market")
-			.SetGreaterThanZero();
-
-		_bearishTrendDuration = Param(nameof(BearishTrendDuration), 5)
-			.SetDisplay("Bear Trend Bars", "Bars to confirm bearish trend", "Bear Market")
-			.SetGreaterThanZero();
-
-		_tradeStart = Param(nameof(TradeStart), TimeSpan.Zero)
-			.SetDisplay("Trade Start", "Start time", "Trading Hours");
-
-		_tradeEnd = Param(nameof(TradeEnd), new TimeSpan(23, 59, 59))
-			.SetDisplay("Trade End", "End time", "Trading Hours");
-
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
+
+		_cooldownBars = Param(nameof(CooldownBars), 60)
+			.SetDisplay("Cooldown Bars", "Min bars between signals", "General");
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_rsi = null;
+		_roc = null;
+		_ma = null;
+		_barsSinceSignal = 0;
 	}
 
 	/// <inheritdoc />
@@ -161,107 +77,54 @@ public class LongAndShortWithMultiIndicatorsStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var rsi = new RelativeStrengthIndex { Length = RsiLength };
-		var roc = new RateOfChange { Length = RocLength };
-		var ma = CreateMa(MaTypeParam, MaLength);
-		var bearishMa = new SMA { Length = BearishMaLength };
-		var atr = new AverageTrueRange { Length = AtrLength };
+		_barsSinceSignal = 0;
+		_rsi = new RelativeStrengthIndex { Length = RsiLength };
+		_roc = new RateOfChange { Length = RocLength };
+		_ma = new ExponentialMovingAverage { Length = MaLength };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(rsi, roc, ma, bearishMa, atr, ProcessCandle).Start();
+		subscription
+			.Bind(_rsi, _roc, _ma, ProcessCandle)
+			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, ma);
-			DrawIndicator(area, bearishMa);
+			DrawIndicator(area, _ma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal rsiValue, decimal rocValue, decimal maValue, decimal bearishMaValue, decimal atrValue)
+	private void ProcessCandle(ICandleMessage candle, decimal rsiVal, decimal rocVal, decimal maVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var close = candle.ClosePrice;
-		var time = candle.CloseTime.TimeOfDay;
-		var inTradeTime = time >= TradeStart && time <= TradeEnd;
+		_barsSinceSignal++;
 
-		var bearishTrend = close < bearishMaValue;
-		_bearishCount = bearishTrend ? _bearishCount + 1 : 0;
-		var bearishTrendConfirmed = _bearishCount >= BearishTrendDuration;
-
-		var rsiCondition = rsiValue < RsiOverbought && rsiValue > RsiOversold;
-		var rocCondition = rocValue > 0m;
-		var maCondition = close > maValue;
-
-		var longCondition = rsiCondition && rocCondition && maCondition;
-		var shortCondition = bearishTrendConfirmed && rocValue < 0m && close < maValue;
-		var stopConditionLong = rsiValue < RsiOversold && rocValue < 0m && close < maValue;
-		var stopConditionShort = rsiValue > RsiOverbought && rocValue > 0m && close > maValue;
-
-		if (!inTradeTime)
+		if (!_rsi.IsFormed || !_roc.IsFormed || !_ma.IsFormed)
 			return;
 
-		if (Position == 0)
+		if (_barsSinceSignal < CooldownBars)
+			return;
+
+		var close = candle.ClosePrice;
+
+		// Long: price above MA trend + RSI not overbought + positive momentum
+		var longSignal = close > maVal && rsiVal < RsiOverbought && rocVal > 0;
+		// Short: price below MA trend + RSI not oversold + negative momentum
+		var shortSignal = close < maVal && rsiVal > RsiOversold && rocVal < 0;
+
+		if (longSignal && Position <= 0)
 		{
-			if (longCondition)
-			{
-				BuyMarket();
-				_stopLossLong = close - atrValue * AtrMultiplier;
-				_trailingStopLong = _stopLossLong;
-			}
-			else if (shortCondition)
-			{
-				SellMarket();
-				_stopLossShort = close + atrValue * AtrMultiplier;
-				_trailingStopShort = _stopLossShort;
-			}
+			BuyMarket(Volume + Math.Abs(Position));
+			_barsSinceSignal = 0;
 		}
-		else if (Position > 0)
+		else if (shortSignal && Position >= 0)
 		{
-			_trailingStopLong = Math.Max(_trailingStopLong, close - atrValue * AtrMultiplier);
-
-			if (stopConditionLong || close <= _trailingStopLong)
-				SellMarket(Position);
+			SellMarket(Volume + Math.Abs(Position));
+			_barsSinceSignal = 0;
 		}
-		else
-		{
-			_trailingStopShort = Math.Min(_trailingStopShort, close + atrValue * AtrMultiplier);
-
-			if (stopConditionShort || close >= _trailingStopShort)
-				BuyMarket(Math.Abs(Position));
-		}
-	}
-
-	private static IIndicator CreateMa(MaTypes type, int length)
-	{
-		return type switch
-		{
-			MaTypes.Sma => new SMA { Length = length },
-			MaTypes.Ema => new EMA { Length = length },
-			MaTypes.Wma => new WeightedMovingAverage { Length = length },
-			MaTypes.Hma => new HullMovingAverage { Length = length },
-			MaTypes.Vwma => new VolumeWeightedMovingAverage { Length = length },
-			MaTypes.Rma => new SmoothedMovingAverage { Length = length },
-			MaTypes.Tema => new TripleExponentialMovingAverage { Length = length },
-			_ => new SMA { Length = length }
-		};
-	}
-
-	/// <summary>
-	/// Moving average types.
-	/// </summary>
-	public enum MaTypes
-	{
-		Sma = 1,
-		Ema,
-		Wma,
-		Hma,
-		Vwma,
-		Rma,
-		Tema
 	}
 }

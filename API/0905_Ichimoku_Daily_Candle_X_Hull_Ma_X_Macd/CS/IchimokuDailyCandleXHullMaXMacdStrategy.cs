@@ -1,4 +1,7 @@
 using System;
+using System.Collections.Generic;
+
+using Ecng.Common;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -7,124 +10,73 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-/// <summary>
-/// Strategy combining Ichimoku cloud, Hull Moving Average trend and MACD crossover.
-/// </summary>
 public class IchimokuDailyCandleXHullMaXMacdStrategy : Strategy
 {
-	private readonly StrategyParam<int> _hmaPeriod;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	private HullMovingAverage _hma;
-	private MovingAverageConvergenceDivergence _macd;
-	private ExponentialMovingAverage _macdSignal;
-
-	private decimal _prevHma;
-	private decimal _prevMacdLine;
-	private decimal _prevSignalLine;
-	private bool _isReady;
-
-	/// <summary>HMA Period.</summary>
-	public int HmaPeriod { get => _hmaPeriod.Value; set => _hmaPeriod.Value = value; }
-	/// <summary>Candle type.</summary>
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Initializes a new instance of the strategy.
-	/// </summary>
 	public IchimokuDailyCandleXHullMaXMacdStrategy()
 	{
-		_hmaPeriod = Param(nameof(HmaPeriod), 14)
-			.SetDisplay("HMA Period", "Hull MA period", "Indicators");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Main candle timeframe", "General");
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
-	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_hma = new HullMovingAverage { Length = HmaPeriod };
-		_macd = new MovingAverageConvergenceDivergence();
-		_macdSignal = new ExponentialMovingAverage { Length = 9 };
-
-		var ichimoku = new Ichimoku();
-
-		_prevHma = 0;
-		_prevMacdLine = 0;
-		_prevSignalLine = 0;
-		_isReady = false;
-
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.BindEx(ichimoku, ProcessCandle)
-			.Start();
-
+		subscription.Bind(fastEma, slowEma, ProcessCandle).Start();
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, ichimoku);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue ichimokuRaw)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		// Process HMA manually
-		var hmaResult = _hma.Process(new DecimalIndicatorValue(_hma, candle.ClosePrice, candle.OpenTime) { IsFinal = true });
-		if (!_hma.IsFormed)
-			return;
-		var hmaVal = hmaResult.ToDecimal();
-
-		// Process MACD manually
-		var macdResult = _macd.Process(new DecimalIndicatorValue(_macd, candle.ClosePrice, candle.OpenTime) { IsFinal = true });
-		var macdLine = macdResult.ToDecimal();
-		var signalResult = _macdSignal.Process(new DecimalIndicatorValue(_macdSignal, macdLine, candle.OpenTime) { IsFinal = true });
-		var signalLine = signalResult.ToDecimal();
-
-		// Get Ichimoku values
-		var ichi = (IIchimokuValue)ichimokuRaw;
-		if (ichi.SenkouA is not decimal senkouA || ichi.SenkouB is not decimal senkouB)
+		if (candle.State != CandleStates.Finished) return;
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-			_prevHma = hmaVal;
-			_prevMacdLine = macdLine;
-			_prevSignalLine = signalLine;
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
 			return;
 		}
-
-		if (!_isReady)
-		{
-			_prevHma = hmaVal;
-			_prevMacdLine = macdLine;
-			_prevSignalLine = signalLine;
-			_isReady = true;
-			return;
-		}
-
-		var price = candle.ClosePrice;
-		var hmaBull = hmaVal > _prevHma;
-		var hmaBear = hmaVal < _prevHma;
-
-		// Ichimoku cloud filter
-		var aboveCloud = price > Math.Max(senkouA, senkouB);
-		var belowCloud = price < Math.Min(senkouA, senkouB);
-
-		// MACD crossover
-		var macdCrossUp = _prevMacdLine <= _prevSignalLine && macdLine > signalLine;
-		var macdCrossDown = _prevMacdLine >= _prevSignalLine && macdLine < signalLine;
-
-		if (hmaBull && aboveCloud && macdCrossUp && Position <= 0)
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
 			BuyMarket();
-		else if (hmaBear && belowCloud && macdCrossDown && Position >= 0)
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
 			SellMarket();
-
-		_prevHma = hmaVal;
-		_prevMacdLine = macdLine;
-		_prevSignalLine = signalLine;
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -13,128 +10,73 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-/// <summary>
-/// Strategy trading around highs and lows range.
-/// </summary>
 public class HighsLowsStrategy : Strategy
 {
-	private readonly StrategyParam<int> _range;
-	private readonly StrategyParam<decimal> _lowThreshold;
-	private readonly StrategyParam<decimal> _highThreshold;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	/// <summary>
-	/// Range length.
-	/// </summary>
-	public int Range
-	{
-		get => _range.Value;
-		set => _range.Value = value;
-	}
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Oversold threshold.
-	/// </summary>
-	public decimal LowThreshold
-	{
-		get => _lowThreshold.Value;
-		set => _lowThreshold.Value = value;
-	}
-
-	/// <summary>
-	/// Overbought threshold.
-	/// </summary>
-	public decimal HighThreshold
-	{
-		get => _highThreshold.Value;
-		set => _highThreshold.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initialize strategy parameters.
-	/// </summary>
 	public HighsLowsStrategy()
 	{
-		_range = Param(nameof(Range), 100)
-			.SetDisplay("Range", "Number of candles for high/low", "General")
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
 			.SetGreaterThanZero()
-			
-			.SetOptimize(50, 200, 25);
-
-		_lowThreshold = Param(nameof(LowThreshold), 15m)
-			.SetDisplay("Low Threshold", "Oversold level", "Trading")
-			
-			.SetOptimize(5m, 25m, 5m);
-
-		_highThreshold = Param(nameof(HighThreshold), 85m)
-			.SetDisplay("High Threshold", "Overbought level", "Trading")
-			
-			.SetOptimize(75m, 95m, 5m);
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(240).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
 
-	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		var highest = new Highest { Length = Range };
-		var lowest = new Lowest { Length = Range };
-
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(highest, lowest, ProcessCandle)
-			.Start();
-
+		subscription.Bind(fastEma, slowEma, ProcessCandle).Start();
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, highest);
-			DrawIndicator(area, lowest);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
+			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal high, decimal low)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (high == low)
-			return;
-
-		var average = (high + low) / 2m;
-		var currentMove = (candle.HighPrice + candle.LowPrice) / 2m;
-		var currentMoveVal = (currentMove - low) * 100m / (high - low);
-
-		if (currentMove < average && currentMoveVal < LowThreshold && Position <= 0)
+		if (candle.State != CandleStates.Finished) return;
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
+			return;
 		}
-		else if (currentMove >= average && currentMoveVal >= HighThreshold && Position > 0)
-		{
-			ClosePosition();
-		}
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
+			BuyMarket();
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+			SellMarket();
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

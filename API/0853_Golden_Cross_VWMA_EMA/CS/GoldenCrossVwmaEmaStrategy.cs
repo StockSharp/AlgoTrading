@@ -1,140 +1,82 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
-using StockSharp.Algo;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
-/// <summary>
-/// Golden Cross VWMA & EMA Strategy.
-/// Opens long when VWMA crosses above EMA from 4h timeframe and short on opposite.
-/// </summary>
 public class GoldenCrossVwmaEmaStrategy : Strategy
 {
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _vwmaLength;
-	private readonly StrategyParam<int> _emaLength;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	private VolumeWeightedMovingAverage _vwma;
-	private ExponentialMovingAverage _ema;
-
-	private decimal? _prevVwma;
-	private decimal? _prevEma;
-	private decimal _currentEma;
-	private bool _emaIsFormed;
-
-	private static readonly DataType HigherCandleType = TimeSpan.FromHours(4).TimeFrame();
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public GoldenCrossVwmaEmaStrategy()
 	{
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles for VWMA", "General");
-
-		_vwmaLength = Param(nameof(VwmaLength), 50)
-			.SetDisplay("VWMA Length", "Period for VWMA", "Indicators");
-
-		_emaLength = Param(nameof(EmaLength), 200)
-			.SetDisplay("EMA Length", "Period for 4h EMA", "Indicators");
-	}
-
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	public int VwmaLength
-	{
-		get => _vwmaLength.Value;
-		set => _vwmaLength.Value = value;
-	}
-
-	public int EmaLength
-	{
-		get => _emaLength.Value;
-		set => _emaLength.Value = value;
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-		=> [(Security, CandleType), (Security, HigherCandleType)];
+	{
+		return [(Security, CandleType)];
+	}
 
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_prevVwma = null;
-		_prevEma = null;
-		_currentEma = 0m;
-		_emaIsFormed = false;
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
 
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_vwma = new VolumeWeightedMovingAverage { Length = VwmaLength };
-		_ema = new EMA { Length = EmaLength };
-
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(_vwma, ProcessBase).Start();
-
-		var higherSubscription = SubscribeCandles(HigherCandleType);
-		higherSubscription.Bind(_ema, ProcessHigher).Start();
-
-		StartProtection(null, null);
-
+		subscription.Bind(fastEma, slowEma, ProcessCandle).Start();
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _vwma);
-			DrawIndicator(area, _ema);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessHigher(ICandleMessage candle, decimal emaValue)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
-		if (candle.State != CandleStates.Finished)
-		return;
-
-		_currentEma = emaValue;
-		_emaIsFormed = _ema.IsFormed;
-	}
-
-	private void ProcessBase(ICandleMessage candle, decimal vwmaValue)
-	{
-		if (candle.State != CandleStates.Finished)
-		return;
-
-		if (!_vwma.IsFormed || !_emaIsFormed)
-		return;
-
-		if (_prevVwma is null || _prevEma is null)
+		if (candle.State != CandleStates.Finished) return;
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-			_prevVwma = vwmaValue;
-			_prevEma = _currentEma;
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
 			return;
 		}
-
-		var crossover = _prevVwma <= _prevEma && vwmaValue > _currentEma;
-		var crossunder = _prevVwma >= _prevEma && vwmaValue < _currentEma;
-
-		if (crossover && Position <= 0)
-		BuyMarket(Volume + Math.Abs(Position));
-		else if (crossunder && Position >= 0)
-		SellMarket(Volume + Math.Abs(Position));
-
-		_prevVwma = vwmaValue;
-		_prevEma = _currentEma;
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
+			BuyMarket();
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+			SellMarket();
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,101 +11,48 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Dollar cost averaging strategy using Heikin Ashi and RSI.
+/// Dca2Strategy using EMA crossover for trend timing.
+/// Enters long on golden cross, short on death cross.
 /// </summary>
 public class Dca2Strategy : Strategy
 {
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _startYear;
-	private readonly StrategyParam<int> _endYear;
-	private readonly StrategyParam<int> _exitPercent;
-	private readonly StrategyParam<int> _exitRsi;
 
-	private RelativeStrengthIndex _rsi;
-	private DateTimeOffset _start;
-	private DateTimeOffset _finish;
-	private decimal _prevHaOpen;
-	private decimal _prevHaClose;
-	private decimal _prevRsi;
-	private int _rsiExit;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	/// <summary>
-	/// Initialize DCA Strategy 2.
-	/// </summary>
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+
 	public Dca2Strategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
-		_startYear = Param(nameof(StartYear), 2004)
-			.SetDisplay("Start Year", "The year at which the strategy to start backtesting", "Period");
-
-		_endYear = Param(nameof(EndYear), 2030)
-			.SetDisplay("End Year", "The year at which the strategy to stop backtesting", "Period");
-
-		_exitPercent = Param(nameof(ExitPercent), 100)
-			.SetDisplay("Exit Percent", "How much capital should be sold at exit", "Exit");
-
-		_exitRsi = Param(nameof(ExitRsi), 85)
-			.SetDisplay("Exit RSI", "The RSI value to exit at. Set to 100 for auto detection", "Exit");
-	}
-
-	/// <summary>
-	/// Candle type.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Start year.
-	/// </summary>
-	public int StartYear
-	{
-		get => _startYear.Value;
-		set => _startYear.Value = value;
-	}
-
-	/// <summary>
-	/// End year.
-	/// </summary>
-	public int EndYear
-	{
-		get => _endYear.Value;
-		set => _endYear.Value = value;
-	}
-
-	/// <summary>
-	/// Exit percent.
-	/// </summary>
-	public int ExitPercent
-	{
-		get => _exitPercent.Value;
-		set => _exitPercent.Value = value;
-	}
-
-	/// <summary>
-	/// Exit RSI level.
-	/// </summary>
-	public int ExitRsi
-	{
-		get => _exitRsi.Value;
-		set => _exitRsi.Value = value;
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-		=> [(Security, CandleType)];
+	{
+		return [(Security, CandleType)];
+	}
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_prevHaOpen = _prevHaClose = 0m;
-		_prevRsi = 0m;
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
 
 	/// <inheritdoc />
@@ -116,59 +60,46 @@ public class Dca2Strategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_start = new DateTimeOffset(StartYear, 1, 1, 0, 0, 0, TimeSpan.Zero);
-		_finish = new DateTimeOffset(EndYear, 1, 1, 0, 0, 0, TimeSpan.Zero);
-
-		var isBitcoin = Security.Code.IndexOf("BTC", StringComparison.OrdinalIgnoreCase) >= 0;
-		_rsiExit = ExitRsi < 100 ? ExitRsi : isBitcoin ? 92 : 84;
-
-		_rsi = new RelativeStrengthIndex { Length = 14 };
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_rsi, ProcessCandle)
+			.Bind(fastEma, slowEma, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _rsi);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal rsiValue)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var haClose = (candle.OpenPrice + candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 4m;
-		var haOpen = _prevHaOpen == 0m && _prevHaClose == 0m
-			? (candle.OpenPrice + candle.ClosePrice) / 2m
-			: (_prevHaOpen + _prevHaClose) / 2m;
-
-		var greenCandle = haClose > haOpen;
-		var redPrev = _prevHaClose < _prevHaOpen;
-		var inWindow = candle.OpenTime >= _start && candle.OpenTime <= _finish;
-
-		if (_rsi.IsFormed && IsFormedAndOnlineAndAllowTrading())
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-			if (greenCandle && redPrev && inWindow)
-				BuyMarket(Volume);
-
-			var crossUnder = _prevRsi >= _rsiExit && rsiValue < _rsiExit;
-			var timeExit = candle.OpenTime >= _finish;
-
-			if (Position > 0 && (crossUnder || timeExit))
-			{
-				var qty = Position * ExitPercent / 100m;
-				SellMarket(qty);
-			}
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
+			return;
 		}
 
-		_prevHaOpen = haOpen;
-		_prevHaClose = haClose;
-		_prevRsi = rsiValue;
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
+		{
+			BuyMarket();
+		}
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+		{
+			SellMarket();
+		}
+
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

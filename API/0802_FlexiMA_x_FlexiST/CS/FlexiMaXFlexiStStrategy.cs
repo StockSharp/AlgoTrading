@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -13,121 +10,73 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-/// <summary>
-/// FlexiMA x FlexiST strategy using SMA and SuperTrend signals.
-/// Enters when price is on the same side of both indicators.
-/// Exits on opposite side conditions.
-/// </summary>
 public class FlexiMaXFlexiStStrategy : Strategy
 {
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _maPeriod;
-	private readonly StrategyParam<int> _stAtrPeriod;
-	private readonly StrategyParam<decimal> _stMultiplier;
-private readonly StrategyParam<Sides?> _direction;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-/// <summary>
-/// Candle type for calculations.
-/// </summary>
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Moving average period.
-	/// </summary>
-	public int MaPeriod { get => _maPeriod.Value; set => _maPeriod.Value = value; }
-
-	/// <summary>
-	/// SuperTrend ATR period.
-	/// </summary>
-	public int StAtrPeriod { get => _stAtrPeriod.Value; set => _stAtrPeriod.Value = value; }
-
-	/// <summary>
-	/// SuperTrend ATR multiplier.
-	/// </summary>
-	public decimal StMultiplier { get => _stMultiplier.Value; set => _stMultiplier.Value = value; }
-
-	/// <summary>
-/// Allowed trade direction.
-/// </summary>
-public Sides? Direction { get => _direction.Value; set => _direction.Value = value; }
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="FlexiMaXFlexiStStrategy"/> class.
-	/// </summary>
 	public FlexiMaXFlexiStStrategy()
 	{
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
-
-		_maPeriod = Param(nameof(MaPeriod), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("MA Period", "Moving average period", "FlexiMA");
-
-		_stAtrPeriod = Param(nameof(StAtrPeriod), 10)
-			.SetGreaterThanZero()
-			.SetDisplay("ATR Period", "ATR length for SuperTrend", "FlexiST");
-
-		_stMultiplier = Param(nameof(StMultiplier), 3m)
-			.SetGreaterThanZero()
-			.SetDisplay("Multiplier", "ATR multiplier for SuperTrend", "FlexiST");
-
-_direction = Param(nameof(Direction), (Sides?)null)
-.SetDisplay("Trade Direction", "Allowed trading direction", "General");
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
 
-	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		var ma = new SMA { Length = MaPeriod };
-		var supertrend = new SuperTrend { Length = StAtrPeriod, Multiplier = StMultiplier };
-
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(ma, supertrend, ProcessCandle)
-			.Start();
-
+		subscription.Bind(fastEma, slowEma, ProcessCandle).Start();
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, ma);
-			DrawIndicator(area, supertrend);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal maValue, decimal stValue)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
-		if (candle.State != CandleStates.Finished)
+		if (candle.State != CandleStates.Finished) return;
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
+		{
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
 			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var maDiff = candle.ClosePrice - maValue;
-		var stDiff = candle.ClosePrice - stValue;
-
-var allowLong = Direction is null or Sides.Buy;
-var allowShort = Direction is null or Sides.Sell;
-
-		if (allowLong && maDiff > 0 && stDiff > 0 && Position <= 0)
-			BuyMarket(Volume + Math.Abs(Position));
-
-		if (allowShort && maDiff < 0 && stDiff < 0 && Position >= 0)
-			SellMarket(Volume + Math.Abs(Position));
-
-		if (Position > 0 && maDiff < 0 && stDiff < 0)
-			SellMarket();
-
-		if (Position < 0 && maDiff > 0 && stDiff > 0)
+		}
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
 			BuyMarket();
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+			SellMarket();
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

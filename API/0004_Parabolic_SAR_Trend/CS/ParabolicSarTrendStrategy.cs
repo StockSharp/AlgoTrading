@@ -59,14 +59,14 @@ public class ParabolicSarTrendStrategy : Strategy
 	/// </summary>
 	public ParabolicSarTrendStrategy()
 	{
-		_accelerationFactor = Param(nameof(AccelerationFactor), 0.02m)
+		_accelerationFactor = Param(nameof(AccelerationFactor), 0.003m)
 			.SetDisplay("Acceleration Factor", "Initial acceleration factor for SAR calculation", "Indicators")
-			
+
 			.SetOptimize(0.01m, 0.05m, 0.01m);
 
-		_maxAccelerationFactor = Param(nameof(MaxAccelerationFactor), 0.2m)
+		_maxAccelerationFactor = Param(nameof(MaxAccelerationFactor), 0.03m)
 			.SetDisplay("Max Acceleration Factor", "Maximum acceleration factor for SAR calculation", "Indicators")
-			
+
 			.SetOptimize(0.1m, 0.5m, 0.1m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -126,6 +126,9 @@ public class ParabolicSarTrendStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
+		if (sarValue <= 0)
+			return;
+
 		// Check the price position relative to SAR
 		var isPriceAboveSar = candle.ClosePrice > sarValue;
 
@@ -148,12 +151,6 @@ public class ParabolicSarTrendStrategy : Strategy
 				SellMarket(volume);
 				LogInfo($"Sell signal: Price {candle.ClosePrice} crossed below SAR {sarValue}");
 			}
-		}
-		// Exit logic - when SAR catches up with price
-		else if ((Position > 0 && !isPriceAboveSar) || (Position < 0 && isPriceAboveSar))
-		{
-			ClosePosition();
-			LogInfo($"Exit signal: SAR {sarValue} catching up with price {candle.ClosePrice}");
 		}
 
 		// Update previous values

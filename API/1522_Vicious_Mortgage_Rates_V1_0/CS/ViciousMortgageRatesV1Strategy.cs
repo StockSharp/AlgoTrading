@@ -1,10 +1,5 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,7 +10,7 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Vicious Mortgage Rates strategy.
-/// Uses fast/slow EMA crossover with volatility filter (StdDev).
+/// Uses fast/slow EMA crossover with volatility filter (StdDev above its SMA).
 /// Trades on EMA cross when volatility is elevated.
 /// </summary>
 public class ViciousMortgageRatesV1Strategy : Strategy
@@ -27,6 +22,7 @@ public class ViciousMortgageRatesV1Strategy : Strategy
 
 	private decimal _prevFast;
 	private decimal _prevSlow;
+	private int _cooldown;
 
 	public int FastLength { get => _fastLength.Value; set => _fastLength.Value = value; }
 	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
@@ -47,36 +43,42 @@ public class ViciousMortgageRatesV1Strategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Vol Length", "Volatility lookback", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe", "General");
 	}
 
+	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
 
+	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
 		_prevFast = 0;
 		_prevSlow = 0;
+		_cooldown = 0;
 	}
 
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
 		var fastEma = new ExponentialMovingAverage { Length = FastLength };
 		var slowEma = new ExponentialMovingAverage { Length = SlowLength };
-		var stdDev = new StandardDeviation { Length = VolLength };
-		var smaVol = new SimpleMovingAverage { Length = VolLength };
 
 		_prevFast = 0;
 		_prevSlow = 0;
+		_cooldown = 0;
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(fastEma, slowEma, stdDev, smaVol, ProcessCandle).Start();
+
+		subscription
+			.Bind(fastEma, slowEma, ProcessCandle)
+			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -88,12 +90,22 @@ public class ViciousMortgageRatesV1Strategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow, decimal stdVal, decimal smaVal)
+	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		if (_cooldown > 0)
+			_cooldown--;
+
 		if (_prevFast == 0)
+		{
+			_prevFast = fast;
+			_prevSlow = slow;
+			return;
+		}
+
+		if (_cooldown > 0)
 		{
 			_prevFast = fast;
 			_prevSlow = slow;
@@ -104,9 +116,15 @@ public class ViciousMortgageRatesV1Strategy : Strategy
 		var shortCross = _prevFast >= _prevSlow && fast < slow;
 
 		if (longCross && Position <= 0)
+		{
 			BuyMarket();
+			_cooldown = 30;
+		}
 		else if (shortCross && Position >= 0)
+		{
 			SellMarket();
+			_cooldown = 30;
+		}
 
 		_prevFast = fast;
 		_prevSlow = slow;

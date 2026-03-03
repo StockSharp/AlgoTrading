@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,93 +11,34 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Daytrading ES Wick Length Strategy (0661).
-/// Enters long when total wick length exceeds its moving average plus offset.
-/// Exits after holding a specified number of bars.
+/// DaytradingESWickLengthStrategy using EMA crossover for trend timing.
+/// Enters long on golden cross, short on death cross.
 /// </summary>
 public class DaytradingESWickLengthStrategy : Strategy
 {
-	private readonly StrategyParam<int> _maLength;
-	private readonly StrategyParam<MovingAverageTypes> _maType;
-	private readonly StrategyParam<decimal> _maOffset;
-	private readonly StrategyParam<int> _holdPeriods;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private IIndicator _ma;
-	private int _barsInPosition;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	/// <summary>
-	/// Moving average length for wick calculation.
-	/// </summary>
-	public int MaLength
-	{
-		get => _maLength.Value;
-		set => _maLength.Value = value;
-	}
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Type of moving average.
-	/// </summary>
-	public MovingAverageTypes MaType
-	{
-		get => _maType.Value;
-		set => _maType.Value = value;
-	}
-
-	/// <summary>
-	/// Offset added to moving average.
-	/// </summary>
-	public decimal MaOffset
-	{
-		get => _maOffset.Value;
-		set => _maOffset.Value = value;
-	}
-
-	/// <summary>
-	/// Number of bars to hold position.
-	/// </summary>
-	public int HoldPeriods
-	{
-		get => _holdPeriods.Value;
-		set => _holdPeriods.Value = value;
-	}
-
-	/// <summary>
-	/// Type of candles to use.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="DaytradingESWickLengthStrategy"/>.
-	/// </summary>
 	public DaytradingESWickLengthStrategy()
 	{
-		_maLength = Param(nameof(MaLength), 20)
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
 			.SetGreaterThanZero()
-			.SetDisplay("MA Length", "Moving average length", "General")
-			
-			.SetOptimize(10, 40, 5);
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
 
-		_maType = Param(nameof(MaType), MovingAverageTypes.VolumeWeighted)
-			.SetDisplay("MA Type", "Type of moving average", "General");
-
-		_maOffset = Param(nameof(MaOffset), 10m)
-			.SetDisplay("MA Offset", "Offset added to MA", "General")
-			
-			.SetOptimize(5m, 20m, 5m);
-
-		_holdPeriods = Param(nameof(HoldPeriods), 18)
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
 			.SetGreaterThanZero()
-			.SetDisplay("Hold Periods", "Bars to hold a position", "General")
-			
-			.SetOptimize(5, 30, 5);
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -113,8 +51,8 @@ public class DaytradingESWickLengthStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_ma = null;
-		_barsInPosition = 0;
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
 
 	/// <inheritdoc />
@@ -122,81 +60,46 @@ public class DaytradingESWickLengthStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_ma = CreateMa(MaType, MaLength);
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(fastEma, slowEma, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _ma);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var upperWick = candle.HighPrice - Math.Max(candle.ClosePrice, candle.OpenPrice);
-		var lowerWick = Math.Min(candle.ClosePrice, candle.OpenPrice) - candle.LowPrice;
-		var totalWick = upperWick + lowerWick;
-
-		var maVal = _ma.Process(new DecimalIndicatorValue(_ma, totalWick, candle.ServerTime)).ToNullableDecimal();
-		if (!maVal.HasValue)
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
+		{
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
 			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading() || !_ma.IsFormed)
-			return;
-
-		var threshold = maVal.Value + MaOffset;
-
-		if (Position <= 0 && totalWick > threshold)
-		{
-			BuyMarket(Volume + Math.Abs(Position));
-			_barsInPosition = 0;
 		}
-		else if (Position > 0)
-		{
-			_barsInPosition++;
 
-			if (_barsInPosition >= HoldPeriods)
-			{
-				SellMarket(Position);
-				_barsInPosition = 0;
-			}
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
+		{
+			BuyMarket();
 		}
-	}
-
-	private static IIndicator CreateMa(MovingAverageTypes type, int length)
-	{
-		return type switch
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
 		{
-			MovingAverageTypes.Simple => new SMA { Length = length },
-			MovingAverageTypes.Exponential => new EMA { Length = length },
-			MovingAverageTypes.Weighted => new WeightedMovingAverage { Length = length },
-			MovingAverageTypes.VolumeWeighted => new VolumeWeightedMovingAverage { Length = length },
-			_ => new SMA { Length = length },
-		};
-	}
+			SellMarket();
+		}
 
-	/// <summary>
-	/// Available moving average types.
-	/// </summary>
-	public enum MovingAverageTypes
-	{
-		/// <summary>Simple moving average.</summary>
-		Simple,
-		/// <summary>Exponential moving average.</summary>
-		Exponential,
-		/// <summary>Weighted moving average.</summary>
-		Weighted,
-		/// <summary>Volume weighted moving average.</summary>
-		VolumeWeighted
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

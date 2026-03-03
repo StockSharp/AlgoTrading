@@ -1,24 +1,19 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
-using StockSharp.Algo.Candles;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Strategy that trades based on RSI Failure Swing pattern.
 /// A failure swing occurs when RSI reverses direction without crossing through centerline.
+/// Uses cooldown to control trade frequency.
 /// </summary>
 public class RsiFailureSwingStrategy : Strategy
 {
@@ -26,17 +21,16 @@ public class RsiFailureSwingStrategy : Strategy
 	private readonly StrategyParam<int> _rsiPeriod;
 	private readonly StrategyParam<decimal> _oversoldLevel;
 	private readonly StrategyParam<decimal> _overboughtLevel;
-	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<int> _cooldownBars;
 
 	private RelativeStrengthIndex _rsi;
-	
-	private decimal _prevRsiValue;
-	private decimal _prevPrevRsiValue;
-	private bool _inPosition;
-	private Sides _positionSide;
+
+	private decimal _prevRsi;
+	private decimal _prevPrevRsi;
+	private int _cooldown;
 
 	/// <summary>
-	/// Candle type and timeframe for the strategy.
+	/// Candle type and timeframe.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -45,7 +39,7 @@ public class RsiFailureSwingStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Period for RSI calculation.
+	/// RSI period.
 	/// </summary>
 	public int RsiPeriod
 	{
@@ -54,7 +48,7 @@ public class RsiFailureSwingStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Oversold level for RSI.
+	/// Oversold level.
 	/// </summary>
 	public decimal OversoldLevel
 	{
@@ -63,7 +57,7 @@ public class RsiFailureSwingStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Overbought level for RSI.
+	/// Overbought level.
 	/// </summary>
 	public decimal OverboughtLevel
 	{
@@ -72,37 +66,37 @@ public class RsiFailureSwingStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stop-loss percentage from entry price.
+	/// Cooldown bars between trades.
 	/// </summary>
-	public decimal StopLossPercent
+	public int CooldownBars
 	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	/// <summary>
-	/// Initializes a new instance of the <see cref="RsiFailureSwingStrategy"/>.
+	/// Constructor.
 	/// </summary>
 	public RsiFailureSwingStrategy()
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-					 .SetDisplay("Candle Type", "Type of candles to use for analysis", "General");
-		
+			.SetDisplay("Candle Type", "Candle timeframe", "General");
+
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
-					.SetDisplay("RSI Period", "Period for RSI calculation", "RSI Settings")
-					.SetRange(2, 50);
-		
-		_oversoldLevel = Param(nameof(OversoldLevel), 30m)
-					   .SetDisplay("Oversold Level", "RSI level considered oversold", "RSI Settings")
-					   .SetRange(10m, 40m);
-		
-		_overboughtLevel = Param(nameof(OverboughtLevel), 70m)
-						 .SetDisplay("Overbought Level", "RSI level considered overbought", "RSI Settings")
-						 .SetRange(60m, 90m);
-		
-		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
-						  .SetDisplay("Stop Loss %", "Stop-loss percentage from entry price", "Protection")
-						  .SetRange(0.5m, 5m);
+			.SetDisplay("RSI Period", "Period for RSI", "RSI Settings")
+			.SetRange(2, 50);
+
+		_oversoldLevel = Param(nameof(OversoldLevel), 40m)
+			.SetDisplay("Oversold Level", "RSI oversold threshold", "RSI Settings")
+			.SetRange(10m, 45m);
+
+		_overboughtLevel = Param(nameof(OverboughtLevel), 60m)
+			.SetDisplay("Overbought Level", "RSI overbought threshold", "RSI Settings")
+			.SetRange(55m, 90m);
+
+		_cooldownBars = Param(nameof(CooldownBars), 400)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "General")
+			.SetRange(10, 2000);
 	}
 
 	/// <inheritdoc />
@@ -115,36 +109,24 @@ public class RsiFailureSwingStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
 		_rsi = default;
-		_prevRsiValue = 0;
-		_prevPrevRsiValue = 0;
-		_inPosition = false;
-		_positionSide = default;
+		_prevRsi = 0;
+		_prevPrevRsi = 0;
+		_cooldown = 0;
 	}
-
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		
-		// Initialize indicators
+
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
-		
-		
-		// Create and setup subscription for candles
+
 		var subscription = SubscribeCandles(CandleType);
-		
-		// Bind indicator and processor
 		subscription
 			.Bind(_rsi, ProcessCandle)
 			.Start();
-		
-		// Enable stop-loss protection
-		StartProtection(new Unit(0), new Unit(StopLossPercent, UnitTypes.Percent));
-		
-		// Setup chart if available
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -156,91 +138,73 @@ public class RsiFailureSwingStrategy : Strategy
 
 	private void ProcessCandle(ICandleMessage candle, decimal rsiValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
-		
-		// Need at least 3 RSI values to detect failure swing
-		if (_prevRsiValue == 0 || _prevPrevRsiValue == 0)
+
+		// Need at least 2 previous RSI values
+		if (_prevRsi == 0 || _prevPrevRsi == 0)
 		{
-			_prevPrevRsiValue = _prevRsiValue;
-			_prevRsiValue = rsiValue;
+			_prevPrevRsi = _prevRsi;
+			_prevRsi = rsiValue;
 			return;
 		}
-		
-		// Detect Bullish Failure Swing:
-		// 1. RSI falls below oversold level
-		// 2. RSI rises without crossing centerline
-		// 3. RSI pulls back but stays above previous low
-		// 4. RSI breaks above the high point of first rise
-		bool isBullishFailureSwing = _prevPrevRsiValue < OversoldLevel &&
-									_prevRsiValue > _prevPrevRsiValue &&
-									rsiValue < _prevRsiValue &&
-									rsiValue > _prevPrevRsiValue;
-		
-		// Detect Bearish Failure Swing:
-		// 1. RSI rises above overbought level
-		// 2. RSI falls without crossing centerline
-		// 3. RSI bounces up but stays below previous high
-		// 4. RSI breaks below the low point of first decline
-		bool isBearishFailureSwing = _prevPrevRsiValue > OverboughtLevel &&
-									 _prevRsiValue < _prevPrevRsiValue &&
-									 rsiValue > _prevRsiValue &&
-									 rsiValue < _prevPrevRsiValue;
-		
-		// Trading logic
-		if (isBullishFailureSwing && !_inPosition)
+
+		if (_cooldown > 0)
 		{
-			// Enter long position
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
-			
-			_inPosition = true;
-			_positionSide = Sides.Buy;
-			
-			LogInfo($"Bullish RSI Failure Swing detected. RSI values: {_prevPrevRsiValue:F2} -> {_prevRsiValue:F2} -> {rsiValue:F2}. Long entry at {candle.ClosePrice}");
+			_cooldown--;
+			_prevPrevRsi = _prevRsi;
+			_prevRsi = rsiValue;
+			return;
 		}
-		else if (isBearishFailureSwing && !_inPosition)
+
+		// Bullish Failure Swing: RSI was oversold, rose, pulled back but stayed above prior low
+		var isBullish = _prevPrevRsi < OversoldLevel &&
+			_prevRsi > _prevPrevRsi &&
+			rsiValue < _prevRsi &&
+			rsiValue > _prevPrevRsi;
+
+		// Bearish Failure Swing: RSI was overbought, fell, bounced but stayed below prior high
+		var isBearish = _prevPrevRsi > OverboughtLevel &&
+			_prevRsi < _prevPrevRsi &&
+			rsiValue > _prevRsi &&
+			rsiValue < _prevPrevRsi;
+
+		if (Position == 0)
 		{
-			// Enter short position
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
-			
-			_inPosition = true;
-			_positionSide = Sides.Sell;
-			
-			LogInfo($"Bearish RSI Failure Swing detected. RSI values: {_prevPrevRsiValue:F2} -> {_prevRsiValue:F2} -> {rsiValue:F2}. Short entry at {candle.ClosePrice}");
-		}
-		
-		// Exit conditions
-		if (_inPosition)
-		{
-			// For long positions: exit when RSI crosses above 50
-			if (_positionSide == Sides.Buy && rsiValue > 50)
+			if (isBullish)
 			{
-				SellMarket(Math.Abs(Position));
-				_inPosition = false;
-				_positionSide = default;
-				
-				LogInfo($"Exit signal for long position: RSI ({rsiValue:F2}) crossed above 50. Closing at {candle.ClosePrice}");
+				BuyMarket();
+				_cooldown = CooldownBars;
 			}
-			// For short positions: exit when RSI crosses below 50
-			else if (_positionSide == Sides.Sell && rsiValue < 50)
+			else if (isBearish)
 			{
-				BuyMarket(Math.Abs(Position));
-				_inPosition = false;
-				_positionSide = default;
-				
-				LogInfo($"Exit signal for short position: RSI ({rsiValue:F2}) crossed below 50. Closing at {candle.ClosePrice}");
+				SellMarket();
+				_cooldown = CooldownBars;
 			}
 		}
-		
-		// Update RSI values for next iteration
-		_prevPrevRsiValue = _prevRsiValue;
-		_prevRsiValue = rsiValue;
+		else if (Position > 0)
+		{
+			// Exit long when RSI crosses above overbought or reverses from peak
+			if (rsiValue > OverboughtLevel || (rsiValue < 45 && _prevRsi > 45))
+			{
+				SellMarket();
+				_cooldown = CooldownBars;
+			}
+		}
+		else if (Position < 0)
+		{
+			// Exit short when RSI crosses below oversold or reverses from trough
+			if (rsiValue < OversoldLevel || (rsiValue > 55 && _prevRsi < 55))
+			{
+				BuyMarket();
+				_cooldown = CooldownBars;
+			}
+		}
+
+		_prevPrevRsi = _prevRsi;
+		_prevRsi = rsiValue;
 	}
 }

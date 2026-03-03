@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,9 +11,11 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Williams %R Hook Reversal Strategy.
-/// Enters long when Williams %R forms an upward hook from oversold conditions.
-/// Enters short when Williams %R forms a downward hook from overbought conditions.
+/// Williams %R Hook Reversal strategy.
+/// Enters long when Williams %R hooks up from oversold zone.
+/// Enters short when Williams %R hooks down from overbought zone.
+/// Exits when Williams %R reaches neutral zone.
+/// Uses cooldown to control trade frequency.
 /// </summary>
 public class WilliamsRHookReversalStrategy : Strategy
 {
@@ -24,13 +23,14 @@ public class WilliamsRHookReversalStrategy : Strategy
 	private readonly StrategyParam<decimal> _oversoldLevel;
 	private readonly StrategyParam<decimal> _overboughtLevel;
 	private readonly StrategyParam<decimal> _exitLevel;
-	private readonly StrategyParam<Unit> _stopLoss;
 	private readonly StrategyParam<DataType> _candleType;
-	
-	private decimal _prevWillR;
+	private readonly StrategyParam<int> _cooldownBars;
+
+	private decimal? _prevWillR;
+	private int _cooldown;
 
 	/// <summary>
-	/// Period for Williams %R calculation.
+	/// Williams %R period.
 	/// </summary>
 	public int WillRPeriod
 	{
@@ -39,7 +39,7 @@ public class WilliamsRHookReversalStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Oversold level for Williams %R (typically -80).
+	/// Oversold level (typically -80).
 	/// </summary>
 	public decimal OversoldLevel
 	{
@@ -48,7 +48,7 @@ public class WilliamsRHookReversalStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Overbought level for Williams %R (typically -20).
+	/// Overbought level (typically -20).
 	/// </summary>
 	public decimal OverboughtLevel
 	{
@@ -57,7 +57,7 @@ public class WilliamsRHookReversalStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Exit level for Williams %R (neutral zone).
+	/// Exit level (neutral zone).
 	/// </summary>
 	public decimal ExitLevel
 	{
@@ -66,16 +66,7 @@ public class WilliamsRHookReversalStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stop loss percentage from entry price.
-	/// </summary>
-	public Unit StopLoss
-	{
-		get => _stopLoss.Value;
-		set => _stopLoss.Value = value;
-	}
-
-	/// <summary>
-	/// Type of candles to use.
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -84,37 +75,41 @@ public class WilliamsRHookReversalStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initializes a new instance of the <see cref="WilliamsRHookReversalStrategy"/>.
+	/// Cooldown bars.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
+	/// Constructor.
 	/// </summary>
 	public WilliamsRHookReversalStrategy()
 	{
 		_willRPeriod = Param(nameof(WillRPeriod), 14)
-			.SetDisplay("Williams %R Period", "Period for Williams %R calculation", "Williams %R Settings")
 			.SetRange(7, 21)
-			;
-			
+			.SetDisplay("Williams %R Period", "Period for Williams %R", "Williams %R");
+
 		_oversoldLevel = Param(nameof(OversoldLevel), -80m)
-			.SetDisplay("Oversold Level", "Oversold level for Williams %R (typically -80)", "Williams %R Settings")
 			.SetRange(-90m, -70m)
-			;
-			
+			.SetDisplay("Oversold", "Oversold level", "Williams %R");
+
 		_overboughtLevel = Param(nameof(OverboughtLevel), -20m)
-			.SetDisplay("Overbought Level", "Overbought level for Williams %R (typically -20)", "Williams %R Settings")
 			.SetRange(-30m, -10m)
-			;
-			
+			.SetDisplay("Overbought", "Overbought level", "Williams %R");
+
 		_exitLevel = Param(nameof(ExitLevel), -50m)
-			.SetDisplay("Exit Level", "Exit level for Williams %R (neutral zone)", "Williams %R Settings")
 			.SetRange(-60m, -40m)
-			;
-			
-		_stopLoss = Param(nameof(StopLoss), new Unit(2, UnitTypes.Percent))
-			.SetDisplay("Stop Loss", "Stop loss as percentage from entry price", "Risk Management")
-			.SetRange(1m, 3m)
-			;
-			
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+			.SetDisplay("Exit Level", "Neutral exit zone", "Williams %R");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
+
+		_cooldownBars = Param(nameof(CooldownBars), 500)
+			.SetRange(1, 1000)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
 	}
 
 	/// <inheritdoc />
@@ -123,100 +118,85 @@ public class WilliamsRHookReversalStrategy : Strategy
 		return [(Security, CandleType)];
 	}
 
-		/// <inheritdoc />
-		protected override void OnReseted()
-		{
-				base.OnReseted();
-
-				_prevWillR = 0;
-		}
-
-		/// <inheritdoc />
-		protected override void OnStarted2(DateTime time)
-		{
-				base.OnStarted2(time);
-
-				// Enable position protection using stop-loss
-				StartProtection(
-						takeProfit: null,
-						stopLoss: StopLoss,
-						isStopTrailing: false,
-						useMarketOrders: true
-				);
-
-				// Create Williams %R indicator
-				var williamsR = new WilliamsR { Length = WillRPeriod };
-
-	// Create subscription
-	var subscription = SubscribeCandles(CandleType);
-	
-	// Bind indicator and process candles
-	subscription
-		.Bind(williamsR, ProcessCandle)
-		.Start();
-		
-	// Setup chart visualization
-	var area = CreateChartArea();
-	if (area != null)
+	/// <inheritdoc />
+	protected override void OnReseted()
 	{
-		DrawCandles(area, subscription);
-		DrawIndicator(area, williamsR);
-		DrawOwnTrades(area);
+		base.OnReseted();
+		_prevWillR = null;
+		_cooldown = default;
 	}
-}
 
-	/// <summary>
-	/// Process candle with Williams %R value.
-	/// </summary>
-	/// <param name="candle">Candle.</param>
-	/// <param name="willRValue">Williams %R value.</param>
+	/// <inheritdoc />
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
+
+		_prevWillR = null;
+		_cooldown = 0;
+
+		var williamsR = new WilliamsR { Length = WillRPeriod };
+
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(williamsR, ProcessCandle)
+			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, williamsR);
+			DrawOwnTrades(area);
+		}
+	}
+
 	private void ProcessCandle(ICandleMessage candle, decimal willRValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
-		
-		// If this is the first calculation, just store the value
-		if (_prevWillR == 0)
+
+		if (_prevWillR == null)
 		{
 			_prevWillR = willRValue;
 			return;
 		}
 
-		// Check for Williams %R hooks
-		bool oversoldHookUp = _prevWillR < OversoldLevel && willRValue > _prevWillR;
-		bool overboughtHookDown = _prevWillR > OverboughtLevel && willRValue < _prevWillR;
-		
-		// Long entry: Williams %R forms an upward hook from oversold
-		if (oversoldHookUp && Position <= 0)
+		if (_cooldown > 0)
 		{
-			BuyMarket(Volume + Math.Abs(Position));
-			LogInfo($"Long entry: Williams %R upward hook from oversold ({_prevWillR} -> {willRValue})");
+			_cooldown--;
+			_prevWillR = willRValue;
+			return;
 		}
-		// Short entry: Williams %R forms a downward hook from overbought
-		else if (overboughtHookDown && Position >= 0)
+
+		// Hook up from oversold
+		var oversoldHookUp = _prevWillR < OversoldLevel && willRValue > _prevWillR;
+		// Hook down from overbought
+		var overboughtHookDown = _prevWillR > OverboughtLevel && willRValue < _prevWillR;
+
+		if (Position == 0 && oversoldHookUp)
 		{
-			SellMarket(Volume + Math.Abs(Position));
-			LogInfo($"Short entry: Williams %R downward hook from overbought ({_prevWillR} -> {willRValue})");
+			BuyMarket();
+			_cooldown = CooldownBars;
 		}
-		
-		// Exit conditions based on Williams %R reaching neutral zone
-		if (willRValue > ExitLevel && Position < 0)
+		else if (Position == 0 && overboughtHookDown)
 		{
-			BuyMarket(Math.Abs(Position));
-			LogInfo($"Exit short: Williams %R reached neutral zone ({willRValue} > {ExitLevel})");
+			SellMarket();
+			_cooldown = CooldownBars;
 		}
-		else if (willRValue < ExitLevel && Position > 0)
+		else if (Position > 0 && willRValue < ExitLevel)
 		{
-			SellMarket(Position);
-			LogInfo($"Exit long: Williams %R reached neutral zone ({willRValue} < {ExitLevel})");
+			SellMarket();
+			_cooldown = CooldownBars;
 		}
-		
-		// Update previous Williams %R value
+		else if (Position < 0 && willRValue > ExitLevel)
+		{
+			BuyMarket();
+			_cooldown = CooldownBars;
+		}
+
 		_prevWillR = willRValue;
 	}
 }

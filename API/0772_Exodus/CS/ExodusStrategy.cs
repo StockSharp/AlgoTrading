@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,77 +12,26 @@ namespace StockSharp.Samples.Strategies;
 
 public class ExodusStrategy : Strategy
 {
-	private readonly StrategyParam<int> _vwmoMomentum;
-	private readonly StrategyParam<int> _vwmoVolume;
-	private readonly StrategyParam<int> _vwmoSmooth;
-	private readonly StrategyParam<decimal> _vwmoThreshold;
-	private readonly StrategyParam<int> _atrLength;
-	private readonly StrategyParam<decimal> _atrMultiplier;
-	private readonly StrategyParam<decimal> _tpMultiplier;
-	private readonly StrategyParam<int> _adxLength;
-	private readonly StrategyParam<decimal> _adxThreshold;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	private readonly AverageTrueRange _atr;
-	private readonly AverageDirectionalIndex _adx;
-	private readonly SimpleMovingAverage _volumeSma;
-	private readonly SimpleMovingAverage _vwmoSma;
-
-	private decimal _prevClose;
-
-	public int VwmoMomentum { get => _vwmoMomentum.Value; set => _vwmoMomentum.Value = value; }
-	public int VwmoVolume { get => _vwmoVolume.Value; set => _vwmoVolume.Value = value; }
-	public int VwmoSmooth { get => _vwmoSmooth.Value; set => _vwmoSmooth.Value = value; }
-	public decimal VwmoThreshold { get => _vwmoThreshold.Value; set => _vwmoThreshold.Value = value; }
-	public int AtrLength { get => _atrLength.Value; set => _atrLength.Value = value; }
-	public decimal AtrMultiplier { get => _atrMultiplier.Value; set => _atrMultiplier.Value = value; }
-	public decimal TpMultiplier { get => _tpMultiplier.Value; set => _tpMultiplier.Value = value; }
-	public int AdxLength { get => _adxLength.Value; set => _adxLength.Value = value; }
-	public decimal AdxThreshold { get => _adxThreshold.Value; set => _adxThreshold.Value = value; }
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public ExodusStrategy()
 	{
-		_vwmoMomentum = Param(nameof(VwmoMomentum), 21)
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
 			.SetGreaterThanZero()
-			.SetDisplay("VWMO Momentum", "Momentum lookback", "VWMO");
-
-		_vwmoVolume = Param(nameof(VwmoVolume), 30)
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
 			.SetGreaterThanZero()
-			.SetDisplay("VWMO Volume", "Volume lookback", "VWMO");
-
-		_vwmoSmooth = Param(nameof(VwmoSmooth), 9)
-			.SetGreaterThanZero()
-			.SetDisplay("VWMO Smooth", "Smoothing", "VWMO");
-
-		_vwmoThreshold = Param(nameof(VwmoThreshold), 10m)
-			.SetDisplay("VWMO Threshold", "Signal threshold", "VWMO");
-
-		_atrLength = Param(nameof(AtrLength), 21)
-			.SetGreaterThanZero()
-			.SetDisplay("ATR Length", "ATR period", "Risk");
-
-		_atrMultiplier = Param(nameof(AtrMultiplier), 2.1m)
-			.SetDisplay("ATR Mult", "Stop ATR multiplier", "Risk");
-
-		_tpMultiplier = Param(nameof(TpMultiplier), 4.1m)
-			.SetDisplay("TP Mult", "Take profit ATR multiplier", "Risk");
-
-		_adxLength = Param(nameof(AdxLength), 21)
-			.SetGreaterThanZero()
-			.SetDisplay("ADX Length", "ADX period", "Filters");
-
-		_adxThreshold = Param(nameof(AdxThreshold), 27m)
-			.SetDisplay("ADX Threshold", "Minimum ADX", "Filters");
-
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
-
-		_atr = new AverageTrueRange { Length = AtrLength };
-		_adx = new AverageDirectionalIndex { Length = AdxLength };
-		_volumeSma = new SMA { Length = VwmoVolume };
-		_vwmoSma = new SMA { Length = VwmoSmooth };
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
@@ -96,58 +42,41 @@ public class ExodusStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevClose = 0m;
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
 
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_atr.Length = AtrLength;
-		_adx.Length = AdxLength;
-		_volumeSma.Length = VwmoVolume;
-		_vwmoSma.Length = VwmoSmooth;
-
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(_atr, _adx, ProcessCandle).Start();
-
+		subscription.Bind(fastEma, slowEma, ProcessCandle).Start();
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal atrValue, decimal adxValue)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
-		if (candle.State != CandleStates.Finished)
+		if (candle.State != CandleStates.Finished) return;
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
+		{
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
 			return;
-
-		var avgVol = _volumeSma.Process(new DecimalIndicatorValue(_volumeSma, candle.TotalVolume, candle.ServerTime)).ToDecimal();
-		var priceMom = _prevClose == 0m ? 0m : candle.ClosePrice - _prevClose;
-		var volWeight = avgVol == 0m ? 0m : candle.TotalVolume / avgVol;
-		var vwmo = _vwmoSma.Process(new DecimalIndicatorValue(_vwmoSma, priceMom * volWeight, candle.ServerTime)).ToDecimal();
-
-		_prevClose = candle.ClosePrice;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (Position <= 0 && vwmo > VwmoThreshold && adxValue > AdxThreshold)
-		{
-			BuyMarket(Volume + Math.Abs(Position));
 		}
-		else if (Position >= 0 && vwmo < -VwmoThreshold && adxValue > AdxThreshold)
-		{
-			SellMarket(Volume + Math.Abs(Position));
-		}
-		else
-		{
-			if (Position > 0 && vwmo < 0)
-				SellMarket(Math.Abs(Position));
-			else if (Position < 0 && vwmo > 0)
-				BuyMarket(Math.Abs(Position));
-		}
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
+			BuyMarket();
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+			SellMarket();
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

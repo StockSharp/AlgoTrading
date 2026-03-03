@@ -83,38 +83,28 @@ public class LitecoinTrailingStopStrategy : Strategy
 	/// </summary>
 	public LitecoinTrailingStopStrategy()
 	{
-		_kamaLength = Param(nameof(KamaLength), 50)
+		_kamaLength = Param(nameof(KamaLength), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("KAMA Length", "Period for KAMA indicator", "General")
-		
 		.SetOptimize(20, 100, 5);
 
-		_barsBetweenEntries = Param(nameof(BarsBetweenEntries), 30)
+		_barsBetweenEntries = Param(nameof(BarsBetweenEntries), 200)
 		.SetGreaterThanZero()
 		.SetDisplay("Bars Between Entries", "Minimum bars between new positions", "General")
-		
 		.SetOptimize(10, 60, 5);
 
-		_trailingStopPercent = Param(nameof(TrailingStopPercent), 12m)
+		_trailingStopPercent = Param(nameof(TrailingStopPercent), 15m)
 		.SetGreaterThanZero()
 		.SetDisplay("Trailing Stop %", "Percent for trailing stop", "Risk")
-		
 		.SetOptimize(5m, 20m, 1m);
 
 		_delayBars = Param(nameof(DelayBars), 50)
 		.SetGreaterThanZero()
 		.SetDisplay("Delay Bars", "Bars before trailing starts", "Risk")
-		
 		.SetOptimize(10, 100, 10);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles", "General");
-	}
-
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
@@ -124,7 +114,7 @@ public class LitecoinTrailingStopStrategy : Strategy
 
 		_prevKama = 0m;
 		_barsSinceEntry = 0;
-		_barsSinceLastTrade = int.MaxValue;
+		_barsSinceLastTrade = 1000;
 		_entryPrice = 0m;
 		_highestPrice = 0m;
 		_lowestPrice = 0m;
@@ -136,6 +126,12 @@ public class LitecoinTrailingStopStrategy : Strategy
 		base.OnStarted2(time);
 
 		_kama = new KaufmanAdaptiveMovingAverage { Length = KamaLength };
+		_prevKama = 0m;
+		_barsSinceEntry = 0;
+		_barsSinceLastTrade = 1000;
+		_entryPrice = 0m;
+		_highestPrice = 0m;
+		_lowestPrice = 0m;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -159,18 +155,16 @@ public class LitecoinTrailingStopStrategy : Strategy
 		if (!_kama.IsFormed)
 		return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
 
-		var flat = _prevKama != 0m && kamaValue / _prevKama > 0.999m && kamaValue / _prevKama < 1.001m;
-		var bullish = kamaValue > _prevKama && !flat;
-		var bearish = kamaValue < _prevKama && !flat;
+		var bullish = _prevKama != 0m && kamaValue > _prevKama;
+		var bearish = _prevKama != 0m && kamaValue < _prevKama;
 
-		_barsSinceLastTrade++;
+		if (_barsSinceLastTrade < 10000)
+			_barsSinceLastTrade++;
 		if (Position != 0)
-		_barsSinceEntry++;
+			_barsSinceEntry++;
 		else
-		_barsSinceEntry = 0;
+			_barsSinceEntry = 0;
 
 		var canEnter = _barsSinceLastTrade >= BarsBetweenEntries;
 

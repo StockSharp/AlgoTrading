@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -13,190 +10,73 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-/// <summary>
-/// Strategy combining a GM-8 SMA, a secondary EMA filter, and ADX.
-/// </summary>
 public class Gm8AdxSecondEmaStrategy : Strategy
 {
-	private readonly StrategyParam<int> _gmPeriod;
-	private readonly StrategyParam<int> _secondEmaPeriod;
-	private readonly StrategyParam<int> _adxPeriod;
-	private readonly StrategyParam<decimal> _adxThreshold;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	private SimpleMovingAverage _gmSma;
-	private ExponentialMovingAverage _secondEma;
-	private AverageDirectionalIndex _adx;
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	private decimal _prevClose;
-	private decimal _prevSma;
-	private bool _isFirst = true;
-
-	/// <summary>
-	/// GM-8 SMA period.
-	/// </summary>
-	public int GmPeriod
-	{
-		get => _gmPeriod.Value;
-		set => _gmPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Second EMA period.
-	/// </summary>
-	public int SecondEmaPeriod
-	{
-		get => _secondEmaPeriod.Value;
-		set => _secondEmaPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// ADX period.
-	/// </summary>
-	public int AdxPeriod
-	{
-		get => _adxPeriod.Value;
-		set => _adxPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// ADX threshold.
-	/// </summary>
-	public decimal AdxThreshold
-	{
-		get => _adxThreshold.Value;
-		set => _adxThreshold.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initialize strategy parameters.
-	/// </summary>
 	public Gm8AdxSecondEmaStrategy()
 	{
-		_gmPeriod = Param(nameof(GmPeriod), 15)
-			.SetDisplay("GM Period", "SMA period for GM-8", "Indicators")
-			
-			.SetOptimize(5, 30, 5);
-
-		_secondEmaPeriod = Param(nameof(SecondEmaPeriod), 59)
-			.SetDisplay("Second EMA Period", "Period for secondary EMA", "Indicators")
-			
-			.SetOptimize(20, 100, 5);
-
-		_adxPeriod = Param(nameof(AdxPeriod), 8)
-			.SetDisplay("ADX Period", "Period for ADX indicator", "Indicators")
-			
-			.SetOptimize(5, 20, 1);
-
-		_adxThreshold = Param(nameof(AdxThreshold), 34m)
-			.SetDisplay("ADX Threshold", "Minimum ADX level", "Indicators")
-			
-			.SetOptimize(20m, 50m, 5m);
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_gmSma = default;
-		_secondEma = default;
-		_adx = default;
-		_prevClose = default;
-		_prevSma = default;
-		_isFirst = true;
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		StartProtection(null, null);
-
-		_gmSma = new SMA { Length = GmPeriod };
-		_secondEma = new EMA { Length = SecondEmaPeriod };
-		_adx = new AverageDirectionalIndex { Length = AdxPeriod };
-
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.BindEx(_gmSma, _secondEma, _adx, ProcessCandle)
-			.Start();
-
+		subscription.Bind(fastEma, slowEma, ProcessCandle).Start();
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _gmSma);
-			DrawIndicator(area, _secondEma);
-			DrawIndicator(area, _adx);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue smaValue, IIndicatorValue emaValue, IIndicatorValue adxValue)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!smaValue.IsFinal || !emaValue.IsFinal || !adxValue.IsFinal)
-			return;
-
-		var sma = smaValue.ToDecimal();
-		var ema = emaValue.ToDecimal();
-		var adxTyped = (AverageDirectionalIndexValue)adxValue;
-
-		if (adxTyped.MovingAverage is not decimal adx)
-			return;
-
-		if (_isFirst)
+		if (candle.State != CandleStates.Finished) return;
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-			_prevClose = candle.ClosePrice;
-			_prevSma = sma;
-			_isFirst = false;
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
 			return;
 		}
-
-		var crossAbove = _prevClose <= _prevSma && candle.ClosePrice > sma;
-		var crossBelow = _prevClose >= _prevSma && candle.ClosePrice < sma;
-
-		if (crossAbove && candle.ClosePrice > ema && adx > AdxThreshold && Position <= 0)
-		{
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
-		}
-		else if (crossBelow && candle.ClosePrice < ema && adx > AdxThreshold && Position >= 0)
-		{
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
-		}
-		else if (crossBelow && Position > 0)
-		{
-			SellMarket(Position);
-		}
-		else if (crossAbove && Position < 0)
-		{
-			BuyMarket(Math.Abs(Position));
-		}
-
-		_prevClose = candle.ClosePrice;
-		_prevSma = sma;
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
+			BuyMarket();
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+			SellMarket();
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }
-

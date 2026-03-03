@@ -32,6 +32,7 @@ public class BbsrExtremeStrategy : Strategy
 	private decimal _prevMa;
 	private bool _isInitialized;
 	private decimal _entryPrice;
+	private int _cooldown;
 
 	/// <summary>
 	/// Period for Bollinger Bands calculation.
@@ -101,11 +102,11 @@ public class BbsrExtremeStrategy : Strategy
 	/// </summary>
 	public BbsrExtremeStrategy()
 	{
-		_bollingerPeriod = Param(nameof(BollingerPeriod), 20)
+		_bollingerPeriod = Param(nameof(BollingerPeriod), 30)
 			.SetGreaterThanZero()
 			.SetDisplay("Bollinger Period", "Bollinger Bands length", "Indicators");
 
-		_bollingerMultiplier = Param(nameof(BollingerMultiplier), 2m)
+		_bollingerMultiplier = Param(nameof(BollingerMultiplier), 2.5m)
 			.SetGreaterThanZero()
 			.SetDisplay("Bollinger Multiplier", "Standard deviation multiplier", "Indicators");
 
@@ -125,7 +126,7 @@ public class BbsrExtremeStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Profit Multiplier", "ATR multiplier for take profit", "Risk Management");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -145,6 +146,7 @@ public class BbsrExtremeStrategy : Strategy
 		_prevMa = default;
 		_isInitialized = false;
 		_entryPrice = 0m;
+		_cooldown = 0;
 	}
 
 	/// <inheritdoc />
@@ -182,7 +184,6 @@ public class BbsrExtremeStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue[] values)
@@ -190,11 +191,14 @@ public class BbsrExtremeStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var bbValue = (BollingerBandsValue)values[0];
-		if (bbValue.UpBand is not decimal upper || bbValue.LowBand is not decimal lower)
+		if (values[0] is not BollingerBandsValue bbValue ||
+			bbValue.UpBand is not decimal upper ||
+			bbValue.LowBand is not decimal lower ||
+			!values[1].IsFormed || !values[2].IsFormed)
 			return;
-		var maValue = values[1].ToDecimal();
-		var atrValue = values[2].ToDecimal();
+
+		var maValue = values[1].GetValue<decimal>();
+		var atrValue = values[2].GetValue<decimal>();
 
 		if (!_isInitialized)
 		{
@@ -206,22 +210,23 @@ public class BbsrExtremeStrategy : Strategy
 			return;
 		}
 
+		if (_cooldown > 0)
+			_cooldown--;
+
 		var bull = _prevClose < _prevLower && candle.ClosePrice > lower && maValue > _prevMa;
 		var bear = _prevClose > _prevUpper && candle.ClosePrice < upper && maValue < _prevMa;
 
-		if (bull && Position <= 0)
+		if (bull && Position <= 0 && _cooldown == 0)
 		{
-			CancelActiveOrders();
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
+			BuyMarket();
 			_entryPrice = candle.ClosePrice;
+			_cooldown = 20;
 		}
-		else if (bear && Position >= 0)
+		else if (bear && Position >= 0 && _cooldown == 0)
 		{
-			CancelActiveOrders();
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
+			SellMarket();
 			_entryPrice = candle.ClosePrice;
+			_cooldown = 20;
 		}
 
 		var stop = AtrStopMultiplier * atrValue;
@@ -234,8 +239,9 @@ public class BbsrExtremeStrategy : Strategy
 
 			if (candle.LowPrice <= stopPrice || candle.HighPrice >= profitPrice)
 			{
-				SellMarket(Position);
+				SellMarket();
 				_entryPrice = 0m;
+				_cooldown = 20;
 			}
 		}
 		else if (Position < 0)
@@ -245,8 +251,9 @@ public class BbsrExtremeStrategy : Strategy
 
 			if (candle.HighPrice >= stopPrice || candle.LowPrice <= profitPrice)
 			{
-				BuyMarket(-Position);
+				BuyMarket();
 				_entryPrice = 0m;
+				_cooldown = 20;
 			}
 		}
 

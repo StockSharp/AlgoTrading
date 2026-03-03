@@ -1,9 +1,8 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -11,25 +10,27 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
 /// <summary>
 /// Volume Climax Reversal strategy.
+/// Enters counter-trend when volume spikes above average with MA confirmation.
+/// Uses cooldown and MA cross for exits.
 /// </summary>
 public class VolumeClimaxReversalStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _volumePeriod;
-	private readonly StrategyParam<decimal> _volumeMultiplier;
 	private readonly StrategyParam<int> _maPeriod;
-	private readonly StrategyParam<decimal> _atrMultiplier;
-	
+	private readonly StrategyParam<decimal> _volumeMultiplier;
+	private readonly StrategyParam<int> _cooldownBars;
+
 	private SimpleMovingAverage _ma;
-	private SimpleMovingAverage _volumeAverage;
-	private AverageTrueRange _atr;
+
+	private decimal _prevMa;
+	private decimal _prevClose;
+	private readonly List<decimal> _volumes = new();
+	private int _cooldown;
 
 	/// <summary>
-	/// Candle type and timeframe.
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -38,16 +39,16 @@ public class VolumeClimaxReversalStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Period for volume average calculation.
+	/// MA period.
 	/// </summary>
-	public int VolumePeriod
+	public int MaPeriod
 	{
-		get => _volumePeriod.Value;
-		set => _volumePeriod.Value = value;
+		get => _maPeriod.Value;
+		set => _maPeriod.Value = value;
 	}
 
 	/// <summary>
-	/// Volume multiplier for signal detection.
+	/// Volume multiplier for climax detection.
 	/// </summary>
 	public decimal VolumeMultiplier
 	{
@@ -56,50 +57,33 @@ public class VolumeClimaxReversalStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Moving average period for trend determination.
+	/// Cooldown bars.
 	/// </summary>
-	public int MAPeriod
+	public int CooldownBars
 	{
-		get => _maPeriod.Value;
-		set => _maPeriod.Value = value;
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	/// <summary>
-	/// ATR multiplier for stop loss.
-	/// </summary>
-	public decimal ATRMultiplier
-	{
-		get => _atrMultiplier.Value;
-		set => _atrMultiplier.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="VolumeClimaxReversalStrategy"/>.
+	/// Constructor.
 	/// </summary>
 	public VolumeClimaxReversalStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "Candles");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle timeframe", "General");
 
-		_volumePeriod = Param(nameof(VolumePeriod), 20)
-			.SetRange(10, 50)
-			.SetDisplay("Volume Period", "Period for volume average calculation", "Volume")
-			;
+		_maPeriod = Param(nameof(MaPeriod), 20)
+			.SetDisplay("MA Period", "SMA period", "Indicators")
+			.SetRange(10, 50);
 
-		_volumeMultiplier = Param(nameof(VolumeMultiplier), 3m)
-			.SetRange(1.5m, 5m)
-			.SetDisplay("Volume Multiplier", "Volume threshold as multiplier of average volume", "Volume")
-			;
+		_volumeMultiplier = Param(nameof(VolumeMultiplier), 2m)
+			.SetDisplay("Volume Multiplier", "Volume spike threshold", "Volume")
+			.SetRange(1.5m, 5m);
 
-		_maPeriod = Param(nameof(MAPeriod), 20)
-			.SetRange(10, 50)
-			.SetDisplay("MA Period", "Period for moving average calculation", "Moving Average")
-			;
-
-		_atrMultiplier = Param(nameof(ATRMultiplier), 2m)
-			.SetRange(1m, 5m)
-			.SetDisplay("ATR Multiplier", "Multiplier for ATR to calculate stop loss", "Risk")
-			;
+		_cooldownBars = Param(nameof(CooldownBars), 400)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "General")
+			.SetRange(10, 2000);
 	}
 
 	/// <inheritdoc />
@@ -109,24 +93,29 @@ public class VolumeClimaxReversalStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_ma = default;
+		_prevMa = 0;
+		_prevClose = 0;
+		_volumes.Clear();
+		_cooldown = 0;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		// Initialize indicators
-		_ma = new SMA { Length = MAPeriod };
-		_volumeAverage = new SMA { Length = VolumePeriod };
-		_atr = new AverageTrueRange { Length = VolumePeriod };
+		_ma = new SimpleMovingAverage { Length = MaPeriod };
+		_volumes.Clear();
 
-		// Create and subscribe to candles
 		var subscription = SubscribeCandles(CandleType);
-		
-		// Use BindEx to process both price and volume
 		subscription
-			.Bind(_ma, _atr, ProcessCandle)
+			.Bind(_ma, ProcessCandle)
 			.Start();
 
-		// Set up chart if available
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -136,55 +125,77 @@ public class VolumeClimaxReversalStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal maValue, decimal atrValue)
+	private void ProcessCandle(ICandleMessage candle, decimal ma)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Process indicators
-		var volumeAverageValue = _volumeAverage.Process(new DecimalIndicatorValue(_volumeAverage, candle.TotalVolume, candle.ServerTime)).ToDecimal();
-
-		// Check if strategy is ready to trade
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// Get current candle information
-		decimal currentVolume = candle.TotalVolume;
-		bool isBullishCandle = candle.ClosePrice > candle.OpenPrice;
-		bool isBearishCandle = candle.ClosePrice < candle.OpenPrice;
+		var close = candle.ClosePrice;
+		var volume = candle.TotalVolume;
 
-		// Check for volume climax (volume spike)
-		bool isVolumeClimaxDetected = currentVolume > volumeAverageValue * VolumeMultiplier;
+		// Track volumes for average calculation
+		_volumes.Add(volume);
+		if (_volumes.Count > MaPeriod)
+			_volumes.RemoveAt(0);
 
-		if (isVolumeClimaxDetected)
+		if (_volumes.Count < MaPeriod || _prevMa == 0)
 		{
-			LogInfo($"Volume climax detected: {currentVolume} > {volumeAverageValue} * {VolumeMultiplier}");
+			_prevMa = ma;
+			_prevClose = close;
+			return;
+		}
 
-			// Bullish reversal: High volume + bearish candle + price below MA
-			if (isBearishCandle && candle.ClosePrice < maValue && Position <= 0)
+		// Calculate average volume
+		decimal avgVolume = 0;
+		for (int i = 0; i < _volumes.Count; i++)
+			avgVolume += _volumes[i];
+		avgVolume /= _volumes.Count;
+
+		var isVolumeClimax = avgVolume > 0 && volume > avgVolume * VolumeMultiplier;
+		var isBullish = close > candle.OpenPrice;
+		var isBearish = close < candle.OpenPrice;
+
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+			_prevMa = ma;
+			_prevClose = close;
+			return;
+		}
+
+		// Exit logic: MA cross
+		if (Position > 0 && close < ma && _prevClose >= _prevMa)
+		{
+			SellMarket();
+			_cooldown = CooldownBars;
+		}
+		else if (Position < 0 && close > ma && _prevClose <= _prevMa)
+		{
+			BuyMarket();
+			_cooldown = CooldownBars;
+		}
+
+		// Entry logic: volume climax reversal
+		if (Position == 0 && isVolumeClimax)
+		{
+			// Bullish reversal: high volume bearish candle below MA (selling climax)
+			if (isBearish && close < ma)
 			{
-				LogInfo("Bullish reversal signal detected");
-				BuyMarket(Volume + Math.Abs(Position));
+				BuyMarket();
+				_cooldown = CooldownBars;
 			}
-			// Bearish reversal: High volume + bullish candle + price above MA
-			else if (isBullishCandle && candle.ClosePrice > maValue && Position >= 0)
+			// Bearish reversal: high volume bullish candle above MA (buying climax)
+			else if (isBullish && close > ma)
 			{
-				LogInfo("Bearish reversal signal detected");
-				SellMarket(Volume + Math.Abs(Position));
+				SellMarket();
+				_cooldown = CooldownBars;
 			}
 		}
 
-		// Exit logic - Price crosses MA
-		if (Position > 0 && candle.ClosePrice < maValue)
-		{
-			LogInfo("Exit long: Price moved below MA");
-			ClosePosition();
-		}
-		else if (Position < 0 && candle.ClosePrice > maValue)
-		{
-			LogInfo("Exit short: Price moved above MA");
-			ClosePosition();
-		}
+		_prevMa = ma;
+		_prevClose = close;
 	}
 }

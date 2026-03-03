@@ -1,94 +1,82 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using System.IO;
-using System.Text.RegularExpressions;
-
 namespace StockSharp.Samples.Strategies;
 
 public class FinishRenamingStrategy : Strategy
 {
-	private readonly StrategyParam<int> _start;
-	private readonly StrategyParam<string> _path;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
+	private readonly StrategyParam<DataType> _candleType;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	public int StartNumber
-	{
-		get => _start.Value;
-		set => _start.Value = value;
-	}
-
-	public string DirectoryPath
-	{
-		get => _path.Value;
-		set => _path.Value = value;
-	}
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public FinishRenamingStrategy()
 	{
-		_start = Param(nameof(StartNumber), 2888)
-		.SetGreaterThanZero()
-		.SetDisplay("Start Number", "Initial counter value", "Renaming");
-		_path = Param(nameof(DirectoryPath), "TradingView")
-		.SetDisplay("Directory Path", "Path containing text files", "Renaming");
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return Array.Empty<(Security, DataType)>();
+		return [(Security, CandleType)];
 	}
 
-	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		var dir = DirectoryPath;
-		var counter = StartNumber;
-
-		if (!Directory.Exists(dir))
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(fastEma, slowEma, ProcessCandle).Start();
+		var area = CreateChartArea();
+		if (area != null)
 		{
-			LogError($"Directory '{dir}' not found.");
+			DrawCandles(area, subscription);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
+			DrawOwnTrades(area);
+		}
+	}
+
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
+	{
+		if (candle.State != CandleStates.Finished) return;
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
+		{
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
 			return;
 		}
-
-		var files = new DirectoryInfo(dir)
-		.GetFiles("*.txt")
-		.Where(f => !Regex.IsMatch(f.Name, "^[0-9]{4}_"))
-		.OrderBy(f => f.Name);
-		var success = 0;
-		var errors = 0;
-
-		foreach (var f in files)
-		{
-			var newName = $"{counter:D4}_{f.Name}";
-			LogInfo($"[{counter}] {f.Name}");
-			try
-			{
-				f.MoveTo(Path.Combine(dir, newName));
-				success++;
-			}
-			catch (Exception ex)
-			{
-				LogError($"ERROR: {ex.Message}");
-				errors++;
-			}
-			counter++;
-		}
-
-		LogInfo("Final renaming completed!");
-		LogInfo($"Successful renames: {success}");
-		LogInfo($"Errors: {errors}");
-		LogInfo($"Final counter: {counter}");
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
+			BuyMarket();
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+			SellMarket();
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

@@ -1,167 +1,82 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
-
 namespace StockSharp.Samples.Strategies;
 
-/// <summary>
-/// Strategy that enters long on EMA crossover with RSI confirmation and exits on opposite signal.
-/// Applies percent based take profit and stop loss.
-/// </summary>
 public class EmaRsiTrendReversalStrategy : Strategy
 {
-	private readonly StrategyParam<int> _fastLength;
-	private readonly StrategyParam<int> _slowLength;
-	private readonly StrategyParam<int> _rsiLength;
-	private readonly StrategyParam<decimal> _rsiLevel;
-	private readonly StrategyParam<decimal> _takeProfitPercent;
-	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	private ExponentialMovingAverage _fastEma;
-	private ExponentialMovingAverage _slowEma;
-	private RelativeStrengthIndex _rsi;
-
-	private decimal _prevFast;
-	private decimal _prevSlow;
-	private bool _hasPrev;
-
-	/// <summary>
-	/// Fast EMA period.
-	/// </summary>
-	public int FastLength { get => _fastLength.Value; set => _fastLength.Value = value; }
-
-	/// <summary>
-	/// Slow EMA period.
-	/// </summary>
-	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
-
-	/// <summary>
-	/// RSI calculation length.
-	/// </summary>
-	public int RsiLength { get => _rsiLength.Value; set => _rsiLength.Value = value; }
-
-	/// <summary>
-	/// RSI level filter.
-	/// </summary>
-	public decimal RsiLevel { get => _rsiLevel.Value; set => _rsiLevel.Value = value; }
-
-	/// <summary>
-	/// Take profit percentage.
-	/// </summary>
-	public decimal TakeProfitPercent { get => _takeProfitPercent.Value; set => _takeProfitPercent.Value = value; }
-
-	/// <summary>
-	/// Stop loss percentage.
-	/// </summary>
-	public decimal StopLossPercent { get => _stopLossPercent.Value; set => _stopLossPercent.Value = value; }
-
-	/// <summary>
-	/// Candle type for strategy calculation.
-	/// </summary>
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Initialize strategy parameters.
-	/// </summary>
 	public EmaRsiTrendReversalStrategy()
 	{
-		_fastLength = Param(nameof(FastLength), 9)
-			.SetDisplay("Fast EMA Length", "Fast EMA period", "Indicators");
-
-		_slowLength = Param(nameof(SlowLength), 21)
-			.SetDisplay("Slow EMA Length", "Slow EMA period", "Indicators");
-
-		_rsiLength = Param(nameof(RsiLength), 14)
-			.SetDisplay("RSI Length", "RSI period", "Indicators");
-
-		_rsiLevel = Param(nameof(RsiLevel), 50m)
-			.SetDisplay("RSI Level", "RSI level filter", "Indicators");
-
-		_takeProfitPercent = Param(nameof(TakeProfitPercent), 2m)
-			.SetDisplay("Take Profit %", "Take profit percent", "Risk Management");
-
-		_stopLossPercent = Param(nameof(StopLossPercent), 1m)
-			.SetDisplay("Stop Loss %", "Stop loss percent", "Risk Management");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Candle type", "Common");
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
-	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_fastEma = new EMA { Length = FastLength };
-		_slowEma = new EMA { Length = SlowLength };
-		_rsi = new RelativeStrengthIndex { Length = RsiLength };
-
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(_fastEma, _slowEma, _rsi, ProcessCandle)
-			.Start();
-
-		StartProtection(
-			new Unit(TakeProfitPercent, UnitTypes.Percent),
-			new Unit(StopLossPercent, UnitTypes.Percent));
-
+		subscription.Bind(fastEma, slowEma, ProcessCandle).Start();
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _fastEma);
-			DrawIndicator(area, _slowEma);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow, decimal rsi)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!_fastEma.IsFormed || !_slowEma.IsFormed || !_rsi.IsFormed)
+		if (candle.State != CandleStates.Finished) return;
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-			_prevFast = fast;
-			_prevSlow = slow;
-			_hasPrev = true;
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
 			return;
 		}
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			_prevFast = fast;
-			_prevSlow = slow;
-			_hasPrev = true;
-			return;
-		}
-
-		var buySignal = _hasPrev && _prevFast < _prevSlow && fast > slow && rsi > RsiLevel && Position <= 0;
-		var sellSignal = _hasPrev && _prevFast > _prevSlow && fast < slow && rsi < RsiLevel && Position > 0;
-
-		if (buySignal)
-		{
-			BuyMarket(Volume + Math.Abs(Position));
-		}
-		else if (sellSignal)
-		{
-			SellMarket(Position);
-		}
-
-		_prevFast = fast;
-		_prevSlow = slow;
-		_hasPrev = true;
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
+			BuyMarket();
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+			SellMarket();
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

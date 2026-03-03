@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,26 +11,50 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Holds a long position only during the most recent N bars.
+/// Backward Number of Bars strategy.
+/// Uses momentum over N bars with EMA trend filter.
+/// Buys when price is above N-bar-ago price in uptrend, sells when below in downtrend.
 /// </summary>
 public class BackwardNumberOfBarsStrategy : Strategy
 {
-	private readonly StrategyParam<int> _barCount;
+	private readonly StrategyParam<int> _momentumLength;
+	private readonly StrategyParam<int> _emaLength;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private DateTimeOffset _startTime;
+	private decimal _prevMomentum;
+	private int _barIndex;
+	private int _lastTradeBar;
 
 	/// <summary>
-	/// Number of bars to keep the position.
+	/// Momentum lookback length.
 	/// </summary>
-	public int BarCount
+	public int MomentumLength
 	{
-		get => _barCount.Value;
-		set => _barCount.Value = value;
+		get => _momentumLength.Value;
+		set => _momentumLength.Value = value;
 	}
 
 	/// <summary>
-	/// Type of candles to use.
+	/// EMA trend filter period.
+	/// </summary>
+	public int EmaLength
+	{
+		get => _emaLength.Value;
+		set => _emaLength.Value = value;
+	}
+
+	/// <summary>
+	/// Cooldown bars between trades.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -41,11 +62,21 @@ public class BackwardNumberOfBarsStrategy : Strategy
 		set => _candleType.Value = value;
 	}
 
+	/// <summary>
+	/// Constructor.
+	/// </summary>
 	public BackwardNumberOfBarsStrategy()
 	{
-		_barCount = Param(nameof(BarCount), 50)
-			.SetDisplay("Bar Count", "Number of bars for the window", "General")
-			;
+		_momentumLength = Param(nameof(MomentumLength), 50)
+			.SetGreaterThanZero()
+			.SetDisplay("Momentum Length", "ROC lookback period", "Indicators");
+
+		_emaLength = Param(nameof(EmaLength), 40)
+			.SetGreaterThanZero()
+			.SetDisplay("EMA Length", "EMA trend filter period", "Indicators");
+
+		_cooldownBars = Param(nameof(CooldownBars), 350)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "Trading");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -61,7 +92,9 @@ public class BackwardNumberOfBarsStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_startTime = default;
+		_prevMomentum = 0;
+		_barIndex = 0;
+		_lastTradeBar = 0;
 	}
 
 	/// <inheritdoc />
@@ -69,41 +102,48 @@ public class BackwardNumberOfBarsStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var tf = (TimeSpan)CandleType.Arg;
-		_startTime = time - TimeSpan.FromTicks(tf.Ticks * BarCount);
+		var roc = new RateOfChange { Length = MomentumLength };
+		var ema = new ExponentialMovingAverage { Length = EmaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(roc, ema, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawIndicator(area, ema);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal rocValue, decimal emaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		_barIndex++;
 
-		var withinWindow = candle.OpenTime >= _startTime;
+		var cooldownOk = _barIndex - _lastTradeBar > CooldownBars;
 
-		if (withinWindow)
+		// ROC crosses above zero with uptrend = buy
+		var longSignal = _prevMomentum <= 0 && rocValue > 0 && candle.ClosePrice > emaValue;
+		// ROC crosses below zero with downtrend = sell
+		var shortSignal = _prevMomentum >= 0 && rocValue < 0 && candle.ClosePrice < emaValue;
+
+		if (longSignal && Position <= 0 && cooldownOk)
 		{
-			if (Position <= 0)
-				BuyMarket();
+			BuyMarket();
+			_lastTradeBar = _barIndex;
 		}
-		else
+		else if (shortSignal && Position >= 0 && cooldownOk)
 		{
-			if (Position >= 0)
-				SellMarket();
+			SellMarket();
+			_lastTradeBar = _barIndex;
 		}
+
+		_prevMomentum = rocValue;
 	}
 }

@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,22 +11,23 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that trades MACD reversions to zero line.
-/// It enters when MACD is below/above zero and trending back towards zero line,
-/// and exits when MACD crosses its signal line.
+/// Strategy that trades MACD crossings of the zero line.
+/// Buys when MACD crosses above zero, sells when MACD crosses below zero.
 /// </summary>
 public class MacdZeroStrategy : Strategy
 {
 	private readonly StrategyParam<int> _fastPeriod;
 	private readonly StrategyParam<int> _slowPeriod;
 	private readonly StrategyParam<int> _signalPeriod;
-	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _cooldownBars;
 
 	private decimal _prevMacd;
+	private bool _hasPrev;
+	private int _cooldown;
 
 	/// <summary>
-	/// Fast EMA period for MACD calculation (default: 12)
+	/// Fast EMA period for MACD calculation.
 	/// </summary>
 	public int FastPeriod
 	{
@@ -38,7 +36,7 @@ public class MacdZeroStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Slow EMA period for MACD calculation (default: 26)
+	/// Slow EMA period for MACD calculation.
 	/// </summary>
 	public int SlowPeriod
 	{
@@ -47,7 +45,7 @@ public class MacdZeroStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Signal line period for MACD calculation (default: 9)
+	/// Signal line period for MACD calculation.
 	/// </summary>
 	public int SignalPeriod
 	{
@@ -56,16 +54,7 @@ public class MacdZeroStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stop-loss as percentage from entry price (default: 2%)
-	/// </summary>
-	public decimal StopLossPercent
-	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
-	}
-
-	/// <summary>
-	/// Type of candles used for strategy calculation
+	/// Type of candles used for strategy calculation.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -74,32 +63,37 @@ public class MacdZeroStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initialize the MACD Zero strategy
+	/// Cooldown bars between trades.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
+	/// Initialize the MACD Zero strategy.
 	/// </summary>
 	public MacdZeroStrategy()
 	{
-		_fastPeriod = Param(nameof(FastPeriod), 12)
-			.SetDisplay("Fast EMA Period", "Fast EMA period for MACD calculation", "MACD Parameters")
-			
+		_fastPeriod = Param(nameof(FastPeriod), 8)
+			.SetDisplay("Fast EMA", "Fast EMA period for MACD", "MACD")
 			.SetOptimize(8, 16, 2);
 
-		_slowPeriod = Param(nameof(SlowPeriod), 26)
-			.SetDisplay("Slow EMA Period", "Slow EMA period for MACD calculation", "MACD Parameters")
-			
-			.SetOptimize(20, 30, 2);
+		_slowPeriod = Param(nameof(SlowPeriod), 17)
+			.SetDisplay("Slow EMA", "Slow EMA period for MACD", "MACD")
+			.SetOptimize(15, 30, 2);
 
 		_signalPeriod = Param(nameof(SignalPeriod), 9)
-			.SetDisplay("Signal Period", "Signal line period for MACD calculation", "MACD Parameters")
-			
+			.SetDisplay("Signal", "Signal line period for MACD", "MACD")
 			.SetOptimize(7, 12, 1);
 
-		_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
-			.SetDisplay("Stop Loss %", "Stop loss as percentage from entry price", "Risk Management")
-			
-			.SetOptimize(1.0m, 5.0m, 0.5m);
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "Data");
+		_cooldownBars = Param(nameof(CooldownBars), 700)
+			.SetRange(1, 1000)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
 	}
 
 	/// <inheritdoc />
@@ -112,9 +106,9 @@ public class MacdZeroStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		// Reset state variables
-		_prevMacd = 0;
-
+		_prevMacd = default;
+		_hasPrev = default;
+		_cooldown = default;
 	}
 
 	/// <inheritdoc />
@@ -122,7 +116,9 @@ public class MacdZeroStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Create MACD indicator with signal line
+		_prevMacd = 0;
+		_hasPrev = false;
+		_cooldown = 0;
 
 		var macd = new MovingAverageConvergenceDivergenceSignal
 		{
@@ -133,13 +129,12 @@ public class MacdZeroStrategy : Strategy
 			},
 			SignalMa = { Length = SignalPeriod }
 		};
-		// Create subscription and bind MACD indicator
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
 			.BindEx(macd, ProcessCandle)
 			.Start();
 
-		// Configure chart
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -147,88 +142,61 @@ public class MacdZeroStrategy : Strategy
 			DrawIndicator(area, macd);
 			DrawOwnTrades(area);
 		}
-
-		// Setup protection with stop-loss
-		StartProtection(
-			new Unit(0), // No take profit
-			new Unit(StopLossPercent, UnitTypes.Percent) // Stop loss as percentage of entry price
-		);
 	}
 
-	/// <summary>
-	/// Process candle and check for MACD signals
-	/// </summary>
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!macdValue.IsFormed)
 			return;
 
 		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
-		if (macdTyped.Macd is not decimal macd || macdTyped.Signal is not decimal signal)
+		if (macdTyped.Macd is not decimal macdLine || macdTyped.Signal is not decimal signal)
+			return;
+
+		if (!_hasPrev)
 		{
+			_prevMacd = macdLine;
+			_hasPrev = true;
 			return;
 		}
 
-		// Initialize _prevMacd on first formed candle
-		if (_prevMacd == 0)
+		if (_cooldown > 0)
 		{
-			_prevMacd = macd;
+			_cooldown--;
+			_prevMacd = macdLine;
 			return;
 		}
 
-		// Check if MACD is trending towards zero
-		bool isTrendingTowardsZero = false;
-		
-		if (macd < 0 && macd > _prevMacd)
+		// Zero line crossover signals
+		var prevBelow = _prevMacd < 0;
+		var currAbove = macdLine >= 0;
+		var prevAbove = _prevMacd >= 0;
+		var currBelow = macdLine < 0;
+
+		if (Position == 0 && prevBelow && currAbove)
 		{
-			// MACD is negative but increasing (moving towards zero from below)
-			isTrendingTowardsZero = true;
+			BuyMarket();
+			_cooldown = CooldownBars;
 		}
-		else if (macd > 0 && macd < _prevMacd)
+		else if (Position == 0 && prevAbove && currBelow)
 		{
-			// MACD is positive but decreasing (moving towards zero from above)
-			isTrendingTowardsZero = true;
+			SellMarket();
+			_cooldown = CooldownBars;
+		}
+		else if (Position > 0 && prevAbove && currBelow)
+		{
+			SellMarket();
+			_cooldown = CooldownBars;
+		}
+		else if (Position < 0 && prevBelow && currAbove)
+		{
+			BuyMarket();
+			_cooldown = CooldownBars;
 		}
 
-		if (Position == 0)
-		{
-			// No position - check for entry signals
-			if (macd < 0 && isTrendingTowardsZero)
-			{
-				// MACD is below zero and trending back to zero - buy (long)
-				BuyMarket(Volume);
-			}
-			else if (macd > 0 && isTrendingTowardsZero)
-			{
-				// MACD is above zero and trending back to zero - sell (short)
-				SellMarket(Volume);
-			}
-		}
-		else if (Position > 0)
-		{
-			// Long position - check for exit signal
-			if (macd > signal)
-			{
-				// MACD crossed above signal line - exit long
-				SellMarket(Position);
-			}
-		}
-		else if (Position < 0)
-		{
-			// Short position - check for exit signal
-			if (macd < signal)
-			{
-				// MACD crossed below signal line - exit short
-				BuyMarket(Math.Abs(Position));
-			}
-		}
-
-		// Update previous MACD value
-		_prevMacd = macd;
+		_prevMacd = macdLine;
 	}
 }

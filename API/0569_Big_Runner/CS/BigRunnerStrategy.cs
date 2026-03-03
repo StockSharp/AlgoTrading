@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,135 +11,43 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Big Runner Strategy - trades SMA crossover with optional stop loss and take profit.
+/// Big Runner Strategy - trades SMA crossover with stop loss and take profit.
 /// </summary>
 public class BigRunnerStrategy : Strategy
 {
 	private readonly StrategyParam<int> _fastLength;
 	private readonly StrategyParam<int> _slowLength;
-	private readonly StrategyParam<bool> _useStopTake;
-	private readonly StrategyParam<decimal> _takeProfitLongPercent;
-	private readonly StrategyParam<decimal> _takeProfitShortPercent;
-	private readonly StrategyParam<decimal> _stopLossLongPercent;
-	private readonly StrategyParam<decimal> _stopLossShortPercent;
-	private readonly StrategyParam<decimal> _percentOfPortfolio;
-	private readonly StrategyParam<decimal> _leverage;
+	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<decimal> _takeProfitPercent;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _entryPrice;
-	private decimal _stopPrice;
-	private decimal _takeProfitPrice;
-	private bool _isLong;
-	private decimal _prevClose;
 	private decimal _prevFast;
 	private decimal _prevSlow;
-	private bool _initialized;
+	private decimal _entryPrice;
 
-	/// <summary>
-	/// Fast SMA period.
-	/// </summary>
 	public int FastLength { get => _fastLength.Value; set => _fastLength.Value = value; }
-
-	/// <summary>
-	/// Slow SMA period.
-	/// </summary>
 	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
-
-	/// <summary>
-	/// Enable stop loss and take profit.
-	/// </summary>
-	public bool UseStopTake { get => _useStopTake.Value; set => _useStopTake.Value = value; }
-
-	/// <summary>
-	/// Take profit percent for long positions.
-	/// </summary>
-	public decimal TakeProfitLongPercent { get => _takeProfitLongPercent.Value; set => _takeProfitLongPercent.Value = value; }
-
-	/// <summary>
-	/// Take profit percent for short positions.
-	/// </summary>
-	public decimal TakeProfitShortPercent { get => _takeProfitShortPercent.Value; set => _takeProfitShortPercent.Value = value; }
-
-	/// <summary>
-	/// Stop loss percent for long positions.
-	/// </summary>
-	public decimal StopLossLongPercent { get => _stopLossLongPercent.Value; set => _stopLossLongPercent.Value = value; }
-
-	/// <summary>
-	/// Stop loss percent for short positions.
-	/// </summary>
-	public decimal StopLossShortPercent { get => _stopLossShortPercent.Value; set => _stopLossShortPercent.Value = value; }
-
-	/// <summary>
-	/// Percent of portfolio used per trade.
-	/// </summary>
-	public decimal PercentOfPortfolio { get => _percentOfPortfolio.Value; set => _percentOfPortfolio.Value = value; }
-
-	/// <summary>
-	/// Leverage multiplier.
-	/// </summary>
-	public decimal Leverage { get => _leverage.Value; set => _leverage.Value = value; }
-
-	/// <summary>
-	/// Candle type for strategy calculation.
-	/// </summary>
+	public decimal StopLossPercent { get => _stopLossPercent.Value; set => _stopLossPercent.Value = value; }
+	public decimal TakeProfitPercent { get => _takeProfitPercent.Value; set => _takeProfitPercent.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Constructor.
-	/// </summary>
 	public BigRunnerStrategy()
 	{
-		_fastLength = Param(nameof(FastLength), 5)
+		_fastLength = Param(nameof(FastLength), 120)
 			.SetGreaterThanZero()
-			.SetDisplay("Fast Length", "Fast SMA period", "SMA")
-			
-			.SetOptimize(3, 10, 1);
+			.SetDisplay("Fast Length", "Fast SMA period", "SMA");
 
-		_slowLength = Param(nameof(SlowLength), 20)
+		_slowLength = Param(nameof(SlowLength), 450)
 			.SetGreaterThanZero()
-			.SetDisplay("Slow Length", "Slow SMA period", "SMA")
-			
-			.SetOptimize(15, 30, 1);
+			.SetDisplay("Slow Length", "Slow SMA period", "SMA");
 
-		_useStopTake = Param(nameof(UseStopTake), true)
-			.SetDisplay("Use SL/TP", "Enable stop loss and take profit", "Risk");
-
-		_takeProfitLongPercent = Param(nameof(TakeProfitLongPercent), 4m)
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 			.SetGreaterThanZero()
-			.SetDisplay("TP Long %", "Take profit percent for long", "Risk")
-			
-			.SetOptimize(2m, 8m, 1m);
+			.SetDisplay("Stop Loss %", "Stop loss percent from entry", "Risk");
 
-		_takeProfitShortPercent = Param(nameof(TakeProfitShortPercent), 7m)
+		_takeProfitPercent = Param(nameof(TakeProfitPercent), 4m)
 			.SetGreaterThanZero()
-			.SetDisplay("TP Short %", "Take profit percent for short", "Risk")
-			
-			.SetOptimize(4m, 10m, 1m);
-
-		_stopLossLongPercent = Param(nameof(StopLossLongPercent), 2m)
-			.SetGreaterThanZero()
-			.SetDisplay("SL Long %", "Stop loss percent for long", "Risk")
-			
-			.SetOptimize(1m, 5m, 1m);
-
-		_stopLossShortPercent = Param(nameof(StopLossShortPercent), 2m)
-			.SetGreaterThanZero()
-			.SetDisplay("SL Short %", "Stop loss percent for short", "Risk")
-			
-			.SetOptimize(1m, 5m, 1m);
-
-		_percentOfPortfolio = Param(nameof(PercentOfPortfolio), 10m)
-			.SetGreaterThanZero()
-			.SetDisplay("Portfolio %", "Percent of portfolio per trade", "Risk")
-			
-			.SetOptimize(5m, 20m, 5m);
-
-		_leverage = Param(nameof(Leverage), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Leverage", "Position leverage", "Risk")
-			
-			.SetOptimize(1m, 3m, 0.5m);
+			.SetDisplay("Take Profit %", "Take profit percent from entry", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -158,11 +63,9 @@ public class BigRunnerStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
+		_prevFast = 0m;
+		_prevSlow = 0m;
 		_entryPrice = 0m;
-		_stopPrice = 0m;
-		_takeProfitPrice = 0m;
-		_isLong = false;
-		_initialized = false;
 	}
 
 	/// <inheritdoc />
@@ -170,8 +73,8 @@ public class BigRunnerStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var fastMa = new SMA { Length = FastLength };
-		var slowMa = new SMA { Length = SlowLength };
+		var fastMa = new SimpleMovingAverage { Length = FastLength };
+		var slowMa = new SimpleMovingAverage { Length = SlowLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -193,84 +96,48 @@ public class BigRunnerStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_initialized)
+		if (_prevFast == 0m || _prevSlow == 0m)
 		{
-			_prevClose = candle.ClosePrice;
 			_prevFast = fastValue;
 			_prevSlow = slowValue;
-			_initialized = true;
 			return;
 		}
 
-		var buySignal = _prevClose <= _prevFast && candle.ClosePrice > fastValue &&
-			_prevFast <= _prevSlow && fastValue > slowValue;
+		// Golden cross - buy
+		if (_prevFast <= _prevSlow && fastValue > slowValue && Position <= 0)
+		{
+			BuyMarket();
+			_entryPrice = candle.ClosePrice;
+		}
+		// Death cross - sell
+		else if (_prevFast >= _prevSlow && fastValue < slowValue && Position >= 0)
+		{
+			SellMarket();
+			_entryPrice = candle.ClosePrice;
+		}
 
-		var sellSignal = _prevClose >= _prevFast && candle.ClosePrice < fastValue &&
-			_prevFast >= _prevSlow && fastValue < slowValue;
+		// Stop loss / take profit for long
+		if (Position > 0 && _entryPrice > 0)
+		{
+			var pnlPercent = (candle.ClosePrice - _entryPrice) / _entryPrice * 100m;
+			if (pnlPercent <= -StopLossPercent || pnlPercent >= TakeProfitPercent)
+			{
+				SellMarket();
+				_entryPrice = 0m;
+			}
+		}
+		// Stop loss / take profit for short
+		else if (Position < 0 && _entryPrice > 0)
+		{
+			var pnlPercent = (_entryPrice - candle.ClosePrice) / _entryPrice * 100m;
+			if (pnlPercent <= -StopLossPercent || pnlPercent >= TakeProfitPercent)
+			{
+				BuyMarket();
+				_entryPrice = 0m;
+			}
+		}
 
-		if (buySignal && Position <= 0)
-			Enter(true, candle.ClosePrice);
-
-		if (sellSignal && Position >= 0)
-			Enter(false, candle.ClosePrice);
-
-		if (UseStopTake && Position != 0)
-			CheckStops(candle.ClosePrice);
-
-		_prevClose = candle.ClosePrice;
 		_prevFast = fastValue;
 		_prevSlow = slowValue;
-	}
-
-	private void Enter(bool isLong, decimal price)
-	{
-		var volume = CalculateVolume(price);
-		_entryPrice = price;
-		_isLong = isLong;
-
-		if (UseStopTake)
-		{
-			if (isLong)
-			{
-				var tp = TakeProfitLongPercent / 100m;
-				var sl = StopLossLongPercent / 100m;
-				_takeProfitPrice = _entryPrice * (1m + tp);
-				_stopPrice = _entryPrice * (1m - sl);
-			}
-			else
-			{
-				var tp = TakeProfitShortPercent / 100m;
-				var sl = StopLossShortPercent / 100m;
-				_takeProfitPrice = _entryPrice * (1m - tp);
-				_stopPrice = _entryPrice * (1m + sl);
-			}
-		}
-
-		if (isLong)
-			BuyMarket(volume + Math.Abs(Position));
-		else
-			SellMarket(volume + Math.Abs(Position));
-	}
-
-	private void CheckStops(decimal price)
-	{
-		if (_isLong && Position > 0)
-		{
-			if (price >= _takeProfitPrice || price <= _stopPrice)
-				SellMarket(Math.Abs(Position));
-		}
-		else if (!_isLong && Position < 0)
-		{
-			if (price <= _takeProfitPrice || price >= _stopPrice)
-				BuyMarket(Math.Abs(Position));
-		}
-	}
-
-	private decimal CalculateVolume(decimal price)
-	{
-		var portfolioValue = Portfolio.CurrentValue ?? 0m;
-		var portion = PercentOfPortfolio / 100m * Leverage;
-		var size = portfolioValue * portion / price;
-		return size > 0 ? size : Volume;
 	}
 }

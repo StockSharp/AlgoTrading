@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -28,8 +25,6 @@ public class BtcChopReversalStrategy : Strategy
 	private readonly StrategyParam<int> _macdFast;
 	private readonly StrategyParam<int> _macdSlow;
 	private readonly StrategyParam<int> _macdSignal;
-	private readonly StrategyParam<int> _volLookback;
-	private readonly StrategyParam<decimal> _volSpikeMultiplier;
 	private readonly StrategyParam<decimal> _takeProfitPercent;
 	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
@@ -37,7 +32,6 @@ public class BtcChopReversalStrategy : Strategy
 	private bool _prevShortSetup;
 	private bool _prevLongSetup;
 	private decimal _prevMacdHist;
-	private readonly SimpleMovingAverage _volSma = new();
 
 	public int EmaPeriod { get => _emaPeriod.Value; set => _emaPeriod.Value = value; }
 	public int AtrLength { get => _atrLength.Value; set => _atrLength.Value = value; }
@@ -48,8 +42,6 @@ public class BtcChopReversalStrategy : Strategy
 	public int MacdFast { get => _macdFast.Value; set => _macdFast.Value = value; }
 	public int MacdSlow { get => _macdSlow.Value; set => _macdSlow.Value = value; }
 	public int MacdSignal { get => _macdSignal.Value; set => _macdSignal.Value = value; }
-	public int VolLookback { get => _volLookback.Value; set => _volLookback.Value = value; }
-	public decimal VolSpikeMultiplier { get => _volSpikeMultiplier.Value; set => _volSpikeMultiplier.Value = value; }
 	public decimal TakeProfitPercent { get => _takeProfitPercent.Value; set => _takeProfitPercent.Value = value; }
 	public decimal StopLossPercent { get => _stopLossPercent.Value; set => _stopLossPercent.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
@@ -64,7 +56,7 @@ public class BtcChopReversalStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Length", "ATR calculation length", "Indicators");
 
-		_atrMultiplier = Param(nameof(AtrMultiplier), 4.4m)
+		_atrMultiplier = Param(nameof(AtrMultiplier), 2.5m)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Multiplier", "Multiplier for ATR bands", "Indicators");
 
@@ -72,10 +64,10 @@ public class BtcChopReversalStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "Length for RSI", "Indicators");
 
-		_rsiOverbought = Param(nameof(RsiOverbought), 68)
+		_rsiOverbought = Param(nameof(RsiOverbought), 63)
 			.SetDisplay("RSI Overbought", "Overbought level for RSI", "Indicators");
 
-		_rsiOversold = Param(nameof(RsiOversold), 28)
+		_rsiOversold = Param(nameof(RsiOversold), 37)
 			.SetDisplay("RSI Oversold", "Oversold level for RSI", "Indicators");
 
 		_macdFast = Param(nameof(MacdFast), 14)
@@ -90,14 +82,6 @@ public class BtcChopReversalStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Signal", "Signal length for MACD", "Indicators");
 
-		_volLookback = Param(nameof(VolLookback), 16)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume MA Length", "Length for volume moving average", "Filters");
-
-		_volSpikeMultiplier = Param(nameof(VolSpikeMultiplier), 1.5m)
-			.SetGreaterThanZero()
-			.SetDisplay("Sell Spike Mult", "Multiplier for volume spike", "Filters");
-
 		_takeProfitPercent = Param(nameof(TakeProfitPercent), 0.75m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit (%)", "Take profit percent", "Risk");
@@ -106,7 +90,7 @@ public class BtcChopReversalStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss (%)", "Stop loss percent", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -123,7 +107,6 @@ public class BtcChopReversalStrategy : Strategy
 		_prevShortSetup = false;
 		_prevLongSetup = false;
 		_prevMacdHist = 0m;
-		_volSma.Length = VolLookback;
 	}
 
 	/// <inheritdoc />
@@ -131,80 +114,79 @@ public class BtcChopReversalStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var ema = new EMA { Length = EmaPeriod };
+		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
 		var atr = new AverageTrueRange { Length = AtrLength };
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };
 		var macd = new MovingAverageConvergenceDivergenceSignal
 		{
-		Macd =
-		{
-		ShortMa = { Length = MacdFast },
-		LongMa = { Length = MacdSlow },
-		},
-		SignalMa = { Length = MacdSignal }
+			Macd =
+			{
+				ShortMa = { Length = MacdFast },
+				LongMa = { Length = MacdSlow },
+			},
+			SignalMa = { Length = MacdSignal }
 		};
 
-		StartProtection(new Unit(TakeProfitPercent, UnitTypes.Percent),
-		new Unit(StopLossPercent, UnitTypes.Percent));
+		StartProtection(
+			new Unit(TakeProfitPercent, UnitTypes.Percent),
+			new Unit(StopLossPercent, UnitTypes.Percent));
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-		.BindEx(macd, ema, atr, rsi, ProcessCandle)
-		.Start();
+			.BindEx(macd, ema, atr, rsi, ProcessCandle)
+			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
-		DrawCandles(area, subscription);
-		DrawIndicator(area, ema);
-		DrawIndicator(area, atr);
-		DrawIndicator(area, rsi);
-		DrawIndicator(area, macd);
-		DrawOwnTrades(area);
+			DrawCandles(area, subscription);
+			DrawIndicator(area, ema);
+			DrawOwnTrades(area);
 		}
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue, IIndicatorValue emaValue, IIndicatorValue atrValue, IIndicatorValue rsiValue)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
+		var emaVal = emaValue.ToDecimal();
+		var atrVal = atrValue.ToDecimal();
+		var rsiVal = rsiValue.ToDecimal();
 
-		var ema = emaValue.ToDecimal();
-		var atr = atrValue.ToDecimal();
-		var rsi = rsiValue.ToDecimal();
-		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
-		var macdHist = (macdTyped.Macd ?? 0m) - (macdTyped.Signal ?? 0m);
+		if (macdValue is not IMovingAverageConvergenceDivergenceSignalValue macdTyped)
+			return;
 
-		var upperBand = ema + AtrMultiplier * atr;
-		var lowerBand = ema - AtrMultiplier * atr;
-		var volumeSma = _volSma.Process(new DecimalIndicatorValue(_volSma, candle.TotalVolume, candle.ServerTime)).ToDecimal();
-		var sellSpike = candle.TotalVolume > volumeSma * VolSpikeMultiplier && candle.ClosePrice < candle.OpenPrice;
+		var macdLine = macdTyped.Macd ?? 0m;
+		var signalLine = macdTyped.Signal ?? 0m;
+		var macdHist = macdLine - signalLine;
+
+		if (atrVal <= 0)
+			return;
+
+		var upperBand = emaVal + AtrMultiplier * atrVal;
+		var lowerBand = emaVal - AtrMultiplier * atrVal;
 
 		var shortSetup = candle.HighPrice > upperBand &&
-		rsi > RsiOverbought &&
-		macdHist < _prevMacdHist && _prevMacdHist > 0 &&
-		candle.ClosePrice < candle.OpenPrice;
+			rsiVal > RsiOverbought &&
+			macdHist < _prevMacdHist &&
+			candle.ClosePrice < candle.OpenPrice;
 
 		var longSetup = candle.LowPrice < lowerBand &&
-		rsi < RsiOversold &&
-		macdHist > _prevMacdHist && _prevMacdHist < 0 &&
-		candle.ClosePrice > candle.OpenPrice;
+			rsiVal < RsiOversold &&
+			macdHist > _prevMacdHist &&
+			candle.ClosePrice > candle.OpenPrice;
 
 		var shortConfirmed = shortSetup && !_prevShortSetup;
-		var longConfirmed = longSetup && !_prevLongSetup && !sellSpike;
+		var longConfirmed = longSetup && !_prevLongSetup;
 
 		if (shortConfirmed && Position >= 0)
 		{
-		var volume = Volume + Math.Abs(Position);
-		SellMarket(volume);
+			SellMarket();
 		}
 		else if (longConfirmed && Position <= 0)
 		{
-		var volume = Volume + Math.Abs(Position);
-		BuyMarket(volume);
+			BuyMarket();
 		}
 
 		_prevShortSetup = shortSetup;

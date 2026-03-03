@@ -1,10 +1,5 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,8 +9,8 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Trades VIX front month when the RSI of the spread between front and second month contracts is oversold.
-/// Exits when RSI rises above the exit threshold.
+/// Volatility Arbitrage Spread Oscillator Model (VASOM).
+/// Uses RSI on the spread between two securities to detect mean reversion opportunities.
 /// </summary>
 public class VolatilityArbitrageSpreadOscillatorModelStrategy : Strategy
 {
@@ -27,85 +22,55 @@ public class VolatilityArbitrageSpreadOscillatorModelStrategy : Strategy
 
 	private decimal _frontClose;
 	private decimal _secondClose;
-	private RelativeStrengthIndex _rsi;
+	private decimal _rsiVal;
+	private decimal _prevRsi;
+	private int _cooldown;
 
-	/// <summary>
-	/// RSI period.
-	/// </summary>
-	public int RsiPeriod
-	{
-		get => _rsiPeriod.Value;
-		set => _rsiPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// RSI level for long entry.
-	/// </summary>
-	public int LongThreshold
-	{
-		get => _longThreshold.Value;
-		set => _longThreshold.Value = value;
-	}
-
-	/// <summary>
-	/// RSI level for exit.
-	/// </summary>
-	public int ExitThreshold
-	{
-		get => _exitThreshold.Value;
-		set => _exitThreshold.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Second month VIX future.
-	/// </summary>
-	public Security SecondSecurity
-	{
-		get => _secondSecurity.Value;
-		set => _secondSecurity.Value = value;
-	}
+	public int RsiPeriod { get => _rsiPeriod.Value; set => _rsiPeriod.Value = value; }
+	public int LongThreshold { get => _longThreshold.Value; set => _longThreshold.Value = value; }
+	public int ExitThreshold { get => _exitThreshold.Value; set => _exitThreshold.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public Security SecondSecurity { get => _secondSecurity.Value; set => _secondSecurity.Value = value; }
 
 	public VolatilityArbitrageSpreadOscillatorModelStrategy()
 	{
-		_rsiPeriod = Param(nameof(RsiPeriod), 2)
+		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "Length of RSI", "Parameters");
 
-		_longThreshold = Param(nameof(LongThreshold), 46)
+		_longThreshold = Param(nameof(LongThreshold), 35)
 			.SetRange(0, 100)
 			.SetDisplay("Long Threshold", "RSI level to enter long", "Parameters");
 
-		_exitThreshold = Param(nameof(ExitThreshold), 76)
+		_exitThreshold = Param(nameof(ExitThreshold), 65)
 			.SetRange(0, 100)
 			.SetDisplay("Exit Threshold", "RSI level to exit", "Parameters");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "Parameters");
 
-		_secondSecurity = Param(nameof(SecondSecurity), new Security { Id = "CBOE:VX2!" })
-			.SetDisplay("Second Security", "Second month VIX future", "Parameters");
+		_secondSecurity = Param<Security>(nameof(SecondSecurity))
+			.SetDisplay("Second Security", "Second security for spread", "Parameters");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-		=> [(Security, CandleType), (SecondSecurity, CandleType)];
+	{
+		var list = new List<(Security sec, DataType dt)> { (Security, CandleType) };
+		if (SecondSecurity != null)
+			list.Add((SecondSecurity, CandleType));
+		return list;
+	}
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_frontClose = 0m;
-		_secondClose = 0m;
-		_rsi = null;
+		_frontClose = 0;
+		_secondClose = 0;
+		_rsiVal = 0;
+		_prevRsi = 0;
+		_cooldown = 0;
 	}
 
 	/// <inheritdoc />
@@ -113,33 +78,33 @@ public class VolatilityArbitrageSpreadOscillatorModelStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
+		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
+
+		_frontClose = 0;
+		_secondClose = 0;
+		_rsiVal = 0;
+		_prevRsi = 0;
+		_cooldown = 0;
 
 		var frontSub = SubscribeCandles(CandleType);
-		frontSub.Bind(ProcessFront).Start();
 
-		var secondSub = SubscribeCandles(CandleType, security: SecondSecurity);
-		secondSub.Bind(ProcessSecond).Start();
+		frontSub
+			.Bind(rsi, ProcessFront)
+			.Start();
+
+		if (SecondSecurity != null)
+		{
+			var secondSub = SubscribeCandles(CandleType, security: SecondSecurity);
+			secondSub.Bind(ProcessSecond).Start();
+		}
 
 		var area = CreateChartArea();
-		var rsiArea = CreateChartArea();
 		if (area != null)
 		{
-			area.Title = "Spread RSI";
 			DrawCandles(area, frontSub);
+			DrawIndicator(area, rsi);
 			DrawOwnTrades(area);
 		}
-		if (rsiArea != null)
-			DrawIndicator(rsiArea, _rsi);
-	}
-
-	private void ProcessFront(ICandleMessage candle)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		_frontClose = candle.ClosePrice;
-		TryTrade(candle);
 	}
 
 	private void ProcessSecond(ICandleMessage candle)
@@ -148,23 +113,37 @@ public class VolatilityArbitrageSpreadOscillatorModelStrategy : Strategy
 			return;
 
 		_secondClose = candle.ClosePrice;
-		TryTrade(candle);
 	}
 
-	private void TryTrade(ICandleMessage candle)
+	private void ProcessFront(ICandleMessage candle, decimal rsiValue)
 	{
-		if (_frontClose == 0m || _secondClose == 0m)
+		if (candle.State != CandleStates.Finished)
 			return;
 
-		var spread = _frontClose - _secondClose;
-		var rsiValue = _rsi.Process(new DecimalIndicatorValue(_rsi, spread, candle.OpenTime)).ToDecimal();
+		_frontClose = candle.ClosePrice;
+		_prevRsi = _rsiVal;
+		_rsiVal = rsiValue;
 
-		if (!_rsi.IsFormed || !IsFormedAndOnlineAndAllowTrading())
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+			return;
+		}
+
+		if (_prevRsi == 0)
 			return;
 
-		if (Position <= 0 && rsiValue < LongThreshold)
+		// Long entry when RSI crosses below threshold
+		if (_rsiVal < LongThreshold && Position <= 0)
+		{
 			BuyMarket();
-		else if (Position > 0 && rsiValue > ExitThreshold)
+			_cooldown = 45;
+		}
+		// Exit long / short entry when RSI crosses above threshold
+		else if (_rsiVal > ExitThreshold && Position >= 0)
+		{
 			SellMarket();
+			_cooldown = 45;
+		}
 	}
 }

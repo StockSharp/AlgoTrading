@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,7 +11,9 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Scalping strategy for AUD/USD using EMA trend filter, Bollinger Bands and RSI.
+/// Scalping strategy using EMA crossover with RSI filter.
+/// Buys when fast EMA crosses above slow EMA and RSI exits oversold.
+/// Sells when fast EMA crosses below slow EMA and RSI exits overbought.
 /// </summary>
 public class AudUsdScalpingStrategy : Strategy
 {
@@ -22,20 +21,15 @@ public class AudUsdScalpingStrategy : Strategy
 	private readonly StrategyParam<int> _emaShort;
 	private readonly StrategyParam<int> _emaLong;
 	private readonly StrategyParam<int> _rsiPeriod;
-	private readonly StrategyParam<int> _rsiOverbought;
-	private readonly StrategyParam<int> _rsiOversold;
-	private readonly StrategyParam<int> _bbLength;
-	private readonly StrategyParam<decimal> _bbMultiplier;
-	private readonly StrategyParam<decimal> _takeProfit;
-	private readonly StrategyParam<decimal> _stopLoss;
+	private readonly StrategyParam<int> _cooldownBars;
 
-	private ExponentialMovingAverage _emaFast;
-	private ExponentialMovingAverage _emaSlow;
-	private BollingerBands _bollinger;
-	private RelativeStrengthIndex _rsi;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
+	private int _barIndex;
+	private int _lastTradeBar;
 
 	/// <summary>
-	/// Candle type for strategy calculation.
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -71,61 +65,16 @@ public class AudUsdScalpingStrategy : Strategy
 	}
 
 	/// <summary>
-	/// RSI overbought level.
+	/// Cooldown bars between trades.
 	/// </summary>
-	public int RsiOverbought
+	public int CooldownBars
 	{
-		get => _rsiOverbought.Value;
-		set => _rsiOverbought.Value = value;
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	/// <summary>
-	/// RSI oversold level.
-	/// </summary>
-	public int RsiOversold
-	{
-		get => _rsiOversold.Value;
-		set => _rsiOversold.Value = value;
-	}
-
-	/// <summary>
-	/// Bollinger Bands length.
-	/// </summary>
-	public int BbLength
-	{
-		get => _bbLength.Value;
-		set => _bbLength.Value = value;
-	}
-
-	/// <summary>
-	/// Bollinger Bands width multiplier.
-	/// </summary>
-	public decimal BbMultiplier
-	{
-		get => _bbMultiplier.Value;
-		set => _bbMultiplier.Value = value;
-	}
-
-	/// <summary>
-	/// Take profit value in price.
-	/// </summary>
-	public decimal TakeProfit
-	{
-		get => _takeProfit.Value;
-		set => _takeProfit.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss value in price.
-	/// </summary>
-	public decimal StopLoss
-	{
-		get => _stopLoss.Value;
-		set => _stopLoss.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the strategy.
+	/// Constructor.
 	/// </summary>
 	public AudUsdScalpingStrategy()
 	{
@@ -134,55 +83,18 @@ public class AudUsdScalpingStrategy : Strategy
 
 		_emaShort = Param(nameof(EmaShort), 13)
 			.SetGreaterThanZero()
-			.SetDisplay("Short EMA", "Fast EMA period", "Indicators")
-			
-			.SetOptimize(5, 30, 5);
+			.SetDisplay("Short EMA", "Fast EMA period", "Indicators");
 
 		_emaLong = Param(nameof(EmaLong), 26)
 			.SetGreaterThanZero()
-			.SetDisplay("Long EMA", "Slow EMA period", "Indicators")
-			
-			.SetOptimize(20, 60, 5);
+			.SetDisplay("Long EMA", "Slow EMA period", "Indicators");
 
-		_rsiPeriod = Param(nameof(RsiPeriod), 4)
+		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("RSI Period", "RSI calculation period", "Indicators")
-			
-			.SetOptimize(2, 10, 2);
+			.SetDisplay("RSI Period", "RSI calculation period", "Indicators");
 
-		_rsiOverbought = Param(nameof(RsiOverbought), 70)
-			.SetDisplay("RSI Overbought", "Overbought threshold", "Indicators")
-			
-			.SetOptimize(60, 80, 5);
-
-		_rsiOversold = Param(nameof(RsiOversold), 30)
-			.SetDisplay("RSI Oversold", "Oversold threshold", "Indicators")
-			
-			.SetOptimize(20, 40, 5);
-
-		_bbLength = Param(nameof(BbLength), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("BB Length", "Bollinger Bands length", "Indicators")
-			
-			.SetOptimize(10, 40, 5);
-
-		_bbMultiplier = Param(nameof(BbMultiplier), 2m)
-			.SetGreaterThanZero()
-			.SetDisplay("BB Mult", "Bollinger Bands multiplier", "Indicators")
-			
-			.SetOptimize(1m, 3m, 0.5m);
-
-		_takeProfit = Param(nameof(TakeProfit), 0.0005m)
-			.SetGreaterThanZero()
-			.SetDisplay("Take Profit", "Take profit in price", "Risk")
-			
-			.SetOptimize(0.0001m, 0.001m, 0.0001m);
-
-		_stopLoss = Param(nameof(StopLoss), 0.0004m)
-			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss", "Stop loss in price", "Risk")
-			
-			.SetOptimize(0.0001m, 0.001m, 0.0001m);
+		_cooldownBars = Param(nameof(CooldownBars), 350)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "Trading");
 	}
 
 	/// <inheritdoc />
@@ -192,57 +104,64 @@ public class AudUsdScalpingStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFastEma = 0;
+		_prevSlowEma = 0;
+		_barIndex = 0;
+		_lastTradeBar = 0;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_emaFast = new EMA { Length = EmaShort };
-		_emaSlow = new EMA { Length = EmaLong };
-		_bollinger = new BollingerBands { Length = BbLength, Width = BbMultiplier };
-		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
+		var emaFast = new ExponentialMovingAverage { Length = EmaShort };
+		var emaSlow = new ExponentialMovingAverage { Length = EmaLong };
+		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx([_bollinger, _emaFast, _emaSlow, _rsi], ProcessCandle)
+			.Bind(emaFast, emaSlow, rsi, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _emaFast);
-			DrawIndicator(area, _emaSlow);
-			DrawIndicator(area, _bollinger);
+			DrawIndicator(area, emaFast);
+			DrawIndicator(area, emaSlow);
 			DrawOwnTrades(area);
 		}
-
-		StartProtection(new Unit(TakeProfit, UnitTypes.Absolute), new Unit(StopLoss, UnitTypes.Absolute));
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue[] values)
+	private void ProcessCandle(ICandleMessage candle, decimal fastValue, decimal slowValue, decimal rsiValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_bollinger.IsFormed || !_emaFast.IsFormed || !_emaSlow.IsFormed || !_rsi.IsFormed)
-			return;
+		_barIndex++;
 
-		var bbValue = (BollingerBandsValue)values[0];
-		if (bbValue.UpBand is not decimal bbUpper || bbValue.LowBand is not decimal bbLower)
-			return;
-		var emaFast = values[1].ToDecimal();
-		var emaSlow = values[2].ToDecimal();
-		var rsiValue = values[3].ToDecimal();
+		var cooldownOk = _barIndex - _lastTradeBar > CooldownBars;
 
-		var isUpTrend = emaFast > emaSlow;
-		var isDownTrend = emaFast < emaSlow;
+		// EMA crossover with RSI filter
+		var crossUp = _prevFastEma > 0 && _prevFastEma <= _prevSlowEma && fastValue > slowValue;
+		var crossDown = _prevFastEma > 0 && _prevFastEma >= _prevSlowEma && fastValue < slowValue;
 
-		var longCondition = isUpTrend && candle.ClosePrice <= bbLower && rsiValue > RsiOversold;
-		var shortCondition = isDownTrend && candle.ClosePrice >= bbUpper && rsiValue < RsiOverbought;
+		if (crossUp && rsiValue < 60 && Position <= 0 && cooldownOk)
+		{
+			BuyMarket();
+			_lastTradeBar = _barIndex;
+		}
+		else if (crossDown && rsiValue > 40 && Position >= 0 && cooldownOk)
+		{
+			SellMarket();
+			_lastTradeBar = _barIndex;
+		}
 
-		if (longCondition && Position <= 0)
-			RegisterOrder(CreateOrder(Sides.Buy, candle.ClosePrice, Volume));
-		else if (shortCondition && Position >= 0)
-			RegisterOrder(CreateOrder(Sides.Sell, candle.ClosePrice, Volume));
+		_prevFastEma = fastValue;
+		_prevSlowEma = slowValue;
 	}
 }

@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,60 +11,31 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Screener strategy that evaluates RSI across multiple symbols and logs ratings.
+/// CleanerScreenersLibraryStrategy using EMA crossover for trend timing.
+/// Enters long on golden cross, short on death cross.
 /// </summary>
 public class CleanerScreenersLibraryStrategy : Strategy
 {
-	private readonly StrategyParam<int> _rsiLength;
-	private readonly StrategyParam<decimal> _strongThreshold;
-	private readonly StrategyParam<decimal> _weakThreshold;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	/// <summary>
-	/// RSI period length.
-	/// </summary>
-	public int RsiLength { get => _rsiLength.Value; set => _rsiLength.Value = value; }
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	/// <summary>
-	/// Upper threshold for strong rating.
-	/// </summary>
-	public decimal StrongThreshold { get => _strongThreshold.Value; set => _strongThreshold.Value = value; }
-
-	/// <summary>
-	/// Threshold for buy rating.
-	/// </summary>
-	public decimal WeakThreshold { get => _weakThreshold.Value; set => _weakThreshold.Value = value; }
-
-	/// <summary>
-	/// Candle type used for all symbols.
-	/// </summary>
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Collection of symbols to screen.
-	/// </summary>
-	public IList<Security> Symbols { get; } = new List<Security>();
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="CleanerScreenersLibraryStrategy"/> class.
-	/// </summary>
 	public CleanerScreenersLibraryStrategy()
 	{
-		_rsiLength = Param(nameof(RsiLength), 14)
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
 			.SetGreaterThanZero()
-			.SetDisplay("RSI Length", "Period for RSI indicator", "General")
-			
-			.SetOptimize(5, 30, 5);
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
 
-		_strongThreshold = Param(nameof(StrongThreshold), 70m)
-			.SetDisplay("Strong Threshold", "Upper RSI threshold for strong rating", "General")
-			
-			.SetOptimize(60m, 80m, 5m);
-
-		_weakThreshold = Param(nameof(WeakThreshold), 60m)
-			.SetDisplay("Weak Threshold", "RSI threshold for buy rating", "General")
-			
-			.SetOptimize(40m, 70m, 5m);
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -76,8 +44,15 @@ public class CleanerScreenersLibraryStrategy : Strategy
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		foreach (var security in Symbols)
-			yield return (security, CandleType);
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
 
 	/// <inheritdoc />
@@ -85,38 +60,46 @@ public class CleanerScreenersLibraryStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		foreach (var security in Symbols)
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
+
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(fastEma, slowEma, ProcessCandle)
+			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
 		{
-			var rsi = new RSI { Length = RsiLength };
-			var subscription = SubscribeCandles(CandleType, security: security);
-
-			subscription
-				.Bind(rsi, (candle, rsiValue) =>
-				{
-					if (candle.State != CandleStates.Finished)
-						return;
-
-					var rating = GetRating(rsiValue);
-					LogInfo($"{security.Id} {rating} (RSI {rsiValue:F2})");
-				})
-				.Start();
+			DrawCandles(area, subscription);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
+			DrawOwnTrades(area);
 		}
 	}
 
-	private string GetRating(decimal value)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
-		if (value >= StrongThreshold)
-			return "Strong Buy";
+		if (candle.State != CandleStates.Finished)
+			return;
 
-		if (value >= WeakThreshold)
-			return "Buy";
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
+		{
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
+			return;
+		}
 
-		if (value <= 100m - StrongThreshold)
-			return "Strong Sell";
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
+		{
+			BuyMarket();
+		}
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+		{
+			SellMarket();
+		}
 
-		if (value <= 100m - WeakThreshold)
-			return "Sell";
-
-		return "Neutral";
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

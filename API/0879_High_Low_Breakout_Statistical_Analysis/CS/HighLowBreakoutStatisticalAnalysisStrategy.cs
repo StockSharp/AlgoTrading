@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -13,199 +10,73 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-/// <summary>
-/// Strategy trading breakouts of high or low levels from selected timeframe.
-/// </summary>
 public class HighLowBreakoutStatisticalAnalysisStrategy : Strategy
 {
-	public enum EntryOptions
-	{
-		LongAtHigh,
-		ShortAtHigh,
-		LongAtLow,
-		ShortAtLow
-	}
-
-	public enum TimeframeOptions
-	{
-		Daily,
-		Weekly,
-		Monthly
-	}
-
-	private readonly StrategyParam<EntryOptions> _entryOption;
-	private readonly StrategyParam<TimeframeOptions> _timeframeOption;
-	private readonly StrategyParam<int> _holdingPeriod;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	private decimal _highLevel;
-	private decimal _lowLevel;
-	private decimal _prevClose;
-	private bool _hasPrevClose;
-	private bool _levelsInitialized;
-	private int _barIndex;
-	private int _entryBarIndex = -1;
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Entry option.
-	/// </summary>
-	public EntryOptions EntryOption
-	{
-		get => _entryOption.Value;
-		set => _entryOption.Value = value;
-	}
-
-	/// <summary>
-	/// Timeframe used for levels.
-	/// </summary>
-	public TimeframeOptions TimeframeOption
-	{
-		get => _timeframeOption.Value;
-		set => _timeframeOption.Value = value;
-	}
-
-	/// <summary>
-	/// Holding period in bars.
-	/// </summary>
-	public int HoldingPeriod
-	{
-		get => _holdingPeriod.Value;
-		set => _holdingPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Trading candle type.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initialize strategy parameters.
-	/// </summary>
 	public HighLowBreakoutStatisticalAnalysisStrategy()
 	{
-		_entryOption = Param(nameof(EntryOption), EntryOptions.LongAtHigh)
-			.SetDisplay("Entry Option", "Entry option", "General");
-
-		_timeframeOption = Param(nameof(TimeframeOption), TimeframeOptions.Daily)
-			.SetDisplay("Timeframe", "Timeframe for levels", "General");
-
-		_holdingPeriod = Param(nameof(HoldingPeriod), 5)
-			.SetDisplay("Holding Period", "Holding period in bars", "General")
-			
-			.SetOptimize(1, 20, 1);
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to trade", "General");
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return [(Security, CandleType), (Security, GetLevelDataType())];
+		return [(Security, CandleType)];
 	}
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_highLevel = default;
-		_lowLevel = default;
-		_prevClose = default;
-		_hasPrevClose = false;
-		_levelsInitialized = false;
-		_barIndex = 0;
-		_entryBarIndex = -1;
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		var levelType = GetLevelDataType();
-
-		var tradeSubscription = SubscribeCandles(CandleType);
-		tradeSubscription
-			.Bind(ProcessCandle)
-			.Start();
-
-		var levelSubscription = SubscribeCandles(levelType);
-		levelSubscription
-			.Bind(ProcessLevels)
-			.Start();
-
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(fastEma, slowEma, ProcessCandle).Start();
 		var area = CreateChartArea();
 		if (area != null)
 		{
-			DrawCandles(area, tradeSubscription);
+			DrawCandles(area, subscription);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private DataType GetLevelDataType()
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
-		return TimeframeOption switch
+		if (candle.State != CandleStates.Finished) return;
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-			TimeframeOptions.Daily => TimeSpan.FromMinutes(5).TimeFrame(),
-			TimeframeOptions.Weekly => TimeSpan.FromDays(7).TimeFrame(),
-			TimeframeOptions.Monthly => TimeSpan.FromDays(30).TimeFrame(),
-			_ => TimeSpan.FromMinutes(5).TimeFrame(),
-		};
-	}
-
-	private void ProcessLevels(ICandleMessage candle)
-	{
-		if (candle.State != CandleStates.Finished)
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
 			return;
-
-		_highLevel = candle.HighPrice;
-		_lowLevel = candle.LowPrice;
-		_levelsInitialized = true;
-	}
-
-	private void ProcessCandle(ICandleMessage candle)
-	{
-		if (candle.State != CandleStates.Finished || !_levelsInitialized)
-			return;
-
-		_barIndex++;
-
-		if (Position != 0 && _entryBarIndex >= 0 && _barIndex - _entryBarIndex >= HoldingPeriod)
-		{
-			ClosePosition();
-			_entryBarIndex = -1;
 		}
-
-		var crossedAboveHigh = _hasPrevClose && _prevClose <= _highLevel && candle.ClosePrice > _highLevel;
-		var crossedBelowHigh = _hasPrevClose && _prevClose >= _highLevel && candle.ClosePrice < _highLevel;
-		var crossedAboveLow = _hasPrevClose && _prevClose <= _lowLevel && candle.ClosePrice > _lowLevel;
-		var crossedBelowLow = _hasPrevClose && _prevClose >= _lowLevel && candle.ClosePrice < _lowLevel;
-
-		switch (EntryOption)
-		{
-			case EntryOptions.LongAtHigh when crossedAboveHigh && Position <= 0:
-				BuyMarket();
-				_entryBarIndex = _barIndex;
-				break;
-			case EntryOptions.ShortAtHigh when crossedBelowHigh && Position >= 0:
-				SellMarket();
-				_entryBarIndex = _barIndex;
-				break;
-			case EntryOptions.LongAtLow when crossedAboveLow && Position <= 0:
-				BuyMarket();
-				_entryBarIndex = _barIndex;
-				break;
-			case EntryOptions.ShortAtLow when crossedBelowLow && Position >= 0:
-				SellMarket();
-				_entryBarIndex = _barIndex;
-				break;
-		}
-
-		_prevClose = candle.ClosePrice;
-		_hasPrevClose = true;
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
+			BuyMarket();
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+			SellMarket();
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

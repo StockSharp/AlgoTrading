@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,41 +11,34 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// CE XAU/USDT Strategy based on price crossing its SMA.
-/// Buys when price crosses above the SMA and sells when price crosses below.
+/// CE_XAU_USDTStrategy using EMA crossover for trend timing.
+/// Enters long on golden cross, short on death cross.
 /// </summary>
 public class CE_XAU_USDTStrategy : Strategy
 {
-	private readonly StrategyParam<int> _smaPeriod;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private SMA _sma;
-	private decimal _prevClose;
-	private decimal _prevSma;
-	private bool _initialized;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	/// <summary>
-	/// SMA period.
-	/// </summary>
-	public int SmaPeriod { get => _smaPeriod.Value; set => _smaPeriod.Value = value; }
-
-	/// <summary>
-	/// Candle type for calculation.
-	/// </summary>
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Initializes a new instance of the <see cref="CE_XAU_USDTStrategy"/>.
-	/// </summary>
 	public CE_XAU_USDTStrategy()
 	{
-		_smaPeriod = Param(nameof(SmaPeriod), 14)
-		.SetGreaterThanZero()
-		.SetDisplay("SMA Period", "Period for SMA", "Parameters")
-		;
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-		.SetDisplay("Candle Type", "Type of candles", "General");
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -61,10 +51,8 @@ public class CE_XAU_USDTStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevClose = 0m;
-		_prevSma = 0m;
-		_initialized = false;
-		_sma = null;
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
 
 	/// <inheritdoc />
@@ -72,49 +60,46 @@ public class CE_XAU_USDTStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_sma = new SMA { Length = SmaPeriod };
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-		.Bind(_sma, ProcessCandle)
-		.Start();
+			.Bind(fastEma, slowEma, ProcessCandle)
+			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _sma);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
-		if (!_sma.IsFormed)
-		return;
-
-		if (!_initialized)
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-			_prevClose = candle.ClosePrice;
-			_prevSma = smaValue;
-			_initialized = true;
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
 			return;
 		}
 
-		var crossUp = _prevClose <= _prevSma && candle.ClosePrice > smaValue;
-		var crossDown = _prevClose >= _prevSma && candle.ClosePrice < smaValue;
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
+		{
+			BuyMarket();
+		}
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+		{
+			SellMarket();
+		}
 
-		if (crossUp && Position <= 0 && IsFormedAndOnlineAndAllowTrading())
-		BuyMarket();
-
-		if (crossDown && Position >= 0 && IsFormedAndOnlineAndAllowTrading())
-		SellMarket();
-
-		_prevClose = candle.ClosePrice;
-		_prevSma = smaValue;
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }
-

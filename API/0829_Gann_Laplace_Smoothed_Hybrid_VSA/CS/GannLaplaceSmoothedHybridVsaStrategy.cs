@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -13,132 +10,73 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-/// <summary>
-/// Strategy combining a Gann-style trend filter with Laplace-smoothed volume spread analysis.
-/// </summary>
 public class GannLaplaceSmoothedHybridVsaStrategy : Strategy
 {
-	private readonly StrategyParam<int> _trendPeriod;
-	private readonly StrategyParam<int> _vsaPeriod;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	private SimpleMovingAverage _trendMa;
-	private ExponentialMovingAverage _vsaEma;
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Trend moving average period.
-	/// </summary>
-	public int TrendPeriod
-	{
-		get => _trendPeriod.Value;
-		set => _trendPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// EMA period for volume spread smoothing.
-	/// </summary>
-	public int VsaPeriod
-	{
-		get => _vsaPeriod.Value;
-		set => _vsaPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initialize the strategy.
-	/// </summary>
 	public GannLaplaceSmoothedHybridVsaStrategy()
 	{
-		_trendPeriod = Param(nameof(TrendPeriod), 20)
-			.SetDisplay("Trend Period", "Period for trend moving average", "Indicators")
-			
-			.SetOptimize(10, 50, 5);
-
-		_vsaPeriod = Param(nameof(VsaPeriod), 14)
-			.SetDisplay("VSA Smoothing", "EMA period for volume spread", "Indicators")
-			
-			.SetOptimize(5, 30, 5);
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_trendMa = default;
-		_vsaEma = default;
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		StartProtection(null, null);
-
-		_trendMa = new SMA { Length = TrendPeriod };
-		_vsaEma = new EMA { Length = VsaPeriod };
-
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(_trendMa, ProcessCandle)
-			.Start();
-
+		subscription.Bind(fastEma, slowEma, ProcessCandle).Start();
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _trendMa);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal trendValue)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
-		if (candle.State != CandleStates.Finished)
+		if (candle.State != CandleStates.Finished) return;
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
+		{
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
 			return;
-
-		var range = candle.HighPrice - candle.LowPrice;
-		if (range == 0)
-			return;
-
-		var spread = candle.ClosePrice - candle.OpenPrice;
-		var vsa = spread / range * candle.TotalVolume;
-
-		var smoothed = _vsaEma.Process(new DecimalIndicatorValue(_vsaEma, vsa, candle.OpenTime)).ToDecimal();
-
-		if (smoothed > 0 && candle.ClosePrice > trendValue && Position <= 0)
-		{
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
 		}
-		else if (smoothed < 0 && candle.ClosePrice < trendValue && Position >= 0)
-		{
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
-		}
-		else if (Position > 0 && smoothed < 0)
-		{
-			SellMarket(Position);
-		}
-		else if (Position < 0 && smoothed > 0)
-		{
-			BuyMarket(Math.Abs(Position));
-		}
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
+			BuyMarket();
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+			SellMarket();
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

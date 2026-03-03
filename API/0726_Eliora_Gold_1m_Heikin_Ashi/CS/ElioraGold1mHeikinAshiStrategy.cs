@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -13,285 +10,73 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-/// <summary>
-/// Eliora Gold 1m Heikin Ashi strategy.
-/// Trades based on Heikin Ashi candle strength, trend alignment and a cooldown.
-/// </summary>
 public class ElioraGold1mHeikinAshiStrategy : Strategy
 {
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _atrPeriod;
-	private readonly StrategyParam<int> _cooldownBars;
-	private readonly StrategyParam<decimal> _bodyAtrMultiplier;
-	private readonly StrategyParam<decimal> _volatilityMultiplier;
-	private readonly StrategyParam<decimal> _trailingMultiplier;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	private AverageTrueRange _atr;
-	private SimpleMovingAverage _sma;
-	private Lowest _lowest;
-	private Highest _highest;
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	private decimal _prevHaOpen;
-	private decimal _prevHaClose;
-	private decimal _prevHaHigh;
-	private decimal _prevHaLow;
-
-	private decimal? _highestSinceEntry;
-	private decimal? _lowestSinceEntry;
-
-	private int _barIndex;
-	private int _lastTradeIndex = int.MinValue;
-
-	/// <summary>
-	/// Candle type and timeframe.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// ATR period.
-	/// </summary>
-	public int AtrPeriod
-	{
-		get => _atrPeriod.Value;
-		set => _atrPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Cooldown bars after trade.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
-	/// Body to ATR multiplier for strong candles.
-	/// </summary>
-	public decimal BodyAtrMultiplier
-	{
-		get => _bodyAtrMultiplier.Value;
-		set => _bodyAtrMultiplier.Value = value;
-	}
-
-	/// <summary>
-	/// ATR multiplier for volatility filter.
-	/// </summary>
-	public decimal VolatilityMultiplier
-	{
-		get => _volatilityMultiplier.Value;
-		set => _volatilityMultiplier.Value = value;
-	}
-
-	/// <summary>
-	/// ATR multiplier for trailing exit.
-	/// </summary>
-	public decimal TrailingMultiplier
-	{
-		get => _trailingMultiplier.Value;
-		set => _trailingMultiplier.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="ElioraGold1mHeikinAshiStrategy"/>.
-	/// </summary>
 	public ElioraGold1mHeikinAshiStrategy()
 	{
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
-		_atrPeriod = Param(nameof(AtrPeriod), 14)
-			.SetDisplay("ATR Period", "ATR calculation period", "Parameters")
-			
-			.SetOptimize(7, 21, 1);
-
-		_cooldownBars = Param(nameof(CooldownBars), 5)
-			.SetDisplay("Cooldown Bars", "Minimum bars between trades", "Parameters")
-			
-			.SetOptimize(1, 10, 1);
-
-		_bodyAtrMultiplier = Param(nameof(BodyAtrMultiplier), 0.4m)
-			.SetDisplay("Body ATR Multiplier", "Multiplier to detect strong candles", "Parameters");
-
-		_volatilityMultiplier = Param(nameof(VolatilityMultiplier), 1.2m)
-			.SetDisplay("Volatility Multiplier", "ATR multiplier for volatility filter", "Parameters");
-
-		_trailingMultiplier = Param(nameof(TrailingMultiplier), 0.8m)
-			.SetDisplay("Trailing Multiplier", "ATR multiplier for trailing exit", "Parameters");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevHaOpen = 0;
-		_prevHaClose = 0;
-		_prevHaHigh = 0;
-		_prevHaLow = 0;
-		_highestSinceEntry = null;
-		_lowestSinceEntry = null;
-		_barIndex = 0;
-		_lastTradeIndex = int.MinValue;
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_atr = new AverageTrueRange { Length = AtrPeriod };
-		_sma = new SMA { Length = 20 };
-		_lowest = new Lowest { Length = 5 };
-		_highest = new Highest { Length = 5 };
-
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.BindEx(_atr, ProcessCandle)
-			.Start();
-
+		subscription.Bind(fastEma, slowEma, ProcessCandle).Start();
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
-
-		StartProtection(null, null);
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue atrValue)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		_barIndex++;
-
-		var atr = atrValue.ToDecimal();
-
-		decimal haOpen, haClose, haHigh, haLow;
-
-		haClose = (candle.OpenPrice + candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 4m;
-
-		if (_prevHaOpen == 0)
+		if (candle.State != CandleStates.Finished) return;
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-			haOpen = (candle.OpenPrice + candle.ClosePrice) / 2m;
-			haHigh = candle.HighPrice;
-			haLow = candle.LowPrice;
-		}
-		else
-		{
-			haOpen = (_prevHaOpen + _prevHaClose) / 2m;
-			haHigh = Math.Max(Math.Max(candle.HighPrice, haOpen), haClose);
-			haLow = Math.Min(Math.Min(candle.LowPrice, haOpen), haClose);
-		}
-
-		var smaValue = _sma.Process(new DecimalIndicatorValue(_sma, haClose, candle.ServerTime));
-		if (!smaValue.IsFinal)
-		{
-			_prevHaOpen = haOpen;
-			_prevHaClose = haClose;
-			_prevHaHigh = haHigh;
-			_prevHaLow = haLow;
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
 			return;
 		}
-
-		var trendMa = smaValue.ToDecimal();
-
-		var lowVal = _lowest.Process(new DecimalIndicatorValue(_lowest, haLow, candle.ServerTime));
-		var highVal = _highest.Process(new DecimalIndicatorValue(_highest, haHigh, candle.ServerTime));
-
-		if (!lowVal.IsFinal || !highVal.IsFinal)
-		{
-			_prevHaOpen = haOpen;
-			_prevHaClose = haClose;
-			_prevHaHigh = haHigh;
-			_prevHaLow = haLow;
-			return;
-		}
-
-		var lowest = lowVal.ToDecimal();
-		var highest = highVal.ToDecimal();
-
-		var body = Math.Abs(haClose - haOpen);
-		var candleStrong = body > atr * BodyAtrMultiplier;
-
-		var inTrendUp = haClose > trendMa;
-		var inTrendDown = haClose < trendMa;
-
-		var consolidating = lowest > _prevHaLow && highest < _prevHaHigh;
-
-		var bearishStrong = haOpen > haClose && body > atr * BodyAtrMultiplier;
-		var allowShorts = inTrendDown && bearishStrong;
-
-		var canTrade = _barIndex - _lastTradeIndex >= CooldownBars;
-
-		var volatilityThreshold = atr * VolatilityMultiplier;
-
-		var longCondition = canTrade && candleStrong && !consolidating && inTrendUp && atr < volatilityThreshold;
-		var shortCondition = canTrade && candleStrong && !consolidating && allowShorts && atr < volatilityThreshold;
-
-		var exitLong = false;
-		var exitShort = false;
-
-		if (Position > 0)
-		{
-			_highestSinceEntry = _highestSinceEntry.HasValue ? Math.Max(_highestSinceEntry.Value, haHigh) : haHigh;
-			exitLong = haClose < _highestSinceEntry.Value - atr * TrailingMultiplier;
-		}
-		else
-		{
-			_highestSinceEntry = null;
-		}
-
-		if (Position < 0)
-		{
-			_lowestSinceEntry = _lowestSinceEntry.HasValue ? Math.Min(_lowestSinceEntry.Value, haLow) : haLow;
-			exitShort = haClose > _lowestSinceEntry.Value + atr * TrailingMultiplier;
-		}
-		else
-		{
-			_lowestSinceEntry = null;
-		}
-
-		if (longCondition)
-		{
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
 			BuyMarket();
-			_lastTradeIndex = _barIndex;
-			_highestSinceEntry = null;
-		}
-		else if (shortCondition)
-		{
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
 			SellMarket();
-			_lastTradeIndex = _barIndex;
-			_lowestSinceEntry = null;
-		}
-
-		if (exitLong && Position > 0)
-		{
-			SellMarket(Position);
-		}
-
-		if (exitShort && Position < 0)
-		{
-			BuyMarket(Math.Abs(Position));
-		}
-
-		_prevHaOpen = haOpen;
-		_prevHaClose = haClose;
-		_prevHaHigh = haHigh;
-		_prevHaLow = haLow;
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

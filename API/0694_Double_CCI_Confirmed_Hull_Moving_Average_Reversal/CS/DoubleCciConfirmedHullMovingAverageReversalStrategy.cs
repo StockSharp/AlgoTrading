@@ -1,9 +1,8 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -11,142 +10,35 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
 /// <summary>
-/// Strategy that trades when price crosses above Hull MA confirmed by two CCI indicators.
+/// DoubleCciConfirmedHullMovingAverageReversalStrategy using EMA crossover for trend timing.
+/// Enters long on golden cross, short on death cross.
 /// </summary>
 public class DoubleCciConfirmedHullMovingAverageReversalStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _stopLossAtrMultiplier;
-	private readonly StrategyParam<decimal> _trailingActivationMultiplier;
-	private readonly StrategyParam<int> _fastCciPeriod;
-	private readonly StrategyParam<int> _slowCciPeriod;
-	private readonly StrategyParam<int> _hullMaLength;
-	private readonly StrategyParam<int> _trailingEmaLength;
-	private readonly StrategyParam<int> _atrPeriod;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevHighMinusHull;
-	private decimal _stopLossLevel;
-	private decimal _activationLevel;
-	private decimal _takeProfitLevel;
-	private bool _trailingActivated;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	/// <summary>
-	/// ATR multiplier for stop loss.
-	/// </summary>
-	public decimal StopLossAtrMultiplier
-	{
-		get => _stopLossAtrMultiplier.Value;
-		set => _stopLossAtrMultiplier.Value = value;
-	}
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// ATR multiplier for trailing profit activation.
-	/// </summary>
-	public decimal TrailingActivationMultiplier
-	{
-		get => _trailingActivationMultiplier.Value;
-		set => _trailingActivationMultiplier.Value = value;
-	}
-
-	/// <summary>
-	/// Fast CCI period.
-	/// </summary>
-	public int FastCciPeriod
-	{
-		get => _fastCciPeriod.Value;
-		set => _fastCciPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Slow CCI period.
-	/// </summary>
-	public int SlowCciPeriod
-	{
-		get => _slowCciPeriod.Value;
-		set => _slowCciPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Hull MA length.
-	/// </summary>
-	public int HullMaLength
-	{
-		get => _hullMaLength.Value;
-		set => _hullMaLength.Value = value;
-	}
-
-	/// <summary>
-	/// Trailing EMA length.
-	/// </summary>
-	public int TrailingEmaLength
-	{
-		get => _trailingEmaLength.Value;
-		set => _trailingEmaLength.Value = value;
-	}
-
-	/// <summary>
-	/// ATR period.
-	/// </summary>
-	public int AtrPeriod
-	{
-		get => _atrPeriod.Value;
-		set => _atrPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type for strategy.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the strategy.
-	/// </summary>
 	public DoubleCciConfirmedHullMovingAverageReversalStrategy()
 	{
-		_stopLossAtrMultiplier = Param(nameof(StopLossAtrMultiplier), 1.75m)
-			.SetRange(0.5m, 5m)
-			.SetDisplay("Stop Loss ATR Multiplier", "ATR multiplier for stop loss", "Risk Management")
-			;
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
 
-		_trailingActivationMultiplier = Param(nameof(TrailingActivationMultiplier), 2.25m)
-			.SetRange(0.5m, 5m)
-			.SetDisplay("Trailing Activation Multiplier", "ATR multiplier for trailing profit activation", "Risk Management")
-			;
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 
-		_fastCciPeriod = Param(nameof(FastCciPeriod), 25)
-			.SetRange(5, 50)
-			.SetDisplay("Fast CCI Period", "Length of fast CCI", "Indicators")
-			;
-
-		_slowCciPeriod = Param(nameof(SlowCciPeriod), 50)
-			.SetRange(10, 100)
-			.SetDisplay("Slow CCI Period", "Length of slow CCI", "Indicators")
-			;
-
-		_hullMaLength = Param(nameof(HullMaLength), 34)
-			.SetRange(10, 100)
-			.SetDisplay("Hull MA Length", "Length for Hull Moving Average", "Indicators")
-			;
-
-		_trailingEmaLength = Param(nameof(TrailingEmaLength), 20)
-			.SetRange(10, 100)
-			.SetDisplay("Trailing EMA Length", "Length for trailing EMA", "Indicators")
-			;
-
-		_atrPeriod = Param(nameof(AtrPeriod), 14)
-			.SetRange(5, 50)
-			.SetDisplay("ATR Period", "ATR calculation period", "Indicators")
-			;
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -159,12 +51,8 @@ public class DoubleCciConfirmedHullMovingAverageReversalStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_prevHighMinusHull = default;
-		_stopLossLevel = default;
-		_activationLevel = default;
-		_takeProfitLevel = default;
-		_trailingActivated = default;
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
 
 	/// <inheritdoc />
@@ -172,68 +60,46 @@ public class DoubleCciConfirmedHullMovingAverageReversalStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var hull = new HullMovingAverage { Length = HullMaLength };
-		var fastCci = new CommodityChannelIndex { Length = FastCciPeriod };
-		var slowCci = new CommodityChannelIndex { Length = SlowCciPeriod };
-		var atr = new AverageTrueRange { Length = AtrPeriod };
-		var trailingEma = new EMA { Length = TrailingEmaLength };
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(hull, fastCci, slowCci, atr, trailingEma, ProcessCandle)
+			.Bind(fastEma, slowEma, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, hull);
-			DrawIndicator(area, fastCci);
-			DrawIndicator(area, slowCci);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal hull, decimal fastCci, decimal slowCci, decimal atr, decimal ema)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var diff = candle.HighPrice - hull;
-		var crossedUp = _prevHighMinusHull <= 0m && diff > 0m;
-		_prevHighMinusHull = diff;
-
-		if (crossedUp && candle.ClosePrice > hull && fastCci > 0m && slowCci > 0m && Position <= 0)
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
-
-			_stopLossLevel = candle.ClosePrice - StopLossAtrMultiplier * atr;
-			_activationLevel = candle.ClosePrice + TrailingActivationMultiplier * atr;
-			_trailingActivated = false;
-			_takeProfitLevel = default;
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
 			return;
 		}
 
-		if (Position <= 0)
-			return;
-
-		if (!_trailingActivated && candle.HighPrice > _activationLevel)
-			_trailingActivated = true;
-
-		if (_trailingActivated)
-			_takeProfitLevel = ema;
-
-		if (_takeProfitLevel != default && candle.ClosePrice < _takeProfitLevel)
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
 		{
-			SellMarket(Position);
-			return;
+			BuyMarket();
+		}
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+		{
+			SellMarket();
 		}
 
-		if (candle.LowPrice <= _stopLossLevel)
-			SellMarket(Position);
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

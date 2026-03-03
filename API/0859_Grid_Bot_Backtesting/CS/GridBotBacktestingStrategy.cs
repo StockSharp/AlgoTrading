@@ -1,9 +1,8 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -11,205 +10,73 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
-/// <summary>
-/// Grid Bot Backtesting Strategy.
-/// </summary>
 public class GridBotBacktestingStrategy : Strategy
 {
-	private readonly StrategyParam<DataType> _candleTypeParam;
-	private readonly StrategyParam<bool> _autoBounds;
-	private readonly StrategyParam<string> _boundSource;
-	private readonly StrategyParam<int> _boundLookback;
-	private readonly StrategyParam<decimal> _boundDeviation;
-	private readonly StrategyParam<decimal> _upperBoundParam;
-	private readonly StrategyParam<decimal> _lowerBoundParam;
-	private readonly StrategyParam<int> _gridQty;
-	
-	private Highest _highest = null!;
-	private Lowest _lowest = null!;
-	private SimpleMovingAverage _sma = null!;
-	
-	private decimal[] _gridLines = Array.Empty<decimal>();
-	private bool[] _orderPlaced = Array.Empty<bool>();
-	private decimal _upperBound;
-	private decimal _lowerBound;
-	private bool _gridInitialized;
-	private decimal _gridWidth;
-	private decimal _volumePerGrid;
-	
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
+	private readonly StrategyParam<DataType> _candleType;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
+
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+
 	public GridBotBacktestingStrategy()
 	{
-		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-		.SetDisplay("Candle type", "Candle type for strategy", "General");
-		
-		_autoBounds = Param(nameof(AutoBounds), true)
-		.SetDisplay("Auto Bounds", "Automatically compute grid bounds", "Grid");
-		
-		_boundSource = Param(nameof(BoundSource), "Hi & Low")
-		.SetDisplay("Bound Source", "Hi & Low or Average", "Grid");
-		
-		_boundLookback = Param(nameof(BoundLookback), 250)
-		.SetDisplay("Bound Lookback", "Lookback for auto bounds", "Grid");
-		
-		_boundDeviation = Param(nameof(BoundDeviation), 0.10m)
-		.SetDisplay("Bound Deviation", "Deviation for auto bounds", "Grid");
-		
-		_upperBoundParam = Param(nameof(UpperBound), 0.285m)
-		.SetDisplay("Upper Bound", "Manual upper bound", "Grid");
-		
-		_lowerBoundParam = Param(nameof(LowerBound), 0.225m)
-		.SetDisplay("Lower Bound", "Manual lower bound", "Grid");
-		
-		_gridQty = Param(nameof(GridLines), 30)
-		.SetDisplay("Grid Lines", "Number of grid lines", "Grid");
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
-	
-	public DataType CandleType
-	{
-		get => _candleTypeParam.Value;
-		set => _candleTypeParam.Value = value;
-	}
-	
-	public bool AutoBounds
-	{
-		get => _autoBounds.Value;
-		set => _autoBounds.Value = value;
-	}
-	
-	public string BoundSource
-	{
-		get => _boundSource.Value;
-		set => _boundSource.Value = value;
-	}
-	
-	public int BoundLookback
-	{
-		get => _boundLookback.Value;
-		set => _boundLookback.Value = value;
-	}
-	
-	public decimal BoundDeviation
-	{
-		get => _boundDeviation.Value;
-		set => _boundDeviation.Value = value;
-	}
-	
-	public decimal UpperBound
-	{
-		get => _upperBoundParam.Value;
-		set => _upperBoundParam.Value = value;
-	}
-	
-	public decimal LowerBound
-	{
-		get => _lowerBoundParam.Value;
-		set => _lowerBoundParam.Value = value;
-	}
-	
-	public int GridLines
-	{
-		get => _gridQty.Value;
-		set => _gridQty.Value = value;
-	}
-	
-	/// <inheritdoc />
+
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	=> [(Security, CandleType)];
-	
-	/// <inheritdoc />
+	{
+		return [(Security, CandleType)];
+	}
+
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		
-		_gridLines = Array.Empty<decimal>();
-		_orderPlaced = Array.Empty<bool>();
-		_gridInitialized = false;
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
-	
-	/// <inheritdoc />
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		
-		_highest = new Highest { Length = BoundLookback };
-		_lowest = new Lowest { Length = BoundLookback };
-		_sma = new SMA { Length = BoundLookback };
-		
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-		.Bind(_highest, _lowest, _sma, ProcessCandle)
-		.Start();
+		subscription.Bind(fastEma, slowEma, ProcessCandle).Start();
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
+			DrawOwnTrades(area);
+		}
 	}
-	
-	private void InitializeGrid(decimal upper, decimal lower)
+
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
-		_upperBound = upper;
-		_lowerBound = lower;
-		_gridWidth = (upper - lower) / (GridLines - 1);
-		_gridLines = new decimal[GridLines];
-		_orderPlaced = new bool[GridLines];
-		
-		for (var i = 0; i < GridLines; i++)
-		_gridLines[i] = lower + _gridWidth * i;
-		
-		_volumePerGrid = Volume / (GridLines - 1);
-		_gridInitialized = true;
-	}
-	
-	private void ProcessCandle(ICandleMessage candle, decimal highest, decimal lowest, decimal avg)
-	{
-		if (candle.State != CandleStates.Finished)
-		return;
-		
-		if (AutoBounds)
+		if (candle.State != CandleStates.Finished) return;
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-			if (BoundSource == "Hi & Low")
-			{
-				if (!_highest.IsFormed || !_lowest.IsFormed)
-				return;
-				
-				var newUpper = highest * (1 + BoundDeviation);
-				var newLower = lowest * (1 - BoundDeviation);
-				
-				if (!_gridInitialized || newUpper != _upperBound || newLower != _lowerBound)
-				InitializeGrid(newUpper, newLower);
-			}
-			else
-			{
-				if (!_sma.IsFormed)
-				return;
-				
-				var newUpper = avg * (1 + BoundDeviation);
-				var newLower = avg * (1 - BoundDeviation);
-				
-				if (!_gridInitialized || newUpper != _upperBound || newLower != _lowerBound)
-				InitializeGrid(newUpper, newLower);
-			}
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
+			return;
 		}
-		else if (!_gridInitialized)
-		{
-			InitializeGrid(UpperBound, LowerBound);
-		}
-		
-		if (!_gridInitialized)
-		return;
-		
-		for (var i = 0; i < _gridLines.Length; i++)
-		{
-			var line = _gridLines[i];
-			
-			if (candle.ClosePrice < line && !_orderPlaced[i] && i < _gridLines.Length - 1)
-			{
-				BuyMarket(_volumePerGrid);
-				_orderPlaced[i] = true;
-			}
-			else if (candle.ClosePrice > line && i > 0 && _orderPlaced[i - 1])
-			{
-				SellMarket(_volumePerGrid);
-				_orderPlaced[i - 1] = false;
-			}
-		}
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
+			BuyMarket();
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+			SellMarket();
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

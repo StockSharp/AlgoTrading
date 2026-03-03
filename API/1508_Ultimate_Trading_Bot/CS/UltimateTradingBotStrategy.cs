@@ -14,9 +14,7 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// RSI and dual EMA based trading bot.
-/// Buys when RSI crosses above oversold and fast EMA > slow EMA (price above MA).
-/// Sells when RSI crosses below overbought or fast EMA < slow EMA.
+/// Ultimate Trading Bot strategy using RSI momentum with EMA trend filter.
 /// </summary>
 public class UltimateTradingBotStrategy : Strategy
 {
@@ -30,6 +28,7 @@ public class UltimateTradingBotStrategy : Strategy
 	private decimal _prevRsi;
 	private decimal _prevFast;
 	private decimal _prevSlow;
+	private int _cooldown;
 
 	public int RsiLength { get => _rsiLength.Value; set => _rsiLength.Value = value; }
 	public decimal RsiOverbought { get => _rsiOverbought.Value; set => _rsiOverbought.Value = value; }
@@ -50,11 +49,11 @@ public class UltimateTradingBotStrategy : Strategy
 		_rsiOversold = Param(nameof(RsiOversold), 30m)
 			.SetDisplay("RSI Oversold", "Oversold level", "General");
 
-		_fastEmaLength = Param(nameof(FastEmaLength), 12)
+		_fastEmaLength = Param(nameof(FastEmaLength), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast EMA", "Fast EMA period", "General");
 
-		_slowEmaLength = Param(nameof(SlowEmaLength), 26)
+		_slowEmaLength = Param(nameof(SlowEmaLength), 21)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow EMA", "Slow EMA period", "General");
 
@@ -73,6 +72,7 @@ public class UltimateTradingBotStrategy : Strategy
 		_prevRsi = 0;
 		_prevFast = 0;
 		_prevSlow = 0;
+		_cooldown = 0;
 	}
 
 	protected override void OnStarted2(DateTime time)
@@ -83,10 +83,6 @@ public class UltimateTradingBotStrategy : Strategy
 		var emaFast = new ExponentialMovingAverage { Length = FastEmaLength };
 		var emaSlow = new ExponentialMovingAverage { Length = SlowEmaLength };
 
-		_prevRsi = 0;
-		_prevFast = 0;
-		_prevSlow = 0;
-
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(rsi, emaFast, emaSlow, ProcessCandle).Start();
 
@@ -94,39 +90,70 @@ public class UltimateTradingBotStrategy : Strategy
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, rsi);
 			DrawIndicator(area, emaFast);
+			DrawIndicator(area, emaSlow);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal rsi, decimal fast, decimal slow)
+	private void ProcessCandle(ICandleMessage candle, decimal rsiVal, decimal emaFast, decimal emaSlow)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (_prevRsi == 0)
+		if (_prevRsi == 0 || _prevFast == 0 || _prevSlow == 0)
 		{
-			_prevRsi = rsi;
-			_prevFast = fast;
-			_prevSlow = slow;
+			_prevRsi = rsiVal;
+			_prevFast = emaFast;
+			_prevSlow = emaSlow;
 			return;
 		}
 
-		var rsiCrossUp = _prevRsi <= RsiOversold && rsi > RsiOversold;
-		var rsiCrossDown = _prevRsi >= RsiOverbought && rsi < RsiOverbought;
-		var emaBullish = fast > slow;
-		var emaCrossDown = _prevFast >= _prevSlow && fast < slow;
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+			_prevRsi = rsiVal;
+			_prevFast = emaFast;
+			_prevSlow = emaSlow;
+			return;
+		}
 
-		// Long entry: RSI crosses above oversold while EMA trend is bullish
-		if (rsiCrossUp && emaBullish && Position <= 0)
-			BuyMarket();
-		// Exit long: RSI crosses below overbought or EMA bearish cross
-		else if ((rsiCrossDown || emaCrossDown) && Position > 0)
+		var hist = emaFast - emaSlow;
+		var histUp = hist > 0m;
+		var histDown = hist < 0m;
+
+		var rsiCrossUp = _prevRsi <= 50m && rsiVal > 50m;
+		var rsiCrossDown = _prevRsi >= 50m && rsiVal < 50m;
+
+		// Exit
+		if (Position > 0 && rsiCrossDown)
+		{
 			SellMarket();
+			_cooldown = 80;
+		}
+		else if (Position < 0 && rsiCrossUp)
+		{
+			BuyMarket();
+			_cooldown = 80;
+		}
 
-		_prevRsi = rsi;
-		_prevFast = fast;
-		_prevSlow = slow;
+		// Entry
+		if (Position == 0)
+		{
+			if (rsiCrossUp && histUp)
+			{
+				BuyMarket();
+				_cooldown = 80;
+			}
+			else if (rsiCrossDown && histDown)
+			{
+				SellMarket();
+				_cooldown = 80;
+			}
+		}
+
+		_prevRsi = rsiVal;
+		_prevFast = emaFast;
+		_prevSlow = emaSlow;
 	}
 }

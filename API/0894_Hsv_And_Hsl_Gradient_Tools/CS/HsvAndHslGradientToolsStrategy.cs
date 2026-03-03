@@ -1,207 +1,82 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-
 namespace StockSharp.Samples.Strategies;
 
-/// <summary>
-/// Color helpers converted from the "HSV and HSL gradient Tools" TradingView library.
-/// Provides functions for color conversion, inversion and gradient calculation.
-/// </summary>
 public class HsvAndHslGradientToolsStrategy : Strategy
 {
-	private static (decimal H, decimal S, decimal V, decimal A) Limit(decimal h, decimal s, decimal v, decimal a)
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
+	private readonly StrategyParam<DataType> _candleType;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
+
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+
+	public HsvAndHslGradientToolsStrategy()
 	{
-		var hue = ((h % 360m) + 360m) % 360m;
-		var sat = Math.Min(1m, Math.Max(0m, s));
-		var val = Math.Min(1m, Math.Max(0m, v));
-		var alpha = Math.Min(1m, Math.Max(0m, a));
-		return (hue, sat, val, alpha);
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
-	private static decimal Hue(decimal red, decimal green, decimal blue)
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		var min = Math.Min(red, Math.Min(green, blue));
-		var max = Math.Max(red, Math.Max(green, blue));
-		var hue = 0m;
-		if (min != max)
+		return [(Security, CandleType)];
+	}
+
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
+	}
+
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(fastEma, slowEma, ProcessCandle).Start();
+		var area = CreateChartArea();
+		if (area != null)
 		{
-			var delta = max - min;
-			hue = max == red
-				? (green - blue) / delta
-				: max == green
-					? 2m + (blue - red) / delta
-					: 4m + (red - green) / delta;
-			hue += 6m;
-			hue *= 60m;
+			DrawCandles(area, subscription);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
+			DrawOwnTrades(area);
 		}
-		return hue;
 	}
 
-	public static (decimal H, decimal S, decimal V, decimal A) RgbToHsv(byte r, byte g, byte b, byte t = 0)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
-		var red = r / 255m;
-		var green = g / 255m;
-		var blue = b / 255m;
-		var min = Math.Min(red, Math.Min(green, blue));
-		var max = Math.Max(red, Math.Max(green, blue));
-		var value = max;
-		var chroma = max - min;
-		var sat = value == 0m ? 0m : chroma / value;
-		var hue = chroma == 0m
-			? 0m
-			: value == red
-				? 60m * ((green - blue) / chroma)
-				: value == green
-					? 60m * (2m + (blue - red) / chroma)
-					: 60m * (4m + (red - green) / chroma);
-		var alpha = 1m - t / 100m;
-		return Limit(hue, sat, value, alpha);
-	}
-
-	public static (decimal H, decimal S, decimal L, decimal A) RgbToHsl(byte r, byte g, byte b, byte t = 0)
-	{
-		var red = r / 255m;
-		var green = g / 255m;
-		var blue = b / 255m;
-		var min = Math.Min(red, Math.Min(green, blue));
-		var max = Math.Max(red, Math.Max(green, blue));
-		var lum = (max + min) / 2m;
-		var chroma = max - min;
-		var sat = chroma == 0m ? 0m : chroma / (1m - Math.Abs(2m * lum - 1m));
-		var hue = Hue(red, green, blue);
-		var alpha = 1m - t / 100m;
-		return Limit(hue, sat, lum, alpha);
-	}
-
-	public static int Hsv(decimal h, decimal s = 1m, decimal v = 1m, decimal a = 1m)
-	{
-		var data = Limit(h, s, v, a);
-		var hue = data.H / 60m;
-		var chroma = data.V * data.S;
-		var sec = chroma * (1m - Math.Abs((hue % 2m) - 1m));
-		var m = data.V - chroma;
-		decimal r = 0m, g = 0m, b = 0m;
-		var i = (int)Math.Floor(hue);
-		switch (i)
+		if (candle.State != CandleStates.Finished) return;
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-			case 0: r = chroma; g = sec; b = 0m; break;
-			case 1: r = sec; g = chroma; b = 0m; break;
-			case 2: r = 0m; g = chroma; b = sec; break;
-			case 3: r = 0m; g = sec; b = chroma; break;
-			case 4: r = sec; g = 0m; b = chroma; break;
-			default: r = chroma; g = 0m; b = sec; break;
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
+			return;
 		}
-		var alpha = (int)Math.Round(data.A * 255m);
-		var ri = (int)Math.Round((m + r) * 255m);
-		var gi = (int)Math.Round((m + g) * 255m);
-		var bi = (int)Math.Round((m + b) * 255m);
-		return (alpha << 24) | (ri << 16) | (gi << 8) | bi;
-	}
-
-	public static int Hsl(decimal h, decimal s = 1m, decimal l = 0.5m, decimal a = 1m)
-	{
-		var data = Limit(h, s, l, a);
-		if (data.S == 0m)
-		{
-			var gray = (int)Math.Round(data.V * 255m);
-			var alpha = (int)Math.Round(data.A * 255m);
-			return (alpha << 24) | (gray << 16) | (gray << 8) | gray;
-		}
-		var q = data.V < 0.5m ? data.V * (1m + data.S) : data.V + data.S - data.V * data.S;
-		var p = 2m * data.V - q;
-		decimal Hue2Rgb(decimal t)
-		{
-			if (t < 0m)
-				t += 1m;
-			if (t > 1m)
-				t -= 1m;
-			if (t < 1m / 6m)
-				return p + (q - p) * 6m * t;
-			if (t < 1m / 2m)
-				return q;
-			if (t < 2m / 3m)
-				return p + (q - p) * (2m / 3m - t) * 6m;
-			return p;
-		}
-		var r = Hue2Rgb((data.H / 360m) + 1m / 3m);
-		var g = Hue2Rgb(data.H / 360m);
-		var b = Hue2Rgb((data.H / 360m) - 1m / 3m);
-		var alpha2 = (int)Math.Round(data.A * 255m);
-		var ri = (int)Math.Round(r * 255m);
-		var gi = (int)Math.Round(g * 255m);
-		var bi = (int)Math.Round(b * 255m);
-		return (alpha2 << 24) | (ri << 16) | (gi << 8) | bi;
-	}
-
-	private static decimal EaseBoth(decimal v)
-	{
-		return v < 0.5m
-			? 4m * v * v * v
-			: 1m - (decimal)Math.Pow((double)(-2m * v + 2m), 3) / 2m;
-	}
-
-	private static decimal EaseIn(decimal v)
-	{
-		return v == 0m ? 0m : (decimal)Math.Pow(2d, (double)(10m * v - 10m));
-	}
-
-	private static decimal EaseOut(decimal v)
-	{
-		return v == 1m ? 1m : 1m - (decimal)Math.Pow(2d, (double)(-10m * v));
-	}
-
-	private static decimal PercentOfDistance(decimal value, decimal start, decimal end)
-	{
-		var range = end - start;
-		if (range == 0m)
-			return 0m;
-		return (value - start) / range;
-	}
-
-	public static int HsvInvert(int color)
-	{
-		var (h, s, v, a) = RgbToHsv((byte)((color >> 16) & 0xFF), (byte)((color >> 8) & 0xFF), (byte)(color & 0xFF), (byte)((color >> 24) & 0xFF));
-		return Hsv(h, s, 1m - EaseBoth(v), a);
-	}
-
-	public static int HslInvert(int color)
-	{
-		var (h, s, l, a) = RgbToHsl((byte)((color >> 16) & 0xFF), (byte)((color >> 8) & 0xFF), (byte)(color & 0xFF), (byte)((color >> 24) & 0xFF));
-		return Hsl(h, s, 1m - EaseBoth(l), a);
-	}
-
-	public static int HsvGradient(decimal signal, decimal startVal, decimal endVal, int startCol, int endCol)
-	{
-		var (h1, s1, v1, a1) = RgbToHsv((byte)((startCol >> 16) & 0xFF), (byte)((startCol >> 8) & 0xFF), (byte)(startCol & 0xFF), (byte)((startCol >> 24) & 0xFF));
-		var (h2, s2, v2, a2) = RgbToHsv((byte)((endCol >> 16) & 0xFF), (byte)((endCol >> 8) & 0xFF), (byte)(endCol & 0xFF), (byte)((endCol >> 24) & 0xFF));
-		var pos = PercentOfDistance(signal, startVal, endVal);
-		var hue = h1 + 360m + pos * ((h2 - h1 + 540m) % 360m - 180m);
-		var sat = s1 + (s2 - s1) * pos;
-		var val = v1 + (v2 - v1) * pos;
-		var alpha = a1 + (a2 - a1) * pos;
-		return Hsv(hue, sat, val, alpha);
-	}
-
-	public static int HslGradient(decimal signal, decimal startVal, decimal endVal, int startCol, int endCol)
-	{
-		var (h1, s1, l1, a1) = RgbToHsl((byte)((startCol >> 16) & 0xFF), (byte)((startCol >> 8) & 0xFF), (byte)(startCol & 0xFF), (byte)((startCol >> 24) & 0xFF));
-		var (h2, s2, l2, a2) = RgbToHsl((byte)((endCol >> 16) & 0xFF), (byte)((endCol >> 8) & 0xFF), (byte)(endCol & 0xFF), (byte)((endCol >> 24) & 0xFF));
-		var pos = PercentOfDistance(signal, startVal, endVal);
-		var hue = h1 + 360m + pos * ((h2 - h1 + 540m) % 360m - 180m);
-		var sat = s1 + (s2 - s1) * pos;
-		var lum = l1 + (l2 - l1) * pos;
-		var alpha = a1 + (a2 - a1) * pos;
-		return Hsl(hue, sat, lum, alpha);
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
+			BuyMarket();
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+			SellMarket();
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

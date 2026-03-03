@@ -1,73 +1,69 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
-using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Long Explosive V1 strategy enters long positions on strong price increases and exits on sharp drops.
+/// Explosive strategy that enters positions on strong price moves.
+/// Goes long on sharp increases and short on sharp decreases.
 /// </summary>
 public class LongExplosiveV1Strategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<decimal> _priceIncreasePercent;
 	private readonly StrategyParam<decimal> _priceDecreasePercent;
+	private readonly StrategyParam<int> _cooldownBars;
 
 	private decimal _previousClose;
-	private bool _isFirst = true;
+	private int _barsSinceSignal;
 
-	/// <summary>
-	/// Candle type for calculation.
-	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Price increase percentage to enter a long position.
-	/// </summary>
 	public decimal PriceIncreasePercent
 	{
 		get => _priceIncreasePercent.Value;
 		set => _priceIncreasePercent.Value = value;
 	}
 
-	/// <summary>
-	/// Price decrease percentage to exit.
-	/// </summary>
 	public decimal PriceDecreasePercent
 	{
 		get => _priceDecreasePercent.Value;
 		set => _priceDecreasePercent.Value = value;
 	}
 
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
 	public LongExplosiveV1Strategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
-		_priceIncreasePercent = Param(nameof(PriceIncreasePercent), 1m)
-			.SetDisplay("Price increase (%)", "Percentage increase to enter long", "General")
-			;
-		_priceDecreasePercent = Param(nameof(PriceDecreasePercent), 1m)
-			.SetDisplay("Price decrease (%)", "Percentage decrease to exit", "General")
-			;
+		_priceIncreasePercent = Param(nameof(PriceIncreasePercent), 0.5m)
+			.SetDisplay("Price increase (%)", "Percentage increase to go long", "General");
+		_priceDecreasePercent = Param(nameof(PriceDecreasePercent), 0.5m)
+			.SetDisplay("Price decrease (%)", "Percentage decrease to go short", "General");
+		_cooldownBars = Param(nameof(CooldownBars), 20)
+			.SetDisplay("Cooldown Bars", "Min bars between signals", "General");
 	}
 
 	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	protected override void OnReseted()
 	{
-		return [(Security, CandleType)];
+		base.OnReseted();
+
+		_previousClose = 0;
+		_barsSinceSignal = 0;
 	}
 
 	/// <inheritdoc />
@@ -75,10 +71,20 @@ public class LongExplosiveV1Strategy : Strategy
 	{
 		base.OnStarted2(time);
 
+		_previousClose = 0;
+		_barsSinceSignal = 0;
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
 			.Bind(ProcessCandle)
 			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawOwnTrades(area);
+		}
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -86,27 +92,31 @@ public class LongExplosiveV1Strategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (_isFirst)
+		_barsSinceSignal++;
+
+		if (_previousClose == 0)
 		{
 			_previousClose = candle.ClosePrice;
-			_isFirst = false;
 			return;
 		}
 
-		var change = candle.ClosePrice - _previousClose;
-		var longLimit = candle.ClosePrice * PriceIncreasePercent / 100m;
-		var shortLimit = candle.ClosePrice * PriceDecreasePercent / 100m;
-
-		if (change < -shortLimit)
-			ClosePosition();
-
-		if (change > longLimit)
-		{
-			ClosePosition();
-			BuyMarket();
-		}
-
+		var change = (candle.ClosePrice - _previousClose) / _previousClose * 100m;
 		_previousClose = candle.ClosePrice;
+
+		if (_barsSinceSignal < CooldownBars)
+			return;
+
+		// Strong increase -> go long
+		if (change > PriceIncreasePercent && Position <= 0)
+		{
+			BuyMarket(Volume + Math.Abs(Position));
+			_barsSinceSignal = 0;
+		}
+		// Strong decrease -> go short
+		else if (change < -PriceDecreasePercent && Position >= 0)
+		{
+			SellMarket(Volume + Math.Abs(Position));
+			_barsSinceSignal = 0;
+		}
 	}
 }
-

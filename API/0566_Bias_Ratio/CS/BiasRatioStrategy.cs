@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -22,51 +19,24 @@ public class BiasRatioStrategy : Strategy
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<decimal> _biasThreshold;
 
-	/// <summary>
-	/// Candle type for strategy calculation.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
+	private decimal _prevBiasEma;
+	private decimal _prevBiasSma;
 
-	/// <summary>
-	/// Moving average period.
-	/// </summary>
-	public int MaPeriod
-	{
-		get => _maPeriod.Value;
-		set => _maPeriod.Value = value;
-	}
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int MaPeriod { get => _maPeriod.Value; set => _maPeriod.Value = value; }
+	public decimal BiasThreshold { get => _biasThreshold.Value; set => _biasThreshold.Value = value; }
 
-	/// <summary>
-	/// Price deviation ratio from moving averages.
-	/// </summary>
-	public decimal BiasThreshold
-	{
-		get => _biasThreshold.Value;
-		set => _biasThreshold.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="BiasRatioStrategy"/> class.
-	/// </summary>
 	public BiasRatioStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(3).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
 		_maPeriod = Param(nameof(MaPeriod), 200)
 			.SetGreaterThanZero()
-			.SetDisplay("MA Period", "Moving average period", "Indicators")
-			
-			.SetOptimize(100, 300, 50);
+			.SetDisplay("MA Period", "Moving average period", "Indicators");
 
-		_biasThreshold = Param(nameof(BiasThreshold), 0.025m)
-			.SetDisplay("Bias Threshold", "Price deviation ratio from MA", "Trading")
-			
-			.SetOptimize(0.01m, 0.05m, 0.005m);
+		_biasThreshold = Param(nameof(BiasThreshold), 0.015m)
+			.SetDisplay("Bias Threshold", "Price deviation ratio from MA", "Trading");
 	}
 
 	/// <inheritdoc />
@@ -76,12 +46,20 @@ public class BiasRatioStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevBiasEma = 0m;
+		_prevBiasSma = 0m;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		var ema = new EMA { Length = MaPeriod };
-		var sma = new SMA { Length = MaPeriod };
+		var ema = new ExponentialMovingAverage { Length = MaPeriod };
+		var sma = new SimpleMovingAverage { Length = MaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -103,20 +81,27 @@ public class BiasRatioStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (emaValue <= 0 || smaValue <= 0)
 			return;
 
-		var close = candle.ClosePrice;
-		var longCondition = emaValue != 0 && close / emaValue >= 1 + BiasThreshold;
-		var shortCondition = smaValue != 0 && close / smaValue <= 1 - BiasThreshold;
+		var biasEma = candle.ClosePrice / emaValue - 1m;
+		var biasSma = candle.ClosePrice / smaValue - 1m;
 
-		if (longCondition && Position <= 0)
+		// Long: price crosses above threshold from EMA
+		var longSignal = _prevBiasEma <= BiasThreshold && biasEma > BiasThreshold;
+		// Short: price crosses below negative threshold from SMA
+		var shortSignal = _prevBiasSma >= -BiasThreshold && biasSma < -BiasThreshold;
+
+		if (longSignal && Position <= 0)
 		{
 			BuyMarket();
 		}
-		else if (shortCondition && Position >= 0)
+		else if (shortSignal && Position >= 0)
 		{
 			SellMarket();
 		}
+
+		_prevBiasEma = biasEma;
+		_prevBiasSma = biasSma;
 	}
 }

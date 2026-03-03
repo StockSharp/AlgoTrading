@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,69 +11,34 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Volume delta SMA strategy with 1-year high/low thresholds.
-/// Buys when delta SMA was very low and crosses above zero.
-/// Exits when delta SMA drops below 60% of its 1-year high after a 70% cross.
+/// DeltaSma1YearHighLowStrategy using EMA crossover for trend timing.
+/// Enters long on golden cross, short on death cross.
 /// </summary>
 public class DeltaSma1YearHighLowStrategy : Strategy
 {
-	private readonly StrategyParam<int> _lookbackBars;
-
-	private readonly StrategyParam<int> _deltaSmaLength;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private SimpleMovingAverage _deltaSma;
-	private Highest _highest;
-	private Lowest _lowest;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	private bool _wasVeryLow;
-	private bool _crossedAbove70;
-	private decimal _previousDeltaSma;
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Delta SMA period length.
-	/// </summary>
-	public int DeltaSmaLength
-	{
-		get => _deltaSmaLength.Value;
-		set => _deltaSmaLength.Value = value;
-	}
-
-	/// <summary>
-	/// Lookback bars for yearly high/low calculations.
-	/// </summary>
-	public int LookbackBars
-	{
-		get => _lookbackBars.Value;
-		set => _lookbackBars.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type for strategy calculation.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes <see cref="DeltaSma1YearHighLowStrategy"/>.
-	/// </summary>
 	public DeltaSma1YearHighLowStrategy()
 	{
-		_deltaSmaLength = Param(nameof(DeltaSmaLength), 14)
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
 			.SetGreaterThanZero()
-			.SetDisplay("Delta SMA Length", "Period for delta SMA", "Parameters")
-			
-			.SetOptimize(5, 30, 5);
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
 
-		_lookbackBars = Param(nameof(LookbackBars), 365)
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
 			.SetGreaterThanZero()
-			.SetDisplay("Lookback Bars", "Bars for yearly high/low", "Parameters");
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "Parameters");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -89,13 +51,8 @@ public class DeltaSma1YearHighLowStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_deltaSma = default;
-		_highest = default;
-		_lowest = default;
-		_wasVeryLow = false;
-		_crossedAbove70 = false;
-		_previousDeltaSma = 0m;
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
 
 	/// <inheritdoc />
@@ -103,73 +60,46 @@ public class DeltaSma1YearHighLowStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_deltaSma = new SimpleMovingAverage { Length = DeltaSmaLength };
-		_highest = new Highest { Length = LookbackBars };
-		_lowest = new Lowest { Length = LookbackBars };
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(fastEma, slowEma, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _deltaSma);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var volume = candle.TotalVolume;
-		var delta = 0m;
-		if (candle.ClosePrice > candle.OpenPrice)
-			delta = volume;
-		else if (candle.ClosePrice < candle.OpenPrice)
-			delta = -volume;
-
-		var deltaSmaValue = _deltaSma.Process(new DecimalIndicatorValue(_deltaSma, delta, candle.ServerTime)).ToDecimal();
-		var highestValue = _highest.Process(new DecimalIndicatorValue(_highest, deltaSmaValue, candle.ServerTime)).ToDecimal();
-		var lowestValue = _lowest.Process(new DecimalIndicatorValue(_lowest, deltaSmaValue, candle.ServerTime)).ToDecimal();
-
-		if (!_deltaSma.IsFormed || !_highest.IsFormed || !_lowest.IsFormed)
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-			_previousDeltaSma = deltaSmaValue;
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
 			return;
 		}
 
-
-		var veryLowThreshold = lowestValue * 0.7m;
-		var above70Threshold = highestValue * 0.9m;
-		var below60Threshold = highestValue * 0.5m;
-
-		if (deltaSmaValue < veryLowThreshold)
-			_wasVeryLow = true;
-
-		var crossedAboveZero = _previousDeltaSma <= 0 && deltaSmaValue > 0;
-		if (crossedAboveZero)
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
 		{
-			if (_wasVeryLow && Position <= 0)
-				BuyMarket();
-
-			_wasVeryLow = false;
+			BuyMarket();
+		}
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+		{
+			SellMarket();
 		}
 
-		var crossedAbove70 = _previousDeltaSma <= above70Threshold && deltaSmaValue > above70Threshold;
-		if (crossedAbove70)
-			_crossedAbove70 = true;
-
-		if (_crossedAbove70 && deltaSmaValue < below60Threshold * 0.5m)
-			_crossedAbove70 = false;
-
-		if (_crossedAbove70 && deltaSmaValue < below60Threshold && Position > 0)
-			SellMarket();
-
-		_previousDeltaSma = deltaSmaValue;
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

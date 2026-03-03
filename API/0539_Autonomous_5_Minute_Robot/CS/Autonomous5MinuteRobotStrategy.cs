@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,50 +11,56 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Autonomous 5-Minute Robot strategy based on trend and volume imbalance.
+/// Autonomous 5-Minute Robot strategy.
+/// Uses SMA trend filter with RSI momentum for entries.
+/// Buys when RSI crosses above 50 in uptrend, sells when RSI crosses below 50 in downtrend.
 /// </summary>
 public class Autonomous5MinuteRobotStrategy : Strategy
 {
-	private readonly StrategyParam<int> _lookback;
-
 	private readonly StrategyParam<int> _maLength;
-	private readonly StrategyParam<int> _volumeLength;
-	private readonly StrategyParam<decimal> _stopLossPercent;
-	private readonly StrategyParam<decimal> _takeProfitPercent;
+	private readonly StrategyParam<int> _rsiLength;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private SimpleMovingAverage _sma;
-	private Shift _shift;
+	private decimal _prevRsi;
+	private int _barIndex;
+	private int _lastTradeBar;
 
 	/// <summary>
-	/// Moving average length for trend detection.
+	/// Moving average length.
 	/// </summary>
-	public int MaLength { get => _maLength.Value; set => _maLength.Value = value; }
+	public int MaLength
+	{
+		get => _maLength.Value;
+		set => _maLength.Value = value;
+	}
 
 	/// <summary>
-	/// Volume lookback length (unused).
+	/// RSI period.
 	/// </summary>
-	public int VolumeLength { get => _volumeLength.Value; set => _volumeLength.Value = value; }
+	public int RsiLength
+	{
+		get => _rsiLength.Value;
+		set => _rsiLength.Value = value;
+	}
 
 	/// <summary>
-	/// Bars used for previous close comparison.
+	/// Cooldown bars between trades.
 	/// </summary>
-	public int Lookback { get => _lookback.Value; set => _lookback.Value = value; }
-
-	/// <summary>
-	/// Stop loss percentage from entry price.
-	/// </summary>
-	public decimal StopLossPercent { get => _stopLossPercent.Value; set => _stopLossPercent.Value = value; }
-
-	/// <summary>
-	/// Take profit percentage from entry price.
-	/// </summary>
-	public decimal TakeProfitPercent { get => _takeProfitPercent.Value; set => _takeProfitPercent.Value = value; }
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
 
 	/// <summary>
 	/// Candle type.
 	/// </summary>
-	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
 
 	/// <summary>
 	/// Constructor.
@@ -66,33 +69,16 @@ public class Autonomous5MinuteRobotStrategy : Strategy
 	{
 		_maLength = Param(nameof(MaLength), 50)
 			.SetGreaterThanZero()
-			.SetDisplay("Trend MA Length", "Moving average length", "Parameters")
-			
-			.SetOptimize(20, 100, 5);
+			.SetDisplay("Trend MA Length", "Moving average length", "Indicators");
 
-		_volumeLength = Param(nameof(VolumeLength), 10)
+		_rsiLength = Param(nameof(RsiLength), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("Volume Length", "Volume lookback length", "Parameters")
-			
-			.SetOptimize(5, 20, 1);
+			.SetDisplay("RSI Length", "RSI period", "Indicators");
 
-		_lookback = Param(nameof(Lookback), 6)
-			.SetGreaterThanZero()
-			.SetDisplay("Lookback", "Bars used for previous close", "Parameters")
-			
-			.SetOptimize(3, 12, 1);
+		_cooldownBars = Param(nameof(CooldownBars), 350)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "Trading");
 
-		_stopLossPercent = Param(nameof(StopLossPercent), 3m)
-			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management")
-			
-			.SetOptimize(1m, 5m, 1m);
-
-		_takeProfitPercent = Param(nameof(TakeProfitPercent), 29m)
-			.SetDisplay("Take Profit %", "Take profit percentage", "Risk Management")
-			
-			.SetOptimize(10m, 50m, 5m);
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type for strategy", "General");
 	}
 
@@ -103,66 +89,64 @@ public class Autonomous5MinuteRobotStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevRsi = 0;
+		_barIndex = 0;
+		_lastTradeBar = 0;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_sma = new SMA { Length = MaLength };
-		_shift = new Shift { Length = Lookback };
+		var sma = new SimpleMovingAverage { Length = MaLength };
+		var rsi = new RelativeStrengthIndex { Length = RsiLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_sma, _shift, ProcessCandle)
+			.Bind(sma, rsi, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _sma);
+			DrawIndicator(area, sma);
 			DrawOwnTrades(area);
 		}
-
-		StartProtection(
-			new Unit(TakeProfitPercent, UnitTypes.Percent),
-			new Unit(StopLossPercent, UnitTypes.Percent));
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal maValue, decimal prevClose)
+	private void ProcessCandle(ICandleMessage candle, decimal maValue, decimal rsiValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_sma.IsFormed || !_shift.IsFormed)
-			return;
+		_barIndex++;
+
+		var cooldownOk = _barIndex - _lastTradeBar > CooldownBars;
 
 		var isBullish = candle.ClosePrice > maValue;
 		var isBearish = candle.ClosePrice < maValue;
 
-		var buyVolume = candle.HighPrice != candle.LowPrice
-			? candle.TotalVolume * (candle.ClosePrice - candle.LowPrice) / (candle.HighPrice - candle.LowPrice)
-			: 0m;
-		var sellVolume = candle.HighPrice != candle.LowPrice
-			? candle.TotalVolume * (candle.HighPrice - candle.ClosePrice) / (candle.HighPrice - candle.LowPrice)
-			: 0m;
+		// RSI crosses above 50 with uptrend
+		var longSignal = _prevRsi > 0 && _prevRsi < 50 && rsiValue >= 50 && isBullish;
+		// RSI crosses below 50 with downtrend
+		var shortSignal = _prevRsi > 0 && _prevRsi > 50 && rsiValue <= 50 && isBearish;
 
-		var uptrend = candle.ClosePrice > prevClose && isBullish;
-		var downtrend = candle.ClosePrice < prevClose && isBearish;
-
-		var longCondition = uptrend && buyVolume > sellVolume;
-		var shortCondition = downtrend && sellVolume > buyVolume;
-
-		if (longCondition && Position <= 0)
+		if (longSignal && Position <= 0 && cooldownOk)
 		{
-			if (Position < 0)
-				BuyMarket(Position.Abs());
-			BuyMarket(Volume);
+			BuyMarket();
+			_lastTradeBar = _barIndex;
 		}
-		else if (shortCondition && Position >= 0)
+		else if (shortSignal && Position >= 0 && cooldownOk)
 		{
-			if (Position > 0)
-				SellMarket(Position);
-			SellMarket(Volume);
+			SellMarket();
+			_lastTradeBar = _barIndex;
 		}
+
+		_prevRsi = rsiValue;
 	}
 }

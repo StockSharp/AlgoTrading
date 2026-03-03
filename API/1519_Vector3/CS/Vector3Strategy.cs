@@ -14,139 +14,134 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Triple moving average crossover strategy.
-/// Enters long when fast MA is above middle and middle above slow. Short when opposite.
+/// Vector3 strategy using RSI momentum with EMA trend filter.
 /// </summary>
 public class Vector3Strategy : Strategy
 {
-private readonly StrategyParam<int> _fastLength;
-private readonly StrategyParam<int> _middleLength;
-private readonly StrategyParam<int> _slowLength;
-private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _fastLength;
+	private readonly StrategyParam<int> _middleLength;
+	private readonly StrategyParam<int> _slowLength;
+	private readonly StrategyParam<DataType> _candleType;
 
-private SimpleMovingAverage _fastMa = null!;
-private SimpleMovingAverage _middleMa = null!;
-private SimpleMovingAverage _slowMa = null!;
+	private decimal _prevRsi;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private int _cooldown;
 
-/// <summary>
-/// Fast MA length.
-/// </summary>
-public int FastLength
-{
-get => _fastLength.Value;
-set => _fastLength.Value = value;
-}
+	public int FastLength { get => _fastLength.Value; set => _fastLength.Value = value; }
+	public int MiddleLength { get => _middleLength.Value; set => _middleLength.Value = value; }
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-/// <summary>
-/// Middle MA length.
-/// </summary>
-public int MiddleLength
-{
-get => _middleLength.Value;
-set => _middleLength.Value = value;
-}
+	public Vector3Strategy()
+	{
+		_fastLength = Param(nameof(FastLength), 5)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast Length", "Fast MA period", "General");
 
-/// <summary>
-/// Slow MA length.
-/// </summary>
-public int SlowLength
-{
-get => _slowLength.Value;
-set => _slowLength.Value = value;
-}
+		_middleLength = Param(nameof(MiddleLength), 13)
+			.SetGreaterThanZero()
+			.SetDisplay("Middle Length", "Middle MA period", "General");
 
-/// <summary>
-/// Candle type to process.
-/// </summary>
-public DataType CandleType
-{
-get => _candleType.Value;
-set => _candleType.Value = value;
-}
+		_slowLength = Param(nameof(SlowLength), 34)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow Length", "Slow MA period", "General");
 
-/// <summary>
-/// Initializes a new instance of <see cref="Vector3Strategy"/>.
-/// </summary>
-public Vector3Strategy()
-{
-_fastLength = Param(nameof(FastLength), 10)
-.SetGreaterThanZero()
-.SetDisplay("Fast Length", "Fast moving average period", "General")
-;
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles", "General");
+	}
 
-_middleLength = Param(nameof(MiddleLength), 50)
-.SetGreaterThanZero()
-.SetDisplay("Middle Length", "Middle moving average period", "General")
-;
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
 
-_slowLength = Param(nameof(SlowLength), 100)
-.SetGreaterThanZero()
-.SetDisplay("Slow Length", "Slow moving average period", "General")
-;
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevRsi = 0;
+		_prevFast = 0;
+		_prevSlow = 0;
+		_cooldown = 0;
+	}
 
-_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-.SetDisplay("Candle Type", "Timeframe", "General");
-}
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
 
-/// <inheritdoc />
-public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-{
-return [(Security, CandleType)];
-}
+		var rsi = new RelativeStrengthIndex { Length = 14 };
+		var emaFast = new ExponentialMovingAverage { Length = 8 };
+		var emaSlow = new ExponentialMovingAverage { Length = 21 };
 
-/// <inheritdoc />
-protected override void OnReseted()
-{
-base.OnReseted();
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(rsi, emaFast, emaSlow, ProcessCandle).Start();
 
-_fastMa = default!;
-_middleMa = default!;
-_slowMa = default!;
-}
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, emaFast);
+			DrawIndicator(area, emaSlow);
+			DrawOwnTrades(area);
+		}
+	}
 
-/// <inheritdoc />
-protected override void OnStarted2(DateTime time)
-{
-base.OnStarted2(time);
+	private void ProcessCandle(ICandleMessage candle, decimal rsiVal, decimal emaFast, decimal emaSlow)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
 
-_fastMa = new SMA { Length = FastLength };
-_middleMa = new SMA { Length = MiddleLength };
-_slowMa = new SMA { Length = SlowLength };
+		if (_prevRsi == 0 || _prevFast == 0 || _prevSlow == 0)
+		{
+			_prevRsi = rsiVal;
+			_prevFast = emaFast;
+			_prevSlow = emaSlow;
+			return;
+		}
 
-var subscription = SubscribeCandles(CandleType);
-subscription.Bind(_fastMa, _middleMa, _slowMa, ProcessCandle).Start();
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+			_prevRsi = rsiVal;
+			_prevFast = emaFast;
+			_prevSlow = emaSlow;
+			return;
+		}
 
-var area = CreateChartArea();
-if (area != null)
-{
-DrawCandles(area, subscription);
-DrawIndicator(area, _fastMa);
-DrawIndicator(area, _middleMa);
-DrawIndicator(area, _slowMa);
-DrawOwnTrades(area);
-}
-}
+		var hist = emaFast - emaSlow;
+		var histUp = hist > 0m;
+		var histDown = hist < 0m;
 
-private void ProcessCandle(ICandleMessage candle, decimal fast, decimal middle, decimal slow)
-{
-if (candle.State != CandleStates.Finished)
-return;
+		var rsiCrossUp = _prevRsi <= 50m && rsiVal > 50m;
+		var rsiCrossDown = _prevRsi >= 50m && rsiVal < 50m;
 
-if (!IsFormedAndOnlineAndAllowTrading())
-return;
+		if (Position > 0 && rsiCrossDown)
+		{
+			SellMarket();
+			_cooldown = 80;
+		}
+		else if (Position < 0 && rsiCrossUp)
+		{
+			BuyMarket();
+			_cooldown = 80;
+		}
 
-var isLong = fast > middle && middle > slow;
-var isShort = fast < middle && middle < slow;
+		if (Position == 0)
+		{
+			if (rsiCrossUp && histUp)
+			{
+				BuyMarket();
+				_cooldown = 80;
+			}
+			else if (rsiCrossDown && histDown)
+			{
+				SellMarket();
+				_cooldown = 80;
+			}
+		}
 
-if (isLong && Position <= 0)
-{
-var volume = Volume + (Position < 0 ? -Position : 0m);
-BuyMarket(volume);
-}
-else if (isShort && Position >= 0)
-{
-var volume = Volume + (Position > 0 ? Position : 0m);
-SellMarket(volume);
-}
-}
+		_prevRsi = rsiVal;
+		_prevFast = emaFast;
+		_prevSlow = emaSlow;
+	}
 }

@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,21 +11,22 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Vol Adjusted MA strategy
-/// Strategy enters long when price is above MA + k*ATR, and short when price is below MA - k*ATR
+/// Vol Adjusted MA strategy.
+/// Enters long when price is above MA + k*ATR, short when below MA - k*ATR.
+/// Exits when price returns to MA.
 /// </summary>
-public class VolAdjustedMAStrategy : Strategy
+public class VolAdjustedMaStrategy : Strategy
 {
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<int> _atrPeriod;
 	private readonly StrategyParam<decimal> _atrMultiplier;
 	private readonly StrategyParam<DataType> _candleType;
-	
-	private decimal _prevAdjustedUpperBand;
-	private decimal _prevAdjustedLowerBand;
+	private readonly StrategyParam<int> _cooldownBars;
+
+	private int _cooldown;
 
 	/// <summary>
-	/// MA Period
+	/// MA Period.
 	/// </summary>
 	public int MAPeriod
 	{
@@ -37,7 +35,7 @@ public class VolAdjustedMAStrategy : Strategy
 	}
 
 	/// <summary>
-	/// ATR Period
+	/// ATR Period.
 	/// </summary>
 	public int ATRPeriod
 	{
@@ -46,7 +44,7 @@ public class VolAdjustedMAStrategy : Strategy
 	}
 
 	/// <summary>
-	/// ATR multiplier (k)
+	/// ATR multiplier (k).
 	/// </summary>
 	public decimal ATRMultiplier
 	{
@@ -55,7 +53,7 @@ public class VolAdjustedMAStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Candle type for strategy calculation
+	/// Candle type for strategy calculation.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -64,30 +62,37 @@ public class VolAdjustedMAStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initialize <see cref="VolAdjustedMAStrategy"/>.
+	/// Cooldown bars between trades.
 	/// </summary>
-	public VolAdjustedMAStrategy()
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
+	/// Initialize the VolAdjustedMa strategy.
+	/// </summary>
+	public VolAdjustedMaStrategy()
 	{
 		_maPeriod = Param(nameof(MAPeriod), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("MA Period", "Period for Moving Average calculation", "Strategy Parameters")
-			
+			.SetDisplay("MA Period", "Period for Moving Average calculation", "Indicators")
 			.SetOptimize(10, 50, 5);
 
 		_atrPeriod = Param(nameof(ATRPeriod), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("ATR Period", "Period for Average True Range calculation", "Strategy Parameters")
-			
+			.SetDisplay("ATR Period", "Period for ATR calculation", "Indicators")
 			.SetOptimize(7, 28, 7);
 
 		_atrMultiplier = Param(nameof(ATRMultiplier), 2.0m)
-			.SetRange(0.1m, decimal.MaxValue)
-			.SetDisplay("ATR Multiplier", "Multiplier for ATR to adjust MA bands", "Strategy Parameters")
-			
+			.SetDisplay("ATR Multiplier", "Multiplier for ATR to adjust MA bands", "Entry")
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles for strategy calculation", "Strategy Parameters");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
+
+		_cooldownBars = Param(nameof(CooldownBars), 500)
+			.SetRange(1, 1000)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
 	}
 
 	/// <inheritdoc />
@@ -100,9 +105,7 @@ public class VolAdjustedMAStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevAdjustedUpperBand = 0;
-		_prevAdjustedLowerBand = 0;
-
+		_cooldown = default;
 	}
 
 	/// <inheritdoc />
@@ -110,24 +113,16 @@ public class VolAdjustedMAStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Create indicators
-		var ma = new SMA() { Length = MAPeriod };
-		var atr = new AverageTrueRange() { Length = ATRPeriod };
+		_cooldown = 0;
 
-		// Create subscription and bind indicators
+		var ma = new SimpleMovingAverage { Length = MAPeriod };
+		var atr = new AverageTrueRange { Length = ATRPeriod };
+
 		var subscription = SubscribeCandles(CandleType);
-		
 		subscription
 			.Bind(ma, atr, ProcessCandle)
 			.Start();
 
-		// Configure protection
-		StartProtection(
-			takeProfit: new Unit(3, UnitTypes.Percent),
-			stopLoss: new Unit(2, UnitTypes.Percent)
-		);
-
-		// Setup chart visualization
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -139,50 +134,43 @@ public class VolAdjustedMAStrategy : Strategy
 
 	private void ProcessCandle(ICandleMessage candle, decimal maValue, decimal atrValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// Calculate adjusted bands
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+			return;
+		}
+
 		var adjustedUpperBand = maValue + ATRMultiplier * atrValue;
 		var adjustedLowerBand = maValue - ATRMultiplier * atrValue;
 
-		// Log current values
-		LogInfo($"Candle Close: {candle.ClosePrice}, MA: {maValue}, ATR: {atrValue}");
-		LogInfo($"Upper Band: {adjustedUpperBand}, Lower Band: {adjustedLowerBand}");
-
-		// Store for next comparison if needed
-		_prevAdjustedUpperBand = adjustedUpperBand;
-		_prevAdjustedLowerBand = adjustedLowerBand;
-
-		// Trading logic:
-		// Long: Price > MA + k*ATR
-		if (candle.ClosePrice > adjustedUpperBand && Position <= 0)
+		if (Position == 0)
 		{
-			LogInfo($"Buy Signal: Price ({candle.ClosePrice}) > Upper Band ({adjustedUpperBand})");
-			BuyMarket(Volume + Math.Abs(Position));
+			if (candle.ClosePrice > adjustedUpperBand)
+			{
+				BuyMarket();
+				_cooldown = CooldownBars;
+			}
+			else if (candle.ClosePrice < adjustedLowerBand)
+			{
+				SellMarket();
+				_cooldown = CooldownBars;
+			}
 		}
-		// Short: Price < MA - k*ATR
-		else if (candle.ClosePrice < adjustedLowerBand && Position >= 0)
+		else if (Position > 0 && candle.ClosePrice < maValue)
 		{
-			LogInfo($"Sell Signal: Price ({candle.ClosePrice}) < Lower Band ({adjustedLowerBand})");
-			SellMarket(Volume + Math.Abs(Position));
+			SellMarket();
+			_cooldown = CooldownBars;
 		}
-		// Exit Long: Price < MA
-		else if (candle.ClosePrice < maValue && Position > 0)
+		else if (Position < 0 && candle.ClosePrice > maValue)
 		{
-			LogInfo($"Exit Long: Price ({candle.ClosePrice}) < MA ({maValue})");
-			SellMarket(Math.Abs(Position));
-		}
-		// Exit Short: Price > MA
-		else if (candle.ClosePrice > maValue && Position < 0)
-		{
-			LogInfo($"Exit Short: Price ({candle.ClosePrice}) > MA ({maValue})");
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
+			_cooldown = CooldownBars;
 		}
 	}
 }

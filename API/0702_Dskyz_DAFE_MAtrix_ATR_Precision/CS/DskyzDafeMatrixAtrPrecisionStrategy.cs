@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,278 +11,48 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Dskyz (DAFE) MAtrix with ATR-Powered Precision strategy.
+/// DskyzDafeMatrixAtrPrecisionStrategy using EMA crossover for trend timing.
+/// Enters long on golden cross, short on death cross.
 /// </summary>
 public class DskyzDafeMatrixAtrPrecisionStrategy : Strategy
 {
-	private readonly StrategyParam<MovingAverageTypes> _fastMaType;
-	private readonly StrategyParam<MovingAverageTypes> _slowMaType;
-	private readonly StrategyParam<int> _fastLength;
-	private readonly StrategyParam<int> _slowLength;
-	private readonly StrategyParam<int> _atrPeriod;
-	private readonly StrategyParam<decimal> _atrMultiplier;
-	private readonly StrategyParam<bool> _useTrendFilter;
-	private readonly StrategyParam<decimal> _minVolume;
-	private readonly StrategyParam<decimal> _volatilityThreshold;
-	private readonly StrategyParam<int> _tradingStartHour;
-	private readonly StrategyParam<int> _tradingEndHour;
-	private readonly StrategyParam<decimal> _trailOffset;
-	private readonly StrategyParam<decimal> _profitTargetAtrMult;
-	private readonly StrategyParam<decimal> _fixedStopMultiplier;
-	private readonly StrategyParam<int> _tradeQuantity;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private IIndicator _fastMa;
-	private IIndicator _slowMa;
-	private AverageTrueRange _atr;
-	private SimpleMovingAverage _volumeSma;
-	private SimpleMovingAverage _fastMa15;
-	private SimpleMovingAverage _slowMa15;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	private int _trend15m;
-	private decimal _entryPrice;
-	private decimal _trailingStop;
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Moving average type selection.
-	/// </summary>
-	public enum MovingAverageTypes
-	{
-		SMA,
-		EMA,
-		SMMA,
-		HMA,
-		TEMA,
-		WMA,
-		VWMA,
-		ZLEMA,
-		ALMA,
-		KAMA,
-		DEMA
-	}
-
-	/// <summary>
-	/// Initializes <see cref="DskyzDafeMatrixAtrPrecisionStrategy"/>.
-	/// </summary>
 	public DskyzDafeMatrixAtrPrecisionStrategy()
 	{
-		_fastMaType = Param(nameof(FastMaType), MovingAverageTypes.SMA)
-						  .SetDisplay("Fast MA Type", "Type of fast moving average", "Moving Averages");
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
 
-		_slowMaType = Param(nameof(SlowMaType), MovingAverageTypes.SMA)
-						  .SetDisplay("Slow MA Type", "Type of slow moving average", "Moving Averages");
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 
-		_fastLength = Param(nameof(FastLength), 9)
-						  .SetDisplay("Fast MA Length", "Length of fast moving average", "Moving Averages")
-						  
-						  .SetOptimize(5, 20, 1);
-
-		_slowLength = Param(nameof(SlowLength), 19)
-						  .SetDisplay("Slow MA Length", "Length of slow moving average", "Moving Averages")
-						  
-						  .SetOptimize(10, 40, 1);
-
-		_atrPeriod = Param(nameof(AtrPeriod), 14)
-						 .SetDisplay("ATR Period", "Period for ATR calculation", "Risk Management")
-						 
-						 .SetOptimize(7, 28, 1);
-
-		_atrMultiplier = Param(nameof(AtrMultiplier), 1.5m)
-							 .SetDisplay("ATR Multiplier", "ATR multiplier for price filter", "Risk Management")
-							 
-							 .SetOptimize(1m, 3m, 0.1m);
-
-		_useTrendFilter =
-			Param(nameof(UseTrendFilter), true).SetDisplay("Use Trend Filter", "Enable 15m trend filter", "Filters");
-
-		_minVolume = Param(nameof(MinVolume), 10m).SetDisplay("Minimum Volume", "Minimum candle volume", "Filters");
-
-		_volatilityThreshold = Param(nameof(VolatilityThreshold), 0.01m)
-								   .SetDisplay("Volatility Threshold", "Maximum ATR/Close ratio", "Filters");
-
-		_tradingStartHour = Param(nameof(TradingStartHour), 9)
-								.SetDisplay("Trading Start Hour", "Allowed trading start hour", "Filters");
-
-		_tradingEndHour =
-			Param(nameof(TradingEndHour), 16).SetDisplay("Trading End Hour", "Allowed trading end hour", "Filters");
-
-		_trailOffset = Param(nameof(TrailOffset), 0.5m)
-						   .SetDisplay("Trailing Stop ATR Mult", "ATR multiplier for trailing stop", "Risk Management");
-
-		_profitTargetAtrMult =
-			Param(nameof(ProfitTargetAtrMult), 1.2m)
-				.SetDisplay("Profit Target ATR Mult", "ATR multiplier for profit target", "Risk Management");
-
-		_fixedStopMultiplier =
-			Param(nameof(FixedStopMultiplier), 1.3m)
-				.SetDisplay("Fixed Stop ATR Mult", "ATR multiplier for fixed stop", "Risk Management");
-
-		_tradeQuantity =
-			Param(nameof(TradeQuantity), 2).SetDisplay("Trade Quantity", "Fixed quantity per trade", "General");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-						  .SetDisplay("Candle Type", "Type of candles used", "General");
-	}
-
-	/// <summary>
-	/// Fast MA type.
-	/// </summary>
-	public MovingAverageTypes FastMaType
-	{
-		get => _fastMaType.Value;
-		set => _fastMaType.Value = value;
-	}
-
-	/// <summary>
-	/// Slow MA type.
-	/// </summary>
-	public MovingAverageTypes SlowMaType
-	{
-		get => _slowMaType.Value;
-		set => _slowMaType.Value = value;
-	}
-
-	/// <summary>
-	/// Fast MA length.
-	/// </summary>
-	public int FastLength
-	{
-		get => _fastLength.Value;
-		set => _fastLength.Value = value;
-	}
-
-	/// <summary>
-	/// Slow MA length.
-	/// </summary>
-	public int SlowLength
-	{
-		get => _slowLength.Value;
-		set => _slowLength.Value = value;
-	}
-
-	/// <summary>
-	/// ATR period.
-	/// </summary>
-	public int AtrPeriod
-	{
-		get => _atrPeriod.Value;
-		set => _atrPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// ATR multiplier for price filter.
-	/// </summary>
-	public decimal AtrMultiplier
-	{
-		get => _atrMultiplier.Value;
-		set => _atrMultiplier.Value = value;
-	}
-
-	/// <summary>
-	/// Use 15m trend filter.
-	/// </summary>
-	public bool UseTrendFilter
-	{
-		get => _useTrendFilter.Value;
-		set => _useTrendFilter.Value = value;
-	}
-
-	/// <summary>
-	/// Minimum volume per candle.
-	/// </summary>
-	public decimal MinVolume
-	{
-		get => _minVolume.Value;
-		set => _minVolume.Value = value;
-	}
-
-	/// <summary>
-	/// Maximum allowed ATR/Close ratio.
-	/// </summary>
-	public decimal VolatilityThreshold
-	{
-		get => _volatilityThreshold.Value;
-		set => _volatilityThreshold.Value = value;
-	}
-
-	/// <summary>
-	/// Allowed trading start hour.
-	/// </summary>
-	public int TradingStartHour
-	{
-		get => _tradingStartHour.Value;
-		set => _tradingStartHour.Value = value;
-	}
-
-	/// <summary>
-	/// Allowed trading end hour.
-	/// </summary>
-	public int TradingEndHour
-	{
-		get => _tradingEndHour.Value;
-		set => _tradingEndHour.Value = value;
-	}
-
-	/// <summary>
-	/// ATR multiplier for trailing stop.
-	/// </summary>
-	public decimal TrailOffset
-	{
-		get => _trailOffset.Value;
-		set => _trailOffset.Value = value;
-	}
-
-	/// <summary>
-	/// ATR multiplier for profit target.
-	/// </summary>
-	public decimal ProfitTargetAtrMult
-	{
-		get => _profitTargetAtrMult.Value;
-		set => _profitTargetAtrMult.Value = value;
-	}
-
-	/// <summary>
-	/// ATR multiplier for fixed stop.
-	/// </summary>
-	public decimal FixedStopMultiplier
-	{
-		get => _fixedStopMultiplier.Value;
-		set => _fixedStopMultiplier.Value = value;
-	}
-
-	/// <summary>
-	/// Quantity per trade.
-	/// </summary>
-	public int TradeQuantity
-	{
-		get => _tradeQuantity.Value;
-		set => _tradeQuantity.Value = value;
-	}
-
-	/// <summary>
-	/// Type of candles used.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		yield return (Security, CandleType);
-		yield return (Security, TimeSpan.FromMinutes(15).TimeFrame());
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_trend15m = 0;
-		_entryPrice = 0;
-		_trailingStop = 0;
-		_volumeSma = new SimpleMovingAverage { Length = 10 };
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
 
 	/// <inheritdoc />
@@ -293,113 +60,46 @@ public class DskyzDafeMatrixAtrPrecisionStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_fastMa = CreateMovingAverage(FastMaType, FastLength);
-		_slowMa = CreateMovingAverage(SlowMaType, SlowLength);
-		_atr = new AverageTrueRange { Length = AtrPeriod };
-		_volumeSma = new SimpleMovingAverage { Length = 10 };
-		_fastMa15 = new SimpleMovingAverage { Length = FastLength };
-		_slowMa15 = new SimpleMovingAverage { Length = SlowLength };
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(_fastMa, _slowMa, _atr, ProcessCandle).Start();
-
-		var trendSubscription = SubscribeCandles(TimeSpan.FromMinutes(15).TimeFrame());
-		trendSubscription.Bind(_fastMa15, _slowMa15, ProcessTrend).Start();
+		subscription
+			.Bind(fastEma, slowEma, ProcessCandle)
+			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _fastMa);
-			DrawIndicator(area, _slowMa);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private static IIndicator CreateMovingAverage(MovingAverageTypes type, int length)
-	{
-		return type switch { MovingAverageTypes.SMA => new SimpleMovingAverage { Length = length },
-							 MovingAverageTypes.EMA => new ExponentialMovingAverage { Length = length },
-							 MovingAverageTypes.SMMA => new SmoothedMovingAverage { Length = length },
-							 MovingAverageTypes.HMA => new HullMovingAverage { Length = length },
-							 MovingAverageTypes.TEMA => new TripleExponentialMovingAverage { Length = length },
-							 MovingAverageTypes.WMA => new WeightedMovingAverage { Length = length },
-							 MovingAverageTypes.VWMA => new VolumeWeightedMovingAverage { Length = length },
-							 MovingAverageTypes.ZLEMA => new ZeroLagExponentialMovingAverage { Length = length },
-							 MovingAverageTypes.ALMA => new ArnaudLegouxMovingAverage { Length = length },
-							 MovingAverageTypes.KAMA => new KaufmanAdaptiveMovingAverage { Length = length },
-							 MovingAverageTypes.DEMA => new DoubleExponentialMovingAverage { Length = length },
-							 _ => new SimpleMovingAverage { Length = length } };
-	}
-
-	private void ProcessTrend(ICandleMessage candle, decimal fast15, decimal slow15)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		_trend15m = fast15 > slow15 ? 1 : fast15 < slow15 ? -1 : 0;
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal fastMaValue, decimal slowMaValue, decimal atrValue)
-	{
-		if (candle.State != CandleStates.Finished)
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
+		{
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
 			return;
-
-		var volValue = _volumeSma.Process(new DecimalIndicatorValue(_volumeSma, candle.TotalVolume, candle.OpenTime));
-		var volumeAvg = volValue.ToDecimal();
-
-
-		var volumeOk = candle.TotalVolume >= MinVolume;
-		var volumeSpike = candle.TotalVolume > 1.2m * volumeAvg;
-		var hour = candle.OpenTime.Hour;
-		var timeWindow = hour >= TradingStartHour && hour <= TradingEndHour;
-		var volatilityOk = candle.ClosePrice != 0 && atrValue / candle.ClosePrice <= VolatilityThreshold;
-
-		var atrFilterLong = candle.ClosePrice > slowMaValue + atrValue * AtrMultiplier;
-		var atrFilterShort = candle.ClosePrice < slowMaValue - atrValue * AtrMultiplier;
-
-		var maAbove = candle.ClosePrice > fastMaValue && fastMaValue > slowMaValue;
-		var maBelow = candle.ClosePrice < fastMaValue && fastMaValue < slowMaValue;
-
-		var trendLongOk = !UseTrendFilter || _trend15m >= 0;
-		var trendShortOk = !UseTrendFilter || _trend15m <= 0;
-
-		if (Position == 0)
-		{
-			if (maAbove && trendLongOk && atrFilterLong && volumeOk && volumeSpike && timeWindow && volatilityOk)
-			{
-				BuyMarket();
-				_entryPrice = candle.ClosePrice;
-				_trailingStop = _entryPrice - atrValue * TrailOffset;
-			}
-			else if (maBelow && trendShortOk && atrFilterShort && volumeOk && volumeSpike && timeWindow && volatilityOk)
-			{
-				SellMarket();
-				_entryPrice = candle.ClosePrice;
-				_trailingStop = _entryPrice + atrValue * TrailOffset;
-			}
 		}
-		else if (Position > 0)
-		{
-			var stopPrice = _entryPrice - atrValue * FixedStopMultiplier;
-			var targetPrice = _entryPrice + atrValue * ProfitTargetAtrMult;
-			var newTrail = candle.ClosePrice - atrValue * TrailOffset;
-			if (newTrail > _trailingStop)
-				_trailingStop = newTrail;
 
-			if (candle.LowPrice <= _trailingStop || candle.LowPrice <= stopPrice || candle.HighPrice >= targetPrice)
-				SellMarket();
-		}
-		else
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
 		{
-			var stopPrice = _entryPrice + atrValue * FixedStopMultiplier;
-			var targetPrice = _entryPrice - atrValue * ProfitTargetAtrMult;
-			var newTrail = candle.ClosePrice + atrValue * TrailOffset;
-			if (newTrail < _trailingStop || _trailingStop == 0)
-				_trailingStop = newTrail;
-
-			if (candle.HighPrice >= _trailingStop || candle.HighPrice >= stopPrice || candle.LowPrice <= targetPrice)
-				BuyMarket();
+			BuyMarket();
 		}
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+		{
+			SellMarket();
+		}
+
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

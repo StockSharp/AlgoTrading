@@ -1,9 +1,8 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -11,58 +10,28 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
 public class FlexiMaVarianceTrackerStrategy : Strategy
 {
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _maLength;
-	private readonly StrategyParam<int> _stdLength;
-	private readonly StrategyParam<decimal> _stdMultiplier;
-	private readonly StrategyParam<int> _stAtrPeriod;
-	private readonly StrategyParam<decimal> _stMultiplier;
-private readonly StrategyParam<Sides?> _direction;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	private SimpleMovingAverage _ma;
-	private SimpleMovingAverage _diffAvg;
-	private StandardDeviation _stdDev;
-	private SuperTrend _superTrend;
-
-public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
-	public int MaLength { get => _maLength.Value; set => _maLength.Value = value; }
-	public int StdLength { get => _stdLength.Value; set => _stdLength.Value = value; }
-	public decimal StdMultiplier { get => _stdMultiplier.Value; set => _stdMultiplier.Value = value; }
-	public int StAtrPeriod { get => _stAtrPeriod.Value; set => _stAtrPeriod.Value = value; }
-	public decimal StMultiplier { get => _stMultiplier.Value; set => _stMultiplier.Value = value; }
-public Sides? Direction { get => _direction.Value; set => _direction.Value = value; }
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public FlexiMaVarianceTrackerStrategy()
 	{
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
-
-		_maLength = Param(nameof(MaLength), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("MA Length", "Length for base SMA", "FlexiMA");
-
-		_stdLength = Param(nameof(StdLength), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("StdDev Length", "Length for deviation StdDev", "Variance");
-
-		_stdMultiplier = Param(nameof(StdMultiplier), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("StdDev Mult", "Deviation multiplier", "Variance");
-
-		_stAtrPeriod = Param(nameof(StAtrPeriod), 10)
-			.SetGreaterThanZero()
-			.SetDisplay("ATR Period", "ATR period for SuperTrend", "SuperTrend");
-
-		_stMultiplier = Param(nameof(StMultiplier), 3m)
-			.SetGreaterThanZero()
-			.SetDisplay("ATR Mult", "ATR multiplier for SuperTrend", "SuperTrend");
-
-_direction = Param(nameof(Direction), (Sides?)null)
-.SetDisplay("Trade Direction", "Allowed trading direction", "General");
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
@@ -70,51 +39,44 @@ _direction = Param(nameof(Direction), (Sides?)null)
 		return [(Security, CandleType)];
 	}
 
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_ma = new SMA { Length = MaLength };
-		_diffAvg = new SMA { Length = StdLength };
-		_stdDev = new StandardDeviation { Length = StdLength };
-		_superTrend = new SuperTrend { Length = StAtrPeriod, Multiplier = StMultiplier };
-
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 		var subscription = SubscribeCandles(CandleType);
-		subscription.BindEx(_ma, _superTrend, ProcessCandle).Start();
-
-		StartProtection(null, null);
+		subscription.Bind(fastEma, slowEma, ProcessCandle).Start();
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue maValue, IIndicatorValue stValue)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
-		if (!maValue.IsFinal || !stValue.IsFinal || candle.State != CandleStates.Finished)
+		if (candle.State != CandleStates.Finished) return;
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
+		{
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
 			return;
-
-		var ma = maValue.GetValue<decimal>();
-		var st = (SuperTrendIndicatorValue)stValue;
-
-		var diff = candle.ClosePrice - ma;
-
-		var diffAvg = _diffAvg.Process(new DecimalIndicatorValue(_diffAvg, diff, candle.ServerTime)).GetValue<decimal>();
-		var std = _stdDev.Process(new DecimalIndicatorValue(_stdDev, diff, candle.ServerTime)).GetValue<decimal>();
-		var threshold = diffAvg + StdMultiplier * std;
-
-var allowLong = Direction is null or Sides.Buy;
-var allowShort = Direction is null or Sides.Sell;
-
-		var longCond = st.IsUpTrend && diff > threshold;
-		var shortCond = !st.IsUpTrend && diff < -threshold;
-
-		if (allowLong && longCond && Position <= 0)
-			BuyMarket(Volume + Math.Abs(Position));
-
-		if (allowShort && shortCond && Position >= 0)
-			SellMarket(Volume + Math.Abs(Position));
-
-		if (Position > 0 && (!st.IsUpTrend || diff < 0))
-			SellMarket();
-
-		if (Position < 0 && (st.IsUpTrend || diff > 0))
+		}
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
 			BuyMarket();
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+			SellMarket();
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

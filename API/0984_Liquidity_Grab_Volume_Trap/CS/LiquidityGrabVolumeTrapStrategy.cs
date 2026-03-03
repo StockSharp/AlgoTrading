@@ -1,28 +1,29 @@
 using System;
-using System.Linq;
 
 using Ecng.Common;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
-using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Liquidity Grab Strategy (Volume Trap).
-/// Detects liquidity grabs where price sweeps beyond recent range 
+/// Detects liquidity grabs where price sweeps beyond recent range
 /// then reverses back, indicating a trap.
 /// </summary>
 public class LiquidityGrabVolumeTrapStrategy : Strategy
 {
 	private readonly StrategyParam<int> _lookback;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _cooldownBars;
 
-	private SimpleMovingAverage _volumeSma;
-	private readonly System.Collections.Generic.List<decimal> _highs = new();
-	private readonly System.Collections.Generic.List<decimal> _lows = new();
+	private Highest _highest;
+	private Lowest _lowest;
+	private int _barsSinceSignal;
+	private decimal _prevHigh;
+	private decimal _prevLow;
 
 	public int Lookback
 	{
@@ -36,6 +37,12 @@ public class LiquidityGrabVolumeTrapStrategy : Strategy
 		set => _candleType.Value = value;
 	}
 
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
 	public LiquidityGrabVolumeTrapStrategy()
 	{
 		_lookback = Param(nameof(Lookback), 10)
@@ -43,20 +50,24 @@ public class LiquidityGrabVolumeTrapStrategy : Strategy
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candles for calculations", "General");
+
+		_cooldownBars = Param(nameof(CooldownBars), 50)
+			.SetDisplay("Cooldown Bars", "Min bars between signals", "General");
 	}
 
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_volumeSma = new SimpleMovingAverage { Length = 20 };
-		_highs.Clear();
-		_lows.Clear();
-
+		_highest = new Highest { Length = Lookback };
+		_lowest = new Lowest { Length = Lookback };
+		_barsSinceSignal = 0;
+		_prevHigh = 0;
+		_prevLow = 0;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(_highest, _lowest, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -67,30 +78,39 @@ public class LiquidityGrabVolumeTrapStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_highest = null;
+		_lowest = null;
+		_barsSinceSignal = 0;
+		_prevHigh = 0;
+		_prevLow = 0;
+	}
+
+	private void ProcessCandle(ICandleMessage candle, decimal highVal, decimal lowVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		_volumeSma.Process(new DecimalIndicatorValue(_volumeSma, candle.TotalVolume, candle.ServerTime));
+		_barsSinceSignal++;
 
-		// Track highs/lows for rolling range
-		_highs.Add(candle.HighPrice);
-		_lows.Add(candle.LowPrice);
-		if (_highs.Count > Lookback + 1) _highs.RemoveAt(0);
-		if (_lows.Count > Lookback + 1) _lows.RemoveAt(0);
-
-		if (_highs.Count <= Lookback)
-			return;
-
-		// Range from the PREVIOUS lookback bars (excluding current candle)
-		var rangeHigh = decimal.MinValue;
-		var rangeLow = decimal.MaxValue;
-		for (int i = 0; i < _highs.Count - 1; i++)
+		if (!_highest.IsFormed || !_lowest.IsFormed)
 		{
-			if (_highs[i] > rangeHigh) rangeHigh = _highs[i];
-			if (_lows[i] < rangeLow) rangeLow = _lows[i];
+			_prevHigh = highVal;
+			_prevLow = lowVal;
+			return;
 		}
+
+		// Use previous bar's range values
+		var rangeHigh = _prevHigh;
+		var rangeLow = _prevLow;
+
+		// Update previous values for next bar
+		_prevHigh = highVal;
+		_prevLow = lowVal;
 
 		// Bullish grab: wick swept below prior range low but closed back inside
 		var bullGrab = candle.LowPrice < rangeLow && candle.ClosePrice > rangeLow;
@@ -98,23 +118,19 @@ public class LiquidityGrabVolumeTrapStrategy : Strategy
 		// Bearish grab: wick swept above prior range high but closed back inside
 		var bearGrab = candle.HighPrice > rangeHigh && candle.ClosePrice < rangeHigh;
 
+		// Cooldown check
+		if (_barsSinceSignal < CooldownBars)
+			return;
+
 		if (bullGrab && Position <= 0)
 		{
 			BuyMarket(Volume + Math.Abs(Position));
+			_barsSinceSignal = 0;
 		}
 		else if (bearGrab && Position >= 0)
 		{
 			SellMarket(Volume + Math.Abs(Position));
-		}
-
-		// Exit: close beyond range on wrong side
-		if (Position > 0 && candle.ClosePrice < rangeLow)
-		{
-			SellMarket(Math.Abs(Position));
-		}
-		else if (Position < 0 && candle.ClosePrice > rangeHigh)
-		{
-			BuyMarket(Math.Abs(Position));
+			_barsSinceSignal = 0;
 		}
 	}
 }

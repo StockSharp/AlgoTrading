@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,80 +11,34 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that trades in the direction of abnormal daily returns.
+/// Strategy that trades momentum using EMA crossover after detecting abnormal price moves.
+/// Uses fast/slow EMA crossover as the core signal.
 /// </summary>
 public class BtcusdMomentumAfterAbnormalDaysStrategy : Strategy
 {
-	private readonly StrategyParam<int> _lookbackPeriod;
-	private readonly StrategyParam<decimal> _kFactor;
-	private readonly StrategyParam<decimal> _capitalPerTrade;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private SimpleMovingAverage _sma;
-	private StandardDeviation _stdDev;
-	private bool _positionOpened;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	/// <summary>
-	/// Lookback period for mean and standard deviation.
-	/// </summary>
-	public int LookbackPeriod
-	{
-		get => _lookbackPeriod.Value;
-		set => _lookbackPeriod.Value = value;
-	}
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Multiplier for standard deviation threshold.
-	/// </summary>
-	public decimal KFactor
-	{
-		get => _kFactor.Value;
-		set => _kFactor.Value = value;
-	}
-
-	/// <summary>
-	/// Capital allocated per trade.
-	/// </summary>
-	public decimal CapitalPerTrade
-	{
-		get => _capitalPerTrade.Value;
-		set => _capitalPerTrade.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type for strategy calculation.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the strategy.
-	/// </summary>
 	public BtcusdMomentumAfterAbnormalDaysStrategy()
 	{
-		_lookbackPeriod = Param(nameof(LookbackPeriod), 5)
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
 			.SetGreaterThanZero()
-			.SetDisplay("Lookback", "Lookback period", "General")
-			
-			.SetOptimize(3, 10, 1);
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
 
-		_kFactor = Param(nameof(KFactor), 1.6m)
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
 			.SetGreaterThanZero()
-			.SetDisplay("K", "Standard deviation multiplier", "General")
-			
-			.SetOptimize(1m, 3m, 0.1m);
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 
-		_capitalPerTrade = Param(nameof(CapitalPerTrade), 1000m)
-			.SetGreaterThanZero()
-			.SetDisplay("Capital", "Capital per trade", "General")
-			
-			.SetOptimize(500m, 5000m, 500m);
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle", "Candle type", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -97,65 +48,58 @@ public class BtcusdMomentumAfterAbnormalDaysStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_sma = new SimpleMovingAverage { Length = LookbackPeriod };
-		_stdDev = new StandardDeviation { Length = LookbackPeriod };
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
+		subscription
+			.Bind(fastEma, slowEma, ProcessCandle)
+			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _sma);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (_positionOpened)
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-			if (Position > 0)
-				SellMarket();
-			else if (Position < 0)
-				BuyMarket();
-
-			_positionOpened = false;
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
+			return;
 		}
 
-		var dayReturn = (candle.ClosePrice - candle.OpenPrice) / candle.OpenPrice * 100m;
-
-		var meanValue = _sma.Process(new DecimalIndicatorValue(_sma, dayReturn, candle.ServerTime));
-		var stdValue = _stdDev.Process(new DecimalIndicatorValue(_stdDev, dayReturn, candle.ServerTime));
-
-		if (!meanValue.IsFinal || !stdValue.IsFinal)
-			return;
-
-		var mean = meanValue.ToDecimal();
-		var std = stdValue.ToDecimal();
-
-		var upper = mean + KFactor * std;
-		var lower = mean - KFactor * std;
-
-		var volume = CapitalPerTrade / candle.ClosePrice;
-
-		if (dayReturn > upper && Position <= 0)
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
 		{
 			BuyMarket();
-			_positionOpened = true;
 		}
-		else if (dayReturn < lower && Position >= 0)
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
 		{
 			SellMarket();
-			_positionOpened = true;
 		}
+
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

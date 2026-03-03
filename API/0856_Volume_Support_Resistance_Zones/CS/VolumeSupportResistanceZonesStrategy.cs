@@ -1,169 +1,82 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
-using StockSharp.Algo;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
-/// <summary>
-/// Volume-based Support & Resistance Zones V2.
-/// Buys when price enters a support zone and exits on a resistance zone.
-/// </summary>
 public class VolumeSupportResistanceZonesStrategy : Strategy
 {
-	private readonly StrategyParam<int> _volumeMaPeriod;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<DateTimeOffset> _startDate;
-	private readonly StrategyParam<DateTimeOffset> _endDate;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	private SimpleMovingAverage _volumeSma;
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	private decimal?[] _highs;
-	private decimal?[] _lows;
-	private decimal?[] _opens;
-	private decimal?[] _closes;
-	private decimal?[] _volumes;
-	private decimal?[] _volumeSmaValues;
-	private int _arrayCount;
-
-	private decimal? _support;
-	private decimal? _resistance;
-
-	/// <summary>
-	/// Volume moving average period.
-	/// </summary>
-	public int VolumeMaPeriod
-	{
-		get => _volumeMaPeriod.Value;
-		set => _volumeMaPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used by the strategy.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Start date for trading.
-	/// </summary>
-	public DateTimeOffset StartDate
-	{
-		get => _startDate.Value;
-		set => _startDate.Value = value;
-	}
-
-	/// <summary>
-	/// End date for trading.
-	/// </summary>
-	public DateTimeOffset EndDate
-	{
-		get => _endDate.Value;
-		set => _endDate.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes <see cref="VolumeSupportResistanceZonesStrategy"/>.
-	/// </summary>
 	public VolumeSupportResistanceZonesStrategy()
 	{
-		_volumeMaPeriod = Param(nameof(VolumeMaPeriod), 6)
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
 			.SetGreaterThanZero()
-			.SetDisplay("Volume MA", "Volume moving average period", "General")
-			;
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
-			.SetDisplay("Candle Type", "Candle type", "General");
-
-		_startDate = Param(nameof(StartDate), new DateTimeOffset(new DateTime(2020, 12, 4)))
-			.SetDisplay("Start Date", "Start date", "General");
-
-		_endDate = Param(nameof(EndDate), new DateTimeOffset(new DateTime(2025, 12, 31)))
-			.SetDisplay("End Date", "End date", "General");
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
-	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_volumeSma = new SMA { Length = VolumeMaPeriod };
-
-		_highs = new decimal?[6];
-		_lows = new decimal?[6];
-		_opens = new decimal?[6];
-		_closes = new decimal?[6];
-		_volumes = new decimal?[6];
-		_volumeSmaValues = new decimal?[6];
-		_arrayCount = 0;
-
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
-
-		StartProtection(null, null);
+		subscription.Bind(fastEma, slowEma, ProcessCandle).Start();
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		var smaValue = _volumeSma.Process(new DecimalIndicatorValue(_volumeSma, candle.TotalVolume, candle.OpenTime)).ToDecimal();
-
-		for (var i = 0; i < _highs.Length - 1; i++)
+		if (candle.State != CandleStates.Finished) return;
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-			_highs[i] = _highs[i + 1];
-			_lows[i] = _lows[i + 1];
-			_opens[i] = _opens[i + 1];
-			_closes[i] = _closes[i + 1];
-			_volumes[i] = _volumes[i + 1];
-			_volumeSmaValues[i] = _volumeSmaValues[i + 1];
-		}
-
-		_highs[^1] = candle.HighPrice;
-		_lows[^1] = candle.LowPrice;
-		_opens[^1] = candle.OpenPrice;
-		_closes[^1] = candle.ClosePrice;
-		_volumes[^1] = candle.TotalVolume;
-		_volumeSmaValues[^1] = smaValue;
-
-		if (_arrayCount < _highs.Length)
-			_arrayCount++;
-
-		if (_arrayCount == _highs.Length)
-		{
-			var up = _highs[2] > _highs[1] && _highs[1] > _highs[0] && _highs[3] < _highs[2] && _highs[4] < _highs[3] && _volumes[2] > _volumeSmaValues[2];
-			var down = _lows[2] < _lows[1] && _lows[1] < _lows[0] && _lows[3] > _lows[2] && _lows[4] > _lows[3] && _volumes[2] > _volumeSmaValues[2];
-
-			if (up)
-				_resistance = _closes[2] >= _opens[2] ? _closes[2] : _opens[2];
-
-			if (down)
-				_support = _closes[2] >= _opens[2] ? _opens[2] : _closes[2];
-		}
-
-		var time = candle.OpenTime;
-
-		if (time < StartDate || time > EndDate)
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
 			return;
-
-		if (_support is decimal support && candle.ClosePrice <= support && Position <= 0)
+		}
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
 			BuyMarket();
-
-		if (_resistance is decimal resistance && candle.ClosePrice >= resistance && Position > 0)
-			SellMarket(Position);
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+			SellMarket();
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }
-

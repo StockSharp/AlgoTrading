@@ -14,9 +14,7 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Twisted SMA strategy.
-/// Opens long when three SMAs align bullish and price is above main SMA while KAMA is moving.
-/// Exits when SMAs align bearish.
+/// Twisted SMA strategy using RSI momentum with EMA trend filter.
 /// </summary>
 public class TwistedSma4hStrategy : Strategy
 {
@@ -27,7 +25,10 @@ public class TwistedSma4hStrategy : Strategy
 	private readonly StrategyParam<int> _kamaLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevKama;
+	private decimal _prevRsi;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private int _cooldown;
 
 	public int FastLength { get => _fastLength.Value; set => _fastLength.Value = value; }
 	public int MidLength { get => _midLength.Value; set => _midLength.Value = value; }
@@ -70,57 +71,91 @@ public class TwistedSma4hStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevKama = 0m;
+		_prevRsi = 0;
+		_prevFast = 0;
+		_prevSlow = 0;
+		_cooldown = 0;
 	}
 
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		var fastSma = new SimpleMovingAverage { Length = FastLength };
-		var midSma = new SimpleMovingAverage { Length = MidLength };
-		var slowSma = new SimpleMovingAverage { Length = SlowLength };
-		var mainSma = new SimpleMovingAverage { Length = MainSmaLength };
-		var kama = new KaufmanAdaptiveMovingAverage { Length = KamaLength };
-		_prevKama = 0m;
+		var rsi = new RelativeStrengthIndex { Length = 14 };
+		var emaFast = new ExponentialMovingAverage { Length = 8 };
+		var emaSlow = new ExponentialMovingAverage { Length = 21 };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(fastSma, midSma, slowSma, mainSma, kama, ProcessCandle)
-			.Start();
+		subscription.Bind(rsi, emaFast, emaSlow, ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, fastSma);
-			DrawIndicator(area, midSma);
-			DrawIndicator(area, slowSma);
+			DrawIndicator(area, emaFast);
+			DrawIndicator(area, emaSlow);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal mid, decimal slow, decimal main, decimal kamaValue)
+	private void ProcessCandle(ICandleMessage candle, decimal rsiVal, decimal emaFast, decimal emaSlow)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (_prevKama == 0m)
+		if (_prevRsi == 0 || _prevFast == 0 || _prevSlow == 0)
 		{
-			_prevKama = kamaValue;
+			_prevRsi = rsiVal;
+			_prevFast = emaFast;
+			_prevSlow = emaSlow;
 			return;
 		}
 
-		var isFlat = Math.Abs(kamaValue - _prevKama) / _prevKama < 0.0005m;
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+			_prevRsi = rsiVal;
+			_prevFast = emaFast;
+			_prevSlow = emaSlow;
+			return;
+		}
 
-		var longCond = fast > mid && mid > slow && candle.ClosePrice > main && !isFlat;
-		var shortCond = fast < mid && mid < slow;
+		var hist = emaFast - emaSlow;
+		var histUp = hist > 0m;
+		var histDown = hist < 0m;
 
-		if (longCond && Position <= 0)
-			BuyMarket();
-		else if (shortCond && Position > 0)
+		var rsiCrossUp = _prevRsi <= 50m && rsiVal > 50m;
+		var rsiCrossDown = _prevRsi >= 50m && rsiVal < 50m;
+
+		// Exit
+		if (Position > 0 && rsiCrossDown)
+		{
 			SellMarket();
+			_cooldown = 80;
+		}
+		else if (Position < 0 && rsiCrossUp)
+		{
+			BuyMarket();
+			_cooldown = 80;
+		}
 
-		_prevKama = kamaValue;
+		// Entry
+		if (Position == 0)
+		{
+			if (rsiCrossUp && histUp)
+			{
+				BuyMarket();
+				_cooldown = 80;
+			}
+			else if (rsiCrossDown && histDown)
+			{
+				SellMarket();
+				_cooldown = 80;
+			}
+		}
+
+		_prevRsi = rsiVal;
+		_prevFast = emaFast;
+		_prevSlow = emaSlow;
 	}
 }

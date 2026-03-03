@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,114 +11,34 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy trades Bollinger Bands breakouts on daily candles with trend filter and ATR-based position sizing.
+/// DailyBollingerBandStrategy using EMA crossover for trend timing.
+/// Enters long on golden cross, short on death cross.
 /// </summary>
 public class DailyBollingerBandStrategy : Strategy
 {
-	private readonly StrategyParam<int> _bollingerPeriod;
-	private readonly StrategyParam<decimal> _bollingerMultiplier;
-	private readonly StrategyParam<int> _trendFilterLength;
-	private readonly StrategyParam<int> _atrLength;
-	private readonly StrategyParam<decimal> _riskRate;
-	private readonly StrategyParam<int> _unit;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<DateTimeOffset> _startTime;
-	private readonly StrategyParam<DateTimeOffset> _endTime;
 
-	private decimal _prevMiddle;
-	private decimal _prevUpper;
-	private decimal _prevLower;
-	private decimal _prevMa;
-	private decimal _prevClose;
-	private bool _isInitialized;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	/// <summary>
-	/// Bollinger Bands period.
-	/// </summary>
-	public int BollingerPeriod { get => _bollingerPeriod.Value; set => _bollingerPeriod.Value = value; }
-
-	/// <summary>
-	/// Bollinger Bands deviation multiplier.
-	/// </summary>
-	public decimal BollingerMultiplier { get => _bollingerMultiplier.Value; set => _bollingerMultiplier.Value = value; }
-
-	/// <summary>
-	/// Trend filter moving average length.
-	/// </summary>
-	public int TrendFilterLength { get => _trendFilterLength.Value; set => _trendFilterLength.Value = value; }
-
-	/// <summary>
-	/// ATR calculation period.
-	/// </summary>
-	public int AtrLength { get => _atrLength.Value; set => _atrLength.Value = value; }
-
-	/// <summary>
-	/// Risk percentage of capital per trade.
-	/// </summary>
-	public decimal RiskRate { get => _riskRate.Value; set => _riskRate.Value = value; }
-
-	/// <summary>
-	/// Volume unit step.
-	/// </summary>
-	public int Unit { get => _unit.Value; set => _unit.Value = value; }
-
-	/// <summary>
-	/// Candle type.
-	/// </summary>
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Start date.
-	/// </summary>
-	public DateTimeOffset StartTime { get => _startTime.Value; set => _startTime.Value = value; }
-
-	/// <summary>
-	/// End date.
-	/// </summary>
-	public DateTimeOffset EndTime { get => _endTime.Value; set => _endTime.Value = value; }
-
-	/// <summary>
-	/// Initializes a new instance of the strategy.
-	/// </summary>
 	public DailyBollingerBandStrategy()
 	{
-		_bollingerPeriod = Param(nameof(BollingerPeriod), 20)
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
 			.SetGreaterThanZero()
-			.SetDisplay("Bollinger Period", "Bollinger Bands period", "Indicators")
-			;
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
 
-		_bollingerMultiplier = Param(nameof(BollingerMultiplier), 1m)
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
 			.SetGreaterThanZero()
-			.SetDisplay("Bollinger Multiplier", "Deviation multiplier", "Indicators")
-			;
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 
-		_trendFilterLength = Param(nameof(TrendFilterLength), 200)
-			.SetGreaterThanZero()
-			.SetDisplay("Trend Filter Length", "Long MA period", "Indicators")
-			;
-
-		_atrLength = Param(nameof(AtrLength), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("ATR Length", "ATR calculation period", "Risk Management")
-			;
-
-		_riskRate = Param(nameof(RiskRate), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Risk Rate (%)", "Risk percentage of capital", "Risk Management")
-			;
-
-		_unit = Param(nameof(Unit), 100)
-			.SetGreaterThanZero()
-			.SetDisplay("Unit", "Volume unit step", "Risk Management");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
-
-		_startTime = Param(nameof(StartTime), new DateTimeOffset(new DateTime(2000, 1, 4), TimeSpan.Zero))
-			.SetDisplay("Start Time", "Strategy start date", "General");
-
-		_endTime = Param(nameof(EndTime), new DateTimeOffset(new DateTime(9999, 12, 30), TimeSpan.Zero))
-			.SetDisplay("End Time", "Strategy end date", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -134,12 +51,8 @@ public class DailyBollingerBandStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevMiddle = 0m;
-		_prevUpper = 0m;
-		_prevLower = 0m;
-		_prevMa = 0m;
-		_prevClose = 0m;
-		_isInitialized = false;
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
 
 	/// <inheritdoc />
@@ -147,96 +60,46 @@ public class DailyBollingerBandStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
-
-		var bollinger = new BollingerBands
-		{
-			Length = BollingerPeriod,
-			Width = BollingerMultiplier
-		};
-
-		var ma = new SMA { Length = TrendFilterLength };
-		var atr = new AverageTrueRange { Length = AtrLength };
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.BindEx(bollinger, ma, atr, ProcessCandle).Start();
+		subscription
+			.Bind(fastEma, slowEma, ProcessCandle)
+			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, ma);
-			DrawIndicator(area, bollinger);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bollingerValue, IIndicatorValue maValue, IIndicatorValue atrValue)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var bb = (BollingerBandsValue)bollingerValue;
-		if (bb.UpBand is not decimal upper || bb.LowBand is not decimal lower || bb.MovingAverage is not decimal middle)
-			return;
-
-		var ma = maValue.ToDecimal();
-		var atr = atrValue.ToDecimal();
-
-		if (!_isInitialized)
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-			_prevMiddle = middle;
-			_prevUpper = upper;
-			_prevLower = lower;
-			_prevMa = ma;
-			_prevClose = candle.ClosePrice;
-			_isInitialized = true;
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
 			return;
 		}
 
-		var withinPeriod = candle.ServerTime >= StartTime && candle.ServerTime <= EndTime;
-
-		var bbSlope = middle - _prevMiddle;
-		var tfSlope = ma - _prevMa;
-
-		var crossUpper = _prevClose <= _prevUpper && candle.ClosePrice > upper;
-		var crossLower = _prevClose >= _prevLower && candle.ClosePrice < lower;
-		var crossDownMiddle = _prevClose >= _prevMiddle && candle.ClosePrice < middle;
-		var crossUpMiddle = _prevClose <= _prevMiddle && candle.ClosePrice > middle;
-
-		var size = CalculatePositionSize(atr);
-
-		if (withinPeriod && Position == 0 && size > 0m)
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
 		{
-			if (crossUpper && bbSlope > 0m && tfSlope > 0m)
-				BuyMarket(size);
-			else if (crossLower && bbSlope < 0m && tfSlope < 0m)
-				SellMarket(size);
+			BuyMarket();
+		}
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+		{
+			SellMarket();
 		}
 
-		if (withinPeriod)
-		{
-			if (Position > 0 && crossDownMiddle)
-				SellMarket(Position);
-			else if (Position < 0 && crossUpMiddle)
-				BuyMarket(-Position);
-		}
-
-		_prevMiddle = middle;
-		_prevUpper = upper;
-		_prevLower = lower;
-		_prevMa = ma;
-		_prevClose = candle.ClosePrice;
-	}
-
-	private decimal CalculatePositionSize(decimal atrValue)
-	{
-		if (atrValue <= 0m)
-			return 0m;
-
-		var equity = Portfolio?.CurrentValue ?? 0m;
-		var s = (equity * RiskRate / 100m) / (2m * atrValue);
-		var size = Math.Floor(s / Unit) * Unit;
-		return size;
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

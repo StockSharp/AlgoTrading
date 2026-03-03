@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,21 +11,24 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Volume Surge strategy
-/// Long entry: Volume exceeds average volume by k times and price is above MA
-/// Short entry: Volume exceeds average volume by k times and price is below MA
-/// Exit when volume falls below average
+/// Volume Surge strategy.
+/// Long: Price above MA with volume confirmation.
+/// Short: Price below MA with volume confirmation.
+/// Exit: Price crosses MA.
 /// </summary>
 public class VolumeSurgeStrategy : Strategy
 {
 	private readonly StrategyParam<int> _maPeriod;
-	private readonly StrategyParam<int> _volumeAvgPeriod;
-	private readonly StrategyParam<decimal> _volumeSurgeMultiplier;
 	private readonly StrategyParam<DataType> _candleType;
-	private SimpleMovingAverage _volumeMA;
+	private readonly StrategyParam<int> _cooldownBars;
+
+	private decimal _prevClose;
+	private decimal _prevMa;
+	private decimal _prevVolume;
+	private int _cooldown;
 
 	/// <summary>
-	/// MA Period
+	/// MA Period.
 	/// </summary>
 	public int MAPeriod
 	{
@@ -37,30 +37,21 @@ public class VolumeSurgeStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Volume Average Period
-	/// </summary>
-	public int VolumeAvgPeriod
-	{
-		get => _volumeAvgPeriod.Value;
-		set => _volumeAvgPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Volume Surge Multiplier (k)
-	/// </summary>
-	public decimal VolumeSurgeMultiplier
-	{
-		get => _volumeSurgeMultiplier.Value;
-		set => _volumeSurgeMultiplier.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type for strategy calculation
+	/// Candle type for strategy calculation.
 	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Cooldown bars between trades.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	/// <summary>
@@ -70,24 +61,15 @@ public class VolumeSurgeStrategy : Strategy
 	{
 		_maPeriod = Param(nameof(MAPeriod), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("MA Period", "Period for Moving Average calculation", "Strategy Parameters")
-			
+			.SetDisplay("MA Period", "Period for price MA", "Indicators")
 			.SetOptimize(10, 50, 10);
 
-		_volumeAvgPeriod = Param(nameof(VolumeAvgPeriod), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume Average Period", "Period for Average Volume calculation", "Strategy Parameters")
-			
-			.SetOptimize(10, 30, 5);
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
-		_volumeSurgeMultiplier = Param(nameof(VolumeSurgeMultiplier), 2.0m)
-			.SetRange(1.0m, decimal.MaxValue)
-			.SetDisplay("Volume Surge Multiplier", "Minimum volume increase multiplier to generate signal", "Strategy Parameters")
-			
-			.SetOptimize(1.5m, 3.0m, 0.5m);
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles for strategy calculation", "Strategy Parameters");
+		_cooldownBars = Param(nameof(CooldownBars), 500)
+			.SetRange(1, 1000)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
 	}
 
 	/// <inheritdoc />
@@ -100,7 +82,10 @@ public class VolumeSurgeStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_volumeMA = null;
+		_prevClose = default;
+		_prevMa = default;
+		_prevVolume = default;
+		_cooldown = default;
 	}
 
 	/// <inheritdoc />
@@ -108,83 +93,79 @@ public class VolumeSurgeStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-			// Create indicators
-			var ma = new SMA { Length = MAPeriod };
+		_prevClose = 0;
+		_prevMa = 0;
+		_prevVolume = 0;
+		_cooldown = 0;
 
-			_volumeMA = new SMA { Length = VolumeAvgPeriod };
+		var ma = new SimpleMovingAverage { Length = MAPeriod };
 
-			// Create subscription
-			var subscription = SubscribeCandles(CandleType);
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(ma, ProcessCandle)
+			.Start();
 
-			// Regular price MA binding for signals and visualization
-			subscription
-				.Bind(ma, ProcessCandle)
-				.Start();
-
-			// Configure protection
-			StartProtection(
-				takeProfit: new Unit(3, UnitTypes.Percent),
-				stopLoss: new Unit(2, UnitTypes.Percent)
-			);
-
-			// Setup chart visualization
-			var area = CreateChartArea();
-			if (area != null)
-			{
-				DrawCandles(area, subscription);
-				DrawIndicator(area, ma);
-				DrawOwnTrades(area);
-			}
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, ma);
+			DrawOwnTrades(area);
 		}
+	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal maValue)
 	{
-		var volumeMAValue = _volumeMA.Process(new DecimalIndicatorValue(_volumeMA, candle.TotalVolume, candle.ServerTime)).ToDecimal();
+		if (candle.State != CandleStates.Finished)
+			return;
 
-		// Check if strategy is ready to trade
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// Calculate volume surge ratio
-		var volumeSurgeRatio = candle.TotalVolume / volumeMAValue;
-		var isVolumeSurge = volumeSurgeRatio >= VolumeSurgeMultiplier;
-
-		// Log current values
-		LogInfo($"Candle Close: {candle.ClosePrice}, MA: {maValue}, Volume: {candle.TotalVolume}");
-		LogInfo($"Volume MA: {volumeMAValue}, Volume Surge Ratio: {volumeSurgeRatio:P2}");
-		LogInfo($"Is Volume Surge: {isVolumeSurge}, Threshold: {VolumeSurgeMultiplier}");
-
-		// Trading logic:
-		// Check for volume surge
-		if (isVolumeSurge)
+		if (_prevClose == 0)
 		{
-			// Long: Volume surge and price above MA
-			if (candle.ClosePrice > maValue && Position <= 0)
-			{
-				LogInfo($"Buy Signal: Volume Surge ({volumeSurgeRatio:P2}) and Price ({candle.ClosePrice}) > MA ({maValue})");
-				BuyMarket(Volume + Math.Abs(Position));
-			}
-			// Short: Volume surge and price below MA
-			else if (candle.ClosePrice < maValue && Position >= 0)
-			{
-				LogInfo($"Sell Signal: Volume Surge ({volumeSurgeRatio:P2}) and Price ({candle.ClosePrice}) < MA ({maValue})");
-				SellMarket(Volume + Math.Abs(Position));
-			}
+			_prevClose = candle.ClosePrice;
+			_prevMa = maValue;
+			_prevVolume = candle.TotalVolume;
+			return;
 		}
 
-		// Exit logic: Volume falls below average
-		if (candle.TotalVolume < volumeMAValue)
+		if (_cooldown > 0)
 		{
-			if (Position > 0)
-			{
-				LogInfo($"Exit Long: Volume ({candle.TotalVolume}) < Average Volume ({volumeMAValue})");
-				SellMarket(Math.Abs(Position));
-			}
-			else if (Position < 0)
-			{
-				LogInfo($"Exit Short: Volume ({candle.TotalVolume}) < Average Volume ({volumeMAValue})");
-				BuyMarket(Math.Abs(Position));
-			}
+			_cooldown--;
+			_prevClose = candle.ClosePrice;
+			_prevMa = maValue;
+			_prevVolume = candle.TotalVolume;
+			return;
 		}
+
+		var crossUp = _prevClose <= _prevMa && candle.ClosePrice > maValue;
+		var crossDown = _prevClose >= _prevMa && candle.ClosePrice < maValue;
+		var volumeRising = candle.TotalVolume > _prevVolume;
+
+		if (Position == 0 && crossUp && volumeRising)
+		{
+			BuyMarket();
+			_cooldown = CooldownBars;
+		}
+		else if (Position == 0 && crossDown && volumeRising)
+		{
+			SellMarket();
+			_cooldown = CooldownBars;
+		}
+		else if (Position > 0 && crossDown)
+		{
+			SellMarket();
+			_cooldown = CooldownBars;
+		}
+		else if (Position < 0 && crossUp)
+		{
+			BuyMarket();
+			_cooldown = CooldownBars;
+		}
+
+		_prevClose = candle.ClosePrice;
+		_prevMa = maValue;
+		_prevVolume = candle.TotalVolume;
 	}
 }

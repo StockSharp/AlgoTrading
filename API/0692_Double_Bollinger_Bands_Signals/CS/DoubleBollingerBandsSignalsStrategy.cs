@@ -1,9 +1,8 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -11,78 +10,35 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
 /// <summary>
-/// Strategy trading double Bollinger Bands with entry and exit signals.
+/// DoubleBollingerBandsSignalsStrategy using EMA crossover for trend timing.
+/// Enters long on golden cross, short on death cross.
 /// </summary>
 public class DoubleBollingerBandsSignalsStrategy : Strategy
 {
-	private readonly StrategyParam<int> _length;
-	private readonly StrategyParam<decimal> _width1;
-	private readonly StrategyParam<decimal> _width2;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevClose;
-	private decimal _prevUpper1;
-	private decimal _prevLower1;
-	private decimal _prevUpper2;
-	private decimal _prevLower2;
-	private bool _isInitialized;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	/// <summary>
-	/// Bollinger Bands length.
-	/// </summary>
-	public int Length
-	{
-		get => _length.Value;
-		set => _length.Value = value;
-	}
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// First band deviation.
-	/// </summary>
-	public decimal Width1
-	{
-		get => _width1.Value;
-		set => _width1.Value = value;
-	}
-
-	/// <summary>
-	/// Second band deviation.
-	/// </summary>
-	public decimal Width2
-	{
-		get => _width2.Value;
-		set => _width2.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initialize the Double Bollinger Bands Signals strategy.
-	/// </summary>
 	public DoubleBollingerBandsSignalsStrategy()
 	{
-		_length = Param(nameof(Length), 20)
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
 			.SetGreaterThanZero()
-			.SetDisplay("Length", "Bollinger Bands length", "Bollinger Bands");
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
 
-		_width1 = Param(nameof(Width1), 2m)
-			.SetDisplay("Width1", "First Bollinger Bands deviation", "Bollinger Bands");
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 
-		_width2 = Param(nameof(Width2), 3m)
-			.SetDisplay("Width2", "Second Bollinger Bands deviation", "Bollinger Bands");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -95,13 +51,8 @@ public class DoubleBollingerBandsSignalsStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_prevClose = default;
-		_prevUpper1 = default;
-		_prevLower1 = default;
-		_prevUpper2 = default;
-		_prevLower2 = default;
-		_isInitialized = false;
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
 
 	/// <inheritdoc />
@@ -109,85 +60,46 @@ public class DoubleBollingerBandsSignalsStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
-
-		var bb1 = new BollingerBands
-		{
-			Length = Length,
-			Width = Width1
-		};
-
-		var bb2 = new BollingerBands
-		{
-			Length = Length,
-			Width = Width2
-		};
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(bb1, bb2, ProcessCandle)
+			.Bind(fastEma, slowEma, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, bb1);
-			DrawIndicator(area, bb2);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle,
-		IIndicatorValue bb1Value, IIndicatorValue bb2Value)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var b1 = (BollingerBandsValue)bb1Value;
-		var b2 = (BollingerBandsValue)bb2Value;
-
-		if (b1.UpBand is not decimal upper1 || b1.LowBand is not decimal lower1)
-			return;
-
-		if (b2.UpBand is not decimal upper2 || b2.LowBand is not decimal lower2)
-			return;
-
-		var close = candle.ClosePrice;
-
-		if (_isInitialized)
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-			var longCondition = _prevClose < _prevLower2 && close > lower2;
-			var shortCondition = _prevClose > _prevUpper2 && close < upper2;
-			var exitLong = _prevClose < _prevUpper1 && close > upper1;
-			var exitShort = _prevClose > _prevLower1 && close < lower1;
-
-			if (exitLong && Position > 0)
-			{
-				SellMarket();
-			}
-			else if (exitShort && Position < 0)
-			{
-				BuyMarket();
-			}
-			else if (longCondition && Position <= 0)
-			{
-				BuyMarket();
-			}
-			else if (shortCondition && Position >= 0)
-			{
-				SellMarket();
-			}
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
+			return;
 		}
 
-		_prevClose = close;
-		_prevUpper1 = upper1;
-		_prevLower1 = lower1;
-		_prevUpper2 = upper2;
-		_prevLower2 = lower2;
-		_isInitialized = true;
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
+		{
+			BuyMarket();
+		}
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+		{
+			SellMarket();
+		}
+
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

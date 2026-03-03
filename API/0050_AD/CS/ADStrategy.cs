@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,21 +11,21 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Accumulation/Distribution (A/D) Strategy
-/// Long entry: A/D rising and price above MA
-/// Short entry: A/D falling and price below MA
-/// Exit: A/D changes direction
+/// Accumulation/Distribution (A/D) Strategy.
+/// Long entry: A/D rising and price above MA.
+/// Short entry: A/D falling and price below MA.
 /// </summary>
 public class ADStrategy : Strategy
 {
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	
+	private readonly StrategyParam<int> _cooldownBars;
+
 	private decimal _previousADValue;
-	private bool _isFirstCandle;
+	private int _cooldown;
 
 	/// <summary>
-	/// MA Period
+	/// MA Period.
 	/// </summary>
 	public int MAPeriod
 	{
@@ -37,12 +34,21 @@ public class ADStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Candle type for strategy calculation
+	/// Candle type for strategy calculation.
 	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Cooldown bars between trades.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	/// <summary>
@@ -52,12 +58,15 @@ public class ADStrategy : Strategy
 	{
 		_maPeriod = Param(nameof(MAPeriod), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("MA Period", "Period for Moving Average calculation", "Strategy Parameters")
-			
+			.SetDisplay("MA Period", "Period for Moving Average", "Indicators")
 			.SetOptimize(10, 50, 10);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles for strategy calculation", "Strategy Parameters");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
+
+		_cooldownBars = Param(nameof(CooldownBars), 500)
+			.SetRange(1, 1000)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
 	}
 
 	/// <inheritdoc />
@@ -70,9 +79,8 @@ public class ADStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_previousADValue = 0;
-		_isFirstCandle = true;
-
+		_previousADValue = default;
+		_cooldown = default;
 	}
 
 	/// <inheritdoc />
@@ -80,88 +88,73 @@ public class ADStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Create indicators
-		var ma = new SMA { Length = MAPeriod };
+		_previousADValue = 0;
+		_cooldown = 0;
+
+		var ma = new SimpleMovingAverage { Length = MAPeriod };
 		var ad = new AccumulationDistributionLine();
 
-		// Create subscription and bind indicators
 		var subscription = SubscribeCandles(CandleType);
-		
-		// We need to bind both indicators but handle with one callback
 		subscription
 			.Bind(ma, ad, ProcessCandle)
 			.Start();
 
-		// Configure protection
-		StartProtection(
-			takeProfit: new Unit(3, UnitTypes.Percent),
-			stopLoss: new Unit(2, UnitTypes.Percent)
-		);
-
-		// Setup chart visualization
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
 			DrawIndicator(area, ma);
-			DrawIndicator(area, ad);
 			DrawOwnTrades(area);
 		}
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal maValue, decimal adValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
-		
-		// Skip the first candle, just initialize values
-		if (_isFirstCandle)
+
+		if (_previousADValue == 0)
 		{
 			_previousADValue = adValue;
-			_isFirstCandle = false;
 			return;
 		}
-		
-		// Check for A/D direction
-		var adRising = adValue > _previousADValue;
-		var adFalling = adValue < _previousADValue;
-		
-		// Log current values
-		LogInfo($"Candle Close: {candle.ClosePrice}, MA: {maValue}, A/D: {adValue}");
-		LogInfo($"Previous A/D: {_previousADValue}, A/D Rising: {adRising}, A/D Falling: {adFalling}");
 
-		// Trading logic:
-		// Long: A/D rising and price above MA
-		if (adRising && candle.ClosePrice > maValue && Position <= 0)
+		if (_cooldown > 0)
 		{
-			LogInfo($"Buy Signal: A/D rising and Price ({candle.ClosePrice}) > MA ({maValue})");
-			BuyMarket(Volume + Math.Abs(Position));
+			_cooldown--;
+			_previousADValue = adValue;
+			return;
 		}
-		// Short: A/D falling and price below MA
-		else if (adFalling && candle.ClosePrice < maValue && Position >= 0)
+
+		var adRising = adValue > _previousADValue;
+
+		if (Position == 0)
 		{
-			LogInfo($"Sell Signal: A/D falling and Price ({candle.ClosePrice}) < MA ({maValue})");
-			SellMarket(Volume + Math.Abs(Position));
+			if (adRising && candle.ClosePrice > maValue)
+			{
+				BuyMarket();
+				_cooldown = CooldownBars;
+			}
+			else if (!adRising && candle.ClosePrice < maValue)
+			{
+				SellMarket();
+				_cooldown = CooldownBars;
+			}
 		}
-		
-		// Exit logic: A/D changes direction
-		if (Position > 0 && adFalling)
+		else if (Position > 0 && !adRising)
 		{
-			LogInfo($"Exit Long: A/D changing direction (falling)");
-			SellMarket(Math.Abs(Position));
+			SellMarket();
+			_cooldown = CooldownBars;
 		}
 		else if (Position < 0 && adRising)
 		{
-			LogInfo($"Exit Short: A/D changing direction (rising)");
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
+			_cooldown = CooldownBars;
 		}
 
-		// Store current A/D value for next comparison
 		_previousADValue = adValue;
 	}
 }

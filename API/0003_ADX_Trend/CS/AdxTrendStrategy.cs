@@ -80,14 +80,14 @@ public class AdxTrendStrategy : Strategy
 	/// </summary>
 	public AdxTrendStrategy()
 	{
-		_adxPeriod = Param(nameof(AdxPeriod), 14)
+		_adxPeriod = Param(nameof(AdxPeriod), 50)
 			.SetDisplay("ADX Period", "Period for calculating ADX indicator", "Indicators")
-			
+
 			.SetOptimize(10, 30, 2);
 
-		_maPeriod = Param(nameof(MaPeriod), 50)
+		_maPeriod = Param(nameof(MaPeriod), 200)
 			.SetDisplay("MA Period", "Period for calculating Moving Average", "Indicators")
-			
+
 			.SetOptimize(20, 100, 10);
 
 		_atrMultiplier = Param(nameof(AtrMultiplier), 2m)
@@ -100,7 +100,7 @@ public class AdxTrendStrategy : Strategy
 			
 			.SetOptimize(15, 25, 1);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -128,12 +128,30 @@ public class AdxTrendStrategy : Strategy
 		// Create indicators
 		var adx = new AverageDirectionalIndex { Length = AdxPeriod };
 		var ma = new SMA { Length = MaPeriod };
-		var atr = new AverageTrueRange { Length = AdxPeriod };
+
+		var currentAdxMa = 0m;
+		var currentMaValue = 0m;
 
 		// Create subscription and bind indicators
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(adx, ma, atr, ProcessCandle)
+			.BindEx(adx, (candle, adxVal) =>
+			{
+				if (adxVal is AverageDirectionalIndexValue adxTyped && adxTyped.MovingAverage is decimal adxMaVal)
+					currentAdxMa = adxMaVal;
+			})
+			.Bind(ma, (candle, maVal) =>
+			{
+				if (candle.State != CandleStates.Finished)
+					return;
+
+				if (!IsFormedAndOnlineAndAllowTrading())
+					return;
+
+				currentMaValue = maVal;
+
+				ProcessCandle(candle, currentAdxMa, currentMaValue);
+			})
 			.Start();
 
 		// Setup chart visualization if available
@@ -146,68 +164,37 @@ public class AdxTrendStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		// Start protection for positions
-		StartProtection(
-			takeProfit: null,
-			stopLoss: new Unit(AtrMultiplier, UnitTypes.Absolute),
-			isStopTrailing: true
-		);
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue adxValue, IIndicatorValue maValue, IIndicatorValue atrValue)
+	private void ProcessCandle(ICandleMessage candle, decimal adxMa, decimal maValue)
 	{
-		// Skip unfinished candles
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		// Check if strategy is ready to trade
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var adxTyped = (AverageDirectionalIndexValue)adxValue;
-
-		if (adxTyped.MovingAverage is not decimal adxMa)
-			return;
-
-		// Check ADX threshold for entry conditions
-		var isAdxEnoughForEntry = adxMa > 25;
-		
-		// Check ADX threshold for exit conditions
-		var isAdxBelowExit = adxMa < AdxExitThreshold;
-		
-		// Current price relative to MA
-		var isPriceAboveMa = candle.ClosePrice > maValue.ToDecimal();
-
-		// Store ADX state
-		_adxAboveThreshold = isAdxEnoughForEntry;
-
-		// Trading logic
-		if (isAdxBelowExit && Position != 0)
+		if (adxMa == 0 || maValue == 0)
 		{
-			// Exit position when ADX weakens
-			ClosePosition();
-			LogInfo($"Exiting position at {candle.ClosePrice}. ADX = {adxMa} (below threshold {AdxExitThreshold})");
+			_prevMaValue = maValue;
+			_prevAdxValue = adxMa;
+			return;
 		}
-		else if (isAdxEnoughForEntry)
-		{
-			var volume = Volume + Math.Abs(Position);
 
-			// Long entry
+		var isPriceAboveMa = candle.ClosePrice > maValue;
+		var wasPriceAboveMa = _prevMaValue != 0 && candle.OpenPrice > _prevMaValue;
+		var isAdxStrong = adxMa > 25;
+
+		// Only trade on MA crossover when ADX is strong
+		if (_prevMaValue != 0 && isAdxStrong && wasPriceAboveMa != isPriceAboveMa)
+		{
 			if (isPriceAboveMa && Position <= 0)
 			{
-				BuyMarket(volume);
-				LogInfo($"Buy signal: ADX = {adxMa}, Price = {candle.ClosePrice}, MA = {maValue}");
+				BuyMarket(Volume + Math.Abs(Position));
 			}
-			// Short entry
 			else if (!isPriceAboveMa && Position >= 0)
 			{
-				SellMarket(volume);
-				LogInfo($"Sell signal: ADX = {adxMa}, Price = {candle.ClosePrice}, MA = {maValue}");
+				SellMarket(Volume + Math.Abs(Position));
 			}
 		}
 
 		// Update previous values
 		_prevAdxValue = adxMa;
-		_prevMaValue = maValue.ToDecimal();
+		_prevMaValue = maValue;
+		_adxAboveThreshold = isAdxStrong;
 	}
 }

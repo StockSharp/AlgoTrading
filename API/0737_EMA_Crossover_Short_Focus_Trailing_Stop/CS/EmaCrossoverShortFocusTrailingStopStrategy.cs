@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -13,197 +10,73 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-/// <summary>
-/// Strategy based on EMA crossovers with trailing stop.
-/// </summary>
 public class EmaCrossoverShortFocusTrailingStopStrategy : Strategy
 {
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _shortEmaLength;
-	private readonly StrategyParam<int> _midEmaLength;
-	private readonly StrategyParam<int> _longEmaLength;
-	private readonly StrategyParam<decimal> _trailOffset;
-	private readonly StrategyParam<decimal> _trailDistance;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	private decimal _longStop;
-	private decimal _shortStop;
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Candle type.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Short EMA period.
-	/// </summary>
-	public int ShortEmaLength
-	{
-		get => _shortEmaLength.Value;
-		set => _shortEmaLength.Value = value;
-	}
-
-	/// <summary>
-	/// Middle EMA period.
-	/// </summary>
-	public int MidEmaLength
-	{
-		get => _midEmaLength.Value;
-		set => _midEmaLength.Value = value;
-	}
-
-	/// <summary>
-	/// Long EMA period.
-	/// </summary>
-	public int LongEmaLength
-	{
-		get => _longEmaLength.Value;
-		set => _longEmaLength.Value = value;
-	}
-
-	/// <summary>
-	/// Trailing stop offset.
-	/// </summary>
-	public decimal TrailOffset
-	{
-		get => _trailOffset.Value;
-		set => _trailOffset.Value = value;
-	}
-
-	/// <summary>
-	/// Trailing stop distance from extreme.
-	/// </summary>
-	public decimal TrailDistance
-	{
-		get => _trailDistance.Value;
-		set => _trailDistance.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="EmaCrossoverShortFocusTrailingStopStrategy"/>.
-	/// </summary>
 	public EmaCrossoverShortFocusTrailingStopStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
-
-		_shortEmaLength = Param(nameof(ShortEmaLength), 13)
-			.SetRange(5, 50)
-			.SetDisplay("Short EMA", "Short EMA length", "Indicators")
-			;
-
-		_midEmaLength = Param(nameof(MidEmaLength), 25)
-			.SetRange(5, 50)
-			.SetDisplay("Mid EMA", "Middle EMA length", "Indicators")
-			;
-
-		_longEmaLength = Param(nameof(LongEmaLength), 33)
-			.SetRange(5, 100)
-			.SetDisplay("Long EMA", "Long EMA length", "Indicators")
-			;
-
-		_trailOffset = Param(nameof(TrailOffset), 2m)
-			.SetRange(0.5m, 5m)
-			.SetDisplay("Trail Offset", "Offset for trailing stop", "Risk")
-			;
-
-		_trailDistance = Param(nameof(TrailDistance), 10m)
-			.SetRange(2m, 50m)
-			.SetDisplay("Trail Distance", "Distance from extreme", "Risk")
-			;
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
 
-	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		var shortEma = new EMA { Length = ShortEmaLength };
-		var midEma = new EMA { Length = MidEmaLength };
-		var longEma = new EMA { Length = LongEmaLength };
-
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(shortEma, midEma, longEma, ProcessCandle)
-			.Start();
-
+		subscription.Bind(fastEma, slowEma, ProcessCandle).Start();
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, shortEma);
-			DrawIndicator(area, midEma);
-			DrawIndicator(area, longEma);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
-
-		StartProtection(null, null);
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal shortEma, decimal midEma, decimal longEma)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
-		if (candle.State != CandleStates.Finished)
+		if (candle.State != CandleStates.Finished) return;
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
+		{
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
 			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (shortEma >= longEma && Position <= 0)
-		{
-			BuyMarket(Volume + Math.Abs(Position));
-			_longStop = candle.ClosePrice - TrailDistance;
-			_shortStop = 0m;
 		}
-		else if (shortEma <= longEma && Position >= 0)
-		{
-			SellMarket(Volume + Math.Abs(Position));
-			_shortStop = candle.ClosePrice + TrailDistance;
-			_longStop = 0m;
-		}
-
-		if (shortEma < longEma && Position > 0)
-		{
-			SellMarket(Math.Abs(Position));
-			_longStop = 0m;
-		}
-		else if (shortEma > midEma && Position < 0)
-		{
-			BuyMarket(Math.Abs(Position));
-			_shortStop = 0m;
-		}
-
-		if (Position > 0)
-		{
-			var candidate = candle.HighPrice - TrailDistance;
-			if (candidate > _longStop)
-				_longStop = candidate;
-
-			if (candle.ClosePrice <= _longStop - TrailOffset)
-			{
-				SellMarket(Math.Abs(Position));
-				_longStop = 0m;
-			}
-		}
-		else if (Position < 0)
-		{
-			var candidate = candle.LowPrice + TrailDistance;
-			if (_shortStop == 0m || candidate < _shortStop)
-				_shortStop = candidate;
-
-			if (candle.ClosePrice >= _shortStop + TrailOffset)
-			{
-				BuyMarket(Math.Abs(Position));
-				_shortStop = 0m;
-			}
-		}
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
+			BuyMarket();
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+			SellMarket();
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

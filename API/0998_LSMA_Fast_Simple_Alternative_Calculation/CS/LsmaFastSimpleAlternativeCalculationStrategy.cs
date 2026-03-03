@@ -1,17 +1,14 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
-
-
 
 /// <summary>
 /// LSMA Fast And Simple Alternative Calculation Strategy.
@@ -22,14 +19,17 @@ public class LsmaFastSimpleAlternativeCalculationStrategy : Strategy
 	private readonly StrategyParam<int> _length;
 	private readonly StrategyParam<DataType> _candleType;
 
+	private WeightedMovingAverage _wma;
+	private SimpleMovingAverage _sma;
 	private decimal _prevDiff;
+	private int _cooldown;
 
 	public LsmaFastSimpleAlternativeCalculationStrategy()
 	{
-		_length = Param(nameof(Length), 25)
+		_length = Param(nameof(Length), 50)
 			.SetDisplay("LSMA Length", "Length for LSMA calculation", "LSMA");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -53,7 +53,8 @@ public class LsmaFastSimpleAlternativeCalculationStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevDiff = 0m;
+		_prevDiff = default;
+		_cooldown = default;
 	}
 
 	/// <inheritdoc />
@@ -61,12 +62,12 @@ public class LsmaFastSimpleAlternativeCalculationStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var wma = new WeightedMovingAverage { Length = Length };
-		var sma = new SMA { Length = Length };
+		_wma = new WeightedMovingAverage { Length = Length };
+		_sma = new SimpleMovingAverage { Length = Length };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(wma, sma, ProcessCandle)
+			.Bind(_wma, _sma, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -82,16 +83,33 @@ public class LsmaFastSimpleAlternativeCalculationStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!_wma.IsFormed || !_sma.IsFormed)
 			return;
 
 		var lsma = 3m * wmaValue - 2m * smaValue;
 		var diff = candle.ClosePrice - lsma;
 
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+			_prevDiff = diff;
+			return;
+		}
+
 		if (_prevDiff <= 0m && diff > 0m && Position <= 0)
-			BuyMarket(Volume + Math.Abs(Position));
+		{
+			if (Position < 0)
+				BuyMarket();
+			BuyMarket();
+			_cooldown = 10;
+		}
 		else if (_prevDiff >= 0m && diff < 0m && Position >= 0)
-			SellMarket(Volume + Math.Abs(Position));
+		{
+			if (Position > 0)
+				SellMarket();
+			SellMarket();
+			_cooldown = 10;
+		}
 
 		_prevDiff = diff;
 	}

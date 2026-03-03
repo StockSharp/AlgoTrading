@@ -44,6 +44,7 @@ public class BollingerHeikinAshiEntryStrategy : Strategy
 	private decimal _lowerBb2;
 	private decimal _prevHigh;
 	private decimal _prevLow;
+	private int _cooldown;
 
 	public int BollingerPeriod
 	{
@@ -70,7 +71,7 @@ public class BollingerHeikinAshiEntryStrategy : Strategy
 			
 			.SetOptimize(10, 50, 5);
 
-		_bollingerDeviation = Param(nameof(BollingerDeviation), 2m)
+		_bollingerDeviation = Param(nameof(BollingerDeviation), 1.5m)
 			.SetDisplay("Bollinger Deviation", "Bollinger Bands standard deviation", "Indicators")
 			
 			.SetOptimize(1m, 3m, 0.5m);
@@ -110,6 +111,7 @@ public class BollingerHeikinAshiEntryStrategy : Strategy
 		_lowerBb2 = default;
 		_prevHigh = default;
 		_prevLow = default;
+		_cooldown = default;
 	}
 
 	/// <inheritdoc />
@@ -141,12 +143,10 @@ public class BollingerHeikinAshiEntryStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (bbValue.IsEmpty)
+		if (bbValue is not BollingerBandsValue bb ||
+			bb.UpBand is not decimal upper ||
+			bb.LowBand is not decimal lower)
 			return;
-
-		var bb = (BollingerBandsValue)bbValue;
-		var upper = bb.UpBand ?? 0m;
-		var lower = bb.LowBand ?? 0m;
 
 		var haClose = (candle.OpenPrice + candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 4m;
 		decimal haOpen;
@@ -167,73 +167,62 @@ public class BollingerHeikinAshiEntryStrategy : Strategy
 		var green1 = _haClose1 > _haOpen1 && (_haHigh1 >= _upperBb1 || _haClose1 >= _upperBb1);
 		var green2 = _haClose2 > _haOpen2 && (_haHigh2 >= _upperBb2 || _haClose2 >= _upperBb2);
 
-		var buySignal = red1 && red2 && haClose > haOpen && haClose > lower;
-		var sellSignal = green1 && green2 && haClose < haOpen && haClose < upper;
+		var buySignal = red1 && haClose > haOpen && haClose > lower;
+		var sellSignal = green1 && haClose < haOpen && haClose < upper;
 
-		if (buySignal && Position <= 0)
+		if (_cooldown > 0)
+			_cooldown--;
+
+		if (buySignal && Position <= 0 && _cooldown == 0)
 		{
 			_entryPrice = candle.ClosePrice;
-			_initialStop = _prevLow;
+			_initialStop = _prevLow > 0 ? _prevLow : candle.LowPrice;
 			_firstTarget = _entryPrice + (_entryPrice - _initialStop);
 			_firstTargetReached = false;
 			_trailStop = default;
+			_cooldown = 20;
 			BuyMarket();
 		}
-		else if (sellSignal && Position >= 0)
+		else if (sellSignal && Position >= 0 && _cooldown == 0)
 		{
 			_entryPrice = candle.ClosePrice;
-			_initialStop = _prevHigh;
+			_initialStop = _prevHigh > 0 ? _prevHigh : candle.HighPrice;
 			_firstTarget = _entryPrice - (_initialStop - _entryPrice);
 			_firstTargetReached = false;
 			_trailStop = default;
+			_cooldown = 20;
 			SellMarket();
 		}
 
 		if (Position > 0)
 		{
-			if (!_firstTargetReached)
+			if (candle.HighPrice >= _firstTarget)
 			{
-				if (candle.HighPrice >= _firstTarget)
-				{
-					SellMarket();
-					_firstTargetReached = true;
-					_trailStop = _entryPrice;
-				}
-			}
-			else
-			{
-				_trailStop = Math.Max(_trailStop, _prevLow);
+				_firstTargetReached = true;
+				_trailStop = Math.Max(_entryPrice, _prevLow);
 			}
 
+			if (_firstTargetReached)
+				_trailStop = Math.Max(_trailStop, _prevLow);
+
 			var currentStop = _firstTargetReached ? _trailStop : _initialStop;
-			if (candle.LowPrice <= currentStop)
-			{
-				if (Position > 0) SellMarket();
-				else if (Position < 0) BuyMarket();
-			}
+			if (currentStop > 0 && candle.LowPrice <= currentStop)
+				SellMarket();
 		}
 		else if (Position < 0)
 		{
-			if (!_firstTargetReached)
+			if (candle.LowPrice <= _firstTarget)
 			{
-				if (candle.LowPrice <= _firstTarget)
-				{
-					BuyMarket();
-					_firstTargetReached = true;
-					_trailStop = _entryPrice;
-				}
-			}
-			else
-			{
-				_trailStop = Math.Min(_trailStop, _prevHigh);
+				_firstTargetReached = true;
+				_trailStop = Math.Min(_entryPrice, _prevHigh);
 			}
 
+			if (_firstTargetReached && _trailStop > 0)
+				_trailStop = Math.Min(_trailStop, _prevHigh);
+
 			var currentStop = _firstTargetReached ? _trailStop : _initialStop;
-			if (candle.HighPrice >= currentStop)
-			{
-				if (Position > 0) SellMarket();
-				else if (Position < 0) BuyMarket();
-			}
+			if (currentStop > 0 && candle.HighPrice >= currentStop)
+				BuyMarket();
 		}
 
 		_haOpen2 = _haOpen1;

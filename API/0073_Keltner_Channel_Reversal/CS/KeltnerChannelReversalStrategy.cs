@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,22 +12,21 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Keltner Channel Reversal strategy.
-/// The strategy enters long when price is below lower Keltner Channel and a bullish candle appears,
-/// enters short when price is above upper Keltner Channel and a bearish candle appears.
+/// Enters long when price is below lower Keltner Channel with a bullish candle.
+/// Enters short when price is above upper Keltner Channel with a bearish candle.
+/// Exits at middle band.
 /// </summary>
 public class KeltnerChannelReversalStrategy : Strategy
 {
 	private readonly StrategyParam<int> _emaPeriod;
 	private readonly StrategyParam<decimal> _atrMultiplier;
-	private readonly StrategyParam<int> _atrPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<decimal> _stopLossAtrMultiplier;
+	private readonly StrategyParam<int> _cooldownBars;
 
-	private KeltnerChannels _keltnerChannel;
-	private AverageTrueRange _atr;
+	private int _cooldown;
 
 	/// <summary>
-	/// EMA period for Keltner Channel calculation.
+	/// EMA period for Keltner Channel.
 	/// </summary>
 	public int EmaPeriod
 	{
@@ -39,21 +35,12 @@ public class KeltnerChannelReversalStrategy : Strategy
 	}
 
 	/// <summary>
-	/// ATR multiplier for Keltner Channel calculation.
+	/// ATR multiplier for Keltner Channel.
 	/// </summary>
 	public decimal AtrMultiplier
 	{
 		get => _atrMultiplier.Value;
 		set => _atrMultiplier.Value = value;
-	}
-
-	/// <summary>
-	/// ATR period for Keltner Channel calculation.
-	/// </summary>
-	public int AtrPeriod
-	{
-		get => _atrPeriod.Value;
-		set => _atrPeriod.Value = value;
 	}
 
 	/// <summary>
@@ -66,12 +53,12 @@ public class KeltnerChannelReversalStrategy : Strategy
 	}
 
 	/// <summary>
-	/// ATR multiplier for stop-loss.
+	/// Cooldown bars.
 	/// </summary>
-	public decimal StopLossAtrMultiplier
+	public int CooldownBars
 	{
-		get => _stopLossAtrMultiplier.Value;
-		set => _stopLossAtrMultiplier.Value = value;
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	/// <summary>
@@ -81,28 +68,18 @@ public class KeltnerChannelReversalStrategy : Strategy
 	{
 		_emaPeriod = Param(nameof(EmaPeriod), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("EMA Period", "Period for the EMA in Keltner Channel", "Indicators")
-			
-			.SetOptimize(10, 30, 5);
+			.SetDisplay("EMA Period", "Period for EMA in Keltner Channel", "Indicators");
 
 		_atrMultiplier = Param(nameof(AtrMultiplier), 2.0m)
 			.SetNotNegative()
-			.SetDisplay("ATR Multiplier", "Multiplier for the ATR in Keltner Channel", "Indicators")
-			
-			.SetOptimize(1.0m, 3.0m, 0.5m);
+			.SetDisplay("ATR Multiplier", "Multiplier for ATR in Keltner Channel", "Indicators");
 
-		_atrPeriod = Param(nameof(AtrPeriod), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("ATR Period", "Period for ATR calculation", "Indicators");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
-		_stopLossAtrMultiplier = Param(nameof(StopLossAtrMultiplier), 2.0m)
-			.SetNotNegative()
-			.SetDisplay("Stop Loss ATR Multiplier", "ATR multiplier for stop-loss calculation", "Risk Management")
-			
-			.SetOptimize(1.0m, 3.0m, 0.5m);
+		_cooldownBars = Param(nameof(CooldownBars), 500)
+			.SetRange(1, 1000)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
 	}
 
 	/// <inheritdoc />
@@ -115,9 +92,7 @@ public class KeltnerChannelReversalStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_keltnerChannel = null;
-		_atr = null;
+		_cooldown = default;
 	}
 
 	/// <inheritdoc />
@@ -125,91 +100,75 @@ public class KeltnerChannelReversalStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Create indicators
-		_keltnerChannel = new KeltnerChannels
+		_cooldown = 0;
+
+		var keltner = new KeltnerChannels
 		{
 			Length = EmaPeriod,
 			Multiplier = AtrMultiplier,
 		};
 
-		_atr = new AverageTrueRange
-		{
-			Length = AtrPeriod
-		};
-
-		// Create subscription and bind indicators
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(_keltnerChannel, _atr, ProcessCandle)
+			.BindEx(keltner, ProcessCandle)
 			.Start();
 
-		// Setup chart visualization if available
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _keltnerChannel);
+			DrawIndicator(area, keltner);
 			DrawOwnTrades(area);
 		}
-
-		// Start position protection
-		StartProtection(
-			takeProfit: new Unit(0, UnitTypes.Absolute), // No take profit, rely on the strategy's exit logic
-			stopLoss: new Unit(StopLossAtrMultiplier, UnitTypes.Absolute)
-		);
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue keltnerValue, IIndicatorValue atrValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue keltnerValue)
 	{
 		if (candle.State != CandleStates.Finished)
+			return;
+
+		if (!keltnerValue.IsFormed)
 			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// Get Keltner Channel values
-		var keltnerTyped = (KeltnerChannelsValue)keltnerValue;
-		var upper = keltnerTyped.Upper;
-		var lower = keltnerTyped.Lower;
-		var middle = keltnerTyped.Middle;
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+			return;
+		}
 
-		// Determine if the candle is bullish or bearish
+		var kc = (IKeltnerChannelsValue)keltnerValue;
+		var upper = kc.Upper;
+		var lower = kc.Lower;
+		var middle = kc.Middle;
+
+		if (upper == null || lower == null || middle == null)
+			return;
+
 		var isBullish = candle.ClosePrice > candle.OpenPrice;
 		var isBearish = candle.ClosePrice < candle.OpenPrice;
 
-		// Long entry: Price below lower band and bullish candle
-		if (candle.ClosePrice < lower && isBullish && Position <= 0)
+		if (Position == 0 && candle.ClosePrice < lower.Value && isBullish)
 		{
-			// Cancel active orders first
-			CancelActiveOrders();
-			
-			// Enter long position
-			BuyMarket(Volume + Math.Abs(Position));
-			
-			LogInfo($"Long entry: Price {candle.ClosePrice} below lower band {lower} with bullish candle");
+			BuyMarket();
+			_cooldown = CooldownBars;
 		}
-		// Short entry: Price above upper band and bearish candle
-		else if (candle.ClosePrice > upper && isBearish && Position >= 0)
+		else if (Position == 0 && candle.ClosePrice > upper.Value && isBearish)
 		{
-			// Cancel active orders first
-			CancelActiveOrders();
-			
-			// Enter short position
-			SellMarket(Volume + Math.Abs(Position));
-			
-			LogInfo($"Short entry: Price {candle.ClosePrice} above upper band {upper} with bearish candle");
+			SellMarket();
+			_cooldown = CooldownBars;
 		}
-		// Long exit: Price returns to middle band
-		else if (candle.ClosePrice > middle && Position > 0)
+		else if (Position > 0 && candle.ClosePrice > middle.Value)
 		{
-			SellMarket(Math.Abs(Position));
-			LogInfo($"Long exit: Price {candle.ClosePrice} above middle band {middle}");
+			SellMarket();
+			_cooldown = CooldownBars;
 		}
-		// Short exit: Price returns to middle band
-		else if (candle.ClosePrice < middle && Position < 0)
+		else if (Position < 0 && candle.ClosePrice < middle.Value)
 		{
-			BuyMarket(Math.Abs(Position));
-			LogInfo($"Short exit: Price {candle.ClosePrice} below middle band {middle}");
+			BuyMarket();
+			_cooldown = CooldownBars;
 		}
 	}
 }

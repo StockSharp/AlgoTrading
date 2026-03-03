@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -13,178 +10,73 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-/// <summary>
-/// Trades ES against a global index using spread RSI.
-/// </summary>
 public class GlobalIndexSpreadRsiStrategy : Strategy
 {
-	private readonly StrategyParam<Security> _global;
-	private readonly StrategyParam<int> _rsiLength;
-	private readonly StrategyParam<decimal> _oversold;
-	private readonly StrategyParam<decimal> _overbought;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	private readonly RelativeStrengthIndex _rsi = new();
-	private readonly Dictionary<Security, decimal> _lastPrices = [];
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	private decimal _entryPrice;
-	private decimal _prevProfit;
-	private DateTimeOffset _prevTime;
-
-	/// <summary>
-	/// Global index security.
-	/// </summary>
-	public Security GlobalSecurity
-	{
-		get => _global.Value;
-		set => _global.Value = value;
-	}
-
-	/// <summary>
-	/// RSI calculation length.
-	/// </summary>
-	public int RsiLength
-	{
-		get => _rsiLength.Value;
-		set => _rsiLength.Value = value;
-	}
-
-	/// <summary>
-	/// RSI oversold threshold.
-	/// </summary>
-	public decimal OversoldThreshold
-	{
-		get => _oversold.Value;
-		set => _oversold.Value = value;
-	}
-
-	/// <summary>
-	/// RSI overbought threshold.
-	/// </summary>
-	public decimal OverboughtThreshold
-	{
-		get => _overbought.Value;
-		set => _overbought.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type for calculations.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="GlobalIndexSpreadRsiStrategy"/>.
-	/// </summary>
 	public GlobalIndexSpreadRsiStrategy()
 	{
-		_global = Param<Security>(nameof(GlobalSecurity), null)
-			.SetDisplay("Global Index", "Global index security", "Universe");
-
-		_rsiLength = Param(nameof(RsiLength), 2)
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
 			.SetGreaterThanZero()
-			.SetDisplay("RSI Length", "RSI calculation length", "Parameters");
-
-		_oversold = Param(nameof(OversoldThreshold), 35m)
-			.SetDisplay("Oversold", "RSI oversold level", "Parameters");
-
-		_overbought = Param(nameof(OverboughtThreshold), 78m)
-			.SetDisplay("Overbought", "RSI overbought level", "Parameters");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "Data");
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		if (Security == null || GlobalSecurity == null)
-			throw new InvalidOperationException("Securities must be set.");
-
-		yield return (Security, CandleType);
-		yield return (GlobalSecurity, CandleType);
+		return [(Security, CandleType)];
 	}
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_lastPrices.Clear();
-		_rsi.Reset();
-		_entryPrice = 0m;
-		_prevProfit = 0m;
-		_prevTime = default;
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
-		if (GlobalSecurity == null)
-			throw new InvalidOperationException("Global security must be set.");
-
 		base.OnStarted2(time);
-
-		_rsi.Length = RsiLength;
-
-		var mainSub = SubscribeCandles(CandleType, true, Security);
-		mainSub.Bind(c => ProcessCandle(c, Security)).Start();
-
-		SubscribeCandles(CandleType, true, GlobalSecurity)
-			.Bind(c => ProcessCandle(c, GlobalSecurity))
-			.Start();
-
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(fastEma, slowEma, ProcessCandle).Start();
 		var area = CreateChartArea();
 		if (area != null)
 		{
-			DrawCandles(area, mainSub);
+			DrawCandles(area, subscription);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, Security security)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		_lastPrices[security] = candle.ClosePrice;
-
-		if (security != Security)
-			return;
-
-		if (!_lastPrices.TryGetValue(GlobalSecurity, out var globalClose))
-			return;
-
-		var spread = (candle.ClosePrice - globalClose) / globalClose * 100m;
-		var rsiValue = _rsi.Process(new DecimalIndicatorValue(_rsi, spread, candle.ServerTime));
-		if (!rsiValue.IsFinal)
-			return;
-
-		var rsi = rsiValue.ToDecimal();
-
-		if (rsi < OversoldThreshold && Position <= 0)
+		if (candle.State != CandleStates.Finished) return;
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
+			return;
+		}
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
 			BuyMarket();
-			_entryPrice = candle.ClosePrice;
-			_prevTime = candle.CloseTime;
-			_prevProfit = 0m;
-		}
-		else if (rsi > OverboughtThreshold && Position > 0)
-		{
-			SellMarket(Position);
-			_entryPrice = 0m;
-			_prevTime = default;
-		}
-
-		if (Position > 0 && _entryPrice > 0m)
-		{
-			var profit = (candle.ClosePrice - _entryPrice) / _entryPrice * 100m;
-			_prevTime = candle.CloseTime;
-			_prevProfit = profit;
-		}
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+			SellMarket();
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }
-

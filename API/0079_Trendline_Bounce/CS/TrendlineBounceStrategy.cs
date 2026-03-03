@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,31 +12,23 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Trendline Bounce strategy.
-/// The strategy automatically identifies trendlines by connecting highs or lows
-/// and enters positions when price bounces off a trendline with confirmation.
+/// Calculates linear regression of recent lows (support) and highs (resistance).
+/// Buys on bounce off support trendline, sells on bounce off resistance.
+/// Uses SMA for exit signals.
 /// </summary>
 public class TrendlineBounceStrategy : Strategy
 {
 	private readonly StrategyParam<int> _trendlinePeriod;
 	private readonly StrategyParam<int> _maPeriod;
-	private readonly StrategyParam<decimal> _bounceThresholdPercent;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<decimal> _stopLossPercent;
-	
-	private SimpleMovingAverage _ma;
-	
-	// Store recent candles for trendline calculation
-	private readonly Queue<ICandleMessage> _recentCandles = [];
-	
-	// Trendline parameters
-	private decimal _supportSlope;
-	private decimal _supportIntercept;
-	private decimal _resistanceSlope;
-	private decimal _resistanceIntercept;
-	private DateTimeOffset _lastTrendlineUpdate;
+	private readonly StrategyParam<int> _cooldownBars;
+
+	private readonly List<decimal> _highs = new();
+	private readonly List<decimal> _lows = new();
+	private int _cooldown;
 
 	/// <summary>
-	/// Period for trendline calculation.
+	/// Trendline period.
 	/// </summary>
 	public int TrendlinePeriod
 	{
@@ -48,21 +37,12 @@ public class TrendlineBounceStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Moving average period for trend confirmation.
+	/// MA Period.
 	/// </summary>
 	public int MAPeriod
 	{
 		get => _maPeriod.Value;
 		set => _maPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Bounce threshold percentage for entry signals.
-	/// </summary>
-	public decimal BounceThresholdPercent
-	{
-		get => _bounceThresholdPercent.Value;
-		set => _bounceThresholdPercent.Value = value;
 	}
 
 	/// <summary>
@@ -75,12 +55,12 @@ public class TrendlineBounceStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stop-loss percentage.
+	/// Cooldown bars.
 	/// </summary>
-	public decimal StopLossPercent
+	public int CooldownBars
 	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	/// <summary>
@@ -90,30 +70,18 @@ public class TrendlineBounceStrategy : Strategy
 	{
 		_trendlinePeriod = Param(nameof(TrendlinePeriod), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("Trendline Period", "Number of candles to use for trendline calculation", "Indicators")
-			
-			.SetOptimize(10, 30, 5);
+			.SetDisplay("Trendline Period", "Lookback for trendline", "Indicators");
 
 		_maPeriod = Param(nameof(MAPeriod), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("MA Period", "Period for moving average calculation", "Indicators")
-			
-			.SetOptimize(10, 50, 10);
+			.SetDisplay("MA Period", "Period for SMA", "Indicators");
 
-		_bounceThresholdPercent = Param(nameof(BounceThresholdPercent), 0.5m)
-			.SetNotNegative()
-			.SetDisplay("Bounce Threshold %", "Maximum distance from trendline for bounce detection", "Indicators")
-			
-			.SetOptimize(0.1m, 1.0m, 0.1m);
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
-		_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
-			.SetNotNegative()
-			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management")
-			
-			.SetOptimize(1.0m, 3.0m, 0.5m);
+		_cooldownBars = Param(nameof(CooldownBars), 500)
+			.SetRange(1, 1000)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
 	}
 
 	/// <inheritdoc />
@@ -126,14 +94,9 @@ public class TrendlineBounceStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_ma = null;
-		_recentCandles.Clear();
-		_supportSlope = 0;
-		_supportIntercept = 0;
-		_resistanceSlope = 0;
-		_resistanceIntercept = 0;
-		_lastTrendlineUpdate = DateTimeOffset.MinValue;
+		_highs.Clear();
+		_lows.Clear();
+		_cooldown = default;
 	}
 
 	/// <inheritdoc />
@@ -141,193 +104,108 @@ public class TrendlineBounceStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Create MA indicator
-		_ma = new SMA
-		{
-			Length = MAPeriod
-		};
+		_highs.Clear();
+		_lows.Clear();
+		_cooldown = 0;
 
-		// Create subscription and bind indicators
+		var sma = new SimpleMovingAverage { Length = MAPeriod };
+
 		var subscription = SubscribeCandles(CandleType);
-
 		subscription
-			.Bind(_ma, ProcessCandle)
+			.Bind(sma, ProcessCandle)
 			.Start();
 
-		// Setup chart visualization if available
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _ma);
+			DrawIndicator(area, sma);
 			DrawOwnTrades(area);
 		}
-
-		// Start position protection
-		StartProtection(
-			takeProfit: new Unit(0, UnitTypes.Absolute), // No take profit, rely on exit logic
-			stopLoss: new Unit(StopLossPercent, UnitTypes.Percent)
-		);
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal maPrice)
+	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		_highs.Add(candle.HighPrice);
+		_lows.Add(candle.LowPrice);
+
+		if (_highs.Count > TrendlinePeriod)
+		{
+			_highs.RemoveAt(0);
+			_lows.RemoveAt(0);
+		}
+
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// Add current candle to the queue and maintain queue size
-		_recentCandles.Enqueue(candle);
-		while (_recentCandles.Count > TrendlinePeriod && _recentCandles.Count > 0)
-			_recentCandles.Dequeue();
-
-		// Update trendlines periodically
-		if (_lastTrendlineUpdate == DateTimeOffset.MinValue || 
-			(candle.OpenTime - _lastTrendlineUpdate).TotalMinutes >= TrendlinePeriod)
-		{
-			UpdateTrendlines();
-			_lastTrendlineUpdate = candle.OpenTime;
-		}
-
-		// Check for trendline bounces
-		CheckForTrendlineBounces(candle, maPrice);
-	}
-
-	private void UpdateTrendlines()
-	{
-		if (_recentCandles.Count < 3)
+		if (_highs.Count < TrendlinePeriod)
 			return;
 
-		var candles = _recentCandles.ToArray();
-		int n = candles.Length;
-		
-		// Calculate support trendline (connecting lows)
-		List<(decimal x, decimal y)> supportPoints = [];
-		
-		// Find significant lows for support line
-		for (int i = 1; i < n - 1; i++)
+		if (_cooldown > 0)
 		{
-			// A point is a low if it's lower than both neighbors
-			if (candles[i].LowPrice < candles[i-1].LowPrice && 
-				candles[i].LowPrice < candles[i+1].LowPrice)
-			{
-				supportPoints.Add((i, candles[i].LowPrice));
-			}
-		}
-		
-		// Calculate resistance trendline (connecting highs)
-		List<(decimal x, decimal y)> resistancePoints = [];
-		
-		// Find significant highs for resistance line
-		for (int i = 1; i < n - 1; i++)
-		{
-			// A point is a high if it's higher than both neighbors
-			if (candles[i].HighPrice > candles[i-1].HighPrice && 
-				candles[i].HighPrice > candles[i+1].HighPrice)
-			{
-				resistancePoints.Add((i, candles[i].HighPrice));
-			}
-		}
-
-		// We need at least 2 points to define a line
-		if (supportPoints.Count >= 2)
-		{
-			CalculateLinearRegression(supportPoints, out _supportSlope, out _supportIntercept);
-			LogInfo($"Updated support trendline: y = {_supportSlope}x + {_supportIntercept}");
-		}
-		
-		if (resistancePoints.Count >= 2)
-		{
-			CalculateLinearRegression(resistancePoints, out _resistanceSlope, out _resistanceIntercept);
-			LogInfo($"Updated resistance trendline: y = {_resistanceSlope}x + {_resistanceIntercept}");
-		}
-	}
-
-	private void CalculateLinearRegression(List<(decimal x, decimal y)> points, out decimal slope, out decimal intercept)
-	{
-		int n = points.Count;
-		decimal sumX = 0;
-		decimal sumY = 0;
-		decimal sumXY = 0;
-		decimal sumX2 = 0;
-
-		foreach (var point in points)
-		{
-			sumX += point.x;
-			sumY += point.y;
-			sumXY += point.x * point.y;
-			sumX2 += point.x * point.x;
-		}
-
-		decimal denominator = n * sumX2 - sumX * sumX;
-		
-		// Avoid division by zero
-		if (denominator == 0)
-		{
-			slope = 0;
-			intercept = (n > 0) ? sumY / n : 0;
+			_cooldown--;
 			return;
 		}
 
-		slope = (n * sumXY - sumX * sumY) / denominator;
-		intercept = (sumY - slope * sumX) / n;
-	}
+		// Calculate linear regression for support (lows) and resistance (highs)
+		var supportLevel = GetLinRegValue(_lows);
+		var resistanceLevel = GetLinRegValue(_highs);
+		var buffer = (resistanceLevel - supportLevel) * 0.05m;
 
-	private void CheckForTrendlineBounces(ICandleMessage candle, decimal maPrice)
-	{
-		if (_recentCandles.Count < 3)
+		if (buffer <= 0)
 			return;
 
-		// Calculate the x-coordinate for the current candle
-		decimal x = _recentCandles.Count - 1;
-		
-		// Calculate trendline values at current x
-		decimal supportValue = _supportSlope * x + _supportIntercept;
-		decimal resistanceValue = _resistanceSlope * x + _resistanceIntercept;
-		
-		LogInfo($"Current candle: Close={candle.ClosePrice}, Support={supportValue}, Resistance={resistanceValue}");
-		
-		// Determine if price is near a trendline
-		decimal bounceThreshold = candle.ClosePrice * (BounceThresholdPercent / 100);
-		
-		bool nearSupport = Math.Abs(candle.LowPrice - supportValue) <= bounceThreshold;
-		bool nearResistance = Math.Abs(candle.HighPrice - resistanceValue) <= bounceThreshold;
-		
-		// Check for bullish bounce off support
-		if (nearSupport && candle.ClosePrice > candle.OpenPrice && candle.ClosePrice > supportValue && Position <= 0)
+		var isBullish = candle.ClosePrice > candle.OpenPrice;
+		var isBearish = candle.ClosePrice < candle.OpenPrice;
+
+		// Bounce off support (buy)
+		if (Position == 0 && candle.LowPrice <= supportLevel + buffer && isBullish)
 		{
-			// Bullish candle bouncing off support - go long
-			if (maPrice < candle.ClosePrice)  // Only go long if price is above MA (uptrend)
-			{
-				CancelActiveOrders();
-				BuyMarket(Volume + Math.Abs(Position));
-				LogInfo($"Long entry at {candle.ClosePrice} on support bounce at {supportValue}");
-			}
+			BuyMarket();
+			_cooldown = CooldownBars;
 		}
-		// Check for bearish bounce off resistance
-		else if (nearResistance && candle.ClosePrice < candle.OpenPrice && candle.ClosePrice < resistanceValue && Position >= 0)
+		// Bounce off resistance (sell)
+		else if (Position == 0 && candle.HighPrice >= resistanceLevel - buffer && isBearish)
 		{
-			// Bearish candle bouncing off resistance - go short
-			if (maPrice > candle.ClosePrice)  // Only go short if price is below MA (downtrend)
-			{
-				CancelActiveOrders();
-				SellMarket(Volume + Math.Abs(Position));
-				LogInfo($"Short entry at {candle.ClosePrice} on resistance bounce at {resistanceValue}");
-			}
+			SellMarket();
+			_cooldown = CooldownBars;
+		}
+		// Exit using SMA
+		else if (Position > 0 && candle.ClosePrice < smaValue)
+		{
+			SellMarket();
+			_cooldown = CooldownBars;
+		}
+		else if (Position < 0 && candle.ClosePrice > smaValue)
+		{
+			BuyMarket();
+			_cooldown = CooldownBars;
+		}
+	}
+
+	private static decimal GetLinRegValue(List<decimal> values)
+	{
+		var n = values.Count;
+		if (n == 0) return 0;
+
+		decimal sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
+		for (int i = 0; i < n; i++)
+		{
+			sumX += i;
+			sumY += values[i];
+			sumXY += i * values[i];
+			sumX2 += i * i;
 		}
 
-		// Exit logic based on MA crossover
-		if (Position > 0 && candle.ClosePrice < maPrice)
-		{
-			SellMarket(Math.Abs(Position));
-			LogInfo($"Long exit at {candle.ClosePrice} (price below MA {maPrice})");
-		}
-		else if (Position < 0 && candle.ClosePrice > maPrice)
-		{
-			BuyMarket(Math.Abs(Position));
-			LogInfo($"Short exit at {candle.ClosePrice} (price above MA {maPrice})");
-		}
+		var denom = n * sumX2 - sumX * sumX;
+		if (denom == 0) return sumY / n;
+
+		var slope = (n * sumXY - sumX * sumY) / denom;
+		var intercept = (sumY - slope * sumX) / n;
+
+		return slope * (n - 1) + intercept;
 	}
 }

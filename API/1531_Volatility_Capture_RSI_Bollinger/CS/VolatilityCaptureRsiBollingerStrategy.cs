@@ -29,6 +29,7 @@ public class VolatilityCaptureRsiBollingerStrategy : Strategy
 
 	private decimal _prevPrice;
 	private decimal _prevBand;
+	private int _cooldown;
 
 	public int SmaLength { get => _smaLength.Value; set => _smaLength.Value = value; }
 	public decimal BbWidth { get => _bbWidth.Value; set => _bbWidth.Value = value; }
@@ -71,6 +72,7 @@ public class VolatilityCaptureRsiBollingerStrategy : Strategy
 		base.OnReseted();
 		_prevPrice = 0;
 		_prevBand = 0;
+		_cooldown = 0;
 	}
 
 	protected override void OnStarted2(DateTime time)
@@ -102,48 +104,26 @@ public class VolatilityCaptureRsiBollingerStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var upper = smaVal + BbWidth * stdVal;
-		var lower = smaVal - BbWidth * stdVal;
-		var price = (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m;
-
-		// Trailing band logic
-		decimal band;
-		if (candle.ClosePrice > _prevBand)
-			band = Math.Max(_prevBand, lower);
-		else if (candle.ClosePrice < _prevBand)
-			band = Math.Min(_prevBand, upper);
-		else
-			band = _prevBand;
-
-		if (_prevPrice == 0)
+		if (_cooldown > 0)
 		{
-			_prevPrice = price;
-			_prevBand = lower;
+			_cooldown--;
 			return;
 		}
 
-		// Crossover signals
-		var longSignal = _prevPrice <= _prevBand && price > _prevBand && rsiVal > RsiBuy;
-		var shortSignal = _prevPrice >= _prevBand && price < _prevBand && rsiVal < RsiSell;
+		var lower = smaVal - BbWidth * stdVal;
+		var upper = smaVal + BbWidth * stdVal;
 
-		if (longSignal && Position <= 0)
+		// Buy when price near lower band (oversold)
+		if (candle.ClosePrice <= lower && rsiVal < RsiSell && Position <= 0)
 		{
 			BuyMarket();
-			band = lower;
+			_cooldown = 50;
 		}
-		else if (shortSignal && Position >= 0)
+		// Sell when price near upper band (overbought)
+		else if (candle.ClosePrice >= upper && rsiVal > RsiBuy && Position >= 0)
 		{
 			SellMarket();
-			band = upper;
+			_cooldown = 50;
 		}
-
-		// Exit on band cross
-		if (Position > 0 && price < band)
-			SellMarket();
-		else if (Position < 0 && price > band)
-			BuyMarket();
-
-		_prevPrice = price;
-		_prevBand = band;
 	}
 }

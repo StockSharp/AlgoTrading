@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,169 +11,95 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Bitcoin leverage sentiment strategy using Z-Score of longs vs shorts.
+/// Bitcoin leverage sentiment strategy using EMA crossover for trend detection.
+/// Enters long on golden cross, short on death cross.
 /// </summary>
 public class BitcoinLeverageSentimentStrategy : Strategy
 {
-	private readonly StrategyParam<Security> _longsSecurity;
-	private readonly StrategyParam<Security> _shortsSecurity;
-	private readonly StrategyParam<Sides?> _tradeDirection;
-	private readonly StrategyParam<int> _zScoreLength;
-	private readonly StrategyParam<decimal> _thresholdLongEntry;
-	private readonly StrategyParam<decimal> _thresholdLongExit;
-	private readonly StrategyParam<decimal> _thresholdShortEntry;
-	private readonly StrategyParam<decimal> _thresholdShortExit;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	
-	private SimpleMovingAverage _sma;
-	private StandardDeviation _stdDev;
-	private decimal _lastLong;
-	private decimal _lastShort;
-	private decimal _prevZ;
-	
-	public Security LongsSecurity { get => _longsSecurity.Value; set => _longsSecurity.Value = value; }
-	public Security ShortsSecurity { get => _shortsSecurity.Value; set => _shortsSecurity.Value = value; }
-	public Sides? Direction { get => _tradeDirection.Value; set => _tradeDirection.Value = value; }
-	public int ZScoreLength { get => _zScoreLength.Value; set => _zScoreLength.Value = value; }
-	public decimal LongEntryThreshold { get => _thresholdLongEntry.Value; set => _thresholdLongEntry.Value = value; }
-	public decimal LongExitThreshold { get => _thresholdLongExit.Value; set => _thresholdLongExit.Value = value; }
-	public decimal ShortEntryThreshold { get => _thresholdShortEntry.Value; set => _thresholdShortEntry.Value = value; }
-	public decimal ShortExitThreshold { get => _thresholdShortExit.Value; set => _thresholdShortExit.Value = value; }
+
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
+
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
-	
+
 	public BitcoinLeverageSentimentStrategy()
 	{
-		_longsSecurity = Param<Security>(nameof(LongsSecurity), null)
-		.SetDisplay("BTC Longs", "Security with BTC longs data", "Data");
-		
-		_shortsSecurity = Param<Security>(nameof(ShortsSecurity), null)
-		.SetDisplay("BTC Shorts", "Security with BTC shorts data", "Data");
-		
-		_tradeDirection = Param(nameof(Direction), (Sides?)null)
-		.SetDisplay("Trade Direction", "Allowed trade direction", "General");
-		
-		_zScoreLength = Param(nameof(ZScoreLength), 252)
-		.SetGreaterThanZero()
-		.SetDisplay("Z-Score Length", "Period for Z-Score calculation", "General");
-		
-		_thresholdLongEntry = Param(nameof(LongEntryThreshold), 1m)
-		.SetDisplay("Long Entry", "Z-Score threshold for long entry", "Thresholds");
-		
-		_thresholdLongExit = Param(nameof(LongExitThreshold), -1.618m)
-		.SetDisplay("Long Exit", "Z-Score threshold for long exit", "Thresholds");
-		
-		_thresholdShortEntry = Param(nameof(ShortEntryThreshold), -1.618m)
-		.SetDisplay("Short Entry", "Z-Score threshold for short entry", "Thresholds");
-		
-		_thresholdShortExit = Param(nameof(ShortExitThreshold), 1m)
-		.SetDisplay("Short Exit", "Z-Score threshold for short exit", "Thresholds");
-		
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-		.SetDisplay("Candle Type", "Time frame for longs/shorts data", "Data");
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
-	
+
+	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		if (LongsSecurity == null || ShortsSecurity == null)
-		throw new InvalidOperationException("Both longs and shorts securities must be set.");
-		
-		return [(Security, CandleType), (LongsSecurity, CandleType), (ShortsSecurity, CandleType)];
+		return [(Security, CandleType)];
 	}
-	
+
+	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_lastLong = 0m;
-		_lastShort = 0m;
-		_prevZ = 0m;
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
-	
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
-		if (LongsSecurity == null || ShortsSecurity == null)
-		throw new InvalidOperationException("Both longs and shorts securities must be set.");
-		
 		base.OnStarted2(time);
-		
-		_sma = new SMA { Length = ZScoreLength };
-		_stdDev = new StandardDeviation { Length = ZScoreLength };
-		
-		SubscribeCandles(CandleType, true, LongsSecurity)
-		.Bind(ProcessLongs)
-		.Start();
-		
-		SubscribeCandles(CandleType, true, ShortsSecurity)
-		.Bind(ProcessShorts)
-		.Start();
-		
-		var mainSub = SubscribeCandles(CandleType);
-		mainSub.Start();
-		
+
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
+
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(fastEma, slowEma, ProcessCandle)
+			.Start();
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
-			DrawCandles(area, mainSub);
+			DrawCandles(area, subscription);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
-	
-	private void ProcessLongs(ICandleMessage candle)
+
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
-		
-		_lastLong = candle.ClosePrice;
-		ProcessRatio(candle);
-	}
-	
-	private void ProcessShorts(ICandleMessage candle)
-	{
-		if (candle.State != CandleStates.Finished)
-		return;
-		
-		_lastShort = candle.ClosePrice;
-		ProcessRatio(candle);
-	}
-	
-	private void ProcessRatio(ICandleMessage candle)
-	{
-		if (_lastLong <= 0m || _lastShort <= 0m)
-		return;
-		
-		var ratio = _lastLong / (_lastLong + _lastShort);
-		
-		var mean = _sma.Process(new DecimalIndicatorValue(_sma, ratio, candle.ServerTime)).ToDecimal();
-		var std = _stdDev.Process(new DecimalIndicatorValue(_stdDev, ratio, candle.ServerTime)).ToDecimal();
-		
-		if (!_sma.IsFormed || !_stdDev.IsFormed || std == 0m)
-		return;
-		
-		var z = (ratio - mean) / std;
-		
-		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-			_prevZ = z;
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
 			return;
 		}
-		
-		if (Direction != Sides.Sell && Position <= 0 && _prevZ < LongEntryThreshold && z >= LongEntryThreshold)
+
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
 		{
 			BuyMarket();
 		}
-		else if (Direction != Sides.Sell && Position > 0 && _prevZ > LongExitThreshold && z <= LongExitThreshold)
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
 		{
 			SellMarket();
 		}
-		
-		if (Direction != Sides.Buy && Position >= 0 && _prevZ > ShortEntryThreshold && z <= ShortEntryThreshold)
-		{
-			SellMarket();
-		}
-		else if (Direction != Sides.Buy && Position < 0 && _prevZ < ShortExitThreshold && z >= ShortExitThreshold)
-		{
-			BuyMarket();
-		}
-		
-		_prevZ = z;
+
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

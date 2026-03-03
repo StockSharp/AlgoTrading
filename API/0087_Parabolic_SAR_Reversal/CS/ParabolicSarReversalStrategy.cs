@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,38 +11,41 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Parabolic SAR Reversal Strategy.
+/// Parabolic SAR Reversal strategy.
 /// Enters long when SAR switches from above to below price.
 /// Enters short when SAR switches from below to above price.
+/// Uses cooldown to control trade frequency.
 /// </summary>
 public class ParabolicSarReversalStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _initialAcceleration;
-	private readonly StrategyParam<decimal> _maxAcceleration;
+	private readonly StrategyParam<decimal> _acceleration;
+	private readonly StrategyParam<decimal> _accelerationMax;
 	private readonly StrategyParam<DataType> _candleType;
-	
-	private bool? _prevIsSarAbovePrice;
+	private readonly StrategyParam<int> _cooldownBars;
+
+	private bool? _prevSarAbove;
+	private int _cooldown;
 
 	/// <summary>
-	/// Initial acceleration factor for Parabolic SAR.
+	/// Initial acceleration.
 	/// </summary>
-	public decimal InitialAcceleration
+	public decimal Acceleration
 	{
-		get => _initialAcceleration.Value;
-		set => _initialAcceleration.Value = value;
+		get => _acceleration.Value;
+		set => _acceleration.Value = value;
 	}
 
 	/// <summary>
-	/// Maximum acceleration factor for Parabolic SAR.
+	/// Max acceleration.
 	/// </summary>
-	public decimal MaxAcceleration
+	public decimal AccelerationMax
 	{
-		get => _maxAcceleration.Value;
-		set => _maxAcceleration.Value = value;
+		get => _accelerationMax.Value;
+		set => _accelerationMax.Value = value;
 	}
 
 	/// <summary>
-	/// Type of candles to use.
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -54,22 +54,33 @@ public class ParabolicSarReversalStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initializes a new instance of the <see cref="ParabolicSarReversalStrategy"/>.
+	/// Cooldown bars.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
+	/// Constructor.
 	/// </summary>
 	public ParabolicSarReversalStrategy()
 	{
-		_initialAcceleration = Param(nameof(InitialAcceleration), 0.02m)
-			.SetDisplay("Initial Acceleration", "Initial acceleration factor for Parabolic SAR", "SAR Settings")
+		_acceleration = Param(nameof(Acceleration), 0.02m)
 			.SetRange(0.01m, 0.05m)
-			;
-			
-		_maxAcceleration = Param(nameof(MaxAcceleration), 0.2m)
-			.SetDisplay("Max Acceleration", "Maximum acceleration factor for Parabolic SAR", "SAR Settings")
+			.SetDisplay("Acceleration", "Initial acceleration factor", "SAR");
+
+		_accelerationMax = Param(nameof(AccelerationMax), 0.2m)
 			.SetRange(0.1m, 0.3m)
-			;
-			
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+			.SetDisplay("Max Acceleration", "Maximum acceleration factor", "SAR");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
+
+		_cooldownBars = Param(nameof(CooldownBars), 500)
+			.SetRange(1, 1000)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
 	}
 
 	/// <inheritdoc />
@@ -82,7 +93,8 @@ public class ParabolicSarReversalStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevIsSarAbovePrice = null;
+		_prevSarAbove = null;
+		_cooldown = default;
 	}
 
 	/// <inheritdoc />
@@ -90,75 +102,78 @@ public class ParabolicSarReversalStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
+		_prevSarAbove = null;
+		_cooldown = 0;
 
-		// Create Parabolic SAR indicator
-		var parabolicSar = new ParabolicSar
+		var sar = new ParabolicSar
 		{
-			Acceleration = InitialAcceleration,
-			AccelerationMax = MaxAcceleration
+			Acceleration = Acceleration,
+			AccelerationMax = AccelerationMax
 		};
 
-		// Create subscription
 		var subscription = SubscribeCandles(CandleType);
-		
-		// Bind indicator and process candles
 		subscription
-			.Bind(parabolicSar, ProcessCandle)
+			.Bind(sar, ProcessCandle)
 			.Start();
-			
-		// Setup chart visualization
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, parabolicSar);
+			DrawIndicator(area, sar);
 			DrawOwnTrades(area);
 		}
 	}
 
-	/// <summary>
-	/// Process candle with Parabolic SAR value.
-	/// </summary>
-	/// <param name="candle">Candle.</param>
-	/// <param name="sarValue">Parabolic SAR value.</param>
 	private void ProcessCandle(ICandleMessage candle, decimal sarValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// Determine if SAR is above or below price
-		bool isSarAbovePrice = sarValue > candle.ClosePrice;
-		
-		// If this is the first calculation, just store the state
-		if (_prevIsSarAbovePrice == null)
+		var isSarAbove = sarValue > candle.ClosePrice;
+
+		if (_prevSarAbove == null)
 		{
-			_prevIsSarAbovePrice = isSarAbovePrice;
+			_prevSarAbove = isSarAbove;
 			return;
 		}
-		
-		// Check for SAR reversal
-		bool sarSwitchedBelow = _prevIsSarAbovePrice.Value && !isSarAbovePrice;
-		bool sarSwitchedAbove = !_prevIsSarAbovePrice.Value && isSarAbovePrice;
-		
-		// Long entry: SAR switched from above to below price
-		if (sarSwitchedBelow && Position <= 0)
+
+		if (_cooldown > 0)
 		{
-			BuyMarket(Volume + Math.Abs(Position));
-			LogInfo($"Long entry: SAR ({sarValue}) switched below price ({candle.ClosePrice})");
+			_cooldown--;
+			_prevSarAbove = isSarAbove;
+			return;
 		}
-		// Short entry: SAR switched from below to above price
-		else if (sarSwitchedAbove && Position >= 0)
+
+		// SAR switched from above to below = bullish signal
+		var sarSwitchedBelow = _prevSarAbove == true && !isSarAbove;
+		// SAR switched from below to above = bearish signal
+		var sarSwitchedAbove = _prevSarAbove == false && isSarAbove;
+
+		if (Position == 0 && sarSwitchedBelow)
 		{
-			SellMarket(Volume + Math.Abs(Position));
-			LogInfo($"Short entry: SAR ({sarValue}) switched above price ({candle.ClosePrice})");
+			BuyMarket();
+			_cooldown = CooldownBars;
 		}
-		
-		// Update the previous state
-		_prevIsSarAbovePrice = isSarAbovePrice;
+		else if (Position == 0 && sarSwitchedAbove)
+		{
+			SellMarket();
+			_cooldown = CooldownBars;
+		}
+		else if (Position > 0 && sarSwitchedAbove)
+		{
+			SellMarket();
+			_cooldown = CooldownBars;
+		}
+		else if (Position < 0 && sarSwitchedBelow)
+		{
+			BuyMarket();
+			_cooldown = CooldownBars;
+		}
+
+		_prevSarAbove = isSarAbove;
 	}
 }

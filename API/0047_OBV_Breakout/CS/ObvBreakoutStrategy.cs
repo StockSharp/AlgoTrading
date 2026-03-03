@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,41 +11,29 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// On-Balance Volume (OBV) Breakout strategy
-/// Long entry: OBV breaks above its highest level over N periods
-/// Short entry: OBV breaks below its lowest level over N periods
-/// Exit when OBV crosses below/above its moving average
+/// On-Balance Volume (OBV) Breakout strategy.
+/// Enters when OBV crosses its moving average indicating volume confirmation of trend.
 /// </summary>
-public class OBVBreakoutStrategy : Strategy
+public class ObvBreakoutStrategy : Strategy
 {
-	private readonly StrategyParam<int> _lookbackPeriod;
-	private readonly StrategyParam<int> _obvMAPeriod;
+	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	
-	private decimal? _highestOBV;
-	private decimal? _lowestOBV;
-	private bool _isFirstCandle;
+	private readonly StrategyParam<int> _cooldownBars;
+
+	private decimal _prevObv;
+	private int _cooldown;
 
 	/// <summary>
-	/// Lookback Period for OBV highest/lowest
+	/// MA Period for OBV average.
 	/// </summary>
-	public int LookbackPeriod
+	public int MAPeriod
 	{
-		get => _lookbackPeriod.Value;
-		set => _lookbackPeriod.Value = value;
+		get => _maPeriod.Value;
+		set => _maPeriod.Value = value;
 	}
 
 	/// <summary>
-	/// OBV MA Period
-	/// </summary>
-	public int OBVMAPeriod
-	{
-		get => _obvMAPeriod.Value;
-		set => _obvMAPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type for strategy calculation
+	/// Candle type for strategy calculation.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -57,24 +42,29 @@ public class OBVBreakoutStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initialize <see cref="OBVBreakoutStrategy"/>.
+	/// Cooldown bars between trades.
 	/// </summary>
-	public OBVBreakoutStrategy()
+	public int CooldownBars
 	{
-		_lookbackPeriod = Param(nameof(LookbackPeriod), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("Lookback Period", "Period for calculating OBV highest/lowest levels", "Strategy Parameters")
-			
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
+	/// Initialize the OBV Breakout strategy.
+	/// </summary>
+	public ObvBreakoutStrategy()
+	{
+		_maPeriod = Param(nameof(MAPeriod), 20)
+			.SetDisplay("MA Period", "Period for OBV moving average", "Indicators")
 			.SetOptimize(10, 50, 10);
 
-		_obvMAPeriod = Param(nameof(OBVMAPeriod), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("OBV MA Period", "Period for OBV Moving Average calculation", "Strategy Parameters")
-			
-			.SetOptimize(10, 30, 5);
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles for strategy calculation", "Strategy Parameters");
+		_cooldownBars = Param(nameof(CooldownBars), 500)
+			.SetRange(1, 1000)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
 	}
 
 	/// <inheritdoc />
@@ -87,10 +77,8 @@ public class OBVBreakoutStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_highestOBV = null;
-		_lowestOBV = null;
-		_isFirstCandle = true;
-
+		_prevObv = default;
+		_cooldown = default;
 	}
 
 	/// <inheritdoc />
@@ -98,101 +86,73 @@ public class OBVBreakoutStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Create indicators
-		var obv = new OnBalanceVolume();
-		
-		// Create a custom moving average for OBV
-		var obvMA = new SMA { Length = OBVMAPeriod };
-		
-		// Create highest and lowest indicators for OBV values
-		var highest = new Highest { Length = LookbackPeriod };
-		var lowest = new Lowest { Length = LookbackPeriod };
+		_prevObv = 0;
+		_cooldown = 0;
 
-		// Create subscription and bind indicators
+		var obv = new OnBalanceVolume();
+		var sma = new SimpleMovingAverage { Length = MAPeriod };
+
 		var subscription = SubscribeCandles(CandleType);
-		
-		// We need to process OBV first, then calculate MA and highest/lowest from it
 		subscription
-			.BindEx(obv, (candle, obvValue) => {
-				// Skip unfinished candles
-				if (candle.State != CandleStates.Finished)
-					return;
-				
-				// Process the OBV value through other indicators
-				var obvMAValue = obvMA.Process(obvValue).ToDecimal();
-				var obvVal = obvValue.ToDecimal();
-				
-				if (!_isFirstCandle)
-				{
-					var highestValue = highest.IsFormed && _highestOBV.HasValue ? highest.Process(obvValue).ToDecimal() : (_highestOBV.HasValue ? Math.Max(_highestOBV.Value, obvVal) : obvVal);
-					var lowestValue = lowest.IsFormed && _lowestOBV.HasValue ? lowest.Process(obvValue).ToDecimal() : (_lowestOBV.HasValue ? Math.Min(_lowestOBV.Value, obvVal) : obvVal);
-					
-					ProcessCandle(candle, obvVal, obvMAValue, highestValue, lowestValue);
-					
-					if (!highest.IsFormed)
-						_highestOBV = highestValue;
-					if (!lowest.IsFormed)
-						_lowestOBV = lowestValue;
-				}
-				else
-				{
-					_highestOBV = obvVal;
-					_lowestOBV = obvVal;
-					_isFirstCandle = false;
-				}
-			})
+			.Bind(obv, sma, ProcessCandle)
 			.Start();
 
-		// Configure protection
-		StartProtection(
-			takeProfit: new Unit(3, UnitTypes.Percent),
-			stopLoss: new Unit(2, UnitTypes.Percent)
-		);
-
-		// Setup chart visualization
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, obv);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal obvValue, decimal obvMAValue, decimal highestValue, decimal lowestValue)
+	private void ProcessCandle(ICandleMessage candle, decimal obvValue, decimal smaValue)
 	{
-		// Check if strategy is ready to trade
+		if (candle.State != CandleStates.Finished)
+			return;
+
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
-		
-		// Log current values
-		LogInfo($"Candle Close: {candle.ClosePrice}, OBV: {obvValue}, OBV MA: {obvMAValue}");
-		LogInfo($"Highest OBV: {highestValue}, Lowest OBV: {lowestValue}");
 
-		// Trading logic:
-		// Long: OBV breaks above highest level
-		if (_highestOBV.HasValue && obvValue > highestValue && obvValue > _highestOBV.Value && Position <= 0)
+		if (_prevObv == 0)
 		{
-			LogInfo($"Buy Signal: OBV ({obvValue}) breaking above highest level ({highestValue})");
-			BuyMarket(Volume + Math.Abs(Position));
+			_prevObv = obvValue;
+			return;
 		}
-		// Short: OBV breaks below lowest level
-		else if (_lowestOBV.HasValue && obvValue < lowestValue && obvValue < _lowestOBV.Value && Position >= 0)
+
+		if (_cooldown > 0)
 		{
-			LogInfo($"Sell Signal: OBV ({obvValue}) breaking below lowest level ({lowestValue})");
-			SellMarket(Volume + Math.Abs(Position));
+			_cooldown--;
+			_prevObv = obvValue;
+			return;
 		}
-		
-		// Exit logic: OBV crosses below/above its moving average
-		if (Position > 0 && obvValue < obvMAValue)
+
+		// Use OBV direction + price vs SMA for signals
+		var obvRising = obvValue > _prevObv;
+
+		if (Position == 0)
 		{
-			LogInfo($"Exit Long: OBV ({obvValue}) < OBV MA ({obvMAValue})");
-			SellMarket(Math.Abs(Position));
+			if (obvRising && candle.ClosePrice > smaValue)
+			{
+				BuyMarket();
+				_cooldown = CooldownBars;
+			}
+			else if (!obvRising && candle.ClosePrice < smaValue)
+			{
+				SellMarket();
+				_cooldown = CooldownBars;
+			}
 		}
-		else if (Position < 0 && obvValue > obvMAValue)
+		else if (Position > 0 && !obvRising)
 		{
-			LogInfo($"Exit Short: OBV ({obvValue}) > OBV MA ({obvMAValue})");
-			BuyMarket(Math.Abs(Position));
+			SellMarket();
+			_cooldown = CooldownBars;
 		}
+		else if (Position < 0 && obvRising)
+		{
+			BuyMarket();
+			_cooldown = CooldownBars;
+		}
+
+		_prevObv = obvValue;
 	}
 }

@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -13,127 +10,96 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
+/// <summary>
+/// CryptoVolatilityBitcoinCorrelationStrategy using EMA crossover for trend timing.
+/// Enters long on golden cross, short on death cross.
+/// </summary>
 public class CryptoVolatilityBitcoinCorrelationStrategy : Strategy
 {
-	private readonly StrategyParam<int> _vixFixLength;
-	private readonly StrategyParam<int> _emaLength;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<Security> _volatilitySecurity;
 
-	private decimal _prevVixFix;
-	private decimal _currentBvol;
-	private decimal _prevBvol;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	public int VixFixLength { get => _vixFixLength.Value; set => _vixFixLength.Value = value; }
-	public int EmaLength { get => _emaLength.Value; set => _emaLength.Value = value; }
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
-	public Security VolatilitySecurity { get => _volatilitySecurity.Value; set => _volatilitySecurity.Value = value; }
 
 	public CryptoVolatilityBitcoinCorrelationStrategy()
 	{
-		_vixFixLength = Param(nameof(VixFixLength), 22)
-		.SetDisplay("VIX Fix Length", "Length for VIX Fix calculation", "Parameters");
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
 
-		_emaLength = Param(nameof(EmaLength), 50)
-		.SetDisplay("EMA Length", "EMA period", "Parameters");
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-		.SetDisplay("Candle Type", "Timeframe for candles", "General");
-
-		_volatilitySecurity = Param<Security>(nameof(VolatilitySecurity))
-		.SetDisplay("Volatility Security", "Security for volatility index", "Data")
-		.SetRequired();
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
+	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return
-		[
-		(Security, CandleType),
-		(VolatilitySecurity, CandleType)
-		];
+		return [(Security, CandleType)];
 	}
 
+	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevVixFix = 0m;
-		_currentBvol = 0m;
-		_prevBvol = 0m;
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		var highestClose = new Highest { Length = VixFixLength };
-		var ema = new EMA { Length = EmaLength };
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 
-		var mainSubscription = SubscribeCandles(CandleType);
-		mainSubscription
-		.Bind(highestClose, ema, ProcessMainCandle)
-		.Start();
-
-		var bvolSubscription = SubscribeCandles(CandleType, security: VolatilitySecurity);
-		bvolSubscription
-		.Bind(ProcessVolatilityCandle)
-		.Start();
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(fastEma, slowEma, ProcessCandle)
+			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
-			DrawCandles(area, mainSubscription);
-			DrawIndicator(area, ema);
+			DrawCandles(area, subscription);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessVolatilityCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
-		if (_currentBvol == 0m)
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-			_currentBvol = candle.ClosePrice;
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
 			return;
 		}
 
-		_prevBvol = _currentBvol;
-		_currentBvol = candle.ClosePrice;
-	}
-
-	private void ProcessMainCandle(ICandleMessage candle, decimal highestClose, decimal emaValue)
-	{
-		if (candle.State != CandleStates.Finished)
-		return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
-
-		if (_prevBvol == 0m || highestClose == 0m)
-		return;
-
-		var vixFix = (highestClose - candle.LowPrice) / highestClose * 100m;
-
-		if (_prevVixFix == 0m)
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
 		{
-			_prevVixFix = vixFix;
-			return;
+			BuyMarket();
+		}
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+		{
+			SellMarket();
 		}
 
-		var longCondition = vixFix > _prevVixFix && _currentBvol > _prevBvol && candle.ClosePrice > emaValue;
-		var exitCondition = candle.ClosePrice < emaValue;
-
-		if (Position <= 0 && longCondition)
-		{
-			CancelActiveOrders();
-			BuyMarket(Volume + Math.Abs(Position));
-		}
-		else if (Position > 0 && exitCondition)
-		{
-			SellMarket(Position);
-		}
-
-		_prevVixFix = vixFix;
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

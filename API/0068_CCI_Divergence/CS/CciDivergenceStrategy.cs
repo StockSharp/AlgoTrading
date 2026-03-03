@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,28 +11,23 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// CCI Divergence strategy that looks for divergences between price and CCI
-/// as potential reversal signals.
+/// CCI Divergence strategy.
+/// Detects divergences between price and CCI for reversal signals.
+/// Bullish: price falling but CCI rising.
+/// Bearish: price rising but CCI falling.
 /// </summary>
 public class CciDivergenceStrategy : Strategy
 {
 	private readonly StrategyParam<int> _cciPeriod;
-	private readonly StrategyParam<int> _divergencePeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<decimal> _stopLossPercent;
-	private readonly StrategyParam<int> _overboughtLevel;
-	private readonly StrategyParam<int> _oversoldLevel;
+	private readonly StrategyParam<int> _cooldownBars;
 
-	private decimal? _previousPrice;
-	private decimal? _previousCci;
-	private decimal? _currentPrice;
-	private decimal? _currentCci;
-	private int _barsSinceDivergence;
-	private bool _bullishDivergence;
-	private bool _bearishDivergence;
+	private decimal _prevPrice;
+	private decimal _prevCci;
+	private int _cooldown;
 
 	/// <summary>
-	/// CCI calculation period.
+	/// CCI Period.
 	/// </summary>
 	public int CciPeriod
 	{
@@ -44,16 +36,7 @@ public class CciDivergenceStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Number of bars to look back for divergence.
-	/// </summary>
-	public int DivergencePeriod
-	{
-		get => _divergencePeriod.Value;
-		set => _divergencePeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Type of candles to use.
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -62,64 +45,29 @@ public class CciDivergenceStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stop-loss percentage from entry price.
+	/// Cooldown bars.
 	/// </summary>
-	public decimal StopLossPercent
+	public int CooldownBars
 	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	/// <summary>
-	/// CCI overbought level.
-	/// </summary>
-	public int OverboughtLevel
-	{
-		get => _overboughtLevel.Value;
-		set => _overboughtLevel.Value = value;
-	}
-
-	/// <summary>
-	/// CCI oversold level.
-	/// </summary>
-	public int OversoldLevel
-	{
-		get => _oversoldLevel.Value;
-		set => _oversoldLevel.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="CciDivergenceStrategy"/>.
+	/// Constructor.
 	/// </summary>
 	public CciDivergenceStrategy()
 	{
-		_cciPeriod = Param(nameof(CciPeriod), 20)
-			.SetRange(10, 30)
-			.SetDisplay("CCI Period", "Period for CCI calculation", "Indicator Parameters")
-			;
+		_cciPeriod = Param(nameof(CciPeriod), 14)
+			.SetRange(5, 30)
+			.SetDisplay("CCI Period", "Period for CCI", "Indicators");
 
-		_divergencePeriod = Param(nameof(DivergencePeriod), 5)
-			.SetRange(3, 10)
-			.SetDisplay("Divergence Period", "Number of bars to look back for divergence", "Signal Parameters")
-			;
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
-		_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
-			.SetRange(0.5m, 5.0m)
-			.SetDisplay("Stop Loss %", "Percentage-based stop loss from entry", "Risk Management")
-			;
-
-		_overboughtLevel = Param(nameof(OverboughtLevel), 100)
-			.SetRange(80, 200)
-			.SetDisplay("Overbought Level", "CCI level considered overbought", "Signal Parameters")
-			;
-
-		_oversoldLevel = Param(nameof(OversoldLevel), -100)
-			.SetRange(-200, -80)
-			.SetDisplay("Oversold Level", "CCI level considered oversold", "Signal Parameters")
-			;
+		_cooldownBars = Param(nameof(CooldownBars), 500)
+			.SetRange(1, 1000)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
 	}
 
 	/// <inheritdoc />
@@ -132,14 +80,9 @@ public class CciDivergenceStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_previousPrice = null;
-		_previousCci = null;
-		_currentPrice = null;
-		_currentCci = null;
-		_barsSinceDivergence = 0;
-		_bullishDivergence = false;
-		_bearishDivergence = false;
+		_prevPrice = default;
+		_prevCci = default;
+		_cooldown = default;
 	}
 
 	/// <inheritdoc />
@@ -147,28 +90,17 @@ public class CciDivergenceStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-// Create CCI indicator
-		var cci = new CommodityChannelIndex
-		{
-			Length = CciPeriod
-		};
+		_prevPrice = 0;
+		_prevCci = 0;
+		_cooldown = 0;
 
-		// Create candle subscription
+		var cci = new CommodityChannelIndex { Length = CciPeriod };
+
 		var subscription = SubscribeCandles(CandleType);
-
-		// Bind CCI to candles
 		subscription
 			.Bind(cci, ProcessCandle)
 			.Start();
 
-		// Enable position protection
-		StartProtection(
-			new Unit(0, UnitTypes.Absolute), // No take profit (managed by exit signals)
-			new Unit(StopLossPercent, UnitTypes.Percent), // Stop loss at defined percentage
-			false // No trailing stop
-		);
-
-		// Setup chart visualization if available
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -180,117 +112,52 @@ public class CciDivergenceStrategy : Strategy
 
 	private void ProcessCandle(ICandleMessage candle, decimal cciValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// Store previous values before updating
-		if (_currentPrice.HasValue && _currentCci.HasValue)
+		if (_prevPrice == 0)
 		{
-			_previousPrice = _currentPrice;
-			_previousCci = _currentCci;
+			_prevPrice = candle.ClosePrice;
+			_prevCci = cciValue;
+			return;
 		}
 
-		// Update current values
-		_currentPrice = candle.ClosePrice;
-		_currentCci = cciValue;
-
-		LogInfo($"Candle: {candle.OpenTime}, Close: {candle.ClosePrice}, CCI: {cciValue:F2}");
-
-		// Look for divergences once we have enough data
-		if (_previousPrice.HasValue && _previousCci.HasValue && _currentPrice.HasValue && _currentCci.HasValue)
+		if (_cooldown > 0)
 		{
-			CheckForDivergences();
+			_cooldown--;
+			_prevPrice = candle.ClosePrice;
+			_prevCci = cciValue;
+			return;
 		}
 
-		// Process signals based on detected divergences
-		ProcessDivergenceSignals(candle, cciValue);
-	}
+		var bullishDiv = candle.ClosePrice < _prevPrice && cciValue > _prevCci;
+		var bearishDiv = candle.ClosePrice > _prevPrice && cciValue < _prevCci;
 
-	private void CheckForDivergences()
-	{
-		// Check for bullish divergence (lower price lows but higher CCI lows)
-		if (_currentPrice < _previousPrice && _currentCci > _previousCci)
+		if (Position == 0 && bullishDiv && cciValue > -100)
 		{
-			_bullishDivergence = true;
-			_bearishDivergence = false;
-			_barsSinceDivergence = 0;
-			LogInfo($"Bullish Divergence Detected: Price {_previousPrice}->{_currentPrice}, CCI {_previousCci}->{_currentCci}");
+			BuyMarket();
+			_cooldown = CooldownBars;
 		}
-		// Check for bearish divergence (higher price highs but lower CCI highs)
-		else if (_currentPrice > _previousPrice && _currentCci < _previousCci)
+		else if (Position == 0 && bearishDiv && cciValue < 100)
 		{
-			_bearishDivergence = true;
-			_bullishDivergence = false;
-			_barsSinceDivergence = 0;
-			LogInfo($"Bearish Divergence Detected: Price {_previousPrice}->{_currentPrice}, CCI {_previousCci}->{_currentCci}");
+			SellMarket();
+			_cooldown = CooldownBars;
 		}
-		else
+		else if (Position > 0 && cciValue > 100)
 		{
-			_barsSinceDivergence++;
-			
-			// Reset divergence signals after a certain number of bars
-			if (_barsSinceDivergence > DivergencePeriod)
-			{
-				_bullishDivergence = false;
-				_bearishDivergence = false;
-			}
+			SellMarket();
+			_cooldown = CooldownBars;
 		}
-	}
+		else if (Position < 0 && cciValue < -100)
+		{
+			BuyMarket();
+			_cooldown = CooldownBars;
+		}
 
-	private void ProcessDivergenceSignals(ICandleMessage candle, decimal cciValue)
-	{
-		// Entry signals based on detected divergences
-		if (_bullishDivergence && Position <= 0 && cciValue < OversoldLevel)
-		{
-			// Bullish divergence with CCI in oversold territory - Buy signal
-			if (Position < 0)
-			{
-				// Close any existing short position
-				BuyMarket(Math.Abs(Position));
-				LogInfo($"Closed short position on bullish divergence");
-			}
-
-			// Open new long position
-			BuyMarket(Volume);
-			LogInfo($"Buy signal: Bullish CCI divergence with oversold CCI value: {cciValue:F2}");
-			
-			// Reset divergence detection
-			_bullishDivergence = false;
-		}
-		else if (_bearishDivergence && Position >= 0 && cciValue > OverboughtLevel)
-		{
-			// Bearish divergence with CCI in overbought territory - Sell signal
-			if (Position > 0)
-			{
-				// Close any existing long position
-				SellMarket(Position);
-				LogInfo($"Closed long position on bearish divergence");
-			}
-
-			// Open new short position
-			SellMarket(Volume);
-			LogInfo($"Sell signal: Bearish CCI divergence with overbought CCI value: {cciValue:F2}");
-			
-			// Reset divergence detection
-			_bearishDivergence = false;
-		}
-		
-		// Exit signals based on CCI crossing zero line
-		else if (Position > 0 && _previousCci < 0 && cciValue > 0)
-		{
-			// Exit long position when CCI crosses above zero
-			SellMarket(Position);
-			LogInfo($"Exit long: CCI crossed above zero from negative to positive");
-		}
-		else if (Position < 0 && _previousCci > 0 && cciValue < 0)
-		{
-			// Exit short position when CCI crosses below zero
-			BuyMarket(Math.Abs(Position));
-			LogInfo($"Exit short: CCI crossed below zero from positive to negative");
-		}
+		_prevPrice = candle.ClosePrice;
+		_prevCci = cciValue;
 	}
 }

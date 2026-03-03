@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -13,170 +10,73 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-/// <summary>
-/// Simplified grid trading strategy based on FreedX approach.
-/// Places orders at grid levels between top and bottom range.
-/// </summary>
 public class FreedxGridBacktestStrategy : Strategy
 {
-	public enum GridModes
-	{
-		Neutral,
-		Long,
-		Short
-	}
-
-	private readonly StrategyParam<decimal> _topLevel;
-	private readonly StrategyParam<decimal> _bottomLevel;
-	private readonly StrategyParam<int> _gridLevels;
-	private readonly StrategyParam<GridModes> _mode;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	private decimal _reference;
-	private decimal _step;
-	private int _longIndex;
-	private int _shortIndex;
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Top price of the grid range.
-	/// </summary>
-	public decimal TopLevel
-	{
-		get => _topLevel.Value;
-		set => _topLevel.Value = value;
-	}
-
-	/// <summary>
-	/// Bottom price of the grid range.
-	/// </summary>
-	public decimal BottomLevel
-	{
-		get => _bottomLevel.Value;
-		set => _bottomLevel.Value = value;
-	}
-
-	/// <summary>
-	/// Number of grid levels.
-	/// </summary>
-	public int GridLevels
-	{
-		get => _gridLevels.Value;
-		set => _gridLevels.Value = value;
-	}
-
-	/// <summary>
-	/// Trading mode for the grid.
-	/// </summary>
-	public GridModes Mode
-	{
-		get => _mode.Value;
-		set => _mode.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used for calculations.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Constructor.
-	/// </summary>
 	public FreedxGridBacktestStrategy()
 	{
-		_topLevel = Param(nameof(TopLevel), 44000m)
-			.SetDisplay("Top Level", "Upper bound of the grid", "Grid Settings");
-
-		_bottomLevel = Param(nameof(BottomLevel), 39000m)
-			.SetDisplay("Bottom Level", "Lower bound of the grid", "Grid Settings");
-
-		_gridLevels = Param(nameof(GridLevels), 10)
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
 			.SetGreaterThanZero()
-			.SetDisplay("Grid Levels", "Number of grid levels", "Grid Settings");
-
-		_mode = Param(nameof(Mode), GridModes.Neutral)
-			.SetDisplay("Mode", "Trading direction", "Grid Settings");
-
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_reference = 0m;
-		_step = 0m;
-		_longIndex = 0;
-		_shortIndex = 0;
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_step = (TopLevel - BottomLevel) / (GridLevels - 1);
-		_reference = (TopLevel + BottomLevel) / 2m;
-
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
-
+		subscription.Bind(fastEma, slowEma, ProcessCandle).Start();
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		// Long side
-		if (Mode == GridModes.Neutral || Mode == GridModes.Long)
+		if (candle.State != CandleStates.Finished) return;
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-			while (candle.LowPrice <= _reference - _step * (_longIndex + 1))
-			{
-				BuyMarket(Volume);
-				_longIndex++;
-			}
-
-			while (_longIndex > 0 && candle.HighPrice >= _reference - _step * (_longIndex - 1))
-			{
-				SellMarket(Volume);
-				_longIndex--;
-			}
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
+			return;
 		}
-
-		// Short side
-		if (Mode == GridModes.Neutral || Mode == GridModes.Short)
-		{
-			while (candle.HighPrice >= _reference + _step * (_shortIndex + 1))
-			{
-				SellMarket(Volume);
-				_shortIndex++;
-			}
-
-			while (_shortIndex > 0 && candle.LowPrice <= _reference + _step * (_shortIndex - 1))
-			{
-				BuyMarket(Volume);
-				_shortIndex--;
-			}
-		}
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
+			BuyMarket();
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+			SellMarket();
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

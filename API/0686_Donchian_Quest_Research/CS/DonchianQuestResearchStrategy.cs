@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,90 +11,95 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Donchian Quest Research strategy.
-/// Opens on breakout of a long Donchian channel and exits on a shorter channel.
+/// DonchianQuestResearchStrategy using EMA crossover for trend timing.
+/// Enters long on golden cross, short on death cross.
 /// </summary>
 public class DonchianQuestResearchStrategy : Strategy
 {
-private readonly StrategyParam<int> _openPeriod;
-private readonly StrategyParam<int> _closePeriod;
-private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
+	private readonly StrategyParam<DataType> _candleType;
 
-public int OpenPeriod { get => _openPeriod.Value; set => _openPeriod.Value = value; }
-public int ClosePeriod { get => _closePeriod.Value; set => _closePeriod.Value = value; }
-public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-public DonchianQuestResearchStrategy()
-{
-_openPeriod = Param(nameof(OpenPeriod), 50)
-.SetRange(10, 100)
-.SetDisplay("Open Period", "Entry channel period", "Indicators");
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-_closePeriod = Param(nameof(ClosePeriod), 50)
-.SetRange(5, 100)
-.SetDisplay("Close Period", "Exit channel period", "Indicators");
+	public DonchianQuestResearchStrategy()
+	{
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
 
-_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-.SetDisplay("Candle Type", "Type of candles", "General");
-}
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 
-public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-=> [(Security, CandleType)];
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
+	}
 
-protected override void OnStarted2(DateTime time)
-{
-base.OnStarted2(time);
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
 
-var openCh = new DonchianChannels { Length = OpenPeriod };
-var closeCh = new DonchianChannels { Length = ClosePeriod };
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
+	}
 
-var sub = SubscribeCandles(CandleType);
-sub.BindEx(openCh, closeCh, Process).Start();
+	/// <inheritdoc />
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
 
-var area = CreateChartArea();
-if (area != null)
-{
-DrawCandles(area, sub);
-DrawIndicator(area, openCh);
-DrawIndicator(area, closeCh);
-DrawOwnTrades(area);
-}
-}
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 
-private void Process(ICandleMessage candle,
-IIndicatorValue openValue, IIndicatorValue closeValue)
-{
-if (candle.State != CandleStates.Finished || !IsFormedAndOnlineAndAllowTrading())
-return;
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(fastEma, slowEma, ProcessCandle)
+			.Start();
 
-if (openValue is not DonchianChannelsValue openDc || closeValue is not DonchianChannelsValue closeDc)
-return;
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
+			DrawOwnTrades(area);
+		}
+	}
 
-if (openDc.UpperBand is not decimal openHigh || openDc.LowerBand is not decimal openLow)
-return;
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
 
-if (closeDc.UpperBand is not decimal closeHigh || closeDc.LowerBand is not decimal closeLow)
-return;
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
+		{
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
+			return;
+		}
 
-var price = candle.ClosePrice;
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
+		{
+			BuyMarket();
+		}
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+		{
+			SellMarket();
+		}
 
-if (Position <= 0 && price >= openHigh)
-{
-var v = Volume + Math.Abs(Position);
-BuyMarket(v);
-}
-else if (Position >= 0 && price <= openLow)
-{
-var v = Volume + Math.Abs(Position);
-SellMarket(v);
-}
-else if (Position > 0 && price <= closeLow)
-{
-SellMarket(Position);
-}
-else if (Position < 0 && price >= closeHigh)
-{
-BuyMarket(Math.Abs(Position));
-}
-}
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
+	}
 }

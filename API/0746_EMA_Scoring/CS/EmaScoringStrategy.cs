@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -13,165 +10,73 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-/// <summary>
-/// EMA scoring strategy.
-/// Buys when the score crosses above threshold and sells when it crosses below.
-/// </summary>
 public class EmaScoringStrategy : Strategy
 {
-	private readonly StrategyParam<int> _shortEmaPeriod;
-	private readonly StrategyParam<int> _mediumEmaPeriod;
-	private readonly StrategyParam<int> _longEmaPeriod;
-	private readonly StrategyParam<int> _threshold;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	private int _prevScore;
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Period for short EMA.
-	/// </summary>
-	public int ShortEmaPeriod
-	{
-		get => _shortEmaPeriod.Value;
-		set => _shortEmaPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Period for medium EMA.
-	/// </summary>
-	public int MediumEmaPeriod
-	{
-		get => _mediumEmaPeriod.Value;
-		set => _mediumEmaPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Period for long EMA.
-	/// </summary>
-	public int LongEmaPeriod
-	{
-		get => _longEmaPeriod.Value;
-		set => _longEmaPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Score threshold for signals.
-	/// </summary>
-	public int Threshold
-	{
-		get => _threshold.Value;
-		set => _threshold.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used for analysis.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="EmaScoringStrategy"/>.
-	/// </summary>
 	public EmaScoringStrategy()
 	{
-		_shortEmaPeriod = Param(nameof(ShortEmaPeriod), 21)
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
 			.SetGreaterThanZero()
-			.SetDisplay("Short EMA Period", "Short EMA period", "EMA")
-			
-			.SetOptimize(10, 50, 5);
-
-		_mediumEmaPeriod = Param(nameof(MediumEmaPeriod), 50)
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
 			.SetGreaterThanZero()
-			.SetDisplay("Medium EMA Period", "Medium EMA period", "EMA")
-			
-			.SetOptimize(30, 100, 5);
-
-		_longEmaPeriod = Param(nameof(LongEmaPeriod), 100)
-			.SetGreaterThanZero()
-			.SetDisplay("Long EMA Period", "Long EMA period", "EMA")
-			
-			.SetOptimize(50, 200, 10);
-
-		_threshold = Param(nameof(Threshold), 4)
-			.SetDisplay("Score Threshold", "Score threshold", "General")
-			
-			.SetOptimize(1, 6, 1);
-
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevScore = 0;
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		StartProtection(null, null);
-
-		var emaShort = new EMA { Length = ShortEmaPeriod };
-		var emaMedium = new EMA { Length = MediumEmaPeriod };
-		var emaLong = new EMA { Length = LongEmaPeriod };
-
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(emaShort, emaMedium, emaLong, ProcessCandle)
-			.Start();
-
+		subscription.Bind(fastEma, slowEma, ProcessCandle).Start();
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, emaShort);
-			DrawIndicator(area, emaMedium);
-			DrawIndicator(area, emaLong);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal emaShort, decimal emaMedium, decimal emaLong)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		var score = 0;
-		score += candle.ClosePrice > emaShort ? 1 : -1;
-		score += candle.ClosePrice > emaMedium ? 1 : -1;
-		score += candle.ClosePrice > emaLong ? 1 : -1;
-		score += emaShort > emaMedium ? 1 : -1;
-		score += emaMedium > emaLong ? 1 : -1;
-		score += emaShort > emaLong ? 1 : -1;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (candle.State != CandleStates.Finished) return;
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-			_prevScore = score;
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
 			return;
 		}
-
-		if (_prevScore < Threshold && score >= Threshold && Position <= 0)
-		{
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
 			BuyMarket();
-		}
-		else if (_prevScore > -Threshold && score <= -Threshold && Position >= 0)
-		{
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
 			SellMarket();
-		}
-
-		_prevScore = score;
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

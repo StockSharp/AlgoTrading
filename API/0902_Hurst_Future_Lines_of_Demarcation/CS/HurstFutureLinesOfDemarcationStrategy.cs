@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,183 +12,71 @@ namespace StockSharp.Samples.Strategies;
 
 public class HurstFutureLinesOfDemarcationStrategy : Strategy
 {
-	public enum CloseTriggers
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
+	private readonly StrategyParam<DataType> _candleType;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
+
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+
+	public HurstFutureLinesOfDemarcationStrategy()
 	{
-	Price,
-	Signal,
-	Trade,
-	Trend,
-	None
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
-private SimpleMovingAverage _sma;
-private readonly Queue<decimal> _signalQueue = new();
-private readonly Queue<decimal> _tradeQueue = new();
-private readonly Queue<decimal> _trendQueue = new();
-private int _signalOffset;
-private int _tradeOffset;
-private int _trendOffset;
-private decimal? _signal;
-private decimal? _trade;
-private decimal? _trend;
-private decimal? _prevPrice;
-private decimal? _prevSignal;
-private decimal? _prevClose1;
-private decimal? _prevClose2;
-private int _state;
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
 
-private StrategyParam<bool> _smoothFld;
-private StrategyParam<int> _fldSmoothing;
-private StrategyParam<int> _signalCycleLength;
-private StrategyParam<int> _tradeCycleLength;
-private StrategyParam<int> _trendCycleLength;
-private StrategyParam<CloseTriggers> _closeTrigger1;
-private StrategyParam<CloseTriggers> _closeTrigger2;
-private StrategyParam<DataType> _candleType;
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
+	}
 
-public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
-public bool SmoothFld { get => _smoothFld.Value; set => _smoothFld.Value = value; }
-public int FldSmoothing { get => _fldSmoothing.Value; set => _fldSmoothing.Value = value; }
-public int SignalCycleLength { get => _signalCycleLength.Value; set => _signalCycleLength.Value = value; }
-public int TradeCycleLength { get => _tradeCycleLength.Value; set => _tradeCycleLength.Value = value; }
-public int TrendCycleLength { get => _trendCycleLength.Value; set => _trendCycleLength.Value = value; }
-public CloseTriggers CloseTrigger1 { get => _closeTrigger1.Value; set => _closeTrigger1.Value = value; }
-public CloseTriggers CloseTrigger2 { get => _closeTrigger2.Value; set => _closeTrigger2.Value = value; }
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(fastEma, slowEma, ProcessCandle).Start();
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
+			DrawOwnTrades(area);
+		}
+	}
 
-public HurstFutureLinesOfDemarcationStrategy()
-{
-_smoothFld = Param(nameof(SmoothFld), false)
-.SetDisplay("Smooth FLD", "Use smoothing for FLD", "FLD");
-_fldSmoothing = Param(nameof(FldSmoothing), 5)
-.SetDisplay("FLD Smoothing", "SMA length for FLD smoothing", "FLD");
-_signalCycleLength = Param(nameof(SignalCycleLength), 5)
-.SetDisplay("Signal Cycle Length", "Quarter cycle length", "Cycles");
-_tradeCycleLength = Param(nameof(TradeCycleLength), 20)
-.SetDisplay("Trade Cycle Length", "Trade cycle length", "Cycles");
-_trendCycleLength = Param(nameof(TrendCycleLength), 80)
-.SetDisplay("Trend Cycle Length", "Trend cycle length", "Cycles");
-_closeTrigger1 = Param(nameof(CloseTrigger1), CloseTriggers.Price)
-.SetDisplay("Close Trigger 1", "First value for exit cross", "Exit");
-_closeTrigger2 = Param(nameof(CloseTrigger2), CloseTriggers.Trade)
-.SetDisplay("Close Trigger 2", "Second value for exit cross", "Exit");
-_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-.SetDisplay("Candle Type", "Type of candles", "General");
-}
-
-/// <inheritdoc />
-protected override void OnReseted()
-{
-base.OnReseted();
-
-_signalQueue.Clear();
-_tradeQueue.Clear();
-_trendQueue.Clear();
-_signal = _trade = _trend = null;
-_prevPrice = _prevSignal = null;
-_prevClose1 = _prevClose2 = null;
-_state = 0;
-}
-
-/// <inheritdoc />
-protected override void OnStarted2(DateTime time)
-{
-base.OnStarted2(time);
-
-var length = SmoothFld ? FldSmoothing : 1;
-_sma = new SimpleMovingAverage { Length = length };
-
-_signalOffset = (int)Math.Round(SignalCycleLength / 2m);
-_tradeOffset = (int)Math.Round(TradeCycleLength / 2m);
-_trendOffset = (int)Math.Round(TrendCycleLength / 2m);
-
-var subscription = SubscribeCandles(CandleType);
-subscription
-.Bind(ProcessCandle)
-.Start();
-}
-
-private void ProcessCandle(ICandleMessage candle)
-{
-if (candle.State != CandleStates.Finished)
-return;
-
-var price = (candle.OpenPrice + candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 4m;
-var fld = _sma.Process(new DecimalIndicatorValue(_sma, price, candle.OpenTime)).ToDecimal();
-
-_signalQueue.Enqueue(fld);
-_tradeQueue.Enqueue(fld);
-_trendQueue.Enqueue(fld);
-
-_signal = _signalQueue.Count > _signalOffset ? _signalQueue.Dequeue() : null;
-_trade = _tradeQueue.Count > _tradeOffset ? _tradeQueue.Dequeue() : null;
-_trend = _trendQueue.Count > _trendOffset ? _trendQueue.Dequeue() : null;
-
-if (_signal.HasValue && _trade.HasValue && _trend.HasValue)
-{
-UpdateState(price, _signal.Value, _trade.Value, _trend.Value);
-
-if (_prevPrice.HasValue && _prevSignal.HasValue)
-{
-var crossUp = _prevPrice <= _prevSignal && price > _signal;
-var crossDown = _prevPrice >= _prevSignal && price < _signal;
-
-if (crossUp && _state == 1)
-BuyMarket();
-else if (crossDown && _state == 6)
-SellMarket();
-}
-
-var close1 = GetTriggerValue(CloseTrigger1, price, _signal, _trade, _trend);
-var close2 = GetTriggerValue(CloseTrigger2, price, _signal, _trade, _trend);
-
-if (close1.HasValue && close2.HasValue && _prevClose1.HasValue && _prevClose2.HasValue)
-{
-var crossUnder = _prevClose1 >= _prevClose2 && close1.Value < close2.Value;
-var crossOver = _prevClose1 <= _prevClose2 && close1.Value > close2.Value;
-
-if (Position > 0 && crossUnder)
-{ if (Position > 0) SellMarket(); else if (Position < 0) BuyMarket(); }
-else if (Position < 0 && crossOver)
-{ if (Position > 0) SellMarket(); else if (Position < 0) BuyMarket(); }
-}
-
-_prevClose1 = close1;
-_prevClose2 = close2;
-}
-
-_prevPrice = price;
-_prevSignal = _signal;
-}
-
-private static decimal? GetTriggerValue(CloseTriggers trigger, decimal price, decimal? signal, decimal? trade, decimal? trend)
-{
-return trigger switch
-{
-CloseTriggers.Price => price,
-CloseTriggers.Signal => signal,
-CloseTriggers.Trade => trade,
-CloseTriggers.Trend => trend,
-_ => null,
-};
-}
-
-private void UpdateState(decimal price, decimal signal, decimal trade, decimal trend)
-{
-if (signal > trade && trade > trend)
-_state = 1;
-if (_state == 1 && price < signal)
-_state = 2;
-if (signal < trade && trade > trend)
-_state = 3;
-if (_state == 3 && price < signal)
-_state = 4;
-if (signal < trade && trade < trend)
-_state = 5;
-if (_state == 5 && price < signal)
-_state = 6;
-if (signal > trade && trade < trend)
-_state = 7;
-if (_state == 7 && price < signal)
-_state = 8;
-}
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
+	{
+		if (candle.State != CandleStates.Finished) return;
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
+		{
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
+			return;
+		}
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
+			BuyMarket();
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+			SellMarket();
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
+	}
 }

@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,22 +11,22 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Volume Weighted Moving Average (VWMA) Strategy
-/// Long entry: Price crosses above VWMA
-/// Short entry: Price crosses below VWMA
-/// Exit: Price crosses back through VWMA
+/// Volume Weighted Moving Average (VWMA) Strategy.
+/// Long entry: Price crosses above VWMA.
+/// Short entry: Price crosses below VWMA.
 /// </summary>
 public class VWMAStrategy : Strategy
 {
 	private readonly StrategyParam<int> _vwmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	
+	private readonly StrategyParam<int> _cooldownBars;
+
 	private decimal _previousClosePrice;
 	private decimal _previousVWMA;
-	private bool _isFirstCandle;
+	private int _cooldown;
 
 	/// <summary>
-	/// VWMA Period
+	/// VWMA Period.
 	/// </summary>
 	public int VWMAPeriod
 	{
@@ -38,12 +35,21 @@ public class VWMAStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Candle type for strategy calculation
+	/// Candle type for strategy calculation.
 	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Cooldown bars between trades.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	/// <summary>
@@ -53,12 +59,15 @@ public class VWMAStrategy : Strategy
 	{
 		_vwmaPeriod = Param(nameof(VWMAPeriod), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("VWMA Period", "Period for Volume Weighted Moving Average calculation", "Strategy Parameters")
-			
+			.SetDisplay("VWMA Period", "Period for Volume Weighted Moving Average", "Indicators")
 			.SetOptimize(5, 30, 5);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles for strategy calculation", "Strategy Parameters");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
+
+		_cooldownBars = Param(nameof(CooldownBars), 500)
+			.SetRange(1, 1000)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
 	}
 
 	/// <inheritdoc />
@@ -71,10 +80,9 @@ public class VWMAStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_previousClosePrice = 0;
-		_previousVWMA = 0;
-		_isFirstCandle = true;
-
+		_previousClosePrice = default;
+		_previousVWMA = default;
+		_cooldown = default;
 	}
 
 	/// <inheritdoc />
@@ -82,23 +90,17 @@ public class VWMAStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Create VWMA indicator
+		_previousClosePrice = 0;
+		_previousVWMA = 0;
+		_cooldown = 0;
+
 		var vwma = new VolumeWeightedMovingAverage { Length = VWMAPeriod };
 
-		// Create subscription and bind indicators
 		var subscription = SubscribeCandles(CandleType);
-		
 		subscription
-			.BindEx(vwma, ProcessCandle)
+			.Bind(vwma, ProcessCandle)
 			.Start();
 
-		// Configure protection
-		StartProtection(
-			takeProfit: new Unit(3, UnitTypes.Percent),
-			stopLoss: new Unit(2, UnitTypes.Percent)
-		);
-
-		// Setup chart visualization
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -108,64 +110,53 @@ public class VWMAStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue vwmaValue)
+	private void ProcessCandle(ICandleMessage candle, decimal vwmaPrice)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// Extract VWMA value from indicator result
-		var vwmaPrice = vwmaValue.ToDecimal();
-		
-		// Skip the first candle, just initialize values
-		if (_isFirstCandle)
+		if (_previousClosePrice == 0)
 		{
 			_previousClosePrice = candle.ClosePrice;
 			_previousVWMA = vwmaPrice;
-			_isFirstCandle = false;
 			return;
 		}
-		
-		// Check for VWMA crossovers
+
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+			_previousClosePrice = candle.ClosePrice;
+			_previousVWMA = vwmaPrice;
+			return;
+		}
+
 		var crossoverUp = _previousClosePrice <= _previousVWMA && candle.ClosePrice > vwmaPrice;
 		var crossoverDown = _previousClosePrice >= _previousVWMA && candle.ClosePrice < vwmaPrice;
-		
-		// Log current values
-		LogInfo($"Candle Close: {candle.ClosePrice}, VWMA: {vwmaPrice}");
-		LogInfo($"Previous Close: {_previousClosePrice}, Previous VWMA: {_previousVWMA}");
-		LogInfo($"Crossover Up: {crossoverUp}, Crossover Down: {crossoverDown}");
 
-		// Trading logic:
-		// Long: Price crosses above VWMA
-		if (crossoverUp && Position <= 0)
+		if (Position == 0 && crossoverUp)
 		{
-			LogInfo($"Buy Signal: Price crossing above VWMA ({candle.ClosePrice} > {vwmaPrice})");
-			BuyMarket(Volume + Math.Abs(Position));
+			BuyMarket();
+			_cooldown = CooldownBars;
 		}
-		// Short: Price crosses below VWMA
-		else if (crossoverDown && Position >= 0)
+		else if (Position == 0 && crossoverDown)
 		{
-			LogInfo($"Sell Signal: Price crossing below VWMA ({candle.ClosePrice} < {vwmaPrice})");
-			SellMarket(Volume + Math.Abs(Position));
+			SellMarket();
+			_cooldown = CooldownBars;
 		}
-		
-		// Exit logic: Price crosses back through VWMA
-		if (Position > 0 && crossoverDown)
+		else if (Position > 0 && crossoverDown)
 		{
-			LogInfo($"Exit Long: Price crossing below VWMA ({candle.ClosePrice} < {vwmaPrice})");
-			SellMarket(Math.Abs(Position));
+			SellMarket();
+			_cooldown = CooldownBars;
 		}
 		else if (Position < 0 && crossoverUp)
 		{
-			LogInfo($"Exit Short: Price crossing above VWMA ({candle.ClosePrice} > {vwmaPrice})");
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
+			_cooldown = CooldownBars;
 		}
 
-		// Store current values for next comparison
 		_previousClosePrice = candle.ClosePrice;
 		_previousVWMA = vwmaPrice;
 	}

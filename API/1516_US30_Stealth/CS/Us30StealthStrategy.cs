@@ -14,8 +14,7 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Stealth strategy based on trend and engulfing patterns.
-/// Uses EMA for trend, engulfing candles for entry, with percent TP/SL.
+/// US30 Stealth strategy using RSI momentum with EMA trend filter.
 /// </summary>
 public class Us30StealthStrategy : Strategy
 {
@@ -24,9 +23,10 @@ public class Us30StealthStrategy : Strategy
 	private readonly StrategyParam<decimal> _slPct;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevOpen;
-	private decimal _prevClose;
-	private decimal _entryPrice;
+	private decimal _prevRsi;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private int _cooldown;
 
 	public int MaLen { get => _maLen.Value; set => _maLen.Value = value; }
 	public decimal TpPct { get => _tpPct.Value; set => _tpPct.Value = value; }
@@ -35,11 +35,11 @@ public class Us30StealthStrategy : Strategy
 
 	public Us30StealthStrategy()
 	{
-		_maLen = Param(nameof(MaLen), 50)
+		_maLen = Param(nameof(MaLen), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("MA Length", "Moving average length", "Indicators");
+			.SetDisplay("MA Length", "Moving average length", "General");
 
-		_tpPct = Param(nameof(TpPct), 1.0m)
+		_tpPct = Param(nameof(TpPct), 1.5m)
 			.SetGreaterThanZero()
 			.SetDisplay("TP %", "Take profit percent", "Risk");
 
@@ -59,93 +59,89 @@ public class Us30StealthStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevOpen = 0;
-		_prevClose = 0;
-		_entryPrice = 0;
+		_prevRsi = 0;
+		_prevFast = 0;
+		_prevSlow = 0;
+		_cooldown = 0;
 	}
 
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		var ema = new ExponentialMovingAverage { Length = MaLen };
-
-		_prevOpen = 0;
-		_prevClose = 0;
-		_entryPrice = 0;
+		var rsi = new RelativeStrengthIndex { Length = 14 };
+		var emaFast = new ExponentialMovingAverage { Length = 8 };
+		var emaSlow = new ExponentialMovingAverage { Length = 21 };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ema, ProcessCandle).Start();
+		subscription.Bind(rsi, emaFast, emaSlow, ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, ema);
+			DrawIndicator(area, emaFast);
+			DrawIndicator(area, emaSlow);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal emaVal)
+	private void ProcessCandle(ICandleMessage candle, decimal rsiVal, decimal emaFast, decimal emaSlow)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (_prevOpen == 0)
+		if (_prevRsi == 0 || _prevFast == 0 || _prevSlow == 0)
 		{
-			_prevOpen = candle.OpenPrice;
-			_prevClose = candle.ClosePrice;
+			_prevRsi = rsiVal;
+			_prevFast = emaFast;
+			_prevSlow = emaSlow;
 			return;
 		}
 
-		// TP/SL management
-		if (Position > 0 && _entryPrice > 0)
+		if (_cooldown > 0)
 		{
-			if (candle.ClosePrice >= _entryPrice * (1m + TpPct / 100m) ||
-				candle.ClosePrice <= _entryPrice * (1m - SlPct / 100m))
-			{
-				SellMarket();
-				_entryPrice = 0;
-			}
-		}
-		else if (Position < 0 && _entryPrice > 0)
-		{
-			if (candle.ClosePrice <= _entryPrice * (1m - TpPct / 100m) ||
-				candle.ClosePrice >= _entryPrice * (1m + SlPct / 100m))
-			{
-				BuyMarket();
-				_entryPrice = 0;
-			}
+			_cooldown--;
+			_prevRsi = rsiVal;
+			_prevFast = emaFast;
+			_prevSlow = emaSlow;
+			return;
 		}
 
-		// Trend detection
-		var isUpTrend = candle.ClosePrice > emaVal;
-		var isDownTrend = candle.ClosePrice < emaVal;
+		var hist = emaFast - emaSlow;
+		var histUp = hist > 0m;
+		var histDown = hist < 0m;
 
-		// Engulfing patterns
-		var bullEng = candle.ClosePrice > candle.OpenPrice &&
-			_prevClose < _prevOpen &&
-			candle.ClosePrice > _prevOpen &&
-			candle.OpenPrice <= _prevClose;
+		var rsiCrossUp = _prevRsi <= 50m && rsiVal > 50m;
+		var rsiCrossDown = _prevRsi >= 50m && rsiVal < 50m;
 
-		var bearEng = candle.ClosePrice < candle.OpenPrice &&
-			_prevClose > _prevOpen &&
-			candle.ClosePrice < _prevOpen &&
-			candle.OpenPrice >= _prevClose;
-
-		// Entry signals
-		if (bullEng && isUpTrend && Position <= 0)
-		{
-			BuyMarket();
-			_entryPrice = candle.ClosePrice;
-		}
-		else if (bearEng && isDownTrend && Position >= 0)
+		if (Position > 0 && rsiCrossDown)
 		{
 			SellMarket();
-			_entryPrice = candle.ClosePrice;
+			_cooldown = 80;
+		}
+		else if (Position < 0 && rsiCrossUp)
+		{
+			BuyMarket();
+			_cooldown = 80;
 		}
 
-		_prevOpen = candle.OpenPrice;
-		_prevClose = candle.ClosePrice;
+		if (Position == 0)
+		{
+			if (rsiCrossUp && histUp)
+			{
+				BuyMarket();
+				_cooldown = 80;
+			}
+			else if (rsiCrossDown && histDown)
+			{
+				SellMarket();
+				_cooldown = 80;
+			}
+		}
+
+		_prevRsi = rsiVal;
+		_prevFast = emaFast;
+		_prevSlow = emaSlow;
 	}
 }

@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,18 +12,18 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Bollinger Band Reversal strategy.
-/// The strategy enters long position when price is below the lower Bollinger Band and the candle is bullish,
-/// enters short position when price is above the upper Bollinger Band and the candle is bearish.
+/// Enters long when price is below the lower Bollinger Band and candle is bullish.
+/// Enters short when price is above the upper Bollinger Band and candle is bearish.
+/// Exits at middle band.
 /// </summary>
 public class BollingerBandReversalStrategy : Strategy
 {
 	private readonly StrategyParam<int> _bollingerPeriod;
 	private readonly StrategyParam<decimal> _bollingerDeviation;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<decimal> _atrMultiplier;
+	private readonly StrategyParam<int> _cooldownBars;
 
-	private BollingerBands _bollingerBands;
-	private AverageTrueRange _atr;
+	private int _cooldown;
 
 	/// <summary>
 	/// Bollinger Bands period.
@@ -56,12 +53,12 @@ public class BollingerBandReversalStrategy : Strategy
 	}
 
 	/// <summary>
-	/// ATR multiplier for stop-loss.
+	/// Cooldown bars.
 	/// </summary>
-	public decimal AtrMultiplier
+	public int CooldownBars
 	{
-		get => _atrMultiplier.Value;
-		set => _atrMultiplier.Value = value;
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	/// <summary>
@@ -71,24 +68,18 @@ public class BollingerBandReversalStrategy : Strategy
 	{
 		_bollingerPeriod = Param(nameof(BollingerPeriod), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("Bollinger Period", "Number of periods for Bollinger Bands", "Indicators")
-			
-			.SetOptimize(10, 30, 5);
+			.SetDisplay("Bollinger Period", "Period for Bollinger Bands", "Indicators");
 
 		_bollingerDeviation = Param(nameof(BollingerDeviation), 2.0m)
 			.SetNotNegative()
-			.SetDisplay("Bollinger Deviation", "Number of standard deviations for Bollinger Bands", "Indicators")
-			
-			.SetOptimize(1.5m, 3.0m, 0.5m);
+			.SetDisplay("Bollinger Deviation", "Standard deviations for Bollinger Bands", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
-		_atrMultiplier = Param(nameof(AtrMultiplier), 2.0m)
-			.SetNotNegative()
-			.SetDisplay("ATR Multiplier", "Multiplier for ATR to set stop-loss", "Risk Management")
-			
-			.SetOptimize(1.0m, 3.0m, 0.5m);
+		_cooldownBars = Param(nameof(CooldownBars), 500)
+			.SetRange(1, 1000)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
 	}
 
 	/// <inheritdoc />
@@ -98,95 +89,83 @@ public class BollingerBandReversalStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_cooldown = default;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		// Create indicators
-		_bollingerBands = new BollingerBands
+		_cooldown = 0;
+
+		var bollingerBands = new BollingerBands
 		{
 			Length = BollingerPeriod,
 			Width = BollingerDeviation
 		};
 
-		_atr = new AverageTrueRange
-		{
-			Length = 14
-		};
-
-		// Create subscription and bind indicators
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(_bollingerBands, _atr, ProcessCandle)
+			.BindEx(bollingerBands, ProcessCandle)
 			.Start();
 
-		// Setup chart visualization if available
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _bollingerBands);
+			DrawIndicator(area, bollingerBands);
 			DrawOwnTrades(area);
 		}
-
-		// Start position protection
-		StartProtection(
-			takeProfit: new Unit(10, UnitTypes.Percent),
-			stopLoss: new Unit(AtrMultiplier, UnitTypes.Absolute)
-		);
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bollingerValue, IIndicatorValue atrValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bollingerValue)
 	{
 		if (candle.State != CandleStates.Finished)
+			return;
+
+		if (!bollingerValue.IsFormed)
 			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// Get current Bollinger Bands values
-		var bollingerTyped = (BollingerBandsValue)bollingerValue;
-		var upperBand = bollingerTyped.UpBand;
-		var lowerBand = bollingerTyped.LowBand;
-		var middleBand = bollingerTyped.MovingAverage;
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+			return;
+		}
 
-		// Determine if the candle is bullish or bearish
+		var bb = (BollingerBandsValue)bollingerValue;
+		var upperBand = bb.UpBand;
+		var lowerBand = bb.LowBand;
+		var middleBand = bb.MovingAverage;
+
 		var isBullish = candle.ClosePrice > candle.OpenPrice;
 		var isBearish = candle.ClosePrice < candle.OpenPrice;
 
-		// Long entry: Price below lower band and bullish candle
-		if (candle.ClosePrice < lowerBand && isBullish && Position <= 0)
+		if (Position == 0 && candle.ClosePrice < lowerBand && isBullish)
 		{
-			// Cancel active orders first
-			CancelActiveOrders();
-			
-			// Enter long position
-			BuyMarket(Volume + Math.Abs(Position));
-			
-			LogInfo($"Long entry: Price {candle.ClosePrice} below lower band {lowerBand} with bullish candle");
+			BuyMarket();
+			_cooldown = CooldownBars;
 		}
-		// Short entry: Price above upper band and bearish candle
-		else if (candle.ClosePrice > upperBand && isBearish && Position >= 0)
+		else if (Position == 0 && candle.ClosePrice > upperBand && isBearish)
 		{
-			// Cancel active orders first
-			CancelActiveOrders();
-			
-			// Enter short position
-			SellMarket(Volume + Math.Abs(Position));
-			
-			LogInfo($"Short entry: Price {candle.ClosePrice} above upper band {upperBand} with bearish candle");
+			SellMarket();
+			_cooldown = CooldownBars;
 		}
-		// Long exit: Price above middle band
-		else if (candle.ClosePrice > middleBand && Position > 0)
+		else if (Position > 0 && candle.ClosePrice > middleBand)
 		{
-			SellMarket(Math.Abs(Position));
-			LogInfo($"Long exit: Price {candle.ClosePrice} above middle band {middleBand}");
+			SellMarket();
+			_cooldown = CooldownBars;
 		}
-		// Short exit: Price below middle band
-		else if (candle.ClosePrice < middleBand && Position < 0)
+		else if (Position < 0 && candle.ClosePrice < middleBand)
 		{
-			BuyMarket(Math.Abs(Position));
-			LogInfo($"Short exit: Price {candle.ClosePrice} below middle band {middleBand}");
+			BuyMarket();
+			_cooldown = CooldownBars;
 		}
 	}
 }

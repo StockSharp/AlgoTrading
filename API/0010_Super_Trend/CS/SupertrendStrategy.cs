@@ -59,17 +59,17 @@ public class SupertrendStrategy : Strategy
 	/// </summary>
 	public SupertrendStrategy()
 	{
-		_period = Param(nameof(Period), 10)
+		_period = Param(nameof(Period), 300)
 			.SetDisplay("Period", "Period for Supertrend calculation", "Indicators")
-			
+
 			.SetOptimize(7, 21, 2);
 
-		_multiplier = Param(nameof(Multiplier), 3.0m)
+		_multiplier = Param(nameof(Multiplier), 50.0m)
 			.SetDisplay("Multiplier", "Multiplier for Supertrend calculation", "Indicators")
-			
+
 			.SetOptimize(2.0m, 4.0m, 0.5m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -180,19 +180,6 @@ public class SupertrendStrategy : Strategy
 			var volume = Volume + Math.Abs(Position);
 			SellMarket(volume);
 			LogInfo($"Sell signal: Price ({candle.ClosePrice}) crossed below Supertrend ({supertrendValue})");
-		}
-		// Exit logic for existing positions
-		else if (isCrossedBelow && Position > 0)
-		{
-			// Exit long position
-			SellMarket(Position);
-			LogInfo($"Exit long: Price ({candle.ClosePrice}) crossed below Supertrend ({supertrendValue})");
-		}
-		else if (isCrossedAbove && Position < 0)
-		{
-			// Exit short position
-			BuyMarket(Math.Abs(Position));
-			LogInfo($"Exit short: Price ({candle.ClosePrice}) crossed above Supertrend ({supertrendValue})");
 		}
 
 		// Update state for the next candle

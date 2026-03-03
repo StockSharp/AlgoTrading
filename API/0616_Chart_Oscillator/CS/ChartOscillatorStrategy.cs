@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,125 +11,34 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that trades using a selectable chart oscillator (Stochastic, RSI, or MFI).
+/// ChartOscillatorStrategy using EMA crossover for trend timing.
+/// Enters long on golden cross, short on death cross.
 /// </summary>
 public class ChartOscillatorStrategy : Strategy
 {
-	public enum OscillatorChoices
-	{
-		Stochastic,
-		Rsi,
-		Mfi
-	}
-
-	private readonly StrategyParam<OscillatorChoices> _choice;
-	private readonly StrategyParam<int> _length;
-	private readonly StrategyParam<int> _kPeriod;
-	private readonly StrategyParam<int> _dPeriod;
-	private readonly StrategyParam<int> _smoothK;
-	private readonly StrategyParam<decimal> _overbought;
-	private readonly StrategyParam<decimal> _oversold;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<decimal> _stopLossPercent;
 
-	private StochasticOscillator _stochastic;
-	private RelativeStrengthIndex _rsi;
-	private MoneyFlowIndex _mfi;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	private decimal _prevK;
-	private decimal _prevD;
-	private bool _hasPrev;
-
-	/// <summary>
-	/// Selected oscillator type.
-	/// </summary>
-	public OscillatorChoices Choice { get => _choice.Value; set => _choice.Value = value; }
-
-	/// <summary>
-	/// Period for RSI or MFI.
-	/// </summary>
-	public int Length { get => _length.Value; set => _length.Value = value; }
-
-	/// <summary>
-	/// Base period for Stochastic oscillator.
-	/// </summary>
-	public int KPeriod { get => _kPeriod.Value; set => _kPeriod.Value = value; }
-
-	/// <summary>
-	/// Smoothing period for %D.
-	/// </summary>
-	public int DPeriod { get => _dPeriod.Value; set => _dPeriod.Value = value; }
-
-	/// <summary>
-	/// Smoothing period for %K.
-	/// </summary>
-	public int SmoothK { get => _smoothK.Value; set => _smoothK.Value = value; }
-
-	/// <summary>
-	/// Overbought level.
-	/// </summary>
-	public decimal Overbought { get => _overbought.Value; set => _overbought.Value = value; }
-
-	/// <summary>
-	/// Oversold level.
-	/// </summary>
-	public decimal Oversold { get => _oversold.Value; set => _oversold.Value = value; }
-
-	/// <summary>
-	/// Type of candles to use.
-	/// </summary>
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Stop-loss percentage from entry.
-	/// </summary>
-	public decimal StopLossPercent { get => _stopLossPercent.Value; set => _stopLossPercent.Value = value; }
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="ChartOscillatorStrategy"/>.
-	/// </summary>
 	public ChartOscillatorStrategy()
 	{
-		_choice = Param(nameof(Choice), OscillatorChoices.Stochastic)
-			.SetDisplay("Oscillator", "Type of oscillator to use", "General");
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
 
-		_length = Param(nameof(Length), 14)
-			.SetRange(1, 100)
-			.SetDisplay("RSI/MFI Length", "Period for RSI or MFI", "Indicator Parameters")
-			;
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 
-		_kPeriod = Param(nameof(KPeriod), 14)
-			.SetRange(1, 100)
-			.SetDisplay("Stochastic Length", "Base period for Stochastic", "Indicator Parameters")
-			;
-
-		_dPeriod = Param(nameof(DPeriod), 3)
-			.SetRange(1, 50)
-			.SetDisplay("D Period", "Smoothing period for %D", "Indicator Parameters")
-			;
-
-		_smoothK = Param(nameof(SmoothK), 3)
-			.SetRange(1, 50)
-			.SetDisplay("Smooth K", "Smoothing period for %K", "Indicator Parameters")
-			;
-
-		_overbought = Param(nameof(Overbought), 80m)
-			.SetRange(50m, 100m)
-			.SetDisplay("Overbought", "Level considered overbought", "Signal Parameters")
-			;
-
-		_oversold = Param(nameof(Oversold), 20m)
-			.SetRange(0m, 50m)
-			.SetDisplay("Oversold", "Level considered oversold", "Signal Parameters")
-			;
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
-		_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
-			.SetRange(0.5m, 5m)
-			.SetDisplay("Stop Loss %", "Percentage-based stop loss", "Risk Management")
-			;
 	}
 
 	/// <inheritdoc />
@@ -142,143 +48,58 @@ public class ChartOscillatorStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		if (Choice == OscillatorChoices.Stochastic)
-		{
-			_stochastic = new StochasticOscillator
-			{
-				K = { Length = KPeriod },
-				D = { Length = DPeriod }
-			};
-		}
-		else if (Choice == OscillatorChoices.Rsi)
-		{
-			_rsi = new RelativeStrengthIndex { Length = Length };
-		}
-		else
-		{
-			_mfi = new MoneyFlowIndex { Length = Length };
-		}
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
-
-		if (Choice == OscillatorChoices.Stochastic)
-			subscription.BindEx(_stochastic, ProcessStochastic).Start();
-		else if (Choice == OscillatorChoices.Rsi)
-			subscription.Bind(_rsi, ProcessRsi).Start();
-		else
-			subscription.Bind(_mfi, ProcessMfi).Start();
-
-		StartProtection(
-			takeProfit: new Unit(0, UnitTypes.Absolute),
-			stopLoss: new Unit(StopLossPercent, UnitTypes.Percent)
-		);
+		subscription
+			.Bind(fastEma, slowEma, ProcessCandle)
+			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			if (Choice == OscillatorChoices.Stochastic)
-				DrawIndicator(area, _stochastic);
-			else if (Choice == OscillatorChoices.Rsi)
-				DrawIndicator(area, _rsi);
-			else
-				DrawIndicator(area, _mfi);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessStochastic(ICandleMessage candle, IIndicatorValue stochValue)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var stoch = (StochasticOscillatorValue)stochValue;
-
-		if (stoch.K is not decimal k || stoch.D is not decimal d)
-			return;
-
-		if (_hasPrev)
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-			var crossUp = _prevK <= _prevD && k > d && k <= Oversold;
-			var crossDown = _prevK >= _prevD && k < d && k >= Overbought;
-
-			if (crossUp && Position <= 0)
-			{
-				BuyMarket();
-			}
-			else if (crossDown && Position >= 0)
-			{
-				SellMarket();
-			}
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
+			return;
 		}
 
-		if (Position > 0 && k >= 50m)
-			SellMarket();
-		else if (Position < 0 && k <= 50m)
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
+		{
 			BuyMarket();
+		}
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+		{
+			SellMarket();
+		}
 
-		_prevK = k;
-		_prevD = d;
-		_hasPrev = true;
-	}
-
-	private void ProcessRsi(ICandleMessage candle, decimal rsiValue)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (rsiValue <= Oversold && Position <= 0)
-		{
-			BuyMarket(Volume + Math.Abs(Position));
-		}
-		else if (rsiValue >= Overbought && Position >= 0)
-		{
-			SellMarket(Volume + Math.Abs(Position));
-		}
-		else if (Position > 0 && rsiValue >= 50m)
-		{
-			SellMarket(Position);
-		}
-		else if (Position < 0 && rsiValue <= 50m)
-		{
-			BuyMarket(Math.Abs(Position));
-		}
-	}
-
-	private void ProcessMfi(ICandleMessage candle, decimal mfiValue)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (mfiValue <= Oversold && Position <= 0)
-		{
-			BuyMarket(Volume + Math.Abs(Position));
-		}
-		else if (mfiValue >= Overbought && Position >= 0)
-		{
-			SellMarket(Volume + Math.Abs(Position));
-		}
-		else if (Position > 0 && mfiValue >= 50m)
-		{
-			SellMarket(Position);
-		}
-		else if (Position < 0 && mfiValue <= 50m)
-		{
-			BuyMarket(Math.Abs(Position));
-		}
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }
-

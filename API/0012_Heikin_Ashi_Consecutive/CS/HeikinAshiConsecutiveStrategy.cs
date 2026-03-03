@@ -64,17 +64,17 @@ public class HeikinAshiConsecutiveStrategy : Strategy
 	/// </summary>
 	public HeikinAshiConsecutiveStrategy()
 	{
-		_consecutiveCandles = Param(nameof(ConsecutiveCandles), 3)
+		_consecutiveCandles = Param(nameof(ConsecutiveCandles), 7)
 			.SetDisplay("Consecutive Candles", "Number of consecutive candles required for signal", "Trading parameters")
-			
-			.SetOptimize(2, 5, 1);
+
+			.SetOptimize(5, 10, 1);
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 			.SetDisplay("Stop Loss (%)", "Stop loss as a percentage of entry price", "Risk parameters")
 			
 			.SetOptimize(1, 3, 0.5m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -177,33 +177,18 @@ public class HeikinAshiConsecutiveStrategy : Strategy
 			_bearishCount = 0;
 		}
 
-		// Trading logic
+		// Trading logic - enter/reverse on consecutive candles
 		if (_bullishCount >= ConsecutiveCandles && Position <= 0)
 		{
 			// Enough consecutive bullish candles - Buy signal
 			var volume = Volume + Math.Abs(Position);
 			BuyMarket(volume);
-			LogInfo($"Buy signal: {_bullishCount} consecutive bullish Heikin-Ashi candles");
 		}
 		else if (_bearishCount >= ConsecutiveCandles && Position >= 0)
 		{
 			// Enough consecutive bearish candles - Sell signal
 			var volume = Volume + Math.Abs(Position);
 			SellMarket(volume);
-			LogInfo($"Sell signal: {_bearishCount} consecutive bearish Heikin-Ashi candles");
-		}
-		// Exit logic
-		else if (Position > 0 && isBearish)
-		{
-			// Exit long position on first bearish candle
-			SellMarket(Position);
-			LogInfo($"Exit long: Bearish Heikin-Ashi candle appeared");
-		}
-		else if (Position < 0 && isBullish)
-		{
-			// Exit short position on first bullish candle
-			BuyMarket(Math.Abs(Position));
-			LogInfo($"Exit short: Bullish Heikin-Ashi candle appeared");
 		}
 
 		// Store current Heikin-Ashi values for next candle

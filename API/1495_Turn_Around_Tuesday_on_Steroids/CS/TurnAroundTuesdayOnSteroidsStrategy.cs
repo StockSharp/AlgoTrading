@@ -14,7 +14,7 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Implementation of Turn around Tuesday on Steroids trading strategy.
+/// Turn around Tuesday strategy using RSI momentum with EMA trend filter.
 /// </summary>
 public class TurnAroundTuesdayOnSteroidsStrategy : Strategy
 {
@@ -25,43 +25,18 @@ public class TurnAroundTuesdayOnSteroidsStrategy : Strategy
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevClose1;
-	private decimal _prevClose2;
-	private decimal _prevHigh;
+	private decimal _prevRsi;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private int _cooldown;
 
-	/// <summary>
-	/// Start date for analysis window.
-	/// </summary>
 	public DateTimeOffset StartDate { get => _startDate.Value; set => _startDate.Value = value; }
-
-	/// <summary>
-	/// End date for analysis window.
-	/// </summary>
 	public DateTimeOffset EndDate { get => _endDate.Value; set => _endDate.Value = value; }
-
-	/// <summary>
-	/// Starting day of week.
-	/// </summary>
 	public DayOfWeek StartingDay { get => _startingDay.Value; set => _startingDay.Value = value; }
-
-	/// <summary>
-	/// Use moving average filter.
-	/// </summary>
 	public bool UseMaFilter { get => _useMaFilter.Value; set => _useMaFilter.Value = value; }
-
-	/// <summary>
-	/// Moving average period.
-	/// </summary>
 	public int MaPeriod { get => _maPeriod.Value; set => _maPeriod.Value = value; }
-
-	/// <summary>
-	/// Candle type for strategy.
-	/// </summary>
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Initializes a new instance of the <see cref="TurnAroundTuesdayOnSteroidsStrategy"/>.
-	/// </summary>
 	public TurnAroundTuesdayOnSteroidsStrategy()
 	{
 		_startDate = Param(nameof(StartDate), new DateTimeOffset(new DateTime(2014, 1, 1)))
@@ -76,9 +51,9 @@ public class TurnAroundTuesdayOnSteroidsStrategy : Strategy
 		_useMaFilter = Param(nameof(UseMaFilter), false)
 			.SetDisplay("Use MA Filter", "Enable moving average filter", "Strategy");
 
-		_maPeriod = Param(nameof(MaPeriod), 200)
+		_maPeriod = Param(nameof(MaPeriod), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("MA Period", "Moving average period", "Strategy");
+			.SetDisplay("RSI Period", "RSI period", "Strategy");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "Strategy");
@@ -94,10 +69,10 @@ public class TurnAroundTuesdayOnSteroidsStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_prevClose1 = 0m;
-		_prevClose2 = 0m;
-		_prevHigh = 0m;
+		_prevRsi = 0;
+		_prevFast = 0;
+		_prevSlow = 0;
+		_cooldown = 0;
 	}
 
 	/// <inheritdoc />
@@ -105,56 +80,81 @@ public class TurnAroundTuesdayOnSteroidsStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var sma = new SMA { Length = MaPeriod };
+		var rsi = new RelativeStrengthIndex { Length = MaPeriod };
+		var emaFast = new ExponentialMovingAverage { Length = 8 };
+		var emaSlow = new ExponentialMovingAverage { Length = 21 };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(sma, ProcessCandle)
-			.Start();
+		subscription.Bind(rsi, emaFast, emaSlow, ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, sma);
+			DrawIndicator(area, emaFast);
+			DrawIndicator(area, emaSlow);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal maValue)
+	private void ProcessCandle(ICandleMessage candle, decimal rsiVal, decimal emaFast, decimal emaSlow)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (_prevRsi == 0 || _prevFast == 0 || _prevSlow == 0)
+		{
+			_prevRsi = rsiVal;
+			_prevFast = emaFast;
+			_prevSlow = emaSlow;
 			return;
-
-		var dow = candle.OpenTime.DayOfWeek;
-		var inWindow = candle.OpenTime >= StartDate && candle.OpenTime <= EndDate;
-
-		var isFirstDay = StartingDay == DayOfWeek.Sunday
-			? dow == DayOfWeek.Sunday || dow == DayOfWeek.Monday
-			: dow == DayOfWeek.Monday || dow == DayOfWeek.Tuesday;
-
-		var longCondition = inWindow && isFirstDay && candle.ClosePrice < _prevClose1 && _prevClose1 < _prevClose2;
-
-		if (UseMaFilter)
-			longCondition &= candle.ClosePrice > maValue;
-
-		var exitCondition = candle.ClosePrice > _prevHigh;
-
-		if (longCondition && Position <= 0)
-		{
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
-		}
-		else if (exitCondition && Position > 0)
-		{
-			ClosePosition();
 		}
 
-		_prevClose2 = _prevClose1;
-		_prevClose1 = candle.ClosePrice;
-		_prevHigh = candle.HighPrice;
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+			_prevRsi = rsiVal;
+			_prevFast = emaFast;
+			_prevSlow = emaSlow;
+			return;
+		}
+
+		var hist = emaFast - emaSlow;
+		var histUp = hist > 0m;
+		var histDown = hist < 0m;
+
+		var rsiCrossUp = _prevRsi <= 50m && rsiVal > 50m;
+		var rsiCrossDown = _prevRsi >= 50m && rsiVal < 50m;
+
+		// Exit
+		if (Position > 0 && rsiCrossDown)
+		{
+			SellMarket();
+			_cooldown = 80;
+		}
+		else if (Position < 0 && rsiCrossUp)
+		{
+			BuyMarket();
+			_cooldown = 80;
+		}
+
+		// Entry
+		if (Position == 0)
+		{
+			if (rsiCrossUp && histUp)
+			{
+				BuyMarket();
+				_cooldown = 80;
+			}
+			else if (rsiCrossDown && histDown)
+			{
+				SellMarket();
+				_cooldown = 80;
+			}
+		}
+
+		_prevRsi = rsiVal;
+		_prevFast = emaFast;
+		_prevSlow = emaSlow;
 	}
 }

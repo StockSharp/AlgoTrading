@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,106 +11,48 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Color Code Overlay strategy.
-/// Trades on candle color changes with pip-based stops and time filter.
+/// ColorCodeOverlayStrategy using EMA crossover for trend timing.
+/// Enters long on golden cross, short on death cross.
 /// </summary>
 public class ColorCodeOverlayStrategy : Strategy
 {
-	/// <summary>
-	/// Trade direction options.
-	/// </summary>
-	public enum TradeTypes
-	{
-		Both,
-		LongOnly,
-		ShortOnly
-	}
-
-	private readonly StrategyParam<TradeTypes> _tradeType;
-	private readonly StrategyParam<int> _stopLossPips;
-	private readonly StrategyParam<int> _takeProfitPips;
-	private readonly StrategyParam<TimeSpan> _startTime;
-	private readonly StrategyParam<TimeSpan> _endTime;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal? _prevColorOpen;
-	private decimal? _prevColorClose;
-	private bool _prevBullish;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	private readonly StrategyParam<decimal> _thresholdPercent;
-
-	/// <summary>
-	/// Trade type.
-	/// </summary>
-	public TradeTypes Mode { get => _tradeType.Value; set => _tradeType.Value = value; }
-
-	/// <summary>
-	/// Stop loss in pips.
-	/// </summary>
-	public int StopLossPips { get => _stopLossPips.Value; set => _stopLossPips.Value = value; }
-
-	/// <summary>
-	/// Take profit in pips.
-	/// </summary>
-	public int TakeProfitPips { get => _takeProfitPips.Value; set => _takeProfitPips.Value = value; }
-
-	/// <summary>
-	/// Trading start time.
-	/// </summary>
-	public TimeSpan StartTime { get => _startTime.Value; set => _startTime.Value = value; }
-
-	/// <summary>
-	/// Trading end time.
-	/// </summary>
-	public TimeSpan EndTime { get => _endTime.Value; set => _endTime.Value = value; }
-
-	/// <summary>
-	/// Candle type.
-	/// </summary>
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Minimum percent change to confirm a color switch.
-	/// </summary>
-	public decimal ThresholdPercent { get => _thresholdPercent.Value; set => _thresholdPercent.Value = value; }
-
-	/// <summary>
-	/// Initializes a new instance of the strategy.
-	/// </summary>
 	public ColorCodeOverlayStrategy()
 	{
-		_tradeType = Param(nameof(Mode), TradeTypes.Both)
-			.SetDisplay("Trade Type", "Trading mode", "General");
-
-		_stopLossPips = Param(nameof(StopLossPips), 20)
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
 			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss (pips)", "Stop distance", "Risk");
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
 
-		_takeProfitPips = Param(nameof(TakeProfitPips), 40)
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
 			.SetGreaterThanZero()
-			.SetDisplay("Take Profit (pips)", "Take profit distance", "Risk");
-
-		_thresholdPercent = Param(nameof(ThresholdPercent), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Threshold %", "Percent change to confirm color switch", "General");
-
-		_startTime = Param(nameof(StartTime), new TimeSpan(9, 0, 0))
-			.SetDisplay("Start Time", "Trading start", "General");
-
-		_endTime = Param(nameof(EndTime), new TimeSpan(16, 0, 0))
-			.SetDisplay("End Time", "Trading end", "General");
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Time frame", "General");
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevColorOpen = null;
-		_prevColorClose = null;
-		_prevBullish = false;
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
 
 	/// <inheritdoc />
@@ -121,69 +60,46 @@ public class ColorCodeOverlayStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var pip = Security?.PriceStep ?? 1m;
-		StartProtection(
-			takeProfit: new Unit(TakeProfitPips * pip, UnitTypes.Absolute),
-			stopLoss: new Unit(StopLossPips * pip, UnitTypes.Absolute));
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 
-		var sub = SubscribeCandles(CandleType);
-		sub.Bind(Process).Start();
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(fastEma, slowEma, ProcessCandle)
+			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
-			DrawCandles(area, sub);
+			DrawCandles(area, subscription);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void Process(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var colorClose = (candle.OpenPrice + candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 4m;
-		decimal colorOpen;
-
-		if (_prevColorOpen is null || _prevColorClose is null)
-			colorOpen = (candle.OpenPrice + candle.ClosePrice) / 2m;
-		else
-			colorOpen = (_prevColorOpen.Value + _prevColorClose.Value) / 2m;
-
-		var colorHigh = Math.Max(candle.HighPrice, Math.Max(colorOpen, colorClose));
-		var colorLow = Math.Min(candle.LowPrice, Math.Min(colorOpen, colorClose));
-		var range = colorHigh - colorLow;
-		var threshold = (ThresholdPercent / 100m) * range;
-		var isBullish = colorClose > colorOpen;
-		var changeGreenToRed = _prevBullish && !isBullish && Math.Abs(colorClose - colorOpen) > threshold;
-		var changeRedToGreen = !_prevBullish && isBullish && Math.Abs(colorClose - colorOpen) > threshold;
-
-		var tod = candle.OpenTime.TimeOfDay;
-		var inTime = tod >= StartTime && tod <= EndTime;
-
-		if (inTime)
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-			if (changeRedToGreen)
-			{
-				if ((Mode == TradeTypes.Both || Mode == TradeTypes.ShortOnly) && Position < 0)
-					BuyMarket(-Position);
-				if ((Mode == TradeTypes.Both || Mode == TradeTypes.LongOnly) && Position <= 0)
-					BuyMarket();
-			}
-			else if (changeGreenToRed)
-			{
-				if ((Mode == TradeTypes.Both || Mode == TradeTypes.LongOnly) && Position > 0)
-					SellMarket(Position);
-				if ((Mode == TradeTypes.Both || Mode == TradeTypes.ShortOnly) && Position >= 0)
-					SellMarket();
-			}
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
+			return;
 		}
 
-		_prevColorOpen = colorOpen;
-		_prevColorClose = colorClose;
-		_prevBullish = isBullish;
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
+		{
+			BuyMarket();
+		}
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+		{
+			SellMarket();
+		}
+
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

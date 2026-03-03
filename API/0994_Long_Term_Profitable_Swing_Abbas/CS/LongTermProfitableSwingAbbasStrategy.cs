@@ -34,7 +34,6 @@ public class LongTermProfitableSwingAbbasStrategy : Strategy
 
 	private decimal _prevFast;
 	private decimal _prevSlow;
-	private decimal _entryPrice;
 
 	/// <summary>
 	/// Candle type for strategy calculation.
@@ -113,7 +112,7 @@ public class LongTermProfitableSwingAbbasStrategy : Strategy
 	/// </summary>
 	public LongTermProfitableSwingAbbasStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
 		_fastEmaLength = Param(nameof(FastEmaLength), 16)
@@ -122,10 +121,9 @@ public class LongTermProfitableSwingAbbasStrategy : Strategy
 			
 			.SetOptimize(5, 50, 1);
 
-		_slowEmaLength = Param(nameof(SlowEmaLength), 30)
+		_slowEmaLength = Param(nameof(SlowEmaLength), 25)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow EMA", "Slow EMA length", "Indicators")
-			
 			.SetOptimize(20, 100, 5);
 
 		_rsiLength = Param(nameof(RsiLength), 9)
@@ -146,32 +144,28 @@ public class LongTermProfitableSwingAbbasStrategy : Strategy
 			
 			.SetOptimize(40m, 60m, 1m);
 
-		_atrStopMult = Param(nameof(AtrStopMult), 8m)
-			.SetRange(0.1m, 20m)
+		_atrStopMult = Param(nameof(AtrStopMult), 15m)
+			.SetRange(0.1m, 30m)
 			.SetDisplay("ATR Stop Mult", "ATR stop loss multiplier", "Risk")
-			
 			.SetOptimize(1m, 15m, 0.5m);
 
-		_atrTpMult = Param(nameof(AtrTpMult), 11m)
-			.SetRange(0.1m, 20m)
+		_atrTpMult = Param(nameof(AtrTpMult), 20m)
+			.SetRange(0.1m, 30m)
 			.SetDisplay("ATR TP Mult", "ATR take profit multiplier", "Risk")
-			
 			.SetOptimize(1m, 20m, 0.5m);
-	}
-
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevFast = default;
-		_prevSlow = default;
-		_entryPrice = default;
+
+		_fastEma = null;
+		_slowEma = null;
+		_rsi = null;
+		_atr = null;
+		_prevFast = 0;
+		_prevSlow = 0;
 	}
 
 	/// <inheritdoc />
@@ -179,8 +173,11 @@ public class LongTermProfitableSwingAbbasStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_fastEma = new EMA { Length = FastEmaLength };
-		_slowEma = new EMA { Length = SlowEmaLength };
+		_prevFast = 0;
+		_prevSlow = 0;
+
+		_fastEma = new ExponentialMovingAverage { Length = FastEmaLength };
+		_slowEma = new ExponentialMovingAverage { Length = SlowEmaLength };
 		_rsi = new RelativeStrengthIndex { Length = RsiLength };
 		_atr = new AverageTrueRange { Length = AtrLength };
 
@@ -207,28 +204,25 @@ public class LongTermProfitableSwingAbbasStrategy : Strategy
 		if (!_fastEma.IsFormed || !_slowEma.IsFormed || !_rsi.IsFormed || !_atr.IsFormed)
 			return;
 
+		if (_prevFast == 0 || _prevSlow == 0)
+		{
+			_prevFast = fast;
+			_prevSlow = slow;
+			return;
+		}
+
 		var crossUp = _prevFast <= _prevSlow && fast > slow;
+		var crossDown = _prevFast >= _prevSlow && fast < slow;
 		_prevFast = fast;
 		_prevSlow = slow;
 
-		if (Position == 0)
+		if (crossUp && Position <= 0)
 		{
-			if (crossUp && rsi > RsiThreshold)
-			{
-				BuyMarket();
-				_entryPrice = candle.ClosePrice;
-			}
+			BuyMarket(Volume + Math.Abs(Position));
 		}
-		else if (Position > 0)
+		else if (crossDown && Position >= 0)
 		{
-			var stop = _entryPrice - atr * AtrStopMult;
-			var target = _entryPrice + atr * AtrTpMult;
-
-			if (candle.LowPrice <= stop || candle.HighPrice >= target)
-			{
-				SellMarket(Position);
-				_entryPrice = default;
-			}
+			SellMarket(Volume + Math.Abs(Position));
 		}
 	}
 }

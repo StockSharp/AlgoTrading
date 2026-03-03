@@ -14,8 +14,7 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Stochastic-like oscillator strategy using RSI as proxy with K/D crossover logic.
-/// Supports long and short trades with percent-based TP/SL.
+/// Ultimate Stochastics strategy using RSI momentum with EMA trend filter.
 /// </summary>
 public class UltimateStochasticsStrategy : Strategy
 {
@@ -27,10 +26,10 @@ public class UltimateStochasticsStrategy : Strategy
 	private readonly StrategyParam<decimal> _stopLossPct;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private readonly List<decimal> _rsiValues = new();
-	private decimal _prevK;
-	private decimal _prevD;
-	private decimal _entryPrice;
+	private decimal _prevRsi;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private int _cooldown;
 
 	public int RsiLength { get => _rsiLength.Value; set => _rsiLength.Value = value; }
 	public int SmoothLength { get => _smoothLength.Value; set => _smoothLength.Value = value; }
@@ -76,10 +75,10 @@ public class UltimateStochasticsStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_rsiValues.Clear();
-		_prevK = 0;
-		_prevD = 0;
-		_entryPrice = 0;
+		_prevRsi = 0;
+		_prevFast = 0;
+		_prevSlow = 0;
+		_cooldown = 0;
 	}
 
 	protected override void OnStarted2(DateTime time)
@@ -87,86 +86,80 @@ public class UltimateStochasticsStrategy : Strategy
 		base.OnStarted2(time);
 
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };
-
-		_rsiValues.Clear();
-		_prevK = 0;
-		_prevD = 0;
-		_entryPrice = 0;
+		var emaFast = new ExponentialMovingAverage { Length = 8 };
+		var emaSlow = new ExponentialMovingAverage { Length = 21 };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(rsi, ProcessCandle).Start();
+		subscription.Bind(rsi, emaFast, emaSlow, ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, rsi);
+			DrawIndicator(area, emaFast);
+			DrawIndicator(area, emaSlow);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal rsiValue)
+	private void ProcessCandle(ICandleMessage candle, decimal rsiVal, decimal emaFast, decimal emaSlow)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// RSI as K, smoothed RSI as D
-		_rsiValues.Add(rsiValue);
-		while (_rsiValues.Count > SmoothLength + 2)
-			_rsiValues.RemoveAt(0);
-
-		if (_rsiValues.Count < SmoothLength)
-			return;
-
-		var k = rsiValue;
-		decimal dSum = 0;
-		for (int i = _rsiValues.Count - SmoothLength; i < _rsiValues.Count; i++)
-			dSum += _rsiValues[i];
-		var d = dSum / SmoothLength;
-
-		if (_prevK == 0)
+		if (_prevRsi == 0 || _prevFast == 0 || _prevSlow == 0)
 		{
-			_prevK = k;
-			_prevD = d;
+			_prevRsi = rsiVal;
+			_prevFast = emaFast;
+			_prevSlow = emaSlow;
 			return;
 		}
 
-		// Check TP/SL
-		if (Position > 0 && _entryPrice > 0)
+		if (_cooldown > 0)
 		{
-			if (candle.ClosePrice >= _entryPrice * (1m + TakeProfitPct / 100m) ||
-				candle.ClosePrice <= _entryPrice * (1m - StopLossPct / 100m))
-			{
-				SellMarket();
-				_entryPrice = 0;
-			}
-		}
-		else if (Position < 0 && _entryPrice > 0)
-		{
-			if (candle.ClosePrice <= _entryPrice * (1m - TakeProfitPct / 100m) ||
-				candle.ClosePrice >= _entryPrice * (1m + StopLossPct / 100m))
-			{
-				BuyMarket();
-				_entryPrice = 0;
-			}
+			_cooldown--;
+			_prevRsi = rsiVal;
+			_prevFast = emaFast;
+			_prevSlow = emaSlow;
+			return;
 		}
 
-		// Entry signals: K crosses D in oversold/overbought zone
-		var longSignal = _prevK <= _prevD && k > d && k < Oversold;
-		var shortSignal = _prevK >= _prevD && k < d && k > Overbought;
+		var hist = emaFast - emaSlow;
+		var histUp = hist > 0m;
+		var histDown = hist < 0m;
 
-		if (longSignal && Position <= 0)
-		{
-			BuyMarket();
-			_entryPrice = candle.ClosePrice;
-		}
-		else if (shortSignal && Position >= 0)
+		var rsiCrossUp = _prevRsi <= 50m && rsiVal > 50m;
+		var rsiCrossDown = _prevRsi >= 50m && rsiVal < 50m;
+
+		// Exit
+		if (Position > 0 && rsiCrossDown)
 		{
 			SellMarket();
-			_entryPrice = candle.ClosePrice;
+			_cooldown = 80;
+		}
+		else if (Position < 0 && rsiCrossUp)
+		{
+			BuyMarket();
+			_cooldown = 80;
 		}
 
-		_prevK = k;
-		_prevD = d;
+		// Entry
+		if (Position == 0)
+		{
+			if (rsiCrossUp && histUp)
+			{
+				BuyMarket();
+				_cooldown = 80;
+			}
+			else if (rsiCrossDown && histDown)
+			{
+				SellMarket();
+				_cooldown = 80;
+			}
+		}
+
+		_prevRsi = rsiVal;
+		_prevFast = emaFast;
+		_prevSlow = emaSlow;
 	}
 }

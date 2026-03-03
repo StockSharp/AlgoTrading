@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -13,150 +10,73 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-/// <summary>
-/// Strategy based on daily, premarket, and previous day levels.
-/// Enters long when price crosses above premarket or previous day high.
-/// Enters short when price crosses below premarket or previous day low.
-/// Exits when price reaches the current day's high or low.
-/// </summary>
 public class HodLodPmhPmlPdhPdlStrategy : Strategy
 {
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	private DateTime _currentDay;
-	private decimal _dailyHigh;
-	private decimal _dailyLow;
-	private decimal _previousDayHigh;
-	private decimal _previousDayLow;
-	private decimal _pmHigh;
-	private decimal _pmLow;
-	private bool _isPremarket;
-	private decimal _prevClose;
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Candle type used by the strategy.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="HodLodPmhPmlPdhPdlStrategy"/> class.
-	/// </summary>
 	public HodLodPmhPmlPdhPdlStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-		=> [(Security, CandleType)];
+	{
+		return [(Security, CandleType)];
+	}
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_currentDay = default;
-		_dailyHigh = default;
-		_dailyLow = default;
-		_previousDayHigh = default;
-		_previousDayLow = default;
-		_pmHigh = default;
-		_pmLow = default;
-		_isPremarket = false;
-		_prevClose = default;
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(ProcessCandle)
-			.Start();
-
+		subscription.Bind(fastEma, slowEma, ProcessCandle).Start();
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
-		if (candle.State != CandleStates.Finished)
+		if (candle.State != CandleStates.Finished) return;
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
+		{
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
 			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var date = candle.OpenTime.Date;
-		if (_currentDay != date)
-		{
-			_previousDayHigh = _dailyHigh;
-			_previousDayLow = _dailyLow;
-			_dailyHigh = candle.HighPrice;
-			_dailyLow = candle.LowPrice;
-			_currentDay = date;
 		}
-		else
-		{
-			_dailyHigh = Math.Max(_dailyHigh, candle.HighPrice);
-			_dailyLow = Math.Min(_dailyLow, candle.LowPrice);
-		}
-
-		var time = candle.OpenTime.TimeOfDay;
-		var isPremarket = time < new TimeSpan(9, 30, 0) || time >= new TimeSpan(16, 0, 0);
-		if (isPremarket)
-		{
-			if (!_isPremarket)
-			{
-				_pmHigh = candle.HighPrice;
-				_pmLow = candle.LowPrice;
-			}
-			else
-			{
-				if (candle.HighPrice > _pmHigh)
-					_pmHigh = candle.HighPrice;
-				if (candle.LowPrice < _pmLow)
-					_pmLow = candle.LowPrice;
-			}
-		}
-		_isPremarket = isPremarket;
-
-		if (_prevClose != default)
-		{
-			var crossUpPmh = _prevClose <= _pmHigh && candle.ClosePrice > _pmHigh;
-			var crossUpPdh = _prevClose <= _previousDayHigh && candle.ClosePrice > _previousDayHigh;
-			var crossDownPml = _prevClose >= _pmLow && candle.ClosePrice < _pmLow;
-			var crossDownPdl = _prevClose >= _previousDayLow && candle.ClosePrice < _previousDayLow;
-			var crossUpDh = _prevClose <= _dailyHigh && candle.ClosePrice > _dailyHigh;
-			var crossDownDl = _prevClose >= _dailyLow && candle.ClosePrice < _dailyLow;
-
-			if (Position == 0)
-			{
-				if (crossUpPmh || crossUpPdh)
-					BuyMarket(Volume);
-				else if (crossDownPml || crossDownPdl)
-					SellMarket(Volume);
-			}
-			else if (Position > 0 && crossUpDh)
-			{
-				SellMarket(Volume);
-			}
-			else if (Position < 0 && crossDownDl)
-			{
-				BuyMarket(Volume);
-			}
-		}
-
-		_prevClose = candle.ClosePrice;
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
+			BuyMarket();
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+			SellMarket();
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

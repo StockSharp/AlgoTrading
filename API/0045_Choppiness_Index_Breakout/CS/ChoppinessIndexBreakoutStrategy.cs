@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,10 +11,8 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Choppiness Index Breakout strategy
-/// Enters trades when market transitions from choppy to trending state
-/// Long entry: Choppiness Index falls below 38.2 and price is above MA
-/// Short entry: Choppiness Index falls below 38.2 and price is below MA
+/// Choppiness Index Breakout strategy.
+/// Enters when market transitions from choppy to trending state.
 /// </summary>
 public class ChoppinessIndexBreakoutStrategy : Strategy
 {
@@ -26,11 +21,13 @@ public class ChoppinessIndexBreakoutStrategy : Strategy
 	private readonly StrategyParam<decimal> _choppinessThreshold;
 	private readonly StrategyParam<decimal> _highChoppinessThreshold;
 	private readonly StrategyParam<DataType> _candleType;
-	
+	private readonly StrategyParam<int> _cooldownBars;
+
 	private decimal _prevChoppiness;
+	private int _cooldown;
 
 	/// <summary>
-	/// MA Period
+	/// MA Period.
 	/// </summary>
 	public int MAPeriod
 	{
@@ -39,7 +36,7 @@ public class ChoppinessIndexBreakoutStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Choppiness Index Period
+	/// Choppiness Index Period.
 	/// </summary>
 	public int ChoppinessPeriod
 	{
@@ -48,7 +45,7 @@ public class ChoppinessIndexBreakoutStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Choppiness Threshold (low)
+	/// Choppiness Threshold (low = trending).
 	/// </summary>
 	public decimal ChoppinessThreshold
 	{
@@ -57,7 +54,7 @@ public class ChoppinessIndexBreakoutStrategy : Strategy
 	}
 
 	/// <summary>
-	/// High Choppiness Threshold (for exit)
+	/// High Choppiness Threshold (for exit).
 	/// </summary>
 	public decimal HighChoppinessThreshold
 	{
@@ -66,7 +63,7 @@ public class ChoppinessIndexBreakoutStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Candle type for strategy calculation
+	/// Candle type for strategy calculation.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -75,36 +72,41 @@ public class ChoppinessIndexBreakoutStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initialize <see cref="ChoppinessIndexBreakoutStrategy"/>.
+	/// Cooldown bars between trades.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
+	/// Initialize the Choppiness Index Breakout strategy.
 	/// </summary>
 	public ChoppinessIndexBreakoutStrategy()
 	{
 		_maPeriod = Param(nameof(MAPeriod), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("MA Period", "Period for Moving Average calculation", "Strategy Parameters")
-			
+			.SetDisplay("MA Period", "Period for Moving Average calculation", "Indicators")
 			.SetOptimize(10, 50, 10);
 
 		_choppinessPeriod = Param(nameof(ChoppinessPeriod), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("Choppiness Period", "Period for Choppiness Index calculation", "Strategy Parameters")
-			
+			.SetDisplay("Choppiness Period", "Period for Choppiness Index calculation", "Indicators")
 			.SetOptimize(10, 30, 5);
 
-		_choppinessThreshold = Param(nameof(ChoppinessThreshold), 38.2m)
-			.SetRange(20m, 50m)
-			.SetDisplay("Choppiness Threshold", "Threshold below which market is considered trending", "Strategy Parameters")
-			
-			.SetOptimize(30m, 45m, 2.5m);
+		_choppinessThreshold = Param(nameof(ChoppinessThreshold), 99m)
+			.SetDisplay("Choppiness Threshold", "Threshold below which market is trending", "Entry")
+			.SetOptimize(90m, 100m, 1m);
 
-		_highChoppinessThreshold = Param(nameof(HighChoppinessThreshold), 61.8m)
-			.SetRange(50m, 80m)
-			.SetDisplay("High Choppiness Threshold", "Threshold above which to exit positions", "Strategy Parameters")
-			
-			.SetOptimize(55m, 70m, 2.5m);
+		_highChoppinessThreshold = Param(nameof(HighChoppinessThreshold), 99.5m)
+			.SetDisplay("High Choppiness", "Threshold above which to exit positions", "Exit")
+			.SetOptimize(95m, 100m, 0.5m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles for strategy calculation", "Strategy Parameters");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
+
+		_cooldownBars = Param(nameof(CooldownBars), 500)
+			.SetRange(1, 1000)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
 	}
 
 	/// <inheritdoc />
@@ -117,8 +119,8 @@ public class ChoppinessIndexBreakoutStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevChoppiness = 100m; // Initialize to high value
-
+		_prevChoppiness = 100m;
+		_cooldown = default;
 	}
 
 	/// <inheritdoc />
@@ -126,88 +128,68 @@ public class ChoppinessIndexBreakoutStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Create indicators
-		var ma = new SMA { Length = MAPeriod };
+		_prevChoppiness = 100m;
+		_cooldown = 0;
+
+		var ma = new SimpleMovingAverage { Length = MAPeriod };
 		var choppinessIndex = new ChoppinessIndex { Length = ChoppinessPeriod };
 
-		// Create subscription and bind indicators
 		var subscription = SubscribeCandles(CandleType);
-		
 		subscription
 			.Bind(ma, choppinessIndex, ProcessCandle)
 			.Start();
 
-		// Configure protection
-		StartProtection(
-			takeProfit: new Unit(3, UnitTypes.Percent),
-			stopLoss: new Unit(2, UnitTypes.Percent)
-		);
-
-		// Setup chart visualization
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
 			DrawIndicator(area, ma);
-			DrawIndicator(area, choppinessIndex);
 			DrawOwnTrades(area);
 		}
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal maValue, decimal choppinessValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
-		
-		// Log current values
-		LogInfo($"Candle Close: {candle.ClosePrice}, MA: {maValue}, Choppiness: {choppinessValue}");
-		LogInfo($"Previous Choppiness: {_prevChoppiness}, Threshold: {ChoppinessThreshold}");
 
-		// Check for transition from choppy to trending (falling below threshold)
-		var transitionToTrending = _prevChoppiness >= ChoppinessThreshold && choppinessValue < ChoppinessThreshold;
-		
-		// Trading logic:
-		if (transitionToTrending)
+		if (_cooldown > 0)
 		{
-			LogInfo($"Market transitioning to trending state: {choppinessValue} < {ChoppinessThreshold}");
-			
-			// Long: Low choppiness and price above MA
-			if (candle.ClosePrice > maValue && Position <= 0)
-			{
-				LogInfo($"Buy Signal: Low choppiness ({choppinessValue}) and Price ({candle.ClosePrice}) > MA ({maValue})");
-				BuyMarket(Volume + Math.Abs(Position));
-			}
-			// Short: Low choppiness and price below MA
-			else if (candle.ClosePrice < maValue && Position >= 0)
-			{
-				LogInfo($"Sell Signal: Low choppiness ({choppinessValue}) and Price ({candle.ClosePrice}) < MA ({maValue})");
-				SellMarket(Volume + Math.Abs(Position));
-			}
-		}
-		
-		// Exit logic: Choppiness rises above high threshold (market becoming choppy again)
-		if (choppinessValue > HighChoppinessThreshold)
-		{
-			LogInfo($"Market becoming choppy: {choppinessValue} > {HighChoppinessThreshold}");
-			
-			if (Position > 0)
-			{
-				LogInfo($"Exit Long: High choppiness ({choppinessValue})");
-				SellMarket(Math.Abs(Position));
-			}
-			else if (Position < 0)
-			{
-				LogInfo($"Exit Short: High choppiness ({choppinessValue})");
-				BuyMarket(Math.Abs(Position));
-			}
+			_cooldown--;
+			_prevChoppiness = choppinessValue;
+			return;
 		}
 
-		// Store current choppiness for next comparison
+		var isTrending = choppinessValue < ChoppinessThreshold;
+		var isChoppy = choppinessValue > HighChoppinessThreshold;
+
+		if (Position == 0 && isTrending)
+		{
+			if (candle.ClosePrice > maValue)
+			{
+				BuyMarket();
+				_cooldown = CooldownBars;
+			}
+			else if (candle.ClosePrice < maValue)
+			{
+				SellMarket();
+				_cooldown = CooldownBars;
+			}
+		}
+		else if (Position > 0 && isChoppy)
+		{
+			SellMarket();
+			_cooldown = CooldownBars;
+		}
+		else if (Position < 0 && isChoppy)
+		{
+			BuyMarket();
+			_cooldown = CooldownBars;
+		}
+
 		_prevChoppiness = choppinessValue;
 	}
 }

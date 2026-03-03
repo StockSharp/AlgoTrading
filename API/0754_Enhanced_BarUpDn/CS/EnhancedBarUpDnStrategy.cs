@@ -1,9 +1,8 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -11,251 +10,73 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
-/// <summary>
-/// Strategy based on Enhanced BarUpDn signals with Bollinger Bands filter.
-/// </summary>
 public class EnhancedBarUpDnStrategy : Strategy
 {
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _bbLength;
-	private readonly StrategyParam<decimal> _bbMultiplier;
-	private readonly StrategyParam<int> _maLength;
-	private readonly StrategyParam<int> _atrLength;
-	private readonly StrategyParam<decimal> _atrMultiplierSl;
-	private readonly StrategyParam<decimal> _atrMultiplierTp;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	private BollingerBands _bollinger;
-	private SimpleMovingAverage _trendMa;
-	private AverageTrueRange _atr;
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	private decimal _entryPrice;
-	private decimal _prevClose;
-
-	/// <summary>
-	/// Type of candles for calculation.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Bollinger Bands length.
-	/// </summary>
-	public int BbLength
-	{
-		get => _bbLength.Value;
-		set => _bbLength.Value = value;
-	}
-
-	/// <summary>
-	/// Bollinger Bands multiplier.
-	/// </summary>
-	public decimal BbMultiplier
-	{
-		get => _bbMultiplier.Value;
-		set => _bbMultiplier.Value = value;
-	}
-
-	/// <summary>
-	/// Moving average length for trend filter.
-	/// </summary>
-	public int MaLength
-	{
-		get => _maLength.Value;
-		set => _maLength.Value = value;
-	}
-
-	/// <summary>
-	/// ATR calculation length.
-	/// </summary>
-	public int AtrLength
-	{
-		get => _atrLength.Value;
-		set => _atrLength.Value = value;
-	}
-
-	/// <summary>
-	/// ATR multiplier for stop-loss.
-	/// </summary>
-	public decimal AtrMultiplierSl
-	{
-		get => _atrMultiplierSl.Value;
-		set => _atrMultiplierSl.Value = value;
-	}
-
-	/// <summary>
-	/// ATR multiplier for take-profit.
-	/// </summary>
-	public decimal AtrMultiplierTp
-	{
-		get => _atrMultiplierTp.Value;
-		set => _atrMultiplierTp.Value = value;
-	}
-
-	/// <summary>
-	/// Constructor.
-	/// </summary>
 	public EnhancedBarUpDnStrategy()
 	{
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
-
-		_bbLength = Param(nameof(BbLength), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("BB Length", "Bollinger Bands length", "Indicators")
-			
-			.SetOptimize(10, 50, 5);
-
-		_bbMultiplier = Param(nameof(BbMultiplier), 2m)
-			.SetRange(0.1m, 10m)
-			.SetDisplay("BB Multiplier", "Bollinger Bands multiplier", "Indicators")
-			
-			.SetOptimize(1m, 4m, 0.5m);
-
-		_maLength = Param(nameof(MaLength), 50)
-			.SetGreaterThanZero()
-			.SetDisplay("MA Length", "Trend MA length", "Indicators")
-			
-			.SetOptimize(20, 100, 10);
-
-		_atrLength = Param(nameof(AtrLength), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("ATR Length", "ATR calculation length", "Indicators")
-			
-			.SetOptimize(7, 28, 1);
-
-		_atrMultiplierSl = Param(nameof(AtrMultiplierSl), 2m)
-			.SetRange(0.1m, 10m)
-			.SetDisplay("ATR SL Mult", "ATR multiplier for stop-loss", "Risk")
-			
-			.SetOptimize(0.5m, 4m, 0.5m);
-
-		_atrMultiplierTp = Param(nameof(AtrMultiplierTp), 3m)
-			.SetRange(0.1m, 10m)
-			.SetDisplay("ATR TP Mult", "ATR multiplier for take-profit", "Risk")
-			
-			.SetOptimize(1m, 6m, 0.5m);
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_entryPrice = default;
-		_prevClose = default;
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_bollinger = new BollingerBands
-		{
-			Length = BbLength,
-			Width = BbMultiplier
-		};
-
-		_trendMa = new SimpleMovingAverage
-		{
-			Length = MaLength
-		};
-
-		_atr = new AverageTrueRange
-		{
-			Length = AtrLength
-		};
-
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.BindEx(new IIndicator[] { _bollinger, _trendMa, _atr }, ProcessCandle)
-			.Start();
-
+		subscription.Bind(fastEma, slowEma, ProcessCandle).Start();
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _bollinger);
-			DrawIndicator(area, _trendMa);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue[] values)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		var bb = (BollingerBandsValue)values[0];
-		if (bb.UpBand is not decimal upper || bb.LowBand is not decimal lower || bb.MovingAverage is not decimal middle)
-			return;
-		var trendValue = values[1].ToDecimal();
-		var atrValue = values[2].ToDecimal();
-
-		if (!_bollinger.IsFormed || !_trendMa.IsFormed || !_atr.IsFormed)
+		if (candle.State != CandleStates.Finished) return;
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-			_prevClose = candle.ClosePrice;
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
 			return;
 		}
-
-		var open = candle.OpenPrice;
-		var close = candle.ClosePrice;
-		var high = candle.HighPrice;
-		var low = candle.LowPrice;
-
-		var isUptrend = close > trendValue;
-		var isDowntrend = close < trendValue;
-
-		var barUp = close > open && open > _prevClose && isUptrend && close > lower;
-		var barDn = close < open && open < _prevClose && isDowntrend && close < upper;
-
-		if (Position == 0)
-		{
-			if (barUp)
-			{
-				BuyMarket();
-				_entryPrice = close;
-			}
-			else if (barDn)
-			{
-				SellMarket();
-				_entryPrice = close;
-			}
-		}
-		else if (Position > 0)
-		{
-			var stop = _entryPrice - atrValue * AtrMultiplierSl;
-			var target = _entryPrice + atrValue * AtrMultiplierTp;
-
-			if (low <= stop || high >= target)
-			{
-				SellMarket();
-				_entryPrice = default;
-			}
-		}
-		else if (Position < 0)
-		{
-			var stop = _entryPrice + atrValue * AtrMultiplierSl;
-			var target = _entryPrice - atrValue * AtrMultiplierTp;
-
-			if (high >= stop || low <= target)
-			{
-				BuyMarket();
-				_entryPrice = default;
-			}
-		}
-
-		_prevClose = close;
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
+			BuyMarket();
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+			SellMarket();
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

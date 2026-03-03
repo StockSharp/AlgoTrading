@@ -14,8 +14,7 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that accumulates positions when RSI drops below its mean minus standard deviation,
-/// and exits when RSI rises above its mean plus standard deviation.
+/// Strategy that uses RSI momentum with EMA trend filter for intelligent accumulation.
 /// </summary>
 public class TtpIntelligentAccumulatorStrategy : Strategy
 {
@@ -23,8 +22,10 @@ public class TtpIntelligentAccumulatorStrategy : Strategy
 	private readonly StrategyParam<int> _lookback;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private readonly List<decimal> _rsiHistory = new();
-	private decimal _entryPrice;
+	private decimal _prevRsi;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private int _cooldown;
 
 	public int RsiPeriod { get => _rsiPeriod.Value; set => _rsiPeriod.Value = value; }
 	public int Lookback { get => _lookback.Value; set => _lookback.Value = value; }
@@ -32,13 +33,13 @@ public class TtpIntelligentAccumulatorStrategy : Strategy
 
 	public TtpIntelligentAccumulatorStrategy()
 	{
-		_rsiPeriod = Param(nameof(RsiPeriod), 7)
+		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "RSI calculation length", "Indicators");
 
-		_lookback = Param(nameof(Lookback), 14)
+		_lookback = Param(nameof(Lookback), 21)
 			.SetGreaterThanZero()
-			.SetDisplay("Lookback", "Period for RSI mean and std dev", "Indicators");
+			.SetDisplay("Lookback", "Slow EMA period", "Indicators");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
@@ -52,8 +53,10 @@ public class TtpIntelligentAccumulatorStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_rsiHistory.Clear();
-		_entryPrice = 0;
+		_prevRsi = 0;
+		_prevFast = 0;
+		_prevSlow = 0;
+		_cooldown = 0;
 	}
 
 	protected override void OnStarted2(DateTime time)
@@ -61,72 +64,82 @@ public class TtpIntelligentAccumulatorStrategy : Strategy
 		base.OnStarted2(time);
 
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
+		var emaFast = new ExponentialMovingAverage { Length = 8 };
+		var emaSlow = new ExponentialMovingAverage { Length = Lookback };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(rsi, ProcessCandle).Start();
+		subscription.Bind(rsi, emaFast, emaSlow, ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawIndicator(area, emaFast);
+			DrawIndicator(area, emaSlow);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal rsiVal)
+	private void ProcessCandle(ICandleMessage candle, decimal rsiVal, decimal emaFast, decimal emaSlow)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		_rsiHistory.Add(rsiVal);
-		if (_rsiHistory.Count > Lookback)
-			_rsiHistory.RemoveAt(0);
-
-		if (_rsiHistory.Count < Lookback)
-			return;
-
-		// Calculate mean and std of RSI
-		var sum = 0m;
-		for (var i = 0; i < _rsiHistory.Count; i++)
-			sum += _rsiHistory[i];
-		var mean = sum / _rsiHistory.Count;
-
-		var sumSq = 0m;
-		for (var i = 0; i < _rsiHistory.Count; i++)
+		if (_prevRsi == 0 || _prevFast == 0 || _prevSlow == 0)
 		{
-			var diff = _rsiHistory[i] - mean;
-			sumSq += diff * diff;
-		}
-		var std = (decimal)Math.Sqrt((double)(sumSq / _rsiHistory.Count));
-
-		if (std <= 0)
+			_prevRsi = rsiVal;
+			_prevFast = emaFast;
+			_prevSlow = emaSlow;
 			return;
-
-		var entrySignal = rsiVal < mean - std;
-		var exitSignal = rsiVal > mean + std;
-
-		// Accumulate long when RSI is oversold relative to its own distribution
-		if (entrySignal && Position <= 0)
-		{
-			BuyMarket();
-			_entryPrice = candle.ClosePrice;
 		}
-		// Exit when RSI is overbought
-		else if (exitSignal && Position > 0)
+
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+			_prevRsi = rsiVal;
+			_prevFast = emaFast;
+			_prevSlow = emaSlow;
+			return;
+		}
+
+		// EMA histogram
+		var hist = emaFast - emaSlow;
+		var histUp = hist > 0m;
+		var histDown = hist < 0m;
+
+		// RSI cross 50
+		var rsiCrossUp = _prevRsi <= 50m && rsiVal > 50m;
+		var rsiCrossDown = _prevRsi >= 50m && rsiVal < 50m;
+
+		// Exit
+		if (Position > 0 && rsiCrossDown)
 		{
 			SellMarket();
-			_entryPrice = 0;
+			_cooldown = 80;
 		}
-		// Also allow short on extreme overbought
-		else if (exitSignal && Position == 0)
-		{
-			SellMarket();
-			_entryPrice = candle.ClosePrice;
-		}
-		else if (entrySignal && Position < 0)
+		else if (Position < 0 && rsiCrossUp)
 		{
 			BuyMarket();
-			_entryPrice = 0;
+			_cooldown = 80;
 		}
+
+		// Entry
+		if (Position == 0)
+		{
+			if (rsiCrossUp && histUp)
+			{
+				BuyMarket();
+				_cooldown = 80;
+			}
+			else if (rsiCrossDown && histDown)
+			{
+				SellMarket();
+				_cooldown = 80;
+			}
+		}
+
+		_prevRsi = rsiVal;
+		_prevFast = emaFast;
+		_prevSlow = emaSlow;
 	}
 }

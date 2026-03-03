@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,156 +11,95 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that draws lines connecting past open prices similar to the TradingView "Day Play Ace Spectrum" study.
+/// DailyPlayAceSpectrumStrategy using EMA crossover for trend timing.
+/// Enters long on golden cross, short on death cross.
 /// </summary>
 public class DailyPlayAceSpectrumStrategy : Strategy
 {
-	private readonly StrategyParam<int> _linesCount;
-	private readonly StrategyParam<int> _intervalA;
-	private readonly StrategyParam<int> _intervalB;
-	private readonly StrategyParam<decimal> _scale;
-	private readonly StrategyParam<decimal> _thicknessOffset;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	
-	private readonly List<ICandleMessage> _candles = new();
-	
-	/// <summary>
-	/// Number of lines to draw.
-	/// </summary>
-	public int LinesCount
-	{
-		get => _linesCount.Value;
-		set => _linesCount.Value = value;
-	}
-	
-	/// <summary>
-	/// Multiplier for the first bar index.
-	/// </summary>
-	public int IntervalA
-	{
-		get => _intervalA.Value;
-		set => _intervalA.Value = value;
-	}
-	
-	/// <summary>
-	/// Multiplier for the second bar index.
-	/// </summary>
-	public int IntervalB
-	{
-		get => _intervalB.Value;
-		set => _intervalB.Value = value;
-	}
-	
-	/// <summary>
-	/// Scaling factor for line thickness.
-	/// </summary>
-	public decimal Scale
-	{
-		get => _scale.Value;
-		set => _scale.Value = value;
-	}
-	
-	/// <summary>
-	/// Offset added to line thickness.
-	/// </summary>
-	public decimal ThicknessOffset
-	{
-		get => _thicknessOffset.Value;
-		set => _thicknessOffset.Value = value;
-	}
-	
-	/// <summary>
-	/// Candle type parameter.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-	
-	/// <summary>
-	/// Constructor.
-	/// </summary>
+
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
+
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+
 	public DailyPlayAceSpectrumStrategy()
 	{
-		_linesCount = Param(nameof(LinesCount), 120)
-		.SetGreaterThanZero()
-		.SetDisplay("Lines Count", "Number of lines to draw", "General");
-		
-		_intervalA = Param(nameof(IntervalA), 18)
-		.SetGreaterThanZero()
-		.SetDisplay("Interval A", "Multiplier for first bar index", "General");
-		
-		_intervalB = Param(nameof(IntervalB), 9)
-		.SetGreaterThanZero()
-		.SetDisplay("Interval B", "Multiplier for second bar index", "General");
-		
-		_scale = Param(nameof(Scale), 50m)
-		.SetGreaterThanZero()
-		.SetDisplay("Scale", "Scaling factor for line thickness", "General");
-		
-		_thicknessOffset = Param(nameof(ThicknessOffset), 4m)
-		.SetDisplay("Thickness Offset", "Offset added to line thickness", "General");
-		
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-		.SetDisplay("Candle Type", "Type of candles to use", "General");
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
-	
+
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
-	
+
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_candles.Clear();
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
-	
+
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		
+
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
+
 		var subscription = SubscribeCandles(CandleType);
-		
 		subscription
-		.Bind(ProcessCandle)
-		.Start();
-		
+			.Bind(fastEma, slowEma, ProcessCandle)
+			.Start();
+
 		var area = CreateChartArea();
 		if (area != null)
-		DrawCandles(area, subscription);
-	}
-	
-	private void ProcessCandle(ICandleMessage candle)
-	{
-		if (candle.State != CandleStates.Finished)
-		return;
-		
-		_candles.Add(candle);
-		
-		var maxIndex = LinesCount * Math.Max(IntervalA, IntervalB);
-		if (_candles.Count <= maxIndex)
-		return;
-		
-		for (var i = 1; i <= LinesCount; i++)
 		{
-			var indexA = i * IntervalA;
-			var indexB = i * IntervalB;
-			
-			if (_candles.Count <= indexA || _candles.Count <= indexB)
-			continue;
-			
-			var candleA = _candles[_candles.Count - 1 - indexA];
-			var candleB = _candles[_candles.Count - 1 - indexB];
-			
-			var width = (decimal)i / (LinesCount / (Scale == 0 ? 1m : Scale)) + ThicknessOffset;
-			
-			// Line drawing removed (not available in API)
+			DrawCandles(area, subscription);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
+			DrawOwnTrades(area);
 		}
 	}
-}
 
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
+
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
+		{
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
+			return;
+		}
+
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
+		{
+			BuyMarket();
+		}
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+		{
+			SellMarket();
+		}
+
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
+	}
+}

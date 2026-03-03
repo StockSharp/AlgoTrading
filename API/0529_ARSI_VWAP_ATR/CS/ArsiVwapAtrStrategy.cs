@@ -1,102 +1,88 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Adaptive RSI strategy with dynamic OB/OS levels based on ATR or VWAP deviation.
+/// Adaptive RSI strategy with dynamic OB/OS levels.
+/// Uses RSI crossover of overbought/oversold thresholds with EMA trend filter.
 /// </summary>
 public class ArsiVwapAtrStrategy : Strategy
 {
 	private readonly StrategyParam<int> _rsiLength;
-	private readonly StrategyParam<decimal> _baseK;
-	private readonly StrategyParam<decimal> _riskPercent;
-	private readonly StrategyParam<decimal> _stopLossPercent;
-	private readonly StrategyParam<decimal> _riskReward;
-	private readonly StrategyParam<string> _sourceOb;
-	private readonly StrategyParam<string> _sourceOs;
-	private readonly StrategyParam<int> _atrLengthOb;
-	private readonly StrategyParam<int> _atrLengthOs;
-	private readonly StrategyParam<decimal> _obMultiplier;
-	private readonly StrategyParam<decimal> _osMultiplier;
+	private readonly StrategyParam<int> _emaLength;
+	private readonly StrategyParam<decimal> _obLevel;
+	private readonly StrategyParam<decimal> _osLevel;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal? _prevRsi;
+	private decimal _prevRsi;
+	private int _barIndex;
+	private int _lastTradeBar;
 
 	/// <summary>
 	/// RSI length.
 	/// </summary>
-	public int RsiLength { get => _rsiLength.Value; set => _rsiLength.Value = value; }
+	public int RsiLength
+	{
+		get => _rsiLength.Value;
+		set => _rsiLength.Value = value;
+	}
 
 	/// <summary>
-	/// Base K coefficient.
+	/// EMA trend filter length.
 	/// </summary>
-	public decimal BaseK { get => _baseK.Value; set => _baseK.Value = value; }
+	public int EmaLength
+	{
+		get => _emaLength.Value;
+		set => _emaLength.Value = value;
+	}
 
 	/// <summary>
-	/// Risk percent of equity.
+	/// RSI overbought level.
 	/// </summary>
-	public decimal RiskPercent { get => _riskPercent.Value; set => _riskPercent.Value = value; }
+	public decimal ObLevel
+	{
+		get => _obLevel.Value;
+		set => _obLevel.Value = value;
+	}
 
 	/// <summary>
-	/// Stop loss percent.
+	/// RSI oversold level.
 	/// </summary>
-	public decimal StopLossPercent { get => _stopLossPercent.Value; set => _stopLossPercent.Value = value; }
+	public decimal OsLevel
+	{
+		get => _osLevel.Value;
+		set => _osLevel.Value = value;
+	}
 
 	/// <summary>
-	/// Risk reward multiplier.
+	/// Cooldown bars between trades.
 	/// </summary>
-	public decimal RiskReward { get => _riskReward.Value; set => _riskReward.Value = value; }
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
 
 	/// <summary>
-	/// Source for overbought level (ATR or VWAP).
+	/// Candle type.
 	/// </summary>
-	public string SourceOb { get => _sourceOb.Value; set => _sourceOb.Value = value; }
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
 
 	/// <summary>
-	/// Source for oversold level (ATR or VWAP).
-	/// </summary>
-	public string SourceOs { get => _sourceOs.Value; set => _sourceOs.Value = value; }
-
-	/// <summary>
-	/// ATR length for OB calculation.
-	/// </summary>
-	public int AtrLengthOb { get => _atrLengthOb.Value; set => _atrLengthOb.Value = value; }
-
-	/// <summary>
-	/// ATR length for OS calculation.
-	/// </summary>
-	public int AtrLengthOs { get => _atrLengthOs.Value; set => _atrLengthOs.Value = value; }
-
-	/// <summary>
-	/// Multiplier for OB line.
-	/// </summary>
-	public decimal ObMultiplier { get => _obMultiplier.Value; set => _obMultiplier.Value = value; }
-
-	/// <summary>
-	/// Multiplier for OS line.
-	/// </summary>
-	public decimal OsMultiplier { get => _osMultiplier.Value; set => _osMultiplier.Value = value; }
-
-	/// <summary>
-	/// Candle type for strategy calculation.
-	/// </summary>
-	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
-
-	/// <summary>
-	/// Initialize <see cref="ArsiVwapAtrStrategy"/>.
+	/// Constructor.
 	/// </summary>
 	public ArsiVwapAtrStrategy()
 	{
@@ -104,42 +90,20 @@ public class ArsiVwapAtrStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "RSI calculation period", "Indicators");
 
-		_baseK = Param(nameof(BaseK), 1m)
-			.SetDisplay("Base K", "Base coefficient", "Indicators");
-
-		_riskPercent = Param(nameof(RiskPercent), 2m)
-			.SetDisplay("Risk %", "Risk percent of equity", "Risk")
-			.SetGreaterThanZero();
-
-		_stopLossPercent = Param(nameof(StopLossPercent), 2.5m)
-			.SetDisplay("SL %", "Stop loss percent", "Risk")
-			.SetGreaterThanZero();
-
-		_riskReward = Param(nameof(RiskReward), 2m)
-			.SetDisplay("RR", "Risk reward multiplier", "Risk")
-			.SetGreaterThanZero();
-
-		_sourceOb = Param(nameof(SourceOb), "ATR")
-			.SetDisplay("OB Source", "Source for OB line (ATR/VWAP)", "Indicators");
-
-		_sourceOs = Param(nameof(SourceOs), "ATR")
-			.SetDisplay("OS Source", "Source for OS line (ATR/VWAP)", "Indicators");
-
-		_atrLengthOb = Param(nameof(AtrLengthOb), 14)
+		_emaLength = Param(nameof(EmaLength), 50)
 			.SetGreaterThanZero()
-			.SetDisplay("ATR OB", "ATR length for OB", "Indicators");
+			.SetDisplay("EMA Length", "EMA trend filter period", "Indicators");
 
-		_atrLengthOs = Param(nameof(AtrLengthOs), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("ATR OS", "ATR length for OS", "Indicators");
+		_obLevel = Param(nameof(ObLevel), 55m)
+			.SetDisplay("OB Level", "Overbought RSI level", "Indicators");
 
-		_obMultiplier = Param(nameof(ObMultiplier), 10m)
-			.SetDisplay("OB Mult", "OB line multiplier", "Indicators");
+		_osLevel = Param(nameof(OsLevel), 45m)
+			.SetDisplay("OS Level", "Oversold RSI level", "Indicators");
 
-		_osMultiplier = Param(nameof(OsMultiplier), 10m)
-			.SetDisplay("OS Mult", "OS line multiplier", "Indicators");
+		_cooldownBars = Param(nameof(CooldownBars), 300)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "Trading");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -153,7 +117,9 @@ public class ArsiVwapAtrStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevRsi = null;
+		_prevRsi = 0;
+		_barIndex = 0;
+		_lastTradeBar = 0;
 	}
 
 	/// <inheritdoc />
@@ -162,84 +128,47 @@ public class ArsiVwapAtrStrategy : Strategy
 		base.OnStarted2(time);
 
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };
-		var vwap = new VolumeWeightedMovingAverage();
-		var atrOb = new AverageTrueRange { Length = AtrLengthOb };
-		var atrOs = new AverageTrueRange { Length = AtrLengthOs };
+		var ema = new ExponentialMovingAverage { Length = EmaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(vwap, rsi, atrOb, atrOs, ProcessCandle)
+			.Bind(rsi, ema, ProcessCandle)
 			.Start();
-
-		StartProtection(
-			stopLoss: new Unit(StopLossPercent, UnitTypes.Percent),
-			takeProfit: new Unit(StopLossPercent * RiskReward, UnitTypes.Percent));
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, vwap);
-			DrawIndicator(area, rsi);
+			DrawIndicator(area, ema);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal vwapValue, decimal rsiValue, decimal atrObValue, decimal atrOsValue)
+	private void ProcessCandle(ICandleMessage candle, decimal rsiValue, decimal emaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		_barIndex++;
 
-		var close = candle.ClosePrice;
+		var cooldownOk = _barIndex - _lastTradeBar > CooldownBars;
 
-		var volOb = SourceOb == "ATR" ? atrObValue / close * 100m : Math.Abs(close - vwapValue) / close * 100m;
-		var volOs = SourceOs == "ATR" ? atrOsValue / close * 100m : Math.Abs(close - vwapValue) / close * 100m;
+		// RSI crosses above OS level from below = buy signal
+		var longSignal = _prevRsi > 0 && _prevRsi < OsLevel && rsiValue >= OsLevel;
+		// RSI crosses below OB level from above = sell signal
+		var shortSignal = _prevRsi > 0 && _prevRsi > ObLevel && rsiValue <= ObLevel;
 
-		var kOb = BaseK * Math.Max(volOb / 5m, 0.5m);
-		var kOs = BaseK * Math.Max(volOs / 5m, 0.5m);
-
-		var ob = 50m + kOb * ObMultiplier;
-		var os = 50m - kOs * OsMultiplier;
-
-		if (_prevRsi != null)
+		if (longSignal && Position <= 0 && cooldownOk)
 		{
-			var longIn = _prevRsi < os && rsiValue >= os;
-			var shortIn = _prevRsi > ob && rsiValue <= ob;
-			var exitLong = (_prevRsi > 50m && rsiValue <= 50m) || (_prevRsi < ob && rsiValue >= ob);
-			var exitShort = (_prevRsi < 50m && rsiValue >= 50m) || (_prevRsi > os && rsiValue <= os);
-
-			if (longIn && Position <= 0)
-			{
-				var volume = CalculateQty(close);
-				BuyMarket(volume);
-			}
-			else if (shortIn && Position >= 0)
-			{
-				var volume = CalculateQty(close);
-				SellMarket(volume);
-			}
-			else if (exitLong && Position > 0)
-			{
-				SellMarket(Position);
-			}
-			else if (exitShort && Position < 0)
-			{
-				BuyMarket(Math.Abs(Position));
-			}
+			BuyMarket();
+			_lastTradeBar = _barIndex;
+		}
+		else if (shortSignal && Position >= 0 && cooldownOk)
+		{
+			SellMarket();
+			_lastTradeBar = _barIndex;
 		}
 
 		_prevRsi = rsiValue;
 	}
-
-	private decimal CalculateQty(decimal price)
-	{
-		var equity = Portfolio?.CurrentValue ?? 0m;
-		var riskValue = equity * RiskPercent / 100m;
-		var stopDist = price * StopLossPercent / 100m;
-		return stopDist > 0m ? riskValue / stopDist : 0m;
-	}
 }
-

@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,67 +11,31 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that calculates CME equity futures price limit levels.
+/// CmeEquityFuturesPriceLimitsStrategy using EMA crossover for trend timing.
+/// Enters long on golden cross, short on death cross.
 /// </summary>
 public class CmeEquityFuturesPriceLimitsStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _manualReference;
-	private readonly StrategyParam<bool> _showLimitDownLevels;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _offsetHour;
 
-	private decimal _reference;
-	private int _prevHour = -1;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	/// <summary>
-	/// Manual reference price override (0 to disable).
-	/// </summary>
-	public decimal ManualReference
-	{
-		get => _manualReference.Value;
-		set => _manualReference.Value = value;
-	}
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Show -7/-13/-20% limit-down levels.
-	/// </summary>
-	public bool ShowLimitDownLevels
-	{
-		get => _showLimitDownLevels.Value;
-		set => _showLimitDownLevels.Value = value;
-	}
-
-	/// <summary>
-	/// Hour to capture the daily reference price.
-	/// </summary>
-	public int OffsetHour
-	{
-		get => _offsetHour.Value;
-		set => _offsetHour.Value = value;
-	}
-
-	/// <summary>
-	/// Type of candles to process.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the strategy.
-	/// </summary>
 	public CmeEquityFuturesPriceLimitsStrategy()
 	{
-		_manualReference = Param(nameof(ManualReference), 0m)
-			.SetDisplay("Manual Reference", "Manual reference price (0 to disable)", "General");
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
 
-		_showLimitDownLevels = Param(nameof(ShowLimitDownLevels), true)
-			.SetDisplay("Show Limit Down Levels", "Log -7/-13/-20% levels", "General");
-
-		_offsetHour = Param(nameof(OffsetHour), 20)
-			.SetDisplay("Reference Hour", "Hour to capture reference price", "General");
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -90,9 +51,8 @@ public class CmeEquityFuturesPriceLimitsStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_reference = 0m;
-		_prevHour = -1;
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
 
 	/// <inheritdoc />
@@ -100,46 +60,46 @@ public class CmeEquityFuturesPriceLimitsStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var subscription = SubscribeCandles(CandleType);
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 
+		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(fastEma, slowEma, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
+			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var hour = candle.OpenTime.Hour;
-
-		if (hour == OffsetHour && _prevHour != OffsetHour)
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-			_reference = ManualReference != 0m ? ManualReference : candle.OpenPrice;
-
-			var limitUp = _reference * 1.05m;
-			var limitDown = _reference * 0.95m;
-
-			LogInfo($"Reference: {_reference}, +5%: {limitUp}, -5%: {limitDown}");
-
-			if (ShowLimitDownLevels)
-			{
-				var limit7 = _reference * 0.93m;
-				var limit13 = _reference * 0.87m;
-				var limit20 = _reference * 0.80m;
-
-				LogInfo($"-7%: {limit7}, -13%: {limit13}, -20%: {limit20}");
-			}
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
+			return;
 		}
 
-		_prevHour = hour;
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
+		{
+			BuyMarket();
+		}
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+		{
+			SellMarket();
+		}
+
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }
-

@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,22 +11,25 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// CCI Hook Reversal Strategy.
-/// Enters long when CCI forms an upward hook from oversold conditions.
-/// Enters short when CCI forms a downward hook from overbought conditions.
+/// CCI Hook Reversal strategy.
+/// Enters long when CCI hooks up from oversold zone.
+/// Enters short when CCI hooks down from overbought zone.
+/// Exits when CCI crosses zero.
+/// Uses cooldown to control trade frequency.
 /// </summary>
 public class CciHookReversalStrategy : Strategy
 {
 	private readonly StrategyParam<int> _cciPeriod;
 	private readonly StrategyParam<int> _oversoldLevel;
 	private readonly StrategyParam<int> _overboughtLevel;
-	private readonly StrategyParam<Unit> _stopLoss;
 	private readonly StrategyParam<DataType> _candleType;
-	
-	private decimal _prevCci;
+	private readonly StrategyParam<int> _cooldownBars;
+
+	private decimal? _prevCci;
+	private int _cooldown;
 
 	/// <summary>
-	/// Period for CCI calculation.
+	/// CCI period.
 	/// </summary>
 	public int CciPeriod
 	{
@@ -38,7 +38,7 @@ public class CciHookReversalStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Oversold level for CCI.
+	/// Oversold level.
 	/// </summary>
 	public int OversoldLevel
 	{
@@ -47,7 +47,7 @@ public class CciHookReversalStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Overbought level for CCI.
+	/// Overbought level.
 	/// </summary>
 	public int OverboughtLevel
 	{
@@ -56,16 +56,7 @@ public class CciHookReversalStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stop loss percentage from entry price.
-	/// </summary>
-	public Unit StopLoss
-	{
-		get => _stopLoss.Value;
-		set => _stopLoss.Value = value;
-	}
-
-	/// <summary>
-	/// Type of candles to use.
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -74,32 +65,37 @@ public class CciHookReversalStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initializes a new instance of the <see cref="CciHookReversalStrategy"/>.
+	/// Cooldown bars.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
+	/// Constructor.
 	/// </summary>
 	public CciHookReversalStrategy()
 	{
 		_cciPeriod = Param(nameof(CciPeriod), 20)
-			.SetDisplay("CCI Period", "Period for CCI calculation", "CCI Settings")
 			.SetRange(14, 30)
-			;
-			
+			.SetDisplay("CCI Period", "Period for CCI", "CCI");
+
 		_oversoldLevel = Param(nameof(OversoldLevel), -100)
-			.SetDisplay("Oversold Level", "Oversold level for CCI", "CCI Settings")
 			.SetRange(-150, -50)
-			;
-			
+			.SetDisplay("Oversold", "Oversold level", "CCI");
+
 		_overboughtLevel = Param(nameof(OverboughtLevel), 100)
-			.SetDisplay("Overbought Level", "Overbought level for CCI", "CCI Settings")
 			.SetRange(50, 150)
-			;
-			
-		_stopLoss = Param(nameof(StopLoss), new Unit(2, UnitTypes.Percent))
-			.SetDisplay("Stop Loss", "Stop loss as percentage from entry price", "Risk Management")
-			.SetRange(1m, 3m)
-			;
-			
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+			.SetDisplay("Overbought", "Overbought level", "CCI");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
+
+		_cooldownBars = Param(nameof(CooldownBars), 500)
+			.SetRange(1, 1000)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
 	}
 
 	/// <inheritdoc />
@@ -108,100 +104,85 @@ public class CciHookReversalStrategy : Strategy
 		return [(Security, CandleType)];
 	}
 
-		/// <inheritdoc />
-		protected override void OnReseted()
-		{
-				base.OnReseted();
-
-				_prevCci = 0;
-		}
-
-		/// <inheritdoc />
-		protected override void OnStarted2(DateTime time)
-		{
-				base.OnStarted2(time);
-
-				// Enable position protection using stop-loss
-				StartProtection(
-						takeProfit: null,
-						stopLoss: StopLoss,
-						isStopTrailing: false,
-						useMarketOrders: true
-				);
-
-				// Create CCI indicator
-				var cci = new CommodityChannelIndex { Length = CciPeriod };
-
-	// Create subscription
-	var subscription = SubscribeCandles(CandleType);
-	
-	// Bind indicator and process candles
-	subscription
-		.Bind(cci, ProcessCandle)
-		.Start();
-		
-	// Setup chart visualization
-	var area = CreateChartArea();
-	if (area != null)
+	/// <inheritdoc />
+	protected override void OnReseted()
 	{
-		DrawCandles(area, subscription);
-		DrawIndicator(area, cci);
-		DrawOwnTrades(area);
+		base.OnReseted();
+		_prevCci = null;
+		_cooldown = default;
 	}
-}
 
-	/// <summary>
-	/// Process candle with CCI value.
-	/// </summary>
-	/// <param name="candle">Candle.</param>
-	/// <param name="cciValue">CCI value.</param>
+	/// <inheritdoc />
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
+
+		_prevCci = null;
+		_cooldown = 0;
+
+		var cci = new CommodityChannelIndex { Length = CciPeriod };
+
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(cci, ProcessCandle)
+			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, cci);
+			DrawOwnTrades(area);
+		}
+	}
+
 	private void ProcessCandle(ICandleMessage candle, decimal cciValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
-		
-		// If this is the first calculation, just store the value
-		if (_prevCci == 0)
+
+		if (_prevCci == null)
 		{
 			_prevCci = cciValue;
 			return;
 		}
 
-		// Check for CCI hooks
-		bool oversoldHookUp = _prevCci < OversoldLevel && cciValue > _prevCci;
-		bool overboughtHookDown = _prevCci > OverboughtLevel && cciValue < _prevCci;
-		
-		// Long entry: CCI forms an upward hook from oversold
-		if (oversoldHookUp && Position <= 0)
+		if (_cooldown > 0)
 		{
-			BuyMarket(Volume + Math.Abs(Position));
-			LogInfo($"Long entry: CCI upward hook from oversold ({_prevCci} -> {cciValue})");
+			_cooldown--;
+			_prevCci = cciValue;
+			return;
 		}
-		// Short entry: CCI forms a downward hook from overbought
-		else if (overboughtHookDown && Position >= 0)
+
+		// Hook up from oversold
+		var oversoldHookUp = _prevCci < OversoldLevel && cciValue > _prevCci;
+		// Hook down from overbought
+		var overboughtHookDown = _prevCci > OverboughtLevel && cciValue < _prevCci;
+
+		if (Position == 0 && oversoldHookUp)
 		{
-			SellMarket(Volume + Math.Abs(Position));
-			LogInfo($"Short entry: CCI downward hook from overbought ({_prevCci} -> {cciValue})");
+			BuyMarket();
+			_cooldown = CooldownBars;
 		}
-		
-		// Exit conditions based on CCI crossing zero line
-		if (cciValue > 0 && Position < 0)
+		else if (Position == 0 && overboughtHookDown)
 		{
-			BuyMarket(Math.Abs(Position));
-			LogInfo($"Exit short: CCI crossed above zero ({cciValue})");
+			SellMarket();
+			_cooldown = CooldownBars;
 		}
-		else if (cciValue < 0 && Position > 0)
+		else if (Position > 0 && cciValue < 0)
 		{
-			SellMarket(Position);
-			LogInfo($"Exit long: CCI crossed below zero ({cciValue})");
+			SellMarket();
+			_cooldown = CooldownBars;
 		}
-		
-		// Update previous CCI value
+		else if (Position < 0 && cciValue > 0)
+		{
+			BuyMarket();
+			_cooldown = CooldownBars;
+		}
+
 		_prevCci = cciValue;
 	}
 }

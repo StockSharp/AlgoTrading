@@ -1,11 +1,7 @@
-
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,151 +11,95 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Donchian low crossing above WMA during year 2025 with adjustable take profit.
-/// Long positions only.
+/// DonchianWmaCrossoverStrategy using EMA crossover for trend timing.
+/// Enters long on golden cross, short on death cross.
 /// </summary>
 public class DonchianWmaCrossoverStrategy : Strategy
 {
-	private readonly StrategyParam<int> _donchianLength;
-	private readonly StrategyParam<int> _wmaLength;
-	private readonly StrategyParam<decimal> _takeProfitPercent;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	
-	private bool _initialized;
-	private decimal _prevDonLow;
-	private decimal _prevWma;
-	private decimal _entryPrice;
 
-	private static readonly DateTime _startDate = new(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-	private static readonly DateTime _endDate = new(2025, 12, 31, 23, 59, 0, DateTimeKind.Utc);
-	
-	/// <summary>
-	/// Donchian channel length.
-	/// </summary>
-	public int DonchianLength { get => _donchianLength.Value; set => _donchianLength.Value = value; }
-	
-	/// <summary>
-	/// Weighted moving average length.
-	/// </summary>
-	public int WmaLength { get => _wmaLength.Value; set => _wmaLength.Value = value; }
-	
-	/// <summary>
-	/// Take profit percentage.
-	/// </summary>
-	public decimal TakeProfitPercent { get => _takeProfitPercent.Value; set => _takeProfitPercent.Value = value; }
-	
-	/// <summary>
-	/// Candle type.
-	/// </summary>
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
+
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
-	
-	/// <summary>
-	/// Initialize <see cref="DonchianWmaCrossoverStrategy"/>.
-	/// </summary>
+
 	public DonchianWmaCrossoverStrategy()
 	{
-		_donchianLength = Param(nameof(DonchianLength), 7)
-		.SetGreaterThanZero()
-		.SetDisplay("Donchian Length", "Period for Donchian channel", "Parameters")
-		
-		.SetOptimize(5, 30, 1);
-		
-		_wmaLength = Param(nameof(WmaLength), 62)
-		.SetGreaterThanZero()
-		.SetDisplay("WMA Length", "Period for weighted moving average", "Parameters")
-		
-		.SetOptimize(20, 100, 1);
-		
-		_takeProfitPercent = Param(nameof(TakeProfitPercent), 0.01m)
-		.SetGreaterThanZero()
-		.SetDisplay("Take Profit %", "Take profit as decimal", "Risk")
-		
-		.SetOptimize(0.005m, 0.05m, 0.005m);
-		
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-		.SetDisplay("Candle Type", "Type of candles", "General");
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
-	
+
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
-	
+
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_initialized = false;
-		_prevDonLow = 0m;
-		_prevWma = 0m;
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
-	
+
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		
-		var donchian = new DonchianChannels { Length = DonchianLength };
-		var wma = new WeightedMovingAverage { Length = WmaLength };
-		
+
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-		.BindEx(donchian, wma, ProcessCandle)
-		.Start();
-		
+			.Bind(fastEma, slowEma, ProcessCandle)
+			.Start();
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, donchian);
-			DrawIndicator(area, wma);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
-	
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue donchianValue, IIndicatorValue wmaValue)
+
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
-		
-		
-		var dc = (DonchianChannelsValue)donchianValue;
-		if (dc.LowerBand is not decimal donLow)
-		return;
-		
-		var wma = wmaValue.ToDecimal();
-		
-		var in2025 = candle.OpenTime >= _startDate && candle.OpenTime <= _endDate;
-		
-		if (!_initialized)
+			return;
+
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-			_prevDonLow = donLow;
-			_prevWma = wma;
-			_initialized = true;
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
 			return;
 		}
-		
-		var crossUp = _prevDonLow <= _prevWma && donLow > wma;
-		var crossDown = _prevDonLow >= _prevWma && donLow < wma;
-		var wmaUp = wma > _prevWma;
-		
-		if (crossUp && in2025 && Position <= 0)
+
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
 		{
 			BuyMarket();
-			_entryPrice = candle.ClosePrice;
 		}
-		else if (Position > 0)
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
 		{
-			var exitTp = candle.ClosePrice >= _entryPrice * (1 + TakeProfitPercent);
-			var exitX = crossDown && !wmaUp;
-			var exitAll = exitTp || exitX || !in2025;
-
-			if (exitAll)
 			SellMarket();
 		}
-		
-		_prevDonLow = donLow;
-		_prevWma = wma;
+
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

@@ -1,9 +1,8 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -11,186 +10,73 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
-/// <summary>
-/// Volume oscillator strategy with EMA smoothing.
-/// Buys when oscillator rises above threshold and sells when it falls below.
-/// </summary>
 public class FineTuneGannLaplaceVzoStrategy : Strategy
 {
-	private readonly StrategyParam<int> _fastVolumeLength;
-	private readonly StrategyParam<int> _slowVolumeLength;
-	private readonly StrategyParam<int> _smoothLength;
-	private readonly StrategyParam<decimal> _threshold;
-	private readonly StrategyParam<bool> _closeAll;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	private ExponentialMovingAverage _fastVolumeEma;
-	private ExponentialMovingAverage _slowVolumeEma;
-	private ExponentialMovingAverage _smoothEma;
-	private decimal _previousSmooth;
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Fast volume EMA length.
-	/// </summary>
-	public int FastVolumeLength
-	{
-		get => _fastVolumeLength.Value;
-		set => _fastVolumeLength.Value = value;
-	}
-
-	/// <summary>
-	/// Slow volume EMA length.
-	/// </summary>
-	public int SlowVolumeLength
-	{
-		get => _slowVolumeLength.Value;
-		set => _slowVolumeLength.Value = value;
-	}
-
-	/// <summary>
-	/// Smoothing EMA length for oscillator.
-	/// </summary>
-	public int SmoothLength
-	{
-		get => _smoothLength.Value;
-		set => _smoothLength.Value = value;
-	}
-
-	/// <summary>
-	/// Threshold level for signals.
-	/// </summary>
-	public decimal Threshold
-	{
-		get => _threshold.Value;
-		set => _threshold.Value = value;
-	}
-
-	/// <summary>
-	/// Enable closing positions when no signals.
-	/// </summary>
-	public bool CloseAll
-	{
-		get => _closeAll.Value;
-		set => _closeAll.Value = value;
-	}
-
-	/// <summary>
-	/// Type of candles for calculations.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initialize <see cref="FineTuneGannLaplaceVzoStrategy"/>.
-	/// </summary>
 	public FineTuneGannLaplaceVzoStrategy()
 	{
-		_fastVolumeLength = Param(nameof(FastVolumeLength), 5)
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
 			.SetGreaterThanZero()
-			.SetDisplay("Fast Volume EMA", "Fast volume EMA length", "Parameters")
-			
-			.SetOptimize(3, 20, 1);
-
-		_slowVolumeLength = Param(nameof(SlowVolumeLength), 20)
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
 			.SetGreaterThanZero()
-			.SetDisplay("Slow Volume EMA", "Slow volume EMA length", "Parameters")
-			
-			.SetOptimize(10, 40, 5);
-
-		_smoothLength = Param(nameof(SmoothLength), 2)
-			.SetGreaterThanZero()
-			.SetDisplay("Smooth Length", "EMA smoothing length", "Parameters")
-			
-			.SetOptimize(1, 10, 1);
-
-		_threshold = Param(nameof(Threshold), 0m)
-			.SetDisplay("Threshold", "Signal threshold", "Parameters")
-			
-			.SetOptimize(-10m, 10m, 1m);
-
-		_closeAll = Param(nameof(CloseAll), true)
-			.SetDisplay("Close All", "Close position when no signal", "Parameters");
-
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Candle type for calculations", "Parameters");
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_fastVolumeEma = null;
-		_slowVolumeEma = null;
-		_smoothEma = null;
-		_previousSmooth = 0m;
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_fastVolumeEma = new EMA { Length = FastVolumeLength };
-		_slowVolumeEma = new EMA { Length = SlowVolumeLength };
-		_smoothEma = new EMA { Length = SmoothLength };
-
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(ProcessCandle)
-			.Start();
+		subscription.Bind(fastEma, slowEma, ProcessCandle).Start();
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		var fast = _fastVolumeEma.Process(new DecimalIndicatorValue(_fastVolumeEma, candle.TotalVolume, candle.ServerTime)).ToDecimal();
-		var slow = _slowVolumeEma.Process(new DecimalIndicatorValue(_slowVolumeEma, candle.TotalVolume, candle.ServerTime)).ToDecimal();
-
-		if (!_fastVolumeEma.IsFormed || !_slowVolumeEma.IsFormed)
-			return;
-
-		var vzo = slow == 0m ? 0m : (fast - slow) / slow * 100m;
-		var smooth = _smoothEma.Process(new DecimalIndicatorValue(_smoothEma, vzo, candle.ServerTime)).ToDecimal();
-
-		if (!_smoothEma.IsFormed)
+		if (candle.State != CandleStates.Finished) return;
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-			_previousSmooth = smooth;
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
 			return;
 		}
-
-		var rising = smooth > _previousSmooth;
-		var falling = smooth < _previousSmooth;
-
-		if (rising && smooth > Threshold && Position <= 0)
-		{
-			BuyMarket(Volume + Math.Abs(Position));
-		}
-		else if (falling && smooth < -Threshold && Position >= 0)
-		{
-			SellMarket(Volume + Math.Abs(Position));
-		}
-		else if (!rising && !falling && CloseAll && Position != 0)
-		{
-			if (Position > 0)
-				SellMarket(Math.Abs(Position));
-			else
-				BuyMarket(Math.Abs(Position));
-		}
-
-		_previousSmooth = smooth;
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
+			BuyMarket();
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+			SellMarket();
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

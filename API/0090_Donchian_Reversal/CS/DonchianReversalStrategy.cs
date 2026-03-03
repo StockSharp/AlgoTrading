@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,21 +11,23 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Donchian Reversal Strategy.
+/// Donchian Reversal strategy.
 /// Enters long when price bounces from the lower Donchian Channel band.
 /// Enters short when price bounces from the upper Donchian Channel band.
+/// Exits at middle band.
+/// Uses cooldown to control trade frequency.
 /// </summary>
 public class DonchianReversalStrategy : Strategy
 {
 	private readonly StrategyParam<int> _period;
-	private readonly StrategyParam<Unit> _stopLoss;
 	private readonly StrategyParam<DataType> _candleType;
-	
-	private decimal _previousClose;
-	private bool _isFirstCandle = true;
+	private readonly StrategyParam<int> _cooldownBars;
+
+	private decimal _prevClose;
+	private int _cooldown;
 
 	/// <summary>
-	/// Period for Donchian Channel calculation.
+	/// Donchian period.
 	/// </summary>
 	public int Period
 	{
@@ -37,16 +36,7 @@ public class DonchianReversalStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stop loss percentage from entry price.
-	/// </summary>
-	public Unit StopLoss
-	{
-		get => _stopLoss.Value;
-		set => _stopLoss.Value = value;
-	}
-
-	/// <summary>
-	/// Type of candles to use.
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -55,22 +45,29 @@ public class DonchianReversalStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initializes a new instance of the <see cref="DonchianReversalStrategy"/>.
+	/// Cooldown bars.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
+	/// Constructor.
 	/// </summary>
 	public DonchianReversalStrategy()
 	{
 		_period = Param(nameof(Period), 20)
-			.SetDisplay("Period", "Period for Donchian Channel calculation", "Indicator Settings")
-			.SetOptimize(10, 40, 5)
-			;
-			
-		_stopLoss = Param(nameof(StopLoss), new Unit(2, UnitTypes.Percent))
-			.SetDisplay("Stop Loss", "Stop loss as percentage from entry price", "Risk Management")
-			.SetOptimize(1m, 3m, 0.5m)
-			;
-			
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+			.SetRange(10, 40)
+			.SetDisplay("Period", "Period for Donchian Channel", "Indicators");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
+
+		_cooldownBars = Param(nameof(CooldownBars), 500)
+			.SetRange(1, 1000)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
 	}
 
 	/// <inheritdoc />
@@ -83,8 +80,8 @@ public class DonchianReversalStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_previousClose = 0;
-		_isFirstCandle = true;
+		_prevClose = default;
+		_cooldown = default;
 	}
 
 	/// <inheritdoc />
@@ -92,27 +89,16 @@ public class DonchianReversalStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Enable position protection using stop-loss
-		StartProtection(
-			takeProfit: null,
-			stopLoss: StopLoss,
-			isStopTrailing: false,
-			useMarketOrders: true
-		);
+		_prevClose = 0;
+		_cooldown = 0;
 
-		
-		// Create Donchian Channel indicator
 		var donchian = new DonchianChannels { Length = Period };
 
-		// Create subscription
 		var subscription = SubscribeCandles(CandleType);
-		
-		// Bind indicator and process candles
 		subscription
 			.BindEx(donchian, ProcessCandle)
 			.Start();
-			
-		// Setup chart visualization
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -122,47 +108,60 @@ public class DonchianReversalStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue donchianValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue donchianIv)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!donchianIv.IsFormed)
 			return;
-		
-		// If this is the first candle, just store the close price
-		if (_isFirstCandle)
+
+		var dv = (IDonchianChannelsValue)donchianIv;
+
+		if (dv.UpperBand is not decimal upper ||
+			dv.LowerBand is not decimal lower ||
+			dv.Middle is not decimal middle)
+			return;
+
+		if (_prevClose == 0)
 		{
-			_previousClose = candle.ClosePrice;
-			_isFirstCandle = false;
+			_prevClose = candle.ClosePrice;
 			return;
 		}
 
-		var donchianTyped = (DonchianChannelsValue)donchianValue;
-		var middleBand = donchianTyped.Middle;
-		var upperBand = donchianTyped.UpperBand;
-		var lowerBand = donchianTyped.LowerBand;
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+			_prevClose = candle.ClosePrice;
+			return;
+		}
 
-		// Check for price bounce from Donchian bands
-		bool bouncedFromLower = _previousClose < lowerBand && candle.ClosePrice > lowerBand;
-		bool bouncedFromUpper = _previousClose > upperBand && candle.ClosePrice < upperBand;
-		
-		// Long entry: Price bounced from lower band
-		if (bouncedFromLower && Position <= 0)
+		// Bounce from lower band = bullish
+		var bouncedFromLower = _prevClose <= lower && candle.ClosePrice > lower;
+		// Bounce from upper band = bearish
+		var bouncedFromUpper = _prevClose >= upper && candle.ClosePrice < upper;
+
+		if (Position == 0 && bouncedFromLower)
 		{
-			BuyMarket(Volume + Math.Abs(Position));
-			LogInfo($"Long entry: Price bounced from lower Donchian band ({lowerBand})");
+			BuyMarket();
+			_cooldown = CooldownBars;
 		}
-		// Short entry: Price bounced from upper band
-		else if (bouncedFromUpper && Position >= 0)
+		else if (Position == 0 && bouncedFromUpper)
 		{
-			SellMarket(Volume + Math.Abs(Position));
-			LogInfo($"Short entry: Price bounced from upper Donchian band ({upperBand})");
+			SellMarket();
+			_cooldown = CooldownBars;
 		}
-		
-		// Store current close price for next candle comparison
-		_previousClose = candle.ClosePrice;
+		else if (Position > 0 && candle.ClosePrice >= middle && bouncedFromUpper)
+		{
+			SellMarket();
+			_cooldown = CooldownBars;
+		}
+		else if (Position < 0 && candle.ClosePrice <= middle && bouncedFromLower)
+		{
+			BuyMarket();
+			_cooldown = CooldownBars;
+		}
+
+		_prevClose = candle.ClosePrice;
 	}
 }

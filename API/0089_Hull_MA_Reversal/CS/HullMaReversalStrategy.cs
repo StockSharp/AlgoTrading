@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,23 +11,23 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Hull MA Reversal Strategy.
+/// Hull MA Reversal strategy.
 /// Enters long when Hull MA changes direction from down to up.
 /// Enters short when Hull MA changes direction from up to down.
+/// Uses cooldown to control trade frequency.
 /// </summary>
 public class HullMaReversalStrategy : Strategy
 {
 	private readonly StrategyParam<int> _hmaPeriod;
-	private readonly StrategyParam<Unit> _atrMultiplier;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<int> _cooldownBars;
 
-	private decimal _prevHmaValue;
-	private decimal _prevPrevHmaValue;
-	private AverageTrueRange _atr;
+	private decimal _prevHma;
+	private decimal _prevPrevHma;
+	private int _cooldown;
 
 	/// <summary>
-	/// Period for Hull Moving Average.
+	/// HMA period.
 	/// </summary>
 	public int HmaPeriod
 	{
@@ -39,16 +36,7 @@ public class HullMaReversalStrategy : Strategy
 	}
 
 	/// <summary>
-	/// ATR multiplier for stop-loss calculation.
-	/// </summary>
-	public Unit AtrMultiplier
-	{
-		get => _atrMultiplier.Value;
-		set => _atrMultiplier.Value = value;
-	}
-
-	/// <summary>
-	/// Type of candles to use.
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -57,37 +45,29 @@ public class HullMaReversalStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stop-loss percentage.
+	/// Cooldown bars.
 	/// </summary>
-	public decimal StopLossPercent
+	public int CooldownBars
 	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	/// <summary>
-	/// Initializes a new instance of the <see cref="HullMaReversalStrategy"/>.
+	/// Constructor.
 	/// </summary>
 	public HullMaReversalStrategy()
 	{
 		_hmaPeriod = Param(nameof(HmaPeriod), 9)
-			.SetDisplay("HMA Period", "Period for Hull Moving Average", "Indicator Settings")
 			.SetRange(5, 20)
-			;
-			
-		_atrMultiplier = Param(nameof(AtrMultiplier), new Unit(2, UnitTypes.Absolute))
-			.SetDisplay("ATR Multiplier", "Multiplier for ATR stop-loss", "Risk Management")
-			.SetRange(1.5m, 3.0m)
-			;
-			
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+			.SetDisplay("HMA Period", "Period for Hull Moving Average", "Indicators");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
-		_stopLossPercent = Param(nameof(StopLossPercent), 1.0m)
-			.SetNotNegative()
-			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management")
-			
-			.SetOptimize(0.5m, 2.0m, 0.5m);
+		_cooldownBars = Param(nameof(CooldownBars), 500)
+			.SetRange(1, 1000)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
 	}
 
 	/// <inheritdoc />
@@ -100,8 +80,9 @@ public class HullMaReversalStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevHmaValue = 0;
-		_prevPrevHmaValue = 0;
+		_prevHma = default;
+		_prevPrevHma = default;
+		_cooldown = default;
 	}
 
 	/// <inheritdoc />
@@ -109,20 +90,17 @@ public class HullMaReversalStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_atr = new AverageTrueRange { Length = 14 };
+		_prevHma = 0;
+		_prevPrevHma = 0;
+		_cooldown = 0;
 
-		// Create indicators
 		var hma = new HullMovingAverage { Length = HmaPeriod };
 
-		// Create subscription
 		var subscription = SubscribeCandles(CandleType);
-		
-		// Bind indicators and process candles
 		subscription
-			.Bind(hma, _atr, ProcessCandle)
+			.Bind(hma, ProcessCandle)
 			.Start();
-			
-		// Setup chart visualization
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -130,63 +108,63 @@ public class HullMaReversalStrategy : Strategy
 			DrawIndicator(area, hma);
 			DrawOwnTrades(area);
 		}
-
-		StartProtection(
-			new(),
-			new Unit(StopLossPercent, UnitTypes.Percent),
-			useMarketOrders: true
-		);
 	}
 
-	/// <summary>
-	/// Process candle with indicator values.
-	/// </summary>
-	/// <param name="candle">Candle.</param>
-	/// <param name="hmaValue">Hull MA value.</param>
-	/// <param name="atrValue">ATR value.</param>
-	private void ProcessCandle(ICandleMessage candle, decimal hmaValue, decimal atrValue)
+	private void ProcessCandle(ICandleMessage candle, decimal hmaValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// If this is one of the first calculations, just store the values
-		if (_prevHmaValue == 0)
+		if (_prevHma == 0)
 		{
-			_prevHmaValue = hmaValue;
+			_prevHma = hmaValue;
 			return;
 		}
-		
-		if (_prevPrevHmaValue == 0)
+
+		if (_prevPrevHma == 0)
 		{
-			_prevPrevHmaValue = _prevHmaValue;
-			_prevHmaValue = hmaValue;
+			_prevPrevHma = _prevHma;
+			_prevHma = hmaValue;
 			return;
 		}
-		
-		// Check for Hull MA direction change
-		bool directionChangedUp = _prevHmaValue < _prevPrevHmaValue && hmaValue > _prevHmaValue;
-		bool directionChangedDown = _prevHmaValue > _prevPrevHmaValue && hmaValue < _prevHmaValue;
-		
-		// Long entry: Hull MA changed direction from down to up
-		if (directionChangedUp && Position <= 0)
+
+		if (_cooldown > 0)
 		{
-			BuyMarket(Volume + Math.Abs(Position));
-			LogInfo($"Long entry: Hull MA direction changed up ({_prevPrevHmaValue} -> {_prevHmaValue} -> {hmaValue})");
+			_cooldown--;
+			_prevPrevHma = _prevHma;
+			_prevHma = hmaValue;
+			return;
 		}
-		// Short entry: Hull MA changed direction from up to down
-		else if (directionChangedDown && Position >= 0)
+
+		// Direction change detection
+		var dirChangedUp = _prevHma < _prevPrevHma && hmaValue > _prevHma;
+		var dirChangedDown = _prevHma > _prevPrevHma && hmaValue < _prevHma;
+
+		if (Position == 0 && dirChangedUp)
 		{
-			SellMarket(Volume + Math.Abs(Position));
-			LogInfo($"Short entry: Hull MA direction changed down ({_prevPrevHmaValue} -> {_prevHmaValue} -> {hmaValue})");
+			BuyMarket();
+			_cooldown = CooldownBars;
 		}
-		
-		// Update previous values
-		_prevPrevHmaValue = _prevHmaValue;
-		_prevHmaValue = hmaValue;
+		else if (Position == 0 && dirChangedDown)
+		{
+			SellMarket();
+			_cooldown = CooldownBars;
+		}
+		else if (Position > 0 && dirChangedDown)
+		{
+			SellMarket();
+			_cooldown = CooldownBars;
+		}
+		else if (Position < 0 && dirChangedUp)
+		{
+			BuyMarket();
+			_cooldown = CooldownBars;
+		}
+
+		_prevPrevHma = _prevHma;
+		_prevHma = hmaValue;
 	}
 }

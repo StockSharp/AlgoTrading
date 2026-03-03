@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,80 +11,34 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Demo GPT - Day Trading Scalping strategy.
+/// DemoGptDayTradingScalpingStrategy using EMA crossover for trend timing.
+/// Enters long on golden cross, short on death cross.
 /// </summary>
 public class DemoGptDayTradingScalpingStrategy : Strategy
 {
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _volumeAvgPeriod;
-	private readonly StrategyParam<DateTimeOffset> _startDate;
-	private readonly StrategyParam<DateTimeOffset> _endDate;
 
-	private ICandleMessage _prevCandle;
-	private decimal _avgVolume;
-	private int _volumeCounter;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	private decimal _highLevel;
-	private decimal _lowLevel;
-	private decimal _s2;
-	private decimal _s3;
-	private decimal _r2;
-	private decimal _r3;
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-
-	/// <summary>
-	/// Candle type to process.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Volume average period.
-	/// </summary>
-	public int VolumeAvgPeriod
-	{
-		get => _volumeAvgPeriod.Value;
-		set => _volumeAvgPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Start date for trading.
-	/// </summary>
-	public DateTimeOffset StartDate
-	{
-		get => _startDate.Value;
-		set => _startDate.Value = value;
-	}
-
-	/// <summary>
-	/// End date for trading.
-	/// </summary>
-	public DateTimeOffset EndDate
-	{
-		get => _endDate.Value;
-		set => _endDate.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="DemoGptDayTradingScalpingStrategy"/>.
-	/// </summary>
 	public DemoGptDayTradingScalpingStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
-
-		_volumeAvgPeriod = Param(nameof(VolumeAvgPeriod), 20)
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
 			.SetGreaterThanZero()
-			.SetDisplay("Volume SMA Period", "Period for volume average", "Parameters");
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
 
-		_startDate = Param(nameof(StartDate), new DateTimeOffset(2018, 1, 1, 0, 0, 0, TimeSpan.Zero))
-			.SetDisplay("Start Date", "Start date", "Parameters");
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 
-		_endDate = Param(nameof(EndDate), new DateTimeOffset(2069, 12, 31, 0, 0, 0, TimeSpan.Zero))
-			.SetDisplay("End Date", "End date", "Parameters");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -100,12 +51,8 @@ public class DemoGptDayTradingScalpingStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_prevCandle = null;
-		_avgVolume = 0m;
-		_volumeCounter = 0;
-		_highLevel = 0m;
-		_lowLevel = 0m;
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
 
 	/// <inheritdoc />
@@ -113,90 +60,46 @@ public class DemoGptDayTradingScalpingStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var ema20 = new EMA { Length = 20 };
-		var vwap = new VWAP();
-		var highest = new Highest { Length = 14 };
-		var lowest = new Lowest { Length = 14 };
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ema20, vwap, ProcessCandle)
-			.Start();
-
-		SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame())
-			.Bind(highest, lowest, ProcessDaily)
+			.Bind(fastEma, slowEma, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, ema20);
-			DrawIndicator(area, vwap);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
+			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessDaily(ICandleMessage candle, decimal high, decimal low)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		_highLevel = high;
-		_lowLevel = low;
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal ema20, decimal vwap)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		var candleTime = candle.OpenTime;
-		if (candleTime < StartDate || candleTime > EndDate)
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-			if (Position != 0)
-				SellMarket(Position);
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
 			return;
 		}
 
-		var currentVolume = candle.TotalVolume;
-		if (_volumeCounter < VolumeAvgPeriod)
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
 		{
-			_volumeCounter++;
-			_avgVolume = ((_avgVolume * (_volumeCounter - 1)) + currentVolume) / _volumeCounter;
+			BuyMarket();
 		}
-		else
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
 		{
-			_avgVolume = (_avgVolume * (VolumeAvgPeriod - 1) + currentVolume) / VolumeAvgPeriod;
+			SellMarket();
 		}
 
-		var goodVolume = currentVolume > _avgVolume;
-		var range = _highLevel - _lowLevel;
-		_s2 = _lowLevel + range * 1.5m / 2m;
-		_s3 = _lowLevel + range * 1.1m / 2m;
-		_r2 = _highLevel - range * 1.5m / 2m;
-		_r3 = _highLevel - range * 1.1m / 2m;
-
-
-		if (_prevCandle != null && goodVolume)
-		{
-			var greenCandle1 = _prevCandle.ClosePrice > _prevCandle.OpenPrice;
-			var greenCandle2 = candle.ClosePrice > candle.OpenPrice;
-			var redCandle1 = _prevCandle.ClosePrice < _prevCandle.OpenPrice;
-			var redCandle2 = candle.ClosePrice < candle.OpenPrice;
-
-			var buyCondition = greenCandle1 && greenCandle2 && candle.OpenPrice > _prevCandle.ClosePrice;
-			var sellCondition = redCandle1 && redCandle2 && candle.OpenPrice < _prevCandle.ClosePrice;
-
-			if (buyCondition && Position <= 0)
-			{
-				BuyMarket(Volume + Math.Abs(Position));
-			}
-			else if (sellCondition && Position > 0)
-			{
-				SellMarket(Position);
-			}
-		}
-
-		_prevCandle = candle;
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

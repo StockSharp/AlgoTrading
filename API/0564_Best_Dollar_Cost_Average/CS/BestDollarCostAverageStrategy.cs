@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,96 +11,46 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Best Dollar Cost Average Strategy - invests a fixed amount at regular intervals.
+/// Dollar Cost Average strategy — accumulates position at regular intervals,
+/// sells on RSI overbought with forced sell after max accumulation period.
 /// </summary>
 public class BestDollarCostAverageStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<decimal> _amountInvested;
-	private readonly StrategyParam<DcaIntervals> _interval;
-	private readonly StrategyParam<DateTimeOffset> _startDate;
-	private readonly StrategyParam<DateTimeOffset> _endDate;
+	private readonly StrategyParam<int> _buyIntervalBars;
+	private readonly StrategyParam<int> _rsiPeriod;
+	private readonly StrategyParam<decimal> _rsiSellLevel;
+	private readonly StrategyParam<int> _maxAccumulationBars;
 
-	private DateTimeOffset _nextBuyTime;
-	private decimal _totalSpent;
-	private decimal _totalQuantity;
-	private decimal _lastPrice;
+	private RelativeStrengthIndex _rsi;
+	private int _barsSinceLastBuy;
+	private int _totalBarsInPosition;
 
-	/// <summary>
-	/// Candle type for strategy calculation.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int BuyIntervalBars { get => _buyIntervalBars.Value; set => _buyIntervalBars.Value = value; }
+	public int RsiPeriod { get => _rsiPeriod.Value; set => _rsiPeriod.Value = value; }
+	public decimal RsiSellLevel { get => _rsiSellLevel.Value; set => _rsiSellLevel.Value = value; }
+	public int MaxAccumulationBars { get => _maxAccumulationBars.Value; set => _maxAccumulationBars.Value = value; }
 
-	/// <summary>
-	/// Amount invested each period in currency.
-	/// </summary>
-	public decimal AmountInvested
-	{
-		get => _amountInvested.Value;
-		set => _amountInvested.Value = value;
-	}
-
-	/// <summary>
-	/// Interval for dollar cost averaging.
-	/// </summary>
-	public DcaIntervals Interval
-	{
-		get => _interval.Value;
-		set => _interval.Value = value;
-	}
-
-	/// <summary>
-	/// Start date of accumulation.
-	/// </summary>
-	public DateTimeOffset StartDate
-	{
-		get => _startDate.Value;
-		set => _startDate.Value = value;
-	}
-
-	/// <summary>
-	/// End date of accumulation.
-	/// </summary>
-	public DateTimeOffset EndDate
-	{
-		get => _endDate.Value;
-		set => _endDate.Value = value;
-	}
-
-	/// <summary>
-	/// Period options for DCA.
-	/// </summary>
-	public enum DcaIntervals
-	{
-		Daily,
-		Weekly,
-		Monthly,
-	}
-
-	/// <summary>
-	/// Constructor.
-	/// </summary>
 	public BestDollarCostAverageStrategy()
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
-		_amountInvested = Param(nameof(AmountInvested), 100m)
-			.SetRange(0.01m, 1000000m)
-			.SetDisplay("Amount", "Amount invested each period", "DCA");
+		_buyIntervalBars = Param(nameof(BuyIntervalBars), 350)
+			.SetGreaterThanZero()
+			.SetDisplay("Buy Interval", "Bars between DCA buys", "DCA");
 
-		_interval = Param(nameof(Interval), DcaIntervals.Weekly)
-			.SetDisplay("Interval", "Investment interval", "DCA");
+		_rsiPeriod = Param(nameof(RsiPeriod), 14)
+			.SetGreaterThanZero()
+			.SetDisplay("RSI Period", "RSI period for sell signal", "Indicators");
 
-		_startDate = Param(nameof(StartDate), new DateTimeOffset(new DateTime(2018, 1, 1)))
-			.SetDisplay("Start Date", "Start date of accumulation", "DCA");
+		_rsiSellLevel = Param(nameof(RsiSellLevel), 60m)
+			.SetDisplay("RSI Sell Level", "RSI level to trigger sell", "Indicators");
 
-		_endDate = Param(nameof(EndDate), new DateTimeOffset(new DateTime(2020, 1, 28)))
-			.SetDisplay("End Date", "End date of accumulation", "DCA");
+		_maxAccumulationBars = Param(nameof(MaxAccumulationBars), 1200)
+			.SetGreaterThanZero()
+			.SetDisplay("Max Accumulation", "Max bars before forced sell", "DCA");
 	}
 
 	/// <inheritdoc />
@@ -113,15 +60,23 @@ public class BestDollarCostAverageStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_barsSinceLastBuy = 0;
+		_totalBarsInPosition = 0;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_nextBuyTime = StartDate;
+		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(_rsi, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -130,55 +85,52 @@ public class BestDollarCostAverageStrategy : Strategy
 			DrawCandles(area, subscription);
 			DrawOwnTrades(area);
 		}
+
+		var rsiArea = CreateChartArea();
+		if (rsiArea != null)
+		{
+			DrawIndicator(rsiArea, _rsi);
+		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal rsiValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (candle.OpenTime < StartDate || candle.OpenTime > EndDate)
+		if (!_rsi.IsFormed)
+			return;
+
+		_barsSinceLastBuy++;
+
+		if (Position > 0)
+			_totalBarsInPosition++;
+
+		// Forced sell after max accumulation period
+		if (Position > 0 && _totalBarsInPosition >= MaxAccumulationBars)
 		{
-			_lastPrice = candle.ClosePrice;
+			SellMarket();
+			_totalBarsInPosition = 0;
+			_barsSinceLastBuy = 0;
 			return;
 		}
 
-		if (candle.OpenTime >= _nextBuyTime && candle.OpenTime <= EndDate && IsOnline)
+		// Sell accumulated position when RSI is overbought
+		if (Position > 0 && rsiValue >= RsiSellLevel && _totalBarsInPosition >= BuyIntervalBars)
 		{
-			var price = candle.ClosePrice;
-			var volume = AmountInvested / price;
-
-			RegisterOrder(CreateOrder(Sides.Buy, price, volume));
-
-			_totalSpent += AmountInvested;
-			_totalQuantity += volume;
-
-			_nextBuyTime = GetNextBuyTime(_nextBuyTime);
+			SellMarket();
+			_totalBarsInPosition = 0;
+			_barsSinceLastBuy = 0;
+			return;
 		}
 
-		_lastPrice = candle.ClosePrice;
-	}
-
-	private DateTimeOffset GetNextBuyTime(DateTimeOffset current)
-	{
-		return Interval switch
+		// DCA buy at regular intervals
+		if (_barsSinceLastBuy >= BuyIntervalBars)
 		{
-			DcaIntervals.Daily => current + TimeSpan.FromDays(1),
-			DcaIntervals.Weekly => current + TimeSpan.FromDays(7),
-			DcaIntervals.Monthly => current.AddMonths(1),
-			_ => current,
-		};
-	}
-
-	/// <inheritdoc />
-	protected override void OnStopped()
-	{
-		var portfolioValue = _totalQuantity * _lastPrice;
-		var profit = portfolioValue - _totalSpent;
-		var percent = _totalSpent == 0 ? 0 : profit / _totalSpent * 100m;
-
-		LogInfo($"Spent: {_totalSpent:0.##}, Qty: {_totalQuantity:0.######}, Value: {portfolioValue:0.##}, PnL: {profit:0.##} ({percent:0.##}%)");
-
-		base.OnStopped();
+			BuyMarket();
+			_barsSinceLastBuy = 0;
+			if (_totalBarsInPosition == 0)
+				_totalBarsInPosition = 1;
+		}
 	}
 }

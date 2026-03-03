@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -13,192 +10,73 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-/// <summary>
-/// Dynamic Volatility Differential Model strategy.
-/// Trades the spread between implied and historical volatility.
-/// </summary>
 public class DynamicVolatilityDifferentialModelStrategy : Strategy
 {
-	private readonly StrategyParam<int> _length;
-	private readonly StrategyParam<decimal> _stdevMultiplier;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<Security> _volatilitySecurity;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	private StandardDeviation _logReturnStd;
-	private StandardDeviation _spreadStd;
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	private decimal _prevClose;
-	private decimal _prevSpread;
-	private decimal _volIndexClose;
-
-	/// <summary>
-	/// Periods for historical volatility.
-	/// </summary>
-	public int Length
-	{
-		get => _length.Value;
-		set => _length.Value = value;
-	}
-
-	/// <summary>
-	/// Standard deviation multiplier for thresholds.
-	/// </summary>
-	public decimal StdevMultiplier
-	{
-		get => _stdevMultiplier.Value;
-		set => _stdevMultiplier.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Volatility index security.
-	/// </summary>
-	public Security VolatilitySecurity
-	{
-		get => _volatilitySecurity.Value;
-		set => _volatilitySecurity.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes <see cref="DynamicVolatilityDifferentialModelStrategy"/>.
-	/// </summary>
 	public DynamicVolatilityDifferentialModelStrategy()
 	{
-		_length = Param(nameof(Length), 5)
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
 			.SetGreaterThanZero()
-			.SetDisplay("HV Period", "Periods for Historical Volatility", "Parameters")
-			
-			.SetOptimize(1, 20, 1);
-
-		_stdevMultiplier = Param(nameof(StdevMultiplier), 7.1m)
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
 			.SetGreaterThanZero()
-			.SetDisplay("StdDev Multiplier", "Multiplier for dynamic thresholds", "Parameters")
-			
-			.SetOptimize(1m, 10m, 0.5m);
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
-		_volatilitySecurity = Param(nameof(VolatilitySecurity), new Security { Id = "TVC:VIX" })
-			.SetDisplay("Volatility Index", "Symbol of volatility index", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return
-		[
-			(Security, CandleType),
-			(VolatilitySecurity, CandleType)
-		];
+		return [(Security, CandleType)];
 	}
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_logReturnStd = null;
-		_spreadStd = null;
-		_prevClose = default;
-		_prevSpread = default;
-		_volIndexClose = default;
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		if (VolatilitySecurity == null)
-			throw new InvalidOperationException("Volatility security is not specified.");
-
-		_logReturnStd = new StandardDeviation { Length = Length };
-		_spreadStd = new StandardDeviation { Length = Length };
-
-		var mainSub = SubscribeCandles(CandleType);
-		mainSub.Bind(ProcessMainCandle).Start();
-
-		var volSub = SubscribeCandles(CandleType, security: VolatilitySecurity);
-		volSub.Bind(ProcessVolatilityCandle).Start();
-
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(fastEma, slowEma, ProcessCandle).Start();
 		var area = CreateChartArea();
 		if (area != null)
 		{
-			DrawCandles(area, mainSub);
-			DrawIndicator(area, _spreadStd);
+			DrawCandles(area, subscription);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessVolatilityCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
-		if (candle.State != CandleStates.Finished)
-		return;
-
-		_volIndexClose = candle.ClosePrice;
-	}
-
-	private void ProcessMainCandle(ICandleMessage candle)
-	{
-		if (candle.State != CandleStates.Finished)
-		return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
-
-		if (_volIndexClose == 0)
-		return;
-
-		if (_prevClose == 0)
+		if (candle.State != CandleStates.Finished) return;
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-		_prevClose = candle.ClosePrice;
-		return;
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
+			return;
 		}
-
-		var logReturn = (decimal)Math.Log((double)(candle.ClosePrice / _prevClose));
-		var hvValue = _logReturnStd.Process(new DecimalIndicatorValue(_logReturnStd, logReturn, candle.OpenTime));
-
-		if (!_logReturnStd.IsFormed)
-		{
-		_prevClose = candle.ClosePrice;
-		return;
-		}
-
-		var historicalVol = hvValue.ToDecimal() * (decimal)Math.Sqrt(252) * 100m;
-		var spread = _volIndexClose - historicalVol;
-		var spreadStdVal = _spreadStd.Process(new DecimalIndicatorValue(_spreadStd, spread, candle.OpenTime));
-
-		if (!_spreadStd.IsFormed)
-		{
-		_prevClose = candle.ClosePrice;
-		_prevSpread = spread;
-		return;
-		}
-
-		var stdev = spreadStdVal.ToDecimal();
-		var upperThreshold = stdev * StdevMultiplier;
-		var lowerThreshold = -stdev * StdevMultiplier;
-
-		if (spread > upperThreshold && Position <= 0)
-		BuyMarket(Volume + Math.Abs(Position));
-		else if (spread < lowerThreshold && Position >= 0)
-		SellMarket(Volume + Math.Abs(Position));
-
-		if (_prevSpread < 0 && spread > 0 && Position > 0)
-		SellMarket(Math.Abs(Position));
-		else if (_prevSpread > 0 && spread < 0 && Position < 0)
-		BuyMarket(Math.Abs(Position));
-
-		_prevClose = candle.ClosePrice;
-		_prevSpread = spread;
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
+			BuyMarket();
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+			SellMarket();
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

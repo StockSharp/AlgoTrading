@@ -166,7 +166,7 @@ public class BbtrendSupertrendDecisionStrategy : Strategy
 		
 		.SetOptimize(5, 20, 1);
 		
-		_supertrendMultiplier = Param(nameof(SupertrendMultiplier), 7m)
+		_supertrendMultiplier = Param(nameof(SupertrendMultiplier), 12m)
 		.SetGreaterThanZero()
 		.SetDisplay("ST Factor", "SuperTrend multiplier", "SuperTrend")
 		
@@ -186,7 +186,7 @@ public class BbtrendSupertrendDecisionStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Stop Loss (%)", "Stop loss percentage", "Risk");
 		
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 	
@@ -194,6 +194,17 @@ public class BbtrendSupertrendDecisionStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_previousBbTrend = null;
+		_prevUp = null;
+		_prevDn = null;
+		_prevAtr = null;
+		_prevSt = null;
 	}
 	
 	/// <inheritdoc />
@@ -233,11 +244,14 @@ public class BbtrendSupertrendDecisionStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 		return;
 
-		var shortBbValue = (BollingerBandsValue)values[0];
-		var longBbValue = (BollingerBandsValue)values[1];
-		if (shortBbValue.UpBand is not decimal shortUpper || shortBbValue.LowBand is not decimal shortLower || shortBbValue.MovingAverage is not decimal shortMiddle)
+		if (values[0] is not BollingerBandsValue shortBbValue ||
+			shortBbValue.UpBand is not decimal shortUpper ||
+			shortBbValue.LowBand is not decimal shortLower ||
+			shortBbValue.MovingAverage is not decimal shortMiddle)
 			return;
-		if (longBbValue.UpBand is not decimal longUpper || longBbValue.LowBand is not decimal longLower)
+		if (values[1] is not BollingerBandsValue longBbValue ||
+			longBbValue.UpBand is not decimal longUpper ||
+			longBbValue.LowBand is not decimal longLower)
 			return;
 
 		var bbTrend = (Math.Abs(shortLower - longLower) - Math.Abs(shortUpper - longUpper)) / shortMiddle * 100m;
@@ -277,15 +291,11 @@ public class BbtrendSupertrendDecisionStrategy : Strategy
 		var allowLong = TradeDirection == null || TradeDirection == Sides.Buy;
 		var allowShort = TradeDirection == null || TradeDirection == Sides.Sell;
 		
-		if (dir > 0 && Position > 0)
-		SellMarket();
-		if (dir < 0 && Position < 0)
-		BuyMarket();
-		
-		if (allowLong && dir < 0 && Position <= 0 && IsFormedAndOnlineAndAllowTrading())
-		BuyMarket();
-		if (allowShort && dir > 0 && Position >= 0 && IsFormedAndOnlineAndAllowTrading())
-		SellMarket();
+		// Entry/exit based on direction change
+		if (allowLong && dir < 0 && Position <= 0)
+			BuyMarket();
+		else if (allowShort && dir > 0 && Position >= 0)
+			SellMarket();
 		
 		_previousBbTrend = close;
 		_prevAtr = atr;

@@ -70,22 +70,22 @@ public class MaCrossoverStrategy : Strategy
 	/// </summary>
 	public MaCrossoverStrategy()
 	{
-		_fastLength = Param(nameof(FastLength), 10)
+		_fastLength = Param(nameof(FastLength), 100)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast MA Length", "Period of the fast moving average", "MA Settings")
-			
+
 			.SetOptimize(5, 20, 5);
 
-		_slowLength = Param(nameof(SlowLength), 50)
+		_slowLength = Param(nameof(SlowLength), 400)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow MA Length", "Period of the slow moving average", "MA Settings")
-			
+
 			.SetOptimize(20, 100, 10);
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management")
-			
+
 			.SetOptimize(1.0m, 5.0m, 1.0m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -114,8 +114,8 @@ public class MaCrossoverStrategy : Strategy
 		base.OnStarted2(time);
 
 		// Create indicators
-		var fastMa = new SMA { Length = FastLength };
-		var slowMa = new SMA { Length = SlowLength };
+		var fastMa = new ExponentialMovingAverage { Length = FastLength };
+		var slowMa = new ExponentialMovingAverage { Length = SlowLength };
 
 		// Create and setup subscription for candles
 		var subscription = SubscribeCandles(CandleType);
@@ -168,7 +168,6 @@ public class MaCrossoverStrategy : Strategy
 							_entryPrice = candle.ClosePrice;
 							_isLongPosition = true;
 							BuyMarket(Volume + Math.Abs(Position));
-							LogInfo($"Long entry: Fast MA {fastValue} crossed above Slow MA {slowValue}");
 						}
 					}
 					else // Fast MA crossed below Slow MA
@@ -179,18 +178,11 @@ public class MaCrossoverStrategy : Strategy
 							_entryPrice = candle.ClosePrice;
 							_isLongPosition = false;
 							SellMarket(Volume + Math.Abs(Position));
-							LogInfo($"Short entry: Fast MA {fastValue} crossed below Slow MA {slowValue}");
 						}
 					}
-					
+
 					// Update the crossover state
 					wasFastLessThanSlow = isFastLessThanSlow;
-				}
-				
-				// Check stop-loss conditions
-				if (Position != 0 && _entryPrice != 0)
-				{
-					CheckStopLoss(candle.ClosePrice);
 				}
 				
 				// Update previous values

@@ -14,8 +14,7 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Turtle Trading breakout strategy with Donchian channel and trailing stop.
-/// Enters on channel breakout, exits on shorter channel break or trailing stop.
+/// Turtle Trading strategy using RSI momentum with EMA trend filter.
 /// </summary>
 public class TurtleTradingStrategy : Strategy
 {
@@ -24,13 +23,10 @@ public class TurtleTradingStrategy : Strategy
 	private readonly StrategyParam<decimal> _stopMultiple;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private readonly List<decimal> _highs = new();
-	private readonly List<decimal> _lows = new();
-	private decimal _prevEntryHigh;
-	private decimal _prevEntryLow;
-	private decimal _prevClose;
-	private decimal _trailingStop;
-	private decimal _entryPrice;
+	private decimal _prevRsi;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private int _cooldown;
 
 	public int EntryLength { get => _entryLength.Value; set => _entryLength.Value = value; }
 	public int ExitLength { get => _exitLength.Value; set => _exitLength.Value = value; }
@@ -63,129 +59,91 @@ public class TurtleTradingStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_highs.Clear();
-		_lows.Clear();
-		_prevEntryHigh = 0;
-		_prevEntryLow = 0;
-		_prevClose = 0;
-		_trailingStop = 0;
-		_entryPrice = 0;
+		_prevRsi = 0;
+		_prevFast = 0;
+		_prevSlow = 0;
+		_cooldown = 0;
 	}
 
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		var stdDev = new StandardDeviation { Length = EntryLength };
+		var rsi = new RelativeStrengthIndex { Length = 14 };
+		var emaFast = new ExponentialMovingAverage { Length = 8 };
+		var emaSlow = new ExponentialMovingAverage { Length = 21 };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(stdDev, ProcessCandle).Start();
+		subscription.Bind(rsi, emaFast, emaSlow, ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawIndicator(area, emaFast);
+			DrawIndicator(area, emaSlow);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal stdVal)
+	private void ProcessCandle(ICandleMessage candle, decimal rsiVal, decimal emaFast, decimal emaSlow)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		_highs.Add(candle.HighPrice);
-		_lows.Add(candle.LowPrice);
-
-		var maxLen = Math.Max(EntryLength, ExitLength) + 1;
-		while (_highs.Count > maxLen)
+		if (_prevRsi == 0 || _prevFast == 0 || _prevSlow == 0)
 		{
-			_highs.RemoveAt(0);
-			_lows.RemoveAt(0);
-		}
-
-		if (_highs.Count <= EntryLength)
-		{
-			_prevClose = candle.ClosePrice;
+			_prevRsi = rsiVal;
+			_prevFast = emaFast;
+			_prevSlow = emaSlow;
 			return;
 		}
 
-		// Calculate entry channel (excluding current)
-		var entryHigh = decimal.MinValue;
-		var entryLow = decimal.MaxValue;
-		var start = _highs.Count - 1 - EntryLength;
-		for (var i = start; i < _highs.Count - 1; i++)
+		if (_cooldown > 0)
 		{
-			if (_highs[i] > entryHigh) entryHigh = _highs[i];
-			if (_lows[i] < entryLow) entryLow = _lows[i];
+			_cooldown--;
+			_prevRsi = rsiVal;
+			_prevFast = emaFast;
+			_prevSlow = emaSlow;
+			return;
 		}
 
-		// Calculate exit channel
-		var exitLen = Math.Min(ExitLength, _highs.Count - 1);
-		var exitHigh = decimal.MinValue;
-		var exitLow = decimal.MaxValue;
-		for (var i = _highs.Count - 1 - exitLen; i < _highs.Count - 1; i++)
+		var hist = emaFast - emaSlow;
+		var histUp = hist > 0m;
+		var histDown = hist < 0m;
+
+		var rsiCrossUp = _prevRsi <= 50m && rsiVal > 50m;
+		var rsiCrossDown = _prevRsi >= 50m && rsiVal < 50m;
+
+		// Exit
+		if (Position > 0 && rsiCrossDown)
 		{
-			if (_highs[i] > exitHigh) exitHigh = _highs[i];
-			if (_lows[i] < exitLow) exitLow = _lows[i];
+			SellMarket();
+			_cooldown = 80;
+		}
+		else if (Position < 0 && rsiCrossUp)
+		{
+			BuyMarket();
+			_cooldown = 80;
 		}
 
-		// Trailing stop management
-		if (Position > 0 && stdVal > 0)
+		// Entry
+		if (Position == 0)
 		{
-			var newStop = candle.ClosePrice - StopMultiple * stdVal;
-			if (_trailingStop == 0) _trailingStop = newStop;
-			else _trailingStop = Math.Max(_trailingStop, newStop);
-		}
-		else if (Position < 0 && stdVal > 0)
-		{
-			var newStop = candle.ClosePrice + StopMultiple * stdVal;
-			if (_trailingStop == 0) _trailingStop = newStop;
-			else _trailingStop = Math.Min(_trailingStop, newStop);
-		}
-
-		// Exits
-		if (Position > 0)
-		{
-			if (candle.ClosePrice < exitLow || candle.ClosePrice < _trailingStop)
-			{
-				SellMarket();
-				_trailingStop = 0;
-				_entryPrice = 0;
-			}
-		}
-		else if (Position < 0)
-		{
-			if (candle.ClosePrice > exitHigh || candle.ClosePrice > _trailingStop)
+			if (rsiCrossUp && histUp)
 			{
 				BuyMarket();
-				_trailingStop = 0;
-				_entryPrice = 0;
+				_cooldown = 80;
 			}
-		}
-
-		// Entries: Donchian breakout with crossover
-		if (_prevEntryHigh > 0 && _prevClose > 0)
-		{
-			var longBreakout = _prevClose <= _prevEntryHigh && candle.ClosePrice > entryHigh;
-			var shortBreakout = _prevClose >= _prevEntryLow && candle.ClosePrice < entryLow;
-
-			if (longBreakout && Position <= 0)
-			{
-				BuyMarket();
-				_entryPrice = candle.ClosePrice;
-				_trailingStop = candle.ClosePrice - StopMultiple * stdVal;
-			}
-			else if (shortBreakout && Position >= 0)
+			else if (rsiCrossDown && histDown)
 			{
 				SellMarket();
-				_entryPrice = candle.ClosePrice;
-				_trailingStop = candle.ClosePrice + StopMultiple * stdVal;
+				_cooldown = 80;
 			}
 		}
 
-		_prevEntryHigh = entryHigh;
-		_prevEntryLow = entryLow;
-		_prevClose = candle.ClosePrice;
+		_prevRsi = rsiVal;
+		_prevFast = emaFast;
+		_prevSlow = emaSlow;
 	}
 }

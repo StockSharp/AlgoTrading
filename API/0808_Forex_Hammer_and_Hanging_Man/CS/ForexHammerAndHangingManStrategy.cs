@@ -1,173 +1,82 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
-
 namespace StockSharp.Samples.Strategies;
 
-/// <summary>
-/// Strategy that trades hammer and hanging man candlestick patterns.
-/// </summary>
 public class ForexHammerAndHangingManStrategy : Strategy
 {
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _bodyLengthMultiplier;
-	private readonly StrategyParam<decimal> _shadowRatio;
-	private readonly StrategyParam<int> _holdPeriods;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	private int _barIndex;
-	private int _entryBarIndex = -1;
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Candle type and timeframe used by the strategy.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Minimum candle body length multiplier.
-	/// </summary>
-	public int BodyLengthMultiplier
-	{
-		get => _bodyLengthMultiplier.Value;
-		set => _bodyLengthMultiplier.Value = value;
-	}
-
-	/// <summary>
-	/// Lower shadow to body ratio.
-	/// </summary>
-	public decimal ShadowRatio
-	{
-		get => _shadowRatio.Value;
-		set => _shadowRatio.Value = value;
-	}
-
-	/// <summary>
-	/// Holding period in bars.
-	/// </summary>
-	public int HoldPeriods
-	{
-		get => _holdPeriods.Value;
-		set => _holdPeriods.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the strategy.
-	/// </summary>
 	public ForexHammerAndHangingManStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use for pattern detection", "General");
-
-		_bodyLengthMultiplier = Param(nameof(BodyLengthMultiplier), 5)
-			.SetDisplay("Minimum Candle Body Length (Multiplier)", "Minimum body length relative to candle height", "General")
-			;
-
-		_shadowRatio = Param(nameof(ShadowRatio), 1m)
-			.SetDisplay("Lower Shadow to Candle Height Ratio", "Lower shadow to body ratio", "General")
-			;
-
-		_holdPeriods = Param(nameof(HoldPeriods), 26)
-			.SetDisplay("Hold Periods (Bars)", "Holding period in bars", "General")
-			;
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_barIndex = 0;
-		_entryBarIndex = -1;
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 		var subscription = SubscribeCandles(CandleType);
-
-		subscription
-			.Bind(ProcessCandle)
-			.Start();
-
-		StartProtection(
-			takeProfit: new Unit(2, UnitTypes.Percent),
-			stopLoss: new Unit(1, UnitTypes.Percent)
-		);
-
+		subscription.Bind(fastEma, slowEma, ProcessCandle).Start();
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	/// <inheritdoc />
-	protected override void OnPositionReceived(Position position)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
-		if (Position == 0)
-			_entryBarIndex = -1;
-	}
-
-	private void ProcessCandle(ICandleMessage candle)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		_barIndex++;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var bodyLength = Math.Abs(candle.ClosePrice - candle.OpenPrice);
-		var candleHeight = candle.HighPrice - candle.LowPrice;
-		var lowerShadow = Math.Min(candle.OpenPrice, candle.ClosePrice) - candle.LowPrice;
-		var upperShadow = candle.HighPrice - Math.Max(candle.OpenPrice, candle.ClosePrice);
-
-		var smallBody = bodyLength <= candleHeight / BodyLengthMultiplier;
-		var longLowerShadow = lowerShadow >= bodyLength * ShadowRatio;
-		var shortUpperShadow = upperShadow <= bodyLength;
-
-		var isHammer = smallBody && longLowerShadow && shortUpperShadow && candle.ClosePrice > candle.OpenPrice;
-		var isHangingMan = smallBody && longLowerShadow && shortUpperShadow && candle.ClosePrice < candle.OpenPrice;
-
-		if (Position == 0)
+		if (candle.State != CandleStates.Finished) return;
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-			if (isHammer)
-			{
-				BuyMarket(Volume);
-				_entryBarIndex = _barIndex;
-			}
-			else if (isHangingMan)
-			{
-				SellMarket(Volume);
-				_entryBarIndex = _barIndex;
-			}
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
+			return;
 		}
-		else if (_barIndex - _entryBarIndex >= HoldPeriods)
-		{
-			ClosePosition();
-		}
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
+			BuyMarket();
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+			SellMarket();
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

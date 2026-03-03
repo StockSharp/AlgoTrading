@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,9 +11,11 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// RSI Hook Reversal Strategy.
-/// Enters long when RSI forms an upward hook from oversold conditions.
-/// Enters short when RSI forms a downward hook from overbought conditions.
+/// RSI Hook Reversal strategy.
+/// Enters long when RSI hooks up from oversold zone.
+/// Enters short when RSI hooks down from overbought zone.
+/// Exits when RSI reaches neutral zone.
+/// Uses cooldown to control trade frequency.
 /// </summary>
 public class RsiHookReversalStrategy : Strategy
 {
@@ -24,13 +23,14 @@ public class RsiHookReversalStrategy : Strategy
 	private readonly StrategyParam<int> _oversoldLevel;
 	private readonly StrategyParam<int> _overboughtLevel;
 	private readonly StrategyParam<int> _exitLevel;
-	private readonly StrategyParam<Unit> _stopLoss;
 	private readonly StrategyParam<DataType> _candleType;
-	
+	private readonly StrategyParam<int> _cooldownBars;
+
 	private decimal _prevRsi;
+	private int _cooldown;
 
 	/// <summary>
-	/// Period for RSI calculation.
+	/// RSI period.
 	/// </summary>
 	public int RsiPeriod
 	{
@@ -39,7 +39,7 @@ public class RsiHookReversalStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Oversold level for RSI.
+	/// Oversold level.
 	/// </summary>
 	public int OversoldLevel
 	{
@@ -48,7 +48,7 @@ public class RsiHookReversalStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Overbought level for RSI.
+	/// Overbought level.
 	/// </summary>
 	public int OverboughtLevel
 	{
@@ -57,7 +57,7 @@ public class RsiHookReversalStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Exit level for RSI (neutral zone).
+	/// Exit level (neutral zone).
 	/// </summary>
 	public int ExitLevel
 	{
@@ -66,16 +66,7 @@ public class RsiHookReversalStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stop loss percentage from entry price.
-	/// </summary>
-	public Unit StopLoss
-	{
-		get => _stopLoss.Value;
-		set => _stopLoss.Value = value;
-	}
-
-	/// <summary>
-	/// Type of candles to use.
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -84,37 +75,41 @@ public class RsiHookReversalStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initializes a new instance of the <see cref="RsiHookReversalStrategy"/>.
+	/// Cooldown bars.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
+	/// Constructor.
 	/// </summary>
 	public RsiHookReversalStrategy()
 	{
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
-			.SetDisplay("RSI Period", "Period for RSI calculation", "RSI Settings")
 			.SetRange(7, 21)
-			;
-			
+			.SetDisplay("RSI Period", "Period for RSI", "RSI");
+
 		_oversoldLevel = Param(nameof(OversoldLevel), 30)
-			.SetDisplay("Oversold Level", "Oversold level for RSI", "RSI Settings")
 			.SetRange(20, 40)
-			;
-			
+			.SetDisplay("Oversold", "Oversold level", "RSI");
+
 		_overboughtLevel = Param(nameof(OverboughtLevel), 70)
-			.SetDisplay("Overbought Level", "Overbought level for RSI", "RSI Settings")
 			.SetRange(60, 80)
-			;
-			
+			.SetDisplay("Overbought", "Overbought level", "RSI");
+
 		_exitLevel = Param(nameof(ExitLevel), 50)
-			.SetDisplay("Exit Level", "Exit level for RSI (neutral zone)", "RSI Settings")
 			.SetRange(45, 55)
-			;
-			
-		_stopLoss = Param(nameof(StopLoss), new Unit(2, UnitTypes.Percent))
-			.SetDisplay("Stop Loss", "Stop loss as percentage from entry price", "Risk Management")
-			.SetRange(1m, 3m)
-			;
-			
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+			.SetDisplay("Exit Level", "Neutral exit zone", "RSI");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
+
+		_cooldownBars = Param(nameof(CooldownBars), 500)
+			.SetRange(1, 1000)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
 	}
 
 	/// <inheritdoc />
@@ -123,100 +118,85 @@ public class RsiHookReversalStrategy : Strategy
 		return [(Security, CandleType)];
 	}
 
-		/// <inheritdoc />
-		protected override void OnReseted()
-		{
-				base.OnReseted();
-
-				_prevRsi = 0;
-		}
-
-		/// <inheritdoc />
-		protected override void OnStarted2(DateTime time)
-		{
-				base.OnStarted2(time);
-
-				// Enable position protection using stop-loss
-				StartProtection(
-						takeProfit: null,
-						stopLoss: StopLoss,
-						isStopTrailing: false,
-						useMarketOrders: true
-				);
-
-				// Create RSI indicator
-				var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
-
-	// Create subscription
-	var subscription = SubscribeCandles(CandleType);
-	
-	// Bind indicator and process candles
-	subscription
-		.Bind(rsi, ProcessCandle)
-		.Start();
-		
-	// Setup chart visualization
-	var area = CreateChartArea();
-	if (area != null)
+	/// <inheritdoc />
+	protected override void OnReseted()
 	{
-		DrawCandles(area, subscription);
-		DrawIndicator(area, rsi);
-		DrawOwnTrades(area);
+		base.OnReseted();
+		_prevRsi = default;
+		_cooldown = default;
 	}
-}
 
-	/// <summary>
-	/// Process candle with RSI value.
-	/// </summary>
-	/// <param name="candle">Candle.</param>
-	/// <param name="rsiValue">RSI value.</param>
+	/// <inheritdoc />
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
+
+		_prevRsi = 0;
+		_cooldown = 0;
+
+		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
+
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(rsi, ProcessCandle)
+			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, rsi);
+			DrawOwnTrades(area);
+		}
+	}
+
 	private void ProcessCandle(ICandleMessage candle, decimal rsiValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
-		
-		// If this is the first calculation, just store the value
+
 		if (_prevRsi == 0)
 		{
 			_prevRsi = rsiValue;
 			return;
 		}
 
-		// Check for RSI hooks
-		bool oversoldHookUp = _prevRsi < OversoldLevel && rsiValue > _prevRsi;
-		bool overboughtHookDown = _prevRsi > OverboughtLevel && rsiValue < _prevRsi;
-		
-		// Long entry: RSI forms an upward hook from oversold
-		if (oversoldHookUp && Position <= 0)
+		if (_cooldown > 0)
 		{
-			BuyMarket(Volume + Math.Abs(Position));
-			LogInfo($"Long entry: RSI upward hook from oversold ({_prevRsi} -> {rsiValue})");
+			_cooldown--;
+			_prevRsi = rsiValue;
+			return;
 		}
-		// Short entry: RSI forms a downward hook from overbought
-		else if (overboughtHookDown && Position >= 0)
+
+		// RSI hook up from oversold
+		var oversoldHookUp = _prevRsi < OversoldLevel && rsiValue > _prevRsi;
+		// RSI hook down from overbought
+		var overboughtHookDown = _prevRsi > OverboughtLevel && rsiValue < _prevRsi;
+
+		if (Position == 0 && oversoldHookUp)
 		{
-			SellMarket(Volume + Math.Abs(Position));
-			LogInfo($"Short entry: RSI downward hook from overbought ({_prevRsi} -> {rsiValue})");
+			BuyMarket();
+			_cooldown = CooldownBars;
 		}
-		
-		// Exit conditions based on RSI reaching neutral zone
-		if (rsiValue > ExitLevel && Position < 0)
+		else if (Position == 0 && overboughtHookDown)
 		{
-			BuyMarket(Math.Abs(Position));
-			LogInfo($"Exit short: RSI reached neutral zone ({rsiValue} > {ExitLevel})");
+			SellMarket();
+			_cooldown = CooldownBars;
 		}
-		else if (rsiValue < ExitLevel && Position > 0)
+		else if (Position > 0 && rsiValue < ExitLevel)
 		{
-			SellMarket(Position);
-			LogInfo($"Exit long: RSI reached neutral zone ({rsiValue} < {ExitLevel})");
+			SellMarket();
+			_cooldown = CooldownBars;
 		}
-		
-		// Update previous RSI value
+		else if (Position < 0 && rsiValue > ExitLevel)
+		{
+			BuyMarket();
+			_cooldown = CooldownBars;
+		}
+
 		_prevRsi = rsiValue;
 	}
 }

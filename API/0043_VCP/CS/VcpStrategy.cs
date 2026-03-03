@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,20 +12,22 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Volume Contraction Pattern (VCP) strategy.
-/// The strategy looks for narrowing price ranges and breakouts after contraction.
-/// Long entry: Range contraction followed by a break above previous high
-/// Short entry: Range contraction followed by a break below previous low
+/// Looks for narrowing volatility (ATR declining) and breakouts above/below MA bands.
 /// </summary>
-public class VCPStrategy : Strategy
+public class VcpStrategy : Strategy
 {
 	private readonly StrategyParam<int> _maPeriod;
-	private readonly StrategyParam<int> _lookbackPeriod;
+	private readonly StrategyParam<int> _atrPeriod;
+	private readonly StrategyParam<decimal> _atrMultiplier;
 	private readonly StrategyParam<DataType> _candleType;
-	
-	private decimal _prevCandleRange;
+	private readonly StrategyParam<int> _cooldownBars;
+
+	private decimal _prevAtr;
+	private int _contractionCount;
+	private int _cooldown;
 
 	/// <summary>
-	/// MA Period
+	/// MA Period.
 	/// </summary>
 	public int MAPeriod
 	{
@@ -37,16 +36,25 @@ public class VCPStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Lookback Period (for breakout levels)
+	/// ATR Period.
 	/// </summary>
-	public int LookbackPeriod
+	public int AtrPeriod
 	{
-		get => _lookbackPeriod.Value;
-		set => _lookbackPeriod.Value = value;
+		get => _atrPeriod.Value;
+		set => _atrPeriod.Value = value;
 	}
 
 	/// <summary>
-	/// Candle type for strategy calculation
+	/// ATR multiplier for breakout band.
+	/// </summary>
+	public decimal AtrMultiplier
+	{
+		get => _atrMultiplier.Value;
+		set => _atrMultiplier.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type for strategy calculation.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -55,24 +63,37 @@ public class VCPStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initialize <see cref="VCPStrategy"/>.
+	/// Cooldown bars between trades.
 	/// </summary>
-	public VCPStrategy()
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
+	/// Initialize the VCP strategy.
+	/// </summary>
+	public VcpStrategy()
 	{
 		_maPeriod = Param(nameof(MAPeriod), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("MA Period", "Period for Moving Average calculation", "Strategy Parameters")
-			
+			.SetDisplay("MA Period", "Period for Moving Average calculation", "Indicators")
 			.SetOptimize(10, 50, 10);
 
-		_lookbackPeriod = Param(nameof(LookbackPeriod), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("Lookback Period", "Period for calculating breakout levels", "Strategy Parameters")
-			
-			.SetOptimize(10, 30, 5);
+		_atrPeriod = Param(nameof(AtrPeriod), 14)
+			.SetDisplay("ATR Period", "Period for ATR calculation", "Indicators")
+			.SetOptimize(7, 21, 7);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles for strategy calculation", "Strategy Parameters");
+		_atrMultiplier = Param(nameof(AtrMultiplier), 2.0m)
+			.SetDisplay("ATR Multiplier", "ATR multiplier for breakout band", "Entry")
+			.SetOptimize(1.0m, 3.0m, 0.5m);
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
+
+		_cooldownBars = Param(nameof(CooldownBars), 500)
+			.SetRange(1, 1000)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
 	}
 
 	/// <inheritdoc />
@@ -85,8 +106,9 @@ public class VCPStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevCandleRange = 0;
-
+		_prevAtr = default;
+		_contractionCount = default;
+		_cooldown = default;
 	}
 
 	/// <inheritdoc />
@@ -94,25 +116,18 @@ public class VCPStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Create indicators
-		var ma = new SMA { Length = MAPeriod };
-		var highest = new Highest { Length = LookbackPeriod };
-		var lowest = new Lowest { Length = LookbackPeriod };
+		_prevAtr = 0;
+		_contractionCount = 0;
+		_cooldown = 0;
 
-		// Create subscription and bind indicators
+		var ma = new SimpleMovingAverage { Length = MAPeriod };
+		var atr = new AverageTrueRange { Length = AtrPeriod };
+
 		var subscription = SubscribeCandles(CandleType);
-		
 		subscription
-			.Bind(highest, lowest, ma, ProcessCandle)
+			.Bind(ma, atr, ProcessCandle)
 			.Start();
 
-		// Configure protection
-		StartProtection(
-			takeProfit: new Unit(3, UnitTypes.Percent),
-			stopLoss: new Unit(2, UnitTypes.Percent)
-		);
-
-		// Setup chart visualization
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -122,63 +137,64 @@ public class VCPStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal highestValue, decimal lowestValue, decimal maValue)
+	private void ProcessCandle(ICandleMessage candle, decimal maValue, decimal atrValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// Calculate current candle range
-		var currentCandleRange = candle.HighPrice - candle.LowPrice;
-		
-		// If first candle, just store the range and return
-		if (_prevCandleRange == 0)
+		if (_prevAtr == 0)
 		{
-			_prevCandleRange = currentCandleRange;
+			_prevAtr = atrValue;
 			return;
 		}
 
-		// Check for range contraction (current range smaller than previous range)
-		var isContraction = currentCandleRange < _prevCandleRange;
-		
-		// Log current values
-		LogInfo($"Candle Range: {currentCandleRange}, Previous Range: {_prevCandleRange}, Contraction: {isContraction}");
-		LogInfo($"Highest: {highestValue}, Lowest: {lowestValue}, MA: {maValue}");
+		// Track contraction
+		if (atrValue < _prevAtr)
+			_contractionCount++;
+		else
+			_contractionCount = 0;
 
-		// Trading logic:
-		if (isContraction)
+		if (_cooldown > 0)
 		{
-			// Long: Contraction and breakout above highest high
-			if (candle.ClosePrice > highestValue && Position <= 0)
+			_cooldown--;
+			_prevAtr = atrValue;
+			return;
+		}
+
+		// After 3+ contracting bars, look for breakout
+		var isContracted = _contractionCount >= 3;
+		var upperBand = maValue + atrValue * AtrMultiplier;
+		var lowerBand = maValue - atrValue * AtrMultiplier;
+
+		if (Position == 0 && isContracted)
+		{
+			if (candle.ClosePrice > upperBand)
 			{
-				LogInfo($"Buy Signal: Contraction and Price ({candle.ClosePrice}) > Highest ({highestValue})");
-				BuyMarket(Volume + Math.Abs(Position));
+				BuyMarket();
+				_cooldown = CooldownBars;
+				_contractionCount = 0;
 			}
-			// Short: Contraction and breakout below lowest low
-			else if (candle.ClosePrice < lowestValue && Position >= 0)
+			else if (candle.ClosePrice < lowerBand)
 			{
-				LogInfo($"Sell Signal: Contraction and Price ({candle.ClosePrice}) < Lowest ({lowestValue})");
-				SellMarket(Volume + Math.Abs(Position));
+				SellMarket();
+				_cooldown = CooldownBars;
+				_contractionCount = 0;
 			}
 		}
-		
-		// Exit logic: Price crosses MA
-		if (Position > 0 && candle.ClosePrice < maValue)
+		else if (Position > 0 && candle.ClosePrice < maValue)
 		{
-			LogInfo($"Exit Long: Price ({candle.ClosePrice}) < MA ({maValue})");
-			SellMarket(Math.Abs(Position));
+			SellMarket();
+			_cooldown = CooldownBars;
 		}
 		else if (Position < 0 && candle.ClosePrice > maValue)
 		{
-			LogInfo($"Exit Short: Price ({candle.ClosePrice}) > MA ({maValue})");
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
+			_cooldown = CooldownBars;
 		}
 
-		// Store current range for next comparison
-		_prevCandleRange = currentCandleRange;
+		_prevAtr = atrValue;
 	}
 }

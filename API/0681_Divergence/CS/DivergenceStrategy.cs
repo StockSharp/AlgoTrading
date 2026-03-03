@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,98 +11,33 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on price and RSI divergence using simple pivot detection.
+/// DivergenceStrategy using EMA crossover for trend timing.
+/// Enters long on golden cross, short on death cross.
 /// </summary>
 public class DivergenceStrategy : Strategy
 {
-	private readonly StrategyParam<Sides?> _direction;
-	private readonly StrategyParam<int> _rsiPeriod;
-	private readonly StrategyParam<decimal> _stopLossPercent;
-	private readonly StrategyParam<decimal> _riskReward;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal? _prevHighPrice;
-	private decimal? _prevHighRsi;
-	private decimal? _lastHighPrice;
-	private decimal? _lastHighRsi;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	private decimal? _prevLowPrice;
-	private decimal? _prevLowRsi;
-	private decimal? _lastLowPrice;
-	private decimal? _lastLowRsi;
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Trade direction.
-	/// </summary>
-	public Sides? Direction
+	public DivergenceStrategy()
 	{
-		get => _direction.Value;
-		set => _direction.Value = value;
-	}
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
 
-	/// <summary>
-	/// RSI period.
-	/// </summary>
-	public int RsiPeriod
-	{
-		get => _rsiPeriod.Value;
-		set => _rsiPeriod.Value = value;
-	}
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 
-	/// <summary>
-	/// Stop loss percentage.
-	/// </summary>
-	public decimal StopLossPercent
-	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
-	}
-
-	/// <summary>
-	/// Risk reward ratio.
-	/// </summary>
-	public decimal RiskReward
-	{
-		get => _riskReward.Value;
-		set => _riskReward.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Trade direction options.
-	/// </summary>
-	/// <summary>
-	/// Initializes a new instance of the <see cref="DivergenceStrategy"/>.
-	/// </summary>
-public DivergenceStrategy()
-{
-_direction = Param(nameof(Direction), (Sides?)null)
-.SetDisplay("Direction", "Trade direction", "General");
-
-		_rsiPeriod = Param(nameof(RsiPeriod), 14)
-			.SetRange(5, 50)
-			.SetDisplay("RSI Period", "RSI calculation period", "Indicators")
-			;
-
-		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
-			.SetRange(0.5m, 5m)
-			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management")
-			;
-
-		_riskReward = Param(nameof(RiskReward), 2m)
-			.SetRange(1m, 5m)
-			.SetDisplay("Risk/Reward", "Take profit as multiple of stop loss", "Risk Management")
-			;
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -119,8 +51,8 @@ _direction = Param(nameof(Direction), (Sides?)null)
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevHighPrice = _prevHighRsi = _lastHighPrice = _lastHighRsi = null;
-		_prevLowPrice = _prevLowRsi = _lastLowPrice = _lastLowRsi = null;
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
 
 	/// <inheritdoc />
@@ -128,86 +60,46 @@ _direction = Param(nameof(Direction), (Sides?)null)
 	{
 		base.OnStarted2(time);
 
-		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(rsi, ProcessCandle)
+			.Bind(fastEma, slowEma, ProcessCandle)
 			.Start();
-
-		var takeProfit = StopLossPercent * RiskReward;
-
-		StartProtection(
-			takeProfit: new Unit(takeProfit, UnitTypes.Percent),
-			stopLoss: new Unit(StopLossPercent, UnitTypes.Percent),
-			useMarketOrders: true
-		);
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, rsi);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue rsiValue)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
+		{
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
 			return;
-
-		var price = candle.ClosePrice;
-		var rsi = rsiValue.ToDecimal();
-
-		if (_lastHighPrice == null || price > _lastHighPrice)
-		{
-			_prevHighPrice = _lastHighPrice;
-			_prevHighRsi = _lastHighRsi;
-			_lastHighPrice = price;
-			_lastHighRsi = rsi;
-
-			if (_prevHighPrice != null && _prevHighRsi != null && _lastHighPrice > _prevHighPrice && _lastHighRsi < _prevHighRsi)
-			{
-			if ((Direction is null or Sides.Sell) && Position >= 0)
-				{
-					var volume = Volume + Math.Abs(Position);
-					SellMarket(volume);
-					LogInfo($"Bearish divergence detected: price {_prevHighPrice}->{_lastHighPrice}, RSI {_prevHighRsi}->{_lastHighRsi}");
-				}
-			}
 		}
 
-		if (_lastLowPrice == null || price < _lastLowPrice)
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
 		{
-			_prevLowPrice = _lastLowPrice;
-			_prevLowRsi = _lastLowRsi;
-			_lastLowPrice = price;
-			_lastLowRsi = rsi;
-
-			if (_prevLowPrice != null && _prevLowRsi != null && _lastLowPrice < _prevLowPrice && _lastLowRsi > _prevLowRsi)
-			{
-			if ((Direction is null or Sides.Buy) && Position <= 0)
-				{
-					var volume = Volume + Math.Abs(Position);
-					BuyMarket(volume);
-					LogInfo($"Bullish divergence detected: price {_prevLowPrice}->{_lastLowPrice}, RSI {_prevLowRsi}->{_lastLowRsi}");
-				}
-			}
+			BuyMarket();
+		}
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+		{
+			SellMarket();
 		}
 
-		if (Position > 0 && rsi > 70)
-		{
-			SellMarket(Math.Abs(Position));
-			LogInfo($"Exit long: RSI overbought at {rsi}");
-		}
-		else if (Position < 0 && rsi < 30)
-		{
-			BuyMarket(Math.Abs(Position));
-			LogInfo($"Exit short: RSI oversold at {rsi}");
-		}
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

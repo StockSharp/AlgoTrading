@@ -1,11 +1,7 @@
-
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -23,6 +19,7 @@ public class AtrBasedTrendlinesStrategy : Strategy
 	private readonly StrategyParam<int> _lookbackLength;
 	private readonly StrategyParam<decimal> _atrPercent;
 	private readonly StrategyParam<bool> _useWicks;
+	private readonly StrategyParam<int> _cooldownBars;
 
 	private decimal _prevHigh;
 	private decimal _prevPrevHigh;
@@ -34,6 +31,8 @@ public class AtrBasedTrendlinesStrategy : Strategy
 	private decimal _slopeLow;
 	private int _barsSinceHigh;
 	private int _barsSinceLow;
+	private int _barIndex;
+	private int _lastTradeBar;
 
 	/// <summary>
 	/// Candle type.
@@ -72,6 +71,15 @@ public class AtrBasedTrendlinesStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Cooldown bars between trades.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Constructor.
 	/// </summary>
 	public AtrBasedTrendlinesStrategy()
@@ -81,18 +89,16 @@ public class AtrBasedTrendlinesStrategy : Strategy
 
 		_lookbackLength = Param(nameof(LookbackLength), 30)
 			.SetGreaterThanZero()
-			.SetDisplay("Lookback", "Lookback length for pivots", "General")
-			
-			.SetOptimize(10, 60, 5);
+			.SetDisplay("Lookback", "Lookback length for pivots", "General");
 
 		_atrPercent = Param(nameof(AtrPercent), 1m)
-			.SetRange(0m, 5m)
-			.SetDisplay("ATR Percent", "ATR target percentage", "General")
-			
-			.SetOptimize(0.5m, 2m, 0.5m);
+			.SetDisplay("ATR Percent", "ATR target percentage", "General");
 
 		_useWicks = Param(nameof(UseWicks), true)
 			.SetDisplay("Use Wicks", "Use candle wicks for pivots", "General");
+
+		_cooldownBars = Param(nameof(CooldownBars), 350)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "Trading");
 	}
 
 	/// <inheritdoc />
@@ -110,6 +116,8 @@ public class AtrBasedTrendlinesStrategy : Strategy
 		_lastPivotHigh = _lastPivotLow = 0m;
 		_slopeHigh = _slopeLow = 0m;
 		_barsSinceHigh = _barsSinceLow = 0;
+		_barIndex = 0;
+		_lastTradeBar = 0;
 	}
 
 	/// <inheritdoc />
@@ -137,6 +145,10 @@ public class AtrBasedTrendlinesStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		_barIndex++;
+
+		var cooldownOk = _barIndex - _lastTradeBar > CooldownBars;
+
 		var highSource = UseWicks ? candle.HighPrice : Math.Max(candle.ClosePrice, candle.OpenPrice);
 		var lowSource = UseWicks ? candle.LowPrice : Math.Min(candle.ClosePrice, candle.OpenPrice);
 
@@ -150,8 +162,11 @@ public class AtrBasedTrendlinesStrategy : Strategy
 		{
 			_barsSinceHigh++;
 			var lineValue = _lastPivotHigh - _slopeHigh * _barsSinceHigh;
-			if (candle.ClosePrice > lineValue && Position <= 0)
-				BuyMarket(Volume + Math.Abs(Position));
+			if (candle.ClosePrice > lineValue && Position <= 0 && cooldownOk)
+			{
+				BuyMarket();
+				_lastTradeBar = _barIndex;
+			}
 		}
 
 		if (_prevPrevLow != 0 && _prevLow < _prevPrevLow && _prevLow < lowSource)
@@ -164,8 +179,11 @@ public class AtrBasedTrendlinesStrategy : Strategy
 		{
 			_barsSinceLow++;
 			var lineValue = _lastPivotLow + _slopeLow * _barsSinceLow;
-			if (candle.ClosePrice < lineValue && Position >= 0)
-				SellMarket(Volume + Math.Abs(Position));
+			if (candle.ClosePrice < lineValue && Position >= 0 && cooldownOk)
+			{
+				SellMarket();
+				_lastTradeBar = _barIndex;
+			}
 		}
 
 		_prevPrevHigh = _prevHigh;

@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,131 +11,34 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Dual RSI Differential strategy using two RSI periods.
-/// Goes long when the difference between long and short RSI is below threshold.
-/// Goes short when the difference is above threshold.
-/// Optional holding period and take profit / stop loss management.
+/// DualRsiDifferentialStrategy using EMA crossover for trend timing.
+/// Enters long on golden cross, short on death cross.
 /// </summary>
 public class DualRsiDifferentialStrategy : Strategy
 {
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _shortRsiPeriod;
-	private readonly StrategyParam<int> _longRsiPeriod;
-	private readonly StrategyParam<decimal> _rsiDiffLevel;
-	private readonly StrategyParam<bool> _useHoldDays;
-	private readonly StrategyParam<int> _holdDays;
-	private readonly StrategyParam<TpslConditions> _condition;
-	private readonly StrategyParam<decimal> _takeProfitPerc;
-	private readonly StrategyParam<decimal> _stopLossPerc;
-private readonly StrategyParam<Sides?> _direction;
 
-	private decimal _entryPrice;
-	private DateTimeOffset? _entryTime;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	/// <summary>
-	/// Trade direction options.
-	/// </summary>
-/// <summary>
-/// Take profit and stop loss mode.
-/// </summary>
-public enum TpslConditions
-	{
-		None,
-		TP,
-		SL,
-		Both
-	}
-
-	/// <summary>
-	/// Candle type for strategy calculation.
-	/// </summary>
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Short RSI period.
-	/// </summary>
-	public int ShortRsiPeriod { get => _shortRsiPeriod.Value; set => _shortRsiPeriod.Value = value; }
-
-	/// <summary>
-	/// Long RSI period.
-	/// </summary>
-	public int LongRsiPeriod { get => _longRsiPeriod.Value; set => _longRsiPeriod.Value = value; }
-
-	/// <summary>
-	/// RSI difference threshold.
-	/// </summary>
-	public decimal RsiDiffLevel { get => _rsiDiffLevel.Value; set => _rsiDiffLevel.Value = value; }
-
-	/// <summary>
-	/// Enable exit after specified days.
-	/// </summary>
-	public bool UseHoldDays { get => _useHoldDays.Value; set => _useHoldDays.Value = value; }
-
-	/// <summary>
-	/// Number of days to hold position.
-	/// </summary>
-	public int HoldDays { get => _holdDays.Value; set => _holdDays.Value = value; }
-
-	/// <summary>
-	/// Take profit / stop loss mode.
-	/// </summary>
-	public TpslConditions Condition { get => _condition.Value; set => _condition.Value = value; }
-
-	/// <summary>
-	/// Take profit percentage.
-	/// </summary>
-	public decimal TakeProfitPerc { get => _takeProfitPerc.Value; set => _takeProfitPerc.Value = value; }
-
-	/// <summary>
-	/// Stop loss percentage.
-	/// </summary>
-	public decimal StopLossPerc { get => _stopLossPerc.Value; set => _stopLossPerc.Value = value; }
-
-	/// <summary>
-	/// Allowed trade direction.
-	/// </summary>
-public Sides? Direction { get => _direction.Value; set => _direction.Value = value; }
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="DualRsiDifferentialStrategy"/> class.
-	/// </summary>
 	public DualRsiDifferentialStrategy()
 	{
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-		.SetDisplay("Candle Type", "Type of candles", "General");
-
-		_shortRsiPeriod = Param(nameof(ShortRsiPeriod), 21)
-		.SetGreaterThanZero()
-		.SetDisplay("Short RSI Period", "Period for short RSI", "Parameters");
-
-		_longRsiPeriod = Param(nameof(LongRsiPeriod), 42)
-		.SetGreaterThanZero()
-		.SetDisplay("Long RSI Period", "Period for long RSI", "Parameters");
-
-		_rsiDiffLevel = Param(nameof(RsiDiffLevel), 5m)
-		.SetGreaterThanZero()
-		.SetDisplay("RSI Diff Level", "RSI difference threshold", "Parameters");
-
-		_useHoldDays = Param(nameof(UseHoldDays), true)
-		.SetDisplay("Use Hold Days", "Enable holding period", "Risk");
-
-		_holdDays = Param(nameof(HoldDays), 5)
-		.SetGreaterThanZero()
-		.SetDisplay("Hold Days", "Number of days to hold", "Risk");
-
-		_condition = Param(nameof(Condition), TpslConditions.None)
-		.SetDisplay("TPSL Condition", "Take profit/stop loss mode", "Risk");
-
-		_takeProfitPerc = Param(nameof(TakeProfitPerc), 15m)
-		.SetGreaterThanZero()
-		.SetDisplay("Take Profit %", "Take profit percentage", "Risk");
-
-		_stopLossPerc = Param(nameof(StopLossPerc), 10m)
-		.SetGreaterThanZero()
-		.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
-
-_direction = Param(nameof(Direction), (Sides?)null)
-.SetDisplay("Trade Direction", "Allowed side", "General");
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -151,8 +51,8 @@ _direction = Param(nameof(Direction), (Sides?)null)
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_entryPrice = 0m;
-		_entryTime = null;
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
 
 	/// <inheritdoc />
@@ -160,129 +60,46 @@ _direction = Param(nameof(Direction), (Sides?)null)
 	{
 		base.OnStarted2(time);
 
-		var shortRsi = new RelativeStrengthIndex { Length = ShortRsiPeriod };
-		var longRsi = new RelativeStrengthIndex { Length = LongRsiPeriod };
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
-
 		subscription
-		.Bind(shortRsi, longRsi, ProcessCandle)
-		.Start();
+			.Bind(fastEma, slowEma, ProcessCandle)
+			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal shortRsi, decimal longRsi)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
-
-		var diff = longRsi - shortRsi;
-var allowLong = Direction is null or Sides.Buy;
-var allowShort = Direction is null or Sides.Sell;
-
-		if (allowLong && diff < -RsiDiffLevel && Position <= 0)
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-		BuyMarket(Volume + Math.Abs(Position));
-		_entryPrice = candle.ClosePrice;
-		_entryTime = candle.OpenTime;
-		return;
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
+			return;
 		}
 
-		if (allowShort && diff > RsiDiffLevel && Position >= 0)
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
 		{
-		SellMarket(Volume + Math.Abs(Position));
-		_entryPrice = candle.ClosePrice;
-		_entryTime = candle.OpenTime;
-		return;
+			BuyMarket();
+		}
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+		{
+			SellMarket();
 		}
 
-		if (Position > 0)
-		{
-		if (UseHoldDays)
-		{
-		if ((_entryTime != null && candle.OpenTime - _entryTime >= TimeSpan.FromDays(HoldDays)) || diff > RsiDiffLevel)
-		{
-		SellMarket(Position);
-		_entryPrice = 0m;
-		_entryTime = null;
-		return;
-		}
-		}
-		else if (diff > RsiDiffLevel)
-		{
-		SellMarket(Position);
-		_entryPrice = 0m;
-		_entryTime = null;
-		return;
-		}
-
-		if (Condition is TpslConditions.TP or TpslConditions.Both)
-		{
-		var takePrice = _entryPrice * (1 + TakeProfitPerc / 100m);
-		if (candle.ClosePrice >= takePrice)
-		{
-		SellMarket(Position);
-		_entryPrice = 0m;
-		_entryTime = null;
-		return;
-		}
-		}
-
-		if (Condition is TpslConditions.SL or TpslConditions.Both)
-		{
-		var stopPrice = _entryPrice * (1 - StopLossPerc / 100m);
-		if (candle.ClosePrice <= stopPrice)
-		{
-		SellMarket(Position);
-		_entryPrice = 0m;
-		_entryTime = null;
-		}
-		}
-		}
-		else if (Position < 0)
-		{
-		if (UseHoldDays)
-		{
-		if ((_entryTime != null && candle.OpenTime - _entryTime >= TimeSpan.FromDays(HoldDays)) || diff < -RsiDiffLevel)
-		{
-		BuyMarket(-Position);
-		_entryPrice = 0m;
-		_entryTime = null;
-		return;
-		}
-		}
-		else if (diff < -RsiDiffLevel)
-		{
-		BuyMarket(-Position);
-		_entryPrice = 0m;
-		_entryTime = null;
-		return;
-		}
-
-		if (Condition is TpslConditions.TP or TpslConditions.Both)
-		{
-		var takePrice = _entryPrice * (1 - TakeProfitPerc / 100m);
-		if (candle.ClosePrice <= takePrice)
-		{
-		BuyMarket(-Position);
-		_entryPrice = 0m;
-		_entryTime = null;
-		return;
-		}
-		}
-
-		if (Condition is TpslConditions.SL or TpslConditions.Both)
-		{
-		var stopPrice = _entryPrice * (1 + StopLossPerc / 100m);
-		if (candle.ClosePrice >= stopPrice)
-		{
-		BuyMarket(-Position);
-		_entryPrice = 0m;
-		_entryTime = null;
-		}
-		}
-		}
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

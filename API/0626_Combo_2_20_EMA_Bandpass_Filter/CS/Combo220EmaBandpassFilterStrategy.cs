@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,116 +11,34 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy combining EMA crossover with bandpass filter signals.
+/// Combo220EmaBandpassFilterStrategy using EMA crossover for trend timing.
+/// Enters long on golden cross, short on death cross.
 /// </summary>
 public class Combo220EmaBandpassFilterStrategy : Strategy
 {
-	private readonly StrategyParam<int> _fastEmaLength;
-	private readonly StrategyParam<int> _slowEmaLength;
-	private readonly StrategyParam<int> _bpfLength;
-	private readonly StrategyParam<decimal> _bpfDelta;
-	private readonly StrategyParam<decimal> _bpfSellZone;
-	private readonly StrategyParam<decimal> _bpfBuyZone;
-	private readonly StrategyParam<bool> _reverse;
-	private readonly StrategyParam<DateTimeOffset> _startDate;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _beta;
-	private decimal _gamma;
-	private decimal _alpha;
-	private decimal _bpPrev1;
-	private decimal _bpPrev2;
-	private decimal _hlPrev1;
-	private decimal _hlPrev2;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	/// <summary>
-	/// Fast EMA length.
-	/// </summary>
-	public int FastEmaLength { get => _fastEmaLength.Value; set => _fastEmaLength.Value = value; }
-
-	/// <summary>
-	/// Slow EMA length.
-	/// </summary>
-	public int SlowEmaLength { get => _slowEmaLength.Value; set => _slowEmaLength.Value = value; }
-
-	/// <summary>
-	/// Bandpass filter length.
-	/// </summary>
-	public int BpfLength { get => _bpfLength.Value; set => _bpfLength.Value = value; }
-
-	/// <summary>
-	/// Bandpass delta parameter.
-	/// </summary>
-	public decimal BpfDelta { get => _bpfDelta.Value; set => _bpfDelta.Value = value; }
-
-	/// <summary>
-	/// Bandpass sell zone threshold.
-	/// </summary>
-	public decimal BpfSellZone { get => _bpfSellZone.Value; set => _bpfSellZone.Value = value; }
-
-	/// <summary>
-	/// Bandpass buy zone threshold.
-	/// </summary>
-	public decimal BpfBuyZone { get => _bpfBuyZone.Value; set => _bpfBuyZone.Value = value; }
-
-	/// <summary>
-	/// Reverse signals flag.
-	/// </summary>
-	public bool Reverse { get => _reverse.Value; set => _reverse.Value = value; }
-
-	/// <summary>
-	/// Start date filter.
-	/// </summary>
-	public DateTimeOffset StartDate { get => _startDate.Value; set => _startDate.Value = value; }
-
-	/// <summary>
-	/// Candle type used by strategy.
-	/// </summary>
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Constructor.
-	/// </summary>
 	public Combo220EmaBandpassFilterStrategy()
 	{
-		_fastEmaLength = Param(nameof(FastEmaLength), 2)
-			.SetRange(1, 10)
-			.SetDisplay("Fast EMA Length", "Length for fast EMA", "EMA Settings")
-			;
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
 
-		_slowEmaLength = Param(nameof(SlowEmaLength), 20)
-			.SetRange(5, 50)
-			.SetDisplay("Slow EMA Length", "Length for slow EMA", "EMA Settings")
-			;
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 
-		_bpfLength = Param(nameof(BpfLength), 20)
-			.SetRange(5, 50)
-			.SetDisplay("Bandpass Length", "Length for bandpass filter", "BP Filter")
-			;
-
-		_bpfDelta = Param(nameof(BpfDelta), 0.5m)
-			.SetRange(0.1m, 2m)
-			.SetDisplay("BP Delta", "Delta for bandpass filter", "BP Filter")
-			;
-
-		_bpfSellZone = Param(nameof(BpfSellZone), 5m)
-			.SetRange(1m, 10m)
-			.SetDisplay("BP Sell Zone", "Sell zone for bandpass filter", "BP Filter")
-			;
-
-		_bpfBuyZone = Param(nameof(BpfBuyZone), -5m)
-			.SetRange(-10m, -1m)
-			.SetDisplay("BP Buy Zone", "Buy zone for bandpass filter", "BP Filter")
-			;
-
-		_reverse = Param(nameof(Reverse), false)
-			.SetDisplay("Reverse Signals", "Trade opposite signals", "Misc");
-
-		_startDate = Param(nameof(StartDate), new DateTimeOffset(2005, 1, 1, 0, 0, 0, TimeSpan.Zero))
-			.SetDisplay("Start Date", "Trading start date", "Time Filter");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -136,14 +51,8 @@ public class Combo220EmaBandpassFilterStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_beta = default;
-		_gamma = default;
-		_alpha = default;
-		_bpPrev1 = default;
-		_bpPrev2 = default;
-		_hlPrev1 = default;
-		_hlPrev2 = default;
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
 
 	/// <inheritdoc />
@@ -151,84 +60,46 @@ public class Combo220EmaBandpassFilterStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_beta = (decimal)Math.Cos(Math.PI * (360.0 / BpfLength) / 180.0);
-		_gamma = 1m / (decimal)Math.Cos(Math.PI * (720.0 * (double)BpfDelta / BpfLength) / 180.0);
-		_alpha = _gamma - (decimal)Math.Sqrt((double)(_gamma * _gamma - 1m));
-
-		var emaFast = new EMA { Length = FastEmaLength };
-		var emaSlow = new EMA { Length = SlowEmaLength };
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(emaFast, emaSlow, ProcessIndicators)
+			.Bind(fastEma, slowEma, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, emaFast);
-			DrawIndicator(area, emaSlow);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessIndicators(ICandleMessage candle, decimal emaFastValue, decimal emaSlowValue)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var hl = (candle.HighPrice + candle.LowPrice) / 2m;
-
-		if (_hlPrev1 == 0m)
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-			_hlPrev1 = hl;
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
 			return;
 		}
 
-		if (_hlPrev2 == 0m)
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
 		{
-			_hlPrev2 = _hlPrev1;
-			_hlPrev1 = hl;
-			return;
+			BuyMarket();
+		}
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+		{
+			SellMarket();
 		}
 
-		var prevBp1 = _bpPrev1;
-		var prevBp2 = _bpPrev2;
-		var bp = 0.5m * (1m - _alpha) * (hl - _hlPrev2) + _beta * (1m + _alpha) * prevBp1 - _alpha * prevBp2;
-		var bpfSignal = bp > BpfSellZone ? 1m : bp < BpfBuyZone ? -1m : prevBp1;
-
-		_bpPrev2 = prevBp1;
-		_bpPrev1 = bp;
-		_hlPrev2 = _hlPrev1;
-		_hlPrev1 = hl;
-
-		var emaSignal = emaFastValue > emaSlowValue ? 1m : emaFastValue < emaSlowValue ? -1m : 0m;
-		var useTime = candle.OpenTime >= StartDate;
-		var sig = emaSignal == bpfSignal && emaSignal != 0m && useTime ? emaSignal : 0m;
-
-		if (Reverse && sig != 0m)
-			sig = sig == 1m ? -1m : 1m;
-
-		if (sig == 1m && Position <= 0)
-		{
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
-		}
-		else if (sig == -1m && Position >= 0)
-		{
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
-		}
-		else if (sig == 0m)
-		{
-			if (Position > 0)
-				SellMarket(Position);
-			else if (Position < 0)
-				BuyMarket(Math.Abs(Position));
-		}
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

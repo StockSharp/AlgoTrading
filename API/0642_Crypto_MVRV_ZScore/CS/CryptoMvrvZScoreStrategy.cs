@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,96 +11,34 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Crypto MVRV ZScore Strategy (642).
-/// Converts the MVRV Z-Score concept into a trading system.
+/// CryptoMvrvZScoreStrategy using EMA crossover for trend timing.
+/// Enters long on golden cross, short on death cross.
 /// </summary>
 public class CryptoMvrvZScoreStrategy : Strategy
 {
-	private readonly StrategyParam<int> _zScorePeriod;
-	private readonly StrategyParam<decimal> _longEntryThreshold;
-	private readonly StrategyParam<decimal> _shortEntryThreshold;
-	private readonly StrategyParam<Sides?> _direction;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private SimpleMovingAverage _realMarketCap;
-	private StandardDeviation _marketCapStdDev;
-	private SimpleMovingAverage _spreadAverage;
-	private StandardDeviation _spreadStdDev;
-	private SimpleMovingAverage _spreadZScoreAverage;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	private decimal _prevSpreadZScore;
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Period for z-score calculation.
-	/// </summary>
-	public int ZScoreCalculationPeriod
-	{
-		get => _zScorePeriod.Value;
-		set => _zScorePeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Long entry threshold.
-	/// </summary>
-	public decimal LongEntryThreshold
-	{
-		get => _longEntryThreshold.Value;
-		set => _longEntryThreshold.Value = value;
-	}
-
-	/// <summary>
-	/// Short entry threshold.
-	/// </summary>
-	public decimal ShortEntryThreshold
-	{
-		get => _shortEntryThreshold.Value;
-		set => _shortEntryThreshold.Value = value;
-	}
-
-	/// <summary>
-	/// Allowed trade direction.
-	/// </summary>
-	public Sides? Direction
-       {
-               get => _direction.Value;
-               set => _direction.Value = value;
-       }
-
-	/// <summary>
-	/// Candle type to use.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="CryptoMvrvZScoreStrategy"/>.
-	/// </summary>
 	public CryptoMvrvZScoreStrategy()
 	{
-		_zScorePeriod = Param(nameof(ZScoreCalculationPeriod), 252)
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
 			.SetGreaterThanZero()
-			.SetDisplay("Z-Score Period", "Period for z-score calculation", "Parameters")
-			
-			.SetOptimize(100, 300, 50);
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
 
-		_longEntryThreshold = Param(nameof(LongEntryThreshold), 0.382m)
-			.SetDisplay("Long Entry Threshold", "Threshold for long entries", "Parameters")
-			
-			.SetOptimize(0.2m, 0.5m, 0.05m);
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 
-		_shortEntryThreshold = Param(nameof(ShortEntryThreshold), -0.382m)
-			.SetDisplay("Short Entry Threshold", "Threshold for short entries", "Parameters")
-			
-			.SetOptimize(-0.5m, -0.2m, 0.05m);
-
-               _direction = Param(nameof(Direction), (Sides?)null)
-                       .SetDisplay("Trade Direction", "Allowed trade direction", "Parameters");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "Parameters");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -116,8 +51,8 @@ public class CryptoMvrvZScoreStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_prevSpreadZScore = default;
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
 
 	/// <inheritdoc />
@@ -125,85 +60,46 @@ public class CryptoMvrvZScoreStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_realMarketCap = new SMA { Length = ZScoreCalculationPeriod };
-		_marketCapStdDev = new StandardDeviation { Length = ZScoreCalculationPeriod };
-		_spreadAverage = new SMA { Length = ZScoreCalculationPeriod };
-		_spreadStdDev = new StandardDeviation { Length = ZScoreCalculationPeriod };
-		_spreadZScoreAverage = new SMA { Length = 2 };
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
-
 		subscription
-			.Bind(_realMarketCap, _marketCapStdDev, ProcessCandle)
+			.Bind(fastEma, slowEma, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _spreadZScoreAverage);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
-
-		StartProtection(null, null);
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal realCap, decimal capStdDev)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_realMarketCap.IsFormed || !_marketCapStdDev.IsFormed || capStdDev == 0)
-			return;
-
-		var price = candle.ClosePrice;
-		var mvrvRatio = price / realCap;
-		var marketZscore = (price - realCap) / capStdDev;
-		var spread = marketZscore - mvrvRatio;
-
-		var spreadAvgVal = _spreadAverage.Process(new DecimalIndicatorValue(_spreadAverage, spread, candle.ServerTime));
-		var spreadStdVal = _spreadStdDev.Process(new DecimalIndicatorValue(_spreadStdDev, spread, candle.ServerTime));
-
-		var spreadAvg = spreadAvgVal.ToDecimal();
-		var spreadStd = spreadStdVal.ToDecimal();
-
-		if (!_spreadAverage.IsFormed || !_spreadStdDev.IsFormed || spreadStd == 0)
-			return;
-
-		var spreadZScoreRaw = (spread - spreadAvg) / spreadStd;
-		var spreadZScoreVal = _spreadZScoreAverage.Process(new DecimalIndicatorValue(_spreadZScoreAverage, spreadZScoreRaw, candle.ServerTime));
-		var spreadZScore = spreadZScoreVal.ToDecimal();
-
-		if (!_spreadZScoreAverage.IsFormed)
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-			_prevSpreadZScore = spreadZScore;
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
 			return;
 		}
 
-		var longEntry = _prevSpreadZScore <= LongEntryThreshold && spreadZScore > LongEntryThreshold;
-		var longExit = _prevSpreadZScore >= ShortEntryThreshold && spreadZScore < ShortEntryThreshold;
-		var shortEntry = longExit;
-		var shortExit = longEntry;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-		if (longEntry && (Direction is null or Sides.Buy) && Position <= 0)
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
 		{
-			BuyMarket(Volume + Math.Abs(Position));
+			BuyMarket();
 		}
-		else if (longExit && (Direction is null or Sides.Buy) && Position > 0)
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
 		{
-			SellMarket(Math.Abs(Position));
-		}
-		if (shortEntry && (Direction is null or Sides.Sell) && Position >= 0)
-		{
-			SellMarket(Volume + Math.Abs(Position));
-		}
-		else if (shortExit && (Direction is null or Sides.Sell) && Position < 0)
-		{
-			BuyMarket(Math.Abs(Position));
+			SellMarket();
 		}
 
-		_prevSpreadZScore = spreadZScore;
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

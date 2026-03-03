@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,55 +11,48 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Collects price displacement samples and prepares them for scatter or heatmap analysis.
+/// DataChartStrategy using EMA crossover for trend timing.
+/// Enters long on golden cross, short on death cross.
 /// </summary>
 public class DataChartStrategy : Strategy
 {
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _duration;
-	private readonly StrategyParam<bool> _useAtrReference;
-	private readonly StrategyParam<int> _atrLength;
 
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
+
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
-	public int Duration { get => _duration.Value; set => _duration.Value = value; }
-	public bool UseAtrReference { get => _useAtrReference.Value; set => _useAtrReference.Value = value; }
-	public int AtrLength { get => _atrLength.Value; set => _atrLength.Value = value; }
-
-	private readonly AverageTrueRange _atr;
-	private readonly Highest _highest;
-	private readonly Lowest _lowest;
-	private readonly Queue<decimal> _priceBuffer = new();
-	private readonly Queue<decimal> _atrBuffer = new();
-	private readonly Chart _chart = new();
 
 	public DataChartStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-		.SetDisplay("Candle Type", "Type of candles", "General");
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
 
-		_duration = Param(nameof(Duration), 10)
-		.SetGreaterThanZero()
-		.SetDisplay("Duration", "Number of candles to measure displacement", "Chart")
-		
-		.SetOptimize(5, 20, 5);
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 
-		_useAtrReference = Param(nameof(UseAtrReference), true)
-		.SetDisplay("Use ATR", "Measure displacement in ATR units", "Chart");
-
-		_atrLength = Param(nameof(AtrLength), 24)
-		.SetGreaterThanZero()
-		.SetDisplay("ATR Length", "ATR period for normalization", "Chart")
-		
-		.SetOptimize(10, 40, 5);
-
-		_atr = new AverageTrueRange { Length = AtrLength };
-		_highest = new Highest { Length = Duration };
-		_lowest = new Lowest { Length = Duration };
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
+	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
 
 	/// <inheritdoc />
@@ -70,69 +60,46 @@ public class DataChartStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
+
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(Process).Start();
+		subscription
+			.Bind(fastEma, slowEma, ProcessCandle)
+			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
-		DrawCandles(area, subscription);
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void Process(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
-		var atrValue = _atr.Process(candle).ToNullableDecimal();
-		var highest = _highest.Process(new DecimalIndicatorValue(_highest, candle.HighPrice, candle.OpenTime)).ToNullableDecimal();
-		var lowest = _lowest.Process(new DecimalIndicatorValue(_lowest, candle.LowPrice, candle.OpenTime)).ToNullableDecimal();
-
-		if (atrValue is null || highest is null || lowest is null)
-		return;
-
-		_priceBuffer.Enqueue(candle.ClosePrice);
-		_atrBuffer.Enqueue(atrValue.Value);
-
-		if (_priceBuffer.Count <= Duration)
-		return;
-
-		var price = _priceBuffer.Dequeue();
-		var atrRef = _atrBuffer.Dequeue();
-
-		var positive = Math.Abs(highest.Value - price);
-		var negative = Math.Abs(price - lowest.Value);
-
-		var x = UseAtrReference ? positive / atrRef : positive * 100m / price;
-		var y = UseAtrReference ? negative / atrRef : negative * 100m / price;
-
-		_chart.AddSample(x, y);
-		_chart.Draw();
-	}
-
-	private class Sample
-	{
-		public decimal XValue { get; }
-		public decimal YValue { get; }
-
-		public Sample(decimal x, decimal y)
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-			XValue = x;
-			YValue = y;
-		}
-	}
-
-	private class Chart
-	{
-		public List<Sample> Samples { get; } = new();
-
-		public void AddSample(decimal x, decimal y)
-		{
-			Samples.Add(new Sample(x, y));
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
+			return;
 		}
 
-		public void Draw()
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
 		{
-			// Visualization can be added if needed.
+			BuyMarket();
 		}
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+		{
+			SellMarket();
+		}
+
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

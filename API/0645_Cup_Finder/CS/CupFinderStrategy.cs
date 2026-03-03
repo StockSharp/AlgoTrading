@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,83 +11,33 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Cup pattern strategy: detects rounded bottoms or tops and trades breakouts.
+/// CupFinderStrategy using EMA crossover for trend timing.
+/// Enters long on golden cross, short on death cross.
 /// </summary>
 public class CupFinderStrategy : Strategy
 {
-	private readonly StrategyParam<int> _lookback;
-	private readonly StrategyParam<decimal> _widthPercent;
-	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private Highest _highest;
-	private Lowest _lowest;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	private decimal? _leftPeak;
-	private decimal? _cupLow;
-	private bool _cupFormed;
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	private decimal? _leftBottom;
-	private decimal? _cupHigh;
-	private bool _invertedCupFormed;
-
-	/// <summary>
-	/// Lookback period for peak and bottom detection.
-	/// </summary>
-	public int Lookback
-	{
-		get => _lookback.Value;
-		set => _lookback.Value = value;
-	}
-
-	/// <summary>
-	/// Allowed width of the cup as percentage of peak/bottom price.
-	/// </summary>
-	public decimal WidthPercent
-	{
-		get => _widthPercent.Value;
-		set => _widthPercent.Value = value;
-	}
-
-	/// <summary>
-	/// Stop-loss percentage from entry price.
-	/// </summary>
-	public decimal StopLossPercent
-	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
-	}
-
-	/// <summary>
-	/// Type of candles to analyze.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="CupFinderStrategy"/>.
-	/// </summary>
 	public CupFinderStrategy()
 	{
-		_lookback = Param(nameof(Lookback), 150)
-			.SetRange(30, 250)
-			.SetDisplay("Lookback", "Number of bars to search", "Pattern Parameters")
-			;
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
 
-		_widthPercent = Param(nameof(WidthPercent), 5m)
-			.SetRange(1m, 20m)
-			.SetDisplay("Width %", "Maximum cup width in percent", "Pattern Parameters")
-			;
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 
-		_stopLossPercent = Param(nameof(StopLossPercent), 1m)
-			.SetRange(0.5m, 5m)
-			.SetDisplay("Stop Loss %", "Percentage for stop-loss", "Risk Management")
-			;
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -104,15 +51,8 @@ public class CupFinderStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_leftPeak = null;
-		_cupLow = null;
-		_cupFormed = false;
-		_leftBottom = null;
-		_cupHigh = null;
-		_invertedCupFormed = false;
-		_highest = null;
-		_lowest = null;
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
 
 	/// <inheritdoc />
@@ -120,92 +60,46 @@ public class CupFinderStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_highest = new Highest { Length = Lookback };
-		_lowest = new Lowest { Length = Lookback };
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(fastEma, slowEma, ProcessCandle)
 			.Start();
-
-		StartProtection(
-			new Unit(0, UnitTypes.Absolute),
-			new Unit(StopLossPercent, UnitTypes.Percent),
-			false);
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var highest = _highest.Process(candle).ToDecimal();
-		var lowest = _lowest.Process(candle).ToDecimal();
-
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
+		{
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
 			return;
-
-		// Bullish cup detection
-		if (_leftPeak == null || candle.HighPrice >= highest)
-		{
-			_leftPeak = candle.HighPrice;
-			_cupLow = null;
-			_cupFormed = false;
-		}
-		else
-		{
-			if (_cupLow == null || candle.LowPrice < _cupLow)
-				_cupLow = candle.LowPrice;
-
-			var width = _leftPeak.Value * WidthPercent / 100m;
-
-			if (!_cupFormed && _cupLow.HasValue && candle.ClosePrice >= _leftPeak - width)
-				_cupFormed = true;
-
-			if (_cupFormed && candle.ClosePrice > _leftPeak)
-			{
-				if (Position <= 0)
-					BuyMarket();
-
-				_leftPeak = null;
-				_cupLow = null;
-				_cupFormed = false;
-			}
 		}
 
-		// Bearish cup detection (inverted)
-		if (_leftBottom == null || candle.LowPrice <= lowest)
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
 		{
-			_leftBottom = candle.LowPrice;
-			_cupHigh = null;
-			_invertedCupFormed = false;
+			BuyMarket();
 		}
-		else
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
 		{
-			if (_cupHigh == null || candle.HighPrice > _cupHigh)
-				_cupHigh = candle.HighPrice;
-
-			var width = _leftBottom.Value * WidthPercent / 100m;
-
-			if (!_invertedCupFormed && _cupHigh.HasValue && candle.ClosePrice <= _leftBottom + width)
-				_invertedCupFormed = true;
-
-			if (_invertedCupFormed && candle.ClosePrice < _leftBottom)
-			{
-				if (Position >= 0)
-					SellMarket();
-
-				_leftBottom = null;
-				_cupHigh = null;
-				_invertedCupFormed = false;
-			}
+			SellMarket();
 		}
+
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

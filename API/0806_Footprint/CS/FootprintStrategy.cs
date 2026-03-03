@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -13,208 +10,73 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-/// <summary>
-/// Footprint strategy based on buy/sell volume imbalance.
-/// </summary>
 public class FootprintStrategy : Strategy
 {
-	private readonly StrategyParam<int> _imbalancePercent;
-	private readonly StrategyParam<bool> _useTrend;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<DataType> _trendCandleType;
-	private readonly StrategyParam<decimal> _stopLossPercent;
-	private readonly StrategyParam<bool> _enableStopLoss;
-	private readonly StrategyParam<decimal> _takeProfitPercent;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	private decimal _buyVolume;
-	private decimal _sellVolume;
-	private decimal? _prevTrendClose;
-	private bool _trendUp = true;
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Required imbalance percentage.
-	/// </summary>
-	public int ImbalancePercent
-	{
-		get => _imbalancePercent.Value;
-		set => _imbalancePercent.Value = value;
-	}
-
-	/// <summary>
-	/// Enable trend filter.
-	/// </summary>
-	public bool UseTrend
-	{
-		get => _useTrend.Value;
-		set => _useTrend.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type for footprint calculation.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type for trend detection.
-	/// </summary>
-	public DataType TrendCandleType
-	{
-		get => _trendCandleType.Value;
-		set => _trendCandleType.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss percentage.
-	/// </summary>
-	public decimal StopLossPercent
-	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
-	}
-
-	/// <summary>
-	/// Enable stop loss.
-	/// </summary>
-	public bool EnableStopLoss
-	{
-		get => _enableStopLoss.Value;
-		set => _enableStopLoss.Value = value;
-	}
-
-	/// <summary>
-	/// Take profit percentage.
-	/// </summary>
-	public decimal TakeProfitPercent
-	{
-		get => _takeProfitPercent.Value;
-		set => _takeProfitPercent.Value = value;
-	}
-
-	/// <summary>
-	/// Initialize <see cref="FootprintStrategy"/>.
-	/// </summary>
 	public FootprintStrategy()
 	{
-		_imbalancePercent = Param(nameof(ImbalancePercent), 300)
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
 			.SetGreaterThanZero()
-			.SetDisplay("Imbalance %", "Required buy/sell volume imbalance", "General")
-			
-			.SetOptimize(100, 500, 100);
-
-		_useTrend = Param(nameof(UseTrend), true)
-			.SetDisplay("Use Trend", "Enable daily trend filter", "Trend");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromSeconds(1).TimeFrame())
-			.SetDisplay("Candle Type", "Timeframe for footprint calculation", "General");
-
-		_trendCandleType = Param(nameof(TrendCandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Trend Candle", "Timeframe for trend filter", "Trend");
-
-		_stopLossPercent = Param(nameof(StopLossPercent), 1m)
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
 			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss %", "Stop loss as percent", "Risk")
-			
-			.SetOptimize(0.5m, 3m, 0.5m);
-
-		_enableStopLoss = Param(nameof(EnableStopLoss), false)
-			.SetDisplay("Enable Stop Loss", "Use stop loss protection", "Risk");
-
-		_takeProfitPercent = Param(nameof(TakeProfitPercent), 0.3m)
-			.SetGreaterThanZero()
-			.SetDisplay("Take Profit %", "Take profit as percent", "Risk")
-			
-			.SetOptimize(0.1m, 1m, 0.1m);
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		yield return (Security, CandleType);
-		yield return (Security, DataType.Ticks);
-		yield return (Security, TrendCandleType);
+		return [(Security, CandleType)];
 	}
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_buyVolume = 0;
-		_sellVolume = 0;
-		_prevTrendClose = null;
-		_trendUp = true;
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		var candleSub = SubscribeCandles(CandleType);
-		candleSub
-			.Bind(ProcessCandle)
-			.Start();
-
-		SubscribeTicks()
-			.Bind(trade =>
-			{
-				if (trade.OriginSide == Sides.Buy)
-					_buyVolume += trade.Volume;
-				else
-					_sellVolume += trade.Volume;
-			})
-			.Start();
-
-		SubscribeCandles(TrendCandleType)
-			.Bind(ProcessTrendCandle)
-			.Start();
-
-		StartProtection(
-			takeProfit: new Unit(TakeProfitPercent * 100m, UnitTypes.Percent),
-			stopLoss: EnableStopLoss ? new Unit(StopLossPercent * 100m, UnitTypes.Percent) : null
-		);
-
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(fastEma, slowEma, ProcessCandle).Start();
 		var area = CreateChartArea();
 		if (area != null)
 		{
-			DrawCandles(area, candleSub);
+			DrawCandles(area, subscription);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessTrendCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (_prevTrendClose is decimal prev)
-			_trendUp = candle.ClosePrice > prev;
-
-		_prevTrendClose = candle.ClosePrice;
-	}
-
-	private void ProcessCandle(ICandleMessage candle)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var imbalanceRatio = _sellVolume > 0 ? _buyVolume / _sellVolume : decimal.MaxValue;
-		var imbalancePercent = (imbalanceRatio - 1m) * 100m;
-
-		LogInfo($"Buy Vol: {_buyVolume}, Sell Vol: {_sellVolume}, Imbalance %: {imbalancePercent}");
-
-		if (imbalancePercent >= ImbalancePercent && candle.ClosePrice < candle.OpenPrice && (!UseTrend || _trendUp) && Position <= 0)
+		if (candle.State != CandleStates.Finished) return;
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-			BuyMarket(Volume + Math.Abs(Position));
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
+			return;
 		}
-
-		_buyVolume = 0;
-		_sellVolume = 0;
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
+			BuyMarket();
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+			SellMarket();
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,15 +12,28 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Evening Star candle pattern strategy.
-/// The strategy looks for an Evening Star pattern - first bullish candle, second small candle (doji), third bearish candle that closes below the midpoint of the first.
+/// Evening Star: 1st bullish, 2nd small body (doji), 3rd bearish closing below midpoint of 1st.
+/// Morning Star (reverse): 1st bearish, 2nd small body, 3rd bullish closing above midpoint of 1st.
+/// Uses SMA for exit signals.
 /// </summary>
 public class EveningStarStrategy : Strategy
 {
+	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<int> _cooldownBars;
 
-	private ICandleMessage _firstCandle;
-	private ICandleMessage _secondCandle;
+	private ICandleMessage _bar1;
+	private ICandleMessage _bar2;
+	private int _cooldown;
+
+	/// <summary>
+	/// MA Period.
+	/// </summary>
+	public int MAPeriod
+	{
+		get => _maPeriod.Value;
+		set => _maPeriod.Value = value;
+	}
 
 	/// <summary>
 	/// Candle type.
@@ -35,12 +45,12 @@ public class EveningStarStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stop-loss percentage.
+	/// Cooldown bars.
 	/// </summary>
-	public decimal StopLossPercent
+	public int CooldownBars
 	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	/// <summary>
@@ -48,14 +58,16 @@ public class EveningStarStrategy : Strategy
 	/// </summary>
 	public EveningStarStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_maPeriod = Param(nameof(MAPeriod), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("MA Period", "Period for SMA", "Indicators");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
-		_stopLossPercent = Param(nameof(StopLossPercent), 1.0m)
-			.SetNotNegative()
-			.SetDisplay("Stop Loss %", "Stop loss percentage above the second candle's high", "Risk Management")
-			
-			.SetOptimize(0.5m, 3.0m, 0.5m);
+		_cooldownBars = Param(nameof(CooldownBars), 500)
+			.SetRange(1, 1000)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
 	}
 
 	/// <inheritdoc />
@@ -68,9 +80,9 @@ public class EveningStarStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_firstCandle = null;
-		_secondCandle = null;
+		_bar1 = null;
+		_bar2 = null;
+		_cooldown = default;
 	}
 
 	/// <inheritdoc />
@@ -78,30 +90,27 @@ public class EveningStarStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Create subscription
+		_bar1 = null;
+		_bar2 = null;
+		_cooldown = 0;
+
+		var sma = new SimpleMovingAverage { Length = MAPeriod };
+
 		var subscription = SubscribeCandles(CandleType);
-		
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(sma, ProcessCandle)
 			.Start();
 
-		// Setup chart visualization if available
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawIndicator(area, sma);
 			DrawOwnTrades(area);
 		}
-
-		// Setup trailing stop
-		StartProtection(
-			takeProfit: new Unit(0, UnitTypes.Absolute), // no take profit, rely on exit signal
-			stopLoss: new Unit(StopLossPercent, UnitTypes.Percent),
-			isStopTrailing: true
-		);
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
@@ -109,77 +118,54 @@ public class EveningStarStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// The strategy only takes short positions
-		if (Position < 0)
-			return;
-
-		// If we have no previous candle stored, store the current one and return
-		if (_firstCandle == null)
+		if (_cooldown > 0)
 		{
-			_firstCandle = candle;
+			_cooldown--;
+			_bar1 = _bar2;
+			_bar2 = candle;
 			return;
 		}
 
-		// If we have one previous candle stored, store the current one as the second and return
-		if (_secondCandle == null)
+		if (_bar1 != null && _bar2 != null)
 		{
-			_secondCandle = candle;
-			return;
+			var firstBody = Math.Abs(_bar1.OpenPrice - _bar1.ClosePrice);
+			var secondBody = Math.Abs(_bar2.OpenPrice - _bar2.ClosePrice);
+			var secondSmall = firstBody > 0 && secondBody < firstBody * 0.5m;
+			var firstMid = (_bar1.HighPrice + _bar1.LowPrice) / 2;
+
+			// Evening Star (bearish reversal) - primary
+			var firstBullish = _bar1.ClosePrice > _bar1.OpenPrice;
+			var thirdBearish = candle.ClosePrice < candle.OpenPrice;
+			var eveningStar = firstBullish && secondSmall && thirdBearish && candle.ClosePrice < firstMid;
+
+			// Morning Star (bullish reversal) - secondary
+			var firstBearish = _bar1.ClosePrice < _bar1.OpenPrice;
+			var thirdBullish = candle.ClosePrice > candle.OpenPrice;
+			var morningStar = firstBearish && secondSmall && thirdBullish && candle.ClosePrice > firstMid;
+
+			if (Position == 0 && eveningStar)
+			{
+				SellMarket();
+				_cooldown = CooldownBars;
+			}
+			else if (Position == 0 && morningStar)
+			{
+				BuyMarket();
+				_cooldown = CooldownBars;
+			}
+			else if (Position > 0 && candle.ClosePrice < smaValue)
+			{
+				SellMarket();
+				_cooldown = CooldownBars;
+			}
+			else if (Position < 0 && candle.ClosePrice > smaValue)
+			{
+				BuyMarket();
+				_cooldown = CooldownBars;
+			}
 		}
 
-		// We now have three candles to analyze (the first two stored and the current one)
-		var isEveningStar = CheckEveningStar(_firstCandle, _secondCandle, candle);
-
-		if (isEveningStar)
-		{
-			// Evening Star pattern detected - enter short position
-			SellMarket(Volume);
-			
-			LogInfo($"Evening Star pattern detected. Entering short position at {candle.ClosePrice}");
-			
-			// Set stop-loss
-			var stopPrice = _secondCandle.HighPrice * (1 + StopLossPercent / 100);
-			LogInfo($"Setting stop-loss at {stopPrice}");
-		}
-
-		// Shift candles (drop first, move second to first, current to second)
-		_firstCandle = _secondCandle;
-		_secondCandle = candle;
-
-		// Exit logic for existing positions
-		if (Position < 0 && candle.LowPrice < _secondCandle.LowPrice)
-		{
-			BuyMarket(Math.Abs(Position));
-			LogInfo($"Exit signal: Price below previous low. Closing position at {candle.ClosePrice}");
-		}
-	}
-
-	private bool CheckEveningStar(ICandleMessage first, ICandleMessage second, ICandleMessage third)
-	{
-		// Check the first candle is bullish (close higher than open)
-		var firstIsBullish = first.ClosePrice > first.OpenPrice;
-		
-		// Check the third candle is bearish (close lower than open)
-		var thirdIsBearish = third.ClosePrice < third.OpenPrice;
-		
-		// Calculate the body size (absolute difference between open and close)
-		var firstBodySize = Math.Abs(first.OpenPrice - first.ClosePrice);
-		var secondBodySize = Math.Abs(second.OpenPrice - second.ClosePrice);
-		
-		// Second candle should have a small body (doji or near-doji) - typically less than 30% of the first
-		var secondIsSmall = secondBodySize < (firstBodySize * 0.3m);
-		
-		// Calculate midpoint of first candle
-		var firstMidpoint = (first.HighPrice + first.LowPrice) / 2;
-		
-		// Third candle close should be below the midpoint of the first candle
-		var thirdClosesLowEnough = third.ClosePrice < firstMidpoint;
-		
-		// Log pattern analysis
-		LogInfo($"Pattern analysis: First bullish={firstIsBullish}, Second small={secondIsSmall}, " +
-					   $"Third bearish={thirdIsBearish}, Third below midpoint={thirdClosesLowEnough}");
-		
-		// Return true if all conditions are met
-		return firstIsBullish && secondIsSmall && thirdIsBearish && thirdClosesLowEnough;
+		_bar1 = _bar2;
+		_bar2 = candle;
 	}
 }

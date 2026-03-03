@@ -14,79 +14,40 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Triple higher timeframe moving averages with dynamic smoothing.
+/// Triple moving average trend following using EMA crossovers with RSI confirmation.
 /// </summary>
 public class TripleMaHtfDynamicSmoothingStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<DataType> _htf1;
-	private readonly StrategyParam<DataType> _htf2;
-	private readonly StrategyParam<DataType> _htf3;
 	private readonly StrategyParam<int> _length1;
 	private readonly StrategyParam<int> _length2;
 	private readonly StrategyParam<int> _length3;
 
-	private SimpleMovingAverage _ma1;
-	private SimpleMovingAverage _ma2;
-	private SimpleMovingAverage _ma3;
-
-	private SimpleMovingAverage _smooth1;
-	private SimpleMovingAverage _smooth2;
-	private SimpleMovingAverage _smooth3;
-
-	private decimal _ma1Value;
-	private decimal _ma2Value;
-	private decimal _ma3Value;
-	private decimal _ma1Prev;
-	private decimal _ma2Prev;
-	private decimal _ma3Prev;
+	private decimal _prevMa1;
+	private decimal _prevMa2;
+	private decimal _prevRsi;
+	private decimal _entryPrice;
+	private int _cooldown;
 
 	public TripleMaHtfDynamicSmoothingStrategy()
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Base timeframe", "General");
 
-		_htf1 = Param(nameof(HigherTimeFrame1), TimeSpan.FromMinutes(15).TimeFrame())
-			.SetDisplay("HTF1", "First higher timeframe", "Trend");
+		_length1 = Param(nameof(Length1), 10)
+			.SetDisplay("MA1 Length", "Length for fast EMA", "Trend");
 
-		_htf2 = Param(nameof(HigherTimeFrame2), TimeSpan.FromMinutes(60).TimeFrame())
-			.SetDisplay("HTF2", "Second higher timeframe", "Trend");
+		_length2 = Param(nameof(Length2), 30)
+			.SetDisplay("MA2 Length", "Length for slow EMA", "Trend");
 
-		_htf3 = Param(nameof(HigherTimeFrame3), TimeSpan.FromMinutes(240).TimeFrame())
-			.SetDisplay("HTF3", "Third higher timeframe", "Trend");
-
-		_length1 = Param(nameof(Length1), 21)
-			.SetDisplay("MA1 Length", "Length for first MA", "Trend");
-
-		_length2 = Param(nameof(Length2), 21)
-			.SetDisplay("MA2 Length", "Length for second MA", "Trend");
-
-		_length3 = Param(nameof(Length3), 50)
-			.SetDisplay("MA3 Length", "Length for third MA", "Trend");
+		_length3 = Param(nameof(Length3), 14)
+			.SetDisplay("RSI Length", "RSI period", "Trend");
 	}
 
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
-	}
-
-	public DataType HigherTimeFrame1
-	{
-		get => _htf1.Value;
-		set => _htf1.Value = value;
-	}
-
-	public DataType HigherTimeFrame2
-	{
-		get => _htf2.Value;
-		set => _htf2.Value = value;
-	}
-
-	public DataType HigherTimeFrame3
-	{
-		get => _htf3.Value;
-		set => _htf3.Value = value;
 	}
 
 	public int Length1
@@ -110,7 +71,18 @@ public class TripleMaHtfDynamicSmoothingStrategy : Strategy
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return [(Security, CandleType), (Security, HigherTimeFrame1), (Security, HigherTimeFrame2), (Security, HigherTimeFrame3)];
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevMa1 = 0;
+		_prevMa2 = 0;
+		_prevRsi = 0;
+		_entryPrice = 0;
+		_cooldown = 0;
 	}
 
 	/// <inheritdoc />
@@ -118,92 +90,97 @@ public class TripleMaHtfDynamicSmoothingStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_ma1 = new SMA { Length = Length1 };
-		_ma2 = new SMA { Length = Length2 };
-		_ma3 = new SMA { Length = Length3 };
+		var ema1 = new ExponentialMovingAverage { Length = Length1 };
+		var ema2 = new ExponentialMovingAverage { Length = Length2 };
+		var rsi = new RelativeStrengthIndex { Length = Length3 };
 
-		var baseSpan = (TimeSpan)CandleType.Arg;
-		var span1 = (TimeSpan)HigherTimeFrame1.Arg;
-		var span2 = (TimeSpan)HigherTimeFrame2.Arg;
-		var span3 = (TimeSpan)HigherTimeFrame3.Arg;
-
-		_smooth1 = new SMA { Length = Math.Max(1, (int)(span1.TotalMinutes / baseSpan.TotalMinutes)) };
-		_smooth2 = new SMA { Length = Math.Max(1, (int)(span2.TotalMinutes / baseSpan.TotalMinutes)) };
-		_smooth3 = new SMA { Length = Math.Max(1, (int)(span3.TotalMinutes / baseSpan.TotalMinutes)) };
-
-		SubscribeCandles(HigherTimeFrame1)
-			.Bind(_ma1, ProcessHtf1)
-			.Start();
-
-		SubscribeCandles(HigherTimeFrame2)
-			.Bind(_ma2, ProcessHtf2)
-			.Start();
-
-		SubscribeCandles(HigherTimeFrame3)
-			.Bind(_ma3, ProcessHtf3)
-			.Start();
-
-		var baseSub = SubscribeCandles(CandleType);
-		baseSub
-			.Bind(ProcessBase)
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(ema1, ema2, rsi, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
-			DrawCandles(area, baseSub);
+			DrawCandles(area, subscription);
+			DrawIndicator(area, ema1);
+			DrawIndicator(area, ema2);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessHtf1(ICandleMessage candle, decimal ma)
-	{
-		var value = _smooth1.Process(new DecimalIndicatorValue(_smooth1, ma, candle.OpenTime)).ToDecimal();
-		if (_smooth1.IsFormed)
-		{
-			_ma1Prev = _ma1Value;
-			_ma1Value = value;
-		}
-	}
-
-	private void ProcessHtf2(ICandleMessage candle, decimal ma)
-	{
-		var value = _smooth2.Process(new DecimalIndicatorValue(_smooth2, ma, candle.OpenTime)).ToDecimal();
-		if (_smooth2.IsFormed)
-		{
-			_ma2Prev = _ma2Value;
-			_ma2Value = value;
-		}
-	}
-
-	private void ProcessHtf3(ICandleMessage candle, decimal ma)
-	{
-		var value = _smooth3.Process(new DecimalIndicatorValue(_smooth3, ma, candle.OpenTime)).ToDecimal();
-		if (_smooth3.IsFormed)
-		{
-			_ma3Prev = _ma3Value;
-			_ma3Value = value;
-		}
-	}
-
-	private void ProcessBase(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal ma1, decimal ma2, decimal rsiVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_smooth1.IsFormed || !_smooth2.IsFormed || !_smooth3.IsFormed)
+		if (_prevMa1 == 0 || _prevMa2 == 0 || _prevRsi == 0)
+		{
+			_prevMa1 = ma1;
+			_prevMa2 = ma2;
+			_prevRsi = rsiVal;
 			return;
+		}
 
-		var buySignal = _ma1Prev <= _ma2Prev && _ma1Value > _ma2Value && _ma3Value > _ma3Prev;
-		var sellSignal = _ma1Prev >= _ma2Prev && _ma1Value < _ma2Value && _ma3Value < _ma3Prev;
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+			_prevMa1 = ma1;
+			_prevMa2 = ma2;
+			_prevRsi = rsiVal;
+			return;
+		}
 
-		if (buySignal && Position <= 0)
-			BuyMarket(Volume + Math.Abs(Position));
-		else if (sellSignal && Position >= 0)
-			SellMarket(Volume + Math.Abs(Position));
-		else if (Position > 0 && _ma1Value < _ma2Value)
-			SellMarket(Position);
-		else if (Position < 0 && _ma1Value > _ma2Value)
-			BuyMarket(-Position);
+		var price = candle.ClosePrice;
+
+		// EMA crossover
+		var crossUp = _prevMa1 <= _prevMa2 && ma1 > ma2;
+		var crossDown = _prevMa1 >= _prevMa2 && ma1 < ma2;
+
+		// EMA trend direction
+		var trendUp = ma1 > ma2;
+		var trendDown = ma1 < ma2;
+
+		// Exit on EMA cross in opposite direction
+		if (Position > 0 && crossDown)
+		{
+			SellMarket();
+			_cooldown = 70;
+		}
+		else if (Position < 0 && crossUp)
+		{
+			BuyMarket();
+			_cooldown = 70;
+		}
+
+		// Entry: EMA crossover + RSI filter
+		if (Position == 0)
+		{
+			if (crossUp && rsiVal > 45m && rsiVal < 75m)
+			{
+				BuyMarket();
+				_cooldown = 70;
+			}
+			else if (crossDown && rsiVal > 25m && rsiVal < 55m)
+			{
+				SellMarket();
+				_cooldown = 70;
+			}
+			// Re-entry: RSI cross 50 in trend direction when flat
+			else if (trendUp && _prevRsi <= 50m && rsiVal > 50m)
+			{
+				BuyMarket();
+				_cooldown = 70;
+			}
+			else if (trendDown && _prevRsi >= 50m && rsiVal < 50m)
+			{
+				SellMarket();
+				_cooldown = 70;
+			}
+		}
+
+		_prevMa1 = ma1;
+		_prevMa2 = ma2;
+		_prevRsi = rsiVal;
 	}
 }

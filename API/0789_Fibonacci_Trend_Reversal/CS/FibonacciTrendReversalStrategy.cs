@@ -1,9 +1,8 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -11,241 +10,73 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
-/// <summary>
-/// Fibonacci trend reversal strategy with ATR based risk management.
-/// </summary>
 public class FibonacciTrendReversalStrategy : Strategy
 {
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _sensitivity;
-	private readonly StrategyParam<int> _atrPeriod;
-	private readonly StrategyParam<decimal> _atrMultiplier;
-	private readonly StrategyParam<decimal> _riskReward;
-	private readonly StrategyParam<bool> _usePartialTp;
-private readonly StrategyParam<Sides?> _direction;
-	
-	private Highest _highest;
-	private Lowest _lowest;
-	private ATR _atr;
-	
-	private decimal _entryPrice;
-	private decimal _stopLoss;
-	private decimal _tp1;
-	private decimal _tp2;
-	private bool _firstTargetHit;
-	
-	/// <summary>
-	/// Allowed trade direction.
-	/// </summary>
-public Sides? Direction
-{
-get => _direction.Value;
-set => _direction.Value = value;
-}
-	
-	/// <summary>
-	/// Candle type.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-	
-	/// <summary>
-	/// Sensitivity.
-	/// </summary>
-	public int Sensitivity
-	{
-		get => _sensitivity.Value;
-		set => _sensitivity.Value = value;
-	}
-	
-	/// <summary>
-	/// ATR period.
-	/// </summary>
-	public int AtrPeriod
-	{
-		get => _atrPeriod.Value;
-		set => _atrPeriod.Value = value;
-	}
-	
-	/// <summary>
-	/// ATR multiplier for stop loss.
-	/// </summary>
-	public decimal AtrMultiplier
-	{
-		get => _atrMultiplier.Value;
-		set => _atrMultiplier.Value = value;
-	}
-	
-	/// <summary>
-	/// Risk reward ratio.
-	/// </summary>
-	public decimal RiskReward
-	{
-		get => _riskReward.Value;
-		set => _riskReward.Value = value;
-	}
-	
-	/// <summary>
-	/// Use partial take profit.
-	/// </summary>
-	public bool UsePartialTp
-	{
-		get => _usePartialTp.Value;
-		set => _usePartialTp.Value = value;
-	}
-	
-/// <summary>
-/// Initializes a new instance of <see cref="FibonacciTrendReversalStrategy"/>.
-/// </summary>
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
+
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+
 	public FibonacciTrendReversalStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
-		.SetDisplay("Candle Type", "Type of candles", "General");
-		
-		_sensitivity = Param(nameof(Sensitivity), 18)
-		.SetDisplay("Sensitivity", "Base sensitivity", "Fibonacci");
-		
-		_atrPeriod = Param(nameof(AtrPeriod), 14)
-		.SetGreaterThanZero()
-		.SetDisplay("ATR Period", "ATR length", "Risk");
-		
-		_atrMultiplier = Param(nameof(AtrMultiplier), 3.5m)
-		.SetGreaterThanZero()
-		.SetDisplay("ATR Multiplier", "ATR multiplier for stop loss", "Risk");
-		
-		_riskReward = Param(nameof(RiskReward), 2m)
-		.SetGreaterThanZero()
-		.SetDisplay("Risk Reward", "Risk reward ratio", "Risk");
-		
-		_usePartialTp = Param(nameof(UsePartialTp), true)
-		.SetDisplay("Use Partial TP", "Close half position at first target", "Risk");
-		
-_direction = Param(nameof(Direction), (Sides?)null)
-.SetDisplay("Trade Direction", "Allowed trade direction", "General");
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
-	
-	/// <inheritdoc />
+
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return new[] { (Security, CandleType) };
+		return [(Security, CandleType)];
 	}
-	
-	/// <inheritdoc />
+
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		
-		_entryPrice = _stopLoss = _tp1 = _tp2 = default;
-		_firstTargetHit = false;
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
-	
-	/// <inheritdoc />
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		
-		_highest = new Highest { Length = Sensitivity * 10 };
-		_lowest = new Lowest { Length = Sensitivity * 10 };
-		_atr = new ATR { Length = AtrPeriod };
-		
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(_atr, ProcessCandle).Start();
-		
+		subscription.Bind(fastEma, slowEma, ProcessCandle).Start();
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _atr);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
-	
-	private void ProcessCandle(ICandleMessage candle, decimal atr)
+
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
-		if (candle.State != CandleStates.Finished)
-		return;
-		
-		var highLine = _highest.Process(new DecimalIndicatorValue(_highest, candle.HighPrice, candle.ServerTime)).ToNullableDecimal();
-		var lowLine = _lowest.Process(new DecimalIndicatorValue(_lowest, candle.LowPrice, candle.ServerTime)).ToNullableDecimal();
-		
-		if (highLine is null || lowLine is null)
-		return;
-		
-		var range = highLine.Value - lowLine.Value;
-		var midLine = highLine.Value - range * 0.5m;
-		
-		var canLong = candle.ClosePrice >= midLine && candle.OpenPrice < midLine;
-		var canShort = candle.ClosePrice <= midLine && candle.OpenPrice > midLine;
-		
-var allowLong = Direction != Sides.Sell;
-var allowShort = Direction != Sides.Buy;
-		
-		if (Position == 0)
+		if (candle.State != CandleStates.Finished) return;
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-			_firstTargetHit = false;
-			
-			if (canLong && allowLong)
-			{
-				_entryPrice = candle.ClosePrice;
-				_stopLoss = _entryPrice - atr * AtrMultiplier;
-				var risk = _entryPrice - _stopLoss;
-				_tp1 = _entryPrice + risk * RiskReward / 2m;
-				_tp2 = _entryPrice + risk * RiskReward;
-				BuyMarket(Volume);
-			}
-			else if (canShort && allowShort)
-			{
-				_entryPrice = candle.ClosePrice;
-				_stopLoss = _entryPrice + atr * AtrMultiplier;
-				var risk = _stopLoss - _entryPrice;
-				_tp1 = _entryPrice - risk * RiskReward / 2m;
-				_tp2 = _entryPrice - risk * RiskReward;
-				SellMarket(Volume);
-			}
-			
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
 			return;
 		}
-		
-		if (Position > 0)
-		{
-			if (UsePartialTp && !_firstTargetHit && candle.HighPrice >= _tp1)
-			{
-				SellMarket(Position / 2m);
-				_firstTargetHit = true;
-				_stopLoss = _entryPrice;
-			}
-			
-			if (candle.LowPrice <= _stopLoss)
-			{
-				SellMarket(Position);
-			}
-			else if ((!UsePartialTp || _firstTargetHit) && candle.HighPrice >= _tp2)
-			{
-				SellMarket(Position);
-			}
-		}
-		else if (Position < 0)
-		{
-			if (UsePartialTp && !_firstTargetHit && candle.LowPrice <= _tp1)
-			{
-				BuyMarket(-Position / 2m);
-				_firstTargetHit = true;
-				_stopLoss = _entryPrice;
-			}
-			
-			if (candle.HighPrice >= _stopLoss)
-			{
-				BuyMarket(-Position);
-			}
-			else if ((!UsePartialTp || _firstTargetHit) && candle.LowPrice <= _tp2)
-			{
-				BuyMarket(-Position);
-			}
-		}
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
+			BuyMarket();
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+			SellMarket();
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

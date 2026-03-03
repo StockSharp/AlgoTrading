@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 using Ecng.Common;
 
@@ -17,31 +18,46 @@ public class MaMacdBbBackTesterStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _maLength;
 
-	private EMA _ma;
+	private ExponentialMovingAverage _ma;
 	private decimal _prevClose;
 	private decimal _prevMa;
 	private bool _initialized;
+	private int _cooldown;
 
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 	public int MaLength { get => _maLength.Value; set => _maLength.Value = value; }
 
 	public MaMacdBbBackTesterStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candles", "General");
 		_maLength = Param(nameof(MaLength), 20)
 			.SetDisplay("MA Length", "MA period", "Indicators");
 	}
 
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_prevClose = default;
+		_prevMa = default;
+		_initialized = false;
+		_cooldown = default;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_prevClose = 0;
-		_prevMa = 0;
-		_initialized = false;
-
-		_ma = new EMA { Length = MaLength };
+		_ma = new ExponentialMovingAverage { Length = MaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -73,13 +89,31 @@ public class MaMacdBbBackTesterStrategy : Strategy
 			return;
 		}
 
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+			_prevClose = candle.ClosePrice;
+			_prevMa = maVal;
+			return;
+		}
+
 		var crossUp = _prevClose <= _prevMa && candle.ClosePrice > maVal;
 		var crossDown = _prevClose >= _prevMa && candle.ClosePrice < maVal;
 
 		if (crossUp && Position <= 0)
-			BuyMarket(Volume + Math.Abs(Position));
+		{
+			if (Position < 0)
+				BuyMarket();
+			BuyMarket();
+			_cooldown = 10;
+		}
 		else if (crossDown && Position >= 0)
-			SellMarket(Volume + Math.Abs(Position));
+		{
+			if (Position > 0)
+				SellMarket();
+			SellMarket();
+			_cooldown = 10;
+		}
 
 		_prevClose = candle.ClosePrice;
 		_prevMa = maVal;

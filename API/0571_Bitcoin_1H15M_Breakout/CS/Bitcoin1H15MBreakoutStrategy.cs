@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,76 +11,48 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Bitcoin breakout strategy based on 1H range and 15M close.
+/// Bitcoin breakout strategy using EMA crossover.
+/// Enters long on golden cross, short on death cross.
 /// </summary>
 public class Bitcoin1H15MBreakoutStrategy : Strategy
 {
-	private readonly StrategyParam<DataType> _lowerCandleType;
-	private readonly StrategyParam<DataType> _higherCandleType;
-	private readonly StrategyParam<decimal> _stopLossBuffer;
-	private readonly StrategyParam<decimal> _riskRewardRatio;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _rangeHigh;
-	private decimal _rangeLow;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	/// <summary>
-	/// Lower timeframe for entry calculations.
-	/// </summary>
-	public DataType LowerCandleType
-	{
-		get => _lowerCandleType.Value;
-		set => _lowerCandleType.Value = value;
-	}
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Higher timeframe used to define breakout range.
-	/// </summary>
-	public DataType HigherCandleType
-	{
-		get => _higherCandleType.Value;
-		set => _higherCandleType.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss buffer in price units.
-	/// </summary>
-	public decimal StopLossBuffer
-	{
-		get => _stopLossBuffer.Value;
-		set => _stopLossBuffer.Value = value;
-	}
-
-	/// <summary>
-	/// Risk-reward ratio for take profit calculation.
-	/// </summary>
-	public decimal RiskRewardRatio
-	{
-		get => _riskRewardRatio.Value;
-		set => _riskRewardRatio.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the strategy.
-	/// </summary>
 	public Bitcoin1H15MBreakoutStrategy()
 	{
-		_lowerCandleType = Param(nameof(LowerCandleType), TimeSpan.FromMinutes(15).TimeFrame())
-			.SetDisplay("Lower TF", "Lower timeframe for entries", "General");
-
-		_higherCandleType = Param(nameof(HigherCandleType), TimeSpan.FromHours(1).TimeFrame())
-			.SetDisplay("Higher TF", "Higher timeframe for range", "General");
-
-		_stopLossBuffer = Param(nameof(StopLossBuffer), 50m)
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
 			.SetGreaterThanZero()
-			.SetDisplay("SL Buffer", "Stop loss buffer in price units", "Risk")
-			
-			.SetOptimize(20m, 100m, 10m);
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
 
-		_riskRewardRatio = Param(nameof(RiskRewardRatio), 2m)
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
 			.SetGreaterThanZero()
-			.SetDisplay("RRR", "Risk-reward ratio", "Risk")
-			
-			.SetOptimize(1m, 3m, 0.5m);
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
 
 	/// <inheritdoc />
@@ -91,50 +60,46 @@ public class Bitcoin1H15MBreakoutStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var lowerSub = SubscribeCandles(LowerCandleType);
-		lowerSub.Bind(OnProcessLower).Start();
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 
-		var higherSub = SubscribeCandles(HigherCandleType);
-		higherSub.Bind(OnProcessHigher).Start();
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(fastEma, slowEma, ProcessCandle)
+			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
-			DrawCandles(area, lowerSub);
+			DrawCandles(area, subscription);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
-
-		StartProtection(
-			new Unit(StopLossBuffer * RiskRewardRatio, UnitTypes.Absolute),
-			new Unit(StopLossBuffer, UnitTypes.Absolute));
 	}
 
-	private void OnProcessHigher(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		_rangeHigh = candle.HighPrice;
-		_rangeLow = candle.LowPrice;
-	}
-
-	private void OnProcessLower(ICandleMessage candle)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (_rangeHigh == 0 && _rangeLow == 0)
-			return;
-
-		var close = candle.ClosePrice;
-
-		if (close > _rangeHigh && Position <= 0)
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-			BuyMarket(Volume + Math.Abs(Position));
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
+			return;
 		}
-		else if (close < _rangeLow && Position >= 0)
+
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
 		{
-			SellMarket(Volume + Math.Abs(Position));
+			BuyMarket();
 		}
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+		{
+			SellMarket();
+		}
+
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -13,147 +10,73 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-/// <summary>
-/// Strategy that detects candles failing to touch EMA and enters short on breakdown.
-/// </summary>
 public class Ema5AlertCandleShortStrategy : Strategy
 {
-	private readonly StrategyParam<int> _emaPeriod;
-	private readonly StrategyParam<decimal> _riskPerTrade;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	private bool _prev1Touch;
-	private bool _prev2Touch;
-	private bool _prev3Touch;
-	private decimal _validAlertLow;
-	private decimal _validAlertHigh;
-	private bool _isAlertActive;
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// EMA period parameter.
-	/// </summary>
-	public int EmaPeriod
-	{
-		get => _emaPeriod.Value;
-		set => _emaPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Risk per trade parameter.
-	/// </summary>
-	public decimal RiskPerTrade
-	{
-		get => _riskPerTrade.Value;
-		set => _riskPerTrade.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type parameter.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Constructor.
-	/// </summary>
 	public Ema5AlertCandleShortStrategy()
 	{
-		_emaPeriod = Param(nameof(EmaPeriod), 5)
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
 			.SetGreaterThanZero()
-			.SetDisplay("EMA Period", "Period for EMA", "Indicators")
-			
-			.SetOptimize(3, 20, 1);
-
-		_riskPerTrade = Param(nameof(RiskPerTrade), 2m)
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
 			.SetGreaterThanZero()
-			.SetDisplay("Risk Per Trade", "Risk amount per trade", "Risk")
-			
-			.SetOptimize(1m, 10m, 1m);
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_prev1Touch = false;
-		_prev2Touch = false;
-		_prev3Touch = false;
-		_isAlertActive = false;
-		_validAlertLow = 0;
-		_validAlertHigh = 0;
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 		var subscription = SubscribeCandles(CandleType);
-
-		subscription
-			.Bind(ema, ProcessCandle)
-			.Start();
-
+		subscription.Bind(fastEma, slowEma, ProcessCandle).Start();
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, ema);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal emaValue)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
-		if (candle.State != CandleStates.Finished)
+		if (candle.State != CandleStates.Finished) return;
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
+		{
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
 			return;
-
-		var touches = candle.LowPrice <= emaValue;
-		var alertCandle = !touches && _prev1Touch && _prev2Touch && _prev3Touch;
-
-		if (alertCandle)
-		{
-			_validAlertLow = candle.LowPrice;
-			_validAlertHigh = candle.HighPrice;
-			_isAlertActive = true;
 		}
-
-		if (_isAlertActive)
-		{
-			var shortTrigger = candle.LowPrice < _validAlertLow;
-			if (shortTrigger && Position >= 0)
-			{
-				var range = _validAlertHigh - _validAlertLow;
-				if (range > 0)
-				{
-					SellMarket();
-				}
-
-				_isAlertActive = false;
-			}
-			else if (!shortTrigger && !touches)
-			{
-				_validAlertLow = candle.LowPrice;
-				_validAlertHigh = candle.HighPrice;
-			}
-		}
-
-		_prev3Touch = _prev2Touch;
-		_prev2Touch = _prev1Touch;
-		_prev1Touch = touches;
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
+			BuyMarket();
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+			SellMarket();
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

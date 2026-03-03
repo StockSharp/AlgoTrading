@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,13 +12,18 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Strategy based on ADX and Directional Movement indicators.
+/// Buys when +DI crosses above -DI with strong ADX.
+/// Sells when -DI crosses above +DI with strong ADX.
 /// </summary>
 public class AdxDiStrategy : Strategy
 {
 	private readonly StrategyParam<int> _adxPeriod;
 	private readonly StrategyParam<decimal> _adxThreshold;
-	private readonly StrategyParam<decimal> _atrMultiplier;
 	private readonly StrategyParam<DataType> _candleType;
+
+	private bool _prevPlusDiAbove;
+	private bool _hasPrevValues;
+	private int _cooldown;
 
 	/// <summary>
 	/// ADX period.
@@ -42,15 +44,6 @@ public class AdxDiStrategy : Strategy
 	}
 
 	/// <summary>
-	/// ATR multiplier for stop-loss.
-	/// </summary>
-	public decimal AtrMultiplier
-	{
-		get => _atrMultiplier.Value;
-		set => _atrMultiplier.Value = value;
-	}
-
-	/// <summary>
 	/// Candle type.
 	/// </summary>
 	public DataType CandleType
@@ -65,21 +58,13 @@ public class AdxDiStrategy : Strategy
 	public AdxDiStrategy()
 	{
 		_adxPeriod = Param(nameof(AdxPeriod), 14)
-			.SetRange(7, 30)
 			.SetDisplay("ADX Period", "Period for ADX calculation", "Indicators")
-			;
+			.SetOptimize(10, 20, 2);
 
-		_adxThreshold = Param(nameof(AdxThreshold), 25m)
-			.SetRange(15m, 35m)
-			.SetDisplay("ADX Threshold", "ADX level to confirm trend", "Indicators")
-			;
+		_adxThreshold = Param(nameof(AdxThreshold), 15m)
+			.SetDisplay("ADX Threshold", "ADX level to confirm trend", "Indicators");
 
-		_atrMultiplier = Param(nameof(AtrMultiplier), 2m)
-			.SetRange(1m, 5m)
-			.SetDisplay("ATR Multiplier", "Multiplier for ATR stop loss", "Risk Management")
-			;
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -90,91 +75,96 @@ public class AdxDiStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevPlusDiAbove = default;
+		_hasPrevValues = default;
+		_cooldown = default;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		// Create ADX Indicator
 		var adx = new AverageDirectionalIndex { Length = AdxPeriod };
-		var atr = new AverageTrueRange { Length = 14 };
 
-		// Subscribe to candles
 		var subscription = SubscribeCandles(CandleType);
-		
-		// Bind indicators and process candles
 		subscription
-			.BindEx(adx, atr, ProcessCandle)
+			.BindEx(adx, ProcessCandle)
 			.Start();
 
-		// Enable position protection
-		StartProtection(
-			takeProfit: null, 
-			stopLoss: new Unit(AtrMultiplier, UnitTypes.Absolute),
-			isStopTrailing: true,
-			useMarketOrders: true
-		);
-
-		// Setup chart visualization
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
 			DrawIndicator(area, adx);
-			DrawIndicator(area, atr);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue adxValue, IIndicatorValue atrValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue adxValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// Get ADX and +DI/-DI values
-		var adx = (AverageDirectionalIndexValue)adxValue;
-		var adxMain = adx.MovingAverage;
-		var plusDi = adx.Dx.Plus;
-		var minusDi = adx.Dx.Minus;
+		if (adxValue.IsEmpty)
+			return;
 
-		// Trading logic
-		if (adxMain >= AdxThreshold)
+		decimal adxMain, plusDi, minusDi;
+		try
 		{
-			// Strong trend detected
-			
-			// Long signal: +DI > -DI
-			if (plusDi > minusDi && Position <= 0)
-			{
-				var volume = Volume + Math.Abs(Position);
-				BuyMarket(volume);
-				LogInfo($"Buy signal: ADX = {adxMain:F2}, +DI = {plusDi:F2}, -DI = {minusDi:F2}");
-			}
-			// Short signal: -DI > +DI
-			else if (minusDi > plusDi && Position >= 0)
-			{
-				var volume = Volume + Math.Abs(Position);
-				SellMarket(volume);
-				LogInfo($"Sell signal: ADX = {adxMain:F2}, +DI = {plusDi:F2}, -DI = {minusDi:F2}");
-			}
+			var adx = (AverageDirectionalIndexValue)adxValue;
+			if (adx.MovingAverage is not decimal ma)
+				return;
+			if (adx.Dx.Plus is not decimal pDi)
+				return;
+			if (adx.Dx.Minus is not decimal mDi)
+				return;
+			adxMain = ma;
+			plusDi = pDi;
+			minusDi = mDi;
+		}
+		catch (IndexOutOfRangeException)
+		{
+			return;
 		}
 
-		// Exit logic when trend weakens
-		if (adxMain < 20)
+		var plusDiAbove = plusDi > minusDi;
+
+		if (!_hasPrevValues)
 		{
-			if (Position > 0)
-			{
-				SellMarket(Math.Abs(Position));
-				LogInfo($"Exiting long position: ADX weakened to {adxMain:F2}");
-			}
-			else if (Position < 0)
-			{
-				BuyMarket(Math.Abs(Position));
-				LogInfo($"Exiting short position: ADX weakened to {adxMain:F2}");
-			}
+			_hasPrevValues = true;
+			_prevPlusDiAbove = plusDiAbove;
+			return;
 		}
+
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+			_prevPlusDiAbove = plusDiAbove;
+			return;
+		}
+
+		// +DI crosses above -DI with strong trend = buy
+		if (plusDiAbove && !_prevPlusDiAbove && adxMain >= AdxThreshold && Position <= 0)
+		{
+			var volume = Volume + Math.Abs(Position);
+			BuyMarket(volume);
+			_cooldown = 5;
+		}
+		// -DI crosses above +DI with strong trend = sell
+		else if (!plusDiAbove && _prevPlusDiAbove && adxMain >= AdxThreshold && Position >= 0)
+		{
+			var volume = Volume + Math.Abs(Position);
+			SellMarket(volume);
+			_cooldown = 5;
+		}
+
+		_prevPlusDiAbove = plusDiAbove;
 	}
 }

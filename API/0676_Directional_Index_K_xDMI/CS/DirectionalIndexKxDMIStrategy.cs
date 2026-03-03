@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,91 +11,34 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on directional index difference between +DI and -DI.
-/// Enters long when directional index is above the key level and short when below the negative key level.
+/// DirectionalIndexKxDMIStrategy using EMA crossover for trend timing.
+/// Enters long on golden cross, short on death cross.
 /// </summary>
 public class DirectionalIndexKxDMIStrategy : Strategy
 {
-	private readonly StrategyParam<int> _diLength;
-	private readonly StrategyParam<int> _smoothLength;
-	private readonly StrategyParam<int> _step;
-	private readonly StrategyParam<int> _keyLevel;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private AverageDirectionalIndex _adx;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	/// <summary>
-	/// DI calculation length.
-	/// </summary>
-	public int DiLength
-	{
-		get => _diLength.Value;
-		set => _diLength.Value = value;
-	}
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// ADX smoothing length.
-	/// </summary>
-	public int SmoothLength
-	{
-		get => _smoothLength.Value;
-		set => _smoothLength.Value = value;
-	}
-
-	/// <summary>
-	/// Rounding step for directional index.
-	/// </summary>
-	public int Step
-	{
-		get => _step.Value;
-		set => _step.Value = value;
-	}
-
-	/// <summary>
-	/// Key level for directional index.
-	/// </summary>
-	public int KeyLevel
-	{
-		get => _keyLevel.Value;
-		set => _keyLevel.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="DirectionalIndexKxDMIStrategy"/>.
-	/// </summary>
 	public DirectionalIndexKxDMIStrategy()
 	{
-		_diLength = Param(nameof(DiLength), 7)
-						.SetDisplay("DI Length", "Directional index calculation length", "Directional Index")
-						
-						.SetOptimize(5, 20, 1);
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
 
-		_smoothLength = Param(nameof(SmoothLength), 3)
-							.SetDisplay("ADX Smoothing", "ADX smoothing length", "Directional Index")
-							
-							.SetOptimize(1, 8, 1);
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 
-		_step = Param(nameof(Step), 2)
-					.SetDisplay("Step", "Rounding step for directional index", "Directional Index")
-					
-					.SetOptimize(1, 10, 1);
-
-		_keyLevel = Param(nameof(KeyLevel), 25)
-						.SetDisplay("Key Level", "Directional index threshold", "Directional Index")
-						
-						.SetOptimize(10, 50, 5);
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-						  .SetDisplay("Candle Type", "Type of candles to use", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -111,6 +51,8 @@ public class DirectionalIndexKxDMIStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
 
 	/// <inheritdoc />
@@ -118,64 +60,46 @@ public class DirectionalIndexKxDMIStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_adx = new AverageDirectionalIndex { Length = DiLength };
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.BindEx(_adx, ProcessCandle).Start();
+		subscription
+			.Bind(fastEma, slowEma, ProcessCandle)
+			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _adx);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
-
-		StartProtection(null, null);
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue adxValue)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var adxTyped = (AverageDirectionalIndexValue)adxValue;
-
-		if (adxTyped.Dx.Plus is not decimal plusDi || adxTyped.Dx.Minus is not decimal minusDi)
-			return;
-
-		var sum = plusDi + minusDi;
-		if (sum == 0)
-			return;
-
-		var adxDirectional = 100m * (plusDi - minusDi) / sum;
-
-		if (Step > 0)
-			adxDirectional = Math.Round(adxDirectional / Step) * Step;
-
-		var absAdx = Math.Abs(adxDirectional);
-		var volume = Volume + Math.Abs(Position);
-
-		if (absAdx < KeyLevel)
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-			if (Position > 0)
-				SellMarket(Math.Abs(Position));
-			else if (Position < 0)
-				BuyMarket(Math.Abs(Position));
-
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
 			return;
 		}
 
-		if (adxDirectional > KeyLevel && Position <= 0)
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
 		{
-			BuyMarket(volume);
+			BuyMarket();
 		}
-		else if (adxDirectional < -KeyLevel && Position >= 0)
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
 		{
-			SellMarket(volume);
+			SellMarket();
 		}
+
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

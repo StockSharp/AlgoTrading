@@ -71,22 +71,22 @@ public class KeltnerChannelBreakoutStrategy : Strategy
 	/// </summary>
 	public KeltnerChannelBreakoutStrategy()
 	{
-		_emaPeriod = Param(nameof(EmaPeriod), 20)
+		_emaPeriod = Param(nameof(EmaPeriod), 500)
 			.SetDisplay("EMA Period", "Period for Exponential Moving Average", "Indicators")
-			
+
 			.SetOptimize(10, 50, 5);
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetDisplay("ATR Period", "Period for Average True Range", "Indicators")
-			
+
 			.SetOptimize(10, 30, 2);
 
-		_atrMultiplier = Param(nameof(AtrMultiplier), 2m)
+		_atrMultiplier = Param(nameof(AtrMultiplier), 10m)
 			.SetDisplay("ATR Multiplier", "Multiplier for ATR to determine channel width", "Indicators")
-			
+
 			.SetOptimize(1, 3, 0.5m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -170,33 +170,14 @@ public class KeltnerChannelBreakoutStrategy : Strategy
 		var isUpperBreakout = candle.ClosePrice > _prevUpperBand && _prevClosePrice <= _prevUpperBand;
 		var isLowerBreakout = candle.ClosePrice < _prevLowerBand && _prevClosePrice >= _prevLowerBand;
 
-		// Check for exit conditions
-		var shouldExitLong = candle.ClosePrice < _prevEma && Position > 0;
-		var shouldExitShort = candle.ClosePrice > _prevEma && Position < 0;
-
-		// Entry logic
+		// Entry logic - breakout reversal only
 		if (isUpperBreakout && Position <= 0)
 		{
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
-			LogInfo($"Buy signal: Price {candle.ClosePrice} broke above upper band {_prevUpperBand}");
+			BuyMarket(Volume + Math.Abs(Position));
 		}
 		else if (isLowerBreakout && Position >= 0)
 		{
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
-			LogInfo($"Sell signal: Price {candle.ClosePrice} broke below lower band {_prevLowerBand}");
-		}
-		// Exit logic
-		else if (shouldExitLong)
-		{
-			SellMarket(Position);
-			LogInfo($"Exit long: Price {candle.ClosePrice} dropped below EMA {_prevEma}");
-		}
-		else if (shouldExitShort)
-		{
-			BuyMarket(Math.Abs(Position));
-			LogInfo($"Exit short: Price {candle.ClosePrice} rose above EMA {_prevEma}");
+			SellMarket(Volume + Math.Abs(Position));
 		}
 
 		// Update previous values

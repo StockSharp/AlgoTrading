@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,87 +11,48 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Moving average crossover strategy with two take-profit levels and a stop-loss.
+/// DonkyMaTpSlStrategy using EMA crossover for trend timing.
+/// Enters long on golden cross, short on death cross.
 /// </summary>
 public class DonkyMaTpSlStrategy : Strategy
 {
-	private readonly StrategyParam<int> _fastLength;
-	private readonly StrategyParam<int> _slowLength;
-	private readonly StrategyParam<decimal> _takeProfit1Pct;
-	private readonly StrategyParam<decimal> _takeProfit2Pct;
-	private readonly StrategyParam<decimal> _stopLossPct;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private bool _tp1Triggered;
-	private decimal _tp1;
-	private decimal _tp2;
-	private decimal _sl;
-	private decimal _prevFast;
-	private decimal _prevSlow;
-	private bool _hasPrev;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	/// <summary>
-	/// Fast moving average length (default: 10)
-	/// </summary>
-	public int FastLength { get => _fastLength.Value; set => _fastLength.Value = value; }
-
-	/// <summary>
-	/// Slow moving average length (default: 30)
-	/// </summary>
-	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
-
-	/// <summary>
-	/// First take-profit percentage (default: 0.03)
-	/// </summary>
-	public decimal TakeProfit1Pct { get => _takeProfit1Pct.Value; set => _takeProfit1Pct.Value = value; }
-
-	/// <summary>
-	/// Second take-profit percentage (default: 0.06)
-	/// </summary>
-	public decimal TakeProfit2Pct { get => _takeProfit2Pct.Value; set => _takeProfit2Pct.Value = value; }
-
-	/// <summary>
-	/// Stop-loss percentage (default: 0.01)
-	/// </summary>
-	public decimal StopLossPct { get => _stopLossPct.Value; set => _stopLossPct.Value = value; }
-
-	/// <summary>
-	/// Candle type used for calculations.
-	/// </summary>
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Initialize strategy parameters.
-	/// </summary>
 	public DonkyMaTpSlStrategy()
 	{
-		_fastLength = Param(nameof(FastLength), 10)
-			.SetDisplay("Fast MA Length", "Fast moving average length", "Parameters")
-			
-			.SetOptimize(5, 20, 5);
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
 
-		_slowLength = Param(nameof(SlowLength), 30)
-			.SetDisplay("Slow MA Length", "Slow moving average length", "Parameters")
-			
-			.SetOptimize(20, 60, 10);
-
-		_takeProfit1Pct = Param(nameof(TakeProfit1Pct), 0.03m)
-			.SetDisplay("Take Profit 1 (%)", "First take-profit percentage", "Risk")
-			
-			.SetOptimize(0.01m, 0.05m, 0.01m);
-
-		_takeProfit2Pct = Param(nameof(TakeProfit2Pct), 0.06m)
-			.SetDisplay("Take Profit 2 (%)", "Second take-profit percentage", "Risk")
-			
-			.SetOptimize(0.02m, 0.1m, 0.02m);
-
-		_stopLossPct = Param(nameof(StopLossPct), 0.01m)
-			.SetDisplay("Stop Loss (%)", "Stop-loss percentage", "Risk")
-			
-			.SetOptimize(0.005m, 0.03m, 0.005m);
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "Parameters");
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
 
 	/// <inheritdoc />
@@ -102,91 +60,46 @@ public class DonkyMaTpSlStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
-
-		var fastMa = new SMA { Length = FastLength };
-		var slowMa = new SMA { Length = SlowLength };
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(fastMa, slowMa, ProcessCandle)
+			.Bind(fastEma, slowEma, ProcessCandle)
 			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (_hasPrev)
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-			var crossedUp = _prevFast <= _prevSlow && fast > slow;
-			var crossedDown = _prevFast >= _prevSlow && fast < slow;
-
-			if (crossedUp)
-			{
-				if (Position <= 0)
-					OpenLong(candle.ClosePrice);
-			}
-			else if (crossedDown)
-			{
-				if (Position >= 0)
-					OpenShort(candle.ClosePrice);
-			}
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
+			return;
 		}
 
-		ManagePosition(candle.ClosePrice);
-
-		_prevFast = fast;
-		_prevSlow = slow;
-		_hasPrev = true;
-	}
-
-	private void OpenLong(decimal price)
-	{
-		BuyMarket();
-		_tp1 = price * (1 + TakeProfit1Pct);
-		_tp2 = price * (1 + TakeProfit2Pct);
-		_sl = price * (1 - StopLossPct);
-		_tp1Triggered = false;
-	}
-
-	private void OpenShort(decimal price)
-	{
-		SellMarket();
-		_tp1 = price * (1 - TakeProfit1Pct);
-		_tp2 = price * (1 - TakeProfit2Pct);
-		_sl = price * (1 + StopLossPct);
-		_tp1Triggered = false;
-	}
-
-	private void ManagePosition(decimal price)
-	{
-		if (Position > 0)
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
 		{
-			if (!_tp1Triggered && price >= _tp1)
-			{
-				SellMarket(Position / 2m);
-				_tp1Triggered = true;
-			}
-			else if (price <= _sl || price >= _tp2)
-			{
-				SellMarket();
-				_tp1Triggered = false;
-			}
+			BuyMarket();
 		}
-		else if (Position < 0)
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
 		{
-			if (!_tp1Triggered && price <= _tp1)
-			{
-				BuyMarket(Math.Abs(Position) / 2m);
-				_tp1Triggered = true;
-			}
-			else if (price >= _sl || price <= _tp2)
-			{
-				BuyMarket(Math.Abs(Position));
-				_tp1Triggered = false;
-			}
+			SellMarket();
 		}
+
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

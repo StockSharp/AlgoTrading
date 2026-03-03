@@ -78,19 +78,19 @@ public class MacdTrendStrategy : Strategy
 	/// </summary>
 	public MacdTrendStrategy()
 	{
-		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 12)
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 200)
 			.SetDisplay("Fast EMA Period", "Period for fast EMA in MACD", "Indicators")
-			
+
 			.SetOptimize(8, 16, 2);
 
-		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 26)
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 500)
 			.SetDisplay("Slow EMA Period", "Period for slow EMA in MACD", "Indicators")
-			
+
 			.SetOptimize(20, 32, 2);
 
-		_signalPeriod = Param(nameof(SignalPeriod), 9)
+		_signalPeriod = Param(nameof(SignalPeriod), 200)
 			.SetDisplay("Signal Period", "Period for signal line in MACD", "Indicators")
-			
+
 			.SetOptimize(5, 13, 2);
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
@@ -98,7 +98,7 @@ public class MacdTrendStrategy : Strategy
 			
 			.SetOptimize(1, 3, 0.5m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -147,11 +147,6 @@ public class MacdTrendStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		// Start protection with stop loss
-		StartProtection(
-			takeProfit: null,
-			stopLoss: new Unit(StopLossPercent, UnitTypes.Percent)
-		);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue)
@@ -165,8 +160,8 @@ public class MacdTrendStrategy : Strategy
 			return;
 
 		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
-		var macd = macdTyped.Macd;
-		var signal = macdTyped.Signal;
+		if (macdTyped.Macd is not decimal macd || macdTyped.Signal is not decimal signal)
+			return;
 
 		// Check MACD position relative to signal line
 		var isMacdAboveSignal = macd > signal;
@@ -189,17 +184,6 @@ public class MacdTrendStrategy : Strategy
 			var volume = Volume + Math.Abs(Position);
 			SellMarket(volume);
 			LogInfo($"Sell signal: MACD ({macd:F5}) crossed below Signal ({signal:F5})");
-		}
-		// Exit logic based on opposite crossover
-		else if (isMacdCrossedBelowSignal && Position > 0)
-		{
-			SellMarket(Position);
-			LogInfo($"Exit long: MACD ({macd:F5}) crossed below Signal ({signal:F5})");
-		}
-		else if (isMacdCrossedAboveSignal && Position < 0)
-		{
-			BuyMarket(Math.Abs(Position));
-			LogInfo($"Exit short: MACD ({macd:F5}) crossed above Signal ({signal:F5})");
 		}
 
 		// Update previous state

@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,15 +12,18 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Strategy based on RSI mean reversion.
+/// Buys when RSI crosses up from oversold zone, sells when RSI crosses down from overbought.
+/// Uses SMA as trend filter.
 /// </summary>
 public class RsiReversionStrategy : Strategy
 {
 	private readonly StrategyParam<int> _rsiPeriod;
-	private readonly StrategyParam<decimal> _oversoldThreshold;
-	private readonly StrategyParam<decimal> _overboughtThreshold;
-	private readonly StrategyParam<decimal> _exitLevel;
-	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<int> _smaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
+
+	private decimal _prevRsi;
+	private bool _hasPrevValues;
+	private int _cooldown;
 
 	/// <summary>
 	/// RSI period.
@@ -35,39 +35,12 @@ public class RsiReversionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// RSI oversold threshold.
+	/// SMA period for trend filter.
 	/// </summary>
-	public decimal OversoldThreshold
+	public int SmaPeriod
 	{
-		get => _oversoldThreshold.Value;
-		set => _oversoldThreshold.Value = value;
-	}
-
-	/// <summary>
-	/// RSI overbought threshold.
-	/// </summary>
-	public decimal OverboughtThreshold
-	{
-		get => _overboughtThreshold.Value;
-		set => _overboughtThreshold.Value = value;
-	}
-
-	/// <summary>
-	/// RSI exit level.
-	/// </summary>
-	public decimal ExitLevel
-	{
-		get => _exitLevel.Value;
-		set => _exitLevel.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss percentage.
-	/// </summary>
-	public decimal StopLossPercent
-	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
+		get => _smaPeriod.Value;
+		set => _smaPeriod.Value = value;
 	}
 
 	/// <summary>
@@ -85,29 +58,12 @@ public class RsiReversionStrategy : Strategy
 	public RsiReversionStrategy()
 	{
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
-			.SetRange(5, 30)
 			.SetDisplay("RSI Period", "Period for RSI calculation", "Indicators")
-			;
+			.SetOptimize(10, 20, 2);
 
-		_oversoldThreshold = Param(nameof(OversoldThreshold), 30m)
-			.SetRange(10m, 40m)
-			.SetDisplay("Oversold Threshold", "RSI threshold for oversold condition", "Strategy")
-			;
-
-		_overboughtThreshold = Param(nameof(OverboughtThreshold), 70m)
-			.SetRange(60m, 90m)
-			.SetDisplay("Overbought Threshold", "RSI threshold for overbought condition", "Strategy")
-			;
-
-		_exitLevel = Param(nameof(ExitLevel), 50m)
-			.SetRange(40m, 60m)
-			.SetDisplay("Exit Level", "RSI level for exits (mean reversion)", "Strategy")
-			;
-
-		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
-			.SetRange(0.5m, 5m)
-			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management")
-			;
+		_smaPeriod = Param(nameof(SmaPeriod), 50)
+			.SetDisplay("SMA Period", "Period for SMA trend filter", "Indicators")
+			.SetOptimize(30, 70, 10);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -120,77 +76,79 @@ public class RsiReversionStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevRsi = default;
+		_hasPrevValues = default;
+		_cooldown = default;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		// Create RSI indicator
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
+		var sma = new SimpleMovingAverage { Length = SmaPeriod };
 
-		// Subscribe to candles
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(rsi, ProcessCandle)
+			.Bind(rsi, sma, ProcessCandle)
 			.Start();
 
-		// Enable position protection
-		StartProtection(
-			takeProfit: null,
-			stopLoss: new Unit(StopLossPercent, UnitTypes.Percent),
-			useMarketOrders: true
-		);
-
-		// Setup chart visualization
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
 			DrawIndicator(area, rsi);
+			DrawIndicator(area, sma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue rsiValue)
+	private void ProcessCandle(ICandleMessage candle, decimal rsiValue, decimal smaValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// Get RSI value
-		decimal rsi = rsiValue.ToDecimal();
+		if (rsiValue == 0 || smaValue == 0)
+			return;
 
-		// Entry logic for mean reversion
-		if (rsi < OversoldThreshold && Position <= 0)
+		if (!_hasPrevValues)
 		{
-			// Buy when RSI is oversold (below threshold)
+			_hasPrevValues = true;
+			_prevRsi = rsiValue;
+			return;
+		}
+
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+			_prevRsi = rsiValue;
+			return;
+		}
+
+		var price = candle.ClosePrice;
+
+		// RSI crosses up from oversold (30) = buy (mean reversion)
+		if (_prevRsi < 30 && rsiValue >= 30 && Position <= 0)
+		{
 			var volume = Volume + Math.Abs(Position);
 			BuyMarket(volume);
-			LogInfo($"Buy signal: RSI oversold at {rsi:F2}");
+			_cooldown = 10;
 		}
-		else if (rsi > OverboughtThreshold && Position >= 0)
+		// RSI crosses down from overbought (70) = sell (mean reversion)
+		else if (_prevRsi > 70 && rsiValue <= 70 && Position >= 0)
 		{
-			// Sell when RSI is overbought (above threshold)
 			var volume = Volume + Math.Abs(Position);
 			SellMarket(volume);
-			LogInfo($"Sell signal: RSI overbought at {rsi:F2}");
+			_cooldown = 10;
 		}
 
-		// Exit logic based on RSI returning to mid-range (mean reversion)
-		if (Position > 0 && rsi > ExitLevel)
-		{
-			// Exit long position when RSI returns to neutral zone
-			SellMarket(Math.Abs(Position));
-			LogInfo($"Exiting long position: RSI returned to {rsi:F2}");
-		}
-		else if (Position < 0 && rsi < ExitLevel)
-		{
-			// Exit short position when RSI returns to neutral zone
-			BuyMarket(Math.Abs(Position));
-			LogInfo($"Exiting short position: RSI returned to {rsi:F2}");
-		}
+		_prevRsi = rsiValue;
 	}
 }

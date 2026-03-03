@@ -2,66 +2,67 @@ using System;
 
 using Ecng.Common;
 
+using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
-using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// London session breakout strategy based on Asian range.
+/// London session breakout strategy using Highest/Lowest channels.
 /// </summary>
 public class LondonBreakOutClassicStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _crv;
+	private readonly StrategyParam<int> _channelLength;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<TimeSpan> _boxStart;
-	private readonly StrategyParam<TimeSpan> _boxEnd;
-	private readonly StrategyParam<TimeSpan> _tradeStart;
-	private readonly StrategyParam<TimeSpan> _tradeEnd;
+	private readonly StrategyParam<int> _cooldownBars;
 
-	private decimal _sessionHigh;
-	private decimal _sessionLow;
-	private DateTime _currentDay;
-	private bool _tradeOpened;
-	private decimal _stopPrice;
-	private decimal _takePrice;
+	private Highest _highest;
+	private Lowest _lowest;
+	private decimal _prevHigh;
+	private decimal _prevLow;
+	private int _barsSinceSignal;
 
-	public decimal Crv { get => _crv.Value; set => _crv.Value = value; }
+	public int ChannelLength { get => _channelLength.Value; set => _channelLength.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
-	public TimeSpan BoxStart { get => _boxStart.Value; set => _boxStart.Value = value; }
-	public TimeSpan BoxEnd { get => _boxEnd.Value; set => _boxEnd.Value = value; }
-	public TimeSpan TradeStart { get => _tradeStart.Value; set => _tradeStart.Value = value; }
-	public TimeSpan TradeEnd { get => _tradeEnd.Value; set => _tradeEnd.Value = value; }
+	public int CooldownBars { get => _cooldownBars.Value; set => _cooldownBars.Value = value; }
 
 	public LondonBreakOutClassicStrategy()
 	{
-		_crv = Param(nameof(Crv), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("CRV", "Risk reward factor", "General");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_channelLength = Param(nameof(ChannelLength), 20)
+			.SetDisplay("Channel Length", "Period for breakout channel", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Candles", "General");
-		_boxStart = Param(nameof(BoxStart), TimeSpan.Zero)
-			.SetDisplay("Box Start", "Asian session start", "Session");
-		_boxEnd = Param(nameof(BoxEnd), TimeSpan.FromHours(7))
-			.SetDisplay("Box End", "Asian session end", "Session");
-		_tradeStart = Param(nameof(TradeStart), TimeSpan.FromHours(7))
-			.SetDisplay("Trade Start", "Breakout start", "Session");
-		_tradeEnd = Param(nameof(TradeEnd), TimeSpan.FromHours(16))
-			.SetDisplay("Trade End", "Breakout end", "Session");
+		_cooldownBars = Param(nameof(CooldownBars), 20)
+			.SetDisplay("Cooldown Bars", "Min bars between signals", "General");
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_highest = null;
+		_lowest = null;
+		_prevHigh = 0;
+		_prevLow = 0;
+		_barsSinceSignal = 0;
 	}
 
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_sessionHigh = 0m;
-		_sessionLow = decimal.MaxValue;
-		_currentDay = default;
-		_tradeOpened = false;
+		_highest = new Highest { Length = ChannelLength };
+		_lowest = new Lowest { Length = ChannelLength };
+		_prevHigh = 0;
+		_prevLow = 0;
+		_barsSinceSignal = 0;
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(OnProcess).Start();
+		subscription
+			.Bind(_highest, _lowest, ProcessCandle)
+			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -71,71 +72,41 @@ public class LondonBreakOutClassicStrategy : Strategy
 		}
 	}
 
-	private void OnProcess(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal highVal, decimal lowVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var day = candle.OpenTime.Date;
-		if (day != _currentDay)
+		_barsSinceSignal++;
+
+		if (!_highest.IsFormed || !_lowest.IsFormed)
 		{
-			_currentDay = day;
-			_sessionHigh = 0m;
-			_sessionLow = decimal.MaxValue;
-			_tradeOpened = false;
-
-			if (Position > 0)
-				SellMarket(Math.Abs(Position));
-			else if (Position < 0)
-				BuyMarket(Math.Abs(Position));
-		}
-
-		var tod = candle.OpenTime.TimeOfDay;
-
-		// Accumulate Asian session range
-		if (tod >= BoxStart && tod < BoxEnd)
-		{
-			_sessionHigh = Math.Max(_sessionHigh, candle.HighPrice);
-			_sessionLow = Math.Min(_sessionLow, candle.LowPrice);
+			_prevHigh = highVal;
+			_prevLow = lowVal;
 			return;
 		}
 
-		// Trading window
-		if (tod >= TradeStart && tod < TradeEnd && !_tradeOpened && _sessionHigh > 0 && _sessionLow < decimal.MaxValue)
+		if (_barsSinceSignal < CooldownBars)
 		{
-			var mid = (_sessionHigh + _sessionLow) / 2m;
-
-			if (candle.ClosePrice > _sessionHigh && Position <= 0)
-			{
-				_stopPrice = mid;
-				var range = candle.ClosePrice - _stopPrice;
-				_takePrice = candle.ClosePrice + range * Crv;
-				BuyMarket(Volume + Math.Abs(Position));
-				_tradeOpened = true;
-				return;
-			}
-
-			if (candle.ClosePrice < _sessionLow && Position >= 0)
-			{
-				_stopPrice = mid;
-				var range = _stopPrice - candle.ClosePrice;
-				_takePrice = candle.ClosePrice - range * Crv;
-				SellMarket(Volume + Math.Abs(Position));
-				_tradeOpened = true;
-				return;
-			}
+			_prevHigh = highVal;
+			_prevLow = lowVal;
+			return;
 		}
 
-		// Exit logic
-		if (Position > 0)
+		// Breakout above channel high
+		if (candle.ClosePrice > _prevHigh && Position <= 0)
 		{
-			if (candle.ClosePrice <= _stopPrice || candle.ClosePrice >= _takePrice || tod >= TradeEnd)
-				SellMarket(Math.Abs(Position));
+			BuyMarket(Volume + Math.Abs(Position));
+			_barsSinceSignal = 0;
 		}
-		else if (Position < 0)
+		// Breakout below channel low
+		else if (candle.ClosePrice < _prevLow && Position >= 0)
 		{
-			if (candle.ClosePrice >= _stopPrice || candle.ClosePrice <= _takePrice || tod >= TradeEnd)
-				BuyMarket(Math.Abs(Position));
+			SellMarket(Volume + Math.Abs(Position));
+			_barsSinceSignal = 0;
 		}
+
+		_prevHigh = highVal;
+		_prevLow = lowVal;
 	}
 }

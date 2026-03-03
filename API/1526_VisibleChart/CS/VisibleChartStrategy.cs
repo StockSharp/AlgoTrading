@@ -1,10 +1,5 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -21,28 +16,17 @@ public class VisibleChartStrategy : Strategy
 	private readonly StrategyParam<int> _visibleBars;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private Highest _highest = null!;
-	private Lowest _lowest = null!;
-	private int _processed;
+	private decimal _highVal;
+	private decimal _lowVal;
+	private int _cooldown;
 
-	/// <summary>
-	/// Number of bars treated as visible.
-	/// </summary>
 	public int VisibleBars { get => _visibleBars.Value; set => _visibleBars.Value = value; }
-
-	/// <summary>
-	/// Candle type.
-	/// </summary>
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Initializes strategy parameters.
-	/// </summary>
 	public VisibleChartStrategy()
 	{
-		_visibleBars = Param(nameof(VisibleBars), 100)
+		_visibleBars = Param(nameof(VisibleBars), 40)
 			.SetDisplay("Visible Bars", "Number of bars considered visible", "General")
-			
 			.SetOptimize(20, 200, 20);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -52,7 +36,16 @@ public class VisibleChartStrategy : Strategy
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		yield return (Security, CandleType);
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_highVal = 0;
+		_lowVal = 0;
+		_cooldown = 0;
 	}
 
 	/// <inheritdoc />
@@ -60,44 +53,64 @@ public class VisibleChartStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_highest = new Highest { Length = VisibleBars };
-		_lowest = new Lowest { Length = VisibleBars };
+		var highest = new Highest { Length = VisibleBars };
+		var lowest = new Lowest { Length = VisibleBars };
+
+		_highVal = 0;
+		_lowVal = 0;
+		_cooldown = 0;
 
 		var subscription = SubscribeCandles(CandleType);
+
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(highest, lowest, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _highest);
-			DrawIndicator(area, _lowest);
+			DrawIndicator(area, highest);
+			DrawIndicator(area, lowest);
+			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal high, decimal low)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var high = _highest.Process(new DecimalIndicatorValue(_highest, candle.HighPrice, candle.OpenTime)).ToDecimal();
-		var low = _lowest.Process(new DecimalIndicatorValue(_lowest, candle.LowPrice, candle.OpenTime)).ToDecimal();
-
-		if (!_highest.IsFormed || !_lowest.IsFormed)
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+			_highVal = high;
+			_lowVal = low;
 			return;
+		}
 
-		_processed++;
+		if (_highVal == 0)
+		{
+			_highVal = high;
+			_lowVal = low;
+			return;
+		}
 
-		var breakoutUp = candle.ClosePrice >= high && Position <= 0;
-		var breakoutDown = candle.ClosePrice <= low && Position >= 0;
+		var breakoutUp = candle.ClosePrice >= _highVal && Position <= 0;
+		var breakoutDown = candle.ClosePrice <= _lowVal && Position >= 0;
 
 		if (breakoutUp)
-			BuyMarket(Volume + Math.Abs(Position));
+		{
+			BuyMarket();
+			_cooldown = 30;
+		}
 		else if (breakoutDown)
-			SellMarket(Volume + Math.Abs(Position));
+		{
+			SellMarket();
+			_cooldown = 30;
+		}
 
-		LogInfo($"Visible range high: {high}, low: {low}, bars: {_processed}");
+		_highVal = high;
+		_lowVal = low;
 	}
 }

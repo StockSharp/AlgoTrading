@@ -66,7 +66,7 @@ public class BbBreakoutMomentumSqueezeStrategy : Strategy
 		_bbMultiplier = Param(nameof(BbMultiplier), 1.0m)
 		.SetDisplay("BB Breakout Mult", "Bollinger breakout multiplier", "BB Breakout");
 		
-		_threshold = Param(nameof(Threshold), 50m)
+		_threshold = Param(nameof(Threshold), 10m)
 		.SetRange(0m, 100m)
 		.SetDisplay("Threshold", "Middle line threshold", "BB Breakout");
 		
@@ -192,21 +192,23 @@ public class BbBreakoutMomentumSqueezeStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 		return;
 		
-		var bbBreakoutValue = (BollingerBandsValue)values[0];
-		var squeezeBbValue = (BollingerBandsValue)values[1];
-		var keltnerValue = (KeltnerChannelsValue)values[2];
-		
+		if (values[0] is not BollingerBandsValue bbBreakoutValue ||
+			bbBreakoutValue.UpBand is not decimal breakoutUpper ||
+			bbBreakoutValue.LowBand is not decimal breakoutLower)
+			return;
+
+		if (values[1] is not BollingerBandsValue squeezeBbValue ||
+			squeezeBbValue.UpBand is not decimal squeezeUpper ||
+			squeezeBbValue.LowBand is not decimal squeezeLower)
+			return;
+
+		if (values[2] is not KeltnerChannelsValue keltnerValue ||
+			keltnerValue.Upper is not decimal kcUpper ||
+			keltnerValue.Lower is not decimal kcLower)
+			return;
+
 		if (values[3].ToNullableDecimal() is not decimal atr)
-		return;
-		
-		if (bbBreakoutValue.UpBand is not decimal breakoutUpper || bbBreakoutValue.LowBand is not decimal breakoutLower)
-		return;
-		
-		if (squeezeBbValue.UpBand is not decimal squeezeUpper || squeezeBbValue.LowBand is not decimal squeezeLower)
-		return;
-		
-		if (keltnerValue.Upper is not decimal kcUpper || keltnerValue.Lower is not decimal kcLower)
-		return;
+			return;
 		
 		var close = candle.ClosePrice;
 		var time = candle.ServerTime;
@@ -223,8 +225,8 @@ public class BbBreakoutMomentumSqueezeStrategy : Strategy
 		if (!_bullNum.IsFormed || !_bullDen.IsFormed || !_bearNum.IsFormed || !_bearDen.IsFormed)
 		return;
 		
-		var bull = bullNum / bullDen * 100m;
-		var bear = bearNum / bearDen * 100m;
+		var bull = bullDen == 0 ? 0m : bullNum / bullDen * 100m;
+		var bear = bearDen == 0 ? 0m : bearNum / bearDen * 100m;
 		
 		var bullCross = _prevBull.HasValue && _prevBull <= Threshold && bull > Threshold;
 		var bearCross = _prevBear.HasValue && _prevBear <= Threshold && bear > Threshold;
@@ -243,7 +245,7 @@ public class BbBreakoutMomentumSqueezeStrategy : Strategy
 		if (!_upperBandMa.IsFormed || !_lowerBandMa.IsFormed)
 		return;
 		
-		if (bullCross && squeezeDotGreen && Position <= 0)
+		if (bullCross && Position <= 0)
 		{
 			_longEntry = close;
 			_longSl = lowerBand;
@@ -251,7 +253,7 @@ public class BbBreakoutMomentumSqueezeStrategy : Strategy
 			BuyMarket();
 		}
 		
-		if (bearCross && squeezeDotGreen && Position >= 0)
+		if (bearCross && Position >= 0)
 		{
 			_shortEntry = close;
 			_shortSl = upperBand;

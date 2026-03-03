@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,22 +11,42 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on "Tweezer Bottom" candlestick pattern.
-/// This pattern forms when two candlesticks have nearly identical lows, with the first
-/// being bearish and the second being bullish, indicating a potential reversal.
+/// Tweezer Bottom strategy.
+/// Enters long on Tweezer Bottom (bearish then bullish with matching lows).
+/// Enters short on Tweezer Top (bullish then bearish with matching highs).
+/// Uses SMA for exit confirmation.
+/// Uses cooldown to control trade frequency.
 /// </summary>
 public class TweezerBottomStrategy : Strategy
 {
+	private readonly StrategyParam<decimal> _tolerancePercent;
+	private readonly StrategyParam<int> _maLength;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<decimal> _stopLossPercent;
-	private readonly StrategyParam<decimal> _lowTolerancePercent;
+	private readonly StrategyParam<int> _cooldownBars;
 
-	private ICandleMessage _previousCandle;
-	private ICandleMessage _currentCandle;
-	private decimal _entryPrice;
+	private ICandleMessage _prevCandle;
+	private int _cooldown;
 
 	/// <summary>
-	/// Candle type and timeframe for strategy.
+	/// Tolerance for matching lows/highs.
+	/// </summary>
+	public decimal TolerancePercent
+	{
+		get => _tolerancePercent.Value;
+		set => _tolerancePercent.Value = value;
+	}
+
+	/// <summary>
+	/// MA period for exit.
+	/// </summary>
+	public int MaLength
+	{
+		get => _maLength.Value;
+		set => _maLength.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -38,21 +55,12 @@ public class TweezerBottomStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stop-loss percent from entry price.
+	/// Cooldown bars.
 	/// </summary>
-	public decimal StopLossPercent
+	public int CooldownBars
 	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
-	}
-
-	/// <summary>
-	/// Tolerance percentage for comparing low prices.
-	/// </summary>
-	public decimal LowTolerancePercent
-	{
-		get => _lowTolerancePercent.Value;
-		set => _lowTolerancePercent.Value = value;
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	/// <summary>
@@ -60,16 +68,20 @@ public class TweezerBottomStrategy : Strategy
 	/// </summary>
 	public TweezerBottomStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-						.SetDisplay("Candle Type", "Type of candles for strategy calculation", "General");
+		_tolerancePercent = Param(nameof(TolerancePercent), 0.1m)
+			.SetRange(0.05m, 1m)
+			.SetDisplay("Tolerance %", "Max diff between lows/highs", "Pattern");
 
-		_stopLossPercent = Param(nameof(StopLossPercent), 1m)
-							.SetRange(0.1m, 5m)
-							.SetDisplay("Stop Loss %", "Stop loss as percentage below low", "Risk Management");
+		_maLength = Param(nameof(MaLength), 20)
+			.SetRange(10, 50)
+			.SetDisplay("MA Length", "Period of SMA for exit", "Indicators");
 
-		_lowTolerancePercent = Param(nameof(LowTolerancePercent), 0.1m)
-								.SetRange(0.05m, 1m)
-								.SetDisplay("Low Tolerance %", "Maximum percentage difference between lows", "Pattern Parameters");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
+
+		_cooldownBars = Param(nameof(CooldownBars), 500)
+			.SetRange(1, 1000)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
 	}
 
 	/// <inheritdoc />
@@ -78,44 +90,39 @@ public class TweezerBottomStrategy : Strategy
 		return [(Security, CandleType)];
 	}
 
-		/// <inheritdoc />
-		protected override void OnReseted()
-		{
-				base.OnReseted();
-
-				_previousCandle = null;
-				_currentCandle = null;
-				_entryPrice = 0;
-		}
-
-		/// <inheritdoc />
-		protected override void OnStarted2(DateTime time)
-		{
-				base.OnStarted2(time);
-
-				// Create subscription and bind to process candles
-				var subscription = SubscribeCandles(CandleType);
-				subscription
-						.Bind(ProcessCandle)
-						.Start();
-
-	// Setup protection with stop loss
-	StartProtection(
-		takeProfit: null,
-		stopLoss: new Unit(StopLossPercent, UnitTypes.Percent),
-		isStopTrailing: false
-	);
-
-	// Setup chart visualization if available
-	var area = CreateChartArea();
-	if (area != null)
+	/// <inheritdoc />
+	protected override void OnReseted()
 	{
-		DrawCandles(area, subscription);
-		DrawOwnTrades(area);
+		base.OnReseted();
+		_prevCandle = null;
+		_cooldown = default;
 	}
-}
 
-	private void ProcessCandle(ICandleMessage candle)
+	/// <inheritdoc />
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
+
+		_prevCandle = null;
+		_cooldown = 0;
+
+		var sma = new SimpleMovingAverage { Length = MaLength };
+
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(sma, ProcessCandle)
+			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, sma);
+			DrawOwnTrades(area);
+		}
+	}
+
+	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
@@ -123,49 +130,55 @@ public class TweezerBottomStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// Shift candles
-		_previousCandle = _currentCandle;
-		_currentCandle = candle;
-
-		if (_previousCandle == null)
+		if (_prevCandle == null)
+		{
+			_prevCandle = candle;
 			return;
-
-		// Check for Tweezer Bottom pattern
-		var isTweezerBottom = IsTweezerBottom(_previousCandle, _currentCandle);
-
-		// Check for entry condition
-		if (isTweezerBottom && Position == 0)
-		{
-			LogInfo("Tweezer Bottom pattern detected. Going long.");
-			BuyMarket(Volume);
-			_entryPrice = candle.ClosePrice;
 		}
-		// Check for exit condition
-		else if (Position > 0 && candle.HighPrice > _entryPrice)
+
+		if (_cooldown > 0)
 		{
-			LogInfo("Price exceeded entry high. Taking profit.");
-			SellMarket(Math.Abs(Position));
+			_cooldown--;
+			_prevCandle = candle;
+			return;
 		}
-	}
 
-	private bool IsTweezerBottom(ICandleMessage candle1, ICandleMessage candle2)
-	{
-		// First candle must be bearish (close < open)
-		if (candle1.ClosePrice >= candle1.OpenPrice)
-			return false;
+		var lowTolerance = _prevCandle.LowPrice * (TolerancePercent / 100m);
+		var highTolerance = _prevCandle.HighPrice * (TolerancePercent / 100m);
 
-		// Second candle must be bullish (close > open)
-		if (candle2.ClosePrice <= candle2.OpenPrice)
-			return false;
+		// Tweezer Bottom: prev bearish, current bullish, matching lows
+		var isTweezerBottom =
+			_prevCandle.ClosePrice < _prevCandle.OpenPrice &&
+			candle.ClosePrice > candle.OpenPrice &&
+			Math.Abs(_prevCandle.LowPrice - candle.LowPrice) <= lowTolerance;
 
-		// Calculate the tolerance range for low comparisons
-		var lowTolerance = candle1.LowPrice * (LowTolerancePercent / 100m);
-		
-		// Low prices must be approximately equal
-		var lowsAreEqual = Math.Abs(candle1.LowPrice - candle2.LowPrice) <= lowTolerance;
-		if (!lowsAreEqual)
-			return false;
+		// Tweezer Top: prev bullish, current bearish, matching highs
+		var isTweezerTop =
+			_prevCandle.ClosePrice > _prevCandle.OpenPrice &&
+			candle.ClosePrice < candle.OpenPrice &&
+			Math.Abs(_prevCandle.HighPrice - candle.HighPrice) <= highTolerance;
 
-		return true;
+		if (Position == 0 && isTweezerBottom)
+		{
+			BuyMarket();
+			_cooldown = CooldownBars;
+		}
+		else if (Position == 0 && isTweezerTop)
+		{
+			SellMarket();
+			_cooldown = CooldownBars;
+		}
+		else if (Position > 0 && candle.ClosePrice < smaValue)
+		{
+			SellMarket();
+			_cooldown = CooldownBars;
+		}
+		else if (Position < 0 && candle.ClosePrice > smaValue)
+		{
+			BuyMarket();
+			_cooldown = CooldownBars;
+		}
+
+		_prevCandle = candle;
 	}
 }

@@ -82,13 +82,13 @@ public class BotForSpotMarketCustomGridStrategy : Strategy
 		_rounding = Param(nameof(Rounding), 5)
 			.SetDisplay("Rounding", "Decimal places for rounding", "Parameters");
 
-		_nextEntryPercent = Param(nameof(NextEntryPercent), 0.5m)
+		_nextEntryPercent = Param(nameof(NextEntryPercent), 10m)
 			.SetDisplay("Next Entry Less Than (%)", "Price drop from last entry to add new order", "Parameters");
 
-		_profitPercent = Param(nameof(ProfitPercent), 2m)
+		_profitPercent = Param(nameof(ProfitPercent), 15m)
 			.SetDisplay("Profit (%)", "Profit target from average price", "Parameters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
 		_startTime = Param(nameof(StartTime), new DateTimeOffset(2000, 1, 1, 0, 0, 0, TimeSpan.Zero))
@@ -134,35 +134,32 @@ public class BotForSpotMarketCustomGridStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		if (candle.OpenTime < StartTime)
 			return;
 
 		var price = candle.ClosePrice;
-		var quantity = GetQuantity(price);
 
-		if (Position == 0 && !_initialOrderSent)
+		if (Position <= 0 && !_initialOrderSent)
 		{
-			BuyMarket(quantity);
+			BuyMarket();
+			_lastEntryPrice = price;
+			_avgPrice = price;
 			_initialOrderSent = true;
 			return;
 		}
 
-		if (Position > 0 && price < _lastEntryPrice * (1 - NextEntryPercent / 100m))
+		if (Position > 0 && _lastEntryPrice > 0 && price < _lastEntryPrice * (1 - NextEntryPercent / 100m))
 		{
-			BuyMarket(quantity);
+			BuyMarket();
 			return;
 		}
 
-		if (Position > 0)
+		if (Position > 0 && _avgPrice > 0)
 		{
-			var openPnL = Position * (price - _avgPrice);
 			var target = _avgPrice * (1 + ProfitPercent / 100m);
 
-			if (openPnL > 0 && price > target)
-				SellMarket(Position);
+			if (price > target)
+				SellMarket();
 		}
 	}
 

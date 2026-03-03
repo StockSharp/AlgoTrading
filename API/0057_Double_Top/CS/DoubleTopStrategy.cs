@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,22 +11,22 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Double Top reversal strategy: looks for two similar tops with confirmation.
-/// This pattern often indicates a trend reversal from bullish to bearish.
+/// Double Top reversal strategy.
+/// Detects two similar tops and enters short on confirmation.
+/// Uses SMA for exit signal.
 /// </summary>
 public class DoubleTopStrategy : Strategy
 {
 	private readonly StrategyParam<int> _distanceParam;
 	private readonly StrategyParam<decimal> _similarityPercent;
+	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<int> _cooldownBars;
 
-	private decimal? _firstTopHigh;
-	private decimal? _secondTopHigh;
-	private int _barsSinceFirstTop;
-	private bool _patternConfirmed;
-
-	private Highest _highestIndicator;
+	private decimal _recentHigh;
+	private decimal _prevHigh;
+	private int _barsSinceHigh;
+	private int _cooldown;
 
 	/// <summary>
 	/// Distance between tops in bars.
@@ -41,12 +38,21 @@ public class DoubleTopStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Maximum percent difference between two tops to consider them similar.
+	/// Maximum percent difference between two tops.
 	/// </summary>
 	public decimal SimilarityPercent
 	{
 		get => _similarityPercent.Value;
 		set => _similarityPercent.Value = value;
+	}
+
+	/// <summary>
+	/// MA Period for exit.
+	/// </summary>
+	public int MAPeriod
+	{
+		get => _maPeriod.Value;
+		set => _maPeriod.Value = value;
 	}
 
 	/// <summary>
@@ -59,36 +65,37 @@ public class DoubleTopStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stop-loss percentage above the higher of the two tops.
+	/// Cooldown bars between trades.
 	/// </summary>
-	public decimal StopLossPercent
+	public int CooldownBars
 	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	/// <summary>
-	/// Initializes a new instance of the <see cref="DoubleTopStrategy"/>.
+	/// Initializes a new instance of <see cref="DoubleTopStrategy"/>.
 	/// </summary>
 	public DoubleTopStrategy()
 	{
-		_distanceParam = Param(nameof(Distance), 5)
-			.SetRange(3, 15)
-			.SetDisplay("Distance between tops", "Number of bars between two tops", "Pattern Parameters")
-			;
+		_distanceParam = Param(nameof(Distance), 20)
+			.SetRange(3, 100)
+			.SetDisplay("Distance", "Bars between tops", "Pattern");
 
-		_similarityPercent = Param(nameof(SimilarityPercent), 2.0m)
-			.SetRange(0.5m, 5.0m)
-			.SetDisplay("Similarity %", "Maximum percentage difference between two tops", "Pattern Parameters")
-			;
+		_similarityPercent = Param(nameof(SimilarityPercent), 1.0m)
+			.SetRange(0.1m, 5.0m)
+			.SetDisplay("Similarity %", "Max % diff between tops", "Pattern");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_maPeriod = Param(nameof(MAPeriod), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("MA Period", "Period for exit SMA", "Indicators");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
-		_stopLossPercent = Param(nameof(StopLossPercent), 1.0m)
-			.SetRange(0.5m, 3.0m)
-			.SetDisplay("Stop Loss %", "Percentage above top for stop-loss", "Risk Management")
-			;
+		_cooldownBars = Param(nameof(CooldownBars), 500)
+			.SetRange(1, 1000)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
 	}
 
 	/// <inheritdoc />
@@ -101,12 +108,10 @@ public class DoubleTopStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_firstTopHigh = null;
-		_secondTopHigh = null;
-		_barsSinceFirstTop = 0;
-		_patternConfirmed = false;
-		_highestIndicator = null;
+		_recentHigh = default;
+		_prevHigh = default;
+		_barsSinceHigh = default;
+		_cooldown = default;
 	}
 
 	/// <inheritdoc />
@@ -114,102 +119,100 @@ public class DoubleTopStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Create indicator to find highest values
-		_highestIndicator = new Highest { Length = Distance * 2 };
+		_recentHigh = 0;
+		_prevHigh = 0;
+		_barsSinceHigh = 0;
+		_cooldown = 0;
 
-			// Subscribe to candles
-			var subscription = SubscribeCandles(CandleType);
+		var sma = new SimpleMovingAverage { Length = MAPeriod };
 
-			// Bind candle processing 
-			subscription
-				.Bind(ProcessCandle)
-				.Start();
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(sma, ProcessCandle)
+			.Start();
 
-			// Enable position protection
-			StartProtection(
-				new Unit(0, UnitTypes.Absolute), // No take profit (manual exit)
-				new Unit(StopLossPercent, UnitTypes.Percent), // Stop loss at defined percentage
-				false // No trailing
-			);
-
-			// Setup chart visualization if available
-			var area = CreateChartArea();
-			if (area != null)
-			{
-				DrawCandles(area, subscription);
-				DrawOwnTrades(area);
-			}
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, sma);
+			DrawOwnTrades(area);
 		}
+	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Process the candle with the Highest indicator
-		var highestValue = _highestIndicator.Process(candle).ToDecimal();
-
-		// If strategy is not ready yet, return
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// Already in position, no need to search for new patterns
-		if (Position < 0)
-			return;
-
-		// If we have a confirmed pattern and price falls below support
-		if (_patternConfirmed && candle.ClosePrice < candle.OpenPrice)
+		if (_cooldown > 0)
 		{
-			// Sell signal - Double Top with confirmation candle
-			SellMarket(Volume);
-			LogInfo($"Double Top signal: Sell at {candle.ClosePrice}, Stop Loss at {Math.Max(_firstTopHigh.Value, _secondTopHigh.Value) * (1 + StopLossPercent / 100)}");
-
-			// Reset pattern detection
-			_patternConfirmed = false;
-			_firstTopHigh = null;
-			_secondTopHigh = null;
-			_barsSinceFirstTop = 0;
+			_cooldown--;
+			TrackHighs(candle);
 			return;
 		}
 
-		// Pattern detection logic
-		if (_firstTopHigh == null)
+		// Track new highs
+		if (_recentHigh == 0 || candle.HighPrice > _recentHigh)
 		{
-			// Looking for first top
-			if (candle.HighPrice == highestValue)
-			{
-				_firstTopHigh = candle.HighPrice;
-				_barsSinceFirstTop = 0;
-				LogInfo($"Potential first top detected at price {_firstTopHigh}");
-			}
+			if (_recentHigh > 0)
+				_prevHigh = _recentHigh;
+
+			_recentHigh = candle.HighPrice;
+			_barsSinceHigh = 0;
 		}
 		else
 		{
-			_barsSinceFirstTop++;
+			_barsSinceHigh++;
+		}
 
-			// If we're at the appropriate distance, check for second top
-			if (_barsSinceFirstTop >= Distance && _secondTopHigh == null)
+		if (Position == 0 && _prevHigh > 0 && _barsSinceHigh >= Distance)
+		{
+			var priceDiff = Math.Abs((_recentHigh - _prevHigh) / _prevHigh * 100);
+
+			if (priceDiff <= SimilarityPercent && candle.ClosePrice < smaValue)
 			{
-				// Check if current high is close to first top
-				var priceDifference = Math.Abs((candle.HighPrice - _firstTopHigh.Value) / _firstTopHigh.Value * 100);
-
-				if (priceDifference <= SimilarityPercent)
-				{
-					_secondTopHigh = candle.HighPrice;
-					_patternConfirmed = true;
-					LogInfo($"Double Top pattern confirmed. First: {_firstTopHigh}, Second: {_secondTopHigh}");
-				}
+				SellMarket();
+				_cooldown = CooldownBars;
+				_recentHigh = 0;
+				_prevHigh = 0;
 			}
-
-			// If too much time has passed, reset pattern search
-			if (_barsSinceFirstTop > Distance * 3 || (_secondTopHigh != null && _barsSinceFirstTop > Distance * 4))
+			else if (priceDiff <= SimilarityPercent && candle.ClosePrice > smaValue)
 			{
-				_firstTopHigh = null;
-				_secondTopHigh = null;
-				_barsSinceFirstTop = 0;
-				_patternConfirmed = false;
+				BuyMarket();
+				_cooldown = CooldownBars;
+				_recentHigh = 0;
+				_prevHigh = 0;
 			}
+		}
+		else if (Position > 0 && candle.ClosePrice < smaValue)
+		{
+			SellMarket();
+			_cooldown = CooldownBars;
+		}
+		else if (Position < 0 && candle.ClosePrice > smaValue)
+		{
+			BuyMarket();
+			_cooldown = CooldownBars;
+		}
+	}
+
+	private void TrackHighs(ICandleMessage candle)
+	{
+		if (_recentHigh == 0 || candle.HighPrice > _recentHigh)
+		{
+			if (_recentHigh > 0)
+				_prevHigh = _recentHigh;
+
+			_recentHigh = candle.HighPrice;
+			_barsSinceHigh = 0;
+		}
+		else
+		{
+			_barsSinceHigh++;
 		}
 	}
 }

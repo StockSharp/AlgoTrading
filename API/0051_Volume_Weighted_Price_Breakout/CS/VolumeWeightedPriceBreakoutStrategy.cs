@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,19 +11,22 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Volume Weighted Price Breakout Strategy
-/// Long entry: Price rises above the volume-weighted average price over N periods
-/// Short entry: Price falls below the volume-weighted average price over N periods
-/// Exit: Price crosses MA in the opposite direction
+/// Volume Weighted Price Breakout Strategy.
+/// Long entry: Price rises above VWMA.
+/// Short entry: Price falls below VWMA.
+/// Exit: Price crosses MA in the opposite direction.
 /// </summary>
 public class VolumeWeightedPriceBreakoutStrategy : Strategy
 {
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<int> _vwapPeriod;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _cooldownBars;
+
+	private int _cooldown;
 
 	/// <summary>
-	/// MA Period
+	/// MA Period.
 	/// </summary>
 	public int MAPeriod
 	{
@@ -35,7 +35,7 @@ public class VolumeWeightedPriceBreakoutStrategy : Strategy
 	}
 
 	/// <summary>
-	/// VWAP Period
+	/// VWAP Period.
 	/// </summary>
 	public int VWAPPeriod
 	{
@@ -44,12 +44,21 @@ public class VolumeWeightedPriceBreakoutStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Candle type for strategy calculation
+	/// Candle type for strategy calculation.
 	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Cooldown bars between trades.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	/// <summary>
@@ -59,18 +68,20 @@ public class VolumeWeightedPriceBreakoutStrategy : Strategy
 	{
 		_maPeriod = Param(nameof(MAPeriod), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("MA Period", "Period for Moving Average calculation", "Strategy Parameters")
-			
+			.SetDisplay("MA Period", "Period for Moving Average", "Indicators")
 			.SetOptimize(10, 50, 10);
 
 		_vwapPeriod = Param(nameof(VWAPPeriod), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("VWAP Period", "Period for Volume Weighted Average Price calculation", "Strategy Parameters")
-			
+			.SetDisplay("VWAP Period", "Period for VWMA", "Indicators")
 			.SetOptimize(10, 30, 5);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles for strategy calculation", "Strategy Parameters");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
+
+		_cooldownBars = Param(nameof(CooldownBars), 500)
+			.SetRange(1, 1000)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
 	}
 
 	/// <inheritdoc />
@@ -83,6 +94,7 @@ public class VolumeWeightedPriceBreakoutStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
+		_cooldown = default;
 	}
 
 	/// <inheritdoc />
@@ -90,29 +102,21 @@ public class VolumeWeightedPriceBreakoutStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-			// Create indicators
-			var ma = new SMA { Length = MAPeriod };
-			var vwma = new VolumeWeightedMovingAverage { Length = VWAPPeriod };
+		_cooldown = 0;
 
-			// Create subscription and bind indicators
-			var subscription = SubscribeCandles(CandleType);
+		var ma = new SimpleMovingAverage { Length = MAPeriod };
+		var vwma = new VolumeWeightedMovingAverage { Length = VWAPPeriod };
 
-			subscription
-				.Bind(ma, vwma, ProcessCandle)
-				.Start();
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(ma, vwma, ProcessCandle)
+			.Start();
 
-			// Configure protection
-			StartProtection(
-				takeProfit: new Unit(3, UnitTypes.Percent),
-				stopLoss: new Unit(2, UnitTypes.Percent)
-			);
-
-			// Setup chart visualization
-			var area = CreateChartArea();
-			if (area != null)
-			{
-				DrawCandles(area, subscription);
-				DrawIndicator(area, ma);
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, ma);
 			DrawIndicator(area, vwma);
 			DrawOwnTrades(area);
 		}
@@ -120,41 +124,40 @@ public class VolumeWeightedPriceBreakoutStrategy : Strategy
 
 	private void ProcessCandle(ICandleMessage candle, decimal maValue, decimal vwmaValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// Log current values
-		LogInfo($"Candle Close: {candle.ClosePrice}, MA: {maValue}, VWMA: {vwmaValue}");
-
-		// Trading logic:
-		// Long: Price above VWMA
-		if (candle.ClosePrice > vwmaValue && Position <= 0)
+		if (_cooldown > 0)
 		{
-			LogInfo($"Buy Signal: Price ({candle.ClosePrice}) > VWMA ({vwmaValue})");
-			BuyMarket(Volume + Math.Abs(Position));
-		}
-		// Short: Price below VWMA
-		else if (candle.ClosePrice < vwmaValue && Position >= 0)
-		{
-			LogInfo($"Sell Signal: Price ({candle.ClosePrice}) < VWMA ({vwmaValue})");
-			SellMarket(Volume + Math.Abs(Position));
+			_cooldown--;
+			return;
 		}
 
-		// Exit logic: Price crosses MA in the opposite direction
-		if (Position > 0 && candle.ClosePrice < maValue)
+		if (Position == 0)
 		{
-			LogInfo($"Exit Long: Price ({candle.ClosePrice}) < MA ({maValue})");
-			SellMarket(Math.Abs(Position));
+			if (candle.ClosePrice > vwmaValue)
+			{
+				BuyMarket();
+				_cooldown = CooldownBars;
+			}
+			else if (candle.ClosePrice < vwmaValue)
+			{
+				SellMarket();
+				_cooldown = CooldownBars;
+			}
+		}
+		else if (Position > 0 && candle.ClosePrice < maValue)
+		{
+			SellMarket();
+			_cooldown = CooldownBars;
 		}
 		else if (Position < 0 && candle.ClosePrice > maValue)
 		{
-			LogInfo($"Exit Short: Price ({candle.ClosePrice}) > MA ({maValue})");
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
+			_cooldown = CooldownBars;
 		}
 	}
 }

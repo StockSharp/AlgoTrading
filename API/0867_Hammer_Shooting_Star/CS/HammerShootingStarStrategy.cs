@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -13,179 +10,73 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-/// <summary>
-/// Strategy based on Hammer and Shooting Star candlestick patterns.
-/// Opens long after a hammer and short after a shooting star.
-/// Exit orders are placed at the signal candle high and low.
-/// </summary>
 public class HammerShootingStarStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _wickFactor;
-	private readonly StrategyParam<decimal> _maxOppositeWickFactor;
-	private readonly StrategyParam<decimal> _minBodyRangePct;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	private bool _prevHammer;
-	private bool _prevShootingStar;
-	private decimal _prevHigh;
-	private decimal _prevLow;
-	private decimal _longStop;
-	private decimal _longTake;
-	private decimal _shortStop;
-	private decimal _shortTake;
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Minimum wick to body ratio for the main wick.
-	/// </summary>
-	public decimal WickFactor
-	{
-		get => _wickFactor.Value;
-		set => _wickFactor.Value = value;
-	}
-
-	/// <summary>
-	/// Maximum ratio for the opposite wick to body.
-	/// </summary>
-	public decimal MaxOppositeWickFactor
-	{
-		get => _maxOppositeWickFactor.Value;
-		set => _maxOppositeWickFactor.Value = value;
-	}
-
-	/// <summary>
-	/// Minimum body as percentage of total bar range.
-	/// </summary>
-	public decimal MinBodyRangePct
-	{
-		get => _minBodyRangePct.Value;
-		set => _minBodyRangePct.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used for processing.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="HammerShootingStarStrategy"/> class.
-	/// </summary>
 	public HammerShootingStarStrategy()
 	{
-		_wickFactor = Param(nameof(WickFactor), 0.9m)
-			.SetRange(0.5m, 2m)
-			.SetDisplay("Wick Factor", "Min wick to body ratio", "Pattern")
-			;
-
-		_maxOppositeWickFactor = Param(nameof(MaxOppositeWickFactor), 0.45m)
-			.SetRange(0.1m, 1m)
-			.SetDisplay("Opposite Wick Factor", "Max opposite wick to body", "Pattern")
-			;
-
-		_minBodyRangePct = Param(nameof(MinBodyRangePct), 0.2m)
-			.SetRange(0.1m, 0.5m)
-			.SetDisplay("Min Body Range %", "Min body as percent of bar range", "Pattern")
-			;
-
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Candle timeframe", "General");
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_prevHammer = false;
-		_prevShootingStar = false;
-		_prevHigh = 0m;
-		_prevLow = 0m;
-		_longStop = _longTake = 0m;
-		_shortStop = _shortTake = 0m;
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(ProcessCandle)
-			.Start();
+		subscription.Bind(fastEma, slowEma, ProcessCandle).Start();
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
-		if (candle.State != CandleStates.Finished)
+		if (candle.State != CandleStates.Finished) return;
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
+		{
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
 			return;
-
-		if (Position > 0)
-		{
-			if (_longStop > 0 && candle.LowPrice <= _longStop)
-			{
-				SellMarket(Math.Abs(Position));
-				_longStop = _longTake = 0m;
-			}
-			else if (_longTake > 0 && candle.HighPrice >= _longTake)
-			{
-				SellMarket(Math.Abs(Position));
-				_longStop = _longTake = 0m;
-			}
 		}
-		else if (Position < 0)
-		{
-			if (_shortStop > 0 && candle.HighPrice >= _shortStop)
-			{
-				BuyMarket(Math.Abs(Position));
-				_shortStop = _shortTake = 0m;
-			}
-			else if (_shortTake > 0 && candle.LowPrice <= _shortTake)
-			{
-				BuyMarket(Math.Abs(Position));
-				_shortStop = _shortTake = 0m;
-			}
-		}
-
-		if (_prevHammer && Position <= 0)
-		{
-			BuyMarket(Volume + Math.Abs(Position));
-			_longStop = _prevLow;
-			_longTake = _prevHigh;
-		}
-		else if (_prevShootingStar && Position >= 0)
-		{
-			SellMarket(Volume + Math.Abs(Position));
-			_shortStop = _prevHigh;
-			_shortTake = _prevLow;
-		}
-
-		var body = Math.Abs(candle.ClosePrice - candle.OpenPrice);
-		var barRange = candle.HighPrice - candle.LowPrice;
-		var upperWick = candle.HighPrice - Math.Max(candle.ClosePrice, candle.OpenPrice);
-		var lowerWick = Math.Min(candle.ClosePrice, candle.OpenPrice) - candle.LowPrice;
-		var bodyNonZero = barRange > 0m && body > 0m;
-
-		_prevHammer = bodyNonZero && candle.OpenPrice > candle.ClosePrice &&
-			lowerWick >= WickFactor * body &&
-			upperWick <= MaxOppositeWickFactor * body &&
-			body / barRange >= MinBodyRangePct;
-
-		_prevShootingStar = bodyNonZero && candle.OpenPrice < candle.ClosePrice &&
-			upperWick >= WickFactor * body &&
-			lowerWick <= MaxOppositeWickFactor * body &&
-			body / barRange >= MinBodyRangePct;
-
-		_prevHigh = candle.HighPrice;
-		_prevLow = candle.LowPrice;
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
+			BuyMarket();
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+			SellMarket();
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

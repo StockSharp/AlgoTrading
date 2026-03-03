@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,16 +12,29 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Doji Reversal strategy.
-/// The strategy looks for doji candlestick patterns after a trend and takes a reversal position.
+/// Looks for doji candlestick patterns after a trend and takes a reversal position.
+/// Doji after downtrend = buy, doji after uptrend = sell.
+/// Uses SMA for exit signals.
 /// </summary>
 public class DojiReversalStrategy : Strategy
 {
+	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<decimal> _dojiThreshold;
-	private readonly StrategyParam<decimal> _stopLossPercent;
-	
-	private ICandleMessage _previousCandle;
-	private ICandleMessage _previousPreviousCandle;
+	private readonly StrategyParam<int> _cooldownBars;
+
+	private ICandleMessage _bar1;
+	private ICandleMessage _bar2;
+	private int _cooldown;
+
+	/// <summary>
+	/// MA Period.
+	/// </summary>
+	public int MAPeriod
+	{
+		get => _maPeriod.Value;
+		set => _maPeriod.Value = value;
+	}
 
 	/// <summary>
 	/// Candle type.
@@ -36,7 +46,7 @@ public class DojiReversalStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Doji threshold as percentage of candle range.
+	/// Doji threshold as fraction of candle range.
 	/// </summary>
 	public decimal DojiThreshold
 	{
@@ -45,12 +55,12 @@ public class DojiReversalStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stop-loss percentage.
+	/// Cooldown bars.
 	/// </summary>
-	public decimal StopLossPercent
+	public int CooldownBars
 	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	/// <summary>
@@ -58,20 +68,20 @@ public class DojiReversalStrategy : Strategy
 	/// </summary>
 	public DojiReversalStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_maPeriod = Param(nameof(MAPeriod), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("MA Period", "Period for SMA", "Indicators");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
 		_dojiThreshold = Param(nameof(DojiThreshold), 0.1m)
 			.SetNotNegative()
-			.SetDisplay("Doji Threshold", "Maximum body size as percentage of candle range to consider it a doji", "Indicators")
-			
-			.SetOptimize(0.05m, 0.2m, 0.05m);
+			.SetDisplay("Doji Threshold", "Max body/range ratio for doji", "Indicators");
 
-		_stopLossPercent = Param(nameof(StopLossPercent), 1.0m)
-			.SetNotNegative()
-			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management")
-			
-			.SetOptimize(0.5m, 2.0m, 0.5m);
+		_cooldownBars = Param(nameof(CooldownBars), 500)
+			.SetRange(1, 1000)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
 	}
 
 	/// <inheritdoc />
@@ -84,9 +94,9 @@ public class DojiReversalStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_previousCandle = null;
-		_previousPreviousCandle = null;
+		_bar1 = null;
+		_bar2 = null;
+		_cooldown = default;
 	}
 
 	/// <inheritdoc />
@@ -94,29 +104,27 @@ public class DojiReversalStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Create subscription
+		_bar1 = null;
+		_bar2 = null;
+		_cooldown = 0;
+
+		var sma = new SimpleMovingAverage { Length = MAPeriod };
+
 		var subscription = SubscribeCandles(CandleType);
-		
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(sma, ProcessCandle)
 			.Start();
 
-		// Setup chart visualization if available
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawIndicator(area, sma);
 			DrawOwnTrades(area);
 		}
-		
-		// Start protection with dynamic stop-loss
-		StartProtection(
-			takeProfit: new Unit(0, UnitTypes.Absolute), // No take profit, relying on exit signal
-			stopLoss: new Unit(StopLossPercent, UnitTypes.Percent)
-		);
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
@@ -124,95 +132,60 @@ public class DojiReversalStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// We need 3 candles to make a decision
-		if (_previousCandle == null)
+		if (_cooldown > 0)
 		{
-			_previousCandle = candle;
+			_cooldown--;
+			_bar1 = _bar2;
+			_bar2 = candle;
 			return;
 		}
 
-		if (_previousPreviousCandle == null)
+		if (_bar1 != null && _bar2 != null)
 		{
-			_previousPreviousCandle = _previousCandle;
-			_previousCandle = candle;
-			return;
-		}
+			var isDoji = IsDoji(candle);
 
-		// Check if current candle is a doji
-		var isDoji = IsDojiCandle(candle);
-		
-		if (isDoji)
-		{
-			// Check for downtrend before the doji (previous candle lower than the one before it)
-			var isDowntrend = _previousCandle.ClosePrice < _previousPreviousCandle.ClosePrice;
-			
-			// Check for uptrend before the doji (previous candle higher than the one before it)
-			var isUptrend = _previousCandle.ClosePrice > _previousPreviousCandle.ClosePrice;
-			
-			LogInfo($"Doji detected. Downtrend before: {isDowntrend}, Uptrend before: {isUptrend}");
-			
-			// If we have a doji after a downtrend and no long position yet
-			if (isDowntrend && Position <= 0)
+			if (isDoji)
 			{
-				// Cancel any existing orders
-				CancelActiveOrders();
-				
-				// Enter long position
-				BuyMarket(Volume + Math.Abs(Position));
-				
-				LogInfo($"Buying at {candle.ClosePrice} after doji in downtrend");
+				var isDowntrend = _bar2.ClosePrice < _bar1.ClosePrice;
+				var isUptrend = _bar2.ClosePrice > _bar1.ClosePrice;
+
+				if (Position == 0 && isDowntrend)
+				{
+					BuyMarket();
+					_cooldown = CooldownBars;
+				}
+				else if (Position == 0 && isUptrend)
+				{
+					SellMarket();
+					_cooldown = CooldownBars;
+				}
 			}
-			// If we have a doji after an uptrend and no short position yet
-			else if (isUptrend && Position >= 0)
+
+			// Exit on SMA cross
+			if (Position > 0 && candle.ClosePrice < smaValue)
 			{
-				// Cancel any existing orders
-				CancelActiveOrders();
-				
-				// Enter short position
-				SellMarket(Volume + Math.Abs(Position));
-				
-				LogInfo($"Selling at {candle.ClosePrice} after doji in uptrend");
+				SellMarket();
+				_cooldown = CooldownBars;
+			}
+			else if (Position < 0 && candle.ClosePrice > smaValue)
+			{
+				BuyMarket();
+				_cooldown = CooldownBars;
 			}
 		}
 
-		// Exit logic - exiting when the price moves beyond the doji's high/low
-		if (Position > 0 && candle.HighPrice > _previousCandle.HighPrice)
-		{
-			SellMarket(Math.Abs(Position));
-			LogInfo($"Exiting long position at {candle.ClosePrice} (price above doji high)");
-		}
-		else if (Position < 0 && candle.LowPrice < _previousCandle.LowPrice)
-		{
-			BuyMarket(Math.Abs(Position));
-			LogInfo($"Exiting short position at {candle.ClosePrice} (price below doji low)");
-		}
-
-		// Update candles for next iteration
-		_previousPreviousCandle = _previousCandle;
-		_previousCandle = candle;
+		_bar1 = _bar2;
+		_bar2 = candle;
 	}
 
-	private bool IsDojiCandle(ICandleMessage candle)
+	private bool IsDoji(ICandleMessage candle)
 	{
-		// Calculate the body size (absolute difference between open and close)
 		var bodySize = Math.Abs(candle.OpenPrice - candle.ClosePrice);
-		
-		// Calculate the total range of the candle
 		var totalRange = candle.HighPrice - candle.LowPrice;
-		
-		// Avoid division by zero
+
 		if (totalRange == 0)
 			return false;
-		
-		// Calculate the body as a percentage of the total range
-		var bodySizePercentage = bodySize / totalRange;
-		
-		// It's a doji if the body size is smaller than the threshold
-		var isDoji = bodySizePercentage < DojiThreshold;
-		
-		LogInfo($"Candle analysis: Body size: {bodySize}, Total range: {totalRange}, " +
-					   $"Body %: {bodySizePercentage:P2}, Is Doji: {isDoji}");
-		
-		return isDoji;
+
+		return bodySize / totalRange < DojiThreshold;
 	}
 }

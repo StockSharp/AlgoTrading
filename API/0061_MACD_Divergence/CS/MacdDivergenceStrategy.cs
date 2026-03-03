@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,64 +11,22 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// MACD Divergence strategy that looks for divergences between price and MACD
-/// as potential reversal signals.
+/// MACD Divergence strategy.
+/// Detects divergences between price and MACD for reversal signals.
+/// Bullish: price falling but MACD rising.
+/// Bearish: price rising but MACD falling.
 /// </summary>
 public class MacdDivergenceStrategy : Strategy
 {
-	private readonly StrategyParam<int> _fastMacdPeriod;
-	private readonly StrategyParam<int> _slowMacdPeriod;
-	private readonly StrategyParam<int> _signalPeriod;
-	private readonly StrategyParam<int> _divergencePeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<int> _cooldownBars;
 
-	private decimal? _previousPrice;
-	private decimal? _previousMacd;
-	private decimal? _currentPrice;
-	private decimal? _currentMacd;
-	private int _barsSinceDivergence;
-	private bool _bullishDivergence;
-	private bool _bearishDivergence;
+	private decimal _prevPrice;
+	private decimal _prevMacd;
+	private int _cooldown;
 
 	/// <summary>
-	/// Fast EMA period for MACD calculation.
-	/// </summary>
-	public int FastMacdPeriod
-	{
-		get => _fastMacdPeriod.Value;
-		set => _fastMacdPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Slow EMA period for MACD calculation.
-	/// </summary>
-	public int SlowMacdPeriod
-	{
-		get => _slowMacdPeriod.Value;
-		set => _slowMacdPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Signal line period for MACD.
-	/// </summary>
-	public int SignalPeriod
-	{
-		get => _signalPeriod.Value;
-		set => _signalPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Number of bars to look back for divergence.
-	/// </summary>
-	public int DivergencePeriod
-	{
-		get => _divergencePeriod.Value;
-		set => _divergencePeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Type of candles to use.
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -80,66 +35,40 @@ public class MacdDivergenceStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stop-loss percentage from entry price.
+	/// Cooldown bars between trades.
 	/// </summary>
-	public decimal StopLossPercent
+	public int CooldownBars
 	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	/// <summary>
-	/// Initializes a new instance of the <see cref="MacdDivergenceStrategy"/>.
+	/// Constructor.
 	/// </summary>
 	public MacdDivergenceStrategy()
 	{
-		_fastMacdPeriod = Param(nameof(FastMacdPeriod), 12)
-			.SetRange(5, 20)
-			.SetDisplay("Fast MACD Period", "Fast EMA period for MACD", "Indicator Parameters")
-			;
-
-		_slowMacdPeriod = Param(nameof(SlowMacdPeriod), 26)
-			.SetRange(15, 40)
-			.SetDisplay("Slow MACD Period", "Slow EMA period for MACD", "Indicator Parameters")
-			;
-
-		_signalPeriod = Param(nameof(SignalPeriod), 9)
-			.SetRange(5, 15)
-			.SetDisplay("Signal Period", "Signal line period for MACD", "Indicator Parameters")
-			;
-
-		_divergencePeriod = Param(nameof(DivergencePeriod), 5)
-			.SetRange(3, 10)
-			.SetDisplay("Divergence Period", "Number of bars to look back for divergence", "Signal Parameters")
-			;
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
-		_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
-			.SetRange(0.5m, 5.0m)
-			.SetDisplay("Stop Loss %", "Percentage-based stop loss from entry", "Risk Management")
-			;
+		_cooldownBars = Param(nameof(CooldownBars), 500)
+			.SetRange(1, 1000)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return [(Security, CandleType)];
+		return [(Security, _candleType.Value)];
 	}
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_previousPrice = null;
-		_previousMacd = null;
-		_currentPrice = null;
-		_currentMacd = null;
-		_barsSinceDivergence = 0;
-		_bullishDivergence = false;
-		_bearishDivergence = false;
+		_prevPrice = default;
+		_prevMacd = default;
+		_cooldown = default;
 	}
 
 	/// <inheritdoc />
@@ -147,33 +76,17 @@ public class MacdDivergenceStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Create MACD indicator
+		_prevPrice = 0;
+		_prevMacd = 0;
+		_cooldown = 0;
 
-		var macd = new MovingAverageConvergenceDivergenceSignal
-		{
-			Macd =
-			{
-				ShortMa = { Length = FastMacdPeriod },
-				LongMa = { Length = SlowMacdPeriod },
-			},
-			SignalMa = { Length = SignalPeriod }
-		};
-		// Create candle subscription
-		var subscription = SubscribeCandles(CandleType);
+		var macd = new MovingAverageConvergenceDivergenceSignal();
 
-		// Bind MACD to candles
+		var subscription = SubscribeCandles(_candleType.Value);
 		subscription
 			.BindEx(macd, ProcessCandle)
 			.Start();
 
-		// Enable position protection
-		StartProtection(
-			new Unit(0, UnitTypes.Absolute), // No take profit (managed by signal cross)
-			new Unit(StopLossPercent, UnitTypes.Percent), // Stop loss at defined percentage
-			false // No trailing stop
-		);
-
-		// Setup chart visualization if available
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -185,132 +98,59 @@ public class MacdDivergenceStrategy : Strategy
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!macdValue.IsFormed)
 			return;
 
-		try
-		{
-			// Extract MACD values - be careful with the order of indexes
-			var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
-			
-			if (macdTyped.Macd is not decimal macd || macdTyped.Signal is not decimal signal)
-			{
-				return;
-			}
+		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
 
-			// Store previous values before updating
-			if (_currentPrice.HasValue && _currentMacd.HasValue)
-			{
-				_previousPrice = _currentPrice;
-				_previousMacd = _currentMacd;
-			}
+		if (macdTyped.Macd is not decimal macdLine || macdTyped.Signal is not decimal signal)
+			return;
 
-			// Update current values
-			_currentPrice = candle.ClosePrice;
-			_currentMacd = macd;
+		if (_prevPrice == 0)
+		{
+			_prevPrice = candle.ClosePrice;
+			_prevMacd = macdLine;
+			return;
+		}
 
-			LogInfo($"Candle: {candle.OpenTime}, Close: {candle.ClosePrice}, MACD: {macd:F4}, Signal: {signal:F4}");
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+			_prevPrice = candle.ClosePrice;
+			_prevMacd = macdLine;
+			return;
+		}
 
-			// Look for divergences once we have enough data
-			if (_previousPrice.HasValue && _previousMacd.HasValue && _currentPrice.HasValue && _currentMacd.HasValue)
-			{
-				CheckForDivergences();
-			}
+		// Bullish divergence: price down but MACD up
+		var bullishDiv = candle.ClosePrice < _prevPrice && macdLine > _prevMacd;
+		// Bearish divergence: price up but MACD down
+		var bearishDiv = candle.ClosePrice > _prevPrice && macdLine < _prevMacd;
 
-			// Process signals based on detected divergences
-			ProcessDivergenceSignals(candle, macd, signal);
-		}
-		catch (Exception ex)
+		if (Position == 0 && bullishDiv && macdLine > signal)
 		{
-			LogError($"Error processing MACD values: {ex.Message}");
+			BuyMarket();
+			_cooldown = CooldownBars;
 		}
-	}
+		else if (Position == 0 && bearishDiv && macdLine < signal)
+		{
+			SellMarket();
+			_cooldown = CooldownBars;
+		}
+		else if (Position > 0 && macdLine < signal)
+		{
+			SellMarket();
+			_cooldown = CooldownBars;
+		}
+		else if (Position < 0 && macdLine > signal)
+		{
+			BuyMarket();
+			_cooldown = CooldownBars;
+		}
 
-	private void CheckForDivergences()
-	{
-		// Check for bullish divergence (lower price lows but higher MACD lows)
-		if (_currentPrice < _previousPrice && _currentMacd > _previousMacd)
-		{
-			_bullishDivergence = true;
-			_bearishDivergence = false;
-			_barsSinceDivergence = 0;
-			LogInfo($"Bullish Divergence Detected: Price {_previousPrice}->{_currentPrice}, MACD {_previousMacd}->{_currentMacd}");
-		}
-		// Check for bearish divergence (higher price highs but lower MACD highs)
-		else if (_currentPrice > _previousPrice && _currentMacd < _previousMacd)
-		{
-			_bearishDivergence = true;
-			_bullishDivergence = false;
-			_barsSinceDivergence = 0;
-			LogInfo($"Bearish Divergence Detected: Price {_previousPrice}->{_currentPrice}, MACD {_previousMacd}->{_currentMacd}");
-		}
-		else
-		{
-			_barsSinceDivergence++;
-			
-			// Reset divergence signals after a certain number of bars
-			if (_barsSinceDivergence > DivergencePeriod)
-			{
-				_bullishDivergence = false;
-				_bearishDivergence = false;
-			}
-		}
-	}
-
-	private void ProcessDivergenceSignals(ICandleMessage candle, decimal macdLine, decimal signalLine)
-	{
-		// Entry signals based on detected divergences
-		if (_bullishDivergence && Position <= 0 && macdLine > signalLine)
-		{
-			// Bullish divergence with MACD crossing above signal - Buy signal
-			if (Position < 0)
-			{
-				// Close any existing short position
-				BuyMarket(Math.Abs(Position));
-				LogInfo($"Closed short position on bullish divergence");
-			}
-
-			// Open new long position
-			BuyMarket(Volume);
-			LogInfo($"Buy signal: Bullish MACD divergence with signal line cross");
-			
-			// Reset divergence detection
-			_bullishDivergence = false;
-		}
-		else if (_bearishDivergence && Position >= 0 && macdLine < signalLine)
-		{
-			// Bearish divergence with MACD crossing below signal - Sell signal
-			if (Position > 0)
-			{
-				// Close any existing long position
-				SellMarket(Position);
-				LogInfo($"Closed long position on bearish divergence");
-			}
-
-			// Open new short position
-			SellMarket(Volume);
-			LogInfo($"Sell signal: Bearish MACD divergence with signal line cross");
-			
-			// Reset divergence detection
-			_bearishDivergence = false;
-		}
-		
-		// Exit signals based on MACD crossing the signal line
-		else if (Position > 0 && macdLine < signalLine)
-		{
-			// Exit long position when MACD crosses below signal
-			SellMarket(Position);
-			LogInfo($"Exit long: MACD crossed below signal line");
-		}
-		else if (Position < 0 && macdLine > signalLine)
-		{
-			// Exit short position when MACD crosses above signal
-			BuyMarket(Math.Abs(Position));
-			LogInfo($"Exit short: MACD crossed above signal line");
-		}
+		_prevPrice = candle.ClosePrice;
+		_prevMacd = macdLine;
 	}
 }

@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,17 +12,17 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Strategy based on Bollinger Bands squeeze.
+/// Detects when bands narrow (squeeze) and trades the breakout direction.
 /// </summary>
 public class BollingerSqueezeStrategy : Strategy
 {
 	private readonly StrategyParam<int> _bollingerPeriod;
 	private readonly StrategyParam<decimal> _bollingerDeviation;
-	private readonly StrategyParam<decimal> _squeezeThreshold;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _previousBandWidth;
-	private bool _isFirstValue = true;
-	private bool _isInSqueeze = false;
+	private decimal _prevBandWidth;
+	private bool _hasPrevValues;
+	private int _cooldown;
 
 	/// <summary>
 	/// Bollinger Bands period.
@@ -46,15 +43,6 @@ public class BollingerSqueezeStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Squeeze threshold.
-	/// </summary>
-	public decimal SqueezeThreshold
-	{
-		get => _squeezeThreshold.Value;
-		set => _squeezeThreshold.Value = value;
-	}
-
-	/// <summary>
 	/// Candle type.
 	/// </summary>
 	public DataType CandleType
@@ -69,19 +57,11 @@ public class BollingerSqueezeStrategy : Strategy
 	public BollingerSqueezeStrategy()
 	{
 		_bollingerPeriod = Param(nameof(BollingerPeriod), 20)
-			.SetRange(10, 50)
-			.SetDisplay("Bollinger Period", "Period for Bollinger Bands calculation", "Indicators")
-			;
+			.SetDisplay("Bollinger Period", "Period for Bollinger Bands", "Indicators")
+			.SetOptimize(15, 30, 5);
 
-		_bollingerDeviation = Param(nameof(BollingerDeviation), 2m)
-			.SetRange(1m, 3m)
-			.SetDisplay("Bollinger Deviation", "Standard deviation multiplier for Bollinger Bands", "Indicators")
-			;
-
-		_squeezeThreshold = Param(nameof(SqueezeThreshold), 0.2m)
-			.SetRange(0.05m, 0.5m)
-			.SetDisplay("Squeeze Threshold", "Threshold for Bollinger Bands width to identify squeeze", "Strategy")
-			;
+		_bollingerDeviation = Param(nameof(BollingerDeviation), 1.8m)
+			.SetDisplay("Bollinger Deviation", "Standard deviation multiplier", "Indicators");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -97,11 +77,9 @@ public class BollingerSqueezeStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		// Reset state variables
-		_previousBandWidth = 0;
-		_isFirstValue = true;
-		_isInSqueeze = false;
-
+		_prevBandWidth = default;
+		_hasPrevValues = default;
+		_cooldown = default;
 	}
 
 	/// <inheritdoc />
@@ -109,102 +87,77 @@ public class BollingerSqueezeStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Create Bollinger Bands indicator
-		var bollingerBands = new BollingerBands
+		var bb = new BollingerBands
 		{
 			Length = BollingerPeriod,
 			Width = BollingerDeviation
 		};
 
-		// Subscribe to candles and bind the indicator
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(bollingerBands, ProcessCandle)
+			.BindEx(bb, ProcessCandle)
 			.Start();
 
-		// Setup chart visualization
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, bollingerBands);
+			DrawIndicator(area, bb);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bollingerValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bbValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var bb = (BollingerBandsValue)bollingerValue;
-		
-		if (bb.UpBand is not decimal upperBand ||
-			bb.LowBand is not decimal lowerBand ||
-			bb.MovingAverage is not decimal middleBand)
+		var bb = (IBollingerBandsValue)bbValue;
+
+		if (bb.UpBand is not decimal upper ||
+			bb.LowBand is not decimal lower ||
+			bb.MovingAverage is not decimal middle)
+			return;
+
+		if (middle == 0)
+			return;
+
+		var bandWidth = (upper - lower) / middle;
+
+		if (!_hasPrevValues)
 		{
-			return; // Not enough data to calculate bands
-		}
-
-
-		// Calculate Bollinger Bands width relative to the middle band
-		decimal bandWidth = (upperBand - lowerBand) / middleBand;
-
-		if (_isFirstValue)
-		{
-			_previousBandWidth = bandWidth;
-			_isFirstValue = false;
+			_hasPrevValues = true;
+			_prevBandWidth = bandWidth;
 			return;
 		}
 
-		// Detect squeeze (narrow Bollinger Bands)
-		bool isSqueeze = bandWidth < SqueezeThreshold;
-
-		// Check for breakout from squeeze
-		if (_isInSqueeze && !isSqueeze && bandWidth > _previousBandWidth)
+		if (_cooldown > 0)
 		{
-			// Squeeze is ending with expanding bands - potential breakout
-			
-			// Determine breakout direction by price relative to middle band
-			if (candle.ClosePrice > upperBand && Position <= 0)
-			{
-				// Bullish breakout (price breaks above upper band)
-				var volume = Volume + Math.Abs(Position);
-				BuyMarket(volume);
-				LogInfo($"Buy signal: Bollinger squeeze breakout upward. Width: {bandWidth:F4}, Price: {candle.ClosePrice}, Upper Band: {upperBand}");
-			}
-			else if (candle.ClosePrice < lowerBand && Position >= 0)
-			{
-				// Bearish breakout (price breaks below lower band)
-				var volume = Volume + Math.Abs(Position);
-				SellMarket(volume);
-				LogInfo($"Sell signal: Bollinger squeeze breakout downward. Width: {bandWidth:F4}, Price: {candle.ClosePrice}, Lower Band: {lowerBand}");
-			}
+			_cooldown--;
+			_prevBandWidth = bandWidth;
+			return;
 		}
 
-		// Update squeeze state
-		_isInSqueeze = isSqueeze;
-		
-		// Exit logic
-		if (Position > 0 && candle.ClosePrice < middleBand)
+		var price = candle.ClosePrice;
+
+		// Price crosses above upper band = buy (breakout)
+		if (price > upper && Position <= 0)
 		{
-			// Exit long position when price falls below middle band
-			SellMarket(Math.Abs(Position));
-			LogInfo($"Exiting long position: Price below middle band. Price: {candle.ClosePrice}, Middle Band: {middleBand}");
+			var volume = Volume + Math.Abs(Position);
+			BuyMarket(volume);
+			_cooldown = 10;
 		}
-		else if (Position < 0 && candle.ClosePrice > middleBand)
+		// Price crosses below lower band = sell (breakout)
+		else if (price < lower && Position >= 0)
 		{
-			// Exit short position when price rises above middle band
-			BuyMarket(Math.Abs(Position));
-			LogInfo($"Exiting short position: Price above middle band. Price: {candle.ClosePrice}, Middle Band: {middleBand}");
+			var volume = Volume + Math.Abs(Position);
+			SellMarket(volume);
+			_cooldown = 10;
 		}
 
-		// Store current band width for next comparison
-		_previousBandWidth = bandWidth;
+		_prevBandWidth = bandWidth;
 	}
 }

@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -13,162 +10,73 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-/// <summary>
-/// Gold pullback strategy using EMA trend filter, MACD and TDI confirmation.
-/// </summary>
 public class GoldPullbackStrategy : Strategy
 {
-	private readonly StrategyParam<int> _emaFastLength;
-	private readonly StrategyParam<int> _emaSlowLength;
-	private readonly StrategyParam<int> _emaPullbackLength;
-	private readonly StrategyParam<decimal> _slOffset;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	private ExponentialMovingAverage _emaFast;
-	private ExponentialMovingAverage _emaSlow;
-	private ExponentialMovingAverage _emaPullback;
-	private MovingAverageConvergenceDivergence _macd;
-	private RelativeStrengthIndex _rsi;
-	private SimpleMovingAverage _tdiMa;
-	private SimpleMovingAverage _tdiSignal;
-
-	private decimal _longStop;
-	private decimal _longTake;
-	private decimal _shortStop;
-	private decimal _shortTake;
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public GoldPullbackStrategy()
 	{
-		_emaFastLength = Param(nameof(EmaFastLength), 14)
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
 			.SetGreaterThanZero()
-			.SetDisplay("EMA Fast", "Fast EMA length", "Indicators")
-			;
-
-		_emaSlowLength = Param(nameof(EmaSlowLength), 60)
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
 			.SetGreaterThanZero()
-			.SetDisplay("EMA Slow", "Slow EMA length", "Indicators")
-			;
-
-		_emaPullbackLength = Param(nameof(EmaPullbackLength), 21)
-			.SetGreaterThanZero()
-			.SetDisplay("EMA Pullback", "Pullback EMA length", "Indicators")
-			;
-
-		_slOffset = Param(nameof(SlOffset), 0.1m)
-			.SetGreaterThanZero()
-			.SetDisplay("SL Offset", "Offset for stop calculation", "Risk")
-			;
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Candle type for strategy", "General");
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
-	public int EmaFastLength { get => _emaFastLength.Value; set => _emaFastLength.Value = value; }
-	public int EmaSlowLength { get => _emaSlowLength.Value; set => _emaSlowLength.Value = value; }
-	public int EmaPullbackLength { get => _emaPullbackLength.Value; set => _emaPullbackLength.Value = value; }
-	public decimal SlOffset { get => _slOffset.Value; set => _slOffset.Value = value; }
-	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
-
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-		=> [(Security, CandleType)];
+	{
+		return [(Security, CandleType)];
+	}
 
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_longStop = _longTake = 0m;
-		_shortStop = _shortTake = 0m;
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
 
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_emaFast = new ExponentialMovingAverage { Length = EmaFastLength };
-		_emaSlow = new ExponentialMovingAverage { Length = EmaSlowLength };
-		_emaPullback = new ExponentialMovingAverage { Length = EmaPullbackLength };
-		_macd = new MovingAverageConvergenceDivergence
-		{
-			ShortMa = { Length = 5 },
-			LongMa = { Length = 34 },
-		};
-		_rsi = new RelativeStrengthIndex { Length = 13 };
-		_tdiMa = new SimpleMovingAverage { Length = 2 };
-		_tdiSignal = new SimpleMovingAverage { Length = 7 };
-
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(_emaFast, _emaSlow, _emaPullback, _rsi, ProcessCandle).Start();
-
+		subscription.Bind(fastEma, slowEma, ProcessCandle).Start();
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _emaFast);
-			DrawIndicator(area, _emaSlow);
-			DrawIndicator(area, _emaPullback);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal emaFast, decimal emaSlow, decimal emaPullback, decimal rsiValue)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
-		if (candle.State != CandleStates.Finished)
+		if (candle.State != CandleStates.Finished) return;
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
+		{
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
 			return;
-
-		var tdiMaValue = _tdiMa.Process(new DecimalIndicatorValue(_tdiMa, rsiValue, candle.ServerTime)).ToDecimal();
-		var tdiSignalValue = _tdiSignal.Process(new DecimalIndicatorValue(_tdiSignal, rsiValue, candle.ServerTime)).ToDecimal();
-
-		var macdVal = _macd.Process(new DecimalIndicatorValue(_macd, candle.ClosePrice, candle.ServerTime));
-		var macd = macdVal.ToDecimal();
-		var macdSignal = 0m; // simplified - use MACD line direction
-
-		if (!_macd.IsFormed || !_tdiSignal.IsFormed || !_emaFast.IsFormed || !_emaSlow.IsFormed || !_emaPullback.IsFormed)
-			return;
-
-		var trendUp = emaFast > emaSlow;
-		var trendDown = emaFast < emaSlow;
-		var touchEma = candle.LowPrice <= emaPullback && candle.HighPrice >= emaPullback;
-		var macdBuy = macd > macdSignal;
-		var macdSell = macd < macdSignal;
-		var tdiBuy = tdiMaValue > tdiSignalValue && rsiValue > 50m;
-		var tdiSell = tdiMaValue < tdiSignalValue && rsiValue < 50m;
-
-		var buySignal = trendUp && touchEma && macdBuy && tdiBuy;
-		var sellSignal = trendDown && touchEma && macdSell && tdiSell;
-
-		if (Position > 0)
-		{
-			if (candle.LowPrice <= _longStop || candle.HighPrice >= _longTake)
-			{
-				SellMarket(Position);
-				_longStop = _longTake = 0m;
-			}
 		}
-		else if (Position < 0)
-		{
-			if (candle.HighPrice >= _shortStop || candle.LowPrice <= _shortTake)
-			{
-				BuyMarket(Math.Abs(Position));
-				_shortStop = _shortTake = 0m;
-			}
-		}
-
-		if (buySignal && Position <= 0)
-		{
-			var volume = Volume + Math.Abs(Position);
-			var sl = candle.LowPrice - SlOffset;
-			var tp = candle.ClosePrice + (candle.ClosePrice - sl);
-			BuyMarket(volume);
-			_longStop = sl;
-			_longTake = tp;
-		}
-		else if (sellSignal && Position >= 0)
-		{
-			var volume = Volume + Math.Abs(Position);
-			var sl = candle.HighPrice + SlOffset;
-			var tp = candle.ClosePrice - (sl - candle.ClosePrice);
-			SellMarket(volume);
-			_shortStop = sl;
-			_shortTake = tp;
-		}
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
+			BuyMarket();
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+			SellMarket();
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

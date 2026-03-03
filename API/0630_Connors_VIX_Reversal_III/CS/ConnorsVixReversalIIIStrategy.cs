@@ -1,175 +1,105 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using Ecng.ComponentModel;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Connors VIX Reversal III strategy.
-/// Trades contrarian signals based on VIX moving average breakouts.
+/// ConnorsVixReversalIIIStrategy using EMA crossover for trend timing.
+/// Enters long on golden cross, short on death cross.
 /// </summary>
 public class ConnorsVixReversalIIIStrategy : Strategy
 {
-	private readonly StrategyParam<int> _lengthMa;
-	private readonly StrategyParam<decimal> _percentThreshold;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<Security> _vixSecurity;
-	
-	private decimal _previousVixMa;
-	private SMA _vixSma = null!;
-	
-	/// <summary>
-	/// Length of VIX moving average.
-	/// </summary>
-	public int LengthMA
-	{
-		get => _lengthMa.Value;
-		set => _lengthMa.Value = value;
-	}
-	
-	/// <summary>
-	/// Percentage threshold for signals.
-	/// </summary>
-	public decimal PercentThreshold
-	{
-		get => _percentThreshold.Value;
-		set => _percentThreshold.Value = value;
-	}
-	
-	/// <summary>
-	/// Candle type for data.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-	
-	/// <summary>
-	/// Security providing VIX data.
-	/// </summary>
-	public Security VixSecurity
-	{
-		get => _vixSecurity.Value;
-		set => _vixSecurity.Value = value;
-	}
-	
-	/// <summary>
-	/// Initializes a new instance of <see cref="ConnorsVixReversalIIIStrategy"/>.
-	/// </summary>
+
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
+
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+
 	public ConnorsVixReversalIIIStrategy()
 	{
-		_lengthMa = Param(nameof(LengthMA), 10)
-		.SetGreaterThanZero()
-		.SetDisplay("MA Length", "Length of VIX moving average", "Parameters")
-		
-		.SetOptimize(5, 30, 5);
-		
-		_percentThreshold = Param(nameof(PercentThreshold), 10m)
-		.SetGreaterThanZero()
-		.SetDisplay("Percent Threshold", "Percentage threshold for signals", "Parameters")
-		
-		.SetOptimize(5m, 20m, 1m);
-		
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-		.SetDisplay("Candle Type", "Type of candles to use", "Data");
-		
-		_vixSecurity = Param<Security>(nameof(VixSecurity))
-		.SetDisplay("VIX Security", "Security providing VIX data", "Data")
-		.SetRequired();
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
-	
+
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return
-		[
-		(Security, CandleType),
-		(VixSecurity, CandleType)
-		];
+		return [(Security, CandleType)];
 	}
-	
+
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_previousVixMa = 0m;
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
-	
+
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		
-		_vixSma = new SMA { Length = LengthMA };
-		
-		var mainSubscription = SubscribeCandles(CandleType);
-		mainSubscription.Start();
-		
-		var vixSubscription = SubscribeCandles(CandleType, security: VixSecurity);
-		vixSubscription
-		.Bind(_vixSma, ProcessVixCandle)
-		.Start();
-		
+
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
+
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(fastEma, slowEma, ProcessCandle)
+			.Start();
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
-			DrawCandles(area, vixSubscription);
-			DrawIndicator(area, _vixSma);
+			DrawCandles(area, subscription);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
-	
-	private void ProcessVixCandle(ICandleMessage candle, decimal vixMa)
+
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
-		
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
-		
-		if (!_vixSma.IsFormed)
+			return;
+
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-			_previousVixMa = vixMa;
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
 			return;
 		}
-		
-		var vixClose = candle.ClosePrice;
-		var vixHigh = candle.HighPrice;
-		var vixLow = candle.LowPrice;
-		
-		var buySignal = vixLow > vixMa && vixClose > vixMa * (1 + PercentThreshold / 100m);
-		var sellSignal = vixHigh < vixMa && vixClose < vixMa * (1 - PercentThreshold / 100m);
-		
-		if (buySignal && Position <= 0)
+
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
 		{
-			BuyMarket(Volume + Math.Abs(Position));
+			BuyMarket();
 		}
-		else if (sellSignal && Position >= 0)
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
 		{
-			SellMarket(Volume + Math.Abs(Position));
+			SellMarket();
 		}
-		
-		if (_previousVixMa != 0m)
-		{
-			if (Position > 0 && vixLow < _previousVixMa)
-			SellMarket(Position);
-			
-			if (Position < 0 && vixHigh > _previousVixMa)
-			BuyMarket(Math.Abs(Position));
-		}
-		
-		_previousVixMa = vixMa;
+
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

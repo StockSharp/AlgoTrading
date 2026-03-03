@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 using Ecng.Common;
 
@@ -9,6 +10,9 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
+/// <summary>
+/// MA crossover strategy with take profit, stop loss, and EMA filter.
+/// </summary>
 public class MaCrossoverTpSl5EmaFilterStrategy : Strategy
 {
 	private readonly StrategyParam<int> _fastLength;
@@ -18,14 +22,13 @@ public class MaCrossoverTpSl5EmaFilterStrategy : Strategy
 	private readonly StrategyParam<decimal> _stopPercent;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private EMA _fastMa;
-	private EMA _slowMa;
-	private EMA _ema;
-	private decimal _entryPrice;
-	private bool _isLong;
+	private ExponentialMovingAverage _fastMa;
+	private ExponentialMovingAverage _slowMa;
+	private ExponentialMovingAverage _ema;
 	private decimal _prevFast;
 	private decimal _prevSlow;
 	private bool _initialized;
+	private int _cooldown;
 
 	public int FastLength { get => _fastLength.Value; set => _fastLength.Value = value; }
 	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
@@ -36,32 +39,45 @@ public class MaCrossoverTpSl5EmaFilterStrategy : Strategy
 
 	public MaCrossoverTpSl5EmaFilterStrategy()
 	{
-		_fastLength = Param(nameof(FastLength), 10).SetGreaterThanZero()
+		_fastLength = Param(nameof(FastLength), 8).SetGreaterThanZero()
 			.SetDisplay("Fast MA", "Fast MA period", "Indicators");
-		_slowLength = Param(nameof(SlowLength), 30).SetGreaterThanZero()
+		_slowLength = Param(nameof(SlowLength), 21).SetGreaterThanZero()
 			.SetDisplay("Slow MA", "Slow MA period", "Indicators");
 		_emaLength = Param(nameof(EmaLength), 5).SetGreaterThanZero()
 			.SetDisplay("EMA Filter", "EMA filter length", "Indicators");
-		_targetPercent = Param(nameof(TargetPercent), 2m).SetGreaterThanZero()
+		_targetPercent = Param(nameof(TargetPercent), 10m).SetGreaterThanZero()
 			.SetDisplay("TP %", "Take profit percent", "Risk");
-		_stopPercent = Param(nameof(StopPercent), 1m).SetGreaterThanZero()
+		_stopPercent = Param(nameof(StopPercent), 8m).SetGreaterThanZero()
 			.SetDisplay("SL %", "Stop loss percent", "Risk");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Candles", "General");
 	}
 
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_prevFast = default;
+		_prevSlow = default;
+		_initialized = false;
+		_cooldown = default;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_entryPrice = 0;
-		_prevFast = 0;
-		_prevSlow = 0;
-		_initialized = false;
-
-		_fastMa = new EMA { Length = FastLength };
-		_slowMa = new EMA { Length = SlowLength };
-		_ema = new EMA { Length = EmaLength };
+		_fastMa = new ExponentialMovingAverage { Length = FastLength };
+		_slowMa = new ExponentialMovingAverage { Length = SlowLength };
+		_ema = new ExponentialMovingAverage { Length = EmaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -94,35 +110,32 @@ public class MaCrossoverTpSl5EmaFilterStrategy : Strategy
 			return;
 		}
 
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+			_prevFast = fast;
+			_prevSlow = slow;
+			return;
+		}
+
 		var crossUp = _prevFast <= _prevSlow && fast > slow;
 		var crossDown = _prevFast >= _prevSlow && fast < slow;
 
+		// Long entry on cross up with EMA filter
 		if (crossUp && Position <= 0)
 		{
-			_entryPrice = candle.ClosePrice;
-			_isLong = true;
-			BuyMarket(Volume + Math.Abs(Position));
+			if (Position < 0)
+				BuyMarket();
+			BuyMarket();
+			_cooldown = 12;
 		}
+		// Short entry on cross down with EMA filter
 		else if (crossDown && Position >= 0)
 		{
-			_entryPrice = candle.ClosePrice;
-			_isLong = false;
-			SellMarket(Volume + Math.Abs(Position));
-		}
-
-		if (Position > 0 && _isLong && _entryPrice > 0)
-		{
-			var tp = _entryPrice * (1m + TargetPercent / 100m);
-			var sl = _entryPrice * (1m - StopPercent / 100m);
-			if (candle.ClosePrice >= tp || candle.ClosePrice <= sl)
-				SellMarket(Math.Abs(Position));
-		}
-		else if (Position < 0 && !_isLong && _entryPrice > 0)
-		{
-			var tp = _entryPrice * (1m - TargetPercent / 100m);
-			var sl = _entryPrice * (1m + StopPercent / 100m);
-			if (candle.ClosePrice <= tp || candle.ClosePrice >= sl)
-				BuyMarket(Math.Abs(Position));
+			if (Position > 0)
+				SellMarket();
+			SellMarket();
+			_cooldown = 12;
 		}
 
 		_prevFast = fast;

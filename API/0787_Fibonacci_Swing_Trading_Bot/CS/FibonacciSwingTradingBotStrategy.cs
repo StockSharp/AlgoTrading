@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -13,200 +10,73 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-/// <summary>
-/// Fibonacci swing trading strategy.
-/// Calculates Fibonacci retracement levels over Donchian channel and trades on bullish/bearish candles.
-/// </summary>
 public class FibonacciSwingTradingBotStrategy : Strategy
 {
-	private readonly StrategyParam<int> _swingLength;
-	private readonly StrategyParam<decimal> _fiboLevel1;
-	private readonly StrategyParam<decimal> _fiboLevel2;
-	private readonly StrategyParam<decimal> _riskRewardRatio;
-	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	private decimal _stopLoss;
-	private decimal _takeProfit;
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// First Fibonacci retracement level.
-	/// </summary>
-	public decimal FiboLevel1
-	{
-		get => _fiboLevel1.Value;
-		set => _fiboLevel1.Value = value;
-	}
-
-	/// <summary>
-	/// Second Fibonacci retracement level.
-	/// </summary>
-	public decimal FiboLevel2
-	{
-		get => _fiboLevel2.Value;
-		set => _fiboLevel2.Value = value;
-	}
-
-	/// <summary>
-	/// Risk to reward ratio.
-	/// </summary>
-	public decimal RiskRewardRatio
-	{
-		get => _riskRewardRatio.Value;
-		set => _riskRewardRatio.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss percentage.
-	/// </summary>
-	public decimal StopLossPercent
-	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
-	}
-
-	/// <summary>
-	/// Donchian channel length.
-	/// </summary>
-	public int SwingLength
-	{
-		get => _swingLength.Value;
-		set => _swingLength.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type for analysis.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes parameters.
-	/// </summary>
 	public FibonacciSwingTradingBotStrategy()
 	{
-		_swingLength = Param(nameof(SwingLength), 50)
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
 			.SetGreaterThanZero()
-			.SetDisplay("Swing Length", "Donchian lookback length", "Parameters")
-			
-			.SetOptimize(10, 100, 5);
-
-		_fiboLevel1 = Param(nameof(FiboLevel1), 0.618m)
-			.SetDisplay("Fibonacci Level 1", "First retracement level", "Parameters")
-			
-			.SetOptimize(0.5m, 0.8m, 0.01m);
-
-		_fiboLevel2 = Param(nameof(FiboLevel2), 0.786m)
-			.SetDisplay("Fibonacci Level 2", "Second retracement level", "Parameters")
-			
-			.SetOptimize(0.7m, 0.9m, 0.01m);
-
-		_riskRewardRatio = Param(nameof(RiskRewardRatio), 2m)
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
 			.SetGreaterThanZero()
-			.SetDisplay("Risk/Reward Ratio", "Target ratio between profit and loss", "Risk Management")
-			
-			.SetOptimize(1m, 4m, 0.5m);
-
-		_stopLossPercent = Param(nameof(StopLossPercent), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss %", "Stop loss percent from entry price", "Risk Management")
-			
-			.SetOptimize(0.5m, 5m, 0.5m);
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_stopLoss = default;
-		_takeProfit = default;
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		StartProtection(null, null);
-
-		var donchian = new DonchianChannels { Length = SwingLength };
-
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.BindEx(donchian, ProcessCandle)
-			.Start();
-
+		subscription.Bind(fastEma, slowEma, ProcessCandle).Start();
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, donchian);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue donchianValue)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
-		if (candle.State != CandleStates.Finished)
+		if (candle.State != CandleStates.Finished) return;
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
+		{
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
 			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var dc = (DonchianChannelsValue)donchianValue;
-
-		if (dc.UpperBand is not decimal highestHigh ||
-			dc.LowerBand is not decimal lowestLow)
-			return;
-
-		var range = highestHigh - lowestLow;
-		var fib618 = highestHigh - range * FiboLevel1;
-		var fib786 = highestHigh - range * FiboLevel2;
-
-		var bullishCandle = candle.ClosePrice > candle.OpenPrice && candle.ClosePrice > fib618 && candle.ClosePrice < highestHigh;
-		var bearishCandle = candle.ClosePrice < candle.OpenPrice && candle.ClosePrice < fib786 && candle.ClosePrice > lowestLow;
-
-		var stopLoss = bullishCandle
-			? candle.ClosePrice * (1m - StopLossPercent / 100m)
-			: candle.ClosePrice * (1m + StopLossPercent / 100m);
-
-		var takeProfit = bullishCandle
-			? candle.ClosePrice + (candle.ClosePrice - stopLoss) * RiskRewardRatio
-			: candle.ClosePrice - (stopLoss - candle.ClosePrice) * RiskRewardRatio;
-
-		if (bullishCandle && Position <= 0)
-		{
-			BuyMarket(Volume + Math.Abs(Position));
-			_stopLoss = stopLoss;
-			_takeProfit = takeProfit;
 		}
-		else if (bearishCandle && Position >= 0)
-		{
-			SellMarket(Volume + Math.Abs(Position));
-			_stopLoss = stopLoss;
-			_takeProfit = takeProfit;
-		}
-
-		if (Position > 0 && (candle.ClosePrice <= _stopLoss || candle.ClosePrice >= _takeProfit))
-		{
-			SellMarket(Position);
-		}
-		else if (Position < 0 && (candle.ClosePrice >= _stopLoss || candle.ClosePrice <= _takeProfit))
-		{
-			BuyMarket(Math.Abs(Position));
-		}
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
+			BuyMarket();
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+			SellMarket();
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }
-

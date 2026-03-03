@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,56 +11,28 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// ALMA based strategy with volatility filter and ATR exits.
+/// ALMA based strategy with EMA crossover.
+/// Goes long when ALMA crosses above slow EMA, short when crosses below.
 /// </summary>
 public class AlmaOptimizedStrategy : Strategy
 {
-	private readonly StrategyParam<int> _fastEmaLength;
-	private readonly StrategyParam<int> _atrLength;
+	private readonly StrategyParam<int> _almaLength;
 	private readonly StrategyParam<int> _emaLength;
-	private readonly StrategyParam<int> _adxLength;
-	private readonly StrategyParam<int> _rsiLength;
 	private readonly StrategyParam<int> _cooldownBars;
-	private readonly StrategyParam<decimal> _bbMultiplier;
-	private readonly StrategyParam<decimal> _slAtrMultiplier;
-	private readonly StrategyParam<decimal> _tpAtrMultiplier;
-	private readonly StrategyParam<int> _timeBasedExit;
-	private readonly StrategyParam<decimal> _minAtr;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private int _barIndex;
-	private int _lastBuyBar;
-	private int _entryBar;
-	private SignalTypes _lastSignal;
-	private decimal _stopPrice;
-	private decimal _takePrice;
-	private decimal _prevClose;
-	private decimal _prevFastEma;
-	private BollingerBands _bollinger;
-
-	private enum SignalTypes
-	{
-		None,
-		Buy,
-		Sell
-	}
+	private int _lastTradeBar;
+	private decimal _prevAlma;
+	private decimal _prevEma;
 
 	/// <summary>
-	/// Fast EMA period.
+	/// ALMA period.
 	/// </summary>
-	public int FastEmaLength
+	public int AlmaLength
 	{
-		get => _fastEmaLength.Value;
-		set => _fastEmaLength.Value = value;
-	}
-
-	/// <summary>
-	/// ATR period.
-	/// </summary>
-	public int AtrLength
-	{
-		get => _atrLength.Value;
-		set => _atrLength.Value = value;
+		get => _almaLength.Value;
+		set => _almaLength.Value = value;
 	}
 
 	/// <summary>
@@ -76,75 +45,12 @@ public class AlmaOptimizedStrategy : Strategy
 	}
 
 	/// <summary>
-	/// ADX period.
-	/// </summary>
-	public int AdxLength
-	{
-		get => _adxLength.Value;
-		set => _adxLength.Value = value;
-	}
-
-	/// <summary>
-	/// RSI period.
-	/// </summary>
-	public int RsiLength
-	{
-		get => _rsiLength.Value;
-		set => _rsiLength.Value = value;
-	}
-
-	/// <summary>
-	/// Cooldown bars after long entry.
+	/// Cooldown bars between trades.
 	/// </summary>
 	public int CooldownBars
 	{
 		get => _cooldownBars.Value;
 		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
-	/// Bollinger Bands multiplier.
-	/// </summary>
-	public decimal BbMultiplier
-	{
-		get => _bbMultiplier.Value;
-		set => _bbMultiplier.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss ATR multiplier.
-	/// </summary>
-	public decimal SlAtrMultiplier
-	{
-		get => _slAtrMultiplier.Value;
-		set => _slAtrMultiplier.Value = value;
-	}
-
-	/// <summary>
-	/// Take profit ATR multiplier.
-	/// </summary>
-	public decimal TpAtrMultiplier
-	{
-		get => _tpAtrMultiplier.Value;
-		set => _tpAtrMultiplier.Value = value;
-	}
-
-	/// <summary>
-	/// Exit after N bars.
-	/// </summary>
-	public int TimeBasedExit
-	{
-		get => _timeBasedExit.Value;
-		set => _timeBasedExit.Value = value;
-	}
-
-	/// <summary>
-	/// Minimum ATR for volatility filter.
-	/// </summary>
-	public decimal MinAtr
-	{
-		get => _minAtr.Value;
-		set => _minAtr.Value = value;
 	}
 
 	/// <summary>
@@ -161,73 +67,27 @@ public class AlmaOptimizedStrategy : Strategy
 	/// </summary>
 	public AlmaOptimizedStrategy()
 	{
-		_fastEmaLength = Param(nameof(FastEmaLength), 20)
-		.SetGreaterThanZero()
-		.SetDisplay("Fast EMA Length", "Fast EMA period", "Indicator")
-		
-		.SetOptimize(10, 40, 5);
+		_almaLength = Param(nameof(AlmaLength), 9)
+			.SetDisplay("ALMA Length", "ALMA period", "Indicator");
 
-		_atrLength = Param(nameof(AtrLength), 14)
-		.SetGreaterThanZero()
-		.SetDisplay("ATR Length", "ATR period", "Indicator")
-		
-		.SetOptimize(7, 21, 7);
+		_emaLength = Param(nameof(EmaLength), 26)
+			.SetDisplay("EMA Length", "Slow EMA period", "Indicator");
 
-		_emaLength = Param(nameof(EmaLength), 72)
-		.SetGreaterThanZero()
-		.SetDisplay("EMA Length", "Slow EMA period", "Indicator")
-		
-		.SetOptimize(50, 100, 10);
+		_cooldownBars = Param(nameof(CooldownBars), 40)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "Trading");
 
-		_adxLength = Param(nameof(AdxLength), 10)
-		.SetGreaterThanZero()
-		.SetDisplay("ADX Length", "ADX period", "Indicator")
-		
-		.SetOptimize(5, 20, 5);
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles", "General");
+	}
 
-		_rsiLength = Param(nameof(RsiLength), 14)
-		.SetGreaterThanZero()
-		.SetDisplay("RSI Length", "RSI period", "Indicator")
-		
-		.SetOptimize(7, 21, 7);
-
-		_cooldownBars = Param(nameof(CooldownBars), 7)
-		.SetGreaterThanZero()
-		.SetDisplay("Cooldown Bars", "Bars to wait after long entry", "Trading")
-		
-		.SetOptimize(3, 15, 2);
-
-		_bbMultiplier = Param(nameof(BbMultiplier), 3m)
-		.SetGreaterThanZero()
-		.SetDisplay("BB Multiplier", "Bollinger Bands deviation", "Indicator")
-		
-		.SetOptimize(1m, 5m, 1m);
-
-		_slAtrMultiplier = Param(nameof(SlAtrMultiplier), 5m)
-		.SetGreaterThanZero()
-		.SetDisplay("SL ATR Mult", "ATR multiplier for stop loss", "Risk")
-		
-		.SetOptimize(2m, 8m, 1m);
-
-		_tpAtrMultiplier = Param(nameof(TpAtrMultiplier), 4m)
-		.SetGreaterThanZero()
-		.SetDisplay("TP ATR Mult", "ATR multiplier for take profit", "Risk")
-		
-		.SetOptimize(2m, 8m, 1m);
-
-		_timeBasedExit = Param(nameof(TimeBasedExit), 0)
-		.SetDisplay("Time Based Exit", "Exit after N bars (0 disabled)", "Risk")
-		
-		.SetOptimize(0, 20, 5);
-
-		_minAtr = Param(nameof(MinAtr), 0.005m)
-		.SetGreaterThanZero()
-		.SetDisplay("Min ATR", "Minimum ATR value", "Filter")
-		
-		.SetOptimize(0.001m, 0.01m, 0.001m);
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-		.SetDisplay("Candle Type", "Type of candles", "General");
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_barIndex = 0;
+		_lastTradeBar = 0;
+		_prevAlma = 0;
+		_prevEma = 0;
 	}
 
 	/// <inheritdoc />
@@ -237,111 +97,62 @@ public class AlmaOptimizedStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_barIndex = 0;
-		_lastBuyBar = int.MinValue;
-		_entryBar = 0;
-		_lastSignal = SignalTypes.None;
-		_stopPrice = 0m;
-		_takePrice = 0m;
-		_prevClose = 0m;
-		_prevFastEma = 0m;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
-
-		var fastEma = new EMA { Length = FastEmaLength };
-		var slowEma = new EMA { Length = EmaLength };
-		var alma = new ALMA { Length = 15, Offset = 0.65m, Sigma = 6 };
-		var adx = new AverageDirectionalIndex { Length = AdxLength };
-		var rsi = new RelativeStrengthIndex { Length = RsiLength };
-		var atr = new AverageTrueRange { Length = AtrLength };
-		_bollinger = new BollingerBands { Length = 20, Width = BbMultiplier };
-		var bollinger = _bollinger;
+		var alma = new ArnaudLegouxMovingAverage { Length = AlmaLength, Offset = 0.65m, Sigma = 6 };
+		var ema = new ExponentialMovingAverage { Length = EmaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 
 		subscription
-			.Bind(fastEma, slowEma, alma, adx, rsi, atr, bollinger, ProcessCandle)
+			.Bind(alma, ema, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, fastEma);
-			DrawIndicator(area, slowEma);
 			DrawIndicator(area, alma);
-			DrawIndicator(area, bollinger);
+			DrawIndicator(area, ema);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue, decimal almaValue, decimal adxValue, decimal rsiValue, decimal atrValue, decimal middleBand)
+	private void ProcessCandle(ICandleMessage candle, decimal almaValue, decimal emaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
 		_barIndex++;
 
-		var volatility = atrValue > MinAtr;
-		var upperBand = _bollinger.UpBand.GetCurrentValue();
-		var lowerBand = _bollinger.LowBand.GetCurrentValue();
-
-		if (_prevClose != 0m || _prevFastEma != 0m)
+		if (_prevAlma == 0 || _prevEma == 0)
 		{
-			var buyCond = volatility && candle.ClosePrice > slowEmaValue && candle.ClosePrice > almaValue && rsiValue > 30m && adxValue > 30m && candle.ClosePrice < upperBand && (_barIndex - _lastBuyBar > CooldownBars) && _lastSignal != SignalTypes.Buy;
-
-			var crossUnder = _prevClose >= _prevFastEma && candle.ClosePrice < fastEmaValue;
-			var sellCond = volatility && crossUnder && _lastSignal != SignalTypes.Sell;
-
-			if (buyCond && Position <= 0)
-			{
-				var volume = Volume + Math.Abs(Position);
-				BuyMarket(volume);
-				_lastBuyBar = _barIndex;
-				_entryBar = _barIndex;
-				_lastSignal = SignalTypes.Buy;
-				_stopPrice = candle.ClosePrice - atrValue * SlAtrMultiplier;
-				_takePrice = candle.ClosePrice + atrValue * TpAtrMultiplier;
-			}
-			else if (sellCond && Position >= 0)
-			{
-				var volume = Volume + Math.Abs(Position);
-				SellMarket(volume);
-				_entryBar = _barIndex;
-				_lastSignal = SignalTypes.Sell;
-				_stopPrice = candle.ClosePrice + atrValue * SlAtrMultiplier;
-				_takePrice = candle.ClosePrice - atrValue * TpAtrMultiplier;
-			}
+			_prevAlma = almaValue;
+			_prevEma = emaValue;
+			return;
 		}
 
-		if (Position > 0)
-		{
-			if (candle.LowPrice <= _stopPrice || candle.HighPrice >= _takePrice || (TimeBasedExit > 0 && _barIndex - _entryBar >= TimeBasedExit))
-			{
-				SellMarket(Position);
-				_lastSignal = SignalTypes.Sell;
-			}
-			else if (Position < 0)
-			{
-				if (candle.HighPrice >= _stopPrice || candle.LowPrice <= _takePrice || (TimeBasedExit > 0 && _barIndex - _entryBar >= TimeBasedExit))
-				{
-					BuyMarket(Math.Abs(Position));
-					_lastSignal = SignalTypes.Buy;
-				}
-			}
+		var cooldownOk = _barIndex - _lastTradeBar > CooldownBars;
 
-			_prevClose = candle.ClosePrice;
-			_prevFastEma = fastEmaValue;
+		// ALMA crosses above EMA -> buy signal
+		var crossOver = _prevAlma <= _prevEma && almaValue > emaValue;
+		// ALMA crosses below EMA -> sell signal
+		var crossUnder = _prevAlma >= _prevEma && almaValue < emaValue;
+
+		if (crossOver && Position <= 0 && cooldownOk)
+		{
+			BuyMarket();
+			_lastTradeBar = _barIndex;
 		}
+		else if (crossUnder && Position >= 0 && cooldownOk)
+		{
+			SellMarket();
+			_lastTradeBar = _barIndex;
+		}
+
+		_prevAlma = almaValue;
+		_prevEma = emaValue;
 	}
 }

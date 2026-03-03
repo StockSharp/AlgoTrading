@@ -14,9 +14,7 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Uptrick Intensity Index strategy.
-/// Uses trend intensity index calculated from three moving averages.
-/// Buys when TII crosses above its average, sells when it crosses below.
+/// Uptrick Intensity Index strategy using RSI momentum with EMA trend filter.
 /// </summary>
 public class UptrickIntensityIndexStrategy : Strategy
 {
@@ -26,9 +24,10 @@ public class UptrickIntensityIndexStrategy : Strategy
 	private readonly StrategyParam<int> _tiiSmooth;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private readonly List<decimal> _tiiValues = new();
-	private decimal _prevDiff;
-	private bool _initialized;
+	private decimal _prevRsi;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private int _cooldown;
 
 	public int Ma1Length { get => _ma1Length.Value; set => _ma1Length.Value = value; }
 	public int Ma2Length { get => _ma2Length.Value; set => _ma2Length.Value = value; }
@@ -66,75 +65,91 @@ public class UptrickIntensityIndexStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_tiiValues.Clear();
-		_prevDiff = 0;
-		_initialized = false;
+		_prevRsi = 0;
+		_prevFast = 0;
+		_prevSlow = 0;
+		_cooldown = 0;
 	}
 
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		var ma1 = new SimpleMovingAverage { Length = Ma1Length };
-		var ma2 = new SimpleMovingAverage { Length = Ma2Length };
-		var ma3 = new SimpleMovingAverage { Length = Ma3Length };
-
-		_tiiValues.Clear();
-		_prevDiff = 0;
-		_initialized = false;
+		var rsi = new RelativeStrengthIndex { Length = 14 };
+		var emaFast = new ExponentialMovingAverage { Length = 8 };
+		var emaSlow = new ExponentialMovingAverage { Length = 21 };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ma1, ma2, ma3, ProcessCandle).Start();
+		subscription.Bind(rsi, emaFast, emaSlow, ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawIndicator(area, emaFast);
+			DrawIndicator(area, emaSlow);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal ma1Val, decimal ma2Val, decimal ma3Val)
+	private void ProcessCandle(ICandleMessage candle, decimal rsiVal, decimal emaFast, decimal emaSlow)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var close = candle.ClosePrice;
-
-		// TII: average relative distance from 3 MAs
-		var rel1 = ma1Val > 0 ? (close - ma1Val) / ma1Val : 0;
-		var rel2 = ma2Val > 0 ? (close - ma2Val) / ma2Val : 0;
-		var rel3 = ma3Val > 0 ? (close - ma3Val) / ma3Val : 0;
-
-		var tii = (rel1 + rel2 + rel3) / 3m * 100m;
-		_tiiValues.Add(tii);
-
-		while (_tiiValues.Count > TiiSmooth + 2)
-			_tiiValues.RemoveAt(0);
-
-		if (_tiiValues.Count < TiiSmooth)
-			return;
-
-		// SMA of TII
-		decimal sum = 0;
-		for (int i = _tiiValues.Count - TiiSmooth; i < _tiiValues.Count; i++)
-			sum += _tiiValues[i];
-		var tiiMa = sum / TiiSmooth;
-
-		var diff = tii - tiiMa;
-
-		if (!_initialized)
+		if (_prevRsi == 0 || _prevFast == 0 || _prevSlow == 0)
 		{
-			_prevDiff = diff;
-			_initialized = true;
+			_prevRsi = rsiVal;
+			_prevFast = emaFast;
+			_prevSlow = emaSlow;
 			return;
 		}
 
-		if (_prevDiff <= 0m && diff > 0m && Position <= 0)
-			BuyMarket();
-		else if (_prevDiff >= 0m && diff < 0m && Position >= 0)
-			SellMarket();
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+			_prevRsi = rsiVal;
+			_prevFast = emaFast;
+			_prevSlow = emaSlow;
+			return;
+		}
 
-		_prevDiff = diff;
+		var hist = emaFast - emaSlow;
+		var histUp = hist > 0m;
+		var histDown = hist < 0m;
+
+		var rsiCrossUp = _prevRsi <= 50m && rsiVal > 50m;
+		var rsiCrossDown = _prevRsi >= 50m && rsiVal < 50m;
+
+		// Exit
+		if (Position > 0 && rsiCrossDown)
+		{
+			SellMarket();
+			_cooldown = 80;
+		}
+		else if (Position < 0 && rsiCrossUp)
+		{
+			BuyMarket();
+			_cooldown = 80;
+		}
+
+		// Entry
+		if (Position == 0)
+		{
+			if (rsiCrossUp && histUp)
+			{
+				BuyMarket();
+				_cooldown = 80;
+			}
+			else if (rsiCrossDown && histDown)
+			{
+				SellMarket();
+				_cooldown = 80;
+			}
+		}
+
+		_prevRsi = rsiVal;
+		_prevFast = emaFast;
+		_prevSlow = emaSlow;
 	}
 }

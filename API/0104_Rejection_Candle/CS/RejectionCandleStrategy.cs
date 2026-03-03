@@ -1,35 +1,52 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
-using StockSharp.Algo.Candles;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on rejection candles that indicate potential reversals.
+/// Rejection Candle (Pin Bar) strategy.
+/// Enters long on bullish rejection (lower low + bullish close + long lower wick).
+/// Enters short on bearish rejection (higher high + bearish close + long upper wick).
+/// Uses SMA for exit confirmation.
+/// Uses cooldown to control trade frequency.
 /// </summary>
 public class RejectionCandleStrategy : Strategy
 {
+	private readonly StrategyParam<int> _maLength;
+	private readonly StrategyParam<decimal> _wickRatio;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<decimal> _stopLossPercent;
-	
-	private ICandleMessage _previousCandle;
-	private bool _inPosition;
-	private Sides _currentPositionSide;
+	private readonly StrategyParam<int> _cooldownBars;
+
+	private ICandleMessage _prevCandle;
+	private int _cooldown;
 
 	/// <summary>
-	/// Candle type and timeframe for the strategy.
+	/// MA period for exit.
+	/// </summary>
+	public int MaLength
+	{
+		get => _maLength.Value;
+		set => _maLength.Value = value;
+	}
+
+	/// <summary>
+	/// Wick to body ratio threshold.
+	/// </summary>
+	public decimal WickRatio
+	{
+		get => _wickRatio.Value;
+		set => _wickRatio.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -38,25 +55,33 @@ public class RejectionCandleStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stop-loss percentage from entry price.
+	/// Cooldown bars.
 	/// </summary>
-	public decimal StopLossPercent
+	public int CooldownBars
 	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	/// <summary>
-	/// Initializes a new instance of the <see cref="RejectionCandleStrategy"/>.
+	/// Constructor.
 	/// </summary>
 	public RejectionCandleStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-					 .SetDisplay("Candle Type", "Type of candles to use for pattern detection", "General");
-		
-		_stopLossPercent = Param(nameof(StopLossPercent), 1m)
-						  .SetDisplay("Stop Loss %", "Stop-loss percentage from entry price", "Protection")
-						  .SetRange(0.1m, 5m);
+		_maLength = Param(nameof(MaLength), 20)
+			.SetRange(10, 50)
+			.SetDisplay("MA Length", "Period of SMA for exit", "Indicators");
+
+		_wickRatio = Param(nameof(WickRatio), 1.5m)
+			.SetRange(1m, 3m)
+			.SetDisplay("Wick Ratio", "Min wick to body ratio for rejection", "Pattern");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
+
+		_cooldownBars = Param(nameof(CooldownBars), 500)
+			.SetRange(1, 1000)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
 	}
 
 	/// <inheritdoc />
@@ -69,142 +94,97 @@ public class RejectionCandleStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		
-		_previousCandle = null;
-		_inPosition = false;
-		_currentPositionSide = default;
+		_prevCandle = null;
+		_cooldown = default;
 	}
 
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		// Create and setup subscription for candles
+
+		_prevCandle = null;
+		_cooldown = 0;
+
+		var sma = new SimpleMovingAverage { Length = MaLength };
+
 		var subscription = SubscribeCandles(CandleType);
-		
-		// Bind the candle processor
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(sma, ProcessCandle)
 			.Start();
-		
-		// Enable stop-loss protection
-		StartProtection(new Unit(0), new Unit(StopLossPercent, UnitTypes.Percent));
-		
-		// Setup chart if available
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawIndicator(area, sma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
-		
-		// Skip first candle as we need at least one previous candle
-		if (_previousCandle == null)
+
+		if (_prevCandle == null)
 		{
-			_previousCandle = candle;
+			_prevCandle = candle;
 			return;
 		}
-		
-		// Determine candle characteristics
-		bool isBullish = candle.ClosePrice > candle.OpenPrice;
-		bool isBearish = candle.ClosePrice < candle.OpenPrice;
-		bool hasUpperWick = candle.HighPrice > Math.Max(candle.OpenPrice, candle.ClosePrice);
-		bool hasLowerWick = candle.LowPrice < Math.Min(candle.OpenPrice, candle.ClosePrice);
-		bool madeLowerLow = candle.LowPrice < _previousCandle.LowPrice;
-		bool madeHigherHigh = candle.HighPrice > _previousCandle.HighPrice;
-		
-		// 1. Bearish Rejection (Pin Bar): Made a higher high but closed lower with a long upper wick
-		if (madeHigherHigh && isBearish && hasUpperWick)
+
+		if (_cooldown > 0)
 		{
-			// Calculate upper wick size as a percentage of candle body
-			decimal bodySize = Math.Abs(candle.ClosePrice - candle.OpenPrice);
-			decimal upperWickSize = candle.HighPrice - Math.Max(candle.OpenPrice, candle.ClosePrice);
-			
-			// Upper wick should be significant compared to body
-			if (upperWickSize > bodySize * 1.5m)
-			{
-				// If we already have a long position, close it
-				if (Position > 0)
-				{
-					SellMarket(Math.Abs(Position));
-					_inPosition = false;
-					_currentPositionSide = default;
-					LogInfo($"Closed long position at {candle.ClosePrice} on bearish rejection");
-				}
-				// Enter short if we're not already short
-				else if (Position <= 0)
-				{
-					var volume = Volume + Math.Abs(Position);
-					SellMarket(volume);
-					_inPosition = true;
-					_currentPositionSide = Sides.Sell;
-					LogInfo($"Bearish rejection detected. Short entry at {candle.ClosePrice}");
-				}
-			}
+			_cooldown--;
+			_prevCandle = candle;
+			return;
 		}
-		
-		// 2. Bullish Rejection (Pin Bar): Made a lower low but closed higher with a long lower wick
-		else if (madeLowerLow && isBullish && hasLowerWick)
+
+		var bodySize = Math.Abs(candle.ClosePrice - candle.OpenPrice);
+		if (bodySize == 0) bodySize = 0.01m; // avoid div by zero
+
+		var upperWick = candle.HighPrice - Math.Max(candle.OpenPrice, candle.ClosePrice);
+		var lowerWick = Math.Min(candle.OpenPrice, candle.ClosePrice) - candle.LowPrice;
+
+		var isBullish = candle.ClosePrice > candle.OpenPrice;
+		var isBearish = candle.ClosePrice < candle.OpenPrice;
+
+		// Bullish rejection: made lower low, bullish close, long lower wick
+		var bullishRejection =
+			candle.LowPrice < _prevCandle.LowPrice &&
+			isBullish &&
+			lowerWick > bodySize * WickRatio;
+
+		// Bearish rejection: made higher high, bearish close, long upper wick
+		var bearishRejection =
+			candle.HighPrice > _prevCandle.HighPrice &&
+			isBearish &&
+			upperWick > bodySize * WickRatio;
+
+		if (Position == 0 && bullishRejection)
 		{
-			// Calculate lower wick size as a percentage of candle body
-			decimal bodySize = Math.Abs(candle.ClosePrice - candle.OpenPrice);
-			decimal lowerWickSize = Math.Min(candle.OpenPrice, candle.ClosePrice) - candle.LowPrice;
-			
-			// Lower wick should be significant compared to body
-			if (lowerWickSize > bodySize * 1.5m)
-			{
-				// If we already have a short position, close it
-				if (Position < 0)
-				{
-					BuyMarket(Math.Abs(Position));
-					_inPosition = false;
-					_currentPositionSide = default;
-					LogInfo($"Closed short position at {candle.ClosePrice} on bullish rejection");
-				}
-				// Enter long if we're not already long
-				else if (Position >= 0)
-				{
-					var volume = Volume + Math.Abs(Position);
-					BuyMarket(volume);
-					_inPosition = true;
-					_currentPositionSide = Sides.Buy;
-					LogInfo($"Bullish rejection detected. Long entry at {candle.ClosePrice}");
-				}
-			}
+			BuyMarket();
+			_cooldown = CooldownBars;
 		}
-		
-		// Check for exit conditions if in position
-		if (_inPosition)
+		else if (Position == 0 && bearishRejection)
 		{
-			if (_currentPositionSide == Sides.Buy && candle.HighPrice > _previousCandle.HighPrice)
-			{
-				// For long positions: exit when price breaks above the high of previous candle
-				SellMarket(Math.Abs(Position));
-				_inPosition = false;
-				_currentPositionSide = default;
-				LogInfo($"Exit signal: Price broke above previous high ({_previousCandle.HighPrice}). Closed long at {candle.ClosePrice}");
-			}
-			else if (_currentPositionSide == Sides.Sell && candle.LowPrice < _previousCandle.LowPrice)
-			{
-				// For short positions: exit when price breaks below the low of previous candle
-				BuyMarket(Math.Abs(Position));
-				_inPosition = false;
-				_currentPositionSide = default;
-				LogInfo($"Exit signal: Price broke below previous low ({_previousCandle.LowPrice}). Closed short at {candle.ClosePrice}");
-			}
+			SellMarket();
+			_cooldown = CooldownBars;
 		}
-		
-		// Store current candle as previous for the next iteration
-		_previousCandle = candle;
+		else if (Position > 0 && candle.ClosePrice < smaValue)
+		{
+			SellMarket();
+			_cooldown = CooldownBars;
+		}
+		else if (Position < 0 && candle.ClosePrice > smaValue)
+		{
+			BuyMarket();
+			_cooldown = CooldownBars;
+		}
+
+		_prevCandle = candle;
 	}
 }

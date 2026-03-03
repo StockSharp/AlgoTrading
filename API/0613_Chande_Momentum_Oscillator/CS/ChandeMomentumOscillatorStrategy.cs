@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,92 +11,31 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on the Chande Momentum Oscillator.
-/// Enters long when CMO drops below a lower threshold and exits
-/// when CMO exceeds an upper threshold or after a fixed number of bars.
+/// ChandeMomentumOscillatorStrategy using EMA crossover for trend timing.
+/// Enters long on golden cross, short on death cross.
 /// </summary>
 public class ChandeMomentumOscillatorStrategy : Strategy
 {
-	private readonly StrategyParam<int> _cmoPeriod;
-	private readonly StrategyParam<decimal> _lowerThreshold;
-	private readonly StrategyParam<decimal> _upperThreshold;
-	private readonly StrategyParam<int> _maxBarsInPosition;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private ChandeMomentumOscillator _cmo;
-	private int _barsSinceEntry;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	/// <summary>
-	/// Period for the Chande Momentum Oscillator.
-	/// </summary>
-	public int CmoPeriod
-	{
-		get => _cmoPeriod.Value;
-		set => _cmoPeriod.Value = value;
-	}
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Lower threshold to open a long position.
-	/// </summary>
-	public decimal LowerThreshold
-	{
-		get => _lowerThreshold.Value;
-		set => _lowerThreshold.Value = value;
-	}
-
-	/// <summary>
-	/// Upper threshold to close a long position.
-	/// </summary>
-	public decimal UpperThreshold
-	{
-		get => _upperThreshold.Value;
-		set => _upperThreshold.Value = value;
-	}
-
-	/// <summary>
-	/// Maximum number of bars to hold a position.
-	/// </summary>
-	public int MaxBarsInPosition
-	{
-		get => _maxBarsInPosition.Value;
-		set => _maxBarsInPosition.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used for calculations.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="ChandeMomentumOscillatorStrategy"/>.
-	/// </summary>
 	public ChandeMomentumOscillatorStrategy()
 	{
-		_cmoPeriod = Param(nameof(CmoPeriod), 9)
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
 			.SetGreaterThanZero()
-			.SetDisplay("CMO Period", "Period for Chande Momentum Oscillator", "Indicators")
-			
-			.SetOptimize(5, 20, 1);
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
 
-		_lowerThreshold = Param(nameof(LowerThreshold), -50m)
-			.SetDisplay("Lower Threshold", "Enter long when CMO is below", "Strategy")
-			
-			.SetOptimize(-70m, -30m, 5m);
-
-		_upperThreshold = Param(nameof(UpperThreshold), 50m)
-			.SetDisplay("Upper Threshold", "Exit long when CMO is above", "Strategy")
-			
-			.SetOptimize(30m, 70m, 5m);
-
-		_maxBarsInPosition = Param(nameof(MaxBarsInPosition), 5)
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
 			.SetGreaterThanZero()
-			.SetDisplay("Max Bars In Position", "Exit after specified number of bars", "Risk")
-			
-			.SetOptimize(3, 10, 1);
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -115,8 +51,8 @@ public class ChandeMomentumOscillatorStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_barsSinceEntry = 0;
-		_cmo = null;
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
 
 	/// <inheritdoc />
@@ -124,53 +60,46 @@ public class ChandeMomentumOscillatorStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_cmo = new ChandeMomentumOscillator { Length = CmoPeriod };
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_cmo, ProcessCandle)
+			.Bind(fastEma, slowEma, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _cmo);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal cmoValue)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (_cmo == null || !_cmo.IsFormed)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (Position > 0)
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-			_barsSinceEntry++;
-
-			if (cmoValue > UpperThreshold || _barsSinceEntry >= MaxBarsInPosition)
-			{
-				SellMarket(Math.Abs(Position));
-				LogInfo($"Exit long: CMO={cmoValue:F2}, Bars={_barsSinceEntry}");
-				_barsSinceEntry = 0;
-			}
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
+			return;
 		}
-		else
+
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
 		{
-			_barsSinceEntry = 0;
-
-			if (cmoValue < LowerThreshold)
-			{
-				BuyMarket(Volume + Math.Abs(Position));
-				LogInfo($"Enter long: CMO={cmoValue:F2}");
-			}
+			BuyMarket();
 		}
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+		{
+			SellMarket();
+		}
+
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

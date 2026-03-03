@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,98 +11,31 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// New York opening range breakout with retest.
+/// CpStratOrbStrategy using EMA crossover for trend timing.
+/// Enters long on golden cross, short on death cross.
 /// </summary>
 public class CpStratOrbStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _minRangePoints;
-	private readonly StrategyParam<decimal> _stopPoints;
-	private readonly StrategyParam<decimal> _takePoints;
-	private readonly StrategyParam<int> _maxTradesPerSession;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal? _nyHigh;
-	private decimal? _nyLow;
-	private bool _nyRangeDone;
-	private int _nyTradeCount;
-	private DateTime _currentDay;
-	private decimal _entryPrice;
-	private decimal _stopPrice;
-	private decimal _takePrice;
-	private readonly TimeZoneInfo _nyTimeZone = TimeZoneInfo.FindSystemTimeZoneById("America/New_York");
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	/// <summary>
-	/// Minimum range in points.
-	/// </summary>
-	public decimal MinRangePoints
-	{
-		get => _minRangePoints.Value;
-		set => _minRangePoints.Value = value;
-	}
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Stop loss in points.
-	/// </summary>
-	public decimal StopPoints
-	{
-		get => _stopPoints.Value;
-		set => _stopPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Take profit in points.
-	/// </summary>
-	public decimal TakePoints
-	{
-		get => _takePoints.Value;
-		set => _takePoints.Value = value;
-	}
-
-	/// <summary>
-	/// Maximum trades per NY session.
-	/// </summary>
-	public int MaxTradesPerSession
-	{
-		get => _maxTradesPerSession.Value;
-		set => _maxTradesPerSession.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used by the strategy.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Constructor.
-	/// </summary>
 	public CpStratOrbStrategy()
 	{
-		_minRangePoints = Param(nameof(MinRangePoints), 60m)
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
 			.SetGreaterThanZero()
-			.SetDisplay("Min Range", "Minimum NY range in points", "General")
-			
-			.SetOptimize(10m, 100m, 10m);
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
 
-		_stopPoints = Param(nameof(StopPoints), 20m)
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
 			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss", "Stop loss in points", "Risk")
-			
-			.SetOptimize(10m, 40m, 5m);
-
-		_takePoints = Param(nameof(TakePoints), 60m)
-			.SetGreaterThanZero()
-			.SetDisplay("Take Profit", "Take profit in points", "Risk")
-			
-			.SetOptimize(20m, 120m, 10m);
-
-		_maxTradesPerSession = Param(nameof(MaxTradesPerSession), 3)
-			.SetGreaterThanZero()
-			.SetDisplay("Max Trades", "Max trades per NY session", "General")
-			;
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -121,134 +51,55 @@ public class CpStratOrbStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_nyHigh = null;
-		_nyLow = null;
-		_nyRangeDone = false;
-		_nyTradeCount = 0;
-		_entryPrice = 0m;
-		_stopPrice = 0m;
-		_takePrice = 0m;
-		_currentDay = default;
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		StartProtection(null, null);
+
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
-
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(fastEma, slowEma, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var nyTime = TimeZoneInfo.ConvertTime(candle.OpenTime, _nyTimeZone);
-
-		if (_currentDay != nyTime.Date)
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-			_currentDay = nyTime.Date;
-			_nyHigh = null;
-			_nyLow = null;
-			_nyRangeDone = false;
-			_nyTradeCount = 0;
-		}
-
-		if (nyTime.Hour == 9 && nyTime.Minute >= 30 && nyTime.Minute < 45)
-		{
-			_nyHigh = _nyHigh.HasValue ? Math.Max(_nyHigh.Value, candle.HighPrice) : candle.HighPrice;
-			_nyLow = _nyLow.HasValue ? Math.Min(_nyLow.Value, candle.LowPrice) : candle.LowPrice;
-		}
-
-		if (nyTime.Hour == 9 && nyTime.Minute == 45 && !_nyRangeDone && _nyHigh.HasValue && _nyLow.HasValue)
-			_nyRangeDone = true;
-
-		if (Position > 0)
-		{
-			if (candle.LowPrice <= _stopPrice)
-			{
-				SellMarket(Math.Abs(Position));
-				ResetPosition();
-				return;
-			}
-
-			if (candle.HighPrice >= _takePrice)
-			{
-				SellMarket(Math.Abs(Position));
-				ResetPosition();
-				return;
-			}
-		}
-		else if (Position < 0)
-		{
-			if (candle.HighPrice >= _stopPrice)
-			{
-				BuyMarket(Math.Abs(Position));
-				ResetPosition();
-				return;
-			}
-
-			if (candle.LowPrice <= _takePrice)
-			{
-				BuyMarket(Math.Abs(Position));
-				ResetPosition();
-				return;
-			}
-		}
-
-		if (!_nyRangeDone || _nyHigh is null || _nyLow is null)
-			return;
-
-		var range = _nyHigh.Value - _nyLow.Value;
-		if (range < MinRangePoints)
-			return;
-
-		if (_nyTradeCount >= MaxTradesPerSession)
-			return;
-
-		var longBreakout = candle.HighPrice > _nyHigh.Value;
-		var longRetest = longBreakout && candle.LowPrice <= _nyHigh.Value && candle.ClosePrice > _nyHigh.Value;
-
-		if (longRetest && Position <= 0)
-		{
-			BuyMarket(Volume + Math.Abs(Position));
-			_entryPrice = candle.ClosePrice;
-			_stopPrice = _entryPrice - StopPoints;
-			_takePrice = _entryPrice + TakePoints;
-			_nyTradeCount++;
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
 			return;
 		}
 
-		var shortBreakout = candle.LowPrice < _nyLow.Value;
-		var shortRetest = shortBreakout && candle.HighPrice >= _nyLow.Value && candle.ClosePrice < _nyLow.Value;
-
-		if (shortRetest && Position >= 0)
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
 		{
-			SellMarket(Volume + Math.Abs(Position));
-			_entryPrice = candle.ClosePrice;
-			_stopPrice = _entryPrice + StopPoints;
-			_takePrice = _entryPrice - TakePoints;
-			_nyTradeCount++;
+			BuyMarket();
 		}
-	}
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+		{
+			SellMarket();
+		}
 
-	private void ResetPosition()
-	{
-		_entryPrice = 0m;
-		_stopPrice = 0m;
-		_takePrice = 0m;
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

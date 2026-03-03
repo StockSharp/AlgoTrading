@@ -50,12 +50,12 @@ public class DonchianChannelStrategy : Strategy
 	/// </summary>
 	public DonchianChannelStrategy()
 	{
-		_channelPeriod = Param(nameof(ChannelPeriod), 20)
+		_channelPeriod = Param(nameof(ChannelPeriod), 1000)
 			.SetDisplay("Channel Period", "Period for Donchian Channel calculation", "Indicators")
 			
 			.SetOptimize(10, 50, 5);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -131,33 +131,14 @@ public class DonchianChannelStrategy : Strategy
 		var isUpperBreakout = candle.ClosePrice > _prevUpperBand && _prevClosePrice <= _prevUpperBand;
 		var isLowerBreakout = candle.ClosePrice < _prevLowerBand && _prevClosePrice >= _prevLowerBand;
 
-		// Check for exit conditions
-		var shouldExitLong = candle.ClosePrice < midValue && Position > 0;
-		var shouldExitShort = candle.ClosePrice > midValue && Position < 0;
-
-		// Entry logic
+		// Entry logic - breakout reversal
 		if (isUpperBreakout && Position <= 0)
 		{
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
-			LogInfo($"Buy signal: Price {candle.ClosePrice} broke above upper band {_prevUpperBand}");
+			BuyMarket(Volume + Math.Abs(Position));
 		}
 		else if (isLowerBreakout && Position >= 0)
 		{
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
-			LogInfo($"Sell signal: Price {candle.ClosePrice} broke below lower band {_prevLowerBand}");
-		}
-		// Exit logic
-		else if (shouldExitLong)
-		{
-			SellMarket(Position);
-			LogInfo($"Exit long: Price {candle.ClosePrice} dropped below middle line {midValue}");
-		}
-		else if (shouldExitShort)
-		{
-			BuyMarket(Math.Abs(Position));
-			LogInfo($"Exit short: Price {candle.ClosePrice} rose above middle line {midValue}");
+			SellMarket(Volume + Math.Abs(Position));
 		}
 
 		// Update previous values

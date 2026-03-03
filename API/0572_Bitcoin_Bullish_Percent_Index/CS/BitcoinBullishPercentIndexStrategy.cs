@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,74 +11,31 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Bitcoin Bullish Percent Index strategy based on RSI indicator.
-/// Buys when RSI crosses above oversold level and sells when RSI crosses below overbought level.
+/// Bitcoin Bullish Percent Index strategy using EMA crossover.
+/// Enters long on golden cross, short on death cross.
 /// </summary>
 public class BitcoinBullishPercentIndexStrategy : Strategy
 {
-	private readonly StrategyParam<int> _rsiPeriod;
-	private readonly StrategyParam<decimal> _overbought;
-	private readonly StrategyParam<decimal> _oversold;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _previousRsi;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	/// <summary>
-	/// RSI calculation period.
-	/// </summary>
-	public int RsiPeriod
-	{
-		get => _rsiPeriod.Value;
-		set => _rsiPeriod.Value = value;
-	}
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Overbought level.
-	/// </summary>
-	public decimal Overbought
-	{
-		get => _overbought.Value;
-		set => _overbought.Value = value;
-	}
-
-	/// <summary>
-	/// Oversold level.
-	/// </summary>
-	public decimal Oversold
-	{
-		get => _oversold.Value;
-		set => _oversold.Value = value;
-	}
-
-	/// <summary>
-	/// The type of candles to use for strategy calculation.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="BitcoinBullishPercentIndexStrategy"/>.
-	/// </summary>
 	public BitcoinBullishPercentIndexStrategy()
 	{
-		_rsiPeriod = Param(nameof(RsiPeriod), 14)
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
 			.SetGreaterThanZero()
-			.SetDisplay("RSI Period", "RSI calculation period", "RSI")
-			
-			.SetOptimize(7, 28, 7);
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
 
-		_overbought = Param(nameof(Overbought), 70m)
-			.SetDisplay("Overbought", "Upper RSI threshold", "RSI")
-			
-			.SetOptimize(60m, 80m, 5m);
-
-		_oversold = Param(nameof(Oversold), 30m)
-			.SetDisplay("Oversold", "Lower RSI threshold", "RSI")
-			
-			.SetOptimize(20m, 40m, 5m);
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
@@ -97,7 +51,8 @@ public class BitcoinBullishPercentIndexStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_previousRsi = 50m;
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
 
 	/// <inheritdoc />
@@ -105,33 +60,46 @@ public class BitcoinBullishPercentIndexStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
-
-		var rsi = new RSI { Length = RsiPeriod };
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(rsi, OnProcess)
+			.Bind(fastEma, slowEma, ProcessCandle)
 			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void OnProcess(ICandleMessage candle, decimal rsiValue)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
+		{
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
 			return;
+		}
 
-		if (_previousRsi < Oversold && rsiValue > Oversold && Position <= 0)
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
 		{
 			BuyMarket();
 		}
-		else if (_previousRsi > Overbought && rsiValue < Overbought && Position >= 0)
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
 		{
 			SellMarket();
 		}
 
-		_previousRsi = rsiValue;
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

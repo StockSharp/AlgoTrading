@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -13,132 +10,73 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-/// <summary>
-/// Multi-timeframe moving average strategy.
-/// Buys when the fast MA is above medium and high MAs.
-/// Sells when the fast MA is below both longer MAs.
-/// </summary>
 public class EfficientWorkStrategy : Strategy
 {
-	private readonly StrategyParam<int> _maPeriod;
-	private readonly StrategyParam<int> _mediumMultiplier;
-	private readonly StrategyParam<int> _highMultiplier;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	/// <summary>
-	/// Base moving average period.
-	/// </summary>
-	public int MaPeriod
-	{
-		get => _maPeriod.Value;
-		set => _maPeriod.Value = value;
-	}
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Medium timeframe multiplier.
-	/// </summary>
-	public int MediumMultiplier
-	{
-		get => _mediumMultiplier.Value;
-		set => _mediumMultiplier.Value = value;
-	}
-
-	/// <summary>
-	/// High timeframe multiplier.
-	/// </summary>
-	public int HighMultiplier
-	{
-		get => _highMultiplier.Value;
-		set => _highMultiplier.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type to process.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="EfficientWorkStrategy"/> class.
-	/// </summary>
 	public EfficientWorkStrategy()
 	{
-		_maPeriod = Param(nameof(MaPeriod), 20)
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
 			.SetGreaterThanZero()
-			.SetDisplay("MA Period", "Base moving average period", "General")
-			
-			.SetOptimize(10, 40, 5);
-
-		_mediumMultiplier = Param(nameof(MediumMultiplier), 5)
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
 			.SetGreaterThanZero()
-			.SetDisplay("Medium TF Multiplier", "Multiplier for medium timeframe MA", "General")
-			
-			.SetOptimize(2, 10, 1);
-
-		_highMultiplier = Param(nameof(HighMultiplier), 10)
-			.SetGreaterThanZero()
-			.SetDisplay("High TF Multiplier", "Multiplier for high timeframe MA", "General")
-			
-			.SetOptimize(5, 20, 1);
-
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
 
-	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		var fastMa = new SMA { Length = MaPeriod };
-		var mediumMa = new SMA { Length = MaPeriod * MediumMultiplier };
-		var highMa = new SMA { Length = MaPeriod * HighMultiplier };
-
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 		var subscription = SubscribeCandles(CandleType);
-
-		subscription
-			.Bind(fastMa, mediumMa, highMa, (candle, fastValue, mediumValue, highValue) =>
-			{
-				if (candle.State != CandleStates.Finished)
-					return;
-
-				if (!IsFormedAndOnlineAndAllowTrading())
-					return;
-
-				if (!fastMa.IsFormed || !mediumMa.IsFormed || !highMa.IsFormed)
-					return;
-
-				var fastAbove = fastValue > mediumValue && fastValue > highValue;
-				var fastBelow = fastValue < mediumValue && fastValue < highValue;
-
-				if (fastAbove && Position <= 0)
-				{
-					BuyMarket(Volume + Math.Abs(Position));
-				}
-				else if (fastBelow && Position >= 0)
-				{
-					SellMarket(Volume + Math.Abs(Position));
-				}
-			})
-			.Start();
-
+		subscription.Bind(fastEma, slowEma, ProcessCandle).Start();
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, fastMa);
-			DrawIndicator(area, mediumMa);
-			DrawIndicator(area, highMa);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
+	}
+
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
+	{
+		if (candle.State != CandleStates.Finished) return;
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
+		{
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
+			return;
+		}
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
+			BuyMarket();
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+			SellMarket();
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

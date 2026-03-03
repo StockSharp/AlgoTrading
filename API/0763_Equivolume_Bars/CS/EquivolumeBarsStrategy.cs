@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -13,121 +10,73 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-/// <summary>
-/// Strategy based on volume ratio from equivolume bars.
-/// Enters long when volume spike occurs on bullish candle.
-/// Enters short when volume spike occurs on bearish candle.
-/// Closes position when volume returns below threshold or candle reverses.
-/// </summary>
 public class EquivolumeBarsStrategy : Strategy
 {
-	private readonly StrategyParam<int> _lookback;
-	private readonly StrategyParam<decimal> _volumeThreshold;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	private SimpleMovingAverage _volumeSma;
-	private decimal _prevVolumeSum;
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Number of bars for volume sum.
-	/// </summary>
-	public int Lookback
-	{
-		get => _lookback.Value;
-		set => _lookback.Value = value;
-	}
-
-	/// <summary>
-	/// Ratio threshold of current volume to previous sum.
-	/// </summary>
-	public decimal VolumeThreshold
-	{
-		get => _volumeThreshold.Value;
-		set => _volumeThreshold.Value = value;
-	}
-
-	/// <summary>
-	/// Type of candles to process.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes strategy parameters.
-	/// </summary>
 	public EquivolumeBarsStrategy()
 	{
-		_lookback = Param(nameof(Lookback), 60)
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
 			.SetGreaterThanZero()
-			.SetDisplay("Lookback", "Volume lookback period", "General")
-			
-			.SetOptimize(20, 120, 20);
-
-		_volumeThreshold = Param(nameof(VolumeThreshold), 0.1m)
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
 			.SetGreaterThanZero()
-			.SetDisplay("Volume Threshold", "Ratio threshold for high volume", "General")
-			
-			.SetOptimize(0.05m, 0.2m, 0.05m);
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_volumeSma?.Reset();
-		_prevVolumeSum = 0;
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_volumeSma = new SimpleMovingAverage { Length = Lookback };
-
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
+		subscription.Bind(fastEma, slowEma, ProcessCandle).Start();
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
-		if (candle.State != CandleStates.Finished)
+		if (candle.State != CandleStates.Finished) return;
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
+		{
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
 			return;
-
-		var currentAvg = _volumeSma.Process(new DecimalIndicatorValue(_volumeSma, candle.TotalVolume, candle.OpenTime)).ToDecimal();
-
-		if (!_volumeSma.IsFormed)
-			return;
-
-		var currentSum = currentAvg * Lookback;
-		var ratio = _prevVolumeSum == 0 ? 0 : candle.TotalVolume / _prevVolumeSum;
-
-		var isBull = candle.ClosePrice >= candle.OpenPrice;
-		var isBear = candle.ClosePrice < candle.OpenPrice;
-		var highVolume = ratio > VolumeThreshold;
-
-		if (highVolume && isBull && Position <= 0)
+		}
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
 			BuyMarket();
-		else if (highVolume && isBear && Position >= 0)
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
 			SellMarket();
-		else if (Position > 0 && (!highVolume || isBear))
-			SellMarket();
-		else if (Position < 0 && (!highVolume || isBull))
-			BuyMarket();
-
-		_prevVolumeSum = currentSum;
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

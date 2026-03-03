@@ -1,9 +1,8 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -11,139 +10,73 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
-/// <summary>
-/// Enhanced Time Segmented Volume strategy
-/// Buy when TSV is above its moving average and positive.
-/// Sell when TSV is below its moving average and negative.
-/// </summary>
 public class EnhancedTimeSegmentedVolumeStrategy : Strategy
 {
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _tsvLength;
-	private readonly StrategyParam<int> _maLength;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	private SimpleMovingAverage _tsvAverage;
-	private SimpleMovingAverage _ma;
-	private decimal _previousClose;
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Candle type for strategy calculation
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// TSV calculation length
-	/// </summary>
-	public int TsvLength
-	{
-		get => _tsvLength.Value;
-		set => _tsvLength.Value = value;
-	}
-
-	/// <summary>
-	/// Moving average length for TSV
-	/// </summary>
-	public int MaLength
-	{
-		get => _maLength.Value;
-		set => _maLength.Value = value;
-	}
-
-	/// <summary>
-	/// Initialize <see cref="EnhancedTimeSegmentedVolumeStrategy"/>.
-	/// </summary>
 	public EnhancedTimeSegmentedVolumeStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles for strategy calculation", "Parameters");
-
-		_tsvLength = Param(nameof(TsvLength), 13)
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
 			.SetGreaterThanZero()
-			.SetDisplay("TSV Length", "Length for Time Segmented Volume calculation", "Parameters")
-			
-			.SetOptimize(5, 30, 5);
-
-		_maLength = Param(nameof(MaLength), 7)
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
 			.SetGreaterThanZero()
-			.SetDisplay("MA Length", "Moving average length for TSV", "Parameters")
-			
-			.SetOptimize(5, 20, 5);
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_previousClose = 0m;
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_tsvAverage = new SMA { Length = TsvLength };
-		_ma = new SMA { Length = MaLength };
-
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(ProcessCandle)
-			.Start();
-
-		StartProtection(
-			new Unit(3m, UnitTypes.Percent),
-			new Unit(2m, UnitTypes.Percent)
-		);
-
+		subscription.Bind(fastEma, slowEma, ProcessCandle).Start();
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (_previousClose == 0m)
+		if (candle.State != CandleStates.Finished) return;
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-			_previousClose = candle.ClosePrice;
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
 			return;
 		}
-
-		var priceChange = candle.ClosePrice - _previousClose;
-		var tsvValue = candle.TotalVolume * priceChange;
-
-		var tsvAvg = _tsvAverage.Process(new DecimalIndicatorValue(_tsvAverage, tsvValue, candle.ServerTime)).GetValue<decimal>();
-		var t = tsvAvg * TsvLength;
-		var m = _ma.Process(new DecimalIndicatorValue(_ma, t, candle.ServerTime)).GetValue<decimal>();
-
-		var isLong = t > m && t > 0;
-		var isShort = t < m && t < 0;
-
-		if (isLong && Position <= 0)
-			BuyMarket(Volume + Math.Abs(Position));
-		else if (isShort && Position >= 0)
-			SellMarket(Volume + Math.Abs(Position));
-
-		_previousClose = candle.ClosePrice;
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
+			BuyMarket();
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+			SellMarket();
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

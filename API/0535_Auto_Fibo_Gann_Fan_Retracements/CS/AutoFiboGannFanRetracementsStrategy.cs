@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,17 +11,57 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Detects new swing highs and lows and calculates Fibonacci and Gann retracement levels.
+/// Auto Fibonacci Gann Fan Retracements strategy.
+/// Uses Highest/Lowest channel breakouts with EMA trend filter.
+/// Buys when price breaks above highest channel with uptrend, sells on break below lowest with downtrend.
 /// </summary>
 public class AutoFiboGannFanRetracementsStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _lookbackPeriod;
+	private readonly StrategyParam<int> _channelLength;
+	private readonly StrategyParam<int> _emaLength;
+	private readonly StrategyParam<int> _cooldownBars;
 
-	private decimal _highestPrice;
-	private decimal _lowestPrice;
-	private bool _waitingForHigh = true;
-	private bool _isInitialized;
+	private decimal _prevHighest;
+	private decimal _prevLowest;
+	private int _barIndex;
+	private int _lastTradeBar;
+
+	/// <summary>
+	/// Candle type.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Channel lookback length.
+	/// </summary>
+	public int ChannelLength
+	{
+		get => _channelLength.Value;
+		set => _channelLength.Value = value;
+	}
+
+	/// <summary>
+	/// EMA trend filter period.
+	/// </summary>
+	public int EmaLength
+	{
+		get => _emaLength.Value;
+		set => _emaLength.Value = value;
+	}
+
+	/// <summary>
+	/// Cooldown bars between trades.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
 
 	/// <summary>
 	/// Constructor.
@@ -34,29 +71,32 @@ public class AutoFiboGannFanRetracementsStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
-		_lookbackPeriod = Param(nameof(LookbackPeriod), 20)
+		_channelLength = Param(nameof(ChannelLength), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("Lookback Period", "Bars for swing detection", "General")
-			
-			.SetOptimize(10, 50, 10);
+			.SetDisplay("Channel Length", "Highest/Lowest lookback", "Indicators");
+
+		_emaLength = Param(nameof(EmaLength), 50)
+			.SetGreaterThanZero()
+			.SetDisplay("EMA Length", "EMA trend filter period", "Indicators");
+
+		_cooldownBars = Param(nameof(CooldownBars), 350)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "Trading");
 	}
 
-	/// <summary>
-	/// Type of candles to use.
-	/// </summary>
-	public DataType CandleType
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
+		return [(Security, CandleType)];
 	}
 
-	/// <summary>
-	/// Bars for swing detection.
-	/// </summary>
-	public int LookbackPeriod
+	/// <inheritdoc />
+	protected override void OnReseted()
 	{
-		get => _lookbackPeriod.Value;
-		set => _lookbackPeriod.Value = value;
+		base.OnReseted();
+		_prevHighest = 0;
+		_prevLowest = 0;
+		_barIndex = 0;
+		_lastTradeBar = 0;
 	}
 
 	/// <inheritdoc />
@@ -64,73 +104,50 @@ public class AutoFiboGannFanRetracementsStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var highest = new Highest { Length = LookbackPeriod };
-		var lowest = new Lowest { Length = LookbackPeriod };
+		var highest = new Highest { Length = ChannelLength };
+		var lowest = new Lowest { Length = ChannelLength };
+		var ema = new ExponentialMovingAverage { Length = EmaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(highest, lowest, ProcessCandle)
+			.Bind(highest, lowest, ema, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawIndicator(area, ema);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal highestValue, decimal lowestValue)
+	private void ProcessCandle(ICandleMessage candle, decimal highestValue, decimal lowestValue, decimal emaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_isInitialized)
+		_barIndex++;
+
+		var cooldownOk = _barIndex - _lastTradeBar > CooldownBars;
+
+		// Breakout above previous highest with uptrend
+		var breakUp = _prevHighest > 0 && candle.ClosePrice > _prevHighest && candle.ClosePrice > emaValue;
+		// Breakout below previous lowest with downtrend
+		var breakDown = _prevLowest > 0 && candle.ClosePrice < _prevLowest && candle.ClosePrice < emaValue;
+
+		if (breakUp && Position <= 0 && cooldownOk)
 		{
-			_highestPrice = highestValue;
-			_lowestPrice = lowestValue;
-			_isInitialized = true;
-			return;
+			BuyMarket();
+			_lastTradeBar = _barIndex;
+		}
+		else if (breakDown && Position >= 0 && cooldownOk)
+		{
+			SellMarket();
+			_lastTradeBar = _barIndex;
 		}
 
-		if (_waitingForHigh)
-		{
-			if (highestValue > _highestPrice)
-			{
-				_highestPrice = highestValue;
-				CalcLevels(_lowestPrice, _highestPrice);
-				_waitingForHigh = false;
-			}
-		}
-		else
-		{
-			if (lowestValue < _lowestPrice)
-			{
-				_lowestPrice = lowestValue;
-				CalcLevels(_highestPrice, _lowestPrice);
-				_waitingForHigh = true;
-			}
-		}
-	}
-
-	private void CalcLevels(decimal start, decimal end)
-	{
-		var range = end - start;
-		if (range == 0)
-			return;
-
-		decimal[] fibo = { 0.236m, 0.382m, 0.5m, 0.618m, 0.786m };
-		foreach (var r in fibo)
-		{
-			var level = start + range * r;
-			LogInfo($"Fibo {r:P0}: {level}");
-		}
-
-		decimal[] gann = { 0.125m, 0.25m, 0.5m, 0.75m, 0.875m };
-		foreach (var r in gann)
-		{
-			var level = start + range * r;
-			LogInfo($"Gann {r:P0}: {level}");
-		}
+		_prevHighest = highestValue;
+		_prevLowest = lowestValue;
 	}
 }

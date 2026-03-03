@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,19 +11,31 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// VWAP Bounce Strategy.
-/// Enters long when price is below VWAP and a bullish candle forms.
-/// Enters short when price is above VWAP and a bearish candle forms.
+/// VWAP Bounce strategy.
+/// Enters long when price bounces off VWAP from below with a bullish candle.
+/// Enters short when price bounces off VWAP from above with a bearish candle.
+/// Uses SMA for exit signals.
 /// </summary>
 public class VwapBounceStrategy : Strategy
 {
+	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<Unit> _stopLoss;
-	
-	private decimal _prevVwap;
+	private readonly StrategyParam<int> _cooldownBars;
+
+	private decimal _prevClose;
+	private int _cooldown;
 
 	/// <summary>
-	/// Type of candles to use.
+	/// MA Period.
+	/// </summary>
+	public int MAPeriod
+	{
+		get => _maPeriod.Value;
+		set => _maPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -35,26 +44,29 @@ public class VwapBounceStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stop loss percentage from entry price.
+	/// Cooldown bars.
 	/// </summary>
-	public Unit StopLoss
+	public int CooldownBars
 	{
-		get => _stopLoss.Value;
-		set => _stopLoss.Value = value;
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	/// <summary>
-	/// Initializes a new instance of the <see cref="VwapBounceStrategy"/>.
+	/// Constructor.
 	/// </summary>
 	public VwapBounceStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_maPeriod = Param(nameof(MAPeriod), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("MA Period", "Period for SMA", "Indicators");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
-			
-		_stopLoss = Param(nameof(StopLoss), new Unit(2, UnitTypes.Percent))
-			.SetDisplay("Stop Loss", "Stop loss as percentage from entry price", "Risk Management")
-			.SetRange(0.5m, 5m)
-			;
+
+		_cooldownBars = Param(nameof(CooldownBars), 500)
+			.SetRange(1, 1000)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
 	}
 
 	/// <inheritdoc />
@@ -67,9 +79,8 @@ public class VwapBounceStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		// Reset VWAP value
-		_prevVwap = 0;
+		_prevClose = default;
+		_cooldown = default;
 	}
 
 	/// <inheritdoc />
@@ -77,78 +88,77 @@ public class VwapBounceStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Enable position protection using stop-loss
-		StartProtection(
-			takeProfit: null,
-			stopLoss: StopLoss,
-			isStopTrailing: false,
-			useMarketOrders: true
-		);
+		_prevClose = 0;
+		_cooldown = 0;
 
+		var vwma = new VolumeWeightedMovingAverage { Length = 20 };
+		var sma = new SimpleMovingAverage { Length = MAPeriod };
 
-		// Create subscription to candles
 		var subscription = SubscribeCandles(CandleType);
-		
-		// Bind candle handler
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(vwma, sma, ProcessCandle)
 			.Start();
 
-		// Setup chart if available
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawIndicator(area, vwma);
+			DrawIndicator(area, sma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	/// <summary>
-	/// Process new candle.
-	/// </summary>
-	/// <param name="candle">New candle.</param>
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal vwmaValue, decimal smaValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// Calculate VWAP for current candle
-		decimal vwap = candle.TotalVolume != 0 
-			? candle.TotalPrice / candle.TotalVolume 
-			: candle.ClosePrice;
-
-		// If VWAP is not initialized yet
-		if (_prevVwap == 0)
+		if (_prevClose == 0)
 		{
-			_prevVwap = vwap;
+			_prevClose = candle.ClosePrice;
 			return;
 		}
-		
-		// Bullish candle condition (Close > Open)
-		bool isBullishCandle = candle.ClosePrice > candle.OpenPrice;
-		
-		// Bearish candle condition (Close < Open)
-		bool isBearishCandle = candle.ClosePrice < candle.OpenPrice;
-		
-		// Long entry: Price below VWAP and bullish candle
-		if (candle.ClosePrice < vwap && isBullishCandle && Position <= 0)
+
+		if (_cooldown > 0)
 		{
-			BuyMarket(Volume + Math.Abs(Position));
-			LogInfo($"Long entry: Close {candle.ClosePrice}, VWAP {vwap}, Bullish Candle");
-		}
-		// Short entry: Price above VWAP and bearish candle
-		else if (candle.ClosePrice > vwap && isBearishCandle && Position >= 0)
-		{
-			SellMarket(Volume + Math.Abs(Position));
-			LogInfo($"Short entry: Close {candle.ClosePrice}, VWAP {vwap}, Bearish Candle");
+			_cooldown--;
+			_prevClose = candle.ClosePrice;
+			return;
 		}
 
-		// Update previous VWAP value
-		_prevVwap = vwap;
+		var isBullish = candle.ClosePrice > candle.OpenPrice;
+		var isBearish = candle.ClosePrice < candle.OpenPrice;
+
+		// Bounce off VWAP from below (bullish): prev close was below VWAP, now above or near, bullish candle
+		var bouncedUp = _prevClose < vwmaValue && candle.ClosePrice >= vwmaValue && isBullish;
+		// Bounce off VWAP from above (bearish): prev close was above VWAP, now below or near, bearish candle
+		var bouncedDown = _prevClose > vwmaValue && candle.ClosePrice <= vwmaValue && isBearish;
+
+		if (Position == 0 && bouncedUp)
+		{
+			BuyMarket();
+			_cooldown = CooldownBars;
+		}
+		else if (Position == 0 && bouncedDown)
+		{
+			SellMarket();
+			_cooldown = CooldownBars;
+		}
+		else if (Position > 0 && candle.ClosePrice < smaValue)
+		{
+			SellMarket();
+			_cooldown = CooldownBars;
+		}
+		else if (Position < 0 && candle.ClosePrice > smaValue)
+		{
+			BuyMarket();
+			_cooldown = CooldownBars;
+		}
+
+		_prevClose = candle.ClosePrice;
 	}
 }

@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -13,228 +10,73 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-/// <summary>
-/// High Yield Spread strategy with SMA filter.
-/// Uses either High Yield Spread or VIX to trigger trades.
-/// </summary>
 public class HighYieldSpreadWithSmaFilterStrategy : Strategy
 {
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<Bases> _basis;
-	private readonly StrategyParam<decimal> _threshold;
-	private readonly StrategyParam<Sides> _direction;
-	private readonly StrategyParam<int> _holdingPeriod;
-	private readonly StrategyParam<bool> _useSmaFilter;
-	private readonly StrategyParam<int> _smaLength;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	private SimpleMovingAverage _sma;
-	private Security _basisSecurity;
-	private decimal _spread;
-	private int _barsInPosition;
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Candle type.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Bases selection.
-	/// </summary>
-	public Bases BasisSelection
-	{
-		get => _basis.Value;
-		set => _basis.Value = value;
-	}
-
-	/// <summary>
-	/// Spread threshold.
-	/// </summary>
-	public decimal Threshold
-	{
-		get => _threshold.Value;
-		set => _threshold.Value = value;
-	}
-
-	/// <summary>
-	/// Trade direction.
-	/// </summary>
-	public Sides Direction
-	{
-		get => _direction.Value;
-		set => _direction.Value = value;
-	}
-
-	/// <summary>
-	/// Holding period in bars.
-	/// </summary>
-	public int HoldingPeriod
-	{
-		get => _holdingPeriod.Value;
-		set => _holdingPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Use SMA filter.
-	/// </summary>
-	public bool UseSmaFilter
-	{
-		get => _useSmaFilter.Value;
-		set => _useSmaFilter.Value = value;
-	}
-
-	/// <summary>
-	/// SMA length.
-	/// </summary>
-	public int SmaLength
-	{
-		get => _smaLength.Value;
-		set => _smaLength.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="HighYieldSpreadWithSmaFilterStrategy"/> class.
-	/// </summary>
 	public HighYieldSpreadWithSmaFilterStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
-		_basis = Param(nameof(BasisSelection), Bases.HighYieldSpread)
-			.SetDisplay("Bases", "Spread basis", "General");
-
-		_threshold = Param(nameof(Threshold), 5m)
-			.SetDisplay("Threshold", "Spread threshold", "Parameters")
-			
-			.SetOptimize(1m, 10m, 0.5m);
-
-		_direction = Param(nameof(Direction), Sides.Buy)
-			.SetDisplay("Direction", "Trade direction", "Parameters");
-
-		_holdingPeriod = Param(nameof(HoldingPeriod), 5)
-			.SetGreaterThanZero()
-			.SetDisplay("Holding Period", "Bars to hold position", "Risk Management")
-			
-			.SetOptimize(1, 20, 1);
-
-		_useSmaFilter = Param(nameof(UseSmaFilter), true)
-			.SetDisplay("Use SMA Filter", "Enable price SMA filter", "Filters");
-
-		_smaLength = Param(nameof(SmaLength), 50)
-			.SetGreaterThanZero()
-			.SetDisplay("SMA Length", "Length of SMA filter", "Filters")
-			
-			.SetOptimize(10, 100, 10);
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		_basisSecurity = BasisSelection == Bases.HighYieldSpread
-			? new Security { Id = "FRED:BAMLH0A0HYM2" }
-			: new Security { Id = "CBOE:VIX" };
-
-		return
-		[
-			(Security, CandleType),
-			(_basisSecurity, CandleType)
-		];
+		return [(Security, CandleType)];
 	}
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_sma = null;
-		_basisSecurity = null;
-		_spread = default;
-		_barsInPosition = default;
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_sma = new SMA { Length = SmaLength };
-
-		var mainSub = SubscribeCandles(CandleType);
-		mainSub.Bind(_sma, ProcessMainCandle).Start();
-
-		var spreadSub = SubscribeCandles(CandleType, security: _basisSecurity);
-		spreadSub.Bind(ProcessSpreadCandle).Start();
-
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(fastEma, slowEma, ProcessCandle).Start();
 		var area = CreateChartArea();
 		if (area != null)
 		{
-			DrawCandles(area, mainSub);
-			DrawIndicator(area, _sma);
+			DrawCandles(area, subscription);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessSpreadCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		_spread = candle.ClosePrice;
-	}
-
-	private void ProcessMainCandle(ICandleMessage candle, decimal sma)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (_spread == 0)
-			return;
-
-		var longCond = Direction == Sides.Buy && _spread > Threshold && (!UseSmaFilter || candle.ClosePrice > sma);
-		var shortCond = Direction == Sides.Sell && _spread < Threshold && (!UseSmaFilter || candle.ClosePrice < sma);
-
-		if (Position == 0)
+		if (candle.State != CandleStates.Finished) return;
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-			if (longCond)
-			{
-				BuyMarket();
-				_barsInPosition = 0;
-			}
-			else if (shortCond)
-			{
-				SellMarket();
-				_barsInPosition = 0;
-			}
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
+			return;
 		}
-		else
-		{
-			_barsInPosition++;
-
-			if (_barsInPosition >= HoldingPeriod)
-			{
-				if (Position > 0)
-					SellMarket(Math.Abs(Position));
-				else
-					BuyMarket(Math.Abs(Position));
-
-				_barsInPosition = 0;
-			}
-		}
-	}
-
-	/// <summary>
-	/// Spread basis options.
-	/// </summary>
-	public enum Bases
-	{
-		HighYieldSpread,
-		Vix
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
+			BuyMarket();
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+			SellMarket();
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }
-

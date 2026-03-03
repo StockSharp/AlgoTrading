@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 using Ecng.Common;
 
@@ -20,9 +21,13 @@ public class MaWithLogisticStrategy : Strategy
 	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private EMA _fastMa;
-	private EMA _slowMa;
+	private ExponentialMovingAverage _fastMa;
+	private ExponentialMovingAverage _slowMa;
 	private decimal _entryPrice;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private bool _initialized;
+	private int _cooldown;
 
 	public int FastLength { get => _fastLength.Value; set => _fastLength.Value = value; }
 	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
@@ -32,25 +37,43 @@ public class MaWithLogisticStrategy : Strategy
 
 	public MaWithLogisticStrategy()
 	{
-		_fastLength = Param(nameof(FastLength), 9).SetGreaterThanZero()
+		_fastLength = Param(nameof(FastLength), 12).SetGreaterThanZero()
 			.SetDisplay("Fast MA", "Fast MA period", "Indicators");
-		_slowLength = Param(nameof(SlowLength), 21).SetGreaterThanZero()
+		_slowLength = Param(nameof(SlowLength), 25).SetGreaterThanZero()
 			.SetDisplay("Slow MA", "Slow MA period", "Indicators");
-		_takeProfitPercent = Param(nameof(TakeProfitPercent), 2m).SetGreaterThanZero()
+		_takeProfitPercent = Param(nameof(TakeProfitPercent), 8m).SetGreaterThanZero()
 			.SetDisplay("TP %", "Take profit percent", "Risk");
-		_stopLossPercent = Param(nameof(StopLossPercent), 1m).SetGreaterThanZero()
+		_stopLossPercent = Param(nameof(StopLossPercent), 5m).SetGreaterThanZero()
 			.SetDisplay("SL %", "Stop loss percent", "Risk");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(20).TimeFrame())
 			.SetDisplay("Candle Type", "Candles", "General");
 	}
 
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_entryPrice = default;
+		_prevFast = default;
+		_prevSlow = default;
+		_initialized = false;
+		_cooldown = default;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		_entryPrice = 0;
 
-		_fastMa = new EMA { Length = FastLength };
-		_slowMa = new EMA { Length = SlowLength };
+		_fastMa = new ExponentialMovingAverage { Length = FastLength };
+		_slowMa = new ExponentialMovingAverage { Length = SlowLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(_fastMa, _slowMa, ProcessCandle).Start();
@@ -73,34 +96,46 @@ public class MaWithLogisticStrategy : Strategy
 		if (!_fastMa.IsFormed || !_slowMa.IsFormed)
 			return;
 
+		if (!_initialized)
+		{
+			_prevFast = fast;
+			_prevSlow = slow;
+			_initialized = true;
+			return;
+		}
+
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+			_prevFast = fast;
+			_prevSlow = slow;
+			return;
+		}
+
 		var close = candle.ClosePrice;
-		var longCond = close > fast && fast > slow;
-		var shortCond = close < fast && fast < slow;
 
-		if (longCond && Position <= 0)
+		// MA crossover entry
+		var crossUp = _prevFast <= _prevSlow && fast > slow;
+		var crossDown = _prevFast >= _prevSlow && fast < slow;
+
+		if (crossUp && Position <= 0)
 		{
-			BuyMarket(Volume + Math.Abs(Position));
+			if (Position < 0)
+				BuyMarket();
+			BuyMarket();
 			_entryPrice = close;
+			_cooldown = 5;
 		}
-		else if (shortCond && Position >= 0)
+		else if (crossDown && Position >= 0)
 		{
-			SellMarket(Volume + Math.Abs(Position));
+			if (Position > 0)
+				SellMarket();
+			SellMarket();
 			_entryPrice = close;
+			_cooldown = 5;
 		}
 
-		if (Position > 0 && _entryPrice > 0)
-		{
-			var tp = _entryPrice * (1m + TakeProfitPercent / 100m);
-			var sl = _entryPrice * (1m - StopLossPercent / 100m);
-			if (close >= tp || close <= sl)
-				SellMarket(Math.Abs(Position));
-		}
-		else if (Position < 0 && _entryPrice > 0)
-		{
-			var tp = _entryPrice * (1m - TakeProfitPercent / 100m);
-			var sl = _entryPrice * (1m + StopLossPercent / 100m);
-			if (close <= tp || close >= sl)
-				BuyMarket(Math.Abs(Position));
-		}
+		_prevFast = fast;
+		_prevSlow = slow;
 	}
 }

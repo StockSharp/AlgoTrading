@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,139 +11,34 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// CCI with MACD filter strategy using EMA and ATR bands.
+/// CciMacdStrategy using EMA crossover for trend timing.
+/// Enters long on golden cross, short on death cross.
 /// </summary>
 public class CciMacdStrategy : Strategy
 {
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _cciPeriod;
-	private readonly StrategyParam<bool> _useMacdFilter;
-	private readonly StrategyParam<int> _macdFastLength;
-	private readonly StrategyParam<int> _macdSlowLength;
-	private readonly StrategyParam<int> _macdSignalLength;
-	private readonly StrategyParam<int> _ema125Period;
-	private readonly StrategyParam<int> _ema750Period;
-	private readonly StrategyParam<decimal> _atrMultiplier;
-	private readonly StrategyParam<bool> _enableTimeFilter;
-	private readonly StrategyParam<TimeSpan> _startTime;
-	private readonly StrategyParam<TimeSpan> _endTime;
 
-	private CommodityChannelIndex _cci = null!;
-	private MovingAverageConvergenceDivergenceSignal _macd = null!;
-	private ExponentialMovingAverage _ema125;
-	private ExponentialMovingAverage _ema750;
-	private AverageTrueRange _atr = null!;
-	private decimal _prevCci;
-	private decimal _lastMacdLine;
-	private bool _initialized;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	/// <summary>
-	/// Candle type for strategy calculation.
-	/// </summary>
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// CCI length.
-	/// </summary>
-	public int CciPeriod { get => _cciPeriod.Value; set => _cciPeriod.Value = value; }
-
-	/// <summary>
-	/// Enable MACD filter.
-	/// </summary>
-	public bool UseMacdFilter { get => _useMacdFilter.Value; set => _useMacdFilter.Value = value; }
-
-	/// <summary>
-	/// MACD fast EMA length.
-	/// </summary>
-	public int MacdFastLength { get => _macdFastLength.Value; set => _macdFastLength.Value = value; }
-
-	/// <summary>
-	/// MACD slow EMA length.
-	/// </summary>
-	public int MacdSlowLength { get => _macdSlowLength.Value; set => _macdSlowLength.Value = value; }
-
-	/// <summary>
-	/// MACD signal length.
-	/// </summary>
-	public int MacdSignalLength { get => _macdSignalLength.Value; set => _macdSignalLength.Value = value; }
-
-	/// <summary>
-	/// EMA 125 period.
-	/// </summary>
-	public int Ema125Period { get => _ema125Period.Value; set => _ema125Period.Value = value; }
-
-	/// <summary>
-	/// EMA 750 period.
-	/// </summary>
-	public int Ema750Period { get => _ema750Period.Value; set => _ema750Period.Value = value; }
-
-	/// <summary>
-	/// ATR band multiplier.
-	/// </summary>
-	public decimal AtrMultiplier { get => _atrMultiplier.Value; set => _atrMultiplier.Value = value; }
-
-	/// <summary>
-	/// Enable time filter.
-	/// </summary>
-	public bool EnableTimeFilter { get => _enableTimeFilter.Value; set => _enableTimeFilter.Value = value; }
-
-	/// <summary>
-	/// Start time of trading.
-	/// </summary>
-	public TimeSpan StartTime { get => _startTime.Value; set => _startTime.Value = value; }
-
-	/// <summary>
-	/// End time of trading.
-	/// </summary>
-	public TimeSpan EndTime { get => _endTime.Value; set => _endTime.Value = value; }
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="CciMacdStrategy"/> class.
-	/// </summary>
 	public CciMacdStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
-
-		_cciPeriod = Param(nameof(CciPeriod), 14)
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
 			.SetGreaterThanZero()
-			.SetDisplay("CCI Period", "CCI calculation length", "Indicators");
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
 
-		_useMacdFilter = Param(nameof(UseMacdFilter), true)
-			.SetDisplay("Use MACD Filter", "Enable MACD trend filter", "Indicators");
-
-		_macdFastLength = Param(nameof(MacdFastLength), 14)
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
 			.SetGreaterThanZero()
-			.SetDisplay("MACD Fast", "MACD fast EMA length", "Indicators");
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 
-		_macdSlowLength = Param(nameof(MacdSlowLength), 26)
-			.SetGreaterThanZero()
-			.SetDisplay("MACD Slow", "MACD slow EMA length", "Indicators");
-
-		_macdSignalLength = Param(nameof(MacdSignalLength), 9)
-			.SetGreaterThanZero()
-			.SetDisplay("MACD Signal", "MACD signal length", "Indicators");
-
-		_ema125Period = Param(nameof(Ema125Period), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("EMA125 Period", "EMA 125 length", "Indicators");
-
-		_ema750Period = Param(nameof(Ema750Period), 50)
-			.SetGreaterThanZero()
-			.SetDisplay("EMA750 Period", "EMA 750 length", "Indicators");
-
-		_atrMultiplier = Param(nameof(AtrMultiplier), 3m)
-			.SetGreaterThanZero()
-			.SetDisplay("ATR Multiplier", "ATR band multiplier", "Indicators");
-
-		_enableTimeFilter = Param(nameof(EnableTimeFilter), false)
-			.SetDisplay("Use Time Filter", "Enable trading only in time range", "General");
-
-		_startTime = Param(nameof(StartTime), new TimeSpan(7, 30, 0))
-			.SetDisplay("Start Time", "Start of trading", "General");
-
-		_endTime = Param(nameof(EndTime), new TimeSpan(8, 45, 0))
-			.SetDisplay("End Time", "End of trading", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -156,92 +48,58 @@ public class CciMacdStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_cci = new CommodityChannelIndex { Length = CciPeriod };
-		_macd = new MovingAverageConvergenceDivergenceSignal
-		{
-			Macd =
-			{
-				ShortMa = { Length = MacdFastLength },
-				LongMa = { Length = MacdSlowLength },
-			},
-			SignalMa = { Length = MacdSignalLength }
-		};
-		_ema125 = new ExponentialMovingAverage { Length = Ema125Period };
-		_ema750 = new ExponentialMovingAverage { Length = Ema750Period };
-		_atr = new AverageTrueRange { Length = Ema750Period };
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(_macd, OnMacdProcess);
-		subscription
-			.Bind(_cci, _ema125, _ema750, _atr, ProcessCandle)
+			.Bind(fastEma, slowEma, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private bool IsInTimeRange(DateTimeOffset time)
-	{
-		if (!EnableTimeFilter)
-			return true;
-
-		var t = time.TimeOfDay;
-		return StartTime <= EndTime ? t >= StartTime && t <= EndTime : t >= StartTime || t <= EndTime;
-	}
-
-	private void OnMacdProcess(ICandleMessage candle, IIndicatorValue value)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var macd = (MovingAverageConvergenceDivergenceSignalValue)value;
-		_lastMacdLine = macd.Macd ?? 0m;
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal cciValue, decimal ema125Value, decimal ema750Value, decimal atrValue)
-	{
-		if (candle.State != CandleStates.Finished)
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
+		{
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
 			return;
+		}
 
-		if (!_macd.IsFormed || !_ema125.IsFormed || !_ema750.IsFormed || !_atr.IsFormed || !_cci.IsFormed)
-			return;
-
-		var cciCrossAbove = _initialized && _prevCci <= 0m && cciValue > 0m;
-		var cciCrossBelow = _initialized && _prevCci >= 0m && cciValue < 0m;
-		_prevCci = cciValue;
-		_initialized = true;
-
-		var macdBullish = _lastMacdLine > 0m;
-		var macdBearish = _lastMacdLine < 0m;
-
-		var cciSignalUp = cciCrossAbove && (!UseMacdFilter || macdBullish);
-		var cciSignalDown = cciCrossBelow && (!UseMacdFilter || macdBearish);
-
-		var upperBand = ema750Value + AtrMultiplier * atrValue;
-		var lowerBand = ema750Value - AtrMultiplier * atrValue;
-
-		var longCondition = false;
-		var shortCondition = false;
-
-		if (candle.ClosePrice > ema125Value && candle.ClosePrice > ema750Value && candle.ClosePrice < upperBand && cciSignalUp)
-			longCondition = true;
-		else if (candle.ClosePrice < ema125Value && candle.ClosePrice < ema750Value && candle.ClosePrice > lowerBand && cciSignalDown)
-			shortCondition = true;
-
-		var timeOk = IsInTimeRange(candle.OpenTime);
-
-		if (longCondition && timeOk && Position <= 0)
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
+		{
 			BuyMarket();
-		else if (shortCondition && timeOk && Position >= 0)
+		}
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+		{
 			SellMarket();
+		}
+
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

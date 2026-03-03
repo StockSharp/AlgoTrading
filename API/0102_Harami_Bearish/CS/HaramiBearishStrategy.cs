@@ -1,35 +1,42 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
-using StockSharp.Algo.Candles;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Harami Bearish pattern strategy.
-/// Strategy enters short position when a bearish harami pattern is detected.
+/// Harami Bearish strategy.
+/// Enters short on bearish harami (bullish candle followed by smaller bearish candle inside it).
+/// Enters long on bullish harami (bearish candle followed by smaller bullish candle inside it).
+/// Uses SMA for exit confirmation.
+/// Uses cooldown to control trade frequency.
 /// </summary>
 public class HaramiBearishStrategy : Strategy
 {
+	private readonly StrategyParam<int> _maLength;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<decimal> _stopLossPercent;
-	
-	private ICandleMessage _previousCandle;
-	private bool _patternDetected;
+	private readonly StrategyParam<int> _cooldownBars;
+
+	private ICandleMessage _prevCandle;
+	private int _cooldown;
 
 	/// <summary>
-	/// Candle type and timeframe for the strategy.
+	/// MA period for exit.
+	/// </summary>
+	public int MaLength
+	{
+		get => _maLength.Value;
+		set => _maLength.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -38,25 +45,29 @@ public class HaramiBearishStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stop-loss as percentage above the pattern's high.
+	/// Cooldown bars.
 	/// </summary>
-	public decimal StopLossPercent
+	public int CooldownBars
 	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	/// <summary>
-	/// Initializes a new instance of the <see cref="HaramiBearishStrategy"/>.
+	/// Constructor.
 	/// </summary>
 	public HaramiBearishStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-					 .SetDisplay("Candle Type", "Type of candles to use for pattern detection", "General");
-		
-		_stopLossPercent = Param(nameof(StopLossPercent), 1m)
-						  .SetDisplay("Stop Loss %", "Stop-loss percentage above pattern's high", "Protection")
-						  .SetRange(0.1m, 5m);
+		_maLength = Param(nameof(MaLength), 20)
+			.SetRange(10, 50)
+			.SetDisplay("MA Length", "Period of SMA for exit", "Indicators");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
+
+		_cooldownBars = Param(nameof(CooldownBars), 500)
+			.SetRange(1, 1000)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
 	}
 
 	/// <inheritdoc />
@@ -69,93 +80,90 @@ public class HaramiBearishStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		
-		_previousCandle = null;
-		_patternDetected = false;
+		_prevCandle = null;
+		_cooldown = default;
 	}
 
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		// Create and setup subscription for candles
+
+		_prevCandle = null;
+		_cooldown = 0;
+
+		var sma = new SimpleMovingAverage { Length = MaLength };
+
 		var subscription = SubscribeCandles(CandleType);
-		
-		// Bind the candle processor
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(sma, ProcessCandle)
 			.Start();
-		
-		// Enable stop-loss protection
-		StartProtection(new Unit(0), new Unit(StopLossPercent, UnitTypes.Percent));
-		
-		// Setup chart if available
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawIndicator(area, sma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
-		
-		// Skip first candle as we need at least one previous candle to detect the pattern
-		if (_previousCandle == null)
+
+		if (_prevCandle == null)
 		{
-			_previousCandle = candle;
+			_prevCandle = candle;
 			return;
 		}
-		
-		// Check for Harami Bearish pattern:
-		// 1. Previous candle is bullish (close > open)
-		// 2. Current candle is bearish (close < open)
-		// 3. Current candle is completely inside the previous candle (high < prev high and low > prev low)
-		bool isPreviousBullish = _previousCandle.OpenPrice < _previousCandle.ClosePrice;
-		bool isCurrentBearish = candle.OpenPrice > candle.ClosePrice;
-		bool isInsidePrevious = candle.HighPrice < _previousCandle.HighPrice && 
-								candle.LowPrice > _previousCandle.LowPrice;
-		
-		// Detect Harami Bearish pattern
-		if (isPreviousBullish && isCurrentBearish && isInsidePrevious && !_patternDetected)
+
+		if (_cooldown > 0)
 		{
-			_patternDetected = true;
-			
-			// Calculate position size (if we already have a position, this will close it and open a new one)
-			var volume = Volume + Math.Abs(Position);
-			
-			// Enter short position at market price
-			SellMarket(volume);
-			
-			// Set stop-loss level
-			var stopLossLevel = candle.HighPrice * (1 + StopLossPercent / 100);
-			
-			LogInfo($"Harami Bearish detected. Selling at {candle.ClosePrice}. Stop-loss set at {stopLossLevel}");
+			_cooldown--;
+			_prevCandle = candle;
+			return;
 		}
-		else if (_patternDetected)
+
+		// Bearish Harami: prev bullish, current bearish, current inside prev
+		var bearishHarami =
+			_prevCandle.ClosePrice > _prevCandle.OpenPrice &&
+			candle.ClosePrice < candle.OpenPrice &&
+			candle.HighPrice < _prevCandle.HighPrice &&
+			candle.LowPrice > _prevCandle.LowPrice;
+
+		// Bullish Harami: prev bearish, current bullish, current inside prev
+		var bullishHarami =
+			_prevCandle.ClosePrice < _prevCandle.OpenPrice &&
+			candle.ClosePrice > candle.OpenPrice &&
+			candle.HighPrice < _prevCandle.HighPrice &&
+			candle.LowPrice > _prevCandle.LowPrice;
+
+		if (Position == 0 && bearishHarami)
 		{
-			// Check for exit condition: price breaks below the previous candle's low
-			if (candle.LowPrice < _previousCandle.LowPrice)
-			{
-				// If we have a short position and price breaks below previous low, close the position
-				if (Position < 0)
-				{
-					BuyMarket(Math.Abs(Position));
-					_patternDetected = false;
-					
-					LogInfo($"Exit signal: Price broke below previous low ({_previousCandle.LowPrice}). Closing position at {candle.ClosePrice}");
-				}
-			}
+			SellMarket();
+			_cooldown = CooldownBars;
 		}
-		
-		// Store current candle as previous for the next iteration
-		_previousCandle = candle;
+		else if (Position == 0 && bullishHarami)
+		{
+			BuyMarket();
+			_cooldown = CooldownBars;
+		}
+		else if (Position < 0 && candle.ClosePrice > smaValue)
+		{
+			BuyMarket();
+			_cooldown = CooldownBars;
+		}
+		else if (Position > 0 && candle.ClosePrice < smaValue)
+		{
+			SellMarket();
+			_cooldown = CooldownBars;
+		}
+
+		_prevCandle = candle;
 	}
 }

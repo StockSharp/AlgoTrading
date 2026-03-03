@@ -103,16 +103,16 @@ public class BbRsiStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
-		_bbPeriod = Param(nameof(BbPeriod), 30)
+		_bbPeriod = Param(nameof(BbPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("BB Period", "Bollinger Bands period", "Bollinger Bands")
-			
+
 			.SetOptimize(10, 50, 5);
 
-		_bbDeviation = Param(nameof(BbDeviation), 2m)
+		_bbDeviation = Param(nameof(BbDeviation), 1.5m)
 			.SetRange(0.5m, 5m)
 			.SetDisplay("BB Deviation", "Bollinger Bands deviation", "Bollinger Bands")
-			
+
 			.SetOptimize(1m, 4m, 0.5m);
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 13)
@@ -121,19 +121,19 @@ public class BbRsiStrategy : Strategy
 			
 			.SetOptimize(7, 21, 2);
 
-		_rsiBuyLevel = Param(nameof(RsiBuyLevel), 30m)
+		_rsiBuyLevel = Param(nameof(RsiBuyLevel), 48m)
 			.SetRange(0m, 100m)
 			.SetDisplay("RSI Buy Level", "RSI threshold to enter long", "RSI")
-			
+
 			.SetOptimize(20m, 40m, 5m);
 
-		_rsiExitLevel = Param(nameof(RsiExitLevel), 70m)
+		_rsiExitLevel = Param(nameof(RsiExitLevel), 52m)
 			.SetRange(0m, 100m)
 			.SetDisplay("RSI Exit Level", "RSI threshold to exit long", "RSI")
-			
+
 			.SetOptimize(60m, 80m, 5m);
 
-		_trailingStep = Param(nameof(TrailingStep), 1m)
+		_trailingStep = Param(nameof(TrailingStep), 2m)
 			.SetRange(0.1m, 20m)
 			.SetDisplay("Trailing Step %", "Trailing stop step percent", "Risk")
 			
@@ -183,33 +183,57 @@ public class BbRsiStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var bbValue = (BollingerBandsValue)values[0];
-		if (bbValue.UpBand is not decimal upperBand || bbValue.LowBand is not decimal lowerBand || bbValue.MovingAverage is not decimal middleBand)
+		if (values[0] is not BollingerBandsValue bbValue ||
+			bbValue.UpBand is not decimal upperBand ||
+			bbValue.LowBand is not decimal lowerBand ||
+			!values[1].IsFormed)
 			return;
-		var rsiValue = values[1].ToDecimal();
 
+		var rsiValue = values[1].GetValue<decimal>();
 		var closePrice = candle.ClosePrice;
 
-		if (!_inTrade && closePrice < lowerBand && rsiValue < RsiBuyLevel && Position <= 0)
+		if (Position == 0)
 		{
-			BuyMarket();
-			_peakPrice = closePrice;
-			_inTrade = true;
-			return;
+			// Long entry: close below lower BB and RSI oversold
+			if (closePrice < lowerBand && rsiValue < RsiBuyLevel)
+			{
+				BuyMarket();
+				_peakPrice = closePrice;
+				_inTrade = true;
+			}
+			// Short entry: close above upper BB and RSI overbought
+			else if (closePrice > upperBand && rsiValue > RsiExitLevel)
+			{
+				SellMarket();
+				_peakPrice = closePrice;
+				_inTrade = true;
+			}
 		}
-
-		if (!_inTrade)
-			return;
-
-		if (closePrice > _peakPrice)
-			_peakPrice = closePrice;
-
-		var trailingDrop = _peakPrice * (1 - TrailingStep / 100m);
-
-		if (closePrice <= trailingDrop || rsiValue > RsiExitLevel)
+		else if (Position > 0 && _inTrade)
 		{
-			SellMarket();
-			_inTrade = false;
+			if (closePrice > _peakPrice)
+				_peakPrice = closePrice;
+
+			var trailingDrop = _peakPrice * (1m - TrailingStep / 100m);
+
+			if (closePrice <= trailingDrop || rsiValue > RsiExitLevel)
+			{
+				SellMarket();
+				_inTrade = false;
+			}
+		}
+		else if (Position < 0 && _inTrade)
+		{
+			if (closePrice < _peakPrice)
+				_peakPrice = closePrice;
+
+			var trailingRise = _peakPrice * (1m + TrailingStep / 100m);
+
+			if (closePrice >= trailingRise || rsiValue < RsiBuyLevel)
+			{
+				BuyMarket();
+				_inTrade = false;
+			}
 		}
 	}
 }

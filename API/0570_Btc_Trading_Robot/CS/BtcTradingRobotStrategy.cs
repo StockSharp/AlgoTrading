@@ -1,11 +1,7 @@
-
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,123 +11,48 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Breakout strategy using Donchian channels and trailing stop.
+/// BTC Trading Robot strategy using EMA crossover with stop loss and take profit.
+/// Enters long on golden cross, short on death cross.
+/// Manages risk with percentage-based stops.
 /// </summary>
 public class BtcTradingRobotStrategy : Strategy
 {
-	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _barsCount;
-	private readonly StrategyParam<decimal> _takeProfitPercent;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<decimal> _stopLossPercent;
-	private readonly StrategyParam<decimal> _trailingPercent;
-	private readonly StrategyParam<int> _startHour;
-	private readonly StrategyParam<int> _endHour;
+	private readonly StrategyParam<decimal> _takeProfitPercent;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevClose;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 	private decimal _entryPrice;
-	private decimal _peakPrice;
-	private decimal _valleyPrice;
 
-	/// <summary>
-	/// Candle type.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public decimal StopLossPercent { get => _stopLossPercent.Value; set => _stopLossPercent.Value = value; }
+	public decimal TakeProfitPercent { get => _takeProfitPercent.Value; set => _takeProfitPercent.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Bars lookback for channel calculation.
-	/// </summary>
-	public int BarsCount
-	{
-		get => _barsCount.Value;
-		set => _barsCount.Value = value;
-	}
-
-	/// <summary>
-	/// Take profit as percent of price.
-	/// </summary>
-	public decimal TakeProfitPercent
-	{
-		get => _takeProfitPercent.Value;
-		set => _takeProfitPercent.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss as percent of price.
-	/// </summary>
-	public decimal StopLossPercent
-	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
-	}
-
-	/// <summary>
-	/// Trailing percentage of take profit.
-	/// </summary>
-	public decimal TrailingPercent
-	{
-		get => _trailingPercent.Value;
-		set => _trailingPercent.Value = value;
-	}
-
-	/// <summary>
-	/// Session start hour.
-	/// </summary>
-	public int StartHour
-	{
-		get => _startHour.Value;
-		set => _startHour.Value = value;
-	}
-
-	/// <summary>
-	/// Session end hour.
-	/// </summary>
-	public int EndHour
-	{
-		get => _endHour.Value;
-		set => _endHour.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes the strategy.
-	/// </summary>
 	public BtcTradingRobotStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
-
-		_barsCount = Param(nameof(BarsCount), 5)
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
 			.SetGreaterThanZero()
-			.SetDisplay("Bars N", "Bars lookback", "General")
-			
-			.SetOptimize(2, 10, 1);
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
 
-		_takeProfitPercent = Param(nameof(TakeProfitPercent), 0.2m)
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
 			.SetGreaterThanZero()
-			.SetDisplay("TP %", "Take profit percent", "Risk")
-			
-			.SetOptimize(0.05m, 0.5m, 0.05m);
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 
-		_stopLossPercent = Param(nameof(StopLossPercent), 0.1m)
+		_stopLossPercent = Param(nameof(StopLossPercent), 3m)
 			.SetGreaterThanZero()
-			.SetDisplay("SL %", "Stop loss percent", "Risk")
-			
-			.SetOptimize(0.05m, 0.5m, 0.05m);
+			.SetDisplay("Stop Loss %", "Stop loss percent", "Risk");
 
-		_trailingPercent = Param(nameof(TrailingPercent), 7m)
+		_takeProfitPercent = Param(nameof(TakeProfitPercent), 5m)
 			.SetGreaterThanZero()
-			.SetDisplay("Trail %", "Trailing percent of TP", "Risk")
-			
-			.SetOptimize(1m, 15m, 1m);
+			.SetDisplay("Take Profit %", "Take profit percent", "Risk");
 
-		_startHour = Param(nameof(StartHour), 0)
-			.SetDisplay("Start Hour", "Session start hour", "Session");
-
-		_endHour = Param(nameof(EndHour), 0)
-			.SetDisplay("End Hour", "Session end hour", "Session");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -144,11 +65,9 @@ public class BtcTradingRobotStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_prevClose = 0;
-		_entryPrice = 0;
-		_peakPrice = 0;
-		_valleyPrice = 0;
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
+		_entryPrice = 0m;
 	}
 
 	/// <inheritdoc />
@@ -156,112 +75,72 @@ public class BtcTradingRobotStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var channel = new DonchianChannels { Length = BarsCount * 2 + 1 };
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(channel, ProcessCandle)
+			.Bind(fastEma, slowEma, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, channel);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue channelValue)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
+		{
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
 			return;
-
-		var dc = (DonchianChannelsValue)channelValue;
-
-		if (dc.UpperBand is not decimal upper || dc.LowerBand is not decimal lower)
-			return;
+		}
 
 		var price = candle.ClosePrice;
-		var tick = Security?.PriceStep ?? 1m;
 
-		var tpPoints = price * TakeProfitPercent;
-		var slPoints = price * StopLossPercent;
-		var orderDist = tpPoints / 2m;
-		var trailPoints = tpPoints * TrailingPercent / 100m;
-		var trailTrigger = tpPoints * TrailingPercent / 100m;
-
-		var hour = candle.CloseTime.Hour;
-		var inSession = (StartHour == 0 || hour >= StartHour) && (EndHour == 0 || hour < EndHour);
-
-		if (Position == 0 && inSession)
+		// Check stop loss / take profit
+		if (Position > 0 && _entryPrice > 0)
 		{
-			if (_prevClose < upper - orderDist * tick && candle.HighPrice >= upper && Position <= 0)
-			{
-				BuyMarket();
-				_entryPrice = price;
-				_peakPrice = price;
-				return;
-			}
-
-			if (_prevClose > lower + orderDist * tick && candle.LowPrice <= lower && Position >= 0)
+			var pnlPct = (price - _entryPrice) / _entryPrice * 100m;
+			if (pnlPct >= TakeProfitPercent || pnlPct <= -StopLossPercent)
 			{
 				SellMarket();
-				_entryPrice = price;
-				_valleyPrice = price;
-				return;
+				_entryPrice = 0m;
+			}
+		}
+		else if (Position < 0 && _entryPrice > 0)
+		{
+			var pnlPct = (_entryPrice - price) / _entryPrice * 100m;
+			if (pnlPct >= TakeProfitPercent || pnlPct <= -StopLossPercent)
+			{
+				BuyMarket();
+				_entryPrice = 0m;
 			}
 		}
 
-		if (Position > 0)
+		// Golden cross - buy
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
 		{
-			if (price > _peakPrice)
-				_peakPrice = price;
-
-			if (price >= _entryPrice + tpPoints || price <= _entryPrice - slPoints)
-			{
-				SellMarket();
-				ResetPosition();
-				return;
-			}
-
-			var profit = _peakPrice - _entryPrice;
-			if (profit >= trailTrigger && price <= _peakPrice - trailPoints)
-			{
-				SellMarket();
-				ResetPosition();
-			}
+			BuyMarket();
+			_entryPrice = price;
 		}
-		else if (Position < 0)
+		// Death cross - sell
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
 		{
-			if (price < _valleyPrice)
-				_valleyPrice = price;
-
-			if (price <= _entryPrice - tpPoints || price >= _entryPrice + slPoints)
-			{
-				BuyMarket();
-				ResetPosition();
-				return;
-			}
-
-			var profit = _entryPrice - _valleyPrice;
-			if (profit >= trailTrigger && price >= _valleyPrice + trailPoints)
-			{
-				BuyMarket();
-				ResetPosition();
-			}
+			SellMarket();
+			_entryPrice = price;
 		}
 
-		_prevClose = price;
-	}
-
-	private void ResetPosition()
-	{
-		_entryPrice = 0;
-		_peakPrice = 0;
-		_valleyPrice = 0;
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -13,116 +10,73 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-/// <summary>
-/// Strategy trading when candle high/low ratio is near the golden ratio.
-/// </summary>
 public class GeoStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _tolerance;
-	private readonly StrategyParam<decimal> _phi;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-/// <summary>
-/// Golden ratio tolerance in percent.
-/// </summary>
-	public decimal Tolerance
-	{
-		get => _tolerance.Value;
-		set => _tolerance.Value = value;
-	}
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-/// <summary>
-/// Golden ratio value.
-/// </summary>
-	public decimal Phi
-	{
-		get => _phi.Value;
-		set => _phi.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type.
-	/// </summary>
-	public DataType CandleType
-	{
-	get => _candleType.Value;
-	set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes strategy parameters.
-	/// </summary>
 	public GeoStrategy()
 	{
-	_tolerance = Param(nameof(Tolerance), 1m)
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
 			.SetGreaterThanZero()
-			.SetDisplay("Tolerance", "Tolerance percent for phi ratio", "General")
-			
-			.SetOptimize(0.5m, 5m, 0.5m);
-
-	_phi = Param(nameof(Phi), 1.61803398875m)
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
 			.SetGreaterThanZero()
-			.SetDisplay("Phi", "Golden ratio value", "General")
-			
-			.SetOptimize(1.4m, 1.8m, 0.01m);
-
-	_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-		.SetDisplay("Candle Type", "Type of candles to use", "General");
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-	return [(Security, CandleType)];
+		return [(Security, CandleType)];
 	}
 
-	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
-	base.OnStarted2(time);
-
-	StartProtection(null, null);
-
-	var subscription = SubscribeCandles(CandleType);
-	subscription.Bind(ProcessCandle).Start();
+		base.OnStarted2(time);
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(fastEma, slowEma, ProcessCandle).Start();
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
-	if (candle.State != CandleStates.Finished)
-		return;
-
-	if (!IsFormedAndOnlineAndAllowTrading())
-		return;
-
-	if (candle.LowPrice <= 0)
-		return;
-
-	var phiMatch = IsPhiRatio(candle.LowPrice, candle.HighPrice, Tolerance);
-
-	if (phiMatch)
-	{
-		if (Position <= 0)
-		BuyMarket();
+		if (candle.State != CandleStates.Finished) return;
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
+		{
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
+			return;
+		}
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
+			BuyMarket();
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+			SellMarket();
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
-	else
-	{
-		if (Position >= 0)
-		SellMarket();
-	}
-	}
-
-	private bool IsPhiRatio(decimal a, decimal b, decimal tolerance)
-{
-	var loPhi = Phi * (1 - tolerance / 100m);
-	var hiPhi = Phi * (1 + tolerance / 100m);
-	var r = b / a;
-	return r > loPhi && r < hiPhi;
-	}
-
-	private static decimal Gap(decimal value1, decimal value2)
-	{
-	return Math.Abs(value1 - value2);
-	}
-
 }

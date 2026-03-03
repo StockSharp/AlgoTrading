@@ -30,6 +30,10 @@ public class AltcoinIndexCorrelationStrategy : Strategy
 	private decimal _indexFast;
 	private decimal _indexSlow;
 	private bool _indexReady;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private int _barIndex;
+	private int _lastTradeBar;
 
 	/// <summary>
 	/// Length of fast EMA for main security.
@@ -108,14 +112,12 @@ public class AltcoinIndexCorrelationStrategy : Strategy
 	/// </summary>
 	public AltcoinIndexCorrelationStrategy()
 	{
-		_fastEmaLen = Param(nameof(FastEmaLength), 47)
+		_fastEmaLen = Param(nameof(FastEmaLength), 7)
 			.SetDisplay("Fast EMA", "Fast EMA length", "EMA Settings")
-			
-			.SetOptimize(10, 100, 5);
+			.SetOptimize(5, 50, 5);
 
-		_slowEmaLen = Param(nameof(SlowEmaLength), 50)
+		_slowEmaLen = Param(nameof(SlowEmaLength), 18)
 			.SetDisplay("Slow EMA", "Slow EMA length", "EMA Settings")
-			
 			.SetOptimize(10, 100, 5);
 
 		_indexFastEmaLen = Param(nameof(IndexFastEmaLength), 47)
@@ -135,8 +137,7 @@ public class AltcoinIndexCorrelationStrategy : Strategy
 			.SetDisplay("Inverse Signal", "Use inverse correlation logic", "Index Reference");
 
 		_indexSecurity = Param<Security>(nameof(IndexSecurity))
-			.SetDisplay("Index Security", "Reference index security", "Data")
-			.SetRequired();
+			.SetDisplay("Index Security", "Reference index security", "Data");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
@@ -146,7 +147,8 @@ public class AltcoinIndexCorrelationStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		yield return (Security, CandleType);
-		yield return (IndexSecurity, CandleType);
+		if (IndexSecurity != null)
+			yield return (IndexSecurity, CandleType);
 	}
 
 	/// <inheritdoc />
@@ -156,6 +158,10 @@ public class AltcoinIndexCorrelationStrategy : Strategy
 		_indexFast = 0m;
 		_indexSlow = 0m;
 		_indexReady = false;
+		_prevFast = 0m;
+		_prevSlow = 0m;
+		_barIndex = 0;
+		_lastTradeBar = 0;
 	}
 
 	/// <inheritdoc />
@@ -163,21 +169,24 @@ public class AltcoinIndexCorrelationStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var fastEma = new EMA { Length = FastEmaLength };
-		var slowEma = new EMA { Length = SlowEmaLength };
-
-		var indexFastEma = new EMA { Length = IndexFastEmaLength };
-		var indexSlowEma = new EMA { Length = IndexSlowEmaLength };
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaLength };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaLength };
 
 		var mainSub = SubscribeCandles(CandleType);
 		mainSub
 			.Bind(fastEma, slowEma, ProcessMainCandle)
 			.Start();
 
-		var indexSub = SubscribeCandles(CandleType, security: IndexSecurity);
-		indexSub
-			.Bind(indexFastEma, indexSlowEma, ProcessIndexCandle)
-			.Start();
+		if (IndexSecurity != null)
+		{
+			var indexFastEma = new ExponentialMovingAverage { Length = IndexFastEmaLength };
+			var indexSlowEma = new ExponentialMovingAverage { Length = IndexSlowEmaLength };
+
+			var indexSub = SubscribeCandles(CandleType, security: IndexSecurity);
+			indexSub
+				.Bind(indexFastEma, indexSlowEma, ProcessIndexCandle)
+				.Start();
+		}
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -204,29 +213,53 @@ public class AltcoinIndexCorrelationStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		_barIndex++;
+
+		if (_prevFast == 0 || _prevSlow == 0)
+		{
+			_prevFast = fast;
+			_prevSlow = slow;
+			return;
+		}
+
+		var cooldownOk = _barIndex - _lastTradeBar > 5;
+
+		// Cross-over detection
+		var crossOver = _prevFast <= _prevSlow && fast > slow;
+		var crossUnder = _prevFast >= _prevSlow && fast < slow;
+
 		bool goLong;
 		bool goShort;
 
 		if (SkipIndexReference || !_indexReady)
 		{
-			goLong = fast > slow;
-			goShort = fast < slow;
+			goLong = crossOver;
+			goShort = crossUnder;
 		}
 		else
 		{
-			goLong = fast > slow && _indexFast > _indexSlow;
-			goShort = fast < slow && _indexFast < _indexSlow;
+			goLong = crossOver && _indexFast > _indexSlow;
+			goShort = crossUnder && _indexFast < _indexSlow;
 
 			if (InverseSignal)
 			{
-				goLong = fast < slow && _indexFast > _indexSlow;
-				goShort = fast > slow && _indexFast < _indexSlow;
+				goLong = crossOver && _indexFast < _indexSlow;
+				goShort = crossUnder && _indexFast > _indexSlow;
 			}
 		}
 
-		if (goLong && Position <= 0)
+		if (goLong && Position <= 0 && cooldownOk)
+		{
 			BuyMarket();
-		else if (goShort && Position >= 0)
+			_lastTradeBar = _barIndex;
+		}
+		else if (goShort && Position >= 0 && cooldownOk)
+		{
 			SellMarket();
+			_lastTradeBar = _barIndex;
+		}
+
+		_prevFast = fast;
+		_prevSlow = slow;
 	}
 }

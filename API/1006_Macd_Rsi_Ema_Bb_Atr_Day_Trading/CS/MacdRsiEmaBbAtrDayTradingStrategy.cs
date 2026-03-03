@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 using Ecng.Common;
 
@@ -21,15 +22,15 @@ public class MacdRsiEmaBbAtrDayTradingStrategy : Strategy
 	private readonly StrategyParam<decimal> _atrMultiplier;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private EMA _emaFast;
-	private EMA _emaSlow;
+	private ExponentialMovingAverage _emaFast;
+	private ExponentialMovingAverage _emaSlow;
 	private RelativeStrengthIndex _rsi;
 	private AverageTrueRange _atr;
 	private decimal _prevFast;
 	private decimal _prevSlow;
 	private bool _initialized;
-	private decimal _entryPrice;
 	private decimal _stopPrice;
+	private int _cooldown;
 
 	public int EmaFastLen { get => _emaFastLen.Value; set => _emaFastLen.Value = value; }
 	public int EmaSlowLen { get => _emaSlowLen.Value; set => _emaSlowLen.Value = value; }
@@ -44,19 +45,36 @@ public class MacdRsiEmaBbAtrDayTradingStrategy : Strategy
 		_emaSlowLen = Param(nameof(EmaSlowLen), 21).SetDisplay("Slow EMA", "Slow EMA", "Indicators");
 		_rsiLength = Param(nameof(RsiLength), 14).SetDisplay("RSI", "RSI period", "Indicators");
 		_atrLength = Param(nameof(AtrLength), 14).SetDisplay("ATR", "ATR period", "Indicators");
-		_atrMultiplier = Param(nameof(AtrMultiplier), 2m).SetDisplay("ATR Mult", "ATR stop mult", "Risk");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_atrMultiplier = Param(nameof(AtrMultiplier), 3.0m).SetDisplay("ATR Mult", "ATR stop mult", "Risk");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(25).TimeFrame())
 			.SetDisplay("Candle Type", "Candles", "General");
 	}
 
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_prevFast = default;
+		_prevSlow = default;
+		_initialized = false;
+		_stopPrice = default;
+		_cooldown = default;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		_prevFast = 0; _prevSlow = 0; _initialized = false;
-		_entryPrice = 0; _stopPrice = 0;
 
-		_emaFast = new EMA { Length = EmaFastLen };
-		_emaSlow = new EMA { Length = EmaSlowLen };
+		_emaFast = new ExponentialMovingAverage { Length = EmaFastLen };
+		_emaSlow = new ExponentialMovingAverage { Length = EmaSlowLen };
 		_rsi = new RelativeStrengthIndex { Length = RsiLength };
 		_atr = new AverageTrueRange { Length = AtrLength };
 
@@ -91,28 +109,48 @@ public class MacdRsiEmaBbAtrDayTradingStrategy : Strategy
 			return;
 		}
 
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+			_prevFast = fast;
+			_prevSlow = slow;
+			return;
+		}
+
 		var crossUp = _prevFast <= _prevSlow && fast > slow;
 		var crossDown = _prevFast >= _prevSlow && fast < slow;
 
 		// Entry with RSI confirmation
-		if (crossUp && rsi > 40 && rsi < 70 && Position <= 0)
+		if (crossUp && rsi > 25 && rsi < 80 && Position <= 0)
 		{
-			BuyMarket(Volume + Math.Abs(Position));
-			_entryPrice = candle.ClosePrice;
+			if (Position < 0)
+				BuyMarket();
+			BuyMarket();
 			_stopPrice = candle.ClosePrice - atr * AtrMultiplier;
+			_cooldown = 8;
 		}
-		else if (crossDown && rsi > 30 && rsi < 60 && Position >= 0)
+		else if (crossDown && rsi > 20 && rsi < 75 && Position >= 0)
 		{
-			SellMarket(Volume + Math.Abs(Position));
-			_entryPrice = candle.ClosePrice;
+			if (Position > 0)
+				SellMarket();
+			SellMarket();
 			_stopPrice = candle.ClosePrice + atr * AtrMultiplier;
+			_cooldown = 8;
 		}
 
 		// ATR stop exit
-		if (Position > 0 && candle.ClosePrice <= _stopPrice)
-			SellMarket(Math.Abs(Position));
-		else if (Position < 0 && candle.ClosePrice >= _stopPrice)
-			BuyMarket(Math.Abs(Position));
+		if (Position > 0 && _stopPrice > 0 && candle.ClosePrice <= _stopPrice)
+		{
+			SellMarket();
+			_stopPrice = 0;
+			_cooldown = 10;
+		}
+		else if (Position < 0 && _stopPrice > 0 && candle.ClosePrice >= _stopPrice)
+		{
+			BuyMarket();
+			_stopPrice = 0;
+			_cooldown = 10;
+		}
 
 		_prevFast = fast;
 		_prevSlow = slow;

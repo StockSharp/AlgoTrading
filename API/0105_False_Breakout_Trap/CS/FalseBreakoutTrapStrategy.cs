@@ -1,52 +1,35 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
-using StockSharp.Algo.Candles;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that trades false breakouts of support and resistance levels.
+/// False Breakout Trap strategy.
+/// Detects when price breaks a recent high/low range then reverses back.
+/// Trades against the failed breakout direction.
+/// Uses SMA for exit confirmation.
+/// Uses cooldown to control trade frequency.
 /// </summary>
 public class FalseBreakoutTrapStrategy : Strategy
 {
-	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _lookbackPeriod;
 	private readonly StrategyParam<int> _maPeriod;
-	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _cooldownBars;
 
-	private SimpleMovingAverage _ma;
-	private Highest _highest;
-	private Lowest _lowest;
-	
-	private decimal _lastHighestValue;
-	private decimal _lastLowestValue;
-	private bool _breakoutDetected;
-	private Sides _breakoutSide;
-	private decimal _breakoutPrice;
+	private readonly List<decimal> _highs = new();
+	private readonly List<decimal> _lows = new();
+	private int _cooldown;
 
 	/// <summary>
-	/// Candle type and timeframe for the strategy.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Period for high/low range detection.
+	/// Lookback period for range.
 	/// </summary>
 	public int LookbackPeriod
 	{
@@ -55,7 +38,7 @@ public class FalseBreakoutTrapStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Period for moving average calculation.
+	/// MA period for exit.
 	/// </summary>
 	public int MaPeriod
 	{
@@ -64,33 +47,42 @@ public class FalseBreakoutTrapStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stop-loss percentage from entry price.
+	/// Candle type.
 	/// </summary>
-	public decimal StopLossPercent
+	public DataType CandleType
 	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
+		get => _candleType.Value;
+		set => _candleType.Value = value;
 	}
 
 	/// <summary>
-	/// Initializes a new instance of the <see cref="FalseBreakoutTrapStrategy"/>.
+	/// Cooldown bars.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
+	/// Constructor.
 	/// </summary>
 	public FalseBreakoutTrapStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-					 .SetDisplay("Candle Type", "Type of candles to use for analysis", "General");
-		
 		_lookbackPeriod = Param(nameof(LookbackPeriod), 20)
-						 .SetDisplay("Lookback Period", "Period for high/low range detection", "Range")
-						 .SetRange(5, 50);
-		
+			.SetRange(5, 50)
+			.SetDisplay("Lookback", "Period for high/low range", "Range");
+
 		_maPeriod = Param(nameof(MaPeriod), 20)
-				   .SetDisplay("MA Period", "Period for moving average calculation", "Trend")
-				   .SetRange(5, 50);
-		
-		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
-						  .SetDisplay("Stop Loss %", "Stop-loss percentage from entry price", "Protection")
-						  .SetRange(0.5m, 5m);
+			.SetRange(5, 50)
+			.SetDisplay("MA Period", "Period for SMA exit", "Indicators");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
+
+		_cooldownBars = Param(nameof(CooldownBars), 500)
+			.SetRange(1, 1000)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
 	}
 
 	/// <inheritdoc />
@@ -103,146 +95,95 @@ public class FalseBreakoutTrapStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_lastHighestValue = 0;
-		_lastLowestValue = 0;
-		_breakoutDetected = false;
-		_breakoutSide = default;
-		_breakoutPrice = 0;
+		_highs.Clear();
+		_lows.Clear();
+		_cooldown = default;
 	}
 
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		// Initialize indicators
-		_ma = new SMA { Length = MaPeriod };
-		_highest = new Highest { Length = LookbackPeriod };
-		_lowest = new Lowest { Length = LookbackPeriod };
-		
-		_breakoutDetected = false;
-		_breakoutSide = default;
-		
-		// Create and setup subscription for candles
+
+		_highs.Clear();
+		_lows.Clear();
+		_cooldown = 0;
+
+		var sma = new SimpleMovingAverage { Length = MaPeriod };
+
 		var subscription = SubscribeCandles(CandleType);
-		
-		// Bind indicators and processor
 		subscription
-			.Bind(_ma, _highest, _lowest, ProcessCandle)
+			.Bind(sma, ProcessCandle)
 			.Start();
-		
-		// Enable stop-loss protection
-		StartProtection(new Unit(0), new Unit(StopLossPercent, UnitTypes.Percent));
-		
-		// Setup chart if available
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _ma);
+			DrawIndicator(area, sma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal ma, decimal highest, decimal lowest)
+	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
-		
-		// Store the last highest and lowest values
-		_lastHighestValue = highest;
-		_lastLowestValue = lowest;
-		
-		// First, check if we're already tracking a potential false breakout
-		if (_breakoutDetected)
+
+		// Maintain rolling high/low window
+		_highs.Add(candle.HighPrice);
+		_lows.Add(candle.LowPrice);
+		if (_highs.Count > LookbackPeriod + 1)
 		{
-			// Check for false breakout confirmation
-			if (_breakoutSide == Sides.Buy)
-			{
-				// A false upside breakout is confirmed when price falls back below MA
-				if (candle.ClosePrice < ma)
-				{
-					// Enter short position
-					var volume = Volume + Math.Abs(Position);
-					SellMarket(volume);
-					
-					LogInfo($"False upside breakout confirmed. Short entry at {candle.ClosePrice}. Resistance level: {_lastHighestValue}");
-					
-					// Reset breakout detection
-					_breakoutDetected = false;
-					_breakoutSide = default;
-				}
-			}
-			else if (_breakoutSide == Sides.Sell)
-			{
-				// A false downside breakout is confirmed when price rises back above MA
-				if (candle.ClosePrice > ma)
-				{
-					// Enter long position
-					var volume = Volume + Math.Abs(Position);
-					BuyMarket(volume);
-					
-					LogInfo($"False downside breakout confirmed. Long entry at {candle.ClosePrice}. Support level: {_lastLowestValue}");
-					
-					// Reset breakout detection
-					_breakoutDetected = false;
-					_breakoutSide = default;
-				}
-			}
-			
-			// If the breakout continues beyond our threshold, abandon the false breakout idea
-			if (_breakoutSide == Sides.Buy && candle.ClosePrice > _breakoutPrice * 1.01m)
-			{
-				LogInfo($"Breakout appears genuine, not a false breakout. Abandoning the setup.");
-				_breakoutDetected = false;
-				_breakoutSide = default;
-			}
-			else if (_breakoutSide == Sides.Sell && candle.ClosePrice < _breakoutPrice * 0.99m)
-			{
-				LogInfo($"Breakout appears genuine, not a false breakout. Abandoning the setup.");
-				_breakoutDetected = false;
-				_breakoutSide = default;
-			}
+			_highs.RemoveAt(0);
+			_lows.RemoveAt(0);
 		}
-		else
+
+		if (_highs.Count < LookbackPeriod + 1)
+			return;
+
+		if (_cooldown > 0)
 		{
-			// Check for potential breakout
-			if (candle.HighPrice > _lastHighestValue)
-			{
-				// Potential upside breakout
-				_breakoutDetected = true;
-				_breakoutSide = Sides.Buy;
-				_breakoutPrice = candle.ClosePrice;
-				
-				LogInfo($"Potential upside breakout detected at {candle.HighPrice}. Watching for false breakout pattern.");
-			}
-			else if (candle.LowPrice < _lastLowestValue)
-			{
-				// Potential downside breakout
-				_breakoutDetected = true;
-				_breakoutSide = Sides.Sell;
-				_breakoutPrice = candle.ClosePrice;
-				
-				LogInfo($"Potential downside breakout detected at {candle.LowPrice}. Watching for false breakout pattern.");
-			}
+			_cooldown--;
+			return;
 		}
-		
-		// Exit conditions based on price crossing the moving average
-		if (Position > 0 && candle.ClosePrice < ma)
+
+		// Find highest high and lowest low of the previous N bars (excluding current)
+		decimal rangeHigh = decimal.MinValue;
+		decimal rangeLow = decimal.MaxValue;
+		for (int i = 0; i < _highs.Count - 1; i++)
 		{
-			// Exit long position when price falls below MA
-			SellMarket(Math.Abs(Position));
-			LogInfo($"Exit signal: Price below MA. Closed long position at {candle.ClosePrice}");
+			if (_highs[i] > rangeHigh) rangeHigh = _highs[i];
+			if (_lows[i] < rangeLow) rangeLow = _lows[i];
 		}
-		else if (Position < 0 && candle.ClosePrice > ma)
+
+		// False upside breakout: candle broke above range high but closed below it
+		var falseBreakUp = candle.HighPrice > rangeHigh && candle.ClosePrice < rangeHigh;
+		// False downside breakout: candle broke below range low but closed above it
+		var falseBreakDown = candle.LowPrice < rangeLow && candle.ClosePrice > rangeLow;
+
+		if (Position == 0 && falseBreakDown)
 		{
-			// Exit short position when price rises above MA
-			BuyMarket(Math.Abs(Position));
-			LogInfo($"Exit signal: Price above MA. Closed short position at {candle.ClosePrice}");
+			BuyMarket();
+			_cooldown = CooldownBars;
+		}
+		else if (Position == 0 && falseBreakUp)
+		{
+			SellMarket();
+			_cooldown = CooldownBars;
+		}
+		else if (Position > 0 && candle.ClosePrice < smaValue)
+		{
+			SellMarket();
+			_cooldown = CooldownBars;
+		}
+		else if (Position < 0 && candle.ClosePrice > smaValue)
+		{
+			BuyMarket();
+			_cooldown = CooldownBars;
 		}
 	}
 }

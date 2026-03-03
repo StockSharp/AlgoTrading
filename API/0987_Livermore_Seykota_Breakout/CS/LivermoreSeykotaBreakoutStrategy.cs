@@ -1,11 +1,9 @@
 using System;
-using System.Collections.Generic;
 
 using Ecng.Common;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
-using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
@@ -17,128 +15,115 @@ public class LivermoreSeykotaBreakoutStrategy : Strategy
 	private readonly StrategyParam<int> _atrLength;
 	private readonly StrategyParam<decimal> _trailAtrMultiplier;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _cooldownBars;
 
-	private readonly List<ICandleMessage> _candles = new();
-	private decimal? _lastPivotHigh;
-	private decimal? _lastPivotLow;
-	private decimal _highestSinceEntry;
-	private decimal _lowestSinceEntry;
+	private ExponentialMovingAverage _ema;
+	private AverageTrueRange _atr;
+	private Highest _highest;
+	private Lowest _lowest;
+
+	private decimal _prevHighest;
+	private decimal _prevLowest;
+	private int _barsSinceSignal;
 
 	public int EmaLength { get => _emaLength.Value; set => _emaLength.Value = value; }
 	public int PivotLength { get => _pivotLength.Value; set => _pivotLength.Value = value; }
 	public int AtrLength { get => _atrLength.Value; set => _atrLength.Value = value; }
 	public decimal TrailAtrMultiplier { get => _trailAtrMultiplier.Value; set => _trailAtrMultiplier.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int CooldownBars { get => _cooldownBars.Value; set => _cooldownBars.Value = value; }
 
 	public LivermoreSeykotaBreakoutStrategy()
 	{
-		_emaLength = Param(nameof(EmaLength), 20)
+		_emaLength = Param(nameof(EmaLength), 50)
 			.SetDisplay("EMA Length", "EMA trend period", "Indicators");
-		_pivotLength = Param(nameof(PivotLength), 3)
-			.SetDisplay("Pivot Length", "Bars for pivot", "General");
+		_pivotLength = Param(nameof(PivotLength), 30)
+			.SetDisplay("Pivot Length", "Bars for pivot high/low", "General");
 		_atrLength = Param(nameof(AtrLength), 14)
 			.SetDisplay("ATR Length", "ATR period", "Indicators");
-		_trailAtrMultiplier = Param(nameof(TrailAtrMultiplier), 3m)
+		_trailAtrMultiplier = Param(nameof(TrailAtrMultiplier), 10m)
 			.SetDisplay("Trail ATR Mult", "ATR trailing mult", "Risk");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Candles", "General");
+		_cooldownBars = Param(nameof(CooldownBars), 50)
+			.SetDisplay("Cooldown Bars", "Min bars between signals", "General");
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_ema = null;
+		_atr = null;
+		_highest = null;
+		_lowest = null;
+		_prevHighest = 0;
+		_prevLowest = 0;
+		_barsSinceSignal = 0;
 	}
 
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_candles.Clear();
-		_lastPivotHigh = null;
-		_lastPivotLow = null;
-		_highestSinceEntry = 0;
-		_lowestSinceEntry = decimal.MaxValue;
-
-		var ema = new EMA { Length = EmaLength };
-		var atr = new AverageTrueRange { Length = AtrLength };
+		_ema = new ExponentialMovingAverage { Length = EmaLength };
+		_atr = new AverageTrueRange { Length = AtrLength };
+		_highest = new Highest { Length = PivotLength };
+		_lowest = new Lowest { Length = PivotLength };
+		_prevHighest = 0;
+		_prevLowest = 0;
+		_barsSinceSignal = 0;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ema, atr, ProcessCandle)
+			.Bind(_ema, _atr, _highest, _lowest, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, ema);
+			DrawIndicator(area, _ema);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal emaVal, decimal atr)
+	private void ProcessCandle(ICandleMessage candle, decimal emaVal, decimal atrVal, decimal highVal, decimal lowVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Track pivots
-		_candles.Add(candle);
-		var maxCount = PivotLength * 2 + 1;
-		if (_candles.Count > maxCount)
-			_candles.RemoveAt(0);
+		_barsSinceSignal++;
 
-		if (_candles.Count == maxCount)
+		if (!_ema.IsFormed || !_atr.IsFormed || !_highest.IsFormed || !_lowest.IsFormed)
 		{
-			var pivotIndex = PivotLength;
-			var pivotCandle = _candles[pivotIndex];
-			var isHigh = true;
-			var isLow = true;
-
-			for (var i = 0; i < maxCount; i++)
-			{
-				if (i == pivotIndex) continue;
-				if (_candles[i].HighPrice >= pivotCandle.HighPrice) isHigh = false;
-				if (_candles[i].LowPrice <= pivotCandle.LowPrice) isLow = false;
-			}
-
-			if (isHigh) _lastPivotHigh = pivotCandle.HighPrice;
-			if (isLow) _lastPivotLow = pivotCandle.LowPrice;
+			_prevHighest = highVal;
+			_prevLowest = lowVal;
+			return;
 		}
 
-		if (atr <= 0) return;
-
-		// Exit logic first
-		if (Position > 0)
+		if (atrVal <= 0 || _barsSinceSignal < CooldownBars)
 		{
-			_highestSinceEntry = Math.Max(_highestSinceEntry, candle.HighPrice);
-			var trailStop = _highestSinceEntry - atr * TrailAtrMultiplier;
-			if (candle.ClosePrice <= trailStop)
-			{
-				SellMarket();
-				return;
-			}
-		}
-		else if (Position < 0)
-		{
-			_lowestSinceEntry = Math.Min(_lowestSinceEntry, candle.LowPrice);
-			var trailStop = _lowestSinceEntry + atr * TrailAtrMultiplier;
-			if (candle.ClosePrice >= trailStop)
-			{
-				BuyMarket();
-				return;
-			}
+			_prevHighest = highVal;
+			_prevLowest = lowVal;
+			return;
 		}
 
-		// Entry logic - only when flat
-		if (Position == 0)
+		// Breakout above previous highest with EMA confirmation — go long
+		if (candle.ClosePrice > _prevHighest && candle.ClosePrice > emaVal && Position <= 0)
 		{
-			if (_lastPivotHigh.HasValue && candle.ClosePrice > _lastPivotHigh.Value
-				&& candle.ClosePrice > emaVal)
-			{
-				BuyMarket();
-				_highestSinceEntry = candle.HighPrice;
-			}
-			else if (_lastPivotLow.HasValue && candle.ClosePrice < _lastPivotLow.Value
-				&& candle.ClosePrice < emaVal)
-			{
-				SellMarket();
-				_lowestSinceEntry = candle.LowPrice;
-			}
+			BuyMarket(Volume + Math.Abs(Position));
+			_barsSinceSignal = 0;
 		}
+		// Breakout below previous lowest with EMA confirmation — go short
+		else if (candle.ClosePrice < _prevLowest && candle.ClosePrice < emaVal && Position >= 0)
+		{
+			SellMarket(Volume + Math.Abs(Position));
+			_barsSinceSignal = 0;
+		}
+
+		_prevHighest = highVal;
+		_prevLowest = lowVal;
 	}
 }

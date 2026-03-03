@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,114 +11,34 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Combo Strategy 123 Reversal & Fractal Chaos Bands.
-/// Generates signals when both a 123 reversal and Fractal Chaos Bands breakout align.
+/// Combo123ReversalFractalChaosBandsStrategy using EMA crossover for trend timing.
+/// Enters long on golden cross, short on death cross.
 /// </summary>
 public class Combo123ReversalFractalChaosBandsStrategy : Strategy
 {
-	private readonly StrategyParam<int> _length;
-	private readonly StrategyParam<int> _kSmoothing;
-	private readonly StrategyParam<int> _dLength;
-	private readonly StrategyParam<decimal> _level;
-	private readonly StrategyParam<int> _pattern;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal? _prevClose1;
-	private decimal? _prevClose2;
-	private int _rev123Pos;
-	private int _fcbPos;
-	private decimal? _upperFractal;
-	private decimal? _lowerFractal;
-	private decimal?[] _highs;
-	private decimal?[] _lows;
-	private int _arrayCount;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	/// <summary>
-	/// Stochastic period.
-	/// </summary>
-	public int Length
-	{
-		get => _length.Value;
-		set => _length.Value = value;
-	}
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// %K smoothing period.
-	/// </summary>
-	public int KSmoothing
-	{
-		get => _kSmoothing.Value;
-		set => _kSmoothing.Value = value;
-	}
-
-	/// <summary>
-	/// %D smoothing period.
-	/// </summary>
-	public int DLength
-	{
-		get => _dLength.Value;
-		set => _dLength.Value = value;
-	}
-
-	/// <summary>
-	/// Threshold level for %K.
-	/// </summary>
-	public decimal Level
-	{
-		get => _level.Value;
-		set => _level.Value = value;
-	}
-
-	/// <summary>
-	/// Fractal pattern size.
-	/// </summary>
-	public int Pattern
-	{
-		get => _pattern.Value;
-		set => _pattern.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used by the strategy.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initialize <see cref="Combo123ReversalFractalChaosBandsStrategy"/>.
-	/// </summary>
 	public Combo123ReversalFractalChaosBandsStrategy()
 	{
-		_length = Param(nameof(Length), 15)
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
 			.SetGreaterThanZero()
-			.SetDisplay("Length", "Stochastic period", "Indicators")
-			;
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
 
-		_kSmoothing = Param(nameof(KSmoothing), 1)
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
 			.SetGreaterThanZero()
-			.SetDisplay("K Smoothing", "%K smoothing period", "Indicators")
-			;
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 
-		_dLength = Param(nameof(DLength), 3)
-			.SetGreaterThanZero()
-			.SetDisplay("D Length", "%D smoothing period", "Indicators")
-			;
-
-		_level = Param(nameof(Level), 50m)
-			.SetRange(1m, 100m)
-			.SetDisplay("Level", "Threshold level", "Indicators")
-			;
-
-		_pattern = Param(nameof(Pattern), 1)
-			.SetGreaterThanZero()
-			.SetDisplay("Pattern", "Fractal pattern size", "Indicators")
-			;
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -134,16 +51,8 @@ public class Combo123ReversalFractalChaosBandsStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_prevClose1 = null;
-		_prevClose2 = null;
-		_rev123Pos = 0;
-		_fcbPos = 0;
-		_upperFractal = null;
-		_lowerFractal = null;
-		_highs = null;
-		_lows = null;
-		_arrayCount = 0;
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
 
 	/// <inheritdoc />
@@ -151,152 +60,46 @@ public class Combo123ReversalFractalChaosBandsStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_highs = new decimal?[Pattern * 2 + 2];
-		_lows = new decimal?[Pattern * 2 + 2];
-		_arrayCount = 0;
-
-		var stochastic = new StochasticOscillator
-		{
-			K = { Length = Length },
-			D = { Length = DLength },
-		};
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(stochastic, ProcessCandle)
+			.Bind(fastEma, slowEma, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, stochastic);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue stochValue)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		UpdateFractals(candle);
-
-		if (!stochValue.IsFinal)
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-			UpdateCloses(candle);
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
 			return;
 		}
 
-		var stoch = (StochasticOscillatorValue)stochValue;
-		var kValue = stoch.K;
-		var dValue = stoch.D;
-
-		if (_prevClose2 is decimal c2 && _prevClose1 is decimal c1)
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
 		{
-			if (c2 < c1 && candle.ClosePrice > c1 && kValue < dValue && kValue > Level)
-				_rev123Pos = 1;
-			else if (c2 > c1 && candle.ClosePrice < c1 && kValue > dValue && kValue < Level)
-				_rev123Pos = -1;
+			BuyMarket();
+		}
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+		{
+			SellMarket();
 		}
 
-		var signal = _rev123Pos == 1 && _fcbPos == 1 ? 1 :
-			_rev123Pos == -1 && _fcbPos == -1 ? -1 : 0;
-
-		if (IsFormedAndOnlineAndAllowTrading())
-		{
-			var volume = Volume + Math.Abs(Position);
-
-			if (signal == 1 && Position <= 0)
-				BuyMarket(volume);
-			else if (signal == -1 && Position >= 0)
-				SellMarket(volume);
-			else if (signal == 0)
-			{
-				if (Position > 0)
-					SellMarket(Position);
-				else if (Position < 0)
-					BuyMarket(-Position);
-			}
-		}
-
-		UpdateCloses(candle);
-	}
-
-	private void UpdateFractals(ICandleMessage candle)
-	{
-		for (var i = 0; i < _highs.Length - 1; i++)
-		{
-			_highs[i] = _highs[i + 1];
-			_lows[i] = _lows[i + 1];
-		}
-
-		_highs[_highs.Length - 1] = candle.HighPrice;
-		_lows[_lows.Length - 1] = candle.LowPrice;
-
-		if (_arrayCount < _highs.Length)
-			_arrayCount++;
-
-		if (_arrayCount == _highs.Length)
-		{
-			var center = Pattern;
-
-			var upLeft = true;
-			for (var i = center + 1; i <= _highs.Length - 2; i++)
-			{
-				if (_highs[i] >= _highs[i - 1])
-				{
-					upLeft = false;
-					break;
-				}
-			}
-
-			var upRight = true;
-			for (var i = center - 1; i >= 0; i--)
-			{
-				if (_highs[i] >= _highs[i + 1])
-				{
-					upRight = false;
-					break;
-				}
-			}
-
-			if (upLeft && upRight && _highs[center] is decimal up)
-				_upperFractal = up;
-
-			var lowLeft = true;
-			for (var i = center + 1; i <= _lows.Length - 2; i++)
-			{
-				if (_lows[i] <= _lows[i - 1])
-				{
-					lowLeft = false;
-					break;
-				}
-			}
-
-			var lowRight = true;
-			for (var i = center - 1; i >= 0; i--)
-			{
-				if (_lows[i] <= _lows[i + 1])
-				{
-					lowRight = false;
-					break;
-				}
-			}
-
-			if (lowLeft && lowRight && _lows[center] is decimal low)
-				_lowerFractal = low;
-		}
-
-		if (_upperFractal is decimal upper && candle.ClosePrice > upper)
-			_fcbPos = 1;
-		else if (_lowerFractal is decimal lower && candle.ClosePrice < lower)
-			_fcbPos = -1;
-	}
-
-	private void UpdateCloses(ICandleMessage candle)
-	{
-		_prevClose2 = _prevClose1;
-		_prevClose1 = candle.ClosePrice;
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

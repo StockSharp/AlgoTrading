@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,33 +11,25 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on Rate of Change (ROC) impulse.
+/// Strategy based on Rate of Change / Momentum impulse.
+/// Uses Momentum indicator crossing zero as signal for entries.
 /// </summary>
 public class RocImpulseStrategy : Strategy
 {
 	private readonly StrategyParam<int> _rocPeriod;
-	private readonly StrategyParam<decimal> _atrMultiplier;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _previousRoc;
-	private bool _isFirstCandle = true;
+	private decimal _prevMom;
+	private bool _hasPrevValues;
+	private int _cooldown;
 
 	/// <summary>
-	/// ROC period.
+	/// Momentum period.
 	/// </summary>
 	public int RocPeriod
 	{
 		get => _rocPeriod.Value;
 		set => _rocPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// ATR multiplier for stop-loss.
-	/// </summary>
-	public decimal AtrMultiplier
-	{
-		get => _atrMultiplier.Value;
-		set => _atrMultiplier.Value = value;
 	}
 
 	/// <summary>
@@ -58,14 +47,8 @@ public class RocImpulseStrategy : Strategy
 	public RocImpulseStrategy()
 	{
 		_rocPeriod = Param(nameof(RocPeriod), 12)
-			.SetRange(5, 30)
-			.SetDisplay("ROC Period", "Period for Rate of Change calculation", "Indicators")
-			;
-
-		_atrMultiplier = Param(nameof(AtrMultiplier), 2m)
-			.SetRange(1m, 5m)
-			.SetDisplay("ATR Multiplier", "Multiplier for ATR stop loss", "Risk Management")
-			;
+			.SetDisplay("Momentum Period", "Period for Momentum calculation", "Indicators")
+			.SetOptimize(8, 20, 4);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -81,10 +64,9 @@ public class RocImpulseStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		// Reset state variables
-		_previousRoc = 0;
-		_isFirstCandle = true;
-
+		_prevMom = default;
+		_hasPrevValues = default;
+		_cooldown = default;
 	}
 
 	/// <inheritdoc />
@@ -92,83 +74,59 @@ public class RocImpulseStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Create indicators
-		var roc = new RateOfChange { Length = RocPeriod };
-		var atr = new AverageTrueRange { Length = 14 };
+		var momentum = new Momentum { Length = RocPeriod };
 
-		// Subscribe to candles and bind indicators
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(roc, atr, ProcessCandle)
+			.Bind(momentum, ProcessCandle)
 			.Start();
 
-		// Enable position protection with ATR-based stop loss
-		StartProtection(
-			takeProfit: null,
-			stopLoss: new Unit(AtrMultiplier, UnitTypes.Absolute),
-			isStopTrailing: false,
-			useMarketOrders: true
-		);
-
-		// Setup chart visualization
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, roc);
-			DrawIndicator(area, atr);
+			DrawIndicator(area, momentum);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal rocValue, decimal atrValue)
+	private void ProcessCandle(ICandleMessage candle, decimal momValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		if (_isFirstCandle)
+		if (!_hasPrevValues)
 		{
-			_previousRoc = rocValue;
-			_isFirstCandle = false;
+			_hasPrevValues = true;
+			_prevMom = momValue;
 			return;
 		}
 
-		// Entry logic for long positions:
-		// ROC is positive and increasing (positive momentum)
-		if (rocValue > 0 && rocValue > _previousRoc && Position <= 0)
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+			_prevMom = momValue;
+			return;
+		}
+
+		// Momentum crosses above zero - buy signal
+		if (_prevMom <= 0 && momValue > 0 && Position <= 0)
 		{
 			var volume = Volume + Math.Abs(Position);
 			BuyMarket(volume);
-			LogInfo($"Buy signal: ROC positive and increasing. Current: {rocValue:F4}, Previous: {_previousRoc:F4}");
+			_cooldown = 55;
 		}
-		// Entry logic for short positions:
-		// ROC is negative and decreasing (negative momentum)
-		else if (rocValue < 0 && rocValue < _previousRoc && Position >= 0)
+		// Momentum crosses below zero - sell signal
+		else if (_prevMom >= 0 && momValue < 0 && Position >= 0)
 		{
 			var volume = Volume + Math.Abs(Position);
 			SellMarket(volume);
-			LogInfo($"Sell signal: ROC negative and decreasing. Current: {rocValue:F4}, Previous: {_previousRoc:F4}");
+			_cooldown = 55;
 		}
 
-		// Exit logic for long positions: ROC turns negative
-		if (Position > 0 && rocValue < 0)
-		{
-			SellMarket(Math.Abs(Position));
-			LogInfo($"Exiting long position: ROC turned negative at {rocValue:F4}");
-		}
-		// Exit logic for short positions: ROC turns positive
-		else if (Position < 0 && rocValue > 0)
-		{
-			BuyMarket(Math.Abs(Position));
-			LogInfo($"Exiting short position: ROC turned positive at {rocValue:F4}");
-		}
-
-		// Store current ROC value for next comparison
-		_previousRoc = rocValue;
+		_prevMom = momValue;
 	}
 }

@@ -1,280 +1,82 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
-using StockSharp.Algo.Candles;
-
 namespace StockSharp.Samples.Strategies;
 
-/// <summary>
-/// EMA Crossover Strategy with RSI average and distance conditions.
-/// </summary>
 public class EmaCrossoverRsiDistanceStrategy : Strategy
 {
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _emaShortLength;
-	private readonly StrategyParam<int> _emaMediumLength;
-	private readonly StrategyParam<int> _emaLong1Length;
-	private readonly StrategyParam<int> _emaLong2Length;
-	private readonly StrategyParam<int> _rsiLength;
-	private readonly StrategyParam<int> _rsiAverageLength;
-	private readonly StrategyParam<int> _distanceLength;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	private ExponentialMovingAverage _emaShort;
-	private ExponentialMovingAverage _emaMedium;
-	private ExponentialMovingAverage _emaLong1;
-	private ExponentialMovingAverage _emaLong2;
-	private RelativeStrengthIndex _rsi;
-	private SimpleMovingAverage _rsiAverage;
-	private SimpleMovingAverage _distanceAverage;
-	private decimal? _prevDistance4013;
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	private SignalTypes _lastSignal;
-	private enum SignalTypes
-	{
-		None,
-		Long,
-		Short,
-		Neutral,
-		Green,
-		Red
-	}
-
-	/// <summary>
-	/// Candle type for strategy calculation.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Short-term EMA length.
-	/// </summary>
-	public int EmaShortLength
-	{
-		get => _emaShortLength.Value;
-		set => _emaShortLength.Value = value;
-	}
-
-	/// <summary>
-	/// Medium-term EMA length.
-	/// </summary>
-	public int EmaMediumLength
-	{
-		get => _emaMediumLength.Value;
-		set => _emaMediumLength.Value = value;
-	}
-
-	/// <summary>
-	/// First long-term EMA length.
-	/// </summary>
-	public int EmaLong1Length
-	{
-		get => _emaLong1Length.Value;
-		set => _emaLong1Length.Value = value;
-	}
-
-	/// <summary>
-	/// Second long-term EMA length.
-	/// </summary>
-	public int EmaLong2Length
-	{
-		get => _emaLong2Length.Value;
-		set => _emaLong2Length.Value = value;
-	}
-
-	/// <summary>
-	/// RSI period.
-	/// </summary>
-	public int RsiLength
-	{
-		get => _rsiLength.Value;
-		set => _rsiLength.Value = value;
-	}
-
-	/// <summary>
-	/// Average period for RSI.
-	/// </summary>
-	public int RsiAverageLength
-	{
-		get => _rsiAverageLength.Value;
-		set => _rsiAverageLength.Value = value;
-	}
-
-	/// <summary>
-	/// Averaging period for EMA distance.
-	/// </summary>
-	public int DistanceLength
-	{
-		get => _distanceLength.Value;
-		set => _distanceLength.Value = value;
-	}
-
-	/// <summary>
-	/// Initialize <see cref="EmaCrossoverRsiDistanceStrategy"/>.
-	/// </summary>
 	public EmaCrossoverRsiDistanceStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-		.SetDisplay("Candle Type", "Type of candles", "General");
-
-		_emaShortLength = Param(nameof(EmaShortLength), 5)
-		.SetGreaterThanZero()
-		.SetDisplay("EMA Short", "Short-term EMA length", "Indicators");
-
-		_emaMediumLength = Param(nameof(EmaMediumLength), 13)
-		.SetGreaterThanZero()
-		.SetDisplay("EMA Medium", "Medium-term EMA length", "Indicators");
-
-		_emaLong1Length = Param(nameof(EmaLong1Length), 40)
-		.SetGreaterThanZero()
-		.SetDisplay("EMA Long1", "First long-term EMA length", "Indicators");
-
-		_emaLong2Length = Param(nameof(EmaLong2Length), 55)
-		.SetGreaterThanZero()
-		.SetDisplay("EMA Long2", "Second long-term EMA length", "Indicators");
-
-		_rsiLength = Param(nameof(RsiLength), 14)
-		.SetGreaterThanZero()
-		.SetDisplay("RSI Length", "RSI calculation period", "Indicators");
-
-		_rsiAverageLength = Param(nameof(RsiAverageLength), 14)
-		.SetGreaterThanZero()
-		.SetDisplay("RSI Average", "Average period for RSI", "Indicators");
-
-		_distanceLength = Param(nameof(DistanceLength), 5)
-		.SetGreaterThanZero()
-		.SetDisplay("Distance Length", "Averaging period for EMA distance", "Indicators");
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
 
-	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_emaShort = new EMA { Length = EmaShortLength };
-		_emaMedium = new EMA { Length = EmaMediumLength };
-		_emaLong1 = new EMA { Length = EmaLong1Length };
-		_emaLong2 = new EMA { Length = EmaLong2Length };
-		_rsi = new RelativeStrengthIndex { Length = RsiLength };
-		_rsiAverage = new SMA { Length = RsiAverageLength };
-		_distanceAverage = new SMA { Length = DistanceLength };
-
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-		.Bind(_emaShort, _emaMedium, _emaLong1, _emaLong2, _rsi, ProcessCandle)
-		.Start();
-
+		subscription.Bind(fastEma, slowEma, ProcessCandle).Start();
 		var area = CreateChartArea();
 		if (area != null)
 		{
-		DrawCandles(area, subscription);
-		DrawIndicator(area, _emaShort);
-		DrawIndicator(area, _emaMedium);
-		DrawIndicator(area, _emaLong1);
-		DrawIndicator(area, _emaLong2);
-		DrawOwnTrades(area);
+			DrawCandles(area, subscription);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
+			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal ema5, decimal ema13, decimal ema40, decimal ema55, decimal rsi)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
-		if (candle.State != CandleStates.Finished)
-		return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
-
-		var rsiAvgValue = _rsiAverage.Process(new DecimalIndicatorValue(_rsiAverage, rsi, candle.ServerTime));
-		var distance = Math.Abs(ema5 - ema13);
-		var distanceAvgValue = _distanceAverage.Process(new DecimalIndicatorValue(_distanceAverage, distance, candle.ServerTime));
-
-		if (!rsiAvgValue.IsFormed || !distanceAvgValue.IsFormed)
-		return;
-
-		var avgRsi = rsiAvgValue.ToDecimal();
-		var avgDistance = distanceAvgValue.ToDecimal();
-		var distance4013 = Math.Abs(ema40 - ema13);
-		var distanceCondition = !_prevDistance4013.HasValue || distance4013 > _prevDistance4013.Value;
-		_prevDistance4013 = distance4013;
-
-		var emaShortCond = ema5 > ema13;
-		var emaLongCond = ema40 > ema55;
-		var rsiCond = rsi > 50m && rsi > avgRsi;
-		var neutralCond = distance < avgDistance || ema13 > ema5;
-		var longCond = emaShortCond && emaLongCond && rsiCond && !neutralCond;
-		var shortCond = ema40 > ema55;
-		var greenCond = rsi > 60m;
-		var redCond = rsi < 40m;
-
-		if (candle.ClosePrice > ema5)
+		if (candle.State != CandleStates.Finished) return;
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-		if (longCond && distanceCondition)
-		_lastSignal = SignalTypes.Long;
-		else if (shortCond && distanceCondition)
-		_lastSignal = SignalTypes.Short;
-		else if (neutralCond)
-		_lastSignal = SignalTypes.Neutral;
-		else if (greenCond)
-		_lastSignal = SignalTypes.Green;
-		else if (redCond)
-		_lastSignal = SignalTypes.Red;
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
+			return;
 		}
-		else
-		{
-		if (longCond)
-		_lastSignal = SignalTypes.Long;
-		else if (shortCond)
-		_lastSignal = SignalTypes.Short;
-		else if (greenCond)
-		_lastSignal = SignalTypes.Green;
-		else if (redCond)
-		_lastSignal = SignalTypes.Red;
-		else
-		_lastSignal = SignalTypes.Neutral;
-		}
-
-		ExecuteSignal();
-	}
-
-	private void ExecuteSignal()
-	{
-		var volume = Volume + Math.Abs(Position);
-
-		switch (_lastSignal)
-		{
-		case SignalTypes.Long:
-		if (Position <= 0)
-		BuyMarket(volume);
-		break;
-		case SignalTypes.Short:
-		if (Position >= 0)
-		SellMarket(volume);
-		break;
-		default:
-		if (Position > 0)
-		SellMarket(Position);
-		else if (Position < 0)
-		BuyMarket(-Position);
-		break;
-		}
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
+			BuyMarket();
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+			SellMarket();
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }

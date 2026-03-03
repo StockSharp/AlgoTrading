@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -13,101 +10,73 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-/// <summary>
-/// Gauge strategy that trades based on price position within a predefined range.
-/// </summary>
 public class GuageStrategy : Strategy
 {
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<decimal> _minValue;
-	private readonly StrategyParam<decimal> _maxValue;
-	private readonly StrategyParam<decimal> _upperThreshold;
-	private readonly StrategyParam<decimal> _lowerThreshold;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
+
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public GuageStrategy()
 	{
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "Data");
-		_minValue = Param(nameof(MinValue), 0m)
-			.SetDisplay("Min Value", "Minimum gauge value", "General")
-			
-			.SetOptimize(-100m, 100m, 10m);
-		_maxValue = Param(nameof(MaxValue), 100m)
-			.SetDisplay("Max Value", "Maximum gauge value", "General")
-			
-			.SetOptimize(0m, 200m, 10m);
-		_upperThreshold = Param(nameof(UpperThreshold), 0.75m)
-			.SetDisplay("Upper Threshold", "Gauge percentage to enter long", "Entry Parameters")
-			
-			.SetOptimize(0.6m, 0.9m, 0.05m);
-		_lowerThreshold = Param(nameof(LowerThreshold), 0.25m)
-			.SetDisplay("Lower Threshold", "Gauge percentage to enter short", "Entry Parameters")
-			
-			.SetOptimize(0.1m, 0.4m, 0.05m);
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	public decimal MinValue
-	{
-		get => _minValue.Value;
-		set => _minValue.Value = value;
-	}
-
-	public decimal MaxValue
-	{
-		get => _maxValue.Value;
-		set => _maxValue.Value = value;
-	}
-
-	public decimal UpperThreshold
-	{
-		get => _upperThreshold.Value;
-		set => _upperThreshold.Value = value;
-	}
-
-	public decimal LowerThreshold
-	{
-		get => _lowerThreshold.Value;
-		set => _lowerThreshold.Value = value;
-	}
-
-	/// <inheritdoc />
-	protected override void OnStarted2(DateTime time)
-	{
-		base.OnStarted2(time);
-
-		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
-	}
-
-	private void ProcessCandle(ICandleMessage candle)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (MaxValue <= MinValue)
-			return;
-
-		var value = candle.ClosePrice;
-		var ratio = (value - MinValue) / (MaxValue - MinValue);
-
-		if (ratio > UpperThreshold && Position <= 0)
-			BuyMarket();
-		else if (ratio < LowerThreshold && Position >= 0)
-			SellMarket();
-
-		LogInfo($"Gauge ratio: {ratio:P2}");
-	}
-
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
-}
 
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
+	}
+
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(fastEma, slowEma, ProcessCandle).Start();
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
+			DrawOwnTrades(area);
+		}
+	}
+
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
+	{
+		if (candle.State != CandleStates.Finished) return;
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
+		{
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
+			return;
+		}
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
+			BuyMarket();
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+			SellMarket();
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
+	}
+}

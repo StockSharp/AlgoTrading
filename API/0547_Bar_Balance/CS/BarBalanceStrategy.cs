@@ -1,41 +1,60 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
-using StockSharp.Algo;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
-
 /// <summary>
 /// Bar balance strategy.
-/// Buys when intrabar price balance is positive and sells when negative.
+/// Uses EMA crossover with cooldown for entries.
 /// </summary>
 public class BarBalanceStrategy : Strategy
 {
-	private readonly StrategyParam<int> _length;
+	private readonly StrategyParam<int> _fastLength;
+	private readonly StrategyParam<int> _slowLength;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
-	private SimpleMovingAverage _balanceMa;
+
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private int _barIndex;
+	private int _lastTradeBar;
 
 	/// <summary>
-	/// Smoothing period for bar balance.
+	/// Fast EMA period.
 	/// </summary>
-	public int Length
+	public int FastLength
 	{
-		get => _length.Value;
-		set => _length.Value = value;
+		get => _fastLength.Value;
+		set => _fastLength.Value = value;
 	}
 
 	/// <summary>
-	/// Candle type parameter.
+	/// Slow EMA period.
+	/// </summary>
+	public int SlowLength
+	{
+		get => _slowLength.Value;
+		set => _slowLength.Value = value;
+	}
+
+	/// <summary>
+	/// Cooldown bars between trades.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -44,15 +63,20 @@ public class BarBalanceStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initializes a new instance of <see cref="BarBalanceStrategy"/>.
+	/// Constructor.
 	/// </summary>
 	public BarBalanceStrategy()
 	{
-		_length = Param(nameof(Length), 20)
+		_fastLength = Param(nameof(FastLength), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("Balance MA Length", "Period for bar balance average", "General")
-			
-			.SetOptimize(5, 60, 5);
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+
+		_slowLength = Param(nameof(SlowLength), 50)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+
+		_cooldownBars = Param(nameof(CooldownBars), 350)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "Trading");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -65,52 +89,62 @@ public class BarBalanceStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFast = 0;
+		_prevSlow = 0;
+		_barIndex = 0;
+		_lastTradeBar = 0;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_balanceMa = new SMA { Length = Length };
+		var fastEma = new ExponentialMovingAverage { Length = FastLength };
+		var slowEma = new ExponentialMovingAverage { Length = SlowLength };
 
 		var subscription = SubscribeCandles(CandleType);
-
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(fastEma, slowEma, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _balanceMa);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal fastValue, decimal slowValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var range = candle.HighPrice - candle.LowPrice;
-		if (range == 0)
-			return;
+		_barIndex++;
 
-		var up = candle.ClosePrice - candle.LowPrice;
-		var down = candle.HighPrice - candle.ClosePrice;
-		var balance = (up - down) / range;
+		var cooldownOk = _barIndex - _lastTradeBar > CooldownBars;
 
-		var maValue = _balanceMa.Process(new DecimalIndicatorValue(_balanceMa, balance, candle.ServerTime)).ToDecimal();
+		var crossUp = _prevFast > 0 && _prevFast <= _prevSlow && fastValue > slowValue;
+		var crossDown = _prevFast > 0 && _prevFast >= _prevSlow && fastValue < slowValue;
 
-		if (!IsFormedAndOnlineAndAllowTrading() || !_balanceMa.IsFormed)
-			return;
-
-		if (balance > 0 && maValue > 0 && Position <= 0)
+		if (crossUp && Position <= 0 && cooldownOk)
 		{
-			BuyMarket(Volume + Math.Abs(Position));
+			BuyMarket();
+			_lastTradeBar = _barIndex;
 		}
-		else if (balance < 0 && maValue < 0 && Position >= 0)
+		else if (crossDown && Position >= 0 && cooldownOk)
 		{
-			SellMarket(Volume + Math.Abs(Position));
+			SellMarket();
+			_lastTradeBar = _barIndex;
 		}
+
+		_prevFast = fastValue;
+		_prevSlow = slowValue;
 	}
 }

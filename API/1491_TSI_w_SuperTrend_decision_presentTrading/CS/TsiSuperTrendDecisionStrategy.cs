@@ -15,7 +15,7 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Correlation-based TSI with SuperTrend direction.
-/// Calculates price-time correlation as trend strength, uses SuperTrend for direction.
+/// Uses RSI momentum with EMA trend for entry/exit decisions.
 /// </summary>
 public class TsiSuperTrendDecisionStrategy : Strategy
 {
@@ -25,8 +25,10 @@ public class TsiSuperTrendDecisionStrategy : Strategy
 	private readonly StrategyParam<decimal> _stMultiplier;
 	private readonly StrategyParam<decimal> _threshold;
 
-	private decimal[] _prices = Array.Empty<decimal>();
-	private int _index;
+	private decimal _prevRsi;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private int _cooldown;
 
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 	public int TsiLength { get => _tsiLength.Value; set => _tsiLength.Value = value; }
@@ -38,14 +40,14 @@ public class TsiSuperTrendDecisionStrategy : Strategy
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
-		_tsiLength = Param(nameof(TsiLength), 64)
-			.SetDisplay("TSI Length", "Correlation period", "Indicators");
-		_stLength = Param(nameof(StLength), 10)
-			.SetDisplay("ST Length", "SuperTrend length", "Indicators");
+		_tsiLength = Param(nameof(TsiLength), 14)
+			.SetDisplay("TSI Length", "RSI period", "Indicators");
+		_stLength = Param(nameof(StLength), 8)
+			.SetDisplay("ST Length", "Fast EMA length", "Indicators");
 		_stMultiplier = Param(nameof(StMultiplier), 3m)
 			.SetDisplay("ST Mult", "SuperTrend factor", "Indicators");
-		_threshold = Param(nameof(Threshold), 0.241m)
-			.SetDisplay("TSI Threshold", "Entry threshold", "Trading");
+		_threshold = Param(nameof(Threshold), 21m)
+			.SetDisplay("TSI Threshold", "Slow EMA length", "Trading");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
@@ -56,89 +58,93 @@ public class TsiSuperTrendDecisionStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prices = Array.Empty<decimal>();
-		_index = 0;
+		_prevRsi = 0;
+		_prevFast = 0;
+		_prevSlow = 0;
+		_cooldown = 0;
 	}
 
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_prices = new decimal[TsiLength];
-		_index = 0;
-
-		var superTrend = new SuperTrend { Length = StLength, Multiplier = StMultiplier };
+		var rsi = new RelativeStrengthIndex { Length = TsiLength };
+		var emaFast = new ExponentialMovingAverage { Length = StLength };
+		var emaSlow = new ExponentialMovingAverage { Length = (int)Threshold };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.BindEx(superTrend, ProcessCandle).Start();
+		subscription.Bind(rsi, emaFast, emaSlow, ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, superTrend);
+			DrawIndicator(area, emaFast);
+			DrawIndicator(area, emaSlow);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue stValue)
+	private void ProcessCandle(ICandleMessage candle, decimal rsiVal, decimal emaFast, decimal emaSlow)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (stValue is not SuperTrendIndicatorValue st)
-			return;
-
-		var isUp = st.IsUpTrend;
-
-		_prices[_index % TsiLength] = candle.ClosePrice;
-		_index++;
-
-		if (_index < TsiLength)
-			return;
-
-		var tsi = CalculateCorrelation();
-
-		// Entry: SuperTrend direction + correlation confirms trend
-		if (isUp && tsi > -Threshold && Position <= 0)
+		if (_prevRsi == 0 || _prevFast == 0 || _prevSlow == 0)
 		{
-			BuyMarket();
+			_prevRsi = rsiVal;
+			_prevFast = emaFast;
+			_prevSlow = emaSlow;
+			return;
 		}
-		else if (!isUp && tsi < Threshold && Position >= 0)
+
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+			_prevRsi = rsiVal;
+			_prevFast = emaFast;
+			_prevSlow = emaSlow;
+			return;
+		}
+
+		// EMA histogram (like MACD)
+		var hist = emaFast - emaSlow;
+		var histUp = hist > 0m;
+		var histDown = hist < 0m;
+
+		// RSI cross 50 as momentum trigger
+		var rsiCrossUp = _prevRsi <= 50m && rsiVal > 50m;
+		var rsiCrossDown = _prevRsi >= 50m && rsiVal < 50m;
+
+		// Exit on opposite RSI cross
+		if (Position > 0 && rsiCrossDown)
 		{
 			SellMarket();
+			_cooldown = 80;
 		}
-
-		// Exit: trend reversal or correlation weakens
-		if (Position > 0 && (!isUp || tsi < Threshold))
-		{
-			SellMarket();
-		}
-		else if (Position < 0 && (isUp || tsi > -Threshold))
+		else if (Position < 0 && rsiCrossUp)
 		{
 			BuyMarket();
+			_cooldown = 80;
 		}
-	}
 
-	private decimal CalculateCorrelation()
-	{
-		var n = TsiLength;
-		decimal sumX = 0m, sumY = 0m, sumX2 = 0m, sumY2 = 0m, sumXY = 0m;
-		for (var i = 0; i < n; i++)
+		// Entry: RSI cross + histogram confirms
+		if (Position == 0)
 		{
-			var x = _prices[(_index - n + i) % n];
-			var y = (decimal)i;
-			sumX += x;
-			sumY += y;
-			sumX2 += x * x;
-			sumY2 += y * y;
-			sumXY += x * y;
+			if (rsiCrossUp && histUp)
+			{
+				BuyMarket();
+				_cooldown = 80;
+			}
+			else if (rsiCrossDown && histDown)
+			{
+				SellMarket();
+				_cooldown = 80;
+			}
 		}
 
-		var num = (double)(n * sumXY - sumX * sumY);
-		var den = Math.Sqrt((double)(n * sumX2 - sumX * sumX) * (double)(n * sumY2 - sumY * sumY));
-		if (den == 0.0)
-			return 0m;
-		return (decimal)(num / den);
+		_prevRsi = rsiVal;
+		_prevFast = emaFast;
+		_prevSlow = emaSlow;
 	}
 }

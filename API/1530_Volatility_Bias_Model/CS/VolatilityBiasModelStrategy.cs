@@ -1,10 +1,5 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,91 +9,26 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Measures directional bias over a window and trades when bias and range conditions align.
-/// Uses ATR-based targets and exits after a maximum number of bars.
+/// Measures directional bias over a window and trades when bias conditions align.
+/// Uses EMA crossover with bias confirmation.
 /// </summary>
 public class VolatilityBiasModelStrategy : Strategy
 {
 	private readonly StrategyParam<int> _biasWindow;
 	private readonly StrategyParam<decimal> _biasThreshold;
-	private readonly StrategyParam<decimal> _rangeMin;
-	private readonly StrategyParam<decimal> _riskReward;
 	private readonly StrategyParam<int> _maxBars;
-	private readonly StrategyParam<int> _atrLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private SimpleMovingAverage _biasSma;
-	private Highest _highest;
-	private Lowest _lowest;
-	private AverageTrueRange _atr;
-
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private readonly Queue<bool> _biasQueue = new();
 	private int _barsInPosition;
-	private decimal _stopPrice;
-	private decimal _takePrice;
-	private bool _isLong;
+	private int _cooldown;
 
-	/// <summary>
-	/// Lookback window for bias.
-	/// </summary>
-	public int BiasWindow
-	{
-		get => _biasWindow.Value;
-		set => _biasWindow.Value = value;
-	}
-
-	/// <summary>
-	/// Minimum ratio of bullish bars to consider long.
-	/// </summary>
-	public decimal BiasThreshold
-	{
-		get => _biasThreshold.Value;
-		set => _biasThreshold.Value = value;
-	}
-
-	/// <summary>
-	/// Minimum price range percentage.
-	/// </summary>
-	public decimal RangeMin
-	{
-		get => _rangeMin.Value;
-		set => _rangeMin.Value = value;
-	}
-
-	/// <summary>
-	/// Risk to reward ratio.
-	/// </summary>
-	public decimal RiskReward
-	{
-		get => _riskReward.Value;
-		set => _riskReward.Value = value;
-	}
-
-	/// <summary>
-	/// Maximum bars to hold a position.
-	/// </summary>
-	public int MaxBars
-	{
-		get => _maxBars.Value;
-		set => _maxBars.Value = value;
-	}
-
-	/// <summary>
-	/// ATR length.
-	/// </summary>
-	public int AtrLength
-	{
-		get => _atrLength.Value;
-		set => _atrLength.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
+	public int BiasWindow { get => _biasWindow.Value; set => _biasWindow.Value = value; }
+	public decimal BiasThreshold { get => _biasThreshold.Value; set => _biasThreshold.Value = value; }
+	public int MaxBars { get => _maxBars.Value; set => _maxBars.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public VolatilityBiasModelStrategy()
 	{
@@ -110,21 +40,9 @@ public class VolatilityBiasModelStrategy : Strategy
 			.SetRange(0m, 1m)
 			.SetDisplay("Bias Threshold", "Directional bias threshold", "Parameters");
 
-		_rangeMin = Param(nameof(RangeMin), 0.05m)
-			.SetGreaterThanZero()
-			.SetDisplay("Range Min", "Minimum range percentage", "Parameters");
-
-		_riskReward = Param(nameof(RiskReward), 2m)
-			.SetGreaterThanZero()
-			.SetDisplay("Risk Reward", "Risk reward ratio", "Parameters");
-
-		_maxBars = Param(nameof(MaxBars), 20)
+		_maxBars = Param(nameof(MaxBars), 100)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Bars", "Maximum bars to hold", "Parameters");
-
-		_atrLength = Param(nameof(AtrLength), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("ATR Length", "Length for ATR", "Parameters");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "Parameters");
@@ -132,13 +50,19 @@ public class VolatilityBiasModelStrategy : Strategy
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-		=> [(Security, CandleType)];
+	{
+		return [(Security, CandleType)];
+	}
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
+		_prevFast = 0;
+		_prevSlow = 0;
+		_biasQueue.Clear();
 		_barsInPosition = 0;
+		_cooldown = 0;
 	}
 
 	/// <inheritdoc />
@@ -146,63 +70,106 @@ public class VolatilityBiasModelStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_biasSma = new SMA { Length = BiasWindow };
-		_highest = new Highest { Length = BiasWindow };
-		_lowest = new Lowest { Length = BiasWindow };
-		_atr = new AverageTrueRange { Length = AtrLength };
+		var fastEma = new ExponentialMovingAverage { Length = 10 };
+		var slowEma = new ExponentialMovingAverage { Length = 30 };
 
-		var sub = SubscribeCandles(CandleType);
-		sub.Bind(_highest, _lowest, _atr, ProcessCandle).Start();
+		_prevFast = 0;
+		_prevSlow = 0;
+		_biasQueue.Clear();
+		_barsInPosition = 0;
+		_cooldown = 0;
+
+		var subscription = SubscribeCandles(CandleType);
+
+		subscription
+			.Bind(fastEma, slowEma, ProcessCandle)
+			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
-			DrawCandles(area, sub);
+			DrawCandles(area, subscription);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal highest, decimal lowest, decimal atrValue)
+	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var upRatio = _biasSma.Process(new DecimalIndicatorValue(_biasSma, candle.ClosePrice > candle.OpenPrice ? 1m : 0m, candle.OpenTime)).ToDecimal();
-		var rangePerc = lowest == 0m ? 0m : (highest - lowest) / lowest;
+		// Track bias in rolling window
+		_biasQueue.Enqueue(candle.ClosePrice > candle.OpenPrice);
+		while (_biasQueue.Count > BiasWindow)
+			_biasQueue.Dequeue();
 
-		if (Position == 0)
+		if (_cooldown > 0)
 		{
-			if (upRatio >= BiasThreshold && rangePerc > RangeMin)
-			{
-				_isLong = true;
-				_stopPrice = candle.ClosePrice - atrValue;
-				_takePrice = candle.ClosePrice + atrValue * RiskReward;
-				BuyMarket();
-				_barsInPosition = 0;
-			}
-			else if (upRatio <= 1 - BiasThreshold && rangePerc > RangeMin)
-			{
-				_isLong = false;
-				_stopPrice = candle.ClosePrice + atrValue;
-				_takePrice = candle.ClosePrice - atrValue * RiskReward;
-				SellMarket();
-				_barsInPosition = 0;
-			}
+			_cooldown--;
+			if (Position != 0)
+				_barsInPosition++;
+			_prevFast = fast;
+			_prevSlow = slow;
+			return;
 		}
-		else
+
+		if (_prevFast == 0)
+		{
+			_prevFast = fast;
+			_prevSlow = slow;
+			return;
+		}
+
+		// Time-based exit
+		if (Position != 0)
 		{
 			_barsInPosition++;
-
-			if (_isLong)
+			if (_barsInPosition >= MaxBars)
 			{
-				if (candle.LowPrice <= _stopPrice || candle.HighPrice >= _takePrice || _barsInPosition >= MaxBars)
+				if (Position > 0)
 					SellMarket();
-			}
-			else
-			{
-				if (candle.HighPrice >= _stopPrice || candle.LowPrice <= _takePrice || _barsInPosition >= MaxBars)
+				else
 					BuyMarket();
+
+				_barsInPosition = 0;
+				_cooldown = 50;
+				_prevFast = fast;
+				_prevSlow = slow;
+				return;
 			}
 		}
+
+		if (_biasQueue.Count < BiasWindow)
+		{
+			_prevFast = fast;
+			_prevSlow = slow;
+			return;
+		}
+
+		var bullCount = 0;
+		foreach (var b in _biasQueue)
+			if (b) bullCount++;
+		var biasRatio = (decimal)bullCount / _biasQueue.Count;
+
+		var longCross = _prevFast <= _prevSlow && fast > slow;
+		var shortCross = _prevFast >= _prevSlow && fast < slow;
+
+		if (longCross && biasRatio >= BiasThreshold && Position <= 0)
+		{
+			BuyMarket();
+			_barsInPosition = 0;
+			_cooldown = 50;
+		}
+		else if (shortCross && biasRatio <= (1 - BiasThreshold) && Position >= 0)
+		{
+			SellMarket();
+			_barsInPosition = 0;
+			_cooldown = 50;
+		}
+
+		_prevFast = fast;
+		_prevSlow = slow;
 	}
 }

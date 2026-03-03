@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,26 +11,20 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on Stochastic Oscillator's overbought/oversold conditions.
+/// Stochastic Overbought/Oversold strategy.
+/// Buys when K is oversold, sells when K is overbought.
 /// </summary>
 public class StochasticOverboughtOversoldStrategy : Strategy
 {
-	private readonly StrategyParam<int> _stochPeriod;
 	private readonly StrategyParam<int> _kPeriod;
 	private readonly StrategyParam<int> _dPeriod;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _cooldownBars;
+
+	private int _cooldown;
 
 	/// <summary>
-	/// Stochastic oscillator period.
-	/// </summary>
-	public int StochPeriod
-	{
-		get => _stochPeriod.Value;
-		set => _stochPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// K period for Stochastic oscillator.
+	/// K period.
 	/// </summary>
 	public int KPeriod
 	{
@@ -42,7 +33,7 @@ public class StochasticOverboughtOversoldStrategy : Strategy
 	}
 
 	/// <summary>
-	/// D period for Stochastic oscillator.
+	/// D period.
 	/// </summary>
 	public int DPeriod
 	{
@@ -51,7 +42,7 @@ public class StochasticOverboughtOversoldStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Candle type and timeframe used by the strategy.
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -60,30 +51,33 @@ public class StochasticOverboughtOversoldStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Cooldown bars.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Constructor.
 	/// </summary>
 	public StochasticOverboughtOversoldStrategy()
 	{
-		_stochPeriod = Param(nameof(StochPeriod), 14)
-					  .SetGreaterThanZero()
-					  .SetDisplay("Stochastic Period", "Period for Stochastic oscillator calculation", "Indicators")
-					  
-					  .SetOptimize(5, 30, 5);
-
 		_kPeriod = Param(nameof(KPeriod), 3)
-				  .SetGreaterThanZero()
-				  .SetDisplay("K Period", "Smoothing period for Stochastic %K line", "Indicators")
-				  
-				  .SetOptimize(1, 10, 1);
+			.SetGreaterThanZero()
+			.SetDisplay("K Period", "Smoothing period for %K", "Indicators");
 
 		_dPeriod = Param(nameof(DPeriod), 3)
-				  .SetGreaterThanZero()
-				  .SetDisplay("D Period", "Smoothing period for Stochastic %D line", "Indicators")
-				  
-				  .SetOptimize(1, 10, 1);
+			.SetGreaterThanZero()
+			.SetDisplay("D Period", "Smoothing period for %D", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-					 .SetDisplay("Candle Type", "Type of candles to use", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
+
+		_cooldownBars = Param(nameof(CooldownBars), 500)
+			.SetRange(1, 1000)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
 	}
 
 	/// <inheritdoc />
@@ -93,31 +87,30 @@ public class StochasticOverboughtOversoldStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_cooldown = default;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		// Create Stochastic oscillator
+		_cooldown = 0;
+
 		var stochastic = new StochasticOscillator
 		{
 			K = { Length = KPeriod },
 			D = { Length = DPeriod },
 		};
 
-		// Subscribe to candles and bind Stochastic indicator
 		var subscription = SubscribeCandles(CandleType);
-
 		subscription
 			.BindEx(stochastic, ProcessCandle)
 			.Start();
 
-		// Setup stop loss/take profit protection
-		StartProtection(
-			takeProfit: new Unit(2, UnitTypes.Percent),
-			stopLoss: new Unit(2, UnitTypes.Percent)
-		);
-
-		// Setup chart visualization if available
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -129,43 +122,42 @@ public class StochasticOverboughtOversoldStrategy : Strategy
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue stochValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!stochValue.IsFormed)
 			return;
 
 		var stochTyped = (StochasticOscillatorValue)stochValue;
-		var kValue = stochTyped.K;
-		var dValue = stochTyped.D;
 
-		LogInfo($"Stochastic %K: {kValue}, %D: {dValue}");
+		if (stochTyped.K is not decimal kValue)
+			return;
 
-		if (kValue < 20 && Position <= 0)
+		if (_cooldown > 0)
 		{
-			// Oversold condition - Buy
-			LogInfo($"Oversold condition detected. K: {kValue}, D: {dValue}");
-			BuyMarket(Volume + Math.Abs(Position));
+			_cooldown--;
+			return;
 		}
-		else if (kValue > 80 && Position >= 0)
+
+		if (Position == 0 && kValue < 20)
 		{
-			// Overbought condition - Sell
-			LogInfo($"Overbought condition detected. K: {kValue}, D: {dValue}");
-			SellMarket(Volume + Math.Abs(Position));
+			BuyMarket();
+			_cooldown = CooldownBars;
 		}
-		else if (kValue > 50 && Position > 0)
+		else if (Position == 0 && kValue > 80)
 		{
-			// Exit long position when Stochastic moves back above 50
-			LogInfo($"Exiting long position. K: {kValue}");
-			SellMarket(Position);
+			SellMarket();
+			_cooldown = CooldownBars;
 		}
-		else if (kValue < 50 && Position < 0)
+		else if (Position > 0 && kValue > 80)
 		{
-			// Exit short position when Stochastic moves back below 50
-			LogInfo($"Exiting short position. K: {kValue}");
-			BuyMarket(Math.Abs(Position));
+			SellMarket();
+			_cooldown = CooldownBars;
+		}
+		else if (Position < 0 && kValue < 20)
+		{
+			BuyMarket();
+			_cooldown = CooldownBars;
 		}
 	}
 }

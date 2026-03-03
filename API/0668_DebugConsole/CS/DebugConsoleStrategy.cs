@@ -1,9 +1,8 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -11,73 +10,35 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
 /// <summary>
-/// Demonstrates a console that queues messages for debugging.
+/// DebugConsoleStrategy using EMA crossover for trend timing.
+/// Enters long on golden cross, short on death cross.
 /// </summary>
 public class DebugConsoleStrategy : Strategy
 {
-	private readonly StrategyParam<int> _size;
-	private readonly StrategyParam<bool> _isVisible;
-	private readonly StrategyParam<bool> _intrabar;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private DebugConsole _console;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	/// <summary>
-	/// Number of messages to keep.
-	/// </summary>
-	public int Size
-	{
-		get => _size.Value;
-		set => _size.Value = value;
-	}
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Enable console output.
-	/// </summary>
-	public bool IsVisible
-	{
-		get => _isVisible.Value;
-		set => _isVisible.Value = value;
-	}
-
-	/// <summary>
-	/// Allow intrabar messages.
-	/// </summary>
-	public bool Intrabar
-	{
-		get => _intrabar.Value;
-		set => _intrabar.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used for logging.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="DebugConsoleStrategy"/>.
-	/// </summary>
 	public DebugConsoleStrategy()
 	{
-		_size = Param(nameof(Size), 20)
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
 			.SetGreaterThanZero()
-			.SetDisplay("Console Size", "Number of messages to keep", "Console");
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
 
-		_isVisible = Param(nameof(IsVisible), true)
-			.SetDisplay("Visible", "Enable console output", "Console");
-
-		_intrabar = Param(nameof(Intrabar), false)
-			.SetDisplay("Intrabar", "Allow intrabar messages", "Console");
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to log", "General");
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -90,7 +51,8 @@ public class DebugConsoleStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_console = null;
+		_prevFastEma = 0m;
+		_prevSlowEma = 0m;
 	}
 
 	/// <inheritdoc />
@@ -98,91 +60,46 @@ public class DebugConsoleStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_console = new DebugConsole(Size, Intrabar);
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
-
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(fastEma, slowEma, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
+			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		_console.Queue($"{candle.OpenTime:O} Close: {candle.ClosePrice}");
-		_console.QueueOne("only one");
-		_console.QueueOneIntrabar($"intrabar: {candle.ClosePrice}", candle.OpenTime);
-
-		if (IsVisible)
-			_console.Update(m => LogInfo(m));
-	}
-
-	private class DebugConsole
-	{
-		private readonly int _size;
-		private readonly bool _intrabar;
-		private readonly List<string> _entries = new();
-		private DateTimeOffset _currentBar;
-		private string _intrabarMessage;
-
-		public DebugConsole(int size, bool intrabar)
+		if (_prevFastEma == 0m || _prevSlowEma == 0m)
 		{
-			_size = size;
-			_intrabar = intrabar;
+			_prevFastEma = fastEmaValue;
+			_prevSlowEma = slowEmaValue;
+			return;
 		}
 
-		public void Queue(string message)
+		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
 		{
-			Add(message);
+			BuyMarket();
+		}
+		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+		{
+			SellMarket();
 		}
 
-		public void QueueOne(string message)
-		{
-			if (_entries.Contains(message))
-				return;
-
-			Add(message);
-		}
-
-		public void QueueOneIntrabar(string message, DateTimeOffset barTime)
-		{
-			if (!_intrabar)
-				return;
-
-			if (_currentBar != barTime)
-			{
-				_intrabarMessage = null;
-				_currentBar = barTime;
-			}
-
-			if (_intrabarMessage != null)
-				return;
-
-			_intrabarMessage = message;
-			Add(message);
-		}
-
-		public void Update(Action<string> output)
-		{
-			output(string.Join(System.Environment.NewLine, _entries));
-		}
-
-		private void Add(string message)
-		{
-			_entries.Add(message);
-
-			if (_entries.Count > _size)
-				_entries.RemoveAt(0);
-		}
+		_prevFastEma = fastEmaValue;
+		_prevSlowEma = slowEmaValue;
 	}
 }
-

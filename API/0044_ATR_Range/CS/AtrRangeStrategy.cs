@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,22 +11,24 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// ATR Range strategy
-/// Enters long when price moves up by at least ATR over N candles
-/// Enters short when price moves down by at least ATR over N candles
+/// ATR Range strategy.
+/// Enters long when price moves up by at least ATR over N candles,
+/// enters short when price moves down by at least ATR over N candles.
 /// </summary>
-public class ATRRangeStrategy : Strategy
+public class AtrRangeStrategy : Strategy
 {
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<int> _atrPeriod;
 	private readonly StrategyParam<int> _lookbackPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	
+	private readonly StrategyParam<int> _cooldownBars;
+
 	private decimal _nBarsAgoPrice;
 	private int _barCounter;
+	private int _cooldown;
 
 	/// <summary>
-	/// MA Period
+	/// MA Period.
 	/// </summary>
 	public int MAPeriod
 	{
@@ -38,7 +37,7 @@ public class ATRRangeStrategy : Strategy
 	}
 
 	/// <summary>
-	/// ATR Period
+	/// ATR Period.
 	/// </summary>
 	public int ATRPeriod
 	{
@@ -47,7 +46,7 @@ public class ATRRangeStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Lookback Period (N candles for price movement)
+	/// Lookback Period (N candles for price movement).
 	/// </summary>
 	public int LookbackPeriod
 	{
@@ -56,7 +55,7 @@ public class ATRRangeStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Candle type for strategy calculation
+	/// Candle type for strategy calculation.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -65,30 +64,37 @@ public class ATRRangeStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initialize <see cref="ATRRangeStrategy"/>.
+	/// Cooldown bars between trades.
 	/// </summary>
-	public ATRRangeStrategy()
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
+	/// Initialize the ATR Range strategy.
+	/// </summary>
+	public AtrRangeStrategy()
 	{
 		_maPeriod = Param(nameof(MAPeriod), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("MA Period", "Period for Moving Average calculation", "Strategy Parameters")
-			
+			.SetDisplay("MA Period", "Period for Moving Average calculation", "Indicators")
 			.SetOptimize(10, 50, 10);
 
 		_atrPeriod = Param(nameof(ATRPeriod), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("ATR Period", "Period for Average True Range calculation", "Strategy Parameters")
-			
+			.SetDisplay("ATR Period", "Period for ATR calculation", "Indicators")
 			.SetOptimize(7, 28, 7);
 
 		_lookbackPeriod = Param(nameof(LookbackPeriod), 5)
-			.SetGreaterThanZero()
-			.SetDisplay("Lookback Period", "Number of candles to measure price movement", "Strategy Parameters")
-			
+			.SetDisplay("Lookback Period", "Number of candles to measure price movement", "Entry")
 			.SetOptimize(3, 10, 1);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles for strategy calculation", "Strategy Parameters");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
+
+		_cooldownBars = Param(nameof(CooldownBars), 500)
+			.SetRange(1, 1000)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
 	}
 
 	/// <inheritdoc />
@@ -103,7 +109,7 @@ public class ATRRangeStrategy : Strategy
 		base.OnReseted();
 		_nBarsAgoPrice = default;
 		_barCounter = default;
-
+		_cooldown = default;
 	}
 
 	/// <inheritdoc />
@@ -111,94 +117,80 @@ public class ATRRangeStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Create indicators
-		var ma = new SMA { Length = MAPeriod };
+		_nBarsAgoPrice = 0;
+		_barCounter = 0;
+		_cooldown = 0;
+
+		var ma = new SimpleMovingAverage { Length = MAPeriod };
 		var atr = new AverageTrueRange { Length = ATRPeriod };
 
-		// Create subscription and bind indicators
 		var subscription = SubscribeCandles(CandleType);
-		
 		subscription
 			.Bind(ma, atr, ProcessCandle)
 			.Start();
 
-		// Configure protection
-		StartProtection(
-			takeProfit: new Unit(3, UnitTypes.Percent),
-			stopLoss: new Unit(2, UnitTypes.Percent)
-		);
-
-		// Setup chart visualization
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
 			DrawIndicator(area, ma);
-			DrawIndicator(area, atr);
 			DrawOwnTrades(area);
 		}
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal maValue, decimal atrValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// Increment bar counter
 		_barCounter++;
 
-		// Store price for first bar of lookback period
 		if (_barCounter == 1 || _barCounter % LookbackPeriod == 1)
 		{
 			_nBarsAgoPrice = candle.ClosePrice;
-			LogInfo($"Storing reference price: {_nBarsAgoPrice} at bar {_barCounter}");
 			return;
 		}
 
-		// Only check for signals at the end of each lookback period
-		if (_barCounter % LookbackPeriod != 0)
-			return;
-
-		// Calculate price movement over the lookback period
-		var priceMovement = candle.ClosePrice - _nBarsAgoPrice;
-		var absMovement = Math.Abs(priceMovement);
-		
-		// Log current values
-		LogInfo($"Candle Close: {candle.ClosePrice}, Reference Price: {_nBarsAgoPrice}, Movement: {priceMovement}");
-		LogInfo($"ATR: {atrValue}, MA: {maValue}, Absolute Movement: {absMovement}");
-
-		// Check if price movement exceeds ATR
-		if (absMovement >= atrValue)
+		if (_cooldown > 0)
 		{
-			// Long signal: Price moved up by at least ATR
-			if (priceMovement > 0 && Position <= 0)
+			_cooldown--;
+			return;
+		}
+
+		// Check at end of each lookback period
+		if (_barCounter % LookbackPeriod == 0)
+		{
+			var priceMovement = candle.ClosePrice - _nBarsAgoPrice;
+			var absMovement = Math.Abs(priceMovement);
+
+			if (absMovement >= atrValue)
 			{
-				LogInfo($"Buy Signal: Price movement ({priceMovement}) > ATR ({atrValue})");
-				BuyMarket(Volume + Math.Abs(Position));
-			}
-			// Short signal: Price moved down by at least ATR
-			else if (priceMovement < 0 && Position >= 0)
-			{
-				LogInfo($"Sell Signal: Price movement ({priceMovement}) < -ATR ({-atrValue})");
-				SellMarket(Volume + Math.Abs(Position));
+				if (Position == 0 && priceMovement > 0)
+				{
+					BuyMarket();
+					_cooldown = CooldownBars;
+				}
+				else if (Position == 0 && priceMovement < 0)
+				{
+					SellMarket();
+					_cooldown = CooldownBars;
+				}
 			}
 		}
-		
-		// Exit logic: Price crosses MA
+
+		// Exit logic: price crosses MA
 		if (Position > 0 && candle.ClosePrice < maValue)
 		{
-			LogInfo($"Exit Long: Price ({candle.ClosePrice}) < MA ({maValue})");
-			SellMarket(Math.Abs(Position));
+			SellMarket();
+			_cooldown = CooldownBars;
 		}
 		else if (Position < 0 && candle.ClosePrice > maValue)
 		{
-			LogInfo($"Exit Short: Price ({candle.ClosePrice}) > MA ({maValue})");
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
+			_cooldown = CooldownBars;
 		}
 	}
 }

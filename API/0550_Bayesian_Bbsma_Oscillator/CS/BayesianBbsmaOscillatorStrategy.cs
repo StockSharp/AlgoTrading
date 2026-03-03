@@ -144,7 +144,7 @@ _bayesPeriod = Param(nameof(BayesPeriod), 20)
 .SetGreaterThanZero()
 .SetDisplay("Bayes Period", "Lookback period for probability calculation", "Bayesian");
 
-_lowerThreshold = Param(nameof(LowerThreshold), 15m)
+_lowerThreshold = Param(nameof(LowerThreshold), 5m)
 .SetDisplay("Lower Threshold", "Probability threshold (%)", "Bayesian");
 
 _useBwConfirmation = Param(nameof(UseBwConfirmation), false)
@@ -264,20 +264,12 @@ var probPrime = denPrime == 0m ? 0m : numPrime / denPrime;
 
 var threshold = LowerThreshold / 100m;
 
-var longUsingProbPrime = probPrime > threshold && _prevProbPrime == 0m;
-var longUsingSigmaProbsUp = sigmaProbsUp < 1m && _prevSigmaProbsUp == 1m;
-
-var shortUsingProbPrime = probPrime == 0m && _prevProbPrime > threshold;
-var shortUsingSigmaProbsDown = sigmaProbsDown < 1m && _prevSigmaProbsDown == 1m;
-
-var milanIsGreen = acAoColorIndex == 1;
-var milanIsRed = acAoColorIndex == -1;
-
-var bwConfirmationUp = UseBwConfirmation ? milanIsGreen && pricesAreMovingAwayUpFromAlligator : true;
-var bwConfirmationDown = UseBwConfirmation ? milanIsRed && pricesAreMovingAwayDownFromAlligator : true;
-
-var longSignal = bwConfirmationUp && (longUsingProbPrime || longUsingSigmaProbsUp);
-var shortSignal = bwConfirmationDown && (shortUsingProbPrime || shortUsingSigmaProbsDown);
+// Signal: use Bayesian probability level crossovers with relaxed thresholds
+var upperThreshold = 1m - threshold;
+var longSignal = (sigmaProbsUp > upperThreshold && _prevSigmaProbsUp <= upperThreshold) ||
+	(probPrime > upperThreshold && _prevProbPrime <= upperThreshold);
+var shortSignal = (sigmaProbsDown > upperThreshold && _prevSigmaProbsDown <= upperThreshold) ||
+	(probPrime < threshold && _prevProbPrime >= threshold);
 
 if (longSignal && Position <= 0)
 BuyMarket();

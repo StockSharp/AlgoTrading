@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,33 +11,32 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Cumulative Delta Breakout strategy
-/// Long entry: Cumulative Delta breaks above its N-period highest
-/// Short entry: Cumulative Delta breaks below its N-period lowest
-/// Exit: Cumulative Delta changes sign (crosses zero)
+/// Cumulative Delta Breakout strategy.
+/// Estimates delta from candle direction and volume.
+/// Long: Cumulative delta rising and price above SMA.
+/// Short: Cumulative delta falling and price below SMA.
 /// </summary>
 public class CumulativeDeltaBreakoutStrategy : Strategy
 {
-	private readonly StrategyParam<int> _lookbackPeriod;
+	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _cooldownBars;
 
 	private decimal _cumulativeDelta;
-	private decimal? _highestDelta;
-	private decimal? _lowestDelta;
-	private int _barCount;
-	private readonly Queue<decimal> _deltaWindow = [];
+	private decimal _prevDelta;
+	private int _cooldown;
 
 	/// <summary>
-	/// Lookback Period for highest/lowest delta
+	/// MA Period.
 	/// </summary>
-	public int LookbackPeriod
+	public int MAPeriod
 	{
-		get => _lookbackPeriod.Value;
-		set => _lookbackPeriod.Value = value;
+		get => _maPeriod.Value;
+		set => _maPeriod.Value = value;
 	}
 
 	/// <summary>
-	/// Candle type for strategy calculation
+	/// Candle type for strategy calculation.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -49,18 +45,30 @@ public class CumulativeDeltaBreakoutStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Cooldown bars between trades.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Initialize <see cref="CumulativeDeltaBreakoutStrategy"/>.
 	/// </summary>
 	public CumulativeDeltaBreakoutStrategy()
 	{
-		_lookbackPeriod = Param(nameof(LookbackPeriod), 20)
+		_maPeriod = Param(nameof(MAPeriod), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("Lookback Period", "Period for calculating highest/lowest delta", "Strategy Parameters")
-			
+			.SetDisplay("MA Period", "Period for SMA", "Indicators")
 			.SetOptimize(10, 50, 10);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles for strategy calculation", "Strategy Parameters");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
+
+		_cooldownBars = Param(nameof(CooldownBars), 500)
+			.SetRange(1, 1000)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
 	}
 
 	/// <inheritdoc />
@@ -73,12 +81,9 @@ public class CumulativeDeltaBreakoutStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_cumulativeDelta = 0;
-		_highestDelta = null;
-		_lowestDelta = null;
-		_barCount = 0;
-		_deltaWindow.Clear();
+		_cumulativeDelta = default;
+		_prevDelta = default;
+		_cooldown = default;
 	}
 
 	/// <inheritdoc />
@@ -86,97 +91,79 @@ public class CumulativeDeltaBreakoutStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Create subscription for both candles and ticks
-		var candleSubscription = SubscribeCandles(CandleType);
+		_cumulativeDelta = 0;
+		_prevDelta = 0;
+		_cooldown = 0;
 
-			// Bind candle processing
-			candleSubscription
-				.Bind(ProcessCandle)
-				.Start();
+		var sma = new SimpleMovingAverage { Length = MAPeriod };
 
-			// Subscribe to ticks to compute delta
-			SubscribeTicks()
-				.Bind(trade =>
-				{
-					// Calculate delta: positive for buy trades, negative for sell trades
-					var delta = trade.OriginSide == Sides.Buy ? trade.Volume : -trade.Volume;
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(sma, ProcessCandle)
+			.Start();
 
-					// Add to cumulative delta
-					_cumulativeDelta += delta;
-				})
-				.Start();
-
-			// Configure protection
-			StartProtection(
-				takeProfit: new Unit(3, UnitTypes.Percent),
-				stopLoss: new Unit(2, UnitTypes.Percent)
-			);
-
-			// Setup chart visualization
-			var area = CreateChartArea();
-			if (area != null)
-			{
-				DrawCandles(area, candleSubscription);
-				DrawOwnTrades(area);
-			}
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, sma);
+			DrawOwnTrades(area);
 		}
+	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// Increment bar counter
-		_barCount++;
+		// Estimate delta from candle: bullish candle adds volume, bearish subtracts
+		var delta = candle.ClosePrice >= candle.OpenPrice
+			? candle.TotalVolume
+			: -candle.TotalVolume;
+		_cumulativeDelta += delta;
 
-		// Update rolling window
-		_deltaWindow.Enqueue(_cumulativeDelta);
-		if (_deltaWindow.Count > LookbackPeriod)
-			_deltaWindow.Dequeue();
-
-		if (_deltaWindow.Count < LookbackPeriod)
+		if (_prevDelta == 0)
 		{
-			_highestDelta = _deltaWindow.Max();
-			_lowestDelta = _deltaWindow.Min();
+			_prevDelta = _cumulativeDelta;
 			return;
 		}
 
-		_highestDelta = _deltaWindow.Max();
-		_lowestDelta = _deltaWindow.Min();
-
-		// Log current values
-		LogInfo($"Candle Close: {candle.ClosePrice}, Cumulative Delta: {_cumulativeDelta}");
-		LogInfo($"Highest Delta: {_highestDelta}, Lowest Delta: {_lowestDelta}");
-
-		// Trading logic:
-		// Long: Cumulative Delta breaks above highest
-		if (_highestDelta.HasValue && _cumulativeDelta > _highestDelta && Position <= 0)
+		if (_cooldown > 0)
 		{
-			LogInfo($"Buy Signal: Cumulative Delta ({_cumulativeDelta}) breaking above highest ({_highestDelta})");
-			BuyMarket(Volume + Math.Abs(Position));
-		}
-		// Short: Cumulative Delta breaks below lowest
-		else if (_lowestDelta.HasValue && _cumulativeDelta < _lowestDelta && Position >= 0)
-		{
-			LogInfo($"Sell Signal: Cumulative Delta ({_cumulativeDelta}) breaking below lowest ({_lowestDelta})");
-			SellMarket(Volume + Math.Abs(Position));
+			_cooldown--;
+			_prevDelta = _cumulativeDelta;
+			return;
 		}
 
-		// Exit logic: Cumulative Delta crosses zero
-		if (Position > 0 && _cumulativeDelta < 0)
+		var deltaRising = _cumulativeDelta > _prevDelta;
+
+		if (Position == 0)
 		{
-			LogInfo($"Exit Long: Cumulative Delta ({_cumulativeDelta}) < 0");
-			SellMarket(Math.Abs(Position));
+			if (deltaRising && candle.ClosePrice > smaValue)
+			{
+				BuyMarket();
+				_cooldown = CooldownBars;
+			}
+			else if (!deltaRising && candle.ClosePrice < smaValue)
+			{
+				SellMarket();
+				_cooldown = CooldownBars;
+			}
 		}
-		else if (Position < 0 && _cumulativeDelta > 0)
+		else if (Position > 0 && !deltaRising)
 		{
-			LogInfo($"Exit Short: Cumulative Delta ({_cumulativeDelta}) > 0");
-			BuyMarket(Math.Abs(Position));
+			SellMarket();
+			_cooldown = CooldownBars;
 		}
+		else if (Position < 0 && deltaRising)
+		{
+			BuyMarket();
+			_cooldown = CooldownBars;
+		}
+
+		_prevDelta = _cumulativeDelta;
 	}
 }
