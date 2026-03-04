@@ -1,10 +1,13 @@
 namespace StockSharp.Samples.Strategies;
 
 using System;
+using System.Collections.Generic;
 
-using StockSharp.Algo;
+using Ecng.Common;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
+using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 /// <summary>
@@ -26,8 +29,22 @@ public class IntradayComboHHStrategy : Strategy
 		_minSignals = Param(nameof(MinSignals), 2)
 			.SetDisplay("Min Signals", "Minimum required conditions", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type", "General");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevMacdSignal = 0;
+		_macdInitialized = false;
 	}
 
 	/// <inheritdoc />
@@ -79,8 +96,7 @@ public class IntradayComboHHStrategy : Strategy
 		var sellCount = 0;
 
 		// Stochastic signal
-		var stochTyped = (StochasticOscillatorValue)stochValue;
-		if (stochTyped.K is decimal k)
+		if (stochValue is StochasticOscillatorValue stochTyped && stochTyped.K is decimal k)
 		{
 			if (k < 20)
 				buyCount++;
@@ -89,8 +105,7 @@ public class IntradayComboHHStrategy : Strategy
 		}
 
 		// MACD signal
-		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
-		if (macdTyped.Signal is decimal signal)
+		if (macdValue is MovingAverageConvergenceDivergenceSignalValue macdTyped && macdTyped.Signal is decimal signal)
 		{
 			if (_macdInitialized)
 			{
@@ -107,8 +122,7 @@ public class IntradayComboHHStrategy : Strategy
 		}
 
 		// Bollinger Bands signal
-		var bb = (BollingerBandsValue)bollingerValue;
-		if (bb.LowBand is decimal lower && bb.UpBand is decimal upper)
+		if (bollingerValue is BollingerBandsValue bb && bb.LowBand is decimal lower && bb.UpBand is decimal upper)
 		{
 			if (candle.ClosePrice < lower)
 				buyCount++;

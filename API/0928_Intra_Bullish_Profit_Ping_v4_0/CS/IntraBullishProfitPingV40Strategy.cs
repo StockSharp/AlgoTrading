@@ -1,14 +1,10 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
-using StockSharp.Algo;
 
 namespace StockSharp.Samples.Strategies;
 
@@ -99,17 +95,30 @@ public class IntraBullishProfitPingV40Strategy : Strategy
 			.SetDisplay("MACD Signal", "MACD signal EMA length", "MACD")
 			.SetGreaterThanZero();
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevShort = null;
+		_prevLong = null;
+		_lastRsi = 0;
+		_lastHistogram = 0;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_prevShort = null;
-		_prevLong = null;
 
 		var emaShort = new ExponentialMovingAverage { Length = ShortEmaLength };
 		var emaLong = new ExponentialMovingAverage { Length = LongEmaLength };
@@ -125,33 +134,8 @@ public class IntraBullishProfitPingV40Strategy : Strategy
 		};
 
 		var subscription = SubscribeCandles(CandleType);
-
-		// Bind RSI separately
-		subscription.Bind(rsi, (candle, rsiVal) =>
-		{
-			_lastRsi = rsiVal;
-		});
-
-		// Bind MACD separately to capture histogram via inner indicators
-		subscription.BindEx(macd, (candle, value) =>
-		{
-			if (value is not IComplexIndicatorValue complexVal)
-				return;
-
-			// Get MACD histogram (difference between MACD line and signal line)
-			foreach (var inner in complexVal.InnerValues)
-			{
-				if (inner.Key is MovingAverageConvergenceDivergenceHistogram)
-				{
-					_lastHistogram = inner.Value.IsEmpty ? 0m : ((DecimalIndicatorValue)inner.Value).Value;
-					break;
-				}
-			}
-		});
-
-		// Bind EMAs for crossover detection
 		subscription
-			.Bind(emaShort, emaLong, ProcessCandle)
+			.BindEx(emaShort, emaLong, rsi, macd, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -166,19 +150,30 @@ public class IntraBullishProfitPingV40Strategy : Strategy
 
 	private void ProcessCandle(
 		ICandleMessage candle,
-		decimal emaShort,
-		decimal emaLong)
+		IIndicatorValue emaShortVal,
+		IIndicatorValue emaLongVal,
+		IIndicatorValue rsiVal,
+		IIndicatorValue macdVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		if (emaShortVal.IsEmpty || emaLongVal.IsEmpty || rsiVal.IsEmpty || macdVal.IsEmpty)
+			return;
+
+		var emaShort = emaShortVal.ToDecimal();
+		var emaLong = emaLongVal.ToDecimal();
+		_lastRsi = rsiVal.ToDecimal();
+
+		if (macdVal is MovingAverageConvergenceDivergenceSignalValue macdTyped)
+		{
+			if (macdTyped.Macd is decimal m && macdTyped.Signal is decimal s)
+				_lastHistogram = m - s;
+		}
+
 		var crossUp = _prevShort is not null && _prevLong is not null && _prevShort <= _prevLong && emaShort > emaLong;
 		var crossDown = _prevShort is not null && _prevLong is not null && _prevShort >= _prevLong && emaShort < emaLong;
 
-		var bullishCandle = candle.ClosePrice > candle.OpenPrice;
-		var bearishCandle = candle.ClosePrice < candle.OpenPrice;
-
-		// Use EMA crossover as primary signal, with loose RSI filter
 		var buySignal = crossUp && _lastRsi > 40m;
 		var sellSignal = crossDown && _lastRsi < 60m;
 

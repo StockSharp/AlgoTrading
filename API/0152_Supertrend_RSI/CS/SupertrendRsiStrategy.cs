@@ -1,55 +1,63 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
-using StockSharp.Algo.Candles;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Implementation of strategy - Supertrend + RSI.
-/// Buy when price is above Supertrend and RSI is below 30 (oversold).
-/// Sell when price is below Supertrend and RSI is above 70 (overbought).
+/// Strategy combining manual Supertrend with RSI.
+/// Buys when price above Supertrend and RSI oversold.
+/// Sells when price below Supertrend and RSI overbought.
 /// </summary>
 public class SupertrendRsiStrategy : Strategy
 {
-	private readonly StrategyParam<int> _supertrendPeriod;
-	private readonly StrategyParam<decimal> _supertrendMultiplier;
+	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _atrPeriod;
+	private readonly StrategyParam<decimal> _multiplier;
 	private readonly StrategyParam<int> _rsiPeriod;
 	private readonly StrategyParam<decimal> _rsiOversold;
 	private readonly StrategyParam<decimal> _rsiOverbought;
-	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _cooldownBars;
 
-	// Indicators
-	private SuperTrend _supertrend;
-	private RelativeStrengthIndex _rsi;
+	private readonly List<decimal> _highs = new();
+	private readonly List<decimal> _lows = new();
+	private readonly List<decimal> _closes = new();
+	private decimal _prevSupertrend;
+	private bool _prevUpTrend;
+	private bool _stInitialized;
+	private int _cooldown;
 
 	/// <summary>
-	/// Supertrend period.
+	/// Candle type for strategy calculation.
 	/// </summary>
-	public int SupertrendPeriod
+	public DataType CandleType
 	{
-		get => _supertrendPeriod.Value;
-		set => _supertrendPeriod.Value = value;
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// ATR period for Supertrend.
+	/// </summary>
+	public int AtrPeriod
+	{
+		get => _atrPeriod.Value;
+		set => _atrPeriod.Value = value;
 	}
 
 	/// <summary>
 	/// Supertrend multiplier.
 	/// </summary>
-	public decimal SupertrendMultiplier
+	public decimal Multiplier
 	{
-		get => _supertrendMultiplier.Value;
-		set => _supertrendMultiplier.Value = value;
+		get => _multiplier.Value;
+		set => _multiplier.Value = value;
 	}
 
 	/// <summary>
@@ -80,41 +88,42 @@ public class SupertrendRsiStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Candle type used for strategy.
+	/// Cooldown bars between trades.
 	/// </summary>
-	public DataType CandleType
+	public int CooldownBars
 	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	/// <summary>
-	/// Initialize <see cref="SupertrendRsiStrategy"/>.
+	/// Initialize strategy.
 	/// </summary>
 	public SupertrendRsiStrategy()
 	{
-		_supertrendPeriod = Param(nameof(SupertrendPeriod), 10)
-			.SetGreaterThanZero()
-			.SetDisplay("Supertrend Period", "Period for ATR in Supertrend", "Supertrend Parameters");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
-		_supertrendMultiplier = Param(nameof(SupertrendMultiplier), 3.0m)
-			.SetGreaterThanZero()
-			.SetDisplay("Supertrend Multiplier", "Multiplier for ATR in Supertrend", "Supertrend Parameters");
+		_atrPeriod = Param(nameof(AtrPeriod), 10)
+			.SetRange(5, 30)
+			.SetDisplay("ATR Period", "ATR period for Supertrend", "Supertrend");
+
+		_multiplier = Param(nameof(Multiplier), 3.0m)
+			.SetDisplay("Multiplier", "ATR multiplier for Supertrend", "Supertrend");
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("RSI Period", "Period for relative strength index", "RSI Parameters");
+			.SetRange(7, 21)
+			.SetDisplay("RSI Period", "Period for RSI", "RSI");
 
 		_rsiOversold = Param(nameof(RsiOversold), 30m)
-			.SetRange(1, 100)
-			.SetDisplay("RSI Oversold", "RSI level to consider market oversold", "RSI Parameters");
+			.SetDisplay("RSI Oversold", "RSI oversold level", "RSI");
 
 		_rsiOverbought = Param(nameof(RsiOverbought), 70m)
-			.SetRange(1, 100)
-			.SetDisplay("RSI Overbought", "RSI level to consider market overbought", "RSI Parameters");
+			.SetDisplay("RSI Overbought", "RSI overbought level", "RSI");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Candle type for strategy", "General");
+		_cooldownBars = Param(nameof(CooldownBars), 100)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "General")
+			.SetRange(5, 500);
 	}
 
 	/// <inheritdoc />
@@ -124,53 +133,44 @@ public class SupertrendRsiStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_highs.Clear();
+		_lows.Clear();
+		_closes.Clear();
+		_prevSupertrend = 0;
+		_prevUpTrend = true;
+		_stInitialized = false;
+		_cooldown = 0;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		// Create indicators
-		_supertrend = new SuperTrend
-		{
-			Length = SupertrendPeriod,
-			Multiplier = SupertrendMultiplier
-		};
+		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 
-		_rsi = new RelativeStrengthIndex
-		{
-			Length = RsiPeriod
-		};
-
-		// Setup candle subscription
 		var subscription = SubscribeCandles(CandleType);
-		
-		// Bind both indicators to the candle feed
+
 		subscription
-			.Bind(_supertrend, _rsi, ProcessCandle)
+			.Bind(rsi, ProcessCandle)
 			.Start();
 
-		// Setup chart visualization if available
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _supertrend);
-			
-			// Create separate area for RSI
+			DrawOwnTrades(area);
+
 			var rsiArea = CreateChartArea();
 			if (rsiArea != null)
-			{
-				DrawIndicator(rsiArea, _rsi);
-			}
-			
-			DrawOwnTrades(area);
+				DrawIndicator(rsiArea, rsi);
 		}
-
-		// Using Supertrend for dynamic stop-loss
-		// (the strategy design already includes the dynamic stop-loss mechanism
-		// through the Supertrend indicator crossovers)
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal supertrendValue, decimal rsiValue)
+	private void ProcessCandle(ICandleMessage candle, decimal rsiValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
@@ -178,40 +178,113 @@ public class SupertrendRsiStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		LogInfo($"Candle: {candle.OpenTime}, Close: {candle.ClosePrice}, " +
-			   $"Supertrend: {supertrendValue}, RSI: {rsiValue}");
+		var high = candle.HighPrice;
+		var low = candle.LowPrice;
+		var close = candle.ClosePrice;
 
-		// Trading rules
-		var trend = candle.ClosePrice > supertrendValue ? 1 : -1; // 1 = uptrend, -1 = downtrend
+		_highs.Add(high);
+		_lows.Add(low);
+		_closes.Add(close);
 
-		if (trend > 0 && rsiValue < RsiOversold && Position <= 0)
+		var period = AtrPeriod;
+
+		if (_closes.Count < period + 1)
 		{
-			// Buy signal - price above Supertrend (uptrend) and RSI is oversold
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
-
-			LogInfo($"Buy signal: Uptrend (Price > Supertrend) and RSI oversold ({rsiValue} < {RsiOversold}). Volume: {volume}");
+			if (_cooldown > 0) _cooldown--;
+			return;
 		}
-		else if (trend < 0 && rsiValue > RsiOverbought && Position >= 0)
-		{
-			// Sell signal - price below Supertrend (downtrend) and RSI is overbought
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
 
-			LogInfo($"Sell signal: Downtrend (Price < Supertrend) and RSI overbought ({rsiValue} > {RsiOverbought}). Volume: {volume}");
-		}
-		// Exit conditions are handled by Supertrend crossovers
-		else if (trend < 0 && Position > 0)
+		// Manual ATR calculation
+		decimal sumTr = 0;
+		var count = _highs.Count;
+		for (int i = count - period; i < count; i++)
 		{
-			// Exit long position when trend turns down
-			SellMarket(Math.Abs(Position));
-			LogInfo($"Exit long: Trend turned down (Price < Supertrend). Position: {Position}");
+			var h = _highs[i];
+			var l = _lows[i];
+			var prevC = _closes[i - 1];
+			var tr = Math.Max(h - l, Math.Max(Math.Abs(h - prevC), Math.Abs(l - prevC)));
+			sumTr += tr;
 		}
-		else if (trend > 0 && Position < 0)
+		var atr = sumTr / period;
+
+		// Manual Supertrend
+		var midPrice = (high + low) / 2m;
+		var upperBand = midPrice + Multiplier * atr;
+		var lowerBand = midPrice - Multiplier * atr;
+
+		bool upTrend;
+		decimal supertrend;
+
+		if (!_stInitialized)
 		{
-			// Exit short position when trend turns up
-			BuyMarket(Math.Abs(Position));
-			LogInfo($"Exit short: Trend turned up (Price > Supertrend). Position: {Position}");
+			upTrend = close > midPrice;
+			supertrend = upTrend ? lowerBand : upperBand;
+			_stInitialized = true;
+		}
+		else
+		{
+			if (_prevUpTrend)
+			{
+				// In uptrend: lower band can only increase
+				if (lowerBand < _prevSupertrend)
+					lowerBand = _prevSupertrend;
+
+				upTrend = close >= lowerBand;
+				supertrend = upTrend ? lowerBand : upperBand;
+			}
+			else
+			{
+				// In downtrend: upper band can only decrease
+				if (upperBand > _prevSupertrend)
+					upperBand = _prevSupertrend;
+
+				upTrend = close > upperBand;
+				supertrend = upTrend ? lowerBand : upperBand;
+			}
+		}
+
+		_prevSupertrend = supertrend;
+		_prevUpTrend = upTrend;
+
+		// Trim lists
+		if (_highs.Count > period * 3)
+		{
+			var trim = _highs.Count - period * 2;
+			_highs.RemoveRange(0, trim);
+			_lows.RemoveRange(0, trim);
+			_closes.RemoveRange(0, trim);
+		}
+
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+			return;
+		}
+
+		// Buy: uptrend + RSI oversold
+		if (upTrend && rsiValue < RsiOversold && Position == 0)
+		{
+			BuyMarket();
+			_cooldown = CooldownBars;
+		}
+		// Sell: downtrend + RSI overbought
+		else if (!upTrend && rsiValue > RsiOverbought && Position == 0)
+		{
+			SellMarket();
+			_cooldown = CooldownBars;
+		}
+
+		// Exit long: trend turns down
+		if (Position > 0 && !upTrend)
+		{
+			SellMarket();
+			_cooldown = CooldownBars;
+		}
+		// Exit short: trend turns up
+		else if (Position < 0 && upTrend)
+		{
+			BuyMarket();
+			_cooldown = CooldownBars;
 		}
 	}
 }

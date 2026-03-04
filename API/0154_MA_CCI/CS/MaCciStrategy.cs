@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -20,12 +17,24 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class MaCciStrategy : Strategy
 {
+	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<int> _cciPeriod;
 	private readonly StrategyParam<decimal> _overboughtLevel;
 	private readonly StrategyParam<decimal> _oversoldLevel;
-	private readonly StrategyParam<decimal> _stopLossPercent;
-	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _cooldownBars;
+
+	private decimal _cciValue;
+	private int _cooldown;
+
+	/// <summary>
+	/// Candle type for strategy calculation.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
 
 	/// <summary>
 	/// MA period.
@@ -64,21 +73,12 @@ public class MaCciStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stop loss percentage.
+	/// Cooldown bars between trades.
 	/// </summary>
-	public decimal StopLossPercent
+	public int CooldownBars
 	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type for strategy calculation.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	/// <summary>
@@ -86,36 +86,26 @@ public class MaCciStrategy : Strategy
 	/// </summary>
 	public MaCciStrategy()
 	{
-		_maPeriod = Param(nameof(MaPeriod), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("MA Period", "Period for Moving Average calculation", "Indicators")
-			
-			.SetOptimize(10, 50, 10);
-
-		_cciPeriod = Param(nameof(CciPeriod), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("CCI Period", "Period for CCI calculation", "Indicators")
-			
-			.SetOptimize(10, 30, 5);
-
-		_overboughtLevel = Param(nameof(OverboughtLevel), 100m)
-			.SetDisplay("Overbought Level", "CCI level considered overbought", "Trading Levels")
-			
-			.SetOptimize(80, 150, 25);
-
-		_oversoldLevel = Param(nameof(OversoldLevel), -100m)
-			.SetDisplay("Oversold Level", "CCI level considered oversold", "Trading Levels")
-			
-			.SetOptimize(-150, -80, 25);
-
-		_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
-			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management")
-			
-			.SetOptimize(1.0m, 5.0m, 1.0m);
-
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
+
+		_maPeriod = Param(nameof(MaPeriod), 20)
+			.SetRange(10, 50)
+			.SetDisplay("MA Period", "Period for Moving Average", "Indicators");
+
+		_cciPeriod = Param(nameof(CciPeriod), 20)
+			.SetRange(10, 30)
+			.SetDisplay("CCI Period", "Period for CCI calculation", "Indicators");
+
+		_overboughtLevel = Param(nameof(OverboughtLevel), 100m)
+			.SetDisplay("Overbought Level", "CCI level considered overbought", "Trading Levels");
+
+		_oversoldLevel = Param(nameof(OversoldLevel), -100m)
+			.SetDisplay("Oversold Level", "CCI level considered oversold", "Trading Levels");
+
+		_cooldownBars = Param(nameof(CooldownBars), 100)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "General")
+			.SetRange(5, 500);
 	}
 
 	/// <inheritdoc />
@@ -125,77 +115,90 @@ public class MaCciStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_cciValue = 0;
+		_cooldown = 0;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		// Create indicators
-		var ma = new SMA { Length = MaPeriod };
-		var cci = new CCI { Length = CciPeriod };
+		var ema = new ExponentialMovingAverage { Length = MaPeriod };
+		var cci = new CommodityChannelIndex { Length = CciPeriod };
 
-		// Create subscription
 		var subscription = SubscribeCandles(CandleType);
 
-		// Bind indicators to candles
+		// CCI takes candle input - use BindEx as side handler
+		subscription.BindEx(cci, OnCci);
+
+		// EMA for main logic
 		subscription
-			.Bind(ma, cci, ProcessCandle)
+			.Bind(ema, ProcessCandle)
 			.Start();
 
-		// Enable stop-loss
-		StartProtection(
-			takeProfit: null,
-			stopLoss: new Unit(StopLossPercent, UnitTypes.Percent),
-			isStopTrailing: false,
-			useMarketOrders: true
-		);
-
-		// Setup chart if available
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, ma);
-			
-			// Create second area for CCI
-			var cciArea = CreateChartArea();
-			DrawIndicator(cciArea, cci);
-			
+			DrawIndicator(area, ema);
 			DrawOwnTrades(area);
+
+			var cciArea = CreateChartArea();
+			if (cciArea != null)
+				DrawIndicator(cciArea, cci);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal maValue, decimal cciValue)
+	private void OnCci(ICandleMessage candle, IIndicatorValue value)
 	{
-		// Skip unfinished candles
+		if (!value.IsEmpty)
+			_cciValue = value.ToDecimal();
+	}
+
+	private void ProcessCandle(ICandleMessage candle, decimal maValue)
+	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// Trading logic
-		if (candle.ClosePrice > maValue && cciValue < OversoldLevel && Position <= 0)
+		var close = candle.ClosePrice;
+
+		if (_cooldown > 0)
 		{
-			// Price above MA and CCI is oversold - Buy
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
+			_cooldown--;
+			return;
 		}
-		else if (candle.ClosePrice < maValue && cciValue > OverboughtLevel && Position >= 0)
+
+		// Buy: price above MA + CCI oversold
+		if (close > maValue && _cciValue < OversoldLevel && Position == 0)
 		{
-			// Price below MA and CCI is overbought - Sell
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
+			BuyMarket();
+			_cooldown = CooldownBars;
 		}
-		else if (Position > 0 && candle.ClosePrice < maValue)
+		// Sell: price below MA + CCI overbought
+		else if (close < maValue && _cciValue > OverboughtLevel && Position == 0)
 		{
-			// Exit long position when price crosses below MA
-			SellMarket(Math.Abs(Position));
+			SellMarket();
+			_cooldown = CooldownBars;
 		}
-		else if (Position < 0 && candle.ClosePrice > maValue)
+
+		// Exit long: price crosses below MA
+		if (Position > 0 && close < maValue)
 		{
-			// Exit short position when price crosses above MA
-			BuyMarket(Math.Abs(Position));
+			SellMarket();
+			_cooldown = CooldownBars;
+		}
+		// Exit short: price crosses above MA
+		else if (Position < 0 && close > maValue)
+		{
+			BuyMarket();
+			_cooldown = CooldownBars;
 		}
 	}
 }

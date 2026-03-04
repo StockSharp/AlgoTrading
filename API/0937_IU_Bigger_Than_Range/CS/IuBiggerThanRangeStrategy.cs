@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -83,8 +80,29 @@ public class IuBiggerThanRangeStrategy : Strategy
 		_atrFactor = Param(nameof(AtrFactor), 2m)
 			.SetDisplay("ATR Factor", "ATR multiplier.", "Risk Management");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(2).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles.", "General");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevRangeSize = 0m;
+		_prevCandleHigh = 0m;
+		_prevCandleLow = 0m;
+		_stopPrice = 0m;
+		_targetPrice = 0m;
+		_entryPrice = 0m;
+		_highestHigh = 0m;
+		_lowestLow = decimal.MaxValue;
+		_barCount = 0;
 	}
 
 	/// <inheritdoc />

@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -36,7 +33,7 @@ public class Iu4BarUpStrategy : Strategy
 			.SetDisplay("SuperTrend ATR Factor", "ATR factor for SuperTrend", "General")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -105,7 +102,8 @@ public class Iu4BarUpStrategy : Strategy
 		if (!stValue.IsFinal)
 		return;
 
-		var st = ((SuperTrendIndicatorValue)stValue).Value;
+		if (stValue.IsEmpty) return;
+		var st = stValue.ToDecimal();
 
 		var bullish = candle.ClosePrice > candle.OpenPrice;
 		var fourBull = bullish && _prevBull1 && _prevBull2 && _prevBull3;
@@ -114,7 +112,7 @@ public class Iu4BarUpStrategy : Strategy
 		BuyMarket();
 
 		if (Position > 0 && candle.ClosePrice < st)
-		SellMarket(Position);
+		SellMarket();
 
 		_prevBull3 = _prevBull2;
 		_prevBull2 = _prevBull1;

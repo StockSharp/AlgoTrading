@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -85,6 +82,22 @@ public class InwCoinMartingaleStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_avgPrice = 0m;
+		_martingaleCount = 0;
+		_prevHistogram = 0m;
+		_isFirst = true;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
@@ -136,7 +149,7 @@ public class InwCoinMartingaleStrategy : Strategy
 			_avgPrice = price;
 			_martingaleCount = 1;
 		}
-		else if (Position > 0)
+		else if (Position > 0 && _avgPrice > 0)
 		{
 			// Check for martingale averaging down
 			var drop = (price - _avgPrice) / _avgPrice * 100m;

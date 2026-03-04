@@ -1,10 +1,6 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -64,7 +60,7 @@ public class InternalBarStrengthIbsStrategy : Strategy
 			.SetDisplay("Lower Threshold", "IBS value to enter long", "Parameters")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
 		_startTime = Param(nameof(StartTime), new DateTimeOffset(2014, 1, 1, 0, 0, 0, TimeSpan.Zero))
@@ -105,9 +101,6 @@ public class InternalBarStrengthIbsStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		var time = candle.OpenTime;
 
 		var range = candle.HighPrice - candle.LowPrice;
@@ -119,16 +112,9 @@ public class InternalBarStrengthIbsStrategy : Strategy
 		var inWindow = time >= StartTime && time <= EndTime;
 
 		if (inWindow && ibs < LowerThreshold && Position <= 0)
-		{
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
-			LogInfo($"Long entry at {candle.ClosePrice}, IBS={ibs:F2}");
-		}
+			BuyMarket();
 
 		if (Position > 0 && ibs >= UpperThreshold)
-		{
-			SellMarket(Math.Abs(Position));
-			LogInfo($"Exit long at {candle.ClosePrice}, IBS={ibs:F2}");
-		}
+			SellMarket();
 	}
 }

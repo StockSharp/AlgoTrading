@@ -1,59 +1,31 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo.Candles;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy combining VWAP and Volume indicators.
-/// Buys/sells on VWAP breakouts confirmed by above-average volume.
+/// Strategy combining VWAP with volume confirmation.
+/// Buys on VWAP breakout with above-average volume, sells on breakdown.
 /// </summary>
 public class VwapVolumeStrategy : Strategy
 {
+	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _volumePeriod;
 	private readonly StrategyParam<decimal> _volumeThreshold;
-	private readonly StrategyParam<decimal> _stopLossPercent;
-	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _cooldownBars;
 
-	private SimpleMovingAverage _volumeMA;
-
-	/// <summary>
-	/// Period for volume moving average.
-	/// </summary>
-	public int VolumePeriod
-	{
-		get => _volumePeriod.Value;
-		set => _volumePeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Volume threshold as percentage of average volume.
-	/// </summary>
-	public decimal VolumeThreshold
-	{
-		get => _volumeThreshold.Value;
-		set => _volumeThreshold.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss percentage.
-	/// </summary>
-	public decimal StopLossPercent
-	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
-	}
+	private readonly List<decimal> _volumes = new();
+	private readonly List<decimal> _typicalPriceVol = new();
+	private decimal _cumVol;
+	private decimal _cumTpv;
+	private int _cooldown;
 
 	/// <summary>
 	/// Candle type for strategy calculation.
@@ -65,33 +37,51 @@ public class VwapVolumeStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Period for volume moving average.
+	/// </summary>
+	public int VolumePeriod
+	{
+		get => _volumePeriod.Value;
+		set => _volumePeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Volume threshold multiplier.
+	/// </summary>
+	public decimal VolumeThreshold
+	{
+		get => _volumeThreshold.Value;
+		set => _volumeThreshold.Value = value;
+	}
+
+	/// <summary>
+	/// Cooldown bars between trades.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Initialize strategy.
 	/// </summary>
-			public VwapVolumeStrategy()
-			{
-					_volumePeriod = Param(nameof(VolumePeriod), 20)
-							.SetGreaterThanZero()
-							.SetDisplay("Volume MA Period", "Period for volume moving average", "Indicators")
-							
-							.SetOptimize(10, 50, 10);
+	public VwapVolumeStrategy()
+	{
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
-					_volumeThreshold = Param(nameof(VolumeThreshold), 1.5m)
-							.SetGreaterThanZero()
-							.SetDisplay("Volume Threshold", "Multiplier for average volume to confirm signal", "Trading Levels")
-							
-							.SetOptimize(1.2m, 2.0m, 0.2m);
+		_volumePeriod = Param(nameof(VolumePeriod), 20)
+			.SetRange(10, 50)
+			.SetDisplay("Volume MA Period", "Period for volume moving average", "Indicators");
 
-					_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
-							.SetGreaterThanZero()
-							.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management")
-							
-							.SetOptimize(1.0m, 3.0m, 0.5m);
+		_volumeThreshold = Param(nameof(VolumeThreshold), 1.5m)
+			.SetDisplay("Volume Threshold", "Multiplier for average volume", "Trading Levels");
 
-					_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-							.SetDisplay("Candle Type", "Type of candles to use", "General");
-
-					_volumeMA = new SMA { Length = VolumePeriod };
-			}
+		_cooldownBars = Param(nameof(CooldownBars), 100)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "General")
+			.SetRange(5, 500);
+	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
@@ -100,100 +90,105 @@ public class VwapVolumeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-			protected override void OnReseted()
-			{
-					base.OnReseted();
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_volumes.Clear();
+		_typicalPriceVol.Clear();
+		_cumVol = 0;
+		_cumTpv = 0;
+		_cooldown = 0;
+	}
 
-					_volumeMA = new SMA { Length = VolumePeriod };
-			}
+	/// <inheritdoc />
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
 
-			/// <inheritdoc />
-			protected override void OnStarted2(DateTime time)
-			{
-					base.OnStarted2(time);
+		var ema = new ExponentialMovingAverage { Length = VolumePeriod };
 
-					// Create indicators
-					var vwap = new VolumeWeightedMovingAverage();
+		var subscription = SubscribeCandles(CandleType);
 
-					// Create subscription
-					var subscription = SubscribeCandles(CandleType);
-
-		// Create custom bind for processing VWAP and volume data
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(ema, ProcessCandle)
 			.Start();
 
-		// Enable stop-loss
-		StartProtection(
-			takeProfit: null,
-			stopLoss: new Unit(StopLossPercent, UnitTypes.Percent),
-			isStopTrailing: false,
-			useMarketOrders: true
-		);
-
-		// Setup chart if available
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, vwap);
-			
-			// Create second area for volume
-			var volumeArea = CreateChartArea();
-			DrawIndicator(volumeArea, _volumeMA);
-			
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal emaValue)
 	{
-		// Process volume with indicator
-		var volumeMA = _volumeMA.Process(new DecimalIndicatorValue(_volumeMA, candle.TotalVolume, candle.ServerTime)).ToDecimal();
-
-		// Calculate VWAP manually for the current candle
-		decimal vwap = 0;
-		var typicalPrice = (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3;
-		
-		if (candle.TotalVolume > 0)
-		{
-			// Simple VWAP calculation for a single candle
-			vwap = typicalPrice;
-		}
-
-		// Skip if volume MA is not formed yet
-		if (!_volumeMA.IsFormed)
+		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// Check if volume is above threshold
-		bool isHighVolume = candle.TotalVolume > volumeMA * VolumeThreshold;
+		var close = candle.ClosePrice;
+		var high = candle.HighPrice;
+		var low = candle.LowPrice;
+		var vol = candle.TotalVolume;
+		var typicalPrice = (high + low + close) / 3m;
 
-		// Trading logic
-		if (candle.ClosePrice > vwap && isHighVolume && Position <= 0)
+		_volumes.Add(vol);
+		_cumVol += vol;
+		_cumTpv += typicalPrice * vol;
+
+		var volPrd = VolumePeriod;
+
+		if (_volumes.Count < volPrd)
 		{
-			// Price breaks above VWAP with high volume - Buy
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
+			if (_cooldown > 0) _cooldown--;
+			return;
 		}
-		else if (candle.ClosePrice < vwap && isHighVolume && Position >= 0)
+
+		// Manual VWAP (cumulative)
+		var vwapValue = _cumVol > 0 ? _cumTpv / _cumVol : close;
+
+		// Manual volume average
+		decimal sumVol = 0;
+		var count = _volumes.Count;
+		for (int i = count - volPrd; i < count; i++)
+			sumVol += _volumes[i];
+		var avgVol = sumVol / volPrd;
+
+		var highVolume = vol > avgVol * VolumeThreshold;
+
+		if (_cooldown > 0)
 		{
-			// Price breaks below VWAP with high volume - Sell
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
+			_cooldown--;
+			return;
 		}
-		else if (Position > 0 && candle.ClosePrice < vwap)
+
+		// Buy: price above VWAP + high volume
+		if (close > vwapValue && highVolume && Position == 0)
 		{
-			// Exit long position when price crosses below VWAP
-			SellMarket(Math.Abs(Position));
+			BuyMarket();
+			_cooldown = CooldownBars;
 		}
-		else if (Position < 0 && candle.ClosePrice > vwap)
+		// Sell: price below VWAP + high volume
+		else if (close < vwapValue && highVolume && Position == 0)
 		{
-			// Exit short position when price crosses above VWAP
-			BuyMarket(Math.Abs(Position));
+			SellMarket();
+			_cooldown = CooldownBars;
+		}
+
+		// Exit long: price below VWAP
+		if (Position > 0 && close < vwapValue)
+		{
+			SellMarket();
+			_cooldown = CooldownBars;
+		}
+		// Exit short: price above VWAP
+		else if (Position < 0 && close > vwapValue)
+		{
+			BuyMarket();
+			_cooldown = CooldownBars;
 		}
 	}
 }

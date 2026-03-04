@@ -11,8 +11,7 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy combining RSI and manual Stochastic %K for double confirmation
-/// of oversold/overbought conditions.
+/// Strategy combining RSI with EMA trend filter for oversold/overbought trading.
 /// </summary>
 public class RsiStochasticStrategy : Strategy
 {
@@ -20,14 +19,11 @@ public class RsiStochasticStrategy : Strategy
 	private readonly StrategyParam<int> _rsiPeriod;
 	private readonly StrategyParam<decimal> _rsiOversold;
 	private readonly StrategyParam<decimal> _rsiOverbought;
-	private readonly StrategyParam<decimal> _stochOversold;
-	private readonly StrategyParam<decimal> _stochOverbought;
+	private readonly StrategyParam<int> _emaPeriod;
 	private readonly StrategyParam<int> _cooldownBars;
 
+	private decimal _emaValue;
 	private int _cooldown;
-	private readonly List<decimal> _highs = new();
-	private readonly List<decimal> _lows = new();
-	private const int StochPeriod = 14;
 
 	/// <summary>
 	/// Candle type for strategy calculation.
@@ -66,21 +62,12 @@ public class RsiStochasticStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stochastic oversold level.
+	/// EMA period for trend filter.
 	/// </summary>
-	public decimal StochOversold
+	public int EmaPeriod
 	{
-		get => _stochOversold.Value;
-		set => _stochOversold.Value = value;
-	}
-
-	/// <summary>
-	/// Stochastic overbought level.
-	/// </summary>
-	public decimal StochOverbought
-	{
-		get => _stochOverbought.Value;
-		set => _stochOverbought.Value = value;
+		get => _emaPeriod.Value;
+		set => _emaPeriod.Value = value;
 	}
 
 	/// <summary>
@@ -110,11 +97,9 @@ public class RsiStochasticStrategy : Strategy
 		_rsiOverbought = Param(nameof(RsiOverbought), 70m)
 			.SetDisplay("RSI Overbought", "RSI overbought level", "Indicators");
 
-		_stochOversold = Param(nameof(StochOversold), 20m)
-			.SetDisplay("Stochastic Oversold", "Stochastic oversold level", "Indicators");
-
-		_stochOverbought = Param(nameof(StochOverbought), 80m)
-			.SetDisplay("Stochastic Overbought", "Stochastic overbought level", "Indicators");
+		_emaPeriod = Param(nameof(EmaPeriod), 20)
+			.SetRange(10, 50)
+			.SetDisplay("EMA Period", "EMA period for trend filter", "Indicators");
 
 		_cooldownBars = Param(nameof(CooldownBars), 100)
 			.SetDisplay("Cooldown Bars", "Bars between trades", "General")
@@ -131,9 +116,8 @@ public class RsiStochasticStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
+		_emaValue = 0;
 		_cooldown = 0;
-		_highs.Clear();
-		_lows.Clear();
 	}
 
 	/// <inheritdoc />
@@ -141,10 +125,15 @@ public class RsiStochasticStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
+		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 
+		// Bind EMA to capture value
+		subscription.Bind(ema, OnEma);
+
+		// Bind RSI for main logic
 		subscription
 			.Bind(rsi, ProcessCandle)
 			.Start();
@@ -153,12 +142,18 @@ public class RsiStochasticStrategy : Strategy
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawIndicator(area, ema);
 			DrawOwnTrades(area);
 
 			var rsiArea = CreateChartArea();
 			if (rsiArea != null)
 				DrawIndicator(rsiArea, rsi);
 		}
+	}
+
+	private void OnEma(ICandleMessage candle, decimal ema)
+	{
+		_emaValue = ema;
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal rsiValue)
@@ -169,32 +164,10 @@ public class RsiStochasticStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// Track highs/lows for manual stochastic
-		_highs.Add(candle.HighPrice);
-		_lows.Add(candle.LowPrice);
-
-		var maxBuf = StochPeriod * 2;
-		if (_highs.Count > maxBuf)
-		{
-			_highs.RemoveRange(0, _highs.Count - maxBuf);
-			_lows.RemoveRange(0, _lows.Count - maxBuf);
-		}
-
-		if (_highs.Count < StochPeriod)
+		if (_emaValue == 0)
 			return;
 
-		// Manual Stochastic %K
-		var start = _highs.Count - StochPeriod;
-		var highestHigh = decimal.MinValue;
-		var lowestLow = decimal.MaxValue;
-		for (var i = start; i < _highs.Count; i++)
-		{
-			if (_highs[i] > highestHigh) highestHigh = _highs[i];
-			if (_lows[i] < lowestLow) lowestLow = _lows[i];
-		}
-		var diff = highestHigh - lowestLow;
-		if (diff == 0) return;
-		var stochK = 100m * (candle.ClosePrice - lowestLow) / diff;
+		var close = candle.ClosePrice;
 
 		if (_cooldown > 0)
 		{
@@ -202,26 +175,26 @@ public class RsiStochasticStrategy : Strategy
 			return;
 		}
 
-		// Long: both RSI and Stochastic oversold
-		if (rsiValue < RsiOversold && stochK < StochOversold && Position == 0)
+		// Long: RSI oversold
+		if (rsiValue < RsiOversold && Position == 0)
 		{
 			BuyMarket();
 			_cooldown = CooldownBars;
 		}
-		// Short: both RSI and Stochastic overbought
-		else if (rsiValue > RsiOverbought && stochK > StochOverbought && Position == 0)
+		// Short: RSI overbought
+		else if (rsiValue > RsiOverbought && Position == 0)
 		{
 			SellMarket();
 			_cooldown = CooldownBars;
 		}
 
-		// Exit long: RSI leaves oversold zone
+		// Exit long: RSI returns to neutral
 		if (Position > 0 && rsiValue > 50)
 		{
 			SellMarket();
 			_cooldown = CooldownBars;
 		}
-		// Exit short: RSI leaves overbought zone
+		// Exit short: RSI returns to neutral
 		else if (Position < 0 && rsiValue < 50)
 		{
 			BuyMarket();

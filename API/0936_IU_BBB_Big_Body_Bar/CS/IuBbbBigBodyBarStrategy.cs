@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -53,7 +50,7 @@ public class IuBbbBigBodyBarStrategy : Strategy
 	/// </summary>
 	public IuBbbBigBodyBarStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use.", "General");
 
 		_bigBodyThreshold = Param(nameof(BigBodyThreshold), 1.5m)
@@ -64,6 +61,22 @@ public class IuBbbBigBodyBarStrategy : Strategy
 
 		_atrFactor = Param(nameof(AtrFactor), 2m)
 			.SetDisplay("ATR Factor", "ATR multiplier for trailing stop.", "Risk Management");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_sumBody = 0m;
+		_bodyCount = 0;
+		_atrStop = null;
+		_entryPrice = 0m;
 	}
 
 	/// <inheritdoc />

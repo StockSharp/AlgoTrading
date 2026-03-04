@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,20 +11,34 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy combining Donchian Channels and RSI indicators.
-/// Buys on Donchian breakouts when RSI confirms trend is not overextended.
+/// Strategy combining manual Donchian Channels with RSI.
+/// Buys on upper band breakout when RSI is not overbought.
+/// Sells on lower band breakout when RSI is not oversold.
 /// </summary>
 public class DonchianRsiStrategy : Strategy
 {
+	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _donchianPeriod;
 	private readonly StrategyParam<int> _rsiPeriod;
 	private readonly StrategyParam<decimal> _rsiOverboughtLevel;
 	private readonly StrategyParam<decimal> _rsiOversoldLevel;
-	private readonly StrategyParam<decimal> _stopLossPercent;
-	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _cooldownBars;
+
+	private readonly List<decimal> _highs = new();
+	private readonly List<decimal> _lows = new();
+	private int _cooldown;
 
 	/// <summary>
-	/// Period for Donchian Channels calculation.
+	/// Candle type for strategy calculation.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Donchian channel period.
 	/// </summary>
 	public int DonchianPeriod
 	{
@@ -36,7 +47,7 @@ public class DonchianRsiStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Period for RSI calculation.
+	/// RSI period.
 	/// </summary>
 	public int RsiPeriod
 	{
@@ -63,187 +74,153 @@ public class DonchianRsiStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stop loss percentage.
+	/// Cooldown bars between trades.
 	/// </summary>
-	public decimal StopLossPercent
+	public int CooldownBars
 	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
-
-	/// <summary>
-	/// Candle type for strategy calculation.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	// Variables to store previous high and low values for breakout detection
-	private decimal _prevUpperBand;
-	private decimal _prevLowerBand;
-	private bool _isFirstCalculation;
 
 	/// <summary>
 	/// Initialize strategy.
 	/// </summary>
 	public DonchianRsiStrategy()
 	{
-		_donchianPeriod = Param(nameof(DonchianPeriod), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("Donchian Period", "Period for Donchian Channels calculation", "Indicators")
-			
-			.SetOptimize(10, 50, 10);
-
-		_rsiPeriod = Param(nameof(RsiPeriod), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("RSI Period", "Period for RSI calculation", "Indicators")
-			
-			.SetOptimize(7, 21, 7);
-
-		_rsiOverboughtLevel = Param(nameof(RsiOverboughtLevel), 70m)
-			.SetRange(50, 90)
-			.SetDisplay("RSI Overbought", "RSI level considered overbought", "Trading Levels")
-			
-			.SetOptimize(65, 80, 5);
-
-		_rsiOversoldLevel = Param(nameof(RsiOversoldLevel), 30m)
-			.SetRange(10, 50)
-			.SetDisplay("RSI Oversold", "RSI level considered oversold", "Trading Levels")
-			
-			.SetOptimize(20, 35, 5);
-
-		_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
-			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management")
-			
-			.SetOptimize(1.0m, 3.0m, 0.5m);
-
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
+
+		_donchianPeriod = Param(nameof(DonchianPeriod), 20)
+			.SetRange(10, 50)
+			.SetDisplay("Donchian Period", "Period for Donchian Channels", "Indicators");
+
+		_rsiPeriod = Param(nameof(RsiPeriod), 14)
+			.SetRange(7, 21)
+			.SetDisplay("RSI Period", "Period for RSI", "Indicators");
+
+		_rsiOverboughtLevel = Param(nameof(RsiOverboughtLevel), 70m)
+			.SetDisplay("RSI Overbought", "RSI overbought level", "Trading Levels");
+
+		_rsiOversoldLevel = Param(nameof(RsiOversoldLevel), 30m)
+			.SetDisplay("RSI Oversold", "RSI oversold level", "Trading Levels");
+
+		_cooldownBars = Param(nameof(CooldownBars), 100)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "General")
+			.SetRange(5, 500);
 	}
 
-			/// <inheritdoc />
-			public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-			{
-					return [(Security, CandleType)];
-			}
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
 
-			/// <inheritdoc />
-			protected override void OnReseted()
-			{
-					base.OnReseted();
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_highs.Clear();
+		_lows.Clear();
+		_cooldown = 0;
+	}
 
-					_prevLowerBand = default;
-					_prevUpperBand = default;
-					_isFirstCalculation = true;
-			}
+	/// <inheritdoc />
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
 
-			/// <inheritdoc />
-			protected override void OnStarted2(DateTime time)
-			{
-					base.OnStarted2(time);
+		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 
-					// Create indicators
-					var donchian = new DonchianChannels { Length = DonchianPeriod };
-					var rsi = new RSI { Length = RsiPeriod };
-
-		// Create subscription
 		var subscription = SubscribeCandles(CandleType);
 
-		// Bind indicators to candles
 		subscription
-			.BindEx(donchian, rsi, ProcessCandle)
+			.Bind(rsi, ProcessCandle)
 			.Start();
 
-		// Enable stop-loss
-		StartProtection(
-			takeProfit: null,
-			stopLoss: new Unit(StopLossPercent, UnitTypes.Percent),
-			isStopTrailing: false,
-			useMarketOrders: true
-		);
-
-		// Setup chart if available
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, donchian);
-			
-			// Create second area for RSI
-			var rsiArea = CreateChartArea();
-			DrawIndicator(rsiArea, rsi);
-			
 			DrawOwnTrades(area);
+
+			var rsiArea = CreateChartArea();
+			if (rsiArea != null)
+				DrawIndicator(rsiArea, rsi);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue donchianValue, IIndicatorValue rsiValue)
+	private void ProcessCandle(ICandleMessage candle, decimal rsiValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var donchianTyped = (DonchianChannelsValue)donchianValue;
-
-		if (donchianTyped.UpperBand is not decimal upperBand ||
-			donchianTyped.LowerBand is not decimal lowerBand ||
-			donchianTyped.Middle is not decimal middleBand)
-		{
-			return;
-		}
-
-		// Store current bands before comparison
-		var currentUpper = upperBand;
-		var currentLower = lowerBand;
-
-		// Skip first calculation to avoid false breakouts
-		if (_isFirstCalculation)
-		{
-			_isFirstCalculation = false;
-			_prevUpperBand = currentUpper;
-			_prevLowerBand = currentLower;
-			return;
-		}
-
-		// Check if strategy is ready to trade
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var rsiDec = rsiValue.ToDecimal();
+		var high = candle.HighPrice;
+		var low = candle.LowPrice;
+		var close = candle.ClosePrice;
 
-		// Detect breakouts by comparing current price to previous Donchian bands
-		bool upperBreakout = candle.ClosePrice > _prevUpperBand;
-		bool lowerBreakout = candle.ClosePrice < _prevLowerBand;
+		_highs.Add(high);
+		_lows.Add(low);
 
-		// Trading logic
-		if (upperBreakout && rsiDec < RsiOverboughtLevel && Position <= 0)
+		var period = DonchianPeriod;
+
+		if (_highs.Count < period + 1)
 		{
-			// Upward breakout with RSI not overbought - Buy
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
-		}
-		else if (lowerBreakout && rsiDec > RsiOversoldLevel && Position >= 0)
-		{
-			// Downward breakout with RSI not oversold - Sell
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
-		}
-		else if (Position > 0 && candle.ClosePrice < middleBand)
-		{
-			// Exit long position when price falls below middle band
-			SellMarket(Math.Abs(Position));
-		}
-		else if (Position < 0 && candle.ClosePrice > middleBand)
-		{
-			// Exit short position when price rises above middle band
-			BuyMarket(Math.Abs(Position));
+			if (_cooldown > 0) _cooldown--;
+			return;
 		}
 
-		// Update previous bands for next comparison
-		_prevUpperBand = currentUpper;
-		_prevLowerBand = currentLower;
+		// Previous Donchian channel (excluding current bar)
+		decimal prevUpper = decimal.MinValue;
+		decimal prevLower = decimal.MaxValue;
+		var count = _highs.Count;
+		for (int i = count - period - 1; i < count - 1; i++)
+		{
+			if (_highs[i] > prevUpper) prevUpper = _highs[i];
+			if (_lows[i] < prevLower) prevLower = _lows[i];
+		}
+		var middleBand = (prevUpper + prevLower) / 2m;
+
+		// Trim lists
+		if (_highs.Count > period * 3)
+		{
+			var trim = _highs.Count - period * 2;
+			_highs.RemoveRange(0, trim);
+			_lows.RemoveRange(0, trim);
+		}
+
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+			return;
+		}
+
+		// Buy: upper breakout + RSI not overbought
+		if (close > prevUpper && rsiValue < RsiOverboughtLevel && Position == 0)
+		{
+			BuyMarket();
+			_cooldown = CooldownBars;
+		}
+		// Sell: lower breakout + RSI not oversold
+		else if (close < prevLower && rsiValue > RsiOversoldLevel && Position == 0)
+		{
+			SellMarket();
+			_cooldown = CooldownBars;
+		}
+
+		// Exit long: price below middle
+		if (Position > 0 && close < middleBand)
+		{
+			SellMarket();
+			_cooldown = CooldownBars;
+		}
+		// Exit short: price above middle
+		else if (Position < 0 && close > middleBand)
+		{
+			BuyMarket();
+			_cooldown = CooldownBars;
+		}
 	}
 }

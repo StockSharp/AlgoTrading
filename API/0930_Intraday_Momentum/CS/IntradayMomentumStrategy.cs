@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -31,10 +28,6 @@ public class IntradayMomentumStrategy : Strategy
 	private readonly StrategyParam<int> _endMinute;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private ExponentialMovingAverage _emaFast;
-	private ExponentialMovingAverage _emaSlow;
-	private RelativeStrengthIndex _rsi;
-	private VWAP _vwap;
 
 	private decimal _prevFast;
 	private decimal _prevSlow;
@@ -150,23 +143,23 @@ public class IntradayMomentumStrategy : Strategy
 			
 			.SetOptimize(1m, 10m, 0.5m);
 
-		_startHour = Param(nameof(StartHour), 9)
+		_startHour = Param(nameof(StartHour), 0)
 			.SetRange(0, 23)
 			.SetDisplay("Session Start Hour", "Trading session start hour", "Session");
 
-		_startMinute = Param(nameof(StartMinute), 30)
+		_startMinute = Param(nameof(StartMinute), 0)
 			.SetRange(0, 59)
 			.SetDisplay("Session Start Minute", "Trading session start minute", "Session");
 
-		_endHour = Param(nameof(EndHour), 15)
+		_endHour = Param(nameof(EndHour), 23)
 			.SetRange(0, 23)
 			.SetDisplay("Session End Hour", "Trading session end hour", "Session");
 
-		_endMinute = Param(nameof(EndMinute), 45)
+		_endMinute = Param(nameof(EndMinute), 59)
 			.SetRange(0, 59)
 			.SetDisplay("Session End Minute", "Trading session end minute", "Session");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -194,26 +187,31 @@ public class IntradayMomentumStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_emaFast = new EMA { Length = EmaFastLength };
-		_emaSlow = new EMA { Length = EmaSlowLength };
-		_rsi = new RelativeStrengthIndex { Length = RsiLength };
-		_vwap = new VWAP();
+		var emaFastInd = new ExponentialMovingAverage { Length = EmaFastLength };
+		var emaSlowInd = new ExponentialMovingAverage { Length = EmaSlowLength };
+		var rsiInd = new RelativeStrengthIndex { Length = RsiLength };
+		var vwapInd = new VolumeWeightedAveragePrice();
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_emaFast, _emaSlow, _rsi, _vwap, ProcessCandle)
+			.BindEx(emaFastInd, emaSlowInd, rsiInd, vwapInd, ProcessCandle)
 			.Start();
 
 		StartProtection(null, null);
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal emaFast, decimal emaSlow, decimal rsi, decimal vwap)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue emaFastVal, IIndicatorValue emaSlowVal, IIndicatorValue rsiVal, IIndicatorValue vwapVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_emaFast.IsFormed || !_emaSlow.IsFormed || !_rsi.IsFormed || !_vwap.IsFormed)
+		if (emaFastVal.IsEmpty || emaSlowVal.IsEmpty || rsiVal.IsEmpty || vwapVal.IsEmpty)
 			return;
+
+		var emaFast = emaFastVal.ToDecimal();
+		var emaSlow = emaSlowVal.ToDecimal();
+		var rsi = rsiVal.ToDecimal();
+		var vwap = vwapVal.ToDecimal();
 
 		var time = candle.OpenTime.TimeOfDay;
 		var start = new TimeSpan(StartHour, StartMinute, 0);

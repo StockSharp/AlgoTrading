@@ -1,12 +1,8 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -39,7 +35,7 @@ public class IntradayVolumeSwingsStrategy : Strategy {
 							"General");
 
 		_candleType =
-			Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 				.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -174,9 +170,7 @@ public class IntradayVolumeSwingsStrategy : Strategy {
 			_currentSwingHighTop = _currentSwingHighBottom = null;
 		}
 
-		if (IsFormedAndOnlineAndAllowTrading()) {
-			CheckRegions(candle);
-		}
+		CheckRegions(candle);
 
 		_volume1 = candle.TotalVolume;
 		_prevOpen = candle.OpenPrice;
@@ -198,11 +192,11 @@ public class IntradayVolumeSwingsStrategy : Strategy {
 			var level = _prevDaySwingHighBottom.Value;
 			if (RegionMustClose) {
 				if (_prevOpen < level && _prevClose >= level && Position <= 0)
-					BuyMarket(Volume + Math.Abs(Position));
+					BuyMarket();
 			} else {
 				if (candle.OpenPrice < level && candle.HighPrice >= level &&
 					Position <= 0)
-					BuyMarket(Volume + Math.Abs(Position));
+					BuyMarket();
 			}
 		}
 
@@ -210,11 +204,11 @@ public class IntradayVolumeSwingsStrategy : Strategy {
 			var level = _prevDaySwingLowTop.Value;
 			if (RegionMustClose) {
 				if (_prevOpen > level && _prevClose <= level && Position >= 0)
-					SellMarket(Volume + Math.Abs(Position));
+					SellMarket();
 			} else {
 				if (candle.OpenPrice > level && candle.LowPrice <= level &&
 					Position >= 0)
-					SellMarket(Volume + Math.Abs(Position));
+					SellMarket();
 			}
 		}
 
@@ -222,11 +216,11 @@ public class IntradayVolumeSwingsStrategy : Strategy {
 			var level = _dailySwingHighBottom.Value;
 			if (RegionMustClose) {
 				if (_prevOpen < level && _prevClose >= level && Position <= 0)
-					BuyMarket(Volume + Math.Abs(Position));
+					BuyMarket();
 			} else {
 				if (candle.OpenPrice < level && candle.HighPrice >= level &&
 					Position <= 0)
-					BuyMarket(Volume + Math.Abs(Position));
+					BuyMarket();
 			}
 		}
 
@@ -234,11 +228,11 @@ public class IntradayVolumeSwingsStrategy : Strategy {
 			var level = _dailySwingLowTop.Value;
 			if (RegionMustClose) {
 				if (_prevOpen > level && _prevClose <= level && Position >= 0)
-					SellMarket(Volume + Math.Abs(Position));
+					SellMarket();
 			} else {
 				if (candle.OpenPrice > level && candle.LowPrice <= level &&
 					Position >= 0)
-					SellMarket(Volume + Math.Abs(Position));
+					SellMarket();
 			}
 		}
 	}
