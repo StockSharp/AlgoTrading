@@ -1,12 +1,8 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -14,8 +10,8 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Parabolic SAR Distance Mean Reversion Strategy.
-/// This strategy trades based on the mean reversion of the distance between price and Parabolic SAR.
+/// Parabolic SAR distance mean reversion strategy.
+/// Trades large deviations of price from a locally calculated Parabolic SAR level and exits when the distance returns to its recent average.
 /// </summary>
 public class ParabolicSarDistanceMeanReversionStrategy : Strategy
 {
@@ -23,21 +19,21 @@ public class ParabolicSarDistanceMeanReversionStrategy : Strategy
 	private readonly StrategyParam<decimal> _accelerationLimit;
 	private readonly StrategyParam<int> _lookbackPeriod;
 	private readonly StrategyParam<decimal> _deviationMultiplier;
+	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
-	
-	private ParabolicSar _parabolicSar;
-	private SimpleMovingAverage _distanceAverage;
-	private StandardDeviation _distanceStdDev;
-	
-	private decimal _currentDistanceLong;  // Price - SAR (for long positions)
-	private decimal _currentDistanceShort; // SAR - Price (for short positions)
-	private decimal _prevDistanceLong;
-	private decimal _prevDistanceShort;
-	private decimal _prevDistanceAvgLong;
-	private decimal _prevDistanceAvgShort;
-	private decimal _prevDistanceStdDevLong;
-	private decimal _prevDistanceStdDevShort;
+
+	private decimal[] _distanceHistory;
+	private int _currentIndex;
+	private int _filledCount;
+	private int _cooldown;
+	private bool _isInitialized;
+	private bool _isBullishTrend;
 	private decimal _sarValue;
+	private decimal _extremePoint;
+	private decimal _acceleration;
+	private decimal _previousHigh;
+	private decimal _previousLow;
 
 	/// <summary>
 	/// Acceleration factor for Parabolic SAR.
@@ -58,7 +54,7 @@ public class ParabolicSarDistanceMeanReversionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Lookback period for calculating the average and standard deviation of distance.
+	/// Lookback period for distance statistics.
 	/// </summary>
 	public int LookbackPeriod
 	{
@@ -76,6 +72,24 @@ public class ParabolicSarDistanceMeanReversionStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Stop loss percentage.
+	/// </summary>
+	public decimal StopLossPercent
+	{
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
+	}
+
+	/// <summary>
+	/// Cooldown bars between orders.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Candle type.
 	/// </summary>
 	public DataType CandleType
@@ -85,29 +99,37 @@ public class ParabolicSarDistanceMeanReversionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Constructor.
+	/// Initializes a new instance of <see cref="ParabolicSarDistanceMeanReversionStrategy"/>.
 	/// </summary>
 	public ParabolicSarDistanceMeanReversionStrategy()
 	{
 		_accelerationFactor = Param(nameof(AccelerationFactor), 0.02m)
+			.SetGreaterThanZero()
 			.SetDisplay("Acceleration Factor", "Acceleration factor for Parabolic SAR", "Parabolic SAR")
-			
 			.SetOptimize(0.01m, 0.05m, 0.01m);
 
 		_accelerationLimit = Param(nameof(AccelerationLimit), 0.2m)
+			.SetGreaterThanZero()
 			.SetDisplay("Acceleration Limit", "Acceleration limit for Parabolic SAR", "Parabolic SAR")
-			
 			.SetOptimize(0.1m, 0.3m, 0.05m);
 
 		_lookbackPeriod = Param(nameof(LookbackPeriod), 20)
-			.SetDisplay("Lookback Period", "Lookback period for calculating the average and standard deviation of distance", "Mean Reversion")
-			
+			.SetGreaterThanZero()
+			.SetDisplay("Lookback Period", "Lookback period for distance statistics", "Strategy Parameters")
 			.SetOptimize(10, 50, 5);
 
-		_deviationMultiplier = Param(nameof(DeviationMultiplier), 2.0m)
-			.SetDisplay("Deviation Multiplier", "Deviation multiplier for mean reversion detection", "Mean Reversion")
-			
-			.SetOptimize(1.0m, 3.0m, 0.5m);
+		_deviationMultiplier = Param(nameof(DeviationMultiplier), 1.5m)
+			.SetGreaterThanZero()
+			.SetDisplay("Deviation Multiplier", "Deviation multiplier for mean reversion detection", "Strategy Parameters")
+			.SetOptimize(1m, 3m, 0.5m);
+
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetGreaterThanZero()
+			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management");
+
+		_cooldownBars = Param(nameof(CooldownBars), 1200)
+			.SetRange(1, 5000)
+			.SetDisplay("Cooldown Bars", "Bars to wait between orders", "Risk Management");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type for strategy", "General");
@@ -123,15 +145,17 @@ public class ParabolicSarDistanceMeanReversionStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_currentDistanceLong = 0;
-		_currentDistanceShort = 0;
-		_prevDistanceLong = 0;
-		_prevDistanceShort = 0;
-		_prevDistanceAvgLong = 0;
-		_prevDistanceAvgShort = 0;
-		_prevDistanceStdDevLong = 0;
-		_prevDistanceStdDevShort = 0;
-		_sarValue = 0;
+		_distanceHistory = new decimal[LookbackPeriod];
+		_currentIndex = default;
+		_filledCount = default;
+		_cooldown = default;
+		_isInitialized = default;
+		_isBullishTrend = default;
+		_sarValue = default;
+		_extremePoint = default;
+		_acceleration = default;
+		_previousHigh = default;
+		_previousLow = default;
 	}
 
 	/// <inheritdoc />
@@ -139,133 +163,168 @@ public class ParabolicSarDistanceMeanReversionStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Initialize indicators
-		_parabolicSar = new ParabolicSar
-		{
-			Acceleration = AccelerationFactor,
-			AccelerationMax = AccelerationLimit
-		};
-		
-		_distanceAverage = new SMA { Length = LookbackPeriod };
-		_distanceStdDev = new StandardDeviation { Length = LookbackPeriod };
-		
-		// Reset stored values
+		_distanceHistory = new decimal[LookbackPeriod];
+		_currentIndex = 0;
+		_filledCount = 0;
+		_cooldown = 0;
 
-		// Create subscription and bind indicators
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(_parabolicSar, ProcessParabolicSar)
+			.Bind(ProcessCandle)
 			.Start();
 
-		// Setup chart visualization if available
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _parabolicSar);
 			DrawOwnTrades(area);
 		}
+
+		StartProtection(new(), new Unit(StopLossPercent, UnitTypes.Percent));
 	}
 
-	private void ProcessParabolicSar(ICandleMessage candle, IIndicatorValue value)
+	private void ProcessCandle(ICandleMessage candle)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
+		if (!_isInitialized)
+		{
+			InitializeState(candle);
+			return;
+		}
+
+		UpdateSar(candle);
+
+		var distance = Math.Abs(candle.ClosePrice - _sarValue);
+
+		_distanceHistory[_currentIndex] = distance;
+		_currentIndex = (_currentIndex + 1) % LookbackPeriod;
+
+		if (_filledCount < LookbackPeriod)
+			_filledCount++;
+
+		if (_filledCount < LookbackPeriod)
+		{
+			_previousHigh = candle.HighPrice;
+			_previousLow = candle.LowPrice;
+			return;
+		}
+
+		var avgDistance = 0m;
+		var sumSq = 0m;
+
+		for (var i = 0; i < LookbackPeriod; i++)
+			avgDistance += _distanceHistory[i];
+
+		avgDistance /= LookbackPeriod;
+
+		for (var i = 0; i < LookbackPeriod; i++)
+		{
+			var diff = _distanceHistory[i] - avgDistance;
+			sumSq += diff * diff;
+		}
+
+		var stdDistance = (decimal)Math.Sqrt((double)(sumSq / LookbackPeriod));
+
 		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-		
-		// Get the Parabolic SAR value
-		_sarValue = value.ToDecimal();
-		
-		// Calculate distances
-		_currentDistanceLong = candle.ClosePrice - _sarValue;
-		_currentDistanceShort = _sarValue - candle.ClosePrice;
-		
-		// Calculate averages and standard deviations for both distances
-		var longDistanceAvg = _distanceAverage.Process(new DecimalIndicatorValue(_distanceAverage, _currentDistanceLong, candle.ServerTime)).ToDecimal();
-		var longDistanceStdDev = _distanceStdDev.Process(new DecimalIndicatorValue(_distanceStdDev, _currentDistanceLong, candle.ServerTime)).ToDecimal();
-		
-		var shortDistanceAvg = _distanceAverage.Process(new DecimalIndicatorValue(_distanceAverage, _currentDistanceShort, candle.ServerTime)).ToDecimal();
-		var shortDistanceStdDev = _distanceStdDev.Process(new DecimalIndicatorValue(_distanceStdDev, _currentDistanceShort, candle.ServerTime)).ToDecimal();
-		
-		// Skip the first value
-		if (_prevDistanceLong == 0 || _prevDistanceShort == 0)
 		{
-			_prevDistanceLong = _currentDistanceLong;
-			_prevDistanceShort = _currentDistanceShort;
-			_prevDistanceAvgLong = longDistanceAvg;
-			_prevDistanceAvgShort = shortDistanceAvg;
-			_prevDistanceStdDevLong = longDistanceStdDev;
-			_prevDistanceStdDevShort = shortDistanceStdDev;
+			_previousHigh = candle.HighPrice;
+			_previousLow = candle.LowPrice;
 			return;
 		}
-		
-		// Calculate thresholds for long position
-		var longDistanceExtendedThreshold = _prevDistanceAvgLong + _prevDistanceStdDevLong * DeviationMultiplier;
-		
-		// Calculate thresholds for short position
-		var shortDistanceExtendedThreshold = _prevDistanceAvgShort + _prevDistanceStdDevShort * DeviationMultiplier;
-		
-		// Trading logic:
-		// For long positions - when price is far above SAR (mean reversion to downside)
-		if (_currentDistanceLong > longDistanceExtendedThreshold && 
-			_prevDistanceLong <= longDistanceExtendedThreshold && 
-			Position >= 0 && candle.ClosePrice > _sarValue)
+
+		if (_cooldown > 0)
 		{
-			SellMarket(Volume + Math.Abs(Position));
-			LogInfo($"Long distance extended: {_currentDistanceLong} > {longDistanceExtendedThreshold}. Selling at {candle.ClosePrice}");
+			_cooldown--;
+			_previousHigh = candle.HighPrice;
+			_previousLow = candle.LowPrice;
+			return;
 		}
-		// For short positions - when price is far below SAR (mean reversion to upside)
-		else if (_currentDistanceShort > shortDistanceExtendedThreshold && 
-				_prevDistanceShort <= shortDistanceExtendedThreshold && 
-				Position <= 0 && candle.ClosePrice < _sarValue)
+
+		var extendedThreshold = avgDistance + stdDistance * DeviationMultiplier;
+		var priceAboveSar = candle.ClosePrice > _sarValue;
+		var priceBelowSar = candle.ClosePrice < _sarValue;
+
+		if (Position == 0)
 		{
-			BuyMarket(Volume + Math.Abs(Position));
-			LogInfo($"Short distance extended: {_currentDistanceShort} > {shortDistanceExtendedThreshold}. Buying at {candle.ClosePrice}");
+			if (distance > extendedThreshold)
+			{
+				if (priceAboveSar)
+				{
+					SellMarket();
+					_cooldown = CooldownBars;
+				}
+				else if (priceBelowSar)
+				{
+					BuyMarket();
+					_cooldown = CooldownBars;
+				}
+			}
 		}
-		
-		// Exit positions when distance returns to average
-		else if (Position < 0 && _currentDistanceShort < _prevDistanceAvgShort && _prevDistanceShort >= _prevDistanceAvgShort)
-		{
-			BuyMarket(Math.Abs(Position));
-			LogInfo($"Short distance returned to average: {_currentDistanceShort} < {_prevDistanceAvgShort}. Closing short position at {candle.ClosePrice}");
-		}
-		else if (Position < 0 && _currentDistanceShort < _prevDistanceAvgShort && _prevDistanceShort >= _prevDistanceAvgShort)
-		{
-			BuyMarket(Math.Abs(Position));
-			LogInfo($"Short distance returned to average: {_currentDistanceShort} < {_prevDistanceAvgShort}. Closing short position at {candle.ClosePrice}");
-		}
-		else if (Position > 0 && _currentDistanceLong < _prevDistanceAvgLong && _prevDistanceLong >= _prevDistanceAvgLong)
+		else if (Position > 0 && (distance <= avgDistance || priceAboveSar))
 		{
 			SellMarket(Math.Abs(Position));
-			LogInfo($"Long distance returned to average: {_currentDistanceLong} < {_prevDistanceAvgLong}. Closing long position at {candle.ClosePrice}");
+			_cooldown = CooldownBars;
 		}
-		
-		// Use Parabolic SAR as dynamic stop
-		else if ((Position > 0 && candle.ClosePrice < _sarValue) || 
-				(Position < 0 && candle.ClosePrice > _sarValue))
+		else if (Position < 0 && (distance <= avgDistance || priceBelowSar))
 		{
-			if (Position > 0)
+			BuyMarket(Math.Abs(Position));
+			_cooldown = CooldownBars;
+		}
+
+		_previousHigh = candle.HighPrice;
+		_previousLow = candle.LowPrice;
+	}
+
+	private void InitializeState(ICandleMessage candle)
+	{
+		_isBullishTrend = candle.ClosePrice >= candle.OpenPrice;
+		_sarValue = _isBullishTrend ? candle.LowPrice : candle.HighPrice;
+		_extremePoint = _isBullishTrend ? candle.HighPrice : candle.LowPrice;
+		_acceleration = AccelerationFactor;
+		_previousHigh = candle.HighPrice;
+		_previousLow = candle.LowPrice;
+		_isInitialized = true;
+	}
+
+	private void UpdateSar(ICandleMessage candle)
+	{
+		_sarValue += _acceleration * (_extremePoint - _sarValue);
+
+		if (_isBullishTrend)
+		{
+			_sarValue = Math.Min(_sarValue, _previousLow);
+
+			if (candle.LowPrice <= _sarValue)
 			{
-				SellMarket(Math.Abs(Position));
-				LogInfo($"Price crossed below Parabolic SAR: {candle.ClosePrice} < {_sarValue}. Closing long position at {candle.ClosePrice}");
+				_isBullishTrend = false;
+				_sarValue = _extremePoint;
+				_extremePoint = candle.LowPrice;
+				_acceleration = AccelerationFactor;
 			}
-			else if (Position < 0)
+			else if (candle.HighPrice > _extremePoint)
 			{
-				BuyMarket(Math.Abs(Position));
-				LogInfo($"Price crossed above Parabolic SAR: {candle.ClosePrice} > {_sarValue}. Closing short position at {candle.ClosePrice}");
+				_extremePoint = candle.HighPrice;
+				_acceleration = Math.Min(_acceleration + AccelerationFactor, AccelerationLimit);
 			}
 		}
-		
-		// Store current values for next comparison
-		_prevDistanceLong = _currentDistanceLong;
-		_prevDistanceShort = _currentDistanceShort;
-		_prevDistanceAvgLong = longDistanceAvg;
-		_prevDistanceAvgShort = shortDistanceAvg;
-		_prevDistanceStdDevLong = longDistanceStdDev;
-		_prevDistanceStdDevShort = shortDistanceStdDev;
+		else
+		{
+			_sarValue = Math.Max(_sarValue, _previousHigh);
+
+			if (candle.HighPrice >= _sarValue)
+			{
+				_isBullishTrend = true;
+				_sarValue = _extremePoint;
+				_extremePoint = candle.HighPrice;
+				_acceleration = AccelerationFactor;
+			}
+			else if (candle.LowPrice < _extremePoint)
+			{
+				_extremePoint = candle.LowPrice;
+				_acceleration = Math.Min(_acceleration + AccelerationFactor, AccelerationLimit);
+			}
+		}
 	}
 }

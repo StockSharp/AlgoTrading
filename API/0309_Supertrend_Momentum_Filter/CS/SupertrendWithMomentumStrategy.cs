@@ -1,11 +1,9 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
+using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -14,20 +12,25 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on Supertrend and Momentum indicators.
+/// Trend-following strategy that trades SuperTrend direction only when momentum confirms acceleration.
 /// </summary>
 public class SupertrendWithMomentumStrategy : Strategy
 {
 	private readonly StrategyParam<int> _supertrendPeriod;
 	private readonly StrategyParam<decimal> _supertrendMultiplier;
 	private readonly StrategyParam<int> _momentumPeriod;
+	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
 
-	// Store previous values to detect changes
+	private SuperTrend _supertrend;
+	private Momentum _momentum;
 	private decimal _prevMomentum;
+	private bool _isInitialized;
+	private int _cooldown;
 
 	/// <summary>
-	/// Supertrend period parameter.
+	/// SuperTrend period.
 	/// </summary>
 	public int SupertrendPeriod
 	{
@@ -36,7 +39,7 @@ public class SupertrendWithMomentumStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Supertrend multiplier parameter.
+	/// SuperTrend multiplier.
 	/// </summary>
 	public decimal SupertrendMultiplier
 	{
@@ -45,7 +48,7 @@ public class SupertrendWithMomentumStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Momentum period parameter.
+	/// Momentum period.
 	/// </summary>
 	public int MomentumPeriod
 	{
@@ -54,7 +57,25 @@ public class SupertrendWithMomentumStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Candle type parameter.
+	/// Bars to wait between orders.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
+	/// Stop loss percentage.
+	/// </summary>
+	public decimal StopLossPercent
+	{
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -63,27 +84,29 @@ public class SupertrendWithMomentumStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Constructor.
+	/// Initializes strategy parameters.
 	/// </summary>
 	public SupertrendWithMomentumStrategy()
 	{
 		_supertrendPeriod = Param(nameof(SupertrendPeriod), 10)
-			.SetGreaterThanZero()
-			.SetDisplay("Supertrend Period", "Period of the Supertrend indicator", "Indicators")
-			
-			.SetOptimize(5, 20, 1);
+			.SetRange(2, 50)
+			.SetDisplay("Supertrend Period", "Period of the SuperTrend indicator", "Indicators");
 
-		_supertrendMultiplier = Param(nameof(SupertrendMultiplier), 3.0m)
-			.SetGreaterThanZero()
-			.SetDisplay("Supertrend Multiplier", "Multiplier for the Supertrend indicator", "Indicators")
-			
-			.SetOptimize(1.0m, 5.0m, 0.5m);
+		_supertrendMultiplier = Param(nameof(SupertrendMultiplier), 3m)
+			.SetRange(0.5m, 10m)
+			.SetDisplay("Supertrend Multiplier", "Multiplier of the SuperTrend indicator", "Indicators");
 
 		_momentumPeriod = Param(nameof(MomentumPeriod), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("Momentum Period", "Period of the Momentum indicator", "Indicators")
-			
-			.SetOptimize(5, 30, 5);
+			.SetRange(2, 100)
+			.SetDisplay("Momentum Period", "Period of the Momentum indicator", "Indicators");
+
+		_cooldownBars = Param(nameof(CooldownBars), 84)
+			.SetRange(1, 500)
+			.SetDisplay("Cooldown Bars", "Bars to wait between orders", "Risk");
+
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetRange(0.5m, 10m)
+			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -92,7 +115,8 @@ public class SupertrendWithMomentumStrategy : Strategy
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return [(Security, CandleType)];
+		if (Security != null)
+			yield return (Security, CandleType);
 	}
 
 	/// <inheritdoc />
@@ -100,7 +124,11 @@ public class SupertrendWithMomentumStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_prevMomentum = default;
+		_supertrend = null;
+		_momentum = null;
+		_prevMomentum = 0m;
+		_isInitialized = false;
+		_cooldown = 0;
 	}
 
 	/// <inheritdoc />
@@ -108,82 +136,98 @@ public class SupertrendWithMomentumStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Create indicators
-		var supertrend = new SuperTrend
+		if (Security == null)
+			throw new InvalidOperationException("Security is not specified.");
+
+		_supertrend = new SuperTrend
 		{
 			Length = SupertrendPeriod,
-			Multiplier = SupertrendMultiplier
+			Multiplier = SupertrendMultiplier,
 		};
+		_momentum = new Momentum { Length = MomentumPeriod };
+		_cooldown = 0;
+		_isInitialized = false;
 
-		var momentum = new Momentum
-		{
-			Length = MomentumPeriod
-		};
-
-		// Subscribe to candles and bind indicators
 		var subscription = SubscribeCandles(CandleType);
 
 		subscription
-			.Bind(supertrend, momentum, ProcessCandle)
+			.Bind(_supertrend, _momentum, ProcessCandle)
 			.Start();
 
-		// Setup chart if available
 		var area = CreateChartArea();
+
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, supertrend);
-			DrawIndicator(area, momentum);
+			DrawIndicator(area, _supertrend);
+			DrawIndicator(area, _momentum);
 			DrawOwnTrades(area);
 		}
 
-		// Setup position protection
-		StartProtection(
-			takeProfit: new Unit(2, UnitTypes.Percent),
-			stopLoss: new Unit(1, UnitTypes.Percent)
-		);
+		StartProtection(new Unit(0, UnitTypes.Absolute), new Unit(StopLossPercent, UnitTypes.Percent), false);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal supertrendValue, decimal momentumValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready for trading
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!_supertrend.IsFormed || !_momentum.IsFormed)
 			return;
 
-		var isAboveSupertrend = candle.ClosePrice > supertrendValue;
+		if (ProcessState != ProcessStates.Started)
+			return;
+
+		if (!_isInitialized)
+		{
+			_prevMomentum = momentumValue;
+			_isInitialized = true;
+			return;
+		}
+
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+			_prevMomentum = momentumValue;
+			return;
+		}
+
+		var price = candle.ClosePrice;
+		var isAboveSupertrend = price > supertrendValue;
+		var isBelowSupertrend = price < supertrendValue;
 		var isMomentumRising = momentumValue > _prevMomentum;
+		var isMomentumFalling = momentumValue < _prevMomentum;
 
-		// Strategy logic:
-		// Buy when price is above Supertrend and Momentum is rising
-		// Sell when price is below Supertrend and Momentum is falling
-		if (isAboveSupertrend && isMomentumRising && Position <= 0)
+		if (Position == 0)
 		{
-			// Cancel any active orders before entering a new position
-			CancelActiveOrders();
-
-			// Calculate position size
-			var volume = Volume + Math.Abs(Position);
-			
-			// Enter long position
-			BuyMarket(volume);
+			if (isAboveSupertrend && isMomentumRising && momentumValue >= 100m)
+			{
+				BuyMarket();
+				_cooldown = CooldownBars;
+			}
+			else if (isBelowSupertrend && isMomentumFalling && momentumValue <= 100m)
+			{
+				SellMarket();
+				_cooldown = CooldownBars;
+			}
 		}
-		else if (!isAboveSupertrend && !isMomentumRising && Position >= 0)
+		else if (Position > 0)
 		{
-			// Cancel any active orders before entering a new position
-			CancelActiveOrders();
-
-			// Calculate position size
-			var volume = Volume + Math.Abs(Position);
-			
-			// Enter short position
-			SellMarket(volume);
+			if (isBelowSupertrend || isMomentumFalling)
+			{
+				SellMarket(Math.Abs(Position));
+				_cooldown = CooldownBars;
+			}
+		}
+		else if (Position < 0)
+		{
+			if (isAboveSupertrend || isMomentumRising)
+			{
+				BuyMarket(Math.Abs(Position));
+				_cooldown = CooldownBars;
+			}
 		}
 
-		// Store current momentum value for next comparison
 		_prevMomentum = momentumValue;
 	}
 }

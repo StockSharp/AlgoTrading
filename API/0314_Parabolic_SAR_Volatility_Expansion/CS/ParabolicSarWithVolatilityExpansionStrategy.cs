@@ -1,11 +1,9 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
+using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -14,7 +12,7 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on Parabolic SAR with Volatility Expansion detection.
+/// Trend-following strategy that activates Parabolic SAR signals only when ATR expands above its recent regime.
 /// </summary>
 public class ParabolicSarWithVolatilityExpansionStrategy : Strategy
 {
@@ -22,10 +20,18 @@ public class ParabolicSarWithVolatilityExpansionStrategy : Strategy
 	private readonly StrategyParam<decimal> _sarMaxAf;
 	private readonly StrategyParam<int> _atrPeriod;
 	private readonly StrategyParam<decimal> _volatilityExpansionFactor;
+	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
 
+	private ParabolicSar _parabolicSar;
+	private AverageTrueRange _atr;
+	private SimpleMovingAverage _atrSma;
+	private StandardDeviation _atrStdDev;
+	private int _cooldown;
+
 	/// <summary>
-	/// SAR acceleration factor parameter.
+	/// Parabolic SAR acceleration factor.
 	/// </summary>
 	public decimal SarAf
 	{
@@ -34,7 +40,7 @@ public class ParabolicSarWithVolatilityExpansionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// SAR maximum acceleration factor parameter.
+	/// Parabolic SAR maximum acceleration factor.
 	/// </summary>
 	public decimal SarMaxAf
 	{
@@ -43,7 +49,7 @@ public class ParabolicSarWithVolatilityExpansionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// ATR period parameter.
+	/// ATR period.
 	/// </summary>
 	public int AtrPeriod
 	{
@@ -52,7 +58,7 @@ public class ParabolicSarWithVolatilityExpansionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Volatility expansion factor parameter.
+	/// Multiplier for volatility expansion detection.
 	/// </summary>
 	public decimal VolatilityExpansionFactor
 	{
@@ -61,7 +67,25 @@ public class ParabolicSarWithVolatilityExpansionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Candle type parameter.
+	/// Bars to wait after each order.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
+	/// Stop loss percentage.
+	/// </summary>
+	public decimal StopLossPercent
+	{
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -70,33 +94,33 @@ public class ParabolicSarWithVolatilityExpansionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Constructor.
+	/// Initializes strategy parameters.
 	/// </summary>
 	public ParabolicSarWithVolatilityExpansionStrategy()
 	{
 		_sarAf = Param(nameof(SarAf), 0.02m)
-			.SetGreaterThanZero()
-			.SetDisplay("SAR AF", "Parabolic SAR acceleration factor", "Indicators")
-			
-			.SetOptimize(0.01m, 0.05m, 0.01m);
+			.SetRange(0.001m, 1m)
+			.SetDisplay("SAR AF", "Parabolic SAR acceleration factor", "Indicators");
 
 		_sarMaxAf = Param(nameof(SarMaxAf), 0.2m)
-			.SetGreaterThanZero()
-			.SetDisplay("SAR Max AF", "Parabolic SAR maximum acceleration factor", "Indicators")
-			
-			.SetOptimize(0.1m, 0.3m, 0.05m);
+			.SetRange(0.01m, 2m)
+			.SetDisplay("SAR Max AF", "Parabolic SAR maximum acceleration factor", "Indicators");
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("ATR Period", "Period for ATR calculation", "Indicators")
-			
-			.SetOptimize(7, 28, 7);
+			.SetRange(2, 100)
+			.SetDisplay("ATR Period", "Period for ATR calculation", "Indicators");
 
-		_volatilityExpansionFactor = Param(nameof(VolatilityExpansionFactor), 2.0m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volatility Expansion Factor", "Factor for volatility expansion detection", "Indicators")
-			
-			.SetOptimize(1.5m, 3.0m, 0.5m);
+		_volatilityExpansionFactor = Param(nameof(VolatilityExpansionFactor), 1.6m)
+			.SetRange(0.1m, 10m)
+			.SetDisplay("Volatility Expansion Factor", "Factor for volatility expansion detection", "Signals");
+
+		_cooldownBars = Param(nameof(CooldownBars), 84)
+			.SetRange(1, 500)
+			.SetDisplay("Cooldown Bars", "Bars to wait after each order", "Risk");
+
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetRange(0.5m, 10m)
+			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -105,7 +129,20 @@ public class ParabolicSarWithVolatilityExpansionStrategy : Strategy
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return [(Security, CandleType)];
+		if (Security != null)
+			yield return (Security, CandleType);
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_parabolicSar = null;
+		_atr = null;
+		_atrSma = null;
+		_atrStdDev = null;
+		_cooldown = 0;
 	}
 
 	/// <inheritdoc />
@@ -113,100 +150,89 @@ public class ParabolicSarWithVolatilityExpansionStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Create indicators
-		var parabolicSar = new ParabolicSar
+		if (Security == null)
+			throw new InvalidOperationException("Security is not specified.");
+
+		_parabolicSar = new ParabolicSar
 		{
 			Acceleration = SarAf,
-			AccelerationMax = SarMaxAf
+			AccelerationMax = SarMaxAf,
 		};
-		
-		var atr = new AverageTrueRange { Length = AtrPeriod };
-		var atrSma = new SMA { Length = AtrPeriod };
-		var atrStdDev = new StandardDeviation { Length = AtrPeriod };
+		_atr = new AverageTrueRange { Length = AtrPeriod };
+		_atrSma = new SimpleMovingAverage { Length = AtrPeriod };
+		_atrStdDev = new StandardDeviation { Length = AtrPeriod };
+		_cooldown = 0;
 
-		// Subscribe to candles and bind indicators
 		var subscription = SubscribeCandles(CandleType);
-		
+
 		subscription
-			.Bind(parabolicSar, atr, (candle, sarValue, atrValue) =>
-			{
-				// Calculate ATR average and standard deviation
-				var atrSmaValue = atrSma.Process(new DecimalIndicatorValue(atrSma, atrValue, candle.ServerTime));
-				var atrStdDevValue = atrStdDev.Process(new DecimalIndicatorValue(atrStdDev, atrValue, candle.ServerTime));
-				
-				// Process the strategy logic
-				ProcessStrategy(
-					candle,
-					sarValue,
-					atrValue,
-					atrSmaValue.ToDecimal(),
-					atrStdDevValue.ToDecimal()
-				);
-			})
+			.Bind(_parabolicSar, ProcessCandle)
 			.Start();
 
-		// Setup chart if available
 		var area = CreateChartArea();
+
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, parabolicSar);
-			DrawIndicator(area, atr);
+			DrawIndicator(area, _parabolicSar);
+			DrawIndicator(area, _atr);
 			DrawOwnTrades(area);
 		}
+
+		StartProtection(new Unit(0, UnitTypes.Absolute), new Unit(StopLossPercent, UnitTypes.Percent), false);
 	}
 
-	private void ProcessStrategy(ICandleMessage candle, decimal sarValue, decimal atrValue, decimal atrAvg, decimal atrStdDev)
+	private void ProcessCandle(ICandleMessage candle, decimal sarValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready for trading
-		if (!IsFormedAndOnlineAndAllowTrading())
+		var atrValue = _atr.Process(candle).ToDecimal();
+		var atrSmaValue = _atrSma.Process(atrValue, candle.OpenTime, true).ToDecimal();
+		var atrStdDevValue = _atrStdDev.Process(atrValue, candle.OpenTime, true).ToDecimal();
+
+		if (!_parabolicSar.IsFormed || !_atr.IsFormed || !_atrSma.IsFormed || !_atrStdDev.IsFormed)
 			return;
 
-		// Check if volatility is expanding
-		var volatilityThreshold = atrAvg + (VolatilityExpansionFactor * atrStdDev);
-		var isVolatilityExpanding = atrValue > volatilityThreshold;
-		
-		// Trading logic - only trade during volatility expansion
-		if (isVolatilityExpanding)
+		if (ProcessState != ProcessStates.Started)
+			return;
+
+		if (_cooldown > 0)
 		{
-			// Check price relative to SAR
-			var isAboveSar = candle.ClosePrice > sarValue;
-			var isBelowSar = candle.ClosePrice < sarValue;
-			
-			if (isAboveSar && Position <= 0)
-			{
-				// Price above SAR with volatility expansion - Go long
-				CancelActiveOrders();
-				
-				// Calculate position size
-				var volume = Volume + Math.Abs(Position);
-				
-				// Enter long position
-				BuyMarket(volume);
-			}
-			else if (isBelowSar && Position >= 0)
-			{
-				// Price below SAR with volatility expansion - Go short
-				CancelActiveOrders();
-				
-				// Calculate position size
-				var volume = Volume + Math.Abs(Position);
-				
-				// Enter short position
-				SellMarket(volume);
-			}
+			_cooldown--;
+			return;
 		}
-		
-		// Exit logic - when price crosses SAR
-		if ((Position > 0 && candle.ClosePrice < sarValue) ||
-			(Position < 0 && candle.ClosePrice > sarValue))
+
+		var volatilityThreshold = atrSmaValue + VolatilityExpansionFactor * atrStdDevValue;
+		var isVolatilityExpanding = atrValue >= volatilityThreshold;
+		var isAboveSar = candle.ClosePrice > sarValue;
+		var isBelowSar = candle.ClosePrice < sarValue;
+
+		if (Position == 0)
 		{
-			// Close position
-			ClosePosition();
+			if (isVolatilityExpanding && isAboveSar)
+			{
+				BuyMarket();
+				_cooldown = CooldownBars;
+			}
+			else if (isVolatilityExpanding && isBelowSar)
+			{
+				SellMarket();
+				_cooldown = CooldownBars;
+			}
+
+			return;
+		}
+
+		if (Position > 0 && (!isAboveSar || !isVolatilityExpanding))
+		{
+			SellMarket(Math.Abs(Position));
+			_cooldown = CooldownBars;
+		}
+		else if (Position < 0 && (!isBelowSar || !isVolatilityExpanding))
+		{
+			BuyMarket(Math.Abs(Position));
+			_cooldown = CooldownBars;
 		}
 	}
 }

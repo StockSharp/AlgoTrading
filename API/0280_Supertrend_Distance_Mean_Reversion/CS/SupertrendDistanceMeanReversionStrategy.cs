@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,8 +11,8 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Supertrend Distance Mean Reversion Strategy.
-/// This strategy trades based on the mean reversion of the distance between price and Supertrend indicator.
+/// Supertrend distance mean reversion strategy.
+/// Trades large deviations of price from Supertrend and exits when the distance returns to its recent average.
 /// </summary>
 public class SupertrendDistanceMeanReversionStrategy : Strategy
 {
@@ -23,22 +20,15 @@ public class SupertrendDistanceMeanReversionStrategy : Strategy
 	private readonly StrategyParam<decimal> _multiplier;
 	private readonly StrategyParam<int> _lookbackPeriod;
 	private readonly StrategyParam<decimal> _deviationMultiplier;
+	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
-	
-	private AverageTrueRange _atr;
+
 	private SuperTrend _supertrend;
-	private SimpleMovingAverage _distanceAverage;
-	private StandardDeviation _distanceStdDev;
-	
-	private decimal _currentDistanceLong;  // Price - Supertrend (for long positions)
-	private decimal _currentDistanceShort; // Supertrend - Price (for short positions)
-	private decimal _prevDistanceLong;
-	private decimal _prevDistanceShort;
-	private decimal _prevDistanceAvgLong;
-	private decimal _prevDistanceAvgShort;
-	private decimal _prevDistanceStdDevLong;
-	private decimal _prevDistanceStdDevShort;
-	private decimal _supertrendValue;
+	private decimal[] _distanceHistory;
+	private int _currentIndex;
+	private int _filledCount;
+	private int _cooldown;
 
 	/// <summary>
 	/// ATR period for Supertrend calculation.
@@ -59,7 +49,7 @@ public class SupertrendDistanceMeanReversionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Lookback period for calculating the average and standard deviation of distance.
+	/// Lookback period for distance statistics.
 	/// </summary>
 	public int LookbackPeriod
 	{
@@ -77,6 +67,24 @@ public class SupertrendDistanceMeanReversionStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Stop loss percentage.
+	/// </summary>
+	public decimal StopLossPercent
+	{
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
+	}
+
+	/// <summary>
+	/// Cooldown bars between orders.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Candle type.
 	/// </summary>
 	public DataType CandleType
@@ -86,29 +94,37 @@ public class SupertrendDistanceMeanReversionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Constructor.
+	/// Initializes a new instance of <see cref="SupertrendDistanceMeanReversionStrategy"/>.
 	/// </summary>
 	public SupertrendDistanceMeanReversionStrategy()
 	{
 		_atrPeriod = Param(nameof(AtrPeriod), 10)
+			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "ATR period for Supertrend calculation", "Supertrend")
-			
 			.SetOptimize(5, 20, 1);
 
-		_multiplier = Param(nameof(Multiplier), 3.0m)
+		_multiplier = Param(nameof(Multiplier), 3m)
+			.SetGreaterThanZero()
 			.SetDisplay("Multiplier", "Multiplier for Supertrend calculation", "Supertrend")
-			
-			.SetOptimize(1.0m, 5.0m, 0.5m);
+			.SetOptimize(1m, 5m, 0.5m);
 
 		_lookbackPeriod = Param(nameof(LookbackPeriod), 20)
-			.SetDisplay("Lookback Period", "Lookback period for calculating the average and standard deviation of distance", "Mean Reversion")
-			
+			.SetGreaterThanZero()
+			.SetDisplay("Lookback Period", "Lookback period for distance statistics", "Strategy Parameters")
 			.SetOptimize(10, 50, 5);
 
-		_deviationMultiplier = Param(nameof(DeviationMultiplier), 2.0m)
-			.SetDisplay("Deviation Multiplier", "Deviation multiplier for mean reversion detection", "Mean Reversion")
-			
-			.SetOptimize(1.0m, 3.0m, 0.5m);
+		_deviationMultiplier = Param(nameof(DeviationMultiplier), 1.5m)
+			.SetGreaterThanZero()
+			.SetDisplay("Deviation Multiplier", "Deviation multiplier for mean reversion detection", "Strategy Parameters")
+			.SetOptimize(1m, 3m, 0.5m);
+
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetGreaterThanZero()
+			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management");
+
+		_cooldownBars = Param(nameof(CooldownBars), 1200)
+			.SetRange(1, 5000)
+			.SetDisplay("Cooldown Bars", "Bars to wait between orders", "Risk Management");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type for strategy", "General");
@@ -124,15 +140,11 @@ public class SupertrendDistanceMeanReversionStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_currentDistanceLong = 0;
-		_currentDistanceShort = 0;
-		_prevDistanceLong = 0;
-		_prevDistanceShort = 0;
-		_prevDistanceAvgLong = 0;
-		_prevDistanceAvgShort = 0;
-		_prevDistanceStdDevLong = 0;
-		_prevDistanceStdDevShort = 0;
-		_supertrendValue = 0;
+		_supertrend = null;
+		_currentIndex = default;
+		_filledCount = default;
+		_cooldown = default;
+		_distanceHistory = new decimal[LookbackPeriod];
 	}
 
 	/// <inheritdoc />
@@ -140,22 +152,17 @@ public class SupertrendDistanceMeanReversionStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Initialize indicators
-		_atr = new AverageTrueRange { Length = AtrPeriod };
 		_supertrend = new SuperTrend { Length = AtrPeriod, Multiplier = Multiplier };
-		
-		_distanceAverage = new SMA { Length = LookbackPeriod };
-		_distanceStdDev = new StandardDeviation { Length = LookbackPeriod };
-		
-		// Reset stored values
+		_distanceHistory = new decimal[LookbackPeriod];
+		_currentIndex = 0;
+		_filledCount = 0;
+		_cooldown = 0;
 
-		// Create subscription and bind indicators
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(_supertrend, ProcessSupertrend)
+			.Bind(_supertrend, ProcessSupertrend)
 			.Start();
 
-		// Setup chart visualization if available
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -163,102 +170,83 @@ public class SupertrendDistanceMeanReversionStrategy : Strategy
 			DrawIndicator(area, _supertrend);
 			DrawOwnTrades(area);
 		}
+
+		StartProtection(new(), new Unit(StopLossPercent, UnitTypes.Percent));
 	}
 
-	private void ProcessSupertrend(ICandleMessage candle, IIndicatorValue value)
+	private void ProcessSupertrend(ICandleMessage candle, decimal supertrendValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
+		if (!_supertrend.IsFormed)
+			return;
+
+		var distance = Math.Abs(candle.ClosePrice - supertrendValue);
+
+		_distanceHistory[_currentIndex] = distance;
+		_currentIndex = (_currentIndex + 1) % LookbackPeriod;
+
+		if (_filledCount < LookbackPeriod)
+			_filledCount++;
+
+		if (_filledCount < LookbackPeriod)
+			return;
+
+		var avgDistance = 0m;
+		var sumSq = 0m;
+
+		for (var i = 0; i < LookbackPeriod; i++)
+			avgDistance += _distanceHistory[i];
+
+		avgDistance /= LookbackPeriod;
+
+		for (var i = 0; i < LookbackPeriod; i++)
+		{
+			var diff = _distanceHistory[i] - avgDistance;
+			sumSq += diff * diff;
+		}
+
+		var stdDistance = (decimal)Math.Sqrt((double)(sumSq / LookbackPeriod));
+
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
-		
-		// Get the Supertrend value
-		_supertrendValue = value.ToDecimal();
-		
-		// Calculate distances
-		_currentDistanceLong = candle.ClosePrice - _supertrendValue;
-		_currentDistanceShort = _supertrendValue - candle.ClosePrice;
-		
-		// Calculate averages and standard deviations for both distances
-		var longDistanceAvg = _distanceAverage.Process(new DecimalIndicatorValue(_distanceAverage, _currentDistanceLong, candle.ServerTime)).ToDecimal();
-		var longDistanceStdDev = _distanceStdDev.Process(new DecimalIndicatorValue(_distanceStdDev, _currentDistanceLong, candle.ServerTime)).ToDecimal();
-		
-		var shortDistanceAvg = _distanceAverage.Process(new DecimalIndicatorValue(_distanceAverage, _currentDistanceShort, candle.ServerTime)).ToDecimal();
-		var shortDistanceStdDev = _distanceStdDev.Process(new DecimalIndicatorValue(_distanceStdDev, _currentDistanceShort, candle.ServerTime)).ToDecimal();
-		
-		// Skip the first value
-		if (_prevDistanceLong == 0 || _prevDistanceShort == 0)
+
+		if (_cooldown > 0)
 		{
-			_prevDistanceLong = _currentDistanceLong;
-			_prevDistanceShort = _currentDistanceShort;
-			_prevDistanceAvgLong = longDistanceAvg;
-			_prevDistanceAvgShort = shortDistanceAvg;
-			_prevDistanceStdDevLong = longDistanceStdDev;
-			_prevDistanceStdDevShort = shortDistanceStdDev;
+			_cooldown--;
 			return;
 		}
-		
-		// Calculate thresholds for long position
-		var longDistanceExtendedThreshold = _prevDistanceAvgLong + _prevDistanceStdDevLong * DeviationMultiplier;
-		
-		// Calculate thresholds for short position
-		var shortDistanceExtendedThreshold = _prevDistanceAvgShort + _prevDistanceStdDevShort * DeviationMultiplier;
-		
-		// Trading logic:
-		// For long positions - when price is far above Supertrend (mean reversion to downside)
-		if (_currentDistanceLong > longDistanceExtendedThreshold && 
-			_prevDistanceLong <= longDistanceExtendedThreshold && 
-			Position >= 0 && candle.ClosePrice > _supertrendValue)
+
+		var extendedThreshold = avgDistance + stdDistance * DeviationMultiplier;
+		var priceAboveSupertrend = candle.ClosePrice > supertrendValue;
+		var priceBelowSupertrend = candle.ClosePrice < supertrendValue;
+
+		if (Position == 0)
 		{
-			SellMarket(Volume + Math.Abs(Position));
-			LogInfo($"Long distance extended: {_currentDistanceLong} > {longDistanceExtendedThreshold}. Selling at {candle.ClosePrice}");
+			if (distance > extendedThreshold)
+			{
+				if (priceAboveSupertrend)
+				{
+					SellMarket();
+					_cooldown = CooldownBars;
+				}
+				else if (priceBelowSupertrend)
+				{
+					BuyMarket();
+					_cooldown = CooldownBars;
+				}
+			}
 		}
-		// For short positions - when price is far below Supertrend (mean reversion to upside)
-		else if (_currentDistanceShort > shortDistanceExtendedThreshold && 
-				_prevDistanceShort <= shortDistanceExtendedThreshold && 
-				Position <= 0 && candle.ClosePrice < _supertrendValue)
-		{
-			BuyMarket(Volume + Math.Abs(Position));
-			LogInfo($"Short distance extended: {_currentDistanceShort} > {shortDistanceExtendedThreshold}. Buying at {candle.ClosePrice}");
-		}
-		
-		// Exit positions when distance returns to average
-		else if (Position < 0 && _currentDistanceShort < _prevDistanceAvgShort && _prevDistanceShort >= _prevDistanceAvgShort)
-		{
-			BuyMarket(Math.Abs(Position));
-			LogInfo($"Short distance returned to average: {_currentDistanceShort} < {_prevDistanceAvgShort}. Closing short position at {candle.ClosePrice}");
-		}
-		else if (Position > 0 && _currentDistanceLong < _prevDistanceAvgLong && _prevDistanceLong >= _prevDistanceAvgLong)
+		else if (Position > 0 && (distance <= avgDistance || priceAboveSupertrend))
 		{
 			SellMarket(Math.Abs(Position));
-			LogInfo($"Long distance returned to average: {_currentDistanceLong} < {_prevDistanceAvgLong}. Closing long position at {candle.ClosePrice}");
+			_cooldown = CooldownBars;
 		}
-		
-		// Use Supertrend as dynamic stop
-		else if ((Position > 0 && candle.ClosePrice < _supertrendValue) || 
-				(Position < 0 && candle.ClosePrice > _supertrendValue))
+		else if (Position < 0 && (distance <= avgDistance || priceBelowSupertrend))
 		{
-			if (Position > 0)
-			{
-				SellMarket(Math.Abs(Position));
-				LogInfo($"Price crossed below Supertrend: {candle.ClosePrice} < {_supertrendValue}. Closing long position at {candle.ClosePrice}");
-			}
-			else if (Position < 0)
-			{
-				BuyMarket(Math.Abs(Position));
-				LogInfo($"Price crossed above Supertrend: {candle.ClosePrice} > {_supertrendValue}. Closing short position at {candle.ClosePrice}");
-			}
+			BuyMarket(Math.Abs(Position));
+			_cooldown = CooldownBars;
 		}
-		
-		// Store current values for next comparison
-		_prevDistanceLong = _currentDistanceLong;
-		_prevDistanceShort = _currentDistanceShort;
-		_prevDistanceAvgLong = longDistanceAvg;
-		_prevDistanceAvgShort = shortDistanceAvg;
-		_prevDistanceStdDevLong = longDistanceStdDev;
-		_prevDistanceStdDevShort = shortDistanceStdDev;
 	}
 }

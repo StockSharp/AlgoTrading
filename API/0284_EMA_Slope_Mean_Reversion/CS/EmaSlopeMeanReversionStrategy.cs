@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,7 +11,8 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// EMA Slope Mean Reversion Strategy - strategy based on mean reversion of exponential moving average slope.
+/// Exponential moving average slope mean reversion strategy.
+/// Trades reversions from extreme EMA slopes and exits when the slope returns to its recent average.
 /// </summary>
 public class EmaSlopeMeanReversionStrategy : Strategy
 {
@@ -22,18 +20,19 @@ public class EmaSlopeMeanReversionStrategy : Strategy
 	private readonly StrategyParam<int> _slopeLookback;
 	private readonly StrategyParam<decimal> _thresholdMultiplier;
 	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
+	private ExponentialMovingAverage _ema;
 	private decimal _previousEmaValue;
-	private decimal _currentSlope;
-	private decimal _averageSlope;
-	private decimal _slopeStdDev;
-	private int _slopeCount;
-	private decimal _sumSlopes;
-	private decimal _sumSquaredDiff;
+	private decimal[] _slopeHistory;
+	private int _currentIndex;
+	private int _filledCount;
+	private int _cooldown;
+	private bool _isInitialized;
 
 	/// <summary>
-	/// EMA period.
+	/// Exponential moving average period.
 	/// </summary>
 	public int EmaPeriod
 	{
@@ -42,16 +41,16 @@ public class EmaSlopeMeanReversionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Period for calculating slope statistics.
+	/// Period for slope statistics.
 	/// </summary>
 	public int SlopeLookback
 	{
 		get => _slopeLookback.Value;
 		set => _slopeLookback.Value = value;
 	}
-	
+
 	/// <summary>
-	/// Threshold multiplier for standard deviation.
+	/// Standard deviation multiplier for entry threshold.
 	/// </summary>
 	public decimal ThresholdMultiplier
 	{
@@ -60,12 +59,21 @@ public class EmaSlopeMeanReversionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stop-loss percentage.
+	/// Stop loss percentage.
 	/// </summary>
 	public decimal StopLossPercent
 	{
 		get => _stopLossPercent.Value;
 		set => _stopLossPercent.Value = value;
+	}
+
+	/// <summary>
+	/// Cooldown bars between orders.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	/// <summary>
@@ -78,29 +86,32 @@ public class EmaSlopeMeanReversionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initialize <see cref="EmaSlopeMeanReversionStrategy"/>.
+	/// Initializes a new instance of <see cref="EmaSlopeMeanReversionStrategy"/>.
 	/// </summary>
 	public EmaSlopeMeanReversionStrategy()
 	{
 		_emaPeriod = Param(nameof(EmaPeriod), 20)
+			.SetGreaterThanZero()
 			.SetDisplay("EMA Period", "Exponential Moving Average period", "EMA Settings")
-			
 			.SetOptimize(10, 50, 5);
 
 		_slopeLookback = Param(nameof(SlopeLookback), 20)
+			.SetGreaterThanZero()
 			.SetDisplay("Slope Lookback", "Period for slope statistics", "Slope Settings")
-			
 			.SetOptimize(10, 50, 5);
 
-		_thresholdMultiplier = Param(nameof(ThresholdMultiplier), 2m)
+		_thresholdMultiplier = Param(nameof(ThresholdMultiplier), 1.5m)
+			.SetGreaterThanZero()
 			.SetDisplay("Threshold Multiplier", "Standard deviation multiplier for entry threshold", "Slope Settings")
-			
-			.SetOptimize(1.0m, 3.0m, 0.5m);
+			.SetOptimize(1m, 3m, 0.5m);
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
-			.SetDisplay("Stop Loss %", "Stop loss as percentage of entry price", "Risk Management")
-			
-			.SetOptimize(1.0m, 3.0m, 0.5m);
+			.SetGreaterThanZero()
+			.SetDisplay("Stop Loss %", "Stop loss as percentage of entry price", "Risk Management");
+
+		_cooldownBars = Param(nameof(CooldownBars), 1200)
+			.SetRange(1, 5000)
+			.SetDisplay("Cooldown Bars", "Bars to wait between orders", "Risk Management");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -116,13 +127,13 @@ public class EmaSlopeMeanReversionStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_previousEmaValue = 0;
-		_currentSlope = 0;
-		_averageSlope = 0;
-		_slopeStdDev = 0;
-		_slopeCount = 0;
-		_sumSlopes = 0;
-		_sumSquaredDiff = 0;
+		_ema = null;
+		_previousEmaValue = default;
+		_slopeHistory = new decimal[SlopeLookback];
+		_currentIndex = default;
+		_filledCount = default;
+		_cooldown = default;
+		_isInitialized = default;
 	}
 
 	/// <inheritdoc />
@@ -130,30 +141,24 @@ public class EmaSlopeMeanReversionStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Reset variables
+		_ema = new ExponentialMovingAverage { Length = EmaPeriod };
+		_slopeHistory = new decimal[SlopeLookback];
+		_currentIndex = 0;
+		_filledCount = 0;
+		_cooldown = 0;
 
-		// Create EMA indicator
-		var ema = new EMA { Length = EmaPeriod };
-
-		// Subscribe to candles and bind indicator
 		var subscription = SubscribeCandles(CandleType);
-		
 		subscription
-			.Bind(ema, ProcessCandle)
+			.Bind(_ema, ProcessCandle)
 			.Start();
 
-		// Start position protection
-		StartProtection(
-			new Unit(0, UnitTypes.Absolute), // No take profit (use exit rule instead)
-			new Unit(StopLossPercent, UnitTypes.Percent) // Stop loss
-		);
+		StartProtection(new(), new Unit(StopLossPercent, UnitTypes.Percent));
 
-		// Setup chart if available
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, ema);
+			DrawIndicator(area, _ema);
 			DrawOwnTrades(area);
 		}
 	}
@@ -163,72 +168,81 @@ public class EmaSlopeMeanReversionStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		if (!_ema.IsFormed)
+			return;
+
+		if (!_isInitialized)
+		{
+			_previousEmaValue = emaValue;
+			_isInitialized = true;
+			return;
+		}
+
+		if (_previousEmaValue == 0)
+			return;
+
+		var slope = emaValue - _previousEmaValue;
+		_previousEmaValue = emaValue;
+
+		_slopeHistory[_currentIndex] = slope;
+		_currentIndex = (_currentIndex + 1) % SlopeLookback;
+
+		if (_filledCount < SlopeLookback)
+			_filledCount++;
+
+		if (_filledCount < SlopeLookback)
+			return;
+
+		var averageSlope = 0m;
+		var sumSq = 0m;
+
+		for (var i = 0; i < SlopeLookback; i++)
+			averageSlope += _slopeHistory[i];
+
+		averageSlope /= SlopeLookback;
+
+		for (var i = 0; i < SlopeLookback; i++)
+		{
+			var diff = _slopeHistory[i] - averageSlope;
+			sumSq += diff * diff;
+		}
+
+		var slopeStdDev = (decimal)Math.Sqrt((double)(sumSq / SlopeLookback));
+
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// Calculate EMA slope only if we have previous EMA value
-		if (_previousEmaValue != 0)
+		if (_cooldown > 0)
 		{
-			// Calculate current slope
-			_currentSlope = emaValue - _previousEmaValue;
-
-			// Update statistics
-			_slopeCount++;
-			_sumSlopes += _currentSlope;
-
-			// Update average slope
-			if (_slopeCount > 0)
-				_averageSlope = _sumSlopes / _slopeCount;
-
-			// Calculate sum of squared differences for std dev
-			_sumSquaredDiff += (_currentSlope - _averageSlope) * (_currentSlope - _averageSlope);
-
-			// Calculate standard deviation after we have enough samples
-			if (_slopeCount >= SlopeLookback)
-			{
-				_slopeStdDev = (decimal)Math.Sqrt((double)(_sumSquaredDiff / _slopeCount));
-
-				// Remove oldest slope value contribution (simple approximation)
-				if (_slopeCount > SlopeLookback)
-				{
-					_slopeCount = SlopeLookback;
-					_sumSlopes = _averageSlope * SlopeLookback;
-					_sumSquaredDiff = _slopeStdDev * _slopeStdDev * SlopeLookback;
-				}
-
-				// Calculate entry thresholds
-				var lowerThreshold = _averageSlope - ThresholdMultiplier * _slopeStdDev;
-				var upperThreshold = _averageSlope + ThresholdMultiplier * _slopeStdDev;
-
-				// Trading logic
-				if (_currentSlope < lowerThreshold && Position <= 0)
-				{
-					// Slope is below lower threshold (falling rapidly) - mean reversion buy signal
-					BuyMarket(Volume + Math.Abs(Position));
-					LogInfo($"BUY Signal: Slope {_currentSlope:F6} < Lower Threshold {lowerThreshold:F6}");
-				}
-				else if (_currentSlope > upperThreshold && Position >= 0)
-				{
-					// Slope is above upper threshold (rising rapidly) - mean reversion sell signal
-					SellMarket(Volume + Math.Abs(Position));
-					LogInfo($"SELL Signal: Slope {_currentSlope:F6} > Upper Threshold {upperThreshold:F6}");
-				}
-				else if (_currentSlope > _averageSlope && Position > 0)
-				{
-					// Exit long position when slope returns to average (profit target)
-					SellMarket(Position);
-					LogInfo($"EXIT LONG: Slope {_currentSlope:F6} returned to average {_averageSlope:F6}");
-				}
-				else if (_currentSlope < _averageSlope && Position < 0)
-				{
-					// Exit short position when slope returns to average (profit target)
-					BuyMarket(Math.Abs(Position));
-					LogInfo($"EXIT SHORT: Slope {_currentSlope:F6} returned to average {_averageSlope:F6}");
-				}
-			}
+			_cooldown--;
+			return;
 		}
 
-		// Save current EMA value for next calculation
-		_previousEmaValue = emaValue;
+		var lowerThreshold = averageSlope - ThresholdMultiplier * slopeStdDev;
+		var upperThreshold = averageSlope + ThresholdMultiplier * slopeStdDev;
+
+		if (Position == 0)
+		{
+			if (slope < lowerThreshold)
+			{
+				BuyMarket();
+				_cooldown = CooldownBars;
+			}
+			else if (slope > upperThreshold)
+			{
+				SellMarket();
+				_cooldown = CooldownBars;
+			}
+		}
+		else if (Position > 0 && slope >= averageSlope)
+		{
+			SellMarket(Math.Abs(Position));
+			_cooldown = CooldownBars;
+		}
+		else if (Position < 0 && slope <= averageSlope)
+		{
+			BuyMarket(Math.Abs(Position));
+			_cooldown = CooldownBars;
+		}
 	}
 }

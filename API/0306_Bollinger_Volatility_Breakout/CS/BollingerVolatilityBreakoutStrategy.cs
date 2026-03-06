@@ -1,11 +1,9 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
+using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -14,7 +12,7 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on Bollinger Bands breakout with volatility confirmation.
+/// Breakout strategy that trades Bollinger band breaks only when ATR expands beyond its recent regime.
 /// </summary>
 public class BollingerVolatilityBreakoutStrategy : Strategy
 {
@@ -23,12 +21,19 @@ public class BollingerVolatilityBreakoutStrategy : Strategy
 	private readonly StrategyParam<int> _atrPeriod;
 	private readonly StrategyParam<decimal> _atrDeviationMultiplier;
 	private readonly StrategyParam<decimal> _stopLossMultiplier;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
+
+	private BollingerBands _bollingerBands;
+	private AverageTrueRange _atr;
 	private SimpleMovingAverage _atrSma;
 	private StandardDeviation _atrStdDev;
+	private decimal _entryPrice;
+	private decimal _entryAtr;
+	private int _cooldown;
 
 	/// <summary>
-	/// Period for Bollinger Bands calculation.
+	/// Period for Bollinger bands calculation.
 	/// </summary>
 	public int BollingerPeriod
 	{
@@ -37,7 +42,7 @@ public class BollingerVolatilityBreakoutStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Standard deviation multiplier for Bollinger Bands.
+	/// Standard deviation multiplier for Bollinger bands.
 	/// </summary>
 	public decimal BollingerDeviation
 	{
@@ -55,7 +60,7 @@ public class BollingerVolatilityBreakoutStrategy : Strategy
 	}
 
 	/// <summary>
-	/// ATR standard deviation multiplier for volatility confirmation.
+	/// ATR standard deviation multiplier used for volatility confirmation.
 	/// </summary>
 	public decimal AtrDeviationMultiplier
 	{
@@ -64,7 +69,7 @@ public class BollingerVolatilityBreakoutStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stop loss multiplier relative to ATR.
+	/// ATR multiplier used for stop distance.
 	/// </summary>
 	public decimal StopLossMultiplier
 	{
@@ -73,7 +78,16 @@ public class BollingerVolatilityBreakoutStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Candle type parameter.
+	/// Bars to wait after each order.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -82,48 +96,57 @@ public class BollingerVolatilityBreakoutStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initialize a new instance of <see cref="BollingerVolatilityBreakoutStrategy"/>.
+	/// Initializes strategy parameters.
 	/// </summary>
 	public BollingerVolatilityBreakoutStrategy()
 	{
 		_bollingerPeriod = Param(nameof(BollingerPeriod), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("Bollinger Period", "Period for Bollinger Bands calculation", "Indicator Settings")
-			
-			.SetOptimize(10, 50, 10);
+			.SetRange(5, 100)
+			.SetDisplay("Bollinger Period", "Period for Bollinger band calculation", "Indicators");
 
-		_bollingerDeviation = Param(nameof(BollingerDeviation), 2.0m)
-			.SetGreaterThanZero()
-			.SetDisplay("Bollinger Deviation", "Standard deviation multiplier for Bollinger Bands", "Indicator Settings")
-			
-			.SetOptimize(1.5m, 3.0m, 0.5m);
+		_bollingerDeviation = Param(nameof(BollingerDeviation), 2m)
+			.SetRange(0.5m, 5m)
+			.SetDisplay("Bollinger Deviation", "Standard deviation multiplier for Bollinger bands", "Indicators");
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("ATR Period", "Period for ATR calculation", "Indicator Settings")
-			
-			.SetOptimize(7, 21, 7);
+			.SetRange(5, 50)
+			.SetDisplay("ATR Period", "Period for ATR calculation", "Indicators");
 
-		_atrDeviationMultiplier = Param(nameof(AtrDeviationMultiplier), 2.0m)
-			.SetGreaterThanZero()
-			.SetDisplay("ATR Deviation Multiplier", "Standard deviation multiplier for ATR", "Strategy Settings")
-			
-			.SetOptimize(1.0m, 3.0m, 0.5m);
+		_atrDeviationMultiplier = Param(nameof(AtrDeviationMultiplier), 1.6m)
+			.SetRange(0.1m, 5m)
+			.SetDisplay("ATR Deviation Multiplier", "ATR regime threshold multiplier", "Signals");
 
-		_stopLossMultiplier = Param(nameof(StopLossMultiplier), 2.0m)
-			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss Multiplier", "ATR multiplier for stop-loss", "Strategy Settings")
-			
-			.SetOptimize(1.0m, 3.0m, 0.5m);
+		_stopLossMultiplier = Param(nameof(StopLossMultiplier), 1.8m)
+			.SetRange(0.5m, 10m)
+			.SetDisplay("Stop Loss Multiplier", "ATR multiplier used for stop distance", "Risk");
+
+		_cooldownBars = Param(nameof(CooldownBars), 84)
+			.SetRange(1, 500)
+			.SetDisplay("Cooldown Bars", "Bars to wait after each order", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles for strategy", "General");
+			.SetDisplay("Candle Type", "Type of candles for the strategy", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return [(Security, CandleType)];
+		if (Security != null)
+			yield return (Security, CandleType);
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_bollingerBands = null;
+		_atr = null;
+		_atrSma = null;
+		_atrStdDev = null;
+		_entryPrice = 0m;
+		_entryAtr = 0m;
+		_cooldown = 0;
 	}
 
 	/// <inheritdoc />
@@ -131,120 +154,110 @@ public class BollingerVolatilityBreakoutStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_atrSma = new SMA { Length = AtrPeriod };
-		_atrStdDev = new StandardDeviation { Length = AtrPeriod };
+		if (Security == null)
+			throw new InvalidOperationException("Security is not specified.");
 
-		// Create indicators
-		var bollingerBands = new BollingerBands
+		_bollingerBands = new BollingerBands
 		{
 			Length = BollingerPeriod,
-			Width = BollingerDeviation
+			Width = BollingerDeviation,
 		};
+		_atr = new AverageTrueRange { Length = AtrPeriod };
+		_atrSma = new SimpleMovingAverage { Length = AtrPeriod };
+		_atrStdDev = new StandardDeviation { Length = AtrPeriod };
+		_cooldown = 0;
 
-		var atr = new AverageTrueRange { Length = AtrPeriod };
-
-		// Create subscription
 		var subscription = SubscribeCandles(CandleType);
 
-		// Bind main indicators to subscription
 		subscription
-			.BindEx(bollingerBands, atr, ProcessCandle)
+			.BindEx(_bollingerBands, ProcessCandle)
 			.Start();
 
-		// Enable position protection
-		StartProtection(
-			takeProfit: new Unit(0), // We'll handle exits in the strategy logic
-			stopLoss: new Unit(0),   // We'll handle stops in the strategy logic
-			useMarketOrders: true
-		);
-
-		// Setup chart if available
 		var area = CreateChartArea();
+
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, bollingerBands);
-			DrawIndicator(area, atr);
+			DrawIndicator(area, _bollingerBands);
+			DrawIndicator(area, _atr);
 			DrawOwnTrades(area);
 		}
+
+		StartProtection(new Unit(0, UnitTypes.Absolute), new Unit(StopLossMultiplier, UnitTypes.Percent), false);
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bbValue, IIndicatorValue atrValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bollingerValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
-		if (!IsFormedAndOnlineAndAllowTrading())
+		var typedBands = (BollingerBandsValue)bollingerValue;
+
+		if (typedBands.UpBand is not decimal upperBand ||
+			typedBands.LowBand is not decimal lowerBand ||
+			typedBands.MovingAverage is not decimal middleBand)
 			return;
 
-		var bbTyped = (BollingerBandsValue)bbValue;
-		var bbUpper = bbTyped.UpBand;
-		var bbLower = bbTyped.LowBand;
-		var bbMiddle = bbTyped.MovingAverage;
+		var atrValue = _atr.Process(candle).ToDecimal();
+		var atrAverageValue = _atrSma.Process(atrValue, candle.OpenTime, true).ToDecimal();
+		var atrStdDevValue = _atrStdDev.Process(atrValue, candle.OpenTime, true).ToDecimal();
 
-		var atrDec = atrValue.ToDecimal();
+		if (!_bollingerBands.IsFormed || !_atr.IsFormed || !_atrSma.IsFormed || !_atrStdDev.IsFormed)
+			return;
 
-		// Get values from indicators
-		var atrSmaValue = _atrSma.Process(new DecimalIndicatorValue(_atrSma, atrDec, candle.ServerTime)).ToDecimal(); // Default to current ATR if SMA not available
-		var atrStdDevValue = _atrStdDev.Process(new DecimalIndicatorValue(_atrStdDev, atrDec, candle.ServerTime)).ToDecimal() * 0.2m; // Default to 20% of ATR if StdDev not available
-		
-		// Calculate volatility threshold for breakout confirmation
-		var volatilityThreshold = atrSmaValue + AtrDeviationMultiplier * atrStdDevValue;
-		
-		// Check for increased volatility
-		var isHighVolatility = atrDec > volatilityThreshold;
-		
-		// Define entry conditions
-		var longEntryCondition = candle.ClosePrice > bbUpper && isHighVolatility && Position <= 0;
-		var shortEntryCondition = candle.ClosePrice < bbLower && isHighVolatility && Position >= 0;
-		
-		// Define exit conditions
-		var longExitCondition = candle.ClosePrice < bbMiddle && Position > 0;
-		var shortExitCondition = candle.ClosePrice > bbMiddle && Position < 0;
+		if (ProcessState != ProcessStates.Started)
+			return;
 
-		// Log current values
-		LogInfo($"Close: {candle.ClosePrice}, BB Upper: {bbUpper}, BB Lower: {bbLower}, ATR: {atrDec}, ATR Threshold: {volatilityThreshold}, High Volatility: {isHighVolatility}");
-
-		// Execute trading logic
-		if (longEntryCondition)
+		if (_cooldown > 0)
 		{
-			// Calculate position size
-			var positionSize = Volume + Math.Abs(Position);
-			
-			// Calculate stop loss level
-			var stopPrice = candle.ClosePrice - atrDec * StopLossMultiplier;
-			
-			// Enter long position
-			BuyMarket(positionSize);
-			
-			LogInfo($"Long entry: Price={candle.ClosePrice}, BB Upper={bbUpper}, ATR={atrDec}, Stop={stopPrice}");
+			_cooldown--;
+			return;
 		}
-		else if (shortEntryCondition)
+
+		var volatilityThreshold = atrAverageValue + AtrDeviationMultiplier * atrStdDevValue;
+		var isHighVolatility = atrValue >= volatilityThreshold;
+		var price = candle.ClosePrice;
+
+		if (Position == 0)
 		{
-			// Calculate position size
-			var positionSize = Volume + Math.Abs(Position);
-			
-			// Calculate stop loss level
-			var stopPrice = candle.ClosePrice + atrDec * StopLossMultiplier;
-			
-			// Enter short position
-			SellMarket(positionSize);
-			
-			LogInfo($"Short entry: Price={candle.ClosePrice}, BB Lower={bbLower}, ATR={atrDec}, Stop={stopPrice}");
+			if (!isHighVolatility)
+				return;
+
+			if (price >= upperBand)
+			{
+				_entryPrice = price;
+				_entryAtr = atrValue;
+				BuyMarket();
+				_cooldown = CooldownBars;
+			}
+			else if (price <= lowerBand)
+			{
+				_entryPrice = price;
+				_entryAtr = atrValue;
+				SellMarket();
+				_cooldown = CooldownBars;
+			}
+
+			return;
 		}
-		else if (longExitCondition)
+
+		var stopDistance = _entryAtr * StopLossMultiplier;
+
+		if (Position > 0)
 		{
-			// Exit long position
-			SellMarket(Math.Abs(Position));
-			LogInfo($"Long exit: Price={candle.ClosePrice}, BB Middle={bbMiddle}");
+			if (price <= middleBand || !isHighVolatility || price <= _entryPrice - stopDistance)
+			{
+				SellMarket(Math.Abs(Position));
+				_cooldown = CooldownBars;
+			}
 		}
-		else if (shortExitCondition)
+		else if (Position < 0)
 		{
-			// Exit short position
-			BuyMarket(Math.Abs(Position));
-			LogInfo($"Short exit: Price={candle.ClosePrice}, BB Middle={bbMiddle}");
+			if (price >= middleBand || !isHighVolatility || price >= _entryPrice + stopDistance)
+			{
+				BuyMarket(Math.Abs(Position));
+				_cooldown = CooldownBars;
+			}
 		}
 	}
 }

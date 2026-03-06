@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,8 +11,8 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Donchian Width Mean Reversion Strategy.
-/// This strategy trades based on the mean reversion of the Donchian Channel width.
+/// Donchian width mean reversion strategy.
+/// Trades contractions and expansions of Donchian Channel width around its recent average.
 /// </summary>
 public class DonchianWidthMeanReversionStrategy : Strategy
 {
@@ -23,16 +20,14 @@ public class DonchianWidthMeanReversionStrategy : Strategy
 	private readonly StrategyParam<int> _lookbackPeriod;
 	private readonly StrategyParam<decimal> _deviationMultiplier;
 	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
-	
+
 	private DonchianChannels _donchian;
-	private SimpleMovingAverage _widthAverage;
-	private StandardDeviation _widthStdDev;
-	
-	private decimal _currentWidth;
-	private decimal _prevWidth;
-	private decimal _prevWidthAverage;
-	private decimal _prevWidthStdDev;
+	private decimal[] _widthHistory;
+	private int _currentIndex;
+	private int _filledCount;
+	private int _cooldown;
 
 	/// <summary>
 	/// Donchian Channel period.
@@ -44,7 +39,7 @@ public class DonchianWidthMeanReversionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Lookback period for calculating the average and standard deviation of width.
+	/// Lookback period for width statistics.
 	/// </summary>
 	public int LookbackPeriod
 	{
@@ -71,6 +66,15 @@ public class DonchianWidthMeanReversionStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Cooldown bars between orders.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Candle type.
 	/// </summary>
 	public DataType CandleType
@@ -80,29 +84,32 @@ public class DonchianWidthMeanReversionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Constructor.
+	/// Initializes a new instance of <see cref="DonchianWidthMeanReversionStrategy"/>.
 	/// </summary>
 	public DonchianWidthMeanReversionStrategy()
 	{
 		_donchianPeriod = Param(nameof(DonchianPeriod), 20)
-			.SetDisplay("Donchian Period", "Donchian Channel period", "Donchian")
-			
+			.SetGreaterThanZero()
+			.SetDisplay("Donchian Period", "Donchian Channel period", "Indicators")
 			.SetOptimize(10, 50, 5);
 
 		_lookbackPeriod = Param(nameof(LookbackPeriod), 20)
-			.SetDisplay("Lookback Period", "Lookback period for calculating the average and standard deviation of width", "Mean Reversion")
-			
+			.SetGreaterThanZero()
+			.SetDisplay("Lookback Period", "Lookback period for width statistics", "Strategy Parameters")
 			.SetOptimize(10, 50, 5);
 
-		_deviationMultiplier = Param(nameof(DeviationMultiplier), 2.0m)
-			.SetDisplay("Deviation Multiplier", "Deviation multiplier for mean reversion detection", "Mean Reversion")
-			
-			.SetOptimize(1.0m, 3.0m, 0.5m);
+		_deviationMultiplier = Param(nameof(DeviationMultiplier), 1.5m)
+			.SetGreaterThanZero()
+			.SetDisplay("Deviation Multiplier", "Deviation multiplier for mean reversion detection", "Strategy Parameters")
+			.SetOptimize(1m, 3m, 0.5m);
 
-		_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
-			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management")
-			
-			.SetOptimize(1.0m, 5.0m, 0.5m);
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetGreaterThanZero()
+			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management");
+
+		_cooldownBars = Param(nameof(CooldownBars), 1200)
+			.SetRange(1, 5000)
+			.SetDisplay("Cooldown Bars", "Bars to wait between orders", "Risk Management");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type for strategy", "General");
@@ -118,10 +125,11 @@ public class DonchianWidthMeanReversionStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_currentWidth = 0;
-		_prevWidth = 0;
-		_prevWidthAverage = 0;
-		_prevWidthStdDev = 0;
+		_donchian = null;
+		_currentIndex = default;
+		_filledCount = default;
+		_cooldown = default;
+		_widthHistory = new decimal[LookbackPeriod];
 	}
 
 	/// <inheritdoc />
@@ -129,20 +137,17 @@ public class DonchianWidthMeanReversionStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Initialize indicators
 		_donchian = new DonchianChannels { Length = DonchianPeriod };
-		_widthAverage = new SMA { Length = LookbackPeriod };
-		_widthStdDev = new StandardDeviation { Length = LookbackPeriod };
-		
-		// Reset stored values
+		_widthHistory = new decimal[LookbackPeriod];
+		_currentIndex = 0;
+		_filledCount = 0;
+		_cooldown = 0;
 
-		// Create subscription and bind indicators
 		var subscription = SubscribeCandles(CandleType);
 		subscription
 			.BindEx(_donchian, ProcessDonchian)
 			.Start();
 
-		// Setup chart visualization if available
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -150,87 +155,84 @@ public class DonchianWidthMeanReversionStrategy : Strategy
 			DrawIndicator(area, _donchian);
 			DrawOwnTrades(area);
 		}
-		
-		// Start position protection
-		StartProtection(
-			takeProfit: null,
-			stopLoss: new Unit(StopLossPercent, UnitTypes.Percent)
-		);
+
+		StartProtection(new(), new Unit(StopLossPercent, UnitTypes.Percent));
 	}
 
 	private void ProcessDonchian(ICandleMessage candle, IIndicatorValue donchianValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!_donchian.IsFormed)
 			return;
-		
-		// Extract upper and lower bands from the indicator value
-		var donchianTyped = (DonchianChannelsValue)donchianValue;
-		
-		if (donchianTyped.UpperBand is not decimal upperBand ||
-			donchianTyped.LowerBand is not decimal lowerBand)
+
+		var typedValue = (DonchianChannelsValue)donchianValue;
+		if (typedValue.UpperBand is not decimal upperBand ||
+			typedValue.LowerBand is not decimal lowerBand)
+			return;
+
+		var width = upperBand - lowerBand;
+
+		_widthHistory[_currentIndex] = width;
+		_currentIndex = (_currentIndex + 1) % LookbackPeriod;
+
+		if (_filledCount < LookbackPeriod)
+			_filledCount++;
+
+		if (_filledCount < LookbackPeriod)
+			return;
+
+		var avgWidth = 0m;
+		var sumSq = 0m;
+
+		for (var i = 0; i < LookbackPeriod; i++)
+			avgWidth += _widthHistory[i];
+
+		avgWidth /= LookbackPeriod;
+
+		for (var i = 0; i < LookbackPeriod; i++)
 		{
-			return; // Not enough data to calculate bands
+			var diff = _widthHistory[i] - avgWidth;
+			sumSq += diff * diff;
 		}
 
-		// Calculate the Donchian channel width
-		_currentWidth = upperBand - lowerBand;
-		
-		// Calculate the average and standard deviation of the width
-		var widthAverage = _widthAverage.Process(new DecimalIndicatorValue(_widthAverage, _currentWidth, candle.ServerTime)).ToDecimal();
-		var widthStdDev = _widthStdDev.Process(new DecimalIndicatorValue(_widthStdDev, _currentWidth, candle.ServerTime)).ToDecimal();
-		
-		// Skip the first value
-		if (_prevWidth == 0)
+		var stdWidth = (decimal)Math.Sqrt((double)(sumSq / LookbackPeriod));
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		if (_cooldown > 0)
 		{
-			_prevWidth = _currentWidth;
-			_prevWidthAverage = widthAverage;
-			_prevWidthStdDev = widthStdDev;
+			_cooldown--;
 			return;
 		}
-		
-		// Calculate thresholds
-		var narrowThreshold = _prevWidthAverage - _prevWidthStdDev * DeviationMultiplier;
-		var wideThreshold = _prevWidthAverage + _prevWidthStdDev * DeviationMultiplier;
-		
-		// Trading logic:
-		// When channel is narrowing (compression), enter long position
-		if (_currentWidth < narrowThreshold && _prevWidth >= narrowThreshold && Position == 0)
+
+		var narrowThreshold = avgWidth - stdWidth * DeviationMultiplier;
+		var wideThreshold = avgWidth + stdWidth * DeviationMultiplier;
+
+		if (Position == 0)
 		{
-			BuyMarket(Volume);
-			LogInfo($"Donchian channel width compression: {_currentWidth} < {narrowThreshold}. Buying at {candle.ClosePrice}");
-		}
-		// When channel is widening (expansion), enter short position
-		else if (_currentWidth > wideThreshold && _prevWidth <= wideThreshold && Position == 0)
-		{
-			SellMarket(Volume);
-			LogInfo($"Donchian channel width expansion: {_currentWidth} > {wideThreshold}. Selling at {candle.ClosePrice}");
-		}
-		
-		// Exit positions when width returns to average
-		else if ((Position > 0 || Position < 0) && 
-				 Math.Abs(_currentWidth - _prevWidthAverage) < 0.1m * _prevWidthStdDev &&
-				 Math.Abs(_prevWidth - _prevWidthAverage) >= 0.1m * _prevWidthStdDev)
-		{
-			if (Position > 0)
+			if (width < narrowThreshold)
 			{
-				SellMarket(Math.Abs(Position));
-				LogInfo($"Donchian width returned to average: {_currentWidth} ≈ {_prevWidthAverage}. Closing long position at {candle.ClosePrice}");
+				BuyMarket();
+				_cooldown = CooldownBars;
 			}
-			else if (Position < 0)
+			else if (width > wideThreshold)
 			{
-				BuyMarket(Math.Abs(Position));
-				LogInfo($"Donchian width returned to average: {_currentWidth} ≈ {_prevWidthAverage}. Closing short position at {candle.ClosePrice}");
+				SellMarket();
+				_cooldown = CooldownBars;
 			}
 		}
-		
-		// Store current values for next comparison
-		_prevWidth = _currentWidth;
-		_prevWidthAverage = widthAverage;
-		_prevWidthStdDev = widthStdDev;
+		else if (Position > 0 && width >= avgWidth)
+		{
+			SellMarket(Math.Abs(Position));
+			_cooldown = CooldownBars;
+		}
+		else if (Position < 0 && width <= avgWidth)
+		{
+			BuyMarket(Math.Abs(Position));
+			_cooldown = CooldownBars;
+		}
 	}
 }

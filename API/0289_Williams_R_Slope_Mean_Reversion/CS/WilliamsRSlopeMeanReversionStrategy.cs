@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,8 +11,8 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Williams %R Slope Mean Reversion Strategy.
-/// This strategy trades based on Williams %R slope reversions to the mean.
+/// Williams %R slope mean reversion strategy.
+/// Trades reversions from extreme Williams %R slopes and exits when the slope returns to its recent average.
 /// </summary>
 public class WilliamsRSlopeMeanReversionStrategy : Strategy
 {
@@ -23,21 +20,21 @@ public class WilliamsRSlopeMeanReversionStrategy : Strategy
 	private readonly StrategyParam<int> _lookbackPeriod;
 	private readonly StrategyParam<decimal> _deviationMultiplier;
 	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _longWilliamsLevel;
+	private readonly StrategyParam<decimal> _shortWilliamsLevel;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private WilliamsR _williamsR;
-	private decimal _previousSlopeValue;
-	private decimal _currentSlopeValue;
-	private bool _isFirstCalculation = true;
-
-	private decimal _averageSlope;
-	private decimal _slopeStdDev;
-	private int _sampleCount;
-	private decimal _sumSlopes;
-	private decimal _sumSlopesSquared;
+	private decimal _previousWilliamsValue;
+	private decimal[] _slopeHistory;
+	private int _currentIndex;
+	private int _filledCount;
+	private int _cooldown;
+	private bool _isInitialized;
 
 	/// <summary>
-	/// Williams %R Period.
+	/// Williams %R period.
 	/// </summary>
 	public int WilliamsRPeriod
 	{
@@ -46,7 +43,7 @@ public class WilliamsRSlopeMeanReversionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Period for calculating slope average and standard deviation.
+	/// Period for slope statistics.
 	/// </summary>
 	public int LookbackPeriod
 	{
@@ -55,7 +52,7 @@ public class WilliamsRSlopeMeanReversionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// The multiplier for standard deviation to determine entry threshold.
+	/// Multiplier for standard deviation to determine entry threshold.
 	/// </summary>
 	public decimal DeviationMultiplier
 	{
@@ -73,6 +70,33 @@ public class WilliamsRSlopeMeanReversionStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Cooldown bars between orders.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
+	/// Maximum Williams %R level for long entries.
+	/// </summary>
+	public decimal LongWilliamsLevel
+	{
+		get => _longWilliamsLevel.Value;
+		set => _longWilliamsLevel.Value = value;
+	}
+
+	/// <summary>
+	/// Minimum Williams %R level for short entries.
+	/// </summary>
+	public decimal ShortWilliamsLevel
+	{
+		get => _shortWilliamsLevel.Value;
+		set => _shortWilliamsLevel.Value = value;
+	}
+
+	/// <summary>
 	/// Candle type for strategy.
 	/// </summary>
 	public DataType CandleType
@@ -82,33 +106,40 @@ public class WilliamsRSlopeMeanReversionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Constructor.
+	/// Initializes a new instance of <see cref="WilliamsRSlopeMeanReversionStrategy"/>.
 	/// </summary>
 	public WilliamsRSlopeMeanReversionStrategy()
 	{
 		_williamsRPeriod = Param(nameof(WilliamsRPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Williams %R Period", "Period for Williams %R indicator", "Indicator Parameters")
-			
 			.SetOptimize(10, 30, 2);
 
 		_lookbackPeriod = Param(nameof(LookbackPeriod), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("Lookback Period", "Period for calculating average and standard deviation of the slope", "Strategy Parameters")
-			
+			.SetDisplay("Lookback Period", "Period for slope statistics", "Strategy Parameters")
 			.SetOptimize(10, 50, 5);
 
-		_deviationMultiplier = Param(nameof(DeviationMultiplier), 2.0m)
+		_deviationMultiplier = Param(nameof(DeviationMultiplier), 1.5m)
 			.SetGreaterThanZero()
 			.SetDisplay("Deviation Multiplier", "Multiplier for standard deviation to determine entry threshold", "Strategy Parameters")
-			
-			.SetOptimize(1.0m, 3.0m, 0.5m);
+			.SetOptimize(1m, 3m, 0.5m);
 
-		_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management")
-			
-			.SetOptimize(1.0m, 5.0m, 0.5m);
+			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management");
+
+		_cooldownBars = Param(nameof(CooldownBars), 1200)
+			.SetRange(1, 5000)
+			.SetDisplay("Cooldown Bars", "Bars to wait between orders", "Risk Management");
+
+		_longWilliamsLevel = Param(nameof(LongWilliamsLevel), -80m)
+			.SetRange(-100m, 0m)
+			.SetDisplay("Long Williams Level", "Maximum Williams %R level for long entries", "Signal Filters");
+
+		_shortWilliamsLevel = Param(nameof(ShortWilliamsLevel), -20m)
+			.SetRange(-100m, 0m)
+			.SetDisplay("Short Williams Level", "Minimum Williams %R level for short entries", "Signal Filters");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -124,34 +155,31 @@ public class WilliamsRSlopeMeanReversionStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_sampleCount = 0;
-		_sumSlopes = 0;
-		_sumSlopesSquared = 0;
-		_isFirstCalculation = true;
-		_previousSlopeValue = 0;
-		_currentSlopeValue = 0;
-		_averageSlope = 0;
-		_slopeStdDev = 0;
+		_williamsR = null;
+		_previousWilliamsValue = default;
+		_slopeHistory = new decimal[LookbackPeriod];
+		_currentIndex = default;
+		_filledCount = default;
+		_cooldown = default;
+		_isInitialized = default;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
-		// Initialize indicators
-		_williamsR = new WilliamsR
-		{
-			Length = WilliamsRPeriod
-		};
+		base.OnStarted2(time);
 
-		// Initialize statistics variables
+		_williamsR = new WilliamsR { Length = WilliamsRPeriod };
+		_slopeHistory = new decimal[LookbackPeriod];
+		_currentIndex = 0;
+		_filledCount = 0;
+		_cooldown = 0;
 
-		// Create subscription and bind indicator
 		var subscription = SubscribeCandles(CandleType);
 		subscription
 			.Bind(_williamsR, ProcessCandle)
 			.Start();
 
-		// Set up chart visualization if available
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -160,85 +188,86 @@ public class WilliamsRSlopeMeanReversionStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		// Start position protection
-		StartProtection(
-			new Unit(StopLossPercent, UnitTypes.Percent), 
-			new Unit(StopLossPercent, UnitTypes.Percent));
-
-		base.OnStarted2(time);
+		StartProtection(new(), new Unit(StopLossPercent, UnitTypes.Percent));
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal williamsRValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready for trading
+		if (!_williamsR.IsFormed)
+			return;
+
+		if (!_isInitialized)
+		{
+			_previousWilliamsValue = williamsRValue;
+			_isInitialized = true;
+			return;
+		}
+
+		var slope = williamsRValue - _previousWilliamsValue;
+		_previousWilliamsValue = williamsRValue;
+
+		_slopeHistory[_currentIndex] = slope;
+		_currentIndex = (_currentIndex + 1) % LookbackPeriod;
+
+		if (_filledCount < LookbackPeriod)
+			_filledCount++;
+
+		if (_filledCount < LookbackPeriod)
+			return;
+
+		var averageSlope = 0m;
+		var sumSq = 0m;
+
+		for (var i = 0; i < LookbackPeriod; i++)
+			averageSlope += _slopeHistory[i];
+
+		averageSlope /= LookbackPeriod;
+
+		for (var i = 0; i < LookbackPeriod; i++)
+		{
+			var diff = _slopeHistory[i] - averageSlope;
+			sumSq += diff * diff;
+		}
+
+		var slopeStdDev = (decimal)Math.Sqrt((double)(sumSq / LookbackPeriod));
+
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// Calculate Williams %R slope
-		if (_isFirstCalculation)
+		if (_cooldown > 0)
 		{
-			_previousSlopeValue = williamsRValue;
-			_isFirstCalculation = false;
+			_cooldown--;
 			return;
 		}
-		
-		_currentSlopeValue = williamsRValue - _previousSlopeValue;
-		_previousSlopeValue = williamsRValue;
 
-		// Update statistics for slope values
-		_sampleCount++;
-		_sumSlopes += _currentSlopeValue;
-		_sumSlopesSquared += _currentSlopeValue * _currentSlopeValue;
+		var lowerThreshold = averageSlope - DeviationMultiplier * slopeStdDev;
+		var upperThreshold = averageSlope + DeviationMultiplier * slopeStdDev;
 
-		// We need enough samples to calculate meaningful statistics
-		if (_sampleCount < LookbackPeriod)
-			return;
-
-		// If we have more samples than our lookback period, adjust the statistics
-		if (_sampleCount > LookbackPeriod)
+		if (Position == 0)
 		{
-			// This is a simplified approach - ideally we would keep a circular buffer
-			// of the last N slopes for more accurate calculations
-			_sampleCount = LookbackPeriod;
+			if (slope < lowerThreshold && williamsRValue <= LongWilliamsLevel)
+			{
+				BuyMarket();
+				_cooldown = CooldownBars;
+			}
+			else if (slope > upperThreshold && williamsRValue >= ShortWilliamsLevel)
+			{
+				SellMarket();
+				_cooldown = CooldownBars;
+			}
 		}
-
-		// Calculate statistics
-		_averageSlope = _sumSlopes / _sampleCount;
-		var variance = (_sumSlopesSquared / _sampleCount) - (_averageSlope * _averageSlope);
-		_slopeStdDev = (variance <= 0) ? 0 : (decimal)Math.Sqrt((double)variance);
-
-		// Calculate thresholds for entries
-		var longEntryThreshold = _averageSlope - DeviationMultiplier * _slopeStdDev;
-		var shortEntryThreshold = _averageSlope + DeviationMultiplier * _slopeStdDev;
-
-		// Trading logic
-		if (_currentSlopeValue < longEntryThreshold && Position <= 0)
+		else if (Position > 0 && slope >= averageSlope)
 		{
-			// Long entry: slope is significantly lower than average (mean reversion expected)
-			LogInfo($"Williams %R slope {_currentSlopeValue} below threshold {longEntryThreshold}, entering LONG");
-			BuyMarket(Volume + Math.Abs(Position));
-		}
-		else if (_currentSlopeValue > shortEntryThreshold && Position >= 0)
-		{
-			// Short entry: slope is significantly higher than average (mean reversion expected)
-			LogInfo($"Williams %R slope {_currentSlopeValue} above threshold {shortEntryThreshold}, entering SHORT");
-			SellMarket(Volume + Math.Abs(Position));
-		}
-		else if (Position > 0 && _currentSlopeValue > _averageSlope)
-		{
-			// Exit long when slope returns to or above average
-			LogInfo($"Williams %R slope {_currentSlopeValue} returned to average {_averageSlope}, exiting LONG");
 			SellMarket(Math.Abs(Position));
+			_cooldown = CooldownBars;
 		}
-		else if (Position < 0 && _currentSlopeValue < _averageSlope)
+		else if (Position < 0 && slope <= averageSlope)
 		{
-			// Exit short when slope returns to or below average
-			LogInfo($"Williams %R slope {_currentSlopeValue} returned to average {_averageSlope}, exiting SHORT");
 			BuyMarket(Math.Abs(Position));
+			_cooldown = CooldownBars;
 		}
 	}
 }

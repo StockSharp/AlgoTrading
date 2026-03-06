@@ -1,165 +1,192 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
+using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
+using StockSharp.Configuration;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Correlation Mean Reversion strategy.
-/// Trades based on changes in correlation between two securities.
+/// Mean-reversion strategy that uses rolling inter-market correlation as a regime filter.
+/// Trades the primary security when a low-correlation regime coincides with short-term divergence versus the secondary security.
 /// </summary>
 public class CorrelationMeanReversionStrategy : Strategy
 {
-	private readonly StrategyParam<Security> _security2;
+	private readonly StrategyParam<string> _security2Id;
 	private readonly StrategyParam<int> _correlationPeriod;
 	private readonly StrategyParam<int> _lookbackPeriod;
 	private readonly StrategyParam<decimal> _deviationThreshold;
+	private readonly StrategyParam<decimal> _exitThreshold;
+	private readonly StrategyParam<decimal> _divergenceThreshold;
 	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
-	
-	// Indicators and data containers
+
+	private Security _security2;
+	private Correlation _correlation;
 	private SimpleMovingAverage _correlationSma;
 	private StandardDeviation _correlationStdDev;
-	
-	private readonly Queue<decimal> _security1Prices = [];
-	private readonly Queue<decimal> _security2Prices = [];
-	
-	// Current values
-	private decimal _currentCorrelation;
-	private decimal _averageCorrelation;
-	private decimal _correlationStdDeviation;
-	private decimal _security1LastPrice;
-	private decimal _security2LastPrice;
-	private bool _security1Updated;
-	private bool _security2Updated;
-	
+	private decimal _latestPrice1;
+	private decimal _latestPrice2;
+	private decimal _previousPrice1;
+	private decimal _previousPrice2;
+	private bool _primaryUpdated;
+	private bool _secondaryUpdated;
+	private int _cooldown;
+
 	/// <summary>
-	/// First security for correlation calculation.
+	/// Secondary security identifier.
 	/// </summary>
-	public Security Security1
+	public string Security2Id
 	{
-		get => Security;
-		set => Security = value;
+		get => _security2Id.Value;
+		set => _security2Id.Value = value;
 	}
-	
+
 	/// <summary>
-	/// Second security for correlation calculation.
-	/// </summary>
-	public Security Security2
-	{
-		get => _security2.Value;
-		set => _security2.Value = value;
-	}
-	
-	/// <summary>
-	/// Period for correlation calculation.
+	/// Rolling period for the correlation indicator.
 	/// </summary>
 	public int CorrelationPeriod
 	{
 		get => _correlationPeriod.Value;
 		set => _correlationPeriod.Value = value;
 	}
-	
+
 	/// <summary>
-	/// Lookback period for moving average and standard deviation calculation.
+	/// Lookback period for correlation mean and deviation.
 	/// </summary>
 	public int LookbackPeriod
 	{
 		get => _lookbackPeriod.Value;
 		set => _lookbackPeriod.Value = value;
 	}
-	
+
 	/// <summary>
-	/// Threshold in standard deviations for entry signals.
+	/// Absolute Z-score required to recognize a low-correlation dislocation.
 	/// </summary>
 	public decimal DeviationThreshold
 	{
 		get => _deviationThreshold.Value;
 		set => _deviationThreshold.Value = value;
 	}
-	
+
 	/// <summary>
-	/// Stop loss percentage from entry price.
+	/// Exit Z-score threshold as correlation normalizes.
+	/// </summary>
+	public decimal ExitThreshold
+	{
+		get => _exitThreshold.Value;
+		set => _exitThreshold.Value = value;
+	}
+
+	/// <summary>
+	/// Minimum one-bar relative performance spread required for entry.
+	/// </summary>
+	public decimal DivergenceThreshold
+	{
+		get => _divergenceThreshold.Value;
+		set => _divergenceThreshold.Value = value;
+	}
+
+	/// <summary>
+	/// Stop loss percentage.
 	/// </summary>
 	public decimal StopLossPercent
 	{
 		get => _stopLossPercent.Value;
 		set => _stopLossPercent.Value = value;
 	}
-	
+
 	/// <summary>
-	/// Candle timeframe type for data subscription.
+	/// Bars to wait after each order.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type for both instruments.
 	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
-	
+
 	/// <summary>
-	/// Constructor.
+	/// Initializes strategy parameters.
 	/// </summary>
 	public CorrelationMeanReversionStrategy()
 	{
-		_security2 = Param<Security>(nameof(Security2))
-			.SetDisplay("Second Security", "Second security for correlation calculation", "Securities");
-			
+		_security2Id = Param(nameof(Security2Id), Paths.HistoryDefaultSecurity2)
+			.SetDisplay("Second Security Id", "Identifier of the secondary security", "General");
+
 		_correlationPeriod = Param(nameof(CorrelationPeriod), 20)
-			.SetRange(10, 100)
-			.SetDisplay("Correlation Period", "Period for correlation calculation", "Parameters")
-			;
-			
-		_lookbackPeriod = Param(nameof(LookbackPeriod), 20)
-			.SetRange(10, 100)
-			.SetDisplay("Lookback Period", "Period for moving average and standard deviation calculation", "Parameters")
-			;
-			
-		_deviationThreshold = Param(nameof(DeviationThreshold), 2.0m)
-			.SetRange(1.0m, 3.0m)
-			.SetDisplay("Deviation Threshold", "Threshold in standard deviations for entry signals", "Parameters")
-			;
-			
-		_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
-			.SetRange(0.5m, 5.0m)
-			.SetDisplay("Stop Loss", "Stop loss percentage from entry price", "Parameters")
-			;
-			
+			.SetRange(5, 100)
+			.SetDisplay("Correlation Period", "Rolling period for the correlation indicator", "Indicators");
+
+		_lookbackPeriod = Param(nameof(LookbackPeriod), 30)
+			.SetRange(10, 150)
+			.SetDisplay("Lookback Period", "Lookback period for correlation statistics", "Indicators");
+
+		_deviationThreshold = Param(nameof(DeviationThreshold), 1.1m)
+			.SetRange(0.25m, 3m)
+			.SetDisplay("Deviation Threshold", "Absolute Z-score required for entry", "Signals");
+
+		_exitThreshold = Param(nameof(ExitThreshold), 0.15m)
+			.SetRange(0m, 2m)
+			.SetDisplay("Exit Threshold", "Z-score threshold used for exit", "Signals");
+
+		_divergenceThreshold = Param(nameof(DivergenceThreshold), 0.003m)
+			.SetRange(0.0005m, 0.05m)
+			.SetDisplay("Divergence Threshold", "Minimum one-bar divergence between the two instruments", "Signals");
+
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetRange(0.5m, 10m)
+			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
+
+		_cooldownBars = Param(nameof(CooldownBars), 120)
+			.SetRange(1, 500)
+			.SetDisplay("Cooldown Bars", "Bars to wait after each order", "Risk");
+
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Timeframe for candles", "Parameters");
+			.SetDisplay("Candle Type", "Candle series for both instruments", "General");
 	}
-	
+
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		if (Security1 != null && Security2 != null)
-		{
-			yield return (Security1, CandleType);
-			yield return (Security2, CandleType);
-		}
+		if (Security != null)
+			yield return (Security, CandleType);
+
+		if (!Security2Id.IsEmpty())
+			yield return (new Security { Id = Security2Id }, CandleType);
 	}
-	
+
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_currentCorrelation = 0;
-		_averageCorrelation = 0;
-		_correlationStdDeviation = 0;
-		_security1LastPrice = 0;
-		_security2LastPrice = 0;
-		_security1Updated = false;
-		_security2Updated = false;
-		_security1Prices.Clear();
-		_security2Prices.Clear();
+
+		_security2 = null;
+		_correlation = null;
+		_correlationSma = null;
+		_correlationStdDev = null;
+		_latestPrice1 = 0m;
+		_latestPrice2 = 0m;
+		_previousPrice1 = 0m;
+		_previousPrice2 = 0m;
+		_primaryUpdated = false;
+		_secondaryUpdated = false;
+		_cooldown = 0;
 	}
 
 	/// <inheritdoc />
@@ -167,191 +194,140 @@ public class CorrelationMeanReversionStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
+		if (Security == null)
+			throw new InvalidOperationException("Primary security is not specified.");
 
-		if (Security1 == null)
-			throw new InvalidOperationException("First security is not specified.");
-			
-		if (Security2 == null)
-			throw new InvalidOperationException("Second security is not specified.");
-		
-		// Initialize indicators
-		_correlationSma = new SMA { Length = LookbackPeriod };
+		if (Security2Id.IsEmpty())
+			throw new InvalidOperationException("Secondary security identifier is not specified.");
+
+		_security2 = this.LookupById(Security2Id) ?? new Security { Id = Security2Id };
+		_correlation = new Correlation { Length = CorrelationPeriod };
+		_correlationSma = new SimpleMovingAverage { Length = LookbackPeriod };
 		_correlationStdDev = new StandardDeviation { Length = LookbackPeriod };
-		
-		// Subscribe to candles for both securities
-		var subscription1 = SubscribeCandles(CandleType, false, Security1);
-		var subscription2 = SubscribeCandles(CandleType, false, Security2);
-		
-		// Process data
-		subscription1
-			.Bind(ProcessSecurity1Candle)
+		_cooldown = 0;
+
+		var primarySubscription = SubscribeCandles(CandleType, security: Security);
+		var secondarySubscription = SubscribeCandles(CandleType, security: _security2);
+
+		primarySubscription
+			.Bind(ProcessPrimaryCandle)
 			.Start();
-			
-		subscription2
-			.Bind(ProcessSecurity2Candle)
+
+		secondarySubscription
+			.Bind(ProcessSecondaryCandle)
 			.Start();
-		
-		// Setup visualization
+
 		var area = CreateChartArea();
+
 		if (area != null)
 		{
-			DrawCandles(area, subscription1);
-			DrawCandles(area, subscription2);
+			DrawCandles(area, primarySubscription);
+			DrawCandles(area, secondarySubscription);
 			DrawOwnTrades(area);
 		}
-		
-		// Setup position protection
-		StartProtection(
-			new Unit(0, UnitTypes.Absolute), // No take profit
-			new Unit(StopLossPercent, UnitTypes.Percent), // Stop loss in percent
-			false // No trailing stop
-		);
+
+		StartProtection(new Unit(0, UnitTypes.Absolute), new Unit(StopLossPercent, UnitTypes.Percent), false);
 	}
-	
-	private void ProcessSecurity1Candle(ICandleMessage candle)
+
+	private void ProcessPrimaryCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
-		
-		// Store the last price
-		_security1LastPrice = candle.ClosePrice;
-		_security1Updated = true;
-		
-		// Update correlation and check for signals
-		CalculateCorrelation(candle.ServerTime, candle.State == CandleStates.Finished);
+
+		_latestPrice1 = candle.ClosePrice;
+		_primaryUpdated = true;
+
+		TryProcessPair(candle.OpenTime);
 	}
-	
-	private void ProcessSecurity2Candle(ICandleMessage candle)
+
+	private void ProcessSecondaryCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
-		
-		// Store the last price
-		_security2LastPrice = candle.ClosePrice;
-		_security2Updated = true;
-		
-		// Update correlation and check for signals
-		CalculateCorrelation(candle.ServerTime, candle.State == CandleStates.Finished);
+
+		_latestPrice2 = candle.ClosePrice;
+		_secondaryUpdated = true;
+
+		TryProcessPair(candle.OpenTime);
 	}
-	
-	private void CalculateCorrelation(DateTimeOffset time, bool isFinal)
+
+	private void TryProcessPair(DateTimeOffset time)
 	{
-		// Only proceed if both securities have been updated
-		if (!_security1Updated || !_security2Updated)
+		if (!_primaryUpdated || !_secondaryUpdated)
 			return;
-		
-		// Reset flags
-		_security1Updated = false;
-		_security2Updated = false;
-		
-		// Add the latest prices to queues
-		_security1Prices.Enqueue(_security1LastPrice);
-		_security2Prices.Enqueue(_security2LastPrice);
-		
-		// Keep queue sizes limited to correlation period
-		while (_security1Prices.Count > CorrelationPeriod)
+
+		_primaryUpdated = false;
+		_secondaryUpdated = false;
+
+		if (_latestPrice1 <= 0 || _latestPrice2 <= 0)
+			return;
+
+		if (_previousPrice1 <= 0 || _previousPrice2 <= 0)
 		{
-			_security1Prices.Dequeue();
-			_security2Prices.Dequeue();
+			_previousPrice1 = _latestPrice1;
+			_previousPrice2 = _latestPrice2;
+			return;
 		}
-		
-		// Need sufficient data to calculate correlation
-		if (_security1Prices.Count < CorrelationPeriod)
-			return;
-		
-		// Calculate correlation coefficient
-		_currentCorrelation = CalculateCorrelationCoefficient([.. _security1Prices], [.. _security2Prices]);
-		
-		// Process indicators
-		_averageCorrelation = _correlationSma.Process(new DecimalIndicatorValue(_correlationSma, _currentCorrelation, time.UtcDateTime)).ToDecimal();
-		_correlationStdDeviation = _correlationStdDev.Process(new DecimalIndicatorValue(_correlationStdDev, _currentCorrelation, time.UtcDateTime)).ToDecimal();
 
-		if (_correlationStdDeviation == 0)
+		var correlationValue = _correlation.Process((_latestPrice1, _latestPrice2), time.UtcDateTime, true).ToDecimal();
+		var averageCorrelation = _correlationSma.Process(correlationValue, time.UtcDateTime, true).ToDecimal();
+		var stdCorrelation = _correlationStdDev.Process(correlationValue, time.UtcDateTime, true).ToDecimal();
+
+		var primaryReturn = (_latestPrice1 - _previousPrice1) / _previousPrice1;
+		var secondaryReturn = (_latestPrice2 - _previousPrice2) / _previousPrice2;
+		var divergence = primaryReturn - secondaryReturn;
+
+		_previousPrice1 = _latestPrice1;
+		_previousPrice2 = _latestPrice2;
+
+		if (!_correlation.IsFormed || !_correlationSma.IsFormed || !_correlationStdDev.IsFormed)
 			return;
-		
-		// Check for trading signals
-		CheckSignal();
-	}
-	
-	private static decimal CalculateCorrelationCoefficient(decimal[] series1, decimal[] series2)
-	{
-		// Need at least two points for correlation
-		if (series1.Length < 2 || series1.Length != series2.Length)
-			return 0;
-		
-		// Calculate means
-		decimal mean1 = series1.Average();
-		decimal mean2 = series2.Average();
-		
-		decimal sum1 = 0;
-		decimal sum2 = 0;
-		decimal sum12 = 0;
-		
-		// Calculate correlation
-		for (int i = 0; i < series1.Length; i++)
+
+		if (ProcessState != ProcessStates.Started)
+			return;
+
+		if (_cooldown > 0)
 		{
-			decimal diff1 = series1[i] - mean1;
-			decimal diff2 = series2[i] - mean2;
-			
-			sum1 += diff1 * diff1;
-			sum2 += diff2 * diff2;
-			sum12 += diff1 * diff2;
-		}
-		
-		// Avoid division by zero
-		if (sum1 == 0 || sum2 == 0)
-			return 0;
-
-		var demom = (decimal)Math.Sqrt((double)(sum1 * sum2));
-
-		return demom == 0 ? 0 : sum12 / demom;
-	}
-	
-	private void CheckSignal()
-	{
-		// Ensure strategy is ready for trading and indicators are formed
-		if (!IsFormedAndOnlineAndAllowTrading() || 
-			!_correlationSma.IsFormed || 
-			!_correlationStdDev.IsFormed)
+			_cooldown--;
 			return;
-		
-		// Calculate Z-score for correlation
-		var correlationZScore = (_currentCorrelation - _averageCorrelation) / _correlationStdDeviation;
-		
-		// If we have no position, check for entry signals
+		}
+
+		if (stdCorrelation <= 0)
+			return;
+
+		var zScore = (correlationValue - averageCorrelation) / stdCorrelation;
+		var isLowCorrelation = zScore <= -DeviationThreshold;
+
 		if (Position == 0)
 		{
-			// Correlation drops below average (securities are less correlated than normal)
-			if (correlationZScore < -DeviationThreshold)
+			if (!isLowCorrelation)
+				return;
+
+			if (divergence <= -DivergenceThreshold)
 			{
-				// Long Security1, Short Security2
-				BuyMarket(Volume, Security1);
-				SellMarket(Volume, Security2);
-				
-				LogInfo($"LONG {Security1.Code}, SHORT {Security2.Code}: Correlation Z-Score: {correlationZScore:F2}");
+				BuyMarket();
+				_cooldown = CooldownBars;
 			}
-			// Correlation rises above average (securities are more correlated than normal)
-			else if (correlationZScore > DeviationThreshold)
+			else if (divergence >= DivergenceThreshold)
 			{
-				// Short Security1, Long Security2
-				SellMarket(Volume, Security1);
-				BuyMarket(Volume, Security2);
-				
-				LogInfo($"SHORT {Security1.Code}, LONG {Security2.Code}: Correlation Z-Score: {correlationZScore:F2}");
+				SellMarket();
+				_cooldown = CooldownBars;
 			}
+
+			return;
 		}
-		// Check for exit signals
-		else
+
+		var correlationRecovered = zScore >= -ExitThreshold;
+
+		if (Position > 0 && (correlationRecovered || divergence >= -DivergenceThreshold * 0.5m))
 		{
-			// Exit when correlation returns to average
-			if ((Position > 0 && correlationZScore >= 0) || 
-				(Position < 0 && correlationZScore <= 0))
-			{
-				ClosePosition(Security1);
-				ClosePosition(Security2);
-				
-				LogInfo($"CLOSE PAIR: Correlation Z-Score: {correlationZScore:F2}");
-			}
+			SellMarket(Math.Abs(Position));
+			_cooldown = CooldownBars;
+		}
+		else if (Position < 0 && (correlationRecovered || divergence <= DivergenceThreshold * 0.5m))
+		{
+			BuyMarket(Math.Abs(Position));
+			_cooldown = CooldownBars;
 		}
 	}
 }

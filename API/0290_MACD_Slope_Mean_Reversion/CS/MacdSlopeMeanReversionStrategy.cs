@@ -1,12 +1,8 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -14,8 +10,8 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// MACD Slope Mean Reversion Strategy.
-/// This strategy trades based on MACD histogram slope reversions to the mean.
+/// MACD slope mean reversion strategy.
+/// Trades reversions from extreme MACD histogram slopes and exits when the slope returns to its recent average.
 /// </summary>
 public class MacdSlopeMeanReversionStrategy : Strategy
 {
@@ -25,21 +21,21 @@ public class MacdSlopeMeanReversionStrategy : Strategy
 	private readonly StrategyParam<int> _lookbackPeriod;
 	private readonly StrategyParam<decimal> _deviationMultiplier;
 	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private MovingAverageConvergenceDivergenceSignal _macd;
+	private decimal _fastEma;
+	private decimal _slowEma;
+	private decimal _signalEma;
 	private decimal _previousHistogram;
-	private decimal _currentHistogramSlope;
-	private bool _isFirstCalculation = true;
-
-	private decimal _averageSlope;
-	private decimal _slopeStdDev;
-	private int _sampleCount;
-	private decimal _sumSlopes;
-	private decimal _sumSlopesSquared;
+	private decimal[] _slopeHistory;
+	private int _currentIndex;
+	private int _filledCount;
+	private int _cooldown;
+	private bool _isInitialized;
 
 	/// <summary>
-	/// MACD Fast Period.
+	/// MACD fast period.
 	/// </summary>
 	public int FastMacdPeriod
 	{
@@ -48,7 +44,7 @@ public class MacdSlopeMeanReversionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// MACD Slow Period.
+	/// MACD slow period.
 	/// </summary>
 	public int SlowMacdPeriod
 	{
@@ -57,7 +53,7 @@ public class MacdSlopeMeanReversionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// MACD Signal Period.
+	/// MACD signal period.
 	/// </summary>
 	public int SignalMacdPeriod
 	{
@@ -66,7 +62,7 @@ public class MacdSlopeMeanReversionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Period for calculating slope average and standard deviation.
+	/// Period for slope statistics.
 	/// </summary>
 	public int LookbackPeriod
 	{
@@ -75,7 +71,7 @@ public class MacdSlopeMeanReversionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// The multiplier for standard deviation to determine entry threshold.
+	/// Multiplier for standard deviation to determine entry threshold.
 	/// </summary>
 	public decimal DeviationMultiplier
 	{
@@ -93,6 +89,15 @@ public class MacdSlopeMeanReversionStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Cooldown bars between orders.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Candle type for strategy.
 	/// </summary>
 	public DataType CandleType
@@ -102,45 +107,42 @@ public class MacdSlopeMeanReversionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Constructor.
+	/// Initializes a new instance of <see cref="MacdSlopeMeanReversionStrategy"/>.
 	/// </summary>
 	public MacdSlopeMeanReversionStrategy()
 	{
 		_fastMacdPeriod = Param(nameof(FastMacdPeriod), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Fast", "Fast EMA period for MACD", "Indicator Parameters")
-			
 			.SetOptimize(8, 20, 2);
 
 		_slowMacdPeriod = Param(nameof(SlowMacdPeriod), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Slow", "Slow EMA period for MACD", "Indicator Parameters")
-			
 			.SetOptimize(20, 40, 2);
 
 		_signalMacdPeriod = Param(nameof(SignalMacdPeriod), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Signal", "Signal line period for MACD", "Indicator Parameters")
-			
 			.SetOptimize(5, 15, 2);
 
 		_lookbackPeriod = Param(nameof(LookbackPeriod), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("Lookback Period", "Period for calculating average and standard deviation of the slope", "Strategy Parameters")
-			
+			.SetDisplay("Lookback Period", "Period for slope statistics", "Strategy Parameters")
 			.SetOptimize(10, 50, 5);
 
-		_deviationMultiplier = Param(nameof(DeviationMultiplier), 2.0m)
+		_deviationMultiplier = Param(nameof(DeviationMultiplier), 1.5m)
 			.SetGreaterThanZero()
 			.SetDisplay("Deviation Multiplier", "Multiplier for standard deviation to determine entry threshold", "Strategy Parameters")
-			
-			.SetOptimize(1.0m, 3.0m, 0.5m);
+			.SetOptimize(1m, 3m, 0.5m);
 
-		_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management")
-			
-			.SetOptimize(1.0m, 5.0m, 0.5m);
+			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management");
+
+		_cooldownBars = Param(nameof(CooldownBars), 1200)
+			.SetRange(1, 5000)
+			.SetDisplay("Cooldown Bars", "Bars to wait between orders", "Risk Management");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -156,140 +158,131 @@ public class MacdSlopeMeanReversionStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
+		_fastEma = default;
+		_slowEma = default;
+		_signalEma = default;
 		_previousHistogram = default;
-		_currentHistogramSlope = default;
-		_averageSlope = default;
-		_slopeStdDev = default;
-		_sampleCount = 0;
-		_sumSlopes = 0;
-		_sumSlopesSquared = 0;
-		_isFirstCalculation = true;
-		_sampleCount = 0;
-		_sumSlopes = 0;
-		_sumSlopesSquared = 0;
-		_isFirstCalculation = true;
+		_slopeHistory = new decimal[LookbackPeriod];
+		_currentIndex = default;
+		_filledCount = default;
+		_cooldown = default;
+		_isInitialized = default;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
+		base.OnStarted2(time);
 
-		// Initialize indicators
+		_slopeHistory = new decimal[LookbackPeriod];
+		_currentIndex = 0;
+		_filledCount = 0;
+		_cooldown = 0;
 
-		_macd = new MovingAverageConvergenceDivergenceSignal
-		{
-			Macd =
-			{
-				ShortMa = { Length = FastMacdPeriod },
-				LongMa = { Length = SlowMacdPeriod },
-			},
-			SignalMa = { Length = SignalMacdPeriod }
-		};
-		// Initialize statistics variables
-
-		// Create subscription and bind indicator
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(_macd, ProcessCandle)
+			.Bind(ProcessCandle)
 			.Start();
 
-		// Set up chart visualization if available
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _macd);
 			DrawOwnTrades(area);
 		}
 
-		// Start position protection
-		StartProtection(
-			new Unit(StopLossPercent, UnitTypes.Percent), 
-			new Unit(StopLossPercent, UnitTypes.Percent));
-
-		base.OnStarted2(time);
+		StartProtection(new(), new Unit(StopLossPercent, UnitTypes.Percent));
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue)
+	private void ProcessCandle(ICandleMessage candle)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready for trading
+		var closePrice = candle.ClosePrice;
+
+		if (!_isInitialized)
+		{
+			_fastEma = closePrice;
+			_slowEma = closePrice;
+			_signalEma = 0;
+			_previousHistogram = 0;
+			_isInitialized = true;
+			return;
+		}
+
+		var fastAlpha = 2m / (FastMacdPeriod + 1m);
+		var slowAlpha = 2m / (SlowMacdPeriod + 1m);
+		var signalAlpha = 2m / (SignalMacdPeriod + 1m);
+
+		_fastEma += fastAlpha * (closePrice - _fastEma);
+		_slowEma += slowAlpha * (closePrice - _slowEma);
+
+		var macdLine = _fastEma - _slowEma;
+		_signalEma += signalAlpha * (macdLine - _signalEma);
+		var histogram = macdLine - _signalEma;
+		var histogramSlope = histogram - _previousHistogram;
+		_previousHistogram = histogram;
+
+		_slopeHistory[_currentIndex] = histogramSlope;
+		_currentIndex = (_currentIndex + 1) % LookbackPeriod;
+
+		if (_filledCount < LookbackPeriod)
+			_filledCount++;
+
+		if (_filledCount < LookbackPeriod)
+			return;
+
+		var averageSlope = 0m;
+		var sumSq = 0m;
+
+		for (var i = 0; i < LookbackPeriod; i++)
+			averageSlope += _slopeHistory[i];
+
+		averageSlope /= LookbackPeriod;
+
+		for (var i = 0; i < LookbackPeriod; i++)
+		{
+			var diff = _slopeHistory[i] - averageSlope;
+			sumSq += diff * diff;
+		}
+
+		var slopeStdDev = (decimal)Math.Sqrt((double)(sumSq / LookbackPeriod));
+
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
-		if (macdTyped.Macd is not decimal macd || macdTyped.Signal is not decimal signal)
+		if (_cooldown > 0)
 		{
+			_cooldown--;
 			return;
 		}
 
-		// Calculate MACD histogram
-		var histogram = macd - signal;
+		var lowerThreshold = averageSlope - DeviationMultiplier * slopeStdDev;
+		var upperThreshold = averageSlope + DeviationMultiplier * slopeStdDev;
 
-		// Calculate MACD histogram slope
-		if (_isFirstCalculation)
+		if (Position == 0)
 		{
-			_previousHistogram = histogram;
-			_isFirstCalculation = false;
-			return;
+			if (histogramSlope < lowerThreshold && histogram < 0)
+			{
+				BuyMarket();
+				_cooldown = CooldownBars;
+			}
+			else if (histogramSlope > upperThreshold && histogram > 0)
+			{
+				SellMarket();
+				_cooldown = CooldownBars;
+			}
 		}
-
-		_currentHistogramSlope = histogram - _previousHistogram;
-		_previousHistogram = histogram;
-
-		// Update statistics for slope values
-		_sampleCount++;
-		_sumSlopes += _currentHistogramSlope;
-		_sumSlopesSquared += _currentHistogramSlope * _currentHistogramSlope;
-
-		// We need enough samples to calculate meaningful statistics
-		if (_sampleCount < LookbackPeriod)
-			return;
-
-		// If we have more samples than our lookback period, adjust the statistics
-		if (_sampleCount > LookbackPeriod)
+		else if (Position > 0 && histogramSlope >= averageSlope)
 		{
-			// This is a simplified approach - ideally we would keep a circular buffer
-			// of the last N slopes for more accurate calculations
-			_sampleCount = LookbackPeriod;
-		}
-
-		// Calculate statistics
-		_averageSlope = _sumSlopes / _sampleCount;
-		var variance = (_sumSlopesSquared / _sampleCount) - (_averageSlope * _averageSlope);
-		_slopeStdDev = (variance <= 0) ? 0 : (decimal)Math.Sqrt((double)variance);
-
-		// Calculate thresholds for entries
-		var longEntryThreshold = _averageSlope - DeviationMultiplier * _slopeStdDev;
-		var shortEntryThreshold = _averageSlope + DeviationMultiplier * _slopeStdDev;
-
-		// Trading logic
-		if (_currentHistogramSlope < longEntryThreshold && Position <= 0)
-		{
-			// Long entry: slope is significantly lower than average (mean reversion expected)
-			LogInfo($"MACD histogram slope {_currentHistogramSlope} below threshold {longEntryThreshold}, entering LONG");
-			BuyMarket(Volume + Math.Abs(Position));
-		}
-		else if (_currentHistogramSlope > shortEntryThreshold && Position >= 0)
-		{
-			// Short entry: slope is significantly higher than average (mean reversion expected)
-			LogInfo($"MACD histogram slope {_currentHistogramSlope} above threshold {shortEntryThreshold}, entering SHORT");
-			SellMarket(Volume + Math.Abs(Position));
-		}
-		else if (Position > 0 && _currentHistogramSlope > _averageSlope)
-		{
-			// Exit long when slope returns to or above average
-			LogInfo($"MACD histogram slope {_currentHistogramSlope} returned to average {_averageSlope}, exiting LONG");
 			SellMarket(Math.Abs(Position));
+			_cooldown = CooldownBars;
 		}
-		else if (Position < 0 && _currentHistogramSlope < _averageSlope)
+		else if (Position < 0 && histogramSlope <= averageSlope)
 		{
-			// Exit short when slope returns to or below average
-			LogInfo($"MACD histogram slope {_currentHistogramSlope} returned to average {_averageSlope}, exiting SHORT");
 			BuyMarket(Math.Abs(Position));
+			_cooldown = CooldownBars;
 		}
 	}
 }

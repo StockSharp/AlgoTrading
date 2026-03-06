@@ -1,11 +1,9 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
+using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -14,7 +12,7 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on breakouts during high volatility clusters.
+/// Breakout strategy that trades only when ATR expands into a high-volatility cluster.
 /// </summary>
 public class VolatilityClusterBreakoutStrategy : Strategy
 {
@@ -22,11 +20,19 @@ public class VolatilityClusterBreakoutStrategy : Strategy
 	private readonly StrategyParam<int> _atrPeriod;
 	private readonly StrategyParam<decimal> _stdDevMultiplier;
 	private readonly StrategyParam<decimal> _stopMultiplier;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
+
+	private SimpleMovingAverage _sma;
+	private StandardDeviation _stdDev;
+	private AverageTrueRange _atr;
 	private SimpleMovingAverage _atrAvg;
+	private decimal _entryPrice;
+	private decimal _entryAtr;
+	private int _cooldown;
 
 	/// <summary>
-	/// Period for price average and standard deviation calculation.
+	/// Period for the moving average and standard deviation.
 	/// </summary>
 	public int PriceAvgPeriod
 	{
@@ -44,7 +50,7 @@ public class VolatilityClusterBreakoutStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Standard deviation multiplier for breakout threshold.
+	/// Standard deviation multiplier used for breakout levels.
 	/// </summary>
 	public decimal StdDevMultiplier
 	{
@@ -53,7 +59,7 @@ public class VolatilityClusterBreakoutStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stop-loss multiplier relative to ATR.
+	/// ATR multiplier used for stop distance.
 	/// </summary>
 	public decimal StopMultiplier
 	{
@@ -62,7 +68,16 @@ public class VolatilityClusterBreakoutStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Candle type parameter.
+	/// Bars to wait after each order.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -71,48 +86,53 @@ public class VolatilityClusterBreakoutStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initialize a new instance of <see cref="VolatilityClusterBreakoutStrategy"/>.
+	/// Initializes strategy parameters.
 	/// </summary>
 	public VolatilityClusterBreakoutStrategy()
 	{
 		_priceAvgPeriod = Param(nameof(PriceAvgPeriod), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("Price Average Period", "Period for calculating price average and standard deviation", "Strategy Settings")
-			
-			.SetOptimize(10, 50, 5);
+			.SetRange(5, 100)
+			.SetDisplay("Price Average Period", "Period for moving average and standard deviation", "Indicators");
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("ATR Period", "Period for calculating Average True Range", "Strategy Settings")
-			
-			.SetOptimize(7, 21, 7);
+			.SetRange(5, 50)
+			.SetDisplay("ATR Period", "Period for ATR calculation", "Indicators");
 
-		_stdDevMultiplier = Param(nameof(StdDevMultiplier), 2.0m)
-			.SetGreaterThanZero()
-			.SetDisplay("StdDev Multiplier", "Multiplier for standard deviation to determine breakout levels", "Strategy Settings")
-			
-			.SetOptimize(1.0m, 3.0m, 0.5m);
+		_stdDevMultiplier = Param(nameof(StdDevMultiplier), 1.3m)
+			.SetRange(0.25m, 5m)
+			.SetDisplay("StdDev Multiplier", "Multiplier for breakout levels", "Signals");
 
-		_stopMultiplier = Param(nameof(StopMultiplier), 2.0m)
-			.SetGreaterThanZero()
-			.SetDisplay("Stop ATR Multiplier", "ATR multiplier for stop-loss", "Strategy Settings")
-			
-			.SetOptimize(1.0m, 3.0m, 0.5m);
+		_stopMultiplier = Param(nameof(StopMultiplier), 1.8m)
+			.SetRange(0.5m, 10m)
+			.SetDisplay("Stop ATR Multiplier", "ATR multiplier used for stop distance", "Risk");
+
+		_cooldownBars = Param(nameof(CooldownBars), 60)
+			.SetRange(1, 500)
+			.SetDisplay("Cooldown Bars", "Bars to wait after each order", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles for strategy", "General");
+			.SetDisplay("Candle Type", "Type of candles for the strategy", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return [(Security, CandleType)];
+		if (Security != null)
+			yield return (Security, CandleType);
 	}
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
+
+		_sma = null;
+		_stdDev = null;
+		_atr = null;
+		_atrAvg = null;
+		_entryPrice = 0m;
+		_entryAtr = 0m;
+		_cooldown = 0;
 	}
 
 	/// <inheritdoc />
@@ -120,105 +140,98 @@ public class VolatilityClusterBreakoutStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_atrAvg = new SMA { Length = AtrPeriod };
+		if (Security == null)
+			throw new InvalidOperationException("Security is not specified.");
 
-		// Create indicators
-		var sma = new SMA { Length = PriceAvgPeriod };
-		var stdDev = new StandardDeviation { Length = PriceAvgPeriod };
-		var atr = new AverageTrueRange { Length = AtrPeriod };
+		_sma = new SimpleMovingAverage { Length = PriceAvgPeriod };
+		_stdDev = new StandardDeviation { Length = PriceAvgPeriod };
+		_atr = new AverageTrueRange { Length = AtrPeriod };
+		_atrAvg = new SimpleMovingAverage { Length = Math.Max(AtrPeriod * 2, 10) };
+		_cooldown = 0;
 
-		// Create subscription
 		var subscription = SubscribeCandles(CandleType);
 
-		// Bind indicators to subscription
 		subscription
-			.Bind(sma, stdDev, atr, ProcessCandle)
+			.Bind(_sma, _stdDev, _atr, ProcessCandle)
 			.Start();
 
-		// Enable position protection with dynamic stops
-		StartProtection(
-			takeProfit: new Unit(0), // We'll handle exits in the strategy logic
-			stopLoss: new Unit(0),   // We'll handle stops in the strategy logic
-			useMarketOrders: true
-		);
-
-		// Setup chart if available
 		var area = CreateChartArea();
+
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, sma);
-			DrawIndicator(area, atr);
+			DrawIndicator(area, _sma);
+			DrawIndicator(area, _atr);
 			DrawOwnTrades(area);
 		}
+
+		StartProtection(new Unit(0, UnitTypes.Absolute), new Unit(StopMultiplier, UnitTypes.Percent), false);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal smaValue, decimal stdDevValue, decimal atrValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var atrAvgVal = _atrAvg.Process(new DecimalIndicatorValue(_atrAvg, atrValue, candle.ServerTime));
+		var atrAvgValue = _atrAvg.Process(atrValue, candle.OpenTime, true).ToDecimal();
 
-		// Check if strategy is ready to trade
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!_sma.IsFormed || !_stdDev.IsFormed || !_atr.IsFormed || !_atrAvg.IsFormed)
 			return;
 
-		// Calculate breakout levels
+		if (ProcessState != ProcessStates.Started)
+			return;
+
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+			return;
+		}
+
 		var upperLevel = smaValue + StdDevMultiplier * stdDevValue;
 		var lowerLevel = smaValue - StdDevMultiplier * stdDevValue;
-		
-		// Check if we're in high volatility cluster
-		var isHighVolatility = atrValue > smaValue * 0.01m; // ATR > 1% of price as simplification
-		
-		// Exit conditions based on volatility
-		var exitCondition = !isHighVolatility;
+		var isHighVolatility = atrValue >= atrAvgValue * 1.15m;
+		var price = candle.ClosePrice;
 
-		// Entry conditions
-		var longEntryCondition = candle.ClosePrice > upperLevel && isHighVolatility && Position <= 0;
-		var shortEntryCondition = candle.ClosePrice < lowerLevel && isHighVolatility && Position >= 0;
-
-		// Execute trading logic
-		if (exitCondition)
+		if (Position == 0)
 		{
-			// Exit positions when volatility drops
-			if (Position > 0)
+			if (!isHighVolatility)
+				return;
+
+			if (price >= upperLevel)
+			{
+				_entryPrice = price;
+				_entryAtr = atrValue;
+				BuyMarket();
+				_cooldown = CooldownBars;
+			}
+			else if (price <= lowerLevel)
+			{
+				_entryPrice = price;
+				_entryAtr = atrValue;
+				SellMarket();
+				_cooldown = CooldownBars;
+			}
+
+			return;
+		}
+
+		var stopDistance = _entryAtr * StopMultiplier;
+
+		if (Position > 0)
+		{
+			if (price <= smaValue || !isHighVolatility || price <= _entryPrice - stopDistance)
 			{
 				SellMarket(Math.Abs(Position));
-				LogInfo($"Long exit on volatility drop: Price={candle.ClosePrice}, ATR={atrValue}");
+				_cooldown = CooldownBars;
 			}
-			else if (Position < 0)
+		}
+		else if (Position < 0)
+		{
+			if (price >= smaValue || !isHighVolatility || price >= _entryPrice + stopDistance)
 			{
 				BuyMarket(Math.Abs(Position));
-				LogInfo($"Short exit on volatility drop: Price={candle.ClosePrice}, ATR={atrValue}");
+				_cooldown = CooldownBars;
 			}
-		}
-		else if (longEntryCondition)
-		{
-			// Calculate position size
-			var positionSize = Volume + Math.Abs(Position);
-			
-			// Calculate stop loss level
-			var stopPrice = candle.ClosePrice - atrValue * StopMultiplier;
-			
-			// Enter long position
-			BuyMarket(positionSize);
-			
-			LogInfo($"Long entry: Price={candle.ClosePrice}, Upper={upperLevel}, ATR={atrValue}, Stop={stopPrice}");
-		}
-		else if (shortEntryCondition)
-		{
-			// Calculate position size
-			var positionSize = Volume + Math.Abs(Position);
-			
-			// Calculate stop loss level
-			var stopPrice = candle.ClosePrice + atrValue * StopMultiplier;
-			
-			// Enter short position
-			SellMarket(positionSize);
-			
-			LogInfo($"Short entry: Price={candle.ClosePrice}, Lower={lowerLevel}, ATR={atrValue}, Stop={stopPrice}");
 		}
 	}
 }

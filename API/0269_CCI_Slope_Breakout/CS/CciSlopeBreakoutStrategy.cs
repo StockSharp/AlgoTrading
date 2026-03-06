@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,7 +11,8 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// CCI Slope Breakout Strategy
+/// Strategy based on CCI slope breakout.
+/// Opens positions when CCI slope deviates from its recent average by a multiple of standard deviation.
 /// </summary>
 public class CciSlopeBreakoutStrategy : Strategy
 {
@@ -23,111 +21,155 @@ public class CciSlopeBreakoutStrategy : Strategy
 	private readonly StrategyParam<decimal> _breakoutMultiplier;
 	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
-	
-	private CommodityChannelIndex _cci;
-	private LinearRegression _cciSlope;
-	private decimal _prevCciSlopeValue;
-	private decimal _slopeAvg;
-	private decimal _slopeStdDev;
-	private decimal _sumSlope;
-	private decimal _sumSlopeSquared;
-	private readonly Queue<decimal> _slopeValues = [];
+	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _minCciMagnitude;
 
+	private CommodityChannelIndex _cci;
+	private decimal _prevCciValue;
+	private decimal _currentSlope;
+	private decimal _avgSlope;
+	private decimal _stdDevSlope;
+	private decimal[] _slopes;
+	private int _currentIndex;
+	private int _filledCount;
+	private int _cooldown;
+	private bool _isInitialized;
+
+	/// <summary>
+	/// CCI period.
+	/// </summary>
 	public int CciPeriod
 	{
 		get => _cciPeriod.Value;
 		set => _cciPeriod.Value = value;
 	}
 
+	/// <summary>
+	/// Lookback period for slope statistics calculation.
+	/// </summary>
 	public int SlopePeriod
 	{
 		get => _slopePeriod.Value;
 		set => _slopePeriod.Value = value;
 	}
 
+	/// <summary>
+	/// Standard deviation multiplier for breakout detection.
+	/// </summary>
 	public decimal BreakoutMultiplier
 	{
 		get => _breakoutMultiplier.Value;
 		set => _breakoutMultiplier.Value = value;
 	}
 
+	/// <summary>
+	/// Stop loss percentage.
+	/// </summary>
 	public decimal StopLossPercent
 	{
 		get => _stopLossPercent.Value;
 		set => _stopLossPercent.Value = value;
 	}
 
+	/// <summary>
+	/// Candle type.
+	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
-	
+
+	/// <summary>
+	/// Cooldown bars between orders.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
+	/// Minimum absolute CCI value required for entries.
+	/// </summary>
+	public decimal MinCciMagnitude
+	{
+		get => _minCciMagnitude.Value;
+		set => _minCciMagnitude.Value = value;
+	}
+
+	/// <summary>
+	/// Initializes a new instance of <see cref="CciSlopeBreakoutStrategy"/>.
+	/// </summary>
 	public CciSlopeBreakoutStrategy()
 	{
 		_cciPeriod = Param(nameof(CciPeriod), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("CCI Period", "Period for CCI calculation", "Indicator")
-			
+			.SetDisplay("CCI Period", "Period for CCI calculation", "Indicator Parameters")
 			.SetOptimize(10, 30, 5);
-			
+
 		_slopePeriod = Param(nameof(SlopePeriod), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("Slope Period", "Period for slope average and standard deviation", "Indicator")
-			
-			.SetOptimize(10, 30, 5);
-			
-		_breakoutMultiplier = Param(nameof(BreakoutMultiplier), 2.0m)
+			.SetDisplay("Slope Period", "Period for slope statistics calculation", "Strategy Parameters")
+			.SetOptimize(10, 50, 5);
+
+		_breakoutMultiplier = Param(nameof(BreakoutMultiplier), 2.5m)
 			.SetGreaterThanZero()
-			.SetDisplay("Breakout Multiplier", "Standard deviation multiplier for breakout", "Signal")
-			
-			.SetOptimize(1.0m, 3.0m, 0.5m);
-			
-		_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
+			.SetDisplay("Breakout Multiplier", "Standard deviation multiplier for breakout detection", "Strategy Parameters")
+			.SetOptimize(1.5m, 4m, 0.5m);
+
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management")
-			
-			.SetOptimize(1.0m, 3.0m, 0.5m);
-			
+			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management");
+
+		_cooldownBars = Param(nameof(CooldownBars), 1200)
+			.SetRange(1, 5000)
+			.SetDisplay("Cooldown Bars", "Bars to wait between orders", "Risk Management");
+
+		_minCciMagnitude = Param(nameof(MinCciMagnitude), 100m)
+			.SetGreaterThanZero()
+			.SetDisplay("Min CCI Magnitude", "Minimum absolute CCI value required for entries", "Signal Filters");
+
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
-	
+
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
-	
+
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevCciSlopeValue = 0;
-		_slopeAvg = 0;
-		_slopeStdDev = 0;
-		_sumSlope = 0;
-		_sumSlopeSquared = 0;
-		_slopeValues.Clear();
+		_cci = null;
+		_prevCciValue = default;
+		_currentSlope = default;
+		_avgSlope = default;
+		_stdDevSlope = default;
+		_currentIndex = default;
+		_filledCount = default;
+		_cooldown = default;
+		_isInitialized = default;
+		_slopes = new decimal[SlopePeriod];
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		
-		// Initialize indicators
+
 		_cci = new CommodityChannelIndex { Length = CciPeriod };
-		_cciSlope = new LinearRegression { Length = 2 }; // For calculating slope
-		
-		
-		// Create subscription and bind indicator
+		_slopes = new decimal[SlopePeriod];
+		_cooldown = 0;
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
 			.Bind(_cci, ProcessCandle)
 			.Start();
-		
-		// Setup chart visualization
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -135,83 +177,102 @@ public class CciSlopeBreakoutStrategy : Strategy
 			DrawIndicator(area, _cci);
 			DrawOwnTrades(area);
 		}
-		
-		// Enable position protection
+
 		StartProtection(new(), new Unit(StopLossPercent, UnitTypes.Percent));
 	}
-	
+
 	private void ProcessCandle(ICandleMessage candle, decimal cciValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
+		if (!_cci.IsFormed)
+			return;
+
+		if (!_isInitialized)
+		{
+			_prevCciValue = cciValue;
+			_isInitialized = true;
+			return;
+		}
+
+		_currentSlope = cciValue - _prevCciValue;
+		_prevCciValue = cciValue;
+
+		_slopes[_currentIndex] = _currentSlope;
+		_currentIndex = (_currentIndex + 1) % SlopePeriod;
+
+		if (_filledCount < SlopePeriod)
+			_filledCount++;
+
+		if (_filledCount < SlopePeriod)
+			return;
+
+		CalculateStatistics();
+
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
-		
-		// Calculate CCI slope
-		var currentSlopeTyped = (LinearRegressionValue)_cciSlope.Process(new DecimalIndicatorValue(_cciSlope, cciValue, candle.ServerTime));
 
-		if (currentSlopeTyped.LinearReg is not decimal currentSlopeValue)
+		if (_stdDevSlope <= 0)
 			return;
 
-		// Update slope stats when we have 2 values to calculate slope
-		if (_prevCciSlopeValue != 0)
+		if (_cooldown > 0)
 		{
-			// Calculate simple slope from current and previous values
-			decimal slope = currentSlopeValue - _prevCciSlopeValue;
-			
-			// Update running statistics
-			_slopeValues.Enqueue(slope);
-			_sumSlope += slope;
-			_sumSlopeSquared += slope * slope;
-			
-			// Remove oldest value if we have enough
-			if (_slopeValues.Count > SlopePeriod)
+			_cooldown--;
+			return;
+		}
+
+		var upperThreshold = _avgSlope + BreakoutMultiplier * _stdDevSlope;
+		var lowerThreshold = _avgSlope - BreakoutMultiplier * _stdDevSlope;
+		var absCci = Math.Abs(cciValue);
+
+		if (Position == 0)
+		{
+			if (_currentSlope > upperThreshold && cciValue > 0 && absCci >= MinCciMagnitude)
 			{
-				var oldSlope = _slopeValues.Dequeue();
-				_sumSlope -= oldSlope;
-				_sumSlopeSquared -= oldSlope * oldSlope;
+				BuyMarket();
+				_cooldown = CooldownBars;
 			}
-			
-			// Calculate average and standard deviation
-			_slopeAvg = _sumSlope / _slopeValues.Count;
-			decimal variance = (_sumSlopeSquared / _slopeValues.Count) - (_slopeAvg * _slopeAvg);
-			_slopeStdDev = variance <= 0 ? 0 : (decimal)Math.Sqrt((double)variance);
-			
-			// Generate signals if we have enough data for statistics
-			if (_slopeValues.Count >= SlopePeriod)
+			else if (_currentSlope < lowerThreshold && cciValue < 0 && absCci >= MinCciMagnitude)
 			{
-				// Breakout logic
-				if (slope > _slopeAvg + BreakoutMultiplier * _slopeStdDev && Position <= 0)
-				{
-					// Long position on bullish slope breakout
-					BuyMarket(Volume + Math.Abs(Position));
-					LogInfo($"Long entry: CCI slope breakout above {_slopeAvg + BreakoutMultiplier * _slopeStdDev:F2}");
-				}
-				else if (slope < _slopeAvg - BreakoutMultiplier * _slopeStdDev && Position >= 0)
-				{
-					// Short position on bearish slope breakout
-					SellMarket(Volume + Math.Abs(Position));
-					LogInfo($"Short entry: CCI slope breakout below {_slopeAvg - BreakoutMultiplier * _slopeStdDev:F2}");
-				}
-				
-				// Exit logic - Return to mean
-				if (Position > 0 && slope < _slopeAvg)
-				{
-					SellMarket(Math.Abs(Position));
-					LogInfo("Long exit: CCI slope returned to mean");
-				}
-				else if (Position < 0 && slope > _slopeAvg)
-				{
-					BuyMarket(Math.Abs(Position));
-					LogInfo("Short exit: CCI slope returned to mean");
-				}
+				SellMarket();
+				_cooldown = CooldownBars;
 			}
 		}
-		
-		// Update previous value for next iteration
-		_prevCciSlopeValue = currentSlopeValue;
+		else if (Position > 0)
+		{
+			if (_currentSlope <= _avgSlope)
+			{
+				SellMarket(Math.Abs(Position));
+				_cooldown = CooldownBars;
+			}
+		}
+		else if (Position < 0)
+		{
+			if (_currentSlope >= _avgSlope)
+			{
+				BuyMarket(Math.Abs(Position));
+				_cooldown = CooldownBars;
+			}
+		}
+	}
+
+	private void CalculateStatistics()
+	{
+		_avgSlope = 0;
+		var sumSquaredDiffs = 0m;
+
+		for (var i = 0; i < SlopePeriod; i++)
+			_avgSlope += _slopes[i];
+
+		_avgSlope /= SlopePeriod;
+
+		for (var i = 0; i < SlopePeriod; i++)
+		{
+			var diff = _slopes[i] - _avgSlope;
+			sumSquaredDiffs += diff * diff;
+		}
+
+		_stdDevSlope = (decimal)Math.Sqrt((double)(sumSquaredDiffs / SlopePeriod));
 	}
 }

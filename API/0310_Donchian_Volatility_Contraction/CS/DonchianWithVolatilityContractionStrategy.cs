@@ -1,11 +1,9 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
+using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -14,22 +12,32 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on Donchian Channel breakout after volatility contraction.
+/// Breakout strategy that waits for Donchian channel contraction before trading a break of the previous channel.
 /// </summary>
 public class DonchianWithVolatilityContractionStrategy : Strategy
 {
 	private readonly StrategyParam<int> _donchianPeriod;
 	private readonly StrategyParam<int> _atrPeriod;
 	private readonly StrategyParam<decimal> _volatilityFactor;
+	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
 
-	// Indicators for maintaining the channel width
-	private decimal _avgDcWidth;
-	private decimal _stdDevDcWidth;
-	private decimal _currentDcWidth;
+	private Highest _donchianHigh;
+	private Lowest _donchianLow;
+	private AverageTrueRange _atr;
+	private SimpleMovingAverage _widthAverage;
+	private StandardDeviation _widthStdDev;
+	private decimal _previousHigh;
+	private decimal _previousLow;
+	private decimal _previousWidth;
+	private decimal _widthAverageValue;
+	private decimal _widthStdDevValue;
+	private bool _isInitialized;
+	private int _cooldown;
 
 	/// <summary>
-	/// Donchian channel period parameter.
+	/// Donchian channel period.
 	/// </summary>
 	public int DonchianPeriod
 	{
@@ -38,7 +46,7 @@ public class DonchianWithVolatilityContractionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// ATR period parameter.
+	/// ATR period.
 	/// </summary>
 	public int AtrPeriod
 	{
@@ -47,7 +55,7 @@ public class DonchianWithVolatilityContractionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Volatility contraction factor parameter.
+	/// Standard deviation multiplier for contraction detection.
 	/// </summary>
 	public decimal VolatilityFactor
 	{
@@ -56,7 +64,25 @@ public class DonchianWithVolatilityContractionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Candle type parameter.
+	/// Bars to wait after each order.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
+	/// Stop loss percentage.
+	/// </summary>
+	public decimal StopLossPercent
+	{
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -65,27 +91,29 @@ public class DonchianWithVolatilityContractionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Constructor.
+	/// Initializes strategy parameters.
 	/// </summary>
 	public DonchianWithVolatilityContractionStrategy()
 	{
 		_donchianPeriod = Param(nameof(DonchianPeriod), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("Donchian Period", "Period for Donchian Channel", "Indicators")
-			
-			.SetOptimize(10, 50, 5);
+			.SetRange(2, 100)
+			.SetDisplay("Donchian Period", "Period for the Donchian channel", "Indicators");
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("ATR Period", "Period for ATR indicator", "Indicators")
-			
-			.SetOptimize(7, 28, 7);
+			.SetRange(2, 100)
+			.SetDisplay("ATR Period", "Period for the ATR", "Indicators");
 
-		_volatilityFactor = Param(nameof(VolatilityFactor), 2.0m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volatility Factor", "Standard deviation multiplier for contraction detection", "Indicators")
-			
-			.SetOptimize(1.0m, 3.0m, 0.5m);
+		_volatilityFactor = Param(nameof(VolatilityFactor), 0.8m)
+			.SetRange(0.1m, 5m)
+			.SetDisplay("Volatility Factor", "Standard deviation multiplier for contraction detection", "Signals");
+
+		_cooldownBars = Param(nameof(CooldownBars), 72)
+			.SetRange(1, 500)
+			.SetDisplay("Cooldown Bars", "Bars to wait after each order", "Risk");
+
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetRange(0.5m, 10m)
+			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -94,7 +122,8 @@ public class DonchianWithVolatilityContractionStrategy : Strategy
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return [(Security, CandleType)];
+		if (Security != null)
+			yield return (Security, CandleType);
 	}
 
 	/// <inheritdoc />
@@ -102,118 +131,137 @@ public class DonchianWithVolatilityContractionStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_avgDcWidth = default;
-		_stdDevDcWidth = default;
-		_currentDcWidth = default;
+		_donchianHigh = null;
+		_donchianLow = null;
+		_atr = null;
+		_widthAverage = null;
+		_widthStdDev = null;
+		_previousHigh = 0m;
+		_previousLow = 0m;
+		_previousWidth = 0m;
+		_widthAverageValue = 0m;
+		_widthStdDevValue = 0m;
+		_isInitialized = false;
+		_cooldown = 0;
 	}
 
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		// Create indicators
-		var donchianHigh = new Highest { Length = DonchianPeriod };
-		var donchianLow = new Lowest { Length = DonchianPeriod };
-		var atr = new AverageTrueRange { Length = AtrPeriod };
-		var sma = new SMA { Length = DonchianPeriod };
-		var standardDeviation = new StandardDeviation { Length = DonchianPeriod };
+		if (Security == null)
+			throw new InvalidOperationException("Security is not specified.");
 
-		// Subscribe to candles and bind indicators
+		_donchianHigh = new Highest { Length = DonchianPeriod };
+		_donchianLow = new Lowest { Length = DonchianPeriod };
+		_atr = new AverageTrueRange { Length = AtrPeriod };
+		_widthAverage = new SimpleMovingAverage { Length = DonchianPeriod };
+		_widthStdDev = new StandardDeviation { Length = DonchianPeriod };
+		_isInitialized = false;
+		_cooldown = 0;
+
 		var subscription = SubscribeCandles(CandleType);
 
 		subscription
-			.BindEx(donchianHigh, (candle, highValue) =>
-			{
-				var highPrice = highValue.ToDecimal();
-
-				// Process Donchian Low separately
-				var lowValue = donchianLow.Process(candle);
-				var lowPrice = lowValue.ToDecimal();
-
-				// Process ATR
-				var atrValue = atr.Process(candle);
-
-				// Calculate Donchian Channel width
-				_currentDcWidth = highPrice - lowPrice;
-
-				// Process SMA and StdDev for the channel width
-				var smaValue = sma.Process(new DecimalIndicatorValue(sma, _currentDcWidth, candle.ServerTime));
-				var stdDevValue = standardDeviation.Process(new DecimalIndicatorValue(standardDeviation, _currentDcWidth, candle.ServerTime));
-
-				_avgDcWidth = smaValue.ToDecimal();
-				_stdDevDcWidth = stdDevValue.ToDecimal();
-
-				// Process the strategy logic
-				ProcessStrategy(candle, highPrice, lowPrice, atrValue.ToDecimal());
-			})
+			.Bind(_donchianHigh, _donchianLow, _atr, ProcessCandle)
 			.Start();
 
-		// Setup chart if available
 		var area = CreateChartArea();
+
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawIndicator(area, _atr);
 			DrawOwnTrades(area);
 		}
 
-		// Setup position protection
-		StartProtection(
-			takeProfit: new Unit(2, UnitTypes.Percent),
-			stopLoss: new Unit(1, UnitTypes.Percent)
-		);
+		StartProtection(new Unit(0, UnitTypes.Absolute), new Unit(StopLossPercent, UnitTypes.Percent), false);
 	}
 
-	private void ProcessStrategy(ICandleMessage candle, decimal donchianHigh, decimal donchianLow, decimal atrValue)
+	private void ProcessCandle(ICandleMessage candle, decimal donchianHigh, decimal donchianLow, decimal atrValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready for trading
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!_donchianHigh.IsFormed || !_donchianLow.IsFormed || !_atr.IsFormed)
 			return;
 
-		// Calculate volatility threshold
-		var volatilityThreshold = _avgDcWidth - VolatilityFactor * _stdDevDcWidth;
-		
-		// Check for volatility contraction
-		var isVolatilityContracted = _currentDcWidth < volatilityThreshold;
-		
-		if (isVolatilityContracted)
+		if (!_isInitialized)
 		{
-			// Breakout after volatility contraction
-			if (candle.ClosePrice > donchianHigh && Position <= 0)
-			{
-				// Cancel any active orders before entering a new position
-				CancelActiveOrders();
+			_previousHigh = donchianHigh;
+			_previousLow = donchianLow;
+			_previousWidth = donchianHigh - donchianLow;
+			_widthAverageValue = _widthAverage.Process(_previousWidth, candle.OpenTime, true).ToDecimal();
+			_widthStdDevValue = _widthStdDev.Process(_previousWidth, candle.OpenTime, true).ToDecimal();
+			_isInitialized = true;
+			return;
+		}
 
-				// Calculate position size
-				var volume = Volume + Math.Abs(Position);
-				
-				// Enter long position
-				BuyMarket(volume);
+		if (!_widthAverage.IsFormed || !_widthStdDev.IsFormed)
+		{
+			_previousHigh = donchianHigh;
+			_previousLow = donchianLow;
+			_previousWidth = donchianHigh - donchianLow;
+			_widthAverageValue = _widthAverage.Process(_previousWidth, candle.OpenTime, true).ToDecimal();
+			_widthStdDevValue = _widthStdDev.Process(_previousWidth, candle.OpenTime, true).ToDecimal();
+			return;
+		}
+
+		if (ProcessState != ProcessStates.Started)
+			return;
+
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+			UpdateChannelStatistics(candle, donchianHigh, donchianLow);
+			return;
+		}
+
+		var price = candle.ClosePrice;
+		var channelMiddle = (_previousHigh + _previousLow) / 2m;
+		var volatilityThreshold = Math.Max(_widthAverageValue - VolatilityFactor * _widthStdDevValue, Security.PriceStep ?? 1m);
+		var isVolatilityContracted = _previousWidth <= volatilityThreshold;
+
+		if (Position == 0)
+		{
+			if (isVolatilityContracted && price >= _previousHigh + atrValue * 0.05m)
+			{
+				BuyMarket();
+				_cooldown = CooldownBars;
 			}
-			else if (candle.ClosePrice < donchianLow && Position >= 0)
+			else if (isVolatilityContracted && price <= _previousLow - atrValue * 0.05m)
 			{
-				// Cancel any active orders before entering a new position
-				CancelActiveOrders();
-
-				// Calculate position size
-				var volume = Volume + Math.Abs(Position);
-				
-				// Enter short position
-				SellMarket(volume);
+				SellMarket();
+				_cooldown = CooldownBars;
 			}
 		}
-		
-		// Exit logic - when price reverts to the middle of the channel
-		var channelMiddle = (donchianHigh + donchianLow) / 2;
-		
-		if ((Position > 0 && candle.ClosePrice < channelMiddle) ||
-			(Position < 0 && candle.ClosePrice > channelMiddle))
+		else if (Position > 0)
 		{
-			// Close position
-			ClosePosition();
+			if (price <= channelMiddle)
+			{
+				SellMarket(Math.Abs(Position));
+				_cooldown = CooldownBars;
+			}
 		}
+		else if (Position < 0)
+		{
+			if (price >= channelMiddle)
+			{
+				BuyMarket(Math.Abs(Position));
+				_cooldown = CooldownBars;
+			}
+		}
+
+		UpdateChannelStatistics(candle, donchianHigh, donchianLow);
+	}
+
+	private void UpdateChannelStatistics(ICandleMessage candle, decimal donchianHigh, decimal donchianLow)
+	{
+		_previousHigh = donchianHigh;
+		_previousLow = donchianLow;
+		_previousWidth = donchianHigh - donchianLow;
+		_widthAverageValue = _widthAverage.Process(_previousWidth, candle.OpenTime, true).ToDecimal();
+		_widthStdDevValue = _widthStdDev.Process(_previousWidth, candle.OpenTime, true).ToDecimal();
 	}
 }

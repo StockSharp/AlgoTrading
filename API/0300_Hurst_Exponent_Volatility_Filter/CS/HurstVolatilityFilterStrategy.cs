@@ -1,11 +1,9 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
+using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -14,304 +12,240 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy using the Hurst exponent to identify mean-reversion markets
-/// with an ATR-based volatility filter to confirm entry signals
+/// Mean-reversion strategy that enters only when Hurst indicates anti-persistent behavior and ATR confirms a quiet regime.
 /// </summary>
 public class HurstVolatilityFilterStrategy : Strategy
 {
-	// Strategy parameters
-	private readonly StrategyParam<int> _hurstPeriodParam;
-	private readonly StrategyParam<int> _maPeriodParam;
-	private readonly StrategyParam<int> _atrPeriodParam;
-	private readonly StrategyParam<decimal> _stopLossParam;
-	private readonly StrategyParam<DataType> _candleTypeParam;
+	private readonly StrategyParam<int> _hurstPeriod;
+	private readonly StrategyParam<int> _maPeriod;
+	private readonly StrategyParam<int> _atrPeriod;
+	private readonly StrategyParam<decimal> _hurstThreshold;
+	private readonly StrategyParam<decimal> _deviationAtrMultiplier;
+	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<DataType> _candleType;
 
-	// Indicators
 	private SimpleMovingAverage _sma;
 	private AverageTrueRange _atr;
 	private HurstExponent _hurstExponent;
-
-	// Internal state variables
-	private decimal _averageAtr;
-	private bool _isLongPosition;
-	private decimal _positionEntryPrice;
+	private SimpleMovingAverage _atrAverage;
+	private int _cooldown;
 
 	/// <summary>
-	/// Period for Hurst exponent calculation
+	/// Period for Hurst exponent calculation.
 	/// </summary>
 	public int HurstPeriod
 	{
-		get => _hurstPeriodParam.Value;
-		set => _hurstPeriodParam.Value = value;
+		get => _hurstPeriod.Value;
+		set => _hurstPeriod.Value = value;
 	}
 
 	/// <summary>
-	/// Period for Moving Average calculation
+	/// Period for moving average calculation.
 	/// </summary>
 	public int MAPeriod
 	{
-		get => _maPeriodParam.Value;
-		set => _maPeriodParam.Value = value;
+		get => _maPeriod.Value;
+		set => _maPeriod.Value = value;
 	}
 
 	/// <summary>
-	/// Period for ATR calculation
+	/// Period for ATR calculation.
 	/// </summary>
 	public int ATRPeriod
 	{
-		get => _atrPeriodParam.Value;
-		set => _atrPeriodParam.Value = value;
+		get => _atrPeriod.Value;
+		set => _atrPeriod.Value = value;
 	}
 
 	/// <summary>
-	/// Stop loss as percentage of entry price
+	/// Maximum Hurst value allowed for entries.
 	/// </summary>
-	public decimal StopLoss
+	public decimal HurstThreshold
 	{
-		get => _stopLossParam.Value;
-		set => _stopLossParam.Value = value;
+		get => _hurstThreshold.Value;
+		set => _hurstThreshold.Value = value;
 	}
 
 	/// <summary>
-	/// Candle type for strategy operation
+	/// ATR multiple required for deviation from the moving average.
+	/// </summary>
+	public decimal DeviationAtrMultiplier
+	{
+		get => _deviationAtrMultiplier.Value;
+		set => _deviationAtrMultiplier.Value = value;
+	}
+
+	/// <summary>
+	/// Stop loss percentage.
+	/// </summary>
+	public decimal StopLossPercent
+	{
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
+	}
+
+	/// <summary>
+	/// Bars to wait after each order.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
+	/// Candle series used for calculation.
 	/// </summary>
 	public DataType CandleType
 	{
-		get => _candleTypeParam.Value;
-		set => _candleTypeParam.Value = value;
+		get => _candleType.Value;
+		set => _candleType.Value = value;
 	}
 
 	/// <summary>
-	/// Constructor with default parameters
+	/// Initializes strategy parameters.
 	/// </summary>
 	public HurstVolatilityFilterStrategy()
 	{
-		_hurstPeriodParam = Param(nameof(HurstPeriod), 100)
-			.SetDisplay("Hurst Period", "Period for calculating Hurst exponent", "Indicators")
-			.SetGreaterThanZero()
-			
-			.SetOptimize(50, 150, 10);
+		_hurstPeriod = Param(nameof(HurstPeriod), 80)
+			.SetRange(20, 200)
+			.SetDisplay("Hurst Period", "Period for the Hurst exponent", "Indicators");
 
-		_maPeriodParam = Param(nameof(MAPeriod), 20)
-			.SetDisplay("MA Period", "Period for calculating Moving Average", "Indicators")
-			.SetGreaterThanZero()
-			
-			.SetOptimize(10, 30, 5);
+		_maPeriod = Param(nameof(MAPeriod), 20)
+			.SetRange(5, 100)
+			.SetDisplay("MA Period", "Period for the moving average", "Indicators");
 
-		_atrPeriodParam = Param(nameof(ATRPeriod), 14)
-			.SetDisplay("ATR Period", "Period for calculating Average True Range", "Indicators")
-			.SetGreaterThanZero()
-			
-			.SetOptimize(7, 21, 7);
+		_atrPeriod = Param(nameof(ATRPeriod), 14)
+			.SetRange(5, 50)
+			.SetDisplay("ATR Period", "Period for the ATR", "Indicators");
 
-		_stopLossParam = Param(nameof(StopLoss), 2.0m)
-			.SetDisplay("Stop Loss", "Stop loss percentage from entry price", "Risk Management")
-			.SetGreaterThanZero()
-			
-			.SetOptimize(1.0m, 3.0m, 0.5m);
+		_hurstThreshold = Param(nameof(HurstThreshold), 0.7m)
+			.SetRange(-1m, 1m)
+			.SetDisplay("Hurst Threshold", "Maximum Hurst value allowed for entries", "Signals");
 
-		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_deviationAtrMultiplier = Param(nameof(DeviationAtrMultiplier), 0.5m)
+			.SetRange(0.1m, 5m)
+			.SetDisplay("Deviation ATR", "Minimum ATR multiple required for entry", "Signals");
+
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetRange(0.5m, 10m)
+			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
+
+		_cooldownBars = Param(nameof(CooldownBars), 90)
+			.SetRange(1, 500)
+			.SetDisplay("Cooldown Bars", "Bars to wait after each order", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return [(Security, CandleType)];
+		if (Security != null)
+			yield return (Security, CandleType);
 	}
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_isLongPosition = false;
-		_positionEntryPrice = 0;
-		_averageAtr = 0;
+
+		_sma = null;
+		_atr = null;
+		_hurstExponent = null;
+		_atrAverage = null;
+		_cooldown = 0;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		
-		// Reset state
 
-		// Create indicators
-		_sma = new() { Length = MAPeriod };
-		_atr = new() { Length = ATRPeriod };
-		_hurstExponent = new()
-		{
-			// Configure Hurst exponent displacement indicator
-			Length = HurstPeriod
-		};
+		if (Security == null)
+			throw new InvalidOperationException("Security is not specified.");
 
-		// Subscribe to candles
+		_sma = new SimpleMovingAverage { Length = MAPeriod };
+		_atr = new AverageTrueRange { Length = ATRPeriod };
+		_hurstExponent = new HurstExponent { Length = HurstPeriod };
+		_atrAverage = new SimpleMovingAverage { Length = Math.Max(ATRPeriod * 2, 10) };
+		_cooldown = 0;
+
 		var subscription = SubscribeCandles(CandleType);
-		
-		// Bind indicators to candle events
+
 		subscription
-			.Bind(_sma, _atr, ProcessCandle)
+			.Bind(_sma, _atr, _hurstExponent, ProcessCandle)
 			.Start();
-		
-		// Setup chart visualization if available
+
 		var area = CreateChartArea();
+
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
 			DrawIndicator(area, _sma);
 			DrawIndicator(area, _atr);
+			DrawIndicator(area, _hurstExponent);
 			DrawOwnTrades(area);
 		}
-		
-		// Enable position protection with stop loss
-		StartProtection(
-			takeProfit: new Unit(0), // No take-profit, using custom exit conditions
-			stopLoss: new Unit(StopLoss, UnitTypes.Percent)
-		);
+
+		StartProtection(new Unit(0, UnitTypes.Absolute), new Unit(StopLossPercent, UnitTypes.Percent), false);
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal smaValue, decimal atrValue)
+	private void ProcessCandle(ICandleMessage candle, decimal smaValue, decimal atrValue, decimal hurstValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
-		
-		// Process Hurst exponent
-		if (CalculateHurstExponentValue(candle) is not decimal hurstValue)
+
+		var atrAverageValue = _atrAverage.Process(atrValue, candle.OpenTime, true).ToDecimal();
+
+		if (!_sma.IsFormed || !_atr.IsFormed || !_hurstExponent.IsFormed || !_atrAverage.IsFormed)
 			return;
 
-		// Update average ATR
-		UpdateAverageAtr(atrValue);
-		
-		// Check if strategy is ready to trade
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (ProcessState != ProcessStates.Started)
 			return;
-		
-		// Manage open positions
-		if (Position != 0)
+
+		if (_cooldown > 0)
 		{
-			CheckExitConditions(candle.ClosePrice, smaValue);
+			_cooldown--;
+			return;
 		}
-		else
+
+		var price = candle.ClosePrice;
+		var deviation = price - smaValue;
+		var requiredDeviation = atrValue * DeviationAtrMultiplier;
+		var isMeanReversionRegime = hurstValue <= HurstThreshold;
+		var isQuietVolatility = atrValue <= atrAverageValue * 1.5m;
+
+		if (Position == 0)
 		{
-			CheckEntryConditions(candle.ClosePrice, smaValue, hurstValue, atrValue);
-		}
-	}
-	
-	private decimal? CalculateHurstExponentValue(ICandleMessage candle)
-	{
-		// In a real implementation, this would use R/S analysis or other methods
-		// to calculate the Hurst exponent. For this example, we'll use a placeholder
-		// logic that estimates the Hurst exponent based on recent price behavior.
-		
-		// Process current price through the displacement indicator
-		var hurstValue = _hurstExponent.Process(candle).ToNullableDecimal();
-		
-		// For demonstration purposes - in a real implementation you'd use
-		// a proper Hurst exponent calculation library or algorithm
-		// This is just a placeholder that gives a value between 0 and 1
-		return hurstValue;
-	}
-	
-	private void UpdateAverageAtr(decimal atrValue)
-	{
-		if (_averageAtr == 0)
-		{
-			_averageAtr = atrValue;
-		}
-		else
-		{
-			// Simple exponential smoothing
-			_averageAtr = 0.9m * _averageAtr + 0.1m * atrValue;
-		}
-	}
-	
-	private void CheckEntryConditions(decimal price, decimal smaValue, decimal hurstValue, decimal atrValue)
-	{
-		// Check for mean-reversion markets (Hurst < 0.5)
-		if (hurstValue < 0.5m)
-		{
-			// Check volatility is lower than average (filtered condition)
-			if (atrValue < _averageAtr)
+			if (!isMeanReversionRegime || !isQuietVolatility)
+				return;
+
+			if (deviation <= -requiredDeviation)
 			{
-				// Long signal: Price is below average in mean-reverting market with low volatility
-				if (price < smaValue)
-				{
-					EnterLong(price);
-				}
-				// Short signal: Price is above average in mean-reverting market with low volatility
-				else if (price > smaValue)
-				{
-					EnterShort(price);
-				}
+				BuyMarket();
+				_cooldown = CooldownBars;
 			}
+			else if (deviation >= requiredDeviation)
+			{
+				SellMarket();
+				_cooldown = CooldownBars;
+			}
+
+			return;
 		}
-	}
-	
-	private void CheckExitConditions(decimal price, decimal smaValue)
-	{
-		// Mean reversion exit strategy
-		if (_isLongPosition && price > smaValue)
+
+		if (Position > 0 && (price >= smaValue || deviation >= -atrValue * 0.2m || !isMeanReversionRegime))
 		{
-			ExitPosition(price);
+			SellMarket(Math.Abs(Position));
+			_cooldown = CooldownBars;
 		}
-		else if (!_isLongPosition && price < smaValue)
+		else if (Position < 0 && (price <= smaValue || deviation <= atrValue * 0.2m || !isMeanReversionRegime))
 		{
-			ExitPosition(price);
+			BuyMarket(Math.Abs(Position));
+			_cooldown = CooldownBars;
 		}
-	}
-	
-	private void EnterLong(decimal price)
-	{
-		// Create and send a buy market order
-		var volume = Volume;
-		BuyMarket(volume);
-		
-		// Update internal state
-		_isLongPosition = true;
-		_positionEntryPrice = price;
-		
-		LogInfo($"Enter LONG at {price}, Hurst shows mean-reversion market with low volatility");
-	}
-	
-	private void EnterShort(decimal price)
-	{
-		// Create and send a sell market order
-		var volume = Volume;
-		SellMarket(volume);
-		
-		// Update internal state
-		_isLongPosition = false;
-		_positionEntryPrice = price;
-		
-		LogInfo($"Enter SHORT at {price}, Hurst shows mean-reversion market with low volatility");
-	}
-	
-	private void ExitPosition(decimal price)
-	{
-		// Close position at market
-		ClosePosition();
-		
-		// Calculate profit/loss for logging
-		decimal pnl = _isLongPosition 
-			? (price - _positionEntryPrice) / _positionEntryPrice * 100 
-			: (_positionEntryPrice - price) / _positionEntryPrice * 100;
-		
-		LogInfo($"Exit position at {price}, P&L: {pnl:F2}%, Mean reversion complete");
-		
-		// Reset position tracking
-		_positionEntryPrice = 0;
-	}
-	
-	/// <inheritdoc />
-	protected override void OnStopped()
-	{
-		// Close any open positions when strategy stops
-		if (Position != 0)
-		{
-			ClosePosition();
-		}
-		
-		base.OnStopped();
 	}
 }

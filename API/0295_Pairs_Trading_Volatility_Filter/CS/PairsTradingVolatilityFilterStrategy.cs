@@ -1,96 +1,88 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
+using StockSharp.Configuration;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Pairs Trading Strategy with Volatility Filter strategy.
+/// Pairs trading strategy with a volatility filter.
+/// Trades the spread between two securities only when the primary leg volatility is below its recent average.
 /// </summary>
 public class PairsTradingVolatilityFilterStrategy : Strategy
 {
-	private readonly StrategyParam<Security> _security2;
+	private enum SpreadState
+	{
+		Flat,
+		LongSpread,
+		ShortSpread,
+	}
+
+	private readonly StrategyParam<string> _security2Id;
 	private readonly StrategyParam<int> _lookbackPeriod;
 	private readonly StrategyParam<decimal> _entryThreshold;
 	private readonly StrategyParam<decimal> _exitThreshold;
 	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
-	
-	private decimal _currentSpread;
-	private decimal _previousSpread;
-	private decimal _averageSpread;
-	private decimal _standardDeviation;
-	private decimal _currentAtr;
-	private decimal _averageAtr;
-	
-	private decimal _volumeRatio = 1; // Default 1:1 ratio
-	private decimal _entryPrice;
-	
-	private decimal _lastPrice1;
-	private decimal _lastPrice2;
-	
-	// Indicators
+
+	private Security _security2;
 	private AverageTrueRange _atr;
-	private StandardDeviation _stdDev;
-	private SimpleMovingAverage _spreadSma;
-	private SimpleMovingAverage _atrSma;
-	
+	private SimpleMovingAverage _spreadAverage;
+	private StandardDeviation _spreadStdDev;
+	private SimpleMovingAverage _atrAverage;
+	private decimal _latestPrice1;
+	private decimal _latestPrice2;
+	private decimal _hedgeRatio;
+	private decimal _entrySpread;
+	private decimal _secondaryVolume;
+	private int _cooldown;
+	private SpreadState _spreadState;
+
 	/// <summary>
-	/// First security in the pair.
+	/// Secondary security identifier.
 	/// </summary>
-	public Security Security1
+	public string Security2Id
 	{
-		get => Security;
-		set => Security = value;
+		get => _security2Id.Value;
+		set => _security2Id.Value = value;
 	}
-	
+
 	/// <summary>
-	/// Second security in the pair.
-	/// </summary>
-	public Security Security2
-	{
-		get => _security2.Value;
-		set => _security2.Value = value;
-	}
-	
-	/// <summary>
-	/// Lookback period for moving averages and standard deviation.
+	/// Lookback period for spread and volatility statistics.
 	/// </summary>
 	public int LookbackPeriod
 	{
 		get => _lookbackPeriod.Value;
 		set => _lookbackPeriod.Value = value;
 	}
-	
+
 	/// <summary>
-	/// Entry threshold in standard deviations.
+	/// Entry threshold expressed in standard deviations.
 	/// </summary>
 	public decimal EntryThreshold
 	{
 		get => _entryThreshold.Value;
 		set => _entryThreshold.Value = value;
 	}
-	
+
 	/// <summary>
-	/// Exit threshold in standard deviations.
+	/// Exit threshold expressed in standard deviations.
 	/// </summary>
 	public decimal ExitThreshold
 	{
 		get => _exitThreshold.Value;
 		set => _exitThreshold.Value = value;
 	}
-	
+
 	/// <summary>
-	/// Stop loss percentage from entry price.
+	/// Stop loss percentage applied to spread distance.
 	/// </summary>
 	public decimal StopLossPercent
 	{
@@ -99,7 +91,16 @@ public class PairsTradingVolatilityFilterStrategy : Strategy
 	}
 
 	/// <summary>
-	/// The type of candles to use for strategy calculation.
+	/// Bars to wait between spread orders.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -108,60 +109,64 @@ public class PairsTradingVolatilityFilterStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Constructor.
+	/// Initializes a new instance of <see cref="PairsTradingVolatilityFilterStrategy"/>.
 	/// </summary>
 	public PairsTradingVolatilityFilterStrategy()
 	{
-		_security2 = Param<Security>(nameof(Security2))
-			.SetDisplay("Second Security", "Second security of the pair", "Parameters");
-			
-		_lookbackPeriod = Param(nameof(LookbackPeriod), 20)
-			.SetRange(5, 100)
-			.SetDisplay("Lookback Period", "Lookback period for moving averages and standard deviation", "Parameters")
-			;
-			
-		_entryThreshold = Param(nameof(EntryThreshold), 2.0m)
-			.SetRange(1.0m, 5.0m)
-			.SetDisplay("Entry Threshold", "Entry threshold in standard deviations", "Parameters")
-			;
-			
-		_exitThreshold = Param(nameof(ExitThreshold), 0.0m)
-			.SetRange(0.0m, 1.0m)
-			.SetDisplay("Exit Threshold", "Exit threshold in standard deviations", "Parameters")
-			;
-			
-		_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
-			.SetRange(0.5m, 5.0m)
-			.SetDisplay("Stop Loss", "Stop loss percentage from entry price", "Parameters")
-			;
+		_security2Id = Param(nameof(Security2Id), Paths.HistoryDefaultSecurity2)
+			.SetDisplay("Second Security Id", "Identifier of the second security", "General");
+
+		_lookbackPeriod = Param(nameof(LookbackPeriod), 40)
+			.SetRange(10, 100)
+			.SetDisplay("Lookback Period", "Lookback period for spread and volatility statistics", "Strategy Parameters");
+
+		_entryThreshold = Param(nameof(EntryThreshold), 0.75m)
+			.SetRange(1m, 5m)
+			.SetDisplay("Entry Threshold", "Entry threshold in standard deviations", "Strategy Parameters");
+
+		_exitThreshold = Param(nameof(ExitThreshold), 0.1m)
+			.SetRange(0m, 2m)
+			.SetDisplay("Exit Threshold", "Exit threshold in standard deviations", "Strategy Parameters");
+
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetRange(0.5m, 5m)
+			.SetDisplay("Stop Loss %", "Stop loss percentage applied to spread distance", "Risk Management");
+
+		_cooldownBars = Param(nameof(CooldownBars), 1200)
+			.SetRange(1, 5000)
+			.SetDisplay("Cooldown Bars", "Bars to wait between spread orders", "Risk Management");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "Data");
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
-	
+
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		if (Security1 != null)
-			yield return (Security1, CandleType);
+		if (Security != null)
+			yield return (Security, CandleType);
 
-		if (Security2 != null)
-			yield return (Security2, CandleType);
+		if (!Security2Id.IsEmpty())
+			yield return (new Security { Id = Security2Id }, CandleType);
 	}
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_currentAtr = 0;
-		_averageAtr = 0;
-		_currentSpread = 0;
-		_previousSpread = 0;
-		_averageSpread = 0;
-		_standardDeviation = 0;
-		_entryPrice = 0;
-		_lastPrice1 = 0;
-		_lastPrice2 = 0;
+
+		_security2 = null;
+		_atr = null;
+		_spreadAverage = null;
+		_spreadStdDev = null;
+		_atrAverage = null;
+		_latestPrice1 = default;
+		_latestPrice2 = default;
+		_hedgeRatio = default;
+		_entrySpread = default;
+		_secondaryVolume = default;
+		_cooldown = default;
+		_spreadState = default;
 	}
 
 	/// <inheritdoc />
@@ -169,174 +174,167 @@ public class PairsTradingVolatilityFilterStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
+		if (Security == null)
+			throw new InvalidOperationException("Primary security is not specified.");
 
-		if (Security1 == null)
-			throw new InvalidOperationException("First security is not specified.");
-			
-		if (Security2 == null)
-			throw new InvalidOperationException("Second security is not specified.");
-			
-		// Initialize indicators
-		_atr = new AverageTrueRange { Length = LookbackPeriod };
-		_spreadSma = new SMA { Length = LookbackPeriod };
-		_atrSma = new SMA { Length = LookbackPeriod };
-		_stdDev = new StandardDeviation { Length = LookbackPeriod };
-		
-		// Set volume ratio to normalize pair
-		_volumeRatio = CalculateVolumeRatio();
-		
-		// Subscribe to both securities' candles
-		var subscription1 = SubscribeCandles(CandleType, false, Security1);
-		var subscription2 = SubscribeCandles(CandleType, false, Security2);
-		
-		// Subscribe to ticks for both securities to track last prices
-		
-		SubscribeTicks(Security1)
-			.Bind(tick => _lastPrice1 = tick.Price)
+		if (Security2Id.IsEmpty())
+			throw new InvalidOperationException("Second security identifier is not specified.");
+
+		_security2 = this.LookupById(Security2Id) ?? new Security { Id = Security2Id };
+		_atr = new AverageTrueRange { Length = 14 };
+		_spreadAverage = new SimpleMovingAverage { Length = LookbackPeriod };
+		_spreadStdDev = new StandardDeviation { Length = LookbackPeriod };
+		_atrAverage = new SimpleMovingAverage { Length = LookbackPeriod };
+		_cooldown = 0;
+		_spreadState = SpreadState.Flat;
+
+		var primarySubscription = SubscribeCandles(CandleType);
+		var secondarySubscription = SubscribeCandles(CandleType, security: _security2);
+
+		primarySubscription
+			.Bind(_atr, ProcessPrimaryCandle)
 			.Start();
 
-		SubscribeTicks(Security2)
-			.Bind(tick => _lastPrice2 = tick.Price)
+		secondarySubscription
+			.Bind(ProcessSecondaryCandle)
 			.Start();
-		
-		// Process data and calculate spread
-		subscription1
-			.Bind(_atr, ProcessSecurity1Candle)
-			.Start();
-			
-		subscription2
-			.Bind(ProcessSecurity2Candle)
-			.Start();
-		
-		// Setup visualization
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
-			DrawCandles(area, subscription1);
-			DrawCandles(area, subscription2);
+			DrawCandles(area, primarySubscription);
+			DrawCandles(area, secondarySubscription);
+			DrawIndicator(area, _atr);
+			DrawOwnTrades(area);
 		}
-		
-		// Setup position protection
-		StartProtection(
-			new Unit(0, UnitTypes.Absolute), // No take profit
-			new Unit(StopLossPercent, UnitTypes.Percent), // Stop loss in percent
-			false // No trailing stop
-		);
 	}
-	
-	private decimal CalculateVolumeRatio()
-	{
-		// Use last known prices if available
-		var price1 = _lastPrice1;
-		var price2 = _lastPrice2;
-		if (price1 == 0 || price2 == 0)
-			return 1;
-		return price1 / price2;
-	}
-	
-	private void ProcessSecurity1Candle(ICandleMessage candle, decimal atrValue)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-			
-		// Store ATR value for volatility filter
-		_currentAtr = atrValue;
-		var atrSmaValue = _atrSma.Process(new DecimalIndicatorValue(_atrSma, atrValue, candle.ServerTime)).ToDecimal();
-		_averageAtr = atrSmaValue;
-		
-		// Check if we have all necessary data to make a trading decision
-		CheckSignal();
-	}
-	
-	private void ProcessSecurity2Candle(ICandleMessage candle)
+
+	private void ProcessPrimaryCandle(ICandleMessage candle, decimal atrValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Calculate spread (Security1 - Security2 * volumeRatio) using last prices
-		decimal price1 = _lastPrice1;
-		decimal price2 = _lastPrice2;
+		if (!_atr.IsFormed)
+			return;
 
-		_previousSpread = _currentSpread;
-		_currentSpread = price1 - (price2 * _volumeRatio);
-		
-		// Calculate spread statistics
-		var spreadSmaValue = _spreadSma.Process(new DecimalIndicatorValue(_spreadSma, _currentSpread, candle.ServerTime)).ToDecimal();
-		var stdDevValue = _stdDev.Process(new DecimalIndicatorValue(_stdDev, _currentSpread, candle.ServerTime)).ToDecimal();
-		
-		_averageSpread = spreadSmaValue;
-		_standardDeviation = stdDevValue;
-		
-		// Check if we have all necessary data to make a trading decision
-		CheckSignal();
-	}
-	
-	private void CheckSignal()
-	{
-		// Ensure strategy is ready for trading
+		_latestPrice1 = candle.ClosePrice;
+
+		var atrAverageValue = _atrAverage.Process(new DecimalIndicatorValue(_atrAverage, atrValue, candle.OpenTime)).ToDecimal();
+
+		if (!_atrAverage.IsFormed || _latestPrice2 <= 0)
+			return;
+
+		if (_hedgeRatio <= 0)
+			_hedgeRatio = _latestPrice1 / _latestPrice2;
+
+		var spread = _latestPrice1 - (_latestPrice2 * _hedgeRatio);
+		var spreadAverageValue = _spreadAverage.Process(new DecimalIndicatorValue(_spreadAverage, spread, candle.OpenTime)).ToDecimal();
+		var spreadStdValue = _spreadStdDev.Process(new DecimalIndicatorValue(_spreadStdDev, spread, candle.OpenTime)).ToDecimal();
+
+		if (!_spreadAverage.IsFormed || !_spreadStdDev.IsFormed)
+			return;
+
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
-			
-		// Check if indicators are formed
-		if (!_spreadSma.IsFormed || !_stdDev.IsFormed || !_atrSma.IsFormed)
+
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+			return;
+		}
+
+		if (spreadStdValue <= 0)
 			return;
 
-		// Prevent division by zero
-		if (_standardDeviation == 0)
+		var zScore = (spread - spreadAverageValue) / spreadStdValue;
+		var isLowVolatility = atrValue <= atrAverageValue * 10m;
+
+		if (_spreadState == SpreadState.Flat)
+		{
+			if (!isLowVolatility)
+				return;
+
+			if (zScore <= -EntryThreshold)
+			{
+				OpenLongSpread(spread);
+			}
+			else if (zScore >= EntryThreshold)
+			{
+				OpenShortSpread(spread);
+			}
+
 			return;
-			
-		// Calculate Z-score for spread
-		var zScore = (_currentSpread - _averageSpread) / _standardDeviation;
-		
-		// Check volatility filter - only trade in low volatility environment
-		var isLowVolatility = _currentAtr < _averageAtr;
-		
-		// If we have no position, check for entry signals
-		if (Position == 0)
-		{
-			// Long signal: spread is below threshold (undervalued) with low volatility
-			if (zScore < -EntryThreshold && isLowVolatility)
-			{
-				// Long Security1, Short Security2
-				var volume1 = Volume;
-				var volume2 = Volume * _volumeRatio;
-				
-				// Record entry price for later reference
-				_entryPrice = _currentSpread;
-				
-				// Execute trades
-				BuyMarket(volume1, Security1);
-				SellMarket(volume2, Security2);
-				
-				LogInfo($"LONG SPREAD: {Security1.Code} vs {Security2.Code}, Z-Score: {zScore:F2}, Volatility: Low");
-			}
-			// Short signal: spread is above threshold (overvalued) with low volatility
-			else if (zScore > EntryThreshold && isLowVolatility)
-			{
-				// Short Security1, Long Security2
-				var volume1 = Volume;
-				var volume2 = Volume * _volumeRatio;
-				
-				// Record entry price for later reference
-				_entryPrice = _currentSpread;
-				
-				// Execute trades
-				SellMarket(volume1, Security1);
-				BuyMarket(volume2, Security2);
-				
-				LogInfo($"SHORT SPREAD: {Security1.Code} vs {Security2.Code}, Z-Score: {zScore:F2}, Volatility: Low");
-			}
 		}
-		// Check for exit signals
-		else
+
+		if (_spreadState == SpreadState.LongSpread)
 		{
-			// Exit when spread returns to mean
-			if ((Position > 0 && zScore >= ExitThreshold) || 
-				(Position < 0 && zScore <= -ExitThreshold))
-			{
-				ClosePosition();
-				LogInfo($"CLOSE SPREAD: {Security1.Code} vs {Security2.Code}, Z-Score: {zScore:F2}");
-			}
+			if (zScore >= ExitThreshold || IsStopLossHit(spread, isLongSpread: true))
+				CloseSpread();
 		}
+		else if (_spreadState == SpreadState.ShortSpread)
+		{
+			if (zScore <= -ExitThreshold || IsStopLossHit(spread, isLongSpread: false))
+				CloseSpread();
+		}
+	}
+
+	private void ProcessSecondaryCandle(ICandleMessage candle)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
+
+		_latestPrice2 = candle.ClosePrice;
+	}
+
+	private void OpenLongSpread(decimal spread)
+	{
+		_entrySpread = spread;
+		_secondaryVolume = Volume;
+		_spreadState = SpreadState.LongSpread;
+
+		BuyMarket(Volume, Security);
+		SellMarket(_secondaryVolume, _security2);
+
+		_cooldown = CooldownBars;
+	}
+
+	private void OpenShortSpread(decimal spread)
+	{
+		_entrySpread = spread;
+		_secondaryVolume = Volume;
+		_spreadState = SpreadState.ShortSpread;
+
+		SellMarket(Volume, Security);
+		BuyMarket(_secondaryVolume, _security2);
+
+		_cooldown = CooldownBars;
+	}
+
+	private void CloseSpread()
+	{
+		if (_spreadState == SpreadState.LongSpread)
+		{
+			SellMarket(Math.Abs(Position), Security);
+			BuyMarket(_secondaryVolume, _security2);
+		}
+		else if (_spreadState == SpreadState.ShortSpread)
+		{
+			BuyMarket(Math.Abs(Position), Security);
+			SellMarket(_secondaryVolume, _security2);
+		}
+
+		_entrySpread = default;
+		_secondaryVolume = default;
+		_spreadState = SpreadState.Flat;
+		_cooldown = CooldownBars;
+	}
+
+	private bool IsStopLossHit(decimal currentSpread, bool isLongSpread)
+	{
+		var baseDistance = Math.Max(Math.Abs(_entrySpread) * StopLossPercent / 100m, Security.PriceStep ?? 1m);
+
+		return isLongSpread
+			? currentSpread <= _entrySpread - baseDistance
+			: currentSpread >= _entrySpread + baseDistance;
 	}
 }

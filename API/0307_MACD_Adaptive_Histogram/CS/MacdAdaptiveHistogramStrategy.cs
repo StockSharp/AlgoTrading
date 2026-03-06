@@ -1,11 +1,9 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
+using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -14,7 +12,7 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on MACD with adaptive histogram threshold.
+/// MACD strategy that adapts entry thresholds to the rolling distribution of the histogram.
 /// </summary>
 public class MacdAdaptiveHistogramStrategy : Strategy
 {
@@ -24,9 +22,13 @@ public class MacdAdaptiveHistogramStrategy : Strategy
 	private readonly StrategyParam<int> _histogramAvgPeriod;
 	private readonly StrategyParam<decimal> _stdDevMultiplier;
 	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
+
+	private MovingAverageConvergenceDivergenceSignal _macd;
 	private SimpleMovingAverage _histAvg;
 	private StandardDeviation _histStdDev;
+	private int _cooldown;
 
 	/// <summary>
 	/// Fast EMA period for MACD.
@@ -56,7 +58,7 @@ public class MacdAdaptiveHistogramStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Period for histogram average and standard deviation calculation.
+	/// Lookback period for the histogram statistics.
 	/// </summary>
 	public int HistogramAvgPeriod
 	{
@@ -65,7 +67,7 @@ public class MacdAdaptiveHistogramStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Standard deviation multiplier for histogram threshold.
+	/// Standard deviation multiplier for adaptive histogram thresholds.
 	/// </summary>
 	public decimal StdDevMultiplier
 	{
@@ -83,7 +85,16 @@ public class MacdAdaptiveHistogramStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Candle type parameter.
+	/// Bars to wait after each order.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -92,54 +103,47 @@ public class MacdAdaptiveHistogramStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initialize a new instance of <see cref="MacdAdaptiveHistogramStrategy"/>.
+	/// Initializes strategy parameters.
 	/// </summary>
 	public MacdAdaptiveHistogramStrategy()
 	{
 		_fastPeriod = Param(nameof(FastPeriod), 12)
-			.SetGreaterThanZero()
-			.SetDisplay("Fast Period", "Fast EMA period for MACD", "MACD Settings")
-			
-			.SetOptimize(8, 16, 2);
+			.SetRange(2, 50)
+			.SetDisplay("Fast Period", "Fast EMA period for MACD", "MACD");
 
 		_slowPeriod = Param(nameof(SlowPeriod), 26)
-			.SetGreaterThanZero()
-			.SetDisplay("Slow Period", "Slow EMA period for MACD", "MACD Settings")
-			
-			.SetOptimize(20, 32, 3);
+			.SetRange(3, 100)
+			.SetDisplay("Slow Period", "Slow EMA period for MACD", "MACD");
 
 		_signalPeriod = Param(nameof(SignalPeriod), 9)
-			.SetGreaterThanZero()
-			.SetDisplay("Signal Period", "Signal line period for MACD", "MACD Settings")
-			
-			.SetOptimize(7, 12, 1);
+			.SetRange(2, 50)
+			.SetDisplay("Signal Period", "Signal line period for MACD", "MACD");
 
 		_histogramAvgPeriod = Param(nameof(HistogramAvgPeriod), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("Histogram Avg Period", "Period for histogram average calculation", "Strategy Settings")
-			
-			.SetOptimize(10, 30, 5);
+			.SetRange(5, 100)
+			.SetDisplay("Histogram Avg Period", "Lookback period for histogram statistics", "Signals");
 
-		_stdDevMultiplier = Param(nameof(StdDevMultiplier), 2.0m)
-			.SetGreaterThanZero()
-			.SetDisplay("StdDev Multiplier", "Standard deviation multiplier for histogram threshold", "Strategy Settings")
-			
-			.SetOptimize(1.0m, 3.0m, 0.5m);
+		_stdDevMultiplier = Param(nameof(StdDevMultiplier), 1.2m)
+			.SetRange(0.1m, 5m)
+			.SetDisplay("StdDev Multiplier", "Standard deviation multiplier for adaptive thresholds", "Signals");
 
-		_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
-			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss %", "Stop loss percentage", "Strategy Settings")
-			
-			.SetOptimize(1.0m, 3.0m, 0.5m);
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetRange(0.5m, 10m)
+			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
+
+		_cooldownBars = Param(nameof(CooldownBars), 16)
+			.SetRange(1, 200)
+			.SetDisplay("Cooldown Bars", "Bars to wait after each order", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles for strategy", "General");
+			.SetDisplay("Candle Type", "Type of candles for the strategy", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return [(Security, CandleType)];
+		if (Security != null)
+			yield return (Security, CandleType);
 	}
 
 	/// <inheritdoc />
@@ -147,6 +151,10 @@ public class MacdAdaptiveHistogramStrategy : Strategy
 	{
 		base.OnReseted();
 
+		_macd = null;
+		_histAvg = null;
+		_histStdDev = null;
+		_cooldown = 0;
 	}
 
 	/// <inheritdoc />
@@ -154,118 +162,98 @@ public class MacdAdaptiveHistogramStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_histAvg = new SMA { Length = HistogramAvgPeriod };
-		_histStdDev = new StandardDeviation { Length = HistogramAvgPeriod };
+		if (Security == null)
+			throw new InvalidOperationException("Security is not specified.");
 
-		// Create MACD indicator with custom settings
-		var macdLine = new MovingAverageConvergenceDivergenceSignal
+		_macd = new MovingAverageConvergenceDivergenceSignal
 		{
 			Macd =
 			{
 				ShortMa = { Length = FastPeriod },
 				LongMa = { Length = SlowPeriod },
 			},
-			SignalMa = { Length = SignalPeriod }
+			SignalMa = { Length = SignalPeriod },
 		};
+		_histAvg = new SimpleMovingAverage { Length = HistogramAvgPeriod };
+		_histStdDev = new StandardDeviation { Length = HistogramAvgPeriod };
+		_cooldown = 0;
 
-		// Create subscription
 		var subscription = SubscribeCandles(CandleType);
 
-		// Bind MACD to subscription
 		subscription
-			.BindEx(macdLine, ProcessCandle)
+			.BindEx(_macd, ProcessCandle)
 			.Start();
 
-		// Enable position protection with percentage stop-loss
-		StartProtection(
-			takeProfit: new Unit(0), // We'll handle exits in the strategy logic
-			stopLoss: new Unit(StopLossPercent, UnitTypes.Percent),
-			useMarketOrders: true
-		);
-
-		// Setup chart if available
 		var area = CreateChartArea();
+
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, macdLine);
+			DrawIndicator(area, _macd);
 			DrawOwnTrades(area);
 		}
+
+		StartProtection(new Unit(0, UnitTypes.Absolute), new Unit(StopLossPercent, UnitTypes.Percent), false);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
-		
-		if (macdTyped.Macd is not decimal macd ||
-			macdTyped.Signal is not decimal signal)
+		var typedValue = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
+
+		if (typedValue.Macd is not decimal macd ||
+			typedValue.Signal is not decimal signal)
+			return;
+
+		var histogram = macd - signal;
+		var histogramAverage = _histAvg.Process(histogram, candle.OpenTime, true).ToDecimal();
+		var histogramStdDev = _histStdDev.Process(histogram, candle.OpenTime, true).ToDecimal();
+
+		if (!_macd.IsFormed || !_histAvg.IsFormed || !_histStdDev.IsFormed)
+			return;
+
+		if (ProcessState != ProcessStates.Started)
+			return;
+
+		if (_cooldown > 0)
 		{
+			_cooldown--;
 			return;
 		}
 
-		// Extract MACD values
-		var histogram = macd - signal; // Not using Item3 as it might not be available depending on MACD implementation
-
-		// Process the histogram through the statistics indicators
-		var histAvgValue = _histAvg.Process(new DecimalIndicatorValue(_histAvg, histogram, macdValue.Time)).ToDecimal();
-		var histStdDevValue = _histStdDev.Process(new DecimalIndicatorValue(_histStdDev, histogram, macdValue.Time)).ToDecimal();
-
-		// Check if strategy is ready to trade
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (histogramStdDev <= 0)
 			return;
-		
-		// Calculate adaptive thresholds for histogram
-		var upperThreshold = histAvgValue + StdDevMultiplier * histStdDevValue;
-		var lowerThreshold = histAvgValue - StdDevMultiplier * histStdDevValue;
-		
-		// Define entry conditions with adaptive thresholds
-		var longEntryCondition = histogram > upperThreshold && Position <= 0;
-		var shortEntryCondition = histogram < lowerThreshold && Position >= 0;
-		
-		// Define exit conditions
-		var longExitCondition = histogram < 0 && Position > 0;
-		var shortExitCondition = histogram > 0 && Position < 0;
 
-		// Log current values
-		LogInfo($"Candle: {candle.OpenTime}, Close: {candle.ClosePrice}, MACD: {macd}, Signal: {signal}, Histogram: {histogram}");
-		LogInfo($"Hist Avg: {histAvgValue}, Hist StdDev: {histStdDevValue}, Upper: {upperThreshold}, Lower: {lowerThreshold}");
+		var upperThreshold = histogramAverage + StdDevMultiplier * histogramStdDev;
+		var lowerThreshold = histogramAverage - StdDevMultiplier * histogramStdDev;
 
-		// Execute trading logic
-		if (longEntryCondition)
+		if (Position == 0)
 		{
-			// Calculate position size
-			var positionSize = Volume + Math.Abs(Position);
-			
-			// Enter long position
-			BuyMarket(positionSize);
-			
-			LogInfo($"Long entry: Price={candle.ClosePrice}, Histogram={histogram}, Threshold={upperThreshold}");
+			if (histogram >= upperThreshold && histogram > 0)
+			{
+				BuyMarket();
+				_cooldown = CooldownBars;
+			}
+			else if (histogram <= lowerThreshold && histogram < 0)
+			{
+				SellMarket();
+				_cooldown = CooldownBars;
+			}
+
+			return;
 		}
-		else if (shortEntryCondition)
+
+		if (Position > 0 && histogram <= histogramAverage)
 		{
-			// Calculate position size
-			var positionSize = Volume + Math.Abs(Position);
-			
-			// Enter short position
-			SellMarket(positionSize);
-			
-			LogInfo($"Short entry: Price={candle.ClosePrice}, Histogram={histogram}, Threshold={lowerThreshold}");
-		}
-		else if (longExitCondition)
-		{
-			// Exit long position
 			SellMarket(Math.Abs(Position));
-			LogInfo($"Long exit: Price={candle.ClosePrice}, Histogram={histogram}");
+			_cooldown = CooldownBars;
 		}
-		else if (shortExitCondition)
+		else if (Position < 0 && histogram >= histogramAverage)
 		{
-			// Exit short position
 			BuyMarket(Math.Abs(Position));
-			LogInfo($"Short exit: Price={candle.ClosePrice}, Histogram={histogram}");
+			_cooldown = CooldownBars;
 		}
 	}
 }

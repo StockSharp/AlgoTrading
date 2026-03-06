@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,31 +11,30 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// ATR Slope Mean Reversion Strategy.
-/// This strategy trades based on ATR slope reversions to the mean.
+/// ATR slope mean reversion strategy.
+/// Trades reversion of extreme ATR slope values with an EMA direction filter.
 /// </summary>
 public class AtrSlopeMeanReversionStrategy : Strategy
 {
 	private readonly StrategyParam<int> _atrPeriod;
-	private readonly StrategyParam<int> _lookbackPeriod;
-	private readonly StrategyParam<decimal> _deviationMultiplier;
-	private readonly StrategyParam<int> _stopLossMultiplier;
-	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _emaPeriod;
+	private readonly StrategyParam<int> _slopeLookback;
+	private readonly StrategyParam<decimal> _thresholdMultiplier;
 	private readonly StrategyParam<decimal> _stopLossPercent;
-	
-	private AverageTrueRange _atr;
-	private decimal _previousAtr;
-	private decimal _currentAtrSlope;
-	private bool _isFirstCalculation = true;
+	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _averageSlope;
-	private decimal _slopeStdDev;
-	private int _sampleCount;
-	private decimal _sumSlopes;
-	private decimal _sumSlopesSquared;
+	private AverageTrueRange _atr;
+	private ExponentialMovingAverage _ema;
+	private decimal _previousAtrValue;
+	private decimal[] _slopeHistory;
+	private int _currentIndex;
+	private int _filledCount;
+	private int _cooldown;
+	private bool _isInitialized;
 
 	/// <summary>
-	/// ATR Period.
+	/// ATR period.
 	/// </summary>
 	public int AtrPeriod
 	{
@@ -47,43 +43,34 @@ public class AtrSlopeMeanReversionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Period for calculating slope average and standard deviation.
+	/// EMA period.
 	/// </summary>
-	public int LookbackPeriod
+	public int EmaPeriod
 	{
-		get => _lookbackPeriod.Value;
-		set => _lookbackPeriod.Value = value;
+		get => _emaPeriod.Value;
+		set => _emaPeriod.Value = value;
 	}
 
 	/// <summary>
-	/// The multiplier for standard deviation to determine entry threshold.
+	/// Lookback used to estimate slope mean and standard deviation.
 	/// </summary>
-	public decimal DeviationMultiplier
+	public int SlopeLookback
 	{
-		get => _deviationMultiplier.Value;
-		set => _deviationMultiplier.Value = value;
+		get => _slopeLookback.Value;
+		set => _slopeLookback.Value = value;
 	}
 
 	/// <summary>
-	/// Stop loss multiplier (in ATR units).
+	/// Standard deviation multiplier for entry threshold.
 	/// </summary>
-	public int StopLossMultiplier
+	public decimal ThresholdMultiplier
 	{
-		get => _stopLossMultiplier.Value;
-		set => _stopLossMultiplier.Value = value;
+		get => _thresholdMultiplier.Value;
+		set => _thresholdMultiplier.Value = value;
 	}
 
 	/// <summary>
-	/// Candle type for strategy.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Stop-loss percentage.
+	/// Stop loss percentage.
 	/// </summary>
 	public decimal StopLossPercent
 	{
@@ -92,42 +79,54 @@ public class AtrSlopeMeanReversionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Constructor.
+	/// Bars to wait between orders.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Initializes a new instance of <see cref="AtrSlopeMeanReversionStrategy"/>.
 	/// </summary>
 	public AtrSlopeMeanReversionStrategy()
 	{
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("ATR Period", "Period for ATR indicator", "Indicator Parameters")
-			
-			.SetOptimize(10, 30, 2);
+			.SetDisplay("ATR Period", "Period for ATR calculation", "Indicator Parameters");
 
-		_lookbackPeriod = Param(nameof(LookbackPeriod), 20)
+		_emaPeriod = Param(nameof(EmaPeriod), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("Lookback Period", "Period for calculating average and standard deviation of the slope", "Strategy Parameters")
-			
-			.SetOptimize(10, 50, 5);
+			.SetDisplay("EMA Period", "Period for EMA direction filter", "Indicator Parameters");
 
-		_deviationMultiplier = Param(nameof(DeviationMultiplier), 2.0m)
+		_slopeLookback = Param(nameof(SlopeLookback), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("Deviation Multiplier", "Multiplier for standard deviation to determine entry threshold", "Strategy Parameters")
-			
-			.SetOptimize(1.0m, 3.0m, 0.5m);
+			.SetDisplay("Slope Lookback", "Period for slope statistics", "Strategy Parameters");
 
-		_stopLossMultiplier = Param(nameof(StopLossMultiplier), 2)
+		_thresholdMultiplier = Param(nameof(ThresholdMultiplier), 1.5m)
 			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss ATR Multiplier", "Multiplier for ATR to set stop loss", "Risk Management")
-			
-			.SetOptimize(1, 5, 1);
+			.SetDisplay("Threshold Multiplier", "Standard deviation multiplier for entries", "Strategy Parameters");
+
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetGreaterThanZero()
+			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management");
+
+		_cooldownBars = Param(nameof(CooldownBars), 1200)
+			.SetRange(1, 5000)
+			.SetDisplay("Cooldown Bars", "Bars to wait between orders", "Risk Management");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
-		_stopLossPercent = Param(nameof(StopLossPercent), 1.0m)
-			.SetNotNegative()
-			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management")
-			
-			.SetOptimize(0.5m, 2.0m, 0.5m);
 	}
 
 	/// <inheritdoc />
@@ -140,129 +139,139 @@ public class AtrSlopeMeanReversionStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_sampleCount = 0;
-		_sumSlopes = 0;
-		_sumSlopesSquared = 0;
-		_isFirstCalculation = true;
-		_previousAtr = 0;
-		_currentAtrSlope = 0;
-		_averageSlope = 0;
-		_slopeStdDev = 0;
+
+		_atr = null;
+		_ema = null;
+		_previousAtrValue = default;
+		_slopeHistory = new decimal[SlopeLookback];
+		_currentIndex = default;
+		_filledCount = default;
+		_cooldown = default;
+		_isInitialized = default;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
-		// Initialize indicators
-		_atr = new AverageTrueRange
-		{
-			Length = AtrPeriod
-		};
+		base.OnStarted2(time);
 
-		// Initialize statistics variables
+		_atr = new AverageTrueRange { Length = AtrPeriod };
+		_ema = new ExponentialMovingAverage { Length = EmaPeriod };
+		_slopeHistory = new decimal[SlopeLookback];
+		_currentIndex = 0;
+		_filledCount = 0;
+		_cooldown = 0;
 
-		// Create subscription and bind indicator
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_atr, ProcessCandle)
+			.Bind(_atr, _ema, ProcessCandle)
 			.Start();
 
-		// Set up chart visualization if available
+		StartProtection(new(), new Unit(StopLossPercent, UnitTypes.Percent));
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawIndicator(area, _ema);
 			DrawIndicator(area, _atr);
 			DrawOwnTrades(area);
 		}
-
-		StartProtection(
-			new(),
-			new Unit(StopLossPercent, UnitTypes.Percent)
-		);
-
-		base.OnStarted2(time);
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal atrValue)
+	private void ProcessCandle(ICandleMessage candle, decimal atrValue, decimal emaValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready for trading
+		if (!_atr.IsFormed || !_ema.IsFormed)
+			return;
+
+		if (!_isInitialized)
+		{
+			_previousAtrValue = atrValue;
+			_isInitialized = true;
+			return;
+		}
+
+		var slope = atrValue - _previousAtrValue;
+		_previousAtrValue = atrValue;
+
+		_slopeHistory[_currentIndex] = slope;
+		_currentIndex = (_currentIndex + 1) % SlopeLookback;
+
+		if (_filledCount < SlopeLookback)
+			_filledCount++;
+
+		if (_filledCount < SlopeLookback)
+			return;
+
+		CalculateStatistics(out var averageSlope, out var slopeStdDev);
+
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// Calculate ATR slope
-		if (_isFirstCalculation)
+		if (slopeStdDev <= 0)
+			return;
+
+		if (_cooldown > 0)
 		{
-			_previousAtr = atrValue;
-			_isFirstCalculation = false;
+			_cooldown--;
 			return;
 		}
 
-		_currentAtrSlope = atrValue - _previousAtr;
-		_previousAtr = atrValue;
+		var lowerThreshold = averageSlope - ThresholdMultiplier * slopeStdDev;
+		var upperThreshold = averageSlope + ThresholdMultiplier * slopeStdDev;
+		var priceAboveEma = candle.ClosePrice >= emaValue;
+		var priceBelowEma = candle.ClosePrice <= emaValue;
 
-		// Update statistics for slope values
-		_sampleCount++;
-		_sumSlopes += _currentAtrSlope;
-		_sumSlopesSquared += _currentAtrSlope * _currentAtrSlope;
-
-		// We need enough samples to calculate meaningful statistics
-		if (_sampleCount < LookbackPeriod)
-			return;
-
-		// If we have more samples than our lookback period, adjust the statistics
-		if (_sampleCount > LookbackPeriod)
+		if (Position == 0)
 		{
-			// This is a simplified approach - ideally we would keep a circular buffer
-			// of the last N slopes for more accurate calculations
-			_sampleCount = LookbackPeriod;
+			if (slope <= lowerThreshold && priceAboveEma)
+			{
+				BuyMarket();
+				_cooldown = CooldownBars;
+			}
+			else if (slope >= upperThreshold && priceBelowEma)
+			{
+				SellMarket();
+				_cooldown = CooldownBars;
+			}
+		}
+		else if (Position > 0)
+		{
+			if (slope >= averageSlope || priceBelowEma)
+			{
+				SellMarket(Math.Abs(Position));
+				_cooldown = CooldownBars;
+			}
+		}
+		else if (Position < 0)
+		{
+			if (slope <= averageSlope || priceAboveEma)
+			{
+				BuyMarket(Math.Abs(Position));
+				_cooldown = CooldownBars;
+			}
+		}
+	}
+
+	private void CalculateStatistics(out decimal averageSlope, out decimal slopeStdDev)
+	{
+		averageSlope = 0m;
+		var sumSquaredDiffs = 0m;
+
+		for (var i = 0; i < SlopeLookback; i++)
+			averageSlope += _slopeHistory[i];
+
+		averageSlope /= SlopeLookback;
+
+		for (var i = 0; i < SlopeLookback; i++)
+		{
+			var diff = _slopeHistory[i] - averageSlope;
+			sumSquaredDiffs += diff * diff;
 		}
 
-		// Calculate statistics
-		_averageSlope = _sumSlopes / _sampleCount;
-		var variance = (_sumSlopesSquared / _sampleCount) - (_averageSlope * _averageSlope);
-		_slopeStdDev = (variance <= 0) ? 0 : (decimal)Math.Sqrt((double)variance);
-
-		// Calculate thresholds for entries
-		var longEntryThreshold = _averageSlope - DeviationMultiplier * _slopeStdDev;
-		var shortEntryThreshold = _averageSlope + DeviationMultiplier * _slopeStdDev;
-
-		// Trading logic
-		if (_currentAtrSlope < longEntryThreshold && Position <= 0)
-		{
-			// Long entry: slope is significantly lower than average (mean reversion expected)
-			LogInfo($"ATR slope {_currentAtrSlope} below threshold {longEntryThreshold}, entering LONG");
-			BuyMarket(Volume + Math.Abs(Position));
-			
-			// Calculate and set stop loss based on ATR
-			var stopPrice = candle.ClosePrice - atrValue * StopLossMultiplier;
-			LogInfo($"Setting stop loss at {stopPrice} (ATR: {atrValue}, Multiplier: {StopLossMultiplier})");
-		}
-		else if (_currentAtrSlope > shortEntryThreshold && Position >= 0)
-		{
-			// Short entry: slope is significantly higher than average (mean reversion expected)
-			LogInfo($"ATR slope {_currentAtrSlope} above threshold {shortEntryThreshold}, entering SHORT");
-			SellMarket(Volume + Math.Abs(Position));
-			
-			// Calculate and set stop loss based on ATR
-			var stopPrice = candle.ClosePrice + atrValue * StopLossMultiplier;
-			LogInfo($"Setting stop loss at {stopPrice} (ATR: {atrValue}, Multiplier: {StopLossMultiplier})");
-		}
-		else if (Position > 0 && _currentAtrSlope > _averageSlope)
-		{
-			// Exit long when slope returns to or above average
-			LogInfo($"ATR slope {_currentAtrSlope} returned to average {_averageSlope}, exiting LONG");
-			SellMarket(Math.Abs(Position));
-		}
-		else if (Position < 0 && _currentAtrSlope < _averageSlope)
-		{
-			// Exit short when slope returns to or below average
-			LogInfo($"ATR slope {_currentAtrSlope} returned to average {_averageSlope}, exiting SHORT");
-			BuyMarket(Math.Abs(Position));
-		}
+		slopeStdDev = (decimal)Math.Sqrt((double)(sumSquaredDiffs / SlopeLookback));
 	}
 }

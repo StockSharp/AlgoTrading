@@ -1,11 +1,9 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
+using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -14,20 +12,23 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on momentum indicator adjusted with seasonality strength.
+/// Momentum strategy that allows longs or shorts only when the current month historically supports that seasonal bias.
 /// </summary>
 public class SeasonalityAdjustedMomentumStrategy : Strategy
 {
 	private readonly StrategyParam<int> _momentumPeriod;
 	private readonly StrategyParam<decimal> _seasonalityThreshold;
 	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
-	
-	// Dictionary to store seasonality strength values for each month
+
 	private readonly Dictionary<int, decimal> _seasonalStrengthByMonth = [];
+	private Momentum _momentum;
+	private SimpleMovingAverage _momentumAverage;
+	private int _cooldown;
 
 	/// <summary>
-	/// Period for Momentum indicator.
+	/// Period for the momentum indicator.
 	/// </summary>
 	public int MomentumPeriod
 	{
@@ -36,7 +37,7 @@ public class SeasonalityAdjustedMomentumStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Threshold for seasonality strength.
+	/// Minimum absolute seasonality strength required to allow directional entries.
 	/// </summary>
 	public decimal SeasonalityThreshold
 	{
@@ -54,7 +55,16 @@ public class SeasonalityAdjustedMomentumStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Candle type parameter.
+	/// Bars to wait after each order.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -63,171 +73,157 @@ public class SeasonalityAdjustedMomentumStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initialize a new instance of <see cref="SeasonalityAdjustedMomentumStrategy"/>.
+	/// Initializes strategy parameters.
 	/// </summary>
 	public SeasonalityAdjustedMomentumStrategy()
 	{
 		_momentumPeriod = Param(nameof(MomentumPeriod), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("Momentum Period", "Period for momentum indicator", "Strategy Settings")
-			
-			.SetOptimize(7, 21, 7);
+			.SetRange(3, 100)
+			.SetDisplay("Momentum Period", "Period for the momentum indicator", "Indicators");
 
-		_seasonalityThreshold = Param(nameof(SeasonalityThreshold), 0.5m)
-			.SetGreaterThanZero()
-			.SetDisplay("Seasonality Threshold", "Threshold value for seasonality strength", "Strategy Settings")
-			
-			.SetOptimize(0.3m, 0.7m, 0.1m);
+		_seasonalityThreshold = Param(nameof(SeasonalityThreshold), 0.2m)
+			.SetRange(0m, 1m)
+			.SetDisplay("Seasonality Threshold", "Minimum absolute seasonality strength required for entries", "Signals");
 
-		_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
-			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss %", "Stop loss percentage", "Strategy Settings")
-			
-			.SetOptimize(1.0m, 3.0m, 0.5m);
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetRange(0.5m, 10m)
+			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
+
+		_cooldownBars = Param(nameof(CooldownBars), 120)
+			.SetRange(1, 500)
+			.SetDisplay("Cooldown Bars", "Bars to wait after each order", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles for strategy", "General");
-		
-		// Initialize seasonality strength for each month (example data)
-		InitializeSeasonalityData();
-	}
+			.SetDisplay("Candle Type", "Type of candles for the strategy", "General");
 
-	private void InitializeSeasonalityData()
-	{
-		// This is sample data - in a real strategy, this would be calculated from historical data
-		// Positive values indicate historically strong months, negative values indicate weak months
-		_seasonalStrengthByMonth[1] = 0.8m;  // January
-		_seasonalStrengthByMonth[2] = 0.2m;  // February
-		_seasonalStrengthByMonth[3] = 0.5m;  // March
-		_seasonalStrengthByMonth[4] = 0.7m;  // April
-		_seasonalStrengthByMonth[5] = 0.3m;  // May
-		_seasonalStrengthByMonth[6] = -0.2m; // June
-		_seasonalStrengthByMonth[7] = -0.3m; // July
-		_seasonalStrengthByMonth[8] = -0.4m; // August
-		_seasonalStrengthByMonth[9] = -0.7m; // September
-		_seasonalStrengthByMonth[10] = 0.4m; // October
-		_seasonalStrengthByMonth[11] = 0.6m; // November
-		_seasonalStrengthByMonth[12] = 0.9m; // December
+		InitializeSeasonalityData();
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return [(Security, CandleType)];
+		if (Security != null)
+			yield return (Security, CandleType);
 	}
+
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
 
+		_momentum = null;
+		_momentumAverage = null;
+		_cooldown = 0;
 		_seasonalStrengthByMonth.Clear();
 		InitializeSeasonalityData();
 	}
-
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		// Create indicators
-		var momentum = new Momentum { Length = MomentumPeriod };
-		var momentumAvg = new SMA { Length = MomentumPeriod };
+		if (Security == null)
+			throw new InvalidOperationException("Security is not specified.");
 
-		// Create subscription
+		_momentum = new Momentum { Length = MomentumPeriod };
+		_momentumAverage = new SimpleMovingAverage { Length = MomentumPeriod };
+		_cooldown = 0;
+
 		var subscription = SubscribeCandles(CandleType);
-		
-		// Bind indicators to subscription
-		subscription
-			.Bind(momentum, momentumAvg, ProcessCandle)
-			.Start();
-		
-		// Enable position protection with percentage stop-loss
-		StartProtection(
-			takeProfit: new Unit(0), // We'll handle exits in the strategy logic
-			stopLoss: new Unit(StopLossPercent, UnitTypes.Percent),
-			useMarketOrders: true
-		);
 
-		// Setup chart if available
+		subscription
+			.Bind(_momentum, ProcessCandle)
+			.Start();
+
 		var area = CreateChartArea();
+
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, momentum);
-			DrawIndicator(area, momentumAvg);
+			DrawIndicator(area, _momentum);
+			DrawIndicator(area, _momentumAverage);
 			DrawOwnTrades(area);
 		}
+
+		StartProtection(new Unit(0, UnitTypes.Absolute), new Unit(StopLossPercent, UnitTypes.Percent), false);
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal momentumValue, decimal momentumAvgValue)
+	private void ProcessCandle(ICandleMessage candle, decimal momentumValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
-		if (!IsFormedAndOnlineAndAllowTrading())
+		var momentumAvgValue = _momentumAverage.Process(momentumValue, candle.OpenTime, true).ToDecimal();
+
+		if (!_momentum.IsFormed || !_momentumAverage.IsFormed)
 			return;
 
-		// Get current month
-		var currentMonth = candle.OpenTime.Month;
-		
-		// Get seasonality strength for current month
-		decimal seasonalStrength = 0;
-		if (_seasonalStrengthByMonth.TryGetValue(currentMonth, out var strength))
-		{
-			seasonalStrength = strength;
-		}
-		
-		// Log seasonality data
-		LogInfo($"Month: {currentMonth}, Seasonality Strength: {seasonalStrength}, Momentum: {momentumValue}, Avg Momentum: {momentumAvgValue}");
-		
-		// Define entry conditions with seasonality adjustment
-		var longEntryCondition = momentumValue > momentumAvgValue && 
-							   seasonalStrength > SeasonalityThreshold && 
-							   Position <= 0;
-							   
-		var shortEntryCondition = momentumValue < momentumAvgValue && 
-								seasonalStrength < -SeasonalityThreshold && 
-								Position >= 0;
-		
-		// Define exit conditions
-		var longExitCondition = momentumValue < momentumAvgValue && Position > 0;
-		var shortExitCondition = momentumValue > momentumAvgValue && Position < 0;
+		if (ProcessState != ProcessStates.Started)
+			return;
 
-		// Execute trading logic
-		if (longEntryCondition)
+		if (_cooldown > 0)
 		{
-			// Calculate position size
-			var positionSize = Volume + Math.Abs(Position);
-			
-			// Enter long position
-			BuyMarket(positionSize);
-			
-			LogInfo($"Long entry: Price={candle.ClosePrice}, Momentum={momentumValue}, Avg={momentumAvgValue}, Seasonality={seasonalStrength}");
+			_cooldown--;
+			return;
 		}
-		else if (shortEntryCondition)
+
+		var seasonalStrength = GetSeasonalStrength(candle.OpenTime.Month);
+		var allowLong = seasonalStrength >= SeasonalityThreshold;
+		var allowShort = seasonalStrength <= -SeasonalityThreshold;
+		var bullishMomentum = momentumValue > momentumAvgValue;
+		var bearishMomentum = momentumValue < momentumAvgValue;
+
+		if (Position > 0)
 		{
-			// Calculate position size
-			var positionSize = Volume + Math.Abs(Position);
-			
-			// Enter short position
-			SellMarket(positionSize);
-			
-			LogInfo($"Short entry: Price={candle.ClosePrice}, Momentum={momentumValue}, Avg={momentumAvgValue}, Seasonality={seasonalStrength}");
+			if (!allowLong || bearishMomentum)
+			{
+				SellMarket(Math.Abs(Position));
+				_cooldown = CooldownBars;
+			}
+
+			return;
 		}
-		else if (longExitCondition)
+
+		if (Position < 0)
 		{
-			// Exit long position
-			SellMarket(Math.Abs(Position));
-			LogInfo($"Long exit: Price={candle.ClosePrice}, Momentum={momentumValue}, Avg={momentumAvgValue}");
+			if (!allowShort || bullishMomentum)
+			{
+				BuyMarket(Math.Abs(Position));
+				_cooldown = CooldownBars;
+			}
+
+			return;
 		}
-		else if (shortExitCondition)
+
+		if (allowLong && bullishMomentum)
 		{
-			// Exit short position
-			BuyMarket(Math.Abs(Position));
-			LogInfo($"Short exit: Price={candle.ClosePrice}, Momentum={momentumValue}, Avg={momentumAvgValue}");
+			BuyMarket();
+			_cooldown = CooldownBars;
 		}
+		else if (allowShort && bearishMomentum)
+		{
+			SellMarket();
+			_cooldown = CooldownBars;
+		}
+	}
+
+	private decimal GetSeasonalStrength(int month)
+		=> _seasonalStrengthByMonth.TryGetValue(month, out var strength) ? strength : 0m;
+
+	private void InitializeSeasonalityData()
+	{
+		_seasonalStrengthByMonth[1] = 0.8m;
+		_seasonalStrengthByMonth[2] = 0.2m;
+		_seasonalStrengthByMonth[3] = 0.5m;
+		_seasonalStrengthByMonth[4] = 0.7m;
+		_seasonalStrengthByMonth[5] = 0.3m;
+		_seasonalStrengthByMonth[6] = -0.2m;
+		_seasonalStrengthByMonth[7] = -0.3m;
+		_seasonalStrengthByMonth[8] = -0.4m;
+		_seasonalStrengthByMonth[9] = -0.7m;
+		_seasonalStrengthByMonth[10] = 0.4m;
+		_seasonalStrengthByMonth[11] = 0.6m;
+		_seasonalStrengthByMonth[12] = 0.9m;
 	}
 }

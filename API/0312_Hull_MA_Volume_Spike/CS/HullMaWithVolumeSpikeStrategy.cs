@@ -1,11 +1,9 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
+using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -14,20 +12,26 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on Hull Moving Average with Volume Spike detection.
+/// Trend-following strategy that requires a Hull moving average slope change to be confirmed by a volume spike.
 /// </summary>
 public class HullMaWithVolumeSpikeStrategy : Strategy
 {
 	private readonly StrategyParam<int> _hmaPeriod;
 	private readonly StrategyParam<int> _volumeAvgPeriod;
 	private readonly StrategyParam<decimal> _volumeThresholdFactor;
+	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
-	
-	// Store previous HMA value to detect direction changes
+
+	private HullMovingAverage _hma;
+	private SimpleMovingAverage _volumeSma;
+	private StandardDeviation _volumeStdDev;
 	private decimal _prevHmaValue;
+	private bool _isInitialized;
+	private int _cooldown;
 
 	/// <summary>
-	/// Hull Moving Average period parameter.
+	/// Hull moving average period.
 	/// </summary>
 	public int HmaPeriod
 	{
@@ -36,7 +40,7 @@ public class HullMaWithVolumeSpikeStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Volume average period parameter.
+	/// Period for volume statistics.
 	/// </summary>
 	public int VolumeAvgPeriod
 	{
@@ -45,7 +49,7 @@ public class HullMaWithVolumeSpikeStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Volume threshold factor parameter.
+	/// Multiplier applied to volume standard deviation.
 	/// </summary>
 	public decimal VolumeThresholdFactor
 	{
@@ -54,7 +58,25 @@ public class HullMaWithVolumeSpikeStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Candle type parameter.
+	/// Bars to wait after each order.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
+	/// Stop loss percentage.
+	/// </summary>
+	public decimal StopLossPercent
+	{
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -63,27 +85,29 @@ public class HullMaWithVolumeSpikeStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Constructor.
+	/// Initializes strategy parameters.
 	/// </summary>
 	public HullMaWithVolumeSpikeStrategy()
 	{
 		_hmaPeriod = Param(nameof(HmaPeriod), 9)
-			.SetGreaterThanZero()
-			.SetDisplay("HMA Period", "Period for Hull Moving Average", "Indicators")
-			
-			.SetOptimize(5, 20, 1);
+			.SetRange(2, 100)
+			.SetDisplay("HMA Period", "Period for the Hull moving average", "Indicators");
 
 		_volumeAvgPeriod = Param(nameof(VolumeAvgPeriod), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume Avg Period", "Period for volume moving average", "Indicators")
-			
-			.SetOptimize(10, 50, 5);
+			.SetRange(2, 100)
+			.SetDisplay("Volume Avg Period", "Period for volume statistics", "Indicators");
 
-		_volumeThresholdFactor = Param(nameof(VolumeThresholdFactor), 2.0m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume Threshold Factor", "Factor for volume spike detection", "Indicators")
-			
-			.SetOptimize(1.5m, 3.0m, 0.5m);
+		_volumeThresholdFactor = Param(nameof(VolumeThresholdFactor), 1.8m)
+			.SetRange(0.1m, 10m)
+			.SetDisplay("Volume Threshold Factor", "Multiplier for volume spike detection", "Signals");
+
+		_cooldownBars = Param(nameof(CooldownBars), 72)
+			.SetRange(1, 500)
+			.SetDisplay("Cooldown Bars", "Bars to wait after each order", "Risk");
+
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetRange(0.5m, 10m)
+			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -92,7 +116,8 @@ public class HullMaWithVolumeSpikeStrategy : Strategy
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return [(Security, CandleType)];
+		if (Security != null)
+			yield return (Security, CandleType);
 	}
 
 	/// <inheritdoc />
@@ -100,7 +125,12 @@ public class HullMaWithVolumeSpikeStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_prevHmaValue = 0;
+		_hma = null;
+		_volumeSma = null;
+		_volumeStdDev = null;
+		_prevHmaValue = 0m;
+		_isInitialized = false;
+		_cooldown = 0;
 	}
 
 	/// <inheritdoc />
@@ -108,104 +138,96 @@ public class HullMaWithVolumeSpikeStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Create indicators
-		var hma = new HullMovingAverage { Length = HmaPeriod };
-		var volumeSma = new SMA { Length = VolumeAvgPeriod };
-		var volumeStdDev = new StandardDeviation { Length = VolumeAvgPeriod };
+		if (Security == null)
+			throw new InvalidOperationException("Security is not specified.");
 
-		// Subscribe to candles and bind indicators
+		_hma = new HullMovingAverage { Length = HmaPeriod };
+		_volumeSma = new SimpleMovingAverage { Length = VolumeAvgPeriod };
+		_volumeStdDev = new StandardDeviation { Length = VolumeAvgPeriod };
+		_isInitialized = false;
+		_cooldown = 0;
+
 		var subscription = SubscribeCandles(CandleType);
-		
+
 		subscription
-			.BindEx(hma, (candle, hmaValue) => 
-			{
-				// Process volume indicators
-				var volumeSmaValue = volumeSma.Process(new DecimalIndicatorValue(volumeSma, candle.TotalVolume, candle.ServerTime));
-				var volumeStdDevValue = volumeStdDev.Process(new DecimalIndicatorValue(volumeStdDev, candle.TotalVolume, candle.ServerTime));
-				
-				// Process the strategy logic
-				ProcessStrategy(
-					candle, 
-					hmaValue.ToDecimal(), 
-					candle.TotalVolume, 
-					volumeSmaValue.ToDecimal(), 
-					volumeStdDevValue.ToDecimal()
-				);
-			})
+			.Bind(_hma, ProcessCandle)
 			.Start();
 
-		// Setup chart if available
 		var area = CreateChartArea();
+
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, hma);
+			DrawIndicator(area, _hma);
 			DrawOwnTrades(area);
 		}
 
-		// Setup position protection
-		StartProtection(
-			takeProfit: new Unit(2, UnitTypes.Percent),
-			stopLoss: new Unit(1, UnitTypes.Percent)
-		);
+		StartProtection(new Unit(0, UnitTypes.Absolute), new Unit(StopLossPercent, UnitTypes.Percent), false);
 	}
 
-	private void ProcessStrategy(ICandleMessage candle, decimal hmaValue, decimal volume, decimal volumeAvg, decimal volumeStdDev)
+	private void ProcessCandle(ICandleMessage candle, decimal hmaValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready for trading
-		if (!IsFormedAndOnlineAndAllowTrading())
+		var volumeAvgValue = _volumeSma.Process(candle.TotalVolume, candle.OpenTime, true).ToDecimal();
+		var volumeStdDevValue = _volumeStdDev.Process(candle.TotalVolume, candle.OpenTime, true).ToDecimal();
+
+		if (!_hma.IsFormed || !_volumeSma.IsFormed || !_volumeStdDev.IsFormed)
 			return;
 
-		// Skip if it's the first valid candle
-		if (_prevHmaValue == 0)
+		if (ProcessState != ProcessStates.Started)
+			return;
+
+		if (!_isInitialized)
 		{
+			_prevHmaValue = hmaValue;
+			_isInitialized = true;
+			return;
+		}
+
+		if (_cooldown > 0)
+		{
+			_cooldown--;
 			_prevHmaValue = hmaValue;
 			return;
 		}
 
-		// Detect HMA direction
 		var isHmaRising = hmaValue > _prevHmaValue;
-		
-		// Check for volume spike
-		var volumeThreshold = volumeAvg + (VolumeThresholdFactor * volumeStdDev);
-		var isVolumeSpiking = volume > volumeThreshold;
-		
-		// Trading logic - only enter on HMA direction change with volume spike
-		if (isHmaRising && isVolumeSpiking && Position <= 0)
+		var isHmaFalling = hmaValue < _prevHmaValue;
+		var volumeThreshold = volumeAvgValue + VolumeThresholdFactor * volumeStdDevValue;
+		var isVolumeSpiking = candle.TotalVolume >= volumeThreshold;
+
+		if (Position == 0)
 		{
-			// Hull MA rising with volume spike - Go long
-			CancelActiveOrders();
-			
-			// Calculate position size
-			var positionSize = Volume + Math.Abs(Position);
-			
-			// Enter long position
-			BuyMarket(positionSize);
+			if (isHmaRising && isVolumeSpiking)
+			{
+				BuyMarket();
+				_cooldown = CooldownBars;
+			}
+			else if (isHmaFalling && isVolumeSpiking)
+			{
+				SellMarket();
+				_cooldown = CooldownBars;
+			}
 		}
-		else if (!isHmaRising && isVolumeSpiking && Position >= 0)
+		else if (Position > 0)
 		{
-			// Hull MA falling with volume spike - Go short
-			CancelActiveOrders();
-			
-			// Calculate position size
-			var positionSize = Volume + Math.Abs(Position);
-			
-			// Enter short position
-			SellMarket(positionSize);
+			if (isHmaFalling)
+			{
+				SellMarket(Math.Abs(Position));
+				_cooldown = CooldownBars;
+			}
 		}
-		
-		// Exit logic - HMA direction reversal
-		if ((Position > 0 && !isHmaRising) || (Position < 0 && isHmaRising))
+		else if (Position < 0)
 		{
-			// Close position on HMA direction change
-			ClosePosition();
+			if (isHmaRising)
+			{
+				BuyMarket(Math.Abs(Position));
+				_cooldown = CooldownBars;
+			}
 		}
 
-		// Update previous HMA value
 		_prevHmaValue = hmaValue;
 	}
 }

@@ -1,11 +1,9 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
+using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -14,7 +12,7 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on Keltner Channel and RSI Divergence.
+/// Mean-reversion strategy that trades Keltner band extremes only when RSI diverges from price.
 /// </summary>
 public class KeltnerWithRsiDivergenceStrategy : Strategy
 {
@@ -22,14 +20,20 @@ public class KeltnerWithRsiDivergenceStrategy : Strategy
 	private readonly StrategyParam<int> _atrPeriod;
 	private readonly StrategyParam<decimal> _atrMultiplier;
 	private readonly StrategyParam<int> _rsiPeriod;
+	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
 
-	// Store previous values to detect divergence
+	private ExponentialMovingAverage _ema;
+	private AverageTrueRange _atr;
+	private RelativeStrengthIndex _rsi;
 	private decimal _prevRsi;
 	private decimal _prevPrice;
+	private bool _isInitialized;
+	private int _cooldown;
 
 	/// <summary>
-	/// EMA period parameter.
+	/// EMA period.
 	/// </summary>
 	public int EmaPeriod
 	{
@@ -38,7 +42,7 @@ public class KeltnerWithRsiDivergenceStrategy : Strategy
 	}
 
 	/// <summary>
-	/// ATR period parameter.
+	/// ATR period.
 	/// </summary>
 	public int AtrPeriod
 	{
@@ -47,7 +51,7 @@ public class KeltnerWithRsiDivergenceStrategy : Strategy
 	}
 
 	/// <summary>
-	/// ATR multiplier parameter.
+	/// ATR multiplier for Keltner bands.
 	/// </summary>
 	public decimal AtrMultiplier
 	{
@@ -56,7 +60,7 @@ public class KeltnerWithRsiDivergenceStrategy : Strategy
 	}
 
 	/// <summary>
-	/// RSI period parameter.
+	/// RSI period.
 	/// </summary>
 	public int RsiPeriod
 	{
@@ -65,7 +69,25 @@ public class KeltnerWithRsiDivergenceStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Candle type parameter.
+	/// Bars to wait after each order.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
+	/// Stop loss percentage.
+	/// </summary>
+	public decimal StopLossPercent
+	{
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -74,33 +96,33 @@ public class KeltnerWithRsiDivergenceStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Constructor.
+	/// Initializes strategy parameters.
 	/// </summary>
 	public KeltnerWithRsiDivergenceStrategy()
 	{
 		_emaPeriod = Param(nameof(EmaPeriod), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("EMA Period", "Period for EMA calculation", "Indicators")
-			
-			.SetOptimize(10, 50, 5);
+			.SetRange(2, 100)
+			.SetDisplay("EMA Period", "Period for EMA calculation", "Indicators");
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("ATR Period", "Period for ATR calculation", "Indicators")
-			
-			.SetOptimize(7, 28, 7);
+			.SetRange(2, 100)
+			.SetDisplay("ATR Period", "Period for ATR calculation", "Indicators");
 
-		_atrMultiplier = Param(nameof(AtrMultiplier), 2.0m)
-			.SetGreaterThanZero()
-			.SetDisplay("ATR Multiplier", "Multiplier for ATR to set channel width", "Indicators")
-			
-			.SetOptimize(1.0m, 3.0m, 0.5m);
+		_atrMultiplier = Param(nameof(AtrMultiplier), 1.15m)
+			.SetRange(0.1m, 10m)
+			.SetDisplay("ATR Multiplier", "Multiplier for the Keltner band width", "Indicators");
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("RSI Period", "Period for RSI calculation", "Indicators")
-			
-			.SetOptimize(7, 28, 7);
+			.SetRange(2, 100)
+			.SetDisplay("RSI Period", "Period for RSI calculation", "Indicators");
+
+		_cooldownBars = Param(nameof(CooldownBars), 72)
+			.SetRange(1, 500)
+			.SetDisplay("Cooldown Bars", "Bars to wait after each order", "Risk");
+
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetRange(0.5m, 10m)
+			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -109,7 +131,8 @@ public class KeltnerWithRsiDivergenceStrategy : Strategy
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return [(Security, CandleType)];
+		if (Security != null)
+			yield return (Security, CandleType);
 	}
 
 	/// <inheritdoc />
@@ -117,8 +140,13 @@ public class KeltnerWithRsiDivergenceStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_prevRsi = 50;
-		_prevPrice = 0;
+		_ema = null;
+		_atr = null;
+		_rsi = null;
+		_prevRsi = 50m;
+		_prevPrice = 0m;
+		_isInitialized = false;
+		_cooldown = 0;
 	}
 
 	/// <inheritdoc />
@@ -126,95 +154,98 @@ public class KeltnerWithRsiDivergenceStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Create indicators
-		var ema = new EMA { Length = EmaPeriod };
-		var atr = new AverageTrueRange { Length = AtrPeriod };
-		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
+		if (Security == null)
+			throw new InvalidOperationException("Security is not specified.");
 
-		// Subscribe to candles and bind indicators
+		_ema = new ExponentialMovingAverage { Length = EmaPeriod };
+		_atr = new AverageTrueRange { Length = AtrPeriod };
+		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
+		_isInitialized = false;
+		_cooldown = 0;
+
 		var subscription = SubscribeCandles(CandleType);
 
 		subscription
-			.Bind(ema, atr, rsi, ProcessCandle)
+			.Bind(_ema, _atr, _rsi, ProcessCandle)
 			.Start();
 
-		// Setup chart if available
 		var area = CreateChartArea();
+
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, ema);
-			DrawIndicator(area, rsi);
+			DrawIndicator(area, _ema);
+			DrawIndicator(area, _rsi);
 			DrawOwnTrades(area);
 		}
 
-		// Setup position protection
-		StartProtection(
-			takeProfit: new Unit(2, UnitTypes.Percent),
-			stopLoss: new Unit(1, UnitTypes.Percent)
-		);
+		StartProtection(new Unit(0, UnitTypes.Absolute), new Unit(StopLossPercent, UnitTypes.Percent), false);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal emaValue, decimal atrValue, decimal rsiValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready for trading
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!_ema.IsFormed || !_atr.IsFormed || !_rsi.IsFormed)
 			return;
 
-		// Skip if it's the first valid candle
-		if (_prevPrice == 0)
+		if (ProcessState != ProcessStates.Started)
+			return;
+
+		if (!_isInitialized)
 		{
+			_prevPrice = candle.ClosePrice;
+			_prevRsi = rsiValue;
+			_isInitialized = true;
+			return;
+		}
+
+		if (_cooldown > 0)
+		{
+			_cooldown--;
 			_prevPrice = candle.ClosePrice;
 			_prevRsi = rsiValue;
 			return;
 		}
 
-		// Calculate Keltner Channel
-		var upperBand = emaValue + (AtrMultiplier * atrValue);
-		var lowerBand = emaValue - (AtrMultiplier * atrValue);
+		var upperBand = emaValue + AtrMultiplier * atrValue;
+		var lowerBand = emaValue - AtrMultiplier * atrValue;
+		var bullishDivergence = (rsiValue >= _prevRsi && candle.ClosePrice < _prevPrice) || rsiValue <= 30m;
+		var bearishDivergence = (rsiValue <= _prevRsi && candle.ClosePrice > _prevPrice) || rsiValue >= 70m;
+		var price = candle.ClosePrice;
 
-		// Check for RSI divergence
-		var isBullishDivergence = rsiValue > _prevRsi && candle.ClosePrice < _prevPrice;
-		var isBearishDivergence = rsiValue < _prevRsi && candle.ClosePrice > _prevPrice;
-
-		// Trading logic
-		if (candle.ClosePrice < lowerBand && isBullishDivergence && Position <= 0)
+		if (Position == 0)
 		{
-			// Bullish divergence at lower band
-			CancelActiveOrders();
-			
-			// Calculate position size
-			var volume = Volume + Math.Abs(Position);
-			
-			// Enter long position
-			BuyMarket(volume);
+			if (price <= lowerBand + atrValue * 0.1m && bullishDivergence)
+			{
+				BuyMarket();
+				_cooldown = CooldownBars;
+			}
+			else if (price >= upperBand - atrValue * 0.1m && bearishDivergence)
+			{
+				SellMarket();
+				_cooldown = CooldownBars;
+			}
 		}
-		else if (candle.ClosePrice > upperBand && isBearishDivergence && Position >= 0)
+		else if (Position > 0)
 		{
-			// Bearish divergence at upper band
-			CancelActiveOrders();
-			
-			// Calculate position size
-			var volume = Volume + Math.Abs(Position);
-			
-			// Enter short position
-			SellMarket(volume);
+			if (price >= emaValue || rsiValue >= 50m)
+			{
+				SellMarket(Math.Abs(Position));
+				_cooldown = CooldownBars;
+			}
 		}
-
-		// Exit logic - when price reverts to EMA
-		if ((Position > 0 && candle.ClosePrice > emaValue) ||
-			(Position < 0 && candle.ClosePrice < emaValue))
+		else if (Position < 0)
 		{
-			// Exit position
-			ClosePosition();
+			if (price <= emaValue || rsiValue <= 50m)
+			{
+				BuyMarket(Math.Abs(Position));
+				_cooldown = CooldownBars;
+			}
 		}
 
-		// Update previous values
+		_prevPrice = price;
 		_prevRsi = rsiValue;
-		_prevPrice = candle.ClosePrice;
 	}
 }
