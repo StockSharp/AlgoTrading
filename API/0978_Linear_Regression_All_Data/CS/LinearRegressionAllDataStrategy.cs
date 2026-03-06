@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -21,6 +18,8 @@ public class LinearRegressionAllDataStrategy : Strategy
 {
 	private readonly StrategyParam<int> _maxBarsBack;
 	private readonly StrategyParam<decimal> _deviationThreshold;
+	private readonly StrategyParam<decimal> _exitThreshold;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private long _index;
@@ -28,9 +27,12 @@ public class LinearRegressionAllDataStrategy : Strategy
 	private decimal _sumY;
 	private decimal _sumX2;
 	private decimal _sumXY;
+	private int _barsFromSignal;
 
 	public int MaxBarsBack { get => _maxBarsBack.Value; set => _maxBarsBack.Value = value; }
 	public decimal DeviationThreshold { get => _deviationThreshold.Value; set => _deviationThreshold.Value = value; }
+	public decimal ExitThreshold { get => _exitThreshold.Value; set => _exitThreshold.Value = value; }
+	public int CooldownBars { get => _cooldownBars.Value; set => _cooldownBars.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public LinearRegressionAllDataStrategy()
@@ -39,13 +41,34 @@ public class LinearRegressionAllDataStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Max Bars Back", "Maximum number of bars for drawing", "General");
 
-		_deviationThreshold = Param(nameof(DeviationThreshold), 0.002m)
+		_deviationThreshold = Param(nameof(DeviationThreshold), 0.008m)
 			.SetDisplay("Deviation Threshold", "Deviation from regression to trigger trade", "General");
+
+		_exitThreshold = Param(nameof(ExitThreshold), 0.002m)
+			.SetDisplay("Exit Threshold", "Deviation level to close a position", "General");
+
+		_cooldownBars = Param(nameof(CooldownBars), 8)
+			.SetGreaterThanZero()
+			.SetDisplay("Cooldown Bars", "Minimum bars between signals", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_index = 0;
+		_sumX = 0m;
+		_sumY = 0m;
+		_sumX2 = 0m;
+		_sumXY = 0m;
+		_barsFromSignal = int.MaxValue;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
@@ -55,6 +78,7 @@ public class LinearRegressionAllDataStrategy : Strategy
 		_sumY = 0m;
 		_sumX2 = 0m;
 		_sumXY = 0m;
+		_barsFromSignal = int.MaxValue;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -103,11 +127,39 @@ public class LinearRegressionAllDataStrategy : Strategy
 
 		// Deviation from regression line
 		var deviation = (candle.ClosePrice - predicted) / predicted;
+		_barsFromSignal++;
 
-		// Mean reversion: buy when price below regression, sell when above
-		if (deviation < -DeviationThreshold && Position <= 0)
-			BuyMarket(Volume + Math.Abs(Position));
-		else if (deviation > DeviationThreshold && Position >= 0)
-			SellMarket(Volume + Math.Abs(Position));
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		if (_barsFromSignal < CooldownBars)
+			return;
+
+		if (Position == 0)
+		{
+			if (deviation <= -DeviationThreshold)
+			{
+				BuyMarket(Volume);
+				_barsFromSignal = 0;
+			}
+			else if (deviation >= DeviationThreshold)
+			{
+				SellMarket(Volume);
+				_barsFromSignal = 0;
+			}
+
+			return;
+		}
+
+		if (Position > 0 && deviation >= -ExitThreshold)
+		{
+			SellMarket(Math.Abs(Position));
+			_barsFromSignal = 0;
+		}
+		else if (Position < 0 && deviation <= ExitThreshold)
+		{
+			BuyMarket(Math.Abs(Position));
+			_barsFromSignal = 0;
+		}
 	}
 }

@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
@@ -16,6 +15,7 @@ public class MateosTimeOfDayAnalysisLeStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _startHour;
 	private readonly StrategyParam<int> _endHour;
+	private DateTime _entryDate;
 
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 	public int StartHour { get => _startHour.Value; set => _startHour.Value = value; }
@@ -23,14 +23,23 @@ public class MateosTimeOfDayAnalysisLeStrategy : Strategy
 
 	public MateosTimeOfDayAnalysisLeStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame());
 		_startHour = Param(nameof(StartHour), 9);
 		_endHour = Param(nameof(EndHour), 16);
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_entryDate = default;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+		_entryDate = default;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -44,16 +53,23 @@ public class MateosTimeOfDayAnalysisLeStrategy : Strategy
 			return;
 
 		var hour = candle.ServerTime.Hour;
+		var date = candle.ServerTime.Date;
 
 		if (hour >= StartHour && hour < EndHour)
 		{
-			if (Position <= 0)
+			if (date.DayOfWeek == DayOfWeek.Monday && Position <= 0 && _entryDate != date)
+			{
 				BuyMarket();
+				_entryDate = date;
+			}
 		}
-		else if (hour >= EndHour)
+		else if (hour >= EndHour || hour < StartHour)
 		{
 			if (Position > 0)
+			{
 				SellMarket();
+				_entryDate = default;
+			}
 		}
 	}
 }

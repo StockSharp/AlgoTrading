@@ -1,11 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
-
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -23,6 +19,8 @@ public class KaufmanTrendStrategy : Strategy
 	private readonly StrategyParam<decimal> _processNoise;
 	private readonly StrategyParam<decimal> _measurementNoise;
 	private readonly StrategyParam<int> _oscBufferLength;
+	private readonly StrategyParam<int> _maxEntries;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _filteredSrc;
@@ -31,9 +29,10 @@ public class KaufmanTrendStrategy : Strategy
 	private decimal _p01;
 	private decimal _p10;
 	private decimal _p11 = 1m;
-	private readonly Queue<decimal> _oscBuffer = new();
-	private decimal _prevTrendStrength;
-	private decimal _entryPrice;
+	private decimal _oscAbsAverage;
+	private int _warmupCount;
+	private int _entriesExecuted;
+	private int _barsSinceSignal;
 
 	public int TrendStrengthEntry
 	{
@@ -65,6 +64,18 @@ public class KaufmanTrendStrategy : Strategy
 		set => _oscBufferLength.Value = value;
 	}
 
+	public int MaxEntries
+	{
+		get => _maxEntries.Value;
+		set => _maxEntries.Value = value;
+	}
+
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
 	public DataType CandleType
 	{
 		get => _candleType.Value;
@@ -88,6 +99,12 @@ public class KaufmanTrendStrategy : Strategy
 		_oscBufferLength = Param(nameof(OscBufferLength), 10)
 			.SetDisplay("Oscillator Buffer", "Bars for normalization.", "Trend");
 
+		_maxEntries = Param(nameof(MaxEntries), 45)
+			.SetDisplay("Max Entries", "Maximum entries per run.", "Risk");
+
+		_cooldownBars = Param(nameof(CooldownBars), 120)
+			.SetDisplay("Cooldown Bars", "Minimum bars between entries.", "Risk");
+
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles.", "General");
 	}
@@ -103,9 +120,10 @@ public class KaufmanTrendStrategy : Strategy
 		_p01 = 0m;
 		_p10 = 0m;
 		_p11 = 1m;
-		_oscBuffer.Clear();
-		_prevTrendStrength = 0m;
-		_entryPrice = 0m;
+		_oscAbsAverage = 0m;
+		_warmupCount = 0;
+		_entriesExecuted = 0;
+		_barsSinceSignal = CooldownBars;
 
 		var atr = new AverageTrueRange { Length = 14 };
 
@@ -127,27 +145,26 @@ public class KaufmanTrendStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		_barsSinceSignal++;
 		UpdateKalman(candle.ClosePrice);
 
-		_oscBuffer.Enqueue(_oscillator);
-		if (_oscBuffer.Count > OscBufferLength)
-			_oscBuffer.Dequeue();
-
-		decimal maxAbs = 0m;
-		foreach (var v in _oscBuffer)
+		var absOsc = Math.Abs(_oscillator);
+		if (_warmupCount == 0)
 		{
-			var abs = Math.Abs(v);
-			if (abs > maxAbs)
-				maxAbs = abs;
+			_oscAbsAverage = absOsc;
+		}
+		else
+		{
+			var alpha = 2m / (OscBufferLength + 1m);
+			_oscAbsAverage += (absOsc - _oscAbsAverage) * alpha;
 		}
 
-		var trendStrength = maxAbs > 0m ? _oscillator / maxAbs * 100m : 0m;
+		_warmupCount++;
 
-		if (_oscBuffer.Count < OscBufferLength)
-		{
-			_prevTrendStrength = trendStrength;
+		var trendStrength = _oscAbsAverage > 0m ? _oscillator / _oscAbsAverage * 100m : 0m;
+
+		if (_warmupCount < OscBufferLength)
 			return;
-		}
 
 		var priceAboveMa = candle.ClosePrice > _filteredSrc;
 		var priceBelowMa = candle.ClosePrice < _filteredSrc;
@@ -160,29 +177,31 @@ public class KaufmanTrendStrategy : Strategy
 		// Exit logic
 		if (Position > 0 && trendWeakLong)
 		{
-			SellMarket();
+			SellMarket(Math.Abs(Position));
+			_barsSinceSignal = 0;
 		}
 		else if (Position < 0 && trendWeakShort)
 		{
-			BuyMarket();
+			BuyMarket(Math.Abs(Position));
+			_barsSinceSignal = 0;
 		}
 
 		// Entry logic
-		if (Position == 0)
+		if (Position == 0 && _entriesExecuted < MaxEntries && _barsSinceSignal >= CooldownBars)
 		{
 			if (trendStrongLong && priceAboveMa)
 			{
 				BuyMarket();
-				_entryPrice = candle.ClosePrice;
+				_entriesExecuted++;
+				_barsSinceSignal = 0;
 			}
 			else if (trendStrongShort && priceBelowMa)
 			{
 				SellMarket();
-				_entryPrice = candle.ClosePrice;
+				_entriesExecuted++;
+				_barsSinceSignal = 0;
 			}
 		}
-
-		_prevTrendStrength = trendStrength;
 	}
 
 	private void UpdateKalman(decimal price)

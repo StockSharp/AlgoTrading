@@ -23,6 +23,7 @@ public class RsiDonchianStrategy : Strategy
 {
 	private readonly StrategyParam<int> _rsiPeriod;
 	private readonly StrategyParam<int> _donchianPeriod;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
 	
@@ -35,6 +36,7 @@ public class RsiDonchianStrategy : Strategy
 	private decimal _donchianLow;
 	private decimal _donchianMiddle;
 	private decimal _currentRsi;
+	private int _cooldown;
 
 	/// <summary>
 	/// RSI period parameter.
@@ -54,6 +56,15 @@ public class RsiDonchianStrategy : Strategy
 		set => _donchianPeriod.Value = value;
 	}
 	
+	/// <summary>
+	/// Bars to wait between trades.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
 	/// <summary>
 	/// Stop-loss percentage parameter.
 	/// </summary>
@@ -88,6 +99,10 @@ public class RsiDonchianStrategy : Strategy
 			.SetDisplay("Donchian Period", "Period for Donchian Channel calculation", "Indicators")
 			
 			.SetOptimize(10, 30, 5);
+
+		_cooldownBars = Param(nameof(CooldownBars), 80)
+			.SetRange(1, 200)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "General");
 			
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 			.SetGreaterThanZero()
@@ -95,7 +110,7 @@ public class RsiDonchianStrategy : Strategy
 			
 			.SetOptimize(1m, 3m, 0.5m);
 			
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 	
@@ -118,6 +133,7 @@ public class RsiDonchianStrategy : Strategy
 		_donchianLow = 0;
 		_donchianMiddle = 0;
 		_currentRsi = 0;
+		_cooldown = 0;
 	}
 
 	/// <inheritdoc />
@@ -149,12 +165,6 @@ Length = RsiPeriod
 			.Bind(_rsi, _highestHigh, _lowestLow, ProcessIndicators)
 			.Start();
 
-		// Enable position protection with stop-loss
-		StartProtection(
-			takeProfit: new Unit(0, UnitTypes.Absolute), // No take-profit
-			stopLoss: new Unit(StopLossPercent, UnitTypes.Percent) // Stop-loss as percentage
-		);
-		
 		// Setup chart if available
 		var area = CreateChartArea();
 		if (area != null)
@@ -201,27 +211,29 @@ Length = RsiPeriod
 			return;
 		
 		// Trading signals
-		bool isRsiOversold = _currentRsi < 30;
-		bool isRsiOverbought = _currentRsi > 70;
-		bool isPriceBreakingHigher = candle.ClosePrice > _donchianHigh;
-		bool isPriceBreakingLower = candle.ClosePrice < _donchianLow;
+		bool isRsiOversold = _currentRsi < 20;
+		bool isRsiOverbought = _currentRsi > 80;
+		bool isAtLowerBand = candle.ClosePrice <= _donchianLow * 1.001m;
+		bool isAtUpperBand = candle.ClosePrice >= _donchianHigh * 0.999m;
+		if (_cooldown > 0)
+			_cooldown--;
 		
-		// Long signal: RSI < 30 (oversold) and price breaks above Donchian high
-		if (isRsiOversold && isPriceBreakingHigher)
+		// Long signal: RSI < 30 (oversold) and price near Donchian low
+		if (_cooldown == 0 && isRsiOversold && isAtLowerBand)
 		{
 			if (Position <= 0)
 			{
 				BuyMarket(Volume + Math.Abs(Position));
-				LogInfo($"Long Entry: RSI({_currentRsi:F2}) < 30 && Price({candle.ClosePrice}) > Donchian High({_donchianHigh})");
+				_cooldown = CooldownBars;
 			}
 		}
-		// Short signal: RSI > 70 (overbought) and price breaks below Donchian low
-		else if (isRsiOverbought && isPriceBreakingLower)
+		// Short signal: RSI > 70 (overbought) and price near Donchian high
+		else if (_cooldown == 0 && isRsiOverbought && isAtUpperBand)
 		{
 			if (Position >= 0)
 			{
 				SellMarket(Volume + Math.Abs(Position));
-				LogInfo($"Short Entry: RSI({_currentRsi:F2}) > 70 && Price({candle.ClosePrice}) < Donchian Low({_donchianLow})");
+				_cooldown = CooldownBars;
 			}
 		}
 		// Exit signals based on Donchian middle line
@@ -231,12 +243,12 @@ Length = RsiPeriod
 			if (Position > 0)
 			{
 				SellMarket(Math.Abs(Position));
-				LogInfo($"Exit Long: Price({candle.ClosePrice}) < Donchian Middle({_donchianMiddle})");
+				_cooldown = CooldownBars;
 			}
 			else if (Position < 0)
 			{
 				BuyMarket(Math.Abs(Position));
-				LogInfo($"Exit Short: Price({candle.ClosePrice}) > Donchian Middle({_donchianMiddle})");
+				_cooldown = CooldownBars;
 			}
 		}
 	}

@@ -123,6 +123,8 @@ public class StatisticalArbitrageStrategy : Strategy
 
 		if (SecondSecurity == null)
 			throw new InvalidOperationException("Second security is not specified.");
+
+		var secondSecurity = this.LookupById(SecondSecurity.Id) ?? SecondSecurity;
 		
 		// Initialize indicators
 		_firstMA = new() { Length = LookbackPeriod };
@@ -130,7 +132,7 @@ public class StatisticalArbitrageStrategy : Strategy
 		
 		// Create subscriptions for both securities
 		var firstSecuritySubscription = SubscribeCandles(CandleType);
-		var secondSecuritySubscription = SubscribeCandles(CandleType, security: SecondSecurity);
+		var secondSecuritySubscription = SubscribeCandles(CandleType, security: secondSecurity);
 		
 		// Bind to first security candles
 		firstSecuritySubscription

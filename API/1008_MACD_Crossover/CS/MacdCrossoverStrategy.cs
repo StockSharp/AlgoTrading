@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -25,9 +22,11 @@ public class MacdCrossoverStrategy : Strategy
 	private readonly StrategyParam<int> _signalLength;
 	private readonly StrategyParam<decimal> _lowerThreshold;
 	private readonly StrategyParam<decimal> _upperThreshold;
+	private readonly StrategyParam<int> _signalCooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private bool _prevIsMacdAboveSignal;
+	private int _barsFromSignal;
 
 	/// <summary>
 	/// Fast EMA period for MACD.
@@ -75,6 +74,15 @@ public class MacdCrossoverStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Minimum bars between executed signals.
+	/// </summary>
+	public int SignalCooldownBars
+	{
+		get => _signalCooldownBars.Value;
+		set => _signalCooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Candle type used for calculations.
 	/// </summary>
 	public DataType CandleType
@@ -106,17 +114,21 @@ public class MacdCrossoverStrategy : Strategy
 			
 			.SetOptimize(5, 13, 2);
 
-		_lowerThreshold = Param(nameof(LowerThreshold), -0.5m)
+		_lowerThreshold = Param(nameof(LowerThreshold), -0.3m)
 			.SetDisplay("Lower Threshold", "Lower bound for MACD zone", "MACD Zone")
 			
 			.SetOptimize(-1m, 0m, 0.1m);
 
-		_upperThreshold = Param(nameof(UpperThreshold), 0.5m)
+		_upperThreshold = Param(nameof(UpperThreshold), 0.3m)
 			.SetDisplay("Upper Threshold", "Upper bound for MACD zone", "MACD Zone")
 			
 			.SetOptimize(0m, 1m, 0.1m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_signalCooldownBars = Param(nameof(SignalCooldownBars), 10)
+			.SetGreaterThanZero()
+			.SetDisplay("Cooldown Bars", "Minimum bars between trade signals", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(10).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -131,6 +143,7 @@ public class MacdCrossoverStrategy : Strategy
 	{
 		base.OnReseted();
 		_prevIsMacdAboveSignal = false;
+		_barsFromSignal = int.MaxValue;
 	}
 
 	/// <inheritdoc />
@@ -170,24 +183,47 @@ public class MacdCrossoverStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
-		var macd = macdTyped.Macd;
-		var signal = macdTyped.Signal;
+		if (macdValue is not IMovingAverageConvergenceDivergenceSignalValue macdTyped)
+			return;
+
+		if (macdTyped.Macd is not decimal macd || macdTyped.Signal is not decimal signal)
+			return;
 
 		var isMacdAboveSignal = macd > signal;
 		var crossUp = isMacdAboveSignal && !_prevIsMacdAboveSignal;
 		var crossDown = !isMacdAboveSignal && _prevIsMacdAboveSignal;
 		var inZone = macd >= LowerThreshold && macd <= UpperThreshold;
+		_barsFromSignal++;
 
-		if (crossDown && Position > 0)
-			SellMarket(Position);
-		if (crossUp && Position < 0)
-			BuyMarket(Math.Abs(Position));
-
-		if (crossUp && inZone && Position <= 0)
-			BuyMarket(Volume + Math.Abs(Position));
-		if (crossDown && inZone && Position >= 0)
-			SellMarket(Volume + Math.Abs(Position));
+		if (_barsFromSignal >= SignalCooldownBars)
+		{
+			if (crossUp)
+			{
+				if (Position < 0)
+				{
+					BuyMarket(Volume + Math.Abs(Position));
+					_barsFromSignal = 0;
+				}
+				else if (inZone && Position == 0)
+				{
+					BuyMarket(Volume);
+					_barsFromSignal = 0;
+				}
+			}
+			else if (crossDown)
+			{
+				if (Position > 0)
+				{
+					SellMarket(Volume + Math.Abs(Position));
+					_barsFromSignal = 0;
+				}
+				else if (inZone && Position == 0)
+				{
+					SellMarket(Volume);
+					_barsFromSignal = 0;
+				}
+			}
+		}
 
 		_prevIsMacdAboveSignal = isMacdAboveSignal;
 	}

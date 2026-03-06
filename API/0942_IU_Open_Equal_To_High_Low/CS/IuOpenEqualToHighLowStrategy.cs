@@ -1,13 +1,8 @@
 
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
-
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -20,9 +15,11 @@ namespace StockSharp.Samples.Strategies;
 public class IuOpenEqualToHighLowStrategy : Strategy
 {
 	private readonly StrategyParam<decimal> _riskReward;
+	private readonly StrategyParam<int> _cooldownDays;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private DateTime _currentDay;
+	private DateTime _nextEntryDate;
 	private decimal _stopPrice;
 	private decimal _takePrice;
 	private ICandleMessage _prevCandle;
@@ -34,6 +31,15 @@ public class IuOpenEqualToHighLowStrategy : Strategy
 	{
 		get => _riskReward.Value;
 		set => _riskReward.Value = value;
+	}
+
+	/// <summary>
+	/// Minimum days between entries.
+	/// </summary>
+	public int CooldownDays
+	{
+		get => _cooldownDays.Value;
+		set => _cooldownDays.Value = value;
 	}
 
 	/// <summary>
@@ -56,6 +62,9 @@ public class IuOpenEqualToHighLowStrategy : Strategy
 			
 			.SetOptimize(1m, 5m, 1m);
 
+		_cooldownDays = Param(nameof(CooldownDays), 45)
+			.SetDisplay("Cooldown Days", "Minimum number of days between new entries", "Risk");
+
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
@@ -71,6 +80,7 @@ public class IuOpenEqualToHighLowStrategy : Strategy
 	{
 		base.OnReseted();
 		_currentDay = default;
+		_nextEntryDate = DateTime.MinValue;
 		_stopPrice = 0m;
 		_takePrice = 0m;
 		_prevCandle = null;
@@ -80,7 +90,6 @@ public class IuOpenEqualToHighLowStrategy : Strategy
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		StartProtection(null, null);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -99,21 +108,26 @@ public class IuOpenEqualToHighLowStrategy : Strategy
 		{
 			_currentDay = day;
 
-			if (Position == 0 && _prevCandle != null)
+			if (Position == 0 && _prevCandle != null && day >= _nextEntryDate)
 			{
 				var entryPrice = candle.OpenPrice;
+				var tolerance = candle.OpenPrice * 0.0002m;
+				var isOpenNearLow = candle.OpenPrice - candle.LowPrice <= tolerance;
+				var isOpenNearHigh = candle.HighPrice - candle.OpenPrice <= tolerance;
 
-				if (candle.OpenPrice == candle.LowPrice)
+				if (isOpenNearLow)
 				{
 					_stopPrice = _prevCandle.LowPrice;
 					_takePrice = entryPrice + (entryPrice - _stopPrice) * RiskReward;
 					BuyMarket();
+					_nextEntryDate = day.AddDays(CooldownDays);
 				}
-				else if (candle.OpenPrice == candle.HighPrice)
+				else if (isOpenNearHigh)
 				{
 					_stopPrice = _prevCandle.HighPrice;
 					_takePrice = entryPrice - (_stopPrice - entryPrice) * RiskReward;
 					SellMarket();
+					_nextEntryDate = day.AddDays(CooldownDays);
 				}
 			}
 		}

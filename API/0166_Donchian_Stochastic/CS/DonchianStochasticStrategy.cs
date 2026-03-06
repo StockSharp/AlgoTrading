@@ -24,11 +24,13 @@ public class DonchianStochasticStrategy : Strategy
 	private readonly StrategyParam<int> _stochK;
 	private readonly StrategyParam<int> _stochD;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<decimal> _stopLossPercent;
 
 	// Indicators
 	private DonchianChannels _donchian;
 	private StochasticOscillator _stochastic;
+	private int _cooldown;
 
 	/// <summary>
 	/// Donchian Channel period.
@@ -76,6 +78,15 @@ public class DonchianStochasticStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Bars to wait between trades.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Stop-loss percentage.
 	/// </summary>
 	public decimal StopLossPercent
@@ -116,6 +127,10 @@ public class DonchianStochasticStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
+		_cooldownBars = Param(nameof(CooldownBars), 100)
+			.SetRange(5, 500)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "General");
+
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management")
@@ -136,6 +151,7 @@ public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 
 		_donchian = null;
 		_stochastic = null;
+		_cooldown = 0;
 	}
 
 /// <inheritdoc />
@@ -213,29 +229,38 @@ protected override void OnStarted2(DateTime time)
 			return;
 		}
 
-		// Trading logic:
-		// Buy when price breaks above upper Donchian band with Stochastic showing oversold condition
-		if (candle.ClosePrice >= upperBand && stochK < 20 && Position <= 0)
+		if (_cooldown > 0)
 		{
-			BuyMarket(Volume + Math.Abs(Position));
-			LogInfo($"Long entry: Price={candle.ClosePrice}, Upper Band={upperBand}, Stochastic %K={stochK}");
+			_cooldown--;
+			return;
 		}
-		// Sell when price breaks below lower Donchian band with Stochastic showing overbought condition
-		else if (candle.ClosePrice <= lowerBand && stochK > 80 && Position >= 0)
+
+		// Trading logic:
+		// Enter in trend direction with stochastic confirmation.
+		if (candle.ClosePrice >= middleBand && stochK > 55 && Position == 0)
 		{
-			SellMarket(Volume + Math.Abs(Position));
-			LogInfo($"Short entry: Price={candle.ClosePrice}, Lower Band={lowerBand}, Stochastic %K={stochK}");
+			BuyMarket();
+			_cooldown = CooldownBars;
+			LogInfo($"Long entry: Price={candle.ClosePrice}, Middle Band={middleBand}, Stochastic %K={stochK}");
+		}
+		else if (candle.ClosePrice <= middleBand && stochK < 45 && Position == 0)
+		{
+			SellMarket();
+			_cooldown = CooldownBars;
+			LogInfo($"Short entry: Price={candle.ClosePrice}, Middle Band={middleBand}, Stochastic %K={stochK}");
 		}
 		// Exit long position when price falls below middle band
 		else if (Position > 0 && candle.ClosePrice < middleBand)
 		{
-			SellMarket(Math.Abs(Position));
+			SellMarket();
+			_cooldown = CooldownBars;
 			LogInfo($"Long exit: Price={candle.ClosePrice}, Middle Band={middleBand}");
 		}
 		// Exit short position when price rises above middle band
 		else if (Position < 0 && candle.ClosePrice > middleBand)
 		{
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
+			_cooldown = CooldownBars;
 			LogInfo($"Short exit: Price={candle.ClosePrice}, Middle Band={middleBand}");
 		}
 	}

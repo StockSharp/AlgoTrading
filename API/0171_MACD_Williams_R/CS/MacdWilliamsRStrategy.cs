@@ -24,8 +24,13 @@ public class MacdWilliamsRStrategy : Strategy
 	private readonly StrategyParam<int> _macdSlow;
 	private readonly StrategyParam<int> _macdSignal;
 	private readonly StrategyParam<int> _williamsRPeriod;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
+
+private int _cooldown;
+private bool _hasPrevState;
+private bool _prevBull;
 
 	/// <summary>
 	/// MACD fast period
@@ -61,6 +66,15 @@ public class MacdWilliamsRStrategy : Strategy
 	{
 		get => _williamsRPeriod.Value;
 		set => _williamsRPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Bars to wait between trades.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	/// <summary>
@@ -110,6 +124,10 @@ public class MacdWilliamsRStrategy : Strategy
 			
 			.SetOptimize(10, 20, 2);
 
+		_cooldownBars = Param(nameof(CooldownBars), 120)
+			.SetRange(5, 500)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "General");
+
 		_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss %", "Stop loss as percentage of entry price", "Risk Management")
@@ -130,6 +148,9 @@ public class MacdWilliamsRStrategy : Strategy
 		protected override void OnReseted()
 		{
 			base.OnReseted();
+			_cooldown = 0;
+			_hasPrevState = false;
+			_prevBull = false;
 		}
 
 		/// <inheritdoc />
@@ -149,12 +170,6 @@ public class MacdWilliamsRStrategy : Strategy
 			SignalMa = { Length = MacdSignal }
 		};
 		var williamsR = new WilliamsR { Length = WilliamsRPeriod };
-
-		// Enable position protection with stop-loss
-		StartProtection(
-			takeProfit: new Unit(0), // No take profit
-			stopLoss: new Unit(StopLossPercent, UnitTypes.Percent)
-		);
 
 		// Subscribe to candles and bind indicators
 		var subscription = SubscribeCandles(CandleType);
@@ -195,33 +210,51 @@ public class MacdWilliamsRStrategy : Strategy
 		var macd = macdTyped.Macd;
 		var signal = macdTyped.Signal;
 		var williamsR = williamsRValue.ToDecimal();
+		var bull = macd > signal;
+
+		if (!_hasPrevState)
+		{
+			_hasPrevState = true;
+			_prevBull = bull;
+			return;
+		}
+
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+			return;
+		}
+
+		var crossedUp = !_prevBull && bull;
+		var crossedDown = _prevBull && !bull;
 
 		// Trading logic
-		if (macd > signal) // MACD above signal line - bullish
+		if (crossedUp && Position == 0)
 		{
-			if (williamsR < -80 && Position <= 0) // Oversold condition
-			{
-				// Buy signal
-				BuyMarket(Volume + Math.Abs(Position));
-			}
+			BuyMarket();
+			_cooldown = CooldownBars;
+		}
+		else if (crossedDown && Position == 0)
+		{
+			SellMarket();
+			_cooldown = CooldownBars;
 		}
 		else if (macd < signal) // MACD below signal line - bearish
 		{
-			if (williamsR > -20 && Position >= 0) // Overbought condition
-			{
-				// Sell signal
-				SellMarket(Volume + Math.Abs(Position));
-			}
-			else if (Position > 0) // Already long, exit on MACD crossing down
+			if (Position > 0) // Already long, exit on MACD crossing down
 			{
 				// Exit long position
-				SellMarket(Position);
+				SellMarket();
+				_cooldown = CooldownBars;
 			}
 		}
 		else if (macd > signal && Position < 0) // Already short, exit on MACD crossing up
 		{
 			// Exit short position
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
+			_cooldown = CooldownBars;
 		}
+
+		_prevBull = bull;
 	}
 }

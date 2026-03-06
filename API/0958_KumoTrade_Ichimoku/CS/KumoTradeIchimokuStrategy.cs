@@ -24,6 +24,8 @@ public class KumoTradeIchimokuStrategy : Strategy
 	private readonly StrategyParam<int> _stochK;
 	private readonly StrategyParam<int> _stochD;
 	private readonly StrategyParam<int> _atrPeriod;
+	private readonly StrategyParam<int> _maxEntries;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<DateTimeOffset> _startTime;
 	private readonly StrategyParam<DateTimeOffset> _endTime;
@@ -35,6 +37,8 @@ public class KumoTradeIchimokuStrategy : Strategy
 	private decimal? _trailStopShort;
 	private decimal _highestClose;
 	private decimal _lowestLow;
+	private int _entriesExecuted;
+	private int _barsSinceSignal;
 	
 	/// <summary>
 	/// Tenkan-sen period.
@@ -116,6 +120,24 @@ public class KumoTradeIchimokuStrategy : Strategy
 		get => _endTime.Value;
 		set => _endTime.Value = value;
 	}
+
+	/// <summary>
+	/// Maximum entries per run.
+	/// </summary>
+	public int MaxEntries
+	{
+		get => _maxEntries.Value;
+		set => _maxEntries.Value = value;
+	}
+
+	/// <summary>
+	/// Minimum bars between entries.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
 	
 	/// <summary>
 	/// Initializes a new instance of the <see cref="KumoTradeIchimokuStrategy"/>.
@@ -151,14 +173,22 @@ public class KumoTradeIchimokuStrategy : Strategy
 		.SetDisplay("ATR Period", "Period for ATR stop", "Risk")
 		
 		.SetOptimize(3, 10, 1);
+
+		_maxEntries = Param(nameof(MaxEntries), 45)
+		.SetGreaterThanZero()
+		.SetDisplay("Max Entries", "Maximum entries per run", "Risk");
+
+		_cooldownBars = Param(nameof(CooldownBars), 12000)
+			.SetGreaterThanZero()
+			.SetDisplay("Cooldown Bars", "Minimum bars between entries", "Risk");
 		
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles", "General");
 		
-		_startTime = Param(nameof(StartTime), new DateTimeOffset(new DateTime(2024, 5, 1, 22, 0, 0), TimeSpan.Zero))
+		_startTime = Param(nameof(StartTime), DateTimeOffset.MinValue)
 		.SetDisplay("Start Time", "Trading window start", "Time");
 		
-		_endTime = Param(nameof(EndTime), new DateTimeOffset(new DateTime(2025, 1, 1, 19, 30, 0), TimeSpan.Zero))
+		_endTime = Param(nameof(EndTime), DateTimeOffset.MaxValue)
 		.SetDisplay("End Time", "Trading window end", "Time");
 	}
 	
@@ -179,14 +209,16 @@ public class KumoTradeIchimokuStrategy : Strategy
 		_trailStopShort = null;
 		_highestClose = 0m;
 		_lowestLow = 0m;
+		_entriesExecuted = 0;
+		_barsSinceSignal = 0;
 	}
 	
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		
-		StartProtection(null, null);
+		_entriesExecuted = 0;
+		_barsSinceSignal = CooldownBars;
 		
 		var ichimoku = new Ichimoku
 		{
@@ -221,6 +253,8 @@ public class KumoTradeIchimokuStrategy : Strategy
 	{
 		if (candle.State != CandleStates.Finished)
 		return;
+
+		_barsSinceSignal++;
 		
 		if (candle.OpenTime < StartTime || candle.OpenTime > EndTime)
 		return;
@@ -242,9 +276,7 @@ public class KumoTradeIchimokuStrategy : Strategy
 		if (stochTyped.D is not decimal stochD)
 		return;
 		
-		if (!atrValue.IsFinal)
-		return;
-		var atr = atrValue.GetValue<decimal>();
+		var atr = atrValue.ToDecimal();
 		
 		var upperCloud = Math.Max(senkouA, senkouB);
 		var lowerCloud = Math.Min(senkouA, senkouB);
@@ -266,18 +298,30 @@ public class KumoTradeIchimokuStrategy : Strategy
 		stochD >= 90m &&
 		_prevStochD > stochD &&
 		kumoRed;
+
+		if (_barsSinceSignal < CooldownBars)
+		{
+			_prevStochD = stochD;
+			_prevHigh = candle.HighPrice;
+			_prevKijun = kijun;
+			return;
+		}
 		
-		if (longCond)
+		if (_entriesExecuted < MaxEntries && _barsSinceSignal >= CooldownBars && longCond)
 		{
 			BuyMarket(Volume + Math.Abs(Position));
 			_trailStopLong = null;
 			_highestClose = candle.ClosePrice;
+			_entriesExecuted++;
+			_barsSinceSignal = 0;
 		}
-		else if (shortCond)
+		else if (_entriesExecuted < MaxEntries && _barsSinceSignal >= CooldownBars && shortCond)
 		{
 			SellMarket(Volume + Math.Abs(Position));
 			_trailStopShort = null;
 			_lowestLow = candle.LowPrice;
+			_entriesExecuted++;
+			_barsSinceSignal = 0;
 		}
 		
 		if (Position > 0)
@@ -287,7 +331,12 @@ public class KumoTradeIchimokuStrategy : Strategy
 			if (_trailStopLong == null || temp > _trailStopLong)
 			_trailStopLong = temp;
 			if (_trailStopLong != null && candle.ClosePrice < _trailStopLong)
-			SellMarket(Position);
+			{
+				SellMarket(Math.Abs(Position));
+				_trailStopLong = null;
+				_highestClose = 0m;
+				_barsSinceSignal = 0;
+			}
 		}
 		else if (Position < 0)
 		{
@@ -296,7 +345,12 @@ public class KumoTradeIchimokuStrategy : Strategy
 			if (_trailStopShort == null || temp < _trailStopShort)
 			_trailStopShort = temp;
 			if (_trailStopShort != null && candle.ClosePrice > _trailStopShort)
-			BuyMarket(Math.Abs(Position));
+			{
+				BuyMarket(Math.Abs(Position));
+				_trailStopShort = null;
+				_lowestLow = 0m;
+				_barsSinceSignal = 0;
+			}
 		}
 		
 		_prevStochD = stochD;

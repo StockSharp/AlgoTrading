@@ -22,6 +22,7 @@ public class ParabolicSarVolumeStrategy : Strategy
 	private readonly StrategyParam<decimal> _acceleration;
 	private readonly StrategyParam<decimal> _maxAcceleration;
 	private readonly StrategyParam<int> _volumePeriod;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private ParabolicSar _parabolicSar;
@@ -31,6 +32,7 @@ public class ParabolicSarVolumeStrategy : Strategy
 	private decimal _prevSar;
 	private decimal _currentAvgVolume;
 	private bool _prevPriceAboveSar;
+	private int _cooldown;
 
 	/// <summary>
 	/// Parabolic SAR acceleration factor.
@@ -57,6 +59,15 @@ public class ParabolicSarVolumeStrategy : Strategy
 	{
 		get => _volumePeriod.Value;
 		set => _volumePeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Bars to wait between trades.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	/// <summary>
@@ -88,7 +99,11 @@ public class ParabolicSarVolumeStrategy : Strategy
 			
 			.SetDisplay("Volume Period", "Period for volume moving average", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_cooldownBars = Param(nameof(CooldownBars), 30)
+			.SetRange(1, 100)
+			.SetDisplay("Cooldown Bars", "Bars between entries", "General");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -104,6 +119,7 @@ public class ParabolicSarVolumeStrategy : Strategy
 		_prevSar = 0;
 		_currentAvgVolume = 0;
 		_prevPriceAboveSar = false;
+		_cooldown = 0;
 		_parabolicSar = null;
 		_volumeIndicator = null;
 		_volumeAverage = null;
@@ -136,13 +152,6 @@ public class ParabolicSarVolumeStrategy : Strategy
 			.Bind(_parabolicSar, _volumeIndicator, ProcessIndicators)
 			.Start();
 
-		// Setup position protection with trailing stop
-		StartProtection(
-			takeProfit: new Unit(0, UnitTypes.Absolute),
-			stopLoss: new Unit(0, UnitTypes.Absolute),
-			isStopTrailing: true
-		);
-
 		// Setup chart visualization if available
 		var area = CreateChartArea();
 		if (area != null)
@@ -151,8 +160,11 @@ public class ParabolicSarVolumeStrategy : Strategy
 			DrawIndicator(area, _parabolicSar);
 			
 			var volumeArea = CreateChartArea();
-			DrawIndicator(volumeArea, _volumeIndicator);
-			DrawIndicator(volumeArea, _volumeAverage);
+			if (volumeArea != null)
+			{
+				DrawIndicator(volumeArea, _volumeIndicator);
+				DrawIndicator(volumeArea, _volumeAverage);
+			}
 			
 			DrawOwnTrades(area);
 		}
@@ -160,7 +172,13 @@ public class ParabolicSarVolumeStrategy : Strategy
 
 	private void ProcessIndicators(ICandleMessage candle, decimal sarValue, decimal volumeValue)
 	{
-		_currentAvgVolume = _volumeAverage.Process(new DecimalIndicatorValue(_volumeAverage, volumeValue, candle.ServerTime)).ToDecimal();
+		var avgValue = _volumeAverage.Process(new DecimalIndicatorValue(_volumeAverage, volumeValue, candle.ServerTime));
+		if (avgValue == null)
+			return;
+
+		_currentAvgVolume = avgValue.ToDecimal();
+		if (_currentAvgVolume <= 0)
+			return;
 
 		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
@@ -176,40 +194,40 @@ public class ParabolicSarVolumeStrategy : Strategy
 		var isPriceAboveSar = currentPrice > sarValue;
 		
 		// Determine if volume is above average
-		var isHighVolume = currentVolume > _currentAvgVolume;
+		var isHighVolume = currentVolume > _currentAvgVolume * 1.5m;
+
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+			_prevSar = sarValue;
+			_prevPriceAboveSar = isPriceAboveSar;
+			return;
+		}
 
 		// Check for SAR crossover with volume confirmation
 		// Bullish crossover: Price crosses above SAR with high volume
 		if (isPriceAboveSar && !_prevPriceAboveSar && isHighVolume && Position <= 0)
 		{
-			// Cancel existing orders before entering new position
 			CancelActiveOrders();
 			
-			// Enter long position
 			var volume = Volume + Math.Abs(Position);
 			BuyMarket(volume);
-			
-			LogInfo($"Long entry signal: Price {currentPrice} crossed above SAR {sarValue} with high volume {currentVolume} > avg {_currentAvgVolume}");
+			_cooldown = CooldownBars;
 		}
 		// Bearish crossover: Price crosses below SAR with high volume
 		else if (!isPriceAboveSar && _prevPriceAboveSar && isHighVolume && Position >= 0)
 		{
-			// Cancel existing orders before entering new position
 			CancelActiveOrders();
 			
-			// Enter short position
 			var volume = Volume + Math.Abs(Position);
 			SellMarket(volume);
-			
-			LogInfo($"Short entry signal: Price {currentPrice} crossed below SAR {sarValue} with high volume {currentVolume} > avg {_currentAvgVolume}");
+			_cooldown = CooldownBars;
 		}
 		// Exit signals based on SAR crossover (without volume confirmation)
 		else if ((Position > 0 && !isPriceAboveSar) || (Position < 0 && isPriceAboveSar))
 		{
-			// Close position on SAR reversal
 			ClosePosition();
-			
-			LogInfo($"Exit signal: SAR reversal. Price: {currentPrice}, SAR: {sarValue}");
+			_cooldown = CooldownBars;
 		}
 
 		// Update previous values for next candle

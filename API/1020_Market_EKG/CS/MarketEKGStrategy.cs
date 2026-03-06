@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
@@ -14,18 +13,36 @@ namespace StockSharp.Samples.Strategies;
 public class MarketEKGStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<decimal> _deviationThresholdPercent;
+	private readonly StrategyParam<int> _cooldownBars;
 
 	private ICandleMessage _prev1;
 	private ICandleMessage _prev2;
 	private ICandleMessage _prev3;
+	private int _barsFromSignal;
 
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public decimal DeviationThresholdPercent { get => _deviationThresholdPercent.Value; set => _deviationThresholdPercent.Value = value; }
+	public int CooldownBars { get => _cooldownBars.Value; set => _cooldownBars.Value = value; }
 
 	public MarketEKGStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame());
+		_deviationThresholdPercent = Param(nameof(DeviationThresholdPercent), 0.15m);
+		_cooldownBars = Param(nameof(CooldownBars), 16);
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prev1 = null;
+		_prev2 = null;
+		_prev3 = null;
+		_barsFromSignal = CooldownBars;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
@@ -33,6 +50,7 @@ public class MarketEKGStrategy : Strategy
 		_prev1 = null;
 		_prev2 = null;
 		_prev3 = null;
+		_barsFromSignal = CooldownBars;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -49,11 +67,21 @@ public class MarketEKGStrategy : Strategy
 		{
 			var avgClose = (_prev3.ClosePrice + _prev2.ClosePrice) / 2m;
 			var diffClose = avgClose - _prev1.ClosePrice;
+			var basePrice = _prev1.ClosePrice;
+			var diffPercent = basePrice == 0m ? 0m : Math.Abs(diffClose) / basePrice * 100m;
+			_barsFromSignal++;
+			var canSignal = _barsFromSignal >= CooldownBars;
 
-			if (diffClose > 0 && Position <= 0)
+			if (canSignal && diffClose > 0 && diffPercent >= DeviationThresholdPercent && Position <= 0)
+			{
 				BuyMarket();
-			else if (diffClose < 0 && Position >= 0)
+				_barsFromSignal = 0;
+			}
+			else if (canSignal && diffClose < 0 && diffPercent >= DeviationThresholdPercent && Position >= 0)
+			{
 				SellMarket();
+				_barsFromSignal = 0;
+			}
 		}
 
 		_prev3 = _prev2;

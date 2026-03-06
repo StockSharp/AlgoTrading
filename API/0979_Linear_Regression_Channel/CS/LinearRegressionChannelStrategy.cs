@@ -3,8 +3,6 @@ using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -21,8 +19,11 @@ public class LinearRegressionChannelStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _length;
 	private readonly StrategyParam<decimal> _deviation;
+	private readonly StrategyParam<int> _cooldownBars;
 
+	private readonly object _sync = new();
 	private readonly Queue<decimal> _closes = new();
+	private int _barsFromSignal;
 
 	/// <summary>
 	/// Candle type for calculations.
@@ -40,24 +41,35 @@ public class LinearRegressionChannelStrategy : Strategy
 	public decimal Deviation { get => _deviation.Value; set => _deviation.Value = value; }
 
 	/// <summary>
+	/// Minimum bars between trade actions.
+	/// </summary>
+	public int CooldownBars { get => _cooldownBars.Value; set => _cooldownBars.Value = value; }
+
+	/// <summary>
 	/// Initializes a new instance of the <see cref="LinearRegressionChannelStrategy"/> class.
 	/// </summary>
 	public LinearRegressionChannelStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(10).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 
-		_length = Param(nameof(Length), 100)
+		_length = Param(nameof(Length), 150)
 			.SetGreaterThanZero()
 			.SetDisplay("Length", "Bars for regression", "Parameters")
 			
-			.SetOptimize(50, 200, 50);
+			.SetOptimize(80, 240, 40);
 
-		_deviation = Param(nameof(Deviation), 2m)
+		_deviation = Param(nameof(Deviation), 3m)
 			.SetGreaterThanZero()
 			.SetDisplay("Deviation", "Channel width multiplier", "Parameters")
 			
-			.SetOptimize(1m, 3m, 0.5m);
+			.SetOptimize(2m, 4m, 0.5m);
+
+		_cooldownBars = Param(nameof(CooldownBars), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("Cooldown Bars", "Minimum bars between signals", "Parameters")
+			
+			.SetOptimize(10, 40, 2);
 	}
 
 	/// <inheritdoc />
@@ -70,13 +82,18 @@ public class LinearRegressionChannelStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_closes.Clear();
+		lock (_sync)
+		{
+			_closes.Clear();
+		}
+		_barsFromSignal = int.MaxValue;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+		_barsFromSignal = int.MaxValue;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -96,21 +113,27 @@ public class LinearRegressionChannelStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		_closes.Enqueue(candle.ClosePrice);
-		if (_closes.Count > Length)
-			_closes.Dequeue();
+		decimal[] closesSnapshot;
+		lock (_sync)
+		{
+			_closes.Enqueue(candle.ClosePrice);
+			if (_closes.Count > Length)
+				_closes.Dequeue();
 
-		if (_closes.Count < Length)
-			return;
+			if (_closes.Count < Length)
+				return;
 
-		var n = Length;
+			closesSnapshot = _closes.ToArray();
+		}
+
+		var n = closesSnapshot.Length;
 		decimal sumX = 0;
 		decimal sumY = 0;
 		decimal sumXY = 0;
 		decimal sumX2 = 0;
 		var i = 0;
 
-		foreach (var y in _closes)
+		foreach (var y in closesSnapshot)
 		{
 			var x = (decimal)i;
 			sumX += x;
@@ -132,7 +155,7 @@ public class LinearRegressionChannelStrategy : Strategy
 
 		decimal devSum = 0;
 		i = 0;
-		foreach (var y in _closes)
+		foreach (var y in closesSnapshot)
 		{
 			var x = (decimal)i;
 			var fitted = intercept + slope * x;
@@ -144,22 +167,33 @@ public class LinearRegressionChannelStrategy : Strategy
 
 		var upper = line + deviation * Deviation;
 		var lower = line - deviation * Deviation;
+		_barsFromSignal++;
 
-		if (slope > 0 && candle.ClosePrice < lower && Position <= 0)
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		if (_barsFromSignal < CooldownBars)
+			return;
+
+		if (slope > 0 && candle.ClosePrice < lower && Position == 0)
 		{
-			BuyMarket();
+			BuyMarket(Volume);
+			_barsFromSignal = 0;
 		}
-		else if (slope < 0 && candle.ClosePrice > upper && Position >= 0)
+		else if (slope < 0 && candle.ClosePrice > upper && Position == 0)
 		{
-			SellMarket();
+			SellMarket(Volume);
+			_barsFromSignal = 0;
 		}
 		else if (Position > 0 && candle.ClosePrice >= line)
 		{
-			SellMarket();
+			SellMarket(Math.Abs(Position));
+			_barsFromSignal = 0;
 		}
 		else if (Position < 0 && candle.ClosePrice <= line)
 		{
-			BuyMarket();
+			BuyMarket(Math.Abs(Position));
+			_barsFromSignal = 0;
 		}
 	}
 }

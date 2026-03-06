@@ -20,10 +20,6 @@ public class KeltnerWidthBreakoutStrategy : Strategy
 	private readonly StrategyParam<decimal> _widthThreshold;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevWidth;
-	private decimal _prevAvgWidth;
-	private bool _hasPrev;
-
 	/// <summary>
 	/// EMA period for Keltner Channel.
 	/// </summary>
@@ -95,17 +91,47 @@ public class KeltnerWidthBreakoutStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_prevWidth = 0;
-		_prevAvgWidth = 0;
-		_hasPrev = false;
-
 		var ema = new ExponentialMovingAverage { Length = EMAPeriod };
 		var atr = new AverageTrueRange { Length = ATRPeriod };
+		var widthAverage = new SimpleMovingAverage { Length = Math.Max(5, EMAPeriod / 2) };
 
 		var subscription = SubscribeCandles(CandleType);
 
 		subscription
-			.Bind(ema, atr, ProcessCandle)
+			.Bind(ema, atr, (candle, emaValue, atrValue) =>
+			{
+				if (candle.State != CandleStates.Finished || atrValue <= 0)
+					return;
+
+				// Keltner width = (EMA + ATR*k) - (EMA - ATR*k) = 2*ATR*k
+				var width = 2m * ATRMultiplier * atrValue;
+				var avgWidthValue = widthAverage.Process(new DecimalIndicatorValue(widthAverage, width, candle.ServerTime));
+
+				if (!widthAverage.IsFormed)
+					return;
+
+				var avgWidth = avgWidthValue.ToDecimal();
+				if (avgWidth <= 0 || !IsFormedAndOnlineAndAllowTrading())
+					return;
+
+				// Width breakout detection
+				if (width > avgWidth * WidthThreshold)
+				{
+					// Determine direction based on price relative to EMA
+					if (candle.ClosePrice > emaValue && Position <= 0)
+						BuyMarket();
+					else if (candle.ClosePrice < emaValue && Position >= 0)
+						SellMarket();
+				}
+				// Exit when width contracts back
+				else if (width < avgWidth * 0.8m)
+				{
+					if (Position > 0)
+						SellMarket();
+					else if (Position < 0)
+						BuyMarket();
+				}
+			})
 			.Start();
 
 		var area = CreateChartArea();
@@ -115,56 +141,5 @@ public class KeltnerWidthBreakoutStrategy : Strategy
 			DrawIndicator(area, ema);
 			DrawOwnTrades(area);
 		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal emaValue, decimal atrValue)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (atrValue <= 0)
-			return;
-
-		// Calculate Keltner Channel boundaries
-		var upperBand = emaValue + ATRMultiplier * atrValue;
-		var lowerBand = emaValue - ATRMultiplier * atrValue;
-
-		// Calculate Channel width
-		var width = upperBand - lowerBand;
-
-		if (!_hasPrev)
-		{
-			_prevWidth = width;
-			_prevAvgWidth = width;
-			_hasPrev = true;
-			return;
-		}
-
-		// Simple exponential smoothing of width for average
-		_prevAvgWidth = _prevAvgWidth * 0.9m + width * 0.1m;
-
-		// Width breakout detection
-		if (width > _prevAvgWidth * WidthThreshold)
-		{
-			// Determine direction based on price relative to EMA
-			if (candle.ClosePrice > emaValue && Position <= 0)
-			{
-				BuyMarket();
-			}
-			else if (candle.ClosePrice < emaValue && Position >= 0)
-			{
-				SellMarket();
-			}
-		}
-		// Exit when width contracts back
-		else if (width < _prevAvgWidth * 0.8m)
-		{
-			if (Position > 0)
-				SellMarket();
-			else if (Position < 0)
-				BuyMarket();
-		}
-
-		_prevWidth = width;
 	}
 }

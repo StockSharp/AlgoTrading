@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -23,11 +20,13 @@ namespace StockSharp.Samples.Strategies;
 	private readonly StrategyParam<decimal> _atrFactor;
 	private readonly StrategyParam<decimal> _stopLossMultiplier;
 	private readonly StrategyParam<decimal> _takeProfitMultiplier;
+	private readonly StrategyParam<int> _cooldownBars;
 	
 	private SuperTrend _superTrend;
 	private int _prevDirection;
 	private decimal _stopLoss;
 	private decimal _takeProfit;
+	private int _barsFromSignal;
 	
 	/// <summary>
 	/// Candle type for strategy calculation.
@@ -73,13 +72,22 @@ namespace StockSharp.Samples.Strategies;
 	get => _takeProfitMultiplier.Value;
 	set => _takeProfitMultiplier.Value = value;
 	}
+
+	/// <summary>
+	/// Minimum bars between trade actions.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
 	
 	/// <summary>
 	/// Initialize strategy parameters.
 	/// </summary>
 	public MachineLearningSuperTrendStrategy()
 	{
-	_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+	_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(10).TimeFrame())
 	.SetDisplay("Candle Type", "Type of candles to use", "General");
 	
 	_atrPeriod = Param(nameof(AtrPeriod), 4)
@@ -94,13 +102,17 @@ namespace StockSharp.Samples.Strategies;
 	
 	.SetOptimize(1m, 5m, 0.5m);
 	
-	_stopLossMultiplier = Param(nameof(StopLossMultiplier), 0.0025m)
+	_stopLossMultiplier = Param(nameof(StopLossMultiplier), 0.01m)
 	.SetRange(0m, 0.05m)
 	.SetDisplay("Stop Loss Mult", "Percentage from SuperTrend", "Risk Management");
 	
-	_takeProfitMultiplier = Param(nameof(TakeProfitMultiplier), 0.022m)
+	_takeProfitMultiplier = Param(nameof(TakeProfitMultiplier), 0.03m)
 	.SetRange(0m, 0.1m)
 	.SetDisplay("Take Profit Mult", "Percentage from SuperTrend", "Risk Management");
+
+	_cooldownBars = Param(nameof(CooldownBars), 8)
+		.SetGreaterThanZero()
+		.SetDisplay("Cooldown Bars", "Bars between trade actions", "Risk Management");
 	}
 	
 	/// <inheritdoc />
@@ -113,15 +125,18 @@ namespace StockSharp.Samples.Strategies;
 	protected override void OnReseted()
 	{
 	base.OnReseted();
+	_superTrend = null;
 	_prevDirection = 0;
 	_stopLoss = 0;
 	_takeProfit = 0;
+	_barsFromSignal = CooldownBars;
 	}
 	
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 	base.OnStarted2(time);
+	_barsFromSignal = CooldownBars;
 	
 	_superTrend = new SuperTrend
 	{
@@ -151,34 +166,43 @@ namespace StockSharp.Samples.Strategies;
 	if (!IsFormedAndOnlineAndAllowTrading() || !_superTrend.IsFormed)
 	return;
 	
-	var direction = candle.ClosePrice > superTrendValue ? -1 : 1;
+	var direction = candle.ClosePrice > superTrendValue ? 1 : -1;
 	var directionChanged = _prevDirection != 0 && direction != _prevDirection;
+	_barsFromSignal++;
+	var canTradeNow = _barsFromSignal >= CooldownBars;
 	
-	_stopLoss = direction == -1
+	_stopLoss = direction == 1
 	? superTrendValue - superTrendValue * StopLossMultiplier
 	: superTrendValue + superTrendValue * StopLossMultiplier;
 	
-	_takeProfit = direction == -1
+	_takeProfit = direction == 1
 	? superTrendValue + superTrendValue * TakeProfitMultiplier
 	: superTrendValue - superTrendValue * TakeProfitMultiplier;
 	
-	if (directionChanged)
+	if (canTradeNow && directionChanged)
 	{
-	if (direction == -1 && Position <= 0)
+	if (direction == 1 && Position <= 0)
 	BuyMarket(Volume + Math.Abs(Position));
-	else if (direction == 1 && Position >= 0)
+	else if (direction == -1 && Position >= 0)
 	SellMarket(Volume + Math.Abs(Position));
+	_barsFromSignal = 0;
 	}
 	
-	if (Position > 0)
+	if (canTradeNow && Position > 0)
 	{
 	if (candle.ClosePrice <= _stopLoss || candle.ClosePrice >= _takeProfit)
+	{
 	SellMarket(Math.Abs(Position));
+	_barsFromSignal = 0;
 	}
-	else if (Position < 0)
+	}
+	else if (canTradeNow && Position < 0)
 	{
 	if (candle.ClosePrice >= _stopLoss || candle.ClosePrice <= _takeProfit)
+	{
 	BuyMarket(Math.Abs(Position));
+	_barsFromSignal = 0;
+	}
 	}
 	
 	_prevDirection = direction;

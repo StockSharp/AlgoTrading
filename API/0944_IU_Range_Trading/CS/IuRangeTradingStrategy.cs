@@ -1,11 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
-
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -22,6 +18,7 @@ public class IuRangeTradingStrategy : Strategy
 	private readonly StrategyParam<int> _atrLength;
 	private readonly StrategyParam<decimal> _atrTargetFactor;
 	private readonly StrategyParam<decimal> _atrRangeFactor;
+	private readonly StrategyParam<int> _cooldownDays;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private bool _previousRangeCond;
@@ -30,6 +27,7 @@ public class IuRangeTradingStrategy : Strategy
 	private decimal? _sl0;
 	private decimal? _trailingSl;
 	private decimal _entryPrice;
+	private DateTime _nextEntryDate;
 
 	/// <summary>
 	/// Lookback period for range detection.
@@ -68,6 +66,15 @@ public class IuRangeTradingStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Minimum days between entries.
+	/// </summary>
+	public int CooldownDays
+	{
+		get => _cooldownDays.Value;
+		set => _cooldownDays.Value = value;
+	}
+
+	/// <summary>
 	/// Candle type.
 	/// </summary>
 	public DataType CandleType
@@ -93,8 +100,24 @@ public class IuRangeTradingStrategy : Strategy
 		_atrRangeFactor = Param(nameof(AtrRangeFactor), 1.75m)
 			.SetDisplay("ATR Range Factor", "ATR multiplier to validate range.", "Parameters");
 
+		_cooldownDays = Param(nameof(CooldownDays), 30)
+			.SetDisplay("Cooldown Days", "Minimum days between entries.", "Parameters");
+
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use.", "General");
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_previousRangeCond = false;
+		_rangeHigh = 0m;
+		_rangeLow = 0m;
+		_sl0 = null;
+		_trailingSl = null;
+		_entryPrice = 0m;
+		_nextEntryDate = DateTime.MinValue;
 	}
 
 	/// <inheritdoc />
@@ -108,6 +131,7 @@ public class IuRangeTradingStrategy : Strategy
 		_sl0 = null;
 		_trailingSl = null;
 		_entryPrice = 0m;
+		_nextEntryDate = DateTime.MinValue;
 
 
 		var highest = new Highest { Length = RangeLength };
@@ -147,7 +171,7 @@ public class IuRangeTradingStrategy : Strategy
 		}
 
 		// Entry logic: breakout from range
-		if (Position == 0 && _rangeHigh != 0 && _rangeLow != 0)
+		if (Position == 0 && _rangeHigh != 0 && _rangeLow != 0 && candle.OpenTime.Date >= _nextEntryDate)
 		{
 			if (candle.ClosePrice > _rangeHigh)
 			{
@@ -155,6 +179,7 @@ public class IuRangeTradingStrategy : Strategy
 				_entryPrice = candle.ClosePrice;
 				_sl0 = _entryPrice - atrValue * AtrTargetFactor;
 				_trailingSl = _entryPrice + atrValue * AtrTargetFactor;
+				_nextEntryDate = candle.OpenTime.Date.AddDays(CooldownDays);
 			}
 			else if (candle.ClosePrice < _rangeLow)
 			{
@@ -162,6 +187,7 @@ public class IuRangeTradingStrategy : Strategy
 				_entryPrice = candle.ClosePrice;
 				_sl0 = _entryPrice + atrValue * AtrTargetFactor;
 				_trailingSl = _entryPrice - atrValue * AtrTargetFactor;
+				_nextEntryDate = candle.OpenTime.Date.AddDays(CooldownDays);
 			}
 		}
 

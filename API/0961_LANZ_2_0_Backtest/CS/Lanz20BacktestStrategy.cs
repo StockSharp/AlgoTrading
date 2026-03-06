@@ -1,12 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
-
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -40,6 +35,7 @@ public class Lanz20BacktestStrategy : Strategy
 	private readonly StrategyParam<int> _fullCoveragePips;
 	private readonly StrategyParam<decimal> _minBosBreakPips;
 	private readonly StrategyParam<decimal> _rrMultiplier;
+	private readonly StrategyParam<int> _cooldownDays;
 	private readonly StrategyParam<DataType> _candleType;
 	
 	private readonly List<decimal> _highs = new();
@@ -61,6 +57,7 @@ public class Lanz20BacktestStrategy : Strategy
 	private decimal _minBosBreakDist;
 	private decimal _stopPrice;
 	private decimal _takeProfitPrice;
+	private DateTime _nextTradeDate;
 	private readonly TimeZoneInfo _nyZone = TimeZoneInfo.FindSystemTimeZoneById("America/New_York");
 	
 	/// <summary>
@@ -125,6 +122,15 @@ public class Lanz20BacktestStrategy : Strategy
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
+
+	/// <summary>
+	/// Minimum number of days between entries.
+	/// </summary>
+	public int CooldownDays
+	{
+		get => _cooldownDays.Value;
+		set => _cooldownDays.Value = value;
+	}
 	
 	/// <summary>
 	/// Constructor.
@@ -151,6 +157,10 @@ public class Lanz20BacktestStrategy : Strategy
 		_rrMultiplier = Param(nameof(RrMultiplier), 5.5m)
 		.SetGreaterThanZero()
 		.SetDisplay("RR Multiplier", "Risk reward multiplier", "Risk");
+
+		_cooldownDays = Param(nameof(CooldownDays), 90)
+		.SetGreaterThanZero()
+		.SetDisplay("Cooldown Days", "Minimum days between entries", "Risk");
 		
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe for strategy", "General");
@@ -180,8 +190,11 @@ public class Lanz20BacktestStrategy : Strategy
 		_bosDir = null;
 		_lastBosDir = null;
 		_lastTrendDir = null;
+		_pipSize = 0m;
+		_minBosBreakDist = 0m;
 		_stopPrice = 0m;
 		_takeProfitPrice = 0m;
+		_nextTradeDate = DateTime.MinValue;
 	}
 	
 	/// <inheritdoc />
@@ -191,6 +204,7 @@ public class Lanz20BacktestStrategy : Strategy
 		
 		_pipSize = (Security.PriceStep ?? 1m) * 10m;
 		_minBosBreakDist = MinBosBreakPips * _pipSize;
+		_nextTradeDate = DateTime.MinValue;
 		
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -323,16 +337,17 @@ public class Lanz20BacktestStrategy : Strategy
 		
 		if (alreadyInTrade)
 		return;
+
+		if (nyTime.Date < _nextTradeDate)
+			return;
 		
-		var enterLong = isAnalysisBar && _lastBosDir == 1 && _lastTrendDir == 1;
-		var enterShort = isAnalysisBar && _lastBosDir == -1 && _lastTrendDir == -1;
-		var enterFallbackLong = isAnalysisBar && _lastBosDir == 1 && _lastTrendDir != 1;
-		var enterFallbackShort = isAnalysisBar && _lastBosDir == -1 && _lastTrendDir != -1;
+		var enterLong = isAnalysisBar && _lastBosDir == 1;
+		var enterShort = isAnalysisBar && _lastBosDir == -1;
 		
 		var entryPrice = candle.ClosePrice;
 		var riskUsd = AccountSizeUsd * (RiskPercent / 100m);
 		
-		if (enterLong || enterFallbackLong)
+		if (enterLong)
 		{
 			var fallbackSl = entryPrice - 5m * _pipSize;
 			var slBase = SlProtectionMode switch
@@ -350,12 +365,13 @@ public class Lanz20BacktestStrategy : Strategy
 			var lotSize = slPips == 0 ? 0 : riskUsd / (slPips * 10m);
 			if (lotSize > 0)
 			{
-				BuyLimit(entryPrice, lotSize);
+				BuyMarket(lotSize);
 				_stopPrice = slPrice;
 				_takeProfitPrice = tpPrice;
+				_nextTradeDate = nyTime.Date.AddDays(CooldownDays);
 			}
 		}
-		else if (enterShort || enterFallbackShort)
+		else if (enterShort)
 		{
 			var fallbackSl = entryPrice + 5m * _pipSize;
 			var slBase = SlProtectionMode switch
@@ -373,11 +389,11 @@ public class Lanz20BacktestStrategy : Strategy
 			var lotSize = slPips == 0 ? 0 : riskUsd / (slPips * 10m);
 			if (lotSize > 0)
 			{
-				SellLimit(entryPrice, lotSize);
+				SellMarket(lotSize);
 				_stopPrice = slPrice;
 				_takeProfitPrice = tpPrice;
+				_nextTradeDate = nyTime.Date.AddDays(CooldownDays);
 			}
 		}
 	}
 }
-

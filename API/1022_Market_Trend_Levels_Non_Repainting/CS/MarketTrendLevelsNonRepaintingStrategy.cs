@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
@@ -16,16 +15,19 @@ public class MarketTrendLevelsNonRepaintingStrategy : Strategy
 	private readonly StrategyParam<int> _fastLength;
 	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<int> _rsiLength;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private ExponentialMovingAverage _emaFast;
 	private ExponentialMovingAverage _emaSlow;
 	private RelativeStrengthIndex _rsi;
 	private decimal? _prevDiff;
+	private int _barsFromSignal;
 
 	public int FastLength { get => _fastLength.Value; set => _fastLength.Value = value; }
 	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
 	public int RsiLength { get => _rsiLength.Value; set => _rsiLength.Value = value; }
+	public int CooldownBars { get => _cooldownBars.Value; set => _cooldownBars.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public MarketTrendLevelsNonRepaintingStrategy()
@@ -33,9 +35,22 @@ public class MarketTrendLevelsNonRepaintingStrategy : Strategy
 		_fastLength = Param(nameof(FastLength), 12);
 		_slowLength = Param(nameof(SlowLength), 25);
 		_rsiLength = Param(nameof(RsiLength), 14);
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
+		_cooldownBars = Param(nameof(CooldownBars), 3);
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(10).TimeFrame());
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_emaFast = null;
+		_emaSlow = null;
+		_rsi = null;
+		_prevDiff = null;
+		_barsFromSignal = CooldownBars;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
@@ -44,6 +59,7 @@ public class MarketTrendLevelsNonRepaintingStrategy : Strategy
 		_emaSlow = new ExponentialMovingAverage { Length = SlowLength };
 		_rsi = new RelativeStrengthIndex { Length = RsiLength };
 		_prevDiff = null;
+		_barsFromSignal = CooldownBars;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -66,9 +82,8 @@ public class MarketTrendLevelsNonRepaintingStrategy : Strategy
 		var crossUp = _prevDiff.HasValue && _prevDiff <= 0 && diff > 0;
 		var crossDown = _prevDiff.HasValue && _prevDiff >= 0 && diff < 0;
 		_prevDiff = diff;
-
-		var filterLong = rsiValue > 50;
-		var filterShort = rsiValue < 50;
+		var filterLong = rsiValue > 52;
+		var filterShort = rsiValue < 48;
 
 		if (crossUp && Position <= 0 && filterLong)
 			BuyMarket();

@@ -1,16 +1,12 @@
 
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
-
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
+using StockSharp.Algo.Indicators;
 
 namespace StockSharp.Samples.Strategies;
 
@@ -31,6 +27,7 @@ public class Lanz50Strategy : Strategy
 	private readonly StrategyParam<int> _endMinute;
 	private readonly StrategyParam<bool> _enableBuy;
 	private readonly StrategyParam<bool> _enableSell;
+	private readonly StrategyParam<int> _maxEntriesOverall;
 
 	private decimal? _lastEntryPrice;
 	private int _dailyCounter;
@@ -39,6 +36,7 @@ public class Lanz50Strategy : Strategy
 	private ICandleMessage _prev1;
 	private ICandleMessage _prev2;
 	private bool _hadPosition;
+	private int _entriesOverall;
 	private readonly TimeZoneInfo _nyZone = TimeZoneInfo.FindSystemTimeZoneById("America/New_York");
 
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
@@ -53,6 +51,7 @@ public class Lanz50Strategy : Strategy
 	public int EndMinute { get => _endMinute.Value; set => _endMinute.Value = value; }
 	public bool EnableBuy { get => _enableBuy.Value; set => _enableBuy.Value = value; }
 	public bool EnableSell { get => _enableSell.Value; set => _enableSell.Value = value; }
+	public int MaxEntriesOverall { get => _maxEntriesOverall.Value; set => _maxEntriesOverall.Value = value; }
 
 	public Lanz50Strategy()
 	{
@@ -97,6 +96,10 @@ public class Lanz50Strategy : Strategy
 
 		_enableSell = Param(nameof(EnableSell), false)
 			.SetDisplay("Enable Sell", "Allow short trades", "Mode");
+
+		_maxEntriesOverall = Param(nameof(MaxEntriesOverall), 45)
+			.SetDisplay("Max Entries Overall", "Maximum entries per run", "Risk")
+			.SetRange(1, 1000);
 	}
 
 	/// <inheritdoc />
@@ -114,6 +117,8 @@ public class Lanz50Strategy : Strategy
 		_prev1 = null;
 		_prev2 = null;
 		_hadPosition = false;
+		_entriesOverall = 0;
+		_pipSize = 0m;
 	}
 
 	/// <inheritdoc />
@@ -122,11 +127,7 @@ public class Lanz50Strategy : Strategy
 		base.OnStarted2(time);
 
 		_pipSize = (Security?.PriceStep ?? 1m) * 10m;
-
-		StartProtection(
-			takeProfit: new Unit(TakeProfitPips * _pipSize, UnitTypes.Absolute),
-			stopLoss: new Unit(StopLossPips * _pipSize, UnitTypes.Absolute),
-			useMarketOrders: true);
+		_entriesOverall = 0;
 
 		var ema = new EMA { Length = EmaPeriod };
 
@@ -182,7 +183,7 @@ public class Lanz50Strategy : Strategy
 		}
 
 		var distanceOk = _lastEntryPrice == null || Math.Abs(candle.ClosePrice - _lastEntryPrice.Value) >= MinDistancePips * _pipSize;
-		var canOpen = _dailyCounter < MaxTrades && isWithinHours && distanceOk;
+		var canOpen = _entriesOverall < MaxEntriesOverall && _dailyCounter < MaxTrades && isWithinHours && distanceOk;
 
 		var bullish1 = candle.ClosePrice > candle.OpenPrice;
 		var bullish2 = _prev1?.ClosePrice > _prev1?.OpenPrice;
@@ -199,6 +200,7 @@ public class Lanz50Strategy : Strategy
 			var volume = Volume + Math.Abs(Position);
 			BuyMarket(volume);
 			_dailyCounter++;
+			_entriesOverall++;
 			_lastEntryPrice = candle.ClosePrice;
 			_hadPosition = true;
 		}
@@ -207,6 +209,7 @@ public class Lanz50Strategy : Strategy
 			var volume = Volume + Math.Abs(Position);
 			SellMarket(volume);
 			_dailyCounter++;
+			_entriesOverall++;
 			_lastEntryPrice = candle.ClosePrice;
 			_hadPosition = true;
 		}
@@ -217,10 +220,9 @@ public class Lanz50Strategy : Strategy
 
 	private void CloseAll()
 	{
-		CancelActiveOrders();
 		if (Position > 0)
-			SellMarket(Position);
+			SellMarket(Math.Abs(Position));
 		else if (Position < 0)
-			BuyMarket(-Position);
+			BuyMarket(Math.Abs(Position));
 	}
 }

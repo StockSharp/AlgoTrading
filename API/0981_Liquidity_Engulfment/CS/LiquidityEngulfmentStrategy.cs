@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -26,6 +23,7 @@ public class LiquidityEngulfmentStrategy : Strategy
 	private readonly StrategyParam<int> _stopLossPips;
 	private readonly StrategyParam<int> _takeProfitPips;
 	private readonly StrategyParam<bool> _enableTakeProfit;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private Highest _highest;
@@ -45,6 +43,7 @@ public class LiquidityEngulfmentStrategy : Strategy
 	private decimal _entryPrice;
 	private DateTimeOffset _entryTime;
 	private int _index;
+	private int _barsFromTrade;
 
 	public TradeModes Mode { get => _mode.Value; set => _mode.Value = value; }
 	public int UpperLookback { get => _upperLookback.Value; set => _upperLookback.Value = value; }
@@ -52,19 +51,46 @@ public class LiquidityEngulfmentStrategy : Strategy
 	public int StopLossPips { get => _stopLossPips.Value; set => _stopLossPips.Value = value; }
 	public int TakeProfitPips { get => _takeProfitPips.Value; set => _takeProfitPips.Value = value; }
 	public bool EnableTakeProfit { get => _enableTakeProfit.Value; set => _enableTakeProfit.Value = value; }
+	public int CooldownBars { get => _cooldownBars.Value; set => _cooldownBars.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public LiquidityEngulfmentStrategy()
 	{
 		_mode = Param(nameof(Mode), TradeModes.Both).SetDisplay("Mode", "Trading mode", "General");
-		_upperLookback = Param(nameof(UpperLookback), 10).SetGreaterThanZero().SetDisplay("Upper Lookback", "Upper liquidity", "Indicators");
-		_lowerLookback = Param(nameof(LowerLookback), 10).SetGreaterThanZero().SetDisplay("Lower Lookback", "Lower liquidity", "Indicators");
-		_stopLossPips = Param(nameof(StopLossPips), 10).SetGreaterThanZero().SetDisplay("Stop Loss", "Stop in pips", "Risk");
-		_takeProfitPips = Param(nameof(TakeProfitPips), 20).SetGreaterThanZero().SetDisplay("Take Profit", "Target in pips", "Risk");
+		_upperLookback = Param(nameof(UpperLookback), 14).SetGreaterThanZero().SetDisplay("Upper Lookback", "Upper liquidity", "Indicators");
+		_lowerLookback = Param(nameof(LowerLookback), 14).SetGreaterThanZero().SetDisplay("Lower Lookback", "Lower liquidity", "Indicators");
+		_stopLossPips = Param(nameof(StopLossPips), 25).SetGreaterThanZero().SetDisplay("Stop Loss", "Stop in pips", "Risk");
+		_takeProfitPips = Param(nameof(TakeProfitPips), 50).SetGreaterThanZero().SetDisplay("Take Profit", "Target in pips", "Risk");
 		_enableTakeProfit = Param(nameof(EnableTakeProfit), true).SetDisplay("Enable TP", "Use take profit", "Risk");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Type of candles", "General");
+		_cooldownBars = Param(nameof(CooldownBars), 12).SetGreaterThanZero().SetDisplay("Cooldown Bars", "Bars between trade actions", "Risk");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(10).TimeFrame()).SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_highest = null;
+		_lowest = null;
+		_prev = null;
+		_lastBullOpen = null;
+		_lastBearOpen = null;
+		_lastBullIndex = 0;
+		_lastBearIndex = 0;
+		_lastSignal = string.Empty;
+		_touchedLower = false;
+		_touchedUpper = false;
+		_lockedBull = false;
+		_lockedBear = false;
+		_sinceTouch = -1;
+		_entryPrice = 0m;
+		_entryTime = DateTimeOffset.MinValue;
+		_index = 0;
+		_barsFromTrade = int.MaxValue;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
@@ -85,6 +111,7 @@ public class LiquidityEngulfmentStrategy : Strategy
 		_entryPrice = 0m;
 		_entryTime = DateTimeOffset.MinValue;
 		_index = 0;
+		_barsFromTrade = int.MaxValue;
 
 		var sub = SubscribeCandles(CandleType);
 		sub.Bind(Process).Start();
@@ -111,6 +138,8 @@ public class LiquidityEngulfmentStrategy : Strategy
 			_index++;
 			return;
 		}
+
+		_barsFromTrade++;
 
 		var highest = highVal.ToDecimal();
 		var lowest = lowVal.ToDecimal();
@@ -168,40 +197,55 @@ public class LiquidityEngulfmentStrategy : Strategy
 		var step = Security.PriceStep ?? 1m;
 		var canLong = Mode != TradeModes.BearishOnly;
 		var canShort = Mode != TradeModes.BullishOnly;
+		var canTradeNow = _barsFromTrade >= CooldownBars;
 
-		if (canShort && bearSignal && Position >= 0)
+		if (canTradeNow && canShort && bearSignal && Position == 0)
 		{
-			SellMarket(Volume + Position);
+			SellMarket(Volume);
 			_entryPrice = candle.ClosePrice;
 			_entryTime = candle.OpenTime;
+			_barsFromTrade = 0;
 		}
-		else if (canLong && bullSignal && Position <= 0)
+		else if (canTradeNow && canLong && bullSignal && Position == 0)
 		{
-			BuyMarket(Volume + Math.Abs(Position));
+			BuyMarket(Volume);
 			_entryPrice = candle.ClosePrice;
 			_entryTime = candle.OpenTime;
+			_barsFromTrade = 0;
 		}
-		else
+		else if (canTradeNow)
 		{
 			if (Position < 0 && bullSignal && candle.OpenTime > _entryTime)
+			{
 				BuyMarket(Math.Abs(Position));
+				_barsFromTrade = 0;
+			}
 			else if (Position > 0 && bearSignal && candle.OpenTime > _entryTime)
+			{
 				SellMarket(Position);
+				_barsFromTrade = 0;
+			}
 		}
 
-		if (Position > 0)
+		if (canTradeNow && Position > 0)
 		{
 			var stop = _entryPrice - StopLossPips * step;
 			var tp = _entryPrice + TakeProfitPips * step;
 			if (candle.ClosePrice <= stop || (EnableTakeProfit && candle.ClosePrice >= tp))
+			{
 				SellMarket(Position);
+				_barsFromTrade = 0;
+			}
 		}
-		else if (Position < 0)
+		else if (canTradeNow && Position < 0)
 		{
 			var stop = _entryPrice + StopLossPips * step;
 			var tp = _entryPrice - TakeProfitPips * step;
 			if (candle.ClosePrice >= stop || (EnableTakeProfit && candle.ClosePrice <= tp))
+			{
 				BuyMarket(Math.Abs(Position));
+				_barsFromTrade = 0;
+			}
 		}
 
 		_prev = candle;

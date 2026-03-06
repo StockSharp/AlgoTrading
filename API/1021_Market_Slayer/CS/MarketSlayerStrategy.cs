@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
@@ -40,6 +39,22 @@ public class MarketSlayerStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_trendWmaHigh = null;
+		_trendWmaLow = null;
+		_shortWma = null;
+		_longWma = null;
+		_trendHlv = 0;
+		_isTrendBullish = false;
+		_prevShort = null;
+		_prevLong = null;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);

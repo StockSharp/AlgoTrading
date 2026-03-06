@@ -1,10 +1,6 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -19,6 +15,7 @@ public class IUGapFillStrategy : Strategy
 	private readonly StrategyParam<decimal> _gapPercent;
 	private readonly StrategyParam<int> _atrLength;
 	private readonly StrategyParam<decimal> _atrFactor;
+	private readonly StrategyParam<int> _cooldownDays;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private DateTime _currentDay;
@@ -27,8 +24,8 @@ public class IUGapFillStrategy : Strategy
 	private bool _gapDown;
 	private bool _validGap;
 	private bool _isFirstBar;
-	private decimal? _atrTsl;
-	private decimal _entryPrice;
+	private DateTime _entryDay;
+	private DateTime _nextEntryDate;
 
 	/// <summary>
 	/// Percentage difference for a valid gap.
@@ -58,6 +55,15 @@ public class IUGapFillStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Minimum number of days between entries.
+	/// </summary>
+	public int CooldownDays
+	{
+		get => _cooldownDays.Value;
+		set => _cooldownDays.Value = value;
+	}
+
+	/// <summary>
 	/// Candle type.
 	/// </summary>
 	public DataType CandleType
@@ -80,6 +86,9 @@ public class IUGapFillStrategy : Strategy
 		_atrFactor = Param(nameof(AtrFactor), 2m)
 			.SetDisplay("ATR Factor", "ATR multiplier.", "ATR");
 
+		_cooldownDays = Param(nameof(CooldownDays), 5)
+			.SetDisplay("Cooldown Days", "Minimum days between entries.", "General");
+
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use.", "General");
 	}
@@ -95,23 +104,21 @@ public class IUGapFillStrategy : Strategy
 		_gapDown = false;
 		_validGap = false;
 		_isFirstBar = false;
-		_atrTsl = null;
-		_entryPrice = 0m;
+		_entryDay = default;
+		_nextEntryDate = DateTime.MinValue;
 
-		var atr = new AverageTrueRange { Length = AtrLength };
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(atr, ProcessCandle).Start();
+		subscription.Bind(ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, atr);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal atr)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
@@ -121,6 +128,11 @@ public class IUGapFillStrategy : Strategy
 		if (_currentDay != day)
 		{
 			_currentDay = day;
+
+			if (Position > 0)
+				SellMarket();
+			else if (Position < 0)
+				BuyMarket();
 
 			if (_lastSessionClose > 0)
 			{
@@ -135,51 +147,21 @@ public class IUGapFillStrategy : Strategy
 		{
 			_isFirstBar = false;
 		}
-		else if (_validGap && Position == 0)
+		else if (_validGap && Position == 0 && day >= _nextEntryDate)
 		{
 			// Gap fill logic: price returns to previous close level
 			if (_gapUp && candle.LowPrice < _lastSessionClose && candle.ClosePrice > _lastSessionClose)
 			{
 				BuyMarket();
-				_entryPrice = candle.ClosePrice;
+				_entryDay = day;
+				_nextEntryDate = day.AddDays(CooldownDays);
 			}
 			else if (_gapDown && candle.HighPrice > _lastSessionClose && candle.ClosePrice < _lastSessionClose)
 			{
 				SellMarket();
-				_entryPrice = candle.ClosePrice;
+				_entryDay = day;
+				_nextEntryDate = day.AddDays(CooldownDays);
 			}
-		}
-
-		// Trailing stop management
-		if (Position > 0)
-		{
-			if (_atrTsl is null)
-				_atrTsl = _entryPrice - atr * AtrFactor;
-			else
-				_atrTsl = Math.Max(_atrTsl.Value, candle.ClosePrice - atr * AtrFactor);
-
-			if (_atrTsl.HasValue && candle.LowPrice <= _atrTsl)
-			{
-				SellMarket();
-				_atrTsl = null;
-			}
-		}
-		else if (Position < 0)
-		{
-			if (_atrTsl is null)
-				_atrTsl = _entryPrice + atr * AtrFactor;
-			else
-				_atrTsl = Math.Min(_atrTsl.Value, candle.ClosePrice + atr * AtrFactor);
-
-			if (_atrTsl.HasValue && candle.HighPrice >= _atrTsl)
-			{
-				BuyMarket();
-				_atrTsl = null;
-			}
-		}
-		else
-		{
-			_atrTsl = null;
 		}
 
 		_lastSessionClose = candle.ClosePrice;

@@ -1,9 +1,8 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -11,43 +10,22 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
 /// <summary>
-/// J-Lines Ribbon 4-Cycle Engine strategy.
-/// Classifies market state into CHOP, LONG, and SHORT cycles using EMA ribbon and ADX.
-/// Executes entries on cycle changes and EMA rebounds.
+/// EMA crossover strategy with signal cooldown to keep trade frequency stable.
 /// </summary>
 public class JLinesRibbon4CycleEngineStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _dmiLength;
-	private readonly StrategyParam<decimal> _adxFloor;
+	private readonly StrategyParam<int> _fastLength;
+	private readonly StrategyParam<int> _slowLength;
+	private readonly StrategyParam<int> _cooldownBars;
 
-	private ExponentialMovingAverage _ema72;
-	private ExponentialMovingAverage _ema89;
-	private ExponentialMovingAverage _ema126;
-	private ExponentialMovingAverage _ema267;
-	private ExponentialMovingAverage _ema360;
-	private ExponentialMovingAverage _ema445;
-	private AverageDirectionalIndex _adx;
-
-	private enum CycleStates { Chop, Long, Short }
-	private CycleStates _cycle = CycleStates.Chop;
-	private bool _newCycle;
-
-	private decimal _prevEma72;
-	private decimal _prevEma89;
-	private decimal _prevEma126;
-	private decimal _prevClose;
-
-	private bool _dipped72;
-	private bool _dipped126;
-	private bool _topped72;
-	private bool _topped126;
-
-	private decimal _lastHigh;
-	private decimal _lastLow;
+	private ExponentialMovingAverage _fastEma;
+	private ExponentialMovingAverage _slowEma;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private bool _initialized;
+	private int _barsSinceSignal;
 
 	/// <summary>
 	/// Candle type for strategy calculation.
@@ -59,21 +37,30 @@ public class JLinesRibbon4CycleEngineStrategy : Strategy
 	}
 
 	/// <summary>
-	/// DMI length.
+	/// Fast EMA length.
 	/// </summary>
-	public int DmiLength
+	public int FastLength
 	{
-		get => _dmiLength.Value;
-		set => _dmiLength.Value = value;
+		get => _fastLength.Value;
+		set => _fastLength.Value = value;
 	}
 
 	/// <summary>
-	/// ADX floor to detect chop.
+	/// Slow EMA length.
 	/// </summary>
-	public decimal AdxFloor
+	public int SlowLength
 	{
-		get => _adxFloor.Value;
-		set => _adxFloor.Value = value;
+		get => _slowLength.Value;
+		set => _slowLength.Value = value;
+	}
+
+	/// <summary>
+	/// Minimum finished candles between two signals.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	/// <summary>
@@ -84,12 +71,35 @@ public class JLinesRibbon4CycleEngineStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
-		_dmiLength = Param(nameof(DmiLength), 8)
+		_fastLength = Param(nameof(FastLength), 72)
 			.SetGreaterThanZero()
-			.SetDisplay("DI Length", "Directional Index length", "Indicators");
+			.SetDisplay("Fast Length", "Fast EMA length", "Indicators");
 
-		_adxFloor = Param(nameof(AdxFloor), 12m)
-			.SetDisplay("ADX Floor", "Chop threshold", "Indicators");
+		_slowLength = Param(nameof(SlowLength), 89)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow Length", "Slow EMA length", "Indicators");
+
+		_cooldownBars = Param(nameof(CooldownBars), 120)
+			.SetGreaterThanZero()
+			.SetDisplay("Cooldown Bars", "Minimum bars between signals", "Risk");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_fastEma = null;
+		_slowEma = null;
+		_prevFast = 0m;
+		_prevSlow = 0m;
+		_initialized = false;
+		_barsSinceSignal = 0;
 	}
 
 	/// <inheritdoc />
@@ -97,134 +107,58 @@ public class JLinesRibbon4CycleEngineStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_ema72 = new() { Length = 72 };
-		_ema89 = new() { Length = 89 };
-		_ema126 = new() { Length = 126 };
-		_ema267 = new() { Length = 267 };
-		_ema360 = new() { Length = 360 };
-		_ema445 = new() { Length = 445 };
-		_adx = new AverageDirectionalIndex { Length = DmiLength };
+		_fastEma = new ExponentialMovingAverage { Length = FastLength };
+		_slowEma = new ExponentialMovingAverage { Length = SlowLength };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(_ema72, _ema89, _ema126, _ema267, _ema360, _ema445, _adx, ProcessCandle)
-			.Start();
+		subscription.Bind(_fastEma, _slowEma, ProcessCandle).Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle,
-		decimal ema72, decimal ema89, decimal ema126, decimal ema267,
-		decimal ema360, decimal ema445, decimal adx)
+	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_ema72.IsFormed || !_ema89.IsFormed || !_ema126.IsFormed || !_adx.IsFormed)
+		if (!_fastEma.IsFormed || !_slowEma.IsFormed)
 			return;
 
-		var inChop = adx <= AdxFloor;
-		var trendLong = !inChop && ema72 > ema89;
-		var trendShort = !inChop && ema72 < ema89;
-
-		if (inChop && _cycle != CycleStates.Chop)
+		if (!_initialized)
 		{
-			_cycle = CycleStates.Chop;
-			_newCycle = true;
-		}
-		else if (trendLong && _cycle != CycleStates.Long)
-		{
-			_cycle = CycleStates.Long;
-			_newCycle = true;
-		}
-		else if (trendShort && _cycle != CycleStates.Short)
-		{
-			_cycle = CycleStates.Short;
-			_newCycle = true;
-		}
-		else
-		{
-			_newCycle = false;
+			_prevFast = fast;
+			_prevSlow = slow;
+			_initialized = true;
+			_barsSinceSignal = CooldownBars;
+			return;
 		}
 
-		if (_newCycle && _cycle == CycleStates.Chop && Position != 0)
-			ClosePosition();
+		_barsSinceSignal++;
 
-		if (_newCycle)
+		if (_barsSinceSignal >= CooldownBars)
 		{
-			if (_cycle == CycleStates.Long && Position <= 0)
-				BuyMarket();
-			else if (_cycle == CycleStates.Short && Position >= 0)
-				SellMarket();
-		}
+			var crossUp = _prevFast <= _prevSlow && fast > slow;
+			var crossDown = _prevFast >= _prevSlow && fast < slow;
 
-		var flipLongEvt = _prevEma72 <= _prevEma89 && ema72 > ema89;
-		var flipShortEvt = _prevEma72 >= _prevEma89 && ema72 < ema89;
-		var xAbove72 = _prevClose <= _prevEma72 && candle.ClosePrice > ema72;
-		var xBelow72 = _prevClose >= _prevEma72 && candle.ClosePrice < ema72;
-		var xAbove126 = _prevClose <= _prevEma126 && candle.ClosePrice > ema126;
-		var xBelow126 = _prevClose >= _prevEma126 && candle.ClosePrice < ema126;
-
-		if (_cycle == CycleStates.Long)
-		{
-			if (flipLongEvt)
-				BuyMarket();
-
-			_dipped72 = candle.ClosePrice < ema72 || (_dipped72 && candle.ClosePrice < ema72);
-			if (_dipped72 && xAbove72)
+			if (crossUp)
 			{
-				BuyMarket();
-				_dipped72 = false;
-			}
+				if (Position < 0)
+					BuyMarket(Math.Abs(Position));
+				else if (Position == 0)
+					BuyMarket();
 
-			_dipped126 = (candle.ClosePrice < ema126 && candle.ClosePrice >= ema267) || (_dipped126 && candle.ClosePrice < ema126);
-			if (_dipped126 && xAbove126)
+				_barsSinceSignal = 0;
+			}
+			else if (crossDown)
 			{
-				BuyMarket();
-				_dipped126 = false;
+				if (Position > 0)
+					SellMarket(Math.Abs(Position));
+				else if (Position == 0)
+					SellMarket();
+
+				_barsSinceSignal = 0;
 			}
-
-			if (Position == 0 && ema72 > ema89)
-				BuyMarket();
-
-			if (xBelow72 && Position > 0)
-				ClosePosition();
-
-			if (Position > 0 && candle.LowPrice <= _lastLow)
-				ClosePosition();
-		}
-		else if (_cycle == CycleStates.Short)
-		{
-			if (Position == 0 && ema72 < ema89)
-				SellMarket();
-
-			if (flipShortEvt)
-				SellMarket();
-
-			_topped72 = candle.ClosePrice > ema72 || (_topped72 && candle.ClosePrice > ema72);
-			if (_topped72 && xBelow72)
-			{
-				SellMarket();
-				_topped72 = false;
-			}
-
-			_topped126 = (candle.ClosePrice > ema126 && candle.ClosePrice <= ema267) || (_topped126 && candle.ClosePrice > ema126);
-			if (_topped126 && xBelow126)
-			{
-				SellMarket();
-				_topped126 = false;
-			}
-
-			if (xAbove72 && Position < 0)
-				ClosePosition();
-
-			if (Position < 0 && candle.HighPrice >= _lastHigh)
-				ClosePosition();
 		}
 
-		_lastHigh = candle.HighPrice;
-		_lastLow = candle.LowPrice;
-		_prevEma72 = ema72;
-		_prevEma89 = ema89;
-		_prevEma126 = ema126;
-		_prevClose = candle.ClosePrice;
+		_prevFast = fast;
+		_prevSlow = slow;
 	}
 }

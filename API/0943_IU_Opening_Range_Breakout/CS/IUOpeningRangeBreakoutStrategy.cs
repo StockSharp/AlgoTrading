@@ -1,12 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
-
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -22,6 +17,7 @@ public class IUOpeningRangeBreakoutStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<decimal> _riskReward;
 	private readonly StrategyParam<int> _maxTrades;
+	private readonly StrategyParam<int> _cooldownDays;
 	private readonly StrategyParam<TimeSpan> _endTime;
 
 	private decimal _orHigh;
@@ -31,6 +27,7 @@ public class IUOpeningRangeBreakoutStrategy : Strategy
 	private decimal _targetPrice;
 	private int _tradesToday;
 	private DateTime _currentDay;
+	private DateTime _nextTradeDate;
 	private ICandleMessage _prevCandle;
 
 	/// <summary>
@@ -61,6 +58,15 @@ public class IUOpeningRangeBreakoutStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Minimum days between entries.
+	/// </summary>
+	public int CooldownDays
+	{
+		get => _cooldownDays.Value;
+		set => _cooldownDays.Value = value;
+	}
+
+	/// <summary>
 	/// Time to close all positions.
 	/// </summary>
 	public TimeSpan EndTime
@@ -83,9 +89,12 @@ public class IUOpeningRangeBreakoutStrategy : Strategy
 			
 			.SetOptimize(1m, 3m, 0.5m);
 
-		_maxTrades = Param(nameof(MaxTrades), 2)
+		_maxTrades = Param(nameof(MaxTrades), 1)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Trades", "Maximum trades per day", "General");
+
+		_cooldownDays = Param(nameof(CooldownDays), 60)
+			.SetDisplay("Cooldown Days", "Minimum days between entries", "General");
 
 		_endTime = Param(nameof(EndTime), new TimeSpan(15, 0, 0))
 			.SetDisplay("End Time", "Daily close time (UTC)", "General");
@@ -98,11 +107,27 @@ public class IUOpeningRangeBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_orHigh = 0m;
+		_orLow = 0m;
+		_rangeSet = false;
+		_stopPrice = 0m;
+		_targetPrice = 0m;
+		_tradesToday = 0;
+		_currentDay = default;
+		_nextTradeDate = DateTime.MinValue;
+		_prevCandle = null;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
 		_currentDay = time.Date;
+		_nextTradeDate = DateTime.MinValue;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
@@ -135,22 +160,27 @@ public class IUOpeningRangeBreakoutStrategy : Strategy
 		// Close positions at end of day
 		if (openTime.TimeOfDay >= EndTime && Position != 0)
 		{
-			ClosePosition();
+			if (Position > 0)
+				SellMarket(Math.Abs(Position));
+			else if (Position < 0)
+				BuyMarket(Math.Abs(Position));
 		}
 
-		if (Position == 0 && _tradesToday < MaxTrades)
+		if (Position == 0 && _tradesToday < MaxTrades && openTime.Date >= _nextTradeDate)
 		{
-			if (candle.ClosePrice > _orHigh)
+			if (candle.HighPrice > _orHigh)
 			{
 				BuyMarket();
 				_tradesToday++;
+				_nextTradeDate = openTime.Date.AddDays(CooldownDays);
 				_stopPrice = _prevCandle.LowPrice;
 				_targetPrice = candle.ClosePrice + (candle.ClosePrice - _stopPrice) * RiskReward;
 			}
-			else if (candle.ClosePrice < _orLow)
+			else if (candle.LowPrice < _orLow)
 			{
 				SellMarket();
 				_tradesToday++;
+				_nextTradeDate = openTime.Date.AddDays(CooldownDays);
 				_stopPrice = _prevCandle.HighPrice;
 				_targetPrice = candle.ClosePrice - (_stopPrice - candle.ClosePrice) * RiskReward;
 			}

@@ -85,6 +85,26 @@ public class IUHigherTimeframeMACrossStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	=> [(Security, Ma1CandleType), (Security, Ma2CandleType)];
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_ma1 = null;
+		_ma2 = null;
+		_prevMa1 = null;
+		_prevMa2 = null;
+		_entryPrice = null;
+		_stopPrice = null;
+		_takePrice = null;
+		_prevLow = null;
+		_prevHigh = null;
+		_lastMa1Candle = null;
+		_ma1Indicator = null;
+		_ma2Indicator = null;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);

@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -29,9 +26,6 @@ public class LinearOnMacdStrategy : Strategy
 	private MovingAverageConvergenceDivergenceSignal _priceMacd = null!;
 	private LinearRegression _priceReg = null!;
 
-	private decimal _prevPredicted;
-	private decimal _prevObvMacd;
-
 	public int FastLength { get => _fastLength.Value; set => _fastLength.Value = value; }
 	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
 	public int SignalLength { get => _signalLength.Value; set => _signalLength.Value = value; }
@@ -51,9 +45,6 @@ public class LinearOnMacdStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_prevPredicted = 0m;
-		_prevObvMacd = 0m;
-
 		_obv = new OnBalanceVolume();
 		_obvMacd = new MovingAverageConvergenceDivergenceSignal
 		{
@@ -64,7 +55,15 @@ public class LinearOnMacdStrategy : Strategy
 			},
 			SignalMa = { Length = SignalLength }
 		};
-		_priceMacd = new MovingAverageConvergenceDivergenceSignal();
+		_priceMacd = new MovingAverageConvergenceDivergenceSignal
+		{
+			Macd =
+			{
+				ShortMa = { Length = FastLength },
+				LongMa = { Length = SlowLength },
+			},
+			SignalMa = { Length = SignalLength }
+		};
 		_priceReg = new LinearRegression { Length = Lookback };
 
 		var subscription = SubscribeCandles(CandleType);
@@ -96,6 +95,9 @@ public class LinearOnMacdStrategy : Strategy
 		var priceMacdResult = _priceMacd.Process(CreateFinalValue(_priceMacd, candle.ClosePrice, candle.ServerTime));
 		var regResult = _priceReg.Process(CreateFinalValue(_priceReg, candle.ClosePrice, candle.ServerTime));
 
+		if (!_obvMacd.IsFormed || !_priceMacd.IsFormed || !_priceReg.IsFormed)
+			return;
+
 		if (obvMacdResult is not IMovingAverageConvergenceDivergenceSignalValue obvMacdTyped)
 			return;
 		if (priceMacdResult is not IMovingAverageConvergenceDivergenceSignalValue priceMacdTyped)
@@ -113,12 +115,12 @@ public class LinearOnMacdStrategy : Strategy
 		var longCondition = priceMacd > priceSignal && obvMacd > obvSignal && candle.ClosePrice > predicted;
 		var shortCondition = obvMacd < obvSignal && priceMacd < priceSignal && candle.ClosePrice < predicted;
 
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
 		if (longCondition && Position <= 0)
 			BuyMarket(Volume + Math.Abs(Position));
 		else if (shortCondition && Position >= 0)
 			SellMarket(Volume + Math.Abs(Position));
-
-		_prevPredicted = predicted;
-		_prevObvMacd = obvMacd;
 	}
 }

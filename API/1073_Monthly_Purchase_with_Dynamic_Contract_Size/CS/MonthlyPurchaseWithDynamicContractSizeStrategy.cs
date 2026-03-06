@@ -121,7 +121,7 @@ public class MonthlyPurchaseWithDynamicContractSizeStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var equity = Portfolio.CurrentValue;
+		var equity = Portfolio.CurrentValue ?? 0m;
 		if (_highestEquity == null || equity > _highestEquity)
 			_highestEquity = equity;
 
@@ -133,9 +133,12 @@ public class MonthlyPurchaseWithDynamicContractSizeStrategy : Strategy
 		var lastMonth = _lastBuyTime?.Month;
 		var lastYear = _lastBuyTime?.Year;
 
-		if (currentDay == BuyDay && (lastMonth != candle.OpenTime.Month || lastYear != candle.OpenTime.Year))
+		if (currentDay >= BuyDay && (lastMonth != candle.OpenTime.Month || lastYear != candle.OpenTime.Year))
 		{
-			var contracts = (int)(equity * PercentOfEquity / candle.ClosePrice);
+			var effectiveEquity = equity > candle.ClosePrice ? equity : candle.ClosePrice;
+			var contracts = (int)(effectiveEquity * PercentOfEquity / candle.ClosePrice);
+			if (contracts <= 0)
+				contracts = 1;
 			if (contracts > 0)
 			{
 				BuyMarket(contracts);

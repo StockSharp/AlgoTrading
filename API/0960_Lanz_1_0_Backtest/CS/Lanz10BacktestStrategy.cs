@@ -99,6 +99,7 @@ public class Lanz10BacktestStrategy : Strategy
 		_baseLevel = 0m;
 		_orderSent = false;
 		_entryOrder = null;
+		_pipSize = 0m;
 	}
 
 	protected override void OnStarted2(DateTime time)

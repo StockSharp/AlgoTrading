@@ -87,6 +87,8 @@ public class VwapMeanReversionStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
+		_atr = null;
+		_vwap = null;
 		_currentAtr = default;
 		_currentVwap = default;
 	}
@@ -130,7 +132,14 @@ public class VwapMeanReversionStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		_currentVwap = _vwap.Process(candle).ToDecimal();
+		try
+		{
+			_currentVwap = _vwap.Process(candle).ToDecimal();
+		}
+		catch
+		{
+			return;
+		}
 
 		_currentAtr = atr;
 		ProcessStrategy(candle.ClosePrice);

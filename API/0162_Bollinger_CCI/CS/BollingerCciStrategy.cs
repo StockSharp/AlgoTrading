@@ -28,8 +28,11 @@ public class BollingerCciStrategy : Strategy
 	private readonly StrategyParam<int> _cciPeriod;
 	private readonly StrategyParam<decimal> _cciOversold;
 	private readonly StrategyParam<decimal> _cciOverbought;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<Unit> _stopLoss;
 	private readonly StrategyParam<DataType> _candleType;
+
+	private int _cooldown;
 
 	/// <summary>
 	/// Bollinger Bands period.
@@ -77,6 +80,15 @@ public class BollingerCciStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Bars to wait between trades.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Stop-loss value.
 	/// </summary>
 	public Unit StopLoss
@@ -117,6 +129,10 @@ public class BollingerCciStrategy : Strategy
 		_cciOverbought = Param(nameof(CciOverbought), 100m)
 			.SetDisplay("CCI Overbought", "CCI level to consider market overbought", "CCI Parameters");
 
+		_cooldownBars = Param(nameof(CooldownBars), 80)
+			.SetRange(5, 500)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "General");
+
 		_stopLoss = Param(nameof(StopLoss), new Unit(2, UnitTypes.Absolute))
 			.SetDisplay("Stop Loss", "Stop loss in ATR or value", "Risk Management");
 
@@ -134,8 +150,7 @@ public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		Indicators.Clear();
+		_cooldown = 0;
 	}
 
 /// <inheritdoc />
@@ -177,8 +192,6 @@ protected override void OnStarted2(DateTime time)
 			DrawOwnTrades(area);
 		}
 
-		// Start protective orders
-		StartProtection(new(), StopLoss);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bollingerValue, IIndicatorValue cciValue)
@@ -187,6 +200,9 @@ protected override void OnStarted2(DateTime time)
 			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		if (!bollingerValue.IsFormed || !cciValue.IsFormed)
 			return;
 
 		// In this function we receive only the middle band value from the Bollinger Bands indicator
@@ -206,34 +222,43 @@ protected override void OnStarted2(DateTime time)
 			$"Upper Band: {upperBand}, Middle Band: {middleBand}, Lower Band: {lowerBand}, " +
 			$"CCI: {cciTyped}");
 
-		// Trading rules
-		if (price < lowerBand && cciTyped < CciOversold && Position <= 0)
+		if (_cooldown > 0)
 		{
-			// Buy signal - price below lower band and CCI oversold
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
-			
-			LogInfo($"Buy signal: Price below lower Bollinger Band and CCI oversold ({cciTyped} < {CciOversold}). Volume: {volume}");
+			_cooldown--;
+			return;
 		}
-		else if (price > upperBand && cciTyped > CciOverbought && Position >= 0)
+
+		// Trading rules
+		var lowerTouch = price <= lowerBand * 1.002m;
+		var upperTouch = price >= upperBand * 0.998m;
+
+		if (lowerTouch && cciTyped < CciOversold && Position == 0)
 		{
-			// Sell signal - price above upper band and CCI overbought
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
+			BuyMarket();
+			_cooldown = CooldownBars;
 			
-			LogInfo($"Sell signal: Price above upper Bollinger Band and CCI overbought ({cciTyped} > {CciOverbought}). Volume: {volume}");
+			LogInfo($"Buy signal: Price below lower Bollinger Band and CCI oversold ({cciTyped} < {CciOversold}).");
+		}
+		else if (upperTouch && cciTyped > CciOverbought && Position == 0)
+		{
+			SellMarket();
+			_cooldown = CooldownBars;
+			
+			LogInfo($"Sell signal: Price above upper Bollinger Band and CCI overbought ({cciTyped} > {CciOverbought}).");
 		}
 		// Exit conditions
 		else if (price > middleBand && Position > 0)
 		{
 			// Exit long position when price returns to the middle band
-			SellMarket(Position);
+			SellMarket();
+			_cooldown = CooldownBars;
 			LogInfo($"Exit long: Price returned to middle band. Position: {Position}");
 		}
 		else if (price < middleBand && Position < 0)
 		{
 			// Exit short position when price returns to the middle band
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
+			_cooldown = CooldownBars;
 			LogInfo($"Exit short: Price returned to middle band. Position: {Position}");
 		}
 	}

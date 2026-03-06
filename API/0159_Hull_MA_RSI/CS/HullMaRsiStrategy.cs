@@ -28,9 +28,12 @@ public class HullMaRsiStrategy : Strategy
 	private readonly StrategyParam<decimal> _rsiOversold;
 	private readonly StrategyParam<decimal> _rsiOverbought;
 	private readonly StrategyParam<Unit> _stopLoss;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
+	private decimal _hmaValue;
 	private decimal _prevHmaValue;
+	private int _cooldown;
 
 	/// <summary>
 	/// Hull Moving Average period.
@@ -78,6 +81,15 @@ public class HullMaRsiStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Bars to wait between trades.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Candle type used for strategy.
 	/// </summary>
 	public DataType CandleType
@@ -110,6 +122,10 @@ public class HullMaRsiStrategy : Strategy
 		_stopLoss = Param(nameof(StopLoss), new Unit(2, UnitTypes.Absolute))
 			.SetDisplay("Stop Loss", "Stop loss in ATR or value", "Risk Management");
 
+		_cooldownBars = Param(nameof(CooldownBars), 130)
+			.SetRange(5, 500)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "General");
+
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type for strategy", "General");
 
@@ -127,7 +143,9 @@ public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 			base.OnReseted();
 
+			_hmaValue = 0;
 			_prevHmaValue = 0;
+			_cooldown = 0;
 	}
 
 	/// <inheritdoc />
@@ -142,9 +160,10 @@ public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 			// Setup candle subscription
 			var subscription = SubscribeCandles(CandleType);
 		
-		// Bind indicators to candles
+		// Store HMA value in field, process logic on RSI callback.
+		subscription.Bind(hma, OnHma);
 		subscription
-			.Bind(hma, rsi, ProcessCandle)
+			.Bind(rsi, ProcessCandle)
 			.Start();
 
 		// Setup chart visualization if available
@@ -164,11 +183,14 @@ public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 			DrawOwnTrades(area);
 		}
 
-		// Start protective orders
-		StartProtection(new(), StopLoss);
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal hmaValue, decimal rsiValue)
+	private void OnHma(ICandleMessage candle, decimal hmaValue)
+	{
+		_hmaValue = hmaValue;
+	}
+
+	private void ProcessCandle(ICandleMessage candle, decimal rsiValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
@@ -176,47 +198,59 @@ public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
+		if (_hmaValue == 0)
+			return;
+
+		if (_prevHmaValue == 0)
+		{
+			_prevHmaValue = _hmaValue;
+			return;
+		}
+
 		// Determine if HMA is rising or falling
-		var isHmaRising = _prevHmaValue != 0 && hmaValue > _prevHmaValue;
-		var isHmaFalling = _prevHmaValue != 0 && hmaValue < _prevHmaValue;
+		var isHmaRising = _prevHmaValue != 0 && _hmaValue > _prevHmaValue;
+		var isHmaFalling = _prevHmaValue != 0 && _hmaValue < _prevHmaValue;
 
 		LogInfo($"Candle: {candle.OpenTime}, Close: {candle.ClosePrice}, " +
-			   $"HMA: {hmaValue}, Previous HMA: {_prevHmaValue}, " +
+			   $"HMA: {_hmaValue}, Previous HMA: {_prevHmaValue}, " +
 			   $"HMA Rising: {isHmaRising}, HMA Falling: {isHmaFalling}, " +
 			   $"RSI: {rsiValue}");
 
-		// Trading rules
-		if (isHmaRising && rsiValue < RsiOversold && Position <= 0)
+		if (_cooldown > 0)
 		{
-			// Buy signal - HMA rising and RSI oversold
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
-			
-			LogInfo($"Buy signal: HMA rising and RSI oversold ({rsiValue} < {RsiOversold}). Volume: {volume}");
+			_cooldown--;
+			_prevHmaValue = _hmaValue;
+			return;
 		}
-		else if (isHmaFalling && rsiValue > RsiOverbought && Position >= 0)
+
+		// Trading rules
+		if (isHmaRising && rsiValue < RsiOversold && Position == 0)
 		{
-			// Sell signal - HMA falling and RSI overbought
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
-			
-			LogInfo($"Sell signal: HMA falling and RSI overbought ({rsiValue} > {RsiOverbought}). Volume: {volume}");
+			BuyMarket();
+			_cooldown = CooldownBars;
+			LogInfo($"Buy signal: HMA rising and RSI oversold ({rsiValue} < {RsiOversold}).");
+		}
+		else if (isHmaFalling && rsiValue > RsiOverbought && Position == 0)
+		{
+			SellMarket();
+			_cooldown = CooldownBars;
+			LogInfo($"Sell signal: HMA falling and RSI overbought ({rsiValue} > {RsiOverbought}).");
 		}
 		// Exit conditions based on HMA direction change
 		else if (isHmaFalling && Position > 0)
 		{
-			// Exit long position when HMA starts falling
-			SellMarket(Position);
+			SellMarket();
+			_cooldown = CooldownBars;
 			LogInfo($"Exit long: HMA started falling. Position: {Position}");
 		}
 		else if (isHmaRising && Position < 0)
 		{
-			// Exit short position when HMA starts rising
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
+			_cooldown = CooldownBars;
 			LogInfo($"Exit short: HMA started rising. Position: {Position}");
 		}
 
 		// Update HMA value for next iteration
-		_prevHmaValue = hmaValue;
+		_prevHmaValue = _hmaValue;
 	}
 }

@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
 
 using Ecng.Common;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -12,55 +9,97 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// MOC Delta MOO Entry strategy.
-/// Uses volume delta from a rolling window to generate momentum entries.
+/// Momentum strategy based on aggregated volume delta windows.
 /// </summary>
 public class MocDeltaMooEntryStrategy : Strategy
 {
-	private readonly StrategyParam<int> _smaLength;
-	private readonly StrategyParam<int> _deltaWindow;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _deltaWindow;
+	private readonly StrategyParam<decimal> _deltaThresholdPercent;
+	private readonly StrategyParam<int> _signalCooldownBars;
 
-	private SMA _smaFast;
-	private SMA _smaSlow;
+	private decimal _windowBuyVolume;
+	private decimal _windowSellVolume;
+	private int _windowBarCount;
+	private int _barsFromSignal;
 
-	private decimal _sessionBuyVol;
-	private decimal _sessionSellVol;
-	private int _candleCount;
-	private decimal _prevDelta;
-	private bool _hasPrevDelta;
+	/// <summary>
+	/// Candle timeframe.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
 
-	public int SmaLength { get => _smaLength.Value; set => _smaLength.Value = value; }
-	public int DeltaWindow { get => _deltaWindow.Value; set => _deltaWindow.Value = value; }
-	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	/// <summary>
+	/// Number of bars per delta window.
+	/// </summary>
+	public int DeltaWindow
+	{
+		get => _deltaWindow.Value;
+		set => _deltaWindow.Value = value;
+	}
+
+	/// <summary>
+	/// Absolute delta percent needed to trigger an entry.
+	/// </summary>
+	public decimal DeltaThresholdPercent
+	{
+		get => _deltaThresholdPercent.Value;
+		set => _deltaThresholdPercent.Value = value;
+	}
+
+	/// <summary>
+	/// Minimum bars between entries.
+	/// </summary>
+	public int SignalCooldownBars
+	{
+		get => _signalCooldownBars.Value;
+		set => _signalCooldownBars.Value = value;
+	}
 
 	public MocDeltaMooEntryStrategy()
 	{
-		_smaLength = Param(nameof(SmaLength), 20);
-		_deltaWindow = Param(nameof(DeltaWindow), 12);
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+			.SetDisplay("Candle Type", "Candles timeframe", "General");
+		_deltaWindow = Param(nameof(DeltaWindow), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("Delta Window", "Bars per delta calculation window", "General");
+		_deltaThresholdPercent = Param(nameof(DeltaThresholdPercent), 8m)
+			.SetGreaterThanZero()
+			.SetDisplay("Delta Threshold %", "Minimum delta percent for momentum", "General");
+		_signalCooldownBars = Param(nameof(SignalCooldownBars), 12)
+			.SetGreaterThanZero()
+			.SetDisplay("Signal Cooldown Bars", "Minimum bars between entries", "General");
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_windowBuyVolume = 0m;
+		_windowSellVolume = 0m;
+		_windowBarCount = 0;
+		_barsFromSignal = 0;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+		StartProtection(null, null);
 
-		_sessionBuyVol = 0;
-		_sessionSellVol = 0;
-		_candleCount = 0;
-		_prevDelta = 0;
-		_hasPrevDelta = false;
-
-		_smaFast = new SMA { Length = SmaLength };
-		_smaSlow = new SMA { Length = SmaLength * 2 };
+		_windowBuyVolume = 0m;
+		_windowSellVolume = 0m;
+		_windowBarCount = 0;
+		_barsFromSignal = SignalCooldownBars;
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(_smaFast, _smaSlow, ProcessCandle)
-			.Start();
+		subscription.Bind(ProcessCandle).Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal smaFast, decimal smaSlow)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
@@ -69,44 +108,50 @@ public class MocDeltaMooEntryStrategy : Strategy
 			return;
 
 		if (candle.ClosePrice > candle.OpenPrice)
-			_sessionBuyVol += candle.TotalVolume;
+			_windowBuyVolume += candle.TotalVolume;
+		else if (candle.ClosePrice < candle.OpenPrice)
+			_windowSellVolume += candle.TotalVolume;
 		else
-			_sessionSellVol += candle.TotalVolume;
-
-		_candleCount++;
-
-		if (_candleCount % DeltaWindow == 0)
 		{
-			var totalVol = _sessionBuyVol + _sessionSellVol;
-			var delta = totalVol > 0 ? (_sessionBuyVol - _sessionSellVol) / totalVol * 100m : 0m;
-
-			_sessionBuyVol = 0;
-			_sessionSellVol = 0;
-
-			if (_hasPrevDelta)
-			{
-				if (_prevDelta > 1.5m && candle.ClosePrice > smaFast && smaFast > smaSlow && Position <= 0)
-				{
-					if (Position < 0)
-						BuyMarket(Math.Abs(Position));
-					BuyMarket();
-				}
-				else if (_prevDelta < -1.5m && candle.ClosePrice < smaFast && smaFast < smaSlow && Position >= 0)
-				{
-					if (Position > 0)
-						SellMarket(Position);
-					SellMarket();
-				}
-			}
-
-			_prevDelta = delta;
-			_hasPrevDelta = true;
-			return;
+			_windowBuyVolume += candle.TotalVolume * 0.5m;
+			_windowSellVolume += candle.TotalVolume * 0.5m;
 		}
 
-		if (Position > 0 && candle.ClosePrice < smaSlow)
-			SellMarket();
-		else if (Position < 0 && candle.ClosePrice > smaSlow)
-			BuyMarket();
+		_windowBarCount++;
+		_barsFromSignal++;
+
+		if (_windowBarCount < DeltaWindow)
+			return;
+
+		var totalVolume = _windowBuyVolume + _windowSellVolume;
+		var deltaPercent = totalVolume > 0m
+			? (_windowBuyVolume - _windowSellVolume) / totalVolume * 100m
+			: 0m;
+
+		var momentumSignal = 0;
+		if (deltaPercent > DeltaThresholdPercent)
+			momentumSignal = 1;
+		else if (deltaPercent < -DeltaThresholdPercent)
+			momentumSignal = -1;
+
+		if (_barsFromSignal >= SignalCooldownBars && momentumSignal != 0)
+		{
+			if (momentumSignal > 0 && Position <= 0)
+			{
+				var volume = Volume + Math.Abs(Position);
+				BuyMarket(volume);
+				_barsFromSignal = 0;
+			}
+			else if (momentumSignal < 0 && Position >= 0)
+			{
+				var volume = Volume + Math.Abs(Position);
+				SellMarket(volume);
+				_barsFromSignal = 0;
+			}
+		}
+
+		_windowBuyVolume = 0m;
+		_windowSellVolume = 0m;
+		_windowBarCount = 0;
 	}
 }

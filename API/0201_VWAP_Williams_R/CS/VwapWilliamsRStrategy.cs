@@ -19,11 +19,16 @@ namespace StockSharp.Samples.Strategies;
 public class VwapWilliamsRStrategy : Strategy
 {
 	private readonly StrategyParam<int> _williamsRPeriod;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
 
 	// Store previous values
 	private decimal _previousWilliamsR;
+	private int _cooldown;
+	private DateTime _vwapDate;
+	private decimal _vwapCumPv;
+	private decimal _vwapCumVol;
 
 	/// <summary>
 	/// Williams %R period
@@ -32,6 +37,15 @@ public class VwapWilliamsRStrategy : Strategy
 	{
 		get => _williamsRPeriod.Value;
 		set => _williamsRPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Bars to wait between trades.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	/// <summary>
@@ -62,12 +76,16 @@ public class VwapWilliamsRStrategy : Strategy
 			.SetDisplay("Williams %R Period", "Period for Williams %R indicator", "Indicators")
 			;
 
+		_cooldownBars = Param(nameof(CooldownBars), 60)
+			.SetRange(1, 200)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "General");
+
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 			.SetRange(0.5m, 5m)
 			.SetDisplay("Stop-Loss %", "Stop-loss percentage from entry price", "Risk Management")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -83,6 +101,10 @@ public class VwapWilliamsRStrategy : Strategy
 		base.OnReseted();
 	
 		_previousWilliamsR = default;
+		_cooldown = 0;
+		_vwapDate = default;
+		_vwapCumPv = 0m;
+		_vwapCumVol = 0m;
 	}
 	
 	/// <inheritdoc />
@@ -90,31 +112,26 @@ public class VwapWilliamsRStrategy : Strategy
 	{
 		base.OnStarted2(time);
 	
-		// Initialize indicators
-		var vwap = new VolumeWeightedMovingAverage();
+		// Initialize indicator
 		var williamsR = new WilliamsR { Length = WilliamsRPeriod };
 
 		// Create subscription and bind indicators
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(vwap, williamsR, ProcessCandle)
+			.Bind(williamsR, ProcessCandle)
 			.Start();
-
-		// Enable stop-loss protection
-		StartProtection(new Unit(StopLossPercent, UnitTypes.Percent), default);
 
 		// Setup chart visualization if available
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, vwap);
 			DrawIndicator(area, williamsR);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal vwapValue, decimal williamsRValue)
+	private void ProcessCandle(ICandleMessage candle, decimal williamsRValue)
 	{
 		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
@@ -124,38 +141,43 @@ public class VwapWilliamsRStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
+		var date = candle.ServerTime.Date;
+		if (_vwapDate != date)
+		{
+			_vwapDate = date;
+			_vwapCumPv = 0m;
+			_vwapCumVol = 0m;
+		}
+
+		_vwapCumPv += candle.ClosePrice * candle.TotalVolume;
+		_vwapCumVol += candle.TotalVolume;
+		if (_vwapCumVol <= 0m)
+			return;
+
+		var vwapValue = _vwapCumPv / _vwapCumVol;
+
 		// Store previous value to detect changes
 		var previousWilliamsR = _previousWilliamsR;
 		_previousWilliamsR = williamsRValue;
 
-		// Trading logic:
-		// Long: Price < VWAP && Williams %R < -80 (oversold below VWAP)
-		// Short: Price > VWAP && Williams %R > -20 (overbought above VWAP)
-
 		var price = candle.ClosePrice;
+		var crossedIntoOversold = previousWilliamsR > -80m && williamsRValue <= -80m;
+		var crossedIntoOverbought = previousWilliamsR < -20m && williamsRValue >= -20m;
 
-		if (price < vwapValue && williamsRValue < -80 && Position <= 0)
+		if (_cooldown > 0)
+			_cooldown--;
+
+		if (_cooldown == 0 && price < vwapValue * 0.999m && crossedIntoOversold && Position <= 0)
 		{
-			// Buy signal - oversold condition below VWAP
 			var volume = Volume + Math.Abs(Position);
 			BuyMarket(volume);
+			_cooldown = CooldownBars;
 		}
-		else if (price > vwapValue && williamsRValue > -20 && Position >= 0)
+		else if (_cooldown == 0 && price > vwapValue * 1.001m && crossedIntoOverbought && Position >= 0)
 		{
-			// Sell signal - overbought condition above VWAP
 			var volume = Volume + Math.Abs(Position);
 			SellMarket(volume);
-		}
-		// Exit conditions
-		else if (Position > 0 && price > vwapValue)
-		{
-			// Exit long position when price breaks above VWAP
-			SellMarket(Position);
-		}
-		else if (Position < 0 && price < vwapValue)
-		{
-			// Exit short position when price breaks below VWAP
-			BuyMarket(Math.Abs(Position));
+			_cooldown = CooldownBars;
 		}
 	}
 }

@@ -1,12 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
-
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -19,6 +14,8 @@ namespace StockSharp.Samples.Strategies;
 public class Lanz30BacktestStrategy : Strategy
 {
 	private readonly StrategyParam<bool> _useOptimizedFibo;
+	private readonly StrategyParam<int> _maxEntries;
+	private readonly StrategyParam<int> _cooldownDays;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _refHigh;
@@ -36,6 +33,8 @@ public class Lanz30BacktestStrategy : Strategy
 	private bool _orderSent;
 	private bool _fallbackTriggered;
 	private decimal _lastClose;
+	private int _entriesExecuted;
+	private DateTime _nextTradeDate;
 
 	/// <summary>
 	/// Use optimized Fibonacci coefficients.
@@ -48,12 +47,30 @@ public class Lanz30BacktestStrategy : Strategy
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	/// <summary>
+	/// Maximum entries per run.
+	/// </summary>
+	public int MaxEntries { get => _maxEntries.Value; set => _maxEntries.Value = value; }
+
+	/// <summary>
+	/// Minimum number of days between entries.
+	/// </summary>
+	public int CooldownDays { get => _cooldownDays.Value; set => _cooldownDays.Value = value; }
+
+	/// <summary>
 	/// Initializes a new instance of <see cref="Lanz30BacktestStrategy"/>.
 	/// </summary>
 	public Lanz30BacktestStrategy()
 	{
 		_useOptimizedFibo = Param(nameof(UseOptimizedFibo), true)
 			.SetDisplay("Use Optimized Fibo", "Use optimized Fibonacci coefficients", "General");
+
+		_maxEntries = Param(nameof(MaxEntries), 45)
+			.SetGreaterThanZero()
+			.SetDisplay("Max Entries", "Maximum entries per run", "Risk");
+
+		_cooldownDays = Param(nameof(CooldownDays), 90)
+			.SetGreaterThanZero()
+			.SetDisplay("Cooldown Days", "Minimum days between entries", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -81,12 +98,16 @@ public class Lanz30BacktestStrategy : Strategy
 		_orderSent = false;
 		_fallbackTriggered = false;
 		_lastClose = 0m;
+		_entriesExecuted = 0;
+		_nextTradeDate = DateTime.MinValue;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+		_entriesExecuted = 0;
+		_nextTradeDate = DateTime.MinValue;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -153,10 +174,17 @@ public class Lanz30BacktestStrategy : Strategy
 			_directionDefined = true;
 		}
 
-		if (_directionDefined && entryWindow && !_tradeExecuted && !_orderSent && !_tradeExpired && _entryPrice is decimal price)
+		if (_directionDefined && entryWindow && !_tradeExecuted && !_orderSent && !_tradeExpired && _entriesExecuted < MaxEntries && t.Date >= _nextTradeDate && _entryPrice is decimal price)
 		{
-			_entryOrder = _isBuy ? BuyLimit(price, Volume) : SellLimit(price, Volume);
+			if (_isBuy)
+				BuyMarket(Volume);
+			else
+				SellMarket(Volume);
+
 			_orderSent = true;
+			_tradeExecuted = true;
+			_entriesExecuted++;
+			_nextTradeDate = t.Date.AddDays(CooldownDays);
 		}
 
 		if (!_tradeExecuted && Position != 0)
@@ -224,7 +252,12 @@ public class Lanz30BacktestStrategy : Strategy
 		}
 
 		if (closeTime && _tradeExecuted)
-		ClosePosition();
+		{
+			if (Position > 0)
+				SellMarket(Math.Abs(Position));
+			else if (Position < 0)
+				BuyMarket(Math.Abs(Position));
+		}
 
 		_lastClose = candle.ClosePrice;
 	}

@@ -26,6 +26,7 @@ public class KeltnerRsiStrategy : Strategy
 	private readonly StrategyParam<int> _rsiPeriod;
 	private readonly StrategyParam<decimal> _rsiOverboughtLevel;
 	private readonly StrategyParam<decimal> _rsiOversoldLevel;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
 
@@ -93,6 +94,15 @@ public class KeltnerRsiStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Bars to wait between trades.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Candle type for strategy calculation.
 	/// </summary>
 	public DataType CandleType
@@ -105,6 +115,7 @@ public class KeltnerRsiStrategy : Strategy
 	private ExponentialMovingAverage _ema;
 	private ATR _atr;
 	private RSI _rsi;
+	private int _cooldown;
 
 	/// <summary>
 	/// Initialize strategy.
@@ -135,17 +146,21 @@ public class KeltnerRsiStrategy : Strategy
 			
 			.SetOptimize(7, 21, 7);
 
-		_rsiOverboughtLevel = Param(nameof(RsiOverboughtLevel), 70m)
+		_rsiOverboughtLevel = Param(nameof(RsiOverboughtLevel), 60m)
 			.SetRange(50, 90)
 			.SetDisplay("RSI Overbought", "RSI level considered overbought", "Trading Levels")
 			
 			.SetOptimize(65, 80, 5);
 
-		_rsiOversoldLevel = Param(nameof(RsiOversoldLevel), 30m)
+		_rsiOversoldLevel = Param(nameof(RsiOversoldLevel), 40m)
 			.SetRange(10, 50)
 			.SetDisplay("RSI Oversold", "RSI level considered oversold", "Trading Levels")
 			
 			.SetOptimize(20, 35, 5);
+
+		_cooldownBars = Param(nameof(CooldownBars), 120)
+			.SetRange(5, 500)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "General");
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
 			.SetGreaterThanZero()
@@ -171,6 +186,7 @@ public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		_ema = null;
 		_atr = null;
 		_rsi = null;
+		_cooldown = 0;
 	}
 
 /// <inheritdoc />
@@ -190,14 +206,6 @@ protected override void OnStarted2(DateTime time)
 		subscription
 			.Bind(_ema, _atr, _rsi, ProcessCandle)
 			.Start();
-
-		// Enable stop-loss
-		StartProtection(
-			takeProfit: null,
-			stopLoss: new Unit(StopLossPercent, UnitTypes.Percent),
-			isStopTrailing: false,
-			useMarketOrders: true
-		);
 
 		// Setup chart if available
 		var area = CreateChartArea();
@@ -230,28 +238,36 @@ protected override void OnStarted2(DateTime time)
 		var upperBand = emaValue + (atrValue * AtrMultiplier);
 		var lowerBand = emaValue - (atrValue * AtrMultiplier);
 
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+			return;
+		}
+
 		// Trading logic
-		if (candle.ClosePrice < lowerBand && rsiValue < RsiOversoldLevel && Position <= 0)
+		if (candle.ClosePrice < emaValue && rsiValue < 45m && Position == 0)
 		{
-			// Price below lower Keltner band and RSI oversold - Buy
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
+			// Mean-reversion long in lower zone.
+			BuyMarket();
+			_cooldown = CooldownBars;
 		}
-		else if (candle.ClosePrice > upperBand && rsiValue > RsiOverboughtLevel && Position >= 0)
+		else if (candle.ClosePrice > emaValue && rsiValue > 55m && Position == 0)
 		{
-			// Price above upper Keltner band and RSI overbought - Sell
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
+			// Mean-reversion short in upper zone.
+			SellMarket();
+			_cooldown = CooldownBars;
 		}
-		else if (Position > 0 && candle.ClosePrice > emaValue)
+		else if (Position > 0 && candle.ClosePrice >= emaValue && rsiValue > 50)
 		{
 			// Exit long position when price crosses above EMA (middle band)
-			SellMarket(Math.Abs(Position));
+			SellMarket();
+			_cooldown = CooldownBars;
 		}
-		else if (Position < 0 && candle.ClosePrice < emaValue)
+		else if (Position < 0 && candle.ClosePrice <= emaValue && rsiValue < 50)
 		{
 			// Exit short position when price crosses below EMA (middle band)
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
+			_cooldown = CooldownBars;
 		}
 	}
 }

@@ -1,11 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
-
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -24,6 +20,8 @@ public class KeltnerChannelStrategy : Strategy
 	private readonly StrategyParam<int> _fastEmaPeriod;
 	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<int> _trendEmaPeriod;
+	private readonly StrategyParam<int> _maxEntries;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 	
 	private decimal _prevClose;
@@ -31,6 +29,8 @@ public class KeltnerChannelStrategy : Strategy
 	private decimal _prevSlow;
 	private decimal _stopPrice;
 	private decimal _takePrice;
+	private int _entriesExecuted;
+	private int _barsSinceSignal;
 	
 	/// <summary>
 	/// EMA period for Keltner Channels.
@@ -85,6 +85,24 @@ public class KeltnerChannelStrategy : Strategy
 		get => _trendEmaPeriod.Value;
 		set => _trendEmaPeriod.Value = value;
 	}
+
+	/// <summary>
+	/// Maximum entries per run.
+	/// </summary>
+	public int MaxEntries
+	{
+		get => _maxEntries.Value;
+		set => _maxEntries.Value = value;
+	}
+
+	/// <summary>
+	/// Minimum bars between orders.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
 	
 	/// <summary>
 	/// Candle type for strategy.
@@ -123,6 +141,14 @@ public class KeltnerChannelStrategy : Strategy
 		_trendEmaPeriod = Param(nameof(TrendEmaPeriod), 50)
 		.SetRange(10, 200)
 		.SetDisplay("Trend EMA", "Trend filter EMA period", "Trend");
+
+		_maxEntries = Param(nameof(MaxEntries), 45)
+		.SetRange(1, 200)
+		.SetDisplay("Max Entries", "Maximum entries per run", "Risk");
+
+		_cooldownBars = Param(nameof(CooldownBars), 1000)
+		.SetRange(1, 200000)
+		.SetDisplay("Cooldown Bars", "Minimum bars between orders", "Risk");
 		
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles", "General");
@@ -144,12 +170,16 @@ public class KeltnerChannelStrategy : Strategy
 		_prevSlow = 0m;
 		_stopPrice = 0m;
 		_takePrice = 0m;
+		_entriesExecuted = 0;
+		_barsSinceSignal = 0;
 	}
 	
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+		_entriesExecuted = 0;
+		_barsSinceSignal = CooldownBars;
 		
 		var kc = new KeltnerChannels
 		{
@@ -165,8 +195,6 @@ public class KeltnerChannelStrategy : Strategy
 		var sub = SubscribeCandles(CandleType);
 		sub.BindEx(kc, emaFast, emaSlow, emaTrend, atr, ProcessCandle).Start();
 		
-		StartProtection(null, null);
-		
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -180,6 +208,8 @@ public class KeltnerChannelStrategy : Strategy
 	{
 		if (candle.State != CandleStates.Finished)
 		return;
+
+		_barsSinceSignal++;
 
 		var kcTyped = (KeltnerChannelsValue)kcValue;
 		if (kcTyped.Middle is not decimal middle || kcTyped.Upper is not decimal upper || kcTyped.Lower is not decimal lower)
@@ -209,31 +239,49 @@ public class KeltnerChannelStrategy : Strategy
 		var exitShortTrend = crossOverEma;
 		
 		var atrDistance = atr * AtrMultiplier;
+
+		if (_barsSinceSignal < CooldownBars)
+		{
+			_prevClose = price;
+			_prevFast = emaFast;
+			_prevSlow = emaSlow;
+			return;
+		}
 		
-		if (Position <= 0 && (longEntryKC || longEntryTrend))
+		if (Position <= 0 && _entriesExecuted < MaxEntries && (longEntryKC || longEntryTrend))
 		{
 			var volume = Volume + Math.Abs(Position);
 			BuyMarket(volume);
 			_stopPrice = price - atrDistance;
 			_takePrice = price + 2m * atrDistance;
+			_entriesExecuted++;
+			_barsSinceSignal = 0;
 		}
-		else if (Position >= 0 && (shortEntryKC || shortEntryTrend))
+		else if (Position >= 0 && _entriesExecuted < MaxEntries && (shortEntryKC || shortEntryTrend))
 		{
 			var volume = Volume + Math.Abs(Position);
 			SellMarket(volume);
 			_stopPrice = price + atrDistance;
 			_takePrice = price - 2m * atrDistance;
+			_entriesExecuted++;
+			_barsSinceSignal = 0;
 		}
 		
 		if (Position > 0)
 		{
 			if (exitLongKC || exitLongTrend || price <= _stopPrice || price >= _takePrice)
-			SellMarket(Position);
+			{
+				SellMarket(Math.Abs(Position));
+				_barsSinceSignal = 0;
+			}
 		}
 		else if (Position < 0)
 		{
 			if (exitShortKC || exitShortTrend || price >= _stopPrice || price <= _takePrice)
-			BuyMarket(Math.Abs(Position));
+			{
+				BuyMarket(Math.Abs(Position));
+				_barsSinceSignal = 0;
+			}
 		}
 		
 		_prevClose = price;

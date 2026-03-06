@@ -25,7 +25,10 @@ public class StochasticKeltnerStrategy : Strategy
 	private readonly StrategyParam<decimal> _keltnerMultiplier;
 	private readonly StrategyParam<int> _atrPeriod;
 	private readonly StrategyParam<decimal> _atrMultiplier;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
+	private decimal _prevStochK;
+	private int _cooldown;
 
 	/// <summary>
 	/// Stochastic period
@@ -91,6 +94,15 @@ public class StochasticKeltnerStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Bars to wait between trades.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Candle type for strategy
 	/// </summary>
 	public DataType CandleType
@@ -139,7 +151,11 @@ public class StochasticKeltnerStrategy : Strategy
 			.SetDisplay("ATR Multiplier", "Multiplier for ATR-based stop-loss", "Risk Management")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_cooldownBars = Param(nameof(CooldownBars), 40)
+			.SetRange(1, 200)
+			.SetDisplay("Cooldown Bars", "Bars between entries", "General");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -153,6 +169,8 @@ public class StochasticKeltnerStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
+		_prevStochK = 50m;
+		_cooldown = 0;
 	}
 
 	/// <inheritdoc />
@@ -180,9 +198,6 @@ public class StochasticKeltnerStrategy : Strategy
 			.BindEx(keltner, stochastic, atr, ProcessIndicators)
 			.Start();
 		
-		// Enable ATR-based stop protection
-		StartProtection(default, new Unit(AtrMultiplier, UnitTypes.Absolute));
-
 		// Setup chart visualization if available
 		var area = CreateChartArea();
 		if (area != null)
@@ -216,31 +231,38 @@ public class StochasticKeltnerStrategy : Strategy
 		// Short: Stoch %K > 80 && Price > Keltner upper band (overbought at upper band)
 
 		var stochTyped = (StochasticOscillatorValue)stochValue;
-		var stochK = stochTyped.K;
-		var stochD = stochTyped.D;
+		if (stochTyped.K is not decimal stochK)
+			return;
 
-		if (stochK < 20 && price < lowerBand && Position <= 0)
+		var crossedBelow20 = _prevStochK >= 20m && stochK < 20m;
+		var crossedAbove80 = _prevStochK <= 80m && stochK > 80m;
+		_prevStochK = stochK;
+
+		if (_cooldown > 0)
+			_cooldown--;
+
+		if (_cooldown == 0 && crossedBelow20 && price <= lowerBand * 1.001m && Position <= 0)
 		{
-			// Buy signal - Stochastic oversold at Keltner lower band
 			var volume = Volume + Math.Abs(Position);
 			BuyMarket(volume);
+			_cooldown = CooldownBars;
 		}
-		else if (stochK > 80 && price > upperBand && Position >= 0)
+		else if (_cooldown == 0 && crossedAbove80 && price >= upperBand * 0.999m && Position >= 0)
 		{
-			// Sell signal - Stochastic overbought at Keltner upper band
 			var volume = Volume + Math.Abs(Position);
 			SellMarket(volume);
+			_cooldown = CooldownBars;
 		}
 		// Exit conditions
-		else if (Position > 0 && price > middleBand)
+		else if (Position > 0 && crossedAbove80)
 		{
-			// Exit long position when price returns to middle band
 			SellMarket(Position);
+			_cooldown = CooldownBars;
 		}
-		else if (Position < 0 && price < middleBand)
+		else if (Position < 0 && crossedBelow20)
 		{
-			// Exit short position when price returns to middle band
 			BuyMarket(Math.Abs(Position));
+			_cooldown = CooldownBars;
 		}
 	}
 }

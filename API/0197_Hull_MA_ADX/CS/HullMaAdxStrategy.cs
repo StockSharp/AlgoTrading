@@ -26,6 +26,7 @@ public class HullMaAdxStrategy : Strategy
 {
 	private readonly StrategyParam<int> _hmaPeriod;
 	private readonly StrategyParam<int> _adxPeriod;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<decimal> _atrMultiplier;
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<decimal> _stopLossPercent;
@@ -36,6 +37,9 @@ public class HullMaAdxStrategy : Strategy
 
 	private decimal _prevHmaValue;
 	private decimal _prevAdxValue;
+	private int _cooldown;
+	private bool _hasPrevSlope;
+	private bool _prevSlopeUp;
 
 	/// <summary>
 	/// Hull Moving Average period.
@@ -53,6 +57,15 @@ public class HullMaAdxStrategy : Strategy
 	{
 		get => _adxPeriod.Value;
 		set => _adxPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Bars to wait between trades.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	/// <summary>
@@ -97,10 +110,14 @@ public class HullMaAdxStrategy : Strategy
 			
 			.SetOptimize(10, 20, 2);
 
+		_cooldownBars = Param(nameof(CooldownBars), 80)
+			.SetRange(1, 200)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "General");
+
 		_atrMultiplier = Param(nameof(AtrMultiplier), 2m)
 			.SetDisplay("ATR Multiplier", "ATR multiplier for stop loss calculation", "Risk Management");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe of data for strategy", "General");
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 1.0m)
@@ -127,6 +144,9 @@ public class HullMaAdxStrategy : Strategy
 
 		_prevHmaValue = 0;
 		_prevAdxValue = 0;
+		_cooldown = 0;
+		_hasPrevSlope = false;
+		_prevSlopeUp = false;
 	}
 
 	/// <inheritdoc />
@@ -163,10 +183,6 @@ public class HullMaAdxStrategy : Strategy
 			}
 		}
 
-		StartProtection(
-			new Unit(0), // No take profit
-			new Unit(StopLossPercent, UnitTypes.Absolute)
-		);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue hmaValue, IIndicatorValue adxValue, IIndicatorValue atrValue)
@@ -185,6 +201,11 @@ public class HullMaAdxStrategy : Strategy
 		// Detect HMA direction
 		bool hmaIncreasing = hma > _prevHmaValue;
 		bool hmaDecreasing = hma < _prevHmaValue;
+		if (!_hasPrevSlope)
+		{
+			_hasPrevSlope = true;
+			_prevSlopeUp = hmaIncreasing;
+		}
 
 		// Check if strategy is ready for trading
 		if (!IsFormedAndOnlineAndAllowTrading())
@@ -195,29 +216,35 @@ public class HullMaAdxStrategy : Strategy
 			return;
 		}
 
+		if (_cooldown > 0)
+			_cooldown--;
+
+		var slopeTurnedUp = !_prevSlopeUp && hmaIncreasing;
+		var slopeTurnedDown = _prevSlopeUp && hmaDecreasing;
+
 		// Trading logic
-		if (adx > 25)
+		if (_cooldown == 0 && adx > 30)
 		{
-			// Strong trend detected
-			if (hmaIncreasing && Position <= 0)
+			if (slopeTurnedUp && Position <= 0)
 			{
-				// HMA rising with strong trend - go long
 				BuyMarket(Volume + Math.Abs(Position));
+				_cooldown = CooldownBars;
 			}
-			else if (hmaDecreasing && Position >= 0)
+			else if (slopeTurnedDown && Position >= 0)
 			{
-				// HMA falling with strong trend - go short
 				SellMarket(Volume + Math.Abs(Position));
+				_cooldown = CooldownBars;
 			}
 		}
-		else if (adx < 20 && _prevAdxValue >= 20)
+		else if (adx < 18 && Position != 0)
 		{
-			// Trend weakening - close position
 			ClosePosition();
+			_cooldown = CooldownBars;
 		}
 
 		// Store current values for next candle
 		_prevHmaValue = hma;
 		_prevAdxValue = adx;
+		_prevSlopeUp = hmaIncreasing;
 	}
 }

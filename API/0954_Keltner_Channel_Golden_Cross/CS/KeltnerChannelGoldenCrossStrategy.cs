@@ -1,11 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
-
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -25,7 +21,12 @@ public class KeltnerChannelGoldenCrossStrategy : Strategy
 	private readonly StrategyParam<MovingAverageTypes> _maType;
 	private readonly StrategyParam<int> _shortMaLength;
 	private readonly StrategyParam<int> _longMaLength;
+	private readonly StrategyParam<int> _maxEntries;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
+
+	private int _entriesExecuted;
+	private int _barsSinceSignal;
 
 	/// <summary>
 	/// Basis MA length.
@@ -68,6 +69,16 @@ public class KeltnerChannelGoldenCrossStrategy : Strategy
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	/// <summary>
+	/// Maximum entries per run.
+	/// </summary>
+	public int MaxEntries { get => _maxEntries.Value; set => _maxEntries.Value = value; }
+
+	/// <summary>
+	/// Minimum bars between entries.
+	/// </summary>
+	public int CooldownBars { get => _cooldownBars.Value; set => _cooldownBars.Value = value; }
+
+	/// <summary>
 	/// Initializes a new instance of <see cref="KeltnerChannelGoldenCrossStrategy"/>.
 	/// </summary>
 	public KeltnerChannelGoldenCrossStrategy()
@@ -102,14 +113,32 @@ public class KeltnerChannelGoldenCrossStrategy : Strategy
 		.SetGreaterThanZero()
 		;
 
+		_maxEntries = Param(nameof(MaxEntries), 45)
+		.SetDisplay("Max Entries", "Maximum entries per run", "Risk")
+		.SetGreaterThanZero();
+
+		_cooldownBars = Param(nameof(CooldownBars), 12000)
+		.SetDisplay("Cooldown Bars", "Minimum bars between entries", "Risk")
+		.SetGreaterThanZero();
+
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles", "General");
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_entriesExecuted = 0;
+		_barsSinceSignal = 0;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+		_entriesExecuted = 0;
+		_barsSinceSignal = CooldownBars;
 
 		var basis = CreateMa(MaType, MaLength);
 		var entryAtr = new AverageTrueRange { Length = 10 };
@@ -121,8 +150,6 @@ public class KeltnerChannelGoldenCrossStrategy : Strategy
 		subscription
 			.Bind(basis, entryAtr, atr, shortMa, longMa, ProcessCandle)
 			.Start();
-
-		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -150,6 +177,8 @@ public class KeltnerChannelGoldenCrossStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		_barsSinceSignal++;
+
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
@@ -163,10 +192,16 @@ public class KeltnerChannelGoldenCrossStrategy : Strategy
 		var longTrend = shortMa > longMa;
 		var shortTrend = shortMa < longMa;
 
+		if (_barsSinceSignal < CooldownBars)
+			return;
+
 		if (Position > 0)
 		{
 			if (price >= takeProfit || price <= stopLong)
-				SellMarket(Position);
+			{
+				SellMarket(Math.Abs(Position));
+				_barsSinceSignal = 0;
+			}
 
 			return;
 		}
@@ -174,15 +209,29 @@ public class KeltnerChannelGoldenCrossStrategy : Strategy
 		if (Position < 0)
 		{
 			if (price <= takeProfitShort || price >= stopShort)
+			{
 				BuyMarket(Math.Abs(Position));
+				_barsSinceSignal = 0;
+			}
 
 			return;
 		}
 
+		if (_entriesExecuted >= MaxEntries || _barsSinceSignal < CooldownBars)
+			return;
+
 		if (longTrend && price > upperEntry)
+		{
 			BuyMarket(Volume);
+			_entriesExecuted++;
+			_barsSinceSignal = 0;
+		}
 		else if (shortTrend && price < lowerEntry)
+		{
 			SellMarket(Volume);
+			_entriesExecuted++;
+			_barsSinceSignal = 0;
+		}
 	}
 
 	/// <summary>

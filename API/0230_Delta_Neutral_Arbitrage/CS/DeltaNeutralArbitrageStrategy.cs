@@ -148,8 +148,10 @@ public class DeltaNeutralArbitrageStrategy : Strategy
 		if (Asset2Security == null)
 			throw new InvalidOperationException("Asset2Security is not specified.");
 
+		Asset2Security = this.LookupById(Asset2Security.Id) ?? Asset2Security;
+
 		if (Asset2Portfolio == null)
-			throw new InvalidOperationException("Asset2Portfolio is not specified.");
+			Asset2Portfolio = Portfolio;
 
 		// Initialize indicators for spread statistics
 		_spreadSma = new SMA { Length = LookbackPeriod };

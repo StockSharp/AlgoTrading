@@ -29,8 +29,13 @@ public class MacdCciStrategy : Strategy
 	private readonly StrategyParam<int> _cciPeriod;
 	private readonly StrategyParam<decimal> _cciOversold;
 	private readonly StrategyParam<decimal> _cciOverbought;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<Unit> _stopLoss;
 	private readonly StrategyParam<DataType> _candleType;
+
+	private int _cooldown;
+	private bool _hasPrevMacdState;
+	private bool _prevMacdAboveSignal;
 
 	/// <summary>
 	/// MACD fast period.
@@ -87,6 +92,15 @@ public class MacdCciStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Bars to wait between trades.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Stop-loss value.
 	/// </summary>
 	public Unit StopLoss
@@ -131,6 +145,10 @@ public class MacdCciStrategy : Strategy
 		_cciOverbought = Param(nameof(CciOverbought), 100m)
 			.SetDisplay("CCI Overbought", "CCI level to consider market overbought", "CCI Parameters");
 
+		_cooldownBars = Param(nameof(CooldownBars), 320)
+			.SetRange(5, 1000)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "General");
+
 		_stopLoss = Param(nameof(StopLoss), new Unit(2, UnitTypes.Percent))
 			.SetDisplay("Stop Loss", "Stop loss percent or value", "Risk Management");
 
@@ -149,7 +167,9 @@ public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		base.OnReseted();
 
-		Indicators.Clear();
+		_cooldown = 0;
+		_hasPrevMacdState = false;
+		_prevMacdAboveSignal = false;
 	}
 
 /// <inheritdoc />
@@ -195,8 +215,6 @@ protected override void OnStarted2(DateTime time)
 			DrawOwnTrades(area);
 		}
 
-		// Start protective orders
-		StartProtection(new(), StopLoss);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue, IIndicatorValue cciValue)
@@ -205,6 +223,9 @@ protected override void OnStarted2(DateTime time)
 			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		if (!macdValue.IsFormed || !cciValue.IsFormed)
 			return;
 
 		// Note: In this implementation, the MACD and signal values are obtained separately.
@@ -220,54 +241,60 @@ protected override void OnStarted2(DateTime time)
 		
 		// Determine if MACD is above or below signal line
 		var isMacdAboveSignal = macdLine > signalLine;
-
 		var cciDec = cciValue.ToDecimal();
+
+		if (!_hasPrevMacdState)
+		{
+			_hasPrevMacdState = true;
+			_prevMacdAboveSignal = isMacdAboveSignal;
+			return;
+		}
 
 		LogInfo($"Candle: {candle.OpenTime}, Close: {candle.ClosePrice}, " +
 			$"MACD: {macdLine}, Signal: {signalLine}, " +
 			$"MACD > Signal: {isMacdAboveSignal}, CCI: {cciDec}");
 
-		// Trading rules
-		if (isMacdAboveSignal && cciDec < CciOversold && Position <= 0)
+		if (_cooldown > 0)
 		{
-			// Buy signal - MACD above signal line and CCI oversold
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
-			
-			LogInfo($"Buy signal: MACD above Signal and CCI oversold ({cciDec} < {CciOversold}). Volume: {volume}");
+			_cooldown--;
+			_prevMacdAboveSignal = isMacdAboveSignal;
+			return;
 		}
-		else if (!isMacdAboveSignal && cciDec > CciOverbought && Position >= 0)
+
+		var crossedUp = !_prevMacdAboveSignal && isMacdAboveSignal;
+		var crossedDown = _prevMacdAboveSignal && !isMacdAboveSignal;
+
+		// Trading rules
+		if (crossedUp && cciDec < CciOversold && Position == 0)
 		{
-			// Sell signal - MACD below signal line and CCI overbought
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
+			BuyMarket();
+			_cooldown = CooldownBars;
 			
-			LogInfo($"Sell signal: MACD below Signal and CCI overbought ({cciDec} > {CciOverbought}). Volume: {volume}");
+			LogInfo($"Buy signal: MACD crossed above Signal and CCI oversold ({cciDec} < {CciOversold}).");
+		}
+		else if (crossedDown && cciDec > CciOverbought && Position == 0)
+		{
+			SellMarket();
+			_cooldown = CooldownBars;
+			
+			LogInfo($"Sell signal: MACD crossed below Signal and CCI overbought ({cciDec} > {CciOverbought}).");
 		}
 		// Exit conditions based on MACD crossovers
-		else if (!isMacdAboveSignal && Position > 0)
+		else if (crossedDown && Position > 0)
 		{
 			// Exit long position when MACD crosses below signal
-			SellMarket(Position);
+			SellMarket();
+			_cooldown = CooldownBars;
 			LogInfo($"Exit long: MACD crossed below Signal. Position: {Position}");
 		}
-		else if (isMacdAboveSignal && Position < 0)
+		else if (crossedUp && Position < 0)
 		{
 			// Exit short position when MACD crosses above signal
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
+			_cooldown = CooldownBars;
 			LogInfo($"Exit short: MACD crossed above Signal. Position: {Position}");
 		}
-	}
 
-	private T GetIndicator<T>() where T : IIndicator
-	{
-		// Helper method to find an indicator by type in the Indicators collection
-		foreach (var indicator in Indicators)
-		{
-			if (indicator is T typedIndicator)
-				return typedIndicator;
-		}
-
-		return default;
+		_prevMacdAboveSignal = isMacdAboveSignal;
 	}
 }

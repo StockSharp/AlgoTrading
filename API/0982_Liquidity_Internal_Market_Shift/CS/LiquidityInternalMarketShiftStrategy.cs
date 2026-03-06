@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -23,6 +20,7 @@ public class LiquidityInternalMarketShiftStrategy : Strategy
 	private readonly StrategyParam<int> _takeProfitPips;
 	private readonly StrategyParam<int> _upperLB;
 	private readonly StrategyParam<int> _lowerLB;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private Highest _highest;
@@ -35,6 +33,7 @@ public class LiquidityInternalMarketShiftStrategy : Strategy
 	private decimal _entryPrice;
 	private bool _hasEntry, _isLong;
 	private DateTimeOffset _entryTime;
+	private int _barsFromTrade;
 
 	public TradeModes Mode { get => _mode.Value; set => _mode.Value = value; }
 	public bool EnableTakeProfit { get => _enableTakeProfit.Value; set => _enableTakeProfit.Value = value; }
@@ -42,19 +41,48 @@ public class LiquidityInternalMarketShiftStrategy : Strategy
 	public int TakeProfitPips { get => _takeProfitPips.Value; set => _takeProfitPips.Value = value; }
 	public int UpperLiquidityLookback { get => _upperLB.Value; set => _upperLB.Value = value; }
 	public int LowerLiquidityLookback { get => _lowerLB.Value; set => _lowerLB.Value = value; }
+	public int CooldownBars { get => _cooldownBars.Value; set => _cooldownBars.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public LiquidityInternalMarketShiftStrategy()
 	{
 		_mode = Param(nameof(Mode), TradeModes.Both).SetDisplay("Mode", "Trading mode", "General");
 		_enableTakeProfit = Param(nameof(EnableTakeProfit), true).SetDisplay("Enable TP", "Use TP", "Risk");
-		_stopLossPips = Param(nameof(StopLossPips), 10).SetGreaterThanZero().SetDisplay("SL pips", "SL", "Risk");
-		_takeProfitPips = Param(nameof(TakeProfitPips), 20).SetGreaterThanZero().SetDisplay("TP pips", "TP", "Risk");
-		_upperLB = Param(nameof(UpperLiquidityLookback), 10).SetGreaterThanZero().SetDisplay("Upper LB", "Upper", "Signals");
-		_lowerLB = Param(nameof(LowerLiquidityLookback), 10).SetGreaterThanZero().SetDisplay("Lower LB", "Lower", "Signals");
+		_stopLossPips = Param(nameof(StopLossPips), 20).SetGreaterThanZero().SetDisplay("SL pips", "SL", "Risk");
+		_takeProfitPips = Param(nameof(TakeProfitPips), 40).SetGreaterThanZero().SetDisplay("TP pips", "TP", "Risk");
+		_upperLB = Param(nameof(UpperLiquidityLookback), 14).SetGreaterThanZero().SetDisplay("Upper LB", "Upper", "Signals");
+		_lowerLB = Param(nameof(LowerLiquidityLookback), 14).SetGreaterThanZero().SetDisplay("Lower LB", "Lower", "Signals");
+		_cooldownBars = Param(nameof(CooldownBars), 10).SetGreaterThanZero().SetDisplay("Cooldown Bars", "Bars between trade actions", "Risk");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Candles", "General");
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_highest = null;
+		_lowest = null;
+		_bullCnt = 0;
+		_bearCnt = 0;
+		_lowBullP = null;
+		_highBearP = null;
+		_prevBullP = null;
+		_prevBearP = null;
+		_lastShift = 0;
+		_touchLow = false;
+		_touchUp = false;
+		_lockBull = false;
+		_lockBear = false;
+		_barSince = null;
+		_entryPrice = 0m;
+		_hasEntry = false;
+		_isLong = false;
+		_entryTime = DateTimeOffset.MinValue;
+		_barsFromTrade = int.MaxValue;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
@@ -65,6 +93,7 @@ public class LiquidityInternalMarketShiftStrategy : Strategy
 		_lastShift = 0; _touchLow = false; _touchUp = false;
 		_lockBull = false; _lockBear = false; _barSince = null;
 		_hasEntry = false; _entryPrice = 0m; _isLong = false;
+		_barsFromTrade = int.MaxValue;
 
 		var sub = SubscribeCandles(CandleType);
 		sub.Bind(ProcessCandle).Start();
@@ -79,6 +108,7 @@ public class LiquidityInternalMarketShiftStrategy : Strategy
 		var hi = _highest.Process(new DecimalIndicatorValue(_highest, candle.HighPrice, candle.ServerTime) { IsFinal = true }).ToDecimal();
 		var lo = _lowest.Process(new DecimalIndicatorValue(_lowest, candle.LowPrice, candle.ServerTime) { IsFinal = true }).ToDecimal();
 		if (!_highest.IsFormed || !_lowest.IsFormed) return;
+		_barsFromTrade++;
 
 		if (candle.LowPrice <= lo) _touchLow = true;
 		if (candle.HighPrice >= hi) _touchUp = true;
@@ -104,30 +134,33 @@ public class LiquidityInternalMarketShiftStrategy : Strategy
 		if (_barSince >= 3) { _lockBull = false; _lockBear = false; _barSince = null; }
 		if (_touchLow) _lockBull = false;
 		if (_touchUp) _lockBear = false;
+		var canTradeNow = _barsFromTrade >= CooldownBars;
 
-		if (Mode != TradeModes.BearishOnly && bullSig && !_hasEntry)
+		if (canTradeNow && Mode != TradeModes.BearishOnly && bullSig && !_hasEntry)
 		{
 			BuyMarket();
 			_entryPrice = candle.ClosePrice; _entryTime = candle.OpenTime; _isLong = true; _hasEntry = true;
+			_barsFromTrade = 0;
 		}
-		else if (Mode != TradeModes.BullishOnly && bearSig && !_hasEntry)
+		else if (canTradeNow && Mode != TradeModes.BullishOnly && bearSig && !_hasEntry)
 		{
 			SellMarket();
 			_entryPrice = candle.ClosePrice; _entryTime = candle.OpenTime; _isLong = false; _hasEntry = true;
+			_barsFromTrade = 0;
 		}
 
-		if (_hasEntry)
+		if (_hasEntry && canTradeNow)
 		{
-			if (_isLong && bearSig && candle.OpenTime > _entryTime) { SellMarket(Math.Abs(Position)); _hasEntry = false; }
-			else if (!_isLong && bullSig && candle.OpenTime > _entryTime) { BuyMarket(Math.Abs(Position)); _hasEntry = false; }
+			if (_isLong && bearSig && candle.OpenTime > _entryTime) { SellMarket(Math.Abs(Position)); _hasEntry = false; _barsFromTrade = 0; }
+			else if (!_isLong && bullSig && candle.OpenTime > _entryTime) { BuyMarket(Math.Abs(Position)); _hasEntry = false; _barsFromTrade = 0; }
 
 			if (_hasEntry)
 			{
 				var pip = Security.PriceStep ?? 0.01m;
 				if (_isLong && (candle.ClosePrice <= _entryPrice - StopLossPips * pip || (EnableTakeProfit && candle.ClosePrice >= _entryPrice + TakeProfitPips * pip)))
-				{ SellMarket(Math.Abs(Position)); _hasEntry = false; }
+				{ SellMarket(Math.Abs(Position)); _hasEntry = false; _barsFromTrade = 0; }
 				else if (!_isLong && (candle.ClosePrice >= _entryPrice + StopLossPips * pip || (EnableTakeProfit && candle.ClosePrice <= _entryPrice - TakeProfitPips * pip)))
-				{ BuyMarket(Math.Abs(Position)); _hasEntry = false; }
+				{ BuyMarket(Math.Abs(Position)); _hasEntry = false; _barsFromTrade = 0; }
 			}
 		}
 	}

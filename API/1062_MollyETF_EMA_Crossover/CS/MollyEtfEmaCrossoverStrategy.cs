@@ -94,16 +94,16 @@ public class MollyEtfEmaCrossoverStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Slow EMA", "Length of the slow EMA", "Parameters");
 
-		_useDateFilter = Param(nameof(UseDateFilter), true)
+		_useDateFilter = Param(nameof(UseDateFilter), false)
 			.SetDisplay("Use Date Filter", "Enable date range filtering", "Date Range");
 
 		_startDate = Param(nameof(StartDate), new DateTime(2018, 1, 1))
 			.SetDisplay("Start Date", "Beginning of trading period", "Date Range");
 
-		_endDate = Param(nameof(EndDate), new DateTime(2023, 9, 7))
+		_endDate = Param(nameof(EndDate), new DateTime(2030, 1, 1))
 			.SetDisplay("End Date", "End of trading period", "Date Range");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 

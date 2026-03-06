@@ -1,11 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
-
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -28,10 +24,12 @@ public class JmaQuantumEdgeStrategy : Strategy
 	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<bool> _enableStopLoss;
 	private readonly StrategyParam<decimal> _takeProfitPercent;
+	private readonly StrategyParam<int> _cooldownBars;
 
 	private decimal? _prevJma;
 	private decimal? _prevPrevJma;
 	private decimal? _higherJma;
+	private int _barsSinceSignal;
 
 	/// <summary>
 	/// Main JMA period length.
@@ -96,6 +94,15 @@ public class JmaQuantumEdgeStrategy : Strategy
 		set => _takeProfitPercent.Value = value;
 	}
 
+	/// <summary>
+	/// Minimum number of finished bars between signals.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
 	public JmaQuantumEdgeStrategy()
 	{
 		_jmaLength = Param(nameof(JmaLength), 20)
@@ -130,6 +137,20 @@ public class JmaQuantumEdgeStrategy : Strategy
 			.SetDisplay("Take Profit %", "Take profit percent", "Risk Management")
 			
 			.SetOptimize(1m, 5m, 1m);
+
+		_cooldownBars = Param(nameof(CooldownBars), 360)
+			.SetGreaterThanZero()
+			.SetDisplay("Cooldown Bars", "Minimum bars between signals", "Risk Management");
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevJma = null;
+		_prevPrevJma = null;
+		_higherJma = null;
+		_barsSinceSignal = 0;
 	}
 
 	/// <inheritdoc />
@@ -148,10 +169,6 @@ public class JmaQuantumEdgeStrategy : Strategy
 		SubscribeCandles(HigherCandleType)
 			.Bind(higherJma, ProcessHigherCandle)
 			.Start();
-
-		StartProtection(
-			takeProfit: new Unit(TakeProfitPercent * 100m, UnitTypes.Percent),
-			stopLoss: EnableStopLoss ? new Unit(StopLossPercent * 100m, UnitTypes.Percent) : null);
 	}
 
 	private void ProcessHigherCandle(ICandleMessage candle, decimal jmaValue)
@@ -167,15 +184,34 @@ public class JmaQuantumEdgeStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		_barsSinceSignal++;
+
 		if (_prevJma is decimal prev && _prevPrevJma is decimal prev2 && _higherJma is decimal higher)
 		{
 			var turnUp = prev < prev2 && jmaValue >= prev;
 			var turnDown = prev > prev2 && jmaValue <= prev;
 
-			if (turnUp && jmaValue > higher && Position <= 0)
-				BuyMarket();
-			else if (turnDown && jmaValue < higher && Position >= 0)
-				SellMarket();
+			if (_barsSinceSignal >= CooldownBars)
+			{
+				if (turnUp && jmaValue > higher)
+				{
+					if (Position < 0)
+						BuyMarket(Math.Abs(Position));
+					else if (Position == 0)
+						BuyMarket();
+
+					_barsSinceSignal = 0;
+				}
+				else if (turnDown && jmaValue < higher)
+				{
+					if (Position > 0)
+						SellMarket(Math.Abs(Position));
+					else if (Position == 0)
+						SellMarket();
+
+					_barsSinceSignal = 0;
+				}
+			}
 		}
 
 		_prevPrevJma = _prevJma;

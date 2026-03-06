@@ -21,11 +21,15 @@ namespace StockSharp.Samples.Strategies;
 public class CciVwapStrategy : Strategy
 {
 	private readonly StrategyParam<int> _cciPeriod;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
 	
 	private CommodityChannelIndex _cci;
-	private decimal _currentVwap;
+	private int _cooldown;
+	private DateTime _vwapDate;
+	private decimal _vwapCumPv;
+	private decimal _vwapCumVol;
 	
 	/// <summary>
 	/// CCI period parameter.
@@ -36,6 +40,15 @@ public class CciVwapStrategy : Strategy
 		set => _cciPeriod.Value = value;
 	}
 	
+	/// <summary>
+	/// Bars to wait between trades.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
 	/// <summary>
 	/// Stop-loss percentage parameter.
 	/// </summary>
@@ -64,6 +77,10 @@ public class CciVwapStrategy : Strategy
 			.SetDisplay("CCI period", "CCI indicator period", "Indicators")
 			
 			.SetOptimize(10, 30, 5);
+
+		_cooldownBars = Param(nameof(CooldownBars), 60)
+			.SetRange(1, 200)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "General");
 			
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 			.SetGreaterThanZero()
@@ -71,7 +88,7 @@ public class CciVwapStrategy : Strategy
 			
 			.SetOptimize(1m, 3m, 0.5m);
 			
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle type", "Type of candles to use", "General");
 	}
 	
@@ -87,7 +104,10 @@ public class CciVwapStrategy : Strategy
 		base.OnReseted();
 
 		_cci = null;
-		_currentVwap = default;
+		_cooldown = 0;
+		_vwapDate = default;
+		_vwapCumPv = 0m;
+		_vwapCumVol = 0m;
 	}
 
 	/// <inheritdoc />
@@ -100,22 +120,11 @@ public class CciVwapStrategy : Strategy
 		{
 			Length = CciPeriod
 		};
-		
-		// Create subscription for Level1 to get VWAP
-		SubscribeLevel1()
-			.Bind(ProcessLevel1)
-			.Start();
 
 		// Bind CCI to candle subscription
 		var candlesSubscription = SubscribeCandles(CandleType)
 			.Bind(_cci, ProcessCandle)
 			.Start();
-
-		// Enable position protection
-		StartProtection(
-			takeProfit: new Unit(0, UnitTypes.Absolute), // No take-profit
-			stopLoss: new Unit(StopLossPercent, UnitTypes.Percent) // Stop-loss as percentage
-		);
 		
 		// Setup chart if available
 		var area = CreateChartArea();
@@ -127,15 +136,7 @@ public class CciVwapStrategy : Strategy
 		}
 	}
 	
-	private void ProcessLevel1(Level1ChangeMessage level1)
-	{
-		if (level1.Changes.TryGetValue(Level1Fields.VWAP, out var vwap))
-		{
-			_currentVwap = (decimal)vwap;
-		}
-	}
-	
-	private void ProcessCandle(ICandleMessage candle, decimal cciValue)
+	private void ProcessCandle(ICandleMessage candle, decimal cci)
 	{
 		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
@@ -145,33 +146,49 @@ public class CciVwapStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 			
-		// Skip if we don't have VWAP yet
-		if (_currentVwap == 0)
+		var date = candle.ServerTime.Date;
+		if (_vwapDate != date)
+		{
+			_vwapDate = date;
+			_vwapCumPv = 0m;
+			_vwapCumVol = 0m;
+		}
+
+		_vwapCumPv += candle.ClosePrice * candle.TotalVolume;
+		_vwapCumVol += candle.TotalVolume;
+		if (_vwapCumVol <= 0m)
 			return;
+
+		var currentVwap = _vwapCumPv / _vwapCumVol;
+		if (currentVwap == 0)
+			return;
+
+		if (_cooldown > 0)
+			_cooldown--;
 			
 		// Long signal: CCI below -100 and price below VWAP
-		if (cciValue < -100 && candle.ClosePrice < _currentVwap && Position <= 0)
+		if (_cooldown == 0 && cci < -150 && candle.ClosePrice < currentVwap * 0.998m && Position <= 0)
 		{
 			BuyMarket(Volume);
-			LogInfo($"Buy signal: CCI={cciValue:F2}, Price={candle.ClosePrice}, VWAP={_currentVwap}");
+			_cooldown = CooldownBars;
 		}
 		// Short signal: CCI above 100 and price above VWAP
-		else if (cciValue > 100 && candle.ClosePrice > _currentVwap && Position >= 0)
+		else if (_cooldown == 0 && cci > 150 && candle.ClosePrice > currentVwap * 1.002m && Position >= 0)
 		{
 			SellMarket(Volume);
-			LogInfo($"Sell signal: CCI={cciValue:F2}, Price={candle.ClosePrice}, VWAP={_currentVwap}");
+			_cooldown = CooldownBars;
 		}
 		// Exit long position: Price crosses above VWAP
-		else if (Position > 0 && candle.ClosePrice > _currentVwap)
+		else if (Position > 0 && candle.ClosePrice > currentVwap)
 		{
 			SellMarket(Math.Abs(Position));
-			LogInfo($"Exit long: Price={candle.ClosePrice}, VWAP={_currentVwap}");
+			_cooldown = CooldownBars;
 		}
 		// Exit short position: Price crosses below VWAP
-		else if (Position < 0 && candle.ClosePrice < _currentVwap)
+		else if (Position < 0 && candle.ClosePrice < currentVwap)
 		{
 			BuyMarket(Math.Abs(Position));
-			LogInfo($"Exit short: Price={candle.ClosePrice}, VWAP={_currentVwap}");
+			_cooldown = CooldownBars;
 		}
 	}
 }

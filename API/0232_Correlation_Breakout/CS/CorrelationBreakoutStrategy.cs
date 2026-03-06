@@ -159,6 +159,14 @@ public class CorrelationBreakoutStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
+		if (_asset1Prices == null || _asset2Prices == null || _asset1Prices.Length != LookbackPeriod || _asset2Prices.Length != LookbackPeriod)
+		{
+			_asset1Prices = new decimal[LookbackPeriod];
+			_asset2Prices = new decimal[LookbackPeriod];
+			_currentIndex = 0;
+			_isInitialized = false;
+		}
+
 		// Subscribe to candles for both assets
 		if (Asset1 != null && Asset2 != null && CandleType != null)
 		{

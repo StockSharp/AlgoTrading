@@ -24,8 +24,12 @@ public class SupertrendStochasticStrategy : Strategy
 	private readonly StrategyParam<int> _stochPeriod;
 	private readonly StrategyParam<int> _stochK;
 	private readonly StrategyParam<int> _stochD;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<decimal> _stopLossPercent;
+	private int _cooldown;
+	private bool _hasPrevTrend;
+	private bool _prevBullish;
 
 	// Indicators
 	private SuperTrend _supertrend;
@@ -74,6 +78,15 @@ public class SupertrendStochasticStrategy : Strategy
 	{
 		get => _stochD.Value;
 		set => _stochD.Value = value;
+	}
+
+	/// <summary>
+	/// Bars to wait between trades.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	/// <summary>
@@ -129,6 +142,10 @@ public class SupertrendStochasticStrategy : Strategy
 			
 			.SetOptimize(1, 10, 1);
 
+		_cooldownBars = Param(nameof(CooldownBars), 8)
+			.SetRange(1, 50)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "General");
+
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
@@ -151,6 +168,9 @@ public class SupertrendStochasticStrategy : Strategy
 		base.OnReseted();
 		_supertrend = null;
 		_stochastic = null;
+		_cooldown = 0;
+		_hasPrevTrend = false;
+		_prevBullish = false;
 	}
 
 	/// <inheritdoc />
@@ -194,10 +214,6 @@ public class SupertrendStochasticStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection(
-			new(),
-			new Unit(StopLossPercent, UnitTypes.Percent)
-		);
 	}
 
 	private void ProcessCandle(
@@ -226,33 +242,46 @@ public class SupertrendStochasticStrategy : Strategy
 		if (stochTyped.K is not decimal stochK)
 			return;
 
+		if (!_hasPrevTrend)
+		{
+			_hasPrevTrend = true;
+			_prevBullish = isBullish;
+			return;
+		}
+
 		bool isAboveSupertrend = candle.ClosePrice > supertrendLine;
 		bool isBelowSupertrend = candle.ClosePrice < supertrendLine;
+		bool trendFlipUp = !_prevBullish && isBullish;
+		bool trendFlipDown = _prevBullish && isBearish;
 
-		// Trading logic:
-		// Buy when price is above Supertrend line (bullish) and Stochastic shows oversold condition
-		if (isAboveSupertrend && isBullish && stochK < 20 && Position <= 0)
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+			_prevBullish = isBullish;
+			return;
+		}
+
+		if (trendFlipUp && isAboveSupertrend && stochK < 35 && Position <= 0)
 		{
 			BuyMarket(Volume + Math.Abs(Position));
-			LogInfo($"Long entry: Price={candle.ClosePrice}, Supertrend={supertrendLine}, Stochastic %K={stochK}");
+			_cooldown = CooldownBars;
 		}
-		// Sell when price is below Supertrend line (bearish) and Stochastic shows overbought condition
-		else if (isBelowSupertrend && isBearish && stochK > 80 && Position >= 0)
+		else if (trendFlipDown && isBelowSupertrend && stochK > 65 && Position >= 0)
 		{
 			SellMarket(Volume + Math.Abs(Position));
-			LogInfo($"Short entry: Price={candle.ClosePrice}, Supertrend={supertrendLine}, Stochastic %K={stochK}");
+			_cooldown = CooldownBars;
 		}
-		// Exit long position when price falls below Supertrend line
-		else if (Position > 0 && isBelowSupertrend)
+		else if (Position > 0 && trendFlipDown)
 		{
 			SellMarket(Math.Abs(Position));
-			LogInfo($"Long exit: Price={candle.ClosePrice}, Below Supertrend={supertrendLine}");
+			_cooldown = CooldownBars;
 		}
-		// Exit short position when price rises above Supertrend line
-		else if (Position < 0 && isAboveSupertrend)
+		else if (Position < 0 && trendFlipUp)
 		{
 			BuyMarket(Math.Abs(Position));
-			LogInfo($"Short exit: Price={candle.ClosePrice}, Above Supertrend={supertrendLine}");
+			_cooldown = CooldownBars;
 		}
+
+		_prevBullish = isBullish;
 	}
 }

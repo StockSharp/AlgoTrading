@@ -24,6 +24,7 @@ public class DonchianMacdStrategy : Strategy
 	private readonly StrategyParam<int> _macdFast;
 	private readonly StrategyParam<int> _macdSlow;
 	private readonly StrategyParam<int> _macdSignal;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
 
@@ -35,6 +36,7 @@ public class DonchianMacdStrategy : Strategy
 	private decimal? _previousMacd;
 	private decimal? _previousSignal;
 	private decimal? _entryPrice;
+	private int _cooldown;
 
 	/// <summary>
 	/// Donchian channel period.
@@ -70,6 +72,15 @@ public class DonchianMacdStrategy : Strategy
 	{
 		get => _macdSignal.Value;
 		set => _macdSignal.Value = value;
+	}
+
+	/// <summary>
+	/// Bars to wait between trades.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	/// <summary>
@@ -115,12 +126,16 @@ public class DonchianMacdStrategy : Strategy
 			
 			.SetDisplay("MACD Signal Period", "Signal line period for MACD", "Indicators");
 
+		_cooldownBars = Param(nameof(CooldownBars), 50)
+			.SetRange(1, 200)
+			.SetDisplay("Cooldown Bars", "Bars between entries", "General");
+
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 			.SetRange(1m, 5m)
 			
 			.SetDisplay("Stop-Loss %", "Stop-loss percentage from entry price", "Risk Management");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -138,6 +153,7 @@ public class DonchianMacdStrategy : Strategy
 		_previousMacd = 0;
 		_previousSignal = 0;
 		_entryPrice = null;
+		_cooldown = 0;
 		_donchian = null;
 		_macd = null;
 	}
@@ -170,9 +186,6 @@ public class DonchianMacdStrategy : Strategy
 			.BindEx(_donchian, _macd, ProcessCandle)
 			.Start();
 
-		// Setup position protection
-		StartProtection(new Unit(0, UnitTypes.Absolute), new Unit(StopLossPercent, UnitTypes.Percent));
-
 		// Setup chart visualization if available
 		var area = CreateChartArea();
 		if (area != null)
@@ -197,43 +210,42 @@ public class DonchianMacdStrategy : Strategy
 		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
 		var signalValue = macdTyped.Signal;
 		var macdDec = macdTyped.Macd;
+		var isBullishCross = _previousMacd <= _previousSignal && macdDec > signalValue;
+		var isBearishCross = _previousMacd >= _previousSignal && macdDec < signalValue;
+
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+		}
 
 		// Check for breakouts with MACD trend confirmation
 		// Long entry: Price breaks above Donchian high and MACD > Signal
-		if (candle.ClosePrice > _previousHighest && Position <= 0 && macdDec > signalValue)
+		if (_cooldown == 0 && candle.ClosePrice > _previousHighest * 1.001m && Position <= 0 && isBullishCross)
 		{
-			// Cancel existing orders before entering new position
 			CancelActiveOrders();
 			
-			// Enter long position
 			var volume = Volume + Math.Abs(Position);
 			BuyMarket(volume);
 			_entryPrice = candle.ClosePrice;
-			
-			LogInfo($"Long entry signal: Price {candle.ClosePrice} broke above Donchian high {_previousHighest} with MACD confirmation");
+			_cooldown = CooldownBars;
 		}
 		// Short entry: Price breaks below Donchian low and MACD < Signal
-		else if (candle.ClosePrice < _previousLowest && Position >= 0 && macdDec < signalValue)
+		else if (_cooldown == 0 && candle.ClosePrice < _previousLowest * 0.999m && Position >= 0 && isBearishCross)
 		{
-			// Cancel existing orders before entering new position
 			CancelActiveOrders();
 			
-			// Enter short position
 			var volume = Volume + Math.Abs(Position);
 			SellMarket(volume);
 			_entryPrice = candle.ClosePrice;
-			
-			LogInfo($"Short entry signal: Price {candle.ClosePrice} broke below Donchian low {_previousLowest} with MACD confirmation");
+			_cooldown = CooldownBars;
 		}
 		// MACD trend reversal exit
-		else if ((Position > 0 && macdDec < signalValue && _previousMacd > _previousSignal) ||
-				 (Position < 0 && macdDec > signalValue && _previousMacd < _previousSignal))
+		else if ((Position > 0 && isBearishCross) ||
+				 (Position < 0 && isBullishCross))
 		{
-			// Close position on MACD signal reversal
 			ClosePosition();
 			_entryPrice = null;
-			
-			LogInfo($"Exit signal: MACD trend reversal. MACD: {macdDec}, Signal: {signalValue}");
+			_cooldown = CooldownBars;
 		}
 
 		var donchianTyped = (DonchianChannelsValue)donchianValue;

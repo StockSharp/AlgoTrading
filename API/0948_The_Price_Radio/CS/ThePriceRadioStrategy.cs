@@ -1,11 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
-
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -20,6 +16,9 @@ namespace StockSharp.Samples.Strategies;
 public class ThePriceRadioStrategy : Strategy
 {
 	private readonly StrategyParam<int> _length;
+	private readonly StrategyParam<int> _maxEntries;
+	private readonly StrategyParam<int> _holdBars;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private Highest _envelope = null!;
@@ -28,6 +27,9 @@ public class ThePriceRadioStrategy : Strategy
 	private Lowest _derivLow = null!;
 	private SimpleMovingAverage _fmSma = null!;
 	private decimal _prevClose;
+	private int _entriesExecuted;
+	private int _barsInPosition;
+	private int _barsSinceSignal;
 
 	/// <summary>
 	/// Lookback period.
@@ -36,6 +38,33 @@ public class ThePriceRadioStrategy : Strategy
 	{
 		get => _length.Value;
 		set => _length.Value = value;
+	}
+
+	/// <summary>
+	/// Maximum number of entries per run.
+	/// </summary>
+	public int MaxEntries
+	{
+		get => _maxEntries.Value;
+		set => _maxEntries.Value = value;
+	}
+
+	/// <summary>
+	/// Forced position holding period in finished bars.
+	/// </summary>
+	public int HoldBars
+	{
+		get => _holdBars.Value;
+		set => _holdBars.Value = value;
+	}
+
+	/// <summary>
+	/// Minimum finished bars between entries.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	/// <summary>
@@ -57,6 +86,18 @@ public class ThePriceRadioStrategy : Strategy
 			.SetDisplay("Length", "Lookback period", "General")
 			;
 
+		_maxEntries = Param(nameof(MaxEntries), 45)
+			.SetGreaterThanZero()
+			.SetDisplay("Max Entries", "Maximum entries per run", "Risk");
+
+		_holdBars = Param(nameof(HoldBars), 180)
+			.SetGreaterThanZero()
+			.SetDisplay("Hold Bars", "Bars to hold position before forced exit", "Risk");
+
+		_cooldownBars = Param(nameof(CooldownBars), 240)
+			.SetGreaterThanZero()
+			.SetDisplay("Cooldown Bars", "Minimum bars between entries", "Risk");
+
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
@@ -72,7 +113,15 @@ public class ThePriceRadioStrategy : Strategy
 	{
 		base.OnReseted();
 
+		_envelope = null!;
+		_amSma = null!;
+		_derivHigh = null!;
+		_derivLow = null!;
+		_fmSma = null!;
 		_prevClose = 0;
+		_entriesExecuted = 0;
+		_barsInPosition = 0;
+		_barsSinceSignal = 0;
 	}
 
 	/// <inheritdoc />
@@ -85,6 +134,9 @@ public class ThePriceRadioStrategy : Strategy
 		_derivHigh = new Highest { Length = Length };
 		_derivLow = new Lowest { Length = Length };
 		_fmSma = new SMA { Length = Length };
+		_entriesExecuted = 0;
+		_barsInPosition = 0;
+		_barsSinceSignal = CooldownBars;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
@@ -125,9 +177,41 @@ public class ThePriceRadioStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		if (Position <= 0 && deriv > am && deriv > fm)
+		if (Position != 0)
+		{
+			_barsInPosition++;
+
+			if (_barsInPosition >= HoldBars)
+			{
+				if (Position > 0)
+					SellMarket(Math.Abs(Position));
+				else
+					BuyMarket(Math.Abs(Position));
+
+				_barsInPosition = 0;
+				_barsSinceSignal = 0;
+			}
+
+			return;
+		}
+
+		_barsInPosition = 0;
+		_barsSinceSignal++;
+
+		if (_entriesExecuted >= MaxEntries || _barsSinceSignal < CooldownBars)
+			return;
+
+		if (deriv > am && deriv > fm)
+		{
 			BuyMarket();
-		else if (Position >= 0 && deriv < -am && deriv < -fm)
+			_entriesExecuted++;
+			_barsSinceSignal = 0;
+		}
+		else if (deriv < -am && deriv < -fm)
+		{
 			SellMarket();
+			_entriesExecuted++;
+			_barsSinceSignal = 0;
+		}
 	}
 }

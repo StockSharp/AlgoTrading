@@ -1,11 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
-
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -22,12 +18,19 @@ public class KeltnerChannelBasedGridStrategy : Strategy
 	private readonly StrategyParam<decimal> _gridCoefficient;
 	private readonly StrategyParam<int> _numGrids;
 	private readonly StrategyParam<bool> _useExponential;
+	private readonly StrategyParam<int> _maxRebalances;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
+
+	private int _rebalanceCount;
+	private int _barsSinceRebalance;
 
 	public int Length { get => _length.Value; set => _length.Value = value; }
 	public decimal GridCoefficient { get => _gridCoefficient.Value; set => _gridCoefficient.Value = value; }
 	public int NumGrids { get => _numGrids.Value; set => _numGrids.Value = value; }
 	public bool UseExponential { get => _useExponential.Value; set => _useExponential.Value = value; }
+	public int MaxRebalances { get => _maxRebalances.Value; set => _maxRebalances.Value = value; }
+	public int CooldownBars { get => _cooldownBars.Value; set => _cooldownBars.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public KeltnerChannelBasedGridStrategy()
@@ -53,6 +56,14 @@ public class KeltnerChannelBasedGridStrategy : Strategy
 		_useExponential = Param(nameof(UseExponential), true)
 		.SetDisplay("Use EMA", "Use EMA instead of SMA", "Keltner");
 
+		_maxRebalances = Param(nameof(MaxRebalances), 45)
+		.SetGreaterThanZero()
+		.SetDisplay("Max Rebalances", "Maximum rebalance orders per run", "Risk");
+
+		_cooldownBars = Param(nameof(CooldownBars), 240)
+		.SetGreaterThanZero()
+		.SetDisplay("Cooldown Bars", "Minimum bars between rebalances", "Risk");
+
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 		.SetDisplay("Candle type", "Type of candles", "General");
 	}
@@ -64,9 +75,19 @@ public class KeltnerChannelBasedGridStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_rebalanceCount = 0;
+		_barsSinceRebalance = 0;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+		_rebalanceCount = 0;
+		_barsSinceRebalance = CooldownBars;
 
 		IIndicator ma = UseExponential ? new EMA { Length = Length } : new SMA { Length = Length };
 		var atr = new AverageTrueRange { Length = Length };
@@ -89,6 +110,8 @@ public class KeltnerChannelBasedGridStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 		return;
 
+		_barsSinceRebalance++;
+
 		if (atrValue == 0)
 		return;
 
@@ -103,12 +126,15 @@ public class KeltnerChannelBasedGridStrategy : Strategy
 		targetPosition = -maxAmount;
 
 		var diff = Math.Abs(targetPosition - Position);
-		if (diff >= maxAmount / NumGrids)
+		if (_rebalanceCount < MaxRebalances && _barsSinceRebalance >= CooldownBars && diff >= maxAmount / NumGrids)
 		{
 			if (targetPosition > Position)
 			BuyMarket(targetPosition - Position);
 			else if (targetPosition < Position)
 			SellMarket(Position - targetPosition);
+
+			_rebalanceCount++;
+			_barsSinceRebalance = 0;
 		}
 	}
 }

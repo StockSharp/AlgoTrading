@@ -30,10 +30,6 @@ public class IchimokuWidthBreakoutStrategy : Strategy
 	
 	private Ichimoku _ichimoku;
 	private SimpleMovingAverage _widthAverage;
-	
-	// Track cloud width values
-	private decimal _lastWidth;
-	private decimal _lastAvgWidth;
 
 	/// <summary>
 	/// Tenkan-sen period for Ichimoku.
@@ -150,14 +146,6 @@ public class IchimokuWidthBreakoutStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_lastWidth = 0;
-		_lastAvgWidth = 0;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
@@ -228,30 +216,18 @@ public class IchimokuWidthBreakoutStrategy : Strategy
 		var widthAvgValue = _widthAverage.Process(new DecimalIndicatorValue(_widthAverage, width, candle.ServerTime));
 		var avgWidth = widthAvgValue.ToDecimal();
 		
-		// For first values, just save and skip
-		if (_lastWidth == 0)
-		{
-			_lastWidth = width;
-			_lastAvgWidth = avgWidth;
-			return;
-		}
-		
 		// Calculate width standard deviation (simplified approach)
 		var stdDev = Math.Abs(width - avgWidth) * 1.5m; // Simplified approximation
 		
 		// Skip if indicators are not formed yet
 		if (!_ichimoku.IsFormed || !_widthAverage.IsFormed)
 		{
-			_lastWidth = width;
-			_lastAvgWidth = avgWidth;
 			return;
 		}
 		
 		// Check if trading is allowed
 		if (!IsFormedAndOnlineAndAllowTrading())
 		{
-			_lastWidth = width;
-			_lastAvgWidth = avgWidth;
 			return;
 		}
 		
@@ -262,8 +238,8 @@ public class IchimokuWidthBreakoutStrategy : Strategy
 			var upperCloud = Math.Max(senkouSpanA, senkouSpanB);
 			var lowerCloud = Math.Min(senkouSpanA, senkouSpanB);
 			
-			var bullish = candle.ClosePrice > upperCloud;
-			var bearish = candle.ClosePrice < lowerCloud;
+			var bullish = candle.ClosePrice > upperCloud || candle.ClosePrice > kijun;
+			var bearish = candle.ClosePrice < lowerCloud || candle.ClosePrice < kijun;
 			
 			// Cancel active orders before placing new ones
 			CancelActiveOrders();
@@ -289,9 +265,5 @@ public class IchimokuWidthBreakoutStrategy : Strategy
 			// Exit position when cloud width returns to normal or price enters cloud
 			ClosePosition();
 		}
-		
-		// Update last values
-		_lastWidth = width;
-		_lastAvgWidth = avgWidth;
 	}
 }

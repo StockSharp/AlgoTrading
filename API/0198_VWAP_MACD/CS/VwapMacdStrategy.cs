@@ -27,6 +27,7 @@ public class VwapMacdStrategy : Strategy
 	private readonly StrategyParam<int> _macdFastPeriod;
 	private readonly StrategyParam<int> _macdSlowPeriod;
 	private readonly StrategyParam<int> _macdSignalPeriod;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
 
@@ -35,6 +36,7 @@ public class VwapMacdStrategy : Strategy
 
 	private decimal _prevMacd;
 	private decimal _prevSignal;
+	private int _cooldown;
 
 	/// <summary>
 	/// MACD fast EMA period.
@@ -61,6 +63,15 @@ public class VwapMacdStrategy : Strategy
 	{
 		get => _macdSignalPeriod.Value;
 		set => _macdSignalPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Bars to wait between trades.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	/// <summary>
@@ -98,10 +109,14 @@ public class VwapMacdStrategy : Strategy
 			.SetDisplay("MACD Signal Period", "Signal line period for MACD calculation", "Indicators")
 			;
 
+		_cooldownBars = Param(nameof(CooldownBars), 30)
+			.SetRange(1, 200)
+			.SetDisplay("Cooldown Bars", "Bars between entries", "General");
+
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 			.SetDisplay("Stop Loss (%)", "Stop loss percentage from entry price", "Risk Management");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe of data for strategy", "General");
 	}
 
@@ -121,6 +136,7 @@ public class VwapMacdStrategy : Strategy
 
 		_prevMacd = 0;
 		_prevSignal = 0;
+		_cooldown = 0;
 	}
 
 	/// <inheritdoc />
@@ -140,9 +156,6 @@ public class VwapMacdStrategy : Strategy
 			SignalMa = { Length = MacdSignalPeriod }
 		};
 		_vwap = new() { Length = MacdSignalPeriod };
-		// Enable position protection
-		StartProtection(new Unit(StopLossPercent, UnitTypes.Percent), new Unit(StopLossPercent, UnitTypes.Percent));
-
 		// Create subscription
 		var subscription = SubscribeCandles(CandleType);
 
@@ -198,27 +211,30 @@ public class VwapMacdStrategy : Strategy
 		}
 
 		// Trading logic
-		if (candle.ClosePrice > vwap && macd > signal && Position <= 0)
+		if (_cooldown > 0)
+			_cooldown--;
+
+		if (_cooldown == 0 && candle.ClosePrice > vwap * 1.001m && macdCrossedAboveSignal && Position <= 0)
 		{
-			// Price above VWAP with bullish MACD - go long
 			BuyMarket(Volume + Math.Abs(Position));
+			_cooldown = CooldownBars;
 		}
-		else if (candle.ClosePrice < vwap && macd < signal && Position >= 0)
+		else if (_cooldown == 0 && candle.ClosePrice < vwap * 0.999m && macdCrossedBelowSignal && Position >= 0)
 		{
-			// Price below VWAP with bearish MACD - go short
 			SellMarket(Volume + Math.Abs(Position));
+			_cooldown = CooldownBars;
 		}
 
 		// Exit logic based on MACD crosses
 		if (Position > 0 && macdCrossedBelowSignal)
 		{
-			// Exit long position when MACD crosses below Signal
 			ClosePosition();
+			_cooldown = CooldownBars;
 		}
 		else if (Position < 0 && macdCrossedAboveSignal)
 		{
-			// Exit short position when MACD crosses above Signal
 			ClosePosition();
+			_cooldown = CooldownBars;
 		}
 
 		// Store current values for next candle

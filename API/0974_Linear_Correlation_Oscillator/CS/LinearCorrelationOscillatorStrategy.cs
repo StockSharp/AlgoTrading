@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -20,11 +17,14 @@ namespace StockSharp.Samples.Strategies;
 public class LinearCorrelationOscillatorStrategy : Strategy
 {
 	private readonly StrategyParam<int> _length;
+	private readonly StrategyParam<decimal> _entryLevel;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal[] _prices;
 	private int _index;
 	private decimal _prevCorrelation;
+	private int _barsFromSignal;
 
 	/// <summary>
 	/// Lookback period for correlation calculation.
@@ -40,6 +40,24 @@ public class LinearCorrelationOscillatorStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Absolute correlation level required to open a position.
+	/// </summary>
+	public decimal EntryLevel
+	{
+		get => _entryLevel.Value;
+		set => _entryLevel.Value = value;
+	}
+
+	/// <summary>
+	/// Minimum number of bars between entry signals.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Candle type used for processing.
 	/// </summary>
 	public DataType CandleType
@@ -50,10 +68,40 @@ public class LinearCorrelationOscillatorStrategy : Strategy
 
 	public LinearCorrelationOscillatorStrategy()
 	{
-		_length = Param(nameof(Length), 14).SetDisplay("Length", "Length", "General");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle type", "Candle type", "General");
+		_length = Param(nameof(Length), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("Length", "Lookback length", "General")
+			
+			.SetOptimize(18, 60, 2);
+
+		_entryLevel = Param(nameof(EntryLevel), 0.08m)
+			.SetGreaterThanZero()
+			.SetDisplay("Entry Level", "Absolute level required for entry", "General")
+			
+			.SetOptimize(0.10m, 0.40m, 0.05m);
+
+		_cooldownBars = Param(nameof(CooldownBars), 4)
+			.SetGreaterThanZero()
+			.SetDisplay("Cooldown Bars", "Bars between entry signals", "General")
+			
+			.SetOptimize(4, 20, 1);
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle type", "Candle type", "General");
 
 		_prices = new decimal[Length];
+		_barsFromSignal = int.MaxValue;
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_prices = new decimal[Length];
+		_index = 0;
+		_prevCorrelation = 0m;
+		_barsFromSignal = int.MaxValue;
 	}
 
 	/// <inheritdoc />
@@ -91,13 +139,23 @@ public class LinearCorrelationOscillatorStrategy : Strategy
 		}
 
 		var correlation = CalculateCorrelation();
+		_barsFromSignal++;
 
 		if (IsFormedAndOnlineAndAllowTrading())
 		{
-			if (_prevCorrelation <= 0m && correlation > 0m && Position <= 0)
-				BuyMarket();
-			else if (_prevCorrelation >= 0m && correlation < 0m && Position >= 0)
-				SellMarket();
+			if (_barsFromSignal >= CooldownBars)
+			{
+				if (_prevCorrelation <= EntryLevel && correlation > EntryLevel && Position <= 0)
+				{
+					BuyMarket(Volume + Math.Abs(Position));
+					_barsFromSignal = 0;
+				}
+				else if (_prevCorrelation >= -EntryLevel && correlation < -EntryLevel && Position >= 0)
+				{
+					SellMarket(Volume + Math.Abs(Position));
+					_barsFromSignal = 0;
+				}
+			}
 		}
 
 		_prevCorrelation = correlation;

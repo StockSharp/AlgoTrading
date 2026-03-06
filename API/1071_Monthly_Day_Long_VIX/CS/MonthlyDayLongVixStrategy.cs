@@ -30,6 +30,7 @@ public class MonthlyDayLongVixStrategy : Strategy
 	private int _currentMonth;
 	private DateTime _entryDate;
 	private int _barsInPosition;
+	private bool _enteredThisMonth;
 
 	/// <summary>
 	/// Entry day of the month.
@@ -96,14 +97,14 @@ public class MonthlyDayLongVixStrategy : Strategy
 
 	public MonthlyDayLongVixStrategy()
 	{
-		_entryDay = Param(nameof(EntryDay), 27)
+		_entryDay = Param(nameof(EntryDay), 2)
 			.SetDisplay("Entry Day", "Day of month to enter", "General");
 
-		_holdDuration = Param(nameof(HoldDuration), 4)
+		_holdDuration = Param(nameof(HoldDuration), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("Hold Duration", "Bars to hold position", "General");
 
-		_vixThreshold = Param(nameof(VixThreshold), 20m)
+		_vixThreshold = Param(nameof(VixThreshold), 100m)
 			.SetDisplay("VIX Threshold", "Maximum VIX value to allow entry", "VIX");
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
@@ -132,6 +133,7 @@ public class MonthlyDayLongVixStrategy : Strategy
 		_currentMonth = 0;
 		_entryDate = default;
 		_barsInPosition = 0;
+		_enteredThisMonth = false;
 	}
 
 	/// <inheritdoc />
@@ -179,14 +181,18 @@ public class MonthlyDayLongVixStrategy : Strategy
 		{
 			_currentMonth = date.Month;
 			_entryDate = GetAdjustedDate(date);
+			_enteredThisMonth = false;
 		}
 
 		if (Position == 0)
 		{
 			_barsInPosition = 0;
 
-			if (date == _entryDate && _vix < VixThreshold)
+			if (!_enteredThisMonth && date >= _entryDate && _vix < VixThreshold)
+			{
 				BuyMarket();
+				_enteredThisMonth = true;
+			}
 		}
 		else
 		{

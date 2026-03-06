@@ -18,6 +18,7 @@ public class MmFibonacciStrategy : Strategy
 {
 	private readonly StrategyParam<int> _frame;
 	private readonly StrategyParam<decimal> _multiplier;
+	private readonly StrategyParam<int> _signalCooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private Highest _highest;
@@ -25,24 +26,43 @@ public class MmFibonacciStrategy : Strategy
 
 	private int _sinceHigh;
 	private int _sinceLow;
+	private int _prevFibDir;
+	private int _barsFromSignal;
 
 	public int Frame { get => _frame.Value; set => _frame.Value = value; }
 	public decimal Multiplier { get => _multiplier.Value; set => _multiplier.Value = value; }
+	public int SignalCooldownBars { get => _signalCooldownBars.Value; set => _signalCooldownBars.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public MmFibonacciStrategy()
 	{
 		_frame = Param(nameof(Frame), 64).SetGreaterThanZero();
-		_multiplier = Param(nameof(Multiplier), 1.5m);
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
+		_multiplier = Param(nameof(Multiplier), 1.5m).SetGreaterThanZero();
+		_signalCooldownBars = Param(nameof(SignalCooldownBars), 12).SetGreaterThanZero();
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame());
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_highest = null;
+		_lowest = null;
+		_sinceHigh = 0;
+		_sinceLow = 0;
+		_prevFibDir = 0;
+		_barsFromSignal = 0;
 	}
 
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+		StartProtection(null, null);
 
 		_sinceHigh = 0;
 		_sinceLow = 0;
+		_prevFibDir = 0;
+		_barsFromSignal = SignalCooldownBars;
 
 		var length = (int)Math.Round(Frame * Multiplier);
 
@@ -132,23 +152,26 @@ public class MmFibonacciStrategy : Strategy
 		var fibDirUp = _sinceHigh > _sinceLow;
 		var fibDirDn = _sinceHigh < _sinceLow;
 
-		var fib100 = fibDirUp ? top : bottom;
-		var fib0 = fibDirUp ? bottom : top;
-		var fib50 = fibDirUp ? bottom + fibRange * 0.5m : top - fibRange * 0.5m;
+		var fibDir = fibDirUp ? 1 : fibDirDn ? -1 : 0;
+		_barsFromSignal++;
 
-		if (fibDirUp)
+		if (fibDir != 0 && fibDir != _prevFibDir && _barsFromSignal >= SignalCooldownBars)
 		{
-			if (candle.ClosePrice > fib100 && Position <= 0)
-				BuyMarket();
-			else if (Position > 0 && candle.ClosePrice < fib50)
-				SellMarket();
+			if (fibDir > 0 && Position <= 0)
+			{
+				var volume = Volume + Math.Abs(Position);
+				BuyMarket(volume);
+				_barsFromSignal = 0;
+			}
+			else if (fibDir < 0 && Position >= 0)
+			{
+				var volume = Volume + Math.Abs(Position);
+				SellMarket(volume);
+				_barsFromSignal = 0;
+			}
 		}
-		else if (fibDirDn)
-		{
-			if (candle.ClosePrice < fib0 && Position >= 0)
-				SellMarket();
-			else if (Position < 0 && candle.ClosePrice > fib50)
-				BuyMarket();
-		}
+
+		if (fibDir != 0)
+			_prevFibDir = fibDir;
 	}
 }

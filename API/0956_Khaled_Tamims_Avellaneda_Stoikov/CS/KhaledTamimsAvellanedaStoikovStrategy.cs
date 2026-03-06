@@ -1,12 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
-
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -24,10 +19,14 @@ public class KhaledTamimsAvellanedaStoikovStrategy : Strategy
 	private readonly StrategyParam<decimal> _k;
 	private readonly StrategyParam<decimal> _m;
 	private readonly StrategyParam<decimal> _fee;
+	private readonly StrategyParam<int> _maxEntries;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _prevClose;
 	private bool _isFirst = true;
+	private int _entriesExecuted;
+	private int _barsSinceSignal;
 
 	/// <summary>
 	/// Initializes a new instance of the strategy.
@@ -40,6 +39,8 @@ public class KhaledTamimsAvellanedaStoikovStrategy : Strategy
 		_k = Param("K", 5m).SetDisplay("K", "K", "General");
 		_m = Param("M", 0.5m).SetDisplay("M", "M", "General");
 		_fee = Param("Fee", 0m).SetDisplay("Fee", "Fee", "General");
+		_maxEntries = Param("Max Entries", 45).SetDisplay("Max Entries", "Maximum entries per run", "Risk");
+		_cooldownBars = Param("Cooldown Bars", 12000).SetDisplay("Cooldown Bars", "Minimum bars between entries", "Risk");
 		_candleType = Param("Candle type", TimeSpan.FromMinutes(1).TimeFrame()).SetDisplay("Candle Type", "Candle Type", "General");
 	}
 
@@ -49,23 +50,37 @@ public class KhaledTamimsAvellanedaStoikovStrategy : Strategy
 	public decimal K { get => _k.Value; set => _k.Value = value; }
 	public decimal M { get => _m.Value; set => _m.Value = value; }
 	public decimal Fee { get => _fee.Value; set => _fee.Value = value; }
+	public int MaxEntries { get => _maxEntries.Value; set => _maxEntries.Value = value; }
+	public int CooldownBars { get => _cooldownBars.Value; set => _cooldownBars.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevClose = 0m;
+		_isFirst = true;
+		_entriesExecuted = 0;
+		_barsSinceSignal = 0;
+	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+		_entriesExecuted = 0;
+		_barsSinceSignal = CooldownBars;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
-
-		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
+
+		_barsSinceSignal++;
 
 		if (_isFirst)
 		{
@@ -84,10 +99,21 @@ public class KhaledTamimsAvellanedaStoikovStrategy : Strategy
 		var longCondition = candle.ClosePrice < bidQuote - M;
 		var shortCondition = candle.ClosePrice > askQuote + M;
 
+		if (_entriesExecuted >= MaxEntries || _barsSinceSignal < CooldownBars)
+			return;
+
 		if (longCondition && Position <= 0)
+		{
 			BuyMarket();
+			_entriesExecuted++;
+			_barsSinceSignal = 0;
+		}
 		else if (shortCondition && Position >= 0)
+		{
 			SellMarket();
+			_entriesExecuted++;
+			_barsSinceSignal = 0;
+		}
 	}
 }
 

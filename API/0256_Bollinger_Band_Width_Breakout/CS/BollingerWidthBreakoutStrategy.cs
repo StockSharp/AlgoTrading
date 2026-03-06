@@ -30,8 +30,6 @@ public class BollingerWidthBreakoutStrategy : Strategy
 	private BollingerBands _bollinger;
 	private SimpleMovingAverage _widthAverage;
 	private AverageTrueRange _atr;
-	private decimal _bestBidPrice;
-	private decimal _bestAskPrice;
 
 	/// <summary>
 	/// Bollinger Bands period.
@@ -136,8 +134,6 @@ public class BollingerWidthBreakoutStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_bestBidPrice = default;
-		_bestAskPrice = default;
 	}
 
 	/// <inheritdoc />
@@ -164,14 +160,6 @@ public class BollingerWidthBreakoutStrategy : Strategy
 			.BindEx(_bollinger, _atr, ProcessBollinger)
 			.Start();
 
-		SubscribeOrderBook()
-			.Bind(d =>
-			{
-				_bestBidPrice = d.GetBestBid()?.Price ?? _bestBidPrice;
-				_bestAskPrice = d.GetBestAsk()?.Price ?? _bestAskPrice;
-			})
-			.Start();
-
 		// Create chart area for visualization
 		var area = CreateChartArea();
 		if (area != null)
@@ -186,12 +174,13 @@ public class BollingerWidthBreakoutStrategy : Strategy
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
-		
-		// Process candle through ATR
-		var currentAtr = atrValue.ToDecimal();
 
+		if (!bollingerValue.IsFinal || !atrValue.IsFinal || bollingerValue.IsEmpty || atrValue.IsEmpty)
+			return;
+		
 		// Calculate Bollinger Band width
-		var bollingerTyped = (BollingerBandsValue)bollingerValue;
+		if (bollingerValue is not BollingerBandsValue bollingerTyped)
+			return;
 
 		if (bollingerTyped.UpBand is not decimal upperBand)
 			return;
@@ -238,9 +227,6 @@ public class BollingerWidthBreakoutStrategy : Strategy
 			
 			// Cancel active orders before placing new ones
 			CancelActiveOrders();
-			
-			// Calculate stop-loss based on current ATR
-			var stopOffset = StopMultiplier * currentAtr;
 			
 			// Trade in the determined direction
 			if (priceDirection && Position <= 0)

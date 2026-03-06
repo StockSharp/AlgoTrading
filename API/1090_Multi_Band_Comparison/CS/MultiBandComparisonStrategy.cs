@@ -88,6 +88,14 @@ public class MultiBandComparisonStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_prices.Clear();
+		_entryCounter = 0;
+		_exitCounter = 0;
+	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
@@ -129,7 +137,8 @@ public class MultiBandComparisonStrategy : Strategy
 		if (_prices.Count < Length || stdValue == 0m)
 			return;
 
-		var quantUpper = GetQuantile(_prices, UpperQuantile);
+		var snapshot = _prices.ToArray();
+		var quantUpper = GetQuantile(snapshot, UpperQuantile);
 		var quantUpperStdDown = quantUpper - stdValue * BollingerMultiplier;
 
 		var trigger = candle.ClosePrice > quantUpperStdDown;
@@ -140,10 +149,12 @@ public class MultiBandComparisonStrategy : Strategy
 		if (Position <= 0 && _entryCounter >= EntryConfirmBars)
 		{
 			BuyMarket();
+			_entryCounter = 0;
 		}
 		else if (Position > 0 && _exitCounter >= ExitConfirmBars)
 		{
 			SellMarket(Position);
+			_exitCounter = 0;
 		}
 	}
 

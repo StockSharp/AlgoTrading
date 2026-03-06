@@ -105,6 +105,8 @@ public class BollingerBandSqueezeStrategy : Strategy
 	{
 		base.OnReseted();
 
+		_bollinger = null;
+		_atr = null;
 		_prevBollingerWidth = 0;
 		_avgBollingerWidth = 0;
 		_bollingerWidthSum = 0;
@@ -127,7 +129,7 @@ public class BollingerBandSqueezeStrategy : Strategy
 		// Create subscription and bind indicator
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-				.BindEx(_bollinger, _atr, ProcessCandle)
+				.BindEx(_bollinger, ProcessCandle)
 				.Start();
 
 		// Setup chart visualization if available
@@ -146,7 +148,7 @@ public class BollingerBandSqueezeStrategy : Strategy
 		);
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bollingerValue, IIndicatorValue atrValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bollingerValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
@@ -161,8 +163,6 @@ public class BollingerBandSqueezeStrategy : Strategy
 
 		if (bollingerTyped.LowBand is not decimal lowerBand)
 			return;
-
-		var atr = atrValue.ToDecimal();
 
 		// Calculate Bollinger width (upper - lower)
 		var bollingerWidth = upperBand - lowerBand;

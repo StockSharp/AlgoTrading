@@ -28,12 +28,16 @@ public class KstSkyrexioStrategy : Strategy
 	private readonly StrategyParam<int> _smaLen3;
 	private readonly StrategyParam<int> _smaLen4;
 	private readonly StrategyParam<int> _signalLength;
+	private readonly StrategyParam<int> _maxEntries;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _prevKst;
 	private decimal _prevSig;
 	private decimal _stopLoss;
 	private decimal _takeProfit;
+	private int _entriesExecuted;
+	private int _barsSinceSignal;
 
 	/// <summary>
 	/// Moving average type for filter.
@@ -136,6 +140,16 @@ public class KstSkyrexioStrategy : Strategy
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	/// <summary>
+	/// Maximum entries per run.
+	/// </summary>
+	public int MaxEntries { get => _maxEntries.Value; set => _maxEntries.Value = value; }
+
+	/// <summary>
+	/// Minimum bars between entries.
+	/// </summary>
+	public int CooldownBars { get => _cooldownBars.Value; set => _cooldownBars.Value = value; }
+
+	/// <summary>
 	/// Initializes a new instance of the strategy.
 	/// </summary>
 	public KstSkyrexioStrategy()
@@ -201,14 +215,36 @@ public class KstSkyrexioStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Signal Length", "KST signal SMA length", "KST");
 
+		_maxEntries = Param(nameof(MaxEntries), 45)
+			.SetGreaterThanZero()
+			.SetDisplay("Max Entries", "Maximum entries per run", "Risk");
+
+		_cooldownBars = Param(nameof(CooldownBars), 120)
+			.SetGreaterThanZero()
+			.SetDisplay("Cooldown Bars", "Minimum bars between entries", "Risk");
+
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevKst = 0m;
+		_prevSig = 0m;
+		_stopLoss = 0m;
+		_takeProfit = 0m;
+		_entriesExecuted = 0;
+		_barsSinceSignal = 0;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+		_entriesExecuted = 0;
+		_barsSinceSignal = CooldownBars;
 
 		var roc1 = new RateOfChange { Length = RocLen1 };
 		var sma1 = new SMA { Length = SmaLen1 };
@@ -242,6 +278,8 @@ public class KstSkyrexioStrategy : Strategy
 			if (candle.State != CandleStates.Finished)
 				return;
 
+			_barsSinceSignal++;
+
 			var close = candle.ClosePrice;
 			var median = (candle.HighPrice + candle.LowPrice) / 2m;
 			var t = candle.OpenTime;
@@ -271,15 +309,22 @@ public class KstSkyrexioStrategy : Strategy
 			var chopCond = !EnableChopFilter || chop < ChopThreshold;
 
 			var crossUp = _prevKst <= _prevSig && kst > sig;
-			if (crossUp && close > filterValue && close > jawValue && chopCond && Position == 0)
+			if (_entriesExecuted < MaxEntries && _barsSinceSignal >= CooldownBars && crossUp && close > filterValue && close > jawValue && chopCond && Position == 0)
 			{
 				_stopLoss = candle.LowPrice - AtrStopLoss * atrValue;
 				_takeProfit = close + AtrTakeProfit * atrValue;
 				BuyMarket();
+				_entriesExecuted++;
+				_barsSinceSignal = 0;
 			}
 
-			if (Position > 0 && (candle.LowPrice <= _stopLoss || candle.HighPrice >= _takeProfit))
-				SellMarket();
+			if (Position > 0 && _stopLoss > 0m && _takeProfit > 0m && (candle.LowPrice <= _stopLoss || candle.HighPrice >= _takeProfit))
+			{
+				SellMarket(Math.Abs(Position));
+				_stopLoss = 0m;
+				_takeProfit = 0m;
+				_barsSinceSignal = 0;
+			}
 
 			_prevKst = kst;
 			_prevSig = sig;

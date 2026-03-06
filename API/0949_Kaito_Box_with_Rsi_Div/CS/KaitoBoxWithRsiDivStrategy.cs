@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -12,190 +9,199 @@ using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
-	
-	/// <summary>
-	/// Strategy that trades box breakouts with RSI divergence and moving average trend filter.
-	/// </summary>
-	public class KaitoBoxWithRsiDivStrategy : Strategy
-	{
+
+/// <summary>
+/// Box breakout strategy with RSI and MA200 filters.
+/// </summary>
+public class KaitoBoxWithRsiDivStrategy : Strategy
+{
 	private readonly StrategyParam<int> _boxLength;
 	private readonly StrategyParam<int> _rsiLength;
-	private readonly StrategyParam<int> _ma20Period;
-	private readonly StrategyParam<int> _ma50Period;
-	private readonly StrategyParam<int> _ma100Period;
-	private readonly StrategyParam<int> _ma200Period;
+	private readonly StrategyParam<int> _maPeriod;
+	private readonly StrategyParam<int> _maxEntries;
+	private readonly StrategyParam<int> _holdBars;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
-	
-	private decimal? _prevLow;
-	private decimal? _prevLowRsi;
-	private decimal? _prevHigh;
-	private decimal? _prevHighRsi;
-	
+
+	private int _entriesExecuted;
+	private int _barsInPosition;
+	private int _barsSinceSignal;
+
 	/// <summary>
-	/// Length of the box range for high/low detection.
+	/// Length of the box range.
 	/// </summary>
 	public int BoxLength
 	{
-	get => _boxLength.Value;
-	set => _boxLength.Value = value;
+		get => _boxLength.Value;
+		set => _boxLength.Value = value;
 	}
-	
+
 	/// <summary>
-	/// Length of the RSI indicator.
+	/// Length of RSI indicator.
 	/// </summary>
 	public int RsiLength
 	{
-	get => _rsiLength.Value;
-	set => _rsiLength.Value = value;
+		get => _rsiLength.Value;
+		set => _rsiLength.Value = value;
 	}
-	
+
 	/// <summary>
-	/// Period for the 20-bar moving average.
+	/// Period for long trend filter.
 	/// </summary>
-	public int Ma20Period
+	public int MaPeriod
 	{
-	get => _ma20Period.Value;
-	set => _ma20Period.Value = value;
+		get => _maPeriod.Value;
+		set => _maPeriod.Value = value;
 	}
-	
+
 	/// <summary>
-	/// Period for the 50-bar moving average.
+	/// Maximum number of entries per run.
 	/// </summary>
-	public int Ma50Period
+	public int MaxEntries
 	{
-	get => _ma50Period.Value;
-	set => _ma50Period.Value = value;
+		get => _maxEntries.Value;
+		set => _maxEntries.Value = value;
 	}
-	
+
 	/// <summary>
-	/// Period for the 100-bar moving average.
+	/// Maximum holding period in finished candles.
 	/// </summary>
-	public int Ma100Period
+	public int HoldBars
 	{
-	get => _ma100Period.Value;
-	set => _ma100Period.Value = value;
+		get => _holdBars.Value;
+		set => _holdBars.Value = value;
 	}
-	
+
 	/// <summary>
-	/// Period for the 200-bar moving average.
+	/// Minimum bars between entries.
 	/// </summary>
-	public int Ma200Period
+	public int CooldownBars
 	{
-	get => _ma200Period.Value;
-	set => _ma200Period.Value = value;
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
-	
+
 	/// <summary>
-	/// Type of candles used by the strategy.
+	/// Candle type used by the strategy.
 	/// </summary>
 	public DataType CandleType
 	{
-	get => _candleType.Value;
-	set => _candleType.Value = value;
+		get => _candleType.Value;
+		set => _candleType.Value = value;
 	}
-	
+
 	/// <summary>
 	/// Initializes a new instance of the strategy.
 	/// </summary>
 	public KaitoBoxWithRsiDivStrategy()
 	{
-	_boxLength = Param(nameof(BoxLength), 3)
-	.SetDisplay("Box Length", "Length of the box range", "General")
-	
-	.SetOptimize(2, 10, 1);
-	
-	_rsiLength = Param(nameof(RsiLength), 2)
-	.SetDisplay("RSI Length", "Length of RSI", "General")
-	
-	.SetOptimize(2, 14, 1);
-	
-	_ma20Period = Param(nameof(Ma20Period), 20)
-	.SetDisplay("MA20 Period", "Short moving average period", "Trend");
-	
-	_ma50Period = Param(nameof(Ma50Period), 50)
-	.SetDisplay("MA50 Period", "Medium moving average period", "Trend");
-	
-	_ma100Period = Param(nameof(Ma100Period), 100)
-	.SetDisplay("MA100 Period", "Medium moving average period", "Trend");
-	
-	_ma200Period = Param(nameof(Ma200Period), 200)
-	.SetDisplay("MA200 Period", "Long moving average period", "Trend");
-	
-	_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(3).TimeFrame())
-	.SetDisplay("Candle Type", "Timeframe for candles", "General");
+		_boxLength = Param(nameof(BoxLength), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("Box Length", "Length of the box range", "General");
+
+		_rsiLength = Param(nameof(RsiLength), 14)
+			.SetGreaterThanZero()
+			.SetDisplay("RSI Length", "Length of RSI", "General");
+
+		_maPeriod = Param(nameof(MaPeriod), 200)
+			.SetGreaterThanZero()
+			.SetDisplay("MA Period", "Trend moving average period", "Trend");
+
+		_maxEntries = Param(nameof(MaxEntries), 45)
+			.SetGreaterThanZero()
+			.SetDisplay("Max Entries", "Maximum entries per run", "Risk");
+
+		_holdBars = Param(nameof(HoldBars), 240)
+			.SetGreaterThanZero()
+			.SetDisplay("Hold Bars", "Bars to hold position before forced exit", "Risk");
+
+		_cooldownBars = Param(nameof(CooldownBars), 240)
+			.SetGreaterThanZero()
+			.SetDisplay("Cooldown Bars", "Minimum bars between entries", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(3).TimeFrame())
+			.SetDisplay("Candle Type", "Timeframe for candles", "General");
 	}
-	
+
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-	return [(Security, CandleType)];
+		return [(Security, CandleType)];
 	}
-	
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_entriesExecuted = 0;
+		_barsInPosition = 0;
+		_barsSinceSignal = 0;
+	}
+
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
-	base.OnStarted2(time);
-	
-	StartProtection(null, null);
-	
-	var highest = new Highest { Length = BoxLength };
-	var lowest = new Lowest { Length = BoxLength };
-	var rsi = new RelativeStrengthIndex { Length = RsiLength };
-	var ma20 = new SMA { Length = Ma20Period };
-	var ma50 = new SMA { Length = Ma50Period };
-	var ma100 = new SMA { Length = Ma100Period };
-	var ma200 = new SMA { Length = Ma200Period };
-	
-	var subscription = SubscribeCandles(CandleType);
-	subscription
-	.Bind(highest, lowest, rsi, ma20, ma50, ma100, ma200, ProcessCandle)
-	.Start();
-	
-	var area = CreateChartArea();
-	if (area != null)
+		base.OnStarted2(time);
+
+		var highest = new Highest { Length = BoxLength };
+		var lowest = new Lowest { Length = BoxLength };
+		var rsi = new RelativeStrengthIndex { Length = RsiLength };
+		var ma = new SimpleMovingAverage { Length = MaPeriod };
+
+		_entriesExecuted = 0;
+		_barsInPosition = 0;
+		_barsSinceSignal = CooldownBars;
+
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(highest, lowest, rsi, ma, ProcessCandle).Start();
+	}
+
+	private void ProcessCandle(ICandleMessage candle, decimal highestHigh, decimal lowestLow, decimal rsiValue, decimal maValue)
 	{
-	DrawCandles(area, subscription);
-	DrawIndicator(area, ma20);
-	DrawIndicator(area, ma50);
-	DrawIndicator(area, ma100);
-	DrawIndicator(area, ma200);
-	DrawOwnTrades(area);
+		if (candle.State != CandleStates.Finished)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		if (Position != 0)
+		{
+			_barsInPosition++;
+
+			if (_barsInPosition >= HoldBars)
+			{
+				if (Position > 0)
+					SellMarket(Math.Abs(Position));
+				else
+					BuyMarket(Math.Abs(Position));
+
+				_barsInPosition = 0;
+				_barsSinceSignal = 0;
+			}
+
+			return;
+		}
+
+		_barsInPosition = 0;
+		_barsSinceSignal++;
+
+		if (_entriesExecuted >= MaxEntries || _barsSinceSignal < CooldownBars)
+			return;
+
+		var longSignal = candle.HighPrice >= highestHigh && rsiValue > 55m && candle.ClosePrice > maValue;
+		var shortSignal = candle.LowPrice <= lowestLow && rsiValue < 45m && candle.ClosePrice < maValue;
+
+		if (longSignal)
+		{
+			BuyMarket();
+			_entriesExecuted++;
+			_barsSinceSignal = 0;
+		}
+		else if (shortSignal)
+		{
+			SellMarket();
+			_entriesExecuted++;
+			_barsSinceSignal = 0;
+		}
 	}
-	}
-	
-	private void ProcessCandle(ICandleMessage candle, decimal highestHigh, decimal lowestLow, decimal rsiValue, decimal ma20, decimal ma50, decimal ma100, decimal ma200)
-	{
-	if (candle.State != CandleStates.Finished)
-	return;
-	
-	if (!IsFormedAndOnlineAndAllowTrading())
-	return;
-	
-	const decimal rsiOverbought = 80m;
-	const decimal rsiOversold = 13m;
-	
-	bool downTrend = ma20 < ma200 && ma50 < ma200 && ma100 < ma200;
-	bool upTrend = ma20 > ma200 && ma50 > ma200 && ma100 > ma200;
-	
-	bool bullishDiv = _prevLow is decimal prevLow && _prevLowRsi is decimal prevLowRsi &&
-	candle.LowPrice < prevLow && rsiValue > prevLowRsi && rsiValue < rsiOversold;
-	
-	bool bearishDiv = _prevHigh is decimal prevHigh && _prevHighRsi is decimal prevHighRsi &&
-	candle.HighPrice > prevHigh && rsiValue < prevHighRsi && rsiValue > rsiOverbought;
-	
-	bool longSignal = candle.ClosePrice <= lowestLow && bullishDiv;
-	bool shortSignal = candle.ClosePrice >= highestHigh && bearishDiv;
-	
-	if (downTrend && longSignal && Position <= 0)
-	BuyMarket();
-	
-	if (upTrend && shortSignal && Position > 0)
-	SellMarket(Position);
-	
-	_prevLow = lowestLow;
-	_prevLowRsi = rsiValue;
-	_prevHigh = highestHigh;
-	_prevHighRsi = rsiValue;
-	}
-	}
-	
+}

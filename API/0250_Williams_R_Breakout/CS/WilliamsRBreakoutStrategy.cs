@@ -203,13 +203,11 @@ public class WilliamsRBreakoutStrategy : Strategy
 		if (currentWilliamsR > currentWilliamsRAvg + Multiplier * stdDev && Position <= 0)
 		{
 			// Williams %R breaking out upward (but remember Williams %R is negative, less negative = bullish)
-			CancelActiveOrders();
 			BuyMarket(Volume + Math.Abs(Position));
 		}
 		else if (currentWilliamsR < currentWilliamsRAvg - Multiplier * stdDev && Position >= 0)
 		{
 			// Williams %R breaking out downward (more negative = bearish)
-			CancelActiveOrders();
 			SellMarket(Volume + Math.Abs(Position));
 		}
 		// Check for exit condition - Williams %R returns to average
@@ -217,7 +215,10 @@ public class WilliamsRBreakoutStrategy : Strategy
 				 (Position < 0 && currentWilliamsR > currentWilliamsRAvg))
 		{
 			// Exit position
-			ClosePosition();
+			if (Position > 0)
+				SellMarket(Math.Abs(Position));
+			else if (Position < 0)
+				BuyMarket(Math.Abs(Position));
 		}
 		
 		// Update previous values

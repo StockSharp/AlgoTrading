@@ -185,10 +185,18 @@ public class HullMaSlopeBreakoutStrategy : Strategy
 		
 		// Calculate current slope (simple difference for now)
 		_currentSlope = currentHullValue - _prevHullValue;
+
+		if (_slopes is null || _slopes.Length != LookbackPeriod)
+		{
+			_slopes = new decimal[LookbackPeriod];
+			_currentIndex = 0;
+			_prevHullValue = currentHullValue;
+			return;
+		}
 		
 		// Store slope in array and update index
 		_slopes[_currentIndex] = _currentSlope;
-		_currentIndex = (_currentIndex + 1) % LookbackPeriod;
+		_currentIndex = (_currentIndex + 1) % _slopes.Length;
 		
 		// Calculate statistics once we have enough data
 		if (!IsFormedAndOnlineAndAllowTrading())
@@ -249,24 +257,28 @@ public class HullMaSlopeBreakoutStrategy : Strategy
 	
 	private void CalculateStatistics()
 	{
+		var period = _slopes?.Length ?? 0;
+		if (period <= 0)
+			return;
+
 		// Reset statistics
 		_avgSlope = 0;
 		decimal sumSquaredDiffs = 0;
 		
 		// Calculate average
-		for (int i = 0; i < LookbackPeriod; i++)
+		for (int i = 0; i < period; i++)
 		{
 			_avgSlope += _slopes[i];
 		}
-		_avgSlope /= LookbackPeriod;
+		_avgSlope /= period;
 		
 		// Calculate standard deviation
-		for (int i = 0; i < LookbackPeriod; i++)
+		for (int i = 0; i < period; i++)
 		{
 			decimal diff = _slopes[i] - _avgSlope;
 			sumSquaredDiffs += diff * diff;
 		}
 		
-		_stdDevSlope = (decimal)Math.Sqrt((double)(sumSquaredDiffs / LookbackPeriod));
+		_stdDevSlope = (decimal)Math.Sqrt((double)(sumSquaredDiffs / period));
 	}
 }

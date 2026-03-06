@@ -17,28 +17,44 @@ namespace StockSharp.Samples.Strategies;
 public class MomentumAlligator4hBitcoinStrategy : Strategy
 {
 	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<int> _signalCooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _prevAo;
 	private bool _hasPrev;
 	private decimal _entryPrice;
+	private int _barsFromSignal;
 
 	public decimal StopLossPercent { get => _stopLossPercent.Value; set => _stopLossPercent.Value = value; }
+	public int SignalCooldownBars { get => _signalCooldownBars.Value; set => _signalCooldownBars.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public MomentumAlligator4hBitcoinStrategy()
 	{
 		_stopLossPercent = Param(nameof(StopLossPercent), 0.02m).SetGreaterThanZero();
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
+		_signalCooldownBars = Param(nameof(SignalCooldownBars), 8).SetGreaterThanZero();
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame());
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevAo = 0m;
+		_hasPrev = false;
+		_entryPrice = 0m;
+		_barsFromSignal = 0;
 	}
 
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+		StartProtection(null, null);
 
 		_prevAo = 0;
 		_hasPrev = false;
 		_entryPrice = 0;
+		_barsFromSignal = SignalCooldownBars;
 
 		var jaw = new SmoothedMovingAverage { Length = 13 };
 		var teeth = new SmoothedMovingAverage { Length = 8 };
@@ -60,24 +76,29 @@ public class MomentumAlligator4hBitcoinStrategy : Strategy
 			return;
 
 		var close = candle.ClosePrice;
+		_barsFromSignal++;
 
 		if (_hasPrev)
 		{
-			// AO increasing and positive - momentum building
-			var aoMomentum = ao > _prevAo && ao > 0;
+			var aoCrossUp = _prevAo <= 0m && ao > 0m;
+			var aoCrossDown = _prevAo >= 0m && ao < 0m;
+			var alligatorBull = lips > teeth && close > jaw;
+			var alligatorBear = lips < teeth && close < jaw;
 
-			if (aoMomentum && close > jaw && close > lips && Position <= 0)
+			if (_barsFromSignal >= SignalCooldownBars && aoCrossUp && alligatorBull && close > lips && Position <= 0)
 			{
-				BuyMarket();
+				var volume = Volume + Math.Abs(Position);
+				BuyMarket(volume);
 				_entryPrice = close;
+				_barsFromSignal = 0;
 			}
 
-			// AO decreasing and negative - bearish momentum
-			var aoBearish = ao < _prevAo && ao < 0;
-			if (aoBearish && close < jaw && close < lips && Position >= 0)
+			if (_barsFromSignal >= SignalCooldownBars && aoCrossDown && alligatorBear && close < lips && Position >= 0)
 			{
-				SellMarket();
+				var volume = Volume + Math.Abs(Position);
+				SellMarket(volume);
 				_entryPrice = close;
+				_barsFromSignal = 0;
 			}
 		}
 

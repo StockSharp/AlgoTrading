@@ -26,12 +26,15 @@ public class AdxVolumeStrategy : Strategy
 	private readonly StrategyParam<int> _adxPeriod;
 	private readonly StrategyParam<decimal> _adxThreshold;
 	private readonly StrategyParam<int> _volumeAvgPeriod;
+	private readonly StrategyParam<decimal> _volumeMultiplier;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<Unit> _stopLoss;
 	private readonly StrategyParam<DataType> _candleType;
 
 	// For volume tracking
 	private decimal _averageVolume;
 	private int _volumeCounter;
+	private int _cooldown;
 
 	/// <summary>
 	/// ADX period.
@@ -58,6 +61,24 @@ public class AdxVolumeStrategy : Strategy
 	{
 		get => _volumeAvgPeriod.Value;
 		set => _volumeAvgPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Volume multiplier above average.
+	/// </summary>
+	public decimal VolumeMultiplier
+	{
+		get => _volumeMultiplier.Value;
+		set => _volumeMultiplier.Value = value;
+	}
+
+	/// <summary>
+	/// Bars to wait between trades.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	/// <summary>
@@ -95,6 +116,14 @@ public class AdxVolumeStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Volume Average Period", "Period for volume moving average", "Volume Parameters");
 
+		_volumeMultiplier = Param(nameof(VolumeMultiplier), 1.4m)
+			.SetRange(1.0m, 3.0m)
+			.SetDisplay("Volume Multiplier", "Multiplier over average volume", "Volume Parameters");
+
+		_cooldownBars = Param(nameof(CooldownBars), 160)
+			.SetRange(5, 500)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "General");
+
 		_stopLoss = Param(nameof(StopLoss), new Unit(2, UnitTypes.Absolute))
 			.SetDisplay("Stop Loss", "Stop loss in ATR or value", "Risk Management");
 
@@ -103,6 +132,7 @@ public class AdxVolumeStrategy : Strategy
 
 		_averageVolume = 0;
 		_volumeCounter = 0;
+		_cooldown = 0;
 	}
 
 	/// <inheritdoc />
@@ -118,6 +148,7 @@ public class AdxVolumeStrategy : Strategy
 
 		_averageVolume = 0;
 		_volumeCounter = 0;
+		_cooldown = 0;
 	}
 
 	/// <inheritdoc />
@@ -145,8 +176,6 @@ public class AdxVolumeStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		// Start protective orders
-		StartProtection(new(), StopLoss);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue adxValue)
@@ -155,6 +184,9 @@ public class AdxVolumeStrategy : Strategy
 			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		if (!adxValue.IsFormed)
 			return;
 
 		// Update average volume calculation
@@ -170,38 +202,51 @@ public class AdxVolumeStrategy : Strategy
 			_averageVolume = (_averageVolume * (VolumeAvgPeriod - 1) + currentVolume) / VolumeAvgPeriod;
 		}
 
+		if (_volumeCounter < VolumeAvgPeriod)
+		{
+			if (_cooldown > 0)
+				_cooldown--;
+			return;
+		}
+
 		var adxTyped = (AverageDirectionalIndexValue)adxValue;
 		var diPlusValue = adxTyped.Dx.Plus;
 		var diMinusValue = adxTyped.Dx.Minus;
 		var adxMa = adxTyped.MovingAverage;
 
 		// Check if volume is above average
-		var isVolumeAboveAverage = currentVolume > _averageVolume;
+		var isVolumeAboveAverage = currentVolume > _averageVolume * VolumeMultiplier;
 
 		LogInfo($"Candle: {candle.OpenTime}, Close: {candle.ClosePrice}, " +
 			   $"ADX: {adxMa}, DI+: {diPlusValue}, DI-: {diMinusValue}, " +
 			   $"Volume: {currentVolume}, Avg Volume: {_averageVolume}");
+
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+			return;
+		}
 
 		// Trading rules
 		if (adxMa > AdxThreshold && isVolumeAboveAverage)
 		{
 			// Strong trend detected with above average volume
 			
-			if (diPlusValue > diMinusValue && Position <= 0)
+			if (diPlusValue > diMinusValue && Position == 0)
 			{
 				// Bullish trend - DI+ > DI-
-				var volume = Volume + Math.Abs(Position);
-				BuyMarket(volume);
+				BuyMarket();
+				_cooldown = CooldownBars;
 				
-				LogInfo($"Buy signal: Strong trend (ADX: {adxMa}) with DI+ > DI- and high volume. Volume: {volume}");
+				LogInfo($"Buy signal: Strong trend (ADX: {adxMa}) with DI+ > DI- and high volume.");
 			}
-			else if (diMinusValue > diPlusValue && Position >= 0)
+			else if (diMinusValue > diPlusValue && Position == 0)
 			{
 				// Bearish trend - DI- > DI+
-				var volume = Volume + Math.Abs(Position);
-				SellMarket(volume);
+				SellMarket();
+				_cooldown = CooldownBars;
 				
-				LogInfo($"Sell signal: Strong trend (ADX: {adxMa}) with DI- > DI+ and high volume. Volume: {volume}");
+				LogInfo($"Sell signal: Strong trend (ADX: {adxMa}) with DI- > DI+ and high volume.");
 			}
 		}
 		// Exit conditions
@@ -210,12 +255,14 @@ public class AdxVolumeStrategy : Strategy
 			// Trend weakening - exit all positions
 			if (Position > 0)
 			{
-				SellMarket(Position);
+				SellMarket();
+				_cooldown = CooldownBars;
 				LogInfo($"Exit long: ADX weakening below {AdxThreshold * 0.8m}. Position: {Position}");
 			}
 			else if (Position < 0)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
+				_cooldown = CooldownBars;
 				LogInfo($"Exit short: ADX weakening below {AdxThreshold * 0.8m}. Position: {Position}");
 			}
 		}
@@ -223,13 +270,15 @@ public class AdxVolumeStrategy : Strategy
 		else if (diPlusValue < diMinusValue && Position > 0)
 		{
 			// DI+ crosses below DI- while in long position
-			SellMarket(Position);
+			SellMarket();
+			_cooldown = CooldownBars;
 			LogInfo($"Exit long: DI+ crossed below DI-. Position: {Position}");
 		}
 		else if (diPlusValue > diMinusValue && Position < 0)
 		{
 			// DI+ crosses above DI- while in short position
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
+			_cooldown = CooldownBars;
 			LogInfo($"Exit short: DI+ crossed above DI-. Position: {Position}");
 		}
 	}

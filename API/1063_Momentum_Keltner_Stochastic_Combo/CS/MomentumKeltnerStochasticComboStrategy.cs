@@ -24,6 +24,7 @@ public class MomentumKeltnerStochasticComboStrategy : Strategy
 	private readonly StrategyParam<decimal> _threshold;
 	private readonly StrategyParam<int> _atrLength;
 	private readonly StrategyParam<decimal> _slPoints;
+	private readonly StrategyParam<int> _signalCooldownBars;
 
 	private readonly StrategyParam<bool> _enableScaling;
 	private readonly StrategyParam<int> _baseContracts;
@@ -32,6 +33,10 @@ public class MomentumKeltnerStochasticComboStrategy : Strategy
 	private readonly StrategyParam<int> _maxContracts;
 
 	private readonly StrategyParam<DataType> _candleType;
+
+	private decimal _prevMomentum;
+	private bool _hasPrevMomentum;
+	private int _barsFromSignal;
 
 	public int MomLength
 	{
@@ -67,6 +72,12 @@ public class MomentumKeltnerStochasticComboStrategy : Strategy
 	{
 		get => _slPoints.Value;
 		set => _slPoints.Value = value;
+	}
+
+	public int SignalCooldownBars
+	{
+		get => _signalCooldownBars.Value;
+		set => _signalCooldownBars.Value = value;
 	}
 
 	public bool EnableScaling
@@ -125,7 +136,7 @@ public class MomentumKeltnerStochasticComboStrategy : Strategy
 			
 			.SetOptimize(0.5m, 2m, 0.1m);
 
-		_threshold = Param(nameof(Threshold), 99m)
+		_threshold = Param(nameof(Threshold), 10m)
 			.SetRange(0m, 100m)
 			.SetDisplay("Stochastic Threshold", "Threshold for Keltner stochastic", "Indicators")
 			
@@ -143,7 +154,7 @@ public class MomentumKeltnerStochasticComboStrategy : Strategy
 			
 			.SetOptimize(500m, 2000m, 100m);
 
-		_enableScaling = Param(nameof(EnableScaling), true)
+		_enableScaling = Param(nameof(EnableScaling), false)
 			.SetDisplay("Enable Dynamic Contracts", "Use equity based position sizing", "Money Management");
 
 		_baseContracts = Param(nameof(BaseContracts), 1)
@@ -162,7 +173,11 @@ public class MomentumKeltnerStochasticComboStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Max Contracts", "Maximum contracts allowed", "Money Management");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_signalCooldownBars = Param(nameof(SignalCooldownBars), 24)
+			.SetGreaterThanZero()
+			.SetDisplay("Signal Cooldown Bars", "Minimum bars between entries", "Risk Management");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for calculations", "General");
 	}
 
@@ -171,9 +186,21 @@ public class MomentumKeltnerStochasticComboStrategy : Strategy
 		return [(Security, CandleType)];
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevMomentum = 0m;
+		_hasPrevMomentum = false;
+		_barsFromSignal = 0;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+		_prevMomentum = 0m;
+		_hasPrevMomentum = false;
+		_barsFromSignal = SignalCooldownBars;
 
 		var ema = new EMA { Length = KeltnerLength };
 		var atr = new AverageTrueRange { Length = AtrLength };
@@ -214,11 +241,11 @@ public class MomentumKeltnerStochasticComboStrategy : Strategy
 		var denominator = upper - lower;
 		var keltnerStoch = denominator != 0m ? 100m * (candle.ClosePrice - lower) / denominator : 50m;
 
-		var longCondition = momentumValue > 0m && keltnerStoch < Threshold;
-		var shortCondition = momentumValue < 0m && keltnerStoch > Threshold;
+		var momentumCrossUp = _hasPrevMomentum && _prevMomentum <= 0m && momentumValue > 0m;
+		var momentumCrossDown = _hasPrevMomentum && _prevMomentum >= 0m && momentumValue < 0m;
 
-		var exitLongCondition = Position > 0 && keltnerStoch > Threshold;
-		var exitShortCondition = Position < 0 && keltnerStoch < Threshold;
+		var longCondition = momentumCrossUp && keltnerStoch <= Threshold;
+		var shortCondition = momentumCrossDown && keltnerStoch >= (100m - Threshold);
 
 		var contractSize = BaseContracts;
 
@@ -233,20 +260,22 @@ public class MomentumKeltnerStochasticComboStrategy : Strategy
 		if (contractSize > MaxContracts)
 			contractSize = MaxContracts;
 
-		if (longCondition && Position <= 0)
+		_barsFromSignal++;
+
+		if (_barsFromSignal >= SignalCooldownBars && longCondition && Position <= 0)
 		{
 			var volume = contractSize + Math.Abs(Position);
 			BuyMarket(volume);
+			_barsFromSignal = 0;
 		}
-		else if (shortCondition && Position >= 0)
+		else if (_barsFromSignal >= SignalCooldownBars && shortCondition && Position >= 0)
 		{
 			var volume = contractSize + Math.Abs(Position);
 			SellMarket(volume);
+			_barsFromSignal = 0;
 		}
 
-		if (exitLongCondition)
-			SellMarket(Math.Abs(Position));
-		else if (exitShortCondition)
-			BuyMarket(Math.Abs(Position));
+		_prevMomentum = momentumValue;
+		_hasPrevMomentum = true;
 	}
 }

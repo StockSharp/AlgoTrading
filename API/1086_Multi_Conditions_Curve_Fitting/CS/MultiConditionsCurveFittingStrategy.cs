@@ -20,13 +20,21 @@ public class MultiConditionsCurveFittingStrategy : Strategy
 	private readonly StrategyParam<int> _rsiLength;
 	private readonly StrategyParam<decimal> _rsiOverbought;
 	private readonly StrategyParam<decimal> _rsiOversold;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
+
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private bool _hasPrev;
+	private int _barIndex;
+	private int _lastSignalBar = int.MinValue;
 
 	public int FastEmaLength { get => _fastEmaLength.Value; set => _fastEmaLength.Value = value; }
 	public int SlowEmaLength { get => _slowEmaLength.Value; set => _slowEmaLength.Value = value; }
 	public int RsiLength { get => _rsiLength.Value; set => _rsiLength.Value = value; }
 	public decimal RsiOverbought { get => _rsiOverbought.Value; set => _rsiOverbought.Value = value; }
 	public decimal RsiOversold { get => _rsiOversold.Value; set => _rsiOversold.Value = value; }
+	public int CooldownBars { get => _cooldownBars.Value; set => _cooldownBars.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public MultiConditionsCurveFittingStrategy()
@@ -34,14 +42,20 @@ public class MultiConditionsCurveFittingStrategy : Strategy
 		_fastEmaLength = Param(nameof(FastEmaLength), 10);
 		_slowEmaLength = Param(nameof(SlowEmaLength), 25);
 		_rsiLength = Param(nameof(RsiLength), 14);
-		_rsiOverbought = Param(nameof(RsiOverbought), 70m);
-		_rsiOversold = Param(nameof(RsiOversold), 30m);
+		_rsiOverbought = Param(nameof(RsiOverbought), 68m);
+		_rsiOversold = Param(nameof(RsiOversold), 32m);
+		_cooldownBars = Param(nameof(CooldownBars), 5).SetGreaterThanZero();
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
 	}
 
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+		_prevFast = 0m;
+		_prevSlow = 0m;
+		_hasPrev = false;
+		_barIndex = 0;
+		_lastSignalBar = int.MinValue;
 
 		var fastEma = new EMA { Length = FastEmaLength };
 		var slowEma = new EMA { Length = SlowEmaLength };
@@ -58,21 +72,47 @@ public class MultiConditionsCurveFittingStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		_barIndex++;
+
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var longCondition = fastEma > slowEma && rsi < 50;
-		var shortCondition = fastEma < slowEma && rsi > 50;
+		if (!_hasPrev)
+		{
+			_prevFast = fastEma;
+			_prevSlow = slowEma;
+			_hasPrev = true;
+			return;
+		}
 
-		if (longCondition && Position <= 0)
-			BuyMarket();
-		if (shortCondition && Position >= 0)
-			SellMarket();
+		var canSignal = _barIndex - _lastSignalBar >= CooldownBars;
+		var longSignal = _prevFast <= _prevSlow && fastEma > slowEma && rsi <= 60m;
+		var shortSignal = _prevFast >= _prevSlow && fastEma < slowEma && rsi >= 40m;
 
-		// Exit
-		if (Position > 0 && (fastEma < slowEma || rsi > RsiOverbought))
-			SellMarket();
-		if (Position < 0 && (fastEma > slowEma || rsi < RsiOversold))
-			BuyMarket();
+		if (canSignal && longSignal && Position <= 0)
+		{
+			BuyMarket(Volume + Math.Abs(Position));
+			_lastSignalBar = _barIndex;
+		}
+		else if (canSignal && shortSignal && Position >= 0)
+		{
+			SellMarket(Volume + Math.Abs(Position));
+			_lastSignalBar = _barIndex;
+		}
+
+		_prevFast = fastEma;
+		_prevSlow = slowEma;
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_prevFast = 0m;
+		_prevSlow = 0m;
+		_hasPrev = false;
+		_barIndex = 0;
+		_lastSignalBar = int.MinValue;
 	}
 }

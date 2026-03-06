@@ -34,6 +34,8 @@ public class CointegrationPairsStrategy : Strategy
 	
 	private decimal _asset1Price;
 	private decimal _asset2Price;
+	private const int _tradeCooldownTicks = 30;
+	private int _cooldownTicksLeft;
 
 	private Portfolio _asset2Portfolio;
 
@@ -149,6 +151,7 @@ public class CointegrationPairsStrategy : Strategy
 		_residuals.Clear();
 		_asset1Price = 0;
 		_asset2Price = 0;
+		_cooldownTicksLeft = 0;
 
 		// Use the same portfolio for second asset or find another portfolio
 		_asset2Portfolio = Portfolio;
@@ -213,8 +216,17 @@ public class CointegrationPairsStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
+		if (_cooldownTicksLeft > 0)
+		{
+			_cooldownTicksLeft--;
+			_asset1Price = 0;
+			_asset2Price = 0;
+			return;
+		}
+
 		// Calculate residual = Asset1Price - Beta * Asset2Price
 		var residual = _asset1Price - Beta * _asset2Price;
+		var hasTraded = false;
 		
 		// Track residual statistics over period
 		_residuals.Enqueue(residual);
@@ -245,6 +257,7 @@ public class CointegrationPairsStrategy : Strategy
 				// Long Asset1, Short Asset2
 				// First, close any existing short position on Asset1
 				BuyMarket(Volume + Math.Abs(Position));
+				hasTraded = true;
 				
 				// Then, short Asset2 using the second portfolio
 				if (_asset2Portfolio != null)
@@ -258,6 +271,7 @@ public class CointegrationPairsStrategy : Strategy
 					};
 					
 					RegisterOrder(asset2Order);
+					hasTraded = true;
 				}
 			}
 			else if (zScore > EntryThreshold && Position >= 0)
@@ -265,6 +279,7 @@ public class CointegrationPairsStrategy : Strategy
 				// Short Asset1, Long Asset2
 				// First, close any existing long position on Asset1
 				SellMarket(Volume + Math.Abs(Position));
+				hasTraded = true;
 				
 				// Then, buy Asset2 using the second portfolio
 				if (_asset2Portfolio != null)
@@ -278,6 +293,7 @@ public class CointegrationPairsStrategy : Strategy
 					};
 					
 					RegisterOrder(asset2Order);
+					hasTraded = true;
 				}
 			}
 			else if (Math.Abs(zScore) < 0.5m)
@@ -289,6 +305,7 @@ public class CointegrationPairsStrategy : Strategy
 						SellMarket(Position);
 					else
 						BuyMarket(Math.Abs(Position));
+					hasTraded = true;
 					
 					// Close position on Asset2
 					if (_asset2Portfolio != null)
@@ -302,10 +319,14 @@ public class CointegrationPairsStrategy : Strategy
 						};
 						
 						RegisterOrder(asset2Order);
+						hasTraded = true;
 					}
 				}
 			}
 		}
+
+		if (hasTraded)
+			_cooldownTicksLeft = _tradeCooldownTicks;
 		
 		// Reset prices for next update
 		_asset1Price = 0;

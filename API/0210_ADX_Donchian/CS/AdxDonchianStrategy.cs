@@ -24,6 +24,8 @@ public class AdxDonchianStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _adxThreshold;
 	private readonly StrategyParam<decimal> _multiplier;
+	private readonly StrategyParam<int> _cooldownBars;
+	private int _cooldown;
 
 	/// <summary>
 	/// ADX period
@@ -59,6 +61,15 @@ public class AdxDonchianStrategy : Strategy
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Bars to wait between trades.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	/// <summary>
@@ -99,7 +110,7 @@ public class AdxDonchianStrategy : Strategy
 			.SetDisplay("Stop-Loss %", "Stop-loss percentage from entry price", "Risk Management")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
 		_adxThreshold = Param(nameof(AdxThreshold), 10)
@@ -111,6 +122,10 @@ public class AdxDonchianStrategy : Strategy
 			.SetRange(0m, 1m)
 			.SetDisplay("Multiplier %", "Sensitivity to Donchian Channel border (percent)", "Indicators")
 			;
+
+		_cooldownBars = Param(nameof(CooldownBars), 40)
+			.SetRange(1, 200)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "General");
 	}
 
 	/// <inheritdoc />
@@ -123,6 +138,7 @@ public class AdxDonchianStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
+		_cooldown = 0;
 	}
 
 	/// <inheritdoc />
@@ -140,9 +156,6 @@ public class AdxDonchianStrategy : Strategy
 			.BindEx(donchian, adx, ProcessCandle)
 			.Start();
 		
-		// Enable percentage-based stop-loss protection
-		StartProtection(new Unit(StopLossPercent, UnitTypes.Percent), default);
-
 		// Setup chart visualization if available
 		var area = CreateChartArea();
 		if (area != null)
@@ -180,21 +193,25 @@ public class AdxDonchianStrategy : Strategy
 		// Short: ADX > AdxThreshold && Price <= lowerBorder (strong trend with breakout down)
 		
 		var strongTrend = typedAdx.MovingAverage > AdxThreshold;
+		if (_cooldown > 0)
+			_cooldown--;
 
 		var upperBorder = upperBand * (1 - Multiplier / 100);
 		var lowerBorder = lowerBand * (1 + Multiplier / 100);
 
-		if (strongTrend && price >= upperBorder && Position <= 0)
+		if (_cooldown == 0 && strongTrend && price >= upperBorder && Position <= 0)
 		{
 			// Buy signal - Strong trend with Donchian Channel breakout up (with multiplier)
 			var volume = Volume + Math.Abs(Position);
 			BuyMarket(volume);
+			_cooldown = CooldownBars;
 		}
-		else if (strongTrend && price <= lowerBorder && Position >= 0)
+		else if (_cooldown == 0 && strongTrend && price <= lowerBorder && Position >= 0)
 		{
 			// Sell signal - Strong trend with Donchian Channel breakout down (with multiplier)
 			var volume = Volume + Math.Abs(Position);
 			SellMarket(volume);
+			_cooldown = CooldownBars;
 		}
 		// Exit conditions - ADX weakness
 		else if (Position != 0 && typedAdx.MovingAverage < AdxThreshold - 5)
@@ -204,6 +221,8 @@ public class AdxDonchianStrategy : Strategy
 				SellMarket(Position);
 			else
 				BuyMarket(Math.Abs(Position));
+
+			_cooldown = CooldownBars;
 		}
 	}
 }

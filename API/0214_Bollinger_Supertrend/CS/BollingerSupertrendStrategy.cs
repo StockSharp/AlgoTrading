@@ -25,6 +25,7 @@ public class BollingerSupertrendStrategy : Strategy
 	private readonly StrategyParam<decimal> _bollingerDeviation;
 	private readonly StrategyParam<int> _supertrendPeriod;
 	private readonly StrategyParam<decimal> _supertrendMultiplier;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 	
 	private BollingerBands _bollinger;
@@ -33,6 +34,7 @@ public class BollingerSupertrendStrategy : Strategy
 	private bool _isLongTrend;
 	private decimal _supertrendValue;
 	private decimal _lastClose;
+	private int _cooldown;
 	
 	/// <summary>
 	/// Bollinger Bands period.
@@ -71,6 +73,15 @@ public class BollingerSupertrendStrategy : Strategy
 	}
 	
 	/// <summary>
+	/// Bars to wait between trades.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Candle type parameter.
 	/// </summary>
 	public DataType CandleType
@@ -107,8 +118,12 @@ public class BollingerSupertrendStrategy : Strategy
 			.SetDisplay("Supertrend Multiplier", "ATR multiplier for Supertrend calculation", "Indicators")
 			
 			.SetOptimize(2.0m, 4.0m, 0.5m);
+
+		_cooldownBars = Param(nameof(CooldownBars), 60)
+			.SetRange(1, 200)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "General");
 			
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 	
@@ -128,6 +143,7 @@ public class BollingerSupertrendStrategy : Strategy
 		_isLongTrend = default;
 		_supertrendValue = default;
 		_lastClose = default;
+		_cooldown = 0;
 	}
 
 	/// <inheritdoc />
@@ -236,23 +252,25 @@ Width = BollingerDeviation
 		bool isPriceAboveSupertrend = candle.ClosePrice > _supertrendValue;
 		bool isPriceAboveUpperBand = candle.ClosePrice > upperBand;
 		bool isPriceBelowLowerBand = candle.ClosePrice < lowerBand;
+		if (_cooldown > 0)
+			_cooldown--;
 		
 		// Long signal: Price breaks above upper Bollinger Band and is above Supertrend
-		if (isPriceAboveUpperBand && isPriceAboveSupertrend)
+		if (_cooldown == 0 && isPriceAboveUpperBand && isPriceAboveSupertrend)
 		{
 			if (Position <= 0)
 			{
 				BuyMarket(Volume + Math.Abs(Position));
-				LogInfo($"Long Entry: Price({candle.ClosePrice}) > Upper BB({upperBand}) && Price > Supertrend({_supertrendValue})");
+				_cooldown = CooldownBars;
 			}
 		}
 		// Short signal: Price breaks below lower Bollinger Band and is below Supertrend
-		else if (isPriceBelowLowerBand && !isPriceAboveSupertrend)
+		else if (_cooldown == 0 && isPriceBelowLowerBand && !isPriceAboveSupertrend)
 		{
 			if (Position >= 0)
 			{
 				SellMarket(Volume + Math.Abs(Position));
-				LogInfo($"Short Entry: Price({candle.ClosePrice}) < Lower BB({lowerBand}) && Price < Supertrend({_supertrendValue})");
+				_cooldown = CooldownBars;
 			}
 		}
 		// Exit signals based on Supertrend
@@ -262,12 +280,12 @@ Width = BollingerDeviation
 			if (Position > 0)
 			{
 				SellMarket(Math.Abs(Position));
-				LogInfo($"Exit Long: Price({candle.ClosePrice}) < Supertrend({_supertrendValue})");
+				_cooldown = CooldownBars;
 			}
 			else if (Position < 0)
 			{
 				BuyMarket(Math.Abs(Position));
-				LogInfo($"Exit Short: Price({candle.ClosePrice}) > Supertrend({_supertrendValue})");
+				_cooldown = CooldownBars;
 			}
 		}
 	}

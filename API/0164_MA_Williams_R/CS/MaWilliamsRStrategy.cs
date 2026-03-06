@@ -28,8 +28,11 @@ public class MaWilliamsRStrategy : Strategy
 	private readonly StrategyParam<int> _williamsRPeriod;
 	private readonly StrategyParam<decimal> _williamsROversold;
 	private readonly StrategyParam<decimal> _williamsROverbought;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<Unit> _stopLoss;
 	private readonly StrategyParam<DataType> _candleType;
+
+	private int _cooldown;
 
 	/// <summary>
 	/// Moving Average period.
@@ -77,6 +80,15 @@ public class MaWilliamsRStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Bars to wait between trades.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Stop-loss value.
 	/// </summary>
 	public Unit StopLoss
@@ -110,13 +122,17 @@ public class MaWilliamsRStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Williams %R Period", "Period for Williams %R", "Williams %R Parameters");
 
-		_williamsROversold = Param(nameof(WilliamsROversold), -80m)
+		_williamsROversold = Param(nameof(WilliamsROversold), -70m)
 			.SetRange(-100, 0)
 			.SetDisplay("Williams %R Oversold", "Williams %R level to consider market oversold", "Williams %R Parameters");
 
-		_williamsROverbought = Param(nameof(WilliamsROverbought), -20m)
+		_williamsROverbought = Param(nameof(WilliamsROverbought), -30m)
 			.SetRange(-100, 0)
 			.SetDisplay("Williams %R Overbought", "Williams %R level to consider market overbought", "Williams %R Parameters");
+
+		_cooldownBars = Param(nameof(CooldownBars), 120)
+			.SetRange(5, 500)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "General");
 
 		_stopLoss = Param(nameof(StopLoss), new Unit(2, UnitTypes.Percent))
 			.SetDisplay("Stop Loss", "Stop loss percent or value", "Risk Management");
@@ -135,8 +151,7 @@ public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		Indicators.Clear();
+		_cooldown = 0;
 	}
 
 /// <inheritdoc />
@@ -195,8 +210,6 @@ protected override void OnStarted2(DateTime time)
 			DrawOwnTrades(area);
 		}
 
-		// Start protective orders
-		StartProtection(new(), StopLoss);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal maValue, decimal williamsRValue)
@@ -217,34 +230,42 @@ protected override void OnStarted2(DateTime time)
 			$"MA: {maValue}, Price > MA: {isPriceAboveMA}, " +
 			$"Williams %R: {williamsRValue}");
 
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+			return;
+		}
+
 		// Trading rules
-		if (isPriceAboveMA && williamsRValue < WilliamsROversold && Position <= 0)
+		if (isPriceAboveMA && williamsRValue <= WilliamsROversold && Position == 0)
 		{
 			// Buy signal - price above MA and Williams %R oversold
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
+			BuyMarket();
+			_cooldown = CooldownBars;
 			
-			LogInfo($"Buy signal: Price above MA and Williams %R oversold ({williamsRValue} < {WilliamsROversold}). Volume: {volume}");
+			LogInfo($"Buy signal: Price above MA and Williams %R oversold ({williamsRValue} <= {WilliamsROversold}).");
 		}
-		else if (!isPriceAboveMA && williamsRValue > WilliamsROverbought && Position >= 0)
+		else if (!isPriceAboveMA && williamsRValue >= WilliamsROverbought && Position == 0)
 		{
 			// Sell signal - price below MA and Williams %R overbought
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
+			SellMarket();
+			_cooldown = CooldownBars;
 			
-			LogInfo($"Sell signal: Price below MA and Williams %R overbought ({williamsRValue} > {WilliamsROverbought}). Volume: {volume}");
+			LogInfo($"Sell signal: Price below MA and Williams %R overbought ({williamsRValue} >= {WilliamsROverbought}).");
 		}
 		// Exit conditions
 		else if (!isPriceAboveMA && Position > 0)
 		{
 			// Exit long position when price falls below MA
-			SellMarket(Position);
+			SellMarket();
+			_cooldown = CooldownBars;
 			LogInfo($"Exit long: Price fell below MA. Position: {Position}");
 		}
 		else if (isPriceAboveMA && Position < 0)
 		{
 			// Exit short position when price rises above MA
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
+			_cooldown = CooldownBars;
 			LogInfo($"Exit short: Price rose above MA. Position: {Position}");
 		}
 	}

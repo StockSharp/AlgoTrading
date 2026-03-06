@@ -1,11 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
-
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -24,10 +20,14 @@ public class LarryConnorsRsi3Strategy : Strategy
 	private readonly StrategyParam<decimal> _dropTrigger;
 	private readonly StrategyParam<decimal> _oversoldLevel;
 	private readonly StrategyParam<decimal> _overboughtLevel;
+	private readonly StrategyParam<int> _maxEntries;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _rsiPrev1;
 	private decimal _rsiPrev2;
+	private int _entriesExecuted;
+	private int _barsSinceSignal;
 
 	/// <summary>
 	/// RSI period.
@@ -84,6 +84,24 @@ public class LarryConnorsRsi3Strategy : Strategy
 	}
 
 	/// <summary>
+	/// Maximum entries per run.
+	/// </summary>
+	public int MaxEntries
+	{
+		get => _maxEntries.Value;
+		set => _maxEntries.Value = value;
+	}
+
+	/// <summary>
+	/// Minimum bars between orders.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Initializes a new instance of <see cref="LarryConnorsRsi3Strategy"/>.
 	/// </summary>
 	public LarryConnorsRsi3Strategy()
@@ -113,6 +131,12 @@ public class LarryConnorsRsi3Strategy : Strategy
 			
 			.SetOptimize(60m, 80m, 5m);
 
+		_maxEntries = Param(nameof(MaxEntries), 45)
+			.SetDisplay("Max Entries", "Maximum entries per run", "Risk");
+
+		_cooldownBars = Param(nameof(CooldownBars), 10000)
+			.SetDisplay("Cooldown Bars", "Minimum bars between orders", "Risk");
+
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
@@ -129,12 +153,16 @@ public class LarryConnorsRsi3Strategy : Strategy
 		base.OnReseted();
 		_rsiPrev1 = 0m;
 		_rsiPrev2 = 0m;
+		_entriesExecuted = 0;
+		_barsSinceSignal = 0;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+		_entriesExecuted = 0;
+		_barsSinceSignal = CooldownBars;
 
 		var sma = new SMA { Length = SmaPeriod };
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
@@ -159,19 +187,24 @@ public class LarryConnorsRsi3Strategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		_barsSinceSignal++;
+
 		var hasHistory = _rsiPrev1 != 0m && _rsiPrev2 != 0m;
 		var condition1 = candle.ClosePrice > smaValue;
 		var condition2 = hasHistory && _rsiPrev2 > _rsiPrev1 && _rsiPrev1 > rsiValue && _rsiPrev2 > DropTrigger;
 		var condition3 = rsiValue < OversoldLevel;
 
-		if (condition1 && condition2 && condition3 && Position <= 0)
+		if (condition1 && condition2 && condition3 && Position <= 0 && _entriesExecuted < MaxEntries && _barsSinceSignal >= CooldownBars)
 		{
 			var volume = Volume + Math.Abs(Position);
 			BuyMarket(volume);
+			_entriesExecuted++;
+			_barsSinceSignal = 0;
 		}
 		else if (rsiValue > OverboughtLevel && Position > 0)
 		{
-			SellMarket(Position);
+			SellMarket(Math.Abs(Position));
+			_barsSinceSignal = 0;
 		}
 
 		_rsiPrev2 = _rsiPrev1;

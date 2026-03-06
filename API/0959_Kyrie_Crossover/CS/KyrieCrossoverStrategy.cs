@@ -1,11 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
-
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -22,10 +18,14 @@ public class KyrieCrossoverStrategy : Strategy
 	private readonly StrategyParam<int> _shortEmaPeriod;
 	private readonly StrategyParam<int> _longEmaPeriod;
 	private readonly StrategyParam<decimal> _riskPercent;
+	private readonly StrategyParam<int> _maxEntries;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _entryPrice;
 	private bool _isLong;
+	private int _entriesExecuted;
+	private int _barsSinceSignal;
 
 	/// <summary>
 	/// Short EMA period.
@@ -64,6 +64,24 @@ public class KyrieCrossoverStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Maximum entries per run.
+	/// </summary>
+	public int MaxEntries
+	{
+		get => _maxEntries.Value;
+		set => _maxEntries.Value = value;
+	}
+
+	/// <summary>
+	/// Minimum bars between orders.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Initializes a new instance of the strategy.
 	/// </summary>
 	public KyrieCrossoverStrategy()
@@ -86,6 +104,14 @@ public class KyrieCrossoverStrategy : Strategy
 			
 			.SetOptimize(0.5m, 5.0m, 0.5m);
 
+		_maxEntries = Param(nameof(MaxEntries), 45)
+			.SetGreaterThanZero()
+			.SetDisplay("Max Entries", "Maximum entries per run", "Risk Management");
+
+		_cooldownBars = Param(nameof(CooldownBars), 240)
+			.SetGreaterThanZero()
+			.SetDisplay("Cooldown Bars", "Minimum bars between orders", "Risk Management");
+
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
@@ -102,12 +128,16 @@ public class KyrieCrossoverStrategy : Strategy
 		base.OnReseted();
 		_entryPrice = 0m;
 		_isLong = false;
+		_entriesExecuted = 0;
+		_barsSinceSignal = 0;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+		_entriesExecuted = 0;
+		_barsSinceSignal = CooldownBars;
 
 		var shortEma = new EMA { Length = ShortEmaPeriod };
 		var longEma = new EMA { Length = LongEmaPeriod };
@@ -124,6 +154,8 @@ public class KyrieCrossoverStrategy : Strategy
 			{
 				if (candle.State != CandleStates.Finished)
 					return;
+
+				_barsSinceSignal++;
 
 				if (!IsFormedAndOnlineAndAllowTrading())
 					return;
@@ -142,19 +174,23 @@ public class KyrieCrossoverStrategy : Strategy
 
 				var isShortBelowLong = shortValue < longValue;
 
-				if (wasShortBelowLong != isShortBelowLong)
+				if (wasShortBelowLong != isShortBelowLong && _entriesExecuted < MaxEntries && _barsSinceSignal >= CooldownBars)
 				{
 					if (!isShortBelowLong && Position <= 0)
 					{
 						_entryPrice = candle.ClosePrice;
 						_isLong = true;
 						BuyMarket(Volume + Math.Abs(Position));
+						_entriesExecuted++;
+						_barsSinceSignal = 0;
 					}
 					else if (isShortBelowLong && Position >= 0)
 					{
 						_entryPrice = candle.ClosePrice;
 						_isLong = false;
 						SellMarket(Volume + Math.Abs(Position));
+						_entriesExecuted++;
+						_barsSinceSignal = 0;
 					}
 
 					wasShortBelowLong = isShortBelowLong;
@@ -167,8 +203,6 @@ public class KyrieCrossoverStrategy : Strategy
 				prevLong = longValue;
 			})
 			.Start();
-
-		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -188,13 +222,21 @@ public class KyrieCrossoverStrategy : Strategy
 		{
 			var stopPrice = _entryPrice * (1m - stopLossThreshold);
 			if (currentPrice <= stopPrice)
+			{
 				SellMarket(Math.Abs(Position));
+				_entryPrice = 0m;
+				_barsSinceSignal = 0;
+			}
 		}
 		else if (!_isLong && Position < 0)
 		{
 			var stopPrice = _entryPrice * (1m + stopLossThreshold);
 			if (currentPrice >= stopPrice)
+			{
 				BuyMarket(Math.Abs(Position));
+				_entryPrice = 0m;
+				_barsSinceSignal = 0;
+			}
 		}
 	}
 }

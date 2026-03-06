@@ -176,6 +176,15 @@ public class MomentumSyncPsarRsiAdxFiltered3TierExitStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+	base.OnReseted();
+	_psarAbovePrev1 = false;
+	_psarAbovePrev2 = false;
+	_barsSinceBearishFlip = -1;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 	base.OnStarted2(time);
@@ -214,15 +223,18 @@ public class MomentumSyncPsarRsiAdxFiltered3TierExitStrategy : Strategy
 	if (candle.State != CandleStates.Finished)
 		return;
 
-	if (!psarValue.IsFinal || !rsiValue.IsFinal || !adxValue.IsFinal)
-		return;
-
 	if (!IsFormedAndOnlineAndAllowTrading())
 		return;
 
-	var psar = psarValue.GetValue<decimal>();
-	var rsi = rsiValue.GetValue<decimal>();
-	var adx = ((AverageDirectionalIndexValue)adxValue).MovingAverage;
+	if (!psarValue.IsFinal || !rsiValue.IsFinal || !adxValue.IsFinal)
+		return;
+
+	var psar = psarValue.ToDecimal();
+	var rsi = rsiValue.ToDecimal();
+
+	if (adxValue is not AverageDirectionalIndexValue adxTyped ||
+		adxTyped.MovingAverage is not decimal adx)
+		return;
 
 	var psarBullishFlip =
 		psar < candle.ClosePrice && _psarAbovePrev1 && _psarAbovePrev2;

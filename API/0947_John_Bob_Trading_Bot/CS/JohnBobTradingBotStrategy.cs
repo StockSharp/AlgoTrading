@@ -1,17 +1,11 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
-
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
-
-using StockSharp.Algo;
 
 namespace StockSharp.Samples.Strategies;
 
@@ -21,6 +15,7 @@ namespace StockSharp.Samples.Strategies;
 public class JohnBobTradingBotStrategy : Strategy
 {
 	private readonly StrategyParam<decimal> _atrMultiplier;
+	private readonly StrategyParam<int> _maxEntries;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _prevClose;
@@ -34,6 +29,7 @@ public class JohnBobTradingBotStrategy : Strategy
 	private decimal _entryPrice;
 	private decimal _stopPrice;
 	private decimal _targetPrice;
+	private int _entriesExecuted;
 
 	/// <summary>
 	/// ATR multiplier for stop-loss calculation.
@@ -42,6 +38,15 @@ public class JohnBobTradingBotStrategy : Strategy
 	{
 		get => _atrMultiplier.Value;
 		set => _atrMultiplier.Value = value;
+	}
+
+	/// <summary>
+	/// Maximum number of entries for one test run.
+	/// </summary>
+	public int MaxEntries
+	{
+		get => _maxEntries.Value;
+		set => _maxEntries.Value = value;
 	}
 
 	/// <summary>
@@ -61,8 +66,29 @@ public class JohnBobTradingBotStrategy : Strategy
 		_atrMultiplier = Param(nameof(AtrMultiplier), 2m)
 			.SetDisplay("ATR Mult", "ATR stop multiplier.", "Risk");
 
+		_maxEntries = Param(nameof(MaxEntries), 45)
+			.SetDisplay("Max Entries", "Maximum entries per run.", "Risk");
+
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles.", "General");
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevClose = 0m;
+		_prevHigh = 0m;
+		_prevLow = 0m;
+		_prev2High = 0m;
+		_prev2Low = 0m;
+		_highestHigh = 0m;
+		_lowestLow = decimal.MaxValue;
+		_barCount = 0;
+		_entryPrice = 0m;
+		_stopPrice = 0m;
+		_targetPrice = 0m;
+		_entriesExecuted = 0;
 	}
 
 	/// <inheritdoc />
@@ -81,6 +107,7 @@ public class JohnBobTradingBotStrategy : Strategy
 		_entryPrice = 0m;
 		_stopPrice = 0m;
 		_targetPrice = 0m;
+		_entriesExecuted = 0;
 
 		var atr = new AverageTrueRange { Length = 14 };
 
@@ -130,27 +157,27 @@ public class JohnBobTradingBotStrategy : Strategy
 		var sellSignal = crossDown || fvgDown;
 
 		// Exit logic
-		if (Position > 0)
+		if (Position > 0 && _stopPrice > 0m && _targetPrice > 0m)
 		{
 			if (candle.LowPrice <= _stopPrice || candle.HighPrice >= _targetPrice)
 			{
-				SellMarket();
+				SellMarket(Math.Abs(Position));
 				_stopPrice = 0m;
 				_targetPrice = 0m;
 			}
 		}
-		else if (Position < 0)
+		else if (Position < 0 && _stopPrice > 0m && _targetPrice > 0m)
 		{
 			if (candle.HighPrice >= _stopPrice || candle.LowPrice <= _targetPrice)
 			{
-				BuyMarket();
+				BuyMarket(Math.Abs(Position));
 				_stopPrice = 0m;
 				_targetPrice = 0m;
 			}
 		}
 
 		// Entry logic
-		if (Position == 0)
+		if (Position == 0 && _entriesExecuted < MaxEntries)
 		{
 			if (buySignal)
 			{
@@ -158,6 +185,7 @@ public class JohnBobTradingBotStrategy : Strategy
 				_entryPrice = close;
 				_stopPrice = close - atrValue * AtrMultiplier;
 				_targetPrice = close + atrValue * AtrMultiplier * 2m;
+				_entriesExecuted++;
 			}
 			else if (sellSignal)
 			{
@@ -165,6 +193,7 @@ public class JohnBobTradingBotStrategy : Strategy
 				_entryPrice = close;
 				_stopPrice = close + atrValue * AtrMultiplier;
 				_targetPrice = close - atrValue * AtrMultiplier * 2m;
+				_entriesExecuted++;
 			}
 		}
 

@@ -26,6 +26,7 @@ public class VolumeSupertrendStrategy : Strategy
 
 	private decimal _supertrendValue;
 	private int _supertrendDirection;
+	private int _cooldown;
 
 	/// <summary>
 	/// Volume average period
@@ -98,7 +99,7 @@ public class VolumeSupertrendStrategy : Strategy
 			
 			.SetOptimize(1m, 3m, 0.5m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -115,6 +116,7 @@ public class VolumeSupertrendStrategy : Strategy
 
 		_supertrendValue = default;
 		_supertrendDirection = default;
+		_cooldown = 0;
 	}
 
 	/// <inheritdoc />
@@ -124,87 +126,24 @@ public class VolumeSupertrendStrategy : Strategy
 
 		// Initialize indicators
 		var volumeMA = new SMA { Length = VolumeAvgPeriod };
-
-		// Create custom Supertrend indicator - StockSharp doesn't have built-in Supertrend
-		var atr = new AverageTrueRange { Length = SupertrendPeriod };
+		var supertrend = new SuperTrend
+		{
+			Length = SupertrendPeriod,
+			Multiplier = SupertrendMultiplier
+		};
 
 		// Create subscription
 		var subscription = SubscribeCandles(CandleType);
-
-		// Bind indicators to handle each candle
 		subscription
-				.Bind(atr, (candle, atrValue) =>
-				{
-					// Calculate volume average
-					var volumeValue = volumeMA.Process(new DecimalIndicatorValue(volumeMA, candle.TotalVolume, candle.ServerTime)).ToDecimal();
-
-					// Calculate Supertrend
-					if (!atr.IsFormed)
-						return;
-
-					var highPrice = candle.HighPrice;
-					var lowPrice = candle.LowPrice;
-					var closePrice = candle.ClosePrice;
-
-					// Calculate bands
-					var multiplier = SupertrendMultiplier;
-					var atrAmount = atrValue * multiplier;
-
-					var upperBand = ((highPrice + lowPrice) / 2) + atrAmount;
-					var lowerBand = ((highPrice + lowPrice) / 2) - atrAmount;
-
-					// Initialize Supertrend
-					if (_supertrendValue == 0 && _supertrendDirection == 0)
-					{
-						_supertrendValue = closePrice;
-						_supertrendDirection = 1;
-					}
-
-					// Update Supertrend
-					if (_supertrendDirection == 1) // Previous trend was up
-					{
-						// Update lower band only - trailing
-						_supertrendValue = Math.Max(lowerBand, _supertrendValue);
-
-						// Check for trend reversal
-						if (closePrice < _supertrendValue)
-						{
-							_supertrendDirection = -1;
-							_supertrendValue = upperBand;
-						}
-					}
-					else // Previous trend was down
-					{
-						// Update upper band only - trailing
-						_supertrendValue = Math.Min(upperBand, _supertrendValue);
-
-						// Check for trend reversal
-						if (closePrice > _supertrendValue)
-						{
-							_supertrendDirection = 1;
-							_supertrendValue = lowerBand;
-						}
-					}
-
-					// Current volume
-					var currentVolume = candle.TotalVolume;
-
-					// Process trading signals
-					ProcessSignals(candle, currentVolume, volumeValue, _supertrendValue, _supertrendDirection);
-				})
-				.Start();
-
-		// Enable position protection
-		StartProtection(
-			takeProfit: new Unit(0, UnitTypes.Absolute), // No take-profit
-			stopLoss: new Unit(StopLossPercent, UnitTypes.Percent) // Stop-loss as percentage
-		);
+			.BindEx(supertrend, volumeMA, ProcessSignals)
+			.Start();
 
 		// Setup chart visualization if available
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawIndicator(area, supertrend);
 			DrawIndicator(area, volumeMA);
 
 			// Create a secondary area for volume
@@ -220,8 +159,7 @@ public class VolumeSupertrendStrategy : Strategy
 		}
 	}
 
-	private void ProcessSignals(ICandleMessage candle, decimal currentVolume, decimal volumeAvg,
-		decimal supertrendValue, int supertrendDirection)
+	private void ProcessSignals(ICandleMessage candle, IIndicatorValue supertrendValue, IIndicatorValue volumeValue)
 	{
 		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
@@ -231,36 +169,50 @@ public class VolumeSupertrendStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var price = candle.ClosePrice;
+		if (supertrendValue is not SuperTrendIndicatorValue st)
+			return;
+
+		var volumeAvg = volumeValue.ToDecimal();
+		if (volumeAvg <= 0)
+			return;
+
+		var currentVolume = candle.TotalVolume;
+		var supertrendDirection = st.IsUpTrend ? 1 : -1;
+		if (_cooldown > 0)
+			_cooldown--;
 
 		// Trading logic:
 		// Long: Volume > Avg(Volume) && Price > Supertrend (volume surge with uptrend)
 		// Short: Volume > Avg(Volume) && Price < Supertrend (volume surge with downtrend)
 
-		var volumeSurge = currentVolume > volumeAvg;
+		var volumeSurge = currentVolume >= volumeAvg;
 
-		if (volumeSurge && supertrendDirection == 1 && Position <= 0)
+		if (_cooldown == 0 && volumeSurge && supertrendDirection == 1 && Position <= 0)
 		{
 			// Buy signal - Volume surge with Supertrend uptrend
 			var volume = Volume + Math.Abs(Position);
 			BuyMarket(volume);
+			_cooldown = 10;
 		}
-		else if (volumeSurge && supertrendDirection == -1 && Position >= 0)
+		else if (_cooldown == 0 && volumeSurge && supertrendDirection == -1 && Position >= 0)
 		{
 			// Sell signal - Volume surge with Supertrend downtrend
 			var volume = Volume + Math.Abs(Position);
 			SellMarket(volume);
+			_cooldown = 10;
 		}
 		// Exit conditions based on Supertrend reversal
 		else if (Position > 0 && supertrendDirection == -1)
 		{
 			// Exit long position when Supertrend turns down
 			SellMarket(Position);
+			_cooldown = 10;
 		}
 		else if (Position < 0 && supertrendDirection == 1)
 		{
 			// Exit short position when Supertrend turns up
 			BuyMarket(Math.Abs(Position));
+			_cooldown = 10;
 		}
 	}
 }

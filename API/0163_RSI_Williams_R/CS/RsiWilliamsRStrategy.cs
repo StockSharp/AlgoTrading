@@ -29,8 +29,13 @@ public class RsiWilliamsRStrategy : Strategy
 	private readonly StrategyParam<int> _williamsRPeriod;
 	private readonly StrategyParam<decimal> _williamsROversold;
 	private readonly StrategyParam<decimal> _williamsROverbought;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<Unit> _stopLoss;
 	private readonly StrategyParam<DataType> _candleType;
+
+	private int _cooldown;
+	private decimal _prevRsi;
+	private decimal _prevWilliams;
 
 	/// <summary>
 	/// RSI period.
@@ -87,6 +92,15 @@ public class RsiWilliamsRStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Bars to wait between trades.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Stop-loss value.
 	/// </summary>
 	public Unit StopLoss
@@ -133,6 +147,10 @@ public class RsiWilliamsRStrategy : Strategy
 			.SetRange(-100, 0)
 			.SetDisplay("Williams %R Overbought", "Williams %R level to consider market overbought", "Williams %R Parameters");
 
+		_cooldownBars = Param(nameof(CooldownBars), 180)
+			.SetRange(5, 500)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "General");
+
 		_stopLoss = Param(nameof(StopLoss), new Unit(2, UnitTypes.Percent))
 			.SetDisplay("Stop Loss", "Stop loss percent or value", "Risk Management");
 
@@ -150,8 +168,9 @@ public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		Indicators.Clear();
+		_cooldown = 0;
+		_prevRsi = 0;
+		_prevWilliams = 0;
 	}
 
 /// <inheritdoc />
@@ -188,8 +207,6 @@ protected override void OnStarted2(DateTime time)
 			DrawOwnTrades(area);
 		}
 
-		// Start protective orders
-		StartProtection(new(), StopLoss);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal rsiValue, decimal williamsRValue)
@@ -200,38 +217,61 @@ protected override void OnStarted2(DateTime time)
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
+		if (_prevRsi == 0 && _prevWilliams == 0)
+		{
+			_prevRsi = rsiValue;
+			_prevWilliams = williamsRValue;
+			return;
+		}
+
 		LogInfo($"Candle: {candle.OpenTime}, Close: {candle.ClosePrice}, " +
 			$"RSI: {rsiValue} , Williams %R: {williamsRValue}");
 
-		// Trading rules
-		if (rsiValue < RsiOversold && williamsRValue < WilliamsROversold && Position <= 0)
+		if (_cooldown > 0)
 		{
-			// Buy signal - double oversold condition
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
-
-			LogInfo($"Buy signal: Double oversold condition - RSI: {rsiValue} < {RsiOversold} and Williams %R: {williamsRValue} < {WilliamsROversold}. Volume: {volume}");
+			_cooldown--;
+			_prevRsi = rsiValue;
+			_prevWilliams = williamsRValue;
+			return;
 		}
-		else if (rsiValue > RsiOverbought && williamsRValue > WilliamsROverbought && Position >= 0)
-		{
-			// Sell signal - double overbought condition
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
 
-			LogInfo($"Sell signal: Double overbought condition - RSI: {rsiValue} > {RsiOverbought} and Williams %R: {williamsRValue} > {WilliamsROverbought}. Volume: {volume}");
+		var oversoldCross = _prevRsi >= RsiOversold && rsiValue < RsiOversold
+			&& _prevWilliams >= WilliamsROversold && williamsRValue < WilliamsROversold;
+		var overboughtCross = _prevRsi <= RsiOverbought && rsiValue > RsiOverbought
+			&& _prevWilliams <= WilliamsROverbought && williamsRValue > WilliamsROverbought;
+
+		// Trading rules
+		if (oversoldCross && Position == 0)
+		{
+			BuyMarket();
+			_cooldown = CooldownBars;
+
+			LogInfo($"Buy signal: Double oversold condition - RSI: {rsiValue} < {RsiOversold} and Williams %R: {williamsRValue} < {WilliamsROversold}.");
+		}
+		else if (overboughtCross && Position == 0)
+		{
+			SellMarket();
+			_cooldown = CooldownBars;
+
+			LogInfo($"Sell signal: Double overbought condition - RSI: {rsiValue} > {RsiOverbought} and Williams %R: {williamsRValue} > {WilliamsROverbought}.");
 		}
 		// Exit conditions
 		else if (rsiValue > 50 && Position > 0)
 		{
 			// Exit long position when RSI returns to neutral zone
-			SellMarket(Position);
+			SellMarket();
+			_cooldown = CooldownBars;
 			LogInfo($"Exit long: RSI returned to neutral zone ({rsiValue} > 50). Position: {Position}");
 		}
 		else if (rsiValue < 50 && Position < 0)
 		{
 			// Exit short position when RSI returns to neutral zone
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
+			_cooldown = CooldownBars;
 			LogInfo($"Exit short: RSI returned to neutral zone ({rsiValue} < 50). Position: {Position}");
 		}
+
+		_prevRsi = rsiValue;
+		_prevWilliams = williamsRValue;
 	}
 }

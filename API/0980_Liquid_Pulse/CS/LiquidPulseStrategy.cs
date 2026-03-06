@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -64,6 +61,28 @@ public class LiquidPulseStrategy : Strategy
 			.SetDisplay("Candle Type", "Timeframe", "General");
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_prevMacd = 0m;
+		_prevSignal = 0m;
+		_entryPrice = 0m;
+		_stop = 0m;
+		_tp = 0m;
+		_day = default;
+		_dailyTrades = 0;
+		_volLookback = 0;
+		_volThreshold = 0m;
+
+		_macd = null;
+		_adx = null;
+		_atr = null;
+		_volSma = null;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);

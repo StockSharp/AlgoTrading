@@ -18,9 +18,6 @@ public class DonchianWidthBreakoutStrategy : Strategy
 	private readonly StrategyParam<decimal> _widthThreshold;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevAvgWidth;
-	private bool _hasPrev;
-
 	/// <summary>
 	/// Donchian Channel period.
 	/// </summary>
@@ -68,16 +65,51 @@ public class DonchianWidthBreakoutStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_prevAvgWidth = 0;
-		_hasPrev = false;
-
 		var highest = new Highest { Length = DonchianPeriod };
 		var lowest = new Lowest { Length = DonchianPeriod };
+		var widthAverage = new SimpleMovingAverage { Length = Math.Max(5, DonchianPeriod / 2) };
 
 		var subscription = SubscribeCandles(CandleType);
 
 		subscription
-			.Bind(highest, lowest, ProcessCandle)
+			.Bind(highest, lowest, (candle, highestValue, lowestValue) =>
+			{
+				if (candle.State != CandleStates.Finished)
+					return;
+
+				var width = highestValue - lowestValue;
+
+				if (width <= 0)
+					return;
+
+				var avgWidthValue = widthAverage.Process(new DecimalIndicatorValue(widthAverage, width, candle.ServerTime));
+
+				if (!widthAverage.IsFormed)
+					return;
+
+				var avgWidth = avgWidthValue.ToDecimal();
+				if (avgWidth <= 0 || !IsFormedAndOnlineAndAllowTrading())
+					return;
+
+				var middleChannel = (highestValue + lowestValue) / 2m;
+
+				// Width breakout detection
+				if (width > avgWidth * WidthThreshold)
+				{
+					if (candle.ClosePrice > middleChannel && Position <= 0)
+						BuyMarket();
+					else if (candle.ClosePrice < middleChannel && Position >= 0)
+						SellMarket();
+				}
+				// Exit when width contracts
+				else if (width < avgWidth * 0.8m)
+				{
+					if (Position > 0)
+						SellMarket();
+					else if (Position < 0)
+						BuyMarket();
+				}
+			})
 			.Start();
 
 		var area = CreateChartArea();
@@ -85,50 +117,6 @@ public class DonchianWidthBreakoutStrategy : Strategy
 		{
 			DrawCandles(area, subscription);
 			DrawOwnTrades(area);
-		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal highestValue, decimal lowestValue)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		var width = highestValue - lowestValue;
-
-		if (width <= 0)
-			return;
-
-		if (!_hasPrev)
-		{
-			_prevAvgWidth = width;
-			_hasPrev = true;
-			return;
-		}
-
-		// Exponential smoothing of width average
-		_prevAvgWidth = _prevAvgWidth * 0.9m + width * 0.1m;
-
-		var middleChannel = (highestValue + lowestValue) / 2;
-
-		// Width breakout detection
-		if (width > _prevAvgWidth * WidthThreshold)
-		{
-			if (candle.ClosePrice > middleChannel && Position <= 0)
-			{
-				BuyMarket();
-			}
-			else if (candle.ClosePrice < middleChannel && Position >= 0)
-			{
-				SellMarket();
-			}
-		}
-		// Exit when width contracts
-		else if (width < _prevAvgWidth * 0.8m)
-		{
-			if (Position > 0)
-				SellMarket();
-			else if (Position < 0)
-				BuyMarket();
 		}
 	}
 }

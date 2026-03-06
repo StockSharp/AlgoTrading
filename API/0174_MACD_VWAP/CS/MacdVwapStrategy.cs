@@ -23,8 +23,12 @@ public class MacdVwapStrategy : Strategy
 	private readonly StrategyParam<int> _macdFast;
 	private readonly StrategyParam<int> _macdSlow;
 	private readonly StrategyParam<int> _macdSignal;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
+	private int _cooldown;
+	private bool _hasPrevDiff;
+	private decimal _prevDiff;
 
 	/// <summary>
 	/// MACD fast period
@@ -51,6 +55,15 @@ public class MacdVwapStrategy : Strategy
 	{
 		get => _macdSignal.Value;
 		set => _macdSignal.Value = value;
+	}
+
+	/// <summary>
+	/// Bars to wait between trades.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	/// <summary>
@@ -94,6 +107,10 @@ public class MacdVwapStrategy : Strategy
 			
 			.SetOptimize(7, 12, 1);
 
+		_cooldownBars = Param(nameof(CooldownBars), 35)
+			.SetRange(1, 200)
+			.SetDisplay("Cooldown Bars", "Bars between new entries", "General");
+
 		_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss %", "Stop loss as percentage of entry price", "Risk Management")
@@ -111,10 +128,13 @@ public class MacdVwapStrategy : Strategy
 	}
 
 		/// <inheritdoc />
-		protected override void OnReseted()
-		{
-			base.OnReseted();
-		}
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_cooldown = 0;
+		_hasPrevDiff = false;
+		_prevDiff = 0m;
+	}
 
 		/// <inheritdoc />
 		protected override void OnStarted2(DateTime time)
@@ -133,12 +153,6 @@ public class MacdVwapStrategy : Strategy
 			SignalMa = { Length = MacdSignal }
 		};
 		var vwap = new VolumeWeightedMovingAverage();
-
-		// Enable position protection with stop-loss
-		StartProtection(
-			takeProfit: new Unit(0), // No take profit
-			stopLoss: new Unit(StopLossPercent, UnitTypes.Percent)
-		);
 
 		// Subscribe to candles and bind indicators
 		var subscription = SubscribeCandles(CandleType);
@@ -169,34 +183,53 @@ public class MacdVwapStrategy : Strategy
 
 		// Get additional values from MACD (signal line)
 		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
-		var macd = macdTyped.Macd;
-		var signal = macdTyped.Signal;
+		var macd = macdTyped.Macd ?? 0m;
+		var signal = macdTyped.Signal ?? 0m;
 		var vwap = vwapValue.ToDecimal();
 
 		// Current price (close of the candle)
 		var price = candle.ClosePrice;
+		var diff = macd - signal;
+
+		if (!_hasPrevDiff)
+		{
+			_hasPrevDiff = true;
+			_prevDiff = diff;
+			return;
+		}
+
+		var crossUp = _prevDiff <= 0m && diff > 0m;
+		var crossDown = _prevDiff >= 0m && diff < 0m;
+
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+			_prevDiff = diff;
+			return;
+		}
 
 		// Trading logic
-		if (macd > signal && price > vwap && Position <= 0)
+		if (crossUp && price > vwap * 1.001m && Position <= 0)
 		{
-			// Buy signal: MACD above signal and price above VWAP
 			BuyMarket(Volume + Math.Abs(Position));
+			_cooldown = CooldownBars;
 		}
-		else if (macd < signal && price < vwap && Position >= 0)
+		else if (crossDown && price < vwap * 0.999m && Position >= 0)
 		{
-			// Sell signal: MACD below signal and price below VWAP
 			SellMarket(Volume + Math.Abs(Position));
+			_cooldown = CooldownBars;
 		}
-		// Exit conditions
-		else if (macd < signal && Position > 0)
+		else if (crossDown && Position > 0)
 		{
-			// Exit long position when MACD crosses below signal
 			SellMarket(Position);
+			_cooldown = CooldownBars;
 		}
-		else if (macd > signal && Position < 0)
+		else if (crossUp && Position < 0)
 		{
-			// Exit short position when MACD crosses above signal
 			BuyMarket(Math.Abs(Position));
+			_cooldown = CooldownBars;
 		}
+
+		_prevDiff = diff;
 	}
 }

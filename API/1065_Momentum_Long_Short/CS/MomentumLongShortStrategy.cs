@@ -1,5 +1,5 @@
 using System;
-using System.Linq;
+using System.Collections.Generic;
 
 using Ecng.Common;
 
@@ -11,37 +11,72 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Momentum strategy trading long and short with trend and RSI filters.
+/// Momentum strategy with EMA cross, RSI filter and cooldown.
 /// </summary>
 public class MomentumLongShortStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _slPercent;
+	private readonly StrategyParam<int> _fastLength;
+	private readonly StrategyParam<int> _slowLength;
+	private readonly StrategyParam<int> _rsiLength;
+	private readonly StrategyParam<int> _signalCooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
-	public decimal SlPercent { get => _slPercent.Value; set => _slPercent.Value = value; }
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private bool _hasPrev;
+	private int _barsFromSignal;
+
+	public int FastLength { get => _fastLength.Value; set => _fastLength.Value = value; }
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public int RsiLength { get => _rsiLength.Value; set => _rsiLength.Value = value; }
+	public int SignalCooldownBars { get => _signalCooldownBars.Value; set => _signalCooldownBars.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public MomentumLongShortStrategy()
 	{
-		_slPercent = Param(nameof(SlPercent), 3m);
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
+		_fastLength = Param(nameof(FastLength), 20).SetGreaterThanZero();
+		_slowLength = Param(nameof(SlowLength), 50).SetGreaterThanZero();
+		_rsiLength = Param(nameof(RsiLength), 14).SetGreaterThanZero();
+		_signalCooldownBars = Param(nameof(SignalCooldownBars), 10).SetGreaterThanZero();
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame());
 	}
 
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFast = 0m;
+		_prevSlow = 0m;
+		_hasPrev = false;
+		_barsFromSignal = 0;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+		StartProtection(null, null);
 
-		var maFast = new EMA { Length = 20 };
-		var maSlow = new EMA { Length = 50 };
-		var rsi = new RelativeStrengthIndex { Length = 14 };
+		_prevFast = 0m;
+		_prevSlow = 0m;
+		_hasPrev = false;
+		_barsFromSignal = SignalCooldownBars;
+
+		var maFast = new ExponentialMovingAverage { Length = FastLength };
+		var maSlow = new ExponentialMovingAverage { Length = SlowLength };
+		var rsi = new RelativeStrengthIndex { Length = RsiLength };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(maFast, maSlow, rsi, ProcessCandle)
-			.Start();
+		subscription.Bind(maFast, maSlow, rsi, ProcessCandle).Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal maFast, decimal maSlow, decimal rsi)
+	private void ProcessCandle(ICandleMessage candle, decimal maFast, decimal maSlow, decimal rsiValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
@@ -49,28 +84,33 @@ public class MomentumLongShortStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var close = candle.ClosePrice;
+		_barsFromSignal++;
 
-		// Long: price above MAs, trend up, RSI not overbought
-		if (close > maFast && maFast > maSlow && rsi < 70 && Position <= 0)
+		if (!_hasPrev)
 		{
-			if (Position < 0)
-				BuyMarket(Math.Abs(Position));
-			BuyMarket();
+			_prevFast = maFast;
+			_prevSlow = maSlow;
+			_hasPrev = true;
+			return;
 		}
 
-		// Short: price below MAs, trend down, RSI not oversold
-		if (close < maFast && maFast < maSlow && rsi > 30 && Position >= 0)
+		var crossUp = _prevFast <= _prevSlow && maFast > maSlow;
+		var crossDown = _prevFast >= _prevSlow && maFast < maSlow;
+
+		if (_barsFromSignal >= SignalCooldownBars && crossUp && rsiValue <= 65m && Position <= 0)
 		{
-			if (Position > 0)
-				SellMarket(Position);
-			SellMarket();
+			var volume = Volume + Math.Abs(Position);
+			BuyMarket(volume);
+			_barsFromSignal = 0;
+		}
+		else if (_barsFromSignal >= SignalCooldownBars && crossDown && rsiValue >= 35m && Position >= 0)
+		{
+			var volume = Volume + Math.Abs(Position);
+			SellMarket(volume);
+			_barsFromSignal = 0;
 		}
 
-		// Stop loss
-		if (Position > 0 && close < maFast)
-			SellMarket();
-		else if (Position < 0 && close > maFast)
-			BuyMarket();
+		_prevFast = maFast;
+		_prevSlow = maSlow;
 	}
 }

@@ -1,25 +1,17 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
-using StockSharp.Algo.Candles;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Implementation of strategy - Parabolic SAR + Stochastic.
-/// Buy when price is above SAR and Stochastic %K is below 20 (oversold).
-/// Sell when price is below SAR and Stochastic %K is above 80 (overbought).
+/// Strategy combining Parabolic SAR trend direction with Stochastic entry confirmation.
 /// </summary>
 public class ParabolicSarStochasticStrategy : Strategy
 {
@@ -30,10 +22,14 @@ public class ParabolicSarStochasticStrategy : Strategy
 	private readonly StrategyParam<int> _stochPeriod;
 	private readonly StrategyParam<decimal> _stochOversold;
 	private readonly StrategyParam<decimal> _stochOverbought;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
+	private decimal _sarValue;
 	private decimal _lastStochK;
 	private bool _isAboveSar;
+	private bool _hasTrendState;
+	private int _cooldown;
 
 	/// <summary>
 	/// Parabolic SAR acceleration factor.
@@ -45,7 +41,7 @@ public class ParabolicSarStochasticStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Parabolic SAR maximum acceleration factor.
+	/// Parabolic SAR max acceleration factor.
 	/// </summary>
 	public decimal MaxAccelerationFactor
 	{
@@ -54,7 +50,7 @@ public class ParabolicSarStochasticStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stochastic %K period.
+	/// Stochastic K period.
 	/// </summary>
 	public int StochK
 	{
@@ -63,7 +59,7 @@ public class ParabolicSarStochasticStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stochastic %D period.
+	/// Stochastic D period.
 	/// </summary>
 	public int StochD
 	{
@@ -99,6 +95,15 @@ public class ParabolicSarStochasticStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Bars to wait between trades.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Candle type used for strategy.
 	/// </summary>
 	public DataType CandleType
@@ -108,166 +113,178 @@ public class ParabolicSarStochasticStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initialize <see cref="ParabolicSarStochasticStrategy"/>.
+	/// Strategy constructor.
 	/// </summary>
 	public ParabolicSarStochasticStrategy()
 	{
 		_accelerationFactor = Param(nameof(AccelerationFactor), 0.02m)
 			.SetRange(0.01m, 0.2m)
-			.SetDisplay("Acceleration Factor", "Initial acceleration factor for SAR", "SAR Parameters");
+			.SetDisplay("Acceleration Factor", "Initial acceleration factor for SAR", "SAR");
 
 		_maxAccelerationFactor = Param(nameof(MaxAccelerationFactor), 0.2m)
 			.SetRange(0.05m, 0.5m)
-			.SetDisplay("Max Acceleration Factor", "Maximum acceleration factor for SAR", "SAR Parameters");
+			.SetDisplay("Max Acceleration Factor", "Maximum acceleration factor for SAR", "SAR");
 
 		_stochK = Param(nameof(StochK), 3)
-			.SetGreaterThanZero()
-			.SetDisplay("Stochastic %K", "Stochastic %K smoothing period", "Stochastic Parameters");
+			.SetRange(1, 10)
+			.SetDisplay("Stochastic %K", "Stochastic %K smoothing period", "Stochastic");
 
 		_stochD = Param(nameof(StochD), 3)
-			.SetGreaterThanZero()
-			.SetDisplay("Stochastic %D", "Stochastic %D smoothing period", "Stochastic Parameters");
+			.SetRange(1, 10)
+			.SetDisplay("Stochastic %D", "Stochastic %D smoothing period", "Stochastic");
 
 		_stochPeriod = Param(nameof(StochPeriod), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("Stochastic Period", "Main period for Stochastic oscillator", "Stochastic Parameters");
+			.SetRange(5, 30)
+			.SetDisplay("Stochastic Period", "Main stochastic period", "Stochastic");
 
 		_stochOversold = Param(nameof(StochOversold), 20m)
-			.SetRange(1, 100)
-			.SetDisplay("Oversold Level", "Level below which market is considered oversold", "Stochastic Parameters");
+			.SetDisplay("Oversold Level", "Stochastic oversold level", "Stochastic");
 
 		_stochOverbought = Param(nameof(StochOverbought), 80m)
-			.SetRange(1, 100)
-			.SetDisplay("Overbought Level", "Level above which market is considered overbought", "Stochastic Parameters");
+			.SetDisplay("Overbought Level", "Stochastic overbought level", "Stochastic");
+
+		_cooldownBars = Param(nameof(CooldownBars), 160)
+			.SetRange(5, 500)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type for strategy", "General");
-
-		_lastStochK = 50; // Initialize to a neutral value
-		_isAboveSar = false;
 	}
 
-			/// <inheritdoc />
-			public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-			{
-					return [(Security, CandleType)];
-			}
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
 
-			/// <inheritdoc />
-			protected override void OnReseted()
-			{
-					base.OnReseted();
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_sarValue = 0;
+		_lastStochK = 50m;
+		_isAboveSar = false;
+		_hasTrendState = false;
+		_cooldown = 0;
+	}
 
-					_lastStochK = 50;
-					_isAboveSar = false;
-			}
+	/// <inheritdoc />
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
 
-			/// <inheritdoc />
-			protected override void OnStarted2(DateTime time)
-			{
-					base.OnStarted2(time);
+		var parabolicSar = new ParabolicSar
+		{
+			AccelerationStep = AccelerationFactor,
+			AccelerationMax = MaxAccelerationFactor
+		};
 
-					// Create indicators
-					var parabolicSar = new ParabolicSar
-					{
-							AccelerationStep = AccelerationFactor,
-							AccelerationMax = MaxAccelerationFactor
-					};
+		var stochastic = new StochasticOscillator
+		{
+			K = { Length = StochK },
+			D = { Length = StochD },
+		};
 
-					var stochastic = new StochasticOscillator
-					{
-							K = { Length = StochK },
-							D = { Length = StochD },
-					};
+		var subscription = SubscribeCandles(CandleType);
 
-					// Setup candle subscription
-					var subscription = SubscribeCandles(CandleType);
-		
-		// Bind indicators to candles
+		subscription.BindEx(parabolicSar, OnSar);
 		subscription
-			.BindEx(parabolicSar, stochastic, ProcessCandle)
+			.BindEx(stochastic, ProcessCandle)
 			.Start();
 
-		// Setup chart visualization if available
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
 			DrawIndicator(area, parabolicSar);
-			
-			// Create separate area for Stochastic
+			DrawOwnTrades(area);
+
 			var stochArea = CreateChartArea();
 			if (stochArea != null)
-			{
 				DrawIndicator(stochArea, stochastic);
-			}
-			
-			DrawOwnTrades(area);
 		}
-
-		// SAR itself will act as a dynamic stop-loss by reversing position
-		// when price crosses SAR in the opposite direction
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue sarValue, IIndicatorValue stochValue)
+	private void OnSar(ICandleMessage candle, IIndicatorValue sarValue)
 	{
+		if (candle is null || sarValue is null)
+			return;
+
+		if (candle.State != CandleStates.Finished || !sarValue.IsFormed)
+			return;
+
+		_sarValue = sarValue.ToDecimal();
+	}
+
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue stochValue)
+	{
+		if (candle is null || stochValue is null)
+			return;
+
 		if (candle.State != CandleStates.Finished)
 			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var stochTyped = (StochasticOscillatorValue)stochValue;
-		if (stochTyped.K is not decimal stochK)
+		if (_sarValue == 0 || !stochValue.IsFormed)
 			return;
 
-		var sarDec = sarValue.ToDecimal();
+		if (stochValue is not IStochasticOscillatorValue stochTyped || stochTyped.K is not decimal stochK)
+			return;
 
-		var currentPrice = candle.ClosePrice;
-		var priceAboveSar = currentPrice > sarDec;
-		
-		LogInfo($"Candle: {candle.OpenTime}, Close: {currentPrice}, " +
-			   $"Parabolic SAR: {sarDec}, Stochastic %K: {stochK}, " +
-			   $"IsAboveSAR: {priceAboveSar}, OldIsAboveSAR: {_isAboveSar}");
+		var close = candle.ClosePrice;
+		var priceAboveSar = close > _sarValue;
 
-		// Check for SAR reversal signal (price crossing SAR)
+		if (!_hasTrendState)
+		{
+			_isAboveSar = priceAboveSar;
+			_hasTrendState = true;
+			_lastStochK = stochK;
+			return;
+		}
+
 		var sarSignalChange = priceAboveSar != _isAboveSar;
 
-		// Trading rules
-		if (priceAboveSar && stochK < StochOversold && Position <= 0)
+		if (_cooldown > 0)
 		{
-			// Buy signal - price above SAR (uptrend) and Stochastic oversold
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
-			
-			LogInfo($"Buy signal: Price above SAR and Stochastic oversold ({stochK} < {StochOversold}). Volume: {volume}");
-		}
-		else if (!priceAboveSar && stochK > StochOverbought && Position >= 0)
-		{
-			// Sell signal - price below SAR (downtrend) and Stochastic overbought
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
-			
-			LogInfo($"Sell signal: Price below SAR and Stochastic overbought ({stochK} > {StochOverbought}). Volume: {volume}");
-		}
-		// Check for SAR reversal - exit signals
-		else if (sarSignalChange)
-		{
-			if (!priceAboveSar && Position > 0)
-			{
-				// Exit long position when price crosses below SAR
-				SellMarket(Position);
-				LogInfo($"Exit long: Price crossed below SAR. Position: {Position}");
-			}
-			else if (priceAboveSar && Position < 0)
-			{
-				// Exit short position when price crosses above SAR
-				BuyMarket(Math.Abs(Position));
-				LogInfo($"Exit short: Price crossed above SAR. Position: {Position}");
-			}
+			_cooldown--;
+			_lastStochK = stochK;
+			_isAboveSar = priceAboveSar;
+			return;
 		}
 
-		// Update state for next iteration
+		var longEntry = Position == 0
+			&& priceAboveSar
+			&& _lastStochK <= StochOversold
+			&& stochK > _lastStochK;
+
+		var shortEntry = Position == 0
+			&& !priceAboveSar
+			&& _lastStochK >= StochOverbought
+			&& stochK < _lastStochK;
+
+		if (longEntry)
+		{
+			BuyMarket();
+			_cooldown = CooldownBars;
+		}
+		else if (shortEntry)
+		{
+			SellMarket();
+			_cooldown = CooldownBars;
+		}
+		else if (sarSignalChange && Position > 0 && !priceAboveSar)
+		{
+			SellMarket();
+			_cooldown = CooldownBars;
+		}
+		else if (sarSignalChange && Position < 0 && priceAboveSar)
+		{
+			BuyMarket();
+			_cooldown = CooldownBars;
+		}
+
 		_lastStochK = stochK;
 		_isAboveSar = priceAboveSar;
 	}

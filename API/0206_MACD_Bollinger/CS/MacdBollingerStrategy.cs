@@ -25,7 +25,9 @@ public class MacdBollingerStrategy : Strategy
 	private readonly StrategyParam<decimal> _bollingerDeviation;
 	private readonly StrategyParam<int> _atrPeriod;
 	private readonly StrategyParam<decimal> _atrMultiplier;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
+	private int _cooldown;
 
 	/// <summary>
 	/// MACD fast EMA period
@@ -91,6 +93,15 @@ public class MacdBollingerStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Bars to wait between trades.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Candle type for strategy
 	/// </summary>
 	public DataType CandleType
@@ -139,7 +150,11 @@ public class MacdBollingerStrategy : Strategy
 			.SetDisplay("ATR Multiplier", "Multiplier for ATR-based stop-loss", "Risk Management")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_cooldownBars = Param(nameof(CooldownBars), 30)
+			.SetRange(1, 200)
+			.SetDisplay("Cooldown Bars", "Bars between entries", "General");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -153,6 +168,7 @@ public class MacdBollingerStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
+		_cooldown = 0;
 	}
 
 	/// <inheritdoc />
@@ -185,9 +201,6 @@ public class MacdBollingerStrategy : Strategy
 			.BindEx(bollinger, macd, atr, ProcessIndicators)
 			.Start();
 		
-		// Enable ATR-based stop protection
-		StartProtection(default, new Unit(AtrMultiplier, UnitTypes.Absolute));
-
 		// Setup chart visualization if available
 		var area = CreateChartArea();
 		if (area != null)
@@ -215,8 +228,8 @@ public class MacdBollingerStrategy : Strategy
 		var middleBand = bollingerTyped.MovingAverage;
 
 		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
-		var macd = macdTyped.Macd;
-		var signal = macdTyped.Signal;
+		var macd = macdTyped.Macd ?? 0m;
+		var signal = macdTyped.Signal ?? 0m;
 
 		var price = candle.ClosePrice;
 
@@ -225,29 +238,31 @@ public class MacdBollingerStrategy : Strategy
 		// Short: MACD < Signal && Price > BB_upper (trend down with overbought conditions)
 		
 		var macdCrossOver = macd > signal;
+		if (_cooldown > 0)
+			_cooldown--;
 
-		if (macdCrossOver && price < lowerBand && Position <= 0)
+		if (_cooldown == 0 && macdCrossOver && price < middleBand * 0.999m && Position <= 0)
 		{
-			// Buy signal - MACD crossing above signal line at lower Bollinger Band
 			var volume = Volume + Math.Abs(Position);
 			BuyMarket(volume);
+			_cooldown = CooldownBars;
 		}
-		else if (!macdCrossOver && price > upperBand && Position >= 0)
+		else if (_cooldown == 0 && !macdCrossOver && price > middleBand * 1.001m && Position >= 0)
 		{
-			// Sell signal - MACD crossing below signal line at upper Bollinger Band
 			var volume = Volume + Math.Abs(Position);
 			SellMarket(volume);
+			_cooldown = CooldownBars;
 		}
 		// Exit conditions
-		else if (Position > 0 && price > middleBand)
+		else if (Position > 0 && !macdCrossOver)
 		{
-			// Exit long position when price returns to middle band
 			SellMarket(Position);
+			_cooldown = CooldownBars;
 		}
-		else if (Position < 0 && price < middleBand)
+		else if (Position < 0 && macdCrossOver)
 		{
-			// Exit short position when price returns to middle band
 			BuyMarket(Math.Abs(Position));
+			_cooldown = CooldownBars;
 		}
 	}
 }

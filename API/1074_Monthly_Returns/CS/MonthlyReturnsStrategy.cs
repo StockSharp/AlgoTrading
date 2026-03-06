@@ -20,6 +20,8 @@ public class MonthlyReturnsStrategy : Strategy
 {
 	private readonly StrategyParam<int> _leftBars;
 	private readonly StrategyParam<int> _rightBars;
+	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _breakoutOffsetPercent;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private readonly List<decimal> _highBuffer = new();
@@ -29,6 +31,8 @@ public class MonthlyReturnsStrategy : Strategy
 	private decimal _lPrice;
 	private bool _awaitLong;
 	private bool _awaitShort;
+	private int _barIndex;
+	private int _lastSignalBar = int.MinValue;
 
 	private decimal _prevEquity = 1m;
 	private decimal _curMonthReturn;
@@ -68,19 +72,46 @@ public class MonthlyReturnsStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Minimum number of finished candles between signals.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
+	/// Minimum breakout offset in percents from pivot level.
+	/// </summary>
+	public decimal BreakoutOffsetPercent
+	{
+		get => _breakoutOffsetPercent.Value;
+		set => _breakoutOffsetPercent.Value = value;
+	}
+
+	/// <summary>
 	/// Initialize <see cref="MonthlyReturnsStrategy"/>.
 	/// </summary>
 	public MonthlyReturnsStrategy()
 	{
-		_leftBars = Param(nameof(LeftBars), 2)
+		_leftBars = Param(nameof(LeftBars), 6)
 			.SetDisplay("Left Bars", "Bars to the left for pivots", "General")
 			.SetGreaterThanZero();
 
-		_rightBars = Param(nameof(RightBars), 1)
+		_rightBars = Param(nameof(RightBars), 3)
 			.SetDisplay("Right Bars", "Bars to the right for pivots", "General")
 			.SetGreaterThanZero();
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_cooldownBars = Param(nameof(CooldownBars), 14)
+			.SetDisplay("Cooldown Bars", "Finished candles between entries", "General")
+			.SetGreaterThanZero();
+
+		_breakoutOffsetPercent = Param(nameof(BreakoutOffsetPercent), 0.10m)
+			.SetDisplay("Breakout Offset %", "Min breakout offset from pivot", "General")
+			.SetCanOptimize(true)
+			.SetGreaterThanZero();
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(10).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -95,6 +126,11 @@ public class MonthlyReturnsStrategy : Strategy
 
 	private void ProcessCandle(ICandleMessage candle)
 	{
+		if (candle.State != CandleStates.Finished)
+			return;
+
+		_barIndex++;
+
 		_highBuffer.Add(candle.HighPrice);
 		_lowBuffer.Add(candle.LowPrice);
 
@@ -105,9 +141,6 @@ public class MonthlyReturnsStrategy : Strategy
 
 		if (_lowBuffer.Count > size)
 			_lowBuffer.RemoveAt(0);
-
-		if (candle.State != CandleStates.Finished)
-			return;
 
 		if (_highBuffer.Count == size)
 		{
@@ -155,16 +188,24 @@ public class MonthlyReturnsStrategy : Strategy
 			}
 		}
 
-		if (_awaitLong && candle.HighPrice > _hPrice && Position <= 0 && IsFormedAndOnlineAndAllowTrading())
+		var canSignal = _barIndex - _lastSignalBar >= CooldownBars;
+		var longTrigger = _hPrice * (1m + BreakoutOffsetPercent / 100m);
+		var shortTrigger = _lPrice * (1m - BreakoutOffsetPercent / 100m);
+
+		if (_awaitLong && canSignal && candle.HighPrice > longTrigger && Position <= 0 && IsFormedAndOnlineAndAllowTrading())
 		{
 			BuyMarket(Volume + Math.Abs(Position));
 			_awaitLong = false;
+			_awaitShort = false;
+			_lastSignalBar = _barIndex;
 		}
 
-		if (_awaitShort && candle.LowPrice < _lPrice && Position >= 0 && IsFormedAndOnlineAndAllowTrading())
+		if (_awaitShort && canSignal && candle.LowPrice < shortTrigger && Position >= 0 && IsFormedAndOnlineAndAllowTrading())
 		{
 			SellMarket(Volume + Math.Abs(Position));
 			_awaitShort = false;
+			_awaitLong = false;
+			_lastSignalBar = _barIndex;
 		}
 
 		UpdateReturns(candle);
@@ -203,5 +244,31 @@ public class MonthlyReturnsStrategy : Strategy
 
 		_curMonthReturn = (1m + _curMonthReturn) * (1m + barReturn) - 1m;
 		_curYearReturn = (1m + _curYearReturn) * (1m + barReturn) - 1m;
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_highBuffer.Clear();
+		_lowBuffer.Clear();
+		_monthReturns.Clear();
+		_monthTimes.Clear();
+		_yearReturns.Clear();
+		_yearTimes.Clear();
+
+		_hPrice = 0m;
+		_lPrice = 0m;
+		_awaitLong = false;
+		_awaitShort = false;
+		_barIndex = 0;
+		_lastSignalBar = int.MinValue;
+
+		_prevEquity = 1m;
+		_curMonthReturn = 0m;
+		_curYearReturn = 0m;
+		_prevMonth = -1;
+		_prevYear = -1;
 	}
 }

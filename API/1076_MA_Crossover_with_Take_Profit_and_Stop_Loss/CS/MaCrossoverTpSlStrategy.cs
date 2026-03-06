@@ -91,4 +91,14 @@ public class MaCrossoverTpSlStrategy : Strategy
 
 		_wasFastLess = isFastLess;
 	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_entryPrice = 0m;
+		_wasFastLess = false;
+		_initialized = false;
+	}
 }

@@ -22,11 +22,14 @@ public class AdxCciStrategy : Strategy
 {
 	private readonly StrategyParam<int> _adxPeriod;
 	private readonly StrategyParam<int> _cciPeriod;
+	private readonly StrategyParam<decimal> _adxThreshold;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _prevCciValue;
 	private bool _isFirstValue = true;
+	private int _cooldown;
 
 	/// <summary>
 	/// ADX period
@@ -44,6 +47,24 @@ public class AdxCciStrategy : Strategy
 	{
 		get => _cciPeriod.Value;
 		set => _cciPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// ADX threshold.
+	/// </summary>
+	public decimal AdxThreshold
+	{
+		get => _adxThreshold.Value;
+		set => _adxThreshold.Value = value;
+	}
+
+	/// <summary>
+	/// Bars to wait between trades.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	/// <summary>
@@ -81,6 +102,14 @@ public class AdxCciStrategy : Strategy
 			
 			.SetOptimize(14, 30, 1);
 
+		_adxThreshold = Param(nameof(AdxThreshold), 18m)
+			.SetRange(10m, 40m)
+			.SetDisplay("ADX Threshold", "Minimum ADX for trend entries", "Indicators");
+
+		_cooldownBars = Param(nameof(CooldownBars), 120)
+			.SetRange(5, 500)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "General");
+
 		_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss %", "Stop loss as percentage of entry price", "Risk Management")
@@ -104,6 +133,7 @@ public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 
 		_prevCciValue = 0;
 		_isFirstValue = true;
+		_cooldown = 0;
 	}
 
 /// <inheritdoc />
@@ -118,12 +148,7 @@ protected override void OnStarted2(DateTime time)
 		// Reset state variables
 		_prevCciValue = 0;
 		_isFirstValue = true;
-		
-		// Enable position protection with stop-loss
-		StartProtection(
-			takeProfit: new Unit(0), // No take profit
-			stopLoss: new Unit(StopLossPercent, UnitTypes.Percent)
-		);
+		_cooldown = 0;
 
 		// Subscribe to candles and bind indicators
 		var subscription = SubscribeCandles(CandleType);
@@ -166,34 +191,49 @@ protected override void OnStarted2(DateTime time)
 			_isFirstValue = false;
 			return;
 		}
-
-		// Store for the next iteration
-		_prevCciValue = cciValue.ToDecimal();
+		
+		var cciDec = cciValue.ToDecimal();
 
 		var adxTyped = (AverageDirectionalIndexValue)adxValue;
 		var adxMa = adxTyped.MovingAverage;
 
-		// Trading logic
-		if (adxMa > 25)
+		if (_cooldown > 0)
 		{
-			if (_prevCciValue < -100 && Position <= 0)
+			_cooldown--;
+			_prevCciValue = cciDec;
+			return;
+		}
+
+		// Trading logic
+		if (Position == 0)
+		{
+			if (_prevCciValue >= -40m && cciDec < -40m)
 			{
-				// Strong trend with oversold CCI - Buy
-				BuyMarket(Volume + Math.Abs(Position));
+				BuyMarket();
+				_cooldown = CooldownBars;
 			}
-			else if (_prevCciValue > 100 && Position >= 0)
+			else if (_prevCciValue <= 40m && cciDec > 40m)
 			{
-				// Strong trend with overbought CCI - Sell
-				SellMarket(Volume + Math.Abs(Position));
+				SellMarket();
+				_cooldown = CooldownBars;
 			}
 		}
-		else if (adxMa < 20)
+		else if (adxMa < AdxThreshold * 0.8m || (Position > 0 && cciDec > 0) || (Position < 0 && cciDec < 0))
 		{
 			// Trend is weakening - close any position
 			if (Position > 0)
-				SellMarket(Position);
+			{
+				SellMarket();
+				_cooldown = CooldownBars;
+			}
 			else if (Position < 0)
-				BuyMarket(Math.Abs(Position));
+			{
+				BuyMarket();
+				_cooldown = CooldownBars;
+			}
 		}
+
+		// Store for the next iteration
+		_prevCciValue = cciDec;
 	}
 }

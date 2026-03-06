@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
@@ -15,6 +14,7 @@ public class MacdVolumeXauusdStrategy : Strategy
 {
 	private readonly StrategyParam<int> _shortLength;
 	private readonly StrategyParam<int> _longLength;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private ExponentialMovingAverage _shortVolumeEma;
@@ -23,18 +23,35 @@ public class MacdVolumeXauusdStrategy : Strategy
 
 	private decimal _prevMacd;
 	private bool _prevMacdSet;
+	private int _barsFromSignal;
 
 	public int ShortLength { get => _shortLength.Value; set => _shortLength.Value = value; }
 	public int LongLength { get => _longLength.Value; set => _longLength.Value = value; }
+	public int CooldownBars { get => _cooldownBars.Value; set => _cooldownBars.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public MacdVolumeXauusdStrategy()
 	{
 		_shortLength = Param(nameof(ShortLength), 5);
 		_longLength = Param(nameof(LongLength), 10);
+		_cooldownBars = Param(nameof(CooldownBars), 2);
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_shortVolumeEma = null;
+		_longVolumeEma = null;
+		_macd = null;
+		_prevMacd = 0m;
+		_prevMacdSet = false;
+		_barsFromSignal = int.MaxValue;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
@@ -45,6 +62,7 @@ public class MacdVolumeXauusdStrategy : Strategy
 
 		_prevMacd = 0;
 		_prevMacdSet = false;
+		_barsFromSignal = int.MaxValue;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -80,14 +98,18 @@ public class MacdVolumeXauusdStrategy : Strategy
 		var longSignal = _prevMacd <= 0 && macd > 0;
 		// MACD cross below zero = sell
 		var shortSignal = _prevMacd >= 0 && macd < 0;
+		_barsFromSignal++;
+		var canSignal = _barsFromSignal >= CooldownBars;
 
-		if (longSignal && Position <= 0)
+		if (canSignal && longSignal && Position <= 0)
 		{
 			BuyMarket();
+			_barsFromSignal = 0;
 		}
-		else if (shortSignal && Position >= 0)
+		else if (canSignal && shortSignal && Position >= 0)
 		{
 			SellMarket();
+			_barsFromSignal = 0;
 		}
 
 		_prevMacd = macd;

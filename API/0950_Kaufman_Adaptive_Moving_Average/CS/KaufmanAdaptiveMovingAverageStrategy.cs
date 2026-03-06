@@ -1,11 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
-
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -37,6 +33,8 @@ public class KaufmanAdaptiveMovingAverageStrategy : Strategy
 	private int _risingCount;
 	private int _fallingCount;
 	private bool _isFirst = true;
+	private bool _wasRising;
+	private bool _wasFalling;
 
 	public int Length { get => _length.Value; set => _length.Value = value; }
 	public int Fast { get => _fast.Value; set => _fast.Value = value; }
@@ -66,13 +64,13 @@ public class KaufmanAdaptiveMovingAverageStrategy : Strategy
 			
 			.SetOptimize(20, 100, 10);
 
-		_risingPeriod = Param(nameof(RisingPeriod), 10)
+		_risingPeriod = Param(nameof(RisingPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Rising period", "Bars for KAMA rising condition", "Strategy")
 			
 			.SetOptimize(5, 20, 5);
 
-		_fallingPeriod = Param(nameof(FallingPeriod), 10)
+		_fallingPeriod = Param(nameof(FallingPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Falling period", "Bars for KAMA falling condition", "Strategy")
 			
@@ -81,7 +79,7 @@ public class KaufmanAdaptiveMovingAverageStrategy : Strategy
 		_orderDirection = Param(nameof(OrderDirection), TradeSides.Long)
 			.SetDisplay("Order direction", "Allowed trade direction", "Strategy");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle type", "Type of candles", "General");
 	}
 
@@ -100,6 +98,8 @@ public class KaufmanAdaptiveMovingAverageStrategy : Strategy
 		_risingCount = 0;
 		_fallingCount = 0;
 		_isFirst = true;
+		_wasRising = false;
+		_wasFalling = false;
 	}
 
 	/// <inheritdoc />
@@ -156,8 +156,10 @@ public class KaufmanAdaptiveMovingAverageStrategy : Strategy
 
 		var isRising = _risingCount >= RisingPeriod;
 		var isFalling = _fallingCount >= FallingPeriod;
+		var risingEdge = isRising && !_wasRising;
+		var fallingEdge = isFalling && !_wasFalling;
 
-		if (isRising)
+		if (risingEdge)
 		{
 			if (Position < 0)
 				BuyMarket(Math.Abs(Position));
@@ -166,7 +168,8 @@ public class KaufmanAdaptiveMovingAverageStrategy : Strategy
 			if (allowLong && Position == 0)
 				BuyMarket(Volume);
 		}
-		else if (isFalling)
+
+		if (fallingEdge)
 		{
 			if (Position > 0)
 				SellMarket(Math.Abs(Position));
@@ -176,6 +179,8 @@ public class KaufmanAdaptiveMovingAverageStrategy : Strategy
 				SellMarket(Volume);
 		}
 
+		_wasRising = isRising;
+		_wasFalling = isFalling;
 		_prevKama = kamaValue;
 	}
 }

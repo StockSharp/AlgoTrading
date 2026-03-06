@@ -1,17 +1,12 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
-
-using StockSharp.Algo;
 
 namespace StockSharp.Samples.Strategies;
 
@@ -20,6 +15,7 @@ public class IuEmaChannelStrategy : Strategy
 {
 	private StrategyParam<int> _emaLength;
 	private StrategyParam<decimal> _riskToReward;
+	private StrategyParam<int> _maxEntries;
 	private StrategyParam<DataType> _candleType;
 
 	private decimal _prevClose;
@@ -30,6 +26,9 @@ public class IuEmaChannelStrategy : Strategy
 	private decimal _stopPrice;
 	private decimal _takePrice;
 	private bool _isInitialized;
+	private int _entriesExecuted;
+	private bool _entryPending;
+	private bool _exitPending;
 
 	public IuEmaChannelStrategy()
 	{
@@ -43,12 +42,17 @@ public class IuEmaChannelStrategy : Strategy
 			.SetGreaterThanZero()
 			;
 
+		_maxEntries = Param(nameof(MaxEntries), 35)
+			.SetDisplay("Max Entries", "Maximum number of entries per test run", "General")
+			.SetGreaterThanZero();
+
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for candles", "General");
 	}
 
 	public int EmaLength { get => _emaLength.Value; set => _emaLength.Value = value; }
 	public decimal RiskToReward { get => _riskToReward.Value; set => _riskToReward.Value = value; }
+	public int MaxEntries { get => _maxEntries.Value; set => _maxEntries.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	/// <inheritdoc />
@@ -70,14 +74,15 @@ public class IuEmaChannelStrategy : Strategy
 		_prevLow = 0m;
 		_stopPrice = 0m;
 		_takePrice = 0m;
+		_entriesExecuted = 0;
+		_entryPending = false;
+		_exitPending = false;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		StartProtection(null, null);
 
 		var highEma = new EMA
 		{
@@ -122,6 +127,26 @@ public class IuEmaChannelStrategy : Strategy
 
 		if (Position == 0)
 		{
+			_exitPending = false;
+			_entryPending = false;
+		}
+		else
+		{
+			_entryPending = false;
+		}
+
+		if (Position == 0)
+		{
+			if (_entriesExecuted >= MaxEntries || _entryPending)
+			{
+				_prevClose = candle.ClosePrice;
+				_prevHighEma = highEmaValue;
+				_prevLowEma = lowEmaValue;
+				_prevHigh = candle.HighPrice;
+				_prevLow = candle.LowPrice;
+				return;
+			}
+
 			var crossUp = _prevClose <= _prevHighEma && candle.ClosePrice > highEmaValue;
 			var crossDown = _prevClose >= _prevLowEma && candle.ClosePrice < lowEmaValue;
 
@@ -130,23 +155,33 @@ public class IuEmaChannelStrategy : Strategy
 				_stopPrice = _prevLow;
 				_takePrice = candle.ClosePrice + (candle.ClosePrice - _stopPrice) * RiskToReward;
 				BuyMarket();
+				_entriesExecuted++;
+				_entryPending = true;
 			}
 			else if (crossDown)
 			{
 				_stopPrice = _prevHigh;
 				_takePrice = candle.ClosePrice - (_stopPrice - candle.ClosePrice) * RiskToReward;
 				SellMarket();
+				_entriesExecuted++;
+				_entryPending = true;
 			}
 		}
 		else if (Position > 0)
 		{
-			if (candle.LowPrice <= _stopPrice || candle.HighPrice >= _takePrice)
+			if (!_exitPending && (candle.LowPrice <= _stopPrice || candle.HighPrice >= _takePrice))
+			{
 				SellMarket();
+				_exitPending = true;
+			}
 		}
 		else if (Position < 0)
 		{
-			if (candle.HighPrice >= _stopPrice || candle.LowPrice <= _takePrice)
+			if (!_exitPending && (candle.HighPrice >= _stopPrice || candle.LowPrice <= _takePrice))
+			{
 				BuyMarket();
+				_exitPending = true;
+			}
 		}
 
 		_prevClose = candle.ClosePrice;

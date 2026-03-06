@@ -20,11 +20,14 @@ public class HullMaCciStrategy : Strategy
 {
 	private readonly StrategyParam<int> _hullPeriod;
 	private readonly StrategyParam<int> _cciPeriod;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<int> _atrPeriod;
 	private readonly StrategyParam<decimal> _atrMultiplier;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _previousHullValue;
+	private decimal _previousCciValue;
+	private int _cooldown;
 
 	/// <summary>
 	/// Hull MA period
@@ -42,6 +45,15 @@ public class HullMaCciStrategy : Strategy
 	{
 		get => _cciPeriod.Value;
 		set => _cciPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Bars to wait between trades.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	/// <summary>
@@ -86,6 +98,10 @@ public class HullMaCciStrategy : Strategy
 			.SetDisplay("CCI Period", "Period for CCI indicator", "Indicators")
 			;
 
+		_cooldownBars = Param(nameof(CooldownBars), 100)
+			.SetRange(1, 200)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "General");
+
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetRange(7, 28)
 			.SetDisplay("ATR Period", "ATR period for stop-loss calculation", "Risk Management")
@@ -96,7 +112,7 @@ public class HullMaCciStrategy : Strategy
 			.SetDisplay("ATR Multiplier", "Multiplier for ATR-based stop-loss", "Risk Management")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -112,6 +128,8 @@ public class HullMaCciStrategy : Strategy
 		base.OnReseted();
 
 		_previousHullValue = default;
+		_previousCciValue = 0m;
+		_cooldown = 0;
 	}
 
 	/// <inheritdoc />
@@ -120,7 +138,7 @@ public class HullMaCciStrategy : Strategy
 		base.OnStarted2(time);
 
 		// Initialize indicators
-		var hullMA = new HullMovingAverage { Length = HullPeriod };
+		var hullMA = new ExponentialMovingAverage { Length = HullPeriod };
 		var cci = new CommodityChannelIndex { Length = CciPeriod };
 		var atr = new AverageTrueRange { Length = AtrPeriod };
 
@@ -130,9 +148,6 @@ public class HullMaCciStrategy : Strategy
 			.Bind(hullMA, cci, atr, ProcessIndicators)
 			.Start();
 		
-		// Enable ATR-based stop protection
-		StartProtection(default, new Unit(AtrMultiplier, UnitTypes.Absolute));
-
 		// Setup chart visualization if available
 		var area = CreateChartArea();
 		if (area != null)
@@ -157,6 +172,8 @@ public class HullMaCciStrategy : Strategy
 		// Store previous Hull value for slope detection
 		var previousHullValue = _previousHullValue;
 		_previousHullValue = hullValue;
+		var previousCciValue = _previousCciValue;
+		_previousCciValue = cciValue;
 
 		// Skip first candle until we have previous value
 		if (previousHullValue == 0)
@@ -167,29 +184,34 @@ public class HullMaCciStrategy : Strategy
 		// Short: HMA(t) < HMA(t-1) && CCI > 100 (HMA falling with overbought conditions)
 		
 		var hullSlope = hullValue > previousHullValue;
+		var crossedUp = previousCciValue <= 100m && cciValue > 100m;
+		var crossedDown = previousCciValue >= -100m && cciValue < -100m;
 
-		if (hullSlope && cciValue < -100 && Position <= 0)
+		if (_cooldown > 0)
+			_cooldown--;
+
+		if (_cooldown == 0 && hullSlope && crossedUp && Position <= 0)
 		{
-			// Buy signal - HMA rising with oversold CCI
 			var volume = Volume + Math.Abs(Position);
 			BuyMarket(volume);
+			_cooldown = CooldownBars;
 		}
-		else if (!hullSlope && cciValue > 100 && Position >= 0)
+		else if (_cooldown == 0 && !hullSlope && crossedDown && Position >= 0)
 		{
-			// Sell signal - HMA falling with overbought CCI
 			var volume = Volume + Math.Abs(Position);
 			SellMarket(volume);
+			_cooldown = CooldownBars;
 		}
 		// Exit conditions based on HMA slope change
-		else if (Position > 0 && !hullSlope)
+		else if (Position > 0 && !hullSlope && cciValue < 0m)
 		{
-			// Exit long position when HMA starts falling
 			SellMarket(Position);
+			_cooldown = CooldownBars;
 		}
-		else if (Position < 0 && hullSlope)
+		else if (Position < 0 && hullSlope && cciValue > 0m)
 		{
-			// Exit short position when HMA starts rising
 			BuyMarket(Math.Abs(Position));
+			_cooldown = CooldownBars;
 		}
 	}
 }

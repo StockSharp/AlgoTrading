@@ -26,11 +26,13 @@ public class MfiWithOversoldZoneExitAndAveragingStrategy : Strategy
 	private readonly StrategyParam<decimal> _stopLossPercentage;
 	private readonly StrategyParam<decimal> _exitGainPercentage;
 	private readonly StrategyParam<int> _cancelAfterBars;
+	private readonly StrategyParam<int> _signalCooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 	
 	private Order _entryOrder;
 	private decimal _longEntryPrice;
 	private int _barsSinceEntryOrder;
+	private int _barsFromSignal;
 	private bool _inOversoldZone;
 	
 	/// <summary>
@@ -67,6 +69,11 @@ public class MfiWithOversoldZoneExitAndAveragingStrategy : Strategy
 	/// Candle type used by the strategy.
 	/// </summary>
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+
+	/// <summary>
+	/// Minimum bars between new entry orders.
+	/// </summary>
+	public int SignalCooldownBars { get => _signalCooldownBars.Value; set => _signalCooldownBars.Value = value; }
 	
 	/// <summary>
 	/// Initializes a new instance of the <see cref="MfiWithOversoldZoneExitAndAveragingStrategy"/>.
@@ -91,7 +98,10 @@ public class MfiWithOversoldZoneExitAndAveragingStrategy : Strategy
 		_cancelAfterBars = Param(nameof(CancelAfterBars), 5)
 		.SetRange(1, 100)
 		.SetDisplay("Cancel After Bars", "Bars before canceling limit order", "Trading");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_signalCooldownBars = Param(nameof(SignalCooldownBars), 20)
+		.SetRange(1, 500)
+		.SetDisplay("Signal Cooldown Bars", "Minimum bars between entry orders", "Trading");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 	
@@ -109,6 +119,7 @@ public class MfiWithOversoldZoneExitAndAveragingStrategy : Strategy
 		_entryOrder = null;
 		_longEntryPrice = 0m;
 		_barsSinceEntryOrder = 0;
+		_barsFromSignal = 0;
 		_inOversoldZone = false;
 	}
 	
@@ -146,17 +157,20 @@ public class MfiWithOversoldZoneExitAndAveragingStrategy : Strategy
 		
 		if (!IsFormedAndOnlineAndAllowTrading())
 		return;
+
+		_barsFromSignal++;
 		
 		if (mfiValue < MfiOversoldLevel)
 		{
 			_inOversoldZone = true;
 		}
-		else if (_inOversoldZone && mfiValue > MfiOversoldLevel && Position == 0 && _entryOrder == null)
+		else if (_inOversoldZone && mfiValue > MfiOversoldLevel && Position == 0 && _entryOrder == null && _barsFromSignal >= SignalCooldownBars)
 		{
 			_inOversoldZone = false;
 			_longEntryPrice = candle.ClosePrice * (1 - LongEntryPercentage / 100m);
 			_entryOrder = BuyLimit(_longEntryPrice, Volume);
 			_barsSinceEntryOrder = 0;
+			_barsFromSignal = 0;
 		}
 		
 		if (_entryOrder != null)

@@ -22,7 +22,10 @@ public class KeltnerWilliamsRStrategy : Strategy
 	private readonly StrategyParam<decimal> _keltnerMultiplier;
 	private readonly StrategyParam<int> _atrPeriod;
 	private readonly StrategyParam<int> _williamsRPeriod;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
+	private decimal _prevWilliamsR;
+	private int _cooldown;
 
 	/// <summary>
 	/// EMA period for Keltner Channel
@@ -61,6 +64,15 @@ public class KeltnerWilliamsRStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Bars to wait between trades.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Candle type for strategy
 	/// </summary>
 	public DataType CandleType
@@ -94,7 +106,11 @@ public class KeltnerWilliamsRStrategy : Strategy
 			.SetDisplay("Williams %R Period", "Period for Williams %R indicator", "Indicators")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_cooldownBars = Param(nameof(CooldownBars), 40)
+			.SetRange(1, 200)
+			.SetDisplay("Cooldown Bars", "Bars between entries", "General");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -108,6 +124,8 @@ public class KeltnerWilliamsRStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
+		_prevWilliamsR = 0m;
+		_cooldown = 0;
 	}
 
 	/// <inheritdoc />
@@ -130,9 +148,6 @@ public class KeltnerWilliamsRStrategy : Strategy
 			.BindEx(keltner, williamsR, ProcessIndicators)
 			.Start();
 		
-		// Enable stop-loss protection based on ATR
-		StartProtection(default, new Unit(2, UnitTypes.Absolute));
-
 		// Setup chart visualization if available
 		var area = CreateChartArea();
 		if (area != null)
@@ -160,35 +175,29 @@ public class KeltnerWilliamsRStrategy : Strategy
 		var middle = keltnerTyped.Middle;
 
 		var williamsR = williamsRValue.ToDecimal();
+		var crossedIntoOversold = _prevWilliamsR > -80m && williamsR <= -80m;
+		var crossedIntoOverbought = _prevWilliamsR < -20m && williamsR >= -20m;
+		_prevWilliamsR = williamsR;
 
 		var price = candle.ClosePrice;
+		if (_cooldown > 0)
+			_cooldown--;
 
 		// Trading logic:
 		// Long: Price < lower Keltner band && Williams %R < -80 (oversold at lower band)
 		// Short: Price > upper Keltner band && Williams %R > -20 (overbought at upper band)
 		
-		if (price < lower && williamsR < -80 && Position <= 0)
+		if (_cooldown == 0 && price <= lower * 1.001m && crossedIntoOversold && Position <= 0)
 		{
-			// Buy signal
 			var volume = Volume + Math.Abs(Position);
 			BuyMarket(volume);
+			_cooldown = CooldownBars;
 		}
-		else if (price > upper && williamsR > -20 && Position >= 0)
+		else if (_cooldown == 0 && price >= upper * 0.999m && crossedIntoOverbought && Position >= 0)
 		{
-			// Sell signal
 			var volume = Volume + Math.Abs(Position);
 			SellMarket(volume);
-		}
-		// Exit conditions
-		else if (Position > 0 && price > middle)
-		{
-			// Exit long position when price returns to middle band
-			SellMarket(Position);
-		}
-		else if (Position < 0 && price < middle)
-		{
-			// Exit short position when price returns to middle band
-			BuyMarket(Math.Abs(Position));
+			_cooldown = CooldownBars;
 		}
 	}
 }

@@ -79,7 +79,7 @@ public class DonchianCciStrategy : Strategy
 			.SetDisplay("Stop-Loss %", "Stop-loss percentage from entry price", "Risk Management")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -147,13 +147,13 @@ public class DonchianCciStrategy : Strategy
 		// Long: Price > Donchian Upper && CCI < -100 (breakout up with oversold conditions)
 		// Short: Price < Donchian Lower && CCI > 100 (breakout down with overbought conditions)
 		
-		if (price > upperBand && cciDec < -100 && Position <= 0)
+		if (price >= upperBand && cciDec > 0 && Position <= 0)
 		{
 			// Buy signal - breakout up with oversold conditions
 			var volume = Volume + Math.Abs(Position);
 			BuyMarket(volume);
 		}
-		else if (price < lowerBand && cciDec > 100 && Position >= 0)
+		else if (price <= lowerBand && cciDec < 0 && Position >= 0)
 		{
 			// Sell signal - breakout down with overbought conditions
 			var volume = Volume + Math.Abs(Position);

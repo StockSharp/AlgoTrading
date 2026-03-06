@@ -108,6 +108,13 @@ public class MachineLearningLogisticRegressionStrategy : Strategy
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
+
+		_baseSeries = new decimal[Lookback];
+		_synthSeries = new decimal[Lookback];
+		_filled = 0;
+		_signal = 0;
+		_hpCounter = 0;
+		_isInitialized = false;
 	}
 
 	/// <inheritdoc />
@@ -133,6 +140,13 @@ public class MachineLearningLogisticRegressionStrategy : Strategy
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+
+		_baseSeries = new decimal[Lookback];
+		_synthSeries = new decimal[Lookback];
+		_filled = 0;
+		_signal = 0;
+		_hpCounter = 0;
+		_isInitialized = false;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
@@ -163,6 +177,20 @@ public class MachineLearningLogisticRegressionStrategy : Strategy
 		if (!_isInitialized)
 		{
 			_isInitialized = true;
+			return;
+		}
+
+		// Bootstrap first direction once model buffers are initialized.
+		if (_signal == 0)
+		{
+			_signal = candle.ClosePrice >= _baseSeries[^2] ? 1 : -1;
+			_hpCounter = 0;
+
+			if (_signal == 1 && Position <= 0)
+				BuyMarket(Volume + Math.Abs(Position));
+			else if (_signal == -1 && Position >= 0)
+				SellMarket(Volume + Math.Abs(Position));
+
 			return;
 		}
 

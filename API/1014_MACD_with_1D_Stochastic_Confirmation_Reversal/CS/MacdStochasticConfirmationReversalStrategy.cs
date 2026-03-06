@@ -109,6 +109,29 @@ public class MacdStochasticConfirmationReversalStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_macd = null;
+		_atr = null;
+		_ema = null;
+		_dailyStoch = null;
+
+		_dailyK = null;
+		_dailyD = null;
+		_prevMacd = 0m;
+		_prevSignal = 0m;
+		_hasPrev = false;
+
+		_stopLossLevel = 0m;
+		_activationLevel = 0m;
+		_trailingActive = false;
+		_takeProfitLevel = null;
+		_entryPrice = 0m;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);

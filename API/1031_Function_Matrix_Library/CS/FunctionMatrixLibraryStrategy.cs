@@ -1,9 +1,8 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -11,168 +10,153 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
 /// <summary>
-/// Demonstrates multiple linear regression using two SMA inputs.
+/// Uses a simple two-factor matrix-style model based on fast/slow SMA values.
 /// </summary>
 public class FunctionMatrixLibraryStrategy : Strategy
 {
-	private readonly StrategyParam<int> _lookback;
-	private readonly StrategyParam<int> _length1;
-	private readonly StrategyParam<int> _length2;
+	private readonly StrategyParam<int> _fastLength;
+	private readonly StrategyParam<int> _slowLength;
+	private readonly StrategyParam<decimal> _entryThresholdPercent;
+	private readonly StrategyParam<int> _signalCooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
-	
-	private SMA _sma1;
-	private SMA _sma2;
-	
-	private readonly List<decimal> _yValues = new();
-	private readonly List<decimal> _x1Values = new();
-	private readonly List<decimal> _x2Values = new();
-	
+
+	private SimpleMovingAverage _fastSma;
+	private SimpleMovingAverage _slowSma;
+	private int _barsFromSignal;
+
 	/// <summary>
-	/// Lookback period for regression.
+	/// Fast SMA length.
 	/// </summary>
-	public int Lookback
+	public int FastLength
 	{
-		get => _lookback.Value;
-		set => _lookback.Value = value;
+		get => _fastLength.Value;
+		set => _fastLength.Value = value;
 	}
-	
+
 	/// <summary>
-	/// SMA length for first explanatory variable.
+	/// Slow SMA length.
 	/// </summary>
-	public int Length1
+	public int SlowLength
 	{
-		get => _length1.Value;
-		set => _length1.Value = value;
+		get => _slowLength.Value;
+		set => _slowLength.Value = value;
 	}
-	
+
 	/// <summary>
-	/// SMA length for second explanatory variable.
+	/// Minimum percent edge required to open or reverse a position.
 	/// </summary>
-	public int Length2
+	public decimal EntryThresholdPercent
 	{
-		get => _length2.Value;
-		set => _length2.Value = value;
+		get => _entryThresholdPercent.Value;
+		set => _entryThresholdPercent.Value = value;
 	}
-	
+
 	/// <summary>
-	/// Candle type.
+	/// Minimum bars between market entries.
+	/// </summary>
+	public int SignalCooldownBars
+	{
+		get => _signalCooldownBars.Value;
+		set => _signalCooldownBars.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type used for calculations.
 	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
-	
+
 	/// <summary>
-	/// Initializes a new instance of the <see cref="FunctionMatrixLibraryStrategy"/> class.
+	/// Initializes a new instance of the strategy.
 	/// </summary>
 	public FunctionMatrixLibraryStrategy()
 	{
-		_lookback = Param(nameof(Lookback), 20)
-		.SetGreaterThanZero()
-		.SetDisplay("Lookback", "Regression lookback length", "General");
-		
-		_length1 = Param(nameof(Length1), 10)
-		.SetGreaterThanZero()
-		.SetDisplay("Length1", "First SMA length", "General");
-		
-		_length2 = Param(nameof(Length2), 20)
-		.SetGreaterThanZero()
-		.SetDisplay("Length2", "Second SMA length", "General");
-		
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-		.SetDisplay("Candle Type", "Type of candles", "General");
+		_fastLength = Param(nameof(FastLength), 12)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast Length", "Fast SMA length", "General");
+
+		_slowLength = Param(nameof(SlowLength), 48)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow Length", "Slow SMA length", "General");
+
+		_entryThresholdPercent = Param(nameof(EntryThresholdPercent), 0.25m)
+			.SetGreaterThanZero()
+			.SetDisplay("Entry Threshold %", "Required model edge in percent", "General");
+
+		_signalCooldownBars = Param(nameof(SignalCooldownBars), 12)
+			.SetGreaterThanZero()
+			.SetDisplay("Signal Cooldown Bars", "Minimum bars between entries", "General");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(10).TimeFrame())
+			.SetDisplay("Candle Type", "Candles timeframe", "General");
 	}
-	
+
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
-	
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_fastSma = null;
+		_slowSma = null;
+		_barsFromSignal = 0;
+	}
+
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		
-		_sma1 = new() { Length = Length1 };
-		_sma2 = new() { Length = Length2 };
-		
+
+		StartProtection(null, null);
+
+		_fastSma = new() { Length = FastLength };
+		_slowSma = new() { Length = SlowLength };
+		_barsFromSignal = SignalCooldownBars;
+
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-		.Bind(_sma1, _sma2, ProcessCandle)
-		.Start();
-		
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, _sma1);
-			DrawIndicator(area, _sma2);
-		}
+		subscription.Bind(_fastSma, _slowSma, ProcessCandle).Start();
 	}
-	
-	private void ProcessCandle(ICandleMessage candle, decimal sma1Value, decimal sma2Value)
+
+	private void ProcessCandle(ICandleMessage candle, decimal fastValue, decimal slowValue)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
-		
-		AddToBuffer(_yValues, candle.ClosePrice);
-		AddToBuffer(_x1Values, sma1Value);
-		AddToBuffer(_x2Values, sma2Value);
-		
-		if (_yValues.Count < Lookback)
-		return;
-		
-		var coeffs = CalculateCoefficients(_yValues, _x1Values, _x2Values);
-		var estimate = coeffs[0] + coeffs[1] * sma1Value + coeffs[2] * sma2Value;
-		this.LogInfo($"Estimate={estimate}");
-	}
-	
-	private void AddToBuffer(List<decimal> buffer, decimal value)
-	{
-		if (buffer.Count == Lookback)
-		buffer.RemoveAt(0);
-		buffer.Add(value);
-	}
-	
-	private decimal[] CalculateCoefficients(List<decimal> y, List<decimal> x1, List<decimal> x2)
-	{
-		var n = y.Count;
-		decimal sumY = 0m, sumX1 = 0m, sumX2 = 0m;
-		for (var i = 0; i < n; i++)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		if (!_fastSma.IsFormed || !_slowSma.IsFormed)
+			return;
+
+		var close = candle.ClosePrice;
+		if (close <= 0m)
+			return;
+
+		_barsFromSignal++;
+		if (_barsFromSignal < SignalCooldownBars)
+			return;
+
+		// Weighted linear combination emulates a compact matrix regression output.
+		var modelPrice = (2m * fastValue + slowValue) / 3m;
+		var edgePercent = (modelPrice - close) / close * 100m;
+
+		if (edgePercent >= EntryThresholdPercent && Position <= 0)
 		{
-			sumY += y[i];
-			sumX1 += x1[i];
-			sumX2 += x2[i];
+			BuyMarket();
+			_barsFromSignal = 0;
 		}
-		var meanY = sumY / n;
-		var meanX1 = sumX1 / n;
-		var meanX2 = sumX2 / n;
-		
-		decimal s11 = 0m, s22 = 0m, s12 = 0m, s1y = 0m, s2y = 0m;
-		for (var i = 0; i < n; i++)
+		else if (edgePercent <= -EntryThresholdPercent && Position >= 0)
 		{
-			var dx1 = x1[i] - meanX1;
-			var dx2 = x2[i] - meanX2;
-			var dy = y[i] - meanY;
-			s11 += dx1 * dx1;
-			s22 += dx2 * dx2;
-			s12 += dx1 * dx2;
-			s1y += dx1 * dy;
-			s2y += dx2 * dy;
+			SellMarket();
+			_barsFromSignal = 0;
 		}
-		
-		var denom = s11 * s22 - s12 * s12;
-		if (denom == 0)
-		return new decimal[3];
-		
-		var b1 = (s1y * s22 - s2y * s12) / denom;
-		var b2 = (s2y * s11 - s1y * s12) / denom;
-		var b0 = meanY - b1 * meanX1 - b2 * meanX2;
-		return new[] { b0, b1, b2 };
 	}
 }

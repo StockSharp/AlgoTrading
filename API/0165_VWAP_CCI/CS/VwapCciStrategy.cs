@@ -26,8 +26,11 @@ public class VwapCciStrategy : Strategy
 	private readonly StrategyParam<int> _cciPeriod;
 	private readonly StrategyParam<decimal> _cciOversold;
 	private readonly StrategyParam<decimal> _cciOverbought;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<Unit> _stopLoss;
 	private readonly StrategyParam<DataType> _candleType;
+
+	private int _cooldown;
 
 	/// <summary>
 	/// CCI period.
@@ -57,6 +60,15 @@ public class VwapCciStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Bars to wait between trades.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Stop-loss value.
 	/// </summary>
 	public Unit StopLoss
@@ -83,11 +95,15 @@ public class VwapCciStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("CCI Period", "Period for Commodity Channel Index", "CCI Parameters");
 
-		_cciOversold = Param(nameof(CciOversold), -100m)
+		_cciOversold = Param(nameof(CciOversold), -20m)
 			.SetDisplay("CCI Oversold", "CCI level to consider market oversold", "CCI Parameters");
 
-		_cciOverbought = Param(nameof(CciOverbought), 100m)
+		_cciOverbought = Param(nameof(CciOverbought), 20m)
 			.SetDisplay("CCI Overbought", "CCI level to consider market overbought", "CCI Parameters");
+
+		_cooldownBars = Param(nameof(CooldownBars), 120)
+			.SetRange(5, 500)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "General");
 
 		_stopLoss = Param(nameof(StopLoss), new Unit(2, UnitTypes.Percent))
 			.SetDisplay("Stop Loss", "Stop loss percent or value", "Risk Management");
@@ -106,8 +122,7 @@ public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		Indicators.Clear();
+		_cooldown = 0;
 	}
 
 /// <inheritdoc />
@@ -144,8 +159,6 @@ protected override void OnStarted2(DateTime time)
 			DrawOwnTrades(area);
 		}
 
-		// Start protective orders
-		StartProtection(new(), StopLoss);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal vwapValue, decimal cciValue)
@@ -166,34 +179,45 @@ protected override void OnStarted2(DateTime time)
 			$"VWAP: {vwapValue}, Price > VWAP: {isPriceAboveVWAP}, " +
 			$"CCI: {cciValue}");
 
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+			return;
+		}
+
 		// Trading rules
-		if (!isPriceAboveVWAP && cciValue < CciOversold && Position <= 0)
+		var belowVwap = price <= vwapValue * 1.001m;
+		var aboveVwap = price >= vwapValue * 0.999m;
+
+		if (belowVwap && cciValue <= CciOversold && Position == 0)
 		{
 			// Buy signal - price below VWAP and CCI oversold
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
+			BuyMarket();
+			_cooldown = CooldownBars;
 			
-			LogInfo($"Buy signal: Price below VWAP and CCI oversold ({cciValue} < {CciOversold}). Volume: {volume}");
+			LogInfo($"Buy signal: Price below VWAP and CCI oversold ({cciValue} <= {CciOversold}).");
 		}
-		else if (isPriceAboveVWAP && cciValue > CciOverbought && Position >= 0)
+		else if (aboveVwap && cciValue >= CciOverbought && Position == 0)
 		{
 			// Sell signal - price above VWAP and CCI overbought
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
+			SellMarket();
+			_cooldown = CooldownBars;
 			
-			LogInfo($"Sell signal: Price above VWAP and CCI overbought ({cciValue} > {CciOverbought}). Volume: {volume}");
+			LogInfo($"Sell signal: Price above VWAP and CCI overbought ({cciValue} >= {CciOverbought}).");
 		}
 		// Exit conditions
 		else if (isPriceAboveVWAP && Position > 0)
 		{
 			// Exit long position when price crosses above VWAP
-			BuyMarket(Math.Abs(Position));
+			SellMarket();
+			_cooldown = CooldownBars;
 			LogInfo($"Exit long: Price crossed above VWAP. Position: {Position}");
 		}
 		else if (!isPriceAboveVWAP && Position < 0)
 		{
 			// Exit short position when price crosses below VWAP
-			SellMarket(Volume);
+			BuyMarket();
+			_cooldown = CooldownBars;
 			LogInfo($"Exit short: Price crossed below VWAP. Position: {Position}");
 		}
 	}

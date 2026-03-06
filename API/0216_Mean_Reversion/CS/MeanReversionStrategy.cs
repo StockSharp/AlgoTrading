@@ -23,11 +23,15 @@ public class MeanReversionStrategy : Strategy
 {
 	private readonly StrategyParam<int> _movingAveragePeriod;
 	private readonly StrategyParam<decimal> _deviationMultiplier;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private SimpleMovingAverage _ma;
 	private StandardDeviation _stdDev;
+	private bool _wasBelowLower;
+	private bool _wasAboveUpper;
+	private int _cooldown;
 
 	/// <summary>
 	/// Moving average period parameter.
@@ -45,6 +49,15 @@ public class MeanReversionStrategy : Strategy
 	{
 		get => _deviationMultiplier.Value;
 		set => _deviationMultiplier.Value = value;
+	}
+
+	/// <summary>
+	/// Bars to wait between trades.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	/// <summary>
@@ -76,11 +89,15 @@ public class MeanReversionStrategy : Strategy
 			
 			.SetOptimize(10, 50, 5);
 
-		_deviationMultiplier = Param(nameof(DeviationMultiplier), 2.0m)
+		_deviationMultiplier = Param(nameof(DeviationMultiplier), 1.5m)
 			.SetGreaterThanZero()
 			.SetDisplay("Deviation Multiplier", "Standard deviation multiplier for entry signals", "Indicators")
 			
 			.SetOptimize(1.5m, 3.0m, 0.5m);
+
+		_cooldownBars = Param(nameof(CooldownBars), 20)
+			.SetRange(1, 200)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "General");
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 			.SetGreaterThanZero()
@@ -88,7 +105,7 @@ public class MeanReversionStrategy : Strategy
 			
 			.SetOptimize(1m, 3m, 0.5m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -105,6 +122,9 @@ public class MeanReversionStrategy : Strategy
 
 		_ma = null;
 		_stdDev = null;
+		_wasBelowLower = false;
+		_wasAboveUpper = false;
+		_cooldown = 0;
 	}
 
 	/// <inheritdoc />
@@ -123,12 +143,6 @@ public class MeanReversionStrategy : Strategy
 		subscription
 			.Bind(_ma, _stdDev, ProcessCandle)
 			.Start();
-
-		// Enable position protection with stop-loss
-		StartProtection(
-			takeProfit: new Unit(0, UnitTypes.Absolute), // No take-profit
-			stopLoss: new Unit(StopLossPercent, UnitTypes.Percent) // Stop-loss as percentage
-		);
 
 		// Setup chart if available
 		var area = CreateChartArea();
@@ -153,24 +167,32 @@ public class MeanReversionStrategy : Strategy
 		// Calculate upper and lower bands based on mean and standard deviation
 		decimal upperBand = maValue + (stdDevValue * DeviationMultiplier);
 		decimal lowerBand = maValue - (stdDevValue * DeviationMultiplier);
+		var isBelowLower = candle.ClosePrice < lowerBand;
+		var isAboveUpper = candle.ClosePrice > upperBand;
+		var crossedBelowLower = !_wasBelowLower && isBelowLower;
+		var crossedAboveUpper = !_wasAboveUpper && isAboveUpper;
+		_wasBelowLower = isBelowLower;
+		_wasAboveUpper = isAboveUpper;
+		if (_cooldown > 0)
+			_cooldown--;
 
 		// Trading logic
-		if (candle.ClosePrice < lowerBand)
+		if (_cooldown == 0 && isBelowLower)
 		{
 			// Long signal: Price below lower band (mean - k*stdDev)
 			if (Position <= 0)
 			{
 				BuyMarket(Volume + Math.Abs(Position));
-				LogInfo($"Long Entry: Price({candle.ClosePrice}) < Lower Band({lowerBand:F2})");
+				_cooldown = CooldownBars;
 			}
 		}
-		else if (candle.ClosePrice > upperBand)
+		else if (_cooldown == 0 && isAboveUpper)
 		{
 			// Short signal: Price above upper band (mean + k*stdDev)
 			if (Position >= 0)
 			{
 				SellMarket(Volume + Math.Abs(Position));
-				LogInfo($"Short Entry: Price({candle.ClosePrice}) > Upper Band({upperBand:F2})");
+				_cooldown = CooldownBars;
 			}
 		}
 		else if ((Position > 0 && candle.ClosePrice > maValue) ||
@@ -180,12 +202,12 @@ public class MeanReversionStrategy : Strategy
 			if (Position > 0)
 			{
 				SellMarket(Math.Abs(Position));
-				LogInfo($"Exit Long: Price({candle.ClosePrice}) > MA({maValue:F2})");
+				_cooldown = CooldownBars;
 			}
 			else if (Position < 0)
 			{
 				BuyMarket(Math.Abs(Position));
-				LogInfo($"Exit Short: Price({candle.ClosePrice}) < MA({maValue:F2})");
+				_cooldown = CooldownBars;
 			}
 		}
 	}

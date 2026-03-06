@@ -1,12 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
-
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -26,6 +21,7 @@ public class IUBreakOfAnySessionStrategy : Strategy
 	private readonly StrategyParam<TimeSpan> _exitStart;
 	private readonly StrategyParam<TimeSpan> _exitEnd;
 	private readonly StrategyParam<decimal> _profitFactor;
+	private readonly StrategyParam<int> _maxEntries;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private bool _insideSession;
@@ -34,6 +30,7 @@ public class IUBreakOfAnySessionStrategy : Strategy
 	private decimal _extendedHigh;
 	private decimal _extendedLow;
 	private bool _tradeExecuted;
+	private int _entriesExecuted;
 	private decimal _entryPrice;
 	private decimal _stopPrice;
 	private decimal _targetPrice;
@@ -45,6 +42,7 @@ public class IUBreakOfAnySessionStrategy : Strategy
 	public TimeSpan ExitStart { get => _exitStart.Value; set => _exitStart.Value = value; }
 	public TimeSpan ExitEnd { get => _exitEnd.Value; set => _exitEnd.Value = value; }
 	public decimal ProfitFactor { get => _profitFactor.Value; set => _profitFactor.Value = value; }
+	public int MaxEntries { get => _maxEntries.Value; set => _maxEntries.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public IUBreakOfAnySessionStrategy()
@@ -68,6 +66,9 @@ public class IUBreakOfAnySessionStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Profit Factor", "Risk to reward ratio", "Risk");
 
+		_maxEntries = Param(nameof(MaxEntries), 45)
+			.SetDisplay("Max Entries", "Maximum number of entries per test", "Trading");
+
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
@@ -86,6 +87,7 @@ public class IUBreakOfAnySessionStrategy : Strategy
 		_extendedHigh = 0m;
 		_extendedLow = 0m;
 		_tradeExecuted = false;
+		_entriesExecuted = 0;
 		_entryPrice = 0m;
 		_stopPrice = 0m;
 		_targetPrice = 0m;
@@ -142,8 +144,10 @@ public class IUBreakOfAnySessionStrategy : Strategy
 
 		if (inExit)
 		{
-			if (Position != 0)
-				ClosePosition();
+			if (Position > 0)
+				SellMarket();
+			else if (Position < 0)
+				BuyMarket();
 
 			_tradeExecuted = false;
 			return;
@@ -152,14 +156,14 @@ public class IUBreakOfAnySessionStrategy : Strategy
 		if (Position > 0)
 		{
 			if (candle.LowPrice <= _stopPrice || candle.HighPrice >= _targetPrice)
-				ClosePosition();
+				SellMarket();
 		}
 		else if (Position < 0)
 		{
 			if (candle.HighPrice >= _stopPrice || candle.LowPrice <= _targetPrice)
-				ClosePosition();
+				BuyMarket();
 		}
-		else if (!_tradeExecuted && inEntry && _extendedHigh > 0m && _extendedLow > 0m)
+		else if (!_tradeExecuted && _entriesExecuted < MaxEntries && inEntry && _extendedHigh > 0m && _extendedLow > 0m)
 		{
 			var longSignal = candle.OpenPrice < _extendedHigh && candle.ClosePrice > _extendedHigh;
 			var shortSignal = candle.OpenPrice > _extendedLow && candle.ClosePrice < _extendedLow;
@@ -172,6 +176,7 @@ public class IUBreakOfAnySessionStrategy : Strategy
 				_targetPrice = _entryPrice + risk * ProfitFactor;
 				BuyMarket();
 				_tradeExecuted = true;
+				_entriesExecuted++;
 			}
 			else if (shortSignal)
 			{
@@ -181,6 +186,7 @@ public class IUBreakOfAnySessionStrategy : Strategy
 				_targetPrice = _entryPrice - risk * ProfitFactor;
 				SellMarket();
 				_tradeExecuted = true;
+				_entriesExecuted++;
 			}
 		}
 	}

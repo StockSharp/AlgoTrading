@@ -26,8 +26,6 @@ public class IuBiggerThanRangeStrategy : Strategy
 	private decimal _stopPrice;
 	private decimal _targetPrice;
 	private decimal _entryPrice;
-	private decimal _highestHigh;
-	private decimal _lowestLow;
 	private int _barCount;
 
 	/// <summary>
@@ -100,8 +98,6 @@ public class IuBiggerThanRangeStrategy : Strategy
 		_stopPrice = 0m;
 		_targetPrice = 0m;
 		_entryPrice = 0m;
-		_highestHigh = 0m;
-		_lowestLow = decimal.MaxValue;
 		_barCount = 0;
 	}
 
@@ -116,11 +112,9 @@ public class IuBiggerThanRangeStrategy : Strategy
 		_stopPrice = 0m;
 		_targetPrice = 0m;
 		_entryPrice = 0m;
-		_highestHigh = 0m;
-		_lowestLow = decimal.MaxValue;
 		_barCount = 0;
 
-		var atr = new AverageTrueRange { Length = 14 };
+		var atr = new AverageTrueRange { Length = LookbackPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -142,11 +136,7 @@ public class IuBiggerThanRangeStrategy : Strategy
 
 		_barCount++;
 
-		// Track highest/lowest manually
-		if (candle.HighPrice > _highestHigh) _highestHigh = candle.HighPrice;
-		if (candle.LowPrice < _lowestLow) _lowestLow = candle.LowPrice;
-
-		var rangeSize = _highestHigh - _lowestLow;
+		var rangeSize = candle.HighPrice - candle.LowPrice;
 		var candleBody = Math.Abs(candle.ClosePrice - candle.OpenPrice);
 
 		if (_barCount < LookbackPeriod)
@@ -180,16 +170,18 @@ public class IuBiggerThanRangeStrategy : Strategy
 		}
 
 		// Entry logic
-		if (Position == 0 && candleBody > _prevRangeSize * 0.5m)
+		var isBodyStrong = candleBody >= _prevRangeSize && candleBody >= atrValue * 0.8m;
+
+		if (Position == 0 && isBodyStrong)
 		{
-			if (candle.ClosePrice > candle.OpenPrice)
+			if (candle.ClosePrice > candle.OpenPrice && candle.ClosePrice > _prevCandleHigh)
 			{
 				BuyMarket();
 				_entryPrice = candle.ClosePrice;
 				_stopPrice = _entryPrice - atrValue * AtrFactor;
 				_targetPrice = _entryPrice + (_entryPrice - _stopPrice) * RiskToReward;
 			}
-			else if (candle.ClosePrice < candle.OpenPrice)
+			else if (candle.ClosePrice < candle.OpenPrice && candle.ClosePrice < _prevCandleLow)
 			{
 				SellMarket();
 				_entryPrice = candle.ClosePrice;

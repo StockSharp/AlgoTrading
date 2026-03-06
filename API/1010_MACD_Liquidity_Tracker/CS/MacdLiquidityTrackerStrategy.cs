@@ -13,29 +13,51 @@ public class MacdLiquidityTrackerStrategy : Strategy
 {
 	private readonly StrategyParam<int> _fastLength;
 	private readonly StrategyParam<int> _slowLength;
+	private readonly StrategyParam<decimal> _minMacdPercent;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private EMA _emaFast;
 	private EMA _emaSlow;
 	private decimal _prevMacd;
 	private bool _initialized;
+	private int _barsFromSignal;
 
 	public int FastLength { get => _fastLength.Value; set => _fastLength.Value = value; }
 	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public decimal MinMacdPercent { get => _minMacdPercent.Value; set => _minMacdPercent.Value = value; }
+	public int CooldownBars { get => _cooldownBars.Value; set => _cooldownBars.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public MacdLiquidityTrackerStrategy()
 	{
 		_fastLength = Param(nameof(FastLength), 12).SetDisplay("Fast", "Fast EMA", "MACD");
 		_slowLength = Param(nameof(SlowLength), 26).SetDisplay("Slow", "Slow EMA", "MACD");
+		_minMacdPercent = Param(nameof(MinMacdPercent), 0.005m).SetDisplay("Min MACD %", "Minimum MACD magnitude in percent", "MACD");
+		_cooldownBars = Param(nameof(CooldownBars), 6).SetDisplay("Cooldown", "Bars between signals", "Risk");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candles", "General");
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_emaFast = null;
+		_emaSlow = null;
+		_prevMacd = 0m;
+		_initialized = false;
+		_barsFromSignal = int.MaxValue;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		_prevMacd = 0; _initialized = false;
+		_prevMacd = 0;
+		_initialized = false;
+		_barsFromSignal = int.MaxValue;
 
 		_emaFast = new EMA { Length = FastLength };
 		_emaSlow = new EMA { Length = SlowLength };
@@ -58,21 +80,36 @@ public class MacdLiquidityTrackerStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
 		if (!_emaFast.IsFormed || !_emaSlow.IsFormed)
 			return;
 
 		var macd = fast - slow;
+		var closePrice = candle.ClosePrice;
+		if (closePrice <= 0)
+			return;
 
 		if (!_initialized) { _prevMacd = macd; _initialized = true; return; }
+		_barsFromSignal++;
 
 		// MACD zero-line crossover
 		var crossUp = _prevMacd <= 0 && macd > 0;
 		var crossDown = _prevMacd >= 0 && macd < 0;
+		var macdPercent = Math.Abs(macd) / closePrice * 100m;
+		var canSignal = _barsFromSignal >= CooldownBars && macdPercent >= MinMacdPercent;
 
-		if (crossUp && Position <= 0)
+		if (canSignal && crossUp && Position <= 0)
+		{
 			BuyMarket(Volume + Math.Abs(Position));
-		else if (crossDown && Position >= 0)
+			_barsFromSignal = 0;
+		}
+		else if (canSignal && crossDown && Position >= 0)
+		{
 			SellMarket(Volume + Math.Abs(Position));
+			_barsFromSignal = 0;
+		}
 
 		_prevMacd = macd;
 	}

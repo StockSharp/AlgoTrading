@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
@@ -17,6 +16,7 @@ public class MagicWandStsmStrategy : Strategy
 	private readonly StrategyParam<decimal> _supertrendMultiplier;
 	private readonly StrategyParam<int> _maLength;
 	private readonly StrategyParam<decimal> _riskReward;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private AverageTrueRange _atr;
@@ -29,11 +29,13 @@ public class MagicWandStsmStrategy : Strategy
 	private bool _isFirst;
 	private decimal _stop;
 	private decimal _take;
+	private int _barsFromTrade;
 
 	public int SupertrendPeriod { get => _supertrendPeriod.Value; set => _supertrendPeriod.Value = value; }
 	public decimal SupertrendMultiplier { get => _supertrendMultiplier.Value; set => _supertrendMultiplier.Value = value; }
 	public int MaLength { get => _maLength.Value; set => _maLength.Value = value; }
 	public decimal RiskReward { get => _riskReward.Value; set => _riskReward.Value = value; }
+	public int CooldownBars { get => _cooldownBars.Value; set => _cooldownBars.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public MagicWandStsmStrategy()
@@ -41,10 +43,29 @@ public class MagicWandStsmStrategy : Strategy
 		_supertrendPeriod = Param(nameof(SupertrendPeriod), 10);
 		_supertrendMultiplier = Param(nameof(SupertrendMultiplier), 3m);
 		_maLength = Param(nameof(MaLength), 50);
-		_riskReward = Param(nameof(RiskReward), 2m);
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
+		_riskReward = Param(nameof(RiskReward), 3m);
+		_cooldownBars = Param(nameof(CooldownBars), 24);
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame());
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_atr = null;
+		_sma = null;
+		_prevHighest = 0m;
+		_prevLowest = 0m;
+		_prevSupertrend = 0m;
+		_prevClose = 0m;
+		_isFirst = true;
+		_stop = 0m;
+		_take = 0m;
+		_barsFromTrade = CooldownBars;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
@@ -55,6 +76,7 @@ public class MagicWandStsmStrategy : Strategy
 		_prevHighest = _prevLowest = _prevSupertrend = _prevClose = 0m;
 		_stop = _take = 0m;
 		_isFirst = true;
+		_barsFromTrade = CooldownBars;
 
 		var sub = SubscribeCandles(CandleType);
 		sub.Bind(_atr, _sma, ProcessCandle).Start();
@@ -90,31 +112,41 @@ public class MagicWandStsmStrategy : Strategy
 			: (candle.ClosePrice >= currentLower ? currentLower : currentUpper);
 
 		var isUpTrend = candle.ClosePrice > supertrend;
+		_barsFromTrade++;
+		var canEnter = _barsFromTrade >= CooldownBars;
 
-		if (Position == 0)
+		if (Position == 0 && canEnter)
 		{
 			if (isUpTrend && candle.ClosePrice > smaValue)
 			{
 				BuyMarket();
 				_stop = supertrend;
 				_take = candle.ClosePrice + (candle.ClosePrice - _stop) * RiskReward;
+				_barsFromTrade = 0;
 			}
 			else if (!isUpTrend && candle.ClosePrice < smaValue)
 			{
 				SellMarket();
 				_stop = supertrend;
 				_take = candle.ClosePrice - (_stop - candle.ClosePrice) * RiskReward;
+				_barsFromTrade = 0;
 			}
 		}
 		else if (Position > 0)
 		{
 			if (candle.LowPrice <= _stop || candle.ClosePrice >= _take)
+			{
 				SellMarket();
+				_barsFromTrade = 0;
+			}
 		}
 		else if (Position < 0)
 		{
 			if (candle.HighPrice >= _stop || candle.ClosePrice <= _take)
+			{
 				BuyMarket();
+				_barsFromTrade = 0;
+			}
 		}
 
 		_prevHighest = currentUpper;

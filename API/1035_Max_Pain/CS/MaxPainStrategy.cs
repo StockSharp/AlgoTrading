@@ -33,9 +33,20 @@ public class MaxPainStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_barIndex = 0;
+		_entryBar = null;
+		_prevClose = 0m;
+		_volumes.Clear();
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+		StartProtection(null, null);
 
 		_barIndex = 0;
 		_entryBar = null;

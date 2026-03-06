@@ -1,12 +1,8 @@
 
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
-
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -24,6 +20,7 @@ public class Lanz40BacktestStrategy : Strategy
 	private readonly StrategyParam<decimal> _riskReward;
 	private readonly StrategyParam<decimal> _riskPercent;
 	private readonly StrategyParam<decimal> _pipValueUsd;
+	private readonly StrategyParam<int> _maxEntries;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private Highest _highest;
@@ -45,6 +42,7 @@ public class Lanz40BacktestStrategy : Strategy
 	private bool _signalTriggeredSell;
 	private decimal _stopPrice;
 	private decimal _takeProfitPrice;
+	private int _entriesExecuted;
 
 	/// <summary>
 	/// Pivot swing length.
@@ -101,6 +99,15 @@ public class Lanz40BacktestStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Maximum entries per run.
+	/// </summary>
+	public int MaxEntries
+	{
+	    get => _maxEntries.Value;
+	    set => _maxEntries.Value = value;
+	}
+
+	/// <summary>
 	/// Initializes a new instance of the <see cref="Lanz40BacktestStrategy"/>.
 	/// </summary>
 	public Lanz40BacktestStrategy()
@@ -123,6 +130,10 @@ public class Lanz40BacktestStrategy : Strategy
 
 	    _pipValueUsd = Param(nameof(PipValueUsd), 10m)
 	        .SetDisplay("Pip Value USD", "Pip value for one lot", "Risk")
+	        .SetGreaterThanZero();
+
+	    _maxEntries = Param(nameof(MaxEntries), 45)
+	        .SetDisplay("Max Entries", "Maximum entries per run", "Risk")
 	        .SetGreaterThanZero();
 
 	    _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -152,6 +163,7 @@ public class Lanz40BacktestStrategy : Strategy
 	    _signalTriggeredSell = false;
 	    _stopPrice = 0m;
 	    _takeProfitPrice = 0m;
+	    _entriesExecuted = 0;
 	}
 
 	/// <inheritdoc />
@@ -210,8 +222,8 @@ public class Lanz40BacktestStrategy : Strategy
 	        _bottomCrossed = false;
 	    }
 
-	    var buySignal = !_topCrossed && _lastTop.HasValue && candle.ClosePrice > _lastTop.Value;
-	    var sellSignal = !_bottomCrossed && _lastBottom.HasValue && candle.ClosePrice < _lastBottom.Value;
+	    var buySignal = !_topCrossed && _prevHigh.HasValue && candle.ClosePrice > _prevHigh.Value;
+	    var sellSignal = !_bottomCrossed && _prevLow.HasValue && candle.ClosePrice < _prevLow.Value;
 
 	    if (Position == 0)
 	    {
@@ -238,7 +250,7 @@ public class Lanz40BacktestStrategy : Strategy
 	    var pip = (Security.PriceStep ?? 0m) * 10m;
 	    var buffer = SlBufferPoints * pip;
 
-	    if (_signalTriggeredBuy && Position == 0 && _entryPriceBuy.HasValue)
+	    if (_signalTriggeredBuy && Position == 0 && _entriesExecuted < MaxEntries && _entryPriceBuy.HasValue)
 	    {
 	        var sl = candle.LowPrice - buffer;
 	        var tp = _entryPriceBuy.Value + (_entryPriceBuy.Value - sl) * RiskReward;
@@ -249,9 +261,10 @@ public class Lanz40BacktestStrategy : Strategy
 	            _stopPrice = sl;
 	            _takeProfitPrice = tp;
 	            _topCrossed = true;
+	            _entriesExecuted++;
 	        }
 	    }
-	    else if (_signalTriggeredSell && Position == 0 && _entryPriceSell.HasValue)
+	    else if (_signalTriggeredSell && Position == 0 && _entriesExecuted < MaxEntries && _entryPriceSell.HasValue)
 	    {
 	        var sl = candle.HighPrice + buffer;
 	        var tp = _entryPriceSell.Value - (sl - _entryPriceSell.Value) * RiskReward;
@@ -262,6 +275,7 @@ public class Lanz40BacktestStrategy : Strategy
 	            _stopPrice = sl;
 	            _takeProfitPrice = tp;
 	            _bottomCrossed = true;
+	            _entriesExecuted++;
 	        }
 	    }
 

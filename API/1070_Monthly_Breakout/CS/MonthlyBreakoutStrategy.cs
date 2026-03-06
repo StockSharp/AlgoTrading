@@ -94,18 +94,18 @@ public class MonthlyBreakoutStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Working candle timeframe", "General");
 		
-		_january = Param(nameof(January), false).SetDisplay("January", "Enable trading in January", "Months");
-		_february = Param(nameof(February), false).SetDisplay("February", "Enable trading in February", "Months");
-		_march = Param(nameof(March), false).SetDisplay("March", "Enable trading in March", "Months");
-		_april = Param(nameof(April), false).SetDisplay("April", "Enable trading in April", "Months");
-		_may = Param(nameof(May), false).SetDisplay("May", "Enable trading in May", "Months");
-		_june = Param(nameof(June), false).SetDisplay("June", "Enable trading in June", "Months");
-		_july = Param(nameof(July), false).SetDisplay("July", "Enable trading in July", "Months");
-		_august = Param(nameof(August), false).SetDisplay("August", "Enable trading in August", "Months");
-		_september = Param(nameof(September), false).SetDisplay("September", "Enable trading in September", "Months");
-		_october = Param(nameof(October), false).SetDisplay("October", "Enable trading in October", "Months");
-		_november = Param(nameof(November), false).SetDisplay("November", "Enable trading in November", "Months");
-		_december = Param(nameof(December), false).SetDisplay("December", "Enable trading in December", "Months");
+		_january = Param(nameof(January), true).SetDisplay("January", "Enable trading in January", "Months");
+		_february = Param(nameof(February), true).SetDisplay("February", "Enable trading in February", "Months");
+		_march = Param(nameof(March), true).SetDisplay("March", "Enable trading in March", "Months");
+		_april = Param(nameof(April), true).SetDisplay("April", "Enable trading in April", "Months");
+		_may = Param(nameof(May), true).SetDisplay("May", "Enable trading in May", "Months");
+		_june = Param(nameof(June), true).SetDisplay("June", "Enable trading in June", "Months");
+		_july = Param(nameof(July), true).SetDisplay("July", "Enable trading in July", "Months");
+		_august = Param(nameof(August), true).SetDisplay("August", "Enable trading in August", "Months");
+		_september = Param(nameof(September), true).SetDisplay("September", "Enable trading in September", "Months");
+		_october = Param(nameof(October), true).SetDisplay("October", "Enable trading in October", "Months");
+		_november = Param(nameof(November), true).SetDisplay("November", "Enable trading in November", "Months");
+		_december = Param(nameof(December), true).SetDisplay("December", "Enable trading in December", "Months");
 	}
 	
 	/// <inheritdoc />
@@ -146,39 +146,47 @@ public class MonthlyBreakoutStrategy : Strategy
 	
 	private void ProcessCandle(ICandleMessage candle)
 	{
-		if (candle.State != CandleStates.Finished)
-		return;
+	if (candle.State != CandleStates.Finished)
+	return;
 		
 		if (!IsFormedAndOnlineAndAllowTrading())
 		return;
 		
 		_barIndex++;
 		
-		var close = candle.ClosePrice;
-		var high = candle.HighPrice;
-		var low = candle.LowPrice;
-		var month = candle.OpenTime.Month;
-		
-		if (month != _currentMonth)
-		{
-			_monthlyHigh = high;
-			_monthlyLow = low;
-			_prevMonthlyHigh = _monthlyHigh;
-			_prevMonthlyLow = _monthlyLow;
-			_currentMonth = month;
-		}
-		else
+	var close = candle.ClosePrice;
+	var high = candle.HighPrice;
+	var low = candle.LowPrice;
+	var month = candle.OpenTime.Month;
+	
+	if (month != _currentMonth)
+	{
+		if (_currentMonth != 0)
 		{
 			_prevMonthlyHigh = _monthlyHigh;
 			_prevMonthlyLow = _monthlyLow;
-			_monthlyHigh = Math.Max(_monthlyHigh, high);
-			_monthlyLow = Math.Min(_monthlyLow, low);
 		}
-		
-		var crossAboveHigh = _prevClose <= _prevMonthlyHigh && close > _monthlyHigh;
-		var crossBelowHigh = _prevClose >= _prevMonthlyHigh && close < _monthlyHigh;
-		var crossAboveLow = _prevClose <= _prevMonthlyLow && close > _monthlyLow;
-		var crossBelowLow = _prevClose >= _prevMonthlyLow && close < _monthlyLow;
+
+		_monthlyHigh = high;
+		_monthlyLow = low;
+		_currentMonth = month;
+	}
+	else
+	{
+		_monthlyHigh = Math.Max(_monthlyHigh, high);
+		_monthlyLow = Math.Min(_monthlyLow, low);
+	}
+
+	if (_prevMonthlyHigh <= 0m || _prevMonthlyLow <= 0m)
+	{
+		_prevClose = close;
+		return;
+	}
+	
+	var crossAboveHigh = _prevClose <= _prevMonthlyHigh && close > _prevMonthlyHigh;
+	var crossBelowHigh = _prevClose >= _prevMonthlyHigh && close < _prevMonthlyHigh;
+	var crossAboveLow = _prevClose <= _prevMonthlyLow && close > _prevMonthlyLow;
+	var crossBelowLow = _prevClose >= _prevMonthlyLow && close < _prevMonthlyLow;
 		
 		if (Position != 0 && _entryBar.HasValue && _barIndex >= _entryBar.Value + HoldingPeriod)
 		{

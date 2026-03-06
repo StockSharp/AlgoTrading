@@ -24,12 +24,15 @@ public class WilliamsIchimokuStrategy : Strategy
 	private readonly StrategyParam<int> _tenkanPeriod;
 	private readonly StrategyParam<int> _kijunPeriod;
 	private readonly StrategyParam<int> _senkouSpanBPeriod;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 	
 	private WilliamsR _williamsR;
 	private Ichimoku _ichimoku;
 	
 	private decimal? _lastKijun;
+	private decimal _prevWilliamsR;
+	private int _cooldown;
 	
 	/// <summary>
 	/// Williams %R indicator period.
@@ -68,6 +71,15 @@ public class WilliamsIchimokuStrategy : Strategy
 	}
 	
 	/// <summary>
+	/// Bars to wait between trades.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Candle type parameter.
 	/// </summary>
 	public DataType CandleType
@@ -104,8 +116,12 @@ public class WilliamsIchimokuStrategy : Strategy
 			.SetDisplay("Senkou Span B Period", "Period for Senkou Span B line (Ichimoku)", "Indicators")
 			
 			.SetOptimize(40, 60, 4);
+
+		_cooldownBars = Param(nameof(CooldownBars), 60)
+			.SetRange(1, 200)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "General");
 			
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 	
@@ -123,6 +139,8 @@ public class WilliamsIchimokuStrategy : Strategy
 		_williamsR = null;
 		_ichimoku = null;
 		_lastKijun = null;
+		_prevWilliamsR = -50m;
+		_cooldown = 0;
 	}
 
 	/// <inheritdoc />
@@ -150,13 +168,6 @@ public class WilliamsIchimokuStrategy : Strategy
 		subscription
 			.BindEx(_williamsR, _ichimoku, ProcessCandle)
 			.Start();
-		
-		// Set stop-loss at Kijun-sen level
-		// The actual stop level will be updated in the ProcessCandle method
-		StartProtection(
-			takeProfit: new Unit(0, UnitTypes.Absolute), // No take-profit
-			stopLoss: new Unit(0, UnitTypes.Absolute) // Will be dynamic based on Kijun-sen
-		);
 		
 		// Setup chart if available
 		var area = CreateChartArea();
@@ -201,29 +212,34 @@ public class WilliamsIchimokuStrategy : Strategy
 		var isPriceBelowKumo = candle.ClosePrice < kumoBottom;
 
 		var williamsRDec = williamsRValue.ToDecimal();
+		var crossedBelow80 = _prevWilliamsR >= -90m && williamsRDec < -90m;
+		var crossedAbove20 = _prevWilliamsR <= -10m && williamsRDec > -10m;
+		_prevWilliamsR = williamsRDec;
+		if (_cooldown > 0)
+			_cooldown--;
 
 		// Save current Kijun for stop-loss
 		_lastKijun = kijun;
 		
 		// Trading logic
-		if (williamsRDec < -80 && isPriceAboveKumo && tenkan > kijun)
+		if (_cooldown == 0 && crossedBelow80 && candle.ClosePrice > kumoTop * 1.002m && isPriceAboveKumo && tenkan > kijun)
 		{
 			// Long signal: %R < -80 (oversold), price above Kumo, Tenkan > Kijun
 			if (Position <= 0)
 			{
 				// Close any existing short position and open long
 				BuyMarket(Volume + Math.Abs(Position));
-				LogInfo($"Long Entry: %R={williamsRDec:F2}, Price above Kumo, Tenkan > Kijun");
+				_cooldown = CooldownBars;
 			}
 		}
-		else if (williamsRDec > -20 && isPriceBelowKumo && tenkan < kijun)
+		else if (_cooldown == 0 && crossedAbove20 && candle.ClosePrice < kumoBottom * 0.998m && isPriceBelowKumo && tenkan < kijun)
 		{
 			// Short signal: %R > -20 (overbought), price below Kumo, Tenkan < Kijun
 			if (Position >= 0)
 			{
 				// Close any existing long position and open short
 				SellMarket(Volume + Math.Abs(Position));
-				LogInfo($"Short Entry: %R={williamsRDec:F2}, Price below Kumo, Tenkan < Kijun");
+				_cooldown = CooldownBars;
 			}
 		}
 		else if ((Position > 0 && candle.ClosePrice < kumoBottom) || 
@@ -233,12 +249,12 @@ public class WilliamsIchimokuStrategy : Strategy
 			if (Position > 0)
 			{
 				SellMarket(Math.Abs(Position));
-				LogInfo("Exit Long: Price crossed below Kumo");
+				_cooldown = CooldownBars;
 			}
 			else if (Position < 0)
 			{
 				BuyMarket(Math.Abs(Position));
-				LogInfo("Exit Short: Price crossed above Kumo");
+				_cooldown = CooldownBars;
 			}
 		}
 	}

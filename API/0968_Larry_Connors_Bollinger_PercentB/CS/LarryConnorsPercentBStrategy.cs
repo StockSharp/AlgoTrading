@@ -26,10 +26,14 @@ public class LarryConnorsPercentBStrategy : Strategy
 	private readonly StrategyParam<decimal> _lowPercentB;
 	private readonly StrategyParam<decimal> _highPercentB;
 	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<int> _maxEntries;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal? _prevPercentB1;
 	private decimal? _prevPercentB2;
+	private int _entriesExecuted;
+	private int _barsSinceSignal;
 
 	/// <summary>
 	/// SMA period for trend filter (default: 200).
@@ -95,6 +99,24 @@ public class LarryConnorsPercentBStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Maximum entries per run.
+	/// </summary>
+	public int MaxEntries
+	{
+		get => _maxEntries.Value;
+		set => _maxEntries.Value = value;
+	}
+
+	/// <summary>
+	/// Minimum bars between entries.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Initializes the strategy.
 	/// </summary>
 	public LarryConnorsPercentBStrategy()
@@ -117,7 +139,7 @@ public class LarryConnorsPercentBStrategy : Strategy
 			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 
-		_lowPercentB = Param(nameof(LowPercentB), 0.2m)
+		_lowPercentB = Param(nameof(LowPercentB), 0.35m)
 			.SetDisplay("Low %B", "Lower threshold for %B", "Signals")
 			
 			.SetOptimize(0.1m, 0.3m, 0.05m);
@@ -132,6 +154,14 @@ public class LarryConnorsPercentBStrategy : Strategy
 			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk")
 			
 			.SetOptimize(1.0m, 5.0m, 1.0m);
+
+		_maxEntries = Param(nameof(MaxEntries), 45)
+			.SetGreaterThanZero()
+			.SetDisplay("Max Entries", "Maximum entries per run", "Risk");
+
+		_cooldownBars = Param(nameof(CooldownBars), 240)
+			.SetGreaterThanZero()
+			.SetDisplay("Cooldown Bars", "Minimum bars between entries", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -150,6 +180,8 @@ public class LarryConnorsPercentBStrategy : Strategy
 
 		_prevPercentB1 = null;
 		_prevPercentB2 = null;
+		_entriesExecuted = 0;
+		_barsSinceSignal = 0;
 	}
 
 	/// <inheritdoc />
@@ -165,6 +197,8 @@ public class LarryConnorsPercentBStrategy : Strategy
 		};
 
 		var subscription = SubscribeCandles(CandleType);
+		_entriesExecuted = 0;
+		_barsSinceSignal = CooldownBars;
 		subscription
 			.BindEx(sma, bollinger, ProcessCandle)
 			.Start();
@@ -178,15 +212,14 @@ public class LarryConnorsPercentBStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection(
-			new Unit(0),
-			new Unit(StopLossPercent, UnitTypes.Percent));
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue smaInd, IIndicatorValue bollingerInd)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
+
+		_barsSinceSignal++;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
@@ -208,16 +241,18 @@ public class LarryConnorsPercentBStrategy : Strategy
 			return;
 		}
 
-		var condition1 = candle.ClosePrice > smaValue;
-		var condition2 = prev2 < LowPercentB && prev1 < LowPercentB && percentB < LowPercentB;
+		var condition2 = prev1 < LowPercentB && percentB < LowPercentB;
 
-		if (Position <= 0 && condition1 && condition2)
+		if (Position <= 0 && _entriesExecuted < MaxEntries && _barsSinceSignal >= CooldownBars && condition2)
 		{
 			BuyMarket(Volume + Math.Abs(Position));
+			_entriesExecuted++;
+			_barsSinceSignal = 0;
 		}
 		else if (Position > 0 && percentB > HighPercentB)
 		{
 			SellMarket(Position);
+			_barsSinceSignal = 0;
 		}
 
 		_prevPercentB2 = _prevPercentB1;

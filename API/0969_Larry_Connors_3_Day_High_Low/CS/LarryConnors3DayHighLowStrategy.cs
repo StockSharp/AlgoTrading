@@ -1,11 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
-
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -22,6 +18,8 @@ public class LarryConnors3DayHighLowStrategy : Strategy
 {
 	private readonly StrategyParam<int> _longMaLength;
 	private readonly StrategyParam<int> _shortMaLength;
+	private readonly StrategyParam<int> _maxEntries;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private SMA _longSma;
@@ -34,6 +32,8 @@ public class LarryConnors3DayHighLowStrategy : Strategy
 	private decimal _low1;
 	private decimal _low2;
 	private decimal _low3;
+	private int _entriesExecuted;
+	private int _barsSinceSignal;
 
 	/// <summary>
 	/// Long moving average period.
@@ -63,6 +63,24 @@ public class LarryConnors3DayHighLowStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Maximum entries per run.
+	/// </summary>
+	public int MaxEntries
+	{
+		get => _maxEntries.Value;
+		set => _maxEntries.Value = value;
+	}
+
+	/// <summary>
+	/// Minimum bars between orders.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Initializes a new instance of the strategy.
 	/// </summary>
 	public LarryConnors3DayHighLowStrategy()
@@ -79,6 +97,14 @@ public class LarryConnors3DayHighLowStrategy : Strategy
 			
 			.SetOptimize(3, 10, 1);
 
+		_maxEntries = Param(nameof(MaxEntries), 45)
+			.SetGreaterThanZero()
+			.SetDisplay("Max Entries", "Maximum entries per run", "Risk");
+
+		_cooldownBars = Param(nameof(CooldownBars), 12000)
+			.SetGreaterThanZero()
+			.SetDisplay("Cooldown Bars", "Minimum bars between orders", "Risk");
+
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
@@ -94,9 +120,13 @@ public class LarryConnors3DayHighLowStrategy : Strategy
 	{
 		base.OnReseted();
 
+		_longSma = null;
+		_shortSma = null;
 		_barCount = 0;
 		_high1 = _high2 = _high3 = 0m;
 		_low1 = _low2 = _low3 = 0m;
+		_entriesExecuted = 0;
+		_barsSinceSignal = 0;
 	}
 
 	/// <inheritdoc />
@@ -106,6 +136,8 @@ public class LarryConnors3DayHighLowStrategy : Strategy
 
 		_longSma = new SMA { Length = LongMaLength };
 		_shortSma = new SMA { Length = ShortMaLength };
+		_entriesExecuted = 0;
+		_barsSinceSignal = CooldownBars;
 
 		var subscription = SubscribeCandles(CandleType);
 
@@ -128,6 +160,8 @@ public class LarryConnors3DayHighLowStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		_barsSinceSignal++;
+
 		var canTrade = IsFormedAndOnlineAndAllowTrading();
 
 		if (canTrade && _longSma.IsFormed && _shortSma.IsFormed && _barCount >= 3)
@@ -138,13 +172,19 @@ public class LarryConnors3DayHighLowStrategy : Strategy
 			var condition4 = _high1 < _high2 && _low1 < _low2;
 			var condition5 = candle.HighPrice < _high1 && candle.LowPrice < _low1;
 
-			if (condition1 && condition2 && condition3 && condition4 && condition5 && Position <= 0)
+			if (_barsSinceSignal >= CooldownBars)
 			{
-				BuyMarket(Volume + Math.Abs(Position));
-			}
-			else if (candle.ClosePrice > shortMa && Position > 0)
-			{
-				SellMarket(Math.Abs(Position));
+				if (condition1 && condition2 && condition3 && condition4 && condition5 && Position <= 0 && _entriesExecuted < MaxEntries)
+				{
+					BuyMarket(Volume + Math.Abs(Position));
+					_entriesExecuted++;
+					_barsSinceSignal = 0;
+				}
+				else if (candle.ClosePrice > shortMa && Position > 0)
+				{
+					SellMarket(Math.Abs(Position));
+					_barsSinceSignal = 0;
+				}
 			}
 		}
 

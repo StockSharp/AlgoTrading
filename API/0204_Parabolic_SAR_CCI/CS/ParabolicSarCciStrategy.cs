@@ -21,7 +21,10 @@ public class ParabolicSarCciStrategy : Strategy
 	private readonly StrategyParam<decimal> _sarAccelerationFactor;
 	private readonly StrategyParam<decimal> _sarMaxAccelerationFactor;
 	private readonly StrategyParam<int> _cciPeriod;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
+	private int _cooldown;
+	private decimal _prevCci;
 
 	/// <summary>
 	/// Parabolic SAR acceleration factor
@@ -48,6 +51,15 @@ public class ParabolicSarCciStrategy : Strategy
 	{
 		get => _cciPeriod.Value;
 		set => _cciPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Bars to wait between trades.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	/// <summary>
@@ -79,7 +91,11 @@ public class ParabolicSarCciStrategy : Strategy
 			.SetDisplay("CCI Period", "Period for CCI indicator", "Indicators")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_cooldownBars = Param(nameof(CooldownBars), 50)
+			.SetRange(1, 200)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "General");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -93,6 +109,8 @@ public class ParabolicSarCciStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
+		_cooldown = 0;
+		_prevCci = 0m;
 	}
 
 	/// <inheritdoc />
@@ -137,33 +155,43 @@ public class ParabolicSarCciStrategy : Strategy
 			return;
 
 		var price = candle.ClosePrice;
+		var crossedUp = _prevCci <= 100m && cciValue > 100m;
+		var crossedDown = _prevCci >= -100m && cciValue < -100m;
+		_prevCci = cciValue;
+
+		if (_cooldown > 0)
+			_cooldown--;
 
 		// Trading logic:
 		// Long: Price > SAR && CCI < -100 (trend up with oversold conditions)
 		// Short: Price < SAR && CCI > 100 (trend down with overbought conditions)
 		
-		if (price > sarValue && cciValue < -100 && Position <= 0)
+		if (_cooldown == 0 && price > sarValue && crossedUp && Position <= 0)
 		{
 			// Buy signal - trend up with oversold CCI
 			var volume = Volume + Math.Abs(Position);
 			BuyMarket(volume);
+			_cooldown = CooldownBars;
 		}
-		else if (price < sarValue && cciValue > 100 && Position >= 0)
+		else if (_cooldown == 0 && price < sarValue && crossedDown && Position >= 0)
 		{
 			// Sell signal - trend down with overbought CCI
 			var volume = Volume + Math.Abs(Position);
 			SellMarket(volume);
+			_cooldown = CooldownBars;
 		}
 		// Exit conditions based on SAR breakout (dynamic stop-loss)
-		else if (Position > 0 && price < sarValue)
+		else if (Position > 0 && price < sarValue && cciValue < 0m)
 		{
 			// Exit long position when price drops below SAR
 			SellMarket(Position);
+			_cooldown = CooldownBars;
 		}
-		else if (Position < 0 && price > sarValue)
+		else if (Position < 0 && price > sarValue && cciValue > 0m)
 		{
 			// Exit short position when price rises above SAR
 			BuyMarket(Math.Abs(Position));
+			_cooldown = CooldownBars;
 		}
 	}
 }

@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 using Ecng.Common;
 
@@ -19,15 +18,30 @@ namespace StockSharp.Samples.Strategies;
 public class LinearCrossTradingStrategy : Strategy
 {
 	private readonly StrategyParam<int> _length;
+	private readonly StrategyParam<decimal> _slopeThresholdPercent;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _prevSlope;
 	private bool _prevSlopeSet;
+	private int _barsFromSignal;
 
 	public int Length
 	{
 		get => _length.Value;
 		set => _length.Value = value;
+	}
+
+	public decimal SlopeThresholdPercent
+	{
+		get => _slopeThresholdPercent.Value;
+		set => _slopeThresholdPercent.Value = value;
+	}
+
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	public DataType CandleType
@@ -42,8 +56,26 @@ public class LinearCrossTradingStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Regression Length", "Number of bars for linear regression", "Indicator");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_slopeThresholdPercent = Param(nameof(SlopeThresholdPercent), 0.10m)
+			.SetGreaterThanZero()
+			.SetDisplay("Slope Threshold %", "Minimum normalized slope for signals", "Indicator");
+
+		_cooldownBars = Param(nameof(CooldownBars), 16)
+			.SetGreaterThanZero()
+			.SetDisplay("Cooldown Bars", "Minimum bars between entries", "General");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(10).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for strategy", "General");
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_prevSlope = 0m;
+		_prevSlopeSet = false;
+		_barsFromSignal = int.MaxValue;
 	}
 
 	/// <inheritdoc />
@@ -70,7 +102,11 @@ public class LinearCrossTradingStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var slope = candle.ClosePrice - linRegValue;
+		var closePrice = candle.ClosePrice;
+		if (closePrice <= 0)
+			return;
+
+		var slope = (closePrice - linRegValue) / closePrice * 100m;
 
 		if (!_prevSlopeSet)
 		{
@@ -79,10 +115,21 @@ public class LinearCrossTradingStrategy : Strategy
 			return;
 		}
 
-		if (_prevSlope <= 0m && slope > 0m && Position <= 0)
-			BuyMarket();
-		else if (_prevSlope >= 0m && slope < 0m && Position >= 0)
-			SellMarket();
+		_barsFromSignal++;
+
+		if (IsFormedAndOnlineAndAllowTrading() && _barsFromSignal >= CooldownBars)
+		{
+			if (_prevSlope <= SlopeThresholdPercent && slope > SlopeThresholdPercent && Position <= 0)
+			{
+				BuyMarket(Volume + Math.Abs(Position));
+				_barsFromSignal = 0;
+			}
+			else if (_prevSlope >= -SlopeThresholdPercent && slope < -SlopeThresholdPercent && Position >= 0)
+			{
+				SellMarket(Volume + Math.Abs(Position));
+				_barsFromSignal = 0;
+			}
+		}
 
 		_prevSlope = slope;
 	}

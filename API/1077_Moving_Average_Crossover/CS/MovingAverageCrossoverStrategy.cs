@@ -21,11 +21,15 @@ public class MovingAverageCrossoverStrategy : Strategy
 {
 	private readonly StrategyParam<int> _shortLength;
 	private readonly StrategyParam<int> _longLength;
+	private readonly StrategyParam<int> _cooldownCandles;
+	private readonly StrategyParam<decimal> _minSpreadPercent;
 	private readonly StrategyParam<DataType> _candleType;
 	
 	private decimal _prevShort;
 	private decimal _prevLong;
 	private bool _isFirst;
+	private int _barIndex;
+	private int _lastTradeBar = int.MinValue;
 	
 	/// <summary>
 	/// Short SMA period length.
@@ -53,25 +57,51 @@ public class MovingAverageCrossoverStrategy : Strategy
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
+
+	/// <summary>
+	/// Minimum finished candles between entries.
+	/// </summary>
+	public int CooldownCandles
+	{
+		get => _cooldownCandles.Value;
+		set => _cooldownCandles.Value = value;
+	}
+
+	/// <summary>
+	/// Minimum spread between moving averages in percent.
+	/// </summary>
+	public decimal MinSpreadPercent
+	{
+		get => _minSpreadPercent.Value;
+		set => _minSpreadPercent.Value = value;
+	}
 	
 	/// <summary>
 	/// Initializes a new instance of the <see cref="MovingAverageCrossoverStrategy"/> class.
 	/// </summary>
 	public MovingAverageCrossoverStrategy()
 	{
-		_shortLength = Param(nameof(ShortLength), 9)
+		_shortLength = Param(nameof(ShortLength), 10)
 		.SetGreaterThanZero()
 		.SetDisplay("Short MA Length", "Period of the short moving average", "General")
 		
 		.SetOptimize(5, 20, 1);
 		
-		_longLength = Param(nameof(LongLength), 21)
+		_longLength = Param(nameof(LongLength), 34)
 		.SetGreaterThanZero()
 		.SetDisplay("Long MA Length", "Period of the long moving average", "General")
 		
 		.SetOptimize(20, 100, 5);
+
+		_cooldownCandles = Param(nameof(CooldownCandles), 8)
+		.SetGreaterThanZero()
+		.SetDisplay("Cooldown Candles", "Finished candles between entries", "General");
+
+		_minSpreadPercent = Param(nameof(MinSpreadPercent), 0.02m)
+		.SetGreaterThanZero()
+		.SetDisplay("Min Spread %", "Minimum MA spread on crossover", "General");
 		
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe for analysis", "General");
 	}
 	
@@ -88,6 +118,8 @@ public class MovingAverageCrossoverStrategy : Strategy
 		_prevShort = 0m;
 		_prevLong = 0m;
 		_isFirst = true;
+		_barIndex = 0;
+		_lastTradeBar = int.MinValue;
 	}
 	
 	/// <inheritdoc />
@@ -115,6 +147,8 @@ public class MovingAverageCrossoverStrategy : Strategy
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
+
+		_barIndex++;
 		
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
@@ -127,13 +161,23 @@ public class MovingAverageCrossoverStrategy : Strategy
 			return;
 		}
 		
-		var crossUp = _prevShort <= _prevLong && shortValue > longValue;
-		var crossDown = _prevShort >= _prevLong && shortValue < longValue;
+		var spreadPercent = candle.ClosePrice != 0m
+			? Math.Abs(shortValue - longValue) / candle.ClosePrice * 100m
+			: 0m;
+		var canTrade = _barIndex - _lastTradeBar >= CooldownCandles;
+		var crossUp = _prevShort <= _prevLong && shortValue > longValue && spreadPercent >= MinSpreadPercent;
+		var crossDown = _prevShort >= _prevLong && shortValue < longValue && spreadPercent >= MinSpreadPercent;
 		
-		if (crossUp && Position <= 0)
+		if (canTrade && crossUp && Position <= 0)
+		{
 			BuyMarket(Volume + Math.Abs(Position));
-		else if (crossDown && Position >= 0)
+			_lastTradeBar = _barIndex;
+		}
+		else if (canTrade && crossDown && Position >= 0)
+		{
 			SellMarket(Volume + Math.Abs(Position));
+			_lastTradeBar = _barIndex;
+		}
 		
 		_prevShort = shortValue;
 		_prevLong = longValue;

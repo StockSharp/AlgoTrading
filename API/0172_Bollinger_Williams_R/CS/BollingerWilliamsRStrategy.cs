@@ -26,6 +26,9 @@ public class BollingerWilliamsRStrategy : Strategy
 	private readonly StrategyParam<int> _atrPeriod;
 	private readonly StrategyParam<decimal> _atrMultiplier;
 	private readonly StrategyParam<DataType> _candleType;
+	private int _cooldown;
+	private bool _wasBelowLower;
+	private bool _wasAboveUpper;
 
 	/// <summary>
 	/// Bollinger Bands period
@@ -127,10 +130,13 @@ public class BollingerWilliamsRStrategy : Strategy
 	}
 
 		/// <inheritdoc />
-		protected override void OnReseted()
-		{
-			base.OnReseted();
-		}
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_cooldown = 0;
+		_wasBelowLower = false;
+		_wasAboveUpper = false;
+	}
 
 		/// <inheritdoc />
 		protected override void OnStarted2(DateTime time)
@@ -197,21 +203,33 @@ public class BollingerWilliamsRStrategy : Strategy
 		var stopSize = atrValue.ToDecimal() * AtrMultiplier;
 
 		var williamsRValueDec = williamsRValue.ToDecimal();
+		var isBelowLower = price <= lowerBand * 1.001m;
+		var isAboveUpper = price >= upperBand * 0.999m;
+
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+			_wasBelowLower = isBelowLower;
+			_wasAboveUpper = isAboveUpper;
+			return;
+		}
 
 		// Trading logic
-		if (price <= lowerBand && williamsRValueDec < -80 && Position <= 0)
+		if (!_wasBelowLower && isBelowLower && williamsRValueDec < -45 && Position <= 0)
 		{
 			// Buy signal: price at/below lower band and Williams %R oversold
 			BuyMarket(Volume + Math.Abs(Position));
+			_cooldown = 6;
 			
 			// Set stop-loss
 			var stopPrice = price - stopSize;
 			RegisterOrder(CreateOrder(Sides.Sell, stopPrice, Math.Abs(Position + Volume).Max(Volume)));
 		}
-		else if (price >= upperBand && williamsRValueDec > -20 && Position >= 0)
+		else if (!_wasAboveUpper && isAboveUpper && williamsRValueDec > -55 && Position >= 0)
 		{
 			// Sell signal: price at/above upper band and Williams %R overbought
 			SellMarket(Volume + Math.Abs(Position));
+			_cooldown = 6;
 			
 			// Set stop-loss
 			var stopPrice = price + stopSize;
@@ -228,5 +246,8 @@ public class BollingerWilliamsRStrategy : Strategy
 			// Exit long position when price returns to middle band
 			SellMarket(Position);
 		}
+
+		_wasBelowLower = isBelowLower;
+		_wasAboveUpper = isAboveUpper;
 	}
 }

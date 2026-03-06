@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,16 +11,19 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on Hull Moving Average crossover on price levels.
-/// It enters long when price breaks above the computed level and short when price falls below it.
+/// HMA cross strategy with threshold and cooldown to reduce signal noise.
 /// </summary>
 public class MhHullMovingAverageBasedTradingStrategy : Strategy
 {
 	private readonly StrategyParam<int> _hullPeriod;
+	private readonly StrategyParam<decimal> _signalThresholdPercent;
+	private readonly StrategyParam<int> _signalCooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevHma;
-	private decimal _prevPrice;
+	private HullMovingAverage _hma;
+	private decimal _prevDiffPercent;
+	private bool _hasPrevDiff;
+	private int _barsFromSignal;
 
 	/// <summary>
 	/// Period for Hull Moving Average.
@@ -32,6 +32,24 @@ public class MhHullMovingAverageBasedTradingStrategy : Strategy
 	{
 		get => _hullPeriod.Value;
 		set => _hullPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Minimum price to HMA distance in percent required for a signal.
+	/// </summary>
+	public decimal SignalThresholdPercent
+	{
+		get => _signalThresholdPercent.Value;
+		set => _signalThresholdPercent.Value = value;
+	}
+
+	/// <summary>
+	/// Minimum bars between entries.
+	/// </summary>
+	public int SignalCooldownBars
+	{
+		get => _signalCooldownBars.Value;
+		set => _signalCooldownBars.Value = value;
 	}
 
 	/// <summary>
@@ -48,12 +66,19 @@ public class MhHullMovingAverageBasedTradingStrategy : Strategy
 	/// </summary>
 	public MhHullMovingAverageBasedTradingStrategy()
 	{
-		_hullPeriod = Param(nameof(HullPeriod), 210)
-			.SetDisplay("Hull Period", "Period for Hull Moving Average", "Indicators")
-			
-			.SetOptimize(50, 300, 10);
+		_hullPeriod = Param(nameof(HullPeriod), 120)
+			.SetGreaterThanZero()
+			.SetDisplay("Hull Period", "Period for Hull Moving Average", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_signalThresholdPercent = Param(nameof(SignalThresholdPercent), 0.15m)
+			.SetGreaterThanZero()
+			.SetDisplay("Signal Threshold %", "Minimum distance from HMA", "Indicators");
+
+		_signalCooldownBars = Param(nameof(SignalCooldownBars), 10)
+			.SetGreaterThanZero()
+			.SetDisplay("Signal Cooldown Bars", "Minimum bars between entries", "Indicators");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -67,29 +92,25 @@ public class MhHullMovingAverageBasedTradingStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevHma = default;
-		_prevPrice = default;
+		_hma = null;
+		_prevDiffPercent = 0m;
+		_hasPrevDiff = false;
+		_barsFromSignal = 0;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+		StartProtection(null, null);
 
-		var hma = new HullMovingAverage { Length = HullPeriod };
+		_hma = new HullMovingAverage { Length = HullPeriod };
+		_prevDiffPercent = 0m;
+		_hasPrevDiff = false;
+		_barsFromSignal = SignalCooldownBars;
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(hma, ProcessCandle)
-			.Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, hma);
-			DrawOwnTrades(area);
-		}
+		subscription.Bind(_hma, ProcessCandle).Start();
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal hmaValue)
@@ -100,47 +121,36 @@ public class MhHullMovingAverageBasedTradingStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var price = candle.OpenPrice;
-
-		if (_prevHma == 0)
-		{
-			_prevHma = hmaValue;
-			_prevPrice = price;
+		if (!_hma.IsFormed)
 			return;
-		}
 
-		var n1 = hmaValue;
-		var n2 = _prevHma;
-		var hullLine = n2;
-		var hullRetracted = n1 > n2 ? hullLine - 2m : hullLine + 2m;
-		var c1 = hullRetracted + n1 - price;
-		var c2 = hullRetracted - n2 + price;
+		var price = candle.ClosePrice;
+		if (price <= 0m)
+			return;
 
-		if (price < c2 && Position > 0)
-		{
-			SellMarket(Position);
-			LogInfo($"Exit long at {price}");
-		}
-		else if (price > c2 && Position < 0)
-		{
-			BuyMarket(-Position);
-			LogInfo($"Exit short at {price}");
-		}
+		var diffPercent = (price - hmaValue) / price * 100m;
+		var threshold = SignalThresholdPercent;
+		var crossedUp = _hasPrevDiff && _prevDiffPercent <= threshold && diffPercent > threshold;
+		var crossedDown = _hasPrevDiff && _prevDiffPercent >= -threshold && diffPercent < -threshold;
 
-		if (price > c2 && _prevPrice > c1 && Position <= 0)
+		_prevDiffPercent = diffPercent;
+		_hasPrevDiff = true;
+
+		_barsFromSignal++;
+		if (_barsFromSignal < SignalCooldownBars)
+			return;
+
+		if (crossedUp && Position <= 0)
 		{
 			var volume = Volume + Math.Abs(Position);
 			BuyMarket(volume);
-			LogInfo($"Buy signal at {price}");
+			_barsFromSignal = 0;
 		}
-		else if (price < c1 && _prevPrice < c2 && Position >= 0)
+		else if (crossedDown && Position >= 0)
 		{
 			var volume = Volume + Math.Abs(Position);
 			SellMarket(volume);
-			LogInfo($"Sell signal at {price}");
+			_barsFromSignal = 0;
 		}
-
-		_prevHma = n1;
-		_prevPrice = price;
 	}
 }

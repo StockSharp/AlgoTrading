@@ -26,11 +26,13 @@ public class VwapAdxStrategy : Strategy
 {
 	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<int> _adxPeriod;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private AverageDirectionalIndex _adx;
 	private VolumeWeightedMovingAverage _vwap;
 	private decimal _prevAdxValue;
+	private int _cooldown;
 
 	/// <summary>
 	/// Stop loss percentage value.
@@ -48,6 +50,15 @@ public class VwapAdxStrategy : Strategy
 	{
 		get => _adxPeriod.Value;
 		set => _adxPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Bars to wait between trades.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	/// <summary>
@@ -72,7 +83,11 @@ public class VwapAdxStrategy : Strategy
 			
 			.SetOptimize(10, 20, 1);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_cooldownBars = Param(nameof(CooldownBars), 25)
+			.SetRange(1, 200)
+			.SetDisplay("Cooldown Bars", "Bars between entries", "General");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe of data for strategy", "General");
 	}
 
@@ -86,6 +101,7 @@ public class VwapAdxStrategy : Strategy
 	{
 		base.OnReseted();
 		_prevAdxValue = default;
+		_cooldown = 0;
 		_adx = null;
 		_vwap = null;
 	}
@@ -98,9 +114,6 @@ public class VwapAdxStrategy : Strategy
 		// Create ADX indicator
 		_adx = new() { Length = AdxPeriod };
 		_vwap = new() { Length = AdxPeriod };
-
-		// Enable position protection
-		StartProtection(new Unit(StopLossPercent, UnitTypes.Percent), new Unit(StopLossPercent, UnitTypes.Percent));
 
 		// Create subscription and subscribe to VWAP
 		var subscription = SubscribeCandles(CandleType);
@@ -126,7 +139,19 @@ public class VwapAdxStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var vwap = _vwap.Process(candle).ToDecimal();
+		decimal vwap;
+		try
+		{
+			var vwapValue = _vwap.Process(candle);
+			if (vwapValue == null || !_vwap.IsFormed)
+				return;
+
+			vwap = vwapValue.ToDecimal();
+		}
+		catch (IndexOutOfRangeException)
+		{
+			return;
+		}
 
 		// Get current ADX value
 		var typedAdx = (AverageDirectionalIndexValue)adxValue;
@@ -139,24 +164,30 @@ public class VwapAdxStrategy : Strategy
 			return;
 
 		// Trading logic
-		if (currentAdxValue > 25)
+		if (_cooldown > 0)
 		{
-			// Strong trend detected
-			if (candle.ClosePrice > vwap && Position <= 0)
+			_cooldown--;
+		}
+
+		var adxImpulseUp = _prevAdxValue <= 25 && currentAdxValue > 25;
+
+		if (_cooldown == 0 && adxImpulseUp)
+		{
+			if (candle.ClosePrice > vwap * 1.001m && Position <= 0)
 			{
-				// Price above VWAP - go long
 				BuyMarket(Volume + Math.Abs(Position));
+				_cooldown = CooldownBars;
 			}
-			else if (candle.ClosePrice < vwap && Position >= 0)
+			else if (candle.ClosePrice < vwap * 0.999m && Position >= 0)
 			{
-				// Price below VWAP - go short
 				SellMarket(Volume + Math.Abs(Position));
+				_cooldown = CooldownBars;
 			}
 		}
-		else if (currentAdxValue < 20 && _prevAdxValue > 20)
+		else if (currentAdxValue < 18 && Position != 0)
 		{
-			// Trend weakening - close position
 			ClosePosition();
+			_cooldown = CooldownBars;
 		}
 
 		// Store current ADX value for next candle

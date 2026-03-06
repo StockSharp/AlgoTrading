@@ -136,6 +136,9 @@ public class StochasticMeanReversionStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
+		_stochastic = null;
+		_stochAverage = null;
+		_stochStdDev = null;
 		_prevStochKValue = default;
 	}
 
@@ -185,7 +188,8 @@ public class StochasticMeanReversionStrategy : Strategy
 			return;
 
 		// Extract %K value from stochastic
-		var stochTyped = (StochasticOscillatorValue)stochValue;
+		if (stochValue is not IStochasticOscillatorValue stochTyped)
+			return;
 
 		if (stochTyped.K is not decimal kValue)
 			return;
@@ -205,8 +209,9 @@ public class StochasticMeanReversionStrategy : Strategy
 		}
 
 		// Calculate bands
-		var upperBand = stochAvgValue + Multiplier * stochStdDevValue;
-		var lowerBand = stochAvgValue - Multiplier * stochStdDevValue;
+		var effectiveStdDev = decimal.Max(1m, stochStdDevValue);
+		var upperBand = stochAvgValue + Multiplier * effectiveStdDev;
+		var lowerBand = stochAvgValue - Multiplier * effectiveStdDev;
 
 		LogInfo($"Stoch %K: {currentStochKValue}, Avg: {stochAvgValue}, Upper: {upperBand}, Lower: {lowerBand}");
 
@@ -214,13 +219,13 @@ public class StochasticMeanReversionStrategy : Strategy
 		if (Position == 0)
 		{
 			// Long Entry: Stochastic %K is below lower band
-			if (currentStochKValue < lowerBand)
+			if (currentStochKValue < lowerBand || currentStochKValue < 20m)
 			{
 				LogInfo($"Buy Signal - Stoch %K ({currentStochKValue}) < Lower Band ({lowerBand})");
 				BuyMarket(Volume);
 			}
 			// Short Entry: Stochastic %K is above upper band
-			else if (currentStochKValue > upperBand)
+			else if (currentStochKValue > upperBand || currentStochKValue > 80m)
 			{
 				LogInfo($"Sell Signal - Stoch %K ({currentStochKValue}) > Upper Band ({upperBand})");
 				SellMarket(Volume);

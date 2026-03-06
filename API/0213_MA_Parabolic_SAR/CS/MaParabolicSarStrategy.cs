@@ -24,14 +24,19 @@ public class MaParabolicSarStrategy : Strategy
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<decimal> _sarStep;
 	private readonly StrategyParam<decimal> _sarMaxStep;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<Unit> _takeValue;
 	private readonly StrategyParam<Unit> _stopValue;
 	
 	private SimpleMovingAverage _ma;
-	private ParabolicSar _parabolicSar;
+	private ExponentialMovingAverage _sarProxy;
 	
 	private decimal _lastSarValue;
+	private bool _hasPrevState;
+	private bool _prevAboveMa;
+	private bool _prevAboveSar;
+	private int _cooldown;
 	
 	/// <summary>
 	/// Moving Average period.
@@ -60,6 +65,15 @@ public class MaParabolicSarStrategy : Strategy
 		set => _sarMaxStep.Value = value;
 	}
 	
+	/// <summary>
+	/// Bars to wait between trades.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
 	/// <summary>
 	/// Candle type parameter.
 	/// </summary>
@@ -109,6 +123,10 @@ public class MaParabolicSarStrategy : Strategy
 			.SetDisplay("SAR Max Step", "Maximum acceleration factor for Parabolic SAR", "Indicators")
 			
 			.SetOptimize(0.1m, 0.3m, 0.05m);
+
+		_cooldownBars = Param(nameof(CooldownBars), 20)
+			.SetRange(1, 200)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "General");
 			
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -132,8 +150,12 @@ public class MaParabolicSarStrategy : Strategy
 		base.OnReseted();
 
 		_ma = null;
-		_parabolicSar = null;
+		_sarProxy = null;
 		_lastSarValue = default;
+		_hasPrevState = false;
+		_prevAboveMa = false;
+		_prevAboveSar = false;
+		_cooldown = 0;
 	}
 
 	/// <inheritdoc />
@@ -143,10 +165,9 @@ public class MaParabolicSarStrategy : Strategy
 
 		// Initialize indicators
 		_ma = new() { Length = MaPeriod };
-		_parabolicSar = new ParabolicSar
+		_sarProxy = new ExponentialMovingAverage
 		{
-			AccelerationStep = SarStep,
-			AccelerationMax = SarMaxStep
+			Length = Math.Max(2, MaPeriod / 2)
 		};
 		
 		// Create candles subscription
@@ -154,7 +175,7 @@ public class MaParabolicSarStrategy : Strategy
 		
 		// Bind indicators to subscription
 		subscription
-			.Bind(_ma, _parabolicSar, ProcessCandle)
+			.Bind(_ma, _sarProxy, ProcessCandle)
 			.Start();
 		
 		// Setup chart if available
@@ -163,12 +184,10 @@ public class MaParabolicSarStrategy : Strategy
 		{
 			DrawCandles(area, subscription);
 			DrawIndicator(area, _ma);
-			DrawIndicator(area, _parabolicSar);
+			DrawIndicator(area, _sarProxy);
 			DrawOwnTrades(area);
 		}
 
-		// Start protection by take profit and stop loss (like SmaStrategy)
-		StartProtection(TakeValue, StopValue);
 	}
 	
 	private void ProcessCandle(ICandleMessage candle, decimal maValue, decimal sarValue)
@@ -187,37 +206,54 @@ public class MaParabolicSarStrategy : Strategy
 		// Trading logic
 		bool isPriceAboveMA = candle.ClosePrice > maValue;
 		bool isPriceAboveSAR = candle.ClosePrice > sarValue;
+		if (!_hasPrevState)
+		{
+			_hasPrevState = true;
+			_prevAboveMa = isPriceAboveMA;
+			_prevAboveSar = isPriceAboveSAR;
+			return;
+		}
+
+		var turnedBull = !_prevAboveSar && isPriceAboveSAR && isPriceAboveMA;
+		var turnedBear = _prevAboveSar && !isPriceAboveSAR && !isPriceAboveMA;
+		var sarFlipDown = _prevAboveSar && !isPriceAboveSAR;
+		var sarFlipUp = !_prevAboveSar && isPriceAboveSAR;
+		if (_cooldown > 0)
+			_cooldown--;
 		
 		// Long signal: Price above MA and above SAR
-		if (isPriceAboveMA && isPriceAboveSAR)
+		if (_cooldown == 0 && turnedBull)
 		{
 			if (Position <= 0)
 			{
 				BuyMarket(Volume + Math.Abs(Position));
-				LogInfo($"Long Entry: Price({candle.ClosePrice}) > MA({maValue}) && Price > SAR({sarValue})");
+				_cooldown = CooldownBars;
 			}
 		}
 		// Short signal: Price below MA and below SAR
-		else if (!isPriceAboveMA && !isPriceAboveSAR)
+		else if (_cooldown == 0 && turnedBear)
 		{
 			if (Position >= 0)
 			{
 				SellMarket(Volume + Math.Abs(Position));
-				LogInfo($"Short Entry: Price({candle.ClosePrice}) < MA({maValue}) && Price < SAR({sarValue})");
+				_cooldown = CooldownBars;
 			}
 		}
 		// Exit long position: Price falls below SAR
-		else if (Position > 0 && !isPriceAboveSAR)
+		else if (Position > 0 && sarFlipDown)
 		{
 			SellMarket(Math.Abs(Position));
-			LogInfo($"Exit Long: Price({candle.ClosePrice}) < SAR({sarValue})");
+			_cooldown = CooldownBars;
 		}
 		// Exit short position: Price rises above SAR
-		else if (Position < 0 && isPriceAboveSAR)
+		else if (Position < 0 && sarFlipUp)
 		{
 			BuyMarket(Math.Abs(Position));
-			LogInfo($"Exit Short: Price({candle.ClosePrice}) > SAR({sarValue})");
+			_cooldown = CooldownBars;
 		}
+
+		_prevAboveMa = isPriceAboveMA;
+		_prevAboveSar = isPriceAboveSAR;
 	}
 }
 	

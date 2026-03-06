@@ -26,7 +26,9 @@ public class IchimokuStochasticStrategy : Strategy
 	private readonly StrategyParam<int> _stochPeriod;
 	private readonly StrategyParam<int> _stochK;
 	private readonly StrategyParam<int> _stochD;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
+	private int _cooldown;
 
 	/// <summary>
 	/// Tenkan-sen period
@@ -83,6 +85,15 @@ public class IchimokuStochasticStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Bars to wait between trades.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Candle type for strategy calculation
 	/// </summary>
 	public DataType CandleType
@@ -132,6 +143,10 @@ public class IchimokuStochasticStrategy : Strategy
 			
 			.SetOptimize(1, 5, 1);
 
+		_cooldownBars = Param(nameof(CooldownBars), 4)
+			.SetRange(1, 20)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "General");
+
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for strategy", "General");
 	}
@@ -143,10 +158,11 @@ public class IchimokuStochasticStrategy : Strategy
 		}
 
 		/// <inheritdoc />
-		protected override void OnReseted()
-		{
-			base.OnReseted();
-		}
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_cooldown = 0;
+	}
 
 		/// <inheritdoc />
 		protected override void OnStarted2(DateTime time)
@@ -234,33 +250,32 @@ public class IchimokuStochasticStrategy : Strategy
 		if (stochTyped.K is not decimal stochasticK)
 			return;
 
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+			return;
+		}
+
 		// Trading logic
-		if (isAboveKumo && isBullishCross && stochasticK < 20 && Position <= 0)
+		if (isAboveKumo && isBullishCross && stochasticK < 15 && Position <= 0)
 		{
-			// Buy signal: price above cloud, bullish cross, and oversold stochastic
 			BuyMarket(Volume + Math.Abs(Position));
-			
-			// Use Kijun-sen as stop-loss
-			RegisterOrder(CreateOrder(Sides.Sell, kijun, Math.Abs(Position + Volume).Max(Volume)));
+			_cooldown = CooldownBars;
 		}
-		else if (isBelowKumo && isBearishCross && stochasticK > 80 && Position >= 0)
+		else if (isBelowKumo && isBearishCross && stochasticK > 85 && Position >= 0)
 		{
-			// Sell signal: price below cloud, bearish cross, and overbought stochastic
 			SellMarket(Volume + Math.Abs(Position));
-			
-			// Use Kijun-sen as stop-loss
-			RegisterOrder(CreateOrder(Sides.Buy, kijun, Math.Abs(Position + Volume).Max(Volume)));
+			_cooldown = CooldownBars;
 		}
-		// Exit conditions
-		else if (price < kijun && Position > 0)
+		else if (isBearishCross && Position > 0)
 		{
-			// Exit long position when price falls below Kijun-sen
 			SellMarket(Position);
+			_cooldown = CooldownBars;
 		}
-		else if (price > kijun && Position < 0)
+		else if (isBullishCross && Position < 0)
 		{
-			// Exit short position when price rises above Kijun-sen
 			BuyMarket(Math.Abs(Position));
+			_cooldown = CooldownBars;
 		}
 	}
 }

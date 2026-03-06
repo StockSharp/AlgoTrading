@@ -21,9 +21,11 @@ public class MathStatisticsKernelFunctionsStrategy : Strategy
 {
 	private readonly StrategyParam<string> _kernel;
 	private readonly StrategyParam<decimal> _bandwidth;
+	private readonly StrategyParam<int> _signalCooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private int _barIndex;
+	private int _lastTradeBar = -1;
 
 	/// <summary>
 	/// Kernel function name.
@@ -41,6 +43,15 @@ public class MathStatisticsKernelFunctionsStrategy : Strategy
 	{
 		get => _bandwidth.Value;
 		set => _bandwidth.Value = value;
+	}
+
+	/// <summary>
+	/// Minimum bars between two market entries.
+	/// </summary>
+	public int SignalCooldownBars
+	{
+		get => _signalCooldownBars.Value;
+		set => _signalCooldownBars.Value = value;
 	}
 
 	/// <summary>
@@ -64,6 +75,9 @@ public class MathStatisticsKernelFunctionsStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Bandwidth", "Kernel bandwidth", "General");
 
+		_signalCooldownBars = Param(nameof(SignalCooldownBars), 20)
+			.SetDisplay("Signal Cooldown Bars", "Minimum bars between entries", "General");
+
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for candles", "General");
 	}
@@ -79,6 +93,7 @@ public class MathStatisticsKernelFunctionsStrategy : Strategy
 	{
 		base.OnReseted();
 		_barIndex = 0;
+		_lastTradeBar = -1;
 	}
 
 	/// <inheritdoc />
@@ -100,15 +115,23 @@ public class MathStatisticsKernelFunctionsStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var test = -1m + (_barIndex % 100) * 0.02m;
+		// Slower synthetic cycle reduces signal frequency and keeps order count stable.
+		var test = -1m + (_barIndex % 400) * 0.005m;
 		_barIndex++;
 
 		var value = Select(Kernel, test, Bandwidth);
+		var canTrade = _lastTradeBar < 0 || _barIndex - _lastTradeBar >= SignalCooldownBars;
 
-		if (value > 0.5m && Position <= 0)
+		if (canTrade && value > 0.5m && Position <= 0)
+		{
 			BuyMarket();
-		else if (value < 0.5m && Position >= 0)
+			_lastTradeBar = _barIndex;
+		}
+		else if (canTrade && value < 0.5m && Position >= 0)
+		{
 			SellMarket();
+			_lastTradeBar = _barIndex;
+		}
 	}
 
 	private static decimal Uniform(decimal distance, decimal bandwidth)

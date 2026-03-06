@@ -30,10 +30,12 @@ public class SupertrendAdxStrategy : Strategy
 	private readonly StrategyParam<decimal> _supertrendMultiplier;
 	private readonly StrategyParam<int> _adxPeriod;
 	private readonly StrategyParam<decimal> _adxThreshold;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _lastSupertrend;
 	private bool _isAboveSupertrend;
+	private int _cooldown;
 
 	/// <summary>
 	/// Period for Supertrend calculation.
@@ -72,6 +74,15 @@ public class SupertrendAdxStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Bars to wait between trades.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Type of candles to use.
 	/// </summary>
 	public DataType CandleType
@@ -103,13 +114,17 @@ public class SupertrendAdxStrategy : Strategy
 			
 			.SetOptimize(7, 21, 7);
 
-		_adxThreshold = Param(nameof(AdxThreshold), 25m)
+		_adxThreshold = Param(nameof(AdxThreshold), 30m)
 			.SetGreaterThanZero()
 			.SetDisplay("ADX Threshold", "Minimum ADX value to confirm trend strength", "Indicators")
 			
 			.SetOptimize(20m, 30m, 5m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_cooldownBars = Param(nameof(CooldownBars), 40)
+			.SetRange(1, 100)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "General");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -126,6 +141,7 @@ public class SupertrendAdxStrategy : Strategy
 
 		_lastSupertrend = 0;
 		_isAboveSupertrend = false;
+		_cooldown = 0;
 	}
 
 	/// <inheritdoc />
@@ -174,42 +190,28 @@ public class SupertrendAdxStrategy : Strategy
 		var isAboveSupertrend = candle.ClosePrice > supertrendTyped.Value;
 		var isStrongTrend = adxTyped.MovingAverage > AdxThreshold;
 
-		// Log current state
-		LogInfo($"Close: {candle.ClosePrice}, Supertrend: {supertrendValue}, ADX: {adxValue}, Above: {isAboveSupertrend}, Strong Trend: {isStrongTrend}");
-
 		// Check for trend change (crossing Supertrend line)
 		var trendChanged = isAboveSupertrend != _isAboveSupertrend && _lastSupertrend > 0;
+		if (_cooldown > 0)
+			_cooldown--;
 
-		// Trading logic
-		if (Position == 0) // No position
+		if (_cooldown == 0 && trendChanged && isStrongTrend)
 		{
-			if (isAboveSupertrend && isStrongTrend)
+			if (isAboveSupertrend && Position <= 0)
 			{
-				// Buy signal
-				BuyMarket(Volume);
-				LogInfo($"Buy signal: Price above Supertrend with strong trend (ADX: {adxValue})");
+				BuyMarket(Volume + Math.Abs(Position));
+				_cooldown = CooldownBars;
 			}
-			else if (!isAboveSupertrend && isStrongTrend)
+			else if (!isAboveSupertrend && Position >= 0)
 			{
-				// Sell signal
-				SellMarket(Volume);
-				LogInfo($"Sell signal: Price below Supertrend with strong trend (ADX: {adxValue})");
+				SellMarket(Volume + Math.Abs(Position));
+				_cooldown = CooldownBars;
 			}
 		}
-		else if (trendChanged) // Exit on trend change
+		else if (!isStrongTrend && Position != 0)
 		{
-			if (Position > 0 && !isAboveSupertrend)
-			{
-				// Exit long position
-				SellMarket(Math.Abs(Position));
-				LogInfo($"Exit long position: Price crossed below Supertrend ({supertrendValue})");
-			}
-			else if (Position < 0 && isAboveSupertrend)
-			{
-				// Exit short position
-				BuyMarket(Math.Abs(Position));
-				LogInfo($"Exit short position: Price crossed above Supertrend ({supertrendValue})");
-			}
+			ClosePosition();
+			_cooldown = CooldownBars;
 		}
 
 		// Save current state

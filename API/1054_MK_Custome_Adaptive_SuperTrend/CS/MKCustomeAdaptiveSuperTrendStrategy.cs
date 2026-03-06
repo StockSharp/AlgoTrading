@@ -45,9 +45,22 @@ public class MKCustomeAdaptiveSuperTrendStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_atr = null;
+		_atrHistory.Clear();
+		_prevLowerBand = 0m;
+		_prevUpperBand = 0m;
+		_prevSuperTrend = 0m;
+		_prevDirection = 0;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+		StartProtection(null, null);
 
 		_prevLowerBand = 0;
 		_prevUpperBand = 0;
