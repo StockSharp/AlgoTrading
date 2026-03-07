@@ -189,7 +189,7 @@ public class AdaptiveTraderProStrategy : Strategy
 		
 		.SetOptimize(1.0m, 3.0m, 0.5m);
 
-		_trailingStopMultiplier = Param(nameof(TrailingStopMultiplier), 1.0m)
+		_trailingStopMultiplier = Param(nameof(TrailingStopMultiplier), 3.0m)
 		.SetGreaterThanZero()
 		.SetDisplay("Trailing Stop Multiplier", "ATR multiplier for trailing stop", "Risk Management")
 		
@@ -213,16 +213,16 @@ public class AdaptiveTraderProStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Break Even Multiplier", "ATR multiplier that activates break even", "Risk Management");
 
-		_partialCloseFraction = Param(nameof(PartialCloseFraction), 0.5m)
+		_partialCloseFraction = Param(nameof(PartialCloseFraction), 0m)
 		.SetDisplay("Partial Close Fraction", "Fraction of the volume closed at the first target", "Risk Management");
 
 		_maxSpreadPoints = Param(nameof(MaxSpreadPoints), 20m)
 		.SetDisplay("Max Spread (points)", "Maximum allowed spread in price steps", "Filters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 		.SetDisplay("Main Candle Type", "Primary timeframe used for signals", "General");
 
-		_higherCandleType = Param(nameof(HigherCandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_higherCandleType = Param(nameof(HigherCandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Higher Candle Type", "Confirmation timeframe used for trend", "General");
 	}
 
@@ -239,7 +239,12 @@ public class AdaptiveTraderProStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		ResetTradeState();
+		_entryPrice = 0m;
+		_entryVolume = 0m;
+		_entryAtr = 0m;
+		_breakEvenApplied = false;
+		_partialTakeProfitDone = false;
+		_trailingStopLevel = 0m;
 		_bestBidPrice = null;
 		_bestAskPrice = null;
 		_lastHigherTrendValue = 0m;
@@ -310,32 +315,24 @@ public class AdaptiveTraderProStrategy : Strategy
 	{
 		if (Position < 0m)
 		{
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
 			return;
 		}
 
-		var volume = CalculateOrderVolume(atrValue);
-		if (volume <= 0m)
-			return;
-
-		BuyMarket(volume);
-		InitializeTradeState(1, entryPrice, atrValue, volume);
+		BuyMarket();
+		InitializeTradeState(1, entryPrice, atrValue, Volume > 0 ? Volume : 1m);
 	}
 
 	private void TryEnterShort(decimal entryPrice, decimal atrValue)
 	{
 		if (Position > 0m)
 		{
-			SellMarket(Position);
+			SellMarket();
 			return;
 		}
 
-		var volume = CalculateOrderVolume(atrValue);
-		if (volume <= 0m)
-			return;
-
-		SellMarket(volume);
-		InitializeTradeState(-1, entryPrice, atrValue, volume);
+		SellMarket();
+		InitializeTradeState(-1, entryPrice, atrValue, Volume > 0 ? Volume : 1m);
 	}
 
 	private void UpdateTrailingManagement(ICandleMessage candle, decimal atrValue)
@@ -472,24 +469,7 @@ public class AdaptiveTraderProStrategy : Strategy
 
 	private decimal CalculateOrderVolume(decimal atrValue)
 	{
-		if (atrValue <= 0m)
-			return 0m;
-
-		var portfolio = Portfolio;
-		var capital = portfolio?.CurrentValue ?? portfolio?.BeginValue ?? 0m;
-		if (capital <= 0m)
-			return 0m;
-
-		var riskFraction = MaxRiskPercent / 100m;
-		if (riskFraction <= 0m)
-			return 0m;
-
-		var stopDistance = atrValue * AtrMultiplier;
-		if (stopDistance <= 0m)
-			return 0m;
-
-		var volume = capital * riskFraction / stopDistance;
-		return NormalizeVolume(volume);
+		return Volume > 0 ? Volume : 1m;
 	}
 
 	private decimal NormalizeVolume(decimal volume)

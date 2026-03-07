@@ -107,7 +107,7 @@ public class SupermacbotByTheGuardianForexTvStrategy : Strategy
 	/// </summary>
 	public SupermacbotByTheGuardianForexTvStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to process", "General");
 
 		_fastMaPeriod = Param(nameof(FastMaPeriod), 12)

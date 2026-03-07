@@ -69,7 +69,7 @@ public class BacktestingTradeAssistantPanelStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Take-profit distance in pips", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candle series for trading signals", "General");
 	}
 

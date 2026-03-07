@@ -164,7 +164,7 @@ public class SmartTrendFollowerStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 		.SetDisplay("Candle Type", "Primary timeframe", "General");
 
-		_initialVolume = Param(nameof(InitialVolume), 0.01m)
+		_initialVolume = Param(nameof(InitialVolume), 1m)
 		.SetGreaterThanZero()
 		.SetDisplay("Initial Volume", "Starting order volume in lots", "Money Management");
 

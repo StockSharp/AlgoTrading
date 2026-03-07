@@ -75,7 +75,7 @@ public class CloseAgentStrategy : Strategy
 	/// </summary>
 	public CloseAgentStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for indicators", "General");
 
 		_rsiLength = Param(nameof(RsiLength), 13)
@@ -101,10 +101,25 @@ public class CloseAgentStrategy : Strategy
 		return [(Security, CandleType)];
 	}
 
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private bool _hasPrev;
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFast = 0m;
+		_prevSlow = 0m;
+		_hasPrev = false;
+	}
+
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+
+		_hasPrev = false;
 
 		var smaFast = new SimpleMovingAverage { Length = 10 };
 		var smaSlow = new SimpleMovingAverage { Length = 30 };
@@ -127,18 +142,31 @@ public class CloseAgentStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Entry logic: SMA crossover
-		if (fast > slow && Position <= 0)
+		if (!_hasPrev)
+		{
+			_prevFast = fast;
+			_prevSlow = slow;
+			_hasPrev = true;
+			return;
+		}
+
+		var crossUp = _prevFast <= _prevSlow && fast > slow;
+		var crossDown = _prevFast >= _prevSlow && fast < slow;
+
+		if (crossUp && Position <= 0)
 		{
 			if (Position < 0)
 				BuyMarket();
 			BuyMarket();
 		}
-		else if (fast < slow && Position >= 0)
+		else if (crossDown && Position >= 0)
 		{
 			if (Position > 0)
 				SellMarket();
 			SellMarket();
 		}
+
+		_prevFast = fast;
+		_prevSlow = slow;
 	}
 }

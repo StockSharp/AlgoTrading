@@ -296,7 +296,7 @@ public class EuroSurgeSimplifiedStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Stop Loss (pts)", "Distance in price steps for stop-loss", "Risk Management");
 
-		_minTradeIntervalMinutes = Param(nameof(MinTradeIntervalMinutes), 60)
+		_minTradeIntervalMinutes = Param(nameof(MinTradeIntervalMinutes), 600)
 		.SetNotNegative()
 		.SetDisplay("Min Trade Interval", "Minimum minutes between entries", "Execution");
 
@@ -365,7 +365,7 @@ public class EuroSurgeSimplifiedStrategy : Strategy
 		_useStochastic = Param(nameof(UseStochastic), true)
 		.SetDisplay("Use Stochastic", "Enable Stochastic oscillator filter", "Filters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe for signal calculations", "Execution");
 	}
 
@@ -380,6 +380,9 @@ public class EuroSurgeSimplifiedStrategy : Strategy
 	{
 		base.OnReseted();
 		_lastTradeTime = DateTimeOffset.MinValue;
+		_fastMaValue = 0m;
+		_slowMaValue = 0m;
+		_rsiValue = 0m;
 	}
 
 	/// <inheritdoc />
