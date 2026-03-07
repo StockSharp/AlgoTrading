@@ -32,11 +32,11 @@ public class YeongRrgStrategy : Strategy
 
 	public YeongRrgStrategy()
 	{
-		_length = Param(nameof(Length), 14)
+		_length = Param(nameof(Length), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Length", "Period for calculations", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 

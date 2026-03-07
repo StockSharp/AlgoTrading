@@ -49,7 +49,7 @@ public class ZScoreRsiStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("RSI EMA Length", "EMA length over RSI", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 

@@ -42,7 +42,7 @@ public class YesterdaysHighStrategy : Strategy
 
 	public YesterdaysHighStrategy()
 	{
-		_gap = Param(nameof(Gap), 0.1m)
+		_gap = Param(nameof(Gap), 0.5m)
 			.SetDisplay("Gap%", "Entry gap percent above prev high", "Entry");
 
 		_stopLoss = Param(nameof(StopLoss), 2m)
@@ -57,7 +57,7 @@ public class YesterdaysHighStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Trail Offset", "Trailing stop offset percent", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
