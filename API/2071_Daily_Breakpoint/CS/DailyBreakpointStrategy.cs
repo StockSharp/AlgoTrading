@@ -22,7 +22,10 @@ public class DailyBreakpointStrategy : Strategy
 	private readonly StrategyParam<decimal> _takeProfitPct;
 	private readonly StrategyParam<decimal> _stopLossPct;
 
-	private ICandleMessage _prev;
+	private decimal _prevOpen;
+	private decimal _prevClose;
+	private DateTimeOffset _prevTime;
+	private bool _hasPrev;
 	private decimal _dayOpen;
 
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
@@ -34,7 +37,7 @@ public class DailyBreakpointStrategy : Strategy
 
 	public DailyBreakpointStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candles", "General");
 		_breakPointPct = Param(nameof(BreakPointPct), 0.3m)
 			.SetDisplay("Break Point %", "Breakout offset as % of price", "General");
@@ -55,8 +58,11 @@ public class DailyBreakpointStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prev = null;
-		_dayOpen = 0m;
+		_prevOpen = default;
+		_prevClose = default;
+		_prevTime = default;
+		_hasPrev = default;
+		_dayOpen = default;
 	}
 
 	/// <inheritdoc />
@@ -70,16 +76,8 @@ public class DailyBreakpointStrategy : Strategy
 			isStopTrailing: true,
 			useMarketOrders: true);
 
-		var passthrough = new SimpleMovingAverage { Length = 1 };
 		var sub = SubscribeCandles(CandleType);
-		sub.Bind(passthrough, (candle, _) => Process(candle)).Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, sub);
-			DrawOwnTrades(area);
-		}
+		sub.Bind(Process).Start();
 	}
 
 	private void Process(ICandleMessage c)
@@ -87,33 +85,36 @@ public class DailyBreakpointStrategy : Strategy
 		if (c.State != CandleStates.Finished)
 			return;
 
-		if (_prev == null || c.OpenTime.Date != _prev.OpenTime.Date)
+		if (!_hasPrev || c.OpenTime.Date != _prevTime.Date)
 			_dayOpen = c.OpenPrice;
 
-		if (Position == 0 && _prev != null)
+		if (Position == 0 && _hasPrev)
 		{
 			var price = c.ClosePrice;
-			var lastSize = Math.Abs(_prev.ClosePrice - _prev.OpenPrice);
+			var lastSize = Math.Abs(_prevClose - _prevOpen);
 			var minSize = LastBarMinPct / 100m * price;
 			var maxSize = LastBarMaxPct / 100m * price;
 			var offset = BreakPointPct / 100m * price;
 			var breakBuy = _dayOpen + offset;
 			var breakSell = _dayOpen - offset;
 
-			if (_prev.ClosePrice > _prev.OpenPrice && price - _dayOpen >= offset &&
+			if (_prevClose > _prevOpen && price - _dayOpen >= offset &&
 				lastSize >= minSize && lastSize <= maxSize &&
-				breakBuy >= _prev.OpenPrice && breakBuy <= _prev.ClosePrice)
+				breakBuy >= _prevOpen && breakBuy <= _prevClose)
 			{
 				BuyMarket();
 			}
-			else if (_prev.ClosePrice < _prev.OpenPrice && _dayOpen - price >= offset &&
+			else if (_prevClose < _prevOpen && _dayOpen - price >= offset &&
 				lastSize >= minSize && lastSize <= maxSize &&
-				breakSell <= _prev.OpenPrice && breakSell >= _prev.ClosePrice)
+				breakSell <= _prevOpen && breakSell >= _prevClose)
 			{
 				SellMarket();
 			}
 		}
 
-		_prev = c;
+		_prevOpen = c.OpenPrice;
+		_prevClose = c.ClosePrice;
+		_prevTime = c.OpenTime;
+		_hasPrev = true;
 	}
 }

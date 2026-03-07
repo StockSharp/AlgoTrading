@@ -28,19 +28,19 @@ public class TrafficLightStrategy : Strategy
 
 	public TrafficLightStrategy()
 	{
-		_redMaPeriod = Param(nameof(RedMaPeriod), 120)
+		_redMaPeriod = Param(nameof(RedMaPeriod), 50)
 			.SetGreaterThanZero()
-			.SetDisplay("Red MA", "SMA period representing the slow trend", "Parameters");
+			.SetDisplay("Red MA", "EMA period representing the slow trend", "Parameters");
 
-		_yellowMaPeriod = Param(nameof(YellowMaPeriod), 55)
+		_yellowMaPeriod = Param(nameof(YellowMaPeriod), 25)
 			.SetGreaterThanZero()
-			.SetDisplay("Yellow MA", "SMA period representing the medium trend", "Parameters");
+			.SetDisplay("Yellow MA", "EMA period representing the medium trend", "Parameters");
 
 		_greenMaPeriod = Param(nameof(GreenMaPeriod), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Green MA", "EMA period representing the fast trend", "Parameters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for calculations", "General");
 	}
 
@@ -51,28 +51,24 @@ public class TrafficLightStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		var redMa = new SimpleMovingAverage { Length = RedMaPeriod };
-		var yellowMa = new SimpleMovingAverage { Length = YellowMaPeriod };
+		var redMa = new ExponentialMovingAverage { Length = RedMaPeriod };
+		var yellowMa = new ExponentialMovingAverage { Length = YellowMaPeriod };
 		var greenMa = new ExponentialMovingAverage { Length = GreenMaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
 			.Bind(redMa, yellowMa, greenMa, ProcessCandle)
 			.Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, redMa);
-			DrawIndicator(area, yellowMa);
-			DrawIndicator(area, greenMa);
-			DrawOwnTrades(area);
-		}
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal red, decimal yellow, decimal green)

@@ -32,7 +32,7 @@ public class InstantaneousTrendFilterStrategy : Strategy
 
 	public InstantaneousTrendFilterStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for analysis", "General");
 		_alpha = Param(nameof(Alpha), 0.07m)
 			.SetDisplay("Alpha", "Filter smoothing coefficient", "Indicator");
@@ -48,12 +48,17 @@ public class InstantaneousTrendFilterStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_bars = 0;
-		_prevClose = 0;
-		_prevPrevClose = 0;
-		_itrendPrev1 = 0;
-		_itrendPrev2 = 0;
-		_triggerPrev = 0;
+		_bars = default;
+		_prevClose = default;
+		_prevPrevClose = default;
+		_itrendPrev1 = default;
+		_itrendPrev2 = default;
+		_triggerPrev = default;
+		_k0 = default;
+		_k1 = default;
+		_k2 = default;
+		_k3 = default;
+		_k4 = default;
 	}
 
 	/// <inheritdoc />
@@ -69,16 +74,8 @@ public class InstantaneousTrendFilterStrategy : Strategy
 		_k3 = 2m * (1m - Alpha);
 		_k4 = (1m - Alpha) * (1m - Alpha);
 
-		var passthrough = new SimpleMovingAverage { Length = 1 };
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(passthrough, (candle, _) => ProcessCandle(candle)).Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawOwnTrades(area);
-		}
+		subscription.Bind(ProcessCandle).Start();
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
