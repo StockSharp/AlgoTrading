@@ -24,7 +24,7 @@ public class OsfCountertrendStrategy : Strategy
 	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private RelativeStrengthIndex _rsi = null!;
+	private RelativeStrengthIndex _rsi;
 	private int _cooldown;
 	private decimal _longTarget;
 	private decimal _shortTarget;
@@ -99,7 +99,7 @@ public class OsfCountertrendStrategy : Strategy
 		
 		.SetDisplay("Cooldown Bars", "Finished candles to wait after trading", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Data series for processing", "General");
 	}
 
@@ -114,6 +114,7 @@ public class OsfCountertrendStrategy : Strategy
 	{
 		base.OnReseted();
 
+		_rsi = null;
 		_cooldown = 0;
 		_longTarget = 0m;
 		_shortTarget = 0m;
