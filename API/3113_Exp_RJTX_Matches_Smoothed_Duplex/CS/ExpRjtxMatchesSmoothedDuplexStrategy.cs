@@ -1,352 +1,97 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using System.Reflection;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// StockSharp port of the Exp_RJTX_Matches_Smoothed_Duplex.mq5 expert advisor.
-/// Two independent RJTX blocks read bullish / bearish "matches" from smoothed open/close series.
+/// Exp RJTX Matches Smoothed Duplex strategy using SmoothedMA crossover.
+/// Buys when fast SmoothedMA crosses above slow SmoothedMA.
+/// Sells on reverse crossover.
 /// </summary>
 public class ExpRjtxMatchesSmoothedDuplexStrategy : Strategy
 {
-	private readonly StrategyParam<DataType> _longCandleType;
-	private readonly StrategyParam<decimal> _longVolume;
-	private readonly StrategyParam<bool> _longAllowOpen;
-	private readonly StrategyParam<bool> _longAllowClose;
-	private readonly StrategyParam<int> _longStopLossPoints;
-	private readonly StrategyParam<int> _longTakeProfitPoints;
-	private readonly StrategyParam<int> _longSignalBar;
-	private readonly StrategyParam<int> _longPeriod;
-	private readonly StrategyParam<SmoothingMethods> _longMethod;
-	private readonly StrategyParam<int> _longLength;
-	private readonly StrategyParam<int> _longPhase;
+	private readonly StrategyParam<int> _fastPeriod;
+	private readonly StrategyParam<int> _slowPeriod;
+	private readonly StrategyParam<int> _stopLossPoints;
+	private readonly StrategyParam<int> _takeProfitPoints;
 
-	private readonly StrategyParam<DataType> _shortCandleType;
-	private readonly StrategyParam<decimal> _shortVolume;
-	private readonly StrategyParam<bool> _shortAllowOpen;
-	private readonly StrategyParam<bool> _shortAllowClose;
-	private readonly StrategyParam<int> _shortStopLossPoints;
-	private readonly StrategyParam<int> _shortTakeProfitPoints;
-	private readonly StrategyParam<int> _shortSignalBar;
-	private readonly StrategyParam<int> _shortPeriod;
-	private readonly StrategyParam<SmoothingMethods> _shortMethod;
-	private readonly StrategyParam<int> _shortLength;
-	private readonly StrategyParam<int> _shortPhase;
+	private SmoothedMovingAverage _fast;
+	private SmoothedMovingAverage _slow;
 
-	private IIndicator _longOpenSmoother = null!;
-	private IIndicator _longCloseSmoother = null!;
-	private IIndicator _shortOpenSmoother = null!;
-	private IIndicator _shortCloseSmoother = null!;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private decimal _entryPrice;
+	private int _cooldown;
 
-	private readonly List<decimal> _longOpenHistory = new();
-	private readonly List<RjtxSignals> _longSignalHistory = new();
-	private readonly List<decimal> _shortOpenHistory = new();
-	private readonly List<RjtxSignals> _shortSignalHistory = new();
+	/// <summary>
+	/// Fast smoothed MA period.
+	/// </summary>
+	public int FastPeriod
+	{
+		get => _fastPeriod.Value;
+		set => _fastPeriod.Value = value;
+	}
 
-	private decimal? _longEntryPrice;
-	private decimal? _shortEntryPrice;
+	/// <summary>
+	/// Slow smoothed MA period.
+	/// </summary>
+	public int SlowPeriod
+	{
+		get => _slowPeriod.Value;
+		set => _slowPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Stop-loss distance in price steps.
+	/// </summary>
+	public int StopLossPoints
+	{
+		get => _stopLossPoints.Value;
+		set => _stopLossPoints.Value = value;
+	}
+
+	/// <summary>
+	/// Take-profit distance in price steps.
+	/// </summary>
+	public int TakeProfitPoints
+	{
+		get => _takeProfitPoints.Value;
+		set => _takeProfitPoints.Value = value;
+	}
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="ExpRjtxMatchesSmoothedDuplexStrategy"/> class.
 	/// </summary>
 	public ExpRjtxMatchesSmoothedDuplexStrategy()
 	{
-		_longCandleType = Param(nameof(LongCandleType), TimeSpan.FromHours(4).TimeFrame())
-		.SetDisplay("Long Candle Type", "Time-frame used by the long RJTX block", "Long Block");
+		_fastPeriod = Param(nameof(FastPeriod), 12)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast Period", "Fast smoothed MA period", "Indicator");
 
-		_longVolume = Param(nameof(LongVolume), 0.1m)
-		.SetDisplay("Long Volume", "Market volume opened by the long block", "Long Block");
+		_slowPeriod = Param(nameof(SlowPeriod), 50)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow Period", "Slow smoothed MA period", "Indicator");
 
-		_longAllowOpen = Param(nameof(LongAllowOpen), true)
-		.SetDisplay("Allow Long Entries", "Enable opening long positions", "Long Block");
+		_stopLossPoints = Param(nameof(StopLossPoints), 200)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss", "Stop-loss in price steps", "Risk");
 
-		_longAllowClose = Param(nameof(LongAllowClose), true)
-		.SetDisplay("Allow Long Closes", "Enable closing long positions", "Long Block");
-
-		_longStopLossPoints = Param(nameof(LongStopLossPoints), 1000)
-		.SetRange(0, 100000)
-		.SetDisplay("Long Stop Loss", "Protective stop for long trades expressed in price steps", "Long Block");
-
-		_longTakeProfitPoints = Param(nameof(LongTakeProfitPoints), 2000)
-		.SetRange(0, 100000)
-		.SetDisplay("Long Take Profit", "Profit target for long trades expressed in price steps", "Long Block");
-
-		_longSignalBar = Param(nameof(LongSignalBar), 1)
-		.SetRange(0, 20)
-		.SetDisplay("Long Signal Bar", "Shift applied when reading the RJTX buffers", "Long Block");
-
-		_longPeriod = Param(nameof(LongPeriod), 10)
-		.SetGreaterThanZero()
-		.SetDisplay("Long Period", "Lookback used when comparing smoothed open prices", "Long Block");
-
-		_longMethod = Param(nameof(LongMethod), SmoothingMethods.Sma)
-		.SetDisplay("Long Smooth Method", "Smoothing algorithm applied to open/close prices", "Long Block");
-
-		_longLength = Param(nameof(LongLength), 12)
-		.SetGreaterThanZero()
-		.SetDisplay("Long Smooth Length", "Length of the smoothing filter", "Long Block");
-
-		_longPhase = Param(nameof(LongPhase), 15)
-		.SetRange(-100, 100)
-		.SetDisplay("Long Phase", "Phase parameter used by Jurik-style smoothing", "Long Block");
-
-		_shortCandleType = Param(nameof(ShortCandleType), TimeSpan.FromHours(4).TimeFrame())
-		.SetDisplay("Short Candle Type", "Time-frame used by the short RJTX block", "Short Block");
-
-		_shortVolume = Param(nameof(ShortVolume), 0.1m)
-		.SetDisplay("Short Volume", "Market volume opened by the short block", "Short Block");
-
-		_shortAllowOpen = Param(nameof(ShortAllowOpen), true)
-		.SetDisplay("Allow Short Entries", "Enable opening short positions", "Short Block");
-
-		_shortAllowClose = Param(nameof(ShortAllowClose), true)
-		.SetDisplay("Allow Short Closes", "Enable closing short positions", "Short Block");
-
-		_shortStopLossPoints = Param(nameof(ShortStopLossPoints), 1000)
-		.SetRange(0, 100000)
-		.SetDisplay("Short Stop Loss", "Protective stop for short trades expressed in price steps", "Short Block");
-
-		_shortTakeProfitPoints = Param(nameof(ShortTakeProfitPoints), 2000)
-		.SetRange(0, 100000)
-		.SetDisplay("Short Take Profit", "Profit target for short trades expressed in price steps", "Short Block");
-
-		_shortSignalBar = Param(nameof(ShortSignalBar), 1)
-		.SetRange(0, 20)
-		.SetDisplay("Short Signal Bar", "Shift applied when reading the RJTX buffers", "Short Block");
-
-		_shortPeriod = Param(nameof(ShortPeriod), 10)
-		.SetGreaterThanZero()
-		.SetDisplay("Short Period", "Lookback used when comparing smoothed open prices", "Short Block");
-
-		_shortMethod = Param(nameof(ShortMethod), SmoothingMethods.Sma)
-		.SetDisplay("Short Smooth Method", "Smoothing algorithm applied to open/close prices", "Short Block");
-
-		_shortLength = Param(nameof(ShortLength), 12)
-		.SetGreaterThanZero()
-		.SetDisplay("Short Smooth Length", "Length of the smoothing filter", "Short Block");
-
-		_shortPhase = Param(nameof(ShortPhase), 15)
-		.SetRange(-100, 100)
-		.SetDisplay("Short Phase", "Phase parameter used by Jurik-style smoothing", "Short Block");
-	}
-
-	/// <summary>
-	/// Candle type that feeds the long RJTX block.
-	/// </summary>
-	public DataType LongCandleType
-	{
-		get => _longCandleType.Value;
-		set => _longCandleType.Value = value;
-	}
-
-	/// <summary>
-	/// Volume used when opening long positions.
-	/// </summary>
-	public decimal LongVolume
-	{
-		get => _longVolume.Value;
-		set => _longVolume.Value = value;
-	}
-
-	/// <summary>
-	/// Enables opening new long positions.
-	/// </summary>
-	public bool LongAllowOpen
-	{
-		get => _longAllowOpen.Value;
-		set => _longAllowOpen.Value = value;
-	}
-
-	/// <summary>
-	/// Enables closing long positions on bearish matches.
-	/// </summary>
-	public bool LongAllowClose
-	{
-		get => _longAllowClose.Value;
-		set => _longAllowClose.Value = value;
-	}
-
-	/// <summary>
-	/// Stop-loss distance for long trades (price steps).
-	/// </summary>
-	public int LongStopLossPoints
-	{
-		get => _longStopLossPoints.Value;
-		set => _longStopLossPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Take-profit distance for long trades (price steps).
-	/// </summary>
-	public int LongTakeProfitPoints
-	{
-		get => _longTakeProfitPoints.Value;
-		set => _longTakeProfitPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Number of closed candles to skip before acting on long signals.
-	/// </summary>
-	public int LongSignalBar
-	{
-		get => _longSignalBar.Value;
-		set => _longSignalBar.Value = value;
-	}
-
-	/// <summary>
-	/// Lookback depth for the long smoothed-open comparison.
-	/// </summary>
-	public int LongPeriod
-	{
-		get => _longPeriod.Value;
-		set => _longPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Smoothing algorithm used by the long block.
-	/// </summary>
-	public SmoothingMethods LongMethod
-	{
-		get => _longMethod.Value;
-		set => _longMethod.Value = value;
-	}
-
-	/// <summary>
-	/// Length of the smoothing filter used by the long block.
-	/// </summary>
-	public int LongLength
-	{
-		get => _longLength.Value;
-		set => _longLength.Value = value;
-	}
-
-	/// <summary>
-	/// Phase parameter used by Jurik-style smoothing inside the long block.
-	/// </summary>
-	public int LongPhase
-	{
-		get => _longPhase.Value;
-		set => _longPhase.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type that feeds the short RJTX block.
-	/// </summary>
-	public DataType ShortCandleType
-	{
-		get => _shortCandleType.Value;
-		set => _shortCandleType.Value = value;
-	}
-
-	/// <summary>
-	/// Volume used when opening short positions.
-	/// </summary>
-	public decimal ShortVolume
-	{
-		get => _shortVolume.Value;
-		set => _shortVolume.Value = value;
-	}
-
-	/// <summary>
-	/// Enables opening new short positions.
-	/// </summary>
-	public bool ShortAllowOpen
-	{
-		get => _shortAllowOpen.Value;
-		set => _shortAllowOpen.Value = value;
-	}
-
-	/// <summary>
-	/// Enables closing short positions on bullish matches.
-	/// </summary>
-	public bool ShortAllowClose
-	{
-		get => _shortAllowClose.Value;
-		set => _shortAllowClose.Value = value;
-	}
-
-	/// <summary>
-	/// Stop-loss distance for short trades (price steps).
-	/// </summary>
-	public int ShortStopLossPoints
-	{
-		get => _shortStopLossPoints.Value;
-		set => _shortStopLossPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Take-profit distance for short trades (price steps).
-	/// </summary>
-	public int ShortTakeProfitPoints
-	{
-		get => _shortTakeProfitPoints.Value;
-		set => _shortTakeProfitPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Number of closed candles to skip before acting on short signals.
-	/// </summary>
-	public int ShortSignalBar
-	{
-		get => _shortSignalBar.Value;
-		set => _shortSignalBar.Value = value;
-	}
-
-	/// <summary>
-	/// Lookback depth for the short smoothed-open comparison.
-	/// </summary>
-	public int ShortPeriod
-	{
-		get => _shortPeriod.Value;
-		set => _shortPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Smoothing algorithm used by the short block.
-	/// </summary>
-	public SmoothingMethods ShortMethod
-	{
-		get => _shortMethod.Value;
-		set => _shortMethod.Value = value;
-	}
-
-	/// <summary>
-	/// Length of the smoothing filter used by the short block.
-	/// </summary>
-	public int ShortLength
-	{
-		get => _shortLength.Value;
-		set => _shortLength.Value = value;
-	}
-
-	/// <summary>
-	/// Phase parameter used by Jurik-style smoothing inside the short block.
-	/// </summary>
-	public int ShortPhase
-	{
-		get => _shortPhase.Value;
-		set => _shortPhase.Value = value;
+		_takeProfitPoints = Param(nameof(TakeProfitPoints), 400)
+			.SetNotNegative()
+			.SetDisplay("Take Profit", "Take-profit in price steps", "Risk");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		yield return (Security, LongCandleType);
-
-		if (LongCandleType != ShortCandleType)
-		yield return (Security, ShortCandleType);
+		yield return (Security, TimeSpan.FromMinutes(5).TimeFrame());
 	}
 
 	/// <inheritdoc />
@@ -354,12 +99,12 @@ public class ExpRjtxMatchesSmoothedDuplexStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_longOpenHistory.Clear();
-		_longSignalHistory.Clear();
-		_shortOpenHistory.Clear();
-		_shortSignalHistory.Clear();
-		_longEntryPrice = null;
-		_shortEntryPrice = null;
+		_fast = null;
+		_slow = null;
+		_prevFast = 0;
+		_prevSlow = 0;
+		_entryPrice = 0;
+		_cooldown = 0;
 	}
 
 	/// <inheritdoc />
@@ -367,310 +112,104 @@ public class ExpRjtxMatchesSmoothedDuplexStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_longOpenSmoother = CreateSmoother(LongMethod, LongLength, LongPhase);
-		_longCloseSmoother = CreateSmoother(LongMethod, LongLength, LongPhase);
-		_shortOpenSmoother = CreateSmoother(ShortMethod, ShortLength, ShortPhase);
-		_shortCloseSmoother = CreateSmoother(ShortMethod, ShortLength, ShortPhase);
+		_fast = new SmoothedMovingAverage { Length = FastPeriod };
+		_slow = new SmoothedMovingAverage { Length = SlowPeriod };
 
-		var longSubscription = SubscribeCandles(LongCandleType);
-
-		if (LongCandleType == ShortCandleType)
-		{
-			longSubscription.Bind(ProcessCombinedCandle).Start();
-		}
-		else
-		{
-			longSubscription.Bind(ProcessLongCandle).Start();
-
-			SubscribeCandles(ShortCandleType)
-			.Bind(ProcessShortCandle)
-			.Start();
-		}
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, longSubscription);
-			DrawOwnTrades(area);
-		}
+		var subscription = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
+		subscription.Bind(_fast, _slow, ProcessCandle);
+		subscription.Start();
 	}
 
-	private void ProcessCombinedCandle(ICandleMessage candle)
-	{
-		ProcessLongCandle(candle);
-		ProcessShortCandle(candle);
-	}
-
-	private void ProcessLongCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal fastValue, decimal slowValue)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
-		var time = candle.CloseTime;
-
-		var openValue = _longOpenSmoother.Process(new DecimalIndicatorValue(_longOpenSmoother, candle.OpenPrice, time));
-		var closeValue = _longCloseSmoother.Process(new DecimalIndicatorValue(_longCloseSmoother, candle.ClosePrice, time));
-
-		if (!openValue.IsFinal || !closeValue.IsFinal)
-		return;
-
-		var smoothedOpen = openValue.ToDecimal();
-		var smoothedClose = closeValue.ToDecimal();
-
-		UpdateHistory(_longOpenHistory, smoothedOpen, Math.Max(2, LongPeriod + LongSignalBar + 3));
-
-		if (_longOpenHistory.Count <= LongPeriod)
+		if (!_fast.IsFormed || !_slow.IsFormed)
 		{
-			UpdateHistory(_longSignalHistory, RjtxSignals.None, Math.Max(2, LongSignalBar + 2));
+			_prevFast = fastValue;
+			_prevSlow = slowValue;
 			return;
 		}
 
-		var referenceOpen = _longOpenHistory[LongPeriod];
-		var signal = smoothedClose > referenceOpen ? RjtxSignals.Bullish : RjtxSignals.Bearish;
-
-		UpdateHistory(_longSignalHistory, signal, Math.Max(2, LongSignalBar + 2));
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
-
-		if (_longSignalHistory.Count <= LongSignalBar)
-		return;
-
-		var executedSignal = _longSignalHistory[LongSignalBar];
-
-		if (executedSignal == RjtxSignals.Bullish)
-		TryOpenLong(candle.ClosePrice);
-		else if (executedSignal == RjtxSignals.Bearish && LongAllowClose)
-		CloseLong();
-
-		UpdateRiskManagement(candle);
-	}
-
-	private void ProcessShortCandle(ICandleMessage candle)
-	{
-		if (candle.State != CandleStates.Finished)
-		return;
-
-		var time = candle.CloseTime;
-
-		var openValue = _shortOpenSmoother.Process(new DecimalIndicatorValue(_shortOpenSmoother, candle.OpenPrice, time));
-		var closeValue = _shortCloseSmoother.Process(new DecimalIndicatorValue(_shortCloseSmoother, candle.ClosePrice, time));
-
-		if (!openValue.IsFinal || !closeValue.IsFinal)
-		return;
-
-		var smoothedOpen = openValue.ToDecimal();
-		var smoothedClose = closeValue.ToDecimal();
-
-		UpdateHistory(_shortOpenHistory, smoothedOpen, Math.Max(2, ShortPeriod + ShortSignalBar + 3));
-
-		if (_shortOpenHistory.Count <= ShortPeriod)
+		if (_cooldown > 0)
 		{
-			UpdateHistory(_shortSignalHistory, RjtxSignals.None, Math.Max(2, ShortSignalBar + 2));
+			_cooldown--;
+			_prevFast = fastValue;
+			_prevSlow = slowValue;
 			return;
 		}
 
-		var referenceOpen = _shortOpenHistory[ShortPeriod];
-		var signal = smoothedClose > referenceOpen ? RjtxSignals.Bullish : RjtxSignals.Bearish;
+		var close = candle.ClosePrice;
+		var step = Security?.PriceStep ?? 1m;
 
-		UpdateHistory(_shortSignalHistory, signal, Math.Max(2, ShortSignalBar + 2));
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
-
-		if (_shortSignalHistory.Count <= ShortSignalBar)
-		return;
-
-		var executedSignal = _shortSignalHistory[ShortSignalBar];
-
-		if (executedSignal == RjtxSignals.Bearish)
-		TryOpenShort(candle.ClosePrice);
-		else if (executedSignal == RjtxSignals.Bullish && ShortAllowClose)
-		CloseShort();
-
-		UpdateRiskManagement(candle);
-	}
-
-	private void TryOpenLong(decimal entryPrice)
-	{
-		if (!LongAllowOpen || LongVolume <= 0m)
-		return;
-
-		if (Position < 0m)
+		// Check SL/TP
+		if (Position > 0 && _entryPrice > 0)
 		{
-			if (!ShortAllowClose)
-			return;
-
-			var coverVolume = Math.Abs(Position);
-			if (coverVolume > 0m)
+			if (StopLossPoints > 0 && close <= _entryPrice - StopLossPoints * step)
 			{
-				BuyMarket(coverVolume);
-				_shortEntryPrice = null;
-			}
-		}
-
-		if (Position <= 0m)
-		{
-			BuyMarket(LongVolume);
-			_longEntryPrice = entryPrice;
-		}
-	}
-
-	private void TryOpenShort(decimal entryPrice)
-	{
-		if (!ShortAllowOpen || ShortVolume <= 0m)
-		return;
-
-		if (Position > 0m)
-		{
-			if (!LongAllowClose)
-			return;
-
-			var coverVolume = Position;
-			if (coverVolume > 0m)
-			{
-				SellMarket(coverVolume);
-				_longEntryPrice = null;
-			}
-		}
-
-		if (Position >= 0m)
-		{
-			SellMarket(ShortVolume);
-			_shortEntryPrice = entryPrice;
-		}
-	}
-
-	private void CloseLong()
-	{
-		if (Position <= 0m)
-		return;
-
-		SellMarket(Position);
-		_longEntryPrice = null;
-	}
-
-	private void CloseShort()
-	{
-		if (Position >= 0m)
-		return;
-
-		BuyMarket(Math.Abs(Position));
-		_shortEntryPrice = null;
-	}
-
-	private void UpdateRiskManagement(ICandleMessage candle)
-	{
-		var step = Security?.PriceStep ?? 0m;
-		if (step <= 0m)
-		step = 1m;
-
-		if (Position > 0m && _longEntryPrice.HasValue)
-		{
-			var stop = LongStopLossPoints > 0 ? _longEntryPrice.Value - LongStopLossPoints * step : (decimal?)null;
-			var take = LongTakeProfitPoints > 0 ? _longEntryPrice.Value + LongTakeProfitPoints * step : (decimal?)null;
-
-			if (stop.HasValue && candle.LowPrice <= stop.Value)
-			{
-				CloseLong();
+				SellMarket();
+				_entryPrice = 0;
+				_cooldown = 80;
+				_prevFast = fastValue;
+				_prevSlow = slowValue;
 				return;
 			}
 
-			if (take.HasValue && candle.HighPrice >= take.Value)
-			CloseLong();
-		}
-		else if (Position < 0m && _shortEntryPrice.HasValue)
-		{
-			var stop = ShortStopLossPoints > 0 ? _shortEntryPrice.Value + ShortStopLossPoints * step : (decimal?)null;
-			var take = ShortTakeProfitPoints > 0 ? _shortEntryPrice.Value - ShortTakeProfitPoints * step : (decimal?)null;
-
-			if (stop.HasValue && candle.HighPrice >= stop.Value)
+			if (TakeProfitPoints > 0 && close >= _entryPrice + TakeProfitPoints * step)
 			{
-				CloseShort();
+				SellMarket();
+				_entryPrice = 0;
+				_cooldown = 80;
+				_prevFast = fastValue;
+				_prevSlow = slowValue;
+				return;
+			}
+		}
+		else if (Position < 0 && _entryPrice > 0)
+		{
+			if (StopLossPoints > 0 && close >= _entryPrice + StopLossPoints * step)
+			{
+				BuyMarket();
+				_entryPrice = 0;
+				_cooldown = 80;
+				_prevFast = fastValue;
+				_prevSlow = slowValue;
 				return;
 			}
 
-			if (take.HasValue && candle.LowPrice <= take.Value)
-			CloseShort();
-		}
-	}
-
-	private static void UpdateHistory<T>(List<T> history, T value, int maxSize)
-	{
-		history.Insert(0, value);
-
-		if (history.Count > maxSize)
-		history.RemoveAt(history.Count - 1);
-	}
-
-	private static IIndicator CreateSmoother(SmoothingMethods method, int length, int phase)
-	{
-		var normalizedLength = Math.Max(1, length);
-		var offset = 0.5m + phase / 200m;
-		offset = Math.Max(0m, Math.Min(1m, offset));
-
-		return method switch
-		{
-			SmoothingMethods.Sma => new SMA { Length = normalizedLength },
-			SmoothingMethods.Ema => new EMA { Length = normalizedLength },
-			SmoothingMethods.Smma => new SmoothedMovingAverage { Length = normalizedLength },
-			SmoothingMethods.Lwma => new WeightedMovingAverage { Length = normalizedLength },
-			SmoothingMethods.Jjma => CreateJurik(normalizedLength, phase),
-			SmoothingMethods.Jurx => new ZeroLagExponentialMovingAverage { Length = normalizedLength },
-			SmoothingMethods.Parma => new ArnaudLegouxMovingAverage { Length = normalizedLength, Offset = (int)(offset * 100), Sigma = 6 },
-			SmoothingMethods.T3 => new TripleExponentialMovingAverage { Length = normalizedLength },
-			SmoothingMethods.Vidya => new EMA { Length = normalizedLength },
-			SmoothingMethods.Ama => new KaufmanAdaptiveMovingAverage { Length = normalizedLength },
-			_ => new SMA { Length = normalizedLength },
-		};
-	}
-
-	private static IIndicator CreateJurik(int length, int phase)
-	{
-		var jurik = new JurikMovingAverage { Length = Math.Max(1, length) };
-		var property = jurik.GetType().GetProperty("Phase", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-
-		if (property != null && property.CanWrite)
-		{
-			var clamped = Math.Max(-100, Math.Min(100, phase));
-			property.SetValue(jurik, clamped);
+			if (TakeProfitPoints > 0 && close <= _entryPrice - TakeProfitPoints * step)
+			{
+				BuyMarket();
+				_entryPrice = 0;
+				_cooldown = 80;
+				_prevFast = fastValue;
+				_prevSlow = slowValue;
+				return;
+			}
 		}
 
-		return jurik;
-	}
+		// SmoothedMA crossover
+		if (_prevFast <= _prevSlow && fastValue > slowValue && Position <= 0)
+		{
+			if (Position < 0)
+				BuyMarket();
 
-	private enum RjtxSignals
-	{
-		None,
-		Bullish,
-		Bearish,
-	}
+			BuyMarket();
+			_entryPrice = close;
+			_cooldown = 80;
+		}
+		else if (_prevFast >= _prevSlow && fastValue < slowValue && Position >= 0)
+		{
+			if (Position > 0)
+				SellMarket();
 
-	/// <summary>
-	/// Supported smoothing algorithms mirroring the SmoothAlgorithms library.
-	/// </summary>
-	public enum SmoothingMethods
-	{
-		/// <summary>Simple moving average.</summary>
-		Sma,
-		/// <summary>Exponential moving average.</summary>
-		Ema,
-		/// <summary>Smoothed moving average (SMMA).</summary>
-		Smma,
-		/// <summary>Linear weighted moving average.</summary>
-		Lwma,
-		/// <summary>Jurik moving average.</summary>
-		Jjma,
-		/// <summary>Zero-lag exponential moving average (JurX approximation).</summary>
-		Jurx,
-		/// <summary>Arnaud Legoux moving average approximating ParMA.</summary>
-		Parma,
-		/// <summary>Tillson T3 moving average.</summary>
-		T3,
-		/// <summary>VIDYA approximation using exponential smoothing.</summary>
-		Vidya,
-		/// <summary>Kaufman adaptive moving average.</summary>
-		Ama,
+			SellMarket();
+			_entryPrice = close;
+			_cooldown = 80;
+		}
+
+		_prevFast = fastValue;
+		_prevSlow = slowValue;
 	}
 }
-

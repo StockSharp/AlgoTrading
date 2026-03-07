@@ -5,149 +5,228 @@ using Ecng.Common;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
+using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on the Fine Tuning MA Candle indicator from MetaTrader.
-/// Computes a weighted MA candle inline and trades on color transitions.
-/// Color 0 = bearish, 1 = neutral, 2 = bullish.
+/// Fine Tuning MA Candle strategy using WMA crossover with EMA trend filter.
+/// Buys when fast WMA crosses above slow WMA with price above EMA.
+/// Sells on reverse conditions.
 /// </summary>
 public class ExpFineTuningMaCandleStrategy : Strategy
 {
-	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _length;
-	private readonly StrategyParam<decimal> _rank;
+	private readonly StrategyParam<int> _fastPeriod;
+	private readonly StrategyParam<int> _slowPeriod;
+	private readonly StrategyParam<int> _emaPeriod;
+	private readonly StrategyParam<int> _stopLossPoints;
+	private readonly StrategyParam<int> _takeProfitPoints;
 
-	private readonly List<decimal> _opens = new();
-	private readonly List<decimal> _highs = new();
-	private readonly List<decimal> _lows = new();
-	private readonly List<decimal> _closes = new();
-	private int? _prevColor;
+	private WeightedMovingAverage _fast;
+	private WeightedMovingAverage _slow;
+	private ExponentialMovingAverage _ema;
 
-	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
-	public int Length { get => _length.Value; set => _length.Value = value; }
-	public decimal Rank { get => _rank.Value; set => _rank.Value = value; }
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private decimal _entryPrice;
+	private int _cooldown;
 
-	public ExpFineTuningMaCandleStrategy()
+	/// <summary>
+	/// Fast WMA period.
+	/// </summary>
+	public int FastPeriod
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Timeframe", "General");
-
-		_length = Param(nameof(Length), 10)
-			.SetGreaterThanZero()
-			.SetDisplay("Length", "Weighted MA lookback", "Indicator");
-
-		_rank = Param(nameof(Rank), 2m)
-			.SetDisplay("Rank", "Weight curvature", "Indicator");
+		get => _fastPeriod.Value;
+		set => _fastPeriod.Value = value;
 	}
 
+	/// <summary>
+	/// Slow WMA period.
+	/// </summary>
+	public int SlowPeriod
+	{
+		get => _slowPeriod.Value;
+		set => _slowPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// EMA trend filter period.
+	/// </summary>
+	public int EmaPeriod
+	{
+		get => _emaPeriod.Value;
+		set => _emaPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Stop-loss distance in price steps.
+	/// </summary>
+	public int StopLossPoints
+	{
+		get => _stopLossPoints.Value;
+		set => _stopLossPoints.Value = value;
+	}
+
+	/// <summary>
+	/// Take-profit distance in price steps.
+	/// </summary>
+	public int TakeProfitPoints
+	{
+		get => _takeProfitPoints.Value;
+		set => _takeProfitPoints.Value = value;
+	}
+
+	/// <summary>
+	/// Initializes a new instance of the <see cref="ExpFineTuningMaCandleStrategy"/> class.
+	/// </summary>
+	public ExpFineTuningMaCandleStrategy()
+	{
+		_fastPeriod = Param(nameof(FastPeriod), 10)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast Period", "Fast WMA period", "Indicator");
+
+		_slowPeriod = Param(nameof(SlowPeriod), 50)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow Period", "Slow WMA period", "Indicator");
+
+		_emaPeriod = Param(nameof(EmaPeriod), 200)
+			.SetGreaterThanZero()
+			.SetDisplay("EMA Period", "EMA trend filter period", "Indicator");
+
+		_stopLossPoints = Param(nameof(StopLossPoints), 200)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss", "Stop-loss in price steps", "Risk");
+
+		_takeProfitPoints = Param(nameof(TakeProfitPoints), 400)
+			.SetNotNegative()
+			.SetDisplay("Take Profit", "Take-profit in price steps", "Risk");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		yield return (Security, TimeSpan.FromMinutes(5).TimeFrame());
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_fast = null;
+		_slow = null;
+		_ema = null;
+		_prevFast = 0;
+		_prevSlow = 0;
+		_entryPrice = 0;
+		_cooldown = 0;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_opens.Clear();
-		_highs.Clear();
-		_lows.Clear();
-		_closes.Clear();
-		_prevColor = null;
+		_fast = new WeightedMovingAverage { Length = FastPeriod };
+		_slow = new WeightedMovingAverage { Length = SlowPeriod };
+		_ema = new ExponentialMovingAverage { Length = EmaPeriod };
 
-		var sma = new SimpleMovingAverage { Length = 2 };
-
-		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(sma, ProcessCandle)
-			.Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawOwnTrades(area);
-		}
+		var subscription = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
+		subscription.Bind(_fast, _slow, _ema, ProcessCandle);
+		subscription.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal smaVal)
+	private void ProcessCandle(ICandleMessage candle, decimal fastValue, decimal slowValue, decimal emaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		_opens.Add(candle.OpenPrice);
-		_highs.Add(candle.HighPrice);
-		_lows.Add(candle.LowPrice);
-		_closes.Add(candle.ClosePrice);
-
-		var len = Length;
-		if (_closes.Count < len)
-			return;
-
-		// trim to keep only what we need
-		while (_opens.Count > len + 5)
+		if (!_fast.IsFormed || !_slow.IsFormed || !_ema.IsFormed)
 		{
-			_opens.RemoveAt(0);
-			_highs.RemoveAt(0);
-			_lows.RemoveAt(0);
-			_closes.RemoveAt(0);
-		}
-
-		// compute weighted MA for OHLC
-		var maOpen = ComputeWeightedMA(_opens, len);
-		var maHigh = ComputeWeightedMA(_highs, len);
-		var maLow = ComputeWeightedMA(_lows, len);
-		var maClose = ComputeWeightedMA(_closes, len);
-
-		// determine color: bullish if maClose > maOpen, bearish otherwise
-		int color;
-		if (maClose > maOpen)
-			color = 2; // bullish
-		else if (maClose < maOpen)
-			color = 0; // bearish
-		else
-			color = 1; // neutral
-
-		if (_prevColor == null)
-		{
-			_prevColor = color;
+			_prevFast = fastValue;
+			_prevSlow = slowValue;
 			return;
 		}
 
-		var prev = _prevColor.Value;
-		_prevColor = color;
-
-		// Trade on color transitions
-		if (prev != 2 && color == 2 && Position <= 0)
+		if (_cooldown > 0)
 		{
-			// Turn bullish
-			if (Position < 0) BuyMarket();
+			_cooldown--;
+			_prevFast = fastValue;
+			_prevSlow = slowValue;
+			return;
+		}
+
+		var close = candle.ClosePrice;
+		var step = Security?.PriceStep ?? 1m;
+
+		// Check SL/TP
+		if (Position > 0 && _entryPrice > 0)
+		{
+			if (StopLossPoints > 0 && close <= _entryPrice - StopLossPoints * step)
+			{
+				SellMarket();
+				_entryPrice = 0;
+				_cooldown = 80;
+				_prevFast = fastValue;
+				_prevSlow = slowValue;
+				return;
+			}
+
+			if (TakeProfitPoints > 0 && close >= _entryPrice + TakeProfitPoints * step)
+			{
+				SellMarket();
+				_entryPrice = 0;
+				_cooldown = 80;
+				_prevFast = fastValue;
+				_prevSlow = slowValue;
+				return;
+			}
+		}
+		else if (Position < 0 && _entryPrice > 0)
+		{
+			if (StopLossPoints > 0 && close >= _entryPrice + StopLossPoints * step)
+			{
+				BuyMarket();
+				_entryPrice = 0;
+				_cooldown = 80;
+				_prevFast = fastValue;
+				_prevSlow = slowValue;
+				return;
+			}
+
+			if (TakeProfitPoints > 0 && close <= _entryPrice - TakeProfitPoints * step)
+			{
+				BuyMarket();
+				_entryPrice = 0;
+				_cooldown = 80;
+				_prevFast = fastValue;
+				_prevSlow = slowValue;
+				return;
+			}
+		}
+
+		// WMA crossover with EMA trend filter
+		if (_prevFast <= _prevSlow && fastValue > slowValue && close > emaValue && Position <= 0)
+		{
+			if (Position < 0)
+				BuyMarket();
+
 			BuyMarket();
+			_entryPrice = close;
+			_cooldown = 80;
 		}
-		else if (prev != 0 && color == 0 && Position >= 0)
+		else if (_prevFast >= _prevSlow && fastValue < slowValue && close < emaValue && Position >= 0)
 		{
-			// Turn bearish
-			if (Position > 0) SellMarket();
+			if (Position > 0)
+				SellMarket();
+
 			SellMarket();
-		}
-	}
-
-	private decimal ComputeWeightedMA(List<decimal> data, int length)
-	{
-		var count = data.Count;
-		if (count < length) return data[count - 1];
-
-		var rank = Rank;
-		var sum = 0m;
-		var weightSum = 0m;
-
-		for (var i = 0; i < length; i++)
-		{
-			var idx = count - 1 - i;
-			// weight decreases with distance, curvature controlled by rank
-			var w = (decimal)Math.Pow((double)(length - i), (double)rank);
-			sum += data[idx] * w;
-			weightSum += w;
+			_entryPrice = close;
+			_cooldown = 80;
 		}
 
-		return weightSum > 0 ? sum / weightSum : data[count - 1];
+		_prevFast = fastValue;
+		_prevSlow = slowValue;
 	}
 }

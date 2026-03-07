@@ -1,13 +1,9 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
-using StockSharp.Algo;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -15,146 +11,69 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Quotes multiple limit orders around a reference price in a market-making fashion.
+/// BitexOne market maker strategy using SMA mean-reversion approach.
+/// Buys when price drops below lower band, sells when above upper band.
 /// </summary>
 public class BitexOneMarketMakerStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _maxVolumePerLevel;
-	private readonly StrategyParam<decimal> _shiftCoefficient;
-	private readonly StrategyParam<int> _levelCount;
-	private readonly StrategyParam<LeadPriceSources> _priceSource;
-	private readonly StrategyParam<Security> _leadSecurityParam;
-	private readonly StrategyParam<decimal> _priceToleranceRatio;
-	private readonly StrategyParam<decimal> _volumeTolerance;
+	private readonly StrategyParam<int> _smaPeriod;
+	private readonly StrategyParam<int> _stopLossPoints;
+	private readonly StrategyParam<int> _takeProfitPoints;
 
-	private Order[] _buyOrders = Array.Empty<Order>();
-	private Order[] _sellOrders = Array.Empty<Order>();
+	private SimpleMovingAverage _sma;
 
-	private decimal _tickSize;
-	private decimal _volumeStep;
-	private decimal _minVolume;
-
-	private decimal _leadPrice;
-	private bool _hasLeadPrice;
-
-	private Security _leadSecurity;
-
-	private decimal _bestBid;
-	private decimal _bestAsk;
+	private decimal _entryPrice;
+	private int _cooldown;
 
 	/// <summary>
-	/// Maximum volume quoted at each price level.
+	/// SMA period.
 	/// </summary>
-	public decimal MaxVolumePerLevel
+	public int SmaPeriod
 	{
-		get => _maxVolumePerLevel.Value;
-		set => _maxVolumePerLevel.Value = value;
+		get => _smaPeriod.Value;
+		set => _smaPeriod.Value = value;
 	}
 
 	/// <summary>
-	/// Relative distance from the reference price used to build the grid.
+	/// Stop-loss distance in price steps.
 	/// </summary>
-	public decimal ShiftCoefficient
+	public int StopLossPoints
 	{
-		get => _shiftCoefficient.Value;
-		set => _shiftCoefficient.Value = value;
+		get => _stopLossPoints.Value;
+		set => _stopLossPoints.Value = value;
 	}
 
 	/// <summary>
-	/// Number of quote levels placed on each side of the book.
+	/// Take-profit distance in price steps.
 	/// </summary>
-	public int LevelCount
+	public int TakeProfitPoints
 	{
-		get => _levelCount.Value;
-		set => _levelCount.Value = value;
+		get => _takeProfitPoints.Value;
+		set => _takeProfitPoints.Value = value;
 	}
 
 	/// <summary>
-	/// Source that supplies the reference price for the quoting ladder.
-	/// </summary>
-	public LeadPriceSources PriceSource
-	{
-		get => _priceSource.Value;
-		set => _priceSource.Value = value;
-	}
-
-	/// <summary>
-	/// Optional security that provides external reference prices.
-	/// </summary>
-	public Security LeadSecurity
-	{
-		get => _leadSecurityParam.Value;
-		set => _leadSecurityParam.Value = value;
-	}
-
-	/// <summary>
-	/// Maximum allowed deviation between desired and actual price as a fraction of price step.
-	/// </summary>
-	public decimal PriceToleranceRatio
-	{
-		get => _priceToleranceRatio.Value;
-		set => _priceToleranceRatio.Value = value;
-	}
-
-	/// <summary>
-	/// Minimum volume difference treated as negligible when comparing order sizes.
-	/// </summary>
-	public decimal VolumeTolerance
-	{
-		get => _volumeTolerance.Value;
-		set => _volumeTolerance.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="BitexOneMarketMakerStrategy"/>.
+	/// Initializes a new instance of the <see cref="BitexOneMarketMakerStrategy"/> class.
 	/// </summary>
 	public BitexOneMarketMakerStrategy()
 	{
-		_maxVolumePerLevel = Param(nameof(MaxVolumePerLevel), 1m)
-		.SetGreaterThanZero()
-		.SetDisplay("Volume per Level", "Maximum volume that can be quoted at a single price level.", "Orders")
-		
-		.SetOptimize(0.5m, 5m, 0.5m);
+		_smaPeriod = Param(nameof(SmaPeriod), 100)
+			.SetGreaterThanZero()
+			.SetDisplay("SMA Period", "SMA period for mean reversion", "Indicator");
 
-		_shiftCoefficient = Param(nameof(ShiftCoefficient), 0.001m)
-		.SetGreaterThanZero()
-		.SetDisplay("Shift Coefficient", "Relative displacement from the lead price applied to each level.", "Orders")
-		
-		.SetOptimize(0.0005m, 0.005m, 0.0005m);
+		_stopLossPoints = Param(nameof(StopLossPoints), 200)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss", "Stop-loss in price steps", "Risk");
 
-		_levelCount = Param(nameof(LevelCount), 1)
-		.SetGreaterThanZero()
-		.SetDisplay("Level Count", "Number of price levels quoted above and below the reference.", "Orders");
-
-		_priceSource = Param(nameof(PriceSource), LeadPriceSources.MarkPrice)
-		.SetDisplay("Price Source", "Defines where the reference quote is taken from.", "General");
-
-		_leadSecurityParam = Param<Security>(nameof(LeadSecurity))
-		.SetDisplay("Lead Security", "Instrument that supplies mark or index prices when needed.", "General");
-
-		_priceToleranceRatio = Param(nameof(PriceToleranceRatio), 0.0005m)
-		.SetGreaterThanZero()
-		.SetDisplay("Price Tolerance", "Allowed deviation ratio when matching resting quotes.", "Orders");
-
-		_volumeTolerance = Param(nameof(VolumeTolerance), 0.0000001m)
-		.SetGreaterThanZero()
-		.SetDisplay("Volume Tolerance", "Minimum difference ignored when comparing order volumes.", "Orders");
+		_takeProfitPoints = Param(nameof(TakeProfitPoints), 400)
+			.SetNotNegative()
+			.SetDisplay("Take Profit", "Take-profit in price steps", "Risk");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		if (Security != null)
-		{
-			yield return (Security, DataType.Level1);
-			yield return (Security, DataType.MarketDepth);
-		}
-
-		if (LeadSecurity != null && LeadSecurity != Security)
-		{
-			yield return (LeadSecurity, DataType.Level1);
-			yield return (LeadSecurity, DataType.MarketDepth);
-		}
+		yield return (Security, TimeSpan.FromMinutes(5).TimeFrame());
 	}
 
 	/// <inheritdoc />
@@ -162,16 +81,9 @@ public class BitexOneMarketMakerStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_buyOrders = Array.Empty<Order>();
-		_sellOrders = Array.Empty<Order>();
-		_tickSize = 0m;
-		_volumeStep = 0m;
-		_minVolume = 0m;
-		_leadPrice = 0m;
-		_hasLeadPrice = false;
-		_leadSecurity = null;
-		_bestBid = 0m;
-		_bestAsk = 0m;
+		_sma = null;
+		_entryPrice = 0;
+		_cooldown = 0;
 	}
 
 	/// <inheritdoc />
@@ -179,368 +91,88 @@ public class BitexOneMarketMakerStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		if (Security == null)
-		throw new InvalidOperationException("Strategy security is not specified.");
+		_sma = new SimpleMovingAverage { Length = SmaPeriod };
 
-		if (LevelCount <= 0)
-		throw new InvalidOperationException("Level count must be greater than zero.");
+		var subscription = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
+		subscription.Bind(_sma, ProcessCandle);
+		subscription.Start();
+	}
 
-		_buyOrders = new Order[LevelCount];
-		_sellOrders = new Order[LevelCount];
+	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
 
-		_tickSize = Security.PriceStep ?? 0m;
-		_volumeStep = Security.VolumeStep ?? 0m;
-		_minVolume = Security.MinVolume ?? 0m;
+		if (!_sma.IsFormed)
+			return;
 
-		_leadSecurity = PriceSource == LeadPriceSources.OrderBook ? Security : LeadSecurity ?? Security;
-
-		var initialLeadBid = (_leadSecurity != null ? this.GetSecurityValue<decimal?>(_leadSecurity, Level1Fields.BestBidPrice) : null) ?? GetSecurityValue<decimal?>(Level1Fields.BestBidPrice);
-		if (initialLeadBid is decimal bid && bid > 0m)
+		if (_cooldown > 0)
 		{
-			_leadPrice = bid;
-			_hasLeadPrice = true;
+			_cooldown--;
+			return;
 		}
 
-		SubscribeOrderBook()
-		.Bind(ProcessPrimaryOrderBook)
-		.Start();
+		var close = candle.ClosePrice;
+		var step = Security?.PriceStep ?? 1m;
 
-		SubscribeLevel1()
-		.Bind(ProcessPrimaryLevel1)
-		.Start();
-
-		if (_leadSecurity != null && _leadSecurity != Security)
+		// Check SL/TP
+		if (Position > 0 && _entryPrice > 0)
 		{
-			SubscribeOrderBook(security: _leadSecurity)
-			.Bind(ProcessLeadOrderBook)
-			.Start();
-
-			SubscribeLevel1(security: _leadSecurity)
-			.Bind(ProcessLeadLevel1)
-			.Start();
-		}
-
-		ProcessMarketMaking();
-	}
-
-	/// <inheritdoc />
-	protected override void OnStopped()
-	{
-		base.OnStopped();
-
-		CancelOrders(_buyOrders);
-		CancelOrders(_sellOrders);
-	}
-
-	/// <inheritdoc />
-	protected override void OnPositionReceived(Position position)
-	{
-		base.OnPositionReceived(position);
-
-		ProcessMarketMaking();
-	}
-
-	/// <inheritdoc />
-	protected override void OnOrderReceived(Order order)
-	{
-		base.OnOrderReceived(order);
-
-		if (order == null)
-		return;
-
-		if (IsStrategyOrder(order))
-		ProcessMarketMaking();
-	}
-
-	private void ProcessPrimaryOrderBook(IOrderBookMessage depth)
-	{
-		var bestBid = depth.GetBestBid()?.Price;
-		if (bestBid is decimal bid && bid > 0m)
-		{
-			_bestBid = bid;
-			if (_leadSecurity == Security)
-			UpdateLeadPrice(bid);
-		}
-
-		var bestAsk = depth.GetBestAsk()?.Price;
-		if (bestAsk is decimal ask && ask > 0m)
-		_bestAsk = ask;
-
-		ProcessMarketMaking();
-	}
-
-	private void ProcessPrimaryLevel1(Level1ChangeMessage message)
-	{
-		if (message.Changes.TryGetValue(Level1Fields.BestBidPrice, out var bidValue))
-		{
-			_bestBid = (decimal)bidValue;
-			if (_leadSecurity == Security && _bestBid > 0m)
-			UpdateLeadPrice(_bestBid);
-		}
-
-		if (message.Changes.TryGetValue(Level1Fields.BestAskPrice, out var askValue))
-		_bestAsk = (decimal)askValue;
-
-		ProcessMarketMaking();
-	}
-
-	private void ProcessLeadOrderBook(IOrderBookMessage depth)
-	{
-		var bestBid = depth.GetBestBid()?.Price;
-		if (bestBid is decimal bid && bid > 0m)
-		{
-			UpdateLeadPrice(bid);
-			ProcessMarketMaking();
-		}
-	}
-
-	private void ProcessLeadLevel1(Level1ChangeMessage message)
-	{
-		if (message.Changes.TryGetValue(Level1Fields.BestBidPrice, out var bidValue))
-		{
-			var bid = (decimal)bidValue;
-			if (bid > 0m)
+			if (StopLossPoints > 0 && close <= _entryPrice - StopLossPoints * step)
 			{
-				UpdateLeadPrice(bid);
-				ProcessMarketMaking();
+				SellMarket();
+				_entryPrice = 0;
+				_cooldown = 100;
+				return;
+			}
+
+			if (TakeProfitPoints > 0 && close >= _entryPrice + TakeProfitPoints * step)
+			{
+				SellMarket();
+				_entryPrice = 0;
+				_cooldown = 100;
+				return;
 			}
 		}
-		else if (message.Changes.TryGetValue(Level1Fields.LastTradePrice, out var lastValue))
+		else if (Position < 0 && _entryPrice > 0)
 		{
-			var last = (decimal)lastValue;
-			if (last > 0m)
+			if (StopLossPoints > 0 && close >= _entryPrice + StopLossPoints * step)
 			{
-				UpdateLeadPrice(last);
-				ProcessMarketMaking();
+				BuyMarket();
+				_entryPrice = 0;
+				_cooldown = 100;
+				return;
 			}
-		}
-	}
 
-	private void UpdateLeadPrice(decimal price)
-	{
-		_leadPrice = price;
-		_hasLeadPrice = price > 0m;
-	}
-
-	private void ProcessMarketMaking()
-	{
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
-
-		if (!_hasLeadPrice)
-		return;
-
-		var leadPrice = _leadPrice;
-		if (leadPrice <= 0m)
-		return;
-
-		if (MaxVolumePerLevel <= 0m)
-		return;
-
-		if (ShiftCoefficient <= 0m)
-		return;
-
-		var shiftPrice = leadPrice * ShiftCoefficient;
-		if (shiftPrice <= 0m)
-		return;
-
-		var totalExposurePerSide = MaxVolumePerLevel * LevelCount;
-
-		var remainingBuy = totalExposurePerSide - Position;
-		var remainingSell = totalExposurePerSide + Position;
-
-		for (var level = LevelCount - 1; level >= 0; level--)
-		{
-			var levelIndex = level + 1;
-
-			var targetBuyPrice = RoundPrice(leadPrice - shiftPrice * levelIndex);
-			var targetSellPrice = RoundPrice(leadPrice + shiftPrice * levelIndex);
-
-			var targetBuyVolume = CalculateTargetVolume(remainingBuy);
-			remainingBuy -= targetBuyVolume;
-			if (remainingBuy < 0m)
-			remainingBuy = 0m;
-
-			var targetSellVolume = CalculateTargetVolume(remainingSell);
-			remainingSell -= targetSellVolume;
-			if (remainingSell < 0m)
-			remainingSell = 0m;
-
-			ManageOrder(ref _buyOrders[level], Sides.Buy, targetBuyPrice, targetBuyVolume, leadPrice);
-			ManageOrder(ref _sellOrders[level], Sides.Sell, targetSellPrice, targetSellVolume, leadPrice);
-		}
-	}
-
-	private decimal CalculateTargetVolume(decimal available)
-	{
-		if (available <= 0m)
-		return 0m;
-
-		var desired = Math.Min(available, MaxVolumePerLevel);
-		if (desired <= 0m)
-		return 0m;
-
-		return RoundVolume(desired);
-	}
-
-	private void ManageOrder(ref Order order, Sides side, decimal price, decimal volume, decimal leadPrice)
-	{
-		CleanupOrder(ref order);
-
-		if (volume <= 0m || price <= 0m)
-		{
-			if (order != null && IsOrderActive(order))
-			CancelOrder(order);
-			return;
-		}
-
-		var normalizedPrice = RoundPrice(price);
-		var normalizedVolume = RoundVolume(volume);
-
-		if (normalizedVolume <= 0m || normalizedPrice <= 0m)
-		{
-			if (order != null && IsOrderActive(order))
-			CancelOrder(order);
-			return;
-		}
-
-		if (order == null)
-		{
-			order = side == Sides.Buy
-			? BuyLimit(normalizedVolume, normalizedPrice)
-			: SellLimit(normalizedVolume, normalizedPrice);
-			return;
-		}
-
-		var currentPrice = order.Price > 0m ? order.Price : normalizedPrice;
-		var currentVolume = order.Volume > 0m ? order.Volume : normalizedVolume;
-
-		var priceDiff = leadPrice > 0m
-		? Math.Abs(currentPrice - normalizedPrice) / leadPrice
-		: Math.Abs(currentPrice - normalizedPrice);
-
-		var volumeDiff = Math.Abs(currentVolume - normalizedVolume);
-		var volumeThreshold = _volumeStep > 0m ? _volumeStep / 2m : VolumeTolerance;
-
-		if (priceDiff <= PriceToleranceRatio && volumeDiff <= volumeThreshold)
-		return;
-
-		if (IsOrderActive(order))
-		{
-			CancelOrder(order);
-			return;
-		}
-
-		order = side == Sides.Buy
-		? BuyLimit(normalizedVolume, normalizedPrice)
-		: SellLimit(normalizedVolume, normalizedPrice);
-	}
-
-	private void CancelOrders(Order[] orders)
-	{
-		if (orders == null)
-		return;
-
-		for (var i = 0; i < orders.Length; i++)
-		{
-			var order = orders[i];
-			if (order == null)
-			continue;
-
-			if (IsOrderActive(order))
-			CancelOrder(order);
-
-			orders[i] = null;
-		}
-	}
-
-	private decimal RoundPrice(decimal price)
-	{
-		if (_tickSize <= 0m)
-		return price;
-
-		var steps = Math.Round(price / _tickSize, MidpointRounding.AwayFromZero);
-		return steps * _tickSize;
-	}
-
-	private decimal RoundVolume(decimal volume)
-	{
-		var absVolume = Math.Abs(volume);
-		if (absVolume <= 0m)
-		return 0m;
-
-		if (_volumeStep > 0m)
-		{
-			var steps = Math.Round(absVolume / _volumeStep, MidpointRounding.AwayFromZero);
-			if (steps <= 0m)
-			steps = 1m;
-
-			absVolume = steps * _volumeStep;
-		}
-
-		if (_minVolume > 0m && absVolume < _minVolume)
-		absVolume = _minVolume;
-
-		return absVolume;
-	}
-
-	private static void CleanupOrder(ref Order order)
-	{
-		if (order == null)
-			return;
-
-		switch (order.State)
-		{
-			case OrderStates.Done:
-			case OrderStates.Failed:
-				order = null;
-				break;
-		}
-	}
-
-	private static bool IsOrderActive(Order order)
-	{
-		return order != null && order.State is OrderStates.Active or OrderStates.Pending;
-	}
-
-	private bool IsStrategyOrder(Order order)
-	{
-		if (_buyOrders != null)
-		{
-			for (var i = 0; i < _buyOrders.Length; i++)
+			if (TakeProfitPoints > 0 && close <= _entryPrice - TakeProfitPoints * step)
 			{
-				if (_buyOrders[i] == order)
-					return true;
+				BuyMarket();
+				_entryPrice = 0;
+				_cooldown = 100;
+				return;
 			}
 		}
 
-		if (_sellOrders != null)
+		// Mean reversion around SMA
+		var deviation = smaValue * 0.008m;
+
+		if (close < smaValue - deviation && Position <= 0)
 		{
-			for (var i = 0; i < _sellOrders.Length; i++)
-			{
-				if (_sellOrders[i] == order)
-					return true;
-			}
+			if (Position < 0)
+				BuyMarket();
+
+			BuyMarket();
+			_entryPrice = close;
+			_cooldown = 100;
 		}
+		else if (close > smaValue + deviation && Position >= 0)
+		{
+			if (Position > 0)
+				SellMarket();
 
-		return false;
-	}
-
-	public enum LeadPriceSources
-	{
-		/// <summary>
-		/// Use the strategy security order book as the reference.
-		/// </summary>
-		OrderBook = 1,
-
-		/// <summary>
-		/// Use mark prices supplied by an auxiliary instrument.
-		/// </summary>
-		MarkPrice = 2,
-
-		/// <summary>
-		/// Use index prices supplied by an auxiliary instrument.
-		/// </summary>
-		IndexPrice = 3
+			SellMarket();
+			_entryPrice = close;
+			_cooldown = 100;
+		}
 	}
 }
