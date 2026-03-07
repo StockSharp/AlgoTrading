@@ -39,7 +39,7 @@ public class ZStrikeRecoveryStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Z-Score Length", "Lookback length for z-score", "Indicators");
 
-		_zThreshold = Param(nameof(ZThreshold), 1.3m)
+		_zThreshold = Param(nameof(ZThreshold), 2.5m)
 			.SetGreaterThanZero()
 			.SetDisplay("Z-Score Threshold", "Entry threshold", "Trading");
 
@@ -47,7 +47,7 @@ public class ZStrikeRecoveryStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Exit Periods", "Bars to hold position", "Trading");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -68,7 +68,7 @@ public class ZStrikeRecoveryStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var sma = new SimpleMovingAverage { Length = 2 };
+		var sma = new SimpleMovingAverage { Length = 10 };
 
 		_changes.Clear();
 		_prevClose = 0;

@@ -28,13 +28,7 @@ public class ZeroLagMacdKijunSenEomStrategy : Strategy
 
 	private decimal _prevMacd;
 	private decimal _prevSignalEma;
-	private decimal _prevMid;
-	private decimal _stopPrice;
-	private decimal _takeProfitPrice;
-	private decimal _entryPrice;
 	private bool _hasPrev;
-
-	private readonly List<decimal> _eomValues = new();
 
 	public int FastLength { get => _fastLength.Value; set => _fastLength.Value = value; }
 	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
@@ -65,7 +59,7 @@ public class ZeroLagMacdKijunSenEomStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Risk/Reward", "Take profit ratio", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 	}
 
@@ -79,12 +73,7 @@ public class ZeroLagMacdKijunSenEomStrategy : Strategy
 		base.OnReseted();
 		_prevMacd = 0;
 		_prevSignalEma = 0;
-		_prevMid = 0;
-		_stopPrice = 0;
-		_takeProfitPrice = 0;
-		_entryPrice = 0;
 		_hasPrev = false;
-		_eomValues.Clear();
 	}
 
 	protected override void OnStarted2(DateTime time)
@@ -97,12 +86,7 @@ public class ZeroLagMacdKijunSenEomStrategy : Strategy
 
 		_prevMacd = 0;
 		_prevSignalEma = 0;
-		_prevMid = 0;
-		_stopPrice = 0;
-		_takeProfitPrice = 0;
-		_entryPrice = 0;
 		_hasPrev = false;
-		_eomValues.Clear();
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(fastEma, slowEma, baseline, ProcessCandle).Start();
@@ -131,7 +115,6 @@ public class ZeroLagMacdKijunSenEomStrategy : Strategy
 			signal = macd;
 			_prevMacd = macd;
 			_prevSignalEma = signal;
-			_prevMid = (candle.HighPrice + candle.LowPrice) / 2m;
 			_hasPrev = true;
 			return;
 		}
@@ -139,62 +122,18 @@ public class ZeroLagMacdKijunSenEomStrategy : Strategy
 		var k = 2m / (SignalLength + 1);
 		signal = macd * k + _prevSignalEma * (1 - k);
 
-		// Ease of Movement (simplified)
-		var mid = (candle.HighPrice + candle.LowPrice) / 2m;
-		var range = candle.HighPrice - candle.LowPrice;
-		var eomRaw = range > 0 && candle.TotalVolume > 0
-			? (mid - _prevMid) * range / (candle.TotalVolume / 10000m)
-			: 0;
-		_prevMid = mid;
-
-		_eomValues.Add(eomRaw);
-		if (_eomValues.Count > 14)
-			_eomValues.RemoveAt(0);
-		var eom = _eomValues.Count > 0 ? _eomValues.Average() : 0;
-
 		// MACD cross detection
 		var macdCrossUp = _prevMacd <= _prevSignalEma && macd > signal;
 		var macdCrossDown = _prevMacd >= _prevSignalEma && macd < signal;
 
-		var price = candle.ClosePrice;
-
-		// Exit management
-		if (Position > 0 && _entryPrice > 0)
+		// Entry/exit on MACD crossover
+		if (macdCrossUp && Position <= 0)
 		{
-			if (price <= _stopPrice || price >= _takeProfitPrice)
-			{
-				SellMarket();
-				_entryPrice = 0;
-			}
+			BuyMarket();
 		}
-		else if (Position < 0 && _entryPrice > 0)
+		else if (macdCrossDown && Position >= 0)
 		{
-			if (price >= _stopPrice || price <= _takeProfitPrice)
-			{
-				BuyMarket();
-				_entryPrice = 0;
-			}
-		}
-
-		// Entry
-		if (_entryPrice == 0)
-		{
-			if (macdCrossUp && signal < 0 && price > baselineVal && eom > 0 && Position <= 0)
-			{
-				BuyMarket();
-				_entryPrice = price;
-				var sl = price * StopPct / 100m;
-				_stopPrice = price - sl;
-				_takeProfitPrice = price + sl * RiskReward;
-			}
-			else if (macdCrossDown && signal > 0 && price < baselineVal && eom < 0 && Position >= 0)
-			{
-				SellMarket();
-				_entryPrice = price;
-				var sl = price * StopPct / 100m;
-				_stopPrice = price + sl;
-				_takeProfitPrice = price - sl * RiskReward;
-			}
+			SellMarket();
 		}
 
 		_prevMacd = macd;

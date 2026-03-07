@@ -24,10 +24,6 @@ public class ZapTeamProV6EmaStrategy : Strategy
 	private readonly StrategyParam<bool> _enableShorts;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private readonly ExponentialMovingAverage _ema21 = new();
-	private readonly ExponentialMovingAverage _ema50 = new();
-	private readonly ExponentialMovingAverage _ema200 = new();
-
 	private decimal? _prev21;
 	private decimal? _prev50;
 
@@ -68,16 +64,27 @@ public class ZapTeamProV6EmaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prev21 = null;
+		_prev50 = null;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_ema21.Length = Ema21Length;
-		_ema50.Length = Ema50Length;
-		_ema200.Length = Ema200Length;
+		var ema21 = new ExponentialMovingAverage { Length = Ema21Length };
+		var ema50 = new ExponentialMovingAverage { Length = Ema50Length };
+		var ema200 = new ExponentialMovingAverage { Length = Ema200Length };
+
+		_prev21 = null;
+		_prev50 = null;
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(_ema21, _ema50, _ema200, ProcessCandle).Start();
+		subscription.Bind(ema21, ema50, ema200, ProcessCandle).Start();
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal ema21, decimal ema50, decimal ema200)
@@ -102,11 +109,11 @@ public class ZapTeamProV6EmaStrategy : Strategy
 
 		if (crossUp && trendLong && Position <= 0)
 		{
-			BuyMarket(Volume + Math.Abs(Position));
+			BuyMarket();
 		}
 		else if (crossDown && trendShort && EnableShorts && Position >= 0)
 		{
-			SellMarket(Volume + Math.Abs(Position));
+			SellMarket();
 		}
 
 		_prev21 = ema21;

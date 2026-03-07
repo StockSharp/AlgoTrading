@@ -23,10 +23,6 @@ public class ZeroLagMaTrendFollowingStrategy : Strategy
 	private readonly StrategyParam<decimal> _riskReward;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private ZeroLagExponentialMovingAverage _zlma = null!;
-	private ExponentialMovingAverage _ema = null!;
-	private AverageTrueRange _atr = null!;
-
 	private decimal _prevZlma;
 	private decimal _prevEma;
 	private bool _longSetup;
@@ -37,92 +33,96 @@ public class ZeroLagMaTrendFollowingStrategy : Strategy
 	private decimal _takeProfitPrice;
 	private bool _entryPlaced;
 
-	/// <summary>
-	/// Moving average length.
-	/// </summary>
-	public int Length
-	{
-		get => _length.Value;
-		set => _length.Value = value;
-	}
+	public int Length { get => _length.Value; set => _length.Value = value; }
+	public int AtrPeriod { get => _atrPeriod.Value; set => _atrPeriod.Value = value; }
+	public decimal RiskReward { get => _riskReward.Value; set => _riskReward.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// ATR period for box height.
-	/// </summary>
-	public int AtrPeriod
-	{
-		get => _atrPeriod.Value;
-		set => _atrPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Risk-reward ratio.
-	/// </summary>
-	public decimal RiskReward
-	{
-		get => _riskReward.Value;
-		set => _riskReward.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used by the strategy.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="ZeroLagMaTrendFollowingStrategy"/>.
-	/// </summary>
 	public ZeroLagMaTrendFollowingStrategy()
 	{
 		_length = Param(nameof(Length), 34).SetDisplay("Length", "MA length", "Indicators");
 		_atrPeriod = Param(nameof(AtrPeriod), 14).SetDisplay("ATR Period", "ATR length", "Indicators");
 		_riskReward = Param(nameof(RiskReward), 2m).SetDisplay("Risk/Reward", "Take profit ratio", "Risk");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Candle timeframe", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame()).SetDisplay("Candle Type", "Candle timeframe", "General");
 	}
 
-	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevZlma = 0;
+		_prevEma = 0;
+		_longSetup = false;
+		_shortSetup = false;
+		_boxTop = 0;
+		_boxBottom = 0;
+		_stopPrice = 0;
+		_takeProfitPrice = 0;
+		_entryPlaced = false;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
-		_zlma = new ZeroLagExponentialMovingAverage { Length = Length };
-		_ema = new EMA { Length = Length };
-		_atr = new AverageTrueRange { Length = AtrPeriod };
+		base.OnStarted2(time);
+
+		var zlma = new ZeroLagExponentialMovingAverage { Length = Length };
+		var ema = new ExponentialMovingAverage { Length = Length };
+		var atr = new AverageTrueRange { Length = AtrPeriod };
+
+		_prevZlma = 0;
+		_prevEma = 0;
+		_longSetup = false;
+		_shortSetup = false;
+		_boxTop = 0;
+		_boxBottom = 0;
+		_stopPrice = 0;
+		_takeProfitPrice = 0;
+		_entryPlaced = false;
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(_zlma, _ema, _atr, ProcessCandle)
-			.Start();
+		subscription.Bind(zlma, ema, atr, ProcessCandle).Start();
 
-		base.OnStarted2(time);
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, ema);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal zlma, decimal ema, decimal atrValue)
+	private void ProcessCandle(ICandleMessage candle, decimal zlmaVal, decimal emaVal, decimal atrValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (_prevZlma == 0)
+		{
+			_prevZlma = zlmaVal;
+			_prevEma = emaVal;
 			return;
+		}
 
-		var crossUp = _prevZlma <= _prevEma && zlma > ema;
-		var crossDown = _prevZlma >= _prevEma && zlma < ema;
-		_prevZlma = zlma;
-		_prevEma = ema;
+		var crossUp = _prevZlma <= _prevEma && zlmaVal > emaVal;
+		var crossDown = _prevZlma >= _prevEma && zlmaVal < emaVal;
+		_prevZlma = zlmaVal;
+		_prevEma = emaVal;
 
 		if (crossUp)
 		{
-			_boxTop = zlma;
-			_boxBottom = zlma - atrValue;
+			_boxTop = zlmaVal;
+			_boxBottom = zlmaVal - atrValue;
 			_longSetup = true;
 			_shortSetup = false;
 		}
 		else if (crossDown)
 		{
-			_boxTop = zlma + atrValue;
-			_boxBottom = zlma;
+			_boxTop = zlmaVal + atrValue;
+			_boxBottom = zlmaVal;
 			_shortSetup = true;
 			_longSetup = false;
 		}
@@ -133,52 +133,38 @@ public class ZeroLagMaTrendFollowingStrategy : Strategy
 		{
 			if (_longSetup && candle.LowPrice > _boxTop && Position <= 0)
 			{
-			    CancelActiveOrders();
-			    var volume = Volume + Math.Abs(Position);
-			    BuyMarket(volume);
-			    _entryPlaced = true;
-			    _stopPrice = _boxBottom;
-			    _takeProfitPrice = price + (price - _stopPrice) * RiskReward;
-			    _longSetup = false;
+				BuyMarket();
+				_entryPlaced = true;
+				_stopPrice = _boxBottom;
+				_takeProfitPrice = price + (price - _stopPrice) * RiskReward;
+				_longSetup = false;
 			}
 			else if (_shortSetup && candle.HighPrice < _boxBottom && Position >= 0)
 			{
-			    CancelActiveOrders();
-			    var volume = Volume + Math.Abs(Position);
-			    SellMarket(volume);
-			    _entryPlaced = true;
-			    _stopPrice = _boxTop;
-			    _takeProfitPrice = price - (_stopPrice - price) * RiskReward;
-			    _shortSetup = false;
+				SellMarket();
+				_entryPlaced = true;
+				_stopPrice = _boxTop;
+				_takeProfitPrice = price - (_stopPrice - price) * RiskReward;
+				_shortSetup = false;
 			}
 		}
 		else
 		{
 			if (Position > 0)
 			{
-			    if (candle.LowPrice <= _stopPrice)
-			    {
-			        SellMarket(Position);
-			        _entryPlaced = false;
-			    }
-			    else if (candle.HighPrice >= _takeProfitPrice)
-			    {
-			        SellMarket(Position);
-			        _entryPlaced = false;
-			    }
+				if (candle.LowPrice <= _stopPrice || candle.HighPrice >= _takeProfitPrice)
+				{
+					SellMarket();
+					_entryPlaced = false;
+				}
 			}
 			else if (Position < 0)
 			{
-			    if (candle.HighPrice >= _stopPrice)
-			    {
-			        BuyMarket(Math.Abs(Position));
-			        _entryPlaced = false;
-			    }
-			    else if (candle.LowPrice <= _takeProfitPrice)
-			    {
-			        BuyMarket(Math.Abs(Position));
-			        _entryPlaced = false;
-			    }
+				if (candle.HighPrice >= _stopPrice || candle.LowPrice <= _takeProfitPrice)
+				{
+					BuyMarket();
+					_entryPlaced = false;
+				}
 			}
 		}
 	}
