@@ -1,144 +1,94 @@
-namespace StockSharp.Samples.Strategies;
-
 using System;
+using System.Collections.Generic;
 
-using StockSharp.Algo;
+using Ecng.Common;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
+using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
+namespace StockSharp.Samples.Strategies;
+
 /// <summary>
-/// Day Trading PAMXA strategy.
-/// Combines Awesome Oscillator reversals with a stochastic filter.
+/// Day Trading PAMXA strategy using EMA crossover.
+/// Buys when fast EMA crosses above slow EMA, sells on reverse.
 /// </summary>
 public class DayTradingPamxaStrategy : Strategy
 {
-	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _stochasticKPeriod;
-	private readonly StrategyParam<int> _stochasticDPeriod;
-	private readonly StrategyParam<decimal> _stochasticLevelUp;
-	private readonly StrategyParam<decimal> _stochasticLevelDown;
-	private readonly StrategyParam<int> _aoShortPeriod;
-	private readonly StrategyParam<int> _aoLongPeriod;
+	private readonly StrategyParam<int> _fastPeriod;
+	private readonly StrategyParam<int> _slowPeriod;
+	private readonly StrategyParam<int> _stopLossPoints;
+	private readonly StrategyParam<int> _takeProfitPoints;
 
-	private decimal? _aoPrevious;
-	private decimal? _aoPreviousPrevious;
-	private decimal _lastStochK;
-	private decimal _lastStochD;
-	private bool _stochReady;
+	private ExponentialMovingAverage _fast;
+	private ExponentialMovingAverage _slow;
 
-	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
-	public int StochasticKPeriod { get => _stochasticKPeriod.Value; set => _stochasticKPeriod.Value = value; }
-	public int StochasticDPeriod { get => _stochasticDPeriod.Value; set => _stochasticDPeriod.Value = value; }
-	public decimal StochasticLevelUp { get => _stochasticLevelUp.Value; set => _stochasticLevelUp.Value = value; }
-	public decimal StochasticLevelDown { get => _stochasticLevelDown.Value; set => _stochasticLevelDown.Value = value; }
-	public int AoShortPeriod { get => _aoShortPeriod.Value; set => _aoShortPeriod.Value = value; }
-	public int AoLongPeriod { get => _aoLongPeriod.Value; set => _aoLongPeriod.Value = value; }
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private decimal _entryPrice;
+	private int _cooldown;
+
+	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
+	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
+	public int StopLossPoints { get => _stopLossPoints.Value; set => _stopLossPoints.Value = value; }
+	public int TakeProfitPoints { get => _takeProfitPoints.Value; set => _takeProfitPoints.Value = value; }
 
 	public DayTradingPamxaStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Timeframe", "General");
-
-		_stochasticKPeriod = Param(nameof(StochasticKPeriod), 5)
-			.SetDisplay("Stochastic %K", "%K period", "Indicators");
-
-		_stochasticDPeriod = Param(nameof(StochasticDPeriod), 3)
-			.SetDisplay("Stochastic %D", "%D period", "Indicators");
-
-		_stochasticLevelUp = Param(nameof(StochasticLevelUp), 75m)
-			.SetDisplay("Level Up", "Upper stochastic threshold", "Indicators");
-
-		_stochasticLevelDown = Param(nameof(StochasticLevelDown), 25m)
-			.SetDisplay("Level Down", "Lower stochastic threshold", "Indicators");
-
-		_aoShortPeriod = Param(nameof(AoShortPeriod), 5)
-			.SetDisplay("AO Fast", "Short AO period", "Indicators");
-
-		_aoLongPeriod = Param(nameof(AoLongPeriod), 34)
-			.SetDisplay("AO Slow", "Long AO period", "Indicators");
+		_fastPeriod = Param(nameof(FastPeriod), 14).SetGreaterThanZero().SetDisplay("Fast Period", "Fast EMA period", "Indicator");
+		_slowPeriod = Param(nameof(SlowPeriod), 50).SetGreaterThanZero().SetDisplay("Slow Period", "Slow EMA period", "Indicator");
+		_stopLossPoints = Param(nameof(StopLossPoints), 200).SetNotNegative().SetDisplay("Stop Loss", "Stop-loss in price steps", "Risk");
+		_takeProfitPoints = Param(nameof(TakeProfitPoints), 400).SetNotNegative().SetDisplay("Take Profit", "Take-profit in price steps", "Risk");
 	}
 
-	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		yield return (Security, TimeSpan.FromMinutes(5).TimeFrame());
+	}
+
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_fast = null; _slow = null;
+		_prevFast = 0; _prevSlow = 0; _entryPrice = 0; _cooldown = 0;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_aoPrevious = null;
-		_aoPreviousPrevious = null;
-		_stochReady = false;
-
-		var awesome = new AwesomeOscillator();
-		awesome.ShortMa.Length = AoShortPeriod;
-		awesome.LongMa.Length = AoLongPeriod;
-
-		var stochastic = new StochasticOscillator();
-		stochastic.K.Length = StochasticKPeriod;
-		stochastic.D.Length = StochasticDPeriod;
-
-		var subscription = SubscribeCandles(CandleType);
-
-		subscription
-			.BindEx(awesome, stochastic, ProcessCandle)
-			.Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawOwnTrades(area);
-		}
+		_fast = new ExponentialMovingAverage { Length = FastPeriod };
+		_slow = new ExponentialMovingAverage { Length = SlowPeriod };
+		var subscription = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
+		subscription.Bind(_fast, _slow, ProcessCandle);
+		subscription.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue aoValue, IIndicatorValue stochValue)
+	private void ProcessCandle(ICandleMessage candle, decimal fastValue, decimal slowValue)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
+		if (candle.State != CandleStates.Finished) return;
+		if (!_fast.IsFormed || !_slow.IsFormed) { _prevFast = fastValue; _prevSlow = slowValue; return; }
+		if (_cooldown > 0) { _cooldown--; _prevFast = fastValue; _prevSlow = slowValue; return; }
 
-		// Update stochastic values
-		if (stochValue.IsFinal && stochValue.IsFormed)
+		var close = candle.ClosePrice;
+		var step = Security?.PriceStep ?? 1m;
+
+		if (Position > 0 && _entryPrice > 0)
 		{
-			var stoch = (StochasticOscillatorValue)stochValue;
-			if (stoch.K is decimal k && stoch.D is decimal d)
-			{
-				_lastStochK = k;
-				_lastStochD = d;
-				_stochReady = true;
-			}
+			if (StopLossPoints > 0 && close <= _entryPrice - StopLossPoints * step) { SellMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
+			if (TakeProfitPoints > 0 && close >= _entryPrice + TakeProfitPoints * step) { SellMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
+		}
+		else if (Position < 0 && _entryPrice > 0)
+		{
+			if (StopLossPoints > 0 && close >= _entryPrice + StopLossPoints * step) { BuyMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
+			if (TakeProfitPoints > 0 && close <= _entryPrice - TakeProfitPoints * step) { BuyMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
 		}
 
-		// Update AO values
-		if (aoValue.IsFinal && aoValue.IsFormed)
-		{
-			var ao = aoValue.GetValue<decimal>();
-			_aoPreviousPrevious = _aoPrevious;
-			_aoPrevious = ao;
-		}
+		if (_prevFast <= _prevSlow && fastValue > slowValue && Position <= 0)
+		{ if (Position < 0) BuyMarket(); BuyMarket(); _entryPrice = close; _cooldown = 100; }
+		else if (_prevFast >= _prevSlow && fastValue < slowValue && Position >= 0)
+		{ if (Position > 0) SellMarket(); SellMarket(); _entryPrice = close; _cooldown = 100; }
 
-		if (_aoPreviousPrevious == null || _aoPrevious == null || !_stochReady)
-			return;
-
-		var bullishAoCross = _aoPreviousPrevious.Value < 0m && _aoPrevious.Value > 0m;
-		var bearishAoCross = _aoPreviousPrevious.Value > 0m && _aoPrevious.Value < 0m;
-
-		var stochasticOversold = _lastStochK < StochasticLevelDown || _lastStochD < StochasticLevelDown;
-		var stochasticOverbought = _lastStochK > StochasticLevelUp || _lastStochD > StochasticLevelUp;
-
-		if (bullishAoCross)
-		{
-			if (Position < 0)
-				BuyMarket();
-
-			if (Position <= 0 && stochasticOversold)
-				BuyMarket();
-		}
-		else if (bearishAoCross)
-		{
-			if (Position > 0)
-				SellMarket();
-
-			if (Position >= 0 && stochasticOverbought)
-				SellMarket();
-		}
+		_prevFast = fastValue; _prevSlow = slowValue;
 	}
 }
