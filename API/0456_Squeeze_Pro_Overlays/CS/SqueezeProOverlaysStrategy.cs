@@ -1,81 +1,78 @@
+namespace StockSharp.Samples.Strategies;
+
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-namespace StockSharp.Samples.Strategies;
-
 /// <summary>
-/// Squeeze Pro Overlays Strategy - trades breakouts when volatility expands from a squeeze.
+/// Squeeze Pro Overlays Strategy.
+/// Detects when BB is inside KC (squeeze), then trades on breakout direction.
+/// Uses momentum (LinearRegSlope) to determine direction.
 /// </summary>
 public class SqueezeProOverlaysStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _squeezeLength;
+	private readonly StrategyParam<int> _cooldownBars;
 
-	private BollingerBands _bollingerBands;
-	private KeltnerChannels _keltnerLow;
-	private KeltnerChannels _keltnerMid;
-	private KeltnerChannels _keltnerHigh;
-	private LinearRegression _momentum;
+	private BollingerBands _bb;
+	private KeltnerChannels _kc;
+	private LinearRegSlope _slope;
 
 	private bool _wasSqueezed;
-	private decimal _currentMomentum;
+	private int _cooldownRemaining;
 
-	/// <summary>
-	/// Candle type for strategy calculation.
-	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Calculation length for all indicators.
-	/// </summary>
 	public int SqueezeLength
 	{
 		get => _squeezeLength.Value;
 		set => _squeezeLength.Value = value;
 	}
 
-	/// <summary>
-	/// Constructor.
-	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
 	public SqueezeProOverlaysStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
 		_squeezeLength = Param(nameof(SqueezeLength), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("Squeeze Length", "Calculation length", "Squeeze")
-			
-			.SetOptimize(10, 30, 5);
+			.SetDisplay("Squeeze Length", "Calculation length", "Squeeze");
+
+		_cooldownBars = Param(nameof(CooldownBars), 10)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "Risk");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
 
+		_bb = null;
+		_kc = null;
+		_slope = null;
 		_wasSqueezed = false;
-		_currentMomentum = default;
+		_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
@@ -83,75 +80,85 @@ public class SqueezeProOverlaysStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_bollingerBands = new BollingerBands { Length = SqueezeLength, Width = 2m };
-		_keltnerLow = new KeltnerChannels { Length = SqueezeLength, Multiplier = 2m };
-		_keltnerMid = new KeltnerChannels { Length = SqueezeLength, Multiplier = 1.5m };
-		_keltnerHigh = new KeltnerChannels { Length = SqueezeLength, Multiplier = 1m };
-		_momentum = new LinearRegression { Length = SqueezeLength };
+		_bb = new BollingerBands { Length = SqueezeLength, Width = 2m };
+		_kc = new KeltnerChannels { Length = SqueezeLength, Multiplier = 1.5m };
+		_slope = new LinearRegSlope { Length = SqueezeLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(_momentum, ProcessCandle)
+			.BindEx(_bb, _kc, _slope, OnProcess)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawIndicator(area, _bb);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue momentumValue)
+	private void OnProcess(ICandleMessage candle, IIndicatorValue bbValue, IIndicatorValue kcValue, IIndicatorValue slopeValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var bbValue = _bollingerBands.Process(candle);
-		var kcLowValue = _keltnerLow.Process(candle);
-		var kcMidValue = _keltnerMid.Process(candle);
-		var kcHighValue = _keltnerHigh.Process(candle);
+		if (!_bb.IsFormed || !_kc.IsFormed || !_slope.IsFormed)
+			return;
 
-		if (!_bollingerBands.IsFormed || !_keltnerLow.IsFormed || !_keltnerMid.IsFormed || !_keltnerHigh.IsFormed)
+		if (bbValue.IsEmpty || kcValue.IsEmpty || slopeValue.IsEmpty)
 			return;
 
 		var bb = (BollingerBandsValue)bbValue;
-		var kcLow = (KeltnerChannelsValue)kcLowValue;
-		var kcMid = (KeltnerChannelsValue)kcMidValue;
-		var kcHigh = (KeltnerChannelsValue)kcHighValue;
+		var kc = (KeltnerChannelsValue)kcValue;
 
-		if (bb.UpBand is not decimal bbUpper ||
-			bb.LowBand is not decimal bbLower ||
-			kcLow.Upper is not decimal lowUpper ||
-			kcLow.Lower is not decimal lowLower ||
-			kcMid.Upper is not decimal midUpper ||
-			kcMid.Lower is not decimal midLower ||
-			kcHigh.Upper is not decimal highUpper ||
-			kcHigh.Lower is not decimal highLower ||
-			!momentumValue.IsFinal)
+		if (bb.UpBand is not decimal bbUpper || bb.LowBand is not decimal bbLower)
+			return;
+		if (kc.Upper is not decimal kcUpper || kc.Lower is not decimal kcLower)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		if (_cooldownRemaining > 0)
 		{
-			return; // Not enough data
+			_cooldownRemaining--;
+			return;
 		}
 
-		_currentMomentum = ((LinearRegressionValue)momentumValue).LinearRegSlope ?? 0m;
+		var slopeVal = slopeValue.ToDecimal();
+		var squeezed = bbUpper < kcUpper && bbLower > kcLower;
 
-		var lowSqz = bbUpper < lowUpper && bbLower > lowLower;
-		var midSqz = bbUpper < midUpper && bbLower > midLower;
-		var highSqz = bbUpper < highUpper && bbLower > highLower;
-		var anySqz = lowSqz || midSqz || highSqz;
-
-		if (_wasSqueezed && !anySqz)
+		// Squeeze release: was squeezed, now not
+		if (_wasSqueezed && !squeezed)
 		{
-			if (_currentMomentum > 0 && Position <= 0)
+			if (slopeVal > 0 && Position <= 0)
 			{
-				BuyMarket();
+				if (Position < 0)
+					BuyMarket(Math.Abs(Position));
+				BuyMarket(Volume);
+				_cooldownRemaining = CooldownBars;
 			}
-			else if (_currentMomentum < 0 && Position >= 0)
+			else if (slopeVal < 0 && Position >= 0)
 			{
-				SellMarket();
+				if (Position > 0)
+					SellMarket(Math.Abs(Position));
+				SellMarket(Volume);
+				_cooldownRemaining = CooldownBars;
 			}
 		}
+		// Exit: slope reverses
+		else if (Position > 0 && slopeVal < 0)
+		{
+			SellMarket(Math.Abs(Position));
+			_cooldownRemaining = CooldownBars;
+		}
+		else if (Position < 0 && slopeVal > 0)
+		{
+			BuyMarket(Math.Abs(Position));
+			_cooldownRemaining = CooldownBars;
+		}
 
-		_wasSqueezed = anySqz;
+		_wasSqueezed = squeezed;
 	}
 }

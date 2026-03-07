@@ -1,136 +1,99 @@
+namespace StockSharp.Samples.Strategies;
+
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-namespace StockSharp.Samples.Strategies;
-
 /// <summary>
-/// Smart Money Concepts with Bollinger Bands breakout strategy.
+/// Smart Money Concepts with Bollinger Bands Breakout Strategy.
+/// Uses BB breakout with momentum candle filter and structure shift detection.
 /// </summary>
 public class SmcBbBreakoutStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _bbLength;
-	private readonly StrategyParam<decimal> _bbMultiplier;
-	private readonly StrategyParam<int> _orderBlockLength;
-	private readonly StrategyParam<int> _swingLength;
-	private readonly StrategyParam<bool> _momentumFilter;
+	private readonly StrategyParam<decimal> _bbWidth;
 	private readonly StrategyParam<decimal> _momentumBodyPercent;
+	private readonly StrategyParam<int> _cooldownBars;
 
-	private BollingerBands _bollinger;
-	private Highest _orderBlockHigh;
-	private Lowest _orderBlockLow;
-	private Highest _swingHigh;
-	private Lowest _swingLow;
+	private BollingerBands _bb;
 
-	private decimal _previousHigh;
-	private decimal _previousLow;
-	private decimal _lastSwingHigh;
-	private decimal _lastSwingLow;
 	private decimal _prevClose;
-	private decimal _prevUpper;
-	private decimal _prevLower;
-	private decimal _prevBasis;
-	private bool _hasPrevBands;
+	private decimal _prevHigh;
+	private decimal _prevLow;
+	private bool _hasPrev;
+	private int _cooldownRemaining;
 
-	/// <summary>
-	/// Candle type for strategy calculation.
-	/// </summary>
-	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
 
-	/// <summary>
-	/// Bollinger Bands length.
-	/// </summary>
-	public int BbLength { get => _bbLength.Value; set => _bbLength.Value = value; }
+	public int BbLength
+	{
+		get => _bbLength.Value;
+		set => _bbLength.Value = value;
+	}
 
-	/// <summary>
-	/// Bollinger Bands width multiplier.
-	/// </summary>
-	public decimal BbMultiplier { get => _bbMultiplier.Value; set => _bbMultiplier.Value = value; }
+	public decimal BbWidth
+	{
+		get => _bbWidth.Value;
+		set => _bbWidth.Value = value;
+	}
 
-	/// <summary>
-	/// Order block lookback length.
-	/// </summary>
-	public int OrderBlockLength { get => _orderBlockLength.Value; set => _orderBlockLength.Value = value; }
+	public decimal MomentumBodyPercent
+	{
+		get => _momentumBodyPercent.Value;
+		set => _momentumBodyPercent.Value = value;
+	}
 
-	/// <summary>
-	/// Swing lookback length.
-	/// </summary>
-	public int SwingLength { get => _swingLength.Value; set => _swingLength.Value = value; }
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
 
-	/// <summary>
-	/// Require momentum candle for entry.
-	/// </summary>
-	public bool MomentumFilter { get => _momentumFilter.Value; set => _momentumFilter.Value = value; }
-
-	/// <summary>
-	/// Minimum body percent to treat candle as momentum.
-	/// </summary>
-	public decimal MomentumBodyPercent { get => _momentumBodyPercent.Value; set => _momentumBodyPercent.Value = value; }
-
-	/// <summary>
-	/// Constructor.
-	/// </summary>
 	public SmcBbBreakoutStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
-		_bbLength = Param(nameof(BbLength), 55)
+		_bbLength = Param(nameof(BbLength), 34)
 			.SetGreaterThanZero()
-			.SetDisplay("BB Length", "Bollinger Bands period", "Bollinger")
-			
-			.SetOptimize(20, 100, 5);
+			.SetDisplay("BB Length", "Bollinger Bands period", "Bollinger");
 
-		_bbMultiplier = Param(nameof(BbMultiplier), 2m)
-			.SetRange(0.5m, 5m)
-			.SetDisplay("BB Multiplier", "Bollinger width multiplier", "Bollinger");
+		_bbWidth = Param(nameof(BbWidth), 2m)
+			.SetDisplay("BB Width", "Bollinger width multiplier", "Bollinger");
 
-		_orderBlockLength = Param(nameof(OrderBlockLength), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("Order Block Length", "Lookback for order block", "SMC");
+		_momentumBodyPercent = Param(nameof(MomentumBodyPercent), 0.5m)
+			.SetDisplay("Momentum Body %", "Minimum body vs range ratio", "Momentum");
 
-		_swingLength = Param(nameof(SwingLength), 12)
-			.SetGreaterThanZero()
-			.SetDisplay("Swing Length", "Lookback for swings", "SMC");
-
-		_momentumFilter = Param(nameof(MomentumFilter), true)
-			.SetDisplay("Momentum Filter", "Require momentum candle for entry", "Momentum");
-
-		_momentumBodyPercent = Param(nameof(MomentumBodyPercent), 0.7m)
-			.SetRange(0.01m, 1m)
-			.SetDisplay("Momentum Body %", "Minimum body percentage", "Momentum");
+		_cooldownBars = Param(nameof(CooldownBars), 10)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "Risk");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
 
-		_previousHigh = default;
-		_previousLow = default;
-		_lastSwingHigh = default;
-		_lastSwingLow = default;
-		_prevClose = default;
-		_prevUpper = default;
-		_prevLower = default;
-		_prevBasis = default;
-		_hasPrevBands = false;
+		_bb = null;
+		_prevClose = 0;
+		_prevHigh = 0;
+		_prevLow = 0;
+		_hasPrev = false;
+		_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
@@ -138,102 +101,94 @@ public class SmcBbBreakoutStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_bollinger = new BollingerBands { Length = BbLength, Width = BbMultiplier };
-		_orderBlockHigh = new Highest { Length = OrderBlockLength };
-		_orderBlockLow = new Lowest { Length = OrderBlockLength };
-		_swingHigh = new Highest { Length = SwingLength };
-		_swingLow = new Lowest { Length = SwingLength };
+		_bb = new BollingerBands { Length = BbLength, Width = BbWidth };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx([_orderBlockHigh, _orderBlockLow, _swingHigh, _swingLow], ProcessCandle)
+			.BindEx(_bb, OnProcess)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawIndicator(area, _bb);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue[] values)
+	private void OnProcess(ICandleMessage candle, IIndicatorValue bbValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var bbValue = _bollinger.Process(candle);
+		if (!_bb.IsFormed)
+			return;
+
+		if (bbValue.IsEmpty)
+			return;
+
 		var bb = (BollingerBandsValue)bbValue;
-
-		if (bb.UpBand is not decimal upper || bb.LowBand is not decimal lower || bb.MovingAverage is not decimal basis)
+		if (bb.UpBand is not decimal upper || bb.LowBand is not decimal lower || bb.MovingAverage is not decimal mid)
 			return;
 
-		if (values[0].ToNullableDecimal() is not decimal obHigh)
-			return;
-		if (values[1].ToNullableDecimal() is not decimal obLow)
-			return;
-		if (values[2].ToNullableDecimal() is not decimal swingHigh)
-			return;
-		if (values[3].ToNullableDecimal() is not decimal swingLow)
+		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		if (_lastSwingHigh == default)
+		if (_cooldownRemaining > 0)
 		{
-			_lastSwingHigh = swingHigh;
-			_previousHigh = swingHigh;
-		}
-		else if (swingHigh > _lastSwingHigh)
-		{
-			_previousHigh = _lastSwingHigh;
-			_lastSwingHigh = swingHigh;
+			_cooldownRemaining--;
+			_prevClose = candle.ClosePrice;
+			_prevHigh = candle.HighPrice;
+			_prevLow = candle.LowPrice;
+			_hasPrev = true;
+			return;
 		}
 
-		if (_lastSwingLow == default)
-		{
-			_lastSwingLow = swingLow;
-			_previousLow = swingLow;
-		}
-		else if (swingLow < _lastSwingLow || _lastSwingLow == 0)
-		{
-			_previousLow = _lastSwingLow;
-			_lastSwingLow = swingLow;
-		}
-
+		var price = candle.ClosePrice;
 		var range = candle.HighPrice - candle.LowPrice;
 		var body = Math.Abs(candle.ClosePrice - candle.OpenPrice);
-		var bodyPercent = range > 0m ? body / range : 0m;
-		var longMomentum = bodyPercent >= MomentumBodyPercent && candle.ClosePrice > candle.OpenPrice;
-		var shortMomentum = bodyPercent >= MomentumBodyPercent && candle.ClosePrice < candle.OpenPrice;
+		var bodyRatio = range > 0 ? body / range : 0m;
 
-		var shiftBullish = candle.ClosePrice > _previousHigh;
-		var shiftBearish = candle.ClosePrice < _previousLow;
+		var isBullishMomentum = bodyRatio >= MomentumBodyPercent && candle.ClosePrice > candle.OpenPrice;
+		var isBearishMomentum = bodyRatio >= MomentumBodyPercent && candle.ClosePrice < candle.OpenPrice;
 
-		var crossoverUp = _hasPrevBands && _prevClose <= _prevUpper && candle.ClosePrice > upper;
-		var crossunderDown = _hasPrevBands && _prevClose >= _prevLower && candle.ClosePrice < lower;
-		var crossunderBasis = _hasPrevBands && _prevClose >= _prevBasis && candle.ClosePrice < basis;
-		var crossoverBasis = _hasPrevBands && _prevClose <= _prevBasis && candle.ClosePrice > basis;
+		// Structure shift: new high above previous high
+		var breakHigher = _hasPrev && candle.HighPrice > _prevHigh;
+		var breakLower = _hasPrev && candle.LowPrice < _prevLow;
 
-		var longCondition = crossoverUp && shiftBullish && (!MomentumFilter || longMomentum);
-		var shortCondition = crossunderDown && shiftBearish && (!MomentumFilter || shortMomentum);
-		var exitLongCondition = crossunderBasis || candle.ClosePrice < obLow * 0.99m;
-		var exitShortCondition = crossoverBasis || candle.ClosePrice > obHigh * 1.01m;
-
-		if (longCondition && Position <= 0)
-			BuyMarket();
-
-		if (shortCondition && Position >= 0)
-			SellMarket();
-
-		if (exitLongCondition && Position > 0)
-			SellMarket();
-
-		if (exitShortCondition && Position < 0)
-			BuyMarket();
+		// Buy: close above upper BB + bullish momentum + structure break higher
+		if (price > upper && isBullishMomentum && breakHigher && Position <= 0)
+		{
+			if (Position < 0)
+				BuyMarket(Math.Abs(Position));
+			BuyMarket(Volume);
+			_cooldownRemaining = CooldownBars;
+		}
+		// Sell: close below lower BB + bearish momentum + structure break lower
+		else if (price < lower && isBearishMomentum && breakLower && Position >= 0)
+		{
+			if (Position > 0)
+				SellMarket(Math.Abs(Position));
+			SellMarket(Volume);
+			_cooldownRemaining = CooldownBars;
+		}
+		// Exit long: price crosses below mid BB
+		else if (Position > 0 && price < mid)
+		{
+			SellMarket(Math.Abs(Position));
+			_cooldownRemaining = CooldownBars;
+		}
+		// Exit short: price crosses above mid BB
+		else if (Position < 0 && price > mid)
+		{
+			BuyMarket(Math.Abs(Position));
+			_cooldownRemaining = CooldownBars;
+		}
 
 		_prevClose = candle.ClosePrice;
-		_prevUpper = upper;
-		_prevLower = lower;
-		_prevBasis = basis;
-		_hasPrevBands = true;
+		_prevHigh = candle.HighPrice;
+		_prevLow = candle.LowPrice;
+		_hasPrev = true;
 	}
 }
