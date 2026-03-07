@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,101 +11,68 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Hedged strategy that simultaneously opens long and short market positions
-/// and manages them with symmetrical take-profit, stop-loss, and trailing rules.
-/// Converted from the MetaTrader 5 expert "Doubler.mq5".
+/// Doubler strategy using double EMA confirmation with trailing stop management.
+/// Enters long when both fast and medium EMAs are above slow EMA.
+/// Enters short when both fast and medium EMAs are below slow EMA.
 /// </summary>
 public class DoublerStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volumeTolerance;
+	private readonly StrategyParam<int> _fastPeriod;
+	private readonly StrategyParam<int> _medPeriod;
+	private readonly StrategyParam<int> _slowPeriod;
+	private readonly StrategyParam<int> _stopLossPoints;
+	private readonly StrategyParam<int> _takeProfitPoints;
 
-	private readonly StrategyParam<decimal> _orderVolume;
-	private readonly StrategyParam<decimal> _stopLossPips;
-	private readonly StrategyParam<decimal> _takeProfitPips;
-	private readonly StrategyParam<decimal> _trailingStopPips;
-	private readonly StrategyParam<decimal> _trailingStepPips;
-	private readonly StrategyParam<bool> _logTradeDetails;
+	private ExponentialMovingAverage _fast;
+	private ExponentialMovingAverage _med;
+	private ExponentialMovingAverage _slow;
 
-	private readonly Dictionary<Order, PendingOrderInfo> _pendingOrders = new();
-
-	private PositionState _longPosition;
-	private PositionState _shortPosition;
-
-	private decimal _pipValue;
-	private decimal _stopLossOffset;
-	private decimal _takeProfitOffset;
-	private decimal _trailingStopOffset;
-	private decimal _trailingStepOffset;
-
-	private decimal _bestBid;
-	private decimal _bestAsk;
-	private bool _hasBestBid;
-	private bool _hasBestAsk;
-
-	private int _pendingEntryOrders;
-	private bool _isPairOpening;
+	private decimal _entryPrice;
+	private int _cooldown;
 
 	/// <summary>
-	/// Volume used for each hedge leg.
+	/// Fast EMA period.
 	/// </summary>
-	public decimal OrderVolume
+	public int FastPeriod
 	{
-		get => _orderVolume.Value;
-		set => _orderVolume.Value = value;
+		get => _fastPeriod.Value;
+		set => _fastPeriod.Value = value;
 	}
 
 	/// <summary>
-	/// Stop-loss distance expressed in pips.
+	/// Medium EMA period.
 	/// </summary>
-	public decimal StopLossPips
+	public int MedPeriod
 	{
-		get => _stopLossPips.Value;
-		set => _stopLossPips.Value = value;
+		get => _medPeriod.Value;
+		set => _medPeriod.Value = value;
 	}
 
 	/// <summary>
-	/// Take-profit distance expressed in pips.
+	/// Slow EMA period.
 	/// </summary>
-	public decimal TakeProfitPips
+	public int SlowPeriod
 	{
-		get => _takeProfitPips.Value;
-		set => _takeProfitPips.Value = value;
+		get => _slowPeriod.Value;
+		set => _slowPeriod.Value = value;
 	}
 
 	/// <summary>
-	/// Trailing stop distance expressed in pips.
+	/// Stop-loss distance in price steps.
 	/// </summary>
-	public decimal TrailingStopPips
+	public int StopLossPoints
 	{
-		get => _trailingStopPips.Value;
-		set => _trailingStopPips.Value = value;
+		get => _stopLossPoints.Value;
+		set => _stopLossPoints.Value = value;
 	}
 
 	/// <summary>
-	/// Minimal additional move before the trailing stop advances.
+	/// Take-profit distance in price steps.
 	/// </summary>
-	public decimal TrailingStepPips
+	public int TakeProfitPoints
 	{
-		get => _trailingStepPips.Value;
-		set => _trailingStepPips.Value = value;
-	}
-
-	/// <summary>
-	/// Enables verbose logging for fills and trailing updates.
-	/// </summary>
-	public bool LogTradeDetails
-	{
-		get => _logTradeDetails.Value;
-		set => _logTradeDetails.Value = value;
-	}
-
-	/// <summary>
-	/// Maximum allowed volume mismatch between hedge legs.
-	/// </summary>
-	public decimal VolumeTolerance
-	{
-		get => _volumeTolerance.Value;
-		set => _volumeTolerance.Value = value;
+		get => _takeProfitPoints.Value;
+		set => _takeProfitPoints.Value = value;
 	}
 
 	/// <summary>
@@ -116,48 +80,31 @@ public class DoublerStrategy : Strategy
 	/// </summary>
 	public DoublerStrategy()
 	{
-		_volumeTolerance = Param(nameof(VolumeTolerance), 0.0000001m)
-			.SetNotNegative()
-			.SetDisplay("Volume Tolerance", "Tolerance used when comparing hedge legs", "Trading");
-
-		_orderVolume = Param(nameof(OrderVolume), 1m)
+		_fastPeriod = Param(nameof(FastPeriod), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("Order Volume", "Volume for each hedge leg", "Trading")
-			
-			.SetOptimize(0.1m, 5m, 0.1m);
+			.SetDisplay("Fast Period", "Fast EMA period", "Indicator");
 
-		_stopLossPips = Param(nameof(StopLossPips), 150m)
+		_medPeriod = Param(nameof(MedPeriod), 50)
+			.SetGreaterThanZero()
+			.SetDisplay("Medium Period", "Medium EMA period", "Indicator");
+
+		_slowPeriod = Param(nameof(SlowPeriod), 200)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow Period", "Slow EMA period", "Indicator");
+
+		_stopLossPoints = Param(nameof(StopLossPoints), 150)
 			.SetNotNegative()
-			.SetDisplay("Stop Loss (pips)", "Stop-loss distance in pips", "Risk")
-			
-			.SetOptimize(0m, 500m, 10m);
+			.SetDisplay("Stop Loss", "Stop-loss distance in price steps", "Risk");
 
-		_takeProfitPips = Param(nameof(TakeProfitPips), 300m)
+		_takeProfitPoints = Param(nameof(TakeProfitPoints), 300)
 			.SetNotNegative()
-			.SetDisplay("Take Profit (pips)", "Take-profit distance in pips", "Risk")
-			
-			.SetOptimize(0m, 1000m, 10m);
-
-		_trailingStopPips = Param(nameof(TrailingStopPips), 5m)
-			.SetNotNegative()
-			.SetDisplay("Trailing Stop (pips)", "Trailing stop distance", "Risk")
-			
-			.SetOptimize(0m, 50m, 1m);
-
-		_trailingStepPips = Param(nameof(TrailingStepPips), 5m)
-			.SetNotNegative()
-			.SetDisplay("Trailing Step (pips)", "Minimal progress before trailing", "Risk")
-			
-			.SetOptimize(0m, 50m, 1m);
-
-		_logTradeDetails = Param(nameof(LogTradeDetails), false)
-			.SetDisplay("Log Trade Details", "Write fill and trailing diagnostics", "Logging");
+			.SetDisplay("Take Profit", "Take-profit distance in price steps", "Risk");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		yield return (Security, DataType.Level1);
+		yield return (Security, TimeSpan.FromMinutes(5).TimeFrame());
 	}
 
 	/// <inheritdoc />
@@ -165,15 +112,11 @@ public class DoublerStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_pendingOrders.Clear();
-		_longPosition = null;
-		_shortPosition = null;
-		_bestBid = 0m;
-		_bestAsk = 0m;
-		_hasBestBid = false;
-		_hasBestAsk = false;
-		_pendingEntryOrders = 0;
-		_isPairOpening = false;
+		_fast = null;
+		_med = null;
+		_slow = null;
+		_entryPrice = 0;
+		_cooldown = 0;
 	}
 
 	/// <inheritdoc />
@@ -181,414 +124,89 @@ public class DoublerStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		if (TrailingStopPips > 0m && TrailingStepPips <= 0m)
-			throw new InvalidOperationException("Trailing step must be positive when trailing stop is enabled.");
+		_fast = new ExponentialMovingAverage { Length = FastPeriod };
+		_med = new ExponentialMovingAverage { Length = MedPeriod };
+		_slow = new ExponentialMovingAverage { Length = SlowPeriod };
 
-		_pipValue = CalculatePipValue();
-		_stopLossOffset = StopLossPips > 0m ? StopLossPips * _pipValue : 0m;
-		_takeProfitOffset = TakeProfitPips > 0m ? TakeProfitPips * _pipValue : 0m;
-		_trailingStopOffset = TrailingStopPips > 0m ? TrailingStopPips * _pipValue : 0m;
-		_trailingStepOffset = TrailingStepPips > 0m ? TrailingStepPips * _pipValue : 0m;
-
-		StartProtection(null, null);
-
-		SubscribeLevel1()
-			.Bind(ProcessLevel1)
-			.Start();
+		var subscription = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
+		subscription.Bind(_fast, _med, _slow, ProcessCandle);
+		subscription.Start();
 	}
 
-	private void ProcessLevel1(Level1ChangeMessage message)
+	private void ProcessCandle(ICandleMessage candle, decimal fastValue, decimal medValue, decimal slowValue)
 	{
-		if (message.Changes.TryGetValue(Level1Fields.BestBidPrice, out var bidValue))
+		if (candle.State != CandleStates.Finished)
+			return;
+
+		if (!_fast.IsFormed || !_med.IsFormed || !_slow.IsFormed)
+			return;
+
+		if (_cooldown > 0)
 		{
-			var bid = (decimal)bidValue;
-			if (bid > 0m)
+			_cooldown--;
+			return;
+		}
+
+		var close = candle.ClosePrice;
+		var step = Security?.PriceStep ?? 1m;
+
+		// Check SL/TP
+		if (Position > 0 && _entryPrice > 0)
+		{
+			if (StopLossPoints > 0 && close <= _entryPrice - StopLossPoints * step)
 			{
-				_bestBid = bid;
-				_hasBestBid = true;
+				SellMarket();
+				_entryPrice = 0;
+				_cooldown = 100;
+				return;
+			}
+
+			if (TakeProfitPoints > 0 && close >= _entryPrice + TakeProfitPoints * step)
+			{
+				SellMarket();
+				_entryPrice = 0;
+				_cooldown = 100;
+				return;
+			}
+		}
+		else if (Position < 0 && _entryPrice > 0)
+		{
+			if (StopLossPoints > 0 && close >= _entryPrice + StopLossPoints * step)
+			{
+				BuyMarket();
+				_entryPrice = 0;
+				_cooldown = 100;
+				return;
+			}
+
+			if (TakeProfitPoints > 0 && close <= _entryPrice - TakeProfitPoints * step)
+			{
+				BuyMarket();
+				_entryPrice = 0;
+				_cooldown = 100;
+				return;
 			}
 		}
 
-		if (message.Changes.TryGetValue(Level1Fields.BestAskPrice, out var askValue))
+		// Double confirmation: both fast and med above slow for long
+		if (fastValue > slowValue && medValue > slowValue && Position <= 0)
 		{
-			var ask = (decimal)askValue;
-			if (ask > 0m)
-			{
-				_bestAsk = ask;
-				_hasBestAsk = true;
-			}
+			if (Position < 0)
+				BuyMarket();
+
+			BuyMarket();
+			_entryPrice = close;
+			_cooldown = 100;
 		}
-
-		ProcessStrategy();
-	}
-
-	private void ProcessStrategy()
-	{
-		if (!_hasBestBid || !_hasBestAsk)
-			return;
-
-		if (!HasOpenExposure())
+		// Double confirmation: both fast and med below slow for short
+		else if (fastValue < slowValue && medValue < slowValue && Position >= 0)
 		{
-			TryOpenPair();
-			return;
+			if (Position > 0)
+				SellMarket();
+
+			SellMarket();
+			_entryPrice = close;
+			_cooldown = 100;
 		}
-
-		if (_longPosition != null)
-			ManageLong(_longPosition);
-
-		if (_shortPosition != null)
-			ManageShort(_shortPosition);
-	}
-
-	private bool HasOpenExposure()
-	{
-		return _isPairOpening
-			|| (_longPosition is { IsActive: true })
-			|| (_shortPosition is { IsActive: true });
-	}
-
-	private void TryOpenPair()
-	{
-		if (_isPairOpening)
-			return;
-
-		if (Security == null || Portfolio == null)
-			return;
-
-		var volume = NormalizeVolume(OrderVolume);
-		if (volume <= 0m)
-			return;
-
-		_isPairOpening = true;
-
-		var longPosition = new PositionState { Side = Sides.Buy };
-		var longOrder = CreateMarketOrder(Sides.Buy, volume, "Doubler:LongEntry");
-		RegisterEntryOrder(longOrder, longPosition);
-
-		var shortPosition = new PositionState { Side = Sides.Sell };
-		var shortOrder = CreateMarketOrder(Sides.Sell, volume, "Doubler:ShortEntry");
-		RegisterEntryOrder(shortOrder, shortPosition);
-	}
-
-	private void RegisterEntryOrder(Order order, PositionState position)
-	{
-		_pendingOrders[order] = new PendingOrderInfo
-		{
-			Position = position,
-			IsEntry = true,
-			RemainingVolume = order.Volume,
-			CloseReasons = CloseReasons.None
-		};
-
-		_pendingEntryOrders++;
-
-		RegisterOrder(order);
-	}
-
-	private void RegisterExitOrder(Order order, PositionState position, CloseReasons reason)
-	{
-		_pendingOrders[order] = new PendingOrderInfo
-		{
-			Position = position,
-			IsEntry = false,
-			RemainingVolume = order.Volume,
-			CloseReasons = reason
-		};
-
-		RegisterOrder(order);
-	}
-
-	private Order CreateMarketOrder(Sides side, decimal volume, string comment)
-	{
-		return new Order
-		{
-			Security = Security,
-			Portfolio = Portfolio,
-			Volume = volume,
-			Side = side,
-			Type = OrderTypes.Market,
-			Comment = comment
-		};
-	}
-
-	private void ManageLong(PositionState position)
-	{
-		if (!position.IsActive || position.IsClosing)
-			return;
-
-		var price = _bestBid;
-		if (price <= 0m)
-			return;
-
-		if (position.StopPrice is decimal stop && stop > 0m && price <= stop)
-		{
-			ClosePosition(position, CloseReasons.StopLoss);
-			return;
-		}
-
-		if (position.TakePrice is decimal take && take > 0m && price >= take)
-		{
-			ClosePosition(position, CloseReasons.TakeProfit);
-			return;
-		}
-
-		UpdateLongTrailing(position, price);
-	}
-
-	private void ManageShort(PositionState position)
-	{
-		if (!position.IsActive || position.IsClosing)
-			return;
-
-		var price = _bestAsk;
-		if (price <= 0m)
-			return;
-
-		if (position.StopPrice is decimal stop && stop > 0m && price >= stop)
-		{
-			ClosePosition(position, CloseReasons.StopLoss);
-			return;
-		}
-
-		if (position.TakePrice is decimal take && take > 0m && price <= take)
-		{
-			ClosePosition(position, CloseReasons.TakeProfit);
-			return;
-		}
-
-		UpdateShortTrailing(position, price);
-	}
-
-	private void UpdateLongTrailing(PositionState position, decimal price)
-	{
-		if (_trailingStopOffset <= 0m)
-			return;
-
-		if (price > position.HighestPrice)
-			position.HighestPrice = price;
-
-		var profitDistance = price - position.EntryPrice;
-		if (profitDistance < _trailingStopOffset + _trailingStepOffset)
-			return;
-
-		var threshold = price - (_trailingStopOffset + _trailingStepOffset);
-		var currentStop = position.StopPrice ?? 0m;
-		if (currentStop <= 0m || currentStop < threshold)
-		{
-			var newStop = price - _trailingStopOffset;
-			position.StopPrice = newStop;
-			LogTrade($"Long trailing stop moved to {newStop}");
-		}
-	}
-
-	private void UpdateShortTrailing(PositionState position, decimal price)
-	{
-		if (_trailingStopOffset <= 0m)
-			return;
-
-		if (position.LowestPrice == 0m || price < position.LowestPrice)
-			position.LowestPrice = price;
-
-		var profitDistance = position.EntryPrice - price;
-		if (profitDistance < _trailingStopOffset + _trailingStepOffset)
-			return;
-
-		var threshold = price + (_trailingStopOffset + _trailingStepOffset);
-		var currentStop = position.StopPrice ?? 0m;
-		if (currentStop <= 0m || currentStop > threshold)
-		{
-			var newStop = price + _trailingStopOffset;
-			position.StopPrice = newStop;
-			LogTrade($"Short trailing stop moved to {newStop}");
-		}
-	}
-
-	private void ClosePosition(PositionState position, CloseReasons reason)
-	{
-		if (Security == null || Portfolio == null)
-			return;
-
-		if (position.IsClosing)
-			return;
-
-		var volume = NormalizeVolume(position.Volume);
-		if (volume <= 0m)
-		{
-			ReleasePosition(position);
-			return;
-		}
-
-		var exitSide = position.Side == Sides.Buy ? Sides.Sell : Sides.Buy;
-		var comment = reason == CloseReasons.TakeProfit ? "Doubler:TakeProfit" : "Doubler:StopLoss";
-
-		var order = CreateMarketOrder(exitSide, volume, comment);
-		position.IsClosing = true;
-		RegisterExitOrder(order, position, reason);
-	}
-
-	/// <inheritdoc />
-	protected override void OnOwnTradeReceived(MyTrade trade)
-	{
-		base.OnOwnTradeReceived(trade);
-
-		if (trade.Order == null)
-			return;
-
-		if (!_pendingOrders.TryGetValue(trade.Order, out var info))
-			return;
-
-		var tradeVolume = trade.Trade.Volume;
-		var tradePrice = trade.Trade.Price;
-
-		info.RemainingVolume -= tradeVolume;
-		info.FilledVolume += tradeVolume;
-		info.WeightedPrice += tradePrice * tradeVolume;
-
-		if (info.RemainingVolume > VolumeTolerance)
-			return;
-
-		_pendingOrders.Remove(trade.Order);
-
-		if (info.FilledVolume <= 0m)
-			return;
-
-		var averagePrice = info.WeightedPrice / info.FilledVolume;
-		var position = info.Position;
-
-		if (info.IsEntry)
-		{
-			if (position.Side == Sides.Buy)
-				_longPosition = position;
-			else
-				_shortPosition = position;
-
-			position.Volume = info.FilledVolume;
-			position.EntryPrice = averagePrice;
-			position.IsActive = true;
-			position.IsClosing = false;
-			position.HighestPrice = averagePrice;
-			position.LowestPrice = averagePrice;
-			position.StopPrice = _stopLossOffset > 0m
-				? (position.Side == Sides.Buy ? averagePrice - _stopLossOffset : averagePrice + _stopLossOffset)
-				: null;
-			position.TakePrice = _takeProfitOffset > 0m
-				? (position.Side == Sides.Buy ? averagePrice + _takeProfitOffset : averagePrice - _takeProfitOffset)
-				: null;
-
-			if (_pendingEntryOrders > 0)
-				_pendingEntryOrders--;
-
-			if (_pendingEntryOrders == 0)
-				_isPairOpening = false;
-
-			LogTrade($"{position.Side} entry filled at {averagePrice} with volume {info.FilledVolume}");
-		}
-		else
-		{
-			position.IsActive = false;
-			position.IsClosing = false;
-			position.Volume = 0m;
-			position.StopPrice = null;
-			position.TakePrice = null;
-
-			if (position.Side == Sides.Buy)
-				_longPosition = null;
-			else
-				_shortPosition = null;
-
-			LogTrade($"{position.Side} exit filled at {averagePrice} with volume {info.FilledVolume} ({info.CloseReasons})");
-		}
-	}
-
-	private void ReleasePosition(PositionState position)
-	{
-		position.IsActive = false;
-		position.IsClosing = false;
-		position.Volume = 0m;
-		position.StopPrice = null;
-		position.TakePrice = null;
-
-		if (position.Side == Sides.Buy)
-			_longPosition = null;
-		else
-			_shortPosition = null;
-	}
-
-	private decimal CalculatePipValue()
-	{
-		var security = Security ?? throw new InvalidOperationException("Security is not set.");
-		var step = security.PriceStep ?? 0m;
-		if (step <= 0m)
-			throw new InvalidOperationException("Price step is not specified for the security.");
-
-		var decimals = security.Decimals;
-		var adjust = decimals == 3 || decimals == 5 ? 10m : 1m;
-		return step * adjust;
-	}
-
-	private decimal NormalizeVolume(decimal volume)
-	{
-		if (volume <= 0m)
-			return 0m;
-
-		var security = Security ?? throw new InvalidOperationException("Security is not set.");
-
-		var minVolume = security.MinVolume ?? 0m;
-		if (minVolume > 0m && volume < minVolume - VolumeTolerance)
-			throw new InvalidOperationException($"Order volume {volume} is less than the minimal allowed {minVolume}.");
-
-		var maxVolume = security.MaxVolume ?? 0m;
-		if (maxVolume > 0m && volume > maxVolume + VolumeTolerance)
-			throw new InvalidOperationException($"Order volume {volume} exceeds the maximal allowed {maxVolume}.");
-
-		var step = security.VolumeStep ?? 0m;
-		if (step > 0m)
-		{
-			var ratio = Math.Round(volume / step);
-			var normalized = ratio * step;
-			if (Math.Abs(normalized - volume) > VolumeTolerance)
-				throw new InvalidOperationException($"Order volume {volume} is not aligned with the volume step {step}. Closest valid volume is {normalized}.");
-
-			volume = normalized;
-		}
-
-		return volume > 0m ? volume : 0m;
-	}
-
-	private void LogTrade(string message)
-	{
-		if (LogTradeDetails)
-			LogInfo(message);
-	}
-
-	private enum CloseReasons
-	{
-		None,
-		StopLoss,
-		TakeProfit
-	}
-
-	private sealed class PositionState
-	{
-		public required Sides Side { get; init; }
-		public decimal Volume { get; set; }
-		public decimal EntryPrice { get; set; }
-		public decimal? StopPrice { get; set; }
-		public decimal? TakePrice { get; set; }
-		public decimal HighestPrice { get; set; }
-		public decimal LowestPrice { get; set; }
-		public bool IsActive { get; set; }
-		public bool IsClosing { get; set; }
-	}
-
-	private sealed class PendingOrderInfo
-	{
-		public required PositionState Position { get; init; }
-		public bool IsEntry { get; init; }
-		public decimal RemainingVolume { get; set; }
-		public decimal FilledVolume { get; set; }
-		public decimal WeightedPrice { get; set; }
-		public CloseReasons CloseReasons { get; init; }
 	}
 }
-

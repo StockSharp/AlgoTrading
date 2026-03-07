@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -19,30 +16,15 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class CloseAllPositionsStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _profitThreshold;
-	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _smaPeriod;
+	private readonly StrategyParam<int> _stopLossPoints;
+	private readonly StrategyParam<int> _takeProfitPoints;
 
 	private SimpleMovingAverage _sma;
+
 	private decimal _entryPrice;
-
-	/// <summary>
-	/// Minimum floating profit that triggers position close.
-	/// </summary>
-	public decimal ProfitThreshold
-	{
-		get => _profitThreshold.Value;
-		set => _profitThreshold.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used to detect new bars.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
+	private decimal _prevSma;
+	private int _cooldown;
 
 	/// <summary>
 	/// SMA period for entry signals.
@@ -54,34 +36,56 @@ public class CloseAllPositionsStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Stop-loss distance in price steps.
+	/// </summary>
+	public int StopLossPoints
+	{
+		get => _stopLossPoints.Value;
+		set => _stopLossPoints.Value = value;
+	}
+
+	/// <summary>
+	/// Take-profit distance in price steps.
+	/// </summary>
+	public int TakeProfitPoints
+	{
+		get => _takeProfitPoints.Value;
+		set => _takeProfitPoints.Value = value;
+	}
+
+	/// <summary>
 	/// Initializes strategy parameters.
 	/// </summary>
 	public CloseAllPositionsStrategy()
 	{
-		_profitThreshold = Param(nameof(ProfitThreshold), 10m)
-			.SetDisplay("Profit Threshold", "Floating profit required to close position", "General")
-			.SetOptimize(5m, 50m, 5m);
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Candle series used for periodic checks", "General");
-
-		_smaPeriod = Param(nameof(SmaPeriod), 20)
+		_smaPeriod = Param(nameof(SmaPeriod), 100)
 			.SetGreaterThanZero()
 			.SetDisplay("SMA Period", "Moving average period for entry signals", "Indicators");
+
+		_stopLossPoints = Param(nameof(StopLossPoints), 200)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss", "Stop-loss distance in price steps", "Risk");
+
+		_takeProfitPoints = Param(nameof(TakeProfitPoints), 300)
+			.SetNotNegative()
+			.SetDisplay("Take Profit", "Take-profit distance in price steps", "Risk");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		yield return (Security, CandleType);
+		yield return (Security, TimeSpan.FromMinutes(5).TimeFrame());
 	}
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
+
 		_sma = null;
-		_entryPrice = 0m;
+		_entryPrice = 0;
+		_prevSma = 0;
+		_cooldown = 0;
 	}
 
 	/// <inheritdoc />
@@ -91,9 +95,9 @@ public class CloseAllPositionsStrategy : Strategy
 
 		_sma = new SimpleMovingAverage { Length = SmaPeriod };
 
-		SubscribeCandles(CandleType)
-			.Bind(_sma, ProcessCandle)
-			.Start();
+		var subscription = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
+		subscription.Bind(_sma, ProcessCandle);
+		subscription.Start();
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
@@ -101,57 +105,85 @@ public class CloseAllPositionsStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormed)
-			return;
-
-		var price = candle.ClosePrice;
-
-		// Check profit threshold for exit
-		if (Position != 0 && _entryPrice > 0m)
+		if (!_sma.IsFormed)
 		{
-			var pnl = Position > 0
-				? price - _entryPrice
-				: _entryPrice - price;
-
-			if (ProfitThreshold > 0m && pnl >= ProfitThreshold)
-			{
-				LogInfo($"Floating profit {pnl:F2} reached threshold {ProfitThreshold:F2}. Closing position.");
-
-				if (Position > 0)
-					SellMarket(Math.Abs(Position));
-				else
-					BuyMarket(Math.Abs(Position));
-
-				_entryPrice = 0m;
-				return;
-			}
-
-			// Also exit on large loss
-			if (pnl <= -ProfitThreshold * 2m)
-			{
-				if (Position > 0)
-					SellMarket(Math.Abs(Position));
-				else
-					BuyMarket(Math.Abs(Position));
-
-				_entryPrice = 0m;
-				return;
-			}
+			_prevSma = smaValue;
+			return;
 		}
 
-		// Entry: trend following
-		if (Position == 0)
+		if (_cooldown > 0)
 		{
-			if (price > smaValue)
-			{
-				BuyMarket();
-				_entryPrice = price;
-			}
-			else if (price < smaValue)
+			_cooldown--;
+			_prevSma = smaValue;
+			return;
+		}
+
+		var close = candle.ClosePrice;
+		var step = Security?.PriceStep ?? 1m;
+
+		// Check SL/TP
+		if (Position > 0 && _entryPrice > 0)
+		{
+			if (StopLossPoints > 0 && close <= _entryPrice - StopLossPoints * step)
 			{
 				SellMarket();
-				_entryPrice = price;
+				_entryPrice = 0;
+				_cooldown = 60;
+				_prevSma = smaValue;
+				return;
+			}
+
+			if (TakeProfitPoints > 0 && close >= _entryPrice + TakeProfitPoints * step)
+			{
+				SellMarket();
+				_entryPrice = 0;
+				_cooldown = 60;
+				_prevSma = smaValue;
+				return;
 			}
 		}
+		else if (Position < 0 && _entryPrice > 0)
+		{
+			if (StopLossPoints > 0 && close >= _entryPrice + StopLossPoints * step)
+			{
+				BuyMarket();
+				_entryPrice = 0;
+				_cooldown = 60;
+				_prevSma = smaValue;
+				return;
+			}
+
+			if (TakeProfitPoints > 0 && close <= _entryPrice - TakeProfitPoints * step)
+			{
+				BuyMarket();
+				_entryPrice = 0;
+				_cooldown = 60;
+				_prevSma = smaValue;
+				return;
+			}
+		}
+
+		// Crossover entry: price crosses above SMA -> buy
+		if (close > smaValue && candle.OpenPrice <= _prevSma && Position <= 0)
+		{
+			if (Position < 0)
+				BuyMarket();
+
+			BuyMarket();
+			_entryPrice = close;
+			_cooldown = 60;
+		}
+		// Price crosses below SMA -> sell
+		else if (close < smaValue && candle.OpenPrice >= _prevSma && Position >= 0)
+		{
+			if (Position > 0)
+				SellMarket();
+
+			SellMarket();
+			_entryPrice = close;
+			_cooldown = 60;
+		}
+
+		_prevSma = smaValue;
 	}
 }

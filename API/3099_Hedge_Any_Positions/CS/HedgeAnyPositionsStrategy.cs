@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,83 +11,67 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Hedging strategy converted from the "Hedge any positions" MQL5 expert.
-/// It opens an opposite trade once the current position loses a configurable number of pips.
+/// Hedge Any Positions strategy using ATR-based mean reversion.
+/// Enters long when price drops below EMA by ATR threshold, enters short on rally above.
+/// Uses stop-loss and take-profit for risk management.
 /// </summary>
 public class HedgeAnyPositionsStrategy : Strategy
 {
-	private sealed class HedgeLeg
-	{
-		public bool IsLong;
-		public decimal EntryPrice;
-		public decimal Volume;
-		public bool IsHedged;
-	}
+	private readonly StrategyParam<int> _emaPeriod;
+	private readonly StrategyParam<int> _atrPeriod;
+	private readonly StrategyParam<decimal> _atrMultiplier;
+	private readonly StrategyParam<int> _stopLossPoints;
+	private readonly StrategyParam<int> _takeProfitPoints;
 
-	private readonly List<HedgeLeg> _legs = new();
+	private ExponentialMovingAverage _ema;
+	private AverageTrueRange _atr;
 
-	private readonly StrategyParam<int> _losingPips;
-	private readonly StrategyParam<decimal> _lotCoefficient;
-	private readonly StrategyParam<bool> _autoPlaceInitialTrade;
-	private readonly StrategyParam<decimal> _initialVolume;
-	private readonly StrategyParam<Sides> _initialDirection;
-	private readonly StrategyParam<DataType> _candleType;
-
-	private decimal _pipSize;
-	private bool _initialTradePlaced;
+	private decimal _entryPrice;
+	private int _cooldown;
 
 	/// <summary>
-	/// Losing distance in pips required before a hedge order is triggered.
+	/// EMA period.
 	/// </summary>
-	public int LosingPips
+	public int EmaPeriod
 	{
-		get => _losingPips.Value;
-		set => _losingPips.Value = value;
+		get => _emaPeriod.Value;
+		set => _emaPeriod.Value = value;
 	}
 
 	/// <summary>
-	/// Multiplier applied to the original lot size when creating the hedge.
+	/// ATR period.
 	/// </summary>
-	public decimal LotCoefficient
+	public int AtrPeriod
 	{
-		get => _lotCoefficient.Value;
-		set => _lotCoefficient.Value = value;
+		get => _atrPeriod.Value;
+		set => _atrPeriod.Value = value;
 	}
 
 	/// <summary>
-	/// Enables automatic placement of the very first trade when the strategy starts.
+	/// Multiplier applied to ATR for entry threshold.
 	/// </summary>
-	public bool AutoPlaceInitialTrade
+	public decimal AtrMultiplier
 	{
-		get => _autoPlaceInitialTrade.Value;
-		set => _autoPlaceInitialTrade.Value = value;
+		get => _atrMultiplier.Value;
+		set => _atrMultiplier.Value = value;
 	}
 
 	/// <summary>
-	/// Volume for the optional initial trade placed at start-up.
+	/// Stop-loss distance in price steps.
 	/// </summary>
-	public decimal InitialVolume
+	public int StopLossPoints
 	{
-		get => _initialVolume.Value;
-		set => _initialVolume.Value = value;
+		get => _stopLossPoints.Value;
+		set => _stopLossPoints.Value = value;
 	}
 
 	/// <summary>
-	/// Direction for the optional initial trade.
+	/// Take-profit distance in price steps.
 	/// </summary>
-	public Sides InitialDirection
+	public int TakeProfitPoints
 	{
-		get => _initialDirection.Value;
-		set => _initialDirection.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used to evaluate price movements.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
+		get => _takeProfitPoints.Value;
+		set => _takeProfitPoints.Value = value;
 	}
 
 	/// <summary>
@@ -98,36 +79,42 @@ public class HedgeAnyPositionsStrategy : Strategy
 	/// </summary>
 	public HedgeAnyPositionsStrategy()
 	{
-		_losingPips = Param(nameof(LosingPips), 5)
+		_emaPeriod = Param(nameof(EmaPeriod), 100)
 			.SetGreaterThanZero()
-			.SetDisplay("Losing Distance (pips)", "Adverse move in pips required before hedging", "Risk")
-			;
+			.SetDisplay("EMA Period", "EMA period for mean price", "Indicator");
 
-		_lotCoefficient = Param(nameof(LotCoefficient), 2m)
+		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("Lot Multiplier", "Multiplier applied to the hedging order volume", "Risk")
-			;
+			.SetDisplay("ATR Period", "ATR calculation period", "Indicator");
 
-		_autoPlaceInitialTrade = Param(nameof(AutoPlaceInitialTrade), false)
-			.SetDisplay("Auto Place Initial Trade", "Automatically send the first order on start", "General");
-
-		_initialVolume = Param(nameof(InitialVolume), 0.1m)
+		_atrMultiplier = Param(nameof(AtrMultiplier), 2m)
 			.SetGreaterThanZero()
-			.SetDisplay("Initial Volume", "Volume for the optional first order", "Trading")
-			;
+			.SetDisplay("ATR Multiplier", "Multiplier for entry distance", "Indicator");
 
-		_initialDirection = Param(nameof(InitialDirection), Sides.Buy)
-			.SetDisplay("Initial Direction", "Direction used by the optional first order", "Trading");
+		_stopLossPoints = Param(nameof(StopLossPoints), 200)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss", "Stop-loss distance in price steps", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Primary candle series driving the hedging checks", "Data");
+		_takeProfitPoints = Param(nameof(TakeProfitPoints), 300)
+			.SetNotNegative()
+			.SetDisplay("Take Profit", "Take-profit distance in price steps", "Risk");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		yield return (Security, TimeSpan.FromMinutes(5).TimeFrame());
 	}
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		ResetState();
+
+		_ema = null;
+		_atr = null;
+		_entryPrice = 0;
+		_cooldown = 0;
 	}
 
 	/// <inheritdoc />
@@ -135,176 +122,89 @@ public class HedgeAnyPositionsStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		ResetState();
+		_ema = new ExponentialMovingAverage { Length = EmaPeriod };
+		_atr = new AverageTrueRange { Length = AtrPeriod };
 
-		_pipSize = CalculatePipSize();
-
-		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
-
-		StartProtection(null, null);
+		var subscription = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
+		subscription.Bind(_ema, _atr, ProcessCandle);
+		subscription.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal emaValue, decimal atrValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (_pipSize <= 0m)
-			_pipSize = CalculatePipSize();
-
-		TryPlaceInitialTrade(candle);
-
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!_ema.IsFormed || !_atr.IsFormed)
 			return;
 
-		var lossDistance = LosingPips * _pipSize;
-
-		if (lossDistance <= 0m)
-			return;
-
-		EvaluateHedges(candle.ClosePrice, lossDistance);
-	}
-
-	private void TryPlaceInitialTrade(ICandleMessage candle)
-	{
-		if (!AutoPlaceInitialTrade || _initialTradePlaced)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var volume = AdjustVolume(InitialVolume);
-
-		if (volume <= 0m)
-			return;
-
-		var order = InitialDirection == Sides.Buy
-			? BuyMarket(volume)
-			: SellMarket(volume);
-
-		if (order is null)
-			return;
-
-		_initialTradePlaced = true;
-
-		_legs.Add(new HedgeLeg
+		if (_cooldown > 0)
 		{
-			IsLong = InitialDirection == Sides.Buy,
-			EntryPrice = candle.ClosePrice,
-			Volume = volume,
-			IsHedged = false
-		});
-	}
+			_cooldown--;
+			return;
+		}
 
-	private void EvaluateHedges(decimal currentPrice, decimal lossDistance)
-	{
-		var initialCount = _legs.Count;
+		var close = candle.ClosePrice;
+		var step = Security?.PriceStep ?? 1m;
+		var threshold = atrValue * AtrMultiplier;
 
-		for (var i = 0; i < initialCount; i++)
+		// Check SL/TP
+		if (Position > 0 && _entryPrice > 0)
 		{
-			var leg = _legs[i];
-
-			if (leg.IsHedged)
-				continue;
-
-			if (leg.IsLong)
+			if (StopLossPoints > 0 && close <= _entryPrice - StopLossPoints * step)
 			{
-				if (leg.EntryPrice - currentPrice < lossDistance)
-					continue;
-
-				var hedgeVolume = AdjustVolume(leg.Volume * LotCoefficient);
-
-				if (hedgeVolume <= 0m)
-					continue;
-
-				if (SellMarket(hedgeVolume) is null)
-					continue;
-
-				leg.IsHedged = true;
-
-				_legs.Add(new HedgeLeg
-				{
-					IsLong = false,
-					EntryPrice = currentPrice,
-					Volume = hedgeVolume,
-					IsHedged = false
-				});
+				SellMarket();
+				_entryPrice = 0;
+				_cooldown = 80;
+				return;
 			}
-			else
+
+			if (TakeProfitPoints > 0 && close >= _entryPrice + TakeProfitPoints * step)
 			{
-				if (currentPrice - leg.EntryPrice < lossDistance)
-					continue;
-
-				var hedgeVolume = AdjustVolume(leg.Volume * LotCoefficient);
-
-				if (hedgeVolume <= 0m)
-					continue;
-
-				if (BuyMarket(hedgeVolume) is null)
-					continue;
-
-				leg.IsHedged = true;
-
-				_legs.Add(new HedgeLeg
-				{
-					IsLong = true,
-					EntryPrice = currentPrice,
-					Volume = hedgeVolume,
-					IsHedged = false
-				});
+				SellMarket();
+				_entryPrice = 0;
+				_cooldown = 80;
+				return;
 			}
 		}
-	}
+		else if (Position < 0 && _entryPrice > 0)
+		{
+			if (StopLossPoints > 0 && close >= _entryPrice + StopLossPoints * step)
+			{
+				BuyMarket();
+				_entryPrice = 0;
+				_cooldown = 80;
+				return;
+			}
 
-	private decimal AdjustVolume(decimal volume)
-	{
-		if (Security is null)
-			return volume;
+			if (TakeProfitPoints > 0 && close <= _entryPrice - TakeProfitPoints * step)
+			{
+				BuyMarket();
+				_entryPrice = 0;
+				_cooldown = 80;
+				return;
+			}
+		}
 
-		var step = Security.VolumeStep ?? 0m;
+		// Mean reversion: buy when price drops below EMA by threshold
+		if (close < emaValue - threshold && Position <= 0)
+		{
+			if (Position < 0)
+				BuyMarket();
 
-		if (step > 0m)
-			volume = step * Math.Floor(volume / step);
+			BuyMarket();
+			_entryPrice = close;
+			_cooldown = 80;
+		}
+		// Mean reversion: sell when price rallies above EMA by threshold
+		else if (close > emaValue + threshold && Position >= 0)
+		{
+			if (Position > 0)
+				SellMarket();
 
-		var minVolume = Security.MinVolume ?? 0m;
-
-		if (minVolume > 0m && volume < minVolume)
-			return 0m;
-
-		var maxVolume = Security.MaxVolume;
-
-		if (maxVolume != null && volume > maxVolume.Value)
-			volume = maxVolume.Value;
-
-		return volume;
-	}
-
-	private decimal CalculatePipSize()
-	{
-		if (Security is null)
-			return 0.0001m;
-
-		var step = Security.PriceStep ?? 0.0001m;
-		var decimals = Security.Decimals ?? GetDecimalsFromStep(step);
-		var factor = decimals == 3 || decimals == 5 ? 10m : 1m;
-
-		return step * factor;
-	}
-
-	private static int GetDecimalsFromStep(decimal step)
-	{
-		if (step <= 0m)
-			return 0;
-
-		var value = Math.Abs(Math.Log10((double)step));
-		return (int)Math.Round(value);
-	}
-
-	private void ResetState()
-	{
-		_legs.Clear();
-		_initialTradePlaced = false;
+			SellMarket();
+			_entryPrice = close;
+			_cooldown = 80;
+		}
 	}
 }
-

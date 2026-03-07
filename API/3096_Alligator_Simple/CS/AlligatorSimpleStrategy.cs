@@ -11,84 +11,25 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Simplified Bill Williams Alligator breakout strategy with pip-based risk management.
-/// Buys when the Lips, Teeth, and Jaw lines expand upward on the previous candle.
-/// Sells when the lines stack downward and manages optional stop-loss, take-profit, and trailing stop levels.
+/// Simplified Bill Williams Alligator breakout strategy.
+/// Buys when Lips > Teeth > Jaw (upward expansion).
+/// Sells when Lips less than Teeth less than Jaw (downward expansion).
+/// Uses stop-loss and take-profit for risk management.
 /// </summary>
 public class AlligatorSimpleStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _orderVolume;
-	private readonly StrategyParam<int> _stopLossPips;
-	private readonly StrategyParam<int> _takeProfitPips;
-	private readonly StrategyParam<int> _trailingStopPips;
-	private readonly StrategyParam<int> _trailingStepPips;
 	private readonly StrategyParam<int> _jawPeriod;
-	private readonly StrategyParam<int> _jawShift;
 	private readonly StrategyParam<int> _teethPeriod;
-	private readonly StrategyParam<int> _teethShift;
 	private readonly StrategyParam<int> _lipsPeriod;
-	private readonly StrategyParam<int> _lipsShift;
-	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _stopLossPoints;
+	private readonly StrategyParam<int> _takeProfitPoints;
 
-	private SmoothedMovingAverage _jaw = null!;
-	private SmoothedMovingAverage _teeth = null!;
-	private SmoothedMovingAverage _lips = null!;
+	private SmoothedMovingAverage _jaw;
+	private SmoothedMovingAverage _teeth;
+	private SmoothedMovingAverage _lips;
 
-	private decimal _pipSize;
 	private decimal _entryPrice;
-	private decimal _prevPosition;
-
-	private decimal? _longStopPrice;
-	private decimal? _longTakePrice;
-	private decimal? _shortStopPrice;
-	private decimal? _shortTakePrice;
-	private bool _longExitRequested;
-	private bool _shortExitRequested;
-
-	/// <summary>
-	/// Trade volume expressed in lots or contracts.
-	/// </summary>
-	public decimal OrderVolume
-	{
-		get => _orderVolume.Value;
-		set => _orderVolume.Value = value;
-	}
-
-	/// <summary>
-	/// Stop-loss distance in pips converted using the symbol price step.
-	/// </summary>
-	public int StopLossPips
-	{
-		get => _stopLossPips.Value;
-		set => _stopLossPips.Value = value;
-	}
-
-	/// <summary>
-	/// Take-profit distance in pips. Zero disables the profit target.
-	/// </summary>
-	public int TakeProfitPips
-	{
-		get => _takeProfitPips.Value;
-		set => _takeProfitPips.Value = value;
-	}
-
-	/// <summary>
-	/// Trailing stop distance in pips. Zero disables trailing logic.
-	/// </summary>
-	public int TrailingStopPips
-	{
-		get => _trailingStopPips.Value;
-		set => _trailingStopPips.Value = value;
-	}
-
-	/// <summary>
-	/// Additional pip move required before advancing the trailing stop.
-	/// </summary>
-	public int TrailingStepPips
-	{
-		get => _trailingStepPips.Value;
-		set => _trailingStepPips.Value = value;
-	}
+	private int _cooldown;
 
 	/// <summary>
 	/// Period for the Alligator jaw (blue) smoothed moving average.
@@ -97,15 +38,6 @@ public class AlligatorSimpleStrategy : Strategy
 	{
 		get => _jawPeriod.Value;
 		set => _jawPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Forward shift applied to the jaw value when evaluating signals.
-	/// </summary>
-	public int JawShift
-	{
-		get => _jawShift.Value;
-		set => _jawShift.Value = value;
 	}
 
 	/// <summary>
@@ -118,15 +50,6 @@ public class AlligatorSimpleStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Forward shift applied to the teeth value when evaluating signals.
-	/// </summary>
-	public int TeethShift
-	{
-		get => _teethShift.Value;
-		set => _teethShift.Value = value;
-	}
-
-	/// <summary>
 	/// Period for the Alligator lips (green) smoothed moving average.
 	/// </summary>
 	public int LipsPeriod
@@ -136,21 +59,21 @@ public class AlligatorSimpleStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Forward shift applied to the lips value when evaluating signals.
+	/// Stop-loss distance in price steps.
 	/// </summary>
-	public int LipsShift
+	public int StopLossPoints
 	{
-		get => _lipsShift.Value;
-		set => _lipsShift.Value = value;
+		get => _stopLossPoints.Value;
+		set => _stopLossPoints.Value = value;
 	}
 
 	/// <summary>
-	/// Candle data type used for calculations.
+	/// Take-profit distance in price steps.
 	/// </summary>
-	public DataType CandleType
+	public int TakeProfitPoints
 	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
+		get => _takeProfitPoints.Value;
+		set => _takeProfitPoints.Value = value;
 	}
 
 	/// <summary>
@@ -158,51 +81,31 @@ public class AlligatorSimpleStrategy : Strategy
 	/// </summary>
 	public AlligatorSimpleStrategy()
 	{
-		_orderVolume = Param(nameof(OrderVolume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Order Volume", "Trade size in lots or contracts", "Trading");
-
-		_stopLossPips = Param(nameof(StopLossPips), 100)
-			.SetDisplay("Stop Loss (pips)", "Initial stop-loss distance", "Risk");
-
-		_takeProfitPips = Param(nameof(TakeProfitPips), 100)
-			.SetDisplay("Take Profit (pips)", "Initial take-profit distance", "Risk");
-
-		_trailingStopPips = Param(nameof(TrailingStopPips), 5)
-			.SetDisplay("Trailing Stop (pips)", "Trailing stop distance", "Risk");
-
-		_trailingStepPips = Param(nameof(TrailingStepPips), 5)
-			.SetDisplay("Trailing Step (pips)", "Extra distance before trailing adjusts", "Risk");
-
 		_jawPeriod = Param(nameof(JawPeriod), 13)
 			.SetGreaterThanZero()
 			.SetDisplay("Jaw Period", "Alligator jaw period", "Alligator");
-
-		_jawShift = Param(nameof(JawShift), 8)
-			.SetDisplay("Jaw Shift", "Forward shift for the jaw", "Alligator");
 
 		_teethPeriod = Param(nameof(TeethPeriod), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("Teeth Period", "Alligator teeth period", "Alligator");
 
-		_teethShift = Param(nameof(TeethShift), 5)
-			.SetDisplay("Teeth Shift", "Forward shift for the teeth", "Alligator");
-
 		_lipsPeriod = Param(nameof(LipsPeriod), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Lips Period", "Alligator lips period", "Alligator");
 
-		_lipsShift = Param(nameof(LipsShift), 3)
-			.SetDisplay("Lips Shift", "Forward shift for the lips", "Alligator");
+		_stopLossPoints = Param(nameof(StopLossPoints), 200)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss", "Stop-loss distance in price steps", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Time frame for candle subscription", "General");
+		_takeProfitPoints = Param(nameof(TakeProfitPoints), 400)
+			.SetNotNegative()
+			.SetDisplay("Take Profit", "Take-profit distance in price steps", "Risk");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return [(Security, CandleType)];
+		yield return (Security, TimeSpan.FromMinutes(5).TimeFrame());
 	}
 
 	/// <inheritdoc />
@@ -210,16 +113,11 @@ public class AlligatorSimpleStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_pipSize = 0m;
-		_entryPrice = 0m;
-		_prevPosition = 0m;
-
-		_longStopPrice = null;
-		_longTakePrice = null;
-		_shortStopPrice = null;
-		_shortTakePrice = null;
-		_longExitRequested = false;
-		_shortExitRequested = false;
+		_jaw = null;
+		_teeth = null;
+		_lips = null;
+		_entryPrice = 0;
+		_cooldown = 0;
 	}
 
 	/// <inheritdoc />
@@ -227,215 +125,89 @@ public class AlligatorSimpleStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		if (TrailingStopPips > 0 && TrailingStepPips <= 0)
-			throw new InvalidOperationException("Trailing step must be positive when trailing stop is enabled.");
-
 		_jaw = new SmoothedMovingAverage { Length = JawPeriod };
 		_teeth = new SmoothedMovingAverage { Length = TeethPeriod };
 		_lips = new SmoothedMovingAverage { Length = LipsPeriod };
 
-		_pipSize = CalculatePipSize();
-
-		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(ProcessCandle)
-			.Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, _jaw);
-			DrawIndicator(area, _teeth);
-			DrawIndicator(area, _lips);
-			DrawOwnTrades(area);
-		}
+		var subscription = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
+		subscription.Bind(_jaw, _teeth, _lips, ProcessCandle);
+		subscription.Start();
 	}
 
-	/// <inheritdoc />
-	protected override void OnPositionReceived(Position position)
-	{
-		base.OnPositionReceived(position);
-
-		var delta = Position - _prevPosition;
-		_prevPosition = Position;
-
-		if (Position == 0)
-		{
-			_longStopPrice = null;
-			_longTakePrice = null;
-			_shortStopPrice = null;
-			_shortTakePrice = null;
-			_longExitRequested = false;
-			_shortExitRequested = false;
-			return;
-		}
-
-		var entryPrice = _entryPrice;
-
-		if (Position > 0 && delta > 0)
-		{
-			_longStopPrice = StopLossPips > 0 ? entryPrice - StopLossPips * _pipSize : (decimal?)null;
-			_longTakePrice = TakeProfitPips > 0 ? entryPrice + TakeProfitPips * _pipSize : (decimal?)null;
-			_longExitRequested = false;
-			_shortStopPrice = null;
-			_shortTakePrice = null;
-			_shortExitRequested = false;
-		}
-		else if (Position < 0 && delta < 0)
-		{
-			_shortStopPrice = StopLossPips > 0 ? entryPrice + StopLossPips * _pipSize : (decimal?)null;
-			_shortTakePrice = TakeProfitPips > 0 ? entryPrice - TakeProfitPips * _pipSize : (decimal?)null;
-			_shortExitRequested = false;
-			_longStopPrice = null;
-			_longTakePrice = null;
-			_longExitRequested = false;
-		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal jawValue, decimal teethValue, decimal lipsValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (Position > 0)
-		{
-			ManageLong(candle);
-		}
-		else if (Position < 0)
-		{
-			ManageShort(candle);
-		}
-
-		var median = (candle.HighPrice + candle.LowPrice) / 2m;
-
-		var jawValue = _jaw.Process(new DecimalIndicatorValue(_jaw, median, candle.OpenTime) { IsFinal = true });
-		var teethValue = _teeth.Process(new DecimalIndicatorValue(_teeth, median, candle.OpenTime) { IsFinal = true });
-		var lipsValue = _lips.Process(new DecimalIndicatorValue(_lips, median, candle.OpenTime) { IsFinal = true });
-
-		var jaw = jawValue.ToDecimal();
-		var teeth = teethValue.ToDecimal();
-		var lips = lipsValue.ToDecimal();
-
 		if (!_jaw.IsFormed || !_teeth.IsFormed || !_lips.IsFormed)
 			return;
 
-		if (Position != 0)
+		if (_cooldown > 0)
+		{
+			_cooldown--;
 			return;
+		}
+
+		var close = candle.ClosePrice;
+		var step = Security?.PriceStep ?? 1m;
+
+		// Check SL/TP for existing positions
+		if (Position > 0 && _entryPrice > 0)
+		{
+			if (StopLossPoints > 0 && close <= _entryPrice - StopLossPoints * step)
+			{
+				SellMarket();
+				_entryPrice = 0;
+				_cooldown = 110;
+				return;
+			}
+
+			if (TakeProfitPoints > 0 && close >= _entryPrice + TakeProfitPoints * step)
+			{
+				SellMarket();
+				_entryPrice = 0;
+				_cooldown = 110;
+				return;
+			}
+		}
+		else if (Position < 0 && _entryPrice > 0)
+		{
+			if (StopLossPoints > 0 && close >= _entryPrice + StopLossPoints * step)
+			{
+				BuyMarket();
+				_entryPrice = 0;
+				_cooldown = 110;
+				return;
+			}
+
+			if (TakeProfitPoints > 0 && close <= _entryPrice - TakeProfitPoints * step)
+			{
+				BuyMarket();
+				_entryPrice = 0;
+				_cooldown = 110;
+				return;
+			}
+		}
 
 		// Buy when lips > teeth > jaw (Alligator opening upward)
-		if (lips > teeth && teeth > jaw)
+		if (lipsValue > teethValue && teethValue > jawValue && Position <= 0)
 		{
-			_entryPrice = candle.ClosePrice;
-			BuyMarket(volume: OrderVolume);
+			if (Position < 0)
+				BuyMarket();
+
+			BuyMarket();
+			_entryPrice = close;
+			_cooldown = 110;
 		}
 		// Sell when lips < teeth < jaw (Alligator opening downward)
-		else if (lips < teeth && teeth < jaw)
+		else if (lipsValue < teethValue && teethValue < jawValue && Position >= 0)
 		{
-			_entryPrice = candle.ClosePrice;
-			SellMarket(volume: OrderVolume);
+			if (Position > 0)
+				SellMarket();
+
+			SellMarket();
+			_entryPrice = close;
+			_cooldown = 110;
 		}
-	}
-
-	private void ManageLong(ICandleMessage candle)
-	{
-		if (_longTakePrice is decimal take && candle.HighPrice >= take)
-		{
-			TryCloseLong();
-			return;
-		}
-
-		if (TrailingStopPips > 0)
-		{
-			var trailDistance = TrailingStopPips * _pipSize;
-			if (trailDistance > 0m)
-			{
-				var stepDistance = TrailingStepPips > 0 ? TrailingStepPips * _pipSize : 0m;
-				var referencePrice = Math.Max(candle.HighPrice, candle.ClosePrice);
-
-				if (referencePrice - _entryPrice > trailDistance + stepDistance)
-				{
-					var desiredStop = referencePrice - trailDistance;
-					var threshold = stepDistance > 0m ? desiredStop - stepDistance : desiredStop;
-
-					if (_longStopPrice is not decimal currentStop || currentStop < threshold)
-					{
-						_longStopPrice = desiredStop;
-					}
-				}
-			}
-		}
-
-		if (_longStopPrice is decimal stop && candle.LowPrice <= stop)
-		{
-			TryCloseLong();
-		}
-	}
-
-	private void ManageShort(ICandleMessage candle)
-	{
-		if (_shortTakePrice is decimal take && candle.LowPrice <= take)
-		{
-			TryCloseShort();
-			return;
-		}
-
-		if (TrailingStopPips > 0)
-		{
-			var trailDistance = TrailingStopPips * _pipSize;
-			if (trailDistance > 0m)
-			{
-				var stepDistance = TrailingStepPips > 0 ? TrailingStepPips * _pipSize : 0m;
-				var referencePrice = Math.Min(candle.LowPrice, candle.ClosePrice);
-
-				if (_entryPrice - referencePrice > trailDistance + stepDistance)
-				{
-					var desiredStop = referencePrice + trailDistance;
-					var threshold = stepDistance > 0m ? desiredStop + stepDistance : desiredStop;
-
-					if (_shortStopPrice is not decimal currentStop || currentStop > threshold)
-					{
-						_shortStopPrice = desiredStop;
-					}
-				}
-			}
-		}
-
-		if (_shortStopPrice is decimal stop && candle.HighPrice >= stop)
-		{
-			TryCloseShort();
-		}
-	}
-
-	private void TryCloseLong()
-	{
-		if (_longExitRequested)
-			return;
-
-		_longExitRequested = true;
-		SellMarket(volume: Position);
-	}
-
-	private void TryCloseShort()
-	{
-		if (_shortExitRequested)
-			return;
-
-		_shortExitRequested = true;
-		BuyMarket(volume: Math.Abs(Position));
-	}
-
-	private decimal CalculatePipSize()
-	{
-		var step = Security?.PriceStep ?? 0m;
-		if (step <= 0m)
-			return 1m;
-
-		var decimals = Security?.Decimals ?? 0;
-		if (decimals == 3 || decimals == 5)
-			return step * 10m;
-
-		return step;
 	}
 }
-
