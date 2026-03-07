@@ -1,17 +1,14 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
-
-
 
 /// <summary>
 /// Strategy based on MACD histogram as an approximation of the Ergodic Ticks Volume OSMA indicator.
@@ -23,9 +20,9 @@ public class ErgodicTicksVolumeOsmaStrategy : Strategy
 	private readonly StrategyParam<int> _signalLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private MovingAverageConvergenceDivergenceSignal _macd;
 	private decimal _prevHist;
 	private decimal _prevPrevHist;
+	private int _candleCount;
 
 	public int FastLength { get => _fastLength.Value; set => _fastLength.Value = value; }
 	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
@@ -50,8 +47,9 @@ public class ErgodicTicksVolumeOsmaStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevHist = 0m;
-		_prevPrevHist = 0m;
+		_prevHist = default;
+		_prevPrevHist = default;
+		_candleCount = default;
 	}
 
 	/// <inheritdoc />
@@ -59,10 +57,7 @@ public class ErgodicTicksVolumeOsmaStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_prevHist = 0m;
-		_prevPrevHist = 0m;
-
-		_macd = new MovingAverageConvergenceDivergenceSignal(
+		var macd = new MovingAverageConvergenceDivergenceSignal(
 			new MovingAverageConvergenceDivergence
 			{
 				ShortMa = { Length = FastLength },
@@ -73,31 +68,30 @@ public class ErgodicTicksVolumeOsmaStrategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_macd, ProcessCandle)
+			.BindEx(macd, ProcessCandle)
 			.Start();
-
-		StartProtection(null, null);
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal macdVal)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue value)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_macd.IsFormed)
+		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var signalVal = _macd.SignalMa.GetCurrentValue();
+		if (value is not MovingAverageConvergenceDivergenceSignalValue macdTyped)
+			return;
+
+		if (macdTyped.Macd is not decimal macdVal || macdTyped.Signal is not decimal signalVal)
+			return;
+
 		var hist = macdVal - signalVal;
 
-		if (_prevPrevHist == 0m)
+		_candleCount++;
+		if (_candleCount <= 2)
 		{
-			_prevPrevHist = hist;
-			return;
-		}
-
-		if (_prevHist == 0m)
-		{
+			_prevPrevHist = _prevHist;
 			_prevHist = hist;
 			return;
 		}

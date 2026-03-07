@@ -1,9 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -32,7 +30,7 @@ public class ErgodicTicksVolumeIndicatorStrategy : Strategy
 
 	public ErgodicTicksVolumeIndicatorStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 
 		_firstLength = Param(nameof(FirstLength), 25)
@@ -79,14 +77,6 @@ public class ErgodicTicksVolumeIndicatorStrategy : Strategy
 		subscription
 			.BindEx(tsi, ProcessCandle)
 			.Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, tsi);
-			DrawOwnTrades(area);
-		}
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue value)

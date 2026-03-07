@@ -1,12 +1,8 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -22,10 +18,12 @@ public class PreviousHighLowBreakoutStrategy : Strategy
 	private readonly StrategyParam<decimal> _stopLoss;
 	private readonly StrategyParam<decimal> _takeProfit;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _cooldownCandles;
 
 	private decimal _previousHigh;
 	private decimal _previousLow;
 	private bool _isFirstCandle = true;
+	private int _cooldown;
 
 	/// <summary>
 	/// Stop loss in price points.
@@ -55,24 +53,32 @@ public class PreviousHighLowBreakoutStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Cooldown period between trades in candles.
+	/// </summary>
+	public int CooldownCandles
+	{
+		get => _cooldownCandles.Value;
+		set => _cooldownCandles.Value = value;
+	}
+
+	/// <summary>
 	/// Initializes strategy parameters.
 	/// </summary>
 	public PreviousHighLowBreakoutStrategy()
 	{
 		_stopLoss = Param(nameof(StopLoss), 50m)
 			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss", "Stop loss in price points", "Risk Management")
-			
-			.SetOptimize(20m, 100m, 10m);
+			.SetDisplay("Stop Loss", "Stop loss in price points", "Risk Management");
 
 		_takeProfit = Param(nameof(TakeProfit), 1000m)
 			.SetGreaterThanZero()
-			.SetDisplay("Take Profit", "Take profit in price points", "Risk Management")
-			
-			.SetOptimize(100m, 2000m, 100m);
+			.SetDisplay("Take Profit", "Take profit in price points", "Risk Management");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for candles", "General");
+
+		_cooldownCandles = Param(nameof(CooldownCandles), 300)
+			.SetDisplay("Cooldown", "Cooldown between trades in candles", "General");
 	}
 
 	/// <inheritdoc />
@@ -82,37 +88,33 @@ public class PreviousHighLowBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_previousHigh = default;
+		_previousLow = default;
+		_isFirstCandle = true;
+		_cooldown = default;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		// Subscribe to candles and process them.
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
 
-		// Enable trailing stop and take profit protection.
 		StartProtection(
-			new Unit(TakeProfit, UnitTypes.Absolute),
 			new Unit(StopLoss, UnitTypes.Absolute),
-			isStopTrailing: true,
-			useMarketOrders: true);
-
-		// Setup chart visualization if available.
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawOwnTrades(area);
-		}
+			new Unit(TakeProfit, UnitTypes.Absolute));
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
 	{
-		// Work only with finished candles.
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Store the first candle values and wait for the next one.
 		if (_isFirstCandle)
 		{
 			_previousHigh = candle.HighPrice;
@@ -121,22 +123,31 @@ public class PreviousHighLowBreakoutStrategy : Strategy
 			return;
 		}
 
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+			_previousHigh = candle.HighPrice;
+			_previousLow = candle.LowPrice;
+			return;
+		}
+
 		var price = candle.ClosePrice;
 
-		// Breakout above previous high.
 		if (price > _previousHigh && Position <= 0)
 		{
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
+			if (Position < 0)
+				BuyMarket();
+			BuyMarket();
+			_cooldown = CooldownCandles;
 		}
-		// Breakout below previous low.
 		else if (price < _previousLow && Position >= 0)
 		{
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
+			if (Position > 0)
+				SellMarket();
+			SellMarket();
+			_cooldown = CooldownCandles;
 		}
 
-		// Update previous candle data for next iteration.
 		_previousHigh = candle.HighPrice;
 		_previousLow = candle.LowPrice;
 	}

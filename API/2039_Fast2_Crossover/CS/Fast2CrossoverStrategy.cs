@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,6 +12,7 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Trading strategy based on Fast2 histogram moving average crossover.
+/// Uses weighted candle body differences with WMA smoothing.
 /// </summary>
 public class Fast2CrossoverStrategy : Strategy
 {
@@ -22,47 +20,28 @@ public class Fast2CrossoverStrategy : Strategy
 	private readonly StrategyParam<int> _fastLength;
 	private readonly StrategyParam<int> _slowLength;
 
-	private WeightedMovingAverage _fast = null!;
-	private WeightedMovingAverage _slow = null!;
-
-	private bool _hasPrevDiff1;
-	private bool _hasPrevDiff2;
-	private decimal _prevDiff1;
-	private decimal _prevDiff2;
-
-	private bool _hasPrevAverage;
 	private decimal _prevFast;
 	private decimal _prevSlow;
+	private bool _hasPrevAverage;
+	private decimal _prevDiff1;
+	private decimal _prevDiff2;
+	private bool _hasPrevDiff1;
+	private bool _hasPrevDiff2;
 
 	/// <summary>Candle type.</summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	/// <summary>Fast WMA length.</summary>
-	public int FastLength
-	{
-		get => _fastLength.Value;
-		set => _fastLength.Value = value;
-	}
+	public int FastLength { get => _fastLength.Value; set => _fastLength.Value = value; }
 
 	/// <summary>Slow WMA length.</summary>
-	public int SlowLength
-	{
-		get => _slowLength.Value;
-		set => _slowLength.Value = value;
-	}
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
 
-	/// <summary>
-	/// Initializes parameters.
-	/// </summary>
 	public Fast2CrossoverStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
-		_fastLength = Param(nameof(FastLength), 3).SetDisplay("Fast length", "Fast length", "General");
-		_slowLength = Param(nameof(SlowLength), 9).SetDisplay("Slow length", "Slow length", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame());
+		_fastLength = Param(nameof(FastLength), 5).SetDisplay("Fast length", "Fast length", "General");
+		_slowLength = Param(nameof(SlowLength), 13).SetDisplay("Slow length", "Slow length", "General");
 	}
 
 	/// <inheritdoc />
@@ -72,74 +51,70 @@ public class Fast2CrossoverStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFast = default;
+		_prevSlow = default;
+		_hasPrevAverage = default;
+		_prevDiff1 = default;
+		_prevDiff2 = default;
+		_hasPrevDiff1 = default;
+		_hasPrevDiff2 = default;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_fast = new WeightedMovingAverage { Length = FastLength };
-		_slow = new WeightedMovingAverage { Length = SlowLength };
+		var fast = new WeightedMovingAverage { Length = FastLength };
+		var slow = new WeightedMovingAverage { Length = SlowLength };
+		Indicators.Add(fast);
+		Indicators.Add(slow);
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
-
-		StartProtection(null, null);
-
-		var area = CreateChartArea();
-		if (area != null)
+		subscription.Bind(candle =>
 		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, _fast);
-			DrawIndicator(area, _slow);
-			DrawOwnTrades(area);
-		}
-	}
+			if (candle.State != CandleStates.Finished)
+				return;
 
-	private void ProcessCandle(ICandleMessage candle)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
+			var diff = candle.ClosePrice - candle.OpenPrice;
+			var hist = diff;
+			if (_hasPrevDiff1)
+				hist += _prevDiff1 / (decimal)Math.Sqrt(2);
+			if (_hasPrevDiff2)
+				hist += _prevDiff2 / (decimal)Math.Sqrt(3);
 
-		// Calculate histogram from candle bodies with square-root weights.
-		var diff = candle.ClosePrice - candle.OpenPrice;
-		var hist = diff;
-		if (_hasPrevDiff1)
-			hist += _prevDiff1 / (decimal)Math.Sqrt(2);
-		if (_hasPrevDiff2)
-			hist += _prevDiff2 / (decimal)Math.Sqrt(3);
+			var fastValue = fast.Process(hist, candle.OpenTime, true);
+			var slowValue = slow.Process(hist, candle.OpenTime, true);
 
-		var fastValue = _fast.Process(hist, candle.OpenTime, true);
-		var slowValue = _slow.Process(hist, candle.OpenTime, true);
-
-		if (fastValue.IsEmpty || slowValue.IsEmpty || !_fast.IsFormed || !_slow.IsFormed)
-		{
 			_prevDiff2 = _prevDiff1;
 			_prevDiff1 = diff;
 			_hasPrevDiff2 = _hasPrevDiff1;
 			_hasPrevDiff1 = true;
-			return;
-		}
 
-		var fast = fastValue.ToDecimal();
-		var slow = slowValue.ToDecimal();
+			if (fastValue.IsEmpty || slowValue.IsEmpty || !fast.IsFormed || !slow.IsFormed)
+				return;
 
-		if (_hasPrevAverage)
-		{
-			// Cross when fast goes below slow -> enter long.
-			if (_prevFast > _prevSlow && fast < slow && Position <= 0)
-				BuyMarket();
+			if (!IsFormedAndOnlineAndAllowTrading())
+				return;
 
-			// Cross when fast goes above slow -> enter short.
-			if (_prevFast < _prevSlow && fast > slow && Position >= 0)
-				SellMarket();
-		}
+			var f = fastValue.ToDecimal();
+			var s = slowValue.ToDecimal();
 
-		_prevFast = fast;
-		_prevSlow = slow;
-		_hasPrevAverage = true;
+			if (_hasPrevAverage)
+			{
+				if (_prevFast > _prevSlow && f < s && Position <= 0)
+					BuyMarket();
 
-		_prevDiff2 = _prevDiff1;
-		_prevDiff1 = diff;
-		_hasPrevDiff2 = _hasPrevDiff1;
-		_hasPrevDiff1 = true;
+				if (_prevFast < _prevSlow && f > s && Position >= 0)
+					SellMarket();
+			}
+
+			_prevFast = f;
+			_prevSlow = s;
+			_hasPrevAverage = true;
+		}).Start();
 	}
 }

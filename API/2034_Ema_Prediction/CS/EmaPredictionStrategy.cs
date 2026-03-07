@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -23,13 +20,7 @@ public class EmaPredictionStrategy : Strategy
 	private readonly StrategyParam<int> _slowPeriod;
 	private readonly StrategyParam<decimal> _takeProfitTicks;
 	private readonly StrategyParam<decimal> _stopLossTicks;
-	private readonly StrategyParam<bool> _buyOpen;
-	private readonly StrategyParam<bool> _sellOpen;
-	private readonly StrategyParam<bool> _buyClose;
-	private readonly StrategyParam<bool> _sellClose;
 
-	private ExponentialMovingAverage _fast;
-	private ExponentialMovingAverage _slow;
 	private decimal _prevFast;
 	private decimal _prevSlow;
 	private bool _initialized;
@@ -80,54 +71,18 @@ public class EmaPredictionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Allow long entries.
-	/// </summary>
-	public bool BuyOpen
-	{
-		get => _buyOpen.Value;
-		set => _buyOpen.Value = value;
-	}
-
-	/// <summary>
-	/// Allow short entries.
-	/// </summary>
-	public bool SellOpen
-	{
-		get => _sellOpen.Value;
-		set => _sellOpen.Value = value;
-	}
-
-	/// <summary>
-	/// Allow closing long positions on sell signals.
-	/// </summary>
-	public bool BuyClose
-	{
-		get => _buyClose.Value;
-		set => _buyClose.Value = value;
-	}
-
-	/// <summary>
-	/// Allow closing short positions on buy signals.
-	/// </summary>
-	public bool SellClose
-	{
-		get => _sellClose.Value;
-		set => _sellClose.Value = value;
-	}
-
-	/// <summary>
 	/// Initializes a new instance of the strategy.
 	/// </summary>
 	public EmaPredictionStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for calculations", "General");
 
-		_fastPeriod = Param(nameof(FastPeriod), 1)
+		_fastPeriod = Param(nameof(FastPeriod), 5)
 			.SetDisplay("Fast EMA Period", "Period of fast EMA", "Indicator")
 			.SetGreaterThanZero();
 
-		_slowPeriod = Param(nameof(SlowPeriod), 2)
+		_slowPeriod = Param(nameof(SlowPeriod), 20)
 			.SetDisplay("Slow EMA Period", "Period of slow EMA", "Indicator")
 			.SetGreaterThanZero();
 
@@ -138,18 +93,6 @@ public class EmaPredictionStrategy : Strategy
 		_stopLossTicks = Param(nameof(StopLossTicks), 1000m)
 			.SetDisplay("Stop Loss Ticks", "Stop loss in ticks", "Risk Management")
 			.SetNotNegative();
-
-		_buyOpen = Param(nameof(BuyOpen), true)
-			.SetDisplay("Open Long", "Allow opening long positions", "Trading");
-
-		_sellOpen = Param(nameof(SellOpen), true)
-			.SetDisplay("Open Short", "Allow opening short positions", "Trading");
-
-		_buyClose = Param(nameof(BuyClose), true)
-			.SetDisplay("Close Long", "Close long positions on sell signal", "Trading");
-
-		_sellClose = Param(nameof(SellClose), true)
-			.SetDisplay("Close Short", "Close short positions on buy signal", "Trading");
 	}
 
 	/// <inheritdoc />
@@ -159,31 +102,31 @@ public class EmaPredictionStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFast = default;
+		_prevSlow = default;
+		_initialized = default;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_fast = new EMA { Length = FastPeriod };
-		_slow = new EMA { Length = SlowPeriod };
+		var fast = new ExponentialMovingAverage { Length = FastPeriod };
+		var slow = new ExponentialMovingAverage { Length = SlowPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_fast, _slow, ProcessCandle)
+			.Bind(fast, slow, ProcessCandle)
 			.Start();
 
 		var step = Security.PriceStep ?? 1m;
 		StartProtection(
-			takeProfit: new Unit(TakeProfitTicks * step, UnitTypes.Absolute),
-			stopLoss: new Unit(StopLossTicks * step, UnitTypes.Absolute));
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, _fast);
-			DrawIndicator(area, _slow);
-			DrawOwnTrades(area);
-		}
+			new Unit(StopLossTicks * step, UnitTypes.Absolute),
+			new Unit(TakeProfitTicks * step, UnitTypes.Absolute));
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow)
@@ -205,25 +148,17 @@ public class EmaPredictionStrategy : Strategy
 		var bullish = _prevFast < _prevSlow && fast > slow && candle.OpenPrice < candle.ClosePrice;
 		var bearish = _prevFast > _prevSlow && fast < slow && candle.OpenPrice > candle.ClosePrice;
 
-		if (bullish)
+		if (bullish && Position <= 0)
 		{
-			var volume = 0m;
-			if (SellClose && Position < 0)
-				volume += Math.Abs(Position);
-			if (BuyOpen && Position <= 0)
-				volume += Volume;
-			if (volume > 0)
-				BuyMarket(volume);
+			if (Position < 0)
+				BuyMarket();
+			BuyMarket();
 		}
-		else if (bearish)
+		else if (bearish && Position >= 0)
 		{
-			var volume = 0m;
-			if (BuyClose && Position > 0)
-				volume += Math.Abs(Position);
-			if (SellOpen && Position >= 0)
-				volume += Volume;
-			if (volume > 0)
-				SellMarket(volume);
+			if (Position > 0)
+				SellMarket();
+			SellMarket();
 		}
 
 		_prevFast = fast;

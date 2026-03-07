@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -50,6 +47,14 @@ public class EmaCrossoverSignalStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_isInitialized = default;
+		_wasFastAboveSlow = default;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
@@ -61,15 +66,6 @@ public class EmaCrossoverSignalStrategy : Strategy
 		subscription
 			.Bind(fastEma, slowEma, Process)
 			.Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, fastEma);
-			DrawIndicator(area, slowEma);
-			DrawOwnTrades(area);
-		}
 	}
 
 	private void Process(ICandleMessage candle, decimal fastValue, decimal slowValue)
