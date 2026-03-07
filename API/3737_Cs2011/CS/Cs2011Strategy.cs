@@ -132,7 +132,7 @@ public class Cs2011Strategy : Strategy
 			
 			.SetOptimize(10, 60, 5);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Source timeframe for MACD", "General");
 	}
 

@@ -55,7 +55,7 @@ public class MultiEaV12Strategy : Strategy
 
 	public MultiEaV12Strategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe", "General");
 
 		_requiredConfirmations = Param(nameof(RequiredConfirmations), 3)
@@ -103,6 +103,10 @@ public class MultiEaV12Strategy : Strategy
 		_macdSignal = Param(nameof(MacdSignal), 9)
 			.SetDisplay("MACD Signal", "Signal line period", "MACD");
 	}
+
+	/// <inheritdoc />
+	public override System.Collections.Generic.IEnumerable<(StockSharp.BusinessEntities.Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
