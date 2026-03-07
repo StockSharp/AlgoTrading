@@ -1,204 +1,100 @@
+namespace StockSharp.Samples.Strategies;
+
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-namespace StockSharp.Samples.Strategies;
-
 /// <summary>
-/// Strategy Tester - combines momentum and ADX for entry signals with ATR-based risk management
+/// ADX Tester Strategy.
+/// Combines momentum (EMA slope) and ADX for entry signals.
+/// Buys when ADX is above key level and DI+ > DI- with rising momentum.
+/// Sells when ADX is above key level and DI- > DI+ with falling momentum.
 /// </summary>
 public class AdxTesterStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _momentumLength;
-	private readonly StrategyParam<int> _adxSmoothingLength;
-	private readonly StrategyParam<int> _diLength;
+	private readonly StrategyParam<int> _adxLength;
 	private readonly StrategyParam<int> _adxKeyLevel;
-	private readonly StrategyParam<int> _atrLength;
-	private readonly StrategyParam<decimal> _atrMultiplier;
-	private readonly StrategyParam<int> _structureLookback;
-	private readonly StrategyParam<bool> _exitByMomentum;
-	private readonly StrategyParam<bool> _exitByStrategy;
+	private readonly StrategyParam<int> _emaLength;
+	private readonly StrategyParam<int> _cooldownBars;
 
-	private LinearRegression _momentum;
-	private Highest _highest;
-	private Lowest _lowest;
-	private SimpleMovingAverage _closeSma;
 	private AverageDirectionalIndex _adx;
-	private AverageTrueRange _atr;
+	private ExponentialMovingAverage _ema;
 
-	private decimal _previousMomentum;
-	private decimal _previousAdx;
-	private decimal _previousClose;
+	private decimal _prevEma;
+	private decimal _prevPrevEma;
+	private int _cooldownRemaining;
 
-	/// <summary>
-	/// Candle type for strategy calculation.
-	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Momentum indicator length.
-	/// </summary>
-	public int MomentumLength
+	public int AdxLength
 	{
-		get => _momentumLength.Value;
-		set => _momentumLength.Value = value;
+		get => _adxLength.Value;
+		set => _adxLength.Value = value;
 	}
 
-	/// <summary>
-	/// ADX smoothing length.
-	/// </summary>
-	public int AdxSmoothingLength
-	{
-		get => _adxSmoothingLength.Value;
-		set => _adxSmoothingLength.Value = value;
-	}
-
-	/// <summary>
-	/// DI length.
-	/// </summary>
-	public int DiLength
-	{
-		get => _diLength.Value;
-		set => _diLength.Value = value;
-	}
-
-	/// <summary>
-	/// ADX key level.
-	/// </summary>
 	public int AdxKeyLevel
 	{
 		get => _adxKeyLevel.Value;
 		set => _adxKeyLevel.Value = value;
 	}
 
-	/// <summary>
-	/// ATR length.
-	/// </summary>
-	public int AtrLength
+	public int EmaLength
 	{
-		get => _atrLength.Value;
-		set => _atrLength.Value = value;
+		get => _emaLength.Value;
+		set => _emaLength.Value = value;
 	}
 
-	/// <summary>
-	/// ATR multiplier for stop loss calculation.
-	/// </summary>
-	public decimal AtrMultiplier
+	public int CooldownBars
 	{
-		get => _atrMultiplier.Value;
-		set => _atrMultiplier.Value = value;
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
-	/// <summary>
-	/// Structure lookback period.
-	/// </summary>
-	public int StructureLookback
-	{
-		get => _structureLookback.Value;
-		set => _structureLookback.Value = value;
-	}
-
-	/// <summary>
-	/// Exit by momentum condition.
-	/// </summary>
-	public bool ExitByMomentum
-	{
-		get => _exitByMomentum.Value;
-		set => _exitByMomentum.Value = value;
-	}
-
-	/// <summary>
-	/// Exit by strategy condition.
-	/// </summary>
-	public bool ExitByStrategy
-	{
-		get => _exitByStrategy.Value;
-		set => _exitByStrategy.Value = value;
-	}
-
-	/// <summary>
-	/// Constructor.
-	/// </summary>
 	public AdxTesterStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
-		_momentumLength = Param(nameof(MomentumLength), 20)
+		_adxLength = Param(nameof(AdxLength), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("Momentum Length", "Momentum indicator length", "Momentum Indicator")
-			
-			.SetOptimize(10, 30, 5);
+			.SetDisplay("ADX Length", "ADX/DI period", "ADX");
 
-		_adxSmoothingLength = Param(nameof(AdxSmoothingLength), 14)
+		_adxKeyLevel = Param(nameof(AdxKeyLevel), 20)
+			.SetDisplay("ADX Key Level", "Minimum ADX level for trending", "ADX");
+
+		_emaLength = Param(nameof(EmaLength), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("ADX Smoothing", "ADX smoothing length", "Directional Movement Index")
-			
-			.SetOptimize(7, 21, 2);
+			.SetDisplay("EMA Length", "Momentum EMA period", "Momentum");
 
-		_diLength = Param(nameof(DiLength), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("DI Length", "DI calculation length", "Directional Movement Index")
-			
-			.SetOptimize(7, 21, 2);
-
-		_adxKeyLevel = Param(nameof(AdxKeyLevel), 23)
-			.SetRange(10, 50)
-			.SetDisplay("ADX Key Level", "Key level for ADX", "Directional Movement Index")
-			
-			.SetOptimize(15, 35, 5);
-
-		_atrLength = Param(nameof(AtrLength), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("ATR Length", "ATR calculation length", "Average True Range")
-			
-			.SetOptimize(7, 21, 2);
-
-		_atrMultiplier = Param(nameof(AtrMultiplier), 1.6m)
-			.SetRange(0.1m, 10.0m)
-			.SetDisplay("ATR Multiplier", "ATR multiplier for stop loss", "Average True Range")
-			
-			.SetOptimize(0.5m, 3.0m, 0.3m);
-
-		_structureLookback = Param(nameof(StructureLookback), 1)
-			.SetGreaterThanZero()
-			.SetDisplay("Structure Lookback", "Lookback period for structure", "Average True Range");
-
-		_exitByMomentum = Param(nameof(ExitByMomentum), false)
-			.SetDisplay("Exit by Momentum", "Exit when momentum turns down", "Strategy");
-
-		_exitByStrategy = Param(nameof(ExitByStrategy), true)
-			.SetDisplay("Exit by Strategy", "Exit by strategy conditions", "Strategy");
+		_cooldownBars = Param(nameof(CooldownBars), 10)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "Risk");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
 
-		_previousAdx = default;
-		_previousMomentum = default;
-		_previousClose = default;
+		_adx = null;
+		_ema = null;
+		_prevEma = 0;
+		_prevPrevEma = 0;
+		_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
@@ -206,102 +102,116 @@ public class AdxTesterStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Initialize indicators
-		_highest = new Highest { Length = MomentumLength };
-		_lowest = new Lowest { Length = MomentumLength };
-		_closeSma = new SMA { Length = MomentumLength };
-		_momentum = new LinearRegression { Length = MomentumLength };
-		_adx = new AverageDirectionalIndex { Length = DiLength };
-		_atr = new AverageTrueRange { Length = AtrLength };
+		_adx = new AverageDirectionalIndex { Length = AdxLength };
+		_ema = new ExponentialMovingAverage { Length = EmaLength };
 
-		// Create subscription for candles
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx([_highest, _lowest, _closeSma, _momentum, _adx, _atr], ProcessCandle)
+			.BindEx(_adx, _ema, OnProcess)
 			.Start();
 
-		// Setup chart visualization
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawIndicator(area, _ema);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue[] values)
+	private void OnProcess(ICandleMessage candle, IIndicatorValue adxValue, IIndicatorValue emaValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Wait for indicators to form
-		if (!_momentum.IsFormed || !_adx.IsFormed || !_atr.IsFormed)
+		if (!_adx.IsFormed || !_ema.IsFormed)
 			return;
 
-		// Extract and convert values from array to decimal
-		var highestValue = values[0].ToDecimal();
-		var lowestValue = values[1].ToDecimal();
-		var closeSmaValue = values[2].ToDecimal();
-		
-		// LinearRegression is a complex indicator but can be converted to decimal directly
-		var linRegValue = (LinearRegressionValue)values[3];
-
-		if (linRegValue.LinearRegSlope is not decimal momentumValue)
+		if (adxValue.IsEmpty || emaValue.IsEmpty)
 			return;
 
-		// DirectionalIndex (ADX) is a complex indicator - extract the main ADX value
-		var adxTyped = (AverageDirectionalIndexValue)values[4];
-		if (adxTyped.MovingAverage is not decimal adxValue)
+		var emaVal = emaValue.ToDecimal();
+
+		var adxTyped = (AverageDirectionalIndexValue)adxValue;
+		if (adxTyped.MovingAverage is not decimal adxVal)
+		{
+			_prevPrevEma = _prevEma;
+			_prevEma = emaVal;
 			return;
-		
-		var atrValue = values[5].ToDecimal();
-
-		// Detect pivot highs (simplified)
-		var momentumPivotHigh = _previousMomentum != 0 && _previousMomentum > momentumValue;
-		var adxPivotHigh = _previousAdx != 0 && _previousAdx > adxValue;
-
-		CheckEntryConditions(candle, momentumValue, adxValue, atrValue, momentumPivotHigh, adxPivotHigh);
-		CheckExitConditions(candle, momentumValue, adxValue, momentumPivotHigh);
-
-		// Store previous values
-		_previousMomentum = momentumValue;
-		_previousAdx = adxValue;
-		_previousClose = candle.ClosePrice;
-	}
-
-	private void CheckEntryConditions(ICandleMessage candle, decimal momentumValue, decimal adxValue, decimal atrValue, bool momentumPivotHigh, bool adxPivotHigh)
-	{
-		var currentPrice = candle.ClosePrice;
-
-		// Buy condition 1: momentum pivot high and ADX declining
-		var buyCondition1 = momentumPivotHigh && adxValue < _previousAdx;
-
-		// Buy condition 2: ADX pivot high, momentum rising and negative
-		var buyCondition2 = adxPivotHigh && momentumValue >= _previousMomentum && momentumValue < 0;
-
-		if ((buyCondition1 || buyCondition2) && Position == 0)
-		{
-			var stopLoss = currentPrice - (atrValue * AtrMultiplier);
-			RegisterOrder(CreateOrder(Sides.Buy, currentPrice, Volume));
 		}
 
-		// Short conditions are disabled by default in original script
-		// Can be enabled by setting appropriate conditions
-	}
+		// Get DI+/DI- from the Dx (DirectionalIndex) sub-indicator
+		var dxValue = adxTyped.Dx;
+		decimal? diPlus = dxValue?.Plus;
+		decimal? diMinus = dxValue?.Minus;
 
-	private void CheckExitConditions(ICandleMessage candle, decimal momentumValue, decimal adxValue, bool momentumPivotHigh)
-	{
-		// Exit long on momentum pivot high (if exit by momentum is enabled)
-		if (Position > 0 && ExitByMomentum && momentumPivotHigh)
+		if (!IsFormedAndOnlineAndAllowTrading())
 		{
-			RegisterOrder(CreateOrder(Sides.Sell, _previousClose, Math.Abs(Position)));
+			_prevPrevEma = _prevEma;
+			_prevEma = emaVal;
+			return;
 		}
 
-		// Additional exit conditions based on strategy settings
-		if (Position > 0 && ExitByStrategy)
+		if (_cooldownRemaining > 0)
 		{
-			// Strategy-specific exit conditions can be added here
+			_cooldownRemaining--;
+			_prevPrevEma = _prevEma;
+			_prevEma = emaVal;
+			return;
 		}
+
+		if (_prevEma == 0 || _prevPrevEma == 0)
+		{
+			_prevPrevEma = _prevEma;
+			_prevEma = emaVal;
+			return;
+		}
+
+		// Momentum: EMA rising or falling
+		var momentumRising = emaVal > _prevEma && _prevEma > _prevPrevEma;
+		var momentumFalling = emaVal < _prevEma && _prevEma < _prevPrevEma;
+
+		// Strong trend
+		var strongTrend = adxVal > AdxKeyLevel;
+
+		// Buy: ADX above key level + momentum rising + (optionally DI+ > DI-)
+		var bullish = strongTrend && momentumRising;
+		if (diPlus.HasValue && diMinus.HasValue)
+			bullish = bullish && diPlus.Value > diMinus.Value;
+
+		// Sell: ADX above key level + momentum falling + (optionally DI- > DI+)
+		var bearish = strongTrend && momentumFalling;
+		if (diPlus.HasValue && diMinus.HasValue)
+			bearish = bearish && diMinus.Value > diPlus.Value;
+
+		if (bullish && Position <= 0)
+		{
+			if (Position < 0)
+				BuyMarket(Math.Abs(Position));
+			BuyMarket(Volume);
+			_cooldownRemaining = CooldownBars;
+		}
+		else if (bearish && Position >= 0)
+		{
+			if (Position > 0)
+				SellMarket(Math.Abs(Position));
+			SellMarket(Volume);
+			_cooldownRemaining = CooldownBars;
+		}
+		// Exit long: momentum turns negative
+		else if (Position > 0 && emaVal < _prevEma)
+		{
+			SellMarket(Math.Abs(Position));
+			_cooldownRemaining = CooldownBars;
+		}
+		// Exit short: momentum turns positive
+		else if (Position < 0 && emaVal > _prevEma)
+		{
+			BuyMarket(Math.Abs(Position));
+			_cooldownRemaining = CooldownBars;
+		}
+
+		_prevPrevEma = _prevEma;
+		_prevEma = emaVal;
 	}
 }

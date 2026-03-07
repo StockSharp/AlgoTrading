@@ -1,200 +1,111 @@
+namespace StockSharp.Samples.Strategies;
+
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-namespace StockSharp.Samples.Strategies;
-
 /// <summary>
-/// Stochastic RSI + Supertrend Strategy with trend moving average filter
+/// Stochastic RSI + Supertrend Strategy.
+/// Uses RSI levels with SuperTrend direction and EMA trend filter.
+/// Buys when RSI is oversold, SuperTrend is bullish, and price above EMA.
+/// Sells when RSI is overbought, SuperTrend is bearish, and price below EMA.
 /// </summary>
 public class StochRsiSupertrendStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _smoothK;
-	private readonly StrategyParam<int> _smoothD;
 	private readonly StrategyParam<int> _rsiLength;
-	private readonly StrategyParam<int> _stochLength;
-	private readonly StrategyParam<string> _maType;
-	private readonly StrategyParam<int> _maLength;
-	private readonly StrategyParam<int> _atrPeriod;
-	private readonly StrategyParam<decimal> _atrFactor;
-	private readonly StrategyParam<bool> _showShort;
+	private readonly StrategyParam<int> _emaLength;
+	private readonly StrategyParam<int> _supertrendLength;
+	private readonly StrategyParam<decimal> _supertrendMultiplier;
+	private readonly StrategyParam<int> _cooldownBars;
 
 	private RelativeStrengthIndex _rsi;
-	private Highest _stochRsiHigh;
-	private Lowest _stochRsiLow;
-	private SimpleMovingAverage _smoothKSma;
-	private SimpleMovingAverage _smoothDSma;
-	private IIndicator _trendMa;
-	private AverageTrueRange _atr;
+	private ExponentialMovingAverage _ema;
+	private SuperTrend _supertrend;
 
-	private decimal _previousK;
-	private decimal _previousD;
-	private decimal _previousSupertrendValue;
-	private decimal _previousClose;
-	private bool _kCrossedOverD;
-	private bool _kCrossedUnderD;
+	private decimal _prevRsi;
+	private int _cooldownRemaining;
 
-	/// <summary>
-	/// Candle type for strategy calculation.
-	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// %K smoothing periods.
-	/// </summary>
-	public int SmoothK
-	{
-		get => _smoothK.Value;
-		set => _smoothK.Value = value;
-	}
-
-	/// <summary>
-	/// %D smoothing periods.
-	/// </summary>
-	public int SmoothD
-	{
-		get => _smoothD.Value;
-		set => _smoothD.Value = value;
-	}
-
-	/// <summary>
-	/// RSI length for Stochastic RSI calculation.
-	/// </summary>
 	public int RsiLength
 	{
 		get => _rsiLength.Value;
 		set => _rsiLength.Value = value;
 	}
 
-	/// <summary>
-	/// Stochastic length for Stochastic RSI calculation.
-	/// </summary>
-	public int StochLength
+	public int EmaLength
 	{
-		get => _stochLength.Value;
-		set => _stochLength.Value = value;
+		get => _emaLength.Value;
+		set => _emaLength.Value = value;
 	}
 
-	/// <summary>
-	/// Trend moving average type.
-	/// </summary>
-	public string MaType
+	public int SupertrendLength
 	{
-		get => _maType.Value;
-		set => _maType.Value = value;
+		get => _supertrendLength.Value;
+		set => _supertrendLength.Value = value;
 	}
 
-	/// <summary>
-	/// Trend moving average length.
-	/// </summary>
-	public int MaLength
+	public decimal SupertrendMultiplier
 	{
-		get => _maLength.Value;
-		set => _maLength.Value = value;
+		get => _supertrendMultiplier.Value;
+		set => _supertrendMultiplier.Value = value;
 	}
 
-	/// <summary>
-	/// ATR period for Supertrend calculation.
-	/// </summary>
-	public int AtrPeriod
+	public int CooldownBars
 	{
-		get => _atrPeriod.Value;
-		set => _atrPeriod.Value = value;
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
-	/// <summary>
-	/// ATR factor for Supertrend calculation.
-	/// </summary>
-	public decimal AtrFactor
-	{
-		get => _atrFactor.Value;
-		set => _atrFactor.Value = value;
-	}
-
-	/// <summary>
-	/// Enable short entries.
-	/// </summary>
-	public bool ShowShort
-	{
-		get => _showShort.Value;
-		set => _showShort.Value = value;
-	}
-
-	/// <summary>
-	/// Constructor.
-	/// </summary>
 	public StochRsiSupertrendStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
-		_smoothK = Param(nameof(SmoothK), 3)
-			.SetGreaterThanZero()
-			.SetDisplay("Smooth K", "%K smoothing periods", "Stochastic RSI")
-			
-			.SetOptimize(1, 5, 1);
-
-		_smoothD = Param(nameof(SmoothD), 3)
-			.SetGreaterThanZero()
-			.SetDisplay("Smooth D", "%D smoothing periods", "Stochastic RSI")
-			
-			.SetOptimize(1, 5, 1);
 
 		_rsiLength = Param(nameof(RsiLength), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("RSI Length", "RSI length for Stochastic RSI", "Stochastic RSI")
-			
-			.SetOptimize(5, 25, 2);
+			.SetDisplay("RSI Length", "RSI period", "RSI");
 
-		_stochLength = Param(nameof(StochLength), 14)
+		_emaLength = Param(nameof(EmaLength), 50)
 			.SetGreaterThanZero()
-			.SetDisplay("Stochastic Length", "Stochastic length for Stochastic RSI", "Stochastic RSI")
-			
-			.SetOptimize(5, 25, 2);
+			.SetDisplay("EMA Length", "Trend EMA period", "Moving Average");
 
-		_maType = Param(nameof(MaType), "EMA")
-			.SetDisplay("MA Type", "Trend moving average type", "Moving Average");
-
-		_maLength = Param(nameof(MaLength), 200)
+		_supertrendLength = Param(nameof(SupertrendLength), 11)
 			.SetGreaterThanZero()
-			.SetDisplay("MA Length", "Trend moving average length", "Moving Average")
-			
-			.SetOptimize(150, 250, 25);
+			.SetDisplay("SuperTrend Length", "SuperTrend ATR period", "SuperTrend");
 
-		_atrPeriod = Param(nameof(AtrPeriod), 11)
-			.SetGreaterThanZero()
-			.SetDisplay("ATR Period", "ATR period for Supertrend", "Supertrend")
-			
-			.SetOptimize(7, 15, 2);
+		_supertrendMultiplier = Param(nameof(SupertrendMultiplier), 2.0m)
+			.SetDisplay("SuperTrend Multiplier", "SuperTrend ATR multiplier", "SuperTrend");
 
-		_atrFactor = Param(nameof(AtrFactor), 2.0m)
-			.SetRange(0.5m, 10.0m)
-			.SetDisplay("ATR Factor", "ATR factor for Supertrend", "Supertrend")
-			
-			.SetOptimize(1.0m, 5.0m, 0.5m);
-
-		_showShort = Param(nameof(ShowShort), false)
-			.SetDisplay("Show Short", "Enable short entries", "Strategy");
+		_cooldownBars = Param(nameof(CooldownBars), 10)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "Risk");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	/// <inheritdoc />
+	protected override void OnReseted()
 	{
-		return [(Security, CandleType)];
+		base.OnReseted();
+
+		_rsi = null;
+		_ema = null;
+		_supertrend = null;
+		_prevRsi = 0;
+		_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
@@ -202,134 +113,94 @@ public class StochRsiSupertrendStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Initialize indicators
 		_rsi = new RelativeStrengthIndex { Length = RsiLength };
-		_stochRsiHigh = new Highest { Length = StochLength };
-		_stochRsiLow = new Lowest { Length = StochLength };
-		_smoothKSma = new SMA { Length = SmoothK };
-		_smoothDSma = new SMA { Length = SmoothD };
-		_atr = new AverageTrueRange { Length = AtrPeriod };
+		_ema = new ExponentialMovingAverage { Length = EmaLength };
+		_supertrend = new SuperTrend { Length = SupertrendLength, Multiplier = SupertrendMultiplier };
 
-		_trendMa = MaType == "SMA" 
-			? (IIndicator)new SMA { Length = MaLength }
-			: new EMA { Length = MaLength };
-
-		// Create subscription for candles
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(_rsi, _trendMa, _atr, ProcessCandle)
+			.BindEx(_rsi, _ema, _supertrend, OnProcess)
 			.Start();
 
-		// Setup chart visualization
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _trendMa);
+			DrawIndicator(area, _ema);
+			DrawIndicator(area, _supertrend);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue rsiValue, IIndicatorValue maValue, IIndicatorValue atrValue)
+	private void OnProcess(ICandleMessage candle, IIndicatorValue rsiValue, IIndicatorValue emaValue, IIndicatorValue stValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Wait for indicators to form
-		if (!_rsi.IsFormed || !_trendMa.IsFormed || !_atr.IsFormed)
+		if (!_rsi.IsFormed || !_ema.IsFormed || !_supertrend.IsFormed)
 			return;
 
-		// Calculate Stochastic RSI manually
-		var rsiPrice = rsiValue.ToDecimal();
-		var highestRsi = _stochRsiHigh.Process(new DecimalIndicatorValue(_stochRsiHigh, rsiPrice, candle.ServerTime));
-		var lowestRsi = _stochRsiLow.Process(new DecimalIndicatorValue(_stochRsiLow, rsiPrice, candle.ServerTime));
-
-		if (!highestRsi.IsFormed || !lowestRsi.IsFormed)
+		if (rsiValue.IsEmpty || emaValue.IsEmpty || stValue.IsEmpty)
 			return;
 
-		// Calculate %K
-		var highVal = highestRsi.ToDecimal();
-		var lowVal = lowestRsi.ToDecimal();
-		var stochRsi = highVal != lowVal ? (rsiPrice - lowVal) / (highVal - lowVal) * 100 : 50;
+		var rsiVal = rsiValue.ToDecimal();
+		var emaVal = emaValue.ToDecimal();
 
-		var kValue = _smoothKSma.Process(new DecimalIndicatorValue(_smoothKSma, stochRsi, candle.ServerTime));
-		var dValue = _smoothDSma.Process(new DecimalIndicatorValue(_smoothDSma, kValue.ToDecimal(), candle.ServerTime));
+		var stTyped = (SuperTrendIndicatorValue)stValue;
+		var isUpTrend = stTyped.IsUpTrend;
 
-		if (!kValue.IsFormed || !dValue.IsFormed)
+		if (!IsFormedAndOnlineAndAllowTrading())
+		{
+			_prevRsi = rsiVal;
 			return;
-
-		var k = kValue.ToDecimal();
-		var d = dValue.ToDecimal();
-		var currentPrice = candle.ClosePrice;
-
-		// Calculate simple SuperTrend-like signal using ATR
-		var hl2 = (candle.HighPrice + candle.LowPrice) / 2;
-		var atrVal = atrValue.ToDecimal();
-		var upperBand = hl2 + (AtrFactor * atrVal);
-		var lowerBand = hl2 - (AtrFactor * atrVal);
-
-		// SuperTrend calculation - simplified version
-		var supertrendValue = currentPrice > _previousSupertrendValue ? lowerBand : upperBand;
-		var supertrendDirection = currentPrice > supertrendValue ? -1 : 1;
-
-		// Detect crossovers
-		if (_previousK != 0 && _previousD != 0)
-		{
-			_kCrossedOverD = _previousK <= _previousD && k > d;
-			_kCrossedUnderD = _previousK >= _previousD && k < d;
 		}
 
-		CheckEntryConditions(candle, k, d, maValue.ToDecimal(), supertrendDirection);
-		CheckExitConditions(candle, k, d, supertrendDirection);
-
-		// Store previous values
-		_previousK = k;
-		_previousD = d;
-		_previousSupertrendValue = supertrendValue;
-		_previousClose = currentPrice;
-	}
-
-	private void CheckEntryConditions(ICandleMessage candle, decimal k, decimal d, decimal maValue, decimal supertrendDirection)
-	{
-		var currentPrice = candle.ClosePrice;
-
-		// Long entry: close > trend MA, K < 20, K crosses over D, Supertrend is bullish
-		if (currentPrice > maValue && 
-			k < 20 && 
-			_kCrossedOverD && 
-			supertrendDirection < 0 && 
-			Position == 0)
+		if (_cooldownRemaining > 0)
 		{
-			RegisterOrder(CreateOrder(Sides.Buy, currentPrice, Volume));
+			_cooldownRemaining--;
+			_prevRsi = rsiVal;
+			return;
 		}
 
-		// Short entry: close < trend MA, K > 80, K crosses under D, Supertrend is bearish
-		if (ShowShort && 
-			currentPrice < maValue && 
-			k > 80 && 
-			_kCrossedUnderD && 
-			supertrendDirection > 0 && 
-			Position == 0)
+		if (_prevRsi == 0)
 		{
-			RegisterOrder(CreateOrder(Sides.Sell, currentPrice, Volume));
-		}
-	}
-
-	private void CheckExitConditions(ICandleMessage candle, decimal k, decimal d, decimal supertrendDirection)
-	{
-		var currentPrice = candle.ClosePrice;
-
-		// Exit long: K > 80 and K crosses under D
-		if (Position > 0 && k > 80 && _kCrossedUnderD)
-		{
-			RegisterOrder(CreateOrder(Sides.Sell, currentPrice, Math.Abs(Position)));
+			_prevRsi = rsiVal;
+			return;
 		}
 
-		// Exit short: K < 20 and K crosses over D
-		if (Position < 0 && k < 20 && _kCrossedOverD)
+		// RSI crossovers
+		var rsiCrossUpOversold = rsiVal > 40 && _prevRsi <= 40;
+		var rsiCrossDownOverbought = rsiVal < 60 && _prevRsi >= 60;
+
+		// Buy: RSI crosses above oversold + SuperTrend bullish + price above EMA
+		if (rsiCrossUpOversold && isUpTrend && candle.ClosePrice > emaVal && Position <= 0)
 		{
-			RegisterOrder(CreateOrder(Sides.Buy, currentPrice, Math.Abs(Position)));
+			if (Position < 0)
+				BuyMarket(Math.Abs(Position));
+			BuyMarket(Volume);
+			_cooldownRemaining = CooldownBars;
 		}
+		// Sell: RSI crosses below overbought + SuperTrend bearish + price below EMA
+		else if (rsiCrossDownOverbought && !isUpTrend && candle.ClosePrice < emaVal && Position >= 0)
+		{
+			if (Position > 0)
+				SellMarket(Math.Abs(Position));
+			SellMarket(Volume);
+			_cooldownRemaining = CooldownBars;
+		}
+		// Exit long: SuperTrend turns bearish
+		else if (Position > 0 && !isUpTrend)
+		{
+			SellMarket(Math.Abs(Position));
+			_cooldownRemaining = CooldownBars;
+		}
+		// Exit short: SuperTrend turns bullish
+		else if (Position < 0 && isUpTrend)
+		{
+			BuyMarket(Math.Abs(Position));
+			_cooldownRemaining = CooldownBars;
+		}
+
+		_prevRsi = rsiVal;
 	}
 }

@@ -1,20 +1,20 @@
+namespace StockSharp.Samples.Strategies;
+
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-namespace StockSharp.Samples.Strategies;
-
 /// <summary>
-/// RSI + EMA Strategy - uses RSI oversold/overbought levels with dual EMA trend filter
+/// RSI + EMA Strategy.
+/// Uses RSI oversold/overbought levels with dual EMA trend filter.
+/// Buys when RSI is oversold and fast EMA > slow EMA.
+/// Sells when RSI is overbought and fast EMA > slow EMA.
 /// </summary>
 public class RsiEmaStrategy : Strategy
 {
@@ -22,136 +22,98 @@ public class RsiEmaStrategy : Strategy
 	private readonly StrategyParam<int> _rsiLength;
 	private readonly StrategyParam<int> _rsiOverbought;
 	private readonly StrategyParam<int> _rsiOversold;
-	private readonly StrategyParam<string> _ma1Type;
 	private readonly StrategyParam<int> _ma1Length;
-	private readonly StrategyParam<string> _ma2Type;
 	private readonly StrategyParam<int> _ma2Length;
+	private readonly StrategyParam<int> _cooldownBars;
 
 	private RelativeStrengthIndex _rsi;
-	private IIndicator _ma1;
-	private IIndicator _ma2;
+	private ExponentialMovingAverage _ma1;
+	private ExponentialMovingAverage _ma2;
 
-	/// <summary>
-	/// Candle type for strategy calculation.
-	/// </summary>
+	private int _cooldownRemaining;
+
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// RSI calculation length.
-	/// </summary>
 	public int RsiLength
 	{
 		get => _rsiLength.Value;
 		set => _rsiLength.Value = value;
 	}
 
-	/// <summary>
-	/// RSI overbought level.
-	/// </summary>
 	public int RsiOverbought
 	{
 		get => _rsiOverbought.Value;
 		set => _rsiOverbought.Value = value;
 	}
 
-	/// <summary>
-	/// RSI oversold level.
-	/// </summary>
 	public int RsiOversold
 	{
 		get => _rsiOversold.Value;
 		set => _rsiOversold.Value = value;
 	}
 
-	/// <summary>
-	/// First moving average type.
-	/// </summary>
-	public string Ma1Type
-	{
-		get => _ma1Type.Value;
-		set => _ma1Type.Value = value;
-	}
-
-	/// <summary>
-	/// First moving average length.
-	/// </summary>
 	public int Ma1Length
 	{
 		get => _ma1Length.Value;
 		set => _ma1Length.Value = value;
 	}
 
-	/// <summary>
-	/// Second moving average type.
-	/// </summary>
-	public string Ma2Type
-	{
-		get => _ma2Type.Value;
-		set => _ma2Type.Value = value;
-	}
-
-	/// <summary>
-	/// Second moving average length.
-	/// </summary>
 	public int Ma2Length
 	{
 		get => _ma2Length.Value;
 		set => _ma2Length.Value = value;
 	}
 
-	/// <summary>
-	/// Constructor.
-	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
 	public RsiEmaStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
 		_rsiLength = Param(nameof(RsiLength), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("RSI Length", "RSI calculation length", "RSI")
-			
-			.SetOptimize(5, 30, 2);
+			.SetDisplay("RSI Length", "RSI calculation length", "RSI");
 
 		_rsiOverbought = Param(nameof(RsiOverbought), 70)
-			.SetRange(50, 95)
-			.SetDisplay("RSI Overbought", "RSI overbought level", "RSI")
-			
-			.SetOptimize(65, 85, 5);
+			.SetDisplay("RSI Overbought", "RSI overbought level", "RSI");
 
 		_rsiOversold = Param(nameof(RsiOversold), 30)
-			.SetRange(5, 50)
-			.SetDisplay("RSI Oversold", "RSI oversold level", "RSI")
-			
-			.SetOptimize(15, 35, 5);
+			.SetDisplay("RSI Oversold", "RSI oversold level", "RSI");
 
-		_ma1Type = Param(nameof(Ma1Type), "EMA")
-			.SetDisplay("MA1 Type", "First moving average type", "Moving Averages");
-
-		_ma1Length = Param(nameof(Ma1Length), 150)
+		_ma1Length = Param(nameof(Ma1Length), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("MA1 Length", "First moving average length", "Moving Averages")
-			
-			.SetOptimize(100, 200, 25);
+			.SetDisplay("MA1 Length", "Fast EMA length", "Moving Averages");
 
-		_ma2Type = Param(nameof(Ma2Type), "EMA")
-			.SetDisplay("MA2 Type", "Second moving average type", "Moving Averages");
-
-		_ma2Length = Param(nameof(Ma2Length), 600)
+		_ma2Length = Param(nameof(Ma2Length), 50)
 			.SetGreaterThanZero()
-			.SetDisplay("MA2 Length", "Second moving average length", "Moving Averages")
-			
-			.SetOptimize(400, 800, 100);
+			.SetDisplay("MA2 Length", "Slow EMA length", "Moving Averages");
+
+		_cooldownBars = Param(nameof(CooldownBars), 10)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "Risk");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	/// <inheritdoc />
+	protected override void OnReseted()
 	{
-		return [(Security, CandleType)];
+		base.OnReseted();
+
+		_rsi = null;
+		_ma1 = null;
+		_ma2 = null;
+		_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
@@ -159,24 +121,15 @@ public class RsiEmaStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Initialize indicators
 		_rsi = new RelativeStrengthIndex { Length = RsiLength };
-		
-		_ma1 = Ma1Type == "SMA" 
-			? (IIndicator)new SMA { Length = Ma1Length }
-			: new EMA { Length = Ma1Length };
-			
-		_ma2 = Ma2Type == "SMA" 
-			? (IIndicator)new SMA { Length = Ma2Length }
-			: new EMA { Length = Ma2Length };
+		_ma1 = new ExponentialMovingAverage { Length = Ma1Length };
+		_ma2 = new ExponentialMovingAverage { Length = Ma2Length };
 
-		// Create subscription for candles
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_rsi, _ma1, _ma2, ProcessCandle)
+			.Bind(_rsi, _ma1, _ma2, OnProcess)
 			.Start();
 
-		// Setup chart visualization
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -187,40 +140,53 @@ public class RsiEmaStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal rsiValue, decimal ma1Value, decimal ma2Value)
+	private void OnProcess(ICandleMessage candle, decimal rsiVal, decimal ma1Val, decimal ma2Val)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Wait for indicators to form
 		if (!_rsi.IsFormed || !_ma1.IsFormed || !_ma2.IsFormed)
 			return;
 
-		var currentPrice = candle.ClosePrice;
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
 
-		// Long entry: RSI < oversold and MA1 > MA2 (trend filter)
-		if (rsiValue < RsiOversold && ma1Value > ma2Value && Position == 0)
+		if (_cooldownRemaining > 0)
 		{
-			RegisterOrder(CreateOrder(Sides.Buy, currentPrice, Volume));
+			_cooldownRemaining--;
+			return;
 		}
 
-		// Short entry: RSI > overbought and MA1 > MA2 (trend filter)
-		if (rsiValue > RsiOverbought && ma1Value > ma2Value && Position == 0)
-		{
-			RegisterOrder(CreateOrder(Sides.Sell, currentPrice, Volume));
-		}
+		var uptrend = ma1Val > ma2Val;
+		var downtrend = ma1Val < ma2Val;
 
-		// Exit long: RSI > overbought
-		if (Position > 0 && rsiValue > RsiOverbought)
+		// Buy: RSI oversold in uptrend
+		if (rsiVal < RsiOversold && uptrend && Position <= 0)
 		{
-			RegisterOrder(CreateOrder(Sides.Sell, currentPrice, Math.Abs(Position)));
+			if (Position < 0)
+				BuyMarket(Math.Abs(Position));
+			BuyMarket(Volume);
+			_cooldownRemaining = CooldownBars;
 		}
-
-		// Exit short: RSI < oversold
-		if (Position < 0 && rsiValue < RsiOversold)
+		// Sell: RSI overbought in downtrend
+		else if (rsiVal > RsiOverbought && downtrend && Position >= 0)
 		{
-			RegisterOrder(CreateOrder(Sides.Buy, currentPrice, Math.Abs(Position)));
+			if (Position > 0)
+				SellMarket(Math.Abs(Position));
+			SellMarket(Volume);
+			_cooldownRemaining = CooldownBars;
+		}
+		// Exit long: RSI overbought
+		else if (Position > 0 && rsiVal > RsiOverbought)
+		{
+			SellMarket(Math.Abs(Position));
+			_cooldownRemaining = CooldownBars;
+		}
+		// Exit short: RSI oversold
+		else if (Position < 0 && rsiVal < RsiOversold)
+		{
+			BuyMarket(Math.Abs(Position));
+			_cooldownRemaining = CooldownBars;
 		}
 	}
 }
