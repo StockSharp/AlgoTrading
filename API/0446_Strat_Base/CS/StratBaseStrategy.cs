@@ -1,149 +1,75 @@
+namespace StockSharp.Samples.Strategies;
+
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-namespace StockSharp.Samples.Strategies;
-
 /// <summary>
-/// Strategy Base Template - template for creating new strategies
+/// Strategy Base - EMA trend following strategy.
+/// Buys when price crosses above EMA, sells when price crosses below EMA.
 /// </summary>
 public class StratBaseStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _emaLength;
-	private readonly StrategyParam<bool> _showLong;
-	private readonly StrategyParam<bool> _showShort;
-	private readonly StrategyParam<bool> _useTP;
-	private readonly StrategyParam<decimal> _tpPercent;
-	private readonly StrategyParam<bool> _useSL;
-	private readonly StrategyParam<decimal> _slPercent;
+	private readonly StrategyParam<int> _cooldownBars;
 
 	private ExponentialMovingAverage _ema;
 
-	/// <summary>
-	/// Candle type for strategy calculation.
-	/// </summary>
+	private decimal _prevClose;
+	private decimal _prevEma;
+	private int _cooldownRemaining;
+
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// EMA length.
-	/// </summary>
 	public int EmaLength
 	{
 		get => _emaLength.Value;
 		set => _emaLength.Value = value;
 	}
 
-	/// <summary>
-	/// Enable long entries.
-	/// </summary>
-	public bool ShowLong
+	public int CooldownBars
 	{
-		get => _showLong.Value;
-		set => _showLong.Value = value;
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
-	/// <summary>
-	/// Enable short entries.
-	/// </summary>
-	public bool ShowShort
-	{
-		get => _showShort.Value;
-		set => _showShort.Value = value;
-	}
-
-	/// <summary>
-	/// Use take profit.
-	/// </summary>
-	public bool UseTP
-	{
-		get => _useTP.Value;
-		set => _useTP.Value = value;
-	}
-
-	/// <summary>
-	/// Take profit percentage.
-	/// </summary>
-	public decimal TpPercent
-	{
-		get => _tpPercent.Value;
-		set => _tpPercent.Value = value;
-	}
-
-	/// <summary>
-	/// Use stop loss.
-	/// </summary>
-	public bool UseSL
-	{
-		get => _useSL.Value;
-		set => _useSL.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss percentage.
-	/// </summary>
-	public decimal SlPercent
-	{
-		get => _slPercent.Value;
-		set => _slPercent.Value = value;
-	}
-
-	/// <summary>
-	/// Constructor.
-	/// </summary>
 	public StratBaseStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
-		_emaLength = Param(nameof(EmaLength), 10)
+		_emaLength = Param(nameof(EmaLength), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("EMA Length", "EMA period", "Moving Averages")
-			
-			.SetOptimize(5, 50, 5);
+			.SetDisplay("EMA Length", "EMA period", "Moving Averages");
 
-		_showLong = Param(nameof(ShowLong), true)
-			.SetDisplay("Long Entries", "Enable long entries", "Strategy");
-
-		_showShort = Param(nameof(ShowShort), false)
-			.SetDisplay("Short Entries", "Enable short entries", "Strategy");
-
-		_useTP = Param(nameof(UseTP), false)
-			.SetDisplay("Enable Take Profit", "Use take profit", "Take Profit");
-
-		_tpPercent = Param(nameof(TpPercent), 1.2m)
-			.SetRange(0.1m, 10.0m)
-			.SetDisplay("TP Percent", "Take profit percentage", "Take Profit")
-			
-			.SetOptimize(0.5m, 3.0m, 0.3m);
-
-		_useSL = Param(nameof(UseSL), false)
-			.SetDisplay("Enable Stop Loss", "Use stop loss", "Stop Loss");
-
-		_slPercent = Param(nameof(SlPercent), 1.8m)
-			.SetRange(0.1m, 10.0m)
-			.SetDisplay("SL Percent", "Stop loss percentage", "Stop Loss")
-			
-			.SetOptimize(0.5m, 5.0m, 0.5m);
+		_cooldownBars = Param(nameof(CooldownBars), 10)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "Risk");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	/// <inheritdoc />
+	protected override void OnReseted()
 	{
-		return [(Security, CandleType)];
+		base.OnReseted();
+
+		_ema = null;
+		_prevClose = 0;
+		_prevEma = 0;
+		_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
@@ -151,16 +77,13 @@ public class StratBaseStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Initialize indicators
-		_ema = new EMA { Length = EmaLength };
+		_ema = new ExponentialMovingAverage { Length = EmaLength };
 
-		// Create subscription for candles
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_ema, ProcessCandle)
+			.Bind(_ema, OnProcess)
 			.Start();
 
-		// Setup chart visualization
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -168,65 +91,63 @@ public class StratBaseStrategy : Strategy
 			DrawIndicator(area, _ema);
 			DrawOwnTrades(area);
 		}
-
-		// Setup protection
-		var takeProfit = UseTP ? new Unit(TpPercent / 100m, UnitTypes.Percent) : new Unit();
-		var stopLoss = UseSL ? new Unit(SlPercent / 100m, UnitTypes.Percent) : new Unit();
-		StartProtection(takeProfit, stopLoss);
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal emaValue)
+	private void OnProcess(ICandleMessage candle, decimal emaVal)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Wait for indicator to form
 		if (!_ema.IsFormed)
+		{
+			_prevClose = candle.ClosePrice;
+			_prevEma = emaVal;
 			return;
-
-		// TODO: Implement entry and exit conditions
-		// This is a base template - specific logic should be added here
-		
-		CheckEntryConditions(candle, emaValue);
-		CheckExitConditions(candle, emaValue);
-	}
-
-	private void CheckEntryConditions(ICandleMessage candle, decimal emaValue)
-	{
-		var currentPrice = candle.ClosePrice;
-
-		// TODO: Add specific entry logic here
-		// Example conditions (to be replaced with actual strategy logic):
-		
-		if (ShowLong && Position == 0)
-		{
-			// Long entry condition placeholder
-			// RegisterOrder(this.CreateOrder(Sides.Buy, currentPrice, Volume));
 		}
 
-		if (ShowShort && Position == 0)
+		if (!IsFormedAndOnlineAndAllowTrading())
 		{
-			// Short entry condition placeholder  
-			// RegisterOrder(this.CreateOrder(Sides.Sell, currentPrice, Volume));
-		}
-	}
-
-	private void CheckExitConditions(ICandleMessage candle, decimal emaValue)
-	{
-		// TODO: Add specific exit logic here
-		// Example exit conditions (to be replaced with actual strategy logic):
-
-		if (Position > 0)
-		{
-			// Long exit condition placeholder
-			// RegisterOrder(this.CreateOrder(Sides.Sell, candle.ClosePrice, Math.Abs(Position)));
+			_prevClose = candle.ClosePrice;
+			_prevEma = emaVal;
+			return;
 		}
 
-		if (Position < 0)
+		if (_cooldownRemaining > 0)
 		{
-			// Short exit condition placeholder
-			// RegisterOrder(CreateOrder(Sides.Buy, candle.ClosePrice, Math.Abs(Position)));
+			_cooldownRemaining--;
+			_prevClose = candle.ClosePrice;
+			_prevEma = emaVal;
+			return;
 		}
+
+		if (_prevClose == 0 || _prevEma == 0)
+		{
+			_prevClose = candle.ClosePrice;
+			_prevEma = emaVal;
+			return;
+		}
+
+		// Price crosses above EMA
+		var crossUp = candle.ClosePrice > emaVal && _prevClose <= _prevEma;
+		// Price crosses below EMA
+		var crossDown = candle.ClosePrice < emaVal && _prevClose >= _prevEma;
+
+		if (crossUp && Position <= 0)
+		{
+			if (Position < 0)
+				BuyMarket(Math.Abs(Position));
+			BuyMarket(Volume);
+			_cooldownRemaining = CooldownBars;
+		}
+		else if (crossDown && Position >= 0)
+		{
+			if (Position > 0)
+				SellMarket(Math.Abs(Position));
+			SellMarket(Volume);
+			_cooldownRemaining = CooldownBars;
+		}
+
+		_prevClose = candle.ClosePrice;
+		_prevEma = emaVal;
 	}
 }

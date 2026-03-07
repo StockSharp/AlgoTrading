@@ -1,20 +1,20 @@
+namespace StockSharp.Samples.Strategies;
+
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-namespace StockSharp.Samples.Strategies;
-
 /// <summary>
-/// Three EMA Cross Strategy - uses fast/slow EMA crossover with trend EMA filter
+/// Three EMA Cross Strategy.
+/// Uses fast/slow EMA crossover with trend EMA filter.
+/// Buys when fast EMA crosses above slow EMA while above trend EMA.
+/// Sells when fast EMA crosses below slow EMA while below trend EMA.
 /// </summary>
 public class ThreeEmaCrossStrategy : Strategy
 {
@@ -22,126 +22,82 @@ public class ThreeEmaCrossStrategy : Strategy
 	private readonly StrategyParam<int> _fastEmaLength;
 	private readonly StrategyParam<int> _slowEmaLength;
 	private readonly StrategyParam<int> _trendEmaLength;
-	private readonly StrategyParam<decimal> _stopLossPercent;
-	private readonly StrategyParam<int> _crossBackBars;
+	private readonly StrategyParam<int> _cooldownBars;
 
 	private ExponentialMovingAverage _fastEma;
 	private ExponentialMovingAverage _slowEma;
 	private ExponentialMovingAverage _trendEma;
 
-	private decimal _previousFastEma;
-	private decimal _previousSlowEma;
-	private bool _crossoverOccurred;
-	private int _barsSinceCross;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
+	private int _cooldownRemaining;
 
-	/// <summary>
-	/// Candle type for strategy calculation.
-	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Fast EMA length.
-	/// </summary>
 	public int FastEmaLength
 	{
 		get => _fastEmaLength.Value;
 		set => _fastEmaLength.Value = value;
 	}
 
-	/// <summary>
-	/// Slow EMA length.
-	/// </summary>
 	public int SlowEmaLength
 	{
 		get => _slowEmaLength.Value;
 		set => _slowEmaLength.Value = value;
 	}
 
-	/// <summary>
-	/// Trend EMA length.
-	/// </summary>
 	public int TrendEmaLength
 	{
 		get => _trendEmaLength.Value;
 		set => _trendEmaLength.Value = value;
 	}
 
-	/// <summary>
-	/// Stop loss percentage.
-	/// </summary>
-	public decimal StopLossPercent
+	public int CooldownBars
 	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
-	/// <summary>
-	/// Check cross in the last X bars.
-	/// </summary>
-	public int CrossBackBars
-	{
-		get => _crossBackBars.Value;
-		set => _crossBackBars.Value = value;
-	}
-
-	/// <summary>
-	/// Constructor.
-	/// </summary>
 	public ThreeEmaCrossStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
 		_fastEmaLength = Param(nameof(FastEmaLength), 10)
 			.SetGreaterThanZero()
-			.SetDisplay("Fast EMA", "Fast EMA length", "Moving Averages")
-			
-			.SetOptimize(5, 20, 3);
+			.SetDisplay("Fast EMA", "Fast EMA length", "Moving Averages");
 
 		_slowEmaLength = Param(nameof(SlowEmaLength), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("Slow EMA", "Slow EMA length", "Moving Averages")
-			
-			.SetOptimize(15, 30, 5);
+			.SetDisplay("Slow EMA", "Slow EMA length", "Moving Averages");
 
 		_trendEmaLength = Param(nameof(TrendEmaLength), 100)
 			.SetGreaterThanZero()
-			.SetDisplay("Trend EMA", "Trend EMA length", "Moving Averages")
-			
-			.SetOptimize(50, 200, 25);
+			.SetDisplay("Trend EMA", "Trend EMA length", "Moving Averages");
 
-		_stopLossPercent = Param(nameof(StopLossPercent), 99.0m)
-			.SetRange(0.1m, 100.0m)
-			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management")
-			
-			.SetOptimize(1.0m, 10.0m, 1.0m);
-
-		_crossBackBars = Param(nameof(CrossBackBars), 10)
-			.SetGreaterThanZero()
-			.SetDisplay("Cross Back Bars", "Check cross in the last X candles", "Strategy")
-			
-			.SetOptimize(5, 20, 3);
+		_cooldownBars = Param(nameof(CooldownBars), 10)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "Risk");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
 
-		_previousFastEma = default;
-		_previousSlowEma = default;
-		_crossoverOccurred = default;
-		_barsSinceCross = default;
+		_fastEma = null;
+		_slowEma = null;
+		_trendEma = null;
+		_prevFastEma = 0;
+		_prevSlowEma = 0;
+		_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
@@ -149,18 +105,15 @@ public class ThreeEmaCrossStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Initialize indicators
-		_fastEma = new EMA { Length = FastEmaLength };
-		_slowEma = new EMA { Length = SlowEmaLength };
-		_trendEma = new EMA { Length = TrendEmaLength };
+		_fastEma = new ExponentialMovingAverage { Length = FastEmaLength };
+		_slowEma = new ExponentialMovingAverage { Length = SlowEmaLength };
+		_trendEma = new ExponentialMovingAverage { Length = TrendEmaLength };
 
-		// Create subscription for candles
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_fastEma, _slowEma, _trendEma, ProcessCandle)
+			.Bind(_fastEma, _slowEma, _trendEma, OnProcess)
 			.Start();
 
-		// Setup chart visualization
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -170,79 +123,76 @@ public class ThreeEmaCrossStrategy : Strategy
 			DrawIndicator(area, _trendEma);
 			DrawOwnTrades(area);
 		}
-
-		// Setup protection
-		StartProtection(new Unit(), new Unit(StopLossPercent / 100m, UnitTypes.Percent));
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue, decimal trendEmaValue)
+	private void OnProcess(ICandleMessage candle, decimal fastEma, decimal slowEma, decimal trendEma)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Wait for indicators to form
 		if (!_fastEma.IsFormed || !_slowEma.IsFormed || !_trendEma.IsFormed)
+		{
+			_prevFastEma = fastEma;
+			_prevSlowEma = slowEma;
 			return;
-
-		var currentPrice = candle.ClosePrice;
-		var lowPrice = candle.LowPrice;
-
-		// Detect EMA crossover
-		if (_previousFastEma != 0 && _previousSlowEma != 0)
-		{
-			var crossedOver = _previousFastEma <= _previousSlowEma && fastEmaValue > slowEmaValue;
-			if (crossedOver)
-			{
-				_crossoverOccurred = true;
-				_barsSinceCross = 0;
-			}
 		}
 
-		// Increment bars since cross
-		if (_crossoverOccurred)
-			_barsSinceCross++;
-
-		// Reset cross flag if too many bars have passed
-		if (_barsSinceCross > CrossBackBars)
-			_crossoverOccurred = false;
-
-		CheckEntryConditions(candle, fastEmaValue, slowEmaValue, trendEmaValue);
-		CheckExitConditions(candle, fastEmaValue, slowEmaValue);
-
-		// Store previous values
-		_previousFastEma = fastEmaValue;
-		_previousSlowEma = slowEmaValue;
-	}
-
-	private void CheckEntryConditions(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue, decimal trendEmaValue)
-	{
-		var currentPrice = candle.ClosePrice;
-		var lowPrice = candle.LowPrice;
-
-		// Entry conditions:
-		// 1. Recent crossover occurred (within last X bars)
-		// 2. Current close >= fast EMA and previous low <= fast EMA (pullback to EMA)
-		// 3. Trend EMA <= current close (trend filter)
-		var entryCondition = _crossoverOccurred &&
-							 currentPrice >= fastEmaValue &&
-							 lowPrice <= fastEmaValue &&
-							 trendEmaValue <= currentPrice;
-
-		if (entryCondition && Position == 0)
+		if (!IsFormedAndOnlineAndAllowTrading())
 		{
-			RegisterOrder(CreateOrder(Sides.Buy, currentPrice, Volume));
+			_prevFastEma = fastEma;
+			_prevSlowEma = slowEma;
+			return;
 		}
-	}
 
-	private void CheckExitConditions(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
-	{
-		// Exit on EMA crossunder (fast EMA crosses below slow EMA)
-		if (Position > 0 && 
-			_previousFastEma > _previousSlowEma && 
-			fastEmaValue < slowEmaValue)
+		if (_cooldownRemaining > 0)
 		{
-			RegisterOrder(CreateOrder(Sides.Sell, candle.ClosePrice, Math.Abs(Position)));
+			_cooldownRemaining--;
+			_prevFastEma = fastEma;
+			_prevSlowEma = slowEma;
+			return;
 		}
+
+		if (_prevFastEma == 0 || _prevSlowEma == 0)
+		{
+			_prevFastEma = fastEma;
+			_prevSlowEma = slowEma;
+			return;
+		}
+
+		// EMA crossovers
+		var crossUp = fastEma > slowEma && _prevFastEma <= _prevSlowEma;
+		var crossDown = fastEma < slowEma && _prevFastEma >= _prevSlowEma;
+
+		// Buy: fast crosses above slow + price above trend EMA
+		if (crossUp && candle.ClosePrice > trendEma && Position <= 0)
+		{
+			if (Position < 0)
+				BuyMarket(Math.Abs(Position));
+			BuyMarket(Volume);
+			_cooldownRemaining = CooldownBars;
+		}
+		// Sell: fast crosses below slow + price below trend EMA
+		else if (crossDown && candle.ClosePrice < trendEma && Position >= 0)
+		{
+			if (Position > 0)
+				SellMarket(Math.Abs(Position));
+			SellMarket(Volume);
+			_cooldownRemaining = CooldownBars;
+		}
+		// Exit long: fast crosses below slow
+		else if (Position > 0 && crossDown)
+		{
+			SellMarket(Math.Abs(Position));
+			_cooldownRemaining = CooldownBars;
+		}
+		// Exit short: fast crosses above slow
+		else if (Position < 0 && crossUp)
+		{
+			BuyMarket(Math.Abs(Position));
+			_cooldownRemaining = CooldownBars;
+		}
+
+		_prevFastEma = fastEma;
+		_prevSlowEma = slowEma;
 	}
 }

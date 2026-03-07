@@ -1,20 +1,20 @@
+namespace StockSharp.Samples.Strategies;
+
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-namespace StockSharp.Samples.Strategies;
-
 /// <summary>
-/// Supertrend + EMA Rebound Strategy - trades Supertrend direction changes and EMA rebounds
+/// Supertrend + EMA Rebound Strategy.
+/// Trades SuperTrend direction changes and EMA rebounds.
+/// Buys when SuperTrend turns bullish or price rebounds from EMA in uptrend.
+/// Sells when SuperTrend turns bearish or price rebounds from EMA in downtrend.
 /// </summary>
 public class SupertrendEmaReboundStrategy : Strategy
 {
@@ -22,129 +22,83 @@ public class SupertrendEmaReboundStrategy : Strategy
 	private readonly StrategyParam<int> _atrPeriod;
 	private readonly StrategyParam<decimal> _atrFactor;
 	private readonly StrategyParam<int> _emaLength;
-	private readonly StrategyParam<bool> _showLong;
-	private readonly StrategyParam<bool> _showShort;
+	private readonly StrategyParam<int> _cooldownBars;
 
 	private SuperTrend _supertrend;
 	private ExponentialMovingAverage _ema;
-	private decimal _previousSupertrendDirection;
-	private decimal _previousClose;
-	private decimal _lastEntryPrice;
 
-	/// <summary>
-	/// Candle type for strategy calculation.
-	/// </summary>
+	private bool _prevIsUpTrend;
+	private bool _prevIsUpTrendSet;
+	private decimal _prevClose;
+	private decimal _prevEma;
+	private int _cooldownRemaining;
+
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// ATR period for Supertrend calculation.
-	/// </summary>
 	public int AtrPeriod
 	{
 		get => _atrPeriod.Value;
 		set => _atrPeriod.Value = value;
 	}
 
-	/// <summary>
-	/// ATR factor for Supertrend calculation.
-	/// </summary>
 	public decimal AtrFactor
 	{
 		get => _atrFactor.Value;
 		set => _atrFactor.Value = value;
 	}
 
-	/// <summary>
-	/// EMA length.
-	/// </summary>
 	public int EmaLength
 	{
 		get => _emaLength.Value;
 		set => _emaLength.Value = value;
 	}
 
-	/// <summary>
-	/// Enable long entries.
-	/// </summary>
-	public bool ShowLong
+	public int CooldownBars
 	{
-		get => _showLong.Value;
-		set => _showLong.Value = value;
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
-	/// <summary>
-	/// Enable short entries.
-	/// </summary>
-	public bool ShowShort
-	{
-		get => _showShort.Value;
-		set => _showShort.Value = value;
-	}
-
-	private readonly StrategyParam<Unit> _takeProfit;
-	public Unit TakeProfit
-	{
-		get => _takeProfit.Value;
-		set => _takeProfit.Value = value;
-	}
-
-	/// <summary>
-	/// Constructor.
-	/// </summary>
 	public SupertrendEmaReboundStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
 		_atrPeriod = Param(nameof(AtrPeriod), 10)
 			.SetGreaterThanZero()
-			.SetDisplay("ATR Period", "ATR period for Supertrend", "Supertrend")
-			
-			.SetOptimize(7, 15, 2);
+			.SetDisplay("ATR Period", "ATR period for Supertrend", "Supertrend");
 
 		_atrFactor = Param(nameof(AtrFactor), 3.0m)
-			.SetRange(0.5m, 10.0m)
-			.SetDisplay("ATR Factor", "ATR factor for Supertrend", "Supertrend")
-			
-			.SetOptimize(1.0m, 5.0m, 0.5m);
+			.SetDisplay("ATR Factor", "ATR factor for Supertrend", "Supertrend");
 
 		_emaLength = Param(nameof(EmaLength), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("EMA Length", "EMA period", "Moving Average")
-			
-			.SetOptimize(10, 50, 5);
+			.SetDisplay("EMA Length", "EMA period", "Moving Average");
 
-		_showLong = Param(nameof(ShowLong), true)
-			.SetDisplay("Long Entries", "Enable long entries", "Strategy");
-
-		_showShort = Param(nameof(ShowShort), true)
-			.SetDisplay("Short Entries", "Enable short entries", "Strategy");
-
-		_takeProfit = Param(nameof(TakeProfit), 1.5m.Percents())
-			.SetRange(0.1m, 10.0m)
-			.SetDisplay("TP", "Take profit", "Take Profit")
-			
-			.SetOptimize(0.5m, 3.0m, 0.3m);
+		_cooldownBars = Param(nameof(CooldownBars), 10)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "Risk");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
 
-		_previousClose = default;
-		_previousSupertrendDirection = default;
-		_lastEntryPrice = default;
+		_supertrend = null;
+		_ema = null;
+		_prevIsUpTrend = false;
+		_prevIsUpTrendSet = false;
+		_prevClose = 0;
+		_prevEma = 0;
+		_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
@@ -152,17 +106,14 @@ public class SupertrendEmaReboundStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Initialize indicators
-		_supertrend = new() { Length = AtrPeriod, Multiplier = AtrFactor };
-		_ema = new() { Length = EmaLength };
+		_supertrend = new SuperTrend { Length = AtrPeriod, Multiplier = AtrFactor };
+		_ema = new ExponentialMovingAverage { Length = EmaLength };
 
-		// Create subscription for candles
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_supertrend, _ema, ProcessCandle)
+			.BindEx(_supertrend, _ema, OnProcess)
 			.Start();
 
-		// Setup chart visualization
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -171,102 +122,92 @@ public class SupertrendEmaReboundStrategy : Strategy
 			DrawIndicator(area, _ema);
 			DrawOwnTrades(area);
 		}
-
-		StartProtection(TakeProfit, new());
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal supertrendValue, decimal emaValue)
+	private void OnProcess(ICandleMessage candle, IIndicatorValue stValue, IIndicatorValue emaValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Wait for indicators to form
 		if (!_supertrend.IsFormed || !_ema.IsFormed)
 			return;
 
-		var currentPrice = candle.ClosePrice;
-		var openPrice = candle.OpenPrice;
+		if (stValue.IsEmpty || emaValue.IsEmpty)
+			return;
 
-		// Determine Supertrend direction (< 0 means uptrend, > 0 means downtrend)
-		var supertrendDirection = currentPrice > supertrendValue ? -1 : 1;
+		var stTyped = (SuperTrendIndicatorValue)stValue;
+		var isUpTrend = stTyped.IsUpTrend;
+		var emaVal = emaValue.ToDecimal();
 
-		// Detect Supertrend direction changes
-		var supertrendDirectionChanged = _previousSupertrendDirection != 0 && 
-			Math.Sign(supertrendDirection) != Math.Sign(_previousSupertrendDirection);
-
-		CheckEntryConditions(candle, emaValue, supertrendDirection, supertrendDirectionChanged);
-		CheckExitConditions(supertrendDirection, supertrendDirectionChanged);
-
-		// Store previous values
-		_previousSupertrendDirection = supertrendDirection;
-		_previousClose = currentPrice;
-
-		// Update last entry price when opening new position
-		if (Position != 0 && _lastEntryPrice == 0)
+		if (!IsFormedAndOnlineAndAllowTrading())
 		{
-			_lastEntryPrice = openPrice;
-		}
-		else if (Position == 0)
-		{
-			_lastEntryPrice = 0;
-		}
-	}
-
-	private void CheckEntryConditions(ICandleMessage candle, decimal emaValue, decimal supertrendDirection, bool supertrendDirectionChanged)
-	{
-		var currentPrice = candle.ClosePrice;
-		var openPrice = candle.OpenPrice;
-
-		// Long entry conditions
-		if (ShowLong && Position == 0)
-		{
-			// Entry 1: Supertrend changes to uptrend
-			var entryLong1 = supertrendDirectionChanged && supertrendDirection < 0;
-
-			// Entry 2: In uptrend, price rebounds from EMA
-			var entryLong2 = supertrendDirection < 0 && 
-				_previousClose < emaValue && 
-				currentPrice > emaValue && 
-				currentPrice < _lastEntryPrice;
-
-			if (entryLong1 || entryLong2)
-			{
-				RegisterOrder(CreateOrder(Sides.Buy, currentPrice, Volume));
-			}
+			_prevIsUpTrend = isUpTrend;
+			_prevIsUpTrendSet = true;
+			_prevClose = candle.ClosePrice;
+			_prevEma = emaVal;
+			return;
 		}
 
-		// Short entry conditions
-		if (ShowShort && Position == 0)
+		if (_cooldownRemaining > 0)
 		{
-			// Entry 1: Supertrend changes to downtrend
-			var entryShort1 = supertrendDirectionChanged && supertrendDirection > 0;
-
-			// Entry 2: In downtrend, price rebounds from EMA
-			var entryShort2 = supertrendDirection > 0 && 
-				_previousClose > emaValue && 
-				currentPrice < emaValue && 
-				currentPrice > _lastEntryPrice;
-
-			if (entryShort1 || entryShort2)
-			{
-				RegisterOrder(CreateOrder(Sides.Sell, currentPrice, Volume));
-			}
-		}
-	}
-
-	private void CheckExitConditions(decimal supertrendDirection, bool supertrendDirectionChanged)
-	{
-		// Exit long when Supertrend changes to downtrend
-		if (Position > 0 && supertrendDirectionChanged && supertrendDirection > 0)
-		{
-			RegisterOrder(CreateOrder(Sides.Sell, _previousClose, Math.Abs(Position)));
+			_cooldownRemaining--;
+			_prevIsUpTrend = isUpTrend;
+			_prevIsUpTrendSet = true;
+			_prevClose = candle.ClosePrice;
+			_prevEma = emaVal;
+			return;
 		}
 
-		// Exit short when Supertrend changes to uptrend
-		if (Position < 0 && supertrendDirectionChanged && supertrendDirection < 0)
+		if (!_prevIsUpTrendSet || _prevClose == 0)
 		{
-			RegisterOrder(CreateOrder(Sides.Buy, _previousClose, Math.Abs(Position)));
+			_prevIsUpTrend = isUpTrend;
+			_prevIsUpTrendSet = true;
+			_prevClose = candle.ClosePrice;
+			_prevEma = emaVal;
+			return;
 		}
+
+		// SuperTrend direction change
+		var trendTurnedUp = isUpTrend && !_prevIsUpTrend;
+		var trendTurnedDown = !isUpTrend && _prevIsUpTrend;
+
+		// EMA rebound: price was below EMA and now crosses above
+		var emaReboundUp = isUpTrend && _prevClose < _prevEma && candle.ClosePrice > emaVal;
+		// EMA rebound: price was above EMA and now crosses below
+		var emaReboundDown = !isUpTrend && _prevClose > _prevEma && candle.ClosePrice < emaVal;
+
+		// Buy: SuperTrend turns bullish or EMA rebound up in uptrend
+		if ((trendTurnedUp || emaReboundUp) && Position <= 0)
+		{
+			if (Position < 0)
+				BuyMarket(Math.Abs(Position));
+			BuyMarket(Volume);
+			_cooldownRemaining = CooldownBars;
+		}
+		// Sell: SuperTrend turns bearish or EMA rebound down in downtrend
+		else if ((trendTurnedDown || emaReboundDown) && Position >= 0)
+		{
+			if (Position > 0)
+				SellMarket(Math.Abs(Position));
+			SellMarket(Volume);
+			_cooldownRemaining = CooldownBars;
+		}
+		// Exit long on SuperTrend bearish flip
+		else if (Position > 0 && trendTurnedDown)
+		{
+			SellMarket(Math.Abs(Position));
+			_cooldownRemaining = CooldownBars;
+		}
+		// Exit short on SuperTrend bullish flip
+		else if (Position < 0 && trendTurnedUp)
+		{
+			BuyMarket(Math.Abs(Position));
+			_cooldownRemaining = CooldownBars;
+		}
+
+		_prevIsUpTrend = isUpTrend;
+		_prevIsUpTrendSet = true;
+		_prevClose = candle.ClosePrice;
+		_prevEma = emaVal;
 	}
 }
