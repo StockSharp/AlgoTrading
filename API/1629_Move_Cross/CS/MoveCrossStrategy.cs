@@ -33,7 +33,7 @@ public class MoveCrossStrategy : Strategy
 
 	public MoveCrossStrategy()
 	{
-		_fastPeriod = Param(nameof(FastPeriod), 2)
+		_fastPeriod = Param(nameof(FastPeriod), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast Period", "Fast SMA period", "Indicators");
 
@@ -44,7 +44,7 @@ public class MoveCrossStrategy : Strategy
 		_threshold = Param(nameof(Threshold), 0.5m)
 			.SetDisplay("Threshold", "RAVI threshold", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 

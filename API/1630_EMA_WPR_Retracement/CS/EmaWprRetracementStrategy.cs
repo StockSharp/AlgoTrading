@@ -44,7 +44,7 @@ public class EmaWprRetracementStrategy : Strategy
 		_wprRetracement = Param(nameof(WprRetracement), 30m)
 			.SetDisplay("WPR Retracement", "Retracement needed for next trade", "Signals");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 

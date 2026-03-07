@@ -15,8 +15,8 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class ExpAtrTrailingStrategy : Strategy
 {
-	private readonly StrategyParam<int> _atrPeriod;
-	private readonly StrategyParam<decimal> _atrFactor;
+	private readonly StrategyParam<int> _stdPeriod;
+	private readonly StrategyParam<decimal> _stdFactor;
 	private readonly StrategyParam<int> _fastEma;
 	private readonly StrategyParam<int> _slowEma;
 	private readonly StrategyParam<DataType> _candleType;
@@ -27,20 +27,20 @@ public class ExpAtrTrailingStrategy : Strategy
 	private decimal _prevSlow;
 	private bool _hasPrev;
 
-	public int AtrPeriod { get => _atrPeriod.Value; set => _atrPeriod.Value = value; }
-	public decimal AtrFactor { get => _atrFactor.Value; set => _atrFactor.Value = value; }
+	public int StdPeriod { get => _stdPeriod.Value; set => _stdPeriod.Value = value; }
+	public decimal StdFactor { get => _stdFactor.Value; set => _stdFactor.Value = value; }
 	public int FastEma { get => _fastEma.Value; set => _fastEma.Value = value; }
 	public int SlowEma { get => _slowEma.Value; set => _slowEma.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public ExpAtrTrailingStrategy()
 	{
-		_atrPeriod = Param(nameof(AtrPeriod), 14)
+		_stdPeriod = Param(nameof(StdPeriod), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("ATR Period", "ATR period", "Indicators");
+			.SetDisplay("StdDev Period", "StdDev period", "Indicators");
 
-		_atrFactor = Param(nameof(AtrFactor), 2m)
-			.SetDisplay("ATR Factor", "ATR multiplier for trailing stop", "Indicators");
+		_stdFactor = Param(nameof(StdFactor), 2m)
+			.SetDisplay("StdDev Factor", "StdDev multiplier for trailing stop", "Indicators");
 
 		_fastEma = Param(nameof(FastEma), 10)
 			.SetGreaterThanZero()
@@ -50,7 +50,7 @@ public class ExpAtrTrailingStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Slow EMA", "Slow EMA for entry", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -73,11 +73,11 @@ public class ExpAtrTrailingStrategy : Strategy
 
 		var fast = new ExponentialMovingAverage { Length = FastEma };
 		var slow = new ExponentialMovingAverage { Length = SlowEma };
-		var atr = new AverageTrueRange { Length = AtrPeriod };
+		var stdDev = new StandardDeviation { Length = StdPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(fast, slow, atr, ProcessCandle)
+			.Bind(fast, slow, stdDev, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -90,7 +90,7 @@ public class ExpAtrTrailingStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow, decimal atrVal)
+	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow, decimal stdVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
@@ -98,7 +98,7 @@ public class ExpAtrTrailingStrategy : Strategy
 		// Trail management
 		if (Position > 0)
 		{
-			var stop = candle.ClosePrice - atrVal * AtrFactor;
+			var stop = candle.ClosePrice - stdVal * StdFactor;
 			if (stop > _longTrail)
 				_longTrail = stop;
 
@@ -110,7 +110,7 @@ public class ExpAtrTrailingStrategy : Strategy
 		}
 		else if (Position < 0)
 		{
-			var stop = candle.ClosePrice + atrVal * AtrFactor;
+			var stop = candle.ClosePrice + stdVal * StdFactor;
 			if (stop < _shortTrail || _shortTrail == 0)
 				_shortTrail = stop;
 
@@ -122,7 +122,7 @@ public class ExpAtrTrailingStrategy : Strategy
 		}
 
 		// Entry signals
-		if (_hasPrev && atrVal > 0)
+		if (_hasPrev && stdVal > 0)
 		{
 			var crossUp = _prevFast <= _prevSlow && fast > slow;
 			var crossDown = _prevFast >= _prevSlow && fast < slow;
@@ -130,13 +130,13 @@ public class ExpAtrTrailingStrategy : Strategy
 			if (crossUp && Position <= 0)
 			{
 				BuyMarket();
-				_longTrail = candle.ClosePrice - atrVal * AtrFactor;
+				_longTrail = candle.ClosePrice - stdVal * StdFactor;
 				_shortTrail = 0;
 			}
 			else if (crossDown && Position >= 0)
 			{
 				SellMarket();
-				_shortTrail = candle.ClosePrice + atrVal * AtrFactor;
+				_shortTrail = candle.ClosePrice + stdVal * StdFactor;
 				_longTrail = 0;
 			}
 		}

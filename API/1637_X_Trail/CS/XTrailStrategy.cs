@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -24,92 +21,84 @@ public class XTrailStrategy : Strategy
 	private readonly StrategyParam<int> _ma2Length;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private SMA _ma1;
-	private SMA _ma2;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private bool _hasPrev;
 
-	private decimal? _prevMa1;
-	private decimal? _prevMa2;
-	private decimal? _prev2Ma1;
-	private decimal? _prev2Ma2;
-
-	/// <summary>
-	/// Fast moving average length.
-	/// </summary>
 	public int Ma1Length
 	{
 		get => _ma1Length.Value;
 		set => _ma1Length.Value = value;
 	}
 
-	/// <summary>
-	/// Slow moving average length.
-	/// </summary>
 	public int Ma2Length
 	{
 		get => _ma2Length.Value;
 		set => _ma2Length.Value = value;
 	}
 
-	/// <summary>
-	/// Candle type for analysis.
-	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Constructor.
-	/// </summary>
 	public XTrailStrategy()
 	{
-		_ma1Length = Param(nameof(Ma1Length), 1)
+		_ma1Length = Param(nameof(Ma1Length), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast MA Length", "Length of the fast moving average", "General");
 
-		_ma2Length = Param(nameof(Ma2Length), 14)
+		_ma2Length = Param(nameof(Ma2Length), 30)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow MA Length", "Length of the slow moving average", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	protected override void OnReseted()
 	{
-		return [(Security, CandleType)];
+		base.OnReseted();
+		_prevFast = 0;
+		_prevSlow = 0;
+		_hasPrev = false;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_ma1 = new SMA { Length = Ma1Length };
-		_ma2 = new SMA { Length = Ma2Length };
+		var ma1 = new SimpleMovingAverage { Length = Ma1Length };
+		var ma2 = new SimpleMovingAverage { Length = Ma2Length };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(ma1, ma2, ProcessCandle)
 			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, ma1);
+			DrawIndicator(area, ma2);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var median = (candle.HighPrice + candle.LowPrice) / 2m;
-
-		var ma1 = _ma1.Process(new DecimalIndicatorValue(_ma1, median, candle.OpenTime)).ToDecimal();
-		var ma2 = _ma2.Process(new DecimalIndicatorValue(_ma2, median, candle.OpenTime)).ToDecimal();
-
-		if (_prevMa1 != null && _prevMa2 != null && _prev2Ma1 != null && _prev2Ma2 != null)
+		if (_hasPrev)
 		{
-			var crossUp = ma1 > ma2 && _prevMa1 > _prevMa2 && _prev2Ma1 < _prev2Ma2;
-			var crossDown = ma1 < ma2 && _prevMa1 < _prevMa2 && _prev2Ma1 > _prev2Ma2;
+			var crossUp = _prevFast <= _prevSlow && fast > slow;
+			var crossDown = _prevFast >= _prevSlow && fast < slow;
 
 			if (crossUp && Position <= 0)
 				BuyMarket();
@@ -117,9 +106,8 @@ public class XTrailStrategy : Strategy
 				SellMarket();
 		}
 
-		_prev2Ma1 = _prevMa1;
-		_prev2Ma2 = _prevMa2;
-		_prevMa1 = ma1;
-		_prevMa2 = ma2;
+		_prevFast = fast;
+		_prevSlow = slow;
+		_hasPrev = true;
 	}
 }

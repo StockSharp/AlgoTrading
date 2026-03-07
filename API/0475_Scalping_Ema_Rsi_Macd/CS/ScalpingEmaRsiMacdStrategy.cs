@@ -3,14 +3,18 @@ namespace StockSharp.Samples.Strategies;
 using System;
 using System.Collections.Generic;
 
-using StockSharp.Algo;
+using Ecng.Common;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 /// <summary>
-/// 30-minute scalping strategy based on EMA crossover with RSI, MACD and volume filter.
+/// 30-minute scalping strategy based on EMA crossover with RSI, MACD and ATR filter.
+/// Buys on bullish EMA cross in uptrend with RSI/MACD confirmation.
+/// Sells on bearish EMA cross in downtrend with RSI/MACD confirmation.
+/// Uses ATR-based stop-loss and take-profit exits.
 /// </summary>
 public class ScalpingEmaRsiMacdStrategy : Strategy
 {
@@ -24,6 +28,7 @@ public class ScalpingEmaRsiMacdStrategy : Strategy
 	private readonly StrategyParam<decimal> _atrMultiplier;
 	private readonly StrategyParam<decimal> _riskReward;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _cooldownBars;
 
 	private decimal _prevFastEma;
 	private decimal _prevSlowEma;
@@ -31,6 +36,7 @@ public class ScalpingEmaRsiMacdStrategy : Strategy
 	private decimal _stopPrice;
 	private decimal _takeProfitPrice;
 	private decimal _entryPrice;
+	private int _cooldownRemaining;
 
 	public int FastEmaLength { get => _fastEmaLength.Value; set => _fastEmaLength.Value = value; }
 	public int SlowEmaLength { get => _slowEmaLength.Value; set => _slowEmaLength.Value = value; }
@@ -42,59 +48,52 @@ public class ScalpingEmaRsiMacdStrategy : Strategy
 	public decimal AtrMultiplier { get => _atrMultiplier.Value; set => _atrMultiplier.Value = value; }
 	public decimal RiskReward { get => _riskReward.Value; set => _riskReward.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int CooldownBars { get => _cooldownBars.Value; set => _cooldownBars.Value = value; }
 
 	public ScalpingEmaRsiMacdStrategy()
 	{
 		_fastEmaLength = Param(nameof(FastEmaLength), 12)
-			.SetDisplay("Fast EMA Length", "Length for fast EMA", "Indicators")
-			.SetOptimize(8, 20, 1);
+			.SetDisplay("Fast EMA Length", "Length for fast EMA", "Indicators");
 
 		_slowEmaLength = Param(nameof(SlowEmaLength), 26)
-			.SetDisplay("Slow EMA Length", "Length for slow EMA", "Indicators")
-			.SetOptimize(20, 40, 1);
+			.SetDisplay("Slow EMA Length", "Length for slow EMA", "Indicators");
 
 		_trendEmaLength = Param(nameof(TrendEmaLength), 55)
-			.SetDisplay("Trend EMA Length", "Length for trend EMA", "Indicators")
-			.SetOptimize(40, 80, 5);
+			.SetDisplay("Trend EMA Length", "Length for trend EMA", "Indicators");
 
 		_rsiLength = Param(nameof(RsiLength), 14)
-			.SetDisplay("RSI Length", "Length for RSI", "Indicators")
-			.SetOptimize(10, 20, 1);
+			.SetDisplay("RSI Length", "Length for RSI", "Indicators");
 
 		_rsiOverbought = Param(nameof(RsiOverbought), 65)
-			.SetDisplay("RSI Overbought", "Upper RSI bound", "Indicators")
-			.SetOptimize(60, 80, 5);
+			.SetDisplay("RSI Overbought", "Upper RSI bound", "Indicators");
 
 		_rsiOversold = Param(nameof(RsiOversold), 35)
-			.SetDisplay("RSI Oversold", "Lower RSI bound", "Indicators")
-			.SetOptimize(20, 40, 5);
+			.SetDisplay("RSI Oversold", "Lower RSI bound", "Indicators");
 
 		_atrLength = Param(nameof(AtrLength), 14)
-			.SetDisplay("ATR Length", "Length for ATR", "Indicators")
-			.SetOptimize(10, 20, 1);
+			.SetDisplay("ATR Length", "Length for ATR", "Indicators");
 
 		_atrMultiplier = Param(nameof(AtrMultiplier), 2m)
-			.SetDisplay("ATR Multiplier", "Multiplier for stop-loss", "Risk")
-			.SetOptimize(1m, 3m, 0.5m);
+			.SetDisplay("ATR Multiplier", "Multiplier for stop-loss", "Risk");
 
 		_riskReward = Param(nameof(RiskReward), 2m)
-			.SetDisplay("Risk Reward", "Take profit multiplier", "Risk")
-			.SetOptimize(1m, 3m, 0.5m);
+			.SetDisplay("Risk Reward", "Take profit multiplier", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
+
+		_cooldownBars = Param(nameof(CooldownBars), 10)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "Risk");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
-	protected override void OnStarted2(DateTime time)
+	protected override void OnReseted()
 	{
-		base.OnStarted2(time);
+		base.OnReseted();
 
 		_prevFastEma = 0;
 		_prevSlowEma = 0;
@@ -102,6 +101,13 @@ public class ScalpingEmaRsiMacdStrategy : Strategy
 		_stopPrice = 0;
 		_takeProfitPrice = 0;
 		_entryPrice = 0;
+		_cooldownRemaining = 0;
+	}
+
+	/// <inheritdoc />
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
 
 		var fastEma = new ExponentialMovingAverage { Length = FastEmaLength };
 		var slowEma = new ExponentialMovingAverage { Length = SlowEmaLength };
@@ -132,7 +138,54 @@ public class ScalpingEmaRsiMacdStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		if (!IsFormedAndOnlineAndAllowTrading())
+		{
+			_prevFastEma = fastEma;
+			_prevSlowEma = slowEma;
+			_prevMacd = macd;
+			return;
+		}
+
 		var close = candle.ClosePrice;
+
+		// Check stop-loss and take-profit exits first
+		if (Position > 0 && _stopPrice > 0)
+		{
+			if (candle.LowPrice <= _stopPrice || candle.HighPrice >= _takeProfitPrice)
+			{
+				SellMarket(Math.Abs(Position));
+				_stopPrice = 0;
+				_takeProfitPrice = 0;
+				_cooldownRemaining = CooldownBars;
+				_prevFastEma = fastEma;
+				_prevSlowEma = slowEma;
+				_prevMacd = macd;
+				return;
+			}
+		}
+		else if (Position < 0 && _stopPrice > 0)
+		{
+			if (candle.HighPrice >= _stopPrice || candle.LowPrice <= _takeProfitPrice)
+			{
+				BuyMarket(Math.Abs(Position));
+				_stopPrice = 0;
+				_takeProfitPrice = 0;
+				_cooldownRemaining = CooldownBars;
+				_prevFastEma = fastEma;
+				_prevSlowEma = slowEma;
+				_prevMacd = macd;
+				return;
+			}
+		}
+
+		if (_cooldownRemaining > 0)
+		{
+			_cooldownRemaining--;
+			_prevFastEma = fastEma;
+			_prevSlowEma = slowEma;
+			_prevMacd = macd;
+			return;
+		}
 
 		// Trend detection
 		var upTrend = close > trendEma && fastEma > slowEma;
@@ -152,36 +205,23 @@ public class ScalpingEmaRsiMacdStrategy : Strategy
 
 		if (longCondition && Position <= 0)
 		{
-			BuyMarket();
+			if (Position < 0)
+				BuyMarket(Math.Abs(Position));
+			BuyMarket(Volume);
 			_entryPrice = close;
 			_stopPrice = close - atr * AtrMultiplier;
 			_takeProfitPrice = close + (close - _stopPrice) * RiskReward;
+			_cooldownRemaining = CooldownBars;
 		}
 		else if (shortCondition && Position >= 0)
 		{
-			SellMarket();
+			if (Position > 0)
+				SellMarket(Math.Abs(Position));
+			SellMarket(Volume);
 			_entryPrice = close;
 			_stopPrice = close + atr * AtrMultiplier;
 			_takeProfitPrice = close - (_stopPrice - close) * RiskReward;
-		}
-		// Stop-loss and take-profit exits
-		else if (Position > 0 && _stopPrice > 0)
-		{
-			if (candle.LowPrice <= _stopPrice || candle.HighPrice >= _takeProfitPrice)
-			{
-				SellMarket();
-				_stopPrice = 0;
-				_takeProfitPrice = 0;
-			}
-		}
-		else if (Position < 0 && _stopPrice > 0)
-		{
-			if (candle.HighPrice >= _stopPrice || candle.LowPrice <= _takeProfitPrice)
-			{
-				BuyMarket();
-				_stopPrice = 0;
-				_takeProfitPrice = 0;
-			}
+			_cooldownRemaining = CooldownBars;
 		}
 
 		_prevFastEma = fastEma;

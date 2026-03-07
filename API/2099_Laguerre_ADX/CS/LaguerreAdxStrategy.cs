@@ -48,7 +48,7 @@ public class LaguerreAdxStrategy : Strategy
 		_takeProfitPct = Param(nameof(TakeProfitPct), 3m)
 			.SetDisplay("Take Profit %", "Take profit percentage", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for candles", "General");
 	}
 
@@ -62,6 +62,7 @@ public class LaguerreAdxStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
+		_adx = default;
 		_prevUp = _prevDown = 0;
 		_l0Up = _l1Up = _l2Up = _l3Up = 0;
 		_l0Down = _l1Down = _l2Down = _l3Down = 0;
@@ -75,48 +76,11 @@ public class LaguerreAdxStrategy : Strategy
 
 		_adx = new AverageDirectionalIndex { Length = AdxPeriod };
 
-		var passthrough = new SimpleMovingAverage { Length = 1 };
+		Indicators.Add(_adx);
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(passthrough, (candle, _) =>
-			{
-				if (candle.State != CandleStates.Finished)
-					return;
-
-				var adxResult = _adx.Process(candle);
-				if (!adxResult.IsFormed)
-					return;
-
-				var adxVal = (AverageDirectionalIndexValue)adxResult;
-				var plus = adxVal.Dx.Plus ?? 0m;
-				var minus = adxVal.Dx.Minus ?? 0m;
-
-				var up = LaguerreRsi(plus, ref _l0Up, ref _l1Up, ref _l2Up, ref _l3Up);
-				var down = LaguerreRsi(minus, ref _l0Down, ref _l1Down, ref _l2Down, ref _l3Down);
-
-				if (!_isInitialized)
-				{
-					_prevUp = up;
-					_prevDown = down;
-					_isInitialized = true;
-					return;
-				}
-
-				// Crossover signals
-				if (_prevUp <= _prevDown && up > down && Position <= 0)
-				{
-					if (Position < 0) BuyMarket();
-					BuyMarket();
-				}
-				else if (_prevUp >= _prevDown && up < down && Position >= 0)
-				{
-					if (Position > 0) SellMarket();
-					SellMarket();
-				}
-
-				_prevUp = up;
-				_prevDown = down;
-			})
+			.Bind(ProcessCandle)
 			.Start();
 
 		StartProtection(
@@ -130,6 +94,49 @@ public class LaguerreAdxStrategy : Strategy
 			DrawCandles(area, subscription);
 			DrawOwnTrades(area);
 		}
+	}
+
+	private void ProcessCandle(ICandleMessage candle)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
+
+		var adxResult = _adx.Process(candle);
+		if (!adxResult.IsFormed)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		var adxVal = (AverageDirectionalIndexValue)adxResult;
+		var plus = adxVal.Dx.Plus ?? 0m;
+		var minus = adxVal.Dx.Minus ?? 0m;
+
+		var up = LaguerreRsi(plus, ref _l0Up, ref _l1Up, ref _l2Up, ref _l3Up);
+		var down = LaguerreRsi(minus, ref _l0Down, ref _l1Down, ref _l2Down, ref _l3Down);
+
+		if (!_isInitialized)
+		{
+			_prevUp = up;
+			_prevDown = down;
+			_isInitialized = true;
+			return;
+		}
+
+		// Crossover signals
+		if (_prevUp <= _prevDown && up > down && Position <= 0)
+		{
+			if (Position < 0) BuyMarket();
+			BuyMarket();
+		}
+		else if (_prevUp >= _prevDown && up < down && Position >= 0)
+		{
+			if (Position > 0) SellMarket();
+			SellMarket();
+		}
+
+		_prevUp = up;
+		_prevDown = down;
 	}
 
 	private decimal LaguerreRsi(decimal value, ref decimal l0, ref decimal l1, ref decimal l2, ref decimal l3)

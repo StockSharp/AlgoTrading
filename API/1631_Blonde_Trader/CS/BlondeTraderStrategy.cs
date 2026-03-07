@@ -35,7 +35,7 @@ public class BlondeTraderStrategy : Strategy
 		_threshold = Param(nameof(Threshold), 0.002m)
 			.SetDisplay("Threshold", "Min distance ratio from extreme", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 

@@ -18,7 +18,7 @@ public class MTrainerStrategy : Strategy
 {
 	private readonly StrategyParam<int> _fastPeriod;
 	private readonly StrategyParam<int> _slowPeriod;
-	private readonly StrategyParam<int> _atrPeriod;
+	private readonly StrategyParam<int> _stdPeriod;
 	private readonly StrategyParam<decimal> _slMultiplier;
 	private readonly StrategyParam<decimal> _tpMultiplier;
 	private readonly StrategyParam<DataType> _candleType;
@@ -32,7 +32,7 @@ public class MTrainerStrategy : Strategy
 
 	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
 	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
-	public int AtrPeriod { get => _atrPeriod.Value; set => _atrPeriod.Value = value; }
+	public int StdPeriod { get => _stdPeriod.Value; set => _stdPeriod.Value = value; }
 	public decimal SlMultiplier { get => _slMultiplier.Value; set => _slMultiplier.Value = value; }
 	public decimal TpMultiplier { get => _tpMultiplier.Value; set => _tpMultiplier.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
@@ -47,9 +47,9 @@ public class MTrainerStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 
-		_atrPeriod = Param(nameof(AtrPeriod), 14)
+		_stdPeriod = Param(nameof(StdPeriod), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("ATR Period", "ATR period for SL/TP", "Indicators");
+			.SetDisplay("StdDev Period", "StdDev period for SL/TP", "Indicators");
 
 		_slMultiplier = Param(nameof(SlMultiplier), 2m)
 			.SetDisplay("SL Multiplier", "ATR multiplier for stop loss", "Risk");
@@ -57,7 +57,7 @@ public class MTrainerStrategy : Strategy
 		_tpMultiplier = Param(nameof(TpMultiplier), 3m)
 			.SetDisplay("TP Multiplier", "ATR multiplier for take profit", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -81,11 +81,11 @@ public class MTrainerStrategy : Strategy
 
 		var fastEma = new ExponentialMovingAverage { Length = FastPeriod };
 		var slowEma = new ExponentialMovingAverage { Length = SlowPeriod };
-		var atr = new AverageTrueRange { Length = AtrPeriod };
+		var stdDev = new StandardDeviation { Length = StdPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(fastEma, slowEma, atr, ProcessCandle)
+			.Bind(fastEma, slowEma, stdDev, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -98,7 +98,7 @@ public class MTrainerStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow, decimal atrVal)
+	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow, decimal stdVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
@@ -121,7 +121,7 @@ public class MTrainerStrategy : Strategy
 			}
 		}
 
-		if (_hasPrev && atrVal > 0)
+		if (_hasPrev && stdVal > 0)
 		{
 			var crossUp = _prevFast <= _prevSlow && fast > slow;
 			var crossDown = _prevFast >= _prevSlow && fast < slow;
@@ -130,15 +130,15 @@ public class MTrainerStrategy : Strategy
 			{
 				BuyMarket();
 				_entryPrice = candle.ClosePrice;
-				_stopLoss = _entryPrice - atrVal * SlMultiplier;
-				_takeProfit = _entryPrice + atrVal * TpMultiplier;
+				_stopLoss = _entryPrice - stdVal * SlMultiplier;
+				_takeProfit = _entryPrice + stdVal * TpMultiplier;
 			}
 			else if (crossDown && Position >= 0)
 			{
 				SellMarket();
 				_entryPrice = candle.ClosePrice;
-				_stopLoss = _entryPrice + atrVal * SlMultiplier;
-				_takeProfit = _entryPrice - atrVal * TpMultiplier;
+				_stopLoss = _entryPrice + stdVal * SlMultiplier;
+				_takeProfit = _entryPrice - stdVal * TpMultiplier;
 			}
 		}
 

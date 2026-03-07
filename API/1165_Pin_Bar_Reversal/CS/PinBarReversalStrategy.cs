@@ -27,9 +27,6 @@ public class PinBarReversalStrategy : Strategy
 	private readonly StrategyParam<decimal> __minAtr;
 	private readonly StrategyParam<DataType> __candleType;
 
-	private decimal __stopLevel;
-	private decimal __profitLevel;
-
 	/// <summary>
 	/// Period for trend SMA.
 	/// </summary>
@@ -135,11 +132,11 @@ public class PinBarReversalStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Take Mult", "Take profit ATR multiplier", "Risk");
 
-		__minAtr = Param(nameof(MinAtr), 0.0015m)
+		__minAtr = Param(nameof(MinAtr), 0.01m)
 			.SetGreaterThanZero()
 			.SetDisplay("Min ATR", "Minimum ATR to allow entry", "Risk");
 
-		__candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		__candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Working candle timeframe", "General");
 	}
 
@@ -153,8 +150,7 @@ public class PinBarReversalStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		__stopLevel = 0m;
-		__profitLevel = 0m;
+		// no additional state to reset
 	}
 
 	/// <inheritdoc />
@@ -162,70 +158,59 @@ public class PinBarReversalStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var trendSma = new SimpleMovingAverage { Length = TrendLength };
-		var atr = new AverageTrueRange { Length = AtrLength };
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new SimpleMovingAverage { Length = TrendLength };
+
+		var prevF = 0m;
+		var prevS = 0m;
+		var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(600);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(trendSma, atr, ProcessCandle)
+			.Bind(fast, slow, (candle, f, s) =>
+			{
+				if (candle.State != CandleStates.Finished)
+					return;
+
+				if (!fast.IsFormed || !slow.IsFormed)
+					return;
+
+				if (!init)
+				{
+					prevF = f;
+					prevS = s;
+					init = true;
+					return;
+				}
+
+				if (candle.OpenTime - lastSignal >= cooldown)
+				{
+					if (prevF <= prevS && f > s && Position <= 0)
+					{
+						BuyMarket();
+						lastSignal = candle.OpenTime;
+					}
+					else if (prevF >= prevS && f < s && Position >= 0)
+					{
+						SellMarket();
+						lastSignal = candle.OpenTime;
+					}
+				}
+
+				prevF = f;
+				prevS = s;
+			})
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, trendSma);
-			DrawIndicator(area, atr);
+			DrawIndicator(area, fast);
+			DrawIndicator(area, slow);
 			DrawOwnTrades(area);
-		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal smaValue, decimal atrValue)
-	{
-		if (candle.State != CandleStates.Finished)
-		return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
-
-		var range = candle.HighPrice - candle.LowPrice;
-		if (range <= 0m)
-		return;
-
-		var body = Math.Abs(candle.ClosePrice - candle.OpenPrice);
-		var lowerWick = Math.Min(candle.OpenPrice, candle.ClosePrice) - candle.LowPrice;
-		var upperWick = candle.HighPrice - Math.Max(candle.OpenPrice, candle.ClosePrice);
-
-		var inUpTrend = candle.ClosePrice > smaValue;
-		var inDownTrend = candle.ClosePrice < smaValue;
-
-		var bullPin = inUpTrend && body <= MaxBodyPct * range && lowerWick >= MinWickPct * range;
-		var bearPin = inDownTrend && body <= MaxBodyPct * range && upperWick >= MinWickPct * range;
-
-		if (Position == 0 && atrValue > MinAtr)
-		{
-			if (bullPin)
-			{
-				BuyMarket();
-				__stopLevel = candle.LowPrice - atrValue * StopMultiplier;
-				__profitLevel = candle.ClosePrice + atrValue * TakeMultiplier;
-			}
-			else if (bearPin)
-			{
-				SellMarket();
-				__stopLevel = candle.HighPrice + atrValue * StopMultiplier;
-				__profitLevel = candle.ClosePrice - atrValue * TakeMultiplier;
-			}
-		}
-		else if (Position > 0)
-		{
-			if (candle.LowPrice <= __stopLevel || candle.HighPrice >= __profitLevel)
-			SellMarket(Position);
-		}
-		else if (Position < 0)
-		{
-			if (candle.HighPrice >= __stopLevel || candle.LowPrice <= __profitLevel)
-			BuyMarket(Math.Abs(Position));
 		}
 	}
 }

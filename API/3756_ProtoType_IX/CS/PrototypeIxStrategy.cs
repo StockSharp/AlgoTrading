@@ -206,7 +206,7 @@ public class PrototypeIxStrategy : Strategy
 		
 		.SetOptimize(1.0m, 10.0m, 1.0m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles used for calculations", "General");
 	}
 

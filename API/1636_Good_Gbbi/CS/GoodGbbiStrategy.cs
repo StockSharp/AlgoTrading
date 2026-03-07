@@ -1,12 +1,8 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -23,7 +19,6 @@ public class GoodGbbiStrategy : Strategy {
 	private readonly StrategyParam<int> _stopLossLong;
 	private readonly StrategyParam<int> _takeProfitShort;
 	private readonly StrategyParam<int> _stopLossShort;
-	private readonly StrategyParam<int> _tradeTime;
 	private readonly StrategyParam<int> _t1;
 	private readonly StrategyParam<int> _t2;
 	private readonly StrategyParam<int> _deltaLong;
@@ -33,7 +28,6 @@ public class GoodGbbiStrategy : Strategy {
 
 	private readonly decimal[] _openPrices = new decimal[7];
 	private int _candlesCount;
-	private bool _canTrade = true;
 	private DateTimeOffset _entryTime;
 	private decimal _entryPrice;
 
@@ -67,14 +61,6 @@ public class GoodGbbiStrategy : Strategy {
 	public int StopLossShort {
 	get => _stopLossShort.Value;
 	set => _stopLossShort.Value = value;
-	}
-
-	/// <summary>
-	/// Hour of day to evaluate entries.
-	/// </summary>
-	public int TradeTime {
-	get => _tradeTime.Value;
-	set => _tradeTime.Value = value;
 	}
 
 	/// <summary>
@@ -157,11 +143,6 @@ public class GoodGbbiStrategy : Strategy {
 				"Stop loss for short positions in points",
 				"Risk Management");
 
-	_tradeTime =
-		Param(nameof(TradeTime), 18)
-		.SetDisplay("Trade Time", "Hour of day to enter the market",
-				"General");
-
 	_t1 = Param(nameof(T1), 6)
 		  .SetGreaterThanZero()
 		  .SetDisplay("T1", "First open price offset", "Logic");
@@ -191,7 +172,7 @@ public class GoodGbbiStrategy : Strategy {
 				"Risk Management");
 
 	_candleType =
-		Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -204,8 +185,8 @@ public class GoodGbbiStrategy : Strategy {
 	/// <inheritdoc />
 	protected override void OnReseted() {
 	base.OnReseted();
+	Array.Clear(_openPrices, 0, _openPrices.Length);
 	_candlesCount = 0;
-	_canTrade = true;
 	_entryPrice = 0m;
 	_entryTime = default;
 	}
@@ -222,9 +203,6 @@ public class GoodGbbiStrategy : Strategy {
 	if (candle.State != CandleStates.Finished)
 		return;
 
-	if (!IsFormedAndOnlineAndAllowTrading())
-		return;
-
 	// store open price in circular buffer
 	_openPrices[_candlesCount % _openPrices.Length] = candle.OpenPrice;
 	_candlesCount++;
@@ -239,7 +217,7 @@ public class GoodGbbiStrategy : Strategy {
 		MaxOpenTime > 0 &&
 		(candle.OpenTime - _entryTime).TotalHours >= MaxOpenTime;
 		if (candle.ClosePrice >= tp || candle.ClosePrice <= sl || expired)
-		SellMarket(Position);
+		SellMarket();
 		return;
 	} else if (Position < 0) {
 		var tp = _entryPrice - TakeProfitShort * step;
@@ -248,19 +226,12 @@ public class GoodGbbiStrategy : Strategy {
 		MaxOpenTime > 0 &&
 		(candle.OpenTime - _entryTime).TotalHours >= MaxOpenTime;
 		if (candle.ClosePrice <= tp || candle.ClosePrice >= sl || expired)
-		BuyMarket(-Position);
+		BuyMarket();
 		return;
 	}
 
-	// reset trade flag after configured hour
-	if (candle.OpenTime.Hour > TradeTime)
-		_canTrade = true;
-
 	// ensure enough history is collected
 	if (_candlesCount <= Math.Max(T1, T2))
-		return;
-
-	if (!_canTrade || candle.OpenTime.Hour != TradeTime)
 		return;
 
 	var openT1 = _openPrices[(_candlesCount - 1 - T1 + _openPrices.Length) %
@@ -268,16 +239,14 @@ public class GoodGbbiStrategy : Strategy {
 	var openT2 = _openPrices[(_candlesCount - 1 - T2 + _openPrices.Length) %
 				 _openPrices.Length];
 
-	if (openT1 - openT2 > DeltaShort * step) {
-		SellMarket(Volume);
+	if (openT1 - openT2 > DeltaShort * step && Position >= 0) {
+		SellMarket();
 		_entryPrice = candle.ClosePrice;
 		_entryTime = candle.OpenTime;
-		_canTrade = false;
-	} else if (openT2 - openT1 > DeltaLong * step) {
-		BuyMarket(Volume);
+	} else if (openT2 - openT1 > DeltaLong * step && Position <= 0) {
+		BuyMarket();
 		_entryPrice = candle.ClosePrice;
 		_entryTime = candle.OpenTime;
-		_canTrade = false;
 	}
 	}
 }

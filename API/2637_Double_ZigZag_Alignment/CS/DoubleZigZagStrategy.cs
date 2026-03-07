@@ -51,8 +51,26 @@ public class DoubleZigZagStrategy : Strategy
 			.SetDisplay("Fast Length", "Lookback for the fast swing detector", "Indicators");
 		_slowLength = Param(nameof(SlowLength), 30)
 			.SetDisplay("Slow Length", "Lookback for the slow confirmation swing", "Indicators");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to analyze", "General");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_highs.Clear();
+		_lows.Clear();
+		_fastDirection = 0;
+		_slowDirection = 0;
+		_lastFastPivotHigh = 0;
+		_lastFastPivotLow = 0;
 	}
 
 	/// <inheritdoc />

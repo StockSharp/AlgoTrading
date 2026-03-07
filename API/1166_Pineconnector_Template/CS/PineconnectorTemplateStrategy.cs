@@ -55,13 +55,13 @@ public class PineconnectorTemplateStrategy : Strategy
 	/// </summary>
 	public PineconnectorTemplateStrategy()
 	{
-		_fastLength = Param(nameof(FastLength), 10)
+		_fastLength = Param(nameof(FastLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast MA Length", "Period of the fast moving average", "MA Settings")
 			
 			.SetOptimize(5, 20, 5);
 
-		_slowLength = Param(nameof(SlowLength), 100)
+		_slowLength = Param(nameof(SlowLength), 40)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow MA Length", "Period of the slow moving average", "MA Settings")
 			
@@ -82,13 +82,51 @@ public class PineconnectorTemplateStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var fastMa = new SMA { Length = FastLength };
-		var slowMa = new SMA { Length = SlowLength };
+		var fastMa = new ExponentialMovingAverage { Length = FastLength };
+		var slowMa = new ExponentialMovingAverage { Length = SlowLength };
+
+		var prevF = 0m;
+		var prevS = 0m;
+		var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
 
 		var subscription = SubscribeCandles(CandleType);
 
 		subscription
-			.Bind(fastMa, slowMa, OnProcess)
+			.Bind(fastMa, slowMa, (candle, f, s) =>
+			{
+				if (candle.State != CandleStates.Finished)
+					return;
+
+				if (!fastMa.IsFormed || !slowMa.IsFormed)
+					return;
+
+				if (!init)
+				{
+					prevF = f;
+					prevS = s;
+					init = true;
+					return;
+				}
+
+				if (candle.OpenTime - lastSignal >= cooldown)
+				{
+					if (prevF <= prevS && f > s && Position <= 0)
+					{
+						BuyMarket();
+						lastSignal = candle.OpenTime;
+					}
+					else if (prevF >= prevS && f < s && Position >= 0)
+					{
+						SellMarket();
+						lastSignal = candle.OpenTime;
+					}
+				}
+
+				prevF = f;
+				prevS = s;
+			})
 			.Start();
 
 		var area = CreateChartArea();
@@ -98,24 +136,6 @@ public class PineconnectorTemplateStrategy : Strategy
 			DrawIndicator(area, fastMa);
 			DrawIndicator(area, slowMa);
 			DrawOwnTrades(area);
-		}
-	}
-
-	private void OnProcess(ICandleMessage candle, decimal fastValue, decimal slowValue)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (fastValue > slowValue && Position <= 0)
-		{
-			BuyMarket(Volume + Math.Abs(Position));
-		}
-		else if (fastValue < slowValue && Position >= 0)
-		{
-			SellMarket(Volume + Math.Abs(Position));
 		}
 	}
 }

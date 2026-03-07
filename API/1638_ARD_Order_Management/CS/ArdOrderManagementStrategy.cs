@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -22,86 +19,64 @@ public class ArdOrderManagementStrategy : Strategy
 	private readonly StrategyParam<decimal> _threshold;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private DeMarker _deMarker;
-	private decimal? _previousValue;
+	private decimal _previousValue;
+	private bool _hasPrev;
 
-	/// <summary>
-	/// DeMarker indicator period.
-	/// </summary>
 	public int DeMarkerPeriod
 	{
 		get => _deMarkerPeriod.Value;
 		set => _deMarkerPeriod.Value = value;
 	}
 
-	/// <summary>
-	/// Threshold for cross detection.
-	/// </summary>
 	public decimal Threshold
 	{
 		get => _threshold.Value;
 		set => _threshold.Value = value;
 	}
 
-	/// <summary>
-	/// Candle type to process.
-	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Initializes a new instance of <see cref="ArdOrderManagementStrategy"/>.
-	/// </summary>
 	public ArdOrderManagementStrategy()
 	{
-		_deMarkerPeriod = Param(nameof(DeMarkerPeriod), 2)
+		_deMarkerPeriod = Param(nameof(DeMarkerPeriod), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("DeMarker Period", "DeMarker indicator period", "Parameters")
-			;
+			.SetDisplay("DeMarker Period", "DeMarker indicator period", "Parameters");
 
 		_threshold = Param(nameof(Threshold), 0.5m)
-			.SetDisplay("Threshold", "DeMarker crossing level", "Parameters")
-			;
+			.SetDisplay("Threshold", "DeMarker crossing level", "Parameters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_deMarker = default;
-		_previousValue = default;
+		_previousValue = 0;
+		_hasPrev = false;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
-
-		_deMarker = new DeMarker { Length = DeMarkerPeriod };
+		var deMarker = new DeMarker { Length = DeMarkerPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(_deMarker, ProcessCandle).Start();
+		subscription.Bind(deMarker, ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _deMarker);
+			DrawIndicator(area, deMarker);
 			DrawOwnTrades(area);
 		}
 	}
@@ -111,9 +86,10 @@ public class ArdOrderManagementStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (_previousValue is null)
+		if (!_hasPrev)
 		{
 			_previousValue = deMarkerValue;
+			_hasPrev = true;
 			return;
 		}
 

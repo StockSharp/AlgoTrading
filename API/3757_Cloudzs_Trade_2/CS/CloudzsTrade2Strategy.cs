@@ -36,7 +36,7 @@ public class CloudzsTrade2Strategy : Strategy
 	private readonly StrategyParam<bool> _closeOnOpposite;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private StochasticOscillator _stochastic;
+	private StochasticOscillator? _stochastic;
 
 	private decimal _previousK;
 	private decimal _previousD;
@@ -269,7 +269,7 @@ public class CloudzsTrade2Strategy : Strategy
 		_closeOnOpposite = Param(nameof(CloseOnOpposite), true)
 			.SetDisplay("Close On Opposite", "Exit when the opposite signal fires", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe for the strategy", "General");
 	}
 
@@ -284,6 +284,7 @@ public class CloudzsTrade2Strategy : Strategy
 	{
 		base.OnReseted();
 
+		_stochastic = null;
 		_previousK = 0m;
 		_previousD = 0m;
 		_lastK = 0m;

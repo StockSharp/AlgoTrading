@@ -117,7 +117,7 @@ public class RabbitM2Strategy : Strategy
 			.SetDisplay("Initial Volume", "Starting base order size", "Money Management")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Primary Candle Type", "Timeframe for CCI, Williams %R and Donchian", "General");
 	}
 
@@ -359,8 +359,7 @@ public class RabbitM2Strategy : Strategy
 
 		_previousWpr = wprCurrent;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		// indicators bound via .BindEx()
 
 		if (_tradeVolume <= 0m)
 			return;
@@ -379,7 +378,7 @@ public class RabbitM2Strategy : Strategy
 			var volume = _tradeVolume + Math.Max(0m, Position);
 			if (volume > 0m)
 			{
-				SellMarket(volume);
+				SellMarket();
 				_currentStop = candle.ClosePrice + _stopLossDistance;
 				_currentTake = candle.ClosePrice - _takeProfitDistance;
 			}
@@ -393,7 +392,7 @@ public class RabbitM2Strategy : Strategy
 			var volume = _tradeVolume + Math.Max(0m, -Position);
 			if (volume > 0m)
 			{
-				BuyMarket(volume);
+				BuyMarket();
 				_currentStop = candle.ClosePrice - _stopLossDistance;
 				_currentTake = candle.ClosePrice + _takeProfitDistance;
 			}
@@ -445,7 +444,7 @@ public class RabbitM2Strategy : Strategy
 		if (volume <= 0m)
 			return;
 
-		SellMarket(volume);
+		SellMarket();
 		_currentStop = 0m;
 		_currentTake = 0m;
 		LogInfo($"Closing long position: {reason}.");
@@ -457,7 +456,7 @@ public class RabbitM2Strategy : Strategy
 		if (volume <= 0m)
 			return;
 
-		BuyMarket(volume);
+		BuyMarket();
 		_currentStop = 0m;
 		_currentTake = 0m;
 		LogInfo($"Closing short position: {reason}.");

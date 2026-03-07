@@ -39,7 +39,7 @@ public class MilleniumCodeStrategy : Strategy
 
 	public MilleniumCodeStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 		_fastLength = Param(nameof(FastLength), 10)
 			.SetDisplay("Fast MA", "Fast moving average length", "Indicators");
@@ -63,6 +63,8 @@ public class MilleniumCodeStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
+		_highest = default;
+		_lowest = default;
 		_prevFast = 0m;
 		_prevSlow = 0m;
 	}
@@ -71,10 +73,13 @@ public class MilleniumCodeStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var fast = new SimpleMovingAverage { Length = FastLength };
-		var slow = new SimpleMovingAverage { Length = SlowLength };
+		var fast = new ExponentialMovingAverage { Length = FastLength };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
 		_highest = new Highest { Length = HighLowBars };
 		_lowest = new Lowest { Length = HighLowBars };
+
+		Indicators.Add(_highest);
+		Indicators.Add(_lowest);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(fast, slow, (candle, fastVal, slowVal) =>

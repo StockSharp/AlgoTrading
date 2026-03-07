@@ -63,7 +63,7 @@ public class BreakoutBarsTrendStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit %", "Take profit percentage", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -77,6 +77,7 @@ public class BreakoutBarsTrendStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
+		_parabolic = default;
 		_lastTrend = 0;
 		_negativeCounter = 0;
 	}
@@ -88,48 +89,12 @@ public class BreakoutBarsTrendStrategy : Strategy
 
 		_parabolic = new ParabolicSar();
 
-		var passthrough = new SimpleMovingAverage { Length = 1 };
+		Indicators.Add(_parabolic);
+
 		var subscription = SubscribeCandles(CandleType);
 
 		subscription
-			.Bind(passthrough, (candle, _) =>
-			{
-				if (candle.State != CandleStates.Finished)
-					return;
-
-				var sarResult = _parabolic.Process(candle);
-				if (!sarResult.IsFormed)
-					return;
-
-				var sarValue = sarResult.ToDecimal();
-				var trend = sarValue < candle.ClosePrice ? 1 : -1;
-
-				if (_lastTrend != 0 && _lastTrend != trend)
-				{
-					// Reversal detected
-					if (trend == 1 && Position < 0)
-						BuyMarket();
-					else if (trend == -1 && Position > 0)
-						SellMarket();
-
-					_negativeCounter++;
-
-					if (_negativeCounter > Negatives)
-					{
-						if (trend == 1 && Position <= 0)
-						{
-							BuyMarket();
-						}
-						else if (trend == -1 && Position >= 0)
-						{
-							SellMarket();
-						}
-						_negativeCounter = 0;
-					}
-				}
-
-				_lastTrend = trend;
-			})
+			.Bind(ProcessCandle)
 			.Start();
 
 		StartProtection(
@@ -143,5 +108,47 @@ public class BreakoutBarsTrendStrategy : Strategy
 			DrawCandles(area, subscription);
 			DrawOwnTrades(area);
 		}
+	}
+
+	private void ProcessCandle(ICandleMessage candle)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
+
+		var sarResult = _parabolic.Process(candle);
+		if (!sarResult.IsFormed)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		var sarValue = sarResult.ToDecimal();
+		var trend = sarValue < candle.ClosePrice ? 1 : -1;
+
+		if (_lastTrend != 0 && _lastTrend != trend)
+		{
+			// Reversal detected
+			if (trend == 1 && Position < 0)
+				BuyMarket();
+			else if (trend == -1 && Position > 0)
+				SellMarket();
+
+			_negativeCounter++;
+
+			if (_negativeCounter > Negatives)
+			{
+				if (trend == 1 && Position <= 0)
+				{
+					BuyMarket();
+				}
+				else if (trend == -1 && Position >= 0)
+				{
+					SellMarket();
+				}
+				_negativeCounter = 0;
+			}
+		}
+
+		_lastTrend = trend;
 	}
 }

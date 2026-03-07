@@ -49,7 +49,22 @@ public class MacdSignalCrossoverStrategy : Strategy
 		_fastPeriod = Param(nameof(FastPeriod), 23);
 		_slowPeriod = Param(nameof(SlowPeriod), 40);
 		_signalPeriod = Param(nameof(SignalPeriod), 8);
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame());
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_prevMacdAboveSignal = false;
+		_hasPrev = false;
 	}
 
 	protected override void OnStarted2(DateTime time)

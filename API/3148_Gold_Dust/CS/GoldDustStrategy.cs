@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -13,543 +10,81 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-/// <summary>
-/// Translation of the "Gold Dust" expert advisor that evaluates two perceptrons built on a weighted moving average.
-/// Generates sell orders when the perceptron output is positive and buy orders when it is negative.
-/// Implements stop-loss management and a candle-based trailing stop expressed in adjusted pips.
-/// </summary>
 public class GoldDustStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _tradeVolume;
-	private readonly StrategyParam<decimal> _stopLossPips;
-	private readonly StrategyParam<decimal> _trailingStopPips;
-	private readonly StrategyParam<decimal> _trailingStepPips;
-	private readonly StrategyParam<int> _maPeriod;
-	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _passMode;
-	private readonly StrategyParam<int> _x11;
-	private readonly StrategyParam<int> _x21;
-	private readonly StrategyParam<int> _x31;
-	private readonly StrategyParam<int> _x41;
-	private readonly StrategyParam<int> _x12;
-	private readonly StrategyParam<int> _x22;
-	private readonly StrategyParam<int> _x32;
-	private readonly StrategyParam<int> _x42;
+	private readonly StrategyParam<int> _fastPeriod;
+	private readonly StrategyParam<int> _slowPeriod;
+	private readonly StrategyParam<int> _stopLossPoints;
+	private readonly StrategyParam<int> _takeProfitPoints;
 
-	private readonly List<decimal> _openHistory = new();
-	private readonly List<decimal> _closeHistory = new();
-	private readonly List<decimal> _maHistory = new();
+	private ExponentialMovingAverage _fast;
+	private ExponentialMovingAverage _slow;
 
-	private decimal _pipValue;
-	private decimal _stopLossOffset;
-	private decimal _trailingStopOffset;
-	private decimal _trailingStepOffset;
-	private int _requiredHistory;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private decimal _entryPrice;
+	private int _cooldown;
 
-	private decimal _lastPosition;
-	private decimal _longStop;
-	private decimal _shortStop;
-	private bool _hasLongStop;
-	private bool _hasShortStop;
-	private decimal _positionPrice;
+	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
+	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
+	public int StopLossPoints { get => _stopLossPoints.Value; set => _stopLossPoints.Value = value; }
+	public int TakeProfitPoints { get => _takeProfitPoints.Value; set => _takeProfitPoints.Value = value; }
 
-	/// <summary>
-	/// Volume used when opening a fresh position.
-	/// </summary>
-	public decimal TradeVolume
-	{
-		get => _tradeVolume.Value;
-		set => _tradeVolume.Value = value;
-	}
-
-	/// <summary>
-	/// Initial stop-loss distance in adjusted pips.
-	/// </summary>
-	public decimal StopLossPips
-	{
-		get => _stopLossPips.Value;
-		set => _stopLossPips.Value = value;
-	}
-
-	/// <summary>
-	/// Distance maintained by the trailing stop in adjusted pips.
-	/// </summary>
-	public decimal TrailingStopPips
-	{
-		get => _trailingStopPips.Value;
-		set => _trailingStopPips.Value = value;
-	}
-
-	/// <summary>
-	/// Extra favourable move required before the trailing stop advances.
-	/// </summary>
-	public decimal TrailingStepPips
-	{
-		get => _trailingStepPips.Value;
-		set => _trailingStepPips.Value = value;
-	}
-
-	/// <summary>
-	/// Length of the weighted moving average.
-	/// </summary>
-	public int MaPeriod
-	{
-		get => _maPeriod.Value;
-		set => _maPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Candle series used for calculations and order timing.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Perceptron mode: 1 uses the first weight set, 2 uses the second, 3 requires consensus.
-	/// </summary>
-	public int PassMode
-	{
-		get => _passMode.Value;
-		set => _passMode.Value = value;
-	}
-
-	/// <summary>
-	/// First weight of perceptron #1 (raw value before 100 offset is removed).
-	/// </summary>
-	public int X11
-	{
-		get => _x11.Value;
-		set => _x11.Value = value;
-	}
-
-	/// <summary>
-	/// Second weight of perceptron #1 (raw value before 100 offset is removed).
-	/// </summary>
-	public int X21
-	{
-		get => _x21.Value;
-		set => _x21.Value = value;
-	}
-
-	/// <summary>
-	/// Third weight of perceptron #1 (raw value before 100 offset is removed).
-	/// </summary>
-	public int X31
-	{
-		get => _x31.Value;
-		set => _x31.Value = value;
-	}
-
-	/// <summary>
-	/// Fourth weight of perceptron #1 (raw value before 100 offset is removed).
-	/// </summary>
-	public int X41
-	{
-		get => _x41.Value;
-		set => _x41.Value = value;
-	}
-
-	/// <summary>
-	/// First weight of perceptron #2 (raw value before 100 offset is removed).
-	/// </summary>
-	public int X12
-	{
-		get => _x12.Value;
-		set => _x12.Value = value;
-	}
-
-	/// <summary>
-	/// Second weight of perceptron #2 (raw value before 100 offset is removed).
-	/// </summary>
-	public int X22
-	{
-		get => _x22.Value;
-		set => _x22.Value = value;
-	}
-
-	/// <summary>
-	/// Third weight of perceptron #2 (raw value before 100 offset is removed).
-	/// </summary>
-	public int X32
-	{
-		get => _x32.Value;
-		set => _x32.Value = value;
-	}
-
-	/// <summary>
-	/// Fourth weight of perceptron #2 (raw value before 100 offset is removed).
-	/// </summary>
-	public int X42
-	{
-		get => _x42.Value;
-		set => _x42.Value = value;
-	}
-
-	/// <summary>
-	/// Initialize strategy parameters with defaults taken from the original expert advisor.
-	/// </summary>
 	public GoldDustStrategy()
 	{
-		_tradeVolume = Param(nameof(TradeVolume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Trade Volume", "Base order volume", "Trading");
-
-		_stopLossPips = Param(nameof(StopLossPips), 150m)
-			.SetDisplay("Stop Loss (pips)", "Initial stop distance in adjusted pips", "Risk");
-
-		_trailingStopPips = Param(nameof(TrailingStopPips), 25m)
-			.SetDisplay("Trailing Stop (pips)", "Trailing stop distance in adjusted pips", "Risk");
-
-		_trailingStepPips = Param(nameof(TrailingStepPips), 5m)
-			.SetDisplay("Trailing Step (pips)", "Extra pips required before the trailing stop moves", "Risk");
-
-		_maPeriod = Param(nameof(MaPeriod), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("MA Period", "Weighted moving average length", "Indicator");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Timeframe used for calculations", "General");
-
-		_passMode = Param(nameof(PassMode), 1)
-			.SetRange(1, 3)
-			.SetDisplay("Pass Mode", "1=Perceptron 1, 2=Perceptron 2, 3=Consensus", "Logic");
-
-		_x11 = Param(nameof(X11), 120)
-			.SetDisplay("X11", "Weight 1 for perceptron #1", "Perceptron #1");
-
-		_x21 = Param(nameof(X21), 80)
-			.SetDisplay("X21", "Weight 2 for perceptron #1", "Perceptron #1");
-
-		_x31 = Param(nameof(X31), 110)
-			.SetDisplay("X31", "Weight 3 for perceptron #1", "Perceptron #1");
-
-		_x41 = Param(nameof(X41), 90)
-			.SetDisplay("X41", "Weight 4 for perceptron #1", "Perceptron #1");
-
-		_x12 = Param(nameof(X12), 100)
-			.SetDisplay("X12", "Weight 1 for perceptron #2", "Perceptron #2");
-
-		_x22 = Param(nameof(X22), 100)
-			.SetDisplay("X22", "Weight 2 for perceptron #2", "Perceptron #2");
-
-		_x32 = Param(nameof(X32), 100)
-			.SetDisplay("X32", "Weight 3 for perceptron #2", "Perceptron #2");
-
-		_x42 = Param(nameof(X42), 100)
-			.SetDisplay("X42", "Weight 4 for perceptron #2", "Perceptron #2");
-
-		_requiredHistory = Math.Max(1, MaPeriod * 3 + 1);
+		_fastPeriod = Param(nameof(FastPeriod), 14).SetGreaterThanZero().SetDisplay("Fast Period", "Fast EMA period", "Indicator");
+		_slowPeriod = Param(nameof(SlowPeriod), 50).SetGreaterThanZero().SetDisplay("Slow Period", "Slow EMA period", "Indicator");
+		_stopLossPoints = Param(nameof(StopLossPoints), 200).SetNotNegative().SetDisplay("Stop Loss", "Stop-loss in price steps", "Risk");
+		_takeProfitPoints = Param(nameof(TakeProfitPoints), 400).SetNotNegative().SetDisplay("Take Profit", "Take-profit in price steps", "Risk");
 	}
 
-	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		yield return (Security, TimeSpan.FromMinutes(5).TimeFrame());
+	}
+
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_openHistory.Clear();
-		_closeHistory.Clear();
-		_maHistory.Clear();
-
-		_pipValue = 0m;
-		_stopLossOffset = 0m;
-		_trailingStopOffset = 0m;
-		_trailingStepOffset = 0m;
-		_requiredHistory = Math.Max(1, MaPeriod * 3 + 1);
-
-		_lastPosition = 0m;
-		_longStop = 0m;
-		_shortStop = 0m;
-		_hasLongStop = false;
-		_hasShortStop = false;
+		_fast = null; _slow = null;
+		_prevFast = 0; _prevSlow = 0; _entryPrice = 0; _cooldown = 0;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		UpdateOffsets();
-		_requiredHistory = Math.Max(1, MaPeriod * 3 + 1);
-
-		var ma = new WeightedMovingAverage
-		{
-			Length = MaPeriod
-		};
-
-		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(ma, (candle, maValue) => ProcessCandle(candle, ma, maValue))
-			.Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, ma);
-			DrawOwnTrades(area);
-		}
+		_fast = new ExponentialMovingAverage { Length = FastPeriod };
+		_slow = new ExponentialMovingAverage { Length = SlowPeriod };
+		var subscription = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
+		subscription.Bind(_fast, _slow, ProcessCandle);
+		subscription.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, WeightedMovingAverage ma, decimal maValue)
+	private void ProcessCandle(ICandleMessage candle, decimal fastValue, decimal slowValue)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
+		if (candle.State != CandleStates.Finished) return;
+		if (!_fast.IsFormed || !_slow.IsFormed) { _prevFast = fastValue; _prevSlow = slowValue; return; }
+		if (_cooldown > 0) { _cooldown--; _prevFast = fastValue; _prevSlow = slowValue; return; }
 
-		AppendHistory(candle, maValue);
-		UpdateOffsets();
-		UpdatePositionState();
-		UpdateTrailingStops(candle);
+		var close = candle.ClosePrice;
+		var step = Security?.PriceStep ?? 1m;
 
-		if (CheckStopLoss(candle))
-			return;
-
-		if (!ma.IsFormed)
-			return;
-
-		var signal = CalculateSupervisorSignal();
-
-		if (signal < 0)
+		if (Position > 0 && _entryPrice > 0)
 		{
-			EnterLong();
-			if (Position > 0) _positionPrice = candle.ClosePrice;
+			if (StopLossPoints > 0 && close <= _entryPrice - StopLossPoints * step) { SellMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
+			if (TakeProfitPoints > 0 && close >= _entryPrice + TakeProfitPoints * step) { SellMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
 		}
-		else if (signal > 0)
+		else if (Position < 0 && _entryPrice > 0)
 		{
-			EnterShort();
-			if (Position < 0) _positionPrice = candle.ClosePrice;
-		}
-		else
-		{
-			CloseProfitablePositions(candle);
-		}
-	}
-
-	private void AppendHistory(ICandleMessage candle, decimal maValue)
-	{
-		_openHistory.Add(candle.OpenPrice);
-		_closeHistory.Add(candle.ClosePrice);
-		_maHistory.Add(maValue);
-
-		var required = Math.Max(1, MaPeriod * 3 + 1);
-		_requiredHistory = required;
-
-		while (_openHistory.Count > required)
-		{
-			_openHistory.RemoveAt(0);
-			_closeHistory.RemoveAt(0);
-			_maHistory.RemoveAt(0);
-		}
-	}
-
-	private void UpdateOffsets()
-	{
-		_pipValue = CalculatePipValue();
-		_stopLossOffset = StopLossPips * _pipValue;
-		_trailingStopOffset = TrailingStopPips * _pipValue;
-		_trailingStepOffset = TrailingStepPips * _pipValue;
-	}
-
-	private void UpdatePositionState()
-	{
-		if (Position > 0m)
-		{
-			if (_lastPosition <= 0m)
-			{
-				_hasShortStop = false;
-				_longStop = _positionPrice - _stopLossOffset;
-				_hasLongStop = _stopLossOffset > 0m;
-			}
-		}
-		else if (Position < 0m)
-		{
-			if (_lastPosition >= 0m)
-			{
-				_hasLongStop = false;
-				_shortStop = _positionPrice + _stopLossOffset;
-				_hasShortStop = _stopLossOffset > 0m;
-			}
-		}
-		else
-		{
-			_hasLongStop = false;
-			_hasShortStop = false;
+			if (StopLossPoints > 0 && close >= _entryPrice + StopLossPoints * step) { BuyMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
+			if (TakeProfitPoints > 0 && close <= _entryPrice - TakeProfitPoints * step) { BuyMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
 		}
 
-		_lastPosition = Position;
-	}
+		if (_prevFast <= _prevSlow && fastValue > slowValue && Position <= 0)
+		{ if (Position < 0) BuyMarket(); BuyMarket(); _entryPrice = close; _cooldown = 100; }
+		else if (_prevFast >= _prevSlow && fastValue < slowValue && Position >= 0)
+		{ if (Position > 0) SellMarket(); SellMarket(); _entryPrice = close; _cooldown = 100; }
 
-	private void UpdateTrailingStops(ICandleMessage candle)
-	{
-		if (_trailingStopOffset <= 0m)
-			return;
-
-		if (Position > 0m)
-		{
-			var profit = candle.ClosePrice - _positionPrice;
-			if (profit > _trailingStopOffset + _trailingStepOffset)
-			{
-				var candidate = candle.ClosePrice - _trailingStopOffset;
-				if (!_hasLongStop || candidate > _longStop)
-				{
-					_longStop = candidate;
-					_hasLongStop = true;
-				}
-			}
-		}
-		else if (Position < 0m)
-		{
-			var profit = _positionPrice - candle.ClosePrice;
-			if (profit > _trailingStopOffset + _trailingStepOffset)
-			{
-				var candidate = candle.ClosePrice + _trailingStopOffset;
-				if (!_hasShortStop || candidate < _shortStop)
-				{
-					_shortStop = candidate;
-					_hasShortStop = true;
-				}
-			}
-		}
-	}
-
-	private bool CheckStopLoss(ICandleMessage candle)
-	{
-		if (Position > 0m && _hasLongStop)
-		{
-			if (candle.LowPrice <= _longStop)
-			{
-				SellMarket(Position);
-				_hasLongStop = false;
-				return true;
-			}
-		}
-		else if (Position < 0m && _hasShortStop)
-		{
-			if (candle.HighPrice >= _shortStop)
-			{
-				BuyMarket(-Position);
-				_hasShortStop = false;
-				return true;
-			}
-		}
-
-		return false;
-	}
-
-	private void EnterLong()
-	{
-		if (Position > 0m)
-			return;
-
-		var volume = TradeVolume + Math.Max(0m, -Position);
-		if (volume <= 0m)
-			return;
-
-		BuyMarket(volume);
-	}
-
-	private void EnterShort()
-	{
-		if (Position < 0m)
-			return;
-
-		var volume = TradeVolume + Math.Max(0m, Position);
-		if (volume <= 0m)
-			return;
-
-		SellMarket(volume);
-	}
-
-	private void CloseProfitablePositions(ICandleMessage candle)
-	{
-		if (Position == 0m)
-			return;
-
-		var openProfit = Position * (candle.ClosePrice - _positionPrice);
-		if (openProfit <= 0m)
-			return;
-
-		if (Position > 0m)
-		{
-			SellMarket(Position);
-			_hasLongStop = false;
-		}
-		else
-		{
-			BuyMarket(-Position);
-			_hasShortStop = false;
-		}
-	}
-
-	private int CalculateSupervisorSignal()
-	{
-		var period = Math.Max(1, MaPeriod);
-		if (_maHistory.Count <= period * 3)
-			return 0;
-
-		var result1 = EvaluatePerceptron(X11, X21, X31, X41);
-		var result2 = EvaluatePerceptron(X12, X22, X32, X42);
-
-		return PassMode switch
-		{
-			1 => result1,
-			2 => result2,
-			3 => result1 != 0 && result1 == result2 ? result1 : 0,
-			_ => 0,
-		};
-	}
-
-	private int EvaluatePerceptron(int x1, int x2, int x3, int x4)
-	{
-		var period = Math.Max(1, MaPeriod);
-		if (_maHistory.Count <= period * 3)
-			return 0;
-
-		var lastIndex = _maHistory.Count - 1;
-		var index1 = lastIndex - period;
-		var index2 = lastIndex - period * 2;
-		var index3 = lastIndex - period * 3;
-
-		if (index3 < 0)
-			return 0;
-
-		var w1 = x1 - 100m;
-		var w2 = x2 - 100m;
-		var w3 = x3 - 100m;
-		var w4 = x4 - 100m;
-
-		var a1 = _closeHistory[lastIndex] - _maHistory[lastIndex];
-		var a2 = _openHistory[index1] - _maHistory[index1];
-		var a3 = _openHistory[index2] - _maHistory[index2];
-		var a4 = _openHistory[index3] - _maHistory[index3];
-
-		var result = w1 * a1 + w2 * a2 + w3 * a3 + w4 * a4;
-
-		if (result > 0m)
-			return 1;
-		if (result < 0m)
-			return -1;
-		return 0;
-	}
-
-	private decimal CalculatePipValue()
-	{
-		var step = Security?.PriceStep ?? 0m;
-		if (step <= 0m)
-			return 1m;
-
-		var scaled = step;
-		var digits = 0;
-		while (scaled < 1m && digits < 10)
-		{
-			scaled *= 10m;
-			digits++;
-		}
-
-		var adjust = (digits == 3 || digits == 5) ? 10m : 1m;
-		return step * adjust;
+		_prevFast = fastValue; _prevSlow = slowValue;
 	}
 }
-
