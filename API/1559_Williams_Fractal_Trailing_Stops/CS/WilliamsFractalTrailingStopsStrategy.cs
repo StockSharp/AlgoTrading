@@ -53,7 +53,7 @@ public WilliamsFractalTrailingStopsStrategy()
 _bufferPercent = Param(nameof(BufferPercent), 0m)
 .SetDisplay("Stop Buffer %", "Percent buffer added to fractal price", "General");
 
-_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 .SetDisplay("Candle Type", "Type of candles", "General");
 }
 
@@ -120,16 +120,13 @@ _longStop = _longStop is decimal l ? Math.Max(l, price) : price;
 }
 }
 
-if (!IsFormedAndOnlineAndAllowTrading())
-return;
-
 if (_shortStop is decimal shortStop && candle.ClosePrice > shortStop && Position <= 0)
 {
-BuyMarket(Volume + Math.Abs(Position));
+BuyMarket();
 }
 else if (_longStop is decimal longStop && candle.ClosePrice < longStop && Position >= 0)
 {
-SellMarket(Volume + Math.Abs(Position));
+SellMarket();
 }
 }
 }

@@ -77,7 +77,7 @@ _overbought = Param(nameof(Overbought), -20m)
 _oversold = Param(nameof(Oversold), -80m)
 .SetDisplay("Oversold", "Oversold level", "General");
 
-_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 .SetDisplay("Candle Type", "Type of candles", "General");
 }
 
@@ -117,16 +117,13 @@ private void ProcessCandle(ICandleMessage candle, decimal wr)
 if (candle.State != CandleStates.Finished)
 return;
 
-if (!IsFormedAndOnlineAndAllowTrading())
-return;
-
 if (_prevWr <= Oversold && wr > Oversold && Position <= 0)
 {
-BuyMarket(Volume + Math.Abs(Position));
+BuyMarket();
 }
 else if (_prevWr >= Overbought && wr < Overbought && Position >= 0)
 {
-SellMarket(Volume + Math.Abs(Position));
+SellMarket();
 }
 
 _prevWr = wr;

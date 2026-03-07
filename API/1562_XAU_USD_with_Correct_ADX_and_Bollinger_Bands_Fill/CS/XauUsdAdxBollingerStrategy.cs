@@ -45,7 +45,7 @@ public class XauUsdAdxBollingerStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Trend Length", "Directional movement lookback", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -102,18 +102,12 @@ public class XauUsdAdxBollingerStrategy : Strategy
 		var trendStrength = avgChange > 0 ? priceChange / avgChange : 0;
 
 		// Only trade when trend is reasonably strong
-		if (trendStrength > 0.5m)
+		if (trendStrength > 1m)
 		{
 			if (candle.ClosePrice > upper && Position <= 0)
 				BuyMarket();
 			else if (candle.ClosePrice < lower && Position >= 0)
 				SellMarket();
 		}
-
-		// Mean reversion exit
-		if (Position > 0 && candle.ClosePrice < smaVal)
-			SellMarket();
-		else if (Position < 0 && candle.ClosePrice > smaVal)
-			BuyMarket();
 	}
 }

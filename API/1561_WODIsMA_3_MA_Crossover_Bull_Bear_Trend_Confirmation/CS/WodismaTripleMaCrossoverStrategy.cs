@@ -77,7 +77,7 @@ _slowLength = Param(nameof(SlowLength), 50)
 .SetGreaterThanZero()
 .SetDisplay("Slow MA", "Slow MA period", "MA");
 
-_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 .SetDisplay("Candle Type", "Type of candles", "General");
 }
 
@@ -92,9 +92,9 @@ protected override void OnStarted2(DateTime time)
 {
 base.OnStarted2(time);
 
-var fast = new SMA { Length = FastLength };
-var mid = new SMA { Length = MidLength };
-var slow = new SMA { Length = SlowLength };
+var fast = new SimpleMovingAverage { Length = FastLength };
+var mid = new SimpleMovingAverage { Length = MidLength };
+var slow = new SimpleMovingAverage { Length = SlowLength };
 
 var subscription = SubscribeCandles(CandleType);
 subscription.Bind(fast, mid, slow, ProcessCandle).Start();
@@ -115,16 +115,13 @@ private void ProcessCandle(ICandleMessage candle, decimal fast, decimal mid, dec
 if (candle.State != CandleStates.Finished)
 return;
 
-if (!IsFormedAndOnlineAndAllowTrading())
-return;
-
 if (fast > mid && mid > slow && Position <= 0)
 {
-BuyMarket(Volume + Math.Abs(Position));
+BuyMarket();
 }
 else if (fast < mid && mid < slow && Position >= 0)
 {
-SellMarket(Volume + Math.Abs(Position));
+SellMarket();
 }
 }
 }
