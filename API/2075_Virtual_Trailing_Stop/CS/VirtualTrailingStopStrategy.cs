@@ -39,7 +39,7 @@ public class VirtualTrailingStopStrategy : Strategy
 		_trailingPct = Param(nameof(TrailingPct), 2m)
 			.SetDisplay("Trailing %", "Trailing stop distance percentage", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 	}
 
@@ -47,6 +47,12 @@ public class VirtualTrailingStopStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
 	}
 
 	/// <inheritdoc />
