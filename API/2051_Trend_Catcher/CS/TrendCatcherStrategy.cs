@@ -22,8 +22,7 @@ public class TrendCatcherStrategy : Strategy
 	private readonly StrategyParam<decimal> _sarMax;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private ParabolicSar _sar;
-	private SimpleMovingAverage _slowMa;
+	private ExponentialMovingAverage _slowMa;
 	private bool _isInitialized;
 	private bool _isPriceAboveSarPrev;
 
@@ -49,7 +48,7 @@ public class TrendCatcherStrategy : Strategy
 		_sarMax = Param(nameof(SarMax), 0.2m)
 			.SetDisplay("SAR Max", "Parabolic SAR maximum acceleration", "Parabolic SAR");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -60,24 +59,35 @@ public class TrendCatcherStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_slowMa = default;
+		_isInitialized = default;
+		_isPriceAboveSarPrev = default;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
 		_isInitialized = false;
 
-		_sar = new ParabolicSar
+		var sar = new ParabolicSar
 		{
 			Acceleration = SarStep,
 			AccelerationStep = SarStep,
 			AccelerationMax = SarMax
 		};
-		var fastMa = new SimpleMovingAverage { Length = FastMaPeriod };
-		_slowMa = new SimpleMovingAverage { Length = SlowMaPeriod };
+		var fastMa = new ExponentialMovingAverage { Length = FastMaPeriod };
+		_slowMa = new ExponentialMovingAverage { Length = SlowMaPeriod };
+
+		Indicators.Add(_slowMa);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(fastMa, ProcessCandle)
+			.BindEx(sar, fastMa, ProcessCandle)
 			.Start();
 
 		StartProtection(
@@ -85,27 +95,18 @@ public class TrendCatcherStrategy : Strategy
 			stopLoss: new Unit(2, UnitTypes.Percent),
 			isStopTrailing: true
 		);
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, fastMa);
-			DrawIndicator(area, _slowMa);
-			DrawOwnTrades(area);
-		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal fastValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue sarValue, IIndicatorValue fastMaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var sarResult = _sar.Process(candle);
-		if (!sarResult.IsFormed)
+		if (!sarValue.IsFormed || !fastMaValue.IsFormed)
 			return;
 
-		var sarValue = sarResult.ToDecimal();
+		var sar = sarValue.ToDecimal();
+		var fastValue = fastMaValue.ToDecimal();
 
 		var slowResult = _slowMa.Process(candle.ClosePrice, candle.OpenTime, true);
 		if (!slowResult.IsFormed)
@@ -113,7 +114,7 @@ public class TrendCatcherStrategy : Strategy
 
 		var slowValue = slowResult.ToDecimal();
 
-		var isPriceAboveSar = candle.ClosePrice > sarValue;
+		var isPriceAboveSar = candle.ClosePrice > sar;
 
 		if (!_isInitialized)
 		{
@@ -121,6 +122,9 @@ public class TrendCatcherStrategy : Strategy
 			_isInitialized = true;
 			return;
 		}
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
 
 		// Buy: SAR flips below price + fast MA above slow MA
 		var buySignal = isPriceAboveSar && !_isPriceAboveSarPrev && fastValue > slowValue;

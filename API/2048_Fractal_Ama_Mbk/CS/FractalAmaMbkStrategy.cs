@@ -30,15 +30,15 @@ public class FractalAmaMbkStrategy : Strategy
 
 	public FractalAmaMbkStrategy()
 	{
-		_framaPeriod = Param(nameof(FramaPeriod), 16)
+		_framaPeriod = Param(nameof(FramaPeriod), 18)
 			.SetGreaterThanZero()
 			.SetDisplay("FRAMA Period", "Period for Fractal Adaptive Moving Average", "Indicator");
 
-		_signalPeriod = Param(nameof(SignalPeriod), 16)
+		_signalPeriod = Param(nameof(SignalPeriod), 18)
 			.SetGreaterThanZero()
 			.SetDisplay("Signal EMA Period", "Period for signal EMA", "Indicator");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -46,6 +46,15 @@ public class FractalAmaMbkStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFrama = default;
+		_prevSignal = default;
+		_isFirst = true;
 	}
 
 	/// <inheritdoc />

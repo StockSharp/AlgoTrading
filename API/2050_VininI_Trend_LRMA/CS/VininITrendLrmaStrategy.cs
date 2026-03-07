@@ -41,7 +41,7 @@ public class VininITrendLrmaStrategy : Strategy
 		_dnLevel = Param(nameof(DnLevel), -0.1m)
 			.SetDisplay("Lower level", "Lower trigger level (percent)", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle Type", "General");
 	}
 
@@ -49,6 +49,13 @@ public class VininITrendLrmaStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevOsc = default;
 	}
 
 	/// <inheritdoc />

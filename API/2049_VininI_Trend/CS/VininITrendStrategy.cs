@@ -41,7 +41,7 @@ public class VininITrendStrategy : Strategy
 		_downLevel = Param(nameof(DownLevel), -10)
 			.SetDisplay("Lower Level", "Lower threshold to trigger sell", "Parameters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -49,6 +49,14 @@ public class VininITrendStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prev1 = default;
+		_prev2 = default;
 	}
 
 	/// <inheritdoc />

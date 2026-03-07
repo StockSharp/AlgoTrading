@@ -30,10 +30,10 @@ public class NegativeSpreadStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("BB Period", "Bollinger Bands period", "Indicators");
 
-		_bbWidth = Param(nameof(BbWidth), 2m)
+		_bbWidth = Param(nameof(BbWidth), 1.5m)
 			.SetDisplay("BB Width", "Bollinger Bands deviation", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -41,6 +41,12 @@ public class NegativeSpreadStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
 	}
 
 	/// <inheritdoc />

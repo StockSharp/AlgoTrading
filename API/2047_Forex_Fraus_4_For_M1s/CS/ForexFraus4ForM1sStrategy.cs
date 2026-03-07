@@ -41,7 +41,7 @@ public class ForexFraus4ForM1sStrategy : Strategy
 		_sellThreshold = Param(nameof(SellThreshold), -10m)
 			.SetDisplay("Sell Threshold", "Level crossing down triggers sell", "Trading");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -49,6 +49,14 @@ public class ForexFraus4ForM1sStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_wasOversold = default;
+		_wasOverbought = default;
 	}
 
 	/// <inheritdoc />
