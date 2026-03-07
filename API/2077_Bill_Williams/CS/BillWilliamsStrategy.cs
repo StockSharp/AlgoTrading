@@ -46,7 +46,7 @@ public class BillWilliamsStrategy : Strategy
 		_gatorDivFastPct = Param(nameof(GatorDivFastPct), 0.15m)
 			.SetDisplay("Lips-Teeth %", "Required lips-teeth distance as % of price", "Alligator");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -62,8 +62,11 @@ public class BillWilliamsStrategy : Strategy
 		base.OnReseted();
 		_highs.Clear();
 		_lows.Clear();
-		_fractalUp = null;
-		_fractalDown = null;
+		_fractalUp = default;
+		_fractalDown = default;
+		_jaw = default;
+		_teeth = default;
+		_lips = default;
 	}
 
 	/// <inheritdoc />
@@ -75,16 +78,12 @@ public class BillWilliamsStrategy : Strategy
 		_teeth = new SmoothedMovingAverage { Length = 8 };
 		_lips = new SmoothedMovingAverage { Length = 5 };
 
-		var passthrough = new SimpleMovingAverage { Length = 1 };
-		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(passthrough, (candle, _) => ProcessCandle(candle)).Start();
+		Indicators.Add(_jaw);
+		Indicators.Add(_teeth);
+		Indicators.Add(_lips);
 
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawOwnTrades(area);
-		}
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(ProcessCandle).Start();
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -118,6 +117,9 @@ public class BillWilliamsStrategy : Strategy
 		var lipsVal = _lips.Process(median, candle.OpenTime, true);
 
 		if (!jawVal.IsFormed || !teethVal.IsFormed || !lipsVal.IsFormed)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		var jaw = jawVal.ToDecimal();

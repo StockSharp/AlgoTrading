@@ -33,7 +33,7 @@ public class ColorSchaffJccxTrendCycleStrategy : Strategy
 		_lowLevel = Param(nameof(LowLevel), 25m)
 			.SetDisplay("Low Level", "Lower trigger level", "Signal");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 	}
 

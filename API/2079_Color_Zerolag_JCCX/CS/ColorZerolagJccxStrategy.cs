@@ -38,7 +38,7 @@ public class ColorZerolagJccxStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Slow MA", "Slow moving average period", "Moving Average");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for calculation", "General");
 	}
 
@@ -53,6 +53,8 @@ public class ColorZerolagJccxStrategy : Strategy
 	{
 		base.OnReseted();
 		_initialized = false;
+		_prevFast = default;
+		_prevSlow = default;
 	}
 
 	/// <inheritdoc />
@@ -60,8 +62,8 @@ public class ColorZerolagJccxStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var fastMa = new SimpleMovingAverage { Length = FastPeriod };
-		var slowMa = new SimpleMovingAverage { Length = SlowPeriod };
+		var fastMa = new ExponentialMovingAverage { Length = FastPeriod };
+		var slowMa = new ExponentialMovingAverage { Length = SlowPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

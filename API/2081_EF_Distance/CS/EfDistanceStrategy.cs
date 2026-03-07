@@ -23,7 +23,6 @@ public class EfDistanceStrategy : Strategy
 	private readonly StrategyParam<decimal> _takeProfitPct;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private AverageTrueRange _atr;
 	private decimal? _prev;
 	private decimal? _prev2;
 
@@ -53,7 +52,7 @@ public class EfDistanceStrategy : Strategy
 		_takeProfitPct = Param(nameof(TakeProfitPct), 4m)
 			.SetDisplay("Take Profit %", "Take profit percentage", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for calculations", "General");
 	}
 
@@ -76,47 +75,11 @@ public class EfDistanceStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var sma = new SimpleMovingAverage { Length = SmaPeriod };
-		_atr = new AverageTrueRange { Length = AtrPeriod };
+		var ema = new ExponentialMovingAverage { Length = SmaPeriod };
+		var atr = new AverageTrueRange { Length = AtrPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(sma, (candle, smaValue) =>
-		{
-			if (candle.State != CandleStates.Finished)
-				return;
-
-			var atrResult = _atr.Process(candle);
-			if (!atrResult.IsFormed)
-				return;
-
-			var atrVal = atrResult.ToDecimal();
-
-			if (_prev is null || _prev2 is null)
-			{
-				_prev2 = _prev;
-				_prev = smaValue;
-				return;
-			}
-
-			var atrEnough = atrVal >= AtrMultiplier / 100m * candle.ClosePrice;
-
-			if (atrEnough)
-			{
-				if (_prev < _prev2 && smaValue > _prev && Position <= 0)
-				{
-					if (Position < 0) BuyMarket();
-					BuyMarket();
-				}
-				else if (_prev > _prev2 && smaValue < _prev && Position >= 0)
-				{
-					if (Position > 0) SellMarket();
-					SellMarket();
-				}
-			}
-
-			_prev2 = _prev;
-			_prev = smaValue;
-		}).Start();
+		subscription.BindEx(ema, atr, ProcessCandle).Start();
 
 		StartProtection(
 			takeProfit: new Unit(TakeProfitPct, UnitTypes.Percent),
@@ -127,8 +90,49 @@ public class EfDistanceStrategy : Strategy
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, sma);
+			DrawIndicator(area, ema);
 			DrawOwnTrades(area);
 		}
+	}
+
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue emaVal, IIndicatorValue atrVal)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
+
+		if (!emaVal.IsFormed || !atrVal.IsFormed)
+			return;
+
+		var smaValue = emaVal.ToDecimal();
+		var atrValue = atrVal.ToDecimal();
+
+		if (_prev is null || _prev2 is null)
+		{
+			_prev2 = _prev;
+			_prev = smaValue;
+			return;
+		}
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		var atrEnough = atrValue >= AtrMultiplier / 100m * candle.ClosePrice;
+
+		if (atrEnough)
+		{
+			if (_prev < _prev2 && smaValue > _prev && Position <= 0)
+			{
+				if (Position < 0) BuyMarket();
+				BuyMarket();
+			}
+			else if (_prev > _prev2 && smaValue < _prev && Position >= 0)
+			{
+				if (Position > 0) SellMarket();
+				SellMarket();
+			}
+		}
+
+		_prev2 = _prev;
+		_prev = smaValue;
 	}
 }
