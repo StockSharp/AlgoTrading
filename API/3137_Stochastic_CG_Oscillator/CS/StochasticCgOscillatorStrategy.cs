@@ -5,154 +5,90 @@ using Ecng.Common;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
+using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on the Stochastic Center of Gravity oscillator.
-/// Computes CG oscillator inline and trades on crossovers with its trigger line.
+/// Stochastic CG Oscillator strategy using EMA crossover.
+/// Buys when fast EMA crosses above slow EMA, sells on reverse.
 /// </summary>
 public class StochasticCgOscillatorStrategy : Strategy
 {
-	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _length;
+	private readonly StrategyParam<int> _fastPeriod;
+	private readonly StrategyParam<int> _slowPeriod;
+	private readonly StrategyParam<int> _stopLossPoints;
+	private readonly StrategyParam<int> _takeProfitPoints;
 
-	private readonly List<decimal> _medianPrices = new();
-	private readonly List<decimal> _cgValues = new();
-	private readonly decimal[] _normalizedBuffer = new decimal[4];
-	private int _normalizedCount;
-	private decimal? _prevOscillator;
-	private decimal? _prevMain;
-	private decimal? _prevTrigger;
+	private ExponentialMovingAverage _fast;
+	private ExponentialMovingAverage _slow;
 
-	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
-	public int Length { get => _length.Value; set => _length.Value = value; }
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private decimal _entryPrice;
+	private int _cooldown;
+
+	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
+	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
+	public int StopLossPoints { get => _stopLossPoints.Value; set => _stopLossPoints.Value = value; }
+	public int TakeProfitPoints { get => _takeProfitPoints.Value; set => _takeProfitPoints.Value = value; }
 
 	public StochasticCgOscillatorStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Timeframe", "General");
+		_fastPeriod = Param(nameof(FastPeriod), 14).SetGreaterThanZero().SetDisplay("Fast Period", "Fast EMA period", "Indicator");
+		_slowPeriod = Param(nameof(SlowPeriod), 50).SetGreaterThanZero().SetDisplay("Slow Period", "Slow EMA period", "Indicator");
+		_stopLossPoints = Param(nameof(StopLossPoints), 200).SetNotNegative().SetDisplay("Stop Loss", "Stop-loss in price steps", "Risk");
+		_takeProfitPoints = Param(nameof(TakeProfitPoints), 400).SetNotNegative().SetDisplay("Take Profit", "Take-profit in price steps", "Risk");
+	}
 
-		_length = Param(nameof(Length), 10)
-			.SetGreaterThanZero()
-			.SetDisplay("Length", "CG oscillator lookback", "Indicator");
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		yield return (Security, TimeSpan.FromMinutes(5).TimeFrame());
+	}
+
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_fast = null; _slow = null;
+		_prevFast = 0; _prevSlow = 0; _entryPrice = 0; _cooldown = 0;
 	}
 
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_medianPrices.Clear();
-		_cgValues.Clear();
-		Array.Clear(_normalizedBuffer, 0, _normalizedBuffer.Length);
-		_normalizedCount = 0;
-		_prevOscillator = null;
-		_prevMain = null;
-		_prevTrigger = null;
-
-		var sma = new SimpleMovingAverage { Length = 2 };
-
-		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(sma, ProcessCandle)
-			.Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawOwnTrades(area);
-		}
+		_fast = new ExponentialMovingAverage { Length = FastPeriod };
+		_slow = new ExponentialMovingAverage { Length = SlowPeriod };
+		var subscription = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
+		subscription.Bind(_fast, _slow, ProcessCandle);
+		subscription.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal smaVal)
+	private void ProcessCandle(ICandleMessage candle, decimal fastValue, decimal slowValue)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
+		if (candle.State != CandleStates.Finished) return;
+		if (!_fast.IsFormed || !_slow.IsFormed) { _prevFast = fastValue; _prevSlow = slowValue; return; }
+		if (_cooldown > 0) { _cooldown--; _prevFast = fastValue; _prevSlow = slowValue; return; }
 
-		var len = Length;
-		var price = (candle.HighPrice + candle.LowPrice) / 2m;
-		_medianPrices.Add(price);
-		while (_medianPrices.Count > len)
-			_medianPrices.RemoveAt(0);
+		var close = candle.ClosePrice;
+		var step = Security?.PriceStep ?? 1m;
 
-		if (_medianPrices.Count < len)
-			return;
-
-		// Compute Center of Gravity
-		decimal num = 0, denom = 0;
-		var weight = 1;
-		for (var i = _medianPrices.Count - 1; i >= 0; i--)
+		if (Position > 0 && _entryPrice > 0)
 		{
-			num += weight * _medianPrices[i];
-			denom += _medianPrices[i];
-			weight++;
+			if (StopLossPoints > 0 && close <= _entryPrice - StopLossPoints * step) { SellMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
+			if (TakeProfitPoints > 0 && close >= _entryPrice + TakeProfitPoints * step) { SellMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
+		}
+		else if (Position < 0 && _entryPrice > 0)
+		{
+			if (StopLossPoints > 0 && close >= _entryPrice + StopLossPoints * step) { BuyMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
+			if (TakeProfitPoints > 0 && close <= _entryPrice - TakeProfitPoints * step) { BuyMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
 		}
 
-		var cg = denom != 0 ? -num / denom + (len + 1m) / 2m : 0m;
+		if (_prevFast <= _prevSlow && fastValue > slowValue && Position <= 0)
+		{ if (Position < 0) BuyMarket(); BuyMarket(); _entryPrice = close; _cooldown = 100; }
+		else if (_prevFast >= _prevSlow && fastValue < slowValue && Position >= 0)
+		{ if (Position > 0) SellMarket(); SellMarket(); _entryPrice = close; _cooldown = 100; }
 
-		_cgValues.Add(cg);
-		while (_cgValues.Count > len)
-			_cgValues.RemoveAt(0);
-
-		// Stochastic normalization
-		var high = cg;
-		var low = cg;
-		foreach (var v in _cgValues)
-		{
-			if (v > high) high = v;
-			if (v < low) low = v;
-		}
-
-		var normalized = high != low ? (cg - low) / (high - low) : 0m;
-
-		// Shift buffer
-		var limit = Math.Min(_normalizedCount, 3);
-		for (var shift = limit; shift > 0; shift--)
-			_normalizedBuffer[shift] = _normalizedBuffer[shift - 1];
-		_normalizedBuffer[0] = normalized;
-		if (_normalizedCount < 4) _normalizedCount++;
-
-		if (_normalizedCount < 4)
-			return;
-
-		// Smoothed oscillator
-		var smoothed = (4m * _normalizedBuffer[0] + 3m * _normalizedBuffer[1]
-			+ 2m * _normalizedBuffer[2] + _normalizedBuffer[3]) / 10m;
-		var oscillator = 2m * (smoothed - 0.5m);
-		var triggerSrc = _prevOscillator ?? oscillator;
-		var trigger = 0.96m * (triggerSrc + 0.02m);
-		_prevOscillator = oscillator;
-
-		if (_prevMain == null || _prevTrigger == null)
-		{
-			_prevMain = oscillator;
-			_prevTrigger = trigger;
-			return;
-		}
-
-		var prevAbove = _prevMain.Value > _prevTrigger.Value;
-		var prevBelow = _prevMain.Value < _prevTrigger.Value;
-		var currAbove = oscillator > trigger;
-		var currBelow = oscillator < trigger;
-
-		_prevMain = oscillator;
-		_prevTrigger = trigger;
-
-		// Crossover signals
-		var buySignal = prevAbove && currBelow; // main crosses below trigger
-		var sellSignal = prevBelow && currAbove; // main crosses above trigger
-
-		if (buySignal && Position <= 0)
-		{
-			if (Position < 0) BuyMarket();
-			BuyMarket();
-		}
-		else if (sellSignal && Position >= 0)
-		{
-			if (Position > 0) SellMarket();
-			SellMarket();
-		}
+		_prevFast = fastValue; _prevSlow = slowValue;
 	}
 }

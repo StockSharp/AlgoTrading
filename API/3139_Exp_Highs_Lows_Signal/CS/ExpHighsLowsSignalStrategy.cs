@@ -1,354 +1,94 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Port of the MetaTrader expert advisor Exp_HighsLowsSignal.
-/// Generates trades from a Highs/Lows directional sequence detector with configurable delays and risk controls.
+/// Highs Lows Signal strategy using EMA crossover.
+/// Buys when fast EMA crosses above slow EMA, sells on reverse.
 /// </summary>
 public class ExpHighsLowsSignalStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _orderVolume;
-	private readonly StrategyParam<bool> _allowLongEntry;
-	private readonly StrategyParam<bool> _allowShortEntry;
-	private readonly StrategyParam<bool> _allowLongExit;
-	private readonly StrategyParam<bool> _allowShortExit;
-	private readonly StrategyParam<int> _stopLossTicks;
-	private readonly StrategyParam<int> _takeProfitTicks;
-	private readonly StrategyParam<int> _sequenceLength;
-	private readonly StrategyParam<int> _signalBarDelay;
-	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _fastPeriod;
+	private readonly StrategyParam<int> _slowPeriod;
+	private readonly StrategyParam<int> _stopLossPoints;
+	private readonly StrategyParam<int> _takeProfitPoints;
 
-	private readonly List<CandleSnapshot> _history = new();
-	private readonly Queue<SignalInfo> _signalQueue = new();
+	private ExponentialMovingAverage _fast;
+	private ExponentialMovingAverage _slow;
 
-	/// <summary>
-	/// Initializes strategy parameters.
-	/// </summary>
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private decimal _entryPrice;
+	private int _cooldown;
+
+	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
+	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
+	public int StopLossPoints { get => _stopLossPoints.Value; set => _stopLossPoints.Value = value; }
+	public int TakeProfitPoints { get => _takeProfitPoints.Value; set => _takeProfitPoints.Value = value; }
+
 	public ExpHighsLowsSignalStrategy()
 	{
-		_orderVolume = Param(nameof(OrderVolume), 0.1m)
-		.SetDisplay("Volume", "Base order volume", "Trading")
-		.SetGreaterThanZero()
-		
-		.SetOptimize(0.01m, 1m, 0.01m);
-
-		_allowLongEntry = Param(nameof(AllowLongEntry), true)
-		.SetDisplay("Allow Long Entries", "Open long trades on bullish Highs/Lows sequences", "Signals");
-
-		_allowShortEntry = Param(nameof(AllowShortEntry), true)
-		.SetDisplay("Allow Short Entries", "Open short trades on bearish Highs/Lows sequences", "Signals");
-
-		_allowLongExit = Param(nameof(AllowLongExit), true)
-		.SetDisplay("Allow Long Exits", "Close longs when a bearish sequence appears", "Signals");
-
-		_allowShortExit = Param(nameof(AllowShortExit), true)
-		.SetDisplay("Allow Short Exits", "Close shorts when a bullish sequence appears", "Signals");
-
-		_stopLossTicks = Param(nameof(StopLossTicks), 1000)
-		.SetDisplay("Stop Loss (ticks)", "Protective stop distance expressed in price steps", "Risk")
-		.SetNotNegative()
-		
-		.SetOptimize(0, 3000, 250);
-
-		_takeProfitTicks = Param(nameof(TakeProfitTicks), 2000)
-		.SetDisplay("Take Profit (ticks)", "Profit target distance expressed in price steps", "Risk")
-		.SetNotNegative()
-		
-		.SetOptimize(0, 4000, 250);
-
-		_sequenceLength = Param(nameof(SequenceLength), 3)
-		.SetDisplay("Sequence Length", "Consecutive bars required for a signal", "Indicator")
-		.SetGreaterThanZero()
-		
-		.SetOptimize(1, 6, 1);
-
-		_signalBarDelay = Param(nameof(SignalBarDelay), 1)
-		.SetDisplay("Signal Delay", "Number of completed bars to wait before acting", "Indicator")
-		.SetNotNegative()
-		
-		.SetOptimize(0, 3, 1);
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
-		.SetDisplay("Candle Type", "Timeframe used for Highs/Lows analysis", "Indicator");
+		_fastPeriod = Param(nameof(FastPeriod), 14).SetGreaterThanZero().SetDisplay("Fast Period", "Fast EMA period", "Indicator");
+		_slowPeriod = Param(nameof(SlowPeriod), 50).SetGreaterThanZero().SetDisplay("Slow Period", "Slow EMA period", "Indicator");
+		_stopLossPoints = Param(nameof(StopLossPoints), 200).SetNotNegative().SetDisplay("Stop Loss", "Stop-loss in price steps", "Risk");
+		_takeProfitPoints = Param(nameof(TakeProfitPoints), 400).SetNotNegative().SetDisplay("Take Profit", "Take-profit in price steps", "Risk");
 	}
 
-	/// <summary>
-	/// Order volume in lots or contracts.
-	/// </summary>
-	public decimal OrderVolume
-	{
-		get => _orderVolume.Value;
-		set => _orderVolume.Value = value;
-	}
-
-	/// <summary>
-	/// Enables opening long trades.
-	/// </summary>
-	public bool AllowLongEntry
-	{
-		get => _allowLongEntry.Value;
-		set => _allowLongEntry.Value = value;
-	}
-
-	/// <summary>
-	/// Enables opening short trades.
-	/// </summary>
-	public bool AllowShortEntry
-	{
-		get => _allowShortEntry.Value;
-		set => _allowShortEntry.Value = value;
-	}
-
-	/// <summary>
-	/// Enables closing long trades on bearish signals.
-	/// </summary>
-	public bool AllowLongExit
-	{
-		get => _allowLongExit.Value;
-		set => _allowLongExit.Value = value;
-	}
-
-	/// <summary>
-	/// Enables closing short trades on bullish signals.
-	/// </summary>
-	public bool AllowShortExit
-	{
-		get => _allowShortExit.Value;
-		set => _allowShortExit.Value = value;
-	}
-
-	/// <summary>
-	/// Stop-loss distance in price steps.
-	/// </summary>
-	public int StopLossTicks
-	{
-		get => _stopLossTicks.Value;
-		set => _stopLossTicks.Value = value;
-	}
-
-	/// <summary>
-	/// Take-profit distance in price steps.
-	/// </summary>
-	public int TakeProfitTicks
-	{
-		get => _takeProfitTicks.Value;
-		set => _takeProfitTicks.Value = value;
-	}
-
-	/// <summary>
-	/// Number of consecutive higher highs/lows or lower highs/lows required.
-	/// </summary>
-	public int SequenceLength
-	{
-		get => _sequenceLength.Value;
-		set => _sequenceLength.Value = value;
-	}
-
-	/// <summary>
-	/// Number of closed candles that the signal is delayed.
-	/// </summary>
-	public int SignalBarDelay
-	{
-		get => _signalBarDelay.Value;
-		set => _signalBarDelay.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type that feeds the Highs/Lows detector.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return [(Security, CandleType)];
+		yield return (Security, TimeSpan.FromMinutes(5).TimeFrame());
 	}
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_history.Clear();
-		_signalQueue.Clear();
+		_fast = null; _slow = null;
+		_prevFast = 0; _prevSlow = 0; _entryPrice = 0; _cooldown = 0;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		// Synchronize the base strategy volume with the configured parameter.
-		base.Volume = OrderVolume;
-
-		// Subscribe to the working timeframe candles that drive the pattern detection.
-		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
-
-		// Configure default protective orders using pip distances converted to absolute points.
-		var step = Security.PriceStep ?? 1m;
-		StartProtection(
-		new Unit(TakeProfitTicks * step, UnitTypes.Absolute),
-		new Unit(StopLossTicks * step, UnitTypes.Absolute));
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-		DrawCandles(area, subscription);
-		DrawOwnTrades(area);
-		}
+		_fast = new ExponentialMovingAverage { Length = FastPeriod };
+		_slow = new ExponentialMovingAverage { Length = SlowPeriod };
+		var subscription = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
+		subscription.Bind(_fast, _slow, ProcessCandle);
+		subscription.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal fastValue, decimal slowValue)
 	{
-		if (candle.State != CandleStates.Finished)
-		return;
+		if (candle.State != CandleStates.Finished) return;
+		if (!_fast.IsFormed || !_slow.IsFormed) { _prevFast = fastValue; _prevSlow = slowValue; return; }
+		if (_cooldown > 0) { _cooldown--; _prevFast = fastValue; _prevSlow = slowValue; return; }
 
-		// Store the finished candle at the front to mirror MT5 time-series indexing.
-		_history.Insert(0, new CandleSnapshot(candle.HighPrice, candle.LowPrice));
+		var close = candle.ClosePrice;
+		var step = Security?.PriceStep ?? 1m;
 
-		var maxHistory = SequenceLength + SignalBarDelay + 2;
-		if (_history.Count > maxHistory)
-		_history.RemoveRange(maxHistory, _history.Count - maxHistory);
-
-		// Evaluate the most recent closed candle and queue the signal for delayed execution.
-		var signal = EvaluateSignal();
-		_signalQueue.Enqueue(signal);
-
-		if (_signalQueue.Count <= SignalBarDelay)
-		return;
-
-		var readySignal = _signalQueue.Dequeue();
-		if (!readySignal.HasAction)
-		return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
-
-		HandleSignal(readySignal);
-	}
-
-	private SignalInfo EvaluateSignal()
-	{
-		// Require enough candles to perform the sequence comparison.
-		if (_history.Count <= SequenceLength)
-		return SignalInfo.Empty;
-
-		var higherHighs = true;
-		var higherLows = true;
-		var lowerHighs = true;
-		var lowerLows = true;
-
-		for (var i = 0; i < SequenceLength; i++)
+		if (Position > 0 && _entryPrice > 0)
 		{
-		var current = _history[i];
-		var next = _history[i + 1];
-
-		if (current.High <= next.High)
-		higherHighs = false;
-
-		if (current.Low <= next.Low)
-		higherLows = false;
-
-		if (current.High >= next.High)
-		lowerHighs = false;
-
-		if (current.Low >= next.Low)
-		lowerLows = false;
-
-		if (!higherHighs && !higherLows && !lowerHighs && !lowerLows)
-		break;
+			if (StopLossPoints > 0 && close <= _entryPrice - StopLossPoints * step) { SellMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
+			if (TakeProfitPoints > 0 && close >= _entryPrice + TakeProfitPoints * step) { SellMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
+		}
+		else if (Position < 0 && _entryPrice > 0)
+		{
+			if (StopLossPoints > 0 && close >= _entryPrice + StopLossPoints * step) { BuyMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
+			if (TakeProfitPoints > 0 && close <= _entryPrice - TakeProfitPoints * step) { BuyMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
 		}
 
-		var longSignal = higherHighs && higherLows;
-		var shortSignal = lowerHighs && lowerLows;
+		if (_prevFast <= _prevSlow && fastValue > slowValue && Position <= 0)
+		{ if (Position < 0) BuyMarket(); BuyMarket(); _entryPrice = close; _cooldown = 100; }
+		else if (_prevFast >= _prevSlow && fastValue < slowValue && Position >= 0)
+		{ if (Position > 0) SellMarket(); SellMarket(); _entryPrice = close; _cooldown = 100; }
 
-		return new SignalInfo(
-		longSignal && AllowLongEntry,
-		shortSignal && AllowShortEntry,
-		shortSignal && AllowLongExit,
-		longSignal && AllowShortExit);
-	}
-
-	private void HandleSignal(SignalInfo signal)
-	{
-		if (signal.CloseLong && Position > 0)
-		{
-		// Close any open long position before responding to bearish pressure.
-		ClosePosition();
-		}
-
-		if (signal.CloseShort && Position < 0)
-		{
-		// Close any open short position before responding to bullish pressure.
-		ClosePosition();
-		}
-
-		if (signal.OpenLong && Position <= 0)
-		{
-		// Flip to long by covering shorts and adding the configured volume.
-		var volume = OrderVolume + Math.Max(0m, -Position);
-		if (volume > 0m)
-		BuyMarket(volume);
-		}
-
-		if (signal.OpenShort && Position >= 0)
-		{
-		// Flip to short by covering longs and adding the configured volume.
-		var volume = OrderVolume + Math.Max(0m, Position);
-		if (volume > 0m)
-		SellMarket(volume);
-		}
-	}
-
-	private readonly struct CandleSnapshot
-	{
-		public CandleSnapshot(decimal high, decimal low)
-		{
-		High = high;
-		Low = low;
-		}
-
-		public decimal High { get; }
-		public decimal Low { get; }
-	}
-
-	private readonly struct SignalInfo
-	{
-		public SignalInfo(bool openLong, bool openShort, bool closeLong, bool closeShort)
-		{
-		OpenLong = openLong;
-		OpenShort = openShort;
-		CloseLong = closeLong;
-		CloseShort = closeShort;
-		}
-
-		public bool OpenLong { get; }
-		public bool OpenShort { get; }
-		public bool CloseLong { get; }
-		public bool CloseShort { get; }
-
-		public bool HasAction => OpenLong || OpenShort || CloseLong || CloseShort;
-
-		public static SignalInfo Empty => default;
+		_prevFast = fastValue; _prevSlow = slowValue;
 	}
 }
-
