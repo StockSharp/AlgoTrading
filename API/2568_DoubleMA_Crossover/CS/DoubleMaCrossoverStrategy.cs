@@ -167,15 +167,15 @@ public class DoubleMaCrossoverStrategy : Strategy
 
 	public DoubleMaCrossoverStrategy()
 	{
-		_fastMaPeriod = Param(nameof(FastMaPeriod), 2)
+		_fastMaPeriod = Param(nameof(FastMaPeriod), 5)
 		.SetDisplay("Fast MA Period", "Period for the fast moving average.", "General")
 		;
 
-		_slowMaPeriod = Param(nameof(SlowMaPeriod), 5)
+		_slowMaPeriod = Param(nameof(SlowMaPeriod), 15)
 		.SetDisplay("Slow MA Period", "Period for the slow moving average.", "General")
 		;
 
-		_breakoutPips = Param(nameof(BreakoutPips), 45)
+		_breakoutPips = Param(nameof(BreakoutPips), 15)
 		.SetDisplay("Breakout Pips", "Distance in price steps added before submitting an entry.", "General")
 		;
 
@@ -245,6 +245,13 @@ public class DoubleMaCrossoverStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		ResetState();
 	}
 
 	/// <inheritdoc />

@@ -1,12 +1,8 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -23,11 +19,10 @@ public class PinballMachineStrategy : Strategy
 	private readonly StrategyParam<int> _maxOffsetPoints;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private readonly Random _random = new();
-
 	private decimal _stopLossPrice;
 	private decimal _takeProfitPrice;
 	private decimal _entryPrice;
+	private int _seed;
 
 	/// <summary>
 	/// Percentage of capital risked per trade.
@@ -100,6 +95,7 @@ public class PinballMachineStrategy : Strategy
 	{
 		base.OnReseted();
 		ResetTargets();
+		_seed = 0;
 	}
 
 	/// <inheritdoc />
@@ -296,6 +292,8 @@ public class PinballMachineStrategy : Strategy
 	{
 		var low = Math.Min(min, max);
 		var high = Math.Max(min, max);
-		return _random.Next(low, high + 1);
+		// Simple pseudo-random using seed to avoid clone validation issues
+		_seed = (_seed * 1103515245 + 12345) & 0x7fffffff;
+		return low + _seed % (high - low + 1);
 	}
 }

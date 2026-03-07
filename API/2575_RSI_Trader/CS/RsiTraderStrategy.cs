@@ -26,11 +26,9 @@ public class RsiTraderStrategy : Strategy
 	private readonly StrategyParam<bool> _reverse;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private RSI _rsi = null!;
-	private SMA _rsiShortSma = null!;
-	private SMA _rsiLongSma = null!;
-	private SMA _priceShortSma = null!;
-	private WeightedMovingAverage _priceLongWma = null!;
+	private decimal _prevRsiShort;
+	private decimal _prevRsiLong;
+	private bool _hasRsiValues;
 
 	/// <summary>
 	/// RSI calculation period.
@@ -38,12 +36,7 @@ public class RsiTraderStrategy : Strategy
 	public int RsiPeriod
 	{
 		get => _rsiPeriod.Value;
-		set
-		{
-			_rsiPeriod.Value = value;
-			if (_rsi != null)
-				_rsi.Length = value;
-		}
+		set => _rsiPeriod.Value = value;
 	}
 
 	/// <summary>
@@ -52,12 +45,7 @@ public class RsiTraderStrategy : Strategy
 	public int ShortRsiMaPeriod
 	{
 		get => _shortRsiMaPeriod.Value;
-		set
-		{
-			_shortRsiMaPeriod.Value = value;
-			if (_rsiShortSma != null)
-				_rsiShortSma.Length = value;
-		}
+		set => _shortRsiMaPeriod.Value = value;
 	}
 
 	/// <summary>
@@ -66,12 +54,7 @@ public class RsiTraderStrategy : Strategy
 	public int LongRsiMaPeriod
 	{
 		get => _longRsiMaPeriod.Value;
-		set
-		{
-			_longRsiMaPeriod.Value = value;
-			if (_rsiLongSma != null)
-				_rsiLongSma.Length = value;
-		}
+		set => _longRsiMaPeriod.Value = value;
 	}
 
 	/// <summary>
@@ -80,12 +63,7 @@ public class RsiTraderStrategy : Strategy
 	public int ShortPriceMaPeriod
 	{
 		get => _shortPriceMaPeriod.Value;
-		set
-		{
-			_shortPriceMaPeriod.Value = value;
-			if (_priceShortSma != null)
-				_priceShortSma.Length = value;
-		}
+		set => _shortPriceMaPeriod.Value = value;
 	}
 
 	/// <summary>
@@ -94,12 +72,7 @@ public class RsiTraderStrategy : Strategy
 	public int LongPriceMaPeriod
 	{
 		get => _longPriceMaPeriod.Value;
-		set
-		{
-			_longPriceMaPeriod.Value = value;
-			if (_priceLongWma != null)
-				_priceLongWma.Length = value;
-		}
+		set => _longPriceMaPeriod.Value = value;
 	}
 
 	/// <summary>
@@ -168,11 +141,9 @@ public class RsiTraderStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_rsi?.Reset();
-		_rsiShortSma?.Reset();
-		_rsiLongSma?.Reset();
-		_priceShortSma?.Reset();
-		_priceLongWma?.Reset();
+		_prevRsiShort = 0m;
+		_prevRsiLong = 0m;
+		_hasRsiValues = false;
 	}
 
 	/// <inheritdoc />
@@ -180,17 +151,37 @@ public class RsiTraderStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_rsi = new RSI { Length = RsiPeriod };
-		_rsiShortSma = new SMA { Length = ShortRsiMaPeriod };
-		_rsiLongSma = new SMA { Length = LongRsiMaPeriod };
-		_priceShortSma = new SMA { Length = ShortPriceMaPeriod };
-		_priceLongWma = new WeightedMovingAverage { Length = LongPriceMaPeriod };
+		var rsi = new RSI { Length = RsiPeriod };
+		var rsiShortSma = new SMA { Length = ShortRsiMaPeriod };
+		var rsiLongSma = new SMA { Length = LongRsiMaPeriod };
+		var priceShortSma = new SMA { Length = ShortPriceMaPeriod };
+		var priceLongWma = new ExponentialMovingAverage { Length = LongPriceMaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(_priceShortSma, _priceLongWma, ProcessCandle)
-			.Start();
 
+		// Bind RSI chain: RSI -> short/long SMA on RSI
+		subscription.Bind(rsi, (candle, rsiValue) =>
+		{
+			if (candle.State != CandleStates.Finished)
+				return;
+
+			var rsiInput = new DecimalIndicatorValue(rsiShortSma, rsiValue, candle.OpenTime) { IsFinal = true };
+			var shortResult = rsiShortSma.Process(rsiInput);
+			var longResult = rsiLongSma.Process(new DecimalIndicatorValue(rsiLongSma, rsiValue, candle.OpenTime) { IsFinal = true });
+
+			if (!rsiShortSma.IsFormed || !rsiLongSma.IsFormed)
+				return;
+
+			if (shortResult is not DecimalIndicatorValue shortDec || longResult is not DecimalIndicatorValue longDec)
+				return;
+
+			_prevRsiShort = shortDec.Value;
+			_prevRsiLong = longDec.Value;
+			_hasRsiValues = true;
+		});
+
+		subscription.Bind(priceShortSma, priceLongWma, ProcessCandle);
+		subscription.Start();
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal priceShort, decimal priceLong)
@@ -198,27 +189,11 @@ public class RsiTraderStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var rsiValue = _rsi.Process(candle);
-		if (!rsiValue.IsFinal || !_rsi.IsFormed)
+		if (!_hasRsiValues)
 			return;
 
-		var rsiShortValue = _rsiShortSma.Process(rsiValue);
-		if (!rsiShortValue.IsFinal || !_rsiShortSma.IsFormed)
-			return;
-
-		var rsiLongValue = _rsiLongSma.Process(rsiValue);
-		if (!rsiLongValue.IsFinal || !_rsiLongSma.IsFormed)
-			return;
-
-		if (!_priceShortSma.IsFormed || !_priceLongWma.IsFormed)
-			return;
-
-		if (rsiShortValue is not DecimalIndicatorValue rsiShortDecimal ||
-			rsiLongValue is not DecimalIndicatorValue rsiLongDecimal)
-			return;
-
-		var rsiShort = rsiShortDecimal.Value;
-		var rsiLong = rsiLongDecimal.Value;
+		var rsiShort = _prevRsiShort;
+		var rsiLong = _prevRsiLong;
 
 		var goLong = priceShort > priceLong && rsiShort > rsiLong;
 		var goShort = priceShort < priceLong && rsiShort < rsiLong;
@@ -226,7 +201,6 @@ public class RsiTraderStrategy : Strategy
 
 		if (sideways && Position != 0)
 		{
-			// Close position when price and RSI trends disagree.
 			if (Position > 0)
 				SellMarket();
 			else
@@ -240,7 +214,6 @@ public class RsiTraderStrategy : Strategy
 
 		if (goLong)
 		{
-			// Align long entries with both bullish price and RSI slopes.
 			if (Reverse)
 				SellMarket();
 			else
@@ -248,7 +221,6 @@ public class RsiTraderStrategy : Strategy
 		}
 		else if (goShort)
 		{
-			// Enter short trades when both price and RSI confirm the downtrend.
 			if (Reverse)
 				BuyMarket();
 			else

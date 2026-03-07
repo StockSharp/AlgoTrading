@@ -162,7 +162,7 @@ public class ElliIchimokuAdxStrategy : Strategy
 			.SetDisplay("Senkou Span B Period", "Senkou Span B length", "Ichimoku")
 			.SetGreaterThanZero();
 
-		_adxPeriod = Param(nameof(AdxPeriod), 10)
+		_adxPeriod = Param(nameof(AdxPeriod), 14)
 			.SetDisplay("ADX Period", "Average Directional Index period", "ADX")
 			.SetGreaterThanZero();
 
@@ -264,9 +264,10 @@ public class ElliIchimokuAdxStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var typed = (AverageDirectionalIndexValue)adxValue;
+		if (adxValue is not AverageDirectionalIndexValue typed)
+			return;
 
-		if (typed.Dx.Plus is not decimal plusDi)
+		if (typed.Dx?.Plus is not decimal plusDi)
 			return;
 
 		_previousPlusDi = _currentPlusDi;

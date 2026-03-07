@@ -157,6 +157,7 @@ public class NUp1DownStrategy : Strategy
 		base.OnReseted();
 
 		_recentCandles.Clear();
+		_pipSize = 0m;
 		ResetPositionState();
 	}
 

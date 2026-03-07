@@ -51,22 +51,22 @@ public class NevalyashkaMartingaleStrategy : Strategy
 			.SetGreaterThanZero()
 			;
 
-		_takeProfitPoints = Param(nameof(TakeProfitPoints), 94m)
+		_takeProfitPoints = Param(nameof(TakeProfitPoints), 500m)
 			.SetDisplay("Take Profit Points", "Profit target in points", "Orders")
 			.SetGreaterThanZero()
 			;
 
-		_moveProfitPoints = Param(nameof(MoveProfitPoints), 25m)
+		_moveProfitPoints = Param(nameof(MoveProfitPoints), 100m)
 			.SetDisplay("Move Profit Points", "Profit buffer before trailing activates", "Orders")
 			.SetGreaterThanZero()
 			;
 
-		_moveStepPoints = Param(nameof(MoveStepPoints), 11m)
+		_moveStepPoints = Param(nameof(MoveStepPoints), 50m)
 			.SetDisplay("Move Step Points", "Extra buffer for trailing stop updates", "Orders")
 			.SetGreaterThanZero()
 			;
 
-		_stopLossPoints = Param(nameof(StopLossPoints), 70m)
+		_stopLossPoints = Param(nameof(StopLossPoints), 400m)
 			.SetDisplay("Stop Loss Points", "Initial protective distance", "Orders")
 			.SetGreaterThanZero()
 			;
