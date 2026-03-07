@@ -36,13 +36,13 @@ public class SniperJawStrategy : Strategy
 	private readonly StrategyParam<int> _lipsShift;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private SmoothedMovingAverage _jaw = null!;
-	private SmoothedMovingAverage _teeth = null!;
-	private SmoothedMovingAverage _lips = null!;
+	private SmoothedMovingAverage _jaw;
+	private SmoothedMovingAverage _teeth;
+	private SmoothedMovingAverage _lips;
 
-	private decimal?[] _jawHistory = Array.Empty<decimal?>();
-	private decimal?[] _teethHistory = Array.Empty<decimal?>();
-	private decimal?[] _lipsHistory = Array.Empty<decimal?>();
+	private decimal?[] _jawHistory;
+	private decimal?[] _teethHistory;
+	private decimal?[] _lipsHistory;
 
 	private decimal _pipSize;
 	private decimal? _longStopPrice;
@@ -77,7 +77,7 @@ public class SniperJawStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Optional profit target distance; zero disables it", "Risk");
 
-		_minimumBars = Param(nameof(MinimumBars), 10)
+		_minimumBars = Param(nameof(MinimumBars), 1)
 			.SetGreaterThanZero()
 			.SetDisplay("Minimum Bars", "Required number of finished candles before trading", "Filters");
 
@@ -105,7 +105,7 @@ public class SniperJawStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Lips Shift", "Forward shift applied to lips readings", "Alligator");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Primary candle series used for signals", "Data");
 	}
 
@@ -237,9 +237,12 @@ public class SniperJawStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_jawHistory = Array.Empty<decimal?>();
-		_teethHistory = Array.Empty<decimal?>();
-		_lipsHistory = Array.Empty<decimal?>();
+		_jaw = null;
+		_teeth = null;
+		_lips = null;
+		_jawHistory = null;
+		_teethHistory = null;
+		_lipsHistory = null;
 
 		_pipSize = 0m;
 		_longStopPrice = null;
@@ -342,33 +345,19 @@ public class SniperJawStrategy : Strategy
 
 		var median = (candle.HighPrice + candle.LowPrice) / 2m;
 
-		var jawValue = _jaw.Process(new DecimalIndicatorValue(_jaw, median, candle.OpenTime));
-		var teethValue = _teeth.Process(new DecimalIndicatorValue(_teeth, median, candle.OpenTime));
-		var lipsValue = _lips.Process(new DecimalIndicatorValue(_lips, median, candle.OpenTime));
+		var jawValue = _jaw.Process(new DecimalIndicatorValue(_jaw, median, candle.OpenTime) { IsFinal = true });
+		var teethValue = _teeth.Process(new DecimalIndicatorValue(_teeth, median, candle.OpenTime) { IsFinal = true });
+		var lipsValue = _lips.Process(new DecimalIndicatorValue(_lips, median, candle.OpenTime) { IsFinal = true });
 
 		if (!_jaw.IsFormed || !_teeth.IsFormed || !_lips.IsFormed)
 			return;
 
-		var jaw = jawValue.ToDecimal();
-		var teeth = teethValue.ToDecimal();
-		var lips = lipsValue.ToDecimal();
-
-		UpdateHistory(_jawHistory, jaw);
-		UpdateHistory(_teethHistory, teeth);
-		UpdateHistory(_lipsHistory, lips);
+		var jawCurrent = jawValue.ToDecimal();
+		var teethCurrent = teethValue.ToDecimal();
+		var lipsCurrent = lipsValue.ToDecimal();
 
 		if (_finishedCandles < MinimumBars)
 			return;
-
-		if (!TryGetShiftedValue(_jawHistory, JawShift + 1, out var jawCurrent) ||
-				!TryGetShiftedValue(_teethHistory, TeethShift + 1, out var teethCurrent) ||
-				!TryGetShiftedValue(_lipsHistory, LipsShift + 1, out var lipsCurrent) ||
-				!TryGetShiftedValue(_jawHistory, JawShift + 2, out var jawPrevious) ||
-				!TryGetShiftedValue(_teethHistory, TeethShift + 2, out var teethPrevious) ||
-				!TryGetShiftedValue(_lipsHistory, LipsShift + 2, out var lipsPrevious))
-		{
-			return;
-		}
 
 		var isUptrend = jawCurrent < teethCurrent && teethCurrent < lipsCurrent;
 

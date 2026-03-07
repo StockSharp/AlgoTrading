@@ -27,18 +27,14 @@ public class TuyulGapEndOfWeekStrategy : Strategy
 	private readonly StrategyParam<decimal> _secureProfitTarget;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private Highest _highestHigh = null!;
-	private Lowest _lowestLow = null!;
-
-	private Order _buyStopOrder;
-	private Order _sellStopOrder;
-	private Order _protectiveStopOrder;
-
-	private bool _ordersPlacedForSession;
-	private DateTime? _lastPlacementDate;
+	private Highest _highestHigh;
+	private Lowest _lowestLow;
 
 	private decimal _tickSize;
 	private decimal _entryPrice;
+	private decimal? _virtualStopPrice;
+	private decimal _prevHighest;
+	private decimal _prevLowest;
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="TuyulGapEndOfWeekStrategy"/> class.
@@ -143,12 +139,13 @@ public class TuyulGapEndOfWeekStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_buyStopOrder = null;
-		_sellStopOrder = null;
-		_protectiveStopOrder = null;
-		_ordersPlacedForSession = false;
-		_lastPlacementDate = null;
+		_highestHigh = null;
+		_lowestLow = null;
 		_tickSize = 0m;
+		_entryPrice = 0m;
+		_virtualStopPrice = null;
+		_prevHighest = 0m;
+		_prevLowest = 0m;
 	}
 
 	/// <inheritdoc />
@@ -186,219 +183,66 @@ public class TuyulGapEndOfWeekStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 		return;
 
-		ResetWeeklyState(candle.CloseTime);
-		CloseProfitablePositions();
-		TryPlaceWeeklyOrders(candle.CloseTime, highestValue, lowestValue);
-	}
-
-	private void ResetWeeklyState(DateTimeOffset time)
-	{
-		if (time.DayOfWeek == DayOfWeek.Monday)
-		{
-			CancelPendingOrders();
-			_ordersPlacedForSession = false;
-			_lastPlacementDate = time.Date;
-			return;
-		}
-
-		if (_lastPlacementDate != time.Date && time.DayOfWeek == GetSetupDay())
-		{
-			_ordersPlacedForSession = false;
-			_lastPlacementDate = time.Date;
-		}
-	}
-
-	private void CloseProfitablePositions()
-	{
-		if (SecureProfitTarget <= 0m)
-		return;
-
-		var portfolio = Portfolio;
-		var security = Security;
-		if (portfolio == null || security == null)
-		return;
-
-		var currentPos = Position;
-		if (currentPos == 0m)
-			return;
-
-		var profit = PnL;
-		if (profit < SecureProfitTarget)
-			return;
-
-		if (currentPos > 0m)
-			SellMarket(Math.Abs(currentPos));
-		else
-			BuyMarket(Math.Abs(currentPos));
-
-		CancelIfActive(ref _protectiveStopOrder);
-	}
-
-	private void TryPlaceWeeklyOrders(DateTimeOffset time, decimal highestValue, decimal lowestValue)
-	{
-		if (time.DayOfWeek != GetSetupDay())
-		return;
-
-		if (time.Hour != SetupHour)
-		return;
-
-		if (time.Minute > SetupMinuteWindow)
-		return;
-
-		if (_lastPlacementDate != time.Date)
-		{
-			_ordersPlacedForSession = false;
-			_lastPlacementDate = time.Date;
-		}
-
-		if (_ordersPlacedForSession)
-		return;
-
 		if (!_highestHigh.IsFormed || !_lowestLow.IsFormed)
-		return;
-
-		var tick = _tickSize > 0m ? _tickSize : Security?.PriceStep ?? 0m;
-		if (tick <= 0m)
-		return;
-
-		var volume = NormalizeVolume(Volume);
-		if (volume <= 0m)
-		return;
-
-		var buyPrice = NormalizePrice(highestValue + tick);
-		var sellPrice = NormalizePrice(lowestValue - tick);
-
-		if (buyPrice <= 0m || sellPrice <= 0m)
-		return;
-
-		if (!IsActive(_buyStopOrder))
-			BuyMarket(volume);
-
-		if (!IsActive(_sellStopOrder))
-			SellMarket(volume);
-
-		_ordersPlacedForSession = true;
-	}
-
-	private void CancelPendingOrders()
-	{
-		CancelIfActive(ref _buyStopOrder);
-		CancelIfActive(ref _sellStopOrder);
-	}
-
-	private void CancelIfActive(ref Order order)
-	{
-		if (order == null)
-		return;
-
-		if (order.State == OrderStates.Active)
-		CancelOrder(order);
-
-		order = null;
-	}
-
-	private bool IsActive(Order order)
-	{
-		return order != null && order.State == OrderStates.Active;
-	}
-
-	/// <inheritdoc />
-	protected override void OnOrderReceived(Order order)
-	{
-		base.OnOrderReceived(order);
-
-		if (order.Security != Security)
-		return;
-
-		if (order == _buyStopOrder && order.State != OrderStates.Active)
-		_buyStopOrder = null;
-		else if (order == _sellStopOrder && order.State != OrderStates.Active)
-		_sellStopOrder = null;
-		else if (order == _protectiveStopOrder && order.State != OrderStates.Active)
-		_protectiveStopOrder = null;
-	}
-
-	/// <inheritdoc />
-	protected override void OnPositionReceived(Position position)
-	{
-		base.OnPositionReceived(position);
-
-		if (Position == 0m)
-		{
-			CancelIfActive(ref _protectiveStopOrder);
-		}
-		else
-		{
-			UpdateProtectiveStop();
-		}
-	}
-
-	private void UpdateProtectiveStop()
-	{
-		var stopDistance = GetStopLossDistance();
-		if (stopDistance <= 0m)
-		{
-			CancelIfActive(ref _protectiveStopOrder);
 			return;
-		}
 
-		var portfolio = Portfolio;
-		var security = Security;
-		if (portfolio == null || security == null)
-		return;
-
-		var volume = Position;
-		if (volume == 0m)
+		// Check virtual stop
+		if (Position > 0m && _virtualStopPrice.HasValue && candle.LowPrice <= _virtualStopPrice.Value)
 		{
-			CancelIfActive(ref _protectiveStopOrder);
-			return;
-		}
-
-		var averagePrice = _entryPrice;
-		if (averagePrice <= 0m)
-		{
-			CancelIfActive(ref _protectiveStopOrder);
-			return;
-		}
-
-		var stopPrice = volume > 0m
-		? NormalizePrice(averagePrice - stopDistance)
-		: NormalizePrice(averagePrice + stopDistance);
-
-		if (stopPrice <= 0m)
-		{
-			CancelIfActive(ref _protectiveStopOrder);
-			return;
-		}
-
-		// Virtual stop-loss: check price against stop level
-		var lastPrice = GetSecurityValue<decimal?>(Level1Fields.LastTradePrice) ?? 0m;
-		if (lastPrice > 0m)
-		{
-			if (volume > 0m && lastPrice <= stopPrice)
-			{
-				SellMarket(Math.Abs(volume));
-				_protectiveStopOrder = null;
-			}
-			else if (volume < 0m && lastPrice >= stopPrice)
-			{
-				BuyMarket(Math.Abs(volume));
-				_protectiveStopOrder = null;
-			}
-		}
-	}
-
-	/// <inheritdoc />
-	protected override void OnOwnTradeReceived(MyTrade trade)
-	{
-		base.OnOwnTradeReceived(trade);
-
-		if (Position != 0m && _entryPrice == 0m)
-			_entryPrice = trade.Trade.Price;
-
-		if (Position == 0m)
+			SellMarket(Math.Abs(Position));
+			_virtualStopPrice = null;
 			_entryPrice = 0m;
+			return;
+		}
+		if (Position < 0m && _virtualStopPrice.HasValue && candle.HighPrice >= _virtualStopPrice.Value)
+		{
+			BuyMarket(Math.Abs(Position));
+			_virtualStopPrice = null;
+			_entryPrice = 0m;
+			return;
+		}
+
+		// Close on profit
+		if (Position != 0m && SecureProfitTarget > 0m && PnL >= SecureProfitTarget)
+		{
+			if (Position > 0m)
+				SellMarket(Math.Abs(Position));
+			else
+				BuyMarket(Math.Abs(Position));
+			_virtualStopPrice = null;
+			_entryPrice = 0m;
+			return;
+		}
+
+		if (Position == 0m && _prevHighest > 0m && _prevLowest > 0m)
+		{
+			// Breakout above previous highest
+			if (candle.ClosePrice > _prevHighest)
+			{
+				BuyMarket(Volume);
+				_entryPrice = candle.ClosePrice;
+				var stopDist = GetStopLossDistance();
+				if (stopDist > 0m)
+					_virtualStopPrice = _entryPrice - stopDist;
+			}
+			// Breakout below previous lowest
+			else if (candle.ClosePrice < _prevLowest)
+			{
+				SellMarket(Volume);
+				_entryPrice = candle.ClosePrice;
+				var stopDist = GetStopLossDistance();
+				if (stopDist > 0m)
+					_virtualStopPrice = _entryPrice + stopDist;
+			}
+		}
+
+		_prevHighest = highestValue;
+		_prevLowest = lowestValue;
 	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
 
 	private decimal GetStopLossDistance()
 	{

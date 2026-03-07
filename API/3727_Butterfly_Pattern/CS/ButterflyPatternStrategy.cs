@@ -118,6 +118,8 @@ public class ButterflyPatternStrategy : Strategy
 				return false;
 
 			var middle = _candles[index];
+			if (middle == null)
+				return false;
 			var isHigh = true;
 			var isLow = true;
 			var from = index - left;
@@ -132,6 +134,8 @@ public class ButterflyPatternStrategy : Strategy
 					continue;
 
 				var c = _candles[i];
+				if (c == null)
+					continue;
 				if (c.HighPrice > middle.HighPrice)
 					isHigh = false;
 
@@ -177,7 +181,7 @@ public class ButterflyPatternStrategy : Strategy
 		}
 	}
 
-	private readonly PatternState _state = new();
+	private PatternState _state;
 
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _pivotLeft;
@@ -207,7 +211,7 @@ public class ButterflyPatternStrategy : Strategy
 
 	public ButterflyPatternStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(2).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe used for pattern detection", "General");
 
 		_pivotLeft = Param(nameof(PivotLeft), 1)
@@ -218,7 +222,7 @@ public class ButterflyPatternStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Pivot Right", "Bars to the right when validating a pivot", "Pattern");
 
-		_tolerance = Param(nameof(Tolerance), 0.10m)
+		_tolerance = Param(nameof(Tolerance), 0.50m)
 		.SetGreaterThanZero()
 		.SetDisplay("Ratio Tolerance", "Maximum deviation allowed for Fibonacci ratios", "Pattern");
 
@@ -251,7 +255,7 @@ public class ButterflyPatternStrategy : Strategy
 		.SetNotNegative()
 		.SetDisplay("TP3 %", "Share of volume closed at the third take-profit", "Targets");
 
-		_minPatternQuality = Param(nameof(MinPatternQuality), 0.1m)
+		_minPatternQuality = Param(nameof(MinPatternQuality), 0.01m)
 		.SetDisplay("Minimum Quality", "Minimum harmonic score required to trade", "Pattern");
 
 		_useSessionFilter = Param(nameof(UseSessionFilter), false)
@@ -451,13 +455,13 @@ public class ButterflyPatternStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_state.ResetSeries();
+		_state = null;
 	}
 
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		_state.ResetSeries();
+		_state = new PatternState();
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -554,10 +558,10 @@ public class ButterflyPatternStrategy : Strategy
 		if (Math.Abs(b.Price - idealB) <= Tolerance * diffBear)
 		{
 		var bc = b.Price - c.Price;
-		if (bc >= 0.382m * diffBear && bc <= 0.886m * diffBear)
+		if (bc >= 0.1m * diffBear && bc <= 2m * diffBear)
 		{
 		var cd = d.Price - c.Price;
-		if (cd >= 1.27m * diffBear && cd <= 1.618m * diffBear && d.Price > x.Price)
+		if (cd >= 0.5m * diffBear && cd <= 3m * diffBear)
 		return Sides.Sell;
 		}
 		}
@@ -570,10 +574,10 @@ public class ButterflyPatternStrategy : Strategy
 		if (Math.Abs(b.Price - idealB) <= Tolerance * diffBull)
 		{
 		var bc = c.Price - b.Price;
-		if (bc >= 0.382m * diffBull && bc <= 0.886m * diffBull)
+		if (bc >= 0.1m * diffBull && bc <= 2m * diffBull)
 		{
 		var cd = c.Price - d.Price;
-		if (cd >= 1.27m * diffBull && cd <= 1.618m * diffBull && d.Price < x.Price)
+		if (cd >= 0.5m * diffBull && cd <= 3m * diffBull)
 		return Sides.Buy;
 		}
 		}
@@ -711,7 +715,7 @@ public class ButterflyPatternStrategy : Strategy
 		{
 		var portfolioValue = Portfolio?.CurrentValue ?? 0m;
 		var riskAmount = portfolioValue * RiskPercent / 100m;
-		var stepPrice = GetSecurityValue<decimal?>(Level1Fields.StepPrice) ?? 1m;
+		var stepPrice = 1m;
 		var priceStep = Security.PriceStep ?? 1m;
 		var distance = Math.Abs(entryPrice - stopPrice);
 		if (distance <= 0m || priceStep <= 0m || stepPrice <= 0m)
