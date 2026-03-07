@@ -58,7 +58,7 @@ public class RijfiePyramidStrategy : Strategy
 
 	public RijfiePyramidStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
 		_lowLevel = Param(nameof(LowLevel), 20m)
@@ -85,6 +85,7 @@ public class RijfiePyramidStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
+		_stochastic = default;
 		_nextBuyPrice = 0;
 		_prevK = null;
 	}
@@ -97,6 +98,8 @@ public class RijfiePyramidStrategy : Strategy
 		_stochastic = new StochasticOscillator();
 		var ema = new ExponentialMovingAverage { Length = MaPeriod };
 
+		Indicators.Add(_stochastic);
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
 			.Bind(ema, (candle, emaValue) =>
@@ -106,6 +109,9 @@ public class RijfiePyramidStrategy : Strategy
 
 				var stochResult = _stochastic.Process(candle);
 				if (!stochResult.IsFormed)
+					return;
+
+				if (!IsFormedAndOnlineAndAllowTrading())
 					return;
 
 				var stochVal = (StochasticOscillatorValue)stochResult;

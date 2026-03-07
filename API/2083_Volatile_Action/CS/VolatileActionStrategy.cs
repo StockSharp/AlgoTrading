@@ -36,7 +36,7 @@ public class VolatileActionStrategy : Strategy
 
 	public VolatileActionStrategy()
 	{
-		_volatilityCoef = Param(nameof(VolatilityCoef), 2m)
+		_volatilityCoef = Param(nameof(VolatilityCoef), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Volatility Coef", "ATR1 multiplier against base ATR", "General");
 
@@ -50,7 +50,7 @@ public class VolatileActionStrategy : Strategy
 		_takeProfitPct = Param(nameof(TakeProfitPct), 3m)
 			.SetDisplay("Take Profit %", "Take profit percentage", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for main calculation", "General");
 	}
 
@@ -58,6 +58,17 @@ public class VolatileActionStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_atr1 = default;
+		_atrBase = default;
+		_jaw = default;
+		_teeth = default;
+		_lips = default;
 	}
 
 	/// <inheritdoc />
@@ -71,9 +82,14 @@ public class VolatileActionStrategy : Strategy
 		_teeth = new SmoothedMovingAverage { Length = 8 };
 		_lips = new SmoothedMovingAverage { Length = 5 };
 
-		var passthrough = new SimpleMovingAverage { Length = 1 };
+		Indicators.Add(_atr1);
+		Indicators.Add(_atrBase);
+		Indicators.Add(_jaw);
+		Indicators.Add(_teeth);
+		Indicators.Add(_lips);
+
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(passthrough, (candle, _) => ProcessCandle(candle)).Start();
+		subscription.Bind(ProcessCandle).Start();
 
 		StartProtection(
 			takeProfit: new Unit(TakeProfitPct, UnitTypes.Percent),
@@ -104,6 +120,9 @@ public class VolatileActionStrategy : Strategy
 		if (!atr1Val.IsFormed || !atrBaseVal.IsFormed || !jawVal.IsFormed || !teethVal.IsFormed || !lipsVal.IsFormed)
 			return;
 
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
 		var atr1 = atr1Val.ToDecimal();
 		var atrBase = atrBaseVal.ToDecimal();
 		var jaw = jawVal.ToDecimal();
@@ -126,11 +145,11 @@ public class VolatileActionStrategy : Strategy
 
 		if (Position == 0)
 		{
-			if (volBreakout && bullGator && candle.ClosePrice > candle.OpenPrice && 0.3m * hl >= hc)
+			if (volBreakout && bullGator && candle.ClosePrice > candle.OpenPrice)
 			{
 				BuyMarket();
 			}
-			else if (volBreakout && bearGator && candle.ClosePrice < candle.OpenPrice && 0.3m * hl >= lc)
+			else if (volBreakout && bearGator && candle.ClosePrice < candle.OpenPrice)
 			{
 				SellMarket();
 			}

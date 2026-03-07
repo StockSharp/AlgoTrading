@@ -20,7 +20,6 @@ public class BasicTrailingStopStrategy : Strategy
 	private readonly StrategyParam<int> _rsiPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private CommodityChannelIndex _cci;
 	private decimal _stopPrice;
 
 	public decimal StopLossPct
@@ -61,7 +60,7 @@ public class BasicTrailingStopStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "Relative Strength Index period", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -83,22 +82,23 @@ public class BasicTrailingStopStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_cci = new CommodityChannelIndex { Length = CciPeriod };
+		var cci = new CommodityChannelIndex { Length = CciPeriod };
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(rsi, (candle, rsiValue) =>
+			.BindEx(cci, rsi, (candle, cciVal, rsiVal) =>
 			{
 				if (candle.State != CandleStates.Finished)
 					return;
 
-				var cciResult = _cci.Process(candle);
-				if (!cciResult.IsFormed)
+				if (!cciVal.IsFormed || !rsiVal.IsFormed)
 					return;
 
-				var cciValue = cciResult.ToDecimal();
-				ProcessCandle(candle, cciValue, rsiValue);
+				if (!IsFormedAndOnlineAndAllowTrading())
+					return;
+
+				ProcessCandle(candle, cciVal.ToDecimal(), rsiVal.ToDecimal());
 			})
 			.Start();
 
