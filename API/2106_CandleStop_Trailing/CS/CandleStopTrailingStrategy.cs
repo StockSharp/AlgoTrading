@@ -41,7 +41,7 @@ public class CandleStopTrailingStrategy : Strategy
 		_slowEma = Param(nameof(SlowEma), 30)
 			.SetDisplay("Slow EMA", "Slow EMA period", "Parameters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type for analysis", "General");
 	}
 
@@ -53,6 +53,8 @@ public class CandleStopTrailingStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
+		_highest = default;
+		_lowest = default;
 		_stopPrice = 0m;
 	}
 
@@ -65,6 +67,9 @@ public class CandleStopTrailingStrategy : Strategy
 		var slow = new ExponentialMovingAverage { Length = SlowEma };
 		_highest = new Highest { Length = TrailPeriod };
 		_lowest = new Lowest { Length = TrailPeriod };
+
+		Indicators.Add(_highest);
+		Indicators.Add(_lowest);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

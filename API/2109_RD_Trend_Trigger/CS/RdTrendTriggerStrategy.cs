@@ -135,6 +135,17 @@ public class RdTrendTriggerStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_highs.Clear();
+		_lows.Clear();
+		_prev1 = null;
+		_prev2 = null;
+		_e1 = _e2 = _e3 = _e4 = _e5 = _e6 = null;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);

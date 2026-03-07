@@ -41,7 +41,7 @@ public class HaMaZiStrategy : Strategy
 			.SetDisplay("MA Period", "EMA period", "General");
 		_zigzagLength = Param(nameof(ZigzagLength), 13)
 			.SetDisplay("ZigZag Length", "Lookback for pivot search", "ZigZag");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 		_stopLossPct = Param(nameof(StopLossPct), 2m)
 			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
@@ -57,6 +57,8 @@ public class HaMaZiStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
+		_highest = default;
+		_lowest = default;
 		_haOpenPrev = 0; _haClosePrev = 0;
 		_lastZigzag = 0; _lastZigzagHigh = 0; _lastZigzagLow = 0;
 	}
@@ -69,6 +71,9 @@ public class HaMaZiStrategy : Strategy
 		var ema = new ExponentialMovingAverage { Length = MaPeriod };
 		_highest = new Highest { Length = ZigzagLength };
 		_lowest = new Lowest { Length = ZigzagLength };
+
+		Indicators.Add(_highest);
+		Indicators.Add(_lowest);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
