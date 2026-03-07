@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,96 +11,84 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Double Supertrend Strategy (using Moving Averages as substitute for SuperTrend)
+/// Double Supertrend Strategy.
+/// Uses two SuperTrend indicators with different parameters.
+/// Enters long when both SuperTrends are bullish.
+/// Enters short when both SuperTrends are bearish.
 /// </summary>
 public class DoubleSupertrendStrategy : Strategy
 {
-	private bool _prevDirection1;
-	private bool _prevDirection2;
+	private readonly StrategyParam<DataType> _candleTypeParam;
+	private readonly StrategyParam<int> _atrPeriod1;
+	private readonly StrategyParam<decimal> _factor1;
+	private readonly StrategyParam<int> _atrPeriod2;
+	private readonly StrategyParam<decimal> _factor2;
+	private readonly StrategyParam<int> _cooldownBars;
+
+	private SuperTrend _st1;
+	private SuperTrend _st2;
+	private bool _prevUpTrend1;
+	private bool _prevUpTrend2;
+	private bool _hasPrev;
+	private int _cooldownRemaining;
 
 	public DoubleSupertrendStrategy()
 	{
-		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle type", "Candle type for strategy calculation.", "General");
 
 		_atrPeriod1 = Param(nameof(ATRPeriod1), 10)
 			.SetGreaterThanZero()
-			.SetDisplay("MA1 Period", "First Moving Average period", "Moving Averages");
+			.SetDisplay("ST1 Period", "First SuperTrend ATR period", "SuperTrend 1");
 
-		_factor1 = Param(nameof(Factor1), 3.0m)
-			.SetDisplay("MA1 Factor", "First Moving Average factor", "Moving Averages");
+		_factor1 = Param(nameof(Factor1), 2.0m)
+			.SetDisplay("ST1 Factor", "First SuperTrend multiplier", "SuperTrend 1");
 
 		_atrPeriod2 = Param(nameof(ATRPeriod2), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("MA2 Period", "Second Moving Average period", "Moving Averages");
+			.SetDisplay("ST2 Period", "Second SuperTrend ATR period", "SuperTrend 2");
 
-		_factor2 = Param(nameof(Factor2), 5.0m)
-			.SetDisplay("MA2 Factor", "Second Moving Average factor", "Moving Averages");
+		_factor2 = Param(nameof(Factor2), 4.0m)
+			.SetDisplay("ST2 Factor", "Second SuperTrend multiplier", "SuperTrend 2");
 
-		_direction = Param(nameof(Direction), "Long")
-			.SetDisplay("Direction", "Trading direction (Long/Short)", "Strategy");
-
-		_takeProfit = Param(nameof(TakeProfit), 1.5m.Percents())
-			.SetDisplay("TP", "Take profit", "Take Profit");
-
-		_stopLoss = Param(nameof(StopLoss), 10m.Percents())
-			.SetDisplay("SL", "Stop loss", "Stop Loss");
+		_cooldownBars = Param(nameof(CooldownBars), 10)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "Risk");
 	}
 
-	private readonly StrategyParam<DataType> _candleTypeParam;
 	public DataType CandleType
 	{
 		get => _candleTypeParam.Value;
 		set => _candleTypeParam.Value = value;
 	}
 
-	private readonly StrategyParam<int> _atrPeriod1;
 	public int ATRPeriod1
 	{
 		get => _atrPeriod1.Value;
 		set => _atrPeriod1.Value = value;
 	}
 
-	private readonly StrategyParam<decimal> _factor1;
 	public decimal Factor1
 	{
 		get => _factor1.Value;
 		set => _factor1.Value = value;
 	}
 
-	private readonly StrategyParam<int> _atrPeriod2;
 	public int ATRPeriod2
 	{
 		get => _atrPeriod2.Value;
 		set => _atrPeriod2.Value = value;
 	}
 
-	private readonly StrategyParam<decimal> _factor2;
 	public decimal Factor2
 	{
 		get => _factor2.Value;
 		set => _factor2.Value = value;
 	}
 
-	private readonly StrategyParam<string> _direction;
-	public string Direction
+	public int CooldownBars
 	{
-		get => _direction.Value;
-		set => _direction.Value = value;
-	}
-
-	private readonly StrategyParam<Unit> _takeProfit;
-	public Unit TakeProfit
-	{
-		get => _takeProfit.Value;
-		set => _takeProfit.Value = value;
-	}
-
-	private readonly StrategyParam<Unit> _stopLoss;
-	public Unit StopLoss
-	{
-		get => _stopLoss.Value;
-		set => _stopLoss.Value = value;
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	/// <inheritdoc />
@@ -114,8 +99,13 @@ public class DoubleSupertrendStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevDirection1 = false;
-		_prevDirection2 = false;
+
+		_st1 = null;
+		_st2 = null;
+		_prevUpTrend1 = false;
+		_prevUpTrend2 = false;
+		_hasPrev = false;
+		_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
@@ -123,108 +113,107 @@ public class DoubleSupertrendStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Create Moving Average indicators as SuperTrend substitute
-		var ma1 = new EMA
-		{
-			Length = ATRPeriod1
-		};
+		_st1 = new SuperTrend { Length = ATRPeriod1, Multiplier = Factor1 };
+		_st2 = new SuperTrend { Length = ATRPeriod2, Multiplier = Factor2 };
 
-		var ma2 = new EMA
-		{
-			Length = ATRPeriod2
-		};
-
-		// Create ATR for volatility-based signals
-		var atr1 = new AverageTrueRange
-		{
-			Length = ATRPeriod1
-		};
-
-		var atr2 = new AverageTrueRange
-		{
-			Length = ATRPeriod2
-		};
-
-		// Subscribe to candles
 		var subscription = SubscribeCandles(CandleType);
+
 		subscription
-			.BindEx(ma1, ma2, atr1, atr2, OnProcess)
+			.BindEx(_st1, _st2, OnProcess)
 			.Start();
 
-		// Configure chart
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, ma1, System.Drawing.Color.Green);
-			DrawIndicator(area, ma2, System.Drawing.Color.Red);
+			DrawIndicator(area, _st1);
+			DrawIndicator(area, _st2);
 			DrawOwnTrades(area);
 		}
-
-		StartProtection(TakeProfit, StopLoss);
 	}
 
-	private void OnProcess(ICandleMessage candle, 
-		IIndicatorValue ma1Value, IIndicatorValue ma2Value, 
-		IIndicatorValue atr1Value, IIndicatorValue atr2Value)
+	private void OnProcess(ICandleMessage candle, IIndicatorValue st1Value, IIndicatorValue st2Value)
 	{
-		// Only process finished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var closePrice = candle.ClosePrice;
-		var ma1Price = ma1Value.ToDecimal();
-		var ma2Price = ma2Value.ToDecimal();
-		var atr1Val = atr1Value.ToDecimal();
-		var atr2Val = atr2Value.ToDecimal();
+		if (!_st1.IsFormed || !_st2.IsFormed)
+			return;
 
-		// Calculate trend direction based on price vs moving average + ATR
-		var upperBand1 = ma1Price + (atr1Val * Factor1);
-		var lowerBand1 = ma1Price - (atr1Val * Factor1);
-		var upperBand2 = ma2Price + (atr2Val * Factor2);
-		var lowerBand2 = ma2Price - (atr2Val * Factor2);
+		if (st1Value.IsEmpty || st2Value.IsEmpty)
+			return;
 
-		// Determine trend direction (simulating SuperTrend logic)
-		var inLong1 = closePrice > lowerBand1;
-		var inLong2 = closePrice > lowerBand2;
+		var stv1 = (SuperTrendIndicatorValue)st1Value;
+		var stv2 = (SuperTrendIndicatorValue)st2Value;
 
-		// Check for direction changes
-		var exitLong = _prevDirection2 && !inLong2;
-		var exitShort = !_prevDirection2 && inLong2;
+		var upTrend1 = stv1.IsUpTrend;
+		var upTrend2 = stv2.IsUpTrend;
 
-		var isLongMode = Direction == "Long";
-		var isShortMode = Direction == "Short";
-
-		// Entry conditions
-		var entryLong = inLong1 && closePrice > upperBand1;
-		var entryShort = !inLong1 && closePrice < lowerBand1;
-
-		// Execute trades
-		if (isLongMode)
+		if (!IsFormedAndOnlineAndAllowTrading())
 		{
-			if (entryLong && Position == 0)
-			{
-				BuyMarket(Volume);
-			}
-			else if (exitLong && Position > 0)
-			{
-				SellMarket(Position);
-			}
-		}
-		else if (isShortMode)
-		{
-			if (entryShort && Position == 0)
-			{
-				SellMarket(Volume);
-			}
-			else if ((exitShort || inLong1) && Position < 0)
-			{
-				BuyMarket(Position.Abs());
-			}
+			_prevUpTrend1 = upTrend1;
+			_prevUpTrend2 = upTrend2;
+			_hasPrev = true;
+			return;
 		}
 
-		// Update previous directions
-		_prevDirection1 = inLong1;
-		_prevDirection2 = inLong2;
+		if (_cooldownRemaining > 0)
+		{
+			_cooldownRemaining--;
+			_prevUpTrend1 = upTrend1;
+			_prevUpTrend2 = upTrend2;
+			_hasPrev = true;
+			return;
+		}
+
+		if (!_hasPrev)
+		{
+			_prevUpTrend1 = upTrend1;
+			_prevUpTrend2 = upTrend2;
+			_hasPrev = true;
+			return;
+		}
+
+		// Both bullish
+		var bothBullish = upTrend1 && upTrend2;
+		// Both bearish
+		var bothBearish = !upTrend1 && !upTrend2;
+
+		// Trend changed to both bullish
+		var bullishSignal = bothBullish && (!_prevUpTrend1 || !_prevUpTrend2);
+		// Trend changed to both bearish
+		var bearishSignal = bothBearish && (_prevUpTrend1 || _prevUpTrend2);
+
+		// Buy when both SuperTrends turn bullish
+		if (bullishSignal && Position <= 0)
+		{
+			if (Position < 0)
+				BuyMarket(Math.Abs(Position));
+			BuyMarket(Volume);
+			_cooldownRemaining = CooldownBars;
+		}
+		// Sell when both SuperTrends turn bearish
+		else if (bearishSignal && Position >= 0)
+		{
+			if (Position > 0)
+				SellMarket(Math.Abs(Position));
+			SellMarket(Volume);
+			_cooldownRemaining = CooldownBars;
+		}
+		// Exit long if either SuperTrend turns bearish
+		else if (Position > 0 && !bothBullish && (_prevUpTrend1 && _prevUpTrend2))
+		{
+			SellMarket(Math.Abs(Position));
+			_cooldownRemaining = CooldownBars;
+		}
+		// Exit short if either SuperTrend turns bullish
+		else if (Position < 0 && !bothBearish && (!_prevUpTrend1 && !_prevUpTrend2))
+		{
+			BuyMarket(Math.Abs(Position));
+			_cooldownRemaining = CooldownBars;
+		}
+
+		_prevUpTrend1 = upTrend1;
+		_prevUpTrend2 = upTrend2;
 	}
 }

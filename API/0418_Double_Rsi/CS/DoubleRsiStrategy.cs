@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,75 +11,94 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Double RSI Strategy with multi-timeframe analysis
+/// Double RSI Strategy.
+/// Uses a short RSI and a long RSI for confirmation.
+/// Buys when both RSIs are oversold and sells when both are overbought.
 /// </summary>
 public class DoubleRsiStrategy : Strategy
 {
-	private decimal _mtfRsiValue;
+	private readonly StrategyParam<DataType> _candleTypeParam;
+	private readonly StrategyParam<int> _rsiShortLength;
+	private readonly StrategyParam<int> _rsiLongLength;
+	private readonly StrategyParam<decimal> _oversold;
+	private readonly StrategyParam<decimal> _overbought;
+	private readonly StrategyParam<int> _cooldownBars;
+
+	private RelativeStrengthIndex _rsiShort;
+	private RelativeStrengthIndex _rsiLong;
+	private int _cooldownRemaining;
 
 	public DoubleRsiStrategy()
 	{
-		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle type", "Candle type for strategy calculation.", "General");
 
-		_rsiLength = Param(nameof(RSILength), 14)
+		_rsiShortLength = Param(nameof(RSIShortLength), 7)
 			.SetGreaterThanZero()
-			.SetDisplay("RSI Length", "RSI period", "RSI");
+			.SetDisplay("Short RSI", "Short RSI period", "RSI");
 
-		_mtfTimeframe = Param(nameof(MTFTimeframe), TimeSpan.FromMinutes(15).TimeFrame())
-			.SetDisplay("MTF Timeframe", "Multi-timeframe for second RSI", "Multi Timeframe RSI");
+		_rsiLongLength = Param(nameof(RSILongLength), 21)
+			.SetGreaterThanZero()
+			.SetDisplay("Long RSI", "Long RSI period", "RSI");
 
-		_useTP = Param(nameof(UseTP), false)
-			.SetDisplay("Use Take Profit", "Enable take profit", "Take Profit");
+		_oversold = Param(nameof(Oversold), 35m)
+			.SetDisplay("Oversold", "RSI oversold level", "RSI");
 
-		_tpPercent = Param(nameof(TPPercent), 1.2m)
-			.SetDisplay("Take Profit %", "Take profit percentage", "Take Profit");
+		_overbought = Param(nameof(Overbought), 65m)
+			.SetDisplay("Overbought", "RSI overbought level", "RSI");
+
+		_cooldownBars = Param(nameof(CooldownBars), 10)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "Risk");
 	}
 
-	private readonly StrategyParam<DataType> _candleTypeParam;
 	public DataType CandleType
 	{
 		get => _candleTypeParam.Value;
 		set => _candleTypeParam.Value = value;
 	}
 
-	private readonly StrategyParam<int> _rsiLength;
-	public int RSILength
+	public int RSIShortLength
 	{
-		get => _rsiLength.Value;
-		set => _rsiLength.Value = value;
+		get => _rsiShortLength.Value;
+		set => _rsiShortLength.Value = value;
 	}
 
-	private readonly StrategyParam<DataType> _mtfTimeframe;
-	public DataType MTFTimeframe
+	public int RSILongLength
 	{
-		get => _mtfTimeframe.Value;
-		set => _mtfTimeframe.Value = value;
+		get => _rsiLongLength.Value;
+		set => _rsiLongLength.Value = value;
 	}
 
-	private readonly StrategyParam<bool> _useTP;
-	public bool UseTP
+	public decimal Oversold
 	{
-		get => _useTP.Value;
-		set => _useTP.Value = value;
+		get => _oversold.Value;
+		set => _oversold.Value = value;
 	}
 
-	private readonly StrategyParam<decimal> _tpPercent;
-	public decimal TPPercent
+	public decimal Overbought
 	{
-		get => _tpPercent.Value;
-		set => _tpPercent.Value = value;
+		get => _overbought.Value;
+		set => _overbought.Value = value;
+	}
+
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-		=> [(Security, CandleType), (Security, MTFTimeframe)];
+		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_mtfRsiValue = 0;
+
+		_rsiShort = null;
+		_rsiLong = null;
+		_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
@@ -90,70 +106,67 @@ public class DoubleRsiStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Create RSI indicators
-		var rsi = new RelativeStrengthIndex { Length = RSILength };
-		var mtfRsi = new RelativeStrengthIndex { Length = RSILength };
+		_rsiShort = new RelativeStrengthIndex { Length = RSIShortLength };
+		_rsiLong = new RelativeStrengthIndex { Length = RSILongLength };
 
-		// Subscribe to regular timeframe
 		var subscription = SubscribeCandles(CandleType);
+
 		subscription
-			.Bind(rsi, OnProcessMainTimeframe)
+			.Bind(_rsiShort, _rsiLong, OnProcess)
 			.Start();
 
-		// Subscribe to multi-timeframe
-		var mtfSubscription = SubscribeCandles(MTFTimeframe);
-		mtfSubscription
-			.Bind(mtfRsi, OnProcessMTF)
-			.Start();
-
-		// Configure chart
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
 			DrawOwnTrades(area);
 		}
-
-		// Start protection if enabled
-		if (UseTP)
-		{
-			var takeValue = new Unit(TPPercent, UnitTypes.Percent);
-			StartProtection(takeValue, new());
-		}
 	}
 
-	private void OnProcessMTF(ICandleMessage candle, decimal mtfRsiValue)
+	private void OnProcess(ICandleMessage candle, decimal rsiShort, decimal rsiLong)
 	{
-		if (candle.State == CandleStates.Finished)
-			_mtfRsiValue = mtfRsiValue;
-	}
-
-	private void OnProcessMainTimeframe(ICandleMessage candle, decimal rsiValue)
-	{
-		// Only process finished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Buy signal: RSI crosses above 30 and MTF RSI < 35
-		var buy = rsiValue > 30 && rsiValue < 35 && _mtfRsiValue < 35;
-		
-		// Sell signal: RSI crosses below 70 and MTF RSI > 65
-		var sell = rsiValue < 70 && rsiValue > 65 && _mtfRsiValue > 65;
+		if (!_rsiShort.IsFormed || !_rsiLong.IsFormed)
+			return;
 
-		// Execute trades
-		if (buy && Position <= 0)
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		if (_cooldownRemaining > 0)
+		{
+			_cooldownRemaining--;
+			return;
+		}
+
+		// Buy: both RSIs oversold
+		if (rsiShort < Oversold && rsiLong < Oversold && Position <= 0)
 		{
 			if (Position < 0)
-				BuyMarket(Position.Abs());
-
+				BuyMarket(Math.Abs(Position));
 			BuyMarket(Volume);
+			_cooldownRemaining = CooldownBars;
 		}
-		else if (sell && Position >= 0)
+		// Sell: both RSIs overbought
+		else if (rsiShort > Overbought && rsiLong > Overbought && Position >= 0)
 		{
 			if (Position > 0)
-				SellMarket(Position);
-
+				SellMarket(Math.Abs(Position));
 			SellMarket(Volume);
+			_cooldownRemaining = CooldownBars;
+		}
+		// Exit long: short RSI overbought
+		else if (Position > 0 && rsiShort > Overbought)
+		{
+			SellMarket(Math.Abs(Position));
+			_cooldownRemaining = CooldownBars;
+		}
+		// Exit short: short RSI oversold
+		else if (Position < 0 && rsiShort < Oversold)
+		{
+			BuyMarket(Math.Abs(Position));
+			_cooldownRemaining = CooldownBars;
 		}
 	}
 }

@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,231 +11,127 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Bollinger Bands Winner PRO Strategy with RSI, Aroon and MA filters
+/// Bollinger Bands Winner PRO Strategy with RSI and MA filters.
+/// Buys when price touches lower BB, RSI confirms oversold, and price above MA.
+/// Sells when price touches upper BB, RSI confirms overbought, and price below MA.
 /// </summary>
 public class BollingerWinnerProStrategy : Strategy
 {
-	private decimal _rsiValue;
-	private decimal _aroonUpValue;
-	private decimal _maValue;
-	private bool _inPosition;
-
-	public BollingerWinnerProStrategy()
-	{
-		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle type", "Candle type for strategy calculation.", "General");
-
-		// Bollinger Bands
-		_bbLength = Param(nameof(BBLength), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("BB Period", "Bollinger Bands period", "Bollinger Bands");
-
-		_bbMultiplier = Param(nameof(BBMultiplier), 2.0m)
-			.SetDisplay("BB StdDev", "Bollinger Bands standard deviation multiplier", "Bollinger Bands");
-
-		// RSI Filter
-		_useRSI = Param(nameof(UseRSI), true)
-			.SetDisplay("Use RSI", "Enable RSI filter", "RSI Filter");
-
-		_rsiLength = Param(nameof(RSILength), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("RSI Length", "RSI period", "RSI Filter");
-
-		_rsiAbove = Param(nameof(RSIAbove), 45m)
-			.SetDisplay("RSI Above", "RSI threshold for long", "RSI Filter");
-
-		_rsiBelow = Param(nameof(RSIBelow), 55m)
-			.SetDisplay("RSI Below", "RSI threshold for short", "RSI Filter");
-
-		// Aroon Filter
-		_useAroon = Param(nameof(UseAroon), false)
-			.SetDisplay("Use Aroon", "Enable Aroon filter", "Aroon Filter");
-
-		_aroonLength = Param(nameof(AroonLength), 288)
-			.SetGreaterThanZero()
-			.SetDisplay("Aroon Period", "Aroon indicator period", "Aroon Filter");
-
-		_aroonConfirmation = Param(nameof(AroonConfirmation), 90m)
-			.SetDisplay("Aroon Confirmation", "Aroon confirmation level", "Aroon Filter");
-
-		_aroonStop = Param(nameof(AroonStop), 70m)
-			.SetDisplay("Aroon Stop", "Aroon stop level", "Aroon Filter");
-
-		// Moving Average
-		_useMA = Param(nameof(UseMA), true)
-			.SetDisplay("Use MA", "Enable moving average filter", "Moving Average");
-
-		_maType = Param(nameof(MAType), "EMA")
-			.SetDisplay("MA Type", "Moving average type (EMA/SMA)", "Moving Average");
-
-		_maLength = Param(nameof(MALength), 200)
-			.SetGreaterThanZero()
-			.SetDisplay("MA Length", "Moving average period", "Moving Average");
-
-		// Strategy
-		_candlePercent = Param(nameof(CandlePercent), 30m)
-			.SetDisplay("Candle %", "Candle percentage for entry zones", "Strategy");
-
-		_showLong = Param(nameof(ShowLong), true)
-			.SetDisplay("Long entries", "Enable long entries", "Strategy");
-
-		_showShort = Param(nameof(ShowShort), false)
-			.SetDisplay("Short entries", "Enable short entries", "Strategy");
-
-		_closeEarly = Param(nameof(CloseEarly), false)
-			.SetDisplay("Close early", "Close position early when in profit", "Strategy");
-
-		// Stop Loss
-		_useSL = Param(nameof(UseSL), true)
-			.SetDisplay("Use Stop Loss", "Enable stop loss", "Stop Loss");
-
-		_slPercent = Param(nameof(SLPercent), 6m)
-			.SetDisplay("Stop Loss %", "Stop loss percentage", "Stop Loss");
-	}
-
-	#region Parameters
-
 	private readonly StrategyParam<DataType> _candleTypeParam;
+	private readonly StrategyParam<int> _bbLength;
+	private readonly StrategyParam<decimal> _bbMultiplier;
+	private readonly StrategyParam<int> _rsiLength;
+	private readonly StrategyParam<decimal> _rsiOversold;
+	private readonly StrategyParam<decimal> _rsiOverbought;
+	private readonly StrategyParam<int> _maLength;
+	private readonly StrategyParam<int> _cooldownBars;
+
+	/// <summary>
+	/// Candle type for strategy calculation.
+	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleTypeParam.Value;
 		set => _candleTypeParam.Value = value;
 	}
 
-	private readonly StrategyParam<int> _bbLength;
+	/// <summary>
+	/// Bollinger Bands period.
+	/// </summary>
 	public int BBLength
 	{
 		get => _bbLength.Value;
 		set => _bbLength.Value = value;
 	}
 
-	private readonly StrategyParam<decimal> _bbMultiplier;
+	/// <summary>
+	/// Bollinger Bands standard deviation multiplier.
+	/// </summary>
 	public decimal BBMultiplier
 	{
 		get => _bbMultiplier.Value;
 		set => _bbMultiplier.Value = value;
 	}
 
-	private readonly StrategyParam<bool> _useRSI;
-	public bool UseRSI
-	{
-		get => _useRSI.Value;
-		set => _useRSI.Value = value;
-	}
-
-	private readonly StrategyParam<int> _rsiLength;
+	/// <summary>
+	/// RSI period.
+	/// </summary>
 	public int RSILength
 	{
 		get => _rsiLength.Value;
 		set => _rsiLength.Value = value;
 	}
 
-	private readonly StrategyParam<decimal> _rsiAbove;
-	public decimal RSIAbove
+	/// <summary>
+	/// RSI oversold level.
+	/// </summary>
+	public decimal RSIOversold
 	{
-		get => _rsiAbove.Value;
-		set => _rsiAbove.Value = value;
+		get => _rsiOversold.Value;
+		set => _rsiOversold.Value = value;
 	}
 
-	private readonly StrategyParam<decimal> _rsiBelow;
-	public decimal RSIBelow
+	/// <summary>
+	/// RSI overbought level.
+	/// </summary>
+	public decimal RSIOverbought
 	{
-		get => _rsiBelow.Value;
-		set => _rsiBelow.Value = value;
+		get => _rsiOverbought.Value;
+		set => _rsiOverbought.Value = value;
 	}
 
-	private readonly StrategyParam<bool> _useAroon;
-	public bool UseAroon
-	{
-		get => _useAroon.Value;
-		set => _useAroon.Value = value;
-	}
-
-	private readonly StrategyParam<int> _aroonLength;
-	public int AroonLength
-	{
-		get => _aroonLength.Value;
-		set => _aroonLength.Value = value;
-	}
-
-	private readonly StrategyParam<decimal> _aroonConfirmation;
-	public decimal AroonConfirmation
-	{
-		get => _aroonConfirmation.Value;
-		set => _aroonConfirmation.Value = value;
-	}
-
-	private readonly StrategyParam<decimal> _aroonStop;
-	public decimal AroonStop
-	{
-		get => _aroonStop.Value;
-		set => _aroonStop.Value = value;
-	}
-
-	private readonly StrategyParam<bool> _useMA;
-	public bool UseMA
-	{
-		get => _useMA.Value;
-		set => _useMA.Value = value;
-	}
-
-	private readonly StrategyParam<string> _maType;
-	public string MAType
-	{
-		get => _maType.Value;
-		set => _maType.Value = value;
-	}
-
-	private readonly StrategyParam<int> _maLength;
+	/// <summary>
+	/// Moving average period.
+	/// </summary>
 	public int MALength
 	{
 		get => _maLength.Value;
 		set => _maLength.Value = value;
 	}
 
-	private readonly StrategyParam<decimal> _candlePercent;
-	public decimal CandlePercent
+	/// <summary>
+	/// Cooldown bars between trades.
+	/// </summary>
+	public int CooldownBars
 	{
-		get => _candlePercent.Value;
-		set => _candlePercent.Value = value;
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
-	private readonly StrategyParam<bool> _showLong;
-	public bool ShowLong
-	{
-		get => _showLong.Value;
-		set => _showLong.Value = value;
-	}
+	private BollingerBands _bollinger;
+	private RelativeStrengthIndex _rsi;
+	private ExponentialMovingAverage _ma;
+	private int _cooldownRemaining;
 
-	private readonly StrategyParam<bool> _showShort;
-	public bool ShowShort
+	public BollingerWinnerProStrategy()
 	{
-		get => _showShort.Value;
-		set => _showShort.Value = value;
-	}
+		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+			.SetDisplay("Candle type", "Candle type for strategy calculation.", "General");
 
-	private readonly StrategyParam<bool> _closeEarly;
-	public bool CloseEarly
-	{
-		get => _closeEarly.Value;
-		set => _closeEarly.Value = value;
-	}
+		_bbLength = Param(nameof(BBLength), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("BB Period", "Bollinger Bands period", "Bollinger Bands");
 
-	private readonly StrategyParam<bool> _useSL;
-	public bool UseSL
-	{
-		get => _useSL.Value;
-		set => _useSL.Value = value;
-	}
+		_bbMultiplier = Param(nameof(BBMultiplier), 1.5m)
+			.SetDisplay("BB StdDev", "Bollinger Bands standard deviation multiplier", "Bollinger Bands");
 
-	private readonly StrategyParam<decimal> _slPercent;
-	public decimal SLPercent
-	{
-		get => _slPercent.Value;
-		set => _slPercent.Value = value;
-	}
+		_rsiLength = Param(nameof(RSILength), 14)
+			.SetGreaterThanZero()
+			.SetDisplay("RSI Length", "RSI period", "RSI Filter");
 
-	#endregion
+		_rsiOversold = Param(nameof(RSIOversold), 40m)
+			.SetDisplay("RSI Oversold", "RSI oversold threshold", "RSI Filter");
+
+		_rsiOverbought = Param(nameof(RSIOverbought), 60m)
+			.SetDisplay("RSI Overbought", "RSI overbought threshold", "RSI Filter");
+
+		_maLength = Param(nameof(MALength), 50)
+			.SetGreaterThanZero()
+			.SetDisplay("MA Length", "Moving average period", "Moving Average");
+
+		_cooldownBars = Param(nameof(CooldownBars), 20)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "Risk");
+	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
@@ -249,10 +142,10 @@ public class BollingerWinnerProStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_rsiValue = 0;
-		_aroonUpValue = 0;
-		_maValue = 0;
-		_inPosition = false;
+		_bollinger = null;
+		_rsi = null;
+		_ma = null;
+		_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
@@ -260,149 +153,89 @@ public class BollingerWinnerProStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Create indicators
-		var bollinger = new BollingerBands
+		_bollinger = new BollingerBands
 		{
 			Length = BBLength,
 			Width = BBMultiplier
 		};
 
-		var rsi = new RelativeStrengthIndex { Length = RSILength };
-		var aroon = UseAroon ? new Aroon { Length = AroonLength } : null;
-		
-		IIndicator ma = MAType == "EMA" 
-			? new EMA { Length = MALength }
-			: new SMA { Length = MALength };
+		_rsi = new RelativeStrengthIndex { Length = RSILength };
+		_ma = new ExponentialMovingAverage { Length = MALength };
 
-		// Subscribe to candles
 		var subscription = SubscribeCandles(CandleType);
 
-		if (UseAroon)
-		{
-			subscription
-				.BindEx(bollinger, rsi, aroon, ma, OnProcessWithAroon)
-				.Start();
-		}
-		else
-		{
-			subscription
-				.BindEx(bollinger, rsi, ma, OnProcessWithoutAroon)
-				.Start();
-		}
+		subscription
+			.BindEx(_bollinger, _rsi, _ma, OnProcess)
+			.Start();
 
-		// Configure chart
 		var area = CreateChartArea();
-
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, bollinger);
-			if (UseMA)
-				DrawIndicator(area, ma);
+			DrawIndicator(area, _bollinger);
+			DrawIndicator(area, _ma);
 			DrawOwnTrades(area);
 		}
-
-		// Start protection if enabled
-		if (UseSL)
-		{
-			var stopValue = new Unit(SLPercent, UnitTypes.Percent);
-			StartProtection(new(), stopValue);
-		}
 	}
 
-	private void OnProcessWithAroon(ICandleMessage candle, 
-		IIndicatorValue bollingerValue, IIndicatorValue rsiValue, 
-		IIndicatorValue aroonValue, IIndicatorValue maValue)
-	{
-		_rsiValue = rsiValue.ToDecimal();
-		var aroonTyped = (AroonValue)aroonValue;
-		_aroonUpValue = aroonTyped.Up.Value;
-		_maValue = maValue.ToDecimal();
-		
-		ProcessCandle(candle, bollingerValue);
-	}
-
-	private void OnProcessWithoutAroon(ICandleMessage candle, 
+	private void OnProcess(ICandleMessage candle,
 		IIndicatorValue bollingerValue, IIndicatorValue rsiValue, IIndicatorValue maValue)
 	{
-		_rsiValue = rsiValue.ToDecimal();
-		_maValue = maValue.ToDecimal();
-		
-		ProcessCandle(candle, bollingerValue);
-	}
-
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bollingerValue)
-	{
-		// Only process finished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var closePrice = candle.ClosePrice;
-		var openPrice = candle.OpenPrice;
-		var highPrice = candle.HighPrice;
-		var lowPrice = candle.LowPrice;
-		
-		var bollingerTyped = (BollingerBandsValue)bollingerValue;
-		var upperBand = bollingerTyped.UpBand;
-		var lowerBand = bollingerTyped.LowBand;
+		if (!_bollinger.IsFormed || !_rsi.IsFormed || !_ma.IsFormed)
+			return;
 
-		// Calculate entry zones
-		var candleSize = highPrice - lowPrice;
-		var candlePercent = CandlePercent * 0.01m;
-		var buyZone = (candleSize * candlePercent) + lowPrice;
-		var sellZone = highPrice - (candleSize * candlePercent);
+		var bb = (BollingerBandsValue)bollingerValue;
+		if (bb.UpBand is not decimal upper ||
+			bb.LowBand is not decimal lower ||
+			bb.MovingAverage is not decimal middle)
+			return;
 
-		// Check filters
-		var buyRSIFilter = !UseRSI || _rsiValue < RSIAbove;
-		var sellRSIFilter = !UseRSI || _rsiValue > RSIBelow;
-		
-		var buyAroonFilter = !UseAroon || _aroonUpValue > AroonConfirmation;
-		var sellAroonFilter = !UseAroon || _aroonUpValue < AroonStop;
-		
-		var buyMAFilter = !UseMA || closePrice > _maValue;
-		var sellMAFilter = !UseMA || closePrice < _maValue;
+		if (rsiValue.IsEmpty || maValue.IsEmpty)
+			return;
 
-		// Buy and sell signals
-		var buy = buyZone < lowerBand && closePrice < openPrice && 
-				 buyRSIFilter && buyAroonFilter && buyMAFilter;
-		
-		var sell = sellZone > upperBand && closePrice > openPrice && 
-				  sellRSIFilter && sellAroonFilter && sellMAFilter;
+		var rsi = rsiValue.ToDecimal();
 
-		// Execute trades
-		if (ShowLong && buy && Position == 0)
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		if (_cooldownRemaining > 0)
 		{
+			_cooldownRemaining--;
+			return;
+		}
+
+		var close = candle.ClosePrice;
+
+		// Buy: price at/below lower BB + RSI oversold
+		if (close <= lower && rsi < RSIOversold && Position <= 0)
+		{
+			if (Position < 0)
+				BuyMarket(Math.Abs(Position));
 			BuyMarket(Volume);
-			_inPosition = true;
+			_cooldownRemaining = CooldownBars;
 		}
-		else if (_inPosition)
+		// Sell: price at/above upper BB + RSI overbought
+		else if (close >= upper && rsi > RSIOverbought && Position >= 0)
 		{
-			// Close early if enabled and in profit
-			if (CloseEarly && closePrice > upperBand && PnL > 0)
-			{
-				SellMarket(Position);
-				_inPosition = false;
-			}
-			// Normal exit
-			else if (sell || sellAroonFilter)
-			{
-				SellMarket(Position);
-				_inPosition = false;
-			}
-		}
-
-		if (ShowShort && sell && Position == 0)
-		{
+			if (Position > 0)
+				SellMarket(Math.Abs(Position));
 			SellMarket(Volume);
-			_inPosition = true;
+			_cooldownRemaining = CooldownBars;
 		}
-		else if (_inPosition && Position < 0)
+		// Exit long at middle band
+		else if (Position > 0 && close >= middle)
 		{
-			if (CloseEarly && closePrice < lowerBand && PnL > 0)
-			{
-				BuyMarket(Position.Abs());
-				_inPosition = false;
-			}
+			SellMarket(Math.Abs(Position));
+			_cooldownRemaining = CooldownBars;
+		}
+		// Exit short at middle band
+		else if (Position < 0 && close <= middle)
+		{
+			BuyMarket(Math.Abs(Position));
+			_cooldownRemaining = CooldownBars;
 		}
 	}
 }
