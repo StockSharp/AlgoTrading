@@ -3,21 +3,18 @@
 // Two share classes of the same soccer club (pair length = 2).
 // Long cheaper share, short expensive when relative premium > EntryThresh;
 // exit when premium shrinks below ExitThresh.
-// Triggered by daily candle of the first ticker — no Schedule used.
+// Uses candle-based price comparison between two securities.
 // -----------------------------------------------------------------------------
 // Date: 2 Aug 2025
 // -----------------------------------------------------------------------------
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
+using StockSharp.Configuration;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
@@ -27,20 +24,19 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class SoccerClubsArbitrageStrategy : Strategy
 {
-	#region Params
-	private readonly StrategyParam<IEnumerable<Security>> _pair;
+	private readonly StrategyParam<string> _security2Id;
 	private readonly StrategyParam<decimal> _entry;
 	private readonly StrategyParam<decimal> _exit;
-	private readonly StrategyParam<decimal> _minUsd;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
 	/// <summary>
-	/// Securities pair used for arbitrage.
+	/// Second security identifier.
 	/// </summary>
-	public IEnumerable<Security> Pair
+	public string Security2Id
 	{
-		get => _pair.Value;
-		set => _pair.Value = value;
+		get => _security2Id.Value;
+		set => _security2Id.Value = value;
 	}
 
 	/// <summary>
@@ -62,12 +58,12 @@ public class SoccerClubsArbitrageStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Minimum trade value in USD.
+	/// Cooldown bars between trades.
 	/// </summary>
-	public decimal MinTradeUsd
+	public int CooldownBars
 	{
-		get => _minUsd.Value;
-		set => _minUsd.Value = value;
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	/// <summary>
@@ -78,38 +74,40 @@ public class SoccerClubsArbitrageStrategy : Strategy
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
-	#endregion
 
-	private Security _a, _b;
-	private readonly Dictionary<Security, decimal> _latestPrices = [];
+	private Security _secondSecurity;
+	private decimal _priceA;
+	private decimal _priceB;
+	private bool _primaryUpdated;
+	private bool _secondUpdated;
+	private int _cooldownRemaining;
 
 	public SoccerClubsArbitrageStrategy()
 	{
-		_pair = Param<IEnumerable<Security>>(nameof(Pair), [])
-			.SetDisplay("Pair", "Securities pair to arbitrage", "General");
+		_security2Id = Param(nameof(Security2Id), Paths.HistoryDefaultSecurity2)
+			.SetDisplay("Second Security Id", "Identifier of the second security", "General");
 
-		_entry = Param(nameof(EntryThreshold), 0.05m)
+		_entry = Param(nameof(EntryThreshold), 0.005m)
 			.SetDisplay("Entry Threshold", "Premium difference to open position", "Parameters");
 
-		_exit = Param(nameof(ExitThreshold), 0.01m)
+		_exit = Param(nameof(ExitThreshold), 0.001m)
 			.SetDisplay("Exit Threshold", "Premium difference to close position", "Parameters");
 
-		_minUsd = Param(nameof(MinTradeUsd), 200m)
-			.SetDisplay("Min Trade USD", "Minimum notional value for orders", "Risk Management");
+		_cooldownBars = Param(nameof(CooldownBars), 5)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "Risk");
+
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
-	public override IEnumerable<(Security, DataType)> GetWorkingSecurities()
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		if (Pair.Count() != 2)
-			throw new InvalidOperationException("Pair must contain exactly two tickers.");
+		if (Security != null)
+			yield return (Security, CandleType);
 
-		_a = Pair.ElementAt(0);
-		_b = Pair.ElementAt(1);
-		yield return (_a, CandleType);
-		yield return (_b, CandleType);
+		if (!Security2Id.IsEmpty())
+			yield return (new Security { Id = Security2Id }, CandleType);
 	}
 
 	/// <inheritdoc />
@@ -117,106 +115,121 @@ public class SoccerClubsArbitrageStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_latestPrices.Clear();
-		_a = null;
-		_b = null;
-
+		_secondSecurity = null;
+		_priceA = 0;
+		_priceB = 0;
+		_primaryUpdated = false;
+		_secondUpdated = false;
+		_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
-		if (Pair == null || !Pair.Any())
-			throw new InvalidOperationException("Pair must contain securities.");
-
 		base.OnStarted2(time);
 
-		// Subscribe to both securities to get price updates
-		foreach (var (s, tf) in GetWorkingSecurities())
-		{
-			SubscribeCandles(tf, true, s)
-				.Bind(c => ProcessCandle(c, s))
-				.Start();
-		}
+		if (Security2Id.IsEmpty())
+			throw new InvalidOperationException("Second security identifier is not specified.");
 
-		// Use first ticker's candle as daily trigger
-		SubscribeCandles(CandleType, true, _a)
-			.Bind(c => TriggerDaily())
+		_secondSecurity = this.LookupById(Security2Id) ?? new Security { Id = Security2Id };
+
+		// Subscribe to primary security candles
+		var primarySub = SubscribeCandles(CandleType, security: Security);
+		primarySub
+			.Bind(ProcessPrimaryCandle)
 			.Start();
+
+		// Subscribe to second security candles
+		var secondSub = SubscribeCandles(CandleType, security: _secondSecurity);
+		secondSub
+			.Bind(ProcessSecondCandle)
+			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, primarySub);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, Security security)
+	private void ProcessPrimaryCandle(ICandleMessage candle)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Store the latest closing price for this security
-		_latestPrices[security] = candle.ClosePrice;
+		_priceA = candle.ClosePrice;
+		_primaryUpdated = true;
+		TryEvaluate();
 	}
 
-	private void TriggerDaily()
+	private void ProcessSecondCandle(ICandleMessage candle)
 	{
-		OnDaily();
-	}
-
-	private void OnDaily()
-	{
-		var pxA = GetLatestPrice(_a);
-		var pxB = GetLatestPrice(_b);
-		if (pxA == 0 || pxB == 0)
+		if (candle.State != CandleStates.Finished)
 			return;
 
-		var premium = pxA / pxB - 1m;
+		_priceB = candle.ClosePrice;
+		_secondUpdated = true;
+		TryEvaluate();
+	}
 
-		if (Math.Abs(premium) < ExitThreshold)
+	private void TryEvaluate()
+	{
+		if (!_primaryUpdated || !_secondUpdated)
+			return;
+
+		if (_priceA <= 0 || _priceB <= 0)
+			return;
+
+		_primaryUpdated = false;
+		_secondUpdated = false;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		if (_cooldownRemaining > 0)
 		{
-			Hedge(0);
+			_cooldownRemaining--;
 			return;
 		}
 
-		if (premium > EntryThreshold)
-			Hedge(-1);       // A overpriced → short A, long B
-		else if (premium < -EntryThreshold)
-			Hedge(+1);       // B overpriced → long A, short B
-	}
+		var premium = _priceA / _priceB - 1m;
 
-	private decimal GetLatestPrice(Security security)
-	{
-		return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
-	}
+		var primaryPos = GetPositionValue(Security, Portfolio) ?? 0m;
 
-	// dir = +1 ⇒ long A / short B ; dir = –1 ⇒ short A / long B ; dir = 0 ⇒ flat
-	private void Hedge(int dir)
-	{
-		var portfolioValue = Portfolio.CurrentValue ?? 0m;
-		decimal half = portfolioValue / 2;
-		var priceA = GetLatestPrice(_a);
-		var priceB = GetLatestPrice(_b);
-		if (priceA > 0)
-			Move(_a, dir * half / priceA);
-		if (priceB > 0)
-			Move(_b, -dir * half / priceB);
-	}
-
-	private void Move(Security s, decimal tgtQty)
-	{
-		var diff = tgtQty - PositionBy(s);
-		var price = GetLatestPrice(s);
-		if (price <= 0 || Math.Abs(diff) * price < MinTradeUsd)
-			return;
-
-		RegisterOrder(new Order
+		// Exit when premium shrinks below exit threshold
+		if (Math.Abs(premium) < ExitThreshold && primaryPos != 0)
 		{
-			Security = s,
-			Portfolio = Portfolio,
-			Side = diff > 0 ? Sides.Buy : Sides.Sell,
-			Volume = Math.Abs(diff),
-			Type = OrderTypes.Market,
-			Comment = "SoccerArb"
-		});
+			Flatten(primaryPos);
+			_cooldownRemaining = CooldownBars;
+			return;
+		}
+
+		// A is overpriced relative to B -> short A, long B
+		if (premium > EntryThreshold && primaryPos >= 0)
+		{
+			if (primaryPos > 0)
+				Flatten(primaryPos);
+
+			SellMarket(Volume);
+			_cooldownRemaining = CooldownBars;
+		}
+		// B is overpriced relative to A -> long A, short B
+		else if (premium < -EntryThreshold && primaryPos <= 0)
+		{
+			if (primaryPos < 0)
+				Flatten(primaryPos);
+
+			BuyMarket(Volume);
+			_cooldownRemaining = CooldownBars;
+		}
 	}
 
-	private decimal PositionBy(Security s) =>
-		GetPositionValue(s, Portfolio) ?? 0m;
+	private void Flatten(decimal primaryPos)
+	{
+		if (primaryPos > 0)
+			SellMarket(primaryPos);
+		else if (primaryPos < 0)
+			BuyMarket(Math.Abs(primaryPos));
+	}
 }

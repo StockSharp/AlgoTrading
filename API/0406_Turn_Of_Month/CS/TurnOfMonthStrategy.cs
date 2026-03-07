@@ -1,21 +1,17 @@
 // TurnOfMonthStrategy.cs
 // -----------------------------------------------------------------------------
-// Holds index ETFs only around turn-of-the-month window.
-// Default: long SPY from (N=1) trading day before month‑end close
+// Holds positions only around turn-of-the-month window.
+// Default: long from N=1 trading day before month-end close
 //          until D=3 trading day of new month close.
-// Trigger: daily candle of ETF.  No Schedule().
+// Trigger: candle close timing.
 // -----------------------------------------------------------------------------
 // Date: 2 Aug 2025
 // -----------------------------------------------------------------------------
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -29,21 +25,8 @@ public class TurnOfMonthStrategy : Strategy
 {
 	private readonly StrategyParam<int> _prior;
 	private readonly StrategyParam<int> _after;
-	private readonly StrategyParam<decimal> _minUsd;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
-
-	/// <summary>
-	/// The type of candles to use for strategy calculation.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	private readonly Dictionary<Security, decimal> _latestPrices = [];
-	private int _tdMonthEnd = int.MaxValue;
-	private int _tdMonthStart = 0;
 
 	/// <summary>
 	/// Number of trading days before month-end to enter.
@@ -64,35 +47,45 @@ public class TurnOfMonthStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Minimum trade value in USD.
+	/// Cooldown bars between trades.
 	/// </summary>
-	public decimal MinTradeUsd
+	public int CooldownBars
 	{
-		get => _minUsd.Value;
-		set => _minUsd.Value = value;
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
+
+	/// <summary>
+	/// The type of candles to use for strategy calculation.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	private int _cooldownRemaining;
 
 	public TurnOfMonthStrategy()
 	{
-		_prior = Param(nameof(DaysPrior), 1)
+		_prior = Param(nameof(DaysPrior), 2)
 			.SetDisplay("Days Prior", "Trading days before month end", "Parameters");
 
-		_after = Param(nameof(DaysAfter), 3)
+		_after = Param(nameof(DaysAfter), 4)
 			.SetDisplay("Days After", "Trading days into new month", "Parameters");
 
-		_minUsd = Param(nameof(MinTradeUsd), 200m)
-			.SetDisplay("Min Trade USD", "Minimum notional value for orders", "Risk Management");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_cooldownBars = Param(nameof(CooldownBars), 10)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
-	public override IEnumerable<(Security, DataType)> GetWorkingSecurities()
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		if (Security == null)
-			throw new InvalidOperationException("Set ETF");
-
-		yield return (Security, CandleType);
+		if (Security != null)
+			yield return (Security, CandleType);
 	}
 
 	/// <inheritdoc />
@@ -100,97 +93,77 @@ public class TurnOfMonthStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_latestPrices.Clear();
-		_tdMonthEnd = int.MaxValue;
-		_tdMonthStart = 0;
+		_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
-		if (Security == null)
-			throw new InvalidOperationException("ETF must be set.");
-
 		base.OnStarted2(time);
 
-		SubscribeCandles(CandleType, true, Security)
-			.Bind(c => ProcessCandle(c, Security))
+		SubscribeCandles(CandleType)
+			.Bind(ProcessCandle)
 			.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, Security security)
+	private void ProcessCandle(ICandleMessage candle)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Store the latest closing price for this security
-		_latestPrices[security] = candle.ClosePrice;
-
-		OnDaily(candle.OpenTime.Date);
-	}
-
-	private void OnDaily(DateTime d)
-	{
-		_tdMonthEnd = TradingDaysLeftInMonth(d);
-		_tdMonthStart = TradingDayNumber(d);
-
-		bool inWindow = (_tdMonthEnd <= DaysPrior) || (_tdMonthStart <= DaysAfter);
-		var portfolioValue = Portfolio.CurrentValue ?? 0m;
-		var price = GetLatestPrice(Security);
-		var tgt = inWindow && price > 0 ? portfolioValue / price : 0;
-		TradeTo(tgt);
-	}
-
-	private decimal GetLatestPrice(Security security)
-	{
-		return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
-	}
-
-	private void TradeTo(decimal tgtQty)
-	{
-		var diff = tgtQty - PositionBy(Security);
-		var price = GetLatestPrice(Security);
-		if (price <= 0 || Math.Abs(diff) * price < MinTradeUsd)
+		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		RegisterOrder(new Order
+		if (_cooldownRemaining > 0)
 		{
-			Security = Security,
-			Portfolio = Portfolio,
-			Side = diff > 0 ? Sides.Buy : Sides.Sell,
-			Volume = Math.Abs(diff),
-			Type = OrderTypes.Market,
-			Comment = "TurnMonth"
-		});
+			_cooldownRemaining--;
+			return;
+		}
+
+		var d = candle.OpenTime.Date;
+		var tdLeft = TradingDaysLeftInMonth(d);
+		var tdNum = TradingDayNumber(d);
+
+		var inWindow = (tdLeft <= DaysPrior) || (tdNum <= DaysAfter);
+
+		if (inWindow && Position <= 0)
+		{
+			if (Position < 0)
+				BuyMarket(Math.Abs(Position));
+
+			BuyMarket(Volume);
+			_cooldownRemaining = CooldownBars;
+		}
+		else if (!inWindow && Position > 0)
+		{
+			SellMarket(Math.Abs(Position));
+			_cooldownRemaining = CooldownBars;
+		}
 	}
 
-	private int TradingDaysLeftInMonth(DateTime d)
+	private static int TradingDaysLeftInMonth(DateTime d)
 	{
-		int cnt = 0;
+		var cnt = 0;
 		var cur = d;
 		while (cur.Month == d.Month)
-		{ 
-			// Simple approximation: assume weekdays are trading days (Monday-Friday)
-			if (cur.DayOfWeek != DayOfWeek.Saturday && cur.DayOfWeek != DayOfWeek.Sunday) 
-				cnt++; 
-			cur = cur.AddDays(1); 
+		{
+			if (cur.DayOfWeek != DayOfWeek.Saturday && cur.DayOfWeek != DayOfWeek.Sunday)
+				cnt++;
+			cur = cur.AddDays(1);
 		}
 		return cnt - 1;
 	}
 
-	private int TradingDayNumber(DateTime d)
+	private static int TradingDayNumber(DateTime d)
 	{
-		int n = 0;
+		var n = 0;
 		var cur = new DateTime(d.Year, d.Month, 1);
 		while (cur <= d)
-		{ 
-			// Simple approximation: assume weekdays are trading days (Monday-Friday)
-			if (cur.DayOfWeek != DayOfWeek.Saturday && cur.DayOfWeek != DayOfWeek.Sunday) 
-				n++; 
-			cur = cur.AddDays(1); 
+		{
+			if (cur.DayOfWeek != DayOfWeek.Saturday && cur.DayOfWeek != DayOfWeek.Sunday)
+				n++;
+			cur = cur.AddDays(1);
 		}
 		return n;
 	}
-	private decimal PositionBy(Security s) => GetPositionValue(s, Portfolio) ?? 0;
 }

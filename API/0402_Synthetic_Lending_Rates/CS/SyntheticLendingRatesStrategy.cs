@@ -1,21 +1,17 @@
 // SyntheticLendingRatesStrategy.cs
 // -----------------------------------------------------------------------------
-// Uses change in synthetic lending-rate intensity (external feed) to take an
-// overnight position in SPY.
-//   • 15:57 ET  capture intensity I0
-//   • 15:59 ET  capture I1; long if I1>I0 else short
-//   • 15:58 ET next day exit to flat
-// Triggered by 1‑minute SPY candles (SubscribeCandles…Bind). No Schedule().
+// Uses change in synthetic lending-rate intensity derived from price momentum
+// to take directional positions.
+// Compares short-term and long-term moving averages as a proxy for
+// synthetic lending-rate shifts. Buys when short-term momentum increases,
+// sells when it decreases, with cooldown management.
 // -----------------------------------------------------------------------------
 // Date: 2 Aug 2025
 // -----------------------------------------------------------------------------
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -25,12 +21,41 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Trades based on changes in synthetic lending-rate intensity.
+/// Trades based on changes in synthetic lending-rate intensity derived from price momentum.
 /// </summary>
 public class SyntheticLendingRatesStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _minUsd;
+	private readonly StrategyParam<int> _shortPeriod;
+	private readonly StrategyParam<int> _longPeriod;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
+
+	/// <summary>
+	/// Short-term momentum period.
+	/// </summary>
+	public int ShortPeriod
+	{
+		get => _shortPeriod.Value;
+		set => _shortPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Long-term momentum period.
+	/// </summary>
+	public int LongPeriod
+	{
+		get => _longPeriod.Value;
+		set => _longPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Cooldown bars between trades.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
 
 	/// <summary>
 	/// The type of candles to use for strategy calculation.
@@ -40,34 +65,33 @@ public class SyntheticLendingRatesStrategy : Strategy
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
-	private readonly Dictionary<Security, decimal> _latestPrices = [];
 
-	/// <summary>
-	/// Minimum trade value in USD.
-	/// </summary>
-	public decimal MinTradeUsd
-	{
-		get => _minUsd.Value;
-		set => _minUsd.Value = value;
-	}
-
-	private decimal? _intensityT0;
+	private ExponentialMovingAverage _shortEma;
+	private ExponentialMovingAverage _longEma;
+	private decimal _prevShortValue;
+	private decimal _prevLongValue;
+	private int _cooldownRemaining;
 
 	public SyntheticLendingRatesStrategy()
 	{
-		_minUsd = Param(nameof(MinTradeUsd), 200m)
-			.SetDisplay("Min Trade USD", "Minimum notional value for orders", "Risk Management");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_shortPeriod = Param(nameof(ShortPeriod), 5)
+			.SetDisplay("Short Period", "Short-term momentum period", "Parameters");
+
+		_longPeriod = Param(nameof(LongPeriod), 20)
+			.SetDisplay("Long Period", "Long-term momentum period", "Parameters");
+
+		_cooldownBars = Param(nameof(CooldownBars), 30)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
-	public override IEnumerable<(Security, DataType)> GetWorkingSecurities()
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		if (Security == null)
-			throw new InvalidOperationException("Security not set");
-
-		yield return (Security, CandleType);
+		if (Security != null)
+			yield return (Security, CandleType);
 	}
 
 	/// <inheritdoc />
@@ -75,64 +99,77 @@ public class SyntheticLendingRatesStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_intensityT0 = null;
-		_latestPrices.Clear();
+		_shortEma = null;
+		_longEma = null;
+		_prevShortValue = 0;
+		_prevLongValue = 0;
+		_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
-		if (Security == null)
-			throw new InvalidOperationException("Security not set");
-
 		base.OnStarted2(time);
-		SubscribeCandles(CandleType, true, Security).Bind(c => ProcessCandle(c, Security)).Start();
+
+		_shortEma = new ExponentialMovingAverage { Length = ShortPeriod };
+		_longEma = new ExponentialMovingAverage { Length = LongPeriod };
+
+		SubscribeCandles(CandleType)
+			.Bind(_shortEma, _longEma, ProcessCandle)
+			.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, Security security)
+	private void ProcessCandle(ICandleMessage candle, decimal shortValue, decimal longValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Store the latest closing price for this security
-		_latestPrices[security] = candle.ClosePrice;
-
-		OnMinute(candle);
-	}
-
-	private void OnMinute(ICandleMessage c)
-	{
-		var utc = c.OpenTime;
-		// 19:57/59 UTC ≈ 15:57/59 ET (summer); adjust in prod
-		if (utc.Hour == 19 && utc.Minute == 57)
-			_intensityT0 = GetIntensity();
-		else if (utc.Hour == 19 && utc.Minute == 59 && _intensityT0 != null)
+		if (!_shortEma.IsFormed || !_longEma.IsFormed)
 		{
-			var dir = GetIntensity() > _intensityT0 ? 1 : -1;
-			var portfolioValue = Portfolio.CurrentValue ?? 0m;
-			var price = GetLatestPrice(Security);
-			if (price > 0)
-				Trade(dir * portfolioValue / price);
-		}
-		// next day exit 19:58 UTC
-		else if (utc.Hour == 19 && utc.Minute == 58)
-			Trade(0);
-	}
-
-	private decimal GetLatestPrice(Security security)
-	{
-		return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
-	}
-
-	private void Trade(decimal tgt)
-	{
-		var diff = tgt - Position;
-		var price = GetLatestPrice(Security);
-		if (price <= 0 || Math.Abs(diff) * price < MinTradeUsd) 
+			_prevShortValue = shortValue;
+			_prevLongValue = longValue;
 			return;
-		RegisterOrder(new Order { Security = Security, Portfolio = Portfolio, Side = diff > 0 ? Sides.Buy : Sides.Sell, Volume = Math.Abs(diff), Type = OrderTypes.Market, Comment = "SynLend" });
-	}
+		}
 
-	private decimal GetIntensity() => 0m; // stub replace with real feed
+		if (!IsFormedAndOnlineAndAllowTrading())
+		{
+			_prevShortValue = shortValue;
+			_prevLongValue = longValue;
+			return;
+		}
+
+		if (_cooldownRemaining > 0)
+		{
+			_cooldownRemaining--;
+			_prevShortValue = shortValue;
+			_prevLongValue = longValue;
+			return;
+		}
+
+		// Synthetic intensity: short-term momentum relative to long-term
+		var currentIntensity = shortValue - longValue;
+		var prevIntensity = _prevShortValue - _prevLongValue;
+
+		// Intensity increasing (short EMA rising faster) -> buy signal
+		if (currentIntensity > 0 && prevIntensity <= 0 && Position <= 0)
+		{
+			if (Position < 0)
+				BuyMarket(Math.Abs(Position));
+
+			BuyMarket(Volume);
+			_cooldownRemaining = CooldownBars;
+		}
+		// Intensity decreasing (short EMA falling relative to long) -> sell signal
+		else if (currentIntensity < 0 && prevIntensity >= 0 && Position >= 0)
+		{
+			if (Position > 0)
+				SellMarket(Math.Abs(Position));
+
+			SellMarket(Volume);
+			_cooldownRemaining = CooldownBars;
+		}
+
+		_prevShortValue = shortValue;
+		_prevLongValue = longValue;
+	}
 }

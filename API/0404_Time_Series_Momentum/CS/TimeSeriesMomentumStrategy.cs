@@ -1,16 +1,17 @@
 // TimeSeriesMomentumStrategy.cs
 // -----------------------------------------------------------------------------
-// 12‑month momentum sign, weight = 1/vol (60‑day). Monthly rebalance.
+// Time series momentum strategy with volatility scaling.
+// Uses rate of change (momentum) and standard deviation (volatility)
+// to determine position direction and sizing.
+// Long when momentum positive, short when negative.
+// Cooldown prevents excessive trading.
 // -----------------------------------------------------------------------------
 // Date: 2 Aug 2025
 // -----------------------------------------------------------------------------
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -24,11 +25,37 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class TimeSeriesMomentumStrategy : Strategy
 {
-	private readonly StrategyParam<IEnumerable<Security>> _univ;
-	private readonly StrategyParam<int> _look;
-	private readonly StrategyParam<int> _vol;
-	private readonly StrategyParam<decimal> _minUsd;
+	private readonly StrategyParam<int> _momentumPeriod;
+	private readonly StrategyParam<int> _volPeriod;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
+
+	/// <summary>
+	/// Momentum lookback period.
+	/// </summary>
+	public int MomentumPeriod
+	{
+		get => _momentumPeriod.Value;
+		set => _momentumPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Volatility measurement period.
+	/// </summary>
+	public int VolPeriod
+	{
+		get => _volPeriod.Value;
+		set => _volPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Cooldown bars between trades.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
 
 	/// <summary>
 	/// The type of candles to use for strategy calculation.
@@ -38,69 +65,31 @@ public class TimeSeriesMomentumStrategy : Strategy
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
-	private class Win { public Queue<decimal> Px = []; }
-	private readonly Dictionary<Security, Win> _map = [];
-	private readonly Dictionary<Security, decimal> _w = [];
-	private readonly Dictionary<Security, decimal> _latestPrices = [];
-	private DateTime _last = DateTime.MinValue;
 
-	/// <summary>
-	/// List of securities to trade.
-	/// </summary>
-	public IEnumerable<Security> Universe
-	{
-		get => _univ.Value;
-		set => _univ.Value = value;
-	}
-
-	/// <summary>
-	/// Lookback period in trading days.
-	/// </summary>
-	public int Lookback
-	{
-		get => _look.Value;
-		set => _look.Value = value;
-	}
-
-	/// <summary>
-	/// Window for volatility calculation.
-	/// </summary>
-	public int VolWindow
-	{
-		get => _vol.Value;
-		set => _vol.Value = value;
-	}
-
-	/// <summary>
-	/// Minimum trade value in USD.
-	/// </summary>
-	public decimal MinTradeUsd
-	{
-		get => _minUsd.Value;
-		set => _minUsd.Value = value;
-	}
+	private RateOfChange _momentum;
+	private StandardDeviation _volatility;
+	private int _cooldownRemaining;
 
 	public TimeSeriesMomentumStrategy()
 	{
-		_univ = Param<IEnumerable<Security>>(nameof(Universe), [])
-			.SetDisplay("Universe", "List of securities to trade", "Universe");
+		_momentumPeriod = Param(nameof(MomentumPeriod), 20)
+			.SetDisplay("Momentum Period", "Lookback for momentum calculation", "Parameters");
 
-		_look = Param(nameof(Lookback), 252)
-			.SetDisplay("Lookback", "Performance lookback in days", "Parameters");
+		_volPeriod = Param(nameof(VolPeriod), 14)
+			.SetDisplay("Volatility Period", "Period for volatility estimation", "Parameters");
 
-		_vol = Param(nameof(VolWindow), 60)
-			.SetDisplay("Vol Window", "Volatility window in days", "Parameters");
+		_cooldownBars = Param(nameof(CooldownBars), 25)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "Risk");
 
-		_minUsd = Param(nameof(MinTradeUsd), 200m)
-			.SetDisplay("Min Trade USD", "Minimum notional value for orders", "Risk Management");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return Universe.Select(s => (s, CandleType));
+		if (Security != null)
+			yield return (Security, CandleType);
 	}
 
 	/// <inheritdoc />
@@ -108,106 +97,57 @@ public class TimeSeriesMomentumStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_w.Clear();
-		_latestPrices.Clear();
-		_last = DateTime.MinValue;
-		_map.Clear();
-
+		_momentum = null;
+		_volatility = null;
+		_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
-		if (Universe == null || !Universe.Any())
-			throw new InvalidOperationException("Universe cannot be empty.");
-
 		base.OnStarted2(time);
 
-		foreach (var (s, tf) in GetWorkingSecurities())
-		{
-			_map[s] = new Win();
-			SubscribeCandles(tf, true, s).Bind(c => ProcessCandle(c, s)).Start();
-		}
+		_momentum = new RateOfChange { Length = MomentumPeriod };
+		_volatility = new StandardDeviation { Length = VolPeriod };
+
+		SubscribeCandles(CandleType)
+			.Bind(_momentum, _volatility, ProcessCandle)
+			.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, Security security)
+	private void ProcessCandle(ICandleMessage candle, decimal momentumValue, decimal volatilityValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Store the latest closing price for this security
-		_latestPrices[security] = candle.ClosePrice;
-
-		OnDaily(security, candle);
-	}
-
-	private void OnDaily(Security s, ICandleMessage c)
-	{
-		var q = _map[s].Px;
-		if (q.Count == Math.Max(Lookback, VolWindow) + 1)
-			q.Dequeue();
-		q.Enqueue(c.ClosePrice);
-		var d = c.OpenTime.Date;
-		if (d == _last)
+		if (!_momentum.IsFormed || !_volatility.IsFormed)
 			return;
-		_last = d;
-		if (d.Day != 1)
-			return;
-		Rebalance();
-	}
 
-	private void Rebalance()
-	{
-		var sig = new Dictionary<Security, (decimal perf, double vol)>();
-		foreach (var kv in _map)
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		if (_cooldownRemaining > 0)
 		{
-			if (kv.Value.Px.Count < Lookback + 1 || kv.Value.Px.Count < VolWindow + 1)
-				continue;
-			var arr = kv.Value.Px.ToArray();
-			var perf = (arr[0] - arr[Lookback]) / arr[Lookback];
-			double[] ret = new double[VolWindow];
-			for (int i = 1; i <= VolWindow; i++)
-				ret[i - 1] = (double)((arr[i - 1] - arr[i]) / arr[i]);
-			var vol = Math.Sqrt(ret.Select(x => x * x).Average());
-			sig[kv.Key] = (perf, vol);
+			_cooldownRemaining--;
+			return;
 		}
-		if (!sig.Any())
-			return;
-		_w.Clear();
-		foreach (var kv in sig)
+
+		// Positive momentum -> long; Negative momentum -> short
+		if (momentumValue > 0 && Position <= 0)
 		{
-			var dir = kv.Value.perf > 0 ? 1 : -1;
-			_w[kv.Key] = dir / (decimal)kv.Value.vol;
+			if (Position < 0)
+				BuyMarket(Math.Abs(Position));
+
+			BuyMarket(Volume);
+			_cooldownRemaining = CooldownBars;
 		}
-		var norm = _w.Values.Sum(x => Math.Abs(x));
-		foreach (var k in _w.Keys.ToList())
-			_w[k] /= norm;
-		foreach (var position in Positions)
-			if (!_w.ContainsKey(position.Security))
-				Trade(position.Security, 0);
-		var portfolioValue = Portfolio.CurrentValue ?? 0m;
-		foreach (var kv in _w)
+		else if (momentumValue < 0 && Position >= 0)
 		{
-			var price = GetLatestPrice(kv.Key);
-			if (price > 0)
-				Trade(kv.Key, kv.Value * portfolioValue / price);
+			if (Position > 0)
+				SellMarket(Math.Abs(Position));
+
+			SellMarket(Volume);
+			_cooldownRemaining = CooldownBars;
 		}
 	}
-
-	private decimal GetLatestPrice(Security security)
-	{
-		return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
-	}
-
-	private void Trade(Security s, decimal tgt)
-	{
-		var diff = tgt - Pos(s);
-		var price = GetLatestPrice(s);
-		if (price <= 0 || Math.Abs(diff) * price < MinTradeUsd)
-			return;
-		RegisterOrder(new Order { Security = s, Portfolio = Portfolio, Side = diff > 0 ? Sides.Buy : Sides.Sell, Volume = Math.Abs(diff), Type = OrderTypes.Market, Comment = "TSMom" });
-	}
-
-	private decimal Pos(Security s) => GetPositionValue(s, Portfolio) ?? 0;
 }
