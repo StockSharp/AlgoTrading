@@ -70,6 +70,16 @@ public class ExpCyclePeriodStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_prevFast = 0m;
+		_prevSlow = 0m;
+		_prevReady = false;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);

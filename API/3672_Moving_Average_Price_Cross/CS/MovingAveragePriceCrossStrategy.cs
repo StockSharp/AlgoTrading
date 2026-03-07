@@ -27,6 +27,7 @@ public class MovingAveragePriceCrossStrategy : Strategy
 	private readonly StrategyParam<int> _takeProfitPoints;
 	private readonly StrategyParam<int> _stopLossPoints;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _signalCooldownBars;
 
 	private SMA _sma;
 	private decimal? _previousClose;
@@ -34,6 +35,7 @@ public class MovingAveragePriceCrossStrategy : Strategy
 	private decimal? _currentClose;
 	private decimal? _currentMa;
 	private decimal _pipSize;
+	private int _cooldownRemaining;
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="MovingAveragePriceCrossStrategy"/> class.
@@ -60,8 +62,12 @@ public class MovingAveragePriceCrossStrategy : Strategy
 			.SetDisplay("Stop loss (points)", "Distance to the protective stop expressed in MetaTrader points.", "Risk")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle type", "Primary timeframe processed by the strategy.", "General");
+
+		_signalCooldownBars = Param(nameof(SignalCooldownBars), 2)
+			.SetNotNegative()
+			.SetDisplay("Signal cooldown", "Closed candles to wait before the next entry.", "General");
 	}
 
 	/// <summary>
@@ -109,6 +115,15 @@ public class MovingAveragePriceCrossStrategy : Strategy
 		set => _candleType.Value = value;
 	}
 
+	/// <summary>
+	/// Closed candles to wait before entering again after a crossover.
+	/// </summary>
+	public int SignalCooldownBars
+	{
+		get => _signalCooldownBars.Value;
+		set => _signalCooldownBars.Value = value;
+	}
+
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
@@ -126,6 +141,7 @@ public class MovingAveragePriceCrossStrategy : Strategy
 		_currentClose = null;
 		_currentMa = null;
 		_pipSize = 0m;
+		_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
@@ -157,6 +173,9 @@ public class MovingAveragePriceCrossStrategy : Strategy
 		// Operate only on completed candles to mirror the MT5 implementation.
 		if (candle.State != CandleStates.Finished)
 			return;
+
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
 
 		// Ensure the strategy is fully initialized and allowed to trade.
 		if (!IsFormedAndOnlineAndAllowTrading())
@@ -196,7 +215,7 @@ public class MovingAveragePriceCrossStrategy : Strategy
 		var crossedBelowPrice = previousMa < previousClose && currentMa > currentClose;
 		var crossedAbovePrice = previousMa > previousClose && currentMa < currentClose;
 
-		if (Position == 0m)
+		if (Position == 0m && _cooldownRemaining == 0)
 		{
 			var volume = NormalizeVolume(OrderVolume);
 
@@ -204,11 +223,13 @@ public class MovingAveragePriceCrossStrategy : Strategy
 			if (crossedBelowPrice && volume > 0m)
 			{
 				SellMarket(volume);
+				_cooldownRemaining = SignalCooldownBars;
 			}
 			// Open a long position when the moving average crosses below price.
 			else if (crossedAbovePrice && volume > 0m)
 			{
 				BuyMarket(volume);
+				_cooldownRemaining = SignalCooldownBars;
 			}
 		}
 

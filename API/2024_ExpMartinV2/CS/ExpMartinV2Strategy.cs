@@ -25,6 +25,7 @@ public class ExpMartinV2Strategy : Strategy
 	private readonly StrategyParam<int> _takeProfit;
 	private readonly StrategyParam<int> _startType;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _cycleCooldownBars;
 
 	private decimal _currentVolume;
 	private decimal _maxVolume;
@@ -35,6 +36,7 @@ public class ExpMartinV2Strategy : Strategy
 	private decimal _longStop;
 	private decimal _shortTake;
 	private decimal _shortStop;
+	private int _cooldownRemaining;
 
 	/// <summary>
 	/// Initial order volume.
@@ -71,9 +73,14 @@ public class ExpMartinV2Strategy : Strategy
 	/// </summary>
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
+	/// <summary>
+	/// Closed candles to wait before starting the next martingale cycle.
+	/// </summary>
+	public int CycleCooldownBars { get => _cycleCooldownBars.Value; set => _cycleCooldownBars.Value = value; }
+
 	public ExpMartinV2Strategy()
 	{
-		_startVolume = Param(nameof(StartVolume), 0.1m)
+		_startVolume = Param(nameof(StartVolume), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Start Volume", "Initial order volume", "General");
 
@@ -96,13 +103,34 @@ public class ExpMartinV2Strategy : Strategy
 		_startType = Param(nameof(StartType), 0)
 			.SetDisplay("Start Type", "0-Buy, 1-Sell", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
+
+		_cycleCooldownBars = Param(nameof(CycleCooldownBars), 2)
+			.SetNotNegative()
+			.SetDisplay("Cycle Cooldown Bars", "Closed candles to wait before the next entry cycle", "General");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_currentVolume = 0m;
+		_maxVolume = 0m;
+		_needOpenPosition = true;
+		_direction = 0;
+		_entryPrice = 0m;
+		_longTake = 0m;
+		_longStop = 0m;
+		_shortTake = 0m;
+		_shortStop = 0m;
+		_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
@@ -127,6 +155,9 @@ public class ExpMartinV2Strategy : Strategy
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
+
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
 
 		var step = Security.PriceStep ?? 1m;
 
@@ -157,7 +188,7 @@ public class ExpMartinV2Strategy : Strategy
 			}
 		}
 
-		if (_needOpenPosition && Position == 0)
+		if (_needOpenPosition && Position == 0 && _cooldownRemaining == 0)
 		{
 			_entryPrice = candle.ClosePrice;
 			if (_direction == 1)
@@ -191,6 +222,7 @@ public class ExpMartinV2Strategy : Strategy
 		}
 
 		_needOpenPosition = true;
+		_cooldownRemaining = CycleCooldownBars;
 	}
 
 	private decimal RoundVolume(decimal volume)

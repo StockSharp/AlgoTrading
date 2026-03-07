@@ -20,6 +20,7 @@ public class SupportResistTradeStrategy : Strategy
 {
 	private readonly StrategyParam<int> _lookback;
 	private readonly StrategyParam<int> _maPeriod;
+	private readonly StrategyParam<int> _signalCooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<decimal> _orderVolume;
 
@@ -37,6 +38,7 @@ public class SupportResistTradeStrategy : Strategy
 	private decimal _pipSize;
 	private bool _levelsInitialized;
 	private decimal _entryPrice;
+	private int _cooldownRemaining;
 
 	/// <summary>
 	/// Number of candles used to build swing levels.
@@ -66,6 +68,15 @@ public class SupportResistTradeStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Bars to wait after an entry or exit.
+	/// </summary>
+	public int SignalCooldownBars
+	{
+		get => _signalCooldownBars.Value;
+		set => _signalCooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Default order volume.
 	/// </summary>
 	public decimal OrderVolume
@@ -88,6 +99,10 @@ public class SupportResistTradeStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("EMA Period", "Length of EMA trend filter", "Indicators")
 		;
+
+		_signalCooldownBars = Param(nameof(SignalCooldownBars), 12)
+			.SetGreaterThanZero()
+			.SetDisplay("Signal Cooldown", "Bars to wait after an entry or exit", "Trading");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles", "General");
@@ -120,6 +135,8 @@ public class SupportResistTradeStrategy : Strategy
 		_trend = TrendDirections.None;
 		_pipSize = 0m;
 		_levelsInitialized = false;
+		_entryPrice = 0m;
+		_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
@@ -133,11 +150,12 @@ public class SupportResistTradeStrategy : Strategy
 		_ema = new EMA { Length = MaPeriod };
 		_highest = new Highest { Length = Lookback };
 		_lowest = new Lowest { Length = Lookback };
+		_cooldownRemaining = 0;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-		.Bind(_ema, _highest, _lowest, ProcessCandle)
-		.Start();
+			.Bind(_ema, ProcessCandle)
+			.Start();
 
 		// Calculate pip size similar to MetaTrader adjustment for 3/5 digit quotes.
 		_pipSize = Security?.PriceStep ?? 0.0001m;
@@ -155,17 +173,23 @@ public class SupportResistTradeStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal emaValue, decimal highestValue, decimal lowestValue)
+	private void ProcessCandle(ICandleMessage candle, decimal emaValue)
 	{
 		// Use only completed candles for trading decisions.
 		if (candle.State != CandleStates.Finished)
 		return;
 
-		if (!_ema.IsFormed || !_highest.IsFormed || !_lowest.IsFormed)
+		var highestValue = _highest.Process(candle.HighPrice, candle.ServerTime, true);
+		var lowestValue = _lowest.Process(candle.LowPrice, candle.ServerTime, true);
+
+		if (!_ema.IsFormed || !highestValue.IsFormed || !lowestValue.IsFormed)
 		return;
 
-		var support = lowestValue;
-		var resistance = highestValue;
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
+
+		var support = lowestValue.ToDecimal();
+		var resistance = highestValue.ToDecimal();
 
 		if (!_levelsInitialized)
 		{
@@ -187,7 +211,7 @@ public class SupportResistTradeStrategy : Strategy
 
 		var exitPlaced = ManagePosition(candle);
 
-		if (!exitPlaced && Position == 0)
+		if (!exitPlaced && _cooldownRemaining == 0 && Position == 0)
 		{
 			if (_trend == TrendDirections.Bullish && _prevResistance.HasValue && candle.ClosePrice > _prevResistance.Value)
 			{
@@ -196,6 +220,7 @@ public class SupportResistTradeStrategy : Strategy
 				_entryPrice = candle.ClosePrice;
 				_longStop = _prevSupport;
 				_shortStop = null;
+				_cooldownRemaining = SignalCooldownBars;
 			}
 			else if (_trend == TrendDirections.Bearish && _prevSupport.HasValue && candle.ClosePrice < _prevSupport.Value)
 			{
@@ -204,6 +229,7 @@ public class SupportResistTradeStrategy : Strategy
 				_entryPrice = candle.ClosePrice;
 				_shortStop = _prevResistance;
 				_longStop = null;
+				_cooldownRemaining = SignalCooldownBars;
 			}
 		}
 
@@ -220,6 +246,7 @@ public class SupportResistTradeStrategy : Strategy
 				// Close long when trailing stop level is breached.
 				SellMarket();
 				_longStop = null;
+				_cooldownRemaining = SignalCooldownBars;
 				return true;
 			}
 
@@ -231,6 +258,7 @@ public class SupportResistTradeStrategy : Strategy
 				// Exit profitable long on drop below refreshed support.
 				SellMarket();
 				_longStop = null;
+				_cooldownRemaining = SignalCooldownBars;
 				return true;
 			}
 
@@ -243,6 +271,7 @@ public class SupportResistTradeStrategy : Strategy
 				// Close short when trailing stop level is breached.
 				BuyMarket();
 				_shortStop = null;
+				_cooldownRemaining = SignalCooldownBars;
 				return true;
 			}
 
@@ -254,6 +283,7 @@ public class SupportResistTradeStrategy : Strategy
 				// Exit profitable short on rally above refreshed resistance.
 				BuyMarket();
 				_shortStop = null;
+				_cooldownRemaining = SignalCooldownBars;
 				return true;
 			}
 

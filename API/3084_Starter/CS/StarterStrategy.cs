@@ -253,10 +253,33 @@ public class StarterStrategy : Strategy
 		set => _candleType.Value = value;
 	}
 
-	/// <inheritdoc />
-	protected override void OnStarted2(DateTime time)
-	{
-		base.OnStarted2(time);
+/// <inheritdoc />
+protected override void OnReseted()
+{
+	base.OnReseted();
+
+	_cci?.Reset();
+	_movingAverage?.Reset();
+	_cci = null!;
+	_movingAverage = null!;
+	_cciHistory.Clear();
+	_maHistory.Clear();
+	_pipSize = 0m;
+	_historyCapacity = 0;
+	_longEntryPrice = null;
+	_shortEntryPrice = null;
+	_longStop = null;
+	_shortStop = null;
+	_signedPosition = 0m;
+	_lastEntrySide = null;
+	_lastEntryPrice = 0m;
+	_consecutiveLosses = 0;
+}
+
+/// <inheritdoc />
+protected override void OnStarted2(DateTime time)
+{
+	base.OnStarted2(time);
 
 		_pipSize = GetPipSize();
 		_historyCapacity = CalculateHistoryCapacity();

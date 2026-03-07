@@ -20,9 +20,12 @@ public class ThreeIndicatorsStrategy : Strategy
 	private readonly StrategyParam<int> _stochasticKPeriod;
 	private readonly StrategyParam<int> _stochasticDPeriod;
 	private readonly StrategyParam<int> _rsiPeriod;
+	private readonly StrategyParam<int> _signalCooldownBars;
 
 	private decimal? _previousOpen;
 	private decimal? _previousMacdMain;
+	private int _previousCompositeSignal;
+	private int _cooldownRemaining;
 
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 	public int MacdFastPeriod { get => _macdFastPeriod.Value; set => _macdFastPeriod.Value = value; }
@@ -31,10 +34,11 @@ public class ThreeIndicatorsStrategy : Strategy
 	public int StochasticKPeriod { get => _stochasticKPeriod.Value; set => _stochasticKPeriod.Value = value; }
 	public int StochasticDPeriod { get => _stochasticDPeriod.Value; set => _stochasticDPeriod.Value = value; }
 	public int RsiPeriod { get => _rsiPeriod.Value; set => _rsiPeriod.Value = value; }
+	public int SignalCooldownBars { get => _signalCooldownBars.Value; set => _signalCooldownBars.Value = value; }
 
 	public ThreeIndicatorsStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle type", "Primary timeframe", "General");
 
 		_macdFastPeriod = Param(nameof(MacdFastPeriod), 11)
@@ -54,6 +58,21 @@ public class ThreeIndicatorsStrategy : Strategy
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetDisplay("RSI period", "RSI length", "RSI");
+
+		_signalCooldownBars = Param(nameof(SignalCooldownBars), 2)
+			.SetNotNegative()
+			.SetDisplay("Signal Cooldown Bars", "Closed candles to wait before a new entry", "General");
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_previousOpen = null;
+		_previousMacdMain = null;
+		_previousCompositeSignal = 0;
+		_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
@@ -63,6 +82,8 @@ public class ThreeIndicatorsStrategy : Strategy
 
 		_previousOpen = null;
 		_previousMacdMain = null;
+		_previousCompositeSignal = 0;
+		_cooldownRemaining = 0;
 
 		var macd = new MovingAverageConvergenceDivergenceSignal();
 		macd.Macd.ShortMa.Length = MacdFastPeriod;
@@ -96,6 +117,9 @@ public class ThreeIndicatorsStrategy : Strategy
 
 		if (!macdValue.IsFinal || !stochValue.IsFinal || !rsiValue.IsFinal)
 			return;
+
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
 
 		if (!macdValue.IsFormed || !stochValue.IsFormed || !rsiValue.IsFormed)
 			return;
@@ -131,25 +155,24 @@ public class ThreeIndicatorsStrategy : Strategy
 		var longSignal = candleSignal >= 0 && macdSignal >= 0 && stochSignal >= 0 && rsiSignal >= 0;
 		var shortSignal = candleSignal <= 0 && macdSignal <= 0 && stochSignal <= 0 && rsiSignal <= 0;
 
-		if (Position > 0 && shortSignal)
+		var compositeSignal = longSignal ? 1 : shortSignal ? -1 : 0;
+
+		if (_cooldownRemaining == 0 && compositeSignal != 0 && compositeSignal != _previousCompositeSignal)
 		{
-			SellMarket();
-			SellMarket();
-		}
-		else if (Position < 0 && longSignal)
-		{
-			BuyMarket();
-			BuyMarket();
-		}
-		else if (Position == 0)
-		{
-			if (longSignal)
-				BuyMarket();
-			else if (shortSignal)
-				SellMarket();
+			if (compositeSignal > 0 && Position <= 0)
+			{
+				BuyMarket(Volume + (Position < 0 ? -Position : 0m));
+				_cooldownRemaining = SignalCooldownBars;
+			}
+			else if (compositeSignal < 0 && Position >= 0)
+			{
+				SellMarket(Volume + (Position > 0 ? Position : 0m));
+				_cooldownRemaining = SignalCooldownBars;
+			}
 		}
 
 		_previousOpen = candle.OpenPrice;
 		_previousMacdMain = macdMain;
+		_previousCompositeSignal = compositeSignal;
 	}
 }

@@ -16,6 +16,7 @@ public class ColorMetroDuplexStrategy : Strategy
 	private readonly StrategyParam<int> _rsiPeriod;
 	private readonly StrategyParam<int> _fastStep;
 	private readonly StrategyParam<int> _slowStep;
+	private readonly StrategyParam<int> _signalCooldownBars;
 
 	// fast envelope state
 	private decimal? _fastMin, _fastMax;
@@ -26,30 +27,49 @@ public class ColorMetroDuplexStrategy : Strategy
 	private decimal? _slowMin, _slowMax;
 	private int _slowTrend;
 	private decimal? _prevSlowBand;
+	private int _cooldownRemaining;
 
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 	public int RsiPeriod { get => _rsiPeriod.Value; set => _rsiPeriod.Value = value; }
 	public int FastStep { get => _fastStep.Value; set => _fastStep.Value = value; }
 	public int SlowStep { get => _slowStep.Value; set => _slowStep.Value = value; }
+	public int SignalCooldownBars { get => _signalCooldownBars.Value; set => _signalCooldownBars.Value = value; }
 
 	public ColorMetroDuplexStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe", "General");
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 7)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "RSI lookback", "Indicator");
 
-		_fastStep = Param(nameof(FastStep), 5)
+		_fastStep = Param(nameof(FastStep), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast Step", "Step size for fast envelope", "Indicator");
 
-		_slowStep = Param(nameof(SlowStep), 15)
+		_slowStep = Param(nameof(SlowStep), 24)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow Step", "Step size for slow envelope", "Indicator");
+
+		_signalCooldownBars = Param(nameof(SignalCooldownBars), 4)
+			.SetGreaterThanZero()
+			.SetDisplay("Signal Cooldown", "Bars to wait between reversals", "Trading");
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_fastMin = _fastMax = null;
+		_slowMin = _slowMax = null;
+		_fastTrend = _slowTrend = 0;
+		_prevFastBand = _prevSlowBand = null;
+		_cooldownRemaining = 0;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
@@ -58,6 +78,7 @@ public class ColorMetroDuplexStrategy : Strategy
 		_slowMin = _slowMax = null;
 		_fastTrend = _slowTrend = 0;
 		_prevFastBand = _prevSlowBand = null;
+		_cooldownRemaining = 0;
 
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 
@@ -79,6 +100,12 @@ public class ColorMetroDuplexStrategy : Strategy
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
 
 		var fStep = (decimal)FastStep;
 		var sStep = (decimal)SlowStep;
@@ -157,30 +184,15 @@ public class ColorMetroDuplexStrategy : Strategy
 		// Short signal: fast crosses above slow (up crosses down upward)
 		var shortOpen = prevUp < prevDown && up >= down;
 
-		// Close long: slow > fast (down > up on previous)
-		var closeLong = prevDown > prevUp;
-		// Close short: slow < fast (down < up on previous)
-		var closeShort = prevDown < prevUp;
-
-		if (closeLong && Position > 0)
+		if (_cooldownRemaining == 0 && longOpen && Position <= 0)
 		{
-			SellMarket();
+			BuyMarket(Volume + Math.Abs(Position));
+			_cooldownRemaining = SignalCooldownBars;
 		}
-
-		if (closeShort && Position < 0)
+		else if (_cooldownRemaining == 0 && shortOpen && Position >= 0)
 		{
-			BuyMarket();
-		}
-
-		if (longOpen && Position <= 0)
-		{
-			if (Position < 0) BuyMarket();
-			BuyMarket();
-		}
-		else if (shortOpen && Position >= 0)
-		{
-			if (Position > 0) SellMarket();
-			SellMarket();
+			SellMarket(Volume + Math.Abs(Position));
+			_cooldownRemaining = SignalCooldownBars;
 		}
 	}
 }

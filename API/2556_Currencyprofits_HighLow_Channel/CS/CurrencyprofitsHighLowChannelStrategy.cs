@@ -27,6 +27,7 @@ public class CurrencyprofitsHighLowChannelStrategy : Strategy
 	private readonly StrategyParam<CandlePrices> _priceSource;
 	private readonly StrategyParam<MovingAverageTypes> _fastMaType;
 	private readonly StrategyParam<MovingAverageTypes> _slowMaType;
+	private readonly StrategyParam<int> _signalCooldownBars;
 
 	private decimal? _previousFast;
 	private decimal? _previousSlow;
@@ -35,6 +36,7 @@ public class CurrencyprofitsHighLowChannelStrategy : Strategy
 	private decimal _entryPrice;
 	private decimal _stopPrice;
 	private int _processedCandles;
+	private int _cooldownRemaining;
 
 	public int FastLength
 	{
@@ -90,6 +92,12 @@ public class CurrencyprofitsHighLowChannelStrategy : Strategy
 		set => _slowMaType.Value = value;
 	}
 
+	public int SignalCooldownBars
+	{
+		get => _signalCooldownBars.Value;
+		set => _signalCooldownBars.Value = value;
+	}
+
 	private int RequiredBars => Math.Max(Math.Max(FastLength, SlowLength), ChannelLength) + 1;
 
 	public CurrencyprofitsHighLowChannelStrategy()
@@ -104,7 +112,7 @@ public class CurrencyprofitsHighLowChannelStrategy : Strategy
 			
 			.SetOptimize(20, 200, 2);
 
-		_channelLength = Param(nameof(ChannelLength), 6)
+		_channelLength = Param(nameof(ChannelLength), 12)
 			.SetDisplay("Channel Lookback", "Number of previous candles for high/low channel", "Indicators")
 			
 			.SetOptimize(3, 20, 1);
@@ -115,7 +123,7 @@ public class CurrencyprofitsHighLowChannelStrategy : Strategy
 		_riskPercent = Param(nameof(RiskPercent), 0.14m)
 			.SetDisplay("Risk Fraction", "Fraction of portfolio capital risked per trade", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe for calculations", "General");
 
 		_priceSource = Param(nameof(PriceSource), CandlePrices.Close)
@@ -126,6 +134,10 @@ public class CurrencyprofitsHighLowChannelStrategy : Strategy
 
 		_slowMaType = Param(nameof(SlowMaType), MovingAverageTypes.Simple)
 			.SetDisplay("Slow MA Type", "Moving average algorithm for the slow line", "Indicators");
+
+		_signalCooldownBars = Param(nameof(SignalCooldownBars), 4)
+			.SetNotNegative()
+			.SetDisplay("Signal Cooldown Bars", "Closed candles to wait before the next entry", "Risk");
 	}
 
 	/// <inheritdoc />
@@ -146,6 +158,7 @@ public class CurrencyprofitsHighLowChannelStrategy : Strategy
 		_entryPrice = 0m;
 		_stopPrice = 0m;
 		_processedCandles = 0;
+		_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
@@ -176,6 +189,9 @@ public class CurrencyprofitsHighLowChannelStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
+
 		_processedCandles++;
 
 		if (_processedCandles <= RequiredBars)
@@ -205,8 +221,9 @@ public class CurrencyprofitsHighLowChannelStrategy : Strategy
 
 			if (exitByChannel || exitByStop)
 			{
-				SellMarket();
+				SellMarket(Position);
 				ResetTradeState();
+				_cooldownRemaining = SignalCooldownBars;
 			}
 		}
 		else if (Position < 0)
@@ -217,38 +234,46 @@ public class CurrencyprofitsHighLowChannelStrategy : Strategy
 
 			if (exitByChannel || exitByStop)
 			{
-				BuyMarket();
+				BuyMarket(-Position);
 				ResetTradeState();
+				_cooldownRemaining = SignalCooldownBars;
 			}
 		}
-		else
+		else if (_cooldownRemaining == 0)
 		{
 			var stopDistance = GetStopDistance();
 
 			if (stopDistance > 0m)
 			{
+				var bullishTrend = _previousFast.Value > _previousSlow.Value && fast > slow;
+				var bearishTrend = _previousFast.Value < _previousSlow.Value && fast < slow;
+				var bullishReversal = candle.LowPrice <= _previousLowest.Value && candle.ClosePrice > candle.OpenPrice && candle.ClosePrice > fast;
+				var bearishReversal = candle.HighPrice >= _previousHighest.Value && candle.ClosePrice < candle.OpenPrice && candle.ClosePrice < fast;
+
 				// Long entries require a bullish trend and a pullback to the recent low channel.
-				if (_previousFast.Value > _previousSlow.Value && candle.LowPrice <= _previousLowest.Value)
+				if (bullishTrend && bullishReversal)
 				{
 					var volume = CalculatePositionSize(stopDistance);
 
 					if (volume > 0m)
 					{
-						BuyMarket();
+						BuyMarket(volume);
 						_entryPrice = candle.ClosePrice;
 						_stopPrice = _entryPrice - stopDistance;
+						_cooldownRemaining = SignalCooldownBars;
 					}
 				}
 				// Short entries require a bearish trend and a retest of the recent high channel.
-				else if (_previousFast.Value < _previousSlow.Value && candle.HighPrice >= _previousHighest.Value)
+				else if (bearishTrend && bearishReversal)
 				{
 					var volume = CalculatePositionSize(stopDistance);
 
 					if (volume > 0m)
 					{
-						SellMarket();
+						SellMarket(volume);
 						_entryPrice = candle.ClosePrice;
 						_stopPrice = _entryPrice + stopDistance;
+						_cooldownRemaining = SignalCooldownBars;
 					}
 				}
 			}

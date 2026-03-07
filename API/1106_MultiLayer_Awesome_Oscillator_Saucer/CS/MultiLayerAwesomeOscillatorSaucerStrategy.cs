@@ -11,7 +11,7 @@ public class MultiLayerAwesomeOscillatorSaucerStrategy : Strategy
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 	public MultiLayerAwesomeOscillatorSaucerStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame());
 	}
 	protected override void OnStarted2(DateTime time)
 	{

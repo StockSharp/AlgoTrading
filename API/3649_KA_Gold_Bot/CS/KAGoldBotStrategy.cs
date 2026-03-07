@@ -306,6 +306,11 @@ public class KAGoldBotStrategy : Strategy
 	{
 		base.OnReseted();
 
+		_fastEma = null!;
+		_slowEma = null!;
+		_keltnerEma = null!;
+		_rangeAverage = null!;
+
 		_closePrev1 = null;
 		_closePrev2 = null;
 		_fastPrev1 = null;
@@ -315,6 +320,13 @@ public class KAGoldBotStrategy : Strategy
 		_upperPrev2 = null;
 		_lowerPrev1 = null;
 		_lowerPrev2 = null;
+
+		_pipSize = 0m;
+		_stopLossDistance = 0m;
+		_takeProfitDistance = 0m;
+		_trailingTriggerDistance = 0m;
+		_trailingStopDistance = 0m;
+		_trailingStepDistance = 0m;
 
 		_longTrailingArmed = false;
 		_shortTrailingArmed = false;

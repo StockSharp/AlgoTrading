@@ -22,6 +22,7 @@ public class VwapAdxTrendStrategy : Strategy
 	private readonly StrategyParam<decimal> _adxThreshold;
 	private readonly StrategyParam<decimal> _adxExitThreshold;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _signalCooldownBars;
 
 	private VolumeWeightedMovingAverage _vwap;
 	private AverageDirectionalIndex _adx;
@@ -31,6 +32,9 @@ public class VwapAdxTrendStrategy : Strategy
 	private decimal _adxValue;
 	private decimal _plusDiValue;
 	private decimal _minusDiValue;
+	private decimal? _prevPlusDiValue;
+	private decimal? _prevMinusDiValue;
+	private int _cooldownRemaining;
 
 	/// <summary>
 	/// ADX period for trend strength calculation.
@@ -69,6 +73,15 @@ public class VwapAdxTrendStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Number of closed candles to wait before entering a new trend signal.
+	/// </summary>
+	public int SignalCooldownBars
+	{
+		get => _signalCooldownBars.Value;
+		set => _signalCooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Initializes a new instance of the <see cref="VwapAdxTrendStrategy"/>.
 	/// </summary>
 	public VwapAdxTrendStrategy()
@@ -88,8 +101,12 @@ public class VwapAdxTrendStrategy : Strategy
 		
 		.SetOptimize(10m, 25m, 5m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles to use", "General");
+
+		_signalCooldownBars = Param(nameof(SignalCooldownBars), 4)
+		.SetNotNegative()
+		.SetDisplay("Signal Cooldown Bars", "Closed candles to wait before a new DI crossover entry", "General");
 	}
 
 	/// <inheritdoc />
@@ -107,6 +124,9 @@ public class VwapAdxTrendStrategy : Strategy
 		_adxValue = default;
 		_plusDiValue = default;
 		_minusDiValue = default;
+		_prevPlusDiValue = null;
+		_prevMinusDiValue = null;
+		_cooldownRemaining = 0;
 		_vwap = null;
 		_adx = null;
 		_di = null;
@@ -163,6 +183,9 @@ public class VwapAdxTrendStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 		return;
 
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
+
 		var adxTyped = (AverageDirectionalIndexValue)adxValue;
 
 		if (adxTyped.MovingAverage is not decimal adx)
@@ -179,36 +202,44 @@ public class VwapAdxTrendStrategy : Strategy
 		_plusDiValue = plusDi;  // +DI
 		_minusDiValue = minusDi; // -DI
 
+		if (_prevPlusDiValue is null || _prevMinusDiValue is null)
+		{
+			_prevPlusDiValue = _plusDiValue;
+			_prevMinusDiValue = _minusDiValue;
+			return;
+		}
+
 		if (!IsFormedAndOnlineAndAllowTrading())
 		return;
 
-		// Log current values
-		LogInfo($"VWAP: {_vwapValue:F2}, ADX: {_adxValue:F2}, +DI: {_plusDiValue:F2}, -DI: {_minusDiValue:F2}");
+		var bullishCross = _prevPlusDiValue.Value <= _prevMinusDiValue.Value && _plusDiValue > _minusDiValue;
+		var bearishCross = _prevPlusDiValue.Value >= _prevMinusDiValue.Value && _minusDiValue > _plusDiValue;
 
 		// Trading logic
-		// Buy when price is above VWAP, ADX > threshold, and +DI > -DI (strong uptrend)
-		if (candle.ClosePrice > _vwapValue && _adxValue > AdxThreshold && _plusDiValue > _minusDiValue && Position <= 0)
+		if (_cooldownRemaining == 0 && bullishCross && candle.ClosePrice > _vwapValue && _adxValue > AdxThreshold && Position <= 0)
 		{
-			BuyMarket(Volume);
-			LogInfo($"Buy Signal: Price {candle.ClosePrice:F2} > VWAP {_vwapValue:F2}, ADX {_adxValue:F2} > {AdxThreshold}, +DI {_plusDiValue:F2} > -DI {_minusDiValue:F2}");
+			BuyMarket(Volume + (Position < 0 ? Math.Abs(Position) : 0m));
+			_cooldownRemaining = SignalCooldownBars;
 		}
-		// Sell when price is below VWAP, ADX > threshold, and -DI > +DI (strong downtrend)
-		else if (candle.ClosePrice < _vwapValue && _adxValue > AdxThreshold && _minusDiValue > _plusDiValue && Position >= 0)
+		else if (_cooldownRemaining == 0 && bearishCross && candle.ClosePrice < _vwapValue && _adxValue > AdxThreshold && Position >= 0)
 		{
 			SellMarket(Volume + Math.Abs(Position));
-			LogInfo($"Sell Signal: Price {candle.ClosePrice:F2} < VWAP {_vwapValue:F2}, ADX {_adxValue:F2} > {AdxThreshold}, -DI {_minusDiValue:F2} > +DI {_plusDiValue:F2}");
+			_cooldownRemaining = SignalCooldownBars;
 		}
 		// Exit long position when ADX weakens below exit threshold or -DI crosses above +DI
 		else if (Position > 0 && (_adxValue < AdxExitThreshold || _minusDiValue > _plusDiValue))
 		{
 			SellMarket(Position);
-			LogInfo($"Exit Long: ADX {_adxValue:F2} < {AdxExitThreshold} or -DI {_minusDiValue:F2} > +DI {_plusDiValue:F2}");
+			_cooldownRemaining = SignalCooldownBars;
 		}
 		// Exit short position when ADX weakens below exit threshold or +DI crosses above -DI
 		else if (Position < 0 && (_adxValue < AdxExitThreshold || _plusDiValue > _minusDiValue))
 		{
 			BuyMarket(Math.Abs(Position));
-			LogInfo($"Exit Short: ADX {_adxValue:F2} < {AdxExitThreshold} or +DI {_plusDiValue:F2} > -DI {_minusDiValue:F2}");
+			_cooldownRemaining = SignalCooldownBars;
 		}
+
+		_prevPlusDiValue = _plusDiValue;
+		_prevMinusDiValue = _minusDiValue;
 	}
 }

@@ -25,17 +25,21 @@ public class VoVixDevmaStrategy : Strategy
 	private readonly StrategyParam<decimal> _stopPct;
 	private readonly StrategyParam<decimal> _tpMult;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _signalCooldownBars;
+	private static readonly object _sync = new();
 
 	private decimal _prevFastStd;
 	private decimal _prevSlowStd;
 	private decimal _entryPrice;
 	private decimal _stopDist;
+	private int _cooldownRemaining;
 
 	public int FastLength { get => _fastLength.Value; set => _fastLength.Value = value; }
 	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
 	public decimal StopPct { get => _stopPct.Value; set => _stopPct.Value = value; }
 	public decimal TpMult { get => _tpMult.Value; set => _tpMult.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int SignalCooldownBars { get => _signalCooldownBars.Value; set => _signalCooldownBars.Value = value; }
 
 	public VoVixDevmaStrategy()
 	{
@@ -55,8 +59,12 @@ public class VoVixDevmaStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("TP Mult", "Take profit as multiple of stop", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
+
+		_signalCooldownBars = Param(nameof(SignalCooldownBars), 3)
+			.SetNotNegative()
+			.SetDisplay("Signal Cooldown", "Closed candles to wait before a new entry", "General");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
@@ -71,6 +79,7 @@ public class VoVixDevmaStrategy : Strategy
 		_prevSlowStd = 0;
 		_entryPrice = 0;
 		_stopDist = 0;
+		_cooldownRemaining = 0;
 	}
 
 	protected override void OnStarted2(DateTime time)
@@ -87,7 +96,7 @@ public class VoVixDevmaStrategy : Strategy
 		_stopDist = 0;
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(fastStd, slowStd, ema, ProcessCandle).Start();
+		subscription.Bind(candle => ProcessCandle(candle, fastStd, slowStd, ema)).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -98,59 +107,78 @@ public class VoVixDevmaStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal fastStdVal, decimal slowStdVal, decimal emaVal)
+	private void ProcessCandle(ICandleMessage candle, StandardDeviation fastStd, StandardDeviation slowStd, ExponentialMovingAverage ema)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// TP/SL management
-		if (Position > 0 && _entryPrice > 0 && _stopDist > 0)
+		lock (_sync)
 		{
-			if (candle.ClosePrice <= _entryPrice - _stopDist || candle.ClosePrice >= _entryPrice + _stopDist * TpMult)
-			{
-				SellMarket();
-				_entryPrice = 0;
-				_stopDist = 0;
-			}
-		}
-		else if (Position < 0 && _entryPrice > 0 && _stopDist > 0)
-		{
-			if (candle.ClosePrice >= _entryPrice + _stopDist || candle.ClosePrice <= _entryPrice - _stopDist * TpMult)
-			{
-				BuyMarket();
-				_entryPrice = 0;
-				_stopDist = 0;
-			}
-		}
+			var time = candle.OpenTime;
+			var priceValue = new DecimalIndicatorValue(fastStd, candle.ClosePrice, time) { IsFinal = true };
+			var fastStdValue = fastStd.Process(priceValue);
+			var slowStdValue = slowStd.Process(new DecimalIndicatorValue(slowStd, candle.ClosePrice, time) { IsFinal = true });
+			var emaValue = ema.Process(new DecimalIndicatorValue(ema, candle.ClosePrice, time) { IsFinal = true });
+			if (!fastStdValue.IsFinal || !slowStdValue.IsFinal || !emaValue.IsFinal || !fastStd.IsFormed || !slowStd.IsFormed || !ema.IsFormed)
+				return;
 
-		if (_prevFastStd == 0 || _prevSlowStd == 0 || fastStdVal <= 0 || slowStdVal <= 0)
-		{
+			if (_cooldownRemaining > 0)
+				_cooldownRemaining--;
+
+			var fastStdVal = fastStdValue.ToDecimal();
+			var slowStdVal = slowStdValue.ToDecimal();
+			var emaVal = emaValue.ToDecimal();
+
+			if (Position > 0 && _entryPrice > 0 && _stopDist > 0)
+			{
+				if (candle.ClosePrice <= _entryPrice - _stopDist || candle.ClosePrice >= _entryPrice + _stopDist * TpMult)
+				{
+					SellMarket(Position);
+					_entryPrice = 0m;
+					_stopDist = 0m;
+					_cooldownRemaining = SignalCooldownBars;
+				}
+			}
+			else if (Position < 0 && _entryPrice > 0 && _stopDist > 0)
+			{
+				if (candle.ClosePrice >= _entryPrice + _stopDist || candle.ClosePrice <= _entryPrice - _stopDist * TpMult)
+				{
+					BuyMarket(-Position);
+					_entryPrice = 0m;
+					_stopDist = 0m;
+					_cooldownRemaining = SignalCooldownBars;
+				}
+			}
+
+			if (_prevFastStd == 0m || _prevSlowStd == 0m || fastStdVal <= 0m || slowStdVal <= 0m)
+			{
+				_prevFastStd = fastStdVal;
+				_prevSlowStd = slowStdVal;
+				return;
+			}
+
+			var volExpanding = fastStdVal > slowStdVal;
+			var wasContracting = _prevFastStd <= _prevSlowStd;
+			var bullCross = _cooldownRemaining == 0 && wasContracting && volExpanding && candle.ClosePrice > emaVal;
+			var bearCross = _cooldownRemaining == 0 && wasContracting && volExpanding && candle.ClosePrice < emaVal;
+
+			if (bullCross && Position <= 0)
+			{
+				BuyMarket(Volume + Math.Abs(Position));
+				_entryPrice = candle.ClosePrice;
+				_stopDist = candle.ClosePrice * StopPct / 100m;
+				_cooldownRemaining = SignalCooldownBars;
+			}
+			else if (bearCross && Position >= 0)
+			{
+				SellMarket(Volume + Math.Abs(Position));
+				_entryPrice = candle.ClosePrice;
+				_stopDist = candle.ClosePrice * StopPct / 100m;
+				_cooldownRemaining = SignalCooldownBars;
+			}
+
 			_prevFastStd = fastStdVal;
 			_prevSlowStd = slowStdVal;
-			return;
 		}
-
-		// Deviation crossover: fast vol crossing above slow vol = regime shift
-		// Use price direction relative to EMA for trade direction
-		var volExpanding = fastStdVal > slowStdVal;
-		var wasContracting = _prevFastStd <= _prevSlowStd;
-		var bullCross = wasContracting && volExpanding && candle.ClosePrice > emaVal;
-		var bearCross = wasContracting && volExpanding && candle.ClosePrice < emaVal;
-
-		if (bullCross && Position <= 0)
-		{
-			BuyMarket();
-			_entryPrice = candle.ClosePrice;
-			_stopDist = candle.ClosePrice * StopPct / 100m;
-		}
-		else if (bearCross && Position >= 0)
-		{
-			SellMarket();
-			_entryPrice = candle.ClosePrice;
-			_stopDist = candle.ClosePrice * StopPct / 100m;
-		}
-
-		_prevFastStd = fastStdVal;
-		_prevSlowStd = slowStdVal;
 	}
 }

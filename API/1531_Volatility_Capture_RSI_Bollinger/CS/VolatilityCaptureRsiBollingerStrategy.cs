@@ -27,8 +27,6 @@ public class VolatilityCaptureRsiBollingerStrategy : Strategy
 	private readonly StrategyParam<decimal> _rsiSell;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevPrice;
-	private decimal _prevBand;
 	private int _cooldown;
 
 	public int SmaLength { get => _smaLength.Value; set => _smaLength.Value = value; }
@@ -70,8 +68,6 @@ public class VolatilityCaptureRsiBollingerStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevPrice = 0;
-		_prevBand = 0;
 		_cooldown = 0;
 	}
 
@@ -82,9 +78,6 @@ public class VolatilityCaptureRsiBollingerStrategy : Strategy
 		var sma = new SimpleMovingAverage { Length = SmaLength };
 		var stdDev = new StandardDeviation { Length = SmaLength };
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };
-
-		_prevPrice = 0;
-		_prevBand = 0;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(sma, stdDev, rsi, ProcessCandle).Start();

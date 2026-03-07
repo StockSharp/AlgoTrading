@@ -34,7 +34,7 @@ public class MultiTimeframeParabolicSarStrategy : Strategy
 		_rsiLength = Param(nameof(RsiLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI", "RSI period", "Indicators");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(2).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 

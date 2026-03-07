@@ -26,11 +26,13 @@ public class ColorMomentumAmaStrategy : Strategy
 	private readonly StrategyParam<int> _fastPeriod;
 	private readonly StrategyParam<int> _slowPeriod;
 	private readonly StrategyParam<int> _signalBar;
+	private readonly StrategyParam<int> _signalCooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private Momentum _momentum = null!;
 	private KaufmanAdaptiveMovingAverage _ama = null!;
 	private decimal?[] _buffer = null!;
+	private int _cooldownRemaining;
 
 	/// <summary>
 	/// Momentum lookback period.
@@ -78,6 +80,15 @@ public class ColorMomentumAmaStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Bars to wait between trading actions.
+	/// </summary>
+	public int SignalCooldownBars
+	{
+		get => _signalCooldownBars.Value;
+		set => _signalCooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Candle type used for calculations.
 	/// </summary>
 	public DataType CandleType
@@ -112,12 +123,16 @@ public class ColorMomentumAmaStrategy : Strategy
 		
 		.SetOptimize(20, 60, 5);
 
-		_signalBar = Param(nameof(SignalBar), 1)
+		_signalBar = Param(nameof(SignalBar), 2)
 		.SetRange(1, 5)
 		.SetDisplay("Signal bar", "Bar index used for signals", "Strategy")
 		;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_signalCooldownBars = Param(nameof(SignalCooldownBars), 6)
+		.SetGreaterThanZero()
+		.SetDisplay("Signal cooldown", "Bars to wait between reversals", "Strategy");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 		.SetDisplay("Candle type", "Type of candles", "General");
 	}
 
@@ -133,6 +148,7 @@ public class ColorMomentumAmaStrategy : Strategy
 		base.OnReseted();
 
 		_buffer = new decimal?[SignalBar + 3];
+		_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
@@ -148,6 +164,7 @@ public class ColorMomentumAmaStrategy : Strategy
 			SlowSCPeriod = SlowPeriod
 		};
 		_buffer = new decimal?[SignalBar + 3];
+		_cooldownRemaining = 0;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -169,6 +186,9 @@ public class ColorMomentumAmaStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 		return;
 
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
+
 		// Update AMA with the momentum value
 		var amaResult = _ama.Process(momentumValue, candle.OpenTime, true);
 		if (!_ama.IsFormed || amaResult.IsEmpty)
@@ -186,28 +206,18 @@ public class ColorMomentumAmaStrategy : Strategy
 		var v2 = _buffer[SignalBar + 2]!.Value;
 
 		// Evaluate trend direction using consecutive values
-		var rising = v1 < v2;
-		var falling = v1 > v2;
+		var rising = v2 < v1 && v1 < v0;
+		var falling = v2 > v1 && v1 > v0;
 
-		if (rising)
+		if (_cooldownRemaining == 0 && rising && Position <= 0)
 		{
-			// Close short positions on upward momentum
-			if (Position < 0)
-			BuyMarket();
-
-			// Open long position if momentum continues rising
-			if (v0 > v1 && Position == 0)
-			BuyMarket();
+			BuyMarket(Volume + Math.Abs(Position));
+			_cooldownRemaining = SignalCooldownBars;
 		}
-		else if (falling)
+		else if (_cooldownRemaining == 0 && falling && Position >= 0)
 		{
-			// Close long positions on downward momentum
-			if (Position > 0)
-			SellMarket();
-
-			// Open short position if momentum continues falling
-			if (v0 < v1 && Position == 0)
-			SellMarket();
+			SellMarket(Volume + Math.Abs(Position));
+			_cooldownRemaining = SignalCooldownBars;
 		}
 	}
 }

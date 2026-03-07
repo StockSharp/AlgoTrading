@@ -1,9 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
 using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
@@ -14,8 +12,7 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that trades based on Adaptive RSI with volume confirmation.
-/// The RSI period adapts based on market volatility (ATR).
+/// Strategy that trades an ATR-adaptive RSI confirmed by relative volume.
 /// </summary>
 public class AdaptiveRsiVolumeStrategy : Strategy
 {
@@ -23,16 +20,17 @@ public class AdaptiveRsiVolumeStrategy : Strategy
 	private readonly StrategyParam<int> _maxRsiPeriod;
 	private readonly StrategyParam<int> _atrPeriod;
 	private readonly StrategyParam<int> _volumeLookback;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
+	private RelativeStrengthIndex _fastRsi = null!;
+	private RelativeStrengthIndex _slowRsi = null!;
+	private AverageTrueRange _atr = null!;
+	private SimpleMovingAverage _volumeSma = null!;
 	private decimal _adaptiveRsiValue;
 	private decimal _avgVolume;
-	private int _currentRsiPeriod;
-	
-	// Indicators
-	private RelativeStrengthIndex _rsi;
-	private AverageTrueRange _atr;
-	private SimpleMovingAverage _volumeSma;
+	private decimal _atrValue;
+	private int _cooldownRemaining;
 
 	/// <summary>
 	/// Strategy parameter: Minimum RSI period.
@@ -53,7 +51,7 @@ public class AdaptiveRsiVolumeStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Strategy parameter: ATR period for volatility calculation.
+	/// Strategy parameter: ATR period for volatility normalization.
 	/// </summary>
 	public int AtrPeriod
 	{
@@ -71,6 +69,15 @@ public class AdaptiveRsiVolumeStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Strategy parameter: Closed candles to wait between position changes.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Strategy parameter: Candle type.
 	/// </summary>
 	public DataType CandleType
@@ -84,23 +91,27 @@ public class AdaptiveRsiVolumeStrategy : Strategy
 	/// </summary>
 	public AdaptiveRsiVolumeStrategy()
 	{
-		_minRsiPeriod = Param(nameof(MinRsiPeriod), 10)
+		_minRsiPeriod = Param(nameof(MinRsiPeriod), 8)
 			.SetGreaterThanZero()
-			.SetDisplay("Min RSI Period", "Minimum period for adaptive RSI", "Indicator Settings");
+			.SetDisplay("Min RSI Period", "Fast RSI period used in high volatility", "Indicator Settings");
 
-		_maxRsiPeriod = Param(nameof(MaxRsiPeriod), 20)
+		_maxRsiPeriod = Param(nameof(MaxRsiPeriod), 21)
 			.SetGreaterThanZero()
-			.SetDisplay("Max RSI Period", "Maximum period for adaptive RSI", "Indicator Settings");
+			.SetDisplay("Max RSI Period", "Slow RSI period used in low volatility", "Indicator Settings");
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "Period for ATR volatility calculation", "Indicator Settings");
 
-		_volumeLookback = Param(nameof(VolumeLookback), 20)
+		_volumeLookback = Param(nameof(VolumeLookback), 12)
 			.SetGreaterThanZero()
-			.SetDisplay("Volume Lookback", "Number of periods to calculate volume average", "Volume Settings");
+			.SetDisplay("Volume Lookback", "Periods used for average volume", "Volume Settings");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_cooldownBars = Param(nameof(CooldownBars), 8)
+			.SetNotNegative()
+			.SetDisplay("Cooldown Bars", "Closed candles to wait before another signal", "Trading");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -115,12 +126,15 @@ public class AdaptiveRsiVolumeStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_adaptiveRsiValue = 50;
-		_avgVolume = 0;
-		_currentRsiPeriod = MaxRsiPeriod;
-		_atr = default;
-		_rsi = default;
-		_volumeSma = default;
+		_adaptiveRsiValue = 50m;
+		_avgVolume = 0m;
+		_atrValue = 0m;
+		_cooldownRemaining = 0;
+
+		_fastRsi?.Reset();
+		_slowRsi?.Reset();
+		_atr?.Reset();
+		_volumeSma?.Reset();
 	}
 
 	/// <inheritdoc />
@@ -128,129 +142,100 @@ public class AdaptiveRsiVolumeStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_currentRsiPeriod = MaxRsiPeriod;
+		_fastRsi = new RelativeStrengthIndex
+		{
+			Length = MinRsiPeriod
+		};
 
-		// Create indicators
+		_slowRsi = new RelativeStrengthIndex
+		{
+			Length = MaxRsiPeriod
+		};
+
 		_atr = new AverageTrueRange
 		{
 			Length = AtrPeriod
 		};
 
-		_rsi = new RelativeStrengthIndex
-		{
-			Length = _currentRsiPeriod
-		};
-
-		_volumeSma = new SMA
+		_volumeSma = new SimpleMovingAverage
 		{
 			Length = VolumeLookback
 		};
 
-		// Create subscription for candles
 		var subscription = SubscribeCandles(CandleType);
 
-		// Bind indicators to subscription and start
 		subscription
-			.BindEx(_atr, _rsi, ProcessCandle)
+			.Bind(ProcessCandle)
 			.Start();
 
-		// Add chart visualization
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _rsi);
+			DrawIndicator(area, _fastRsi);
+			DrawIndicator(area, _slowRsi);
 			DrawOwnTrades(area);
 		}
 
-		// Start position protection with percentage-based stop-loss
 		StartProtection(
-			takeProfit: new Unit(0), // No fixed take profit
-			stopLoss: new Unit(2, UnitTypes.Percent) // 2% stop-loss
+			takeProfit: new Unit(2, UnitTypes.Percent),
+			stopLoss: new Unit(1, UnitTypes.Percent)
 		);
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue atrValue, IIndicatorValue rsiValue)
+	private void ProcessCandle(ICandleMessage candle)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Process volume to calculate average
-		ProcessVolume(candle);
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
 
-		// Calculate adaptive RSI period based on ATR
-		if (atrValue.IsFinal)
-		{
-			decimal atr = atrValue.ToDecimal();
-			
-			// Normalize ATR to a value between 0 and 1 using historical range
-			// This is a simplified approach - in a real implementation you would
-			// track ATR range over a longer period
-			decimal normalizedAtr = Math.Min(Math.Max(atr / (candle.ClosePrice * 0.1m), 0), 1);
-			
-			// Adjust RSI period - higher volatility (ATR) = shorter period
-			int newPeriod = MaxRsiPeriod - (int)Math.Round(normalizedAtr * (MaxRsiPeriod - MinRsiPeriod));
-			
-			// Ensure period stays within bounds
-			newPeriod = Math.Max(MinRsiPeriod, Math.Min(MaxRsiPeriod, newPeriod));
-			
-			// Update RSI period if changed
-			if (newPeriod != _currentRsiPeriod)
-			{
-				_currentRsiPeriod = newPeriod;
-				_rsi.Length = _currentRsiPeriod;
-				
-				LogInfo($"Adjusted RSI period to {_currentRsiPeriod} based on ATR ({atr})");
-			}
-		}
+		var fastRsiValue = _fastRsi.Process(new DecimalIndicatorValue(_fastRsi, candle.ClosePrice, candle.OpenTime) { IsFinal = true });
+		var slowRsiValue = _slowRsi.Process(new DecimalIndicatorValue(_slowRsi, candle.ClosePrice, candle.OpenTime) { IsFinal = true });
+		var atrValue = _atr.Process(new CandleIndicatorValue(_atr, candle) { IsFinal = true });
+		var volumeValue = _volumeSma.Process(new DecimalIndicatorValue(_volumeSma, candle.TotalVolume, candle.OpenTime) { IsFinal = true });
 
-		// Check if strategy is ready to trade
+		if (!_fastRsi.IsFormed || !_slowRsi.IsFormed || !_atr.IsFormed || !_volumeSma.IsFormed ||
+			fastRsiValue.IsEmpty || slowRsiValue.IsEmpty || atrValue.IsEmpty || volumeValue.IsEmpty)
+			return;
+
+		_avgVolume = volumeValue.ToDecimal();
+		_atrValue = atrValue.ToDecimal();
+
+		var fastRsi = fastRsiValue.ToDecimal();
+		var slowRsi = slowRsiValue.ToDecimal();
+		var normalizedAtr = Math.Min(Math.Max(_atrValue / Math.Max(candle.ClosePrice * 0.02m, 1m), 0m), 1m);
+
+		// High volatility shifts weight to the faster RSI.
+		_adaptiveRsiValue = slowRsi + ((fastRsi - slowRsi) * normalizedAtr);
+
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// Store RSI value
-		if (rsiValue.IsFinal)
+		var isHighVolume = candle.TotalVolume >= (_avgVolume * 0.9m);
+		var oversoldLevel = 45m - (normalizedAtr * 5m);
+		var overboughtLevel = 55m + (normalizedAtr * 5m);
+
+		if (_cooldownRemaining == 0 && isHighVolume && _adaptiveRsiValue <= oversoldLevel && Position <= 0)
 		{
-			_adaptiveRsiValue = rsiValue.ToDecimal();
-
-			// Trading logic based on RSI with volume confirmation
-			if (_avgVolume > 0) // Make sure we have volume data
-			{
-				bool isHighVolume = candle.TotalVolume > _avgVolume;
-
-				// Oversold condition with volume confirmation
-				if (_adaptiveRsiValue < 30 && isHighVolume && Position <= 0)
-				{
-					LogInfo($"Buy signal: RSI oversold ({_adaptiveRsiValue}) with high volume ({candle.TotalVolume} > {_avgVolume})");
-					BuyMarket(Volume + Math.Abs(Position));
-				}
-				// Overbought condition with volume confirmation
-				else if (_adaptiveRsiValue > 70 && isHighVolume && Position >= 0)
-				{
-					LogInfo($"Sell signal: RSI overbought ({_adaptiveRsiValue}) with high volume ({candle.TotalVolume} > {_avgVolume})");
-					SellMarket(Volume + Math.Abs(Position));
-				}
-			}
-
-			// Exit logic based on RSI returning to neutral zone
-			if ((Position > 0 && _adaptiveRsiValue > 50) ||
-				(Position < 0 && _adaptiveRsiValue < 50))
-			{
-				LogInfo($"Exit signal: RSI returned to neutral zone ({_adaptiveRsiValue})");
-				ClosePosition();
-			}
+			BuyMarket(Volume + (Position < 0 ? Math.Abs(Position) : 0m));
+			_cooldownRemaining = CooldownBars;
 		}
-	}
-
-	private void ProcessVolume(ICandleMessage candle)
-	{
-		// Process volume with SMA
-		var volumeValue = _volumeSma.Process(new DecimalIndicatorValue(_volumeSma, candle.TotalVolume, candle.ServerTime));
-		
-		if (volumeValue.IsFinal)
+		else if (_cooldownRemaining == 0 && isHighVolume && _adaptiveRsiValue >= overboughtLevel && Position >= 0)
 		{
-			_avgVolume = volumeValue.ToDecimal();
+			SellMarket(Volume + (Position > 0 ? Math.Abs(Position) : 0m));
+			_cooldownRemaining = CooldownBars;
+		}
+		else if (Position > 0 && _adaptiveRsiValue >= 52m)
+		{
+			SellMarket(Position);
+			_cooldownRemaining = CooldownBars;
+		}
+		else if (Position < 0 && _adaptiveRsiValue <= 48m)
+		{
+			BuyMarket(Math.Abs(Position));
+			_cooldownRemaining = CooldownBars;
 		}
 	}
 }

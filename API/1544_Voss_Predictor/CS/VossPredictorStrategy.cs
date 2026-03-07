@@ -75,7 +75,7 @@ public class VossPredictorStrategy : Strategy
 		
 		.SetOptimize(0.5m, 3.0m, 0.5m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -83,6 +83,20 @@ public class VossPredictorStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_pricePrev1 = null;
+		_pricePrev2 = null;
+		_bandPassPrev1 = 0m;
+		_bandPassPrev2 = 0m;
+		Array.Clear(_vossBuffer, 0, _vossBuffer.Length);
+		_prevVpf = 0m;
+		_prevBpf = 0m;
 	}
 
 	/// <inheritdoc />

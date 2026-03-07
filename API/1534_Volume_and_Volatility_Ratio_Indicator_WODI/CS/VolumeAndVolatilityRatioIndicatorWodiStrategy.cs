@@ -24,6 +24,7 @@ public class VolumeAndVolatilityRatioIndicatorWodiStrategy : Strategy
 	private readonly StrategyParam<int> _indexLength;
 	private readonly StrategyParam<decimal> _stopPct;
 	private readonly StrategyParam<decimal> _tpPct;
+	private readonly StrategyParam<int> _signalCooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private readonly List<decimal> _volumes = new();
@@ -32,11 +33,13 @@ public class VolumeAndVolatilityRatioIndicatorWodiStrategy : Strategy
 	private decimal _stopDist;
 	private ICandleMessage _prevCandle;
 	private ICandleMessage _prevPrevCandle;
+	private int _cooldownRemaining;
 
 	public int VolLength { get => _volLength.Value; set => _volLength.Value = value; }
 	public int IndexLength { get => _indexLength.Value; set => _indexLength.Value = value; }
 	public decimal StopPct { get => _stopPct.Value; set => _stopPct.Value = value; }
 	public decimal TpPct { get => _tpPct.Value; set => _tpPct.Value = value; }
+	public int SignalCooldownBars { get => _signalCooldownBars.Value; set => _signalCooldownBars.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public VolumeAndVolatilityRatioIndicatorWodiStrategy()
@@ -57,7 +60,11 @@ public class VolumeAndVolatilityRatioIndicatorWodiStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("TP %", "Take profit percent", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_signalCooldownBars = Param(nameof(SignalCooldownBars), 24)
+			.SetGreaterThanZero()
+			.SetDisplay("Signal Cooldown", "Bars to wait between trades", "Trading");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -75,6 +82,7 @@ public class VolumeAndVolatilityRatioIndicatorWodiStrategy : Strategy
 		_stopDist = 0;
 		_prevCandle = null;
 		_prevPrevCandle = null;
+		_cooldownRemaining = 0;
 	}
 
 	protected override void OnStarted2(DateTime time)
@@ -89,6 +97,7 @@ public class VolumeAndVolatilityRatioIndicatorWodiStrategy : Strategy
 		_stopDist = 0;
 		_prevCandle = null;
 		_prevPrevCandle = null;
+		_cooldownRemaining = 0;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(sma, ProcessCandle).Start();
@@ -105,6 +114,9 @@ public class VolumeAndVolatilityRatioIndicatorWodiStrategy : Strategy
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
+
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
 
 		var vol = candle.TotalVolume;
 		var volatility = candle.ClosePrice > 0 ? (candle.HighPrice - candle.LowPrice) / candle.ClosePrice * 100m : 0;
@@ -126,6 +138,7 @@ public class VolumeAndVolatilityRatioIndicatorWodiStrategy : Strategy
 				SellMarket();
 				_entryPrice = 0;
 				_stopDist = 0;
+				_cooldownRemaining = SignalCooldownBars;
 			}
 		}
 		else if (Position < 0 && _entryPrice > 0 && _stopDist > 0)
@@ -135,6 +148,7 @@ public class VolumeAndVolatilityRatioIndicatorWodiStrategy : Strategy
 				BuyMarket();
 				_entryPrice = 0;
 				_stopDist = 0;
+				_cooldownRemaining = SignalCooldownBars;
 			}
 		}
 
@@ -151,7 +165,7 @@ public class VolumeAndVolatilityRatioIndicatorWodiStrategy : Strategy
 
 		// Entry conditions
 		var highVol = vol > volAvg;
-		var highVolIndex = volIndex > indexAvg * 1.5m;
+		var highVolIndex = volIndex > indexAvg * 2.5m;
 
 		var isLongPattern = highVol && highVolIndex
 			&& _prevCandle.ClosePrice < _prevPrevCandle.ClosePrice
@@ -161,17 +175,19 @@ public class VolumeAndVolatilityRatioIndicatorWodiStrategy : Strategy
 			&& _prevCandle.ClosePrice > _prevPrevCandle.ClosePrice
 			&& candle.ClosePrice < _prevCandle.ClosePrice;
 
-		if (isLongPattern && Position <= 0)
+		if (_cooldownRemaining == 0 && isLongPattern && Position == 0)
 		{
 			BuyMarket();
 			_entryPrice = candle.ClosePrice;
 			_stopDist = candle.ClosePrice * StopPct / 100m;
+			_cooldownRemaining = SignalCooldownBars;
 		}
-		else if (isShortPattern && Position >= 0)
+		else if (_cooldownRemaining == 0 && isShortPattern && Position == 0)
 		{
 			SellMarket();
 			_entryPrice = candle.ClosePrice;
 			_stopDist = candle.ClosePrice * StopPct / 100m;
+			_cooldownRemaining = SignalCooldownBars;
 		}
 
 		_prevPrevCandle = _prevCandle;

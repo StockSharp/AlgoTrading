@@ -52,10 +52,10 @@ public class AdaptiveRenkoDuplexStrategy : Strategy
 
 	public AdaptiveRenkoDuplexStrategy()
 	{
-		_longCandleType = Param(nameof(LongCandleType), TimeSpan.FromHours(4).TimeFrame())
+		_longCandleType = Param(nameof(LongCandleType), TimeSpan.FromDays(1).TimeFrame())
 			.SetDisplay("Long Candle Type", "Timeframe used to derive long-side signals", "Long Side");
 
-		_shortCandleType = Param(nameof(ShortCandleType), TimeSpan.FromHours(4).TimeFrame())
+		_shortCandleType = Param(nameof(ShortCandleType), TimeSpan.FromDays(1).TimeFrame())
 			.SetDisplay("Short Candle Type", "Timeframe used to derive short-side signals", "Short Side");
 
 		_longVolatilityMode = Param(nameof(LongVolatilityMode), AdaptiveRenkoVolatilityModes.AverageTrueRange)
@@ -90,19 +90,19 @@ public class AdaptiveRenkoDuplexStrategy : Strategy
 		_shortPriceMode = Param(nameof(ShortPriceMode), AdaptiveRenkoPriceModes.Close)
 			.SetDisplay("Short Price Mode", "Price source used when building short bricks", "Short Side");
 
-		_longMinimumBrickPoints = Param(nameof(LongMinimumBrickPoints), 2m)
+		_longMinimumBrickPoints = Param(nameof(LongMinimumBrickPoints), 5m)
 			.SetNotNegative()
 			.SetDisplay("Long Minimum Brick", "Minimal brick height in points for long bricks", "Long Side");
 
-		_shortMinimumBrickPoints = Param(nameof(ShortMinimumBrickPoints), 2m)
+		_shortMinimumBrickPoints = Param(nameof(ShortMinimumBrickPoints), 5m)
 			.SetNotNegative()
 			.SetDisplay("Short Minimum Brick", "Minimal brick height in points for short bricks", "Short Side");
 
-		_longSignalBarOffset = Param(nameof(LongSignalBarOffset), 1)
+		_longSignalBarOffset = Param(nameof(LongSignalBarOffset), 2)
 			.SetRange(0, 10)
 			.SetDisplay("Long Signal Offset", "Number of closed bars to delay long signals", "Long Side");
 
-		_shortSignalBarOffset = Param(nameof(ShortSignalBarOffset), 1)
+		_shortSignalBarOffset = Param(nameof(ShortSignalBarOffset), 2)
 			.SetRange(0, 10)
 			.SetDisplay("Short Signal Offset", "Number of closed bars to delay short signals", "Short Side");
 
@@ -625,7 +625,7 @@ public class AdaptiveRenkoDuplexStrategy : Strategy
 		public decimal? Resistance { get; }
 	}
 
-	private sealed class AdaptiveRenkoProcessor
+	private sealed class AdaptiveRenkoProcessor : IEquatable<AdaptiveRenkoProcessor>
 	{
 		private readonly List<RenkoSnapshot> _history = new();
 		private bool _initialized;
@@ -747,6 +747,44 @@ public class AdaptiveRenkoDuplexStrategy : Strategy
 			_down = 0m;
 			_brick = 0m;
 			_trend = RenkoTrends.None;
+		}
+
+		public bool Equals(AdaptiveRenkoProcessor other)
+		{
+			if (ReferenceEquals(null, other))
+				return false;
+
+			if (ReferenceEquals(this, other))
+				return true;
+
+			if (_initialized != other._initialized ||
+				_up != other._up ||
+				_down != other._down ||
+				_brick != other._brick ||
+				_trend != other._trend ||
+				_history.Count != other._history.Count)
+				return false;
+
+			for (var i = 0; i < _history.Count; i++)
+			{
+				if (!_history[i].Equals(other._history[i]))
+					return false;
+			}
+
+			return true;
+		}
+
+		public override bool Equals(object obj)
+			=> obj is AdaptiveRenkoProcessor other && Equals(other);
+
+		public override int GetHashCode()
+		{
+			var hash = HashCode.Combine(_initialized, _up, _down, _brick, _trend, _history.Count);
+
+			foreach (var item in _history)
+				hash = HashCode.Combine(hash, item);
+
+			return hash;
 		}
 
 		private void AppendSnapshot(RenkoSnapshot snapshot, int signalOffset)

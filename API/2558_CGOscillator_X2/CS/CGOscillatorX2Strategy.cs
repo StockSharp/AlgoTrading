@@ -16,7 +16,7 @@ namespace StockSharp.Samples.Strategies;
 /// <summary>
 /// Strategy that trades pullbacks using the Center of Gravity oscillator on two timeframes.
 /// </summary>
-public class CGOscillatorX2Strategy : Strategy
+public class CgOscillatorX2Strategy : Strategy
 {
 	private readonly StrategyParam<DataType> _trendCandleType;
 	private readonly StrategyParam<DataType> _signalCandleType;
@@ -30,6 +30,7 @@ public class CGOscillatorX2Strategy : Strategy
 	private readonly StrategyParam<bool> _sellCloseSignal;
 	private readonly StrategyParam<decimal> _stopLoss;
 	private readonly StrategyParam<decimal> _takeProfit;
+	private readonly StrategyParam<int> _signalCooldownBars;
 
 	private CenterOfGravityOscillator _trendIndicator;
 	private CenterOfGravityOscillator _signalIndicator;
@@ -41,6 +42,7 @@ public class CGOscillatorX2Strategy : Strategy
 	private decimal? _entryPrice;
 	private decimal? _stopPrice;
 	private decimal? _takePrice;
+	private int _cooldownRemaining;
 
 	public DataType TrendCandleType { get => _trendCandleType.Value; set => _trendCandleType.Value = value; }
 	public DataType SignalCandleType { get => _signalCandleType.Value; set => _signalCandleType.Value = value; }
@@ -54,13 +56,14 @@ public class CGOscillatorX2Strategy : Strategy
 	public bool SellCloseSignal { get => _sellCloseSignal.Value; set => _sellCloseSignal.Value = value; }
 	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
 	public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
+	public int SignalCooldownBars { get => _signalCooldownBars.Value; set => _signalCooldownBars.Value = value; }
 
-	public CGOscillatorX2Strategy()
+	public CgOscillatorX2Strategy()
 	{
-		_trendCandleType = Param(nameof(TrendCandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_trendCandleType = Param(nameof(TrendCandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Trend Candle Type", "Higher timeframe for trend detection", "General");
 
-		_signalCandleType = Param(nameof(SignalCandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_signalCandleType = Param(nameof(SignalCandleType), TimeSpan.FromHours(2).TimeFrame())
 			.SetDisplay("Signal Candle Type", "Lower timeframe for trade execution", "General");
 
 		_trendLength = Param(nameof(TrendLength), 10)
@@ -96,6 +99,10 @@ public class CGOscillatorX2Strategy : Strategy
 		_takeProfit = Param(nameof(TakeProfit), 0m)
 			.SetNotNegative()
 			.SetDisplay("Take Profit Distance", "Absolute take-profit distance in price units", "Risk");
+
+		_signalCooldownBars = Param(nameof(SignalCooldownBars), 6)
+			.SetNotNegative()
+			.SetDisplay("Signal Cooldown Bars", "Closed signal candles to wait before a new entry", "Risk");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
@@ -142,6 +149,7 @@ public class CGOscillatorX2Strategy : Strategy
 		_entryPrice = null;
 		_stopPrice = null;
 		_takePrice = null;
+		_cooldownRemaining = 0;
 	}
 
 	private void ProcessTrend(ICandleMessage candle, IIndicatorValue value)
@@ -172,6 +180,9 @@ public class CGOscillatorX2Strategy : Strategy
 		if (!_signalIndicator.IsFormed)
 			return;
 
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
+
 		var cgValue = value.GetValue<decimal>();
 
 		var prevCg = _signalPrevCg;
@@ -190,13 +201,15 @@ public class CGOscillatorX2Strategy : Strategy
 		var closeSell = SellCloseSignal && prevCg > 0;
 		var openBuy = false;
 		var openSell = false;
+		var bullishHook = prevPrevCg.HasValue && prevPrevCg.Value >= prevCg && cgValue > prevCg;
+		var bearishHook = prevPrevCg.HasValue && prevPrevCg.Value <= prevCg && cgValue < prevCg;
 
 		if (_trendDirection < 0)
 		{
 			if (BuyClose)
 				closeBuy = true;
 
-			if (SellOpen && cgValue < prevCg)
+			if (_cooldownRemaining == 0 && SellOpen && bearishHook)
 				openSell = true;
 		}
 		else if (_trendDirection > 0)
@@ -204,33 +217,35 @@ public class CGOscillatorX2Strategy : Strategy
 			if (SellClose)
 				closeSell = true;
 
-			if (BuyOpen && cgValue > prevCg)
+			if (_cooldownRemaining == 0 && BuyOpen && bullishHook)
 				openBuy = true;
 		}
 
 		if (closeBuy && Position > 0)
 		{
-			SellMarket();
+			SellMarket(Position);
 			ResetRiskTargets();
 		}
 
 		if (closeSell && Position < 0)
 		{
-			BuyMarket();
+			BuyMarket(-Position);
 			ResetRiskTargets();
 		}
 
 		if (openBuy && Position <= 0)
 		{
 			var volume = Volume + (Position < 0 ? Math.Abs(Position) : 0m);
-			BuyMarket();
+			BuyMarket(volume);
 			SetRiskTargets(candle.ClosePrice, true);
+			_cooldownRemaining = SignalCooldownBars;
 		}
 		else if (openSell && Position >= 0)
 		{
 			var volume = Volume + (Position > 0 ? Math.Abs(Position) : 0m);
-			SellMarket();
+			SellMarket(volume);
 			SetRiskTargets(candle.ClosePrice, false);
+			_cooldownRemaining = SignalCooldownBars;
 		}
 	}
 
@@ -240,14 +255,14 @@ public class CGOscillatorX2Strategy : Strategy
 		{
 			if (_stopPrice is decimal stop && candle.LowPrice <= stop)
 			{
-				SellMarket();
+				SellMarket(Position);
 				ResetRiskTargets();
 				return true;
 			}
 
 			if (_takePrice is decimal take && candle.HighPrice >= take)
 			{
-				SellMarket();
+				SellMarket(Position);
 				ResetRiskTargets();
 				return true;
 			}
@@ -256,14 +271,14 @@ public class CGOscillatorX2Strategy : Strategy
 		{
 			if (_stopPrice is decimal stop && candle.HighPrice >= stop)
 			{
-				BuyMarket();
+				BuyMarket(-Position);
 				ResetRiskTargets();
 				return true;
 			}
 
 			if (_takePrice is decimal take && candle.LowPrice <= take)
 			{
-				BuyMarket();
+				BuyMarket(-Position);
 				ResetRiskTargets();
 				return true;
 			}

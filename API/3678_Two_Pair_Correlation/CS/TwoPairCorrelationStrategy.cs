@@ -102,7 +102,7 @@ public class TwoPairCorrelationStrategy : Strategy
 			.SetDisplay("ATR Period", "Number of candles for volatility filter", "Indicators")
 			.SetOptimize(5, 40, 1);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candle series for signals", "Indicators");
 	}
 
@@ -144,7 +144,7 @@ public class TwoPairCorrelationStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormed)
+		if (_atr == null || _sma == null || !_atr.IsFormed || !_sma.IsFormed)
 			return;
 
 		_atrValue = atrValue;
@@ -160,7 +160,8 @@ public class TwoPairCorrelationStrategy : Strategy
 				? price - _entryPrice
 				: _entryPrice - price;
 
-			if (MinimumTotalProfit > 0m && pnl >= MinimumTotalProfit)
+			var profitTarget = Math.Max(MinimumTotalProfit, _atrValue * 0.5m);
+			if (profitTarget > 0m && pnl >= profitTarget)
 			{
 				if (Position > 0)
 					SellMarket(Math.Abs(Position));
@@ -178,22 +179,16 @@ public class TwoPairCorrelationStrategy : Strategy
 		if (Position != 0)
 			return;
 
-		// Volatility filter: skip if ATR is too high
-		if (_atrValue > PriceDifferenceThreshold * 2m)
-			return;
-
-		// Mean reversion entry
 		var deviation = price - smaValue;
+		var entryThreshold = Math.Max(PriceDifferenceThreshold, _atrValue);
 
-		if (deviation > PriceDifferenceThreshold)
+		if (deviation > entryThreshold)
 		{
-			// Price too far above SMA - sell expecting reversion
 			SellMarket();
 			_entryPrice = price;
 		}
-		else if (deviation < -PriceDifferenceThreshold)
+		else if (deviation < -entryThreshold)
 		{
-			// Price too far below SMA - buy expecting reversion
 			BuyMarket();
 			_entryPrice = price;
 		}

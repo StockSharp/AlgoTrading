@@ -16,7 +16,7 @@ namespace StockSharp.Samples.Strategies;
 /// <summary>
 /// XOSignal based breakout strategy with re-entry logic.
 /// </summary>
-public class XoSignalReopenStrategy : Strategy
+public class XoSignalReOpenStrategy : Strategy
 {
 	/// <summary>
 	/// Price source applied to the XO calculation.
@@ -194,7 +194,7 @@ public class XoSignalReopenStrategy : Strategy
 	/// <summary>
 	/// Initializes a new instance of the <see cref="XoSignalReopenStrategy"/> class.
 	/// </summary>
-	public XoSignalReopenStrategy()
+	public XoSignalReOpenStrategy()
 	{
 		_atrPeriod = Param(nameof(AtrPeriod), 13)
 		.SetGreaterThanZero()
@@ -210,11 +210,11 @@ public class XoSignalReopenStrategy : Strategy
 			.SetDisplay("Take Profit", "Take profit in ticks", "Risk")
 			.SetNotNegative();
 
-		_priceStepTicks = Param(nameof(PriceStepTicks), 300)
+		_priceStepTicks = Param(nameof(PriceStepTicks), 1000)
 			.SetDisplay("Re-entry Step", "Ticks to add position", "Trading")
 			.SetNotNegative();
 
-		_maxPyramidingPositions = Param(nameof(MaxPyramidingPositions), 10)
+		_maxPyramidingPositions = Param(nameof(MaxPyramidingPositions), 1)
 			.SetDisplay("Max Layers", "Maximum layered entries", "Trading")
 			.SetGreaterThanZero();
 
@@ -230,7 +230,7 @@ public class XoSignalReopenStrategy : Strategy
 		_enableSellExits = Param(nameof(EnableSellExits), true)
 			.SetDisplay("Close Short", "Close short on long signal", "Permissions");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Working timeframe", "General");
 
 		_range = Param(nameof(Range), 10)

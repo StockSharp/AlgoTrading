@@ -128,10 +128,17 @@ public class MamyExpertStrategy : Strategy
 		if (_closeMa == null || _openMa == null || _weightedPriceMa == null)
 			return;
 
-		var closeMaValue = _closeMa.Process(new DecimalIndicatorValue(_closeMa, candle.ClosePrice, candle.OpenTime)).ToDecimal();
-		var openMaValue = _openMa.Process(new DecimalIndicatorValue(_openMa, candle.OpenPrice, candle.OpenTime)).ToDecimal();
+		var closeMaResult = _closeMa.Process(new DecimalIndicatorValue(_closeMa, candle.ClosePrice, candle.OpenTime) { IsFinal = true });
+		var openMaResult = _openMa.Process(new DecimalIndicatorValue(_openMa, candle.OpenPrice, candle.OpenTime) { IsFinal = true });
 		var weightedPrice = CalculateWeightedPrice(candle);
-		var weightedMaValue = _weightedPriceMa.Process(new DecimalIndicatorValue(_weightedPriceMa, weightedPrice, candle.OpenTime)).ToDecimal();
+		var weightedMaResult = _weightedPriceMa.Process(new DecimalIndicatorValue(_weightedPriceMa, weightedPrice, candle.OpenTime) { IsFinal = true });
+
+		if (closeMaResult.IsEmpty || openMaResult.IsEmpty || weightedMaResult.IsEmpty)
+			return;
+
+		var closeMaValue = closeMaResult.ToDecimal();
+		var openMaValue = openMaResult.ToDecimal();
+		var weightedMaValue = weightedMaResult.ToDecimal();
 
 		var previousCloseMa = _previousCloseMa;
 		var previousOpenMa = _previousOpenMa;

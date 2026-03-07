@@ -52,6 +52,7 @@ public class IbsRsiCciV4X2Strategy : Strategy
 	private readonly StrategyParam<int> _signalRangePeriod;
 	private readonly StrategyParam<int> _signalSmoothPeriod;
 	private readonly StrategyParam<int> _signalSignalBar;
+	private readonly StrategyParam<int> _signalCooldownBars;
 	private readonly StrategyParam<bool> _closeLongOnSignalCross;
 	private readonly StrategyParam<bool> _closeShortOnSignalCross;
 
@@ -65,6 +66,7 @@ public class IbsRsiCciV4X2Strategy : Strategy
 	private IbsRsiCciCalculator _signalCalculator;
 
 	private int _trendDirection;
+	private int _cooldownRemaining;
 
 	public IbsRsiCciV4X2Strategy()
 	{
@@ -72,7 +74,7 @@ public class IbsRsiCciV4X2Strategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Volume", "Order volume", "Trading");
 
-		_trendCandleType = Param(nameof(TrendCandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_trendCandleType = Param(nameof(TrendCandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Trend TF", "Trend timeframe", "Trend");
 
 		_trendIbsPeriod = Param(nameof(TrendIbsPeriod), 5)
@@ -152,7 +154,7 @@ public class IbsRsiCciV4X2Strategy : Strategy
 		.SetDisplay("Output Direction", "Directional multiplier for the composite output", "Weights")
 		;
 
-		_signalCandleType = Param(nameof(SignalCandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_signalCandleType = Param(nameof(SignalCandleType), TimeSpan.FromHours(2).TimeFrame())
 			.SetDisplay("Signal TF", "Signal timeframe", "Signal");
 
 		_signalIbsPeriod = Param(nameof(SignalIbsPeriod), 5)
@@ -191,6 +193,10 @@ public class IbsRsiCciV4X2Strategy : Strategy
 		_signalSignalBar = Param(nameof(SignalSignalBar), 1)
 			.SetNotNegative()
 			.SetDisplay("Signal Shift", "Shift used to read indicator", "Signal");
+
+		_signalCooldownBars = Param(nameof(SignalCooldownBars), 10)
+			.SetNotNegative()
+			.SetDisplay("Signal Cooldown", "Closed signal candles to wait before the next entry", "Signal");
 
 		_closeLongOnSignalCross = Param(nameof(CloseLongOnSignalCross), false)
 			.SetDisplay("Close Long Signal", "Close longs on bearish cross", "Signal");
@@ -382,6 +388,12 @@ public class IbsRsiCciV4X2Strategy : Strategy
 		set => _closeShortOnSignalCross.Value = value;
 	}
 
+	public int SignalCooldownBars
+	{
+		get => _signalCooldownBars.Value;
+		set => _signalCooldownBars.Value = value;
+	}
+
 	/// <summary>
 	/// Weight applied to the IBS component of the composite oscillator.
 	/// </summary>
@@ -472,8 +484,11 @@ public class IbsRsiCciV4X2Strategy : Strategy
 		_trendValues.Clear();
 		_signalValues.Clear();
 		_trendDirection = 0;
+		_cooldownRemaining = 0;
 		_trendCalculator?.Reset();
 		_signalCalculator?.Reset();
+		_trendCalculator = null;
+		_signalCalculator = null;
 	}
 
 	/// <inheritdoc />
@@ -564,6 +579,9 @@ public class IbsRsiCciV4X2Strategy : Strategy
 		if (candle.State != CandleStates.Finished || _signalCalculator == null)
 			return;
 
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
+
 		var value = _signalCalculator.Process(candle);
 		if (value == null)
 			return;
@@ -595,7 +613,7 @@ public class IbsRsiCciV4X2Strategy : Strategy
 			if (CloseLongOnTrendFlip)
 				closeLong = true;
 
-			if (AllowShortEntries && current.Up >= current.Down && previous.Up < previous.Down)
+			if (_cooldownRemaining == 0 && AllowShortEntries && current.Up >= current.Down && previous.Up < previous.Down)
 				openShort = true;
 		}
 		else if (_trendDirection > 0)
@@ -603,20 +621,37 @@ public class IbsRsiCciV4X2Strategy : Strategy
 			if (CloseShortOnTrendFlip)
 				closeShort = true;
 
-			if (AllowLongEntries && current.Up <= current.Down && previous.Up > previous.Down)
+			if (_cooldownRemaining == 0 && AllowLongEntries && current.Up <= current.Down && previous.Up > previous.Down)
 				openLong = true;
 		}
 
+		var submitted = false;
+
 		if (closeLong && Position > 0)
+		{
 			CloseLong();
+			submitted = true;
+		}
 
 		if (closeShort && Position < 0)
+		{
 			CloseShort();
+			submitted = true;
+		}
 
 		if (openLong && Position <= 0 && AllowLongEntries)
+		{
 			EnterLong();
+			submitted = true;
+		}
 		else if (openShort && Position >= 0 && AllowShortEntries)
+		{
 			EnterShort();
+			submitted = true;
+		}
+
+		if (submitted)
+			_cooldownRemaining = SignalCooldownBars;
 	}
 
 	private void CloseLong()
@@ -850,6 +885,7 @@ public class IbsRsiCciV4X2Strategy : Strategy
 		private readonly int _period;
 		private readonly SimpleMovingAverage _sma;
 		private readonly Queue<decimal> _buffer = new();
+		private readonly object _sync = new();
 
 		public CommodityChannelIndexCalculator(int period)
 		{
@@ -859,34 +895,41 @@ public class IbsRsiCciV4X2Strategy : Strategy
 
 		public decimal? Process(decimal price, DateTimeOffset time, bool isFinal)
 		{
-			var maValue = _sma.Process(new DecimalIndicatorValue(_sma, price, time.UtcDateTime) { IsFinal = true });
-			_buffer.Enqueue(price);
-			if (_buffer.Count > _period)
-				_buffer.Dequeue();
+			lock (_sync)
+			{
+				var maValue = _sma.Process(new DecimalIndicatorValue(_sma, price, time.UtcDateTime) { IsFinal = true });
+				_buffer.Enqueue(price);
+				if (_buffer.Count > _period)
+					_buffer.Dequeue();
 
-			if (!maValue.IsFinal || _buffer.Count < _period)
-				return null;
+				if (!maValue.IsFinal || _buffer.Count < _period)
+					return null;
 
-			var ma = maValue.GetValue<decimal>();
-			decimal sum = 0m;
-			foreach (var value in _buffer)
-				sum += Math.Abs(value - ma);
+				var ma = maValue.GetValue<decimal>();
+				var snapshot = _buffer.ToArray();
+				decimal sum = 0m;
+				foreach (var value in snapshot)
+					sum += Math.Abs(value - ma);
 
-			if (sum == 0m)
-				return 0m;
+				if (sum == 0m)
+					return 0m;
 
-			var meanDeviation = sum / _period;
-			if (meanDeviation == 0m)
-				return 0m;
+				var meanDeviation = sum / _period;
+				if (meanDeviation == 0m)
+					return 0m;
 
-			var cci = (price - ma) / (0.015m * meanDeviation);
-			return cci;
+				var cci = (price - ma) / (0.015m * meanDeviation);
+				return cci;
+			}
 		}
 
 		public void Reset()
 		{
-			_buffer.Clear();
-			_sma.Reset();
+			lock (_sync)
+			{
+				_buffer.Clear();
+				_sma.Reset();
+			}
 		}
 	}
 }

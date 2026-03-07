@@ -53,7 +53,7 @@ public class ColorLemanTrendStrategy : Strategy
 	/// </summary>
 	public ColorLemanTrendStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for indicator", "General");
 
 		_minPeriod = Param(nameof(Min), 13)
@@ -100,6 +100,19 @@ public class ColorLemanTrendStrategy : Strategy
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		=> [(Security, CandleType)];
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_bullsEma?.Reset();
+		_bearsEma?.Reset();
+		_bullsEma = null!;
+		_bearsEma = null!;
+		_prevBulls = null;
+		_prevBears = null;
+	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)

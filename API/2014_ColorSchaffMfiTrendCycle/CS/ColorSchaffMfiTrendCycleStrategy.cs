@@ -23,6 +23,7 @@ public class ColorSchaffMfiTrendCycleStrategy : Strategy
 	private readonly StrategyParam<int> _cycleLength;
 	private readonly StrategyParam<int> _highLevel;
 	private readonly StrategyParam<int> _lowLevel;
+	private readonly StrategyParam<int> _signalCooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 	
 	private MoneyFlowIndex _fastMfi;
@@ -35,12 +36,14 @@ public class ColorSchaffMfiTrendCycleStrategy : Strategy
 	private bool _st2;
 	private decimal _prevStc;
 	private int _prevColor;
+	private int _cooldownRemaining;
 	
 	public int FastMfiPeriod { get => _fastMfiPeriod.Value; set => _fastMfiPeriod.Value = value; }
 	public int SlowMfiPeriod { get => _slowMfiPeriod.Value; set => _slowMfiPeriod.Value = value; }
 	public int CycleLength { get => _cycleLength.Value; set => _cycleLength.Value = value; }
 	public int HighLevel { get => _highLevel.Value; set => _highLevel.Value = value; }
 	public int LowLevel { get => _lowLevel.Value; set => _lowLevel.Value = value; }
+	public int SignalCooldownBars { get => _signalCooldownBars.Value; set => _signalCooldownBars.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 	
 	public ColorSchaffMfiTrendCycleStrategy()
@@ -59,14 +62,34 @@ public class ColorSchaffMfiTrendCycleStrategy : Strategy
 		
 		_lowLevel = Param(nameof(LowLevel), -60)
 		.SetDisplay("Low Level", "Oversold threshold", "Indicator");
+
+		_signalCooldownBars = Param(nameof(SignalCooldownBars), 12)
+			.SetGreaterThanZero()
+			.SetDisplay("Signal Cooldown", "Bars to wait between trades", "Trading");
 		
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Candles timeframe", "General");
 	}
 	
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_fastMfi = null;
+		_slowMfi = null;
+		_macd = null;
+		_st = null;
+		_index = 0;
+		_valuesCount = 0;
+		_st1 = false;
+		_st2 = false;
+		_prevStc = 0m;
+		_prevColor = 0;
+		_cooldownRemaining = 0;
 	}
 	
 	protected override void OnStarted2(DateTime time)
@@ -77,6 +100,7 @@ public class ColorSchaffMfiTrendCycleStrategy : Strategy
 		_slowMfi = new MoneyFlowIndex { Length = SlowMfiPeriod };
 		_macd = new decimal[CycleLength];
 		_st = new decimal[CycleLength];
+		_cooldownRemaining = 0;
 		
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(_fastMfi, _slowMfi, ProcessCandle).Start();
@@ -86,22 +110,25 @@ public class ColorSchaffMfiTrendCycleStrategy : Strategy
 	{
 		if (candle.State != CandleStates.Finished)
 		return;
+
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
 		
 		var color = CalculateColor(fastMfi, slowMfi);
 		
-		if (_prevColor > 5)
+		if (_cooldownRemaining == 0 && _prevColor == 6 && color == 7 && Position <= 0)
 		{
 			if (Position < 0)
 			BuyMarket();
-			if (color < 6 && Position <= 0)
 			BuyMarket();
+			_cooldownRemaining = SignalCooldownBars;
 		}
-		else if (_prevColor < 2)
+		else if (_cooldownRemaining == 0 && _prevColor == 1 && color == 0 && Position >= 0)
 		{
 			if (Position > 0)
 			SellMarket();
-			if (color > 1 && Position >= 0)
 			SellMarket();
+			_cooldownRemaining = SignalCooldownBars;
 		}
 		
 		_prevColor = color;

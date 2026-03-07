@@ -26,7 +26,7 @@ public class MultiTimeframeRsiGridWithArrowsStrategy : Strategy
 		_fastLength = Param(nameof(FastLength), 10).SetGreaterThanZero();
 		_slowLength = Param(nameof(SlowLength), 30).SetGreaterThanZero();
 		_rsiLength = Param(nameof(RsiLength), 14).SetGreaterThanZero();
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame());
 	}
 
 	protected override void OnStarted2(DateTime time)

@@ -22,6 +22,7 @@ public class ColorXdinMAStrategy : Strategy
 	private readonly StrategyParam<int> _mainLength;
 	private readonly StrategyParam<int> _plusLength;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _signalCooldownBars;
 
 	private SMA _mainMa = null!;
 	private SMA _plusMa = null!;
@@ -29,6 +30,7 @@ public class ColorXdinMAStrategy : Strategy
 	private bool _isInitialized;
 	private decimal _prev;
 	private decimal _prevPrev;
+	private int _cooldownRemaining;
 
 	/// <summary>
 	/// Period of the main moving average.
@@ -58,6 +60,15 @@ public class ColorXdinMAStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Number of closed candles to wait before a new reversal trade.
+	/// </summary>
+	public int SignalCooldownBars
+	{
+		get => _signalCooldownBars.Value;
+		set => _signalCooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Initializes a new instance of <see cref="ColorXdinMAStrategy"/>.
 	/// </summary>
 	public ColorXdinMAStrategy()
@@ -74,8 +85,12 @@ public class ColorXdinMAStrategy : Strategy
 			
 			.SetOptimize(10, 40, 1);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
+
+		_signalCooldownBars = Param(nameof(SignalCooldownBars), 3)
+			.SetNotNegative()
+			.SetDisplay("Signal Cooldown Bars", "Closed candles to wait before a new reversal", "General");
 	}
 
 	/// <inheritdoc />
@@ -85,9 +100,23 @@ public class ColorXdinMAStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_mainMa = null!;
+		_plusMa = null!;
+		_isInitialized = false;
+		_prev = 0m;
+		_prevPrev = 0m;
+		_cooldownRemaining = 0;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+		_cooldownRemaining = 0;
 
 		_mainMa = new SMA { Length = MainLength };
 		_plusMa = new SMA { Length = PlusLength };
@@ -112,6 +141,9 @@ public class ColorXdinMAStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
+
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
@@ -127,15 +159,15 @@ public class ColorXdinMAStrategy : Strategy
 			return;
 		}
 
-		if (_prev < _prevPrev && xdin > _prev)
+		if (_cooldownRemaining == 0 && _prev < _prevPrev && xdin > _prev && Position <= 0)
 		{
-			if (Position < 0) BuyMarket();
-			if (Position <= 0) BuyMarket();
+			BuyMarket(Volume + (Position < 0 ? -Position : 0m));
+			_cooldownRemaining = SignalCooldownBars;
 		}
-		else if (_prev > _prevPrev && xdin < _prev)
+		else if (_cooldownRemaining == 0 && _prev > _prevPrev && xdin < _prev && Position >= 0)
 		{
-			if (Position > 0) SellMarket();
-			if (Position >= 0) SellMarket();
+			SellMarket(Volume + (Position > 0 ? Position : 0m));
+			_cooldownRemaining = SignalCooldownBars;
 		}
 
 		_prevPrev = _prev;

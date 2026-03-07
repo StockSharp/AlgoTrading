@@ -27,12 +27,14 @@ public class VolatilityMomentumBreakoutStrategy : Strategy
 	private readonly StrategyParam<decimal> _rsiShort;
 	private readonly StrategyParam<decimal> _riskReward;
 	private readonly StrategyParam<decimal> _stopMult;
+	private readonly StrategyParam<int> _signalCooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private readonly List<decimal> _highs = new();
 	private readonly List<decimal> _lows = new();
 	private decimal _entryPrice;
 	private decimal _stopDist;
+	private int _cooldownRemaining;
 
 	public int Lookback { get => _lookback.Value; set => _lookback.Value = value; }
 	public int EmaLength { get => _emaLength.Value; set => _emaLength.Value = value; }
@@ -41,11 +43,12 @@ public class VolatilityMomentumBreakoutStrategy : Strategy
 	public decimal RsiShort { get => _rsiShort.Value; set => _rsiShort.Value = value; }
 	public decimal RiskReward { get => _riskReward.Value; set => _riskReward.Value = value; }
 	public decimal StopMult { get => _stopMult.Value; set => _stopMult.Value = value; }
+	public int SignalCooldownBars { get => _signalCooldownBars.Value; set => _signalCooldownBars.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public VolatilityMomentumBreakoutStrategy()
 	{
-		_lookback = Param(nameof(Lookback), 20)
+		_lookback = Param(nameof(Lookback), 40)
 			.SetGreaterThanZero()
 			.SetDisplay("Lookback", "Breakout lookback", "General");
 
@@ -57,21 +60,25 @@ public class VolatilityMomentumBreakoutStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "RSI period", "General");
 
-		_rsiLong = Param(nameof(RsiLong), 50m)
+		_rsiLong = Param(nameof(RsiLong), 55m)
 			.SetDisplay("RSI Long", "RSI above for longs", "General");
 
-		_rsiShort = Param(nameof(RsiShort), 50m)
+		_rsiShort = Param(nameof(RsiShort), 45m)
 			.SetDisplay("RSI Short", "RSI below for shorts", "General");
 
 		_riskReward = Param(nameof(RiskReward), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Risk/Reward", "Target ratio", "Risk");
 
-		_stopMult = Param(nameof(StopMult), 1m)
+		_stopMult = Param(nameof(StopMult), 1.5m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Mult", "StdDev multiplier for stop", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_signalCooldownBars = Param(nameof(SignalCooldownBars), 12)
+			.SetGreaterThanZero()
+			.SetDisplay("Signal Cooldown", "Bars to wait after a trade", "General");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -87,6 +94,7 @@ public class VolatilityMomentumBreakoutStrategy : Strategy
 		_lows.Clear();
 		_entryPrice = 0;
 		_stopDist = 0;
+		_cooldownRemaining = 0;
 	}
 
 	protected override void OnStarted2(DateTime time)
@@ -101,6 +109,7 @@ public class VolatilityMomentumBreakoutStrategy : Strategy
 		_lows.Clear();
 		_entryPrice = 0;
 		_stopDist = 0;
+		_cooldownRemaining = 0;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ema, rsi, stdDev, ProcessCandle).Start();
@@ -118,6 +127,9 @@ public class VolatilityMomentumBreakoutStrategy : Strategy
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
+
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
 
 		_highs.Add(candle.HighPrice);
 		_lows.Add(candle.LowPrice);
@@ -150,6 +162,7 @@ public class VolatilityMomentumBreakoutStrategy : Strategy
 				SellMarket();
 				_entryPrice = 0;
 				_stopDist = 0;
+				_cooldownRemaining = SignalCooldownBars;
 			}
 		}
 		else if (Position < 0 && _entryPrice > 0 && _stopDist > 0)
@@ -161,17 +174,18 @@ public class VolatilityMomentumBreakoutStrategy : Strategy
 				BuyMarket();
 				_entryPrice = 0;
 				_stopDist = 0;
+				_cooldownRemaining = SignalCooldownBars;
 			}
 		}
 
 		// Entry signals
-		if (Position <= 0 && candle.ClosePrice > prevHigh && candle.ClosePrice > emaVal && rsiVal > RsiLong && stdVal > 0)
+		if (_cooldownRemaining == 0 && Position <= 0 && candle.ClosePrice > prevHigh && candle.ClosePrice > emaVal && rsiVal > RsiLong && stdVal > 0)
 		{
 			BuyMarket();
 			_entryPrice = candle.ClosePrice;
 			_stopDist = StopMult * stdVal;
 		}
-		else if (Position >= 0 && candle.ClosePrice < prevLow && candle.ClosePrice < emaVal && rsiVal < RsiShort && stdVal > 0)
+		else if (_cooldownRemaining == 0 && Position >= 0 && candle.ClosePrice < prevLow && candle.ClosePrice < emaVal && rsiVal < RsiShort && stdVal > 0)
 		{
 			SellMarket();
 			_entryPrice = candle.ClosePrice;

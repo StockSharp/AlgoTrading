@@ -83,7 +83,7 @@ public class VwapHiddenMarkovModelStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Stop Loss %", "Stop Loss percentage from entry price", "Risk Management");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -98,7 +98,7 @@ public class VwapHiddenMarkovModelStrategy : Strategy
 	{
 		base.OnReseted();
 
-_currentMarketState = MarketStates.Neutral;
+		_currentMarketState = MarketStates.Neutral;
 		_priceData.Clear();
 		_volumeData.Clear();
 	}
@@ -195,9 +195,13 @@ _currentMarketState = MarketStates.Neutral;
 
 		// Convert data to observations
 		var observations = GenerateObservations();
+		if (observations.Count == 0)
+			return MarketStates.Neutral;
 
 		// Decode the most likely state sequence (simplified Viterbi)
 		var states = SimplifiedViterbi(observations);
+		if (states.Count == 0)
+			return MarketStates.Neutral;
 
 		// Return the most recent state
 		return states.Last();
@@ -215,8 +219,13 @@ _currentMarketState = MarketStates.Neutral;
 
 		for (int i = 1; i < prices.Length; i++)
 		{
-			decimal priceChange = (prices[i] - prices[i - 1]) / prices[i - 1];
-			decimal volumeRatio = volumes[i] / Math.Max(1, volumes[i - 1]);
+			var previousPrice = prices[i - 1];
+			if (previousPrice <= 0)
+				continue;
+
+			var previousVolume = volumes[i - 1];
+			var priceChange = (prices[i] - previousPrice) / previousPrice;
+			var volumeRatio = previousVolume > 0 ? volumes[i] / previousVolume : 1m;
 
 			// Classify observation:
 			// 0: Price down, low volume

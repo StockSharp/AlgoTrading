@@ -16,7 +16,7 @@ namespace StockSharp.Samples.Strategies;
 /// when price breaks above the high (buy) or below the low (sell).
 /// Uses stop-loss, take-profit, and trailing stop for risk management.
 /// </summary>
-public class ConstituentsEaStrategy : Strategy
+public class ConstituentsEAStrategy : Strategy
 {
 	private readonly StrategyParam<int> _searchDepth;
 	private readonly StrategyParam<decimal> _stopLossPips;
@@ -73,7 +73,7 @@ public class ConstituentsEaStrategy : Strategy
 	/// <summary>
 	/// Initializes a new instance of the <see cref="ConstituentsEaStrategy"/> class.
 	/// </summary>
-	public ConstituentsEaStrategy()
+	public ConstituentsEAStrategy()
 	{
 		_searchDepth = Param(nameof(SearchDepth), 3)
 			.SetGreaterThanZero()
@@ -87,7 +87,7 @@ public class ConstituentsEaStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Take profit distance expressed in pips", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Working timeframe used to evaluate highs/lows", "General");
 	}
 

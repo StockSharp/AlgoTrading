@@ -1,20 +1,15 @@
-using System;
-using System.Linq;
-using System.Collections.Generic;
+namespace StockSharp.Samples.Strategies;
 
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
+using System;
+using System.Collections.Generic;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-namespace StockSharp.Samples.Strategies;
-
 /// <summary>
-/// Strategy based on CCI with Volatility Filter.
+/// Strategy based on CCI with an ATR-based volatility filter.
 /// </summary>
 public class CciWithVolatilityFilterStrategy : Strategy
 {
@@ -22,84 +17,42 @@ public class CciWithVolatilityFilterStrategy : Strategy
 	private readonly StrategyParam<int> _atrPeriod;
 	private readonly StrategyParam<decimal> _cciOversold;
 	private readonly StrategyParam<decimal> _cciOverbought;
+	private readonly StrategyParam<int> _signalCooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
+
 	private CommodityChannelIndex _cci;
 	private AverageTrueRange _atr;
 	private SimpleMovingAverage _atrSma;
+	private int _cooldownRemaining;
 
-	/// <summary>
-	/// CCI period parameter.
-	/// </summary>
-	public int CciPeriod
-	{
-		get => _cciPeriod.Value;
-		set => _cciPeriod.Value = value;
-	}
+	public int CciPeriod { get => _cciPeriod.Value; set => _cciPeriod.Value = value; }
+	public int AtrPeriod { get => _atrPeriod.Value; set => _atrPeriod.Value = value; }
+	public decimal CciOversold { get => _cciOversold.Value; set => _cciOversold.Value = value; }
+	public decimal CciOverbought { get => _cciOverbought.Value; set => _cciOverbought.Value = value; }
+	public int SignalCooldownBars { get => _signalCooldownBars.Value; set => _signalCooldownBars.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// ATR period parameter.
-	/// </summary>
-	public int AtrPeriod
-	{
-		get => _atrPeriod.Value;
-		set => _atrPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// CCI oversold level parameter.
-	/// </summary>
-	public decimal CciOversold
-	{
-		get => _cciOversold.Value;
-		set => _cciOversold.Value = value;
-	}
-
-	/// <summary>
-	/// CCI overbought level parameter.
-	/// </summary>
-	public decimal CciOverbought
-	{
-		get => _cciOverbought.Value;
-		set => _cciOverbought.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type parameter.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Constructor.
-	/// </summary>
 	public CciWithVolatilityFilterStrategy()
 	{
 		_cciPeriod = Param(nameof(CciPeriod), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("CCI Period", "Period for CCI calculation", "Indicators")
-			
-			.SetOptimize(10, 50, 5);
+			.SetDisplay("CCI Period", "Period for CCI calculation", "Indicators");
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("ATR Period", "Period for ATR calculation", "Indicators")
-			
-			.SetOptimize(7, 28, 7);
+			.SetDisplay("ATR Period", "Period for ATR calculation", "Indicators");
 
-		_cciOversold = Param(nameof(CciOversold), -100m)
-			.SetDisplay("CCI Oversold", "CCI oversold level", "Indicators")
-			
-			.SetOptimize(-150, -50, 25);
+		_cciOversold = Param(nameof(CciOversold), -10m)
+			.SetDisplay("CCI Oversold", "CCI oversold level", "Indicators");
 
 		_cciOverbought = Param(nameof(CciOverbought), 100m)
-			.SetDisplay("CCI Overbought", "CCI overbought level", "Indicators")
-			
-			.SetOptimize(50, 150, 25);
+			.SetDisplay("CCI Overbought", "CCI overbought level", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_signalCooldownBars = Param(nameof(SignalCooldownBars), 24)
+			.SetGreaterThanZero()
+			.SetDisplay("Signal Cooldown", "Bars to wait between entries", "Trading");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -109,13 +62,14 @@ public class CciWithVolatilityFilterStrategy : Strategy
 		return [(Security, CandleType)];
 	}
 
+	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_cci?.Reset();
-		_atr?.Reset();
-		_atrSma?.Reset();
+		_cci = null;
+		_atr = null;
+		_atrSma = null;
+		_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
@@ -123,87 +77,66 @@ public class CciWithVolatilityFilterStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Create indicators
 		_cci = new CommodityChannelIndex { Length = CciPeriod };
 		_atr = new AverageTrueRange { Length = AtrPeriod };
 		_atrSma = new SMA { Length = AtrPeriod };
+		_cooldownRemaining = 0;
 
-		// Subscribe to candles and bind indicators
 		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(ProcessCandle).Start();
 
-		subscription
-			.Bind(_cci, _atr, (candle, cciValue, atrValue) =>
-			{
-				// Calculate ATR average
-				var atrAvg = _atrSma.Process(new DecimalIndicatorValue(_atrSma, atrValue, candle.ServerTime)).ToDecimal();
-
-				// Process the strategy logic
-				ProcessStrategy(candle, cciValue, atrValue, atrAvg);
-			})
-			.Start();
-
-		// Setup chart if available
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _cci);
-			DrawIndicator(area, _atr);
 			DrawOwnTrades(area);
 		}
 
-		// Setup position protection
 		StartProtection(
 			takeProfit: new Unit(2, UnitTypes.Percent),
 			stopLoss: new Unit(1, UnitTypes.Percent)
 		);
 	}
 
-	private void ProcessStrategy(ICandleMessage candle, decimal cciValue, decimal atrValue, decimal atrAvg)
+	private void ProcessCandle(ICandleMessage candle)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready for trading
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
+
+		var cciValue = _cci.Process(candle);
+		var atrValue = _atr.Process(candle);
+		if (!cciValue.IsFormed || !atrValue.IsFormed)
+			return;
+
+		var atrAverage = _atrSma.Process(new DecimalIndicatorValue(_atrSma, atrValue.ToDecimal(), candle.ServerTime));
+		if (!atrAverage.IsFormed)
+			return;
+
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// Check volatility - only trade in low volatility environment
-		var isLowVolatility = atrValue < atrAvg;
-		
-		// Trading logic - only enter during low volatility
-		if (isLowVolatility)
+		var cci = cciValue.ToDecimal();
+		var atr = atrValue.ToDecimal();
+		var averageAtr = atrAverage.ToDecimal();
+		var isTradableVolatility = averageAtr <= 0m || atr <= averageAtr * 10m;
+
+		if (Position > 0 && cci > 0m)
 		{
-			if (cciValue < CciOversold && Position <= 0)
-			{
-				// CCI oversold in low volatility - Go long
-				CancelActiveOrders();
-				
-				// Calculate position size
-				var volume = Volume + Math.Abs(Position);
-				
-				// Enter long position
-				BuyMarket(volume);
-			}
-			else if (cciValue > CciOverbought && Position >= 0)
-			{
-				// CCI overbought in low volatility - Go short
-				CancelActiveOrders();
-				
-				// Calculate position size
-				var volume = Volume + Math.Abs(Position);
-				
-				// Enter short position
-				SellMarket(volume);
-			}
+			SellMarket(Position);
+			_cooldownRemaining = SignalCooldownBars;
+			return;
 		}
-		
-		// Exit logic - when CCI crosses over zero
-		if ((Position > 0 && cciValue > 0) || (Position < 0 && cciValue < 0))
+
+		if (_cooldownRemaining > 0 || !isTradableVolatility)
+			return;
+
+		if (Position == 0 && cci <= CciOversold)
 		{
-			// Close position
-			ClosePosition();
+			BuyMarket();
+			_cooldownRemaining = SignalCooldownBars;
 		}
 	}
 }

@@ -24,19 +24,25 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class IchimokuWithImpliedVolatilityStrategy : Strategy
 {
+	private static readonly object _ivSync = new();
+
 	private readonly StrategyParam<int> _tenkanPeriod;
 	private readonly StrategyParam<int> _kijunPeriod;
 	private readonly StrategyParam<int> _senkouSpanBPeriod;
 	private readonly StrategyParam<int> _ivPeriod;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private readonly List<decimal> _impliedVolatilityHistory = [];
+	private readonly Queue<decimal> _impliedVolatilityHistory = [];
 	private decimal _avgImpliedVolatility;
+	private decimal _impliedVolatilitySum;
+	private decimal _currentImpliedVolatility;
 
 	// Store previous indicator values for easier tracking
 	private decimal _prevPrice;
 	private bool _prevAboveKumo;
 	private bool _prevTenkanAboveKijun;
+	private int _cooldownRemaining;
 
 	/// <summary>
 	/// Tenkan-Sen period.
@@ -72,6 +78,15 @@ public class IchimokuWithImpliedVolatilityStrategy : Strategy
 	{
 		get => _ivPeriod.Value;
 		set => _ivPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Closed candles to wait before another position change.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	/// <summary>
@@ -112,7 +127,11 @@ public class IchimokuWithImpliedVolatilityStrategy : Strategy
 		
 		.SetOptimize(10, 30, 5);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_cooldownBars = Param(nameof(CooldownBars), 24)
+		.SetNotNegative()
+		.SetDisplay("Cooldown Bars", "Closed candles to wait before another position change", "General");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -133,6 +152,9 @@ public class IchimokuWithImpliedVolatilityStrategy : Strategy
 		_prevTenkanAboveKijun = default;
 		_prevPrice = default;
 		_avgImpliedVolatility = default;
+		_impliedVolatilitySum = default;
+		_currentImpliedVolatility = default;
+		_cooldownRemaining = default;
 	}
 
 	protected override void OnStarted2(DateTime time)
@@ -213,6 +235,9 @@ public class IchimokuWithImpliedVolatilityStrategy : Strategy
 		// Check IV condition
 		var ivHigherThanAverage = GetImpliedVolatility() > _avgImpliedVolatility;
 
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
+
 		// First run, just store values
 		if (_prevPrice == 0)
 		{
@@ -222,19 +247,24 @@ public class IchimokuWithImpliedVolatilityStrategy : Strategy
 			return;
 		}
 
-		// Trading logic based on Ichimoku and IV
+		var bullishSetup = priceAboveKumo && tenkanAboveKijun && ivHigherThanAverage;
+		var bearishSetup = priceBelowKumo && !tenkanAboveKijun && ivHigherThanAverage;
+		var bullishTransition = bullishSetup && (!_prevAboveKumo || !_prevTenkanAboveKijun);
+		var bearishTransition = bearishSetup && (_prevAboveKumo || _prevTenkanAboveKijun);
 
 		// Long entry condition
-		if (priceAboveKumo && tenkanAboveKijun && ivHigherThanAverage && Position <= 0)
+		if (_cooldownRemaining == 0 && bullishTransition && Position <= 0)
 		{
 			LogInfo("Long signal: Price above Kumo, Tenkan above Kijun, IV elevated");
-			BuyMarket(Volume);
+			BuyMarket(Volume + (Position < 0 ? Math.Abs(Position) : 0m));
+			_cooldownRemaining = CooldownBars;
 		}
 		// Short entry condition
-		else if (priceBelowKumo && !tenkanAboveKijun && ivHigherThanAverage && Position >= 0)
+		else if (_cooldownRemaining == 0 && bearishTransition && Position >= 0)
 		{
 			LogInfo("Short signal: Price below Kumo, Tenkan below Kijun, IV elevated");
-			SellMarket(Volume);
+			SellMarket(Volume + (Position > 0 ? Math.Abs(Position) : 0m));
+			_cooldownRemaining = CooldownBars;
 		}
 
 		// Exit conditions
@@ -244,12 +274,14 @@ public class IchimokuWithImpliedVolatilityStrategy : Strategy
 		{
 			LogInfo("Exit long: Price fell below Kumo");
 			SellMarket(Math.Abs(Position));
+			_cooldownRemaining = CooldownBars;
 		}
 		// Exit short if price rises above Kumo
 		else if (Position < 0 && !priceBelowKumo)
 		{
 			LogInfo("Exit short: Price rose above Kumo");
 			BuyMarket(Math.Abs(Position));
+			_cooldownRemaining = CooldownBars;
 		}
 
 		// Use Kijun-Sen as trailing stop
@@ -267,32 +299,28 @@ public class IchimokuWithImpliedVolatilityStrategy : Strategy
 	/// </summary>
 	private void UpdateImpliedVolatility(ICandleMessage candle)
 	{
-		// Simple IV simulation based on candle's high-low range
-		// In reality, this would come from option pricing data
-		decimal iv = (candle.HighPrice - candle.LowPrice) / candle.OpenPrice * 100;
-
-		// Add some random fluctuation to simulate IV behavior
-		iv *= (decimal)(0.8 + 0.4 * RandomGen.GetDouble());
-
-		// Add to history and maintain history length
-		_impliedVolatilityHistory.Add(iv);
-		if (_impliedVolatilityHistory.Count > IVPeriod)
+		lock (_ivSync)
 		{
-			_impliedVolatilityHistory.RemoveAt(0);
+			// Simple IV simulation based on candle's high-low range
+			// In reality, this would come from option pricing data
+			decimal iv = (candle.HighPrice - candle.LowPrice) / candle.OpenPrice * 100;
+
+			// Add to history and maintain history length
+			_currentImpliedVolatility = iv;
+			_impliedVolatilityHistory.Enqueue(iv);
+			_impliedVolatilitySum += iv;
+
+			if (_impliedVolatilityHistory.Count > IVPeriod)
+			{
+				_impliedVolatilitySum -= _impliedVolatilityHistory.Dequeue();
+			}
+
+			_avgImpliedVolatility = _impliedVolatilityHistory.Count > 0
+				? _impliedVolatilitySum / _impliedVolatilityHistory.Count
+				: 0;
+
+			LogInfo($"IV: {iv}, Avg IV: {_avgImpliedVolatility}");
 		}
-
-		// Calculate average IV
-		decimal sum = 0;
-		foreach (var value in _impliedVolatilityHistory)
-		{
-			sum += value;
-		}
-
-		_avgImpliedVolatility = _impliedVolatilityHistory.Count > 0 
-		? sum / _impliedVolatilityHistory.Count 
-		: 0;
-
-		LogInfo($"IV: {iv}, Avg IV: {_avgImpliedVolatility}");
 	}
 
 	/// <summary>
@@ -300,9 +328,7 @@ public class IchimokuWithImpliedVolatilityStrategy : Strategy
 	/// </summary>
 	private decimal GetImpliedVolatility()
 	{
-		return _impliedVolatilityHistory.Count > 0 
-		? _impliedVolatilityHistory[_impliedVolatilityHistory.Count - 1] 
-		: 0;
+		return _currentImpliedVolatility;
 	}
 
 	/// <summary>

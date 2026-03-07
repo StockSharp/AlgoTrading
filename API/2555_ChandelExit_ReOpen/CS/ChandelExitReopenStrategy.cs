@@ -287,7 +287,7 @@ public class ChandelExitReopenStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var atr = atrValue.IsFinal ? atrValue.GetValue<decimal>() : 0m;
+		var atr = atrValue.IsFinal ? atrValue.ToDecimal() : 0m;
 		var info = new CandleInfo(candle.OpenTime, candle.HighPrice, candle.LowPrice, candle.ClosePrice, atr);
 
 		_history.Add(info);
@@ -311,12 +311,14 @@ public class ChandelExitReopenStrategy : Strategy
 		if (_signals.Count <= SignalBar)
 			return;
 
-		var targetIndex = _signals.Count - 1 - SignalBar;
+		var signals = _signals.ToArray();
+		var targetIndex = signals.Length - 1 - SignalBar;
 		if (targetIndex < 0)
 			return;
 
-		var targetSignal = _signals[targetIndex];
-		var targetInfo = _history[targetIndex];
+		var targetSignal = signals[targetIndex];
+		if (targetSignal is null)
+			return;
 
 		var buyOpen = targetSignal.IsUpSignal && EnableBuyEntries;
 		var sellOpen = targetSignal.IsDownSignal && EnableSellEntries;
@@ -327,13 +329,17 @@ public class ChandelExitReopenStrategy : Strategy
 		{
 			for (var idx = targetIndex - 1; idx >= 0; idx--)
 			{
-				if (!sellClose && EnableSellExits && _signals[idx].IsUpSignal)
+				var previousSignal = signals[idx];
+				if (previousSignal is null)
+					continue;
+
+				if (!sellClose && EnableSellExits && previousSignal.IsUpSignal)
 				{
 					sellClose = true;
 					break;
 				}
 
-				if (!buyClose && EnableBuyExits && _signals[idx].IsDownSignal)
+				if (!buyClose && EnableBuyExits && previousSignal.IsDownSignal)
 				{
 					buyClose = true;
 					break;
@@ -473,7 +479,8 @@ public class ChandelExitReopenStrategy : Strategy
 
 	private SignalInfo CalculateSignal(CandleInfo current)
 	{
-		var currentIndex = _history.Count - 1;
+		var history = _history.ToArray();
+		var currentIndex = history.Length - 1;
 		var range = RangePeriod;
 		var shift = Shift;
 
@@ -483,7 +490,7 @@ public class ChandelExitReopenStrategy : Strategy
 		var windowEnd = currentIndex - shift;
 		var windowStart = windowEnd - (range - 1);
 
-		if (windowStart < 0)
+		if (windowStart < 0 || windowEnd >= history.Length)
 		return SignalInfo.Empty(current.Time);
 
 		var highestHigh = decimal.MinValue;
@@ -491,7 +498,7 @@ public class ChandelExitReopenStrategy : Strategy
 
 		for (var i = windowStart; i <= windowEnd; i++)
 		{
-			var item = _history[i];
+			var item = history[i];
 			if (item.High > highestHigh)
 			highestHigh = item.High;
 			if (item.Low < lowestLow)

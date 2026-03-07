@@ -3,7 +3,6 @@ using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
 using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
@@ -24,12 +23,16 @@ public class IchimokuHurstStrategy : Strategy
 	private readonly StrategyParam<int> _hurstPeriod;
 	private readonly StrategyParam<decimal> _hurstThreshold;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _signalCooldownBars;
 
 	private Ichimoku _ichimoku;
 
 	// Data for Hurst exponent calculations
-	private readonly SynchronizedList<decimal> _prices = [];
+	private readonly List<decimal> _prices = [];
 	private decimal _hurstExponent;
+	private decimal? _prevTenkan;
+	private decimal? _prevKijun;
+	private int _cooldownRemaining;
 
 	/// <summary>
 	/// Tenkan-sen (conversion line) period.
@@ -86,6 +89,15 @@ public class IchimokuHurstStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Bars to wait between position changes.
+	/// </summary>
+	public int SignalCooldownBars
+	{
+		get => _signalCooldownBars.Value;
+		set => _signalCooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Initializes a new instance of the <see cref="IchimokuHurstStrategy"/>.
 	/// </summary>
 	public IchimokuHurstStrategy()
@@ -115,8 +127,12 @@ public class IchimokuHurstStrategy : Strategy
 		
 		.SetOptimize(0.45m, 0.6m, 0.05m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles to use", "General");
+
+		_signalCooldownBars = Param(nameof(SignalCooldownBars), 6)
+		.SetGreaterThanZero()
+		.SetDisplay("Signal Cooldown", "Bars to wait between reversals", "Trading");
 	}
 
 	/// <inheritdoc />
@@ -132,6 +148,9 @@ public class IchimokuHurstStrategy : Strategy
 
 		_prices.Clear();
 		_hurstExponent = 0.5m; // Default Hurst exponent value
+		_prevTenkan = null;
+		_prevKijun = null;
+		_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
@@ -200,35 +219,44 @@ public class IchimokuHurstStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 		return;
 
-		// Check if price is above/below Kumo (cloud)
-		bool isPriceAboveKumo = candle.ClosePrice > Math.Max(senkouA, senkouB);
-		bool isPriceBelowKumo = candle.ClosePrice < Math.Min(senkouA, senkouB);
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
 
-		// Trading logic
-		// Buy when price is above the cloud, Tenkan > Kijun, and Hurst > threshold (trending market)
-		if (isPriceAboveKumo && tenkan > kijun && _hurstExponent > HurstThreshold && Position <= 0)
+		// Check if price is above/below Kumo (cloud)
+		var isPriceAboveKumo = candle.ClosePrice > Math.Max(senkouA, senkouB);
+		var isPriceBelowKumo = candle.ClosePrice < Math.Min(senkouA, senkouB);
+
+		if (_prevTenkan is decimal previousTenkan && _prevKijun is decimal previousKijun)
 		{
-			BuyMarket(Volume);
-			LogInfo($"Buy Signal: Price {candle.ClosePrice:F2} above Kumo, Tenkan {tenkan:F2} > Kijun {kijun:F2}, Hurst {_hurstExponent:F3}");
+			var crossUp = previousTenkan <= previousKijun && tenkan > kijun;
+			var crossDown = previousTenkan >= previousKijun && tenkan < kijun;
+			var longExit = Position > 0 && (isPriceBelowKumo || crossDown);
+			var shortExit = Position < 0 && (isPriceAboveKumo || crossUp);
+
+			if (longExit)
+			{
+				SellMarket(Position);
+				_cooldownRemaining = SignalCooldownBars;
+			}
+			else if (shortExit)
+			{
+				BuyMarket(Math.Abs(Position));
+				_cooldownRemaining = SignalCooldownBars;
+			}
+			else if (_cooldownRemaining == 0 && isPriceAboveKumo && crossUp && _hurstExponent > HurstThreshold && Position <= 0)
+			{
+				BuyMarket(Volume + Math.Abs(Position));
+				_cooldownRemaining = SignalCooldownBars;
+			}
+			else if (_cooldownRemaining == 0 && isPriceBelowKumo && crossDown && _hurstExponent > HurstThreshold && Position >= 0)
+			{
+				SellMarket(Volume + Math.Abs(Position));
+				_cooldownRemaining = SignalCooldownBars;
+			}
 		}
-		// Sell when price is below the cloud, Tenkan < Kijun, and Hurst > threshold (trending market)
-		else if (isPriceBelowKumo && tenkan < kijun && _hurstExponent > HurstThreshold && Position >= 0)
-		{
-			SellMarket(Volume + Math.Abs(Position));
-			LogInfo($"Sell Signal: Price {candle.ClosePrice:F2} below Kumo, Tenkan {tenkan:F2} < Kijun {kijun:F2}, Hurst {_hurstExponent:F3}");
-		}
-		// Exit long position when price falls below the cloud
-		else if (Position > 0 && isPriceBelowKumo)
-		{
-			SellMarket(Position);
-			LogInfo($"Exit Long: Price {candle.ClosePrice:F2} fell below Kumo");
-		}
-		// Exit short position when price rises above the cloud
-		else if (Position < 0 && isPriceAboveKumo)
-		{
-			BuyMarket(Math.Abs(Position));
-			LogInfo($"Exit Short: Price {candle.ClosePrice:F2} rose above Kumo");
-		}
+
+		_prevTenkan = tenkan;
+		_prevKijun = kijun;
 	}
 
 	private void CalculateHurstExponent()
@@ -278,6 +306,5 @@ public class IchimokuHurstStrategy : Strategy
 		if (logN != 0)
 		_hurstExponent = (decimal)Math.Log((double)rs) / logN;
 
-		LogInfo($"Calculated Hurst Exponent: {_hurstExponent:F3} (R/S: {rs:F3}, N: {logReturns.Count})");
 	}
 }

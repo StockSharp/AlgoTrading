@@ -45,6 +45,7 @@ private readonly StrategyParam<decimal> _entryStopLossPercent;
 private readonly StrategyParam<int> _lookbackPeriod;
 private readonly StrategyParam<decimal> _stopLossBufferPercent;
 private readonly StrategyParam<DataType> _candleType;
+private static readonly object _sync = new();
 
 private decimal _prevOpen;
 private decimal _prevClose;
@@ -186,7 +187,7 @@ _lookbackPeriod = Param(nameof(LookbackPeriod), 10)
 _stopLossBufferPercent = Param(nameof(StopLossBufferPercent), 0.5m)
 .SetDisplay("Stop Loss Buffer %", "Additional buffer below lowest low", "Risk Management");
 
-_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 .SetDisplay("Candle Type", "Type of candles to use", "General");
 }
 
@@ -220,7 +221,7 @@ var rsi = new RSI { Length = 14 };
 var subscription = SubscribeCandles(CandleType);
 
 subscription
-.Bind(rsi, ProcessCandle)
+.Bind(candle => ProcessCandle(candle, rsi))
 .Start();
 
 var area = CreateChartArea();
@@ -232,13 +233,23 @@ DrawOwnTrades(area);
 }
 }
 
-private void ProcessCandle(ICandleMessage candle, decimal rsiValue)
+private void ProcessCandle(ICandleMessage candle, RelativeStrengthIndex rsi)
 {
 if (candle.State != CandleStates.Finished)
 return;
 
 if (!IsFormedAndOnlineAndAllowTrading())
 return;
+
+decimal rsiValue;
+lock (_sync)
+{
+	var rsiResult = rsi.Process(new DecimalIndicatorValue(rsi, candle.ClosePrice, candle.OpenTime) { IsFinal = true });
+	if (!rsiResult.IsFinal || !rsi.IsFormed)
+		return;
+
+	rsiValue = rsiResult.ToDecimal();
+}
 
 // update low queue
 if (_lowQueue.Count == LookbackPeriod)

@@ -20,12 +20,14 @@ public class RandomTraderStrategy : Strategy
 	private readonly StrategyParam<int> _cooldown;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private Random _random;
+	private readonly StrategyParam<int> _signalSeed;
 	private int _candleCount;
+	private int _signalState;
 
 	public decimal TakeProfitPct { get => _takeProfitPct.Value; set => _takeProfitPct.Value = value; }
 	public decimal StopLossPct { get => _stopLossPct.Value; set => _stopLossPct.Value = value; }
 	public int Cooldown { get => _cooldown.Value; set => _cooldown.Value = value; }
+	public int SignalSeed { get => _signalSeed.Value; set => _signalSeed.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public RandomTraderStrategy()
@@ -36,9 +38,12 @@ public class RandomTraderStrategy : Strategy
 		_stopLossPct = Param(nameof(StopLossPct), 1m)
 			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
 
-		_cooldown = Param(nameof(Cooldown), 10)
+		_cooldown = Param(nameof(Cooldown), 25)
 			.SetGreaterThanZero()
 			.SetDisplay("Cooldown", "Candles between trades", "General");
+
+		_signalSeed = Param(nameof(SignalSeed), 42)
+			.SetDisplay("Signal Seed", "Deterministic seed used for direction selection", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
@@ -51,12 +56,21 @@ public class RandomTraderStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_candleCount = 0;
+		_signalState = SignalSeed;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_random = new Random(42);
 		_candleCount = 0;
+		_signalState = SignalSeed;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -91,8 +105,10 @@ public class RandomTraderStrategy : Strategy
 
 		_candleCount = 0;
 
-		// Randomly choose direction
-		if (_random.NextDouble() > 0.5)
+		_signalState = unchecked(_signalState * 1103515245 + 12345);
+
+		// Use a deterministic pseudo-random sequence to keep clone validation stable.
+		if ((_signalState & 1) == 0)
 			BuyMarket();
 		else
 			SellMarket();

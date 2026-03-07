@@ -24,10 +24,14 @@ public class BollingerKalmanFilterStrategy : Strategy
 	private readonly StrategyParam<decimal> _kalmanQ; // Process noise
 	private readonly StrategyParam<decimal> _kalmanR; // Measurement noise
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _signalCooldownBars;
+	private static readonly object _sync = new();
 	private decimal _upperBand;
 	private decimal _lowerBand;
 	private decimal _midBand;
 	private decimal _kalmanValue;
+	private decimal? _previousKalmanValue;
+	private int _cooldownRemaining;
 
 	/// <summary>
 	/// Bollinger Bands length.
@@ -75,6 +79,15 @@ public class BollingerKalmanFilterStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Closed candles to wait before taking the next signal.
+	/// </summary>
+	public int SignalCooldownBars
+	{
+		get => _signalCooldownBars.Value;
+		set => _signalCooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Initialize strategy.
 	/// </summary>
 	public BollingerKalmanFilterStrategy()
@@ -103,8 +116,12 @@ public class BollingerKalmanFilterStrategy : Strategy
 			
 			.SetOptimize(0.01m, 1.0m, 0.1m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(2).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
+
+		_signalCooldownBars = Param(nameof(SignalCooldownBars), 3)
+			.SetNotNegative()
+			.SetDisplay("Signal Cooldown", "Closed candles to wait before the next entry", "General");
 	}
 
 	/// <inheritdoc />
@@ -122,6 +139,8 @@ public class BollingerKalmanFilterStrategy : Strategy
 		_lowerBand = 0;
 		_midBand = 0;
 		_kalmanValue = 0;
+		_previousKalmanValue = null;
+		_cooldownRemaining = 0;
 	}
 
 
@@ -130,7 +149,6 @@ public class BollingerKalmanFilterStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Create indicators
 		var bollinger = new BollingerBands
 		{
 			Length = BollingerLength,
@@ -143,12 +161,9 @@ public class BollingerKalmanFilterStrategy : Strategy
 			MeasurementNoise = KalmanR
 		};
 
-		// Create subscription for candles
 		var subscription = SubscribeCandles(CandleType);
-		
-		// Bind indicators to the subscription
 		subscription
-			.BindEx(bollinger, kalmanFilter, ProcessCandle)
+			.Bind(candle => ProcessCandle(candle, bollinger, kalmanFilter))
 			.Start();
 
 		// Start position protection
@@ -157,7 +172,6 @@ public class BollingerKalmanFilterStrategy : Strategy
 			stopLoss: new Unit(1, UnitTypes.Percent)
 		);
 
-		// Setup chart visualization if available
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -168,66 +182,61 @@ public class BollingerKalmanFilterStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bollingerValue, IIndicatorValue kalmanValue)
+	private void ProcessCandle(ICandleMessage candle, BollingerBands bollinger, KalmanFilter kalmanFilter)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var bollingerTyped = (BollingerBandsValue)bollingerValue;
-
-		// Extract values from indicators
-		if (bollingerTyped.UpBand is not decimal upperBand)
-			return;
-
-		if (bollingerTyped.LowBand is not decimal lowerBand)
-			return;
-
-		if (bollingerTyped.MovingAverage is not decimal midBand)
-			return;
-
-		decimal kalmanFilterValue = kalmanValue.ToDecimal();
-		_upperBand = upperBand;
-		_lowerBand = lowerBand;
-		_midBand = midBand;
-		_kalmanValue = kalmanFilterValue;
-		
-		// Log the values
-		LogInfo($"Price: {candle.ClosePrice}, Kalman: {kalmanFilterValue}, BB middle: {midBand}, BB upper: {upperBand}, BB lower: {lowerBand}");
-
-		// Trading logic: Buy when price is below lower band but Kalman filter shows upward trend
-		if (candle.ClosePrice < lowerBand && kalmanFilterValue > candle.ClosePrice && Position <= 0)
+		lock (_sync)
 		{
-			// If we have a short position, close it first
-			if (Position < 0)
-				BuyMarket(Math.Abs(Position));
-			
-			// Open a long position
-			BuyMarket(Volume);
-			LogInfo($"Buy signal: Price below lower band ({candle.ClosePrice} < {lowerBand}) with Kalman uptrend ({kalmanFilterValue} > {candle.ClosePrice})");
-		}
-		// Trading logic: Sell when price is above upper band but Kalman filter shows downward trend
-		else if (candle.ClosePrice > upperBand && kalmanFilterValue < candle.ClosePrice && Position >= 0)
-		{
-			// If we have a long position, close it first
-			if (Position > 0)
-				SellMarket(Math.Abs(Position));
-			
-			// Open a short position
-			SellMarket(Volume);
-			LogInfo($"Sell signal: Price above upper band ({candle.ClosePrice} > {upperBand}) with Kalman downtrend ({kalmanFilterValue} < {candle.ClosePrice})");
-		}
-		// Exit signals
-		else if ((Position > 0 && candle.ClosePrice > midBand) || 
-				 (Position < 0 && candle.ClosePrice < midBand))
-		{
-			// Close position when price returns to middle band
-			ClosePosition();
-			LogInfo($"Exit signal: Price returned to middle band. Position closed at {candle.ClosePrice}");
+			var bollingerValue = bollinger.Process(new CandleIndicatorValue(bollinger, candle) { IsFinal = true });
+			var kalmanValue = kalmanFilter.Process(new DecimalIndicatorValue(kalmanFilter, candle.ClosePrice, candle.OpenTime) { IsFinal = true });
+			if (!bollingerValue.IsFinal || !kalmanValue.IsFinal || !bollinger.IsFormed || !kalmanFilter.IsFormed)
+				return;
+
+			if (bollingerValue is not BollingerBandsValue bands ||
+				bands.UpBand is not decimal upperBand ||
+				bands.LowBand is not decimal lowerBand ||
+				bands.MovingAverage is not decimal midBand)
+			{
+				return;
+			}
+
+			if (!IsFormedAndOnlineAndAllowTrading())
+				return;
+
+			if (_cooldownRemaining > 0)
+				_cooldownRemaining--;
+
+			var kalmanFilterValue = kalmanValue.ToDecimal();
+			var kalmanTrendUp = _previousKalmanValue is decimal previous && kalmanFilterValue > previous;
+			var kalmanTrendDown = _previousKalmanValue is decimal prior && kalmanFilterValue < prior;
+
+			_upperBand = upperBand;
+			_lowerBand = lowerBand;
+			_midBand = midBand;
+			_kalmanValue = kalmanFilterValue;
+
+			if (_cooldownRemaining == 0 && candle.LowPrice <= lowerBand && kalmanTrendUp && Position <= 0)
+			{
+				BuyMarket(Volume + Math.Abs(Position));
+				_cooldownRemaining = SignalCooldownBars;
+			}
+			else if (_cooldownRemaining == 0 && candle.HighPrice >= upperBand && kalmanTrendDown && Position >= 0)
+			{
+				SellMarket(Volume + Math.Abs(Position));
+				_cooldownRemaining = SignalCooldownBars;
+			}
+			else if (Position > 0 && candle.ClosePrice >= midBand)
+			{
+				SellMarket(Position);
+			}
+			else if (Position < 0 && candle.ClosePrice <= midBand)
+			{
+				BuyMarket(-Position);
+			}
+
+			_previousKalmanValue = kalmanFilterValue;
 		}
 	}
 }

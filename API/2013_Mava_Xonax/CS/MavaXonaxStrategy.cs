@@ -19,6 +19,7 @@ namespace StockSharp.Samples.Strategies;
 public class MavaXonaxStrategy : Strategy
 {
 	private readonly StrategyParam<int> _emaPeriod;
+	private readonly StrategyParam<int> _signalCooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private EMA _emaClose;
@@ -37,6 +38,7 @@ public class MavaXonaxStrategy : Strategy
 	private decimal _shortStop;
 	private decimal _shortTake;
 	private int _history;
+	private int _cooldownRemaining;
 
 	/// <summary>
 	/// EMA period for all calculations.
@@ -56,11 +58,21 @@ public class MavaXonaxStrategy : Strategy
 		set => _candleType.Value = value;
 	}
 
+	public int SignalCooldownBars
+	{
+		get => _signalCooldownBars.Value;
+		set => _signalCooldownBars.Value = value;
+	}
+
 	public MavaXonaxStrategy()
 	{
 		_emaPeriod = Param(nameof(EmaPeriod), 6)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Period", "EMA period", "General");
+
+		_signalCooldownBars = Param(nameof(SignalCooldownBars), 1)
+			.SetGreaterThanZero()
+			.SetDisplay("Signal Cooldown", "Bars to wait after an entry or exit", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(240).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
@@ -81,6 +93,7 @@ public class MavaXonaxStrategy : Strategy
 		_longStop = _longTake = 0m;
 		_shortStop = _shortTake = 0m;
 		_history = 0;
+		_cooldownRemaining = 0;
 		_emaClose = _emaOpen = _emaHigh = _emaLow = null;
 	}
 
@@ -93,6 +106,7 @@ public class MavaXonaxStrategy : Strategy
 		_emaOpen = new EMA { Length = EmaPeriod };
 		_emaHigh = new EMA { Length = EmaPeriod };
 		_emaLow = new EMA { Length = EmaPeriod };
+		_cooldownRemaining = 0;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(_emaClose, ProcessCandle).Start();
@@ -102,6 +116,9 @@ public class MavaXonaxStrategy : Strategy
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
+
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
 
 		var openValue = _emaOpen!.Process(candle.OpenPrice, candle.ServerTime, true);
 		var highValue = _emaHigh!.Process(candle.HighPrice, candle.ServerTime, true);
@@ -118,21 +135,27 @@ public class MavaXonaxStrategy : Strategy
 		if (Position > 0)
 		{
 			if (candle.ClosePrice <= _longStop || candle.ClosePrice >= _longTake)
+			{
 				SellMarket();
+				_cooldownRemaining = SignalCooldownBars;
+			}
 		}
 		else if (Position < 0)
 		{
 			if (candle.ClosePrice >= _shortStop || candle.ClosePrice <= _shortTake)
+			{
 				BuyMarket();
+				_cooldownRemaining = SignalCooldownBars;
+			}
 		}
 
-		if (_history >= 2 && IsFormedAndOnlineAndAllowTrading())
+		if (_history >= 2 && _cooldownRemaining == 0 && IsFormedAndOnlineAndAllowTrading())
 		{
 			var step = Security.PriceStep ?? 1m;
 			var buySignal = _prevOpen2 > _prevClose2 && _prevOpen1 < _prevClose1;
 			var sellSignal = _prevOpen2 < _prevClose2 && _prevOpen1 > _prevClose1;
 
-			if (buySignal && Position <= 0)
+			if (buySignal && Position == 0)
 			{
 				var takePr = _prevHigh - _prevLow;
 				if (takePr < 600m * step)
@@ -147,8 +170,9 @@ public class MavaXonaxStrategy : Strategy
 				_longTake = entry + takePr;
 
 				BuyMarket();
+				_cooldownRemaining = SignalCooldownBars;
 			}
-			else if (sellSignal && Position >= 0)
+			else if (sellSignal && Position == 0)
 			{
 				var takePr = _prevHigh - _prevLow;
 				if (takePr < 600m * step)
@@ -163,6 +187,7 @@ public class MavaXonaxStrategy : Strategy
 				_shortTake = entry - takePr;
 
 				SellMarket();
+				_cooldownRemaining = SignalCooldownBars;
 			}
 		}
 

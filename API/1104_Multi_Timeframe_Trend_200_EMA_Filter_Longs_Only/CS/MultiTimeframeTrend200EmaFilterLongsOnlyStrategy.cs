@@ -118,7 +118,7 @@ public class MultiTimeframeTrend200EmaFilterLongsOnlyStrategy : Strategy {
 				.SetDisplay("Take Profit %", "Take profit percent", "Risk");
 
 		_candleType =
-			Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			Param(nameof(CandleType), TimeSpan.FromHours(2).TimeFrame())
 				.SetDisplay("Candle Type", "Base timeframe", "General");
 	}
 
@@ -128,6 +128,22 @@ public class MultiTimeframeTrend200EmaFilterLongsOnlyStrategy : Strategy {
 		yield return (Security, CandleType);
 		yield return (Security, TimeSpan.FromMinutes(15).TimeFrame());
 		yield return (Security, TimeSpan.FromMinutes(30).TimeFrame());
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted() {
+		base.OnReseted();
+
+		_fast5 = null!;
+		_slow5 = null!;
+		_ema200 = null!;
+		_fast15 = null!;
+		_slow15 = null!;
+		_fast30 = null!;
+		_slow30 = null!;
+		_trend5 = 0;
+		_trend15 = 0;
+		_trend30 = 0;
 	}
 
 	/// <inheritdoc />

@@ -60,6 +60,12 @@ public class ColorSchaffWprTrendCycleStrategy : Strategy
 		return [(Security, CandleType)];
 	}
 
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevStc = 0m;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
@@ -92,18 +98,12 @@ public class ColorSchaffWprTrendCycleStrategy : Strategy
 		if (crossUp)
 		{
 			if (Position <= 0)
-				BuyMarket();
-
-			if (Position < 0)
-				BuyMarket();
+				BuyMarket(Volume + Math.Abs(Position));
 		}
 		else if (crossDown)
 		{
 			if (Position >= 0)
-				SellMarket();
-
-			if (Position > 0)
-				SellMarket();
+				SellMarket(Volume + Math.Abs(Position));
 		}
 	}
 }

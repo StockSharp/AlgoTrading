@@ -100,7 +100,7 @@ public class VwapEmaAtrPullbackStrategy : Strategy
 	    
 	    .SetOptimize(1m, 3m, 0.5m);
 
-	_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+	_candleType = Param(nameof(CandleType), TimeSpan.FromHours(2).TimeFrame())
 	    .SetDisplay("Candle Type", "Type of candles", "General");
     }
 

@@ -29,6 +29,7 @@ public class MacdWithSentimentFilterStrategy : Strategy
 	private readonly StrategyParam<int> _macdSignal;
 	private readonly StrategyParam<decimal> _threshold;
 	private readonly StrategyParam<decimal> _stopLoss;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
 	// Sentiment score from external data source (simplified with simulation for this example)
@@ -36,6 +37,8 @@ public class MacdWithSentimentFilterStrategy : Strategy
 	// Last MACD and Signal values stored from the previous candle
 	private decimal _prevMacd;
 	private decimal _prevSignal;
+	private bool _hasPreviousMacd;
+	private int _cooldownRemaining;
 
 	/// <summary>
 	/// MACD Fast period.
@@ -83,6 +86,15 @@ public class MacdWithSentimentFilterStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Bars to wait between position changes.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Type of candles to use.
 	/// </summary>
 	public DataType CandleType
@@ -114,11 +126,15 @@ public class MacdWithSentimentFilterStrategy : Strategy
 		
 		.SetOptimize(5, 13, 1);
 
-		_threshold = Param(nameof(Threshold), 0.5m)
+		_threshold = Param(nameof(Threshold), 0.9m)
 		.SetGreaterThanZero()
 		.SetDisplay("Sentiment Threshold", "Threshold for sentiment filter", "Sentiment Settings")
 		
 		.SetOptimize(0.2m, 0.8m, 0.1m);
+
+		_cooldownBars = Param(nameof(CooldownBars), 24)
+		.SetNotNegative()
+		.SetDisplay("Cooldown Bars", "Closed candles to wait before another position change", "General");
 
 		_stopLoss = Param(nameof(StopLoss), 2m)
 		.SetGreaterThanZero()
@@ -126,7 +142,7 @@ public class MacdWithSentimentFilterStrategy : Strategy
 		
 		.SetOptimize(1m, 3m, 0.5m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -145,6 +161,8 @@ public class MacdWithSentimentFilterStrategy : Strategy
 		_prevMacd = default;
 		_prevSignal = default;
 		_sentimentScore = default;
+		_hasPreviousMacd = default;
+		_cooldownRemaining = default;
 	}
 
 	protected override void OnStarted2(DateTime time)
@@ -206,32 +224,37 @@ public class MacdWithSentimentFilterStrategy : Strategy
 			return;
 		}
 
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
+
+		if (!_hasPreviousMacd)
+		{
+			_prevMacd = macd;
+			_prevSignal = signal;
+			_hasPreviousMacd = true;
+			return;
+		}
+
 		// Store previous MACD values for state tracking
 		var prevMacdOverSignal = _prevMacd > _prevSignal;
 		var currMacdOverSignal = macd > signal;
 
-		// Update previous values for next candle
-		_prevMacd = macd;
-		_prevSignal = signal;
-
-		// First candle, just store values
-		if (IsFirstRun())
-		return;
-
 		// Entry conditions with sentiment filter
-		if (prevMacdOverSignal != currMacdOverSignal)
+		if (_cooldownRemaining == 0 && prevMacdOverSignal != currMacdOverSignal)
 		{
 			// MACD crossed above signal with positive sentiment - go long
 			if (currMacdOverSignal && _sentimentScore > Threshold && Position <= 0)
 			{
 				LogInfo("Long signal: MACD crossed above signal with positive sentiment");
-				BuyMarket(Volume);
+				BuyMarket(Volume + (Position < 0 ? Math.Abs(Position) : 0m));
+				_cooldownRemaining = CooldownBars;
 			}
 			// MACD crossed below signal with negative sentiment - go short
 			else if (!currMacdOverSignal && _sentimentScore < -Threshold && Position >= 0)
 			{
 				LogInfo("Short signal: MACD crossed below signal with negative sentiment");
-				SellMarket(Volume);
+				SellMarket(Volume + (Position > 0 ? Math.Abs(Position) : 0m));
+				_cooldownRemaining = CooldownBars;
 			}
 		}
 		// Exit conditions (without sentiment filter)
@@ -242,14 +265,19 @@ public class MacdWithSentimentFilterStrategy : Strategy
 			{
 				LogInfo("Exit long: MACD below signal");
 				SellMarket(Math.Abs(Position));
+				_cooldownRemaining = CooldownBars;
 			}
 			// MACD above signal - exit short position
 			else if (currMacdOverSignal && Position < 0)
 			{
 				LogInfo("Exit short: MACD above signal");
 				BuyMarket(Math.Abs(Position));
+				_cooldownRemaining = CooldownBars;
 			}
 		}
+
+		_prevMacd = macd;
+		_prevSignal = signal;
 	}
 
 	/// <summary>
@@ -258,42 +286,26 @@ public class MacdWithSentimentFilterStrategy : Strategy
 	/// </summary>
 	private void UpdateSentimentScore(ICandleMessage candle)
 	{
-		// Simple simulation of sentiment based on candle pattern
-		// In reality, this would be a call to a sentiment API or database
-
 		var bodySize = Math.Abs(candle.ClosePrice - candle.OpenPrice);
 		var totalSize = candle.HighPrice - candle.LowPrice;
 
 		if (totalSize == 0)
-		return;
+			return;
 
 		var bodyRatio = bodySize / totalSize;
+		_sentimentScore *= 0.85m;
 
 		// Bullish candle with strong body
 		if (candle.ClosePrice > candle.OpenPrice && bodyRatio > 0.7m)
 		{
-			_sentimentScore = Math.Min(_sentimentScore + 0.2m, 1m);
+			_sentimentScore = Math.Min(_sentimentScore + 0.25m, 1m);
 		}
 		// Bearish candle with strong body
 		else if (candle.ClosePrice < candle.OpenPrice && bodyRatio > 0.7m)
 		{
-			_sentimentScore = Math.Max(_sentimentScore - 0.2m, -1m);
-		}
-		// Add random noise to sentiment
-		else
-		{
-			_sentimentScore += (decimal)((RandomGen.GetDouble() - 0.5) * 0.1);
-			_sentimentScore = Math.Max(Math.Min(_sentimentScore, 1m), -1m);
+			_sentimentScore = Math.Max(_sentimentScore - 0.25m, -1m);
 		}
 
 		LogInfo($"Updated sentiment score: {_sentimentScore}");
-	}
-
-	/// <summary>
-	/// Check if this is the first run to avoid trading on first candle.
-	/// </summary>
-	private bool IsFirstRun()
-	{
-		return _prevMacd == 0 && _prevSignal == 0;
 	}
 }

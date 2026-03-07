@@ -25,6 +25,7 @@ public class BreakoutStrategy : Strategy
 	private readonly StrategyParam<int> _exitShift;
 	private readonly StrategyParam<bool> _useMiddleLine;
 	private readonly StrategyParam<decimal> _riskPerTrade;
+	private readonly StrategyParam<int> _signalCooldownBars;
 
 	private Highest _entryHighest;
 	private Lowest _entryLowest;
@@ -34,31 +35,32 @@ public class BreakoutStrategy : Strategy
 	private Shift _entryLowShift;
 	private Shift _exitHighShift;
 	private Shift _exitLowShift;
+	private int _cooldownRemaining;
 
 	public BreakoutStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(2).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe used for calculations", "General");
 
-		_entryPeriod = Param(nameof(EntryPeriod), 10)
+		_entryPeriod = Param(nameof(EntryPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Entry Period", "Lookback bars for breakout detection", "Entry")
 			
 			.SetOptimize(10, 40, 5);
 
-		_entryShift = Param(nameof(EntryShift), 0)
+		_entryShift = Param(nameof(EntryShift), 1)
 			.SetNotNegative()
 			.SetDisplay("Entry Shift", "Bars to delay the Donchian breakout levels", "Entry")
 			
 			.SetOptimize(0, 3, 1);
 
-		_exitPeriod = Param(nameof(ExitPeriod), 10)
+		_exitPeriod = Param(nameof(ExitPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Exit Period", "Lookback bars for trailing exits", "Exit")
 			
 			.SetOptimize(10, 40, 5);
 
-		_exitShift = Param(nameof(ExitShift), 0)
+		_exitShift = Param(nameof(ExitShift), 1)
 			.SetNotNegative()
 			.SetDisplay("Exit Shift", "Bars to delay the trailing channel", "Exit")
 			
@@ -72,6 +74,10 @@ public class BreakoutStrategy : Strategy
 			.SetDisplay("Risk Per Trade", "Fraction of equity risked per trade", "Risk")
 			
 			.SetOptimize(0.005m, 0.03m, 0.005m);
+
+		_signalCooldownBars = Param(nameof(SignalCooldownBars), 4)
+			.SetNotNegative()
+			.SetDisplay("Signal Cooldown Bars", "Closed candles to wait before a new breakout entry", "Risk");
 	}
 
 	public DataType CandleType
@@ -116,6 +122,12 @@ public class BreakoutStrategy : Strategy
 		set => _riskPerTrade.Value = value;
 	}
 
+	public int SignalCooldownBars
+	{
+		get => _signalCooldownBars.Value;
+		set => _signalCooldownBars.Value = value;
+	}
+
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
@@ -123,9 +135,26 @@ public class BreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_entryHighest = null;
+		_entryLowest = null;
+		_exitHighest = null;
+		_exitLowest = null;
+		_entryHighShift = null;
+		_entryLowShift = null;
+		_exitHighShift = null;
+		_exitLowShift = null;
+		_cooldownRemaining = 0;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+		_cooldownRemaining = 0;
 
 		// Create Donchian channel components for entries and exits.
 		_entryHighest = new() { Length = EntryPeriod };
@@ -141,7 +170,7 @@ public class BreakoutStrategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(_entryHighest, _entryLowest, _exitHighest, _exitLowest, ProcessCandle)
+			.Bind(ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -159,19 +188,22 @@ public class BreakoutStrategy : Strategy
 	}
 
 	private void ProcessCandle(
-		ICandleMessage candle,
-		IIndicatorValue entryHighValue,
-		IIndicatorValue entryLowValue,
-		IIndicatorValue exitHighValue,
-		IIndicatorValue exitLowValue)
+		ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 		return;
 
-		//if (!IsFormedAndOnlineAndAllowTrading())
-		//return;
-
 		var time = candle.OpenTime;
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
+
+		var entryHighValue = _entryHighest.Process(new CandleIndicatorValue(_entryHighest, candle));
+		var entryLowValue = _entryLowest.Process(new CandleIndicatorValue(_entryLowest, candle));
+		var exitHighValue = _exitHighest.Process(new CandleIndicatorValue(_exitHighest, candle));
+		var exitLowValue = _exitLowest.Process(new CandleIndicatorValue(_exitLowest, candle));
+
+		if (!_entryHighest.IsFormed || !_entryLowest.IsFormed || !_exitHighest.IsFormed || !_exitLowest.IsFormed)
+			return;
 
 		// Obtain Donchian bands and apply the configured shift.
 		var entryUpper = entryHighValue.ToDecimal();
@@ -179,16 +211,18 @@ public class BreakoutStrategy : Strategy
 
 		if (_entryHighShift != null)
 		{
-		entryUpper = _entryHighShift.Process(new DecimalIndicatorValue(_entryHighShift, entryUpper, time)).ToDecimal();
-		if (!_entryHighShift.IsFormed)
+		var shiftedValue = _entryHighShift.Process(new DecimalIndicatorValue(_entryHighShift, entryUpper, time) { IsFinal = true });
+		if (!_entryHighShift.IsFormed || shiftedValue.IsEmpty)
 		return;
+		entryUpper = shiftedValue.ToDecimal();
 		}
 
 		if (_entryLowShift != null)
 		{
-		entryLower = _entryLowShift.Process(new DecimalIndicatorValue(_entryLowShift, entryLower, time)).ToDecimal();
-		if (!_entryLowShift.IsFormed)
+		var shiftedValue = _entryLowShift.Process(new DecimalIndicatorValue(_entryLowShift, entryLower, time) { IsFinal = true });
+		if (!_entryLowShift.IsFormed || shiftedValue.IsEmpty)
 		return;
+		entryLower = shiftedValue.ToDecimal();
 		}
 
 		var exitUpper = exitHighValue.ToDecimal();
@@ -196,17 +230,22 @@ public class BreakoutStrategy : Strategy
 
 		if (_exitHighShift != null)
 		{
-		exitUpper = _exitHighShift.Process(new DecimalIndicatorValue(_exitHighShift, exitUpper, time)).ToDecimal();
-		if (!_exitHighShift.IsFormed)
+		var shiftedValue = _exitHighShift.Process(new DecimalIndicatorValue(_exitHighShift, exitUpper, time) { IsFinal = true });
+		if (!_exitHighShift.IsFormed || shiftedValue.IsEmpty)
 		return;
+		exitUpper = shiftedValue.ToDecimal();
 		}
 
 		if (_exitLowShift != null)
 		{
-		exitLower = _exitLowShift.Process(new DecimalIndicatorValue(_exitLowShift, exitLower, time)).ToDecimal();
-		if (!_exitLowShift.IsFormed)
+		var shiftedValue = _exitLowShift.Process(new DecimalIndicatorValue(_exitLowShift, exitLower, time) { IsFinal = true });
+		if (!_exitLowShift.IsFormed || shiftedValue.IsEmpty)
 		return;
+		exitLower = shiftedValue.ToDecimal();
 		}
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
 
 		var exitMiddle = (exitUpper + exitLower) / 2m;
 		var exitLong = UseMiddleLine ? Math.Max(exitMiddle, exitLower) : exitLower;
@@ -223,14 +262,16 @@ public class BreakoutStrategy : Strategy
 		if (Position > 0m && candle.LowPrice <= exitLong)
 		{
 		SellMarket(Position);
+		_cooldownRemaining = SignalCooldownBars;
 		}
 		else if (Position < 0m && candle.HighPrice >= exitShort)
 		{
 		BuyMarket(Math.Abs(Position));
+		_cooldownRemaining = SignalCooldownBars;
 		}
 
 		// Enter long positions on breakouts above the shifted channel.
-		if (Position <= 0m && candle.HighPrice >= triggerLong)
+		if (_cooldownRemaining == 0 && Position <= 0m && candle.HighPrice >= triggerLong)
 		{
 		var stopDistance = triggerLong - exitLong;
 		if (stopDistance > 0m)
@@ -238,15 +279,13 @@ public class BreakoutStrategy : Strategy
 		var volume = CalculateVolume(stopDistance);
 		if (volume > 0m)
 		{
-		if (Position < 0m)
-		BuyMarket(Math.Abs(Position));
-
-		BuyMarket(volume);
+		BuyMarket(volume + (Position < 0m ? Math.Abs(Position) : 0m));
+		_cooldownRemaining = SignalCooldownBars;
 		}
 		}
 		}
 		// Enter short positions on breakouts below the shifted channel.
-		else if (Position >= 0m && candle.LowPrice <= triggerShort)
+		else if (_cooldownRemaining == 0 && Position >= 0m && candle.LowPrice <= triggerShort)
 		{
 		var stopDistance = exitShort - triggerShort;
 		if (stopDistance > 0m)
@@ -254,10 +293,8 @@ public class BreakoutStrategy : Strategy
 		var volume = CalculateVolume(stopDistance);
 		if (volume > 0m)
 		{
-		if (Position > 0m)
-		SellMarket(Position);
-
-		SellMarket(volume);
+		SellMarket(volume + (Position > 0m ? Position : 0m));
+		_cooldownRemaining = SignalCooldownBars;
 		}
 		}
 		}

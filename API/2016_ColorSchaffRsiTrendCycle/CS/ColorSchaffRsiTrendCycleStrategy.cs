@@ -1,21 +1,17 @@
+namespace StockSharp.Samples.Strategies;
+
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-namespace StockSharp.Samples.Strategies;
-
 /// <summary>
-/// Strategy based on Color Schaff RSI Trend Cycle indicator.
-/// Reacts to color transitions of the indicator to open or close positions.
+/// Strategy based on a Schaff-style cycle built from fast and slow RSI values.
 /// </summary>
 public class ColorSchaffRsiTrendCycleStrategy : Strategy
 {
@@ -25,9 +21,15 @@ public class ColorSchaffRsiTrendCycleStrategy : Strategy
 	private readonly StrategyParam<int> _highLevel;
 	private readonly StrategyParam<int> _lowLevel;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _signalCooldownBars;
 
-	private decimal? _prevColor;
-	private decimal? _prevPrevColor;
+	private readonly List<decimal> _macdHistory = [];
+	private readonly List<decimal> _stHistory = [];
+	private RelativeStrengthIndex _fastIndicator = null!;
+	private RelativeStrengthIndex _slowIndicator = null!;
+	private decimal _prevStc;
+	private int? _prevColor;
+	private int _cooldownRemaining;
 
 	/// <summary>
 	/// Fast RSI period.
@@ -48,7 +50,7 @@ public class ColorSchaffRsiTrendCycleStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Cycle length used in STC calculation.
+	/// Cycle length used in the Schaff calculation.
 	/// </summary>
 	public int Cycle
 	{
@@ -57,7 +59,7 @@ public class ColorSchaffRsiTrendCycleStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Upper level for color computation.
+	/// Upper level for color classification.
 	/// </summary>
 	public int HighLevel
 	{
@@ -66,7 +68,7 @@ public class ColorSchaffRsiTrendCycleStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Lower level for color computation.
+	/// Lower level for color classification.
 	/// </summary>
 	public int LowLevel
 	{
@@ -84,40 +86,68 @@ public class ColorSchaffRsiTrendCycleStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Bars to wait after each trading action.
+	/// </summary>
+	public int SignalCooldownBars
+	{
+		get => _signalCooldownBars.Value;
+		set => _signalCooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Initializes a new instance of <see cref="ColorSchaffRsiTrendCycleStrategy"/>.
 	/// </summary>
 	public ColorSchaffRsiTrendCycleStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-		.SetDisplay("Candle Type", "Type of candles for calculations", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles for calculations", "General");
 
 		_fastRsi = Param(nameof(FastRsi), 23)
-		.SetGreaterThanZero()
-		.SetDisplay("Fast RSI", "Fast RSI period", "Parameters")
-		
-		.SetOptimize(10, 30, 5);
+			.SetGreaterThanZero()
+			.SetDisplay("Fast RSI", "Fast RSI period", "Parameters")
+			.SetOptimize(10, 30, 5);
 
 		_slowRsi = Param(nameof(SlowRsi), 50)
-		.SetGreaterThanZero()
-		.SetDisplay("Slow RSI", "Slow RSI period", "Parameters")
-		
-		.SetOptimize(30, 70, 5);
+			.SetGreaterThanZero()
+			.SetDisplay("Slow RSI", "Slow RSI period", "Parameters")
+			.SetOptimize(30, 70, 5);
 
 		_cycle = Param(nameof(Cycle), 10)
-		.SetGreaterThanZero()
-		.SetDisplay("Cycle", "Cycle length", "Parameters")
-		
-		.SetOptimize(5, 20, 1);
+			.SetGreaterThanZero()
+			.SetDisplay("Cycle", "Cycle length", "Parameters")
+			.SetOptimize(5, 20, 1);
 
 		_highLevel = Param(nameof(HighLevel), 60)
-		.SetDisplay("High Level", "Upper level for STC", "Parameters")
-		
-		.SetOptimize(40, 80, 5);
+			.SetDisplay("High Level", "Upper level for the cycle", "Parameters")
+			.SetOptimize(40, 80, 5);
 
 		_lowLevel = Param(nameof(LowLevel), -60)
-		.SetDisplay("Low Level", "Lower level for STC", "Parameters")
-		
-		.SetOptimize(-80, -40, 5);
+			.SetDisplay("Low Level", "Lower level for the cycle", "Parameters")
+			.SetOptimize(-80, -40, 5);
+
+		_signalCooldownBars = Param(nameof(SignalCooldownBars), 8)
+			.SetGreaterThanZero()
+			.SetDisplay("Signal Cooldown", "Bars to wait between trading actions", "Trading");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_fastIndicator = null!;
+		_slowIndicator = null!;
+		_macdHistory.Clear();
+		_stHistory.Clear();
+		_prevStc = 0m;
+		_prevColor = null;
+		_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
@@ -125,153 +155,113 @@ public class ColorSchaffRsiTrendCycleStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var stc = new SchaffRsiTrendCycle
-		{
-			FastRsi = FastRsi,
-			SlowRsi = SlowRsi,
-			Cycle = Cycle,
-			HighLevel = HighLevel,
-			LowLevel = LowLevel
-		};
+		_fastIndicator = new RelativeStrengthIndex { Length = FastRsi };
+		_slowIndicator = new RelativeStrengthIndex { Length = SlowRsi };
+		_macdHistory.Clear();
+		_stHistory.Clear();
+		_prevStc = 0m;
+		_prevColor = null;
+		_cooldownRemaining = 0;
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(stc, ProcessCandle).Start();
+		subscription.Bind(ProcessCandle).Start();
 
 		StartProtection(null, null);
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal color)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		_prevPrevColor = _prevColor;
-		_prevColor = color;
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
 
-		if (_prevPrevColor is null)
+		var fastValue = _fastIndicator.Process(candle.ClosePrice, candle.OpenTime, true);
+		var slowValue = _slowIndicator.Process(candle.ClosePrice, candle.OpenTime, true);
+		if (!fastValue.IsFormed || !slowValue.IsFormed)
 			return;
 
-		var prev2 = _prevPrevColor.Value;
-		var prev1 = _prevColor.Value;
+		var diff = fastValue.ToDecimal() - slowValue.ToDecimal();
+		AddValue(_macdHistory, diff, Cycle);
+		if (_macdHistory.Count < Cycle)
+			return;
 
-		if (prev2 > 5)
+		GetMinMax(_macdHistory, out var macdMin, out var macdMax);
+		var previousSt = _stHistory.Count > 0 ? _stHistory[^1] : 0m;
+		var st = macdMax == macdMin ? previousSt : (diff - macdMin) / (macdMax - macdMin) * 100m;
+		AddValue(_stHistory, st, Cycle);
+
+		GetMinMax(_stHistory, out var stMin, out var stMax);
+		var stc = stMax == stMin ? _prevStc : (st - stMin) / (stMax - stMin) * 200m - 100m;
+		var delta = stc - _prevStc;
+		var color = GetColor(stc, delta);
+
+		if (_prevColor.HasValue && _cooldownRemaining == 0)
 		{
-			if (Position < 0)
-				BuyMarket();
-			if (prev1 < 6 && Position <= 0)
-				BuyMarket();
+			if (_prevColor.Value == 6 && color == 7 && Position <= 0)
+			{
+				var volume = Volume + Math.Abs(Position);
+				BuyMarket(volume);
+				_cooldownRemaining = SignalCooldownBars;
+			}
+			else if (_prevColor.Value == 1 && color == 0 && Position >= 0)
+			{
+				var volume = Volume + Math.Abs(Position);
+				SellMarket(volume);
+				_cooldownRemaining = SignalCooldownBars;
+			}
+			else if (Position > 0 && color <= 1)
+			{
+				SellMarket(Position);
+				_cooldownRemaining = SignalCooldownBars;
+			}
+			else if (Position < 0 && color >= 6)
+			{
+				BuyMarket(Math.Abs(Position));
+				_cooldownRemaining = SignalCooldownBars;
+			}
 		}
-		else if (prev2 < 2)
+
+		_prevColor = color;
+		_prevStc = stc;
+	}
+
+	private static void AddValue(List<decimal> values, decimal value, int limit)
+	{
+		values.Add(value);
+		if (values.Count > limit)
+			values.RemoveAt(0);
+	}
+
+	private static void GetMinMax(List<decimal> values, out decimal min, out decimal max)
+	{
+		min = values[0];
+		max = values[0];
+
+		for (var i = 1; i < values.Count; i++)
 		{
-			if (Position > 0)
-				SellMarket();
-			if (prev1 > 1 && Position >= 0)
-				SellMarket();
+			var value = values[i];
+			if (value < min)
+				min = value;
+			if (value > max)
+				max = value;
 		}
 	}
 
-	private class SchaffRsiTrendCycle : BaseIndicator
+	private int GetColor(decimal stc, decimal delta)
 	{
-		public int FastRsi { get; set; }
-		public int SlowRsi { get; set; }
-		public int Cycle { get; set; }
-		public int HighLevel { get; set; }
-		public int LowLevel { get; set; }
-
-		private readonly RSI _fast = new();
-		private readonly RSI _slow = new();
-		private readonly Queue<decimal> _macd = new();
-		private readonly Queue<decimal> _st = new();
-		private decimal? _prevSt;
-		private decimal? _prevStc;
-		private bool _st1Pass;
-		private bool _st2Pass;
-
-		protected override IIndicatorValue OnProcess(IIndicatorValue input)
+		if (stc > 0m)
 		{
-			var price = input.GetValue<decimal>();
+			if (stc > HighLevel)
+				return delta >= 0m ? 7 : 6;
 
-			var fastResult = _fast.Process(new DecimalIndicatorValue(_fast, price, input.Time));
-			var slowResult = _slow.Process(new DecimalIndicatorValue(_slow, price, input.Time));
-
-			if (!_fast.IsFormed || !_slow.IsFormed || fastResult.IsEmpty || slowResult.IsEmpty)
-				return new DecimalIndicatorValue(this, default, input.Time);
-
-			var fastVal = fastResult.GetValue<decimal>();
-			var slowVal = slowResult.GetValue<decimal>();
-
-			var macd = fastVal - slowVal;
-			_macd.Enqueue(macd);
-			if (_macd.Count > Cycle)
-				_macd.Dequeue();
-
-			if (_macd.Count < Cycle)
-				return new DecimalIndicatorValue(this, default, input.Time);
-
-			var llv = _macd.Min();
-			var hhv = _macd.Max();
-
-			var st = hhv != llv ? (macd - llv) / (hhv - llv) * 100m : _prevSt ?? 0m;
-
-			if (_st1Pass && _prevSt.HasValue)
-				st = 0.5m * (st - _prevSt.Value) + _prevSt.Value;
-
-			_st1Pass = true;
-			_prevSt = st;
-
-			_st.Enqueue(st);
-			if (_st.Count > Cycle)
-				_st.Dequeue();
-
-			if (_st.Count < Cycle)
-				return new DecimalIndicatorValue(this, default, input.Time);
-
-			llv = _st.Min();
-			hhv = _st.Max();
-
-			var stc = hhv != llv ? (st - llv) / (hhv - llv) * 200m - 100m : _prevStc ?? 0m;
-
-			if (_st2Pass && _prevStc.HasValue)
-				stc = 0.5m * (stc - _prevStc.Value) + _prevStc.Value;
-
-			var diff = _prevStc.HasValue ? stc - _prevStc.Value : 0m;
-			_st2Pass = true;
-			_prevStc = stc;
-
-			decimal clr = 4m;
-			if (stc > 0)
-			{
-				if (stc > HighLevel)
-					clr = diff >= 0 ? 7m : 6m;
-				else
-					clr = diff >= 0 ? 5m : 4m;
-			}
-			else if (stc < 0)
-			{
-				if (stc < LowLevel)
-					clr = diff < 0 ? 0m : 1m;
-				else
-					clr = diff < 0 ? 2m : 3m;
-			}
-
-			if (input.IsFinal)
-				IsFormed = true;
-			return new DecimalIndicatorValue(this, clr, input.Time);
+			return delta >= 0m ? 5 : 4;
 		}
 
-		public override void Reset()
-		{
-			base.Reset();
-			_fast.Length = FastRsi;
-			_slow.Length = SlowRsi;
-			_fast.Reset();
-			_slow.Reset();
-			_macd.Clear();
-			_st.Clear();
-			_prevSt = null;
-			_prevStc = null;
-			_st1Pass = false;
-			_st2Pass = false;
-		}
+		if (stc < LowLevel)
+			return delta < 0m ? 0 : 1;
+
+		return delta < 0m ? 2 : 3;
 	}
 }

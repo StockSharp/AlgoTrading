@@ -1,9 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
 using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
@@ -37,9 +35,9 @@ public class BollingerKMeansStrategy : Strategy
 	}
 
 	private ClusterStates _currentClusterState = ClusterStates.Neutral;
-	private readonly SynchronizedList<decimal> _rsiValues = [];
-	private readonly SynchronizedList<decimal> _priceValues = [];
-	private readonly SynchronizedList<decimal> _volumeValues = [];
+	private readonly List<decimal> _rsiValues = [];
+	private readonly List<decimal> _priceValues = [];
+	private readonly List<decimal> _volumeValues = [];
 
 	private RelativeStrengthIndex _rsi;
 	private AverageTrueRange _atr;
@@ -185,12 +183,11 @@ _currentClusterState = ClusterStates.Neutral;
 		if (!IsFormedAndOnlineAndAllowTrading())
 		return;
 
-		var bollingerTyped = (BollingerBandsValue)bollingerValue;
-
-		// Extract values from indicators
-		var bollingerUpper = bollingerTyped.UpBand;
-		var bollingerMiddle = bollingerTyped.MovingAverage;
-		var bollingerLower = bollingerTyped.LowBand;
+		if (bollingerValue is not IBollingerBandsValue bollingerTyped ||
+			bollingerTyped.UpBand is not decimal bollingerUpper ||
+			bollingerTyped.MovingAverage is not decimal bollingerMiddle ||
+			bollingerTyped.LowBand is not decimal bollingerLower)
+			return;
 
 		var rsi = rsiValue.ToDecimal();
 		_atrValue = atrValue.ToDecimal();
@@ -201,14 +198,17 @@ _currentClusterState = ClusterStates.Neutral;
 		// Calculate K-Means clusters and determine market state
 		CalculateClusters();
 
+		// Use ATR as a minimal band breach filter to avoid noise around the envelopes.
+		var bandBuffer = Math.Max(_atrValue * 0.1m, Security?.PriceStep ?? 0m);
+
 		// Trading logic
-if (candle.ClosePrice < bollingerLower && _currentClusterState == ClusterStates.Oversold && Position <= 0)
+		if (candle.ClosePrice < bollingerLower - bandBuffer && _currentClusterState == ClusterStates.Oversold && Position <= 0)
 		{
 			// Buy signal - price below lower band and in oversold cluster
 			BuyMarket(Volume);
 			LogInfo($"Buy Signal: Price below lower band ({bollingerLower:F2}) in oversold cluster");
 		}
-else if (candle.ClosePrice > bollingerUpper && _currentClusterState == ClusterStates.Overbought && Position >= 0)
+		else if (candle.ClosePrice > bollingerUpper + bandBuffer && _currentClusterState == ClusterStates.Overbought && Position >= 0)
 		{
 			// Sell signal - price above upper band and in overbought cluster
 			SellMarket(Volume + Math.Abs(Position));
@@ -251,13 +251,15 @@ else if (candle.ClosePrice > bollingerUpper && _currentClusterState == ClusterSt
 		return;
 
 		// Normalize the data (simple min-max normalization)
-		var normalizedRsi = _rsiValues.Last() / 100m;  // RSI is already 0-100
+		var priceValues = _priceValues.ToArray();
+		var rsiValues = _rsiValues.ToArray();
+		var normalizedRsi = rsiValues[^1] / 100m;  // RSI is already 0-100
 
 		// Find min/max for price normalization
 		decimal? minPrice = null;
 		decimal? maxPrice = null;
 
-		foreach (var price in _priceValues)
+		foreach (var price in priceValues)
 		{
 			if (minPrice == null || price < minPrice.Value)
 			minPrice = price;
@@ -270,7 +272,7 @@ else if (candle.ClosePrice > bollingerUpper && _currentClusterState == ClusterSt
 		if (minPrice.HasValue && maxPrice.HasValue && maxPrice.Value != minPrice.Value)
 		{
 			var priceRange = maxPrice.Value - minPrice.Value;
-			normalizedPrice = (_priceValues.Last() - minPrice.Value) / priceRange;
+			normalizedPrice = (priceValues[^1] - minPrice.Value) / priceRange;
 		}
 
 		// Simple rules-based clustering (simplified K-means approximation)
@@ -280,15 +282,15 @@ else if (candle.ClosePrice > bollingerUpper && _currentClusterState == ClusterSt
 
 		if (normalizedRsi < 0.3m && normalizedPrice < 0.3m)
 		{
-_currentClusterState = ClusterStates.Oversold;
+			_currentClusterState = ClusterStates.Oversold;
 		}
 		else if (normalizedRsi > 0.7m && normalizedPrice > 0.7m)
 		{
-_currentClusterState = ClusterStates.Overbought;
+			_currentClusterState = ClusterStates.Overbought;
 		}
 		else
 		{
-_currentClusterState = ClusterStates.Neutral;
+			_currentClusterState = ClusterStates.Neutral;
 		}
 
 		LogInfo($"Cluster State: {_currentClusterState}, Normalized RSI: {normalizedRsi:F2}, Normalized Price: {normalizedPrice:F2}");

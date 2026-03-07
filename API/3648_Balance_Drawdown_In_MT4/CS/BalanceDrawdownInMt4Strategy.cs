@@ -21,11 +21,13 @@ public class BalanceDrawdownInMt4Strategy : Strategy
 	private readonly StrategyParam<decimal> _startBalance;
 	private readonly StrategyParam<decimal> _stopLossPoints;
 	private readonly StrategyParam<decimal> _takeProfitPoints;
+	private readonly StrategyParam<int> _entryCooldownDays;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _maxBalance;
 	private decimal _lastDrawdown;
 	private decimal _lastPrice;
+	private DateTime _lastEntryDate;
 
 	/// <summary>
 	/// Balance used as the baseline for drawdown calculations.
@@ -53,6 +55,15 @@ public class BalanceDrawdownInMt4Strategy : Strategy
 	{
 		get => _takeProfitPoints.Value;
 		set => _takeProfitPoints.Value = value;
+	}
+
+	/// <summary>
+	/// Minimum number of days between new entries.
+	/// </summary>
+	public int EntryCooldownDays
+	{
+		get => _entryCooldownDays.Value;
+		set => _entryCooldownDays.Value = value;
 	}
 
 	/// <summary>
@@ -87,6 +98,10 @@ public class BalanceDrawdownInMt4Strategy : Strategy
 			.SetDisplay("Take-Profit (points)", "Distance from entry price to the profit target.", "Risk")
 			;
 
+		_entryCooldownDays = Param(nameof(EntryCooldownDays), 5)
+			.SetGreaterThanZero()
+			.SetDisplay("Entry Cooldown Days", "Minimum number of days between new long entries.", "Risk");
+
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe that drives drawdown monitoring.", "General");
 	}
@@ -105,6 +120,7 @@ public class BalanceDrawdownInMt4Strategy : Strategy
 		_maxBalance = 0m;
 		_lastDrawdown = 0m;
 		_lastPrice = 0m;
+		_lastEntryDate = default;
 	}
 
 	/// <inheritdoc />
@@ -129,13 +145,16 @@ public class BalanceDrawdownInMt4Strategy : Strategy
 
 		_lastPrice = candle.ClosePrice;
 
-		EnsurePosition();
+		EnsurePosition(candle.CloseTime);
 		UpdateDrawdown();
 	}
 
-	private void EnsurePosition()
+	private void EnsurePosition(DateTime candleDate)
 	{
 		if (Position != 0m)
+			return;
+
+		if (_lastEntryDate != default && (candleDate.Date - _lastEntryDate.Date).TotalDays < EntryCooldownDays)
 			return;
 
 		if (Volume <= 0m)
@@ -145,6 +164,7 @@ public class BalanceDrawdownInMt4Strategy : Strategy
 		}
 
 		BuyMarket(Volume);
+		_lastEntryDate = candleDate.Date;
 	}
 
 	private void UpdateDrawdown()

@@ -269,12 +269,14 @@ public class KeltnerKalmanStrategy : Strategy
 
 	private decimal CalculateKalmanSlope()
 	{
+		var prices = _prices.ToArray();
+
 		// Need at least a few points to calculate a slope
-		if (_prices.Count < 3)
+		if (prices.Length < 3)
 		return 0;
 
 		// Simple linear regression slope calculation
-		int n = _prices.Count;
+		int n = prices.Length;
 		decimal sumX = 0;
 		decimal sumY = 0;
 		decimal sumXY = 0;
@@ -283,7 +285,7 @@ public class KeltnerKalmanStrategy : Strategy
 		for (int i = 0; i < n; i++)
 		{
 			decimal x = i;
-			decimal y = _prices[i];
+			decimal y = prices[i];
 
 			sumX += x;
 			sumY += y;

@@ -84,7 +84,7 @@ public class MovingAverageMartingaleStrategy : Strategy
 			.SetDisplay("Target multiplier", "Factor applied to stop-loss and take-profit distances after a loss.", "Money management")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle type", "Primary timeframe processed by the strategy.", "General");
 	}
 

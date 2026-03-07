@@ -231,7 +231,7 @@ public class RnnProbabilityStrategy : Strategy
 			.SetRange(0m, 100m)
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(2).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe used for signal generation.", "General");
 	}
 
@@ -317,10 +317,12 @@ public class RnnProbabilityStrategy : Strategy
 			AppliedPriceTypes.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
 			_ => candle.ClosePrice,
 		};
-		var rsiValue = _rsi.Process(new DecimalIndicatorValue(_rsi, price, candle.OpenTime)).ToDecimal();
+		var rsiIndicatorValue = _rsi.Process(new DecimalIndicatorValue(_rsi, price, candle.OpenTime) { IsFinal = true });
 
-		if (!_rsi.IsFormed)
+		if (!_rsi.IsFormed || rsiIndicatorValue.IsEmpty)
 			return;
+
+		var rsiValue = rsiIndicatorValue.ToDecimal();
 
 		_rsiHistory.Add(rsiValue);
 		TrimHistory(_rsiHistory, GetHistoryLimit());

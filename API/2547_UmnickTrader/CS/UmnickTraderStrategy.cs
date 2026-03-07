@@ -24,6 +24,7 @@ public class UmnickTraderStrategy : Strategy
 	private readonly StrategyParam<decimal> _stopBase;
 	private readonly StrategyParam<decimal> _tradeVolume;
 	private readonly StrategyParam<decimal> _spread;
+	private readonly StrategyParam<int> _entryCooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
 	// Adaptive buffers storing profit and loss distances observed recently.
@@ -41,6 +42,7 @@ public class UmnickTraderStrategy : Strategy
 
 	private int _currentIndex;
 	private int _currentDirection = 1;
+	private int _cooldownRemaining;
 
 	private bool _positionActive;
 	private bool _isLongPosition;
@@ -86,6 +88,12 @@ public class UmnickTraderStrategy : Strategy
 		set => _candleType.Value = value;
 	}
 
+	public int EntryCooldownBars
+	{
+		get => _entryCooldownBars.Value;
+		set => _entryCooldownBars.Value = value;
+	}
+
 	public UmnickTraderStrategy()
 	{
 		_bufferLength = Param(nameof(BufferLength), 8)
@@ -110,6 +118,10 @@ public class UmnickTraderStrategy : Strategy
 			.SetDisplay("Spread Padding", "Spread compensation used when updating adaptive buffers.", "Parameters")
 			
 			.SetOptimize(0.0001m, 0.002m, 0.0001m);
+
+		_entryCooldownBars = Param(nameof(EntryCooldownBars), 6)
+			.SetGreaterThanZero()
+			.SetDisplay("Entry Cooldown", "Bars to wait after a position is closed.", "Parameters");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Source candle series.", "General");
@@ -144,6 +156,7 @@ public class UmnickTraderStrategy : Strategy
 		_lastTradeProfit = 0m;
 		_currentIndex = 0;
 		_currentDirection = 1;
+		_cooldownRemaining = 0;
 		_positionActive = false;
 		_isLongPosition = false;
 		_positionJustClosed = false;
@@ -178,6 +191,9 @@ public class UmnickTraderStrategy : Strategy
 
 		// Update metrics for an active position before generating new signals.
 		UpdateOpenPosition(candle);
+
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
 
 		// Average of OHLC replicates the MQL5 price smoothing logic.
 		var averagePrice = (candle.OpenPrice + candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 4m;
@@ -230,9 +246,15 @@ public class UmnickTraderStrategy : Strategy
 			_currentIndex++;
 			if (_currentIndex >= bufferLength)
 				_currentIndex = 0;
+
+			_cooldownRemaining = EntryCooldownBars;
+			return;
 		}
 
 		if (limitDistance <= 0m || stopDistance <= 0m)
+			return;
+
+		if (_cooldownRemaining > 0)
 			return;
 
 		var volume = TradeVolume;
@@ -337,7 +359,7 @@ public class UmnickTraderStrategy : Strategy
 
 	private void OpenLong(decimal price, decimal limitDistance, decimal stopDistance, decimal volume)
 	{
-		BuyMarket();
+		BuyMarket(volume);
 
 		// Store trade parameters for managing exits on subsequent candles.
 		_entryPrice = price;
@@ -352,7 +374,7 @@ public class UmnickTraderStrategy : Strategy
 
 	private void OpenShort(decimal price, decimal limitDistance, decimal stopDistance, decimal volume)
 	{
-		SellMarket();
+		SellMarket(volume);
 
 		// Store trade parameters for managing exits on subsequent candles.
 		_entryPrice = price;

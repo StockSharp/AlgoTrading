@@ -56,7 +56,7 @@ public class VrsVegasReversalStrategy : Strategy
 	    
 	    .SetOptimize(0.01m, 0.05m, 0.005m);
 
-	_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+	_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 	    .SetDisplay("Candle Type", "Type of candles", "General");
     }
 
@@ -79,6 +79,7 @@ public class VrsVegasReversalStrategy : Strategy
     protected override void OnStarted2(DateTime time)
     {
 	base.OnStarted2(time);
+	Volume = NormalizeVolume(1m);
 
 	var subscription = SubscribeCandles(CandleType);
 	subscription
@@ -113,27 +114,41 @@ public class VrsVegasReversalStrategy : Strategy
 	    _entryPrice = candle.ClosePrice;
 	    _spikeSize = lowerSpike;
 	    _isLong = true;
-	    BuyMarket(Volume + Math.Abs(Position));
+	    BuyMarket(NormalizeVolume(Volume + Math.Abs(Position)));
 	}
 	else if (enterShort && Position >= 0)
 	{
 	    _entryPrice = candle.ClosePrice;
 	    _spikeSize = upperSpike;
 	    _isLong = false;
-	    SellMarket(Volume + Math.Abs(Position));
+	    SellMarket(NormalizeVolume(Volume + Math.Abs(Position)));
 	}
 
 	if (Position > 0 && _isLong)
 	{
 	    var target = _entryPrice + _spikeSize * 2m;
 	    if (candle.ClosePrice >= target)
-		SellMarket(Math.Abs(Position));
+		SellMarket(Position);
 	}
 	else if (Position < 0 && !_isLong)
 	{
 	    var target = _entryPrice - _spikeSize * 2m;
 	    if (candle.ClosePrice <= target)
-		BuyMarket(Math.Abs(Position));
+		BuyMarket(-Position);
 	}
+    }
+
+    private decimal NormalizeVolume(decimal volume)
+    {
+	var step = Security?.VolumeStep ?? 1m;
+	if (step <= 0m)
+	    step = 1m;
+
+	var minimum = Security?.MinVolume ?? step;
+	if (volume < minimum)
+	    volume = minimum;
+
+	var rounded = Math.Ceiling(volume / step) * step;
+	return rounded < minimum ? minimum : rounded;
     }
 }

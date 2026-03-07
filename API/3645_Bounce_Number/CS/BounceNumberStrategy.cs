@@ -82,6 +82,18 @@ public class BounceNumberStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_bounceDistribution.Clear();
+		_channelCenter = null;
+		_bounceCount = 0;
+		_lastTouchDirection = 0;
+		_candlesInCycle = 0;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);

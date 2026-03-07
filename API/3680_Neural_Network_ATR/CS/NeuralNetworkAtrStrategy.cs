@@ -38,6 +38,7 @@ public class NeuralNetworkAtrStrategy : Strategy
 	private readonly StrategyParam<int> _inputSize;
 	private readonly StrategyParam<decimal> _minimumLearningRate;
 	private readonly StrategyParam<decimal> _featureClamp;
+	private static readonly object _sync = new();
 
 	private decimal _accountEquityAtStart;
 	private decimal _dailyEquityAtStart;
@@ -341,7 +342,7 @@ public class NeuralNetworkAtrStrategy : Strategy
 
 	var subscription = SubscribeCandles(CandleType);
 	subscription
-	.Bind(atr, ProcessCandle)
+	.Bind(candle => ProcessCandle(candle, atr))
 	.Start();
 
 	// Subscribe to level1 updates to evaluate spread in points.
@@ -367,13 +368,26 @@ public class NeuralNetworkAtrStrategy : Strategy
 	}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal atrValue)
+	private void ProcessCandle(ICandleMessage candle, ATR atr)
 	{
 	if (candle.State != CandleStates.Finished)
 	return;
 
 	if (!IsFormedAndOnlineAndAllowTrading())
 	return;
+
+	decimal atrValue;
+	lock (_sync)
+	{
+		var atrResult = atr.Process(new CandleIndicatorValue(atr, candle) { IsFinal = true });
+		if (!atrResult.IsFinal || !atr.IsFormed)
+		{
+			_previousCandle = candle;
+			return;
+		}
+
+		atrValue = atrResult.ToDecimal();
+	}
 
 	if (!_tradingHalted)
 	{

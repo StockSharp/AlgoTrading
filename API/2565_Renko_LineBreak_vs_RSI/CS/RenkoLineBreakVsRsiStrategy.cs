@@ -124,7 +124,7 @@ public class RenkoLineBreakVsRsiStrategy : Strategy
 	/// </summary>
 	public RenkoLineBreakVsRsiStrategy()
 	{
-		_boxSize = Param(nameof(BoxSize), 500m)
+		_boxSize = Param(nameof(BoxSize), 100m)
 		.SetGreaterThanZero()
 		.SetDisplay("Renko Box Size", "Renko brick size in price units", "Renko")
 		
@@ -136,7 +136,7 @@ public class RenkoLineBreakVsRsiStrategy : Strategy
 		
 		.SetOptimize(2, 20, 1);
 
-		_rsiShift = Param(nameof(RsiShift), 20m)
+		_rsiShift = Param(nameof(RsiShift), 10m)
 		.SetGreaterThanZero()
 		.SetDisplay("RSI Shift", "Distance from the 50 level to detect pullbacks", "Indicators")
 		
@@ -155,7 +155,7 @@ public class RenkoLineBreakVsRsiStrategy : Strategy
 		.SetOptimize(10m, 200m, 10m);
 
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(2).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe used for RSI and breakouts", "General");
 	}
 
@@ -202,6 +202,8 @@ public class RenkoLineBreakVsRsiStrategy : Strategy
 		{
 			Length = RsiPeriod
 		};
+
+		_renkoType ??= DataType.Create(typeof(RenkoCandleMessage), new Unit(BoxSize));
 
 		var timeSubscription = SubscribeCandles(CandleType);
 		timeSubscription
@@ -366,7 +368,9 @@ public class RenkoLineBreakVsRsiStrategy : Strategy
 
 	private void TryPlaceEntry(decimal rsiValue, bool hasRsi)
 	{
-		if (_trendState == TrendStates.ToDown || _trendState == TrendStates.ToUp)
+		var effectiveTrend = GetEffectiveTrend();
+
+		if (effectiveTrend == TrendStates.ToDown || effectiveTrend == TrendStates.ToUp)
 		{
 			if (_pendingIsBuy != null)
 			{
@@ -383,7 +387,7 @@ public class RenkoLineBreakVsRsiStrategy : Strategy
 		var indent = IndentFromHighLow;
 		var takeProfitDistance = TakeProfit;
 
-		if (_trendState == TrendStates.Up && rsiValue <= 50m - RsiShift)
+		if (effectiveTrend == TrendStates.Up && rsiValue <= 50m - RsiShift)
 		{
 			var entryPrice = _prevHigh3 + indent;
 			var stopPrice = Math.Min(_prevLow1, Math.Min(_prevLow2, _prevLow3)) - indent;
@@ -394,7 +398,7 @@ public class RenkoLineBreakVsRsiStrategy : Strategy
 				PlacePendingOrder(true, entryPrice, stopPrice, takeProfitPrice);
 			}
 		}
-		else if (_trendState == TrendStates.Down && rsiValue >= 50m + RsiShift)
+		else if (effectiveTrend == TrendStates.Down && rsiValue >= 50m + RsiShift)
 		{
 			var entryPrice = _prevLow3 - indent;
 			var stopPrice = Math.Max(_prevHigh1, Math.Max(_prevHigh2, _prevHigh3)) + indent;
@@ -405,6 +409,23 @@ public class RenkoLineBreakVsRsiStrategy : Strategy
 				PlacePendingOrder(false, entryPrice, stopPrice, takeProfitPrice);
 			}
 		}
+	}
+
+	private TrendStates GetEffectiveTrend()
+	{
+		if (_trendState != TrendStates.None)
+			return _trendState;
+
+		if (_historyCount < 3)
+			return TrendStates.None;
+
+		if (_prevHigh1 > _prevHigh2 && _prevHigh2 > _prevHigh3)
+			return TrendStates.Up;
+
+		if (_prevLow1 < _prevLow2 && _prevLow2 < _prevLow3)
+			return TrendStates.Down;
+
+		return TrendStates.None;
 	}
 
 	private void PlacePendingOrder(bool isBuy, decimal entryPrice, decimal stopPrice, decimal? takeProfitPrice)

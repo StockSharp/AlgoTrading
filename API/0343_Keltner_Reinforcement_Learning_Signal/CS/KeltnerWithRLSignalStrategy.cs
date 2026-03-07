@@ -28,6 +28,7 @@ public class KeltnerWithRLSignalStrategy : Strategy
 	private readonly StrategyParam<int> _atrPeriod;
 	private readonly StrategyParam<decimal> _atrMultiplier;
 	private readonly StrategyParam<decimal> _stopLossAtr;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private enum RLSignals
@@ -47,6 +48,9 @@ public class KeltnerWithRLSignalStrategy : Strategy
 	private decimal _previousSignalPrice;
 	private int _consecutiveWins;
 	private int _consecutiveLosses;
+	private int _cooldownRemaining;
+	private bool _previousAboveUpperBand;
+	private bool _previousBelowLowerBand;
 
 	/// <summary>
 	/// EMA period.
@@ -85,6 +89,15 @@ public class KeltnerWithRLSignalStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Closed candles to wait between position changes.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Type of candles to use.
 	/// </summary>
 	public DataType CandleType
@@ -110,11 +123,15 @@ public class KeltnerWithRLSignalStrategy : Strategy
 		
 		.SetOptimize(7, 21, 7);
 
-		_atrMultiplier = Param(nameof(AtrMultiplier), 2m)
+		_atrMultiplier = Param(nameof(AtrMultiplier), 1.25m)
 		.SetGreaterThanZero()
 		.SetDisplay("ATR Multiplier", "Multiplier for ATR in Keltner Channels", "Keltner Settings")
 		
 		.SetOptimize(1.5m, 3m, 0.5m);
+
+		_cooldownBars = Param(nameof(CooldownBars), 48)
+		.SetNotNegative()
+		.SetDisplay("Cooldown Bars", "Closed candles to wait before another position change", "General");
 
 		_stopLossAtr = Param(nameof(StopLossAtr), 2m)
 		.SetGreaterThanZero()
@@ -122,7 +139,7 @@ public class KeltnerWithRLSignalStrategy : Strategy
 		
 		.SetOptimize(1m, 3m, 0.5m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -140,6 +157,9 @@ public class KeltnerWithRLSignalStrategy : Strategy
 		_currentSignal = default;
 		_consecutiveWins = _consecutiveLosses = default;
 		_lastPrice = _previousEma = _previousAtr = _previousPrice = _previousSignalPrice = default;
+		_cooldownRemaining = default;
+		_previousAboveUpperBand = default;
+		_previousBelowLowerBand = default;
 	}
 
 	protected override void OnStarted2(DateTime time)
@@ -204,26 +224,33 @@ public class KeltnerWithRLSignalStrategy : Strategy
 		// Generate RL signal based on current state
 		UpdateRLSignal(candle, middleBand, currentAtr);
 
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
+
 		// Trading logic
 		var price = candle.ClosePrice;
 		var priceAboveUpperBand = price > upperBand;
 		var priceBelowLowerBand = price < lowerBand;
+		var bullishBreakout = !_previousAboveUpperBand && priceAboveUpperBand;
+		var bearishBreakout = !_previousBelowLowerBand && priceBelowLowerBand;
 
 		// Entry conditions
 
 		// Long entry: Price above upper band and RL signal is Buy
-if (priceAboveUpperBand && _currentSignal == RLSignals.Buy && Position <= 0)
+		if (_cooldownRemaining == 0 && bullishBreakout && _currentSignal == RLSignals.Buy && Position <= 0)
 		{
 			LogInfo($"Long signal: Price {price} > Upper Band {upperBand}, RL Signal = Buy");
-			BuyMarket(Volume);
+			BuyMarket(Volume + (Position < 0 ? Math.Abs(Position) : 0m));
 			_previousSignalPrice = price;
+			_cooldownRemaining = CooldownBars;
 		}
 		// Short entry: Price below lower band and RL signal is Sell
-else if (priceBelowLowerBand && _currentSignal == RLSignals.Sell && Position >= 0)
+		else if (_cooldownRemaining == 0 && bearishBreakout && _currentSignal == RLSignals.Sell && Position >= 0)
 		{
 			LogInfo($"Short signal: Price {price} < Lower Band {lowerBand}, RL Signal = Sell");
-			SellMarket(Volume);
+			SellMarket(Volume + (Position > 0 ? Math.Abs(Position) : 0m));
 			_previousSignalPrice = price;
+			_cooldownRemaining = CooldownBars;
 		}
 
 		// Exit conditions
@@ -233,12 +260,14 @@ else if (priceBelowLowerBand && _currentSignal == RLSignals.Sell && Position >= 
 		{
 			LogInfo($"Exit long: Price {price} < EMA {middleBand}");
 			SellMarket(Math.Abs(Position));
+			_cooldownRemaining = CooldownBars;
 		}
 		// Exit short: Price rises above EMA (middle band)
 		else if (Position < 0 && price > middleBand)
 		{
 			LogInfo($"Exit short: Price {price} > EMA {middleBand}");
 			BuyMarket(Math.Abs(Position));
+			_cooldownRemaining = CooldownBars;
 		}
 
 		// Set stop loss based on ATR
@@ -248,6 +277,8 @@ else if (priceBelowLowerBand && _currentSignal == RLSignals.Sell && Position >= 
 		_previousEma = middleBand;
 		_previousAtr = currentAtr;
 		_previousPrice = price;
+		_previousAboveUpperBand = priceAboveUpperBand;
+		_previousBelowLowerBand = priceBelowLowerBand;
 	}
 
 	/// <summary>

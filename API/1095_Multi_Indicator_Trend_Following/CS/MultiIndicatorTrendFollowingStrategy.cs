@@ -21,11 +21,17 @@ public class MultiIndicatorTrendFollowingStrategy : Strategy
 	private readonly StrategyParam<int> _fastMaLength;
 	private readonly StrategyParam<int> _slowMaLength;
 	private readonly StrategyParam<int> _rsiLength;
+	private readonly StrategyParam<decimal> _longRsiLevel;
+	private readonly StrategyParam<decimal> _shortRsiLevel;
+	private readonly StrategyParam<int> _signalCooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
 	public int FastMaLength { get => _fastMaLength.Value; set => _fastMaLength.Value = value; }
 	public int SlowMaLength { get => _slowMaLength.Value; set => _slowMaLength.Value = value; }
 	public int RsiLength { get => _rsiLength.Value; set => _rsiLength.Value = value; }
+	public decimal LongRsiLevel { get => _longRsiLevel.Value; set => _longRsiLevel.Value = value; }
+	public decimal ShortRsiLevel { get => _shortRsiLevel.Value; set => _shortRsiLevel.Value = value; }
+	public int SignalCooldownBars { get => _signalCooldownBars.Value; set => _signalCooldownBars.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public MultiIndicatorTrendFollowingStrategy()
@@ -39,7 +45,14 @@ public class MultiIndicatorTrendFollowingStrategy : Strategy
 		_rsiLength = Param(nameof(RsiLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "RSI period", "Indicators");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_longRsiLevel = Param(nameof(LongRsiLevel), 55m)
+			.SetDisplay("Long RSI", "Minimum RSI for long entries", "Indicators");
+		_shortRsiLevel = Param(nameof(ShortRsiLevel), 45m)
+			.SetDisplay("Short RSI", "Maximum RSI for short entries", "Indicators");
+		_signalCooldownBars = Param(nameof(SignalCooldownBars), 6)
+			.SetGreaterThanZero()
+			.SetDisplay("Signal Cooldown", "Bars to wait after each crossover trade", "Trading");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -54,6 +67,7 @@ public class MultiIndicatorTrendFollowingStrategy : Strategy
 		var prevFast = 0m;
 		var prevSlow = 0m;
 		var initialized = false;
+		var cooldownRemaining = 0;
 
 		var subscription = SubscribeCandles(CandleType);
 
@@ -66,6 +80,9 @@ public class MultiIndicatorTrendFollowingStrategy : Strategy
 				if (!IsFormedAndOnlineAndAllowTrading())
 					return;
 
+				if (cooldownRemaining > 0)
+					cooldownRemaining--;
+
 				if (!initialized)
 				{
 					prevFast = fastVal;
@@ -77,10 +94,16 @@ public class MultiIndicatorTrendFollowingStrategy : Strategy
 				var crossUp = prevFast <= prevSlow && fastVal > slowVal;
 				var crossDown = prevFast >= prevSlow && fastVal < slowVal;
 
-				if (crossUp && rsiVal > 50 && Position <= 0)
+				if (cooldownRemaining == 0 && crossUp && rsiVal > LongRsiLevel && Position <= 0)
+				{
 					BuyMarket();
-				else if (crossDown && rsiVal < 50 && Position >= 0)
+					cooldownRemaining = SignalCooldownBars;
+				}
+				else if (cooldownRemaining == 0 && crossDown && rsiVal < ShortRsiLevel && Position >= 0)
+				{
 					SellMarket();
+					cooldownRemaining = SignalCooldownBars;
+				}
 
 				prevFast = fastVal;
 				prevSlow = slowVal;

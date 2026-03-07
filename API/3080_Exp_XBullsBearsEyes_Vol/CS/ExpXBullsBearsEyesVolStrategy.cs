@@ -335,6 +335,7 @@ public class ExpXBullsBearsEyesVolStrategy : Strategy
 		_isLongSecondaryOpen = false;
 		_isShortPrimaryOpen = false;
 		_isShortSecondaryOpen = false;
+		_indicator = null;
 	}
 
 	/// <inheritdoc />

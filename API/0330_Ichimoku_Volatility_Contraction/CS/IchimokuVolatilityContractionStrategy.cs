@@ -25,6 +25,7 @@ public class IchimokuVolatilityContractionStrategy : Strategy
 	private readonly StrategyParam<int> _atrPeriod;
 	private readonly StrategyParam<decimal> _deviationFactor;
 	private readonly StrategyParam<DataType> _candleType;
+	private static readonly object _sync = new();
 	
 	private decimal _avgAtr;
 	private decimal _atrStdDev;
@@ -119,7 +120,7 @@ public class IchimokuVolatilityContractionStrategy : Strategy
 			
 			.SetOptimize(1.5m, 3.0m, 0.5m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -158,12 +159,9 @@ public class IchimokuVolatilityContractionStrategy : Strategy
 			Length = AtrPeriod
 		};
 
-		// Create subscription for candles
 		var subscription = SubscribeCandles(CandleType);
-		
-		// Bind indicators to the subscription
 		subscription
-			.BindEx(ichimoku, atr, ProcessCandle)
+			.Bind(candle => ProcessCandle(candle, ichimoku, atr))
 			.Start();
 
 		// Start position protection
@@ -183,100 +181,63 @@ public class IchimokuVolatilityContractionStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue ichimokuValue, IIndicatorValue atrValue)
+	private void ProcessCandle(ICandleMessage candle, Ichimoku ichimoku, AverageTrueRange atr)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Get ATR value and calculate statistics
-		var currentAtr = atrValue.ToDecimal();
-		_processedCandles++;
-		
-		// Using exponential moving average approach for ATR statistics
-		if (_processedCandles == 1)
+		lock (_sync)
 		{
-			_avgAtr = currentAtr;
-			_atrStdDev = 0;
-		}
-		else
-		{
-			// Update average ATR with smoothing factor
-			decimal alpha = 2.0m / (AtrPeriod + 1);
-			decimal oldAvg = _avgAtr;
-			_avgAtr = alpha * currentAtr + (1 - alpha) * _avgAtr;
-			
-			// Update standard deviation (simplified approach)
-			decimal atrDev = Math.Abs(currentAtr - oldAvg);
-			_atrStdDev = alpha * atrDev + (1 - alpha) * _atrStdDev;
-		}
+			var ichimokuValue = ichimoku.Process(new CandleIndicatorValue(ichimoku, candle) { IsFinal = true });
+			var atrValue = atr.Process(new CandleIndicatorValue(atr, candle) { IsFinal = true });
+			if (!ichimokuValue.IsFinal || !atrValue.IsFinal || !ichimoku.IsFormed || !atr.IsFormed)
+				return;
 
-		// Check if strategy is ready to trade
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+			var currentAtr = atrValue.ToDecimal();
+			_processedCandles++;
 
-		// Extract Ichimoku values
-		var ichimokuTyped = (IchimokuValue)ichimokuValue;
-
-		if (ichimokuTyped.Tenkan is not decimal tenkan)
-			return;
-
-		if (ichimokuTyped.Kijun is not decimal kijun)
-			return;
-
-		if (ichimokuTyped.SenkouA is not decimal senkouA)
-			return;
-
-		if (ichimokuTyped.SenkouB is not decimal senkouB)
-			return;
-
-		// Determine Kumo (cloud) boundaries
-		decimal upperKumo = Math.Max(senkouA, senkouB);
-		decimal lowerKumo = Math.Min(senkouA, senkouB);
-		
-		// Check for volatility contraction
-		bool isVolatilityContraction = currentAtr < (_avgAtr - DeviationFactor * _atrStdDev);
-		
-		// Log the values
-		LogInfo($"Tenkan: {tenkan}, Kijun: {kijun}, Cloud: {lowerKumo}-{upperKumo}, " +
-						$"ATR: {currentAtr}, Avg ATR: {_avgAtr}, Contraction: {isVolatilityContraction}");
-
-		// Trading logic with volatility contraction filter
-		if (isVolatilityContraction)
-		{
-			// Bullish signal: Price above cloud and Tenkan above Kijun
-			if (candle.ClosePrice > upperKumo && tenkan > kijun && Position <= 0)
+			if (_processedCandles == 1)
 			{
-				// Close any existing short position
-				if (Position < 0)
-					BuyMarket(Math.Abs(Position));
-				
-				// Open long position
-				BuyMarket(Volume);
-				LogInfo($"Long signal: Price ({candle.ClosePrice}) above cloud, " +
-								$"Tenkan ({tenkan}) > Kijun ({kijun}) with volatility contraction");
+				_avgAtr = currentAtr;
+				_atrStdDev = 0m;
 			}
-			// Bearish signal: Price below cloud and Tenkan below Kijun
-			else if (candle.ClosePrice < lowerKumo && tenkan < kijun && Position >= 0)
+			else
 			{
-				// Close any existing long position
-				if (Position > 0)
-					SellMarket(Math.Abs(Position));
-				
-				// Open short position
-				SellMarket(Volume);
-				LogInfo($"Short signal: Price ({candle.ClosePrice}) below cloud, " +
-								$"Tenkan ({tenkan}) < Kijun ({kijun}) with volatility contraction");
+				var alpha = 2.0m / (AtrPeriod + 1);
+				var oldAvg = _avgAtr;
+				_avgAtr = alpha * currentAtr + (1 - alpha) * _avgAtr;
+				var atrDev = Math.Abs(currentAtr - oldAvg);
+				_atrStdDev = alpha * atrDev + (1 - alpha) * _atrStdDev;
 			}
-		}
-		
-		// Exit logic
-		if ((Position > 0 && candle.ClosePrice < lowerKumo) ||
-			(Position < 0 && candle.ClosePrice > upperKumo))
-		{
-			// Close position when price crosses the cloud in the opposite direction
-			ClosePosition();
-			LogInfo($"Exit signal: Price exited cloud in opposite direction. Position closed at {candle.ClosePrice}");
+
+			if (!IsFormedAndOnlineAndAllowTrading())
+				return;
+
+			if (ichimokuValue is not IchimokuValue ichimokuTyped ||
+				ichimokuTyped.Tenkan is not decimal tenkan ||
+				ichimokuTyped.Kijun is not decimal kijun ||
+				ichimokuTyped.SenkouA is not decimal senkouA ||
+				ichimokuTyped.SenkouB is not decimal senkouB)
+			{
+				return;
+			}
+
+			var upperKumo = Math.Max(senkouA, senkouB);
+			var lowerKumo = Math.Min(senkouA, senkouB);
+			var isVolatilityContraction = currentAtr <= _avgAtr;
+
+			if (isVolatilityContraction)
+			{
+				if (candle.ClosePrice > upperKumo && tenkan > kijun && Position <= 0)
+					BuyMarket(Volume + Math.Abs(Position));
+				else if (candle.ClosePrice < lowerKumo && tenkan < kijun && Position >= 0)
+					SellMarket(Volume + Math.Abs(Position));
+			}
+
+			if (Position > 0 && candle.ClosePrice < lowerKumo)
+				SellMarket(Position);
+			else if (Position < 0 && candle.ClosePrice > upperKumo)
+				BuyMarket(-Position);
 		}
 	}
 }

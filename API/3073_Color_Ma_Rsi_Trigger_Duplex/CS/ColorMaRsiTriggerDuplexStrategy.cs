@@ -21,8 +21,10 @@ public class ColorMaRsiTriggerDuplexStrategy : Strategy
 	private readonly StrategyParam<int> _fastRsiPeriod;
 	private readonly StrategyParam<int> _slowRsiPeriod;
 	private readonly StrategyParam<int> _signalBar;
+	private readonly StrategyParam<int> _signalCooldownBars;
 
 	private readonly List<decimal> _colorHistory = new();
+	private int _cooldownRemaining;
 
 	/// <summary>Candle type.</summary>
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
@@ -36,10 +38,12 @@ public class ColorMaRsiTriggerDuplexStrategy : Strategy
 	public int SlowRsiPeriod { get => _slowRsiPeriod.Value; set => _slowRsiPeriod.Value = value; }
 	/// <summary>Signal bar shift.</summary>
 	public int SignalBar { get => _signalBar.Value; set => _signalBar.Value = value; }
+	/// <summary>Bars to wait between reversals.</summary>
+	public int SignalCooldownBars { get => _signalCooldownBars.Value; set => _signalCooldownBars.Value = value; }
 
 	public ColorMaRsiTriggerDuplexStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for candles", "General");
 
 		_fastMaPeriod = Param(nameof(FastMaPeriod), 5)
@@ -56,6 +60,21 @@ public class ColorMaRsiTriggerDuplexStrategy : Strategy
 
 		_signalBar = Param(nameof(SignalBar), 1)
 			.SetDisplay("Signal Bar", "History shift for signal evaluation", "Strategy");
+
+		_signalCooldownBars = Param(nameof(SignalCooldownBars), 8)
+			.SetGreaterThanZero()
+			.SetDisplay("Signal Cooldown", "Bars to wait between reversals", "Strategy");
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		lock (_colorHistory)
+			_colorHistory.Clear();
+
+		_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
@@ -63,7 +82,10 @@ public class ColorMaRsiTriggerDuplexStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_colorHistory.Clear();
+		lock (_colorHistory)
+			_colorHistory.Clear();
+
+		_cooldownRemaining = 0;
 
 		var fastMa = new ExponentialMovingAverage { Length = FastMaPeriod };
 		var slowMa = new ExponentialMovingAverage { Length = SlowMaPeriod };
@@ -91,6 +113,12 @@ public class ColorMaRsiTriggerDuplexStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
+
 		// Calculate color code from MA and RSI comparisons
 		var score = 0m;
 
@@ -108,38 +136,47 @@ public class ColorMaRsiTriggerDuplexStrategy : Strategy
 		if (score > 1m) score = 1m;
 		else if (score < -1m) score = -1m;
 
-		// Update history (most recent at index 0)
-		_colorHistory.Insert(0, score);
-		var maxHistory = Math.Max(2, SignalBar + 2);
-		while (_colorHistory.Count > maxHistory)
-			_colorHistory.RemoveAt(_colorHistory.Count - 1);
+		decimal recent;
+		decimal older;
 
-		// Need enough history
-		if (_colorHistory.Count <= SignalBar + 1)
-			return;
+		lock (_colorHistory)
+		{
+			_colorHistory.Insert(0, score);
+			var maxHistory = Math.Max(2, SignalBar + 2);
+			while (_colorHistory.Count > maxHistory)
+				_colorHistory.RemoveAt(_colorHistory.Count - 1);
 
-		var recent = _colorHistory[SignalBar];
-		var older = _colorHistory[SignalBar + 1];
+			if (_colorHistory.Count <= SignalBar + 1)
+				return;
 
-		// Long signal: color transitions from negative to positive/neutral
-		if (older > 0m && recent <= 0m && Position <= 0)
-		{
-			BuyMarket();
+			recent = _colorHistory[SignalBar];
+			older = _colorHistory[SignalBar + 1];
 		}
-		// Short signal: color transitions from positive to negative/neutral
-		else if (older < 0m && recent >= 0m && Position >= 0)
+
+		var longOpen = older == -1m && recent == 1m;
+		var shortOpen = older == 1m && recent == -1m;
+		var longExit = Position > 0 && recent < 0m;
+		var shortExit = Position < 0 && recent > 0m;
+
+		if (longExit)
 		{
-			SellMarket();
+			SellMarket(Position);
+			_cooldownRemaining = SignalCooldownBars;
 		}
-		// Exit long if color turns negative
-		else if (Position > 0 && recent < 0m)
+		else if (shortExit)
 		{
-			SellMarket();
+			BuyMarket(Math.Abs(Position));
+			_cooldownRemaining = SignalCooldownBars;
 		}
-		// Exit short if color turns positive
-		else if (Position < 0 && recent > 0m)
+		else if (_cooldownRemaining == 0 && longOpen && Position <= 0)
 		{
-			BuyMarket();
+			BuyMarket(Volume + Math.Abs(Position));
+			_cooldownRemaining = SignalCooldownBars;
+		}
+		else if (_cooldownRemaining == 0 && shortOpen && Position >= 0)
+		{
+			SellMarket(Volume + Math.Abs(Position));
+			_cooldownRemaining = SignalCooldownBars;
 		}
 	}
 }

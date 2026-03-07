@@ -168,7 +168,7 @@ public class IvanCciAveragingStrategy : Strategy
 	/// </summary>
 	public IvanCciAveragingStrategy()
 	{
-		_useAveraging = Param(nameof(UseAveraging), true)
+		_useAveraging = Param(nameof(UseAveraging), false)
 			.SetDisplay("Use Averaging", "Allow additional averaging entries", "Signals");
 
 		_stopLossMaPeriod = Param(nameof(StopLossMaPeriod), 36)
@@ -179,7 +179,7 @@ public class IvanCciAveragingStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Risk %", "Portfolio percent risked per trade", "Risk");
 
-		_useZeroBar = Param(nameof(UseZeroBar), true)
+		_useZeroBar = Param(nameof(UseZeroBar), false)
 			.SetDisplay("Use Zero Bar", "Use current bar values instead of previous", "Signals");
 
 		_reverseLevel = Param(nameof(ReverseLevel), 100m)
@@ -209,7 +209,7 @@ public class IvanCciAveragingStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Minimum Volume", "Fallback trade volume", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for calculations", "General");
 	}
 
@@ -217,6 +217,35 @@ public class IvanCciAveragingStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_cci100?.Reset();
+		_cci13?.Reset();
+		_stopMa?.Reset();
+		_cci100 = null!;
+		_cci13 = null!;
+		_stopMa = null!;
+		_lastCci100 = null;
+		_prevCci100 = null;
+		_lastCci13 = null;
+		_prevCci13 = null;
+		_globalBuySignal = false;
+		_globalSellSignal = false;
+		_closeAll = false;
+		_initialBalance = null;
+		_longEntryPrice = 0m;
+		_shortEntryPrice = 0m;
+		_longStop = 0m;
+		_shortStop = 0m;
+		_longBreakEvenActivated = false;
+		_shortBreakEvenActivated = false;
+		_hasLongEntry = false;
+		_hasShortEntry = false;
 	}
 
 	/// <inheritdoc />

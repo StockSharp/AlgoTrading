@@ -40,6 +40,7 @@ public class ExpHansIndicatorCloudSystemTmPlusStrategy : Strategy
 	private readonly StrategyParam<int> _signalBar;
 	private readonly StrategyParam<int> _localTimeZone;
 	private readonly StrategyParam<int> _destinationTimeZone;
+	private readonly StrategyParam<int> _entryCooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private DailySessionState _dayState;
@@ -47,6 +48,9 @@ public class ExpHansIndicatorCloudSystemTmPlusStrategy : Strategy
 	private decimal? _stopPrice;
 	private decimal? _takePrice;
 	private DateTimeOffset? _entryTime;
+	private decimal _prevClosePrice;
+	private int _cooldownRemaining;
+	private bool _hasPrevClose;
 
 	/// <summary>
 	/// Enumeration matching the money management modes of the original expert.
@@ -197,6 +201,15 @@ public class ExpHansIndicatorCloudSystemTmPlusStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Bars to wait after each entry before accepting a new one.
+	/// </summary>
+	public int EntryCooldownBars
+	{
+		get => _entryCooldownBars.Value;
+		set => _entryCooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Candle series used for indicator calculations.
 	/// </summary>
 	public DataType CandleType
@@ -260,7 +273,7 @@ public class ExpHansIndicatorCloudSystemTmPlusStrategy : Strategy
 		.SetDisplay("Holding Minutes", "Maximum position lifetime in minutes", "Risk")
 		.SetNotNegative();
 
-		_pipsForEntry = Param(nameof(PipsForEntry), 100)
+		_pipsForEntry = Param(nameof(PipsForEntry), 5)
 		.SetDisplay("Pips For Entry", "Offset added above/below the breakout range", "Indicator")
 		.SetNotNegative();
 
@@ -271,8 +284,12 @@ public class ExpHansIndicatorCloudSystemTmPlusStrategy : Strategy
 		_localTimeZone = Param(nameof(LocalTimeZone), 0)
 		.SetDisplay("Local Time Zone", "Broker/server time zone", "Indicator");
 
-		_destinationTimeZone = Param(nameof(DestinationTimeZone), 4)
+		_destinationTimeZone = Param(nameof(DestinationTimeZone), 0)
 		.SetDisplay("Destination Time Zone", "Target time zone for sessions", "Indicator");
+
+		_entryCooldownBars = Param(nameof(EntryCooldownBars), 10)
+			.SetDisplay("Entry Cooldown", "Bars to wait after an entry signal", "Risk")
+			.SetGreaterThanZero();
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 		.SetDisplay("Candle Type", "Time frame used for Hans calculations", "Data");
@@ -291,6 +308,9 @@ public class ExpHansIndicatorCloudSystemTmPlusStrategy : Strategy
 
 		_colorHistory.Clear();
 		_dayState = null;
+		_prevClosePrice = 0m;
+		_cooldownRemaining = 0;
+		_hasPrevClose = false;
 		ResetPositionState();
 	}
 
@@ -311,6 +331,9 @@ public class ExpHansIndicatorCloudSystemTmPlusStrategy : Strategy
 		if (Position == 0 && (_entryTime.HasValue || _stopPrice.HasValue || _takePrice.HasValue))
 		ResetPositionState();
 
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
+
 		UpdateDailyState(candle);
 
 		var color = CalculateColor(candle);
@@ -325,17 +348,19 @@ public class ExpHansIndicatorCloudSystemTmPlusStrategy : Strategy
 		if (currentIndex >= _colorHistory.Count)
 		return;
 
-		var previousIndex = currentIndex - 1;
-		if (previousIndex < 0)
-		return;
-
 		var currentColor = _colorHistory[currentIndex];
-		var previousColor = _colorHistory[previousIndex];
+		var hasBands = TryGetActiveBands(out var upper, out var lower);
+		var buyEntrySignal = false;
+		var sellEntrySignal = false;
 
-		var buyEntrySignal = AllowBuyEntries && IsUpperBreakout(previousColor) && !IsUpperBreakout(currentColor);
-		var sellEntrySignal = AllowSellEntries && IsLowerBreakout(previousColor) && !IsLowerBreakout(currentColor);
-		var buyExitSignal = AllowBuyExits && IsLowerBreakout(previousColor);
-		var sellExitSignal = AllowSellExits && IsUpperBreakout(previousColor);
+		if (hasBands && _hasPrevClose)
+		{
+			buyEntrySignal = AllowBuyEntries && _prevClosePrice <= upper && candle.ClosePrice > upper;
+			sellEntrySignal = AllowSellEntries && _prevClosePrice >= lower && candle.ClosePrice < lower;
+		}
+
+		var buyExitSignal = AllowBuyExits && (IsLowerBreakout(currentColor) || (hasBands && candle.ClosePrice < lower));
+		var sellExitSignal = AllowSellExits && (IsUpperBreakout(currentColor) || (hasBands && candle.ClosePrice > upper));
 
 		if (Position > 0)
 		{
@@ -357,6 +382,15 @@ public class ExpHansIndicatorCloudSystemTmPlusStrategy : Strategy
 				CloseShort();
 			}
 		}
+
+		_prevClosePrice = candle.ClosePrice;
+		_hasPrevClose = true;
+
+		if (_cooldownRemaining > 0)
+			return;
+
+		if (_dayState != null && _dayState.EntryTaken)
+			return;
 
 		if (buyEntrySignal && Position <= 0)
 		{
@@ -380,6 +414,8 @@ public class ExpHansIndicatorCloudSystemTmPlusStrategy : Strategy
 		return;
 
 		BuyMarket(totalVolume);
+		_cooldownRemaining = EntryCooldownBars;
+		_dayState!.EntryTaken = true;
 
 		_entryTime = candle.CloseTime != default ? candle.CloseTime : candle.OpenTime;
 
@@ -407,6 +443,8 @@ public class ExpHansIndicatorCloudSystemTmPlusStrategy : Strategy
 		return;
 
 		SellMarket(totalVolume);
+		_cooldownRemaining = EntryCooldownBars;
+		_dayState!.EntryTaken = true;
 
 		_entryTime = candle.CloseTime != default ? candle.CloseTime : candle.OpenTime;
 
@@ -563,7 +601,7 @@ public class ExpHansIndicatorCloudSystemTmPlusStrategy : Strategy
 			return step;
 		}
 
-		return 0m;
+		return 0.01m;
 	}
 
 	private void ResetPositionState()
@@ -601,6 +639,6 @@ public class ExpHansIndicatorCloudSystemTmPlusStrategy : Strategy
 		public decimal? Session2Low { get; set; }
 		public bool Session1Completed { get; set; }
 		public bool Session2Completed { get; set; }
+		public bool EntryTaken { get; set; }
 	}
 }
-

@@ -3,13 +3,13 @@ namespace StockSharp.Samples.Strategies;
 using System;
 using System.Collections.Generic;
 
-using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
+using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 /// <summary>
-/// Strategy based on Stochastic Oscillator with Dynamic Overbought/Oversold Zones.
+/// Strategy based on Stochastic Oscillator with dynamic overbought and oversold zones.
 /// </summary>
 public class StochasticWithDynamicZonesStrategy : Strategy
 {
@@ -17,12 +17,16 @@ public class StochasticWithDynamicZonesStrategy : Strategy
 	private readonly StrategyParam<int> _stochDPeriod;
 	private readonly StrategyParam<int> _lookbackPeriod;
 	private readonly StrategyParam<decimal> _stdDevFactor;
+	private readonly StrategyParam<int> _signalCooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _prevStochK;
 	private decimal _stochSum;
 	private decimal _stochSqSum;
 	private int _stochCount;
+	private int _cooldownRemaining;
+	private DateTimeOffset? _lastEntryTime;
+	private bool _wasBelowOversold;
 	private readonly Queue<decimal> _stochQueue = new();
 
 	public int StochKPeriod
@@ -49,6 +53,12 @@ public class StochasticWithDynamicZonesStrategy : Strategy
 		set => _stdDevFactor.Value = value;
 	}
 
+	public int SignalCooldownBars
+	{
+		get => _signalCooldownBars.Value;
+		set => _signalCooldownBars.Value = value;
+	}
+
 	public DataType CandleType
 	{
 		get => _candleType.Value;
@@ -57,20 +67,45 @@ public class StochasticWithDynamicZonesStrategy : Strategy
 
 	public StochasticWithDynamicZonesStrategy()
 	{
-		_stochKPeriod = Param(nameof(StochKPeriod), 3)
+		_stochKPeriod = Param(nameof(StochKPeriod), 14)
 			.SetDisplay("Stoch %K Period", "Smoothing period for %K", "Indicators");
 
 		_stochDPeriod = Param(nameof(StochDPeriod), 3)
 			.SetDisplay("Stoch %D Period", "Smoothing period for %D", "Indicators");
 
-		_lookbackPeriod = Param(nameof(LookbackPeriod), 20)
+		_lookbackPeriod = Param(nameof(LookbackPeriod), 40)
 			.SetDisplay("Lookback Period", "Period for dynamic zones", "Indicators");
 
-		_stdDevFactor = Param(nameof(StdDevFactor), 1.5m)
+		_stdDevFactor = Param(nameof(StdDevFactor), 3.0m)
 			.SetDisplay("StdDev Factor", "Factor for dynamic zones", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_signalCooldownBars = Param(nameof(SignalCooldownBars), 240)
+			.SetDisplay("Signal Cooldown", "Bars to wait between signals", "Trading")
+			.SetGreaterThanZero();
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_prevStochK = 50m;
+		_stochSum = 0m;
+		_stochSqSum = 0m;
+		_stochCount = 0;
+		_cooldownRemaining = 0;
+		_lastEntryTime = null;
+		_wasBelowOversold = false;
+		_stochQueue.Clear();
 	}
 
 	/// <inheritdoc />
@@ -78,10 +113,13 @@ public class StochasticWithDynamicZonesStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_prevStochK = 50;
-		_stochSum = 0;
-		_stochSqSum = 0;
+		_prevStochK = 50m;
+		_stochSum = 0m;
+		_stochSqSum = 0m;
 		_stochCount = 0;
+		_cooldownRemaining = 0;
+		_lastEntryTime = null;
+		_wasBelowOversold = false;
 		_stochQueue.Clear();
 
 		var stochastic = new StochasticOscillator
@@ -109,12 +147,14 @@ public class StochasticWithDynamicZonesStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		if (!stochValue.IsFormed)
+			return;
+
 		var stochTyped = (StochasticOscillatorValue)stochValue;
 
 		if (stochTyped.K is not decimal stochK)
 			return;
 
-		// Maintain running stats for dynamic zones
 		_stochQueue.Enqueue(stochK);
 		_stochSum += stochK;
 		_stochSqSum += stochK * stochK;
@@ -134,33 +174,37 @@ public class StochasticWithDynamicZonesStrategy : Strategy
 			return;
 		}
 
-		var avg = _stochSum / _stochCount;
-		var variance = (_stochSqSum / _stochCount) - (avg * avg);
-		var stdDev = variance <= 0 ? 0m : (decimal)Math.Sqrt((double)variance);
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
 
-		var dynamicOversold = avg - StdDevFactor * stdDev;
-		var dynamicOverbought = avg + StdDevFactor * stdDev;
-
+		var average = _stochSum / _stochCount;
+		var variance = (_stochSqSum / _stochCount) - (average * average);
+		var stdDev = variance <= 0m ? 0m : (decimal)Math.Sqrt((double)variance);
+		var dynamicOversold = Math.Max(10m, average - StdDevFactor * stdDev);
+		var entryOversold = Math.Min(dynamicOversold, 10m);
 		var isReversingUp = stochK > _prevStochK;
-		var isReversingDown = stochK < _prevStochK;
 
-		if (stochK < dynamicOversold && isReversingUp && Position <= 0)
-		{
-			BuyMarket();
-		}
-		else if (stochK > dynamicOverbought && isReversingDown && Position >= 0)
+		if (Position > 0 && stochK >= 50m)
 		{
 			SellMarket();
+			_cooldownRemaining = SignalCooldownBars;
 		}
-		else if (Position > 0 && stochK > 50)
-		{
-			SellMarket();
-		}
-		else if (Position < 0 && stochK < 50)
+		else if (_cooldownRemaining == 0 && !HasEntryToday(candle) && _wasBelowOversold && stochK >= entryOversold && isReversingUp && Position == 0)
 		{
 			BuyMarket();
+			_cooldownRemaining = SignalCooldownBars;
+			_lastEntryTime = candle.CloseTime != default ? candle.CloseTime : candle.OpenTime;
 		}
-
+		_wasBelowOversold = stochK < entryOversold;
 		_prevStochK = stochK;
+	}
+
+	private bool HasEntryToday(ICandleMessage candle)
+	{
+		if (!_lastEntryTime.HasValue)
+			return false;
+
+		var candleTime = candle.CloseTime != default ? candle.CloseTime : candle.OpenTime;
+		return (candleTime.Date - _lastEntryTime.Value.Date).TotalDays < 3;
 	}
 }

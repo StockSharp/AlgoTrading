@@ -22,10 +22,13 @@ public class CoppockHistogramStrategy : Strategy
 	private readonly StrategyParam<int> _roc2Period;
 	private readonly StrategyParam<int> _smoothPeriod;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _signalCooldownBars;
+	private static readonly object _sync = new();
 
 	private SimpleMovingAverage _sma = null!;
 	private decimal? _prev;
 	private decimal? _prev2;
+	private int _cooldownRemaining;
 
 	/// <summary>
 	/// First rate of change period.
@@ -65,6 +68,15 @@ public class CoppockHistogramStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Closed candles to wait before acting on the next turn.
+	/// </summary>
+	public int SignalCooldownBars
+	{
+		get => _signalCooldownBars.Value;
+		set => _signalCooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Initializes a new instance of the <see cref="CoppockHistogramStrategy"/>.
 	/// </summary>
 	public CoppockHistogramStrategy()
@@ -85,14 +97,29 @@ public class CoppockHistogramStrategy : Strategy
 			;
 
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "Parameters");
+
+		_signalCooldownBars = Param(nameof(SignalCooldownBars), 2)
+			.SetNotNegative()
+			.SetDisplay("Signal Cooldown", "Closed candles to wait before the next trade", "Parameters");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_sma?.Reset();
+		_prev = null;
+		_prev2 = null;
+		_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
@@ -124,33 +151,33 @@ public class CoppockHistogramStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var smoothValue = _sma.Process(roc1Value + roc2Value, candle.OpenTime, true);
-		if (!smoothValue.IsFinal || smoothValue.IsEmpty || !_sma.IsFormed)
-			return;
-
-		var coppock = smoothValue.ToDecimal();
-
-		if (_prev is decimal prev && _prev2 is decimal prev2)
+		lock (_sync)
 		{
-			if (prev < prev2)
-			{
-				if (Position < 0)
-					BuyMarket();
+			if (_cooldownRemaining > 0)
+				_cooldownRemaining--;
 
-				if (coppock > prev && Position <= 0)
-					BuyMarket();
-			}
-			else if (prev > prev2)
-			{
-				if (Position > 0)
-					SellMarket();
+			var smoothValue = _sma.Process(roc1Value + roc2Value, candle.OpenTime, true);
+			if (!smoothValue.IsFinal || smoothValue.IsEmpty || !_sma.IsFormed)
+				return;
 
-				if (coppock < prev && Position >= 0)
-					SellMarket();
+			var coppock = smoothValue.ToDecimal();
+
+			if (_prev is decimal prev && _prev2 is decimal prev2)
+			{
+				if (_cooldownRemaining == 0 && prev < prev2 && coppock > prev && Position <= 0)
+				{
+					BuyMarket(Volume + Math.Abs(Position));
+					_cooldownRemaining = SignalCooldownBars;
+				}
+				else if (_cooldownRemaining == 0 && prev > prev2 && coppock < prev && Position >= 0)
+				{
+					SellMarket(Volume + Math.Abs(Position));
+					_cooldownRemaining = SignalCooldownBars;
+				}
 			}
+
+			_prev2 = _prev;
+			_prev = coppock;
 		}
-
-		_prev2 = _prev;
-		_prev = coppock;
 	}
 }

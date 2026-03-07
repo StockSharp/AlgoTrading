@@ -1,16 +1,16 @@
+namespace StockSharp.Samples.Strategies;
+
 using System;
 using System.Collections.Generic;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
+using StockSharp.BusinessEntities;
 using StockSharp.Messages;
-
-namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Strategy converted from the MetaTrader expert Exp_XWPR_Histogram_Vol.
-/// Computes a volume-weighted Williams %R histogram inline and trades
-/// on colour transitions.
+/// Computes a volume-weighted Williams %R histogram inline and trades on strong colour transitions.
 /// </summary>
 public class ExpXwprHistogramVolStrategy : Strategy
 {
@@ -18,27 +18,26 @@ public class ExpXwprHistogramVolStrategy : Strategy
 	private readonly StrategyParam<int> _wprPeriod;
 	private readonly StrategyParam<int> _smoothingLength;
 	private readonly StrategyParam<decimal> _highLevel2;
-	private readonly StrategyParam<decimal> _highLevel1;
-	private readonly StrategyParam<decimal> _lowLevel1;
 	private readonly StrategyParam<decimal> _lowLevel2;
+	private readonly StrategyParam<int> _signalCooldownBars;
 
-	// rolling state
 	private WilliamsR _wpr;
 	private SimpleMovingAverage _histSma;
 	private SimpleMovingAverage _volSma;
 	private int? _prevColor;
+	private int _cooldownRemaining;
+	private DateTimeOffset? _lastEntryTime;
 
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 	public int WprPeriod { get => _wprPeriod.Value; set => _wprPeriod.Value = value; }
 	public int SmoothingLength { get => _smoothingLength.Value; set => _smoothingLength.Value = value; }
 	public decimal HighLevel2 { get => _highLevel2.Value; set => _highLevel2.Value = value; }
-	public decimal HighLevel1 { get => _highLevel1.Value; set => _highLevel1.Value = value; }
-	public decimal LowLevel1 { get => _lowLevel1.Value; set => _lowLevel1.Value = value; }
 	public decimal LowLevel2 { get => _lowLevel2.Value; set => _lowLevel2.Value = value; }
+	public int SignalCooldownBars { get => _signalCooldownBars.Value; set => _signalCooldownBars.Value = value; }
 
 	public ExpXwprHistogramVolStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe", "General");
 
 		_wprPeriod = Param(nameof(WprPeriod), 7)
@@ -52,86 +51,86 @@ public class ExpXwprHistogramVolStrategy : Strategy
 		_highLevel2 = Param(nameof(HighLevel2), 17m)
 			.SetDisplay("High Level 2", "Strong bullish zone", "Indicator");
 
-		_highLevel1 = Param(nameof(HighLevel1), 5m)
-			.SetDisplay("High Level 1", "Mild bullish zone", "Indicator");
-
-		_lowLevel1 = Param(nameof(LowLevel1), -5m)
-			.SetDisplay("Low Level 1", "Mild bearish zone", "Indicator");
-
 		_lowLevel2 = Param(nameof(LowLevel2), -17m)
 			.SetDisplay("Low Level 2", "Strong bearish zone", "Indicator");
+
+		_signalCooldownBars = Param(nameof(SignalCooldownBars), 48)
+			.SetGreaterThanZero()
+			.SetDisplay("Signal Cooldown", "Bars to wait after a new entry", "Trading");
 	}
 
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_wpr = null;
+		_histSma = null;
+		_volSma = null;
+		_prevColor = null;
+		_cooldownRemaining = 0;
+		_lastEntryTime = null;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
 		_prevColor = null;
+		_cooldownRemaining = 0;
+		_lastEntryTime = null;
 
 		_wpr = new WilliamsR { Length = WprPeriod };
 		_histSma = new SimpleMovingAverage { Length = SmoothingLength };
 		_volSma = new SimpleMovingAverage { Length = SmoothingLength };
 
 		var subscription = SubscribeCandles(CandleType);
-
-		subscription
-			.Bind(_wpr, ProcessCandle)
-			.Start();
+		subscription.Bind(ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _wpr);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal wprVal)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// volume from candle
-		var volume = candle.TotalVolume;
-		if (volume <= 0)
-			volume = 1;
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
 
-		// histogram raw = (wpr + 50) * volume
-		var histRaw = (wprVal + 50m) * volume;
+		var wprValue = _wpr.Process(candle);
+		if (!wprValue.IsFormed)
+			return;
 
-		// smooth histogram and volume
+		var wpr = wprValue.ToDecimal();
+		var volume = candle.TotalVolume > 0m ? candle.TotalVolume : 1m;
+		var histRaw = (wpr + 50m) * volume;
 		var histSmoothed = _histSma.Process(new DecimalIndicatorValue(_histSma, histRaw, candle.OpenTime) { IsFinal = true });
 		var volSmoothed = _volSma.Process(new DecimalIndicatorValue(_volSma, volume, candle.OpenTime) { IsFinal = true });
 
-		if (!histSmoothed.IsFinal || !histSmoothed.IsFormed)
+		if (!histSmoothed.IsFormed || !volSmoothed.IsFormed)
 			return;
-		if (!volSmoothed.IsFinal || !volSmoothed.IsFormed)
+
+		var baseline = volSmoothed.ToDecimal();
+		if (baseline == 0m)
 			return;
 
 		var hist = histSmoothed.ToDecimal();
-		var baseline = volSmoothed.ToDecimal();
+		var strongBullLevel = HighLevel2 * baseline;
+		var strongBearLevel = LowLevel2 * baseline;
 
-		if (baseline == 0)
-			return;
-
-		// determine color zone (0=strong bull, 1=mild bull, 2=neutral, 3=mild bear, 4=strong bear)
-		var maxLevel = HighLevel2 * baseline;
-		var upperLevel = HighLevel1 * baseline;
-		var lowerLevel = LowLevel1 * baseline;
-		var minLevel = LowLevel2 * baseline;
-
-		int color;
-		if (hist > maxLevel)
-			color = 0; // strong bullish
-		else if (hist > upperLevel)
-			color = 1; // mild bullish
-		else if (hist < minLevel)
-			color = 4; // strong bearish
-		else if (hist < lowerLevel)
-			color = 3; // mild bearish
-		else
-			color = 2; // neutral
+		var color = hist >= strongBullLevel ? 0 : hist <= strongBearLevel ? 4 : 2;
 
 		if (_prevColor == null)
 		{
@@ -139,36 +138,34 @@ public class ExpXwprHistogramVolStrategy : Strategy
 			return;
 		}
 
-		var older = _prevColor.Value;
+		var previousColor = _prevColor.Value;
 		_prevColor = color;
 
-		// Trading logic: color transitions
-		// Bullish transitions: from mild bull (1) to stronger (0), or from neutral+ to any bull
-		// Bearish transitions: from mild bear (3) to stronger (4), or from neutral- to any bear
+		if (_cooldownRemaining > 0 || HasRecentEntry(candle))
+			return;
 
-		if (older == 1 && color == 0 && Position <= 0)
+		if (previousColor != 0 && color == 0 && Position <= 0)
 		{
-			// strong bullish signal
-			if (Position < 0) BuyMarket(); // close short
-			BuyMarket(); // open long
+			var volumeToBuy = Volume + Math.Abs(Position);
+			BuyMarket(volumeToBuy);
+			_cooldownRemaining = SignalCooldownBars;
+			_lastEntryTime = candle.CloseTime != default ? candle.CloseTime : candle.OpenTime;
 		}
-		else if (older == 2 && color <= 1 && Position <= 0)
+		else if (previousColor != 4 && color == 4 && Position >= 0)
 		{
-			// neutral to bullish
-			if (Position < 0) BuyMarket();
-			BuyMarket();
+			var volumeToSell = Volume + Math.Abs(Position);
+			SellMarket(volumeToSell);
+			_cooldownRemaining = SignalCooldownBars;
+			_lastEntryTime = candle.CloseTime != default ? candle.CloseTime : candle.OpenTime;
 		}
-		else if (older == 3 && color == 4 && Position >= 0)
-		{
-			// strong bearish signal
-			if (Position > 0) SellMarket(); // close long
-			SellMarket(); // open short
-		}
-		else if (older == 2 && color >= 3 && Position >= 0)
-		{
-			// neutral to bearish
-			if (Position > 0) SellMarket();
-			SellMarket();
-		}
+	}
+
+	private bool HasRecentEntry(ICandleMessage candle)
+	{
+		if (!_lastEntryTime.HasValue)
+			return false;
+
+		var candleTime = candle.CloseTime != default ? candle.CloseTime : candle.OpenTime;
+		return candleTime.Date == _lastEntryTime.Value.Date;
 	}
 }

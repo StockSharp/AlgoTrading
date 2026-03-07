@@ -34,9 +34,11 @@ public class ColorSchaffTrixTrendCycleStrategy : Strategy {
 	private readonly StrategyParam<bool> _buyClose;
 	private readonly StrategyParam<bool> _sellClose;
 	private readonly StrategyParam<decimal> _factor;
+	private readonly StrategyParam<int> _signalCooldownBars;
 
 	private SchaffTrixTrendCycle _stc = null!;
 	private decimal? _prevStc;
+	private int _cooldownRemaining;
 
 	/// <summary>
 	/// Fast TRIX length.
@@ -143,6 +145,14 @@ public class ColorSchaffTrixTrendCycleStrategy : Strategy {
 	}
 
 	/// <summary>
+	/// Bars to wait between reversals.
+	/// </summary>
+	public int SignalCooldownBars {
+	get => _signalCooldownBars.Value;
+	set => _signalCooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Initializes a new instance of <see
 	/// cref="ColorSchaffTrixTrendCycleStrategy"/>.
 	/// </summary>
@@ -173,8 +183,8 @@ public class ColorSchaffTrixTrendCycleStrategy : Strategy {
 		Param(nameof(LowLevel), -20)
 		.SetDisplay("Low Level", "Lower threshold", "Indicator");
 
-	_candleType =
-		Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType =
+		Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe for candles", "General");
 
 	_stopLoss =
@@ -203,6 +213,17 @@ public class ColorSchaffTrixTrendCycleStrategy : Strategy {
 	_factor =
 		Param(nameof(Factor), 0.5m)
 		.SetDisplay("Factor", "Smoothing factor for STC calculations", "Indicator");
+
+		_signalCooldownBars = Param(nameof(SignalCooldownBars), 8)
+			.SetGreaterThanZero()
+			.SetDisplay("Signal Cooldown", "Bars to wait between reversals", "Trading");
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted() {
+	base.OnReseted();
+	_prevStc = null;
+	_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
@@ -211,7 +232,10 @@ public class ColorSchaffTrixTrendCycleStrategy : Strategy {
 
 	_stc = new SchaffTrixTrendCycle { FastLength = FastTrixLength,
 					  SlowLength = SlowTrixLength,
-					  Cycle = Cycle };
+					  Cycle = Cycle,
+					  Factor = Factor };
+	_prevStc = null;
+	_cooldownRemaining = 0;
 
 	var subscription = SubscribeCandles(CandleType);
 
@@ -225,6 +249,9 @@ public class ColorSchaffTrixTrendCycleStrategy : Strategy {
 	if (candle.State != CandleStates.Finished)
 		return;
 
+	if (_cooldownRemaining > 0)
+		_cooldownRemaining--;
+
 	if (_prevStc is null) {
 		_prevStc = stc;
 		return;
@@ -234,19 +261,21 @@ public class ColorSchaffTrixTrendCycleStrategy : Strategy {
 
 	var crossedUp = stc > HighLevel && prev <= HighLevel;
 	var crossedDown = stc < LowLevel && prev >= LowLevel;
+	var longExit = BuyClose && Position > 0 && stc < 0m;
+	var shortExit = SellClose && Position < 0 && stc > 0m;
 
-	if (crossedUp) {
-		if (SellClose && Position < 0)
-		BuyMarket();
-
-		if (BuyOpen && Position <= 0)
-		BuyMarket();
-	} else if (crossedDown) {
-		if (BuyClose && Position > 0)
-		SellMarket();
-
-		if (SellOpen && Position >= 0)
-		SellMarket();
+	if (longExit) {
+		SellMarket(Position);
+		_cooldownRemaining = SignalCooldownBars;
+	} else if (shortExit) {
+		BuyMarket(Math.Abs(Position));
+		_cooldownRemaining = SignalCooldownBars;
+	} else if (_cooldownRemaining == 0 && crossedUp && BuyOpen && Position <= 0) {
+		BuyMarket(Volume + Math.Abs(Position));
+		_cooldownRemaining = SignalCooldownBars;
+	} else if (_cooldownRemaining == 0 && crossedDown && SellOpen && Position >= 0) {
+		SellMarket(Volume + Math.Abs(Position));
+		_cooldownRemaining = SignalCooldownBars;
 	}
 
 	_prevStc = stc;

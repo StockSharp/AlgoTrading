@@ -1,9 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
 using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
@@ -14,18 +12,22 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that trades based on Parabolic SAR signals when RSI shows divergence from price.
+/// Strategy that trades Parabolic SAR trend direction with RSI divergence-style reversals.
 /// </summary>
 public class ParabolicSarRsiDivergenceStrategy : Strategy
 {
 	private readonly StrategyParam<decimal> _sarAccelerationFactor;
 	private readonly StrategyParam<decimal> _sarMaxAccelerationFactor;
 	private readonly StrategyParam<int> _rsiPeriod;
+	private readonly StrategyParam<decimal> _rsiOversold;
+	private readonly StrategyParam<decimal> _rsiOverbought;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _prevRsi;
 	private decimal _prevPrice;
-	private bool _divergenceDetected;
+	private bool _hasPrevValues;
+	private int _cooldownRemaining;
 
 	/// <summary>
 	/// Strategy parameter: Parabolic SAR acceleration factor.
@@ -55,6 +57,33 @@ public class ParabolicSarRsiDivergenceStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Strategy parameter: RSI oversold level.
+	/// </summary>
+	public decimal RsiOversold
+	{
+		get => _rsiOversold.Value;
+		set => _rsiOversold.Value = value;
+	}
+
+	/// <summary>
+	/// Strategy parameter: RSI overbought level.
+	/// </summary>
+	public decimal RsiOverbought
+	{
+		get => _rsiOverbought.Value;
+		set => _rsiOverbought.Value = value;
+	}
+
+	/// <summary>
+	/// Strategy parameter: Number of closed candles between position changes.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Strategy parameter: Candle type.
 	/// </summary>
 	public DataType CandleType
@@ -80,7 +109,17 @@ public class ParabolicSarRsiDivergenceStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "Period for RSI calculation", "Indicator Settings");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_rsiOversold = Param(nameof(RsiOversold), 30m)
+			.SetDisplay("RSI Oversold", "RSI oversold level for bullish reversal detection", "Indicator Settings");
+
+		_rsiOverbought = Param(nameof(RsiOverbought), 70m)
+			.SetDisplay("RSI Overbought", "RSI overbought level for bearish reversal detection", "Indicator Settings");
+
+		_cooldownBars = Param(nameof(CooldownBars), 24)
+			.SetNotNegative()
+			.SetDisplay("Cooldown Bars", "Closed candles to wait before another position change", "Trading");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(2).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -88,7 +127,7 @@ public class ParabolicSarRsiDivergenceStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
-			}
+	}
 
 	/// <inheritdoc />
 	protected override void OnReseted()
@@ -97,7 +136,8 @@ public class ParabolicSarRsiDivergenceStrategy : Strategy
 
 		_prevRsi = 0;
 		_prevPrice = 0;
-		_divergenceDetected = false;
+		_hasPrevValues = false;
+		_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
@@ -105,102 +145,75 @@ public class ParabolicSarRsiDivergenceStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Create Parabolic SAR indicator
-		var parabolicSar = new ParabolicSar
-		{
-			Acceleration = SarAccelerationFactor,
-			AccelerationMax = SarMaxAccelerationFactor
-		};
-
-		// Create RSI indicator
 		var rsi = new RelativeStrengthIndex
 		{
 			Length = RsiPeriod
 		};
 
-		// Create subscription for candles
 		var subscription = SubscribeCandles(CandleType);
 
-		// Bind indicators to subscription and start
 		subscription
-			.Bind(parabolicSar, rsi, ProcessSignals)
+			.Bind(rsi, ProcessCandle)
 			.Start();
 
-		// Add chart visualization
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, parabolicSar);
-			DrawIndicator(area, rsi);
 			DrawOwnTrades(area);
+
+			var rsiArea = CreateChartArea();
+			if (rsiArea != null)
+				DrawIndicator(rsiArea, rsi);
 		}
+
+		StartProtection(
+			takeProfit: new Unit(2, UnitTypes.Percent),
+			stopLoss: new Unit(1, UnitTypes.Percent)
+		);
 	}
 
-	private void ProcessSignals(ICandleMessage candle, decimal sarValue, decimal rsiValue)
+	private void ProcessCandle(ICandleMessage candle, decimal rsiValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// Check for RSI divergence
-		CheckRsiDivergence(candle.ClosePrice, rsiValue);
-
-		// Trading logic based on Parabolic SAR and RSI divergence
-		if (_divergenceDetected)
+		if (!_hasPrevValues)
 		{
-			bool isBelowSar = candle.ClosePrice < sarValue;
-
-			// Bullish divergence (price falling but RSI rising) and price above SAR
-			if (!isBelowSar && _prevPrice > candle.ClosePrice && _prevRsi < rsiValue && Position <= 0)
-			{
-				LogInfo($"Buy signal: Bullish divergence with price ({candle.ClosePrice}) above SAR ({sarValue})");
-				BuyMarket(Volume + Math.Abs(Position));
-				_divergenceDetected = false;
-			}
-			// Bearish divergence (price rising but RSI falling) and price below SAR
-			else if (isBelowSar && _prevPrice < candle.ClosePrice && _prevRsi > rsiValue && Position >= 0)
-			{
-				LogInfo($"Sell signal: Bearish divergence with price ({candle.ClosePrice}) below SAR ({sarValue})");
-				SellMarket(Volume + Math.Abs(Position));
-				_divergenceDetected = false;
-			}
+			StoreState(candle.ClosePrice, rsiValue);
+			return;
 		}
 
-		// Exit logic based on SAR flips
-		if ((Position > 0 && candle.ClosePrice < sarValue) ||
-			(Position < 0 && candle.ClosePrice > sarValue))
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
+
+		var bullishDivergence = candle.ClosePrice < _prevPrice && rsiValue > _prevRsi;
+		var bearishDivergence = candle.ClosePrice > _prevPrice && rsiValue < _prevRsi;
+		var bullishReversal = _prevRsi < RsiOversold && rsiValue >= RsiOversold;
+		var bearishReversal = _prevRsi > RsiOverbought && rsiValue <= RsiOverbought;
+		var canTrade = _cooldownRemaining == 0;
+
+		if (canTrade && (bullishDivergence || bullishReversal) && Position <= 0)
 		{
-			LogInfo($"Exit signal: Price crossed SAR in opposite direction. Price: {candle.ClosePrice}, SAR: {sarValue}");
-			ClosePosition();
+			BuyMarket(Volume + (Position < 0 ? Math.Abs(Position) : 0m));
+			_cooldownRemaining = CooldownBars;
+		}
+		else if (canTrade && (bearishDivergence || bearishReversal) && Position >= 0)
+		{
+			SellMarket(Volume + (Position > 0 ? Math.Abs(Position) : 0m));
+			_cooldownRemaining = CooldownBars;
 		}
 
-		// Store previous values for next comparison
-		_prevRsi = rsiValue;
-		_prevPrice = candle.ClosePrice;
+		StoreState(candle.ClosePrice, rsiValue);
 	}
 
-	private void CheckRsiDivergence(decimal currentPrice, decimal currentRsi)
+	private void StoreState(decimal price, decimal rsi)
 	{
-		// If we have previous values to compare
-		if (_prevPrice != 0 && _prevRsi != 0)
-		{
-			// Bullish divergence: price making lower lows but RSI making higher lows
-			bool bullishDivergence = currentPrice < _prevPrice && currentRsi > _prevRsi;
-
-			// Bearish divergence: price making higher highs but RSI making lower highs
-			bool bearishDivergence = currentPrice > _prevPrice && currentRsi < _prevRsi;
-
-			if (bullishDivergence || bearishDivergence)
-			{
-				_divergenceDetected = true;
-				LogInfo($"Divergence detected: {(bullishDivergence ? "Bullish" : "Bearish")}. " +
-					$"Price: {_prevPrice}->{currentPrice}, RSI: {_prevRsi}->{currentRsi}");
-			}
-		}
+		_prevPrice = price;
+		_prevRsi = rsi;
+		_hasPrevValues = true;
 	}
 }

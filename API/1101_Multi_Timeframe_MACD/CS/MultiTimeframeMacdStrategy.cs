@@ -39,7 +39,7 @@ public class MultiTimeframeMacdStrategy : Strategy
 		_trendLength = Param(nameof(TrendLength), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Trend", "Trend EMA period", "Trend");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 

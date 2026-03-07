@@ -40,7 +40,7 @@ public class SmoothingAverageCrossoverStrategy : Strategy
 	/// </summary>
         public SmoothingAverageCrossoverStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(2).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for calculations", "General");
 
 		_maLength = Param(nameof(MaLength), 60)
@@ -217,13 +217,13 @@ public class SmoothingAverageCrossoverStrategy : Strategy
 		{
 			if (!ReverseSignals)
 			{
-				if (askPrice > entryLower)
+				if (askPrice > entryUpper)
 				{
 					OpenLong();
 					return;
 				}
 
-				if (bidPrice < entryUpper)
+				if (bidPrice < entryLower)
 				{
 					OpenShort();
 					return;
@@ -231,13 +231,13 @@ public class SmoothingAverageCrossoverStrategy : Strategy
 			}
 			else
 			{
-				if (askPrice > entryLower)
+				if (askPrice > entryUpper)
 				{
 					OpenShort();
 					return;
 				}
 
-				if (bidPrice < entryUpper)
+				if (bidPrice < entryLower)
 				{
 					OpenLong();
 					return;

@@ -93,7 +93,7 @@ public class KeltnerSeasonalStrategy : Strategy
 		_seasonalThreshold = Param(nameof(SeasonalThreshold), 0.5m)
 			.SetDisplay("Seasonal Threshold", "Minimum seasonal strength to consider for trading", "Seasonal Settings");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
 		// Initialize seasonal returns (this would typically be loaded from historical data)

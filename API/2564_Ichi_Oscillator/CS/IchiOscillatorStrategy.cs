@@ -44,7 +44,7 @@ public class IchiOscillatorStrategy : Strategy
 	/// </summary>
 	public IchiOscillatorStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for Ichimoku calculations", "General");
 
 		_ichimokuBasePeriod = Param(nameof(IchimokuBasePeriod), 22)
@@ -228,6 +228,7 @@ public class IchiOscillatorStrategy : Strategy
 		_previousSmoothed = null;
 		_ichimoku?.Reset();
 		_smoother?.Reset();
+		_timeShift = TimeSpan.Zero;
 	}
 
 	/// <inheritdoc />

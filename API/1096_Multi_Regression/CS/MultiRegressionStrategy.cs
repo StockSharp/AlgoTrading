@@ -20,10 +20,12 @@ public class MultiRegressionStrategy : Strategy
 {
 	private readonly StrategyParam<int> _length;
 	private readonly StrategyParam<decimal> _riskMultiplier;
+	private readonly StrategyParam<int> _signalCooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
 	public int Length { get => _length.Value; set => _length.Value = value; }
 	public decimal RiskMultiplier { get => _riskMultiplier.Value; set => _riskMultiplier.Value = value; }
+	public int SignalCooldownBars { get => _signalCooldownBars.Value; set => _signalCooldownBars.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public MultiRegressionStrategy()
@@ -33,7 +35,10 @@ public class MultiRegressionStrategy : Strategy
 			.SetDisplay("Length", "SMA and StdDev period", "Regression");
 		_riskMultiplier = Param(nameof(RiskMultiplier), 2m)
 			.SetDisplay("Risk Multiplier", "StdDev multiplier for bounds", "Risk");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_signalCooldownBars = Param(nameof(SignalCooldownBars), 8)
+			.SetGreaterThanZero()
+			.SetDisplay("Signal Cooldown", "Bars to wait between reversals", "Risk");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "Common");
 	}
 
@@ -45,8 +50,10 @@ public class MultiRegressionStrategy : Strategy
 		var std = new StandardDeviation { Length = Length };
 
 		var prevClose = 0m;
-		var prevSma = 0m;
+		var prevUpper = 0m;
+		var prevLower = 0m;
 		var initialized = false;
+		var cooldownRemaining = 0;
 
 		var subscription = SubscribeCandles(CandleType);
 
@@ -59,32 +66,51 @@ public class MultiRegressionStrategy : Strategy
 				if (!IsFormedAndOnlineAndAllowTrading())
 					return;
 
+				if (cooldownRemaining > 0)
+					cooldownRemaining--;
+
 				var price = candle.ClosePrice;
 
 				if (!initialized)
 				{
 					prevClose = price;
-					prevSma = smaVal;
+					prevUpper = smaVal + stdVal * RiskMultiplier;
+					prevLower = smaVal - stdVal * RiskMultiplier;
 					initialized = true;
 					return;
 				}
 
 				var upperBound = smaVal + stdVal * RiskMultiplier;
 				var lowerBound = smaVal - stdVal * RiskMultiplier;
+				var longEntry = prevClose < prevLower && price >= lowerBound;
+				var shortEntry = prevClose > prevUpper && price <= upperBound;
+				var longExit = Position > 0 && (price >= smaVal || price >= upperBound);
+				var shortExit = Position < 0 && (price <= smaVal || price <= lowerBound);
 
-				// Cross above SMA => buy
-				if (prevClose <= prevSma && price > smaVal && Position <= 0)
-					BuyMarket();
-				// Cross below SMA => sell if long
-				else if (prevClose >= prevSma && price < smaVal && Position > 0)
+				if (longExit)
+				{
 					SellMarket();
-
-				// Exit at bounds
-				if (Position > 0 && price >= upperBound)
-					SellMarket();
+					cooldownRemaining = SignalCooldownBars;
+				}
+				else if (shortExit)
+				{
+					BuyMarket(Math.Abs(Position));
+					cooldownRemaining = SignalCooldownBars;
+				}
+				else if (cooldownRemaining == 0 && longEntry && Position <= 0)
+				{
+					BuyMarket(Volume + Math.Abs(Position));
+					cooldownRemaining = SignalCooldownBars;
+				}
+				else if (cooldownRemaining == 0 && shortEntry && Position >= 0)
+				{
+					SellMarket(Volume + Math.Abs(Position));
+					cooldownRemaining = SignalCooldownBars;
+				}
 
 				prevClose = price;
-				prevSma = smaVal;
+				prevUpper = upperBound;
+				prevLower = lowerBound;
 			})
 			.Start();
 

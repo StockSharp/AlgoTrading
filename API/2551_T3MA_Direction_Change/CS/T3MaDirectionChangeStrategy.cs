@@ -1,21 +1,15 @@
-using System;
-using System.Linq;
-using System.Collections.Generic;
+namespace StockSharp.Samples.Strategies;
 
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
+using System;
+using System.Collections.Generic;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-namespace StockSharp.Samples.Strategies;
-
 /// <summary>
-/// Strategy that replicates the T3MA-ALARM expert logic.
-/// The algorithm trades when a double-smoothed EMA changes its slope direction.
+/// Strategy that trades when a double-smoothed EMA changes its slope direction.
 /// </summary>
 public class T3MaDirectionChangeStrategy : Strategy
 {
@@ -25,87 +19,30 @@ public class T3MaDirectionChangeStrategy : Strategy
 	private readonly StrategyParam<decimal> _stopLossPoints;
 	private readonly StrategyParam<decimal> _takeProfitPoints;
 	private readonly StrategyParam<decimal> _tradeVolume;
+	private readonly StrategyParam<int> _signalCooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
+	private readonly List<decimal> _recentSmoothed = new();
+	private readonly Queue<SignalInfo> _pendingSignals = new();
 	private ExponentialMovingAverage _emaPrice;
 	private ExponentialMovingAverage _emaSmooth;
-	private readonly Queue<decimal> _recentSmoothed = new();
-	private readonly Queue<SignalInfo> _pendingSignals = new();
 	private int _previousDirection;
+	private int _cooldownRemaining;
 
-	/// <summary>
-	/// Length of the EMA used for both smoothing passes.
-	/// </summary>
-	public int MaLength
-	{
-		get => _maLength.Value;
-		set => _maLength.Value = value;
-	}
+	public int MaLength { get => _maLength.Value; set => _maLength.Value = value; }
+	public int MaShift { get => _maShift.Value; set => _maShift.Value = value; }
+	public int SignalBarOffset { get => _signalBarOffset.Value; set => _signalBarOffset.Value = value; }
+	public decimal StopLossPoints { get => _stopLossPoints.Value; set => _stopLossPoints.Value = value; }
+	public decimal TakeProfitPoints { get => _takeProfitPoints.Value; set => _takeProfitPoints.Value = value; }
+	public decimal TradeVolume { get => _tradeVolume.Value; set => _tradeVolume.Value = value; }
+	public int SignalCooldownBars { get => _signalCooldownBars.Value; set => _signalCooldownBars.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Number of bars by which the smoothed series is shifted.
-	/// </summary>
-	public int MaShift
-	{
-		get => _maShift.Value;
-		set => _maShift.Value = value;
-	}
-
-	/// <summary>
-	/// Number of finished candles to delay signal execution.
-	/// </summary>
-	public int SignalBarOffset
-	{
-		get => _signalBarOffset.Value;
-		set => _signalBarOffset.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss distance measured in price steps.
-	/// </summary>
-	public decimal StopLossPoints
-	{
-		get => _stopLossPoints.Value;
-		set => _stopLossPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Take profit distance measured in price steps.
-	/// </summary>
-	public decimal TakeProfitPoints
-	{
-		get => _takeProfitPoints.Value;
-		set => _takeProfitPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Base order volume used when opening a new position.
-	/// </summary>
-	public decimal TradeVolume
-	{
-		get => _tradeVolume.Value;
-		set => _tradeVolume.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used for calculations.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initialize strategy parameters.
-	/// </summary>
 	public T3MaDirectionChangeStrategy()
 	{
 		_maLength = Param(nameof(MaLength), 4)
 			.SetGreaterThanZero()
-			.SetDisplay("EMA Length", "Length of the EMA used for the double smoothing", "Indicator")
-			
-			.SetOptimize(2, 20, 2);
+			.SetDisplay("EMA Length", "Length of the EMA used for the double smoothing", "Indicator");
 
 		_maShift = Param(nameof(MaShift), 0)
 			.SetNotNegative()
@@ -117,21 +54,21 @@ public class T3MaDirectionChangeStrategy : Strategy
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 20m)
 			.SetNotNegative()
-			.SetDisplay("Stop Loss (steps)", "Stop loss distance expressed in price steps", "Risk management")
-			
-			.SetOptimize(0m, 60m, 10m);
+			.SetDisplay("Stop Loss (steps)", "Stop loss distance expressed in price steps", "Risk management");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 125m)
 			.SetNotNegative()
-			.SetDisplay("Take Profit (steps)", "Take profit distance expressed in price steps", "Risk management")
-			
-			.SetOptimize(0m, 200m, 25m);
+			.SetDisplay("Take Profit (steps)", "Take profit distance expressed in price steps", "Risk management");
 
 		_tradeVolume = Param(nameof(TradeVolume), 0.1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trade Volume", "Base volume used for entries", "Trading rules");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_signalCooldownBars = Param(nameof(SignalCooldownBars), 12)
+			.SetGreaterThanZero()
+			.SetDisplay("Signal Cooldown", "Bars to wait after entries and exits", "Trading rules");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles used for calculations", "General");
 	}
 
@@ -145,13 +82,12 @@ public class T3MaDirectionChangeStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
 		_emaPrice = null;
 		_emaSmooth = null;
 		_recentSmoothed.Clear();
 		_pendingSignals.Clear();
 		_previousDirection = 0;
-
+		_cooldownRemaining = 0;
 		Volume = TradeVolume;
 	}
 
@@ -161,18 +97,16 @@ public class T3MaDirectionChangeStrategy : Strategy
 		base.OnStarted2(time);
 
 		Volume = TradeVolume;
-
-		// Create EMA instances used for the double smoothing chain.
 		_emaPrice = new EMA { Length = MaLength };
 		_emaSmooth = new EMA { Length = MaLength };
+		_recentSmoothed.Clear();
+		_pendingSignals.Clear();
+		_previousDirection = 0;
+		_cooldownRemaining = 0;
 
-		// Subscribe to candle updates and process them sequentially.
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(ProcessCandle)
-			.Start();
+		subscription.Bind(ProcessCandle).Start();
 
-		// Optional visualization: candles and executed trades.
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -180,7 +114,6 @@ public class T3MaDirectionChangeStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		// Initialize protective orders based on configured distances.
 		var slUnit = StopLossPoints > 0m ? new Unit(StopLossPoints, UnitTypes.Absolute) : null;
 		var tpUnit = TakeProfitPoints > 0m ? new Unit(TakeProfitPoints, UnitTypes.Absolute) : null;
 		StartProtection(slUnit, tpUnit);
@@ -191,67 +124,51 @@ public class T3MaDirectionChangeStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (_emaPrice is null || _emaSmooth is null)
-			return;
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
 
-		// Run the two-stage EMA smoothing chain.
 		var emaPriceValue = _emaPrice.Process(new DecimalIndicatorValue(_emaPrice, candle.ClosePrice, candle.OpenTime) { IsFinal = true });
 		var emaSmoothValue = _emaSmooth.Process(emaPriceValue);
+		if (!emaSmoothValue.IsFormed)
+			return;
 
-		var smoothed = emaSmoothValue.ToDecimal();
-		_recentSmoothed.Enqueue(smoothed);
-
-		var shift = MaShift;
-		var requiredCount = shift + 2;
-		while (_recentSmoothed.Count > requiredCount)
+		AddSmoothedValue(emaSmoothValue.ToDecimal(), MaShift + 2);
+		if (_recentSmoothed.Count < MaShift + 2)
 		{
-			_recentSmoothed.Dequeue();
-		}
-
-		if (!_emaSmooth.IsFormed || _recentSmoothed.Count < requiredCount)
-		{
-			EnqueueSignal(new SignalInfo(0, candle.OpenTime, candle.ClosePrice));
+			EnqueueSignal(new SignalInfo(0));
 			return;
 		}
 
-		var snapshot = _recentSmoothed.ToArray();
-		var current = snapshot[snapshot.Length - 1 - shift];
-		var previous = snapshot[snapshot.Length - 2 - shift];
-
+		var currentIndex = _recentSmoothed.Count - 1 - MaShift;
+		var previousIndex = _recentSmoothed.Count - 2 - MaShift;
+		var current = _recentSmoothed[currentIndex];
+		var previous = _recentSmoothed[previousIndex];
 		var direction = _previousDirection;
+
 		if (current > previous)
-		{
 			direction = 1;
-		}
 		else if (current < previous)
-		{
 			direction = -1;
-		}
 
 		var signal = 0;
 		if (_previousDirection == -1 && direction == 1)
-		{
 			signal = 1;
-		}
 		else if (_previousDirection == 1 && direction == -1)
-		{
 			signal = -1;
-		}
 
 		_previousDirection = direction;
+		EnqueueSignal(new SignalInfo(signal));
+	}
 
-		var referencePrice = signal > 0
-			? candle.LowPrice
-			: signal < 0
-				? candle.HighPrice
-				: candle.ClosePrice;
-
-		EnqueueSignal(new SignalInfo(signal, candle.OpenTime, referencePrice));
+	private void AddSmoothedValue(decimal value, int limit)
+	{
+		_recentSmoothed.Add(value);
+		if (_recentSmoothed.Count > limit)
+			_recentSmoothed.RemoveAt(0);
 	}
 
 	private void EnqueueSignal(SignalInfo signal)
 	{
-		// Store the signal so that it can be executed after the configured delay.
 		_pendingSignals.Enqueue(signal);
 
 		while (_pendingSignals.Count > SignalBarOffset)
@@ -263,24 +180,22 @@ public class T3MaDirectionChangeStrategy : Strategy
 
 	private void ExecuteSignal(SignalInfo signal)
 	{
-		if (signal.Direction == 0)
+		if (signal.Direction == 0 || _cooldownRemaining > 0)
 			return;
 
-		if (signal.Direction > 0)
+		if (signal.Direction > 0 && Position <= 0)
 		{
-			if (Position < 0)
-				BuyMarket();
-			if (Position <= 0)
-				BuyMarket();
+			var volume = Volume + Math.Abs(Position);
+			BuyMarket(volume);
+			_cooldownRemaining = SignalCooldownBars;
 		}
-		else
+		else if (signal.Direction < 0 && Position >= 0)
 		{
-			if (Position > 0)
-				SellMarket();
-			if (Position >= 0)
-				SellMarket();
+			var volume = Volume + Math.Abs(Position);
+			SellMarket(volume);
+			_cooldownRemaining = SignalCooldownBars;
 		}
 	}
 
-	private readonly record struct SignalInfo(int Direction, DateTimeOffset Time, decimal ReferencePrice);
+	private readonly record struct SignalInfo(int Direction);
 }

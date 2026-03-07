@@ -88,7 +88,7 @@ public class RevisedSelfAdaptiveEaStrategy : Strategy
 		
 		.SetOptimize(7, 50, 1);
 
-		_volume = Param(nameof(TradeVolume), 0.05m)
+		_volume = Param(nameof(TradeVolume), 1m)
 		.SetGreaterThanZero()
 		.SetDisplay("Trade volume", "Base position size expressed in lots.", "Trading")
 		
@@ -98,7 +98,7 @@ public class RevisedSelfAdaptiveEaStrategy : Strategy
 		.SetNotNegative()
 		.SetDisplay("Max spread", "Maximum allowed spread expressed in points.", "Risk");
 
-		_maxRiskPercent = Param(nameof(MaxRiskPercent), 1m)
+		_maxRiskPercent = Param(nameof(MaxRiskPercent), 10m)
 		.SetNotNegative()
 		.SetDisplay("Max risk percent", "Maximum percentage of the portfolio equity accepted per trade.", "Risk");
 
@@ -123,19 +123,19 @@ public class RevisedSelfAdaptiveEaStrategy : Strategy
 		
 		.SetOptimize(0.5m, 5m, 0.5m);
 
-		_oversoldLevel = Param(nameof(OversoldLevel), 30m)
+		_oversoldLevel = Param(nameof(OversoldLevel), 40m)
 		.SetNotNegative()
 		.SetDisplay("Oversold level", "RSI threshold that confirms bullish reversals.", "Oscillator")
 		
 		.SetOptimize(10m, 50m, 5m);
 
-		_overboughtLevel = Param(nameof(OverboughtLevel), 70m)
+		_overboughtLevel = Param(nameof(OverboughtLevel), 60m)
 		.SetNotNegative()
 		.SetDisplay("Overbought level", "RSI threshold that confirms bearish reversals.", "Oscillator")
 		
 		.SetOptimize(50m, 90m, 5m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(2).TimeFrame())
 		.SetDisplay("Candle type", "Time frame used for pattern detection.", "General");
 	}
 

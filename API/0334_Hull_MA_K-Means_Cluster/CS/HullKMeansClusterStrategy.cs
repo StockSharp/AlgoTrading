@@ -22,6 +22,7 @@ public class HullKMeansClusterStrategy : Strategy
 	private readonly StrategyParam<int> _clusterDataLength;
 	private readonly StrategyParam<int> _rsiPeriod;
 	private readonly StrategyParam<DataType> _candleType;
+	private static readonly object _sync = new();
 
 	private enum MarketStates
 	{
@@ -94,7 +95,7 @@ public class HullKMeansClusterStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("RSI Period", "Period for RSI calculation as a clustering feature", "Indicator Settings");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -164,49 +165,33 @@ _currentMarketState = MarketStates.Neutral;
 
 	private void ProcessCandle(ICandleMessage candle, decimal hullValue, decimal rsiValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
-		// Check if strategy is ready to trade
 		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
+			return;
 
-		// Update feature data for clustering
-		UpdateFeatureData(candle, rsiValue);
-
-		// Perform K-Means clustering when enough data is collected
-		if (_priceChangeData.Count >= ClusterDataLength && 
-		_rsiData.Count >= ClusterDataLength && 
-		_volumeRatioData.Count >= ClusterDataLength)
+		lock (_sync)
 		{
-			// Perform K-Means clustering for market state detection
-_currentMarketState = DetectMarketState();
-			LogInfo($"Current market state: {_currentMarketState}");
+			UpdateFeatureData(candle, rsiValue);
+
+			if (_priceChangeData.Count >= ClusterDataLength &&
+				_rsiData.Count >= ClusterDataLength &&
+				_volumeRatioData.Count >= ClusterDataLength)
+			{
+				_currentMarketState = DetectMarketState();
+			}
+
+			var isHullRising = hullValue > _prevHullValue;
+
+			if (isHullRising && _currentMarketState == MarketStates.Bullish && Position <= 0)
+				BuyMarket(Volume + Math.Abs(Position));
+			else if (!isHullRising && _currentMarketState == MarketStates.Bearish && Position >= 0)
+				SellMarket(Volume + Math.Abs(Position));
+
+			_prevHullValue = hullValue;
+			_lastPrice = candle.ClosePrice;
 		}
-
-		// Check for Hull MA direction change
-		bool isHullRising = hullValue > _prevHullValue;
-
-		// Trading logic based on Hull MA direction and market state
-if (isHullRising && _currentMarketState == MarketStates.Bullish && Position <= 0)
-		{
-			// Hull MA rising in bullish market state - Buy signal
-			LogInfo($"Buy signal: Hull MA rising ({hullValue} > {_prevHullValue}) in bullish market state");
-			BuyMarket(Volume + Math.Abs(Position));
-		}
-else if (!isHullRising && _currentMarketState == MarketStates.Bearish && Position >= 0)
-		{
-			// Hull MA falling in bearish market state - Sell signal
-			LogInfo($"Sell signal: Hull MA falling ({hullValue} < {_prevHullValue}) in bearish market state");
-			SellMarket(Volume + Math.Abs(Position));
-		}
-
-		// Store Hull MA value for next comparison
-		_prevHullValue = hullValue;
-
-		// Update last price
-		_lastPrice = candle.ClosePrice;
 	}
 
 	private void UpdateFeatureData(ICandleMessage candle, decimal rsiValue)
@@ -246,13 +231,15 @@ else if (!isHullRising && _currentMarketState == MarketStates.Bearish && Positio
 
 private MarketStates DetectMarketState()
 	{
-		// Simplified implementation of K-Means clustering for market state detection
-		// This is a basic approach - a full implementation would use proper K-Means algorithm
+		var priceChanges = _priceChangeData.ToArray();
+		var rsiValues = _rsiData.ToArray();
+		var volumeRatios = _volumeRatioData.ToArray();
+		if (priceChanges.Length == 0 || rsiValues.Length == 0 || volumeRatios.Length == 0)
+			return MarketStates.Neutral;
 
-		// Calculate feature averages to represent cluster centers
-		decimal avgPriceChange = _priceChangeData.Average();
-		decimal avgRsi = _rsiData.Average();
-		decimal avgVolumeRatio = _volumeRatioData.Average();
+		decimal avgPriceChange = priceChanges.Average();
+		decimal avgRsi = rsiValues.Average();
+		decimal avgVolumeRatio = volumeRatios.Average();
 
 		// Detect market state based on features
 		// Higher RSI, positive price change and higher volume -> Bullish

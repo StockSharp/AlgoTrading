@@ -23,9 +23,14 @@ public class ParabolicSarHurstStrategy : Strategy
 	private readonly StrategyParam<decimal> _sarMaxAccelerationFactor;
 	private readonly StrategyParam<int> _hurstPeriod;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _signalCooldownBars;
 
+	private ParabolicSar _parabolicSar = null!;
+	private HurstExponent _hurstIndicator = null!;
 	private decimal _prevSarValue;
 	private decimal _hurstValue;
+	private bool? _prevPriceAboveSar;
+	private int _cooldownRemaining;
 
 	/// <summary>
 	/// Parabolic SAR acceleration factor.
@@ -64,6 +69,15 @@ public class ParabolicSarHurstStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Number of closed candles to wait before a new SAR crossover entry.
+	/// </summary>
+	public int SignalCooldownBars
+	{
+		get => _signalCooldownBars.Value;
+		set => _signalCooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Initialize strategy.
 	/// </summary>
 	public ParabolicSarHurstStrategy()
@@ -86,8 +100,12 @@ public class ParabolicSarHurstStrategy : Strategy
 			
 			.SetOptimize(50, 150, 25);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
+
+		_signalCooldownBars = Param(nameof(SignalCooldownBars), 4)
+			.SetNotNegative()
+			.SetDisplay("Signal Cooldown Bars", "Closed candles to wait before a new SAR crossover entry", "General");
 	}
 
 	/// <inheritdoc />
@@ -101,8 +119,12 @@ public class ParabolicSarHurstStrategy : Strategy
 	{
 		base.OnReseted();
 
+		_parabolicSar = null!;
+		_hurstIndicator = null!;
 		_prevSarValue = 0;
 		_hurstValue = 0.5m;
+		_prevPriceAboveSar = null;
+		_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
@@ -111,13 +133,13 @@ public class ParabolicSarHurstStrategy : Strategy
 		base.OnStarted2(time);
 
 		// Create indicators
-		var parabolicSar = new ParabolicSar
+		_parabolicSar = new ParabolicSar
 		{
 			Acceleration = SarAccelerationFactor,
 			AccelerationMax = SarMaxAccelerationFactor
 		};
 
-		var hurstIndicator = new HurstExponent
+		_hurstIndicator = new HurstExponent
 		{
 			Length = HurstPeriod
 		};
@@ -125,9 +147,8 @@ public class ParabolicSarHurstStrategy : Strategy
 		// Create subscription for candles
 		var subscription = SubscribeCandles(CandleType);
 
-		// Bind indicators to the subscription
 		subscription
-			.BindEx(parabolicSar, hurstIndicator, ProcessCandle)
+			.Bind(ProcessCandle)
 			.Start();
 
 		// Start position protection
@@ -141,77 +162,66 @@ public class ParabolicSarHurstStrategy : Strategy
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, parabolicSar);
-			DrawIndicator(area, hurstIndicator);
+			DrawIndicator(area, _parabolicSar);
+			DrawIndicator(area, _hurstIndicator);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue sarValue, IIndicatorValue hurstValue)
+	private void ProcessCandle(ICandleMessage candle)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
+
+		var sarValue = _parabolicSar.Process(new CandleIndicatorValue(_parabolicSar, candle));
+		var hurstValue = _hurstIndicator.Process(new CandleIndicatorValue(_hurstIndicator, candle));
+
+		if (!_parabolicSar.IsFormed || !_hurstIndicator.IsFormed || sarValue.IsEmpty || hurstValue.IsEmpty)
+			return;
+
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// Get SAR and Hurst values
 		var sarPrice = sarValue.ToDecimal();
 		_hurstValue = hurstValue.ToDecimal();
-
-		// Store previous SAR for comparison
 		var currentSarValue = sarPrice;
-		
-		// Log the values
-		LogInfo($"SAR: {sarPrice}, Hurst: {_hurstValue}, Price: {candle.ClosePrice}");
+		var priceAboveSar = candle.ClosePrice > sarPrice;
 
-		// Skip first candle (need previous SAR value for comparison)
-		if (_prevSarValue == 0)
+		if (_prevPriceAboveSar is null || _prevSarValue == 0)
 		{
 			_prevSarValue = currentSarValue;
+			_prevPriceAboveSar = priceAboveSar;
 			return;
 		}
 
-		// Trading logic based on Parabolic SAR and Hurst exponent
-		// Hurst > 0.5 indicates trending market (persistence)
-		if (_hurstValue > 0.5m)
+		if (_hurstValue > 0.55m)
 		{
-			// Long signal: Price crossed above SAR
-			if (candle.ClosePrice > sarPrice && Position <= 0)
-			{
-				// Close any existing short position
-				if (Position < 0)
-					BuyMarket(Math.Abs(Position));
+			var bullishCross = !_prevPriceAboveSar.Value && priceAboveSar;
+			var bearishCross = _prevPriceAboveSar.Value && !priceAboveSar;
 
-				// Open long position
-				BuyMarket(Volume);
-				LogInfo($"Long signal: SAR={sarPrice}, Price={candle.ClosePrice}, Hurst={_hurstValue}");
+			if (_cooldownRemaining == 0 && bullishCross && Position <= 0)
+			{
+				BuyMarket(Volume + (Position < 0 ? Math.Abs(Position) : 0m));
+				_cooldownRemaining = SignalCooldownBars;
 			}
-			// Short signal: Price crossed below SAR
-			else if (candle.ClosePrice < sarPrice && Position >= 0)
+			else if (_cooldownRemaining == 0 && bearishCross && Position >= 0)
 			{
-				// Close any existing long position
-				if (Position > 0)
-					SellMarket(Math.Abs(Position));
-
-				// Open short position
-				SellMarket(Volume);
-				LogInfo($"Short signal: SAR={sarPrice}, Price={candle.ClosePrice}, Hurst={_hurstValue}");
+				SellMarket(Volume + (Position > 0 ? Math.Abs(Position) : 0m));
+				_cooldownRemaining = SignalCooldownBars;
 			}
 		}
 		else
 		{
-			// If Hurst < 0.5, consider closing positions as market is not trending
-			if (Position != 0)
-			{
-				LogInfo($"Closing position as Hurst < 0.5: Hurst={_hurstValue}");
-				ClosePosition();
-			}
+			if (Position > 0)
+				SellMarket(Position);
+			else if (Position < 0)
+				BuyMarket(Math.Abs(Position));
 		}
 
-		// Update previous SAR value
 		_prevSarValue = currentSarValue;
+		_prevPriceAboveSar = priceAboveSar;
 	}
 }

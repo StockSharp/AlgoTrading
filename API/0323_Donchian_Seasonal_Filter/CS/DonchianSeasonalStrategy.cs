@@ -20,23 +20,21 @@ public class DonchianSeasonalStrategy : Strategy
 {
 	private readonly StrategyParam<int> _donchianPeriod;
 	private readonly StrategyParam<decimal> _seasonalThreshold;
+	private readonly StrategyParam<int> _signalCooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _seasonalDataCount;
 	
-	private DonchianChannels _donchian;
-	private bool _isLongPosition;
-	private bool _isShortPosition;
+	private DonchianChannels _donchian = null!;
 	
 	// Seasonal data storage
 	private readonly SynchronizedDictionary<Months, decimal> _monthlyReturns = [];
 	
-	// Simulated seasonal data count
-
-	// Current values
-	private decimal _upperBand;
-	private decimal _lowerBand;
-	private decimal _middleBand;
 	private decimal _seasonalStrength;
+	private decimal? _previousUpperBand;
+	private decimal? _previousLowerBand;
+	private decimal? _previousMiddleBand;
+	private decimal? _previousClosePrice;
+	private int _cooldownRemaining;
 
 	/// <summary>
 	/// Donchian Channel period.
@@ -66,6 +64,15 @@ public class DonchianSeasonalStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Number of closed candles to wait before allowing the next entry.
+	/// </summary>
+	public int SignalCooldownBars
+	{
+		get => _signalCooldownBars.Value;
+		set => _signalCooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Candle type to use for the strategy.
 	/// </summary>
 	public DataType CandleType
@@ -79,7 +86,7 @@ public class DonchianSeasonalStrategy : Strategy
 	/// </summary>
 	public DonchianSeasonalStrategy()
 	{
-		_donchianPeriod = Param(nameof(DonchianPeriod), 20)
+		_donchianPeriod = Param(nameof(DonchianPeriod), 40)
 			.SetDisplay("Donchian Period", "Donchian Channel period", "Donchian")
 			
 			.SetOptimize(10, 50, 5);
@@ -95,29 +102,33 @@ public class DonchianSeasonalStrategy : Strategy
 			
 			.SetOptimize(1, 10, 1);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_signalCooldownBars = Param(nameof(SignalCooldownBars), 12)
+			.SetNotNegative()
+			.SetDisplay("Signal Cooldown Bars", "Closed candles to wait before a new breakout entry", "General");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 			
 		// Initialize monthly returns with neutral values
-foreach (Months month in Enum.GetValues(typeof(Months)))
+		foreach (Months month in Enum.GetValues(typeof(Months)))
 		{
 			_monthlyReturns[month] = 0m;
 		}
 		
 		// Simulated historical seasonal data (in a real strategy, this would come from analysis of historical data)
 		// These are example values that suggest certain months tend to be bullish or bearish
-_monthlyReturns[Months.January] = 0.8m;
-_monthlyReturns[Months.February] = 0.3m;
-_monthlyReturns[Months.March] = 0.6m;
-_monthlyReturns[Months.April] = 0.9m;
-_monthlyReturns[Months.May] = 0.2m;
-_monthlyReturns[Months.June] = -0.4m;
-_monthlyReturns[Months.July] = -0.2m;
-_monthlyReturns[Months.August] = -0.7m;
-_monthlyReturns[Months.September] = -0.9m;
-_monthlyReturns[Months.October] = -0.1m;
-_monthlyReturns[Months.November] = 0.5m;
-_monthlyReturns[Months.December] = 0.7m;
+		_monthlyReturns[Months.January] = 0.8m;
+		_monthlyReturns[Months.February] = 0.3m;
+		_monthlyReturns[Months.March] = 0.6m;
+		_monthlyReturns[Months.April] = 0.9m;
+		_monthlyReturns[Months.May] = 0.2m;
+		_monthlyReturns[Months.June] = -0.4m;
+		_monthlyReturns[Months.July] = -0.2m;
+		_monthlyReturns[Months.August] = -0.7m;
+		_monthlyReturns[Months.September] = -0.9m;
+		_monthlyReturns[Months.October] = -0.1m;
+		_monthlyReturns[Months.November] = 0.5m;
+		_monthlyReturns[Months.December] = 0.7m;
 	}
 
 	/// <inheritdoc />
@@ -131,12 +142,12 @@ _monthlyReturns[Months.December] = 0.7m;
 	{
 		base.OnReseted();
 
-		_isLongPosition = false;
-		_isShortPosition = false;
-		_upperBand = 0;
-		_middleBand = 0;
-		_lowerBand = 0;
 		_seasonalStrength = 0;
+		_previousUpperBand = null;
+		_previousLowerBand = null;
+		_previousMiddleBand = null;
+		_previousClosePrice = null;
+		_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
@@ -179,6 +190,9 @@ _monthlyReturns[Months.December] = 0.7m;
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
+
 		var donchianTyped = (DonchianChannelsValue)donchianValue;
 
 		if (donchianTyped.UpperBand is not decimal upperBand ||
@@ -188,48 +202,67 @@ _monthlyReturns[Months.December] = 0.7m;
 			return;
 		}
 
-		// Save current Donchian Channel values
-		_upperBand = upperBand;
-		_middleBand = middleBand;
-		_lowerBand = lowerBand;
-		
 		// Calculate seasonal strength for current month
 		UpdateSeasonalStrength(candle.OpenTime);
+
+		if (_previousUpperBand is null || _previousLowerBand is null || _previousMiddleBand is null || _previousClosePrice is null)
+		{
+			_previousUpperBand = upperBand;
+			_previousLowerBand = lowerBand;
+			_previousMiddleBand = middleBand;
+			_previousClosePrice = candle.ClosePrice;
+			return;
+		}
 		
 		if (!IsFormedAndOnlineAndAllowTrading())
+		{
+			_previousUpperBand = upperBand;
+			_previousLowerBand = lowerBand;
+			_previousMiddleBand = middleBand;
+			_previousClosePrice = candle.ClosePrice;
 			return;
+		}
+
+		var previousUpperBand = _previousUpperBand.Value;
+		var previousLowerBand = _previousLowerBand.Value;
+		var previousMiddleBand = _previousMiddleBand.Value;
+		var previousClosePrice = _previousClosePrice.Value;
 			
 		// Trading logic
-		// Buy when price breaks above upper band and seasonal strength is positive (above threshold)
-		if (candle.ClosePrice > _upperBand && _seasonalStrength > SeasonalThreshold && Position <= 0)
-		{
-			BuyMarket(Volume);
-			LogInfo($"Buy Signal: Price {candle.ClosePrice:F2} > Upper Band {_upperBand:F2}, Seasonal Strength {_seasonalStrength:F2}");
-			_isLongPosition = true;
-			_isShortPosition = false;
-		}
-		// Sell when price breaks below lower band and seasonal strength is negative (below negative threshold)
-		else if (candle.ClosePrice < _lowerBand && _seasonalStrength < -SeasonalThreshold && Position >= 0)
-		{
-			SellMarket(Volume + Math.Abs(Position));
-			LogInfo($"Sell Signal: Price {candle.ClosePrice:F2} < Lower Band {_lowerBand:F2}, Seasonal Strength {_seasonalStrength:F2}");
-			_isLongPosition = false;
-			_isShortPosition = true;
-		}
-		// Exit long position when price falls below middle band
-		else if (_isLongPosition && candle.ClosePrice < _middleBand)
+		// Donchian channels include the current bar, so the breakout must be checked against the previous channel.
+		if (Position > 0 && candle.ClosePrice < previousMiddleBand)
 		{
 			SellMarket(Position);
-			LogInfo($"Exit Long: Price {candle.ClosePrice:F2} fell below Middle Band {_middleBand:F2}");
-			_isLongPosition = false;
+			_cooldownRemaining = SignalCooldownBars;
 		}
-		// Exit short position when price rises above middle band
-		else if (_isShortPosition && candle.ClosePrice > _middleBand)
+		else if (Position < 0 && candle.ClosePrice > previousMiddleBand)
 		{
-			BuyMarket(Math.Abs(Position));
-			LogInfo($"Exit Short: Price {candle.ClosePrice:F2} rose above Middle Band {_middleBand:F2}");
-			_isShortPosition = false;
+			BuyMarket(-Position);
+			_cooldownRemaining = SignalCooldownBars;
 		}
+		else if (_cooldownRemaining == 0 &&
+			previousClosePrice <= previousUpperBand &&
+			candle.ClosePrice > previousUpperBand &&
+			_seasonalStrength > SeasonalThreshold &&
+			Position <= 0)
+		{
+			BuyMarket(Volume + (Position < 0 ? -Position : 0m));
+			_cooldownRemaining = SignalCooldownBars;
+		}
+		else if (_cooldownRemaining == 0 &&
+			previousClosePrice >= previousLowerBand &&
+			candle.ClosePrice < previousLowerBand &&
+			_seasonalStrength < -SeasonalThreshold &&
+			Position >= 0)
+		{
+			SellMarket(Volume + (Position > 0 ? Position : 0m));
+			_cooldownRemaining = SignalCooldownBars;
+		}
+
+		_previousUpperBand = upperBand;
+		_previousLowerBand = lowerBand;
+		_previousMiddleBand = middleBand;
+		_previousClosePrice = candle.ClosePrice;
 	}
 	
 	private void UpdateSeasonalStrength(DateTimeOffset time)

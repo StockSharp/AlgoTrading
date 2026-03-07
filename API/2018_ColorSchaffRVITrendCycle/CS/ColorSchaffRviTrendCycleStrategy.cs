@@ -1,20 +1,16 @@
+namespace StockSharp.Samples.Strategies;
+
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-namespace StockSharp.Samples.Strategies;
-
 /// <summary>
-/// Trading strategy based on Color Schaff RVI Trend Cycle indicator.
+/// Trading strategy based on a Schaff-style cycle built from fast and slow RVI averages.
 /// </summary>
 public class ColorSchaffRviTrendCycleStrategy : Strategy
 {
@@ -23,23 +19,24 @@ public class ColorSchaffRviTrendCycleStrategy : Strategy
 	private readonly StrategyParam<int> _cycleLength;
 	private readonly StrategyParam<int> _highLevel;
 	private readonly StrategyParam<int> _lowLevel;
+	private readonly StrategyParam<int> _signalCooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private RelativeVigorIndex _fastRvi;
-	private RelativeVigorIndex _slowRvi;
-
-	private decimal[] _macd;
-	private decimal[] _st;
-	private decimal[] _stc;
-	private int _index;
-	private int _filled;
+	private readonly List<ICandleMessage> _recentCandles = [];
+	private readonly Queue<decimal> _fastWindow = [];
+	private readonly Queue<decimal> _slowWindow = [];
+	private readonly List<decimal> _macd = [];
+	private readonly List<decimal> _st = [];
+	private decimal _fastSum;
+	private decimal _slowSum;
 	private bool _stReady;
 	private bool _stcReady;
 	private decimal _prevSt;
 	private decimal _prevStc;
+	private int _cooldownRemaining;
 
 	/// <summary>
-	/// Fast RVI period.
+	/// Fast RVI smoothing length.
 	/// </summary>
 	public int FastRviLength
 	{
@@ -48,7 +45,7 @@ public class ColorSchaffRviTrendCycleStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Slow RVI period.
+	/// Slow RVI smoothing length.
 	/// </summary>
 	public int SlowRviLength
 	{
@@ -66,7 +63,7 @@ public class ColorSchaffRviTrendCycleStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Upper threshold for STC.
+	/// Upper threshold for the cycle.
 	/// </summary>
 	public int HighLevel
 	{
@@ -75,12 +72,21 @@ public class ColorSchaffRviTrendCycleStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Lower threshold for STC.
+	/// Lower threshold for the cycle.
 	/// </summary>
 	public int LowLevel
 	{
 		get => _lowLevel.Value;
 		set => _lowLevel.Value = value;
+	}
+
+	/// <summary>
+	/// Bars to wait between reversals.
+	/// </summary>
+	public int SignalCooldownBars
+	{
+		get => _signalCooldownBars.Value;
+		set => _signalCooldownBars.Value = value;
 	}
 
 	/// <summary>
@@ -99,28 +105,27 @@ public class ColorSchaffRviTrendCycleStrategy : Strategy
 	{
 		_fastRviLength = Param(nameof(FastRviLength), 23)
 			.SetGreaterThanZero()
-			.SetDisplay("Fast RVI Length", "Period for fast RVI", "General")
-			;
+			.SetDisplay("Fast RVI Length", "Smoothing length for fast RVI", "General");
 
 		_slowRviLength = Param(nameof(SlowRviLength), 50)
 			.SetGreaterThanZero()
-			.SetDisplay("Slow RVI Length", "Period for slow RVI", "General")
-			;
+			.SetDisplay("Slow RVI Length", "Smoothing length for slow RVI", "General");
 
 		_cycleLength = Param(nameof(CycleLength), 10)
 			.SetGreaterThanZero()
-			.SetDisplay("Cycle", "Length of stochastic cycle", "General")
-			;
+			.SetDisplay("Cycle", "Length of the stochastic cycle", "General");
 
 		_highLevel = Param(nameof(HighLevel), 60)
-			.SetDisplay("High Level", "Upper threshold", "General")
-			;
+			.SetDisplay("High Level", "Upper threshold", "General");
 
 		_lowLevel = Param(nameof(LowLevel), -60)
-			.SetDisplay("Low Level", "Lower threshold", "General")
-			;
+			.SetDisplay("Low Level", "Lower threshold", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_signalCooldownBars = Param(nameof(SignalCooldownBars), 6)
+			.SetGreaterThanZero()
+			.SetDisplay("Signal Cooldown", "Bars to wait between reversals", "General");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -135,17 +140,18 @@ public class ColorSchaffRviTrendCycleStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_fastRvi = default;
-		_slowRvi = default;
-		_macd = default;
-		_st = default;
-		_stc = default;
-		_index = 0;
-		_filled = 0;
+		_recentCandles.Clear();
+		_fastWindow.Clear();
+		_slowWindow.Clear();
+		_macd.Clear();
+		_st.Clear();
+		_fastSum = 0m;
+		_slowSum = 0m;
 		_stReady = false;
 		_stcReady = false;
 		_prevSt = 0m;
 		_prevStc = 0m;
+		_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
@@ -153,27 +159,23 @@ public class ColorSchaffRviTrendCycleStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_fastRvi = new RelativeVigorIndex();
-		_fastRvi.Average.Length = FastRviLength;
-		_slowRvi = new RelativeVigorIndex();
-		_slowRvi.Average.Length = SlowRviLength;
-
-		_macd = new decimal[CycleLength];
-		_st = new decimal[CycleLength];
-		_stc = new decimal[CycleLength];
+		_recentCandles.Clear();
+		_fastWindow.Clear();
+		_slowWindow.Clear();
+		_macd.Clear();
+		_st.Clear();
+		_fastSum = 0m;
+		_slowSum = 0m;
+		_stReady = false;
+		_stcReady = false;
+		_prevSt = 0m;
+		_prevStc = 0m;
+		_cooldownRemaining = 0;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
 
 		StartProtection(null, null);
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, _fastRvi);
-			DrawIndicator(area, _slowRvi);
-		}
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -181,79 +183,122 @@ public class ColorSchaffRviTrendCycleStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var fastResult = _fastRvi.Process(candle);
-		var slowResult = _slowRvi.Process(candle);
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
 
-		if (!_fastRvi.IsFormed || !_slowRvi.IsFormed)
+		_recentCandles.Add(candle);
+		if (_recentCandles.Count > 4)
+			_recentCandles.RemoveAt(0);
+
+		if (_recentCandles.Count < 4)
 			return;
 
-		var fastRviVal = (IRelativeVigorIndexValue)fastResult;
-		var slowRviVal = (IRelativeVigorIndexValue)slowResult;
+		var rawRvi = CalculateRawRvi();
+		UpdateWindow(_fastWindow, ref _fastSum, rawRvi, FastRviLength);
+		UpdateWindow(_slowWindow, ref _slowSum, rawRvi, SlowRviLength);
 
-		if (fastRviVal.Average is not decimal fast || slowRviVal.Average is not decimal slow)
+		if (_fastWindow.Count < FastRviLength || _slowWindow.Count < SlowRviLength)
 			return;
+
+		var fast = _fastSum / _fastWindow.Count;
+		var slow = _slowSum / _slowWindow.Count;
 		var macd = fast - slow;
+		AddValue(_macd, macd, CycleLength);
+		if (_macd.Count < CycleLength)
+			return;
 
-		_macd[_index] = macd;
-
-		var len = Math.Max(_filled, 1);
-		decimal minMacd = _macd[0], maxMacd = _macd[0];
-		for (var i = 1; i < len; i++)
-		{
-			var v = _macd[i];
-			if (v < minMacd)
-				minMacd = v;
-			if (v > maxMacd)
-				maxMacd = v;
-		}
-
-		var st = (maxMacd - minMacd) != 0 ? (macd - minMacd) / (maxMacd - minMacd) * 100m : _prevSt;
+		GetMinMax(_macd, out var minMacd, out var maxMacd);
+		var st = maxMacd == minMacd ? _prevSt : (macd - minMacd) / (maxMacd - minMacd) * 100m;
 		if (_stReady)
 			st = 0.5m * (st - _prevSt) + _prevSt;
 		else
 			_stReady = true;
 
 		_prevSt = st;
-		_st[_index] = st;
+		AddValue(_st, st, CycleLength);
 
-		decimal minSt = _st[0], maxSt = _st[0];
-		for (var i = 1; i < len; i++)
-		{
-			var v = _st[i];
-			if (v < minSt)
-				minSt = v;
-			if (v > maxSt)
-				maxSt = v;
-		}
-
-		var stc = (maxSt - minSt) != 0 ? (st - minSt) / (maxSt - minSt) * 200m - 100m : _prevStc;
+		GetMinMax(_st, out var minSt, out var maxSt);
+		var previousStc = _prevStc;
+		var stc = maxSt == minSt ? previousStc : (st - minSt) / (maxSt - minSt) * 200m - 100m;
 		if (_stcReady)
-			stc = 0.5m * (stc - _prevStc) + _prevStc;
+			stc = 0.5m * (stc - previousStc) + previousStc;
 		else
 			_stcReady = true;
 
 		_prevStc = stc;
-		_stc[_index] = stc;
+		var delta = stc - previousStc;
+		var longEntry = previousStc <= HighLevel && stc > HighLevel && delta > 0m;
+		var shortEntry = previousStc >= LowLevel && stc < LowLevel && delta < 0m;
+		var longExit = Position > 0 && stc < 0m;
+		var shortExit = Position < 0 && stc > 0m;
 
-		_index++;
-		if (_index >= _macd.Length)
-			_index = 0;
-		if (_filled < _macd.Length)
-			_filled++;
-
-		var prevIndex = (_index - 1 + _stc.Length) % _stc.Length;
-		var prevStcValue = _stc[prevIndex];
-		var delta = stc - prevStcValue;
-
-		if (stc > HighLevel && delta >= 0 && Position <= 0)
+		if (longExit)
 		{
-			if (Position < 0) BuyMarket();
-			BuyMarket();
+			SellMarket(Position);
+			_cooldownRemaining = SignalCooldownBars;
 		}
-		else if (stc < LowLevel && delta <= 0 && Position >= 0)
+		else if (shortExit)
 		{
-			if (Position > 0) SellMarket();
-			SellMarket();
+			BuyMarket(Math.Abs(Position));
+			_cooldownRemaining = SignalCooldownBars;
+		}
+		else if (_cooldownRemaining == 0 && longEntry && Position <= 0)
+		{
+			BuyMarket(Volume + Math.Abs(Position));
+			_cooldownRemaining = SignalCooldownBars;
+		}
+		else if (_cooldownRemaining == 0 && shortEntry && Position >= 0)
+		{
+			SellMarket(Volume + Math.Abs(Position));
+			_cooldownRemaining = SignalCooldownBars;
+		}
+	}
+
+	private decimal CalculateRawRvi()
+	{
+		var c0 = _recentCandles[0];
+		var c1 = _recentCandles[1];
+		var c2 = _recentCandles[2];
+		var c3 = _recentCandles[3];
+		var valueUp = ((c0.ClosePrice - c0.OpenPrice) +
+			2m * (c1.ClosePrice - c1.OpenPrice) +
+			2m * (c2.ClosePrice - c2.OpenPrice) +
+			(c3.ClosePrice - c3.OpenPrice)) / 6m;
+		var valueDn = ((c0.HighPrice - c0.LowPrice) +
+			2m * (c1.HighPrice - c1.LowPrice) +
+			2m * (c2.HighPrice - c2.LowPrice) +
+			(c3.HighPrice - c3.LowPrice)) / 6m;
+		return valueDn == 0m ? valueUp : valueUp / valueDn;
+	}
+
+	private static void UpdateWindow(Queue<decimal> window, ref decimal sum, decimal value, int length)
+	{
+		window.Enqueue(value);
+		sum += value;
+
+		while (window.Count > length)
+			sum -= window.Dequeue();
+	}
+
+	private static void AddValue(List<decimal> values, decimal value, int limit)
+	{
+		values.Add(value);
+		if (values.Count > limit)
+			values.RemoveAt(0);
+	}
+
+	private static void GetMinMax(List<decimal> values, out decimal min, out decimal max)
+	{
+		min = values[0];
+		max = values[0];
+
+		for (var i = 1; i < values.Count; i++)
+		{
+			var value = values[i];
+			if (value < min)
+				min = value;
+			if (value > max)
+				max = value;
 		}
 	}
 }

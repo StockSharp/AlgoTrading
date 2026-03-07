@@ -45,6 +45,8 @@ public class ExpTimeZonePivotsOpenSystemTmPlusStrategy : Strategy
 	private decimal? _sessionOpenPrice;
 	private decimal? _upperBand;
 	private decimal? _lowerBand;
+	private bool _sessionTradeTaken;
+	private DateTimeOffset? _lastEntryDate;
 
 	// Pending entry scheduling.
 	private bool _pendingLongEntry;
@@ -245,6 +247,8 @@ public class ExpTimeZonePivotsOpenSystemTmPlusStrategy : Strategy
 		_shortStopPrice = null;
 		_shortTakePrice = null;
 		_timeFrame = CandleType.Arg as TimeSpan?;
+		_sessionTradeTaken = false;
+		_lastEntryDate = null;
 	}
 
 	protected override void OnStarted2(DateTime time)
@@ -300,6 +304,13 @@ public class ExpTimeZonePivotsOpenSystemTmPlusStrategy : Strategy
 
 		var signalSnapshot = _zoneHistory[SignalBar];
 		var confirmSnapshot = _zoneHistory[SignalBar + 1];
+
+		if (signalSnapshot == null || confirmSnapshot == null)
+		{
+			ManageStops(candle);
+			HandleTimeExit(candle.CloseTime);
+			return;
+		}
 
 		var closeLong = false;
 		var closeShort = false;
@@ -362,6 +373,12 @@ public class ExpTimeZonePivotsOpenSystemTmPlusStrategy : Strategy
 		if (Position != 0m)
 			return;
 
+		if (_sessionTradeTaken)
+			return;
+
+		if (_lastEntryDate.HasValue && candle.OpenTime.Date <= _lastEntryDate.Value.Date.AddDays(4))
+			return;
+
 		var opened = false;
 
 		if (_pendingLongEntry && BuyPosOpen)
@@ -377,6 +394,8 @@ public class ExpTimeZonePivotsOpenSystemTmPlusStrategy : Strategy
 					BuyMarket(volume);
 					_pendingLongEntry = false;
 					_longSignalTime = null;
+					_sessionTradeTaken = true;
+					_lastEntryDate = candle.OpenTime;
 					opened = true;
 				}
 			}
@@ -395,6 +414,8 @@ public class ExpTimeZonePivotsOpenSystemTmPlusStrategy : Strategy
 					SellMarket(volume);
 					_pendingShortEntry = false;
 					_shortSignalTime = null;
+					_sessionTradeTaken = true;
+					_lastEntryDate = candle.OpenTime;
 				}
 			}
 		}
@@ -499,6 +520,7 @@ public class ExpTimeZonePivotsOpenSystemTmPlusStrategy : Strategy
 			_shortSignalTime = null;
 			_lastLongSignalOrigin = null;
 			_lastShortSignalOrigin = null;
+			_sessionTradeTaken = false;
 		}
 
 		if (_sessionOpenPrice.HasValue)
@@ -647,4 +669,3 @@ public class ExpTimeZonePivotsOpenSystemTmPlusStrategy : Strategy
 		public DateTimeOffset CloseTime { get; init; }
 	}
 }
-

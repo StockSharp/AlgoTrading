@@ -30,7 +30,7 @@ public class MultiTfAiSuperTrendWithAdxStrategy : Strategy
 
 	public MultiTfAiSuperTrendWithAdxStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 		_fastLength = Param(nameof(FastLength), 10)
 			.SetGreaterThanZero()

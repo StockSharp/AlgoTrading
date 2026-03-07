@@ -22,6 +22,7 @@ public class ExecutorAoStrategy : Strategy
 	private readonly StrategyParam<decimal> _trailingStopPips;
 	private readonly StrategyParam<decimal> _trailingStepPips;
 	private readonly StrategyParam<DataType> _candleType;
+	private static readonly object _sync = new();
 
 	private AwesomeOscillator _ao = null!;
 
@@ -82,7 +83,7 @@ public class ExecutorAoStrategy : Strategy
 			.SetDisplay("Trailing Step (pips)", "Minimum move before trailing adjusts", "Risk")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(2).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe used for analysis", "General");
 	}
 
@@ -204,7 +205,7 @@ public class ExecutorAoStrategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_ao, ProcessCandle)
+			.Bind(candle => ProcessCandle(candle))
 			.Start();
 
 		var area = CreateChartArea();
@@ -216,43 +217,44 @@ public class ExecutorAoStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal aoValue)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var previousAo = _currentAo;
-		var previousAo2 = _previousAo;
-
-		var positionClosed = HandleActivePositions(candle, previousAo);
-
-		StoreAoValue(aoValue);
-
-		if (positionClosed)
-			return;
-
-		if (_ao == null || !_ao.IsFormed)
-			return;
-
-		if (!previousAo.HasValue || !previousAo2.HasValue || !_currentAo.HasValue)
-			return;
-
-		if (Position != 0m)
-			return;
-
-		var current = _currentAo.Value;
-		var prev = previousAo.Value;
-		var prev2 = previousAo2.Value;
-		var indent = MinimumAoIndent;
-
-		if (current > prev && prev < prev2 && current <= -indent)
+		lock (_sync)
 		{
-			OpenLong(candle.ClosePrice);
-			return;
-		}
+			var aoValue = _ao.Process(new CandleIndicatorValue(_ao, candle) { IsFinal = true });
+			if (!aoValue.IsFinal || _ao == null || !_ao.IsFormed)
+				return;
 
-		if (current < prev && prev > prev2 && current >= indent)
-			OpenShort(candle.ClosePrice);
+			var previousAo = _currentAo;
+			var previousAo2 = _previousAo;
+
+			var positionClosed = HandleActivePositions(candle, previousAo);
+
+			StoreAoValue(aoValue.ToDecimal());
+
+			if (positionClosed || !previousAo.HasValue || !previousAo2.HasValue || !_currentAo.HasValue)
+				return;
+
+			if (Position != 0m)
+				return;
+
+			var current = _currentAo.Value;
+			var prev = previousAo.Value;
+			var prev2 = previousAo2.Value;
+			var indent = MinimumAoIndent;
+
+			if (current > prev && prev < prev2 && current <= -indent)
+			{
+				OpenLong(candle.ClosePrice);
+				return;
+			}
+
+			if (current < prev && prev > prev2 && current >= indent)
+				OpenShort(candle.ClosePrice);
+		}
 	}
 
 	private bool HandleActivePositions(ICandleMessage candle, decimal? previousAo)

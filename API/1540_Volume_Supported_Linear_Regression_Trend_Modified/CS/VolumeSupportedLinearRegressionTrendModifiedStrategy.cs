@@ -21,9 +21,12 @@ public class VolumeSupportedLinearRegressionTrendModifiedStrategy : Strategy
 	private readonly StrategyParam<int> _rsiPeriod;
 	private readonly StrategyParam<decimal> _entryLevel;
 	private readonly StrategyParam<decimal> _exitLevel;
+	private readonly StrategyParam<int> _signalCooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private RelativeStrengthIndex _rsi = null!;
+	private decimal? _prevRsi;
+	private int _cooldownRemaining;
 
 	/// <summary>
 	/// RSI period.
@@ -53,6 +56,15 @@ public class VolumeSupportedLinearRegressionTrendModifiedStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Minimum number of closed candles between new entries.
+	/// </summary>
+	public int SignalCooldownBars
+	{
+		get => _signalCooldownBars.Value;
+		set => _signalCooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Candle type to process.
 	/// </summary>
 	public DataType CandleType
@@ -71,15 +83,20 @@ public class VolumeSupportedLinearRegressionTrendModifiedStrategy : Strategy
 			.SetDisplay("RSI Period", "RSI calculation period", "General")
 			;
 
-		_entryLevel = Param(nameof(EntryLevel), 30m)
+		_entryLevel = Param(nameof(EntryLevel), 60m)
 			.SetDisplay("Entry Level", "RSI value to enter long", "General")
 			;
 
-		_exitLevel = Param(nameof(ExitLevel), 70m)
+		_exitLevel = Param(nameof(ExitLevel), 45m)
 			.SetDisplay("Exit Level", "RSI value to close long", "General")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_signalCooldownBars = Param(nameof(SignalCooldownBars), 8)
+			.SetNotNegative()
+			.SetDisplay("Signal Cooldown Bars", "Closed candles to wait before re-entering", "General")
+			;
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -88,11 +105,22 @@ public class VolumeSupportedLinearRegressionTrendModifiedStrategy : Strategy
 		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_prevRsi = null;
+		_cooldownRemaining = 0;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
+		_prevRsi = null;
+		_cooldownRemaining = 0;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -113,17 +141,37 @@ public class VolumeSupportedLinearRegressionTrendModifiedStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
 
-		if (rsi > EntryLevel && Position <= 0)
+		if (_prevRsi is null)
+		{
+			_prevRsi = rsi;
+			return;
+		}
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+		{
+			_prevRsi = rsi;
+			return;
+		}
+
+		var previousRsi = _prevRsi.Value;
+		var longEntry = previousRsi <= EntryLevel && rsi > EntryLevel;
+		var longExit = previousRsi >= ExitLevel && rsi < ExitLevel;
+
+		if (longExit && Position > 0)
+		{
+			SellMarket(Position);
+			_cooldownRemaining = SignalCooldownBars;
+		}
+		else if (_cooldownRemaining == 0 && longEntry && Position <= 0)
 		{
 			var volume = Volume + (Position < 0 ? -Position : 0m);
 			BuyMarket(volume);
+			_cooldownRemaining = SignalCooldownBars;
 		}
-		else if (rsi > ExitLevel && Position > 0)
-		{
-			SellMarket(Position);
-		}
+
+		_prevRsi = rsi;
 	}
 }

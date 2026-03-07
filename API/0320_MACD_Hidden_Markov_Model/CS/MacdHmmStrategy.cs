@@ -1,9 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
 using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
@@ -23,6 +21,7 @@ public class MacdHmmStrategy : Strategy
 	private readonly StrategyParam<int> _macdSignal;
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _hmmHistoryLength;
+	private readonly StrategyParam<int> _signalCooldownBars;
 
 	private MovingAverageConvergenceDivergenceSignal _macd;
 
@@ -37,9 +36,12 @@ public class MacdHmmStrategy : Strategy
 	private MarketStates _currentState = MarketStates.Neutral;
 
 	// Data for HMM calculations
-	private readonly SynchronizedList<decimal> _priceChanges = [];
-	private readonly SynchronizedList<decimal> _volumes = [];
+	private readonly List<decimal> _priceChanges = [];
+	private readonly List<decimal> _volumes = [];
 	private decimal _prevPrice;
+	private decimal? _prevMacd;
+	private decimal? _prevSignal;
+	private int _cooldownRemaining;
 
 	/// <summary>
 	/// MACD fast period.
@@ -87,6 +89,15 @@ public class MacdHmmStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Bars to wait between trading actions.
+	/// </summary>
+	public int SignalCooldownBars
+	{
+		get => _signalCooldownBars.Value;
+		set => _signalCooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Initializes a new instance of the <see cref="MacdHmmStrategy"/>.
 	/// </summary>
 	public MacdHmmStrategy()
@@ -106,13 +117,17 @@ public class MacdHmmStrategy : Strategy
 		
 		.SetOptimize(7, 15, 1);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles to use", "General");
 
 		_hmmHistoryLength = Param(nameof(HmmHistoryLength), 100)
 		.SetDisplay("HMM History Length", "Length of history for Hidden Markov Model", "HMM Parameters")
 		
 		.SetOptimize(50, 200, 10);
+
+		_signalCooldownBars = Param(nameof(SignalCooldownBars), 12)
+		.SetGreaterThanZero()
+		.SetDisplay("Signal Cooldown", "Bars to wait between position changes", "Trading");
 	}
 
 	/// <inheritdoc />
@@ -126,8 +141,11 @@ public class MacdHmmStrategy : Strategy
 	{
 		base.OnReseted();
 
-_currentState = MarketStates.Neutral;
+		_currentState = MarketStates.Neutral;
 		_prevPrice = 0;
+		_prevMacd = null;
+		_prevSignal = null;
+		_cooldownRemaining = 0;
 		_priceChanges.Clear();
 		_volumes.Clear();
 
@@ -189,30 +207,50 @@ _currentState = MarketStates.Neutral;
 		// Determine market state using HMM
 		CalculateMarketState();
 
-		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
-		var macd = macdTyped.Macd;
-		var signal = macdTyped.Signal;
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
 
-		// Generate trade signals based on MACD and HMM state
-			if (macd > signal && _currentState == MarketStates.Bullish && Position <= 0)
+		if (macdValue is not IMovingAverageConvergenceDivergenceSignalValue macdTyped ||
+			macdTyped.Macd is not decimal macd ||
+			macdTyped.Signal is not decimal signal)
+			return;
+
+		if (_prevMacd is not decimal previousMacd || _prevSignal is not decimal previousSignal)
 		{
-			// Buy signal - MACD above signal line and bullish state
-			BuyMarket(Volume);
-			LogInfo($"Buy Signal: MACD ({macd:F6}) > Signal ({signal:F6}) in Bullish state");
+			_prevMacd = macd;
+			_prevSignal = signal;
+			return;
 		}
-			else if (macd < signal && _currentState == MarketStates.Bearish && Position >= 0)
+
+		var crossUp = previousMacd <= previousSignal && macd > signal;
+		var crossDown = previousMacd >= previousSignal && macd < signal;
+		var longExit = Position > 0 && (_currentState == MarketStates.Bearish || crossDown);
+		var shortExit = Position < 0 && (_currentState == MarketStates.Bullish || crossUp);
+
+		// Generate trade signals based on MACD transitions and HMM state.
+		if (longExit)
 		{
-			// Sell signal - MACD below signal line and bearish state
+			SellMarket(Position);
+			_cooldownRemaining = SignalCooldownBars;
+		}
+		else if (shortExit)
+		{
+			BuyMarket(Math.Abs(Position));
+			_cooldownRemaining = SignalCooldownBars;
+		}
+		else if (_cooldownRemaining == 0 && crossUp && _currentState == MarketStates.Bullish && Position <= 0)
+		{
+			BuyMarket(Volume + Math.Abs(Position));
+			_cooldownRemaining = SignalCooldownBars;
+		}
+		else if (_cooldownRemaining == 0 && crossDown && _currentState == MarketStates.Bearish && Position >= 0)
+		{
 			SellMarket(Volume + Math.Abs(Position));
-			LogInfo($"Sell Signal: MACD ({macd:F6}) < Signal ({signal:F6}) in Bearish state");
+			_cooldownRemaining = SignalCooldownBars;
 		}
-			else if ((Position > 0 && (_currentState == MarketStates.Neutral || _currentState == MarketStates.Bearish)) ||
-				(Position < 0 && (_currentState == MarketStates.Neutral || _currentState == MarketStates.Bullish)))
-		{
-			// Exit position if market state changes
-			ClosePosition();
-			LogInfo($"Exit Position: Market state changed to {_currentState}");
-		}
+
+		_prevMacd = macd;
+		_prevSignal = signal;
 	}
 
 	private void UpdateHmmData(ICandleMessage candle)
@@ -245,9 +283,19 @@ _currentState = MarketStates.Neutral;
 		// Note: This is a simplified implementation - a real HMM would use proper state transition probabilities
 
 		// Calculate statistics of recent price changes
-		var recentChanges = _priceChanges.Skip(Math.Max(0, _priceChanges.Count - 10)).ToList();
-		var positiveChanges = recentChanges.Count(c => c > 0);
-		var negativeChanges = recentChanges.Count(c => c < 0);
+		var priceChanges = _priceChanges.ToArray();
+		var volumes = _volumes.ToArray();
+		var startIndex = Math.Max(0, priceChanges.Length - 10);
+		var positiveChanges = 0;
+		var negativeChanges = 0;
+
+		for (var i = startIndex; i < priceChanges.Length; i++)
+		{
+			if (priceChanges[i] > 0)
+				positiveChanges++;
+			else if (priceChanges[i] < 0)
+				negativeChanges++;
+		}
 
 		// Calculate average volume for up and down days
 		decimal upVolume = 0;
@@ -255,16 +303,16 @@ _currentState = MarketStates.Neutral;
 		int upCount = 0;
 		int downCount = 0;
 
-		for (int i = Math.Max(0, _priceChanges.Count - 10); i < _priceChanges.Count; i++)
+		for (var i = startIndex; i < priceChanges.Length; i++)
 		{
-			if (_priceChanges[i] > 0)
+			if (priceChanges[i] > 0)
 			{
-				upVolume += _volumes[i];
+				upVolume += volumes[i];
 				upCount++;
 			}
-			else if (_priceChanges[i] < 0)
+			else if (priceChanges[i] < 0)
 			{
-				downVolume += _volumes[i];
+				downVolume += volumes[i];
 				downCount++;
 			}
 		}
@@ -275,17 +323,15 @@ _currentState = MarketStates.Neutral;
 		// Determine market state based on price change direction and volume
 		if (positiveChanges >= 7 || (positiveChanges >= 6 && upVolume > downVolume * 1.5m))
 		{
-_currentState = MarketStates.Bullish;
+			_currentState = MarketStates.Bullish;
 		}
 		else if (negativeChanges >= 7 || (negativeChanges >= 6 && downVolume > upVolume * 1.5m))
 		{
-_currentState = MarketStates.Bearish;
+			_currentState = MarketStates.Bearish;
 		}
 		else
 		{
-_currentState = MarketStates.Neutral;
+			_currentState = MarketStates.Neutral;
 		}
-
-		LogInfo($"Market State: {_currentState}, Positive Changes: {positiveChanges}, Negative Changes: {negativeChanges}");
 	}
 }

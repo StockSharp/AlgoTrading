@@ -28,6 +28,7 @@ private decimal _sessionLow;
 private decimal _sessionMid;
 private decimal _pocPrice;
 private decimal _maxVolume;
+private bool _sessionTradeDone;
 
 /// <summary>
 /// Candle type.
@@ -43,7 +44,7 @@ set => _candleType.Value = value;
 /// </summary>
 public VolumeProfileMakit0Strategy()
 {
-_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 .SetDisplay("Candle Type", "Type of candles", "General");
 }
 
@@ -63,6 +64,7 @@ _sessionLow = 0;
 _sessionMid = 0;
 _pocPrice = 0;
 _maxVolume = 0;
+_sessionTradeDone = false;
 }
 
 /// <inheritdoc />
@@ -93,14 +95,23 @@ private void ProcessCandle(ICandleMessage candle)
 if (candle.State != CandleStates.Finished)
 return;
 
-// start new session on date change
-if (_currentSession != candle.OpenTime.Date)
+var sessionStart = GetSessionStart(candle.OpenTime.Date);
+
+// start new session on session boundary
+if (_currentSession != sessionStart)
 {
-_currentSession = candle.OpenTime.Date;
+	if (Position > 0)
+		SellMarket(Position);
+	else if (Position < 0)
+		BuyMarket(Math.Abs(Position));
+
+_currentSession = sessionStart;
 _sessionHigh = candle.HighPrice;
 _sessionLow = candle.LowPrice;
+_sessionMid = candle.ClosePrice;
 _pocPrice = candle.ClosePrice;
 _maxVolume = candle.TotalVolume;
+_sessionTradeDone = false;
 return;
 }
 
@@ -117,14 +128,28 @@ _pocPrice = candle.ClosePrice;
 if (!IsFormedAndOnlineAndAllowTrading())
 return;
 
-if (candle.ClosePrice > _pocPrice && Position <= 0)
-BuyMarket(Volume + Math.Abs(Position));
-else if (candle.ClosePrice < _pocPrice && Position >= 0)
-SellMarket(Volume + Math.Abs(Position));
+var bullishProfile = candle.ClosePrice > _pocPrice && candle.ClosePrice > _sessionMid;
+var bearishProfile = candle.ClosePrice < _pocPrice && candle.ClosePrice < _sessionMid;
 
-if (Position > 0 && candle.ClosePrice < _sessionMid)
+if (!_sessionTradeDone && Position == 0 && bullishProfile)
+{
+BuyMarket(Volume);
+_sessionTradeDone = true;
+}
+else if (!_sessionTradeDone && Position == 0 && bearishProfile)
+{
+SellMarket(Volume);
+_sessionTradeDone = true;
+}
+
+if (Position > 0 && candle.ClosePrice < _pocPrice && candle.ClosePrice < _sessionMid)
 SellMarket(Position);
-else if (Position < 0 && candle.ClosePrice > _sessionMid)
+else if (Position < 0 && candle.ClosePrice > _pocPrice && candle.ClosePrice > _sessionMid)
 BuyMarket(Math.Abs(Position));
+}
+
+private static DateTime GetSessionStart(DateTime date)
+{
+	return new DateTime(date.Year, date.Month, 1);
 }
 }

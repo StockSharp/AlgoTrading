@@ -21,14 +21,16 @@ public class MultiStepFlexiMaStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _fastLength;
 	private readonly StrategyParam<int> _slowLength;
+	private readonly StrategyParam<int> _signalCooldownBars;
 
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 	public int FastLength { get => _fastLength.Value; set => _fastLength.Value = value; }
 	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public int SignalCooldownBars { get => _signalCooldownBars.Value; set => _signalCooldownBars.Value = value; }
 
 	public MultiStepFlexiMaStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 		_fastLength = Param(nameof(FastLength), 10)
 			.SetGreaterThanZero()
@@ -36,6 +38,9 @@ public class MultiStepFlexiMaStrategy : Strategy
 		_slowLength = Param(nameof(SlowLength), 30)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow Length", "Slow SMA period", "FlexiMA");
+		_signalCooldownBars = Param(nameof(SignalCooldownBars), 4)
+			.SetGreaterThanZero()
+			.SetDisplay("Signal Cooldown", "Bars to wait between crossovers", "FlexiMA");
 	}
 
 	protected override void OnStarted2(DateTime time)
@@ -48,17 +53,29 @@ public class MultiStepFlexiMaStrategy : Strategy
 		var prevFast = 0m;
 		var prevSlow = 0m;
 		var initialized = false;
+		var cooldownRemaining = 0;
 
 		var subscription = SubscribeCandles(CandleType);
 
 		subscription
-			.Bind(fastSma, slowSma, (candle, fastVal, slowVal) =>
+			.Bind(candle =>
 			{
 				if (candle.State != CandleStates.Finished)
 					return;
 
 				if (!IsFormedAndOnlineAndAllowTrading())
 					return;
+
+				if (cooldownRemaining > 0)
+					cooldownRemaining--;
+
+				var fastResult = fastSma.Process(candle);
+				var slowResult = slowSma.Process(candle);
+				if (!fastSma.IsFormed || !slowSma.IsFormed || fastResult.IsEmpty || slowResult.IsEmpty)
+					return;
+
+				var fastVal = fastResult.ToDecimal();
+				var slowVal = slowResult.ToDecimal();
 
 				if (!initialized)
 				{
@@ -68,10 +85,16 @@ public class MultiStepFlexiMaStrategy : Strategy
 					return;
 				}
 
-				if (prevFast <= prevSlow && fastVal > slowVal && Position <= 0)
+				if (cooldownRemaining == 0 && prevFast <= prevSlow && fastVal > slowVal && Position <= 0)
+				{
 					BuyMarket();
-				else if (prevFast >= prevSlow && fastVal < slowVal && Position > 0)
+					cooldownRemaining = SignalCooldownBars;
+				}
+				else if (cooldownRemaining == 0 && prevFast >= prevSlow && fastVal < slowVal && Position > 0)
+				{
 					SellMarket();
+					cooldownRemaining = SignalCooldownBars;
+				}
 
 				prevFast = fastVal;
 				prevSlow = slowVal;

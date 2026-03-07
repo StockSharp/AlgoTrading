@@ -1,20 +1,15 @@
-using System;
-using System.Linq;
-using System.Collections.Generic;
+namespace StockSharp.Samples.Strategies;
 
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
+using System;
+using System.Collections.Generic;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-namespace StockSharp.Samples.Strategies;
-
 /// <summary>
-/// Strategy based on ADX with Volume Breakout.
+/// Strategy based on ADX with a volume breakout confirmation.
 /// </summary>
 public class AdxWithVolumeBreakoutStrategy : Strategy
 {
@@ -22,84 +17,71 @@ public class AdxWithVolumeBreakoutStrategy : Strategy
 	private readonly StrategyParam<decimal> _adxThreshold;
 	private readonly StrategyParam<int> _volumeAvgPeriod;
 	private readonly StrategyParam<decimal> _volumeThresholdFactor;
+	private readonly StrategyParam<int> _signalCooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
+
 	private AverageDirectionalIndex _adx;
 	private SimpleMovingAverage _volumeSma;
 	private StandardDeviation _volumeStdDev;
+	private int _cooldownRemaining;
 
-	/// <summary>
-	/// ADX period parameter.
-	/// </summary>
 	public int AdxPeriod
 	{
 		get => _adxPeriod.Value;
 		set => _adxPeriod.Value = value;
 	}
 
-	/// <summary>
-	/// ADX threshold parameter.
-	/// </summary>
 	public decimal AdxThreshold
 	{
 		get => _adxThreshold.Value;
 		set => _adxThreshold.Value = value;
 	}
 
-	/// <summary>
-	/// Volume average period parameter.
-	/// </summary>
 	public int VolumeAvgPeriod
 	{
 		get => _volumeAvgPeriod.Value;
 		set => _volumeAvgPeriod.Value = value;
 	}
 
-	/// <summary>
-	/// Volume threshold factor parameter.
-	/// </summary>
 	public decimal VolumeThresholdFactor
 	{
 		get => _volumeThresholdFactor.Value;
 		set => _volumeThresholdFactor.Value = value;
 	}
 
-	/// <summary>
-	/// Candle type parameter.
-	/// </summary>
+	public int SignalCooldownBars
+	{
+		get => _signalCooldownBars.Value;
+		set => _signalCooldownBars.Value = value;
+	}
+
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Constructor.
-	/// </summary>
 	public AdxWithVolumeBreakoutStrategy()
 	{
 		_adxPeriod = Param(nameof(AdxPeriod), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("ADX Period", "Period for ADX calculation", "Indicators")
-			
-			.SetOptimize(7, 28, 7);
+			.SetDisplay("ADX Period", "Period for ADX calculation", "Indicators");
 
-		_adxThreshold = Param(nameof(AdxThreshold), 25m)
+		_adxThreshold = Param(nameof(AdxThreshold), 10m)
 			.SetGreaterThanZero()
-			.SetDisplay("ADX Threshold", "Threshold for strong trend identification", "Indicators")
-			
-			.SetOptimize(15, 35, 5);
+			.SetDisplay("ADX Threshold", "Threshold for strong trend identification", "Indicators");
 
 		_volumeAvgPeriod = Param(nameof(VolumeAvgPeriod), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("Volume Avg Period", "Period for volume moving average", "Indicators")
-			
-			.SetOptimize(10, 50, 5);
+			.SetDisplay("Volume Avg Period", "Period for volume moving average", "Indicators");
 
-		_volumeThresholdFactor = Param(nameof(VolumeThresholdFactor), 2.0m)
+		_volumeThresholdFactor = Param(nameof(VolumeThresholdFactor), 1.0m)
 			.SetGreaterThanZero()
-			.SetDisplay("Volume Threshold Factor", "Factor for volume breakout detection", "Indicators")
-			
-			.SetOptimize(1.5m, 3.0m, 0.5m);
+			.SetDisplay("Volume Threshold Factor", "Factor for volume breakout detection", "Indicators");
+
+		_signalCooldownBars = Param(nameof(SignalCooldownBars), 48)
+			.SetGreaterThanZero()
+			.SetDisplay("Signal Cooldown", "Bars to wait between signals", "Trading");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -116,9 +98,10 @@ public class AdxWithVolumeBreakoutStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_adx?.Reset();
-		_volumeSma?.Reset();
-		_volumeStdDev?.Reset();
+		_adx = null;
+		_volumeSma = null;
+		_volumeStdDev = null;
+		_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
@@ -126,113 +109,86 @@ public class AdxWithVolumeBreakoutStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Create indicators
 		_adx = new AverageDirectionalIndex { Length = AdxPeriod };
 		_volumeSma = new SMA { Length = VolumeAvgPeriod };
 		_volumeStdDev = new StandardDeviation { Length = VolumeAvgPeriod };
+		_cooldownRemaining = 0;
 
-		// Subscribe to candles and bind indicators
 		var subscription = SubscribeCandles(CandleType);
-		
-		subscription
-			.BindEx(_adx, (candle, adxValue) =>
-			{
-				var adxTyped = (AverageDirectionalIndexValue)adxValue;
+		subscription.Bind(ProcessCandle).Start();
 
-				if (adxTyped.MovingAverage is not decimal adx)
-					return;
-
-				var dx = adxTyped.Dx;
-
-				if (dx.Plus is not decimal plusDi || dx.Minus is not decimal minusDi)
-					return;
-
-				// Process volume indicators
-				var smaVal = _volumeSma.Process(new DecimalIndicatorValue(_volumeSma, candle.TotalVolume, candle.ServerTime)).ToDecimal();
-				var stdDevVal = _volumeStdDev.Process(new DecimalIndicatorValue(_volumeStdDev, candle.TotalVolume, candle.ServerTime)).ToDecimal();
-				
-				// Process the strategy logic
-				ProcessStrategy(
-					candle,
-					adx,
-					plusDi,
-					minusDi,
-					candle.TotalVolume,
-					smaVal,
-					stdDevVal
-				);
-			})
-			.Start();
-
-		// Setup chart if available
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _adx);
 			DrawOwnTrades(area);
 		}
 
-		// Setup position protection
 		StartProtection(
 			takeProfit: new Unit(2, UnitTypes.Percent),
 			stopLoss: new Unit(1, UnitTypes.Percent)
 		);
 	}
 
-	private void ProcessStrategy(ICandleMessage candle, decimal adx, decimal diPlus, decimal diMinus, decimal volume, decimal volumeAvg, decimal volumeStdDev)
+	private void ProcessCandle(ICandleMessage candle)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready for trading
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
+
+		var adxValue = _adx.Process(candle);
+		var volumeAvgValue = _volumeSma.Process(new DecimalIndicatorValue(_volumeSma, candle.TotalVolume, candle.ServerTime));
+		var volumeStdValue = _volumeStdDev.Process(new DecimalIndicatorValue(_volumeStdDev, candle.TotalVolume, candle.ServerTime));
+
+		if (!adxValue.IsFormed || !volumeAvgValue.IsFormed || !volumeStdValue.IsFormed)
+			return;
+
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// Check for strong trend
+		var adxTyped = (AverageDirectionalIndexValue)adxValue;
+
+		if (adxTyped.MovingAverage is not decimal adx)
+			return;
+
+		var volumeAverage = volumeAvgValue.ToDecimal();
+		var volumeStdDev = volumeStdValue.ToDecimal();
+		var volumeThreshold = Math.Max(volumeAverage * VolumeThresholdFactor, volumeAverage + volumeStdDev * 0.5m);
 		var isStrongTrend = adx > AdxThreshold;
-		
-		// Check directional indicators
-		var isBullishTrend = diPlus > diMinus;
-		var isBearishTrend = diMinus > diPlus;
-		
-		// Check for volume breakout
-		var volumeThreshold = volumeAvg + (VolumeThresholdFactor * volumeStdDev);
-		var isVolumeBreakout = volume > volumeThreshold;
-		
-		// Trading logic - only enter with strong trend and volume breakout
-		if (isStrongTrend && isVolumeBreakout)
+		var isVolumeBreakout = volumeAverage <= 0m || candle.TotalVolume >= volumeThreshold;
+		var isBullishBreakout = candle.ClosePrice > candle.OpenPrice;
+		var isBearishBreakout = candle.ClosePrice < candle.OpenPrice;
+
+		if (Position > 0 && (adx < 8m || isBearishBreakout))
 		{
-			if (isBullishTrend && Position <= 0)
-			{
-				// Strong bullish trend with volume breakout - Go long
-				CancelActiveOrders();
-				
-				// Calculate position size
-				var ordVolume = Volume + Math.Abs(Position);
-				
-				// Enter long position
-				BuyMarket(volume);
-			}
-			else if (isBearishTrend && Position >= 0)
-			{
-				// Strong bearish trend with volume breakout - Go short
-				CancelActiveOrders();
-				
-				// Calculate position size
-				var ordVolume = Volume + Math.Abs(Position);
-				
-				// Enter short position
-				SellMarket(volume);
-			}
+			SellMarket(Position);
+			_cooldownRemaining = SignalCooldownBars;
+			return;
 		}
-		
-		// Exit logic - when ADX drops below threshold (trend weakens)
-		if (adx < 20)
+
+		if (Position < 0 && (adx < 8m || isBullishBreakout))
 		{
-			// Close position on trend weakening
-			ClosePosition();
+			BuyMarket(Math.Abs(Position));
+			_cooldownRemaining = SignalCooldownBars;
+			return;
+		}
+
+		if (_cooldownRemaining > 0 || !isStrongTrend || !isVolumeBreakout)
+			return;
+
+		if (isBullishBreakout && Position <= 0)
+		{
+			var volume = Volume + Math.Abs(Position);
+			BuyMarket(volume);
+			_cooldownRemaining = SignalCooldownBars;
+		}
+		else if (isBearishBreakout && Position >= 0)
+		{
+			var volume = Volume + Math.Abs(Position);
+			SellMarket(volume);
+			_cooldownRemaining = SignalCooldownBars;
 		}
 	}
 }

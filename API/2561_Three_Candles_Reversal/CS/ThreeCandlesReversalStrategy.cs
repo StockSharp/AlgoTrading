@@ -26,7 +26,8 @@ public class ThreeCandlesReversalStrategy : Strategy
 		None,
 	}
 
-	private readonly Queue<ICandleMessage> _candles = new();
+	private readonly List<CandleSample> _candles = new();
+	private static readonly object _sync = new();
 
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _signalBar;
@@ -56,7 +57,7 @@ public class ThreeCandlesReversalStrategy : Strategy
 
 	public ThreeCandlesReversalStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for the candle subscription", "General");
 		_signalBar = Param(nameof(SignalBar), 1)
 			.SetRange(0, 20)
@@ -108,38 +109,52 @@ public class ThreeCandlesReversalStrategy : Strategy
 	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
-		_candles.Enqueue(candle);
-
-		var required = SignalBar + 5;
-		while (_candles.Count > required)
-		_candles.Dequeue();
-
-		if (_candles.Count < required)
-		return;
-
-		var priceStep = Security?.PriceStep ?? 1m;
-		if (priceStep <= 0m)
-		priceStep = 1m;
-
-		if (CheckRiskManagement(candle, priceStep))
-		return;
-
-		var buffer = _candles.ToArray();
-		var bullishSignal = IsBullishSignal(buffer, priceStep);
-		var bearishSignal = IsBearishSignal(buffer, priceStep);
-
-		if (bullishSignal)
+		lock (_sync)
 		{
-		var signalCandle = GetSeries(buffer, SignalBar);
-		HandleBullish(signalCandle);
-		}
+			var closeTime = candle.CloseTime != default
+				? candle.CloseTime
+				: candle.OpenTime + (CandleType.Arg is TimeSpan tf ? tf : TimeSpan.Zero);
 
-		if (bearishSignal)
-		{
-		var signalCandle = GetSeries(buffer, SignalBar);
-		HandleBearish(signalCandle);
+			_candles.Add(new CandleSample(
+				candle.OpenTime,
+				closeTime,
+				candle.OpenPrice,
+				candle.HighPrice,
+				candle.LowPrice,
+				candle.ClosePrice,
+				candle.TotalVolume));
+
+			var required = SignalBar + 5;
+			while (_candles.Count > required)
+				_candles.RemoveAt(0);
+
+			if (_candles.Count < required)
+				return;
+
+			var priceStep = Security?.PriceStep ?? 1m;
+			if (priceStep <= 0m)
+				priceStep = 1m;
+
+			if (CheckRiskManagement(candle, priceStep))
+				return;
+
+			var buffer = _candles.ToArray();
+			var bullishSignal = IsBullishSignal(buffer, priceStep);
+			var bearishSignal = IsBearishSignal(buffer, priceStep);
+
+			if (bullishSignal)
+			{
+				var signalCandle = GetSeries(buffer, SignalBar);
+				HandleBullish(signalCandle);
+			}
+
+			if (bearishSignal)
+			{
+				var signalCandle = GetSeries(buffer, SignalBar);
+				HandleBearish(signalCandle);
+			}
 		}
 	}
 
@@ -179,126 +194,132 @@ public class ThreeCandlesReversalStrategy : Strategy
 		return false;
 	}
 
-	private void HandleBullish(ICandleMessage signalCandle)
+	private void HandleBullish(CandleSample signalCandle)
 	{
 		var signalTime = signalCandle.CloseTime;
 		if (_lastBullishSignalTime == signalTime)
-		return;
+			return;
 
 		if (AllowSellExit && Position < 0m)
 		{
-		BuyMarket();
-		ResetTradeState();
+			BuyMarket();
+			ResetTradeState();
 		}
 
 		if (AllowBuyEntry && Position == 0m)
 		{
-		BuyMarket();
-		_entryPrice = signalCandle.ClosePrice;
+			BuyMarket();
+			_entryPrice = signalCandle.ClosePrice;
 		}
 
 		_lastBullishSignalTime = signalTime;
 	}
 
-	private void HandleBearish(ICandleMessage signalCandle)
+	private void HandleBearish(CandleSample signalCandle)
 	{
 		var signalTime = signalCandle.CloseTime;
 		if (_lastBearishSignalTime == signalTime)
-		return;
+			return;
 
 		if (AllowBuyExit && Position > 0m)
 		{
-		SellMarket();
-		ResetTradeState();
+			SellMarket();
+			ResetTradeState();
 		}
 
 		if (AllowSellEntry && Position == 0m)
 		{
-		SellMarket();
-		_entryPrice = signalCandle.ClosePrice;
+			SellMarket();
+			_entryPrice = signalCandle.ClosePrice;
 		}
 
 		_lastBearishSignalTime = signalTime;
 	}
 
-	private bool IsBullishSignal(IReadOnlyList<ICandleMessage> candles, decimal priceStep)
+	private bool IsBullishSignal(IReadOnlyList<CandleSample> candles, decimal priceStep)
 	{
-	var last = GetSeries(candles, SignalBar + 1);
-	var middle = GetSeries(candles, SignalBar + 2);
-	var oldest = GetSeries(candles, SignalBar + 3);
+		var last = GetSeries(candles, SignalBar + 1);
+		var middle = GetSeries(candles, SignalBar + 2);
+		var oldest = GetSeries(candles, SignalBar + 3);
 
-	if (!(oldest.OpenPrice > oldest.ClosePrice &&
-	middle.OpenPrice > middle.ClosePrice &&
-	middle.ClosePrice > oldest.LowPrice &&
-	last.OpenPrice < last.ClosePrice &&
-	last.ClosePrice > middle.OpenPrice))
-	{
-	return false;
+		if (!(oldest.OpenPrice > oldest.ClosePrice &&
+			middle.OpenPrice > middle.ClosePrice &&
+			middle.ClosePrice > oldest.LowPrice &&
+			last.OpenPrice < last.ClosePrice &&
+			last.ClosePrice > middle.OpenPrice))
+		{
+			return false;
+		}
+
+		if (!ShouldApplyVolumeFilter(oldest, priceStep))
+			return true;
+
+		var volOldest = oldest.Volume;
+		var volMiddle = middle.Volume;
+		var volLast = last.Volume;
+
+		return volOldest < volMiddle || volLast > volMiddle || volLast > volOldest;
 	}
 
-	if (!ShouldApplyVolumeFilter(oldest, priceStep))
-	return true;
-
-	var volOldest = GetVolume(oldest);
-	var volMiddle = GetVolume(middle);
-	var volLast = GetVolume(last);
-
-	return volOldest < volMiddle || volLast > volMiddle || volLast > volOldest;
-	}
-
-	private bool IsBearishSignal(IReadOnlyList<ICandleMessage> candles, decimal priceStep)
+	private bool IsBearishSignal(IReadOnlyList<CandleSample> candles, decimal priceStep)
 	{
-	var last = GetSeries(candles, SignalBar + 1);
-	var middle = GetSeries(candles, SignalBar + 2);
-	var oldest = GetSeries(candles, SignalBar + 3);
+		var last = GetSeries(candles, SignalBar + 1);
+		var middle = GetSeries(candles, SignalBar + 2);
+		var oldest = GetSeries(candles, SignalBar + 3);
 
-	if (!(oldest.OpenPrice < oldest.ClosePrice &&
-	middle.OpenPrice < middle.ClosePrice &&
-	middle.ClosePrice < oldest.HighPrice &&
-	last.OpenPrice > last.ClosePrice &&
-	last.ClosePrice < middle.OpenPrice))
+		if (!(oldest.OpenPrice < oldest.ClosePrice &&
+			middle.OpenPrice < middle.ClosePrice &&
+			middle.ClosePrice < oldest.HighPrice &&
+			last.OpenPrice > last.ClosePrice &&
+			last.ClosePrice < middle.OpenPrice))
+		{
+			return false;
+		}
+
+		if (!ShouldApplyVolumeFilter(oldest, priceStep))
+			return true;
+
+		var volOldest = oldest.Volume;
+		var volMiddle = middle.Volume;
+		var volLast = last.Volume;
+
+		return volOldest < volMiddle || volLast > volMiddle || volLast > volOldest;
+	}
+
+	private bool ShouldApplyVolumeFilter(CandleSample oldest, decimal priceStep)
 	{
-	return false;
+		if (VolumeFilter == ThreeCandlesVolumeTypes.None)
+			return false;
+
+		if (MaxBarSize <= 0)
+			return false;
+
+		var range = oldest.HighPrice - oldest.LowPrice;
+		var threshold = MaxBarSize * priceStep;
+
+		if (range > threshold)
+			return false;
+
+		return true;
 	}
 
-	if (!ShouldApplyVolumeFilter(oldest, priceStep))
-	return true;
-
-	var volOldest = GetVolume(oldest);
-	var volMiddle = GetVolume(middle);
-	var volLast = GetVolume(last);
-
-	return volOldest < volMiddle || volLast > volMiddle || volLast > volOldest;
-	}
-
-	private bool ShouldApplyVolumeFilter(ICandleMessage oldest, decimal priceStep)
+	private static CandleSample GetSeries(IReadOnlyList<CandleSample> candles, int index)
 	{
-	if (VolumeFilter == ThreeCandlesVolumeTypes.None)
-	return false;
-
-	if (MaxBarSize <= 0)
-	return false;
-
-	var range = oldest.HighPrice - oldest.LowPrice;
-	var threshold = MaxBarSize * priceStep;
-
-	if (range > threshold)
-	return false;
-
-	return true;
+		var idx = candles.Count - 1 - index;
+		return candles[idx];
 	}
-
-	private static ICandleMessage GetSeries(IReadOnlyList<ICandleMessage> candles, int index)
-	{
-	var idx = candles.Count - 1 - index;
-	return candles[idx];
-	}
-
-	private static decimal GetVolume(ICandleMessage candle)
-	=> candle.TotalVolume;
 
 	private void ResetTradeState()
 	{
-	_entryPrice = 0m;
+		_entryPrice = 0m;
 	}
+
+	private readonly record struct CandleSample(
+		DateTimeOffset OpenTime,
+		DateTimeOffset CloseTime,
+		decimal OpenPrice,
+		decimal HighPrice,
+		decimal LowPrice,
+		decimal ClosePrice,
+		decimal Volume);
 }

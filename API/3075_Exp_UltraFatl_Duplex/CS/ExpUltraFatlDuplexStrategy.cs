@@ -98,7 +98,7 @@ public class ExpUltraFatlDuplexStrategy : Strategy
 	/// </summary>
 	public ExpUltraFatlDuplexStrategy()
 	{
-		_longVolume = Param(nameof(LongVolume), 0.1m)
+		_longVolume = Param(nameof(LongVolume), 1m)
 			.SetNotNegative()
 			.SetDisplay("Long Volume", "Order volume for long entries.", "Long");
 
@@ -108,13 +108,13 @@ public class ExpUltraFatlDuplexStrategy : Strategy
 		_allowLongExits = Param(nameof(AllowLongExits), true)
 			.SetDisplay("Allow Long Exits", "Enable closing long positions on opposite signals.", "Long");
 
-		_longCandleType = Param(nameof(LongCandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_longCandleType = Param(nameof(LongCandleType), TimeSpan.FromHours(2).TimeFrame())
 			.SetDisplay("Long Candle Type", "Timeframe used by the long UltraFATL block.", "Long");
 
 		_longAppliedPrice = Param(nameof(LongAppliedPrice), AppliedPrices.Close)
 			.SetDisplay("Long Applied Price", "Price source fed into the long UltraFATL filter.", "Long");
 
-		_longTrendMethod = Param(nameof(LongTrendMethod), SmoothMethods.Jurik)
+		_longTrendMethod = Param(nameof(LongTrendMethod), SmoothMethods.Ema)
 			.SetDisplay("Long Trend Method", "Smoothing method for the long FATL ladder.", "Long");
 
 		_longStartLength = Param(nameof(LongStartLength), 3)
@@ -132,7 +132,7 @@ public class ExpUltraFatlDuplexStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Long Steps", "Number of smoothing steps for the ladder.", "Long");
 
-		_longSmoothMethod = Param(nameof(LongSmoothMethod), SmoothMethods.Jurik)
+		_longSmoothMethod = Param(nameof(LongSmoothMethod), SmoothMethods.Ema)
 			.SetDisplay("Long Counter Method", "Method applied to the bullish/bearish counters.", "Long");
 
 		_longSmoothLength = Param(nameof(LongSmoothLength), 3)
@@ -142,7 +142,7 @@ public class ExpUltraFatlDuplexStrategy : Strategy
 		_longSmoothPhase = Param(nameof(LongSmoothPhase), 100)
 			.SetDisplay("Long Counter Phase", "Phase parameter for the counter smoother.", "Long");
 
-		_longSignalBar = Param(nameof(LongSignalBar), 0)
+		_longSignalBar = Param(nameof(LongSignalBar), 1)
 			.SetNotNegative()
 			.SetDisplay("Long Signal Bar", "Closed-bar offset used when evaluating long signals.", "Long");
 
@@ -154,7 +154,7 @@ public class ExpUltraFatlDuplexStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Long Target (pts)", "Take-profit distance in price steps for long trades.", "Long");
 
-		_shortVolume = Param(nameof(ShortVolume), 0.1m)
+		_shortVolume = Param(nameof(ShortVolume), 1m)
 			.SetNotNegative()
 			.SetDisplay("Short Volume", "Order volume for short entries.", "Short");
 
@@ -164,13 +164,13 @@ public class ExpUltraFatlDuplexStrategy : Strategy
 		_allowShortExits = Param(nameof(AllowShortExits), true)
 			.SetDisplay("Allow Short Exits", "Enable closing short positions on opposite signals.", "Short");
 
-		_shortCandleType = Param(nameof(ShortCandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_shortCandleType = Param(nameof(ShortCandleType), TimeSpan.FromHours(2).TimeFrame())
 			.SetDisplay("Short Candle Type", "Timeframe used by the short UltraFATL block.", "Short");
 
 		_shortAppliedPrice = Param(nameof(ShortAppliedPrice), AppliedPrices.Close)
 			.SetDisplay("Short Applied Price", "Price source fed into the short UltraFATL filter.", "Short");
 
-		_shortTrendMethod = Param(nameof(ShortTrendMethod), SmoothMethods.Jurik)
+		_shortTrendMethod = Param(nameof(ShortTrendMethod), SmoothMethods.Ema)
 			.SetDisplay("Short Trend Method", "Smoothing method for the short FATL ladder.", "Short");
 
 		_shortStartLength = Param(nameof(ShortStartLength), 3)
@@ -188,7 +188,7 @@ public class ExpUltraFatlDuplexStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Short Steps", "Number of smoothing steps for the short ladder.", "Short");
 
-		_shortSmoothMethod = Param(nameof(ShortSmoothMethod), SmoothMethods.Jurik)
+		_shortSmoothMethod = Param(nameof(ShortSmoothMethod), SmoothMethods.Ema)
 			.SetDisplay("Short Counter Method", "Method applied to the bearish counters.", "Short");
 
 		_shortSmoothLength = Param(nameof(ShortSmoothLength), 3)
@@ -198,7 +198,7 @@ public class ExpUltraFatlDuplexStrategy : Strategy
 		_shortSmoothPhase = Param(nameof(ShortSmoothPhase), 100)
 			.SetDisplay("Short Counter Phase", "Phase parameter for the short counter smoother.", "Short");
 
-		_shortSignalBar = Param(nameof(ShortSignalBar), 0)
+		_shortSignalBar = Param(nameof(ShortSignalBar), 1)
 			.SetNotNegative()
 			.SetDisplay("Short Signal Bar", "Closed-bar offset used when evaluating short signals.", "Short");
 
@@ -340,7 +340,7 @@ public class ExpUltraFatlDuplexStrategy : Strategy
 		base.OnStarted2(time);
 
 		_priceStep = Security?.PriceStep ?? 0m;
-		Volume = Math.Max(LongVolume, ShortVolume);
+		Volume = AdjustOrderVolume(Math.Max(LongVolume, ShortVolume));
 
 		_longContext = new UltraFatlContext(this, true, LongCandleType, LongAppliedPrice, LongTrendMethod,
 			LongStartLength, LongPhase, LongStep, LongStepsTotal, LongSmoothMethod, LongSmoothLength,
@@ -381,19 +381,21 @@ public class ExpUltraFatlDuplexStrategy : Strategy
 		}
 	}
 
-	private void ProcessDirectionalSignal(bool isLong, bool openSignal, bool closeSignal, UltraFatlSnapshot snapshot)
+	private void ProcessDirectionalSignal(bool isLong, bool openSignal, bool closeSignal, UltraFatlSnapshot snapshot, decimal volume)
 	{
+		var normalizedVolume = AdjustOrderVolume(volume);
+
 		if (isLong)
 		{
 			if (closeSignal && AllowLongExits && Position > 0m)
 			{
-				SellMarket();
+				SellMarket(Position);
 				_longEntryPrice = null;
 			}
 
-			if (openSignal && AllowLongEntries && Position <= 0m)
+			if (openSignal && AllowLongEntries && Position <= 0m && normalizedVolume > 0m)
 			{
-				BuyMarket();
+				BuyMarket(normalizedVolume + (Position < 0m ? -Position : 0m));
 				_longEntryPrice = snapshot.ClosePrice;
 			}
 		}
@@ -401,13 +403,13 @@ public class ExpUltraFatlDuplexStrategy : Strategy
 		{
 			if (closeSignal && AllowShortExits && Position < 0m)
 			{
-				BuyMarket();
+				BuyMarket(-Position);
 				_shortEntryPrice = null;
 			}
 
-			if (openSignal && AllowShortEntries && Position >= 0m)
+			if (openSignal && AllowShortEntries && Position >= 0m && normalizedVolume > 0m)
 			{
-				SellMarket();
+				SellMarket(normalizedVolume + (Position > 0m ? Position : 0m));
 				_shortEntryPrice = snapshot.ClosePrice;
 			}
 		}
@@ -496,6 +498,26 @@ public class ExpUltraFatlDuplexStrategy : Strategy
 			sum = (sum + candle.ClosePrice) / 2m;
 
 		return ((sum - candle.LowPrice) + (sum - candle.HighPrice)) / 2m;
+	}
+
+	private decimal AdjustOrderVolume(decimal volume)
+	{
+		if (volume <= 0m)
+			return 0m;
+
+		var step = Security?.VolumeStep ?? 0m;
+		if (step > 0m)
+			volume = decimal.Floor(volume / step) * step;
+
+		var minVolume = Security?.MinVolume ?? 0m;
+		if (minVolume > 0m && volume < minVolume)
+			volume = minVolume;
+
+		var maxVolume = Security?.MaxVolume ?? 0m;
+		if (maxVolume > 0m && volume > maxVolume)
+			volume = maxVolume;
+
+		return volume;
 	}
 
 	private static DecimalLengthIndicator CreateMovingAverage(SmoothMethods method, int length, int phase)
@@ -663,7 +685,7 @@ public class ExpUltraFatlDuplexStrategy : Strategy
 
 			for (var i = 0; i < _ladder.Count; i++)
 			{
-				var indicatorValue = _ladder[i].Process(new DecimalIndicatorValue(_ladder[i], fatlValue.Value, candle.OpenTime));
+				var indicatorValue = _ladder[i].Process(new DecimalIndicatorValue(_ladder[i], fatlValue.Value, candle.OpenTime) { IsFinal = true });
 				if (!indicatorValue.IsFinal)
 					return;
 
@@ -686,8 +708,8 @@ public class ExpUltraFatlDuplexStrategy : Strategy
 			if (_bullsSmoother is null || _bearsSmoother is null)
 				return;
 
-			var bullsValue = _bullsSmoother.Process(new DecimalIndicatorValue(_bullsSmoother, upCount, candle.OpenTime));
-			var bearsValue = _bearsSmoother.Process(new DecimalIndicatorValue(_bearsSmoother, downCount, candle.OpenTime));
+			var bullsValue = _bullsSmoother.Process(new DecimalIndicatorValue(_bullsSmoother, upCount, candle.OpenTime) { IsFinal = true });
+			var bearsValue = _bearsSmoother.Process(new DecimalIndicatorValue(_bearsSmoother, downCount, candle.OpenTime) { IsFinal = true });
 
 			if (!bullsValue.IsFinal || !bearsValue.IsFinal)
 				return;
@@ -712,19 +734,21 @@ public class ExpUltraFatlDuplexStrategy : Strategy
 
 			var current = _history[currentIndex];
 			var previous = _history[previousIndex];
+			var bullishBias = current.Bulls > current.Bears;
+			var bearishBias = current.Bears > current.Bulls;
 
 			bool closeSignal;
 			bool openSignal;
 
 			if (_isLong)
 			{
-				closeSignal = previous.Bears > previous.Bulls;
-				openSignal = previous.Bulls > previous.Bears && current.Bulls <= current.Bears;
+				openSignal = bullishBias && previous.Bulls <= previous.Bears;
+				closeSignal = bearishBias;
 			}
 			else
 			{
-				closeSignal = previous.Bulls > previous.Bears;
-				openSignal = previous.Bulls < previous.Bears && current.Bulls >= current.Bears;
+				openSignal = bearishBias && previous.Bulls >= previous.Bears;
+				closeSignal = bullishBias;
 			}
 
 			if (!openSignal && !closeSignal)
@@ -736,7 +760,7 @@ public class ExpUltraFatlDuplexStrategy : Strategy
 			if (!_allowExits)
 				closeSignal = false;
 
-			_strategy.ProcessDirectionalSignal(_isLong, openSignal, closeSignal, current);
+			_strategy.ProcessDirectionalSignal(_isLong, openSignal, closeSignal, current, _volume);
 		}
 
 		public void Dispose()

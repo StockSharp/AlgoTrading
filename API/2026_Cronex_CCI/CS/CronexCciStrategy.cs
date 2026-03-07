@@ -122,7 +122,7 @@ public class CronexCciStrategy : Strategy
 			.SetDisplay("Slow Period", "Slow smoothing period", "Indicators")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 
 		_enableLongEntry = Param(nameof(EnableLongEntry), true)

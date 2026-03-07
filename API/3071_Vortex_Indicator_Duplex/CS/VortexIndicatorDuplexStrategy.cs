@@ -34,6 +34,7 @@ public class VortexIndicatorDuplexStrategy : Strategy
 	private readonly StrategyParam<decimal> _shortStopLossSteps;
 	private readonly StrategyParam<decimal> _shortTakeProfitSteps;
 	private readonly StrategyParam<decimal> _tradeVolume;
+	private readonly StrategyParam<int> _signalCooldownBars;
 
 	private VortexIndicator _longVortex = null!;
 	private VortexIndicator _shortVortex = null!;
@@ -49,6 +50,7 @@ public class VortexIndicatorDuplexStrategy : Strategy
 	private decimal? _shortStopPrice;
 	private decimal? _longTakeProfitPrice;
 	private decimal? _shortTakeProfitPrice;
+	private int _cooldownRemaining;
 
 	private readonly StrategyParam<int> _maxHistoryLength;
 
@@ -117,6 +119,10 @@ public class VortexIndicatorDuplexStrategy : Strategy
 		_tradeVolume = Param(nameof(TradeVolume), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trade Volume", "Base order volume used for entries.", "Risk");
+
+		_signalCooldownBars = Param(nameof(SignalCooldownBars), 4)
+			.SetGreaterThanZero()
+			.SetDisplay("Signal Cooldown", "Bars to wait between trading actions.", "Trading");
 	}
 	/// <summary>
 	/// Candle type for the long-side signal calculations.
@@ -253,6 +259,15 @@ public class VortexIndicatorDuplexStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Bars to wait after each position change.
+	/// </summary>
+	public int SignalCooldownBars
+	{
+		get => _signalCooldownBars.Value;
+		set => _signalCooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Maximum number of stored Vortex samples per signal stream.
 	/// </summary>
 	public int MaxHistoryLength
@@ -285,12 +300,16 @@ public class VortexIndicatorDuplexStrategy : Strategy
 		ResetLongState();
 		ResetShortState();
 
+		_priceStep = 0m;
+		_cooldownRemaining = 0;
 		_longVortex = null!;
 		_shortVortex = null!;
 	}
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
+		base.OnStarted2(time);
+
 		_priceStep = Security.PriceStep ?? 0m;
 		if (_priceStep <= 0m)
 		{
@@ -302,24 +321,27 @@ public class VortexIndicatorDuplexStrategy : Strategy
 		_longVortex = new VortexIndicator { Length = LongLength };
 		var longSubscription = SubscribeCandles(LongCandleType);
 		longSubscription
-			.Bind(_longVortex, ProcessLongCandle)
+			.Bind(ProcessLongCandle)
 			.Start();
 
 		_shortVortex = new VortexIndicator { Length = ShortLength };
 		var shortSubscription = SubscribeCandles(ShortCandleType);
 		shortSubscription
-			.Bind(_shortVortex, ProcessShortCandle)
+			.Bind(ProcessShortCandle)
 			.Start();
 
 		StartProtection(null, null);
-
-		base.OnStarted2(time);
 	}
-	private void ProcessLongCandle(ICandleMessage candle, decimal viPlusVal)
+	private void ProcessLongCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 		{
 			return;
+		}
+
+		if (_cooldownRemaining > 0)
+		{
+			_cooldownRemaining--;
 		}
 
 		if (CheckRiskManagement(candle.ClosePrice))
@@ -327,8 +349,14 @@ public class VortexIndicatorDuplexStrategy : Strategy
 			return;
 		}
 
-		var viPlus = _longVortex.PlusVi.GetCurrentValue();
-		var viMinus = _longVortex.MinusVi.GetCurrentValue();
+		var value = _longVortex.Process(candle);
+		if (value is not IVortexIndicatorValue vortexValue ||
+			vortexValue.PlusVi is not decimal viPlus ||
+			vortexValue.MinusVi is not decimal viMinus)
+		{
+			return;
+		}
+
 		AppendHistory(_longHistory, (viPlus, viMinus));
 
 		if (!_longVortex.IsFormed)
@@ -353,18 +381,24 @@ public class VortexIndicatorDuplexStrategy : Strategy
 		{
 			SellMarket(Position);
 			ResetLongState();
+			_cooldownRemaining = SignalCooldownBars;
 		}
 
-		if (crossUp && AllowLongEntries)
+		if (_cooldownRemaining == 0 && crossUp && AllowLongEntries)
 		{
 			TryOpenLong(candle.ClosePrice);
 		}
 	}
-	private void ProcessShortCandle(ICandleMessage candle, decimal viPlusVal)
+	private void ProcessShortCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 		{
 			return;
+		}
+
+		if (_cooldownRemaining > 0)
+		{
+			_cooldownRemaining--;
 		}
 
 		if (CheckRiskManagement(candle.ClosePrice))
@@ -372,8 +406,14 @@ public class VortexIndicatorDuplexStrategy : Strategy
 			return;
 		}
 
-		var viPlus = _shortVortex.PlusVi.GetCurrentValue();
-		var viMinus = _shortVortex.MinusVi.GetCurrentValue();
+		var value = _shortVortex.Process(candle);
+		if (value is not IVortexIndicatorValue vortexValue ||
+			vortexValue.PlusVi is not decimal viPlus ||
+			vortexValue.MinusVi is not decimal viMinus)
+		{
+			return;
+		}
+
 		AppendHistory(_shortHistory, (viPlus, viMinus));
 
 		if (!_shortVortex.IsFormed)
@@ -398,9 +438,10 @@ public class VortexIndicatorDuplexStrategy : Strategy
 		{
 			BuyMarket(-Position);
 			ResetShortState();
+			_cooldownRemaining = SignalCooldownBars;
 		}
 
-		if (crossDown && AllowShortEntries)
+		if (_cooldownRemaining == 0 && crossDown && AllowShortEntries)
 		{
 			TryOpenShort(candle.ClosePrice);
 		}
@@ -434,6 +475,7 @@ public class VortexIndicatorDuplexStrategy : Strategy
 		_longEntryPrice = price;
 		_longStopPrice = LongStopLossSteps > 0m ? price - GetStepValue(LongStopLossSteps) : null;
 		_longTakeProfitPrice = LongTakeProfitSteps > 0m ? price + GetStepValue(LongTakeProfitSteps) : null;
+		_cooldownRemaining = SignalCooldownBars;
 
 		ResetShortState();
 	}
@@ -466,6 +508,7 @@ public class VortexIndicatorDuplexStrategy : Strategy
 		_shortEntryPrice = price;
 		_shortStopPrice = ShortStopLossSteps > 0m ? price + GetStepValue(ShortStopLossSteps) : null;
 		_shortTakeProfitPrice = ShortTakeProfitSteps > 0m ? price - GetStepValue(ShortTakeProfitSteps) : null;
+		_cooldownRemaining = SignalCooldownBars;
 
 		ResetLongState();
 	}
@@ -477,6 +520,7 @@ public class VortexIndicatorDuplexStrategy : Strategy
 			{
 				SellMarket(Position);
 				ResetLongState();
+				_cooldownRemaining = SignalCooldownBars;
 				return true;
 			}
 
@@ -484,6 +528,7 @@ public class VortexIndicatorDuplexStrategy : Strategy
 			{
 				SellMarket(Position);
 				ResetLongState();
+				_cooldownRemaining = SignalCooldownBars;
 				return true;
 			}
 		}
@@ -493,6 +538,7 @@ public class VortexIndicatorDuplexStrategy : Strategy
 			{
 				BuyMarket(-Position);
 				ResetShortState();
+				_cooldownRemaining = SignalCooldownBars;
 				return true;
 			}
 
@@ -500,6 +546,7 @@ public class VortexIndicatorDuplexStrategy : Strategy
 			{
 				BuyMarket(-Position);
 				ResetShortState();
+				_cooldownRemaining = SignalCooldownBars;
 				return true;
 			}
 		}

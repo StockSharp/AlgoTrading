@@ -110,7 +110,7 @@ public class IndicesTesterStrategy : Strategy
 		_closeTime = Param(nameof(CloseTime), new TimeSpan(23, 30, 0))
 			.SetDisplay("Close Time", "Time of day used to liquidate open positions", "Risk");
 
-		_dailyTradeLimit = Param(nameof(DailyTradeLimit), 100)
+		_dailyTradeLimit = Param(nameof(DailyTradeLimit), 1)
 			.SetGreaterThanZero()
 			.SetDisplay("Daily Trades", "Maximum number of trades per day", "Risk");
 
@@ -212,4 +212,3 @@ public class IndicesTesterStrategy : Strategy
 		return (int)Math.Ceiling(Math.Abs(Position) / volume);
 	}
 }
-

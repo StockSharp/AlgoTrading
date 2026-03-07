@@ -22,6 +22,7 @@ public class VortexMtfStrategy : Strategy
 {
 	private readonly StrategyParam<int> _length;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _signalCooldownBars;
 
 	private readonly List<decimal> _vmPlus = new();
 	private readonly List<decimal> _vmMinus = new();
@@ -31,9 +32,11 @@ public class VortexMtfStrategy : Strategy
 	private decimal? _prevClose;
 	private decimal _prevVip;
 	private decimal _prevVim;
+	private int _cooldownRemaining;
 
 	public int Length { get => _length.Value; set => _length.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int SignalCooldownBars { get => _signalCooldownBars.Value; set => _signalCooldownBars.Value = value; }
 
 	public VortexMtfStrategy()
 	{
@@ -41,8 +44,12 @@ public class VortexMtfStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Vortex Length", "Period of the Vortex indicator", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(2).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for Vortex calculation", "General");
+
+		_signalCooldownBars = Param(nameof(SignalCooldownBars), 4)
+			.SetNotNegative()
+			.SetDisplay("Signal Cooldown Bars", "Closed candles to wait before a new Vortex crossover entry", "General");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
@@ -61,6 +68,7 @@ public class VortexMtfStrategy : Strategy
 		_prevClose = null;
 		_prevVip = 0;
 		_prevVim = 0;
+		_cooldownRemaining = 0;
 	}
 
 	protected override void OnStarted2(DateTime time)
@@ -93,6 +101,9 @@ public class VortexMtfStrategy : Strategy
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
+
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
 
 		if (_prevHigh == null)
 		{
@@ -140,10 +151,16 @@ public class VortexMtfStrategy : Strategy
 			return;
 		}
 
-		if (_prevVip <= _prevVim && vip > vim && Position <= 0)
-			BuyMarket();
-		else if (_prevVip >= _prevVim && vip < vim && Position >= 0)
-			SellMarket();
+		if (_cooldownRemaining == 0 && _prevVip <= _prevVim && vip > vim && Position <= 0)
+		{
+			BuyMarket(Volume + (Position < 0 ? -Position : 0m));
+			_cooldownRemaining = SignalCooldownBars;
+		}
+		else if (_cooldownRemaining == 0 && _prevVip >= _prevVim && vip < vim && Position >= 0)
+		{
+			SellMarket(Volume + (Position > 0 ? Position : 0m));
+			_cooldownRemaining = SignalCooldownBars;
+		}
 
 		_prevVip = vip;
 		_prevVim = vim;

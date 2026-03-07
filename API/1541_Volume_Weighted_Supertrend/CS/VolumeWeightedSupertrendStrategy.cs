@@ -117,7 +117,9 @@ public class VolumeWeightedSupertrendStrategy : Strategy
 		while (_volumes.Count > Period + 1)
 			_volumes.RemoveAt(0);
 
-		if (stdVal <= 0 || _volumes.Count < Period)
+		var volumeWindow = _volumes.ToArray();
+
+		if (stdVal <= 0 || volumeWindow.Length < Period)
 		{
 			_prevClose = close;
 			_prevVolume = volume;
@@ -146,12 +148,12 @@ public class VolumeWeightedSupertrendStrategy : Strategy
 
 		// Volume supertrend (manual ATR-like calc on volume)
 		var trVolume = _prevVolume.HasValue ? Math.Abs(volume - _prevVolume.Value) : 0m;
-		var volAvg = _volumes.Average();
+		var volAvg = volumeWindow.Average();
 		var volStd = 0m;
-		if (_volumes.Count > 1)
+		if (volumeWindow.Length > 1)
 		{
-			var sumSq = _volumes.Sum(v => (v - volAvg) * (v - volAvg));
-			volStd = (decimal)Math.Sqrt((double)(sumSq / _volumes.Count));
+			var sumSq = volumeWindow.Sum(v => (v - volAvg) * (v - volAvg));
+			volStd = (decimal)Math.Sqrt((double)(sumSq / volumeWindow.Length));
 		}
 
 		var volUpperBand = volume + Factor * volStd;

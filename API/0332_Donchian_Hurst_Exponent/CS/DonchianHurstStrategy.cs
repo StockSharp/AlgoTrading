@@ -26,7 +26,9 @@ public class DonchianHurstStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _hurstValue;
-	private bool _donchianIsFormed;
+	private decimal? _previousUpper;
+	private decimal? _previousLower;
+	private decimal? _previousMiddle;
 
 	/// <summary>
 	/// Strategy parameter: Donchian Channel period.
@@ -86,7 +88,7 @@ public class DonchianHurstStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Hurst Period", "Period for Hurst Exponent calculation", "Indicator Settings");
 
-		_hurstThreshold = Param(nameof(HurstThreshold), 0.5m)
+		_hurstThreshold = Param(nameof(HurstThreshold), 0.45m)
 			.SetRange(0, 1)
 			.SetDisplay("Hurst Threshold", "Minimum Hurst Exponent value for trend persistence (>0.5 is trending)", "Indicator Settings");
 
@@ -94,7 +96,7 @@ public class DonchianHurstStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss %", "Stop Loss percentage from entry price", "Risk Management");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(2).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -110,7 +112,9 @@ public class DonchianHurstStrategy : Strategy
 		base.OnReseted();
 
 		_hurstValue = 0;
-		_donchianIsFormed = false;
+		_previousUpper = null;
+		_previousLower = null;
+		_previousMiddle = null;
 	}
 
 	/// <inheritdoc />
@@ -175,13 +179,6 @@ public class DonchianHurstStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// Check if Donchian Channel is formed
-		if (!_donchianIsFormed)
-		{
-			_donchianIsFormed = true;
-			return;
-		}
-
 		var donchianTyped = (DonchianChannelsValue)donchianValue;
 
 		// Convert indicator values to decimal
@@ -192,30 +189,29 @@ public class DonchianHurstStrategy : Strategy
 			return;
 		}
 
-		// Check for Hurst Exponent indicating trend persistence
-		if (_hurstValue > HurstThreshold)
+		if (!_previousUpper.HasValue || !_previousLower.HasValue || !_previousMiddle.HasValue)
 		{
-			// Check for breakout signals
-			if (candle.ClosePrice > upper && Position <= 0)
-			{
-				// Breakout above upper band - Buy signal
-				LogInfo($"Buy signal: Breakout above Donchian upper band ({upper}) with Hurst = {_hurstValue}");
-				BuyMarket(Volume + Math.Abs(Position));
-			}
-			else if (candle.ClosePrice < lower && Position >= 0)
-			{
-				// Breakout below lower band - Sell signal
-				LogInfo($"Sell signal: Breakout below Donchian lower band ({lower}) with Hurst = {_hurstValue}");
-				SellMarket(Volume + Math.Abs(Position));
-			}
+			_previousUpper = upper;
+			_previousLower = lower;
+			_previousMiddle = middle;
+			return;
 		}
 
-		// Exit rules based on middle band reversion
-		if ((Position > 0 && candle.ClosePrice < middle) ||
-			(Position < 0 && candle.ClosePrice > middle))
+		if (_hurstValue > HurstThreshold)
 		{
-			LogInfo($"Exit signal: Price reverted to middle band ({middle})");
-			ClosePosition();
+			if (candle.ClosePrice > _previousUpper.Value && Position <= 0)
+				BuyMarket(Volume + Math.Abs(Position));
+			else if (candle.ClosePrice < _previousLower.Value && Position >= 0)
+				SellMarket(Volume + Math.Abs(Position));
 		}
+
+		if (Position > 0 && candle.ClosePrice < _previousMiddle.Value)
+			SellMarket(Position);
+		else if (Position < 0 && candle.ClosePrice > _previousMiddle.Value)
+			BuyMarket(-Position);
+
+		_previousUpper = upper;
+		_previousLower = lower;
+		_previousMiddle = middle;
 	}
 }

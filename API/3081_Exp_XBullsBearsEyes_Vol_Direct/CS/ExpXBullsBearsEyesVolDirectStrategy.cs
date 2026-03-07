@@ -229,7 +229,7 @@ public class ExpXBullsBearsEyesVolDirectStrategy : Strategy
 		_allowSellClose = Param(nameof(AllowSellClose), true)
 		.SetDisplay("Allow Sell Close", "Enable closing shorts on bullish flips", "Trading");
 
-		_orderVolume = Param(nameof(OrderVolume), 0.1m)
+		_orderVolume = Param(nameof(OrderVolume), 1m)
 		.SetGreaterThanZero()
 		.SetDisplay("Order Volume", "Default market order size", "Trading");
 
@@ -271,7 +271,7 @@ public class ExpXBullsBearsEyesVolDirectStrategy : Strategy
 		.Bind(ProcessCandle)
 		.Start();
 
-		Volume = Math.Max(0m, OrderVolume);
+		Volume = Math.Max(Security?.MinVolume ?? 1m, OrderVolume);
 
 		var priceStep = Security?.PriceStep ?? 0m;
 		Unit stopLoss = null;
@@ -322,7 +322,7 @@ public class ExpXBullsBearsEyesVolDirectStrategy : Strategy
 		return;
 
 		// Feed the EMA with the candle close to emulate iBullsPower/iBearsPower internals.
-		var emaValue = _ema.Process(new DecimalIndicatorValue(_ema, candle.ClosePrice, candle.OpenTime));
+		var emaValue = _ema.Process(new DecimalIndicatorValue(_ema, candle.ClosePrice, candle.OpenTime) { IsFinal = true });
 		if (!emaValue.IsFinal)
 		return;
 
@@ -384,8 +384,8 @@ public class ExpXBullsBearsEyesVolDirectStrategy : Strategy
 		var volume = GetVolume(candle);
 		var scaledHistogram = histogram * volume;
 
-		var histogramValue = _histogramSmoother.Process(new DecimalIndicatorValue(_histogramSmoother, scaledHistogram, candle.OpenTime));
-		var volumeValue = _volumeSmoother.Process(new DecimalIndicatorValue(_volumeSmoother, volume, candle.OpenTime));
+		var histogramValue = _histogramSmoother.Process(new DecimalIndicatorValue(_histogramSmoother, scaledHistogram, candle.OpenTime) { IsFinal = true });
+		var volumeValue = _volumeSmoother.Process(new DecimalIndicatorValue(_volumeSmoother, volume, candle.OpenTime) { IsFinal = true });
 
 		if (histogramValue is not DecimalIndicatorValue { IsFinal: true } histogramResult)
 		return;
@@ -470,24 +470,24 @@ public class ExpXBullsBearsEyesVolDirectStrategy : Strategy
 		{
 			if (AllowSellClose && Position < 0)
 			{
-				BuyMarket();
+				BuyMarket(-Position);
 			}
 
 			if (AllowBuyOpen && currentColor == 1 && Position <= 0)
 			{
-				BuyMarket();
+				BuyMarket(Volume + Math.Abs(Position));
 			}
 		}
 		else if (olderColor == 1)
 		{
 			if (AllowBuyClose && Position > 0)
 			{
-				SellMarket();
+				SellMarket(Position);
 			}
 
 			if (AllowSellOpen && currentColor == 0 && Position >= 0)
 			{
-				SellMarket();
+				SellMarket(Volume + Math.Abs(Position));
 			}
 		}
 	}

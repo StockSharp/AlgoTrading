@@ -23,10 +23,13 @@ private readonly StrategyParam<int> _rsiLength;
 private readonly StrategyParam<int> _rsiHigh;
 private readonly StrategyParam<int> _rsiLow;
 private readonly StrategyParam<bool> _useRsiFilter;
+private readonly StrategyParam<int> _signalCooldownBars;
 private readonly StrategyParam<DataType> _candleType;
 
 private decimal _prevRange;
 private decimal _prevVolume;
+private decimal _prevClose;
+private int _cooldownRemaining;
 
 /// <summary>
 /// RSI length.
@@ -65,6 +68,15 @@ set => _useRsiFilter.Value = value;
 }
 
 /// <summary>
+/// Bars to wait between trading actions.
+/// </summary>
+public int SignalCooldownBars
+{
+get => _signalCooldownBars.Value;
+set => _signalCooldownBars.Value = value;
+}
+
+/// <summary>
 /// Candle type.
 /// </summary>
 public DataType CandleType
@@ -83,16 +95,20 @@ _rsiLength = Param(nameof(RsiLength), 14)
 
 .SetOptimize(10, 20, 2);
 
-_rsiHigh = Param(nameof(RsiHigh), 60)
+_rsiHigh = Param(nameof(RsiHigh), 65)
 .SetDisplay("RSI Above", "Upper RSI threshold", "Filters");
 
-_rsiLow = Param(nameof(RsiLow), 40)
+_rsiLow = Param(nameof(RsiLow), 35)
 .SetDisplay("RSI Below", "Lower RSI threshold", "Filters");
 
-_useRsiFilter = Param(nameof(UseRsiFilter), false)
+_useRsiFilter = Param(nameof(UseRsiFilter), true)
 .SetDisplay("Use RSI Filter", "Enable RSI filtering", "Filters");
 
-_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+_signalCooldownBars = Param(nameof(SignalCooldownBars), 12)
+.SetGreaterThanZero()
+.SetDisplay("Signal Cooldown", "Bars to wait between trades", "Trading");
+
+_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 .SetDisplay("Candle Type", "Type of candles", "General");
 }
 
@@ -108,6 +124,8 @@ protected override void OnReseted()
 base.OnReseted();
 _prevRange = 0;
 _prevVolume = 0;
+_prevClose = 0;
+_cooldownRemaining = 0;
 }
 
 /// <inheritdoc />
@@ -144,26 +162,41 @@ return;
 if (!IsFormedAndOnlineAndAllowTrading())
 return;
 
+if (_cooldownRemaining > 0)
+_cooldownRemaining--;
+
 if (_prevRange == 0)
 {
 _prevRange = candle.HighPrice - candle.LowPrice;
 _prevVolume = candle.TotalVolume;
+_prevClose = candle.ClosePrice;
 return;
 }
 
-var range = candle.HighPrice - candle.LowPrice;
+var step = Security?.PriceStep ?? 0.0001m;
+var range = Math.Max(candle.HighPrice - candle.LowPrice, step);
+var previousRange = Math.Max(_prevRange, step);
 var volume = candle.TotalVolume;
+var volumePerPoint = volume / range;
+var previousVolumePerPoint = _prevVolume / previousRange;
+var bullishImpulse = candle.ClosePrice > candle.OpenPrice && candle.ClosePrice > _prevClose;
+var bearishImpulse = candle.ClosePrice < candle.OpenPrice && candle.ClosePrice < _prevClose;
+var buySignal = volumePerPoint >= previousVolumePerPoint * 1.5m && bullishImpulse && (!UseRsiFilter || rsiValue <= RsiLow);
+var sellSignal = volumePerPoint >= previousVolumePerPoint * 1.5m && bearishImpulse && (!UseRsiFilter || rsiValue >= RsiHigh);
 
-var dpaint = range < _prevRange && volume > _prevVolume;
-var epaint = range > _prevRange && volume < _prevVolume;
-var rsiOk = !UseRsiFilter || rsiValue > RsiHigh || rsiValue < RsiLow;
-
-if (dpaint && rsiOk && Position <= 0)
+if (_cooldownRemaining == 0 && buySignal && Position <= 0)
+{
 BuyMarket(Volume + Math.Abs(Position));
-else if (epaint && rsiOk && Position >= 0)
+_cooldownRemaining = SignalCooldownBars;
+}
+else if (_cooldownRemaining == 0 && sellSignal && Position >= 0)
+{
 SellMarket(Volume + Math.Abs(Position));
+_cooldownRemaining = SignalCooldownBars;
+}
 
 _prevRange = range;
 _prevVolume = volume;
+_prevClose = candle.ClosePrice;
 }
 }
