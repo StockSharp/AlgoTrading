@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,67 +11,20 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Pivot breakout strategy with momentum filter and basic risk management.
+/// Pivot breakout strategy with momentum filter using EMA crossover.
 /// </summary>
 public class PowerHouseSwiftEdgeAiV210Strategy : Strategy
 {
-	private readonly StrategyParam<int> _pivotLength;
-	private readonly StrategyParam<decimal> _momentumThreshold;
-	private readonly StrategyParam<decimal> _takeProfit;
-	private readonly StrategyParam<decimal> _stopLoss;
-	private readonly StrategyParam<int> _minSignalDistance;
+	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private long _barIndex;
-	private long _lastSignalBar = long.MinValue;
-	private decimal? _lastHigh;
-	private decimal? _lastLow;
-	private decimal? _prevClose;
-	private decimal? _entryPrice;
-
 	/// <summary>
-	/// Pivot period length.
+	/// Slow EMA period.
 	/// </summary>
-	public int PivotLength
+	public int SlowLength
 	{
-		get => _pivotLength.Value;
-		set => _pivotLength.Value = value;
-	}
-
-	/// <summary>
-	/// Momentum threshold in percent.
-	/// </summary>
-	public decimal MomentumThreshold
-	{
-		get => _momentumThreshold.Value;
-		set => _momentumThreshold.Value = value;
-	}
-
-	/// <summary>
-	/// Take profit in price points.
-	/// </summary>
-	public decimal TakeProfit
-	{
-		get => _takeProfit.Value;
-		set => _takeProfit.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss in price points.
-	/// </summary>
-	public decimal StopLoss
-	{
-		get => _stopLoss.Value;
-		set => _stopLoss.Value = value;
-	}
-
-	/// <summary>
-	/// Minimum distance between signals in bars.
-	/// </summary>
-	public int MinSignalDistance
-	{
-		get => _minSignalDistance.Value;
-		set => _minSignalDistance.Value = value;
+		get => _slowLength.Value;
+		set => _slowLength.Value = value;
 	}
 
 	/// <summary>
@@ -91,27 +41,11 @@ public class PowerHouseSwiftEdgeAiV210Strategy : Strategy
 	/// </summary>
 	public PowerHouseSwiftEdgeAiV210Strategy()
 	{
-		_pivotLength = Param(nameof(PivotLength), 5)
-			.SetDisplay("Pivot Length", "Pivot Length", "General")
-			;
+		_slowLength = Param(nameof(SlowLength), 40)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow Length", "Slow EMA period", "General");
 
-		_momentumThreshold = Param(nameof(MomentumThreshold), 0.1m)
-			.SetDisplay("Momentum Threshold (%)", "Momentum Threshold (%)", "General")
-			;
-
-		_takeProfit = Param(nameof(TakeProfit), 5000m)
-			.SetDisplay("Take Profit (points)", "Take Profit (points)", "General")
-			;
-
-		_stopLoss = Param(nameof(StopLoss), 5000m)
-			.SetDisplay("Stop Loss (points)", "Stop Loss (points)", "General")
-			;
-
-		_minSignalDistance = Param(nameof(MinSignalDistance), 5)
-			.SetDisplay("Min Signal Distance (bars)", "Min Signal Distance (bars)", "General")
-			;
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candle Type", "General");
 	}
 
@@ -122,88 +56,63 @@ public class PowerHouseSwiftEdgeAiV210Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_barIndex = 0;
-		_lastSignalBar = long.MinValue;
-		_lastHigh = null;
-		_lastLow = null;
-		_prevClose = null;
-		_entryPrice = null;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
 
-		var highest = new Highest { Length = PivotLength };
-		var lowest = new Lowest { Length = PivotLength };
+		var prevF = 0m;
+		var prevS = 0m;
+		var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(highest, lowest, ProcessCandle)
+			.Bind(fast, slow, (candle, f, s) =>
+			{
+				if (candle.State != CandleStates.Finished)
+					return;
+
+				if (!fast.IsFormed || !slow.IsFormed)
+					return;
+
+				if (!init)
+				{
+					prevF = f;
+					prevS = s;
+					init = true;
+					return;
+				}
+
+				if (candle.OpenTime - lastSignal >= cooldown)
+				{
+					if (prevF <= prevS && f > s && Position <= 0)
+					{
+						BuyMarket();
+						lastSignal = candle.OpenTime;
+					}
+					else if (prevF >= prevS && f < s && Position >= 0)
+					{
+						SellMarket();
+						lastSignal = candle.OpenTime;
+					}
+				}
+
+				prevF = f;
+				prevS = s;
+			})
 			.Start();
-	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal highValue, decimal lowValue)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		_barIndex++;
-
-		_lastHigh = highValue;
-		_lastLow = lowValue;
-
-		if (_prevClose is not null)
+		var area = CreateChartArea();
+		if (area != null)
 		{
-			var change = (candle.ClosePrice - _prevClose.Value) / _prevClose.Value * 100m;
-
-			if (change > 0 && _lastHigh is decimal lh && candle.ClosePrice > lh)
-			{
-				if (Position <= 0)
-				{
-					BuyMarket();
-					_entryPrice = candle.ClosePrice;
-					_lastSignalBar = _barIndex;
-				}
-			}
-			else if (change < 0 && _lastLow is decimal ll && candle.ClosePrice < ll)
-			{
-				if (Position >= 0)
-				{
-					SellMarket();
-					_entryPrice = candle.ClosePrice;
-					_lastSignalBar = _barIndex;
-				}
-			}
+			DrawCandles(area, subscription);
+			DrawIndicator(area, fast);
+			DrawIndicator(area, slow);
+			DrawOwnTrades(area);
 		}
-
-		if (_entryPrice is decimal price)
-		{
-			if (Position > 0)
-			{
-				if (candle.HighPrice >= price + TakeProfit || candle.LowPrice <= price - StopLoss)
-				{
-					SellMarket();
-					_entryPrice = null;
-				}
-			}
-			else if (Position < 0)
-			{
-				if (candle.LowPrice <= price - TakeProfit || candle.HighPrice >= price + StopLoss)
-				{
-					BuyMarket();
-					_entryPrice = null;
-				}
-			}
-		}
-
-		_prevClose = candle.ClosePrice;
 	}
 }

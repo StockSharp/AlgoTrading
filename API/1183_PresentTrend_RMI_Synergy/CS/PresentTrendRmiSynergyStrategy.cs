@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,56 +11,24 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// PresentTrend RMI Synergy strategy combines an RSI momentum filter with an ATR-based trailing stop.
+/// PresentTrend RMI Synergy strategy using EMA crossover.
 /// </summary>
 public class PresentTrendRmiSynergyStrategy : Strategy
 {
-	private readonly StrategyParam<int> _rmiPeriod;
-	private readonly StrategyParam<int> _superTrendLength;
-	private readonly StrategyParam<decimal> _superTrendMultiplier;
-private readonly StrategyParam<Sides?> _direction;
+	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal? _stopPrice;
-
 	/// <summary>
-	/// Period for RMI calculation (default: 21)
+	/// Slow EMA period.
 	/// </summary>
-	public int RmiPeriod
+	public int SlowLength
 	{
-		get => _rmiPeriod.Value;
-		set => _rmiPeriod.Value = value;
+		get => _slowLength.Value;
+		set => _slowLength.Value = value;
 	}
 
 	/// <summary>
-	/// Length for trend moving average and ATR (default: 5)
-	/// </summary>
-	public int SuperTrendLength
-	{
-		get => _superTrendLength.Value;
-		set => _superTrendLength.Value = value;
-	}
-
-	/// <summary>
-	/// ATR multiplier for trailing stop (default: 4.0)
-	/// </summary>
-	public decimal SuperTrendMultiplier
-	{
-		get => _superTrendMultiplier.Value;
-		set => _superTrendMultiplier.Value = value;
-	}
-
-	/// <summary>
-	/// Allowed trading direction
-	/// </summary>
-public Sides? Direction
-{
-get => _direction.Value;
-set => _direction.Value = value;
-}
-
-	/// <summary>
-	/// Type of candles used for strategy calculation
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -72,33 +37,16 @@ set => _direction.Value = value;
 	}
 
 	/// <summary>
-	/// Initialize the PresentTrend RMI Synergy strategy
+	/// Initializes a new instance.
 	/// </summary>
 	public PresentTrendRmiSynergyStrategy()
 	{
-		_rmiPeriod = Param(nameof(RmiPeriod), 21)
-			.SetDisplay("RMI Length", "Period for RMI calculation", "Parameters")
-			
-			.SetOptimize(10, 30, 5)
-			.SetGreaterThanZero();
-
-		_superTrendLength = Param(nameof(SuperTrendLength), 5)
-			.SetDisplay("SuperTrend Length", "Length for trend MA and ATR", "Parameters")
-			
-			.SetOptimize(3, 14, 1)
-			.SetGreaterThanZero();
-
-		_superTrendMultiplier = Param(nameof(SuperTrendMultiplier), 4m)
-			.SetDisplay("SuperTrend Multiplier", "ATR multiplier for trailing stop", "Parameters")
-			
-			.SetOptimize(2m, 6m, 0.5m)
-			.SetGreaterThanZero();
-
-_direction = Param(nameof(Direction), (Sides?)null)
-.SetDisplay("Trade Direction", "Allowed trading direction", "General");
+		_slowLength = Param(nameof(SlowLength), 40)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow Length", "Slow EMA period", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "Data");
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
 	/// <inheritdoc />
@@ -108,86 +56,63 @@ _direction = Param(nameof(Direction), (Sides?)null)
 	}
 
 	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_stopPrice = null;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		StartProtection(null, null);
 
-		var rsi = new RelativeStrengthIndex { Length = RmiPeriod };
-		var atr = new AverageTrueRange { Length = SuperTrendLength };
-		var sma = new SMA { Length = SuperTrendLength };
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
+
+		var prevF = 0m;
+		var prevS = 0m;
+		var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(rsi, atr, sma, ProcessCandle)
+			.Bind(fast, slow, (candle, f, s) =>
+			{
+				if (candle.State != CandleStates.Finished)
+					return;
+
+				if (!fast.IsFormed || !slow.IsFormed)
+					return;
+
+				if (!init)
+				{
+					prevF = f;
+					prevS = s;
+					init = true;
+					return;
+				}
+
+				if (candle.OpenTime - lastSignal >= cooldown)
+				{
+					if (prevF <= prevS && f > s && Position <= 0)
+					{
+						BuyMarket();
+						lastSignal = candle.OpenTime;
+					}
+					else if (prevF >= prevS && f < s && Position >= 0)
+					{
+						SellMarket();
+						lastSignal = candle.OpenTime;
+					}
+				}
+
+				prevF = f;
+				prevS = s;
+			})
 			.Start();
 
-		var priceArea = CreateChartArea();
-		var rsiArea = CreateChartArea();
-		if (priceArea != null)
+		var area = CreateChartArea();
+		if (area != null)
 		{
-			DrawCandles(priceArea, subscription);
-			DrawIndicator(priceArea, sma);
-			DrawOwnTrades(priceArea);
-		}
-
-		if (rsiArea != null)
-			DrawIndicator(rsiArea, rsi);
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal rsiValue, decimal atrValue, decimal smaValue)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var trendDir = candle.ClosePrice > smaValue ? 1 : -1;
-		var upperBand = smaValue + SuperTrendMultiplier * atrValue;
-		var lowerBand = smaValue - SuperTrendMultiplier * atrValue;
-
-		if (Position == 0)
-		{
-if ((Direction is null or Sides.Buy) && rsiValue > 60m && trendDir == 1)
-			{
-				BuyMarket(Volume);
-				_stopPrice = lowerBand;
-			}
-else if ((Direction is null or Sides.Sell) && rsiValue < 40m && trendDir == -1)
-			{
-				SellMarket(Volume);
-				_stopPrice = upperBand;
-			}
-		}
-		else if (Position > 0)
-		{
-			if (trendDir == 1)
-				_stopPrice = lowerBand;
-
-			if (_stopPrice is decimal stop && candle.LowPrice <= stop)
-			{
-				SellMarket(Position);
-				_stopPrice = null;
-			}
-		}
-		else
-		{
-			if (trendDir == -1)
-				_stopPrice = upperBand;
-
-			if (_stopPrice is decimal stop && candle.HighPrice >= stop)
-			{
-				BuyMarket(Math.Abs(Position));
-				_stopPrice = null;
-			}
+			DrawCandles(area, subscription);
+			DrawIndicator(area, fast);
+			DrawIndicator(area, slow);
+			DrawOwnTrades(area);
 		}
 	}
 }

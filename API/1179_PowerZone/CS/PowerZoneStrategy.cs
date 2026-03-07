@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,77 +11,24 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// PowerZone breakout strategy.
-/// Detects order block zones and trades breakouts with take profit and stop loss.
+/// PowerZone strategy using EMA crossover.
 /// </summary>
 public class PowerZoneStrategy : Strategy
 {
-	private readonly StrategyParam<int> _periods;
-	private readonly StrategyParam<decimal> _threshold;
-	private readonly StrategyParam<bool> _useWicks;
-	private readonly StrategyParam<decimal> _takeProfitFactor;
-	private readonly StrategyParam<decimal> _stopLossFactor;
+	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private readonly Queue<ICandleMessage> _candles = new();
-	private bool _hasBullZone;
-	private decimal _bullHigh;
-	private decimal _bullLow;
-	private decimal _bullTp;
-	private decimal _bullSl;
-	private bool _hasBearZone;
-	private decimal _bearHigh;
-	private decimal _bearLow;
-	private decimal _bearTp;
-	private decimal _bearSl;
-
 	/// <summary>
-	/// Number of candles to confirm the zone.
+	/// Slow EMA period.
 	/// </summary>
-	public int Periods
+	public int SlowLength
 	{
-		get => _periods.Value;
-		set => _periods.Value = value;
+		get => _slowLength.Value;
+		set => _slowLength.Value = value;
 	}
 
 	/// <summary>
-	/// Minimum percentage move required.
-	/// </summary>
-	public decimal Threshold
-	{
-		get => _threshold.Value;
-		set => _threshold.Value = value;
-	}
-
-	/// <summary>
-	/// Use high/low instead of open/close for zone borders.
-	/// </summary>
-	public bool UseWicks
-	{
-		get => _useWicks.Value;
-		set => _useWicks.Value = value;
-	}
-
-	/// <summary>
-	/// Multiplier for take profit distance.
-	/// </summary>
-	public decimal TakeProfitFactor
-	{
-		get => _takeProfitFactor.Value;
-		set => _takeProfitFactor.Value = value;
-	}
-
-	/// <summary>
-	/// Multiplier for stop loss distance.
-	/// </summary>
-	public decimal StopLossFactor
-	{
-		get => _stopLossFactor.Value;
-		set => _stopLossFactor.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used for analysis.
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -93,35 +37,16 @@ public class PowerZoneStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initializes a new instance of <see cref="PowerZoneStrategy"/>.
+	/// Initializes a new instance.
 	/// </summary>
 	public PowerZoneStrategy()
 	{
-		_periods = Param(nameof(Periods), 5)
-			.SetDisplay("Periods", "Number of candles in PowerZone", "General")
-			
-			.SetOptimize(3, 10, 1);
+		_slowLength = Param(nameof(SlowLength), 40)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow Length", "Slow EMA period", "General");
 
-		_threshold = Param(nameof(Threshold), 0m)
-			.SetDisplay("Threshold", "Minimum move in percent", "General")
-			.SetRange(0m, 10m)
-			;
-
-		_useWicks = Param(nameof(UseWicks), false)
-			.SetDisplay("Use Wicks", "Use full range high/low", "General");
-
-		_takeProfitFactor = Param(nameof(TakeProfitFactor), 1.5m)
-			.SetDisplay("Take Profit Factor", "Multiplier for profit target", "Risk")
-			.SetRange(0.5m, 3m)
-			;
-
-		_stopLossFactor = Param(nameof(StopLossFactor), 1m)
-			.SetDisplay("Stop Loss Factor", "Multiplier for stop loss", "Risk")
-			.SetRange(0.5m, 3m)
-			;
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
 	/// <inheritdoc />
@@ -131,98 +56,63 @@ public class PowerZoneStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_candles.Clear();
-		_hasBullZone = false;
-		_hasBearZone = false;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
+
+		var prevF = 0m;
+		var prevS = 0m;
+		var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
-	}
+		subscription
+			.Bind(fast, slow, (candle, f, s) =>
+			{
+				if (candle.State != CandleStates.Finished)
+					return;
 
-	private void ProcessCandle(ICandleMessage candle)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
+				if (!fast.IsFormed || !slow.IsFormed)
+					return;
 
-		_candles.Enqueue(candle);
-		while (_candles.Count > Periods + 2)
-			_candles.Dequeue();
+				if (!init)
+				{
+					prevF = f;
+					prevS = s;
+					init = true;
+					return;
+				}
 
-		if (_candles.Count < Periods + 2)
-			return;
+				if (candle.OpenTime - lastSignal >= cooldown)
+				{
+					if (prevF <= prevS && f > s && Position <= 0)
+					{
+						BuyMarket();
+						lastSignal = candle.OpenTime;
+					}
+					else if (prevF >= prevS && f < s && Position >= 0)
+					{
+						SellMarket();
+						lastSignal = candle.OpenTime;
+					}
+				}
 
-		var arr = _candles.ToArray();
-		var prev = arr[^2];
-		var ob = arr[^ (Periods + 2)];
+				prevF = f;
+				prevS = s;
+			})
+			.Start();
 
-		var move = Math.Abs((ob.ClosePrice - prev.ClosePrice) / ob.ClosePrice) * 100m;
-		var relMove = move >= Threshold;
-
-		var upCount = 0;
-		var downCount = 0;
-		for (var i = 1; i <= Periods; i++)
+		var area = CreateChartArea();
+		if (area != null)
 		{
-			var bar = arr[^ (i + 1)];
-			if (bar.ClosePrice > bar.OpenPrice)
-				upCount++;
-			if (bar.ClosePrice < bar.OpenPrice)
-				downCount++;
-		}
-
-		var bullZone = ob.ClosePrice < ob.OpenPrice && upCount == Periods && relMove;
-		if (bullZone)
-		{
-			_bullHigh = UseWicks ? ob.HighPrice : ob.OpenPrice;
-			_bullLow = ob.LowPrice;
-			_hasBullZone = true;
-		}
-
-		var bearZone = ob.ClosePrice > ob.OpenPrice && downCount == Periods && relMove;
-		if (bearZone)
-		{
-			_bearHigh = ob.HighPrice;
-			_bearLow = UseWicks ? ob.LowPrice : ob.OpenPrice;
-			_hasBearZone = true;
-		}
-
-		if (_hasBullZone && candle.ClosePrice > _bullHigh && Position <= 0)
-		{
-			var range = _bullHigh - _bullLow;
-			_bullTp = candle.ClosePrice + range * TakeProfitFactor;
-			_bullSl = _bullLow - range * StopLossFactor;
-			BuyMarket(Volume + Math.Abs(Position));
-			_hasBullZone = false;
-		}
-		else if (_hasBearZone && candle.ClosePrice < _bearLow && Position >= 0)
-		{
-			var range = _bearHigh - _bearLow;
-			_bearTp = candle.ClosePrice - range * TakeProfitFactor;
-			_bearSl = _bearHigh + range * StopLossFactor;
-			SellMarket(Volume + Math.Abs(Position));
-			_hasBearZone = false;
-		}
-
-		if (Position > 0)
-		{
-			if (candle.HighPrice >= _bullTp || candle.LowPrice <= _bullSl)
-				SellMarket(Position);
-		}
-		else if (Position < 0)
-		{
-			if (candle.LowPrice <= _bearTp || candle.HighPrice >= _bearSl)
-				BuyMarket(-Position);
+			DrawCandles(area, subscription);
+			DrawIndicator(area, fast);
+			DrawIndicator(area, slow);
+			DrawOwnTrades(area);
 		}
 	}
 }

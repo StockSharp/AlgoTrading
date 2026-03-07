@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,126 +11,103 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// PresentTrend Strategy - uses ATR with RSI or MFI to build adaptive trend line.
+/// PresentTrend strategy using EMA crossover.
 /// </summary>
 public class PresentTrendStrategy : Strategy
 {
+	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _length;
-	private readonly StrategyParam<decimal> _multiplier;
-	private readonly StrategyParam<bool> _useRsi;
-private readonly StrategyParam<Sides?> _direction;
 
-	private AverageTrueRange _atr;
-	private RelativeStrengthIndex _rsi;
-	private MoneyFlowIndex _mfi;
+	/// <summary>
+	/// Slow EMA period.
+	/// </summary>
+	public int SlowLength
+	{
+		get => _slowLength.Value;
+		set => _slowLength.Value = value;
+	}
 
-	private decimal _presentTrend;
-	private decimal _presentTrendPrev;
-	private int _trendDirection;
-	private int _lastLongIndex = int.MinValue;
-	private int _lastShortIndex = int.MinValue;
-	private int _barIndex;
+	/// <summary>
+	/// Candle type.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
 
 	public PresentTrendStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Candle type for strategy calculation.", "General");
+		_slowLength = Param(nameof(SlowLength), 40)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow Length", "Slow EMA period", "General");
 
-		_length = Param(nameof(Length), 14)
-			.SetDisplay("Length", "ATR and oscillator period.", "PresentTrend")
-			;
-
-		_multiplier = Param(nameof(Multiplier), 1.618m)
-			.SetDisplay("Multiplier", "ATR multiplier.", "PresentTrend")
-			;
-
-		_useRsi = Param(nameof(UseRsi), false)
-			.SetDisplay("Use RSI", "Use RSI instead of MFI.", "PresentTrend");
-
-_direction = Param(nameof(Direction), (Sides?)null)
-.SetDisplay("Trade Direction", "Allowed trade direction (Long/Short/Both).", "PresentTrend");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
-	public int Length { get => _length.Value; set => _length.Value = value; }
-	public decimal Multiplier { get => _multiplier.Value; set => _multiplier.Value = value; }
-	public bool UseRsi { get => _useRsi.Value; set => _useRsi.Value = value; }
-public Sides? Direction { get => _direction.Value; set => _direction.Value = value; }
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_atr = new() { Length = Length };
-		_rsi = new() { Length = Length };
-		_mfi = new() { Length = Length };
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
+
+		var prevF = 0m;
+		var prevS = 0m;
+		var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(_atr, _rsi, _mfi, ProcessCandle).Start();
-	}
+		subscription
+			.Bind(fast, slow, (candle, f, s) =>
+			{
+				if (candle.State != CandleStates.Finished)
+					return;
 
-	private void ProcessCandle(ICandleMessage candle, decimal atr, decimal rsi, decimal mfi)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
+				if (!fast.IsFormed || !slow.IsFormed)
+					return;
 
-		var upperThreshold = candle.LowPrice - atr * Multiplier;
-		var lowerThreshold = candle.HighPrice + atr * Multiplier;
-		var indicator = UseRsi ? rsi : mfi;
+				if (!init)
+				{
+					prevF = f;
+					prevS = s;
+					init = true;
+					return;
+				}
 
-		var prev = _presentTrend;
-		var prev2 = _presentTrendPrev;
+				if (candle.OpenTime - lastSignal >= cooldown)
+				{
+					if (prevF <= prevS && f > s && Position <= 0)
+					{
+						BuyMarket();
+						lastSignal = candle.OpenTime;
+					}
+					else if (prevF >= prevS && f < s && Position >= 0)
+					{
+						SellMarket();
+						lastSignal = candle.OpenTime;
+					}
+				}
 
-		decimal newValue;
+				prevF = f;
+				prevS = s;
+			})
+			.Start();
 
-		if (indicator >= 50m)
+		var area = CreateChartArea();
+		if (area != null)
 		{
-			var candidate = upperThreshold;
-			newValue = candidate < prev ? prev : candidate;
+			DrawCandles(area, subscription);
+			DrawIndicator(area, fast);
+			DrawIndicator(area, slow);
+			DrawOwnTrades(area);
 		}
-		else
-		{
-			var candidate = lowerThreshold;
-			newValue = candidate > prev ? prev : candidate;
-		}
-
-		var hasHistory = _barIndex >= 2;
-		var longSignal = hasHistory && prev < prev2 && newValue > prev2;
-		var shortSignal = hasHistory && prev > prev2 && newValue < prev2;
-
-		var prevLong = _lastLongIndex;
-		var prevShort = _lastShortIndex;
-
-		if (longSignal && prevLong < _lastShortIndex)
-			_trendDirection = 1;
-		else if (shortSignal && prevShort < _lastLongIndex)
-			_trendDirection = -1;
-
-		if (longSignal)
-			_lastLongIndex = _barIndex;
-		if (shortSignal)
-			_lastShortIndex = _barIndex;
-
-if (_trendDirection == 1 && (Direction is null or Sides.Buy))
-		{
-			if (Position <= 0)
-				BuyMarket();
-		}
-else if (_trendDirection == -1 && (Direction is null or Sides.Sell))
-		{
-			if (Position >= 0)
-				SellMarket();
-		}
-
-if (Direction == Sides.Buy && _trendDirection == -1 && Position > 0)
-			ClosePosition();
-else if (Direction == Sides.Sell && _trendDirection == 1 && Position < 0)
-			ClosePosition();
-
-		_presentTrendPrev = prev;
-		_presentTrend = newValue;
-		_barIndex++;
 	}
 }

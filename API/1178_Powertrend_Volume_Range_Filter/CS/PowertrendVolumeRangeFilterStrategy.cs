@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,111 +11,43 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Volume range filter strategy with optional ADX, high/low and VWMA filters.
-/// Enters long when price breaks the upper band and exits when price breaks the lower band.
+/// Volume range filter strategy using EMA crossover.
 /// </summary>
 public class PowertrendVolumeRangeFilterStrategy : Strategy
 {
-	private readonly StrategyParam<int> _length;
-	private readonly StrategyParam<bool> _useAdx;
-	private readonly StrategyParam<int> _lengthAdx;
-	private readonly StrategyParam<bool> _useHl;
-	private readonly StrategyParam<int> _lengthHl;
-	private readonly StrategyParam<bool> _useVwma;
-	private readonly StrategyParam<int> _lengthVwma;
+	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private AverageTrueRange _smoothRng = null!;
-	private AverageDirectionalIndex _adx = null!;
-	private SimpleMovingAverage _adxSma = null!;
-	private SimpleMovingAverage _vwma = null!;
-	private Highest _highBandTrend = null!;
-	private Lowest _lowBandTrend = null!;
-
-	private decimal? _prevVolRng;
-	private decimal? _prevVolume;
-	private decimal? _prevBase;
-	private decimal? _prevClose;
-	private decimal? _prevHighBand;
-	private decimal? _prevLowBand;
-	private decimal? _prevHighBandTrend;
-	private decimal? _prevLowBandTrend;
-	private int _barsSinceCrossOver = int.MaxValue;
-	private int _barsSinceCrossUnder = int.MaxValue;
-
 	/// <summary>
-	/// Initializes a new instance of <see cref="PowertrendVolumeRangeFilterStrategy"/>.
+	/// Slow EMA period.
 	/// </summary>
-	public PowertrendVolumeRangeFilterStrategy()
+	public int SlowLength
 	{
-		_length = Param(nameof(Length), 200)
-			.SetGreaterThanZero()
-			.SetDisplay("Length", "Main length for range calculations", "General");
-
-		_useAdx = Param(nameof(UseAdx), false)
-			.SetDisplay("Use ADX", "Enable ADX filter", "Filters");
-
-		_lengthAdx = Param(nameof(LengthAdx), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("ADX Length", "Period for ADX filter", "Filters");
-
-		_useHl = Param(nameof(UseHl), false)
-			.SetDisplay("Use Range HL", "Enable high/low trend filter", "Filters");
-
-		_lengthHl = Param(nameof(LengthHl), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("HL Length", "Lookback for trend filter", "Filters");
-
-		_useVwma = Param(nameof(UseVwma), false)
-			.SetDisplay("Use VWMA", "Enable VWMA filter", "Filters");
-
-		_lengthVwma = Param(nameof(LengthVwma), 200)
-			.SetGreaterThanZero()
-			.SetDisplay("VWMA Length", "Period for VWMA filter", "Filters");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
+		get => _slowLength.Value;
+		set => _slowLength.Value = value;
 	}
 
 	/// <summary>
-	/// Main length for range calculations.
+	/// Candle type.
 	/// </summary>
-	public int Length { get => _length.Value; set => _length.Value = value; }
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
 
 	/// <summary>
-	/// Enable ADX filter.
+	/// Initializes a new instance.
 	/// </summary>
-	public bool UseAdx { get => _useAdx.Value; set => _useAdx.Value = value; }
+	public PowertrendVolumeRangeFilterStrategy()
+	{
+		_slowLength = Param(nameof(SlowLength), 40)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow Length", "Slow EMA period", "General");
 
-	/// <summary>
-	/// ADX period length.
-	/// </summary>
-	public int LengthAdx { get => _lengthAdx.Value; set => _lengthAdx.Value = value; }
-
-	/// <summary>
-	/// Enable high/low trend filter.
-	/// </summary>
-	public bool UseHl { get => _useHl.Value; set => _useHl.Value = value; }
-
-	/// <summary>
-	/// Lookback for trend filter.
-	/// </summary>
-	public int LengthHl { get => _lengthHl.Value; set => _lengthHl.Value = value; }
-
-	/// <summary>
-	/// Enable VWMA filter.
-	/// </summary>
-	public bool UseVwma { get => _useVwma.Value; set => _useVwma.Value = value; }
-
-	/// <summary>
-	/// VWMA period.
-	/// </summary>
-	public int LengthVwma { get => _lengthVwma.Value; set => _lengthVwma.Value = value; }
-
-	/// <summary>
-	/// Candle type to use.
-	/// </summary>
-	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type", "General");
+	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
@@ -129,123 +58,59 @@ public class PowertrendVolumeRangeFilterStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_smoothRng = new AverageTrueRange { Length = Length };
-		_adx = new AverageDirectionalIndex { Length = LengthAdx };
-		_adxSma = new SimpleMovingAverage { Length = LengthAdx };
-		_vwma = new SimpleMovingAverage { Length = LengthVwma };
-		_highBandTrend = new Highest { Length = LengthHl };
-		_lowBandTrend = new Lowest { Length = LengthHl };
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
+
+		var prevF = 0m;
+		var prevS = 0m;
+		var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_adx, _smoothRng, ProcessCandle)
+			.Bind(fast, slow, (candle, f, s) =>
+			{
+				if (candle.State != CandleStates.Finished)
+					return;
+
+				if (!fast.IsFormed || !slow.IsFormed)
+					return;
+
+				if (!init)
+				{
+					prevF = f;
+					prevS = s;
+					init = true;
+					return;
+				}
+
+				if (candle.OpenTime - lastSignal >= cooldown)
+				{
+					if (prevF <= prevS && f > s && Position <= 0)
+					{
+						BuyMarket();
+						lastSignal = candle.OpenTime;
+					}
+					else if (prevF >= prevS && f < s && Position >= 0)
+					{
+						SellMarket();
+						lastSignal = candle.OpenTime;
+					}
+				}
+
+				prevF = f;
+				prevS = s;
+			})
 			.Start();
-	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal adxValue, decimal smoothRng)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var close = candle.ClosePrice;
-		var volume = candle.TotalVolume;
-
-		var volRng = ComputeVolRng(close, volume, smoothRng);
-
-		var hband = volRng + smoothRng;
-		var lowband = volRng - smoothRng;
-
-		var uprng = _prevBase is decimal pb && volRng > pb;
-
-		var adxSmaValue = _adxSma.Process(new DecimalIndicatorValue(_adxSma, adxValue, candle.OpenTime)).ToNullableDecimal();
-		if (UseAdx && adxSmaValue is null)
+		var area = CreateChartArea();
+		if (area != null)
 		{
-			UpdateState(close, volume, volRng, hband, lowband, null, null);
-			return;
+			DrawCandles(area, subscription);
+			DrawIndicator(area, fast);
+			DrawIndicator(area, slow);
+			DrawOwnTrades(area);
 		}
-		var adxFilter = !UseAdx || adxValue > adxSmaValue;
-
-		var highBandTrendFollow = _highBandTrend.Process(new DecimalIndicatorValue(_highBandTrend, hband, candle.OpenTime)).ToNullableDecimal();
-		var lowBandTrendFollow = _lowBandTrend.Process(new DecimalIndicatorValue(_lowBandTrend, lowband, candle.OpenTime)).ToNullableDecimal();
-		if (UseHl && (highBandTrendFollow is null || lowBandTrendFollow is null))
-		{
-			UpdateState(close, volume, volRng, hband, lowband, highBandTrendFollow, lowBandTrendFollow);
-			return;
-		}
-
-		bool crossOver = false;
-		bool crossUnder = false;
-
-		if (_prevClose is decimal pc)
-		{
-			if (_prevHighBandTrend is decimal ph && highBandTrendFollow is decimal hb && pc <= ph && close > ph)
-				crossOver = true;
-			if (_prevLowBandTrend is decimal pl && lowBandTrendFollow is decimal lb && pc >= pl && close < pl)
-				crossUnder = true;
-		}
-
-		if (crossOver)
-			_barsSinceCrossOver = 0;
-		else if (_barsSinceCrossOver < int.MaxValue)
-			_barsSinceCrossOver++;
-
-		if (crossUnder)
-			_barsSinceCrossUnder = 0;
-		else if (_barsSinceCrossUnder < int.MaxValue)
-			_barsSinceCrossUnder++;
-
-		var inGeneralUptrend = _barsSinceCrossOver < _barsSinceCrossUnder;
-		var iguFilterPositive = !UseHl || inGeneralUptrend;
-		var iguFilterNegative = !UseHl || !inGeneralUptrend;
-
-		var vwmaValue = _vwma.Process(new DecimalIndicatorValue(_vwma, volRng, candle.OpenTime)).ToNullableDecimal();
-		if (UseVwma && vwmaValue is null)
-		{
-			UpdateState(close, volume, volRng, hband, lowband, highBandTrendFollow, lowBandTrendFollow);
-			return;
-		}
-		var vwmaFilterPositive = !UseVwma || volRng > vwmaValue;
-
-		bool crossOverHband = _prevClose is decimal pc2 && _prevHighBand is decimal phb && pc2 <= phb && close > hband;
-		bool crossUnderLowband = _prevClose is decimal pc3 && _prevLowBand is decimal plb && pc3 >= plb && close < lowband;
-
-		var buy = uprng && crossOverHband && iguFilterPositive && adxFilter && vwmaFilterPositive;
-		var sell = !uprng && crossUnderLowband && iguFilterNegative && adxFilter;
-
-		if (buy && Position <= 0)
-			BuyMarket();
-		else if (sell && Position > 0)
-			SellMarket();
-
-		UpdateState(close, volume, volRng, hband, lowband, highBandTrendFollow, lowBandTrendFollow);
-	}
-
-	private void UpdateState(decimal close, decimal volume, decimal volRng, decimal hband, decimal lowband, decimal? highBandTrendFollow, decimal? lowBandTrendFollow)
-	{
-		_prevVolume = volume;
-		_prevVolRng = volRng;
-		_prevBase = volRng;
-		_prevClose = close;
-		_prevHighBand = hband;
-		_prevLowBand = lowband;
-		_prevHighBandTrend = highBandTrendFollow;
-		_prevLowBandTrend = lowBandTrendFollow;
-	}
-
-	private decimal ComputeVolRng(decimal source, decimal volume, decimal smoothRng)
-	{
-		if (_prevVolRng is null)
-			return source;
-
-		var prev = _prevVolRng.Value;
-		var prevVol = _prevVolume ?? 0m;
-
-		if (volume > prevVol)
-			return Math.Max(prev, source - smoothRng);
-		else
-			return Math.Min(prev, source + smoothRng);
 	}
 }
