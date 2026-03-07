@@ -117,7 +117,7 @@ public class MpCandlestickStrategy : Strategy
 		_useAutoSl = Param(nameof(UseAutoSl), true)
 		.SetDisplay("Use ATR Stop", "If enabled the stop-loss uses ATR * 1.5 distance", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Primary candle series for signals", "Data");
 	}
 

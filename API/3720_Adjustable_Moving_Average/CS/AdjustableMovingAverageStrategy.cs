@@ -53,17 +53,17 @@ public class AdjustableMovingAverageStrategy : Strategy
 	/// </summary>
 	public AdjustableMovingAverageStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle timeframe", "Timeframe used to build moving averages", "General")
 			;
 
-		_fastPeriod = Param(nameof(FastPeriod), 3)
+		_fastPeriod = Param(nameof(FastPeriod), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast period", "Short moving average length", "Moving averages")
 			
 			.SetOptimize(2, 30, 1);
 
-		_slowPeriod = Param(nameof(SlowPeriod), 9)
+		_slowPeriod = Param(nameof(SlowPeriod), 30)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow period", "Long moving average length", "Moving averages")
 			
@@ -285,6 +285,12 @@ public class AdjustableMovingAverageStrategy : Strategy
 	{
 		get => _tradeComment.Value;
 		set => _tradeComment.Value = value;
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
