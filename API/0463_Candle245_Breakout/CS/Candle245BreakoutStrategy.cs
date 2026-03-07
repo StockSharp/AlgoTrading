@@ -1,40 +1,46 @@
+namespace StockSharp.Samples.Strategies;
+
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-namespace StockSharp.Samples.Strategies;
-
+/// <summary>
+/// Candle 245 Breakout Strategy.
+/// Captures reference candle high/low, then trades breakout
+/// in the next N bars. Uses EMA as trend filter.
+/// </summary>
 public class Candle245BreakoutStrategy : Strategy
 {
-	private readonly StrategyParam<int> _targetHour;
-	private readonly StrategyParam<int> _targetMinute;
-	private readonly StrategyParam<int> _lookForwardBars;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _refPeriod;
+	private readonly StrategyParam<int> _lookForwardBars;
+	private readonly StrategyParam<int> _emaLength;
+	private readonly StrategyParam<int> _cooldownBars;
 
-	private decimal _targetHigh;
-	private decimal _targetLow;
+	private ExponentialMovingAverage _ema;
+
+	private decimal _refHigh;
+	private decimal _refLow;
 	private int _barsLeft;
-	private DateTime _lastTargetDay;
+	private int _barCount;
+	private int _cooldownRemaining;
 
-	public int TargetHour
+	public DataType CandleType
 	{
-		get => _targetHour.Value;
-		set => _targetHour.Value = value;
+		get => _candleType.Value;
+		set => _candleType.Value = value;
 	}
 
-	public int TargetMinute
+	public int RefPeriod
 	{
-		get => _targetMinute.Value;
-		set => _targetMinute.Value = value;
+		get => _refPeriod.Value;
+		set => _refPeriod.Value = value;
 	}
 
 	public int LookForwardBars
@@ -43,77 +49,104 @@ public class Candle245BreakoutStrategy : Strategy
 		set => _lookForwardBars.Value = value;
 	}
 
-	public DataType CandleType
+	public int EmaLength
 	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
+		get => _emaLength.Value;
+		set => _emaLength.Value = value;
+	}
+
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	public Candle245BreakoutStrategy()
 	{
-		_targetHour = Param(nameof(TargetHour), 2)
-			.SetDisplay("Target Hour", "Hour of the reference candle (UTC)", "General");
-
-		_targetMinute = Param(nameof(TargetMinute), 45)
-			.SetDisplay("Target Minute", "Minute of the reference candle (UTC)", "General");
-
-		_lookForwardBars = Param(nameof(LookForwardBars), 2)
-			.SetGreaterThanZero()
-			.SetDisplay("Look Forward Bars", "Number of candles to watch for breakout", "Trading");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(45).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
+
+		_refPeriod = Param(nameof(RefPeriod), 10)
+			.SetGreaterThanZero()
+			.SetDisplay("Ref Period", "Every N bars capture reference candle", "Trading");
+
+		_lookForwardBars = Param(nameof(LookForwardBars), 3)
+			.SetGreaterThanZero()
+			.SetDisplay("Look Forward Bars", "Bars to watch for breakout", "Trading");
+
+		_emaLength = Param(nameof(EmaLength), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("EMA Length", "EMA period for trend filter", "Indicators");
+
+		_cooldownBars = Param(nameof(CooldownBars), 10)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "Risk");
 	}
 
+	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
+	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_targetHigh = default;
-		_targetLow = default;
-		_barsLeft = default;
-		_lastTargetDay = default;
+
+		_ema = null;
+		_refHigh = 0;
+		_refLow = 0;
+		_barsLeft = 0;
+		_barCount = 0;
+		_cooldownRemaining = 0;
 	}
 
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		var subscription = SubscribeCandles(CandleType);
+		_ema = new ExponentialMovingAverage { Length = EmaLength };
 
+		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(_ema, OnProcess)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawIndicator(area, _ema);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void OnProcess(ICandleMessage candle, decimal emaVal)
 	{
 		if (candle.State != CandleStates.Finished)
+			return;
+
+		if (!_ema.IsFormed)
 			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var date = candle.OpenTime.Date;
+		_barCount++;
 
-		if (date != _lastTargetDay && candle.OpenTime.Hour == TargetHour && candle.OpenTime.Minute == TargetMinute)
+		if (_cooldownRemaining > 0)
 		{
-			_targetHigh = candle.HighPrice;
-			_targetLow = candle.LowPrice;
+			_cooldownRemaining--;
+			if (_barsLeft > 0)
+				_barsLeft--;
+			return;
+		}
+
+		// Every RefPeriod bars, capture reference candle
+		if (_barCount % RefPeriod == 0)
+		{
+			_refHigh = candle.HighPrice;
+			_refLow = candle.LowPrice;
 			_barsLeft = LookForwardBars;
-			_lastTargetDay = date;
-			LogInfo($"Target candle captured. High={_targetHigh}, Low={_targetLow}");
 			return;
 		}
 
@@ -122,25 +155,33 @@ public class Candle245BreakoutStrategy : Strategy
 
 		_barsLeft--;
 
-		if (candle.HighPrice > _targetHigh && Position <= 0)
+		var price = candle.ClosePrice;
+
+		// Breakout above reference high + EMA bullish
+		if (price > _refHigh && price > emaVal && Position <= 0)
 		{
-			BuyMarket(Volume + Math.Abs(Position));
-			LogInfo("Breakout above target high. Buying.");
+			if (Position < 0)
+				BuyMarket(Math.Abs(Position));
+			BuyMarket(Volume);
+			_cooldownRemaining = CooldownBars;
 		}
-		else if (candle.LowPrice < _targetLow && Position >= 0)
+		// Breakout below reference low + EMA bearish
+		else if (price < _refLow && price < emaVal && Position >= 0)
 		{
-			SellMarket(Volume + Math.Abs(Position));
-			LogInfo("Breakout below target low. Selling.");
+			if (Position > 0)
+				SellMarket(Math.Abs(Position));
+			SellMarket(Volume);
+			_cooldownRemaining = CooldownBars;
 		}
 
+		// Close position at end of breakout window
 		if (_barsLeft == 0 && Position != 0)
 		{
 			if (Position > 0)
-			SellMarket(Position);
+				SellMarket(Math.Abs(Position));
 			else
-			BuyMarket(Math.Abs(Position));
-
-			LogInfo("Closing position at end of breakout window.");
+				BuyMarket(Math.Abs(Position));
+			_cooldownRemaining = CooldownBars;
 		}
 	}
 }
