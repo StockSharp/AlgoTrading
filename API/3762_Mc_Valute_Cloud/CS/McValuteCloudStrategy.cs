@@ -32,11 +32,11 @@ public class McValuteCloudStrategy : Strategy
 	private readonly StrategyParam<int> _takeProfit;
 	private readonly StrategyParam<int> _stopLoss;
 
-	private ExponentialMovingAverage _filterMa = null!;
-	private SmoothedMovingAverage _blueMa = null!;
-	private SmoothedMovingAverage _limeMa = null!;
-	private MovingAverageConvergenceDivergenceSignal _macd = null!;
-	private Ichimoku _ichimoku = null!;
+	private ExponentialMovingAverage? _filterMa;
+	private SmoothedMovingAverage? _blueMa;
+	private SmoothedMovingAverage? _limeMa;
+	private MovingAverageConvergenceDivergenceSignal? _macd;
+	private Ichimoku? _ichimoku;
 
 	private decimal? _filterValue;
 	private decimal? _blueValue;
@@ -53,7 +53,7 @@ public class McValuteCloudStrategy : Strategy
 	/// </summary>
 	public McValuteCloudStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Primary timeframe used for signals", "General");
 
 		_filterMaLength = Param(nameof(FilterMaLength), 3)
@@ -223,10 +223,21 @@ public class McValuteCloudStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
 
+		_filterMa = null;
+		_blueMa = null;
+		_limeMa = null;
+		_macd = null;
+		_ichimoku = null;
 		_filterValue = null;
 		_blueValue = null;
 		_limeValue = null;
