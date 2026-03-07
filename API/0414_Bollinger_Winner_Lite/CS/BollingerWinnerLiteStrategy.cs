@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,62 +11,95 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Bollinger Bands Winner LITE Strategy
+/// Bollinger Bands Winner LITE Strategy.
+/// Buys when candle body extends below lower BB, sells when above upper BB.
 /// </summary>
 public class BollingerWinnerLiteStrategy : Strategy
 {
-	public BollingerWinnerLiteStrategy()
-	{
-		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle type", "Candle type for strategy calculation.", "General");
-
-		_bbLength = Param(nameof(BBLength), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("BB Period", "Bollinger Bands period", "Bollinger Bands");
-
-		_bbMultiplier = Param(nameof(BBMultiplier), 2.0m)
-			.SetDisplay("BB StdDev", "Bollinger Bands standard deviation multiplier", "Bollinger Bands");
-
-		_candlePercent = Param(nameof(CandlePercent), 30m)
-			.SetDisplay("Candle %", "Candle percentage below/above the BB", "Strategy");
-
-		_showShort = Param(nameof(ShowShort), false)
-			.SetDisplay("Short entries", "Enable short entries", "Strategy");
-	}
-
 	private readonly StrategyParam<DataType> _candleTypeParam;
+	private readonly StrategyParam<int> _bbLength;
+	private readonly StrategyParam<decimal> _bbMultiplier;
+	private readonly StrategyParam<decimal> _candlePercent;
+	private readonly StrategyParam<bool> _showShort;
+	private readonly StrategyParam<int> _cooldownBars;
+
+	/// <summary>
+	/// Candle type for strategy calculation.
+	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleTypeParam.Value;
 		set => _candleTypeParam.Value = value;
 	}
 
-	private readonly StrategyParam<int> _bbLength;
+	/// <summary>
+	/// Bollinger Bands period.
+	/// </summary>
 	public int BBLength
 	{
 		get => _bbLength.Value;
 		set => _bbLength.Value = value;
 	}
 
-	private readonly StrategyParam<decimal> _bbMultiplier;
+	/// <summary>
+	/// Bollinger Bands standard deviation multiplier.
+	/// </summary>
 	public decimal BBMultiplier
 	{
 		get => _bbMultiplier.Value;
 		set => _bbMultiplier.Value = value;
 	}
 
-	private readonly StrategyParam<decimal> _candlePercent;
+	/// <summary>
+	/// Candle percentage below/above the BB.
+	/// </summary>
 	public decimal CandlePercent
 	{
 		get => _candlePercent.Value;
 		set => _candlePercent.Value = value;
 	}
 
-	private readonly StrategyParam<bool> _showShort;
+	/// <summary>
+	/// Enable short entries.
+	/// </summary>
 	public bool ShowShort
 	{
 		get => _showShort.Value;
 		set => _showShort.Value = value;
+	}
+
+	/// <summary>
+	/// Cooldown bars between trades.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	private BollingerBands _bollinger;
+	private int _cooldownRemaining;
+
+	public BollingerWinnerLiteStrategy()
+	{
+		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle type", "Candle type for strategy calculation.", "General");
+
+		_bbLength = Param(nameof(BBLength), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("BB Period", "Bollinger Bands period", "Bollinger Bands");
+
+		_bbMultiplier = Param(nameof(BBMultiplier), 1.5m)
+			.SetDisplay("BB StdDev", "Bollinger Bands standard deviation multiplier", "Bollinger Bands");
+
+		_candlePercent = Param(nameof(CandlePercent), 30m)
+			.SetDisplay("Candle %", "Candle percentage below/above the BB", "Strategy");
+
+		_showShort = Param(nameof(ShowShort), true)
+			.SetDisplay("Short entries", "Enable short entries", "Strategy");
+
+		_cooldownBars = Param(nameof(CooldownBars), 10)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "Risk");
 	}
 
 	/// <inheritdoc />
@@ -77,82 +107,88 @@ public class BollingerWinnerLiteStrategy : Strategy
 		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_bollinger = null;
+		_cooldownRemaining = 0;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		// Create Bollinger Bands indicator
-		var bollinger = new BollingerBands
+		_bollinger = new BollingerBands
 		{
 			Length = BBLength,
 			Width = BBMultiplier
 		};
 
-		// Subscribe to candles
 		var subscription = SubscribeCandles(CandleType);
 
 		subscription
-			.BindEx(bollinger, OnProcess)
+			.BindEx(_bollinger, OnProcess)
 			.Start();
 
-		// Configure chart
 		var area = CreateChartArea();
-
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, bollinger);
+			DrawIndicator(area, _bollinger);
 			DrawOwnTrades(area);
 		}
 	}
 
 	private void OnProcess(ICandleMessage candle, IIndicatorValue bollingerValue)
 	{
-		// Only process finished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var closePrice = candle.ClosePrice;
-		var openPrice = candle.OpenPrice;
-		var highPrice = candle.HighPrice;
-		var lowPrice = candle.LowPrice;
-		
-		var bollingerTyped = (BollingerBandsValue)bollingerValue;
-		var upperBand = bollingerTyped.UpBand;
-		var lowerBand = bollingerTyped.LowBand;
+		if (!_bollinger.IsFormed)
+			return;
 
-		// Calculate entry zones
-		var candleSize = highPrice - lowPrice;
-		var candlePercent = CandlePercent * 0.01m;
-		var buyZone = (candleSize * candlePercent) + lowPrice;
-		var sellZone = highPrice - (candleSize * candlePercent);
+		var bb = (BollingerBandsValue)bollingerValue;
+		if (bb.UpBand is not decimal upperBand ||
+			bb.LowBand is not decimal lowerBand)
+			return;
 
-		// Body size check
-		var bodySize = closePrice > openPrice ? closePrice - openPrice : openPrice - closePrice;
-		var bs60 = bodySize * 0.6m;
-		var bsBuy = lowPrice + bs60;
-
-		// Buy signal
-		var buy = buyZone < lowerBand && !(bsBuy < lowerBand) && closePrice < openPrice;
-
-		// Sell signal  
-		var sell = sellZone > upperBand && closePrice > openPrice;
-
-		// Long entry
-		if (buy && Position == 0)
+		if (_cooldownRemaining > 0)
 		{
-			BuyMarket(Volume);
+			_cooldownRemaining--;
+			return;
 		}
-		// Exit or Short entry
+
+		var close = candle.ClosePrice;
+		var open = candle.OpenPrice;
+		var high = candle.HighPrice;
+		var low = candle.LowPrice;
+
+		// Buy: close below lower band (oversold)
+		var buy = close <= lowerBand;
+
+		// Sell: close above upper band (overbought)
+		var sell = close >= upperBand;
+
+		if (buy && Position <= 0)
+		{
+			if (Position < 0)
+				BuyMarket(Math.Abs(Position));
+			BuyMarket(Volume);
+			_cooldownRemaining = CooldownBars;
+		}
 		else if (sell)
 		{
 			if (Position > 0)
 			{
-				SellMarket(Position);
+				SellMarket(Math.Abs(Position));
+				_cooldownRemaining = CooldownBars;
 			}
 			else if (ShowShort && Position == 0)
 			{
 				SellMarket(Volume);
+				_cooldownRemaining = CooldownBars;
 			}
 		}
 	}

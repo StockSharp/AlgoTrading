@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,16 +11,60 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Bollinger Bands Divergence Strategy
+/// Bollinger Bands Divergence Strategy.
+/// Detects divergence between price and Bollinger Bands expansion.
 /// </summary>
 public class BollingerDivergenceStrategy : Strategy
 {
+	private readonly StrategyParam<DataType> _candleTypeParam;
+	private readonly StrategyParam<int> _bbLength;
+	private readonly StrategyParam<decimal> _bbMultiplier;
+	private readonly StrategyParam<int> _cooldownBars;
+
+	/// <summary>
+	/// Candle type for strategy calculation.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleTypeParam.Value;
+		set => _candleTypeParam.Value = value;
+	}
+
+	/// <summary>
+	/// Bollinger Bands period.
+	/// </summary>
+	public int BBLength
+	{
+		get => _bbLength.Value;
+		set => _bbLength.Value = value;
+	}
+
+	/// <summary>
+	/// Bollinger Bands standard deviation multiplier.
+	/// </summary>
+	public decimal BBMultiplier
+	{
+		get => _bbMultiplier.Value;
+		set => _bbMultiplier.Value = value;
+	}
+
+	/// <summary>
+	/// Cooldown bars between trades.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	private BollingerBands _bollinger;
 	private decimal _prevUpperBand;
 	private decimal _prevLowerBand;
+	private int _cooldownRemaining;
 
 	public BollingerDivergenceStrategy()
 	{
-		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle type", "Candle type for strategy calculation.", "General");
 
 		_bbLength = Param(nameof(BBLength), 20)
@@ -33,46 +74,8 @@ public class BollingerDivergenceStrategy : Strategy
 		_bbMultiplier = Param(nameof(BBMultiplier), 2.0m)
 			.SetDisplay("BB StdDev", "Bollinger Bands standard deviation multiplier", "Bollinger Bands");
 
-		_candlePercent = Param(nameof(CandlePercent), 30m)
-			.SetDisplay("Candle %", "Candle percentage below/above the BB", "Strategy");
-
-		_takeProfit = Param(nameof(TakeProfit), 5m)
-			.SetDisplay("Take Profit %", "Take profit percentage", "Strategy");
-	}
-
-	private readonly StrategyParam<DataType> _candleTypeParam;
-	public DataType CandleType
-	{
-		get => _candleTypeParam.Value;
-		set => _candleTypeParam.Value = value;
-	}
-
-	private readonly StrategyParam<int> _bbLength;
-	public int BBLength
-	{
-		get => _bbLength.Value;
-		set => _bbLength.Value = value;
-	}
-
-	private readonly StrategyParam<decimal> _bbMultiplier;
-	public decimal BBMultiplier
-	{
-		get => _bbMultiplier.Value;
-		set => _bbMultiplier.Value = value;
-	}
-
-	private readonly StrategyParam<decimal> _candlePercent;
-	public decimal CandlePercent
-	{
-		get => _candlePercent.Value;
-		set => _candlePercent.Value = value;
-	}
-
-	private readonly StrategyParam<decimal> _takeProfit;
-	public decimal TakeProfit
-	{
-		get => _takeProfit.Value;
-		set => _takeProfit.Value = value;
+		_cooldownBars = Param(nameof(CooldownBars), 10)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "Risk");
 	}
 
 	/// <inheritdoc />
@@ -84,8 +87,10 @@ public class BollingerDivergenceStrategy : Strategy
 	{
 		base.OnReseted();
 
+		_bollinger = null;
 		_prevUpperBand = 0;
 		_prevLowerBand = 0;
+		_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
@@ -93,95 +98,96 @@ public class BollingerDivergenceStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Create Bollinger Bands indicator
-		var bollinger = new BollingerBands
+		_bollinger = new BollingerBands
 		{
 			Length = BBLength,
 			Width = BBMultiplier
 		};
 
-		// Subscribe to candles
 		var subscription = SubscribeCandles(CandleType);
 
 		subscription
-			.BindEx(bollinger, OnProcess)
+			.BindEx(_bollinger, OnProcess)
 			.Start();
 
-		// Configure chart
 		var area = CreateChartArea();
-
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, bollinger);
+			DrawIndicator(area, _bollinger);
 			DrawOwnTrades(area);
 		}
 	}
 
 	private void OnProcess(ICandleMessage candle, IIndicatorValue bollingerValue)
 	{
-		// Only process finished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var closePrice = candle.ClosePrice;
-		var openPrice = candle.OpenPrice;
-		var highPrice = candle.HighPrice;
-		var lowPrice = candle.LowPrice;
-		
-		var bollingerTyped = (BollingerBandsValue)bollingerValue;
-		var upperBand = bollingerTyped.UpBand;
-		var lowerBand = bollingerTyped.LowBand;
-		var middleBand = bollingerTyped.MovingAverage;
+		if (!_bollinger.IsFormed)
+			return;
 
-		// Check for divergence
-		var buySignal = false;
-		var sellSignal = false;
+		var bb = (BollingerBandsValue)bollingerValue;
+		if (bb.UpBand is not decimal upperBand ||
+			bb.LowBand is not decimal lowerBand ||
+			bb.MovingAverage is not decimal middleBand)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+		{
+			_prevUpperBand = upperBand;
+			_prevLowerBand = lowerBand;
+			return;
+		}
+
+		if (_cooldownRemaining > 0)
+		{
+			_cooldownRemaining--;
+			_prevUpperBand = upperBand;
+			_prevLowerBand = lowerBand;
+			return;
+		}
+
+		var close = candle.ClosePrice;
 
 		if (_prevUpperBand > 0 && _prevLowerBand > 0)
 		{
-			// Buy signal: close > upper, upper expanding, lower contracting, bullish candle
-			buySignal = closePrice > upperBand && 
-					   upperBand > _prevUpperBand && 
-					   lowerBand < _prevLowerBand && 
-					   closePrice > openPrice;
+			// Bands expanding: upper rising, lower dropping
+			var bandsExpanding = upperBand > _prevUpperBand && lowerBand < _prevLowerBand;
+			var bullishCandle = close > candle.OpenPrice;
+			var bearishCandle = close < candle.OpenPrice;
 
-			// Sell signal: close < lower, lower contracting, upper expanding, bearish candle
-			sellSignal = closePrice < lowerBand && 
-						lowerBand < _prevLowerBand && 
-						upperBand > _prevUpperBand && 
-						closePrice < openPrice;
+			// Buy: close above upper band + bands expanding + bullish candle
+			if (close > upperBand && bandsExpanding && bullishCandle && Position <= 0)
+			{
+				if (Position < 0)
+					BuyMarket(Math.Abs(Position));
+				BuyMarket(Volume);
+				_cooldownRemaining = CooldownBars;
+			}
+			// Sell: close below lower band + bands expanding + bearish candle
+			else if (close < lowerBand && bandsExpanding && bearishCandle && Position >= 0)
+			{
+				if (Position > 0)
+					SellMarket(Math.Abs(Position));
+				SellMarket(Volume);
+				_cooldownRemaining = CooldownBars;
+			}
+			// Exit long: price returns below middle
+			else if (Position > 0 && close < middleBand)
+			{
+				SellMarket(Math.Abs(Position));
+				_cooldownRemaining = CooldownBars;
+			}
+			// Exit short: price returns above middle
+			else if (Position < 0 && close > middleBand)
+			{
+				BuyMarket(Math.Abs(Position));
+				_cooldownRemaining = CooldownBars;
+			}
 		}
 
-		// Calculate entry zones
-		var candleSize = highPrice - lowPrice;
-		var buyZone = highPrice - (candleSize * ((100 - CandlePercent) / 100));
-		var sellZone = lowPrice + (candleSize * ((100 - CandlePercent) / 100));
-
-		// Long entry
-		if (buySignal && buyZone > upperBand && Position == 0)
-		{
-			BuyMarket(Volume);
-		}
-		// Long exit
-		else if (Position > 0 && closePrice < middleBand)
-		{
-			SellMarket(Position);
-		}
-
-		// Short entry
-		if (sellSignal && sellZone < lowerBand && Position == 0)
-		{
-			SellMarket(Volume);
-		}
-		// Short exit
-		else if (Position < 0 && closePrice > middleBand)
-		{
-			BuyMarket(Position.Abs());
-		}
-
-		// Update previous bands
-		_prevUpperBand = upperBand.Value;
-		_prevLowerBand = lowerBand.Value;
+		_prevUpperBand = upperBand;
+		_prevLowerBand = lowerBand;
 	}
 }
