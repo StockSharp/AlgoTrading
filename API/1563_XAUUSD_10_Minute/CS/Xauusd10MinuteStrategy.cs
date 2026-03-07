@@ -71,7 +71,7 @@ public class Xauusd10MinuteStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("TP Mult", "StdDev mult for TP", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -150,8 +150,8 @@ public class Xauusd10MinuteStrategy : Strategy
 
 		var emaCrossUp = _prevFastEma <= _prevSlowEma && fastVal > slowVal;
 		var emaCrossDown = _prevFastEma >= _prevSlowEma && fastVal < slowVal;
-		var buySignal = emaCrossUp || rsiVal < RsiOversold;
-		var sellSignal = emaCrossDown || rsiVal > RsiOverbought;
+		var buySignal = emaCrossUp;
+		var sellSignal = emaCrossDown;
 
 		if (buySignal && Position <= 0)
 		{

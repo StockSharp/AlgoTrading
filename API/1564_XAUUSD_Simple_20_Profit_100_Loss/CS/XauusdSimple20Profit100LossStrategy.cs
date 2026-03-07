@@ -42,11 +42,11 @@ public class XauusdSimple20Profit100LossStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("SL %", "Stop loss percent", "Risk");
 
-		_cooldownBars = Param(nameof(CooldownBars), 10)
+		_cooldownBars = Param(nameof(CooldownBars), 100)
 			.SetGreaterThanZero()
 			.SetDisplay("Cooldown", "Bars between trades", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -66,7 +66,7 @@ public class XauusdSimple20Profit100LossStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var sma = new SimpleMovingAverage { Length = 2 };
+		var sma = new SimpleMovingAverage { Length = 10 };
 
 		_barsSinceExit = 100;
 		_entryPrice = 0;
