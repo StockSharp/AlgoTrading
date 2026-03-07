@@ -24,9 +24,9 @@ public class BandsPriceStrategy : Strategy
 	private readonly StrategyParam<int> _dnLevel;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private SimpleMovingAverage _smoother;
-	private int _prevColor = -1;
-	private int _prevPrevColor = -1;
+	private ExponentialMovingAverage _smoother;
+	private int _prevColor;
+	private int _prevPrevColor;
 
 	public int BandsPeriod { get => _bandsPeriod.Value; set => _bandsPeriod.Value = value; }
 	public decimal BandsDeviation { get => _bandsDeviation.Value; set => _bandsDeviation.Value = value; }
@@ -46,7 +46,7 @@ public class BandsPriceStrategy : Strategy
 
 		_smooth = Param(nameof(Smooth), 5)
 			.SetGreaterThanZero()
-			.SetDisplay("Smoothing", "Length of smoothing SMA", "Indicator");
+			.SetDisplay("Smoothing", "Length of smoothing EMA", "Indicator");
 
 		_upLevel = Param(nameof(UpLevel), 25)
 			.SetDisplay("Upper Level", "Threshold for overbought zone", "Indicator");
@@ -54,7 +54,7 @@ public class BandsPriceStrategy : Strategy
 		_dnLevel = Param(nameof(DnLevel), -25)
 			.SetDisplay("Lower Level", "Threshold for oversold zone", "Indicator");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for analysis", "General");
 	}
 
@@ -65,13 +65,24 @@ public class BandsPriceStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_smoother = default;
+		_prevColor = -1;
+		_prevPrevColor = -1;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
 		_prevColor = -1;
 		_prevPrevColor = -1;
-		_smoother = new SimpleMovingAverage { Length = Smooth };
+		_smoother = new ExponentialMovingAverage { Length = Smooth };
+
+		Indicators.Add(_smoother);
 
 		var bands = new BollingerBands { Length = BandsPeriod, Width = BandsDeviation };
 
@@ -79,14 +90,6 @@ public class BandsPriceStrategy : Strategy
 		subscription
 			.BindEx(bands, ProcessCandle)
 			.Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, bands);
-			DrawOwnTrades(area);
-		}
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bbValue)
@@ -110,6 +113,9 @@ public class BandsPriceStrategy : Strategy
 
 		var smoothResult = _smoother.Process(res, candle.OpenTime, true);
 		if (!smoothResult.IsFormed)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		var jres = smoothResult.ToDecimal();

@@ -44,7 +44,7 @@ public class HvrStrategy : Strategy
 		_ratioThreshold = Param(nameof(RatioThreshold), 1m)
 			.SetDisplay("Ratio Threshold", "HVR level for trade direction", "Trading");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for calculation", "General");
 	}
 
@@ -52,6 +52,15 @@ public class HvrStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_shortSd = default;
+		_longSd = default;
+		_prevClose = default;
 	}
 
 	/// <inheritdoc />
@@ -63,17 +72,13 @@ public class HvrStrategy : Strategy
 		_shortSd = new StandardDeviation { Length = ShortPeriod };
 		_longSd = new StandardDeviation { Length = LongPeriod };
 
+		Indicators.Add(_shortSd);
+		Indicators.Add(_longSd);
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
 			.Bind(ProcessCandle)
 			.Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawOwnTrades(area);
-		}
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -94,6 +99,9 @@ public class HvrStrategy : Strategy
 		var longResult = _longSd.Process(logReturn, candle.OpenTime, true);
 
 		if (!shortResult.IsFormed || !longResult.IsFormed)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		var shortVal = shortResult.ToDecimal();

@@ -32,7 +32,7 @@ public class ColorHmaReversalStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("HMA Period", "Hull Moving Average period", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -40,6 +40,15 @@ public class ColorHmaReversalStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevValue1 = default;
+		_prevValue2 = default;
+		_count = default;
 	}
 
 	/// <inheritdoc />
