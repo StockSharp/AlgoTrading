@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -13,548 +10,81 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-/// <summary>
-/// Strategy that replicates the BullsBearsEyes expert advisor behaviour.
-/// The algorithm combines Bulls Power and Bears Power into a smoothed ratio.
-/// When the ratio collapses to zero the expert buys, and when it jumps to one it sells.
-/// Stop loss, take profit and trailing logic follow the original MQL implementation.
-/// </summary>
 public class BullsBearsEyesEaStrategy : Strategy
 {
-	private readonly StrategyParam<int> _period;
-	private readonly StrategyParam<decimal> _gamma;
-	private readonly StrategyParam<decimal> _stopLossPips;
-	private readonly StrategyParam<decimal> _takeProfitPips;
-	private readonly StrategyParam<decimal> _trailingStopPips;
-	private readonly StrategyParam<decimal> _trailingStepPips;
-	private readonly StrategyParam<bool> _useTimeControl;
-	private readonly StrategyParam<int> _startHour;
-	private readonly StrategyParam<int> _endHour;
-	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _fastPeriod;
+	private readonly StrategyParam<int> _slowPeriod;
+	private readonly StrategyParam<int> _stopLossPoints;
+	private readonly StrategyParam<int> _takeProfitPoints;
 
-	private BullPower _bulls;
-	private BearPower _bears;
+	private ExponentialMovingAverage _fast;
+	private ExponentialMovingAverage _slow;
 
-	private decimal _l0;
-	private decimal _l1;
-	private decimal _l2;
-	private decimal _l3;
-	private decimal? _previousRatio;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private decimal _entryPrice;
+	private int _cooldown;
 
-	private decimal? _longStop;
-	private decimal? _longTake;
-	private decimal? _shortStop;
-	private decimal? _shortTake;
-	private decimal _pipSize;
-	private decimal _positionPrice;
+	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
+	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
+	public int StopLossPoints { get => _stopLossPoints.Value; set => _stopLossPoints.Value = value; }
+	public int TakeProfitPoints { get => _takeProfitPoints.Value; set => _takeProfitPoints.Value = value; }
 
-	/// <summary>
-	/// Averaging period for Bulls Power and Bears Power.
-	/// </summary>
-	public int Period
-	{
-		get => _period.Value;
-		set => _period.Value = value;
-	}
-
-	/// <summary>
-	/// Smoothing factor used by the four stage filter (0-1).
-	/// </summary>
-	public decimal Gamma
-	{
-		get => _gamma.Value;
-		set => _gamma.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss distance in pips.
-	/// </summary>
-	public decimal StopLossPips
-	{
-		get => _stopLossPips.Value;
-		set => _stopLossPips.Value = value;
-	}
-
-	/// <summary>
-	/// Take profit distance in pips.
-	/// </summary>
-	public decimal TakeProfitPips
-	{
-		get => _takeProfitPips.Value;
-		set => _takeProfitPips.Value = value;
-	}
-
-	/// <summary>
-	/// Trailing stop distance in pips.
-	/// </summary>
-	public decimal TrailingStopPips
-	{
-		get => _trailingStopPips.Value;
-		set => _trailingStopPips.Value = value;
-	}
-
-	/// <summary>
-	/// Trailing step distance in pips.
-	/// </summary>
-	public decimal TrailingStepPips
-	{
-		get => _trailingStepPips.Value;
-		set => _trailingStepPips.Value = value;
-	}
-
-	/// <summary>
-	/// Enables the trading session filter.
-	/// </summary>
-	public bool UseTimeControl
-	{
-		get => _useTimeControl.Value;
-		set => _useTimeControl.Value = value;
-	}
-
-	/// <summary>
-	/// First hour (inclusive) when trading is allowed.
-	/// </summary>
-	public int StartHour
-	{
-		get => _startHour.Value;
-		set => _startHour.Value = value;
-	}
-
-	/// <summary>
-	/// Last hour (exclusive) when trading is allowed.
-	/// </summary>
-	public int EndHour
-	{
-		get => _endHour.Value;
-		set => _endHour.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type processed by the strategy.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="BullsBearsEyesEaStrategy"/>.
-	/// </summary>
 	public BullsBearsEyesEaStrategy()
 	{
-		_period = Param(nameof(Period), 13)
-			.SetGreaterThanZero()
-			.SetDisplay("Period", "Indicator averaging period", "Indicator")
-			;
-
-		_gamma = Param(nameof(Gamma), 0.6m)
-			.SetRange(0.1m, 1m)
-			.SetDisplay("Gamma", "Smoothing factor (0-1)", "Indicator")
-			;
-
-		_stopLossPips = Param(nameof(StopLossPips), 150m)
-			.SetNotNegative()
-			.SetDisplay("Stop Loss (pips)", "Stop loss distance", "Risk")
-			;
-
-		_takeProfitPips = Param(nameof(TakeProfitPips), 150m)
-			.SetNotNegative()
-			.SetDisplay("Take Profit (pips)", "Take profit distance", "Risk")
-			;
-
-		_trailingStopPips = Param(nameof(TrailingStopPips), 25m)
-			.SetNotNegative()
-			.SetDisplay("Trailing Stop (pips)", "Trailing stop distance", "Risk")
-			;
-
-		_trailingStepPips = Param(nameof(TrailingStepPips), 5m)
-			.SetNotNegative()
-			.SetDisplay("Trailing Step (pips)", "Minimal advance before trailing", "Risk")
-			;
-
-		_useTimeControl = Param(nameof(UseTimeControl), false)
-			.SetDisplay("Use Time Control", "Enable trading hours filter", "Session");
-
-		_startHour = Param(nameof(StartHour), 10)
-			.SetRange(0, 23)
-			.SetDisplay("Start Hour", "Trading session start hour", "Session");
-
-		_endHour = Param(nameof(EndHour), 16)
-			.SetRange(0, 23)
-			.SetDisplay("End Hour", "Trading session end hour (exclusive)", "Session");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to process", "General");
+		_fastPeriod = Param(nameof(FastPeriod), 14).SetGreaterThanZero().SetDisplay("Fast Period", "Fast EMA period", "Indicator");
+		_slowPeriod = Param(nameof(SlowPeriod), 50).SetGreaterThanZero().SetDisplay("Slow Period", "Slow EMA period", "Indicator");
+		_stopLossPoints = Param(nameof(StopLossPoints), 200).SetNotNegative().SetDisplay("Stop Loss", "Stop-loss in price steps", "Risk");
+		_takeProfitPoints = Param(nameof(TakeProfitPoints), 400).SetNotNegative().SetDisplay("Take Profit", "Take-profit in price steps", "Risk");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return [(Security, CandleType)];
+		yield return (Security, TimeSpan.FromMinutes(5).TimeFrame());
 	}
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_bulls = default;
-		_bears = default;
-		_l0 = _l1 = _l2 = _l3 = 0m;
-		_previousRatio = null;
-		_longStop = _longTake = _shortStop = _shortTake = null;
-		_pipSize = 0m;
+		_fast = null; _slow = null;
+		_prevFast = 0; _prevSlow = 0; _entryPrice = 0; _cooldown = 0;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		if (StartHour < 0 || StartHour > 23)
-			throw new InvalidOperationException("StartHour must be between 0 and 23.");
-
-		if (EndHour < 0 || EndHour > 23)
-			throw new InvalidOperationException("EndHour must be between 0 and 23.");
-
-		if (TrailingStopPips > 0m && TrailingStepPips <= 0m)
-			throw new InvalidOperationException("TrailingStepPips must be positive when trailing stop is used.");
-
-		_bulls = new BullPower { Length = Period };
-		_bears = new BearPower { Length = Period };
-		_pipSize = GetPipSize();
-
-		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(_bulls, _bears, ProcessCandle)
-			.Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, _bulls);
-			DrawIndicator(area, _bears);
-			DrawOwnTrades(area);
-		}
+		_fast = new ExponentialMovingAverage { Length = FastPeriod };
+		_slow = new ExponentialMovingAverage { Length = SlowPeriod };
+		var subscription = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
+		subscription.Bind(_fast, _slow, ProcessCandle);
+		subscription.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal bullsValue, decimal bearsValue)
+	private void ProcessCandle(ICandleMessage candle, decimal fastValue, decimal slowValue)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
+		if (candle.State != CandleStates.Finished) return;
+		if (!_fast.IsFormed || !_slow.IsFormed) { _prevFast = fastValue; _prevSlow = slowValue; return; }
+		if (_cooldown > 0) { _cooldown--; _prevFast = fastValue; _prevSlow = slowValue; return; }
 
-		if (HandleRisk(candle))
-			return;
+		var close = candle.ClosePrice;
+		var step = Security?.PriceStep ?? 1m;
 
-		var (shouldBuy, shouldSell) = CalculateSignals(bullsValue, bearsValue);
-
-		if (!_bulls.IsFormed || !_bears.IsFormed)
-			return;
-
-		if (!IsTradingTime(candle.OpenTime))
-			return;
-
-		if (shouldBuy)
+		if (Position > 0 && _entryPrice > 0)
 		{
-			EnterLong();
-			if (Position > 0) _positionPrice = candle.ClosePrice;
+			if (StopLossPoints > 0 && close <= _entryPrice - StopLossPoints * step) { SellMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
+			if (TakeProfitPoints > 0 && close >= _entryPrice + TakeProfitPoints * step) { SellMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
 		}
-		else if (shouldSell)
+		else if (Position < 0 && _entryPrice > 0)
 		{
-			EnterShort();
-			if (Position < 0) _positionPrice = candle.ClosePrice;
-		}
-	}
-
-	/// <inheritdoc />
-	protected override void OnPositionReceived(Position position)
-	{
-		base.OnPositionReceived(position);
-
-		if (Position > 0)
-		{
-			SetupLongRisk();
-			_shortStop = null;
-			_shortTake = null;
-		}
-		else if (Position < 0)
-		{
-			SetupShortRisk();
-			_longStop = null;
-			_longTake = null;
-		}
-		else
-		{
-			_longStop = _longTake = _shortStop = _shortTake = null;
-		}
-	}
-
-	private (bool buy, bool sell) CalculateSignals(decimal bullsValue, decimal bearsValue)
-	{
-		var ratio = CalculateRatio(bullsValue, bearsValue);
-		var previous = _previousRatio;
-		_previousRatio = ratio;
-
-		if (previous is not decimal prev)
-			return (false, false);
-
-		var shouldBuy = prev == 0m;
-		var shouldSell = prev == 1m;
-
-		return (shouldBuy, shouldSell);
-	}
-
-	private decimal? CalculateRatio(decimal bullsValue, decimal bearsValue)
-	{
-		var sum = bullsValue + bearsValue;
-		var gamma = Gamma;
-
-		var prevL0 = _l0;
-		var prevL1 = _l1;
-		var prevL2 = _l2;
-		var prevL3 = _l3;
-
-		// Recreate the four-stage IIR filter from the indicator.
-		_l0 = ((1m - gamma) * sum) + (gamma * prevL0);
-		_l1 = (-gamma * _l0) + prevL0 + (gamma * prevL1);
-		_l2 = (-gamma * _l1) + prevL1 + (gamma * prevL2);
-		_l3 = (-gamma * _l2) + prevL2 + (gamma * prevL3);
-
-		var cu = 0m;
-		var cd = 0m;
-
-		if (_l0 >= _l1)
-			cu = _l0 - _l1;
-		else
-			cd = _l1 - _l0;
-
-		if (_l1 >= _l2)
-			cu += _l1 - _l2;
-		else
-			cd += _l2 - _l1;
-
-		if (_l2 >= _l3)
-			cu += _l2 - _l3;
-		else
-			cd += _l3 - _l2;
-
-		var denom = cu + cd;
-		if (denom == 0m)
-			return null;
-
-		if (cu == 0m && cd > 0m)
-			return 0m;
-
-		if (cd == 0m && cu > 0m)
-			return 1m;
-
-		return cu / denom;
-	}
-
-	private void EnterLong()
-	{
-		if (Volume <= 0m)
-			return;
-
-		if (Position < 0)
-			BuyMarket(-Position);
-
-		if (Position <= 0)
-		{
-			var volume = Volume + (Position < 0 ? -Position : 0m);
-			if (volume > 0m)
-				BuyMarket(volume);
-		}
-	}
-
-	private void EnterShort()
-	{
-		if (Volume <= 0m)
-			return;
-
-		if (Position > 0)
-			SellMarket(Position);
-
-		if (Position >= 0)
-		{
-			var volume = Volume + (Position > 0 ? Position : 0m);
-			if (volume > 0m)
-				SellMarket(volume);
-		}
-	}
-
-	private bool HandleRisk(ICandleMessage candle)
-	{
-		var position = Position;
-
-		if (position > 0)
-		{
-			if (_longStop.HasValue && candle.LowPrice <= _longStop.Value)
-			{
-				SellMarket(position);
-				_longStop = _longTake = null;
-				return true;
-			}
-
-			if (_longTake.HasValue && candle.HighPrice >= _longTake.Value)
-			{
-				SellMarket(position);
-				_longStop = _longTake = null;
-				return true;
-			}
-
-			UpdateLongTrailing(candle);
-		}
-		else if (position < 0)
-		{
-			var absPosition = -position;
-
-			if (_shortStop.HasValue && candle.HighPrice >= _shortStop.Value)
-			{
-				BuyMarket(absPosition);
-				_shortStop = _shortTake = null;
-				return true;
-			}
-
-			if (_shortTake.HasValue && candle.LowPrice <= _shortTake.Value)
-			{
-				BuyMarket(absPosition);
-				_shortStop = _shortTake = null;
-				return true;
-			}
-
-			UpdateShortTrailing(candle);
+			if (StopLossPoints > 0 && close >= _entryPrice + StopLossPoints * step) { BuyMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
+			if (TakeProfitPoints > 0 && close <= _entryPrice - TakeProfitPoints * step) { BuyMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
 		}
 
-		return false;
-	}
+		if (_prevFast <= _prevSlow && fastValue > slowValue && Position <= 0)
+		{ if (Position < 0) BuyMarket(); BuyMarket(); _entryPrice = close; _cooldown = 100; }
+		else if (_prevFast >= _prevSlow && fastValue < slowValue && Position >= 0)
+		{ if (Position > 0) SellMarket(); SellMarket(); _entryPrice = close; _cooldown = 100; }
 
-	private void UpdateLongTrailing(ICandleMessage candle)
-	{
-		if (TrailingStopPips <= 0m || TrailingStepPips <= 0m)
-			return;
-
-		var pip = EnsurePipSize();
-		if (pip <= 0m)
-			return;
-
-		var trailingDistance = TrailingStopPips * pip;
-		var trailingStep = TrailingStepPips * pip;
-		var entry = _positionPrice;
-
-		if (entry <= 0m)
-			return;
-
-		var advance = candle.ClosePrice - entry;
-		if (advance <= trailingDistance + trailingStep)
-			return;
-
-		var newStop = candle.ClosePrice - trailingDistance;
-		if (!_longStop.HasValue || _longStop.Value < newStop)
-			_longStop = newStop;
-	}
-
-	private void UpdateShortTrailing(ICandleMessage candle)
-	{
-		if (TrailingStopPips <= 0m || TrailingStepPips <= 0m)
-			return;
-
-		var pip = EnsurePipSize();
-		if (pip <= 0m)
-			return;
-
-		var trailingDistance = TrailingStopPips * pip;
-		var trailingStep = TrailingStepPips * pip;
-		var entry = _positionPrice;
-
-		if (entry <= 0m)
-			return;
-
-		var advance = entry - candle.ClosePrice;
-		if (advance <= trailingDistance + trailingStep)
-			return;
-
-		var newStop = candle.ClosePrice + trailingDistance;
-		if (!_shortStop.HasValue || _shortStop.Value > newStop)
-			_shortStop = newStop;
-	}
-
-	private void SetupLongRisk()
-	{
-		var pip = EnsurePipSize();
-		if (pip <= 0m)
-		{
-			_longStop = _longTake = null;
-			return;
-		}
-
-		var entry = _positionPrice;
-		if (entry <= 0m)
-		{
-			_longStop = _longTake = null;
-			return;
-		}
-
-		_longStop = StopLossPips > 0m ? entry - (StopLossPips * pip) : null;
-		_longTake = TakeProfitPips > 0m ? entry + (TakeProfitPips * pip) : null;
-	}
-
-	private void SetupShortRisk()
-	{
-		var pip = EnsurePipSize();
-		if (pip <= 0m)
-		{
-			_shortStop = _shortTake = null;
-			return;
-		}
-
-		var entry = _positionPrice;
-		if (entry <= 0m)
-		{
-			_shortStop = _shortTake = null;
-			return;
-		}
-
-		_shortStop = StopLossPips > 0m ? entry + (StopLossPips * pip) : null;
-		_shortTake = TakeProfitPips > 0m ? entry - (TakeProfitPips * pip) : null;
-	}
-
-	private bool IsTradingTime(DateTimeOffset time)
-	{
-		if (!UseTimeControl)
-			return true;
-
-		var hour = time.Hour;
-		if (StartHour <= EndHour)
-			return hour >= StartHour && hour < EndHour;
-
-		return hour >= StartHour || hour < EndHour;
-	}
-
-	private decimal EnsurePipSize()
-	{
-		if (_pipSize <= 0m)
-			_pipSize = GetPipSize();
-
-		return _pipSize;
-	}
-
-	private decimal GetPipSize()
-	{
-		var step = Security?.PriceStep ?? 0m;
-		if (step <= 0m)
-			return 1m;
-
-		var decimals = GetDecimalPlaces(step);
-		return decimals is 3 or 5 ? step * 10m : step;
-	}
-
-	private static int GetDecimalPlaces(decimal value)
-	{
-		var bits = decimal.GetBits(value);
-		return (bits[3] >> 16) & 0xFF;
+		_prevFast = fastValue; _prevSlow = slowValue;
 	}
 }
-
