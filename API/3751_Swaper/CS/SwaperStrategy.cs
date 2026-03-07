@@ -146,15 +146,7 @@ public class SwaperStrategy : Strategy
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		var security = Security;
-
-		if (security != null)
-		{
-			yield return (security, CandleType);
-			yield return (security, DataType.Level1);
-		}
-	}
+		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
 	protected override void OnReseted()
@@ -185,8 +177,6 @@ public class SwaperStrategy : Strategy
 
 		var candleSubscription = SubscribeCandles(CandleType);
 		candleSubscription.Bind(ProcessCandle).Start();
-
-		SubscribeLevel1().Bind(ProcessLevel1).Start();
 	}
 
 	private void ProcessLevel1(Level1ChangeMessage message)

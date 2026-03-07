@@ -6,6 +6,7 @@ using Ecng.Common;
 using Ecng.Collections;
 using Ecng.Serialization;
 
+using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -33,18 +34,17 @@ public class TrendMeLeaveMeChannelStrategy : Strategy
 	private readonly StrategyParam<decimal> _buyVolume;
 	private readonly StrategyParam<decimal> _sellVolume;
 
-	private Order _buyStopOrder;
-	private Order _sellStopOrder;
-	private Order _stopLossOrder;
-	private Order _takeProfitOrder;
 	private decimal _entryPrice;
+	private decimal? _activeStop;
+	private decimal? _activeTake;
+	private int _activeDirection; // 1=long, -1=short, 0=flat
 
 	/// <summary>
 	/// Initializes parameters.
 	/// </summary>
 	public TrendMeLeaveMeChannelStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 		.SetDisplay("Candle Type", "Candle aggregation used for trend estimation", "General");
 
 		_trendLength = Param(nameof(TrendLength), 100)
@@ -229,11 +229,10 @@ public class TrendMeLeaveMeChannelStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_buyStopOrder = null;
-		_sellStopOrder = null;
-		_stopLossOrder = null;
-		_takeProfitOrder = null;
 		_entryPrice = 0m;
+		_activeStop = null;
+		_activeTake = null;
+		_activeDirection = 0;
 	}
 
 	/// <inheritdoc />
@@ -245,228 +244,92 @@ public class TrendMeLeaveMeChannelStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 
 		subscription
-		.Bind(regression, ProcessCandle)
+		.BindEx(regression, ProcessCandle)
 		.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal trendValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue indVal)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
+		if (!indVal.IsFinal || !indVal.IsFormed)
+			return;
 
-		CleanupInactiveOrders();
+		if (indVal is not ILinearRegressionValue lrVal || lrVal.LinearReg is not decimal trendValue)
+			return;
 
-		var priceStep = Security?.PriceStep ?? 0m;
+		var priceStep = Security?.PriceStep ?? 1m;
 		if (priceStep <= 0m)
-		return;
+			priceStep = 1m;
+
+		// Check virtual SL/TP first
+		CheckProtection(candle);
 
 		var close = candle.ClosePrice;
 		var middle = trendValue;
 
-		var buyUpper = NormalizePrice(middle + BuyStepUpper * priceStep);
-		var buyLower = NormalizePrice(middle - BuyStepLower * priceStep);
-		var sellUpper = NormalizePrice(middle + SellStepUpper * priceStep);
-		var sellLower = NormalizePrice(middle - SellStepLower * priceStep);
+		var buyLower = middle - BuyStepLower * priceStep;
+		var sellUpper = middle + SellStepUpper * priceStep;
 
-		ManageBuyStop(close, middle, buyLower, buyUpper, priceStep);
-		ManageSellStop(close, middle, sellUpper, sellLower, priceStep);
-	}
-
-	private void ManageBuyStop(decimal close, decimal middle, decimal lower, decimal upper, decimal priceStep)
-	{
-		var volume = BuyVolume;
-		if (volume <= 0m)
-		return;
-
-		if (Position > 0m)
+		// Buy signal: price is below trend line in the buy zone
+		if (close <= middle && close >= buyLower && Position <= 0)
 		{
-			CancelOrderIfActive(ref _buyStopOrder);
-			return;
+			if (Position < 0)
+			{
+				BuyMarket(Math.Abs(Position));
+				ClearProtection();
+			}
+
+			BuyMarket(BuyVolume);
+			_entryPrice = close;
+			_activeStop = close - BuyStopLossSteps * priceStep;
+			_activeTake = close + BuyTakeProfitSteps * priceStep;
+			_activeDirection = 1;
 		}
-
-		var shouldPlace = close <= middle && close >= lower;
-
-		if (!shouldPlace)
+		// Sell signal: price is above trend line in the sell zone
+		else if (close >= middle && close <= sellUpper && Position >= 0)
 		{
-			CancelOrderIfActive(ref _buyStopOrder);
-			return;
-		}
+			if (Position > 0)
+			{
+				SellMarket(Position);
+				ClearProtection();
+			}
 
-		if (_buyStopOrder is null)
-		{
-			_buyStopOrder = BuyMarket(volume);
-			return;
-		}
-
-		if (_buyStopOrder.State != OrderStates.Active)
-		{
-			_buyStopOrder = BuyMarket(volume);
-			return;
-		}
-
-		var diff = Math.Abs(_buyStopOrder.Price - upper);
-		var minDiff = priceStep / 2m;
-		if (minDiff <= 0m)
-		minDiff = priceStep;
-
-		if (diff >= minDiff)
-		{
-			CancelOrder(_buyStopOrder);
-			_buyStopOrder = BuyMarket(volume);
+			SellMarket(SellVolume);
+			_entryPrice = close;
+			_activeStop = close + SellStopLossSteps * priceStep;
+			_activeTake = close - SellTakeProfitSteps * priceStep;
+			_activeDirection = -1;
 		}
 	}
 
-	private void ManageSellStop(decimal close, decimal middle, decimal upper, decimal lower, decimal priceStep)
+	private void CheckProtection(ICandleMessage candle)
 	{
-		var volume = SellVolume;
-		if (volume <= 0m)
-		return;
-
-		if (Position < 0m)
+		if (_activeDirection == 1 && Position > 0 && _activeStop.HasValue && _activeTake.HasValue)
 		{
-			CancelOrderIfActive(ref _sellStopOrder);
-			return;
+			if (candle.LowPrice <= _activeStop.Value || candle.HighPrice >= _activeTake.Value)
+			{
+				SellMarket(Position);
+				ClearProtection();
+			}
 		}
-
-		var shouldPlace = close >= middle && close <= upper;
-
-		if (!shouldPlace)
+		else if (_activeDirection == -1 && Position < 0 && _activeStop.HasValue && _activeTake.HasValue)
 		{
-			CancelOrderIfActive(ref _sellStopOrder);
-			return;
-		}
-
-		if (_sellStopOrder is null)
-		{
-			_sellStopOrder = SellMarket(volume);
-			return;
-		}
-
-		if (_sellStopOrder.State != OrderStates.Active)
-		{
-			_sellStopOrder = SellMarket(volume);
-			return;
-		}
-
-		var diff = Math.Abs(_sellStopOrder.Price - lower);
-		var minDiff = priceStep / 2m;
-		if (minDiff <= 0m)
-		minDiff = priceStep;
-
-		if (diff >= minDiff)
-		{
-			CancelOrder(_sellStopOrder);
-			_sellStopOrder = SellMarket(volume);
+			if (candle.HighPrice >= _activeStop.Value || candle.LowPrice <= _activeTake.Value)
+			{
+				BuyMarket(Math.Abs(Position));
+				ClearProtection();
+			}
 		}
 	}
 
-	/// <inheritdoc />
-	protected override void OnPositionReceived(Position position)
+	private void ClearProtection()
 	{
-		base.OnPositionReceived(position);
-
-		CleanupInactiveOrders();
-
-		if (Position == 0m)
-		{
-			CancelProtectionOrders();
-			return;
-		}
-
-		SetupProtection(Position > 0m);
-	}
-
-	/// <inheritdoc />
-	protected override void OnOwnTradeReceived(MyTrade trade)
-	{
-		base.OnOwnTradeReceived(trade);
-
-		if (Position != 0m && _entryPrice == 0m)
-			_entryPrice = trade.Trade.Price;
-
-		if (Position == 0m)
-			_entryPrice = 0m;
-	}
-
-	private void SetupProtection(bool isLong)
-	{
-		var priceStep = Security?.PriceStep ?? 0m;
-		if (priceStep <= 0m)
-		return;
-
-		var volume = Math.Abs(Position);
-		if (volume <= 0m)
-		return;
-
-		var entryPrice = _entryPrice;
-		if (entryPrice <= 0m)
-		return;
-
-		CancelProtectionOrders();
-
-		if (isLong)
-		{
-			var stopLoss = NormalizePrice(entryPrice - BuyStopLossSteps * priceStep);
-			var takeProfit = NormalizePrice(entryPrice + BuyTakeProfitSteps * priceStep);
-
-			if (BuyStopLossSteps > 0)
-			_stopLossOrder = SellMarket(volume);
-
-			if (BuyTakeProfitSteps > 0)
-			_takeProfitOrder = SellMarket(volume);
-		}
-		else
-		{
-			var stopLoss = NormalizePrice(entryPrice + SellStopLossSteps * priceStep);
-			var takeProfit = NormalizePrice(entryPrice - SellTakeProfitSteps * priceStep);
-
-			if (SellStopLossSteps > 0)
-			_stopLossOrder = BuyMarket(volume);
-
-			if (SellTakeProfitSteps > 0)
-			_takeProfitOrder = BuyMarket(volume);
-		}
-	}
-
-	private void CleanupInactiveOrders()
-	{
-		if (_buyStopOrder != null && _buyStopOrder.State != OrderStates.Active)
-		_buyStopOrder = null;
-
-		if (_sellStopOrder != null && _sellStopOrder.State != OrderStates.Active)
-		_sellStopOrder = null;
-
-		if (_stopLossOrder != null && _stopLossOrder.State != OrderStates.Active)
-		_stopLossOrder = null;
-
-		if (_takeProfitOrder != null && _takeProfitOrder.State != OrderStates.Active)
-		_takeProfitOrder = null;
-	}
-
-	private void CancelProtectionOrders()
-	{
-		CancelOrderIfActive(ref _stopLossOrder);
-		CancelOrderIfActive(ref _takeProfitOrder);
-	}
-
-	private void CancelOrderIfActive(ref Order order)
-	{
-		if (order is null)
-		return;
-
-		if (order.State == OrderStates.Active)
-		CancelOrder(order);
-
-		order = null;
-	}
-
-	private decimal NormalizePrice(decimal price)
-	{
-		var security = Security;
-		return security?.ShrinkPrice(price) ?? price;
+		_activeStop = null;
+		_activeTake = null;
+		_activeDirection = 0;
+		_entryPrice = 0m;
 	}
 }
 
