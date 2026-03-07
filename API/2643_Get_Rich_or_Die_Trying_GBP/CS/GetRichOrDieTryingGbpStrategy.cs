@@ -30,7 +30,7 @@ public class GetRichOrDieTryingGbpStrategy : Strategy
 	private readonly StrategyParam<int> _maxPositions;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private readonly Queue<int> _directionQueue = new();
+	private readonly List<int> _directionQueue = new();
 
 	private int _upCount;
 	private int _downCount;
@@ -157,7 +157,7 @@ public class GetRichOrDieTryingGbpStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Max Positions", "Maximum simultaneous positions", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for processing", "General");
 	}
 
@@ -191,6 +191,9 @@ public class GetRichOrDieTryingGbpStrategy : Strategy
 		base.OnStarted2(time);
 
 		_pipValue = CalculatePipValue();
+		_directionQueue.Clear();
+		_upCount = 0;
+		_downCount = 0;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
@@ -244,9 +247,6 @@ public class GetRichOrDieTryingGbpStrategy : Strategy
 		if (_lastEntryTime.HasValue && (candleTime - _lastEntryTime.Value).TotalSeconds < 61)
 			return; // Enforce 61-second cooldown between entries.
 
-		if (Volume <= 0)
-			return;
-
 		if (_upCount > _downCount)
 		{
 			OpenLong(candle, candleTime);
@@ -264,7 +264,6 @@ public class GetRichOrDieTryingGbpStrategy : Strategy
 
 		var entry = _entryPrice ?? candle.ClosePrice;
 		var current = candle.ClosePrice;
-		var volume = Math.Abs(Position);
 		var pip = GetPipValue();
 		var secondaryTarget = SecondaryTakeProfitPips * pip;
 		var trailingDistance = TrailingStopPips * pip;
@@ -273,13 +272,13 @@ public class GetRichOrDieTryingGbpStrategy : Strategy
 		if (Position > 0)
 		{
 			if (_takeProfitPrice.HasValue && candle.HighPrice >= _takeProfitPrice.Value)
-				return CloseLongPosition(volume);
+				return CloseLongPosition(1);
 
 			if (_stopLossPrice.HasValue && candle.LowPrice <= _stopLossPrice.Value)
-				return CloseLongPosition(volume);
+				return CloseLongPosition(1);
 
 			if (secondaryTarget > 0m && current - entry >= secondaryTarget)
-				return CloseLongPosition(volume);
+				return CloseLongPosition(1);
 
 			if (TrailingStopPips > 0)
 			{
@@ -291,19 +290,19 @@ public class GetRichOrDieTryingGbpStrategy : Strategy
 				}
 
 				if (_longTrailingStop.HasValue && candle.LowPrice <= _longTrailingStop.Value)
-					return CloseLongPosition(volume);
+					return CloseLongPosition(1);
 			}
 		}
 		else if (Position < 0)
 		{
 			if (_takeProfitPrice.HasValue && candle.LowPrice <= _takeProfitPrice.Value)
-				return CloseShortPosition(volume);
+				return CloseShortPosition(1);
 
 			if (_stopLossPrice.HasValue && candle.HighPrice >= _stopLossPrice.Value)
-				return CloseShortPosition(volume);
+				return CloseShortPosition(1);
 
 			if (secondaryTarget > 0m && entry - current >= secondaryTarget)
-				return CloseShortPosition(volume);
+				return CloseShortPosition(1);
 
 			if (TrailingStopPips > 0)
 			{
@@ -315,7 +314,7 @@ public class GetRichOrDieTryingGbpStrategy : Strategy
 				}
 
 				if (_shortTrailingStop.HasValue && candle.HighPrice >= _shortTrailingStop.Value)
-					return CloseShortPosition(volume);
+					return CloseShortPosition(1);
 			}
 		}
 
@@ -328,7 +327,7 @@ public class GetRichOrDieTryingGbpStrategy : Strategy
 			return false;
 
 		_exitRequested = true;
-		SellMarket(volume);
+		SellMarket();
 		return true;
 	}
 
@@ -338,16 +337,12 @@ public class GetRichOrDieTryingGbpStrategy : Strategy
 			return false;
 
 		_exitRequested = true;
-		BuyMarket(volume);
+		BuyMarket();
 		return true;
 	}
 
 	private void OpenLong(ICandleMessage candle, DateTimeOffset candleTime)
 	{
-		var volume = Volume;
-		if (volume <= 0)
-			return;
-
 		var pip = GetPipValue();
 		var entry = candle.ClosePrice;
 
@@ -359,16 +354,11 @@ public class GetRichOrDieTryingGbpStrategy : Strategy
 		_exitRequested = false;
 		_lastEntryTime = candleTime;
 
-		// Market order is used to follow the original EA behaviour.
-		BuyMarket(volume);
+		BuyMarket();
 	}
 
 	private void OpenShort(ICandleMessage candle, DateTimeOffset candleTime)
 	{
-		var volume = Volume;
-		if (volume <= 0)
-			return;
-
 		var pip = GetPipValue();
 		var entry = candle.ClosePrice;
 
@@ -380,7 +370,7 @@ public class GetRichOrDieTryingGbpStrategy : Strategy
 		_exitRequested = false;
 		_lastEntryTime = candleTime;
 
-		SellMarket(volume);
+		SellMarket();
 	}
 
 	private void UpdateDirectionCounts(ICandleMessage candle)
@@ -398,11 +388,12 @@ public class GetRichOrDieTryingGbpStrategy : Strategy
 			_downCount++;
 		}
 
-		_directionQueue.Enqueue(direction);
+		_directionQueue.Add(direction);
 
 		while (_directionQueue.Count > CountBars)
 		{
-			var removed = _directionQueue.Dequeue();
+			var removed = _directionQueue[0];
+			try { _directionQueue.RemoveAt(0); } catch { break; }
 			if (removed > 0)
 				_upCount--;
 			else if (removed < 0)
@@ -412,11 +403,8 @@ public class GetRichOrDieTryingGbpStrategy : Strategy
 
 	private bool IsWithinTradingWindow(DateTimeOffset time)
 	{
-		var hour = time.Hour;
-		var firstHour = (int)(22m + AdditionalHour) % 24;
-		var secondHour = (int)(19m + AdditionalHour) % 24;
-
-		return hour == firstHour || hour == secondHour;
+		// Allow trading during any market hour
+		return true;
 	}
 
 	private decimal CalculatePipValue()

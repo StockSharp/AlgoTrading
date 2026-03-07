@@ -39,8 +39,8 @@ public class ColorPemaEnvelopesDigitSystemStrategy : Strategy
 
 	private readonly PemaIndicator _pema = new();
 
-	private readonly Queue<decimal> _upperHistory = new();
-	private readonly Queue<decimal> _lowerHistory = new();
+	private readonly List<decimal> _upperHistory = new();
+	private readonly List<decimal> _lowerHistory = new();
 	private readonly List<int> _colorHistory = new();
 
 	/// <summary>
@@ -48,7 +48,7 @@ public class ColorPemaEnvelopesDigitSystemStrategy : Strategy
 	/// </summary>
 	public ColorPemaEnvelopesDigitSystemStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe used for calculations", "General");
 
 		_tradeVolume = Param(nameof(TradeVolume), 1m)
@@ -93,11 +93,11 @@ public class ColorPemaEnvelopesDigitSystemStrategy : Strategy
 		_allowSellClose = Param(nameof(AllowSellClose), true)
 		.SetDisplay("Allow Sell Close", "Allow closing short positions on opposite signal", "Logic");
 
-		_stopLossPoints = Param(nameof(StopLossPoints), 1000m)
+		_stopLossPoints = Param(nameof(StopLossPoints), 10m)
 		.SetRange(0m, 100000m)
 		.SetDisplay("Stop Loss Points", "Distance for protective stop", "Risk");
 
-		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000m)
+		_takeProfitPoints = Param(nameof(TakeProfitPoints), 20m)
 		.SetRange(0m, 100000m)
 		.SetDisplay("Take Profit Points", "Distance for profit target", "Risk");
 	}
@@ -315,8 +315,8 @@ public class ColorPemaEnvelopesDigitSystemStrategy : Strategy
 		}
 		else
 		{
-			upperForColor = _upperHistory.Count >= shift ? _upperHistory.Peek() : (decimal?)null;
-			lowerForColor = _lowerHistory.Count >= shift ? _lowerHistory.Peek() : (decimal?)null;
+			upperForColor = _upperHistory.Count >= shift ? _upperHistory[0] : (decimal?)null;
+			lowerForColor = _lowerHistory.Count >= shift ? _lowerHistory[0] : (decimal?)null;
 		}
 
 		// Determine the color code based on envelope breakouts.
@@ -359,25 +359,19 @@ public class ColorPemaEnvelopesDigitSystemStrategy : Strategy
 
 		// Close positions according to signal permissions.
 		if (buyCloseSignal && Position > 0)
-		SellMarket(Position);
+			SellMarket();
 
 		if (sellCloseSignal && Position < 0)
-		BuyMarket(-Position);
+			BuyMarket();
 
 		// Open new trades after handling position closures.
 		if (buyOpenSignal && Position <= 0)
 		{
-			if (Position < 0)
-			BuyMarket(-Position);
-
-			BuyMarket(TradeVolume);
+			BuyMarket();
 		}
 		else if (sellOpenSignal && Position >= 0)
 		{
-			if (Position > 0)
-			SellMarket(Position);
-
-			SellMarket(TradeVolume);
+			SellMarket();
 		}
 
 		UpdateHistories(currentColor, upperCurrent, lowerCurrent, shift);
@@ -457,18 +451,24 @@ public class ColorPemaEnvelopesDigitSystemStrategy : Strategy
 		_colorHistory.Add(currentColor);
 
 		var maxColors = Math.Max(3, Math.Max(shift, SignalBar) + 3);
-		if (_colorHistory.Count > maxColors)
-		_colorHistory.RemoveRange(0, _colorHistory.Count - maxColors);
+		while (_colorHistory.Count > maxColors)
+		{
+			try { _colorHistory.RemoveAt(0); } catch { break; }
+		}
 
 		if (shift > 0)
 		{
-			_upperHistory.Enqueue(upperCurrent);
-			if (_upperHistory.Count > shift)
-			_upperHistory.Dequeue();
+			_upperHistory.Add(upperCurrent);
+			while (_upperHistory.Count > shift)
+			{
+				try { _upperHistory.RemoveAt(0); } catch { break; }
+			}
 
-			_lowerHistory.Enqueue(lowerCurrent);
-			if (_lowerHistory.Count > shift)
-			_lowerHistory.Dequeue();
+			_lowerHistory.Add(lowerCurrent);
+			while (_lowerHistory.Count > shift)
+			{
+				try { _lowerHistory.RemoveAt(0); } catch { break; }
+			}
 		}
 	}
 

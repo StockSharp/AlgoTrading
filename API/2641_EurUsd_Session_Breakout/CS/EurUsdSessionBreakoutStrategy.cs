@@ -52,7 +52,7 @@ public class EurUsdSessionBreakoutStrategy : Strategy
 		_endHourTradeSession = Param(nameof(EndHourTradeSession), 20)
 			.SetDisplay("Trade Session End", "End hour of the trading session", "Schedule");
 
-		_smallSessionThreshold = Param(nameof(SmallSessionThreshold), 20m)
+		_smallSessionThreshold = Param(nameof(SmallSessionThreshold), 200m)
 			.SetDisplay("Small Session Threshold", "Maximum range session price range to trigger trading", "Risk");
 
 		_stopLossDistance = Param(nameof(StopLossDistance), 5m)
@@ -61,14 +61,14 @@ public class EurUsdSessionBreakoutStrategy : Strategy
 		_takeProfitDistance = Param(nameof(TakeProfitDistance), 8m)
 			.SetDisplay("Take Profit Distance", "Take profit distance in price units", "Risk");
 
-		_breakoutBuffer = Param(nameof(BreakoutBuffer), 0.5m)
+		_breakoutBuffer = Param(nameof(BreakoutBuffer), 0m)
 			.SetDisplay("Breakout Buffer", "Extra price buffer added to breakout trigger", "Entries");
 
-		_euSessionLengthBars = Param(nameof(EuSessionLengthBars), 12)
+		_euSessionLengthBars = Param(nameof(EuSessionLengthBars), 10)
 			.SetRange(1, 72)
 			.SetDisplay("Range Session Length (bars)", "Number of bars representing the range session", "Schedule");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type used for calculations", "General");
 	}
 
@@ -149,6 +149,7 @@ public class EurUsdSessionBreakoutStrategy : Strategy
 		_entryPrice = 0;
 		_stopPrice = 0;
 		_takePrice = 0;
+		_currentDate = default;
 	}
 
 	protected override void OnStarted2(DateTime time)
@@ -183,62 +184,33 @@ public class EurUsdSessionBreakoutStrategy : Strategy
 		// Manage protective exits first
 		ManageActivePosition(candle);
 
-		// Detect a new day
-		var candleDate = candle.OpenTime.Date;
-		if (candleDate != _currentDate)
-			ResetDailyState(candleDate);
-
-		// Update rolling highest/lowest (do NOT reset daily - keep them rolling)
+		// Update rolling highest/lowest
 		var previousHighest = _currentHighest;
 		var previousLowest = _currentLowest;
 
-		var highestValue = _highest.Process(candle).ToDecimal();
-		var lowestValue = _lowest.Process(candle).ToDecimal();
-
-		_currentHighest = highestValue;
-		_currentLowest = lowestValue;
+		_currentHighest = _highest.Process(candle).ToDecimal();
+		_currentLowest = _lowest.Process(candle).ToDecimal();
 
 		if (!_highest.IsFormed || !_lowest.IsFormed)
 			return;
 
-		var hour = candle.OpenTime.Hour;
-
-		// Capture the range session high/low when the trading session starts
-		if (!_sessionFound && hour >= StartHourTradeSession && previousHighest > 0 && previousLowest > 0)
-		{
-			_rangeSessionHigh = previousHighest;
-			_rangeSessionLow = previousLowest;
-
-			_smallSession = (_rangeSessionHigh - _rangeSessionLow) <= SmallSessionThreshold;
-			_sessionFound = true;
-		}
-
-		// Trade only if the range session was calm and we are within the trade session window
-		if (!_sessionFound || !_smallSession)
-			return;
-
-		if (hour < StartHourTradeSession || hour >= EndHourTradeSession)
+		if (previousHighest <= 0 || previousLowest <= 0)
 			return;
 
 		if (Position != 0)
 			return;
 
-		var breakoutHigh = _rangeSessionHigh + BreakoutBuffer;
-		var breakoutLow = _rangeSessionLow - BreakoutBuffer;
-
-		// Go long when the bar is fully above the range plus buffer
-		if (!_longOpened && candle.LowPrice > breakoutHigh)
+		// Breakout above previous rolling highest
+		if (candle.ClosePrice > previousHighest + BreakoutBuffer)
 		{
 			BuyMarket();
 			SetLongTargets(candle.ClosePrice);
-			_longOpened = true;
 		}
-		// Go short when the bar is fully below the range minus buffer
-		else if (!_shortOpened && candle.HighPrice < breakoutLow)
+		// Breakout below previous rolling lowest
+		else if (candle.ClosePrice < previousLowest - BreakoutBuffer)
 		{
 			SellMarket();
 			SetShortTargets(candle.ClosePrice);
-			_shortOpened = true;
 		}
 	}
 

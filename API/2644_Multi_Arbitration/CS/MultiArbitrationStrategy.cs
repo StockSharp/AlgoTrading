@@ -79,7 +79,7 @@ public class MultiArbitrationStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Max Open Positions", "Maximum simultaneous positions allowed before closing everything.", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type used to synchronize trading decisions.", "Data");
 	}
 
@@ -103,10 +103,6 @@ public class MultiArbitrationStrategy : Strategy
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		StartProtection(null, null);
-
-		Volume = TradeVolume;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
@@ -157,13 +153,7 @@ public class MultiArbitrationStrategy : Strategy
 
 	private void OpenLong(ICandleMessage candle)
 	{
-		var volumeToBuy = Volume;
-
-		if (Position < 0)
-		{
-			volumeToBuy += Math.Abs(Position);
-		}
-		else if (Position > 0)
+		if (Position > 0)
 		{
 			// Already holding a long position, so only refresh the entry reference.
 			_entryPrice = candle.ClosePrice;
@@ -171,20 +161,14 @@ public class MultiArbitrationStrategy : Strategy
 			return;
 		}
 
-		BuyMarket(volumeToBuy);
+		BuyMarket();
 		_entryPrice = candle.ClosePrice;
 		_currentSide = Sides.Buy;
 	}
 
 	private void OpenShort(ICandleMessage candle)
 	{
-		var volumeToSell = Volume;
-
-		if (Position > 0)
-		{
-			volumeToSell += Position;
-		}
-		else if (Position < 0)
+		if (Position < 0)
 		{
 			// Already holding a short position, so only refresh the entry reference.
 			_entryPrice = candle.ClosePrice;
@@ -192,7 +176,7 @@ public class MultiArbitrationStrategy : Strategy
 			return;
 		}
 
-		SellMarket(volumeToSell);
+		SellMarket();
 		_entryPrice = candle.ClosePrice;
 		_currentSide = Sides.Sell;
 	}
@@ -204,11 +188,11 @@ public class MultiArbitrationStrategy : Strategy
 
 		if (Position > 0)
 		{
-			SellMarket(Position);
+			SellMarket();
 		}
 		else if (Position < 0)
 		{
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
 		}
 
 		_currentSide = null;

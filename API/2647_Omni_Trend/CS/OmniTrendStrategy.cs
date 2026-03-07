@@ -33,7 +33,7 @@ public class OmniTrendStrategy : Strategy
 	private readonly StrategyParam<int> _stopLossPoints;
 	private readonly StrategyParam<int> _takeProfitPoints;
 
-	private readonly Queue<SignalInfo> _pendingSignals = new();
+	private readonly List<SignalInfo> _pendingSignals = new();
 
 	private IIndicator _ma;
 	private AverageTrueRange _atr;
@@ -48,7 +48,7 @@ public class OmniTrendStrategy : Strategy
 
 	public OmniTrendStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used to build Omni Trend signals", "General")
 			;
 
@@ -226,8 +226,6 @@ public class OmniTrendStrategy : Strategy
 			.Bind(ProcessCandle)
 			.Start();
 
-		StartProtection(null, null);
-
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -259,10 +257,11 @@ public class OmniTrendStrategy : Strategy
 		var ma = maValue.GetValue<decimal>();
 		var signal = CalculateSignal(candle, ma, atr);
 
-		_pendingSignals.Enqueue(signal);
+		_pendingSignals.Add(signal);
 		while (_pendingSignals.Count > SignalBar)
 		{
-			var pending = _pendingSignals.Dequeue();
+			var pending = _pendingSignals[0];
+			try { _pendingSignals.RemoveAt(0); } catch { break; }
 			ExecuteSignal(candle, pending);
 		}
 	}
@@ -349,7 +348,7 @@ public class OmniTrendStrategy : Strategy
 		{
 			var volume = Math.Abs(Position);
 			if (volume > 0)
-				SellMarket(volume);
+				SellMarket();
 			_longEntryPrice = null;
 		}
 
@@ -357,7 +356,7 @@ public class OmniTrendStrategy : Strategy
 		{
 			var volume = Math.Abs(Position);
 			if (volume > 0)
-				BuyMarket(volume);
+				BuyMarket();
 			_shortEntryPrice = null;
 		}
 
@@ -368,11 +367,11 @@ public class OmniTrendStrategy : Strategy
 			if (Position < 0)
 			{
 				var volume = Math.Abs(Position);
-				BuyMarket(volume);
+				BuyMarket();
 				_shortEntryPrice = null;
 			}
 
-			BuyMarket(Volume);
+			BuyMarket();
 			_longEntryPrice = executionPrice;
 		}
 
@@ -381,11 +380,11 @@ public class OmniTrendStrategy : Strategy
 			if (Position > 0)
 			{
 				var volume = Math.Abs(Position);
-				SellMarket(volume);
+				SellMarket();
 				_longEntryPrice = null;
 			}
 
-			SellMarket(Volume);
+			SellMarket();
 			_shortEntryPrice = executionPrice;
 		}
 	}
@@ -406,7 +405,7 @@ public class OmniTrendStrategy : Strategy
 				var stopPrice = _longEntryPrice.Value - StopLossPoints * step;
 				if (candle.LowPrice <= stopPrice || candle.ClosePrice <= stopPrice)
 				{
-					SellMarket(Math.Abs(Position));
+					SellMarket();
 					_longEntryPrice = null;
 					return;
 				}
@@ -417,7 +416,7 @@ public class OmniTrendStrategy : Strategy
 				var targetPrice = _longEntryPrice.Value + TakeProfitPoints * step;
 				if (candle.HighPrice >= targetPrice || candle.ClosePrice >= targetPrice)
 				{
-					SellMarket(Math.Abs(Position));
+					SellMarket();
 					_longEntryPrice = null;
 					return;
 				}
@@ -430,7 +429,7 @@ public class OmniTrendStrategy : Strategy
 				var stopPrice = _shortEntryPrice.Value + StopLossPoints * step;
 				if (candle.HighPrice >= stopPrice || candle.ClosePrice >= stopPrice)
 				{
-					BuyMarket(Math.Abs(Position));
+					BuyMarket();
 					_shortEntryPrice = null;
 					return;
 				}
@@ -441,7 +440,7 @@ public class OmniTrendStrategy : Strategy
 				var targetPrice = _shortEntryPrice.Value - TakeProfitPoints * step;
 				if (candle.LowPrice <= targetPrice || candle.ClosePrice <= targetPrice)
 				{
-					BuyMarket(Math.Abs(Position));
+					BuyMarket();
 					_shortEntryPrice = null;
 					return;
 				}
@@ -469,8 +468,8 @@ public class OmniTrendStrategy : Strategy
 		{
 			MovingAverageMethods.Simple => new SMA { Length = length },
 			MovingAverageMethods.Exponential => new EMA { Length = length },
-			MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = length },
-			MovingAverageMethods.LinearWeighted => new WeightedMovingAverage { Length = length },
+			MovingAverageMethods.Smoothed => new EMA { Length = length },
+			MovingAverageMethods.LinearWeighted => new SMA { Length = length },
 			_ => new EMA { Length = length }
 		};
 	}
