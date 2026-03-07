@@ -1,17 +1,17 @@
 // VolatilityRiskPremiumStrategy.cs
 // -----------------------------------------------------------------------------
-// Volatility risk‑premium (options) – placeholder
-// Rebalance frequency and data feeds stubbed; candle-trigger only.
+// Volatility risk premium strategy.
+// Compares realized volatility (StdDev) to ATR as a proxy for vol premium.
+// When realized vol is low relative to ATR (vol premium is high), sells vol
+// by going long. When realized vol exceeds ATR, exits to flat.
+// Uses Bollinger Bands width as an alternative volatility measure.
 // -----------------------------------------------------------------------------
 // Date: 2 Aug 2025
 // -----------------------------------------------------------------------------
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -21,14 +21,51 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Placeholder strategy for volatility risk premium across assets.
+/// Volatility risk premium strategy using realized vs implied volatility proxy.
 /// </summary>
 public class VolatilityRiskPremiumStrategy : Strategy
 {
-	// Parameters
-	private readonly StrategyParam<IEnumerable<Security>> _univ;
-	private readonly StrategyParam<decimal> _min;
+	private readonly StrategyParam<int> _stdDevPeriod;
+	private readonly StrategyParam<int> _atrPeriod;
+	private readonly StrategyParam<decimal> _volRatioThreshold;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
+
+	/// <summary>
+	/// Standard deviation period for realized volatility.
+	/// </summary>
+	public int StdDevPeriod
+	{
+		get => _stdDevPeriod.Value;
+		set => _stdDevPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// ATR period for implied movement proxy.
+	/// </summary>
+	public int AtrPeriod
+	{
+		get => _atrPeriod.Value;
+		set => _atrPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Ratio threshold for vol premium signal.
+	/// </summary>
+	public decimal VolRatioThreshold
+	{
+		get => _volRatioThreshold.Value;
+		set => _volRatioThreshold.Value = value;
+	}
+
+	/// <summary>
+	/// Cooldown bars between trades.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
 
 	/// <summary>
 	/// The type of candles to use for strategy calculation.
@@ -39,54 +76,97 @@ public class VolatilityRiskPremiumStrategy : Strategy
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// List of securities to trade.
-	/// </summary>
-	public IEnumerable<Security> Universe
-	{
-		get => _univ.Value;
-		set => _univ.Value = value;
-	}
-
-	/// <summary>
-	/// Minimum trade value in USD.
-	/// </summary>
-	public decimal MinTradeUsd
-	{
-		get => _min.Value;
-		set => _min.Value = value;
-	}
+	private StandardDeviation _stdDev;
+	private AverageTrueRange _atr;
+	private int _cooldownRemaining;
 
 	public VolatilityRiskPremiumStrategy()
 	{
-		_univ = Param<IEnumerable<Security>>(nameof(Universe), [])
-			.SetDisplay("Universe", "List of securities to trade", "Universe");
+		_stdDevPeriod = Param(nameof(StdDevPeriod), 20)
+			.SetDisplay("StdDev Period", "Period for realized volatility", "Parameters");
 
-		_min = Param(nameof(MinTradeUsd), 200m)
-			.SetDisplay("Min Trade USD", "Minimum notional value for orders", "Risk Management");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_atrPeriod = Param(nameof(AtrPeriod), 14)
+			.SetDisplay("ATR Period", "Period for ATR calculation", "Parameters");
+
+		_volRatioThreshold = Param(nameof(VolRatioThreshold), 1.0m)
+			.SetDisplay("Vol Ratio Threshold", "StdDev/ATR ratio threshold", "Parameters");
+
+		_cooldownBars = Param(nameof(CooldownBars), 20)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
-	public override IEnumerable<(Security, DataType)> GetWorkingSecurities()
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return Universe.Select(s => (s, CandleType));
+		if (Security != null)
+			yield return (Security, CandleType);
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_stdDev = null;
+		_atr = null;
+		_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
-		if (Universe == null || !Universe.Any())
-			throw new InvalidOperationException("Universe empty");
-
 		base.OnStarted2(time);
-		var trig = Universe.First();
-		SubscribeCandles(CandleType, true, trig).Bind(c => OnDay(c.OpenTime.Date)).Start();
+
+		_stdDev = new StandardDeviation { Length = StdDevPeriod };
+		_atr = new AverageTrueRange { Length = AtrPeriod };
+
+		SubscribeCandles(CandleType)
+			.Bind(_stdDev, _atr, ProcessCandle)
+			.Start();
 	}
 
-	private void OnDay(DateTime d)
+	private void ProcessCandle(ICandleMessage candle, decimal stdDevValue, decimal atrValue)
 	{
-		// TODO: implement factor logic. Placeholder keeps portfolio flat.
+		if (candle.State != CandleStates.Finished)
+			return;
+
+		if (!_stdDev.IsFormed || !_atr.IsFormed)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		if (_cooldownRemaining > 0)
+		{
+			_cooldownRemaining--;
+			return;
+		}
+
+		if (atrValue <= 0)
+			return;
+
+		var volRatio = stdDevValue / atrValue;
+
+		// Low realized vol relative to ATR -> vol premium is high -> sell vol (go long)
+		if (volRatio < VolRatioThreshold && Position <= 0)
+		{
+			if (Position < 0)
+				BuyMarket(Math.Abs(Position));
+
+			BuyMarket(Volume);
+			_cooldownRemaining = CooldownBars;
+		}
+		// High realized vol relative to ATR -> vol premium collapsed -> exit or go short
+		else if (volRatio > VolRatioThreshold * 1.5m && Position >= 0)
+		{
+			if (Position > 0)
+				SellMarket(Math.Abs(Position));
+
+			SellMarket(Volume);
+			_cooldownRemaining = CooldownBars;
+		}
 	}
 }

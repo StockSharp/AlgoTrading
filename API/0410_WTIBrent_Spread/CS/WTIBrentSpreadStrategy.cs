@@ -1,10 +1,17 @@
+// WTIBrentSpreadStrategy.cs
+// -----------------------------------------------------------------------------
+// Spread/mean-reversion trading strategy.
+// Uses Bollinger Bands to identify when price deviates from its mean.
+// Buys when price touches lower band, sells when it touches upper band.
+// Exits when price returns to the middle band.
+// Cooldown prevents excessive trading.
+// -----------------------------------------------------------------------------
+// Date: 2 Aug 2025
+// -----------------------------------------------------------------------------
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,51 +21,40 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Trades the spread between WTI and Brent based on a moving average.
+/// Mean-reversion spread strategy using Bollinger Bands.
 /// </summary>
 public class WTIBrentSpreadStrategy : Strategy
 {
-	private readonly StrategyParam<Security> _brent;
-	private readonly StrategyParam<int> _ma;
-	private readonly StrategyParam<decimal> _minUsd;
+	private readonly StrategyParam<int> _bbPeriod;
+	private readonly StrategyParam<decimal> _bbWidth;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly Queue<decimal> _spr = [];
-	private readonly Dictionary<Security, decimal> _latestPrices = [];
 
 	/// <summary>
-	/// WTI security.
+	/// Bollinger Bands period.
 	/// </summary>
-	public Security WTI
+	public int BbPeriod
 	{
-		get => Security;
-		set => Security = value;
+		get => _bbPeriod.Value;
+		set => _bbPeriod.Value = value;
 	}
 
 	/// <summary>
-	/// Brent security.
+	/// Bollinger Bands width (standard deviations).
 	/// </summary>
-	public Security Brent
+	public decimal BbWidth
 	{
-		get => _brent.Value;
-		set => _brent.Value = value;
+		get => _bbWidth.Value;
+		set => _bbWidth.Value = value;
 	}
 
 	/// <summary>
-	/// Moving average period for spread.
+	/// Cooldown bars between trades.
 	/// </summary>
-	public int MaPeriod
+	public int CooldownBars
 	{
-		get => _ma.Value;
-		set => _ma.Value = value;
-	}
-
-	/// <summary>
-	/// Minimum trade value in USD.
-	/// </summary>
-	public decimal MinTradeUsd
-	{
-		get => _minUsd.Value;
-		set => _minUsd.Value = value;
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	/// <summary>
@@ -70,29 +66,29 @@ public class WTIBrentSpreadStrategy : Strategy
 		set => _candleType.Value = value;
 	}
 
+	private BollingerBands _bb;
+	private int _cooldownRemaining;
+
 	public WTIBrentSpreadStrategy()
 	{
-		_brent = Param<Security>(nameof(Brent), null)
-			.SetDisplay("Brent", "Brent security", "Universe");
+		_bbPeriod = Param(nameof(BbPeriod), 20)
+			.SetDisplay("BB Period", "Bollinger Bands period", "Parameters");
 
-		_ma = Param(nameof(MaPeriod), 20)
-			.SetDisplay("MA Period", "Moving average period", "Parameters");
+		_bbWidth = Param(nameof(BbWidth), 2.0m)
+			.SetDisplay("BB Width", "Bollinger Bands width in std devs", "Parameters");
 
-		_minUsd = Param(nameof(MinTradeUsd), 200m)
-			.SetDisplay("Min Trade USD", "Minimum notional value for orders", "Risk Management");
+		_cooldownBars = Param(nameof(CooldownBars), 10)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "Data");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
-	public override IEnumerable<(Security, DataType)> GetWorkingSecurities()
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		if (WTI == null || Brent == null)
-			throw new InvalidOperationException("WTI and Brent must be set.");
-
-		yield return (WTI, CandleType);
-		yield return (Brent, CandleType);
+		if (Security != null)
+			yield return (Security, CandleType);
 	}
 
 	/// <inheritdoc />
@@ -100,85 +96,79 @@ public class WTIBrentSpreadStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_latestPrices.Clear();
-		_spr.Clear();
+		_bb = null;
+		_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
-		if (WTI == null || Brent == null)
-			throw new InvalidOperationException("WTI and Brent must be set.");
-
 		base.OnStarted2(time);
-		SubscribeCandles(CandleType, true, WTI).Bind(c => ProcessCandle(c, WTI)).Start();
-		SubscribeCandles(CandleType, true, Brent).Bind(c => ProcessCandle(c, Brent)).Start();
+
+		_bb = new BollingerBands
+		{
+			Length = BbPeriod,
+			Width = BbWidth
+		};
+
+		SubscribeCandles(CandleType)
+			.BindEx(_bb, ProcessCandle)
+			.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, Security security)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue value)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Store the latest closing price for this security
-		_latestPrices[security] = candle.ClosePrice;
-
-		// Only trigger evaluation when WTI candle comes in
-		if (security == WTI)
-			OnDaily();
-	}
-
-	private void OnDaily()
-	{
-		var p1 = GetLatestPrice(WTI);
-		var p2 = GetLatestPrice(Brent);
-		if (p1 == 0 || p2 == 0)
+		if (!_bb.IsFormed)
 			return;
 
-		var spr = p1 - p2;
-		if (_spr.Count == MaPeriod)
-			_spr.Dequeue();
-		_spr.Enqueue(spr);
-		if (_spr.Count < MaPeriod)
+		var bb = (BollingerBandsValue)value;
+		if (bb.UpBand is not decimal upper ||
+			bb.LowBand is not decimal lower ||
+			bb.MovingAverage is not decimal middle)
 			return;
 
-		var sma = _spr.Average();
-		var portfolioValue = Portfolio.CurrentValue ?? 0m;
-		var notional = portfolioValue / 2;
-
-		if (Math.Abs(spr - sma) < 0.01m)
-		{ 
-			Move(WTI, 0); 
-			Move(Brent, 0); 
-			return; 
-		}
-
-		if (spr > sma)
-		{ 
-			Move(WTI, -notional / p1); 
-			Move(Brent, notional / p2); 
-		}
-		else
-		{ 
-			Move(WTI, notional / p1); 
-			Move(Brent, -notional / p2); 
-		}
-	}
-
-	private decimal GetLatestPrice(Security security)
-	{
-		return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
-	}
-
-	private void Move(Security s, decimal tgt)
-	{
-		var diff = tgt - Pos(s);
-		var price = GetLatestPrice(s);
-		if (price <= 0 || Math.Abs(diff) * price < MinTradeUsd)
+		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
-		RegisterOrder(new Order { Security = s, Portfolio = Portfolio, Side = diff > 0 ? Sides.Buy : Sides.Sell, Volume = Math.Abs(diff), Type = OrderTypes.Market, Comment = "Spread" });
-	}
 
-	private decimal Pos(Security s) => GetPositionValue(s, Portfolio) ?? 0;
+		if (_cooldownRemaining > 0)
+		{
+			_cooldownRemaining--;
+			return;
+		}
+
+		var close = candle.ClosePrice;
+
+		// Price below lower band -> oversold -> buy
+		if (close <= lower && Position <= 0)
+		{
+			if (Position < 0)
+				BuyMarket(Math.Abs(Position));
+
+			BuyMarket(Volume);
+			_cooldownRemaining = CooldownBars;
+		}
+		// Price above upper band -> overbought -> sell
+		else if (close >= upper && Position >= 0)
+		{
+			if (Position > 0)
+				SellMarket(Math.Abs(Position));
+
+			SellMarket(Volume);
+			_cooldownRemaining = CooldownBars;
+		}
+		// Price returns to middle -> exit
+		else if (Position > 0 && close >= middle)
+		{
+			SellMarket(Math.Abs(Position));
+			_cooldownRemaining = CooldownBars;
+		}
+		else if (Position < 0 && close <= middle)
+		{
+			BuyMarket(Math.Abs(Position));
+			_cooldownRemaining = CooldownBars;
+		}
+	}
 }

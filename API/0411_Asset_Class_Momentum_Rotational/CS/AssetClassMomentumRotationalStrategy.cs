@@ -1,10 +1,16 @@
+// AssetClassMomentumRotationalStrategy.cs
+// -----------------------------------------------------------------------------
+// Momentum rotation strategy using rate of change indicator.
+// Enters long when ROC is positive and above threshold.
+// Exits when ROC turns negative. Uses SMA filter for trend confirmation.
+// Cooldown prevents excessive trading.
+// -----------------------------------------------------------------------------
+// Date: 2 Aug 2025
+// -----------------------------------------------------------------------------
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,51 +20,40 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Momentum rotation strategy across asset classes.
-/// Calculates rate of change and rebalances on the first trading day of each month.
+/// Momentum rotation strategy using ROC and SMA trend filter.
 /// </summary>
 public class AssetClassMomentumRotationalStrategy : Strategy
 {
-	private readonly StrategyParam<IEnumerable<Security>> _universe;
-	private readonly StrategyParam<int> _rocLen;
-	private readonly StrategyParam<int> _topN;
-	private readonly StrategyParam<decimal> _minUsd;
+	private readonly StrategyParam<int> _rocLength;
+	private readonly StrategyParam<int> _smaPeriod;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
-
-	/// <summary>
-	/// Trading universe.
-	/// </summary>
-	public IEnumerable<Security> Universe
-	{
-		get => _universe.Value;
-		set => _universe.Value = value;
-	}
 
 	/// <summary>
 	/// Rate of change lookback length.
 	/// </summary>
 	public int RocLength
 	{
-		get => _rocLen.Value;
-		set => _rocLen.Value = value;
+		get => _rocLength.Value;
+		set => _rocLength.Value = value;
 	}
 
 	/// <summary>
-	/// Number of top assets to hold.
+	/// SMA period for trend filter.
 	/// </summary>
-	public int TopN
+	public int SmaPeriod
 	{
-		get => _topN.Value;
-		set => _topN.Value = value;
+		get => _smaPeriod.Value;
+		set => _smaPeriod.Value = value;
 	}
 
 	/// <summary>
-	/// Minimum trade value in USD.
+	/// Cooldown bars between trades.
 	/// </summary>
-	public decimal MinTradeUsd
+	public int CooldownBars
 	{
-		get => _minUsd.Value;
-		set => _minUsd.Value = value;
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	/// <summary>
@@ -70,135 +65,91 @@ public class AssetClassMomentumRotationalStrategy : Strategy
 		set => _candleType.Value = value;
 	}
 
-	private readonly Dictionary<Security, RateOfChange> _roc = [];
-	private readonly Dictionary<Security, decimal> _latestPrices = [];
-	private readonly HashSet<Security> _held = [];
-	private DateTime _lastDay = DateTime.MinValue;
+	private RateOfChange _roc;
+	private SimpleMovingAverage _sma;
+	private int _cooldownRemaining;
 
-	/// <summary>
-	/// Initializes a new instance of <see cref="AssetClassMomentumRotationalStrategy"/>.
-	/// </summary>
 	public AssetClassMomentumRotationalStrategy()
 	{
-		_universe = Param<IEnumerable<Security>>(nameof(Universe), [])
-			.SetDisplay("Universe", "Securities to trade", "General");
+		_rocLength = Param(nameof(RocLength), 14)
+			.SetDisplay("ROC Length", "Rate of change lookback", "Parameters");
 
-		_rocLen = Param(nameof(RocLength), 252)
-			.SetGreaterThanZero()
-			.SetDisplay("ROC Length", "Rate of change lookback", "General");
+		_smaPeriod = Param(nameof(SmaPeriod), 30)
+			.SetDisplay("SMA Period", "SMA period for trend filter", "Parameters");
 
-		_topN = Param(nameof(TopN), 3)
-			.SetGreaterThanZero()
-			.SetDisplay("Top N", "Number of assets to hold", "General");
+		_cooldownBars = Param(nameof(CooldownBars), 20)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "Risk");
 
-		_minUsd = Param(nameof(MinTradeUsd), 50m)
-			.SetGreaterThanZero()
-			.SetDisplay("Min Trade USD", "Minimum trade value", "General");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type used for momentum", "General");
 	}
 
 	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities() =>
-		Universe.Select(s => (s, CandleType));
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		if (Security != null)
+			yield return (Security, CandleType);
+	}
 
+	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
 
-		_roc.Clear();
-		_latestPrices.Clear();
-		_held.Clear();
-		_lastDay = default;
+		_roc = null;
+		_sma = null;
+		_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
-		if (Universe == null || !Universe.Any())
-			throw new InvalidOperationException("Universe cannot be empty.");
-
 		base.OnStarted2(time);
-		foreach (var (sec, dt) in GetWorkingSecurities())
-		{
-			var win = new RateOfChange { Length = RocLength };
-			_roc[sec] = win;
 
-			SubscribeCandles(dt, true, sec)
-				.Bind(c => ProcessCandle(c, sec))
-				.Start();
-		}
+		_roc = new RateOfChange { Length = RocLength };
+		_sma = new SimpleMovingAverage { Length = SmaPeriod };
+
+		SubscribeCandles(CandleType)
+			.Bind(_roc, _sma, ProcessCandle)
+			.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, Security security)
+	private void ProcessCandle(ICandleMessage candle, decimal rocValue, decimal smaValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Store the latest closing price for this security
-		_latestPrices[security] = candle.ClosePrice;
-
-		// Process the candle through the indicator
-		var win = _roc[security];
-		win.Process(candle);
-
-		var d = candle.OpenTime.Date;
-		if (d == _lastDay)
-			return;
-		_lastDay = d;
-		
-		if (d.Day == 1)
-			TryRebalance();
-	}
-
-	private void TryRebalance()
-	{
-		var ready = _roc.Where(kv => kv.Value.IsFormed)
-						.ToDictionary(kv => kv.Key, kv => kv.Value.GetCurrentValue<decimal>());
-		if (ready.Count < TopN)
+		if (!_roc.IsFormed || !_sma.IsFormed)
 			return;
 
-		var selected = ready.OrderByDescending(kv => kv.Value).Take(TopN).Select(kv => kv.Key).ToHashSet();
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
 
-		foreach (var sec in _held.Where(h => !selected.Contains(h)).ToList())
-			Move(sec, 0);
-
-		var portfolioValue = Portfolio.CurrentValue ?? 0m;
-		decimal capEach = portfolioValue / TopN;
-		foreach (var sec in selected)
+		if (_cooldownRemaining > 0)
 		{
-			var price = GetLatestPrice(sec);
-			if (price > 0)
-				Move(sec, capEach / price);
+			_cooldownRemaining--;
+			return;
 		}
 
-		_held.Clear();
-		_held.UnionWith(selected);
-	}
+		var close = candle.ClosePrice;
 
-	private decimal GetLatestPrice(Security security)
-	{
-		return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
-	}
-
-	private void Move(Security s, decimal tgt)
-	{
-		var diff = tgt - PositionBy(s);
-		var price = GetLatestPrice(s);
-		if (price <= 0 || Math.Abs(diff) * price < MinTradeUsd)
-			return;
-		RegisterOrder(new Order
+		// Strong positive momentum + price above SMA -> long
+		if (rocValue > 0 && close > smaValue && Position <= 0)
 		{
-			Security = s,
-			Portfolio = Portfolio,
-			Side = diff > 0 ? Sides.Buy : Sides.Sell,
-			Volume = Math.Abs(diff),
-			Type = OrderTypes.Market,
-			Comment = "ACMomentum"
-		});
-	}
+			if (Position < 0)
+				BuyMarket(Math.Abs(Position));
 
-	private decimal PositionBy(Security s) => GetPositionValue(s, Portfolio) ?? 0;
+			BuyMarket(Volume);
+			_cooldownRemaining = CooldownBars;
+		}
+		// Negative momentum or price below SMA -> exit/short
+		else if (rocValue < 0 && close < smaValue && Position >= 0)
+		{
+			if (Position > 0)
+				SellMarket(Math.Abs(Position));
+
+			SellMarket(Volume);
+			_cooldownRemaining = CooldownBars;
+		}
+	}
 }
