@@ -125,14 +125,23 @@ public class HybridScalpingBotStrategy : Strategy
 	    _useVolumeFilter = Param(nameof(UseVolumeFilter), false)
 	        .SetDisplay("Use Volume Filter", "Require high volume", "General");
 
-	    _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+	    _candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 	        .SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	/// <inheritdoc />
+	protected override void OnReseted()
 	{
-	    return [(Security, CandleType)];
+		base.OnReseted();
+		_entryPrice = 0;
+		_highestPrice = 0;
+		_lowestPrice = 0;
+		_tradesToday = 0;
+		_lastDate = default;
 	}
 
 	/// <inheritdoc />
@@ -140,11 +149,11 @@ public class HybridScalpingBotStrategy : Strategy
 	{
 	    base.OnStarted2(time);
 
-	    var rsi = new RSI { Length = 14 };
-	    var ema9 = new EMA { Length = 9 };
-	    var ema21 = new EMA { Length = 21 };
-	    var ema50 = new EMA { Length = 50 };
-	    var volumeSma = new SMA { Length = 10 };
+	    var rsi = new RelativeStrengthIndex { Length = 14 };
+	    var ema9 = new ExponentialMovingAverage { Length = 9 };
+	    var ema21 = new ExponentialMovingAverage { Length = 21 };
+	    var ema50 = new ExponentialMovingAverage { Length = 50 };
+	    var volumeSma = new SimpleMovingAverage { Length = 10 };
 
 	    var subscription = SubscribeCandles(CandleType);
 	    subscription

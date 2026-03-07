@@ -36,7 +36,7 @@ public class VwapMeanMagnetV9SimpleAlertStrategy : Strategy
 		_rsiOverbought = Param(nameof(RsiOverbought), 65).SetDisplay("RSI Overbought", "RSI Overbought", "General");
 		_rsiOversold = Param(nameof(RsiOversold), 35).SetDisplay("RSI Oversold", "RSI Oversold", "General");
 		_stopLossPercent = Param(nameof(StopLossPercent), 0.5m).SetDisplay("Stop Loss %", "Stop Loss %", "General");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Candle Type", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame()).SetDisplay("Candle Type", "Candle Type", "General");
 	}
 
 	/// <inheritdoc />
@@ -49,7 +49,7 @@ public class VwapMeanMagnetV9SimpleAlertStrategy : Strategy
 		base.OnStarted2(time);
 
 		var vwap = new VolumeWeightedMovingAverage { Length = VwapLength };
-		var rsi = new RSI { Length = RsiLength };
+		var rsi = new RelativeStrengthIndex { Length = RsiLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(vwap, rsi, ProcessCandle).Start();

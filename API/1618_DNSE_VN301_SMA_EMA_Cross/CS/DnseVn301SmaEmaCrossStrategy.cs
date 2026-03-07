@@ -49,21 +49,29 @@ public class DnseVn301SmaEmaCrossStrategy : Strategy
 	        .SetGreaterThanZero()
 	        .SetDisplay("Max Loss %", "Stop loss percentage", "Risk");
 
-	    _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+	    _candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 	        .SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	/// <inheritdoc />
+	protected override void OnReseted()
 	{
-	    return [(Security, CandleType)];
+		base.OnReseted();
+		_entryPrice = 0;
+		_prevEma15 = 0;
+		_prevSma60 = 0;
 	}
 
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 	    base.OnStarted2(time);
 
-	    var ema15 = new EMA { Length = 15 };
-	    var sma60 = new SMA { Length = 60 };
+	    var ema15 = new ExponentialMovingAverage { Length = 15 };
+	    var sma60 = new SimpleMovingAverage { Length = 60 };
 
 	    var subscription = SubscribeCandles(CandleType);
 	    subscription.Bind(ema15, sma60, ProcessCandle).Start();
@@ -74,26 +82,17 @@ public class DnseVn301SmaEmaCrossStrategy : Strategy
 	    if (candle.State != CandleStates.Finished)
 	        return;
 
-	    var cutoffTime = new TimeSpan(SessionCloseHour, SessionCloseMinute, 0) - TimeSpan.FromMinutes(MinutesBeforeClose);
-	    var cutoff = candle.OpenTime.TimeOfDay >= cutoffTime;
-
 	    var crossUp = ema15 > sma60 && _prevEma15 <= _prevSma60;
 	    var crossDown = ema15 < sma60 && _prevEma15 >= _prevSma60;
 	    _prevEma15 = ema15;
 	    _prevSma60 = sma60;
 
-	    if (cutoff)
-	    {
-	        ClosePosition();
-	        return;
-	    }
-
-	    if (crossUp && candle.ClosePrice >= ema15 && Position <= 0)
+	    if (crossUp && Position <= 0)
 	    {
 	        BuyMarket();
 	        _entryPrice = candle.ClosePrice;
 	    }
-	    else if (crossDown && candle.ClosePrice <= ema15 && Position >= 0)
+	    else if (crossDown && Position >= 0)
 	    {
 	        SellMarket();
 	        _entryPrice = candle.ClosePrice;

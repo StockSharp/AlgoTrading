@@ -11,11 +11,12 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// ATR-based trend reversal strategy simulating renko brick logic on regular candles.
+/// Volatility-based trend reversal strategy simulating renko brick logic on regular candles.
+/// Uses StandardDeviation for brick sizing with stop loss.
 /// </summary>
 public class RenkoTrendReversalStrategy : Strategy
 {
-	private readonly StrategyParam<int> _atrLength;
+	private readonly StrategyParam<int> _stdLength;
 	private readonly StrategyParam<decimal> _brickMultiplier;
 	private readonly StrategyParam<DataType> _candleType;
 
@@ -25,20 +26,20 @@ public class RenkoTrendReversalStrategy : Strategy
 	private bool _hasBrick;
 	private decimal _entryPrice;
 
-	public int AtrLength { get => _atrLength.Value; set => _atrLength.Value = value; }
+	public int StdLength { get => _stdLength.Value; set => _stdLength.Value = value; }
 	public decimal BrickMultiplier { get => _brickMultiplier.Value; set => _brickMultiplier.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public RenkoTrendReversalStrategy()
 	{
-		_atrLength = Param(nameof(AtrLength), 14)
+		_stdLength = Param(nameof(StdLength), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("ATR Length", "ATR period for brick size", "General");
+			.SetDisplay("StdDev Length", "StdDev period for brick size", "General");
 
-		_brickMultiplier = Param(nameof(BrickMultiplier), 1.5m)
-			.SetDisplay("Brick Multiplier", "Multiplier for ATR brick size", "General");
+		_brickMultiplier = Param(nameof(BrickMultiplier), 0.5m)
+			.SetDisplay("Brick Multiplier", "Multiplier for brick size", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle Type", "General");
 	}
 
@@ -52,6 +53,9 @@ public class RenkoTrendReversalStrategy : Strategy
 		base.OnReseted();
 		_hasBrick = false;
 		_entryPrice = 0;
+		_brickHigh = 0;
+		_brickLow = 0;
+		_isUpTrend = false;
 	}
 
 	/// <inheritdoc />
@@ -59,29 +63,29 @@ public class RenkoTrendReversalStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var atr = new AverageTrueRange { Length = AtrLength };
+		var stdDev = new StandardDeviation { Length = StdLength };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(atr, ProcessCandle).Start();
+		subscription.Bind(stdDev, ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, atr);
+			DrawIndicator(area, stdDev);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal atrValue)
+	private void ProcessCandle(ICandleMessage candle, decimal stdValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (atrValue <= 0)
+		if (stdValue <= 0)
 			return;
 
-		var brickSize = atrValue * BrickMultiplier;
+		var brickSize = stdValue * BrickMultiplier;
 
 		if (!_hasBrick)
 		{

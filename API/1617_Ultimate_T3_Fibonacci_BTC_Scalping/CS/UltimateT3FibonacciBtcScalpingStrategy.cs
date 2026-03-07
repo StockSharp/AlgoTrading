@@ -62,21 +62,29 @@ public class UltimateT3FibonacciBtcScalpingStrategy : Strategy
 	        .SetGreaterThanZero()
 	        .SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
 
-	    _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+	    _candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 	        .SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	/// <inheritdoc />
+	protected override void OnReseted()
 	{
-	    return [(Security, CandleType)];
+		base.OnReseted();
+		_entryPrice = 0;
+		_prevT3 = 0;
+		_prevT3Fibo = 0;
 	}
 
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 	    base.OnStarted2(time);
 
-	    var t3 = new EMA { Length = T3Length };
-	    var t3Fibo = new EMA { Length = T3FiboLength };
+	    var t3 = new ExponentialMovingAverage { Length = T3Length };
+	    var t3Fibo = new ExponentialMovingAverage { Length = T3FiboLength };
 
 	    var subscription = SubscribeCandles(CandleType);
 	    subscription.Bind(t3, t3Fibo, ProcessCandle).Start();

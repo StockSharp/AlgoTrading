@@ -37,7 +37,7 @@ public class UnmitigatedLevelsAccumulationStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("High Length", "Highest period for resistance", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle Type", "General");
 	}
 
