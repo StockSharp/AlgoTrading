@@ -1,12 +1,9 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
 
 using Ecng.Common;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
-using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
@@ -28,6 +25,7 @@ public class LorenzoSuperScalpStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
 	}
 
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
@@ -35,9 +33,39 @@ public class LorenzoSuperScalpStrategy : Strategy
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };
 		var bb = new BollingerBands { Length = BbLength, Width = 2m };
 
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(rsi, bb, ProcessCandle)
+			.BindEx(rsi, bb, (candle, rsiVal, bbVal) =>
+			{
+				if (candle.State != CandleStates.Finished)
+					return;
+
+				if (!rsiVal.IsFormed || !bbVal.IsFormed)
+					return;
+
+				var r = rsiVal.ToDecimal();
+
+				var bbTyped = (BollingerBandsValue)bbVal;
+				if (bbTyped.UpBand is not decimal upper || bbTyped.LowBand is not decimal lower)
+					return;
+
+				if (candle.OpenTime - lastSignal < cooldown)
+					return;
+
+				if (r < 45m && candle.ClosePrice <= lower && Position <= 0)
+				{
+					BuyMarket();
+					lastSignal = candle.OpenTime;
+				}
+				else if (r > 55m && candle.ClosePrice >= upper && Position >= 0)
+				{
+					SellMarket();
+					lastSignal = candle.OpenTime;
+				}
+			})
 			.Start();
 
 		var area = CreateChartArea();
@@ -46,54 +74,6 @@ public class LorenzoSuperScalpStrategy : Strategy
 			DrawCandles(area, subscription);
 			DrawIndicator(area, bb);
 			DrawOwnTrades(area);
-		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue rsiVal, IIndicatorValue bbVal)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!rsiVal.IsFinal || !rsiVal.IsFormed || !bbVal.IsFormed)
-			return;
-
-		var rsi = rsiVal.ToDecimal();
-
-		// Get BB bands
-		decimal upperBand = candle.ClosePrice * 1.01m;
-		decimal lowerBand = candle.ClosePrice * 0.99m;
-		var complexBb = bbVal as IComplexIndicatorValue;
-		if (complexBb != null)
-		{
-			var vals = complexBb.InnerValues.Select(v => v.Value.ToDecimal()).ToArray();
-			if (vals.Length >= 3)
-			{
-				upperBand = vals[0];
-				lowerBand = vals[2];
-			}
-		}
-
-		// Buy when RSI oversold and price near lower BB
-		if (rsi < 35m && candle.ClosePrice <= lowerBand && Position <= 0)
-		{
-			if (Position < 0) BuyMarket(Math.Abs(Position));
-			BuyMarket(Volume);
-		}
-		// Sell when RSI overbought and price near upper BB
-		else if (rsi > 65m && candle.ClosePrice >= upperBand && Position >= 0)
-		{
-			if (Position > 0) SellMarket(Math.Abs(Position));
-			SellMarket(Volume);
-		}
-		// Exit long when RSI > 60
-		else if (Position > 0 && rsi > 60m)
-		{
-			SellMarket(Math.Abs(Position));
-		}
-		// Exit short when RSI < 40
-		else if (Position < 0 && rsi < 40m)
-		{
-			BuyMarket(Math.Abs(Position));
 		}
 	}
 }
