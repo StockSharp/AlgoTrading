@@ -55,7 +55,7 @@ public class BollingerBandsSessionReversalStrategy : Strategy
 	/// </summary>
 	public BollingerBandsSessionReversalStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Primary candle series", "General");
 
 		_bollingerLength = Param(nameof(BollingerLength), 20)

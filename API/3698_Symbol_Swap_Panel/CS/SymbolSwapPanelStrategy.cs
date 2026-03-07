@@ -49,7 +49,7 @@ public class SymbolSwapPanelStrategy : Strategy
 	/// </summary>
 	public SymbolSwapPanelStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Candle series for monitoring and signals", "General");
 
 		_maPeriod = Param(nameof(MaPeriod), 20)
@@ -87,9 +87,6 @@ public class SymbolSwapPanelStrategy : Strategy
 	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
 	{
 		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormed)
 			return;
 
 		var price = candle.ClosePrice;

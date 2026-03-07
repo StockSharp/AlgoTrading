@@ -58,7 +58,7 @@ public class SymbolSwapStrategy : Strategy
 	/// </summary>
 	public SymbolSwapStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candle series for signals", "General");
 
 		_smaPeriod = Param(nameof(SmaPeriod), 20)
