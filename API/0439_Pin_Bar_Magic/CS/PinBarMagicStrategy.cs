@@ -1,83 +1,60 @@
 namespace StockSharp.Samples.Strategies;
 
 using System;
+using System.Collections.Generic;
 
 using Ecng.Common;
 
-using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 /// <summary>
-/// Pin Bar Magic Strategy
+/// Pin Bar Magic Strategy.
+/// Detects pin bar candlestick patterns at EMA/SMA levels in trending markets.
+/// Buys on bullish pin bars piercing moving averages in uptrend.
+/// Sells on bearish pin bars piercing moving averages in downtrend.
 /// </summary>
 public class PinBarMagicStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleTypeParam;
-	private readonly StrategyParam<decimal> _equityRisk;
-	private readonly StrategyParam<decimal> _atrMultiplier;
 	private readonly StrategyParam<int> _slowSmaLength;
 	private readonly StrategyParam<int> _mediumEmaLength;
 	private readonly StrategyParam<int> _fastEmaLength;
-	private readonly StrategyParam<int> _atrLength;
-	private readonly StrategyParam<int> _cancelEntryBars;
+	private readonly StrategyParam<int> _cooldownBars;
 
 	private SimpleMovingAverage _slowSma;
 	private ExponentialMovingAverage _mediumEma;
 	private ExponentialMovingAverage _fastEma;
-	private AverageTrueRange _atr;
 
-	private int _barsSinceSignal;
-	private bool _pendingLong;
-	private bool _pendingShort;
-	private decimal _entryPrice;
-	private decimal _stopLoss;
+	private int _cooldownRemaining;
 
 	public PinBarMagicStrategy()
 	{
-		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle type", "Candle type for strategy calculation.", "General");
 
-		_equityRisk = Param(nameof(EquityRisk), 3m)
-			.SetDisplay("Equity Risk %", "Equity risk percentage", "Risk Management");
-
-		_atrMultiplier = Param(nameof(AtrMultiplier), 0.5m)
-			.SetDisplay("ATR Multiplier", "Stop loss ATR multiplier", "Risk Management");
-
 		_slowSmaLength = Param(nameof(SlowSmaLength), 50)
+			.SetGreaterThanZero()
 			.SetDisplay("Slow SMA Period", "Slow SMA period", "Indicators");
 
 		_mediumEmaLength = Param(nameof(MediumEmaLength), 18)
+			.SetGreaterThanZero()
 			.SetDisplay("Medium EMA Period", "Medium EMA period", "Indicators");
 
 		_fastEmaLength = Param(nameof(FastEmaLength), 6)
+			.SetGreaterThanZero()
 			.SetDisplay("Fast EMA Period", "Fast EMA period", "Indicators");
 
-		_atrLength = Param(nameof(AtrLength), 14)
-			.SetDisplay("ATR Period", "ATR period", "Indicators");
-
-		_cancelEntryBars = Param(nameof(CancelEntryBars), 3)
-			.SetDisplay("Cancel Entry Bars", "Cancel entry after X bars", "Strategy");
+		_cooldownBars = Param(nameof(CooldownBars), 10)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "Risk");
 	}
 
 	public DataType CandleType
 	{
 		get => _candleTypeParam.Value;
 		set => _candleTypeParam.Value = value;
-	}
-
-	public decimal EquityRisk
-	{
-		get => _equityRisk.Value;
-		set => _equityRisk.Value = value;
-	}
-
-	public decimal AtrMultiplier
-	{
-		get => _atrMultiplier.Value;
-		set => _atrMultiplier.Value = value;
 	}
 
 	public int SlowSmaLength
@@ -98,28 +75,25 @@ public class PinBarMagicStrategy : Strategy
 		set => _fastEmaLength.Value = value;
 	}
 
-	public int AtrLength
+	public int CooldownBars
 	{
-		get => _atrLength.Value;
-		set => _atrLength.Value = value;
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
-	public int CancelEntryBars
-	{
-		get => _cancelEntryBars.Value;
-		set => _cancelEntryBars.Value = value;
-	}
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
 
-		_barsSinceSignal = default;
-		_entryPrice = default;
-		_stopLoss = default;
-		_pendingLong = default;
-		_pendingShort = default;
+		_slowSma = null;
+		_mediumEma = null;
+		_fastEma = null;
+		_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
@@ -127,19 +101,15 @@ public class PinBarMagicStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Initialize indicators
-		_slowSma = new SMA { Length = SlowSmaLength };
-		_mediumEma = new EMA { Length = MediumEmaLength };
-		_fastEma = new EMA { Length = FastEmaLength };
-		_atr = new AverageTrueRange { Length = AtrLength };
+		_slowSma = new SimpleMovingAverage { Length = SlowSmaLength };
+		_mediumEma = new ExponentialMovingAverage { Length = MediumEmaLength };
+		_fastEma = new ExponentialMovingAverage { Length = FastEmaLength };
 
-		// Subscribe to candles using high-level API
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_slowSma, _mediumEma, _fastEma, _atr, OnProcess)
+			.Bind(_slowSma, _mediumEma, _fastEma, OnProcess)
 			.Start();
 
-		// Setup chart
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -151,15 +121,22 @@ public class PinBarMagicStrategy : Strategy
 		}
 	}
 
-	private void OnProcess(ICandleMessage candle, decimal slowSma, decimal mediumEma, decimal fastEma, decimal atrValue)
+	private void OnProcess(ICandleMessage candle, decimal slowSma, decimal mediumEma, decimal fastEma)
 	{
-		// Process only finished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Wait for indicators to form
-		if (!_slowSma.IsFormed || !_mediumEma.IsFormed || !_fastEma.IsFormed || !_atr.IsFormed)
+		if (!_slowSma.IsFormed || !_mediumEma.IsFormed || !_fastEma.IsFormed)
 			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		if (_cooldownRemaining > 0)
+		{
+			_cooldownRemaining--;
+			return;
+		}
 
 		// Check pin bar patterns
 		var candleRange = candle.HighPrice - candle.LowPrice;
@@ -171,106 +148,61 @@ public class PinBarMagicStrategy : Strategy
 
 		if (candle.ClosePrice > candle.OpenPrice)
 		{
-			// Green candle
 			var lowerWick = candle.OpenPrice - candle.LowPrice;
-			bullishPinBar = lowerWick > 0.66m * candleRange;
+			bullishPinBar = lowerWick > 0.60m * candleRange;
 
 			var upperWick = candle.HighPrice - candle.ClosePrice;
-			bearishPinBar = upperWick > 0.66m * candleRange;
+			bearishPinBar = upperWick > 0.60m * candleRange;
 		}
 		else
 		{
-			// Red candle
 			var lowerWick = candle.ClosePrice - candle.LowPrice;
-			bullishPinBar = lowerWick > 0.66m * candleRange;
+			bullishPinBar = lowerWick > 0.60m * candleRange;
 
 			var upperWick = candle.HighPrice - candle.OpenPrice;
-			bearishPinBar = upperWick > 0.66m * candleRange;
+			bearishPinBar = upperWick > 0.60m * candleRange;
 		}
 
-		// Trend conditions
+		// Trend conditions - EMA fan
 		var fanUpTrend = fastEma > mediumEma && mediumEma > slowSma;
 		var fanDnTrend = fastEma < mediumEma && mediumEma < slowSma;
 
-		// Piercing conditions
-		var bullPierce = (candle.LowPrice < fastEma && candle.OpenPrice > fastEma && candle.ClosePrice > fastEma) ||
-						 (candle.LowPrice < mediumEma && candle.OpenPrice > mediumEma && candle.ClosePrice > mediumEma) ||
-						 (candle.LowPrice < slowSma && candle.OpenPrice > slowSma && candle.ClosePrice > slowSma);
+		// Piercing conditions - candle wick pierces through an MA level
+		var bullPierce = (candle.LowPrice < fastEma && candle.ClosePrice > fastEma) ||
+						 (candle.LowPrice < mediumEma && candle.ClosePrice > mediumEma) ||
+						 (candle.LowPrice < slowSma && candle.ClosePrice > slowSma);
 
-		var bearPierce = (candle.HighPrice > fastEma && candle.OpenPrice < fastEma && candle.ClosePrice < fastEma) ||
-						 (candle.HighPrice > mediumEma && candle.OpenPrice < mediumEma && candle.ClosePrice < mediumEma) ||
-						 (candle.HighPrice > slowSma && candle.OpenPrice < slowSma && candle.ClosePrice < slowSma);
+		var bearPierce = (candle.HighPrice > fastEma && candle.ClosePrice < fastEma) ||
+						 (candle.HighPrice > mediumEma && candle.ClosePrice < mediumEma) ||
+						 (candle.HighPrice > slowSma && candle.ClosePrice < slowSma);
 
-		// Entry conditions
-		var longEntry = fanUpTrend && bullishPinBar && bullPierce;
-		var shortEntry = fanDnTrend && bearishPinBar && bearPierce;
-
-		// Handle pending entries
-		if (_pendingLong)
+		// Buy: uptrend + bullish pin bar + pierce
+		if (fanUpTrend && bullishPinBar && bullPierce && Position <= 0)
 		{
-			_barsSinceSignal++;
-			if (_barsSinceSignal > CancelEntryBars)
-			{
-				_pendingLong = false;
-				_barsSinceSignal = default;
-			}
-			else if (candle.HighPrice >= _entryPrice && Position <= 0)
-			{
-				// Execute long entry
-				var risk = EquityRisk * 0.01m * Portfolio.CurrentValue;
-				var units = risk / (_entryPrice - _stopLoss);
-				BuyMarket(units);
-				_pendingLong = false;
-				_barsSinceSignal = default;
-			}
+			if (Position < 0)
+				BuyMarket(Math.Abs(Position));
+			BuyMarket(Volume);
+			_cooldownRemaining = CooldownBars;
 		}
-
-		if (_pendingShort)
+		// Sell: downtrend + bearish pin bar + pierce
+		else if (fanDnTrend && bearishPinBar && bearPierce && Position >= 0)
 		{
-			_barsSinceSignal++;
-			if (_barsSinceSignal > CancelEntryBars)
-			{
-				_pendingShort = false;
-				_barsSinceSignal = default;
-			}
-			else if (candle.LowPrice <= _entryPrice && Position >= 0)
-			{
-				// Execute short entry
-				var risk = EquityRisk * 0.01m * Portfolio.CurrentValue;
-				var units = risk / (_stopLoss - _entryPrice);
-				SellMarket(units);
-				_pendingShort = false;
-				_barsSinceSignal = default;
-			}
+			if (Position > 0)
+				SellMarket(Math.Abs(Position));
+			SellMarket(Volume);
+			_cooldownRemaining = CooldownBars;
 		}
-
-		// Setup new signals
-		if (longEntry && !_pendingLong && !_pendingShort && Position == 0)
+		// Exit long: trend reversal (fast crosses below medium)
+		else if (Position > 0 && fastEma < mediumEma)
 		{
-			_pendingLong = true;
-			_entryPrice = candle.HighPrice;
-			_stopLoss = candle.LowPrice - atrValue * AtrMultiplier;
-			_barsSinceSignal = default;
+			SellMarket(Math.Abs(Position));
+			_cooldownRemaining = CooldownBars;
 		}
-		else if (shortEntry && !_pendingLong && !_pendingShort && Position == 0)
+		// Exit short: trend reversal (fast crosses above medium)
+		else if (Position < 0 && fastEma > mediumEma)
 		{
-			_pendingShort = true;
-			_entryPrice = candle.LowPrice;
-			_stopLoss = candle.HighPrice + atrValue * AtrMultiplier;
-			_barsSinceSignal = default;
-		}
-
-		// Exit on MA cross
-		var prevFastEma = _fastEma.GetValue(1);
-		var prevMediumEma = _mediumEma.GetValue(1);
-
-		if (Position > 0 && fastEma < mediumEma && prevFastEma >= prevMediumEma)
-		{
-			ClosePosition();
-		}
-		else if (Position < 0 && fastEma > mediumEma && prevFastEma <= prevMediumEma)
-		{
-			ClosePosition();
+			BuyMarket(Math.Abs(Position));
+			_cooldownRemaining = CooldownBars;
 		}
 	}
 }

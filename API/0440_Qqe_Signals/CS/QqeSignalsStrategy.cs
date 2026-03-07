@@ -1,54 +1,52 @@
 namespace StockSharp.Samples.Strategies;
 
 using System;
+using System.Collections.Generic;
 
 using Ecng.Common;
 
-using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 /// <summary>
-/// QQE Signals Strategy
+/// QQE Signals Strategy.
+/// Uses RSI with threshold crossover for trade signals.
+/// Buys when RSI crosses above upper threshold.
+/// Sells when RSI crosses below lower threshold.
+/// Exits at the 50 midline crossover.
 /// </summary>
 public class QqeSignalsStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleTypeParam;
 	private readonly StrategyParam<int> _rsiPeriod;
-	private readonly StrategyParam<int> _rsiSmoothing;
-	private readonly StrategyParam<decimal> _qqeFactor;
-	private readonly StrategyParam<decimal> _threshold;
+	private readonly StrategyParam<decimal> _upperThreshold;
+	private readonly StrategyParam<decimal> _lowerThreshold;
+	private readonly StrategyParam<int> _cooldownBars;
 
 	private RelativeStrengthIndex _rsi;
-	private ExponentialMovingAverage _rsiMa;
-	private ExponentialMovingAverage _atrRsi;
-	private ExponentialMovingAverage _maAtrRsi;
-	private ExponentialMovingAverage _dar;
 
-	private decimal _longband;
-	private decimal _shortband;
-	private int _trend;
-	private int _qqeXlong;
-	private int _qqeXshort;
+	private decimal _prevRsi;
+	private int _cooldownRemaining;
 
 	public QqeSignalsStrategy()
 	{
-		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle type", "Candle type for strategy calculation.", "General");
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
+			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "RSI period", "QQE");
 
-		_rsiSmoothing = Param(nameof(RsiSmoothing), 5)
-			.SetDisplay("RSI Smoothing", "RSI smoothing period", "QQE");
+		_upperThreshold = Param(nameof(UpperThreshold), 60m)
+			.SetDisplay("Upper Threshold", "Bullish threshold", "QQE");
 
-		_qqeFactor = Param(nameof(QqeFactor), 4.238m)
-			.SetDisplay("Fast QQE Factor", "QQE factor", "QQE");
+		_lowerThreshold = Param(nameof(LowerThreshold), 40m)
+			.SetDisplay("Lower Threshold", "Bearish threshold", "QQE");
 
-		_threshold = Param(nameof(Threshold), 10m)
-			.SetDisplay("Threshold", "Threshold value", "QQE");
+		_cooldownBars = Param(nameof(CooldownBars), 10)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "Risk");
 	}
 
 	public DataType CandleType
@@ -63,34 +61,36 @@ public class QqeSignalsStrategy : Strategy
 		set => _rsiPeriod.Value = value;
 	}
 
-	public int RsiSmoothing
+	public decimal UpperThreshold
 	{
-		get => _rsiSmoothing.Value;
-		set => _rsiSmoothing.Value = value;
+		get => _upperThreshold.Value;
+		set => _upperThreshold.Value = value;
 	}
 
-	public decimal QqeFactor
+	public decimal LowerThreshold
 	{
-		get => _qqeFactor.Value;
-		set => _qqeFactor.Value = value;
+		get => _lowerThreshold.Value;
+		set => _lowerThreshold.Value = value;
 	}
 
-	public decimal Threshold
+	public int CooldownBars
 	{
-		get => _threshold.Value;
-		set => _threshold.Value = value;
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
 
-		_longband = default;
-		_shortband = default;
-		_trend = default;
-		_qqeXlong = default;
-		_qqeXshort = default;
+		_rsi = null;
+		_prevRsi = 0;
+		_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
@@ -98,21 +98,13 @@ public class QqeSignalsStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Initialize indicators
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
-		_rsiMa = new EMA { Length = RsiSmoothing };
-		
-		var wildersPeriod = RsiPeriod * 2 - 1;
-		_atrRsi = new EMA { Length = 1 }; // For calculating absolute difference
-		_maAtrRsi = new EMA { Length = wildersPeriod };
-		_dar = new EMA { Length = wildersPeriod };
 
-		// Subscribe to candles
-		var subscription = SubscribeCandles(CandleType)
-			.Bind(ProcessCandle)
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(_rsi, OnProcess)
 			.Start();
 
-		// Setup chart
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -121,106 +113,68 @@ public class QqeSignalsStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void OnProcess(ICandleMessage candle, decimal rsiVal)
 	{
-		// Skip if strategy is not ready
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Calculate RSI
-		var rsiValue = _rsi.Process(candle);
 		if (!_rsi.IsFormed)
+		{
+			_prevRsi = rsiVal;
 			return;
+		}
 
-		// Calculate smoothed RSI
-		var rsiMaValue = _rsiMa.Process(rsiValue);
-		if (!_rsiMa.IsFormed)
+		if (!IsFormedAndOnlineAndAllowTrading())
+		{
+			_prevRsi = rsiVal;
 			return;
+		}
 
-		var rsIndex = rsiMaValue.GetValue<decimal>();
-
-		// Calculate ATR of RSI
-		var prevRsiMa = _rsiMa.GetValue(1);
-		var atrRsiValue = Math.Abs(prevRsiMa - rsIndex);
-		
-		// Calculate MA of ATR RSI
-		var maAtrRsiValue = _maAtrRsi.Process(new DecimalIndicatorValue(_maAtrRsi, atrRsiValue, candle.ServerTime));
-		if (!_maAtrRsi.IsFormed)
+		if (_cooldownRemaining > 0)
+		{
+			_cooldownRemaining--;
+			_prevRsi = rsiVal;
 			return;
+		}
 
-		// Calculate DAR
-		var darValue = _dar.Process(maAtrRsiValue);
-		if (!_dar.IsFormed)
+		if (_prevRsi == 0)
+		{
+			_prevRsi = rsiVal;
 			return;
-
-		var deltaFastAtrRsi = darValue.GetValue<decimal>() * QqeFactor;
-
-		// Calculate bands
-		var newshortband = rsIndex + deltaFastAtrRsi;
-		var newlongband = rsIndex - deltaFastAtrRsi;
-
-		// Update bands
-		var prevLongband = _longband;
-		var prevShortband = _shortband;
-		var prevRsIndex = _rsiMa.GetValue(1);
-
-		if (prevRsIndex > prevLongband && rsIndex > prevLongband)
-		{
-			_longband = Math.Max(prevLongband, newlongband);
-		}
-		else
-		{
-			_longband = newlongband;
 		}
 
-		if (prevRsIndex < prevShortband && rsIndex < prevShortband)
+		// RSI crosses above upper threshold (bullish signal)
+		var crossUp = rsiVal > UpperThreshold && _prevRsi <= UpperThreshold;
+		// RSI crosses below lower threshold (bearish signal)
+		var crossDown = rsiVal < LowerThreshold && _prevRsi >= LowerThreshold;
+
+		if (crossUp && Position <= 0)
 		{
-			_shortband = Math.Min(prevShortband, newshortband);
+			if (Position < 0)
+				BuyMarket(Math.Abs(Position));
+			BuyMarket(Volume);
+			_cooldownRemaining = CooldownBars;
 		}
-		else
+		else if (crossDown && Position >= 0)
 		{
-			_shortband = newshortband;
+			if (Position > 0)
+				SellMarket(Math.Abs(Position));
+			SellMarket(Volume);
+			_cooldownRemaining = CooldownBars;
+		}
+		// Exit long: RSI drops below 50
+		else if (Position > 0 && rsiVal < 50 && _prevRsi >= 50)
+		{
+			SellMarket(Math.Abs(Position));
+			_cooldownRemaining = CooldownBars;
+		}
+		// Exit short: RSI rises above 50
+		else if (Position < 0 && rsiVal > 50 && _prevRsi <= 50)
+		{
+			BuyMarket(Math.Abs(Position));
+			_cooldownRemaining = CooldownBars;
 		}
 
-		// Determine trend
-		var prevTrend = _trend;
-		
-		if (rsIndex > _shortband && prevRsIndex <= prevShortband)
-		{
-			_trend = 1;
-		}
-		else if (rsIndex < _longband && prevRsIndex >= prevLongband)
-		{
-			_trend = -1;
-		}
-
-		// Calculate FastAtrRsiTL
-		var fastAtrRsiTL = _trend == 1 ? _longband : _shortband;
-
-		// Update QQE crosses
-		if (fastAtrRsiTL < rsIndex)
-		{
-			_qqeXlong++;
-			_qqeXshort = 0;
-		}
-		else
-		{
-			_qqeXshort++;
-			_qqeXlong = 0;
-		}
-
-		// Generate signals
-		var qqeLong = _qqeXlong == 1;
-		var qqeShort = _qqeXshort == 1;
-
-		// Execute trades
-		if (qqeLong && Position <= 0)
-		{
-			BuyMarket(Volume + Math.Abs(Position));
-		}
-		else if (qqeShort && Position > 0)
-		{
-			ClosePosition();
-		}
+		_prevRsi = rsiVal;
 	}
 }

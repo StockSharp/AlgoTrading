@@ -5,63 +5,48 @@ using System.Collections.Generic;
 
 using Ecng.Common;
 
-using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 /// <summary>
-/// Multi-Timeframe Bollinger Bands Strategy
+/// Multi-Timeframe Bollinger Bands Strategy.
+/// Uses two BB periods: a short-period BB for exit signals
+/// and a long-period BB (simulating higher timeframe) for entry signals.
+/// Buys when price touches long-period lower BB, exits at short-period upper BB.
 /// </summary>
 public class MtfBbStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleTypeParam;
-	private readonly StrategyParam<DataType> _mtfCandleTypeParam;
-	private readonly StrategyParam<int> _bbLength;
+	private readonly StrategyParam<int> _bbShortLength;
+	private readonly StrategyParam<int> _bbLongLength;
 	private readonly StrategyParam<decimal> _bbMultiplier;
-	private readonly StrategyParam<bool> _useMaFilter;
-	private readonly StrategyParam<int> _maLength;
-	private readonly StrategyParam<bool> _showLong;
-	private readonly StrategyParam<bool> _showShort;
-	private readonly StrategyParam<bool> _useSL;
-	private readonly StrategyParam<decimal> _slPercent;
+	private readonly StrategyParam<int> _cooldownBars;
 
-	private BollingerBands _bollinger;
-	private BollingerBands _mtfBollinger;
-	private ExponentialMovingAverage _ma;
+	private BollingerBands _bbShort;
+	private BollingerBands _bbLong;
+
+	private int _cooldownRemaining;
 
 	public MtfBbStrategy()
 	{
-		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle type", "Main timeframe", "General");
+		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+			.SetDisplay("Candle type", "Candle type for strategy calculation.", "General");
 
-		_mtfCandleTypeParam = Param(nameof(MtfCandleType), TimeSpan.FromMinutes(60).TimeFrame())
-			.SetDisplay("MTF Candle type", "Multi-timeframe for BB", "MTF Bollinger Bands");
+		_bbShortLength = Param(nameof(BbShortLength), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("BB Short Length", "Short-period Bollinger Bands", "Bollinger Bands");
 
-		_bbLength = Param(nameof(BBLength), 20)
-			.SetDisplay("BB Length", "Bollinger Bands period", "MTF Bollinger Bands");
+		_bbLongLength = Param(nameof(BbLongLength), 50)
+			.SetGreaterThanZero()
+			.SetDisplay("BB Long Length", "Long-period Bollinger Bands (MTF proxy)", "Bollinger Bands");
 
 		_bbMultiplier = Param(nameof(BBMultiplier), 2.0m)
-			.SetDisplay("BB StdDev", "Standard deviation multiplier", "MTF Bollinger Bands");
+			.SetDisplay("BB StdDev", "Standard deviation multiplier", "Bollinger Bands");
 
-		_useMaFilter = Param(nameof(UseMaFilter), false)
-			.SetDisplay("Use MA Filter", "Enable Moving Average filter", "MTF Moving Average Filter");
-
-		_maLength = Param(nameof(MaLength), 200)
-			.SetDisplay("MA Length", "Moving Average period", "MTF Moving Average Filter");
-
-		_showLong = Param(nameof(ShowLong), true)
-			.SetDisplay("Long entries", "Enable long positions", "Strategy");
-
-		_showShort = Param(nameof(ShowShort), false)
-			.SetDisplay("Short entries", "Enable short positions", "Strategy");
-
-		_useSL = Param(nameof(UseSL), true)
-			.SetDisplay("Enable SL", "Enable Stop Loss", "Stop Loss");
-
-		_slPercent = Param(nameof(SLPercent), 2m)
-			.SetDisplay("SL Percent", "Stop loss percentage", "Stop Loss");
+		_cooldownBars = Param(nameof(CooldownBars), 10)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "Risk");
 	}
 
 	public DataType CandleType
@@ -70,16 +55,16 @@ public class MtfBbStrategy : Strategy
 		set => _candleTypeParam.Value = value;
 	}
 
-	public DataType MtfCandleType
+	public int BbShortLength
 	{
-		get => _mtfCandleTypeParam.Value;
-		set => _mtfCandleTypeParam.Value = value;
+		get => _bbShortLength.Value;
+		set => _bbShortLength.Value = value;
 	}
 
-	public int BBLength
+	public int BbLongLength
 	{
-		get => _bbLength.Value;
-		set => _bbLength.Value = value;
+		get => _bbLongLength.Value;
+		set => _bbLongLength.Value = value;
 	}
 
 	public decimal BBMultiplier
@@ -88,184 +73,103 @@ public class MtfBbStrategy : Strategy
 		set => _bbMultiplier.Value = value;
 	}
 
-	public bool UseMaFilter
+	public int CooldownBars
 	{
-		get => _useMaFilter.Value;
-		set => _useMaFilter.Value = value;
-	}
-
-	public int MaLength
-	{
-		get => _maLength.Value;
-		set => _maLength.Value = value;
-	}
-
-	public bool ShowLong
-	{
-		get => _showLong.Value;
-		set => _showLong.Value = value;
-	}
-
-	public bool ShowShort
-	{
-		get => _showShort.Value;
-		set => _showShort.Value = value;
-	}
-
-	public bool UseSL
-	{
-		get => _useSL.Value;
-		set => _useSL.Value = value;
-	}
-
-	public decimal SLPercent
-	{
-		get => _slPercent.Value;
-		set => _slPercent.Value = value;
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-		=> [(Security, CandleType), (Security, MtfCandleType)];
+		=> [(Security, CandleType)];
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_bbShort = null;
+		_bbLong = null;
+		_cooldownRemaining = 0;
+	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		// Initialize indicators
-		_bollinger = new BollingerBands
-		{
-			Length = BBLength,
-			Width = BBMultiplier
-		};
+		_bbShort = new BollingerBands { Length = BbShortLength, Width = BBMultiplier };
+		_bbLong = new BollingerBands { Length = BbLongLength, Width = BBMultiplier };
 
-		_mtfBollinger = new BollingerBands
-		{
-			Length = BBLength,
-			Width = BBMultiplier
-		};
-
-		if (UseMaFilter)
-		{
-			_ma = new EMA { Length = MaLength };
-		}
-
-		// Subscribe to main timeframe
 		var subscription = SubscribeCandles(CandleType);
-		
-		// Subscribe to MTF candles
-		var mtfSubscription = SubscribeCandles(MtfCandleType);
-		
-		// Process MTF candles for MTF Bollinger Bands indicator
-		mtfSubscription
-			.BindEx(_mtfBollinger, OnProcessMtf)
+		subscription
+			.BindEx(_bbShort, _bbLong, OnProcess)
 			.Start();
 
-		// Process main timeframe
-		if (UseMaFilter)
-		{
-			// Subscribe MTF candles for MA filter
-			mtfSubscription
-				.BindEx(_ma, OnProcessMa)
-				.Start();
-
-			// Process main timeframe with Bollinger Bands
-			subscription
-				.BindEx(_bollinger, OnProcess)
-				.Start();
-		}
-		else
-		{
-			subscription
-				.BindEx(_bollinger, OnProcess)
-				.Start();
-		}
-
-		// Setup chart
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _bollinger);
-			if (UseMaFilter && _ma != null)
-				DrawIndicator(area, _ma);
+			DrawIndicator(area, _bbShort);
 			DrawOwnTrades(area);
 		}
-
-		// Enable protection
-		if (UseSL)
-		{
-			StartProtection(new(), new Unit(SLPercent, UnitTypes.Percent));
-		}
 	}
 
-	private void OnProcessMtf(ICandleMessage candle, IIndicatorValue mtfBbValue)
+	private void OnProcess(ICandleMessage candle, IIndicatorValue bbShortValue, IIndicatorValue bbLongValue)
 	{
-		// Just update the MTF Bollinger Bands indicator, don't trade here
-		// Trading logic is in OnProcess method
-	}
-
-	private void OnProcessMa(ICandleMessage candle, IIndicatorValue maValue)
-	{
-		// Just update the MA indicator, don't trade here
-		// Trading logic is in OnProcess method
-	}
-
-	private void OnProcess(ICandleMessage candle, IIndicatorValue bbValue)
-	{
-		// Process only finished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Wait for indicators to form
-		if (!_bollinger.IsFormed || !_mtfBollinger.IsFormed)
+		if (!_bbShort.IsFormed || !_bbLong.IsFormed)
 			return;
 
-		if (UseMaFilter && (_ma == null || !_ma.IsFormed))
+		if (bbShortValue.IsEmpty || bbLongValue.IsEmpty)
 			return;
 
-		// Get current timeframe BB values
-		var bollingerTyped = (BollingerBandsValue)bbValue;
-		var upper = bollingerTyped.UpBand;
-		var lower = bollingerTyped.LowBand;
+		var bbShort = (BollingerBandsValue)bbShortValue;
+		var bbLong = (BollingerBandsValue)bbLongValue;
 
-		// Get MTF BB values - access the bands directly
-		var mtfUpper = _mtfBollinger.UpBand.GetValue(0);
-		var mtfLower = _mtfBollinger.LowBand.GetValue(0);
+		if (bbShort.UpBand is not decimal shortUpper || bbShort.LowBand is not decimal shortLower)
+			return;
+		if (bbLong.UpBand is not decimal longUpper || bbLong.LowBand is not decimal longLower)
+			return;
 
-		// MA filter
-		var buyMaFilter = true;
-		var sellMaFilter = true;
-		
-		if (UseMaFilter && _ma != null)
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		if (_cooldownRemaining > 0)
 		{
-			var maValue = _ma.GetValue(0);
-			buyMaFilter = candle.ClosePrice > maValue;
-			sellMaFilter = candle.ClosePrice < maValue;
+			_cooldownRemaining--;
+			return;
 		}
 
-		// Entry conditions
-		var buy = candle.ClosePrice < mtfLower && buyMaFilter;
-		var sell = candle.ClosePrice > mtfUpper && sellMaFilter;
-
-		// Execute trades
-		if (ShowLong && buy && Position <= 0)
+		// Buy: price touches long-period lower BB (oversold on higher timeframe)
+		if (candle.ClosePrice <= longLower && Position <= 0)
 		{
-			BuyMarket(Volume + Math.Abs(Position));
+			if (Position < 0)
+				BuyMarket(Math.Abs(Position));
+			BuyMarket(Volume);
+			_cooldownRemaining = CooldownBars;
 		}
-		else if (ShowLong && Position > 0 && candle.ClosePrice > upper)
+		// Sell: price touches long-period upper BB (overbought on higher timeframe)
+		else if (candle.ClosePrice >= longUpper && Position >= 0)
 		{
-			ClosePosition();
+			if (Position > 0)
+				SellMarket(Math.Abs(Position));
+			SellMarket(Volume);
+			_cooldownRemaining = CooldownBars;
 		}
-
-		if (ShowShort && sell && Position >= 0)
+		// Exit long at short-period upper BB
+		else if (Position > 0 && candle.ClosePrice >= shortUpper)
 		{
-			SellMarket(Volume + Math.Abs(Position));
+			SellMarket(Math.Abs(Position));
+			_cooldownRemaining = CooldownBars;
 		}
-		else if (ShowShort && Position < 0 && candle.ClosePrice < lower)
+		// Exit short at short-period lower BB
+		else if (Position < 0 && candle.ClosePrice <= shortLower)
 		{
-			ClosePosition();
+			BuyMarket(Math.Abs(Position));
+			_cooldownRemaining = CooldownBars;
 		}
 	}
 }
