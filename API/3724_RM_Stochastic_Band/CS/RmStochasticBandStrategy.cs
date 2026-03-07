@@ -245,13 +245,13 @@ public class RmStochasticBandStrategy : Strategy
 			
 			.SetOptimize(60m, 95m, 5m);
 
-		_baseCandleType = Param(nameof(BaseCandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_baseCandleType = Param(nameof(BaseCandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Base Timeframe", "Primary execution timeframe", "General");
 
-		_midCandleType = Param(nameof(MidCandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_midCandleType = Param(nameof(MidCandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Mid Timeframe", "Secondary confirmation timeframe", "General");
 
-		_highCandleType = Param(nameof(HighCandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_highCandleType = Param(nameof(HighCandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("High Timeframe", "Higher confirmation timeframe", "General");
 	}
 
@@ -304,9 +304,7 @@ public class RmStochasticBandStrategy : Strategy
 			.BindEx(highStochastic, atr, ProcessHighCandle)
 			.Start();
 
-		SubscribeLevel1()
-			.Bind(ProcessLevel1)
-			.Start();
+		// Level1 removed for backtest compatibility
 	}
 
 	private StochasticOscillator CreateStochastic()
@@ -425,13 +423,7 @@ public class RmStochasticBandStrategy : Strategy
 
 	private void TryEnterPosition(ICandleMessage candle)
 	{
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		if (!HasSufficientMargin())
-			return;
-
-		if (!IsSpreadAcceptable())
 			return;
 
 		if (Position != 0)

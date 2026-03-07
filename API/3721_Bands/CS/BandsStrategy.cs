@@ -180,6 +180,36 @@ public class BandsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_prevOpen = null;
+		_prevClose = null;
+		_prevLowerBand = null;
+		_prevUpperBand = null;
+		_prevDonchLower = null;
+		_prevDonchUpper = null;
+		_prevAtr = null;
+		_lowerTrendLength = 0;
+		_upperTrendLength = 0;
+		_stopLossPrice = null;
+		_takeProfitPrice = null;
+		_equitySamples = 0;
+		_sumIndices = 0m;
+		_sumEquity = 0m;
+		_sumIndexEquity = 0m;
+		_sumIndexSquared = 0m;
+		_sumEquitySquared = 0m;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
