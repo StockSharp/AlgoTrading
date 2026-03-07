@@ -1,20 +1,20 @@
+namespace StockSharp.Samples.Strategies;
+
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-namespace StockSharp.Samples.Strategies;
-
 /// <summary>
-/// 200 SMA Buffer Strategy - buys when price is above SMA by a percentage and exits when price falls below by another percentage.
+/// 200 SMA Buffer Strategy.
+/// Buys when price is above SMA by entry percent.
+/// Sells when price falls below SMA by exit percent.
+/// Also supports short positions.
 /// </summary>
 public class SmaBufferStrategy : Strategy
 {
@@ -22,10 +22,10 @@ public class SmaBufferStrategy : Strategy
 	private readonly StrategyParam<int> _smaLength;
 	private readonly StrategyParam<decimal> _entryPercent;
 	private readonly StrategyParam<decimal> _exitPercent;
+	private readonly StrategyParam<int> _cooldownBars;
 
 	private SimpleMovingAverage _sma;
-
-	private static readonly DateTimeOffset _startTime = new(2001, 1, 1, 0, 0, 0, TimeSpan.Zero);
+	private int _cooldownRemaining;
 
 	public DataType CandleType
 	{
@@ -51,34 +51,42 @@ public class SmaBufferStrategy : Strategy
 		set => _exitPercent.Value = value;
 	}
 
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
 	public SmaBufferStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
-		_smaLength = Param(nameof(SmaLength), 200)
+		_smaLength = Param(nameof(SmaLength), 100)
 			.SetGreaterThanZero()
-			.SetDisplay("SMA Length", "Period of the moving average", "Parameters")
-			
-			.SetOptimize(50, 300, 25);
+			.SetDisplay("SMA Length", "Period of the moving average", "Parameters");
 
-		_entryPercent = Param(nameof(EntryPercent), 5m)
-			.SetRange(0.1m, 100m)
-			.SetDisplay("Entry %", "Percent above SMA to enter", "Parameters")
-			
-			.SetOptimize(1m, 10m, 1m);
+		_entryPercent = Param(nameof(EntryPercent), 2m)
+			.SetDisplay("Entry %", "Percent above/below SMA to enter", "Parameters");
 
-		_exitPercent = Param(nameof(ExitPercent), 3m)
-			.SetRange(0.1m, 100m)
-			.SetDisplay("Exit %", "Percent below SMA to exit", "Parameters")
-			
-			.SetOptimize(1m, 10m, 1m);
+		_exitPercent = Param(nameof(ExitPercent), 1m)
+			.SetDisplay("Exit %", "Percent toward SMA to exit", "Parameters");
+
+		_cooldownBars = Param(nameof(CooldownBars), 10)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "Risk");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	/// <inheritdoc />
+	protected override void OnReseted()
 	{
-		return [(Security, CandleType)];
+		base.OnReseted();
+
+		_sma = null;
+		_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
@@ -86,12 +94,12 @@ public class SmaBufferStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_sma = new SMA { Length = SmaLength };
+		_sma = new SimpleMovingAverage { Length = SmaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-		.Bind(_sma, ProcessCandle)
-		.Start();
+			.Bind(_sma, OnProcess)
+			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -102,7 +110,7 @@ public class SmaBufferStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
+	private void OnProcess(ICandleMessage candle, decimal smaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
@@ -110,15 +118,48 @@ public class SmaBufferStrategy : Strategy
 		if (!_sma.IsFormed)
 			return;
 
-		if (candle.OpenTime < _startTime)
+		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var upperThreshold = smaValue * (1m + EntryPercent / 100m);
-		var lowerThreshold = smaValue * (1m - ExitPercent / 100m);
+		if (_cooldownRemaining > 0)
+		{
+			_cooldownRemaining--;
+			return;
+		}
 
-		if (Position <= 0 && candle.ClosePrice > upperThreshold)
-			BuyMarket();
-		else if (Position > 0 && candle.ClosePrice < lowerThreshold)
-			SellMarket();
+		var price = candle.ClosePrice;
+		var upperEntry = smaValue * (1m + EntryPercent / 100m);
+		var lowerEntry = smaValue * (1m - EntryPercent / 100m);
+		var upperExit = smaValue * (1m + ExitPercent / 100m);
+		var lowerExit = smaValue * (1m - ExitPercent / 100m);
+
+		// Buy: price above upper entry threshold
+		if (price > upperEntry && Position <= 0)
+		{
+			if (Position < 0)
+				BuyMarket(Math.Abs(Position));
+			BuyMarket(Volume);
+			_cooldownRemaining = CooldownBars;
+		}
+		// Sell: price below lower entry threshold
+		else if (price < lowerEntry && Position >= 0)
+		{
+			if (Position > 0)
+				SellMarket(Math.Abs(Position));
+			SellMarket(Volume);
+			_cooldownRemaining = CooldownBars;
+		}
+		// Exit long: price drops below lower exit
+		else if (Position > 0 && price < lowerExit)
+		{
+			SellMarket(Math.Abs(Position));
+			_cooldownRemaining = CooldownBars;
+		}
+		// Exit short: price rises above upper exit
+		else if (Position < 0 && price > upperExit)
+		{
+			BuyMarket(Math.Abs(Position));
+			_cooldownRemaining = CooldownBars;
+		}
 	}
 }

@@ -1,152 +1,128 @@
+namespace StockSharp.Samples.Strategies;
+
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-namespace StockSharp.Samples.Strategies;
-
 /// <summary>
-/// Moving average crossover confirmed by SuperTrend with Bollinger Bands exits.
+/// Moving Average Crossover confirmed by SuperTrend with Bollinger Bands exits.
+/// Buys on MA cross up + SuperTrend uptrend.
+/// Sells on MA cross down + SuperTrend downtrend.
+/// Exits at BB bands.
 /// </summary>
 public class MaBbSupertrendStrategy : Strategy
 {
-	private readonly StrategyParam<int> _maSignalLength;
-	private readonly StrategyParam<decimal> _maRatio;
+	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _fastMaLength;
+	private readonly StrategyParam<int> _slowMaLength;
 	private readonly StrategyParam<int> _bbLength;
-	private readonly StrategyParam<decimal> _bbMultiplier;
 	private readonly StrategyParam<int> _supertrendPeriod;
 	private readonly StrategyParam<decimal> _supertrendFactor;
-	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _cooldownBars;
 
-	private DecimalLengthIndicator _maBasis;
-	private DecimalLengthIndicator _maSignal;
-	private BollingerBands _bollinger;
+	private SimpleMovingAverage _fastMa;
+	private SimpleMovingAverage _slowMa;
+	private BollingerBands _bb;
 	private SuperTrend _supertrend;
 
-	private decimal _prevBasis;
-	private decimal _prevSignal;
-	private bool _isInitialized;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private bool _hasPrev;
+	private int _cooldownRemaining;
 
-	/// <summary>
-	/// Length of the signal moving average.
-	/// </summary>
-	public int MaSignalLength
-	{
-		get => _maSignalLength.Value;
-		set => _maSignalLength.Value = value;
-	}
-
-	/// <summary>
-	/// Ratio to calculate basis MA length.
-	/// </summary>
-	public decimal MaRatio
-	{
-		get => _maRatio.Value;
-		set => _maRatio.Value = value;
-	}
-
-	/// <summary>
-	/// Bollinger Bands period length.
-	/// </summary>
-	public int BbLength
-	{
-		get => _bbLength.Value;
-		set => _bbLength.Value = value;
-	}
-
-	/// <summary>
-	/// Bollinger Bands width multiplier.
-	/// </summary>
-	public decimal BbMultiplier
-	{
-		get => _bbMultiplier.Value;
-		set => _bbMultiplier.Value = value;
-	}
-
-	/// <summary>
-	/// ATR period for SuperTrend.
-	/// </summary>
-	public int SupertrendPeriod
-	{
-		get => _supertrendPeriod.Value;
-		set => _supertrendPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// ATR multiplier for SuperTrend.
-	/// </summary>
-	public decimal SupertrendFactor
-	{
-		get => _supertrendFactor.Value;
-		set => _supertrendFactor.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used for calculations.
-	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Constructor.
-	/// </summary>
+	public int FastMaLength
+	{
+		get => _fastMaLength.Value;
+		set => _fastMaLength.Value = value;
+	}
+
+	public int SlowMaLength
+	{
+		get => _slowMaLength.Value;
+		set => _slowMaLength.Value = value;
+	}
+
+	public int BbLength
+	{
+		get => _bbLength.Value;
+		set => _bbLength.Value = value;
+	}
+
+	public int SupertrendPeriod
+	{
+		get => _supertrendPeriod.Value;
+		set => _supertrendPeriod.Value = value;
+	}
+
+	public decimal SupertrendFactor
+	{
+		get => _supertrendFactor.Value;
+		set => _supertrendFactor.Value = value;
+	}
+
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
 	public MaBbSupertrendStrategy()
 	{
-		_maSignalLength = Param(nameof(MaSignalLength), 89)
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
+
+		_fastMaLength = Param(nameof(FastMaLength), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("MA Signal Length", "Length of the signal moving average", "MA")
-			
-			.SetOptimize(30, 150, 10);
+			.SetDisplay("Fast MA Length", "Fast SMA period", "MA");
 
-		_maRatio = Param(nameof(MaRatio), 1.08m)
-			.SetRange(0.5m, 3m)
-			.SetDisplay("MA Ratio", "Basis length = Signal length * Ratio", "MA")
-			
-			.SetOptimize(0.5m, 2m, 0.1m);
-
-		_bbLength = Param(nameof(BbLength), 30)
+		_slowMaLength = Param(nameof(SlowMaLength), 50)
 			.SetGreaterThanZero()
-			.SetDisplay("BB Length", "Bollinger Bands period", "Bollinger")
-			
-			.SetOptimize(10, 60, 5);
+			.SetDisplay("Slow MA Length", "Slow SMA period", "MA");
 
-		_bbMultiplier = Param(nameof(BbMultiplier), 3m)
-			.SetRange(1m, 10m)
-			.SetDisplay("BB Width", "Bollinger Bands width", "Bollinger")
-			
-			.SetOptimize(1m, 5m, 0.5m);
+		_bbLength = Param(nameof(BbLength), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("BB Length", "Bollinger Bands period", "Bollinger");
 
 		_supertrendPeriod = Param(nameof(SupertrendPeriod), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("SuperTrend Period", "ATR period for SuperTrend", "SuperTrend")
-			
-			.SetOptimize(5, 40, 5);
+			.SetDisplay("SuperTrend Period", "ATR period for SuperTrend", "SuperTrend");
 
 		_supertrendFactor = Param(nameof(SupertrendFactor), 4m)
-			.SetRange(1m, 10m)
-			.SetDisplay("SuperTrend Factor", "ATR multiplier for SuperTrend", "SuperTrend")
-			
-			.SetOptimize(1m, 8m, 1m);
+			.SetDisplay("SuperTrend Factor", "ATR multiplier for SuperTrend", "SuperTrend");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
+		_cooldownBars = Param(nameof(CooldownBars), 10)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "Risk");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	/// <inheritdoc />
+	protected override void OnReseted()
 	{
-		return [(Security, CandleType)];
+		base.OnReseted();
+
+		_fastMa = null;
+		_slowMa = null;
+		_bb = null;
+		_supertrend = null;
+		_prevFast = 0;
+		_prevSlow = 0;
+		_hasPrev = false;
+		_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
@@ -154,79 +130,105 @@ public class MaBbSupertrendStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var basisLength = (int)Math.Round(MaSignalLength * MaRatio);
-
-		_maBasis = new SMA { Length = basisLength };
-		_maSignal = new SMA { Length = MaSignalLength };
-		_bollinger = new BollingerBands { Length = BbLength, Width = BbMultiplier };
+		_fastMa = new SimpleMovingAverage { Length = FastMaLength };
+		_slowMa = new SimpleMovingAverage { Length = SlowMaLength };
+		_bb = new BollingerBands { Length = BbLength, Width = 2m };
 		_supertrend = new SuperTrend { Length = SupertrendPeriod, Multiplier = SupertrendFactor };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx([_maBasis, _maSignal, _supertrend, _bollinger], ProcessCandle)
+			.BindEx(_fastMa, _slowMa, _bb, _supertrend, OnProcess)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _maBasis);
-			DrawIndicator(area, _maSignal);
-			DrawIndicator(area, _bollinger);
-			DrawIndicator(area, _supertrend);
+			DrawIndicator(area, _fastMa);
+			DrawIndicator(area, _slowMa);
+			DrawIndicator(area, _bb);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue[] values)
+	private void OnProcess(ICandleMessage candle, IIndicatorValue fastVal, IIndicatorValue slowVal, IIndicatorValue bbVal, IIndicatorValue stVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_maBasis.IsFormed || !_maSignal.IsFormed || !_bollinger.IsFormed || !_supertrend.IsFormed)
+		if (!_fastMa.IsFormed || !_slowMa.IsFormed || !_bb.IsFormed || !_supertrend.IsFormed)
 			return;
+
+		if (fastVal.IsEmpty || slowVal.IsEmpty || bbVal.IsEmpty || stVal.IsEmpty)
+			return;
+
+		var fast = fastVal.ToDecimal();
+		var slow = slowVal.ToDecimal();
+
+		var bb = (BollingerBandsValue)bbVal;
+		if (bb.UpBand is not decimal upper || bb.LowBand is not decimal lower)
+			return;
+
+		var stTyped = (SuperTrendIndicatorValue)stVal;
+		var uptrend = stTyped.IsUpTrend;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var basis = values[0].ToDecimal();
-		var signal = values[1].ToDecimal();
-		var supertrendValue = values[2].ToDecimal();
-
-		var bbTyped = (BollingerBandsValue)values[3];
-		if (bbTyped.UpBand is not decimal upper || bbTyped.LowBand is not decimal lower)
-			return;
-
-		if (!_isInitialized)
 		{
-			_prevBasis = basis;
-			_prevSignal = signal;
-			_isInitialized = true;
+			_prevFast = fast;
+			_prevSlow = slow;
+			_hasPrev = true;
 			return;
 		}
 
-		var crossUp = _prevSignal < _prevBasis && signal > basis;
-		var crossDown = _prevSignal > _prevBasis && signal < basis;
+		if (!_hasPrev)
+		{
+			_prevFast = fast;
+			_prevSlow = slow;
+			_hasPrev = true;
+			return;
+		}
 
-		var uptrend = candle.ClosePrice > supertrendValue;
+		if (_cooldownRemaining > 0)
+		{
+			_cooldownRemaining--;
+			_prevFast = fast;
+			_prevSlow = slow;
+			return;
+		}
 
+		var crossUp = _prevFast <= _prevSlow && fast > slow;
+		var crossDown = _prevFast >= _prevSlow && fast < slow;
+
+		// Entry long: MA cross up + SuperTrend uptrend
 		if (crossUp && uptrend && Position <= 0)
-			BuyMarket();
+		{
+			if (Position < 0)
+				BuyMarket(Math.Abs(Position));
+			BuyMarket(Volume);
+			_cooldownRemaining = CooldownBars;
+		}
+		// Entry short: MA cross down + SuperTrend downtrend
 		else if (crossDown && !uptrend && Position >= 0)
-			SellMarket();
-
-		if (Position > 0)
 		{
-			if (candle.ClosePrice >= upper || candle.ClosePrice < supertrendValue)
-				SellMarket();
+			if (Position > 0)
+				SellMarket(Math.Abs(Position));
+			SellMarket(Volume);
+			_cooldownRemaining = CooldownBars;
 		}
-		else if (Position < 0)
+		// Exit long: price reaches upper BB or SuperTrend flips
+		else if (Position > 0 && (candle.ClosePrice >= upper || !uptrend))
 		{
-			if (candle.ClosePrice <= lower || candle.ClosePrice > supertrendValue)
-				BuyMarket();
+			SellMarket(Math.Abs(Position));
+			_cooldownRemaining = CooldownBars;
+		}
+		// Exit short: price reaches lower BB or SuperTrend flips
+		else if (Position < 0 && (candle.ClosePrice <= lower || uptrend))
+		{
+			BuyMarket(Math.Abs(Position));
+			_cooldownRemaining = CooldownBars;
 		}
 
-		_prevBasis = basis;
-		_prevSignal = signal;
+		_prevFast = fast;
+		_prevSlow = slow;
 	}
 }

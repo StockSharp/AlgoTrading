@@ -1,111 +1,91 @@
+namespace StockSharp.Samples.Strategies;
+
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-namespace StockSharp.Samples.Strategies;
-
 /// <summary>
-/// Three Red / Three Green Strategy with ATR filter.
+/// Three Red / Three Green Strategy with volatility filter.
+/// Buys after 3 red candles (mean reversion) with ATR > average.
+/// Exits after 3 green candles or max hold period.
 /// </summary>
 public class ThreeRedGreenVolatilityStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _maxTradeDuration;
-	private readonly StrategyParam<bool> _useGreenExit;
 	private readonly StrategyParam<int> _atrPeriod;
+	private readonly StrategyParam<int> _cooldownBars;
 
 	private AverageTrueRange _atr;
-	private SimpleMovingAverage _atrAverage;
+	private SimpleMovingAverage _atrAvg;
 
 	private int _redCount;
 	private int _greenCount;
-	private int _barIndex;
-	private int? _entryBarIndex;
+	private int _barsSinceEntry;
+	private int _cooldownRemaining;
 
-	/// <summary>
-	/// Candle type for strategy calculation.
-	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Maximum trade duration in bars.
-	/// </summary>
 	public int MaxTradeDuration
 	{
 		get => _maxTradeDuration.Value;
 		set => _maxTradeDuration.Value = value;
 	}
 
-	/// <summary>
-	/// Use three green candles exit.
-	/// </summary>
-	public bool UseGreenExit
-	{
-		get => _useGreenExit.Value;
-		set => _useGreenExit.Value = value;
-	}
-
-	/// <summary>
-	/// ATR period (0 disables filter).
-	/// </summary>
 	public int AtrPeriod
 	{
 		get => _atrPeriod.Value;
 		set => _atrPeriod.Value = value;
 	}
 
-	/// <summary>
-	/// Constructor.
-	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
 	public ThreeRedGreenVolatilityStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
-		_maxTradeDuration = Param(nameof(MaxTradeDuration), 22)
+		_maxTradeDuration = Param(nameof(MaxTradeDuration), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("Max Trade Duration", "Maximum bars in position", "General")
-			
-			.SetOptimize(5, 30, 1);
+			.SetDisplay("Max Hold Bars", "Maximum bars in position", "Trading");
 
-		_useGreenExit = Param(nameof(UseGreenExit), true)
-			.SetDisplay("Use Green Exit", "Exit after three green candles", "General");
+		_atrPeriod = Param(nameof(AtrPeriod), 14)
+			.SetGreaterThanZero()
+			.SetDisplay("ATR Period", "ATR period", "Indicators");
 
-		_atrPeriod = Param(nameof(AtrPeriod), 12)
-			.SetRange(0, 100)
-			.SetDisplay("ATR Period", "ATR period (0 disables)", "Indicator")
-			
-			.SetOptimize(0, 30, 1);
+		_cooldownBars = Param(nameof(CooldownBars), 12)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "Risk");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
 
+		_atr = null;
+		_atrAvg = null;
 		_redCount = 0;
 		_greenCount = 0;
-		_barIndex = 0;
-		_entryBarIndex = null;
+		_barsSinceEntry = 0;
+		_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
@@ -113,58 +93,83 @@ public class ThreeRedGreenVolatilityStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_atr = new AverageTrueRange { Length = Math.Max(1, AtrPeriod) };
-		_atrAverage = new SMA { Length = 30 };
+		_atr = new AverageTrueRange { Length = AtrPeriod };
+		_atrAvg = new SimpleMovingAverage { Length = 30 };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(_atr, ProcessCandle)
+			.Bind(_atr, OnProcess)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _atr);
-			DrawIndicator(area, _atrAverage);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue atrValue)
+	private void OnProcess(ICandleMessage candle, decimal atrVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var atr = atrValue.ToDecimal();
-		var atrAvg = _atrAverage.Process(new DecimalIndicatorValue(_atrAverage, atr, candle.ServerTime)).ToDecimal();
+		if (!_atr.IsFormed)
+			return;
 
-		var atrEntry = AtrPeriod <= 0 || !_atr.IsFormed || !_atrAverage.IsFormed || atr > atrAvg;
+		// Update ATR average manually
+		var atrAvgResult = _atrAvg.Process(new DecimalIndicatorValue(_atrAvg, atrVal, candle.ServerTime));
+		var atrAvgVal = _atrAvg.IsFormed ? atrAvgResult.ToDecimal() : atrVal;
 
-		var redDay = candle.ClosePrice < candle.OpenPrice;
-		var greenDay = candle.ClosePrice > candle.OpenPrice;
+		var isRed = candle.ClosePrice < candle.OpenPrice;
+		var isGreen = candle.ClosePrice > candle.OpenPrice;
 
-		_redCount = redDay ? _redCount + 1 : 0;
-		_greenCount = greenDay ? _greenCount + 1 : 0;
+		_redCount = isRed ? _redCount + 1 : 0;
+		_greenCount = isGreen ? _greenCount + 1 : 0;
 
-		var threeRed = _redCount >= 3;
-		var threeGreen = _greenCount >= 3;
+		if (Position != 0)
+			_barsSinceEntry++;
 
-		if (Position == 0 && threeRed && atrEntry)
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		if (_cooldownRemaining > 0)
 		{
-			BuyMarket();
-			_entryBarIndex = _barIndex;
+			_cooldownRemaining--;
+			return;
 		}
 
-		var tradeDuration = _entryBarIndex.HasValue ? _barIndex - _entryBarIndex.Value : 0;
-		var exitCondition = (UseGreenExit && threeGreen) || (tradeDuration >= MaxTradeDuration);
+		var highVol = atrVal > atrAvgVal * 0.8m;
 
-		if (Position > 0 && exitCondition)
+		// Buy after 3 red candles + volatility check
+		if (_redCount >= 3 && highVol && Position <= 0)
 		{
-			SellMarket();
-			_entryBarIndex = null;
+			if (Position < 0)
+				BuyMarket(Math.Abs(Position));
+			BuyMarket(Volume);
+			_barsSinceEntry = 0;
+			_cooldownRemaining = CooldownBars;
 		}
-
-		_barIndex++;
+		// Sell after 3 green candles + high volatility
+		else if (_greenCount >= 3 && highVol && Position >= 0)
+		{
+			if (Position > 0)
+				SellMarket(Math.Abs(Position));
+			SellMarket(Volume);
+			_barsSinceEntry = 0;
+			_cooldownRemaining = CooldownBars;
+		}
+		// Exit long: 3 green candles or max hold
+		else if (Position > 0 && (_greenCount >= 3 || _barsSinceEntry >= MaxTradeDuration))
+		{
+			SellMarket(Math.Abs(Position));
+			_cooldownRemaining = CooldownBars;
+		}
+		// Exit short: 3 red candles or max hold
+		else if (Position < 0 && (_redCount >= 3 || _barsSinceEntry >= MaxTradeDuration))
+		{
+			BuyMarket(Math.Abs(Position));
+			_cooldownRemaining = CooldownBars;
+		}
 	}
 }

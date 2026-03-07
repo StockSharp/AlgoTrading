@@ -1,122 +1,85 @@
+namespace StockSharp.Samples.Strategies;
+
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-namespace StockSharp.Samples.Strategies;
-
 /// <summary>
-/// Buys 10% of portfolio when S&P 500 and TIPS are above SMA at a new month.
+/// 2X SPY TIPS Strategy (single-security adaptation).
+/// Uses dual SMA to detect strong uptrend, then buys.
+/// Original requires SPY+TIPS, adapted to single security with fast/slow SMA.
 /// </summary>
 public class TwoXSpyTipsStrategy : Strategy
 {
-	private readonly StrategyParam<Security> _sp500Security;
-	private readonly StrategyParam<Security> _tipsSecurity;
-	private readonly StrategyParam<int> _smaLength;
-	private readonly StrategyParam<decimal> _leverage;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _fastSmaLength;
+	private readonly StrategyParam<int> _slowSmaLength;
+	private readonly StrategyParam<int> _cooldownBars;
 
-	private decimal _sp500Price;
-	private decimal _sp500Sma;
-	private decimal _tipsPrice;
-	private decimal _tipsSma;
-	private int _lastMonth;
+	private SimpleMovingAverage _fastSma;
+	private SimpleMovingAverage _slowSma;
 
-	/// <summary>
-	/// Security used for S&P 500 prices.
-	/// </summary>
-	public Security Sp500Security
-	{
-		get => _sp500Security.Value;
-		set => _sp500Security.Value = value;
-	}
+	private int _cooldownRemaining;
 
-	/// <summary>
-	/// Security used for TIPS prices.
-	/// </summary>
-	public Security TipsSecurity
-	{
-		get => _tipsSecurity.Value;
-		set => _tipsSecurity.Value = value;
-	}
-
-	/// <summary>
-	/// Length of moving averages.
-	/// </summary>
-	public int SmaLength
-	{
-		get => _smaLength.Value;
-		set => _smaLength.Value = value;
-	}
-
-	/// <summary>
-	/// Position leverage multiplier.
-	/// </summary>
-	public decimal Leverage
-	{
-		get => _leverage.Value;
-		set => _leverage.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type for analysis.
-	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Initializes a new instance of <see cref="TwoXSpyTipsStrategy"/>.
-	/// </summary>
+	public int FastSmaLength
+	{
+		get => _fastSmaLength.Value;
+		set => _fastSmaLength.Value = value;
+	}
+
+	public int SlowSmaLength
+	{
+		get => _slowSmaLength.Value;
+		set => _slowSmaLength.Value = value;
+	}
+
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
 	public TwoXSpyTipsStrategy()
 	{
-		_sp500Security = Param<Security>(nameof(Sp500Security))
-		                     .SetDisplay("S&P 500 Security", "Security for S&P 500 data", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
-		_tipsSecurity =
-		    Param<Security>(nameof(TipsSecurity)).SetDisplay("TIPS Security", "Security for TIPS data", "General");
+		_fastSmaLength = Param(nameof(FastSmaLength), 50)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast SMA", "Fast SMA period", "Indicators");
 
-		_smaLength = Param(nameof(SmaLength), 200)
-		                 .SetGreaterThanZero()
-		                 .SetDisplay("SMA Length", "Length of moving averages", "Indicators")
-		                 
-		                 .SetOptimize(100, 300, 50);
+		_slowSmaLength = Param(nameof(SlowSmaLength), 200)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow SMA", "Slow SMA period", "Indicators");
 
-		_leverage = Param(nameof(Leverage), 2m)
-		                .SetGreaterThanZero()
-		                .SetDisplay("Leverage", "Position leverage multiplier", "Trading")
-		                
-		                .SetOptimize(1m, 6m, 0.5m);
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-		                  .SetDisplay("Candle Type", "Type of candles", "General");
+		_cooldownBars = Param(nameof(CooldownBars), 15)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "Risk");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType), (Sp500Security, CandleType), (TipsSecurity, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_sp500Price = default;
-		_sp500Sma = default;
-		_tipsPrice = default;
-		_tipsSma = default;
-		_lastMonth = default;
+
+		_fastSma = null;
+		_slowSma = null;
+		_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
@@ -124,69 +87,70 @@ public class TwoXSpyTipsStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		if (Sp500Security == null || TipsSecurity == null)
-			throw new InvalidOperationException("Required securities are not specified.");
+		_fastSma = new SimpleMovingAverage { Length = FastSmaLength };
+		_slowSma = new SimpleMovingAverage { Length = SlowSmaLength };
 
-		var sp500Sma = new SMA { Length = SmaLength };
-		var tipsSma = new SMA { Length = SmaLength };
-
-		var mainSub = SubscribeCandles(CandleType).Bind(ProcessMain).Start();
-
-		SubscribeCandles(CandleType, security: Sp500Security).Bind(sp500Sma, ProcessSp500).Start();
-
-		SubscribeCandles(CandleType, security: TipsSecurity).Bind(tipsSma, ProcessTips).Start();
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(_fastSma, _slowSma, OnProcess)
+			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
-			DrawCandles(area, mainSub);
+			DrawCandles(area, subscription);
+			DrawIndicator(area, _fastSma);
+			DrawIndicator(area, _slowSma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessSp500(ICandleMessage candle, decimal sma)
+	private void OnProcess(ICandleMessage candle, decimal fastVal, decimal slowVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		_sp500Price = candle.ClosePrice;
-		_sp500Sma = sma;
-	}
-
-	private void ProcessTips(ICandleMessage candle, decimal sma)
-	{
-		if (candle.State != CandleStates.Finished)
+		if (!_fastSma.IsFormed || !_slowSma.IsFormed)
 			return;
-
-		_tipsPrice = candle.ClosePrice;
-		_tipsSma = sma;
-	}
-
-	private void ProcessMain(ICandleMessage candle)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		var month = candle.OpenTime.Month;
-		if (month == _lastMonth)
-			return;
-
-		_lastMonth = month;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		if (_sp500Price <= _sp500Sma || _tipsPrice <= _tipsSma)
+		if (_cooldownRemaining > 0)
+		{
+			_cooldownRemaining--;
 			return;
+		}
 
-		var portfolioValue = Portfolio.CurrentValue ?? 0m;
-		if (portfolioValue <= 0)
-			return;
+		var price = candle.ClosePrice;
 
-		var capital = portfolioValue * 0.1m;
-		var qty = (capital / candle.ClosePrice) * Leverage;
-
-		if (qty > 0)
-			BuyMarket(qty);
+		// Strong uptrend: price above both SMAs + fast > slow
+		if (price > fastVal && price > slowVal && fastVal > slowVal && Position <= 0)
+		{
+			if (Position < 0)
+				BuyMarket(Math.Abs(Position));
+			BuyMarket(Volume);
+			_cooldownRemaining = CooldownBars;
+		}
+		// Strong downtrend: price below both SMAs + fast < slow
+		else if (price < fastVal && price < slowVal && fastVal < slowVal && Position >= 0)
+		{
+			if (Position > 0)
+				SellMarket(Math.Abs(Position));
+			SellMarket(Volume);
+			_cooldownRemaining = CooldownBars;
+		}
+		// Exit long: price drops below fast SMA
+		else if (Position > 0 && price < fastVal)
+		{
+			SellMarket(Math.Abs(Position));
+			_cooldownRemaining = CooldownBars;
+		}
+		// Exit short: price rises above fast SMA
+		else if (Position < 0 && price > fastVal)
+		{
+			BuyMarket(Math.Abs(Position));
+			_cooldownRemaining = CooldownBars;
+		}
 	}
 }
