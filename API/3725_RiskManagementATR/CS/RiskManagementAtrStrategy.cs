@@ -35,7 +35,7 @@ public class RiskManagementAtrStrategy : Strategy
 
 	public RiskManagementAtrStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle type", "Primary timeframe processed by the strategy.", "General");
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
@@ -119,6 +119,20 @@ public class RiskManagementAtrStrategy : Strategy
 		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_atr = null;
+		_fastMovingAverage = null;
+		_slowMovingAverage = null;
+		_lastAtrValue = null;
+		_stopLossOrder = null;
+		_priceStep = 0m;
+		_virtualStopPrice = null;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
@@ -134,12 +148,12 @@ public class RiskManagementAtrStrategy : Strategy
 			Length = AtrPeriod
 		};
 
-		_fastMovingAverage = new SMA
+		_fastMovingAverage = new SimpleMovingAverage
 		{
 			Length = FastMaPeriod
 		};
 
-		_slowMovingAverage = new SMA
+		_slowMovingAverage = new SimpleMovingAverage
 		{
 			Length = SlowMaPeriod
 		};
