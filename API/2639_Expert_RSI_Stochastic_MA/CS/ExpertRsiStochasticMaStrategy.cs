@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 using Ecng.Common;
 
@@ -82,7 +83,7 @@ public class ExpertRsiStochasticMaStrategy : Strategy
 
 	public ExpertRsiStochasticMaStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame used for calculations", "General");
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 3)
@@ -112,6 +113,18 @@ public class ExpertRsiStochasticMaStrategy : Strategy
 		_maPeriod = Param(nameof(MaPeriod), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "Length of moving average", "Moving Average");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
 	}
 
 	/// <inheritdoc />

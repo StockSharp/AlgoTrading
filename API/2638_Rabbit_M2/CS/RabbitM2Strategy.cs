@@ -117,7 +117,7 @@ public class RabbitM2Strategy : Strategy
 			.SetDisplay("Initial Volume", "Starting base order size", "Money Management")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Primary Candle Type", "Timeframe for CCI, Williams %R and Donchian", "General");
 	}
 
@@ -251,7 +251,7 @@ public class RabbitM2Strategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		yield return (Security, CandleType);
-		yield return (Security, TimeSpan.FromHours(1).TimeFrame());
+		yield return (Security, TimeSpan.FromHours(4).TimeFrame());
 	}
 
 	/// <inheritdoc />
@@ -296,7 +296,7 @@ public class RabbitM2Strategy : Strategy
 		var emaFast = new EMA { Length = FastEmaPeriod };
 		var emaSlow = new EMA { Length = SlowEmaPeriod };
 
-		var trendSubscription = SubscribeCandles(TimeSpan.FromHours(1).TimeFrame());
+		var trendSubscription = SubscribeCandles(TimeSpan.FromHours(4).TimeFrame());
 		trendSubscription
 			.Bind(emaFast, emaSlow, ProcessTrend)
 			.Start();
