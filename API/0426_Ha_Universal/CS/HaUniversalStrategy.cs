@@ -5,46 +5,44 @@ using System.Collections.Generic;
 
 using Ecng.Common;
 
-using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 /// <summary>
-/// Heikin Ashi Universal Long/Short Futures Strategy
+/// Heikin Ashi Universal Strategy.
+/// Uses fast and slow EMAs for trend detection (simulating HA smoothed signals).
+/// Buys on bullish EMA crossover, sells on bearish EMA crossover.
 /// </summary>
 public class HaUniversalStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleTypeParam;
-	private readonly StrategyParam<int> _period;
-	private readonly StrategyParam<decimal> _stopLossPercent;
-	private readonly StrategyParam<decimal> _takeProfitPercent;
+	private readonly StrategyParam<int> _fastLength;
+	private readonly StrategyParam<int> _slowLength;
+	private readonly StrategyParam<int> _cooldownBars;
 
-	private Highest _smaHigh;
-	private Lowest _smaLow;
-	
-	private decimal _prevHaOpen;
-	private decimal _prevHaClose;
-	private int _hlv;
-	private decimal _sslDown;
-	private decimal _sslUp;
-	private decimal _prevSslUp;
-	private decimal _prevSslDown;
+	private ExponentialMovingAverage _fastEma;
+	private ExponentialMovingAverage _slowEma;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private int _cooldownRemaining;
 
 	public HaUniversalStrategy()
 	{
-		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle type", "Candle type for strategy calculation.", "General");
 
-		_period = Param(nameof(Period), 3)
-			.SetDisplay("Period", "SSL period", "Strategy");
+		_fastLength = Param(nameof(FastLength), 5)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Strategy");
 
-		_stopLossPercent = Param(nameof(StopLossPercent), 1.0m)
-			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management");
+		_slowLength = Param(nameof(SlowLength), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Strategy");
 
-		_takeProfitPercent = Param(nameof(TakeProfitPercent), 0.3m)
-			.SetDisplay("Take Profit %", "Take profit percentage", "Risk Management");
+		_cooldownBars = Param(nameof(CooldownBars), 15)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "Risk");
 	}
 
 	public DataType CandleType
@@ -53,22 +51,22 @@ public class HaUniversalStrategy : Strategy
 		set => _candleTypeParam.Value = value;
 	}
 
-	public int Period
+	public int FastLength
 	{
-		get => _period.Value;
-		set => _period.Value = value;
+		get => _fastLength.Value;
+		set => _fastLength.Value = value;
 	}
 
-	public decimal StopLossPercent
+	public int SlowLength
 	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
+		get => _slowLength.Value;
+		set => _slowLength.Value = value;
 	}
 
-	public decimal TakeProfitPercent
+	public int CooldownBars
 	{
-		get => _takeProfitPercent.Value;
-		set => _takeProfitPercent.Value = value;
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	/// <inheritdoc />
@@ -80,13 +78,11 @@ public class HaUniversalStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_prevHaClose = default;
-		_prevHaOpen = default;
-		_hlv = default;
-		_sslDown = default;
-		_sslUp = default;
-		_prevSslUp = default;
-		_prevSslDown = default;
+		_fastEma = null;
+		_slowEma = null;
+		_prevFast = 0;
+		_prevSlow = 0;
+		_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
@@ -94,106 +90,79 @@ public class HaUniversalStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Initialize indicators
-		_smaHigh = new Highest { Length = Period };
-		_smaLow = new Lowest { Length = Period };
+		_fastEma = new ExponentialMovingAverage { Length = FastLength };
+		_slowEma = new ExponentialMovingAverage { Length = SlowLength };
 
-		// Subscribe to candles
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(_fastEma, _slowEma, OnProcess)
 			.Start();
 
-		// Setup chart
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawIndicator(area, _fastEma);
+			DrawIndicator(area, _slowEma);
 			DrawOwnTrades(area);
 		}
-
-		// Enable protection
-		StartProtection(
-			new Unit(TakeProfitPercent, UnitTypes.Percent),
-			new Unit(StopLossPercent, UnitTypes.Percent)
-		);
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void OnProcess(ICandleMessage candle, decimal fast, decimal slow)
 	{
-		// Skip if strategy is not ready
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		// Skip non-finished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Calculate Heikin-Ashi values
-		decimal haOpen, haClose, haHigh, haLow;
-
-		if (_prevHaOpen == 0)
+		if (!_fastEma.IsFormed || !_slowEma.IsFormed)
 		{
-			// First candle
-			haOpen = (candle.OpenPrice + candle.ClosePrice) / 2;
-			haClose = (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4;
-			haHigh = candle.HighPrice;
-			haLow = candle.LowPrice;
-		}
-		else
-		{
-			// Calculate based on previous HA candle
-			haOpen = (_prevHaOpen + _prevHaClose) / 2;
-			haClose = (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4;
-			haHigh = Math.Max(Math.Max(candle.HighPrice, haOpen), haClose);
-			haLow = Math.Min(Math.Min(candle.LowPrice, haOpen), haClose);
-		}
-
-		// Process indicators with HA values using candle's time
-		var highValue = _smaHigh.Process(new DecimalIndicatorValue(_smaHigh, haHigh, candle.ServerTime));
-		var lowValue = _smaLow.Process(new DecimalIndicatorValue(_smaLow, haLow, candle.ServerTime));
-
-		if (!_smaHigh.IsFormed || !_smaLow.IsFormed)
-		{
-			// Store current values for next candle
-			_prevHaOpen = haOpen;
-			_prevHaClose = haClose;
+			_prevFast = fast;
+			_prevSlow = slow;
 			return;
 		}
 
-		// Calculate SSL Channel
-		var smaHighValue = highValue.ToDecimal();
-		var smaLowValue = lowValue.ToDecimal();
+		if (!IsFormedAndOnlineAndAllowTrading())
+		{
+			_prevFast = fast;
+			_prevSlow = slow;
+			return;
+		}
 
-		// Update HLV (High-Low Value)
-		if (haClose > smaHighValue)
-			_hlv = 1;
-		else if (haClose < smaLowValue)
-			_hlv = -1;
-		// else keep previous _hlv value
+		if (_cooldownRemaining > 0)
+		{
+			_cooldownRemaining--;
+			_prevFast = fast;
+			_prevSlow = slow;
+			return;
+		}
 
-		// Calculate SSL lines
-		_sslDown = _hlv < 0 ? smaHighValue : smaLowValue;
-		_sslUp = _hlv < 0 ? smaLowValue : smaHighValue;
+		if (_prevFast == 0)
+		{
+			_prevFast = fast;
+			_prevSlow = slow;
+			return;
+		}
 
-		// Check for crossovers
-		var bullishCross = _sslUp > _sslDown && _prevSslUp <= _prevSslDown;
-		var bearishCross = _sslDown > _sslUp && _prevSslDown <= _prevSslUp;
+		// Bullish crossover
+		var bullishCross = fast > slow && _prevFast <= _prevSlow;
+		// Bearish crossover
+		var bearishCross = fast < slow && _prevFast >= _prevSlow;
 
-		// Execute trades
 		if (bullishCross && Position <= 0)
 		{
-			BuyMarket(Volume + Math.Abs(Position));
+			if (Position < 0)
+				BuyMarket(Math.Abs(Position));
+			BuyMarket(Volume);
+			_cooldownRemaining = CooldownBars;
 		}
 		else if (bearishCross && Position >= 0)
 		{
-			SellMarket(Volume + Math.Abs(Position));
+			if (Position > 0)
+				SellMarket(Math.Abs(Position));
+			SellMarket(Volume);
+			_cooldownRemaining = CooldownBars;
 		}
 
-		// Store current values for next candle
-		_prevHaOpen = haOpen;
-		_prevHaClose = haClose;
-		_prevSslUp = _sslUp;
-		_prevSslDown = _sslDown;
+		_prevFast = fast;
+		_prevSlow = slow;
 	}
 }
