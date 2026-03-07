@@ -172,7 +172,7 @@ public class TotalPowerIndicatorXStrategy : Strategy
 	/// </summary>
 	public TotalPowerIndicatorXStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe for calculations", "General");
 
 		_powerPeriod = Param(nameof(PowerPeriod), 10)
@@ -296,13 +296,13 @@ public class TotalPowerIndicatorXStrategy : Strategy
 
 		if (EnableLongExit && crossDown && Position > 0m)
 		{
-			SellMarket(Position);
+			SellMarket();
 			ResetLongTargets();
 		}
 
 		if (EnableShortExit && crossUp && Position < 0m)
 		{
-			BuyMarket(-Position);
+			BuyMarket();
 			ResetShortTargets();
 		}
 
@@ -311,12 +311,12 @@ public class TotalPowerIndicatorXStrategy : Strategy
 
 		if (EnableLongEntry && crossUp && Position == 0m)
 		{
-			BuyMarket(Volume);
+			BuyMarket();
 			SetupLongTargets(candle.ClosePrice);
 		}
 		else if (EnableShortEntry && crossDown && Position == 0m)
 		{
-			SellMarket(Volume);
+			SellMarket();
 			SetupShortTargets(candle.ClosePrice);
 		}
 	}
@@ -333,14 +333,14 @@ public class TotalPowerIndicatorXStrategy : Strategy
 
 			if (_longStopPrice.HasValue && candle.LowPrice <= _longStopPrice.Value)
 			{
-				SellMarket(volume);
+				SellMarket();
 				ResetLongTargets();
 				return true;
 			}
 
 			if (_longTakePrice.HasValue && candle.HighPrice >= _longTakePrice.Value)
 			{
-				SellMarket(volume);
+				SellMarket();
 				ResetLongTargets();
 				return true;
 			}
@@ -351,14 +351,14 @@ public class TotalPowerIndicatorXStrategy : Strategy
 
 			if (_shortStopPrice.HasValue && candle.HighPrice >= _shortStopPrice.Value)
 			{
-				BuyMarket(volume);
+				BuyMarket();
 				ResetShortTargets();
 				return true;
 			}
 
 			if (_shortTakePrice.HasValue && candle.LowPrice <= _shortTakePrice.Value)
 			{
-				BuyMarket(volume);
+				BuyMarket();
 				ResetShortTargets();
 				return true;
 			}
@@ -386,12 +386,12 @@ public class TotalPowerIndicatorXStrategy : Strategy
 	{
 		if (Position > 0m)
 		{
-			SellMarket(Position);
+			SellMarket();
 			ResetLongTargets();
 		}
 		else if (Position < 0m)
 		{
-			BuyMarket(-Position);
+			BuyMarket();
 			ResetShortTargets();
 		}
 	}
@@ -438,8 +438,8 @@ public class TotalPowerIndicatorXStrategy : Strategy
 
 	private sealed class TotalPowerIndicator : BaseIndicator
 	{
-		private readonly Queue<int> _bullHistory = new();
-		private readonly Queue<int> _bearHistory = new();
+		private readonly List<int> _bullHistory = new();
+		private readonly List<int> _bearHistory = new();
 		private readonly ExponentialMovingAverage _ema = new();
 		private int _bullCount;
 		private int _bearCount;
@@ -465,7 +465,7 @@ public class TotalPowerIndicatorXStrategy : Strategy
 		protected override IIndicatorValue OnProcess(IIndicatorValue input)
 		{
 			var candle = input.GetValue<ICandleMessage>();
-			var emaValue = _ema.Process(new DecimalIndicatorValue(_ema, candle.ClosePrice, input.Time));
+			var emaValue = _ema.Process(new DecimalIndicatorValue(_ema, candle.ClosePrice, input.Time) { IsFinal = input.IsFinal });
 
 			if (!_ema.IsFormed)
 			{
@@ -508,14 +508,15 @@ public class TotalPowerIndicatorXStrategy : Strategy
 			_ema.Reset();
 		}
 
-		private void UpdateCounters(Queue<int> queue, ref int count, int value)
+		private void UpdateCounters(List<int> list, ref int count, int value)
 		{
-			queue.Enqueue(value);
+			list.Add(value);
 			count += value;
 
-			while (queue.Count > LookbackPeriod)
+			while (list.Count > LookbackPeriod)
 			{
-				count -= queue.Dequeue();
+				try { count -= list[0]; list.RemoveAt(0); }
+				catch { break; }
 			}
 		}
 	}

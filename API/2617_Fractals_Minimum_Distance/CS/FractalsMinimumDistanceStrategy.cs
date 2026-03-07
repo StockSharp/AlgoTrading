@@ -59,7 +59,7 @@ public class FractalsMinimumDistanceStrategy : Strategy
 			.SetDisplay("Signal bar offset", "How many closed bars ago the fractal must appear", "General")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle type", "Primary candle series used for signals", "Data")
 			;
 	}
@@ -160,11 +160,11 @@ public class FractalsMinimumDistanceStrategy : Strategy
 
 			// Close existing long exposure before reversing.
 			if (Position > 0)
-				SellMarket(Position);
+				SellMarket();
 
 			// Enter a short position if the fractals are far enough apart.
 			if (ShouldOpenTrade(distanceThreshold))
-				SellMarket(Volume);
+				SellMarket();
 		}
 
 		if (isLowerFractal)
@@ -173,17 +173,17 @@ public class FractalsMinimumDistanceStrategy : Strategy
 
 			// Close existing short exposure before reversing.
 			if (Position < 0)
-				BuyMarket(-Position);
+				BuyMarket();
 
 			// Enter a long position if the fractals are far enough apart.
 			if (ShouldOpenTrade(distanceThreshold))
-				BuyMarket(Volume);
+				BuyMarket();
 		}
 	}
 
 	private bool ShouldOpenTrade(decimal distanceThreshold)
 	{
-		if (Volume <= 0 || !IsFormedAndOnlineAndAllowTrading())
+		if (Volume <= 0)
 			return false;
 
 		if (_prevUpperFractal is not decimal upper || _prevLowerFractal is not decimal lower)

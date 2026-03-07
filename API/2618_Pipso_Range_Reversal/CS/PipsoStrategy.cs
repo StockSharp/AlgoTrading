@@ -113,7 +113,7 @@ public class PipsoStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Range %", "Extra percentage of the channel width for stop distance", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame used for calculations", "General");
 	}
 
@@ -169,12 +169,7 @@ public class PipsoStrategy : Strategy
 			return;
 		}
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			_previousHighest = highestValue;
-			_previousLowest = lowestValue;
-			return;
-		}
+		// Indicators are bound via .Bind, no need for IsFormedAndOnlineAndAllowTrading.
 
 		var channelHigh = _previousHighest;
 		var channelLow = _previousLowest;
@@ -188,13 +183,13 @@ public class PipsoStrategy : Strategy
 
 		if (breakoutHigh && Position > 0)
 		{
-			SellMarket(Math.Abs(Position));
+			SellMarket();
 			ResetTradeState();
 		}
 
 		if (breakoutLow && Position < 0)
 		{
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
 			ResetTradeState();
 		}
 
@@ -204,14 +199,14 @@ public class PipsoStrategy : Strategy
 
 			if (breakoutHigh && Position == 0 && canTrade)
 			{
-				SellMarket(OrderVolume);
+				SellMarket();
 				_entrySide = Sides.Sell;
 				_entryPrice = channelHigh;
 				_stopPrice = _entryPrice + stopDistance;
 			}
 			else if (breakoutLow && Position == 0 && canTrade)
 			{
-				BuyMarket(OrderVolume);
+				BuyMarket();
 				_entrySide = Sides.Buy;
 				_entryPrice = channelLow;
 				_stopPrice = _entryPrice - stopDistance;
@@ -240,7 +235,7 @@ public class PipsoStrategy : Strategy
 
 			if (candle.LowPrice <= _stopPrice.Value)
 			{
-				SellMarket(Math.Abs(Position));
+				SellMarket();
 				ResetTradeState();
 			}
 		}
@@ -254,7 +249,7 @@ public class PipsoStrategy : Strategy
 
 			if (candle.HighPrice >= _stopPrice.Value)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				ResetTradeState();
 			}
 		}

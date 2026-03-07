@@ -129,7 +129,7 @@ public class PercentageCrossoverChannelSystemStrategy : Strategy
 		_takeProfit = Param(nameof(TakeProfit), 2000)
 			.SetDisplay("Take Profit (steps)", "Target profit distance in price steps", "Risk Management");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe for analysis", "General");
 	}
 
@@ -171,7 +171,7 @@ public class PercentageCrossoverChannelSystemStrategy : Strategy
 		var stopTriggered = HandleRisk(candle);
 
 		// Mirror the MQL signal logic using cached indicator colors.
-		if (IsFormedAndOnlineAndAllowTrading() && _colorHistory.Count > SignalBar)
+		if (_colorHistory.Count > SignalBar)
 		{
 			// Equivalent to CopyBuffer(..., SignalBar, 2, ...) from the EA.
 			var recentIndex = _colorHistory.Count - SignalBar;
@@ -362,8 +362,15 @@ public class PercentageCrossoverChannelSystemStrategy : Strategy
 			return;
 
 		var removeCount = _colorHistory.Count - maxCapacity;
-		_colorHistory.RemoveRange(0, removeCount);
-		_upperHistory.RemoveRange(0, removeCount);
-		_lowerHistory.RemoveRange(0, removeCount);
+		for (var i = 0; i < removeCount; i++)
+		{
+			try
+			{
+				_colorHistory.RemoveAt(0);
+				_upperHistory.RemoveAt(0);
+				_lowerHistory.RemoveAt(0);
+			}
+			catch { break; }
+		}
 	}
 }

@@ -145,13 +145,21 @@ public class PercentageCrossoverStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Signal Bar", "Closed bars to look back for the signal", "Indicator");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for signal candles", "Data");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_colorHistory.Clear();
+		_previousMiddle = null;
+		_lastColor = null;
 	}
 
 	protected override void OnStarted2(DateTime time)
@@ -206,8 +214,11 @@ public class PercentageCrossoverStrategy : Strategy
 
 		_colorHistory.Add(color);
 		var maxSize = Math.Max(SignalBar + 2, 4);
-		if (_colorHistory.Count > maxSize)
-			_colorHistory.RemoveRange(0, _colorHistory.Count - maxSize);
+		while (_colorHistory.Count > maxSize)
+		{
+			try { _colorHistory.RemoveAt(0); }
+			catch { break; }
+		}
 
 		var currentIndex = _colorHistory.Count - SignalBar;
 		if (currentIndex <= 0)

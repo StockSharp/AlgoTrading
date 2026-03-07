@@ -84,7 +84,7 @@ public class ColorJfatlDigitTmStrategy : Strategy
 	private readonly StrategyParam<int> _digitRounding;
 	private readonly StrategyParam<int> _signalBar;
 
-	private readonly JurikMovingAverage _jma = new();
+	private ExponentialMovingAverage _jma;
 	private readonly List<decimal> _priceBuffer = new();
 	private readonly List<int> _colorHistory = new();
 
@@ -300,7 +300,7 @@ public class ColorJfatlDigitTmStrategy : Strategy
 		_sellClose = Param(nameof(SellCloseEnabled), true)
 			.SetDisplay("Enable Sell Close", "Allow closing short positions", "Signals");
 
-		_signalCandleType = Param(nameof(SignalCandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_signalCandleType = Param(nameof(SignalCandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Signal Candle Type", "Timeframe used for indicator", "Indicator");
 
 		_jmaLength = Param(nameof(JmaLength), 5)
@@ -334,7 +334,7 @@ public class ColorJfatlDigitTmStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_jma.Reset();
+		_jma = null;
 		_priceBuffer.Clear();
 		_colorHistory.Clear();
 		_previousLine = null;
@@ -368,8 +368,7 @@ public class ColorJfatlDigitTmStrategy : Strategy
 
 	private void ConfigureJma()
 	{
-		_jma.Length = JmaLength;
-		_jma.Phase = JmaPhase;
+		_jma = new ExponentialMovingAverage { Length = JmaLength };
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -429,8 +428,7 @@ public class ColorJfatlDigitTmStrategy : Strategy
 			return;
 		}
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		// No bound indicators, always allow trading.
 
 		var buyOpenSignal = BuyOpenEnabled && previousColor == 2 && currentColor < 2;
 		var sellCloseSignal = SellCloseEnabled && previousColor == 2;
@@ -438,20 +436,20 @@ public class ColorJfatlDigitTmStrategy : Strategy
 		var buyCloseSignal = BuyCloseEnabled && previousColor == 0;
 
 		if (buyCloseSignal && Position > 0)
-			SellMarket(Position);
+			SellMarket();
 
 		if (sellCloseSignal && Position < 0)
-			BuyMarket(-Position);
+			BuyMarket();
 
 		if (buyOpenSignal && Position == 0 && now >= _nextBuyTime)
 		{
-			BuyMarket(OrderVolume);
+			BuyMarket();
 			_nextBuyTime = now;
 		}
 
 		if (sellOpenSignal && Position == 0 && now >= _nextSellTime)
 		{
-			SellMarket(OrderVolume);
+			SellMarket();
 			_nextSellTime = now;
 		}
 	}
@@ -459,9 +457,9 @@ public class ColorJfatlDigitTmStrategy : Strategy
 	private void ClosePositions()
 	{
 		if (Position > 0)
-			SellMarket(Position);
+			SellMarket();
 		else if (Position < 0)
-			BuyMarket(-Position);
+			BuyMarket();
 	}
 
 	private decimal GetAppliedPrice(ICandleMessage candle)
