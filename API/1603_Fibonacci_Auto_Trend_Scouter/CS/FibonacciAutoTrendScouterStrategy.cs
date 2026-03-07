@@ -36,7 +36,7 @@ public class FibonacciAutoTrendScouterStrategy : Strategy
 		_mediumPeriod = Param(nameof(MediumPeriod), 21)
 			.SetGreaterThanZero()
 			.SetDisplay("Medium Period", "Medium EMA period", "General");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle Type", "General");
 	}
 

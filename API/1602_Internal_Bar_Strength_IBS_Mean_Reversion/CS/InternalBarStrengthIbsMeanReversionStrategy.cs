@@ -35,7 +35,7 @@ public class InternalBarStrengthIbsMeanReversionStrategy : Strategy
 		_lowerThreshold = Param(nameof(LowerThreshold), 0.3m)
 			.SetDisplay("Lower Threshold", "IBS value to exit", "Parameters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -56,7 +56,7 @@ public class InternalBarStrengthIbsMeanReversionStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var sma = new SimpleMovingAverage { Length = 2 };
+		var sma = new SimpleMovingAverage { Length = 10 };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

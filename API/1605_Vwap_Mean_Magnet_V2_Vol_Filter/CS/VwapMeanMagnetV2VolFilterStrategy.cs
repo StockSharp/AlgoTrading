@@ -40,7 +40,7 @@ public class VwapMeanMagnetV2VolFilterStrategy : Strategy
 			.SetDisplay("RSI Overbought", "RSI Overbought", "General");
 		_rsiOversold = Param(nameof(RsiOversold), 35)
 			.SetDisplay("RSI Oversold", "RSI Oversold", "General");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle Type", "General");
 	}
 

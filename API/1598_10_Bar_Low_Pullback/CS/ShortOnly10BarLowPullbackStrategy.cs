@@ -32,7 +32,7 @@ public class ShortOnly10BarLowPullbackStrategy : Strategy
 
 	public ShortOnly10BarLowPullbackStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for processing", "General");
 
 		_lowestPeriod = Param(nameof(LowestPeriod), 10)

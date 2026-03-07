@@ -20,72 +20,91 @@ public class SimpleForecastKeltnerWormsStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _length;
+	private readonly StrategyParam<decimal> _multiplier;
 
-	private ExponentialMovingAverage _ema;
-	private AverageTrueRange _atr;
+	private decimal _prevClose;
+	private decimal _prevUpper;
+	private decimal _prevLower;
+	private bool _hasPrev;
 
-	/// <summary>
-	/// Candle type for calculations.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int Length { get => _length.Value; set => _length.Value = value; }
+	public decimal Multiplier { get => _multiplier.Value; set => _multiplier.Value = value; }
 
-	/// <summary>
-	/// Channel calculation period.
-	/// </summary>
-	public int Length
-	{
-		get => _length.Value;
-		set => _length.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the strategy.
-	/// </summary>
 	public SimpleForecastKeltnerWormsStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for processing", "General");
 
-		_length = Param(nameof(Length), 10)
-			.SetDisplay("Length", "Channel calculation period", "Indicators")
-			;
+		_length = Param(nameof(Length), 20)
+			.SetDisplay("Length", "Channel calculation period", "Indicators");
+
+		_multiplier = Param(nameof(Multiplier), 2m)
+			.SetDisplay("Multiplier", "ATR multiplier for bands", "Indicators");
 	}
 
-	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevClose = 0;
+		_prevUpper = 0;
+		_prevLower = 0;
+		_hasPrev = false;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_ema = new EMA { Length = Length };
-		_atr = new AverageTrueRange { Length = Length };
+		var ema = new ExponentialMovingAverage { Length = Length };
+		var atr = new AverageTrueRange { Length = Length };
 
-		SubscribeCandles(CandleType)
-			.Bind(ProcessCandle)
-			.Start();
+		_prevClose = 0;
+		_prevUpper = 0;
+		_prevLower = 0;
+		_hasPrev = false;
+
+		var sub = SubscribeCandles(CandleType);
+		sub.Bind(ema, atr, ProcessCandle).Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, sub);
+			DrawIndicator(area, ema);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal emaVal, decimal atrVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var ma = _ema.Process(new DecimalIndicatorValue(_ema, candle.ClosePrice, candle.OpenTime)).ToDecimal();
-		var range = _atr.Process(candle).ToDecimal();
+		var upper = emaVal + Multiplier * atrVal;
+		var lower = emaVal - Multiplier * atrVal;
 
-		var mult = 0m;
-		while (Math.Abs(candle.ClosePrice - ma) > range * mult)
-			mult++;
+		if (!_hasPrev)
+		{
+			_prevClose = candle.ClosePrice;
+			_prevUpper = upper;
+			_prevLower = lower;
+			_hasPrev = true;
+			return;
+		}
 
-		var upper = ma + range * mult;
-		var lower = ma - range * mult;
-
-		if (candle.ClosePrice > upper && Position <= 0)
+		// Breakout above upper Keltner band
+		if (_prevClose <= _prevUpper && candle.ClosePrice > upper && Position <= 0)
 			BuyMarket();
-		else if (candle.ClosePrice < lower && Position >= 0)
+		// Breakdown below lower Keltner band
+		else if (_prevClose >= _prevLower && candle.ClosePrice < lower && Position >= 0)
 			SellMarket();
+
+		_prevClose = candle.ClosePrice;
+		_prevUpper = upper;
+		_prevLower = lower;
 	}
 }

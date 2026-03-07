@@ -28,7 +28,7 @@ public class SimplisticAutomaticGrowthModelsStrategy : Strategy
 
 	public SimplisticAutomaticGrowthModelsStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for processing", "General");
 
 		_length = Param(nameof(Length), 10)

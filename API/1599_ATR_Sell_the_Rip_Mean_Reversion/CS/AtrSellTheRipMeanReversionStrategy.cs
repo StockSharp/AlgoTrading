@@ -13,37 +13,40 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// ATR Sell the Rip mean reversion short strategy.
-/// Shorts when price rises above ATR-based threshold, covers on new low.
+/// Shorts when price rises above EMA-based threshold, covers on new low.
+/// Uses StandardDeviation as volatility measure instead of ATR.
 /// </summary>
 public class AtrSellTheRipMeanReversionStrategy : Strategy
 {
-	private readonly StrategyParam<int> _atrPeriod;
-	private readonly StrategyParam<decimal> _atrMultiplier;
+	private readonly StrategyParam<int> _stdPeriod;
+	private readonly StrategyParam<decimal> _multiplier;
 	private readonly StrategyParam<int> _emaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _prevLow;
+	private decimal _prevStd;
+	private decimal _prevEma;
 	private bool _isReady;
 
-	public int AtrPeriod { get => _atrPeriod.Value; set => _atrPeriod.Value = value; }
-	public decimal AtrMultiplier { get => _atrMultiplier.Value; set => _atrMultiplier.Value = value; }
+	public int StdPeriod { get => _stdPeriod.Value; set => _stdPeriod.Value = value; }
+	public decimal Multiplier { get => _multiplier.Value; set => _multiplier.Value = value; }
 	public int EmaPeriod { get => _emaPeriod.Value; set => _emaPeriod.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public AtrSellTheRipMeanReversionStrategy()
 	{
-		_atrPeriod = Param(nameof(AtrPeriod), 14)
+		_stdPeriod = Param(nameof(StdPeriod), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("ATR Period", "ATR calculation period", "Parameters");
+			.SetDisplay("StdDev Period", "Standard deviation period", "Parameters");
 
-		_atrMultiplier = Param(nameof(AtrMultiplier), 1.5m)
-			.SetDisplay("ATR Multiplier", "ATR multiplier for threshold", "Parameters");
+		_multiplier = Param(nameof(Multiplier), 1.0m)
+			.SetDisplay("Multiplier", "Multiplier for threshold", "Parameters");
 
-		_emaPeriod = Param(nameof(EmaPeriod), 50)
+		_emaPeriod = Param(nameof(EmaPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Period", "EMA length for trend filter", "Filters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -56,6 +59,8 @@ public class AtrSellTheRipMeanReversionStrategy : Strategy
 	{
 		base.OnReseted();
 		_prevLow = 0;
+		_prevStd = 0;
+		_prevEma = 0;
 		_isReady = false;
 	}
 
@@ -64,12 +69,12 @@ public class AtrSellTheRipMeanReversionStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var atr = new AverageTrueRange { Length = AtrPeriod };
+		var stdDev = new StandardDeviation { Length = StdPeriod };
 		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(atr, ema, ProcessCandle)
+			.Bind(stdDev, ema, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -81,7 +86,7 @@ public class AtrSellTheRipMeanReversionStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal atrValue, decimal emaValue)
+	private void ProcessCandle(ICandleMessage candle, decimal stdValue, decimal emaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
@@ -89,21 +94,28 @@ public class AtrSellTheRipMeanReversionStrategy : Strategy
 		if (!_isReady)
 		{
 			_prevLow = candle.LowPrice;
+			_prevStd = stdValue;
+			_prevEma = emaValue;
 			_isReady = true;
 			return;
 		}
 
-		// Short condition: price exceeds ATR threshold above EMA, and is below EMA (mean reversion)
-		var atrThreshold = emaValue + atrValue * AtrMultiplier;
-		var shortCondition = candle.ClosePrice > atrThreshold;
+		// Short condition: price exceeds previous bar's threshold above EMA (overextended)
+		if (_prevStd > 0 && _prevEma > 0)
+		{
+			var upperThreshold = _prevEma + _prevStd * Multiplier;
+			var shortCondition = candle.ClosePrice > upperThreshold;
 
-		if (shortCondition && Position >= 0)
-			SellMarket();
+			if (shortCondition && Position >= 0)
+				SellMarket();
+		}
 
 		// Cover condition: close below previous low (mean reversion complete)
 		if (Position < 0 && candle.ClosePrice < _prevLow)
 			BuyMarket();
 
 		_prevLow = candle.LowPrice;
+		_prevStd = stdValue;
+		_prevEma = emaValue;
 	}
 }

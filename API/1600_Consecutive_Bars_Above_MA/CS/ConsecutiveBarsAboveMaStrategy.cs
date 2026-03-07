@@ -37,7 +37,7 @@ public class ConsecutiveBarsAboveMaStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Signal Threshold", "Number of bars above MA", "Parameters");
 
-		_maLength = Param(nameof(MaLength), 5)
+		_maLength = Param(nameof(MaLength), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Length", "Moving average length", "Parameters");
 
@@ -45,7 +45,7 @@ public class ConsecutiveBarsAboveMaStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Period", "EMA length for trend filter", "Filters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -104,9 +104,8 @@ public class ConsecutiveBarsAboveMaStrategy : Strategy
 		else
 			_bullCount = 0;
 
-		// Short: consecutive bars above MA, breakout above previous high, below EMA trend filter
+		// Short: consecutive bars above MA, below EMA trend filter (mean reversion)
 		var shortCondition = _bullCount >= Threshold &&
-			candle.ClosePrice > _prevHigh &&
 			candle.ClosePrice < emaValue;
 
 		if (shortCondition && Position >= 0)
