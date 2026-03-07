@@ -54,7 +54,7 @@ public class IchimokuOscillatorStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Smoothing Period", "Period for smoothing EMA", "Oscillator");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for calculation", "Main");
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
@@ -74,6 +74,7 @@ public class IchimokuOscillatorStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
+		_ema = default;
 		_prevValue = null;
 		_prevPrevValue = null;
 	}
@@ -89,6 +90,8 @@ public class IchimokuOscillatorStrategy : Strategy
 		ichimoku.SenkouB.Length = SenkouSpanBPeriod;
 
 		_ema = new ExponentialMovingAverage { Length = SmoothingPeriod };
+
+		Indicators.Add(_ema);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

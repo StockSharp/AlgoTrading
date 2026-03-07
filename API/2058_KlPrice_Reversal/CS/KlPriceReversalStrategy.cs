@@ -12,7 +12,7 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// KlPrice reversal strategy.
-/// Calculates a normalized oscillator based on price position relative to SMA and ATR.
+/// Calculates a normalized oscillator based on price position relative to EMA and ATR.
 /// Buys when leaving overbought zone, sells when leaving oversold zone.
 /// </summary>
 public class KlPriceReversalStrategy : Strategy
@@ -23,9 +23,8 @@ public class KlPriceReversalStrategy : Strategy
 	private readonly StrategyParam<decimal> _upLevel;
 	private readonly StrategyParam<decimal> _downLevel;
 
-	private AverageTrueRange _atr;
-	private decimal _prevColor = 2m;
-	private bool _isFirst = true;
+	private decimal _prevColor;
+	private bool _isFirst;
 
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 	public int PriceMaLength { get => _priceMaLength.Value; set => _priceMaLength.Value = value; }
@@ -35,12 +34,12 @@ public class KlPriceReversalStrategy : Strategy
 
 	public KlPriceReversalStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for calculations", "General");
 
 		_priceMaLength = Param(nameof(PriceMaLength), 100)
 			.SetGreaterThanZero()
-			.SetDisplay("Price MA Length", "SMA period for price smoothing", "Parameters");
+			.SetDisplay("Price MA Length", "EMA period for price smoothing", "Parameters");
 
 		_atrLength = Param(nameof(AtrLength), 20)
 			.SetGreaterThanZero()
@@ -60,6 +59,14 @@ public class KlPriceReversalStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevColor = 2m;
+		_isFirst = true;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
@@ -67,33 +74,28 @@ public class KlPriceReversalStrategy : Strategy
 		_isFirst = true;
 		_prevColor = 2m;
 
-		var priceMa = new SimpleMovingAverage { Length = PriceMaLength };
-		_atr = new AverageTrueRange { Length = AtrLength };
+		var priceMa = new ExponentialMovingAverage { Length = PriceMaLength };
+		var atr = new AverageTrueRange { Length = AtrLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(priceMa, ProcessCandle)
+			.BindEx(priceMa, atr, ProcessCandle)
 			.Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, priceMa);
-			DrawOwnTrades(area);
-		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal ma)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue maValue, IIndicatorValue atrValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var atrResult = _atr.Process(candle);
-		if (!atrResult.IsFormed)
+		if (!maValue.IsFormed || !atrValue.IsFormed)
 			return;
 
-		var tr = atrResult.ToDecimal();
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		var ma = maValue.ToDecimal();
+		var tr = atrValue.ToDecimal();
 		if (tr == 0m)
 			return;
 

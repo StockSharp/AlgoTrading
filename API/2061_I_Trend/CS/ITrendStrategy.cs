@@ -43,7 +43,7 @@ public class ITrendStrategy : Strategy
 		_bbDeviation = Param(nameof(BbDeviation), 2.0m)
 			.SetDisplay("BB Deviation", "Standard deviation for Bollinger Bands", "Indicator");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles used", "General");
 	}
 
@@ -69,6 +69,8 @@ public class ITrendStrategy : Strategy
 
 		var ma = new ExponentialMovingAverage { Length = MaPeriod };
 		var bb = new BollingerBands { Length = BbPeriod, Width = BbDeviation };
+
+		Indicators.Add(ma);
 
 		var subscription = SubscribeCandles(CandleType);
 
@@ -106,6 +108,9 @@ public class ITrendStrategy : Strategy
 
 	private void ProcessCandle(ICandleMessage candle, decimal maValue, decimal band)
 	{
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
 		var price = candle.ClosePrice;
 
 		var ind = price - band;

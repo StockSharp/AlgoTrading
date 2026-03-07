@@ -38,7 +38,7 @@ public class AnchoredMomentumBreakoutStrategy : Strategy
 			.SetDisplay("SMA Period", "Period for simple moving average", "Indicators");
 		_emaPeriod = Param(nameof(EmaPeriod), 20)
 			.SetDisplay("EMA Period", "Period for exponential moving average", "Indicators");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management");
@@ -60,7 +60,7 @@ public class AnchoredMomentumBreakoutStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var sma = new SimpleMovingAverage { Length = SmaPeriod };
+		var sma = new ExponentialMovingAverage { Length = SmaPeriod };
 		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
 		var sub = SubscribeCandles(CandleType);
 		sub.Bind(sma, ema, ProcessCandle).Start();
