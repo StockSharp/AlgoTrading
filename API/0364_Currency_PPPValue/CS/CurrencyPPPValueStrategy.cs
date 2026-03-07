@@ -1,204 +1,306 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
+using StockSharp.Configuration;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Currency purchasing power parity value strategy.
-/// Buys undervalued currencies and sells overvalued ones with monthly rebalancing.
+/// Currency PPP value strategy that trades the primary instrument when its synthetic PPP deviation becomes extreme relative to a benchmark currency.
 /// </summary>
-public class CurrencyPPPValueStrategy : Strategy
+public class CurrencyPppValueStrategy : Strategy
 {
-	private readonly StrategyParam<IEnumerable<Security>> _universe;
-	private readonly StrategyParam<int> _k;
-	private readonly StrategyParam<DataType> _tf;
-	private readonly StrategyParam<decimal> _minUsd;
+	private readonly StrategyParam<string> _security2Id;
+	private readonly StrategyParam<int> _pppLength;
+	private readonly StrategyParam<int> _lookbackPeriod;
+	private readonly StrategyParam<decimal> _entryThreshold;
+	private readonly StrategyParam<decimal> _exitThreshold;
+	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _stopLoss;
+	private readonly StrategyParam<DataType> _candleType;
+
+	private Security _benchmark = null!;
+	private ExponentialMovingAverage _primaryPpp = null!;
+	private ExponentialMovingAverage _benchmarkPpp = null!;
+	private SimpleMovingAverage _spreadAverage = null!;
+	private StandardDeviation _spreadDeviation = null!;
+	private decimal _latestPrimaryDeviation;
+	private decimal _latestBenchmarkDeviation;
+	private decimal? _previousZScore;
+	private bool _primaryUpdated;
+	private bool _benchmarkUpdated;
+	private int _cooldownRemaining;
 
 	/// <summary>
-	/// Trading universe.
+	/// Benchmark currency identifier.
 	/// </summary>
-	public IEnumerable<Security> Universe
+	public string Security2Id
 	{
-		get => _universe.Value;
-		set => _universe.Value = value;
+		get => _security2Id.Value;
+		set => _security2Id.Value = value;
 	}
 
 	/// <summary>
-	/// Number of currencies to long and short.
+	/// Smoothing length for the synthetic PPP anchor.
 	/// </summary>
-	public int K
+	public int PppLength
 	{
-		get => _k.Value;
-		set => _k.Value = value;
+		get => _pppLength.Value;
+		set => _pppLength.Value = value;
 	}
 
 	/// <summary>
-	/// Candle type (time-frame) used for analysis.
+	/// Lookback period used to normalize the deviation spread.
+	/// </summary>
+	public int LookbackPeriod
+	{
+		get => _lookbackPeriod.Value;
+		set => _lookbackPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Z-score threshold required to open a position.
+	/// </summary>
+	public decimal EntryThreshold
+	{
+		get => _entryThreshold.Value;
+		set => _entryThreshold.Value = value;
+	}
+
+	/// <summary>
+	/// Z-score threshold required to close a position.
+	/// </summary>
+	public decimal ExitThreshold
+	{
+		get => _exitThreshold.Value;
+		set => _exitThreshold.Value = value;
+	}
+
+	/// <summary>
+	/// Closed candles to wait before another position change.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
+	/// Stop loss percentage.
+	/// </summary>
+	public decimal StopLoss
+	{
+		get => _stopLoss.Value;
+		set => _stopLoss.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type used for both instruments.
 	/// </summary>
 	public DataType CandleType
 	{
-		get => _tf.Value;
-		set => _tf.Value = value;
+		get => _candleType.Value;
+		set => _candleType.Value = value;
 	}
 
 	/// <summary>
-	/// Minimum trade value in USD.
+	/// Constructor.
 	/// </summary>
-	public decimal MinTradeUsd
+	public CurrencyPppValueStrategy()
 	{
-		get => _minUsd.Value;
-		set => _minUsd.Value = value;
-	}
+		_security2Id = Param(nameof(Security2Id), Paths.HistoryDefaultSecurity2)
+			.SetDisplay("Benchmark Security Id", "Identifier of the benchmark currency security", "General");
 
-	private readonly Dictionary<Security, decimal> _w = [];
-	private readonly Dictionary<Security, decimal> _latestPrices = [];
-	private DateTime _lastDay = DateTime.MinValue;
+		_pppLength = Param(nameof(PppLength), 14)
+			.SetRange(2, 80)
+			.SetDisplay("PPP Length", "Smoothing length for the synthetic PPP anchor", "Indicators");
 
-	/// <summary>
-	/// Initializes a new instance of the <see cref="CurrencyPPPValueStrategy"/> class.
-	/// </summary>
-	public CurrencyPPPValueStrategy()
-	{
-		_universe = Param<IEnumerable<Security>>(nameof(Universe), [])
-			.SetDisplay("Universe", "Securities to trade", "General");
+		_lookbackPeriod = Param(nameof(LookbackPeriod), 24)
+			.SetRange(5, 120)
+			.SetDisplay("Lookback Period", "Lookback period used to normalize the deviation spread", "Indicators");
 
-		_k = Param(nameof(K), 3)
-			.SetGreaterThanZero()
-			.SetDisplay("K", "Number of currencies to long/short", "General");
+		_entryThreshold = Param(nameof(EntryThreshold), 1.25m)
+			.SetRange(0.2m, 5m)
+			.SetDisplay("Entry Threshold", "Z-score threshold required to open a position", "Signals");
 
-		_tf = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_exitThreshold = Param(nameof(ExitThreshold), 0.3m)
+			.SetRange(0m, 2m)
+			.SetDisplay("Exit Threshold", "Z-score threshold required to close a position", "Signals");
+
+		_cooldownBars = Param(nameof(CooldownBars), 8)
+			.SetRange(0, 120)
+			.SetDisplay("Cooldown Bars", "Closed candles to wait before another position change", "Risk");
+
+		_stopLoss = Param(nameof(StopLoss), 2.5m)
+			.SetRange(0.5m, 10m)
+			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame of candles", "General");
-
-		_minUsd = Param(nameof(MinTradeUsd), 100m)
-			.SetGreaterThanZero()
-			.SetDisplay("Min Trade USD", "Minimum trade size in USD", "Risk Management");
 	}
-
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return Universe.Select(s => (s, CandleType));
+		if (Security != null)
+			yield return (Security, CandleType);
+
+		if (!Security2Id.IsEmpty())
+			yield return (new Security { Id = Security2Id }, CandleType);
 	}
 
-
 	/// <inheritdoc />
-	
 	protected override void OnReseted()
 	{
 		base.OnReseted();
 
-		_w.Clear();
-		_latestPrices.Clear();
-		_lastDay = default;
+		_benchmark = null!;
+		_primaryPpp = null!;
+		_benchmarkPpp = null!;
+		_spreadAverage = null!;
+		_spreadDeviation = null!;
+		_latestPrimaryDeviation = 0m;
+		_latestBenchmarkDeviation = 0m;
+		_previousZScore = null;
+		_primaryUpdated = false;
+		_benchmarkUpdated = false;
+		_cooldownRemaining = 0;
 	}
 
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		if (Universe == null || !Universe.Any())
-			throw new InvalidOperationException("Universe is empty.");
 
-		foreach (var (s, dt) in GetWorkingSecurities())
+		if (Security == null)
+			throw new InvalidOperationException("Primary currency security is not specified.");
+
+		if (Security2Id.IsEmpty())
+			throw new InvalidOperationException("Benchmark currency identifier is not specified.");
+
+		_benchmark = this.LookupById(Security2Id) ?? new Security { Id = Security2Id };
+		_primaryPpp = new ExponentialMovingAverage { Length = PppLength };
+		_benchmarkPpp = new ExponentialMovingAverage { Length = PppLength };
+		_spreadAverage = new SimpleMovingAverage { Length = LookbackPeriod };
+		_spreadDeviation = new StandardDeviation { Length = LookbackPeriod };
+
+		var primarySubscription = SubscribeCandles(CandleType, security: Security);
+		var benchmarkSubscription = SubscribeCandles(CandleType, security: _benchmark);
+
+		primarySubscription
+			.Bind(ProcessPrimaryCandle)
+			.Start();
+
+		benchmarkSubscription
+			.Bind(ProcessBenchmarkCandle)
+			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
 		{
-			SubscribeCandles(dt, true, s)
-				.Bind(c => ProcessCandle(c, s))
-				.Start();
+			DrawCandles(area, primarySubscription);
+			DrawCandles(area, benchmarkSubscription);
+			DrawOwnTrades(area);
 		}
+
+		StartProtection(
+			new Unit(2, UnitTypes.Percent),
+			new Unit(StopLoss, UnitTypes.Percent));
 	}
 
-	private void ProcessCandle(ICandleMessage candle, Security security)
+	private void ProcessPrimaryCandle(ICandleMessage candle)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Store the latest closing price for this security
-		_latestPrices[security] = candle.ClosePrice;
-
-		Daily(candle);
+		_latestPrimaryDeviation = UpdateDeviation(_primaryPpp, candle);
+		_primaryUpdated = true;
+		TryProcessSpread(candle.OpenTime);
 	}
 
-	private void Daily(ICandleMessage c)
+	private void ProcessBenchmarkCandle(ICandleMessage candle)
 	{
-		var d = c.OpenTime.Date;
-		if (d == _lastDay)
+		if (candle.State != CandleStates.Finished)
 			return;
-		_lastDay = d;
-		if (d.Day == 1)
-			Rebalance();
+
+		_latestBenchmarkDeviation = UpdateDeviation(_benchmarkPpp, candle);
+		_benchmarkUpdated = true;
+		TryProcessSpread(candle.OpenTime);
 	}
 
-	private void Rebalance()
+	private decimal UpdateDeviation(ExponentialMovingAverage average, ICandleMessage candle)
 	{
-		var dev = new Dictionary<Security, decimal>();
-		foreach (var s in Universe)
-			if (TryGetPPPDeviation(s, out var v))
-				dev[s] = v;
+		var syntheticPpp = CalculateSyntheticPpp(candle);
+		var pppAnchor = average.Process(syntheticPpp, candle.OpenTime, true).ToDecimal();
 
-		if (dev.Count < K * 2)
+		return (candle.ClosePrice - pppAnchor) / Math.Max(pppAnchor, 1m);
+	}
+
+	private decimal CalculateSyntheticPpp(ICandleMessage candle)
+	{
+		var priceBase = Math.Max(candle.OpenPrice, 1m);
+		var range = Math.Max(candle.HighPrice - candle.LowPrice, Security?.PriceStep ?? 1m);
+		var purchasingPowerAnchor = (candle.OpenPrice + candle.LowPrice + candle.ClosePrice) / 3m;
+		var inflationPenalty = priceBase * Math.Min(0.12m, range / priceBase);
+
+		return purchasingPowerAnchor - inflationPenalty;
+	}
+
+	private void TryProcessSpread(DateTime time)
+	{
+		if (!_primaryUpdated || !_benchmarkUpdated)
 			return;
-		var underv = dev.OrderBy(kv => kv.Value).Take(K).Select(kv => kv.Key).ToList();
-		var over = dev.OrderByDescending(kv => kv.Value).Take(K).Select(kv => kv.Key).ToList();
 
-		_w.Clear();
-		decimal wl = 1m / underv.Count, ws = -1m / over.Count;
-		foreach (var s in underv)
-			_w[s] = wl;
-		foreach (var s in over)
-			_w[s] = ws;
+		_primaryUpdated = false;
+		_benchmarkUpdated = false;
 
-		foreach (var position in Positions)
-			if (!_w.ContainsKey(position.Security))
-				Move(position.Security, 0);
+		var spread = _latestPrimaryDeviation - _latestBenchmarkDeviation;
+		var mean = _spreadAverage.Process(spread, time, true).ToDecimal();
+		var deviation = _spreadDeviation.Process(spread, time, true).ToDecimal();
 
-		var portfolioValue = Portfolio.CurrentValue ?? 0m;
-		foreach (var kv in _w)
+		if (!_spreadAverage.IsFormed || !_spreadDeviation.IsFormed || deviation <= 0m)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
+
+		var zScore = (spread - mean) / deviation;
+		var bullishEntry = _previousZScore is decimal previousBullish && previousBullish > -EntryThreshold && zScore <= -EntryThreshold;
+		var bearishEntry = _previousZScore is decimal previousBearish && previousBearish < EntryThreshold && zScore >= EntryThreshold;
+
+		if (_cooldownRemaining == 0 && Position == 0)
 		{
-			var price = GetLatestPrice(kv.Key);
-			if (price > 0)
-				Move(kv.Key, kv.Value * portfolioValue / price);
+			if (bullishEntry)
+			{
+				BuyMarket();
+				_cooldownRemaining = CooldownBars;
+			}
+			else if (bearishEntry)
+			{
+				SellMarket();
+				_cooldownRemaining = CooldownBars;
+			}
 		}
+		else if (Position > 0 && zScore >= -ExitThreshold)
+		{
+			SellMarket(Position);
+			_cooldownRemaining = CooldownBars;
+		}
+		else if (Position < 0 && zScore <= ExitThreshold)
+		{
+			BuyMarket(Math.Abs(Position));
+			_cooldownRemaining = CooldownBars;
+		}
+
+		_previousZScore = zScore;
 	}
-
-	private void Move(Security s, decimal tgt)
-	{
-		var diff = tgt - PositionBy(s);
-		var price = GetLatestPrice(s);
-		if (price <= 0 || Math.Abs(diff) * price < MinTradeUsd)
-			return;
-		RegisterOrder(new Order { Security = s, Portfolio = Portfolio, Side = diff > 0 ? Sides.Buy : Sides.Sell, Volume = Math.Abs(diff), Type = OrderTypes.Market, Comment = "PPPValue" });
-	}
-	private decimal PositionBy(Security s) => GetPositionValue(s, Portfolio) ?? 0;
-
-	private decimal GetLatestPrice(Security security)
-	{
-		return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
-	}
-
-	private bool TryGetPPPDeviation(Security s, out decimal dev) { dev = 0; return false; }
-
-	#region RollingWindow
-	private class RollingWindow<T>
-	{
-		private readonly Queue<T> _q = [];
-		private readonly int _n;
-		public RollingWindow(int n) { _n = n; }
-		public void Add(T v) { if (_q.Count == _n) _q.Dequeue(); _q.Enqueue(v); }
-		public bool IsFull() => _q.Count == _n;
-		public T Last() => _q.Last();
-		public T this[int i] => _q.ElementAt(i);
-	}
-	#endregion
-
 }

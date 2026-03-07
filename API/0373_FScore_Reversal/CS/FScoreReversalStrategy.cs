@@ -1,243 +1,316 @@
-// FScoreReversalStrategy.cs
-// Combines Piotroski F‑Score with 1‑month reversal.
-// Long losers (1‑month return < 0) with FScore ≥ 7; short winners (return > 0) with FScore ≤ 3.
-// Monthly rebalance. F‑Score feed must be provided via TryGetFScore.
-// Date: 2 August 2025
-
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
+using StockSharp.Configuration;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Piotroski F-Score reversal strategy combining fundamental strength
-/// with 1-month price reversal.
+/// F-Score reversal strategy that trades the primary instrument when a synthetic fundamental score aligns with relative short-term reversal versus a benchmark.
 /// </summary>
 public class FScoreReversalStrategy : Strategy
 {
-	#region Params
-	private readonly StrategyParam<IEnumerable<Security>> _universe;
+	private readonly StrategyParam<string> _security2Id;
 	private readonly StrategyParam<int> _lookback;
-	private readonly StrategyParam<int> _hi;
-	private readonly StrategyParam<int> _lo;
-	private readonly StrategyParam<decimal> _minUsd;
+	private readonly StrategyParam<int> _scoreLength;
+	private readonly StrategyParam<decimal> _entryThreshold;
+	private readonly StrategyParam<decimal> _exitThreshold;
+	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _stopLoss;
 	private readonly StrategyParam<DataType> _candleType;
-	
+
+	private Security _benchmark = null!;
+	private RateOfChange _primaryReversal = null!;
+	private RateOfChange _benchmarkReversal = null!;
+	private ExponentialMovingAverage _primaryScore = null!;
+	private ExponentialMovingAverage _benchmarkScore = null!;
+	private SimpleMovingAverage _spreadAverage = null!;
+	private StandardDeviation _spreadDeviation = null!;
+	private decimal _latestPrimarySignal;
+	private decimal _latestBenchmarkSignal;
+	private decimal? _previousZScore;
+	private bool _primaryUpdated;
+	private bool _benchmarkUpdated;
+	private int _cooldownRemaining;
+
 	/// <summary>
-	/// Securities universe to trade.
+	/// Benchmark security identifier.
 	/// </summary>
-	public IEnumerable<Security> Universe { get => _universe.Value; set => _universe.Value = value; }
-	
+	public string Security2Id
+	{
+		get => _security2Id.Value;
+		set => _security2Id.Value = value;
+	}
+
 	/// <summary>
-	/// Lookback period for 1-month return.
+	/// Lookback period for short-term reversal.
 	/// </summary>
-	public int Lookback { get => _lookback.Value; set => _lookback.Value = value; }
-	
+	public int Lookback
+	{
+		get => _lookback.Value;
+		set => _lookback.Value = value;
+	}
+
 	/// <summary>
-	/// Minimum F-Score for long positions.
+	/// Smoothing length for the synthetic F-Score proxy.
 	/// </summary>
-	public int FHi { get => _hi.Value; set => _hi.Value = value; }
-	
+	public int ScoreLength
+	{
+		get => _scoreLength.Value;
+		set => _scoreLength.Value = value;
+	}
+
 	/// <summary>
-	/// Maximum F-Score for short positions.
+	/// Z-score threshold required to open a position.
 	/// </summary>
-	public int FLo { get => _lo.Value; set => _lo.Value = value; }
-	
+	public decimal EntryThreshold
+	{
+		get => _entryThreshold.Value;
+		set => _entryThreshold.Value = value;
+	}
+
 	/// <summary>
-	/// Minimum trade value in USD.
+	/// Z-score threshold required to close a position.
 	/// </summary>
-	public decimal MinTradeUsd { get => _minUsd.Value; set => _minUsd.Value = value; }
+	public decimal ExitThreshold
+	{
+		get => _exitThreshold.Value;
+		set => _exitThreshold.Value = value;
+	}
+
+	/// <summary>
+	/// Closed candles to wait before another position change.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
+	/// Stop loss percentage.
+	/// </summary>
+	public decimal StopLoss
+	{
+		get => _stopLoss.Value;
+		set => _stopLoss.Value = value;
+	}
 
 	/// <summary>
 	/// The type of candles to use for strategy calculation.
 	/// </summary>
-	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
-	#endregion
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
 
-	private readonly Dictionary<Security, FScoreRollingWindow> _prices = [];
-	private readonly Dictionary<Security, decimal> _ret = [];
-	private readonly Dictionary<Security, int> _fscore = [];
-	private readonly Dictionary<Security, decimal> _w = [];
-	private readonly Dictionary<Security, decimal> _latestPrices = [];
-	private DateTime _lastRebalance = DateTime.MinValue;
-
+	/// <summary>
+	/// Initializes a new instance of <see cref="FScoreReversalStrategy"/>.
+	/// </summary>
 	public FScoreReversalStrategy()
 	{
-		_universe = Param<IEnumerable<Security>>(nameof(Universe), [])
-			.SetDisplay("Universe", "Securities universe", "General");
-		
-		_lookback = Param(nameof(Lookback), 21)
-			.SetGreaterThanZero()
-			.SetDisplay("Lookback", "Lookback period in days", "General");
-		
-		_hi = Param(nameof(FHi), 7)
-			.SetDisplay("High F-Score", "Minimum F-Score for longs", "General");
-		
-		_lo = Param(nameof(FLo), 3)
-			.SetDisplay("Low F-Score", "Maximum F-Score for shorts", "General");
-		
-		_minUsd = Param(nameof(MinTradeUsd), 50m)
-			.SetGreaterThanZero()
-			.SetDisplay("Min trade USD", "Minimum order value", "Risk");
+		_security2Id = Param(nameof(Security2Id), Paths.HistoryDefaultSecurity2)
+			.SetDisplay("Benchmark Security Id", "Identifier of the benchmark security", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_lookback = Param(nameof(Lookback), 12)
+			.SetRange(2, 80)
+			.SetDisplay("Lookback", "Lookback period in bars", "General");
+
+		_scoreLength = Param(nameof(ScoreLength), 8)
+			.SetRange(2, 50)
+			.SetDisplay("Score Length", "Smoothing length for the synthetic F-Score proxy", "General");
+
+		_entryThreshold = Param(nameof(EntryThreshold), 1.2m)
+			.SetRange(0.2m, 5m)
+			.SetDisplay("Entry Threshold", "Z-score threshold required to open a position", "Signals");
+
+		_exitThreshold = Param(nameof(ExitThreshold), 0.3m)
+			.SetRange(0m, 2m)
+			.SetDisplay("Exit Threshold", "Z-score threshold required to close a position", "Signals");
+
+		_cooldownBars = Param(nameof(CooldownBars), 8)
+			.SetRange(0, 120)
+			.SetDisplay("Cooldown Bars", "Closed candles to wait before another position change", "Risk");
+
+		_stopLoss = Param(nameof(StopLoss), 2.5m)
+			.SetRange(0.5m, 10m)
+			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
+	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		if (!Universe.Any())
-			throw new InvalidOperationException("Universe empty");
-		return Universe.Select(s => (s, CandleType));
+		if (Security != null)
+			yield return (Security, CandleType);
+
+		if (!Security2Id.IsEmpty())
+			yield return (new Security { Id = Security2Id }, CandleType);
 	}
 
-	
+	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
 
-		_prices.Clear();
-		_ret.Clear();
-		_fscore.Clear();
-		_w.Clear();
-		_latestPrices.Clear();
-		_lastRebalance = default;
+		_benchmark = null!;
+		_primaryReversal = null!;
+		_benchmarkReversal = null!;
+		_primaryScore = null!;
+		_benchmarkScore = null!;
+		_spreadAverage = null!;
+		_spreadDeviation = null!;
+		_latestPrimarySignal = 0m;
+		_latestBenchmarkSignal = 0m;
+		_previousZScore = null;
+		_primaryUpdated = false;
+		_benchmarkUpdated = false;
+		_cooldownRemaining = 0;
 	}
 
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
-		if (Universe == null || !Universe.Any())
-			throw new InvalidOperationException("Universe empty");
-
 		base.OnStarted2(time);
 
-		foreach (var (sec, dt) in GetWorkingSecurities())
-		{
-			SubscribeCandles(dt, true, sec)
-				.Bind(c => ProcessCandle(c, sec))
-				.Start();
+		if (Security == null)
+			throw new InvalidOperationException("Primary security is not specified.");
 
-			_prices[sec] = new FScoreRollingWindow(Lookback + 1);
+		if (Security2Id.IsEmpty())
+			throw new InvalidOperationException("Benchmark security identifier is not specified.");
+
+		_benchmark = this.LookupById(Security2Id) ?? new Security { Id = Security2Id };
+		_primaryReversal = new RateOfChange { Length = Lookback };
+		_benchmarkReversal = new RateOfChange { Length = Lookback };
+		_primaryScore = new ExponentialMovingAverage { Length = ScoreLength };
+		_benchmarkScore = new ExponentialMovingAverage { Length = ScoreLength };
+		_spreadAverage = new SimpleMovingAverage { Length = 24 };
+		_spreadDeviation = new StandardDeviation { Length = 24 };
+
+		var primarySubscription = SubscribeCandles(CandleType, security: Security);
+		var benchmarkSubscription = SubscribeCandles(CandleType, security: _benchmark);
+
+		primarySubscription
+			.Bind(ProcessPrimaryCandle)
+			.Start();
+
+		benchmarkSubscription
+			.Bind(ProcessBenchmarkCandle)
+			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, primarySubscription);
+			DrawCandles(area, benchmarkSubscription);
+			DrawOwnTrades(area);
 		}
+
+		StartProtection(
+			new Unit(2, UnitTypes.Percent),
+			new Unit(StopLoss, UnitTypes.Percent));
 	}
 
-	private void ProcessCandle(ICandleMessage candle, Security security)
+	private void ProcessPrimaryCandle(ICandleMessage candle)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Store the latest closing price for this security
-		_latestPrices[security] = candle.ClosePrice;
+		var reversalValue = _primaryReversal.Process(candle);
+		var scoreValue = _primaryScore.Process(CalculateFScoreProxy(candle), candle.OpenTime, true);
 
-		if (!_prices.TryGetValue(security, out var win))
-			return;
-		win.Add(candle.ClosePrice);
-		if (win.IsFull())
-			_ret[security] = (win.Last() - win[0]) / win[0];
-
-		var d = candle.OpenTime.Date;
-		if (d.Day == 1 && _lastRebalance != d)
+		if (!reversalValue.IsEmpty && !scoreValue.IsEmpty && _primaryReversal.IsFormed && _primaryScore.IsFormed)
 		{
-			_lastRebalance = d;
-			Rebalance();
+			_latestPrimarySignal = scoreValue.ToDecimal() - reversalValue.ToDecimal();
+			_primaryUpdated = true;
+			TryProcessSpread(candle.OpenTime);
 		}
 	}
 
-	private void Rebalance()
+	private void ProcessBenchmarkCandle(ICandleMessage candle)
 	{
-		_fscore.Clear();
-		foreach (var s in Universe)
-			if (TryGetFScore(s, out var fs))
-				_fscore[s] = fs;
-
-		var eligible = _ret.Keys.Intersect(_fscore.Keys).ToList();
-		if (eligible.Count < 20)
+		if (candle.State != CandleStates.Finished)
 			return;
 
-		var longs = eligible.Where(s => _ret[s] < 0 && _fscore[s] >= FHi).ToList();
-		var shorts = eligible.Where(s => _ret[s] > 0 && _fscore[s] <= FLo).ToList();
-		if (!longs.Any() || !shorts.Any())
-			return;
+		var reversalValue = _benchmarkReversal.Process(candle);
+		var scoreValue = _benchmarkScore.Process(CalculateFScoreProxy(candle), candle.OpenTime, true);
 
-		_w.Clear();
-		decimal wl = 1m / longs.Count;
-		decimal ws = -1m / shorts.Count;
-		foreach (var s in longs)
-			_w[s] = wl;
-		foreach (var s in shorts)
-			_w[s] = ws;
-
-		foreach (var position in Positions)
-			if (!_w.ContainsKey(position.Security))
-				Order(position.Security, -PositionBy(position.Security));
-
-		var portfolioValue = Portfolio.CurrentValue ?? 0m;
-		foreach (var kv in _w)
+		if (!reversalValue.IsEmpty && !scoreValue.IsEmpty && _benchmarkReversal.IsFormed && _benchmarkScore.IsFormed)
 		{
-			var price = GetLatestPrice(kv.Key);
-			if (price > 0)
+			_latestBenchmarkSignal = scoreValue.ToDecimal() - reversalValue.ToDecimal();
+			_benchmarkUpdated = true;
+			TryProcessSpread(candle.OpenTime);
+		}
+	}
+
+	private decimal CalculateFScoreProxy(ICandleMessage candle)
+	{
+		var priceBase = Math.Max(candle.OpenPrice, 1m);
+		var range = Math.Max(candle.HighPrice - candle.LowPrice, Security?.PriceStep ?? 1m);
+		var closeLocation = ((candle.ClosePrice - candle.LowPrice) - (candle.HighPrice - candle.ClosePrice)) / range;
+		var efficiency = (candle.ClosePrice - candle.OpenPrice) / priceBase;
+
+		return (closeLocation * 2m) + (efficiency * 100m);
+	}
+
+	private void TryProcessSpread(DateTime time)
+	{
+		if (!_primaryUpdated || !_benchmarkUpdated)
+			return;
+
+		_primaryUpdated = false;
+		_benchmarkUpdated = false;
+
+		var spread = _latestPrimarySignal - _latestBenchmarkSignal;
+		var mean = _spreadAverage.Process(spread, time, true).ToDecimal();
+		var deviation = _spreadDeviation.Process(spread, time, true).ToDecimal();
+
+		if (!_spreadAverage.IsFormed || !_spreadDeviation.IsFormed || deviation <= 0m)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
+
+		var zScore = (spread - mean) / deviation;
+		var bullishEntry = _previousZScore is decimal previousBullish && previousBullish < EntryThreshold && zScore >= EntryThreshold;
+		var bearishEntry = _previousZScore is decimal previousBearish && previousBearish > -EntryThreshold && zScore <= -EntryThreshold;
+
+		if (_cooldownRemaining == 0 && Position == 0)
+		{
+			if (bullishEntry)
 			{
-				var tgt = kv.Value * portfolioValue / price;
-				var diff = tgt - PositionBy(kv.Key);
-				if (Math.Abs(diff) * price >= MinTradeUsd)
-					Order(kv.Key, diff);
+				BuyMarket();
+				_cooldownRemaining = CooldownBars;
+			}
+			else if (bearishEntry)
+			{
+				SellMarket();
+				_cooldownRemaining = CooldownBars;
 			}
 		}
-	}
-
-	private decimal GetLatestPrice(Security security)
-	{
-		return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
-	}
-
-	private void Order(Security s, decimal qty)
-	{
-		if (qty == 0)
-			return;
-		RegisterOrder(new Order
+		else if (Position > 0 && zScore <= ExitThreshold)
 		{
-			Security = s,
-			Portfolio = Portfolio,
-			Side = qty > 0 ? Sides.Buy : Sides.Sell,
-			Volume = Math.Abs(qty),
-			Type = OrderTypes.Market,
-			Comment = "FScoreRev"
-		});
+			SellMarket(Position);
+			_cooldownRemaining = CooldownBars;
+		}
+		else if (Position < 0 && zScore >= -ExitThreshold)
+		{
+			BuyMarket(Math.Abs(Position));
+			_cooldownRemaining = CooldownBars;
+		}
+
+		_previousZScore = zScore;
 	}
-
-	private decimal PositionBy(Security s) => GetPositionValue(s, Portfolio) ?? 0;
-
-	#region Stub FScore
-	private bool TryGetFScore(Security s, out int fscore)
-	{
-		fscore = 0; // TODO integrate fundamentals
-		return false;
-	}
-	#endregion
 }
-
-#region FScoreRollingWindow
-internal class FScoreRollingWindow
-{
-	private readonly Queue<decimal> _q = []; 
-	private readonly int _size;
-	
-	public FScoreRollingWindow(int size) { _size = size; }
-	public void Add(decimal v) { if (_q.Count == _size) _q.Dequeue(); _q.Enqueue(v); }
-	public bool IsFull() => _q.Count == _size;
-	public decimal Last() => _q.Last();
-	public decimal this[int idx] => _q.ElementAt(idx);
-	public int Count => _q.Count;
-}
-#endregion

@@ -1,66 +1,103 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
+using StockSharp.Configuration;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Fed Model yield-gap timing strategy (Quantpedia #21).
-/// Compares earnings yield with the 10-year Treasury yield and switches between
-/// an equity index ETF and a cash ETF based on the one-month excess return forecast.
+/// Fed model strategy that trades the primary instrument when its synthetic earnings yield exceeds a synthetic bond yield benchmark.
 /// </summary>
 public class FedModelStrategy : Strategy
 {
-	private readonly StrategyParam<IEnumerable<Security>> _univ;
-	private readonly StrategyParam<Security> _bond;
-	private readonly StrategyParam<Security> _earn;
-	private readonly StrategyParam<int> _months;
-	private readonly StrategyParam<DataType> _tf;
-	private readonly StrategyParam<decimal> _minUsd;
+	private readonly StrategyParam<string> _security2Id;
+	private readonly StrategyParam<int> _yieldLength;
+	private readonly StrategyParam<int> _lookbackPeriod;
+	private readonly StrategyParam<decimal> _entryThreshold;
+	private readonly StrategyParam<decimal> _exitThreshold;
+	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _stopLoss;
+	private readonly StrategyParam<DataType> _candleType;
+
+	private Security _benchmark = null!;
+	private ExponentialMovingAverage _earningsYield = null!;
+	private ExponentialMovingAverage _bondYield = null!;
+	private SimpleMovingAverage _gapAverage = null!;
+	private StandardDeviation _gapDeviation = null!;
+	private decimal _latestPrimaryGap;
+	private decimal _latestBenchmarkGap;
+	private decimal? _previousZScore;
+	private bool _primaryUpdated;
+	private bool _benchmarkUpdated;
+	private int _cooldownRemaining;
 
 	/// <summary>
-	/// Securities to trade (equity index first, optional cash ETF second).
+	/// Benchmark security identifier.
 	/// </summary>
-	public IEnumerable<Security> Universe
+	public string Security2Id
 	{
-		get => _univ.Value;
-		set => _univ.Value = value;
+		get => _security2Id.Value;
+		set => _security2Id.Value = value;
 	}
 
 	/// <summary>
-	/// Security representing 10-year Treasury yield.
+	/// Smoothing length for synthetic yields.
 	/// </summary>
-	public Security BondYieldSym
+	public int YieldLength
 	{
-		get => _bond.Value;
-		set => _bond.Value = value;
+		get => _yieldLength.Value;
+		set => _yieldLength.Value = value;
 	}
 
 	/// <summary>
-	/// Security representing earnings yield.
+	/// Lookback period used to normalize the yield gap.
 	/// </summary>
-	public Security EarningsYieldSym
+	public int LookbackPeriod
 	{
-		get => _earn.Value;
-		set => _earn.Value = value;
+		get => _lookbackPeriod.Value;
+		set => _lookbackPeriod.Value = value;
 	}
 
 	/// <summary>
-	/// Number of months in regression window.
+	/// Z-score threshold required to open a position.
 	/// </summary>
-	public int RegressionMonths
+	public decimal EntryThreshold
 	{
-		get => _months.Value;
-		set => _months.Value = value;
+		get => _entryThreshold.Value;
+		set => _entryThreshold.Value = value;
+	}
+
+	/// <summary>
+	/// Z-score threshold required to close a position.
+	/// </summary>
+	public decimal ExitThreshold
+	{
+		get => _exitThreshold.Value;
+		set => _exitThreshold.Value = value;
+	}
+
+	/// <summary>
+	/// Closed candles to wait before another position change.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
+	/// Stop loss percentage.
+	/// </summary>
+	public decimal StopLoss
+	{
+		get => _stopLoss.Value;
+		set => _stopLoss.Value = value;
 	}
 
 	/// <summary>
@@ -68,264 +105,200 @@ public class FedModelStrategy : Strategy
 	/// </summary>
 	public DataType CandleType
 	{
-		get => _tf.Value;
-		set => _tf.Value = value;
+		get => _candleType.Value;
+		set => _candleType.Value = value;
 	}
-
-	/// <summary>
-	/// Minimum dollar value per trade.
-	/// </summary>
-	public decimal MinTradeUsd
-	{
-		get => _minUsd.Value;
-		set => _minUsd.Value = value;
-	}
-
-	private readonly RollingWin _eq = new();
-	private readonly RollingWin _gap = new();
-	private readonly RollingWin _rf = new();
-	private readonly Dictionary<Security, decimal> _latestPrices = [];
-	private DateTime _lastMonth = DateTime.MinValue;
 
 	/// <summary>
 	/// Initializes a new instance of the strategy.
 	/// </summary>
 	public FedModelStrategy()
 	{
-		_univ = Param<IEnumerable<Security>>(nameof(Universe), [])
-				.SetDisplay("Universe", "Securities to trade", "General");
+		_security2Id = Param(nameof(Security2Id), Paths.HistoryDefaultSecurity2)
+			.SetDisplay("Benchmark Security Id", "Identifier of the benchmark security", "General");
 
-		_bond = Param<Security>(nameof(BondYieldSym), null)
-				.SetDisplay("Bond Yield", "10-year Treasury yield security", "Data");
+		_yieldLength = Param(nameof(YieldLength), 12)
+			.SetRange(2, 80)
+			.SetDisplay("Yield Length", "Smoothing length for synthetic yields", "Indicators");
 
-		_earn = Param<Security>(nameof(EarningsYieldSym), null)
-				.SetDisplay("Earnings Yield", "Earnings yield security", "Data");
+		_lookbackPeriod = Param(nameof(LookbackPeriod), 24)
+			.SetRange(5, 120)
+			.SetDisplay("Lookback Period", "Lookback period used to normalize the yield gap", "Indicators");
 
-		_months = Param(nameof(RegressionMonths), 12)
-				.SetGreaterThanZero()
-				.SetDisplay("Regression Months", "Months in regression window", "Settings");
+		_entryThreshold = Param(nameof(EntryThreshold), 1.1m)
+			.SetRange(0.2m, 5m)
+			.SetDisplay("Entry Threshold", "Z-score threshold required to open a position", "Signals");
 
-		_tf = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-				.SetDisplay("Candle Type", "Type of candles", "General");
+		_exitThreshold = Param(nameof(ExitThreshold), 0.25m)
+			.SetRange(0m, 2m)
+			.SetDisplay("Exit Threshold", "Z-score threshold required to close a position", "Signals");
 
-		_minUsd = Param(nameof(MinTradeUsd), 200m)
-				.SetGreaterThanZero()
-				.SetDisplay("Min Trade USD", "Minimum trade value in USD", "Risk Management");
+		_cooldownBars = Param(nameof(CooldownBars), 8)
+			.SetRange(0, 120)
+			.SetDisplay("Cooldown Bars", "Closed candles to wait before another position change", "Risk");
 
-		var n = RegressionMonths + 1;
-		_eq.SetSize(n);
-		_gap.SetSize(n);
-		_rf.SetSize(n);
+		_stopLoss = Param(nameof(StopLoss), 2.5m)
+			.SetRange(0.5m, 10m)
+			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
+	/// <inheritdoc />
 	public override IEnumerable<(Security, DataType)> GetWorkingSecurities()
 	{
-		foreach (var s in Universe)
-			yield return (s, CandleType);
-		if (BondYieldSym != null)
-			yield return (BondYieldSym, CandleType);
-		if (EarningsYieldSym != null)
-			yield return (EarningsYieldSym, CandleType);
+		if (Security != null)
+			yield return (Security, CandleType);
+
+		if (!Security2Id.IsEmpty())
+			yield return (new Security { Id = Security2Id }, CandleType);
 	}
 
+	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
 
-		_eq.Clear();
-		_gap.Clear();
-		_rf.Clear();
-		_latestPrices.Clear();
-		_lastMonth = default;
+		_benchmark = null!;
+		_earningsYield = null!;
+		_bondYield = null!;
+		_gapAverage = null!;
+		_gapDeviation = null!;
+		_latestPrimaryGap = 0m;
+		_latestBenchmarkGap = 0m;
+		_previousZScore = null;
+		_primaryUpdated = false;
+		_benchmarkUpdated = false;
+		_cooldownRemaining = 0;
 	}
 
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
-		if (Universe == null || !Universe.Any())
-		{
-			if (Security != null)
-				Universe = [Security];
-			else
-				throw new InvalidOperationException("Universe is empty.");
-		}
-
 		base.OnStarted2(time);
 
-		foreach (var (s, tf) in GetWorkingSecurities())
-			SubscribeCandles(tf, true, s)
-					.Bind(c => ProcessCandle(c, s))
-					.Start();
+		if (Security == null)
+			throw new InvalidOperationException("Primary security is not specified.");
+
+		if (Security2Id.IsEmpty())
+			throw new InvalidOperationException("Benchmark security identifier is not specified.");
+
+		_benchmark = this.LookupById(Security2Id) ?? new Security { Id = Security2Id };
+		_earningsYield = new ExponentialMovingAverage { Length = YieldLength };
+		_bondYield = new ExponentialMovingAverage { Length = YieldLength };
+		_gapAverage = new SimpleMovingAverage { Length = LookbackPeriod };
+		_gapDeviation = new StandardDeviation { Length = LookbackPeriod };
+
+		var primarySubscription = SubscribeCandles(CandleType, security: Security);
+		var benchmarkSubscription = SubscribeCandles(CandleType, security: _benchmark);
+
+		primarySubscription
+			.Bind(ProcessPrimaryCandle)
+			.Start();
+
+		benchmarkSubscription
+			.Bind(ProcessBenchmarkCandle)
+			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, primarySubscription);
+			DrawCandles(area, benchmarkSubscription);
+			DrawOwnTrades(area);
+		}
+
+		StartProtection(
+			new Unit(2, UnitTypes.Percent),
+			new Unit(StopLoss, UnitTypes.Percent));
 	}
 
-	private void ProcessCandle(ICandleMessage candle, Security security)
+	private void ProcessPrimaryCandle(ICandleMessage candle)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Store the latest closing price for this security
-		_latestPrices[security] = candle.ClosePrice;
-
-		OnDaily(candle);
+		_latestPrimaryGap = UpdateYieldGap(_earningsYield, candle);
+		_primaryUpdated = true;
+		TryProcessGap(candle.OpenTime);
 	}
 
-	private void OnDaily(ICandleMessage c)
+	private void ProcessBenchmarkCandle(ICandleMessage candle)
 	{
-		var d = c.OpenTime.Date;
-		if (d.Day != 1 || _lastMonth == d)
-			return;
-		_lastMonth = d;
-
-		if (c.SecurityId != Universe.First().ToSecurityId())
+		if (candle.State != CandleStates.Finished)
 			return;
 
-		_eq.Add(c.ClosePrice);
-		_rf.Add(GetRF(d));
-
-		var gap = GetYieldGap(d);
-		if (gap == null)
-			return;
-		_gap.Add(gap.Value);
-
-		if (!_eq.Full || !_gap.Full)
-			return;
-
-		var x = _gap.Data;
-		var yret = new decimal[_eq.Size - 1];
-		for (int i = 1; i < _eq.Size; i++)
-			yret[i - 1] = (_eq.Data[i] - _eq.Data[i - 1]) / _eq.Data[i - 1] - _rf.Data[i - 1];
-
-		int n = yret.Length;
-		decimal meanX = x.Take(n).Average();
-		decimal meanY = yret.Average();
-		decimal cov = 0, varX = 0;
-		for (int i = 0; i < n; i++)
-		{
-			var dx = x[i] - meanX;
-			cov += dx * (yret[i] - meanY);
-			varX += dx * dx;
-		}
-		if (varX == 0)
-			return;
-		var beta = cov / varX;
-		var alpha = meanY - beta * meanX;
-		var forecast = alpha + beta * x[^1];
-
-		var equity = Universe.First();
-		var cash = Universe.ElementAtOrDefault(1);
-
-		if (forecast > 0)
-		{
-			Move(equity, 1m);
-			if (cash != null)
-				Move(cash, 0);
-		}
-		else
-		{
-			Move(equity, 0);
-			if (cash != null)
-				Move(cash, 1m);
-		}
+		_latestBenchmarkGap = UpdateYieldGap(_bondYield, candle);
+		_benchmarkUpdated = true;
+		TryProcessGap(candle.OpenTime);
 	}
 
-	private decimal GetLatestPrice(Security security)
+	private decimal UpdateYieldGap(ExponentialMovingAverage average, ICandleMessage candle)
 	{
-		return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
+		var yieldProxy = CalculateYieldProxy(candle);
+		return average.Process(yieldProxy, candle.OpenTime, true).ToDecimal();
 	}
 
-	private void Move(Security s, decimal weight)
+	private decimal CalculateYieldProxy(ICandleMessage candle)
 	{
-		if (s == null)
-			return;
+		var priceBase = Math.Max(candle.ClosePrice, 1m);
+		var range = Math.Max(candle.HighPrice - candle.LowPrice, Security?.PriceStep ?? 1m);
+		var normalizedRange = range / priceBase;
+		var closeLocation = (candle.ClosePrice - candle.LowPrice) / range;
 
-		var portfolioValue = Portfolio.CurrentValue ?? 0m;
-		var price = GetLatestPrice(s);
-		if (price <= 0)
-			return;
-
-		var tgt = weight * portfolioValue / price;
-		var diff = tgt - Pos(s);
-		if (Math.Abs(diff) * price < MinTradeUsd)
-			return;
-
-		RegisterOrder(new Order
-		{
-			Security = s,
-			Portfolio = Portfolio,
-			Side = diff > 0 ? Sides.Buy : Sides.Sell,
-			Volume = Math.Abs(diff),
-			Type = OrderTypes.Market,
-			Comment = "FedModel"
-		});
+		return (1m / priceBase * 100m) + closeLocation - normalizedRange;
 	}
 
-	private decimal Pos(Security s) => GetPositionValue(s, Portfolio) ?? 0;
-
-	private decimal GetRF(DateTime d) => 0.0002m;
-
-	private decimal? GetYieldGap(DateTime d)
+	private void TryProcessGap(DateTime time)
 	{
-		if (!SeriesVal(EarningsYieldSym, d, out var ey))
-			return null;
-		if (!SeriesVal(BondYieldSym, d, out var y10))
-			return null;
-		return ey - y10;
-	}
+		if (!_primaryUpdated || !_benchmarkUpdated)
+			return;
 
-	private bool SeriesVal(Security s, DateTime d, out decimal v) { v = 0; return false; }
+		_primaryUpdated = false;
+		_benchmarkUpdated = false;
 
-	private class RollingWin
-	{
-		public decimal[] Data;
+		var gap = _latestPrimaryGap - _latestBenchmarkGap;
+		var mean = _gapAverage.Process(gap, time, true).ToDecimal();
+		var deviation = _gapDeviation.Process(gap, time, true).ToDecimal();
 
-	 	public int Size => Data?.Length ?? 0;
+		if (!_gapAverage.IsFormed || !_gapDeviation.IsFormed || deviation <= 0m)
+			return;
 
-		private int _n;
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
 
-		public bool Full => _n == Data.Length;
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
 
-		public void SetSize(int n)
+		var zScore = (gap - mean) / deviation;
+		var bullishEntry = _previousZScore is decimal previousBullish && previousBullish < EntryThreshold && zScore >= EntryThreshold;
+		var bearishEntry = _previousZScore is decimal previousBearish && previousBearish > -EntryThreshold && zScore <= -EntryThreshold;
+
+		if (_cooldownRemaining == 0 && Position == 0)
 		{
-			Data = new decimal[n];
-			_n = 0;
-		}
-
-		public void Add(decimal v)
-		{
-			if (_n < Data.Length)
-				_n++;
-
-			for (int i = Data.Length - 1; i > 0; i--)
-				Data[i] = Data[i - 1];
-
-			Data[0] = v;
-		}
-
-		public void Clear()
-		{
-			Data = default;
-			_n = 0;
-		}
-
-		public override int GetHashCode()
-			=> Data?.Aggregate(0, (hash, v) => hash ^ v.GetHashCode()) ?? 0;
-
-		public override bool Equals(object obj)
-		{
-			ArgumentNullException.ThrowIfNull(obj);
-
-			var otherWin = (RollingWin)obj;
-
-			if (otherWin.Size != Size)
-				return false;
-
-			for (var i = 0; i < Size; i++)
+			if (bullishEntry)
 			{
-				if (Data[i] != otherWin.Data[i])
-					return false;
+				BuyMarket();
+				_cooldownRemaining = CooldownBars;
 			}
-
-			return true;
+			else if (bearishEntry)
+			{
+				SellMarket();
+				_cooldownRemaining = CooldownBars;
+			}
 		}
+		else if (Position > 0 && zScore <= ExitThreshold)
+		{
+			SellMarket(Position);
+			_cooldownRemaining = CooldownBars;
+		}
+		else if (Position < 0 && zScore >= -ExitThreshold)
+		{
+			BuyMarket(Math.Abs(Position));
+			_cooldownRemaining = CooldownBars;
+		}
+
+		_previousZScore = zScore;
 	}
 }

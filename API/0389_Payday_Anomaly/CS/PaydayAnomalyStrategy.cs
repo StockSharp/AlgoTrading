@@ -28,7 +28,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class PaydayAnomalyStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _minUsd;
 	private readonly StrategyParam<DataType> _candleType;
 
 	/// <summary>
@@ -40,23 +39,13 @@ public class PaydayAnomalyStrategy : Strategy
 		set => _candleType.Value = value;
 	}
 	private readonly Dictionary<Security, decimal> _latestPrices = [];
-
-	/// <summary>
-	/// Minimum trade value in USD.
-	/// </summary>
-	public decimal MinTradeUsd
-	{
-		get => _minUsd.Value;
-		set => _minUsd.Value = value;
-	}
 	private DateTime _last = DateTime.MinValue;
+	private int _enteredMonthKey;
+	private int _exitedMonthKey;
 
 	public PaydayAnomalyStrategy()
 	{
-		_minUsd = Param(nameof(MinTradeUsd), 200m)
-		.SetGreaterThanZero()
-		.SetDisplay("Min Trade USD", "Minimum trade value in USD", "General");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -74,6 +63,8 @@ public class PaydayAnomalyStrategy : Strategy
 
 		_latestPrices.Clear();
 		_last = default;
+		_enteredMonthKey = 0;
+		_exitedMonthKey = 0;
 	}
 
 	protected override void OnStarted2(DateTime time)
@@ -101,16 +92,23 @@ public class PaydayAnomalyStrategy : Strategy
 		if (d == _last)
 			return;
 		_last = d;
+
+		var monthKey = (d.Year * 100) + d.Month;
 		int tdMonthEnd = TradingDaysLeftInMonth(d);
 		int tdMonthStart = TradingDayNumber(d);
 		bool inWindow = tdMonthEnd <= 2 || tdMonthStart <= 3;
-		var portfolioValue = Portfolio.CurrentValue ?? 0m;
-		var price = GetLatestPrice(Security);
-		var tgt = inWindow && price > 0 ? portfolioValue / price : 0;
-		var diff = tgt - Pos();
-		if (price <= 0 || Math.Abs(diff) * price < MinTradeUsd)
-			return;
-		RegisterOrder(new Order { Security = Security, Portfolio = Portfolio, Side = diff > 0 ? Sides.Buy : Sides.Sell, Volume = Math.Abs(diff), Type = OrderTypes.Market, Comment = "Payday" });
+
+		if (inWindow && Position == 0 && _enteredMonthKey != monthKey)
+		{
+			BuyMarket();
+			_enteredMonthKey = monthKey;
+			_exitedMonthKey = 0;
+		}
+		else if (!inWindow && Position > 0 && _enteredMonthKey == monthKey && _exitedMonthKey != monthKey)
+		{
+			SellMarket(Position);
+			_exitedMonthKey = monthKey;
+		}
 	}
 
 	private decimal GetLatestPrice(Security security)
@@ -145,6 +143,4 @@ public class PaydayAnomalyStrategy : Strategy
 		}
 		return num;
 	}
-
-	private decimal Pos() => GetPositionValue(Security, Portfolio) ?? 0;
 }

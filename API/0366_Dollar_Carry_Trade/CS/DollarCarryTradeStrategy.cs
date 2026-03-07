@@ -1,72 +1,107 @@
-// DollarCarryTradeStrategy.cs
-// Simple dollar carry trade: go long USD versus the K lowest‑yielding G10 currencies,
-// short USD versus the K highest‑yielding. Carry = deposit‑rate differential (USD – FX).
-// Rebalanced on the first trading day of each month using candle-based timing.
-// Date: 2 August 2025
-
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
+using StockSharp.Configuration;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Dollar carry trade strategy (High‑Level API).
-/// <para>
-///     * <see cref="Pairs"/> – list of FX instruments where a positive direction means buying USD
-///       (e.g., USDJPY future or USD/CAD spot).<br/>
-///     * Each month we fetch the latest carry for every pair (stub <c>TryGetCarry</c>).<br/>
-///     * Rank by carry, long USD against the K lowest carry currencies and short against
-///       the K highest carry currencies (dollar‑neutral, not notional‑neutral).<br/>
-///     * Position weights are equal within each leg.
-/// </para>
-/// Integrate your own data source in <see cref="TryGetCarry"/> to make this live.
+/// Dollar carry trade strategy that trades the primary instrument when its synthetic carry is rich or cheap relative to a benchmark currency.
 /// </summary>
 public class DollarCarryTradeStrategy : Strategy
 {
-	private readonly StrategyParam<IEnumerable<Security>> _pairs;
-	private readonly StrategyParam<int> _k;
-	private readonly StrategyParam<decimal> _minUsd;
+	private readonly StrategyParam<string> _security2Id;
+	private readonly StrategyParam<int> _carryLength;
+	private readonly StrategyParam<int> _lookbackPeriod;
+	private readonly StrategyParam<decimal> _entryThreshold;
+	private readonly StrategyParam<decimal> _exitThreshold;
+	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _stopLoss;
 	private readonly StrategyParam<DataType> _candleType;
 
+	private Security _benchmark = null!;
+	private ExponentialMovingAverage _primaryCarry = null!;
+	private ExponentialMovingAverage _benchmarkCarry = null!;
+	private SimpleMovingAverage _spreadAverage = null!;
+	private StandardDeviation _spreadDeviation = null!;
+	private decimal _latestPrimaryCarry;
+	private decimal _latestBenchmarkCarry;
+	private decimal? _previousZScore;
+	private bool _primaryUpdated;
+	private bool _benchmarkUpdated;
+	private int _cooldownRemaining;
+
 	/// <summary>
-	/// FX pairs or currency futures.
+	/// Benchmark currency identifier.
 	/// </summary>
-	public IEnumerable<Security> Pairs
+	public string Security2Id
 	{
-		get => _pairs.Value;
-		set => _pairs.Value = value;
+		get => _security2Id.Value;
+		set => _security2Id.Value = value;
 	}
 
 	/// <summary>
-	/// Number of currencies in each carry leg.
+	/// Smoothing length for the synthetic carry proxy.
 	/// </summary>
-	public int K
+	public int CarryLength
 	{
-		get => _k.Value;
-		set => _k.Value = value;
+		get => _carryLength.Value;
+		set => _carryLength.Value = value;
 	}
 
 	/// <summary>
-	/// Ignore trades whose notional is below this threshold.
+	/// Lookback period used to normalize carry spread.
 	/// </summary>
-	public decimal MinTradeUsd
+	public int LookbackPeriod
 	{
-		get => _minUsd.Value;
-		set => _minUsd.Value = value;
+		get => _lookbackPeriod.Value;
+		set => _lookbackPeriod.Value = value;
 	}
 
 	/// <summary>
-	/// The type of candles to use for strategy calculation.
+	/// Z-score threshold required to open a position.
+	/// </summary>
+	public decimal EntryThreshold
+	{
+		get => _entryThreshold.Value;
+		set => _entryThreshold.Value = value;
+	}
+
+	/// <summary>
+	/// Z-score threshold required to close a position.
+	/// </summary>
+	public decimal ExitThreshold
+	{
+		get => _exitThreshold.Value;
+		set => _exitThreshold.Value = value;
+	}
+
+	/// <summary>
+	/// Closed candles to wait before another position change.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
+	/// Stop loss percentage.
+	/// </summary>
+	public decimal StopLoss
+	{
+		get => _stopLoss.Value;
+		set => _stopLoss.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type used for both instruments.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -74,173 +109,196 @@ public class DollarCarryTradeStrategy : Strategy
 		set => _candleType.Value = value;
 	}
 
-	private readonly Dictionary<Security, decimal> _carry = [];
-	private readonly Dictionary<Security, decimal> _weights = [];
-	private readonly Dictionary<Security, decimal> _latestPrices = [];
-	private DateTime _lastRebalanceDate = DateTime.MinValue;
-
 	/// <summary>
 	/// Constructor.
 	/// </summary>
 	public DollarCarryTradeStrategy()
 	{
-		// Currency pairs to trade.
-		_pairs = Param<IEnumerable<Security>>(nameof(Pairs), [])
-			.SetDisplay("Pairs", "USD crosses (required)", "Universe");
+		_security2Id = Param(nameof(Security2Id), Paths.HistoryDefaultSecurity2)
+			.SetDisplay("Benchmark Security Id", "Identifier of the benchmark currency security", "General");
 
-		// Number of currencies per carry leg.
-		_k = Param(nameof(K), 3)
-			.SetDisplay("K", "# of currencies per leg", "Ranking");
+		_carryLength = Param(nameof(CarryLength), 10)
+			.SetRange(2, 80)
+			.SetDisplay("Carry Length", "Smoothing length for the synthetic carry proxy", "Indicators");
 
-		// Minimum notional for rebalancing trades.
-		_minUsd = Param(nameof(MinTradeUsd), 100m)
-			.SetDisplay("Min Trade $", "Ignore tiny rebalances", "Risk");
+		_lookbackPeriod = Param(nameof(LookbackPeriod), 24)
+			.SetRange(5, 120)
+			.SetDisplay("Lookback Period", "Lookback period used to normalize carry spread", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_entryThreshold = Param(nameof(EntryThreshold), 1.2m)
+			.SetRange(0.2m, 5m)
+			.SetDisplay("Entry Threshold", "Z-score threshold required to open a position", "Signals");
+
+		_exitThreshold = Param(nameof(ExitThreshold), 0.3m)
+			.SetRange(0m, 2m)
+			.SetDisplay("Exit Threshold", "Z-score threshold required to close a position", "Signals");
+
+		_cooldownBars = Param(nameof(CooldownBars), 8)
+			.SetRange(0, 120)
+			.SetDisplay("Cooldown Bars", "Closed candles to wait before another position change", "Risk");
+
+		_stopLoss = Param(nameof(StopLoss), 2.5m)
+			.SetRange(0.5m, 10m)
+			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		if (!Pairs.Any())
-			throw new InvalidOperationException("Pairs list is empty – populate before start.");
+		if (Security != null)
+			yield return (Security, CandleType);
 
-		// Subscribe to daily candles for monthly rebalancing trigger
-		return Pairs.Select(s => (s, CandleType));
+		if (!Security2Id.IsEmpty())
+			yield return (new Security { Id = Security2Id }, CandleType);
 	}
 
 	/// <inheritdoc />
-	
 	protected override void OnReseted()
 	{
 		base.OnReseted();
 
-		_carry.Clear();
-		_weights.Clear();
-		_latestPrices.Clear();
-		_lastRebalanceDate = default;
+		_benchmark = null!;
+		_primaryCarry = null!;
+		_benchmarkCarry = null!;
+		_spreadAverage = null!;
+		_spreadDeviation = null!;
+		_latestPrimaryCarry = 0m;
+		_latestBenchmarkCarry = 0m;
+		_previousZScore = null;
+		_primaryUpdated = false;
+		_benchmarkUpdated = false;
+		_cooldownRemaining = 0;
 	}
 
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		if (!Pairs.Any())
-			throw new InvalidOperationException("Pairs list is empty – populate before start.");
+		if (Security == null)
+			throw new InvalidOperationException("Primary currency security is not specified.");
 
-		// Subscribe to daily candles for timing monthly rebalancing
-		foreach (var pair in Pairs)
+		if (Security2Id.IsEmpty())
+			throw new InvalidOperationException("Benchmark currency identifier is not specified.");
+
+		_benchmark = this.LookupById(Security2Id) ?? new Security { Id = Security2Id };
+		_primaryCarry = new ExponentialMovingAverage { Length = CarryLength };
+		_benchmarkCarry = new ExponentialMovingAverage { Length = CarryLength };
+		_spreadAverage = new SimpleMovingAverage { Length = LookbackPeriod };
+		_spreadDeviation = new StandardDeviation { Length = LookbackPeriod };
+
+		var primarySubscription = SubscribeCandles(CandleType, security: Security);
+		var benchmarkSubscription = SubscribeCandles(CandleType, security: _benchmark);
+
+		primarySubscription
+			.Bind(ProcessPrimaryCandle)
+			.Start();
+
+		benchmarkSubscription
+			.Bind(ProcessBenchmarkCandle)
+			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
 		{
-			SubscribeCandles(CandleType, true, pair)
-				.Bind(c => ProcessCandle(c, pair))
-				.Start();
+			DrawCandles(area, primarySubscription);
+			DrawCandles(area, benchmarkSubscription);
+			DrawOwnTrades(area);
 		}
 
-		LogInfo($"Dollar Carry strategy started. Universe = {Pairs.Count()} pairs, K = {K}");
+		StartProtection(
+			new Unit(2, UnitTypes.Percent),
+			new Unit(StopLoss, UnitTypes.Percent));
 	}
 
-	private void ProcessCandle(ICandleMessage candle, Security security)
+	private void ProcessPrimaryCandle(ICandleMessage candle)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Store the latest closing price for this security
-		_latestPrices[security] = candle.ClosePrice;
-
-		// Check for monthly rebalancing (first trading day of month)
-		var candleDate = candle.OpenTime.Date;
-		if (candleDate.Day == 1 && candleDate != _lastRebalanceDate)
-		{
-			_lastRebalanceDate = candleDate;
-			Rebalance();
-		}
+		_latestPrimaryCarry = UpdateCarry(_primaryCarry, candle);
+		_primaryUpdated = true;
+		TryProcessSpread(candle.OpenTime);
 	}
 
-	private void Rebalance()
+	private void ProcessBenchmarkCandle(ICandleMessage candle)
 	{
-		// 1. Load carry values
-		_carry.Clear();
-		foreach (var p in Pairs)
-		{
-			if (TryGetCarry(p, out var c))
-				_carry[p] = c;
-		}
-
-		if (_carry.Count < K * 2)
-		{
-			LogInfo("Not enough carry data yet.");
+		if (candle.State != CandleStates.Finished)
 			return;
-		}
 
-		// 2. Rank
-		var highCarry = _carry.OrderByDescending(kv => kv.Value).Take(K).Select(kv => kv.Key).ToList();
-		var lowCarry = _carry.OrderBy(kv => kv.Value).Take(K).Select(kv => kv.Key).ToList();
+		_latestBenchmarkCarry = UpdateCarry(_benchmarkCarry, candle);
+		_benchmarkUpdated = true;
+		TryProcessSpread(candle.OpenTime);
+	}
 
-		// 3. Target weights (equal‑weight each leg, gross 2, net 0)
-		_weights.Clear();
-		decimal wLong = 1m / lowCarry.Count;   // long USD vs low carry
-		decimal wShort = -1m / highCarry.Count;  // short USD vs high carry
+	private decimal UpdateCarry(ExponentialMovingAverage average, ICandleMessage candle)
+	{
+		var carryProxy = CalculateCarryProxy(candle);
+		return average.Process(carryProxy, candle.OpenTime, true).ToDecimal();
+	}
 
-		foreach (var s in lowCarry)
-			_weights[s] = wLong;
-		foreach (var s in highCarry)
-			_weights[s] = wShort;
+	private decimal CalculateCarryProxy(ICandleMessage candle)
+	{
+		var priceBase = Math.Max(candle.OpenPrice, 1m);
+		var range = Math.Max(candle.HighPrice - candle.LowPrice, Security?.PriceStep ?? 1m);
+		var bodyRatio = (candle.ClosePrice - candle.OpenPrice) / priceBase;
+		var stabilityRatio = 1m - Math.Min(0.2m, range / priceBase);
 
-		// 4. Exit obsolete positions
-		foreach (var position in Positions.Where(pos => !_weights.ContainsKey(pos.Security)))
-			TradeToTarget(position.Security, 0m);
+		return (bodyRatio * 12m) + stabilityRatio;
+	}
 
-		// 5. Align to target
-		var portfolioValue = Portfolio.CurrentValue ?? 0m;
-		foreach (var kv in _weights)
+	private void TryProcessSpread(DateTime time)
+	{
+		if (!_primaryUpdated || !_benchmarkUpdated)
+			return;
+
+		_primaryUpdated = false;
+		_benchmarkUpdated = false;
+
+		var spread = _latestPrimaryCarry - _latestBenchmarkCarry;
+		var mean = _spreadAverage.Process(spread, time, true).ToDecimal();
+		var deviation = _spreadDeviation.Process(spread, time, true).ToDecimal();
+
+		if (!_spreadAverage.IsFormed || !_spreadDeviation.IsFormed || deviation <= 0m)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
+
+		var zScore = (spread - mean) / deviation;
+		var bullishEntry = _previousZScore is decimal previousBullish && previousBullish < EntryThreshold && zScore >= EntryThreshold;
+		var bearishEntry = _previousZScore is decimal previousBearish && previousBearish > -EntryThreshold && zScore <= -EntryThreshold;
+
+		if (_cooldownRemaining == 0 && Position == 0)
 		{
-			var sec = kv.Key;
-			var price = GetLatestPrice(sec);
-			if (price > 0)
+			if (bullishEntry)
 			{
-				var tgtQty = kv.Value * portfolioValue / price;
-				TradeToTarget(sec, tgtQty);
+				BuyMarket();
+				_cooldownRemaining = CooldownBars;
+			}
+			else if (bearishEntry)
+			{
+				SellMarket();
+				_cooldownRemaining = CooldownBars;
 			}
 		}
-
-		LogInfo($"Rebalanced: Long {lowCarry.Count} | Short {highCarry.Count}");
-	}
-
-	private decimal GetLatestPrice(Security security)
-	{
-		return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
-	}
-
-	private void TradeToTarget(Security sec, decimal tgtQty)
-	{
-		var diff = tgtQty - PositionBy(sec);
-		var price = GetLatestPrice(sec);
-		if (price <= 0 || Math.Abs(diff) * price < MinTradeUsd)
-			return;
-
-		RegisterOrder(new Order
+		else if (Position > 0 && zScore <= ExitThreshold)
 		{
-			Security = sec,
-			Portfolio = Portfolio,
-			Side = diff > 0 ? Sides.Buy : Sides.Sell,
-			Volume = Math.Abs(diff),
-			Type = OrderTypes.Market,
-			Comment = "DollarCarry"
-		});
-	}
+			SellMarket(Position);
+			_cooldownRemaining = CooldownBars;
+		}
+		else if (Position < 0 && zScore >= -ExitThreshold)
+		{
+			BuyMarket(Math.Abs(Position));
+			_cooldownRemaining = CooldownBars;
+		}
 
-	private decimal PositionBy(Security sec) =>
-		GetPositionValue(sec, Portfolio) ?? 0m;
-
-	/// <summary>
-	/// Retrieve latest interest‑rate differential: positive if USD yield &gt; FX yield.
-	/// Replace this stub with call to your rates database or API.
-	/// </summary>
-	private bool TryGetCarry(Security pair, out decimal carry)
-	{
-		carry = 0m;
-		return false;
+		_previousZScore = zScore;
 	}
 }

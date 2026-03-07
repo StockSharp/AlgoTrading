@@ -1,18 +1,7 @@
-// EarningsAnnouncementPremiumStrategy.cs
-// ------------------------------------------------------------
-// Long DaysBefore days BEFORE earnings announcement,
-// exit DaysAfter days AFTER announcement.
-// Candle-stream style: SubscribeCandles → Bind(CandleStates.Finished) → DailyScan once per day.
-// Date: 2 August 2025
-// ------------------------------------------------------------
-
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -22,31 +11,25 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Earnings announcement premium strategy.
-/// Buys <see cref="DaysBefore"/> days before an earnings announcement
-/// and exits <see cref="DaysAfter"/> days after the announcement.
+/// Earnings announcement premium strategy that enters the primary instrument shortly before a synthetic earnings event and exits after the event passes.
 /// </summary>
 public class EarningsAnnouncementPremiumStrategy : Strategy
 {
-	#region Parameters
-	private readonly StrategyParam<IEnumerable<Security>> _universe;
 	private readonly StrategyParam<int> _daysBefore;
 	private readonly StrategyParam<int> _daysAfter;
-	private readonly StrategyParam<decimal> _capitalUsd;
-	private readonly StrategyParam<decimal> _minUsd;
+	private readonly StrategyParam<int> _eventCycleBars;
+	private readonly StrategyParam<int> _trendLength;
+	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _stopLoss;
 	private readonly StrategyParam<DataType> _candleType;
 
-	/// <summary>
-	/// The securities universe.
-	/// </summary>
-	public IEnumerable<Security> Universe
-	{
-		get => _universe.Value;
-		set => _universe.Value = value;
-	}
+	private SimpleMovingAverage _trend = null!;
+	private int _barsSinceEvent;
+	private int _cooldownRemaining;
+	private decimal _latestTrendValue;
 
 	/// <summary>
-	/// Number of days before earnings to enter.
+	/// Number of bars before the synthetic earnings event to enter.
 	/// </summary>
 	public int DaysBefore
 	{
@@ -55,7 +38,7 @@ public class EarningsAnnouncementPremiumStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Number of days after earnings to exit.
+	/// Number of bars after the synthetic earnings event to exit.
 	/// </summary>
 	public int DaysAfter
 	{
@@ -64,170 +47,156 @@ public class EarningsAnnouncementPremiumStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Capital per trade in USD.
+	/// Distance between synthetic earnings events in finished bars.
 	/// </summary>
-	public decimal CapitalPerTradeUsd
+	public int EventCycleBars
 	{
-		get => _capitalUsd.Value;
-		set => _capitalUsd.Value = value;
+		get => _eventCycleBars.Value;
+		set => _eventCycleBars.Value = value;
 	}
 
 	/// <summary>
-	/// Minimum trade value in USD.
+	/// Trend filter length.
 	/// </summary>
-	public decimal MinTradeUsd
+	public int TrendLength
 	{
-		get => _minUsd.Value;
-		set => _minUsd.Value = value;
+		get => _trendLength.Value;
+		set => _trendLength.Value = value;
 	}
 
 	/// <summary>
-	/// The candle type to use for calculations.
+	/// Closed candles to wait before another position change.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
+	/// Stop loss percentage.
+	/// </summary>
+	public decimal StopLoss
+	{
+		get => _stopLoss.Value;
+		set => _stopLoss.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type to use for calculations.
 	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
-	#endregion
-
-	private readonly Dictionary<Security, DateTimeOffset> _exitSchedule = [];
-	private readonly Dictionary<Security, decimal> _latestPrices = [];
-	private DateTime _lastProcessed = DateTime.MinValue;
 
 	/// <summary>
 	/// Initializes a new instance of <see cref="EarningsAnnouncementPremiumStrategy"/>.
 	/// </summary>
 	public EarningsAnnouncementPremiumStrategy()
 	{
-		_universe = Param<IEnumerable<Security>>(nameof(Universe), [])
-			.SetDisplay("Universe", "Securities to trade", "General");
-
-		_daysBefore = Param(nameof(DaysBefore), 5)
-			.SetDisplay("Days Before", "Days before earnings to enter", "General");
+		_daysBefore = Param(nameof(DaysBefore), 3)
+			.SetRange(1, 10)
+			.SetDisplay("Days Before", "Bars before the synthetic earnings event to enter", "General");
 
 		_daysAfter = Param(nameof(DaysAfter), 1)
-			.SetDisplay("Days After", "Days after earnings to exit", "General");
+			.SetRange(1, 10)
+			.SetDisplay("Days After", "Bars after the synthetic earnings event to exit", "General");
 
-		_capitalUsd = Param(nameof(CapitalPerTradeUsd), 5000m)
-			.SetDisplay("Capital per Trade (USD)", "Capital allocated per trade", "Risk");
+		_eventCycleBars = Param(nameof(EventCycleBars), 18)
+			.SetRange(8, 80)
+			.SetDisplay("Event Cycle Bars", "Distance between synthetic earnings events in finished bars", "General");
 
-		_minUsd = Param(nameof(MinTradeUsd), 100m)
-			.SetDisplay("Minimum Trade (USD)", "Minimal trade value", "Risk");
+		_trendLength = Param(nameof(TrendLength), 12)
+			.SetRange(3, 50)
+			.SetDisplay("Trend Length", "Trend filter length", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_cooldownBars = Param(nameof(CooldownBars), 2)
+			.SetRange(0, 20)
+			.SetDisplay("Cooldown Bars", "Closed candles to wait before another position change", "Risk");
+
+		_stopLoss = Param(nameof(StopLoss), 2.5m)
+			.SetRange(0.5m, 10m)
+			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to process", "General");
 	}
 
 	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities() =>
-		Universe.Select(s => (s, CandleType));
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		if (Security != null)
+			yield return (Security, CandleType);
+	}
 
 	/// <inheritdoc />
-	
 	protected override void OnReseted()
 	{
 		base.OnReseted();
 
-		_exitSchedule.Clear();
-		_latestPrices.Clear();
-		_lastProcessed = default;
+		_trend = null!;
+		_barsSinceEvent = 0;
+		_cooldownRemaining = 0;
+		_latestTrendValue = 0m;
 	}
 
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		if (Universe == null || !Universe.Any())
-			throw new InvalidOperationException("Universe is empty.");
+		if (Security == null)
+			throw new InvalidOperationException("Primary security is not specified.");
 
-		foreach (var (sec, tf) in GetWorkingSecurities())
+		_trend = new SimpleMovingAverage { Length = TrendLength };
+
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(ProcessCandle)
+			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
 		{
-			SubscribeCandles(tf, true, sec)
-				.Bind(c => ProcessCandle(c, sec))
-				.Start();
+			DrawCandles(area, subscription);
+			DrawOwnTrades(area);
 		}
+
+		StartProtection(
+			new Unit(2, UnitTypes.Percent),
+			new Unit(StopLoss, UnitTypes.Percent));
 	}
 
-	private void ProcessCandle(ICandleMessage candle, Security security)
+	private void ProcessCandle(ICandleMessage candle)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Store the latest closing price for this security
-		_latestPrices[security] = candle.ClosePrice;
+		_latestTrendValue = _trend.Process(candle).ToDecimal();
 
-		var day = candle.OpenTime.Date;
-		if (day == _lastProcessed)
+		if (!_trend.IsFormed || !IsFormedAndOnlineAndAllowTrading())
 			return;
-		_lastProcessed = day;
-		DailyScan(day);
-	}
 
-	private void DailyScan(DateTime today)
-	{
-		/* -------- Entries -------- */
-		foreach (var stock in Universe)
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
+
+		var barsToEvent = EventCycleBars - (_barsSinceEvent % EventCycleBars);
+		var bullishWindow = barsToEvent <= DaysBefore && barsToEvent > 0 && candle.ClosePrice >= _latestTrendValue * 0.995m;
+		var exitWindow = _barsSinceEvent % EventCycleBars == DaysAfter;
+
+		if (_cooldownRemaining == 0 && Position == 0 && bullishWindow)
 		{
-			if (!TryGetNextEarningsDate(stock, out var earnDate))
-				continue;
-
-			var diff = (earnDate.Date - today).TotalDays;
-			if (diff == DaysBefore && !_exitSchedule.ContainsKey(stock))
-			{
-				var price = GetLatestPrice(stock);
-				if (price <= 0)
-					continue;
-					
-				var qty = CapitalPerTradeUsd / price;
-				if (qty * price >= MinTradeUsd)
-				{
-					Place(stock, qty, Sides.Buy, "Enter");
-					_exitSchedule[stock] = earnDate.Date.AddDays(DaysAfter);
-				}
-			}
+			BuyMarket();
+			_cooldownRemaining = CooldownBars;
+		}
+		else if (Position > 0 && exitWindow)
+		{
+			SellMarket(Position);
+			_cooldownRemaining = CooldownBars;
 		}
 
-		/* -------- Exits -------- */
-		foreach (var kv in _exitSchedule.ToList())
-		{
-			if (today < kv.Value)
-				continue;
-			var pos = PositionBy(kv.Key);
-			if (pos > 0)
-				Place(kv.Key, pos, Sides.Sell, "Exit");
-			_exitSchedule.Remove(kv.Key);
-		}
+		_barsSinceEvent++;
 	}
-
-	private decimal GetLatestPrice(Security security)
-	{
-		return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
-	}
-
-	#region Helpers
-	private void Place(Security s, decimal qty, Sides side, string tag)
-	{
-		RegisterOrder(new Order
-		{
-			Security = s,
-			Portfolio = Portfolio,
-			Side = side,
-			Volume = qty,
-			Type = OrderTypes.Market,
-			Comment = $"EarnPrem-{tag}"
-		});
-	}
-
-	private decimal PositionBy(Security s) => GetPositionValue(s, Portfolio) ?? 0;
-	#endregion
-
-	#region External data stub
-	private bool TryGetNextEarningsDate(Security s, out DateTimeOffset dt)
-	{
-		dt = DateTimeOffset.MinValue;
-		return false; // TODO
-	}
-	#endregion
 }

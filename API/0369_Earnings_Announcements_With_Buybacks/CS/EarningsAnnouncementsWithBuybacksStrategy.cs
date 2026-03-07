@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,67 +11,88 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that buys stocks with active buyback programs before their earnings announcements
-/// and exits a few days after the report.
+/// Strategy that buys the primary instrument before synthetic earnings events when a synthetic buyback regime is active and exits after the event.
 /// </summary>
 public class EarningsAnnouncementsWithBuybacksStrategy : Strategy
 {
-	private readonly StrategyParam<IEnumerable<Security>> _universe;
 	private readonly StrategyParam<int> _daysBefore;
 	private readonly StrategyParam<int> _daysAfter;
-	private readonly StrategyParam<decimal> _capitalUsd;
-	private readonly StrategyParam<decimal> _minUsd;
+	private readonly StrategyParam<int> _eventCycleBars;
+	private readonly StrategyParam<int> _buybackLength;
+	private readonly StrategyParam<decimal> _buybackThreshold;
+	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _stopLoss;
 	private readonly StrategyParam<DataType> _candleType;
-	
-	private readonly Dictionary<Security, DateTimeOffset> _exit = [];
-	private readonly Dictionary<Security, decimal> _latestPrices = [];
-	private DateTime _lastProcessed = DateTime.MinValue;
-	
+
+	private ExponentialMovingAverage _buybackProxy = null!;
+	private int _barIndex;
+	private int _holdingRemaining;
+	private int _cooldownRemaining;
+	private decimal _latestBuybackValue;
+
 	/// <summary>
-	/// Securities universe to monitor.
-	/// </summary>
-	public IEnumerable<Security> Universe
-	{
-		get => _universe.Value;
-		set => _universe.Value = value;
-	}
-	
-	/// <summary>
-	/// Number of days before earnings to enter.
+	/// Number of bars before the synthetic earnings event to enter.
 	/// </summary>
 	public int DaysBefore
 	{
 		get => _daysBefore.Value;
 		set => _daysBefore.Value = value;
 	}
-	
+
 	/// <summary>
-	/// Number of days after earnings to exit.
+	/// Number of bars after the synthetic earnings event to exit.
 	/// </summary>
 	public int DaysAfter
 	{
 		get => _daysAfter.Value;
 		set => _daysAfter.Value = value;
 	}
-	
+
 	/// <summary>
-	/// Capital allocated per trade in USD.
+	/// Distance between synthetic earnings events in bars.
 	/// </summary>
-	public decimal CapitalPerTradeUsd
+	public int EventCycleBars
 	{
-		get => _capitalUsd.Value;
-		set => _capitalUsd.Value = value;
+		get => _eventCycleBars.Value;
+		set => _eventCycleBars.Value = value;
 	}
-	
+
 	/// <summary>
-	/// Minimum trade value in USD.
+	/// Smoothing length for the synthetic buyback activity proxy.
 	/// </summary>
-	public decimal MinTradeUsd
+	public int BuybackLength
 	{
-		get => _minUsd.Value;
-		set => _minUsd.Value = value;
+		get => _buybackLength.Value;
+		set => _buybackLength.Value = value;
 	}
-	
+
+	/// <summary>
+	/// Minimum synthetic buyback score required to enter.
+	/// </summary>
+	public decimal BuybackThreshold
+	{
+		get => _buybackThreshold.Value;
+		set => _buybackThreshold.Value = value;
+	}
+
+	/// <summary>
+	/// Closed candles to wait before another position change.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
+	/// Stop loss percentage.
+	/// </summary>
+	public decimal StopLoss
+	{
+		get => _stopLoss.Value;
+		set => _stopLoss.Value = value;
+	}
+
 	/// <summary>
 	/// Candle type used for price data.
 	/// </summary>
@@ -83,145 +101,139 @@ public class EarningsAnnouncementsWithBuybacksStrategy : Strategy
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
-	
+
 	/// <summary>
 	/// Initializes a new instance of <see cref="EarningsAnnouncementsWithBuybacksStrategy"/>.
 	/// </summary>
 	public EarningsAnnouncementsWithBuybacksStrategy()
 	{
-		_universe = Param<IEnumerable<Security>>(nameof(Universe), [])
-		.SetDisplay("Universe", "Securities to monitor", "General");
-		
-		_daysBefore = Param(nameof(DaysBefore), 5)
-		.SetGreaterThanZero()
-		.SetDisplay("Days Before", "Days before earnings to enter", "Trading");
-		
+		_daysBefore = Param(nameof(DaysBefore), 3)
+			.SetRange(1, 10)
+			.SetDisplay("Days Before", "Bars before the synthetic earnings event to enter", "Trading");
+
 		_daysAfter = Param(nameof(DaysAfter), 1)
-		.SetGreaterThanZero()
-		.SetDisplay("Days After", "Days after earnings to exit", "Trading");
-		
-		_capitalUsd = Param(nameof(CapitalPerTradeUsd), 5000m)
-		.SetGreaterThanZero()
-		.SetDisplay("Capital Per Trade USD", "Capital allocated per trade", "Risk Management");
-		
-		_minUsd = Param(nameof(MinTradeUsd), 100m)
-		.SetGreaterThanZero()
-		.SetDisplay("Minimum Trade USD", "Minimum trade value", "Risk Management");
-		
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-		.SetDisplay("Candle Type", "Type of candles to use", "General");
+			.SetRange(1, 10)
+			.SetDisplay("Days After", "Bars after the synthetic earnings event to exit", "Trading");
+
+		_eventCycleBars = Param(nameof(EventCycleBars), 20)
+			.SetRange(8, 80)
+			.SetDisplay("Event Cycle Bars", "Distance between synthetic earnings events", "Trading");
+
+		_buybackLength = Param(nameof(BuybackLength), 8)
+			.SetRange(2, 40)
+			.SetDisplay("Buyback Length", "Smoothing length for the synthetic buyback proxy", "Indicators");
+
+		_buybackThreshold = Param(nameof(BuybackThreshold), 0.7m)
+			.SetRange(-5m, 5m)
+			.SetDisplay("Buyback Threshold", "Minimum synthetic buyback score required to enter", "Indicators");
+
+		_cooldownBars = Param(nameof(CooldownBars), 2)
+			.SetRange(0, 20)
+			.SetDisplay("Cooldown Bars", "Closed candles to wait before another position change", "Risk");
+
+		_stopLoss = Param(nameof(StopLoss), 2.5m)
+			.SetRange(0.5m, 10m)
+			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
-	
+
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return Universe.Select(s => (s, CandleType));
+		if (Security != null)
+			yield return (Security, CandleType);
 	}
-	
+
 	/// <inheritdoc />
-	
 	protected override void OnReseted()
 	{
 		base.OnReseted();
 
-		_exit.Clear();
-		_latestPrices.Clear();
-		_lastProcessed = default;
+		_buybackProxy = null!;
+		_barIndex = 0;
+		_holdingRemaining = 0;
+		_cooldownRemaining = 0;
+		_latestBuybackValue = 0m;
 	}
 
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		
-		if (Universe == null || !Universe.Any())
-		throw new InvalidOperationException("Universe is empty.");
-		
-		foreach (var (sec, dt) in GetWorkingSecurities())
-		{
-			SubscribeCandles(dt, true, sec)
-			.Bind(c => ProcessCandle(c, sec))
+
+		if (Security == null)
+			throw new InvalidOperationException("Primary security is not specified.");
+
+		_buybackProxy = new ExponentialMovingAverage { Length = BuybackLength };
+
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(ProcessCandle)
 			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawOwnTrades(area);
 		}
+
+		StartProtection(
+			new Unit(2, UnitTypes.Percent),
+			new Unit(StopLoss, UnitTypes.Percent));
 	}
-	
-	private void ProcessCandle(ICandleMessage candle, Security security)
+
+	private void ProcessCandle(ICandleMessage candle)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
-		return;
-		
-		// Store the latest closing price for this security
-		_latestPrices[security] = candle.ClosePrice;
-		
-		var d = candle.OpenTime.Date;
-		if (d == _lastProcessed)
-		return;
-		
-		_lastProcessed = d;
-		DailyScan(d);
-	}
-	
-	private void DailyScan(DateTime today)
-	{
-		foreach (var stock in Universe)
+			return;
+
+		var buybackSignal = CalculateBuybackSignal(candle);
+		_latestBuybackValue = _buybackProxy.Process(buybackSignal, candle.OpenTime, true).ToDecimal();
+
+		if (!_buybackProxy.IsFormed || !IsFormedAndOnlineAndAllowTrading())
 		{
-			if (!TryGetNextEarningsDate(stock, out var earnDate))
-			continue;
-			
-			var diff = (earnDate.Date - today).TotalDays;
-			if (diff == DaysBefore && !_exit.ContainsKey(stock) && TryHasActiveBuyback(stock))
+			_barIndex++;
+			return;
+		}
+
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
+
+		if (_holdingRemaining > 0)
+		{
+			_holdingRemaining--;
+
+			if (_holdingRemaining == 0 && Position > 0)
 			{
-				var price = GetLatestPrice(stock);
-				if (price <= 0)
-				continue;
-				
-				var qty = CapitalPerTradeUsd / price;
-				if (qty * price >= MinTradeUsd)
-				{
-					Place(stock, qty, Sides.Buy, "Enter");
-					_exit[stock] = earnDate.Date.AddDays(DaysAfter);
-				}
+				SellMarket(Position);
+				_cooldownRemaining = CooldownBars;
 			}
 		}
-		
-		foreach (var kv in _exit.ToList())
+
+		var barsToEvent = EventCycleBars - (_barIndex % EventCycleBars);
+		var inEntryWindow = barsToEvent <= DaysBefore && barsToEvent > 0;
+		var buybackActive = _latestBuybackValue >= BuybackThreshold;
+
+		if (_cooldownRemaining == 0 && Position == 0 && inEntryWindow && buybackActive)
 		{
-			if (today >= kv.Value)
-			{
-				var pos = PositionBy(kv.Key);
-				if (pos > 0)
-				Place(kv.Key, pos, Sides.Sell, "Exit");
-				
-				_exit.Remove(kv.Key);
-			}
+			BuyMarket();
+			_holdingRemaining = DaysAfter + 1;
+			_cooldownRemaining = CooldownBars;
 		}
+
+		_barIndex++;
 	}
-	
-	private decimal PositionBy(Security s) => GetPositionValue(s, Portfolio) ?? 0;
-	
-	private decimal GetLatestPrice(Security security)
+
+	private decimal CalculateBuybackSignal(ICandleMessage candle)
 	{
-		return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
+		var priceBase = Math.Max(candle.OpenPrice, 1m);
+		var range = Math.Max(candle.HighPrice - candle.LowPrice, Security?.PriceStep ?? 1m);
+		var closeLocation = ((candle.ClosePrice - candle.LowPrice) - (candle.HighPrice - candle.ClosePrice)) / range;
+		var compression = 1m - Math.Min(0.2m, range / priceBase);
+
+		return (closeLocation * 2m) + compression;
 	}
-	
-	private void Place(Security s, decimal qty, Sides side, string tag)
-	{
-		RegisterOrder(new Order
-		{
-			Security = s,
-			Portfolio = Portfolio,
-			Side = side,
-			Volume = qty,
-			Type = OrderTypes.Market,
-			Comment = $"EarnBuyback-{tag}"
-		});
-	}
-	
-	private bool TryGetNextEarningsDate(Security s, out DateTimeOffset dt)
-	{
-		dt = DateTimeOffset.MinValue;
-		return false;
-	}
-	
-	private bool TryHasActiveBuyback(Security s) => false;
 }

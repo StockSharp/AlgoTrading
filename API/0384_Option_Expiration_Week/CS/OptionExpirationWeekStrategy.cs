@@ -4,7 +4,6 @@
 // Date: 2 Aug 2025
 
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
@@ -23,15 +22,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class OptionExpirationWeekStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _minUsd;
 	private readonly StrategyParam<DataType> _candleType;
-
-	/// <summary>Minimum trade amount in USD.</summary>
-	public decimal MinTradeUsd
-	{
-		get => _minUsd.Value;
-		set => _minUsd.Value = value;
-	}
 
 	/// <summary>
 	/// The type of candles to use for strategy calculation.
@@ -43,13 +34,12 @@ public class OptionExpirationWeekStrategy : Strategy
 	}
 
 	private readonly Dictionary<Security, decimal> _latestPrices = [];
+	private int _enteredMonthKey;
+	private int _exitedMonthKey;
 
 	public OptionExpirationWeekStrategy()
 	{
-		_minUsd = Param(nameof(MinTradeUsd), 200m)
-			.SetDisplay("Min USD", "Minimum trade value", "Risk");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -67,6 +57,8 @@ public class OptionExpirationWeekStrategy : Strategy
 		base.OnReseted();
 
 		_latestPrices.Clear();
+		_enteredMonthKey = 0;
+		_exitedMonthKey = 0;
 	}
 
 	protected override void OnStarted2(DateTime time)
@@ -95,25 +87,20 @@ public class OptionExpirationWeekStrategy : Strategy
 
 	private void OnDaily(DateTime d)
 	{
+		var monthKey = (d.Year * 100) + d.Month;
 		bool inExp = IsOptionExpWeek(d);
-		var portfolioValue = Portfolio.CurrentValue ?? 0m;
-		var price = GetLatestPrice(Security);
-		
-		var tgt = inExp && price > 0 ? portfolioValue / price : 0;
-		var diff = tgt - PositionBy(Security);
-		
-		if (price <= 0 || Math.Abs(diff) * price < MinTradeUsd)
-			return;
 
-		RegisterOrder(new Order
+		if (inExp && Position == 0 && _enteredMonthKey != monthKey)
 		{
-			Security = Security,
-			Portfolio = Portfolio,
-			Side = diff > 0 ? Sides.Buy : Sides.Sell,
-			Volume = Math.Abs(diff),
-			Type = OrderTypes.Market,
-			Comment = "OpExp"
-		});
+			BuyMarket();
+			_enteredMonthKey = monthKey;
+			_exitedMonthKey = 0;
+		}
+		else if (!inExp && Position > 0 && _enteredMonthKey == monthKey && _exitedMonthKey != monthKey)
+		{
+			SellMarket(Position);
+			_exitedMonthKey = monthKey;
+		}
 	}
 
 	private decimal GetLatestPrice(Security security)
@@ -130,6 +117,4 @@ public class OptionExpirationWeekStrategy : Strategy
 		third = third.AddDays(14);
 		return d >= third.AddDays(-4) && d <= third;
 	}
-
-	private decimal PositionBy(Security s) => GetPositionValue(s, Portfolio) ?? 0;
 }

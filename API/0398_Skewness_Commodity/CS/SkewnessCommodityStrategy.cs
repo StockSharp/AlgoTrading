@@ -1,245 +1,289 @@
-// SkewnessCommodityStrategy.cs
-// -----------------------------------------------------------------------------
-// Compute skewness of daily returns over WindowDays for each futures contract.
-// Long TopN most negative-skew, short TopN most positive-skew.
-// Monthly rebalance on the first trading day, triggered by candle-stream
-// (SubscribeCandles → Bind(CandleStates.Finished) → OnDaily).
- // No Schedule() is used.
-// -----------------------------------------------------------------------------
-// Date: 2 Aug 2025
-// ----------------------------------------------------------------------------
-
 using System;
-using System.Linq;
 using System.Collections.Generic;
+using System.Linq;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
+using StockSharp.Configuration;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Skewness-based commodity strategy.
-/// Longs negatively skewed futures and shorts positively skewed ones.
+/// Skewness-based commodity strategy that trades the primary commodity when its return skewness diverges from a benchmark commodity.
 /// </summary>
 public class SkewnessCommodityStrategy : Strategy
 {
-	#region Parameters
-	private readonly StrategyParam<IEnumerable<Security>> _futures;
-	private readonly StrategyParam<int> _window;
-	private readonly StrategyParam<int> _topN;
-	private readonly StrategyParam<decimal> _minUsd;
+	private readonly StrategyParam<string> _security2Id;
+	private readonly StrategyParam<int> _windowLength;
+	private readonly StrategyParam<int> _normalizationPeriod;
+	private readonly StrategyParam<decimal> _entryThreshold;
+	private readonly StrategyParam<decimal> _exitThreshold;
+	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _stopLoss;
 	private readonly StrategyParam<DataType> _candleType;
 
-	/// <summary>
-	/// Futures contracts to evaluate.
-	/// </summary>
-	public IEnumerable<Security> Futures
+	private Security _benchmark = null!;
+	private SimpleMovingAverage _spreadAverage = null!;
+	private StandardDeviation _spreadDeviation = null!;
+	private readonly Queue<decimal> _primaryReturns = [];
+	private readonly Queue<decimal> _benchmarkReturns = [];
+	private decimal? _previousPrimaryClose;
+	private decimal? _previousBenchmarkClose;
+	private decimal? _previousZScore;
+	private decimal _latestPrimarySkewness;
+	private decimal _latestBenchmarkSkewness;
+	private bool _primaryUpdated;
+	private bool _benchmarkUpdated;
+	private int _cooldownRemaining;
+
+	public string Security2Id
 	{
-		get => _futures.Value;
-		set => _futures.Value = value;
+		get => _security2Id.Value;
+		set => _security2Id.Value = value;
 	}
 
-	/// <summary>
-	/// Window length in days for skewness calculation.
-	/// </summary>
-	public int WindowDays
+	public int WindowLength
 	{
-		get => _window.Value;
-		set => _window.Value = value;
+		get => _windowLength.Value;
+		set => _windowLength.Value = value;
 	}
 
-	/// <summary>
-	/// Number of contracts per side to trade.
-	/// </summary>
-	public int TopN
+	public int NormalizationPeriod
 	{
-		get => _topN.Value;
-		set => _topN.Value = value;
+		get => _normalizationPeriod.Value;
+		set => _normalizationPeriod.Value = value;
 	}
 
-	/// <summary>
-	/// Minimum trade value in USD.
-	/// </summary>
-	public decimal MinTradeUsd
+	public decimal EntryThreshold
 	{
-		get => _minUsd.Value;
-		set => _minUsd.Value = value;
+		get => _entryThreshold.Value;
+		set => _entryThreshold.Value = value;
 	}
 
-	/// <summary>
-	/// The type of candles to use for strategy calculation.
-	/// </summary>
+	public decimal ExitThreshold
+	{
+		get => _exitThreshold.Value;
+		set => _exitThreshold.Value = value;
+	}
+
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	public decimal StopLoss
+	{
+		get => _stopLoss.Value;
+		set => _stopLoss.Value = value;
+	}
+
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
-	#endregion
 
-	// rolling windows of prices
-	private readonly Dictionary<Security, Queue<decimal>> _px = [];
-	private readonly Dictionary<Security, decimal> _latestPrices = [];
-	private DateTime _lastProcessed = DateTime.MinValue;
-	private readonly Dictionary<Security, decimal> _weight = [];
-
-	/// <summary>
-	/// Initializes strategy parameters.
-	/// </summary>
 	public SkewnessCommodityStrategy()
 	{
-		_futures = Param<IEnumerable<Security>>(nameof(Futures), [])
-			.SetDisplay("Futures", "Contracts to analyze", "General");
+		_security2Id = Param(nameof(Security2Id), Paths.HistoryDefaultSecurity2)
+			.SetDisplay("Benchmark Security Id", "Identifier of the benchmark commodity", "General");
 
-		_window = Param(nameof(WindowDays), 120)
-			.SetGreaterThanZero()
-			.SetDisplay("Window Days", "Window length for skewness", "Parameters");
+		_windowLength = Param(nameof(WindowLength), 20)
+			.SetRange(5, 120)
+			.SetDisplay("Window Length", "Lookback period used to estimate return skewness", "Indicators");
 
-		_topN = Param(nameof(TopN), 5)
-			.SetGreaterThanZero()
-			.SetDisplay("Top N", "Number of contracts per side", "Parameters");
+		_normalizationPeriod = Param(nameof(NormalizationPeriod), 16)
+			.SetRange(5, 120)
+			.SetDisplay("Normalization Period", "Lookback period used to normalize the skewness spread", "Indicators");
 
-		_minUsd = Param(nameof(MinTradeUsd), 200m)
-			.SetGreaterThanZero()
-			.SetDisplay("Min Trade USD", "Minimum trade value in USD", "Parameters");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
+		_entryThreshold = Param(nameof(EntryThreshold), 1.1m)
+			.SetRange(0.2m, 5m)
+			.SetDisplay("Entry Threshold", "Z-score threshold required to open a position", "Signals");
+
+		_exitThreshold = Param(nameof(ExitThreshold), 0.25m)
+			.SetRange(0m, 2m)
+			.SetDisplay("Exit Threshold", "Z-score threshold required to close a position", "Signals");
+
+		_cooldownBars = Param(nameof(CooldownBars), 8)
+			.SetRange(0, 120)
+			.SetDisplay("Cooldown Bars", "Closed candles to wait before another position change", "Risk");
+
+		_stopLoss = Param(nameof(StopLoss), 3m)
+			.SetRange(0.5m, 10m)
+			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+			.SetDisplay("Candle Type", "Time frame for candles", "General");
 	}
 
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities() =>
-		Futures.Select(f => (f, CandleType));
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		if (Security != null)
+			yield return (Security, CandleType);
 
-	
+		if (!Security2Id.IsEmpty())
+			yield return (new Security { Id = Security2Id }, CandleType);
+	}
+
+	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
 
-		_px.Clear();
-		_latestPrices.Clear();
-		_lastProcessed = default;
-		_weight.Clear();
+		_benchmark = null!;
+		_spreadAverage = null!;
+		_spreadDeviation = null!;
+		_primaryReturns.Clear();
+		_benchmarkReturns.Clear();
+		_previousPrimaryClose = null;
+		_previousBenchmarkClose = null;
+		_previousZScore = null;
+		_latestPrimarySkewness = 0m;
+		_latestBenchmarkSkewness = 0m;
+		_primaryUpdated = false;
+		_benchmarkUpdated = false;
+		_cooldownRemaining = 0;
 	}
 
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		if (Futures == null || !Futures.Any())
-			throw new InvalidOperationException("Futures set is empty");
+		if (Security == null)
+			throw new InvalidOperationException("Primary security is not specified.");
 
-		foreach (var (s, tf) in GetWorkingSecurities())
-		{
-			_px[s] = [];
-			SubscribeCandles(tf, true, s)
-				.Bind(c => OnDaily(s, c))
-				.Start();
-		}
+		if (Security2Id.IsEmpty())
+			throw new InvalidOperationException("Benchmark security identifier is not specified.");
+
+		_benchmark = this.LookupById(Security2Id) ?? new Security { Id = Security2Id };
+		_spreadAverage = new SimpleMovingAverage { Length = NormalizationPeriod };
+		_spreadDeviation = new StandardDeviation { Length = NormalizationPeriod };
+
+		var primarySubscription = SubscribeCandles(CandleType, security: Security);
+		var benchmarkSubscription = SubscribeCandles(CandleType, security: _benchmark);
+
+		primarySubscription.Bind(ProcessPrimaryCandle).Start();
+		benchmarkSubscription.Bind(ProcessBenchmarkCandle).Start();
+
+		StartProtection(new Unit(2, UnitTypes.Percent), new Unit(StopLoss, UnitTypes.Percent));
 	}
 
-	private void OnDaily(Security s, ICandleMessage candle)
+	private void ProcessPrimaryCandle(ICandleMessage candle)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Store the latest closing price for this security
-		_latestPrices[s] = candle.ClosePrice;
-
-		var q = _px[s];
-		if (q.Count == WindowDays + 1)
-			q.Dequeue();
-		q.Enqueue(candle.ClosePrice);
-
-		var d = candle.OpenTime.Date;
-		if (d == _lastProcessed)
-			return;
-		_lastProcessed = d;
-
-		if (d.Day != 1)
+		if (UpdateReturns(_primaryReturns, candle.ClosePrice, ref _previousPrimaryClose) is null)
 			return;
 
-		Rebalance();
+		_latestPrimarySkewness = CalculateSkewness(_primaryReturns);
+		_primaryUpdated = true;
+		TryProcessSpread(candle.OpenTime);
 	}
 
-	private void Rebalance()
+	private void ProcessBenchmarkCandle(ICandleMessage candle)
 	{
-		var skew = new Dictionary<Security, double>();
+		if (candle.State != CandleStates.Finished)
+			return;
 
-		foreach (var kv in _px)
+		if (UpdateReturns(_benchmarkReturns, candle.ClosePrice, ref _previousBenchmarkClose) is null)
+			return;
+
+		_latestBenchmarkSkewness = CalculateSkewness(_benchmarkReturns);
+		_benchmarkUpdated = true;
+		TryProcessSpread(candle.OpenTime);
+	}
+
+	private decimal? UpdateReturns(Queue<decimal> queue, decimal closePrice, ref decimal? previousClose)
+	{
+		if (previousClose is not decimal previous || previous <= 0m)
 		{
-			var q = kv.Value;
-			if (q.Count < WindowDays + 1)
-				continue;
-
-			var arr = q.ToArray();
-			var ret = new double[arr.Length - 1];
-			for (int i = 1; i < arr.Length; i++)
-				ret[i - 1] = (double)((arr[i] - arr[i - 1]) / arr[i - 1]);
-
-			var mean = ret.Average();
-			var sd = Math.Sqrt(ret.Select(r => (r - mean) * (r - mean)).Average());
-			if (sd == 0)
-				continue;
-
-			var sk = ret.Select(r => Math.Pow((r - mean) / sd, 3)).Average();
-			skew[kv.Key] = sk;
+			previousClose = closePrice;
+			return null;
 		}
 
-		if (skew.Count < TopN * 2)
+		var ret = (closePrice - previous) / previous;
+		previousClose = closePrice;
+
+		if (queue.Count == WindowLength)
+			queue.Dequeue();
+
+		queue.Enqueue(ret);
+		return ret;
+	}
+
+	private static decimal CalculateSkewness(IEnumerable<decimal> returns)
+	{
+		var values = returns.ToArray();
+		if (values.Length < 3)
+			return 0m;
+
+		var mean = values.Average();
+		var variance = values.Select(value => (value - mean) * (value - mean)).Average();
+		if (variance <= 0m)
+			return 0m;
+
+		var deviation = (decimal)Math.Sqrt((double)variance);
+		var thirdMoment = values.Select(value => (value - mean) * (value - mean) * (value - mean)).Average();
+		return thirdMoment / (deviation * deviation * deviation);
+	}
+
+	private void TryProcessSpread(DateTime time)
+	{
+		if (!_primaryUpdated || !_benchmarkUpdated || _primaryReturns.Count < WindowLength || _benchmarkReturns.Count < WindowLength)
 			return;
 
-		var longSide = skew.OrderBy(kv => kv.Value).Take(TopN).Select(kv => kv.Key).ToList();        // most negative
-		var shortSide = skew.OrderByDescending(kv => kv.Value).Take(TopN).Select(kv => kv.Key).ToList();
+		_primaryUpdated = false;
+		_benchmarkUpdated = false;
 
-		_weight.Clear();
-		decimal wl = 1m / longSide.Count;
-		decimal ws = -1m / shortSide.Count;
-		foreach (var s in longSide)
-			_weight[s] = wl;
-		foreach (var s in shortSide)
-			_weight[s] = ws;
+		var spread = _latestBenchmarkSkewness - _latestPrimarySkewness;
+		var mean = _spreadAverage.Process(spread, time, true).ToDecimal();
+		var deviation = _spreadDeviation.Process(spread, time, true).ToDecimal();
 
-		foreach (var pos in Positions.Where(position => !_weight.ContainsKey(position.Security)))
-			TradeTo(pos.Security, 0);
+		if (!_spreadAverage.IsFormed || !_spreadDeviation.IsFormed || deviation <= 0m)
+			return;
 
-		var portfolioValue = Portfolio.CurrentValue ?? 0m;
-		foreach (var kv in _weight)
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
+
+		var zScore = (spread - mean) / deviation;
+		var bullishEntry = _previousZScore is decimal previousBullish && previousBullish < EntryThreshold && zScore >= EntryThreshold;
+		var bearishEntry = _previousZScore is decimal previousBearish && previousBearish > -EntryThreshold && zScore <= -EntryThreshold;
+
+		if (_cooldownRemaining == 0 && Position == 0)
 		{
-			var price = GetLatestPrice(kv.Key);
-			if (price > 0)
-				TradeTo(kv.Key, kv.Value * portfolioValue / price);
+			if (bullishEntry)
+			{
+				BuyMarket();
+				_cooldownRemaining = CooldownBars;
+			}
+			else if (bearishEntry)
+			{
+				SellMarket();
+				_cooldownRemaining = CooldownBars;
+			}
 		}
-	}
-
-	private void TradeTo(Security s, decimal tgtQty)
-	{
-		var diff = tgtQty - PositionBy(s);
-		var price = GetLatestPrice(s);
-		if (price <= 0 || Math.Abs(diff) * price < MinTradeUsd)
-			return;
-
-		RegisterOrder(new Order
+		else if (Position > 0 && zScore <= ExitThreshold)
 		{
-			Security = s,
-			Portfolio = Portfolio,
-			Side = diff > 0 ? Sides.Buy : Sides.Sell,
-			Volume = Math.Abs(diff),
-			Type = OrderTypes.Market,
-			Comment = "SkewCom"
-		});
-	}
+			SellMarket(Position);
+			_cooldownRemaining = CooldownBars;
+		}
+		else if (Position < 0 && zScore >= -ExitThreshold)
+		{
+			BuyMarket(Math.Abs(Position));
+			_cooldownRemaining = CooldownBars;
+		}
 
-	private decimal GetLatestPrice(Security security)
-	{
-		return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
+		_previousZScore = zScore;
 	}
-
-	private decimal PositionBy(Security s) =>
-		GetPositionValue(s, Portfolio) ?? 0m;
 }

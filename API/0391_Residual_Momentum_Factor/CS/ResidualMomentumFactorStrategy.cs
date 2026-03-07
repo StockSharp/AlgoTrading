@@ -1,218 +1,338 @@
-// ResidualMomentumFactorStrategy.cs
-// -----------------------------------------------------------------------------
-// Uses residual momentum score from factor model (external feed).
-// Monthly rebalance on first trading day via trigger candle.
-// Long top decile, short bottom decile.
-// -----------------------------------------------------------------------------
-// Date: 2 Aug 2025	 
-// -----------------------------------------------------------------------------
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
+using StockSharp.Configuration;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Residual momentum factor strategy that goes long securities with the highest
-/// residual momentum and short those with the lowest.
+/// Residual momentum factor strategy that trades the primary instrument when its benchmark-adjusted momentum diverges from the market proxy.
 /// </summary>
 public class ResidualMomentumFactorStrategy : Strategy
 {
-	private readonly StrategyParam<IEnumerable<Security>> _univ;
-	private readonly StrategyParam<int> _decile;
-	private readonly StrategyParam<decimal> _minUsd;
+	private readonly StrategyParam<string> _security2Id;
+	private readonly StrategyParam<int> _momentumPeriod;
+	private readonly StrategyParam<int> _betaLength;
+	private readonly StrategyParam<int> _normalizationPeriod;
+	private readonly StrategyParam<decimal> _entryThreshold;
+	private readonly StrategyParam<decimal> _exitThreshold;
+	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _stopLoss;
 	private readonly StrategyParam<DataType> _candleType;
 
+	private Security _benchmark = null!;
+	private RateOfChange _primaryMomentum = null!;
+	private RateOfChange _benchmarkMomentum = null!;
+	private ExponentialMovingAverage _betaAverage = null!;
+	private SimpleMovingAverage _spreadAverage = null!;
+	private StandardDeviation _spreadDeviation = null!;
+	private decimal? _previousPrimaryClose;
+	private decimal? _previousBenchmarkClose;
+	private decimal _latestPrimaryMomentum;
+	private decimal _latestBenchmarkMomentum;
+	private decimal _latestBeta;
+	private decimal? _previousZScore;
+	private bool _primaryUpdated;
+	private bool _benchmarkUpdated;
+	private int _cooldownRemaining;
+
 	/// <summary>
-	/// The type of candles to use for strategy calculation.
+	/// Benchmark security identifier.
+	/// </summary>
+	public string Security2Id
+	{
+		get => _security2Id.Value;
+		set => _security2Id.Value = value;
+	}
+
+	/// <summary>
+	/// Momentum lookback period.
+	/// </summary>
+	public int MomentumPeriod
+	{
+		get => _momentumPeriod.Value;
+		set => _momentumPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Smoothing length used for the rolling beta proxy.
+	/// </summary>
+	public int BetaLength
+	{
+		get => _betaLength.Value;
+		set => _betaLength.Value = value;
+	}
+
+	/// <summary>
+	/// Lookback period used to normalize residual momentum.
+	/// </summary>
+	public int NormalizationPeriod
+	{
+		get => _normalizationPeriod.Value;
+		set => _normalizationPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Z-score threshold required to open a position.
+	/// </summary>
+	public decimal EntryThreshold
+	{
+		get => _entryThreshold.Value;
+		set => _entryThreshold.Value = value;
+	}
+
+	/// <summary>
+	/// Z-score threshold required to close a position.
+	/// </summary>
+	public decimal ExitThreshold
+	{
+		get => _exitThreshold.Value;
+		set => _exitThreshold.Value = value;
+	}
+
+	/// <summary>
+	/// Closed candles to wait before another position change.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
+	/// Stop loss percentage.
+	/// </summary>
+	public decimal StopLoss
+	{
+		get => _stopLoss.Value;
+		set => _stopLoss.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type used for calculations.
 	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
-	private readonly Dictionary<Security, decimal> _w = [];
-	private readonly Dictionary<Security, decimal> _latestPrices = [];
-	private DateTime _last = DateTime.MinValue;
 
-	/// <summary>
-	/// Universe of securities to trade.
-	/// </summary>
-	public IEnumerable<Security> Universe
-	{
-		get => _univ.Value;
-		set => _univ.Value = value;
-	}
-
-	/// <summary>
-	/// Number of deciles used to rank securities.
-	/// </summary>
-	public int Decile
-	{
-		get => _decile.Value;
-		set => _decile.Value = value;
-	}
-
-	/// <summary>
-	/// Minimum dollar value per trade.
-	/// </summary>
-	public decimal MinTradeUsd
-	{
-		get => _minUsd.Value;
-		set => _minUsd.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="ResidualMomentumFactorStrategy"/> class.
-	/// </summary>
 	public ResidualMomentumFactorStrategy()
 	{
-		_univ = Param<IEnumerable<Security>>(nameof(Universe), [])
-			.SetDisplay("Universe", "Securities to trade", "General");
+		_security2Id = Param(nameof(Security2Id), Paths.HistoryDefaultSecurity2)
+			.SetDisplay("Benchmark Security Id", "Identifier of the benchmark security", "General");
 
-		_decile = Param(nameof(Decile), 10)
-			.SetDisplay("Decile", "Number of deciles for ranking", "General");
+		_momentumPeriod = Param(nameof(MomentumPeriod), 32)
+			.SetRange(5, 200)
+			.SetDisplay("Momentum Period", "Momentum lookback period", "Indicators");
 
-		_minUsd = Param(nameof(MinTradeUsd), 200m)
-			.SetDisplay("Min Trade USD", "Minimum dollar value per trade", "General");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
+		_betaLength = Param(nameof(BetaLength), 8)
+			.SetRange(2, 80)
+			.SetDisplay("Beta Length", "Smoothing length used for the rolling beta proxy", "Indicators");
+
+		_normalizationPeriod = Param(nameof(NormalizationPeriod), 24)
+			.SetRange(5, 120)
+			.SetDisplay("Normalization Period", "Lookback period used to normalize residual momentum", "Indicators");
+
+		_entryThreshold = Param(nameof(EntryThreshold), 1.1m)
+			.SetRange(0.2m, 5m)
+			.SetDisplay("Entry Threshold", "Z-score threshold required to open a position", "Signals");
+
+		_exitThreshold = Param(nameof(ExitThreshold), 0.25m)
+			.SetRange(0m, 2m)
+			.SetDisplay("Exit Threshold", "Z-score threshold required to close a position", "Signals");
+
+		_cooldownBars = Param(nameof(CooldownBars), 8)
+			.SetRange(0, 120)
+			.SetDisplay("Cooldown Bars", "Closed candles to wait before another position change", "Risk");
+
+		_stopLoss = Param(nameof(StopLoss), 3m)
+			.SetRange(0.5m, 10m)
+			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+			.SetDisplay("Candle Type", "Time frame for candles", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return Universe.Select(s => (s, CandleType));
+		if (Security != null)
+			yield return (Security, CandleType);
+
+		if (!Security2Id.IsEmpty())
+			yield return (new Security { Id = Security2Id }, CandleType);
 	}
 
 	/// <inheritdoc />
-	
 	protected override void OnReseted()
 	{
 		base.OnReseted();
 
-		_w.Clear();
-		_latestPrices.Clear();
-		_last = default;
+		_benchmark = null!;
+		_primaryMomentum = null!;
+		_benchmarkMomentum = null!;
+		_betaAverage = null!;
+		_spreadAverage = null!;
+		_spreadDeviation = null!;
+		_previousPrimaryClose = null;
+		_previousBenchmarkClose = null;
+		_latestPrimaryMomentum = 0m;
+		_latestBenchmarkMomentum = 0m;
+		_latestBeta = 1m;
+		_previousZScore = null;
+		_primaryUpdated = false;
+		_benchmarkUpdated = false;
+		_cooldownRemaining = 0;
 	}
 
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		if (Universe == null || !Universe.Any())
-			throw new InvalidOperationException("Universe cannot be empty.");
+		if (Security == null)
+			throw new InvalidOperationException("Primary security is not specified.");
 
-		var trig = Universe.First();
-		SubscribeCandles(CandleType, true, trig)
-			.Bind(c => ProcessCandle(c, trig))
+		if (Security2Id.IsEmpty())
+			throw new InvalidOperationException("Benchmark security identifier is not specified.");
+
+		_benchmark = this.LookupById(Security2Id) ?? new Security { Id = Security2Id };
+		_primaryMomentum = new RateOfChange { Length = MomentumPeriod };
+		_benchmarkMomentum = new RateOfChange { Length = MomentumPeriod };
+		_betaAverage = new ExponentialMovingAverage { Length = BetaLength };
+		_spreadAverage = new SimpleMovingAverage { Length = NormalizationPeriod };
+		_spreadDeviation = new StandardDeviation { Length = NormalizationPeriod };
+
+		var primarySubscription = SubscribeCandles(CandleType, security: Security);
+		var benchmarkSubscription = SubscribeCandles(CandleType, security: _benchmark);
+
+		primarySubscription
+			.Bind(ProcessPrimaryCandle)
 			.Start();
+
+		benchmarkSubscription
+			.Bind(ProcessBenchmarkCandle)
+			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, primarySubscription);
+			DrawCandles(area, benchmarkSubscription);
+			DrawOwnTrades(area);
+		}
+
+		StartProtection(
+			new Unit(2, UnitTypes.Percent),
+			new Unit(StopLoss, UnitTypes.Percent));
 	}
 
-	private void ProcessCandle(ICandleMessage candle, Security security)
+	private void ProcessPrimaryCandle(ICandleMessage candle)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Store the latest closing price for this security
-		_latestPrices[security] = candle.ClosePrice;
-
-		OnDaily(candle.OpenTime.Date);
-	}
-
-	private void OnDaily(DateTime d)
-	{
-		if (d == _last)
+		var momentumValue = _primaryMomentum.Process(candle);
+		if (momentumValue.IsEmpty || !_primaryMomentum.IsFormed)
 			return;
 
-		_last = d;
-
-		if (d.Day != 1)
-			return;
-
-		Rebalance();
+		latestBetaFromReturns(candle.ClosePrice, true);
+		_latestPrimaryMomentum = momentumValue.ToDecimal();
+		_primaryUpdated = true;
+		TryProcessResidualMomentum(candle.OpenTime);
 	}
 
-	private void Rebalance()
+	private void ProcessBenchmarkCandle(ICandleMessage candle)
 	{
-		var score = new Dictionary<Security, decimal>();
-		foreach (var s in Universe)
+		if (candle.State != CandleStates.Finished)
+			return;
+
+		var momentumValue = _benchmarkMomentum.Process(candle);
+		if (momentumValue.IsEmpty || !_benchmarkMomentum.IsFormed)
+			return;
+
+		latestBetaFromReturns(candle.ClosePrice, false);
+		_latestBenchmarkMomentum = momentumValue.ToDecimal();
+		_benchmarkUpdated = true;
+		TryProcessResidualMomentum(candle.OpenTime);
+	}
+
+	private void latestBetaFromReturns(decimal closePrice, bool isPrimary)
+	{
+		ref var previousClose = ref isPrimary ? ref _previousPrimaryClose : ref _previousBenchmarkClose;
+
+		if (previousClose is not decimal previous || previous <= 0m)
 		{
-			if (TryGetResidualMomentum(s, out var sc))
-				score[s] = sc;
+			previousClose = closePrice;
+			return;
 		}
 
-		if (score.Count < Decile * 2)
+		var ret = (closePrice - previous) / previous;
+		previousClose = closePrice;
+
+		if (isPrimary)
+			_latestPrimaryMomentum = ret;
+		else
+			_latestBeta = _betaAverage.Process(ret.Abs(), CurrentTime, true).ToDecimal();
+	}
+
+	private void TryProcessResidualMomentum(DateTime time)
+	{
+		if (!_primaryUpdated || !_benchmarkUpdated)
 			return;
 
-		int bucket = score.Count / Decile;
-		var longs = score.OrderByDescending(kv => kv.Value).Take(bucket).Select(kv => kv.Key).ToList();
-		var shorts = score.OrderBy(kv => kv.Value).Take(bucket).Select(kv => kv.Key).ToList();
-		_w.Clear();
+		_primaryUpdated = false;
+		_benchmarkUpdated = false;
 
-		decimal wl = 1m / longs.Count;
-		decimal ws = -1m / shorts.Count;
+		var betaAdjustedBenchmark = _latestBenchmarkMomentum * Math.Max(_latestBeta, 0.2m);
+		var residualMomentum = _latestPrimaryMomentum - betaAdjustedBenchmark;
+		var mean = _spreadAverage.Process(residualMomentum, time, true).ToDecimal();
+		var deviation = _spreadDeviation.Process(residualMomentum, time, true).ToDecimal();
 
-		foreach (var s in longs)
-			_w[s] = wl;
-
-		foreach (var s in shorts)
-			_w[s] = ws;
-
-		foreach (var position in Positions)
-		{
-			if (!_w.ContainsKey(position.Security))
-				Move(position.Security, 0);
-		}
-
-		var portfolioValue = Portfolio.CurrentValue ?? 0m;
-
-		foreach (var kv in _w)
-		{
-			var price = GetLatestPrice(kv.Key);
-			if (price > 0)
-				Move(kv.Key, kv.Value * portfolioValue / price);
-		}
-	}
-
-	private decimal GetLatestPrice(Security security)
-	{
-		return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
-	}
-
-	private void Move(Security s, decimal tgt)
-	{
-		var diff = tgt - Pos(s);
-		var price = GetLatestPrice(s);
-		if (price <= 0 || Math.Abs(diff) * price < MinTradeUsd)
+		if (!_spreadAverage.IsFormed || !_spreadDeviation.IsFormed || deviation <= 0m)
 			return;
 
-		RegisterOrder(new Order
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
+
+		var zScore = (residualMomentum - mean) / deviation;
+		var bullishEntry = _previousZScore is decimal previousBullish && previousBullish < EntryThreshold && zScore >= EntryThreshold;
+		var bearishEntry = _previousZScore is decimal previousBearish && previousBearish > -EntryThreshold && zScore <= -EntryThreshold;
+
+		if (_cooldownRemaining == 0 && Position == 0)
 		{
-			Security = s,
-			Portfolio = Portfolio,
-			Side = diff > 0 ? Sides.Buy : Sides.Sell,
-			Volume = Math.Abs(diff),
-			Type = OrderTypes.Market,
-			Comment = "ResMom",
-		});
-	}
+			if (bullishEntry)
+			{
+				BuyMarket();
+				_cooldownRemaining = CooldownBars;
+			}
+			else if (bearishEntry)
+			{
+				SellMarket();
+				_cooldownRemaining = CooldownBars;
+			}
+		}
+		else if (Position > 0 && zScore <= ExitThreshold)
+		{
+			SellMarket(Position);
+			_cooldownRemaining = CooldownBars;
+		}
+		else if (Position < 0 && zScore >= -ExitThreshold)
+		{
+			BuyMarket(Math.Abs(Position));
+			_cooldownRemaining = CooldownBars;
+		}
 
-	private decimal Pos(Security s) => GetPositionValue(s, Portfolio) ?? 0;
-
-	private bool TryGetResidualMomentum(Security s, out decimal sc)
-	{
-		sc = 0;
-		return false;
+		_previousZScore = zScore;
 	}
 }

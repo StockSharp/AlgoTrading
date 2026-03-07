@@ -1,41 +1,94 @@
-// PairsTradingStocksStrategy.cs
-// -----------------------------------------------------------------------------
-// Simplified top‑N pairs trading among given list of stock pairs.
-// Uses rolling 60‑day price ratio; enter when z>|EntryZ|, exit when |z|<ExitZ.
-// Triggered by daily candles. No Schedule().
-// -----------------------------------------------------------------------------
-// Date: 2 Aug 2025
-// -----------------------------------------------------------------------------
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
+using StockSharp.Configuration;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Simplified pairs trading strategy for stocks.
-/// Trades stock pairs based on the z-score of their price ratio.
+/// Mean-reversion pairs trading strategy for stocks that trades the primary instrument against a benchmark stock using the ratio z-score.
 /// </summary>
 public class PairsTradingStocksStrategy : Strategy
 {
-	private readonly StrategyParam<IEnumerable<(Security, Security)>> _pairs;
-	private readonly StrategyParam<int> _window;
-	private readonly StrategyParam<decimal> _entryZ;
-	private readonly StrategyParam<decimal> _exitZ;
-	private readonly StrategyParam<decimal> _minUsd;
+	private readonly StrategyParam<string> _security2Id;
+	private readonly StrategyParam<int> _windowLength;
+	private readonly StrategyParam<decimal> _entryThreshold;
+	private readonly StrategyParam<decimal> _exitThreshold;
+	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _stopLoss;
 	private readonly StrategyParam<DataType> _candleType;
 
+	private Security _benchmark = null!;
+	private SimpleMovingAverage _ratioAverage = null!;
+	private StandardDeviation _ratioDeviation = null!;
+	private decimal _latestPrimaryClose;
+	private decimal _latestBenchmarkClose;
+	private bool _primaryUpdated;
+	private bool _benchmarkUpdated;
+	private int _cooldownRemaining;
+
 	/// <summary>
-	/// The type of candles to use for strategy calculation.
+	/// Benchmark stock identifier.
+	/// </summary>
+	public string Security2Id
+	{
+		get => _security2Id.Value;
+		set => _security2Id.Value = value;
+	}
+
+	/// <summary>
+	/// Lookback period used to estimate the ratio mean and deviation.
+	/// </summary>
+	public int WindowLength
+	{
+		get => _windowLength.Value;
+		set => _windowLength.Value = value;
+	}
+
+	/// <summary>
+	/// Z-score threshold required to open a paired position.
+	/// </summary>
+	public decimal EntryThreshold
+	{
+		get => _entryThreshold.Value;
+		set => _entryThreshold.Value = value;
+	}
+
+	/// <summary>
+	/// Z-score threshold required to close the paired position.
+	/// </summary>
+	public decimal ExitThreshold
+	{
+		get => _exitThreshold.Value;
+		set => _exitThreshold.Value = value;
+	}
+
+	/// <summary>
+	/// Closed candles to wait before another position change.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
+	/// Stop loss percentage.
+	/// </summary>
+	public decimal StopLoss
+	{
+		get => _stopLoss.Value;
+		set => _stopLoss.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type used for calculations.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -43,168 +96,221 @@ public class PairsTradingStocksStrategy : Strategy
 		set => _candleType.Value = value;
 	}
 
-	private class Win { public Queue<decimal> R = []; }
-	private readonly Dictionary<(Security, Security), Win> _hist = [];
-	private readonly Dictionary<Security, decimal> _latestPrices = [];
-
-	/// <summary>
-	/// Pairs of securities to trade.
-	/// </summary>
-	public IEnumerable<(Security A, Security B)> Pairs
-	{
-		get => _pairs.Value;
-		set => _pairs.Value = value;
-	}
-
-	/// <summary>
-	/// Rolling window size in days.
-	/// </summary>
-	public int WindowDays
-	{
-		get => _window.Value;
-		set => _window.Value = value;
-	}
-
-	/// <summary>
-	/// Entry z-score threshold.
-	/// </summary>
-	public decimal EntryZ
-	{
-		get => _entryZ.Value;
-		set => _entryZ.Value = value;
-	}
-
-	/// <summary>
-	/// Exit z-score threshold.
-	/// </summary>
-	public decimal ExitZ
-	{
-		get => _exitZ.Value;
-		set => _exitZ.Value = value;
-	}
-
-	/// <summary>
-	/// Minimum trade value in USD.
-	/// </summary>
-	public decimal MinTradeUsd
-	{
-		get => _minUsd.Value;
-		set => _minUsd.Value = value;
-	}
-
 	public PairsTradingStocksStrategy()
 	{
-		_pairs = Param<IEnumerable<(Security, Security)>>(nameof(Pairs), [])
-		.SetDisplay("Pairs", "Pairs of securities", "General");
-		_window = Param(nameof(WindowDays), 60)
-		.SetGreaterThanZero()
-		.SetDisplay("Window Days", "Rolling window size in days", "General");
-		_entryZ = Param(nameof(EntryZ), 2m)
-		.SetGreaterThanZero()
-		.SetDisplay("Entry Z", "Entry z-score threshold", "General");
-		_exitZ = Param(nameof(ExitZ), 0.5m)
-		.SetGreaterThanZero()
-		.SetDisplay("Exit Z", "Exit z-score threshold", "General");
-		_minUsd = Param(nameof(MinTradeUsd), 200m)
-		.SetGreaterThanZero()
-		.SetDisplay("Min Trade USD", "Minimum trade value in USD", "General");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
+		_security2Id = Param(nameof(Security2Id), Paths.HistoryDefaultSecurity2)
+			.SetDisplay("Benchmark Security Id", "Identifier of the benchmark stock", "General");
+
+		_windowLength = Param(nameof(WindowLength), 20)
+			.SetRange(5, 120)
+			.SetDisplay("Window Length", "Lookback period used to estimate the ratio mean and deviation", "Indicators");
+
+		_entryThreshold = Param(nameof(EntryThreshold), 1.2m)
+			.SetRange(0.2m, 5m)
+			.SetDisplay("Entry Threshold", "Z-score threshold required to open a paired position", "Signals");
+
+		_exitThreshold = Param(nameof(ExitThreshold), 0.3m)
+			.SetRange(0m, 2m)
+			.SetDisplay("Exit Threshold", "Z-score threshold required to close the paired position", "Signals");
+
+		_cooldownBars = Param(nameof(CooldownBars), 6)
+			.SetRange(0, 120)
+			.SetDisplay("Cooldown Bars", "Closed candles to wait before another position change", "Risk");
+
+		_stopLoss = Param(nameof(StopLoss), 3m)
+			.SetRange(0.5m, 10m)
+			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+			.SetDisplay("Candle Type", "Time frame for candles", "General");
 	}
 
-	public override IEnumerable<(Security, DataType)> GetWorkingSecurities()
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		foreach (var (a, b) in Pairs)
-		{ yield return (a, CandleType); yield return (b, CandleType); }
+		if (Security != null)
+			yield return (Security, CandleType);
+
+		if (!Security2Id.IsEmpty())
+			yield return (new Security { Id = Security2Id }, CandleType);
 	}
 
-	
+	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
 
-		_hist.Clear();
-		_latestPrices.Clear();
+		_benchmark = null!;
+		_ratioAverage = null!;
+		_ratioDeviation = null!;
+		_latestPrimaryClose = 0m;
+		_latestBenchmarkClose = 0m;
+		_primaryUpdated = false;
+		_benchmarkUpdated = false;
+		_cooldownRemaining = 0;
 	}
 
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
-		if (Pairs == null || !Pairs.Any())
-			throw new InvalidOperationException("Pairs must be set.");
 		base.OnStarted2(time);
-		foreach (var (a, b) in Pairs)
+
+		if (Security == null)
+			throw new InvalidOperationException("Primary security is not specified.");
+
+		if (Security2Id.IsEmpty())
+			throw new InvalidOperationException("Benchmark security identifier is not specified.");
+
+		_benchmark = this.LookupById(Security2Id) ?? new Security { Id = Security2Id };
+		_ratioAverage = new SimpleMovingAverage { Length = WindowLength };
+		_ratioDeviation = new StandardDeviation { Length = WindowLength };
+
+		var primarySubscription = SubscribeCandles(CandleType, security: Security);
+		var benchmarkSubscription = SubscribeCandles(CandleType, security: _benchmark);
+
+		primarySubscription
+			.Bind(ProcessPrimaryCandle)
+			.Start();
+
+		benchmarkSubscription
+			.Bind(ProcessBenchmarkCandle)
+			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
 		{
-			_hist[(a, b)] = new Win();
-			SubscribeCandles(CandleType, true, a).Bind(c => ProcessCandle(c, a)).Start();
-			SubscribeCandles(CandleType, true, b).Bind(c => ProcessCandle(c, b)).Start();
+			DrawCandles(area, primarySubscription);
+			DrawCandles(area, benchmarkSubscription);
+			DrawOwnTrades(area);
 		}
+
+		StartProtection(
+			new Unit(2, UnitTypes.Percent),
+			new Unit(StopLoss, UnitTypes.Percent));
 	}
 
-	private void ProcessCandle(ICandleMessage candle, Security security)
+	private void ProcessPrimaryCandle(ICandleMessage candle)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Store the latest closing price for this security
-		_latestPrices[security] = candle.ClosePrice;
-
-		OnDaily();
+		_latestPrimaryClose = candle.ClosePrice;
+		_primaryUpdated = true;
+		TryProcessPair(candle.OpenTime);
 	}
 
-	private void OnDaily()
+	private void ProcessBenchmarkCandle(ICandleMessage candle)
 	{
-		foreach (var pair in Pairs)
+		if (candle.State != CandleStates.Finished)
+			return;
+
+		_latestBenchmarkClose = candle.ClosePrice;
+		_benchmarkUpdated = true;
+		TryProcessPair(candle.OpenTime);
+	}
+
+	private void TryProcessPair(DateTime time)
+	{
+		if (!_primaryUpdated || !_benchmarkUpdated || _latestPrimaryClose <= 0m || _latestBenchmarkClose <= 0m)
+			return;
+
+		_primaryUpdated = false;
+		_benchmarkUpdated = false;
+
+		var ratio = _latestPrimaryClose / _latestBenchmarkClose;
+		var mean = _ratioAverage.Process(ratio, time, true).ToDecimal();
+		var deviation = _ratioDeviation.Process(ratio, time, true).ToDecimal();
+
+		if (!_ratioAverage.IsFormed || !_ratioDeviation.IsFormed || deviation <= 0m)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
+
+		var zScore = (ratio - mean) / deviation;
+
+		if (Math.Abs(zScore) <= ExitThreshold)
 		{
-			var (a, b) = pair;
-			var priceA = GetLatestPrice(a);
-			var priceB = GetLatestPrice(b);
-			if (priceA == 0 || priceB == 0)
-				continue;
-			var r = priceA / priceB;
-			var w = _hist[pair].R;
-			if (w.Count == WindowDays)
-				w.Dequeue();
-			w.Enqueue(r);
-			if (w.Count < WindowDays)
-				continue;
+			FlattenPair();
+			return;
+		}
 
-			var mean = w.Average();
-			var sigma = (decimal)Math.Sqrt(w.Select(x => (double)((x - mean) * (x - mean))).Average());
-			if (sigma == 0)
-				continue;
-			var z = (r - mean) / sigma;
+		if (_cooldownRemaining > 0)
+			return;
 
-			if (Math.Abs(z) < ExitZ)
-			{ Move(a, 0); Move(b, 0); continue; }
-
-			var portfolioValue = Portfolio.CurrentValue ?? 0m;
-			var notional = portfolioValue / 2;
-			if (z > EntryZ) // A overpriced
-			{
-				Move(a, -notional / priceA);
-				Move(b, notional / priceB);
-			}
-			else if (z < -EntryZ) // A underpriced
-			{
-				Move(a, notional / priceA);
-				Move(b, -notional / priceB);
-			}
+		if (zScore >= EntryThreshold)
+		{
+			SetPairPosition(-1m);
+			_cooldownRemaining = CooldownBars;
+		}
+		else if (zScore <= -EntryThreshold)
+		{
+			SetPairPosition(1m);
+			_cooldownRemaining = CooldownBars;
 		}
 	}
 
-	private decimal GetLatestPrice(Security security)
+	private void FlattenPair()
 	{
-		return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
+		var primaryPosition = GetPositionValue(Security, Portfolio) ?? 0m;
+		var benchmarkPosition = GetPositionValue(_benchmark, Portfolio) ?? 0m;
+
+		if (primaryPosition > 0m)
+			SellMarket(primaryPosition);
+		else if (primaryPosition < 0m)
+			BuyMarket(Math.Abs(primaryPosition));
+
+		if (benchmarkPosition > 0m)
+			RegisterOrder(new Order
+			{
+				Security = _benchmark,
+				Portfolio = Portfolio,
+				Side = Sides.Sell,
+				Volume = benchmarkPosition,
+				Type = OrderTypes.Market,
+				Comment = "PairsExit"
+			});
+		else if (benchmarkPosition < 0m)
+			RegisterOrder(new Order
+			{
+				Security = _benchmark,
+				Portfolio = Portfolio,
+				Side = Sides.Buy,
+				Volume = Math.Abs(benchmarkPosition),
+				Type = OrderTypes.Market,
+				Comment = "PairsExit"
+			});
 	}
 
-	private void Move(Security s, decimal tgt)
+	private void SetPairPosition(decimal primaryDirection)
 	{
-		var diff = tgt - PositionBy(s);
-		var price = GetLatestPrice(s);
-		if (price <= 0 || Math.Abs(diff) * price < MinTradeUsd)
-			return;
-		RegisterOrder(new Order { Security = s, Portfolio = Portfolio, Side = diff > 0 ? Sides.Buy : Sides.Sell, Volume = Math.Abs(diff), Type = OrderTypes.Market, Comment = "Pairs" });
+		var primaryPosition = GetPositionValue(Security, Portfolio) ?? 0m;
+		var benchmarkPosition = GetPositionValue(_benchmark, Portfolio) ?? 0m;
+
+		var targetPrimary = primaryDirection;
+		var targetBenchmark = -primaryDirection;
+
+		MoveSecurity(Security, primaryPosition, targetPrimary);
+		MoveSecurity(_benchmark, benchmarkPosition, targetBenchmark);
 	}
-	private decimal PositionBy(Security s) => GetPositionValue(s, Portfolio) ?? 0;
+
+	private void MoveSecurity(Security security, decimal currentPosition, decimal targetPosition)
+	{
+		var diff = targetPosition - currentPosition;
+		if (diff == 0m)
+			return;
+
+		RegisterOrder(new Order
+		{
+			Security = security,
+			Portfolio = Portfolio,
+			Side = diff > 0m ? Sides.Buy : Sides.Sell,
+			Volume = Math.Abs(diff),
+			Type = OrderTypes.Market,
+			Comment = "Pairs"
+		});
+	}
 }

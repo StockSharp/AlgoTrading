@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,55 +11,80 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Trades short-term reversals around earnings announcements.
-/// Shorts recent winners and buys losers on earnings dates.
+/// Trades short-term reversals around synthetic earnings announcement dates for the primary instrument.
 /// </summary>
 public class EarningsAnnouncementReversalStrategy : Strategy
 {
-	private readonly StrategyParam<IEnumerable<Security>> _univ;
-	private readonly StrategyParam<int> _look;
-	private readonly StrategyParam<int> _hold;
-	private readonly StrategyParam<decimal> _minUsd;
+	private readonly StrategyParam<int> _lookbackDays;
+	private readonly StrategyParam<int> _holdingDays;
+	private readonly StrategyParam<int> _eventCycleBars;
+	private readonly StrategyParam<decimal> _reversalThreshold;
+	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _stopLoss;
 	private readonly StrategyParam<DataType> _candleType;
 
-	/// <summary>
-	/// Securities universe to trade.
-	/// </summary>
-	public IEnumerable<Security> Universe
-	{
-		get => _univ.Value;
-		set => _univ.Value = value;
-	}
+	private RateOfChange _momentum = null!;
+	private int _barIndex;
+	private int _holdingRemaining;
+	private int _cooldownRemaining;
+	private decimal _latestMomentum;
 
 	/// <summary>
-	/// Lookback period in days used to determine winners and losers.
+	/// Lookback period in bars used to determine winners and losers.
 	/// </summary>
 	public int LookbackDays
 	{
-		get => _look.Value;
-		set => _look.Value = value;
+		get => _lookbackDays.Value;
+		set => _lookbackDays.Value = value;
 	}
 
 	/// <summary>
-	/// Number of days to hold the position.
+	/// Number of bars to hold the position.
 	/// </summary>
 	public int HoldingDays
 	{
-		get => _hold.Value;
-		set => _hold.Value = value;
+		get => _holdingDays.Value;
+		set => _holdingDays.Value = value;
 	}
 
 	/// <summary>
-	/// Minimum trade size in USD.
+	/// Distance between synthetic earnings events in bars.
 	/// </summary>
-	public decimal MinTradeUsd
+	public int EventCycleBars
 	{
-		get => _minUsd.Value;
-		set => _minUsd.Value = value;
+		get => _eventCycleBars.Value;
+		set => _eventCycleBars.Value = value;
 	}
 
 	/// <summary>
-	/// The type of candles to use for strategy calculation.
+	/// Absolute momentum threshold used to classify recent winners and losers.
+	/// </summary>
+	public decimal ReversalThreshold
+	{
+		get => _reversalThreshold.Value;
+		set => _reversalThreshold.Value = value;
+	}
+
+	/// <summary>
+	/// Closed candles to wait before another position change.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
+	/// Stop loss percentage.
+	/// </summary>
+	public decimal StopLoss
+	{
+		get => _stopLoss.Value;
+		set => _stopLoss.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type used for calculations.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -70,153 +92,134 @@ public class EarningsAnnouncementReversalStrategy : Strategy
 		set => _candleType.Value = value;
 	}
 
-	private class Win
-	{
-		public readonly Queue<decimal> Px = [];
-		public int Held;
-	}
-
-	private readonly Dictionary<Security, Win> _map = [];
-	private readonly Dictionary<Security, decimal> _latestPrices = [];
-
 	/// <summary>
 	/// Initializes a new instance of <see cref="EarningsAnnouncementReversalStrategy"/>.
 	/// </summary>
 	public EarningsAnnouncementReversalStrategy()
 	{
-		_univ = Param<IEnumerable<Security>>(nameof(Universe), [])
-			.SetDisplay("Universe", "Collection of securities to trade", "General");
+		_lookbackDays = Param(nameof(LookbackDays), 6)
+			.SetRange(2, 30)
+			.SetDisplay("Lookback Days", "Number of bars used to calculate recent return", "Parameters");
 
-		_look = Param(nameof(LookbackDays), 5)
-			.SetGreaterThanZero()
-			.SetDisplay("Lookback Days", "Number of days to calculate returns", "Parameters");
+		_holdingDays = Param(nameof(HoldingDays), 3)
+			.SetRange(1, 20)
+			.SetDisplay("Holding Days", "Bars to hold the position after the event", "Parameters");
 
-		_hold = Param(nameof(HoldingDays), 3)
-			.SetGreaterThanZero()
-			.SetDisplay("Holding Days", "Days to hold position", "Parameters");
+		_eventCycleBars = Param(nameof(EventCycleBars), 20)
+			.SetRange(8, 80)
+			.SetDisplay("Event Cycle Bars", "Distance between synthetic earnings events", "Parameters");
 
-		_minUsd = Param(nameof(MinTradeUsd), 200m)
-			.SetGreaterThanZero()
-			.SetDisplay("Min Trade USD", "Minimum trade value in USD", "Parameters");
+		_reversalThreshold = Param(nameof(ReversalThreshold), 1.2m)
+			.SetRange(0.1m, 20m)
+			.SetDisplay("Reversal Threshold", "Absolute momentum threshold used to classify winners and losers", "Parameters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_cooldownBars = Param(nameof(CooldownBars), 2)
+			.SetRange(0, 20)
+			.SetDisplay("Cooldown Bars", "Closed candles to wait before another position change", "Risk");
+
+		_stopLoss = Param(nameof(StopLoss), 2.5m)
+			.SetRange(0.5m, 10m)
+			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
-	public override IEnumerable<(Security, DataType)> GetWorkingSecurities()
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return Universe.Select(s => (s, CandleType));
+		if (Security != null)
+			yield return (Security, CandleType);
 	}
 
 	/// <inheritdoc />
-	
 	protected override void OnReseted()
 	{
 		base.OnReseted();
 
-		_map.Clear();
-		_latestPrices.Clear();
+		_momentum = null!;
+		_barIndex = 0;
+		_holdingRemaining = 0;
+		_cooldownRemaining = 0;
+		_latestMomentum = 0m;
 	}
 
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		if (Universe == null || !Universe.Any())
-			throw new InvalidOperationException("Universe cannot be empty.");
+		if (Security == null)
+			throw new InvalidOperationException("Primary security is not specified.");
 
-		foreach (var (sec, tf) in GetWorkingSecurities())
+		_momentum = new RateOfChange { Length = LookbackDays };
+
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(ProcessCandle)
+			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
 		{
-			_map[sec] = new Win();
-			SubscribeCandles(tf, true, sec)
-				.Bind(c => ProcessCandle(c, sec))
-				.Start();
+			DrawCandles(area, subscription);
+			DrawOwnTrades(area);
 		}
+
+		StartProtection(
+			new Unit(2, UnitTypes.Percent),
+			new Unit(StopLoss, UnitTypes.Percent));
 	}
 
-	private void ProcessCandle(ICandleMessage candle, Security security)
+	private void ProcessCandle(ICandleMessage candle)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Store the latest closing price
-		_latestPrices[security] = candle.ClosePrice;
-
-		OnDaily(security, candle);
-	}
-
-	private void OnDaily(Security security, ICandleMessage candle)
-	{
-		var win = _map[security];
-
-		if (win.Px.Count == LookbackDays + 1)
-			win.Px.Dequeue();
-
-		win.Px.Enqueue(candle.ClosePrice);
-
-		if (!TryGetEarningsDate(security, out var ed))
-			return;
-
-		var day = candle.OpenTime.Date;
-		if (Math.Abs((day - ed.Date).TotalDays) > 1)
-			return;
-
-		if (win.Px.Count < LookbackDays + 1)
-			return;
-
-		var arr = win.Px.ToArray();
-		var ret = (arr[0] - arr[^1]) / arr[^1];
-
-		var portfolioValue = Portfolio.CurrentValue ?? 0m;
-		var price = GetLatestPrice(security);
-		if (price <= 0)
-			return;
-
-		if (ret > 0)
+		var momentumValue = _momentum.Process(candle);
+		if (momentumValue.IsEmpty || !_momentum.IsFormed || !IsFormedAndOnlineAndAllowTrading())
 		{
-			// winner -> short
-			Move(security, -portfolioValue / Universe.Count() / price);
-		}
-		else
-		{
-			// loser -> long
-			Move(security, portfolioValue / Universe.Count() / price);
+			_barIndex++;
+			return;
 		}
 
-		win.Held = 0;
-	}
+		_latestMomentum = momentumValue.ToDecimal();
 
-	private decimal Pos(Security security) => GetPositionValue(security, Portfolio) ?? 0;
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
 
-	private decimal GetLatestPrice(Security security)
-	{
-		return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
-	}
-
-	private void Move(Security security, decimal tgt)
-	{
-		var diff = tgt - Pos(security);
-		var price = GetLatestPrice(security);
-
-		if (price <= 0 || Math.Abs(diff) * price < MinTradeUsd)
-			return;
-
-		RegisterOrder(new Order
+		if (_holdingRemaining > 0)
 		{
-			Security = security,
-			Portfolio = Portfolio,
-			Side = diff > 0 ? Sides.Buy : Sides.Sell,
-			Volume = Math.Abs(diff),
-			Type = OrderTypes.Market,
-			Comment = "EARev"
-		});
-	}
+			_holdingRemaining--;
 
-	private bool TryGetEarningsDate(Security security, out DateTime date)
-	{
-		date = DateTime.MinValue;
-		return false;
+			if (_holdingRemaining == 0 && Position != 0)
+			{
+				if (Position > 0)
+					SellMarket(Position);
+				else
+					BuyMarket(Math.Abs(Position));
+
+				_cooldownRemaining = CooldownBars;
+			}
+		}
+
+		var isEventBar = _barIndex > 0 && _barIndex % EventCycleBars == 0;
+		if (_cooldownRemaining == 0 && Position == 0 && isEventBar)
+		{
+			if (_latestMomentum >= ReversalThreshold)
+			{
+				SellMarket();
+				_holdingRemaining = HoldingDays;
+				_cooldownRemaining = CooldownBars;
+			}
+			else if (_latestMomentum <= -ReversalThreshold)
+			{
+				BuyMarket();
+				_holdingRemaining = HoldingDays;
+				_cooldownRemaining = CooldownBars;
+			}
+		}
+
+		_barIndex++;
 	}
 }

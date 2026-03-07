@@ -1,236 +1,306 @@
-// SectorMomentumRotationStrategy.cs
-// -----------------------------------------------------------------------------
-// Monthly rotate among sector ETFs: hold sectors with positive 6‑month momentum.
-// Equal-weight those sectors; flat otherwise.
-// Trigger via daily candle of first sector ETF.
-// -----------------------------------------------------------------------------
-// Date: 2 Aug 2025
-// -----------------------------------------------------------------------------
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
+using StockSharp.Configuration;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Monthly sector momentum rotation strategy.
+/// Sector momentum rotation strategy that trades the primary sector ETF when its relative strength versus a benchmark sector ETF rotates into or out of favor.
 /// </summary>
 public class SectorMomentumRotationStrategy : Strategy
 {
-	private readonly StrategyParam<IEnumerable<Security>> _sects;
-	private readonly StrategyParam<int> _look;
-	private readonly StrategyParam<decimal> _minUsd;
+	private readonly StrategyParam<string> _security2Id;
+	private readonly StrategyParam<int> _lookbackPeriod;
+	private readonly StrategyParam<int> _normalizationPeriod;
+	private readonly StrategyParam<decimal> _entryThreshold;
+	private readonly StrategyParam<decimal> _exitThreshold;
+	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _stopLoss;
 	private readonly StrategyParam<DataType> _candleType;
 
+	private Security _benchmark = null!;
+	private RateOfChange _primaryMomentum = null!;
+	private RateOfChange _benchmarkMomentum = null!;
+	private ExponentialMovingAverage _relativeStrengthAverage = null!;
+	private SimpleMovingAverage _spreadAverage = null!;
+	private StandardDeviation _spreadDeviation = null!;
+	private decimal _latestPrimaryMomentum;
+	private decimal _latestBenchmarkMomentum;
+	private decimal? _previousZScore;
+	private bool _primaryUpdated;
+	private bool _benchmarkUpdated;
+	private int _cooldownRemaining;
+
 	/// <summary>
-	/// The type of candles to use for strategy calculation.
+	/// Benchmark sector ETF identifier.
+	/// </summary>
+	public string Security2Id
+	{
+		get => _security2Id.Value;
+		set => _security2Id.Value = value;
+	}
+
+	/// <summary>
+	/// Momentum lookback period.
+	/// </summary>
+	public int LookbackPeriod
+	{
+		get => _lookbackPeriod.Value;
+		set => _lookbackPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Lookback period used to normalize the rotation spread.
+	/// </summary>
+	public int NormalizationPeriod
+	{
+		get => _normalizationPeriod.Value;
+		set => _normalizationPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Z-score threshold required to open a position.
+	/// </summary>
+	public decimal EntryThreshold
+	{
+		get => _entryThreshold.Value;
+		set => _entryThreshold.Value = value;
+	}
+
+	/// <summary>
+	/// Z-score threshold required to close a position.
+	/// </summary>
+	public decimal ExitThreshold
+	{
+		get => _exitThreshold.Value;
+		set => _exitThreshold.Value = value;
+	}
+
+	/// <summary>
+	/// Closed candles to wait before another position change.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
+	/// Stop loss percentage.
+	/// </summary>
+	public decimal StopLoss
+	{
+		get => _stopLoss.Value;
+		set => _stopLoss.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type used for calculations.
 	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
-	private readonly Dictionary<Security, RollingWin> _px = [];
-	private readonly Dictionary<Security, decimal> _latestPrices = [];
-	private DateTime _last = DateTime.MinValue;
 
-	/// <summary>
-	/// Sector ETFs to trade.
-	/// </summary>
-	public IEnumerable<Security> SectorETFs
-	{
-		get => _sects.Value;
-		set => _sects.Value = value;
-	}
-
-	/// <summary>
-	/// Lookback window in days.
-	/// </summary>
-	public int LookbackDays
-	{
-		get => _look.Value;
-		set => _look.Value = value;
-	}
-
-	/// <summary>
-	/// Minimum dollar value per trade.
-	/// </summary>
-	public decimal MinTradeUsd
-	{
-		get => _minUsd.Value;
-		set => _minUsd.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="SectorMomentumRotationStrategy"/> class.
-	/// </summary>
 	public SectorMomentumRotationStrategy()
 	{
-		_sects = Param<IEnumerable<Security>>(nameof(SectorETFs), [])
-			.SetDisplay("Sectors", "Sector ETFs to trade", "General");
+		_security2Id = Param(nameof(Security2Id), Paths.HistoryDefaultSecurity2)
+			.SetDisplay("Benchmark Security Id", "Identifier of the benchmark sector ETF", "General");
 
-		_look = Param(nameof(LookbackDays), 126)
-			.SetDisplay("Lookback", "Lookback window in days", "General");
+		_lookbackPeriod = Param(nameof(LookbackPeriod), 24)
+			.SetRange(5, 120)
+			.SetDisplay("Lookback Period", "Momentum lookback period", "Indicators");
 
-		_minUsd = Param(nameof(MinTradeUsd), 200m)
-			.SetDisplay("Min Trade USD", "Minimum dollar value per trade", "General");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
+		_normalizationPeriod = Param(nameof(NormalizationPeriod), 20)
+			.SetRange(5, 120)
+			.SetDisplay("Normalization Period", "Lookback period used to normalize the rotation spread", "Indicators");
+
+		_entryThreshold = Param(nameof(EntryThreshold), 1m)
+			.SetRange(0.2m, 5m)
+			.SetDisplay("Entry Threshold", "Z-score threshold required to open a position", "Signals");
+
+		_exitThreshold = Param(nameof(ExitThreshold), 0.2m)
+			.SetRange(0m, 2m)
+			.SetDisplay("Exit Threshold", "Z-score threshold required to close a position", "Signals");
+
+		_cooldownBars = Param(nameof(CooldownBars), 6)
+			.SetRange(0, 120)
+			.SetDisplay("Cooldown Bars", "Closed candles to wait before another position change", "Risk");
+
+		_stopLoss = Param(nameof(StopLoss), 2.5m)
+			.SetRange(0.5m, 10m)
+			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+			.SetDisplay("Candle Type", "Time frame for candles", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return SectorETFs.Select(s => (s, CandleType));
+		if (Security != null)
+			yield return (Security, CandleType);
+
+		if (!Security2Id.IsEmpty())
+			yield return (new Security { Id = Security2Id }, CandleType);
 	}
 
 	/// <inheritdoc />
-	
 	protected override void OnReseted()
 	{
 		base.OnReseted();
 
-		_px.Clear();
-		_latestPrices.Clear();
-		_last = default;
+		_benchmark = null!;
+		_primaryMomentum = null!;
+		_benchmarkMomentum = null!;
+		_relativeStrengthAverage = null!;
+		_spreadAverage = null!;
+		_spreadDeviation = null!;
+		_latestPrimaryMomentum = 0m;
+		_latestBenchmarkMomentum = 0m;
+		_previousZScore = null;
+		_primaryUpdated = false;
+		_benchmarkUpdated = false;
+		_cooldownRemaining = 0;
 	}
 
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		if (SectorETFs == null || !SectorETFs.Any())
-			throw new InvalidOperationException("Sectors cannot be empty.");
+		if (Security == null)
+			throw new InvalidOperationException("Primary security is not specified.");
 
-		var trig = SectorETFs.First();
-		SubscribeCandles(CandleType, true, trig)
-			.Bind(c => ProcessCandle(c, trig))
+		if (Security2Id.IsEmpty())
+			throw new InvalidOperationException("Benchmark security identifier is not specified.");
+
+		_benchmark = this.LookupById(Security2Id) ?? new Security { Id = Security2Id };
+		_primaryMomentum = new RateOfChange { Length = LookbackPeriod };
+		_benchmarkMomentum = new RateOfChange { Length = LookbackPeriod };
+		_relativeStrengthAverage = new ExponentialMovingAverage { Length = Math.Max(2, NormalizationPeriod / 2) };
+		_spreadAverage = new SimpleMovingAverage { Length = NormalizationPeriod };
+		_spreadDeviation = new StandardDeviation { Length = NormalizationPeriod };
+
+		var primarySubscription = SubscribeCandles(CandleType, security: Security);
+		var benchmarkSubscription = SubscribeCandles(CandleType, security: _benchmark);
+
+		primarySubscription
+			.Bind(ProcessPrimaryCandle)
 			.Start();
 
-		foreach (var s in SectorETFs)
-			_px[s] = new RollingWin(LookbackDays + 1);
+		benchmarkSubscription
+			.Bind(ProcessBenchmarkCandle)
+			.Start();
 
-		foreach (var (s, tf) in GetWorkingSecurities())
-			SubscribeCandles(tf, true, s).Bind(c => ProcessDataCandle(c, s)).Start();
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, primarySubscription);
+			DrawCandles(area, benchmarkSubscription);
+			DrawOwnTrades(area);
+		}
+
+		StartProtection(
+			new Unit(2, UnitTypes.Percent),
+			new Unit(StopLoss, UnitTypes.Percent));
 	}
 
-	private void ProcessCandle(ICandleMessage candle, Security security)
+	private void ProcessPrimaryCandle(ICandleMessage candle)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Store the latest closing price for this security
-		_latestPrices[security] = candle.ClosePrice;
+		var momentumValue = _primaryMomentum.Process(candle);
+		if (momentumValue.IsEmpty || !_primaryMomentum.IsFormed)
+			return;
 
-		OnDaily(candle.OpenTime.Date);
+		_latestPrimaryMomentum = momentumValue.ToDecimal();
+		_primaryUpdated = true;
+		TryProcessRotation(candle.OpenTime);
 	}
 
-	private void ProcessDataCandle(ICandleMessage candle, Security security)
+	private void ProcessBenchmarkCandle(ICandleMessage candle)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Store the latest closing price for this security
-		_latestPrices[security] = candle.ClosePrice;
-
-		// Add to price history
-		_px[security].Add(candle.ClosePrice);
-	}
-
-	private void OnDaily(DateTime d)
-	{
-		if (d == _last)
+		var momentumValue = _benchmarkMomentum.Process(candle);
+		if (momentumValue.IsEmpty || !_benchmarkMomentum.IsFormed)
 			return;
 
-		_last = d;
+		_latestBenchmarkMomentum = momentumValue.ToDecimal();
+		_benchmarkUpdated = true;
+		TryProcessRotation(candle.OpenTime);
+	}
 
-		if (d.Day != 1)
+	private void TryProcessRotation(DateTime time)
+	{
+		if (!_primaryUpdated || !_benchmarkUpdated)
 			return;
 
-		Rebalance();
-	}
+		_primaryUpdated = false;
+		_benchmarkUpdated = false;
 
-	private void Rebalance()
-	{
-		var winners = new List<Security>();
-		foreach (var kv in _px)
-		{
-			if (kv.Value.Full && kv.Value.Data[0] > kv.Value.Data[^1])
-				winners.Add(kv.Key);
-		}
+		var relativeStrength = _latestPrimaryMomentum - _latestBenchmarkMomentum;
+		var smoothedStrength = _relativeStrengthAverage.Process(relativeStrength, time, true).ToDecimal();
+		var spread = relativeStrength - smoothedStrength;
+		var mean = _spreadAverage.Process(spread, time, true).ToDecimal();
+		var deviation = _spreadDeviation.Process(spread, time, true).ToDecimal();
 
-		foreach (var s in SectorETFs.Where(x => !winners.Contains(x)))
-			Move(s, 0);
-
-		if (!winners.Any())
+		if (!_relativeStrengthAverage.IsFormed || !_spreadAverage.IsFormed || !_spreadDeviation.IsFormed || deviation <= 0m)
 			return;
 
-		decimal w = 1m / winners.Count;
-		var portfolioValue = Portfolio.CurrentValue ?? 0m;
-
-		foreach (var s in winners)
-		{
-			var price = GetLatestPrice(s);
-			if (price > 0)
-				Move(s, w * portfolioValue / price);
-		}
-	}
-
-	private decimal GetLatestPrice(Security security)
-	{
-		return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
-	}
-
-	private void Move(Security s, decimal tgt)
-	{
-		var diff = tgt - Pos(s);
-		var price = GetLatestPrice(s);
-		if (price <= 0 || Math.Abs(diff) * price < MinTradeUsd)
+		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		RegisterOrder(new Order
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
+
+		var zScore = (spread - mean) / deviation;
+		var bullishEntry = _previousZScore is decimal previousBullish &&
+			previousBullish < EntryThreshold &&
+			_latestPrimaryMomentum > 0m &&
+			zScore >= EntryThreshold;
+
+		var bearishEntry = _previousZScore is decimal previousBearish &&
+			previousBearish > -EntryThreshold &&
+			_latestPrimaryMomentum < 0m &&
+			_latestBenchmarkMomentum > _latestPrimaryMomentum &&
+			zScore <= -EntryThreshold;
+
+		if (_cooldownRemaining == 0 && Position == 0)
 		{
-			Security = s,
-			Portfolio = Portfolio,
-			Side = diff > 0 ? Sides.Buy : Sides.Sell,
-			Volume = Math.Abs(diff),
-			Type = OrderTypes.Market,
-			Comment = "SectMom",
-		});
-	}
-
-	private decimal Pos(Security s) => GetPositionValue(s, Portfolio) ?? 0;
-
-	private class RollingWin
-	{
-		private readonly Queue<decimal> _q = [];
-		private readonly int _n;
-
-		public RollingWin(int n)
+			if (bullishEntry)
+			{
+				BuyMarket();
+				_cooldownRemaining = CooldownBars;
+			}
+			else if (bearishEntry)
+			{
+				SellMarket();
+				_cooldownRemaining = CooldownBars;
+			}
+		}
+		else if (Position > 0 && (zScore <= ExitThreshold || bearishEntry))
 		{
-			_n = n;
+			SellMarket(Position);
+			_cooldownRemaining = CooldownBars;
+		}
+		else if (Position < 0 && (zScore >= -ExitThreshold || bullishEntry))
+		{
+			BuyMarket(Math.Abs(Position));
+			_cooldownRemaining = CooldownBars;
 		}
 
-		public bool Full => _q.Count == _n;
-
-		public void Add(decimal p)
-		{
-			if (_q.Count == _n)
-				_q.Dequeue();
-			_q.Enqueue(p);
-		}
-
-		public decimal[] Data => [.. _q];
+		_previousZScore = zScore;
 	}
 }

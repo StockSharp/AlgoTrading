@@ -1,169 +1,157 @@
-// JanuaryBarometerStrategy.cs
-// -----------------------------------------------------------------------------
-// If January monthly return is positive, stay long equity index ETF for rest
-// of year; otherwise move to cash proxy.
-// Uses daily candles to detect January close.
-// -----------------------------------------------------------------------------
-// Date: 2 Aug 2025
-// -----------------------------------------------------------------------------
-
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
+using StockSharp.Configuration;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// January barometer strategy rotating between equity and cash ETFs
-/// based on January performance.
+/// January barometer strategy that rotates between the primary instrument and a benchmark proxy based on the primary January return.
 /// </summary>
 public class JanuaryBarometerStrategy : Strategy
 {
-	#region Params
-	private readonly StrategyParam<Security> _equity;
-	private readonly StrategyParam<Security> _cash;
+	private readonly StrategyParam<string> _security2Id;
 	private readonly StrategyParam<decimal> _minUsd;
 	private readonly StrategyParam<DataType> _candleType;
-	
+
+	private readonly Dictionary<Security, decimal> _latestPrices = [];
+	private decimal _januaryOpen;
+	private int _decisionYear;
+
 	/// <summary>
-	/// Equity ETF to hold when January is bullish.
+	/// Benchmark proxy identifier.
 	/// </summary>
-	public Security EquityETF { get => _equity.Value; set => _equity.Value = value; }
-	
-	/// <summary>
-	/// Cash proxy ETF.
-	/// </summary>
-	public Security CashETF { get => _cash.Value; set => _cash.Value = value; }
-	
+	public string Security2Id
+	{
+		get => _security2Id.Value;
+		set => _security2Id.Value = value;
+	}
+
 	/// <summary>
 	/// Minimum trade value in USD.
 	/// </summary>
-	public decimal MinTradeUsd { get => _minUsd.Value; set => _minUsd.Value = value; }
+	public decimal MinTradeUsd
+	{
+		get => _minUsd.Value;
+		set => _minUsd.Value = value;
+	}
 
 	/// <summary>
 	/// The type of candles to use for strategy calculation.
 	/// </summary>
-	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
-	#endregion
-
-	private readonly Dictionary<Security, decimal> _latestPrices = [];
-	private decimal _janOpenPrice = 0m;
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
 
 	public JanuaryBarometerStrategy()
 	{
-		_equity = Param<Security>(nameof(EquityETF), null)
-			.SetDisplay("Equity ETF", "Risk asset", "General");
-		
-		_cash = Param<Security>(nameof(CashETF), null)
-			.SetDisplay("Cash ETF", "Safe asset", "General");
-		
+		_security2Id = Param(nameof(Security2Id), Paths.HistoryDefaultSecurity2)
+			.SetDisplay("Benchmark Security Id", "Defensive benchmark proxy", "General");
+
 		_minUsd = Param(nameof(MinTradeUsd), 200m)
 			.SetGreaterThanZero()
 			.SetDisplay("Min trade USD", "Minimum order value", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
-		}
+	}
 
+	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		if (EquityETF == null || CashETF == null)
-			throw new InvalidOperationException("Both equity and cash ETFs must be set.");
-		return [(EquityETF, CandleType)];
+		if (Security != null)
+			yield return (Security, CandleType);
+
+		if (!Security2Id.IsEmpty())
+			yield return (new Security { Id = Security2Id }, CandleType);
 	}
-	
+
+	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
 
 		_latestPrices.Clear();
-		_janOpenPrice = default;
+		_januaryOpen = 0m;
+		_decisionYear = 0;
 	}
 
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
-		if (EquityETF == null || CashETF == null)
-			throw new InvalidOperationException("Both equity and cash ETFs must be set.");
-
 		base.OnStarted2(time);
 
-		SubscribeCandles(CandleType, true, EquityETF)
-			.Bind(c => ProcessCandle(c, EquityETF))
-				.Start();
+		if (Security == null)
+			throw new InvalidOperationException("Primary security is not specified.");
+
+		if (Security2Id.IsEmpty())
+			throw new InvalidOperationException("Benchmark security identifier is not specified.");
+
+		var primarySubscription = SubscribeCandles(CandleType, security: Security);
+
+		primarySubscription
+			.Bind(candle => ProcessCandle(candle, Security))
+			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, primarySubscription);
+			DrawOwnTrades(area);
+		}
 	}
 
 	private void ProcessCandle(ICandleMessage candle, Security security)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Store the latest closing price for this security
 		_latestPrices[security] = candle.ClosePrice;
 
-		OnDaily(candle);
-	}
+		if (security != Security)
+			return;
 
-	private void OnDaily(ICandleMessage c)
-	{
-		var d = c.OpenTime.Date;
-		// capture open price on first trading day of January
-		if (d.Month == 1 && d.Day == 1)
-			_janOpenPrice = c.OpenPrice;
+		var day = candle.OpenTime.Date;
 
-		// detect January close (31 Jan, or last trading day of Jan)
-		if (d.Month == 1 && (d.Day == 31 || c.State == CandleStates.Finished && c.CloseTime.Date.Month == 2))
+		if (day.Month == 1 && _januaryOpen == 0m)
+			_januaryOpen = candle.OpenPrice;
+
+		if (day.Month == 2 && _decisionYear != day.Year && _januaryOpen > 0m)
 		{
-			if (_janOpenPrice == 0m)
-				return;
-			var janRet = (c.ClosePrice - _janOpenPrice) / _janOpenPrice;
-			Rebalance(janRet > 0);
+			_decisionYear = day.Year;
+			var januaryReturn = (candle.ClosePrice - _januaryOpen) / _januaryOpen;
+			Rebalance(januaryReturn > 0m);
 		}
 	}
 
 	private void Rebalance(bool bullish)
 	{
-		if (bullish)
-		{
-			Move(EquityETF, 1m);
-			Move(CashETF, 0m);
-		}
-		else
-		{
-			Move(EquityETF, 0m);
-			Move(CashETF, 1m);
-		}
+		Move(Security, bullish ? 1m : -1m);
 	}
 
-	private decimal GetLatestPrice(Security security)
+	private void Move(Security security, decimal weight)
 	{
-		return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
-	}
-
-	private void Move(Security s, decimal weight)
-	{
-		var portfolioValue = Portfolio.CurrentValue ?? 0m;
-		var price = GetLatestPrice(s);
-		if (price <= 0)
+		var price = GetLatestPrice(security);
+		if (price <= 0m)
 			return;
-			
-		var tgt = weight * portfolioValue / price;
-		var diff = tgt - PositionBy(s);
+
+		var portfolioValue = Portfolio.CurrentValue ?? 0m;
+		var target = weight * portfolioValue / price;
+		var diff = target - GetPositionValue(security, Portfolio).GetValueOrDefault();
+
 		if (Math.Abs(diff) * price < MinTradeUsd)
 			return;
 
 		RegisterOrder(new Order
 		{
-			Security = s,
+			Security = security,
 			Portfolio = Portfolio,
 			Side = diff > 0 ? Sides.Buy : Sides.Sell,
 			Volume = Math.Abs(diff),
@@ -172,5 +160,8 @@ public class JanuaryBarometerStrategy : Strategy
 		});
 	}
 
-	private decimal PositionBy(Security s) => GetPositionValue(s, Portfolio) ?? 0;
+	private decimal GetLatestPrice(Security security)
+	{
+		return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
+	}
 }

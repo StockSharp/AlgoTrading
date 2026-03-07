@@ -1,54 +1,103 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
+using StockSharp.Configuration;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on lexical density of company filings.
-/// Rebalances quarterly using the first three trading days of February, May, August and November.
+/// Lexical density filings strategy that trades the primary instrument when its synthetic filing-density score diverges from a benchmark.
 /// </summary>
 public class LexicalDensityFilingsStrategy : Strategy
 {
-	private readonly StrategyParam<IEnumerable<Security>> _univ;
-	private readonly StrategyParam<int> _quintile;
-	private readonly StrategyParam<decimal> _minUsd;
-	private readonly StrategyParam<DataType> _tf;
+	private readonly StrategyParam<string> _security2Id;
+	private readonly StrategyParam<int> _densityLength;
+	private readonly StrategyParam<int> _lookbackPeriod;
+	private readonly StrategyParam<decimal> _entryThreshold;
+	private readonly StrategyParam<decimal> _exitThreshold;
+	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _stopLoss;
+	private readonly StrategyParam<DataType> _candleType;
+
+	private Security _benchmark = null!;
+	private ExponentialMovingAverage _primaryDensity = null!;
+	private ExponentialMovingAverage _benchmarkDensity = null!;
+	private SimpleMovingAverage _spreadAverage = null!;
+	private StandardDeviation _spreadDeviation = null!;
+	private decimal _latestPrimaryDensity;
+	private decimal _latestBenchmarkDensity;
+	private decimal? _previousZScore;
+	private bool _primaryUpdated;
+	private bool _benchmarkUpdated;
+	private int _cooldownRemaining;
 
 	/// <summary>
-	/// Universe of securities to trade.
+	/// Benchmark security identifier.
 	/// </summary>
-	public IEnumerable<Security> Universe
+	public string Security2Id
 	{
-		get => _univ.Value;
-		set => _univ.Value = value;
+		get => _security2Id.Value;
+		set => _security2Id.Value = value;
 	}
 
 	/// <summary>
-	/// Number of quintiles for ranking lexical density.
+	/// Smoothing length for the synthetic lexical density score.
 	/// </summary>
-	public int Quintile
+	public int DensityLength
 	{
-		get => _quintile.Value;
-		set => _quintile.Value = value;
+		get => _densityLength.Value;
+		set => _densityLength.Value = value;
 	}
 
 	/// <summary>
-	/// Minimum trade value in USD.
+	/// Lookback period used to normalize the density spread.
 	/// </summary>
-	public decimal MinTradeUsd
+	public int LookbackPeriod
 	{
-		get => _minUsd.Value;
-		set => _minUsd.Value = value;
+		get => _lookbackPeriod.Value;
+		set => _lookbackPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Z-score threshold required to open a position.
+	/// </summary>
+	public decimal EntryThreshold
+	{
+		get => _entryThreshold.Value;
+		set => _entryThreshold.Value = value;
+	}
+
+	/// <summary>
+	/// Z-score threshold required to close a position.
+	/// </summary>
+	public decimal ExitThreshold
+	{
+		get => _exitThreshold.Value;
+		set => _exitThreshold.Value = value;
+	}
+
+	/// <summary>
+	/// Closed candles to wait before another position change.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
+	/// Stop loss percentage.
+	/// </summary>
+	public decimal StopLoss
+	{
+		get => _stopLoss.Value;
+		set => _stopLoss.Value = value;
 	}
 
 	/// <summary>
@@ -56,165 +105,200 @@ public class LexicalDensityFilingsStrategy : Strategy
 	/// </summary>
 	public DataType CandleType
 	{
-		get => _tf.Value;
-		set => _tf.Value = value;
+		get => _candleType.Value;
+		set => _candleType.Value = value;
 	}
-
-	private readonly Dictionary<Security, decimal> _weights = [];
-	private readonly Dictionary<Security, decimal> _latestPrices = [];
-	private DateTime _lastDay = DateTime.MinValue;
 
 	/// <summary>
 	/// Initializes a new instance of <see cref="LexicalDensityFilingsStrategy"/>.
 	/// </summary>
 	public LexicalDensityFilingsStrategy()
 	{
-		_univ = Param<IEnumerable<Security>>(nameof(Universe), [])
-			.SetDisplay("Universe", "Securities to trade", "General");
+		_security2Id = Param(nameof(Security2Id), Paths.HistoryDefaultSecurity2)
+			.SetDisplay("Benchmark Security Id", "Identifier of the benchmark security", "General");
 
-		_quintile = Param(nameof(Quintile), 5)
-			.SetGreaterThanZero()
-			.SetDisplay("Quintile", "Number of quintiles for ranking", "Parameters");
+		_densityLength = Param(nameof(DensityLength), 10)
+			.SetRange(2, 80)
+			.SetDisplay("Density Length", "Smoothing length for the synthetic lexical density score", "Indicators");
 
-		_minUsd = Param(nameof(MinTradeUsd), 200m)
-			.SetGreaterThanZero()
-			.SetDisplay("Min Trade USD", "Minimum order value in USD", "Parameters");
+		_lookbackPeriod = Param(nameof(LookbackPeriod), 24)
+			.SetRange(5, 120)
+			.SetDisplay("Lookback Period", "Lookback period used to normalize the density spread", "Indicators");
 
-		_tf = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_entryThreshold = Param(nameof(EntryThreshold), 1.2m)
+			.SetRange(0.2m, 5m)
+			.SetDisplay("Entry Threshold", "Z-score threshold required to open a position", "Signals");
+
+		_exitThreshold = Param(nameof(ExitThreshold), 0.3m)
+			.SetRange(0m, 2m)
+			.SetDisplay("Exit Threshold", "Z-score threshold required to close a position", "Signals");
+
+		_cooldownBars = Param(nameof(CooldownBars), 8)
+			.SetRange(0, 120)
+			.SetDisplay("Cooldown Bars", "Closed candles to wait before another position change", "Risk");
+
+		_stopLoss = Param(nameof(StopLoss), 2.5m)
+			.SetRange(0.5m, 10m)
+			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for candles", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return Universe.Select(s => (s, CandleType));
+		if (Security != null)
+			yield return (Security, CandleType);
+
+		if (!Security2Id.IsEmpty())
+			yield return (new Security { Id = Security2Id }, CandleType);
 	}
 
 	/// <inheritdoc />
-	
 	protected override void OnReseted()
 	{
 		base.OnReseted();
 
-		_weights.Clear();
-		_latestPrices.Clear();
-		_lastDay = default;
+		_benchmark = null!;
+		_primaryDensity = null!;
+		_benchmarkDensity = null!;
+		_spreadAverage = null!;
+		_spreadDeviation = null!;
+		_latestPrimaryDensity = 0m;
+		_latestBenchmarkDensity = 0m;
+		_previousZScore = null;
+		_primaryUpdated = false;
+		_benchmarkUpdated = false;
+		_cooldownRemaining = 0;
 	}
 
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		if (Universe == null || !Universe.Any())
-			throw new InvalidOperationException("Universe is empty.");
+		if (Security == null)
+			throw new InvalidOperationException("Primary security is not specified.");
 
-		var trigger = Universe.First();
+		if (Security2Id.IsEmpty())
+			throw new InvalidOperationException("Benchmark security identifier is not specified.");
 
-		SubscribeCandles(CandleType, true, trigger)
-			.Bind(c => ProcessCandle(c, trigger))
+		_benchmark = this.LookupById(Security2Id) ?? new Security { Id = Security2Id };
+		_primaryDensity = new ExponentialMovingAverage { Length = DensityLength };
+		_benchmarkDensity = new ExponentialMovingAverage { Length = DensityLength };
+		_spreadAverage = new SimpleMovingAverage { Length = LookbackPeriod };
+		_spreadDeviation = new StandardDeviation { Length = LookbackPeriod };
+
+		var primarySubscription = SubscribeCandles(CandleType, security: Security);
+		var benchmarkSubscription = SubscribeCandles(CandleType, security: _benchmark);
+
+		primarySubscription
+			.Bind(ProcessPrimaryCandle)
 			.Start();
+
+		benchmarkSubscription
+			.Bind(ProcessBenchmarkCandle)
+			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, primarySubscription);
+			DrawCandles(area, benchmarkSubscription);
+			DrawOwnTrades(area);
+		}
+
+		StartProtection(
+			new Unit(2, UnitTypes.Percent),
+			new Unit(StopLoss, UnitTypes.Percent));
 	}
 
-	private void ProcessCandle(ICandleMessage candle, Security security)
+	private void ProcessPrimaryCandle(ICandleMessage candle)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Store the latest closing price for this security
-		_latestPrices[security] = candle.ClosePrice;
+		_latestPrimaryDensity = UpdateDensity(_primaryDensity, candle);
+		_primaryUpdated = true;
+		TryProcessSpread(candle.OpenTime);
+	}
 
-		var d = candle.OpenTime.Date;
-
-		if (d == _lastDay)
+	private void ProcessBenchmarkCandle(ICandleMessage candle)
+	{
+		if (candle.State != CandleStates.Finished)
 			return;
 
-		_lastDay = d;
-
-		if (IsQuarterRebalanceDay(d))
-			Rebalance();
+		_latestBenchmarkDensity = UpdateDensity(_benchmarkDensity, candle);
+		_benchmarkUpdated = true;
+		TryProcessSpread(candle.OpenTime);
 	}
 
-	private static bool IsQuarterRebalanceDay(DateTime d)
+	private decimal UpdateDensity(ExponentialMovingAverage average, ICandleMessage candle)
 	{
-		return (d.Month == 2 || d.Month == 5 || d.Month == 8 || d.Month == 11) &&
-			   d.Day <= 3;
+		var densitySignal = CalculateDensitySignal(candle);
+		return average.Process(densitySignal, candle.OpenTime, true).ToDecimal();
 	}
 
-	private void Rebalance()
+	private decimal CalculateDensitySignal(ICandleMessage candle)
 	{
-		var dens = new Dictionary<Security, decimal>();
+		var priceBase = Math.Max(candle.OpenPrice, 1m);
+		var range = Math.Max(candle.HighPrice - candle.LowPrice, Security?.PriceStep ?? 1m);
+		var closeLocation = ((candle.ClosePrice - candle.LowPrice) - (candle.HighPrice - candle.ClosePrice)) / range;
+		var compression = 1m - Math.Min(0.2m, range / priceBase);
 
-		foreach (var s in Universe)
-		{
-			if (TryGetLexicalDensity(s, out var val))
-				dens[s] = val;
-		}
+		return (closeLocation * 2m) + compression;
+	}
 
-		if (dens.Count < Quintile * 2)
+	private void TryProcessSpread(DateTime time)
+	{
+		if (!_primaryUpdated || !_benchmarkUpdated)
 			return;
 
-		var bucket = dens.Count / Quintile;
+		_primaryUpdated = false;
+		_benchmarkUpdated = false;
 
-		var longSide = dens.OrderByDescending(kv => kv.Value).Take(bucket).Select(kv => kv.Key).ToList();
-		var shortSide = dens.OrderBy(kv => kv.Value).Take(bucket).Select(kv => kv.Key).ToList();
+		var spread = _latestPrimaryDensity - _latestBenchmarkDensity;
+		var mean = _spreadAverage.Process(spread, time, true).ToDecimal();
+		var deviation = _spreadDeviation.Process(spread, time, true).ToDecimal();
 
-		_weights.Clear();
-
-		var wl = 1m / longSide.Count;
-		var ws = -1m / shortSide.Count;
-
-		foreach (var s in longSide)
-			_weights[s] = wl;
-
-		foreach (var s in shortSide)
-			_weights[s] = ws;
-
-		foreach (var position in Positions)
-		{
-			if (!_weights.ContainsKey(position.Security))
-				TradeTo(position.Security, 0);
-		}
-
-		var portfolioValue = Portfolio.CurrentValue ?? 0m;
-
-		foreach (var kv in _weights)
-		{
-			var price = GetLatestPrice(kv.Key);
-			if (price > 0)
-				TradeTo(kv.Key, kv.Value * portfolioValue / price);
-		}
-	}
-
-	private void TradeTo(Security s, decimal tgt)
-	{
-		var diff = tgt - PositionBy(s);
-		var price = GetLatestPrice(s);
-
-		if (price <= 0 || Math.Abs(diff) * price < MinTradeUsd)
+		if (!_spreadAverage.IsFormed || !_spreadDeviation.IsFormed || deviation <= 0m)
 			return;
 
-		RegisterOrder(new Order
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
+
+		var zScore = (spread - mean) / deviation;
+		var bullishEntry = _previousZScore is decimal previousBullish && previousBullish < EntryThreshold && zScore >= EntryThreshold;
+		var bearishEntry = _previousZScore is decimal previousBearish && previousBearish > -EntryThreshold && zScore <= -EntryThreshold;
+
+		if (_cooldownRemaining == 0 && Position == 0)
 		{
-			Security = s,
-			Portfolio = Portfolio,
-			Side = diff > 0 ? Sides.Buy : Sides.Sell,
-			Volume = Math.Abs(diff),
-			Type = OrderTypes.Market,
-			Comment = "LexDensity",
-		});
-	}
+			if (bullishEntry)
+			{
+				BuyMarket();
+				_cooldownRemaining = CooldownBars;
+			}
+			else if (bearishEntry)
+			{
+				SellMarket();
+				_cooldownRemaining = CooldownBars;
+			}
+		}
+		else if (Position > 0 && zScore <= ExitThreshold)
+		{
+			SellMarket(Position);
+			_cooldownRemaining = CooldownBars;
+		}
+		else if (Position < 0 && zScore >= -ExitThreshold)
+		{
+			BuyMarket(Math.Abs(Position));
+			_cooldownRemaining = CooldownBars;
+		}
 
-	private decimal PositionBy(Security s) => GetPositionValue(s, Portfolio) ?? 0;
-
-	private bool TryGetLexicalDensity(Security s, out decimal v)
-	{
-		v = 0;
-		return false;
-	}
-
-	private decimal GetLatestPrice(Security security)
-	{
-		return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
+		_previousZScore = zScore;
 	}
 }

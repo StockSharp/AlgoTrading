@@ -1,231 +1,200 @@
-// PairedSwitchingStrategy.cs
-// -----------------------------------------------------------------------------
-// Each quarter hold the ETF (of two) with higher previous‑quarter return.
-// Quarter = calendar quarter.	Rebalance on first trading day of Jan/Apr/Jul/Oct.
-// -----------------------------------------------------------------------------
-// Date: 2 Aug 2025
-// -----------------------------------------------------------------------------
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
+using StockSharp.Configuration;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Paired switching strategy.
-/// Holds the ETF with higher previous-quarter return.
+/// Paired switching strategy that rotates between the primary instrument and a benchmark instrument based on the prior quarter's return.
 /// </summary>
 public class PairedSwitchingStrategy : Strategy
 {
-	private readonly StrategyParam<Security> _second;
-	private readonly StrategyParam<decimal> _minUsd;
-	private readonly StrategyParam<DataType> _tf;
+	private readonly StrategyParam<string> _security2Id;
+	private readonly StrategyParam<DataType> _candleType;
+
+	private readonly RollingWin _primaryPrices = new(21);
+	private readonly RollingWin _benchmarkPrices = new(21);
+	private Security _benchmark = null!;
+	private int _lastProcessedMonthKey;
 
 	/// <summary>
-	/// First ETF.
+	/// Benchmark instrument identifier.
 	/// </summary>
-	public Security FirstETF
+	public string Security2Id
 	{
-		get => Security;
-		set => Security = value;
+		get => _security2Id.Value;
+		set => _security2Id.Value = value;
 	}
 
 	/// <summary>
-	/// Second ETF.
-	/// </summary>
-	public Security SecondETF
-	{
-		get => _second.Value;
-		set => _second.Value = value;
-	}
-
-	/// <summary>
-	/// Minimum trade value in USD.
-	/// </summary>
-	public decimal MinTradeUsd
-	{
-		get => _minUsd.Value;
-		set => _minUsd.Value = value;
-	}
-
-	/// <summary>
-	/// Candle time frame.
+	/// Candle type used for calculations.
 	/// </summary>
 	public DataType CandleType
 	{
-		get => _tf.Value;
-		set => _tf.Value = value;
+		get => _candleType.Value;
+		set => _candleType.Value = value;
 	}
-
-	private readonly RollingWin _p1 = new(63 + 1);
-	private readonly RollingWin _p2 = new(63 + 1);
-	private readonly Dictionary<Security, decimal> _latestPrices = [];
-	private DateTime _last = DateTime.MinValue;
 
 	public PairedSwitchingStrategy()
 	{
-		_second = Param<Security>(nameof(SecondETF), null)
-			.SetDisplay("Second ETF", "Second exchange-traded fund", "General");
+		_security2Id = Param(nameof(Security2Id), Paths.HistoryDefaultSecurity2)
+			.SetDisplay("Benchmark Security Id", "Identifier of the benchmark instrument", "General");
 
-		_minUsd = Param(nameof(MinTradeUsd), 200m)
-			.SetGreaterThanZero()
-			.SetDisplay("Min Trade USD", "Minimum trade value in USD", "General");
-
-		_tf = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candles time frame", "General");
 	}
 
-	public override IEnumerable<(Security, DataType)> GetWorkingSecurities() =>
-		[(FirstETF, CandleType), (SecondETF, CandleType)];
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		if (Security != null)
+			yield return (Security, CandleType);
 
+		if (!Security2Id.IsEmpty())
+			yield return (new Security { Id = Security2Id }, CandleType);
+	}
+
+	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
 
-		_p1.Clear();
-		_p2.Clear();
-		_latestPrices.Clear();
-		_last = default;
+		_primaryPrices.Clear();
+		_benchmarkPrices.Clear();
+		_benchmark = null!;
+		_lastProcessedMonthKey = 0;
 	}
 
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
-		if (FirstETF == null || SecondETF == null)
-			throw new InvalidOperationException("FirstETF and SecondETF must be set.");
-
 		base.OnStarted2(time);
 
-		SubscribeCandles(CandleType, true, FirstETF)
-			.Bind(c => ProcessCandle(c, FirstETF, true))
+		if (Security == null)
+			throw new InvalidOperationException("Primary security is not specified.");
+
+		if (Security2Id.IsEmpty())
+			throw new InvalidOperationException("Benchmark security identifier is not specified.");
+
+		_benchmark = this.LookupById(Security2Id) ?? new Security { Id = Security2Id };
+
+		SubscribeCandles(CandleType, security: Security)
+			.Bind(candle => ProcessCandle(candle, true))
 			.Start();
 
-		SubscribeCandles(CandleType, true, SecondETF)
-			.Bind(c => ProcessCandle(c, SecondETF, false))
+		SubscribeCandles(CandleType, security: _benchmark)
+			.Bind(candle => ProcessCandle(candle, false))
 			.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, Security security, bool isFirst)
+	private void ProcessCandle(ICandleMessage candle, bool isPrimary)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Store the latest closing price for this security
-		_latestPrices[security] = candle.ClosePrice;
+		(isPrimary ? _primaryPrices : _benchmarkPrices).Add(candle.ClosePrice);
 
-		OnDaily(isFirst, candle);
-	}
-
-	private void OnDaily(bool first, ICandleMessage c)
-	{
-		(first ? _p1 : _p2).Add(c.ClosePrice);
-
-		var d = c.OpenTime.Date;
-		if (d == _last)
+		var day = candle.OpenTime.Date;
+		var monthKey = (day.Year * 100) + day.Month;
+		if (monthKey == _lastProcessedMonthKey)
 			return;
 
-		_last = d;
-		if (!(d.Month % 3 == 1 && d.Day == 1))
-			return; // first trading day of quarter
+		_lastProcessedMonthKey = monthKey;
 
 		Rebalance();
 	}
 
 	private void Rebalance()
 	{
-		if (!_p1.Full || !_p2.Full)
+		if (!_primaryPrices.Full || !_benchmarkPrices.Full)
 			return;
 
-		var r1 = (_p1.Data[0] - _p1.Data[^1]) / _p1.Data[^1];
-		var r2 = (_p2.Data[0] - _p2.Data[^1]) / _p2.Data[^1];
-		var longEtf = r1 > r2 ? FirstETF : SecondETF;
-		var other = r1 > r2 ? SecondETF : FirstETF;
+		var primaryReturn = CalculateQuarterReturn(_primaryPrices);
+		var benchmarkReturn = CalculateQuarterReturn(_benchmarkPrices);
 
-		var portfolioValue = Portfolio.CurrentValue ?? 0m;
-		var longPrice = GetLatestPrice(longEtf);
-		if (longPrice > 0)
-			Move(longEtf, portfolioValue / longPrice);
-
-		Move(other, 0);
-	}
-
-	private decimal Pos(Security s) => GetPositionValue(s, Portfolio) ?? 0;
-
-	private decimal GetLatestPrice(Security security)
-	{
-		return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
-	}
-
-	private void Move(Security s, decimal tgt)
-	{
-		var diff = tgt - Pos(s);
-		var price = GetLatestPrice(s);
-		if (price <= 0 || Math.Abs(diff) * price < MinTradeUsd)
-			return;
-
-		RegisterOrder(new Order
+		if (primaryReturn >= benchmarkReturn)
 		{
-			Security = s,
-			Portfolio = Portfolio,
-			Side = diff > 0 ? Sides.Buy : Sides.Sell,
-			Volume = Math.Abs(diff),
-			Type = OrderTypes.Market,
-			Comment = "PairSwitch"
-		});
+			if (Position <= 0)
+			{
+				if (Position < 0)
+					BuyMarket(Math.Abs(Position));
+
+				BuyMarket();
+			}
+		}
+		else if (Position >= 0)
+		{
+			if (Position > 0)
+				SellMarket(Position);
+
+			SellMarket();
+		}
 	}
 
-	private class RollingWin
+	private static decimal CalculateQuarterReturn(RollingWin window)
 	{
-		private readonly Queue<decimal> _q = [];
-		private readonly int _n;
+		var prices = window.Data;
+		var start = prices[^21];
+		var finish = prices[^1];
+		return (finish - start) / Math.Max(start, 1m);
+	}
 
-		public RollingWin(int n)
+	private sealed class RollingWin
+	{
+		private readonly int _capacity;
+		private readonly Queue<decimal> _values = [];
+
+		public RollingWin(int capacity)
 		{
-			_n = n;
+			_capacity = capacity;
 		}
 
-		public bool Full => _q.Count == _n;
+		public bool Full => _values.Count == _capacity;
 
-		public void Add(decimal p)
+		public decimal[] Data => [.. _values];
+
+		public void Add(decimal value)
 		{
-			if (_q.Count == _n)
-				_q.Dequeue();
+			if (_values.Count == _capacity)
+				_values.Dequeue();
 
-			_q.Enqueue(p);
+			_values.Enqueue(value);
 		}
 
-		public decimal[] Data => [.. _q];
-
-		public void Clear() => _q.Clear();
-
-		public override int GetHashCode()
-			=> Data.Aggregate(0, (hash, value) => hash ^ value.GetHashCode());
+		public void Clear()
+		{
+			_values.Clear();
+		}
 
 		public override bool Equals(object obj)
 		{
-			ArgumentNullException.ThrowIfNull(obj);
-
-			var otherWin = (RollingWin)obj;
-
-			if (otherWin.Data.Length != Data.Length)
+			if (obj is not RollingWin other || other._values.Count != _values.Count)
 				return false;
 
-			for (var i = 0; i < Data.Length; i++)
+			var left = Data;
+			var right = other.Data;
+			for (var i = 0; i < left.Length; i++)
 			{
-				if (Data[i] != otherWin.Data[i])
+				if (left[i] != right[i])
 					return false;
 			}
 
 			return true;
+		}
+
+		public override int GetHashCode()
+		{
+			var hash = _capacity;
+			foreach (var value in _values)
+				hash = (hash * 397) ^ value.GetHashCode();
+
+			return hash;
 		}
 	}
 }

@@ -1,193 +1,292 @@
-// OvernightSentimentAnomalyStrategy.cs
-// -----------------------------------------------------------------------------
-// Goes long equity index ETF only for overnight session when market sentiment
-// indicator >= Threshold. Sentiment value must be provided by external feed
-// (TryGetSentiment). Uses minute candles to trigger entry 5 min before close
-// and exit 5 min after open. No Schedule() is used.
-// -----------------------------------------------------------------------------
-// Date: 2 Aug 2025
-// -----------------------------------------------------------------------------
-
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
+using StockSharp.Configuration;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Trades an equity ETF overnight based on external sentiment indicator.
+/// Overnight sentiment anomaly strategy that trades the primary instrument when its opening gap diverges from benchmark sentiment.
 /// </summary>
 public class OvernightSentimentAnomalyStrategy : Strategy
 {
-	#region Params
-
-	private readonly StrategyParam<Security> _sentimentSym;
-	private readonly StrategyParam<decimal> _threshold;
-	private readonly StrategyParam<decimal> _minUsd;
+	private readonly StrategyParam<string> _security2Id;
+	private readonly StrategyParam<int> _sentimentPeriod;
+	private readonly StrategyParam<int> _normalizationPeriod;
+	private readonly StrategyParam<decimal> _entryThreshold;
+	private readonly StrategyParam<decimal> _exitThreshold;
+	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _stopLoss;
 	private readonly StrategyParam<DataType> _candleType;
 
-	/// <summary>Equity ETF to trade.</summary>
-	public Security EquityETF
+	private Security _benchmark = null!;
+	private RateOfChange _benchmarkSentiment = null!;
+	private ExponentialMovingAverage _gapAverage = null!;
+	private SimpleMovingAverage _signalAverage = null!;
+	private StandardDeviation _signalDeviation = null!;
+	private decimal _latestBenchmarkSentiment;
+	private decimal _latestGap;
+	private bool _primaryUpdated;
+	private bool _benchmarkUpdated;
+	private int _cooldownRemaining;
+
+	/// <summary>
+	/// Benchmark security identifier used as a sentiment proxy.
+	/// </summary>
+	public string Security2Id
 	{
-		get => Security;
-		set => Security = value;
+		get => _security2Id.Value;
+		set => _security2Id.Value = value;
 	}
 
-	/// <summary>Symbol providing sentiment values.</summary>
-	public Security SentimentSymbol
+	/// <summary>
+	/// Lookback period used to estimate benchmark sentiment.
+	/// </summary>
+	public int SentimentPeriod
 	{
-		get => _sentimentSym.Value;
-		set => _sentimentSym.Value = value;
+		get => _sentimentPeriod.Value;
+		set => _sentimentPeriod.Value = value;
 	}
 
-	/// <summary>Sentiment threshold for entry.</summary>
-	public decimal Threshold
+	/// <summary>
+	/// Lookback period used to normalize the anomaly signal.
+	/// </summary>
+	public int NormalizationPeriod
 	{
-		get => _threshold.Value;
-		set => _threshold.Value = value;
+		get => _normalizationPeriod.Value;
+		set => _normalizationPeriod.Value = value;
 	}
 
-	/// <summary>Minimum trade amount in USD.</summary>
-	public decimal MinTradeUsd
+	/// <summary>
+	/// Z-score threshold required to open a position.
+	/// </summary>
+	public decimal EntryThreshold
 	{
-		get => _minUsd.Value;
-		set => _minUsd.Value = value;
+		get => _entryThreshold.Value;
+		set => _entryThreshold.Value = value;
 	}
 
-	/// <summary>Candle type for timing entry/exit.</summary>
+	/// <summary>
+	/// Z-score threshold required to close a position.
+	/// </summary>
+	public decimal ExitThreshold
+	{
+		get => _exitThreshold.Value;
+		set => _exitThreshold.Value = value;
+	}
+
+	/// <summary>
+	/// Closed candles to wait before another position change.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
+	/// Stop loss percentage.
+	/// </summary>
+	public decimal StopLoss
+	{
+		get => _stopLoss.Value;
+		set => _stopLoss.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type used for calculations.
+	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	#endregion
-
-	private readonly Dictionary<Security, decimal> _latestPrices = [];
-
 	public OvernightSentimentAnomalyStrategy()
 	{
-		_sentimentSym = Param<Security>(nameof(SentimentSymbol), null)
-			.SetDisplay("Sentiment Symbol", "Symbol providing sentiment", "Universe");
+		_security2Id = Param(nameof(Security2Id), Paths.HistoryDefaultSecurity2)
+			.SetDisplay("Benchmark Security Id", "Identifier of the benchmark security used as a sentiment proxy", "General");
 
-		_threshold = Param(nameof(Threshold), 0m)
-			.SetDisplay("Threshold", "Sentiment threshold", "Parameters");
+		_sentimentPeriod = Param(nameof(SentimentPeriod), 4)
+			.SetRange(2, 80)
+			.SetDisplay("Sentiment Period", "Lookback period used to estimate benchmark sentiment", "Indicators");
 
-		_minUsd = Param(nameof(MinTradeUsd), 200m)
-			.SetDisplay("Min USD", "Minimum trade value", "Risk");
+		_normalizationPeriod = Param(nameof(NormalizationPeriod), 8)
+			.SetRange(5, 120)
+			.SetDisplay("Normalization Period", "Lookback period used to normalize the anomaly signal", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles for timing entry/exit", "General");
+		_entryThreshold = Param(nameof(EntryThreshold), 0.4m)
+			.SetRange(0.2m, 5m)
+			.SetDisplay("Entry Threshold", "Z-score threshold required to open a position", "Signals");
+
+		_exitThreshold = Param(nameof(ExitThreshold), 0.1m)
+			.SetRange(0m, 2m)
+			.SetDisplay("Exit Threshold", "Z-score threshold required to close a position", "Signals");
+
+		_cooldownBars = Param(nameof(CooldownBars), 8)
+			.SetRange(0, 120)
+			.SetDisplay("Cooldown Bars", "Closed candles to wait before another position change", "Risk");
+
+		_stopLoss = Param(nameof(StopLoss), 3m)
+			.SetRange(0.5m, 10m)
+			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+			.SetDisplay("Candle Type", "Time frame for candles", "General");
 	}
 
-	public override IEnumerable<(Security, DataType)> GetWorkingSecurities()
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		if (EquityETF == null)
-			throw new InvalidOperationException("EquityETF not set");
+		if (Security != null)
+			yield return (Security, CandleType);
 
-		yield return (EquityETF, CandleType);
+		if (!Security2Id.IsEmpty())
+			yield return (new Security { Id = Security2Id }, CandleType);
 	}
 
-	
+	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
 
-		_latestPrices.Clear();
+		_benchmark = null!;
+		_benchmarkSentiment = null!;
+		_gapAverage = null!;
+		_signalAverage = null!;
+		_signalDeviation = null!;
+		_latestBenchmarkSentiment = 0m;
+		_latestGap = 0m;
+		_primaryUpdated = false;
+		_benchmarkUpdated = false;
+		_cooldownRemaining = 0;
 	}
 
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		if (EquityETF == null)
-			throw new InvalidOperationException("EquityETF cannot be null.");
+		if (Security == null)
+			throw new InvalidOperationException("Primary security is not specified.");
 
-		if (SentimentSymbol == null)
-			throw new InvalidOperationException("SentimentSymbol cannot be null.");
+		if (Security2Id.IsEmpty())
+			throw new InvalidOperationException("Benchmark security identifier is not specified.");
 
-		// Subscribe to candles for timing entry/exit
-		SubscribeCandles(CandleType, true, EquityETF)
-			.Bind(c => ProcessCandle(c, EquityETF))
+		_benchmark = this.LookupById(Security2Id) ?? new Security { Id = Security2Id };
+		_benchmarkSentiment = new RateOfChange { Length = SentimentPeriod };
+		_gapAverage = new ExponentialMovingAverage { Length = Math.Max(2, SentimentPeriod) };
+		_signalAverage = new SimpleMovingAverage { Length = NormalizationPeriod };
+		_signalDeviation = new StandardDeviation { Length = NormalizationPeriod };
+
+		var primarySubscription = SubscribeCandles(CandleType, security: Security);
+		var benchmarkSubscription = SubscribeCandles(CandleType, security: _benchmark);
+
+		primarySubscription
+			.Bind(ProcessPrimaryCandle)
 			.Start();
+
+		benchmarkSubscription
+			.Bind(ProcessBenchmarkCandle)
+			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, primarySubscription);
+			DrawCandles(area, benchmarkSubscription);
+			DrawOwnTrades(area);
+		}
+
+		StartProtection(
+			new Unit(2, UnitTypes.Percent),
+			new Unit(StopLoss, UnitTypes.Percent));
 	}
 
-	private void ProcessCandle(ICandleMessage candle, Security security)
+	private void ProcessPrimaryCandle(ICandleMessage candle)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Store the latest closing price for this security
-		_latestPrices[security] = candle.ClosePrice;
+		var gap = (candle.OpenPrice - candle.LowPrice) / Math.Max(candle.LowPrice, 1m);
+		var smoothedGap = _gapAverage.Process(gap, candle.OpenTime, true).ToDecimal();
 
-		OnMinute(candle);
+		if (!_gapAverage.IsFormed)
+			return;
+
+		_latestGap = smoothedGap;
+		_primaryUpdated = true;
+		TryProcessSignal(candle);
 	}
 
-	private void OnMinute(ICandleMessage candle)
+	private void ProcessBenchmarkCandle(ICandleMessage candle)
 	{
-		var utc = candle.OpenTime;
-		
-		// 20:55 UTC ? 15:55 ET (entry 5 min before close)
-		if (utc.Hour == 20 && utc.Minute == 55)
+		if (candle.State != CandleStates.Finished)
+			return;
+
+		var sentimentValue = _benchmarkSentiment.Process(candle);
+		if (sentimentValue.IsEmpty || !_benchmarkSentiment.IsFormed)
+			return;
+
+		_latestBenchmarkSentiment = sentimentValue.ToDecimal();
+		_benchmarkUpdated = true;
+		TryProcessSignal(candle);
+	}
+
+	private void TryProcessSignal(ICandleMessage candle)
+	{
+		if (!_primaryUpdated || !_benchmarkUpdated)
+			return;
+
+		_primaryUpdated = false;
+		_benchmarkUpdated = false;
+
+		var signal = _latestBenchmarkSentiment - (_latestGap * 10m);
+		var mean = _signalAverage.Process(signal, candle.OpenTime, true).ToDecimal();
+		var deviation = _signalDeviation.Process(signal, candle.OpenTime, true).ToDecimal();
+
+		if (!_signalAverage.IsFormed || !_signalDeviation.IsFormed || deviation <= 0m)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
+
+		var zScore = (signal - mean) / deviation;
+		var bullishEntry = zScore >= EntryThreshold;
+		var bearishEntry = zScore <= -EntryThreshold;
+
+		if (_cooldownRemaining == 0 && Position == 0)
 		{
-			CloseEntry();
+			if (bullishEntry)
+			{
+				BuyMarket();
+				_cooldownRemaining = CooldownBars;
+			}
+			else if (bearishEntry)
+			{
+				SellMarket();
+				_cooldownRemaining = CooldownBars;
+			}
 		}
-		// 14:35 UTC ? 09:35 ET (exit 5 min after open next day)
-		else if (utc.Hour == 14 && utc.Minute == 35)
+		else if (Position > 0 && zScore <= ExitThreshold)
 		{
-			OpenExit();
+			SellMarket(Position);
+			_cooldownRemaining = CooldownBars;
 		}
-	}
-
-	private void CloseEntry()
-	{
-		if (!TryGetSentiment(out var sVal) || sVal < Threshold)
-			return;
-		var portfolioValue = Portfolio.CurrentValue ?? 0m;
-		var price = GetLatestPrice(EquityETF);
-		if (price <= 0)
-			return;
-		var qty = portfolioValue / price;
-		if (qty * price < MinTradeUsd)
-			return;
-		Move(qty);
-	}
-
-	private void OpenExit() => Move(0);
-
-	private decimal GetLatestPrice(Security security)
-	{
-		return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
-	}
-
-	private void Move(decimal tgt)
-	{
-		var diff = tgt - Pos();
-		var price = GetLatestPrice(EquityETF);
-		if (price <= 0 || Math.Abs(diff) * price < MinTradeUsd)
-			return;
-		RegisterOrder(new Order
+		else if (Position < 0 && zScore >= -ExitThreshold)
 		{
-			Security = EquityETF,
-			Portfolio = Portfolio,
-			Side = diff > 0 ? Sides.Buy : Sides.Sell,
-			Volume = Math.Abs(diff),
-			Type = OrderTypes.Market,
-			Comment = "OvernightSent"
-		});
+			BuyMarket(Math.Abs(Position));
+			_cooldownRemaining = CooldownBars;
+		}
+
 	}
-
-	private decimal Pos() => GetPositionValue(EquityETF, Portfolio) ?? 0m;
-
-	private bool TryGetSentiment(out decimal val) { val = 0; return false; }
 }

@@ -1,50 +1,105 @@
-// EarningsQualityFactorStrategy.cs — candle-stream version
-// Rebalance triggered by first finished candle of July 1.
-// Date: 2 August 2025
-
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
+using StockSharp.Configuration;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Earnings quality factor strategy.
-/// Rebalances portfolio annually using earnings quality scores.
+/// Earnings quality factor strategy that trades the primary instrument when its synthetic earnings quality diverges from a benchmark.
 /// </summary>
 public class EarningsQualityFactorStrategy : Strategy
 {
-	private readonly StrategyParam<IEnumerable<Security>> _universe;
-	private readonly StrategyParam<decimal> _minUsd;
+	private readonly StrategyParam<string> _security2Id;
+	private readonly StrategyParam<int> _qualityLength;
+	private readonly StrategyParam<int> _lookbackPeriod;
+	private readonly StrategyParam<decimal> _entryThreshold;
+	private readonly StrategyParam<decimal> _exitThreshold;
+	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _stopLoss;
 	private readonly StrategyParam<DataType> _candleType;
-	
+
+	private Security _benchmark = null!;
+	private ExponentialMovingAverage _primaryQuality = null!;
+	private ExponentialMovingAverage _benchmarkQuality = null!;
+	private SimpleMovingAverage _spreadAverage = null!;
+	private StandardDeviation _spreadDeviation = null!;
+	private decimal _latestPrimaryQuality;
+	private decimal _latestBenchmarkQuality;
+	private decimal? _previousZScore;
+	private bool _primaryUpdated;
+	private bool _benchmarkUpdated;
+	private int _cooldownRemaining;
+
 	/// <summary>
-	/// Securities universe to trade.
+	/// Benchmark security identifier.
 	/// </summary>
-	public IEnumerable<Security> Universe
+	public string Security2Id
 	{
-		get => _universe.Value;
-		set => _universe.Value = value;
+		get => _security2Id.Value;
+		set => _security2Id.Value = value;
 	}
-	
+
 	/// <summary>
-	/// Minimum trade size in USD.
+	/// Smoothing length for the synthetic earnings quality score.
 	/// </summary>
-	public decimal MinTradeUsd
+	public int QualityLength
 	{
-		get => _minUsd.Value;
-		set => _minUsd.Value = value;
+		get => _qualityLength.Value;
+		set => _qualityLength.Value = value;
 	}
-	
+
+	/// <summary>
+	/// Lookback period used to normalize the quality spread.
+	/// </summary>
+	public int LookbackPeriod
+	{
+		get => _lookbackPeriod.Value;
+		set => _lookbackPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Z-score threshold required to open a position.
+	/// </summary>
+	public decimal EntryThreshold
+	{
+		get => _entryThreshold.Value;
+		set => _entryThreshold.Value = value;
+	}
+
+	/// <summary>
+	/// Z-score threshold required to close a position.
+	/// </summary>
+	public decimal ExitThreshold
+	{
+		get => _exitThreshold.Value;
+		set => _exitThreshold.Value = value;
+	}
+
+	/// <summary>
+	/// Closed candles to wait before another position change.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
+	/// Stop loss percentage.
+	/// </summary>
+	public decimal StopLoss
+	{
+		get => _stopLoss.Value;
+		set => _stopLoss.Value = value;
+	}
+
 	/// <summary>
 	/// The type of candles to use for calculations.
 	/// </summary>
@@ -53,141 +108,198 @@ public class EarningsQualityFactorStrategy : Strategy
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
-	
-	private readonly Dictionary<Security, decimal> _weights = [];
-	private readonly Dictionary<Security, decimal> _latestPrices = [];
-	private DateTime _lastProcessed = DateTime.MinValue;
-	
+
 	/// <summary>
 	/// Initializes a new instance of the <see cref="EarningsQualityFactorStrategy"/> class.
 	/// </summary>
 	public EarningsQualityFactorStrategy()
 	{
-		// Securities universe.
-		_universe = Param<IEnumerable<Security>>(nameof(Universe), [])
-			.SetDisplay("Universe", "Securities to trade", "General");
-		
-		// Minimum trade value in USD.
-		_minUsd = Param(nameof(MinTradeUsd), 100m)
-			.SetGreaterThanZero()
-			.SetDisplay("Min Trade USD", "Minimum trade size in USD", "Risk Management");
-		
-		// The type of candles to use.
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_security2Id = Param(nameof(Security2Id), Paths.HistoryDefaultSecurity2)
+			.SetDisplay("Benchmark Security Id", "Identifier of the benchmark security", "General");
+
+		_qualityLength = Param(nameof(QualityLength), 12)
+			.SetRange(2, 80)
+			.SetDisplay("Quality Length", "Smoothing length for the synthetic earnings quality score", "Indicators");
+
+		_lookbackPeriod = Param(nameof(LookbackPeriod), 24)
+			.SetRange(5, 120)
+			.SetDisplay("Lookback Period", "Lookback period used to normalize the quality spread", "Indicators");
+
+		_entryThreshold = Param(nameof(EntryThreshold), 1.2m)
+			.SetRange(0.2m, 5m)
+			.SetDisplay("Entry Threshold", "Z-score threshold required to open a position", "Signals");
+
+		_exitThreshold = Param(nameof(ExitThreshold), 0.3m)
+			.SetRange(0m, 2m)
+			.SetDisplay("Exit Threshold", "Z-score threshold required to close a position", "Signals");
+
+		_cooldownBars = Param(nameof(CooldownBars), 8)
+			.SetRange(0, 120)
+			.SetDisplay("Cooldown Bars", "Closed candles to wait before another position change", "Risk");
+
+		_stopLoss = Param(nameof(StopLoss), 2.5m)
+			.SetRange(0.5m, 10m)
+			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for calculation", "General");
 	}
-	
+
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return Universe.Select(s => (s, CandleType));
+		if (Security != null)
+			yield return (Security, CandleType);
+
+		if (!Security2Id.IsEmpty())
+			yield return (new Security { Id = Security2Id }, CandleType);
 	}
-	
+
 	/// <inheritdoc />
-	
 	protected override void OnReseted()
 	{
 		base.OnReseted();
 
-		_weights.Clear();
-		_latestPrices.Clear();
-		_lastProcessed = default;
+		_benchmark = null!;
+		_primaryQuality = null!;
+		_benchmarkQuality = null!;
+		_spreadAverage = null!;
+		_spreadDeviation = null!;
+		_latestPrimaryQuality = 0m;
+		_latestBenchmarkQuality = 0m;
+		_previousZScore = null;
+		_primaryUpdated = false;
+		_benchmarkUpdated = false;
+		_cooldownRemaining = 0;
 	}
 
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		
-		if (Universe == null || !Universe.Any())
-			throw new InvalidOperationException("Universe empty");
-		
-		foreach (var (sec, dt) in GetWorkingSecurities())
+
+		if (Security == null)
+			throw new InvalidOperationException("Primary security is not specified.");
+
+		if (Security2Id.IsEmpty())
+			throw new InvalidOperationException("Benchmark security identifier is not specified.");
+
+		_benchmark = this.LookupById(Security2Id) ?? new Security { Id = Security2Id };
+		_primaryQuality = new ExponentialMovingAverage { Length = QualityLength };
+		_benchmarkQuality = new ExponentialMovingAverage { Length = QualityLength };
+		_spreadAverage = new SimpleMovingAverage { Length = LookbackPeriod };
+		_spreadDeviation = new StandardDeviation { Length = LookbackPeriod };
+
+		var primarySubscription = SubscribeCandles(CandleType, security: Security);
+		var benchmarkSubscription = SubscribeCandles(CandleType, security: _benchmark);
+
+		primarySubscription
+			.Bind(ProcessPrimaryCandle)
+			.Start();
+
+		benchmarkSubscription
+			.Bind(ProcessBenchmarkCandle)
+			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
 		{
-			SubscribeCandles(dt, true, sec)
-				.Bind(c => ProcessCandle(c, sec))
-				.Start();
+			DrawCandles(area, primarySubscription);
+			DrawCandles(area, benchmarkSubscription);
+			DrawOwnTrades(area);
 		}
+
+		StartProtection(
+			new Unit(2, UnitTypes.Percent),
+			new Unit(StopLoss, UnitTypes.Percent));
 	}
-	
-	private void Rebalance()
+
+	private void ProcessPrimaryCandle(ICandleMessage candle)
 	{
-		var scores = new Dictionary<Security, decimal>();
-		foreach (var s in Universe)
-			if (TryGetQualityScore(s, out var q))
-				scores[s] = q;
-		
-		if (scores.Count < 20)
-			return;
-		
-		int dec = scores.Count / 10;
-		var longs = scores.OrderByDescending(kv => kv.Value).Take(dec).Select(kv => kv.Key).ToList();
-		var shorts = scores.OrderBy(kv => kv.Value).Take(dec).Select(kv => kv.Key).ToList();
-		
-		_weights.Clear();
-		decimal wl = 1m / longs.Count;
-		decimal ws = -1m / shorts.Count;
-		foreach (var s in longs)
-			_weights[s] = wl;
-		foreach (var s in shorts)
-			_weights[s] = ws;
-		
-		foreach (var position in Positions)
-			if (!_weights.ContainsKey(position.Security))
-				Move(position.Security, 0);
-		
-		var portfolioValue = Portfolio.CurrentValue ?? 0m;
-		foreach (var kv in _weights)
-		{
-			var price = GetLatestPrice(kv.Key);
-			if (price > 0)
-				Move(kv.Key, kv.Value * portfolioValue / price);
-		}
-	}
-	
-	private decimal PositionBy(Security s) => GetPositionValue(s, Portfolio) ?? 0;
-	
-	private decimal GetLatestPrice(Security security)
-	{
-		return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
-	}
-	
-	private void ProcessCandle(ICandleMessage candle, Security security)
-	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
-		
-		// Store the latest closing price for this security
-		_latestPrices[security] = candle.ClosePrice;
-		
-		var d = candle.OpenTime.Date;
-		if (d == _lastProcessed)
-			return;
-		_lastProcessed = d;
-		if (d.Month == 7 && d.Day == 1)
-			Rebalance();
+
+		_latestPrimaryQuality = UpdateQuality(_primaryQuality, candle);
+		_primaryUpdated = true;
+		TryProcessSpread(candle.OpenTime);
 	}
-	
-	private void Move(Security s, decimal tgt)
+
+	private void ProcessBenchmarkCandle(ICandleMessage candle)
 	{
-		var diff = tgt - PositionBy(s);
-		var price = GetLatestPrice(s);
-		if (price <= 0 || Math.Abs(diff) * price < MinTradeUsd)
+		if (candle.State != CandleStates.Finished)
 			return;
-		RegisterOrder(new Order
+
+		_latestBenchmarkQuality = UpdateQuality(_benchmarkQuality, candle);
+		_benchmarkUpdated = true;
+		TryProcessSpread(candle.OpenTime);
+	}
+
+	private decimal UpdateQuality(ExponentialMovingAverage average, ICandleMessage candle)
+	{
+		var qualitySignal = CalculateQualitySignal(candle);
+		return average.Process(qualitySignal, candle.OpenTime, true).ToDecimal();
+	}
+
+	private decimal CalculateQualitySignal(ICandleMessage candle)
+	{
+		var priceBase = Math.Max(candle.OpenPrice, 1m);
+		var range = Math.Max(candle.HighPrice - candle.LowPrice, Security?.PriceStep ?? 1m);
+		var body = candle.ClosePrice - candle.OpenPrice;
+		var efficiency = body / range;
+		var stability = 1m - Math.Min(0.25m, range / priceBase);
+
+		return (efficiency * 2m) + stability;
+	}
+
+	private void TryProcessSpread(DateTime time)
+	{
+		if (!_primaryUpdated || !_benchmarkUpdated)
+			return;
+
+		_primaryUpdated = false;
+		_benchmarkUpdated = false;
+
+		var spread = _latestPrimaryQuality - _latestBenchmarkQuality;
+		var mean = _spreadAverage.Process(spread, time, true).ToDecimal();
+		var deviation = _spreadDeviation.Process(spread, time, true).ToDecimal();
+
+		if (!_spreadAverage.IsFormed || !_spreadDeviation.IsFormed || deviation <= 0m)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
+
+		var zScore = (spread - mean) / deviation;
+		var bullishEntry = _previousZScore is decimal previousBullish && previousBullish < EntryThreshold && zScore >= EntryThreshold;
+		var bearishEntry = _previousZScore is decimal previousBearish && previousBearish > -EntryThreshold && zScore <= -EntryThreshold;
+
+		if (_cooldownRemaining == 0 && Position == 0)
 		{
-			Security = s,
-			Portfolio = Portfolio,
-			Side = diff > 0 ? Sides.Buy : Sides.Sell,
-			Volume = Math.Abs(diff),
-			Type = OrderTypes.Market,
-			Comment = "EQuality",
-		});
-	}
-	
-	private bool TryGetQualityScore(Security s, out decimal score)
-	{
-		score = 0m;
-		return false;
+			if (bullishEntry)
+			{
+				BuyMarket();
+				_cooldownRemaining = CooldownBars;
+			}
+			else if (bearishEntry)
+			{
+				SellMarket();
+				_cooldownRemaining = CooldownBars;
+			}
+		}
+		else if (Position > 0 && zScore <= ExitThreshold)
+		{
+			SellMarket(Position);
+			_cooldownRemaining = CooldownBars;
+		}
+		else if (Position < 0 && zScore >= -ExitThreshold)
+		{
+			BuyMarket(Math.Abs(Position));
+			_cooldownRemaining = CooldownBars;
+		}
+
+		_previousZScore = zScore;
 	}
 }

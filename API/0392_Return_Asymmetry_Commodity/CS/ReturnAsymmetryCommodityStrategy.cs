@@ -1,257 +1,329 @@
-// ReturnAsymmetryCommodityStrategy.cs
-// -----------------------------------------------------------------------------
-// Uses return asymmetry over past WindowDays for each commodity future:
-// asym = Σ positive returns / |Σ negative returns|.
-// Monthly (first trading day) long TopN asymmetry, short BottomN.
-// Trigger via daily candle of first future (no Schedule).
-// External data: none beyond prices.
-// -----------------------------------------------------------------------------
-// Date: 2 Aug 2025
-// -----------------------------------------------------------------------------
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
+using StockSharp.Configuration;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that ranks commodity futures by return asymmetry and trades the top
-/// and bottom groups each month.
+/// Return asymmetry strategy that trades the primary commodity when its positive-versus-negative return balance diverges from a benchmark commodity.
 /// </summary>
 public class ReturnAsymmetryCommodityStrategy : Strategy
 {
-	#region Params
-
-	private readonly StrategyParam<IEnumerable<Security>> _futs;
-	private readonly StrategyParam<int> _window;
-	private readonly StrategyParam<int> _top;
-	private readonly StrategyParam<decimal> _minUsd;
+	private readonly StrategyParam<string> _security2Id;
+	private readonly StrategyParam<int> _windowLength;
+	private readonly StrategyParam<int> _normalizationPeriod;
+	private readonly StrategyParam<decimal> _entryThreshold;
+	private readonly StrategyParam<decimal> _exitThreshold;
+	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _stopLoss;
 	private readonly StrategyParam<DataType> _candleType;
 
+	private Security _benchmark = null!;
+	private SimpleMovingAverage _spreadAverage = null!;
+	private StandardDeviation _spreadDeviation = null!;
+	private readonly Queue<decimal> _primaryReturns = [];
+	private readonly Queue<decimal> _benchmarkReturns = [];
+	private decimal? _previousPrimaryClose;
+	private decimal? _previousBenchmarkClose;
+	private decimal? _previousZScore;
+	private decimal _latestPrimaryAsymmetry;
+	private decimal _latestBenchmarkAsymmetry;
+	private bool _primaryUpdated;
+	private bool _benchmarkUpdated;
+	private int _cooldownRemaining;
+
 	/// <summary>
-	/// Commodity futures to trade.
+	/// Benchmark security identifier.
 	/// </summary>
-	public IEnumerable<Security> Futures
+	public string Security2Id
 	{
-		get => _futs.Value;
-		set => _futs.Value = value;
+		get => _security2Id.Value;
+		set => _security2Id.Value = value;
 	}
 
 	/// <summary>
-	/// Lookback window in days.
+	/// Lookback period used to compute return asymmetry.
 	/// </summary>
-	public int WindowDays
+	public int WindowLength
 	{
-		get => _window.Value;
-		set => _window.Value = value;
+		get => _windowLength.Value;
+		set => _windowLength.Value = value;
 	}
 
 	/// <summary>
-	/// Number of instruments to long/short.
+	/// Lookback period used to normalize the asymmetry spread.
 	/// </summary>
-	public int TopN
+	public int NormalizationPeriod
 	{
-		get => _top.Value;
-		set => _top.Value = value;
+		get => _normalizationPeriod.Value;
+		set => _normalizationPeriod.Value = value;
 	}
 
 	/// <summary>
-	/// Minimum dollar value per trade.
+	/// Z-score threshold required to open a position.
 	/// </summary>
-	public decimal MinTradeUsd
+	public decimal EntryThreshold
 	{
-		get => _minUsd.Value;
-		set => _minUsd.Value = value;
+		get => _entryThreshold.Value;
+		set => _entryThreshold.Value = value;
 	}
 
+	/// <summary>
+	/// Z-score threshold required to close a position.
+	/// </summary>
+	public decimal ExitThreshold
+	{
+		get => _exitThreshold.Value;
+		set => _exitThreshold.Value = value;
+	}
 
 	/// <summary>
-	/// The type of candles to use for strategy calculation.
+	/// Closed candles to wait before another position change.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
+	/// Stop loss percentage.
+	/// </summary>
+	public decimal StopLoss
+	{
+		get => _stopLoss.Value;
+		set => _stopLoss.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type used for calculations.
 	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
-	#endregion
 
-	private class Win
-	{
-		public Queue<decimal> Px = [];
-	}
-
-	private readonly Dictionary<Security, Win> _map = [];
-	private readonly Dictionary<Security, decimal> _latestPrices = [];
-	private DateTime _lastDay = DateTime.MinValue;
-	private readonly Dictionary<Security, decimal> _w = [];
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="ReturnAsymmetryCommodityStrategy"/> class.
-	/// </summary>
 	public ReturnAsymmetryCommodityStrategy()
 	{
-		_futs = Param<IEnumerable<Security>>(nameof(Futures), [])
-			.SetDisplay("Futures", "Commodity futures to trade", "General");
+		_security2Id = Param(nameof(Security2Id), Paths.HistoryDefaultSecurity2)
+			.SetDisplay("Benchmark Security Id", "Identifier of the benchmark commodity", "General");
 
-		_window = Param(nameof(WindowDays), 120)
-			.SetDisplay("Window", "Lookback window in days", "General");
+		_windowLength = Param(nameof(WindowLength), 20)
+			.SetRange(5, 120)
+			.SetDisplay("Window Length", "Lookback period used to compute return asymmetry", "Indicators");
 
-		_top = Param(nameof(TopN), 5)
-			.SetDisplay("Top N", "Number of instruments to long/short", "General");
+		_normalizationPeriod = Param(nameof(NormalizationPeriod), 16)
+			.SetRange(5, 120)
+			.SetDisplay("Normalization Period", "Lookback period used to normalize the asymmetry spread", "Indicators");
 
-		_minUsd = Param(nameof(MinTradeUsd), 200m)
-			.SetDisplay("Min Trade USD", "Minimum dollar value per trade", "General");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
+		_entryThreshold = Param(nameof(EntryThreshold), 1.1m)
+			.SetRange(0.2m, 5m)
+			.SetDisplay("Entry Threshold", "Z-score threshold required to open a position", "Signals");
+
+		_exitThreshold = Param(nameof(ExitThreshold), 0.25m)
+			.SetRange(0m, 2m)
+			.SetDisplay("Exit Threshold", "Z-score threshold required to close a position", "Signals");
+
+		_cooldownBars = Param(nameof(CooldownBars), 8)
+			.SetRange(0, 120)
+			.SetDisplay("Cooldown Bars", "Closed candles to wait before another position change", "Risk");
+
+		_stopLoss = Param(nameof(StopLoss), 3m)
+			.SetRange(0.5m, 10m)
+			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+			.SetDisplay("Candle Type", "Time frame for candles", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return Futures.Select(s => (s, CandleType));
+		if (Security != null)
+			yield return (Security, CandleType);
+
+		if (!Security2Id.IsEmpty())
+			yield return (new Security { Id = Security2Id }, CandleType);
 	}
 
 	/// <inheritdoc />
-	
 	protected override void OnReseted()
 	{
 		base.OnReseted();
 
-		_map.Clear();
-		_latestPrices.Clear();
-		_lastDay = default;
-		_w.Clear();
+		_benchmark = null!;
+		_spreadAverage = null!;
+		_spreadDeviation = null!;
+		_primaryReturns.Clear();
+		_benchmarkReturns.Clear();
+		_previousPrimaryClose = null;
+		_previousBenchmarkClose = null;
+		_previousZScore = null;
+		_latestPrimaryAsymmetry = 0m;
+		_latestBenchmarkAsymmetry = 0m;
+		_primaryUpdated = false;
+		_benchmarkUpdated = false;
+		_cooldownRemaining = 0;
 	}
 
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		if (Futures == null || !Futures.Any())
-			throw new InvalidOperationException("Futures cannot be empty.");
+		if (Security == null)
+			throw new InvalidOperationException("Primary security is not specified.");
 
-		foreach (var (sec, dt) in GetWorkingSecurities())
+		if (Security2Id.IsEmpty())
+			throw new InvalidOperationException("Benchmark security identifier is not specified.");
+
+		_benchmark = this.LookupById(Security2Id) ?? new Security { Id = Security2Id };
+		_spreadAverage = new SimpleMovingAverage { Length = NormalizationPeriod };
+		_spreadDeviation = new StandardDeviation { Length = NormalizationPeriod };
+
+		var primarySubscription = SubscribeCandles(CandleType, security: Security);
+		var benchmarkSubscription = SubscribeCandles(CandleType, security: _benchmark);
+
+		primarySubscription
+			.Bind(ProcessPrimaryCandle)
+			.Start();
+
+		benchmarkSubscription
+			.Bind(ProcessBenchmarkCandle)
+			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
 		{
-			_map[sec] = new Win();
-			SubscribeCandles(dt, true, sec)
-				.Bind(c => ProcessCandle(c, sec))
-				.Start();
+			DrawCandles(area, primarySubscription);
+			DrawCandles(area, benchmarkSubscription);
+			DrawOwnTrades(area);
 		}
+
+		StartProtection(
+			new Unit(2, UnitTypes.Percent),
+			new Unit(StopLoss, UnitTypes.Percent));
 	}
 
-	private void ProcessCandle(ICandleMessage candle, Security security)
+	private void ProcessPrimaryCandle(ICandleMessage candle)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Store the latest closing price for this security
-		_latestPrices[security] = candle.ClosePrice;
-
-		OnDaily(security, candle);
-	}
-
-	private void OnDaily(Security s, ICandleMessage c)
-	{
-		var q = _map[s].Px;
-		if (q.Count == WindowDays)
-			q.Dequeue();
-		q.Enqueue(c.ClosePrice);
-
-		var d = c.OpenTime.Date;
-		if (d == _lastDay)
-			return;
-		_lastDay = d;
-
-		if (d.Day != 1)
+		var ret = UpdateReturns(_primaryReturns, candle.ClosePrice, ref _previousPrimaryClose);
+		if (ret is null)
 			return;
 
-		Rebalance();
+		_latestPrimaryAsymmetry = CalculateAsymmetry(_primaryReturns);
+		_primaryUpdated = true;
+		TryProcessSpread(candle.OpenTime);
 	}
 
-	private void Rebalance()
+	private void ProcessBenchmarkCandle(ICandleMessage candle)
 	{
-		var asym = new Dictionary<Security, decimal>();
-		foreach (var kv in _map)
+		if (candle.State != CandleStates.Finished)
+			return;
+
+		var ret = UpdateReturns(_benchmarkReturns, candle.ClosePrice, ref _previousBenchmarkClose);
+		if (ret is null)
+			return;
+
+		_latestBenchmarkAsymmetry = CalculateAsymmetry(_benchmarkReturns);
+		_benchmarkUpdated = true;
+		TryProcessSpread(candle.OpenTime);
+	}
+
+	private decimal? UpdateReturns(Queue<decimal> queue, decimal closePrice, ref decimal? previousClose)
+	{
+		if (previousClose is not decimal previous || previous <= 0m)
 		{
-			var q = kv.Value.Px;
-			if (q.Count < WindowDays)
-				continue;
-			var arr = q.ToArray();
-			decimal pos = 0, neg = 0;
-			for (int i = 1; i < arr.Length; i++)
+			previousClose = closePrice;
+			return null;
+		}
+
+		var ret = (closePrice - previous) / previous;
+		previousClose = closePrice;
+
+		if (queue.Count == WindowLength)
+			queue.Dequeue();
+
+		queue.Enqueue(ret);
+		return ret;
+	}
+
+	private static decimal CalculateAsymmetry(IEnumerable<decimal> returns)
+	{
+		decimal positive = 0m;
+		decimal negative = 0m;
+
+		foreach (var ret in returns)
+		{
+			if (ret > 0m)
+				positive += ret;
+			else
+				negative += Math.Abs(ret);
+		}
+
+		return positive / Math.Max(negative, 0.0001m);
+	}
+
+	private void TryProcessSpread(DateTime time)
+	{
+		if (!_primaryUpdated || !_benchmarkUpdated || _primaryReturns.Count < WindowLength || _benchmarkReturns.Count < WindowLength)
+			return;
+
+		_primaryUpdated = false;
+		_benchmarkUpdated = false;
+
+		var spread = _latestPrimaryAsymmetry - _latestBenchmarkAsymmetry;
+		var mean = _spreadAverage.Process(spread, time, true).ToDecimal();
+		var deviation = _spreadDeviation.Process(spread, time, true).ToDecimal();
+
+		if (!_spreadAverage.IsFormed || !_spreadDeviation.IsFormed || deviation <= 0m)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
+
+		var zScore = (spread - mean) / deviation;
+		var bullishEntry = _previousZScore is decimal previousBullish && previousBullish < EntryThreshold && zScore >= EntryThreshold;
+		var bearishEntry = _previousZScore is decimal previousBearish && previousBearish > -EntryThreshold && zScore <= -EntryThreshold;
+
+		if (_cooldownRemaining == 0 && Position == 0)
+		{
+			if (bullishEntry)
 			{
-				var r = (arr[i] - arr[i - 1]) / arr[i - 1];
-				if (r > 0)
-					pos += r;
-				else
-					neg += r;
+				BuyMarket();
+				_cooldownRemaining = CooldownBars;
 			}
-			if (neg == 0)
-				continue;
-			asym[kv.Key] = pos / Math.Abs(neg);
+			else if (bearishEntry)
+			{
+				SellMarket();
+				_cooldownRemaining = CooldownBars;
+			}
+		}
+		else if (Position > 0 && zScore <= ExitThreshold)
+		{
+			SellMarket(Position);
+			_cooldownRemaining = CooldownBars;
+		}
+		else if (Position < 0 && zScore >= -ExitThreshold)
+		{
+			BuyMarket(Math.Abs(Position));
+			_cooldownRemaining = CooldownBars;
 		}
 
-		if (asym.Count < TopN * 2)
-			return;
-
-		var longs = asym.OrderByDescending(kv => kv.Value).Take(TopN).Select(kv => kv.Key).ToList();
-		var shorts = asym.OrderBy(kv => kv.Value).Take(TopN).Select(kv => kv.Key).ToList();
-
-		_w.Clear();
-		decimal wl = 1m / longs.Count;
-		decimal ws = -1m / shorts.Count;
-
-		foreach (var s in longs)
-			_w[s] = wl;
-
-		foreach (var s in shorts)
-			_w[s] = ws;
-
-		foreach (var position in Positions.Where(pos => !_w.ContainsKey(pos.Security)))
-			Move(position.Security, 0);
-
-		var portfolioValue = Portfolio.CurrentValue ?? 0m;
-
-		foreach (var kv in _w)
-		{
-			var price = GetLatestPrice(kv.Key);
-			if (price > 0)
-				Move(kv.Key, kv.Value * portfolioValue / price);
-		}
+		_previousZScore = zScore;
 	}
-
-	private decimal GetLatestPrice(Security security)
-	{
-		return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
-	}
-
-	private void Move(Security s, decimal tgtQty)
-	{
-		var diff = tgtQty - PositionBy(s);
-		var price = GetLatestPrice(s);
-		if (price <= 0 || Math.Abs(diff) * price < MinTradeUsd)
-			return;
-
-		RegisterOrder(new Order
-		{
-			Security = s,
-			Portfolio = Portfolio,
-			Side = diff > 0 ? Sides.Buy : Sides.Sell,
-			Volume = Math.Abs(diff),
-			Type = OrderTypes.Market,
-			Comment = "AsymCom",
-		});
-	}
-
-	private decimal PositionBy(Security s) => GetPositionValue(s, Portfolio) ?? 0;
 }
