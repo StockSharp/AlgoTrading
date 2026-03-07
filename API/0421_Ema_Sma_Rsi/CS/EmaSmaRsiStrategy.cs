@@ -1,17 +1,20 @@
 namespace StockSharp.Samples.Strategies;
 
 using System;
+using System.Collections.Generic;
 
 using Ecng.Common;
 
-using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 /// <summary>
-/// EMA/SMA + RSI Strategy
+/// EMA/SMA + RSI Strategy.
+/// Uses three EMAs for trend and crossover, with RSI for exit signals.
+/// Buy on fast EMA crossing above medium EMA when both above slow EMA.
+/// Sell on fast EMA crossing below medium EMA when both below slow EMA.
 /// </summary>
 public class EmaSmaRsiStrategy : Strategy
 {
@@ -20,50 +23,40 @@ public class EmaSmaRsiStrategy : Strategy
 	private readonly StrategyParam<int> _emaBLength;
 	private readonly StrategyParam<int> _emaCLength;
 	private readonly StrategyParam<int> _rsiLength;
-	private readonly StrategyParam<bool> _showLong;
-	private readonly StrategyParam<bool> _showShort;
-	private readonly StrategyParam<bool> _closeAfterXBars;
-	private readonly StrategyParam<int> _xBars;
+	private readonly StrategyParam<int> _cooldownBars;
 
 	private ExponentialMovingAverage _emaA;
 	private ExponentialMovingAverage _emaB;
 	private ExponentialMovingAverage _emaC;
 	private RelativeStrengthIndex _rsi;
 
-	private int _barsInPosition;
-	private decimal? _entryPrice;
+	private decimal _prevEmaA;
+	private decimal _prevEmaB;
+	private int _cooldownRemaining;
 
 	public EmaSmaRsiStrategy()
 	{
-		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle type", "Candle type for strategy calculation.", "General");
 
-		// Moving Averages
 		_emaALength = Param(nameof(EmaALength), 10)
+			.SetGreaterThanZero()
 			.SetDisplay("EMA A Length", "Fast EMA period", "Moving Averages");
 
 		_emaBLength = Param(nameof(EmaBLength), 20)
+			.SetGreaterThanZero()
 			.SetDisplay("EMA B Length", "Medium EMA period", "Moving Averages");
 
-		_emaCLength = Param(nameof(EmaCLength), 100)
+		_emaCLength = Param(nameof(EmaCLength), 50)
+			.SetGreaterThanZero()
 			.SetDisplay("EMA C Length", "Slow EMA period", "Moving Averages");
 
-		// RSI
 		_rsiLength = Param(nameof(RsiLength), 14)
+			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "RSI period", "RSI");
 
-		// Strategy
-		_showLong = Param(nameof(ShowLong), true)
-			.SetDisplay("Long entries", "Enable long positions", "Strategy");
-
-		_showShort = Param(nameof(ShowShort), false)
-			.SetDisplay("Short entries", "Enable short positions", "Strategy");
-
-		_closeAfterXBars = Param(nameof(CloseAfterXBars), true)
-			.SetDisplay("Close after X bars", "Close position after X bars if in profit", "Strategy");
-
-		_xBars = Param(nameof(XBars), 24)
-			.SetDisplay("# bars", "Number of bars", "Strategy");
+		_cooldownBars = Param(nameof(CooldownBars), 10)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "Risk");
 	}
 
 	public DataType CandleType
@@ -96,28 +89,28 @@ public class EmaSmaRsiStrategy : Strategy
 		set => _rsiLength.Value = value;
 	}
 
-	public bool ShowLong
+	public int CooldownBars
 	{
-		get => _showLong.Value;
-		set => _showLong.Value = value;
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
-	public bool ShowShort
-	{
-		get => _showShort.Value;
-		set => _showShort.Value = value;
-	}
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
 
-	public bool CloseAfterXBars
+	/// <inheritdoc />
+	protected override void OnReseted()
 	{
-		get => _closeAfterXBars.Value;
-		set => _closeAfterXBars.Value = value;
-	}
+		base.OnReseted();
 
-	public int XBars
-	{
-		get => _xBars.Value;
-		set => _xBars.Value = value;
+		_emaA = null;
+		_emaB = null;
+		_emaC = null;
+		_rsi = null;
+		_prevEmaA = 0;
+		_prevEmaB = 0;
+		_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
@@ -125,101 +118,88 @@ public class EmaSmaRsiStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Initialize indicators
-		_emaA = new EMA { Length = EmaALength };
-		_emaB = new EMA { Length = EmaBLength };
-		_emaC = new EMA { Length = EmaCLength };
+		_emaA = new ExponentialMovingAverage { Length = EmaALength };
+		_emaB = new ExponentialMovingAverage { Length = EmaBLength };
+		_emaC = new ExponentialMovingAverage { Length = EmaCLength };
 		_rsi = new RelativeStrengthIndex { Length = RsiLength };
 
-		// Subscribe to candles using high-level API
 		var subscription = SubscribeCandles(CandleType);
 		subscription
 			.Bind(_emaA, _emaB, _emaC, _rsi, OnProcess)
 			.Start();
 
-		// Setup chart
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _emaA, System.Drawing.Color.Purple);
-			DrawIndicator(area, _emaB, System.Drawing.Color.Orange);
-			DrawIndicator(area, _emaC, System.Drawing.Color.Green);
+			DrawIndicator(area, _emaA);
+			DrawIndicator(area, _emaB);
+			DrawIndicator(area, _emaC);
 			DrawOwnTrades(area);
 		}
 	}
 
 	private void OnProcess(ICandleMessage candle, decimal emaA, decimal emaB, decimal emaC, decimal rsi)
 	{
-		// Process only finished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Wait for indicators to form
 		if (!_emaA.IsFormed || !_emaB.IsFormed || !_emaC.IsFormed || !_rsi.IsFormed)
+		{
+			_prevEmaA = emaA;
+			_prevEmaB = emaB;
 			return;
-
-		// Get previous values for crossover detection
-		var prevEmaA = _emaA.GetValue(1);
-		var prevEmaB = _emaB.GetValue(1);
-
-		// Entry conditions
-		var entryLong = emaA > emaB && prevEmaA <= prevEmaB && // Crossover
-						emaA > emaC && 
-						candle.ClosePrice > candle.OpenPrice;
-
-		var entryShort = emaA < emaB && prevEmaA >= prevEmaB && // Crossunder
-						 emaA < emaC && 
-						 candle.ClosePrice < candle.OpenPrice;
-
-		// Exit conditions
-		var exitLong = rsi > 70;
-		var exitShort = rsi < 30;
-
-		// Track bars in position
-		if (Position != 0)
-		{
-			_barsInPosition++;
-		}
-		else
-		{
-			_barsInPosition = 0;
-			_entryPrice = null;
 		}
 
-		// Close after X bars if in profit
-		if (CloseAfterXBars && _barsInPosition >= XBars && _entryPrice.HasValue)
+		if (!IsFormedAndOnlineAndAllowTrading())
 		{
-			if (Position > 0 && candle.ClosePrice > _entryPrice.Value)
-			{
-				exitLong = true;
-			}
-			else if (Position < 0 && candle.ClosePrice < _entryPrice.Value)
-			{
-				exitShort = true;
-			}
+			_prevEmaA = emaA;
+			_prevEmaB = emaB;
+			return;
 		}
 
-		// Execute trades
-		if (ShowLong && exitLong && Position > 0)
+		if (_cooldownRemaining > 0)
 		{
-			ClosePosition();
+			_cooldownRemaining--;
+			_prevEmaA = emaA;
+			_prevEmaB = emaB;
+			return;
 		}
-		else if (ShowShort && exitShort && Position < 0)
+
+		// Crossover detection
+		var bullishCross = emaA > emaB && _prevEmaA <= _prevEmaB && _prevEmaA > 0;
+		var bearishCross = emaA < emaB && _prevEmaA >= _prevEmaB && _prevEmaA > 0;
+
+		// Exit long on RSI overbought
+		if (Position > 0 && rsi > 70)
 		{
-			ClosePosition();
+			SellMarket(Math.Abs(Position));
+			_cooldownRemaining = CooldownBars;
 		}
-		else if (ShowLong && entryLong && Position <= 0)
+		// Exit short on RSI oversold
+		else if (Position < 0 && rsi < 30)
 		{
-			BuyMarket(Volume + Math.Abs(Position));
-			_entryPrice = candle.ClosePrice;
-			_barsInPosition = 0;
+			BuyMarket(Math.Abs(Position));
+			_cooldownRemaining = CooldownBars;
 		}
-		else if (ShowShort && entryShort && Position >= 0)
+		// Buy: fast crosses above medium, both above slow
+		else if (bullishCross && emaA > emaC && Position <= 0)
 		{
-			SellMarket(Volume + Math.Abs(Position));
-			_entryPrice = candle.ClosePrice;
-			_barsInPosition = 0;
+			if (Position < 0)
+				BuyMarket(Math.Abs(Position));
+			BuyMarket(Volume);
+			_cooldownRemaining = CooldownBars;
 		}
+		// Sell: fast crosses below medium, both below slow
+		else if (bearishCross && emaA < emaC && Position >= 0)
+		{
+			if (Position > 0)
+				SellMarket(Math.Abs(Position));
+			SellMarket(Volume);
+			_cooldownRemaining = CooldownBars;
+		}
+
+		_prevEmaA = emaA;
+		_prevEmaB = emaB;
 	}
 }

@@ -1,62 +1,45 @@
 namespace StockSharp.Samples.Strategies;
 
 using System;
+using System.Collections.Generic;
 
 using Ecng.Common;
 
-using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 /// <summary>
-/// Full Candle Strategy
+/// Full Candle Strategy.
+/// Trades on "full body" candles (small shadows) with EMA trend filter.
+/// Buys on bullish full candle above EMA. Sells on bearish full candle below EMA.
 /// </summary>
 public class FullCandleStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleTypeParam;
 	private readonly StrategyParam<int> _emaLength;
-	private readonly StrategyParam<bool> _showLong;
-	private readonly StrategyParam<bool> _showShort;
 	private readonly StrategyParam<decimal> _shadowPercent;
-	private readonly StrategyParam<bool> _useTP;
-	private readonly StrategyParam<decimal> _tpPercent;
-	private readonly StrategyParam<bool> _useSL;
-	private readonly StrategyParam<decimal> _slPercent;
+	private readonly StrategyParam<int> _cooldownBars;
 
 	private ExponentialMovingAverage _ema;
 	private decimal? _entryPrice;
-	private DateTimeOffset? _entryTime;
+	private int _cooldownRemaining;
 
 	public FullCandleStrategy()
 	{
-		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle type", "Candle type for strategy calculation.", "General");
 
-		_emaLength = Param(nameof(EmaLength), 10)
+		_emaLength = Param(nameof(EmaLength), 20)
+			.SetGreaterThanZero()
 			.SetDisplay("EMA Length", "EMA period", "Moving Averages");
 
-		_showLong = Param(nameof(ShowLong), true)
-			.SetDisplay("Long entries", "Enable long positions", "Strategy");
+		_shadowPercent = Param(nameof(ShadowPercent), 10m)
+			.SetDisplay("Shadow Percent", "Maximum shadow percentage of candle range", "Strategy");
 
-		_showShort = Param(nameof(ShowShort), true)
-			.SetDisplay("Short entries", "Enable short positions", "Strategy");
-
-		_shadowPercent = Param(nameof(ShadowPercent), 5m)
-			.SetDisplay("Shadow Percent", "Maximum shadow percentage", "Strategy");
-
-		_useTP = Param(nameof(UseTP), false)
-			.SetDisplay("Enable TP", "Enable Take Profit", "Take Profit");
-
-		_tpPercent = Param(nameof(TPPercent), 1.2m)
-			.SetDisplay("TP Percent", "Take Profit percentage", "Take Profit");
-
-		_useSL = Param(nameof(UseSL), false)
-			.SetDisplay("Enable SL", "Enable Stop Loss", "Stop Loss");
-
-		_slPercent = Param(nameof(SLPercent), 1.8m)
-			.SetDisplay("SL Percent", "Stop Loss percentage", "Stop Loss");
+		_cooldownBars = Param(nameof(CooldownBars), 15)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "Risk");
 	}
 
 	public DataType CandleType
@@ -71,55 +54,30 @@ public class FullCandleStrategy : Strategy
 		set => _emaLength.Value = value;
 	}
 
-	public bool ShowLong
-	{
-		get => _showLong.Value;
-		set => _showLong.Value = value;
-	}
-
-	public bool ShowShort
-	{
-		get => _showShort.Value;
-		set => _showShort.Value = value;
-	}
-
 	public decimal ShadowPercent
 	{
 		get => _shadowPercent.Value;
 		set => _shadowPercent.Value = value;
 	}
 
-	public bool UseTP
+	public int CooldownBars
 	{
-		get => _useTP.Value;
-		set => _useTP.Value = value;
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
-	public decimal TPPercent
-	{
-		get => _tpPercent.Value;
-		set => _tpPercent.Value = value;
-	}
-
-	public bool UseSL
-	{
-		get => _useSL.Value;
-		set => _useSL.Value = value;
-	}
-
-	public decimal SLPercent
-	{
-		get => _slPercent.Value;
-		set => _slPercent.Value = value;
-	}
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
 
-		_entryPrice = default;
-		_entryTime = default;
+		_ema = null;
+		_entryPrice = null;
+		_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
@@ -127,125 +85,101 @@ public class FullCandleStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Initialize EMA indicator
-		_ema = new EMA
-		{
-			Length = EmaLength
-		};
+		_ema = new ExponentialMovingAverage { Length = EmaLength };
 
-		// Subscribe to candles using high-level API
 		var subscription = SubscribeCandles(CandleType);
 		subscription
 			.Bind(_ema, OnProcess)
 			.Start();
 
-		// Setup chart
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _ema, System.Drawing.Color.Purple);
+			DrawIndicator(area, _ema);
 			DrawOwnTrades(area);
-		}
-
-		// Setup protection if enabled
-		if (UseTP && UseSL)
-		{
-			StartProtection(
-				new Unit(TPPercent, UnitTypes.Percent),
-				new Unit(SLPercent, UnitTypes.Percent)
-			);
-		}
-		else if (UseTP)
-		{
-			StartProtection(
-				new Unit(TPPercent, UnitTypes.Percent),
-				null
-			);
-		}
-		else if (UseSL)
-		{
-			StartProtection(
-				null,
-				new Unit(SLPercent, UnitTypes.Percent)
-			);
 		}
 	}
 
 	private void OnProcess(ICandleMessage candle, decimal emaValue)
 	{
-		// Process only finished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Wait for indicator to form
 		if (!_ema.IsFormed)
 			return;
 
-		// Calculate candle metrics
-		var candleSize = candle.HighPrice - candle.LowPrice;
-		if (candleSize == 0)
+		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// Calculate shadow size
-		decimal shadowSize;
-		if (candle.ClosePrice > candle.OpenPrice)
+		if (_cooldownRemaining > 0)
 		{
-			// Green candle - upper shadow
-			shadowSize = candle.HighPrice - candle.ClosePrice;
+			_cooldownRemaining--;
+			return;
+		}
+
+		var close = candle.ClosePrice;
+		var open = candle.OpenPrice;
+		var high = candle.HighPrice;
+		var low = candle.LowPrice;
+
+		var candleSize = high - low;
+		if (candleSize <= 0)
+			return;
+
+		var bodySize = Math.Abs(close - open);
+
+		// Calculate shadow sizes
+		decimal upperShadow, lowerShadow;
+		if (close > open)
+		{
+			upperShadow = high - close;
+			lowerShadow = open - low;
 		}
 		else
 		{
-			// Red candle - lower shadow
-			shadowSize = candle.ClosePrice - candle.LowPrice;
+			upperShadow = high - open;
+			lowerShadow = close - low;
 		}
 
-		var shadowPercentage = (shadowSize * 100) / candleSize;
+		var totalShadowPercent = ((upperShadow + lowerShadow) * 100) / candleSize;
 
-		// Entry conditions
-		var entryLong = candle.ClosePrice > candle.OpenPrice && 
-						candle.ClosePrice > emaValue && 
-						shadowPercentage <= ShadowPercent;
-
-		var entryShort = candle.ClosePrice < candle.OpenPrice && 
-						 candle.ClosePrice < emaValue && 
-						 shadowPercentage <= ShadowPercent;
+		// Full candle = small shadows (body fills most of the range)
+		var isFullCandle = totalShadowPercent <= ShadowPercent && bodySize > 0;
 
 		// Exit conditions
-		var exitLong = false;
-		var exitShort = false;
-
-		if (Position > 0 && _entryPrice.HasValue)
+		if (Position > 0 && _entryPrice.HasValue && close > _entryPrice.Value * 1.003m)
 		{
-			// Exit long when price is above entry + 0.2% and candle is green
-			exitLong = candle.ClosePrice > (_entryPrice.Value * 1.002m) && 
-					   candle.ClosePrice > candle.OpenPrice;
-		}
-		else if (Position < 0 && _entryPrice.HasValue)
-		{
-			// Exit short when price is below entry - 0.2% and candle is red
-			exitShort = candle.ClosePrice < (_entryPrice.Value * 0.998m) && 
-						candle.ClosePrice < candle.OpenPrice;
-		}
-
-		// Execute trades
-		if (exitLong || exitShort)
-		{
-			ClosePosition();
+			SellMarket(Math.Abs(Position));
 			_entryPrice = null;
-			_entryTime = null;
+			_cooldownRemaining = CooldownBars;
+			return;
 		}
-		else if (ShowLong && entryLong && Position <= 0)
+		else if (Position < 0 && _entryPrice.HasValue && close < _entryPrice.Value * 0.997m)
 		{
-			BuyMarket(Volume + Math.Abs(Position));
-			_entryPrice = candle.ClosePrice;
-			_entryTime = candle.OpenTime;
+			BuyMarket(Math.Abs(Position));
+			_entryPrice = null;
+			_cooldownRemaining = CooldownBars;
+			return;
 		}
-		else if (ShowShort && entryShort && Position >= 0)
+
+		// Entry: full bullish candle above EMA
+		if (isFullCandle && close > open && close > emaValue && Position <= 0)
 		{
-			SellMarket(Volume + Math.Abs(Position));
-			_entryPrice = candle.ClosePrice;
-			_entryTime = candle.OpenTime;
+			if (Position < 0)
+				BuyMarket(Math.Abs(Position));
+			BuyMarket(Volume);
+			_entryPrice = close;
+			_cooldownRemaining = CooldownBars;
+		}
+		// Entry: full bearish candle below EMA
+		else if (isFullCandle && close < open && close < emaValue && Position >= 0)
+		{
+			if (Position > 0)
+				SellMarket(Math.Abs(Position));
+			SellMarket(Volume);
+			_entryPrice = close;
+			_cooldownRemaining = CooldownBars;
 		}
 	}
 }
