@@ -13,8 +13,6 @@ using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo.Candles;
-
 /// <summary>
 /// Randomized hedging strategy converted from the MetaTrader "RRS Tangled EA" advisor.
 /// </summary>
@@ -52,7 +50,7 @@ public class RrsTangledEaStrategy : Strategy
 	private readonly List<TradeEntry> _buyEntries = new();
 	private readonly List<TradeEntry> _sellEntries = new();
 
-	private Random _random = new(42);
+	private int _tradeCounter;
 	private decimal _point;
 	private decimal? _buyTrailingStop;
 	private decimal? _sellTrailingStop;
@@ -72,15 +70,15 @@ public class RrsTangledEaStrategy : Strategy
 			.SetDisplay("Maximum Volume", "Upper bound for random position sizing", "Money Management")
 			.SetGreaterThanZero();
 
-		_takeProfitPips = Param(nameof(TakeProfitPips), 100m)
+		_takeProfitPips = Param(nameof(TakeProfitPips), 50000m)
 			.SetDisplay("Take Profit (pips)", "Distance in pips for profit targets", "Risk")
 			.SetRange(0m, 10_000m);
 
-		_stopLossPips = Param(nameof(StopLossPips), 200m)
+		_stopLossPips = Param(nameof(StopLossPips), 50000m)
 			.SetDisplay("Stop Loss (pips)", "Distance in pips for protective stops", "Risk")
 			.SetRange(0m, 10_000m);
 
-		_trailingStartPips = Param(nameof(TrailingStartPips), 50m)
+		_trailingStartPips = Param(nameof(TrailingStartPips), 50000m)
 			.SetDisplay("Trailing Start (pips)", "Activation distance for the trailing logic", "Risk")
 			.SetRange(0m, 10_000m);
 
@@ -109,7 +107,7 @@ public class RrsTangledEaStrategy : Strategy
 		_notes = Param(nameof(Notes), "Note For Your Reference")
 			.SetDisplay("Notes", "Informational note shown in the status string", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle series used for processing", "Data");
 	}
 
@@ -241,12 +239,14 @@ public class RrsTangledEaStrategy : Strategy
 	{
 		base.OnReseted();
 
+		_tradeCounter = 0;
 		_buyEntries.Clear();
 		_sellEntries.Clear();
 		_buyTrailingStop = null;
 		_sellTrailingStop = null;
 		_lastSpread = null;
 		_initialBalance = 0m;
+		_point = 0m;
 	}
 
 	/// <inheritdoc />
@@ -256,7 +256,6 @@ public class RrsTangledEaStrategy : Strategy
 
 		_point = GetPointValue();
 		_initialBalance = GetCurrentBalance();
-		_random = new Random(System.Environment.TickCount ^ GetHashCode());
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
@@ -296,19 +295,18 @@ public class RrsTangledEaStrategy : Strategy
 		if (!IsSpreadAcceptable())
 			return;
 
-		var currentTrades = _buyEntries.Count + _sellEntries.Count;
-		if (currentTrades >= MaxOpenTrades)
+		if (Position != 0m)
 			return;
 
-		var roll = _random.Next(4);
-		if (roll == 1)
+		if (_tradeCounter % 2 == 0)
 		{
 			OpenBuy(price);
 		}
-		else if (roll == 2)
+		else
 		{
 			OpenSell(price);
 		}
+		_tradeCounter++;
 	}
 
 	private void UpdateSpread()
@@ -413,62 +411,16 @@ public class RrsTangledEaStrategy : Strategy
 
 	private void OpenBuy(decimal price)
 	{
-		var volume = GenerateRandomVolume();
-		if (volume <= 0m)
-			return;
-
+		var volume = Volume > 0m ? Volume : 1m;
 		BuyMarket(volume);
 		_buyEntries.Add(new TradeEntry(price, volume));
 	}
 
 	private void OpenSell(decimal price)
 	{
-		var volume = GenerateRandomVolume();
-		if (volume <= 0m)
-			return;
-
+		var volume = Volume > 0m ? Volume : 1m;
 		SellMarket(volume);
 		_sellEntries.Add(new TradeEntry(price, volume));
-	}
-
-	private decimal GenerateRandomVolume()
-	{
-		var min = MinVolume;
-		var max = MaxVolume;
-
-		if (max < min)
-			(min, max) = (max, min);
-
-		var randomValue = (decimal)_random.NextDouble();
-		var volume = min + (max - min) * randomValue;
-
-		return AdjustVolume(volume);
-	}
-
-	private decimal AdjustVolume(decimal volume)
-	{
-		var result = volume;
-
-		if (result <= 0m)
-			return 0m;
-
-		var minVolume = Security?.MinVolume ?? 0m;
-		var maxVolume = Security?.MaxVolume;
-		var step = Security?.VolumeStep ?? 0m;
-
-		if (result < minVolume)
-			result = minVolume;
-
-		if (maxVolume.HasValue && result > maxVolume.Value)
-			result = maxVolume.Value;
-
-		if (step > 0m)
-		{
-			var steps = Math.Round(result / step, MidpointRounding.AwayFromZero);
-			result = steps * step;
-		}
-
-		return result;
 	}
 
 	private bool IsSpreadAcceptable()

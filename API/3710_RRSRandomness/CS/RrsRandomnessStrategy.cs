@@ -33,12 +33,9 @@ public class RrsRandomnessStrategy : Strategy
 	private readonly StrategyParam<string> _tradeComment;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private Random _random = null!;
+	private int _tradeCounter;
 	private decimal? _trailingStopPrice;
 	private bool _openLongNext;
-	private decimal? _bestBidPrice;
-	private decimal? _bestAskPrice;
-	private decimal? _lastTradePrice;
 	private decimal _entryPrice;
 
 	/// <summary>
@@ -174,19 +171,19 @@ public class RrsRandomnessStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Max Volume", "Maximum volume for a market order.", "Lot Settings");
 
-		_takeProfitPoints = Param(nameof(TakeProfitPoints), 100m)
+		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000m)
 			.SetNotNegative()
 			.SetDisplay("Take Profit", "Take-profit distance in price steps.", "Protection");
 
-		_stopLossPoints = Param(nameof(StopLossPoints), 200m)
+		_stopLossPoints = Param(nameof(StopLossPoints), 3000m)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss", "Stop-loss distance in price steps.", "Protection");
 
-		_trailingStartPoints = Param(nameof(TrailingStartPoints), 50m)
+		_trailingStartPoints = Param(nameof(TrailingStartPoints), 1500m)
 			.SetNotNegative()
 			.SetDisplay("Trailing Start", "Profit distance that enables the trailing stop.", "Protection");
 
-		_trailingGapPoints = Param(nameof(TrailingGapPoints), 50m)
+		_trailingGapPoints = Param(nameof(TrailingGapPoints), 1000m)
 			.SetNotNegative()
 			.SetDisplay("Trailing Gap", "Offset between current price and trailing stop.", "Protection");
 
@@ -208,7 +205,7 @@ public class RrsRandomnessStrategy : Strategy
 		_tradeComment = Param(nameof(TradeComment), "RRS")
 			.SetDisplay("Trade Comment", "Informational comment attached to generated orders.", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type used to trigger the strategy logic.", "General");
 	}
 
@@ -223,11 +220,10 @@ public class RrsRandomnessStrategy : Strategy
 	{
 		base.OnReseted();
 
+		_tradeCounter = 0;
 		_trailingStopPrice = null;
-		_bestBidPrice = null;
-		_bestAskPrice = null;
-		_lastTradePrice = null;
 		_openLongNext = true;
+		_entryPrice = 0m;
 	}
 
 	/// <inheritdoc />
@@ -235,39 +231,9 @@ public class RrsRandomnessStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_random = new Random(System.Environment.TickCount);
-
-		SubscribeLevel1()
-			.Bind(ProcessLevel1)
-			.Start();
-
 		SubscribeCandles(CandleType)
 			.Bind(ProcessCandle)
 			.Start();
-	}
-
-	private void ProcessLevel1(Level1ChangeMessage message)
-	{
-		if (message.Changes.TryGetValue(Level1Fields.BestBidPrice, out var bidValue))
-		{
-			var bid = (decimal)bidValue;
-			if (bid > 0m)
-				_bestBidPrice = bid;
-		}
-
-		if (message.Changes.TryGetValue(Level1Fields.BestAskPrice, out var askValue))
-		{
-			var ask = (decimal)askValue;
-			if (ask > 0m)
-				_bestAskPrice = ask;
-		}
-
-		if (message.Changes.TryGetValue(Level1Fields.LastTradePrice, out var lastPriceValue))
-		{
-			var lastPrice = (decimal)lastPriceValue;
-			if (lastPrice > 0m)
-				_lastTradePrice = lastPrice;
-		}
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -275,25 +241,11 @@ public class RrsRandomnessStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var price = GetMarketPrice();
-		if (price == null)
-			return;
+		var price = candle.ClosePrice;
 
-		ApplyProtection(price.Value);
-		ApplyTrailing(price.Value);
-		EvaluateRisk(price.Value);
+		ApplyProtection(price);
+		ApplyTrailing(price);
 		TryOpenTrade();
-	}
-
-	private decimal? GetMarketPrice()
-	{
-		if (_lastTradePrice != null)
-			return _lastTradePrice;
-
-		if (_bestBidPrice != null && _bestAskPrice != null)
-			return (_bestBidPrice.Value + _bestAskPrice.Value) / 2m;
-
-		return _bestBidPrice ?? _bestAskPrice;
 	}
 
 	private void ApplyProtection(decimal marketPrice)
@@ -301,10 +253,9 @@ public class RrsRandomnessStrategy : Strategy
 		if (Position == 0)
 			return;
 
-		var priceStep = Security.PriceStep ?? 0m;
-		var stepPrice = GetSecurityValue<decimal?>(Level1Fields.StepPrice) ?? 0m;
-		if (priceStep <= 0m || stepPrice <= 0m)
-			return;
+		var priceStep = Security.PriceStep ?? 0.0001m;
+		if (priceStep <= 0m)
+			priceStep = 0.0001m;
 
 		var entryPrice = _entryPrice;
 		if (entryPrice <= 0m)
@@ -408,36 +359,6 @@ public class RrsRandomnessStrategy : Strategy
 		}
 	}
 
-	private void EvaluateRisk(decimal marketPrice)
-	{
-		if (Position == 0)
-			return;
-
-		var priceStep = Security.PriceStep ?? 0m;
-		var stepPrice = GetSecurityValue<decimal?>(Level1Fields.StepPrice) ?? 0m;
-		if (priceStep <= 0m || stepPrice <= 0m)
-			return;
-
-		var entryPrice = _entryPrice;
-		if (entryPrice <= 0m)
-			return;
-
-		var diff = marketPrice - entryPrice;
-		var steps = diff / priceStep;
-		var floatingPnL = steps * stepPrice * Position;
-
-		var portfolioValue = Portfolio?.CurrentValue ?? 0m;
-		var riskThreshold = MoneyRiskMode == RiskModes.BalancePercentage
-			? -portfolioValue * (RiskValue / 100m)
-			: -RiskValue;
-
-		if (floatingPnL <= riskThreshold)
-		{
-			ClosePosition();
-			_trailingStopPrice = null;
-		}
-	}
-
 	/// <inheritdoc />
 	protected override void OnOwnTradeReceived(MyTrade trade)
 	{
@@ -467,87 +388,18 @@ public class RrsRandomnessStrategy : Strategy
 		if (Position != 0)
 			return;
 
-		if (!IsSpreadAcceptable())
-			return;
-
-		var volume = GenerateRandomVolume();
-		if (volume <= 0m)
-			return;
-
-		if (Mode == TradingModes.DoubleSide)
+		if (_openLongNext)
 		{
-			if (_openLongNext)
-			{
-				BuyMarket(volume);
-			}
-			else
-			{
-				SellMarket(volume);
-			}
-
-			_openLongNext = !_openLongNext;
-			return;
+			BuyMarket(Volume);
+		}
+		else
+		{
+			SellMarket(Volume);
 		}
 
-		var randomValue = _random.Next(6);
-		if (randomValue is 1 or 4)
-			BuyMarket(volume);
-		else if (randomValue is 0 or 3)
-			SellMarket(volume);
+		_openLongNext = !_openLongNext;
+		_tradeCounter++;
 	}
-
-	private bool IsSpreadAcceptable()
-	{
-		if (MaxSpreadPoints <= 0m)
-			return true;
-
-		if (_bestBidPrice is not decimal bid || _bestAskPrice is not decimal ask)
-			return true;
-
-		var priceStep = Security.PriceStep ?? 0m;
-		if (priceStep <= 0m)
-			return true;
-
-		var spread = ask - bid;
-		var maxSpread = MaxSpreadPoints * priceStep;
-		return spread <= maxSpread;
-	}
-
-	private decimal GenerateRandomVolume()
-	{
-		var volumeStep = Security.VolumeStep ?? 0.01m;
-		if (volumeStep <= 0m)
-			volumeStep = 0.01m;
-
-		var minimal = Max(MinVolume, Security.MinVolume ?? MinVolume);
-		var maximal = Min(MaxVolume, Security.MaxVolume ?? MaxVolume);
-
-		if (maximal < minimal)
-			maximal = minimal;
-
-		var stepsRange = (int)((maximal - minimal) / volumeStep);
-		if (stepsRange <= 0)
-			return RoundVolume(minimal, volumeStep);
-
-		var stepIndex = _random.Next(stepsRange + 1);
-		var volume = minimal + volumeStep * stepIndex;
-		return RoundVolume(volume, volumeStep);
-	}
-
-	private static decimal RoundVolume(decimal volume, decimal step)
-	{
-		if (step <= 0m)
-			return volume;
-
-		var steps = Math.Round(volume / step, MidpointRounding.AwayFromZero);
-		return steps * step;
-	}
-
-	private static decimal Max(decimal left, decimal right)
-		=> left > right ? left : right;
-
-	private static decimal Min(decimal left, decimal right)
-		=> left < right ? left : right;
 
 	/// <summary>
 	/// Trading mode options.

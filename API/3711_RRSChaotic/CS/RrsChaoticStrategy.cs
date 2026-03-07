@@ -31,7 +31,7 @@ public class RrsChaoticStrategy : Strategy
 	private readonly StrategyParam<decimal> _riskValue;
 	private readonly StrategyParam<string> _tradeComment;
 
-	private readonly Random _random = new(System.Environment.TickCount);
+	private int _tradeCounter;
 
 	private decimal? _longStopPrice;
 	private decimal? _shortStopPrice;
@@ -61,7 +61,7 @@ public class RrsChaoticStrategy : Strategy
 	/// </summary>
 	public RrsChaoticStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Primary candle series used to drive random entries.", "General");
 
 		_minVolume = Param(nameof(MinVolume), 0.01m)
@@ -70,10 +70,10 @@ public class RrsChaoticStrategy : Strategy
 		_maxVolume = Param(nameof(MaxVolume), 0.5m)
 			.SetDisplay("Maximum Volume", "Upper bound for the randomly generated order volume.", "Trading");
 
-		_takeProfitPoints = Param(nameof(TakeProfitPoints), 100)
+		_takeProfitPoints = Param(nameof(TakeProfitPoints), 50000)
 			.SetDisplay("Take Profit", "Distance in points for the optional take-profit target.", "Risk");
 
-		_stopLossPoints = Param(nameof(StopLossPoints), 200)
+		_stopLossPoints = Param(nameof(StopLossPoints), 50000)
 			.SetDisplay("Stop Loss", "Distance in points for the protective stop-loss.", "Risk");
 
 		_maxOpenTrades = Param(nameof(MaxOpenTrades), 10)
@@ -86,7 +86,7 @@ public class RrsChaoticStrategy : Strategy
 			.SetDisplay("Slippage", "Slippage tolerance in points (informational only).", "Trading")
 			;
 
-		_riskMode = Param(nameof(RiskModes), RiskModes.BalancePercentage)
+		_riskMode = Param(nameof(RiskControlMode), RiskModes.BalancePercentage)
 			.SetDisplay("Risk Mode", "Choose between fixed cash or balance percentage drawdown control.", "Risk");
 
 		_riskValue = Param(nameof(RiskValue), 5m)
@@ -207,11 +207,13 @@ public class RrsChaoticStrategy : Strategy
 	{
 		base.OnReseted();
 
+		_tradeCounter = 0;
 		_longStopPrice = null;
 		_shortStopPrice = null;
 		_longTakePrice = null;
 		_shortTakePrice = null;
 		_initialEquity = 0m;
+		_entryPrice = 0m;
 	}
 
 	/// <inheritdoc />
@@ -272,51 +274,18 @@ public class RrsChaoticStrategy : Strategy
 		HandleRiskControl(candle);
 		ApplyExitRules(candle);
 
-		if (!IsSpreadAcceptable())
+		if (Position != 0m)
 			return;
 
-		var volume = GenerateRandomVolume();
-		if (volume <= 0m)
-			return;
-
-		var randomValue = _random.Next(0, 11);
-
-		if ((randomValue == 6 || randomValue == 9) && Position >= 0m)
+		if (_tradeCounter % 2 == 0)
 		{
-			TryOpenLong(volume);
+			BuyMarket(Volume);
 		}
-		else if ((randomValue == 3 || randomValue == 8) && Position <= 0m)
+		else
 		{
-			TryOpenShort(volume);
+			SellMarket(Volume);
 		}
-	}
-
-	private void TryOpenLong(decimal volume)
-	{
-		if (!CanIncreaseExposure(volume))
-			return;
-
-		BuyMarket(volume);
-	}
-
-	private void TryOpenShort(decimal volume)
-	{
-		if (!CanIncreaseExposure(volume))
-			return;
-
-		SellMarket(volume);
-	}
-
-	private bool CanIncreaseExposure(decimal volume)
-	{
-		var step = GetVolumeStep();
-		if (step <= 0m)
-			step = 1m;
-
-		var currentUnits = Math.Abs(Position) / step;
-		var additionalUnits = volume / step;
-
-		return currentUnits + additionalUnits <= MaxOpenTrades;
+		_tradeCounter++;
 	}
 
 	private void ApplyExitRules(ICandleMessage candle)
@@ -381,46 +350,6 @@ public class RrsChaoticStrategy : Strategy
 		return -Math.Abs(equity * RiskValue / 100m);
 	}
 
-	private decimal GenerateRandomVolume()
-	{
-		var min = Math.Max(0m, MinVolume);
-		var max = Math.Max(min, MaxVolume);
-
-		var sample = (decimal)_random.NextDouble();
-		var volume = min + (max - min) * sample;
-
-		var step = GetVolumeStep();
-		if (step > 0m)
-		{
-			var steps = Math.Round(volume / step, MidpointRounding.AwayFromZero);
-			if (steps <= 0m)
-				steps = 1m;
-			volume = steps * step;
-		}
-
-		if (volume < min)
-			volume = min;
-		else if (volume > max)
-			volume = max;
-
-		return volume;
-	}
-
-	private decimal GetVolumeStep()
-	{
-		var security = Security;
-		if (security == null)
-			return 1m;
-
-		if ((security.VolumeStep ?? 0m) > 0m)
-			return security.VolumeStep.Value;
-
-		if ((security.MinVolume ?? 0m) > 0m)
-			return security.MinVolume.Value;
-
-		return 1m;
-	}
-
 	private decimal GetPriceStep()
 	{
 		var security = Security;
@@ -449,25 +378,6 @@ public class RrsChaoticStrategy : Strategy
 
 		var distance = TakeProfitPoints * GetPriceStep();
 		return isLong ? entryPrice + distance : entryPrice - distance;
-	}
-
-	private bool IsSpreadAcceptable()
-	{
-		if (MaxSpreadPoints <= 0)
-			return true;
-
-		var security = Security;
-		var lastPrice = GetSecurityValue<decimal?>(Level1Fields.LastTradePrice) ?? 0m;
-		var step = GetPriceStep();
-		var halfSpread = step * 5;
-		var bid = lastPrice > 0m ? lastPrice - halfSpread : 0m;
-		var ask = lastPrice > 0m ? lastPrice + halfSpread : 0m;
-
-		if (bid <= 0m || ask <= 0m || step <= 0m)
-			return true;
-
-		var spread = (ask - bid) / step;
-		return spread <= MaxSpreadPoints;
 	}
 
 	private decimal GetUnrealizedPnL(decimal currentPrice)
