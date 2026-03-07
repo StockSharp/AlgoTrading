@@ -46,7 +46,7 @@ public class ForecastOscillatorStrategy : Strategy
 		_bFactor = Param(nameof(BFactor), 0.7m)
 			.SetDisplay("T3 Factor", "T3 smoothing factor", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -57,11 +57,23 @@ public class ForecastOscillatorStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_b2 = default; _b3 = default; _c1 = default; _c2 = default; _c3 = default; _c4 = default;
+		_w1 = default; _w2 = default;
+		_e1 = default; _e2 = default; _e3 = default; _e4 = default; _e5 = default; _e6 = default;
+		_forecastPrev1 = default; _forecastPrev2 = default;
+		_sigPrev1 = default; _sigPrev2 = default; _sigPrev3 = default;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_linReg = new LinearRegression { Length = Length };
+		var linReg = new LinearRegression { Length = Length };
+		_linReg = linReg;
 
 		// Pre-calculate T3 constants
 		var b = BFactor;
@@ -80,17 +92,12 @@ public class ForecastOscillatorStrategy : Strategy
 		_forecastPrev1 = _forecastPrev2 = null;
 		_sigPrev1 = _sigPrev2 = _sigPrev3 = null;
 
+		Indicators.Add(linReg);
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
 			.Bind(ProcessCandle)
 			.Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawOwnTrades(area);
-		}
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
