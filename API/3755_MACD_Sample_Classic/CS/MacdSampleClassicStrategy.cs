@@ -154,12 +154,12 @@ public class MacdSampleClassicStrategy : Strategy
 		
 		.SetOptimize(20, 40, 2);
 
-		_macdOpenLevel = Param(nameof(MacdOpenLevel), 3m)
+		_macdOpenLevel = Param(nameof(MacdOpenLevel), 0m)
 		.SetDisplay("MACD Open", "Entry threshold in MACD points", "Signals")
 		
 		.SetOptimize(1m, 5m, 1m);
 
-		_macdCloseLevel = Param(nameof(MacdCloseLevel), 2m)
+		_macdCloseLevel = Param(nameof(MacdCloseLevel), 0m)
 		.SetDisplay("MACD Close", "Exit threshold in MACD points", "Signals")
 		
 		.SetOptimize(1m, 4m, 1m);
@@ -174,9 +174,9 @@ public class MacdSampleClassicStrategy : Strategy
 		
 		.SetOptimize(10m, 60m, 10m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 		.SetDisplay("Candle Type", "Candle type used for analysis", "General");
-		_minimumHistoryCandles = Param(nameof(MinimumHistoryCandles), 100)
+		_minimumHistoryCandles = Param(nameof(MinimumHistoryCandles), 30)
 			.SetDisplay("Warm-up candles", "Number of finished candles required before trading starts", "General")
 			.SetGreaterThanZero();
 	}
@@ -192,6 +192,7 @@ public class MacdSampleClassicStrategy : Strategy
 	{
 		base.OnReseted();
 
+		_pointSize = 0m;
 		_prevMacd = null;
 		_prevSignal = null;
 		_trendMaCurrent = null;
