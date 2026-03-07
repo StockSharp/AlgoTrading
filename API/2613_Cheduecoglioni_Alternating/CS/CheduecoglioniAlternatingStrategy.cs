@@ -46,7 +46,7 @@ public class CheduecoglioniAlternatingStrategy : Strategy
 			.SetDisplay("Stop Loss (pips)", "Distance to stop loss", "Risk")
 			.SetGreaterThanZero();
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Source candles for timing", "General");
 	}
 
@@ -98,8 +98,9 @@ public class CheduecoglioniAlternatingStrategy : Strategy
 		base.OnReseted();
 
 		Volume = TradeVolume;
-		_nextSide = Sides.Sell; // Start with a short position like the original expert advisor.
+		_nextSide = Sides.Sell;
 		_activeSide = null;
+		_pipSize = 0m;
 	}
 
 	/// <inheritdoc />
@@ -130,8 +131,8 @@ public class CheduecoglioniAlternatingStrategy : Strategy
 		}
 
 		StartProtection(
-			stopLoss: new Unit(StopLossPips * _pipSize, UnitTypes.Absolute),
 			takeProfit: new Unit(TakeProfitPips * _pipSize, UnitTypes.Absolute),
+			stopLoss: new Unit(StopLossPips * _pipSize, UnitTypes.Absolute),
 			useMarketOrders: true);
 
 		var subscription = SubscribeCandles(CandleType);
@@ -145,8 +146,7 @@ public class CheduecoglioniAlternatingStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		// Strategy has no bound indicators, always allow trading.
 
 		if (Position != 0)
 			return; // Skip if a position exists.
@@ -155,12 +155,10 @@ public class CheduecoglioniAlternatingStrategy : Strategy
 		if (volume <= 0m)
 			return;
 
-		Order order = _nextSide == Sides.Buy
-			? BuyMarket(volume)
-			: SellMarket(volume);
-
-		if (order == null)
-			return;
+		if (_nextSide == Sides.Buy)
+			BuyMarket();
+		else
+			SellMarket();
 
 	}
 

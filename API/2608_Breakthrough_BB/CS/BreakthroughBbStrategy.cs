@@ -94,7 +94,7 @@ public class BreakthroughBbStrategy : Strategy
 			;
 
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candle series processed by the strategy", "General");
 	}
 
@@ -171,14 +171,14 @@ public class BreakthroughBbStrategy : Strategy
 
 		if (Position > 0 && close < middleBand)
 		{
-			SellMarket(Math.Abs(Position));
+			SellMarket();
 			UpdateHistory(close, smaValue);
 			return;
 		}
 
 		if (Position < 0 && close > middleBand)
 		{
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
 			UpdateHistory(close, smaValue);
 			return;
 		}
@@ -193,14 +193,14 @@ public class BreakthroughBbStrategy : Strategy
 		{
 			if (closePrev4.Value < upperBand && close > upperBand && smaValue > maPrev4.Value)
 			{
-				BuyMarket(Volume);
+				BuyMarket();
 				UpdateHistory(close, smaValue);
 				return;
 			}
 
 			if (closePrev4.Value > lowerBand && close < lowerBand && smaValue < maPrev4.Value)
 			{
-				SellMarket(Volume);
+				SellMarket();
 				UpdateHistory(close, smaValue);
 				return;
 			}

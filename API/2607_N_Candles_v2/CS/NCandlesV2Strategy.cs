@@ -102,7 +102,7 @@ public class NCandlesV2Strategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Trailing Step (pips)", "Additional move required to tighten trailing stop", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame used for analysis", "General");
 	}
 
@@ -132,9 +132,6 @@ public class NCandlesV2Strategy : Strategy
 			return;
 
 		// Wait until the strategy is fully initialized and allowed to trade.
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		// Update trailing logic and close the position if protective levels are hit.
 		if (ManageOpenPosition(candle))
 			return;
@@ -222,37 +219,35 @@ public class NCandlesV2Strategy : Strategy
 
 	private void TryOpenLong(ICandleMessage candle)
 	{
-		// Combine the opposite exposure with the desired lot to get the net volume.
-		var volume = LotSize + (Position < 0 ? Math.Abs(Position) : 0m);
-		if (volume <= 0m)
+		if (Position > 0)
 			return;
 
-		BuyMarket(volume);
+		if (Position < 0)
+			BuyMarket();
+
+		BuyMarket();
 		SetPositionState(candle.ClosePrice, 1);
 	}
 
 	private void TryOpenShort(ICandleMessage candle)
 	{
-		// Combine the opposite exposure with the desired lot to get the net volume.
-		var volume = LotSize + (Position > 0 ? Position : 0m);
-		if (volume <= 0m)
+		if (Position < 0)
 			return;
 
-		SellMarket(volume);
+		if (Position > 0)
+			SellMarket();
+
+		SellMarket();
 		SetPositionState(candle.ClosePrice, -1);
 	}
 
 	private bool ExitPosition()
 	{
 		// Close the active position and clear the cached trade state.
-		var volume = Math.Abs(Position);
-		if (volume > 0m)
-		{
-			if (_currentPositionDirection > 0)
-				SellMarket(volume);
-			else if (_currentPositionDirection < 0)
-				BuyMarket(volume);
-		}
+		if (Position > 0)
+			SellMarket();
+		else if (Position < 0)
+			BuyMarket();
 
 		ResetState();
 		return true;

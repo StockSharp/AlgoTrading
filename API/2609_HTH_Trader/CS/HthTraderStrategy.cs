@@ -104,7 +104,7 @@ public class HthTraderStrategy : Strategy
 		_lossLimitPips = Param(nameof(LossLimitPips), 40)
 			.SetDisplay("Loss Limit (pips)", "Loss limit in pips", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for monitoring", "General");
 	}
 
@@ -143,7 +143,7 @@ public class HthTraderStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormed || !TradeEnabled)
+		if (!TradeEnabled)
 			return;
 
 		// Check exit conditions
@@ -157,16 +157,16 @@ public class HthTraderStrategy : Strategy
 
 			if (UseProfitTarget && pipsDiff >= ProfitTargetPips)
 			{
-				if (Position > 0) SellMarket(Math.Abs(Position));
-				else BuyMarket(Math.Abs(Position));
+				if (Position > 0) SellMarket();
+				else BuyMarket();
 				_entryPrice = 0m;
 				return;
 			}
 
 			if (UseLossLimit && pipsDiff <= -LossLimitPips)
 			{
-				if (Position > 0) SellMarket(Math.Abs(Position));
-				else BuyMarket(Math.Abs(Position));
+				if (Position > 0) SellMarket();
+				else BuyMarket();
 				_entryPrice = 0m;
 				return;
 			}

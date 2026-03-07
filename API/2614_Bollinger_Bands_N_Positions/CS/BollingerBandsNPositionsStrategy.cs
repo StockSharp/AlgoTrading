@@ -153,7 +153,7 @@ public class BollingerBandsNPositionsStrategy : Strategy
 		.SetNotNegative()
 		.SetDisplay("Volume Tolerance", "Minimum net position magnitude treated as flat", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Source candles", "General");
 	}
 
@@ -202,7 +202,7 @@ public class BollingerBandsNPositionsStrategy : Strategy
 		if (HandleActivePosition(candle))
 		return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!IsFormed)
 		return;
 
 		if (TryEnterLong(candle, upper))
@@ -241,7 +241,7 @@ public class BollingerBandsNPositionsStrategy : Strategy
 			var stopLevel = entry - StopLossPips * step;
 			if (candle.LowPrice <= stopLevel)
 			{
-				SellMarket(Math.Abs(Position));
+				SellMarket();
 				ResetLongState();
 				return true;
 			}
@@ -252,7 +252,7 @@ public class BollingerBandsNPositionsStrategy : Strategy
 			var targetLevel = entry + TakeProfitPips * step;
 			if (candle.HighPrice >= targetLevel)
 			{
-				SellMarket(Math.Abs(Position));
+				SellMarket();
 				ResetLongState();
 				return true;
 			}
@@ -274,7 +274,7 @@ public class BollingerBandsNPositionsStrategy : Strategy
 
 			if (_longTrailingStop is decimal trailing && candle.LowPrice <= trailing)
 			{
-				SellMarket(Math.Abs(Position));
+				SellMarket();
 				ResetLongState();
 				return true;
 			}
@@ -296,7 +296,7 @@ public class BollingerBandsNPositionsStrategy : Strategy
 			var stopLevel = entry + StopLossPips * step;
 			if (candle.HighPrice >= stopLevel)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				ResetShortState();
 				return true;
 			}
@@ -307,7 +307,7 @@ public class BollingerBandsNPositionsStrategy : Strategy
 			var targetLevel = entry - TakeProfitPips * step;
 			if (candle.LowPrice <= targetLevel)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				ResetShortState();
 				return true;
 			}
@@ -329,7 +329,7 @@ public class BollingerBandsNPositionsStrategy : Strategy
 
 			if (_shortTrailingStop is decimal trailing && candle.HighPrice >= trailing)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				ResetShortState();
 				return true;
 			}
@@ -348,19 +348,19 @@ public class BollingerBandsNPositionsStrategy : Strategy
 
 		if (Position < -VolumeTolerance)
 		{
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
 			ResetShortState();
 			return true;
 		}
 
 		if (Position > VolumeTolerance)
 		{
-			SellMarket(Math.Abs(Position));
+			SellMarket();
 			ResetLongState();
 			return true;
 		}
 
-		BuyMarket(Volume);
+		BuyMarket();
 		_longEntryPrice = candle.ClosePrice;
 		_longTrailingStop = null;
 		ResetShortState();
@@ -377,19 +377,19 @@ public class BollingerBandsNPositionsStrategy : Strategy
 
 		if (Position > VolumeTolerance)
 		{
-			SellMarket(Math.Abs(Position));
+			SellMarket();
 			ResetLongState();
 			return true;
 		}
 
 		if (Position < -VolumeTolerance)
 		{
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
 			ResetShortState();
 			return true;
 		}
 
-		SellMarket(Volume);
+		SellMarket();
 		_shortEntryPrice = candle.ClosePrice;
 		_shortTrailingStop = null;
 		ResetLongState();

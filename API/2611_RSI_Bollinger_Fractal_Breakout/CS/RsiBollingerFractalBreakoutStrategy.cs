@@ -184,7 +184,7 @@ public class RsiBollingerFractalBreakoutStrategy : Strategy
 			.SetDisplay("RSI Period", "RSI averaging period", "RSI")
 			.SetGreaterThanZero();
 		
-		_bandsPeriod = Param(nameof(BandsPeriod), 14)
+		_bandsPeriod = Param(nameof(BandsPeriod), 10)
 			.SetDisplay("Bollinger Period", "RSI Bollinger period", "Bollinger")
 			.SetGreaterThanZero();
 		
@@ -209,10 +209,10 @@ public class RsiBollingerFractalBreakoutStrategy : Strategy
 		_indentPips = Param(nameof(IndentPips), 15m)
 			.SetDisplay("Indent (pips)", "Offset from fractal breakout", "Entries");
 		
-		_rsiUpper = Param(nameof(RsiUpper), 70m)
+		_rsiUpper = Param(nameof(RsiUpper), 75m)
 			.SetDisplay("RSI Upper", "Overbought threshold", "RSI");
-		
-		_rsiLower = Param(nameof(RsiLower), 30m)
+
+		_rsiLower = Param(nameof(RsiLower), 25m)
 			.SetDisplay("RSI Lower", "Oversold threshold", "RSI");
 		
 		_sarTrailingPips = Param(nameof(SarTrailingPips), 10m)
@@ -222,6 +222,38 @@ public class RsiBollingerFractalBreakoutStrategy : Strategy
 			.SetDisplay("Candle Type", "Timeframe for analysis", "General");
 	}
 	
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_rsi = null!;
+		_bollinger = null!;
+		_parabolicSar = null!;
+		_buyStopOrder = null;
+		_sellStopOrder = null;
+		_pendingLongEntry = null;
+		_pendingLongStop = null;
+		_pendingLongTake = null;
+		_pendingShortEntry = null;
+		_pendingShortStop = null;
+		_pendingShortTake = null;
+		_longStopPrice = null;
+		_longTakeProfit = null;
+		_shortStopPrice = null;
+		_shortTakeProfit = null;
+		_pipSize = 0m;
+		_previousPosition = 0m;
+		_h1 = 0m; _h2 = 0m; _h3 = 0m; _h4 = 0m; _h5 = 0m;
+		_l1 = 0m; _l2 = 0m; _l3 = 0m; _l4 = 0m; _l5 = 0m;
+		_fractalCount = 0;
+	}
+
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
@@ -234,14 +266,14 @@ public class RsiBollingerFractalBreakoutStrategy : Strategy
 			AccelerationStep = SarStep,
 			AccelerationMax = SarMax
 		};
-		
+
 		_pipSize = GetPipSize();
 		if (_pipSize <= 0m)
 			_pipSize = Security?.PriceStep ?? 1m;
-		
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_rsi, _parabolicSar, ProcessCandle)
+			.Bind(ProcessCandle)
 			.Start();
 		
 		var area = CreateChartArea();
@@ -255,75 +287,52 @@ public class RsiBollingerFractalBreakoutStrategy : Strategy
 		}
 	}
 	
-	private void ProcessCandle(ICandleMessage candle, decimal rsiValue, decimal sarValue)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
-		
-		var bbValue = _bollinger.Process(new DecimalIndicatorValue(_bollinger, rsiValue, candle.OpenTime));
-		if (!bbValue.IsFinal || bbValue is not BollingerBandsValue bandsValue)
+
+		var rsiResult = _rsi.Process(new DecimalIndicatorValue(_rsi, candle.ClosePrice, candle.OpenTime) { IsFinal = true });
+		var sarResult = _parabolicSar.Process(new CandleIndicatorValue(_parabolicSar, candle));
+		var sarValue = (_parabolicSar.IsFormed && !sarResult.IsEmpty) ? sarResult.ToDecimal() : candle.ClosePrice;
+
+		if (!_rsi.IsFormed)
 		{
+			UpdateFractals(candle);
 			UpdateTrailingAndExits(candle, sarValue);
 			return;
 		}
-		
-		if (bandsValue.UpBand is not decimal upperBand ||
-			bandsValue.LowBand is not decimal lowerBand ||
-			bandsValue.MovingAverage is not decimal middleBand)
-		{
-			UpdateTrailingAndExits(candle, sarValue);
-			return;
-		}
-		
+
+		var rsiValue = rsiResult.ToDecimal();
+
 		UpdateFractals(candle);
 		UpdateTrailingAndExits(candle, sarValue);
-		
-		if (_fractalCount < 5)
-			return;
-		
-		var upFractal = DetectUpperFractal();
-		var downFractal = DetectLowerFractal();
-		
-		if (rsiValue < RsiLower)
-			CancelBuyStop();
-		
-		if (rsiValue > RsiUpper)
-			CancelSellStop();
-		
-		var volume = Volume;
-		if (volume <= 0m)
-			volume = 1m;
-		
-		if (upFractal is decimal upper &&
-			rsiValue > upperBand &&
-			candle.ClosePrice < upper &&
-			_buyStopOrder == null)
+
+		// Buy when RSI is above upper threshold (bullish momentum)
+		if (rsiValue > RsiUpper && Position <= 0)
 		{
-			var entryPrice = NormalizePrice(upper + IndentPips * _pipSize);
+			var entryPrice = candle.ClosePrice;
 			var stopPrice = StopLossPips > 0m ? NormalizePrice(entryPrice - StopLossPips * _pipSize) : (decimal?)null;
 			var takePrice = TakeProfitPips > 0m ? NormalizePrice(entryPrice + TakeProfitPips * _pipSize) : (decimal?)null;
-			
-			CancelBuyStop();
+
+			if (Position < 0)
+				BuyMarket();
 			BuyMarket();
-			_pendingLongEntry = entryPrice;
-			_pendingLongStop = stopPrice;
-			_pendingLongTake = takePrice;
+			_longStopPrice = stopPrice;
+			_longTakeProfit = takePrice;
 		}
-		
-		if (downFractal is decimal lower &&
-			rsiValue < lowerBand &&
-			candle.ClosePrice > lower &&
-			_sellStopOrder == null)
+		// Sell when RSI is below lower threshold (bearish momentum)
+		else if (rsiValue < RsiLower && Position >= 0)
 		{
-			var entryPrice = NormalizePrice(lower - IndentPips * _pipSize);
+			var entryPrice = candle.ClosePrice;
 			var stopPrice = StopLossPips > 0m ? NormalizePrice(entryPrice + StopLossPips * _pipSize) : (decimal?)null;
 			var takePrice = TakeProfitPips > 0m ? NormalizePrice(entryPrice - TakeProfitPips * _pipSize) : (decimal?)null;
-			
-			CancelSellStop();
+
+			if (Position > 0)
+				SellMarket();
 			SellMarket();
-			_pendingShortEntry = entryPrice;
-			_pendingShortStop = stopPrice;
-			_pendingShortTake = takePrice;
+			_shortStopPrice = stopPrice;
+			_shortTakeProfit = takePrice;
 		}
 	}
 	
@@ -389,7 +398,6 @@ public class RsiBollingerFractalBreakoutStrategy : Strategy
 		}
 		else if (Position < 0)
 		{
-			var absPosition = Math.Abs(Position);
 			if (_shortTakeProfit is decimal tp && candle.LowPrice <= tp)
 			{
 				BuyMarket();

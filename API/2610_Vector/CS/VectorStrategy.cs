@@ -112,7 +112,7 @@ public class VectorStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Equity SL %", "Close all when floating loss reaches this percent", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Signal Timeframe", "Timeframe for moving averages", "General");
 	}
 
@@ -171,8 +171,8 @@ public class VectorStrategy : Strategy
 			if ((profitThreshold > 0m && floating >= profitThreshold) ||
 				(lossThreshold > 0m && floating <= -lossThreshold))
 			{
-				if (Position > 0) SellMarket(Math.Abs(Position));
-				else if (Position < 0) BuyMarket(Math.Abs(Position));
+				if (Position > 0) SellMarket();
+				else if (Position < 0) BuyMarket();
 				_entryPrice = 0m;
 				return;
 			}
@@ -182,14 +182,14 @@ public class VectorStrategy : Strategy
 		if (fastValue > slowValue && Position <= 0)
 		{
 			if (Position < 0)
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 			BuyMarket();
 			_entryPrice = candle.ClosePrice;
 		}
 		else if (fastValue < slowValue && Position >= 0)
 		{
 			if (Position > 0)
-				SellMarket(Position);
+				SellMarket();
 			SellMarket();
 			_entryPrice = candle.ClosePrice;
 		}
