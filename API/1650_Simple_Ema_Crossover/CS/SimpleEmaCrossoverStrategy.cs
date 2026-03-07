@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -20,97 +17,51 @@ namespace StockSharp.Samples.Strategies;
 public class SimpleEmaCrossoverStrategy : Strategy
 {
 	private readonly StrategyParam<int> _periods;
-	private readonly StrategyParam<Unit> _stopLoss;
-	private readonly StrategyParam<Unit> _takeProfit;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _prevFast;
 	private decimal _prevSlow;
+	private bool _hasPrev;
 
-	/// <summary>
-	/// Period for the fast EMA.
-	/// </summary>
 	public int Periods
 	{
 		get => _periods.Value;
 		set => _periods.Value = value;
 	}
 
-	/// <summary>
-	/// Stop-loss distance.
-	/// </summary>
-	public Unit StopLoss
-	{
-		get => _stopLoss.Value;
-		set => _stopLoss.Value = value;
-	}
-
-	/// <summary>
-	/// Take-profit distance.
-	/// </summary>
-	public Unit TakeProfit
-	{
-		get => _takeProfit.Value;
-		set => _takeProfit.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type.
-	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Initialize strategy parameters.
-	/// </summary>
 	public SimpleEmaCrossoverStrategy()
 	{
 		_periods = Param(nameof(Periods), 17)
 			.SetGreaterThanZero()
-			.SetDisplay("EMA Period", "Period for the fast EMA", "Indicators")
-			
-			.SetOptimize(10, 30, 1);
+			.SetDisplay("EMA Period", "Period for the fast EMA", "Indicators");
 
-		_stopLoss = Param(nameof(StopLoss), new Unit(31m, UnitTypes.Absolute))
-			.SetDisplay("Stop Loss", "Stop-loss distance in price", "Risk")
-			
-			.SetOptimize(10, 100, 5);
-
-		_takeProfit = Param(nameof(TakeProfit), new Unit(69m, UnitTypes.Absolute))
-			.SetDisplay("Take Profit", "Take-profit distance in price", "Risk")
-			
-			.SetOptimize(10, 100, 5);
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for analysis", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevFast = default;
-		_prevSlow = default;
+		_prevFast = 0;
+		_prevSlow = 0;
+		_hasPrev = false;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		StartProtection(takeProfit: TakeProfit, stopLoss: StopLoss);
-
-		var fastEma = new EMA { Length = Periods };
-		var slowEma = new EMA { Length = Periods + 2 };
+		var fastEma = new ExponentialMovingAverage { Length = Periods };
+		var slowEma = new ExponentialMovingAverage { Length = Periods + 10 };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -132,10 +83,7 @@ public class SimpleEmaCrossoverStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (_prevFast != default && _prevSlow != default)
+		if (_hasPrev)
 		{
 			var crossUp = _prevFast < _prevSlow && fast > slow;
 			var crossDown = _prevFast > _prevSlow && fast < slow;
@@ -148,5 +96,6 @@ public class SimpleEmaCrossoverStrategy : Strategy
 
 		_prevFast = fast;
 		_prevSlow = slow;
+		_hasPrev = true;
 	}
 }

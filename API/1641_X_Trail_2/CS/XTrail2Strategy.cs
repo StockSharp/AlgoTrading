@@ -58,8 +58,8 @@ public class XTrail2Strategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var fast = new SimpleMovingAverage { Length = Ma1Length };
-		var slow = new SimpleMovingAverage { Length = Ma2Length };
+		var fast = new ExponentialMovingAverage { Length = Ma1Length };
+		var slow = new ExponentialMovingAverage { Length = Ma2Length };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

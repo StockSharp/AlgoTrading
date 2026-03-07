@@ -12,22 +12,25 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Strategy that enters on EMA crossover and moves stop-loss to break-even
-/// when price moves favorably by a specified ATR multiple.
+/// when price moves favorably by a specified StdDev multiple.
 /// </summary>
 public class StopLossMoverStrategy : Strategy
 {
 	private readonly StrategyParam<int> _fastLength;
 	private readonly StrategyParam<int> _slowLength;
-	private readonly StrategyParam<decimal> _stopAtrMult;
+	private readonly StrategyParam<decimal> _stopMult;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _entryPrice;
 	private decimal _stopPrice;
 	private bool _isStopMoved;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private bool _hasPrev;
 
 	public int FastLength { get => _fastLength.Value; set => _fastLength.Value = value; }
 	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
-	public decimal StopAtrMult { get => _stopAtrMult.Value; set => _stopAtrMult.Value = value; }
+	public decimal StopMult { get => _stopMult.Value; set => _stopMult.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public StopLossMoverStrategy()
@@ -40,10 +43,10 @@ public class StopLossMoverStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 
-		_stopAtrMult = Param(nameof(StopAtrMult), 1.5m)
-			.SetDisplay("Stop ATR Mult", "ATR multiplier for initial stop", "Risk");
+		_stopMult = Param(nameof(StopMult), 1.5m)
+			.SetDisplay("Stop Mult", "StdDev multiplier for initial stop", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -56,6 +59,9 @@ public class StopLossMoverStrategy : Strategy
 		_entryPrice = 0;
 		_stopPrice = 0;
 		_isStopMoved = false;
+		_prevFast = 0;
+		_prevSlow = 0;
+		_hasPrev = false;
 	}
 
 	protected override void OnStarted2(DateTime time)
@@ -64,20 +70,29 @@ public class StopLossMoverStrategy : Strategy
 
 		var fastEma = new ExponentialMovingAverage { Length = FastLength };
 		var slowEma = new ExponentialMovingAverage { Length = SlowLength };
-		var atr = new AverageTrueRange { Length = 14 };
+		var stdDev = new StandardDeviation { Length = 14 };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(fastEma, slowEma, atr, ProcessCandle)
+			.Bind(fastEma, slowEma, stdDev, ProcessCandle)
 			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow, decimal atrVal)
+	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow, decimal stdVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (atrVal <= 0)
+		if (stdVal <= 0)
 			return;
 
 		var close = candle.ClosePrice;
@@ -89,6 +104,9 @@ public class StopLossMoverStrategy : Strategy
 			_entryPrice = 0;
 			_stopPrice = 0;
 			_isStopMoved = false;
+			_prevFast = fast;
+			_prevSlow = slow;
+			_hasPrev = true;
 			return;
 		}
 		else if (Position < 0 && _stopPrice > 0 && close >= _stopPrice)
@@ -97,13 +115,16 @@ public class StopLossMoverStrategy : Strategy
 			_entryPrice = 0;
 			_stopPrice = 0;
 			_isStopMoved = false;
+			_prevFast = fast;
+			_prevSlow = slow;
+			_hasPrev = true;
 			return;
 		}
 
-		// Move stop to break-even when price moves favorably by 2*ATR
+		// Move stop to break-even when price moves favorably by 2*stdDev
 		if (Position > 0 && !_isStopMoved && _entryPrice > 0)
 		{
-			if (close >= _entryPrice + 2 * atrVal)
+			if (close >= _entryPrice + 2 * stdVal)
 			{
 				_stopPrice = _entryPrice;
 				_isStopMoved = true;
@@ -111,47 +132,45 @@ public class StopLossMoverStrategy : Strategy
 		}
 		else if (Position < 0 && !_isStopMoved && _entryPrice > 0)
 		{
-			if (close <= _entryPrice - 2 * atrVal)
+			if (close <= _entryPrice - 2 * stdVal)
 			{
 				_stopPrice = _entryPrice;
 				_isStopMoved = true;
 			}
 		}
 
+		if (!_hasPrev)
+		{
+			_prevFast = fast;
+			_prevSlow = slow;
+			_hasPrev = true;
+			return;
+		}
+
 		// Entry signals: EMA crossover
-		if (Position == 0)
+		var crossUp = _prevFast <= _prevSlow && fast > slow;
+		var crossDown = _prevFast >= _prevSlow && fast < slow;
+
+		if (crossUp && Position <= 0)
 		{
-			if (fast > slow)
-			{
+			if (Position < 0)
 				BuyMarket();
-				_entryPrice = close;
-				_stopPrice = close - StopAtrMult * atrVal;
-				_isStopMoved = false;
-			}
-			else if (fast < slow)
-			{
+			BuyMarket();
+			_entryPrice = close;
+			_stopPrice = close - StopMult * stdVal;
+			_isStopMoved = false;
+		}
+		else if (crossDown && Position >= 0)
+		{
+			if (Position > 0)
 				SellMarket();
-				_entryPrice = close;
-				_stopPrice = close + StopAtrMult * atrVal;
-				_isStopMoved = false;
-			}
-		}
-		// Reverse on crossover
-		else if (Position > 0 && fast < slow)
-		{
-			SellMarket();
 			SellMarket();
 			_entryPrice = close;
-			_stopPrice = close + StopAtrMult * atrVal;
+			_stopPrice = close + StopMult * stdVal;
 			_isStopMoved = false;
 		}
-		else if (Position < 0 && fast > slow)
-		{
-			BuyMarket();
-			BuyMarket();
-			_entryPrice = close;
-			_stopPrice = close - StopAtrMult * atrVal;
-			_isStopMoved = false;
-		}
+
+		_prevFast = fast;
+		_prevSlow = slow;
 	}
 }
