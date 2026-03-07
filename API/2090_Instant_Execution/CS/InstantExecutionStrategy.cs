@@ -59,7 +59,7 @@ public class InstantExecutionStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Period", "EMA trend filter period", "Indicator");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 

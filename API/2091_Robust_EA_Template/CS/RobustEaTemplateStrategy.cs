@@ -53,7 +53,7 @@ public class RobustEaTemplateStrategy : Strategy
 
 	public RobustEaTemplateStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 
 		_cciPeriod = Param(nameof(CciPeriod), 14)
