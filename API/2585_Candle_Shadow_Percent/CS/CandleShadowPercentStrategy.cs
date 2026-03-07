@@ -157,7 +157,7 @@ public class CandleShadowPercentStrategy : Strategy
 			.SetDisplay("Risk %", "Risk percentage per trade", "Risk")
 			;
 		
-		_minBodyPips = Param(nameof(MinBodyPips), 50)
+		_minBodyPips = Param(nameof(MinBodyPips), 300)
 			.SetGreaterThanZero()
 			.SetDisplay("Minimum Body", "Minimum candle body size in pips", "Pattern")
 			;
@@ -184,7 +184,7 @@ public class CandleShadowPercentStrategy : Strategy
 		_lowerShadowIsMinimum = Param(nameof(LowerShadowIsMinimum), true)
 			.SetDisplay("Lower Shadow Uses Min", "If true the threshold is treated as a minimum", "Pattern");
 		
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for pattern detection", "Data");
 	}
 	

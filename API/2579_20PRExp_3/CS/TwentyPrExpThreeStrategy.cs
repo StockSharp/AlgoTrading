@@ -144,17 +144,17 @@ public class TwentyPrExpThreeStrategy : Strategy
 			.SetDisplay("Risk %", "Portfolio percentage to risk per trade", "Position Sizing")
 			;
 
-		_gapPoints = Param(nameof(GapPoints), 50m)
+		_gapPoints = Param(nameof(GapPoints), 200m)
 			.SetDisplay("Range Filter (pts)", "Minimum daily range in points", "Filters")
 			;
 
 		_sessionStartHour = Param(nameof(SessionStartHour), 7)
 			.SetDisplay("Session Start Hour", "Hour after which breakout trades are enabled", "Filters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe for the strategy", "General");
 
-		_volumeCandleType = Param(nameof(VolumeCandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_volumeCandleType = Param(nameof(VolumeCandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Volume Candle Type", "Higher timeframe for tick volume filter", "General");
 	}
 
@@ -417,7 +417,7 @@ public class TwentyPrExpThreeStrategy : Strategy
 		var hasVolumeHistory = _previousVolumeBar > 0m && _currentVolumeBar > 0m;
 		var volumeRatio = hasVolumeHistory ? _currentVolumeBar / _previousVolumeBar : 0m;
 
-		if (!hasRange || volumeRatio <= 1.5m)
+		if (!hasRange || volumeRatio <= 3.0m)
 			return 0;
 
 		if (candle.ClosePrice >= _dailyHigh && _dailyHigh > 0m)

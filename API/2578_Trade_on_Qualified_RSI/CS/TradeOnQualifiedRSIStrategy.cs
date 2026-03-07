@@ -106,33 +106,33 @@ public class TradeOnQualifiedRSIStrategy : Strategy
 			
 			.SetOptimize(10, 50, 2);
 
-		_upperThreshold = Param(nameof(UpperThreshold), 55m)
+		_upperThreshold = Param(nameof(UpperThreshold), 65m)
 			.SetDisplay("Upper Threshold", "RSI level used to qualify short signals.", "RSI")
-			
+
 			.SetOptimize(50m, 70m, 1m);
 
-		_lowerThreshold = Param(nameof(LowerThreshold), 45m)
+		_lowerThreshold = Param(nameof(LowerThreshold), 35m)
 			.SetDisplay("Lower Threshold", "RSI level used to qualify long signals.", "RSI")
-			
+
 			.SetOptimize(30m, 50m, 1m);
 
-		_countBars = Param(nameof(CountBars), 5)
+		_countBars = Param(nameof(CountBars), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Qualification Bars", "How many previous RSI bars must stay beyond the threshold.", "Signals")
-			
+
 			.SetOptimize(1, 10, 1);
 
-		_stopLossPoints = Param(nameof(StopLossPoints), 21)
+		_stopLossPoints = Param(nameof(StopLossPoints), 200)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss Points", "Stop loss distance expressed in price steps.", "Risk")
-			
+
 			.SetOptimize(5, 50, 5);
 
 		_tradeVolume = Param(nameof(TradeVolume), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trade Volume", "Order volume used for entries.", "Trading");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Source timeframe for RSI calculation.", "General");
 	}
 

@@ -36,7 +36,7 @@ public class StochasticChaikinsVolatilityStrategy : Strategy
 	
 	private DecimalLengthIndicator _primarySmoother = null!;
 	private DecimalLengthIndicator _secondarySmoother = null!;
-	private readonly Queue<decimal> _volatilityWindow = new();
+	private readonly List<decimal> _volatilityWindow = new();
 	private readonly List<decimal> _mainHistory = new();
 	
 	/// <summary>
@@ -170,7 +170,7 @@ public class StochasticChaikinsVolatilityStrategy : Strategy
 	/// </summary>
 	public StochasticChaikinsVolatilityStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe used for indicator calculations", "General");
 		
 		_primaryMethod = Param(nameof(PrimaryMethod), SmoothMethods.Sma)
@@ -273,8 +273,10 @@ public class StochasticChaikinsVolatilityStrategy : Strategy
 		
 		decimal highest = decimal.MinValue;
 		decimal lowest = decimal.MaxValue;
-		foreach (var value in _volatilityWindow)
+		var count = _volatilityWindow.Count;
+		for (var vi = 0; vi < count; vi++)
 		{
+			var value = _volatilityWindow[vi];
 			if (value > highest)
 			highest = value;
 			if (value < lowest)
@@ -319,42 +321,36 @@ public class StochasticChaikinsVolatilityStrategy : Strategy
 		
 		if (Position > 0m && buyClose)
 		{
-			SellMarket(Math.Abs(Position));
+			SellMarket();
 		}
 		else if (Position < 0m && sellClose)
 		{
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
 		}
-		
+
 		if (buyOpen && Position <= 0m)
 		{
-
-			var volume = Volume + (Position < 0m ? Math.Abs(Position) : 0m);
-			if (volume > 0m)
-			BuyMarket(volume);
+			BuyMarket();
 		}
 		else if (sellOpen && Position >= 0m)
 		{
-
-			var volume = Volume + (Position > 0m ? Math.Abs(Position) : 0m);
-			if (volume > 0m)
-			SellMarket(volume);
+			SellMarket();
 		}
 	}
 	
 	private void AddHistory(decimal value)
 	{
 		_mainHistory.Insert(0, value);
-		var maxSize = SignalShift + 3;
-		if (_mainHistory.Count > maxSize)
-		_mainHistory.RemoveRange(maxSize, _mainHistory.Count - maxSize);
+		var maxSize = SignalShift + 4;
+		while (_mainHistory.Count > maxSize)
+		_mainHistory.RemoveAt(_mainHistory.Count - 1);
 	}
 	
-	private static void UpdateQueue(Queue<decimal> queue, decimal value, int length)
+	private static void UpdateQueue(List<decimal> queue, decimal value, int length)
 	{
-		queue.Enqueue(value);
+		queue.Add(value);
 		while (queue.Count > length)
-		queue.Dequeue();
+		queue.RemoveAt(0);
 	}
 	
 	private static DecimalLengthIndicator CreateSmoother(SmoothMethods method, int length)

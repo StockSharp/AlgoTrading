@@ -33,7 +33,7 @@ public class CandleStrategy : Strategy
 	/// </summary>
 	public CandleStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for candle evaluation", "General");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50m)
@@ -124,7 +124,7 @@ public class CandleStrategy : Strategy
 
 		// Enable automatic protective orders and trailing stop handling.
 		if (trailingStop != null || takeProfit != null)
-			StartProtection(trailingStop, takeProfit);
+			StartProtection(takeProfit, trailingStop);
 
 		// Subscribe to candle data for the configured timeframe.
 		var subscription = SubscribeCandles(CandleType);

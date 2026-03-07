@@ -48,14 +48,14 @@ public class NCandlesStrategy : Strategy
 	/// </summary>
 	public NCandlesStrategy()
 	{
-		_consecutiveCandles = Param(nameof(ConsecutiveCandles), 3)
+		_consecutiveCandles = Param(nameof(ConsecutiveCandles), 4)
 			.SetGreaterThanZero()
 			.SetDisplay("Consecutive Candles", "Number of identical candles required", "General")
 			
 			.SetOptimize(2, 6, 1);
 
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candles to analyze", "General");
 	}
 
@@ -125,19 +125,16 @@ public class NCandlesStrategy : Strategy
 			_streakLength = 1;
 		}
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		if (_streakLength < ConsecutiveCandles)
 			return;
 
-		if (direction > 0)
+		if (direction > 0 && Position <= 0)
 		{
-			BuyMarket(Volume);
+			BuyMarket();
 		}
-		else
+		else if (direction < 0 && Position >= 0)
 		{
-			SellMarket(Volume);
+			SellMarket();
 		}
 	}
 }

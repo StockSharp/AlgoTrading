@@ -48,7 +48,7 @@ public class ListPositionsStrategy : Strategy
 	/// </summary>
 	public ListPositionsStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe for monitoring", "General");
 
 		_logInterval = Param(nameof(LogInterval), 10)

@@ -21,6 +21,7 @@ public class MorseCodeStrategy : Strategy
 	/// <summary>
 	/// Available Morse code style patterns where '1' is bullish and '0' is bearish.
 	/// </summary>
+	[System.CLSCompliant(false)]
 	public enum MorsePatternMasks
 	{
 		_0 = 0,
@@ -174,10 +175,10 @@ public class MorseCodeStrategy : Strategy
 	/// </summary>
 	public MorseCodeStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for candle analysis", "General");
 
-		_patternMask = Param(nameof(Pattern), MorsePatternMasks._0)
+		_patternMask = Param(nameof(Pattern), MorsePatternMasks._14)
 			.SetDisplay("Pattern", "Morse code pattern where 1= bullish and 0 = bearish", "Pattern");
 
 		_direction = Param(nameof(Direction), Sides.Buy)
@@ -204,6 +205,7 @@ public class MorseCodeStrategy : Strategy
 	/// <summary>
 	/// Selected Morse code pattern.
 	/// </summary>
+	[System.CLSCompliant(false)]
 	public MorsePatternMasks Pattern
 	{
 		get => _patternMask.Value;
@@ -309,9 +311,6 @@ public class MorseCodeStrategy : Strategy
 		if (_processedBars < _patternLength)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		if (!IsPatternMatched())
 			return;
 
@@ -402,27 +401,13 @@ public class MorseCodeStrategy : Strategy
 
 	private void EnterLong(decimal price)
 	{
-		var volume = Volume;
-		if (volume <= 0m)
-			return;
-
-		if (Position < 0m)
-			volume += Math.Abs(Position); // Close short position and flip long
-
-		BuyMarket(volume);
-		LogInfo($"Entered long position with volume {volume} at price {price}.");
+		BuyMarket();
+		LogInfo($"Entered long position at price {price}.");
 	}
 
 	private void EnterShort(decimal price)
 	{
-		var volume = Volume;
-		if (volume <= 0m)
-			return;
-
-		if (Position > 0m)
-			volume += Math.Abs(Position); // Close long position and flip short
-
-		SellMarket(volume);
-		LogInfo($"Entered short position with volume {volume} at price {price}.");
+		SellMarket();
+		LogInfo($"Entered short position at price {price}.");
 	}
 }

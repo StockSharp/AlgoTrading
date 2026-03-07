@@ -50,7 +50,7 @@ public class InverseReactionStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "Moving average length", "Signal");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe", "General");
 	}
 

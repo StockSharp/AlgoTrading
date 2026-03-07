@@ -172,13 +172,13 @@ public class HeikenAshiIdeaStrategy : Strategy
 		_useCloseAll = Param(nameof(UseCloseAllOnNewBar), true)
 				.SetDisplay("Close On Higher Bar", "Flatten positions when a new candle of the close-all timeframe opens.", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 				.SetDisplay("Primary Candle Type", "Primary timeframe used for trading signals.", "Data");
 
-		_higherCandleType = Param(nameof(HigherCandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_higherCandleType = Param(nameof(HigherCandleType), TimeSpan.FromHours(1).TimeFrame())
 				.SetDisplay("Higher Candle Type", "Confirmation timeframe used for Heikin Ashi trend filter.", "Data");
 
-		_closeAllCandleType = Param(nameof(CloseAllCandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_closeAllCandleType = Param(nameof(CloseAllCandleType), TimeSpan.FromHours(4).TimeFrame())
 				.SetDisplay("Close-All Candle Type", "Timeframe that triggers a complete exit on a new bar.", "Data");
 
 		_startHour = Param(nameof(StartHour), 0)
@@ -189,7 +189,7 @@ public class HeikenAshiIdeaStrategy : Strategy
 				.SetRange(0, 23)
 				.SetDisplay("End Hour", "Last hour of the trading window (inclusive).", "Session");
 
-		_useAtrFilter = Param(nameof(UseAtrFilter), true)
+		_useAtrFilter = Param(nameof(UseAtrFilter), false)
 				.SetDisplay("Use ATR Filter", "Require rising ATR to allow new orders.", "Filters");
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
@@ -231,6 +231,8 @@ public class HeikenAshiIdeaStrategy : Strategy
 		_buyOrder = null;
 		_sellOrder = null;
 		_lastCloseAllTime = null;
+		_priceStep = 0m;
+		_comparisonTolerance = 0m;
 	}
 
 	/// <inheritdoc />
@@ -277,7 +279,7 @@ public class HeikenAshiIdeaStrategy : Strategy
 
 		if (takeProfitUnit != null || stopLossUnit != null)
 		{
-				StartProtection(stopLossUnit, takeProfitUnit);
+				StartProtection(takeProfitUnit, stopLossUnit);
 		}
 	}
 
