@@ -1,73 +1,88 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
 
 using Ecng.Common;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
-using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
 public class OvernightPositioningEmaStrategy : Strategy
 {
-	private readonly StrategyParam<int> _entry;
-	private readonly StrategyParam<int> _exit;
 	private readonly StrategyParam<int> _emaLen;
-	private readonly StrategyParam<bool> _useEma;
 	private readonly StrategyParam<DataType> _candle;
 
-	private TimeSpan _open;
-	private TimeSpan _close;
+	private DateTime _currentDay;
+	private bool _tradeTakenToday;
 
-	public int EntryMinutesBeforeClose { get => _entry.Value; set => _entry.Value = value; }
-	public int ExitMinutesAfterOpen { get => _exit.Value; set => _exit.Value = value; }
 	public int EmaLength { get => _emaLen.Value; set => _emaLen.Value = value; }
-	public bool UseEma { get => _useEma.Value; set => _useEma.Value = value; }
 	public DataType CandleType { get => _candle.Value; set => _candle.Value = value; }
 
 	public OvernightPositioningEmaStrategy()
 	{
-		_entry = Param(nameof(EntryMinutesBeforeClose), 20);
-		_exit = Param(nameof(ExitMinutesAfterOpen), 20);
-		_emaLen = Param(nameof(EmaLength), 100);
-		_useEma = Param(nameof(UseEma), true);
+		_emaLen = Param(nameof(EmaLength), 100).SetGreaterThanZero();
 		_candle = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
-		_open = new(9, 30, 0);
-		_close = new(16, 0, 0);
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_currentDay = default;
+		_tradeTakenToday = false;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		var ema = new EMA { Length = EmaLength };
+
+		_currentDay = default;
+		_tradeTakenToday = false;
+
+		var ema = new ExponentialMovingAverage { Length = EmaLength };
 		var sub = SubscribeCandles(CandleType);
-		sub.Bind(ema, Process).Start();
-	}
+		sub.Bind(ema, (candle, emaVal) =>
+		{
+			if (candle.State != CandleStates.Finished)
+				return;
 
-	private void Process(ICandleMessage candle, decimal emaVal)
-	{
-		if (candle.State != CandleStates.Finished || !IsFormedAndOnlineAndAllowTrading())
-			return;
+			if (!ema.IsFormed)
+				return;
 
-		var ct = candle.CloseTime;
-		var hour = ct.Hour;
-		var minute = ct.Minute;
-		var tod = ct.TimeOfDay;
+			var day = candle.OpenTime.Date;
+			if (_currentDay != day)
+			{
+				_currentDay = day;
+				_tradeTakenToday = false;
+			}
 
-		var closeTime = _close;
-		var openTime = _open;
-		var entryTime = closeTime - TimeSpan.FromMinutes(EntryMinutesBeforeClose);
-		var exitTime = openTime + TimeSpan.FromMinutes(ExitMinutesAfterOpen);
+			if (_tradeTakenToday)
+				return;
 
-		var longOk = !UseEma || candle.ClosePrice > emaVal;
+			var hour = candle.OpenTime.Hour;
 
-		if (tod >= entryTime && tod < closeTime && Position == 0 && longOk)
-			BuyMarket();
+			// Buy near end of day if above EMA
+			if (hour >= 15 && hour < 16 && candle.ClosePrice > emaVal && Position <= 0)
+			{
+				BuyMarket();
+				_tradeTakenToday = true;
+			}
+			// Sell near start of day
+			else if (hour >= 9 && hour < 10 && Position > 0)
+			{
+				SellMarket();
+				_tradeTakenToday = true;
+			}
+		}).Start();
 
-		if (tod >= exitTime && tod < closeTime && Position > 0)
-			SellMarket(Position);
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, sub);
+			DrawIndicator(area, ema);
+			DrawOwnTrades(area);
+		}
 	}
 }
