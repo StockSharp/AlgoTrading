@@ -28,6 +28,9 @@ public class TrailingStopTriggerManagerStrategy : Strategy
 	private bool _trailingEnabled;
 	private decimal _trailingDistance;
 	private decimal _triggerDistance;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private bool _hasPrev;
 
 	/// <summary>
 	/// Candle type.
@@ -61,7 +64,7 @@ public class TrailingStopTriggerManagerStrategy : Strategy
 	/// </summary>
 	public TrailingStopTriggerManagerStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe", "General");
 
 		_trailingPoints = Param(nameof(TrailingPoints), 1000)
@@ -88,6 +91,9 @@ public class TrailingStopTriggerManagerStrategy : Strategy
 		_trailingEnabled = false;
 		_trailingDistance = 0m;
 		_triggerDistance = 0m;
+		_prevFast = 0m;
+		_prevSlow = 0m;
+		_hasPrev = false;
 	}
 
 	/// <inheritdoc />
@@ -177,20 +183,30 @@ public class TrailingStopTriggerManagerStrategy : Strategy
 		}
 
 		// SMA crossover entries
-		if (fast > slow && Position <= 0)
+		if (_hasPrev)
 		{
-			if (Position < 0)
+			var crossUp = _prevFast <= _prevSlow && fast > slow;
+			var crossDown = _prevFast >= _prevSlow && fast < slow;
+
+			if (crossUp && Position <= 0)
+			{
+				if (Position < 0)
+					BuyMarket();
 				BuyMarket();
-			BuyMarket();
-			ResetTrailingState();
-		}
-		else if (fast < slow && Position >= 0)
-		{
-			if (Position > 0)
+				ResetTrailingState();
+			}
+			else if (crossDown && Position >= 0)
+			{
+				if (Position > 0)
+					SellMarket();
 				SellMarket();
-			SellMarket();
-			ResetTrailingState();
+				ResetTrailingState();
+			}
 		}
+
+		_prevFast = fast;
+		_prevSlow = slow;
+		_hasPrev = true;
 	}
 
 	private void ResetTrailingState()

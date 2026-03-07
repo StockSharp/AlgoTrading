@@ -29,8 +29,6 @@ public class MarketPredictorStrategy : Strategy
 	private readonly StrategyParam<int> _monteCarloSimulations;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private readonly Random _random = new();
-
 	private decimal _alpha;
 	private decimal _mu;
 
@@ -145,7 +143,7 @@ public class MarketPredictorStrategy : Strategy
 			
 			.SetOptimize(100, 2000, 100);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for candle subscription", "General");
 	}
 
@@ -209,18 +207,29 @@ public class MarketPredictorStrategy : Strategy
 
 	private void ExecuteTrade(decimal currentPrice)
 	{
-		// Use mean-reversion: buy when price is below the mean, sell when above
-		if (currentPrice < _mu && Position <= 0)
+		var deviation = _alpha > 0 ? Sigma * _alpha : Sigma;
+
+		// Mean-reversion: buy when significantly below mean, sell when significantly above
+		if (currentPrice < _mu - deviation && Position <= 0)
 		{
 			if (Position < 0)
 				BuyMarket();
 			BuyMarket();
 		}
-		else if (currentPrice > _mu && Position >= 0)
+		else if (currentPrice > _mu + deviation && Position >= 0)
 		{
 			if (Position > 0)
 				SellMarket();
 			SellMarket();
+		}
+		// Exit when price returns to mean
+		else if (Position > 0 && currentPrice >= _mu)
+		{
+			SellMarket();
+		}
+		else if (Position < 0 && currentPrice <= _mu)
+		{
+			BuyMarket();
 		}
 	}
 }

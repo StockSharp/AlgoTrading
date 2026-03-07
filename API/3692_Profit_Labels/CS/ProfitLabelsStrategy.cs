@@ -44,13 +44,13 @@ public class ProfitLabelsStrategy : Strategy
 	/// </summary>
 	public ProfitLabelsStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to process", "General");
 
 		_temaPeriod = Param(nameof(TemaPeriod), 6)
 			.SetDisplay("TEMA Period", "Period used for the triple EMA", "Indicator");
 
-		_tradeVolume = Param(nameof(TradeVolume), 0.1m)
+		_tradeVolume = Param(nameof(TradeVolume), 1m)
 			.SetDisplay("Trade Volume", "Volume used for each position", "Trading");
 
 		_placingTrade = Param(nameof(PlacingTrade), true)
@@ -111,6 +111,22 @@ public class ProfitLabelsStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_lastSignalTime = null;
+		_previousTradeBuy = false;
+		_previousTradeSell = false;
+		_entryPrice = null;
+		_entrySide = null;
+		_positionVolume = 0m;
+		_tema0 = null;
+		_tema1 = null;
+		_tema2 = null;
+		_tema3 = null;
 	}
 
 	/// <inheritdoc />

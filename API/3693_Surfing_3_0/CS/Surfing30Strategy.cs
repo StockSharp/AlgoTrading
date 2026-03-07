@@ -32,8 +32,6 @@ public class Surfing30Strategy : Strategy
 	private readonly StrategyParam<int> _tradeEndHour;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private ExponentialMovingAverage _emaHigh = null!;
-	private ExponentialMovingAverage _emaLow = null!;
 	private RelativeStrengthIndex _rsi = null!;
 
 	private decimal? _previousClose;
@@ -78,21 +76,21 @@ public class Surfing30Strategy : Strategy
 			
 			.SetOptimize(5, 30, 1);
 
-		_longRsiThreshold = Param(nameof(LongRsiThreshold), 40m)
+		_longRsiThreshold = Param(nameof(LongRsiThreshold), 30m)
 			.SetDisplay("Long RSI Threshold", "Minimum RSI value required for long entries.", "Filters")
 			
 			.SetOptimize(20m, 60m, 5m);
 
-		_shortRsiThreshold = Param(nameof(ShortRsiThreshold), 65m)
+		_shortRsiThreshold = Param(nameof(ShortRsiThreshold), 70m)
 			.SetDisplay("Short RSI Threshold", "Maximum RSI value allowed for short entries.", "Filters")
 			
 			.SetOptimize(40m, 80m, 5m);
 
-		_tradeStartHour = Param(nameof(TradeStartHour), 8)
+		_tradeStartHour = Param(nameof(TradeStartHour), 0)
 			.SetDisplay("Trade Start Hour", "Hour of the day when new trades may start.", "Sessions")
 			;
 
-		_tradeEndHour = Param(nameof(TradeEndHour), 18)
+		_tradeEndHour = Param(nameof(TradeEndHour), 23)
 			.SetDisplay("Trade End Hour", "Hour of the day when all positions are closed.", "Sessions")
 			;
 
@@ -219,73 +217,39 @@ public class Surfing30Strategy : Strategy
 
 		Volume = OrderVolume;
 
-		_emaHigh = new ExponentialMovingAverage { Length = MaPeriod };
-		_emaLow = new ExponentialMovingAverage { Length = MaPeriod };
+		var sma = new SimpleMovingAverage { Length = MaPeriod };
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(sma, _rsi, ProcessCandle)
 			.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal smaValue, decimal rsiValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var endHour = TradeEndHour;
-		if (endHour >= 0 && candle.OpenTime.Hour >= endHour)
-		{
-			if (Position != 0)
-			{
-				CloseCurrentPosition();
-				ResetTargets();
-			}
-
-			ResetHistory();
-			return;
-		}
-
-		var emaHighValue = _emaHigh.Process(new DecimalIndicatorValue(_emaHigh, candle.HighPrice, candle.OpenTime));
-		var emaLowValue = _emaLow.Process(new DecimalIndicatorValue(_emaLow, candle.LowPrice, candle.OpenTime));
-		var rsiValue = _rsi.Process(new DecimalIndicatorValue(_rsi, candle.ClosePrice, candle.OpenTime));
-
-		if (!_emaHigh.IsFormed || !_emaLow.IsFormed || !_rsi.IsFormed)
-		{
-			UpdateHistory(candle.ClosePrice, emaHighValue.ToDecimal(), emaLowValue.ToDecimal());
-			return;
-		}
-
 		var currentClose = candle.ClosePrice;
-		var currentHighEma = emaHighValue.ToDecimal();
-		var currentLowEma = emaLowValue.ToDecimal();
-		var rsi = rsiValue.ToDecimal();
 
 		if (ManageActivePosition(candle))
 		{
-			UpdateHistory(currentClose, currentHighEma, currentLowEma);
+			UpdateHistory(currentClose, smaValue, smaValue);
 			return;
 		}
 
-		if (!IsWithinTradeHours(candle.OpenTime))
+		if (_previousClose is null || _previousHighEma is null)
 		{
-			UpdateHistory(currentClose, currentHighEma, currentLowEma);
-			return;
-		}
-
-		if (_previousClose is null || _previousHighEma is null || _previousLowEma is null)
-		{
-			UpdateHistory(currentClose, currentHighEma, currentLowEma);
+			UpdateHistory(currentClose, smaValue, smaValue);
 			return;
 		}
 
 		var previousClose = _previousClose.Value;
-		var previousHighEma = _previousHighEma.Value;
-		var previousLowEma = _previousLowEma.Value;
+		var previousSma = _previousHighEma.Value;
 
-		var buySignal = previousClose <= previousHighEma && currentClose > currentHighEma && rsi > LongRsiThreshold;
-		var sellSignal = previousClose >= previousLowEma && currentClose < currentLowEma && rsi < ShortRsiThreshold;
+		var buySignal = previousClose <= previousSma && currentClose > smaValue && rsiValue > LongRsiThreshold;
+		var sellSignal = previousClose >= previousSma && currentClose < smaValue && rsiValue < ShortRsiThreshold;
 
 		if (buySignal && Position <= 0)
 		{
@@ -310,7 +274,7 @@ public class Surfing30Strategy : Strategy
 			SetTargets(currentClose, false);
 		}
 
-		UpdateHistory(currentClose, currentHighEma, currentLowEma);
+		UpdateHistory(currentClose, smaValue, smaValue);
 	}
 
 	private bool ManageActivePosition(ICandleMessage candle)
