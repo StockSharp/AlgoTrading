@@ -53,13 +53,13 @@ public class ThreeCommasTurtleStrategy : Strategy
 
 	public ThreeCommasTurtleStrategy()
 	{
-		_periodFast = Param(nameof(PeriodFast), 20)
+		_periodFast = Param(nameof(PeriodFast), 10)
 			.SetDisplay("Period Fast", "Fast channel period", "Channels");
-		_periodSlow = Param(nameof(PeriodSlow), 20)
+		_periodSlow = Param(nameof(PeriodSlow), 15)
 			.SetDisplay("Period Slow", "Slow channel period", "Channels");
-		_periodExit = Param(nameof(PeriodExit), 10)
+		_periodExit = Param(nameof(PeriodExit), 5)
 			.SetDisplay("Period Exit", "Exit channel period", "Channels");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -80,6 +80,10 @@ public class ThreeCommasTurtleStrategy : Strategy
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+
+		_prevUpperFast = 0m;
+		_prevLowerFast = 0m;
+		_prevClose = 0m;
 
 		var upperFast = new Highest { Length = PeriodFast };
 		var lowerFast = new Lowest { Length = PeriodFast };
@@ -106,16 +110,23 @@ public class ThreeCommasTurtleStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (_prevClose <= _prevUpperFast && candle.ClosePrice > _prevUpperFast && candle.ClosePrice > upSlow && Position <= 0)
+		if (_prevClose == 0)
+		{
+			_prevUpperFast = upFast;
+			_prevLowerFast = lowFast;
+			_prevClose = candle.ClosePrice;
+			return;
+		}
+
+		if (candle.ClosePrice > _prevUpperFast && Position <= 0)
 		{
 			BuyMarket();
 		}
-		else if (_prevClose >= _prevLowerFast && candle.ClosePrice < _prevLowerFast && candle.ClosePrice < lowSlow && Position >= 0)
+		else if (candle.ClosePrice < _prevLowerFast && Position >= 0)
 		{
 			SellMarket();
 		}
-
-		if (Position > 0 && candle.ClosePrice < lowExit)
+		else if (Position > 0 && candle.ClosePrice < lowExit)
 			SellMarket();
 		else if (Position < 0 && candle.ClosePrice > upExit)
 			BuyMarket();

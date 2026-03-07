@@ -26,119 +26,53 @@ public class MartinGaleScalpingStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _maxPyramids;
 
-	private SimpleMovingAverage _fastSma;
-	private SimpleMovingAverage _slowSma;
 	private decimal _stopPrice;
 	private decimal _takePrice;
 	private decimal _prevSlow;
 	private int _pyramids;
 
-	/// <summary>
-	/// Fast SMA length.
-	/// </summary>
-	public int FastLength
-	{
-		get => _fastLength.Value;
-		set => _fastLength.Value = value;
-	}
+	public int FastLength { get => _fastLength.Value; set => _fastLength.Value = value; }
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
+	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
+	public string TradeDirection { get => _tradeDirection.Value; set => _tradeDirection.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int MaxPyramids { get => _maxPyramids.Value; set => _maxPyramids.Value = value; }
 
-	/// <summary>
-	/// Slow SMA length.
-	/// </summary>
-	public int SlowLength
-	{
-		get => _slowLength.Value;
-		set => _slowLength.Value = value;
-	}
-
-	/// <summary>
-	/// Take profit multiplier.
-	/// </summary>
-	public decimal TakeProfit
-	{
-		get => _takeProfit.Value;
-		set => _takeProfit.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss multiplier.
-	/// </summary>
-	public decimal StopLoss
-	{
-		get => _stopLoss.Value;
-		set => _stopLoss.Value = value;
-	}
-
-	/// <summary>
-	/// Trading mode (Long, Short, BiDir).
-	/// </summary>
-	public string TradeDirection
-	{
-		get => _tradeDirection.Value;
-		set => _tradeDirection.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type for calculations.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Maximum pyramid levels.
-	/// </summary>
-	public int MaxPyramids
-	{
-		get => _maxPyramids.Value;
-		set => _maxPyramids.Value = value;
-	}
-
-	/// <summary>
-	/// Initialize <see cref="MartinGaleScalpingStrategy"/>.
-	/// </summary>
 	public MartinGaleScalpingStrategy()
 	{
-		_fastLength = Param(nameof(FastLength), 3)
+		_fastLength = Param(nameof(FastLength), 10)
 			.SetGreaterThanZero()
-			.SetDisplay("Fast SMA Length", "Length for fast SMA", "General")
-			;
+			.SetDisplay("Fast SMA Length", "Length for fast SMA", "General");
 
-		_slowLength = Param(nameof(SlowLength), 8)
+		_slowLength = Param(nameof(SlowLength), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("Slow SMA Length", "Length for slow SMA", "General")
-			;
+			.SetDisplay("Slow SMA Length", "Length for slow SMA", "General");
 
 		_takeProfit = Param(nameof(TakeProfit), 1.03m)
 			.SetGreaterThanZero()
-			.SetDisplay("Take Profit Mult", "Take profit multiplier", "Risk")
-			;
+			.SetDisplay("Take Profit Mult", "Take profit multiplier", "Risk");
 
 		_stopLoss = Param(nameof(StopLoss), 0.95m)
 			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss Mult", "Stop loss multiplier", "Risk")
-			;
+			.SetDisplay("Stop Loss Mult", "Stop loss multiplier", "Risk");
 
 		_tradeDirection = Param(nameof(TradeDirection), "Long")
 			.SetDisplay("Trade Direction", "Trade direction", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for candles", "General");
 
-		_maxPyramids = Param(nameof(MaxPyramids), 5)
+		_maxPyramids = Param(nameof(MaxPyramids), 2)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Pyramids", "Maximum pyramid entries", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
@@ -148,25 +82,27 @@ public class MartinGaleScalpingStrategy : Strategy
 		_pyramids = 0;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_fastSma = new SMA { Length = FastLength };
-		_slowSma = new SMA { Length = SlowLength };
+		var fastSma = new SimpleMovingAverage { Length = FastLength };
+		var slowSma = new SimpleMovingAverage { Length = SlowLength };
+
+		_stopPrice = 0m;
+		_takePrice = 0m;
+		_prevSlow = 0m;
+		_pyramids = 0;
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(_fastSma, _slowSma, ProcessCandle)
-			.Start();
+		subscription.Bind(fastSma, slowSma, ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _fastSma);
-			DrawIndicator(area, _slowSma);
+			DrawIndicator(area, fastSma);
+			DrawIndicator(area, slowSma);
 			DrawOwnTrades(area);
 		}
 	}
@@ -191,7 +127,7 @@ public class MartinGaleScalpingStrategy : Strategy
 		{
 			if ((candle.ClosePrice > _takePrice || candle.ClosePrice < _stopPrice) && crossunder)
 			{
-				SellMarket(Position);
+				SellMarket();
 				ResetLevels();
 			}
 			else if (crossover && AllowLong() && _pyramids < MaxPyramids)
@@ -205,7 +141,7 @@ public class MartinGaleScalpingStrategy : Strategy
 		{
 			if ((candle.ClosePrice > _takePrice || candle.ClosePrice < _stopPrice) && crossover)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				ResetLevels();
 			}
 			else if (crossunder && AllowShort() && _pyramids < MaxPyramids)

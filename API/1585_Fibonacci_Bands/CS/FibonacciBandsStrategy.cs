@@ -71,7 +71,7 @@ public class FibonacciBandsStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("MA Length", "Moving average length", "General");
 
-		_fib3 = Param(nameof(Fib3), 4.236m)
+		_fib3 = Param(nameof(Fib3), 1.618m)
 			.SetDisplay("Fib Level 3", "Fibonacci level 3", "Levels");
 
 		_kcMultiplier = Param(nameof(KcMultiplier), 2m)
@@ -86,7 +86,7 @@ public class FibonacciBandsStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "RSI length", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for candles", "General");
 	}
 

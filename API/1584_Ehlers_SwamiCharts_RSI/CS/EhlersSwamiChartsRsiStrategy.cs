@@ -22,38 +22,10 @@ public class EhlersSwamiChartsRsiStrategy : Strategy
 	private readonly StrategyParam<int> _shortColor;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private RelativeStrengthIndex[] _rsis;
+	public int LongColor { get => _longColor.Value; set => _longColor.Value = value; }
+	public int ShortColor { get => _shortColor.Value; set => _shortColor.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Long color threshold.
-	/// </summary>
-	public int LongColor
-	{
-		get => _longColor.Value;
-		set => _longColor.Value = value;
-	}
-
-	/// <summary>
-	/// Short color threshold.
-	/// </summary>
-	public int ShortColor
-	{
-		get => _shortColor.Value;
-		set => _shortColor.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type for calculations.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initialize <see cref="EhlersSwamiChartsRsiStrategy"/>.
-	/// </summary>
 	public EhlersSwamiChartsRsiStrategy()
 	{
 		_longColor = Param(nameof(LongColor), 50)
@@ -62,32 +34,27 @@ public class EhlersSwamiChartsRsiStrategy : Strategy
 		_shortColor = Param(nameof(ShortColor), 50)
 			.SetDisplay("ShortColor", "Short color threshold", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for candles", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		var list = new List<RelativeStrengthIndex>();
-		for (var i = 2; i <= 48; i++)
+		var rsis = new RelativeStrengthIndex[24];
+		for (var i = 0; i < 24; i++)
 		{
-			list.Add(new RelativeStrengthIndex { Length = i });
+			rsis[i] = new RelativeStrengthIndex { Length = i + 10 };
 		}
-		_rsis = list.ToArray();
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.BindEx(_rsis, ProcessCandle)
-			.Start();
+		subscription.BindEx(rsis, ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -108,8 +75,9 @@ public class EhlersSwamiChartsRsiStrategy : Strategy
 
 		foreach (var val in values)
 		{
-			if (!val.IsFinal)
+			if (val.IsEmpty)
 				continue;
+
 			var rsi = val.ToDecimal() / 100m;
 			int c1;
 			int c2;
@@ -139,11 +107,11 @@ public class EhlersSwamiChartsRsiStrategy : Strategy
 
 		if (longSignal && Position <= 0)
 		{
-			BuyMarket(Position < 0 ? Math.Abs(Position) + 1 : 1);
+			BuyMarket();
 		}
 		else if (shortSignal && Position >= 0)
 		{
-			SellMarket(Position > 0 ? Position + 1 : 1);
+			SellMarket();
 		}
 	}
 }
