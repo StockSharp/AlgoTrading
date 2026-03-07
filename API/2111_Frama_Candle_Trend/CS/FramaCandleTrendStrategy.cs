@@ -37,10 +37,10 @@ public class FramaCandleTrendStrategy : Strategy
 
 	public FramaCandleTrendStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for indicator calculation", "General");
 
-		_framaPeriod = Param(nameof(FramaPeriod), 14)
+		_framaPeriod = Param(nameof(FramaPeriod), 15)
 			.SetGreaterThanZero()
 			.SetDisplay("FrAMA Period", "Length of the Fractal Adaptive Moving Average", "Indicator");
 	}
@@ -49,6 +49,15 @@ public class FramaCandleTrendStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFramaValue = 0;
+		_prevPrevFramaValue = 0;
+		_hasPrev = false;
 	}
 
 	/// <inheritdoc />
