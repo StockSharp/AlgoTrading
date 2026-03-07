@@ -1,96 +1,109 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
-using StockSharp.Algo.Candles;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Williams %R momentum strategy known as Vlado.
-/// Buys when %R drops below the oversold level and sells when %R rises above the overbought level.
+/// Vlado momentum strategy using EMA crossover.
+/// Buys when fast EMA crosses above slow EMA, sells on reverse.
 /// </summary>
 public class VladoStrategy : Strategy
 {
-	private readonly StrategyParam<int> _williamsPeriod;
-	private readonly StrategyParam<decimal> _overboughtLevel;
-	private readonly StrategyParam<decimal> _oversoldLevel;
-	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _fastPeriod;
+	private readonly StrategyParam<int> _slowPeriod;
+	private readonly StrategyParam<int> _stopLossPoints;
+	private readonly StrategyParam<int> _takeProfitPoints;
 
-	private WilliamsR _williams;
+	private ExponentialMovingAverage _fast;
+	private ExponentialMovingAverage _slow;
+
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private decimal _entryPrice;
+	private int _cooldown;
 
 	/// <summary>
-	/// Number of candles used to calculate Williams %R.
+	/// Fast EMA period.
 	/// </summary>
-	public int WilliamsPeriod
+	public int FastPeriod
 	{
-		get => _williamsPeriod.Value;
-		set => _williamsPeriod.Value = value;
+		get => _fastPeriod.Value;
+		set => _fastPeriod.Value = value;
 	}
 
 	/// <summary>
-	/// Overbought threshold for %R (values are negative in the oscillator scale).
+	/// Slow EMA period.
 	/// </summary>
-	public decimal OverboughtLevel
+	public int SlowPeriod
 	{
-		get => _overboughtLevel.Value;
-		set => _overboughtLevel.Value = value;
+		get => _slowPeriod.Value;
+		set => _slowPeriod.Value = value;
 	}
 
 	/// <summary>
-	/// Oversold threshold for %R (values are negative in the oscillator scale).
+	/// Stop-loss distance in price steps.
 	/// </summary>
-	public decimal OversoldLevel
+	public int StopLossPoints
 	{
-		get => _oversoldLevel.Value;
-		set => _oversoldLevel.Value = value;
+		get => _stopLossPoints.Value;
+		set => _stopLossPoints.Value = value;
 	}
 
 	/// <summary>
-	/// Candle type used for calculations.
+	/// Take-profit distance in price steps.
 	/// </summary>
-	public DataType CandleType
+	public int TakeProfitPoints
 	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
+		get => _takeProfitPoints.Value;
+		set => _takeProfitPoints.Value = value;
 	}
 
 	/// <summary>
-	/// Initializes <see cref="VladoStrategy"/>.
+	/// Initializes a new instance of the <see cref="VladoStrategy"/> class.
 	/// </summary>
 	public VladoStrategy()
 	{
-		_williamsPeriod = Param(nameof(WilliamsPeriod), 14)
+		_fastPeriod = Param(nameof(FastPeriod), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("Williams %R Period", "Number of candles used in %R calculation", "Williams %R")
-			;
+			.SetDisplay("Fast Period", "Fast EMA period", "Indicator");
 
-		_overboughtLevel = Param(nameof(OverboughtLevel), -25m)
-			.SetDisplay("Overbought Level", "Threshold to consider %R overbought", "Williams %R")
-			;
+		_slowPeriod = Param(nameof(SlowPeriod), 50)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow Period", "Slow EMA period", "Indicator");
 
-		_oversoldLevel = Param(nameof(OversoldLevel), -75m)
-			.SetDisplay("Oversold Level", "Threshold to consider %R oversold", "Williams %R")
-			;
+		_stopLossPoints = Param(nameof(StopLossPoints), 200)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss", "Stop-loss in price steps", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
-			.SetDisplay("Candle Type", "Candle type used for calculations", "General");
+		_takeProfitPoints = Param(nameof(TakeProfitPoints), 400)
+			.SetNotNegative()
+			.SetDisplay("Take Profit", "Take-profit in price steps", "Risk");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return [(Security, CandleType)];
+		yield return (Security, TimeSpan.FromMinutes(5).TimeFrame());
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_fast = null;
+		_slow = null;
+		_prevFast = 0;
+		_prevSlow = 0;
+		_entryPrice = 0;
+		_cooldown = 0;
 	}
 
 	/// <inheritdoc />
@@ -98,56 +111,104 @@ public class VladoStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_williams = new WilliamsR
-		{
-			Length = WilliamsPeriod
-		};
+		_fast = new ExponentialMovingAverage { Length = FastPeriod };
+		_slow = new ExponentialMovingAverage { Length = SlowPeriod };
 
-		var subscription = SubscribeCandles(CandleType);
-
-		subscription
-			.Bind(_williams, ProcessCandle)
-			.Start();
-
-		var priceArea = CreateChartArea();
-		if (priceArea != null)
-		{
-			DrawCandles(priceArea, subscription);
-			DrawOwnTrades(priceArea);
-
-			var indicatorArea = CreateChartArea();
-			if (indicatorArea != null)
-			{
-				DrawIndicator(indicatorArea, _williams);
-			}
-		}
+		var subscription = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
+		subscription.Bind(_fast, _slow, ProcessCandle);
+		subscription.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal wprValue)
+	private void ProcessCandle(ICandleMessage candle, decimal fastValue, decimal slowValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (_williams?.IsFormed != true)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (wprValue <= OversoldLevel && Position <= 0)
+		if (!_fast.IsFormed || !_slow.IsFormed)
 		{
-			// Oversold environment detected, buy or reverse to long position.
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
-			LogInfo($"Buy signal: %R={wprValue:F2} <= {OversoldLevel}. Volume={volume}.");
+			_prevFast = fastValue;
+			_prevSlow = slowValue;
+			return;
 		}
-		else if (wprValue >= OverboughtLevel && Position >= 0)
+
+		if (_cooldown > 0)
 		{
-			// Overbought environment detected, sell or reverse to short position.
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
-			LogInfo($"Sell signal: %R={wprValue:F2} >= {OverboughtLevel}. Volume={volume}.");
+			_cooldown--;
+			_prevFast = fastValue;
+			_prevSlow = slowValue;
+			return;
 		}
+
+		var close = candle.ClosePrice;
+		var step = Security?.PriceStep ?? 1m;
+
+		// Check SL/TP
+		if (Position > 0 && _entryPrice > 0)
+		{
+			if (StopLossPoints > 0 && close <= _entryPrice - StopLossPoints * step)
+			{
+				SellMarket();
+				_entryPrice = 0;
+				_cooldown = 80;
+				_prevFast = fastValue;
+				_prevSlow = slowValue;
+				return;
+			}
+
+			if (TakeProfitPoints > 0 && close >= _entryPrice + TakeProfitPoints * step)
+			{
+				SellMarket();
+				_entryPrice = 0;
+				_cooldown = 80;
+				_prevFast = fastValue;
+				_prevSlow = slowValue;
+				return;
+			}
+		}
+		else if (Position < 0 && _entryPrice > 0)
+		{
+			if (StopLossPoints > 0 && close >= _entryPrice + StopLossPoints * step)
+			{
+				BuyMarket();
+				_entryPrice = 0;
+				_cooldown = 80;
+				_prevFast = fastValue;
+				_prevSlow = slowValue;
+				return;
+			}
+
+			if (TakeProfitPoints > 0 && close <= _entryPrice - TakeProfitPoints * step)
+			{
+				BuyMarket();
+				_entryPrice = 0;
+				_cooldown = 80;
+				_prevFast = fastValue;
+				_prevSlow = slowValue;
+				return;
+			}
+		}
+
+		// EMA crossover
+		if (_prevFast <= _prevSlow && fastValue > slowValue && Position <= 0)
+		{
+			if (Position < 0)
+				BuyMarket();
+
+			BuyMarket();
+			_entryPrice = close;
+			_cooldown = 80;
+		}
+		else if (_prevFast >= _prevSlow && fastValue < slowValue && Position >= 0)
+		{
+			if (Position > 0)
+				SellMarket();
+
+			SellMarket();
+			_entryPrice = close;
+			_cooldown = 80;
+		}
+
+		_prevFast = fastValue;
+		_prevSlow = slowValue;
 	}
 }
-

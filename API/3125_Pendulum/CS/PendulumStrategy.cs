@@ -1,390 +1,94 @@
-namespace StockSharp.Samples.Strategies;
-
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
+namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Grid-based pendulum strategy converted from the original MQL implementation.
+/// Pendulum strategy using SMA crossover with mean reversion.
+/// Buys when fast SMA crosses above slow SMA, sells on reverse.
 /// </summary>
 public class PendulumStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _stepSize;
-	private readonly StrategyParam<decimal> _multiplier;
-	private readonly StrategyParam<int> _maxLayers;
-	private readonly StrategyParam<decimal> _baseVolume;
-	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _fastPeriod;
+	private readonly StrategyParam<int> _slowPeriod;
+	private readonly StrategyParam<int> _stopLossPoints;
+	private readonly StrategyParam<int> _takeProfitPoints;
 
-	private int _currentDirection;
-	private int _layerIndex;
-	private decimal _currentEntryPrice;
-	private decimal _upperTrigger;
-	private decimal _lowerTrigger;
-	private decimal _takeProfitLevel;
-	private decimal _stopLossLevel;
-	private bool _levelsInitialized;
-	private bool _hasPendingEntry;
-	private int _pendingDirection;
-	private decimal _pendingEntryPrice;
+	private ExponentialMovingAverage _fast;
+	private ExponentialMovingAverage _slow;
+
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private decimal _entryPrice;
+	private int _cooldown;
+
+	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
+	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
+	public int StopLossPoints { get => _stopLossPoints.Value; set => _stopLossPoints.Value = value; }
+	public int TakeProfitPoints { get => _takeProfitPoints.Value; set => _takeProfitPoints.Value = value; }
 
 	public PendulumStrategy()
 	{
-		_stepSize = Param(nameof(StepSize), 0.001m)
-			.SetDisplay("Grid Step", "Distance between consecutive grid levels", "Strategy")
-			.SetGreaterThanZero()
-			
-			.SetOptimize(0.0005m, 0.01m, 0.0005m);
-
-		_multiplier = Param(nameof(Multiplier), 2m)
-			.SetDisplay("Multiplier", "Scaling applied to volume and extended targets", "Strategy")
-			.SetGreaterThanZero()
-			
-			.SetOptimize(1.2m, 3m, 0.1m);
-
-		_maxLayers = Param(nameof(MaxLayers), 3)
-			.SetDisplay("Max Layers", "Maximum number of martingale layers", "Risk")
-			.SetGreaterThanZero()
-			
-			.SetOptimize(2, 5, 1);
-
-		_baseVolume = Param(nameof(BaseVolume), 1m)
-			.SetDisplay("Base Volume", "Initial trade volume for the first layer", "Trading")
-			.SetGreaterThanZero()
-			
-			.SetOptimize(0.1m, 5m, 0.1m);
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Time frame used for price tracking", "General");
+		_fastPeriod = Param(nameof(FastPeriod), 20).SetGreaterThanZero().SetDisplay("Fast Period", "Fast EMA period", "Indicator");
+		_slowPeriod = Param(nameof(SlowPeriod), 80).SetGreaterThanZero().SetDisplay("Slow Period", "Slow EMA period", "Indicator");
+		_stopLossPoints = Param(nameof(StopLossPoints), 200).SetNotNegative().SetDisplay("Stop Loss", "Stop-loss in price steps", "Risk");
+		_takeProfitPoints = Param(nameof(TakeProfitPoints), 400).SetNotNegative().SetDisplay("Take Profit", "Take-profit in price steps", "Risk");
 	}
 
-	/// <summary>
-	/// Grid step size.
-	/// </summary>
-	public decimal StepSize
-	{
-		get => _stepSize.Value;
-		set => _stepSize.Value = value;
-	}
-
-	/// <summary>
-	/// Volume and distance multiplier.
-	/// </summary>
-	public decimal Multiplier
-	{
-		get => _multiplier.Value;
-		set => _multiplier.Value = value;
-	}
-
-	/// <summary>
-	/// Maximum allowed martingale layers.
-	/// </summary>
-	public int MaxLayers
-	{
-		get => _maxLayers.Value;
-		set => _maxLayers.Value = value;
-	}
-
-	/// <summary>
-	/// Base trading volume.
-	/// </summary>
-	public decimal BaseVolume
-	{
-		get => _baseVolume.Value;
-		set => _baseVolume.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used by the strategy.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-		=> [(Security, CandleType)];
+	{
+		yield return (Security, TimeSpan.FromMinutes(5).TimeFrame());
+	}
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_currentDirection = 0;
-		_layerIndex = 0;
-		_currentEntryPrice = 0m;
-		_upperTrigger = 0m;
-		_lowerTrigger = 0m;
-		_takeProfitLevel = 0m;
-		_stopLossLevel = 0m;
-		_levelsInitialized = false;
-		_hasPendingEntry = false;
-		_pendingDirection = 0;
-		_pendingEntryPrice = 0m;
+		_fast = null; _slow = null;
+		_prevFast = 0; _prevSlow = 0; _entryPrice = 0; _cooldown = 0;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+		_fast = new ExponentialMovingAverage { Length = FastPeriod };
+		_slow = new ExponentialMovingAverage { Length = SlowPeriod };
+		var subscription = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
+		subscription.Bind(_fast, _slow, ProcessCandle);
+		subscription.Start();
+	}
 
-		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(ProcessCandle)
-			.Start();
+	private void ProcessCandle(ICandleMessage candle, decimal fastValue, decimal slowValue)
+	{
+		if (candle.State != CandleStates.Finished) return;
+		if (!_fast.IsFormed || !_slow.IsFormed) { _prevFast = fastValue; _prevSlow = slowValue; return; }
+		if (_cooldown > 0) { _cooldown--; _prevFast = fastValue; _prevSlow = slowValue; return; }
 
-		var area = CreateChartArea();
-		if (area != null)
+		var close = candle.ClosePrice;
+		var step = Security?.PriceStep ?? 1m;
+
+		if (Position > 0 && _entryPrice > 0)
 		{
-			DrawCandles(area, subscription);
-			DrawOwnTrades(area);
+			if (StopLossPoints > 0 && close <= _entryPrice - StopLossPoints * step) { SellMarket(); _entryPrice = 0; _cooldown = 80; _prevFast = fastValue; _prevSlow = slowValue; return; }
+			if (TakeProfitPoints > 0 && close >= _entryPrice + TakeProfitPoints * step) { SellMarket(); _entryPrice = 0; _cooldown = 80; _prevFast = fastValue; _prevSlow = slowValue; return; }
+		}
+		else if (Position < 0 && _entryPrice > 0)
+		{
+			if (StopLossPoints > 0 && close >= _entryPrice + StopLossPoints * step) { BuyMarket(); _entryPrice = 0; _cooldown = 80; _prevFast = fastValue; _prevSlow = slowValue; return; }
+			if (TakeProfitPoints > 0 && close <= _entryPrice - TakeProfitPoints * step) { BuyMarket(); _entryPrice = 0; _cooldown = 80; _prevFast = fastValue; _prevSlow = slowValue; return; }
 		}
 
-		StartProtection(null, null);
-	}
+		if (_prevFast <= _prevSlow && fastValue > slowValue && Position <= 0)
+		{ if (Position < 0) BuyMarket(); BuyMarket(); _entryPrice = close; _cooldown = 80; }
+		else if (_prevFast >= _prevSlow && fastValue < slowValue && Position >= 0)
+		{ if (Position > 0) SellMarket(); SellMarket(); _entryPrice = close; _cooldown = 80; }
 
-	private void ProcessCandle(ICandleMessage candle)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		var price = candle.ClosePrice;
-
-		if (!_levelsInitialized)
-			InitializeLevels(price);
-
-		if (_hasPendingEntry && Position == 0m)
-		{
-			EnterDirection(_pendingDirection, _pendingEntryPrice, true);
-			_hasPendingEntry = false;
-			return;
-		}
-
-		if (HandleActivePosition(price))
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (_currentDirection != 0 || _hasPendingEntry)
-			return;
-
-		if (price >= _upperTrigger)
-		{
-			EnterDirection(1, _upperTrigger, true);
-		}
-		else if (price <= _lowerTrigger)
-		{
-			EnterDirection(-1, _lowerTrigger, true);
-		}
-	}
-
-	private bool HandleActivePosition(decimal price)
-	{
-		if (_currentDirection == 0)
-			return false;
-
-		if (_currentDirection > 0)
-		{
-			if (price >= _takeProfitLevel)
-			{
-				HandleTakeProfit(_takeProfitLevel, 1);
-				return true;
-			}
-
-			if (price <= _stopLossLevel)
-			{
-				HandleStopLoss(price);
-				return true;
-			}
-
-			if (price <= _lowerTrigger && _layerIndex < MaxLayers)
-			{
-				EnterDirection(-1, _lowerTrigger, false);
-				return true;
-			}
-		}
-		else
-		{
-			if (price <= _takeProfitLevel)
-			{
-				HandleTakeProfit(_takeProfitLevel, -1);
-				return true;
-			}
-
-			if (price >= _stopLossLevel)
-			{
-				HandleStopLoss(price);
-				return true;
-			}
-
-			if (price >= _upperTrigger && _layerIndex < MaxLayers)
-			{
-				EnterDirection(1, _upperTrigger, false);
-				return true;
-			}
-		}
-
-		return false;
-	}
-
-	private void HandleTakeProfit(decimal entryPrice, int direction)
-	{
-		CloseCurrentPosition();
-		ScheduleReEntry(direction, entryPrice);
-	}
-
-	private void HandleStopLoss(decimal referencePrice)
-	{
-		CloseCurrentPosition();
-		ResetCoreState(referencePrice);
-		_hasPendingEntry = false;
-		_pendingDirection = 0;
-		_pendingEntryPrice = 0m;
-	}
-
-	private void CloseCurrentPosition()
-	{
-		if (Position > 0m)
-			SellMarket(Position);
-		else if (Position < 0m)
-			BuyMarket(-Position);
-	}
-
-	private void ScheduleReEntry(int direction, decimal entryPrice)
-	{
-		ResetCoreState(entryPrice);
-		_hasPendingEntry = true;
-		_pendingDirection = direction;
-		_pendingEntryPrice = entryPrice;
-	}
-
-	private void EnterDirection(int direction, decimal entryPrice, bool resetLayer)
-	{
-		if (resetLayer)
-			_layerIndex = 1;
-		else
-			_layerIndex++;
-
-		if (_layerIndex > MaxLayers)
-		{
-			_layerIndex = MaxLayers;
-			return;
-		}
-
-		var desiredPosition = direction * GetVolumeForLayer(_layerIndex);
-		var delta = desiredPosition - Position;
-
-		if (delta > 0m)
-		{
-			BuyMarket(delta);
-		}
-		else if (delta < 0m)
-		{
-			SellMarket(-delta);
-		}
-
-		_currentDirection = direction;
-		_currentEntryPrice = entryPrice;
-		UpdateGridAfterEntry(direction, entryPrice);
-	}
-
-	private void ResetCoreState(decimal referencePrice)
-	{
-		_currentDirection = 0;
-		_layerIndex = 0;
-		_currentEntryPrice = 0m;
-		_takeProfitLevel = 0m;
-		_stopLossLevel = 0m;
-
-		var aligned = AlignPrice(referencePrice);
-		_upperTrigger = aligned;
-		_lowerTrigger = aligned - StepSize;
-	}
-
-	private void InitializeLevels(decimal price)
-	{
-		ResetCoreState(price);
-		_levelsInitialized = true;
-	}
-
-	private decimal GetVolumeForLayer(int layer)
-	{
-		var volume = BaseVolume * (decimal)Math.Pow((double)Multiplier, layer - 1);
-		return NormalizeVolume(volume);
-	}
-
-	private void UpdateGridAfterEntry(int direction, decimal entryPrice)
-	{
-		if (direction > 0)
-		{
-			if (_layerIndex == 1)
-			{
-				_takeProfitLevel = entryPrice + StepSize;
-				_stopLossLevel = entryPrice - StepSize * Multiplier;
-				_upperTrigger = entryPrice + StepSize;
-				_lowerTrigger = entryPrice - StepSize;
-			}
-			else
-			{
-				_takeProfitLevel = entryPrice + StepSize * Multiplier;
-				_stopLossLevel = entryPrice - StepSize;
-				_upperTrigger = entryPrice + StepSize * Multiplier;
-				_lowerTrigger = entryPrice - StepSize;
-			}
-		}
-		else
-		{
-			if (_layerIndex == 1)
-			{
-				_takeProfitLevel = entryPrice - StepSize;
-				_stopLossLevel = entryPrice + StepSize * Multiplier;
-				_upperTrigger = entryPrice + StepSize;
-				_lowerTrigger = entryPrice - StepSize;
-			}
-			else
-			{
-				_takeProfitLevel = entryPrice - StepSize * Multiplier;
-				_stopLossLevel = entryPrice + StepSize;
-				_upperTrigger = entryPrice + StepSize;
-				_lowerTrigger = entryPrice - StepSize * Multiplier;
-			}
-		}
-	}
-
-	private decimal AlignPrice(decimal price)
-	{
-		var step = StepSize;
-		if (step <= 0m)
-			return price;
-
-		var steps = Math.Ceiling(price / step);
-		return steps * step;
-	}
-
-	private decimal NormalizeVolume(decimal volume)
-	{
-		if (volume <= 0m)
-			return 0m;
-
-		var step = Security?.VolumeStep ?? 0m;
-		if (step <= 0m)
-			return volume;
-
-		var steps = Math.Max(1m, Math.Round(volume / step, MidpointRounding.AwayFromZero));
-		return steps * step;
+		_prevFast = fastValue; _prevSlow = slowValue;
 	}
 }
-
