@@ -48,7 +48,7 @@ public class MustangAlgoChannelStrategy : Strategy
 		_lowerBound = Param(nameof(LowerBound), 40m)
 			.SetDisplay("Lower Bound", "Oversold threshold", "Signals");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 

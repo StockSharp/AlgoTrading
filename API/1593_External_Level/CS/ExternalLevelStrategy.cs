@@ -21,6 +21,9 @@ public class ExternalLevelStrategy : Strategy
 	private readonly StrategyParam<int> _lookback;
 	private readonly StrategyParam<DataType> _candleType;
 
+	private decimal _prevResistance;
+	private decimal _prevSupport;
+
 	public int Lookback { get => _lookback.Value; set => _lookback.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
@@ -30,15 +33,20 @@ public class ExternalLevelStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Lookback", "Support/resistance lookback period", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Source candle timeframe", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevResistance = 0;
+		_prevSupport = 0;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
@@ -46,10 +54,11 @@ public class ExternalLevelStrategy : Strategy
 		var highest = new Highest { Length = Lookback };
 		var lowest = new Lowest { Length = Lookback };
 
+		_prevResistance = 0;
+		_prevSupport = 0;
+
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(highest, lowest, ProcessCandle)
-			.Start();
+		subscription.Bind(highest, lowest, ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -64,9 +73,19 @@ public class ExternalLevelStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (candle.ClosePrice >= resistance && Position <= 0)
+		if (_prevResistance == 0)
+		{
+			_prevResistance = resistance;
+			_prevSupport = support;
+			return;
+		}
+
+		if (candle.ClosePrice > _prevResistance && Position <= 0)
 			BuyMarket();
-		else if (candle.ClosePrice <= support && Position >= 0)
+		else if (candle.ClosePrice < _prevSupport && Position >= 0)
 			SellMarket();
+
+		_prevResistance = resistance;
+		_prevSupport = support;
 	}
 }
