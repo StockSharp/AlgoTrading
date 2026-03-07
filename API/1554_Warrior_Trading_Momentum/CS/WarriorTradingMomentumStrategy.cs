@@ -43,7 +43,7 @@ public class WarriorTradingMomentumStrategy : Strategy
 
 	public WarriorTradingMomentumStrategy()
 	{
-		_minRedCandles = Param(nameof(MinRedCandles), 2)
+		_minRedCandles = Param(nameof(MinRedCandles), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Min Red", "Red candles before reversal", "Momentum");
 
@@ -51,7 +51,7 @@ public class WarriorTradingMomentumStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Risk Reward", "TP to SL ratio", "Risk");
 
-		_maxDailyTrades = Param(nameof(MaxDailyTrades), 10)
+		_maxDailyTrades = Param(nameof(MaxDailyTrades), 1)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Trades", "Daily trade limit", "Risk");
 
@@ -59,11 +59,11 @@ public class WarriorTradingMomentumStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Vol Avg Length", "Volume average period", "Parameters");
 
-		_volMult = Param(nameof(VolMult), 1.5m)
+		_volMult = Param(nameof(VolMult), 3m)
 			.SetGreaterThanZero()
 			.SetDisplay("Vol Mult", "Volume spike multiplier", "Parameters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -135,6 +135,7 @@ public class WarriorTradingMomentumStrategy : Strategy
 				SellMarket();
 				_stopPrice = 0;
 				_takeProfitPrice = 0;
+				return;
 			}
 		}
 		else if (Position < 0)
@@ -144,6 +145,7 @@ public class WarriorTradingMomentumStrategy : Strategy
 				BuyMarket();
 				_stopPrice = 0;
 				_takeProfitPrice = 0;
+				return;
 			}
 		}
 
@@ -156,17 +158,15 @@ public class WarriorTradingMomentumStrategy : Strategy
 		if (stdVal <= 0 || _volumes.Count < VolAvgLength || _dailyTrades >= MaxDailyTrades)
 			return;
 
+		if (Position != 0)
+			return;
+
 		var volAvg = _volumes.Take(VolAvgLength).Sum() / VolAvgLength;
 		var volumeSpike = candle.TotalVolume > volAvg * VolMult;
 		var bullish = candle.ClosePrice > candle.OpenPrice;
 
 		// Red-to-green reversal with volume spike
-		var redToGreen = _redCount >= MinRedCandles && bullish && volumeSpike;
-
-		// Momentum buy: price above EMA with RSI confirmation
-		var momentumBuy = bullish && candle.ClosePrice > emaVal && rsiVal > 50 && volumeSpike;
-
-		if ((redToGreen || momentumBuy) && Position <= 0)
+		if (_redCount >= MinRedCandles && bullish && volumeSpike && candle.ClosePrice > emaVal && rsiVal > 55)
 		{
 			BuyMarket();
 			var stopDist = stdVal * 2m;
@@ -174,7 +174,7 @@ public class WarriorTradingMomentumStrategy : Strategy
 			_takeProfitPrice = candle.ClosePrice + stopDist * RiskReward;
 			_dailyTrades++;
 		}
-		else if (candle.ClosePrice < emaVal && rsiVal < 50 && volumeSpike && Position >= 0)
+		else if (candle.ClosePrice < emaVal && rsiVal < 45 && volumeSpike)
 		{
 			SellMarket();
 			var stopDist = stdVal * 2m;

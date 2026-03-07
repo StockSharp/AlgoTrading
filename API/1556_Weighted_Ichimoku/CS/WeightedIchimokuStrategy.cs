@@ -47,13 +47,13 @@ public class WeightedIchimokuStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Senkou B Period", "Span B length", "Ichimoku");
 
-		_buyThreshold = Param(nameof(BuyThreshold), 40m)
+		_buyThreshold = Param(nameof(BuyThreshold), 70m)
 			.SetDisplay("Buy Threshold", "Score to enter long", "General");
 
-		_sellThreshold = Param(nameof(SellThreshold), -20m)
+		_sellThreshold = Param(nameof(SellThreshold), -70m)
 			.SetDisplay("Sell Threshold", "Score to exit/short", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -115,9 +115,5 @@ public class WeightedIchimokuStrategy : Strategy
 			BuyMarket();
 		else if (score <= SellThreshold && Position >= 0)
 			SellMarket();
-		else if (Position > 0 && score <= 0)
-			SellMarket();
-		else if (Position < 0 && score >= 0)
-			BuyMarket();
 	}
 }

@@ -32,12 +32,12 @@ public class WaindropsMakit0Strategy : Strategy
 
 	public WaindropsMakit0Strategy()
 	{
-		_periodMinutes = Param(nameof(PeriodMinutes), 60)
-			.SetDisplay("Period", "Full period in minutes", "General")
-			
+		_periodMinutes = Param(nameof(PeriodMinutes), 120)
+			.SetDisplay("Period", "Full period in candles", "General")
+
 			.SetOptimize(30, 120, 30);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
@@ -86,11 +86,17 @@ public class WaindropsMakit0Strategy : Strategy
 		var half = PeriodMinutes / 2;
 		if (_counter < half)
 		{
-			_leftValue = _leftVwap.Process(candle).ToDecimal();
+			var res = _leftVwap.Process(candle);
+			if (res.IsEmpty)
+				return;
+			_leftValue = res.ToDecimal();
 		}
 		else
 		{
-			_rightValue = _rightVwap.Process(candle).ToDecimal();
+			var res = _rightVwap.Process(candle);
+			if (res.IsEmpty)
+				return;
+			_rightValue = res.ToDecimal();
 		}
 
 		_counter++;
@@ -104,9 +110,6 @@ public class WaindropsMakit0Strategy : Strategy
 			_counter = 0;
 			_leftVwap.Reset();
 			_rightVwap.Reset();
-
-			if (!IsFormedAndOnlineAndAllowTrading())
-				return;
 
 			if (_rightValue > _leftValue && Position <= 0)
 				BuyMarket();

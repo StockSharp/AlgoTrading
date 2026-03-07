@@ -44,21 +44,21 @@ public class VwapRsiScalperFinalV1Strategy : Strategy
 
 	public VwapRsiScalperFinalV1Strategy()
 	{
-		_rsiLength = Param(nameof(RsiLength), 3)
+		_rsiLength = Param(nameof(RsiLength), 7)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "RSI period", "Indicators");
 
-		_rsiOversold = Param(nameof(RsiOversold), 35m)
+		_rsiOversold = Param(nameof(RsiOversold), 25m)
 			.SetDisplay("RSI Oversold", "Oversold level", "Indicators");
 
-		_rsiOverbought = Param(nameof(RsiOverbought), 70m)
+		_rsiOverbought = Param(nameof(RsiOverbought), 75m)
 			.SetDisplay("RSI Overbought", "Overbought level", "Indicators");
 
 		_emaLength = Param(nameof(EmaLength), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Length", "EMA period", "Indicators");
 
-		_maxTradesPerDay = Param(nameof(MaxTradesPerDay), 10)
+		_maxTradesPerDay = Param(nameof(MaxTradesPerDay), 2)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Trades", "Max trades per day", "Risk");
 
