@@ -199,25 +199,13 @@ public class DualMaTrendConfirmationStrategy : Strategy
 		var slowAboveFast = slowValue > fastValue;
 		var slowBelowFast = slowValue < fastValue;
 
-		var canTrade = IsFormedAndOnlineAndAllowTrading();
-
-		if (canTrade && slowRising && fastRising && priceAboveSlow && slowAboveFast && Position <= 0)
+		if (slowRising && fastRising && priceAboveSlow && slowAboveFast && Position <= 0)
 		{
-			var volume = Volume + Math.Abs(Position);
-			if (volume > 0)
-			{
-				BuyMarket(volume);
-				LogInfo($"Long entry: slow EMA {slowValue:F5}, fast LWMA {fastValue:F5}, close {_previousClose:F5}.");
-			}
+			BuyMarket();
 		}
-		else if (canTrade && slowFalling && fastFalling && priceBelowSlow && slowBelowFast && Position >= 0)
+		else if (slowFalling && fastFalling && priceBelowSlow && slowBelowFast && Position >= 0)
 		{
-			var volume = Volume + Math.Abs(Position);
-			if (volume > 0)
-			{
-				SellMarket(volume);
-				LogInfo($"Short entry: slow EMA {slowValue:F5}, fast LWMA {fastValue:F5}, close {_previousClose:F5}.");
-			}
+			SellMarket();
 		}
 
 		UpdateHistory(slowValue, fastValue, candle.ClosePrice);

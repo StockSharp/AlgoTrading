@@ -176,38 +176,29 @@ public class MaSarAdxBindStrategy : Strategy
 		// Always allow risk exits even if trading is temporarily disabled.
 		if (Position > 0 && candle.ClosePrice < sar)
 		{
-			SellMarket(Math.Abs(Position));
-			LogInfo($"Exit long at {candle.ClosePrice} because price crossed below SAR {sar}.");
+			SellMarket();
 			return;
 		}
 
 		if (Position < 0 && candle.ClosePrice > sar)
 		{
-			BuyMarket(Math.Abs(Position));
-			LogInfo($"Exit short at {candle.ClosePrice} because price crossed above SAR {sar}.");
+			BuyMarket();
 			return;
 		}
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
 
 		// Entry conditions replicated from the MetaTrader version.
 		var bullishSignal = candle.ClosePrice > movingAverage && plusDi >= minusDi && candle.ClosePrice > sar;
 		var bearishSignal = candle.ClosePrice < movingAverage && plusDi <= minusDi && candle.ClosePrice < sar;
 
-		var volume = Volume + Math.Abs(Position);
-
 		if (bullishSignal && Position <= 0)
 		{
-			BuyMarket(volume);
-			LogInfo($"Enter long at {candle.ClosePrice}. Close {candle.ClosePrice}, MA {movingAverage}, +DI {plusDi}, -DI {minusDi}, SAR {sar}.");
+			BuyMarket();
 			return;
 		}
 
 		if (bearishSignal && Position >= 0)
 		{
-			SellMarket(volume);
-			LogInfo($"Enter short at {candle.ClosePrice}. Close {candle.ClosePrice}, MA {movingAverage}, +DI {plusDi}, -DI {minusDi}, SAR {sar}.");
+			SellMarket();
 		}
 	}
 }

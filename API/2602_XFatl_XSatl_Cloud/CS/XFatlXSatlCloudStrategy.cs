@@ -34,15 +34,15 @@ public class XFatlXSatlCloudStrategy : Strategy
 	private readonly StrategyParam<int> _takeProfitTicks;
 	private readonly StrategyParam<int> _stopLossTicks;
 
-	private readonly Queue<decimal> _fastHistory = new();
-	private readonly Queue<decimal> _slowHistory = new();
+	private readonly List<decimal> _fastHistory = new();
+	private readonly List<decimal> _slowHistory = new();
 
 	public XFatlXSatlCloudStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for indicator calculations", "General");
 
-		_fastMethod = Param(nameof(FastMethod), SmoothMethods.Jurik)
+		_fastMethod = Param(nameof(FastMethod), SmoothMethods.Ema)
 			.SetDisplay("Fast Method", "Smoothing algorithm for the fast line", "Indicators");
 
 		_fastLength = Param(nameof(FastLength), 3)
@@ -52,7 +52,7 @@ public class XFatlXSatlCloudStrategy : Strategy
 		_fastPhase = Param(nameof(FastPhase), 15)
 			.SetDisplay("Fast Phase", "Phase parameter for Jurik smoothing", "Indicators");
 
-		_slowMethod = Param(nameof(SlowMethod), SmoothMethods.Jurik)
+		_slowMethod = Param(nameof(SlowMethod), SmoothMethods.Ema)
 			.SetDisplay("Slow Method", "Smoothing algorithm for the slow line", "Indicators");
 
 		_slowLength = Param(nameof(SlowLength), 5)
@@ -181,6 +181,14 @@ public class XFatlXSatlCloudStrategy : Strategy
 		set => _stopLossTicks.Value = value;
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_fastHistory.Clear();
+		_slowHistory.Clear();
+	}
+
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
@@ -234,17 +242,13 @@ public class XFatlXSatlCloudStrategy : Strategy
 		var closeShort = AllowShortExit && fastWasAbove && Position < 0;
 		if (closeShort)
 		{
-			var volume = Math.Abs(Position);
-			if (volume > 0)
-				BuyMarket(volume);
+			BuyMarket();
 		}
 
 		var closeLong = AllowLongExit && fastWasBelow && Position > 0;
 		if (closeLong)
 		{
-			var volume = Position;
-			if (volume > 0)
-				SellMarket(volume);
+			SellMarket();
 		}
 
 		var enterLong = AllowLongEntry && fastWasAbove && fastCurrent <= slowCurrent;
@@ -256,37 +260,27 @@ public class XFatlXSatlCloudStrategy : Strategy
 
 		if (enterLong)
 		{
-			var volume = TradeVolume;
-			if (volume > 0)
-				BuyMarket(volume);
+			BuyMarket();
 		}
 		else if (enterShort)
 		{
-			var volume = TradeVolume;
-			if (volume > 0)
-				SellMarket(volume);
+			SellMarket();
 		}
 	}
 
-	private void UpdateHistory(Queue<decimal> history, decimal value)
+	private void UpdateHistory(List<decimal> history, decimal value)
 	{
-		history.Enqueue(value);
+		history.Add(value);
 		var maxSize = SignalBar + 2;
 		while (history.Count > maxSize)
-			history.Dequeue();
+			history.RemoveAt(0);
 	}
 
-	private static decimal GetShiftedValue(Queue<decimal> history, int shift)
+	private static decimal GetShiftedValue(List<decimal> history, int shift)
 	{
 		var index = history.Count - shift - 1;
-		var i = 0;
-		foreach (var value in history)
-		{
-			if (i == index)
-				return value;
-
-			i++;
-		}
+		if (index >= 0 && index < history.Count)
+			return history[index];
 
 		return 0m;
 	}

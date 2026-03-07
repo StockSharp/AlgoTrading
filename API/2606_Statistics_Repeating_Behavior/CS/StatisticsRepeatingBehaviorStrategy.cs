@@ -27,7 +27,7 @@ public class StatisticsRepeatingBehaviorStrategy : Strategy
 	private readonly StrategyParam<decimal> _martingaleFactor;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private readonly Dictionary<int, BodyStatistics> _bodyStatistics = new();
+	private readonly System.Collections.Concurrent.ConcurrentDictionary<int, BodyStatistics> _bodyStatistics = new();
 
 	private decimal _currentVolume;
 	private decimal _entryPrice;
@@ -119,7 +119,7 @@ public class StatisticsRepeatingBehaviorStrategy : Strategy
 			.SetDisplay("Martingale Factor", "Multiplier after losing trade", "Trading")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candles for analysis", "General");
 	}
 
@@ -201,9 +201,9 @@ public class StatisticsRepeatingBehaviorStrategy : Strategy
 			}
 
 			if (Position > 0)
-				SellMarket(Math.Abs(Position));
+				SellMarket();
 			else if (Position < 0)
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 
 			UpdateVolumeAfterTrade(exitPrice, stopHit);
 		}
@@ -238,14 +238,14 @@ public class StatisticsRepeatingBehaviorStrategy : Strategy
 
 		if (isLong)
 		{
-			BuyMarket(volume);
+			BuyMarket();
 			_entryPrice = candle.ClosePrice;
 			_stopPrice = _entryPrice - stopDistance;
 			_positionDirection = 1;
 		}
 		else
 		{
-			SellMarket(volume);
+			SellMarket();
 			_entryPrice = candle.ClosePrice;
 			_stopPrice = _entryPrice + stopDistance;
 			_positionDirection = -1;
@@ -277,11 +277,7 @@ public class StatisticsRepeatingBehaviorStrategy : Strategy
 	private void UpdateStatistics(ICandleMessage candle)
 	{
 		var currentKey = GetMinuteKey(candle.OpenTime);
-		if (!_bodyStatistics.TryGetValue(currentKey, out var stats))
-		{
-			stats = new BodyStatistics();
-			_bodyStatistics.Add(currentKey, stats);
-		}
+		var stats = _bodyStatistics.GetOrAdd(currentKey, _ => new BodyStatistics());
 
 		var body = candle.ClosePrice - candle.OpenPrice;
 		var bodyPoints = body / _priceStep;

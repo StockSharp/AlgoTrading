@@ -53,10 +53,10 @@ public class KolierSuperTrendX2Strategy : Strategy
 	public KolierSuperTrendX2Strategy()
 	{
 
-		_trendCandleType = Param(nameof(TrendCandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_trendCandleType = Param(nameof(TrendCandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Trend Timeframe", "Timeframe for trend SuperTrend", "Data");
 
-		_entryCandleType = Param(nameof(EntryCandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_entryCandleType = Param(nameof(EntryCandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Entry Timeframe", "Timeframe for entry SuperTrend", "Data");
 
 		_trendAtrPeriod = Param(nameof(TrendAtrPeriod), 10)
@@ -419,26 +419,24 @@ public class KolierSuperTrendX2Strategy : Strategy
 
 		if (closeLong)
 		{
-			SellMarket(Math.Abs(Position));
+			SellMarket();
 			ResetStops();
 		}
 
 		if (closeShort)
 		{
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
 			ResetStops();
 		}
 
 		if (EnableBuyEntries && _trendDirection > 0 && flipToUp && Position <= 0)
 		{
-			var volume = Volume + (Position < 0 ? Math.Abs(Position) : 0m);
-			BuyMarket(volume);
+			BuyMarket();
 			UpdateStops(candle.ClosePrice, true);
 		}
 		else if (EnableSellEntries && _trendDirection < 0 && flipToDown && Position >= 0)
 		{
-			var volume = Volume + (Position > 0 ? Math.Abs(Position) : 0m);
-			SellMarket(volume);
+			SellMarket();
 			UpdateStops(candle.ClosePrice, false);
 		}
 	}
@@ -449,14 +447,14 @@ public class KolierSuperTrendX2Strategy : Strategy
 		{
 			if (_stopLossPrice is decimal sl && candle.LowPrice <= sl)
 			{
-				SellMarket(Math.Abs(Position));
+				SellMarket();
 				ResetStops();
 				return true;
 			}
 
 			if (_takeProfitPrice is decimal tp && candle.HighPrice >= tp)
 			{
-				SellMarket(Math.Abs(Position));
+				SellMarket();
 				ResetStops();
 				return true;
 			}
@@ -512,9 +510,10 @@ public class KolierSuperTrendX2Strategy : Strategy
 	{
 		history.Insert(0, direction);
 
-		if (history.Count > maxLength)
+		while (history.Count > maxLength && history.Count > 0)
 		{
-			history.RemoveRange(maxLength, history.Count - maxLength);
+			try { history.RemoveAt(history.Count - 1); }
+			catch { break; }
 		}
 	}
 
