@@ -128,13 +128,13 @@ public class DealersTradeV751RivotStrategy : Strategy
 	/// </summary>
 	public DealersTradeV751RivotStrategy()
 	{
-		_maxTrades = Param(nameof(MaxTrades), 5)
+		_maxTrades = Param(nameof(MaxTrades), 2)
 		.SetGreaterThanZero()
 		.SetDisplay("Max Trades", "Maximum number of martingale entries", "Position Sizing")
 		
 		.SetOptimize(1, 10, 1);
 
-		_pipDistance = Param(nameof(PipDistance), 4m)
+		_pipDistance = Param(nameof(PipDistance), 10m)
 		.SetGreaterThanZero()
 		.SetDisplay("Pip Distance", "Distance between averaged entries in pips", "Position Sizing")
 		
@@ -168,15 +168,19 @@ public class DealersTradeV751RivotStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Max Volume", "Upper limit for single-entry volume", "Position Sizing");
 
-		_gapThreshold = Param(nameof(GapThreshold), 7m)
+		_gapThreshold = Param(nameof(GapThreshold), 15m)
 		.SetGreaterThanZero()
 		.SetDisplay("Gap Threshold", "Minimal pivot gap required to enable trading", "Signal")
 		
 		.SetOptimize(3m, 15m, 1m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles used for pivot calculations", "Signal");
 	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
 	protected override void OnReseted()
@@ -222,9 +226,6 @@ public class DealersTradeV751RivotStrategy : Strategy
 	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
-
-		if (!IsOnline)
 		return;
 
 		if (_previousCandle == null)
