@@ -1,9 +1,8 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -11,24 +10,17 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
 /// <summary>
 /// Strategy based on the Corrected Average breakout.
-/// The strategy monitors price relative to a corrected moving average.
-/// A signal occurs when price breaks above/below the moving average by a certain level
-/// and then returns to the breakout level.
+/// Monitors price relative to a corrected moving average and trades on breakouts.
 /// </summary>
 public class CorrectedAverageBreakoutStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _length;
-	private readonly StrategyParam<MaTypes> _maType;
 	private readonly StrategyParam<int> _levelPoints;
 	private readonly StrategyParam<int> _stopLossPoints;
 	private readonly StrategyParam<int> _takeProfitPoints;
-	private readonly StrategyParam<bool> _enableLong;
-	private readonly StrategyParam<bool> _enableShort;
 
 	private decimal _prevCorrected;
 	private decimal _prevPrevCorrected;
@@ -36,81 +28,29 @@ public class CorrectedAverageBreakoutStrategy : Strategy
 	private decimal _prevPrevClose;
 	private bool _isInitialized;
 	private decimal _level;
-	private decimal _stopLoss;
-	private decimal _takeProfit;
 
-	/// <summary>
-	/// Candle type used for calculations.
-	/// </summary>
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
-
-	/// <summary>
-	/// Length of moving average and standard deviation.
-	/// </summary>
 	public int Length { get => _length.Value; set => _length.Value = value; }
-
-	/// <summary>
-	/// Moving average type.
-	/// </summary>
-	public MaTypes MaTypeOption { get => _maType.Value; set => _maType.Value = value; }
-
-	/// <summary>
-	/// Breakout level in price steps.
-	/// </summary>
 	public int LevelPoints { get => _levelPoints.Value; set => _levelPoints.Value = value; }
-
-	/// <summary>
-	/// Stop-loss distance in points.
-	/// </summary>
 	public int StopLossPoints { get => _stopLossPoints.Value; set => _stopLossPoints.Value = value; }
-
-	/// <summary>
-	/// Take-profit distance in points.
-	/// </summary>
 	public int TakeProfitPoints { get => _takeProfitPoints.Value; set => _takeProfitPoints.Value = value; }
 
-	/// <summary>
-	/// Enable long trades.
-	/// </summary>
-	public bool EnableLong { get => _enableLong.Value; set => _enableLong.Value = value; }
-
-	/// <summary>
-	/// Enable short trades.
-	/// </summary>
-	public bool EnableShort { get => _enableShort.Value; set => _enableShort.Value = value; }
-
-	/// <summary>
-	/// Initializes a new instance of the strategy.
-	/// </summary>
 	public CorrectedAverageBreakoutStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Timeframe for indicator calculations", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+			.SetDisplay("Candle Type", "Timeframe for calculations", "General");
 
 		_length = Param(nameof(Length), 12)
-			.SetRange(2, 200)
-			.SetDisplay("Length", "Period of moving average and standard deviation", "Indicator");
-
-		_maType = Param(nameof(MaTypeOption), MaTypes.Sma)
-			.SetDisplay("MA Type", "Type of moving average used", "Indicator");
+			.SetDisplay("Length", "Period of moving average", "Indicator");
 
 		_levelPoints = Param(nameof(LevelPoints), 300)
-			.SetRange(10, 5000)
-			.SetDisplay("Level Points", "Breakout distance from corrected average in price steps", "Trading");
+			.SetDisplay("Level Points", "Breakout distance in price steps", "Trading");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000)
-			.SetRange(0, 10000)
-			.SetDisplay("Stop Loss Points", "Stop-loss distance from entry price in price steps", "Risk");
+			.SetDisplay("Stop Loss Points", "Stop loss in price steps", "Risk");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000)
-			.SetRange(0, 10000)
-			.SetDisplay("Take Profit Points", "Take-profit distance from entry price in price steps", "Risk");
-
-		_enableLong = Param(nameof(EnableLong), true)
-			.SetDisplay("Enable Long", "Allow opening long positions", "Trading");
-
-		_enableShort = Param(nameof(EnableShort), true)
-			.SetDisplay("Enable Short", "Allow opening short positions", "Trading");
+			.SetDisplay("Take Profit Points", "Take profit in price steps", "Risk");
 	}
 
 	/// <inheritdoc />
@@ -127,7 +67,8 @@ public class CorrectedAverageBreakoutStrategy : Strategy
 		_prevPrevCorrected = default;
 		_prevClose = default;
 		_prevPrevClose = default;
-		_isInitialized = false;
+		_isInitialized = default;
+		_level = default;
 	}
 
 	/// <inheritdoc />
@@ -137,18 +78,16 @@ public class CorrectedAverageBreakoutStrategy : Strategy
 
 		var step = Security.PriceStep ?? 1m;
 		_level = LevelPoints * step;
-		_stopLoss = StopLossPoints * step;
-		_takeProfit = TakeProfitPoints * step;
 
-		var ma = CreateMa(MaTypeOption, Length);
+		var ma = new ExponentialMovingAverage { Length = Length };
 		var std = new StandardDeviation { Length = Length };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ma, std, ProcessCandle).Start();
 
 		StartProtection(
-			takeProfit: new Unit(_takeProfit, UnitTypes.Absolute),
-			stopLoss: new Unit(_stopLoss, UnitTypes.Absolute));
+			new Unit(StopLossPoints * step, UnitTypes.Absolute),
+			new Unit(TakeProfitPoints * step, UnitTypes.Absolute));
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal maValue, decimal stdValue)
@@ -177,18 +116,16 @@ public class CorrectedAverageBreakoutStrategy : Strategy
 		var buySignal = _prevPrevClose > _prevPrevCorrected + _level && _prevClose <= _prevCorrected + _level;
 		var sellSignal = _prevPrevClose < _prevPrevCorrected - _level && _prevClose >= _prevCorrected - _level;
 
-		if (buySignal && EnableLong && Position <= 0)
+		if (buySignal && Position <= 0)
 		{
 			if (Position < 0)
-				BuyMarket(Math.Abs(Position));
-
+				BuyMarket();
 			BuyMarket();
 		}
-		else if (sellSignal && EnableShort && Position >= 0)
+		else if (sellSignal && Position >= 0)
 		{
 			if (Position > 0)
-				SellMarket(Position);
-
+				SellMarket();
 			SellMarket();
 		}
 
@@ -196,28 +133,5 @@ public class CorrectedAverageBreakoutStrategy : Strategy
 		_prevPrevClose = _prevClose;
 		_prevCorrected = corrected;
 		_prevClose = candle.ClosePrice;
-	}
-
-	private static DecimalLengthIndicator CreateMa(MaTypes type, int length)
-	{
-		return type switch
-		{
-			MaTypes.Sma => new SMA { Length = length },
-			MaTypes.Ema => new EMA { Length = length },
-			MaTypes.Smma => new SmoothedMovingAverage { Length = length },
-			MaTypes.Lwma => new WeightedMovingAverage { Length = length },
-			_ => throw new ArgumentOutOfRangeException(nameof(type))
-		};
-	}
-
-	/// <summary>
-	/// Supported moving average types.
-	/// </summary>
-	public enum MaTypes
-	{
-		Sma,
-		Ema,
-		Smma,
-		Lwma
 	}
 }
