@@ -45,7 +45,7 @@ public class HullTrendOsmaStrategy : Strategy
 		_stopLossPct = Param(nameof(StopLossPct), 2m)
 			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -69,7 +69,7 @@ public class HullTrendOsmaStrategy : Strategy
 		base.OnStarted2(time);
 
 		var hma = new HullMovingAverage { Length = HullPeriod };
-		var signal = new SimpleMovingAverage { Length = SignalPeriod };
+		var signal = new ExponentialMovingAverage { Length = SignalPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

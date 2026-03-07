@@ -34,7 +34,7 @@ public class ColorZerolagHlrStrategy : Strategy
 	private decimal _smoothConst;
 	private decimal _prevFast;
 	private decimal _prevSlow;
-	private bool _isFirst = true;
+	private bool _isFirst;
 
 	public int Smoothing { get => _smoothing.Value; set => _smoothing.Value = value; }
 	public int HlrPeriod1 { get => _hlrPeriod1.Value; set => _hlrPeriod1.Value = value; }
@@ -69,7 +69,7 @@ public class ColorZerolagHlrStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("HLR Period 3", "Lookback for HLR 3", "Indicator");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for calculations", "General");
 	}
 
@@ -84,8 +84,15 @@ public class ColorZerolagHlrStrategy : Strategy
 	{
 		base.OnReseted();
 		_isFirst = true;
-		_prevFast = 0;
-		_prevSlow = 0;
+		_prevFast = default;
+		_prevSlow = default;
+		_smoothConst = default;
+		_high1 = default;
+		_low1 = default;
+		_high2 = default;
+		_low2 = default;
+		_high3 = default;
+		_low3 = default;
 	}
 
 	/// <inheritdoc />
@@ -103,21 +110,22 @@ public class ColorZerolagHlrStrategy : Strategy
 		_high3 = new Highest { Length = HlrPeriod3 };
 		_low3 = new Lowest { Length = HlrPeriod3 };
 
-		// Use a trivial indicator to get candle callbacks
-		var passthrough = new SimpleMovingAverage { Length = 1 };
-		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(passthrough, (candle, _) => ProcessCandle(candle)).Start();
+		Indicators.Add(_high1);
+		Indicators.Add(_low1);
+		Indicators.Add(_high2);
+		Indicators.Add(_low2);
+		Indicators.Add(_high3);
+		Indicators.Add(_low3);
 
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawOwnTrades(area);
-		}
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(ProcessCandle).Start();
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
 	{
+		if (candle.State != CandleStates.Finished)
+			return;
+
 		var h1 = _high1.Process(candle);
 		var l1 = _low1.Process(candle);
 		var h2 = _high2.Process(candle);
@@ -126,6 +134,9 @@ public class ColorZerolagHlrStrategy : Strategy
 		var l3 = _low3.Process(candle);
 
 		if (!h1.IsFormed || !l1.IsFormed || !h2.IsFormed || !l2.IsFormed || !h3.IsFormed || !l3.IsFormed)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		var high1 = h1.ToDecimal();
@@ -155,7 +166,7 @@ public class ColorZerolagHlrStrategy : Strategy
 		// Cross signals
 		if (_prevFast > _prevSlow && fast < slow && Position <= 0)
 		{
-			if (Position < 0) BuyMarket();  // close short first (not expected but safe)
+			if (Position < 0) BuyMarket();
 			BuyMarket();
 		}
 		else if (_prevFast < _prevSlow && fast > slow && Position >= 0)

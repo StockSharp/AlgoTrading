@@ -12,8 +12,8 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Puria strategy based on three moving averages and MACD filter.
-/// Enters long when fast EMA is above two slow LWMAs and MACD is positive.
-/// Enters short when fast EMA is below two slow LWMAs and MACD is negative.
+/// Enters long when fast EMA is above two slow EMAs and MACD is positive.
+/// Enters short when fast EMA is below two slow EMAs and MACD is negative.
 /// </summary>
 public class PuriaStrategy : Strategy
 {
@@ -44,11 +44,11 @@ public class PuriaStrategy : Strategy
 	{
 		_ma1Period = Param(nameof(Ma1Period), 30)
 			.SetGreaterThanZero()
-			.SetDisplay("MA1 Period", "LWMA period", "Moving Averages");
+			.SetDisplay("MA1 Period", "Slow EMA period", "Moving Averages");
 
 		_ma2Period = Param(nameof(Ma2Period), 40)
 			.SetGreaterThanZero()
-			.SetDisplay("MA2 Period", "Second LWMA period", "Moving Averages");
+			.SetDisplay("MA2 Period", "Second slow EMA period", "Moving Averages");
 
 		_ma3Period = Param(nameof(Ma3Period), 5)
 			.SetGreaterThanZero()
@@ -60,7 +60,7 @@ public class PuriaStrategy : Strategy
 		_takeProfitPct = Param(nameof(TakeProfitPct), 3m)
 			.SetDisplay("Take Profit %", "Take profit percentage", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for strategy", "General");
 	}
 
@@ -74,7 +74,13 @@ public class PuriaStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_initialized = false;
+		_macd = default;
+		_prevMa75 = default;
+		_prevMa85 = default;
+		_prevMa5 = default;
+		_prevClose = default;
+		_prevMacd = default;
+		_initialized = default;
 	}
 
 	/// <inheritdoc />
@@ -82,8 +88,8 @@ public class PuriaStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var ma75 = new WeightedMovingAverage { Length = Ma1Period };
-		var ma85 = new WeightedMovingAverage { Length = Ma2Period };
+		var ma75 = new ExponentialMovingAverage { Length = Ma1Period };
+		var ma85 = new ExponentialMovingAverage { Length = Ma2Period };
 		var ma5 = new ExponentialMovingAverage { Length = Ma3Period };
 
 		_macd = new MovingAverageConvergenceDivergence
@@ -91,6 +97,8 @@ public class PuriaStrategy : Strategy
 			ShortMa = { Length = 15 },
 			LongMa = { Length = 26 }
 		};
+
+		Indicators.Add(_macd);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -101,16 +109,6 @@ public class PuriaStrategy : Strategy
 			takeProfit: new Unit(TakeProfitPct, UnitTypes.Percent),
 			stopLoss: new Unit(StopLossPct, UnitTypes.Percent),
 			useMarketOrders: true);
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, ma75);
-			DrawIndicator(area, ma85);
-			DrawIndicator(area, ma5);
-			DrawOwnTrades(area);
-		}
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal ma75Value, decimal ma85Value, decimal ma5Value)
@@ -121,6 +119,9 @@ public class PuriaStrategy : Strategy
 		// Process MACD manually
 		var macdResult = _macd.Process(candle.ClosePrice, candle.OpenTime, true);
 		if (!macdResult.IsFormed)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		var macdVal = macdResult.ToDecimal();

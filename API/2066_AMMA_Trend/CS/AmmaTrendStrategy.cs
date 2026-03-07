@@ -29,7 +29,7 @@ public class AmmaTrendStrategy : Strategy
 
 	public AmmaTrendStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use for analysis", "General");
 
 		_maPeriod = Param(nameof(MaPeriod), 25)
