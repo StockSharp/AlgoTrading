@@ -1,51 +1,43 @@
 namespace StockSharp.Samples.Strategies;
 
 using System;
+using System.Collections.Generic;
 
 using Ecng.Common;
 
-using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 /// <summary>
-/// MACD + DMI Strategy
+/// MACD + DMI Strategy.
+/// Uses MACD for momentum and DMI for directional confirmation.
+/// Buys when MACD crosses above zero and DI+ > DI-.
+/// Sells when MACD crosses below zero and DI- > DI+.
 /// </summary>
 public class MacdDmiStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleTypeParam;
 	private readonly StrategyParam<int> _dmiLength;
-	private readonly StrategyParam<int> _adxSmoothing;
-	private readonly StrategyParam<int> _vstopLength;
-	private readonly StrategyParam<decimal> _vstopMultiplier;
+	private readonly StrategyParam<int> _cooldownBars;
 
+	private MovingAverageConvergenceDivergence _macd;
 	private DirectionalIndex _dmi;
-	private MovingAverageConvergenceDivergenceSignal _macd;
-	private AverageTrueRange _atr;
-	
-	private decimal _vstop;
-	private bool _uptrend = true;
-	private decimal _max;
-	private decimal _min;
+	private decimal _prevMacd;
+	private int _cooldownRemaining;
 
 	public MacdDmiStrategy()
 	{
-		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
+		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle type", "Candle type for strategy calculation.", "General");
 
 		_dmiLength = Param(nameof(DmiLength), 14)
+			.SetGreaterThanZero()
 			.SetDisplay("DMI Length", "DMI period", "DMI");
 
-		_adxSmoothing = Param(nameof(AdxSmoothing), 14)
-			.SetDisplay("ADX Smoothing", "ADX smoothing period", "DMI");
-
-		_vstopLength = Param(nameof(VstopLength), 20)
-			.SetDisplay("Vstop Length", "Volatility Stop period", "Vstop");
-
-		_vstopMultiplier = Param(nameof(VstopMultiplier), 2.0m)
-			.SetDisplay("Vstop Multiplier", "Volatility Stop multiplier", "Vstop");
+		_cooldownBars = Param(nameof(CooldownBars), 10)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "Risk");
 	}
 
 	public DataType CandleType
@@ -60,33 +52,25 @@ public class MacdDmiStrategy : Strategy
 		set => _dmiLength.Value = value;
 	}
 
-	public int AdxSmoothing
+	public int CooldownBars
 	{
-		get => _adxSmoothing.Value;
-		set => _adxSmoothing.Value = value;
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
-	public int VstopLength
-	{
-		get => _vstopLength.Value;
-		set => _vstopLength.Value = value;
-	}
-
-	public decimal VstopMultiplier
-	{
-		get => _vstopMultiplier.Value;
-		set => _vstopMultiplier.Value = value;
-	}
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
 
-		_max = default;
-		_min = default;
-		_vstop = default;
-		_uptrend = true;
+		_macd = null;
+		_dmi = null;
+		_prevMacd = 0;
+		_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
@@ -94,34 +78,14 @@ public class MacdDmiStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Initialize indicators
-		_dmi = new DirectionalIndex
-		{
-			Length = DmiLength
-		};
+		_macd = new MovingAverageConvergenceDivergence();
+		_dmi = new DirectionalIndex { Length = DmiLength };
 
-		_macd = new()
-		{
-			Macd =
-			{
-				ShortMa = { Length = 12 },
-				LongMa = { Length = 26 },
-			},
-			SignalMa = { Length = 9 }
-		};
-
-		_atr = new AverageTrueRange
-		{
-			Length = VstopLength
-		};
-
-		// Subscribe to candles using high-level API
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(_dmi, _macd, _atr, OnProcess)
+			.BindEx(_macd, _dmi, OnProcess)
 			.Start();
 
-		// Setup chart
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -130,89 +94,69 @@ public class MacdDmiStrategy : Strategy
 		}
 	}
 
-	private void OnProcess(ICandleMessage candle, IIndicatorValue dmiValue, IIndicatorValue macdValue, IIndicatorValue atrValue)
+	private void OnProcess(ICandleMessage candle, IIndicatorValue macdValue, IIndicatorValue dmiValue)
 	{
-		// Process only finished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Wait for indicators to form
-		if (!_dmi.IsFormed || !_macd.IsFormed || !_atr.IsFormed)
+		if (!_macd.IsFormed || !_dmi.IsFormed)
 			return;
 
-		// Get indicator values
-		var dmiData = (DirectionalIndexValue)dmiValue;
-		var posDm = dmiData.Plus;
-		var negDm = dmiData.Minus;
+		if (macdValue.IsEmpty)
+			return;
 
-		var macdData = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
-		var macdLine = macdData.Macd;
-		var signalLine = macdData.Signal;
+		var macdVal = macdValue.ToDecimal();
 
-		// Get previous MACD values for crossover detection
-		var prevMacdValue = _macd.GetValue<MovingAverageConvergenceDivergenceSignalValue>(1);
-		var prevMacdLine = prevMacdValue.Macd;
-		var prevSignalLine = prevMacdValue.Signal;
+		var dmiTyped = (DirectionalIndexValue)dmiValue;
+		if (dmiTyped.Plus is not decimal diPlus || dmiTyped.Minus is not decimal diMinus)
+			return;
 
-		// Calculate Volatility Stop
-		CalculateVolatilityStop(candle, atrValue.ToDecimal());
-
-		// Entry condition
-		var macdCrossover = macdLine > signalLine && prevMacdLine <= prevSignalLine;
-		var entryLong = macdCrossover && posDm > negDm;
-
-		// Exit conditions
-		var macdCrossunder = macdLine < signalLine && prevMacdLine >= prevSignalLine;
-		var tales = macdCrossunder && posDm > negDm ? false : 
-					macdCrossunder && posDm < negDm ? true : false;
-		var crossUnderVstop = candle.ClosePrice < _vstop;
-		var closeLong = tales || crossUnderVstop;
-
-		// Execute trades
-		if (entryLong && Position <= 0)
+		if (!IsFormedAndOnlineAndAllowTrading())
 		{
-			BuyMarket(Volume + Math.Abs(Position));
-		}
-		else if (closeLong && Position > 0)
-		{
-			ClosePosition();
-		}
-	}
-
-	private void CalculateVolatilityStop(ICandleMessage candle, decimal atrValue)
-	{
-		var src = candle.ClosePrice;
-		var atrM = atrValue * VstopMultiplier;
-
-		if (_max == 0)
-		{
-			_max = src;
-			_min = src;
-			_vstop = src;
+			_prevMacd = macdVal;
 			return;
 		}
 
-		_max = Math.Max(_max, src);
-		_min = Math.Min(_min, src);
-
-		var prevUptrend = _uptrend;
-		
-		if (_uptrend)
+		if (_cooldownRemaining > 0)
 		{
-			_vstop = Math.Max(_vstop, _max - atrM);
-		}
-		else
-		{
-			_vstop = Math.Min(_vstop, _min + atrM);
+			_cooldownRemaining--;
+			_prevMacd = macdVal;
+			return;
 		}
 
-		_uptrend = src - _vstop >= 0;
+		// MACD zero crossover + DMI direction
+		var macdCrossUp = macdVal > 0 && _prevMacd <= 0 && _prevMacd != 0;
+		var macdCrossDown = macdVal < 0 && _prevMacd >= 0 && _prevMacd != 0;
 
-		if (_uptrend != prevUptrend)
+		// Buy: MACD crosses above zero + DI+ > DI-
+		if (macdCrossUp && diPlus > diMinus && Position <= 0)
 		{
-			_max = src;
-			_min = src;
-			_vstop = _uptrend ? _max - atrM : _min + atrM;
+			if (Position < 0)
+				BuyMarket(Math.Abs(Position));
+			BuyMarket(Volume);
+			_cooldownRemaining = CooldownBars;
 		}
+		// Sell: MACD crosses below zero + DI- > DI+
+		else if (macdCrossDown && diMinus > diPlus && Position >= 0)
+		{
+			if (Position > 0)
+				SellMarket(Math.Abs(Position));
+			SellMarket(Volume);
+			_cooldownRemaining = CooldownBars;
+		}
+		// Exit long: DI- crosses above DI+
+		else if (Position > 0 && diMinus > diPlus && macdVal < 0)
+		{
+			SellMarket(Math.Abs(Position));
+			_cooldownRemaining = CooldownBars;
+		}
+		// Exit short: DI+ crosses above DI-
+		else if (Position < 0 && diPlus > diMinus && macdVal > 0)
+		{
+			BuyMarket(Math.Abs(Position));
+			_cooldownRemaining = CooldownBars;
+		}
+
+		_prevMacd = macdVal;
 	}
 }
