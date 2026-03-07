@@ -43,19 +43,19 @@ public class RsiStochasticMaStrategy : Strategy
 		_rsiPeriod = Param(nameof(RsiPeriod), 3)
 			.SetDisplay("RSI Period", "RSI calculation period", "RSI");
 
-		_rsiUpperLevel = Param(nameof(RsiUpperLevel), 80m)
+		_rsiUpperLevel = Param(nameof(RsiUpperLevel), 65m)
 			.SetDisplay("RSI Upper Level", "RSI overbought level", "RSI");
 
-		_rsiLowerLevel = Param(nameof(RsiLowerLevel), 20m)
+		_rsiLowerLevel = Param(nameof(RsiLowerLevel), 35m)
 			.SetDisplay("RSI Lower Level", "RSI oversold level", "RSI");
 
-		_maPeriod = Param(nameof(MaPeriod), 50)
+		_maPeriod = Param(nameof(MaPeriod), 20)
 			.SetDisplay("MA Period", "Moving average period", "Trend");
 
-		_stochUpperLevel = Param(nameof(StochUpperLevel), 70m)
+		_stochUpperLevel = Param(nameof(StochUpperLevel), 60m)
 			.SetDisplay("Stochastic Upper", "Stochastic overbought level", "Stochastic");
 
-		_stochLowerLevel = Param(nameof(StochLowerLevel), 30m)
+		_stochLowerLevel = Param(nameof(StochLowerLevel), 40m)
 			.SetDisplay("Stochastic Lower", "Stochastic oversold level", "Stochastic");
 
 		_stopLossPct = Param(nameof(StopLossPct), 2m)
@@ -64,7 +64,7 @@ public class RsiStochasticMaStrategy : Strategy
 		_takeProfitPct = Param(nameof(TakeProfitPct), 3m)
 			.SetDisplay("Take Profit %", "Take profit percentage", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
@@ -75,13 +75,22 @@ public class RsiStochasticMaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_stochastic = default;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
-		var ma = new SimpleMovingAverage { Length = MaPeriod };
+		var ma = new ExponentialMovingAverage { Length = MaPeriod };
 		_stochastic = new StochasticOscillator();
+
+		Indicators.Add(_stochastic);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -92,6 +101,9 @@ public class RsiStochasticMaStrategy : Strategy
 
 				var stochResult = _stochastic.Process(candle);
 				if (!stochResult.IsFormed)
+					return;
+
+				if (!IsFormedAndOnlineAndAllowTrading())
 					return;
 
 				var stochVal = (StochasticOscillatorValue)stochResult;

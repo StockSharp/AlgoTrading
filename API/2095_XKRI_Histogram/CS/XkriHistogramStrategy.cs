@@ -44,7 +44,7 @@ public class XkriHistogramStrategy : Strategy
 		_stopLossPct = Param(nameof(StopLossPct), 2m)
 			.SetDisplay("Stop Loss %", "Stop loss percentage", "Protection");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for candles", "General");
 	}
 
@@ -58,6 +58,7 @@ public class XkriHistogramStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
+		_smooth = default;
 		_last = 0;
 		_prev = 0;
 		_prev2 = 0;
@@ -69,8 +70,10 @@ public class XkriHistogramStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var ma = new SimpleMovingAverage { Length = KriPeriod };
+		var ma = new ExponentialMovingAverage { Length = KriPeriod };
 		_smooth = new ExponentialMovingAverage { Length = SmoothPeriod };
+
+		Indicators.Add(_smooth);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ma, (candle, maValue) =>

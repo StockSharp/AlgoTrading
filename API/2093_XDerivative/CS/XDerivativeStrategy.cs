@@ -74,7 +74,7 @@ public class XDerivativeStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "Parameters");
 	}
 
@@ -88,6 +88,7 @@ public class XDerivativeStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
+		_jma = default;
 		_prevValue = null;
 		_prevPrevValue = null;
 	}
@@ -99,6 +100,8 @@ public class XDerivativeStrategy : Strategy
 
 		_jma = new JurikMovingAverage { Length = MaLength };
 		var roc = new RateOfChange { Length = RocPeriod };
+
+		Indicators.Add(_jma);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
