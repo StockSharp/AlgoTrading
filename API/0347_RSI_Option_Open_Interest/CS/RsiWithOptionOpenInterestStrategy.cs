@@ -1,9 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
 using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
@@ -14,7 +12,7 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// RSI with Option Open Interest Strategy.
+/// RSI strategy filtered by deterministic option open-interest spikes.
 /// </summary>
 public class RsiWithOptionOpenInterestStrategy : Strategy
 {
@@ -23,12 +21,13 @@ public class RsiWithOptionOpenInterestStrategy : Strategy
 	private readonly StrategyParam<int> _oiPeriod;
 	private readonly StrategyParam<decimal> _oiDeviationFactor;
 	private readonly StrategyParam<decimal> _stopLoss;
+	private readonly StrategyParam<int> _cooldownBars;
 
-	private RelativeStrengthIndex _rsi;
-	private SimpleMovingAverage _callOiSma;
-	private SimpleMovingAverage _putOiSma;
-	private StandardDeviation _callOiStdDev;
-	private StandardDeviation _putOiStdDev;
+	private RelativeStrengthIndex _rsi = null!;
+	private SimpleMovingAverage _callOiSma = null!;
+	private SimpleMovingAverage _putOiSma = null!;
+	private StandardDeviation _callOiStdDev = null!;
+	private StandardDeviation _putOiStdDev = null!;
 
 	private decimal _currentCallOi;
 	private decimal _currentPutOi;
@@ -36,9 +35,13 @@ public class RsiWithOptionOpenInterestStrategy : Strategy
 	private decimal _avgPutOi;
 	private decimal _stdDevCallOi;
 	private decimal _stdDevPutOi;
+	private decimal? _prevRsi;
+	private bool _prevCallOiSpike;
+	private bool _prevPutOiSpike;
+	private int _cooldownRemaining;
 
 	/// <summary>
-	/// RSI Period.
+	/// RSI period.
 	/// </summary>
 	public int RsiPeriod
 	{
@@ -56,7 +59,7 @@ public class RsiWithOptionOpenInterestStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Open Interest averaging period.
+	/// Open interest averaging period.
 	/// </summary>
 	public int OiPeriod
 	{
@@ -83,32 +86,41 @@ public class RsiWithOptionOpenInterestStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initialize <see cref="RsiWithOptionOpenInterestStrategy"/>.
+	/// Closed candles to wait before another position change.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
+	/// Initialize strategy.
 	/// </summary>
 	public RsiWithOptionOpenInterestStrategy()
 	{
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
-		.SetRange(5, 30)
-		
-		.SetDisplay("RSI Period", "Period for RSI calculation", "Indicators");
+			.SetRange(5, 30)
+			.SetDisplay("RSI Period", "Period for RSI calculation", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-		.SetDisplay("Candle Type", "Type of candles to use", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(2).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
 		_oiPeriod = Param(nameof(OiPeriod), 20)
-		.SetRange(10, 50)
-		
-		.SetDisplay("OI Period", "Period for Open Interest averaging", "Options");
+			.SetRange(10, 50)
+			.SetDisplay("OI Period", "Period for open interest averaging", "Options");
 
-		_oiDeviationFactor = Param(nameof(OiDeviationFactor), 2m)
-		.SetRange(1m, 3m)
-		
-		.SetDisplay("OI StdDev Factor", "Standard deviation multiplier for OI threshold", "Options");
+		_oiDeviationFactor = Param(nameof(OiDeviationFactor), 2.5m)
+			.SetRange(1m, 4m)
+			.SetDisplay("OI StdDev Factor", "Standard deviation multiplier for OI threshold", "Options");
 
 		_stopLoss = Param(nameof(StopLoss), 2m)
-		.SetRange(1m, 5m)
-		
-		.SetDisplay("Stop Loss %", "Stop Loss percentage", "Risk Management");
+			.SetRange(1m, 5m)
+			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management");
+
+		_cooldownBars = Param(nameof(CooldownBars), 18)
+			.SetNotNegative()
+			.SetDisplay("Cooldown Bars", "Closed candles to wait before another position change", "General");
 	}
 
 	/// <inheritdoc />
@@ -123,22 +135,27 @@ public class RsiWithOptionOpenInterestStrategy : Strategy
 		base.OnReseted();
 
 		_rsi?.Reset();
-		_rsi = null;
 		_callOiSma?.Reset();
-		_callOiSma = null;
 		_putOiSma?.Reset();
-		_putOiSma = null;
 		_callOiStdDev?.Reset();
-		_callOiStdDev = null;
 		_putOiStdDev?.Reset();
-		_putOiStdDev = null;
 
-		_currentCallOi = default;
-		_currentPutOi = default;
-		_avgCallOi = default;
-		_avgPutOi = default;
-		_stdDevCallOi = default;
-		_stdDevPutOi = default;
+		_rsi = null!;
+		_callOiSma = null!;
+		_putOiSma = null!;
+		_callOiStdDev = null!;
+		_putOiStdDev = null!;
+
+		_currentCallOi = 0m;
+		_currentPutOi = 0m;
+		_avgCallOi = 0m;
+		_avgPutOi = 0m;
+		_stdDevCallOi = 0m;
+		_stdDevPutOi = 0m;
+		_prevRsi = null;
+		_prevCallOiSpike = false;
+		_prevPutOiSpike = false;
+		_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
@@ -146,14 +163,12 @@ public class RsiWithOptionOpenInterestStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Create indicators
 		_rsi = new RelativeStrengthIndex
 		{
 			Length = RsiPeriod
 		};
 
-		// Indicators for Call options open interest
-		_callOiSma = new SMA
+		_callOiSma = new SimpleMovingAverage
 		{
 			Length = OiPeriod
 		};
@@ -163,8 +178,7 @@ public class RsiWithOptionOpenInterestStrategy : Strategy
 			Length = OiPeriod
 		};
 
-		// Indicators for Put options open interest
-		_putOiSma = new SMA
+		_putOiSma = new SimpleMovingAverage
 		{
 			Length = OiPeriod
 		};
@@ -174,16 +188,11 @@ public class RsiWithOptionOpenInterestStrategy : Strategy
 			Length = OiPeriod
 		};
 
-		// Create candle subscription and bind RSI
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-		.BindEx(_rsi, ProcessCandle)
-		.Start();
+			.Bind(_rsi, ProcessCandle)
+			.Start();
 
-		// Create subscription for option OI data (would be implemented in a real system)
-		// Here we'll just simulate the data in the ProcessCandle method
-
-		// Setup chart visualization
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -192,108 +201,98 @@ public class RsiWithOptionOpenInterestStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		// Start position protection
 		StartProtection(
-		new Unit(2, UnitTypes.Percent),   // Take profit 2%
-		new Unit(StopLoss, UnitTypes.Percent)  // Stop loss based on parameter
+			new Unit(2, UnitTypes.Percent),
+			new Unit(StopLoss, UnitTypes.Percent)
 		);
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue rsiValue)
+	private void ProcessCandle(ICandleMessage candle, decimal rsi)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
-		// Get current RSI value
-		var rsi = rsiValue.ToDecimal();
+		SimulateOptionOi(candle);
 
-		// Simulate option open interest data (in real implementation, this would come from a data provider)
-		SimulateOptionOI(candle);
+		var callOiValueSma = _callOiSma.Process(new DecimalIndicatorValue(_callOiSma, _currentCallOi, candle.OpenTime) { IsFinal = true });
+		var putOiValueSma = _putOiSma.Process(new DecimalIndicatorValue(_putOiSma, _currentPutOi, candle.OpenTime) { IsFinal = true });
+		var callOiValueStdDev = _callOiStdDev.Process(new DecimalIndicatorValue(_callOiStdDev, _currentCallOi, candle.OpenTime) { IsFinal = true });
+		var putOiValueStdDev = _putOiStdDev.Process(new DecimalIndicatorValue(_putOiStdDev, _currentPutOi, candle.OpenTime) { IsFinal = true });
 
-		// Process option OI with indicators
-		var callOiValueSma = _callOiSma.Process(new DecimalIndicatorValue(_callOiSma, _currentCallOi, candle.ServerTime));
-		var putOiValueSma = _putOiSma.Process(new DecimalIndicatorValue(_putOiSma, _currentPutOi, candle.ServerTime));
+		if (!_callOiSma.IsFormed || !_putOiSma.IsFormed || !_callOiStdDev.IsFormed || !_putOiStdDev.IsFormed ||
+			callOiValueSma.IsEmpty || putOiValueSma.IsEmpty || callOiValueStdDev.IsEmpty || putOiValueStdDev.IsEmpty)
+		{
+			_prevRsi = rsi;
+			return;
+		}
 
-		var callOiValueStdDev = _callOiStdDev.Process(new DecimalIndicatorValue(_callOiStdDev, _currentCallOi, candle.ServerTime));
-		var putOiValueStdDev = _putOiStdDev.Process(new DecimalIndicatorValue(_putOiStdDev, _currentPutOi, candle.ServerTime));
-
-		// Update state variables
 		_avgCallOi = callOiValueSma.ToDecimal();
 		_avgPutOi = putOiValueSma.ToDecimal();
 		_stdDevCallOi = callOiValueStdDev.ToDecimal();
 		_stdDevPutOi = putOiValueStdDev.ToDecimal();
 
-		// Check if strategy is ready to trade
 		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
-
-		// Calculate OI thresholds
-		decimal callOiThreshold = _avgCallOi + OiDeviationFactor * _stdDevCallOi;
-		decimal putOiThreshold = _avgPutOi + OiDeviationFactor * _stdDevPutOi;
-
-		// Entry logic
-		if (rsi < 30 && _currentCallOi > callOiThreshold && Position <= 0)
 		{
-			// RSI in oversold territory and Call OI spiking - Long entry
-			BuyMarket(Volume);
-			LogInfo($"Buy Signal: RSI={rsi}, Call OI={_currentCallOi}, Threshold={callOiThreshold}");
-		}
-		else if (rsi > 70 && _currentPutOi > putOiThreshold && Position >= 0)
-		{
-			// RSI in overbought territory and Put OI spiking - Short entry
-			SellMarket(Volume);
-			LogInfo($"Sell Signal: RSI={rsi}, Put OI={_currentPutOi}, Threshold={putOiThreshold}");
+			_prevRsi = rsi;
+			return;
 		}
 
-		// Exit logic
-		if (Position > 0 && rsi > 50)
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
+
+		var callOiThreshold = _avgCallOi + (OiDeviationFactor * _stdDevCallOi);
+		var putOiThreshold = _avgPutOi + (OiDeviationFactor * _stdDevPutOi);
+		var callOiSpike = _currentCallOi > callOiThreshold;
+		var putOiSpike = _currentPutOi > putOiThreshold;
+		var callOiSpikeTransition = !_prevCallOiSpike && callOiSpike;
+		var putOiSpikeTransition = !_prevPutOiSpike && putOiSpike;
+		var oversoldCross = _prevRsi is decimal previousRsi && previousRsi >= 35m && rsi < 35m;
+		var overboughtCross = _prevRsi is decimal previousRsi2 && previousRsi2 <= 65m && rsi > 65m;
+
+		if (_cooldownRemaining == 0 && oversoldCross && callOiSpikeTransition && Position <= 0)
 		{
-			// Exit long position when RSI returns to neutral zone
-			SellMarket(Math.Abs(Position));
-			LogInfo($"Exit Long: RSI={rsi}");
+			BuyMarket(Volume + (Position < 0 ? Math.Abs(Position) : 0m));
+			_cooldownRemaining = CooldownBars;
 		}
-		else if (Position < 0 && rsi < 50)
+		else if (_cooldownRemaining == 0 && overboughtCross && putOiSpikeTransition && Position >= 0)
 		{
-			// Exit short position when RSI returns to neutral zone
+			SellMarket(Volume + (Position > 0 ? Math.Abs(Position) : 0m));
+			_cooldownRemaining = CooldownBars;
+		}
+		else if (Position > 0 && rsi >= 52m)
+		{
+			SellMarket(Position);
+			_cooldownRemaining = CooldownBars;
+		}
+		else if (Position < 0 && rsi <= 48m)
+		{
 			BuyMarket(Math.Abs(Position));
-			LogInfo($"Exit Short: RSI={rsi}");
+			_cooldownRemaining = CooldownBars;
 		}
+
+		_prevRsi = rsi;
+		_prevCallOiSpike = callOiSpike;
+		_prevPutOiSpike = putOiSpike;
 	}
 
-	private void SimulateOptionOI(ICandleMessage candle)
+	private void SimulateOptionOi(ICandleMessage candle)
 	{
-		// This is a placeholder for real option open interest data
-		// In a real implementation, this would connect to an options data provider
-		// We'll simulate some values based on price action for demonstration
+		var range = Math.Max(candle.HighPrice - candle.LowPrice, 1m);
+		var body = candle.ClosePrice - candle.OpenPrice;
+		var bodyRatio = Math.Abs(body) / range;
+		var rangeRatio = range / Math.Max(candle.OpenPrice, 1m);
+		var baseOi = Math.Max(candle.TotalVolume, 1m);
+		var spikeFactor = 1m + Math.Min(0.75m, (bodyRatio * 0.5m) + (rangeRatio * 20m));
 
-		// Base OI values on price movement
-		bool priceUp = candle.OpenPrice < candle.ClosePrice;
-
-		// Simulate bullish sentiment with higher call OI when price is rising
-		// Simulate bearish sentiment with higher put OI when price is falling
-		if (priceUp)
+		if (body >= 0)
 		{
-			_currentCallOi = candle.TotalVolume * (1m + (decimal)RandomGen.GetDouble() * 0.5m);
-			_currentPutOi = candle.TotalVolume * (0.7m + (decimal)RandomGen.GetDouble() * 0.3m);
+			_currentCallOi = baseOi * spikeFactor;
+			_currentPutOi = baseOi * (0.75m + (1m - bodyRatio) * 0.25m);
 		}
 		else
 		{
-			_currentCallOi = candle.TotalVolume * (0.7m + (decimal)RandomGen.GetDouble() * 0.3m);
-			_currentPutOi = candle.TotalVolume * (1m + (decimal)RandomGen.GetDouble() * 0.5m);
-		}
-
-		// Add some randomness for spikes
-		if (RandomGen.GetDouble() > 0.9)
-		{
-			// Occasional spikes in OI
-			_currentCallOi *= 1.5m;
-		}
-
-		if (RandomGen.GetDouble() > 0.9)
-		{
-			// Occasional spikes in OI
-			_currentPutOi *= 1.5m;
+			_currentCallOi = baseOi * (0.75m + (1m - bodyRatio) * 0.25m);
+			_currentPutOi = baseOi * spikeFactor;
 		}
 	}
 }

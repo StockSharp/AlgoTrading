@@ -1,51 +1,108 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
+using StockSharp.Configuration;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Consistent momentum strategy.
-/// Selects securities that show strong momentum over multiple windows
-/// and holds positions for a fixed number of months.
+/// Consistent momentum strategy that trades the primary instrument when both medium-term and long-term momentum are aligned versus a benchmark.
 /// </summary>
 public class ConsistentMomentumStrategy : Strategy
 {
-	private readonly StrategyParam<IEnumerable<Security>> _universe;
-	private readonly StrategyParam<int> _lookback;
+	private readonly StrategyParam<string> _security2Id;
+	private readonly StrategyParam<int> _mediumMomentumLength;
+	private readonly StrategyParam<int> _longMomentumLength;
+	private readonly StrategyParam<decimal> _entryMargin;
+	private readonly StrategyParam<decimal> _exitMargin;
+	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _stopLoss;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _holdingMonths;
-	private readonly StrategyParam<decimal> _minUsd;
+
+	private Security _benchmark = null!;
+	private RateOfChange _primaryMediumMomentum = null!;
+	private RateOfChange _primaryLongMomentum = null!;
+	private RateOfChange _benchmarkMediumMomentum = null!;
+	private RateOfChange _benchmarkLongMomentum = null!;
+	private bool _primaryUpdated;
+	private bool _benchmarkUpdated;
+	private decimal _primaryMediumValue;
+	private decimal _primaryLongValue;
+	private decimal _benchmarkMediumValue;
+	private decimal _benchmarkLongValue;
+	private int _cooldownRemaining;
 
 	/// <summary>
-	/// Securities to trade.
+	/// Benchmark security identifier.
 	/// </summary>
-	public IEnumerable<Security> Universe
+	public string Security2Id
 	{
-		get => _universe.Value;
-		set => _universe.Value = value;
+		get => _security2Id.Value;
+		set => _security2Id.Value = value;
 	}
 
 	/// <summary>
-	/// Lookback period in days for momentum calculation.
+	/// Medium-term momentum length.
 	/// </summary>
-	public int LookbackDays
+	public int MediumMomentumLength
 	{
-		get => _lookback.Value;
-		set => _lookback.Value = value;
+		get => _mediumMomentumLength.Value;
+		set => _mediumMomentumLength.Value = value;
 	}
 
 	/// <summary>
-	/// Candle type used for calculations.
+	/// Long-term momentum length.
+	/// </summary>
+	public int LongMomentumLength
+	{
+		get => _longMomentumLength.Value;
+		set => _longMomentumLength.Value = value;
+	}
+
+	/// <summary>
+	/// Minimum relative edge required to open a position.
+	/// </summary>
+	public decimal EntryMargin
+	{
+		get => _entryMargin.Value;
+		set => _entryMargin.Value = value;
+	}
+
+	/// <summary>
+	/// Relative edge threshold used to close a position.
+	/// </summary>
+	public decimal ExitMargin
+	{
+		get => _exitMargin.Value;
+		set => _exitMargin.Value = value;
+	}
+
+	/// <summary>
+	/// Closed candles to wait before another position change.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
+	/// Stop loss percentage.
+	/// </summary>
+	public decimal StopLoss
+	{
+		get => _stopLoss.Value;
+		set => _stopLoss.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type used for both instruments.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -54,242 +111,188 @@ public class ConsistentMomentumStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Number of months to hold opened positions.
-	/// </summary>
-	public int HoldingMonths
-	{
-		get => _holdingMonths.Value;
-		set => _holdingMonths.Value = value;
-	}
-
-	/// <summary>
-	/// Minimum dollar value for trades.
-	/// </summary>
-	public decimal MinTradeUsd
-	{
-		get => _minUsd.Value;
-		set => _minUsd.Value = value;
-	}
-
-	private readonly Dictionary<Security, RollingWindow<decimal>> _prices = [];
-	private readonly Dictionary<Security, decimal> _latestPrices = [];
-	private readonly List<Tranche> _tranches = [];
-	private DateTime _lastDay = DateTime.MinValue;
-
-	/// <summary>
-	/// Constructor.
+	/// Initializes strategy parameters.
 	/// </summary>
 	public ConsistentMomentumStrategy()
 	{
-		_universe = Param<IEnumerable<Security>>(nameof(Universe), [])
-			.SetDisplay("Universe", "Securities to trade", "General");
+		_security2Id = Param(nameof(Security2Id), Paths.HistoryDefaultSecurity2)
+			.SetDisplay("Benchmark Security Id", "Identifier of the benchmark security", "General");
 
-		_lookback = Param(nameof(LookbackDays), 7 * 21)
-			.SetGreaterThanZero()
-			.SetDisplay("Lookback Days", "Days in momentum lookback window", "Parameters");
+		_mediumMomentumLength = Param(nameof(MediumMomentumLength), 18)
+			.SetRange(5, 80)
+			.SetDisplay("Medium Momentum Length", "Medium-term momentum length", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Time frame for candles", "General");
+		_longMomentumLength = Param(nameof(LongMomentumLength), 60)
+			.SetRange(20, 200)
+			.SetDisplay("Long Momentum Length", "Long-term momentum length", "Indicators");
 
-		_holdingMonths = Param(nameof(HoldingMonths), 6)
-			.SetGreaterThanZero()
-			.SetDisplay("Holding Months", "Months to keep a position", "Parameters");
+		_entryMargin = Param(nameof(EntryMargin), 1.5m)
+			.SetRange(0.1m, 20m)
+			.SetDisplay("Entry Margin", "Minimum relative edge required to open a position", "Signals");
 
-		_minUsd = Param(nameof(MinTradeUsd), 50m)
-			.SetGreaterThanZero()
-			.SetDisplay("Min Trade USD", "Minimal trade value in USD", "Parameters");
+		_exitMargin = Param(nameof(ExitMargin), 0.4m)
+			.SetRange(0m, 10m)
+			.SetDisplay("Exit Margin", "Relative edge threshold used to close a position", "Signals");
+
+		_cooldownBars = Param(nameof(CooldownBars), 8)
+			.SetRange(0, 100)
+			.SetDisplay("Cooldown Bars", "Closed candles to wait before another position change", "Risk");
+
+		_stopLoss = Param(nameof(StopLoss), 2.5m)
+			.SetRange(0.5m, 10m)
+			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+			.SetDisplay("Candle Type", "Candle series for both instruments", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return Universe.Select(s => (s, CandleType));
+		if (Security != null)
+			yield return (Security, CandleType);
+
+		if (!Security2Id.IsEmpty())
+			yield return (new Security { Id = Security2Id }, CandleType);
 	}
 
 	/// <inheritdoc />
-	
 	protected override void OnReseted()
 	{
 		base.OnReseted();
 
-		_prices.Clear();
-		_latestPrices.Clear();
-		_tranches.Clear();
-		_lastDay = default;
+		_benchmark = null!;
+		_primaryMediumMomentum = null!;
+		_primaryLongMomentum = null!;
+		_benchmarkMediumMomentum = null!;
+		_benchmarkLongMomentum = null!;
+		_primaryUpdated = false;
+		_benchmarkUpdated = false;
+		_primaryMediumValue = 0m;
+		_primaryLongValue = 0m;
+		_benchmarkMediumValue = 0m;
+		_benchmarkLongValue = 0m;
+		_cooldownRemaining = 0;
 	}
 
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
-		if (Universe == null || !Universe.Any())
-			throw new InvalidOperationException("Universe cannot be empty.");
-
 		base.OnStarted2(time);
 
-		foreach (var (sec, dt) in GetWorkingSecurities())
-		{
-			_prices[sec] = new RollingWindow<decimal>(LookbackDays + 1);
+		if (Security == null)
+			throw new InvalidOperationException("Primary security is not specified.");
 
-			SubscribeCandles(dt, true, sec)
-				.Bind(c => ProcessCandle(c, sec))
-				.Start();
+		if (Security2Id.IsEmpty())
+			throw new InvalidOperationException("Benchmark security identifier is not specified.");
+
+		_benchmark = this.LookupById(Security2Id) ?? new Security { Id = Security2Id };
+		_primaryMediumMomentum = new RateOfChange { Length = MediumMomentumLength };
+		_primaryLongMomentum = new RateOfChange { Length = LongMomentumLength };
+		_benchmarkMediumMomentum = new RateOfChange { Length = MediumMomentumLength };
+		_benchmarkLongMomentum = new RateOfChange { Length = LongMomentumLength };
+
+		var primarySubscription = SubscribeCandles(CandleType, security: Security);
+		var benchmarkSubscription = SubscribeCandles(CandleType, security: _benchmark);
+
+		primarySubscription
+			.Bind(ProcessPrimaryCandle)
+			.Start();
+
+		benchmarkSubscription
+			.Bind(ProcessBenchmarkCandle)
+			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, primarySubscription);
+			DrawCandles(area, benchmarkSubscription);
+			DrawOwnTrades(area);
 		}
+
+		StartProtection(
+			new Unit(2, UnitTypes.Percent),
+			new Unit(StopLoss, UnitTypes.Percent));
 	}
 
-	private void ProcessCandle(ICandleMessage candle, Security security)
+	private void ProcessPrimaryCandle(ICandleMessage candle)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Store the latest closing price for this security
-		_latestPrices[security] = candle.ClosePrice;
+		var mediumValue = _primaryMediumMomentum.Process(candle);
+		var longValue = _primaryLongMomentum.Process(candle);
 
-		ProcessDaily(candle, security);
+		if (!mediumValue.IsEmpty && !longValue.IsEmpty && _primaryMediumMomentum.IsFormed && _primaryLongMomentum.IsFormed)
+		{
+			_primaryMediumValue = mediumValue.ToDecimal();
+			_primaryLongValue = longValue.ToDecimal();
+			_primaryUpdated = true;
+			TryProcessSignal();
+		}
 	}
 
-	private void ProcessDaily(ICandleMessage c, Security sec)
+	private void ProcessBenchmarkCandle(ICandleMessage candle)
 	{
-		_prices[sec].Add(c.ClosePrice);
-
-		var d = c.OpenTime.Date;
-		if (d == _lastDay)
+		if (candle.State != CandleStates.Finished)
 			return;
 
-		_lastDay = d;
+		var mediumValue = _benchmarkMediumMomentum.Process(candle);
+		var longValue = _benchmarkLongMomentum.Process(candle);
 
-		// Age tranches
-		foreach (var tr in _tranches.ToList())
+		if (!mediumValue.IsEmpty && !longValue.IsEmpty && _benchmarkMediumMomentum.IsFormed && _benchmarkLongMomentum.IsFormed)
 		{
-			tr.Age++;
+			_benchmarkMediumValue = mediumValue.ToDecimal();
+			_benchmarkLongValue = longValue.ToDecimal();
+			_benchmarkUpdated = true;
+			TryProcessSignal();
+		}
+	}
 
-			if (tr.Age >= HoldingMonths)
+	private void TryProcessSignal()
+	{
+		if (!_primaryUpdated || !_benchmarkUpdated)
+			return;
+
+		_primaryUpdated = false;
+		_benchmarkUpdated = false;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
+
+		var mediumEdge = _primaryMediumValue - _benchmarkMediumValue;
+		var longEdge = _primaryLongValue - _benchmarkLongValue;
+		var bullishConsistent = mediumEdge >= EntryMargin && longEdge >= EntryMargin;
+		var bearishConsistent = mediumEdge <= -EntryMargin && longEdge <= -EntryMargin;
+		var bullishExit = mediumEdge <= ExitMargin || longEdge <= ExitMargin;
+		var bearishExit = mediumEdge >= -ExitMargin || longEdge >= -ExitMargin;
+
+		if (_cooldownRemaining == 0 && Position == 0)
+		{
+			if (bullishConsistent)
 			{
-				foreach (var (s, qty) in tr.Pos)
-					Move(s, 0);
-
-				_tranches.Remove(tr);
+				BuyMarket();
+				_cooldownRemaining = CooldownBars;
+			}
+			else if (bearishConsistent)
+			{
+				SellMarket();
+				_cooldownRemaining = CooldownBars;
 			}
 		}
-
-		if (d.Day != 1)
-			return;
-
-		if (_prices.Values.Any(w => !w.IsFull()))
-			return;
-
-		// momentum windows
-		var m7 = 7 * 21;
-
-		var m71 = _prices.ToDictionary(
-			kv => kv.Key,
-			kv => (kv.Value[m7 - 21] - kv.Value[0]) / kv.Value[0]);
-
-		var m60 = _prices.ToDictionary(
-			kv => kv.Key,
-			kv => (kv.Value.Last() - kv.Value[21]) / kv.Value[21]);
-
-		var dec = _prices.Count / 10;
-
-		var top71 = m71.OrderByDescending(kv => kv.Value).Take(dec).Select(kv => kv.Key).ToHashSet();
-		var top60 = m60.OrderByDescending(kv => kv.Value).Take(dec).Select(kv => kv.Key).ToHashSet();
-		var bot71 = m71.OrderBy(kv => kv.Value).Take(dec).Select(kv => kv.Key).ToHashSet();
-		var bot60 = m60.OrderBy(kv => kv.Value).Take(dec).Select(kv => kv.Key).ToHashSet();
-
-		var longs = top71.Intersect(top60).ToList();
-		var shorts = bot71.Intersect(bot60).ToList();
-
-		if (!longs.Any() || !shorts.Any())
-			return;
-
-		var cap = Portfolio.CurrentValue ?? 0m;
-		var wl = cap * 0.5m / longs.Count;
-		var ws = cap * 0.5m / shorts.Count;
-
-		var tranche = new Tranche();
-
-		foreach (var s in longs)
+		else if (Position > 0 && bullishExit)
 		{
-			var price = GetLatestPrice(s);
-			if (price > 0)
-			{
-				var qty = wl / price;
-				Move(s, qty);
-				tranche.Pos.Add((s, qty));
-			}
+			SellMarket(Position);
+			_cooldownRemaining = CooldownBars;
 		}
-
-		foreach (var s in shorts)
+		else if (Position < 0 && bearishExit)
 		{
-			var price = GetLatestPrice(s);
-			if (price > 0)
-			{
-				var qty = -ws / price;
-				Move(s, qty);
-				tranche.Pos.Add((s, qty));
-			}
+			BuyMarket(Math.Abs(Position));
+			_cooldownRemaining = CooldownBars;
 		}
-
-		_tranches.Add(tranche);
 	}
-
-	private decimal GetLatestPrice(Security security)
-	{
-		return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
-	}
-
-	private void Move(Security s, decimal tgt)
-	{
-		var diff = tgt - PositionBy(s);
-		var price = GetLatestPrice(s);
-
-		if (price <= 0 || Math.Abs(diff) * price < MinTradeUsd)
-			return;
-
-		RegisterOrder(new Order
-		{
-			Security = s,
-			Portfolio = Portfolio,
-			Side = diff > 0 ? Sides.Buy : Sides.Sell,
-			Volume = Math.Abs(diff),
-			Type = OrderTypes.Market,
-			Comment = "ConsMom"
-		});
-	}
-
-	private decimal PositionBy(Security s) => GetPositionValue(s, Portfolio) ?? 0;
-
-	private class Tranche
-	{
-		public List<(Security PosSec, decimal PosQty)> Pos { get; } = [];
-		public int Age { get; set; }
-	}
-
-	#region RollingWindow
-
-	private class RollingWindow<T>
-	{
-		private readonly Queue<T> _q = [];
-		private readonly int _n;
-
-		public RollingWindow(int n)
-		{
-			_n = n;
-		}
-
-		public void Add(T v)
-		{
-			if (_q.Count == _n)
-				_q.Dequeue();
-
-			_q.Enqueue(v);
-		}
-
-		public bool IsFull() => _q.Count == _n;
-
-		public T Last() => _q.Last();
-
-		public T this[int i] => _q.ElementAt(i);
-	}
-
-	#endregion
 }

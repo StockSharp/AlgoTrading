@@ -1,74 +1,109 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
+using StockSharp.Configuration;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Asset Growth Effect strategy.
-/// Rebalances annually in July based on total asset growth.
+/// Relative asset-growth strategy that fades excessive synthetic balance-sheet expansion in the primary instrument versus the secondary benchmark.
 /// </summary>
 public class AssetGrowthEffectStrategy : Strategy
 {
-	private readonly StrategyParam<IEnumerable<Security>> _universe;
-	private readonly StrategyParam<int> _quant;
-	private readonly StrategyParam<decimal> _lev;
-	private readonly StrategyParam<decimal> _minUsd;
+	private readonly StrategyParam<string> _security2Id;
+	private readonly StrategyParam<int> _assetLength;
+	private readonly StrategyParam<int> _lookbackPeriod;
+	private readonly StrategyParam<decimal> _entryThreshold;
+	private readonly StrategyParam<decimal> _exitThreshold;
+	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _stopLoss;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private readonly Dictionary<Security, decimal> _prev = [];
-	private readonly Dictionary<Security, decimal> _w = [];
-	private readonly Dictionary<Security, decimal> _latestPrices = [];
-
-	private DateTime _lastDay = DateTime.MinValue;
+	private Security _security2 = null!;
+	private ExponentialMovingAverage _primaryAssetBase = null!;
+	private ExponentialMovingAverage _secondaryAssetBase = null!;
+	private SimpleMovingAverage _growthSpreadAverage = null!;
+	private StandardDeviation _growthSpreadDeviation = null!;
+	private decimal _previousPrimaryAssetBase;
+	private decimal _previousSecondaryAssetBase;
+	private decimal _latestPrimaryGrowth;
+	private decimal _latestSecondaryGrowth;
+	private bool _primaryUpdated;
+	private bool _secondaryUpdated;
+	private decimal? _previousZScore;
+	private int _cooldownRemaining;
 
 	/// <summary>
-	/// Securities universe to trade.
+	/// Secondary security identifier.
 	/// </summary>
-	public IEnumerable<Security> Universe
+	public string Security2Id
 	{
-		get => _universe.Value;
-		set => _universe.Value = value;
+		get => _security2Id.Value;
+		set => _security2Id.Value = value;
 	}
 
 	/// <summary>
-	/// Number of quantiles used to rank securities.
+	/// Smoothing length for the synthetic asset base.
 	/// </summary>
-	public int Quantiles
+	public int AssetLength
 	{
-		get => _quant.Value;
-		set => _quant.Value = value;
+		get => _assetLength.Value;
+		set => _assetLength.Value = value;
 	}
 
 	/// <summary>
-	/// Target portfolio leverage.
+	/// Lookback period used to normalize growth spread.
 	/// </summary>
-	public decimal Leverage
+	public int LookbackPeriod
 	{
-		get => _lev.Value;
-		set => _lev.Value = value;
+		get => _lookbackPeriod.Value;
+		set => _lookbackPeriod.Value = value;
 	}
 
 	/// <summary>
-	/// Minimum trade value in USD.
+	/// Z-score threshold required to open a position.
 	/// </summary>
-	public decimal MinTradeUsd
+	public decimal EntryThreshold
 	{
-		get => _minUsd.Value;
-		set => _minUsd.Value = value;
+		get => _entryThreshold.Value;
+		set => _entryThreshold.Value = value;
 	}
 
 	/// <summary>
-	/// Candle type used for calculations.
+	/// Z-score threshold required to close a position.
+	/// </summary>
+	public decimal ExitThreshold
+	{
+		get => _exitThreshold.Value;
+		set => _exitThreshold.Value = value;
+	}
+
+	/// <summary>
+	/// Closed candles to wait before another position change.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
+	/// Stop loss percentage.
+	/// </summary>
+	public decimal StopLoss
+	{
+		get => _stopLoss.Value;
+		set => _stopLoss.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type used for both instruments.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -77,35 +112,49 @@ public class AssetGrowthEffectStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initializes a new instance of the <see cref="AssetGrowthEffectStrategy"/> class.
+	/// Initializes strategy parameters.
 	/// </summary>
 	public AssetGrowthEffectStrategy()
 	{
-		// Securities universe parameter.
-		_universe = Param<IEnumerable<Security>>(nameof(Universe), [])
-			.SetDisplay("Universe", "Securities universe to trade", "General");
+		_security2Id = Param(nameof(Security2Id), Paths.HistoryDefaultSecurity2)
+			.SetDisplay("Second Security Id", "Identifier of the secondary benchmark security", "General");
 
-		// Number of quantiles parameter.
-		_quant = Param(nameof(Quantiles), 10)
-			.SetDisplay("Quantiles", "Number of growth quantiles", "General");
+		_assetLength = Param(nameof(AssetLength), 8)
+			.SetRange(2, 40)
+			.SetDisplay("Asset Length", "Smoothing length for the synthetic asset base", "Indicators");
 
-		// Portfolio leverage parameter.
-		_lev = Param(nameof(Leverage), 1m)
-			.SetDisplay("Leverage", "Target portfolio leverage", "General");
+		_lookbackPeriod = Param(nameof(LookbackPeriod), 24)
+			.SetRange(10, 150)
+			.SetDisplay("Lookback Period", "Lookback period used to normalize growth spread", "Indicators");
 
-		// Minimum trade USD parameter.
-		_minUsd = Param(nameof(MinTradeUsd), 50m)
-			.SetDisplay("Min Trade USD", "Minimum trade value in USD", "General");
+		_entryThreshold = Param(nameof(EntryThreshold), 1.35m)
+			.SetRange(0.5m, 4m)
+			.SetDisplay("Entry Threshold", "Z-score threshold required to open a position", "Signals");
 
-		// Candle type parameter.
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Candle type for calculations", "General");
+		_exitThreshold = Param(nameof(ExitThreshold), 0.3m)
+			.SetRange(0m, 2m)
+			.SetDisplay("Exit Threshold", "Z-score threshold required to close a position", "Signals");
+
+		_cooldownBars = Param(nameof(CooldownBars), 12)
+			.SetRange(0, 100)
+			.SetDisplay("Cooldown Bars", "Closed candles to wait before another position change", "Risk");
+
+		_stopLoss = Param(nameof(StopLoss), 2.5m)
+			.SetRange(0.5m, 10m)
+			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+			.SetDisplay("Candle Type", "Candle series for both instruments", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return Universe.Select(s => (s, CandleType));
+		if (Security != null)
+			yield return (Security, CandleType);
+
+		if (!Security2Id.IsEmpty())
+			yield return (new Security { Id = Security2Id }, CandleType);
 	}
 
 	/// <inheritdoc />
@@ -113,10 +162,19 @@ public class AssetGrowthEffectStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_prev.Clear();
-		_w.Clear();
-		_latestPrices.Clear();
-		_lastDay = default;
+		_security2 = null!;
+		_primaryAssetBase = null!;
+		_secondaryAssetBase = null!;
+		_growthSpreadAverage = null!;
+		_growthSpreadDeviation = null!;
+		_previousPrimaryAssetBase = 0m;
+		_previousSecondaryAssetBase = 0m;
+		_latestPrimaryGrowth = 0m;
+		_latestSecondaryGrowth = 0m;
+		_primaryUpdated = false;
+		_secondaryUpdated = false;
+		_previousZScore = null;
+		_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
@@ -124,117 +182,142 @@ public class AssetGrowthEffectStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		if (Universe == null || !Universe.Any())
-			throw new InvalidOperationException("Universe cannot be empty.");
+		if (Security == null)
+			throw new InvalidOperationException("Primary security is not specified.");
 
-		foreach (var (sec, dt) in GetWorkingSecurities())
+		if (Security2Id.IsEmpty())
+			throw new InvalidOperationException("Secondary security identifier is not specified.");
+
+		_security2 = this.LookupById(Security2Id) ?? new Security { Id = Security2Id };
+		_primaryAssetBase = new ExponentialMovingAverage { Length = AssetLength };
+		_secondaryAssetBase = new ExponentialMovingAverage { Length = AssetLength };
+		_growthSpreadAverage = new SimpleMovingAverage { Length = LookbackPeriod };
+		_growthSpreadDeviation = new StandardDeviation { Length = LookbackPeriod };
+		_cooldownRemaining = 0;
+
+		var primarySubscription = SubscribeCandles(CandleType, security: Security);
+		var secondarySubscription = SubscribeCandles(CandleType, security: _security2);
+
+		primarySubscription
+			.Bind(ProcessPrimaryCandle)
+			.Start();
+
+		secondarySubscription
+			.Bind(ProcessSecondaryCandle)
+			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
 		{
-			SubscribeCandles(dt, true, sec)
-				.Bind(c => ProcessCandle(c, sec))
-				.Start();
+			DrawCandles(area, primarySubscription);
+			DrawCandles(area, secondarySubscription);
+			DrawOwnTrades(area);
 		}
+
+		StartProtection(
+			new Unit(2, UnitTypes.Percent),
+			new Unit(StopLoss, UnitTypes.Percent));
 	}
 
-	private void ProcessCandle(ICandleMessage candle, Security security)
+	private void ProcessPrimaryCandle(ICandleMessage candle)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Store the latest closing price for this security
-		_latestPrices[security] = candle.ClosePrice;
+		_latestPrimaryGrowth = UpdateGrowth(_primaryAssetBase, candle, ref _previousPrimaryAssetBase);
+		_primaryUpdated = true;
+		TryProcessGrowthSpread(candle.OpenTime);
+	}
 
-		var d = candle.OpenTime.Date;
-
-		if (d == _lastDay)
+	private void ProcessSecondaryCandle(ICandleMessage candle)
+	{
+		if (candle.State != CandleStates.Finished)
 			return;
 
-		_lastDay = d;
-
-		if (d.Month == 7 && d.Day == 1)
-			Rebalance();
+		_latestSecondaryGrowth = UpdateGrowth(_secondaryAssetBase, candle, ref _previousSecondaryAssetBase);
+		_secondaryUpdated = true;
+		TryProcessGrowthSpread(candle.OpenTime);
 	}
 
-	private void Rebalance()
+	private decimal UpdateGrowth(ExponentialMovingAverage average, ICandleMessage candle, ref decimal previousValue)
 	{
-		var growth = new Dictionary<Security, decimal>();
+		var syntheticAssets = CalculateSyntheticAssets(candle);
+		var assetBase = average.Process(syntheticAssets, candle.OpenTime, true).ToDecimal();
 
-		foreach (var s in Universe)
+		if (previousValue == 0m)
 		{
-			if (!TryGetTotalAssets(s, out var tot))
-				continue;
-
-			if (_prev.TryGetValue(s, out var prev) && prev > 0)
-				growth[s] = (tot - prev) / prev;
-
-			_prev[s] = tot;
+			previousValue = assetBase;
+			return 0m;
 		}
 
-		if (growth.Count < Quantiles * 2)
+		var growth = (assetBase - previousValue) / Math.Max(Math.Abs(previousValue), 1m);
+		previousValue = assetBase;
+
+		return growth;
+	}
+
+	private decimal CalculateSyntheticAssets(ICandleMessage candle)
+	{
+		var priceBase = Math.Max(candle.OpenPrice, 1m);
+		var range = Math.Max(candle.HighPrice - candle.LowPrice, Security?.PriceStep ?? 1m);
+		var turnoverProxy = candle.ClosePrice * (1m + ((range / priceBase) * 5m));
+		var balanceSheetProxy = (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m;
+
+		return turnoverProxy + balanceSheetProxy;
+	}
+
+	private void TryProcessGrowthSpread(DateTime time)
+	{
+		if (!_primaryUpdated || !_secondaryUpdated)
 			return;
 
-		var qlen = growth.Count / Quantiles;
-		var sorted = growth.OrderBy(kv => kv.Value).ToList();
-		var longs = sorted.Take(qlen).Select(kv => kv.Key).ToList();
-		var shorts = sorted.Skip(growth.Count - qlen).Select(kv => kv.Key).ToList();
+		_primaryUpdated = false;
+		_secondaryUpdated = false;
 
-		_w.Clear();
-
-		var wl = Leverage / longs.Count;
-		var ws = -Leverage / shorts.Count;
-
-		foreach (var s in longs)
-			_w[s] = wl;
-
-		foreach (var s in shorts)
-			_w[s] = ws;
-
-		foreach (var position in Positions)
-		{
-			if (!_w.ContainsKey(position.Security))
-				Move(position.Security, 0);
-		}
-
-		var portfolioValue = Portfolio.CurrentValue ?? 0m;
-
-		foreach (var kv in _w)
-		{
-			var price = GetLatestPrice(kv.Key);
-
-			if (price > 0)
-				Move(kv.Key, kv.Value * portfolioValue / price);
-		}
-	}
-
-	private decimal GetLatestPrice(Security security)
-	{
-		return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
-	}
-
-	private void Move(Security s, decimal tgt)
-	{
-		var diff = tgt - PositionBy(s);
-		var price = GetLatestPrice(s);
-
-		if (price <= 0 || Math.Abs(diff) * price < MinTradeUsd)
+		if (!_primaryAssetBase.IsFormed || !_secondaryAssetBase.IsFormed)
 			return;
 
-		RegisterOrder(new Order
+		var growthSpread = _latestPrimaryGrowth - _latestSecondaryGrowth;
+		var mean = _growthSpreadAverage.Process(growthSpread, time, true).ToDecimal();
+		var deviation = _growthSpreadDeviation.Process(growthSpread, time, true).ToDecimal();
+
+		if (!_growthSpreadAverage.IsFormed || !_growthSpreadDeviation.IsFormed || deviation <= 0)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
+
+		var zScore = (growthSpread - mean) / deviation;
+		var bullishEntry = _previousZScore is decimal previousBullish && previousBullish > -EntryThreshold && zScore <= -EntryThreshold;
+		var bearishEntry = _previousZScore is decimal previousBearish && previousBearish < EntryThreshold && zScore >= EntryThreshold;
+
+		if (_cooldownRemaining == 0 && Position == 0)
 		{
-			Security = s,
-			Portfolio = Portfolio,
-			Side = diff > 0 ? Sides.Buy : Sides.Sell,
-			Volume = Math.Abs(diff),
-			Type = OrderTypes.Market,
-			Comment = "AssetGrowth"
-		});
-	}
+			if (bullishEntry)
+			{
+				BuyMarket();
+				_cooldownRemaining = CooldownBars;
+			}
+			else if (bearishEntry)
+			{
+				SellMarket();
+				_cooldownRemaining = CooldownBars;
+			}
+		}
+		else if (Position > 0 && zScore >= -ExitThreshold)
+		{
+			SellMarket(Position);
+			_cooldownRemaining = CooldownBars;
+		}
+		else if (Position < 0 && zScore <= ExitThreshold)
+		{
+			BuyMarket(Math.Abs(Position));
+			_cooldownRemaining = CooldownBars;
+		}
 
-	private decimal PositionBy(Security s) => GetPositionValue(s, Portfolio) ?? 0;
-
-	private bool TryGetTotalAssets(Security s, out decimal tot)
-	{
-		tot = 0;
-		return false;
+		_previousZScore = zScore;
 	}
 }

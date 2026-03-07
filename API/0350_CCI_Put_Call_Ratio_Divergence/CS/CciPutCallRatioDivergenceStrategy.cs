@@ -1,9 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
 using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
@@ -14,23 +12,25 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// CCI strategy with Put/Call Ratio Divergence.
+/// CCI reversal strategy filtered by deterministic put/call ratio divergence.
 /// </summary>
 public class CciPutCallRatioDivergenceStrategy : Strategy
 {
 	private readonly StrategyParam<int> _cciPeriod;
 	private readonly StrategyParam<decimal> _atrMultiplier;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private CommodityChannelIndex _cci;
-	private AverageTrueRange _atr;
-
+	private CommodityChannelIndex _cci = null!;
+	private AverageTrueRange _atr = null!;
 	private decimal _prevPcr;
 	private decimal _currentPcr;
 	private decimal _prevPrice;
+	private decimal? _prevCci;
+	private int _cooldownRemaining;
 
 	/// <summary>
-	/// CCI Period.
+	/// CCI period.
 	/// </summary>
 	public int CciPeriod
 	{
@@ -48,6 +48,15 @@ public class CciPutCallRatioDivergenceStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Closed candles to wait between position changes.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Candle type for strategy calculation.
 	/// </summary>
 	public DataType CandleType
@@ -57,22 +66,24 @@ public class CciPutCallRatioDivergenceStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initialize <see cref="CciPutCallRatioDivergenceStrategy"/>.
+	/// Initialize strategy.
 	/// </summary>
 	public CciPutCallRatioDivergenceStrategy()
 	{
 		_cciPeriod = Param(nameof(CciPeriod), 20)
-		.SetRange(10, 50)
-		
-		.SetDisplay("CCI Period", "Period for CCI calculation", "Indicators");
+			.SetRange(10, 50)
+			.SetDisplay("CCI Period", "Period for CCI calculation", "Indicators");
 
 		_atrMultiplier = Param(nameof(AtrMultiplier), 2m)
-		.SetRange(1m, 5m)
-		
-		.SetDisplay("ATR Multiplier", "Multiplier for ATR-based stop loss", "Risk Management");
+			.SetRange(1m, 5m)
+			.SetDisplay("ATR Multiplier", "Multiplier for ATR-based stop loss", "Risk Management");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-		.SetDisplay("Candle Type", "Type of candles to use", "General");
+		_cooldownBars = Param(nameof(CooldownBars), 24)
+			.SetNotNegative()
+			.SetDisplay("Cooldown Bars", "Closed candles to wait before another position change", "General");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -80,19 +91,22 @@ public class CciPutCallRatioDivergenceStrategy : Strategy
 	{
 		return [(Security, CandleType)];
 	}
+
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
 
 		_cci?.Reset();
-		_cci = null;
 		_atr?.Reset();
-		_atr = null;
 
-		_prevPcr = default;
-		_currentPcr = default;
-		_prevPrice = default;
+		_cci = null!;
+		_atr = null!;
+		_prevPcr = 0m;
+		_currentPcr = 0m;
+		_prevPrice = 0m;
+		_prevCci = null;
+		_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
@@ -100,7 +114,6 @@ public class CciPutCallRatioDivergenceStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Create indicators
 		_cci = new CommodityChannelIndex
 		{
 			Length = CciPeriod
@@ -108,18 +121,14 @@ public class CciPutCallRatioDivergenceStrategy : Strategy
 
 		_atr = new AverageTrueRange
 		{
-			Length = 14 // Standard ATR period
+			Length = 14
 		};
 
-		// Create subscription
 		var subscription = SubscribeCandles(CandleType);
-
-		// Bind indicators
 		subscription
-		.Bind(_cci, _atr, ProcessCandle)
-		.Start();
+			.Bind(_cci, _atr, ProcessCandle)
+			.Start();
 
-		// Setup chart visualization
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -128,125 +137,82 @@ public class CciPutCallRatioDivergenceStrategy : Strategy
 			DrawIndicator(area, _atr);
 			DrawOwnTrades(area);
 		}
+
+		StartProtection(
+			new Unit(2, UnitTypes.Percent),
+			new Unit(2, UnitTypes.Percent)
+		);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal cci, decimal atr)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
-		// Get current price
 		var price = candle.ClosePrice;
-
-		// Simulate Put/Call Ratio (in real implementation, this would come from options data)
 		UpdatePutCallRatio(candle);
 
-		// For first candle just initialize values
-		if (_prevPrice == 0)
+		if (_prevPrice == 0m)
 		{
 			_prevPrice = price;
 			_prevPcr = _currentPcr;
+			_prevCci = cci;
 			return;
 		}
 
-		// Check if strategy is ready to trade
 		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
-
-		// Check for divergences
-		bool bullishDivergence = price < _prevPrice && _currentPcr > _prevPcr;
-		bool bearishDivergence = price > _prevPrice && _currentPcr < _prevPcr;
-
-		// Entry logic - using CCI with PCR divergence
-		if (cci < -100 && bullishDivergence && Position <= 0)
 		{
-			// CCI oversold with bullish PCR divergence - Long entry
-			BuyMarket(Volume);
-			LogInfo($"Buy Signal: CCI={cci}, PCR={_currentPcr}, Price={price}, Bullish Divergence");
-		}
-		else if (cci > 100 && bearishDivergence && Position >= 0)
-		{
-			// CCI overbought with bearish PCR divergence - Short entry
-			SellMarket(Volume);
-			LogInfo($"Sell Signal: CCI={cci}, PCR={_currentPcr}, Price={price}, Bearish Divergence");
+			_prevPrice = price;
+			_prevPcr = _currentPcr;
+			_prevCci = cci;
+			return;
 		}
 
-		// Exit logic
-		if (Position > 0 && cci > 0)
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
+
+		var bullishDivergence = price < _prevPrice && _currentPcr > _prevPcr;
+		var bearishDivergence = price > _prevPrice && _currentPcr < _prevPcr;
+		var oversoldCross = _prevCci is decimal previousCci && previousCci >= -100m && cci < -100m;
+		var overboughtCross = _prevCci is decimal previousCci2 && previousCci2 <= 100m && cci > 100m;
+
+		if (_cooldownRemaining == 0 && oversoldCross && bullishDivergence && Position <= 0)
 		{
-			// Exit long position when CCI crosses above zero
-			SellMarket(Math.Abs(Position));
-			LogInfo($"Exit Long: CCI={cci}");
+			BuyMarket(Volume + (Position < 0 ? Math.Abs(Position) : 0m));
+			_cooldownRemaining = CooldownBars;
 		}
-		else if (Position < 0 && cci < 0)
+		else if (_cooldownRemaining == 0 && overboughtCross && bearishDivergence && Position >= 0)
 		{
-			// Exit short position when CCI crosses below zero
+			SellMarket(Volume + (Position > 0 ? Math.Abs(Position) : 0m));
+			_cooldownRemaining = CooldownBars;
+		}
+		else if (Position > 0 && cci >= 20m)
+		{
+			SellMarket(Position);
+			_cooldownRemaining = CooldownBars;
+		}
+		else if (Position < 0 && cci <= -20m)
+		{
 			BuyMarket(Math.Abs(Position));
-			LogInfo($"Exit Short: CCI={cci}");
+			_cooldownRemaining = CooldownBars;
 		}
 
-		// Dynamic stop loss using ATR
-		if (Position != 0)
-		{
-			decimal stopDistance = atr * AtrMultiplier;
-
-			if (Position > 0)
-			{
-				// For long positions, set stop below entry price - ATR*multiplier
-				decimal stopPrice = price - stopDistance;
-				UpdateStopLoss(stopPrice);
-			}
-			else if (Position < 0)
-			{
-				// For short positions, set stop above entry price + ATR*multiplier
-				decimal stopPrice = price + stopDistance;
-				UpdateStopLoss(stopPrice);
-			}
-		}
-
-		// Update previous values
 		_prevPrice = price;
 		_prevPcr = _currentPcr;
+		_prevCci = cci;
 	}
 
 	private void UpdatePutCallRatio(ICandleMessage candle)
 	{
-		// This is a placeholder for real Put/Call Ratio data
-		// In a real implementation, this would connect to an options data provider
+		var priceChange = (candle.ClosePrice - candle.OpenPrice) / Math.Max(candle.OpenPrice, 1m);
+		var range = (candle.HighPrice - candle.LowPrice) / Math.Max(candle.OpenPrice, 1m);
+		var skew = Math.Min(0.2m, range * 5m);
 
-		// Base PCR on price movement (inverse relation usually exists)
-		bool priceUp = candle.OpenPrice < candle.ClosePrice;
-		decimal priceChange = Math.Abs((candle.ClosePrice - candle.OpenPrice) / candle.OpenPrice);
-
-		if (priceUp)
-		{
-			// When price rises, PCR often falls (less put buying)
-			_currentPcr = 0.7m - priceChange + (decimal)(RandomGen.GetDouble() * 0.2);
-		}
+		if (priceChange >= 0)
+			_currentPcr = 0.8m - priceChange + skew;
 		else
-		{
-			// When price falls, PCR often rises (more put buying for protection)
-			_currentPcr = 1.0m + priceChange + (decimal)(RandomGen.GetDouble() * 0.3);
-		}
+			_currentPcr = 1.1m + Math.Abs(priceChange) + skew;
 
-		// Add some randomness for market events
-		if (RandomGen.GetDouble() > 0.9)
-		{
-			// Occasional PCR spikes
-			_currentPcr *= 1.3m;
-		}
-
-		// Keep PCR in realistic bounds
 		_currentPcr = Math.Max(0.5m, Math.Min(2.0m, _currentPcr));
-	}
-
-	private void UpdateStopLoss(decimal stopPrice)
-	{
-		// In a real implementation, this would update the stop loss level
-		// This could be done via order modification or canceling existing stops and placing new ones
-
-		// For this example, we'll just log the new stop level
-		LogInfo($"Updated Stop Loss: {stopPrice}");
 	}
 }

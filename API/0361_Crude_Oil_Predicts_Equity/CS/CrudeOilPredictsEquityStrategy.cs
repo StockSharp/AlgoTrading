@@ -1,58 +1,95 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
+using StockSharp.Configuration;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that invests in an equity ETF when the last month's crude oil return is positive;
-/// otherwise, it holds a cash ETF.
+/// Strategy that holds the primary equity instrument when the benchmark crude-oil proxy shows positive momentum and exits when the signal weakens.
 /// </summary>
 public class CrudeOilPredictsEquityStrategy : Strategy
 {
-	private readonly StrategyParam<Security> _oil;
-	private readonly StrategyParam<Security> _cash;
-	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<string> _oilSecurityId;
 	private readonly StrategyParam<int> _lookback;
+	private readonly StrategyParam<int> _trendLength;
+	private readonly StrategyParam<decimal> _oilThreshold;
+	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _stopLoss;
+	private readonly StrategyParam<DataType> _candleType;
+
+	private Security _oilSecurity = null!;
+	private RateOfChange _oilMomentum = null!;
+	private SimpleMovingAverage _equityTrend = null!;
+	private decimal _latestEquityPrice;
+	private decimal _latestEquityTrend;
+	private decimal _latestOilMomentum;
+	private bool _equityUpdated;
+	private bool _oilUpdated;
+	private int _cooldownRemaining;
 
 	/// <summary>
-	/// Equity ETF to invest in.
+	/// Crude oil benchmark identifier.
 	/// </summary>
-	public Security Equity
+	public string OilSecurityId
 	{
-		get => Security;
-		set => Security = value;
+		get => _oilSecurityId.Value;
+		set => _oilSecurityId.Value = value;
 	}
 
 	/// <summary>
-	/// Crude oil security used for signal calculation.
+	/// Number of candles used to compute oil momentum.
 	/// </summary>
-	public Security Oil
+	public int Lookback
 	{
-		get => _oil.Value;
-		set => _oil.Value = value;
+		get => _lookback.Value;
+		set => _lookback.Value = value;
 	}
 
 	/// <summary>
-	/// Cash ETF to hold when oil return is negative.
+	/// Equity trend filter length.
 	/// </summary>
-	public Security CashEtf
+	public int TrendLength
 	{
-		get => _cash.Value;
-		set => _cash.Value = value;
+		get => _trendLength.Value;
+		set => _trendLength.Value = value;
 	}
 
 	/// <summary>
-	/// Candle type used for calculations.
+	/// Minimum oil momentum required to hold equity exposure.
+	/// </summary>
+	public decimal OilThreshold
+	{
+		get => _oilThreshold.Value;
+		set => _oilThreshold.Value = value;
+	}
+
+	/// <summary>
+	/// Closed candles to wait before another position change.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
+	/// Stop loss percentage.
+	/// </summary>
+	public decimal StopLoss
+	{
+		get => _stopLoss.Value;
+		set => _stopLoss.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type used for both instruments.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -61,44 +98,45 @@ public class CrudeOilPredictsEquityStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Number of candles to look back for return calculation.
-	/// </summary>
-	public int Lookback
-	{
-		get => _lookback.Value;
-		set => _lookback.Value = value;
-	}
-
-	private readonly Dictionary<Security, RollingWindow<decimal>> _wins = [];
-	private readonly Dictionary<Security, decimal> _latestPrices = [];
-	private DateTime _lastDay = DateTime.MinValue;
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="CrudeOilPredictsEquityStrategy"/>.
+	/// Initializes strategy parameters.
 	/// </summary>
 	public CrudeOilPredictsEquityStrategy()
 	{
-		_oil = Param<Security>(nameof(Oil), null)
-			.SetDisplay("Oil", "Crude oil security for signal", "General");
+		_oilSecurityId = Param(nameof(OilSecurityId), Paths.HistoryDefaultSecurity2)
+			.SetDisplay("Oil Security Id", "Identifier of the crude-oil benchmark security", "General");
 
-		_cash = Param<Security>(nameof(CashEtf), null)
-			.SetDisplay("Cash ETF", "Cash ETF when not invested", "General");
+		_lookback = Param(nameof(Lookback), 20)
+			.SetRange(5, 120)
+			.SetDisplay("Lookback", "Number of candles used to compute oil momentum", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Timeframe for analysis", "General");
+		_trendLength = Param(nameof(TrendLength), 20)
+			.SetRange(5, 120)
+			.SetDisplay("Trend Length", "Equity trend filter length", "Indicators");
 
-		_lookback = Param(nameof(Lookback), 22)
-			.SetGreaterThanZero()
-			.SetDisplay("Lookback", "Number of candles for return calculation", "General");
+		_oilThreshold = Param(nameof(OilThreshold), 0m)
+			.SetRange(-20m, 20m)
+			.SetDisplay("Oil Threshold", "Minimum oil momentum required to hold equity exposure", "Signals");
+
+		_cooldownBars = Param(nameof(CooldownBars), 8)
+			.SetRange(0, 100)
+			.SetDisplay("Cooldown Bars", "Closed candles to wait before another position change", "Risk");
+
+		_stopLoss = Param(nameof(StopLoss), 2.5m)
+			.SetRange(0.5m, 10m)
+			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+			.SetDisplay("Candle Type", "Candle series for both instruments", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		if (Equity == null || Oil == null || CashEtf == null)
-			throw new InvalidOperationException("Set securities");
+		if (Security != null)
+			yield return (Security, CandleType);
 
-		return [(Equity, CandleType), (Oil, CandleType), (CashEtf, CandleType)];
+		if (!OilSecurityId.IsEmpty())
+			yield return (new Security { Id = OilSecurityId }, CandleType);
 	}
 
 	/// <inheritdoc />
@@ -106,96 +144,107 @@ public class CrudeOilPredictsEquityStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_wins.Clear();
-		_latestPrices.Clear();
-		_lastDay = default;
+		_oilSecurity = null!;
+		_oilMomentum = null!;
+		_equityTrend = null!;
+		_latestEquityPrice = 0m;
+		_latestEquityTrend = 0m;
+		_latestOilMomentum = 0m;
+		_equityUpdated = false;
+		_oilUpdated = false;
+		_cooldownRemaining = 0;
 	}
 
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		var securities = GetWorkingSecurities().ToArray();
-		if (securities.Length == 0)
-			throw new InvalidOperationException("No securities configured.");
+		if (Security == null)
+			throw new InvalidOperationException("Primary equity security is not specified.");
 
-		foreach (var (s, dt) in securities)
+		if (OilSecurityId.IsEmpty())
+			throw new InvalidOperationException("Oil security identifier is not specified.");
+
+		_oilSecurity = this.LookupById(OilSecurityId) ?? new Security { Id = OilSecurityId };
+		_oilMomentum = new RateOfChange { Length = Lookback };
+		_equityTrend = new SimpleMovingAverage { Length = TrendLength };
+
+		var equitySubscription = SubscribeCandles(CandleType, security: Security);
+		var oilSubscription = SubscribeCandles(CandleType, security: _oilSecurity);
+
+		equitySubscription
+			.Bind(ProcessEquityCandle)
+			.Start();
+
+		oilSubscription
+			.Bind(ProcessOilCandle)
+			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
 		{
-			_wins[s] = new RollingWindow<decimal>(Lookback + 1);
-
-			SubscribeCandles(dt, true, s)
-				.Bind(c => ProcessCandle(c, s))
-				.Start();
+			DrawCandles(area, equitySubscription);
+			DrawCandles(area, oilSubscription);
+			DrawOwnTrades(area);
 		}
+
+		StartProtection(
+			new Unit(2, UnitTypes.Percent),
+			new Unit(StopLoss, UnitTypes.Percent));
 	}
 
-	private void ProcessCandle(ICandleMessage candle, Security security)
+	private void ProcessEquityCandle(ICandleMessage candle)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Store the latest closing price for this security
-		_latestPrices[security] = candle.ClosePrice;
+		_latestEquityPrice = candle.ClosePrice;
+		_latestEquityTrend = _equityTrend.Process(candle).ToDecimal();
+		_equityUpdated = _equityTrend.IsFormed;
+		TryProcessSignal();
+	}
 
-		_wins[security].Add(candle.ClosePrice);
-		var d = candle.OpenTime.Date;
-		if (d == _lastDay)
+	private void ProcessOilCandle(ICandleMessage candle)
+	{
+		if (candle.State != CandleStates.Finished)
 			return;
-		_lastDay = d;
-		if (d.Day == 1)
-			Rebalance();
+
+		var oilValue = _oilMomentum.Process(candle);
+		if (!oilValue.IsEmpty && _oilMomentum.IsFormed)
+		{
+			_latestOilMomentum = oilValue.ToDecimal();
+			_oilUpdated = true;
+			TryProcessSignal();
+		}
 	}
 
-	private void Rebalance()
+	private void TryProcessSignal()
 	{
-		if (!_wins[Oil].IsFull())
+		if (!_equityUpdated || !_oilUpdated)
 			return;
-		var oilRet = (_wins[Oil].Last() - _wins[Oil][0]) / _wins[Oil][0];
-		if (oilRet > 0)
-			MoveTo(Equity);
-		else
-			MoveTo(CashEtf);
-	}
 
-	private void MoveTo(Security target)
-	{
-		foreach (var position in Positions)
-			if (position.Security != target)
-				Move(position.Security, 0);
+		_equityUpdated = false;
+		_oilUpdated = false;
 
-		var portfolioValue = Portfolio.CurrentValue ?? 0m;
-		var price = GetLatestPrice(target);
-		if (price > 0)
-			Move(target, portfolioValue / price);
-	}
-
-	private decimal GetLatestPrice(Security security)
-	{
-		return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
-	}
-
-	private void Move(Security s, decimal tgt)
-	{
-		var diff = tgt - PositionBy(s);
-		var price = GetLatestPrice(s);
-		if (price <= 0 || Math.Abs(diff) * price < 100)
+		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
-		RegisterOrder(new Order { Security = s, Portfolio = Portfolio, Side = diff > 0 ? Sides.Buy : Sides.Sell, Volume = Math.Abs(diff), Type = OrderTypes.Market, Comment = "OilEq" });
-	}
-	private decimal PositionBy(Security s) => GetPositionValue(s, Portfolio) ?? 0;
 
-	#region RollingWindow
-	private class RollingWindow<T>
-	{
-		private readonly Queue<T> _q = [];
-		private readonly int _n;
-		public RollingWindow(int n) { _n = n; }
-		public void Add(T v) { if (_q.Count == _n) _q.Dequeue(); _q.Enqueue(v); }
-		public bool IsFull() => _q.Count == _n;
-		public T Last() => _q.Last();
-		public T this[int i] => _q.ElementAt(i);
-	}
-	#endregion
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
 
+		var bullishSignal = _latestOilMomentum > OilThreshold && _latestEquityPrice >= _latestEquityTrend;
+		var exitSignal = _latestOilMomentum <= OilThreshold || _latestEquityPrice < _latestEquityTrend;
+
+		if (_cooldownRemaining == 0 && Position == 0 && bullishSignal)
+		{
+			BuyMarket();
+			_cooldownRemaining = CooldownBars;
+		}
+		else if (Position > 0 && exitSignal)
+		{
+			SellMarket(Position);
+			_cooldownRemaining = CooldownBars;
+		}
+	}
 }

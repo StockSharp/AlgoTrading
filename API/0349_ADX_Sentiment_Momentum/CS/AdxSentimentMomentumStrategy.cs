@@ -1,9 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
 using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
@@ -14,7 +12,7 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// ADX strategy with Sentiment Momentum filter.
+/// ADX trend strategy filtered by deterministic sentiment momentum.
 /// </summary>
 public class AdxSentimentMomentumStrategy : Strategy
 {
@@ -22,15 +20,19 @@ public class AdxSentimentMomentumStrategy : Strategy
 	private readonly StrategyParam<decimal> _adxThreshold;
 	private readonly StrategyParam<int> _sentimentPeriod;
 	private readonly StrategyParam<decimal> _stopLoss;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private ADX _adx;
+	private ADX _adx = null!;
 	private decimal _prevSentiment;
 	private decimal _currentSentiment;
 	private decimal _sentimentMomentum;
+	private decimal? _prevDiPlus;
+	private decimal? _prevDiMinus;
+	private int _cooldownRemaining;
 
 	/// <summary>
-	/// ADX Period.
+	/// ADX period.
 	/// </summary>
 	public int AdxPeriod
 	{
@@ -39,7 +41,7 @@ public class AdxSentimentMomentumStrategy : Strategy
 	}
 
 	/// <summary>
-	/// ADX Threshold for strong trend.
+	/// ADX threshold for strong trend.
 	/// </summary>
 	public decimal AdxThreshold
 	{
@@ -66,6 +68,15 @@ public class AdxSentimentMomentumStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Closed candles to wait before another position change.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Candle type for strategy calculation.
 	/// </summary>
 	public DataType CandleType
@@ -75,32 +86,32 @@ public class AdxSentimentMomentumStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initialize <see cref="AdxSentimentMomentumStrategy"/>.
+	/// Initialize strategy.
 	/// </summary>
 	public AdxSentimentMomentumStrategy()
 	{
 		_adxPeriod = Param(nameof(AdxPeriod), 14)
-		.SetRange(5, 30)
-		
-		.SetDisplay("ADX Period", "Period for ADX calculation", "Indicators");
+			.SetRange(5, 30)
+			.SetDisplay("ADX Period", "Period for ADX calculation", "Indicators");
 
 		_adxThreshold = Param(nameof(AdxThreshold), 25m)
-		.SetRange(15m, 35m)
-		
-		.SetDisplay("ADX Threshold", "Threshold for strong trend identification", "Indicators");
+			.SetRange(15m, 35m)
+			.SetDisplay("ADX Threshold", "Threshold for strong trend identification", "Indicators");
 
 		_sentimentPeriod = Param(nameof(SentimentPeriod), 5)
-		.SetRange(3, 10)
-		
-		.SetDisplay("Sentiment Period", "Period for sentiment momentum calculation", "Sentiment");
+			.SetRange(3, 10)
+			.SetDisplay("Sentiment Period", "Period for sentiment momentum calculation", "Sentiment");
 
 		_stopLoss = Param(nameof(StopLoss), 2m)
-		.SetRange(1m, 5m)
-		
-		.SetDisplay("Stop Loss %", "Stop Loss percentage", "Risk Management");
+			.SetRange(1m, 5m)
+			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-		.SetDisplay("Candle Type", "Type of candles to use", "General");
+		_cooldownBars = Param(nameof(CooldownBars), 24)
+			.SetNotNegative()
+			.SetDisplay("Cooldown Bars", "Closed candles to wait before another position change", "General");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -108,16 +119,20 @@ public class AdxSentimentMomentumStrategy : Strategy
 	{
 		return [(Security, CandleType)];
 	}
+
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
 
 		_adx?.Reset();
-		_adx = null;
-		_prevSentiment = default;
-		_currentSentiment = default;
-		_sentimentMomentum = default;
+		_adx = null!;
+		_prevSentiment = 0m;
+		_currentSentiment = 0m;
+		_sentimentMomentum = 0m;
+		_prevDiPlus = null;
+		_prevDiMinus = null;
+		_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
@@ -125,19 +140,16 @@ public class AdxSentimentMomentumStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Create ADX Indicator
-		_adx = new()
+		_adx = new ADX
 		{
 			Length = AdxPeriod
 		};
 
-		// Create subscription and bind indicators
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-		.BindEx(_adx, ProcessCandle)
-		.Start();
+			.BindEx(_adx, ProcessCandle)
+			.Start();
 
-		// Setup chart visualization
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -146,95 +158,77 @@ public class AdxSentimentMomentumStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		// Start position protection
 		StartProtection(
-		new Unit(2, UnitTypes.Percent),   // Take profit 2%
-		new Unit(StopLoss, UnitTypes.Percent)  // Stop loss based on parameter
+			new Unit(2, UnitTypes.Percent),
+			new Unit(StopLoss, UnitTypes.Percent)
 		);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue adxValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
-		// Simulate sentiment data and calculate momentum
 		UpdateSentiment(candle);
 
-		// Check if strategy is ready to trade
 		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
+			return;
 
-		var typedAdx = (AverageDirectionalIndexValue)adxValue;
-		var adxMain = typedAdx.MovingAverage;
-		var diPlus = typedAdx.Dx.Plus;
-		var diMinus = typedAdx.Dx.Minus;
+		if (adxValue is not AverageDirectionalIndexValue typedAdx ||
+			typedAdx.MovingAverage is not decimal adxMain ||
+			typedAdx.Dx.Plus is not decimal diPlus ||
+			typedAdx.Dx.Minus is not decimal diMinus)
+			return;
 
-		// Entry logic based on ADX and sentiment momentum
-		if (adxMain > AdxThreshold && diPlus > diMinus && _sentimentMomentum > 0 && Position <= 0)
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
+
+		var bullishCross = _prevDiPlus is decimal previousPlus && _prevDiMinus is decimal previousMinus &&
+			previousPlus <= previousMinus && diPlus > diMinus;
+		var bearishCross = _prevDiPlus is decimal previousPlus2 && _prevDiMinus is decimal previousMinus2 &&
+			previousPlus2 >= previousMinus2 && diMinus > diPlus;
+		var strongTrend = adxMain >= AdxThreshold;
+
+		if (_cooldownRemaining == 0 && strongTrend && bullishCross && _sentimentMomentum > 0 && Position <= 0)
 		{
-			// Strong uptrend with positive sentiment momentum - Long entry
-			BuyMarket(Volume);
-			LogInfo($"Buy Signal: ADX={adxMain}, +DI={diPlus}, -DI={diMinus}, Sentiment Momentum={_sentimentMomentum}");
+			BuyMarket(Volume + (Position < 0 ? Math.Abs(Position) : 0m));
+			_cooldownRemaining = CooldownBars;
 		}
-		else if (adxMain > AdxThreshold && diMinus > diPlus && _sentimentMomentum < 0 && Position >= 0)
+		else if (_cooldownRemaining == 0 && strongTrend && bearishCross && _sentimentMomentum < 0 && Position >= 0)
 		{
-			// Strong downtrend with negative sentiment momentum - Short entry
-			SellMarket(Volume);
-			LogInfo($"Sell Signal: ADX={adxMain}, +DI={diPlus}, -DI={diMinus}, Sentiment Momentum={_sentimentMomentum}");
+			SellMarket(Volume + (Position > 0 ? Math.Abs(Position) : 0m));
+			_cooldownRemaining = CooldownBars;
+		}
+		else if (Position > 0 && (adxMain < 20m || _sentimentMomentum < 0))
+		{
+			SellMarket(Position);
+			_cooldownRemaining = CooldownBars;
+		}
+		else if (Position < 0 && (adxMain < 20m || _sentimentMomentum > 0))
+		{
+			BuyMarket(Math.Abs(Position));
+			_cooldownRemaining = CooldownBars;
 		}
 
-		// Exit logic
-		if (adxMain < 20 && Position != 0)
-		{
-			// Exit when trend weakens (ADX below 20)
-			if (Position > 0)
-			{
-				SellMarket(Math.Abs(Position));
-				LogInfo($"Exit Long: ADX={adxMain}");
-			}
-			else if (Position < 0)
-			{
-				BuyMarket(Math.Abs(Position));
-				LogInfo($"Exit Short: ADX={adxMain}");
-			}
-		}
+		_prevDiPlus = diPlus;
+		_prevDiMinus = diMinus;
 	}
 
 	private void UpdateSentiment(ICandleMessage candle)
 	{
-		// This is a placeholder for real sentiment analysis data
-		// In a real implementation, this would connect to a sentiment data provider
-
-		// Update sentiment values
 		_prevSentiment = _currentSentiment;
-
-		// Simulate sentiment based on price action and some randomness
 		_currentSentiment = SimulateSentiment(candle);
-
-		// Calculate momentum as the change in sentiment
 		_sentimentMomentum = _currentSentiment - _prevSentiment;
 	}
 
 	private decimal SimulateSentiment(ICandleMessage candle)
 	{
-		// Base sentiment on price movement (up = positive sentiment, down = negative sentiment)
-		var priceUp = candle.OpenPrice < candle.ClosePrice;
-		var priceChange = (candle.ClosePrice - candle.OpenPrice) / candle.OpenPrice;
+		var range = Math.Max(candle.HighPrice - candle.LowPrice, 1m);
+		var body = candle.ClosePrice - candle.OpenPrice;
+		var bodyRatio = body / range;
+		var rangeRatio = range / Math.Max(candle.OpenPrice, 1m);
+		var trendFactor = Math.Min(0.3m, rangeRatio * SentimentPeriod);
 
-		// Calculate base sentiment from price change
-		var baseSentiment = priceChange * 10; // Scale up for easier interpretation
-
-		// Add noise to simulate real-world sentiment data
-		var noise = (decimal)(RandomGen.GetDouble() * 0.2 - 0.1);
-
-		// Sometimes sentiment can diverge from price action
-		if (RandomGen.GetDouble() > 0.7)
-		{
-			noise *= 2; // Occasionally larger divergences
-		}
-
-		return baseSentiment + noise;
+		return Math.Max(-1m, Math.Min(1m, bodyRatio + (Math.Sign(body) * trendFactor)));
 	}
 }

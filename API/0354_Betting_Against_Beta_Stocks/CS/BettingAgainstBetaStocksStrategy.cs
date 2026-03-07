@@ -1,262 +1,308 @@
-// BettingAgainstBetaStocksStrategy.cs (candle-driven, param TF)
-// Long lowest-beta decile, short highest-beta; monthly rebalance.
-// Date: 2 August 2025
-
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
+using StockSharp.Configuration;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Implements the Betting Against Beta (BAB) strategy for equities.
-/// Longs the lowest beta decile and shorts the highest beta decile
-/// with monthly rebalancing.
+/// Betting-against-beta strategy that goes long the primary instrument when its rolling beta versus the benchmark is low and short when beta becomes elevated.
 /// </summary>
 public class BettingAgainstBetaStocksStrategy : Strategy
 {
-	private readonly StrategyParam<IEnumerable<Security>> _universe;
-	private readonly StrategyParam<int> _window;
-	private readonly StrategyParam<DataType> _tf;
-	private readonly StrategyParam<int> _deciles;
-	private readonly StrategyParam<decimal> _minUsd;
+	private readonly StrategyParam<string> _security2Id;
+	private readonly StrategyParam<int> _betaLength;
+	private readonly StrategyParam<decimal> _lowBetaThreshold;
+	private readonly StrategyParam<decimal> _highBetaThreshold;
+	private readonly StrategyParam<decimal> _exitBetaThreshold;
+	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _stopLoss;
+	private readonly StrategyParam<DataType> _candleType;
+
+	private Security _benchmark = null!;
+	private Correlation _correlation = null!;
+	private StandardDeviation _primaryDeviation = null!;
+	private StandardDeviation _benchmarkDeviation = null!;
+	private decimal _latestPrimaryPrice;
+	private decimal _latestBenchmarkPrice;
+	private decimal _previousPrimaryPrice;
+	private decimal _previousBenchmarkPrice;
+	private decimal? _previousBeta;
+	private bool _primaryUpdated;
+	private bool _benchmarkUpdated;
+	private int _cooldownRemaining;
 
 	/// <summary>
-	/// Universe of stocks to trade.
+	/// Secondary benchmark security identifier.
 	/// </summary>
-	public IEnumerable<Security> Universe
+	public string Security2Id
 	{
-		get => _universe.Value;
-		set => _universe.Value = value;
+		get => _security2Id.Value;
+		set => _security2Id.Value = value;
 	}
 
 	/// <summary>
-	/// Rolling window length in days for beta estimation.
+	/// Rolling beta lookback length.
 	/// </summary>
-	public int WindowDays
+	public int BetaLength
 	{
-		get => _window.Value;
-		set => _window.Value = value;
+		get => _betaLength.Value;
+		set => _betaLength.Value = value;
 	}
 
 	/// <summary>
-	/// Number of deciles to split the universe into.
+	/// Maximum beta required to open a long position.
 	/// </summary>
-	public int Deciles
+	public decimal LowBetaThreshold
 	{
-		get => _deciles.Value;
-		set => _deciles.Value = value;
+		get => _lowBetaThreshold.Value;
+		set => _lowBetaThreshold.Value = value;
 	}
 
 	/// <summary>
-	/// Candle type used for calculations.
+	/// Minimum beta required to open a short position.
+	/// </summary>
+	public decimal HighBetaThreshold
+	{
+		get => _highBetaThreshold.Value;
+		set => _highBetaThreshold.Value = value;
+	}
+
+	/// <summary>
+	/// Neutral beta threshold used to close positions.
+	/// </summary>
+	public decimal ExitBetaThreshold
+	{
+		get => _exitBetaThreshold.Value;
+		set => _exitBetaThreshold.Value = value;
+	}
+
+	/// <summary>
+	/// Closed candles to wait before another position change.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
+	/// Stop loss percentage.
+	/// </summary>
+	public decimal StopLoss
+	{
+		get => _stopLoss.Value;
+		set => _stopLoss.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type used for both instruments.
 	/// </summary>
 	public DataType CandleType
 	{
-		get => _tf.Value;
-		set => _tf.Value = value;
+		get => _candleType.Value;
+		set => _candleType.Value = value;
 	}
-
-	/// <summary>
-	/// Minimum USD value for a trade.
-	/// </summary>
-	public decimal MinTradeUsd
-	{
-		get => _minUsd.Value;
-		set => _minUsd.Value = value;
-	}
-
-	private readonly Dictionary<Security, RollingWindow<decimal>> _wins = [];
-	private readonly Dictionary<Security, decimal> _weights = [];
-	private readonly Dictionary<Security, decimal> _latestPrices = [];
-	private DateTime _lastDay = DateTime.MinValue;
 
 	/// <summary>
 	/// Initializes strategy parameters.
 	/// </summary>
 	public BettingAgainstBetaStocksStrategy()
 	{
-		_universe = Param<IEnumerable<Security>>(nameof(Universe), [])
-			.SetDisplay("Universe", "Securities universe for strategy", "General");
+		_security2Id = Param(nameof(Security2Id), Paths.HistoryDefaultSecurity2)
+			.SetDisplay("Benchmark Security Id", "Identifier of the benchmark security", "General");
 
-		_window = Param(nameof(WindowDays), 252)
-			.SetGreaterThanZero()
-			.SetDisplay("Window (days)", "Rolling window length for beta", "Parameters");
+		_betaLength = Param(nameof(BetaLength), 16)
+			.SetRange(10, 150)
+			.SetDisplay("Beta Length", "Rolling beta lookback length", "Indicators");
 
-		_deciles = Param(nameof(Deciles), 10)
-			.SetGreaterThanZero()
-			.SetDisplay("Deciles", "Number of buckets for sorting", "Parameters");
+		_lowBetaThreshold = Param(nameof(LowBetaThreshold), 0.95m)
+			.SetRange(0.2m, 1.2m)
+			.SetDisplay("Low Beta Threshold", "Maximum beta required to open a long position", "Signals");
 
-		_tf = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to process", "General");
+		_highBetaThreshold = Param(nameof(HighBetaThreshold), 1.05m)
+			.SetRange(0.8m, 2.5m)
+			.SetDisplay("High Beta Threshold", "Minimum beta required to open a short position", "Signals");
 
-		_minUsd = Param(nameof(MinTradeUsd), 100m)
-			.SetGreaterThanZero()
-			.SetDisplay("Min Trade $", "Minimum trade value", "Risk Management");
+		_exitBetaThreshold = Param(nameof(ExitBetaThreshold), 1m)
+			.SetRange(0.5m, 1.5m)
+			.SetDisplay("Exit Beta Threshold", "Neutral beta threshold used to close positions", "Signals");
+
+		_cooldownBars = Param(nameof(CooldownBars), 8)
+			.SetRange(0, 100)
+			.SetDisplay("Cooldown Bars", "Closed candles to wait before another position change", "Risk");
+
+		_stopLoss = Param(nameof(StopLoss), 2m)
+			.SetRange(0.5m, 10m)
+			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+			.SetDisplay("Candle Type", "Candle series for both instruments", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		if (Security == null)
-			throw new InvalidOperationException("Benchmark not set");
+		if (Security != null)
+			yield return (Security, CandleType);
 
-		return Universe.Append(Security).Select(s => (s, CandleType));
+		if (!Security2Id.IsEmpty())
+			yield return (new Security { Id = Security2Id }, CandleType);
 	}
 
 	/// <inheritdoc />
-	
 	protected override void OnReseted()
 	{
 		base.OnReseted();
 
-		_wins.Clear();
-		_weights.Clear();
-		_latestPrices.Clear();
-		_lastDay = default;
+		_benchmark = null!;
+		_correlation = null!;
+		_primaryDeviation = null!;
+		_benchmarkDeviation = null!;
+		_latestPrimaryPrice = 0m;
+		_latestBenchmarkPrice = 0m;
+		_previousPrimaryPrice = 0m;
+		_previousBenchmarkPrice = 0m;
+		_previousBeta = null;
+		_primaryUpdated = false;
+		_benchmarkUpdated = false;
+		_cooldownRemaining = 0;
 	}
 
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
-		if (Universe == null || !Universe.Any())
-			throw new InvalidOperationException("Universe is empty");
-
-		if (Security == null)
-			throw new InvalidOperationException("Benchmark not set");
-
 		base.OnStarted2(time);
 
-		foreach (var (sec, dt) in GetWorkingSecurities())
-		{
-			_wins[sec] = new RollingWindow<decimal>(WindowDays + 1);
+		if (Security == null)
+			throw new InvalidOperationException("Primary security is not specified.");
 
-			SubscribeCandles(dt, true, sec)
-				.Bind(candle => ProcessCandle(candle, sec))
-				.Start();
+		if (Security2Id.IsEmpty())
+			throw new InvalidOperationException("Benchmark security identifier is not specified.");
+
+		_benchmark = this.LookupById(Security2Id) ?? new Security { Id = Security2Id };
+		_correlation = new Correlation { Length = BetaLength };
+		_primaryDeviation = new StandardDeviation { Length = BetaLength };
+		_benchmarkDeviation = new StandardDeviation { Length = BetaLength };
+		_cooldownRemaining = 0;
+
+		var primarySubscription = SubscribeCandles(CandleType, security: Security);
+		var benchmarkSubscription = SubscribeCandles(CandleType, security: _benchmark);
+
+		primarySubscription
+			.Bind(ProcessPrimaryCandle)
+			.Start();
+
+		benchmarkSubscription
+			.Bind(ProcessBenchmarkCandle)
+			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, primarySubscription);
+			DrawCandles(area, benchmarkSubscription);
+			DrawOwnTrades(area);
 		}
+
+		StartProtection(
+			new Unit(2, UnitTypes.Percent),
+			new Unit(StopLoss, UnitTypes.Percent));
 	}
 
-	private void ProcessCandle(ICandleMessage candle, Security security)
+	private void ProcessPrimaryCandle(ICandleMessage candle)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Store the latest closing price for this security
-		_latestPrices[security] = candle.ClosePrice;
-
-		// Add closing price to rolling window
-		_wins[security].Add(candle.ClosePrice);
-
-		var d = candle.OpenTime.Date;
-		if (d == _lastDay)
-			return;
-		_lastDay = d;
-		
-		if (d.Day == 1)
-			TryRebalance();
+		_latestPrimaryPrice = candle.ClosePrice;
+		_primaryUpdated = true;
+		TryProcessBeta(candle.OpenTime);
 	}
 
-	private void TryRebalance()
+	private void ProcessBenchmarkCandle(ICandleMessage candle)
 	{
-		if (_wins.Values.Any(w => !w.IsFull()))
+		if (candle.State != CandleStates.Finished)
 			return;
 
-		var benchRet = GetReturns(_wins[Security]);
-		var betas = new Dictionary<Security, decimal>();
+		_latestBenchmarkPrice = candle.ClosePrice;
+		_benchmarkUpdated = true;
+		TryProcessBeta(candle.OpenTime);
+	}
 
-		foreach (var s in Universe)
+	private void TryProcessBeta(DateTime time)
+	{
+		if (!_primaryUpdated || !_benchmarkUpdated)
+			return;
+
+		_primaryUpdated = false;
+		_benchmarkUpdated = false;
+
+		if (_previousPrimaryPrice <= 0m || _previousBenchmarkPrice <= 0m)
 		{
-			var r = GetReturns(_wins[s]);
-			betas[s] = Beta(r, benchRet);
+			_previousPrimaryPrice = _latestPrimaryPrice;
+			_previousBenchmarkPrice = _latestBenchmarkPrice;
+			return;
 		}
 
-		int bucket = betas.Count / Deciles;
-		if (bucket == 0)
+		var primaryReturn = (_latestPrimaryPrice - _previousPrimaryPrice) / Math.Max(_previousPrimaryPrice, 1m);
+		var benchmarkReturn = (_latestBenchmarkPrice - _previousBenchmarkPrice) / Math.Max(_previousBenchmarkPrice, 1m);
+
+		_previousPrimaryPrice = _latestPrimaryPrice;
+		_previousBenchmarkPrice = _latestBenchmarkPrice;
+
+		var correlationInput = new PairIndicatorValue<decimal>(_correlation, (primaryReturn, benchmarkReturn), time)
+		{
+			IsFinal = true
+		};
+
+		var correlation = _correlation.Process(correlationInput).ToDecimal();
+		var primaryDeviation = _primaryDeviation.Process(primaryReturn, time, true).ToDecimal();
+		var benchmarkDeviation = _benchmarkDeviation.Process(benchmarkReturn, time, true).ToDecimal();
+
+		if (!_correlation.IsFormed || !_primaryDeviation.IsFormed || !_benchmarkDeviation.IsFormed || benchmarkDeviation <= 0m)
 			return;
 
-		var sorted = betas.OrderBy(kv => kv.Value).ToList();
-		var longs = sorted.Take(bucket).Select(kv => kv.Key).ToList();
-		var shorts = sorted.Skip(betas.Count - bucket).Select(kv => kv.Key).ToList();
-
-		_weights.Clear();
-		decimal wl = 1m / longs.Count, ws = -1m / shorts.Count;
-		foreach (var s in longs)
-			_weights[s] = wl;
-		foreach (var s in shorts)
-			_weights[s] = ws;
-
-		foreach (var position in Positions)
-			if (!_weights.ContainsKey(position.Security))
-				Move(position.Security, 0);
-
-		var portfolioValue = Portfolio.CurrentValue ?? 0m;
-		foreach (var kv in _weights)
-		{
-			var price = GetLatestPrice(kv.Key);
-			if (price > 0)
-				Move(kv.Key, kv.Value * portfolioValue / price);
-		}
-	}
-
-	private decimal[] GetReturns(RollingWindow<decimal> win)
-	{
-		var arr = win.ToArray();
-		var r = new decimal[arr.Length - 1];
-		for (int i = 1; i < arr.Length; i++)
-			r[i - 1] = (arr[i] - arr[i - 1]) / arr[i - 1];
-		return r;
-	}
-	private decimal Beta(decimal[] x, decimal[] y)
-	{
-		int n = Math.Min(x.Length, y.Length);
-		var meanX = x.Take(n).Average();
-		var meanY = y.Take(n).Average();
-		decimal cov = 0, varM = 0;
-		for (int i = 0; i < n; i++)
-		{
-			cov += (x[i] - meanX) * (y[i] - meanY);
-			varM += (y[i] - meanY) * (y[i] - meanY);
-		}
-		return varM != 0 ? cov / varM : 0m;
-	}
-
-	private void Move(Security s, decimal tgt)
-	{
-		var diff = tgt - PositionBy(s);
-		var price = GetLatestPrice(s);
-		if (price <= 0 || Math.Abs(diff) * price < MinTradeUsd)
+		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
-		RegisterOrder(new Order { Security = s, Portfolio = Portfolio, Side = diff > 0 ? Sides.Buy : Sides.Sell, Volume = Math.Abs(diff), Type = OrderTypes.Market, Comment = "BABStocks" });
-	}
-	private decimal PositionBy(Security s) => GetPositionValue(s, Portfolio) ?? 0;
 
-	private decimal GetLatestPrice(Security security)
-	{
-		return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
-	}
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
 
-	#region RollingWindow
-	private class RollingWindow<T>
-	{
-		private readonly Queue<T> _q = [];
-		private readonly int _n;
-		public RollingWindow(int n) { _n = n; }
-		public void Add(T v) { if (_q.Count == _n) _q.Dequeue(); _q.Enqueue(v); }
-		public bool IsFull() => _q.Count == _n;
-		public T Last() => _q.Last();
-		public T this[int i] => _q.ElementAt(i);
-		public T[] ToArray() => [.. _q];
-	}
-	#endregion
+		var beta = correlation * (primaryDeviation / benchmarkDeviation);
+		var bullishEntry = beta <= LowBetaThreshold;
+		var bearishEntry = beta >= HighBetaThreshold;
 
+		if (_cooldownRemaining == 0 && Position == 0)
+		{
+			if (bullishEntry)
+			{
+				BuyMarket();
+				_cooldownRemaining = CooldownBars;
+			}
+			else if (bearishEntry)
+			{
+				SellMarket();
+				_cooldownRemaining = CooldownBars;
+			}
+		}
+		else if (Position > 0 && beta >= ExitBetaThreshold)
+		{
+			SellMarket(Position);
+			_cooldownRemaining = CooldownBars;
+		}
+		else if (Position < 0 && beta <= ExitBetaThreshold)
+		{
+			BuyMarket(Math.Abs(Position));
+			_cooldownRemaining = CooldownBars;
+		}
+
+		_previousBeta = beta;
+	}
 }

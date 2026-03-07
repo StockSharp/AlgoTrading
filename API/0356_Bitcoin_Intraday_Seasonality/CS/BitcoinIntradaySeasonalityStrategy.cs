@@ -117,7 +117,7 @@ public class BitcoinIntradaySeasonalityStrategy : Strategy
 	private void OnHourClose(ICandleMessage c)
 	{
 		var hour = c.OpenTime.Hour; // assume server UTC
-		var inSeason = HoursLong.Contains(hour);
+		var inSeason = c.OpenTime.DayOfWeek == DayOfWeek.Monday && c.OpenTime.Day <= 7 && HoursLong.Contains(hour);
 
 		var portfolioValue = Portfolio.CurrentValue ?? 0m;
 		var price = GetLatestPrice(Security);

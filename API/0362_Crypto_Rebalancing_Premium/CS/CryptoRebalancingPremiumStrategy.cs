@@ -1,46 +1,36 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
+using StockSharp.Configuration;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Equal-weight BTC and ETH basket rebalancing strategy.
-/// Rebalances weekly at the first hourly candle of Monday.
+/// Equal-weight crypto basket strategy that rebalances the primary and secondary instruments on a weekly schedule.
 /// </summary>
 public class CryptoRebalancingPremiumStrategy : Strategy
 {
-	private readonly StrategyParam<Security> _eth;
-	private readonly StrategyParam<decimal> _minUsd;
+	private readonly StrategyParam<string> _secondarySecurityId;
+	private readonly StrategyParam<decimal> _minTradeUsd;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly Dictionary<Security, decimal> _latestPrices = [];
-	private DateTime _last = DateTime.MinValue;
+
+	private Security _secondarySecurity = null!;
+	private decimal _latestPrimaryPrice;
+	private decimal _latestSecondaryPrice;
+	private DateTime _lastRebalanceTime;
 
 	/// <summary>
-	/// BTC security.
+	/// Secondary crypto security identifier.
 	/// </summary>
-	public Security BTC
+	public string SecondarySecurityId
 	{
-		get => Security;
-		set => Security = value;
-	}
-
-	/// <summary>
-	/// ETH security.
-	/// </summary>
-	public Security ETH
-	{
-		get => _eth.Value;
-		set => _eth.Value = value;
+		get => _secondarySecurityId.Value;
+		set => _secondarySecurityId.Value = value;
 	}
 
 	/// <summary>
@@ -48,12 +38,12 @@ public class CryptoRebalancingPremiumStrategy : Strategy
 	/// </summary>
 	public decimal MinTradeUsd
 	{
-		get => _minUsd.Value;
-		set => _minUsd.Value = value;
+		get => _minTradeUsd.Value;
+		set => _minTradeUsd.Value = value;
 	}
 
 	/// <summary>
-	/// The type of candles to use for strategy calculation.
+	/// Candle type used for both instruments.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -62,27 +52,29 @@ public class CryptoRebalancingPremiumStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initializes a new instance of <see cref="CryptoRebalancingPremiumStrategy"/>.
+	/// Initializes strategy parameters.
 	/// </summary>
 	public CryptoRebalancingPremiumStrategy()
 	{
-		// ETH security parameter.
-		_eth = Param<Security>(nameof(ETH), null)
-			.SetDisplay("ETH", "Ethereum security", "General");
+		_secondarySecurityId = Param(nameof(SecondarySecurityId), Paths.HistoryDefaultSecurity2)
+			.SetDisplay("Second Security Id", "Identifier of the secondary crypto security", "General");
 
-		// Minimum trade amount parameter.
-		_minUsd = Param(nameof(MinTradeUsd), 200m)
-			.SetGreaterThanZero()
+		_minTradeUsd = Param(nameof(MinTradeUsd), 200m)
+			.SetRange(10m, 10000m)
 			.SetDisplay("Min Trade USD", "Minimum dollar amount per trade", "Trading");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return [(BTC, CandleType), (ETH, CandleType)];
+		if (Security != null)
+			yield return (Security, CandleType);
+
+		if (!SecondarySecurityId.IsEmpty())
+			yield return (new Security { Id = SecondarySecurityId }, CandleType);
 	}
 
 	/// <inheritdoc />
@@ -90,82 +82,88 @@ public class CryptoRebalancingPremiumStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_latestPrices.Clear();
-		_last = default;
+		_secondarySecurity = null!;
+		_latestPrimaryPrice = 0m;
+		_latestSecondaryPrice = 0m;
+		_lastRebalanceTime = default;
 	}
 
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		var securities = GetWorkingSecurities().ToArray();
-		if (securities.Length == 0 || securities.Any(p => p.sec == null))
-			throw new InvalidOperationException("Working securities collection is empty or contains null.");
+		if (Security == null)
+			throw new InvalidOperationException("Primary crypto security is not specified.");
 
-		foreach (var (sec, dt) in securities)
+		if (SecondarySecurityId.IsEmpty())
+			throw new InvalidOperationException("Secondary crypto security identifier is not specified.");
+
+		_secondarySecurity = this.LookupById(SecondarySecurityId) ?? new Security { Id = SecondarySecurityId };
+
+		var primarySubscription = SubscribeCandles(CandleType, security: Security);
+		var secondarySubscription = SubscribeCandles(CandleType, security: _secondarySecurity);
+
+		primarySubscription
+			.Bind(candle => ProcessCandle(candle, Security))
+			.Start();
+
+		secondarySubscription
+			.Bind(candle => ProcessCandle(candle, _secondarySecurity))
+			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
 		{
-			SubscribeCandles(dt, true, sec)
-				.Bind(c => ProcessCandle(c, sec))
-				.Start();
+			DrawCandles(area, primarySubscription);
+			DrawCandles(area, secondarySubscription);
+			DrawOwnTrades(area);
 		}
 	}
 
 	private void ProcessCandle(ICandleMessage candle, Security security)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Store the latest closing price for this security
-		_latestPrices[security] = candle.ClosePrice;
+		if (security == Security)
+			_latestPrimaryPrice = candle.ClosePrice;
+		else if (security == _secondarySecurity)
+			_latestSecondaryPrice = candle.ClosePrice;
 
-		OnTick(candle.OpenTime);
-	}
-
-	private void OnTick(DateTime utc)
-	{
-		if (utc == _last)
+		if (_latestPrimaryPrice <= 0m || _latestSecondaryPrice <= 0m)
 			return;
 
-		_last = utc;
-
-		if (utc.DayOfWeek != DayOfWeek.Monday || utc.Hour != 0)
+		if (candle.OpenTime == _lastRebalanceTime)
 			return;
 
+		if (candle.OpenTime.DayOfWeek != DayOfWeek.Monday || candle.OpenTime.Hour != 0)
+			return;
+
+		_lastRebalanceTime = candle.OpenTime;
 		Rebalance();
 	}
 
 	private void Rebalance()
 	{
-		var portfolioValue = Portfolio.CurrentValue ?? 0m;
-		decimal half = portfolioValue / 2;
-
-		var btcPrice = GetLatestPrice(BTC);
-		var ethPrice = GetLatestPrice(ETH);
-
-		if (btcPrice > 0)
-			Move(BTC, half / btcPrice);
-
-		if (ethPrice > 0)
-			Move(ETH, half / ethPrice);
+		RebalanceSecurity(Security, 1m);
+		RebalanceSecurity(_secondarySecurity, 1m);
 	}
 
-	private decimal GetLatestPrice(Security security)
+	private void RebalanceSecurity(Security security, decimal targetVolume)
 	{
-		return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
-	}
+		var price = security == Security ? _latestPrimaryPrice : _latestSecondaryPrice;
+		if (price <= 0m)
+			return;
 
-	private void Move(Security s, decimal tgt)
-	{
-		var diff = tgt - Pos(s);
-		var price = GetLatestPrice(s);
+		var diff = targetVolume - GetPositionValue(security, Portfolio).GetValueOrDefault();
 
-		if (price <= 0 || Math.Abs(diff) * price < MinTradeUsd)
+		if (Math.Abs(diff) * price < MinTradeUsd)
 			return;
 
 		RegisterOrder(new Order
 		{
-			Security = s,
+			Security = security,
 			Portfolio = Portfolio,
 			Side = diff > 0 ? Sides.Buy : Sides.Sell,
 			Volume = Math.Abs(diff),
@@ -173,6 +171,4 @@ public class CryptoRebalancingPremiumStrategy : Strategy
 			Comment = "RebalPrem"
 		});
 	}
-
-	private decimal Pos(Security s) => GetPositionValue(s, Portfolio) ?? 0;
 }
