@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,53 +11,43 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Hedged tunnel strategy converted from the "Tunnel gen4" MetaTrader expert.
-/// It opens a buy/sell pair, doubles the position when price travels by a fixed number of pips,
-/// and closes the entire basket once the second anchor is breached again.
+/// Tunnel strategy that uses Bollinger Bands to define a price channel.
+/// Buys when price crosses above the lower band (reversal from oversold),
+/// sells when price crosses below the upper band (reversal from overbought).
 /// </summary>
 public class TunnelGen4Strategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volumeTolerance;
-
-	private readonly StrategyParam<decimal> _startVolume;
+	private readonly StrategyParam<int> _bbLength;
+	private readonly StrategyParam<decimal> _bbWidth;
 	private readonly StrategyParam<decimal> _stepPips;
 
-	private readonly Dictionary<Order, OrderIntents> _orderIntents = new();
-	private readonly HashSet<Order> _entryOrders = new();
+	private BollingerBands _bb;
 
-	private decimal _pipValue;
-	private decimal _stepOffset;
-	private decimal _firstEntryPrice;
-	private decimal _secondEntryPrice;
-	private bool _waitingForSecondEntry;
-	private Order _secondEntryOrder;
-	private decimal _bestBid;
-	private decimal _bestAsk;
-	private bool _hasBestBid;
-	private bool _hasBestAsk;
-	private decimal _longExposure;
-	private decimal _shortExposure;
-	private bool _isClosing;
-
-	private enum OrderIntents
-	{
-		OpenLong,
-		OpenShort,
-		CloseLong,
-		CloseShort
-	}
+	private decimal _prevClose;
+	private decimal _prevUpper;
+	private decimal _prevLower;
+	private decimal _entryPrice;
 
 	/// <summary>
-	/// Initial order volume for the hedged pair.
+	/// Bollinger Bands period length.
 	/// </summary>
-	public decimal StartVolume
+	public int BbLength
 	{
-		get => _startVolume.Value;
-		set => _startVolume.Value = value;
+		get => _bbLength.Value;
+		set => _bbLength.Value = value;
 	}
 
 	/// <summary>
-	/// Step distance expressed in pips.
+	/// Bollinger Bands width (standard deviations).
+	/// </summary>
+	public decimal BbWidth
+	{
+		get => _bbWidth.Value;
+		set => _bbWidth.Value = value;
+	}
+
+	/// <summary>
+	/// Step distance expressed in pips for profit target.
 	/// </summary>
 	public decimal StepPips
 	{
@@ -69,40 +56,27 @@ public class TunnelGen4Strategy : Strategy
 	}
 
 	/// <summary>
-	/// Maximum allowed difference when comparing exposure volumes.
-	/// </summary>
-	public decimal VolumeTolerance
-	{
-		get => _volumeTolerance.Value;
-		set => _volumeTolerance.Value = value;
-	}
-
-	/// <summary>
 	/// Initialize strategy parameters.
 	/// </summary>
 	public TunnelGen4Strategy()
 	{
-		_volumeTolerance = Param(nameof(VolumeTolerance), 0.0000001m)
-			.SetNotNegative()
-			.SetDisplay("Volume Tolerance", "Tolerance when comparing exposure volumes", "Trading");
+		_bbLength = Param(nameof(BbLength), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("BB Length", "Bollinger Bands period", "Indicator");
 
-		_startVolume = Param(nameof(StartVolume), 1m)
-		.SetGreaterThanZero()
-		.SetDisplay("Start Volume", "Initial hedge volume", "Trading")
-		
-		.SetOptimize(0.01m, 1m, 0.01m);
+		_bbWidth = Param(nameof(BbWidth), 2.0m)
+			.SetGreaterThanZero()
+			.SetDisplay("BB Width", "Bollinger Bands width", "Indicator");
 
 		_stepPips = Param(nameof(StepPips), 50m)
-		.SetGreaterThanZero()
-		.SetDisplay("Step (pips)", "Distance between tunnel anchors", "Trading")
-		
-		.SetOptimize(10m, 200m, 10m);
+			.SetGreaterThanZero()
+			.SetDisplay("Step (pips)", "Distance between tunnel anchors", "Trading");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		yield return (Security, DataType.Level1);
+		yield return (Security, TimeSpan.FromMinutes(5).TimeFrame());
 	}
 
 	/// <inheritdoc />
@@ -110,21 +84,11 @@ public class TunnelGen4Strategy : Strategy
 	{
 		base.OnReseted();
 
-		_orderIntents.Clear();
-		_entryOrders.Clear();
-		_pipValue = 0m;
-		_stepOffset = 0m;
-		_firstEntryPrice = 0m;
-		_secondEntryPrice = 0m;
-		_waitingForSecondEntry = false;
-		_secondEntryOrder = null;
-		_bestBid = 0m;
-		_bestAsk = 0m;
-		_hasBestBid = false;
-		_hasBestAsk = false;
-		_longExposure = 0m;
-		_shortExposure = 0m;
-		_isClosing = false;
+		_bb = null;
+		_prevClose = 0;
+		_prevUpper = 0;
+		_prevLower = 0;
+		_entryPrice = 0;
 	}
 
 	/// <inheritdoc />
@@ -132,290 +96,80 @@ public class TunnelGen4Strategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_pipValue = CalculatePipValue();
-		_stepOffset = StepPips * _pipValue;
+		_bb = new BollingerBands
+		{
+			Length = BbLength,
+			Width = BbWidth
+		};
 
-		if (_stepOffset <= 0m)
-		throw new InvalidOperationException("Step offset must be positive.");
-
-		ValidateVolume(StartVolume);
-		ValidateVolume(StartVolume * 2m);
-
-		SubscribeLevel1()
-		.Bind(ProcessLevel1)
-		.Start();
+		var subscription = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
+		subscription.BindEx(_bb, OnProcess);
+		subscription.Start();
 	}
 
-	/// <inheritdoc />
-	protected override void OnOwnTradeReceived(MyTrade trade)
+	private void OnProcess(ICandleMessage candle, IIndicatorValue value)
 	{
-		base.OnOwnTradeReceived(trade);
+		if (candle.State != CandleStates.Finished)
+			return;
 
-		if (trade?.Order is not { } order || !_orderIntents.TryGetValue(order, out var intent))
-		return;
+		var bb = (BollingerBandsValue)value;
+		if (bb.UpBand is not decimal upper ||
+			bb.LowBand is not decimal lower)
+			return;
 
-		var volume = trade.Trade.Volume;
-		var price = trade.Trade.Price;
-
-		switch (intent)
+		if (!_bb.IsFormed)
 		{
-			case OrderIntents.OpenLong:
-				_longExposure += volume;
-				if (_firstEntryPrice == 0m)
-				_firstEntryPrice = price;
-				break;
-			case OrderIntents.OpenShort:
-				_shortExposure += volume;
-				if (_firstEntryPrice == 0m)
-				_firstEntryPrice = price;
-				break;
-			case OrderIntents.CloseLong:
-				_longExposure = Math.Max(0m, _longExposure - volume);
-				break;
-			case OrderIntents.CloseShort:
-				_shortExposure = Math.Max(0m, _shortExposure - volume);
-				break;
-		}
-
-		if (order == _secondEntryOrder && intent is OrderIntents.OpenLong or OrderIntents.OpenShort && _secondEntryPrice == 0m)
-		{
-			_secondEntryPrice = price;
-			_waitingForSecondEntry = false;
-		}
-
-		if (order.Balance <= 0m || IsOrderCompleted(order))
-		{
-			_orderIntents.Remove(order);
-			_entryOrders.Remove(order);
-			if (order == _secondEntryOrder)
-			_secondEntryOrder = null;
-		}
-
-		if (_isClosing && !HasExposure() && !HasActiveExitOrders())
-		ResetCycle();
-	}
-
-	private void ProcessLevel1(Level1ChangeMessage message)
-	{
-		if (message.Changes.TryGetValue(Level1Fields.BestBidPrice, out var bidValue))
-		{
-			var bid = (decimal)bidValue;
-			if (bid > 0m)
-			{
-				_bestBid = bid;
-				_hasBestBid = true;
-			}
-		}
-
-		if (message.Changes.TryGetValue(Level1Fields.BestAskPrice, out var askValue))
-		{
-			var ask = (decimal)askValue;
-			if (ask > 0m)
-			{
-				_bestAsk = ask;
-				_hasBestAsk = true;
-			}
-		}
-
-		if (_hasBestBid && _hasBestAsk)
-		ProcessQuotes();
-	}
-
-	private void ProcessQuotes()
-	{
-		CleanupCompletedOrders();
-
-		if (_isClosing)
-		{
-			if (!HasExposure() && !HasActiveExitOrders())
-			ResetCycle();
-
+			_prevClose = candle.ClosePrice;
+			_prevUpper = upper;
+			_prevLower = lower;
 			return;
 		}
 
-		if (!HasExposure() && !HasActiveEntryOrders())
+		var close = candle.ClosePrice;
+
+		// Buy signal: price crosses above lower band from below
+		if (_prevClose < _prevLower && close >= lower && Position <= 0)
 		{
-			EnterInitialHedge();
-			return;
+			if (Position < 0)
+				BuyMarket();
+
+			BuyMarket();
+			_entryPrice = close;
+		}
+		// Sell signal: price crosses below upper band from above
+		else if (_prevClose > _prevUpper && close <= upper && Position >= 0)
+		{
+			if (Position > 0)
+				SellMarket();
+
+			SellMarket();
+			_entryPrice = close;
 		}
 
-		if (_firstEntryPrice == 0m)
-		return;
-
-		if (_secondEntryPrice == 0m && !_waitingForSecondEntry)
+		// Exit on profit target if in position
+		if (Position > 0 && _entryPrice > 0)
 		{
-			var upperTrigger = _firstEntryPrice + _stepOffset;
-			var lowerTrigger = _firstEntryPrice - _stepOffset;
-
-			if (_bestBid >= upperTrigger)
-			OpenSecondStage(Sides.Sell);
-			else if (_bestAsk <= lowerTrigger)
-			OpenSecondStage(Sides.Buy);
-		}
-		else if (_secondEntryPrice > 0m)
-		{
-			var exitUpper = _secondEntryPrice + _stepOffset;
-			var exitLower = _secondEntryPrice - _stepOffset;
-
-			if (_bestBid >= exitUpper || _bestAsk <= exitLower)
-			CloseCycle();
-		}
-	}
-
-	private void EnterInitialHedge()
-	{
-		var volume = StartVolume;
-		if (volume <= 0m)
-		return;
-
-		RegisterOrder(BuyMarket(volume), OrderIntents.OpenLong, true);
-		RegisterOrder(SellMarket(volume), OrderIntents.OpenShort, true);
-	}
-
-	private void OpenSecondStage(Sides side)
-	{
-		var volume = StartVolume * 2m;
-		if (volume <= 0m)
-		return;
-
-		Order order = side == Sides.Buy ? BuyMarket(volume) : SellMarket(volume);
-		RegisterOrder(order, side == Sides.Buy ? OrderIntents.OpenLong : OrderIntents.OpenShort, true);
-
-		if (order != null)
-		{
-			_waitingForSecondEntry = true;
-			_secondEntryPrice = 0m;
-			_secondEntryOrder = order;
-		}
-	}
-
-	private void CloseCycle()
-	{
-		if (_isClosing)
-		return;
-
-		_isClosing = true;
-
-		if (_longExposure > VolumeTolerance)
-		RegisterOrder(SellMarket(_longExposure), OrderIntents.CloseLong, false);
-
-		if (_shortExposure > VolumeTolerance)
-		RegisterOrder(BuyMarket(_shortExposure), OrderIntents.CloseShort, false);
-
-		if (!HasActiveExitOrders() && !HasExposure())
-		ResetCycle();
-	}
-
-	private void RegisterOrder(Order order, OrderIntents intent, bool isEntry)
-	{
-		if (order == null)
-		return;
-
-		_orderIntents[order] = intent;
-
-		if (isEntry)
-		_entryOrders.Add(order);
-	}
-
-	private void CleanupCompletedOrders()
-	{
-		foreach (var order in _orderIntents.Keys.ToArray())
-		{
-			if (!IsOrderCompleted(order))
-			continue;
-
-			_orderIntents.Remove(order);
-			_entryOrders.Remove(order);
-
-			if (order == _secondEntryOrder)
+			var pipValue = Security?.PriceStep ?? 1m;
+			var target = _entryPrice + StepPips * pipValue;
+			if (close >= target)
 			{
-				_secondEntryOrder = null;
-				if (_secondEntryPrice == 0m)
-				_waitingForSecondEntry = false;
+				SellMarket();
+				_entryPrice = 0;
 			}
 		}
-	}
-
-	private bool HasActiveEntryOrders()
-	{
-		foreach (var order in _entryOrders)
+		else if (Position < 0 && _entryPrice > 0)
 		{
-			if (!IsOrderCompleted(order))
-			return true;
+			var pipValue = Security?.PriceStep ?? 1m;
+			var target = _entryPrice - StepPips * pipValue;
+			if (close <= target)
+			{
+				BuyMarket();
+				_entryPrice = 0;
+			}
 		}
 
-		return false;
-	}
-
-	private bool HasActiveExitOrders()
-	{
-		foreach (var pair in _orderIntents)
-		{
-			if ((pair.Value == OrderIntents.CloseLong || pair.Value == OrderIntents.CloseShort) && !IsOrderCompleted(pair.Key))
-			return true;
-		}
-
-		return false;
-	}
-
-	private bool HasExposure()
-	{
-		return _longExposure > VolumeTolerance || _shortExposure > VolumeTolerance;
-	}
-
-	private void ResetCycle()
-	{
-		_firstEntryPrice = 0m;
-		_secondEntryPrice = 0m;
-		_waitingForSecondEntry = false;
-		_secondEntryOrder = null;
-		_isClosing = false;
-		_longExposure = 0m;
-		_shortExposure = 0m;
-	}
-
-	private void ValidateVolume(decimal volume)
-	{
-		if (volume <= 0m || Security == null)
-		return;
-
-		if (Security.MinVolume is { } minVolume && volume < minVolume - VolumeTolerance)
-		throw new InvalidOperationException($"Volume {volume} is less than the minimal allowed {minVolume}.");
-
-		if (Security.MaxVolume is { } maxVolume && volume > maxVolume + VolumeTolerance)
-		throw new InvalidOperationException($"Volume {volume} is greater than the maximal allowed {maxVolume}.");
-
-		if (Security.VolumeStep is { } step && step > 0m)
-		{
-			var steps = Math.Round(volume / step);
-			var normalized = steps * step;
-			if (Math.Abs(normalized - volume) > VolumeTolerance)
-			throw new InvalidOperationException($"Volume {volume} is not a multiple of the minimal step {step}.");
-		}
-	}
-
-	private decimal CalculatePipValue()
-	{
-		var step = Security?.PriceStep ?? 0m;
-		if (step <= 0m)
-		return 1m;
-
-		var scaled = step;
-		var digits = 0;
-		while (scaled < 1m && digits < 10)
-		{
-			scaled *= 10m;
-			digits++;
-		}
-
-		var adjust = (digits == 3 || digits == 5) ? 10m : 1m;
-		return step * adjust;
-	}
-
-	private static bool IsOrderCompleted(Order order)
-	{
-		return order.State == OrderStates.Done
-		|| order.State == OrderStates.Failed;
+		_prevClose = close;
+		_prevUpper = upper;
+		_prevLower = lower;
 	}
 }
-

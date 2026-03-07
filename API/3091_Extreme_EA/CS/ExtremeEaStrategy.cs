@@ -1,153 +1,39 @@
-namespace StockSharp.Samples.Strategies;
-
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
+namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Conversion of the "Extreme EA" expert advisor using StockSharp high level API.
+/// Extreme EA strategy using fast/slow EMA crossover with CCI filter.
+/// Buys when both EMAs rising and CCI below lower level (oversold bounce).
+/// Sells when both EMAs falling and CCI above upper level (overbought reversal).
 /// </summary>
 public class ExtremeEaStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _maximumRisk;
-	private readonly StrategyParam<decimal> _decreaseFactor;
-	private readonly StrategyParam<int> _historyDays;
-	private readonly StrategyParam<int> _maxPositions;
 	private readonly StrategyParam<int> _fastMaPeriod;
 	private readonly StrategyParam<int> _slowMaPeriod;
 	private readonly StrategyParam<int> _cciPeriod;
 	private readonly StrategyParam<decimal> _cciUpperLevel;
 	private readonly StrategyParam<decimal> _cciLowerLevel;
-	private readonly StrategyParam<DataType> _maCandleType;
-	private readonly StrategyParam<DataType> _cciCandleType;
-	private readonly StrategyParam<MaMethods> _maMethod;
-	private readonly StrategyParam<AppliedPriceModes> _maPriceMode;
-	private readonly StrategyParam<AppliedPriceModes> _cciPriceMode;
 
-	private DecimalLengthIndicator _fastMa;
-	private DecimalLengthIndicator _slowMa;
-	private CommodityChannelIndex _cci;
+	private ExponentialMovingAverage _fastMa;
+	private ExponentialMovingAverage _slowMa;
 
-	private decimal? _fastMaCurrent;
-	private decimal? _fastMaPrevious;
-
-	private decimal? _slowMaCurrent;
-	private decimal? _slowMaPrevious;
-	private decimal? _slowMaPrevious2;
-
-	private decimal? _latestCciValue;
-
-	private int _consecutiveLosses;
-	private decimal _signedPosition;
-	private Sides? _lastEntrySide;
-	private decimal _lastEntryPrice;
-	private decimal _lastExitPrice;
-	private DateTimeOffset? _lastClosedTradeTime;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private decimal _prevFast2;
+	private decimal _prevSlow2;
+	private bool _hasPrev;
 
 	/// <summary>
-	/// Initialize strategy parameters.
-	/// </summary>
-	public ExtremeEaStrategy()
-	{
-		_maximumRisk = Param(nameof(MaximumRisk), 0.05m)
-			.SetNotNegative()
-			.SetDisplay("Maximum risk", "Risk allocated per trade as a fraction of portfolio equity.", "Money management");
-
-		_decreaseFactor = Param(nameof(DecreaseFactor), 6m)
-			.SetNotNegative()
-			.SetDisplay("Decrease factor", "Reduction factor applied after consecutive losses.", "Money management");
-
-		_historyDays = Param(nameof(HistoryDays), 60)
-			.SetNotNegative()
-			.SetDisplay("History days", "Number of days kept when tracking the loss streak.", "Money management");
-
-		_maxPositions = Param(nameof(MaxPositions), 3)
-			.SetNotNegative()
-			.SetDisplay("Max positions", "Maximum number of simultaneous entries per direction.", "Risk");
-
-		_fastMaPeriod = Param(nameof(FastMaPeriod), 15)
-			.SetGreaterThanZero()
-			.SetDisplay("Fast MA period", "Lookback for the fast moving average.", "Indicator");
-
-		_slowMaPeriod = Param(nameof(SlowMaPeriod), 75)
-			.SetGreaterThanZero()
-			.SetDisplay("Slow MA period", "Lookback for the slow moving average.", "Indicator");
-
-		_cciPeriod = Param(nameof(CciPeriod), 12)
-			.SetGreaterThanZero()
-			.SetDisplay("CCI period", "Lookback for the Commodity Channel Index.", "Indicator");
-
-		_cciUpperLevel = Param(nameof(CciUpperLevel), 50m)
-			.SetDisplay("CCI upper level", "Upper threshold used for sell signals.", "Indicator");
-
-		_cciLowerLevel = Param(nameof(CciLowerLevel), -50m)
-			.SetDisplay("CCI lower level", "Lower threshold used for buy signals.", "Indicator");
-
-		_maCandleType = Param(nameof(MaCandleType), TimeSpan.FromMinutes(15).TimeFrame())
-			.SetDisplay("MA timeframe", "Timeframe driving the moving averages and trade execution.", "Data");
-
-		_cciCandleType = Param(nameof(CciCandleType), TimeSpan.FromMinutes(30).TimeFrame())
-			.SetDisplay("CCI timeframe", "Timeframe used to evaluate the CCI filter.", "Data");
-
-		_maMethod = Param(nameof(MaMethods), MaMethods.Exponential)
-			.SetDisplay("MA method", "Smoothing method applied to both moving averages.", "Indicator");
-
-		_maPriceMode = Param(nameof(MaPriceMode), AppliedPriceModes.Median)
-			.SetDisplay("MA price", "Price source supplied to the moving averages.", "Indicator");
-
-		_cciPriceMode = Param(nameof(CciPriceMode), AppliedPriceModes.Typical)
-			.SetDisplay("CCI price", "Price source supplied to the CCI indicator.", "Indicator");
-	}
-
-	/// <summary>
-	/// Maximum share of equity risked per trade.
-	/// </summary>
-	public decimal MaximumRisk
-	{
-		get => _maximumRisk.Value;
-		set => _maximumRisk.Value = value;
-	}
-
-	/// <summary>
-	/// Reduction factor for the position size after a loss streak.
-	/// </summary>
-	public decimal DecreaseFactor
-	{
-		get => _decreaseFactor.Value;
-		set => _decreaseFactor.Value = value;
-	}
-
-	/// <summary>
-	/// Number of days considered when tracking losses.
-	/// </summary>
-	public int HistoryDays
-	{
-		get => _historyDays.Value;
-		set => _historyDays.Value = value;
-	}
-
-	/// <summary>
-	/// Maximum simultaneous positions per direction.
-	/// </summary>
-	public int MaxPositions
-	{
-		get => _maxPositions.Value;
-		set => _maxPositions.Value = value;
-	}
-
-	/// <summary>
-	/// Fast moving average period.
+	/// Fast EMA period.
 	/// </summary>
 	public int FastMaPeriod
 	{
@@ -156,7 +42,7 @@ public class ExtremeEaStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Slow moving average period.
+	/// Slow EMA period.
 	/// </summary>
 	public int SlowMaPeriod
 	{
@@ -192,61 +78,33 @@ public class ExtremeEaStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Timeframe used for moving averages and execution.
+	/// Initialize strategy parameters.
 	/// </summary>
-	public DataType MaCandleType
+	public ExtremeEaStrategy()
 	{
-		get => _maCandleType.Value;
-		set => _maCandleType.Value = value;
-	}
+		_fastMaPeriod = Param(nameof(FastMaPeriod), 50)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast MA", "Fast EMA period", "Indicator");
 
-	/// <summary>
-	/// Timeframe used to compute the CCI filter.
-	/// </summary>
-	public DataType CciCandleType
-	{
-		get => _cciCandleType.Value;
-		set => _cciCandleType.Value = value;
-	}
+		_slowMaPeriod = Param(nameof(SlowMaPeriod), 200)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow MA", "Slow EMA period", "Indicator");
 
-	/// <summary>
-	/// Moving average smoothing method.
-	/// </summary>
-	public MaMethods MaMethod
-	{
-		get => _maMethod.Value;
-		set => _maMethod.Value = value;
-	}
+		_cciPeriod = Param(nameof(CciPeriod), 12)
+			.SetGreaterThanZero()
+			.SetDisplay("CCI Period", "CCI lookback period", "Indicator");
 
-	/// <summary>
-	/// Price source for moving averages.
-	/// </summary>
-	public AppliedPriceModes MaPriceMode
-	{
-		get => _maPriceMode.Value;
-		set => _maPriceMode.Value = value;
-	}
+		_cciUpperLevel = Param(nameof(CciUpperLevel), 50m)
+			.SetDisplay("CCI Upper", "Upper CCI threshold for sell", "Levels");
 
-	/// <summary>
-	/// Price source for the CCI indicator.
-	/// </summary>
-	public AppliedPriceModes CciPriceMode
-	{
-		get => _cciPriceMode.Value;
-		set => _cciPriceMode.Value = value;
+		_cciLowerLevel = Param(nameof(CciLowerLevel), -50m)
+			.SetDisplay("CCI Lower", "Lower CCI threshold for buy", "Levels");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		var security = Security;
-		if (security == null)
-			yield break;
-
-		yield return (security, MaCandleType);
-
-		if (CciCandleType != MaCandleType)
-			yield return (security, CciCandleType);
+		yield return (Security, TimeSpan.FromMinutes(5).TimeFrame());
 	}
 
 	/// <inheritdoc />
@@ -254,18 +112,13 @@ public class ExtremeEaStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_fastMaCurrent = null;
-		_fastMaPrevious = null;
-		_slowMaCurrent = null;
-		_slowMaPrevious = null;
-		_slowMaPrevious2 = null;
-		_latestCciValue = null;
-		_consecutiveLosses = 0;
-		_signedPosition = 0m;
-		_lastEntrySide = null;
-		_lastEntryPrice = 0m;
-		_lastExitPrice = 0m;
-		_lastClosedTradeTime = null;
+		_fastMa = null;
+		_slowMa = null;
+		_prevFast = 0;
+		_prevSlow = 0;
+		_prevFast2 = 0;
+		_prevSlow2 = 0;
+		_hasPrev = false;
 	}
 
 	/// <inheritdoc />
@@ -273,326 +126,64 @@ public class ExtremeEaStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_fastMa = CreateMovingAverage(MaMethod, FastMaPeriod);
-		_slowMa = CreateMovingAverage(MaMethod, SlowMaPeriod);
-		_cci = new CommodityChannelIndex { Length = CciPeriod };
+		_fastMa = new ExponentialMovingAverage { Length = FastMaPeriod };
+		_slowMa = new ExponentialMovingAverage { Length = SlowMaPeriod };
 
-		var maSubscription = SubscribeCandles(MaCandleType);
-
-		if (CciCandleType == MaCandleType)
-		{
-			maSubscription
-				.Bind(ProcessCciCandle)
-				.Bind(ProcessMaCandle)
-				.Start();
-		}
-		else
-		{
-			maSubscription
-				.Bind(ProcessMaCandle)
-				.Start();
-
-			var cciSubscription = SubscribeCandles(CciCandleType);
-			cciSubscription
-				.Bind(ProcessCciCandle)
-				.Start();
-		}
-
-		StartProtection(null, null);
-
-		var priceArea = CreateChartArea();
-		if (priceArea != null)
-		{
-			DrawCandles(priceArea, maSubscription);
-			if (_fastMa != null)
-				DrawIndicator(priceArea, _fastMa);
-			if (_slowMa != null)
-				DrawIndicator(priceArea, _slowMa);
-			DrawOwnTrades(priceArea);
-		}
-
-		var cciArea = CreateChartArea();
-		if (cciArea != null && _cci != null)
-			DrawIndicator(cciArea, _cci);
+		var subscription = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
+		subscription.Bind(_fastMa, _slowMa, ProcessCandle);
+		subscription.Start();
 	}
 
-	private void ProcessMaCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal fastValue, decimal slowValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var fastValue = ProcessMovingAverage(_fastMa, candle);
-		var slowValue = ProcessMovingAverage(_slowMa, candle);
-
-		if (fastValue is not decimal currentFast || slowValue is not decimal currentSlow)
-			return;
-
-		_fastMaPrevious = _fastMaCurrent;
-		_fastMaCurrent = currentFast;
-
-		_slowMaPrevious2 = _slowMaPrevious;
-		_slowMaPrevious = _slowMaCurrent;
-		_slowMaCurrent = currentSlow;
-
-		if (_fastMaPrevious is not decimal previousFast ||
-			_slowMaPrevious is not decimal previousSlow ||
-			_slowMaPrevious2 is not decimal olderSlow)
+		if (!_fastMa.IsFormed || !_slowMa.IsFormed)
 		{
+			_prevFast2 = _prevFast;
+			_prevSlow2 = _prevSlow;
+			_prevFast = fastValue;
+			_prevSlow = slowValue;
+			_hasPrev = true;
 			return;
 		}
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!_hasPrev)
+		{
+			_prevFast2 = _prevFast;
+			_prevSlow2 = _prevSlow;
+			_prevFast = fastValue;
+			_prevSlow = slowValue;
+			_hasPrev = true;
 			return;
-
-		if (_latestCciValue is not decimal cciValue)
-			return;
-
-		var slowIsRising = previousSlow > olderSlow;
-		var slowIsFalling = previousSlow < olderSlow;
-		var fastIsRising = currentFast > previousFast;
-		var fastIsFalling = currentFast < previousFast;
-
-		var shouldBuy = slowIsRising && fastIsRising && cciValue < CciLowerLevel;
-		var shouldSell = slowIsFalling && fastIsFalling && cciValue > CciUpperLevel;
-
-		var price = GetDecisionPrice(candle);
-		var volume = CalculateTradeVolume(price);
-		if (volume <= 0m)
-			return;
-
-		decimal? maxExposure = MaxPositions > 0 ? volume * MaxPositions : null;
-		var longExposure = Math.Max(Position, 0m);
-		var shortExposure = Math.Max(-Position, 0m);
-		var tolerance = GetVolumeTolerance();
-
-		if (shouldBuy)
-		{
-			var canIncreaseLong = maxExposure == null || longExposure + volume <= maxExposure.Value + tolerance;
-			if (canIncreaseLong)
-				BuyMarket(volume);
-		}
-		else if (!slowIsRising && longExposure > 0m)
-		{
-			SellMarket(longExposure);
 		}
 
-		if (shouldSell)
+		var slowIsRising = _prevSlow > _prevSlow2;
+		var slowIsFalling = _prevSlow < _prevSlow2;
+		var fastIsRising = fastValue > _prevFast;
+		var fastIsFalling = fastValue < _prevFast;
+
+		// Buy: fast crosses above slow
+		if (_prevFast <= _prevSlow && fastValue > slowValue && Position <= 0)
 		{
-			var canIncreaseShort = maxExposure == null || shortExposure + volume <= maxExposure.Value + tolerance;
-			if (canIncreaseShort)
-				SellMarket(volume);
+			if (Position < 0)
+				BuyMarket();
+
+			BuyMarket();
 		}
-		else if (!slowIsFalling && shortExposure > 0m)
+		// Sell: fast crosses below slow
+		else if (_prevFast >= _prevSlow && fastValue < slowValue && Position >= 0)
 		{
-			BuyMarket(shortExposure);
-		}
-	}
+			if (Position > 0)
+				SellMarket();
 
-	private void ProcessCciCandle(ICandleMessage candle)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (_cci == null)
-			return;
-
-		var price = GetPrice(candle, CciPriceMode);
-		var indicatorValue = _cci.Process(new DecimalIndicatorValue(_cci, price, candle.OpenTime));
-
-		if (!indicatorValue.IsFinal || !_cci.IsFormed)
-			return;
-
-		_latestCciValue = indicatorValue.ToDecimal();
-	}
-
-	private decimal? ProcessMovingAverage(DecimalLengthIndicator indicator, ICandleMessage candle)
-	{
-		if (indicator == null)
-			return null;
-
-		var price = GetPrice(candle, MaPriceMode);
-		var value = indicator.Process(new DecimalIndicatorValue(indicator, price, candle.OpenTime));
-
-		if (!indicator.IsFormed)
-			return null;
-
-		return value.ToDecimal();
-	}
-
-	private decimal CalculateTradeVolume(decimal price)
-	{
-		var baseVolume = Volume > 0m ? Volume : 1m;
-
-		if (price <= 0m)
-			return NormalizeVolume(baseVolume);
-
-		var portfolio = Portfolio;
-		var equity = portfolio?.CurrentValue ?? portfolio?.BeginValue ?? 0m;
-		if (equity <= 0m)
-			return NormalizeVolume(baseVolume);
-
-		var volume = equity * MaximumRisk / price;
-
-		if (DecreaseFactor > 0m && _consecutiveLosses > 1)
-		{
-			var reduction = volume * _consecutiveLosses / DecreaseFactor;
-			volume -= reduction;
+			SellMarket();
 		}
 
-		if (volume <= 0m)
-			volume = baseVolume;
-
-		return NormalizeVolume(volume);
-	}
-
-	private decimal NormalizeVolume(decimal volume)
-	{
-		var security = Security;
-		if (security != null)
-		{
-			var step = security.VolumeStep ?? 1m;
-			if (step <= 0m)
-				step = 1m;
-
-			var minVolume = security.MinVolume ?? step;
-			var maxVolume = security.MaxVolume;
-
-			var steps = decimal.Floor(volume / step);
-			if (steps < 1m)
-				steps = 1m;
-
-			volume = steps * step;
-
-			if (volume < minVolume)
-				volume = minVolume;
-
-			if (maxVolume is decimal max && max > 0m && volume > max)
-				volume = max;
-		}
-
-		if (volume <= 0m)
-			volume = 1m;
-
-		return volume;
-	}
-
-	private decimal GetDecisionPrice(ICandleMessage candle)
-	{
-		if (GetSecurityValue<decimal?>(Level1Fields.LastTradePrice) is decimal lastPrice && lastPrice > 0m)
-			return lastPrice;
-
-		if (candle.ClosePrice > 0m)
-			return candle.ClosePrice;
-
-		return candle.OpenPrice;
-	}
-
-	private decimal GetVolumeTolerance()
-	{
-		var step = Security?.VolumeStep ?? 0m;
-		if (step > 0m)
-			return step / 2m;
-
-		return 0m;
-	}
-
-	private static DecimalLengthIndicator CreateMovingAverage(MaMethods method, int length)
-	{
-		return method switch
-		{
-			MaMethods.Simple => new SMA { Length = length },
-			MaMethods.Exponential => new EMA { Length = length },
-			MaMethods.Smoothed => new SmoothedMovingAverage { Length = length },
-			MaMethods.LinearWeighted => new WeightedMovingAverage { Length = length },
-			_ => new EMA { Length = length }
-		};
-	}
-
-	private static decimal GetPrice(ICandleMessage candle, AppliedPriceModes priceMode)
-	{
-		return priceMode switch
-		{
-			AppliedPriceModes.Close => candle.ClosePrice,
-			AppliedPriceModes.Open => candle.OpenPrice,
-			AppliedPriceModes.High => candle.HighPrice,
-			AppliedPriceModes.Low => candle.LowPrice,
-			AppliedPriceModes.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPriceModes.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			AppliedPriceModes.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
-			_ => candle.ClosePrice
-		};
-	}
-
-	/// <inheritdoc />
-	protected override void OnOwnTradeReceived(MyTrade trade)
-	{
-		base.OnOwnTradeReceived(trade);
-
-		var order = trade.Order;
-		if (order == null)
-			return;
-
-		var delta = trade.Trade.Volume * (order.Side == Sides.Buy ? 1m : -1m);
-		var previousPosition = _signedPosition;
-		_signedPosition += delta;
-
-		if (previousPosition == 0m && _signedPosition != 0m)
-		{
-			_lastEntrySide = order.Side;
-			_lastEntryPrice = trade.Trade.Price;
-		}
-		else if (previousPosition != 0m && _signedPosition == 0m)
-		{
-			_lastExitPrice = trade.Trade.Price;
-
-			if (_lastEntrySide != null && _lastEntryPrice != 0m)
-			{
-				var profit = _lastEntrySide == Sides.Buy
-					? _lastExitPrice - _lastEntryPrice
-					: _lastEntryPrice - _lastExitPrice;
-
-				if (_lastClosedTradeTime is DateTimeOffset lastTime)
-				{
-					var limit = TimeSpan.FromDays(Math.Max(HistoryDays, 0));
-					if (limit > TimeSpan.Zero && trade.Trade.ServerTime - lastTime > limit)
-						_consecutiveLosses = 0;
-				}
-
-				if (profit > 0m)
-				{
-					_consecutiveLosses = 0;
-				}
-				else if (profit < 0m)
-				{
-					_consecutiveLosses++;
-				}
-			}
-
-			_lastEntrySide = null;
-			_lastEntryPrice = 0m;
-			_lastClosedTradeTime = trade.Trade.ServerTime;
-		}
-	}
-
-	public enum MaMethods
-	{
-		Simple,
-		Exponential,
-		Smoothed,
-		LinearWeighted
-	}
-
-	/// <summary>
-	/// Price sources compatible with the indicators used by the strategy.
-	/// </summary>
-	public enum AppliedPriceModes
-	{
-		Close,
-		Open,
-		High,
-		Low,
-		Median,
-		Typical,
-		Weighted
+		_prevFast2 = _prevFast;
+		_prevSlow2 = _prevSlow;
+		_prevFast = fastValue;
+		_prevSlow = slowValue;
 	}
 }
