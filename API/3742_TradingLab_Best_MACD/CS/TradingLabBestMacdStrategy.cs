@@ -26,10 +26,10 @@ public class TradingLabBestMacdStrategy : Strategy
 	private readonly StrategyParam<decimal> _riskRewardMultiplier;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private SimpleMovingAverage _sma = null!;
-	private Highest _highest = null!;
-	private Lowest _lowest = null!;
-	private MovingAverageConvergenceDivergenceSignal _macd = null!;
+	private SimpleMovingAverage _sma;
+	private Highest _highest;
+	private Lowest _lowest;
+	private MovingAverageConvergenceDivergenceSignal _macd;
 
 	private int _resistanceCounter;
 	private int _supportCounter;
@@ -100,7 +100,7 @@ public class TradingLabBestMacdStrategy : Strategy
 			.SetDisplay("Risk-Reward Multiplier", "Multiplier applied to derive the take-profit distance", "Risk")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Data type used to subscribe for candles", "General")
 			;
 	}
@@ -193,6 +193,41 @@ public class TradingLabBestMacdStrategy : Strategy
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_sma = null;
+		_highest = null;
+		_lowest = null;
+		_macd = null;
+
+		_resistanceCounter = 0;
+		_supportCounter = 0;
+		_macdDownCounter = 0;
+		_macdUpCounter = 0;
+
+		_prevMacdMain = null;
+		_prevMacdSignal = null;
+
+		_plannedStop = null;
+		_plannedTake = null;
+		_plannedSide = null;
+
+		_activeStop = null;
+		_activeTake = null;
+		_activeSide = null;
+
+		_previousHigh = null;
+		_previousLow = null;
+		_hasPreviousCandle = false;
 	}
 
 	/// <inheritdoc />

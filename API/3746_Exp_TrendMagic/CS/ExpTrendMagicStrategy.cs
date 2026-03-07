@@ -37,7 +37,7 @@ public class ExpTrendMagicStrategy : Strategy
 
 	private CommodityChannelIndex _cci;
 	private AverageTrueRange _atr;
-	private readonly List<int> _colorHistory = new();
+	private List<int> _colorHistory;
 	private decimal? _previousTrendMagicValue;
 	private decimal? _entryPrice;
 	private TimeSpan _candleTimeFrame;
@@ -240,7 +240,7 @@ public class ExpTrendMagicStrategy : Strategy
 
 		_cci = null;
 		_atr = null;
-		_colorHistory.Clear();
+		_colorHistory = null;
 		_previousTrendMagicValue = null;
 		_entryPrice = null;
 		_candleTimeFrame = TimeSpan.Zero;
@@ -254,6 +254,7 @@ public class ExpTrendMagicStrategy : Strategy
 		base.OnStarted2(time);
 
 		_candleTimeFrame = CandleType.Arg is TimeSpan span ? span : TimeSpan.Zero;
+		_colorHistory = new List<int>();
 
 		_cci = new CommodityChannelIndex
 		{
@@ -293,7 +294,7 @@ public class ExpTrendMagicStrategy : Strategy
 		// check ATR formed
 
 		var price = GetAppliedPrice(candle, CciPrice);
-		var cciIndicatorValue = cci.Process(new DecimalIndicatorValue(cci, price, candle.OpenTime));
+		var cciIndicatorValue = cci.Process(new DecimalIndicatorValue(cci, price, candle.OpenTime) { IsFinal = true });
 
 		if (!cci.IsFormed || !atr.IsFormed)
 			return;

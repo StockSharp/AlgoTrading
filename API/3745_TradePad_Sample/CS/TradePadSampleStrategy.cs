@@ -31,7 +31,7 @@ public class TradePadSampleStrategy : Strategy
 
 	public TradePadSampleStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe", "General");
 
 		_stochasticKPeriod = Param(nameof(StochasticKPeriod), 10)
@@ -45,6 +45,18 @@ public class TradePadSampleStrategy : Strategy
 
 		_lowerLevel = Param(nameof(LowerLevel), 25m)
 			.SetDisplay("Lower Threshold", "Oversold level", "Signals");
+	}
+
+	/// <inheritdoc />
+	public override System.Collections.Generic.IEnumerable<(StockSharp.BusinessEntities.Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevK = 0;
+		_hasPrev = false;
 	}
 
 	/// <inheritdoc />
