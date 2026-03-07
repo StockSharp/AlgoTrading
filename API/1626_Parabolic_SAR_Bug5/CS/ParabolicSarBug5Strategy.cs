@@ -108,7 +108,7 @@ public class ParabolicSarBug5Strategy : Strategy
 		_sarClose = Param(nameof(SarClose), true)
 			.SetDisplay("SAR Close", "Close position on SAR switch", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 

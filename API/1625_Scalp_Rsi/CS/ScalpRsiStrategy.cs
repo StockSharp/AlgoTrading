@@ -107,7 +107,7 @@ public class ScalpRsiStrategy : Strategy
 			.SetDisplay("Enable Buy", "Allow buy trades", "General");
 		_enableSell = Param(nameof(EnableSell), true)
 			.SetDisplay("Enable Sell", "Allow sell trades", "General");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle", "Candle type", "General");
 
 		_tradeDelaySeconds = Param(nameof(TradeDelaySeconds), 360)
@@ -128,6 +128,7 @@ public class ScalpRsiStrategy : Strategy
 		_sellRsiValues.Clear();
 		_openTrades = 0;
 		_entryPrice = 0;
+		_lastTradeTime = default;
 	}
 
 	/// <inheritdoc />
@@ -135,8 +136,8 @@ public class ScalpRsiStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var buyRsi = new RSI { Length = BuyMaLength };
-		var sellRsi = new RSI { Length = SellMaLength };
+		var buyRsi = new RelativeStrengthIndex { Length = BuyMaLength };
+		var sellRsi = new RelativeStrengthIndex { Length = SellMaLength };
 		var subscription = SubscribeCandles(CandleType);
 		subscription
 			.Bind(buyRsi, sellRsi, ProcessCandle)

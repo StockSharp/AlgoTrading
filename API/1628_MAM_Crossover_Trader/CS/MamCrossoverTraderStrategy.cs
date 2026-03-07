@@ -11,99 +11,79 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// MAM crossover using SMA of close and open prices.
+/// MAM crossover using SMA of close prices with different periods.
 /// </summary>
 public class MamCrossoverTraderStrategy : Strategy
 {
-	private readonly StrategyParam<int> _maPeriod;
+	private readonly StrategyParam<int> _fastPeriod;
+	private readonly StrategyParam<int> _slowPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private SimpleMovingAverage _openSma;
+	private decimal _prevDiff;
 
-	private decimal? _prevDiff1;
-	private decimal? _prevDiff2;
+	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
+	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public MamCrossoverTraderStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
-
-		_maPeriod = Param(nameof(MaPeriod), 20)
+		_fastPeriod = Param(nameof(FastPeriod), 10)
 			.SetGreaterThanZero()
-			.SetDisplay("MA Period", "Simple moving average period", "Indicators");
+			.SetDisplay("Fast Period", "Fast SMA period", "Indicators");
+
+		_slowPeriod = Param(nameof(SlowPeriod), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow Period", "Slow SMA period", "Indicators");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	public int MaPeriod
-	{
-		get => _maPeriod.Value;
-		set => _maPeriod.Value = value;
-	}
-
+	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
+	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevDiff1 = null;
-		_prevDiff2 = null;
+		_prevDiff = 0;
 	}
 
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		var closeSma = new SimpleMovingAverage { Length = MaPeriod };
-		_openSma = new SimpleMovingAverage { Length = MaPeriod };
+		var fastSma = new SimpleMovingAverage { Length = FastPeriod };
+		var slowSma = new SimpleMovingAverage { Length = SlowPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(closeSma, ProcessCandle)
-			.Start();
+		subscription.Bind(fastSma, slowSma, ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, closeSma);
+			DrawIndicator(area, fastSma);
+			DrawIndicator(area, slowSma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal closeSma)
+	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var openInput = new DecimalIndicatorValue(_openSma, candle.OpenPrice, candle.OpenTime) { IsFinal = true };
-		var openSmaValue = _openSma.Process(openInput);
-		if (!openSmaValue.IsFormed || !openSmaValue.IsFinal)
-			return;
+		var diff = fast - slow;
+		var crossUp = _prevDiff <= 0 && diff > 0;
+		var crossDown = _prevDiff >= 0 && diff < 0;
+		_prevDiff = diff;
 
-		var openSma = openSmaValue.GetValue<decimal>();
-
-		var diff = closeSma - openSma;
-
-		if (_prevDiff1.HasValue && _prevDiff2.HasValue)
-		{
-			var crossUp = _prevDiff2.Value < 0 && _prevDiff1.Value > 0 && diff > 0;
-			var crossDown = _prevDiff2.Value > 0 && _prevDiff1.Value < 0 && diff < 0;
-
-			if (crossUp && Position <= 0)
-				BuyMarket();
-			else if (crossDown && Position >= 0)
-				SellMarket();
-		}
-
-		_prevDiff2 = _prevDiff1;
-		_prevDiff1 = diff;
+		if (crossUp && Position <= 0)
+			BuyMarket();
+		else if (crossDown && Position >= 0)
+			SellMarket();
 	}
 }
