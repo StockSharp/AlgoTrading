@@ -45,13 +45,13 @@ public class VarMovAvgStrategy : Strategy
 	private readonly StrategyParam<MovingAverageMethods> _stopMaMethod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private VariableMovingAverage _vma = null!;
-	private IIndicator _stopLowMa = null!;
-	private IIndicator _stopHighMa = null!;
-	private readonly Queue<decimal> _lowMaValues = new();
-	private readonly Queue<decimal> _highMaValues = new();
-	private readonly SignalTracker _longSignal = new(true);
-	private readonly SignalTracker _shortSignal = new(false);
+	private VariableMovingAverage? _vma;
+	private IIndicator? _stopLowMa;
+	private IIndicator? _stopHighMa;
+	private Queue<decimal>? _lowMaValues;
+	private Queue<decimal>? _highMaValues;
+	private SignalTracker? _longSignal;
+	private SignalTracker? _shortSignal;
 
 	/// <summary>
 	/// VMA adaptive window length.
@@ -175,7 +175,7 @@ public class VarMovAvgStrategy : Strategy
 	/// </summary>
 	public VarMovAvgStrategy()
 	{
-		_amaPeriod = Param(nameof(AmaPeriod), 52)
+		_amaPeriod = Param(nameof(AmaPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("VMA Length", "Adaptive moving average period", "Indicators")
 			
@@ -197,7 +197,7 @@ public class VarMovAvgStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Smoothing Power", "Exponent applied to the smoothing coefficient", "Indicators");
 
-		_signalPipsBarA = Param(nameof(SignalPipsBarA), 2m)
+		_signalPipsBarA = Param(nameof(SignalPipsBarA), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Bar A Distance", "Pips distance below/above VMA for Bar A", "Signals");
 
@@ -205,11 +205,11 @@ public class VarMovAvgStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Bar B Distance", "Extra pips distance for Bar B confirmation", "Signals");
 
-		_signalPipsTrade = Param(nameof(SignalPipsTrade), 2m)
+		_signalPipsTrade = Param(nameof(SignalPipsTrade), 10m)
 			.SetGreaterThanZero()
 			.SetDisplay("Entry Offset", "Pips offset from Bar B extreme to entry", "Signals");
 
-		_entryPipsDiff = Param(nameof(EntryPipsDiff), 2m)
+		_entryPipsDiff = Param(nameof(EntryPipsDiff), 500m)
 			.SetGreaterThanZero()
 			.SetDisplay("Entry Band", "Accepted pips range around the entry price", "Signals");
 
@@ -228,7 +228,7 @@ public class VarMovAvgStrategy : Strategy
 		_stopMaMethod = Param(nameof(StopMaMethod), MovingAverageMethods.Exponential)
 			.SetDisplay("Stop MA Method", "Moving average type used for stops", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Working candle timeframe", "General");
 	}
 
@@ -243,10 +243,13 @@ public class VarMovAvgStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_lowMaValues.Clear();
-		_highMaValues.Clear();
-		_longSignal.Reset();
-		_shortSignal.Reset();
+		_vma = null;
+		_stopLowMa = null;
+		_stopHighMa = null;
+		_lowMaValues = null;
+		_highMaValues = null;
+		_longSignal = null;
+		_shortSignal = null;
 	}
 
 	/// <inheritdoc />
@@ -267,10 +270,10 @@ public class VarMovAvgStrategy : Strategy
 		_stopLowMa = CreateMovingAverage(StopMaMethod, StopMaPeriod);
 		_stopHighMa = CreateMovingAverage(StopMaMethod, StopMaPeriod);
 
-		_lowMaValues.Clear();
-		_highMaValues.Clear();
-		_longSignal.Reset();
-		_shortSignal.Reset();
+		_lowMaValues = new Queue<decimal>();
+		_highMaValues = new Queue<decimal>();
+		_longSignal = new SignalTracker(true);
+		_shortSignal = new SignalTracker(false);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -291,10 +294,19 @@ public class VarMovAvgStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		if (_vma is null || _stopLowMa is null || _stopHighMa is null || _lowMaValues is null || _highMaValues is null || _longSignal is null || _shortSignal is null)
+			return;
+
 		var time = candle.CloseTime;
-		var vmaValue = _vma.Process(new DecimalIndicatorValue(_vma, candle.ClosePrice, time)).GetValue<decimal>();
-		var lowMaRaw = _stopLowMa.Process(new DecimalIndicatorValue(_stopLowMa, candle.LowPrice, time)).GetValue<decimal>();
-		var highMaRaw = _stopHighMa.Process(new DecimalIndicatorValue(_stopHighMa, candle.HighPrice, time)).GetValue<decimal>();
+		var vmaResult = _vma.Process(new DecimalIndicatorValue(_vma, candle.ClosePrice, time) { IsFinal = true });
+		if (vmaResult.IsEmpty) return;
+		var vmaValue = vmaResult.GetValue<decimal>();
+		var lowMaResult = _stopLowMa.Process(new DecimalIndicatorValue(_stopLowMa, candle.LowPrice, time) { IsFinal = true });
+		if (lowMaResult.IsEmpty) return;
+		var lowMaRaw = lowMaResult.GetValue<decimal>();
+		var highMaResult = _stopHighMa.Process(new DecimalIndicatorValue(_stopHighMa, candle.HighPrice, time) { IsFinal = true });
+		if (highMaResult.IsEmpty) return;
+		var highMaRaw = highMaResult.GetValue<decimal>();
 
 		var lowMa = GetShiftedValue(_lowMaValues, lowMaRaw, StopMaShift);
 		var highMa = GetShiftedValue(_highMaValues, highMaRaw, StopMaShift);
