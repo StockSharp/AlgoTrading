@@ -22,13 +22,15 @@ public class MacdSampleStrategy : Strategy
 	private decimal _prevMacd;
 	private decimal _prevSignal;
 	private bool _hasPrev;
+	private decimal _emaValue;
+	private bool _hasEma;
 
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 	public int MaTrendPeriod { get => _maTrendPeriod.Value; set => _maTrendPeriod.Value = value; }
 
 	public MacdSampleStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 
 		_maTrendPeriod = Param(nameof(MaTrendPeriod), 50)
@@ -45,6 +47,8 @@ public class MacdSampleStrategy : Strategy
 		_prevMacd = 0;
 		_prevSignal = 0;
 		_hasPrev = false;
+		_emaValue = 0;
+		_hasEma = false;
 	}
 
 	protected override void OnStarted2(DateTime time)
@@ -61,9 +65,6 @@ public class MacdSampleStrategy : Strategy
 			.BindEx(macdSignal, ProcessMacd)
 			.Start();
 	}
-
-	private decimal _emaValue;
-	private bool _hasEma;
 
 	private void ProcessEma(ICandleMessage candle, decimal emaVal)
 	{

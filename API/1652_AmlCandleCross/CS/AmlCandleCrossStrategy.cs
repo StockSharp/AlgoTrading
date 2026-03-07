@@ -27,13 +27,13 @@ public class AmlCandleCrossStrategy : Strategy
 
 	public AmlCandleCrossStrategy()
 	{
-		_fractal = Param(nameof(Fractal), 70)
+		_fractal = Param(nameof(Fractal), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Fractal", "Fractal window size", "General");
-		_lag = Param(nameof(Lag), 18)
+		_lag = Param(nameof(Lag), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Lag", "Lag for smoothing", "General");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle Type", "General");
 	}
 

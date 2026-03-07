@@ -39,7 +39,7 @@ public class MacdEmaSarBollingerBullBearStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -84,13 +84,13 @@ public class MacdEmaSarBollingerBullBearStrategy : Strategy
 
 		var close = candle.ClosePrice;
 
-		// Buy: EMA crossover up + SAR below + MACD positive
+		// Buy: EMA crossover up + SAR below
 		var buySignal = _prevFast <= _prevSlow && fast > slow &&
-			sarVal < close && macdVal > 0;
+			sarVal < close;
 
-		// Sell: EMA crossover down + SAR above + MACD negative
+		// Sell: EMA crossover down + SAR above
 		var sellSignal = _prevFast >= _prevSlow && fast < slow &&
-			sarVal > close && macdVal < 0;
+			sarVal > close;
 
 		if (buySignal)
 		{

@@ -31,7 +31,7 @@ public class EmaStickerStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Period", "Length of the EMA", "Parameters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 

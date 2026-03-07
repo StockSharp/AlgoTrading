@@ -43,7 +43,7 @@ public class GodbotStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Period", "EMA period for trend", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
@@ -98,32 +98,12 @@ public class GodbotStrategy : Strategy
 			return;
 
 		var close = candle.ClosePrice;
-		var emaRising = close > _prevEma;
-		var emaFalling = close < _prevEma;
 
-		// Buy: price below lower band with uptrend
-		if (close < lower && emaRising && Position <= 0)
-		{
-			if (Position < 0)
-				BuyMarket();
+		// Buy: price below lower band
+		if (close < lower && Position <= 0)
 			BuyMarket();
-		}
-		// Sell: price above upper band with downtrend
-		else if (close > upper && emaFalling && Position >= 0)
-		{
-			if (Position > 0)
-				SellMarket();
+		// Sell: price above upper band
+		else if (close > upper && Position >= 0)
 			SellMarket();
-		}
-		// Exit long when price crosses above upper band
-		else if (close > upper && Position > 0)
-		{
-			SellMarket();
-		}
-		// Exit short when price crosses below lower band
-		else if (close < lower && Position < 0)
-		{
-			BuyMarket();
-		}
 	}
 }
