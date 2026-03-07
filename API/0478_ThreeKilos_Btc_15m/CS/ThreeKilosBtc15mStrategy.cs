@@ -11,38 +11,23 @@ using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 /// <summary>
-/// TEMA crossover with manual Supertrend filter strategy.
-/// Calculates 2 TEMA lines (fast/slow) from close price.
-/// Enters long on fast TEMA crossing above slow TEMA with Supertrend uptrend.
-/// Enters short on fast TEMA crossing below slow TEMA with Supertrend downtrend.
+/// Triple EMA crossover with Supertrend filter strategy (simplified 3Kilos).
+/// Uses fast/slow EMA crossover for entries.
+/// Uses SuperTrend indicator for trend confirmation and exits.
 /// </summary>
 public class ThreeKilosBtc15mStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _shortPeriod;
-	private readonly StrategyParam<int> _longPeriod;
-	private readonly StrategyParam<int> _atrLength;
-	private readonly StrategyParam<decimal> _multiplier;
+	private readonly StrategyParam<int> _fastLength;
+	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<int> _cooldownBars;
 
-	private ExponentialMovingAverage _ema1Short;
-	private ExponentialMovingAverage _ema2Short;
-	private ExponentialMovingAverage _ema3Short;
+	private ExponentialMovingAverage _fastEma;
+	private ExponentialMovingAverage _slowEma;
+	private SuperTrend _superTrend;
 
-	private ExponentialMovingAverage _ema1Long;
-	private ExponentialMovingAverage _ema2Long;
-	private ExponentialMovingAverage _ema3Long;
-
-	private AverageTrueRange _atr;
-
-	private bool _isSupertrendInit;
-	private decimal _up;
-	private decimal _dn;
-	private bool _uptrend;
-	private decimal _prevClose;
-
-	private decimal? _prevTemaFast;
-	private decimal? _prevTemaSlow;
+	private decimal _prevFast;
+	private decimal _prevSlow;
 	private int _cooldownRemaining;
 
 	public DataType CandleType
@@ -50,25 +35,15 @@ public class ThreeKilosBtc15mStrategy : Strategy
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
-	public int ShortPeriod
+	public int FastLength
 	{
-		get => _shortPeriod.Value;
-		set => _shortPeriod.Value = value;
+		get => _fastLength.Value;
+		set => _fastLength.Value = value;
 	}
-	public int LongPeriod
+	public int SlowLength
 	{
-		get => _longPeriod.Value;
-		set => _longPeriod.Value = value;
-	}
-	public int AtrLength
-	{
-		get => _atrLength.Value;
-		set => _atrLength.Value = value;
-	}
-	public decimal Multiplier
-	{
-		get => _multiplier.Value;
-		set => _multiplier.Value = value;
+		get => _slowLength.Value;
+		set => _slowLength.Value = value;
 	}
 	public int CooldownBars
 	{
@@ -81,17 +56,13 @@ public class ThreeKilosBtc15mStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type for strategy calculation", "General");
 
-		_shortPeriod = Param(nameof(ShortPeriod), 8)
-			.SetDisplay("Short TEMA Period", "Period for short TEMA", "Indicators");
+		_fastLength = Param(nameof(FastLength), 8)
+			.SetDisplay("Fast EMA", "Fast EMA length", "Indicators")
+			.SetGreaterThanZero();
 
-		_longPeriod = Param(nameof(LongPeriod), 20)
-			.SetDisplay("Long TEMA Period", "Period for long TEMA", "Indicators");
-
-		_atrLength = Param(nameof(AtrLength), 10)
-			.SetDisplay("ATR Length", "ATR length for Supertrend", "Supertrend");
-
-		_multiplier = Param(nameof(Multiplier), 2m)
-			.SetDisplay("Multiplier", "ATR multiplier for Supertrend", "Supertrend");
+		_slowLength = Param(nameof(SlowLength), 21)
+			.SetDisplay("Slow EMA", "Slow EMA length", "Indicators")
+			.SetGreaterThanZero();
 
 		_cooldownBars = Param(nameof(CooldownBars), 12)
 			.SetDisplay("Cooldown Bars", "Bars between trades", "Risk");
@@ -106,23 +77,11 @@ public class ThreeKilosBtc15mStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_ema1Short = null;
-		_ema2Short = null;
-		_ema3Short = null;
-
-		_ema1Long = null;
-		_ema2Long = null;
-		_ema3Long = null;
-
-		_atr = null;
-
-		_isSupertrendInit = false;
-		_up = _dn = 0m;
-		_uptrend = true;
-		_prevClose = 0m;
-
-		_prevTemaFast = null;
-		_prevTemaSlow = null;
+		_fastEma = null;
+		_slowEma = null;
+		_superTrend = null;
+		_prevFast = 0;
+		_prevSlow = 0;
 		_cooldownRemaining = 0;
 	}
 
@@ -131,104 +90,68 @@ public class ThreeKilosBtc15mStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_ema1Short = new() { Length = ShortPeriod };
-		_ema2Short = new() { Length = ShortPeriod };
-		_ema3Short = new() { Length = ShortPeriod };
-
-		_ema1Long = new() { Length = LongPeriod };
-		_ema2Long = new() { Length = LongPeriod };
-		_ema3Long = new() { Length = LongPeriod };
-
-		_atr = new AverageTrueRange { Length = AtrLength };
+		_fastEma = new ExponentialMovingAverage { Length = FastLength };
+		_slowEma = new ExponentialMovingAverage { Length = SlowLength };
+		_superTrend = new SuperTrend { Length = 10, Multiplier = 2m };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(_atr, ProcessCandle).Start();
+		subscription
+			.BindEx(_fastEma, _slowEma, _superTrend, ProcessCandle)
+			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawIndicator(area, _fastEma);
+			DrawIndicator(area, _slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal atr)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue fastVal, IIndicatorValue slowVal, IIndicatorValue stVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var close = candle.ClosePrice;
-		var time = candle.ServerTime;
-
-		// Calculate TEMA fast and slow from close price
-		var temaFast = CalcTema(_ema1Short, _ema2Short, _ema3Short, close, time);
-		var temaSlow = CalcTema(_ema1Long, _ema2Long, _ema3Long, close, time);
-
-		if (!_ema3Short.IsFormed || !_ema3Long.IsFormed)
-		{
-			_prevTemaFast = temaFast;
-			_prevTemaSlow = temaSlow;
-			_prevClose = close;
+		if (!_fastEma.IsFormed || !_slowEma.IsFormed || !_superTrend.IsFormed)
 			return;
-		}
 
-		// Manual Supertrend
-		var hl2 = (candle.HighPrice + candle.LowPrice) / 2m;
-
-		if (!_isSupertrendInit)
-		{
-			_up = hl2 - Multiplier * atr;
-			_dn = hl2 + Multiplier * atr;
-			_uptrend = true;
-			_isSupertrendInit = true;
-		}
-		else
-		{
-			var prevUp = _up;
-			var prevDn = _dn;
-			var prevTrend = _uptrend;
-
-			_up = prevTrend ? Math.Max(hl2 - Multiplier * atr, prevUp)
-				: hl2 - Multiplier * atr;
-			_dn = prevTrend ? hl2 + Multiplier * atr
-				: Math.Min(hl2 + Multiplier * atr, prevDn);
-			_uptrend = _prevClose > prevDn ? true
-				: _prevClose < prevUp ? false
-				: prevTrend;
-		}
+		var fast = fastVal.ToDecimal();
+		var slow = slowVal.ToDecimal();
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 		{
-			_prevTemaFast = temaFast;
-			_prevTemaSlow = temaSlow;
-			_prevClose = close;
+			_prevFast = fast;
+			_prevSlow = slow;
 			return;
 		}
+
+		// SuperTrend direction
+		var isUpTrend = stVal is SuperTrendIndicatorValue sv && sv.IsUpTrend;
 
 		if (_cooldownRemaining > 0)
 		{
 			_cooldownRemaining--;
-			_prevTemaFast = temaFast;
-			_prevTemaSlow = temaSlow;
-			_prevClose = close;
+			_prevFast = fast;
+			_prevSlow = slow;
 			return;
 		}
 
-		var bullCross = _prevTemaFast.HasValue && _prevTemaSlow.HasValue &&
-			_prevTemaFast <= _prevTemaSlow && temaFast > temaSlow;
-		var bearCross = _prevTemaFast.HasValue && _prevTemaSlow.HasValue &&
-			_prevTemaFast >= _prevTemaSlow && temaFast < temaSlow;
+		// EMA crossover
+		var bullCross = _prevFast > 0 && _prevFast <= _prevSlow && fast > slow;
+		var bearCross = _prevFast > 0 && _prevFast >= _prevSlow && fast < slow;
 
-		// Buy: TEMA bullish cross + Supertrend uptrend
-		if (bullCross && _uptrend && Position <= 0)
+		// Buy: bullish EMA cross + Supertrend uptrend
+		if (bullCross && isUpTrend && Position <= 0)
 		{
 			if (Position < 0)
 				BuyMarket(Math.Abs(Position));
 			BuyMarket(Volume);
 			_cooldownRemaining = CooldownBars;
 		}
-		// Sell: TEMA bearish cross + Supertrend downtrend
-		else if (bearCross && !_uptrend && Position >= 0)
+		// Sell: bearish EMA cross + Supertrend downtrend
+		else if (bearCross && !isUpTrend && Position >= 0)
 		{
 			if (Position > 0)
 				SellMarket(Math.Abs(Position));
@@ -236,31 +159,19 @@ public class ThreeKilosBtc15mStrategy : Strategy
 			_cooldownRemaining = CooldownBars;
 		}
 		// Exit long: Supertrend flips to downtrend
-		else if (Position > 0 && !_uptrend)
+		else if (Position > 0 && !isUpTrend && bearCross)
 		{
 			SellMarket(Math.Abs(Position));
 			_cooldownRemaining = CooldownBars;
 		}
 		// Exit short: Supertrend flips to uptrend
-		else if (Position < 0 && _uptrend)
+		else if (Position < 0 && isUpTrend && bullCross)
 		{
 			BuyMarket(Math.Abs(Position));
 			_cooldownRemaining = CooldownBars;
 		}
 
-		_prevTemaFast = temaFast;
-		_prevTemaSlow = temaSlow;
-		_prevClose = close;
-	}
-
-	private static decimal CalcTema(ExponentialMovingAverage ema1,
-		ExponentialMovingAverage ema2,
-		ExponentialMovingAverage ema3,
-		decimal price, DateTimeOffset time)
-	{
-		var e1 = ema1.Process(new DecimalIndicatorValue(ema1, price, time.UtcDateTime)).ToDecimal();
-		var e2 = ema2.Process(new DecimalIndicatorValue(ema2, e1, time.UtcDateTime)).ToDecimal();
-		var e3 = ema3.Process(new DecimalIndicatorValue(ema3, e2, time.UtcDateTime)).ToDecimal();
-		return 3m * (e1 - e2) + e3;
+		_prevFast = fast;
+		_prevSlow = slow;
 	}
 }

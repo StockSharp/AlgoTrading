@@ -38,9 +38,9 @@ public class StochasticMartingaleGridStrategy : Strategy
 	private readonly StrategyParam<decimal> _zoneBuy;
 	private readonly StrategyParam<decimal> _zoneSell;
 
-	private readonly List<Entry> _entries = new();
+	private List<Entry>? _entries;
 
-	private StochasticOscillator _stochastic = null!;
+	private StochasticOscillator? _stochastic;
 	private decimal? _previousMain;
 	private decimal? _previousSignal;
 	private decimal _pipSize;
@@ -53,7 +53,7 @@ public class StochasticMartingaleGridStrategy : Strategy
 	/// </summary>
 	public StochasticMartingaleGridStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used to evaluate stochastic values", "General");
 
 		_baseVolume = Param(nameof(BaseVolume), 0.1m)
@@ -214,7 +214,8 @@ public class StochasticMartingaleGridStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_entries.Clear();
+		_entries = null;
+		_stochastic = null;
 		_previousMain = null;
 		_previousSignal = null;
 		_pipSize = 0m;

@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -22,58 +19,61 @@ public class ContrarianTradeMaStrategy : Strategy
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private Highest _highest = null!;
-	private Lowest _lowest = null!;
-	private SimpleMovingAverage _sma = null!;
-
 	private decimal _prevClose;
 	private int _barsInPosition;
+	private decimal _prevHighest;
+	private decimal _prevLowest;
+	private decimal _prevSma;
+	private bool _hasPrev;
 
-	/// <summary>
-	/// Lookback period for high/low calculations.
-	/// </summary>
 	public int CalcPeriod { get => _calcPeriod.Value; set => _calcPeriod.Value = value; }
-
-	/// <summary>
-	/// Moving average period.
-	/// </summary>
 	public int MaPeriod { get => _maPeriod.Value; set => _maPeriod.Value = value; }
-
-	/// <summary>
-	/// Type of candles to process.
-	/// </summary>
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public ContrarianTradeMaStrategy()
 	{
-		_calcPeriod = Param(nameof(CalcPeriod), 4)
+		_calcPeriod = Param(nameof(CalcPeriod), 10)
 			.SetDisplay("Calc Period", "Lookback period for extremes", "General");
 
-		_maPeriod = Param(nameof(MaPeriod), 7)
+		_maPeriod = Param(nameof(MaPeriod), 20)
 			.SetDisplay("MA Period", "Moving average period", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for candles", "General");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	protected override void OnReseted()
 	{
-		return [(Security, CandleType)];
+		base.OnReseted();
+		_prevClose = 0;
+		_barsInPosition = 0;
+		_prevHighest = 0;
+		_prevLowest = 0;
+		_prevSma = 0;
+		_hasPrev = false;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_highest = new Highest { Length = CalcPeriod };
-		_lowest = new Lowest { Length = CalcPeriod };
-		_sma = new SimpleMovingAverage { Length = MaPeriod };
+		var highest = new Highest { Length = CalcPeriod };
+		var lowest = new Lowest { Length = CalcPeriod };
+		var sma = new SimpleMovingAverage { Length = MaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(_highest, _lowest, _sma, ProcessCandle).Start();
+		subscription.Bind(highest, lowest, sma, ProcessCandle).Start();
 
-		StartProtection(null, null);
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, sma);
+			DrawOwnTrades(area);
+		}
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal highest, decimal lowest, decimal sma)
@@ -81,31 +81,34 @@ public class ContrarianTradeMaStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_highest.IsFormed || !_lowest.IsFormed || !_sma.IsFormed)
+		if (!_hasPrev)
 		{
 			_prevClose = candle.ClosePrice;
+			_prevHighest = highest;
+			_prevLowest = lowest;
+			_prevSma = sma;
+			_hasPrev = true;
 			return;
 		}
 
 		if (Position == 0)
 		{
-			// Check breakout conditions against previous close
-			if (highest < _prevClose)
+			if (_prevHighest < _prevClose && Position <= 0)
 			{
 				BuyMarket();
 				_barsInPosition = 0;
 			}
-			else if (lowest > _prevClose)
+			else if (_prevLowest > _prevClose && Position >= 0)
 			{
 				SellMarket();
 				_barsInPosition = 0;
 			}
-			else if (sma > candle.OpenPrice)
+			else if (_prevSma > candle.OpenPrice && Position <= 0)
 			{
 				BuyMarket();
 				_barsInPosition = 0;
 			}
-			else if (sma < candle.OpenPrice)
+			else if (_prevSma < candle.OpenPrice && Position >= 0)
 			{
 				SellMarket();
 				_barsInPosition = 0;
@@ -115,7 +118,6 @@ public class ContrarianTradeMaStrategy : Strategy
 		{
 			_barsInPosition++;
 
-			// Close position after holding period
 			if (_barsInPosition >= CalcPeriod)
 			{
 				if (Position > 0)
@@ -128,5 +130,8 @@ public class ContrarianTradeMaStrategy : Strategy
 		}
 
 		_prevClose = candle.ClosePrice;
+		_prevHighest = highest;
+		_prevLowest = lowest;
+		_prevSma = sma;
 	}
 }

@@ -32,7 +32,7 @@ public class LinearRegressionSlopeV1Strategy : Strategy
 
 	public LinearRegressionSlopeV1Strategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 
 		_length = Param(nameof(Length), 12)

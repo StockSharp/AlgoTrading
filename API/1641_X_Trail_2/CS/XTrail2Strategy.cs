@@ -12,7 +12,7 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Moving average crossover strategy based on X_trail_2.
-/// Enters long when fast MA crosses above slow MA (confirmed over 2 bars),
+/// Enters long when fast MA crosses above slow MA,
 /// enters short on the reverse crossover.
 /// </summary>
 public class XTrail2Strategy : Strategy
@@ -21,8 +21,9 @@ public class XTrail2Strategy : Strategy
 	private readonly StrategyParam<int> _ma2Length;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal? _ma1Prev;
-	private decimal? _ma2Prev;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private bool _hasPrev;
 
 	public int Ma1Length { get => _ma1Length.Value; set => _ma1Length.Value = value; }
 	public int Ma2Length { get => _ma2Length.Value; set => _ma2Length.Value = value; }
@@ -30,15 +31,15 @@ public class XTrail2Strategy : Strategy
 
 	public XTrail2Strategy()
 	{
-		_ma1Length = Param(nameof(Ma1Length), 5)
+		_ma1Length = Param(nameof(Ma1Length), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("MA1 Length", "Length of the fast MA", "Moving Averages");
 
-		_ma2Length = Param(nameof(Ma2Length), 14)
+		_ma2Length = Param(nameof(Ma2Length), 30)
 			.SetGreaterThanZero()
 			.SetDisplay("MA2 Length", "Length of the slow MA", "Moving Averages");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to process", "General");
 	}
 
@@ -48,7 +49,9 @@ public class XTrail2Strategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_ma1Prev = _ma2Prev = null;
+		_prevFast = 0;
+		_prevSlow = 0;
+		_hasPrev = false;
 	}
 
 	protected override void OnStarted2(DateTime time)
@@ -73,27 +76,21 @@ public class XTrail2Strategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal ma1, decimal ma2)
+	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (_ma1Prev != null && _ma2Prev != null)
+		if (_hasPrev)
 		{
-			// Simple crossover detection
-			if (ma1 > ma2 && _ma1Prev <= _ma2Prev)
-			{
-				if (Position <= 0)
-					BuyMarket();
-			}
-			else if (ma1 < ma2 && _ma1Prev >= _ma2Prev)
-			{
-				if (Position >= 0)
-					SellMarket();
-			}
+			if (fast > slow && _prevFast <= _prevSlow && Position <= 0)
+				BuyMarket();
+			else if (fast < slow && _prevFast >= _prevSlow && Position >= 0)
+				SellMarket();
 		}
 
-		_ma1Prev = ma1;
-		_ma2Prev = ma2;
+		_prevFast = fast;
+		_prevSlow = slow;
+		_hasPrev = true;
 	}
 }

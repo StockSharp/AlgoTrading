@@ -1,126 +1,90 @@
-namespace StockSharp.Samples.Strategies;
-
 using System;
+using System.Collections.Generic;
 
 using Ecng.Common;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
+using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo.Candles;
+namespace StockSharp.Samples.Strategies;
 
-/// <summary>
-/// Simplified MACD 1 Min Scalper - uses WMA crossover + MACD + Momentum confirmation.
-/// </summary>
 public class Macd1MinScalperStrategy : Strategy
 {
-	private WeightedMovingAverage _fastMa;
-	private WeightedMovingAverage _slowMa;
-	private MovingAverageConvergenceDivergence _macd;
-	private Momentum _momentum;
+	private readonly StrategyParam<int> _fastPeriod;
+	private readonly StrategyParam<int> _slowPeriod;
+	private readonly StrategyParam<int> _stopLossPoints;
+	private readonly StrategyParam<int> _takeProfitPoints;
+
+	private ExponentialMovingAverage _fast;
+	private ExponentialMovingAverage _slow;
 
 	private decimal _prevFast;
 	private decimal _prevSlow;
-	private bool _hasPrev;
-	private decimal? _entryPrice;
+	private decimal _entryPrice;
+	private int _cooldown;
+
+	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
+	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
+	public int StopLossPoints { get => _stopLossPoints.Value; set => _stopLossPoints.Value = value; }
+	public int TakeProfitPoints { get => _takeProfitPoints.Value; set => _takeProfitPoints.Value = value; }
+
+	public Macd1MinScalperStrategy()
+	{
+		_fastPeriod = Param(nameof(FastPeriod), 12).SetGreaterThanZero().SetDisplay("Fast Period", "Fast EMA period", "Indicator");
+		_slowPeriod = Param(nameof(SlowPeriod), 50).SetGreaterThanZero().SetDisplay("Slow Period", "Slow EMA period", "Indicator");
+		_stopLossPoints = Param(nameof(StopLossPoints), 200).SetNotNegative().SetDisplay("Stop Loss", "Stop-loss in price steps", "Risk");
+		_takeProfitPoints = Param(nameof(TakeProfitPoints), 400).SetNotNegative().SetDisplay("Take Profit", "Take-profit in price steps", "Risk");
+	}
+
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		yield return (Security, TimeSpan.FromMinutes(5).TimeFrame());
+	}
+
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_fast = null; _slow = null;
+		_prevFast = 0; _prevSlow = 0; _entryPrice = 0; _cooldown = 0;
+	}
 
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_fastMa = new WeightedMovingAverage { Length = 3 };
-		_slowMa = new WeightedMovingAverage { Length = 5 };
-		_macd = new MovingAverageConvergenceDivergence();
-		_momentum = new Momentum { Length = 14 };
-
+		_fast = new ExponentialMovingAverage { Length = FastPeriod };
+		_slow = new ExponentialMovingAverage { Length = SlowPeriod };
 		var subscription = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
-		subscription
-			.Bind(ProcessCandle)
-			.Start();
+		subscription.Bind(_fast, _slow, ProcessCandle);
+		subscription.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal fastValue, decimal slowValue)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
+		if (candle.State != CandleStates.Finished) return;
+		if (!_fast.IsFormed || !_slow.IsFormed) { _prevFast = fastValue; _prevSlow = slowValue; return; }
+		if (_cooldown > 0) { _cooldown--; _prevFast = fastValue; _prevSlow = slowValue; return; }
 
-		var price = candle.ClosePrice;
-		var openTime = candle.OpenTime;
+		var close = candle.ClosePrice;
+		var step = Security?.PriceStep ?? 1m;
 
-		var fastResult = _fastMa.Process(new DecimalIndicatorValue(_fastMa, price, openTime) { IsFinal = true });
-		var slowResult = _slowMa.Process(new DecimalIndicatorValue(_slowMa, price, openTime) { IsFinal = true });
-		var macdResult = _macd.Process(new DecimalIndicatorValue(_macd, price, openTime) { IsFinal = true });
-		var momResult = _momentum.Process(new DecimalIndicatorValue(_momentum, price, openTime) { IsFinal = true });
-
-		if (!_fastMa.IsFormed || !_slowMa.IsFormed || !_macd.IsFormed || !_momentum.IsFormed)
-			return;
-
-		if (fastResult.IsEmpty || slowResult.IsEmpty || macdResult.IsEmpty || momResult.IsEmpty)
-			return;
-
-		var fast = fastResult.ToDecimal();
-		var slow = slowResult.ToDecimal();
-		var macdVal = macdResult.ToDecimal();
-		var momVal = momResult.ToDecimal();
-
-		// Risk management
-		if (_entryPrice.HasValue && Position != 0)
+		if (Position > 0 && _entryPrice > 0)
 		{
-			var step = Security?.PriceStep ?? 1m;
-			if (step <= 0) step = 1m;
-			var stopDist = 100 * step;
-			var takeDist = 100 * step;
-
-			if (Position > 0 && (candle.ClosePrice <= _entryPrice.Value - stopDist || candle.ClosePrice >= _entryPrice.Value + takeDist))
-			{
-				SellMarket();
-				_entryPrice = null;
-				_hasPrev = false;
-				_prevFast = fast; _prevSlow = slow;
-				return;
-			}
-			if (Position < 0 && (candle.ClosePrice >= _entryPrice.Value + stopDist || candle.ClosePrice <= _entryPrice.Value - takeDist))
-			{
-				BuyMarket();
-				_entryPrice = null;
-				_hasPrev = false;
-				_prevFast = fast; _prevSlow = slow;
-				return;
-			}
+			if (StopLossPoints > 0 && close <= _entryPrice - StopLossPoints * step) { SellMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
+			if (TakeProfitPoints > 0 && close >= _entryPrice + TakeProfitPoints * step) { SellMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
+		}
+		else if (Position < 0 && _entryPrice > 0)
+		{
+			if (StopLossPoints > 0 && close >= _entryPrice + StopLossPoints * step) { BuyMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
+			if (TakeProfitPoints > 0 && close <= _entryPrice - TakeProfitPoints * step) { BuyMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
 		}
 
-		if (_hasPrev)
-		{
-			// Buy: fast crosses above slow + MACD positive + momentum above 100
-			var buySignal = fast > slow && _prevFast <= _prevSlow && macdVal > 0 && momVal > 100;
-			// Sell: fast crosses below slow + MACD negative + momentum below 100
-			var sellSignal = fast < slow && _prevFast >= _prevSlow && macdVal < 0 && momVal < 100;
+		if (_prevFast <= _prevSlow && fastValue > slowValue && Position <= 0)
+		{ if (Position < 0) BuyMarket(); BuyMarket(); _entryPrice = close; _cooldown = 100; }
+		else if (_prevFast >= _prevSlow && fastValue < slowValue && Position >= 0)
+		{ if (Position > 0) SellMarket(); SellMarket(); _entryPrice = close; _cooldown = 100; }
 
-			if (buySignal && Position <= 0)
-			{
-				if (Position < 0)
-				{
-					BuyMarket();
-					_entryPrice = null;
-				}
-				BuyMarket();
-				_entryPrice = candle.ClosePrice;
-			}
-			else if (sellSignal && Position >= 0)
-			{
-				if (Position > 0)
-				{
-					SellMarket();
-					_entryPrice = null;
-				}
-				SellMarket();
-				_entryPrice = candle.ClosePrice;
-			}
-		}
-
-		_prevFast = fast;
-		_prevSlow = slow;
-		_hasPrev = true;
+		_prevFast = fastValue; _prevSlow = slowValue;
 	}
 }

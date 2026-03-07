@@ -52,16 +52,16 @@ public class EurUsdSessionBreakoutStrategy : Strategy
 		_endHourTradeSession = Param(nameof(EndHourTradeSession), 20)
 			.SetDisplay("Trade Session End", "End hour of the trading session", "Schedule");
 
-		_smallSessionThreshold = Param(nameof(SmallSessionThreshold), 2000m)
+		_smallSessionThreshold = Param(nameof(SmallSessionThreshold), 20m)
 			.SetDisplay("Small Session Threshold", "Maximum range session price range to trigger trading", "Risk");
 
-		_stopLossDistance = Param(nameof(StopLossDistance), 500m)
+		_stopLossDistance = Param(nameof(StopLossDistance), 5m)
 			.SetDisplay("Stop Loss Distance", "Stop loss distance in price units", "Risk");
 
-		_takeProfitDistance = Param(nameof(TakeProfitDistance), 800m)
+		_takeProfitDistance = Param(nameof(TakeProfitDistance), 8m)
 			.SetDisplay("Take Profit Distance", "Take profit distance in price units", "Risk");
 
-		_breakoutBuffer = Param(nameof(BreakoutBuffer), 50m)
+		_breakoutBuffer = Param(nameof(BreakoutBuffer), 0.5m)
 			.SetDisplay("Breakout Buffer", "Extra price buffer added to breakout trigger", "Entries");
 
 		_euSessionLengthBars = Param(nameof(EuSessionLengthBars), 12)
@@ -124,6 +124,31 @@ public class EurUsdSessionBreakoutStrategy : Strategy
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_highest = null!;
+		_lowest = null!;
+		_currentHighest = 0;
+		_currentLowest = 0;
+		_rangeSessionHigh = 0;
+		_rangeSessionLow = 0;
+		_sessionFound = false;
+		_smallSession = false;
+		_longOpened = false;
+		_shortOpened = false;
+		_entryPrice = 0;
+		_stopPrice = 0;
+		_takePrice = 0;
 	}
 
 	protected override void OnStarted2(DateTime time)

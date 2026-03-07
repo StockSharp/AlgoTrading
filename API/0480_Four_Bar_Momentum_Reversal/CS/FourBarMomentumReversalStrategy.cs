@@ -1,84 +1,76 @@
+namespace StockSharp.Samples.Strategies;
+
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-namespace StockSharp.Samples.Strategies;
-
 /// <summary>
-/// Four Bar Momentum Reversal Strategy - enters long after consecutive closes below the close from a number of bars ago and exits on breakout above previous high.
+/// Four Bar Momentum Reversal Strategy.
+/// Enters long after consecutive closes below the close from N bars ago.
+/// Exits on breakout above previous high.
+/// Uses EMA as trend filter.
 /// </summary>
 public class FourBarMomentumReversalStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _buyThreshold;
 	private readonly StrategyParam<int> _lookback;
-	private readonly StrategyParam<DateTimeOffset> _startTime;
-	private readonly StrategyParam<DateTimeOffset> _endTime;
+	private readonly StrategyParam<int> _emaLength;
+	private readonly StrategyParam<int> _cooldownBars;
 
-	private Shift _shift;
-	private int _aboveCount;
+	private ExponentialMovingAverage _ema;
+	private readonly List<decimal> _closes = new();
 	private int _belowCount;
 	private decimal _prevHigh;
+	private int _cooldownRemaining;
 
-	/// <summary>
-	/// Candle type for strategy calculation.
-	/// </summary>
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
-
-	/// <summary>
-	/// Number of consecutive closes below reference needed to buy.
-	/// </summary>
 	public int BuyThreshold { get => _buyThreshold.Value; set => _buyThreshold.Value = value; }
-
-	/// <summary>
-	/// Number of bars to look back for reference close.
-	/// </summary>
 	public int Lookback { get => _lookback.Value; set => _lookback.Value = value; }
+	public int EmaLength { get => _emaLength.Value; set => _emaLength.Value = value; }
+	public int CooldownBars { get => _cooldownBars.Value; set => _cooldownBars.Value = value; }
 
-	/// <summary>
-	/// Start time for trading window.
-	/// </summary>
-	public DateTimeOffset StartTime { get => _startTime.Value; set => _startTime.Value = value; }
-
-	/// <summary>
-	/// End time for trading window.
-	/// </summary>
-	public DateTimeOffset EndTime { get => _endTime.Value; set => _endTime.Value = value; }
-
-	/// <summary>
-	/// Constructor.
-	/// </summary>
 	public FourBarMomentumReversalStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
-		_buyThreshold = Param(nameof(BuyThreshold), 4)
+		_buyThreshold = Param(nameof(BuyThreshold), 3)
 			.SetGreaterThanZero()
-			.SetDisplay("Buy Threshold", "Consecutive closes below reference to trigger buy", "Strategy")
-			
-			.SetOptimize(2, 10, 1);
+			.SetDisplay("Buy Threshold", "Consecutive closes below reference to trigger buy", "Strategy");
 
 		_lookback = Param(nameof(Lookback), 4)
 			.SetGreaterThanZero()
-			.SetDisplay("Lookback", "Number of bars to compare", "Strategy")
-			
-			.SetOptimize(1, 10, 1);
+			.SetDisplay("Lookback", "Number of bars to compare", "Strategy");
 
-		_startTime = Param(nameof(StartTime), new DateTimeOffset(2014, 1, 1, 0, 0, 0, TimeSpan.Zero))
-			.SetDisplay("Start Time", "Only trade after this time", "Time Settings");
+		_emaLength = Param(nameof(EmaLength), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("EMA Length", "EMA trend filter period", "Indicators");
 
-		_endTime = Param(nameof(EndTime), new DateTimeOffset(2099, 1, 1, 0, 0, 0, TimeSpan.Zero))
-			.SetDisplay("End Time", "Stop trading after this time", "Time Settings");
+		_cooldownBars = Param(nameof(CooldownBars), 10)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "Risk");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_ema = null;
+		_closes.Clear();
+		_belowCount = 0;
+		_prevHigh = 0;
+		_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
@@ -86,55 +78,100 @@ public class FourBarMomentumReversalStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_shift = new Shift { Length = Lookback };
+		_ema = new ExponentialMovingAverage { Length = EmaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_shift, ProcessCandle)
+			.Bind(_ema, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawIndicator(area, _ema);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal pastClose)
+	private void ProcessCandle(ICandleMessage candle, decimal emaVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_shift.IsFormed)
+		if (!_ema.IsFormed)
+		{
+			_closes.Add(candle.ClosePrice);
+			_prevHigh = candle.HighPrice;
 			return;
-
-		if (candle.ClosePrice > pastClose)
-		{
-			_aboveCount++;
-			_belowCount = 0;
-		}
-		else if (candle.ClosePrice < pastClose)
-		{
-			_belowCount++;
-			_aboveCount = 0;
-		}
-		else
-		{
-			_aboveCount = 0;
-			_belowCount = 0;
 		}
 
-		var inWindow = candle.OpenTime >= StartTime && candle.OpenTime <= EndTime;
+		var close = candle.ClosePrice;
 
-		if (_belowCount >= BuyThreshold && inWindow && Position <= 0)
+		// Track past closes for lookback comparison
+		if (_closes.Count >= Lookback)
 		{
-			RegisterOrder(CreateOrder(Sides.Buy, candle.ClosePrice, Volume));
+			var pastClose = _closes[_closes.Count - Lookback];
+
+			if (close < pastClose)
+				_belowCount++;
+			else
+				_belowCount = 0;
 		}
 
-		if (Position > 0 && candle.ClosePrice > _prevHigh)
+		_closes.Add(close);
+
+		// Keep list from growing too large
+		if (_closes.Count > Lookback + 10)
+			_closes.RemoveAt(0);
+
+		if (!IsFormedAndOnlineAndAllowTrading())
 		{
-			RegisterOrder(CreateOrder(Sides.Sell, candle.ClosePrice, Math.Abs(Position)));
+			_prevHigh = candle.HighPrice;
+			return;
+		}
+
+		if (_cooldownRemaining > 0)
+		{
+			_cooldownRemaining--;
+			_prevHigh = candle.HighPrice;
+			return;
+		}
+
+		// Buy: consecutive closes below reference + price below EMA (reversal from weakness)
+		if (_belowCount >= BuyThreshold && Position <= 0)
+		{
+			if (Position < 0)
+				BuyMarket(Math.Abs(Position));
+			BuyMarket(Volume);
+			_cooldownRemaining = CooldownBars;
+		}
+		// Exit long: breakout above previous high
+		else if (Position > 0 && close > _prevHigh)
+		{
+			SellMarket(Math.Abs(Position));
+			_cooldownRemaining = CooldownBars;
+		}
+		// Short: consecutive closes above reference (overbought reversal)
+		else if (_belowCount == 0 && _closes.Count > Lookback)
+		{
+			var pastClose = _closes[_closes.Count - 1 - Lookback];
+			var aboveCount = 0;
+			for (int i = _closes.Count - 1; i >= Math.Max(0, _closes.Count - BuyThreshold); i--)
+			{
+				if (_closes[i] > pastClose)
+					aboveCount++;
+				else
+					break;
+			}
+
+			if (aboveCount >= BuyThreshold && Position >= 0 && close > emaVal)
+			{
+				if (Position > 0)
+					SellMarket(Math.Abs(Position));
+				SellMarket(Volume);
+				_cooldownRemaining = CooldownBars;
+			}
 		}
 
 		_prevHigh = candle.HighPrice;
