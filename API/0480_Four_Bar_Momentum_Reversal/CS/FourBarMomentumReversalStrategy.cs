@@ -53,7 +53,7 @@ public class FourBarMomentumReversalStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Length", "EMA trend filter period", "Indicators");
 
-		_cooldownBars = Param(nameof(CooldownBars), 10)
+		_cooldownBars = Param(nameof(CooldownBars), 15)
 			.SetDisplay("Cooldown Bars", "Bars between trades", "Risk");
 	}
 
