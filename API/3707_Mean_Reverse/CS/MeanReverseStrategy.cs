@@ -148,7 +148,7 @@ public class MeanReverseStrategy : Strategy
 			.SetDisplay("Trade Volume", "Volume opened with a new signal", "Execution")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of market data processed by the strategy", "General");
 	}
 

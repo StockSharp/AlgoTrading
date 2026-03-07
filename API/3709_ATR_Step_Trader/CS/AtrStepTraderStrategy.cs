@@ -189,7 +189,7 @@ public class AtrStepTraderStrategy : Strategy
 			
 			.SetOptimize(0.5m, 2m, 0.5m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame used for processing", "General");
 	}
 

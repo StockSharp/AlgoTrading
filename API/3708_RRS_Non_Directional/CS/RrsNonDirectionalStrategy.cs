@@ -34,8 +34,9 @@ public class RrsNonDirectionalStrategy : Strategy
 	private readonly StrategyParam<int> _maxSpreadPoints;
 	private readonly StrategyParam<int> _slippagePoints;
 	private readonly StrategyParam<string> _tradeComment;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private readonly Random _random = new();
+	private int _tradeCounter;
 
 	private decimal? _lastBid;
 	private decimal? _lastAsk;
@@ -57,7 +58,7 @@ public class RrsNonDirectionalStrategy : Strategy
 	/// </summary>
 	public RrsNonDirectionalStrategy()
 	{
-		_tradingMode = Param(nameof(TradingMode), RrsTradingModes.HedgeStyle)
+		_tradingMode = Param(nameof(RrsTradingMode), RrsTradingModes.HedgeStyle)
 		.SetDisplay("Trading Strategy", "Entry style reproduced from the MT4 extern Trading_Strategy", "General")
 		;
 
@@ -116,12 +117,16 @@ public class RrsNonDirectionalStrategy : Strategy
 		_tradeComment = Param(nameof(TradeComment), "RRS")
 		.SetDisplay("Trade Comment", "Tag attached to every market order", "General")
 		;
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		.SetDisplay("Candle Type", "Candle type for price updates", "General")
+		;
 	}
 
 	/// <summary>
 	/// Selected entry mode from the original EA.
 	/// </summary>
-	public new RrsTradingModes TradingMode
+	public RrsTradingModes RrsTradingMode
 	{
 		get => _tradingMode.Value;
 		set => _tradingMode.Value = value;
@@ -254,23 +259,34 @@ public class RrsNonDirectionalStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Candle type for price updates.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
 	/// Human readable status updated during processing.
 	/// </summary>
 	public string StatusMessage => _statusMessage;
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	=> [(Security, DataType.Level1)];
+	=> [(Security, CandleType)];
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
 
+		_tradeCounter = 0;
 		_lastBid = null;
 		_lastAsk = null;
 		_pointSize = 0m;
 		_tickValue = 0m;
+		_entryPrice = 0m;
 		_longStopPrice = null;
 		_shortStopPrice = null;
 		_longTakePrice = null;
@@ -297,33 +313,27 @@ public class RrsNonDirectionalStrategy : Strategy
 		if (_tickValue <= 0m)
 		_tickValue = 1m;
 
-		if (TradingMode == RrsTradingModes.AutoSwap)
+		if (RrsTradingMode == RrsTradingModes.AutoSwap)
 		InitializeAutoSwap();
 
-		SubscribeLevel1()
-		.Bind(ProcessLevel1)
+		SubscribeCandles(CandleType)
+		.Bind(ProcessCandle)
 		.Start();
-
 	}
 
 	private void InitializeAutoSwap()
 	{
-		TradingMode = RrsTradingModes.HedgeStyle;
+		RrsTradingMode = RrsTradingModes.HedgeStyle;
 		LogInfo("AutoSwap mode falls back to HedgeStyle because swap rates are not available through Level1 data.");
 	}
 
-	private void ProcessLevel1(Level1ChangeMessage change)
+	private void ProcessCandle(ICandleMessage candle)
 	{
-		var fields = change.Changes;
+		if (candle.State != CandleStates.Finished)
+			return;
 
-		if (fields.TryGetValue(Level1Fields.BestBidPrice, out var bidObj) && bidObj is decimal bid)
-		_lastBid = bid;
-
-		if (fields.TryGetValue(Level1Fields.BestAskPrice, out var askObj) && askObj is decimal ask)
-		_lastAsk = ask;
-
-		if (_lastBid is null || _lastAsk is null)
-		return;
+		_lastBid = candle.ClosePrice;
+		_lastAsk = candle.ClosePrice;
 
 		ManageOpenPosition();
 		ApplyRiskCut();
@@ -491,7 +501,7 @@ public class RrsNonDirectionalStrategy : Strategy
 			return;
 		}
 
-		switch (TradingMode)
+		switch (RrsTradingMode)
 		{
 			case RrsTradingModes.HedgeStyle:
 			case RrsTradingModes.AutoSwap:
@@ -504,7 +514,7 @@ public class RrsNonDirectionalStrategy : Strategy
 				OpenShort();
 				break;
 			case RrsTradingModes.BuySellRandom:
-				if (_random.Next(0, 2) == 0)
+				if (_tradeCounter++ % 2 == 0)
 				OpenLong();
 				else
 				OpenShort();

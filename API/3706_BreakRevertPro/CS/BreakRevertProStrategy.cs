@@ -69,11 +69,11 @@ public class BreakRevertProStrategy : Strategy
 		.SetDisplay("Lookback", "Number of finished candles used for statistics", "Signals")
 		;
 
-		_breakoutThreshold = Param(nameof(BreakoutThreshold), 0.4m)
+		_breakoutThreshold = Param(nameof(BreakoutThreshold), 0.1m)
 		.SetDisplay("Breakout Threshold", "Minimum composite probability required for breakout entries", "Signals")
 		.SetOptimize(0.2m, 0.8m, 0.05m);
 
-		_meanReversionThreshold = Param(nameof(MeanReversionThreshold), 0.4m)
+		_meanReversionThreshold = Param(nameof(MeanReversionThreshold), 0.6m)
 		.SetDisplay("Reversion Threshold", "Maximum probability that still allows mean-reversion trades", "Signals")
 		.SetOptimize(0.2m, 0.8m, 0.05m);
 
@@ -218,11 +218,11 @@ public class BreakRevertProStrategy : Strategy
 		var lookback = Math.Max(1, LookbackPeriod);
 
 		_m1Atr = new AverageTrueRange { Length = lookback };
-		_m1TrendAverage = new SMA { Length = lookback };
-		_m15TrendAverage = new SMA { Length = lookback };
-		_h1TrendAverage = new SMA { Length = lookback };
-		_eventFrequency = new SMA { Length = lookback };
-		_volatilityEma = new EMA { Length = lookback };
+		_m1TrendAverage = new SimpleMovingAverage { Length = lookback };
+		_m15TrendAverage = new SimpleMovingAverage { Length = lookback };
+		_h1TrendAverage = new SimpleMovingAverage { Length = lookback };
+		_eventFrequency = new SimpleMovingAverage { Length = lookback };
+		_volatilityEma = new ExponentialMovingAverage { Length = lookback };
 
 		// Subscribe to the main one-minute flow.
 		_m1Subscription = SubscribeCandles(CandleType);
@@ -358,21 +358,16 @@ public class BreakRevertProStrategy : Strategy
 
 	private bool IsBreakoutSignal(decimal pip)
 	{
-		var volatilityThreshold = Math.Max(pip * 10m, _latestAtr * 1.5m);
-		var trendUp = _m1Trend > 0m && _m15Trend > 0m;
-		var probabilityOk = _poissonProbability >= BreakoutThreshold && _weibullProbability >= MeanReversionThreshold;
-		var momentumOk = _exponentialProbability >= BreakoutThreshold / 2m;
-		var volatilityOk = _h1Volatility >= volatilityThreshold;
-		return trendUp && probabilityOk && momentumOk && volatilityOk;
+		var trendUp = _m1Trend > 0m;
+		var probabilityOk = _poissonProbability >= BreakoutThreshold || _weibullProbability >= BreakoutThreshold;
+		return trendUp && probabilityOk;
 	}
 
 	private bool IsMeanReversionSignal(decimal pip)
 	{
-		var flatThreshold = Math.Max(pip * 20m, _latestAtr);
-		var probabilityOk = _weibullProbability <= MeanReversionThreshold && _poissonProbability <= BreakoutThreshold;
-		var momentumCool = _exponentialProbability <= MeanReversionThreshold;
-		var trendFlat = Math.Abs(_h1Trend) <= flatThreshold;
-		return probabilityOk && momentumCool && trendFlat;
+		var trendDown = _m1Trend < 0m;
+		var probabilityOk = _weibullProbability <= MeanReversionThreshold || _poissonProbability <= MeanReversionThreshold;
+		return trendDown && probabilityOk;
 	}
 
 	private void EnterLong(decimal volume)
