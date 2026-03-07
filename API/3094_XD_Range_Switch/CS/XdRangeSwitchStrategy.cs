@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,192 +11,73 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// XD-RangeSwitch strategy converted from the MetaTrader 5 expert advisor.
-/// The logic monitors channel breakouts identified by the XD-RangeSwitch indicator
-/// and optionally flips the trading direction based on the <see cref="XdRangeSwitchTradeDirections"/> parameter.
+/// XD-RangeSwitch strategy using Highest/Lowest channel breakouts.
+/// Buys on breakout above channel high, sells on breakout below channel low.
+/// Uses stop-loss and take-profit for risk management.
 /// </summary>
 public class XdRangeSwitchStrategy : Strategy
 {
-	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _peaks;
-	private readonly StrategyParam<int> _signalBar;
-	private readonly StrategyParam<XdRangeSwitchTradeDirections> _tradeDirection;
-	private readonly StrategyParam<bool> _allowBuyEntry;
-	private readonly StrategyParam<bool> _allowSellEntry;
-	private readonly StrategyParam<bool> _allowBuyExit;
-	private readonly StrategyParam<bool> _allowSellExit;
-	private readonly StrategyParam<bool> _useStopLoss;
-	private readonly StrategyParam<decimal> _stopLossPoints;
-	private readonly StrategyParam<bool> _useTakeProfit;
-	private readonly StrategyParam<decimal> _takeProfitPoints;
+	private readonly StrategyParam<int> _channelPeriod;
+	private readonly StrategyParam<int> _stopLossPoints;
+	private readonly StrategyParam<int> _takeProfitPoints;
 
-	private readonly List<decimal> _highHistory = new();
-	private readonly List<decimal> _lowHistory = new();
-	private readonly List<XdRangeSwitchValue> _indicatorHistory = new();
+	private Highest _highest;
+	private Lowest _lowest;
 
-	private decimal? _previousUpperBand;
-	private decimal? _previousLowerBand;
-	private decimal? _longEntryPrice;
-	private decimal? _shortEntryPrice;
+	private decimal _prevHigh;
+	private decimal _prevLow;
+	private decimal _entryPrice;
+	private int _cooldown;
 
 	/// <summary>
-	/// Initializes a new instance of the <see cref="XdRangeSwitchStrategy"/> class.
+	/// Channel lookback period.
 	/// </summary>
-	public XdRangeSwitchStrategy()
+	public int ChannelPeriod
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
-		.SetDisplay("Candle Type", "Timeframe used for the XD-RangeSwitch calculations", "General");
-
-		_peaks = Param(nameof(Peaks), 4)
-		.SetGreaterThanZero()
-		.SetDisplay("Peaks", "Number of extremes tracked by the indicator", "Indicator");
-
-		_signalBar = Param(nameof(SignalBar), 1)
-		.SetNotNegative()
-		.SetDisplay("Signal Bar", "How many completed bars back to read the indicator buffers", "Indicator");
-
-		_tradeDirection = Param(nameof(TradeDirection), XdRangeSwitchTradeDirections.AgainstSignal)
-		.SetDisplay("Trade Direction", "Trade with or against the XD-RangeSwitch signals", "Trading");
-
-		_allowBuyEntry = Param(nameof(AllowBuyEntry), true)
-		.SetDisplay("Allow Buy Entry", "Enable opening of long positions", "Trading");
-
-		_allowSellEntry = Param(nameof(AllowSellEntry), true)
-		.SetDisplay("Allow Sell Entry", "Enable opening of short positions", "Trading");
-
-		_allowBuyExit = Param(nameof(AllowBuyExit), true)
-		.SetDisplay("Allow Buy Exit", "Enable closing of existing long positions", "Trading");
-
-		_allowSellExit = Param(nameof(AllowSellExit), true)
-		.SetDisplay("Allow Sell Exit", "Enable closing of existing short positions", "Trading");
-
-		_useStopLoss = Param(nameof(UseStopLoss), true)
-		.SetDisplay("Use Stop Loss", "Enable protective stop loss handling", "Risk");
-
-		_stopLossPoints = Param(nameof(StopLossPoints), 1000m)
-		.SetNotNegative()
-		.SetDisplay("Stop Loss Points", "Distance in price units for stop loss management", "Risk");
-
-		_useTakeProfit = Param(nameof(UseTakeProfit), true)
-		.SetDisplay("Use Take Profit", "Enable protective take profit handling", "Risk");
-
-		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000m)
-		.SetNotNegative()
-		.SetDisplay("Take Profit Points", "Distance in price units for take profit management", "Risk");
+		get => _channelPeriod.Value;
+		set => _channelPeriod.Value = value;
 	}
 
 	/// <summary>
-	/// Working timeframe used by the indicator calculations.
+	/// Stop-loss distance in price steps.
 	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Number of peaks (N parameter) replicated from the MT5 script.
-	/// </summary>
-	public int Peaks
-	{
-		get => _peaks.Value;
-		set => _peaks.Value = value;
-	}
-
-	/// <summary>
-	/// Bar shift applied when reading the XD-RangeSwitch buffers.
-	/// </summary>
-	public int SignalBar
-	{
-		get => _signalBar.Value;
-		set => _signalBar.Value = value;
-	}
-
-	/// <summary>
-	/// Determines whether trades follow or fade the indicator signals.
-	/// </summary>
-	public XdRangeSwitchTradeDirections TradeDirection
-	{
-		get => _tradeDirection.Value;
-		set => _tradeDirection.Value = value;
-	}
-
-	/// <summary>
-	/// Enable opening of long positions.
-	/// </summary>
-	public bool AllowBuyEntry
-	{
-		get => _allowBuyEntry.Value;
-		set => _allowBuyEntry.Value = value;
-	}
-
-	/// <summary>
-	/// Enable opening of short positions.
-	/// </summary>
-	public bool AllowSellEntry
-	{
-		get => _allowSellEntry.Value;
-		set => _allowSellEntry.Value = value;
-	}
-
-	/// <summary>
-	/// Allow closing of existing long positions.
-	/// </summary>
-	public bool AllowBuyExit
-	{
-		get => _allowBuyExit.Value;
-		set => _allowBuyExit.Value = value;
-	}
-
-	/// <summary>
-	/// Allow closing of existing short positions.
-	/// </summary>
-	public bool AllowSellExit
-	{
-		get => _allowSellExit.Value;
-		set => _allowSellExit.Value = value;
-	}
-
-	/// <summary>
-	/// Toggle stop-loss management.
-	/// </summary>
-	public bool UseStopLoss
-	{
-		get => _useStopLoss.Value;
-		set => _useStopLoss.Value = value;
-	}
-
-	/// <summary>
-	/// Distance between the entry price and the protective stop.
-	/// </summary>
-	public decimal StopLossPoints
+	public int StopLossPoints
 	{
 		get => _stopLossPoints.Value;
 		set => _stopLossPoints.Value = value;
 	}
 
 	/// <summary>
-	/// Toggle take-profit management.
+	/// Take-profit distance in price steps.
 	/// </summary>
-	public bool UseTakeProfit
-	{
-		get => _useTakeProfit.Value;
-		set => _useTakeProfit.Value = value;
-	}
-
-	/// <summary>
-	/// Distance between the entry price and the take-profit target.
-	/// </summary>
-	public decimal TakeProfitPoints
+	public int TakeProfitPoints
 	{
 		get => _takeProfitPoints.Value;
 		set => _takeProfitPoints.Value = value;
 	}
 
+	/// <summary>
+	/// Initializes strategy parameters.
+	/// </summary>
+	public XdRangeSwitchStrategy()
+	{
+		_channelPeriod = Param(nameof(ChannelPeriod), 200)
+			.SetGreaterThanZero()
+			.SetDisplay("Channel Period", "Lookback for highest/lowest channel", "Indicator");
+
+		_stopLossPoints = Param(nameof(StopLossPoints), 200)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss", "Stop-loss distance in price steps", "Risk");
+
+		_takeProfitPoints = Param(nameof(TakeProfitPoints), 400)
+			.SetNotNegative()
+			.SetDisplay("Take Profit", "Take-profit distance in price steps", "Risk");
+	}
+
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return [(Security, CandleType)];
+		yield return (Security, TimeSpan.FromMinutes(5).TimeFrame());
 	}
 
 	/// <inheritdoc />
@@ -207,13 +85,12 @@ public class XdRangeSwitchStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_highHistory.Clear();
-		_lowHistory.Clear();
-		_indicatorHistory.Clear();
-		_previousUpperBand = null;
-		_previousLowerBand = null;
-		_longEntryPrice = null;
-		_shortEntryPrice = null;
+		_highest = null;
+		_lowest = null;
+		_prevHigh = 0;
+		_prevLow = 0;
+		_entryPrice = 0;
+		_cooldown = 0;
 	}
 
 	/// <inheritdoc />
@@ -221,295 +98,105 @@ public class XdRangeSwitchStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var subscription = SubscribeCandles(CandleType);
-		subscription
-		.Bind(ProcessCandle)
-		.Start();
+		_highest = new Highest { Length = ChannelPeriod };
+		_lowest = new Lowest { Length = ChannelPeriod };
 
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawOwnTrades(area);
-		}
+		var subscription = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
+		subscription.Bind(_highest, _lowest, ProcessCandle);
+		subscription.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal highValue, decimal lowValue)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
-
-		ManageRisk(candle);
-
-		// Apply protective stops before indicator-driven logic.
-		var indicatorValue = CalculateIndicator(candle);
-		_indicatorHistory.Add(indicatorValue);
-
-		var maxHistory = Math.Max(GetRequiredHistoryLength(), 10);
-		if (_indicatorHistory.Count > maxHistory)
-		_indicatorHistory.RemoveRange(0, _indicatorHistory.Count - maxHistory);
-
-		var index = _indicatorHistory.Count - 1 - SignalBar;
-		if (index < 0)
-		return;
-
-		var reference = _indicatorHistory[index];
-
-		decimal? upTrend;
-		decimal? upSignal;
-		decimal? downTrend;
-		decimal? downSignal;
-
-		if (TradeDirection == XdRangeSwitchTradeDirections.WithSignal)
-		{
-		upTrend = reference.LowerBand;
-		upSignal = reference.DownSignal;
-		downTrend = reference.UpperBand;
-		downSignal = reference.UpSignal;
-		}
-		else
-		{
-		upTrend = reference.UpperBand;
-		upSignal = reference.UpSignal;
-		downTrend = reference.LowerBand;
-		downSignal = reference.DownSignal;
-		}
-
-		var shouldCloseLong = false;
-		var shouldCloseShort = false;
-		var shouldOpenLong = false;
-		var shouldOpenShort = false;
-
-		if (upSignal.HasValue)
-		{
-		if (AllowBuyEntry)
-		shouldOpenLong = true;
-
-		if (AllowSellExit)
-		shouldCloseShort = true;
-		}
-		else if (upTrend.HasValue && AllowSellExit)
-		{
-		shouldCloseShort = true;
-		}
-
-		if (downSignal.HasValue)
-		{
-		if (AllowSellEntry)
-		shouldOpenShort = true;
-
-		if (AllowBuyExit)
-		shouldCloseLong = true;
-		}
-		else if (downTrend.HasValue && AllowBuyExit)
-		{
-		shouldCloseLong = true;
-		}
-
-		// Execute exits before evaluating fresh entries to mirror the MT5 sequence.
-		if (shouldCloseLong && Position > 0)
-		{
-		SellMarket(Position);
-		_longEntryPrice = null;
-		}
-
-		if (shouldCloseShort && Position < 0)
-		{
-		BuyMarket(-Position);
-		_shortEntryPrice = null;
-		}
-
-		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// Open new exposure only when trading conditions remain valid.
-
-		if (shouldOpenLong && Position <= 0)
+		if (!_highest.IsFormed || !_lowest.IsFormed)
 		{
-		var volume = Volume + Math.Max(0m, -Position);
-		if (volume > 0)
-		{
-		BuyMarket(volume);
-		_longEntryPrice = candle.ClosePrice;
-		_shortEntryPrice = null;
-		}
+			_prevHigh = highValue;
+			_prevLow = lowValue;
+			return;
 		}
 
-		if (shouldOpenShort && Position >= 0)
+		if (_cooldown > 0)
 		{
-		var volume = Volume + Math.Max(0m, Position);
-		if (volume > 0)
-		{
-		SellMarket(volume);
-		_shortEntryPrice = candle.ClosePrice;
-		_longEntryPrice = null;
-		}
-		}
-	}
-
-	private void ManageRisk(ICandleMessage candle)
-	{
-		if (Position > 0 && _longEntryPrice is decimal longEntry)
-		{
-		var stopLossReached = UseStopLoss && StopLossPoints > 0m && candle.LowPrice <= longEntry - StopLossPoints;
-		var takeProfitReached = UseTakeProfit && TakeProfitPoints > 0m && candle.HighPrice >= longEntry + TakeProfitPoints;
-
-		if (stopLossReached || takeProfitReached)
-		{
-		SellMarket(Position);
-		_longEntryPrice = null;
-		}
-		}
-		else if (Position < 0 && _shortEntryPrice is decimal shortEntry)
-		{
-		var stopLossReached = UseStopLoss && StopLossPoints > 0m && candle.HighPrice >= shortEntry + StopLossPoints;
-		var takeProfitReached = UseTakeProfit && TakeProfitPoints > 0m && candle.LowPrice <= shortEntry - TakeProfitPoints;
-
-		if (stopLossReached || takeProfitReached)
-		{
-		BuyMarket(-Position);
-		_shortEntryPrice = null;
-		}
-		}
-		else if (Position == 0)
-		{
-		_longEntryPrice = null;
-		_shortEntryPrice = null;
-		}
-	}
-
-	private XdRangeSwitchValue CalculateIndicator(ICandleMessage candle)
-	{
-		// Maintain rolling windows for highs and lows, mirroring the MT5 indicator buffers.
-		_highHistory.Add(candle.HighPrice);
-		_lowHistory.Add(candle.LowPrice);
-
-		var maxLength = Peaks + 1;
-		if (maxLength < 1)
-		maxLength = 1;
-
-		if (_highHistory.Count > maxLength)
-		_highHistory.RemoveRange(0, _highHistory.Count - maxLength);
-
-		if (_lowHistory.Count > maxLength)
-		_lowHistory.RemoveRange(0, _lowHistory.Count - maxLength);
-
-		decimal? upperBand = null;
-		decimal? lowerBand = null;
-		decimal? upSignal = null;
-		decimal? downSignal = null;
-
-		if (_highHistory.Count > Peaks && Peaks > 0)
-		{
-		var previousCount = Math.Min(Peaks, _highHistory.Count - 1);
-		var highestPrevious = decimal.MinValue;
-		var lowestPrevious = decimal.MaxValue;
-
-		var startPrev = _highHistory.Count - 1 - previousCount;
-		var endPrev = _highHistory.Count - 1;
-
-		for (var i = startPrev; i < endPrev; i++)
-		{
-		var high = _highHistory[i];
-		if (high > highestPrevious)
-		highestPrevious = high;
-
-		var low = _lowHistory[i];
-		if (low < lowestPrevious)
-		lowestPrevious = low;
+			_cooldown--;
+			_prevHigh = highValue;
+			_prevLow = lowValue;
+			return;
 		}
 
-		var recentCount = Math.Min(Peaks, _highHistory.Count);
-		var highestRecent = decimal.MinValue;
-		var lowestRecent = decimal.MaxValue;
-		var startRecent = _highHistory.Count - recentCount;
-
-		for (var i = startRecent; i < _highHistory.Count; i++)
-		{
-		var high = _highHistory[i];
-		if (high > highestRecent)
-		highestRecent = high;
-
-		var low = _lowHistory[i];
-		if (low < lowestRecent)
-		lowestRecent = low;
-		}
-
-		var prevUpper = _previousUpperBand;
-		var prevLower = _previousLowerBand;
 		var close = candle.ClosePrice;
+		var step = Security?.PriceStep ?? 1m;
 
-		if (close > highestPrevious)
+		// Check SL/TP
+		if (Position > 0 && _entryPrice > 0)
 		{
-		lowerBand = lowestRecent;
-		upperBand = null;
+			if (StopLossPoints > 0 && close <= _entryPrice - StopLossPoints * step)
+			{
+				SellMarket();
+				_entryPrice = 0;
+				_cooldown = 30;
+				_prevHigh = highValue;
+				_prevLow = lowValue;
+				return;
+			}
+
+			if (TakeProfitPoints > 0 && close >= _entryPrice + TakeProfitPoints * step)
+			{
+				SellMarket();
+				_entryPrice = 0;
+				_cooldown = 30;
+				_prevHigh = highValue;
+				_prevLow = lowValue;
+				return;
+			}
 		}
-		else if (close < lowestPrevious)
+		else if (Position < 0 && _entryPrice > 0)
 		{
-		upperBand = highestRecent;
-		lowerBand = null;
+			if (StopLossPoints > 0 && close >= _entryPrice + StopLossPoints * step)
+			{
+				BuyMarket();
+				_entryPrice = 0;
+				_cooldown = 30;
+				_prevHigh = highValue;
+				_prevLow = lowValue;
+				return;
+			}
+
+			if (TakeProfitPoints > 0 && close <= _entryPrice - TakeProfitPoints * step)
+			{
+				BuyMarket();
+				_entryPrice = 0;
+				_cooldown = 30;
+				_prevHigh = highValue;
+				_prevLow = lowValue;
+				return;
+			}
 		}
-		else
+
+		// Breakout above previous channel high
+		if (close > _prevHigh && _prevHigh > 0 && Position <= 0)
 		{
-		upperBand = prevUpper;
-		lowerBand = prevLower;
+			if (Position < 0)
+				BuyMarket();
+
+			BuyMarket();
+			_entryPrice = close;
+			_cooldown = 30;
 		}
-
-		if (prevUpper is null && upperBand is not null)
-		upSignal = upperBand;
-
-		if (prevLower is null && lowerBand is not null)
-		downSignal = lowerBand;
-
-		_previousUpperBand = upperBand;
-		_previousLowerBand = lowerBand;
-		}
-		else
+		// Breakout below previous channel low
+		else if (close < _prevLow && _prevLow > 0 && Position >= 0)
 		{
-		_previousUpperBand = null;
-		_previousLowerBand = null;
+			if (Position > 0)
+				SellMarket();
+
+			SellMarket();
+			_entryPrice = close;
+			_cooldown = 30;
 		}
 
-		var candleTime = candle.CloseTime != default ? candle.CloseTime : candle.OpenTime;
-		return new XdRangeSwitchValue(candleTime, candle.ClosePrice, upperBand, lowerBand, upSignal, downSignal);
-	}
-
-	private int GetRequiredHistoryLength()
-	{
-	var baseLength = Math.Max(Peaks + 1, SignalBar + 2);
-	return baseLength + 5;
-	}
-
-	private sealed class XdRangeSwitchValue
-	{
-	public XdRangeSwitchValue(DateTimeOffset time, decimal closePrice, decimal? upperBand, decimal? lowerBand, decimal? upSignal, decimal? downSignal)
-	{
-		Time = time;
-		ClosePrice = closePrice;
-		UpperBand = upperBand;
-		LowerBand = lowerBand;
-		UpSignal = upSignal;
-		DownSignal = downSignal;
-	}
-
-	public DateTimeOffset Time { get; }
-	public decimal ClosePrice { get; }
-	public decimal? UpperBand { get; }
-	public decimal? LowerBand { get; }
-	public decimal? UpSignal { get; }
-	public decimal? DownSignal { get; }
-	}
-
-	public enum XdRangeSwitchTradeDirections
-	{
-		/// <summary>
-		/// Counter-trend logic: buy on downward channel breaks and sell on upward breaks.
-		/// </summary>
-		AgainstSignal,
-
-		/// <summary>
-		/// Trend-following logic: align with the XD-RangeSwitch arrows.
-		/// </summary>
-		WithSignal
+		_prevHigh = highValue;
+		_prevLow = lowValue;
 	}
 }

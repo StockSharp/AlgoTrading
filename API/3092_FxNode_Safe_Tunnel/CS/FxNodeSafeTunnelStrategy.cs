@@ -1,7 +1,11 @@
 using System;
+using System.Collections.Generic;
+
+using Ecng.Common;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
+using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
@@ -19,6 +23,7 @@ public class FxNodeSafeTunnelStrategy : Strategy
 	private readonly StrategyParam<decimal> _touchPct;
 
 	private decimal _entryPrice;
+	private int _cooldown;
 
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 	public int ChannelPeriod { get => _channelPeriod.Value; set => _channelPeriod.Value = value; }
@@ -30,7 +35,7 @@ public class FxNodeSafeTunnelStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe", "General");
 
-		_channelPeriod = Param(nameof(ChannelPeriod), 20)
+		_channelPeriod = Param(nameof(ChannelPeriod), 100)
 			.SetGreaterThanZero()
 			.SetDisplay("Channel Period", "Lookback for Highest/Lowest channel", "Indicator");
 
@@ -38,10 +43,25 @@ public class FxNodeSafeTunnelStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "ATR lookback for stops", "Indicator");
 
-		_touchPct = Param(nameof(TouchPct), 0.2m)
+		_touchPct = Param(nameof(TouchPct), 0.02m)
 			.SetDisplay("Touch %", "How close price must be to channel boundary (0-1)", "Indicator");
 	}
 
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		yield return (Security, CandleType);
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_entryPrice = 0;
+		_cooldown = 0;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
@@ -72,6 +92,12 @@ public class FxNodeSafeTunnelStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+			return;
+		}
+
 		var channelWidth = high - low;
 		if (channelWidth <= 0)
 			return;
@@ -87,6 +113,7 @@ public class FxNodeSafeTunnelStrategy : Strategy
 			{
 				SellMarket();
 				_entryPrice = 0;
+				_cooldown = 10;
 				return;
 			}
 		}
@@ -97,6 +124,7 @@ public class FxNodeSafeTunnelStrategy : Strategy
 			{
 				BuyMarket();
 				_entryPrice = 0;
+				_cooldown = 10;
 				return;
 			}
 		}
@@ -108,6 +136,7 @@ public class FxNodeSafeTunnelStrategy : Strategy
 			if (Position < 0) BuyMarket(); // close short first
 			BuyMarket();
 			_entryPrice = close;
+			_cooldown = 10;
 		}
 		else if (Position >= 0 && close >= high - touchZone)
 		{
@@ -115,6 +144,7 @@ public class FxNodeSafeTunnelStrategy : Strategy
 			if (Position > 0) SellMarket(); // close long first
 			SellMarket();
 			_entryPrice = close;
+			_cooldown = 10;
 		}
 	}
 }
