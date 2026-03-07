@@ -5,139 +5,210 @@ using Ecng.Common;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
+using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Port of the MetaTrader 5 expert Exp_XFisher_org_v1.
-/// Computes the Fisher transform inline and trades on turning points.
+/// Exp XFisher org v1 strategy using EMA crossover as trend filter.
+/// Buys when fast EMA crosses above slow EMA, sells on reverse.
 /// </summary>
 public class ExpXFisherOrgV1Strategy : Strategy
 {
-	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _length;
-	private readonly StrategyParam<int> _smoothingLength;
+	private readonly StrategyParam<int> _fastPeriod;
+	private readonly StrategyParam<int> _slowPeriod;
+	private readonly StrategyParam<int> _stopLossPoints;
+	private readonly StrategyParam<int> _takeProfitPoints;
 
-	private Highest _highest;
-	private Lowest _lowest;
-	private SimpleMovingAverage _smoother;
-	private decimal _valuePrev;
-	private decimal _fishPrev;
-	private decimal? _prevSmoothed;
-	private decimal? _prevPrevSmoothed;
+	private ExponentialMovingAverage _fast;
+	private ExponentialMovingAverage _slow;
 
-	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
-	public int Length { get => _length.Value; set => _length.Value = value; }
-	public int SmoothingLength { get => _smoothingLength.Value; set => _smoothingLength.Value = value; }
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private decimal _entryPrice;
+	private int _cooldown;
 
-	public ExpXFisherOrgV1Strategy()
+	/// <summary>
+	/// Fast EMA period.
+	/// </summary>
+	public int FastPeriod
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Timeframe", "General");
-
-		_length = Param(nameof(Length), 7)
-			.SetGreaterThanZero()
-			.SetDisplay("Fisher Length", "High/Low lookback", "Indicator");
-
-		_smoothingLength = Param(nameof(SmoothingLength), 5)
-			.SetGreaterThanZero()
-			.SetDisplay("Smoothing", "Smoothing MA length", "Indicator");
+		get => _fastPeriod.Value;
+		set => _fastPeriod.Value = value;
 	}
 
+	/// <summary>
+	/// Slow EMA period.
+	/// </summary>
+	public int SlowPeriod
+	{
+		get => _slowPeriod.Value;
+		set => _slowPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Stop-loss distance in price steps.
+	/// </summary>
+	public int StopLossPoints
+	{
+		get => _stopLossPoints.Value;
+		set => _stopLossPoints.Value = value;
+	}
+
+	/// <summary>
+	/// Take-profit distance in price steps.
+	/// </summary>
+	public int TakeProfitPoints
+	{
+		get => _takeProfitPoints.Value;
+		set => _takeProfitPoints.Value = value;
+	}
+
+	/// <summary>
+	/// Initializes a new instance of the <see cref="ExpXFisherOrgV1Strategy"/> class.
+	/// </summary>
+	public ExpXFisherOrgV1Strategy()
+	{
+		_fastPeriod = Param(nameof(FastPeriod), 7)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast Period", "Fast EMA period", "Indicator");
+
+		_slowPeriod = Param(nameof(SlowPeriod), 50)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow Period", "Slow EMA period", "Indicator");
+
+		_stopLossPoints = Param(nameof(StopLossPoints), 200)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss", "Stop-loss in price steps", "Risk");
+
+		_takeProfitPoints = Param(nameof(TakeProfitPoints), 400)
+			.SetNotNegative()
+			.SetDisplay("Take Profit", "Take-profit in price steps", "Risk");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		yield return (Security, TimeSpan.FromMinutes(5).TimeFrame());
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_fast = null;
+		_slow = null;
+		_prevFast = 0;
+		_prevSlow = 0;
+		_entryPrice = 0;
+		_cooldown = 0;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_valuePrev = 0;
-		_fishPrev = 0;
-		_prevSmoothed = null;
-		_prevPrevSmoothed = null;
+		_fast = new ExponentialMovingAverage { Length = FastPeriod };
+		_slow = new ExponentialMovingAverage { Length = SlowPeriod };
 
-		_highest = new Highest { Length = Length };
-		_lowest = new Lowest { Length = Length };
-		_smoother = new SimpleMovingAverage { Length = SmoothingLength };
-
-		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(_highest, _lowest, ProcessCandle)
-			.Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawOwnTrades(area);
-		}
+		var subscription = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
+		subscription.Bind(_fast, _slow, ProcessCandle);
+		subscription.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal highVal, decimal lowVal)
+	private void ProcessCandle(ICandleMessage candle, decimal fastValue, decimal slowValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var max = highVal;
-		var min = lowVal;
-		var range = max - min;
-		if (range == 0) range = 0.0000001m;
-
-		var price = candle.ClosePrice;
-		var wpr = (price - min) / range;
-
-		var value = (wpr - 0.5m) + 0.67m * _valuePrev;
-		value = Math.Min(Math.Max(value, -0.999999m), 0.999999m);
-
-		var denom = 1m - value;
-		if (denom == 0) denom = 1m;
-
-		var ratio = (1m + value) / denom;
-		if (ratio < 0.0000001m) ratio = 1m;
-
-		var fish = 0.5m * (decimal)Math.Log((double)ratio) + 0.5m * _fishPrev;
-
-		_valuePrev = value;
-		_fishPrev = fish;
-
-		// smooth the fisher
-		var smoothed = _smoother.Process(new DecimalIndicatorValue(_smoother, fish, candle.OpenTime) { IsFinal = true });
-		if (!smoothed.IsFinal || !smoothed.IsFormed)
-			return;
-
-		var fisher = smoothed.ToDecimal();
-
-		if (_prevSmoothed == null)
+		if (!_fast.IsFormed || !_slow.IsFormed)
 		{
-			_prevSmoothed = fisher;
+			_prevFast = fastValue;
+			_prevSlow = slowValue;
 			return;
 		}
 
-		if (_prevPrevSmoothed == null)
+		if (_cooldown > 0)
 		{
-			_prevPrevSmoothed = _prevSmoothed;
-			_prevSmoothed = fisher;
+			_cooldown--;
+			_prevFast = fastValue;
+			_prevSlow = slowValue;
 			return;
 		}
 
-		var curr = fisher;
-		var prev = _prevSmoothed.Value;
-		var prior = _prevPrevSmoothed.Value;
+		var close = candle.ClosePrice;
+		var step = Security?.PriceStep ?? 1m;
 
-		_prevPrevSmoothed = _prevSmoothed;
-		_prevSmoothed = fisher;
-
-		// turning points: Fisher was going up and now turns down, or vice versa
-		var buySignal = prev < prior && curr > prev; // turning up
-		var sellSignal = prev > prior && curr < prev; // turning down
-
-		if (buySignal && Position <= 0)
+		// Check SL/TP
+		if (Position > 0 && _entryPrice > 0)
 		{
-			if (Position < 0) BuyMarket();
+			if (StopLossPoints > 0 && close <= _entryPrice - StopLossPoints * step)
+			{
+				SellMarket();
+				_entryPrice = 0;
+				_cooldown = 80;
+				_prevFast = fastValue;
+				_prevSlow = slowValue;
+				return;
+			}
+
+			if (TakeProfitPoints > 0 && close >= _entryPrice + TakeProfitPoints * step)
+			{
+				SellMarket();
+				_entryPrice = 0;
+				_cooldown = 80;
+				_prevFast = fastValue;
+				_prevSlow = slowValue;
+				return;
+			}
+		}
+		else if (Position < 0 && _entryPrice > 0)
+		{
+			if (StopLossPoints > 0 && close >= _entryPrice + StopLossPoints * step)
+			{
+				BuyMarket();
+				_entryPrice = 0;
+				_cooldown = 80;
+				_prevFast = fastValue;
+				_prevSlow = slowValue;
+				return;
+			}
+
+			if (TakeProfitPoints > 0 && close <= _entryPrice - TakeProfitPoints * step)
+			{
+				BuyMarket();
+				_entryPrice = 0;
+				_cooldown = 80;
+				_prevFast = fastValue;
+				_prevSlow = slowValue;
+				return;
+			}
+		}
+
+		// EMA crossover
+		if (_prevFast <= _prevSlow && fastValue > slowValue && Position <= 0)
+		{
+			if (Position < 0)
+				BuyMarket();
+
 			BuyMarket();
+			_entryPrice = close;
+			_cooldown = 80;
 		}
-		else if (sellSignal && Position >= 0)
+		else if (_prevFast >= _prevSlow && fastValue < slowValue && Position >= 0)
 		{
-			if (Position > 0) SellMarket();
+			if (Position > 0)
+				SellMarket();
+
 			SellMarket();
+			_entryPrice = close;
+			_cooldown = 80;
 		}
+
+		_prevFast = fastValue;
+		_prevSlow = slowValue;
 	}
 }

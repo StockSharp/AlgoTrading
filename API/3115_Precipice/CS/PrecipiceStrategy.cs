@@ -1,93 +1,109 @@
-namespace StockSharp.Samples.Strategies;
-
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
+namespace StockSharp.Samples.Strategies;
+
+/// <summary>
+/// Precipice strategy using EMA crossover for trend direction.
+/// Buys when fast EMA crosses above slow EMA, sells on reverse.
+/// </summary>
 public class PrecipiceStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _tradeVolume;
-	private readonly StrategyParam<int> _stopLossTakeProfitPips;
-	private readonly StrategyParam<bool> _useBuy;
-	private readonly StrategyParam<bool> _useSell;
-	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _fastPeriod;
+	private readonly StrategyParam<int> _slowPeriod;
+	private readonly StrategyParam<int> _stopLossPoints;
+	private readonly StrategyParam<int> _takeProfitPoints;
 
-	private readonly Random _random = new(System.Environment.TickCount);
-	private decimal _pipSize;
-	private Order _stopOrder;
-	private Order _takeProfitOrder;
+	private ExponentialMovingAverage _fast;
+	private ExponentialMovingAverage _slow;
 
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private decimal _entryPrice;
+	private int _cooldown;
+
+	/// <summary>
+	/// Fast EMA period.
+	/// </summary>
+	public int FastPeriod
+	{
+		get => _fastPeriod.Value;
+		set => _fastPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Slow EMA period.
+	/// </summary>
+	public int SlowPeriod
+	{
+		get => _slowPeriod.Value;
+		set => _slowPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Stop-loss distance in price steps.
+	/// </summary>
+	public int StopLossPoints
+	{
+		get => _stopLossPoints.Value;
+		set => _stopLossPoints.Value = value;
+	}
+
+	/// <summary>
+	/// Take-profit distance in price steps.
+	/// </summary>
+	public int TakeProfitPoints
+	{
+		get => _takeProfitPoints.Value;
+		set => _takeProfitPoints.Value = value;
+	}
+
+	/// <summary>
+	/// Initializes a new instance of the <see cref="PrecipiceStrategy"/> class.
+	/// </summary>
 	public PrecipiceStrategy()
 	{
-		_tradeVolume = Param(nameof(TradeVolume), 1m)
-			.SetDisplay("Trade volume", "Default order volume used for entries.", "Trading")
-			.SetGreaterThanZero();
+		_fastPeriod = Param(nameof(FastPeriod), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast Period", "Fast EMA period", "Indicator");
 
-		_stopLossTakeProfitPips = Param(nameof(StopLossTakeProfitPips), 100)
-			.SetDisplay("TP/SL distance (pips)", "Distance between the entry price and protective orders expressed in MetaTrader pips.", "Risk")
-			.SetNotNegative();
+		_slowPeriod = Param(nameof(SlowPeriod), 80)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow Period", "Slow EMA period", "Indicator");
 
-		_useBuy = Param(nameof(UseBuy), true)
-			.SetDisplay("Enable buy", "Allow the strategy to open long positions.", "Signals");
+		_stopLossPoints = Param(nameof(StopLossPoints), 200)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss", "Stop-loss in price steps", "Risk");
 
-		_useSell = Param(nameof(UseSell), true)
-			.SetDisplay("Enable sell", "Allow the strategy to open short positions.", "Signals");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle type", "Primary timeframe processed by the strategy.", "Data");
-	}
-
-	public decimal TradeVolume
-	{
-		get => _tradeVolume.Value;
-		set => _tradeVolume.Value = value;
-	}
-
-	public int StopLossTakeProfitPips
-	{
-		get => _stopLossTakeProfitPips.Value;
-		set => _stopLossTakeProfitPips.Value = value;
-	}
-
-	public bool UseBuy
-	{
-		get => _useBuy.Value;
-		set => _useBuy.Value = value;
-	}
-
-	public bool UseSell
-	{
-		get => _useSell.Value;
-		set => _useSell.Value = value;
-	}
-
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
+		_takeProfitPoints = Param(nameof(TakeProfitPoints), 400)
+			.SetNotNegative()
+			.SetDisplay("Take Profit", "Take-profit in price steps", "Risk");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-		=> [(Security, CandleType)];
+	{
+		yield return (Security, TimeSpan.FromMinutes(5).TimeFrame());
+	}
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
 
-		_stopOrder = null;
-		_takeProfitOrder = null;
-		_pipSize = 0m;
+		_fast = null;
+		_slow = null;
+		_prevFast = 0;
+		_prevSlow = 0;
+		_entryPrice = 0;
+		_cooldown = 0;
 	}
 
 	/// <inheritdoc />
@@ -95,118 +111,104 @@ public class PrecipiceStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		Volume = TradeVolume; // Align helper methods with the configured lot size.
+		_fast = new ExponentialMovingAverage { Length = FastPeriod };
+		_slow = new ExponentialMovingAverage { Length = SlowPeriod };
 
-		var security = Security ?? throw new InvalidOperationException("Security is not set.");
-
-		var priceStep = security.PriceStep ?? 0.0001m;
-		if (priceStep <= 0m)
-			priceStep = 0.0001m;
-
-		var decimals = security.Decimals;
-		_pipSize = decimals == 3 || decimals == 5 ? priceStep * 10m : priceStep;
-		if (_pipSize <= 0m)
-			_pipSize = priceStep;
-		if (_pipSize <= 0m)
-			_pipSize = 0.0001m; // Fallback to a tiny increment when the security lacks metadata.
-
-		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
+		var subscription = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
+		subscription.Bind(_fast, _slow, ProcessCandle);
+		subscription.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal fastValue, decimal slowValue)
 	{
 		if (candle.State != CandleStates.Finished)
-			return; // Wait for fully closed candles to reproduce MetaTrader behaviour.
-
-		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		if (Position != 0m)
-			return; // Trade only when no position exists.
-
-		var volume = TradeVolume;
-		if (volume <= 0m)
-			return;
-
-		var stopDistance = CalculateStopDistance();
-
-		if (UseBuy && _random.NextDouble() < 0.5)
+		if (!_fast.IsFormed || !_slow.IsFormed)
 		{
-			TryExecuteEntry(true, candle.ClosePrice, volume, stopDistance);
+			_prevFast = fastValue;
+			_prevSlow = slowValue;
 			return;
 		}
 
-		if (UseSell && _random.NextDouble() > 0.5)
-			TryExecuteEntry(false, candle.ClosePrice, volume, stopDistance);
-	}
-
-	private decimal CalculateStopDistance()
-	{
-		var pips = StopLossTakeProfitPips;
-
-		if (pips <= 0 || _pipSize <= 0m)
-			return 0m;
-
-		return pips * _pipSize;
-	}
-
-	private void TryExecuteEntry(bool isBuy, decimal price, decimal volume, decimal stopDistance)
-	{
-		if (price <= 0m)
-			return; // Skip entries when candle data is not valid.
-
-		if (isBuy)
-			BuyMarket(volume);
-		else
-			SellMarket(volume);
-
-		AttachProtection(isBuy, price, volume, stopDistance);
-	}
-
-	private void AttachProtection(bool isBuy, decimal price, decimal volume, decimal stopDistance)
-	{
-		CancelProtection();
-
-		if (stopDistance <= 0m)
-			return; // No protective orders requested.
-
-		var slPrice = isBuy ? price - stopDistance : price + stopDistance;
-		var tpPrice = isBuy ? price + stopDistance : price - stopDistance;
-
-		if (slPrice > 0m)
-			_stopOrder = isBuy ? SellLimit(volume, slPrice) : BuyLimit(volume, slPrice);
-
-		if (tpPrice > 0m)
-			_takeProfitOrder = isBuy ? SellLimit(volume, tpPrice) : BuyLimit(volume, tpPrice);
-	}
-
-	private void CancelProtection()
-	{
-		if (_stopOrder != null)
+		if (_cooldown > 0)
 		{
-			if (_stopOrder.State == OrderStates.Active)
-				CancelOrder(_stopOrder); // Cancel the active stop-loss order before replacing it.
-
-			_stopOrder = null;
+			_cooldown--;
+			_prevFast = fastValue;
+			_prevSlow = slowValue;
+			return;
 		}
 
-		if (_takeProfitOrder != null)
+		var close = candle.ClosePrice;
+		var step = Security?.PriceStep ?? 1m;
+
+		// Check SL/TP
+		if (Position > 0 && _entryPrice > 0)
 		{
-			if (_takeProfitOrder.State == OrderStates.Active)
-				CancelOrder(_takeProfitOrder); // Cancel the active take-profit order before replacing it.
+			if (StopLossPoints > 0 && close <= _entryPrice - StopLossPoints * step)
+			{
+				SellMarket();
+				_entryPrice = 0;
+				_cooldown = 80;
+				_prevFast = fastValue;
+				_prevSlow = slowValue;
+				return;
+			}
 
-			_takeProfitOrder = null;
+			if (TakeProfitPoints > 0 && close >= _entryPrice + TakeProfitPoints * step)
+			{
+				SellMarket();
+				_entryPrice = 0;
+				_cooldown = 80;
+				_prevFast = fastValue;
+				_prevSlow = slowValue;
+				return;
+			}
 		}
-	}
+		else if (Position < 0 && _entryPrice > 0)
+		{
+			if (StopLossPoints > 0 && close >= _entryPrice + StopLossPoints * step)
+			{
+				BuyMarket();
+				_entryPrice = 0;
+				_cooldown = 80;
+				_prevFast = fastValue;
+				_prevSlow = slowValue;
+				return;
+			}
 
-	/// <inheritdoc />
-	protected override void OnPositionReceived(Position position)
-	{
-		base.OnPositionReceived(position);
+			if (TakeProfitPoints > 0 && close <= _entryPrice - TakeProfitPoints * step)
+			{
+				BuyMarket();
+				_entryPrice = 0;
+				_cooldown = 80;
+				_prevFast = fastValue;
+				_prevSlow = slowValue;
+				return;
+			}
+		}
 
-		if (Position == 0m)
-			CancelProtection(); // Remove protective orders once the position is fully closed.
+		// EMA crossover
+		if (_prevFast <= _prevSlow && fastValue > slowValue && Position <= 0)
+		{
+			if (Position < 0)
+				BuyMarket();
+
+			BuyMarket();
+			_entryPrice = close;
+			_cooldown = 80;
+		}
+		else if (_prevFast >= _prevSlow && fastValue < slowValue && Position >= 0)
+		{
+			if (Position > 0)
+				SellMarket();
+
+			SellMarket();
+			_entryPrice = close;
+			_cooldown = 80;
+		}
+
+		_prevFast = fastValue;
+		_prevSlow = slowValue;
 	}
 }
-

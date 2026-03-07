@@ -1,63 +1,109 @@
-namespace StockSharp.Samples.Strategies;
-
 using System;
 using System.Collections.Generic;
 
-using StockSharp.Algo;
+using Ecng.Common;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
+using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
+namespace StockSharp.Samples.Strategies;
+
 /// <summary>
-/// Multi-indicator trend following strategy converted from the MetaTrader Lego EA.
-/// Combines dual moving averages and stochastic oscillator to confirm entries and exits.
+/// Lego EA multi-indicator trend following strategy using SMA crossover.
+/// Buys when fast SMA crosses above slow SMA, sells on reverse.
 /// </summary>
 public class LegoEaStrategy : Strategy
 {
-	private readonly StrategyParam<int> _maFastPeriod;
-	private readonly StrategyParam<int> _maSlowPeriod;
-	private readonly StrategyParam<int> _stochasticKPeriod;
-	private readonly StrategyParam<int> _stochasticDPeriod;
-	private readonly StrategyParam<decimal> _stochasticLevelUp;
-	private readonly StrategyParam<decimal> _stochasticLevelDown;
-	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _fastPeriod;
+	private readonly StrategyParam<int> _slowPeriod;
+	private readonly StrategyParam<int> _stopLossPoints;
+	private readonly StrategyParam<int> _takeProfitPoints;
 
-	private decimal _prevFastMa;
-	private decimal _prevSlowMa;
-	private decimal _prevStochK;
-	private decimal _prevStochD;
-	private bool _hasPrev;
+	private SimpleMovingAverage _fast;
+	private SimpleMovingAverage _slow;
 
-	public int MaFastPeriod { get => _maFastPeriod.Value; set => _maFastPeriod.Value = value; }
-	public int MaSlowPeriod { get => _maSlowPeriod.Value; set => _maSlowPeriod.Value = value; }
-	public int StochasticKPeriod { get => _stochasticKPeriod.Value; set => _stochasticKPeriod.Value = value; }
-	public int StochasticDPeriod { get => _stochasticDPeriod.Value; set => _stochasticDPeriod.Value = value; }
-	public decimal StochasticLevelUp { get => _stochasticLevelUp.Value; set => _stochasticLevelUp.Value = value; }
-	public decimal StochasticLevelDown { get => _stochasticLevelDown.Value; set => _stochasticLevelDown.Value = value; }
-	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private decimal _entryPrice;
+	private int _cooldown;
 
+	/// <summary>
+	/// Fast SMA period.
+	/// </summary>
+	public int FastPeriod
+	{
+		get => _fastPeriod.Value;
+		set => _fastPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Slow SMA period.
+	/// </summary>
+	public int SlowPeriod
+	{
+		get => _slowPeriod.Value;
+		set => _slowPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Stop-loss distance in price steps.
+	/// </summary>
+	public int StopLossPoints
+	{
+		get => _stopLossPoints.Value;
+		set => _stopLossPoints.Value = value;
+	}
+
+	/// <summary>
+	/// Take-profit distance in price steps.
+	/// </summary>
+	public int TakeProfitPoints
+	{
+		get => _takeProfitPoints.Value;
+		set => _takeProfitPoints.Value = value;
+	}
+
+	/// <summary>
+	/// Initializes a new instance of the <see cref="LegoEaStrategy"/> class.
+	/// </summary>
 	public LegoEaStrategy()
 	{
-		_maFastPeriod = Param(nameof(MaFastPeriod), 14)
-			.SetDisplay("Fast MA Period", "Fast moving average lookback", "Indicators");
+		_fastPeriod = Param(nameof(FastPeriod), 14)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast Period", "Fast SMA period", "Indicator");
 
-		_maSlowPeriod = Param(nameof(MaSlowPeriod), 67)
-			.SetDisplay("Slow MA Period", "Slow moving average lookback", "Indicators");
+		_slowPeriod = Param(nameof(SlowPeriod), 67)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow Period", "Slow SMA period", "Indicator");
 
-		_stochasticKPeriod = Param(nameof(StochasticKPeriod), 5)
-			.SetDisplay("Stochastic %K", "%K calculation length", "Indicators");
+		_stopLossPoints = Param(nameof(StopLossPoints), 200)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss", "Stop-loss in price steps", "Risk");
 
-		_stochasticDPeriod = Param(nameof(StochasticDPeriod), 3)
-			.SetDisplay("Stochastic %D", "%D smoothing length", "Indicators");
+		_takeProfitPoints = Param(nameof(TakeProfitPoints), 400)
+			.SetNotNegative()
+			.SetDisplay("Take Profit", "Take-profit in price steps", "Risk");
+	}
 
-		_stochasticLevelUp = Param(nameof(StochasticLevelUp), 30m)
-			.SetDisplay("Stochastic Oversold", "Oversold level", "Levels");
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		yield return (Security, TimeSpan.FromMinutes(5).TimeFrame());
+	}
 
-		_stochasticLevelDown = Param(nameof(StochasticLevelDown), 70m)
-			.SetDisplay("Stochastic Overbought", "Overbought level", "Levels");
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Time frame", "General");
+		_fast = null;
+		_slow = null;
+		_prevFast = 0;
+		_prevSlow = 0;
+		_entryPrice = 0;
+		_cooldown = 0;
 	}
 
 	/// <inheritdoc />
@@ -65,90 +111,104 @@ public class LegoEaStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_hasPrev = false;
+		_fast = new SimpleMovingAverage { Length = FastPeriod };
+		_slow = new SimpleMovingAverage { Length = SlowPeriod };
 
-		var maFast = new SimpleMovingAverage { Length = MaFastPeriod };
-		var maSlow = new SimpleMovingAverage { Length = MaSlowPeriod };
-		var stochastic = new StochasticOscillator();
-		stochastic.K.Length = StochasticKPeriod;
-		stochastic.D.Length = StochasticDPeriod;
-
-		var subscription = SubscribeCandles(CandleType);
-
-		subscription
-			.BindEx(maFast, maSlow, stochastic, ProcessCandle)
-			.Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, maFast);
-			DrawIndicator(area, maSlow);
-			DrawOwnTrades(area);
-		}
+		var subscription = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
+		subscription.Bind(_fast, _slow, ProcessCandle);
+		subscription.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue maFastVal, IIndicatorValue maSlowVal, IIndicatorValue stochVal)
+	private void ProcessCandle(ICandleMessage candle, decimal fastValue, decimal slowValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!maFastVal.IsFinal || !maSlowVal.IsFinal || !stochVal.IsFinal)
-			return;
-
-		if (!maFastVal.IsFormed || !maSlowVal.IsFormed || !stochVal.IsFormed)
-			return;
-
-		var fastMa = maFastVal.GetValue<decimal>();
-		var slowMa = maSlowVal.GetValue<decimal>();
-
-		var stoch = (StochasticOscillatorValue)stochVal;
-		var stochK = stoch.K ?? 50m;
-		var stochD = stoch.D ?? 50m;
-
-		if (!_hasPrev)
+		if (!_fast.IsFormed || !_slow.IsFormed)
 		{
-			_prevFastMa = fastMa;
-			_prevSlowMa = slowMa;
-			_prevStochK = stochK;
-			_prevStochD = stochD;
-			_hasPrev = true;
+			_prevFast = fastValue;
+			_prevSlow = slowValue;
 			return;
 		}
 
-		// MA crossover signals
-		var maBuy = fastMa > slowMa;
-		var maSell = fastMa < slowMa;
-
-		// Stochastic signals
-		var stoBuy = _prevStochK > _prevStochD && _prevStochD < StochasticLevelUp;
-		var stoSell = _prevStochK < _prevStochD && _prevStochD > StochasticLevelDown;
-
-		var openBuy = maBuy && stoBuy;
-		var openSell = maSell && stoSell;
-		var closeBuy = maSell || stoSell;
-		var closeSell = maBuy || stoBuy;
-
-		if (Position == 0)
+		if (_cooldown > 0)
 		{
-			if (openBuy && !openSell)
-				BuyMarket();
-			else if (openSell && !openBuy)
+			_cooldown--;
+			_prevFast = fastValue;
+			_prevSlow = slowValue;
+			return;
+		}
+
+		var close = candle.ClosePrice;
+		var step = Security?.PriceStep ?? 1m;
+
+		// Check SL/TP
+		if (Position > 0 && _entryPrice > 0)
+		{
+			if (StopLossPoints > 0 && close <= _entryPrice - StopLossPoints * step)
+			{
 				SellMarket();
+				_entryPrice = 0;
+				_cooldown = 80;
+				_prevFast = fastValue;
+				_prevSlow = slowValue;
+				return;
+			}
+
+			if (TakeProfitPoints > 0 && close >= _entryPrice + TakeProfitPoints * step)
+			{
+				SellMarket();
+				_entryPrice = 0;
+				_cooldown = 80;
+				_prevFast = fastValue;
+				_prevSlow = slowValue;
+				return;
+			}
 		}
-		else if (Position > 0 && closeBuy)
+		else if (Position < 0 && _entryPrice > 0)
 		{
-			SellMarket();
-		}
-		else if (Position < 0 && closeSell)
-		{
-			BuyMarket();
+			if (StopLossPoints > 0 && close >= _entryPrice + StopLossPoints * step)
+			{
+				BuyMarket();
+				_entryPrice = 0;
+				_cooldown = 80;
+				_prevFast = fastValue;
+				_prevSlow = slowValue;
+				return;
+			}
+
+			if (TakeProfitPoints > 0 && close <= _entryPrice - TakeProfitPoints * step)
+			{
+				BuyMarket();
+				_entryPrice = 0;
+				_cooldown = 80;
+				_prevFast = fastValue;
+				_prevSlow = slowValue;
+				return;
+			}
 		}
 
-		_prevFastMa = fastMa;
-		_prevSlowMa = slowMa;
-		_prevStochK = stochK;
-		_prevStochD = stochD;
+		// SMA crossover
+		if (_prevFast <= _prevSlow && fastValue > slowValue && Position <= 0)
+		{
+			if (Position < 0)
+				BuyMarket();
+
+			BuyMarket();
+			_entryPrice = close;
+			_cooldown = 80;
+		}
+		else if (_prevFast >= _prevSlow && fastValue < slowValue && Position >= 0)
+		{
+			if (Position > 0)
+				SellMarket();
+
+			SellMarket();
+			_entryPrice = close;
+			_cooldown = 80;
+		}
+
+		_prevFast = fastValue;
+		_prevSlow = slowValue;
 	}
 }

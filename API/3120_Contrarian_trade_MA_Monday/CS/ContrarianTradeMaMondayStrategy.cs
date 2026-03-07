@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,151 +11,86 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Weekly contrarian strategy that opens positions on Monday when price closes beyond recent extremes or diverges from a moving average.
+/// Contrarian Trade MA Monday strategy using SMA crossover with mean reversion.
+/// Buys when fast SMA crosses above slow SMA, sells on reverse.
 /// </summary>
 public class ContrarianTradeMaMondayStrategy : Strategy
 {
-	private readonly StrategyParam<int> _calcPeriod;
-	private readonly StrategyParam<int> _stopLossPips;
-	private readonly StrategyParam<int> _maPeriod;
-	private readonly StrategyParam<int> _maShift;
-	private readonly StrategyParam<MovingAverageMethods> _maMethod;
-	private readonly StrategyParam<AppliedPriceTypes> _appliedPrice;
-	private readonly StrategyParam<DataType> _tradeCandleType;
-	private readonly StrategyParam<DataType> _maCandleType;
+	private readonly StrategyParam<int> _fastPeriod;
+	private readonly StrategyParam<int> _slowPeriod;
+	private readonly StrategyParam<int> _stopLossPoints;
+	private readonly StrategyParam<int> _takeProfitPoints;
 
-	private Highest _highest = null!;
-	private Lowest _lowest = null!;
-	private DecimalLengthIndicator _maIndicator = null!;
-	private readonly Queue<decimal> _maValues = new();
+	private SimpleMovingAverage _fast;
+	private SimpleMovingAverage _slow;
 
-	private decimal? _currentMaValue;
-	private decimal? _previousMaValue;
-	private decimal? _latestHighest;
-	private decimal? _latestLowest;
-	private decimal? _previousWeeklyClose;
-	private decimal? _currentWeeklyOpen;
-	private bool _weeklyDataReady;
-
-	private DateTimeOffset? _positionEntryTime;
-	private decimal? _stopLossPrice;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private decimal _entryPrice;
+	private int _cooldown;
 
 	/// <summary>
-	/// Number of higher timeframe candles used for calculating extremes.
+	/// Fast SMA period.
 	/// </summary>
-	public int CalcPeriod
+	public int FastPeriod
 	{
-		get => _calcPeriod.Value;
-		set => _calcPeriod.Value = value;
+		get => _fastPeriod.Value;
+		set => _fastPeriod.Value = value;
 	}
 
 	/// <summary>
-	/// Stop-loss size expressed in pips (price steps).
+	/// Slow SMA period.
 	/// </summary>
-	public int StopLossPips
+	public int SlowPeriod
 	{
-		get => _stopLossPips.Value;
-		set => _stopLossPips.Value = value;
+		get => _slowPeriod.Value;
+		set => _slowPeriod.Value = value;
 	}
 
 	/// <summary>
-	/// Moving average period length.
+	/// Stop-loss distance in price steps.
 	/// </summary>
-	public int MaPeriod
+	public int StopLossPoints
 	{
-		get => _maPeriod.Value;
-		set => _maPeriod.Value = value;
+		get => _stopLossPoints.Value;
+		set => _stopLossPoints.Value = value;
 	}
 
 	/// <summary>
-	/// Number of bars used to shift the moving average forward.
+	/// Take-profit distance in price steps.
 	/// </summary>
-	public int MaShift
+	public int TakeProfitPoints
 	{
-		get => _maShift.Value;
-		set => _maShift.Value = value;
+		get => _takeProfitPoints.Value;
+		set => _takeProfitPoints.Value = value;
 	}
 
 	/// <summary>
-	/// Moving average smoothing method.
-	/// </summary>
-	public MovingAverageMethods MaMethod
-	{
-		get => _maMethod.Value;
-		set => _maMethod.Value = value;
-	}
-
-	/// <summary>
-	/// Price source used in the moving average calculation.
-	/// </summary>
-	public AppliedPriceTypes AppliedPrice
-	{
-		get => _appliedPrice.Value;
-		set => _appliedPrice.Value = value;
-	}
-
-	/// <summary>
-	/// Primary candle type that triggers entries and exits.
-	/// </summary>
-	public DataType TradeCandleType
-	{
-		get => _tradeCandleType.Value;
-		set => _tradeCandleType.Value = value;
-	}
-
-	/// <summary>
-	/// Higher timeframe candle type used for the moving average and extreme levels.
-	/// </summary>
-	public DataType MaCandleType
-	{
-		get => _maCandleType.Value;
-		set => _maCandleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes configurable parameters with defaults matching the original MetaTrader expert.
+	/// Initializes a new instance of the <see cref="ContrarianTradeMaMondayStrategy"/> class.
 	/// </summary>
 	public ContrarianTradeMaMondayStrategy()
 	{
-		_calcPeriod = Param(nameof(CalcPeriod), 4)
+		_fastPeriod = Param(nameof(FastPeriod), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("Calc Period", "Lookback of higher timeframe candles for extremes", "General")
-			
-			.SetOptimize(3, 12, 1);
+			.SetDisplay("Fast Period", "Fast SMA period", "Indicator");
 
-		_stopLossPips = Param(nameof(StopLossPips), 300)
-			.SetNotNegative()
-			.SetDisplay("Stop Loss (pips)", "Stop-loss distance expressed in price steps", "Risk")
-			
-			.SetOptimize(100, 600, 50);
-
-		_maPeriod = Param(nameof(MaPeriod), 7)
+		_slowPeriod = Param(nameof(SlowPeriod), 100)
 			.SetGreaterThanZero()
-			.SetDisplay("MA Period", "Moving average length on the higher timeframe", "Moving Average")
-			
-			.SetOptimize(3, 20, 1);
+			.SetDisplay("Slow Period", "Slow SMA period", "Indicator");
 
-		_maShift = Param(nameof(MaShift), 0)
+		_stopLossPoints = Param(nameof(StopLossPoints), 200)
 			.SetNotNegative()
-			.SetDisplay("MA Shift", "Horizontal shift applied to the moving average", "Moving Average");
+			.SetDisplay("Stop Loss", "Stop-loss in price steps", "Risk");
 
-		_maMethod = Param(nameof(MaMethod), MovingAverageMethods.LinearWeighted)
-			.SetDisplay("MA Method", "Moving average smoothing method", "Moving Average");
-
-		_appliedPrice = Param(nameof(AppliedPrice), AppliedPriceTypes.Weighted)
-			.SetDisplay("Applied Price", "Price source fed into the moving average", "Moving Average");
-
-		_tradeCandleType = Param(nameof(TradeCandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Trade Candle Type", "Primary timeframe that triggers entries", "General");
-
-		_maCandleType = Param(nameof(MaCandleType), TimeSpan.FromDays(7).TimeFrame())
-			.SetDisplay("MA Candle Type", "Higher timeframe used for the MA and extremes", "General");
+		_takeProfitPoints = Param(nameof(TakeProfitPoints), 400)
+			.SetNotNegative()
+			.SetDisplay("Take Profit", "Take-profit in price steps", "Risk");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return [(Security, TradeCandleType), (Security, MaCandleType)];
+		yield return (Security, TimeSpan.FromMinutes(5).TimeFrame());
 	}
 
 	/// <inheritdoc />
@@ -166,19 +98,12 @@ public class ContrarianTradeMaMondayStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_highest = null!;
-		_lowest = null!;
-		_maIndicator = null!;
-		_maValues.Clear();
-		_currentMaValue = null;
-		_previousMaValue = null;
-		_latestHighest = null;
-		_latestLowest = null;
-		_previousWeeklyClose = null;
-		_currentWeeklyOpen = null;
-		_weeklyDataReady = false;
-		_positionEntryTime = null;
-		_stopLossPrice = null;
+		_fast = null;
+		_slow = null;
+		_prevFast = 0;
+		_prevSlow = 0;
+		_entryPrice = 0;
+		_cooldown = 0;
 	}
 
 	/// <inheritdoc />
@@ -186,258 +111,104 @@ public class ContrarianTradeMaMondayStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_highest = new Highest { Length = Math.Max(1, CalcPeriod) };
-		_lowest = new Lowest { Length = Math.Max(1, CalcPeriod) };
-		_maIndicator = CreateMovingAverage(MaMethod, MaPeriod);
+		_fast = new SimpleMovingAverage { Length = FastPeriod };
+		_slow = new SimpleMovingAverage { Length = SlowPeriod };
 
-		var weeklySubscription = SubscribeCandles(MaCandleType);
-		weeklySubscription
-			.Bind(ProcessWeeklyCandle)
-			.Start();
-
-		var tradingSubscription = SubscribeCandles(TradeCandleType);
-		tradingSubscription
-			.Bind(ProcessTradingCandle)
-			.Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, tradingSubscription);
-			DrawIndicator(area, _maIndicator);
-			DrawOwnTrades(area);
-		}
+		var subscription = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
+		subscription.Bind(_fast, _slow, ProcessCandle);
+		subscription.Start();
 	}
 
-	private void ProcessWeeklyCandle(ICandleMessage candle)
-	{
-		var highestValue = _highest.Process(candle).ToNullableDecimal();
-		var lowestValue = _lowest.Process(candle).ToNullableDecimal();
-		var isFinished = candle.State == CandleStates.Finished;
-		var price = GetAppliedPrice(candle, AppliedPrice);
-		var maValue = _maIndicator.Process(new DecimalIndicatorValue(_maIndicator, price, candle.OpenTime)).ToNullableDecimal();
-
-		if (!isFinished)
-			return;
-
-		if (highestValue == null || lowestValue == null || maValue == null)
-			return;
-
-		var shiftedMa = GetShiftedMaValue(maValue.Value);
-		if (shiftedMa == null)
-			return;
-
-		_previousMaValue = _currentMaValue;
-		_currentMaValue = shiftedMa;
-		_latestHighest = highestValue.Value;
-		_latestLowest = lowestValue.Value;
-		_previousWeeklyClose = candle.ClosePrice;
-		_weeklyDataReady = _highest.IsFormed && _lowest.IsFormed && _maIndicator.IsFormed && _previousMaValue != null;
-	}
-
-	private void ProcessTradingCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal fastValue, decimal slowValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (candle.OpenTime.DayOfWeek == DayOfWeek.Monday)
-			_currentWeeklyOpen = candle.OpenPrice;
-
-		if (Position != 0)
+		if (!_fast.IsFormed || !_slow.IsFormed)
 		{
-			if (IsFormedAndOnlineAndAllowTrading())
-			{
-				if (CheckStopLoss(candle))
-					return;
+			_prevFast = fastValue;
+			_prevSlow = slowValue;
+			return;
+		}
 
-				if (CheckTimeExit(candle))
-					return;
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+			_prevFast = fastValue;
+			_prevSlow = slowValue;
+			return;
+		}
+
+		var close = candle.ClosePrice;
+		var step = Security?.PriceStep ?? 1m;
+
+		// Check SL/TP
+		if (Position > 0 && _entryPrice > 0)
+		{
+			if (StopLossPoints > 0 && close <= _entryPrice - StopLossPoints * step)
+			{
+				SellMarket();
+				_entryPrice = 0;
+				_cooldown = 80;
+				_prevFast = fastValue;
+				_prevSlow = slowValue;
+				return;
+			}
+
+			if (TakeProfitPoints > 0 && close >= _entryPrice + TakeProfitPoints * step)
+			{
+				SellMarket();
+				_entryPrice = 0;
+				_cooldown = 80;
+				_prevFast = fastValue;
+				_prevSlow = slowValue;
+				return;
+			}
+		}
+		else if (Position < 0 && _entryPrice > 0)
+		{
+			if (StopLossPoints > 0 && close >= _entryPrice + StopLossPoints * step)
+			{
+				BuyMarket();
+				_entryPrice = 0;
+				_cooldown = 80;
+				_prevFast = fastValue;
+				_prevSlow = slowValue;
+				return;
+			}
+
+			if (TakeProfitPoints > 0 && close <= _entryPrice - TakeProfitPoints * step)
+			{
+				BuyMarket();
+				_entryPrice = 0;
+				_cooldown = 80;
+				_prevFast = fastValue;
+				_prevSlow = slowValue;
+				return;
 			}
 		}
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (candle.OpenTime.DayOfWeek == DayOfWeek.Monday)
-			TryEnter(candle);
-	}
-
-	private void TryEnter(ICandleMessage candle)
-	{
-		if (Volume <= 0)
-			return;
-
-		if (Position != 0)
-			return;
-
-		if (!_weeklyDataReady)
-			return;
-
-		if (_latestHighest is not decimal highest ||
-			_latestLowest is not decimal lowest ||
-			_previousWeeklyClose is not decimal prevClose ||
-			_previousMaValue is not decimal maPrev ||
-			_currentWeeklyOpen is not decimal weeklyOpen)
-			return;
-
-		var stopDistance = GetStopLossDistance();
-		var closeTime = candle.CloseTime;
-		var closePrice = candle.ClosePrice;
-
-		if (highest < prevClose || maPrev > weeklyOpen)
+		// SMA crossover
+		if (_prevFast <= _prevSlow && fastValue > slowValue && Position <= 0)
 		{
-			BuyMarket(Volume);
-			_positionEntryTime = closeTime;
-			_stopLossPrice = stopDistance > 0m ? closePrice - stopDistance : null;
-			return;
+			if (Position < 0)
+				BuyMarket();
+
+			BuyMarket();
+			_entryPrice = close;
+			_cooldown = 80;
+		}
+		else if (_prevFast >= _prevSlow && fastValue < slowValue && Position >= 0)
+		{
+			if (Position > 0)
+				SellMarket();
+
+			SellMarket();
+			_entryPrice = close;
+			_cooldown = 80;
 		}
 
-		if (lowest > prevClose || maPrev < weeklyOpen)
-		{
-			SellMarket(Volume);
-			_positionEntryTime = closeTime;
-			_stopLossPrice = stopDistance > 0m ? closePrice + stopDistance : null;
-		}
-	}
-
-	private bool CheckStopLoss(ICandleMessage candle)
-	{
-		if (_stopLossPrice == null)
-			return false;
-
-		if (Position > 0 && candle.LowPrice <= _stopLossPrice)
-		{
-			SellMarket(Position);
-			ResetPositionState();
-			return true;
-		}
-
-		if (Position < 0 && candle.HighPrice >= _stopLossPrice)
-		{
-			BuyMarket(Math.Abs(Position));
-			ResetPositionState();
-			return true;
-		}
-
-		return false;
-	}
-
-	private bool CheckTimeExit(ICandleMessage candle)
-	{
-		if (_positionEntryTime == null)
-			return false;
-
-		if (candle.CloseTime - _positionEntryTime < TimeSpan.FromDays(7))
-			return false;
-
-		if (Position > 0)
-		{
-			SellMarket(Position);
-		}
-		else if (Position < 0)
-		{
-			BuyMarket(Math.Abs(Position));
-		}
-
-		ResetPositionState();
-		return true;
-	}
-
-	private void ResetPositionState()
-	{
-		_positionEntryTime = null;
-		_stopLossPrice = null;
-	}
-
-	private decimal? GetShiftedMaValue(decimal maValue)
-	{
-		_maValues.Enqueue(maValue);
-
-		var requiredCount = MaShift + 1;
-		while (_maValues.Count > requiredCount)
-			_maValues.Dequeue();
-
-		if (_maValues.Count < requiredCount)
-			return null;
-
-		var index = _maValues.Count - MaShift - 1;
-		var counter = 0;
-		decimal selected = 0m;
-		foreach (var value in _maValues)
-		{
-			if (counter == index)
-			{
-				selected = value;
-				break;
-			}
-
-			counter++;
-		}
-
-		return selected;
-	}
-
-	private decimal GetStopLossDistance()
-	{
-		if (StopLossPips <= 0)
-			return 0m;
-
-		var step = Security?.PriceStep;
-		if (step == null || step.Value <= 0m)
-			return 0m;
-
-		return step.Value * StopLossPips;
-	}
-
-	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPriceTypes type)
-	{
-		return type switch
-		{
-			AppliedPriceTypes.Open => candle.OpenPrice,
-			AppliedPriceTypes.High => candle.HighPrice,
-			AppliedPriceTypes.Low => candle.LowPrice,
-			AppliedPriceTypes.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPriceTypes.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			AppliedPriceTypes.Weighted => (candle.HighPrice + candle.LowPrice + (2m * candle.ClosePrice)) / 4m,
-			_ => candle.ClosePrice,
-		};
-	}
-
-	private static DecimalLengthIndicator CreateMovingAverage(MovingAverageMethods method, int length)
-	{
-		return method switch
-		{
-			MovingAverageMethods.Simple => new SMA { Length = length },
-			MovingAverageMethods.Exponential => new EMA { Length = length },
-			MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = length },
-			MovingAverageMethods.LinearWeighted => new WeightedMovingAverage { Length = length },
-			_ => new EMA { Length = length },
-		};
-	}
-
-	/// <summary>
-	/// Moving average methods supported by the strategy.
-	/// </summary>
-	public enum MovingAverageMethods
-	{
-		Simple,
-		Exponential,
-		Smoothed,
-		LinearWeighted
-	}
-
-	/// <summary>
-	/// Price sources that can be fed into the moving average.
-	/// </summary>
-	public enum AppliedPriceTypes
-	{
-		Close,
-		Open,
-		High,
-		Low,
-		Median,
-		Typical,
-		Weighted
+		_prevFast = fastValue;
+		_prevSlow = slowValue;
 	}
 }
-
