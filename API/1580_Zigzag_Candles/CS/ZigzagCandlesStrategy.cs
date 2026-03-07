@@ -25,6 +25,7 @@ public class ZigzagCandlesStrategy : Strategy
 	private decimal _lastZigzagHigh;
 	private decimal _lastZigzagLow;
 	private int _direction;
+	private bool _signalFired;
 
 	public int ZigzagLength
 	{
@@ -42,7 +43,7 @@ public class ZigzagCandlesStrategy : Strategy
 	{
 		_zigzagLength = Param(nameof(ZigzagLength), 5)
 			.SetDisplay("ZigZag Length", "Lookback for pivot search", "ZigZag");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -58,12 +59,19 @@ public class ZigzagCandlesStrategy : Strategy
 		_lastZigzagHigh = 0m;
 		_lastZigzagLow = 0m;
 		_direction = 0;
+		_signalFired = false;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+
+		_lastZigzag = 0m;
+		_lastZigzagHigh = 0m;
+		_lastZigzagLow = 0m;
+		_direction = 0;
+		_signalFired = false;
 
 		var highest = new Highest { Length = ZigzagLength };
 		var lowest = new Lowest { Length = ZigzagLength };
@@ -86,22 +94,35 @@ public class ZigzagCandlesStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		var prevDirection = _direction;
+
 		if (candle.HighPrice >= highest && _direction != 1)
 		{
 			_lastZigzag = candle.HighPrice;
 			_lastZigzagHigh = candle.HighPrice;
 			_direction = 1;
+			_signalFired = false;
 		}
 		else if (candle.LowPrice <= lowest && _direction != -1)
 		{
 			_lastZigzag = candle.LowPrice;
 			_lastZigzagLow = candle.LowPrice;
 			_direction = -1;
+			_signalFired = false;
 		}
 
-		if (_lastZigzag == _lastZigzagLow && Position <= 0)
+		if (_signalFired)
+			return;
+
+		if (_direction == -1 && prevDirection != -1 && Position <= 0)
+		{
 			BuyMarket();
-		else if (_lastZigzag == _lastZigzagHigh && Position >= 0)
+			_signalFired = true;
+		}
+		else if (_direction == 1 && prevDirection != 1 && Position >= 0)
+		{
 			SellMarket();
+			_signalFired = true;
+		}
 	}
 }

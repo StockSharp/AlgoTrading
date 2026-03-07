@@ -50,7 +50,7 @@ public class ThreeCommasHaMaStrategy : Strategy
 			.SetDisplay("MA Fast", "Fast moving average period", "MA");
 		_maSlow = Param(nameof(MaSlow), 18)
 			.SetDisplay("MA Slow", "Slow moving average period", "MA");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -72,8 +72,8 @@ public class ThreeCommasHaMaStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var ma1 = new EMA { Length = MaFast };
-		var ma2 = new EMA { Length = MaSlow };
+		var ma1 = new ExponentialMovingAverage { Length = MaFast };
+		var ma2 = new ExponentialMovingAverage { Length = MaSlow };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -112,9 +112,9 @@ public class ThreeCommasHaMaStrategy : Strategy
 			SellMarket();
 		}
 
-		if (Position > 0 && (candle.ClosePrice < ma2 || candle.ClosePrice <= _stopPrice))
+		if (Position > 0 && candle.ClosePrice < ma2)
 			SellMarket();
-		else if (Position < 0 && (candle.ClosePrice > ma2 || candle.ClosePrice >= _stopPrice))
+		else if (Position < 0 && candle.ClosePrice > ma2)
 			BuyMarket();
 
 		_haOpenPrev = haOpen;

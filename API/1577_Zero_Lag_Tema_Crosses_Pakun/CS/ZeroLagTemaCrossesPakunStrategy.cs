@@ -24,97 +24,79 @@ public class ZeroLagTemaCrossesPakunStrategy : Strategy
 	private readonly StrategyParam<decimal> _riskReward;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private TripleExponentialMovingAverage _fastTema = null!;
-	private TripleExponentialMovingAverage _slowTema = null!;
-	private Highest _highest = null!;
-	private Lowest _lowest = null!;
-
 	private decimal _prevFast;
 	private decimal _prevSlow;
 	private decimal _stopPrice;
 	private decimal _takeProfitPrice;
 	private bool _entryPlaced;
 
-	/// <summary>
-	/// Lookback period for stop calculation.
-	/// </summary>
-	public int Lookback
-	{
-		get => _lookback.Value;
-		set => _lookback.Value = value;
-	}
+	public int Lookback { get => _lookback.Value; set => _lookback.Value = value; }
+	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
+	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
+	public decimal RiskReward { get => _riskReward.Value; set => _riskReward.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Fast TEMA period.
-	/// </summary>
-	public int FastPeriod
-	{
-		get => _fastPeriod.Value;
-		set => _fastPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Slow TEMA period.
-	/// </summary>
-	public int SlowPeriod
-	{
-		get => _slowPeriod.Value;
-		set => _slowPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Risk-reward ratio for exits.
-	/// </summary>
-	public decimal RiskReward
-	{
-		get => _riskReward.Value;
-		set => _riskReward.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type for strategy.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="ZeroLagTemaCrossesPakunStrategy"/>.
-	/// </summary>
 	public ZeroLagTemaCrossesPakunStrategy()
 	{
 		_lookback = Param(nameof(Lookback), 20).SetDisplay("Lookback", "Lookback period", "Indicators");
-		_fastPeriod = Param(nameof(FastPeriod), 69).SetDisplay("Fast Period", "Fast TEMA length", "Indicators");
-		_slowPeriod = Param(nameof(SlowPeriod), 130).SetDisplay("Slow Period", "Slow TEMA length", "Indicators");
+		_fastPeriod = Param(nameof(FastPeriod), 20).SetDisplay("Fast Period", "Fast TEMA length", "Indicators");
+		_slowPeriod = Param(nameof(SlowPeriod), 50).SetDisplay("Slow Period", "Slow TEMA length", "Indicators");
 		_riskReward = Param(nameof(RiskReward), 1.5m).SetDisplay("Risk/Reward", "Take profit ratio", "Risk");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Candle timeframe", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame()).SetDisplay("Candle Type", "Candle timeframe", "General");
 	}
 
-	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFast = 0;
+		_prevSlow = 0;
+		_stopPrice = 0;
+		_takeProfitPrice = 0;
+		_entryPlaced = false;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
-		_fastTema = new TripleExponentialMovingAverage { Length = FastPeriod };
-		_slowTema = new TripleExponentialMovingAverage { Length = SlowPeriod };
-		_highest = new Highest { Length = Lookback };
-		_lowest = new Lowest { Length = Lookback };
+		base.OnStarted2(time);
+
+		var fastTema = new TripleExponentialMovingAverage { Length = FastPeriod };
+		var slowTema = new TripleExponentialMovingAverage { Length = SlowPeriod };
+		var highest = new Highest { Length = Lookback };
+		var lowest = new Lowest { Length = Lookback };
+
+		_prevFast = 0;
+		_prevSlow = 0;
+		_stopPrice = 0;
+		_takeProfitPrice = 0;
+		_entryPlaced = false;
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(_fastTema, _slowTema, _highest, _lowest, ProcessCandle)
-			.Start();
+		subscription.Bind(fastTema, slowTema, highest, lowest, ProcessCandle).Start();
 
-		base.OnStarted2(time);
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow, decimal highest, decimal lowest)
+	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow, decimal highestVal, decimal lowestVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (_prevFast == 0)
+		{
+			_prevFast = fast;
+			_prevSlow = slow;
 			return;
+		}
 
 		var crossUp = _prevFast <= _prevSlow && fast > slow;
 		var crossDown = _prevFast >= _prevSlow && fast < slow;
@@ -127,50 +109,36 @@ public class ZeroLagTemaCrossesPakunStrategy : Strategy
 		{
 			if (crossUp && Position <= 0)
 			{
-			    CancelActiveOrders();
-			    var volume = Volume + Math.Abs(Position);
-			    BuyMarket(volume);
-			    _entryPlaced = true;
-			    _stopPrice = lowest;
-			    _takeProfitPrice = price + (price - _stopPrice) * RiskReward;
+				BuyMarket();
+				_entryPlaced = true;
+				_stopPrice = lowestVal;
+				_takeProfitPrice = price + (price - _stopPrice) * RiskReward;
 			}
 			else if (crossDown && Position >= 0)
 			{
-			    CancelActiveOrders();
-			    var volume = Volume + Math.Abs(Position);
-			    SellMarket(volume);
-			    _entryPlaced = true;
-			    _stopPrice = highest;
-			    _takeProfitPrice = price - (_stopPrice - price) * RiskReward;
+				SellMarket();
+				_entryPlaced = true;
+				_stopPrice = highestVal;
+				_takeProfitPrice = price - (_stopPrice - price) * RiskReward;
 			}
 		}
 		else
 		{
 			if (Position > 0)
 			{
-			    if (candle.LowPrice <= _stopPrice)
-			    {
-			        SellMarket(Position);
-			        _entryPlaced = false;
-			    }
-			    else if (candle.HighPrice >= _takeProfitPrice)
-			    {
-			        SellMarket(Position);
-			        _entryPlaced = false;
-			    }
+				if (candle.LowPrice <= _stopPrice || candle.HighPrice >= _takeProfitPrice)
+				{
+					SellMarket();
+					_entryPlaced = false;
+				}
 			}
 			else if (Position < 0)
 			{
-			    if (candle.HighPrice >= _stopPrice)
-			    {
-			        BuyMarket(Math.Abs(Position));
-			        _entryPlaced = false;
-			    }
-			    else if (candle.LowPrice <= _takeProfitPrice)
-			    {
-			        BuyMarket(Math.Abs(Position));
-			        _entryPlaced = false;
-			    }
+				if (candle.HighPrice >= _stopPrice || candle.LowPrice <= _takeProfitPrice)
+				{
+					BuyMarket();
+					_entryPlaced = false;
+				}
 			}
 		}
 	}

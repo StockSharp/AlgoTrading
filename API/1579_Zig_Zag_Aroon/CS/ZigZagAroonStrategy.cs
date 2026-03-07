@@ -46,7 +46,7 @@ public class ZigZagAroonStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Aroon Period", "Aroon indicator period", "Aroon");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -69,7 +69,7 @@ public class ZigZagAroonStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var sma = new SimpleMovingAverage { Length = 2 };
+		var sma = new SimpleMovingAverage { Length = 10 };
 
 		_highs.Clear();
 		_lows.Clear();
@@ -130,12 +130,16 @@ public class ZigZagAroonStrategy : Strategy
 			return;
 
 		// Manual Aroon calculation
-		var aroonHighs = _highs.Skip(_highs.Count - AroonLength - 1).ToList();
-		var aroonLows = _lows.Skip(_lows.Count - AroonLength - 1).ToList();
+		var count = AroonLength + 1;
+		if (_highs.Count < count || _lows.Count < count)
+			return;
+
+		var aroonHighs = _highs.GetRange(_highs.Count - count, count);
+		var aroonLows = _lows.GetRange(_lows.Count - count, count);
 
 		var highestIdx = 0;
 		var lowestIdx = 0;
-		for (int i = 1; i < aroonHighs.Count; i++)
+		for (int i = 1; i < count; i++)
 		{
 			if (aroonHighs[i] >= aroonHighs[highestIdx]) highestIdx = i;
 			if (aroonLows[i] <= aroonLows[lowestIdx]) lowestIdx = i;

@@ -15,6 +15,7 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Zero-lag volatility breakout strategy with EMA trend filter.
+/// Uses Bollinger Bands on price-EMA divergence to detect breakouts.
 /// </summary>
 public class ZeroLagVolatilityBreakoutEmaTrendStrategy : Strategy
 {
@@ -23,73 +24,60 @@ public class ZeroLagVolatilityBreakoutEmaTrendStrategy : Strategy
 	private readonly StrategyParam<bool> _useBinary;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private ExponentialMovingAverage _ema = null!;
-	private BollingerBands _bollinger = null!;
-
-	private decimal _prevDif;
-	private decimal _prevBbu;
-	private decimal _prevBbm;
 	private decimal _prevEma;
+	private decimal _prevDif;
+	private bool _hasPrev;
 
-	/// <summary>
-	/// EMA length.
-	/// </summary>
-	public int EmaLength
-	{
-		get => _emaLength.Value;
-		set => _emaLength.Value = value;
-	}
+	private readonly List<decimal> _difs = new();
 
-	/// <summary>
-	/// Standard deviation multiplier for Bollinger Bands.
-	/// </summary>
-	public decimal StdMultiplier
-	{
-		get => _stdMultiplier.Value;
-		set => _stdMultiplier.Value = value;
-	}
+	public int EmaLength { get => _emaLength.Value; set => _emaLength.Value = value; }
+	public decimal StdMultiplier { get => _stdMultiplier.Value; set => _stdMultiplier.Value = value; }
+	public bool UseBinary { get => _useBinary.Value; set => _useBinary.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Use binary strategy (hold until opposite signal).
-	/// </summary>
-	public bool UseBinary
-	{
-		get => _useBinary.Value;
-		set => _useBinary.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type for strategy.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="ZeroLagVolatilityBreakoutEmaTrendStrategy"/>.
-	/// </summary>
 	public ZeroLagVolatilityBreakoutEmaTrendStrategy()
 	{
-		_emaLength = Param(nameof(EmaLength), 200).SetDisplay("EMA Length", "Base EMA length", "Indicators");
+		_emaLength = Param(nameof(EmaLength), 50).SetDisplay("EMA Length", "Base EMA length", "Indicators");
 		_stdMultiplier = Param(nameof(StdMultiplier), 2m).SetDisplay("Std Mult", "Standard deviation multiplier", "Indicators");
 		_useBinary = Param(nameof(UseBinary), true).SetDisplay("Use Binary", "Hold until opposite signal", "General");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Candle timeframe", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame()).SetDisplay("Candle Type", "Candle timeframe", "General");
 	}
 
-	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevEma = 0;
+		_prevDif = 0;
+		_hasPrev = false;
+		_difs.Clear();
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
-		_ema = new EMA { Length = EmaLength };
-		_bollinger = new BollingerBands { Length = EmaLength, Width = StdMultiplier };
+		base.OnStarted2(time);
+
+		var ema = new ExponentialMovingAverage { Length = EmaLength };
+
+		_prevEma = 0;
+		_prevDif = 0;
+		_hasPrev = false;
+		_difs.Clear();
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(_ema, ProcessCandle)
-			.Start();
+		subscription.Bind(ema, ProcessCandle).Start();
 
-		base.OnStarted2(time);
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, ema);
+			DrawOwnTrades(area);
+		}
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal emaValue)
@@ -97,45 +85,61 @@ public class ZeroLagVolatilityBreakoutEmaTrendStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		var hJumper = Math.Max(candle.ClosePrice, emaValue);
 		var lJumper = Math.Min(candle.ClosePrice, emaValue);
 		var dif = lJumper == 0 ? 0 : (hJumper / lJumper) - 1m;
 
-		var bbVal = (BollingerBandsValue)_bollinger.Process(new DecimalIndicatorValue(_bollinger, dif, candle.CloseTime));
-		if (bbVal.UpBand is not decimal bbu || bbVal.MovingAverage is not decimal bbm)
-			return;
+		_difs.Add(dif);
+		if (_difs.Count > EmaLength + 10)
+			_difs.RemoveAt(0);
 
-		var sigEnter = _prevDif <= _prevBbu && dif > bbu;
-		var sigExit = _prevDif >= _prevBbm && dif < bbm;
+		if (_difs.Count < 20)
+		{
+			_prevEma = emaValue;
+			_prevDif = dif;
+			_hasPrev = true;
+			return;
+		}
+
+		// Compute Bollinger-like bands on dif values
+		var lookback = Math.Min(_difs.Count, EmaLength);
+		var recent = _difs.Skip(_difs.Count - lookback).ToList();
+		var mean = recent.Average();
+		var sumSq = recent.Sum(v => (v - mean) * (v - mean));
+		var std = (decimal)Math.Sqrt((double)(sumSq / lookback));
+		var bbu = mean + std * StdMultiplier;
+		var bbm = mean;
+
+		if (!_hasPrev)
+		{
+			_prevDif = dif;
+			_prevEma = emaValue;
+			_hasPrev = true;
+			return;
+		}
+
+		var sigEnter = _prevDif <= bbu && dif > bbu;
+		var sigExit = dif < bbm;
 		var enterLong = sigEnter && emaValue > _prevEma;
 		var enterShort = sigEnter && emaValue < _prevEma;
 
 		if (enterLong && Position <= 0)
 		{
-			CancelActiveOrders();
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
+			BuyMarket();
 		}
 		else if (enterShort && Position >= 0)
 		{
-			CancelActiveOrders();
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
+			SellMarket();
 		}
 		else if (!UseBinary && sigExit)
 		{
 			if (Position > 0)
-			    SellMarket(Position);
+				SellMarket();
 			else if (Position < 0)
-			    BuyMarket(Math.Abs(Position));
+				BuyMarket();
 		}
 
 		_prevDif = dif;
-		_prevBbu = bbu;
-		_prevBbm = bbm;
 		_prevEma = emaValue;
 	}
 }
