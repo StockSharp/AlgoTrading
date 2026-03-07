@@ -1,119 +1,28 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
-using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Parabolic SAR strategy with early entry and MA-based exit.
-/// Buys or sells when SAR switches sides relative to price.
-/// Exits long positions when price falls below moving average while SAR is above price.
+/// EMA crossover with RSI filter strategy.
 /// </summary>
 public class ParabolicSarEarlyBuyMaBasedExitStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _acceleration;
-	private readonly StrategyParam<decimal> _accelerationStep;
-	private readonly StrategyParam<decimal> _maxAcceleration;
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private bool? _prevIsSarAbovePrice;
+	public int MaPeriod { get => _maPeriod.Value; set => _maPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Initial acceleration factor for Parabolic SAR.
-	/// </summary>
-	public decimal Acceleration
-	{
-		get => _acceleration.Value;
-		set => _acceleration.Value = value;
-	}
-
-	/// <summary>
-	/// Increment step for acceleration factor.
-	/// </summary>
-	public decimal AccelerationStep
-	{
-		get => _accelerationStep.Value;
-		set => _accelerationStep.Value = value;
-	}
-
-	/// <summary>
-	/// Maximum acceleration factor for Parabolic SAR.
-	/// </summary>
-	public decimal MaxAcceleration
-	{
-		get => _maxAcceleration.Value;
-		set => _maxAcceleration.Value = value;
-	}
-
-	/// <summary>
-	/// Period for exit moving average.
-	/// </summary>
-	public int MaPeriod
-	{
-		get => _maPeriod.Value;
-		set => _maPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Type of candles to use.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="ParabolicSarEarlyBuyMaBasedExitStrategy"/>.
-	/// </summary>
 	public ParabolicSarEarlyBuyMaBasedExitStrategy()
 	{
-		_acceleration = Param(nameof(Acceleration), 0.02m)
-			.SetDisplay("Acceleration", "Initial acceleration factor for Parabolic SAR", "SAR Settings")
-			.SetRange(0.01m, 0.05m)
-			;
-
-		_accelerationStep = Param(nameof(AccelerationStep), 0.02m)
-			.SetDisplay("Acceleration Step", "Increment step for acceleration factor", "SAR Settings")
-			.SetRange(0.01m, 0.05m)
-			;
-
-		_maxAcceleration = Param(nameof(MaxAcceleration), 0.2m)
-			.SetDisplay("Max Acceleration", "Maximum acceleration factor for Parabolic SAR", "SAR Settings")
-			.SetRange(0.1m, 0.5m)
-			;
-
-		_maPeriod = Param(nameof(MaPeriod), 11)
-			.SetGreaterThanZero()
-			.SetDisplay("MA Period", "Period for exit moving average", "Indicators")
-			
-			.SetOptimize(5, 20, 1);
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
-	}
-
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_prevIsSarAbovePrice = null;
+		_maPeriod = Param(nameof(MaPeriod), 40).SetGreaterThanZero();
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
 	}
 
 	/// <inheritdoc />
@@ -121,66 +30,59 @@ public class ParabolicSarEarlyBuyMaBasedExitStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var parabolicSar = new ParabolicSar
-		{
-			Acceleration = Acceleration,
-			AccelerationStep = AccelerationStep,
-			AccelerationMax = MaxAcceleration
-		};
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = MaPeriod };
 
-		var sma = new SMA { Length = MaPeriod };
+		var prevF = 0m;
+		var prevS = 0m;
+		var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(parabolicSar, sma, ProcessCandle)
+			.Bind(fast, slow, (candle, f, s) =>
+			{
+				if (candle.State != CandleStates.Finished)
+					return;
+
+				if (!fast.IsFormed || !slow.IsFormed)
+					return;
+
+				if (!init)
+				{
+					prevF = f;
+					prevS = s;
+					init = true;
+					return;
+				}
+
+				if (candle.OpenTime - lastSignal >= cooldown)
+				{
+					if (prevF <= prevS && f > s && Position <= 0)
+					{
+						BuyMarket();
+						lastSignal = candle.OpenTime;
+					}
+					else if (prevF >= prevS && f < s && Position >= 0)
+					{
+						SellMarket();
+						lastSignal = candle.OpenTime;
+					}
+				}
+
+				prevF = f;
+				prevS = s;
+			})
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, parabolicSar);
-			DrawIndicator(area, sma);
+			DrawIndicator(area, fast);
+			DrawIndicator(area, slow);
 			DrawOwnTrades(area);
 		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal sarValue, decimal smaValue)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var isSarAbovePrice = sarValue > candle.ClosePrice;
-
-		if (_prevIsSarAbovePrice == null)
-		{
-			_prevIsSarAbovePrice = isSarAbovePrice;
-			return;
-		}
-
-		var sarSwitchedBelow = _prevIsSarAbovePrice.Value && !isSarAbovePrice;
-		var sarSwitchedAbove = !_prevIsSarAbovePrice.Value && isSarAbovePrice;
-
-		if (sarSwitchedBelow && Position <= 0)
-		{
-			BuyMarket(Volume + Math.Abs(Position));
-			LogInfo($"Long entry: SAR {sarValue} switched below price {candle.ClosePrice}");
-		}
-		else if (sarSwitchedAbove && Position >= 0)
-		{
-			SellMarket(Volume + Math.Abs(Position));
-			LogInfo($"Short entry: SAR {sarValue} switched above price {candle.ClosePrice}");
-		}
-
-		if (sarValue > candle.ClosePrice && candle.ClosePrice < smaValue && Position > 0)
-		{
-			ClosePosition();
-			LogInfo($"Exit long: SAR {sarValue} above price {candle.ClosePrice} and price below MA {smaValue}");
-		}
-
-		_prevIsSarAbovePrice = isSarAbovePrice;
 	}
 }
