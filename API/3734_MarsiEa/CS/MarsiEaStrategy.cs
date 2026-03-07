@@ -28,8 +28,10 @@ public class MarsiEaStrategy : Strategy
 	private readonly StrategyParam<decimal> _stopLossPips;
 	private readonly StrategyParam<decimal> _takeProfitPips;
 
-	private SimpleMovingAverage _sma = null!;
-	private RelativeStrengthIndex _rsi = null!;
+	private SimpleMovingAverage _sma;
+	private RelativeStrengthIndex _rsi;
+	private decimal? _virtualStopPrice;
+	private decimal? _virtualTakePrice;
 
 	/// <summary>
 	/// Candle type used to feed indicators.
@@ -108,7 +110,7 @@ public class MarsiEaStrategy : Strategy
 	/// </summary>
 	public MarsiEaStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Series used for indicator calculations", "General");
 
 		_maPeriod = Param(nameof(MaPeriod), 14)
@@ -149,6 +151,16 @@ public class MarsiEaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_sma = null;
+		_rsi = null;
+		_virtualStopPrice = null;
+		_virtualTakePrice = null;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
@@ -177,7 +189,43 @@ public class MarsiEaStrategy : Strategy
 		if (!_sma.IsFormed || !_rsi.IsFormed)
 			return;
 
-		// Only one position can be active at the same time, identical to the MetaTrader implementation.
+		// Check virtual SL/TP
+		if (Position > 0m)
+		{
+			if (_virtualStopPrice.HasValue && candle.LowPrice <= _virtualStopPrice.Value)
+			{
+				SellMarket(Position);
+				_virtualStopPrice = null;
+				_virtualTakePrice = null;
+				return;
+			}
+			if (_virtualTakePrice.HasValue && candle.HighPrice >= _virtualTakePrice.Value)
+			{
+				SellMarket(Position);
+				_virtualStopPrice = null;
+				_virtualTakePrice = null;
+				return;
+			}
+		}
+		else if (Position < 0m)
+		{
+			if (_virtualStopPrice.HasValue && candle.HighPrice >= _virtualStopPrice.Value)
+			{
+				BuyMarket(Math.Abs(Position));
+				_virtualStopPrice = null;
+				_virtualTakePrice = null;
+				return;
+			}
+			if (_virtualTakePrice.HasValue && candle.LowPrice <= _virtualTakePrice.Value)
+			{
+				BuyMarket(Math.Abs(Position));
+				_virtualStopPrice = null;
+				_virtualTakePrice = null;
+				return;
+			}
+		}
+
+		// Only one position can be active at the same time
 		if (Position != 0m)
 			return;
 
@@ -187,20 +235,21 @@ public class MarsiEaStrategy : Strategy
 		if (volume <= 0m)
 			return;
 
-		var stopSteps = CalculatePriceSteps(StopLossPips);
-		var takeSteps = CalculatePriceSteps(TakeProfitPips);
+		var pipSize = GetPipSize();
+		if (pipSize <= 0m)
+			pipSize = 1m;
 
-		if (closePrice > maValue && rsiValue < RsiOversold && Position <= 0m)
+		if (closePrice > maValue && rsiValue < RsiOversold)
 		{
-			if (Position < 0m)
-				BuyMarket(-Position);
 			BuyMarket(volume);
+			_virtualStopPrice = closePrice - StopLossPips * pipSize;
+			_virtualTakePrice = closePrice + TakeProfitPips * pipSize;
 		}
-		else if (closePrice < maValue && rsiValue > RsiOverbought && Position >= 0m)
+		else if (closePrice < maValue && rsiValue > RsiOverbought)
 		{
-			if (Position > 0m)
-				SellMarket(Position);
 			SellMarket(volume);
+			_virtualStopPrice = closePrice + StopLossPips * pipSize;
+			_virtualTakePrice = closePrice - TakeProfitPips * pipSize;
 		}
 	}
 
@@ -208,7 +257,7 @@ public class MarsiEaStrategy : Strategy
 	{
 		var portfolioValue = Portfolio?.CurrentValue ?? 0m;
 		var priceStep = Security?.PriceStep ?? 0m;
-		var stepPrice = GetSecurityValue<decimal?>(Level1Fields.StepPrice) ?? 0m;
+		var stepPrice = 1m;
 		var pipSize = GetPipSize();
 
 		if (RiskPercent <= 0m || portfolioValue <= 0m || priceStep <= 0m || stepPrice <= 0m || pipSize <= 0m)

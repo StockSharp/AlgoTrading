@@ -35,11 +35,11 @@ public class TuyulUncensoredStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<decimal> _fibLevel;
 
-	private readonly List<(DateTimeOffset Time, decimal Price)> _pivots = new();
+	private List<(DateTimeOffset Time, decimal Price)> _pivots;
 
-	private ZigZag _zigZag = null!;
-	private ExponentialMovingAverage _fastEma = null!;
-	private ExponentialMovingAverage _slowEma = null!;
+	private ZigZag _zigZag;
+	private ExponentialMovingAverage _fastEma;
+	private ExponentialMovingAverage _slowEma;
 
 	private decimal _lastZigZagHigh;
 	private decimal _lastZigZagLow;
@@ -47,11 +47,6 @@ public class TuyulUncensoredStrategy : Strategy
 	private decimal? _previousFast;
 	private decimal? _previousSlow;
 
-	private Order _pendingOrder;
-	private decimal? _plannedStop;
-	private decimal? _plannedTake;
-	private int _plannedDirection;
-	private int _barsSinceOrder;
 
 	private decimal? _activeStop;
 	private decimal? _activeTake;
@@ -74,7 +69,7 @@ public class TuyulUncensoredStrategy : Strategy
 		.SetDisplay("ZigZag Depth", "Number of bars to evaluate for swings", "ZigZag")
 		.SetGreaterThanZero();
 
-		_zigZagDeviation = Param(nameof(ZigZagDeviation), 5m)
+		_zigZagDeviation = Param(nameof(ZigZagDeviation), 0.05m)
 		.SetDisplay("ZigZag Deviation", "Minimum deviation in points to confirm a swing", "ZigZag")
 		.SetNotNegative();
 
@@ -263,18 +258,15 @@ public class TuyulUncensoredStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_pivots.Clear();
+		_pivots = null;
+		_zigZag = null;
+		_fastEma = null;
+		_slowEma = null;
 		_lastZigZagHigh = 0m;
 		_lastZigZagLow = 0m;
 
 		_previousFast = null;
 		_previousSlow = null;
-
-		_pendingOrder = null;
-		_plannedStop = null;
-		_plannedTake = null;
-		_plannedDirection = 0;
-		_barsSinceOrder = 0;
 
 		_activeStop = null;
 		_activeTake = null;
@@ -285,6 +277,8 @@ public class TuyulUncensoredStrategy : Strategy
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+
+		_pivots = new List<(DateTimeOffset Time, decimal Price)>();
 
 		_zigZag = new ZigZag
 		{
@@ -310,51 +304,19 @@ public class TuyulUncensoredStrategy : Strategy
 		}
 	}
 
-	/// <inheritdoc />
-	protected override void OnOrderReceived(Order order)
-	{
-		base.OnOrderReceived(order);
-
-		if (_pendingOrder != null && order == _pendingOrder)
-		{
-			switch (order.State)
-			{
-				case OrderStates.Done:
-					_activeStop = _plannedStop;
-					_activeTake = _plannedTake;
-					_activeDirection = _plannedDirection;
-					ResetPendingOrderState();
-					break;
-
-				case OrderStates.Failed:
-					ResetPendingOrderState();
-					break;
-			}
-		}
-	}
-
 	private void ProcessCandle(ICandleMessage candle, decimal zigZagValue, decimal fastEmaValue, decimal slowEmaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
 		UpdateActiveProtection(candle);
-		UpdatePendingOrderLifetime();
-
-		if (!IsTradingDayAllowed(candle.OpenTime.DayOfWeek))
-		{
-			CancelPendingOrder();
-			_previousFast = fastEmaValue;
-			_previousSlow = slowEmaValue;
-			return;
-		}
 
 		var (newHigh, newLow) = UpdateZigZagState(candle, zigZagValue);
 
-		if (_pendingOrder == null && Position == 0m && (newHigh || newLow) &&
+		if (Position == 0m && (newHigh || newLow) &&
 		_previousFast.HasValue && _previousSlow.HasValue)
 		{
-			TryPlacePendingOrder(_previousFast.Value, _previousSlow.Value);
+			TryEnterMarket(_previousFast.Value, _previousSlow.Value);
 		}
 
 		_previousFast = fastEmaValue;
@@ -362,22 +324,6 @@ public class TuyulUncensoredStrategy : Strategy
 
 		if (Position == 0m && _activeDirection != 0)
 			ClearActiveProtection();
-	}
-
-	private void UpdatePendingOrderLifetime()
-	{
-		if (_pendingOrder == null)
-			return;
-
-		if (_pendingOrder.State != OrderStates.Active)
-			return;
-
-		if (WaitBarsAfterSignal <= 0)
-			return;
-
-		_barsSinceOrder++;
-		if (_barsSinceOrder >= WaitBarsAfterSignal)
-			CancelPendingOrder();
 	}
 
 	private void UpdateActiveProtection(ICandleMessage candle)
@@ -400,10 +346,8 @@ public class TuyulUncensoredStrategy : Strategy
 		}
 	}
 
-	private void TryPlacePendingOrder(decimal previousFast, decimal previousSlow)
+	private void TryEnterMarket(decimal previousFast, decimal previousSlow)
 	{
-		// removed IsFormedAndOnlineAndAllowTrading guard
-
 		var high = _lastZigZagHigh;
 		var low = _lastZigZagLow;
 
@@ -412,75 +356,38 @@ public class TuyulUncensoredStrategy : Strategy
 
 		var volume = VolumePerTrade;
 		if (volume <= 0m)
+			volume = Volume;
+		if (volume <= 0m)
 			return;
-
-		decimal fibPrice;
-		decimal stopPrice;
-		decimal takePrice;
-		int direction;
 
 		if (previousFast > previousSlow)
 		{
-			fibPrice = low + (high - low) * FibLevel;
-			stopPrice = low;
+			var stopPrice = low;
+			var fibPrice = low + (high - low) * FibLevel;
 			var slDistance = fibPrice - stopPrice;
 			if (slDistance <= 0m)
 				return;
 
-			takePrice = fibPrice + slDistance * TakeProfitMultiplier;
-			direction = 1;
+			var takePrice = fibPrice + slDistance * TakeProfitMultiplier;
+			BuyMarket(volume);
+			_activeStop = stopPrice;
+			_activeTake = takePrice;
+			_activeDirection = 1;
 		}
 		else if (previousFast < previousSlow)
 		{
-			fibPrice = high - (high - low) * FibLevel;
-			stopPrice = high;
+			var stopPrice = high;
+			var fibPrice = high - (high - low) * FibLevel;
 			var slDistance = stopPrice - fibPrice;
 			if (slDistance <= 0m)
 				return;
 
-			takePrice = fibPrice - slDistance * TakeProfitMultiplier;
-			direction = -1;
+			var takePrice = fibPrice - slDistance * TakeProfitMultiplier;
+			SellMarket(volume);
+			_activeStop = stopPrice;
+			_activeTake = takePrice;
+			_activeDirection = -1;
 		}
-		else
-		{
-			return;
-		}
-
-		var minDistance = GetMinimumDistance();
-		if (minDistance > 0m)
-		{
-			if (direction == 1)
-			{
-				if (fibPrice - stopPrice < minDistance)
-					return;
-
-				if (takePrice - fibPrice < minDistance)
-					return;
-			}
-			else
-			{
-				if (stopPrice - fibPrice < minDistance)
-					return;
-
-				if (fibPrice - takePrice < minDistance)
-					return;
-			}
-		}
-
-		Order order;
-		if (direction == 1)
-			order = BuyLimit(volume, fibPrice);
-		else
-			order = SellLimit(volume, fibPrice);
-
-		if (order is null)
-			return;
-
-		_pendingOrder = order;
-		_plannedStop = stopPrice;
-		_plannedTake = takePrice;
-		_plannedDirection = direction;
-		_barsSinceOrder = 0;
 	}
 
 	private (bool newHigh, bool newLow) UpdateZigZagState(ICandleMessage candle, decimal zigZagValue)
@@ -558,33 +465,6 @@ public class TuyulUncensoredStrategy : Strategy
 		};
 	}
 
-	private decimal GetMinimumDistance()
-	{
-		if (Security?.PriceStep is { } step && step > 0m)
-			return step;
-
-		return 0m;
-	}
-
-	private void CancelPendingOrder()
-	{
-		if (_pendingOrder == null)
-			return;
-
-		if (_pendingOrder.State == OrderStates.Active)
-			CancelOrder(_pendingOrder);
-		else if (_pendingOrder.State == OrderStates.None)
-			ResetPendingOrderState();
-	}
-
-	private void ResetPendingOrderState()
-	{
-		_pendingOrder = null;
-		_plannedStop = null;
-		_plannedTake = null;
-		_plannedDirection = 0;
-		_barsSinceOrder = 0;
-	}
 
 	private void ClearActiveProtection()
 	{

@@ -147,7 +147,7 @@ public class ExtremeStrengthReversalStrategy : Strategy
 			
 			.SetOptimize(10, 40, 5);
 
-		_bollingerDeviation = Param(nameof(BollingerDeviation), 2m)
+		_bollingerDeviation = Param(nameof(BollingerDeviation), 1.5m)
 			.SetGreaterThanZero()
 			.SetDisplay("Bollinger Deviation", "Standard deviation multiplier for Bollinger Bands.", "Indicators")
 			
@@ -159,17 +159,17 @@ public class ExtremeStrengthReversalStrategy : Strategy
 			
 			.SetOptimize(7, 28, 1);
 
-		_rsiOverbought = Param(nameof(RsiOverbought), 80m)
+		_rsiOverbought = Param(nameof(RsiOverbought), 65m)
 			.SetDisplay("RSI Overbought", "RSI level that marks extreme overbought conditions.", "Indicators")
 			
 			.SetOptimize(60m, 90m, 5m);
 
-		_rsiOversold = Param(nameof(RsiOversold), 20m)
+		_rsiOversold = Param(nameof(RsiOversold), 35m)
 			.SetDisplay("RSI Oversold", "RSI level that marks extreme oversold conditions.", "Indicators")
 			
 			.SetOptimize(10m, 40m, 5m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe used for analysis.", "General");
 	}
 
@@ -183,6 +183,8 @@ public class ExtremeStrengthReversalStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
+		_bollinger = null;
+		_rsi = null;
 		ResetTradeState();
 	}
 
@@ -348,7 +350,7 @@ public class ExtremeStrengthReversalStrategy : Strategy
 			return 0m;
 
 		var priceStep = Security?.PriceStep ?? 0m;
-		var stepPrice = GetSecurityValue<decimal?>(Level1Fields.StepPrice) ?? 0m;
+		var stepPrice = 1m;
 
 		decimal perUnitRisk;
 		if (priceStep > 0m && stepPrice > 0m)
