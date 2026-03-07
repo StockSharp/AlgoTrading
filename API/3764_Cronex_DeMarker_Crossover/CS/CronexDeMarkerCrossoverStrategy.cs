@@ -23,9 +23,9 @@ public class CronexDeMarkerCrossoverStrategy : Strategy
 	private readonly StrategyParam<int> _slowMaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private DeMarker _deMarker = null!;
-	private WeightedMovingAverage _fastMa = null!;
-	private WeightedMovingAverage _slowMa = null!;
+	private DeMarker? _deMarker;
+	private WeightedMovingAverage? _fastMa;
+	private WeightedMovingAverage? _slowMa;
 
 	private decimal? _previousFast;
 	private decimal? _previousSlow;
@@ -101,6 +101,9 @@ public class CronexDeMarkerCrossoverStrategy : Strategy
 	{
 		base.OnReseted();
 
+		_deMarker = null;
+		_fastMa = null;
+		_slowMa = null;
 		_previousFast = null;
 		_previousSlow = null;
 	}
@@ -150,14 +153,23 @@ public class CronexDeMarkerCrossoverStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		if (_deMarker is null || _fastMa is null || _slowMa is null)
+			return;
+
 		// Update the DeMarker oscillator with the full candle data.
 		var deMarkerResult = _deMarker.Process(new CandleIndicatorValue(_deMarker, candle));
+		if (deMarkerResult.IsEmpty)
+		{
+			return;
+		}
 		var deMarkerValue = deMarkerResult.GetValue<decimal>();
 
 		// Smooth the oscillator with linear weighted moving averages.
-		var fastResult = _fastMa.Process(new DecimalIndicatorValue(_fastMa, deMarkerValue, candle.OpenTime));
+		var fastResult = _fastMa.Process(new DecimalIndicatorValue(_fastMa, deMarkerValue, candle.OpenTime) { IsFinal = true });
+		if (fastResult.IsEmpty) return;
 		var fastValue = fastResult.GetValue<decimal>();
-		var slowResult = _slowMa.Process(new DecimalIndicatorValue(_slowMa, deMarkerValue, candle.OpenTime));
+		var slowResult = _slowMa.Process(new DecimalIndicatorValue(_slowMa, deMarkerValue, candle.OpenTime) { IsFinal = true });
+		if (slowResult.IsEmpty) return;
 		var slowValue = slowResult.GetValue<decimal>();
 
 		// Ensure all indicators accumulated enough samples.

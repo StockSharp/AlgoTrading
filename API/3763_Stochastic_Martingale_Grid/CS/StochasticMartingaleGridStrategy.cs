@@ -53,7 +53,7 @@ public class StochasticMartingaleGridStrategy : Strategy
 	/// </summary>
 	public StochasticMartingaleGridStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used to evaluate stochastic values", "General");
 
 		_baseVolume = Param(nameof(BaseVolume), 0.1m)
@@ -71,7 +71,7 @@ public class StochasticMartingaleGridStrategy : Strategy
 			.SetDisplay("Trailing Stop (pips)", "Trailing stop distance applied per entry", "Risk")
 			;
 
-		_maxOrders = Param(nameof(MaxOrders), 7)
+		_maxOrders = Param(nameof(MaxOrders), 2)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Orders", "Maximum number of simultaneous averaging entries", "Martingale");
 
@@ -95,11 +95,11 @@ public class StochasticMartingaleGridStrategy : Strategy
 			.SetDisplay("Slowing", "Additional smoothing applied to %K", "Indicators")
 			;
 
-		_zoneBuy = Param(nameof(ZoneBuy), 30m)
+		_zoneBuy = Param(nameof(ZoneBuy), 50m)
 			.SetDisplay("Buy Zone", "Upper limit that allows long setups when %K is above %D", "Indicators")
 			;
 
-		_zoneSell = Param(nameof(ZoneSell), 70m)
+		_zoneSell = Param(nameof(ZoneSell), 50m)
 			.SetDisplay("Sell Zone", "Lower limit that allows short setups when %K is below %D", "Indicators")
 			;
 	}
@@ -229,6 +229,7 @@ public class StochasticMartingaleGridStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
+		_entries = new List<Entry>();
 		_pipSize = CalculatePipSize();
 
 		_stochastic = new StochasticOscillator
@@ -264,15 +265,7 @@ public class StochasticMartingaleGridStrategy : Strategy
 		if (stoch.K is not decimal currentMain || stoch.D is not decimal currentSignal)
 		return;
 
-		if (!_stochastic.IsFormed)
-		{
-		// Store the preliminary stochastic readings until the indicator is fully formed.
-		_previousMain = currentMain;
-		_previousSignal = currentSignal;
-		return;
-		}
-
-		var tradingAllowed = IsFormedAndOnlineAndAllowTrading();
+		var tradingAllowed = true;
 
 		if (_currentSide == Sides.Buy)
 		{
