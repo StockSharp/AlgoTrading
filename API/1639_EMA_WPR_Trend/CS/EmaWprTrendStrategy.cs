@@ -124,12 +124,12 @@ public class EmaWprTrendStrategy : Strategy
 		var price = candle.ClosePrice;
 
 		// Exit: WPR at opposite extreme
-		if (Position > 0 && wprValue >= 0)
+		if (Position > 0 && wprValue >= -20)
 		{
 			SellMarket();
 			_entryPrice = 0;
 		}
-		else if (Position < 0 && wprValue <= -100)
+		else if (Position < 0 && wprValue <= -80)
 		{
 			BuyMarket();
 			_entryPrice = 0;
@@ -145,13 +145,13 @@ public class EmaWprTrendStrategy : Strategy
 		var trendUp = _trendCounter >= 1;
 		var trendDown = _trendCounter <= -1;
 
-		if (Position <= 0 && _buyAllowed && wprValue <= -100 && trendUp)
+		if (Position <= 0 && _buyAllowed && wprValue <= -80 && trendUp)
 		{
 			BuyMarket();
 			_entryPrice = price;
 			_buyAllowed = false;
 		}
-		else if (Position >= 0 && _sellAllowed && wprValue >= 0 && trendDown)
+		else if (Position >= 0 && _sellAllowed && wprValue >= -20 && trendDown)
 		{
 			SellMarket();
 			_entryPrice = price;

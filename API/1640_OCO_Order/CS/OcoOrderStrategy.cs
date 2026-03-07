@@ -12,12 +12,12 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// OCO-style breakout strategy. Calculates dynamic buy-stop and sell-stop levels
-/// from recent high/low and enters on breakout, with ATR-based stop-loss and take-profit.
+/// from recent high/low and enters on breakout, with StdDev-based stop-loss and take-profit.
 /// </summary>
 public class OcoOrderStrategy : Strategy
 {
 	private readonly StrategyParam<int> _lookbackPeriod;
-	private readonly StrategyParam<decimal> _atrMultiplier;
+	private readonly StrategyParam<decimal> _stdMultiplier;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _recentHigh;
@@ -26,7 +26,7 @@ public class OcoOrderStrategy : Strategy
 	private int _barCount;
 
 	public int LookbackPeriod { get => _lookbackPeriod.Value; set => _lookbackPeriod.Value = value; }
-	public decimal AtrMultiplier { get => _atrMultiplier.Value; set => _atrMultiplier.Value = value; }
+	public decimal StdMultiplier { get => _stdMultiplier.Value; set => _stdMultiplier.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public OcoOrderStrategy()
@@ -35,10 +35,10 @@ public class OcoOrderStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Lookback", "Bars for high/low calculation", "General");
 
-		_atrMultiplier = Param(nameof(AtrMultiplier), 1.5m)
-			.SetDisplay("ATR Multiplier", "Multiplier for SL/TP distance", "Risk");
+		_stdMultiplier = Param(nameof(StdMultiplier), 1.5m)
+			.SetDisplay("StdDev Multiplier", "Multiplier for SL/TP distance", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -58,23 +58,22 @@ public class OcoOrderStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var atr = new AverageTrueRange { Length = LookbackPeriod };
+		var stdDev = new StandardDeviation { Length = LookbackPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(atr, ProcessCandle)
+			.Bind(stdDev, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, atr);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal atrValue)
+	private void ProcessCandle(ICandleMessage candle, decimal stdValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
@@ -91,13 +90,13 @@ public class OcoOrderStrategy : Strategy
 			return;
 		}
 
-		if (atrValue <= 0)
+		if (stdValue <= 0)
 			return;
 
 		var close = candle.ClosePrice;
-		var slDistance = atrValue * AtrMultiplier;
+		var slDistance = stdValue * StdMultiplier;
 
-		// Exit logic: ATR trailing
+		// Exit logic
 		if (Position > 0)
 		{
 			if (close <= _entryPrice - slDistance || close >= _entryPrice + slDistance * 2)
@@ -115,7 +114,7 @@ public class OcoOrderStrategy : Strategy
 			}
 		}
 
-		// Entry: breakout above recent high or below recent low (OCO style - first one wins)
+		// Entry: breakout above recent high or below recent low
 		if (Position == 0)
 		{
 			if (close > _recentHigh)
