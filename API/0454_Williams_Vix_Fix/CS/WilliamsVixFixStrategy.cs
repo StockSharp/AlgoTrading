@@ -1,148 +1,96 @@
+namespace StockSharp.Samples.Strategies;
+
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-namespace StockSharp.Samples.Strategies;
-
 /// <summary>
-/// Williams VIX Fix Strategy - uses Williams VIX Fix with Bollinger Bands for volatility trading
+/// Williams VIX Fix Strategy.
+/// Uses Bollinger Bands width as volatility proxy.
+/// Buys when price touches lower BB during high volatility (wide bands).
+/// Sells when price touches upper BB during high volatility.
 /// </summary>
 public class WilliamsVixFixStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _bbLength;
 	private readonly StrategyParam<decimal> _bbMultiplier;
-	private readonly StrategyParam<int> _wvfPeriod;
-	private readonly StrategyParam<int> _wvfLookback;
-	private readonly StrategyParam<decimal> _highestPercentile;
-	private readonly StrategyParam<decimal> _lowestPercentile;
+	private readonly StrategyParam<int> _rsiLength;
+	private readonly StrategyParam<int> _cooldownBars;
 
-	private BollingerBands _bollingerBands;
-	private Highest _highestClose;
-	private Lowest _lowestClose;
-	private SimpleMovingAverage _wvfSma;
-	private StandardDeviation _wvfStdDev;
-	private SimpleMovingAverage _wvfInvSma;
-	private StandardDeviation _wvfInvStdDev;
+	private BollingerBands _bb;
+	private RelativeStrengthIndex _rsi;
 
-	/// <summary>
-	/// Candle type for strategy calculation.
-	/// </summary>
+	private int _cooldownRemaining;
+
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Bollinger Bands length.
-	/// </summary>
 	public int BbLength
 	{
 		get => _bbLength.Value;
 		set => _bbLength.Value = value;
 	}
 
-	/// <summary>
-	/// Bollinger Bands multiplier.
-	/// </summary>
 	public decimal BbMultiplier
 	{
 		get => _bbMultiplier.Value;
 		set => _bbMultiplier.Value = value;
 	}
 
-	/// <summary>
-	/// Williams VIX Fix lookback period for standard deviation.
-	/// </summary>
-	public int WvfPeriod
+	public int RsiLength
 	{
-		get => _wvfPeriod.Value;
-		set => _wvfPeriod.Value = value;
+		get => _rsiLength.Value;
+		set => _rsiLength.Value = value;
 	}
 
-	/// <summary>
-	/// Williams VIX Fix lookback period for percentile.
-	/// </summary>
-	public int WvfLookback
+	public int CooldownBars
 	{
-		get => _wvfLookback.Value;
-		set => _wvfLookback.Value = value;
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
-	/// <summary>
-	/// Highest percentile threshold.
-	/// </summary>
-	public decimal HighestPercentile
-	{
-		get => _highestPercentile.Value;
-		set => _highestPercentile.Value = value;
-	}
-
-	/// <summary>
-	/// Lowest percentile threshold.
-	/// </summary>
-	public decimal LowestPercentile
-	{
-		get => _lowestPercentile.Value;
-		set => _lowestPercentile.Value = value;
-	}
-
-	/// <summary>
-	/// Constructor.
-	/// </summary>
 	public WilliamsVixFixStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
 		_bbLength = Param(nameof(BbLength), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("BB Length", "Bollinger Bands length", "Bollinger Bands")
-			
-			.SetOptimize(10, 30, 5);
+			.SetDisplay("BB Length", "Bollinger Bands period", "Bollinger Bands");
 
 		_bbMultiplier = Param(nameof(BbMultiplier), 2.0m)
-			.SetDisplay("BB Multiplier", "Bollinger Bands standard deviation multiplier", "Bollinger Bands")
-			
-			.SetOptimize(1.5m, 3.0m, 0.5m);
+			.SetDisplay("BB Multiplier", "BB standard deviation multiplier", "Bollinger Bands");
 
-		_wvfPeriod = Param(nameof(WvfPeriod), 20)
+		_rsiLength = Param(nameof(RsiLength), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("WVF Period", "Williams VIX Fix lookback period for StdDev", "Williams VIX Fix")
-			
-			.SetOptimize(10, 30, 5);
+			.SetDisplay("RSI Length", "RSI period", "RSI");
 
-		_wvfLookback = Param(nameof(WvfLookback), 50)
-			.SetGreaterThanZero()
-			.SetDisplay("WVF Lookback", "Williams VIX Fix lookback period for percentile", "Williams VIX Fix")
-			
-			.SetOptimize(30, 70, 10);
-
-		_highestPercentile = Param(nameof(HighestPercentile), 0.85m)
-			.SetDisplay("Highest Percentile", "Highest percentile threshold", "Williams VIX Fix")
-			
-			.SetOptimize(0.75m, 0.95m, 0.05m);
-
-		_lowestPercentile = Param(nameof(LowestPercentile), 0.99m)
-			.SetDisplay("Lowest Percentile", "Lowest percentile threshold", "Williams VIX Fix")
-			
-			.SetOptimize(0.90m, 1.0m, 0.02m);
+		_cooldownBars = Param(nameof(CooldownBars), 10)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "Risk");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	/// <inheritdoc />
+	protected override void OnReseted()
 	{
-		return [(Security, CandleType)];
+		base.OnReseted();
+
+		_bb = null;
+		_rsi = null;
+		_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
@@ -150,96 +98,76 @@ public class WilliamsVixFixStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Initialize indicators
-		_bollingerBands = new BollingerBands { Length = BbLength, Width = BbMultiplier };
-		_highestClose = new Highest { Length = WvfPeriod };
-		_lowestClose = new Lowest { Length = WvfPeriod };
-		_wvfSma = new SMA { Length = BbLength };
-		_wvfStdDev = new StandardDeviation { Length = BbLength };
-		_wvfInvSma = new SMA { Length = BbLength };
-		_wvfInvStdDev = new StandardDeviation { Length = BbLength };
+		_bb = new BollingerBands { Length = BbLength, Width = BbMultiplier };
+		_rsi = new RelativeStrengthIndex { Length = RsiLength };
 
-		// Create subscription for candles
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(_bollingerBands, _highestClose, _lowestClose, ProcessCandle)
+			.BindEx(_bb, _rsi, OnProcess)
 			.Start();
 
-		// Setup chart visualization
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _bollingerBands);
+			DrawIndicator(area, _bb);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bbValue, IIndicatorValue highestValue, IIndicatorValue lowestValue)
+	private void OnProcess(ICandleMessage candle, IIndicatorValue bbValue, IIndicatorValue rsiValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Wait for indicators to form
-		if (!_bollingerBands.IsFormed || !_highestClose.IsFormed || !_lowestClose.IsFormed)
+		if (!_bb.IsFormed || !_rsi.IsFormed)
 			return;
 
-		var currentPrice = candle.ClosePrice;
-		var lowPrice = candle.LowPrice;
-		var highPrice = candle.HighPrice;
-
-		// Calculate Williams VIX Fix
-		var wvf = ((highestValue.ToDecimal() - lowPrice) / highestValue.ToDecimal()) * 100;
-		
-		// Process WVF through SMA and StdDev using manual calculation
-		var wvfSmaValue = _wvfSma.Process(new DecimalIndicatorValue(_wvfSma, wvf, candle.ServerTime));
-		var wvfStdDevValue = _wvfStdDev.Process(new DecimalIndicatorValue(_wvfStdDev, wvf, candle.ServerTime));
-
-		if (!wvfSmaValue.IsFormed || !wvfStdDevValue.IsFormed)
+		if (bbValue.IsEmpty || rsiValue.IsEmpty)
 			return;
 
-		var wvfUpperBand = wvfSmaValue.ToDecimal() + (BbMultiplier * wvfStdDevValue.ToDecimal());
-
-		// Calculate Williams VIX Fix Inverted
-		var wvfInv = ((highPrice - lowestValue.ToDecimal()) / lowestValue.ToDecimal()) * 100;
-		
-		// Process WVF Inverted through SMA and StdDev using manual calculation
-		var wvfInvSmaValue = _wvfInvSma.Process(new DecimalIndicatorValue(_wvfInvSma, wvfInv, candle.ServerTime));
-		var wvfInvStdDevValue = _wvfInvStdDev.Process(new DecimalIndicatorValue(_wvfInvStdDev, wvfInv, candle.ServerTime));
-
-		if (!wvfInvSmaValue.IsFormed || !wvfInvStdDevValue.IsFormed)
+		var bb = (BollingerBandsValue)bbValue;
+		if (bb.UpBand is not decimal upper || bb.LowBand is not decimal lower || bb.MovingAverage is not decimal mid)
 			return;
 
-		var wvfInvUpperBand = wvfInvSmaValue.ToDecimal() + (BbMultiplier * wvfInvStdDevValue.ToDecimal());
+		var rsiVal = rsiValue.ToDecimal();
 
-		CheckEntryExitConditions(candle, wvf, wvfUpperBand, wvfInv, wvfInvUpperBand);
-	}
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
 
-	private void CheckEntryExitConditions(ICandleMessage candle, decimal wvf, decimal wvfUpperBand, decimal wvfInv, decimal wvfInvUpperBand)
-	{
-		var currentPrice = candle.ClosePrice;
-		var bbLower = _bollingerBands.LowBand.GetValue(0);
-		var bbUpper = _bollingerBands.UpBand.GetValue(0);
-
-		// Simplified range calculations (original uses complex percentile logic)
-		var rangeHigh = wvf * HighestPercentile; // Simplified
-		var rangeHighInv = wvfInv * LowestPercentile; // Simplified
-
-		// Buy condition: WVF signals and price below lower Bollinger Band
-		var buyCondition = (wvf >= wvfUpperBand || wvf >= rangeHigh) && currentPrice < bbLower;
-
-		// Sell condition: WVF Inverted signals and price above upper Bollinger Band
-		var sellCondition = (wvfInv <= wvfInvUpperBand || wvfInv <= rangeHighInv) && currentPrice > bbUpper;
-
-		if (buyCondition && Position == 0)
+		if (_cooldownRemaining > 0)
 		{
-			RegisterOrder(CreateOrder(Sides.Buy, currentPrice, Volume));
+			_cooldownRemaining--;
+			return;
 		}
 
-		if (Position > 0 && sellCondition)
+		// Buy: price at or below lower BB + RSI oversold
+		if (candle.ClosePrice <= lower && rsiVal < 35 && Position <= 0)
 		{
-			RegisterOrder(CreateOrder(Sides.Sell, currentPrice, Math.Abs(Position)));
+			if (Position < 0)
+				BuyMarket(Math.Abs(Position));
+			BuyMarket(Volume);
+			_cooldownRemaining = CooldownBars;
+		}
+		// Sell: price at or above upper BB + RSI overbought
+		else if (candle.ClosePrice >= upper && rsiVal > 65 && Position >= 0)
+		{
+			if (Position > 0)
+				SellMarket(Math.Abs(Position));
+			SellMarket(Volume);
+			_cooldownRemaining = CooldownBars;
+		}
+		// Exit long: price reaches middle BB or RSI > 70
+		else if (Position > 0 && (candle.ClosePrice >= mid || rsiVal > 70))
+		{
+			SellMarket(Math.Abs(Position));
+			_cooldownRemaining = CooldownBars;
+		}
+		// Exit short: price reaches middle BB or RSI < 30
+		else if (Position < 0 && (candle.ClosePrice <= mid || rsiVal < 30))
+		{
+			BuyMarket(Math.Abs(Position));
+			_cooldownRemaining = CooldownBars;
 		}
 	}
 }
