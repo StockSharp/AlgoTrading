@@ -16,17 +16,22 @@ public class NarrowRangeStrategy : Strategy
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		var fast = new ExponentialMovingAverage { Length = 10 };
-		var slow = new ExponentialMovingAverage { Length = 30 };
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = 40 };
 		var rsi = new RelativeStrengthIndex { Length = 14 };
 		var prevF = 0m; var prevS = 0m; var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(120);
 		var sub = SubscribeCandles(CandleType);
 		sub.Bind(fast, slow, rsi, (c, f, s, r) =>
 		{
 			if (c.State != CandleStates.Finished || !fast.IsFormed || !slow.IsFormed || !rsi.IsFormed) return;
 			if (!init) { prevF = f; prevS = s; init = true; return; }
-			if (prevF <= prevS && f > s && r > 45 && Position <= 0) BuyMarket();
-			else if (prevF >= prevS && f < s && r < 55 && Position > 0) SellMarket();
+			if (c.OpenTime - lastSignal >= cooldown)
+			{
+				if (prevF <= prevS && f > s && r > 50 && Position <= 0) { BuyMarket(); lastSignal = c.OpenTime; }
+				else if (prevF >= prevS && f < s && r < 50 && Position > 0) { SellMarket(); lastSignal = c.OpenTime; }
+			}
 			prevF = f; prevS = s;
 		}).Start();
 		var area = CreateChartArea();

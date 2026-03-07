@@ -1,6 +1,4 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
 
 using Ecng.Common;
 
@@ -28,6 +26,7 @@ public class NseIndexWithEntryExitMarkersStrategy : Strategy
 	private decimal _takeProfit;
 	private decimal _prevRsi;
 	private bool _isRsiInitialized;
+	private DateTimeOffset _lastSignal = DateTimeOffset.MinValue;
 
 	public int SmaPeriod
 	{
@@ -69,12 +68,24 @@ public class NseIndexWithEntryExitMarkersStrategy : Strategy
 	{
 		_smaPeriod = Param(nameof(SmaPeriod), 200);
 		_rsiPeriod = Param(nameof(RsiPeriod), 14);
-		_rsiOversold = Param(nameof(RsiOversold), 40m);
+		_rsiOversold = Param(nameof(RsiOversold), 25m);
 		_atrPeriod = Param(nameof(AtrPeriod), 14);
-		_atrMultiplier = Param(nameof(AtrMultiplier), 1.5m);
+		_atrMultiplier = Param(nameof(AtrMultiplier), 4m);
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_stopLoss = 0m;
+		_takeProfit = 0m;
+		_prevRsi = 0m;
+		_isRsiInitialized = false;
+		_lastSignal = DateTimeOffset.MinValue;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
@@ -83,6 +94,7 @@ public class NseIndexWithEntryExitMarkersStrategy : Strategy
 		_takeProfit = 0m;
 		_prevRsi = 0m;
 		_isRsiInitialized = false;
+		_lastSignal = DateTimeOffset.MinValue;
 
 		var sma = new SimpleMovingAverage { Length = SmaPeriod };
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
@@ -107,13 +119,16 @@ public class NseIndexWithEntryExitMarkersStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (Position > 0)
+		var cooldown = TimeSpan.FromMinutes(480);
+
+		if (Position > 0 && candle.OpenTime - _lastSignal >= cooldown)
 		{
 			if (candle.LowPrice <= _stopLoss || candle.HighPrice >= _takeProfit)
 			{
-				SellMarket(Math.Abs(Position));
+				SellMarket();
 				_stopLoss = 0m;
 				_takeProfit = 0m;
+				_lastSignal = candle.OpenTime;
 			}
 		}
 
@@ -127,13 +142,12 @@ public class NseIndexWithEntryExitMarkersStrategy : Strategy
 		var inUptrend = candle.ClosePrice > smaValue;
 		var crossUp = _prevRsi <= RsiOversold && rsiValue > RsiOversold;
 
-		if (inUptrend && crossUp && Position <= 0)
+		if (inUptrend && crossUp && Position <= 0 && candle.OpenTime - _lastSignal >= cooldown)
 		{
-			if (Position < 0)
-				BuyMarket(Math.Abs(Position));
-			BuyMarket(Volume);
+			BuyMarket();
 			_stopLoss = candle.ClosePrice - AtrMultiplier * atrValue;
 			_takeProfit = candle.ClosePrice + AtrMultiplier * atrValue;
+			_lastSignal = candle.OpenTime;
 		}
 
 		_prevRsi = rsiValue;

@@ -1,6 +1,4 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
 
 using Ecng.Common;
 
@@ -13,35 +11,44 @@ namespace StockSharp.Samples.Strategies;
 
 public class NyBreakoutStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _rewardRisk;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal? _hi;
-	private decimal? _lo;
-	private bool _wasSession;
-	private decimal _stopPrice;
-	private decimal _takePrice;
+	private decimal _dayHigh;
+	private decimal _dayLow;
+	private DateTime _currentDay;
+	private bool _rangeSet;
+	private bool _tradedToday;
 
-	public decimal RewardRisk { get => _rewardRisk.Value; set => _rewardRisk.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public NyBreakoutStrategy()
 	{
-		_rewardRisk = Param(nameof(RewardRisk), 2m).SetGreaterThanZero();
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_dayHigh = 0m;
+		_dayLow = 0m;
+		_currentDay = default;
+		_rangeSet = false;
+		_tradedToday = false;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_hi = null;
-		_lo = null;
-		_wasSession = false;
-		_stopPrice = 0;
-		_takePrice = 0;
+		_dayHigh = 0m;
+		_dayLow = 0m;
+		_currentDay = default;
+		_rangeSet = false;
+		_tradedToday = false;
 
-		var sma = new SimpleMovingAverage { Length = 10 };
+		var sma = new SimpleMovingAverage { Length = 20 };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(sma, ProcessCandle).Start();
@@ -59,71 +66,38 @@ public class NyBreakoutStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var t = candle.OpenTime;
-		// Use first hour of each day as session range
-		var inSession = t.TimeOfDay.TotalHours >= 0 && t.TimeOfDay.TotalHours < 1;
+		var day = candle.OpenTime.Date;
 
-		if (inSession)
+		// New day: close positions, capture first candle range
+		if (day != _currentDay)
 		{
-			_hi = _hi.HasValue ? Math.Max(_hi.Value, candle.HighPrice) : candle.HighPrice;
-			_lo = _lo.HasValue ? Math.Min(_lo.Value, candle.LowPrice) : candle.LowPrice;
+			_currentDay = day;
+			if (Position > 0) SellMarket();
+			else if (Position < 0) BuyMarket();
+			_dayHigh = candle.HighPrice;
+			_dayLow = candle.LowPrice;
+			_rangeSet = true;
+			_tradedToday = false;
+			return;
 		}
 
-		// Manage position
-		if (Position > 0)
+		if (!_rangeSet || _tradedToday)
+			return;
+
+		var range = _dayHigh - _dayLow;
+		if (range <= 0)
+			return;
+
+		// Entry: breakout above range high
+		if (Position <= 0 && candle.ClosePrice > _dayHigh)
 		{
-			if (candle.LowPrice <= _stopPrice || candle.HighPrice >= _takePrice)
-			{
-				SellMarket(Math.Abs(Position));
-			}
+			BuyMarket();
+			_tradedToday = true;
 		}
-		else if (Position < 0)
+		else if (Position >= 0 && candle.ClosePrice < _dayLow)
 		{
-			if (candle.HighPrice >= _stopPrice || candle.LowPrice <= _takePrice)
-			{
-				BuyMarket(Math.Abs(Position));
-			}
-		}
-
-		if (!inSession && _wasSession && _hi.HasValue && _lo.HasValue)
-		{
-			// Range just finished, ready for breakout
-		}
-
-		if (!inSession && _hi.HasValue && _lo.HasValue && Position == 0)
-		{
-			var hi = _hi.Value;
-			var lo = _lo.Value;
-			var range = hi - lo;
-
-			if (range > 0)
-			{
-				if (candle.ClosePrice > hi)
-				{
-					BuyMarket(Volume);
-					_stopPrice = lo;
-					_takePrice = candle.ClosePrice + range * RewardRisk;
-					_hi = null;
-					_lo = null;
-				}
-				else if (candle.ClosePrice < lo)
-				{
-					SellMarket(Volume);
-					_stopPrice = hi;
-					_takePrice = candle.ClosePrice - range * RewardRisk;
-					_hi = null;
-					_lo = null;
-				}
-			}
-		}
-
-		_wasSession = inSession;
-
-		// Reset range for new day
-		if (inSession && !_wasSession)
-		{
-			_hi = candle.HighPrice;
-			_lo = candle.LowPrice;
+			SellMarket();
+			_tradedToday = true;
 		}
 	}
 }

@@ -1,6 +1,4 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
 
 using Ecng.Common;
 
@@ -24,6 +22,7 @@ public class NqPhantomScalperProStrategy : Strategy
 
 	private decimal _entryPrice;
 	private decimal _stopPrice;
+	private DateTimeOffset _lastSignal = DateTimeOffset.MinValue;
 
 	public decimal Band1Mult
 	{
@@ -71,12 +70,23 @@ public class NqPhantomScalperProStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_entryPrice = 0m;
+		_stopPrice = 0m;
+		_lastSignal = DateTimeOffset.MinValue;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
 		_entryPrice = 0m;
 		_stopPrice = 0m;
+		_lastSignal = DateTimeOffset.MinValue;
 
 		var vwap = new VolumeWeightedMovingAverage();
 		var atr = new AverageTrueRange { Length = 14 };
@@ -120,38 +130,42 @@ public class NqPhantomScalperProStrategy : Strategy
 		var trendOkLong = !UseTrendFilter || candle.ClosePrice > trendVal;
 		var trendOkShort = !UseTrendFilter || candle.ClosePrice < trendVal;
 
+		var cooldown = TimeSpan.FromMinutes(360);
+
+		if (candle.OpenTime - _lastSignal < cooldown)
+			return;
+
+		// Exit logic - only on stop loss
+		if (Position > 0 && _stopPrice > 0 && candle.ClosePrice <= _stopPrice)
+		{
+			SellMarket();
+			_stopPrice = 0m;
+			_lastSignal = candle.OpenTime;
+			return;
+		}
+
+		if (Position < 0 && _stopPrice > 0 && candle.ClosePrice >= _stopPrice)
+		{
+			BuyMarket();
+			_stopPrice = 0m;
+			_lastSignal = candle.OpenTime;
+			return;
+		}
+
+		// Entry logic
 		if (Position <= 0 && candle.ClosePrice > upper1 && trendOkLong)
 		{
+			BuyMarket();
 			_entryPrice = candle.ClosePrice;
-			_stopPrice = _entryPrice - atr * AtrStopMult;
-			CancelActiveOrders();
-			if (Position < 0)
-				BuyMarket(Math.Abs(Position));
-			BuyMarket(Volume);
+			_stopPrice = _entryPrice - atr * AtrStopMult * 3;
+			_lastSignal = candle.OpenTime;
 		}
 		else if (Position >= 0 && candle.ClosePrice < lower1 && trendOkShort)
 		{
+			SellMarket();
 			_entryPrice = candle.ClosePrice;
-			_stopPrice = _entryPrice + atr * AtrStopMult;
-			CancelActiveOrders();
-			if (Position > 0)
-				SellMarket(Math.Abs(Position));
-			SellMarket(Volume);
-		}
-
-		if (Position > 0)
-		{
-			if (candle.ClosePrice <= _stopPrice || candle.ClosePrice < vwapVal)
-			{
-				SellMarket(Math.Abs(Position));
-			}
-		}
-		else if (Position < 0)
-		{
-			if (candle.ClosePrice >= _stopPrice || candle.ClosePrice > vwapVal)
-			{
-				BuyMarket(Math.Abs(Position));
-			}
+			_stopPrice = _entryPrice + atr * AtrStopMult * 3;
+			_lastSignal = candle.OpenTime;
 		}
 	}
 }

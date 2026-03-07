@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -27,6 +24,7 @@ public class NeonMomentumWavesStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal? _prevHist;
+	private DateTimeOffset _lastSignal = DateTimeOffset.MinValue;
 
 	/// <summary>
 	/// MACD fast EMA length.
@@ -117,7 +115,7 @@ public class NeonMomentumWavesStrategy : Strategy
 		_shortExitLevel = Param(nameof(ShortExitLevel), -9m)
 			.SetDisplay("Short Exit Level", "Histogram level to exit shorts", "Parameters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -132,6 +130,7 @@ public class NeonMomentumWavesStrategy : Strategy
 	{
 		base.OnReseted();
 		_prevHist = null;
+		_lastSignal = DateTimeOffset.MinValue;
 	}
 
 	/// <inheritdoc />
@@ -184,22 +183,21 @@ public class NeonMomentumWavesStrategy : Strategy
 		}
 
 		var prev = _prevHist.Value;
-		var crossUp = prev <= EntryLevel && hist > EntryLevel;
-		var crossDown = prev >= EntryLevel && hist < EntryLevel;
-		var longExit = Position > 0 && prev <= LongExitLevel && hist > LongExitLevel;
-		var shortExit = Position < 0 && prev >= ShortExitLevel && hist < ShortExitLevel;
+		var cooldown = TimeSpan.FromMinutes(360);
 
-		if (longExit)
-			SellMarket(Position);
-
-		if (shortExit)
-			BuyMarket(Math.Abs(Position));
-
-		if (crossUp && Position <= 0)
-			BuyMarket(Volume + Math.Abs(Position));
-
-		if (crossDown && Position >= 0)
-			SellMarket(Volume + Math.Abs(Position));
+		if (candle.OpenTime - _lastSignal >= cooldown)
+		{
+			if (prev <= EntryLevel && hist > EntryLevel && Position <= 0)
+			{
+				BuyMarket();
+				_lastSignal = candle.OpenTime;
+			}
+			else if (prev >= EntryLevel && hist < EntryLevel && Position > 0)
+			{
+				SellMarket();
+				_lastSignal = candle.OpenTime;
+			}
+		}
 
 		_prevHist = hist;
 	}
