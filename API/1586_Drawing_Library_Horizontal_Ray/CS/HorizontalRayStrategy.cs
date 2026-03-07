@@ -22,100 +22,83 @@ public class HorizontalRayStrategy : Strategy
 	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private SimpleMovingAverage _fast;
-	private SimpleMovingAverage _slow;
 	private decimal _prevFast;
 	private decimal _prevSlow;
 
-	/// <summary>
-	/// Fast SMA length.
-	/// </summary>
-	public int FastLength
-	{
-		get => _fastLength.Value;
-		set => _fastLength.Value = value;
-	}
+	public int FastLength { get => _fastLength.Value; set => _fastLength.Value = value; }
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Slow SMA length.
-	/// </summary>
-	public int SlowLength
-	{
-		get => _slowLength.Value;
-		set => _slowLength.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type for calculations.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initialize <see cref="HorizontalRayStrategy"/>.
-	/// </summary>
 	public HorizontalRayStrategy()
 	{
 		_fastLength = Param(nameof(FastLength), 10)
 			.SetGreaterThanZero()
-			.SetDisplay("Fast Length", "Fast SMA length", "General")
-			;
+			.SetDisplay("Fast Length", "Fast SMA length", "General");
 
 		_slowLength = Param(nameof(SlowLength), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("Slow Length", "Slow SMA length", "General")
-			;
+			.SetDisplay("Slow Length", "Slow SMA length", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for candles", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
 
-	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFast = 0;
+		_prevSlow = 0;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_fast = new SMA { Length = FastLength };
-		_slow = new SMA { Length = SlowLength };
+		var fast = new SimpleMovingAverage { Length = FastLength };
+		var slow = new SimpleMovingAverage { Length = SlowLength };
+
+		_prevFast = 0;
+		_prevSlow = 0;
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(_fast, _slow, ProcessCandle)
-			.Start();
+		subscription.Bind(fast, slow, ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _fast);
-			DrawIndicator(area, _slow);
+			DrawIndicator(area, fast);
+			DrawIndicator(area, slow);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow)
+	private void ProcessCandle(ICandleMessage candle, decimal fastVal, decimal slowVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var crossUp = _prevFast <= _prevSlow && fast > slow;
-		var crossDown = _prevFast >= _prevSlow && fast < slow;
+		if (_prevFast == 0)
+		{
+			_prevFast = fastVal;
+			_prevSlow = slowVal;
+			return;
+		}
+
+		var crossUp = _prevFast <= _prevSlow && fastVal > slowVal;
+		var crossDown = _prevFast >= _prevSlow && fastVal < slowVal;
 
 		if (crossUp && Position <= 0)
 			BuyMarket();
 		else if (crossDown && Position >= 0)
 			SellMarket();
 
-		_prevFast = fast;
-		_prevSlow = slow;
+		_prevFast = fastVal;
+		_prevSlow = slowVal;
 	}
 }

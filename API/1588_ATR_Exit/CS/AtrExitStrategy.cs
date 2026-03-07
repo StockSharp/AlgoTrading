@@ -36,7 +36,7 @@ public class AtrExitStrategy : Strategy
 		_fastLen = Param(nameof(FastLength), 10).SetGreaterThanZero().SetDisplay("Fast EMA", "Fast EMA length", "General");
 		_slowLen = Param(nameof(SlowLength), 30).SetGreaterThanZero().SetDisplay("Slow EMA", "Slow EMA length", "General");
 		_atrLen = Param(nameof(AtrLength), 14).SetGreaterThanZero().SetDisplay("ATR Length", "ATR period", "General");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to process", "General");
 	}
 
