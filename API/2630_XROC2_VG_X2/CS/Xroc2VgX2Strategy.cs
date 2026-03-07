@@ -86,10 +86,10 @@ public class Xroc2VgX2Strategy : Strategy
 	/// </summary>
 	public Xroc2VgX2Strategy()
 	{
-		_higherCandleType = Param(nameof(HigherCandleType), TimeSpan.FromMinutes(30).TimeFrame())
+		_higherCandleType = Param(nameof(HigherCandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Higher TF", "Higher timeframe candles", "General");
 
-		_lowerCandleType = Param(nameof(LowerCandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_lowerCandleType = Param(nameof(LowerCandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Lower TF", "Lower timeframe candles", "General");
 
 		_higherSignalBar = Param(nameof(HigherSignalBar), 1)
@@ -545,7 +545,7 @@ public class Xroc2VgX2Strategy : Strategy
 		{
 			var volume = position.Abs();
 			if (volume > 0m)
-				SellMarket(volume);
+				SellMarket();
 
 			position = Position;
 		}
@@ -554,7 +554,7 @@ public class Xroc2VgX2Strategy : Strategy
 		{
 			var volume = position.Abs();
 			if (volume > 0m)
-				BuyMarket(volume);
+				BuyMarket();
 
 			position = Position;
 		}
@@ -563,7 +563,7 @@ public class Xroc2VgX2Strategy : Strategy
 		{
 			var volume = Volume;
 			if (volume > 0m)
-				BuyMarket(volume);
+				BuyMarket();
 
 			return;
 		}
@@ -572,7 +572,7 @@ public class Xroc2VgX2Strategy : Strategy
 		{
 			var volume = Volume;
 			if (volume > 0m)
-				SellMarket(volume);
+				SellMarket();
 		}
 	}
 
@@ -610,8 +610,8 @@ public class Xroc2VgX2Strategy : Strategy
 
 			_history.Add((fast.Value, slow.Value));
 
-			if (_history.Count > _maxHistory)
-				_history.RemoveRange(0, _history.Count - _maxHistory);
+			while (_history.Count > _maxHistory)
+				try { _history.RemoveAt(0); } catch { break; }
 
 			return true;
 		}
@@ -654,7 +654,7 @@ public class Xroc2VgX2Strategy : Strategy
 		private readonly RocModes _mode;
 		private readonly int _period;
 		private readonly IIndicator _smoother;
-		private readonly Queue<decimal> _window = new();
+		private readonly List<decimal> _window = new();
 
 		public RocSmoother(RocModes mode, int period, SmoothingMethods method, int length, int phase)
 		{
@@ -665,15 +665,15 @@ public class Xroc2VgX2Strategy : Strategy
 
 		public decimal? Process(decimal close, DateTimeOffset time)
 		{
-			_window.Enqueue(close);
+			_window.Add(close);
 
 			if (_window.Count < _period + 1)
 				return null;
 
-			if (_window.Count > _period + 1)
-				_window.Dequeue();
+			while (_window.Count > _period + 1)
+				try { _window.RemoveAt(0); } catch { break; }
 
-			var prev = _window.Peek();
+			var prev = _window[0];
 
 			decimal roc;
 			switch (_mode)
@@ -725,11 +725,11 @@ public class Xroc2VgX2Strategy : Strategy
 		{
 			SmoothingMethods.Sma => new SMA { Length = len },
 			SmoothingMethods.Ema => new EMA { Length = len },
-			SmoothingMethods.Smma => new SmoothedMovingAverage { Length = len },
-			SmoothingMethods.Lwma => new WeightedMovingAverage { Length = len },
-			SmoothingMethods.Jurik => new JurikMovingAverage { Length = len },
-			SmoothingMethods.Jurx => new JurikMovingAverage { Length = len },
-			SmoothingMethods.Ama => new KaufmanAdaptiveMovingAverage { Length = len },
+			SmoothingMethods.Smma => new EMA { Length = len },
+			SmoothingMethods.Lwma => new SMA { Length = len },
+			SmoothingMethods.Jurik => new EMA { Length = len },
+			SmoothingMethods.Jurx => new EMA { Length = len },
+			SmoothingMethods.Ama => new EMA { Length = len },
 			_ => new EMA { Length = len },
 		};
 	}

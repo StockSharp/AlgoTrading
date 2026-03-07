@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 using Ecng.Common;
 
@@ -90,8 +91,22 @@ public class IStochasticTradingStrategy : Strategy
 			.SetRange(0m, 100m)
 			.SetDisplay("Sell Zone", "Lower boundary for bearish confirmation", "Signals");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe for the strategy", "General");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevK = null;
+		_prevD = null;
 	}
 
 	/// <inheritdoc />

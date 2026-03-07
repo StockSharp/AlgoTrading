@@ -92,7 +92,7 @@ public class Xroc2VgTmStrategy : Strategy
 	/// </summary>
 	public Xroc2VgTmStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe", "General");
 
 		_rocPeriod1 = Param(nameof(RocPeriod1), 5)
@@ -392,8 +392,8 @@ public class Xroc2VgTmStrategy : Strategy
 		if (fastRoc is null || slowRoc is null)
 			return;
 
-		var fastValue = _smoothFast.Process(new DecimalIndicatorValue(_smoothFast, fastRoc.Value, candle.OpenTime));
-		var slowValue = _smoothSlow.Process(new DecimalIndicatorValue(_smoothSlow, slowRoc.Value, candle.OpenTime));
+		var fastValue = _smoothFast.Process(new DecimalIndicatorValue(_smoothFast, fastRoc.Value, candle.OpenTime) { IsFinal = true });
+		var slowValue = _smoothSlow.Process(new DecimalIndicatorValue(_smoothSlow, slowRoc.Value, candle.OpenTime) { IsFinal = true });
 
 		// Skip until we have enough data for both smoothing indicators
 
@@ -581,8 +581,8 @@ public class Xroc2VgTmStrategy : Strategy
 		IIndicator indicator = method switch
 		{
 			SmoothingMethods.Simple => new SMA { Length = length },
-			SmoothingMethods.Smoothed => new SmoothedMovingAverage { Length = length },
-			SmoothingMethods.Weighted => new WeightedMovingAverage { Length = length },
+			SmoothingMethods.Smoothed => new EMA { Length = length },
+			SmoothingMethods.Weighted => new SMA { Length = length },
 			_ => new EMA { Length = length }
 		};
 

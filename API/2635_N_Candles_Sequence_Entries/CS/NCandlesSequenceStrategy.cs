@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 using Ecng.Common;
 
@@ -48,8 +49,22 @@ public class NCandlesSequenceStrategy : Strategy
 			.SetDisplay("Consecutive Candles", "Number of identical candles in a row", "Entry")
 			.SetOptimize(2, 6, 1);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to analyze", "General");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_consecutiveDirection = 0;
+		_consecutiveCount = 0;
 	}
 
 	/// <inheritdoc />

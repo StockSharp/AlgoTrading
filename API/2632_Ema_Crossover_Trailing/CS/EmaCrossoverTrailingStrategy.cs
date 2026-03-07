@@ -67,7 +67,7 @@ public class EmaCrossoverTrailingStrategy : Strategy
 			
 			.SetOptimize(1m, 10m, 1m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles used for calculations", "General");
 
 		_tradeVolume = Param(nameof(TradeVolume), 1m)
@@ -145,6 +145,10 @@ public class EmaCrossoverTrailingStrategy : Strategy
 		_previousSlowValue = null;
 		_longStopPrice = null;
 		_shortStopPrice = null;
+		_fastEma = null!;
+		_slowEma = null!;
+		_stopDistance = 0m;
+		_stepDistance = 0m;
 	}
 
 	/// <inheritdoc />
@@ -192,12 +196,7 @@ public class EmaCrossoverTrailingStrategy : Strategy
 			return;
 		}
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			_previousFastValue = fastValue;
-			_previousSlowValue = slowValue;
-			return;
-		}
+		// indicators bound via .Bind()
 
 		if (_previousFastValue is null || _previousSlowValue is null)
 		{
@@ -221,7 +220,7 @@ public class EmaCrossoverTrailingStrategy : Strategy
 
 			if (volumeToBuy > 0)
 			{
-				BuyMarket(volumeToBuy);
+				BuyMarket();
 				InitializeLongTrailing(candle.ClosePrice);
 			}
 		}
@@ -234,7 +233,7 @@ public class EmaCrossoverTrailingStrategy : Strategy
 
 			if (volumeToSell > 0)
 			{
-				SellMarket(volumeToSell);
+				SellMarket();
 				InitializeShortTrailing(candle.ClosePrice);
 			}
 		}
@@ -304,7 +303,7 @@ public class EmaCrossoverTrailingStrategy : Strategy
 
 				if (candle.LowPrice <= _longStopPrice.Value)
 				{
-					SellMarket(Math.Abs(Position));
+					SellMarket();
 					_longStopPrice = null;
 				}
 			}
@@ -324,7 +323,7 @@ public class EmaCrossoverTrailingStrategy : Strategy
 
 				if (candle.HighPrice >= _shortStopPrice.Value)
 				{
-					BuyMarket(Math.Abs(Position));
+					BuyMarket();
 					_shortStopPrice = null;
 				}
 			}

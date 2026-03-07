@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 using Ecng.Common;
 
@@ -63,7 +64,7 @@ public class NCandlesV3Strategy : Strategy
 	/// </summary>
 	public NCandlesV3Strategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles analysed by the strategy", "General");
 
 		_identicalCandles = Param(nameof(IdenticalCandles), 3)
@@ -77,6 +78,20 @@ public class NCandlesV3Strategy : Strategy
 		_stopLossPoints = Param(nameof(StopLossPoints), 50m)
 			.SetRange(0m, 500m)
 			.SetDisplay("Stop Loss Points", "Stop loss distance in price steps", "Risk Management");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_sequenceDirection = 0;
+		_sequenceCount = 0;
 	}
 
 	/// <inheritdoc />

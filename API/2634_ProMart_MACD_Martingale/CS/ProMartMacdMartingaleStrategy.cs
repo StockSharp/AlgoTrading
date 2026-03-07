@@ -91,8 +91,28 @@ public class ProMartMacdMartingaleStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("MACD2 Slow", "Slow EMA period for the secondary MACD.", "Filter");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Data type used for signal generation.", "General");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_macd1History.Clear();
+		_macd2History.Clear();
+		_entryPrice = 0;
+		_inPosition = false;
+		_isLong = false;
+		_lastTradeWasLoss = false;
+		_martingaleCounter = 0;
+		_currentVolume = 0;
 	}
 
 	/// <inheritdoc />
