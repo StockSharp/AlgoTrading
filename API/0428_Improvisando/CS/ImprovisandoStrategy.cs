@@ -5,63 +5,46 @@ using System.Collections.Generic;
 
 using Ecng.Common;
 
-using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 /// <summary>
-/// Improvisando Strategy
+/// Improvisando Strategy.
+/// Uses EMA trend + RSI filter + candle pattern (engulfing) for entries.
+/// Exits via take profit or EMA crossback.
 /// </summary>
 public class ImprovisandoStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleTypeParam;
 	private readonly StrategyParam<int> _emaLength;
 	private readonly StrategyParam<int> _rsiLength;
-	private readonly StrategyParam<bool> _showLong;
-	private readonly StrategyParam<bool> _showShort;
-	private readonly StrategyParam<decimal> _tpPercent;
-	private readonly StrategyParam<decimal> _slPercent;
+	private readonly StrategyParam<int> _cooldownBars;
 
 	private ExponentialMovingAverage _ema;
 	private RelativeStrengthIndex _rsi;
-	private ExponentialMovingAverage _macdFast;
-	private ExponentialMovingAverage _macdSlow;
 
-	private decimal? _entryPrice;
-	private decimal _trailingStopLong;
-	private decimal _trailingStopShort;
-	private decimal _prevMacd;
-	private bool _prevBullishCandle;
-	private bool _prevBearishCandle;
-	
-	//    
 	private decimal _prevClose;
 	private decimal _prevOpen;
+	private int _cooldownRemaining;
+	private decimal? _entryPrice;
 
 	public ImprovisandoStrategy()
 	{
-		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle type", "Candle type for strategy calculation.", "General");
 
-		_emaLength = Param(nameof(EmaLength), 10)
+		_emaLength = Param(nameof(EmaLength), 20)
+			.SetGreaterThanZero()
 			.SetDisplay("EMA Length", "EMA period", "Moving Averages");
 
 		_rsiLength = Param(nameof(RsiLength), 14)
+			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "RSI period", "RSI");
 
-		_showLong = Param(nameof(ShowLong), true)
-			.SetDisplay("Long entries", "Enable long positions", "Strategy");
-
-		_showShort = Param(nameof(ShowShort), false)
-			.SetDisplay("Short entries", "Enable short positions", "Strategy");
-
-		_tpPercent = Param(nameof(TpPercent), 1.2m)
-			.SetDisplay("Take Profit %", "Take profit percentage", "Take Profit");
-
-		_slPercent = Param(nameof(SlPercent), 1.8m)
-			.SetDisplay("Stop Loss %", "Stop loss percentage", "Stop Loss");
+		_cooldownBars = Param(nameof(CooldownBars), 15)
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "Risk");
 	}
 
 	public DataType CandleType
@@ -82,28 +65,10 @@ public class ImprovisandoStrategy : Strategy
 		set => _rsiLength.Value = value;
 	}
 
-	public bool ShowLong
+	public int CooldownBars
 	{
-		get => _showLong.Value;
-		set => _showLong.Value = value;
-	}
-
-	public bool ShowShort
-	{
-		get => _showShort.Value;
-		set => _showShort.Value = value;
-	}
-
-	public decimal TpPercent
-	{
-		get => _tpPercent.Value;
-		set => _tpPercent.Value = value;
-	}
-
-	public decimal SlPercent
-	{
-		get => _slPercent.Value;
-		set => _slPercent.Value = value;
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	/// <inheritdoc />
@@ -115,11 +80,12 @@ public class ImprovisandoStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_prevClose = default;
-		_prevOpen = default;
-		_prevBullishCandle = default;
-		_prevBearishCandle = default;
-		_prevMacd = default;
+		_ema = null;
+		_rsi = null;
+		_prevClose = 0;
+		_prevOpen = 0;
+		_cooldownRemaining = 0;
+		_entryPrice = null;
 	}
 
 	/// <inheritdoc />
@@ -127,146 +93,111 @@ public class ImprovisandoStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Initialize indicators
-		_ema = new EMA { Length = EmaLength };
+		_ema = new ExponentialMovingAverage { Length = EmaLength };
 		_rsi = new RelativeStrengthIndex { Length = RsiLength };
-		_macdFast = new EMA { Length = 12 };
-		_macdSlow = new EMA { Length = 26 };
 
-		// Subscribe to candles using high-level API
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(_ema, _rsi, _macdFast, _macdSlow, OnProcess)
+			.Bind(_ema, _rsi, OnProcess)
 			.Start();
 
-		// Setup chart
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _ema, System.Drawing.Color.Purple);
+			DrawIndicator(area, _ema);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void OnProcess(ICandleMessage candle, IIndicatorValue emaValue, IIndicatorValue rsiValue, IIndicatorValue macdFastValue, IIndicatorValue macdSlowValue)
+	private void OnProcess(ICandleMessage candle, decimal ema, decimal rsi)
 	{
-		// Process only finished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Wait for indicators to form
-		if (!_ema.IsFormed || !_rsi.IsFormed || !_macdFast.IsFormed || !_macdSlow.IsFormed)
+		if (!_ema.IsFormed || !_rsi.IsFormed)
 		{
-			// Store current candle data for next iteration
 			_prevClose = candle.ClosePrice;
 			_prevOpen = candle.OpenPrice;
-			_prevBullishCandle = candle.ClosePrice > candle.OpenPrice;
-			_prevBearishCandle = candle.ClosePrice < candle.OpenPrice;
-			_prevMacd = macdFastValue.ToDecimal() - macdSlowValue.ToDecimal();
 			return;
 		}
 
-		// Calculate MACD
-		var macd = macdFastValue.ToDecimal() - macdSlowValue.ToDecimal();
-		var emaPrice = emaValue.ToDecimal();
-		var rsiPrice = rsiValue.ToDecimal();
-
-		// Check candle patterns
-		var currentBullish = candle.ClosePrice > candle.OpenPrice;
-		var currentBearish = candle.ClosePrice < candle.OpenPrice;
-
-		// Pattern: previous red candle and current green candle crosses above previous high
-		var buyPattern = _prevBearishCandle && candle.ClosePrice > _prevOpen;
-		
-		// Pattern: previous green candle and current red candle crosses below previous low
-		var sellPattern = _prevBullishCandle && candle.ClosePrice < _prevOpen;
-
-		// Entry conditions
-		var entryLong = buyPattern && 
-						candle.ClosePrice > emaPrice && 
-						_prevClose > emaPrice &&
-						rsiPrice < 65 && 
-						macd > _prevMacd;
-
-		var entryShort = sellPattern && 
-						 candle.ClosePrice < emaPrice && 
-						 _prevClose < emaPrice &&
-						 rsiPrice > 35 && 
-						 macd < _prevMacd;
-
-		// Calculate take profit and stop loss levels
-		if (Position != 0 && _entryPrice.HasValue)
+		if (!IsFormedAndOnlineAndAllowTrading())
 		{
-			var longTP = _entryPrice.Value * (1 + TpPercent / 100);
-			var shortTP = _entryPrice.Value * (1 - TpPercent / 100);
-			var longStop = _entryPrice.Value * (1 - SlPercent / 100);
-			var shortStop = _entryPrice.Value * (1 + SlPercent / 100);
+			_prevClose = candle.ClosePrice;
+			_prevOpen = candle.OpenPrice;
+			return;
+		}
 
-			// Update trailing stops
+		if (_cooldownRemaining > 0)
+		{
+			_cooldownRemaining--;
+			_prevClose = candle.ClosePrice;
+			_prevOpen = candle.OpenPrice;
+			return;
+		}
+
+		var close = candle.ClosePrice;
+		var open = candle.OpenPrice;
+
+		// Engulfing patterns
+		var prevBearish = _prevClose < _prevOpen && _prevClose > 0;
+		var prevBullish = _prevClose > _prevOpen && _prevClose > 0;
+
+		// Bullish engulfing: previous red, current green, close above prev open
+		var buyPattern = prevBearish && close > open && close > _prevOpen;
+		// Bearish engulfing: previous green, current red, close below prev open
+		var sellPattern = prevBullish && close < open && close < _prevOpen;
+
+		// Exit long: price crosses below EMA or take profit
+		if (Position > 0)
+		{
+			var tp = _entryPrice.HasValue && close > _entryPrice.Value * 1.02m;
+			if (close < ema || tp)
+			{
+				SellMarket(Math.Abs(Position));
+				_entryPrice = null;
+				_cooldownRemaining = CooldownBars;
+				_prevClose = close;
+				_prevOpen = open;
+				return;
+			}
+		}
+		// Exit short: price crosses above EMA or take profit
+		else if (Position < 0)
+		{
+			var tp = _entryPrice.HasValue && close < _entryPrice.Value * 0.98m;
+			if (close > ema || tp)
+			{
+				BuyMarket(Math.Abs(Position));
+				_entryPrice = null;
+				_cooldownRemaining = CooldownBars;
+				_prevClose = close;
+				_prevOpen = open;
+				return;
+			}
+		}
+
+		// Buy: engulfing + above EMA + RSI not overbought
+		if (buyPattern && close > ema && rsi < 65 && Position <= 0)
+		{
+			if (Position < 0)
+				BuyMarket(Math.Abs(Position));
+			BuyMarket(Volume);
+			_entryPrice = close;
+			_cooldownRemaining = CooldownBars;
+		}
+		// Sell: engulfing + below EMA + RSI not oversold
+		else if (sellPattern && close < ema && rsi > 35 && Position >= 0)
+		{
 			if (Position > 0)
-			{
-				var avgTP = (longTP + _entryPrice.Value) / 2;
-				if (candle.ClosePrice > avgTP)
-				{
-					_trailingStopLong = Math.Max(_trailingStopLong, _entryPrice.Value * 1.002m);
-				}
-				else
-				{
-					_trailingStopLong = Math.Max(_trailingStopLong, longStop);
-				}
-
-				// Check exit conditions
-				if (candle.ClosePrice >= longTP || candle.ClosePrice <= _trailingStopLong)
-				{
-					ClosePosition();
-					_entryPrice = null;
-					_trailingStopLong = 0;
-				}
-			}
-			else if (Position < 0)
-			{
-				var avgTP = (shortTP + _entryPrice.Value) / 2;
-				if (candle.ClosePrice < avgTP)
-				{
-					_trailingStopShort = Math.Min(_trailingStopShort == 0 ? decimal.MaxValue : _trailingStopShort, 
-												  _entryPrice.Value * 0.998m);
-				}
-				else
-				{
-					_trailingStopShort = Math.Min(_trailingStopShort == 0 ? decimal.MaxValue : _trailingStopShort, 
-												  shortStop);
-				}
-
-				// Check exit conditions
-				if (candle.ClosePrice <= shortTP || candle.ClosePrice >= _trailingStopShort)
-				{
-					ClosePosition();
-					_entryPrice = null;
-					_trailingStopShort = 0;
-				}
-			}
+				SellMarket(Math.Abs(Position));
+			SellMarket(Volume);
+			_entryPrice = close;
+			_cooldownRemaining = CooldownBars;
 		}
 
-		// Execute new trades
-		if (ShowLong && entryLong && Position <= 0)
-		{
-			BuyMarket(Volume + Math.Abs(Position));
-			_entryPrice = candle.ClosePrice;
-			_trailingStopLong = _entryPrice.Value * (1 - SlPercent / 100);
-		}
-		else if (ShowShort && entryShort && Position >= 0)
-		{
-			SellMarket(Volume + Math.Abs(Position));
-			_entryPrice = candle.ClosePrice;
-			_trailingStopShort = _entryPrice.Value * (1 + SlPercent / 100);
-		}
-
-		// Update state for next candle
-		_prevMacd = macd;
-		_prevBullishCandle = currentBullish;
-		_prevBearishCandle = currentBearish;
-		_prevClose = candle.ClosePrice;
-		_prevOpen = candle.OpenPrice;
+		_prevClose = close;
+		_prevOpen = open;
 	}
 }
