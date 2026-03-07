@@ -26,6 +26,7 @@ public class EesHedgerStrategy : Strategy
 	private readonly StrategyParam<int> _takeProfitPips;
 	private readonly StrategyParam<int> _trailingStopPips;
 	private readonly StrategyParam<int> _trailingStepPips;
+	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _entryPrice;
 	private decimal? _stopPrice;
@@ -95,12 +96,24 @@ public class EesHedgerStrategy : Strategy
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5)
 			.SetDisplay("Trailing Step (pips)", "Minimum trailing stop increment", "Risk Management");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+			.SetDisplay("Candle Type", "Time frame for processing", "General");
+	}
+
+	/// <summary>
+	/// Candle type used for processing.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		yield return (Security, DataType.Ticks);
+		yield return (Security, CandleType);
 	}
 
 	/// <inheritdoc />
@@ -119,14 +132,16 @@ public class EesHedgerStrategy : Strategy
 
 		_pipSize = CalculatePipSize();
 
-		SubscribeTicks()
-			.Bind(ProcessTrade)
-			.Start();
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(ProcessCandle).Start();
 	}
 
-	private void ProcessTrade(ITickTradeMessage trade)
+	private void ProcessCandle(ICandleMessage candle)
 	{
-		var price = trade.Price;
+		if (candle.State != CandleStates.Finished)
+			return;
+
+		var price = candle.ClosePrice;
 
 		if (price <= 0m)
 			return;
@@ -138,7 +153,7 @@ public class EesHedgerStrategy : Strategy
 			if (volume <= 0m)
 				return;
 
-			BuyMarket(volume);
+			BuyMarket();
 			_entryPrice = price;
 			_stopPrice = null;
 			return;
@@ -154,14 +169,14 @@ public class EesHedgerStrategy : Strategy
 
 			if (Position > 0 && price <= _entryPrice - stopDistance)
 			{
-				SellMarket(Math.Abs(Position));
+				SellMarket();
 				_entryPrice = 0m;
 				_stopPrice = null;
 				return;
 			}
 			else if (Position < 0 && price >= _entryPrice + stopDistance)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				_entryPrice = 0m;
 				_stopPrice = null;
 				return;
@@ -175,14 +190,14 @@ public class EesHedgerStrategy : Strategy
 
 			if (Position > 0 && price >= _entryPrice + takeDistance)
 			{
-				SellMarket(Math.Abs(Position));
+				SellMarket();
 				_entryPrice = 0m;
 				_stopPrice = null;
 				return;
 			}
 			else if (Position < 0 && price <= _entryPrice - takeDistance)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				_entryPrice = 0m;
 				_stopPrice = null;
 				return;
@@ -203,7 +218,7 @@ public class EesHedgerStrategy : Strategy
 
 				if (_stopPrice.HasValue && price <= _stopPrice.Value)
 				{
-					SellMarket(Math.Abs(Position));
+					SellMarket();
 					_entryPrice = 0m;
 					_stopPrice = null;
 				}
@@ -216,7 +231,7 @@ public class EesHedgerStrategy : Strategy
 
 				if (_stopPrice.HasValue && price >= _stopPrice.Value)
 				{
-					BuyMarket(Math.Abs(Position));
+					BuyMarket();
 					_entryPrice = 0m;
 					_stopPrice = null;
 				}

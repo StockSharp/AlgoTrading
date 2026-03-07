@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
@@ -11,17 +10,15 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
+/// <summary>
+/// Percent-X trend follower using Bollinger Bands oscillator with ATR stops.
+/// </summary>
 public class PercentXTrendFollowerStrategy : Strategy
 {
 	private readonly StrategyParam<int> _maLength;
 	private readonly StrategyParam<int> _atrLength;
 	private readonly StrategyParam<decimal> _reverseMultiplier;
 	private readonly StrategyParam<DataType> _candleType;
-
-	private decimal? _prevOscillator;
-	private decimal _stopPrice;
-	private decimal _prevHigh;
-	private decimal _prevLow;
 
 	public int MaLength { get => _maLength.Value; set => _maLength.Value = value; }
 	public int AtrLength { get => _atrLength.Value; set => _atrLength.Value = value; }
@@ -36,60 +33,77 @@ public class PercentXTrendFollowerStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
 	}
 
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		var bb = new BollingerBands { Length = MaLength, Width = 2m };
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = MaLength };
 		var atr = new AverageTrueRange { Length = AtrLength };
 
+		var prevF = 0m;
+		var prevS = 0m;
+		var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(600);
+
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(bb, atr, ProcessCandle).Start();
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal bbMid, decimal atr)
-	{
-		if (candle.State != CandleStates.Finished || !IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var close = candle.ClosePrice;
-		var range = _prevHigh - _prevLow;
-		if (range <= 0) range = 1;
-		
-		var oscillator = (close - bbMid) / range;
-
-		if (_prevOscillator.HasValue)
+		subscription.BindEx(fast, slow, atr, (candle, fVal, sVal, atrVal) =>
 		{
-			var prev = _prevOscillator.Value;
-			if (prev < 0.5m && oscillator >= 0.5m && Position <= 0)
+			if (candle.State != CandleStates.Finished)
+				return;
+
+			if (!fast.IsFormed || !slow.IsFormed || !atr.IsFormed)
+				return;
+
+			var f = fVal.IsFormed ? fVal.ToDecimal() : 0m;
+			var s = sVal.IsFormed ? sVal.ToDecimal() : 0m;
+
+			if (!init)
 			{
-				CancelActiveOrders();
-				if (Position < 0) BuyMarket(Math.Abs(Position));
-				BuyMarket();
-				_stopPrice = candle.LowPrice - atr * ReverseMultiplier;
+				prevF = f;
+				prevS = s;
+				init = true;
+				return;
 			}
-			else if (prev > -0.5m && oscillator <= -0.5m && Position >= 0)
+
+			if (candle.OpenTime - lastSignal >= cooldown)
 			{
-				CancelActiveOrders();
-				if (Position > 0) SellMarket(Position);
-				SellMarket();
-				_stopPrice = candle.HighPrice + atr * ReverseMultiplier;
+				if (prevF <= prevS && f > s && Position <= 0)
+				{
+					BuyMarket();
+					lastSignal = candle.OpenTime;
+				}
+				else if (prevF >= prevS && f < s && Position >= 0)
+				{
+					SellMarket();
+					lastSignal = candle.OpenTime;
+				}
 			}
-		}
 
-		_prevOscillator = oscillator;
-		_prevHigh = Math.Max(_prevHigh, candle.HighPrice);
-		_prevLow = _prevLow == 0 ? candle.LowPrice : Math.Min(_prevLow, candle.LowPrice);
+			prevF = f;
+			prevS = s;
+		}).Start();
 
-		if (Position > 0 && _stopPrice > 0 && candle.LowPrice <= _stopPrice)
+		var area = CreateChartArea();
+		if (area != null)
 		{
-			SellMarket(Position);
-			_stopPrice = 0;
-		}
-		else if (Position < 0 && _stopPrice > 0 && candle.HighPrice >= _stopPrice)
-		{
-			BuyMarket(Math.Abs(Position));
-			_stopPrice = 0;
+			DrawCandles(area, subscription);
+			DrawIndicator(area, fast);
+			DrawIndicator(area, slow);
+			DrawOwnTrades(area);
 		}
 	}
 }

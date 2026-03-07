@@ -114,20 +114,23 @@ public class PaydayAnomaly2Strategy : Strategy
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		StartProtection(null, null);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
 			.Bind(ProcessCandle)
 			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawOwnTrades(area);
+		}
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		var day = candle.OpenTime.Day;
@@ -136,14 +139,14 @@ public class PaydayAnomaly2Strategy : Strategy
 			|| (day == 16 && Trade16th)
 			|| (day == 31 && Trade31st);
 
-		if (isTargetDay && !_tradeOpened)
+		if (isTargetDay && !_tradeOpened && Position <= 0)
 		{
 			BuyMarket();
 			_tradeOpened = true;
 		}
 		else if (!isTargetDay && _tradeOpened && Position > 0)
 		{
-			ClosePosition();
+			SellMarket();
 			_tradeOpened = false;
 		}
 	}

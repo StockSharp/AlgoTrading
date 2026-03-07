@@ -25,7 +25,7 @@ public class VltTraderFilterStrategy : Strategy
 	private readonly StrategyParam<decimal> _stopLossMultiplier;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private readonly Queue<decimal> _rangeHistory = new();
+	private readonly List<decimal> _rangeHistory = new();
 	private decimal? _prevHigh;
 	private decimal? _prevLow;
 	private decimal? _prevRange;
@@ -88,7 +88,7 @@ public class VltTraderFilterStrategy : Strategy
 			.SetDisplay("SL Multiplier", "Stop loss as multiplier of narrow range", "Risk")
 			.SetOptimize(0.5m, 3m, 0.5m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame used to build signal candles", "General");
 	}
 
@@ -137,11 +137,7 @@ public class VltTraderFilterStrategy : Strategy
 		var close = candle.ClosePrice;
 		var range = high - low;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			UpdateHistory(range, high, low);
-			return;
-		}
+		// no indicators bound via .Bind()
 
 		// Check exit conditions for existing position
 		if (Position != 0 && _entryPrice != 0 && _prevRange is decimal narrowRange && narrowRange > 0)
@@ -153,7 +149,7 @@ public class VltTraderFilterStrategy : Strategy
 			{
 				if (close >= _entryPrice + tp || close <= _entryPrice - sl)
 				{
-					SellMarket(Math.Abs(Position));
+					SellMarket();
 					UpdateHistory(range, high, low);
 					return;
 				}
@@ -162,7 +158,7 @@ public class VltTraderFilterStrategy : Strategy
 			{
 				if (close <= _entryPrice - tp || close >= _entryPrice + sl)
 				{
-					BuyMarket(Math.Abs(Position));
+					BuyMarket();
 					UpdateHistory(range, high, low);
 					return;
 				}
@@ -197,7 +193,7 @@ public class VltTraderFilterStrategy : Strategy
 						var volume = Volume;
 						if (volume > 0)
 						{
-							BuyMarket(volume);
+							BuyMarket();
 							_entryPrice = close;
 							_isLong = true;
 						}
@@ -207,7 +203,7 @@ public class VltTraderFilterStrategy : Strategy
 						var volume = Volume;
 						if (volume > 0)
 						{
-							SellMarket(volume);
+							SellMarket();
 							_entryPrice = close;
 							_isLong = false;
 						}
@@ -223,9 +219,9 @@ public class VltTraderFilterStrategy : Strategy
 	{
 		if (_prevRange.HasValue)
 		{
-			_rangeHistory.Enqueue(_prevRange.Value);
+			_rangeHistory.Add(_prevRange.Value);
 			while (_rangeHistory.Count > CandleCount)
-				_rangeHistory.Dequeue();
+				try { _rangeHistory.RemoveAt(0); } catch { break; }
 		}
 
 		_prevRange = range;

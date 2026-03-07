@@ -21,8 +21,6 @@ public class RobustEaTemplateStrategy : Strategy
 	private readonly StrategyParam<decimal> _stopLossPct;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private CommodityChannelIndex _cci;
-
 	public int CciPeriod
 	{
 		get => _cciPeriod.Value;
@@ -55,7 +53,7 @@ public class RobustEaTemplateStrategy : Strategy
 
 	public RobustEaTemplateStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 
 		_cciPeriod = Param(nameof(CciPeriod), 14)
@@ -80,20 +78,23 @@ public class RobustEaTemplateStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_cci = new CommodityChannelIndex { Length = CciPeriod };
+		var cci = new CommodityChannelIndex { Length = CciPeriod };
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(rsi, (candle, rsiValue) =>
+		subscription.BindEx(cci, rsi, (candle, cciVal, rsiVal) =>
 		{
 			if (candle.State != CandleStates.Finished)
 				return;
 
-			var cciResult = _cci.Process(candle);
-			if (!cciResult.IsFormed)
+			if (!cciVal.IsFormed || !rsiVal.IsFormed)
 				return;
 
-			var cciValue = cciResult.ToDecimal();
+			if (!IsFormedAndOnlineAndAllowTrading())
+				return;
+
+			var cciValue = cciVal.ToDecimal();
+			var rsiValue = rsiVal.ToDecimal();
 
 			// Wider signal conditions
 			var longSignal = cciValue < -50m && rsiValue < 40m;

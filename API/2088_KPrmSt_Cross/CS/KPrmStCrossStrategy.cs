@@ -45,7 +45,7 @@ public class KprmStCrossStrategy : Strategy
 
 	public KprmStCrossStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for indicator calculation", "General");
 
 		_stopLossPct = Param(nameof(StopLossPct), 2m)
@@ -65,6 +65,7 @@ public class KprmStCrossStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
+		_stochastic = default;
 		_prevK = null;
 		_prevD = null;
 	}
@@ -76,44 +77,11 @@ public class KprmStCrossStrategy : Strategy
 
 		_stochastic = new StochasticOscillator();
 
-		var passthrough = new SimpleMovingAverage { Length = 1 };
+		Indicators.Add(_stochastic);
+
 		var subscription = SubscribeCandles(CandleType);
 
-		subscription.Bind(passthrough, (candle, _) =>
-		{
-			if (candle.State != CandleStates.Finished)
-				return;
-
-			var stochResult = _stochastic.Process(candle);
-			if (!stochResult.IsFormed)
-				return;
-
-			var stochVal = (StochasticOscillatorValue)stochResult;
-			if (stochVal.K is not decimal k || stochVal.D is not decimal d)
-				return;
-
-			if (_prevK.HasValue && _prevD.HasValue)
-			{
-				var wasBelow = _prevK.Value < _prevD.Value;
-				var isAbove = k > d;
-
-				// K crosses above D -> buy
-				if (wasBelow && isAbove && Position <= 0)
-				{
-					if (Position < 0) BuyMarket();
-					BuyMarket();
-				}
-				// K crosses below D -> sell
-				else if (!wasBelow && !isAbove && _prevK.Value > _prevD.Value && Position >= 0)
-				{
-					if (Position > 0) SellMarket();
-					SellMarket();
-				}
-			}
-
-			_prevK = k;
-			_prevD = d;
-		}).Start();
+		subscription.Bind(ProcessCandle).Start();
 
 		StartProtection(
 			takeProfit: new Unit(TakeProfitPct, UnitTypes.Percent),
@@ -126,5 +94,44 @@ public class KprmStCrossStrategy : Strategy
 			DrawCandles(area, subscription);
 			DrawOwnTrades(area);
 		}
+	}
+
+	private void ProcessCandle(ICandleMessage candle)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
+
+		var stochResult = _stochastic.Process(candle);
+		if (!stochResult.IsFormed)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		var stochVal = (StochasticOscillatorValue)stochResult;
+		if (stochVal.K is not decimal k || stochVal.D is not decimal d)
+			return;
+
+		if (_prevK.HasValue && _prevD.HasValue)
+		{
+			var wasBelow = _prevK.Value < _prevD.Value;
+			var isAbove = k > d;
+
+			// K crosses above D -> buy
+			if (wasBelow && isAbove && Position <= 0)
+			{
+				if (Position < 0) BuyMarket();
+				BuyMarket();
+			}
+			// K crosses below D -> sell
+			else if (!wasBelow && !isAbove && _prevK.Value > _prevD.Value && Position >= 0)
+			{
+				if (Position > 0) SellMarket();
+				SellMarket();
+			}
+		}
+
+		_prevK = k;
+		_prevD = d;
 	}
 }

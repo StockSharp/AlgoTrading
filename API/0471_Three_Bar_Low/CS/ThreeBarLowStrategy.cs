@@ -1,126 +1,99 @@
+namespace StockSharp.Samples.Strategies;
+
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-namespace StockSharp.Samples.Strategies;
-
 /// <summary>
-/// 3-Bar Low Strategy - buys when price breaks below the previous three-bar low and exits on a seven-bar high.
+/// 3-Bar Low Strategy.
+/// Buys when price breaks below recent 3-bar low (mean reversion).
+/// Exits when price breaks above recent 7-bar high.
+/// Uses EMA as optional trend filter.
 /// </summary>
 public class ThreeBarLowStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _maPeriod;
-	private readonly StrategyParam<int> _lowestLength;
-	private readonly StrategyParam<int> _highestLength;
-	private readonly StrategyParam<bool> _useEmaFilter;
+	private readonly StrategyParam<int> _emaLength;
+	private readonly StrategyParam<int> _lookbackLow;
+	private readonly StrategyParam<int> _lookbackHigh;
+	private readonly StrategyParam<int> _cooldownBars;
 
 	private ExponentialMovingAverage _ema;
-	private Lowest _lowest;
-	private Highest _highest;
 
-	private decimal _prevLowest;
-	private decimal _prevHighest;
-	private bool _isInitialized;
+	private readonly List<decimal> _lows = new();
+	private readonly List<decimal> _highs = new();
+	private int _cooldownRemaining;
 
-	/// <summary>
-	/// Candle type for strategy calculation.
-	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// EMA period for optional filter.
-	/// </summary>
-	public int MaPeriod
+	public int EmaLength
 	{
-		get => _maPeriod.Value;
-		set => _maPeriod.Value = value;
+		get => _emaLength.Value;
+		set => _emaLength.Value = value;
 	}
 
-	/// <summary>
-	/// Lookback length for lowest close.
-	/// </summary>
-	public int LowestLength
+	public int LookbackLow
 	{
-		get => _lowestLength.Value;
-		set => _lowestLength.Value = value;
+		get => _lookbackLow.Value;
+		set => _lookbackLow.Value = value;
 	}
 
-	/// <summary>
-	/// Lookback length for highest close.
-	/// </summary>
-	public int HighestLength
+	public int LookbackHigh
 	{
-		get => _highestLength.Value;
-		set => _highestLength.Value = value;
+		get => _lookbackHigh.Value;
+		set => _lookbackHigh.Value = value;
 	}
 
-	/// <summary>
-	/// Enable EMA filter.
-	/// </summary>
-	public bool UseEmaFilter
+	public int CooldownBars
 	{
-		get => _useEmaFilter.Value;
-		set => _useEmaFilter.Value = value;
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
-	/// <summary>
-	/// Initializes a new instance of <see cref="ThreeBarLowStrategy"/>.
-	/// </summary>
 	public ThreeBarLowStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
-		_maPeriod = Param(nameof(MaPeriod), 200)
+		_emaLength = Param(nameof(EmaLength), 50)
 			.SetGreaterThanZero()
-			.SetDisplay("EMA Period", "EMA period for filter", "Indicators")
-			
-			.SetOptimize(50, 300, 50);
+			.SetDisplay("EMA Length", "EMA trend filter period", "Indicators");
 
-		_lowestLength = Param(nameof(LowestLength), 3)
+		_lookbackLow = Param(nameof(LookbackLow), 3)
 			.SetGreaterThanZero()
-			.SetDisplay("Lowest Length", "Lookback for lowest close", "Indicators")
-			
-			.SetOptimize(2, 5, 1);
+			.SetDisplay("Lookback Low", "Bars for lowest low", "Parameters");
 
-		_highestLength = Param(nameof(HighestLength), 7)
+		_lookbackHigh = Param(nameof(LookbackHigh), 7)
 			.SetGreaterThanZero()
-			.SetDisplay("Highest Length", "Lookback for highest close", "Indicators")
-			
-			.SetOptimize(5, 10, 1);
+			.SetDisplay("Lookback High", "Bars for highest high", "Parameters");
 
-		_useEmaFilter = Param(nameof(UseEmaFilter), false)
-			.SetDisplay("Use EMA Filter", "Require price above EMA to enter", "Filters");
+		_cooldownBars = Param(nameof(CooldownBars), 10)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "Risk");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
 
-		_prevLowest = default;
-		_prevHighest = default;
-		_isInitialized = false;
+		_ema = null;
+		_lows.Clear();
+		_highs.Clear();
+		_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
@@ -128,13 +101,11 @@ public class ThreeBarLowStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_ema = new EMA { Length = MaPeriod };
-		_lowest = new Lowest { Length = LowestLength };
-		_highest = new Highest { Length = HighestLength };
+		_ema = new ExponentialMovingAverage { Length = EmaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_lowest, _highest, _ema, ProcessCandle)
+			.Bind(_ema, OnProcess)
 			.Start();
 
 		var area = CreateChartArea();
@@ -142,43 +113,78 @@ public class ThreeBarLowStrategy : Strategy
 		{
 			DrawCandles(area, subscription);
 			DrawIndicator(area, _ema);
-			DrawIndicator(area, _lowest);
-			DrawIndicator(area, _highest);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal lowestValue, decimal highestValue, decimal emaValue)
+	private void OnProcess(ICandleMessage candle, decimal emaVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_lowest.IsFormed || !_highest.IsFormed || (UseEmaFilter && !_ema.IsFormed))
+		if (!_ema.IsFormed)
 			return;
 
-		if (!_isInitialized)
-		{
-			_prevLowest = lowestValue;
-			_prevHighest = highestValue;
-			_isInitialized = true;
-			return;
-		}
+		// Track lows and highs
+		_lows.Add(candle.LowPrice);
+		_highs.Add(candle.HighPrice);
+
+		if (_lows.Count > LookbackLow + 1)
+			_lows.RemoveAt(0);
+		if (_highs.Count > LookbackHigh + 1)
+			_highs.RemoveAt(0);
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var longCondition = candle.ClosePrice < _prevLowest;
+		if (_cooldownRemaining > 0)
+		{
+			_cooldownRemaining--;
+			return;
+		}
 
-		if (UseEmaFilter)
-			longCondition &= candle.ClosePrice > emaValue;
+		if (_lows.Count <= LookbackLow || _highs.Count <= LookbackHigh)
+			return;
 
-		if (longCondition && Position <= 0)
-			RegisterOrder(CreateOrder(Sides.Buy, candle.ClosePrice, Volume));
+		// Find lowest low of previous N bars (excluding current)
+		var lowestLow = decimal.MaxValue;
+		for (var i = 0; i < _lows.Count - 1; i++)
+			lowestLow = Math.Min(lowestLow, _lows[i]);
 
-		if (Position > 0 && candle.ClosePrice > _prevHighest)
-			RegisterOrder(CreateOrder(Sides.Sell, candle.ClosePrice, Math.Abs(Position)));
+		// Find highest high of previous N bars (excluding current)
+		var highestHigh = decimal.MinValue;
+		for (var i = 0; i < _highs.Count - 1; i++)
+			highestHigh = Math.Max(highestHigh, _highs[i]);
 
-		_prevLowest = lowestValue;
-		_prevHighest = highestValue;
+		var price = candle.ClosePrice;
+
+		// Buy: price breaks below previous N-bar low (mean reversion)
+		if (price < lowestLow && Position <= 0)
+		{
+			if (Position < 0)
+				BuyMarket(Math.Abs(Position));
+			BuyMarket(Volume);
+			_cooldownRemaining = CooldownBars;
+		}
+		// Sell short: price breaks above previous N-bar high
+		else if (price > highestHigh && Position >= 0)
+		{
+			if (Position > 0)
+				SellMarket(Math.Abs(Position));
+			SellMarket(Volume);
+			_cooldownRemaining = CooldownBars;
+		}
+		// Exit long: price above previous high
+		else if (Position > 0 && price > highestHigh)
+		{
+			SellMarket(Math.Abs(Position));
+			_cooldownRemaining = CooldownBars;
+		}
+		// Exit short: price below previous low
+		else if (Position < 0 && price < lowestLow)
+		{
+			BuyMarket(Math.Abs(Position));
+			_cooldownRemaining = CooldownBars;
+		}
 	}
 }

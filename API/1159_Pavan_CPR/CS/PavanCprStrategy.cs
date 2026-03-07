@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -27,6 +24,10 @@ public class PavanCprStrategy : Strategy
 	private decimal _lastClose;
 	private decimal _takeProfitPrice;
 	private decimal _stopLossPrice;
+	private decimal _prevSessionHigh;
+	private decimal _prevSessionLow;
+	private decimal _prevSessionClose;
+	private DateTimeOffset _currentDay;
 
 	/// <summary>
 	/// Take profit distance in price points.
@@ -53,18 +54,16 @@ public class PavanCprStrategy : Strategy
 	{
 		_takeProfitTarget = Param(nameof(TakeProfitTarget), 50m)
 			.SetGreaterThanZero()
-			.SetDisplay("Take Profit", "Take profit distance in price points", "General")
-			
-			.SetOptimize(10m, 100m, 10m);
+			.SetDisplay("Take Profit", "Take profit distance in price points", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candles for entry logic", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return [(Security, CandleType), (Security, TimeSpan.FromMinutes(5).TimeFrame())];
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
@@ -76,6 +75,10 @@ public class PavanCprStrategy : Strategy
 		_lastClose = 0m;
 		_takeProfitPrice = 0m;
 		_stopLossPrice = 0m;
+		_prevSessionHigh = 0m;
+		_prevSessionLow = 0m;
+		_prevSessionClose = 0m;
+		_currentDay = default;
 	}
 
 	/// <inheritdoc />
@@ -83,47 +86,79 @@ public class PavanCprStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var daily = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
-		daily.Bind(ProcessDaily).Start();
+		var sessionHigh = 0m;
+		var sessionLow = 0m;
+		var sessionClose = 0m;
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessMain).Start();
-	}
-
-	private void ProcessDaily(ICandleMessage candle)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		var pivot = (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m;
-		var top = (candle.HighPrice + candle.LowPrice) / 2m;
-
-		_todayPivot = pivot;
-		_todayTop = top;
-	}
-
-	private void ProcessMain(ICandleMessage candle)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (_lastClose < _todayTop && candle.ClosePrice > _todayTop && Position <= 0)
+		subscription.Bind(candle =>
 		{
-			BuyMarket(Volume + Math.Abs(Position));
-			_takeProfitPrice = candle.ClosePrice + TakeProfitTarget;
-			_stopLossPrice = _todayPivot;
-		}
-		else if (Position > 0)
-		{
-			if (candle.LowPrice <= _stopLossPrice)
-				SellMarket(Position);
-			else if (candle.HighPrice >= _takeProfitPrice)
-				SellMarket(Position);
-		}
+			if (candle.State != CandleStates.Finished)
+				return;
 
-		_lastClose = candle.ClosePrice;
+			var day = candle.OpenTime.Date;
+
+			if (_currentDay != day)
+			{
+				if (sessionHigh > 0)
+				{
+					_prevSessionHigh = sessionHigh;
+					_prevSessionLow = sessionLow;
+					_prevSessionClose = sessionClose;
+
+					var pivot = (_prevSessionHigh + _prevSessionLow + _prevSessionClose) / 3m;
+					var top = (_prevSessionHigh + _prevSessionLow) / 2m;
+
+					_todayPivot = pivot;
+					_todayTop = top;
+				}
+
+				sessionHigh = candle.HighPrice;
+				sessionLow = candle.LowPrice;
+				_currentDay = day;
+			}
+			else
+			{
+				sessionHigh = Math.Max(sessionHigh, candle.HighPrice);
+				sessionLow = Math.Min(sessionLow, candle.LowPrice);
+			}
+
+			sessionClose = candle.ClosePrice;
+
+			if (_todayTop == 0m)
+			{
+				_lastClose = candle.ClosePrice;
+				return;
+			}
+
+			if (Position == 0 && _lastClose > 0 && _lastClose < _todayTop && candle.ClosePrice > _todayTop)
+			{
+				BuyMarket();
+				_takeProfitPrice = candle.ClosePrice + TakeProfitTarget;
+				_stopLossPrice = _todayPivot;
+			}
+			else if (Position > 0 && _stopLossPrice > 0)
+			{
+				if (candle.LowPrice <= _stopLossPrice || candle.HighPrice >= _takeProfitPrice)
+				{
+					SellMarket();
+					_stopLossPrice = 0m;
+					_takeProfitPrice = 0m;
+				}
+			}
+			else if (Position < 0)
+			{
+				BuyMarket();
+			}
+
+			_lastClose = candle.ClosePrice;
+		}).Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawOwnTrades(area);
+		}
 	}
 }

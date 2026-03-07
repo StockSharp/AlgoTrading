@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -53,7 +50,7 @@ public class ObvAtrStrategy : Strategy
 	/// </summary>
 	public ObvAtrStrategy()
 	{
-		_lookbackLength = Param(nameof(LookbackLength), 30)
+		_lookbackLength = Param(nameof(LookbackLength), 60)
 			.SetGreaterThanZero()
 			.SetDisplay("OBV Lookback", "Lookback length for OBV highs and lows", "Parameters")
 			
@@ -122,17 +119,17 @@ public class ObvAtrStrategy : Strategy
 				if (!IsFormedAndOnlineAndAllowTrading())
 					return;
 
-				if (bullSignal)
-					BuyMarket(Volume + Math.Abs(Position));
+				if (bullSignal && Position <= 0)
+					BuyMarket();
 
-				if (bearSignal)
-					SellMarket(Volume + Math.Abs(Position));
+				if (bearSignal && Position >= 0)
+					SellMarket();
 			})
 			.Start();
 
 		StartProtection(
-			takeProfit: new Unit(3, UnitTypes.Percent),
-			stopLoss: new Unit(2, UnitTypes.Percent));
+			takeProfit: new Unit(5, UnitTypes.Percent),
+			stopLoss: new Unit(3, UnitTypes.Percent));
 
 		var area = CreateChartArea();
 		if (area != null)

@@ -30,7 +30,7 @@ public class NRTRATRStopStrategy : Strategy
 	private readonly StrategyParam<bool> _enableShortExit;
 
 	private AverageTrueRange _atr = null!;
-	private readonly Queue<SignalInfo> _signals = new();
+	private readonly List<SignalInfo> _signals = new();
 
 	private decimal _upperStop;
 	private decimal _lowerStop;
@@ -147,7 +147,7 @@ public class NRTRATRStopStrategy : Strategy
 			
 			.SetOptimize(0, 3, 1);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame of the candles used for calculations", "General");
 
 		_enableLongEntry = Param(nameof(EnableLongEntry), true)
@@ -266,7 +266,7 @@ public class NRTRATRStopStrategy : Strategy
 		_upperStop = upperStop;
 		_lowerStop = lowerStop;
 
-		_signals.Enqueue(new SignalInfo(buySignal, sellSignal, upperStop, lowerStop, candle.CloseTime, candle.ClosePrice));
+		_signals.Add(new SignalInfo(buySignal, sellSignal, upperStop, lowerStop, candle.CloseTime, candle.ClosePrice));
 
 		if (_signals.Count <= SignalBar)
 		{
@@ -274,13 +274,10 @@ public class NRTRATRStopStrategy : Strategy
 			return;
 		}
 
-		var signal = _signals.Dequeue();
+		var signal = _signals[0];
+		try { _signals.RemoveAt(0); } catch { }
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			UpdatePreviousValues(candle);
-			return;
-		}
+		// indicators bound via .Bind() - IsFormed already checked
 
 		if (signal.Buy)
 			HandleBuy(signal);
@@ -297,7 +294,7 @@ public class NRTRATRStopStrategy : Strategy
 		if (volume <= 0)
 			return;
 
-		BuyMarket(volume);
+		BuyMarket();
 		LogInfo($"Buy signal at {signal.Time:u}. Close={signal.ClosePrice:0.#####}, upper stop={signal.UpperStop:0.#####}, lower stop={signal.LowerStop:0.#####}, volume={volume:0.#####}.");
 	}
 
@@ -307,7 +304,7 @@ public class NRTRATRStopStrategy : Strategy
 		if (volume <= 0)
 			return;
 
-		SellMarket(volume);
+		SellMarket();
 		LogInfo($"Sell signal at {signal.Time:u}. Close={signal.ClosePrice:0.#####}, upper stop={signal.UpperStop:0.#####}, lower stop={signal.LowerStop:0.#####}, volume={volume:0.#####}.");
 	}
 

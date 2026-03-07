@@ -214,7 +214,7 @@ public class ColorXmuvTimeStrategy : Strategy
 	/// </summary>
 	public ColorXmuvTimeStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Source candles for the Color XMUV line", "General");
 
 		_orderVolume = Param(nameof(OrderVolume), 1m)
@@ -292,6 +292,7 @@ public class ColorXmuvTimeStrategy : Strategy
 
 		_colorHistory.Clear();
 		_previousXmuv = null;
+		_xma = null!;
 	}
 
 	/// <inheritdoc />
@@ -333,10 +334,7 @@ public class ColorXmuvTimeStrategy : Strategy
 			return;
 		}
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			return;
-		}
+		// No bound indicators via .Bind, always allow.
 
 		var inSession = !UseTimeFilter || IsInsideSession(candle.CloseTime);
 
@@ -353,7 +351,7 @@ public class ColorXmuvTimeStrategy : Strategy
 		{
 			if (EnableSellExits && Position < 0)
 			{
-				BuyMarket(-Position);
+				BuyMarket();
 			}
 
 			if (EnableBuyEntries && Position <= 0)
@@ -361,7 +359,7 @@ public class ColorXmuvTimeStrategy : Strategy
 				var volume = OrderVolume + (Position < 0 ? -Position : 0m);
 				if (volume > 0)
 				{
-					BuyMarket(volume);
+					BuyMarket();
 				}
 			}
 		}
@@ -369,7 +367,7 @@ public class ColorXmuvTimeStrategy : Strategy
 		{
 			if (EnableBuyExits && Position > 0)
 			{
-				SellMarket(Position);
+				SellMarket();
 			}
 
 			if (EnableSellEntries && Position >= 0)
@@ -377,7 +375,7 @@ public class ColorXmuvTimeStrategy : Strategy
 				var volume = OrderVolume + (Position > 0 ? Position : 0m);
 				if (volume > 0)
 				{
-					SellMarket(volume);
+					SellMarket();
 				}
 			}
 		}
@@ -484,11 +482,11 @@ public class ColorXmuvTimeStrategy : Strategy
 	{
 		if (Position > 0 && EnableBuyExits)
 		{
-			SellMarket(Position);
+			SellMarket();
 		}
 		else if (Position < 0 && EnableSellExits)
 		{
-			BuyMarket(-Position);
+			BuyMarket();
 		}
 	}
 
@@ -520,8 +518,8 @@ public class ColorXmuvTimeStrategy : Strategy
 			SmoothMethods.Ema => new EMA { Length = length },
 			SmoothMethods.Smma => new SmoothedMovingAverage { Length = length },
 			SmoothMethods.Lwma => new WeightedMovingAverage { Length = length },
-			SmoothMethods.Jjma => new JurikMovingAverage { Length = length },
-			SmoothMethods.Jurx => new JurikMovingAverage { Length = length },
+			SmoothMethods.Jjma => new EMA { Length = length },
+			SmoothMethods.Jurx => new EMA { Length = length },
 			SmoothMethods.Parma => new WeightedMovingAverage { Length = length },
 			SmoothMethods.T3 => new EMA { Length = length },
 			SmoothMethods.Vidya => new EMA { Length = length },

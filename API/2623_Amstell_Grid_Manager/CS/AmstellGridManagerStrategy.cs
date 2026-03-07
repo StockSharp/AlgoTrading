@@ -129,7 +129,7 @@ public class AmstellGridManagerStrategy : Strategy
 			
 			.SetOptimize(2m, 15m, 1m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for processing", "General");
 	}
 
@@ -180,8 +180,7 @@ public class AmstellGridManagerStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		// no indicators bound via .Bind()
 
 		var close = candle.ClosePrice;
 
@@ -190,7 +189,7 @@ public class AmstellGridManagerStrategy : Strategy
 			var profit = close - longAvg;
 			if (profit >= _takeProfitOffset || -profit >= _stopLossOffset)
 			{
-				SellMarket(_longVolume);
+				SellMarket();
 				_closingLong = true;
 				return;
 			}
@@ -201,7 +200,7 @@ public class AmstellGridManagerStrategy : Strategy
 			var profit = shortAvg - close;
 			if (profit >= _takeProfitOffset || -profit >= _stopLossOffset)
 			{
-				BuyMarket(_shortVolume);
+				BuyMarket();
 				_closingShort = true;
 				return;
 			}
@@ -213,12 +212,12 @@ public class AmstellGridManagerStrategy : Strategy
 		{
 			if (_longVolume <= 0m)
 			{
-				BuyMarket(OrderVolume);
+				BuyMarket();
 				openedLong = true;
 			}
 			else if (_lastBuyPrice is decimal lastBuy && lastBuy - close >= _buyDistanceOffset)
 			{
-				BuyMarket(OrderVolume);
+				BuyMarket();
 				openedLong = true;
 			}
 		}
@@ -230,11 +229,11 @@ public class AmstellGridManagerStrategy : Strategy
 		{
 			if (_shortVolume <= 0m)
 			{
-				SellMarket(OrderVolume);
+				SellMarket();
 			}
 			else if (_lastSellPrice is decimal lastSell && close - lastSell >= _sellDistanceOffset)
 			{
-				SellMarket(OrderVolume);
+				SellMarket();
 			}
 		}
 	}

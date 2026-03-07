@@ -36,7 +36,7 @@ public class SeaDragon2Strategy : Strategy
 		_gridPercent = Param(nameof(GridPercent), 0.5m)
 			.SetDisplay("Grid %", "Grid spacing as price percent", "Trading");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle Type", "General");
 	}
 

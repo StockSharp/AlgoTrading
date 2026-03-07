@@ -89,11 +89,11 @@ public class StellarLiteIctEaStrategy : Strategy
 			.SetDisplay("ATR Period", "Average True Range lookback", "Volatility")
 			;
 
-		_liquidityLookback = Param(nameof(LiquidityLookback), 120)
+		_liquidityLookback = Param(nameof(LiquidityLookback), 20)
 			.SetDisplay("Liquidity Lookback", "Number of candles to detect liquidity pools", "Structure")
 			;
 
-		_atrThreshold = Param(nameof(AtrThreshold), 0.5m)
+		_atrThreshold = Param(nameof(AtrThreshold), 2.0m)
 			.SetDisplay("ATR Threshold", "Maximum candle range relative to ATR", "Structure")
 			;
 

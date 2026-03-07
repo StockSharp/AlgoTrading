@@ -1,6 +1,4 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
 
 using Ecng.Common;
 
@@ -22,6 +20,7 @@ public class ObvTrafficLightsStrategy : Strategy
 	private decimal _prevFast;
 	private decimal _prevSlow;
 	private int _count;
+	private DateTimeOffset _lastSignal = DateTimeOffset.MinValue;
 
 	public int FastLength { get => _fastLength.Value; set => _fastLength.Value = value; }
 	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
@@ -34,6 +33,19 @@ public class ObvTrafficLightsStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevClose = 0;
+		_obv = 0;
+		_prevFast = 0;
+		_prevSlow = 0;
+		_count = 0;
+		_lastSignal = DateTimeOffset.MinValue;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
@@ -99,25 +111,20 @@ public class ObvTrafficLightsStrategy : Strategy
 
 		var goLong = _obv > slowValue && fastValue > slowValue;
 		var goShort = _obv < slowValue && fastValue < slowValue;
+		var cooldown = TimeSpan.FromMinutes(600);
+
+		if (candle.OpenTime - _lastSignal < cooldown)
+			return;
 
 		if (goLong && Position <= 0)
 		{
-			if (Position < 0)
-				BuyMarket(Math.Abs(Position));
-			BuyMarket(Volume);
+			BuyMarket();
+			_lastSignal = candle.OpenTime;
 		}
 		else if (goShort && Position >= 0)
 		{
-			if (Position > 0)
-				SellMarket(Math.Abs(Position));
-			SellMarket(Volume);
-		}
-		else if (!goLong && !goShort)
-		{
-			if (Position > 0)
-				SellMarket(Math.Abs(Position));
-			else if (Position < 0)
-				BuyMarket(Math.Abs(Position));
+			SellMarket();
+			_lastSignal = candle.OpenTime;
 		}
 	}
 }

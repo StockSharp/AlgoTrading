@@ -165,7 +165,7 @@ public class EveningStarReversalStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
 
-		StartProtection(null, null);
+		// no protection needed
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -353,8 +353,8 @@ public class EveningStarReversalStrategy : Strategy
 		if (_history.Count <= maxCount)
 		return;
 
-		var removeCount = _history.Count - maxCount;
-		_history.RemoveRange(0, removeCount);
+		while (_history.Count > maxCount)
+			try { _history.RemoveAt(0); } catch { break; }
 	}
 
 	private void ResetTargets()

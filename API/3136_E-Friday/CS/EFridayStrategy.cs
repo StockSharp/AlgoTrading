@@ -1,527 +1,94 @@
-namespace StockSharp.Samples.Strategies;
-
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
+namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Contrarian intraday strategy that avoids trading on Fridays.
+/// E-Friday strategy using EMA crossover.
+/// Buys when fast EMA crosses above slow EMA, sells on reverse.
 /// </summary>
 public class EFridayStrategy : Strategy
 {
-	private readonly StrategyParam<DataType> _candleTypeParam;
-	private readonly StrategyParam<decimal> _volumeParam;
-	private readonly StrategyParam<decimal> _stopLossPipsParam;
-	private readonly StrategyParam<decimal> _takeProfitPipsParam;
-	private readonly StrategyParam<decimal> _trailingStopPipsParam;
-	private readonly StrategyParam<decimal> _trailingStepPipsParam;
-	private readonly StrategyParam<int> _startHourParam;
-	private readonly StrategyParam<bool> _useCloseHourParam;
-	private readonly StrategyParam<int> _endHourParam;
+	private readonly StrategyParam<int> _fastPeriod;
+	private readonly StrategyParam<int> _slowPeriod;
+	private readonly StrategyParam<int> _stopLossPoints;
+	private readonly StrategyParam<int> _takeProfitPoints;
 
-	private TimeSpan _timeFrame;
-	private decimal _pipSize;
+	private ExponentialMovingAverage _fast;
+	private ExponentialMovingAverage _slow;
 
-	private bool _timeFrameWarningIssued;
-	private bool _fridayMessageShown;
-	private bool _beforeStartMessageShown;
-	private bool _afterEndMessageShown;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private decimal _entryPrice;
+	private int _cooldown;
 
-	private decimal? _longEntryPrice;
-	private decimal? _shortEntryPrice;
-	private decimal? _longStopPrice;
-	private decimal? _shortStopPrice;
-	private decimal? _longTakeProfitPrice;
-	private decimal? _shortTakeProfitPrice;
+	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
+	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
+	public int StopLossPoints { get => _stopLossPoints.Value; set => _stopLossPoints.Value = value; }
+	public int TakeProfitPoints { get => _takeProfitPoints.Value; set => _takeProfitPoints.Value = value; }
 
 	public EFridayStrategy()
 	{
-		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
-		.SetDisplay("Candle Type", "Time frame used to evaluate reversal candles", "General");
-
-		_volumeParam = Param(nameof(TradeVolume), 1m)
-		.SetDisplay("Trade Volume", "Order volume expressed in lots", "Trading")
-		.SetGreaterThanZero()
-		;
-
-		_stopLossPipsParam = Param(nameof(StopLossPips), 50m)
-		.SetDisplay("Stop Loss (pips)", "Distance for the protective stop in pips", "Risk")
-		.SetNotNegative()
-		;
-
-		_takeProfitPipsParam = Param(nameof(TakeProfitPips), 50m)
-		.SetDisplay("Take Profit (pips)", "Distance for the profit target in pips", "Risk")
-		.SetNotNegative()
-		;
-
-		_trailingStopPipsParam = Param(nameof(TrailingStopPips), 5m)
-		.SetDisplay("Trailing Stop (pips)", "Initial trailing stop distance in pips", "Risk")
-		.SetNotNegative()
-		;
-
-		_trailingStepPipsParam = Param(nameof(TrailingStepPips), 5m)
-		.SetDisplay("Trailing Step (pips)", "Minimal advance required to tighten the trailing stop", "Risk")
-		.SetNotNegative()
-		;
-
-		_startHourParam = Param(nameof(StartHour), 5)
-		.SetDisplay("Start Hour", "Hour (exchange time) when trading becomes allowed", "Sessions")
-		.SetRange(0, 23)
-		;
-
-		_useCloseHourParam = Param(nameof(UseCloseHour), true)
-		.SetDisplay("Use Close Hour", "Enable forced position closing after the configured hour", "Sessions");
-
-		_endHourParam = Param(nameof(EndHour), 10)
-		.SetDisplay("End Hour", "Hour (exchange time) when positions are closed", "Sessions")
-		.SetRange(0, 23)
-		;
+		_fastPeriod = Param(nameof(FastPeriod), 14).SetGreaterThanZero().SetDisplay("Fast Period", "Fast EMA period", "Indicator");
+		_slowPeriod = Param(nameof(SlowPeriod), 50).SetGreaterThanZero().SetDisplay("Slow Period", "Slow EMA period", "Indicator");
+		_stopLossPoints = Param(nameof(StopLossPoints), 200).SetNotNegative().SetDisplay("Stop Loss", "Stop-loss in price steps", "Risk");
+		_takeProfitPoints = Param(nameof(TakeProfitPoints), 400).SetNotNegative().SetDisplay("Take Profit", "Take-profit in price steps", "Risk");
 	}
 
-	public DataType CandleType
-	{
-		get => _candleTypeParam.Value;
-		set => _candleTypeParam.Value = value;
-	}
-
-	public decimal TradeVolume
-	{
-		get => _volumeParam.Value;
-		set => _volumeParam.Value = value;
-	}
-
-	public decimal StopLossPips
-	{
-		get => _stopLossPipsParam.Value;
-		set => _stopLossPipsParam.Value = value;
-	}
-
-	public decimal TakeProfitPips
-	{
-		get => _takeProfitPipsParam.Value;
-		set => _takeProfitPipsParam.Value = value;
-	}
-
-	public decimal TrailingStopPips
-	{
-		get => _trailingStopPipsParam.Value;
-		set => _trailingStopPipsParam.Value = value;
-	}
-
-	public decimal TrailingStepPips
-	{
-		get => _trailingStepPipsParam.Value;
-		set => _trailingStepPipsParam.Value = value;
-	}
-
-	public int StartHour
-	{
-		get => _startHourParam.Value;
-		set => _startHourParam.Value = value;
-	}
-
-	public bool UseCloseHour
-	{
-		get => _useCloseHourParam.Value;
-		set => _useCloseHourParam.Value = value;
-	}
-
-	public int EndHour
-	{
-		get => _endHourParam.Value;
-		set => _endHourParam.Value = value;
-	}
-
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-		=> [(Security, CandleType)];
+	{
+		yield return (Security, TimeSpan.FromMinutes(5).TimeFrame());
+	}
 
-	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_fast = null; _slow = null;
+		_prevFast = 0; _prevSlow = 0; _entryPrice = 0; _cooldown = 0;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		Volume = TradeVolume;
-
-		if (TrailingStopPips > 0m && TrailingStepPips <= 0m)
-			throw new InvalidOperationException("Trailing step must be positive when the trailing stop is enabled.");
-
-		_timeFrame = GetTimeFrame();
-		UpdatePipSize();
-
-		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(ProcessCandle)
-			.Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawOwnTrades(area);
-		}
+		_fast = new ExponentialMovingAverage { Length = FastPeriod };
+		_slow = new ExponentialMovingAverage { Length = SlowPeriod };
+		var subscription = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
+		subscription.Bind(_fast, _slow, ProcessCandle);
+		subscription.Start();
 	}
 
-	/// <inheritdoc />
-	protected override void OnOwnTradeReceived(MyTrade trade)
+	private void ProcessCandle(ICandleMessage candle, decimal fastValue, decimal slowValue)
 	{
-		base.OnOwnTradeReceived(trade);
+		if (candle.State != CandleStates.Finished) return;
+		if (!_fast.IsFormed || !_slow.IsFormed) { _prevFast = fastValue; _prevSlow = slowValue; return; }
+		if (_cooldown > 0) { _cooldown--; _prevFast = fastValue; _prevSlow = slowValue; return; }
 
-		if (trade.Order.Side == Sides.Buy && Position > 0m)
-			_longEntryPrice ??= trade.Trade.Price;
-		else if (trade.Order.Side == Sides.Sell && Position < 0m)
-			_shortEntryPrice ??= trade.Trade.Price;
-	}
-
-	private void ProcessCandle(ICandleMessage candle)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (_pipSize <= 0m)
-			UpdatePipSize();
-
-		Volume = TradeVolume;
-
-		if (ManageExistingPosition(candle))
-			return;
-
-		if (_timeFrame > TimeSpan.FromHours(1))
-		{
-			if (!_timeFrameWarningIssued)
-			{
-				this.LogWarning("The original expert advisor only works on H1 or lower periods. Entries are disabled.");
-				_timeFrameWarningIssued = true;
-			}
-
-			return;
-		}
-
-		_timeFrameWarningIssued = false;
-
-		if (!IsTradingSessionActive(candle))
-			return;
-
-		TryEnter(candle);
-	}
-
-	private bool ManageExistingPosition(ICandleMessage candle)
-	{
-		UpdateEntrySnapshot();
-
-		if (Position > 0m)
-			return HandleLongPosition(candle);
-
-		if (Position < 0m)
-			return HandleShortPosition(candle);
-
-		ResetLong();
-		ResetShort();
-		return false;
-	}
-
-	private bool HandleLongPosition(ICandleMessage candle)
-	{
-		if (_longEntryPrice is not decimal entryPrice)
-			return false;
-
-		UpdateLongTrailing(candle, entryPrice);
-
-		if (_longStopPrice is decimal stop && candle.LowPrice <= stop)
-		{
-			SellMarket(Position);
-			ResetLong();
-			return true;
-		}
-
-		if (_longTakeProfitPrice is decimal take && candle.HighPrice >= take)
-		{
-			SellMarket(Position);
-			ResetLong();
-			return true;
-		}
-
-		return false;
-	}
-
-	private bool HandleShortPosition(ICandleMessage candle)
-	{
-		if (_shortEntryPrice is not decimal entryPrice)
-			return false;
-
-		UpdateShortTrailing(candle, entryPrice);
-
-		if (_shortStopPrice is decimal stop && candle.HighPrice >= stop)
-		{
-			BuyMarket(-Position);
-			ResetShort();
-			return true;
-		}
-
-		if (_shortTakeProfitPrice is decimal take && candle.LowPrice <= take)
-		{
-			BuyMarket(-Position);
-			ResetShort();
-			return true;
-		}
-
-		return false;
-	}
-
-	private void UpdateLongTrailing(ICandleMessage candle, decimal entryPrice)
-	{
-		if (TrailingStopPips <= 0m || TrailingStepPips <= 0m || _pipSize <= 0m)
-			return;
-
-		var trailingDistance = TrailingStopPips * _pipSize;
-		var stepDistance = TrailingStepPips * _pipSize;
-
-		// Adjust the trailing stop only when the price advanced far enough.
-		if (candle.ClosePrice - entryPrice <= trailingDistance + stepDistance)
-			return;
-
-		var threshold = candle.ClosePrice - (trailingDistance + stepDistance);
-		if (_longStopPrice is decimal currentStop && currentStop >= threshold)
-			return;
-
-		_longStopPrice = candle.ClosePrice - trailingDistance;
-	}
-
-	private void UpdateShortTrailing(ICandleMessage candle, decimal entryPrice)
-	{
-		if (TrailingStopPips <= 0m || TrailingStepPips <= 0m || _pipSize <= 0m)
-			return;
-
-		var trailingDistance = TrailingStopPips * _pipSize;
-		var stepDistance = TrailingStepPips * _pipSize;
-
-		// Tighten the trailing stop only after the price moves in favour of the position.
-		if (entryPrice - candle.ClosePrice <= trailingDistance + stepDistance)
-			return;
-
-		var threshold = candle.ClosePrice + trailingDistance + stepDistance;
-		if (_shortStopPrice is decimal currentStop && currentStop <= threshold)
-			return;
-
-		_shortStopPrice = candle.ClosePrice + trailingDistance;
-	}
-
-	private bool IsTradingSessionActive(ICandleMessage candle)
-	{
-		var time = candle.CloseTime;
-
-		if (time.DayOfWeek == DayOfWeek.Friday)
-		{
-			if (!_fridayMessageShown)
-			{
-				this.LogInfo("Trading on Friday is disabled by design.");
-				_fridayMessageShown = true;
-			}
-
-			return false;
-		}
-
-		_fridayMessageShown = false;
-
-		var hour = time.Hour;
-
-		if (hour < StartHour)
-		{
-			if (!_beforeStartMessageShown)
-			{
-				this.LogInfo($"Trading window starts at {StartHour:00}:00. Current hour: {hour:00}.");
-				_beforeStartMessageShown = true;
-			}
-
-			return false;
-		}
-
-		_beforeStartMessageShown = false;
-
-		if (UseCloseHour && hour > EndHour)
-		{
-			if (!_afterEndMessageShown)
-			{
-				this.LogInfo($"Trading window ended at {EndHour:00}:00. Current hour: {hour:00}. Closing open positions.");
-				_afterEndMessageShown = true;
-			}
-
-			CloseActivePosition();
-			return false;
-		}
-
-		_afterEndMessageShown = false;
-
-		return true;
-	}
-
-	private void CloseActivePosition()
-	{
-		// Flatten any exposure to respect the configured trading window.
-		if (Position > 0m)
-		{
-			SellMarket(Position);
-			ResetLong();
-		}
-		else if (Position < 0m)
-		{
-			BuyMarket(-Position);
-			ResetShort();
-		}
-	}
-
-	private void TryEnter(ICandleMessage candle)
-	{
-		var open = candle.OpenPrice;
 		var close = candle.ClosePrice;
+		var step = Security?.PriceStep ?? 1m;
 
-		// A bearish candle triggers a long contrarian entry.
-		if (open > close)
+		if (Position > 0 && _entryPrice > 0)
 		{
-			if (Position < 0m)
-			{
-				BuyMarket(-Position);
-				ResetShort();
-				return;
-			}
-
-			if (Position == 0m && TradeVolume > 0m)
-				BuyMarket(TradeVolume);
-
-			return;
+			if (StopLossPoints > 0 && close <= _entryPrice - StopLossPoints * step) { SellMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
+			if (TakeProfitPoints > 0 && close >= _entryPrice + TakeProfitPoints * step) { SellMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
+		}
+		else if (Position < 0 && _entryPrice > 0)
+		{
+			if (StopLossPoints > 0 && close >= _entryPrice + StopLossPoints * step) { BuyMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
+			if (TakeProfitPoints > 0 && close <= _entryPrice - TakeProfitPoints * step) { BuyMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
 		}
 
-		// A bullish candle signals a short entry.
-		if (open < close)
-		{
-			if (Position > 0m)
-			{
-				SellMarket(Position);
-				ResetLong();
-				return;
-			}
+		if (_prevFast <= _prevSlow && fastValue > slowValue && Position <= 0)
+		{ if (Position < 0) BuyMarket(); BuyMarket(); _entryPrice = close; _cooldown = 100; }
+		else if (_prevFast >= _prevSlow && fastValue < slowValue && Position >= 0)
+		{ if (Position > 0) SellMarket(); SellMarket(); _entryPrice = close; _cooldown = 100; }
 
-			if (Position == 0m && TradeVolume > 0m)
-				SellMarket(TradeVolume);
-		}
-	}
-
-	private void UpdateEntrySnapshot()
-	{
-		if (Position > 0m)
-		{
-			var averagePrice = _longEntryPrice ?? 0m;
-			if (averagePrice > 0m)
-			{
-				if (StopLossPips > 0m && _pipSize > 0m)
-				{
-					_longStopPrice ??= averagePrice - StopLossPips * _pipSize;
-				}
-				else if (TrailingStopPips <= 0m)
-				{
-					_longStopPrice = null;
-				}
-
-				if (TakeProfitPips > 0m && _pipSize > 0m)
-				{
-					_longTakeProfitPrice ??= averagePrice + TakeProfitPips * _pipSize;
-				}
-				else
-				{
-					_longTakeProfitPrice = null;
-				}
-			}
-		}
-		else
-		{
-			ResetLong();
-		}
-
-		if (Position < 0m)
-		{
-			var averagePrice = _shortEntryPrice ?? 0m;
-			if (averagePrice > 0m)
-			{
-				if (StopLossPips > 0m && _pipSize > 0m)
-				{
-					_shortStopPrice ??= averagePrice + StopLossPips * _pipSize;
-				}
-				else if (TrailingStopPips <= 0m)
-				{
-					_shortStopPrice = null;
-				}
-
-				if (TakeProfitPips > 0m && _pipSize > 0m)
-				{
-					_shortTakeProfitPrice ??= averagePrice - TakeProfitPips * _pipSize;
-				}
-				else
-				{
-					_shortTakeProfitPrice = null;
-				}
-			}
-		}
-		else
-		{
-			ResetShort();
-		}
-	}
-
-	private void ResetLong()
-	{
-		_longEntryPrice = null;
-		_longStopPrice = null;
-		_longTakeProfitPrice = null;
-	}
-
-	private void ResetShort()
-	{
-		_shortEntryPrice = null;
-		_shortStopPrice = null;
-		_shortTakeProfitPrice = null;
-	}
-
-	private TimeSpan GetTimeFrame()
-	{
-		if (CandleType.Arg is not TimeSpan frame)
-			throw new InvalidOperationException("The candle type must define a time frame.");
-
-		if (frame <= TimeSpan.Zero)
-			throw new InvalidOperationException("The candle time frame must be positive.");
-
-		return frame;
-	}
-
-	private void UpdatePipSize()
-	{
-		var security = Security;
-		if (security == null)
-		{
-			_pipSize = 0m;
-			return;
-		}
-
-		var step = security.PriceStep ?? 0m;
-		if (step <= 0m)
-		{
-			_pipSize = 0m;
-			return;
-		}
-
-		var decimals = security.Decimals;
-		var multiplier = decimals is 3 or 5 ? 10m : 1m;
-		_pipSize = step * multiplier;
+		_prevFast = fastValue; _prevSlow = slowValue;
 	}
 }
-

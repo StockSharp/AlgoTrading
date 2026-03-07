@@ -38,8 +38,8 @@ public class DealersTradeMacdMql4Strategy : Strategy
 	private readonly StrategyParam<int> _macdSlow;
 	private readonly StrategyParam<int> _macdSignal;
 
-	private MovingAverageConvergenceDivergence _macd = null!;
-	private readonly List<PositionState> _positions = new();
+	private MovingAverageConvergenceDivergence _macd;
+	private List<PositionState> _positions;
 	private decimal? _previousMacd;
 	private decimal _pipSize;
 	private decimal _stepValue;
@@ -72,11 +72,11 @@ public class DealersTradeMacdMql4Strategy : Strategy
 			.SetDisplay("Lot Multiplier", "Multiplier applied to subsequent entries", "Money Management")
 			.SetGreaterThanZero();
 
-		_maxTrades = Param(nameof(MaxTrades), 5)
+		_maxTrades = Param(nameof(MaxTrades), 1)
 			.SetDisplay("Max Trades", "Maximum simultaneous positions", "Money Management")
 			.SetGreaterThanZero();
 
-		_spacingPips = Param(nameof(SpacingPips), 4)
+		_spacingPips = Param(nameof(SpacingPips), 20)
 			.SetDisplay("Spacing (pips)", "Minimum price movement before adding", "Money Management")
 			.SetNotNegative();
 
@@ -300,8 +300,8 @@ public class DealersTradeMacdMql4Strategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_macd?.Reset();
-		_positions.Clear();
+		_macd = null;
+		_positions = null;
 		_previousMacd = null;
 	}
 
@@ -309,6 +309,8 @@ public class DealersTradeMacdMql4Strategy : Strategy
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+
+		_positions = new List<PositionState>();
 
 		_macd = new MovingAverageConvergenceDivergence(
 			new ExponentialMovingAverage { Length = MacdSlow },

@@ -1,51 +1,77 @@
+namespace StockSharp.Samples.Strategies;
+
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-namespace StockSharp.Samples.Strategies;
-
 /// <summary>
-/// Strategy based on comparing current candle open with previous close on a 30-minute timeframe.
+/// 30 Minute Candle Strategy.
+/// Compares current close with previous close.
+/// Buys when close > previous close, sells when close < previous close.
+/// Uses EMA as trend filter.
 /// </summary>
 public class ThirtyMinuteCandleStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _emaLength;
+	private readonly StrategyParam<int> _cooldownBars;
 
-	private decimal? _previousClose;
-	private decimal? _stopLoss;
-	private DateTimeOffset? _lastCandleTime;
+	private ExponentialMovingAverage _ema;
 
-	/// <summary>
-	/// Candle type.
-	/// </summary>
+	private decimal _prevClose;
+	private bool _hasPrevClose;
+	private int _cooldownRemaining;
+
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Initializes a new instance of the <see cref="ThirtyMinuteCandleStrategy"/>.
-	/// </summary>
+	public int EmaLength
+	{
+		get => _emaLength.Value;
+		set => _emaLength.Value = value;
+	}
+
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
 	public ThirtyMinuteCandleStrategy()
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
+
+		_emaLength = Param(nameof(EmaLength), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("EMA Length", "EMA trend filter period", "Indicators");
+
+		_cooldownBars = Param(nameof(CooldownBars), 15)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "Risk");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	/// <inheritdoc />
+	protected override void OnReseted()
 	{
-		return [(Security, CandleType)];
+		base.OnReseted();
+
+		_ema = null;
+		_prevClose = 0;
+		_hasPrevClose = false;
+		_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
@@ -53,49 +79,81 @@ public class ThirtyMinuteCandleStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
+		_ema = new ExponentialMovingAverage { Length = EmaLength };
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(_ema, OnProcess)
 			.Start();
 
-		StartProtection(null, null);
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, _ema);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void OnProcess(ICandleMessage candle, decimal emaVal)
 	{
-		var tf = (TimeSpan)CandleType.Arg;
-		var exitTime = candle.OpenTime + tf - TimeSpan.FromMinutes(1);
+		if (candle.State != CandleStates.Finished)
+			return;
 
-		if (CurrentTime >= exitTime && Position != 0)
+		if (!_ema.IsFormed)
+			return;
+
+		var close = candle.ClosePrice;
+
+		if (!_hasPrevClose)
 		{
-			if (Position > 0)
-				SellMarket(Math.Abs(Position));
-			else
-				BuyMarket(Math.Abs(Position));
-
+			_prevClose = close;
+			_hasPrevClose = true;
 			return;
 		}
 
-		if (_lastCandleTime != candle.OpenTime)
+		if (!IsFormedAndOnlineAndAllowTrading())
 		{
-			if (_previousClose.HasValue)
-			{
-				if (candle.OpenPrice > _previousClose && Position <= 0)
-				{
-					BuyMarket(Volume + Math.Abs(Position));
-					_stopLoss = _previousClose;
-				}
-				else if (Position > 0 && candle.OpenPrice < _previousClose)
-				{
-					SellMarket(Volume + Math.Abs(Position));
-					_stopLoss = _previousClose;
-				}
-			}
-
-			_lastCandleTime = candle.OpenTime;
+			_prevClose = close;
+			return;
 		}
 
-		if (candle.State == CandleStates.Finished)
-			_previousClose = candle.ClosePrice;
+		if (_cooldownRemaining > 0)
+		{
+			_cooldownRemaining--;
+			_prevClose = close;
+			return;
+		}
+
+		// Buy: close > previous close + above EMA
+		if (close > _prevClose && close > emaVal && Position <= 0)
+		{
+			if (Position < 0)
+				BuyMarket(Math.Abs(Position));
+			BuyMarket(Volume);
+			_cooldownRemaining = CooldownBars;
+		}
+		// Sell: close < previous close + below EMA
+		else if (close < _prevClose && close < emaVal && Position >= 0)
+		{
+			if (Position > 0)
+				SellMarket(Math.Abs(Position));
+			SellMarket(Volume);
+			_cooldownRemaining = CooldownBars;
+		}
+		// Exit long: close drops below EMA
+		else if (Position > 0 && close < emaVal)
+		{
+			SellMarket(Math.Abs(Position));
+			_cooldownRemaining = CooldownBars;
+		}
+		// Exit short: close rises above EMA
+		else if (Position < 0 && close > emaVal)
+		{
+			BuyMarket(Math.Abs(Position));
+			_cooldownRemaining = CooldownBars;
+		}
+
+		_prevClose = close;
 	}
 }

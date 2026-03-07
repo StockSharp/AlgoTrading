@@ -141,6 +141,7 @@ public class PeadStrategy : Strategy
 		_prevRoc = 0;
 		_stopLevel = 0;
 		_barsInTrade = 0;
+		_entryPrice = 0;
 	}
 
 	/// <inheritdoc />
@@ -148,7 +149,7 @@ public class PeadStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var ema = new EMA { Length = EmaLen };
+		var ema = new ExponentialMovingAverage { Length = EmaLen };
 		var roc = new RateOfChange { Length = PerfDays + 1 };
 
 		var subscription = SubscribeCandles(CandleType);
@@ -185,7 +186,7 @@ public class PeadStrategy : Strategy
 
 		if (entryCond)
 		{
-			BuyMarket(Volume);
+			BuyMarket();
 			_barsInTrade = 0;
 			_stopLevel = 0;
 			_entryPrice = candle.ClosePrice;
@@ -205,14 +206,14 @@ public class PeadStrategy : Strategy
 
 			if (candle.ClosePrice <= _stopLevel)
 			{
-				SellMarket(Position);
+				SellMarket();
 				return;
 			}
 
 			if (_prevEma > 0 && _prevClose > _prevEma && candle.ClosePrice < emaValue)
-				SellMarket(Position);
+				SellMarket();
 			else if (_barsInTrade >= MaxHoldBars)
-				SellMarket(Position);
+				SellMarket();
 		}
 		else
 		{

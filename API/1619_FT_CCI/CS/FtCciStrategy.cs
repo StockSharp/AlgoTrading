@@ -37,7 +37,7 @@ public class FtCciStrategy : Strategy
 		_lowerThreshold = Param(nameof(LowerThreshold), -210m)
 			.SetDisplay("CCI Lower", "CCI level for long entries", "Indicator");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle Type", "General");
 	}
 

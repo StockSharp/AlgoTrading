@@ -24,14 +24,14 @@ public class BullishBearishEngulfingStrategy : Strategy
 	private readonly StrategyParam<bool> _closeOpposite;
 	private readonly StrategyParam<Sides> _bullishSide;
 	private readonly StrategyParam<Sides> _bearishSide;
-	private readonly Queue<CandleSnapshot> _candles = new();
+	private readonly List<CandleSnapshot> _candles = new();
 
 	/// <summary>
 	/// Initializes a new instance of <see cref="BullishBearishEngulfingStrategy"/>.
 	/// </summary>
 	public BullishBearishEngulfingStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for analysis", "General");
 
 		_shift = Param(nameof(Shift), 1)
@@ -117,6 +117,13 @@ public class BullishBearishEngulfingStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_candles.Clear();
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
@@ -126,7 +133,7 @@ public class BullishBearishEngulfingStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
 
-		StartProtection(null, null);
+		// no protection needed
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -142,11 +149,11 @@ public class BullishBearishEngulfingStrategy : Strategy
 			Close = candle.ClosePrice
 		};
 
-		_candles.Enqueue(snapshot);
+		_candles.Add(snapshot);
 
 		var maxCount = Math.Max(Shift + 2, 3);
 		while (_candles.Count > maxCount)
-			_candles.Dequeue();
+			try { _candles.RemoveAt(0); } catch { break; }
 
 		if (_candles.Count < Shift + 1)
 			return;

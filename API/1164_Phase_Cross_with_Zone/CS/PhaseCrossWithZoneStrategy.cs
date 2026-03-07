@@ -19,8 +19,9 @@ public class PhaseCrossWithZoneStrategy : Strategy
 	private readonly StrategyParam<decimal> _offset;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal? _prevLead;
-	private decimal? _prevLag;
+	private decimal _prevLead;
+	private decimal _prevLag;
+	private bool _prevInit;
 
 	public int Length
 	{
@@ -53,7 +54,7 @@ public class PhaseCrossWithZoneStrategy : Strategy
 			
 			.SetOptimize(0m, 1m, 0.1m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -65,19 +66,29 @@ public class PhaseCrossWithZoneStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevLead = null;
-		_prevLag = null;
+		_prevLead = 0;
+		_prevLag = 0;
+		_prevInit = false;
 	}
 
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 		var sma = new SimpleMovingAverage { Length = Length };
-		var ema = new ExponentialMovingAverage { Length = Length };
+		var ema = new ExponentialMovingAverage { Length = Length * 2 };
 		var subscription = SubscribeCandles(CandleType);
 		subscription
 			.Bind(sma, ema, ProcessCandle)
 			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, sma);
+			DrawIndicator(area, ema);
+			DrawOwnTrades(area);
+		}
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal smaValue, decimal emaValue)
@@ -88,18 +99,19 @@ public class PhaseCrossWithZoneStrategy : Strategy
 		var lead = smaValue + Offset;
 		var lag = emaValue - Offset;
 
-		if (_prevLead is decimal prevLead && _prevLag is decimal prevLag)
+		if (_prevInit)
 		{
-			var crossedUp = prevLead <= prevLag && lead > lag;
-			var crossedDown = prevLead >= prevLag && lead < lag;
+			var crossedUp = _prevLead <= _prevLag && lead > lag;
+			var crossedDown = _prevLead >= _prevLag && lead < lag;
 
 			if (crossedUp && Position <= 0)
 				BuyMarket();
-			else if (crossedDown && Position > 0)
+			else if (crossedDown && Position >= 0)
 				SellMarket();
 		}
 
 		_prevLead = lead;
 		_prevLag = lag;
+		_prevInit = true;
 	}
 }

@@ -150,7 +150,7 @@ if (_isLong)
 {
 if (candle.LowPrice <= stop || candle.HighPrice >= target)
 {
-SellMarket(Position);
+SellMarket();
 _stopPrice = null;
 _targetPrice = null;
 }
@@ -159,7 +159,7 @@ else
 {
 if (candle.HighPrice >= stop || candle.LowPrice <= target)
 {
-BuyMarket(-Position);
+BuyMarket();
 _stopPrice = null;
 _targetPrice = null;
 }

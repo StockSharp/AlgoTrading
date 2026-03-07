@@ -13,18 +13,15 @@ namespace StockSharp.Samples.Strategies;
 /// <summary>
 /// Strategy based on the MultiTrend Signal indicator.
 /// Builds an adaptive channel using Highest/Lowest and trades breakouts.
-/// ADX adjusts the lookback period dynamically.
 /// </summary>
 public class ExpMultitrendSignalKvnStrategy : Strategy
 {
 	private readonly StrategyParam<decimal> _k;
 	private readonly StrategyParam<int> _kPeriod;
-	private readonly StrategyParam<int> _adxPeriod;
 	private readonly StrategyParam<decimal> _stopLossPct;
 	private readonly StrategyParam<decimal> _takeProfitPct;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private AverageDirectionalIndex _adx;
 	private Highest _maxHigh;
 	private Lowest _minLow;
 	private int _trend;
@@ -39,12 +36,6 @@ public class ExpMultitrendSignalKvnStrategy : Strategy
 	{
 		get => _kPeriod.Value;
 		set => _kPeriod.Value = value;
-	}
-
-	public int AdxPeriod
-	{
-		get => _adxPeriod.Value;
-		set => _adxPeriod.Value = value;
 	}
 
 	public decimal StopLossPct
@@ -74,17 +65,13 @@ public class ExpMultitrendSignalKvnStrategy : Strategy
 			.SetDisplay("K Period", "Base period for swing calculation", "Indicator")
 			.SetGreaterThanZero();
 
-		_adxPeriod = Param(nameof(AdxPeriod), 14)
-			.SetDisplay("ADX Period", "Period of ADX indicator", "Indicator")
-			.SetGreaterThanZero();
-
 		_stopLossPct = Param(nameof(StopLossPct), 2m)
 			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
 
 		_takeProfitPct = Param(nameof(TakeProfitPct), 3m)
 			.SetDisplay("Take Profit %", "Take profit percentage", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for calculation", "General");
 	}
 
@@ -98,6 +85,8 @@ public class ExpMultitrendSignalKvnStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
+		_maxHigh = default;
+		_minLow = default;
 		_trend = 0;
 	}
 
@@ -106,54 +95,14 @@ public class ExpMultitrendSignalKvnStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_adx = new AverageDirectionalIndex { Length = AdxPeriod };
 		_maxHigh = new Highest { Length = KPeriod };
 		_minLow = new Lowest { Length = KPeriod };
 
-		var passthrough = new SimpleMovingAverage { Length = 1 };
+		Indicators.Add(_maxHigh);
+		Indicators.Add(_minLow);
+
 		var subscription = SubscribeCandles(CandleType);
-
-		subscription
-			.Bind(passthrough, (candle, _) =>
-			{
-				if (candle.State != CandleStates.Finished)
-					return;
-
-				var adxResult = _adx.Process(candle);
-
-				var maxResult = _maxHigh.Process(candle);
-				var minResult = _minLow.Process(candle);
-
-				if (!maxResult.IsFormed || !minResult.IsFormed)
-					return;
-
-				var ssMax = maxResult.ToDecimal();
-				var ssMin = minResult.ToDecimal();
-
-				var swing = (ssMax - ssMin) * K / 100m;
-				var smin = ssMin + swing;
-				var smax = ssMax - swing;
-
-				if (candle.ClosePrice > smax)
-				{
-					if (_trend <= 0 && Position <= 0)
-					{
-						if (Position < 0) BuyMarket();
-						BuyMarket();
-					}
-					_trend = 1;
-				}
-				else if (candle.ClosePrice < smin)
-				{
-					if (_trend >= 0 && Position >= 0)
-					{
-						if (Position > 0) SellMarket();
-						SellMarket();
-					}
-					_trend = -1;
-				}
-			})
-			.Start();
+		subscription.Bind(ProcessCandle).Start();
 
 		StartProtection(
 			takeProfit: new Unit(TakeProfitPct, UnitTypes.Percent),
@@ -165,6 +114,47 @@ public class ExpMultitrendSignalKvnStrategy : Strategy
 		{
 			DrawCandles(area, subscription);
 			DrawOwnTrades(area);
+		}
+	}
+
+	private void ProcessCandle(ICandleMessage candle)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
+
+		var maxResult = _maxHigh.Process(candle);
+		var minResult = _minLow.Process(candle);
+
+		if (!maxResult.IsFormed || !minResult.IsFormed)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		var ssMax = maxResult.ToDecimal();
+		var ssMin = minResult.ToDecimal();
+
+		var swing = (ssMax - ssMin) * K / 100m;
+		var smin = ssMin + swing;
+		var smax = ssMax - swing;
+
+		if (candle.ClosePrice > smax)
+		{
+			if (_trend <= 0 && Position <= 0)
+			{
+				if (Position < 0) BuyMarket();
+				BuyMarket();
+			}
+			_trend = 1;
+		}
+		else if (candle.ClosePrice < smin)
+		{
+			if (_trend >= 0 && Position >= 0)
+			{
+				if (Position > 0) SellMarket();
+				SellMarket();
+			}
+			_trend = -1;
 		}
 	}
 }

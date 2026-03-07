@@ -1,14 +1,19 @@
 namespace StockSharp.Samples.Strategies;
 
 using System;
+using System.Collections.Generic;
 
-using StockSharp.Algo;
+using Ecng.Common;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
+using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 /// <summary>
-/// Three Signal Directional Trend Strategy - combines MACD, Stochastic, and RSI signals.
+/// Three Signal Directional Trend Strategy.
+/// Combines MACD, Stochastic, and RSI signals.
+/// Enters when at least 2 of 3 indicators agree on direction.
 /// </summary>
 public class ThreeSignalDirectionalTrendStrategy : Strategy
 {
@@ -16,13 +21,16 @@ public class ThreeSignalDirectionalTrendStrategy : Strategy
 	private readonly StrategyParam<int> _macdFastLength;
 	private readonly StrategyParam<int> _macdSlowLength;
 	private readonly StrategyParam<int> _macdAvgLength;
-	private readonly StrategyParam<int> _stochKPeriod;
-	private readonly StrategyParam<int> _stochDPeriod;
-	private readonly StrategyParam<decimal> _overbought;
-	private readonly StrategyParam<decimal> _oversold;
+	private readonly StrategyParam<int> _rsiLength;
+	private readonly StrategyParam<int> _cooldownBars;
+
+	private MovingAverageConvergenceDivergenceSignal _macd;
+	private StochasticOscillator _stochastic;
+	private RelativeStrengthIndex _rsi;
 
 	private decimal _prevMacdSignal;
-	private bool _macdInitialized;
+	private bool _macdInit;
+	private int _cooldownRemaining;
 
 	public DataType CandleType
 	{
@@ -48,55 +56,58 @@ public class ThreeSignalDirectionalTrendStrategy : Strategy
 		set => _macdAvgLength.Value = value;
 	}
 
-	public int StochKPeriod
+	public int RsiLength
 	{
-		get => _stochKPeriod.Value;
-		set => _stochKPeriod.Value = value;
+		get => _rsiLength.Value;
+		set => _rsiLength.Value = value;
 	}
 
-	public int StochDPeriod
+	public int CooldownBars
 	{
-		get => _stochDPeriod.Value;
-		set => _stochDPeriod.Value = value;
-	}
-
-	public decimal Overbought
-	{
-		get => _overbought.Value;
-		set => _overbought.Value = value;
-	}
-
-	public decimal Oversold
-	{
-		get => _oversold.Value;
-		set => _oversold.Value = value;
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	public ThreeSignalDirectionalTrendStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
 		_macdFastLength = Param(nameof(MacdFastLength), 12)
+			.SetGreaterThanZero()
 			.SetDisplay("MACD Fast", "Fast EMA length", "MACD");
 
 		_macdSlowLength = Param(nameof(MacdSlowLength), 26)
+			.SetGreaterThanZero()
 			.SetDisplay("MACD Slow", "Slow EMA length", "MACD");
 
 		_macdAvgLength = Param(nameof(MacdAvgLength), 9)
+			.SetGreaterThanZero()
 			.SetDisplay("MACD Signal", "Signal EMA length", "MACD");
 
-		_stochKPeriod = Param(nameof(StochKPeriod), 3)
-			.SetDisplay("Stoch %K", "Stochastic smoothing", "Stochastic");
+		_rsiLength = Param(nameof(RsiLength), 14)
+			.SetGreaterThanZero()
+			.SetDisplay("RSI Length", "RSI period", "RSI");
 
-		_stochDPeriod = Param(nameof(StochDPeriod), 3)
-			.SetDisplay("Stoch %D", "Stochastic %D", "Stochastic");
+		_cooldownBars = Param(nameof(CooldownBars), 10)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "Risk");
+	}
 
-		_overbought = Param(nameof(Overbought), 80m)
-			.SetDisplay("Overbought", "Stochastic overbought level", "Stochastic");
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
 
-		_oversold = Param(nameof(Oversold), 20m)
-			.SetDisplay("Oversold", "Stochastic oversold level", "Stochastic");
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_macd = null;
+		_stochastic = null;
+		_rsi = null;
+		_prevMacdSignal = 0;
+		_macdInit = false;
+		_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
@@ -104,31 +115,23 @@ public class ThreeSignalDirectionalTrendStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_prevMacdSignal = 0;
-		_macdInitialized = false;
-
-		var stochastic = new StochasticOscillator
+		_macd = new MovingAverageConvergenceDivergenceSignal
 		{
-			K = { Length = StochKPeriod },
-			D = { Length = StochDPeriod }
-		};
-
-		var macd = new MovingAverageConvergenceDivergenceSignal
-		{
-			Macd =
-			{
-				ShortMa = { Length = MacdFastLength },
-				LongMa = { Length = MacdSlowLength }
-			},
+			Macd = { ShortMa = { Length = MacdFastLength }, LongMa = { Length = MacdSlowLength } },
 			SignalMa = { Length = MacdAvgLength }
 		};
 
-		var rsi = new RelativeStrengthIndex { Length = 14 };
+		_stochastic = new StochasticOscillator
+		{
+			K = { Length = 14 },
+			D = { Length = 3 }
+		};
+
+		_rsi = new RelativeStrengthIndex { Length = RsiLength };
 
 		var subscription = SubscribeCandles(CandleType);
-
 		subscription
-			.BindEx(stochastic, macd, rsi, ProcessCandle)
+			.BindEx(_macd, _stochastic, _rsi, OnProcess)
 			.Start();
 
 		var area = CreateChartArea();
@@ -139,57 +142,85 @@ public class ThreeSignalDirectionalTrendStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue stochValue, IIndicatorValue macdValue, IIndicatorValue rsiValue)
+	private void OnProcess(ICandleMessage candle, IIndicatorValue macdVal, IIndicatorValue stochVal, IIndicatorValue rsiVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var stochTyped = (StochasticOscillatorValue)stochValue;
-		if (stochTyped.K is not decimal stochK)
+		if (!_macd.IsFormed || !_stochastic.IsFormed || !_rsi.IsFormed)
 			return;
 
-		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
+		if (macdVal.IsEmpty || stochVal.IsEmpty || rsiVal.IsEmpty)
+			return;
+
+		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdVal;
 		if (macdTyped.Signal is not decimal macdSignal)
 			return;
 
-		if (rsiValue.IsEmpty)
+		var stochTyped = (StochasticOscillatorValue)stochVal;
+		if (stochTyped.K is not decimal stochK)
 			return;
 
-		var rsiVal = rsiValue.ToDecimal();
+		var rsi = rsiVal.ToDecimal();
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+		{
+			_prevMacdSignal = macdSignal;
+			_macdInit = true;
+			return;
+		}
+
+		if (!_macdInit)
+		{
+			_prevMacdSignal = macdSignal;
+			_macdInit = true;
+			return;
+		}
+
+		if (_cooldownRemaining > 0)
+		{
+			_cooldownRemaining--;
+			_prevMacdSignal = macdSignal;
+			return;
+		}
 
 		var longCount = 0;
 		var shortCount = 0;
 
 		// MACD signal rising/falling
-		if (_macdInitialized)
-		{
-			if (macdSignal > _prevMacdSignal)
-				longCount++;
-			else if (macdSignal < _prevMacdSignal)
-				shortCount++;
-		}
-		else
-		{
-			_macdInitialized = true;
-		}
-		_prevMacdSignal = macdSignal;
+		if (macdSignal > _prevMacdSignal)
+			longCount++;
+		else if (macdSignal < _prevMacdSignal)
+			shortCount++;
 
 		// Stochastic oversold/overbought
-		if (stochK <= Oversold)
+		if (stochK <= 20)
 			longCount++;
-		else if (stochK >= Overbought)
+		else if (stochK >= 80)
 			shortCount++;
 
 		// RSI direction
-		if (rsiVal < 40)
+		if (rsi < 40)
 			longCount++;
-		else if (rsiVal > 60)
+		else if (rsi > 60)
 			shortCount++;
 
 		// Trade when at least 2 signals agree
 		if (longCount >= 2 && Position <= 0)
-			BuyMarket();
+		{
+			if (Position < 0)
+				BuyMarket(Math.Abs(Position));
+			BuyMarket(Volume);
+			_cooldownRemaining = CooldownBars;
+		}
 		else if (shortCount >= 2 && Position >= 0)
-			SellMarket();
+		{
+			if (Position > 0)
+				SellMarket(Math.Abs(Position));
+			SellMarket(Volume);
+			_cooldownRemaining = CooldownBars;
+		}
+
+		_prevMacdSignal = macdSignal;
 	}
 }

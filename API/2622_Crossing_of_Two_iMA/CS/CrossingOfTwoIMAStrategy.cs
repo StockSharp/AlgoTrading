@@ -119,7 +119,7 @@ public class CrossingOfTwoIMAStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("First MA Shift", "Shift applied to the first moving average", "First Moving Average");
 
-		_firstMethod = Param(nameof(FirstMaMethod), MovingAverageMethods.Smoothed)
+		_firstMethod = Param(nameof(FirstMaMethod), MovingAverageMethods.Simple)
 			.SetDisplay("First MA Method", "Calculation method of the first moving average", "First Moving Average");
 
 		_secondPeriod = Param(nameof(SecondMaPeriod), 8)
@@ -132,7 +132,7 @@ public class CrossingOfTwoIMAStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Second MA Shift", "Shift applied to the second moving average", "Second Moving Average");
 
-		_secondMethod = Param(nameof(SecondMaMethod), MovingAverageMethods.Smoothed)
+		_secondMethod = Param(nameof(SecondMaMethod), MovingAverageMethods.Simple)
 			.SetDisplay("Second MA Method", "Calculation method of the second moving average", "Second Moving Average");
 
 		_useThirdAverage = Param(nameof(UseThirdMovingAverage), true)
@@ -146,7 +146,7 @@ public class CrossingOfTwoIMAStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Third MA Shift", "Shift applied to the third moving average", "Third Moving Average");
 
-		_thirdMethod = Param(nameof(ThirdMaMethod), MovingAverageMethods.Smoothed)
+		_thirdMethod = Param(nameof(ThirdMaMethod), MovingAverageMethods.Simple)
 			.SetDisplay("Third MA Method", "Calculation method of the third moving average", "Third Moving Average");
 
 		_useFixedVolume = Param(nameof(UseFixedVolume), true)
@@ -175,7 +175,7 @@ public class CrossingOfTwoIMAStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Trailing Step (pips)", "Additional progress in pips required before the trailing stop is advanced", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Primary candle series used for signals", "General");
 	}
 
@@ -364,6 +364,9 @@ public class CrossingOfTwoIMAStrategy : Strategy
 		_pendingOrder = null;
 		_lastEntryTime = null;
 		_pipSize = 0m;
+		_firstMa = null;
+		_secondMa = null;
+		_thirdMa = null;
 	}
 
 	/// <inheritdoc />
@@ -429,11 +432,10 @@ public class CrossingOfTwoIMAStrategy : Strategy
 		if (UseThirdMovingAverage && thirdValue.HasValue)
 			UpdateSeries(_thirdValues, ThirdMaShift, thirdValue.Value);
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!_firstMa.IsFormed || !_secondMa.IsFormed)
 			return;
 
-		if (_firstMa?.IsFormed != true || _secondMa?.IsFormed != true)
-			return;
+		// already checked above
 
 		decimal? thirdCurrent = null;
 		if (UseThirdMovingAverage)
@@ -518,7 +520,7 @@ public class CrossingOfTwoIMAStrategy : Strategy
 			if (totalVolume <= 0m)
 				return;
 
-			BuyMarket(totalVolume);
+			BuyMarket();
 			_entryPrice = entryPrice;
 			_activeStopLoss = stopPrice;
 			_activeTakeProfit = takePrice;
@@ -576,7 +578,7 @@ public class CrossingOfTwoIMAStrategy : Strategy
 			if (totalVolume <= 0m)
 				return;
 
-			SellMarket(totalVolume);
+			SellMarket();
 			_entryPrice = entryPrice;
 			_activeStopLoss = stopPrice;
 			_activeTakeProfit = takePrice;
@@ -642,7 +644,7 @@ public class CrossingOfTwoIMAStrategy : Strategy
 			var totalVolume = volume + (Position < 0 ? Math.Abs(Position) : 0m);
 			if (totalVolume > 0m)
 			{
-				BuyMarket(totalVolume);
+				BuyMarket();
 				_entryPrice = _pendingOrder.EntryPrice;
 				_activeStopLoss = _pendingOrder.StopLoss;
 				_activeTakeProfit = _pendingOrder.TakeProfit;
@@ -655,7 +657,7 @@ public class CrossingOfTwoIMAStrategy : Strategy
 			var totalVolume = volume + (Position > 0 ? Math.Abs(Position) : 0m);
 			if (totalVolume > 0m)
 			{
-				SellMarket(totalVolume);
+				SellMarket();
 				_entryPrice = _pendingOrder.EntryPrice;
 				_activeStopLoss = _pendingOrder.StopLoss;
 				_activeTakeProfit = _pendingOrder.TakeProfit;
@@ -680,7 +682,7 @@ public class CrossingOfTwoIMAStrategy : Strategy
 		{
 			if (_activeTakeProfit.HasValue && candle.HighPrice >= _activeTakeProfit.Value)
 			{
-				SellMarket(positionVolume);
+				SellMarket();
 				ResetPositionState();
 				positionChanged = true;
 				return;
@@ -688,7 +690,7 @@ public class CrossingOfTwoIMAStrategy : Strategy
 
 			if (_activeStopLoss.HasValue && candle.LowPrice <= _activeStopLoss.Value)
 			{
-				SellMarket(positionVolume);
+				SellMarket();
 				ResetPositionState();
 				positionChanged = true;
 				return;
@@ -700,7 +702,7 @@ public class CrossingOfTwoIMAStrategy : Strategy
 		{
 			if (_activeTakeProfit.HasValue && candle.LowPrice <= _activeTakeProfit.Value)
 			{
-				BuyMarket(positionVolume);
+				BuyMarket();
 				ResetPositionState();
 				positionChanged = true;
 				return;
@@ -708,7 +710,7 @@ public class CrossingOfTwoIMAStrategy : Strategy
 
 			if (_activeStopLoss.HasValue && candle.HighPrice >= _activeStopLoss.Value)
 			{
-				BuyMarket(positionVolume);
+				BuyMarket();
 				ResetPositionState();
 				positionChanged = true;
 				return;
