@@ -1,215 +1,144 @@
+namespace StockSharp.Samples.Strategies;
+
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-namespace StockSharp.Samples.Strategies;
-
 /// <summary>
-/// Strategy based on adaptive Hull Moving Average.
+/// Strategy based on Hull Moving Average slope with ATR volatility filter.
+/// Enters long when HMA slope is positive and volatility is expanding.
+/// Enters short when HMA slope is negative and volatility is expanding.
 /// </summary>
 public class AdaptiveHmaPlusStrategy : Strategy
 {
-    private readonly StrategyParam<int> _minPeriod;
-    private readonly StrategyParam<int> _maxPeriod;
-    private readonly StrategyParam<decimal> _adaptPercent;
-    private readonly StrategyParam<decimal> _flatThreshold;
-    private readonly StrategyParam<bool> _useVolume;
-    private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _hmaLength;
+	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _cooldownBars;
 
-    private HullMovingAverage _hma;
-    private AverageTrueRange _atrShort;
-    private AverageTrueRange _atrLong;
-    private SimpleMovingAverage _volumeSma;
+	private HullMovingAverage _hma;
+	private AverageTrueRange _atrShort;
+	private AverageTrueRange _atrLong;
 
-    private decimal _dynamicLength;
-    private decimal _prevHma;
+	private decimal _prevHma;
+	private int _cooldownRemaining;
 
-    /// <summary>
-    /// Minimum period for adaptive HMA.
-    /// </summary>
-    public int MinPeriod
-    {
-        get => _minPeriod.Value;
-        set => _minPeriod.Value = value;
-    }
+	public int HmaLength { get => _hmaLength.Value; set => _hmaLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int CooldownBars { get => _cooldownBars.Value; set => _cooldownBars.Value = value; }
 
-    /// <summary>
-    /// Maximum period for adaptive HMA.
-    /// </summary>
-    public int MaxPeriod
-    {
-        get => _maxPeriod.Value;
-        set => _maxPeriod.Value = value;
-    }
+	public AdaptiveHmaPlusStrategy()
+	{
+		_hmaLength = Param(nameof(HmaLength), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("HMA Length", "Hull Moving Average period", "General");
 
-    /// <summary>
-    /// Adaptation percentage per bar.
-    /// </summary>
-    public decimal AdaptPercent
-    {
-        get => _adaptPercent.Value;
-        set => _adaptPercent.Value = value;
-    }
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
-    /// <summary>
-    /// Threshold to treat slope as flat.
-    /// </summary>
-    public decimal FlatThreshold
-    {
-        get => _flatThreshold.Value;
-        set => _flatThreshold.Value = value;
-    }
+		_cooldownBars = Param(nameof(CooldownBars), 10)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "Risk");
+	}
 
-    /// <summary>
-    /// Use volume instead of volatility for adaptation.
-    /// </summary>
-    public bool UseVolume
-    {
-        get => _useVolume.Value;
-        set => _useVolume.Value = value;
-    }
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
 
-    /// <summary>
-    /// Candle type.
-    /// </summary>
-    public DataType CandleType
-    {
-        get => _candleType.Value;
-        set => _candleType.Value = value;
-    }
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_hma = null;
+		_atrShort = null;
+		_atrLong = null;
+		_prevHma = 0;
+		_cooldownRemaining = 0;
+	}
 
-    /// <summary>
-    /// Initialize a new instance of <see cref="AdaptiveHmaPlusStrategy"/>.
-    /// </summary>
-    public AdaptiveHmaPlusStrategy()
-    {
-        _minPeriod = Param(nameof(MinPeriod), 172)
-            .SetDisplay("Min Period", "Minimum period for HMA", "General")
-            
-            .SetOptimize(100, 200, 10);
+	/// <inheritdoc />
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
 
-        _maxPeriod = Param(nameof(MaxPeriod), 233)
-            .SetDisplay("Max Period", "Maximum period for HMA", "General")
-            
-            .SetOptimize(200, 260, 10);
+		_hma = new HullMovingAverage { Length = HmaLength };
+		_atrShort = new AverageTrueRange { Length = 14 };
+		_atrLong = new AverageTrueRange { Length = 46 };
 
-        _adaptPercent = Param(nameof(AdaptPercent), 0.031m)
-            .SetDisplay("Adapt Percent", "Percentage for length adaptation", "General")
-            
-            .SetOptimize(0.01m, 0.05m, 0.01m);
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(_hma, _atrShort, _atrLong, ProcessCandle)
+			.Start();
 
-        _flatThreshold = Param(nameof(FlatThreshold), 0m)
-            .SetDisplay("Flat Threshold", "Slope difference treated as flat", "General")
-            
-            .SetOptimize(0m, 1m, 0.1m);
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, _hma);
+			DrawOwnTrades(area);
+		}
+	}
 
-        _useVolume = Param(nameof(UseVolume), false)
-            .SetDisplay("Use Volume", "Adapt based on volume instead of volatility", "General");
+	private void ProcessCandle(ICandleMessage candle, decimal hmaValue, decimal atrShortValue, decimal atrLongValue)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
 
-        _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-            .SetDisplay("Candle Type", "Type of candles to use", "General");
-    }
+		if (!IsFormedAndOnlineAndAllowTrading())
+		{
+			_prevHma = hmaValue;
+			return;
+		}
 
-    /// <inheritdoc />
-    public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-    {
-        return [(Security, CandleType)];
-    }
+		if (_prevHma == 0)
+		{
+			_prevHma = hmaValue;
+			return;
+		}
 
-    /// <inheritdoc />
-    protected override void OnReseted()
-    {
-        base.OnReseted();
-        _dynamicLength = 0;
-        _prevHma = 0;
-    }
+		if (_cooldownRemaining > 0)
+		{
+			_cooldownRemaining--;
+			_prevHma = hmaValue;
+			return;
+		}
 
-    /// <inheritdoc />
-    protected override void OnStarted2(DateTime time)
-    {
-        base.OnStarted2(time);
+		var slope = hmaValue - _prevHma;
+		var volExpanding = atrShortValue > atrLongValue;
 
-        _hma = new HullMovingAverage { Length = MinPeriod };
-        _atrShort = new AverageTrueRange { Length = 14 };
-        _atrLong = new AverageTrueRange { Length = 46 };
-        _volumeSma = new SMA { Length = 20 };
+		// Buy: HMA slope positive + volatility expanding
+		if (slope > 0 && volExpanding && Position <= 0)
+		{
+			if (Position < 0)
+				BuyMarket(Math.Abs(Position));
+			BuyMarket(Volume);
+			_cooldownRemaining = CooldownBars;
+		}
+		// Sell: HMA slope negative + volatility expanding
+		else if (slope < 0 && volExpanding && Position >= 0)
+		{
+			if (Position > 0)
+				SellMarket(Math.Abs(Position));
+			SellMarket(Volume);
+			_cooldownRemaining = CooldownBars;
+		}
+		// Exit long: slope turns negative
+		else if (Position > 0 && slope <= 0)
+		{
+			SellMarket(Math.Abs(Position));
+			_cooldownRemaining = CooldownBars;
+		}
+		// Exit short: slope turns positive
+		else if (Position < 0 && slope >= 0)
+		{
+			BuyMarket(Math.Abs(Position));
+			_cooldownRemaining = CooldownBars;
+		}
 
-        var subscription = SubscribeCandles(CandleType);
-        subscription
-            .Bind(_hma, _atrShort, _atrLong, ProcessCandle)
-            .Start();
-
-        var area = CreateChartArea();
-        if (area != null)
-        {
-            DrawCandles(area, subscription);
-            DrawIndicator(area, _hma);
-            DrawOwnTrades(area);
-        }
-    }
-
-    private void ProcessCandle(ICandleMessage candle, decimal hmaValue, decimal atrShortValue, decimal atrLongValue)
-    {
-        if (candle.State != CandleStates.Finished)
-            return;
-
-        var volumeSmaValue = _volumeSma.Process(new DecimalIndicatorValue(_volumeSma, candle.TotalVolume, candle.ServerTime)).ToDecimal();
-
-        var plugged = UseVolume
-            ? candle.TotalVolume > volumeSmaValue
-            : atrShortValue > atrLongValue;
-
-        if (_dynamicLength == 0)
-            _dynamicLength = (MinPeriod + MaxPeriod) / 2m;
-
-        _dynamicLength = plugged
-            ? Math.Max(MinPeriod, _dynamicLength * (1 - AdaptPercent))
-            : Math.Min(MaxPeriod, _dynamicLength * (1 + AdaptPercent));
-
-        _hma.Length = (int)_dynamicLength;
-
-        if (!IsFormedAndOnlineAndAllowTrading())
-        {
-            _prevHma = hmaValue;
-            return;
-        }
-
-        var slope = hmaValue - _prevHma;
-
-        var longSignal = slope >= FlatThreshold && plugged && Position <= 0;
-        var shortSignal = slope <= -FlatThreshold && plugged && Position >= 0;
-        var exitLong = Position > 0 && slope <= 0;
-        var exitShort = Position < 0 && slope >= 0;
-
-        if (longSignal)
-        {
-            var volume = Volume + Math.Abs(Position);
-            BuyMarket(volume);
-        }
-        else if (shortSignal)
-        {
-            var volume = Volume + Math.Abs(Position);
-            SellMarket(volume);
-        }
-        else if (exitLong)
-        {
-            SellMarket(Position);
-        }
-        else if (exitShort)
-        {
-            BuyMarket(Math.Abs(Position));
-        }
-
-        _prevHma = hmaValue;
-    }
+		_prevHma = hmaValue;
+	}
 }
-

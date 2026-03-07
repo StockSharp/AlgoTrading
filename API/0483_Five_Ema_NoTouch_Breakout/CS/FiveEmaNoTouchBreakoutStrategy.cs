@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -21,6 +18,7 @@ public class FiveEmaNoTouchBreakoutStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _emaPeriod;
 	private readonly StrategyParam<decimal> _rewardRisk;
+	private readonly StrategyParam<int> _cooldownBars;
 
 	private ExponentialMovingAverage _ema;
 
@@ -35,6 +33,7 @@ public class FiveEmaNoTouchBreakoutStrategy : Strategy
 	private decimal? _longTarget;
 	private decimal? _shortStop;
 	private decimal? _shortTarget;
+	private int _cooldownRemaining;
 
 	/// <summary>
 	/// Candle type for strategy calculation.
@@ -63,12 +62,18 @@ public class FiveEmaNoTouchBreakoutStrategy : Strategy
 		set => _rewardRisk.Value = value;
 	}
 
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
 	/// <summary>
 	/// Constructor.
 	/// </summary>
 	public FiveEmaNoTouchBreakoutStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
 		_emaPeriod = Param(nameof(EmaPeriod), 5)
@@ -82,6 +87,9 @@ public class FiveEmaNoTouchBreakoutStrategy : Strategy
 			.SetDisplay("Reward : Risk", "Reward to risk ratio", "Risk Management")
 			
 			.SetOptimize(1.0m, 5.0m, 0.5m);
+
+		_cooldownBars = Param(nameof(CooldownBars), 10)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "Risk");
 	}
 
 	/// <inheritdoc />
@@ -105,6 +113,7 @@ public class FiveEmaNoTouchBreakoutStrategy : Strategy
 		_longTarget = null;
 		_shortStop = null;
 		_shortTarget = null;
+		_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
@@ -112,7 +121,7 @@ public class FiveEmaNoTouchBreakoutStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_ema = new EMA { Length = EmaPeriod };
+		_ema = new ExponentialMovingAverage { Length = EmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -155,6 +164,36 @@ public class FiveEmaNoTouchBreakoutStrategy : Strategy
 			_longReady = false;
 		}
 
+		// Check stop/target exits (always, regardless of cooldown)
+		if (Position > 0 && _longStop is decimal ls && _longTarget is decimal lt)
+		{
+			if (low <= ls || high >= lt)
+			{
+				SellMarket(Math.Abs(Position));
+				_longStop = null;
+				_longTarget = null;
+				_cooldownRemaining = CooldownBars;
+				return;
+			}
+		}
+		else if (Position < 0 && _shortStop is decimal ss && _shortTarget is decimal st)
+		{
+			if (high >= ss || low <= st)
+			{
+				BuyMarket(Math.Abs(Position));
+				_shortStop = null;
+				_shortTarget = null;
+				_cooldownRemaining = CooldownBars;
+				return;
+			}
+		}
+
+		if (_cooldownRemaining > 0)
+		{
+			_cooldownRemaining--;
+			return;
+		}
+
 		if (_longReady && _pendingLongHigh is decimal longHigh && high > longHigh)
 		{
 			if (_pendingLongLow is decimal longLow)
@@ -163,6 +202,7 @@ public class FiveEmaNoTouchBreakoutStrategy : Strategy
 				_longTarget = close + (close - longLow) * RewardRisk;
 				BuyMarket(Volume + Math.Abs(Position));
 				_longReady = false;
+				_cooldownRemaining = CooldownBars;
 			}
 		}
 		else if (_shortReady && _pendingShortLow is decimal shortLow && low < shortLow)
@@ -173,25 +213,7 @@ public class FiveEmaNoTouchBreakoutStrategy : Strategy
 				_shortTarget = close - (shortHigh - close) * RewardRisk;
 				SellMarket(Volume + Math.Abs(Position));
 				_shortReady = false;
-			}
-		}
-
-		if (Position > 0 && _longStop is decimal ls && _longTarget is decimal lt)
-		{
-			if (low <= ls || high >= lt)
-			{
-				SellMarket(Math.Abs(Position));
-				_longStop = null;
-				_longTarget = null;
-			}
-		}
-		else if (Position < 0 && _shortStop is decimal ss && _shortTarget is decimal st)
-		{
-			if (high >= ss || low <= st)
-			{
-				BuyMarket(Math.Abs(Position));
-				_shortStop = null;
-				_shortTarget = null;
+				_cooldownRemaining = CooldownBars;
 			}
 		}
 	}

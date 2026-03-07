@@ -1,18 +1,21 @@
+namespace StockSharp.Samples.Strategies;
+
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-namespace StockSharp.Samples.Strategies;
-
+/// <summary>
+/// Vietnamese 3x SuperTrend strategy.
+/// Uses three SuperTrend indicators with different settings.
+/// Enters long when SuperTrend conditions align.
+/// Exits based on break-even, all-uptrend-red-candle, or avg price in loss.
+/// </summary>
 public class Vietnamese3xSupertrendStrategy : Strategy
 {
 	private readonly StrategyParam<int> _fastAtrLength;
@@ -21,81 +24,55 @@ public class Vietnamese3xSupertrendStrategy : Strategy
 	private readonly StrategyParam<decimal> _mediumMultiplier;
 	private readonly StrategyParam<int> _slowAtrLength;
 	private readonly StrategyParam<decimal> _slowMultiplier;
-	private readonly StrategyParam<bool> _useHighestOfTwoRedCandles;
-	private readonly StrategyParam<bool> _useEntryStopLoss;
-	private readonly StrategyParam<bool> _useAllDowntrendExit;
-	private readonly StrategyParam<bool> _useAvgPriceInLoss;
 	private readonly StrategyParam<DataType> _candleType;
-	
+	private readonly StrategyParam<int> _cooldownBars;
+
 	private decimal _highestGreen;
 	private bool _breakEvenActive;
 	private decimal _avgEntryPrice;
 	private int _entryCount;
-	
+	private int _cooldownRemaining;
+
 	public int FastAtrLength { get => _fastAtrLength.Value; set => _fastAtrLength.Value = value; }
 	public decimal FastMultiplier { get => _fastMultiplier.Value; set => _fastMultiplier.Value = value; }
 	public int MediumAtrLength { get => _mediumAtrLength.Value; set => _mediumAtrLength.Value = value; }
 	public decimal MediumMultiplier { get => _mediumMultiplier.Value; set => _mediumMultiplier.Value = value; }
 	public int SlowAtrLength { get => _slowAtrLength.Value; set => _slowAtrLength.Value = value; }
 	public decimal SlowMultiplier { get => _slowMultiplier.Value; set => _slowMultiplier.Value = value; }
-	public bool UseHighestOfTwoRedCandles { get => _useHighestOfTwoRedCandles.Value; set => _useHighestOfTwoRedCandles.Value = value; }
-	public bool UseEntryStopLoss { get => _useEntryStopLoss.Value; set => _useEntryStopLoss.Value = value; }
-	public bool UseAllDowntrendExit { get => _useAllDowntrendExit.Value; set => _useAllDowntrendExit.Value = value; }
-	public bool UseAvgPriceInLoss { get => _useAvgPriceInLoss.Value; set => _useAvgPriceInLoss.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
-	
+	public int CooldownBars { get => _cooldownBars.Value; set => _cooldownBars.Value = value; }
+
 	public Vietnamese3xSupertrendStrategy()
 	{
 		_fastAtrLength = Param(nameof(FastAtrLength), 10)
-		.SetDisplay("Fast ATR Length", "ATR length for fast SuperTrend", "SuperTrend")
-		
-		.SetOptimize(5, 20, 1);
-		
+			.SetDisplay("Fast ATR Length", "ATR length for fast SuperTrend", "SuperTrend");
+
 		_fastMultiplier = Param(nameof(FastMultiplier), 1m)
-		.SetDisplay("Fast Multiplier", "ATR multiplier for fast SuperTrend", "SuperTrend")
-		
-		.SetOptimize(0.5m, 3m, 0.5m);
-		
+			.SetDisplay("Fast Multiplier", "ATR multiplier for fast SuperTrend", "SuperTrend");
+
 		_mediumAtrLength = Param(nameof(MediumAtrLength), 11)
-		.SetDisplay("Medium ATR Length", "ATR length for medium SuperTrend", "SuperTrend")
-		
-		.SetOptimize(5, 20, 1);
-		
+			.SetDisplay("Medium ATR Length", "ATR length for medium SuperTrend", "SuperTrend");
+
 		_mediumMultiplier = Param(nameof(MediumMultiplier), 2m)
-		.SetDisplay("Medium Multiplier", "ATR multiplier for medium SuperTrend", "SuperTrend")
-		
-		.SetOptimize(1m, 4m, 0.5m);
-		
+			.SetDisplay("Medium Multiplier", "ATR multiplier for medium SuperTrend", "SuperTrend");
+
 		_slowAtrLength = Param(nameof(SlowAtrLength), 12)
-		.SetDisplay("Slow ATR Length", "ATR length for slow SuperTrend", "SuperTrend")
-		
-		.SetOptimize(5, 30, 1);
-		
+			.SetDisplay("Slow ATR Length", "ATR length for slow SuperTrend", "SuperTrend");
+
 		_slowMultiplier = Param(nameof(SlowMultiplier), 3m)
-		.SetDisplay("Slow Multiplier", "ATR multiplier for slow SuperTrend", "SuperTrend")
-		
-		.SetOptimize(1m, 5m, 0.5m);
-		
-		_useHighestOfTwoRedCandles = Param(nameof(UseHighestOfTwoRedCandles), false)
-		.SetDisplay("Use Highest of Two Red Candles", "Use highest high of two red candles", "Setup");
-		
-		_useEntryStopLoss = Param(nameof(UseEntryStopLoss), true)
-		.SetDisplay("Use Entry Stop Loss", "Activate break-even stop", "Risk");
-		
-		_useAllDowntrendExit = Param(nameof(UseAllDowntrendExit), true)
-		.SetDisplay("Use All Downtrend Exit", "Exit when all SuperTrends turn up with a red candle", "Exit");
-		
-		_useAvgPriceInLoss = Param(nameof(UseAvgPriceInLoss), true)
-		.SetDisplay("Use Avg Price In Loss", "Exit when average entry price is above close", "Exit");
-		
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-		.SetDisplay("Candle Type", "Type of candles to use", "General");
+			.SetDisplay("Slow Multiplier", "ATR multiplier for slow SuperTrend", "SuperTrend");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
+
+		_cooldownBars = Param(nameof(CooldownBars), 10)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "Risk");
 	}
-	
+
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	=> [(Security, CandleType)];
-	
+		=> [(Security, CandleType)];
+
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
@@ -104,79 +81,99 @@ public class Vietnamese3xSupertrendStrategy : Strategy
 		_breakEvenActive = false;
 		_avgEntryPrice = 0;
 		_entryCount = 0;
+		_cooldownRemaining = 0;
 	}
-	
+
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		
+
 		var fast = new SuperTrend { Length = FastAtrLength, Multiplier = FastMultiplier };
 		var medium = new SuperTrend { Length = MediumAtrLength, Multiplier = MediumMultiplier };
 		var slow = new SuperTrend { Length = SlowAtrLength, Multiplier = SlowMultiplier };
-		
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-		.BindEx(fast, medium, slow, ProcessCandle)
-		.Start();
-		
+			.BindEx(fast, medium, slow, ProcessCandle)
+			.Start();
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
 			DrawIndicator(area, fast);
-			DrawIndicator(area, medium);
-			DrawIndicator(area, slow);
 			DrawOwnTrades(area);
 		}
 	}
-	
+
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue fastVal, IIndicatorValue medVal, IIndicatorValue slowVal)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
-		
-		var fast = (SuperTrendIndicatorValue)fastVal;
-		var medium = (SuperTrendIndicatorValue)medVal;
-		var slow = (SuperTrendIndicatorValue)slowVal;
-		
-		var dir1 = fast.IsUpTrend ? 1 : -1;
-		var dir2 = medium.IsUpTrend ? 1 : -1;
-		var dir3 = slow.IsUpTrend ? 1 : -1;
-		
-		if (dir1 < 0 && _highestGreen == 0 && (!UseHighestOfTwoRedCandles || candle.ClosePrice < candle.OpenPrice))
-		_highestGreen = candle.HighPrice;
-		if (_highestGreen > 0 && (!UseHighestOfTwoRedCandles || candle.ClosePrice < candle.OpenPrice))
-		_highestGreen = Math.Max(_highestGreen, candle.HighPrice);
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		var fastSt = (SuperTrendIndicatorValue)fastVal;
+		var medSt = (SuperTrendIndicatorValue)medVal;
+		var slowSt = (SuperTrendIndicatorValue)slowVal;
+
+		var dir1 = fastSt.IsUpTrend ? 1 : -1;
+		var dir2 = medSt.IsUpTrend ? 1 : -1;
+		var dir3 = slowSt.IsUpTrend ? 1 : -1;
+
+		// Track highest green candle for breakout entry
+		if (dir1 < 0 && _highestGreen == 0)
+			_highestGreen = candle.HighPrice;
+		if (_highestGreen > 0 && dir1 < 0)
+			_highestGreen = Math.Max(_highestGreen, candle.HighPrice);
 		if (dir1 >= 0)
-		_highestGreen = 0;
-		
-		if (UseEntryStopLoss && dir1 > 0 && dir2 < 0 && dir3 < 0 && Position > 0)
+			_highestGreen = 0;
+
+		// Exit logic for longs
+		if (Position > 0)
 		{
-			if (!_breakEvenActive && candle.LowPrice > _avgEntryPrice)
-			_breakEvenActive = true;
-			if (_breakEvenActive && candle.LowPrice <= _avgEntryPrice)
+			// Break-even stop
+			if (dir1 > 0 && dir2 < 0 && dir3 < 0)
 			{
-				SellMarket(Position);
+				if (!_breakEvenActive && candle.LowPrice > _avgEntryPrice)
+					_breakEvenActive = true;
+				if (_breakEvenActive && candle.LowPrice <= _avgEntryPrice)
+				{
+					SellMarket(Math.Abs(Position));
+					ResetEntries();
+					_cooldownRemaining = CooldownBars;
+					return;
+				}
+			}
+
+			// All uptrend + red candle exit
+			if (dir3 > 0 && dir2 > 0 && dir1 > 0 && candle.ClosePrice < candle.OpenPrice)
+			{
+				SellMarket(Math.Abs(Position));
 				ResetEntries();
+				_cooldownRemaining = CooldownBars;
+				return;
+			}
+
+			// Avg price in loss exit
+			if (_avgEntryPrice > candle.ClosePrice)
+			{
+				SellMarket(Math.Abs(Position));
+				ResetEntries();
+				_cooldownRemaining = CooldownBars;
 				return;
 			}
 		}
-		
-		if (UseAllDowntrendExit && dir3 > 0 && dir2 > 0 && dir1 > 0 && candle.ClosePrice < candle.OpenPrice && Position > 0)
+
+		if (_cooldownRemaining > 0)
 		{
-			SellMarket(Position);
-			ResetEntries();
+			_cooldownRemaining--;
 			return;
 		}
-		
-		if (UseAvgPriceInLoss && Position > 0 && _avgEntryPrice > candle.ClosePrice)
-		{
-			SellMarket(Position);
-			ResetEntries();
-			return;
-		}
-		
+
+		// Entry logic - max 3 entries
 		if (_entryCount < 3)
 		{
 			if (dir3 < 0)
@@ -185,11 +182,13 @@ public class Vietnamese3xSupertrendStrategy : Strategy
 				{
 					BuyMarket(Volume);
 					AddEntry(candle.ClosePrice);
+					_cooldownRemaining = CooldownBars;
 				}
-				else if (dir2 < 0 && candle.ClosePrice > fast.Value)
+				else if (dir2 < 0 && candle.ClosePrice > fastSt.Value)
 				{
 					BuyMarket(Volume);
 					AddEntry(candle.ClosePrice);
+					_cooldownRemaining = CooldownBars;
 				}
 			}
 			else
@@ -198,17 +197,18 @@ public class Vietnamese3xSupertrendStrategy : Strategy
 				{
 					BuyMarket(Volume);
 					AddEntry(candle.ClosePrice);
+					_cooldownRemaining = CooldownBars;
 				}
 			}
 		}
 	}
-	
+
 	private void AddEntry(decimal price)
 	{
 		_avgEntryPrice = (_avgEntryPrice * _entryCount + price) / (_entryCount + 1);
 		_entryCount++;
 	}
-	
+
 	private void ResetEntries()
 	{
 		_avgEntryPrice = 0;
