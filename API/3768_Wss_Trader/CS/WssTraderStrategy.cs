@@ -56,16 +56,16 @@ public class WssTraderStrategy : Strategy
 	/// </summary>
 	public WssTraderStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Working Candle", "Primary candle type for trading logic.", "General");
 
-		_dailyCandleType = Param(nameof(DailyCandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_dailyCandleType = Param(nameof(DailyCandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Daily Candle", "Daily candle type used for pivot calculation.", "General");
 
-		_startHour = Param(nameof(StartHour), 8)
+		_startHour = Param(nameof(StartHour), 0)
 			.SetDisplay("Start Hour", "Hour of day when trading becomes active (0-23).", "Session");
 
-		_endHour = Param(nameof(EndHour), 16)
+		_endHour = Param(nameof(EndHour), 23)
 			.SetDisplay("End Hour", "Hour of day after which trading is disabled (0-23).", "Session");
 
 		_metricPoints = Param(nameof(MetricPoints), 20)
@@ -239,7 +239,7 @@ public class WssTraderStrategy : Strategy
 		{
 			if (Position != 0m)
 			{
-				ClosePosition();
+				if (Position > 0) SellMarket(); else BuyMarket();
 				ResetPositionState();
 			}
 
@@ -470,7 +470,9 @@ public class WssTraderStrategy : Strategy
 
 	private decimal RoundPrice(decimal price)
 	{
-		return Security?.ShrinkPrice(price) ?? price;
+		if (_priceStep > 0m)
+			return Math.Round(price / _priceStep) * _priceStep;
+		return price;
 	}
 
 	private decimal ConvertPointsToPrice(int points)

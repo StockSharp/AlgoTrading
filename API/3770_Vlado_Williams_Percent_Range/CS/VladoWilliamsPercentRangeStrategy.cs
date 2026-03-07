@@ -28,14 +28,14 @@ public class VladoWilliamsPercentRangeStrategy : Strategy
 	private bool _sellSignal;
 	private int _lastSignal;
 
-	private WilliamsR _williamsR = null!;
+	private WilliamsR? _williamsR;
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="VladoWilliamsPercentRangeStrategy"/> class.
 	/// </summary>
 	public VladoWilliamsPercentRangeStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe for the strategy", "General");
 
 		_wprLength = Param(nameof(WprLength), 100)
@@ -102,10 +102,17 @@ public class VladoWilliamsPercentRangeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
 
+		_williamsR = null;
 		_buySignal = false;
 		_sellSignal = false;
 		_lastSignal = 0;
@@ -146,14 +153,14 @@ public class VladoWilliamsPercentRangeStrategy : Strategy
 			if (Position > 0 && _sellSignal)
 			{
 				// Exit long positions when the bearish Williams %R regime appears.
-				ClosePosition();
+				if (Position > 0) SellMarket(); else BuyMarket();
 				return;
 			}
 
 			if (Position < 0 && _buySignal)
 			{
 				// Exit short positions when the bullish Williams %R regime appears.
-				ClosePosition();
+				if (Position > 0) SellMarket(); else BuyMarket();
 				return;
 			}
 

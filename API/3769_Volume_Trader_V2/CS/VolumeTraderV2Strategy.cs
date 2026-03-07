@@ -32,14 +32,14 @@ public class VolumeTraderV2Strategy : Strategy
 	/// </summary>
 	public VolumeTraderV2Strategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
 		.SetDisplay("Candle Type", "Time frame used to request candles", "Data");
 
-		_startHour = Param(nameof(StartHour), 8)
+		_startHour = Param(nameof(StartHour), 0)
 		.SetDisplay("Start Hour", "First hour (inclusive) when trading is allowed", "Trading")
 		.SetRange(0, 23);
 
-		_endHour = Param(nameof(EndHour), 20)
+		_endHour = Param(nameof(EndHour), 23)
 		.SetDisplay("End Hour", "Last hour (inclusive) when trading is allowed", "Trading")
 		.SetRange(0, 23);
 
