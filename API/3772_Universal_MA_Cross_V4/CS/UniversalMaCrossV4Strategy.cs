@@ -328,7 +328,7 @@ public class UniversalMaCrossV4Strategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Trade Volume", "Order volume for each market entry", "Trading");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Primary candle subscription used by the strategy", "General");
 	}
 
@@ -396,8 +396,12 @@ public class UniversalMaCrossV4Strategy : Strategy
 		var fastPrice = GetPrice(candle, FastPriceType);
 		var slowPrice = GetPrice(candle, SlowPriceType);
 
-		var fastValue = _fastMa.Process(new DecimalIndicatorValue(_fastMa, fastPrice, candle.OpenTime)).ToDecimal();
-		var slowValue = _slowMa.Process(new DecimalIndicatorValue(_slowMa, slowPrice, candle.OpenTime)).ToDecimal();
+		var fastResult = _fastMa.Process(new DecimalIndicatorValue(_fastMa, fastPrice, candle.OpenTime) { IsFinal = true });
+		if (fastResult.IsEmpty) return;
+		var fastValue = fastResult.GetValue<decimal>();
+		var slowResult = _slowMa.Process(new DecimalIndicatorValue(_slowMa, slowPrice, candle.OpenTime) { IsFinal = true });
+		if (slowResult.IsEmpty) return;
+		var slowValue = slowResult.GetValue<decimal>();
 
 		var prevFast = _fastPrev;
 		var prevSlow = _slowPrev;
@@ -652,6 +656,14 @@ public class UniversalMaCrossV4Strategy : Strategy
 		}
 
 		return points;
+	}
+
+	private void ClosePosition()
+	{
+		if (Position > 0)
+			SellMarket();
+		else if (Position < 0)
+			BuyMarket();
 	}
 
 	private enum TradeDirections
