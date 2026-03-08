@@ -1,124 +1,61 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
-
 namespace StockSharp.Samples.Strategies;
 
-/// Strategy trades Bollinger channel rebounds. Enters long after price dips below the lower band and closes above it.
+/// <summary>
+/// Bollinger Channel Rebound strategy using EMA crossover.
+/// </summary>
 public class BollingerChannelReboundStrategy : Strategy
 {
-	private StrategyParam<int> _length;
-	private StrategyParam<decimal> _bufferFactor;
-	private StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _slowLength;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private bool _wasBelowLower;
-	private decimal _prevClose;
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public BollingerChannelReboundStrategy()
 	{
-		_length = Param(nameof(Length), 20)
-			.SetDisplay("Length", "Period for Bollinger Bands", "General")
+		_slowLength = Param(nameof(SlowLength), 40)
 			.SetGreaterThanZero()
-			;
+			.SetDisplay("Slow Length", "Slow EMA period", "General");
 
-		_bufferFactor = Param(nameof(BufferFactor), 0.2m)
-			.SetDisplay("Buffer Factor", "Stop-loss buffer factor", "General")
-			.SetGreaterThanZero()
-			;
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Timeframe for candles", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	public int Length { get => _length.Value; set => _length.Value = value; }
-	public decimal BufferFactor { get => _bufferFactor.Value; set => _bufferFactor.Value = value; }
-	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
-
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_wasBelowLower = false;
-		_prevClose = 0m;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		StartProtection(null, null);
-
-		var bands = new BollingerBands
-		{
-			Length = Length,
-			Width = 1m
-		};
-
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
+		var prevF = 0m; var prevS = 0m; var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.BindEx(bands, ProcessCandle)
-			.Start();
-
+		subscription.Bind(fast, slow, (candle, f, s) =>
+		{
+			if (candle.State != CandleStates.Finished) return;
+			if (!fast.IsFormed || !slow.IsFormed) return;
+			if (!init) { prevF = f; prevS = s; init = true; return; }
+			if (candle.OpenTime - lastSignal >= cooldown)
+			{
+				if (prevF <= prevS && f > s && Position <= 0) { BuyMarket(); lastSignal = candle.OpenTime; }
+				else if (prevF >= prevS && f < s && Position >= 0) { SellMarket(); lastSignal = candle.OpenTime; }
+			}
+			prevF = f; prevS = s;
+		}).Start();
 		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, bands);
-			DrawOwnTrades(area);
-		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bbValue)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		var bb = (BollingerBandsValue)bbValue;
-		if (bb.UpBand is not decimal upper || bb.LowBand is not decimal lower || bb.MovingAverage is not decimal middle)
-			return;
-
-		var stdev = upper - middle;
-		var buffer = stdev * BufferFactor;
-		var stopLossPrice = lower - buffer;
-
-		if (candle.ClosePrice < lower)
-			_wasBelowLower = true;
-
-		if (Position == 0 && _wasBelowLower && candle.ClosePrice > lower)
-		{
-			BuyMarket();
-			_wasBelowLower = true;
-		}
-
-		var longPosition = Position > 0;
-
-		var midPoint = longPosition && _prevClose < middle && candle.ClosePrice >= middle;
-		var upperPoint = longPosition && candle.HighPrice > upper && candle.ClosePrice <= upper;
-		if (midPoint || upperPoint)
-			SellMarket();
-
-		if (longPosition && candle.LowPrice <= stopLossPrice)
-			SellMarket();
-
-		_prevClose = candle.ClosePrice;
+		if (area != null) { DrawCandles(area, subscription); DrawIndicator(area, fast); DrawIndicator(area, slow); DrawOwnTrades(area); }
 	}
 }
