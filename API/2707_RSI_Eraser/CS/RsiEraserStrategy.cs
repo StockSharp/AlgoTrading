@@ -146,10 +146,10 @@ public class RsiEraserStrategy : Strategy
 		.SetRange(0m, 100m)
 		.SetDisplay("Daily Buffer (pips)", "Extra pips added to yesterday's range", "Filters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Primary timeframe for signals", "General");
 
-		_dailyCandleType = Param(nameof(DailyCandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_dailyCandleType = Param(nameof(DailyCandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Daily Candle", "Timeframe used to read yesterday's range", "General");
 	}
 
@@ -257,7 +257,7 @@ public class RsiEraserStrategy : Strategy
 
 			if (_stopPrice.HasValue && candle.LowPrice <= _stopPrice.Value)
 			{
-				SellMarket(Math.Abs(Position));
+				SellMarket();
 				LogInfo($"Exit long via stop at {_stopPrice:0.#####}.");
 				ResetRiskLevels();
 				return true;
@@ -265,7 +265,7 @@ public class RsiEraserStrategy : Strategy
 
 			if (_takePrice.HasValue && candle.HighPrice >= _takePrice.Value)
 			{
-				SellMarket(Math.Abs(Position));
+				SellMarket();
 				LogInfo($"Exit long via take-profit at {_takePrice:0.#####}.");
 				ResetRiskLevels();
 				return true;
@@ -288,7 +288,7 @@ public class RsiEraserStrategy : Strategy
 
 			if (_stopPrice.HasValue && candle.HighPrice >= _stopPrice.Value)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				LogInfo($"Exit short via stop at {_stopPrice:0.#####}.");
 				ResetRiskLevels();
 				return true;
@@ -296,7 +296,7 @@ public class RsiEraserStrategy : Strategy
 
 			if (_takePrice.HasValue && candle.LowPrice <= _takePrice.Value)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				LogInfo($"Exit short via take-profit at {_takePrice:0.#####}.");
 				ResetRiskLevels();
 				return true;
@@ -382,7 +382,7 @@ public class RsiEraserStrategy : Strategy
 		ResetRiskLevels();
 
 		var tradeVolume = volume + Math.Abs(Position);
-		BuyMarket(tradeVolume);
+		BuyMarket();
 
 		_entryPrice = entryPrice;
 		_lastBuyDate = today;
@@ -425,7 +425,7 @@ public class RsiEraserStrategy : Strategy
 		ResetRiskLevels();
 
 		var tradeVolume = volume + Math.Abs(Position);
-		SellMarket(tradeVolume);
+		SellMarket();
 
 		_entryPrice = entryPrice;
 		_lastSellDate = today;

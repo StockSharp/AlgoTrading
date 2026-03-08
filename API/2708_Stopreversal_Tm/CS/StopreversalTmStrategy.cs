@@ -51,7 +51,7 @@ public class StopreversalTmStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<StopreversalAppliedPrices> _appliedPrice;
 
-	private readonly Queue<SignalInfo> _signalQueue = new();
+	private readonly List<SignalInfo> _signalQueue = new();
 
 	private decimal? _previousAppliedPrice;
 	private decimal? _previousStopLevel;
@@ -107,7 +107,7 @@ public class StopreversalTmStrategy : Strategy
 			.SetDisplay("Signal Bar Delay", "Number of completed bars to wait before acting", "Indicator")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles used for calculations", "General");
 
 		_appliedPrice = Param(nameof(AppliedPrice), StopreversalAppliedPrices.Close)
@@ -136,6 +136,15 @@ public class StopreversalTmStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_previousAppliedPrice = null;
+		_previousStopLevel = null;
+		_signalQueue.Clear();
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
@@ -147,7 +156,7 @@ public class StopreversalTmStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
 
-		StartProtection(null, null);
+		// no protection needed
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -188,11 +197,12 @@ public class StopreversalTmStrategy : Strategy
 
 	private void EnqueueSignal(SignalInfo signal, DateTime currentTime)
 	{
-		_signalQueue.Enqueue(signal);
+		_signalQueue.Add(signal);
 
 		while (_signalQueue.Count > SignalBar)
 		{
-			var action = _signalQueue.Dequeue();
+			var action = _signalQueue[0];
+			try { _signalQueue.RemoveAt(0); } catch { }
 			HandleSignal(action, currentTime);
 		}
 	}

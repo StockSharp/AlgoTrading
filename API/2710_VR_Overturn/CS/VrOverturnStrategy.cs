@@ -76,7 +76,7 @@ public class VrOverturnStrategy : Strategy
 	/// </summary>
 	public VrOverturnStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type for data feed", "General");
 
 		_volumeEpsilon = Param(nameof(VolumeEpsilon), 1e-6m)
@@ -387,9 +387,9 @@ public class VrOverturnStrategy : Strategy
 		_pendingEntrySide = nextSide;
 
 		if (nextSide == Sides.Buy)
-		BuyMarket(orderVolume);
+		BuyMarket();
 		else
-		SellMarket(orderVolume);
+		SellMarket();
 	}
 
 	private decimal GetWinningMultiplier()
