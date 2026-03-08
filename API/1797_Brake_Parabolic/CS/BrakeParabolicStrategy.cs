@@ -3,6 +3,7 @@ using System.Collections.Generic;
 
 using Ecng.Common;
 
+using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -10,153 +11,83 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on a parabolic brake indicator.
-/// Opens long when trend flips to bullish and short when it turns bearish.
+/// Parabolic SAR crossover strategy.
 /// </summary>
 public class BrakeParabolicStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _a;
-	private readonly StrategyParam<decimal> _b;
-	private readonly StrategyParam<decimal> _takeProfit;
-	private readonly StrategyParam<decimal> _stopLoss;
+	private readonly StrategyParam<decimal> _sarStep;
+	private readonly StrategyParam<decimal> _sarMax;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _maxPrice;
-	private decimal _minPrice;
-	private decimal _beginPrice;
-	private bool _isLong;
-	private bool _prevIsLong;
-	private int _bar;
-	private bool _init;
-	private decimal _entryPrice;
+	private decimal _prevClose;
+	private decimal _prevSar;
+	private bool _hasPrev;
 
-	public decimal A { get => _a.Value; set => _a.Value = value; }
-	public decimal B { get => _b.Value; set => _b.Value = value; }
-	public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
-	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
+	public decimal SarStep { get => _sarStep.Value; set => _sarStep.Value = value; }
+	public decimal SarMax { get => _sarMax.Value; set => _sarMax.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public BrakeParabolicStrategy()
 	{
-		_a = Param(nameof(A), 1.5m)
-			.SetDisplay("A", "Curve exponent", "Indicator");
-		_b = Param(nameof(B), 1.0m)
-			.SetDisplay("B", "Curve speed", "Indicator");
-		_takeProfit = Param(nameof(TakeProfit), 500m)
-			.SetDisplay("Take Profit", "Take profit distance", "Risk");
-		_stopLoss = Param(nameof(StopLoss), 300m)
-			.SetDisplay("Stop Loss", "Stop loss distance", "Risk");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Timeframe", "General");
+		_sarStep = Param(nameof(SarStep), 0.02m)
+			.SetDisplay("SAR Step", "Acceleration step", "Indicators");
+		_sarMax = Param(nameof(SarMax), 0.2m)
+			.SetDisplay("SAR Max", "Maximum acceleration", "Indicators");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevClose = 0;
+		_prevSar = 0;
+		_hasPrev = false;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_maxPrice = decimal.MinValue;
-		_minPrice = decimal.MaxValue;
-		_beginPrice = 0;
-		_isLong = true;
-		_prevIsLong = true;
-		_bar = 0;
-		_init = false;
-		_entryPrice = 0;
+		var sar = new ParabolicSar { AccelerationStep = SarStep, AccelerationMax = SarMax };
 
-		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
+		SubscribeCandles(CandleType)
+			.Bind(sar, ProcessCandle)
+			.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal sarVal)
 	{
-		if (candle.State != CandleStates.Finished)
+		if (candle.State != CandleStates.Finished) return;
+
+		var close = candle.ClosePrice;
+
+		if (!_hasPrev)
+		{
+			_prevClose = close;
+			_prevSar = sarVal;
+			_hasPrev = true;
 			return;
-
-		if (!_init)
-		{
-			_beginPrice = candle.LowPrice;
-			_init = true;
 		}
 
-		_maxPrice = Math.Max(_maxPrice, candle.HighPrice);
-		_minPrice = Math.Min(_minPrice, candle.LowPrice);
+		var crossUp = _prevClose <= _prevSar && close > sarVal;
+		var crossDown = _prevClose >= _prevSar && close < sarVal;
 
-		// Calculate parabolic level
-		var parab = (decimal)Math.Pow(_bar, (double)A) * B;
-		var level = _isLong ? _beginPrice + parab : _beginPrice - parab;
-
-		if (_isLong && level > candle.LowPrice)
+		if (crossUp && Position <= 0)
 		{
-			_isLong = false;
-			_beginPrice = _maxPrice;
-			_bar = 0;
-			_maxPrice = decimal.MinValue;
-			_minPrice = decimal.MaxValue;
+			if (Position < 0) BuyMarket();
+			BuyMarket();
 		}
-		else if (!_isLong && level < candle.HighPrice)
+		else if (crossDown && Position >= 0)
 		{
-			_isLong = true;
-			_beginPrice = _minPrice;
-			_bar = 0;
-			_maxPrice = decimal.MinValue;
-			_minPrice = decimal.MaxValue;
+			if (Position > 0) SellMarket();
+			SellMarket();
 		}
 
-		var buySignal = !_prevIsLong && _isLong;
-		var sellSignal = _prevIsLong && !_isLong;
-
-		_prevIsLong = _isLong;
-		_bar++;
-
-		var price = candle.ClosePrice;
-
-		// Exit management
-		if (Position > 0)
-		{
-			if (price - _entryPrice >= TakeProfit || _entryPrice - price >= StopLoss)
-			{
-				SellMarket();
-				_entryPrice = 0;
-				return;
-			}
-		}
-		else if (Position < 0)
-		{
-			if (_entryPrice - price >= TakeProfit || price - _entryPrice >= StopLoss)
-			{
-				BuyMarket();
-				_entryPrice = 0;
-				return;
-			}
-		}
-
-		// Entry on direction change
-		if (buySignal)
-		{
-			if (Position < 0)
-			{
-				BuyMarket();
-				_entryPrice = 0;
-			}
-			if (Position == 0)
-			{
-				BuyMarket();
-				_entryPrice = price;
-			}
-		}
-		else if (sellSignal)
-		{
-			if (Position > 0)
-			{
-				SellMarket();
-				_entryPrice = 0;
-			}
-			if (Position == 0)
-			{
-				SellMarket();
-				_entryPrice = price;
-			}
-		}
+		_prevClose = close;
+		_prevSar = sarVal;
 	}
 }

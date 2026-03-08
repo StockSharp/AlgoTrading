@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,227 +11,86 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Milestone trend strategy.
-/// Uses smoothed moving averages to detect trend reversals.
-/// Filters entries by ATR and candle spike.
+/// Milestone trend strategy using EMA crossover with trend confirmation.
 /// </summary>
 public class MilestoneTrendStrategy : Strategy
 {
-private readonly StrategyParam<int> _slowMaPeriod;
-private readonly StrategyParam<int> _fastMaPeriod;
-private readonly StrategyParam<int> _atrPeriod;
-private readonly StrategyParam<decimal> _minTrend;
-private readonly StrategyParam<decimal> _maxTrend;
-private readonly StrategyParam<decimal> _minRange;
-private readonly StrategyParam<decimal> _candleSpike;
-private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _fastPeriod;
+	private readonly StrategyParam<int> _slowPeriod;
+	private readonly StrategyParam<DataType> _candleType;
 
-private decimal _prevSlow;
-private ICandleMessage _prevCandle;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private bool _hasPrev;
 
-/// <summary>
-/// Slow MA period.
-/// </summary>
-public int SlowMaPeriod
-{
-get => _slowMaPeriod.Value;
-set => _slowMaPeriod.Value = value;
-}
+	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
+	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-/// <summary>
-/// Fast MA period.
-/// </summary>
-public int FastMaPeriod
-{
-get => _fastMaPeriod.Value;
-set => _fastMaPeriod.Value = value;
-}
+	public MilestoneTrendStrategy()
+	{
+		_fastPeriod = Param(nameof(FastPeriod), 12)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast Period", "Fast EMA period", "General");
 
-/// <summary>
-/// ATR period.
-/// </summary>
-public int AtrPeriod
-{
-get => _atrPeriod.Value;
-set => _atrPeriod.Value = value;
-}
+		_slowPeriod = Param(nameof(SlowPeriod), 30)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow Period", "Slow EMA period", "General");
 
-/// <summary>
-/// Minimum trend strength.
-/// </summary>
-public decimal MinTrend
-{
-get => _minTrend.Value;
-set => _minTrend.Value = value;
-}
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type", "General");
+	}
 
-/// <summary>
-/// Maximum trend strength.
-/// </summary>
-public decimal MaxTrend
-{
-get => _maxTrend.Value;
-set => _maxTrend.Value = value;
-}
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
 
-/// <summary>
-/// Minimum ATR value to allow trading.
-/// </summary>
-public decimal MinRange
-{
-get => _minRange.Value;
-set => _minRange.Value = value;
-}
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFast = 0;
+		_prevSlow = 0;
+		_hasPrev = false;
+	}
 
-/// <summary>
-/// Maximum candle body size to avoid spikes.
-/// </summary>
-public decimal CandleSpike
-{
-get => _candleSpike.Value;
-set => _candleSpike.Value = value;
-}
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
 
-/// <summary>
-/// Candle type used by the strategy.
-/// </summary>
-public DataType CandleType
-{
-get => _candleType.Value;
-set => _candleType.Value = value;
-}
+		var fast = new ExponentialMovingAverage { Length = FastPeriod };
+		var slow = new ExponentialMovingAverage { Length = SlowPeriod };
 
-/// <summary>
-/// Constructor.
-/// </summary>
-public MilestoneTrendStrategy()
-{
-_slowMaPeriod = Param(nameof(SlowMaPeriod), 120)
-.SetGreaterThanZero()
+		SubscribeCandles(CandleType)
+			.Bind(fast, slow, ProcessCandle)
+			.Start();
+	}
 
-.SetDisplay("Slow MA Period", "Slow MA Period", "General");
+	private void ProcessCandle(ICandleMessage candle, decimal fastVal, decimal slowVal)
+	{
+		if (candle.State != CandleStates.Finished) return;
 
-_fastMaPeriod = Param(nameof(FastMaPeriod), 30)
-.SetGreaterThanZero()
+		if (!_hasPrev)
+		{
+			_prevFast = fastVal;
+			_prevSlow = slowVal;
+			_hasPrev = true;
+			return;
+		}
 
-.SetDisplay("Fast MA Period", "Fast MA Period", "General");
+		var crossUp = _prevFast <= _prevSlow && fastVal > slowVal;
+		var crossDown = _prevFast >= _prevSlow && fastVal < slowVal;
 
-_atrPeriod = Param(nameof(AtrPeriod), 14)
-.SetGreaterThanZero()
+		if (crossUp && Position <= 0)
+		{
+			if (Position < 0) BuyMarket();
+			BuyMarket();
+		}
+		else if (crossDown && Position >= 0)
+		{
+			if (Position > 0) SellMarket();
+			SellMarket();
+		}
 
-.SetDisplay("ATR Period", "ATR Period", "General");
-
-_minTrend = Param(nameof(MinTrend), 1m)
-
-.SetDisplay("Minimum Trend", "Minimum Trend", "General");
-
-_maxTrend = Param(nameof(MaxTrend), 10000m)
-
-.SetDisplay("Maximum Trend", "Maximum Trend", "General");
-
-_minRange = Param(nameof(MinRange), 1m)
-
-.SetDisplay("Minimum ATR", "Minimum ATR", "General");
-
-_candleSpike = Param(nameof(CandleSpike), 100000m)
-
-.SetDisplay("Maximum Candle Body", "Maximum Candle Body", "General");
-
-_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-.SetDisplay("Candle Type", "Candle Type", "General");
-}
-
-/// <inheritdoc />
-public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-{
-return [(Security, CandleType)];
-}
-
-/// <inheritdoc />
-protected override void OnReseted()
-{
-base.OnReseted();
-_prevSlow = 0m;
-_prevCandle = null;
-}
-
-/// <inheritdoc />
-protected override void OnStarted2(DateTime time)
-{
-base.OnStarted2(time);
-
-StartProtection(null, null);
-
-var slowMa = new SMA { Length = SlowMaPeriod };
-var fastMa = new SMA { Length = FastMaPeriod };
-var atr = new ATR { Length = AtrPeriod };
-
-var subscription = SubscribeCandles(CandleType);
-
-subscription
-.Bind(slowMa, fastMa, atr, ProcessCandle)
-.Start();
-
-var area = CreateChartArea();
-if (area != null)
-{
-DrawCandles(area, subscription);
-DrawIndicator(area, slowMa);
-DrawIndicator(area, fastMa);
-DrawIndicator(area, atr);
-DrawOwnTrades(area);
-}
-}
-
-private void ProcessCandle(ICandleMessage candle, decimal slowValue, decimal fastValue, decimal atrValue)
-{
-if (candle.State != CandleStates.Finished)
-return;
-
-// indicators are checked by Bind
-
-var trendStrength = slowValue - _prevSlow;
-
-// Skip trading if candle body indicates a spike.
-var body = Math.Abs(candle.ClosePrice - candle.OpenPrice);
-if (body > CandleSpike)
-{
-_prevSlow = slowValue;
-_prevCandle = candle;
-return;
-}
-
-// Skip trading if ATR is below threshold.
-if (atrValue < MinRange)
-{
-_prevSlow = slowValue;
-_prevCandle = candle;
-return;
-}
-
-bool bullish = false;
-bool bearish = false;
-
-if (_prevCandle != null)
-{
-if (trendStrength < -MinTrend && trendStrength > -MaxTrend && fastValue > slowValue && candle.ClosePrice > candle.OpenPrice && candle.ClosePrice > _prevCandle.HighPrice)
-bullish = true;
-else if (trendStrength > MinTrend && trendStrength < MaxTrend && fastValue < slowValue && candle.ClosePrice < candle.OpenPrice && candle.ClosePrice < _prevCandle.LowPrice)
-bearish = true;
-}
-
-if (bullish && Position <= 0)
-{
-var volume = Volume + Math.Abs(Position);
-BuyMarket(volume);
-}
-else if (bearish && Position >= 0)
-{
-var volume = Volume + Math.Abs(Position);
-SellMarket(volume);
-}
-
-_prevSlow = slowValue;
-_prevCandle = candle;
-}
+		_prevFast = fastVal;
+		_prevSlow = slowVal;
+	}
 }

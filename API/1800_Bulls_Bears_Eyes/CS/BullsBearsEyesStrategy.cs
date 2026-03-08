@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,146 +11,84 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on the Bulls/Bears power balance indicator.
+/// EMA crossover strategy.
 /// </summary>
-public class BullsBearsEyesStrategy : Strategy {
-	private readonly StrategyParam<int> _period;
-	private readonly StrategyParam<decimal> _highLevel;
-	private readonly StrategyParam<decimal> _middleLevel;
-	private readonly StrategyParam<decimal> _lowLevel;
+public class BullsBearsEyesStrategy : Strategy
+{
+	private readonly StrategyParam<int> _fastPeriod;
+	private readonly StrategyParam<int> _slowPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private BullPower _bulls;
-	private BearPower _bears;
-	private int _trend;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private bool _hasPrev;
 
-	/// <summary>
-	/// Averaging period for Bulls/Bears Power.
-	/// </summary>
-	public int Period {
-		get => _period.Value;
-		set => _period.Value = value;
-	}
+	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
+	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Overbought threshold.
-	/// </summary>
-	public decimal HighLevel {
-		get => _highLevel.Value;
-		set => _highLevel.Value = value;
-	}
-
-	/// <summary>
-	/// Middle level.
-	/// </summary>
-	public decimal MiddleLevel {
-		get => _middleLevel.Value;
-		set => _middleLevel.Value = value;
-	}
-
-	/// <summary>
-	/// Oversold threshold.
-	/// </summary>
-	public decimal LowLevel {
-		get => _lowLevel.Value;
-		set => _lowLevel.Value = value;
-	}
-
-	/// <summary>
-	/// Type of candles to process.
-	/// </summary>
-	public DataType CandleType {
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="BullsBearsEyesStrategy"/>.
-	/// </summary>
-	public BullsBearsEyesStrategy() {
-		_period = Param(nameof(Period), 13)
+	public BullsBearsEyesStrategy()
+	{
+		_fastPeriod = Param(nameof(FastPeriod), 13)
 			.SetGreaterThanZero()
-			.SetDisplay("Period", "Indicator averaging period", "Parameters")
-			;
-
-		_highLevel = Param(nameof(HighLevel), 75m)
-			.SetDisplay("High Level", "Overbought level", "Parameters")
-			;
-
-		_middleLevel = Param(nameof(MiddleLevel), 50m)
-			.SetDisplay("Middle Level", "Middle threshold", "Parameters");
-
-		_lowLevel = Param(nameof(LowLevel), 25m)
-			.SetDisplay("Low Level", "Oversold level", "Parameters")
-			;
-
+			.SetDisplay("Fast Period", "Fast EMA period", "Parameters");
+		_slowPeriod = Param(nameof(SlowPeriod), 26)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow Period", "Slow EMA period", "Parameters");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
-			.SetDisplay("Candle Type", "Candles for analysis", "General");
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities() {
-		return [(Security, CandleType)];
-	}
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
-	protected override void OnReseted() {
+	protected override void OnReseted()
+	{
 		base.OnReseted();
-
-		_bulls = default;
-		_bears = default;
-		_trend = 0;
+		_prevFast = 0;
+		_prevSlow = 0;
+		_hasPrev = false;
 	}
 
-	/// <inheritdoc />
-	protected override void OnStarted2(DateTime time) {
+	protected override void OnStarted2(DateTime time)
+	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
+		var fast = new ExponentialMovingAverage { Length = FastPeriod };
+		var slow = new ExponentialMovingAverage { Length = SlowPeriod };
 
-		_bulls = new BullPower { Length = Period };
-		_bears = new BearPower { Length = Period };
-
-		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(_bulls, _bears, ProcessCandle).Start();
-
-		var area = CreateChartArea();
-		if (area != null) {
-			DrawCandles(area, subscription);
-			DrawIndicator(area, _bulls);
-			DrawIndicator(area, _bears);
-			DrawOwnTrades(area);
-		}
+		SubscribeCandles(CandleType)
+			.Bind(fast, slow, ProcessCandle)
+			.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal bullsValue, decimal bearsValue) {
-		if (candle.State != CandleStates.Finished)
+	private void ProcessCandle(ICandleMessage candle, decimal fastVal, decimal slowVal)
+	{
+		if (candle.State != CandleStates.Finished) return;
+
+		if (!_hasPrev)
+		{
+			_prevFast = fastVal;
+			_prevSlow = slowVal;
+			_hasPrev = true;
 			return;
-
-		var sum = Math.Abs(bullsValue) + Math.Abs(bearsValue);
-		var value = sum == 0 ? 50m : 50m + 50m * (bullsValue - bearsValue) / sum;
-
-		var prevTrend = _trend;
-
-		if (value > HighLevel)
-			_trend = prevTrend <= 0 ? 2 : 1;
-		else if (value < LowLevel)
-			_trend = prevTrend >= 0 ? -2 : -1;
-		else
-			_trend = prevTrend switch { > 0 => 1, < 0 => -1, _ => 0 };
-
-		if (_trend > 0) {
-			if (prevTrend < 0 && Position < 0)
-				BuyMarket(-Position);
-
-			if (_trend == 2 && Position <= 0)
-				BuyMarket(Volume + (Position < 0 ? -Position : 0m));
-		} else if (_trend < 0) {
-			if (prevTrend > 0 && Position > 0)
-				SellMarket(Position);
-
-			if (_trend == -2 && Position >= 0)
-				SellMarket(Volume + (Position > 0 ? Position : 0m));
 		}
+
+		var crossUp = _prevFast <= _prevSlow && fastVal > slowVal;
+		var crossDown = _prevFast >= _prevSlow && fastVal < slowVal;
+
+		if (crossUp && Position <= 0)
+		{
+			if (Position < 0) BuyMarket();
+			BuyMarket();
+		}
+		else if (crossDown && Position >= 0)
+		{
+			if (Position > 0) SellMarket();
+			SellMarket();
+		}
+
+		_prevFast = fastVal;
+		_prevSlow = slowVal;
 	}
 }

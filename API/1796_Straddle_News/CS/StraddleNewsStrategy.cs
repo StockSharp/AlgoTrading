@@ -11,111 +11,84 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Volatility straddle strategy with trailing stop.
-/// Enters on large candle breakouts and uses trailing stop to protect profits.
+/// EMA crossover strategy.
 /// </summary>
 public class StraddleNewsStrategy : Strategy
 {
-	private readonly StrategyParam<int> _atrPeriod;
-	private readonly StrategyParam<decimal> _atrMultiplier;
-	private readonly StrategyParam<decimal> _stopLoss;
-	private readonly StrategyParam<decimal> _trailingDist;
+	private readonly StrategyParam<int> _fastPeriod;
+	private readonly StrategyParam<int> _slowPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _entryPrice;
-	private decimal _trailingStop;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private bool _hasPrev;
 
-	public int AtrPeriod { get => _atrPeriod.Value; set => _atrPeriod.Value = value; }
-	public decimal AtrMultiplier { get => _atrMultiplier.Value; set => _atrMultiplier.Value = value; }
-	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
-	public decimal TrailingDist { get => _trailingDist.Value; set => _trailingDist.Value = value; }
+	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
+	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public StraddleNewsStrategy()
 	{
-		_atrPeriod = Param(nameof(AtrPeriod), 14)
+		_fastPeriod = Param(nameof(FastPeriod), 12)
 			.SetGreaterThanZero()
-			.SetDisplay("ATR Period", "ATR period", "Indicators");
-		_atrMultiplier = Param(nameof(AtrMultiplier), 1.5m)
-			.SetDisplay("ATR Multiplier", "Range vs ATR for entry", "Indicators");
-		_stopLoss = Param(nameof(StopLoss), 400m)
-			.SetDisplay("Stop Loss", "Stop loss distance", "Risk");
-		_trailingDist = Param(nameof(TrailingDist), 200m)
-			.SetDisplay("Trailing Distance", "Trailing stop distance", "Risk");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
+			.SetDisplay("Fast Period", "Fast EMA period", "Indicators");
+		_slowPeriod = Param(nameof(SlowPeriod), 26)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow Period", "Slow EMA period", "Indicators");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFast = 0;
+		_prevSlow = 0;
+		_hasPrev = false;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_entryPrice = 0;
-		_trailingStop = 0;
+		var fast = new ExponentialMovingAverage { Length = FastPeriod };
+		var slow = new ExponentialMovingAverage { Length = SlowPeriod };
 
-		var atr = new AverageTrueRange { Length = AtrPeriod };
-
-		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(atr, ProcessCandle).Start();
+		SubscribeCandles(CandleType)
+			.Bind(fast, slow, ProcessCandle)
+			.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal atrValue)
+	private void ProcessCandle(ICandleMessage candle, decimal fastVal, decimal slowVal)
 	{
-		if (candle.State != CandleStates.Finished)
+		if (candle.State != CandleStates.Finished) return;
+
+		if (!_hasPrev)
+		{
+			_prevFast = fastVal;
+			_prevSlow = slowVal;
+			_hasPrev = true;
 			return;
-
-		if (atrValue <= 0)
-			return;
-
-		var price = candle.ClosePrice;
-		var range = candle.HighPrice - candle.LowPrice;
-
-		// Trailing stop and SL management
-		if (Position > 0)
-		{
-			var newTrail = price - TrailingDist;
-			if (newTrail > _trailingStop)
-				_trailingStop = newTrail;
-
-			if (price <= _trailingStop || _entryPrice - price >= StopLoss)
-			{
-				SellMarket();
-				_entryPrice = 0;
-				_trailingStop = 0;
-				return;
-			}
-		}
-		else if (Position < 0)
-		{
-			var newTrail = price + TrailingDist;
-			if (_trailingStop == 0 || newTrail < _trailingStop)
-				_trailingStop = newTrail;
-
-			if (price >= _trailingStop || price - _entryPrice >= StopLoss)
-			{
-				BuyMarket();
-				_entryPrice = 0;
-				_trailingStop = 0;
-				return;
-			}
 		}
 
-		// Entry: large candle breakout
-		if (Position == 0 && range > atrValue * AtrMultiplier)
+		var crossUp = _prevFast <= _prevSlow && fastVal > slowVal;
+		var crossDown = _prevFast >= _prevSlow && fastVal < slowVal;
+
+		if (crossUp && Position <= 0)
 		{
-			if (candle.ClosePrice > candle.OpenPrice)
-			{
-				BuyMarket();
-				_entryPrice = price;
-				_trailingStop = price - TrailingDist;
-			}
-			else if (candle.ClosePrice < candle.OpenPrice)
-			{
-				SellMarket();
-				_entryPrice = price;
-				_trailingStop = price + TrailingDist;
-			}
+			if (Position < 0) BuyMarket();
+			BuyMarket();
 		}
+		else if (crossDown && Position >= 0)
+		{
+			if (Position > 0) SellMarket();
+			SellMarket();
+		}
+
+		_prevFast = fastVal;
+		_prevSlow = slowVal;
 	}
 }

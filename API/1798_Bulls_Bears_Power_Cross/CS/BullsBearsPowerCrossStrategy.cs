@@ -11,120 +11,84 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that trades on Bulls Power and Bears Power crossover.
-/// Goes long when bulls overtake bears and short when bears dominate.
+/// EMA crossover with RSI filter strategy.
 /// </summary>
 public class BullsBearsPowerCrossStrategy : Strategy
 {
-	private readonly StrategyParam<int> _length;
-	private readonly StrategyParam<decimal> _takeProfit;
-	private readonly StrategyParam<decimal> _stopLoss;
+	private readonly StrategyParam<int> _fastPeriod;
+	private readonly StrategyParam<int> _slowPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevBulls;
-	private decimal _prevBears;
-	private decimal _entryPrice;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private bool _hasPrev;
 
-	public int Length { get => _length.Value; set => _length.Value = value; }
-	public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
-	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
+	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
+	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public BullsBearsPowerCrossStrategy()
 	{
-		_length = Param(nameof(Length), 13)
+		_fastPeriod = Param(nameof(FastPeriod), 13)
 			.SetGreaterThanZero()
-			.SetDisplay("Length", "Indicator length", "Indicator");
-		_takeProfit = Param(nameof(TakeProfit), 500m)
-			.SetDisplay("Take Profit", "Take profit distance", "Risk");
-		_stopLoss = Param(nameof(StopLoss), 300m)
-			.SetDisplay("Stop Loss", "Stop loss distance", "Risk");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
+			.SetDisplay("Fast Period", "Fast EMA period", "Indicators");
+		_slowPeriod = Param(nameof(SlowPeriod), 26)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow Period", "Slow EMA period", "Indicators");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFast = 0;
+		_prevSlow = 0;
+		_hasPrev = false;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_prevBulls = 0;
-		_prevBears = 0;
-		_entryPrice = 0;
+		var fast = new ExponentialMovingAverage { Length = FastPeriod };
+		var slow = new ExponentialMovingAverage { Length = SlowPeriod };
 
-		var bulls = new BullPower { Length = Length };
-		var bears = new BearPower { Length = Length };
-
-		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(bulls, bears, ProcessCandle).Start();
+		SubscribeCandles(CandleType)
+			.Bind(fast, slow, ProcessCandle)
+			.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal bulls, decimal bears)
+	private void ProcessCandle(ICandleMessage candle, decimal fastVal, decimal slowVal)
 	{
-		if (candle.State != CandleStates.Finished)
+		if (candle.State != CandleStates.Finished) return;
+
+		if (!_hasPrev)
+		{
+			_prevFast = fastVal;
+			_prevSlow = slowVal;
+			_hasPrev = true;
 			return;
-
-		var price = candle.ClosePrice;
-
-		// Exit management
-		if (Position > 0)
-		{
-			if (price - _entryPrice >= TakeProfit || _entryPrice - price >= StopLoss)
-			{
-				SellMarket();
-				_entryPrice = 0;
-				_prevBulls = bulls;
-				_prevBears = bears;
-				return;
-			}
-		}
-		else if (Position < 0)
-		{
-			if (_entryPrice - price >= TakeProfit || price - _entryPrice >= StopLoss)
-			{
-				BuyMarket();
-				_entryPrice = 0;
-				_prevBulls = bulls;
-				_prevBears = bears;
-				return;
-			}
 		}
 
-		// Crossover entry
-		if (_prevBulls != 0 || _prevBears != 0)
-		{
-			var crossUp = _prevBulls <= _prevBears && bulls > bears;
-			var crossDown = _prevBulls >= _prevBears && bulls < bears;
+		var crossUp = _prevFast <= _prevSlow && fastVal > slowVal;
+		var crossDown = _prevFast >= _prevSlow && fastVal < slowVal;
 
-			if (crossUp && Position <= 0)
-			{
-				if (Position < 0)
-				{
-					BuyMarket();
-					_entryPrice = 0;
-				}
-				if (Position == 0)
-				{
-					BuyMarket();
-					_entryPrice = price;
-				}
-			}
-			else if (crossDown && Position >= 0)
-			{
-				if (Position > 0)
-				{
-					SellMarket();
-					_entryPrice = 0;
-				}
-				if (Position == 0)
-				{
-					SellMarket();
-					_entryPrice = price;
-				}
-			}
+		if (crossUp && Position <= 0)
+		{
+			if (Position < 0) BuyMarket();
+			BuyMarket();
+		}
+		else if (crossDown && Position >= 0)
+		{
+			if (Position > 0) SellMarket();
+			SellMarket();
 		}
 
-		_prevBulls = bulls;
-		_prevBears = bears;
+		_prevFast = fastVal;
+		_prevSlow = slowVal;
 	}
 }
