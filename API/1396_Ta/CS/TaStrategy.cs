@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,245 +11,51 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Ta Strategy from TradingView.
-/// Uses MACD crossover with pivot support/resistance, RSI and ADX filters.
-/// Two profit targets are used with partial exit.
+/// Ta strategy using EMA crossover.
 /// </summary>
 public class TaStrategy : Strategy
 {
-	private readonly StrategyParam<int> _leftBars;
-	private readonly StrategyParam<int> _rightBars;
-	private readonly StrategyParam<int> _macdFast;
-	private readonly StrategyParam<int> _macdSlow;
-	private readonly StrategyParam<int> _macdSignal;
-	private readonly StrategyParam<int> _adxLength;
-	private readonly StrategyParam<decimal> _sellQty;
-	private readonly StrategyParam<decimal> _longTp1;
-	private readonly StrategyParam<decimal> _longTp2;
-	private readonly StrategyParam<decimal> _longSl;
-	private readonly StrategyParam<decimal> _shortTp1;
-	private readonly StrategyParam<decimal> _shortTp2;
-	private readonly StrategyParam<decimal> _shortSl;
-	private readonly StrategyParam<bool> _inverse;
-private readonly StrategyParam<Sides?> _direction;
+	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _entryPrice;
-	private decimal _target1;
-	private decimal _target2;
-	private decimal _stop;
-
-	public int LeftBars { get => _leftBars.Value; set => _leftBars.Value = value; }
-	public int RightBars { get => _rightBars.Value; set => _rightBars.Value = value; }
-	public int MacdFast { get => _macdFast.Value; set => _macdFast.Value = value; }
-	public int MacdSlow { get => _macdSlow.Value; set => _macdSlow.Value = value; }
-	public int MacdSignal { get => _macdSignal.Value; set => _macdSignal.Value = value; }
-	public int AdxLength { get => _adxLength.Value; set => _adxLength.Value = value; }
-	public decimal SellQtyPercent { get => _sellQty.Value; set => _sellQty.Value = value; }
-	public decimal LongTp1Percent { get => _longTp1.Value; set => _longTp1.Value = value; }
-	public decimal LongTp2Percent { get => _longTp2.Value; set => _longTp2.Value = value; }
-	public decimal LongSlPercent { get => _longSl.Value; set => _longSl.Value = value; }
-	public decimal ShortTp1Percent { get => _shortTp1.Value; set => _shortTp1.Value = value; }
-	public decimal ShortTp2Percent { get => _shortTp2.Value; set => _shortTp2.Value = value; }
-	public decimal ShortSlPercent { get => _shortSl.Value; set => _shortSl.Value = value; }
-	public bool Inverse { get => _inverse.Value; set => _inverse.Value = value; }
-	public Sides? Direction { get => _direction.Value; set => _direction.Value = value; }
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public TaStrategy()
 	{
-		_leftBars = Param(nameof(LeftBars), 6)
-		.SetGreaterThanZero()
-		.SetDisplay("Left Bars", "Bars left for pivot", "Support/Resistance");
-		_rightBars = Param(nameof(RightBars), 6)
-		.SetGreaterThanZero()
-		.SetDisplay("Right Bars", "Bars right for pivot", "Support/Resistance");
-		_macdFast = Param(nameof(MacdFast), 12)
-		.SetGreaterThanZero()
-		.SetDisplay("MACD Fast", "Fast EMA length", "MACD");
-		_macdSlow = Param(nameof(MacdSlow), 26)
-		.SetGreaterThanZero()
-		.SetDisplay("MACD Slow", "Slow EMA length", "MACD");
-		_macdSignal = Param(nameof(MacdSignal), 7)
-		.SetGreaterThanZero()
-		.SetDisplay("MACD Signal", "Signal EMA length", "MACD");
-		_adxLength = Param(nameof(AdxLength), 14)
-		.SetGreaterThanZero()
-		.SetDisplay("ADX Length", "ADX period", "ADX");
-		_sellQty = Param(nameof(SellQtyPercent), 50m)
-		.SetDisplay("Sell Qty %", "Percent to exit at TP1", "Exits");
-		_longTp1 = Param(nameof(LongTp1Percent), 6m)
-		.SetDisplay("Long TP1 %", "First long target percent", "Exits");
-		_longTp2 = Param(nameof(LongTp2Percent), 12m)
-		.SetDisplay("Long TP2 %", "Second long target percent", "Exits");
-		_longSl = Param(nameof(LongSlPercent), 3m)
-		.SetDisplay("Long SL %", "Long stop percent", "Exits");
-		_shortTp1 = Param(nameof(ShortTp1Percent), 6m)
-		.SetDisplay("Short TP1 %", "First short target percent", "Exits");
-		_shortTp2 = Param(nameof(ShortTp2Percent), 12m)
-		.SetDisplay("Short TP2 %", "Second short target percent", "Exits");
-		_shortSl = Param(nameof(ShortSlPercent), 3m)
-		.SetDisplay("Short SL %", "Short stop percent", "Exits");
-		_inverse = Param(nameof(Inverse), false)
-		.SetDisplay("Inverse", "Inverse signals", "General");
-		_direction = Param(nameof(Direction), (Sides?)null)
-			.SetDisplay("Direction", "Allowed direction", "General");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-		.SetDisplay("Candle Type", "Working timeframe", "General");
+		_slowLength = Param(nameof(SlowLength), 40)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow Length", "Slow EMA period", "General");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_entryPrice = 0m;
-		_target1 = 0m;
-		_target2 = 0m;
-		_stop = 0m;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		var macd = new MovingAverageConvergenceDivergenceSignal
-		{
-			Macd =
-			{
-				ShortMa = { Length = MacdFast },
-				LongMa = { Length = MacdSlow }
-			},
-			SignalMa = { Length = MacdSignal }
-		};
-		var dmi = new DirectionalIndex { Length = AdxLength };
-		var adx = new AverageDirectionalIndex { Length = AdxLength };
-		var rsi = new RelativeStrengthIndex { Length = 14 };
-		var highest = new Highest { Length = LeftBars };
-		var lowest = new Lowest { Length = LeftBars };
-
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
+		var prevF = 0m; var prevS = 0m; var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-		.BindEx(macd, dmi, adx, rsi, highest, lowest, ProcessCandle)
-		.Start();
-
+		subscription.Bind(fast, slow, (candle, f, s) =>
+		{
+			if (candle.State != CandleStates.Finished) return;
+			if (!fast.IsFormed || !slow.IsFormed) return;
+			if (!init) { prevF = f; prevS = s; init = true; return; }
+			if (candle.OpenTime - lastSignal >= cooldown)
+			{
+				if (prevF <= prevS && f > s && Position <= 0) { BuyMarket(); lastSignal = candle.OpenTime; }
+				else if (prevF >= prevS && f < s && Position >= 0) { SellMarket(); lastSignal = candle.OpenTime; }
+			}
+			prevF = f; prevS = s;
+		}).Start();
 		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, macd);
-			DrawIndicator(area, rsi);
-			DrawIndicator(area, adx);
-		}
-
-		// Protection handled manually in ManagePosition
-	}
-
-	private void ProcessCandle(ICandleMessage candle,
-	IIndicatorValue macdValue,
-	IIndicatorValue dmiValue,
-	IIndicatorValue adxValue,
-	IIndicatorValue rsiValue,
-	IIndicatorValue highValue,
-	IIndicatorValue lowValue)
-	{
-		if (candle.State != CandleStates.Finished)
-		return;
-
-		if (macdValue is not MovingAverageConvergenceDivergenceSignalValue macd ||
-		dmiValue is not DirectionalIndexValue dmi ||
-		adxValue is not AverageDirectionalIndexValue adxData ||
-		!rsiValue.IsFinal ||
-		!highValue.IsFinal ||
-		!lowValue.IsFinal)
-		return;
-
-		if (macd.Macd is not decimal macdLine ||
-		macd.Signal is not decimal signalLine ||
-		dmi.Plus is not decimal plus ||
-		dmi.Minus is not decimal minus ||
-		adxData.MovingAverage is not decimal adx)
-		return;
-
-		var rsi = rsiValue.GetValue<decimal>();
-		var res = highValue.GetValue<decimal>();
-		var sup = lowValue.GetValue<decimal>();
-
-		// Check exits first
-		ManagePosition(candle);
-
-		var longCond = macdLine > signalLine && plus > minus;
-		var shortCond = macdLine < signalLine && plus < minus;
-
-		if (Inverse)
-		{
-			(longCond, shortCond) = (shortCond, longCond);
-		}
-
-		var allowLong = Direction != Sides.Sell;
-		var allowShort = Direction != Sides.Buy;
-
-		if (longCond && allowLong && Position == 0)
-		{
-			EnterLong(candle.ClosePrice);
-		}
-		else if (shortCond && allowShort && Position == 0)
-		{
-			EnterShort(candle.ClosePrice);
-		}
-	}
-
-	private void EnterLong(decimal price)
-	{
-		BuyMarket();
-		_entryPrice = price;
-		_stop = price * (1 - LongSlPercent / 100m);
-		_target1 = price * (1 + LongTp1Percent / 100m);
-		_target2 = price * (1 + LongTp2Percent / 100m);
-
-	}
-
-	private void EnterShort(decimal price)
-	{
-		SellMarket();
-		_entryPrice = price;
-		_stop = price * (1 + ShortSlPercent / 100m);
-		_target1 = price * (1 - ShortTp1Percent / 100m);
-		_target2 = price * (1 - ShortTp2Percent / 100m);
-
-	}
-
-	private void ManagePosition(ICandleMessage candle)
-	{
-		if (Position > 0 && _entryPrice > 0)
-		{
-			if (candle.ClosePrice <= _stop || candle.ClosePrice >= _target2)
-			{
-				SellMarket();
-				ResetTrade();
-			}
-		}
-		else if (Position < 0 && _entryPrice > 0)
-		{
-			if (candle.ClosePrice >= _stop || candle.ClosePrice <= _target2)
-			{
-				BuyMarket();
-				ResetTrade();
-			}
-		}
-	}
-
-	private void ResetTrade()
-	{
-		_entryPrice = 0m;
-		_target1 = 0m;
-		_target2 = 0m;
-		_stop = 0m;
+		if (area != null) { DrawCandles(area, subscription); DrawIndicator(area, fast); DrawIndicator(area, slow); DrawOwnTrades(area); }
 	}
 }

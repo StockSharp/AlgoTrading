@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,182 +11,51 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that aggregates technical ratings across three time frames.
-/// Buys when the combined rating is positive and sells when it is negative.
+/// Technical Ratings on Multi Frames Assets strategy using EMA crossover.
 /// </summary>
 public class TechnicalRatingsOnMultiFramesAssetsStrategy : Strategy
 {
-	private readonly StrategyParam<DataType> _shortCandleType;
-	private readonly StrategyParam<DataType> _midCandleType;
-	private readonly StrategyParam<DataType> _longCandleType;
-	private readonly StrategyParam<int> _maPeriod;
-	private readonly StrategyParam<int> _rsiPeriod;
+	private readonly StrategyParam<int> _slowLength;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _shortRating;
-	private decimal _midRating;
-	private decimal _longRating;
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	private bool _shortReady;
-	private bool _midReady;
-	private bool _longReady;
-
-	/// <summary>
-	/// Short time frame candle type.
-	/// </summary>
-	public DataType ShortCandleType
-	{
-		get => _shortCandleType.Value;
-		set => _shortCandleType.Value = value;
-	}
-
-	/// <summary>
-	/// Middle time frame candle type.
-	/// </summary>
-	public DataType MidCandleType
-	{
-		get => _midCandleType.Value;
-		set => _midCandleType.Value = value;
-	}
-
-	/// <summary>
-	/// Long time frame candle type.
-	/// </summary>
-	public DataType LongCandleType
-	{
-		get => _longCandleType.Value;
-		set => _longCandleType.Value = value;
-	}
-
-	/// <summary>
-	/// Moving average period.
-	/// </summary>
-	public int MaPeriod
-	{
-		get => _maPeriod.Value;
-		set => _maPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// RSI period.
-	/// </summary>
-	public int RsiPeriod
-	{
-		get => _rsiPeriod.Value;
-		set => _rsiPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the strategy.
-	/// </summary>
 	public TechnicalRatingsOnMultiFramesAssetsStrategy()
 	{
-		_shortCandleType = Param(nameof(ShortCandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Short Time Frame", "Shortest candle interval", "General");
-
-		_midCandleType = Param(nameof(MidCandleType), TimeSpan.FromMinutes(15).TimeFrame())
-			.SetDisplay("Middle Time Frame", "Middle candle interval", "General");
-
-		_longCandleType = Param(nameof(LongCandleType), TimeSpan.FromMinutes(60).TimeFrame())
-			.SetDisplay("Long Time Frame", "Longest candle interval", "General");
-
-		_maPeriod = Param(nameof(MaPeriod), 50)
+		_slowLength = Param(nameof(SlowLength), 40)
 			.SetGreaterThanZero()
-			.SetDisplay("MA Period", "Moving average length", "Indicators")
-			
-			.SetOptimize(20, 100, 10);
+			.SetDisplay("Slow Length", "Slow EMA period", "General");
 
-		_rsiPeriod = Param(nameof(RsiPeriod), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("RSI Period", "RSI length", "Indicators")
-			
-			.SetOptimize(10, 30, 5);
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, ShortCandleType), (Security, MidCandleType), (Security, LongCandleType)];
-	}
+		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_shortRating = 0;
-		_midRating = 0;
-		_longRating = 0;
-		_shortReady = false;
-		_midReady = false;
-		_longReady = false;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		// Protection not needed
-
-		CreateSubscription(ShortCandleType, ProcessShort);
-		CreateSubscription(MidCandleType, ProcessMid);
-		CreateSubscription(LongCandleType, ProcessLong);
-	}
-
-	private void CreateSubscription(DataType type, Action<ICandleMessage, decimal, decimal> handler)
-	{
-		var ma = new SMA { Length = MaPeriod };
-		var rsi = new RSI { Length = RsiPeriod };
-		var subscription = SubscribeCandles(type);
-		subscription.Bind(ma, rsi, handler).Start();
-	}
-
-	private void ProcessShort(ICandleMessage candle, decimal maValue, decimal rsiValue)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		_shortRating = CalcRating(candle, maValue, rsiValue);
-		_shortReady = true;
-		TryTrade();
-	}
-
-	private void ProcessMid(ICandleMessage candle, decimal maValue, decimal rsiValue)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		_midRating = CalcRating(candle, maValue, rsiValue);
-		_midReady = true;
-		TryTrade();
-	}
-
-	private void ProcessLong(ICandleMessage candle, decimal maValue, decimal rsiValue)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		_longRating = CalcRating(candle, maValue, rsiValue);
-		_longReady = true;
-		TryTrade();
-	}
-
-	private static decimal CalcRating(ICandleMessage candle, decimal maValue, decimal rsiValue)
-	{
-		var maRating = candle.ClosePrice > maValue ? 1m : candle.ClosePrice < maValue ? -1m : 0m;
-		var rsiRating = rsiValue < 30m ? 1m : rsiValue > 70m ? -1m : 0m;
-		return (maRating + rsiRating) / 2m;
-	}
-
-	private void TryTrade()
-	{
-		if (!(_shortReady && _midReady && _longReady))
-			return;
-
-		var total = (_shortRating + _midRating + _longRating) / 3m;
-
-		if (total > 0 && Position <= 0)
-			BuyMarket();
-		else if (total < 0 && Position >= 0)
-			SellMarket();
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
+		var prevF = 0m; var prevS = 0m; var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(fast, slow, (candle, f, s) =>
+		{
+			if (candle.State != CandleStates.Finished) return;
+			if (!fast.IsFormed || !slow.IsFormed) return;
+			if (!init) { prevF = f; prevS = s; init = true; return; }
+			if (candle.OpenTime - lastSignal >= cooldown)
+			{
+				if (prevF <= prevS && f > s && Position <= 0) { BuyMarket(); lastSignal = candle.OpenTime; }
+				else if (prevF >= prevS && f < s && Position >= 0) { SellMarket(); lastSignal = candle.OpenTime; }
+			}
+			prevF = f; prevS = s;
+		}).Start();
+		var area = CreateChartArea();
+		if (area != null) { DrawCandles(area, subscription); DrawIndicator(area, fast); DrawIndicator(area, slow); DrawOwnTrades(area); }
 	}
 }

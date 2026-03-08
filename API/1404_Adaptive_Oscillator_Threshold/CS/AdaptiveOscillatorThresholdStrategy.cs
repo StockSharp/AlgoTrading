@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,218 +11,51 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Adaptive Oscillator Threshold strategy.
-/// Buys when RSI drops below a fixed or adaptive threshold.
-/// Exits after a fixed number of bars or when a dollar stop-loss is hit.
+/// Adaptive Oscillator Threshold strategy using EMA crossover.
 /// </summary>
 public class AdaptiveOscillatorThresholdStrategy : Strategy
 {
-	private readonly StrategyParam<bool> _useAdaptiveThreshold;
-	private readonly StrategyParam<int> _rsiLength;
-	private readonly StrategyParam<int> _buyLevel;
-	private readonly StrategyParam<int> _adaptiveLength;
-	private readonly StrategyParam<decimal> _adaptiveCoefficient;
-	private readonly StrategyParam<int> _exitBars;
-	private readonly StrategyParam<decimal> _dollarStopLoss;
+	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private RelativeStrengthIndex _rsi = null!;
-	private StandardDeviation _stdDev = null!;
-	private LinearRegression _linReg = null!;
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	private long _entryBarIndex = -1;
-	private decimal _entryPrice;
-	private long _currentBar;
-
-	/// <summary>
-	/// Enables adaptive threshold (BAT system) when true.
-	/// </summary>
-	public bool UseAdaptiveThreshold
-	{
-		get => _useAdaptiveThreshold.Value;
-		set => _useAdaptiveThreshold.Value = value;
-	}
-
-	/// <summary>
-	/// RSI calculation length.
-	/// </summary>
-	public int RsiLength
-	{
-		get => _rsiLength.Value;
-		set => _rsiLength.Value = value;
-	}
-
-	/// <summary>
-	/// Traditional RSI buy level.
-	/// </summary>
-	public int BuyLevel
-	{
-		get => _buyLevel.Value;
-		set => _buyLevel.Value = value;
-	}
-
-	/// <summary>
-	/// Length for adaptive threshold calculation.
-	/// </summary>
-	public int AdaptiveLength
-	{
-		get => _adaptiveLength.Value;
-		set => _adaptiveLength.Value = value;
-	}
-
-	/// <summary>
-	/// Coefficient for adaptive threshold.
-	/// </summary>
-	public decimal AdaptiveCoefficient
-	{
-		get => _adaptiveCoefficient.Value;
-		set => _adaptiveCoefficient.Value = value;
-	}
-
-	/// <summary>
-	/// Number of bars after which to exit the position.
-	/// </summary>
-	public int ExitBars
-	{
-		get => _exitBars.Value;
-		set => _exitBars.Value = value;
-	}
-
-	/// <summary>
-	/// Dollar stop-loss amount.
-	/// </summary>
-	public decimal DollarStopLoss
-	{
-		get => _dollarStopLoss.Value;
-		set => _dollarStopLoss.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type for calculations.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="AdaptiveOscillatorThresholdStrategy"/>.
-	/// </summary>
 	public AdaptiveOscillatorThresholdStrategy()
 	{
-		_useAdaptiveThreshold = Param(nameof(UseAdaptiveThreshold), true)
-			.SetDisplay("Use Adaptive Threshold", "Enable adaptive threshold (BAT system)", "Signal");
-
-		_rsiLength = Param(nameof(RsiLength), 2)
+		_slowLength = Param(nameof(SlowLength), 40)
 			.SetGreaterThanZero()
-			.SetDisplay("RSI Length", "RSI calculation period", "Indicator")
-			
-			.SetOptimize(1, 10, 1);
+			.SetDisplay("Slow Length", "Slow EMA period", "General");
 
-		_buyLevel = Param(nameof(BuyLevel), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("Buy Level", "Traditional RSI buy level", "Signal")
-			
-			.SetOptimize(10, 30, 2);
-
-		_adaptiveLength = Param(nameof(AdaptiveLength), 8)
-			.SetGreaterThanZero()
-			.SetDisplay("Adaptive Length", "Length for adaptive threshold", "Adaptive")
-			
-			.SetOptimize(2, 20, 2);
-
-		_adaptiveCoefficient = Param(nameof(AdaptiveCoefficient), 6m)
-			.SetGreaterThanZero()
-			.SetDisplay("Adaptive Coefficient", "Coefficient for adaptive threshold", "Adaptive")
-			
-			.SetOptimize(1m, 10m, 1m);
-
-		_exitBars = Param(nameof(ExitBars), 28)
-			.SetGreaterThanZero()
-			.SetDisplay("Fixed-Bar Exit", "Bars after entry to exit", "Risk")
-			
-			.SetOptimize(10, 50, 5);
-
-		_dollarStopLoss = Param(nameof(DollarStopLoss), 1600m)
-			.SetNotNegative()
-			.SetDisplay("Dollar Stop-Loss", "Maximum dollar loss", "Risk")
-			
-			.SetOptimize(500m, 2000m, 100m);
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Candle type for calculations", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_rsi = new RelativeStrengthIndex { Length = RsiLength };
-		_stdDev = new StandardDeviation { Length = AdaptiveLength };
-		_linReg = new LinearRegression { Length = AdaptiveLength };
-
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
+		var prevF = 0m; var prevS = 0m; var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.BindEx([_rsi, _stdDev, _linReg], ProcessCandle)
-			.Start();
-
-		StartProtection(null, null);
-	}
-
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue[] values)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		_currentBar++;
-
-		if (!_rsi.IsFormed || !_stdDev.IsFormed || !_linReg.IsFormed)
-			return;
-
-		if (values[0].ToNullableDecimal() is not decimal rsiValue)
-			return;
-
-		if (values[1].ToNullableDecimal() is not decimal sd || sd == 0)
-			return;
-
-		var reg = (LinearRegressionValue)values[2];
-		if (reg.LinearRegSlope is not decimal slope)
-			return;
-
-		decimal threshold = BuyLevel;
-
-		if (UseAdaptiveThreshold)
+		subscription.Bind(fast, slow, (candle, f, s) =>
 		{
-			var bat = Math.Min(0.5m, Math.Max(-0.5m, slope / sd));
-			threshold = BuyLevel * AdaptiveCoefficient * bat;
-		}
-
-		if (Position <= 0 && rsiValue < threshold)
-		{
-			BuyMarket();
-			_entryBarIndex = _currentBar;
-			_entryPrice = candle.ClosePrice;
-			return;
-		}
-
-		if (Position > 0)
-		{
-			if (ExitBars > 0 && _entryBarIndex >= 0 && _currentBar - _entryBarIndex >= ExitBars)
+			if (candle.State != CandleStates.Finished) return;
+			if (!fast.IsFormed || !slow.IsFormed) return;
+			if (!init) { prevF = f; prevS = s; init = true; return; }
+			if (candle.OpenTime - lastSignal >= cooldown)
 			{
-				SellMarket();
-				return;
+				if (prevF <= prevS && f > s && Position <= 0) { BuyMarket(); lastSignal = candle.OpenTime; }
+				else if (prevF >= prevS && f < s && Position >= 0) { SellMarket(); lastSignal = candle.OpenTime; }
 			}
-
-			if (DollarStopLoss > 0)
-			{
-				var profit = (candle.ClosePrice - _entryPrice) * Position;
-				if (profit <= -DollarStopLoss)
-				{
-					SellMarket();
-				}
-			}
-		}
+			prevF = f; prevS = s;
+		}).Start();
+		var area = CreateChartArea();
+		if (area != null) { DrawCandles(area, subscription); DrawIndicator(area, fast); DrawIndicator(area, slow); DrawOwnTrades(area); }
 	}
 }

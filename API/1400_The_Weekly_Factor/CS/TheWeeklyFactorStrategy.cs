@@ -1,9 +1,8 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -11,178 +10,52 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
 /// <summary>
-/// Strategy based on the Weekly Factor pattern.
-/// Closes positions at new sessions and trades breakouts when the weekly factor condition is met.
+/// The Weekly Factor strategy using EMA crossover.
 /// </summary>
 public class TheWeeklyFactorStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _rangeFilter;
+	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private readonly Queue<(decimal open, decimal high, decimal low, decimal close)> _week = new();
-	private decimal _weekOpen;
-	private decimal _weekHigh;
-	private decimal _weekLow;
-	private decimal _weekClose;
-	private bool _weeklyFactor;
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	private DateTime _sessionDate;
-	private decimal _sessionOpen;
-	private decimal _sessionHigh;
-	private decimal _sessionLow;
-	private int _barCounter;
-	private int _dayCounter;
-	private decimal _entryPrice;
-
-	/// <summary>
-	/// Range filter for weekly factor.
-	/// </summary>
-	public decimal RangeFilter
-	{
-		get => _rangeFilter.Value;
-		set => _rangeFilter.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type for intraday calculations.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="TheWeeklyFactorStrategy"/>.
-	/// </summary>
 	public TheWeeklyFactorStrategy()
 	{
-		_rangeFilter = Param(nameof(RangeFilter), 0.5m)
-			.SetRange(0m, 1m)
-			.SetDisplay("Range Filter", "Body to range ratio", "Parameters");
+		_slowLength = Param(nameof(SlowLength), 40)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow Length", "Slow EMA period", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
-			.SetDisplay("Candle Type", "Working candle timeframe", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType), (Security, TimeSpan.FromMinutes(5).TimeFrame())];
-	}
+		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_week.Clear();
-		_weeklyFactor = false;
-		_sessionDate = default;
-		_barCounter = 0;
-		_dayCounter = 0;
-		_entryPrice = 0m;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		var intraday = SubscribeCandles(CandleType);
-		intraday.Bind(ProcessCandle).Start();
-
-		var daily = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
-		daily.Bind(ProcessDaily).Start();
-
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
+		var prevF = 0m; var prevS = 0m; var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(fast, slow, (candle, f, s) =>
+		{
+			if (candle.State != CandleStates.Finished) return;
+			if (!fast.IsFormed || !slow.IsFormed) return;
+			if (!init) { prevF = f; prevS = s; init = true; return; }
+			if (candle.OpenTime - lastSignal >= cooldown)
+			{
+				if (prevF <= prevS && f > s && Position <= 0) { BuyMarket(); lastSignal = candle.OpenTime; }
+				else if (prevF >= prevS && f < s && Position >= 0) { SellMarket(); lastSignal = candle.OpenTime; }
+			}
+			prevF = f; prevS = s;
+		}).Start();
 		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, intraday);
-			DrawOwnTrades(area);
-		}
-	}
-
-	private void ProcessDaily(ICandleMessage candle)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		_week.Enqueue((candle.OpenPrice, candle.HighPrice, candle.LowPrice, candle.ClosePrice));
-		while (_week.Count > 5)
-			_week.Dequeue();
-
-		if (_week.Count == 0)
-			return;
-
-		_weekOpen = _week.Peek().open;
-		_weekHigh = _week.Peek().high;
-		_weekLow = _week.Peek().low;
-		foreach (var item in _week)
-		{
-			if (item.high > _weekHigh)
-				_weekHigh = item.high;
-			if (item.low < _weekLow)
-				_weekLow = item.low;
-			_weekClose = item.close;
-		}
-
-		var body = Math.Abs(_weekOpen - _weekClose);
-		var range = _weekHigh - _weekLow;
-		_weeklyFactor = range != 0m && body < RangeFilter * range;
-	}
-
-	private void ProcessCandle(ICandleMessage candle)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		var day = candle.OpenTime.Date;
-		if (day != _sessionDate)
-		{
-			if (Position > 0)
-				SellMarket(Position);
-			else if (Position < 0)
-				BuyMarket(Math.Abs(Position));
-
-			_sessionDate = day;
-			_sessionOpen = candle.OpenPrice;
-			_sessionHigh = candle.HighPrice;
-			_sessionLow = candle.LowPrice;
-			_barCounter = 1;
-			_dayCounter++;
-		}
-		else
-		{
-			_sessionHigh = Math.Max(_sessionHigh, candle.HighPrice);
-			_sessionLow = Math.Min(_sessionLow, candle.LowPrice);
-			_barCounter++;
-		}
-
-		if (_weeklyFactor && _barCounter > 1 && _barCounter < 91)
-		{
-			if (candle.ClosePrice > _sessionHigh && Position <= 0)
-			{
-				BuyMarket();
-				_entryPrice = candle.ClosePrice;
-				_dayCounter = 0;
-			}
-			else if (candle.ClosePrice < _sessionLow && Position >= 0)
-			{
-				SellMarket();
-				_entryPrice = candle.ClosePrice;
-				_dayCounter = 0;
-			}
-		}
-
-		if (_dayCounter > 1 && Position != 0)
-		{
-			if (Position > 0 && candle.ClosePrice > _entryPrice)
-				SellMarket(Position);
-			else if (Position < 0 && candle.ClosePrice < _entryPrice)
-				BuyMarket(Math.Abs(Position));
-		}
+		if (area != null) { DrawCandles(area, subscription); DrawIndicator(area, fast); DrawIndicator(area, slow); DrawOwnTrades(area); }
 	}
 }
