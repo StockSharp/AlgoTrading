@@ -31,7 +31,7 @@ public class VolumeWeightedMaSlopeStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("VWMA Period", "Period of the Volume Weighted Moving Average", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -39,6 +39,14 @@ public class VolumeWeightedMaSlopeStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevVwma1 = null;
+		_prevVwma2 = null;
 	}
 
 	/// <inheritdoc />

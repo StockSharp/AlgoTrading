@@ -40,7 +40,7 @@ public class JupiterMStrategy : Strategy
 		_sellLevel = Param(nameof(SellLevel), 100m)
 			.SetDisplay("Sell Level", "CCI level to sell (cross below)", "Trading");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for analysis", "General");
 	}
 
@@ -48,6 +48,13 @@ public class JupiterMStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevCci = null;
 	}
 
 	/// <inheritdoc />

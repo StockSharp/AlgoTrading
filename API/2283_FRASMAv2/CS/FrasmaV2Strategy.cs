@@ -32,7 +32,7 @@ public class FrasmaV2Strategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Period", "FRAMA calculation period", "Indicator");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -40,6 +40,15 @@ public class FrasmaV2Strategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_isFirst = true;
+		_prevFrama = 0;
+		_prevColor = 1;
 	}
 
 	/// <inheritdoc />

@@ -46,7 +46,7 @@ public class StochKomposterStrategy : Strategy
 		_downLevel = Param(nameof(DownLevel), 30m)
 			.SetDisplay("Lower Level", "Oversold threshold", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for strategy", "General");
 	}
 
@@ -54,6 +54,13 @@ public class StochKomposterStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevK = null;
 	}
 
 	/// <inheritdoc />

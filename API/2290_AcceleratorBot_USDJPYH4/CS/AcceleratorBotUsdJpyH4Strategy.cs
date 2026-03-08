@@ -37,7 +37,7 @@ public class AcceleratorBotUsdJpyH4Strategy : Strategy
 		_adxThreshold = Param(nameof(AdxThreshold), 20m)
 			.SetDisplay("ADX Threshold", "Minimum ADX to use trend rules", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for calculations", "General");
 	}
 
@@ -45,6 +45,14 @@ public class AcceleratorBotUsdJpyH4Strategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevK = null;
+		_prevD = null;
 	}
 
 	/// <inheritdoc />

@@ -36,7 +36,7 @@ public class TimerTradeStrategy : Strategy
 			.SetDisplay("Take Profit", "Take profit in price units", "Risk")
 			.SetGreaterThanZero();
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for strategy", "General");
 	}
 
@@ -44,6 +44,14 @@ public class TimerTradeStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_isBuyNext = true;
+		_entryPrice = 0;
 	}
 
 	/// <inheritdoc />

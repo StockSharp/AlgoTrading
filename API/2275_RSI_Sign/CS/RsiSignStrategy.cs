@@ -41,7 +41,7 @@ public class RsiSignStrategy : Strategy
 		_downLevel = Param(nameof(DownLevel), 30m)
 			.SetDisplay("RSI Lower Level", "Buy when RSI rises above this value", "Indicator");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for indicator calculations", "General");
 	}
 
@@ -49,6 +49,13 @@ public class RsiSignStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_previousRsi = null;
 	}
 
 	/// <inheritdoc />

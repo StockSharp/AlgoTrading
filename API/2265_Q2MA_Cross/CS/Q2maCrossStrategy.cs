@@ -32,7 +32,7 @@ public class Q2maCrossStrategy : Strategy
 		_length = Param(nameof(Length), 8)
 			.SetDisplay("Length", "Moving average length", "Indicator");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Indicator timeframe", "General");
 	}
 
@@ -40,6 +40,16 @@ public class Q2maCrossStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_closeMa = null;
+		_openMa = null;
+		_prevUp = null;
+		_prevDn = null;
 	}
 
 	/// <inheritdoc />
@@ -52,6 +62,9 @@ public class Q2maCrossStrategy : Strategy
 
 		_closeMa = new ExponentialMovingAverage { Length = Length };
 		_openMa = new ExponentialMovingAverage { Length = Length };
+
+		Indicators.Add(_closeMa);
+		Indicators.Add(_openMa);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -73,8 +86,8 @@ public class Q2maCrossStrategy : Strategy
 
 		var t = candle.ServerTime;
 
-		var upResult = _closeMa.Process(candle.ClosePrice, t, true);
-		var dnResult = _openMa.Process(candle.OpenPrice, t, true);
+		var upResult = _closeMa.Process(new DecimalIndicatorValue(_closeMa, candle.ClosePrice, t) { IsFinal = true });
+		var dnResult = _openMa.Process(new DecimalIndicatorValue(_openMa, candle.OpenPrice, t) { IsFinal = true });
 
 		if (!_closeMa.IsFormed || !_openMa.IsFormed)
 			return;

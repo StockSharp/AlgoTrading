@@ -44,7 +44,7 @@ public class ColorRsiMacdStrategy : Strategy
 
 	public ColorRsiMacdStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 
 		_fastPeriod = Param(nameof(FastPeriod), 12)
@@ -64,6 +64,17 @@ public class ColorRsiMacdStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_histPrev = null;
+		_macdPrev = null;
+		_macdPrev2 = null;
+		_signalPrev = null;
+		_signalPrev2 = null;
 	}
 
 	/// <inheritdoc />

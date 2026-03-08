@@ -34,7 +34,7 @@ public class TrendArrowsStrategy : Strategy
 			.SetDisplay("Period", "Number of bars for extreme calculation", "Parameters")
 			.SetOptimize(5, 30, 5);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe of candles", "Parameters");
 	}
 
@@ -42,6 +42,16 @@ public class TrendArrowsStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevTrendUp = false;
+		_prevTrendDown = false;
+		_prevHighest = null;
+		_prevLowest = null;
 	}
 
 	/// <inheritdoc />

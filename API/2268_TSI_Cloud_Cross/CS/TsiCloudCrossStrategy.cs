@@ -34,7 +34,7 @@ public class TsiCloudCrossStrategy : Strategy
 
 	public TsiCloudCrossStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 		_firstLength = Param(nameof(FirstLength), 25)
 			.SetDisplay("First Length", "First smoothing period for TSI", "TSI")
@@ -51,6 +51,17 @@ public class TsiCloudCrossStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_tsi = null;
+		_tsiValues.Clear();
+		_prevTsi = 0;
+		_prevTrigger = 0;
+		_isInitialized = false;
 	}
 
 	/// <inheritdoc />

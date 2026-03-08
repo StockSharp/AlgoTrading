@@ -37,7 +37,7 @@ public class DirectedMovementCandleStrategy : Strategy
 			.SetDisplay("High Level", "Upper threshold", "Indicator");
 		_lowLevel = Param(nameof(LowLevel), 30m)
 			.SetDisplay("Low Level", "Lower threshold", "Indicator");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type", "Data");
 	}
 
@@ -45,6 +45,14 @@ public class DirectedMovementCandleStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_rsi = null;
+		_prevColor = null;
 	}
 
 	/// <inheritdoc />

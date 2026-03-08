@@ -31,7 +31,7 @@ public class VwapCloseStrategy : Strategy
 			.SetDisplay("Period", "VWMA calculation period", "Indicator")
 			.SetOptimize(2, 5, 1);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -39,6 +39,14 @@ public class VwapCloseStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prev1 = null;
+		_prev2 = null;
 	}
 
 	/// <inheritdoc />

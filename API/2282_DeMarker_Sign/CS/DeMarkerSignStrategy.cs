@@ -38,7 +38,7 @@ public class DeMarkerSignStrategy : Strategy
 		_downLevel = Param(nameof(DownLevel), 0.3m)
 			.SetDisplay("Lower Level", "Buy when DeMarker rises above", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for candles", "General");
 	}
 
@@ -46,6 +46,13 @@ public class DeMarkerSignStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevDeMarker = null;
 	}
 
 	/// <inheritdoc />

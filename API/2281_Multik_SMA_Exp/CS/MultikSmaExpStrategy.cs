@@ -32,7 +32,7 @@ public class MultikSmaExpStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "Length of the moving average", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -43,13 +43,20 @@ public class MultikSmaExpStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_ma0 = _ma1 = _ma2 = null;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
 		_ma0 = _ma1 = _ma2 = null;
 
-		var sma = new SimpleMovingAverage { Length = Period };
+		var sma = new ExponentialMovingAverage { Length = Period };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

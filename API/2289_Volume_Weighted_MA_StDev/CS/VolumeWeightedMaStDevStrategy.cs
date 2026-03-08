@@ -32,7 +32,7 @@ public class VolumeWeightedMaStDevStrategy : Strategy
 
 	public VolumeWeightedMaStDevStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for analysis", "General");
 
 		_vwmaLength = Param(nameof(VwmaLength), 12)
@@ -52,6 +52,15 @@ public class VolumeWeightedMaStDevStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_vwma = null;
+		_stdDev = null;
+		_prevVwma = null;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
@@ -60,6 +69,8 @@ public class VolumeWeightedMaStDevStrategy : Strategy
 
 		_vwma = new VolumeWeightedMovingAverage { Length = VwmaLength };
 		_stdDev = new StandardDeviation { Length = StdPeriod };
+
+		Indicators.Add(_stdDev);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -94,7 +105,7 @@ public class VolumeWeightedMaStDevStrategy : Strategy
 
 		var diff = vwmaValue - _prevVwma.Value;
 
-		var stdResult = _stdDev.Process(diff, t, true);
+		var stdResult = _stdDev.Process(new DecimalIndicatorValue(_stdDev, diff, t) { IsFinal = true });
 
 		if (!_stdDev.IsFormed)
 		{

@@ -37,7 +37,7 @@ public class ColorX2MaDigitStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Slow MA Length", "Length of the second smoothing", "Parameters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for strategy", "General");
 	}
 
@@ -45,6 +45,14 @@ public class ColorX2MaDigitStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFast = null;
+		_prevSlow = null;
 	}
 
 	/// <inheritdoc />

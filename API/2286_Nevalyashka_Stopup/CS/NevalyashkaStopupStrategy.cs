@@ -45,7 +45,7 @@ public class NevalyashkaStopupStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Martingale Coeff", "Multiplier applied after loss", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -53,6 +53,16 @@ public class NevalyashkaStopupStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_entryPrice = 0;
+		_currentStopLoss = 0;
+		_currentTakeProfit = 0;
+		_nextIsBuy = true;
 	}
 
 	/// <inheritdoc />

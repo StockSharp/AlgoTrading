@@ -37,7 +37,7 @@ public class ChaikinVolatilityStochasticStrategy : Strategy
 
 	public ChaikinVolatilityStochasticStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candles for calculation", "General");
 
 		_emaLength = Param(nameof(EmaLength), 10)
@@ -57,6 +57,18 @@ public class ChaikinVolatilityStochasticStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_rangeEma = null;
+		_highest = null;
+		_lowest = null;
+		_wma = null;
+		_prev = null;
+		_prevPrev = null;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
@@ -68,6 +80,11 @@ public class ChaikinVolatilityStochasticStrategy : Strategy
 		_highest = new Highest { Length = StochLength };
 		_lowest = new Lowest { Length = StochLength };
 		_wma = new WeightedMovingAverage { Length = WmaLength };
+
+		Indicators.Add(_rangeEma);
+		Indicators.Add(_highest);
+		Indicators.Add(_lowest);
+		Indicators.Add(_wma);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -91,15 +108,15 @@ public class ChaikinVolatilityStochasticStrategy : Strategy
 		var range = candle.HighPrice - candle.LowPrice;
 
 		// Step 1: EMA of high-low range
-		var emaResult = _rangeEma.Process(range, t, true);
+		var emaResult = _rangeEma.Process(new DecimalIndicatorValue(_rangeEma, range, t) { IsFinal = true });
 		if (!_rangeEma.IsFormed)
 			return;
 
 		var emaVal = emaResult.GetValue<decimal>();
 
 		// Step 2: Highest and Lowest of the EMA values
-		var highResult = _highest.Process(emaVal, t, true);
-		var lowResult = _lowest.Process(emaVal, t, true);
+		var highResult = _highest.Process(new DecimalIndicatorValue(_highest, emaVal, t) { IsFinal = true });
+		var lowResult = _lowest.Process(new DecimalIndicatorValue(_lowest, emaVal, t) { IsFinal = true });
 
 		if (!_highest.IsFormed || !_lowest.IsFormed)
 			return;
@@ -114,7 +131,7 @@ public class ChaikinVolatilityStochasticStrategy : Strategy
 		var percent = (emaVal - ll) / (hh - ll) * 100m;
 
 		// Step 4: WMA smoothing
-		var smoothResult = _wma.Process(percent, t, true);
+		var smoothResult = _wma.Process(new DecimalIndicatorValue(_wma, percent, t) { IsFinal = true });
 		if (!_wma.IsFormed)
 			return;
 

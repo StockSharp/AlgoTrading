@@ -36,7 +36,7 @@ public class CciWoodiesStrategy : Strategy
 		_slowPeriod = Param(nameof(SlowPeriod), 14)
 			.SetDisplay("Slow CCI Period", "Period for slow CCI", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -44,6 +44,15 @@ public class CciWoodiesStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFast = 0;
+		_prevSlow = 0;
+		_isInitialized = false;
 	}
 
 	/// <inheritdoc />

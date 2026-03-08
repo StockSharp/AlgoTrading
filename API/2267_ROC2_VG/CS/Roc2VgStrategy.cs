@@ -54,7 +54,7 @@ public class Roc2VgStrategy : Strategy
 
 	public Roc2VgStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candles", "General");
 		_rocPeriod1 = Param(nameof(RocPeriod1), 8).SetGreaterThanZero()
 			.SetDisplay("ROC Period 1", "Length of first ROC", "Indicator");
@@ -71,6 +71,14 @@ public class Roc2VgStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevUp = null;
+		_prevDn = null;
 	}
 
 	/// <inheritdoc />

@@ -36,7 +36,7 @@ public class UniversalTrailingStopHedgeStrategy : Strategy
 			.SetDisplay("ATR Multiplier", "ATR multiplier for stop distance", "Indicators")
 			.SetGreaterThanZero();
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for calculations", "General");
 	}
 
@@ -44,6 +44,14 @@ public class UniversalTrailingStopHedgeStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_entryPrice = 0;
+		_trailingStop = 0;
 	}
 
 	/// <inheritdoc />

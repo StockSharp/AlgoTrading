@@ -39,7 +39,7 @@ public class MaChannelStrategy : Strategy
 			.SetDisplay("Offset", "Price offset from the average", "Parameters")
 			.SetOptimize(50m, 500m, 50m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "Parameters");
 	}
 
@@ -50,6 +50,15 @@ public class MaChannelStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_maHigh = null;
+		_maLow = null;
+		_trend = 0;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
@@ -57,6 +66,9 @@ public class MaChannelStrategy : Strategy
 		_trend = 0;
 		_maHigh = new ExponentialMovingAverage { Length = Length };
 		_maLow = new ExponentialMovingAverage { Length = Length };
+
+		Indicators.Add(_maHigh);
+		Indicators.Add(_maLow);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -78,8 +90,8 @@ public class MaChannelStrategy : Strategy
 
 		var t = candle.ServerTime;
 
-		var highResult = _maHigh.Process(candle.HighPrice, t, true);
-		var lowResult = _maLow.Process(candle.LowPrice, t, true);
+		var highResult = _maHigh.Process(new DecimalIndicatorValue(_maHigh, candle.HighPrice, t) { IsFinal = true });
+		var lowResult = _maLow.Process(new DecimalIndicatorValue(_maLow, candle.LowPrice, t) { IsFinal = true });
 
 		if (!_maHigh.IsFormed || !_maLow.IsFormed)
 			return;

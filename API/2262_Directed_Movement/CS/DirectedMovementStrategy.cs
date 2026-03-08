@@ -20,8 +20,8 @@ public class DirectedMovementStrategy : Strategy
 	private readonly StrategyParam<int> _fastMaLength;
 	private readonly StrategyParam<int> _slowMaLength;
 
-	private DecimalLengthIndicator _fastMa;
-	private DecimalLengthIndicator _slowMa;
+	private ExponentialMovingAverage _fastMa;
+	private ExponentialMovingAverage _slowMa;
 	private decimal _prevFast;
 	private decimal _prevSlow;
 
@@ -32,7 +32,7 @@ public class DirectedMovementStrategy : Strategy
 
 	public DirectedMovementStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
@@ -52,6 +52,16 @@ public class DirectedMovementStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_fastMa = null;
+		_slowMa = null;
+		_prevFast = 0m;
+		_prevSlow = 0m;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
@@ -60,8 +70,11 @@ public class DirectedMovementStrategy : Strategy
 		_prevSlow = 0m;
 
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
-		_fastMa = new SimpleMovingAverage { Length = FastMaLength };
+		_fastMa = new ExponentialMovingAverage { Length = FastMaLength };
 		_slowMa = new ExponentialMovingAverage { Length = SlowMaLength };
+
+		Indicators.Add(_fastMa);
+		Indicators.Add(_slowMa);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -84,13 +97,13 @@ public class DirectedMovementStrategy : Strategy
 
 		var t = candle.ServerTime;
 
-		var fastResult = _fastMa.Process(rsiValue, t, true);
+		var fastResult = _fastMa.Process(new DecimalIndicatorValue(_fastMa, rsiValue, t) { IsFinal = true });
 		if (!_fastMa.IsFormed)
 			return;
 
 		var fast = fastResult.GetValue<decimal>();
 
-		var slowResult = _slowMa.Process(fast, t, true);
+		var slowResult = _slowMa.Process(new DecimalIndicatorValue(_slowMa, fast, t) { IsFinal = true });
 		if (!_slowMa.IsFormed)
 		{
 			_prevFast = fast;
