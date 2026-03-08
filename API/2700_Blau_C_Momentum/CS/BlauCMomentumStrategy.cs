@@ -43,7 +43,7 @@ public class BlauCMomentumStrategy : Strategy
 	private readonly StrategyParam<AppliedPrices> _priceForOpen;
 	private readonly StrategyParam<int> _signalBar;
 
-	private BlauMomentumCalculator _momentum;
+	private BlauMomentumCalculator? _momentum;
 	private readonly List<decimal> _indicatorHistory = new();
 	private TimeSpan _candleSpan;
 	private DateTimeOffset? _longTradeBlockUntil;
@@ -87,7 +87,7 @@ public class BlauCMomentumStrategy : Strategy
 		_entryMode = Param(nameof(EntryMode), EntryModes.Twist)
 			.SetDisplay("Entry Mode", "Choose between zero breakout or twist logic", "Logic");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Indicator Timeframe", "Candle type used for indicator calculations", "Data");
 
 		_smoothingMethod = Param(nameof(SmoothingMethod), SmoothMethods.Exponential)
@@ -320,9 +320,10 @@ public class BlauCMomentumStrategy : Strategy
 		base.OnReseted();
 
 		_indicatorHistory.Clear();
-		_momentum?.Reset();
+		_momentum = null;
 		_longTradeBlockUntil = null;
 		_shortTradeBlockUntil = null;
+		_candleSpan = TimeSpan.Zero;
 	}
 
 	/// <inheritdoc />
@@ -452,40 +453,24 @@ public class BlauCMomentumStrategy : Strategy
 
 		if (closeLong && Position > 0m)
 		{
-			SellMarket(Position);
+			SellMarket();
 		}
 
 		if (closeShort && Position < 0m)
 		{
-			BuyMarket(-Position);
+			BuyMarket();
 		}
 
 		if (openLong && Position <= 0m && CanEnterLong(candle.OpenTime))
 		{
-			var volume = CalculateTradeVolume(candle.ClosePrice);
-			if (volume > 0m)
-			{
-				var totalVolume = volume + Math.Max(0m, -Position);
-				if (totalVolume > 0m)
-				{
-					BuyMarket(totalVolume);
-					SetLongBlock(candle.OpenTime);
-				}
-			}
+			BuyMarket();
+			SetLongBlock(candle.OpenTime);
 		}
 
 		if (openShort && Position >= 0m && CanEnterShort(candle.OpenTime))
 		{
-			var volume = CalculateTradeVolume(candle.ClosePrice);
-			if (volume > 0m)
-			{
-				var totalVolume = volume + Math.Max(0m, Position);
-				if (totalVolume > 0m)
-				{
-					SellMarket(totalVolume);
-					SetShortBlock(candle.OpenTime);
-				}
-			}
+			SellMarket();
+			SetShortBlock(candle.OpenTime);
 		}
 	}
 
@@ -739,7 +724,7 @@ public class BlauCMomentumStrategy : Strategy
 		private readonly AppliedPrices _price1;
 		private readonly AppliedPrices _price2;
 
-		private readonly Queue<decimal> _priceBuffer = new();
+		private readonly List<decimal> _priceBuffer = new();
 		private readonly DecimalLengthIndicator _ma1;
 		private readonly DecimalLengthIndicator _ma2;
 		private readonly DecimalLengthIndicator _ma3;
@@ -773,23 +758,31 @@ public class BlauCMomentumStrategy : Strategy
 			var value1 = GetAppliedPrice(_price1, candle);
 			var value2 = GetAppliedPrice(_price2, candle);
 
-			_priceBuffer.Enqueue(value2);
+			_priceBuffer.Add(value2);
 			if (_priceBuffer.Count > _momentumLength)
-				_priceBuffer.Dequeue();
+				try { _priceBuffer.RemoveAt(0); } catch { }
 
 			if (_priceBuffer.Count < _momentumLength)
 				return null;
 
-			var reference = _priceBuffer.Peek();
+			var reference = _priceBuffer[0];
 			var momentum = value1 - reference;
 			var time = candle.OpenTime;
 
-			var smooth1 = _ma1.Process(new DecimalIndicatorValue(_ma1, momentum, time) { IsFinal = true }).ToDecimal();
-			var smooth2 = _ma2.Process(new DecimalIndicatorValue(_ma2, smooth1, time) { IsFinal = true }).ToDecimal();
-			var smooth3 = _ma3.Process(new DecimalIndicatorValue(_ma3, smooth2, time) { IsFinal = true }).ToDecimal();
+			var smooth1Result = _ma1.Process(new DecimalIndicatorValue(_ma1, momentum, time) { IsFinal = true });
+			if (!_ma1.IsFormed)
+				return null;
+			var smooth1 = smooth1Result.ToDecimal();
 
+			var smooth2Result = _ma2.Process(new DecimalIndicatorValue(_ma2, smooth1, time) { IsFinal = true });
+			if (!_ma2.IsFormed)
+				return null;
+			var smooth2 = smooth2Result.ToDecimal();
+
+			var smooth3Result = _ma3.Process(new DecimalIndicatorValue(_ma3, smooth2, time) { IsFinal = true });
 			if (!_ma3.IsFormed)
 				return null;
+			var smooth3 = smooth3Result.ToDecimal();
 
 			return point > 0m ? smooth3 * 100m / point : smooth3;
 		}

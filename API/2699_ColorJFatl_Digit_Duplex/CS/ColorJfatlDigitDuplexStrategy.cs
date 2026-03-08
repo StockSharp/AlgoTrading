@@ -51,9 +51,9 @@ public class ColorJfatlDigitDuplexStrategy : Strategy
 
 	public ColorJfatlDigitDuplexStrategy()
 	{
-		_longCandleType = Param(nameof(LongCandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_longCandleType = Param(nameof(LongCandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Long Candle Type", "Timeframe for the long indicator", "General");
-		_shortCandleType = Param(nameof(ShortCandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_shortCandleType = Param(nameof(ShortCandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Short Candle Type", "Timeframe for the short indicator", "General");
 
 		_longJmaLength = Param(nameof(LongJmaLength), 5)
@@ -292,6 +292,22 @@ public class ColorJfatlDigitDuplexStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, LongCandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_longStopPrice = null;
+		_longTakePrice = null;
+		_shortStopPrice = null;
+		_shortTakePrice = null;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
@@ -401,7 +417,7 @@ public class ColorJfatlDigitDuplexStrategy : Strategy
 		if (volume <= 0)
 		return;
 
-		BuyMarket(volume);
+		BuyMarket();
 		SetupLongRisk(entryPrice);
 		ClearShortRisk();
 	}
@@ -415,7 +431,7 @@ public class ColorJfatlDigitDuplexStrategy : Strategy
 		if (volume <= 0)
 		return;
 
-		SellMarket(volume);
+		SellMarket();
 		SetupShortRisk(entryPrice);
 		ClearLongRisk();
 	}
@@ -499,9 +515,9 @@ public class ColorJfatlDigitDuplexStrategy : Strategy
 	private void CloseCurrentPosition()
 	{
 		if (Position > 0)
-			SellMarket(Math.Abs(Position));
+			SellMarket();
 		else if (Position < 0)
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
 	}
 
 	/// <summary>

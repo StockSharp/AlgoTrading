@@ -148,7 +148,7 @@ public class MamAcdStrategy : Strategy
 		.SetNotNegative()
 		.SetDisplay("Take Profit (pips)", "Take-profit distance in pips", "Risk management");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles used for calculations", "General");
 	}
 
@@ -166,7 +166,7 @@ public class MamAcdStrategy : Strategy
 		_previousMacd = null;
 		_readyForLong = false;
 		_readyForShort = false;
-		_pipSize = 1m;
+		_pipSize = 0m;
 	}
 
 	/// <inheritdoc />
@@ -266,7 +266,7 @@ public class MamAcdStrategy : Strategy
 			var volume = Volume + (Position < 0 ? -Position : 0m);
 			if (volume > 0)
 			{
-				BuyMarket(volume);
+				BuyMarket();
 				_readyForLong = false;
 			}
 		}
@@ -275,7 +275,7 @@ public class MamAcdStrategy : Strategy
 			var volume = Volume + (Position > 0 ? Position : 0m);
 			if (volume > 0)
 			{
-				SellMarket(volume);
+				SellMarket();
 				_readyForShort = false;
 			}
 		}

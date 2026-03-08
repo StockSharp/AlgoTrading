@@ -48,8 +48,8 @@ public class SelfOptimizingRsiOrMfiTraderV3Strategy : Strategy
 	private decimal? _stopPrice;
 	private decimal? _takeProfitPrice;
 
-	private IIndicator _indicator;
-	private AverageTrueRange _atr;
+	private IIndicator? _indicator;
+	private AverageTrueRange? _atr;
 
 	/// <summary>
 	/// Indicator source used for optimization.
@@ -252,11 +252,11 @@ public class SelfOptimizingRsiOrMfiTraderV3Strategy : Strategy
 	/// </summary>
 	public SelfOptimizingRsiOrMfiTraderV3Strategy()
 	{
-		_optimizingPeriods = Param(nameof(OptimizingPeriods), 144)
+		_optimizingPeriods = Param(nameof(OptimizingPeriods), 30)
 			.SetGreaterThanZero()
 			.SetDisplay("Optimization Bars", "Number of bars used for optimization", "General")
-			
-			.SetOptimize(60, 240, 30);
+
+			.SetOptimize(20, 100, 10);
 
 		_useAggressiveEntries = Param(nameof(UseAggressiveEntries), false)
 			.SetDisplay("Aggressive Entries", "Allow entries without indicator crosses", "Trading");
@@ -321,7 +321,7 @@ public class SelfOptimizingRsiOrMfiTraderV3Strategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Breakeven Padding", "Padding in points applied after trigger", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for analysis", "General");
 
 		Volume = 1m;
@@ -649,7 +649,7 @@ public class SelfOptimizingRsiOrMfiTraderV3Strategy : Strategy
 		if (Position < 0m)
 			orderVolume += Math.Abs(Position);
 
-		BuyMarket(orderVolume);
+		BuyMarket();
 
 		_entryPrice = candle.ClosePrice;
 		_stopPrice = _entryPrice - stopLossDiff;
@@ -662,7 +662,7 @@ public class SelfOptimizingRsiOrMfiTraderV3Strategy : Strategy
 		if (Position > 0m)
 			orderVolume += Position;
 
-		SellMarket(orderVolume);
+		SellMarket();
 
 		_entryPrice = candle.ClosePrice;
 		_stopPrice = _entryPrice + stopLossDiff;
@@ -683,14 +683,14 @@ public class SelfOptimizingRsiOrMfiTraderV3Strategy : Strategy
 
 			if (_stopPrice is decimal stop && candle.LowPrice <= stop)
 			{
-				SellMarket(Position);
+				SellMarket();
 				ResetPositionState();
 				return;
 			}
 
 			if (_takeProfitPrice is decimal target && candle.HighPrice >= target)
 			{
-				SellMarket(Position);
+				SellMarket();
 				ResetPositionState();
 				return;
 			}
@@ -707,14 +707,14 @@ public class SelfOptimizingRsiOrMfiTraderV3Strategy : Strategy
 
 			if (_stopPrice is decimal stop && candle.HighPrice >= stop)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				ResetPositionState();
 				return;
 			}
 
 			if (_takeProfitPrice is decimal target && candle.LowPrice <= target)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				ResetPositionState();
 				return;
 			}

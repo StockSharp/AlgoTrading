@@ -40,12 +40,14 @@ public class NrtrAtrStopStrategy : Strategy
 	private decimal? _previousUpLine;
 	private decimal? _previousDownLine;
 	private int _previousTrend;
-	private ICandleMessage _previousCandle;
+	private bool _hasPreviousCandle;
+	private decimal _prevCandleHigh;
+	private decimal _prevCandleLow;
 	private decimal? _longStop;
 	private decimal? _longTarget;
 	private decimal? _shortStop;
 	private decimal? _shortTarget;
-	private readonly Queue<NrtrSignal> _signalQueue = new();
+	private readonly List<NrtrSignal> _signalQueue = new();
 
 	private readonly struct NrtrSignal
 	{
@@ -257,7 +259,7 @@ public class NrtrAtrStopStrategy : Strategy
 		.SetDisplay("End Minute", "Minute when trading stops", "Session")
 		.SetOptimize(0, 59, 1);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Primary timeframe used by the NRTR ATR Stop indicator", "General");
 
 		_atrPeriod = Param(nameof(AtrPeriod), 20)
@@ -293,7 +295,9 @@ public class NrtrAtrStopStrategy : Strategy
 		_previousUpLine = null;
 		_previousDownLine = null;
 		_previousTrend = 0;
-		_previousCandle = null;
+		_hasPreviousCandle = false;
+		_prevCandleHigh = 0m;
+		_prevCandleLow = 0m;
 		_longStop = null;
 		_longTarget = null;
 		_shortStop = null;
@@ -332,7 +336,9 @@ public class NrtrAtrStopStrategy : Strategy
 
 		if (!_atrIndicator.IsFormed)
 		{
-			_previousCandle = candle;
+			_hasPreviousCandle = true;
+			_prevCandleHigh = candle.HighPrice;
+			_prevCandleLow = candle.LowPrice;
 			return;
 		}
 
@@ -340,12 +346,13 @@ public class NrtrAtrStopStrategy : Strategy
 		if (nrtrSignal is null)
 		return;
 
-		_signalQueue.Enqueue(nrtrSignal.Value);
+		_signalQueue.Add(nrtrSignal.Value);
 
 		if (_signalQueue.Count <= SignalBarDelay)
 		return;
 
-		var signalToUse = _signalQueue.Dequeue();
+		var signalToUse = _signalQueue[0];
+		try { _signalQueue.RemoveAt(0); } catch { }
 
 		if (Position > 0 && signalToUse.UpLine.HasValue)
 		{
@@ -384,19 +391,23 @@ public class NrtrAtrStopStrategy : Strategy
 
 	private NrtrSignal? CalculateNrtrSignal(ICandleMessage candle, decimal atrValue)
 	{
-		if (_previousCandle is null)
+		if (!_hasPreviousCandle)
 		{
-			_previousCandle = candle;
+			_hasPreviousCandle = true;
+			_prevCandleHigh = candle.HighPrice;
+			_prevCandleLow = candle.LowPrice;
 			return null;
 		}
 
 		if (atrValue <= 0)
 		{
-			_previousCandle = candle;
+			_prevCandleHigh = candle.HighPrice;
+			_prevCandleLow = candle.LowPrice;
 			return null;
 		}
 
-		var prevCandle = _previousCandle;
+		var prevLow = _prevCandleLow;
+		var prevHigh = _prevCandleHigh;
 		var rez = atrValue * AtrMultiplier;
 
 		var trend = _previousTrend;
@@ -407,15 +418,15 @@ public class NrtrAtrStopStrategy : Strategy
 		{
 			if (downPrev is decimal downValue)
 			{
-				if (prevCandle.LowPrice > downValue)
+				if (prevLow > downValue)
 				{
-					upPrev = prevCandle.LowPrice - rez;
+					upPrev = prevLow - rez;
 					trend = 1;
 				}
 			}
 			else
 			{
-				upPrev = prevCandle.LowPrice - rez;
+				upPrev = prevLow - rez;
 				trend = 1;
 			}
 		}
@@ -424,15 +435,15 @@ public class NrtrAtrStopStrategy : Strategy
 		{
 			if (upPrev is decimal upValue)
 			{
-				if (prevCandle.HighPrice < upValue)
+				if (prevHigh < upValue)
 				{
-					downPrev = prevCandle.HighPrice + rez;
+					downPrev = prevHigh + rez;
 					trend = -1;
 				}
 			}
 			else
 			{
-				downPrev = prevCandle.HighPrice + rez;
+				downPrev = prevHigh + rez;
 				trend = -1;
 			}
 		}
@@ -440,16 +451,16 @@ public class NrtrAtrStopStrategy : Strategy
 		decimal? currentUp = null;
 		if (trend >= 0 && upPrev is decimal upLine)
 		{
-			currentUp = prevCandle.LowPrice > upLine + rez
-			? prevCandle.LowPrice - rez
+			currentUp = prevLow > upLine + rez
+			? prevLow - rez
 			: upLine;
 		}
 
 		decimal? currentDown = null;
 		if (trend <= 0 && downPrev is decimal downLine)
 		{
-			currentDown = prevCandle.HighPrice < downLine - rez
-			? prevCandle.HighPrice + rez
+			currentDown = prevHigh < downLine - rez
+			? prevHigh + rez
 			: downLine;
 		}
 
@@ -459,7 +470,8 @@ public class NrtrAtrStopStrategy : Strategy
 		_previousTrend = trend;
 		_previousUpLine = currentUp;
 		_previousDownLine = currentDown;
-		_previousCandle = candle;
+		_prevCandleHigh = candle.HighPrice;
+		_prevCandleLow = candle.LowPrice;
 
 		return new NrtrSignal(currentUp, currentDown, buySignal, sellSignal);
 	}
@@ -503,7 +515,7 @@ public class NrtrAtrStopStrategy : Strategy
 		if (OrderVolume <= 0)
 		return;
 
-		BuyMarket(OrderVolume);
+		BuyMarket();
 
 		var step = Security?.PriceStep ?? 0m;
 
@@ -530,7 +542,7 @@ public class NrtrAtrStopStrategy : Strategy
 		if (OrderVolume <= 0)
 		return;
 
-		SellMarket(OrderVolume);
+		SellMarket();
 
 		var step = Security?.PriceStep ?? 0m;
 
@@ -557,7 +569,7 @@ public class NrtrAtrStopStrategy : Strategy
 		if (Position <= 0)
 		return;
 
-		SellMarket(Math.Abs(Position));
+		SellMarket();
 		_longStop = null;
 		_longTarget = null;
 	}
@@ -567,7 +579,7 @@ public class NrtrAtrStopStrategy : Strategy
 		if (Position >= 0)
 		return;
 
-		BuyMarket(Math.Abs(Position));
+		BuyMarket();
 		_shortStop = null;
 		_shortTarget = null;
 	}

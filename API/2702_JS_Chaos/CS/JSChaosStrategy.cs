@@ -35,18 +35,18 @@ public class JSChaosStrategy : Strategy
 	private readonly StrategyParam<int> _breakevenPlusPips;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private SmoothedMovingAverage _jaw;
-	private SmoothedMovingAverage _teeth;
-	private SmoothedMovingAverage _lips;
-	private SmoothedMovingAverage _ma21;
-	private SimpleMovingAverage _aoShort;
-	private SimpleMovingAverage _aoLong;
-	private SimpleMovingAverage _aoSma;
-	private StandardDeviation _stdDev;
+	private SmoothedMovingAverage _jaw = null!;
+	private SmoothedMovingAverage _teeth = null!;
+	private SmoothedMovingAverage _lips = null!;
+	private SmoothedMovingAverage _ma21 = null!;
+	private SimpleMovingAverage _aoShort = null!;
+	private SimpleMovingAverage _aoLong = null!;
+	private SimpleMovingAverage _aoSma = null!;
+	private StandardDeviation _stdDev = null!;
 
-	private readonly Queue<decimal> _jawQueue = new();
-	private readonly Queue<decimal> _teethQueue = new();
-	private readonly Queue<decimal> _lipsQueue = new();
+	private readonly List<decimal> _jawQueue = new();
+	private readonly List<decimal> _teethQueue = new();
+	private readonly List<decimal> _lipsQueue = new();
 
 	private decimal? _jawValue;
 	private decimal? _teethValue;
@@ -286,7 +286,7 @@ public class JSChaosStrategy : Strategy
 			.SetDisplay("Lips Shift", "Shift applied to the lips moving average", "Indicator")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to process", "General");
 	}
 
@@ -426,25 +426,34 @@ public class JSChaosStrategy : Strategy
 		var jawValue = _jaw.Process(new DecimalIndicatorValue(_jaw, median, candle.OpenTime) { IsFinal = true });
 		if (jawValue.IsFormed)
 		{
-			_jawQueue.Enqueue(jawValue.ToDecimal());
+			_jawQueue.Add(jawValue.ToDecimal());
 			if (_jawQueue.Count > JawShift)
-				_jawValue = _jawQueue.Dequeue();
+			{
+				_jawValue = _jawQueue[0];
+				try { _jawQueue.RemoveAt(0); } catch { }
+			}
 		}
 
 		var teethValue = _teeth.Process(new DecimalIndicatorValue(_teeth, median, candle.OpenTime) { IsFinal = true });
 		if (teethValue.IsFormed)
 		{
-			_teethQueue.Enqueue(teethValue.ToDecimal());
+			_teethQueue.Add(teethValue.ToDecimal());
 			if (_teethQueue.Count > TeethShift)
-				_teethValue = _teethQueue.Dequeue();
+			{
+				_teethValue = _teethQueue[0];
+				try { _teethQueue.RemoveAt(0); } catch { }
+			}
 		}
 
 		var lipsValue = _lips.Process(new DecimalIndicatorValue(_lips, median, candle.OpenTime) { IsFinal = true });
 		if (lipsValue.IsFormed)
 		{
-			_lipsQueue.Enqueue(lipsValue.ToDecimal());
+			_lipsQueue.Add(lipsValue.ToDecimal());
 			if (_lipsQueue.Count > LipsShift)
-				_lipsValue = _lipsQueue.Dequeue();
+			{
+				_lipsValue = _lipsQueue[0];
+				try { _lipsQueue.RemoveAt(0); } catch { }
+			}
 		}
 	}
 
@@ -747,7 +756,7 @@ public class JSChaosStrategy : Strategy
 				continue;
 
 			ExecuteTrade(pending);
-			_pendingOrders.RemoveAt(i);
+			try { _pendingOrders.RemoveAt(i); } catch { }
 		}
 	}
 
@@ -757,9 +766,9 @@ public class JSChaosStrategy : Strategy
 			return;
 
 		if (order.Side == Sides.Buy)
-			BuyMarket(order.Volume);
+			BuyMarket();
 		else
-			SellMarket(order.Volume);
+			SellMarket();
 
 		_activeTrades.Add(new ActiveTrade
 		{
@@ -862,7 +871,7 @@ public class JSChaosStrategy : Strategy
 				continue;
 
 			CloseTrade(trade);
-			_activeTrades.RemoveAt(i);
+			try { _activeTrades.RemoveAt(i); } catch { }
 		}
 	}
 
@@ -890,16 +899,16 @@ public class JSChaosStrategy : Strategy
 				continue;
 
 			CloseTrade(trade);
-			_activeTrades.RemoveAt(i);
+			try { _activeTrades.RemoveAt(i); } catch { }
 		}
 	}
 
 	private void CloseTrade(ActiveTrade trade)
 	{
 		if (trade.Side == Sides.Buy)
-			SellMarket(trade.Volume);
+			SellMarket();
 		else
-			BuyMarket(trade.Volume);
+			BuyMarket();
 	}
 
 	private bool IsTradingTime(DateTime time)
