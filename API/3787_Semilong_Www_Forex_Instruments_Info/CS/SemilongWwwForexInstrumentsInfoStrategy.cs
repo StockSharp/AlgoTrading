@@ -33,8 +33,8 @@ public class SemilongWwwForexInstrumentsInfoStrategy : Strategy
 	private readonly StrategyParam<int> _autoMarginDivider;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private Shift _shiftCloseOne = null!;
-	private Shift _shiftCloseTwo = null!;
+	private Shift? _shiftCloseOne;
+	private Shift? _shiftCloseTwo;
 	private decimal _pipSize;
 	private int _positionDirection;
 	private decimal _entryPrice;
@@ -52,11 +52,11 @@ public class SemilongWwwForexInstrumentsInfoStrategy : Strategy
 		_lossPoints = Param(nameof(LossPoints), 60)
 		.SetDisplay("Stop Loss (points)", "Distance in points for the protective stop", "Risk");
 
-		_shiftOne = Param(nameof(ShiftOne), 100)
+		_shiftOne = Param(nameof(ShiftOne), 20)
 		.SetNotNegative()
 		.SetDisplay("Primary Shift", "Number of bars between the current close and the comparison close", "Signals");
 
-		_moveOnePoints = Param(nameof(MoveOnePoints), 60)
+		_moveOnePoints = Param(nameof(MoveOnePoints), 10)
 		.SetNotNegative()
 		.SetDisplay("Primary Move (points)", "Minimum deviation in points from the primary shifted close", "Signals");
 
@@ -64,7 +64,7 @@ public class SemilongWwwForexInstrumentsInfoStrategy : Strategy
 		.SetNotNegative()
 		.SetDisplay("Secondary Shift", "Additional bars added on top of the primary shift", "Signals");
 
-		_moveTwoPoints = Param(nameof(MoveTwoPoints), 30)
+		_moveTwoPoints = Param(nameof(MoveTwoPoints), 5)
 		.SetNotNegative()
 		.SetDisplay("Secondary Move (points)", "Minimum distance between the two shifted closes", "Signals");
 
@@ -79,14 +79,14 @@ public class SemilongWwwForexInstrumentsInfoStrategy : Strategy
 		.SetNotNegative()
 		.SetDisplay("Trailing Stop (points)", "Trailing stop distance in points", "Risk");
 
-		_useAutoLot = Param(nameof(UseAutoLot), true)
+		_useAutoLot = Param(nameof(UseAutoLot), false)
 		.SetDisplay("Use Auto Lot", "Enable dynamic position sizing based on free margin", "Money Management");
 
 		_autoMarginDivider = Param(nameof(AutoMarginDivider), 7)
 		.SetRange(1, int.MaxValue)
 		.SetDisplay("Auto Margin Divider", "Divisor used to convert free margin into the lot size", "Money Management");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 		.SetDisplay("Candle Type", "Time frame used for signal calculations", "General");
 	}
 
@@ -209,6 +209,9 @@ public class SemilongWwwForexInstrumentsInfoStrategy : Strategy
 	{
 		base.OnReseted();
 
+		_shiftCloseOne = null;
+		_shiftCloseTwo = null;
+		_pipSize = 0m;
 		_positionDirection = 0;
 		_entryPrice = 0m;
 		_bestPrice = 0m;
@@ -236,11 +239,20 @@ public class SemilongWwwForexInstrumentsInfoStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var shiftedOneValue = _shiftCloseOne.Process(new DecimalIndicatorValue(_shiftCloseOne, candle.ClosePrice, candle.OpenTime)).ToDecimal();
-		var shiftedTwoValue = _shiftCloseTwo.Process(new DecimalIndicatorValue(_shiftCloseTwo, candle.ClosePrice, candle.OpenTime)).ToDecimal();
+		if (_shiftCloseOne == null || _shiftCloseTwo == null)
+			return;
+
+		var shiftedOneResult = _shiftCloseOne.Process(new DecimalIndicatorValue(_shiftCloseOne, candle.ClosePrice, candle.OpenTime) { IsFinal = true });
+		var shiftedTwoResult = _shiftCloseTwo.Process(new DecimalIndicatorValue(_shiftCloseTwo, candle.ClosePrice, candle.OpenTime) { IsFinal = true });
+
+		if (shiftedOneResult.IsEmpty || shiftedTwoResult.IsEmpty)
+			return;
 
 		if (!_shiftCloseOne.IsFormed || !_shiftCloseTwo.IsFormed)
 			return;
+
+		var shiftedOneValue = shiftedOneResult.GetValue<decimal>();
+		var shiftedTwoValue = shiftedTwoResult.GetValue<decimal>();
 
 		var bidPrice = GetSecurityValue<decimal?>(Level1Fields.BestBidPrice) ?? candle.ClosePrice;
 		var askPrice = GetSecurityValue<decimal?>(Level1Fields.BestAskPrice) ?? candle.ClosePrice;
@@ -260,9 +272,6 @@ public class SemilongWwwForexInstrumentsInfoStrategy : Strategy
 		if (Position != 0m)
 			return;
 
-		if (HasActiveOrders())
-			return;
-
 		var moveOne = MoveOnePoints * _pipSize;
 		var moveTwo = MoveTwoPoints * _pipSize;
 
@@ -273,13 +282,6 @@ public class SemilongWwwForexInstrumentsInfoStrategy : Strategy
 		var sellSignal = bidDelta > moveOne && closeDelta < -moveTwo;
 
 		if (!buySignal && !sellSignal)
-			return;
-
-		var volume = CalculateTradeVolume();
-		if (volume <= 0m)
-			return;
-
-		if (GetFreeMargin() < volume * 2000m)
 			return;
 
 		if (buySignal)

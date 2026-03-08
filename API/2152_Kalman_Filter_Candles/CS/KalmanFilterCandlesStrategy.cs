@@ -32,7 +32,7 @@ public class KalmanFilterCandlesStrategy : Strategy
 		_processNoise = Param(nameof(ProcessNoise), 1m)
 			.SetDisplay("Process Noise", "Kalman filter smoothing factor", "Parameters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for candles", "Common");
 	}
 
@@ -46,6 +46,8 @@ public class KalmanFilterCandlesStrategy : Strategy
 		base.OnReseted();
 		_prevColor = 1;
 		_hasPrev = false;
+		_openFilter = default;
+		_closeFilter = default;
 	}
 
 	/// <inheritdoc />
@@ -55,6 +57,9 @@ public class KalmanFilterCandlesStrategy : Strategy
 
 		_openFilter = new KalmanFilter { ProcessNoise = ProcessNoise, MeasurementNoise = ProcessNoise };
 		_closeFilter = new KalmanFilter { ProcessNoise = ProcessNoise, MeasurementNoise = ProcessNoise };
+
+		Indicators.Add(_openFilter);
+		Indicators.Add(_closeFilter);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
@@ -78,7 +83,7 @@ public class KalmanFilterCandlesStrategy : Strategy
 		var openRes = _openFilter.Process(openInput);
 		var closeRes = _closeFilter.Process(closeInput);
 
-		if (!_openFilter.IsFormed || !_closeFilter.IsFormed)
+		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		var openVal = openRes.ToDecimal();

@@ -1,197 +1,143 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Aftershock earnings drift strategy.
+/// Uses large price moves relative to ATR as proxy for earnings surprise.
 /// </summary>
 public class AftershockPlaybookStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _posSurprise;
-	private readonly StrategyParam<decimal> _negSurprise;
 	private readonly StrategyParam<decimal> _atrMult;
 	private readonly StrategyParam<int> _atrLen;
-	private readonly StrategyParam<bool> _reverse;
-	private readonly StrategyParam<bool> _timeExit;
-	private readonly StrategyParam<int> _holdDays;
+	private readonly StrategyParam<decimal> _surpriseThreshold;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _cooldownBars;
 
-	private decimal _entry;
-	private DateTime _entryTime;
-	private decimal _atr;
-	private bool _waitNext;
-	private bool _reenter;
-	private int _lastDir;
 	private decimal _prevClose;
+	private int _cooldownRemaining;
 
-	public decimal PositiveSurprise { get => _posSurprise.Value; set => _posSurprise.Value = value; }
-	public decimal NegativeSurprise { get => _negSurprise.Value; set => _negSurprise.Value = value; }
 	public decimal AtrMultiplier { get => _atrMult.Value; set => _atrMult.Value = value; }
 	public int AtrLength { get => _atrLen.Value; set => _atrLen.Value = value; }
-	public bool ReverseSignals { get => _reverse.Value; set => _reverse.Value = value; }
-	public bool UseTimeExit { get => _timeExit.Value; set => _timeExit.Value = value; }
-	public int HoldDays { get => _holdDays.Value; set => _holdDays.Value = value; }
+	public decimal SurpriseThreshold { get => _surpriseThreshold.Value; set => _surpriseThreshold.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int CooldownBars { get => _cooldownBars.Value; set => _cooldownBars.Value = value; }
 
 	public AftershockPlaybookStrategy()
 	{
-		_posSurprise = Param(nameof(PositiveSurprise), 0m).SetDisplay("Positive surprise ≥ (%)", "Minimum EPS surprise for long", "General");
-		_negSurprise = Param(nameof(NegativeSurprise), 0m).SetDisplay("Negative surprise ≤ (%)", "Maximum negative EPS surprise for short", "General");
-		_atrMult = Param(nameof(AtrMultiplier), 2m).SetDisplay("ATR stop ×", "ATR multiplier for short stop", "Risk");
-		_atrLen = Param(nameof(AtrLength), 14).SetDisplay("ATR length", "ATR lookback period", "Risk");
-		_reverse = Param(nameof(ReverseSignals), false).SetDisplay("Reverse signals", "Flip long/short polarity", "General");
-		_timeExit = Param(nameof(UseTimeExit), false).SetDisplay("Time exit", "Use time based exit", "Risk");
-		_holdDays = Param(nameof(HoldDays), 45).SetDisplay("Hold Days", "Calendar days to hold", "Risk");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Type of candles to process", "General");
+		_atrMult = Param(nameof(AtrMultiplier), 1.0m)
+			.SetDisplay("ATR Multiplier", "ATR multiplier for surprise threshold", "Strategy");
+
+		_atrLen = Param(nameof(AtrLength), 14)
+			.SetGreaterThanZero()
+			.SetDisplay("ATR Length", "ATR lookback period", "Strategy");
+
+		_surpriseThreshold = Param(nameof(SurpriseThreshold), 1.0m)
+			.SetDisplay("Surprise Threshold", "ATR multiplier for detecting surprise moves", "Strategy");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles", "General");
+
+		_cooldownBars = Param(nameof(CooldownBars), 10)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "Risk");
 	}
 
+	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		=> [(Security, CandleType)];
 
+	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_entry = 0m;
-		_entryTime = DateTime.MinValue;
-		_atr = 0m;
-		_waitNext = false;
-		_reenter = false;
-		_lastDir = 0;
 		_prevClose = 0;
+		_cooldownRemaining = 0;
 	}
 
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+
 		var atr = new AverageTrueRange { Length = AtrLength };
-		SubscribeCandles(CandleType).Bind(atr, ProcessCandle).Start();
+
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(atr, ProcessCandle)
+			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal atr)
+	private void ProcessCandle(ICandleMessage candle, decimal atrValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		_atr = atr;
-
-		if (TryGetEarningsSurprise(candle, out var surprise))
+		if (!IsFormedAndOnlineAndAllowTrading())
 		{
-			_waitNext = false;
-			_reenter = false;
-
-			if (Position != 0)
-			{
-				Exit(candle.ClosePrice, true);
-				return;
-			}
-
-			var longOk = surprise >= PositiveSurprise;
-			var shortOk = surprise <= NegativeSurprise;
-
-			if (ReverseSignals)
-				(longOk, shortOk) = (shortOk, longOk);
-
-			if (longOk && !_waitNext)
-			{
-				BuyMarket();
-				_entry = candle.ClosePrice;
-				_entryTime = candle.OpenTime;
-				_lastDir = 1;
-			}
-			else if (shortOk && !_waitNext)
-			{
-				SellMarket();
-				_entry = candle.ClosePrice;
-				_entryTime = candle.OpenTime;
-				_lastDir = -1;
-			}
+			_prevClose = candle.ClosePrice;
+			return;
 		}
 
-		if (Position < 0)
+		if (_prevClose == 0 || atrValue == 0)
 		{
-			var stop = _entry + AtrMultiplier * _atr;
-			if (candle.HighPrice >= stop)
-			{
-				Exit(stop);
-				return;
-			}
+			_prevClose = candle.ClosePrice;
+			return;
 		}
 
-		if (UseTimeExit && Position != 0)
+		if (_cooldownRemaining > 0)
 		{
-			var days = (candle.CloseTime.Date - _entryTime.Date).TotalDays;
-			if (days >= HoldDays)
-			{
-				Exit(candle.ClosePrice);
-				return;
-			}
+			_cooldownRemaining--;
+			_prevClose = candle.ClosePrice;
+			return;
 		}
 
-		if (Position == 0 && _reenter && _lastDir != 0)
-		{
-			if (_lastDir > 0)
-				BuyMarket();
-			else
-				SellMarket();
+		var change = candle.ClosePrice - _prevClose;
+		var threshold = atrValue * SurpriseThreshold;
 
-			_entry = candle.ClosePrice;
-			_entryTime = candle.OpenTime;
-			_reenter = false;
+		// Detect large price moves (earnings surprise proxy)
+		if (change > threshold && Position <= 0)
+		{
+			// Large positive move - go long (drift continuation)
+			if (Position < 0)
+				BuyMarket(Math.Abs(Position));
+			BuyMarket(Volume);
+			_cooldownRemaining = CooldownBars;
+		}
+		else if (change < -threshold && Position >= 0)
+		{
+			// Large negative move - go short (drift continuation)
+			if (Position > 0)
+				SellMarket(Math.Abs(Position));
+			SellMarket(Volume);
+			_cooldownRemaining = CooldownBars;
+		}
+		// Exit if price reverses by ATR amount
+		else if (Position > 0 && change < -atrValue * AtrMultiplier)
+		{
+			SellMarket(Math.Abs(Position));
+			_cooldownRemaining = CooldownBars;
+		}
+		else if (Position < 0 && change > atrValue * AtrMultiplier)
+		{
+			BuyMarket(Math.Abs(Position));
+			_cooldownRemaining = CooldownBars;
 		}
 
 		_prevClose = candle.ClosePrice;
-	}
-
-	private void Exit(decimal price, bool ignore = false)
-	{
-		if (Position > 0)
-			SellMarket(Position);
-		else if (Position < 0)
-			BuyMarket(-Position);
-
-		if (!ignore)
-		{
-			var pnl = (price - _entry) * _lastDir;
-			if (pnl > 0)
-				_reenter = true;
-			else
-				_waitNext = true;
-		}
-
-		_entry = 0m;
-		_entryTime = DateTime.MinValue;
-	}
-
-	private bool TryGetEarningsSurprise(ICandleMessage candle, out decimal surprise)
-	{
-		surprise = 0m;
-
-		if (_prevClose == 0 || _atr == 0)
-			return false;
-
-		// Use large price move relative to ATR as proxy for earnings surprise
-		var change = candle.ClosePrice - _prevClose;
-		var threshold = _atr * 1.5m;
-
-		if (Math.Abs(change) >= threshold)
-		{
-			surprise = change / _prevClose * 100m;
-			return true;
-		}
-
-		return false;
 	}
 }

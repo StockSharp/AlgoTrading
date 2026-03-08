@@ -45,13 +45,26 @@ public class MacdTrendModeStrategy : Strategy
 			.SetDisplay("Signal Length", "Signal line period", "MACD");
 		_trendMode = Param(nameof(TrendMode), TrendModes.Cloud)
 			.SetDisplay("Trend Mode", "Trend detection mode", "General");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		=> [(Security, CandleType)];
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevHist = default;
+		_prevPrevHist = default;
+		_hasPrevHist = false;
+		_hasPrevPrevHist = false;
+		_prevMacd = default;
+		_prevSignal = default;
+		_hasPrevLines = false;
+	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)

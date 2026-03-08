@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -16,122 +13,54 @@ namespace StockSharp.Samples.Strategies;
 /// <summary>
 /// Strategy that buys breakouts when ADX is below a threshold.
 /// Enters long if price closes above the previous highest close.
-/// Limits trades per day and exits at session end.
 /// </summary>
 public class AdxRangeBreakoutStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _stopLoss;
 	private readonly StrategyParam<int> _highestPeriod;
 	private readonly StrategyParam<int> _adxPeriod;
 	private readonly StrategyParam<decimal> _adxThreshold;
-	private readonly StrategyParam<int> _maxTradesPerDay;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _cooldownBars;
 
-	private AverageDirectionalIndex _adx;
-	private Highest _highest;
 	private decimal _prevHighest;
-	private int _tradesToday;
-	private DateTime _currentDay;
+	private int _cooldownRemaining;
 
-	private static readonly TimeSpan SessionStart = new(7, 30, 0);
-	private static readonly TimeSpan SessionEnd = new(14, 30, 0);
+	public int HighestPeriod { get => _highestPeriod.Value; set => _highestPeriod.Value = value; }
+	public int AdxPeriod { get => _adxPeriod.Value; set => _adxPeriod.Value = value; }
+	public decimal AdxThreshold { get => _adxThreshold.Value; set => _adxThreshold.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int CooldownBars { get => _cooldownBars.Value; set => _cooldownBars.Value = value; }
 
-	/// <summary>
-	/// Stop loss in price units.
-	/// </summary>
-	public decimal StopLoss
-	{
-		get => _stopLoss.Value;
-		set => _stopLoss.Value = value;
-	}
-
-	/// <summary>
-	/// Lookback period for highest close.
-	/// </summary>
-	public int HighestPeriod
-	{
-		get => _highestPeriod.Value;
-		set => _highestPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// ADX calculation period.
-	/// </summary>
-	public int AdxPeriod
-	{
-		get => _adxPeriod.Value;
-		set => _adxPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Maximum ADX value to allow entry.
-	/// </summary>
-	public decimal AdxThreshold
-	{
-		get => _adxThreshold.Value;
-		set => _adxThreshold.Value = value;
-	}
-
-	/// <summary>
-	/// Maximum trades allowed per day.
-	/// </summary>
-	public int MaxTradesPerDay
-	{
-		get => _maxTradesPerDay.Value;
-		set => _maxTradesPerDay.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type for processing.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initialize <see cref="AdxRangeBreakoutStrategy"/>.
-	/// </summary>
 	public AdxRangeBreakoutStrategy()
 	{
-		_stopLoss = Param(nameof(StopLoss), 1000m)
-			.SetDisplay("Stop Loss", "Stop-loss in price units", "Exits")
-			.SetGreaterThanZero();
-
-		_highestPeriod = Param(nameof(HighestPeriod), 34)
-			.SetDisplay("Highest Lookback", "Bars for highest close", "Indicators")
-			.SetGreaterThanZero();
+		_highestPeriod = Param(nameof(HighestPeriod), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("Highest Lookback", "Bars for highest close", "Indicators");
 
 		_adxPeriod = Param(nameof(AdxPeriod), 14)
-			.SetDisplay("ADX Period", "Period for ADX", "Indicators")
-			.SetGreaterThanZero();
+			.SetGreaterThanZero()
+			.SetDisplay("ADX Period", "Period for ADX", "Indicators");
 
-		_adxThreshold = Param(nameof(AdxThreshold), 17.5m)
-			.SetDisplay("ADX Threshold", "Upper ADX limit", "Indicators")
-			.SetGreaterThanZero();
-
-		_maxTradesPerDay = Param(nameof(MaxTradesPerDay), 3)
-			.SetDisplay("Max Trades Per Day", "Trade limit per session", "Risk")
-			.SetGreaterThanZero();
+		_adxThreshold = Param(nameof(AdxThreshold), 25m)
+			.SetDisplay("ADX Threshold", "Upper ADX limit for range", "Indicators");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
+
+		_cooldownBars = Param(nameof(CooldownBars), 15)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "Risk");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevHighest = default;
-		_tradesToday = default;
-		_currentDay = default;
+		_prevHighest = 0;
+		_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
@@ -139,25 +68,18 @@ public class AdxRangeBreakoutStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_adx = new AverageDirectionalIndex { Length = AdxPeriod };
-		_highest = new Highest { Length = HighestPeriod };
+		var adx = new AverageDirectionalIndex { Length = AdxPeriod };
+		var highest = new Highest { Length = HighestPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(_adx, _highest, ProcessCandle)
+			.BindEx(adx, highest, ProcessCandle)
 			.Start();
-
-		StartProtection(
-			takeProfit: null,
-			stopLoss: new Unit(StopLoss, UnitTypes.Absolute)
-		);
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _adx);
-			DrawIndicator(area, _highest);
 			DrawOwnTrades(area);
 		}
 	}
@@ -167,63 +89,47 @@ public class AdxRangeBreakoutStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!adxValue.IsFinal || !highestValue.IsFinal)
-			return;
-
-		if (!_highest.IsFormed)
-		{
-			_prevHighest = highestValue.GetValue<decimal>();
-			return;
-		}
-
-		if (candle.OpenTime.Date != _currentDay)
-		{
-			_currentDay = candle.OpenTime.Date;
-			_tradesToday = 0;
-		}
-
-		if (!IsWithinSession(candle.OpenTime))
-		{
-			if (Position != 0)
-			{
-				ClosePosition();
-				LogInfo("End of session exit.");
-			}
-
-			_prevHighest = highestValue.GetValue<decimal>();
-			return;
-		}
+		var curHighest = highestValue.ToDecimal();
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 		{
-			_prevHighest = highestValue.GetValue<decimal>();
+			_prevHighest = curHighest;
 			return;
 		}
 
-		var adxTyped = (AverageDirectionalIndexValue)adxValue;
-		var adx = adxTyped.MovingAverage;
-		if (adx is not decimal adxMa)
+		if (_prevHighest == 0)
 		{
-			_prevHighest = highestValue.GetValue<decimal>();
+			_prevHighest = curHighest;
 			return;
 		}
 
-		var prevHigh = _prevHighest;
-		var highest = highestValue.GetValue<decimal>();
+		var adxTyped = (IAverageDirectionalIndexValue)adxValue;
+		if (adxTyped.MovingAverage is not decimal adxMa)
+		{
+			_prevHighest = curHighest;
+			return;
+		}
 
-		if (Position == 0 && _tradesToday < MaxTradesPerDay && adxMa < AdxThreshold && candle.ClosePrice >= prevHigh)
+		if (_cooldownRemaining > 0)
+		{
+			_cooldownRemaining--;
+			_prevHighest = curHighest;
+			return;
+		}
+
+		// Buy breakout when ADX is low (range-bound market breaking out)
+		if (Position == 0 && adxMa < AdxThreshold && candle.ClosePrice > _prevHighest)
 		{
 			BuyMarket(Volume);
-			_tradesToday++;
-			LogInfo($"Long entry at {candle.ClosePrice} ADX={adxMa}");
+			_cooldownRemaining = CooldownBars;
+		}
+		// Exit long when ADX rises (trend established, take profit)
+		else if (Position > 0 && (adxMa >= AdxThreshold * 1.5m || candle.ClosePrice < _prevHighest * 0.98m))
+		{
+			SellMarket(Math.Abs(Position));
+			_cooldownRemaining = CooldownBars;
 		}
 
-		_prevHighest = highest;
-	}
-
-	private static bool IsWithinSession(DateTimeOffset time)
-	{
-		var t = time.TimeOfDay;
-		return t >= SessionStart && t <= SessionEnd;
+		_prevHighest = curHighest;
 	}
 }

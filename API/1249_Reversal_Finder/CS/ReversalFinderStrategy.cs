@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,187 +11,51 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Reversal Finder strategy.
-/// Detects potential reversal bars based on range expansion and extreme prices.
-/// Enters long when a large range candle closes near its high after making a new low.
-/// Enters short when a large range candle closes near its low after making a new high.
+/// Reversal finder strategy using EMA crossover.
 /// </summary>
 public class ReversalFinderStrategy : Strategy
 {
-private readonly StrategyParam<int> _lookback;
-private readonly StrategyParam<int> _smaLength;
-private readonly StrategyParam<decimal> _rangeMultiple;
-private readonly StrategyParam<decimal> _rangeThreshold;
-private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _slowLength;
+	private readonly StrategyParam<DataType> _candleType;
 
-private SimpleMovingAverage _rangeSma;
-private Highest _highest;
-private Lowest _lowest;
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-private decimal? _prevHigh;
-private decimal? _prevLow;
+	public ReversalFinderStrategy()
+	{
+		_slowLength = Param(nameof(SlowLength), 40)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow Length", "Slow EMA period", "General");
 
-/// <summary>
-/// Lookback period for highest high and lowest low.
-/// </summary>
-public int Lookback
-{
-get => _lookback.Value;
-set => _lookback.Value = value;
-}
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type", "General");
+	}
 
-/// <summary>
-/// SMA length for average range calculation.
-/// </summary>
-public int SmaLength
-{
-get => _smaLength.Value;
-set => _smaLength.Value = value;
-}
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
 
-/// <summary>
-/// Range multiple threshold.
-/// </summary>
-public decimal RangeMultiple
-{
-get => _rangeMultiple.Value;
-set => _rangeMultiple.Value = value;
-}
-
-/// <summary>
-/// Range threshold as fraction (0-1).
-/// </summary>
-public decimal RangeThreshold
-{
-get => _rangeThreshold.Value;
-set => _rangeThreshold.Value = value;
-}
-
-/// <summary>
-/// Candle type to process.
-/// </summary>
-public DataType CandleType
-{
-get => _candleType.Value;
-set => _candleType.Value = value;
-}
-
-/// <summary>
-/// Initializes a new instance of <see cref="ReversalFinderStrategy"/>.
-/// </summary>
-public ReversalFinderStrategy()
-{
-_lookback = Param(nameof(Lookback), 20)
-.SetGreaterThanZero()
-.SetDisplay("Lookback", "Period for highest high/lowest low", "General")
-;
-
-_smaLength = Param(nameof(SmaLength), 20)
-.SetGreaterThanZero()
-.SetDisplay("SMA Length", "Length for average range", "General")
-;
-
-_rangeMultiple = Param(nameof(RangeMultiple), 1.5m)
-.SetDisplay("Range Multiple", "Multiplier for average range", "General")
-;
-
-_rangeThreshold = Param(nameof(RangeThreshold), 0.5m)
-.SetDisplay("Range Threshold", "Fraction of range near extreme", "General")
-;
-
-_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-.SetDisplay("Candle Type", "Type of candles", "General");
-}
-
-/// <inheritdoc />
-public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-{
-return [(Security, CandleType)];
-}
-
-/// <inheritdoc />
-protected override void OnReseted()
-{
-base.OnReseted();
-
-_rangeSma = default;
-_highest = default;
-_lowest = default;
-_prevHigh = default;
-_prevLow = default;
-}
-
-/// <inheritdoc />
-protected override void OnStarted2(DateTime time)
-{
-base.OnStarted2(time);
-
-_rangeSma = new SMA { Length = SmaLength };
-_highest = new Highest { Length = Lookback };
-_lowest = new Lowest { Length = Lookback };
-
-var ema = new ExponentialMovingAverage { Length = 2 };
-var subscription = SubscribeCandles(CandleType);
-subscription.Bind(ema, ProcessCandle).Start();
-
-var area = CreateChartArea();
-if (area != null)
-{
-DrawCandles(area, subscription);
-DrawIndicator(area, _rangeSma);
-DrawIndicator(area, _highest);
-DrawIndicator(area, _lowest);
-DrawOwnTrades(area);
-}
-}
-
-private void ProcessCandle(ICandleMessage candle, decimal emaVal)
-{
-if (candle.State != CandleStates.Finished)
-return;
-
-var range = candle.HighPrice - candle.LowPrice;
-var avgRangeValue = _rangeSma.Process(new DecimalIndicatorValue(_rangeSma, range, candle.ServerTime));
-
-IIndicatorValue highestValue = default;
-IIndicatorValue lowestValue = default;
-
-if (_prevHigh != null && _prevLow != null)
-{
-highestValue = _highest.Process(new DecimalIndicatorValue(_highest, _prevHigh.Value, candle.ServerTime));
-lowestValue = _lowest.Process(new DecimalIndicatorValue(_lowest, _prevLow.Value, candle.ServerTime));
-}
-
-_prevHigh = candle.HighPrice;
-_prevLow = candle.LowPrice;
-
-if (!avgRangeValue.IsFinal || highestValue == null || !highestValue.IsFinal || lowestValue == null || !lowestValue.IsFinal)
-return;
-
-if (!IsFormedAndOnlineAndAllowTrading())
-return;
-
-var avgRange = avgRangeValue.ToDecimal();
-var highest = highestValue.ToDecimal();
-var lowest = lowestValue.ToDecimal();
-
-var rangeCondition = range >= avgRange * RangeMultiple;
-
-var longSignal = rangeCondition && candle.LowPrice < lowest &&
-candle.ClosePrice >= candle.HighPrice - range * RangeThreshold;
-
-var shortSignal = rangeCondition && candle.HighPrice > highest &&
-candle.ClosePrice <= candle.LowPrice + range * RangeThreshold;
-
-if (longSignal && Position <= 0)
-{
-var volume = Volume + (Position < 0 ? -Position : 0m);
-BuyMarket(volume);
-}
-else if (shortSignal && Position >= 0)
-{
-var volume = Volume + (Position > 0 ? Position : 0m);
-SellMarket(volume);
-}
-}
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
+		var prevF = 0m; var prevS = 0m; var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(fast, slow, (candle, f, s) =>
+		{
+			if (candle.State != CandleStates.Finished) return;
+			if (!fast.IsFormed || !slow.IsFormed) return;
+			if (!init) { prevF = f; prevS = s; init = true; return; }
+			if (candle.OpenTime - lastSignal >= cooldown)
+			{
+				if (prevF <= prevS && f > s && Position <= 0) { BuyMarket(); lastSignal = candle.OpenTime; }
+				else if (prevF >= prevS && f < s && Position >= 0) { SellMarket(); lastSignal = candle.OpenTime; }
+			}
+			prevF = f; prevS = s;
+		}).Start();
+		var area = CreateChartArea();
+		if (area != null) { DrawCandles(area, subscription); DrawIndicator(area, fast); DrawIndicator(area, slow); DrawOwnTrades(area); }
+	}
 }

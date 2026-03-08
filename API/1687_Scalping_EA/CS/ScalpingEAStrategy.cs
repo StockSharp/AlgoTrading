@@ -39,7 +39,7 @@ public class ScalpingEAStrategy : Strategy
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "ATR period for stops", "Indicators");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -58,7 +58,7 @@ public class ScalpingEAStrategy : Strategy
 
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
-		var atr = new AverageTrueRange { Length = AtrPeriod };
+		var atr = new StandardDeviation { Length = AtrPeriod };
 
 		SubscribeCandles(CandleType)
 			.Bind(rsi, ema, atr, ProcessCandle)

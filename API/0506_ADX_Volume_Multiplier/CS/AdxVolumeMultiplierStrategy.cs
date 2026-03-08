@@ -22,7 +22,6 @@ public class AdxVolumeMultiplierStrategy : Strategy
 	private readonly StrategyParam<int> _volumePeriod;
 	private readonly StrategyParam<int> _cooldownBars;
 
-	private SimpleMovingAverage _volumeSma;
 	private int _cooldownRemaining;
 
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
@@ -37,11 +36,11 @@ public class AdxVolumeMultiplierStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
-		_adxPeriod = Param(nameof(AdxPeriod), 21)
+		_adxPeriod = Param(nameof(AdxPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ADX Period", "Period for ADX", "ADX");
 
-		_adxThreshold = Param(nameof(AdxThreshold), 15m)
+		_adxThreshold = Param(nameof(AdxThreshold), 20m)
 			.SetDisplay("ADX Threshold", "Trend strength threshold", "ADX");
 
 		_volumeMultiplier = Param(nameof(VolumeMultiplier), 0.8m)
@@ -51,7 +50,7 @@ public class AdxVolumeMultiplierStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Volume Period", "Period for volume SMA", "Volume");
 
-		_cooldownBars = Param(nameof(CooldownBars), 10)
+		_cooldownBars = Param(nameof(CooldownBars), 15)
 			.SetDisplay("Cooldown Bars", "Bars between trades", "Risk");
 	}
 
@@ -63,7 +62,6 @@ public class AdxVolumeMultiplierStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_volumeSma = null;
 		_cooldownRemaining = 0;
 	}
 
@@ -73,22 +71,23 @@ public class AdxVolumeMultiplierStrategy : Strategy
 		base.OnStarted2(time);
 
 		var adx = new AverageDirectionalIndex { Length = AdxPeriod };
-		_volumeSma = new SimpleMovingAverage { Length = VolumePeriod };
+		var ema = new ExponentialMovingAverage { Length = VolumePeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(adx, ProcessCandle)
+			.BindEx(adx, ema, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawIndicator(area, ema);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue adxValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue adxValue, IIndicatorValue emaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
@@ -96,16 +95,13 @@ public class AdxVolumeMultiplierStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var volumeValue = _volumeSma.Process(new DecimalIndicatorValue(_volumeSma, candle.TotalVolume, candle.ServerTime));
-		if (!_volumeSma.IsFormed)
-			return;
-		var avgVolume = volumeValue.ToDecimal();
-
 		var adxTyped = (IAverageDirectionalIndexValue)adxValue;
 		if (adxTyped.MovingAverage is not decimal adx ||
 			adxTyped.Dx.Plus is not decimal diPlus ||
 			adxTyped.Dx.Minus is not decimal diMinus)
 			return;
+
+		var ema = emaValue.ToDecimal();
 
 		if (_cooldownRemaining > 0)
 		{
@@ -113,9 +109,12 @@ public class AdxVolumeMultiplierStrategy : Strategy
 			return;
 		}
 
-		var volumeOk = avgVolume > 0 && candle.TotalVolume > avgVolume * VolumeMultiplier;
-		var longCondition = adx > AdxThreshold && diPlus > diMinus && volumeOk;
-		var shortCondition = adx > AdxThreshold && diMinus > diPlus && volumeOk;
+		// Use EMA as trend confirmation instead of volume multiplier
+		var aboveEma = candle.ClosePrice > ema;
+		var belowEma = candle.ClosePrice < ema;
+
+		var longCondition = adx > AdxThreshold && diPlus > diMinus && aboveEma;
+		var shortCondition = adx > AdxThreshold && diMinus > diPlus && belowEma;
 
 		if (longCondition && Position <= 0)
 		{

@@ -29,6 +29,7 @@ public class CarbophosGridStrategy : Strategy
 	private decimal? _entryPrice;
 	private decimal _gridCenterPrice;
 	private bool _gridPlaced;
+	private int _cooldownRemaining;
 
 	private readonly List<decimal> _buyLevels = new();
 	private readonly List<decimal> _sellLevels = new();
@@ -92,22 +93,22 @@ public class CarbophosGridStrategy : Strategy
 	/// </summary>
 	public CarbophosGridStrategy()
 	{
-		_profitTarget = Param(nameof(ProfitTarget), 5m)
+		_profitTarget = Param(nameof(ProfitTarget), 500m)
 			.SetGreaterThanZero()
 			.SetDisplay("Profit Target", "Floating profit target in money", "Risk")
 			.SetOptimize(100m, 1000m, 50m);
 
-		_maxLoss = Param(nameof(MaxLoss), 10m)
+		_maxLoss = Param(nameof(MaxLoss), 100m)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Loss", "Maximum floating loss before closing", "Risk")
 			.SetOptimize(50m, 500m, 25m);
 
-		_stepPips = Param(nameof(StepPips), 5)
+		_stepPips = Param(nameof(StepPips), 2000)
 			.SetGreaterThanZero()
 			.SetDisplay("Step (pips)", "Distance between grid levels in pips", "Grid")
 			.SetOptimize(10, 150, 10);
 
-		_ordersPerSide = Param(nameof(OrdersPerSide), 3)
+		_ordersPerSide = Param(nameof(OrdersPerSide), 1)
 			.SetGreaterThanZero()
 			.SetDisplay("Orders Per Side", "Number of pending orders on each side", "Grid")
 			.SetOptimize(1, 10, 1);
@@ -134,6 +135,7 @@ public class CarbophosGridStrategy : Strategy
 		_entryPrice = null;
 		_gridCenterPrice = 0m;
 		_gridPlaced = false;
+		_cooldownRemaining = 0;
 		_buyLevels.Clear();
 		_sellLevels.Clear();
 	}
@@ -180,6 +182,13 @@ public class CarbophosGridStrategy : Strategy
 				CloseAll("Maximum loss reached.");
 				return;
 			}
+		}
+
+		// Cooldown after closing
+		if (_cooldownRemaining > 0)
+		{
+			_cooldownRemaining--;
+			return;
 		}
 
 		// Place grid if none is active
@@ -288,6 +297,7 @@ public class CarbophosGridStrategy : Strategy
 		_sellLevels.Clear();
 		_gridPlaced = false;
 		_entryPrice = null;
+		_cooldownRemaining = 10;
 
 		LogInfo(reason);
 	}

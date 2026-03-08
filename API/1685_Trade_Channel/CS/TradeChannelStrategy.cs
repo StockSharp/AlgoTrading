@@ -37,7 +37,7 @@ public class TradeChannelStrategy : Strategy
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "ATR length for stop calculation", "Indicators");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -59,7 +59,7 @@ public class TradeChannelStrategy : Strategy
 
 		var highest = new Highest { Length = ChannelPeriod };
 		var lowest = new Lowest { Length = ChannelPeriod };
-		var atr = new AverageTrueRange { Length = AtrPeriod };
+		var atr = new StandardDeviation { Length = AtrPeriod };
 
 		SubscribeCandles(CandleType)
 			.Bind(highest, lowest, atr, ProcessCandle)

@@ -50,7 +50,7 @@ public class LaguerreRocStrategy : Strategy
 		_downLevel = Param(nameof(DownLevel), 0.25m)
 			.SetDisplay("Down Level", "Oversold threshold", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -67,6 +67,7 @@ public class LaguerreRocStrategy : Strategy
 		_isFirst = true;
 		_prevColor = 2;
 		_l0 = _l1 = _l2 = _l3 = 0m;
+		_roc = default;
 	}
 
 	/// <inheritdoc />

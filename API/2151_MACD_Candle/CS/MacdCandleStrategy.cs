@@ -50,7 +50,7 @@ public class MacdCandleStrategy : Strategy
 			.SetDisplay("Signal", "Signal period", "Indicator")
 			.SetOptimize(5, 15, 1);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type for indicators", "General");
 	}
 
@@ -65,6 +65,8 @@ public class MacdCandleStrategy : Strategy
 	{
 		base.OnReseted();
 		_previousColor = null;
+		_macdOpen = default;
+		_macdClose = default;
 	}
 
 	/// <inheritdoc />
@@ -92,6 +94,9 @@ public class MacdCandleStrategy : Strategy
 			SignalMa = { Length = SignalLength }
 		};
 
+		Indicators.Add(_macdOpen);
+		Indicators.Add(_macdClose);
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
 			.Bind(ProcessCandle)
@@ -109,7 +114,7 @@ public class MacdCandleStrategy : Strategy
 		var openValue = _macdOpen.Process(openInput);
 		var closeValue = _macdClose.Process(closeInput);
 
-		if (!_macdOpen.IsFormed || !_macdClose.IsFormed)
+		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		var openMacd = ((IMovingAverageConvergenceDivergenceSignalValue)openValue).Macd;

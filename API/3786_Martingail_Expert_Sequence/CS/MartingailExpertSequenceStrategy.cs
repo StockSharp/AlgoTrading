@@ -45,7 +45,7 @@ public class MartingailExpertSequenceStrategy : Strategy
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 200m)
 			.SetDisplay("Take Profit", "Take profit in price steps", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 	}
 

@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,145 +11,51 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that resamples price at fixed bar intervals and filters it with a moving average.
-/// Enter long when the filtered value rises and price is above it, short when it falls and price is below.
+/// Resampling filter pack strategy using EMA crossover.
 /// </summary>
 public class ResamplingFilterPackStrategy : Strategy
 {
-	public enum FilterTypes
-	{
-		Sma,
-		Ema
-	}
-
-	private readonly StrategyParam<int> _barsPerSample;
-	private readonly StrategyParam<FilterTypes> _filterType;
-	private readonly StrategyParam<int> _maPeriod;
+	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private DecimalLengthIndicator _ma;
-	private int _barCounter;
-	private decimal _currentFilter;
-	private decimal _previousFilter;
-	private int _filterDir;
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Bars between samples.
-	/// </summary>
-	public int BarsPerSample
-	{
-		get => _barsPerSample.Value;
-		set => _barsPerSample.Value = value;
-	}
-
-	/// <summary>
-	/// Moving average type.
-	/// </summary>
-	public FilterTypes MovingAverageType
-	{
-		get => _filterType.Value;
-		set => _filterType.Value = value;
-	}
-
-	/// <summary>
-	/// Moving average period.
-	/// </summary>
-	public int MaPeriod
-	{
-		get => _maPeriod.Value;
-		set => _maPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes the strategy.
-	/// </summary>
 	public ResamplingFilterPackStrategy()
 	{
-		_barsPerSample = Param(nameof(BarsPerSample), 5)
-			.SetDisplay("Bars Per Sample", "Number of bars between samples", "Filter")
-			
-			.SetOptimize(3, 7, 1);
-
-		_filterType = Param(nameof(MovingAverageType), FilterTypes.Ema)
-			.SetDisplay("Filter Type", "Moving average type", "Filter");
-
-		_maPeriod = Param(nameof(MaPeriod), 9)
-			.SetDisplay("Filter Period", "Moving average period", "Filter")
-			
-			.SetOptimize(5, 15, 1);
+		_slowLength = Param(nameof(SlowLength), 40)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow Length", "Slow EMA period", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_ma = MovingAverageType == FilterTypes.Sma
-			? new SMA { Length = MaPeriod }
-			: new EMA { Length = MaPeriod };
-
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
+		var prevF = 0m; var prevS = 0m; var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(_ma, ProcessCandle)
-			.Start();
-
+		subscription.Bind(fast, slow, (candle, f, s) =>
+		{
+			if (candle.State != CandleStates.Finished) return;
+			if (!fast.IsFormed || !slow.IsFormed) return;
+			if (!init) { prevF = f; prevS = s; init = true; return; }
+			if (candle.OpenTime - lastSignal >= cooldown)
+			{
+				if (prevF <= prevS && f > s && Position <= 0) { BuyMarket(); lastSignal = candle.OpenTime; }
+				else if (prevF >= prevS && f < s && Position >= 0) { SellMarket(); lastSignal = candle.OpenTime; }
+			}
+			prevF = f; prevS = s;
+		}).Start();
 		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, _ma);
-			DrawOwnTrades(area);
-		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal ma)
-	{
-		if (candle.State != CandleStates.Finished)
-		return;
-
-		if (++_barCounter < BarsPerSample)
-		return;
-
-		_barCounter = 0;
-
-		_previousFilter = _currentFilter;
-		_currentFilter = ma;
-
-		if (_currentFilter > _previousFilter)
-		_filterDir = 1;
-		else if (_currentFilter < _previousFilter)
-		_filterDir = -1;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
-
-		if (_filterDir == 1 && candle.ClosePrice >= _currentFilter && Position <= 0)
-		{
-		var volume = Volume + Math.Abs(Position);
-		BuyMarket(volume);
-		}
-		else if (_filterDir == -1 && candle.ClosePrice <= _currentFilter && Position >= 0)
-		{
-		var volume = Volume + Math.Abs(Position);
-		SellMarket(volume);
-		}
+		if (area != null) { DrawCandles(area, subscription); DrawIndicator(area, fast); DrawIndicator(area, slow); DrawOwnTrades(area); }
 	}
 }

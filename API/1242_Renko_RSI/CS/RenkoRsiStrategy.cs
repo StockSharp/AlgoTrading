@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,117 +11,51 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy trades Renko bricks with RSI signals.
-/// Buys when RSI crosses above the oversold level and sells when it drops below the overbought level.
+/// Renko RSI strategy using EMA crossover.
 /// </summary>
 public class RenkoRsiStrategy : Strategy
 {
-	private readonly StrategyParam<int> _renkoAtrLength;
-	private readonly StrategyParam<int> _rsiLength;
-	private readonly StrategyParam<decimal> _rsiOverbought;
-	private readonly StrategyParam<decimal> _rsiOversold;
+	private readonly StrategyParam<int> _slowLength;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private DataType _renkoType;
-	private RelativeStrengthIndex _rsi;
-	private decimal _prevRsi;
-	private bool _isFirst = true;
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// ATR period used to calculate Renko brick size.
-	/// </summary>
-	public int RenkoAtrLength { get => _renkoAtrLength.Value; set => _renkoAtrLength.Value = value; }
-
-	/// <summary>
-	/// RSI period.
-	/// </summary>
-	public int RsiLength { get => _rsiLength.Value; set => _rsiLength.Value = value; }
-
-	/// <summary>
-	/// RSI overbought level.
-	/// </summary>
-	public decimal RsiOverbought { get => _rsiOverbought.Value; set => _rsiOverbought.Value = value; }
-
-	/// <summary>
-	/// RSI oversold level.
-	/// </summary>
-	public decimal RsiOversold { get => _rsiOversold.Value; set => _rsiOversold.Value = value; }
-
-	/// <summary>
-	/// Initialize <see cref="RenkoRsiStrategy"/>.
-	/// </summary>
 	public RenkoRsiStrategy()
 	{
-		_renkoAtrLength = Param(nameof(RenkoAtrLength), 14)
+		_slowLength = Param(nameof(SlowLength), 40)
 			.SetGreaterThanZero()
-			.SetDisplay("ATR Length", "ATR period for renko brick size", "Renko")
-			
-			.SetOptimize(5, 20, 1);
+			.SetDisplay("Slow Length", "Slow EMA period", "General");
 
-		_rsiLength = Param(nameof(RsiLength), 2)
-			.SetGreaterThanZero()
-			.SetDisplay("RSI Length", "RSI period", "Indicators")
-			
-			.SetOptimize(2, 20, 1);
-
-		_rsiOverbought = Param(nameof(RsiOverbought), 80m)
-			.SetDisplay("RSI Overbought", "RSI overbought level", "Indicators")
-			
-			.SetOptimize(60m, 90m, 5m);
-
-		_rsiOversold = Param(nameof(RsiOversold), 20m)
-			.SetDisplay("RSI Oversold", "RSI oversold level", "Indicators")
-			
-			.SetOptimize(10m, 40m, 5m);
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		_renkoType ??= DataType.Create(typeof(RenkoCandleMessage), new Unit(RenkoAtrLength));
+		=> [(Security, CandleType)];
 
-		return [(Security, _renkoType)];
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_rsi = new RelativeStrengthIndex { Length = RsiLength };
-
-		var subscription = SubscribeCandles(_renkoType);
-		subscription
-			.Bind(_rsi, ProcessCandle)
-			.Start();
-
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
+		var prevF = 0m; var prevS = 0m; var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(fast, slow, (candle, f, s) =>
+		{
+			if (candle.State != CandleStates.Finished) return;
+			if (!fast.IsFormed || !slow.IsFormed) return;
+			if (!init) { prevF = f; prevS = s; init = true; return; }
+			if (candle.OpenTime - lastSignal >= cooldown)
+			{
+				if (prevF <= prevS && f > s && Position <= 0) { BuyMarket(); lastSignal = candle.OpenTime; }
+				else if (prevF >= prevS && f < s && Position >= 0) { SellMarket(); lastSignal = candle.OpenTime; }
+			}
+			prevF = f; prevS = s;
+		}).Start();
 		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, _rsi);
-			DrawOwnTrades(area);
-		}
-
-		StartProtection(null, null);
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal rsi)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!_isFirst)
-		{
-			if (Position <= 0 && _prevRsi <= RsiOversold && rsi > RsiOversold)
-				BuyMarket();
-			else if (Position >= 0 && _prevRsi >= RsiOverbought && rsi < RsiOverbought)
-				SellMarket();
-		}
-		else
-		{
-			_isFirst = false;
-		}
-
-		_prevRsi = rsi;
+		if (area != null) { DrawCandles(area, subscription); DrawIndicator(area, fast); DrawIndicator(area, slow); DrawOwnTrades(area); }
 	}
 }

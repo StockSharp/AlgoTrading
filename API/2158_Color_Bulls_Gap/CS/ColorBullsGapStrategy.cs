@@ -21,10 +21,10 @@ public class ColorBullsGapStrategy : Strategy
 	private readonly StrategyParam<int> _length1;
 	private readonly StrategyParam<int> _length2;
 	private readonly StrategyParam<DataType> _candleType;
-	private SimpleMovingAverage _smaClose;
-	private SimpleMovingAverage _smaOpen;
-	private SimpleMovingAverage _smaBullsC;
-	private SimpleMovingAverage _smaBullsO;
+	private ExponentialMovingAverage _smaClose;
+	private ExponentialMovingAverage _smaOpen;
+	private ExponentialMovingAverage _smaBullsC;
+	private ExponentialMovingAverage _smaBullsO;
 	private readonly Queue<int> _colorHistory = new();
 	private decimal _prevXbullsC;
 	private bool _isFirst = true;
@@ -41,20 +41,42 @@ public class ColorBullsGapStrategy : Strategy
 		_length2 = Param(nameof(Length2), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Second Length", "Length for secondary smoothing", "Indicator");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for indicator", "General");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_smaClose = default;
+		_smaOpen = default;
+		_smaBullsC = default;
+		_smaBullsO = default;
+		_prevXbullsC = default;
+		_isFirst = true;
+		_colorHistory.Clear();
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		_smaClose = new SimpleMovingAverage { Length = Length1 };
-		_smaOpen = new SimpleMovingAverage { Length = Length1 };
-		_smaBullsC = new SimpleMovingAverage { Length = Length2 };
-		_smaBullsO = new SimpleMovingAverage { Length = Length2 };
+		_smaClose = new ExponentialMovingAverage { Length = Length1 };
+		_smaOpen = new ExponentialMovingAverage { Length = Length1 };
+		_smaBullsC = new ExponentialMovingAverage { Length = Length2 };
+		_smaBullsO = new ExponentialMovingAverage { Length = Length2 };
 		_isFirst = true;
 		_colorHistory.Clear();
+
+		Indicators.Add(_smaClose);
+		Indicators.Add(_smaOpen);
+		Indicators.Add(_smaBullsC);
+		Indicators.Add(_smaBullsO);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

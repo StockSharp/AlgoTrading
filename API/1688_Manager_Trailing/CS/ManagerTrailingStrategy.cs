@@ -48,7 +48,7 @@ public class ManagerTrailingStrategy : Strategy
 			.SetDisplay("ATR Period", "ATR period for trailing", "Indicators");
 		_trailMult = Param(nameof(TrailMult), 2.0m)
 			.SetDisplay("Trail Mult", "ATR multiplier for trailing stop", "Risk");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -68,7 +68,7 @@ public class ManagerTrailingStrategy : Strategy
 
 		var fast = new ExponentialMovingAverage { Length = FastPeriod };
 		var slow = new ExponentialMovingAverage { Length = SlowPeriod };
-		var atr = new AverageTrueRange { Length = AtrPeriod };
+		var atr = new StandardDeviation { Length = AtrPeriod };
 
 		SubscribeCandles(CandleType)
 			.Bind(fast, slow, atr, ProcessCandle)

@@ -39,7 +39,7 @@ public class LineOrderDualLevelStrategy : Strategy
 			.SetDisplay("ATR Period", "ATR period", "Indicators");
 		_atrMult = Param(nameof(AtrMult), 1.0m)
 			.SetDisplay("ATR Mult", "ATR multiplier for levels", "Indicators");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -57,7 +57,7 @@ public class LineOrderDualLevelStrategy : Strategy
 		base.OnStarted2(time);
 
 		var sma = new SimpleMovingAverage { Length = SmaPeriod };
-		var atr = new AverageTrueRange { Length = AtrPeriod };
+		var atr = new StandardDeviation { Length = AtrPeriod };
 
 		SubscribeCandles(CandleType)
 			.Bind(sma, atr, ProcessCandle)
