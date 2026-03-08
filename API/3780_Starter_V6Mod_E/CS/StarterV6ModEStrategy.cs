@@ -79,14 +79,35 @@ public class StarterV6ModEStrategy : Strategy
 		_laguerreGamma = Param(nameof(LaguerreGamma), 0.7m)
 			.SetDisplay("Laguerre Gamma", "Smoothing factor for Laguerre RSI", "Indicators");
 
-		_laguerreOversold = Param(nameof(LaguerreOversold), 0.2m)
+		_laguerreOversold = Param(nameof(LaguerreOversold), 0.5m)
 			.SetDisplay("Laguerre Oversold", "Oversold level (0-1)", "Indicators");
 
-		_laguerreOverbought = Param(nameof(LaguerreOverbought), 0.8m)
+		_laguerreOverbought = Param(nameof(LaguerreOverbought), 0.5m)
 			.SetDisplay("Laguerre Overbought", "Overbought level (0-1)", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_lagL0 = 0m;
+		_lagL1 = 0m;
+		_lagL2 = 0m;
+		_lagL3 = 0m;
+		_prevFast = 0m;
+		_prevSlow = 0m;
+		_prevLaguerre = 0m;
+		_hasPrev = false;
 	}
 
 	/// <inheritdoc />

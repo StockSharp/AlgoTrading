@@ -109,8 +109,23 @@ public class MacdStochasticFilterStrategy : Strategy
 		_stochDLength = Param(nameof(StochDLength), 3)
 			.SetDisplay("Stochastic D", "Smoothing for D line", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for price data", "General");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_prevMacd = null;
+		_prevSignal = null;
 	}
 
 	/// <inheritdoc />

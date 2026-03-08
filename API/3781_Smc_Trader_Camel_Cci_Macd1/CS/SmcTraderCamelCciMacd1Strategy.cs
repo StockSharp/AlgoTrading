@@ -1,6 +1,7 @@
 namespace StockSharp.Samples.Strategies;
 
 using System;
+using System.Collections.Generic;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -33,7 +34,7 @@ public class SmcTraderCamelCciMacd1Strategy : Strategy
 
 	public SmcTraderCamelCciMacd1Strategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 
 		_emaLength = Param(nameof(EmaLength), 34)
@@ -50,6 +51,21 @@ public class SmcTraderCamelCciMacd1Strategy : Strategy
 
 		_cciPeriod = Param(nameof(CciPeriod), 20)
 			.SetDisplay("CCI Period", "CCI period", "Indicators");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_prevMacdMain = null;
+		_prevMacdSignal = null;
 	}
 
 	/// <inheritdoc />

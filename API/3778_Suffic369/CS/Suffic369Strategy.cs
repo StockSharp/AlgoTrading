@@ -60,8 +60,24 @@ public class Suffic369Strategy : Strategy
 		_slowMaLength = Param(nameof(SlowMaLength), 6)
 			.SetDisplay("Slow SMA Length", "Slow moving average period", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Primary candle source", "General");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_prevFast = 0m;
+		_prevSlow = 0m;
+		_hasPrev = false;
 	}
 
 	/// <inheritdoc />
