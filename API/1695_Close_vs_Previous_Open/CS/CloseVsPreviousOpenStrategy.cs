@@ -12,7 +12,7 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Compares the close of the last finished candle with the open of the prior candle.
-/// Buys when the latest close is above the previous open, sells when it is below.
+/// Buys when the latest close is significantly above the previous open, sells when below.
 /// </summary>
 public class CloseVsPreviousOpenStrategy : Strategy
 {
@@ -21,13 +21,13 @@ public class CloseVsPreviousOpenStrategy : Strategy
 	private decimal _prevOpen;
 	private decimal _prevPrevOpen;
 	private decimal _prevClose;
-	private bool _isInitialized;
+	private int _barCount;
 
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public CloseVsPreviousOpenStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
@@ -37,30 +37,37 @@ public class CloseVsPreviousOpenStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevOpen = 0; _prevPrevOpen = 0; _prevClose = 0; _isInitialized = false;
+		_prevOpen = 0; _prevPrevOpen = 0; _prevClose = 0; _barCount = 0;
 	}
 
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		SubscribeCandles(CandleType).Bind(ProcessCandle).Start();
+
+		var stdev = new StandardDeviation { Length = 20 };
+
+		SubscribeCandles(CandleType).Bind(stdev, ProcessCandle).Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal stdevVal)
 	{
 		if (candle.State != CandleStates.Finished) return;
 
 		var close = candle.ClosePrice;
 		var open = candle.OpenPrice;
+		_barCount++;
 
-		if (_isInitialized)
+		if (_barCount >= 3 && stdevVal > 0)
 		{
-			if (_prevClose > _prevPrevOpen && Position <= 0)
+			var diff = _prevClose - _prevPrevOpen;
+
+			// Only trade on significant moves (> 1 stdev)
+			if (diff > stdevVal && Position <= 0)
 			{
 				if (Position < 0) BuyMarket();
 				BuyMarket();
 			}
-			else if (_prevClose < _prevPrevOpen && Position >= 0)
+			else if (diff < -stdevVal && Position >= 0)
 			{
 				if (Position > 0) SellMarket();
 				SellMarket();
@@ -70,6 +77,5 @@ public class CloseVsPreviousOpenStrategy : Strategy
 		_prevPrevOpen = _prevOpen;
 		_prevOpen = open;
 		_prevClose = close;
-		_isInitialized = true;
 	}
 }

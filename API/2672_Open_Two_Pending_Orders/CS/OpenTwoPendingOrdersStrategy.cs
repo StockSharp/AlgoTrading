@@ -31,6 +31,7 @@ public class OpenTwoPendingOrdersStrategy : Strategy
 	private decimal? _takeLevel;
 	private decimal _highestSinceEntry;
 	private decimal _lowestSinceEntry;
+	private int _cooldown;
 
 	/// <summary>
 	/// Stop loss distance expressed in price steps.
@@ -82,19 +83,19 @@ public class OpenTwoPendingOrdersStrategy : Strategy
 	/// </summary>
 	public OpenTwoPendingOrdersStrategy()
 	{
-		_stopLossPoints = Param(nameof(StopLossPoints), 2000m)
+		_stopLossPoints = Param(nameof(StopLossPoints), 5000m)
 			.SetDisplay("Stop Loss (steps)", "Stop loss distance in price steps", "Risk")
 			.SetOptimize(20m, 300m, 20m);
 
-		_takeProfitPoints = Param(nameof(TakeProfitPoints), 3000m)
+		_takeProfitPoints = Param(nameof(TakeProfitPoints), 8000m)
 			.SetDisplay("Take Profit (steps)", "Take profit distance in price steps", "Risk")
 			.SetOptimize(50m, 600m, 50m);
 
-		_trailingStopPoints = Param(nameof(TrailingStopPoints), 1000m)
+		_trailingStopPoints = Param(nameof(TrailingStopPoints), 3000m)
 			.SetDisplay("Trailing Stop (steps)", "Trailing stop distance in price steps", "Risk")
 			.SetOptimize(10m, 200m, 10m);
 
-		_entryOffsetPoints = Param(nameof(EntryOffsetPoints), 700m)
+		_entryOffsetPoints = Param(nameof(EntryOffsetPoints), 1000m)
 			.SetDisplay("Entry Offset (steps)", "Offset from close for pending entries", "Execution")
 			.SetOptimize(10m, 150m, 10m);
 
@@ -136,6 +137,12 @@ public class OpenTwoPendingOrdersStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+			return;
+		}
+
 		var step = GetStep();
 
 		// Manage existing position
@@ -147,7 +154,7 @@ public class OpenTwoPendingOrdersStrategy : Strategy
 			if (Position == 0)
 			{
 				ResetState();
-				SetupPendingEntries(candle.ClosePrice, step);
+				_cooldown = 20;
 			}
 			return;
 		}
@@ -285,6 +292,7 @@ public class OpenTwoPendingOrdersStrategy : Strategy
 		_takeLevel = null;
 		_highestSinceEntry = 0m;
 		_lowestSinceEntry = 0m;
+		_cooldown = 0;
 	}
 
 	private decimal GetStep()

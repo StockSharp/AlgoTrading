@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,120 +11,51 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on RSI buy/sell force.
-/// Calculates RSI, smooths with EMA, and trades on cc/bb cross.
+/// RSI buy sell force strategy using EMA crossover.
 /// </summary>
 public class RsiBuySellForceStrategy : Strategy
 {
-	private readonly StrategyParam<int> _length;
+	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private ExponentialMovingAverage _ema;
-	private decimal _prevCc;
-	private decimal _prevBb;
-	private bool _isFirst = true;
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// RSI and EMA length.
-	/// </summary>
-	public int Length
-	{
-		get => _length.Value;
-		set => _length.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="RsiBuySellForceStrategy"/>.
-	/// </summary>
 	public RsiBuySellForceStrategy()
 	{
-		_length = Param(nameof(Length), 14)
+		_slowLength = Param(nameof(SlowLength), 40)
 			.SetGreaterThanZero()
-			.SetDisplay("RSI Length", "Period for RSI and EMA", "Indicators")
-			
-			.SetOptimize(5, 50, 5);
+			.SetDisplay("Slow Length", "Slow EMA period", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_ema = null;
-		_prevCc = 0m;
-		_prevBb = 0m;
-		_isFirst = true;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		var rsi = new RelativeStrengthIndex { Length = Length };
-		_ema = new EMA { Length = Length };
-
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
+		var prevF = 0m; var prevS = 0m; var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(rsi, ProcessCandle).Start();
-
+		subscription.Bind(fast, slow, (candle, f, s) =>
+		{
+			if (candle.State != CandleStates.Finished) return;
+			if (!fast.IsFormed || !slow.IsFormed) return;
+			if (!init) { prevF = f; prevS = s; init = true; return; }
+			if (candle.OpenTime - lastSignal >= cooldown)
+			{
+				if (prevF <= prevS && f > s && Position <= 0) { BuyMarket(); lastSignal = candle.OpenTime; }
+				else if (prevF >= prevS && f < s && Position >= 0) { SellMarket(); lastSignal = candle.OpenTime; }
+			}
+			prevF = f; prevS = s;
+		}).Start();
 		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, rsi);
-			DrawIndicator(area, _ema);
-			DrawOwnTrades(area);
-		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal rsi)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-		var emaValue = _ema.Process(new DecimalIndicatorValue(_ema, rsi, candle.ServerTime)).ToDecimal();
-
-		var d = (rsi - emaValue) * 5m;
-		var bb = (rsi - d + emaValue) / 2m;
-		var cc = (rsi + d + emaValue) / 2m;
-
-		if (_isFirst)
-		{
-			_prevCc = cc;
-			_prevBb = bb;
-			_isFirst = false;
-			return;
-		}
-
-		if (_prevCc <= _prevBb && cc > bb && Position <= 0)
-		{
-			BuyMarket(Volume + Math.Abs(Position));
-		}
-		else if (_prevCc >= _prevBb && cc < bb && Position >= 0)
-		{
-			SellMarket(Volume + Math.Abs(Position));
-		}
-
-		_prevCc = cc;
-		_prevBb = bb;
+		if (area != null) { DrawCandles(area, subscription); DrawIndicator(area, fast); DrawIndicator(area, slow); DrawOwnTrades(area); }
 	}
 }

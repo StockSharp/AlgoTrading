@@ -114,7 +114,7 @@ public class RsiMaTrendStrategy : Strategy
 			
 			.SetOptimize(100, 300, 20);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -125,13 +125,19 @@ public class RsiMaTrendStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
-		var fastMa = new SMA { Length = FastMaPeriod };
-		var slowMa = new SMA { Length = SlowMaPeriod };
+		var fastMa = new ExponentialMovingAverage { Length = FastMaPeriod };
+		var slowMa = new ExponentialMovingAverage { Length = SlowMaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 
@@ -162,11 +168,15 @@ public class RsiMaTrendStrategy : Strategy
 
 		if (rsiValue < RsiBuyLevel && isUpTrend && Position <= 0)
 		{
-			BuyMarket(Volume + Math.Abs(Position));
+			if (Position < 0)
+				BuyMarket();
+			BuyMarket();
 		}
 		else if (rsiValue > RsiSellLevel && !isUpTrend && Position >= 0)
 		{
-			SellMarket(Volume + Math.Abs(Position));
+			if (Position > 0)
+				SellMarket();
+			SellMarket();
 		}
 	}
 }

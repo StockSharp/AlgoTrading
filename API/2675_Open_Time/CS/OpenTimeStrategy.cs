@@ -51,7 +51,7 @@ public class OpenTimeStrategy : Strategy
 	/// </summary>
 	public OpenTimeStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle subscription type", "General");
 		_useCloseTime = Param(nameof(UseCloseTime), true)
 			.SetDisplay("Use Close Window", "Enable automatic closing window", "Trading");
@@ -65,19 +65,19 @@ public class OpenTimeStrategy : Strategy
 			.SetDisplay("Trailing Stop", "Trailing stop distance in pips", "Risk");
 		_trailingStepPips = Param(nameof(TrailingStepPips), 3)
 			.SetDisplay("Trailing Step", "Additional move required to shift the trail", "Risk");
-		_tradeHour = Param(nameof(TradeHour), 18)
+		_tradeHour = Param(nameof(TradeHour), 10)
 			.SetDisplay("Trade Hour", "Hour to start opening positions", "Trading");
-		_tradeMinute = Param(nameof(TradeMinute), 50)
+		_tradeMinute = Param(nameof(TradeMinute), 0)
 			.SetDisplay("Trade Minute", "Minute to start opening positions", "Trading");
-		_durationSeconds = Param(nameof(DurationSeconds), 300)
+		_durationSeconds = Param(nameof(DurationSeconds), 18000)
 			.SetDisplay("Duration", "Window length in seconds", "Trading");
 		_enableSell = Param(nameof(EnableSell), true)
 			.SetDisplay("Enable Sell", "Allow short entries", "Trading");
 		_enableBuy = Param(nameof(EnableBuy), true)
 			.SetDisplay("Enable Buy", "Allow long entries", "Trading");
-		_stopLossPips = Param(nameof(StopLossPips), 0)
+		_stopLossPips = Param(nameof(StopLossPips), 500)
 			.SetDisplay("Stop Loss", "Initial stop loss in pips", "Risk");
-		_takeProfitPips = Param(nameof(TakeProfitPips), 0)
+		_takeProfitPips = Param(nameof(TakeProfitPips), 1000)
 			.SetDisplay("Take Profit", "Initial take profit in pips", "Risk");
 	}
 
@@ -249,8 +249,7 @@ public class OpenTimeStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		// Enable built-in position protection against leftover exposure.
-		StartProtection(null, null);
+		// no protection
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -281,27 +280,25 @@ public class OpenTimeStrategy : Strategy
 		// Open or reverse long positions when buying is enabled.
 		if (EnableBuy && Position <= 0)
 		{
-			var volume = Volume + (Position < 0 ? -Position : 0m);
-			if (volume > 0)
+			if (Position < 0)
 			{
-				if (Position < 0)
-					ResetShortState();
-
-				BuyMarket(volume);
-				InitializeLongState(candle.ClosePrice);
+				BuyMarket();
+				ResetShortState();
 			}
+
+			BuyMarket();
+			InitializeLongState(candle.ClosePrice);
 		}
 		else if (EnableSell && Position >= 0)
 		{
-			var volume = Volume + (Position > 0 ? Position : 0m);
-			if (volume > 0)
+			if (Position > 0)
 			{
-				if (Position > 0)
-					ResetLongState();
-
-				SellMarket(volume);
-				InitializeShortState(candle.ClosePrice);
+				SellMarket();
+				ResetLongState();
 			}
+
+			SellMarket();
+			InitializeShortState(candle.ClosePrice);
 		}
 	}
 
@@ -338,36 +335,31 @@ public class OpenTimeStrategy : Strategy
 	{
 		if (Position > 0)
 		{
-			// Close long positions when price touches stop loss.
 			if (_longStop.HasValue && candle.LowPrice <= _longStop.Value)
 			{
-				SellMarket(Position);
+				SellMarket();
 				ResetLongState();
 				return;
 			}
 
-			// Close long positions when the take profit target is reached.
 			if (_longTake.HasValue && candle.HighPrice >= _longTake.Value)
 			{
-				SellMarket(Position);
+				SellMarket();
 				ResetLongState();
 			}
 		}
 		else if (Position < 0)
 		{
-			var absPos = -Position;
-			// Close short positions when price hits the stop level.
 			if (_shortStop.HasValue && candle.HighPrice >= _shortStop.Value)
 			{
-				BuyMarket(absPos);
+				BuyMarket();
 				ResetShortState();
 				return;
 			}
 
-			// Close short positions when the take profit target is reached.
 			if (_shortTake.HasValue && candle.LowPrice <= _shortTake.Value)
 			{
-				BuyMarket(absPos);
+				BuyMarket();
 				ResetShortState();
 			}
 		}
@@ -378,12 +370,12 @@ public class OpenTimeStrategy : Strategy
 		// Flatten the portfolio and clear cached levels.
 		if (Position > 0)
 		{
-			SellMarket(Position);
+			SellMarket();
 			ResetLongState();
 		}
 		else if (Position < 0)
 		{
-			BuyMarket(-Position);
+			BuyMarket();
 			ResetShortState();
 		}
 	}

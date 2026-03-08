@@ -27,7 +27,7 @@ public class ForexFrausSloggerStrategy : Strategy
 	private readonly StrategyParam<int> _stopHour;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private SimpleMovingAverage _sma = null!;
+	private ExponentialMovingAverage _sma = null!;
 
 	private bool _wasAboveUpper;
 	private bool _wasBelowLower;
@@ -139,7 +139,7 @@ public class ForexFrausSloggerStrategy : Strategy
 			.SetRange(0, 23)
 			.SetDisplay("Stop Hour", "Trading stop hour", "Parameters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Working candle timeframe", "Parameters");
 	}
 
@@ -167,7 +167,7 @@ public class ForexFrausSloggerStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_sma = new SMA { Length = 14 };
+		_sma = new ExponentialMovingAverage { Length = 14 };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

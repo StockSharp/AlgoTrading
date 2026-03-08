@@ -76,19 +76,19 @@ public class PendingOrdersByTimeStrategy : Strategy
 			.SetDisplay("Closing Hour", "Hour to cancel orders and flat positions", "Schedule")
 			.SetRange(0, 23);
 
-		_distancePips = Param(nameof(DistancePips), 20m)
+		_distancePips = Param(nameof(DistancePips), 500m)
 			.SetDisplay("Distance (pips)", "Offset for entry stop orders", "Orders")
 			.SetGreaterThanZero();
 
-		_stopLossPips = Param(nameof(StopLossPips), 20m)
+		_stopLossPips = Param(nameof(StopLossPips), 500m)
 			.SetDisplay("Stop Loss (pips)", "Protective stop distance", "Risk")
 			.SetGreaterThanZero();
 
-		_takeProfitPips = Param(nameof(TakeProfitPips), 500m)
+		_takeProfitPips = Param(nameof(TakeProfitPips), 2000m)
 			.SetDisplay("Take Profit (pips)", "Profit target distance", "Risk")
 			.SetGreaterThanZero();
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Working timeframe for the schedule", "General");
 	}
 
@@ -169,8 +169,8 @@ public class PendingOrdersByTimeStrategy : Strategy
 		if (_pendingBuyPrice is decimal buyPrice && candle.HighPrice >= buyPrice && Position <= 0)
 		{
 			if (Position < 0)
-				BuyMarket(-Position);
-			BuyMarket(Volume);
+				BuyMarket();
+			BuyMarket();
 			_entryPrice = buyPrice;
 			_pendingBuyPrice = null;
 			_pendingSellPrice = null;
@@ -180,8 +180,8 @@ public class PendingOrdersByTimeStrategy : Strategy
 		if (_pendingSellPrice is decimal sellPrice && candle.LowPrice <= sellPrice && Position >= 0)
 		{
 			if (Position > 0)
-				SellMarket(Position);
-			SellMarket(Volume);
+				SellMarket();
+			SellMarket();
 			_entryPrice = sellPrice;
 			_pendingBuyPrice = null;
 			_pendingSellPrice = null;
@@ -200,14 +200,14 @@ public class PendingOrdersByTimeStrategy : Strategy
 		{
 			if (takeProfitDistance > 0m && candle.HighPrice - entry >= takeProfitDistance)
 			{
-				SellMarket(Position);
+				SellMarket();
 				_entryPrice = null;
 				return;
 			}
 
 			if (stopLossDistance > 0m && entry - candle.LowPrice >= stopLossDistance)
 			{
-				SellMarket(Position);
+				SellMarket();
 				_entryPrice = null;
 			}
 		}
@@ -215,14 +215,14 @@ public class PendingOrdersByTimeStrategy : Strategy
 		{
 			if (takeProfitDistance > 0m && entry - candle.LowPrice >= takeProfitDistance)
 			{
-				BuyMarket(-Position);
+				BuyMarket();
 				_entryPrice = null;
 				return;
 			}
 
 			if (stopLossDistance > 0m && candle.HighPrice - entry >= stopLossDistance)
 			{
-				BuyMarket(-Position);
+				BuyMarket();
 				_entryPrice = null;
 			}
 		}
@@ -231,9 +231,9 @@ public class PendingOrdersByTimeStrategy : Strategy
 	private void ExitPosition()
 	{
 		if (Position > 0m)
-			SellMarket(Position);
+			SellMarket();
 		else if (Position < 0m)
-			BuyMarket(-Position);
+			BuyMarket();
 		_entryPrice = null;
 	}
 

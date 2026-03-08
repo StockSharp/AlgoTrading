@@ -32,7 +32,7 @@ public class EPSIMultiSetStrategy : Strategy
 			.SetDisplay("ATR Period", "ATR period", "Indicators");
 		_breakoutMult = Param(nameof(BreakoutMult), 0.5m)
 			.SetDisplay("Breakout Mult", "ATR multiplier for breakout", "Indicators");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe", "General");
 	}
 
@@ -49,7 +49,7 @@ public class EPSIMultiSetStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var atr = new AverageTrueRange { Length = AtrPeriod };
+		var atr = new StandardDeviation { Length = AtrPeriod };
 
 		SubscribeCandles(CandleType).Bind(atr, ProcessCandle).Start();
 	}

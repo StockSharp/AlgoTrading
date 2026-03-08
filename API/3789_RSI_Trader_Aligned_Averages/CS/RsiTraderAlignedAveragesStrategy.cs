@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -39,8 +40,24 @@ public class RsiTraderAlignedAveragesStrategy : Strategy
 		_longMaPeriod = Param(nameof(LongMaPeriod), 26)
 			.SetDisplay("Long MA", "Long moving average period", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_prevShort = 0m;
+		_prevLong = 0m;
+		_hasPrev = false;
 	}
 
 	/// <inheritdoc />

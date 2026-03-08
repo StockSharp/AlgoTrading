@@ -11,22 +11,20 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Xbug Free v4 strategy based on moving average crossing median price.
+/// Xbug Free v4 strategy based on SMA crossing median price.
 /// </summary>
 public class XbugFreeV4Strategy : Strategy
 {
 	private readonly StrategyParam<int> _maPeriod;
-	private readonly StrategyParam<int> _atrPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal? _prevSma;
-	private decimal? _prevPrice;
-	private decimal? _prev2Sma;
-	private decimal? _prev2Price;
-	private decimal _entryPrice;
+	private decimal _prevSma;
+	private decimal _prevPrice;
+	private decimal _prev2Sma;
+	private decimal _prev2Price;
+	private int _barCount;
 
 	public int MaPeriod { get => _maPeriod.Value; set => _maPeriod.Value = value; }
-	public int AtrPeriod { get => _atrPeriod.Value; set => _atrPeriod.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public XbugFreeV4Strategy()
@@ -34,10 +32,7 @@ public class XbugFreeV4Strategy : Strategy
 		_maPeriod = Param(nameof(MaPeriod), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "Moving average length", "Indicators");
-		_atrPeriod = Param(nameof(AtrPeriod), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("ATR Period", "ATR period for stops", "Indicators");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -47,9 +42,9 @@ public class XbugFreeV4Strategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevSma = null; _prevPrice = null;
-		_prev2Sma = null; _prev2Price = null;
-		_entryPrice = 0;
+		_prevSma = 0; _prevPrice = 0;
+		_prev2Sma = 0; _prev2Price = 0;
+		_barCount = 0;
 	}
 
 	protected override void OnStarted2(DateTime time)
@@ -57,55 +52,32 @@ public class XbugFreeV4Strategy : Strategy
 		base.OnStarted2(time);
 
 		var sma = new SimpleMovingAverage { Length = MaPeriod };
-		var atr = new AverageTrueRange { Length = AtrPeriod };
+		var stdev = new StandardDeviation { Length = 14 };
 
-		SubscribeCandles(CandleType).Bind(sma, atr, ProcessCandle).Start();
+		SubscribeCandles(CandleType).Bind(sma, stdev, ProcessCandle).Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal smaValue, decimal atrValue)
+	private void ProcessCandle(ICandleMessage candle, decimal smaValue, decimal stdevValue)
 	{
 		if (candle.State != CandleStates.Finished) return;
 
 		var median = (candle.HighPrice + candle.LowPrice) / 2m;
+		_barCount++;
 
-		if (_prevSma is decimal prevSma && _prevPrice is decimal prevPrice
-			&& _prev2Sma is decimal prev2Sma && _prev2Price is decimal prev2Price)
+		if (_barCount >= 3)
 		{
-			var buySignal = smaValue > median && prevSma > prevPrice && prev2Sma < prev2Price;
-			var sellSignal = smaValue < median && prevSma < prevPrice && prev2Sma > prev2Price;
+			var buySignal = smaValue > median && _prevSma > _prevPrice && _prev2Sma < _prev2Price;
+			var sellSignal = smaValue < median && _prevSma < _prevPrice && _prev2Sma > _prev2Price;
 
 			if (buySignal && Position <= 0)
 			{
 				if (Position < 0) BuyMarket();
 				BuyMarket();
-				_entryPrice = candle.ClosePrice;
 			}
 			else if (sellSignal && Position >= 0)
 			{
 				if (Position > 0) SellMarket();
 				SellMarket();
-				_entryPrice = candle.ClosePrice;
-			}
-		}
-
-		// Exit on ATR-based stop/take
-		if (atrValue > 0 && _entryPrice > 0)
-		{
-			if (Position > 0)
-			{
-				if (candle.ClosePrice <= _entryPrice - atrValue * 2 || candle.ClosePrice >= _entryPrice + atrValue * 3)
-				{
-					SellMarket();
-					_entryPrice = 0;
-				}
-			}
-			else if (Position < 0)
-			{
-				if (candle.ClosePrice >= _entryPrice + atrValue * 2 || candle.ClosePrice <= _entryPrice - atrValue * 3)
-				{
-					BuyMarket();
-					_entryPrice = 0;
-				}
 			}
 		}
 

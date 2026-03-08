@@ -51,8 +51,27 @@ public class ColorMetroDeMarkerStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Slow Step", "Slow step size for MMinus line", "Indicator");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for candles", "General");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_fmin = 999999m;
+		_fmax = -999999m;
+		_smin = 999999m;
+		_smax = -999999m;
+		_ftrend = 0;
+		_strend = 0;
+		_prevMPlus = 0m;
+		_prevMMinus = 0m;
+		_isFirst = true;
 	}
 
 	/// <inheritdoc />

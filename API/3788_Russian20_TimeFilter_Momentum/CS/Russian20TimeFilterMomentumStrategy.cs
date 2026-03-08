@@ -113,7 +113,7 @@ public class Russian20TimeFilterMomentumStrategy : Strategy
 	/// </summary>
 	public Russian20TimeFilterMomentumStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type used for analysis", "General");
 
 		_movingAverageLength = Param(nameof(MovingAverageLength), 20)

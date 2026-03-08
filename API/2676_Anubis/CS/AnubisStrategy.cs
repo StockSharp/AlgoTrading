@@ -37,7 +37,7 @@ public class AnubisStrategy : Strategy
 	private readonly StrategyParam<int> _stdSlowLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private readonly DataType _higherTimeFrame = TimeSpan.FromHours(4).TimeFrame();
+	private readonly DataType _higherTimeFrame = TimeSpan.FromDays(1).TimeFrame();
 
 	private AverageTrueRange _atrIndicator = null!;
 	private CommodityChannelIndex _cciIndicator = null!;
@@ -284,11 +284,11 @@ public class AnubisStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Entry Spacing (pips)", "Minimum distance between consecutive entries", "Trading");
 
-		_maxLongPositions = Param(nameof(MaxLongPositions), 2)
+		_maxLongPositions = Param(nameof(MaxLongPositions), 1)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Long Entries", "Maximum stacked long positions", "Trading");
 
-		_maxShortPositions = Param(nameof(MaxShortPositions), 2)
+		_maxShortPositions = Param(nameof(MaxShortPositions), 1)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Short Entries", "Maximum stacked short positions", "Trading");
 
@@ -316,7 +316,7 @@ public class AnubisStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Slow StdDev Length", "Secondary standard deviation period used for take-profit", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Signal Candle Type", "Timeframe used for MACD and ATR", "General");
 	}
 
@@ -377,7 +377,7 @@ public class AnubisStrategy : Strategy
 		base.OnStarted2(time);
 
 		Volume = TradeVolume;
-		StartProtection(null, null);
+		// no protection
 
 		InitializeIndicators();
 		InitializeDistances();
@@ -501,7 +501,7 @@ public class AnubisStrategy : Strategy
 			// Close opposite exposure before opening a new long.
 			if (Position < 0m)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				ResetShortTargets();
 			}
 
@@ -512,7 +512,7 @@ public class AnubisStrategy : Strategy
 
 			if (allowEntry && spacedEnough && newBar)
 			{
-				BuyMarket(TradeVolume);
+				BuyMarket();
 				_entryPrice = price;
 				_longEntries++;
 				_lastLongPrice = price;
@@ -527,7 +527,7 @@ public class AnubisStrategy : Strategy
 			// Close opposite exposure before opening a new short.
 			if (Position > 0m)
 			{
-				SellMarket(Math.Abs(Position));
+				SellMarket();
 				ResetLongTargets();
 			}
 
@@ -538,7 +538,7 @@ public class AnubisStrategy : Strategy
 
 			if (allowEntry && spacedEnough && newBar)
 			{
-				SellMarket(TradeVolume);
+				SellMarket();
 				_entryPrice = price;
 				_shortEntries++;
 				_lastShortPrice = price;
@@ -560,7 +560,7 @@ public class AnubisStrategy : Strategy
 			// Check range-based and MACD-based exit conditions.
 			if (exitByRange || exitByMacd)
 			{
-				SellMarket(Math.Abs(Position));
+				SellMarket();
 				ResetLongTargets();
 			}
 			else
@@ -576,7 +576,7 @@ public class AnubisStrategy : Strategy
 
 			if (exitByRange || exitByMacd)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				ResetShortTargets();
 			}
 			else
@@ -627,7 +627,7 @@ public class AnubisStrategy : Strategy
 		// Exit long positions when price hits the take-profit level.
 		if (_longTakePrice > 0m && price >= _longTakePrice)
 		{
-			SellMarket(Math.Abs(Position));
+			SellMarket();
 			ResetLongTargets();
 			return;
 		}
@@ -635,7 +635,7 @@ public class AnubisStrategy : Strategy
 		// Exit long positions when price returns to the protective stop.
 		if (_longStopPrice > 0m && price <= _longStopPrice)
 		{
-			SellMarket(Math.Abs(Position));
+			SellMarket();
 			ResetLongTargets();
 		}
 	}
@@ -648,7 +648,7 @@ public class AnubisStrategy : Strategy
 		// Exit short positions when price hits the take-profit level.
 		if (_shortTakePrice > 0m && price <= _shortTakePrice)
 		{
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
 			ResetShortTargets();
 			return;
 		}
@@ -656,7 +656,7 @@ public class AnubisStrategy : Strategy
 		// Exit short positions when price returns to the protective stop.
 		if (_shortStopPrice > 0m && price >= _shortStopPrice)
 		{
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
 			ResetShortTargets();
 		}
 	}
