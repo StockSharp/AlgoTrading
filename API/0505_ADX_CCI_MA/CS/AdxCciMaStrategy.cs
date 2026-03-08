@@ -3,7 +3,8 @@ namespace StockSharp.Samples.Strategies;
 using System;
 using System.Collections.Generic;
 
-using StockSharp.Algo;
+using Ecng.Common;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -15,56 +16,65 @@ using StockSharp.Messages;
 /// </summary>
 public class AdxCciMaStrategy : Strategy
 {
-	private readonly StrategyParam<bool> _enableLong;
-	private readonly StrategyParam<bool> _enableShort;
 	private readonly StrategyParam<int> _cciPeriod;
 	private readonly StrategyParam<int> _adxLength;
 	private readonly StrategyParam<decimal> _adxThreshold;
 	private readonly StrategyParam<int> _maLength;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _cooldownBars;
 
 	private decimal _prevPlusDi;
 	private decimal _prevMinusDi;
+	private int _cooldownRemaining;
 
-	public bool EnableLong { get => _enableLong.Value; set => _enableLong.Value = value; }
-	public bool EnableShort { get => _enableShort.Value; set => _enableShort.Value = value; }
 	public int CciPeriod { get => _cciPeriod.Value; set => _cciPeriod.Value = value; }
 	public int AdxLength { get => _adxLength.Value; set => _adxLength.Value = value; }
 	public decimal AdxThreshold { get => _adxThreshold.Value; set => _adxThreshold.Value = value; }
 	public int MaLength { get => _maLength.Value; set => _maLength.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int CooldownBars { get => _cooldownBars.Value; set => _cooldownBars.Value = value; }
 
 	public AdxCciMaStrategy()
 	{
-		_enableLong = Param(nameof(EnableLong), true)
-			.SetDisplay("Enable Long", "Allow long trades", "General");
-		_enableShort = Param(nameof(EnableShort), true)
-			.SetDisplay("Enable Short", "Allow short trades", "General");
 		_cciPeriod = Param(nameof(CciPeriod), 15)
+			.SetGreaterThanZero()
 			.SetDisplay("CCI Period", "Period for CCI", "Indicators");
+
 		_adxLength = Param(nameof(AdxLength), 10)
+			.SetGreaterThanZero()
 			.SetDisplay("ADX Length", "Length for ADX", "Indicators");
+
 		_adxThreshold = Param(nameof(AdxThreshold), 20m)
 			.SetDisplay("ADX Threshold", "ADX level to confirm trend", "Indicators");
+
 		_maLength = Param(nameof(MaLength), 50)
+			.SetGreaterThanZero()
 			.SetDisplay("MA Length", "Length of moving average", "MA Trend");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for candles", "General");
+
+		_cooldownBars = Param(nameof(CooldownBars), 10)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "Risk");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	/// <inheritdoc />
+	protected override void OnReseted()
 	{
-		return [(Security, CandleType)];
+		base.OnReseted();
+		_prevPlusDi = 0;
+		_prevMinusDi = 0;
+		_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_prevPlusDi = 0;
-		_prevMinusDi = 0;
 
 		var cci = new CommodityChannelIndex { Length = CciPeriod };
 		var adx = new AverageDirectionalIndex { Length = AdxLength };
@@ -89,6 +99,9 @@ public class AdxCciMaStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
 		var adxTyped = (IAverageDirectionalIndexValue)adxValue;
 		if (adxTyped.MovingAverage is not decimal adx)
 			return;
@@ -100,13 +113,38 @@ public class AdxCciMaStrategy : Strategy
 		var cci = cciValue.ToDecimal();
 		var ma = maValue.ToDecimal();
 
-		var longSignal = plusDi > minusDi && _prevPlusDi > 0 && _prevPlusDi <= _prevMinusDi;
-		var shortSignal = minusDi > plusDi && _prevMinusDi > 0 && _prevMinusDi <= _prevPlusDi;
+		if (_prevPlusDi == 0)
+		{
+			_prevPlusDi = plusDi;
+			_prevMinusDi = minusDi;
+			return;
+		}
 
-		if (EnableLong && longSignal && cci > 100m && adx >= AdxThreshold && candle.ClosePrice > ma && Position <= 0)
-			BuyMarket();
-		else if (EnableShort && shortSignal && cci < -100m && adx >= AdxThreshold && candle.ClosePrice < ma && Position >= 0)
-			SellMarket();
+		if (_cooldownRemaining > 0)
+		{
+			_cooldownRemaining--;
+			_prevPlusDi = plusDi;
+			_prevMinusDi = minusDi;
+			return;
+		}
+
+		var longSignal = plusDi > minusDi && _prevPlusDi <= _prevMinusDi;
+		var shortSignal = minusDi > plusDi && _prevMinusDi <= _prevPlusDi;
+
+		if (longSignal && cci > 0m && adx >= AdxThreshold && candle.ClosePrice > ma && Position <= 0)
+		{
+			if (Position < 0)
+				BuyMarket(Math.Abs(Position));
+			BuyMarket(Volume);
+			_cooldownRemaining = CooldownBars;
+		}
+		else if (shortSignal && cci < 0m && adx >= AdxThreshold && candle.ClosePrice < ma && Position >= 0)
+		{
+			if (Position > 0)
+				SellMarket(Math.Abs(Position));
+			SellMarket(Volume);
+			_cooldownRemaining = CooldownBars;
+		}
 
 		_prevPlusDi = plusDi;
 		_prevMinusDi = minusDi;

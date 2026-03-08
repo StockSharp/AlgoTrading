@@ -1,294 +1,87 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Advanced Supertrend strategy with optional RSI and MA filters.
+/// Advanced Supertrend strategy with EMA trend filter and ATR-based stops.
 /// </summary>
 public class AdvancedSupertrendStrategy : Strategy
 {
 	private readonly StrategyParam<int> _atrLength;
 	private readonly StrategyParam<decimal> _multiplier;
-	private readonly StrategyParam<bool> _useRsiFilter;
-	private readonly StrategyParam<int> _rsiLength;
-	private readonly StrategyParam<decimal> _rsiOverbought;
-	private readonly StrategyParam<decimal> _rsiOversold;
-	private readonly StrategyParam<bool> _useMaFilter;
 	private readonly StrategyParam<int> _maLength;
-	private readonly StrategyParam<MaTypes> _maType;
-	private readonly StrategyParam<bool> _useStopLoss;
+	private readonly StrategyParam<int> _atrStopLength;
 	private readonly StrategyParam<decimal> _slMultiplier;
-	private readonly StrategyParam<bool> _useTakeProfit;
 	private readonly StrategyParam<decimal> _tpMultiplier;
-	private readonly StrategyParam<bool> _useTrendStrength;
-	private readonly StrategyParam<int> _minTrendBars;
-	private readonly StrategyParam<bool> _useBreakoutConfirmation;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _cooldownBars;
 
-	private AverageTrueRange _atr;
-	private RelativeStrengthIndex _rsi;
-	private IIndicator _ma;
+	private bool _prevUpTrend;
+	private bool _hasPrev;
+	private decimal _entryPrice;
+	private decimal _atrAtEntry;
+	private int _cooldownRemaining;
 
-	private decimal _prevTrendUp;
-	private decimal _prevTrendDown;
-	private int _prevTrend = 1;
-	private int _trendStrength;
-	private decimal _prevSupertrend;
-	private decimal _stopLossLevel;
-	private decimal _takeProfitLevel;
-	private decimal _prevClose;
+	public int AtrLength { get => _atrLength.Value; set => _atrLength.Value = value; }
+	public decimal Multiplier { get => _multiplier.Value; set => _multiplier.Value = value; }
+	public int MaLength { get => _maLength.Value; set => _maLength.Value = value; }
+	public int AtrStopLength { get => _atrStopLength.Value; set => _atrStopLength.Value = value; }
+	public decimal SlMultiplier { get => _slMultiplier.Value; set => _slMultiplier.Value = value; }
+	public decimal TpMultiplier { get => _tpMultiplier.Value; set => _tpMultiplier.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int CooldownBars { get => _cooldownBars.Value; set => _cooldownBars.Value = value; }
 
-	/// <summary>
-	/// ATR length for Supertrend and risk management.
-	/// </summary>
-	public int AtrLength
-	{
-		get => _atrLength.Value;
-		set => _atrLength.Value = value;
-	}
-
-	/// <summary>
-	/// Supertrend ATR multiplier.
-	/// </summary>
-	public decimal Multiplier
-	{
-		get => _multiplier.Value;
-		set => _multiplier.Value = value;
-	}
-
-	/// <summary>
-	/// Use RSI filter.
-	/// </summary>
-	public bool UseRsiFilter
-	{
-		get => _useRsiFilter.Value;
-		set => _useRsiFilter.Value = value;
-	}
-
-	/// <summary>
-	/// RSI length.
-	/// </summary>
-	public int RsiLength
-	{
-		get => _rsiLength.Value;
-		set => _rsiLength.Value = value;
-	}
-
-	/// <summary>
-	/// RSI overbought level.
-	/// </summary>
-	public decimal RsiOverbought
-	{
-		get => _rsiOverbought.Value;
-		set => _rsiOverbought.Value = value;
-	}
-
-	/// <summary>
-	/// RSI oversold level.
-	/// </summary>
-	public decimal RsiOversold
-	{
-		get => _rsiOversold.Value;
-		set => _rsiOversold.Value = value;
-	}
-
-	/// <summary>
-	/// Use MA filter.
-	/// </summary>
-	public bool UseMaFilter
-	{
-		get => _useMaFilter.Value;
-		set => _useMaFilter.Value = value;
-	}
-
-	/// <summary>
-	/// MA length.
-	/// </summary>
-	public int MaLength
-	{
-		get => _maLength.Value;
-		set => _maLength.Value = value;
-	}
-
-	/// <summary>
-	/// Moving average type.
-	/// </summary>
-	public MaTypes MaType
-	{
-		get => _maType.Value;
-		set => _maType.Value = value;
-	}
-
-	/// <summary>
-	/// Enable stop loss.
-	/// </summary>
-	public bool UseStopLoss
-	{
-		get => _useStopLoss.Value;
-		set => _useStopLoss.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss ATR multiplier.
-	/// </summary>
-	public decimal SlMultiplier
-	{
-		get => _slMultiplier.Value;
-		set => _slMultiplier.Value = value;
-	}
-
-	/// <summary>
-	/// Enable take profit.
-	/// </summary>
-	public bool UseTakeProfit
-	{
-		get => _useTakeProfit.Value;
-		set => _useTakeProfit.Value = value;
-	}
-
-	/// <summary>
-	/// Take profit ATR multiplier.
-	/// </summary>
-	public decimal TpMultiplier
-	{
-		get => _tpMultiplier.Value;
-		set => _tpMultiplier.Value = value;
-	}
-
-	/// <summary>
-	/// Enable trend strength filter.
-	/// </summary>
-	public bool UseTrendStrength
-	{
-		get => _useTrendStrength.Value;
-		set => _useTrendStrength.Value = value;
-	}
-
-	/// <summary>
-	/// Minimum bars in current trend.
-	/// </summary>
-	public int MinTrendBars
-	{
-		get => _minTrendBars.Value;
-		set => _minTrendBars.Value = value;
-	}
-
-	/// <summary>
-	/// Enable breakout confirmation.
-	/// </summary>
-	public bool UseBreakoutConfirmation
-	{
-		get => _useBreakoutConfirmation.Value;
-		set => _useBreakoutConfirmation.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type for strategy.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="AdvancedSupertrendStrategy"/>.
-	/// </summary>
 	public AdvancedSupertrendStrategy()
 	{
-		_atrLength = Param(nameof(AtrLength), 6)
-			.SetDisplay("ATR Length", "ATR period", "Supertrend Settings")
-			
-			.SetOptimize(5, 15, 1);
+		_atrLength = Param(nameof(AtrLength), 10)
+			.SetGreaterThanZero()
+			.SetDisplay("ATR Length", "ATR period for SuperTrend", "SuperTrend");
 
 		_multiplier = Param(nameof(Multiplier), 3m)
-			.SetDisplay("Multiplier", "Supertrend multiplier", "Supertrend Settings")
-			
-			.SetOptimize(1m, 5m, 0.5m);
-
-		_useRsiFilter = Param(nameof(UseRsiFilter), false)
-			.SetDisplay("Use RSI Filter", "Enable RSI filter", "RSI Filter");
-
-		_rsiLength = Param(nameof(RsiLength), 14)
-			.SetDisplay("RSI Length", "RSI period", "RSI Filter")
-			
-			.SetOptimize(7, 21, 1);
-
-		_rsiOverbought = Param(nameof(RsiOverbought), 70m)
-			.SetDisplay("RSI Overbought", "Overbought level", "RSI Filter");
-
-		_rsiOversold = Param(nameof(RsiOversold), 30m)
-			.SetDisplay("RSI Oversold", "Oversold level", "RSI Filter");
-
-		_useMaFilter = Param(nameof(UseMaFilter), true)
-			.SetDisplay("Use MA Filter", "Enable MA filter", "MA Filter");
+			.SetDisplay("Multiplier", "SuperTrend multiplier", "SuperTrend");
 
 		_maLength = Param(nameof(MaLength), 50)
-			.SetDisplay("MA Length", "MA period", "MA Filter")
-			
-			.SetOptimize(20, 100, 10);
+			.SetGreaterThanZero()
+			.SetDisplay("EMA Length", "EMA period for trend filter", "Filters");
 
-		_maType = Param(nameof(MaType), MaTypes.Weighted)
-			.SetDisplay("MA Type", "Type of moving average", "MA Filter");
+		_atrStopLength = Param(nameof(AtrStopLength), 14)
+			.SetGreaterThanZero()
+			.SetDisplay("ATR Stop Length", "ATR period for stops", "Risk");
 
-		_useStopLoss = Param(nameof(UseStopLoss), true)
-			.SetDisplay("Use Stop Loss", "Enable stop loss", "Risk Management");
+		_slMultiplier = Param(nameof(SlMultiplier), 2m)
+			.SetDisplay("SL Multiplier", "Stop loss ATR multiplier", "Risk");
 
-		_slMultiplier = Param(nameof(SlMultiplier), 3m)
-			.SetDisplay("SL Multiplier", "Stop loss ATR multiplier", "Risk Management");
+		_tpMultiplier = Param(nameof(TpMultiplier), 4m)
+			.SetDisplay("TP Multiplier", "Take profit ATR multiplier", "Risk");
 
-		_useTakeProfit = Param(nameof(UseTakeProfit), true)
-			.SetDisplay("Use Take Profit", "Enable take profit", "Risk Management");
-
-		_tpMultiplier = Param(nameof(TpMultiplier), 9m)
-			.SetDisplay("TP Multiplier", "Take profit ATR multiplier", "Risk Management");
-
-		_useTrendStrength = Param(nameof(UseTrendStrength), false)
-			.SetDisplay("Use Trend Strength", "Enable trend strength filter", "Advanced")
-			
-			.SetOptimize(false, true, true);
-
-		_minTrendBars = Param(nameof(MinTrendBars), 2)
-			.SetDisplay("Min Trend Bars", "Minimum trend bars", "Advanced");
-
-		_useBreakoutConfirmation = Param(nameof(UseBreakoutConfirmation), true)
-			.SetDisplay("Use Breakout", "Enable breakout confirmation", "Advanced");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
+
+		_cooldownBars = Param(nameof(CooldownBars), 10)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "Risk");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevTrendUp = default;
-		_prevTrendDown = default;
-		_prevTrend = 1;
-		_trendStrength = default;
-		_prevSupertrend = default;
-		_stopLossLevel = default;
-		_takeProfitLevel = default;
-		_prevClose = default;
+		_prevUpTrend = false;
+		_hasPrev = false;
+		_entryPrice = 0;
+		_atrAtEntry = 0;
+		_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
@@ -296,115 +89,105 @@ public class AdvancedSupertrendStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_atr = new AverageTrueRange { Length = AtrLength };
-		_rsi = new RelativeStrengthIndex { Length = RsiLength };
-
-		_ma = MaType switch
-		{
-			MaTypes.Exponential => new EMA { Length = MaLength },
-			MaTypes.Weighted => new WeightedMovingAverage { Length = MaLength },
-			_ => new SMA { Length = MaLength }
-		};
+		var st = new SuperTrend { Length = AtrLength, Multiplier = Multiplier };
+		var ema = new ExponentialMovingAverage { Length = MaLength };
+		var atr = new AverageTrueRange { Length = AtrStopLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_atr, _rsi, _ma, ProcessCandle)
+			.BindEx(st, ema, atr, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _ma);
+			DrawIndicator(area, st);
+			DrawIndicator(area, ema);
 			DrawOwnTrades(area);
 		}
-
-		StartProtection(new Unit(), new Unit());
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal atrValue, decimal rsiValue, decimal maValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue stValue, IIndicatorValue emaValue, IIndicatorValue atrValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_atr.IsFormed)
+		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var median = (candle.HighPrice + candle.LowPrice) / 2m;
-		var up = median - Multiplier * atrValue;
-		var down = median + Multiplier * atrValue;
+		if (stValue.IsEmpty || emaValue.IsEmpty || atrValue.IsEmpty)
+			return;
 
-		if (_prevTrendUp == 0m)
+		var stv = (SuperTrendIndicatorValue)stValue;
+		var upTrend = stv.IsUpTrend;
+		var emaVal = emaValue.ToDecimal();
+		var atrVal = atrValue.ToDecimal();
+
+		if (!_hasPrev)
 		{
-			_prevTrendUp = up;
-			_prevTrendDown = down;
-			_prevSupertrend = down;
-			_prevClose = candle.ClosePrice;
+			_prevUpTrend = upTrend;
+			_hasPrev = true;
 			return;
 		}
 
-		var trendUp = _prevClose > _prevTrendUp ? Math.Max(up, _prevTrendUp) : up;
-		var trendDown = _prevClose < _prevTrendDown ? Math.Min(down, _prevTrendDown) : down;
-		var trend = candle.ClosePrice <= _prevTrendDown ? -1 : candle.ClosePrice >= _prevTrendUp ? 1 : _prevTrend;
-		var supertrend = trend == 1 ? trendUp : trendDown;
-
-		var supertrendBullish = trend == 1 && _prevTrend == -1;
-		var supertrendBearish = trend == -1 && _prevTrend == 1;
-
-		_trendStrength = trend != _prevTrend ? 1 : _trendStrength + 1;
-
-		var rsiBuyCondition = !UseRsiFilter || (rsiValue > RsiOversold && rsiValue < RsiOverbought);
-		var rsiSellCondition = !UseRsiFilter || (rsiValue < RsiOverbought && rsiValue > RsiOversold);
-		var maBuyCondition = !UseMaFilter || candle.ClosePrice > maValue;
-		var maSellCondition = !UseMaFilter || candle.ClosePrice < maValue;
-		var trendStrengthCondition = !UseTrendStrength || _trendStrength >= MinTrendBars;
-		var breakoutBuy = !UseBreakoutConfirmation || candle.ClosePrice > _prevSupertrend;
-		var breakoutSell = !UseBreakoutConfirmation || candle.ClosePrice < _prevSupertrend;
-
-		if (supertrendBullish && rsiBuyCondition && maBuyCondition && trendStrengthCondition && breakoutBuy && Position <= 0)
+		// Check stop/TP
+		if (Position > 0 && _entryPrice > 0 && _atrAtEntry > 0)
 		{
-			BuyMarket();
-			_stopLossLevel = UseStopLoss ? candle.ClosePrice - atrValue * SlMultiplier : 0m;
-			_takeProfitLevel = UseTakeProfit ? candle.ClosePrice + atrValue * TpMultiplier : 0m;
+			var sl = _entryPrice - _atrAtEntry * SlMultiplier;
+			var tp = _entryPrice + _atrAtEntry * TpMultiplier;
+			if (candle.ClosePrice <= sl || candle.ClosePrice >= tp)
+			{
+				SellMarket(Math.Abs(Position));
+				_entryPrice = 0;
+				_cooldownRemaining = CooldownBars;
+				_prevUpTrend = upTrend;
+				return;
+			}
 		}
-		else if (supertrendBearish && rsiSellCondition && maSellCondition && trendStrengthCondition && breakoutSell && Position >= 0)
+		else if (Position < 0 && _entryPrice > 0 && _atrAtEntry > 0)
 		{
-			SellMarket();
-			_stopLossLevel = UseStopLoss ? candle.ClosePrice + atrValue * SlMultiplier : 0m;
-			_takeProfitLevel = UseTakeProfit ? candle.ClosePrice - atrValue * TpMultiplier : 0m;
-		}
-		else if (Position > 0)
-		{
-			if (UseStopLoss && candle.LowPrice <= _stopLossLevel)
-				ClosePosition();
-			else if (UseTakeProfit && candle.HighPrice >= _takeProfitLevel)
-				ClosePosition();
-		}
-		else if (Position < 0)
-		{
-			if (UseStopLoss && candle.HighPrice >= _stopLossLevel)
-				ClosePosition();
-			else if (UseTakeProfit && candle.LowPrice <= _takeProfitLevel)
-				ClosePosition();
+			var sl = _entryPrice + _atrAtEntry * SlMultiplier;
+			var tp = _entryPrice - _atrAtEntry * TpMultiplier;
+			if (candle.ClosePrice >= sl || candle.ClosePrice <= tp)
+			{
+				BuyMarket(Math.Abs(Position));
+				_entryPrice = 0;
+				_cooldownRemaining = CooldownBars;
+				_prevUpTrend = upTrend;
+				return;
+			}
 		}
 
-		_prevTrendUp = trendUp;
-		_prevTrendDown = trendDown;
-		_prevTrend = trend;
-		_prevSupertrend = supertrend;
-		_prevClose = candle.ClosePrice;
-	}
+		if (_cooldownRemaining > 0)
+		{
+			_cooldownRemaining--;
+			_prevUpTrend = upTrend;
+			return;
+		}
 
-	/// <summary>
-	/// Moving average types.
-	/// </summary>
-	public enum MaTypes
-	{
-		/// <summary>Simple moving average.</summary>
-		Simple,
-		/// <summary>Exponential moving average.</summary>
-		Exponential,
-		/// <summary>Weighted moving average.</summary>
-		Weighted
+		var bullishFlip = upTrend && !_prevUpTrend;
+		var bearishFlip = !upTrend && _prevUpTrend;
+
+		if (bullishFlip && candle.ClosePrice > emaVal && Position <= 0)
+		{
+			if (Position < 0)
+				BuyMarket(Math.Abs(Position));
+			BuyMarket(Volume);
+			_entryPrice = candle.ClosePrice;
+			_atrAtEntry = atrVal;
+			_cooldownRemaining = CooldownBars;
+		}
+		else if (bearishFlip && candle.ClosePrice < emaVal && Position >= 0)
+		{
+			if (Position > 0)
+				SellMarket(Math.Abs(Position));
+			SellMarket(Volume);
+			_entryPrice = candle.ClosePrice;
+			_atrAtEntry = atrVal;
+			_cooldownRemaining = CooldownBars;
+		}
+
+		_prevUpTrend = upTrend;
 	}
 }
