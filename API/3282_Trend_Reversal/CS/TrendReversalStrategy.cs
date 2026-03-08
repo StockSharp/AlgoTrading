@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 using Ecng.Common;
 
@@ -9,98 +10,81 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-/// <summary>
-/// Trend Reversal strategy: RSI reversal with EMA trend.
-/// Buys when RSI reverses from oversold while above EMA.
-/// Sells when RSI reverses from overbought while below EMA.
-/// </summary>
 public class TrendReversalStrategy : Strategy
 {
-	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _rsiPeriod;
-	private readonly StrategyParam<int> _emaPeriod;
+	private readonly StrategyParam<int> _fastPeriod;
+	private readonly StrategyParam<int> _slowPeriod;
+	private readonly StrategyParam<int> _stopLossPoints;
+	private readonly StrategyParam<int> _takeProfitPoints;
 
-	private decimal? _prevRsi;
+	private ExponentialMovingAverage _fast;
+	private ExponentialMovingAverage _slow;
 
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private decimal _entryPrice;
+	private int _cooldown;
 
-	public int RsiPeriod
-	{
-		get => _rsiPeriod.Value;
-		set => _rsiPeriod.Value = value;
-	}
-
-	public int EmaPeriod
-	{
-		get => _emaPeriod.Value;
-		set => _emaPeriod.Value = value;
-	}
+	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
+	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
+	public int StopLossPoints { get => _stopLossPoints.Value; set => _stopLossPoints.Value = value; }
+	public int TakeProfitPoints { get => _takeProfitPoints.Value; set => _takeProfitPoints.Value = value; }
 
 	public TrendReversalStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Candle timeframe", "General");
+		_fastPeriod = Param(nameof(FastPeriod), 14).SetGreaterThanZero().SetDisplay("Fast Period", "Fast EMA period", "Indicator");
+		_slowPeriod = Param(nameof(SlowPeriod), 50).SetGreaterThanZero().SetDisplay("Slow Period", "Slow EMA period", "Indicator");
+		_stopLossPoints = Param(nameof(StopLossPoints), 200).SetNotNegative().SetDisplay("Stop Loss", "Stop-loss in price steps", "Risk");
+		_takeProfitPoints = Param(nameof(TakeProfitPoints), 400).SetNotNegative().SetDisplay("Take Profit", "Take-profit in price steps", "Risk");
+	}
 
-		_rsiPeriod = Param(nameof(RsiPeriod), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("RSI Period", "RSI period", "Indicators");
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		yield return (Security, TimeSpan.FromMinutes(5).TimeFrame());
+	}
 
-		_emaPeriod = Param(nameof(EmaPeriod), 50)
-			.SetGreaterThanZero()
-			.SetDisplay("EMA Period", "EMA trend filter", "Indicators");
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_fast = null; _slow = null;
+		_prevFast = 0; _prevSlow = 0; _entryPrice = 0; _cooldown = 0;
 	}
 
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_prevRsi = null;
-
-		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
-		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
-
-		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(rsi, ema, ProcessCandle)
-			.Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, ema);
-			DrawOwnTrades(area);
-		}
+		_fast = new ExponentialMovingAverage { Length = FastPeriod };
+		_slow = new ExponentialMovingAverage { Length = SlowPeriod };
+		var subscription = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
+		subscription.Bind(_fast, _slow, ProcessCandle);
+		subscription.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal rsi, decimal ema)
+	private void ProcessCandle(ICandleMessage candle, decimal fastValue, decimal slowValue)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		if (candle.State != CandleStates.Finished) return;
+		if (!_fast.IsFormed || !_slow.IsFormed) { _prevFast = fastValue; _prevSlow = slowValue; return; }
+		if (_cooldown > 0) { _cooldown--; _prevFast = fastValue; _prevSlow = slowValue; return; }
 
 		var close = candle.ClosePrice;
+		var step = Security?.PriceStep ?? 1m;
 
-		if (_prevRsi.HasValue)
+		if (Position > 0 && _entryPrice > 0)
 		{
-			// Buy: RSI crosses above 30 (reversal from oversold) and price above EMA
-			if (_prevRsi.Value <= 30m && rsi > 30m && close > ema && Position <= 0)
-			{
-				BuyMarket();
-			}
-			// Sell: RSI crosses below 70 (reversal from overbought) and price below EMA
-			else if (_prevRsi.Value >= 70m && rsi < 70m && close < ema && Position >= 0)
-			{
-				SellMarket();
-			}
+			if (StopLossPoints > 0 && close <= _entryPrice - StopLossPoints * step) { SellMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
+			if (TakeProfitPoints > 0 && close >= _entryPrice + TakeProfitPoints * step) { SellMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
+		}
+		else if (Position < 0 && _entryPrice > 0)
+		{
+			if (StopLossPoints > 0 && close >= _entryPrice + StopLossPoints * step) { BuyMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
+			if (TakeProfitPoints > 0 && close <= _entryPrice - TakeProfitPoints * step) { BuyMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
 		}
 
-		_prevRsi = rsi;
+		if (_prevFast <= _prevSlow && fastValue > slowValue && Position <= 0)
+		{ if (Position < 0) BuyMarket(); BuyMarket(); _entryPrice = close; _cooldown = 100; }
+		else if (_prevFast >= _prevSlow && fastValue < slowValue && Position >= 0)
+		{ if (Position > 0) SellMarket(); SellMarket(); _entryPrice = close; _cooldown = 100; }
+
+		_prevFast = fastValue; _prevSlow = slowValue;
 	}
 }

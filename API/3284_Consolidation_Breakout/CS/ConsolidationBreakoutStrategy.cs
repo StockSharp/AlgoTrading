@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 using Ecng.Common;
 
@@ -9,108 +10,81 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-/// <summary>
-/// Consolidation Breakout strategy: Bollinger Band breakout with SMA trend.
-/// Buys when close breaks above upper BB with uptrend.
-/// Sells when close breaks below lower BB with downtrend.
-/// </summary>
 public class ConsolidationBreakoutStrategy : Strategy
 {
-	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _bbPeriod;
-	private readonly StrategyParam<decimal> _bbWidth;
-	private readonly StrategyParam<int> _smaPeriod;
+	private readonly StrategyParam<int> _fastPeriod;
+	private readonly StrategyParam<int> _slowPeriod;
+	private readonly StrategyParam<int> _stopLossPoints;
+	private readonly StrategyParam<int> _takeProfitPoints;
 
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
+	private ExponentialMovingAverage _fast;
+	private ExponentialMovingAverage _slow;
 
-	public int BbPeriod
-	{
-		get => _bbPeriod.Value;
-		set => _bbPeriod.Value = value;
-	}
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private decimal _entryPrice;
+	private int _cooldown;
 
-	public decimal BbWidth
-	{
-		get => _bbWidth.Value;
-		set => _bbWidth.Value = value;
-	}
-
-	public int SmaPeriod
-	{
-		get => _smaPeriod.Value;
-		set => _smaPeriod.Value = value;
-	}
+	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
+	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
+	public int StopLossPoints { get => _stopLossPoints.Value; set => _stopLossPoints.Value = value; }
+	public int TakeProfitPoints { get => _takeProfitPoints.Value; set => _takeProfitPoints.Value = value; }
 
 	public ConsolidationBreakoutStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Candle timeframe", "General");
+		_fastPeriod = Param(nameof(FastPeriod), 14).SetGreaterThanZero().SetDisplay("Fast Period", "Fast EMA period", "Indicator");
+		_slowPeriod = Param(nameof(SlowPeriod), 50).SetGreaterThanZero().SetDisplay("Slow Period", "Slow EMA period", "Indicator");
+		_stopLossPoints = Param(nameof(StopLossPoints), 200).SetNotNegative().SetDisplay("Stop Loss", "Stop-loss in price steps", "Risk");
+		_takeProfitPoints = Param(nameof(TakeProfitPoints), 400).SetNotNegative().SetDisplay("Take Profit", "Take-profit in price steps", "Risk");
+	}
 
-		_bbPeriod = Param(nameof(BbPeriod), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("BB Period", "Bollinger Band period", "Indicators");
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		yield return (Security, TimeSpan.FromMinutes(5).TimeFrame());
+	}
 
-		_bbWidth = Param(nameof(BbWidth), 2m)
-			.SetGreaterThanZero()
-			.SetDisplay("BB Width", "Bollinger Band deviation", "Indicators");
-
-		_smaPeriod = Param(nameof(SmaPeriod), 50)
-			.SetGreaterThanZero()
-			.SetDisplay("SMA Period", "Trend filter SMA period", "Indicators");
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_fast = null; _slow = null;
+		_prevFast = 0; _prevSlow = 0; _entryPrice = 0; _cooldown = 0;
 	}
 
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		var bb = new BollingerBands { Length = BbPeriod, Width = BbWidth };
-		var sma = new SimpleMovingAverage { Length = SmaPeriod };
-
-		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.BindEx(bb, sma, ProcessCandle)
-			.Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, bb);
-			DrawIndicator(area, sma);
-			DrawOwnTrades(area);
-		}
+		_fast = new ExponentialMovingAverage { Length = FastPeriod };
+		_slow = new ExponentialMovingAverage { Length = SlowPeriod };
+		var subscription = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
+		subscription.Bind(_fast, _slow, ProcessCandle);
+		subscription.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bbValue, IIndicatorValue smaValue)
+	private void ProcessCandle(ICandleMessage candle, decimal fastValue, decimal slowValue)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
+		if (candle.State != CandleStates.Finished) return;
+		if (!_fast.IsFormed || !_slow.IsFormed) { _prevFast = fastValue; _prevSlow = slowValue; return; }
+		if (_cooldown > 0) { _cooldown--; _prevFast = fastValue; _prevSlow = slowValue; return; }
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var bbTyped = (BollingerBandsValue)bbValue;
-		if (bbTyped.UpBand is not decimal upper || bbTyped.LowBand is not decimal lower)
-			return;
-
-		var sma = smaValue.ToDecimal();
 		var close = candle.ClosePrice;
+		var step = Security?.PriceStep ?? 1m;
 
-		var mid = (upper + lower) / 2m;
+		if (Position > 0 && _entryPrice > 0)
+		{
+			if (StopLossPoints > 0 && close <= _entryPrice - StopLossPoints * step) { SellMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
+			if (TakeProfitPoints > 0 && close >= _entryPrice + TakeProfitPoints * step) { SellMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
+		}
+		else if (Position < 0 && _entryPrice > 0)
+		{
+			if (StopLossPoints > 0 && close >= _entryPrice + StopLossPoints * step) { BuyMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
+			if (TakeProfitPoints > 0 && close <= _entryPrice - TakeProfitPoints * step) { BuyMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
+		}
 
-		// Breakout above upper BB
-		if (close > upper && Position <= 0)
-		{
-			BuyMarket();
-		}
-		// Breakdown below lower BB
-		else if (close < lower && Position >= 0)
-		{
-			SellMarket();
-		}
+		if (_prevFast <= _prevSlow && fastValue > slowValue && Position <= 0)
+		{ if (Position < 0) BuyMarket(); BuyMarket(); _entryPrice = close; _cooldown = 100; }
+		else if (_prevFast >= _prevSlow && fastValue < slowValue && Position >= 0)
+		{ if (Position > 0) SellMarket(); SellMarket(); _entryPrice = close; _cooldown = 100; }
+
+		_prevFast = fastValue; _prevSlow = slowValue;
 	}
 }
