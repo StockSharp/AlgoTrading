@@ -56,7 +56,7 @@ public class SemilongWwwForexInstrumentsInfoStrategy : Strategy
 		.SetNotNegative()
 		.SetDisplay("Primary Shift", "Number of bars between the current close and the comparison close", "Signals");
 
-		_moveOnePoints = Param(nameof(MoveOnePoints), 10)
+		_moveOnePoints = Param(nameof(MoveOnePoints), 0)
 		.SetNotNegative()
 		.SetDisplay("Primary Move (points)", "Minimum deviation in points from the primary shifted close", "Signals");
 
@@ -64,7 +64,7 @@ public class SemilongWwwForexInstrumentsInfoStrategy : Strategy
 		.SetNotNegative()
 		.SetDisplay("Secondary Shift", "Additional bars added on top of the primary shift", "Signals");
 
-		_moveTwoPoints = Param(nameof(MoveTwoPoints), 5)
+		_moveTwoPoints = Param(nameof(MoveTwoPoints), 0)
 		.SetNotNegative()
 		.SetDisplay("Secondary Move (points)", "Minimum distance between the two shifted closes", "Signals");
 
@@ -245,10 +245,10 @@ public class SemilongWwwForexInstrumentsInfoStrategy : Strategy
 		var shiftedOneResult = _shiftCloseOne.Process(new DecimalIndicatorValue(_shiftCloseOne, candle.ClosePrice, candle.OpenTime) { IsFinal = true });
 		var shiftedTwoResult = _shiftCloseTwo.Process(new DecimalIndicatorValue(_shiftCloseTwo, candle.ClosePrice, candle.OpenTime) { IsFinal = true });
 
-		if (shiftedOneResult.IsEmpty || shiftedTwoResult.IsEmpty)
+		if (!_shiftCloseOne.IsFormed || !_shiftCloseTwo.IsFormed)
 			return;
 
-		if (!_shiftCloseOne.IsFormed || !_shiftCloseTwo.IsFormed)
+		if (shiftedOneResult.IsEmpty || shiftedTwoResult.IsEmpty)
 			return;
 
 		var shiftedOneValue = shiftedOneResult.GetValue<decimal>();
