@@ -55,7 +55,7 @@ public class Mbkasctrend3Strategy : Strategy
 		_w3 = Param(nameof(Weight3),1m).SetDisplay("Weight 3","Weight for WPR3","Indicator");
 		_sl = Param(nameof(StopLoss),1000m).SetGreaterThanZero().SetDisplay("Stop Loss","Stop loss in points","Protection");
 		_tp = Param(nameof(TakeProfit),2000m).SetGreaterThanZero().SetDisplay("Take Profit","Take profit in points","Protection");
-		_candle = Param(nameof(CandleType),TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type","Time frame for calculations","General");
+		_candle = Param(nameof(CandleType),TimeSpan.FromHours(4).TimeFrame()).SetDisplay("Candle Type","Time frame for calculations","General");
 	}
 	
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
@@ -63,6 +63,12 @@ public class Mbkasctrend3Strategy : Strategy
 		return [(Security, CandleType)];
 	}
 	
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevTrend = 0;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);

@@ -54,7 +54,7 @@ public class LosslessMaStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Slow MA", "Slow SMA length", "Parameters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candles for strategy", "General");
 	}
 
@@ -76,8 +76,8 @@ public class LosslessMaStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var fastMa = new SMA { Length = FastLength };
-		var slowMa = new SMA { Length = SlowLength };
+		var fastMa = new ExponentialMovingAverage { Length = FastLength };
+		var slowMa = new ExponentialMovingAverage { Length = SlowLength };
 
 		var subscription = SubscribeCandles(CandleType);
 
@@ -115,15 +115,17 @@ public class LosslessMaStrategy : Strategy
 		// Bullish crossover
 		if (prevFast <= prevSlow && fastValue > slowValue && Position <= 0)
 		{
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
+			if (Position < 0)
+				BuyMarket();
+			BuyMarket();
 		}
 
 		// Bearish crossover
 		if (prevFast >= prevSlow && fastValue < slowValue && Position >= 0)
 		{
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
+			if (Position > 0)
+				SellMarket();
+			SellMarket();
 		}
 	}
 }
