@@ -11,8 +11,8 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Escort Trend strategy combining WMA crossover with MACD and CCI confirmation.
-/// Buys when fast WMA above slow WMA, MACD bullish, CCI above threshold.
+/// Escort Trend strategy combining WMA crossover with CCI confirmation.
+/// Buys when fast WMA above slow WMA and CCI above threshold.
 /// Sells when opposite conditions met.
 /// </summary>
 public class EscortTrendStrategy : Strategy
@@ -25,9 +25,9 @@ public class EscortTrendStrategy : Strategy
 	private readonly StrategyParam<decimal> _takeProfitPct;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private WeightedMovingAverage _slowWma;
-	private CommodityChannelIndex _cci;
-	private MovingAverageConvergenceDivergenceSignal _macd;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private bool _hasPrev;
 
 	public int FastWmaPeriod { get => _fastWmaPeriod.Value; set => _fastWmaPeriod.Value = value; }
 	public int SlowWmaPeriod { get => _slowWmaPeriod.Value; set => _slowWmaPeriod.Value = value; }
@@ -60,14 +60,21 @@ public class EscortTrendStrategy : Strategy
 		_takeProfitPct = Param(nameof(TakeProfitPct), 3m)
 			.SetDisplay("Take Profit %", "Take profit percentage", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	/// <inheritdoc />
+	protected override void OnReseted()
 	{
-		return [(Security, CandleType)];
+		base.OnReseted();
+		_prevFast = 0;
+		_prevSlow = 0;
+		_hasPrev = false;
 	}
 
 	/// <inheritdoc />
@@ -76,69 +83,50 @@ public class EscortTrendStrategy : Strategy
 		base.OnStarted2(time);
 
 		var fastWma = new WeightedMovingAverage { Length = FastWmaPeriod };
-		_slowWma = new WeightedMovingAverage { Length = SlowWmaPeriod };
-		_cci = new CommodityChannelIndex { Length = CciPeriod };
-		_macd = new MovingAverageConvergenceDivergenceSignal();
+		var slowWma = new WeightedMovingAverage { Length = SlowWmaPeriod };
+		var cci = new CommodityChannelIndex { Length = CciPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(fastWma, ProcessCandle)
+			.Bind(fastWma, slowWma, cci, ProcessCandle)
 			.Start();
 
 		StartProtection(
 			takeProfit: new Unit(TakeProfitPct, UnitTypes.Percent),
 			stopLoss: new Unit(StopLossPct, UnitTypes.Percent)
 		);
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, fastWma);
-			DrawIndicator(area, _slowWma);
-			DrawOwnTrades(area);
-		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal fast)
+	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow, decimal cciValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var slowResult = _slowWma.Process(candle.ClosePrice, candle.OpenTime, true);
-		if (!slowResult.IsFormed)
+		if (!_hasPrev)
+		{
+			_prevFast = fast;
+			_prevSlow = slow;
+			_hasPrev = true;
 			return;
+		}
 
-		var slow = slowResult.ToDecimal();
+		// Buy crossover: fast WMA crosses above slow WMA with CCI confirmation
+		var crossUp = _prevFast <= _prevSlow && fast > slow && cciValue > CciThreshold;
+		// Sell crossover: fast WMA crosses below slow WMA with CCI confirmation
+		var crossDown = _prevFast >= _prevSlow && fast < slow && cciValue < -CciThreshold;
 
-		var cciResult = _cci.Process(candle);
-		if (!cciResult.IsFormed)
-			return;
-
-		var cciValue = cciResult.ToDecimal();
-
-		var macdResult = _macd.Process(candle.ClosePrice, candle.OpenTime, true);
-		if (!macdResult.IsFormed)
-			return;
-
-		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdResult;
-		if (macdTyped.Macd is not decimal macdLine || macdTyped.Signal is not decimal signalLine)
-			return;
-
-		// Buy: fast WMA above slow WMA, MACD bullish, CCI above threshold
-		var buy = fast > slow && macdLine > signalLine && cciValue > CciThreshold;
-		// Sell: fast WMA below slow WMA, MACD bearish, CCI below negative threshold
-		var sell = fast < slow && macdLine < signalLine && cciValue < -CciThreshold;
-
-		if (buy && Position <= 0)
+		if (crossUp && Position <= 0)
 		{
 			if (Position < 0) BuyMarket();
 			BuyMarket();
 		}
-		else if (sell && Position >= 0)
+		else if (crossDown && Position >= 0)
 		{
 			if (Position > 0) SellMarket();
 			SellMarket();
 		}
+
+		_prevFast = fast;
+		_prevSlow = slow;
 	}
 }

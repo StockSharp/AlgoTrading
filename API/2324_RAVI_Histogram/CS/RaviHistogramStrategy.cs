@@ -66,13 +66,20 @@ public class RaviHistogramStrategy : Strategy
 		_sellClose = Param(nameof(SellClose), true)
 			.SetDisplay("Close Short", "Allow closing short positions", "Trading");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevRavi = 0;
+		_isFirst = true;
 	}
 
 	protected override void OnStarted2(DateTime time)
@@ -106,6 +113,13 @@ public class RaviHistogramStrategy : Strategy
 
 		// Calculate RAVI value from EMA difference.
 		var ravi = 100m * (fast - slow) / slow;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+		{
+			_prevRavi = ravi;
+			_isFirst = false;
+			return;
+		}
 
 		if (_isFirst)
 		{

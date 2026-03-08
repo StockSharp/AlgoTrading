@@ -1,5 +1,7 @@
 using System;
 
+using Ecng.Common;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -95,6 +97,9 @@ public class ScalperEmaSimpleStrategy : Strategy
 	private void ProcessCandle(ICandleMessage candle, decimal fastValue, decimal slowValue, decimal stochK)
 	{
 		if (candle.State != CandleStates.Finished)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		// Buy: uptrend (fast > slow) + stochastic oversold

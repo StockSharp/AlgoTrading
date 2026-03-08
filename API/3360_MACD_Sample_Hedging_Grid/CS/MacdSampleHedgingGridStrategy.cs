@@ -15,9 +15,6 @@ public class MacdSampleHedgingGridStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevMacd;
-	private bool _hasPrev;
-
 	public DataType CandleType
 	{
 		get => _candleType.Value;
@@ -26,19 +23,39 @@ public class MacdSampleHedgingGridStrategy : Strategy
 
 	public MacdSampleHedgingGridStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 	}
 
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		_hasPrev = false;
 
 		var macd = new MovingAverageConvergenceDivergence();
 
+		decimal? prevMacd = null;
+
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(macd, ProcessCandle).Start();
+		subscription
+			.Bind(macd, (candle, macdLine) =>
+			{
+				if (candle.State != CandleStates.Finished)
+					return;
+
+				if (!IsFormedAndOnlineAndAllowTrading())
+					return;
+
+				if (prevMacd.HasValue)
+				{
+					if (prevMacd.Value <= 0 && macdLine > 0 && Position <= 0)
+						BuyMarket();
+					else if (prevMacd.Value >= 0 && macdLine < 0 && Position >= 0)
+						SellMarket();
+				}
+
+				prevMacd = macdLine;
+			})
+			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -46,25 +63,5 @@ public class MacdSampleHedgingGridStrategy : Strategy
 			DrawCandles(area, subscription);
 			DrawOwnTrades(area);
 		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal macdLine)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!_hasPrev)
-		{
-			_prevMacd = macdLine;
-			_hasPrev = true;
-			return;
-		}
-
-		if (_prevMacd <= 0 && macdLine > 0 && Position <= 0)
-			BuyMarket();
-		else if (_prevMacd >= 0 && macdLine < 0 && Position >= 0)
-			SellMarket();
-
-		_prevMacd = macdLine;
 	}
 }

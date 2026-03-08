@@ -68,17 +68,18 @@ public class GridderEaStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var bbv = bbVal.IsEmpty ? null : (BollingerBandsValue)bbVal;
-		if (bbv == null)
+		var bbv = (BollingerBandsValue)bbVal;
+		if (bbv.UpBand is not decimal upper ||
+			bbv.LowBand is not decimal lower)
 			return;
 
 		var close = candle.ClosePrice;
 
-		if (close < bbv.LowBand && Position <= 0)
+		if (close < lower && Position <= 0)
 		{
 			BuyMarket();
 		}
-		else if (close > bbv.UpBand && Position >= 0)
+		else if (close > upper && Position >= 0)
 		{
 			SellMarket();
 		}

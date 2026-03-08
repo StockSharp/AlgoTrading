@@ -18,9 +18,9 @@ public class CandlesticksBwStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 
-	private readonly SimpleMovingAverage _aoFast = new() { Length = 5 };
-	private readonly SimpleMovingAverage _aoSlow = new() { Length = 34 };
-	private readonly SimpleMovingAverage _acMa = new() { Length = 5 };
+	private SimpleMovingAverage _aoFast;
+	private SimpleMovingAverage _aoSlow;
+	private SimpleMovingAverage _acMa;
 
 	private decimal _prevAo;
 	private decimal _prevAc;
@@ -31,13 +31,25 @@ public class CandlesticksBwStrategy : Strategy
 
 	public CandlesticksBwStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for analysis", "General");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_aoFast = null;
+		_aoSlow = null;
+		_acMa = null;
+		_prevAo = 0;
+		_prevAc = 0;
+		_hasPrev = false;
+		_prevColor = -1;
 	}
 
 	protected override void OnStarted2(DateTime time)
@@ -48,6 +60,14 @@ public class CandlesticksBwStrategy : Strategy
 		_prevAc = 0;
 		_hasPrev = false;
 		_prevColor = -1;
+
+		_aoFast = new SimpleMovingAverage { Length = 5 };
+		_aoSlow = new SimpleMovingAverage { Length = 34 };
+		_acMa = new SimpleMovingAverage { Length = 5 };
+
+		Indicators.Add(_aoFast);
+		Indicators.Add(_aoSlow);
+		Indicators.Add(_acMa);
 
 		var sma = new SimpleMovingAverage { Length = 1 };
 

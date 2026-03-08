@@ -16,6 +16,8 @@ public class OmzdwwiPendingManagerStrategy : Strategy
 {
 	private readonly StrategyParam<int> _rsiPeriod;
 	private readonly StrategyParam<int> _smaPeriod;
+	private readonly StrategyParam<decimal> _oversold;
+	private readonly StrategyParam<decimal> _overbought;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _prevRsi;
@@ -23,6 +25,8 @@ public class OmzdwwiPendingManagerStrategy : Strategy
 
 	public int RsiPeriod { get => _rsiPeriod.Value; set => _rsiPeriod.Value = value; }
 	public int SmaPeriod { get => _smaPeriod.Value; set => _smaPeriod.Value = value; }
+	public decimal Oversold { get => _oversold.Value; set => _oversold.Value = value; }
+	public decimal Overbought { get => _overbought.Value; set => _overbought.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public OmzdwwiPendingManagerStrategy()
@@ -31,13 +35,26 @@ public class OmzdwwiPendingManagerStrategy : Strategy
 			.SetDisplay("RSI Period", "RSI lookback", "Indicators");
 		_smaPeriod = Param(nameof(SmaPeriod), 20)
 			.SetDisplay("SMA Period", "SMA lookback", "Indicators");
+		_oversold = Param(nameof(Oversold), 40m)
+			.SetDisplay("Oversold", "RSI oversold level", "Indicators");
+		_overbought = Param(nameof(Overbought), 60m)
+			.SetDisplay("Overbought", "RSI overbought level", "Indicators");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevRsi = default;
+		_hasPrev = default;
 	}
 
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+		_prevRsi = 0;
 		_hasPrev = false;
 
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
@@ -54,12 +71,15 @@ public class OmzdwwiPendingManagerStrategy : Strategy
 
 		if (!_hasPrev) { _prevRsi = rsi; _hasPrev = true; return; }
 
-		if (_prevRsi >= 30 && rsi < 30 && close > sma && Position <= 0)
+		var oversold = Oversold;
+		var overbought = Overbought;
+
+		if (_prevRsi >= oversold && rsi < oversold && close > sma && Position <= 0)
 		{
 			if (Position < 0) BuyMarket();
 			BuyMarket();
 		}
-		else if (_prevRsi <= 70 && rsi > 70 && close < sma && Position >= 0)
+		else if (_prevRsi <= overbought && rsi > overbought && close < sma && Position >= 0)
 		{
 			if (Position > 0) SellMarket();
 			SellMarket();

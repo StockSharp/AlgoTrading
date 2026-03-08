@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,142 +11,84 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// VR Overturn strategy implementing martingale and anti-martingale principles.
-/// Alternates direction and adjusts volume based on win/loss results.
+/// Overturn strategy using EMA crossover.
 /// </summary>
 public class VROverturnStrategy : Strategy
 {
-	public enum TradeModes
-	{
-		Martingale,
-		AntiMartingale
-	}
-
-	private readonly StrategyParam<TradeModes> _tradeMode;
-	private readonly StrategyParam<Sides> _startSide;
-	private readonly StrategyParam<int> _takePoints;
-	private readonly StrategyParam<int> _stopPoints;
+	private readonly StrategyParam<int> _fastPeriod;
+	private readonly StrategyParam<int> _slowPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _entryPrice;
-	private Sides _currentSide;
-	private int _consecutiveLosses;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private bool _hasPrev;
 
-	public TradeModes Mode { get => _tradeMode.Value; set => _tradeMode.Value = value; }
-	public Sides StartSide { get => _startSide.Value; set => _startSide.Value = value; }
-	public int TakeProfit { get => _takePoints.Value; set => _takePoints.Value = value; }
-	public int StopLoss { get => _stopPoints.Value; set => _stopPoints.Value = value; }
+	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
+	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public VROverturnStrategy()
 	{
-		_tradeMode = Param(nameof(Mode), TradeModes.Martingale)
-			.SetDisplay("Trade Mode", "Martingale or AntiMartingale", "General");
-
-		_startSide = Param(nameof(StartSide), Sides.Buy)
-			.SetDisplay("Start Side", "Initial trade direction", "General");
-
-		_takePoints = Param(nameof(TakeProfit), 300)
+		_fastPeriod = Param(nameof(FastPeriod), 12)
 			.SetGreaterThanZero()
-			.SetDisplay("Take Profit", "Take profit in points", "Risk");
-
-		_stopPoints = Param(nameof(StopLoss), 300)
+			.SetDisplay("Fast Period", "Fast EMA period", "General");
+		_slowPeriod = Param(nameof(SlowPeriod), 26)
 			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss", "Stop loss in points", "Risk");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Slow Period", "Slow EMA period", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	protected override void OnReseted()
 	{
-		return [(Security, CandleType)];
+		base.OnReseted();
+		_prevFast = 0;
+		_prevSlow = 0;
+		_hasPrev = false;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_currentSide = StartSide;
-		_consecutiveLosses = 0;
+		var fast = new ExponentialMovingAverage { Length = FastPeriod };
+		var slow = new ExponentialMovingAverage { Length = SlowPeriod };
 
-		var sma = new SimpleMovingAverage { Length = 10 };
-		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(sma, ProcessCandle).Start();
+		SubscribeCandles(CandleType)
+			.Bind(fast, slow, ProcessCandle)
+			.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
+	private void ProcessCandle(ICandleMessage candle, decimal fastVal, decimal slowVal)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
+		if (candle.State != CandleStates.Finished) return;
 
-		var step = Security.PriceStep ?? 1m;
-		var price = candle.ClosePrice;
-
-		if (Position == 0)
+		if (!_hasPrev)
 		{
-			_entryPrice = price;
-			if (_currentSide == Sides.Buy)
-				BuyMarket();
-			else
-				SellMarket();
+			_prevFast = fastVal;
+			_prevSlow = slowVal;
+			_hasPrev = true;
 			return;
 		}
 
-		if (Position > 0)
-		{
-			var tp = _entryPrice + TakeProfit * step;
-			var sl = _entryPrice - StopLoss * step;
+		var crossUp = _prevFast <= _prevSlow && fastVal > slowVal;
+		var crossDown = _prevFast >= _prevSlow && fastVal < slowVal;
 
-			if (price >= tp)
-			{
-				SellMarket();
-				OnTradeResult(true);
-			}
-			else if (price <= sl)
-			{
-				SellMarket();
-				OnTradeResult(false);
-			}
-		}
-		else if (Position < 0)
+		if (crossUp && Position <= 0)
 		{
-			var tp = _entryPrice - TakeProfit * step;
-			var sl = _entryPrice + StopLoss * step;
-
-			if (price <= tp)
-			{
-				BuyMarket();
-				OnTradeResult(true);
-			}
-			else if (price >= sl)
-			{
-				BuyMarket();
-				OnTradeResult(false);
-			}
+			if (Position < 0) BuyMarket();
+			BuyMarket();
 		}
-	}
-
-	private void OnTradeResult(bool isWin)
-	{
-		if (Mode == TradeModes.Martingale)
+		else if (crossDown && Position >= 0)
 		{
-			if (isWin)
-				_consecutiveLosses = 0;
-			else
-				_consecutiveLosses++;
-		}
-		else
-		{
-			if (isWin)
-				_consecutiveLosses++;
-			else
-				_consecutiveLosses = 0;
+			if (Position > 0) SellMarket();
+			SellMarket();
 		}
 
-		if (!isWin)
-			_currentSide = _currentSide == Sides.Buy ? Sides.Sell : Sides.Buy;
+		_prevFast = fastVal;
+		_prevSlow = slowVal;
 	}
 }

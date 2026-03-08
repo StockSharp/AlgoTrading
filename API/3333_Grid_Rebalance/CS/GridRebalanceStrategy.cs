@@ -10,8 +10,9 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Grid Rebalance strategy: RSI + EMA level-based.
-/// Buys when RSI < 45 and close > EMA. Sells when RSI > 55 and close < EMA.
+/// Grid Rebalance strategy: RSI + EMA crossover-based.
+/// Buys when close crosses above EMA with RSI confirmation.
+/// Sells when close crosses below EMA with RSI confirmation.
 /// </summary>
 public class GridRebalanceStrategy : Strategy
 {
@@ -39,7 +40,7 @@ public class GridRebalanceStrategy : Strategy
 
 	public GridRebalanceStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
@@ -58,9 +59,35 @@ public class GridRebalanceStrategy : Strategy
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
 
+		decimal? prevClose = null;
+		decimal? prevEma = null;
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(rsi, ema, ProcessCandle)
+			.Bind(rsi, ema, (candle, rsiVal, emaVal) =>
+			{
+				if (candle.State != CandleStates.Finished)
+					return;
+
+				if (!IsFormedAndOnlineAndAllowTrading())
+					return;
+
+				var close = candle.ClosePrice;
+
+				if (prevClose.HasValue && prevEma.HasValue)
+				{
+					var crossUp = prevClose.Value <= prevEma.Value && close > emaVal;
+					var crossDown = prevClose.Value >= prevEma.Value && close < emaVal;
+
+					if (crossUp && rsiVal < 55m && Position <= 0)
+						BuyMarket();
+					else if (crossDown && rsiVal > 45m && Position >= 0)
+						SellMarket();
+				}
+
+				prevClose = close;
+				prevEma = emaVal;
+			})
 			.Start();
 
 		var area = CreateChartArea();
@@ -70,19 +97,5 @@ public class GridRebalanceStrategy : Strategy
 			DrawIndicator(area, ema);
 			DrawOwnTrades(area);
 		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal rsi, decimal ema)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (rsi < 50m && candle.ClosePrice > ema && Position <= 0)
-			BuyMarket();
-		else if (rsi > 50m && candle.ClosePrice < ema && Position >= 0)
-			SellMarket();
 	}
 }

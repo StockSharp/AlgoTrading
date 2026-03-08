@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,8 +11,8 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on the OsHMA oscillator.
-/// It trades on zero crossings or direction changes of the oscillator.
+/// Strategy based on the OsHMA oscillator (difference of fast and slow Hull MA).
+/// Trades on zero crossings or direction changes of the oscillator.
 /// </summary>
 public class OsHmaStrategy : Strategy
 {
@@ -34,184 +31,109 @@ public class OsHmaStrategy : Strategy
 
 	private decimal _prevValue;
 	private decimal _prevPrevValue;
+	private int _count;
 
-	/// <summary>
-	/// Period of fast Hull Moving Average.
-	/// </summary>
-	public int FastHma
-	{
-		get => _fastHma.Value;
-		set => _fastHma.Value = value;
-	}
+	public int FastHma { get => _fastHma.Value; set => _fastHma.Value = value; }
+	public int SlowHma { get => _slowHma.Value; set => _slowHma.Value = value; }
+	public OsHmaModes Mode { get => _mode.Value; set => _mode.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
+	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
 
-	/// <summary>
-	/// Period of slow Hull Moving Average.
-	/// </summary>
-	public int SlowHma
-	{
-		get => _slowHma.Value;
-		set => _slowHma.Value = value;
-	}
-
-	/// <summary>
-	/// Trading mode.
-	/// </summary>
-	public OsHmaModes Mode
-	{
-		get => _mode.Value;
-		set => _mode.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type to subscribe to.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Take profit in points.
-	/// </summary>
-	public decimal TakeProfit
-	{
-		get => _takeProfit.Value;
-		set => _takeProfit.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss in points.
-	/// </summary>
-	public decimal StopLoss
-	{
-		get => _stopLoss.Value;
-		set => _stopLoss.Value = value;
-	}
-
-	/// <summary>
-	/// Initialize strategy parameters.
-	/// </summary>
 	public OsHmaStrategy()
 	{
 		_fastHma = Param(nameof(FastHma), 13)
-		.SetDisplay("Fast HMA", "Length of fast Hull Moving Average", "Indicators")
-		
-		.SetOptimize(10, 20, 1);
+			.SetDisplay("Fast HMA", "Length of fast Hull Moving Average", "Indicators");
 
 		_slowHma = Param(nameof(SlowHma), 26)
-		.SetDisplay("Slow HMA", "Length of slow Hull Moving Average", "Indicators")
-		
-		.SetOptimize(20, 40, 2);
+			.SetDisplay("Slow HMA", "Length of slow Hull Moving Average", "Indicators");
 
 		_mode = Param(nameof(Mode), OsHmaModes.Twist)
-		.SetDisplay("Mode", "Breakdown – zero crossing, Twist – direction change", "General");
+			.SetDisplay("Mode", "Breakdown or Twist", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-		.SetDisplay("Candle Type", "Timeframe for candles", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+			.SetDisplay("Candle Type", "Timeframe for candles", "General");
 
 		_takeProfit = Param(nameof(TakeProfit), 2000m)
-		.SetDisplay("Take Profit", "Target profit in points", "Risk")
-		
-		.SetOptimize(500m, 4000m, 500m);
+			.SetDisplay("Take Profit", "Target profit in points", "Risk");
 
 		_stopLoss = Param(nameof(StopLoss), 1000m)
-		.SetDisplay("Stop Loss", "Loss limit in points", "Risk")
-		
-		.SetOptimize(300m, 3000m, 300m);
+			.SetDisplay("Stop Loss", "Loss limit in points", "Risk");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-	return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
-	base.OnReseted();
-	_prevValue = 0m;
-	_prevPrevValue = 0m;
+		base.OnReseted();
+		_prevValue = 0;
+		_prevPrevValue = 0;
+		_count = 0;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
-	base.OnStarted2(time);
+		base.OnStarted2(time);
 
-	var fastHma = new HullMovingAverage { Length = FastHma };
-	var slowHma = new HullMovingAverage { Length = SlowHma };
+		var fastHma = new HullMovingAverage { Length = FastHma };
+		var slowHma = new HullMovingAverage { Length = SlowHma };
 
-	var subscription = SubscribeCandles(CandleType);
-	subscription
-	.Bind(fastHma, slowHma, ProcessCandle)
-	.Start();
+		SubscribeCandles(CandleType)
+			.Bind(fastHma, slowHma, ProcessCandle)
+			.Start();
 
-	var area = CreateChartArea();
-	if (area != null)
-	{
-	DrawCandles(area, subscription);
-	DrawIndicator(area, fastHma);
-	DrawIndicator(area, slowHma);
-	DrawOwnTrades(area);
-	}
-
-	StartProtection(
-	takeProfit: new Unit(TakeProfit, UnitTypes.Absolute),
-	stopLoss: new Unit(StopLoss, UnitTypes.Absolute),
-	isStopTrailing: false);
+		StartProtection(
+			takeProfit: new Unit(TakeProfit, UnitTypes.Absolute),
+			stopLoss: new Unit(StopLoss, UnitTypes.Absolute)
+		);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal fastValue, decimal slowValue)
 	{
-	// Ignore unfinished candles
-	if (candle.State != CandleStates.Finished)
-	return;
+		if (candle.State != CandleStates.Finished)
+			return;
 
-	if (!IsFormedAndOnlineAndAllowTrading())
-	return;
+		var current = fastValue - slowValue;
+		_count++;
 
-	var current = fastValue - slowValue;
+		if (_count < 3)
+		{
+			_prevPrevValue = _prevValue;
+			_prevValue = current;
+			return;
+		}
 
-	// Initialize on the first call
-	if (_prevValue == 0m && _prevPrevValue == 0m)
-	{
-	_prevPrevValue = _prevValue;
-	_prevValue = current;
-	return;
-	}
+		var buySignal = false;
+		var sellSignal = false;
 
-	var buySignal = false;
-	var sellSignal = false;
+		switch (Mode)
+		{
+			case OsHmaModes.Breakdown:
+				buySignal = _prevValue <= 0 && current > 0;
+				sellSignal = _prevValue >= 0 && current < 0;
+				break;
+			case OsHmaModes.Twist:
+				buySignal = _prevValue < _prevPrevValue && current > _prevValue;
+				sellSignal = _prevValue > _prevPrevValue && current < _prevValue;
+				break;
+		}
 
-	switch (Mode)
-	{
-	case OsHmaModes.Breakdown:
-	buySignal = _prevValue > 0m && current <= 0m;
-	sellSignal = _prevValue < 0m && current >= 0m;
-	break;
+		if (buySignal && Position <= 0)
+		{
+			if (Position < 0) BuyMarket();
+			BuyMarket();
+		}
+		else if (sellSignal && Position >= 0)
+		{
+			if (Position > 0) SellMarket();
+			SellMarket();
+		}
 
-	case OsHmaModes.Twist:
-	buySignal = _prevPrevValue < _prevValue && current > _prevValue;
-	sellSignal = _prevPrevValue > _prevValue && current < _prevValue;
-	break;
-	}
-
-	if (buySignal && Position <= 0)
-	{
-	// Close short positions and open long
-	var volume = Volume + Math.Abs(Position);
-	BuyMarket(volume);
-	}
-	else if (sellSignal && Position >= 0)
-	{
-	// Close long positions and open short
-	var volume = Volume + Math.Abs(Position);
-	SellMarket(volume);
-	}
-
-	_prevPrevValue = _prevValue;
-	_prevValue = current;
+		_prevPrevValue = _prevValue;
+		_prevValue = current;
 	}
 }

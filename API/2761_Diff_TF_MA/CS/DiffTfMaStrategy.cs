@@ -63,16 +63,16 @@ public class DiffTfMaStrategy : Strategy
 			
 			.SetOptimize(5, 30, 5);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Base Candle", "Trading timeframe", "General");
 
-		_higherCandleType = Param(nameof(HigherCandleType), TimeSpan.FromHours(1).TimeFrame())
+		_higherCandleType = Param(nameof(HigherCandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Higher Candle", "Higher timeframe for confirmation", "General");
 
 		_reverseSignals = Param(nameof(ReverseSignals), false)
 			.SetDisplay("Reverse Signals", "Invert the crossover logic", "General");
 
-		Volume = 1m;
+		Volume = 0.1m;
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()

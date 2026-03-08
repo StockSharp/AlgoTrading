@@ -11,8 +11,8 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Wedge Pattern strategy: WMA crossover + Momentum.
-/// Buys when fast WMA crosses above slow WMA and momentum > 100.
-/// Sells on cross below with momentum < 100.
+/// Buys when fast WMA crosses above slow WMA and momentum &gt; 100.
+/// Sells on cross below with momentum &lt; 100.
 /// </summary>
 public class WedgePatternStrategy : Strategy
 {
@@ -20,9 +20,6 @@ public class WedgePatternStrategy : Strategy
 	private readonly StrategyParam<int> _fastPeriod;
 	private readonly StrategyParam<int> _slowPeriod;
 	private readonly StrategyParam<int> _momPeriod;
-
-	private decimal? _prevFast;
-	private decimal? _prevSlow;
 
 	public DataType CandleType
 	{
@@ -50,18 +47,18 @@ public class WedgePatternStrategy : Strategy
 
 	public WedgePatternStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 
-		_fastPeriod = Param(nameof(FastPeriod), 8)
+		_fastPeriod = Param(nameof(FastPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast WMA", "Fast WMA period", "Indicators");
 
-		_slowPeriod = Param(nameof(SlowPeriod), 20)
+		_slowPeriod = Param(nameof(SlowPeriod), 40)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow WMA", "Slow WMA period", "Indicators");
 
-		_momPeriod = Param(nameof(MomPeriod), 10)
+		_momPeriod = Param(nameof(MomPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Momentum", "Momentum period", "Indicators");
 	}
@@ -70,16 +67,37 @@ public class WedgePatternStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_prevFast = null;
-		_prevSlow = null;
-
 		var fast = new WeightedMovingAverage { Length = FastPeriod };
 		var slow = new WeightedMovingAverage { Length = SlowPeriod };
 		var mom = new Momentum { Length = MomPeriod };
 
+		decimal? prevFast = null;
+		decimal? prevSlow = null;
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(fast, slow, mom, ProcessCandle)
+			.Bind(fast, slow, mom, (candle, fastVal, slowVal, momVal) =>
+			{
+				if (candle.State != CandleStates.Finished)
+					return;
+
+				if (!IsFormedAndOnlineAndAllowTrading())
+					return;
+
+				if (prevFast.HasValue && prevSlow.HasValue)
+				{
+					var crossUp = prevFast.Value <= prevSlow.Value && fastVal > slowVal;
+					var crossDown = prevFast.Value >= prevSlow.Value && fastVal < slowVal;
+
+					if (crossUp && momVal > 100m && Position <= 0)
+						BuyMarket();
+					else if (crossDown && momVal < 100m && Position >= 0)
+						SellMarket();
+				}
+
+				prevFast = fastVal;
+				prevSlow = slowVal;
+			})
 			.Start();
 
 		var area = CreateChartArea();
@@ -90,28 +108,5 @@ public class WedgePatternStrategy : Strategy
 			DrawIndicator(area, slow);
 			DrawOwnTrades(area);
 		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow, decimal mom)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (_prevFast.HasValue && _prevSlow.HasValue)
-		{
-			var crossUp = _prevFast.Value <= _prevSlow.Value && fast > slow;
-			var crossDown = _prevFast.Value >= _prevSlow.Value && fast < slow;
-
-			if (crossUp && mom > 100m && Position <= 0)
-				BuyMarket();
-			else if (crossDown && mom < 100m && Position >= 0)
-				SellMarket();
-		}
-
-		_prevFast = fast;
-		_prevSlow = slow;
 	}
 }

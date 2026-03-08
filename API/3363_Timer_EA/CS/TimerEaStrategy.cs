@@ -22,7 +22,7 @@ public class TimerEaStrategy : Strategy
 
 	public TimerEaStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 		_fastPeriod = Param(nameof(FastPeriod), 10)
 			.SetGreaterThanZero()
@@ -35,16 +35,43 @@ public class TimerEaStrategy : Strategy
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+
 		var fast = new SimpleMovingAverage { Length = FastPeriod };
 		var slow = new SimpleMovingAverage { Length = SlowPeriod };
-		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(fast, slow, ProcessCandle).Start();
-	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow)
-	{
-		if (candle.State != CandleStates.Finished) return;
-		if (fast > slow && Position <= 0) BuyMarket();
-		else if (fast < slow && Position >= 0) SellMarket();
+		decimal? prevFast = null;
+		decimal? prevSlow = null;
+
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(fast, slow, (candle, fastVal, slowVal) =>
+			{
+				if (candle.State != CandleStates.Finished)
+					return;
+
+				if (!IsFormedAndOnlineAndAllowTrading())
+					return;
+
+				if (prevFast.HasValue && prevSlow.HasValue)
+				{
+					if (prevFast.Value <= prevSlow.Value && fastVal > slowVal && Position <= 0)
+						BuyMarket();
+					else if (prevFast.Value >= prevSlow.Value && fastVal < slowVal && Position >= 0)
+						SellMarket();
+				}
+
+				prevFast = fastVal;
+				prevSlow = slowVal;
+			})
+			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, fast);
+			DrawIndicator(area, slow);
+			DrawOwnTrades(area);
+		}
 	}
 }

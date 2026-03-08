@@ -28,9 +28,9 @@ public class PriceExtremeStrategy : Strategy
 	private readonly StrategyParam<int> _takeProfitPoints;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private Highest _upperBand = null!;
-	private Lowest _lowerBand = null!;
 	private readonly List<ICandleMessage> _history = new();
+	private readonly List<decimal> _highs = new();
+	private readonly List<decimal> _lows = new();
 	private decimal? _stopPrice;
 	private decimal? _takePrice;
 	private decimal _prevPosition;
@@ -124,7 +124,7 @@ public class PriceExtremeStrategy : Strategy
 	/// </summary>
 	public PriceExtremeStrategy()
 	{
-		_levelLength = Param(nameof(LevelLength), 5)
+		_levelLength = Param(nameof(LevelLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Level Length", "Number of candles for price extremes", "Indicator")
 			
@@ -143,7 +143,7 @@ public class PriceExtremeStrategy : Strategy
 		_reverseSignals = Param(nameof(ReverseSignals), false)
 			.SetDisplay("Reverse Signals", "Invert breakout direction", "Trading");
 
-		_orderVolume = Param(nameof(OrderVolume), 1m)
+		_orderVolume = Param(nameof(OrderVolume), 0.1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Order Volume", "Volume sent with market orders", "Trading");
 
@@ -153,7 +153,7 @@ public class PriceExtremeStrategy : Strategy
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 0)
 			.SetDisplay("Take Profit", "Profit target in price steps", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe", "Data");
 	}
 
@@ -167,6 +167,12 @@ public class PriceExtremeStrategy : Strategy
 		base.OnReseted();
 
 		_history.Clear();
+		_highs.Clear();
+		_lows.Clear();
+		_prevUpper = 0m;
+		_prevLower = 0m;
+		_entryPrice = 0m;
+		_prevPosition = 0m;
 		ResetTargets();
 	}
 
@@ -175,34 +181,29 @@ public class PriceExtremeStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_upperBand = new Highest { Length = LevelLength };
-		_lowerBand = new Lowest { Length = LevelLength };
-
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_upperBand, _lowerBand, ProcessCandle)
+			.Bind(ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _upperBand);
-			DrawIndicator(area, _lowerBand);
 			DrawOwnTrades(area);
 		}
-
-		// no protection needed
 	}
 
 	private bool CanOpenLong => EnableLong && OrderVolume > 0m;
 	private bool CanOpenShort => EnableShort && OrderVolume > 0m;
 
-	private void ProcessCandle(ICandleMessage candle, decimal upper, decimal lower)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		_highs.Add(candle.HighPrice);
+		_lows.Add(candle.LowPrice);
 		_history.Add(candle);
 
 		var maxHistory = Math.Max(LevelLength + SignalShift + 2, 10);
@@ -210,6 +211,19 @@ public class PriceExtremeStrategy : Strategy
 		{
 			var removeCount = _history.Count - maxHistory;
 			_history.RemoveRange(0, removeCount);
+			_highs.RemoveRange(0, removeCount);
+			_lows.RemoveRange(0, removeCount);
+		}
+
+		if (_highs.Count < LevelLength)
+			return;
+
+		var upper = decimal.MinValue;
+		var lower = decimal.MaxValue;
+		for (var i = _highs.Count - LevelLength; i < _highs.Count; i++)
+		{
+			if (_highs[i] > upper) upper = _highs[i];
+			if (_lows[i] < lower) lower = _lows[i];
 		}
 
 		if (_history.Count < SignalShift)

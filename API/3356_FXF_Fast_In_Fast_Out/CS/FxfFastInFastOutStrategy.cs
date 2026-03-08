@@ -17,9 +17,6 @@ public class FxfFastInFastOutStrategy : Strategy
 	private readonly StrategyParam<int> _emaPeriod;
 	private readonly StrategyParam<int> _rsiPeriod;
 
-	private decimal _prevRsi;
-	private bool _hasPrev;
-
 	public DataType CandleType
 	{
 		get => _candleType.Value;
@@ -40,7 +37,7 @@ public class FxfFastInFastOutStrategy : Strategy
 
 	public FxfFastInFastOutStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 
 		_emaPeriod = Param(nameof(EmaPeriod), 10)
@@ -55,13 +52,35 @@ public class FxfFastInFastOutStrategy : Strategy
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		_hasPrev = false;
 
 		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 
+		decimal? prevRsi = null;
+
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ema, rsi, ProcessCandle).Start();
+		subscription
+			.Bind(ema, rsi, (candle, emaVal, rsiVal) =>
+			{
+				if (candle.State != CandleStates.Finished)
+					return;
+
+				if (!IsFormedAndOnlineAndAllowTrading())
+					return;
+
+				var close = candle.ClosePrice;
+
+				if (prevRsi.HasValue)
+				{
+					if (prevRsi.Value <= 50 && rsiVal > 50 && close > emaVal && Position <= 0)
+						BuyMarket();
+					else if (prevRsi.Value >= 50 && rsiVal < 50 && close < emaVal && Position >= 0)
+						SellMarket();
+				}
+
+				prevRsi = rsiVal;
+			})
+			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -70,27 +89,5 @@ public class FxfFastInFastOutStrategy : Strategy
 			DrawIndicator(area, ema);
 			DrawOwnTrades(area);
 		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal ema, decimal rsi)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!_hasPrev)
-		{
-			_prevRsi = rsi;
-			_hasPrev = true;
-			return;
-		}
-
-		var close = candle.ClosePrice;
-
-		if (_prevRsi <= 50 && rsi > 50 && close > ema && Position <= 0)
-			BuyMarket();
-		else if (_prevRsi >= 50 && rsi < 50 && close < ema && Position >= 0)
-			SellMarket();
-
-		_prevRsi = rsi;
 	}
 }

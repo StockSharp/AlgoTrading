@@ -106,6 +106,21 @@ public class ArrowsAndCurvesStrategy : Strategy
 		return [(Security, CandleType)];
 	}
 
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_highSeries.Clear();
+		_lowSeries.Clear();
+		_closeSeries.Clear();
+		_uptrend = false;
+		_uptrend2 = false;
+		_previousSellArrow = false;
+		_previousBuyArrow = false;
+		_entryPrice = null;
+		_stopPrice = null;
+		_takePrice = null;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);

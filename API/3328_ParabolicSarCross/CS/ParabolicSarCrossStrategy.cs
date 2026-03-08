@@ -17,9 +17,6 @@ public class ParabolicSarCrossStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal? _prevSar;
-	private decimal? _prevClose;
-
 	public DataType CandleType
 	{
 		get => _candleType.Value;
@@ -28,7 +25,7 @@ public class ParabolicSarCrossStrategy : Strategy
 
 	public ParabolicSarCrossStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 	}
 
@@ -36,14 +33,37 @@ public class ParabolicSarCrossStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_prevSar = null;
-		_prevClose = null;
-
 		var sar = new ParabolicSar { Acceleration = 0.02m, AccelerationStep = 0.02m, AccelerationMax = 0.2m };
+
+		decimal? prevSar = null;
+		decimal? prevClose = null;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(sar, ProcessCandle)
+			.Bind(sar, (candle, sarVal) =>
+			{
+				if (candle.State != CandleStates.Finished)
+					return;
+
+				if (!IsFormedAndOnlineAndAllowTrading())
+					return;
+
+				var close = candle.ClosePrice;
+
+				if (prevSar.HasValue && prevClose.HasValue)
+				{
+					var crossUp = prevClose.Value <= prevSar.Value && close > sarVal;
+					var crossDown = prevClose.Value >= prevSar.Value && close < sarVal;
+
+					if (crossUp && Position <= 0)
+						BuyMarket();
+					else if (crossDown && Position >= 0)
+						SellMarket();
+				}
+
+				prevSar = sarVal;
+				prevClose = close;
+			})
 			.Start();
 
 		var area = CreateChartArea();
@@ -53,30 +73,5 @@ public class ParabolicSarCrossStrategy : Strategy
 			DrawIndicator(area, sar);
 			DrawOwnTrades(area);
 		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal sar)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var close = candle.ClosePrice;
-
-		if (_prevSar.HasValue && _prevClose.HasValue)
-		{
-			var crossUp = _prevClose.Value <= _prevSar.Value && close > sar;
-			var crossDown = _prevClose.Value >= _prevSar.Value && close < sar;
-
-			if (crossUp && Position <= 0)
-				BuyMarket();
-			else if (crossDown && Position >= 0)
-				SellMarket();
-		}
-
-		_prevSar = sar;
-		_prevClose = close;
 	}
 }

@@ -19,9 +19,6 @@ public class AwesomeOscillatorTraderStrategy : Strategy
 	private readonly StrategyParam<int> _fastPeriod;
 	private readonly StrategyParam<int> _slowPeriod;
 
-	private decimal? _prevFast;
-	private decimal? _prevSlow;
-
 	public DataType CandleType
 	{
 		get => _candleType.Value;
@@ -42,14 +39,14 @@ public class AwesomeOscillatorTraderStrategy : Strategy
 
 	public AwesomeOscillatorTraderStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 
-		_fastPeriod = Param(nameof(FastPeriod), 5)
+		_fastPeriod = Param(nameof(FastPeriod), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast SMA", "Fast SMA period", "Indicators");
 
-		_slowPeriod = Param(nameof(SlowPeriod), 20)
+		_slowPeriod = Param(nameof(SlowPeriod), 34)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow SMA", "Slow SMA period", "Indicators");
 	}
@@ -58,15 +55,36 @@ public class AwesomeOscillatorTraderStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_prevFast = null;
-		_prevSlow = null;
-
 		var fast = new SimpleMovingAverage { Length = FastPeriod };
 		var slow = new SimpleMovingAverage { Length = SlowPeriod };
 
+		decimal? prevFast = null;
+		decimal? prevSlow = null;
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(fast, slow, ProcessCandle)
+			.Bind(fast, slow, (candle, fastVal, slowVal) =>
+			{
+				if (candle.State != CandleStates.Finished)
+					return;
+
+				if (!IsFormedAndOnlineAndAllowTrading())
+					return;
+
+				if (prevFast.HasValue && prevSlow.HasValue)
+				{
+					var crossUp = prevFast.Value <= prevSlow.Value && fastVal > slowVal;
+					var crossDown = prevFast.Value >= prevSlow.Value && fastVal < slowVal;
+
+					if (crossUp && Position <= 0)
+						BuyMarket();
+					else if (crossDown && Position >= 0)
+						SellMarket();
+				}
+
+				prevFast = fastVal;
+				prevSlow = slowVal;
+			})
 			.Start();
 
 		var area = CreateChartArea();
@@ -77,28 +95,5 @@ public class AwesomeOscillatorTraderStrategy : Strategy
 			DrawIndicator(area, slow);
 			DrawOwnTrades(area);
 		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (_prevFast.HasValue && _prevSlow.HasValue)
-		{
-			var crossUp = _prevFast.Value <= _prevSlow.Value && fast > slow;
-			var crossDown = _prevFast.Value >= _prevSlow.Value && fast < slow;
-
-			if (crossUp && Position <= 0)
-				BuyMarket();
-			else if (crossDown && Position >= 0)
-				SellMarket();
-		}
-
-		_prevFast = fast;
-		_prevSlow = slow;
 	}
 }

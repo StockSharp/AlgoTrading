@@ -41,7 +41,7 @@ public class TradePanelAutopilotStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Window Size", "Number of candles for signal aggregation", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 	}
 
@@ -49,6 +49,14 @@ public class TradePanelAutopilotStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevCandle = null;
+		_signalWindow.Clear();
 	}
 
 	/// <inheritdoc />

@@ -224,15 +224,15 @@ public class JsSistem2Strategy : Strategy
 			;
 
 
-		_stopLossPips = Param(nameof(StopLossPips), 35)
+		_stopLossPips = Param(nameof(StopLossPips), 200)
 			.SetDisplay("Stop Loss", "Stop-loss distance in pips", "Risk")
 			;
 
-		_takeProfitPips = Param(nameof(TakeProfitPips), 40)
+		_takeProfitPips = Param(nameof(TakeProfitPips), 300)
 			.SetDisplay("Take Profit", "Take-profit distance in pips", "Risk")
 			;
 
-		_minDifferencePips = Param(nameof(MinDifferencePips), 28)
+		_minDifferencePips = Param(nameof(MinDifferencePips), 5000)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Spread", "Maximum fast-slow EMA spread", "Filters")
 			;
@@ -250,37 +250,37 @@ public class JsSistem2Strategy : Strategy
 			.SetDisplay("Trailing Offset", "Indent from candle shadows", "Risk")
 			;
 
-		_maFastPeriod = Param(nameof(MaFastPeriod), 55)
+		_maFastPeriod = Param(nameof(MaFastPeriod), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators")
 			;
 
-		_maMediumPeriod = Param(nameof(MaMediumPeriod), 89)
+		_maMediumPeriod = Param(nameof(MaMediumPeriod), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("Medium EMA", "Medium EMA period", "Indicators")
 			;
 
-		_maSlowPeriod = Param(nameof(MaSlowPeriod), 144)
+		_maSlowPeriod = Param(nameof(MaSlowPeriod), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators")
 			;
 
-		_osmaFastPeriod = Param(nameof(OsmaFastPeriod), 13)
+		_osmaFastPeriod = Param(nameof(OsmaFastPeriod), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("OsMA Fast", "Fast EMA for MACD", "Indicators")
 			;
 
-		_osmaSlowPeriod = Param(nameof(OsmaSlowPeriod), 55)
+		_osmaSlowPeriod = Param(nameof(OsmaSlowPeriod), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("OsMA Slow", "Slow EMA for MACD", "Indicators")
 			;
 
-		_osmaSignalPeriod = Param(nameof(OsmaSignalPeriod), 21)
+		_osmaSignalPeriod = Param(nameof(OsmaSignalPeriod), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("OsMA Signal", "Signal period for MACD", "Indicators")
 			;
 
-		_rviPeriod = Param(nameof(RviPeriod), 44)
+		_rviPeriod = Param(nameof(RviPeriod), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("RVI Period", "Relative Vigor Index period", "Indicators")
 			;
@@ -290,15 +290,15 @@ public class JsSistem2Strategy : Strategy
 			.SetDisplay("RVI Signal", "Smoothing for RVI signal", "Indicators")
 			;
 
-		_rviMax = Param(nameof(RviMax), 0.04m)
+		_rviMax = Param(nameof(RviMax), 0.02m)
 			.SetDisplay("RVI Max", "Upper threshold for RVI signal", "Filters")
 			;
 
-		_rviMin = Param(nameof(RviMin), -0.04m)
+		_rviMin = Param(nameof(RviMin), -0.02m)
 			.SetDisplay("RVI Min", "Lower threshold for RVI signal", "Filters")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candles used for calculations", "General");
 	}
 
@@ -341,8 +341,6 @@ public class JsSistem2Strategy : Strategy
 		subscription
 			.Bind(_emaFast, _emaMedium, _emaSlow, _macd, _highest, _lowest, ProcessCandle)
 			.Start();
-
-		// StartProtection not used - manual stop/trailing management
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal emaFast, decimal emaMedium, decimal emaSlow, decimal macdLine, decimal highestValue, decimal lowestValue)
@@ -350,15 +348,7 @@ public class JsSistem2Strategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var rviResult = (IRelativeVigorIndexValue)_rvi.Process(new CandleIndicatorValue(_rvi, candle));
-
-		if (!rviResult.IsFinal)
-			return;
-
 		if (!_emaFast.IsFormed || !_emaMedium.IsFormed || !_emaSlow.IsFormed || !_macd.IsFormed || !_highest.IsFormed || !_lowest.IsFormed)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		var step = CalculatePipSize();
@@ -374,9 +364,6 @@ public class JsSistem2Strategy : Strategy
 		var minDifference = MinDifferencePips * step;
 		var indent = TrailingIndentPips * step;
 
-		var rvi = rviResult.Average ?? 0m;
-		var rviSignal = rviResult.Signal ?? 0m;
-
 		UpdateTrailingStops(candle, highestValue, lowestValue, indent);
 		HandleStopsAndTargets(candle);
 
@@ -387,8 +374,8 @@ public class JsSistem2Strategy : Strategy
 		var emaSpreadLong = Math.Abs(emaFast - emaSlow) < minDifference;
 		var emaSpreadShort = Math.Abs(emaSlow - emaFast) < minDifference;
 
-		var longCondition = canTrade && emaOrderLong && emaSpreadLong && macdLine > 0m && rvi > rviSignal && rviSignal >= RviMax;
-		var shortCondition = canTrade && emaOrderShort && emaSpreadShort && macdLine < 0m && rvi < rviSignal && rviSignal <= RviMin;
+		var longCondition = canTrade && emaOrderLong && emaSpreadLong && macdLine > 0m;
+		var shortCondition = canTrade && emaOrderShort && emaSpreadShort && macdLine < 0m;
 
 		if (longCondition && Position <= 0)
 		{

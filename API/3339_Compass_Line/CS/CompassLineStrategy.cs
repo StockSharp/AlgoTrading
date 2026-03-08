@@ -40,7 +40,7 @@ public class CompassLineStrategy : Strategy
 
 	public CompassLineStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 
 		_bbPeriod = Param(nameof(BbPeriod), 20)
@@ -59,9 +59,45 @@ public class CompassLineStrategy : Strategy
 		var bb = new BollingerBands { Length = BbPeriod };
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 
+		decimal? prevClose = null;
+		decimal? prevLower = null;
+		decimal? prevUpper = null;
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(bb, rsi, ProcessCandle)
+			.BindEx(bb, rsi, (candle, bbVal, rsiVal) =>
+			{
+				if (candle.State != CandleStates.Finished)
+					return;
+
+				if (!IsFormedAndOnlineAndAllowTrading())
+					return;
+
+				var bbv = (BollingerBandsValue)bbVal;
+				if (bbv.UpBand is not decimal upper || bbv.LowBand is not decimal lower)
+					return;
+
+				if (rsiVal.IsEmpty)
+					return;
+
+				var rsiDec = rsiVal.GetValue<decimal>();
+				var close = candle.ClosePrice;
+
+				if (prevClose.HasValue && prevLower.HasValue && prevUpper.HasValue)
+				{
+					var crossBelowLower = prevClose.Value > prevLower.Value && close <= lower;
+					var crossAboveUpper = prevClose.Value < prevUpper.Value && close >= upper;
+
+					if (crossBelowLower && rsiDec < 45m && Position <= 0)
+						BuyMarket();
+					else if (crossAboveUpper && rsiDec > 55m && Position >= 0)
+						SellMarket();
+				}
+
+				prevClose = close;
+				prevLower = lower;
+				prevUpper = upper;
+			})
 			.Start();
 
 		var area = CreateChartArea();
@@ -71,29 +107,5 @@ public class CompassLineStrategy : Strategy
 			DrawIndicator(area, bb);
 			DrawOwnTrades(area);
 		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bbVal, IIndicatorValue rsiVal)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!bbVal.IsFinal || !rsiVal.IsFinal)
-			return;
-
-		if (bbVal.IsEmpty || rsiVal.IsEmpty)
-			return;
-
-		var bb = (BollingerBandsValue)bbVal;
-		if (bb.UpBand is not decimal upper || bb.LowBand is not decimal lower)
-			return;
-
-		var rsi = rsiVal.GetValue<decimal>();
-		var close = candle.ClosePrice;
-
-		if (close <= lower && rsi < 45m && Position <= 0)
-			BuyMarket();
-		else if (close >= upper && rsi > 55m && Position >= 0)
-			SellMarket();
 	}
 }

@@ -62,7 +62,7 @@ public class FisherOrgSignStrategy : Strategy
 		_downLevel = Param(nameof(DownLevel), -0.1m)
 			.SetDisplay("Lower Level", "Buy signal level", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -70,6 +70,13 @@ public class FisherOrgSignStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFisher = null;
 	}
 
 	/// <inheritdoc />

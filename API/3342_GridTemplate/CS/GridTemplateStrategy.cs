@@ -17,9 +17,6 @@ public class GridTemplateStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<decimal> _gridStepPercent;
 
-	private decimal _lastTradePrice;
-	private bool _initialized;
-
 	public DataType CandleType
 	{
 		get => _candleType.Value;
@@ -34,26 +31,53 @@ public class GridTemplateStrategy : Strategy
 
 	public GridTemplateStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 
-		_gridStepPercent = Param(nameof(GridStepPercent), 0.5m)
+		_gridStepPercent = Param(nameof(GridStepPercent), 3.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Grid Step %", "Price change percentage for grid level", "Grid");
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_initialized = false;
-
 		var sma = new SimpleMovingAverage { Length = 10 };
+
+		decimal? lastTradePrice = null;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(sma, ProcessCandle)
+			.Bind(sma, (candle, smaVal) =>
+			{
+				if (candle.State != CandleStates.Finished)
+					return;
+
+				if (!IsFormedAndOnlineAndAllowTrading())
+					return;
+
+				var close = candle.ClosePrice;
+
+				if (!lastTradePrice.HasValue)
+				{
+					lastTradePrice = close;
+					return;
+				}
+
+				var step = lastTradePrice.Value * GridStepPercent / 100m;
+
+				if (close <= lastTradePrice.Value - step)
+				{
+					BuyMarket();
+					lastTradePrice = close;
+				}
+				else if (close >= lastTradePrice.Value + step)
+				{
+					SellMarket();
+					lastTradePrice = close;
+				}
+			})
 			.Start();
 
 		var area = CreateChartArea();
@@ -62,36 +86,6 @@ public class GridTemplateStrategy : Strategy
 			DrawCandles(area, subscription);
 			DrawIndicator(area, sma);
 			DrawOwnTrades(area);
-		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal sma)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		var close = candle.ClosePrice;
-
-		if (!_initialized)
-		{
-			_lastTradePrice = close;
-			_initialized = true;
-			return;
-		}
-
-		var step = _lastTradePrice * GridStepPercent / 100m;
-
-		// Buy when price drops by grid step
-		if (close <= _lastTradePrice - step)
-		{
-			BuyMarket();
-			_lastTradePrice = close;
-		}
-		// Sell when price rises by grid step
-		else if (close >= _lastTradePrice + step)
-		{
-			SellMarket();
-			_lastTradePrice = close;
 		}
 	}
 }

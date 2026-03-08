@@ -1,9 +1,8 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -11,12 +10,9 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
-
 /// <summary>
 /// Strategy based on price position relative to SMA envelopes.
-/// Buys when price is below the middle or above it, and sells in opposite situations.
+/// Buys when price is below the lower envelope, sells when above upper.
 /// </summary>
 public class JpalonsoModokiStrategy : Strategy
 {
@@ -25,133 +21,77 @@ public class JpalonsoModokiStrategy : Strategy
 	private readonly StrategyParam<decimal> _deviation;
 	private readonly StrategyParam<Unit> _takeProfit;
 	private readonly StrategyParam<Unit> _stopLoss;
-	
-	private SimpleMovingAverage _sma;
-	
-	/// <summary>
-	/// Initializes a new instance of the <see cref="JpalonsoModokiStrategy"/> class.
-	/// </summary>
+
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int SmaPeriod { get => _smaPeriod.Value; set => _smaPeriod.Value = value; }
+	public decimal Deviation { get => _deviation.Value; set => _deviation.Value = value; }
+	public Unit TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
+	public Unit StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
+
 	public JpalonsoModokiStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-		.SetDisplay("Candle Type", "Type of candles to use", "General");
-		
-		_smaPeriod = Param(nameof(SmaPeriod), 200)
-		.SetDisplay("SMA Period", "Length of the moving average", "Envelopes");
-		
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
+
+		_smaPeriod = Param(nameof(SmaPeriod), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("SMA Period", "Length of the moving average", "Envelopes");
+
 		_deviation = Param(nameof(Deviation), 0.35m)
-		.SetDisplay("Deviation %", "Envelope deviation from SMA in percent", "Envelopes");
-		
-		_takeProfit = Param(nameof(TakeProfit), new Unit(127, UnitTypes.Absolute))
-		.SetDisplay("Take Profit", "Take profit in points", "Risk Management");
-		
-		_stopLoss = Param(nameof(StopLoss), new Unit(77, UnitTypes.Absolute))
-		.SetDisplay("Stop Loss", "Stop loss in points", "Risk Management");
+			.SetDisplay("Deviation %", "Envelope deviation from SMA in percent", "Envelopes");
+
+		_takeProfit = Param(nameof(TakeProfit), new Unit(3000, UnitTypes.Absolute))
+			.SetDisplay("Take Profit", "Take profit in points", "Risk Management");
+
+		_stopLoss = Param(nameof(StopLoss), new Unit(5000, UnitTypes.Absolute))
+			.SetDisplay("Stop Loss", "Stop loss in points", "Risk Management");
 	}
-	
-	/// <summary>
-	/// Type of candles to use.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-	
-	/// <summary>
-	/// Moving average period.
-	/// </summary>
-	public int SmaPeriod
-	{
-		get => _smaPeriod.Value;
-		set => _smaPeriod.Value = value;
-	}
-	
-	/// <summary>
-	/// Envelope deviation in percent.
-	/// </summary>
-	public decimal Deviation
-	{
-		get => _deviation.Value;
-		set => _deviation.Value = value;
-	}
-	
-	/// <summary>
-	/// Take profit in points.
-	/// </summary>
-	public Unit TakeProfit
-	{
-		get => _takeProfit.Value;
-		set => _takeProfit.Value = value;
-	}
-	
-	/// <summary>
-	/// Stop loss in points.
-	/// </summary>
-	public Unit StopLoss
-	{
-		get => _stopLoss.Value;
-		set => _stopLoss.Value = value;
-	}
-	
+
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	/// <inheritdoc />
+	protected override void OnReseted()
 	{
-		return [(Security, CandleType)];
+		base.OnReseted();
 	}
-	
+
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		
+
 		StartProtection(takeProfit: TakeProfit, stopLoss: StopLoss);
-		
-		_sma = new SimpleMovingAverage { Length = SmaPeriod };
-		
-		var subscription = SubscribeCandles(CandleType);
-		subscription
-		.Bind(_sma, ProcessCandle)
-		.Start();
-		
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, _sma);
-			DrawOwnTrades(area);
-		}
+
+		var sma = new SimpleMovingAverage { Length = SmaPeriod };
+
+		SubscribeCandles(CandleType)
+			.Bind(sma, ProcessCandle)
+			.Start();
 	}
-	
-	/// <summary>
-	/// Process incoming candles and generate trade signals.
-	/// </summary>
-	/// <param name="candle">Current candle.</param>
-	/// <param name="ma">SMA value.</param>
+
 	private void ProcessCandle(ICandleMessage candle, decimal ma)
 	{
-		// Only finished candles are processed
 		if (candle.State != CandleStates.Finished)
-		return;
-		
-		// Wait until the indicator has enough data
-		if (!_sma.IsFormed)
-		return;
-		
+			return;
+
 		var upper = ma * (1 + Deviation / 100m);
 		var lower = ma * (1 - Deviation / 100m);
 		var close = candle.ClosePrice;
-		
-		var buy = close <= lower || (close < upper && close > ma);
-		var sell = close >= upper || (close > lower && close < ma);
-		
+
+		var buy = close <= lower;
+		var sell = close >= upper;
+
 		if (buy && Position <= 0)
 		{
-			BuyMarket(Volume + Math.Abs(Position));
+			if (Position < 0) BuyMarket();
+			BuyMarket();
 		}
 		else if (sell && Position >= 0)
 		{
-			SellMarket(Volume + Math.Abs(Position));
+			if (Position > 0) SellMarket();
+			SellMarket();
 		}
 	}
 }

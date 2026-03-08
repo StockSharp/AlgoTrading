@@ -40,7 +40,7 @@ public class RandomCoinTossBaselineStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Hold Bars", "Number of bars to hold position", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to process", "General");
 	}
 
@@ -48,6 +48,14 @@ public class RandomCoinTossBaselineStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_random = null;
+		_barsInPosition = 0;
 	}
 
 	/// <inheritdoc />

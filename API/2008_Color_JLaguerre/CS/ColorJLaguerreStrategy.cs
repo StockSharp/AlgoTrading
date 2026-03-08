@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,7 +11,7 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on color-coded Laguerre oscillator.
+/// Strategy based on color-coded Laguerre oscillator approximated by RSI.
 /// </summary>
 public class ColorJLaguerreStrategy : Strategy
 {
@@ -25,100 +22,47 @@ public class ColorJLaguerreStrategy : Strategy
 	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal? _prevRsi;
+	private decimal _prevRsi;
+	private bool _hasPrev;
 
-	/// <summary>
-	/// RSI calculation length.
-	/// </summary>
-	public int RsiLength
-	{
-		get => _rsiLength.Value;
-		set => _rsiLength.Value = value;
-	}
+	public int RsiLength { get => _rsiLength.Value; set => _rsiLength.Value = value; }
+	public decimal HighLevel { get => _highLevel.Value; set => _highLevel.Value = value; }
+	public decimal MiddleLevel { get => _middleLevel.Value; set => _middleLevel.Value = value; }
+	public decimal LowLevel { get => _lowLevel.Value; set => _lowLevel.Value = value; }
+	public decimal StopLossPercent { get => _stopLossPercent.Value; set => _stopLossPercent.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Upper threshold for exit signals.
-	/// </summary>
-	public decimal HighLevel
-	{
-		get => _highLevel.Value;
-		set => _highLevel.Value = value;
-	}
-
-	/// <summary>
-	/// Middle threshold used for trend detection.
-	/// </summary>
-	public decimal MiddleLevel
-	{
-		get => _middleLevel.Value;
-		set => _middleLevel.Value = value;
-	}
-
-	/// <summary>
-	/// Lower threshold for exit signals.
-	/// </summary>
-	public decimal LowLevel
-	{
-		get => _lowLevel.Value;
-		set => _lowLevel.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss percentage.
-	/// </summary>
-	public decimal StopLossPercent
-	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="ColorJLaguerreStrategy"/>.
-	/// </summary>
 	public ColorJLaguerreStrategy()
 	{
 		_rsiLength = Param(nameof(RsiLength), 14)
-		.SetRange(5, 50)
-		.SetDisplay("RSI Length", "Period for RSI", "Indicators")
-		;
+			.SetDisplay("RSI Length", "Period for RSI", "Indicators");
 
 		_highLevel = Param(nameof(HighLevel), 85m)
-		.SetRange(60m, 95m)
-		.SetDisplay("High Level", "Upper threshold", "Levels")
-		;
+			.SetDisplay("High Level", "Upper threshold", "Levels");
 
 		_middleLevel = Param(nameof(MiddleLevel), 50m)
-		.SetRange(30m, 70m)
-		.SetDisplay("Middle Level", "Central threshold", "Levels")
-		;
+			.SetDisplay("Middle Level", "Central threshold", "Levels");
 
 		_lowLevel = Param(nameof(LowLevel), 15m)
-		.SetRange(5m, 40m)
-		.SetDisplay("Low Level", "Lower threshold", "Levels")
-		;
+			.SetDisplay("Low Level", "Lower threshold", "Levels");
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
-		.SetRange(0.5m, 5m)
-		.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management")
-		;
+			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-		.SetDisplay("Candle Type", "Type of candles to use", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	/// <inheritdoc />
+	protected override void OnReseted()
 	{
-		return [(Security, CandleType)];
+		base.OnReseted();
+		_prevRsi = 0;
+		_hasPrev = false;
 	}
 
 	/// <inheritdoc />
@@ -126,70 +70,54 @@ public class ColorJLaguerreStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Create RSI indicator as approximation of Laguerre oscillator
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };
 
-		// Subscribe to candle data and bind indicator
-		var subscription = SubscribeCandles(CandleType);
-		subscription
-		.Bind(rsi, ProcessCandle)
-		.Start();
+		SubscribeCandles(CandleType)
+			.Bind(rsi, ProcessCandle)
+			.Start();
 
-		// Enable stop loss protection
 		StartProtection(
-		takeProfit: null,
-		stopLoss: new Unit(StopLossPercent, UnitTypes.Percent),
-		useMarketOrders: true
+			takeProfit: new Unit(4, UnitTypes.Percent),
+			stopLoss: new Unit(StopLossPercent, UnitTypes.Percent)
 		);
-
-		// Draw candles, indicator, and trades on chart
-		var area = CreateChartArea();
-		if (area != null)
-		{
-		DrawCandles(area, subscription);
-		DrawIndicator(area, rsi);
-		DrawOwnTrades(area);
-		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal rsi)
+	private void ProcessCandle(ICandleMessage candle, decimal rsiValue)
 	{
-		// Process only finished candles
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
-		// Ensure strategy can trade
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
-
-		if (_prevRsi is null)
+		if (!_hasPrev)
 		{
-		_prevRsi = rsi;
-		return;
+			_prevRsi = rsiValue;
+			_hasPrev = true;
+			return;
 		}
 
-		// Open long position when RSI crosses above middle level
-		if (_prevRsi <= MiddleLevel && rsi > MiddleLevel && Position <= 0)
+		// Open long when RSI crosses above middle level
+		if (_prevRsi <= MiddleLevel && rsiValue > MiddleLevel && Position <= 0)
 		{
-		BuyMarket(Volume + Math.Abs(Position));
+			if (Position < 0) BuyMarket();
+			BuyMarket();
 		}
-		// Open short position when RSI crosses below middle level
-		else if (_prevRsi >= MiddleLevel && rsi < MiddleLevel && Position >= 0)
+		// Open short when RSI crosses below middle level
+		else if (_prevRsi >= MiddleLevel && rsiValue < MiddleLevel && Position >= 0)
 		{
-		SellMarket(Volume + Math.Abs(Position));
-		}
-
-		// Exit long position at high level
-		if (Position > 0 && rsi >= HighLevel)
-		{
-		SellMarket(Math.Abs(Position));
-		}
-		// Exit short position at low level
-		else if (Position < 0 && rsi <= LowLevel)
-		{
-		BuyMarket(Math.Abs(Position));
+			if (Position > 0) SellMarket();
+			SellMarket();
 		}
 
-		_prevRsi = rsi;
+		// Exit long at high level
+		if (Position > 0 && rsiValue >= HighLevel)
+		{
+			SellMarket();
+		}
+		// Exit short at low level
+		else if (Position < 0 && rsiValue <= LowLevel)
+		{
+			BuyMarket();
+		}
+
+		_prevRsi = rsiValue;
 	}
 }

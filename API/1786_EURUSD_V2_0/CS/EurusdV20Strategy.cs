@@ -50,21 +50,28 @@ public class EurusdV20Strategy : Strategy
 			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_entryPrice = 0;
+	}
+
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_entryPrice = 0;
-
 		var sma = new SimpleMovingAverage { Length = MaLength };
-		var atr = new AverageTrueRange { Length = AtrLength };
 
 		var sub = SubscribeCandles(CandleType);
-		sub.Bind(sma, atr, ProcessCandle).Start();
+		sub.Bind(sma, ProcessCandle).Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal sma, decimal atr)
+	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
@@ -95,17 +102,16 @@ public class EurusdV20Strategy : Strategy
 			return;
 
 		// Mean reversion: buy below SMA, sell above SMA
-		// Use ATR as distance filter: only enter when price is at least 0.5*ATR away
-		var dist = Math.Abs(close - sma);
-		if (atr <= 0 || dist < atr * 0.5m)
+		var dist = Math.Abs(close - smaValue);
+		if (dist < smaValue * 0.002m)
 			return;
 
-		if (close < sma)
+		if (close < smaValue)
 		{
 			BuyMarket();
 			_entryPrice = close;
 		}
-		else if (close > sma)
+		else if (close > smaValue)
 		{
 			SellMarket();
 			_entryPrice = close;

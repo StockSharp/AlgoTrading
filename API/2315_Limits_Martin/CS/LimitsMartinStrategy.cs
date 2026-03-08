@@ -38,7 +38,7 @@ public class LimitsMartinStrategy : Strategy
 		_overbought = Param(nameof(Overbought), 70m)
 			.SetDisplay("Overbought", "RSI overbought level", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 

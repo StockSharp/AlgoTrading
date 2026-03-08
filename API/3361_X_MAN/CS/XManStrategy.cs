@@ -19,7 +19,7 @@ public class XManStrategy : Strategy
 
 	public XManStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 		_smaPeriod = Param(nameof(SmaPeriod), 20)
 			.SetGreaterThanZero()
@@ -33,8 +33,36 @@ public class XManStrategy : Strategy
 		var sma = new SimpleMovingAverage { Length = SmaPeriod };
 		var rsi = new RelativeStrengthIndex { Length = 14 };
 
+		decimal? prevClose = null;
+		decimal? prevSma = null;
+
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(sma, rsi, ProcessCandle).Start();
+		subscription
+			.Bind(sma, rsi, (candle, smaVal, rsiVal) =>
+			{
+				if (candle.State != CandleStates.Finished)
+					return;
+
+				if (!IsFormedAndOnlineAndAllowTrading())
+					return;
+
+				var close = candle.ClosePrice;
+
+				if (prevClose.HasValue && prevSma.HasValue)
+				{
+					var crossUp = prevClose.Value <= prevSma.Value && close > smaVal;
+					var crossDown = prevClose.Value >= prevSma.Value && close < smaVal;
+
+					if (crossUp && rsiVal < 70 && Position <= 0)
+						BuyMarket();
+					else if (crossDown && rsiVal > 30 && Position >= 0)
+						SellMarket();
+				}
+
+				prevClose = close;
+				prevSma = smaVal;
+			})
+			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -43,18 +71,5 @@ public class XManStrategy : Strategy
 			DrawIndicator(area, sma);
 			DrawOwnTrades(area);
 		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal sma, decimal rsi)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		var close = candle.ClosePrice;
-
-		if (close > sma && rsi < 70 && Position <= 0)
-			BuyMarket();
-		else if (close < sma && rsi > 30 && Position >= 0)
-			SellMarket();
 	}
 }

@@ -32,7 +32,7 @@ public class SudokuUiStrategy : Strategy
 
 	public SudokuUiStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 
 		_smaPeriod = Param(nameof(SmaPeriod), 20)
@@ -46,9 +46,35 @@ public class SudokuUiStrategy : Strategy
 
 		var sma = new SimpleMovingAverage { Length = SmaPeriod };
 
+		decimal? prevClose = null;
+		decimal? prevSma = null;
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(sma, ProcessCandle)
+			.Bind(sma, (candle, smaVal) =>
+			{
+				if (candle.State != CandleStates.Finished)
+					return;
+
+				if (!IsFormedAndOnlineAndAllowTrading())
+					return;
+
+				var close = candle.ClosePrice;
+
+				if (prevClose.HasValue && prevSma.HasValue)
+				{
+					var crossBelow = prevClose.Value >= prevSma.Value && close < smaVal;
+					var crossAbove = prevClose.Value <= prevSma.Value && close > smaVal;
+
+					if (crossBelow && Position <= 0)
+						BuyMarket();
+					else if (crossAbove && Position >= 0)
+						SellMarket();
+				}
+
+				prevClose = close;
+				prevSma = smaVal;
+			})
 			.Start();
 
 		var area = CreateChartArea();
@@ -58,19 +84,5 @@ public class SudokuUiStrategy : Strategy
 			DrawIndicator(area, sma);
 			DrawOwnTrades(area);
 		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal sma)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (candle.ClosePrice < sma && Position <= 0)
-			BuyMarket();
-		else if (candle.ClosePrice > sma && Position >= 0)
-			SellMarket();
 	}
 }

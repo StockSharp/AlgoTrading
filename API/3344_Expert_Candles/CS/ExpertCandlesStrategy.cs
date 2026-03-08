@@ -31,7 +31,7 @@ public class ExpertCandlesStrategy : Strategy
 
 	public ExpertCandlesStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 
 		_shadowRatio = Param(nameof(ShadowRatio), 0.3m)
@@ -39,7 +39,6 @@ public class ExpertCandlesStrategy : Strategy
 			.SetDisplay("Shadow Ratio", "Min shadow to body ratio for pattern", "Signals");
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
@@ -48,7 +47,35 @@ public class ExpertCandlesStrategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(sma, ProcessCandle)
+			.Bind(sma, (candle, smaVal) =>
+			{
+				if (candle.State != CandleStates.Finished)
+					return;
+
+				if (!IsFormedAndOnlineAndAllowTrading())
+					return;
+
+				var open = candle.OpenPrice;
+				var high = candle.HighPrice;
+				var low = candle.LowPrice;
+				var close = candle.ClosePrice;
+				var range = high - low;
+
+				if (range <= 0)
+					return;
+
+				var body = Math.Abs(close - open);
+				var upperShadow = high - Math.Max(open, close);
+				var lowerShadow = Math.Min(open, close) - low;
+
+				var isHammer = lowerShadow > range * ShadowRatio && upperShadow < body;
+				var isShootingStar = upperShadow > range * ShadowRatio && lowerShadow < body;
+
+				if (isHammer && close > smaVal && Position <= 0)
+					BuyMarket();
+				else if (isShootingStar && close < smaVal && Position >= 0)
+					SellMarket();
+			})
 			.Start();
 
 		var area = CreateChartArea();
@@ -58,34 +85,5 @@ public class ExpertCandlesStrategy : Strategy
 			DrawIndicator(area, sma);
 			DrawOwnTrades(area);
 		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal sma)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		var open = candle.OpenPrice;
-		var high = candle.HighPrice;
-		var low = candle.LowPrice;
-		var close = candle.ClosePrice;
-		var range = high - low;
-
-		if (range <= 0)
-			return;
-
-		var body = Math.Abs(close - open);
-		var upperShadow = high - Math.Max(open, close);
-		var lowerShadow = Math.Min(open, close) - low;
-
-		// Bullish hammer: long lower shadow, small upper shadow
-		var isHammer = lowerShadow > range * ShadowRatio && upperShadow < body;
-		// Bearish shooting star: long upper shadow, small lower shadow
-		var isShootingStar = upperShadow > range * ShadowRatio && lowerShadow < body;
-
-		if (isHammer && close > sma && Position <= 0)
-			BuyMarket();
-		else if (isShootingStar && close < sma && Position >= 0)
-			SellMarket();
 	}
 }

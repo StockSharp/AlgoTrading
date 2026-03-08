@@ -244,9 +244,6 @@ public class SarTradingV20Strategy : Strategy
 		if (!_ma.IsFormed || !_parabolicSar.IsFormed)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		if (_closeHistory.Count <= MaShift)
 			return;
 
@@ -259,11 +256,11 @@ public class SarTradingV20Strategy : Strategy
 
 		if (sarBelowMa || closeBelowMa)
 		{
-			OpenLong(candle.ClosePrice, sarBelowMa, closeBelowMa);
+			OpenLong(candle.ClosePrice);
 		}
 		else if (sarAboveMa || closeAboveMa)
 		{
-			OpenShort(candle.ClosePrice, sarAboveMa, closeAboveMa);
+			OpenShort(candle.ClosePrice);
 		}
 	}
 
@@ -377,7 +374,7 @@ public class SarTradingV20Strategy : Strategy
 		}
 	}
 
-	private void OpenLong(decimal price, bool triggeredBySar, bool triggeredByShiftedClose)
+	private void OpenLong(decimal price)
 	{
 		var volume = Volume;
 		if (volume <= 0)
@@ -386,17 +383,9 @@ public class SarTradingV20Strategy : Strategy
 		BuyMarket(volume);
 
 		InitializePositionState(price, true);
-
-		var reason = triggeredBySar && triggeredByShiftedClose
-			? "Parabolic SAR below SMA and shifted close below SMA"
-			: triggeredBySar
-				? "Parabolic SAR below SMA"
-				: "Shifted close below SMA";
-
-		// open long
 	}
 
-	private void OpenShort(decimal price, bool triggeredBySar, bool triggeredByShiftedClose)
+	private void OpenShort(decimal price)
 	{
 		var volume = Volume;
 		if (volume <= 0)
@@ -405,14 +394,6 @@ public class SarTradingV20Strategy : Strategy
 		SellMarket(volume);
 
 		InitializePositionState(price, false);
-
-		var reason = triggeredBySar && triggeredByShiftedClose
-			? "Parabolic SAR above SMA and shifted close above SMA"
-			: triggeredBySar
-				? "Parabolic SAR above SMA"
-				: "Shifted close above SMA";
-
-		// open short
 	}
 
 	private void InitializePositionState(decimal entryPrice, bool isLong)

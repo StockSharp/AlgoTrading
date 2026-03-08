@@ -34,7 +34,7 @@ public class SarTrailingSystemStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("SAR Max", "Parabolic SAR maximum acceleration", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -55,7 +55,7 @@ public class SarTrailingSystemStrategy : Strategy
 		};
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.BindEx(sar, ProcessCandle).Start();
+		subscription.Bind(sar, ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -66,18 +66,13 @@ public class SarTrailingSystemStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue sarVal)
+	private void ProcessCandle(ICandleMessage candle, decimal sarValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (sarVal.IsEmpty)
-			return;
-
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
-
-		var sarValue = sarVal.GetValue<decimal>();
 
 		// Price above SAR = uptrend, buy
 		if (candle.ClosePrice > sarValue && Position <= 0)

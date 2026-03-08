@@ -47,7 +47,7 @@ public class CaiStandardDeviationStrategy : Strategy
 			.SetDisplay("Close Multiplier", "StdDev multiplier for exits", "Parameters")
 			.SetOptimize(0.5m, 2m, 0.5m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles used", "Parameters");
 	}
 

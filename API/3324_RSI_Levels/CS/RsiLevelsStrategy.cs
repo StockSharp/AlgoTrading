@@ -32,7 +32,7 @@ public class RsiLevelsStrategy : Strategy
 
 	public RsiLevelsStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
@@ -67,11 +67,11 @@ public class RsiLevelsStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		if (rsi < 35m && Position <= 0)
+		if (rsi < 30m && Position <= 0)
 		{
 			BuyMarket();
 		}
-		else if (rsi > 65m && Position >= 0)
+		else if (rsi > 70m && Position >= 0)
 		{
 			SellMarket();
 		}

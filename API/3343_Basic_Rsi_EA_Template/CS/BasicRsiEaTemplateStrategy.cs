@@ -44,7 +44,7 @@ public class BasicRsiEaTemplateStrategy : Strategy
 
 	public BasicRsiEaTemplateStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
@@ -58,16 +58,37 @@ public class BasicRsiEaTemplateStrategy : Strategy
 			.SetDisplay("Oversold Level", "RSI oversold threshold", "Indicators");
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 
+		decimal? prevRsi = null;
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(rsi, ProcessCandle)
+			.Bind(rsi, (candle, rsiValue) =>
+			{
+				if (candle.State != CandleStates.Finished)
+					return;
+
+				if (!IsFormedAndOnlineAndAllowTrading())
+					return;
+
+				if (prevRsi.HasValue)
+				{
+					var crossBelowOversold = prevRsi.Value >= OversoldLevel && rsiValue < OversoldLevel;
+					var crossAboveOverbought = prevRsi.Value <= OverboughtLevel && rsiValue > OverboughtLevel;
+
+					if (crossBelowOversold && Position <= 0)
+						BuyMarket();
+					else if (crossAboveOverbought && Position >= 0)
+						SellMarket();
+				}
+
+				prevRsi = rsiValue;
+			})
 			.Start();
 
 		var area = CreateChartArea();
@@ -77,16 +98,5 @@ public class BasicRsiEaTemplateStrategy : Strategy
 			DrawIndicator(area, rsi);
 			DrawOwnTrades(area);
 		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal rsiValue)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (rsiValue < OversoldLevel && Position <= 0)
-			BuyMarket();
-		else if (rsiValue > OverboughtLevel && Position >= 0)
-			SellMarket();
 	}
 }

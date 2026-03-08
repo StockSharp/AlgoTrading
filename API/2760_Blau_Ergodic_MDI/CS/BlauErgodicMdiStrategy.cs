@@ -83,7 +83,7 @@ public class BlauErgodicMdiStrategy : Strategy
 		_entryMode = Param(nameof(Mode), EntryModes.Twist)
 			.SetDisplay("Entry Mode", "Signal interpretation mode", "Strategy");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Indicator Timeframe", "Timeframe used for calculations", "Data");
 
 		_smoothingMethod = Param(nameof(SmoothingMethod), SmoothingMethods.Exponential)

@@ -34,7 +34,7 @@ public class PpoCloudStrategy : Strategy
 
 	public PpoCloudStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 
 		_fastPeriod = Param(nameof(FastPeriod), 12)
@@ -55,6 +55,14 @@ public class PpoCloudStrategy : Strategy
 		return [(Security, CandleType)];
 	}
 
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevPpo = 0;
+		_prevSignal = 0;
+		_hasPrev = false;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
@@ -65,6 +73,7 @@ public class PpoCloudStrategy : Strategy
 
 		var ppo = new PPO { ShortPeriod = FastPeriod, LongPeriod = SlowPeriod };
 		var signalEma = new ExponentialMovingAverage { Length = SignalPeriod };
+		Indicators.Add(signalEma);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ppo, ProcessCandle).Start();

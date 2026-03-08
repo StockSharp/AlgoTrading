@@ -1,5 +1,7 @@
 using System;
 
+using Ecng.Common;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -16,10 +18,6 @@ public class MovingAverageCrossoverSpreadStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _fastPeriod;
 	private readonly StrategyParam<int> _slowPeriod;
-
-	private decimal _prevFast;
-	private decimal _prevSlow;
-	private bool _hasPrev;
 
 	public DataType CandleType
 	{
@@ -59,9 +57,33 @@ public class MovingAverageCrossoverSpreadStrategy : Strategy
 		var fastMa = new ExponentialMovingAverage { Length = FastPeriod };
 		var slowMa = new ExponentialMovingAverage { Length = SlowPeriod };
 
+		decimal? prevFast = null;
+		decimal? prevSlow = null;
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(fastMa, slowMa, ProcessCandle)
+			.Bind(fastMa, slowMa, (candle, fastValue, slowValue) =>
+			{
+				if (candle.State != CandleStates.Finished)
+					return;
+
+				if (!IsFormedAndOnlineAndAllowTrading())
+					return;
+
+				if (prevFast.HasValue && prevSlow.HasValue)
+				{
+					var crossUp = prevFast.Value <= prevSlow.Value && fastValue > slowValue;
+					var crossDown = prevFast.Value >= prevSlow.Value && fastValue < slowValue;
+
+					if (crossUp && Position <= 0)
+						BuyMarket();
+					else if (crossDown && Position >= 0)
+						SellMarket();
+				}
+
+				prevFast = fastValue;
+				prevSlow = slowValue;
+			})
 			.Start();
 
 		var area = CreateChartArea();
@@ -72,29 +94,5 @@ public class MovingAverageCrossoverSpreadStrategy : Strategy
 			DrawIndicator(area, slowMa);
 			DrawOwnTrades(area);
 		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal fastValue, decimal slowValue)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (_hasPrev)
-		{
-			// Golden cross: fast crosses above slow
-			if (_prevFast <= _prevSlow && fastValue > slowValue && Position <= 0)
-			{
-				BuyMarket();
-			}
-			// Death cross: fast crosses below slow
-			else if (_prevFast >= _prevSlow && fastValue < slowValue && Position >= 0)
-			{
-				SellMarket();
-			}
-		}
-
-		_prevFast = fastValue;
-		_prevSlow = slowValue;
-		_hasPrev = true;
 	}
 }

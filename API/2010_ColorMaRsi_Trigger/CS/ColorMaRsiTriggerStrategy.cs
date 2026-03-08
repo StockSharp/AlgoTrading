@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,162 +12,103 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// ColorMaRsi Trigger strategy.
-/// Combines fast and slow EMA and RSI to generate trading signals.
+/// Combines fast and slow EMA crossover with RSI crossover to generate trading signals.
 /// </summary>
 public class ColorMaRsiTriggerStrategy : Strategy
 {
-private readonly StrategyParam<int> _emaFastLength;
-private readonly StrategyParam<int> _emaSlowLength;
-private readonly StrategyParam<int> _rsiFastLength;
-private readonly StrategyParam<int> _rsiSlowLength;
-private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _emaFastLength;
+	private readonly StrategyParam<int> _emaSlowLength;
+	private readonly StrategyParam<int> _rsiFastLength;
+	private readonly StrategyParam<int> _rsiSlowLength;
+	private readonly StrategyParam<DataType> _candleType;
 
-private ExponentialMovingAverage _emaFast = null!;
-private ExponentialMovingAverage _emaSlow = null!;
-private RelativeStrengthIndex _rsiFast = null!;
-private RelativeStrengthIndex _rsiSlow = null!;
-private decimal _prevSignal;
+	private decimal _prevSignal;
 
-/// <summary>
-/// Fast EMA period.
-/// </summary>
-public int EmaFastLength { get => _emaFastLength.Value; set => _emaFastLength.Value = value; }
+	public int EmaFastLength { get => _emaFastLength.Value; set => _emaFastLength.Value = value; }
+	public int EmaSlowLength { get => _emaSlowLength.Value; set => _emaSlowLength.Value = value; }
+	public int RsiFastLength { get => _rsiFastLength.Value; set => _rsiFastLength.Value = value; }
+	public int RsiSlowLength { get => _rsiSlowLength.Value; set => _rsiSlowLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-/// <summary>
-/// Slow EMA period.
-/// </summary>
-public int EmaSlowLength { get => _emaSlowLength.Value; set => _emaSlowLength.Value = value; }
+	public ColorMaRsiTriggerStrategy()
+	{
+		_emaFastLength = Param(nameof(EmaFastLength), 5)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "General");
 
-/// <summary>
-/// Fast RSI period.
-/// </summary>
-public int RsiFastLength { get => _rsiFastLength.Value; set => _rsiFastLength.Value = value; }
+		_emaSlowLength = Param(nameof(EmaSlowLength), 10)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "General");
 
-/// <summary>
-/// Slow RSI period.
-/// </summary>
-public int RsiSlowLength { get => _rsiSlowLength.Value; set => _rsiSlowLength.Value = value; }
+		_rsiFastLength = Param(nameof(RsiFastLength), 3)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast RSI", "Fast RSI period", "General");
 
-/// <summary>
-/// Candle type used for calculations.
-/// </summary>
-public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+		_rsiSlowLength = Param(nameof(RsiSlowLength), 13)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow RSI", "Slow RSI period", "General");
 
-/// <summary>
-/// Initializes strategy parameters.
-/// </summary>
-public ColorMaRsiTriggerStrategy()
-{
-_emaFastLength = Param(nameof(EmaFastLength), 5)
-.SetGreaterThanZero()
-.SetDisplay("Fast EMA", "Fast EMA period", "General")
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles", "General");
+	}
 
-.SetOptimize(3, 20, 1);
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
 
-_emaSlowLength = Param(nameof(EmaSlowLength), 10)
-.SetGreaterThanZero()
-.SetDisplay("Slow EMA", "Slow EMA period", "General")
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevSignal = 0;
+	}
 
-.SetOptimize(5, 40, 1);
+	/// <inheritdoc />
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
 
-_rsiFastLength = Param(nameof(RsiFastLength), 3)
-.SetGreaterThanZero()
-.SetDisplay("Fast RSI", "Fast RSI period", "General")
+		var emaFast = new ExponentialMovingAverage { Length = EmaFastLength };
+		var emaSlow = new ExponentialMovingAverage { Length = EmaSlowLength };
+		var rsiFast = new RelativeStrengthIndex { Length = RsiFastLength };
+		var rsiSlow = new RelativeStrengthIndex { Length = RsiSlowLength };
 
-.SetOptimize(2, 20, 1);
+		SubscribeCandles(CandleType)
+			.Bind(emaFast, emaSlow, rsiFast, rsiSlow, ProcessCandle)
+			.Start();
+	}
 
-_rsiSlowLength = Param(nameof(RsiSlowLength), 13)
-.SetGreaterThanZero()
-.SetDisplay("Slow RSI", "Slow RSI period", "General")
+	private void ProcessCandle(ICandleMessage candle, decimal emaFastValue, decimal emaSlowValue, decimal rsiFastValue, decimal rsiSlowValue)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
 
-.SetOptimize(5, 40, 1);
+		// Compute composite signal from EMA and RSI crossovers
+		var signal = 0m;
+		if (emaFastValue > emaSlowValue)
+			signal += 1;
+		if (emaFastValue < emaSlowValue)
+			signal -= 1;
+		if (rsiFastValue > rsiSlowValue)
+			signal += 1;
+		if (rsiFastValue < rsiSlowValue)
+			signal -= 1;
 
-_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-.SetDisplay("Candle Type", "Type of candles", "General");
-}
+		// Clamp signal to [-1, 1]
+		signal = Math.Clamp(signal, -1, 1);
 
-/// <inheritdoc />
-public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-{
-yield return (Security, CandleType);
-}
+		// Detect signal change for entry/exit
+		if (_prevSignal <= 0 && signal > 0 && Position <= 0)
+		{
+			if (Position < 0) BuyMarket();
+			BuyMarket();
+		}
+		else if (_prevSignal >= 0 && signal < 0 && Position >= 0)
+		{
+			if (Position > 0) SellMarket();
+			SellMarket();
+		}
 
-/// <inheritdoc />
-protected override void OnReseted()
-{
-base.OnReseted();
-_prevSignal = 0;
-}
-
-/// <inheritdoc />
-protected override void OnStarted2(DateTime time)
-{
-base.OnStarted2(time);
-
-_emaFast = new ExponentialMovingAverage { Length = EmaFastLength };
-_emaSlow = new ExponentialMovingAverage { Length = EmaSlowLength };
-_rsiFast = new RelativeStrengthIndex { Length = RsiFastLength };
-_rsiSlow = new RelativeStrengthIndex { Length = RsiSlowLength };
-
-var subscription = SubscribeCandles(CandleType);
-subscription
-.Bind(_emaFast, _emaSlow, _rsiFast, _rsiSlow, ProcessCandle)
-.Start();
-
-var area = CreateChartArea();
-if (area != null)
-{
-DrawCandles(area, subscription);
-DrawIndicator(area, _emaFast);
-DrawIndicator(area, _emaSlow);
-DrawIndicator(area, _rsiFast);
-DrawIndicator(area, _rsiSlow);
-}
-}
-
-private void ProcessCandle(ICandleMessage candle, decimal emaFastValue, decimal emaSlowValue, decimal rsiFastValue, decimal rsiSlowValue)
-{
-if (candle.State != CandleStates.Finished)
-return;
-
-if (!_emaFast.IsFormed || !_emaSlow.IsFormed || !_rsiFast.IsFormed || !_rsiSlow.IsFormed)
-return;
-
-if (!IsFormedAndOnlineAndAllowTrading())
-return;
-
-var signal = 0m;
-if (emaFastValue > emaSlowValue)
-signal += 1;
-if (emaFastValue < emaSlowValue)
-signal -= 1;
-if (rsiFastValue > rsiSlowValue)
-signal += 1;
-if (rsiFastValue < rsiSlowValue)
-signal -= 1;
-
-if (signal > 1)
-signal = 1;
-if (signal < -1)
-signal = -1;
-
-if (_prevSignal > 0)
-{
-if (Position < 0)
-BuyMarket(Math.Abs(Position));
-
-if (signal <= 0 && Position <= 0)
-BuyMarket(Volume);
-}
-else if (_prevSignal < 0)
-{
-if (Position > 0)
-SellMarket(Position);
-
-if (signal >= 0 && Position >= 0)
-SellMarket(Volume);
-}
-
-_prevSignal = signal;
-}
+		_prevSignal = signal;
+	}
 }

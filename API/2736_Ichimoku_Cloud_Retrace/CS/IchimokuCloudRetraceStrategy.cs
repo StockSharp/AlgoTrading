@@ -175,9 +175,6 @@ public class IchimokuCloudRetraceStrategy : Strategy
 		if (Position == 0)
 			_entryPrice = 0m;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		var ichimoku = (IchimokuValue)ichimokuValue;
 
 		if (ichimoku.SenkouA is not decimal senkouA ||

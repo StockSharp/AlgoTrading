@@ -46,10 +46,10 @@ public class SmartAcTraderStrategy : Strategy
 
 	public SmartAcTraderStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 
-		_fastPeriod = Param(nameof(FastPeriod), 6)
+		_fastPeriod = Param(nameof(FastPeriod), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
 
@@ -62,7 +62,6 @@ public class SmartAcTraderStrategy : Strategy
 			.SetDisplay("ROC Period", "Rate of Change period", "Indicators");
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
@@ -71,9 +70,33 @@ public class SmartAcTraderStrategy : Strategy
 		var slow = new ExponentialMovingAverage { Length = SlowPeriod };
 		var roc = new RateOfChange { Length = RocPeriod };
 
+		decimal? prevFast = null;
+		decimal? prevSlow = null;
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(fast, slow, roc, ProcessCandle)
+			.Bind(fast, slow, roc, (candle, fastVal, slowVal, rocVal) =>
+			{
+				if (candle.State != CandleStates.Finished)
+					return;
+
+				if (!IsFormedAndOnlineAndAllowTrading())
+					return;
+
+				if (prevFast.HasValue && prevSlow.HasValue)
+				{
+					var crossUp = prevFast.Value <= prevSlow.Value && fastVal > slowVal;
+					var crossDown = prevFast.Value >= prevSlow.Value && fastVal < slowVal;
+
+					if (crossUp && rocVal > 0 && Position <= 0)
+						BuyMarket();
+					else if (crossDown && rocVal < 0 && Position >= 0)
+						SellMarket();
+				}
+
+				prevFast = fastVal;
+				prevSlow = slowVal;
+			})
 			.Start();
 
 		var area = CreateChartArea();
@@ -84,16 +107,5 @@ public class SmartAcTraderStrategy : Strategy
 			DrawIndicator(area, slow);
 			DrawOwnTrades(area);
 		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow, decimal roc)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (fast > slow && roc > 0 && Position <= 0)
-			BuyMarket();
-		else if (fast < slow && roc < 0 && Position >= 0)
-			SellMarket();
 	}
 }

@@ -52,7 +52,7 @@ public class JfatlDigitSystemStrategy : Strategy
 			.SetDisplay("JMA Phase", "JMA phase", "Parameters")
 			.SetOptimize(-100, 100, 20);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe", "Parameters");
 	}
 
@@ -60,6 +60,14 @@ public class JfatlDigitSystemStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevJma = null;
+		_prevSlope = null;
 	}
 
 	/// <inheritdoc />

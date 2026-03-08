@@ -60,7 +60,7 @@ public class AroonOscillatorSignAlertStrategy : Strategy
 		_downLevel = Param(nameof(DownLevel), -50)
 			.SetDisplay("Down Level", "Lower threshold for buy signal", "Indicator");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for processing", "General");
 	}
 
@@ -68,6 +68,13 @@ public class AroonOscillatorSignAlertStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_previousValue = null;
 	}
 
 	/// <inheritdoc />

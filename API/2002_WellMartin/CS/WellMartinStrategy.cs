@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,126 +11,52 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Well Martin mean reversion strategy using Bollinger Bands and ADX.
+/// Well Martin mean reversion strategy using Bollinger Bands.
+/// Buys at lower band, sells at upper band.
 /// </summary>
 public class WellMartinStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _bollingerPeriod;
 	private readonly StrategyParam<decimal> _bollingerWidth;
-	private readonly StrategyParam<int> _adxPeriod;
-	private readonly StrategyParam<decimal> _adxLevel;
 	private readonly StrategyParam<decimal> _takeProfit;
 	private readonly StrategyParam<decimal> _stopLoss;
 
-	private BollingerBands _bollinger;
-	private AverageDirectionalIndex _adx;
 	private decimal _entryPrice;
-	private int _lastDealType; // 0 - none, 1 - sell, 2 - buy
 
-	/// <summary>
-	/// Candle type to process.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int BollingerPeriod { get => _bollingerPeriod.Value; set => _bollingerPeriod.Value = value; }
+	public decimal BollingerWidth { get => _bollingerWidth.Value; set => _bollingerWidth.Value = value; }
+	public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
+	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
 
-	/// <summary>
-	/// Bollinger Bands period.
-	/// </summary>
-	public int BollingerPeriod
-	{
-		get => _bollingerPeriod.Value;
-		set => _bollingerPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Bollinger Bands width (deviation).
-	/// </summary>
-	public decimal BollingerWidth
-	{
-		get => _bollingerWidth.Value;
-		set => _bollingerWidth.Value = value;
-	}
-
-	/// <summary>
-	/// ADX period.
-	/// </summary>
-	public int AdxPeriod
-	{
-		get => _adxPeriod.Value;
-		set => _adxPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// ADX threshold level.
-	/// </summary>
-	public decimal AdxLevel
-	{
-		get => _adxLevel.Value;
-		set => _adxLevel.Value = value;
-	}
-
-	/// <summary>
-	/// Take profit in price units.
-	/// </summary>
-	public decimal TakeProfit
-	{
-		get => _takeProfit.Value;
-		set => _takeProfit.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss in price units.
-	/// </summary>
-	public decimal StopLoss
-	{
-		get => _stopLoss.Value;
-		set => _stopLoss.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="WellMartinStrategy"/>.
-	/// </summary>
 	public WellMartinStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 
 		_bollingerPeriod = Param(nameof(BollingerPeriod), 84)
 			.SetDisplay("Bollinger Period", "Bollinger Bands period", "Indicators");
 
-		_bollingerWidth = Param<decimal>(nameof(BollingerWidth), 1.8m)
+		_bollingerWidth = Param(nameof(BollingerWidth), 1.8m)
 			.SetDisplay("Bollinger Width", "Bollinger Bands width", "Indicators");
 
-		_adxPeriod = Param(nameof(AdxPeriod), 40)
-			.SetDisplay("ADX Period", "ADX period", "Indicators");
-
-		_adxLevel = Param<decimal>(nameof(AdxLevel), 45m)
-			.SetDisplay("ADX Level", "ADX threshold", "Parameters");
-
-		_takeProfit = Param<decimal>(nameof(TakeProfit), 1200m)
+		_takeProfit = Param(nameof(TakeProfit), 1200m)
 			.SetDisplay("Take Profit", "Take profit in price units", "Risk");
 
-		_stopLoss = Param<decimal>(nameof(StopLoss), 1400m)
+		_stopLoss = Param(nameof(StopLoss), 1400m)
 			.SetDisplay("Stop Loss", "Stop loss in price units", "Risk");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_entryPrice = 0m;
-		_lastDealType = 0;
+		_entryPrice = 0;
 	}
 
 	/// <inheritdoc />
@@ -141,76 +64,61 @@ public class WellMartinStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_bollinger = new BollingerBands
+		var bb = new BollingerBands
 		{
 			Length = BollingerPeriod,
 			Width = BollingerWidth
 		};
 
-		_adx = new AverageDirectionalIndex
-		{
-			Length = AdxPeriod
-		};
-
-		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
+		SubscribeCandles(CandleType)
+			.BindEx(bb, ProcessCandle)
+			.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bbValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var bbResult = _bollinger.Process(candle);
-		var adxResult = _adx.Process(candle);
-
-		if (!_bollinger.IsFormed || !_adx.IsFormed)
+		var bb = (IBollingerBandsValue)bbValue;
+		if (bb.UpBand is not decimal upper || bb.LowBand is not decimal lower)
 			return;
 
-		if (!IsOnline)
-			return;
+		var close = candle.ClosePrice;
 
-		var bbValue = (IBollingerBandsValue)bbResult;
-		var adxValue = (IAverageDirectionalIndexValue)adxResult;
-
-		if (bbValue.UpBand is not decimal upper || bbValue.LowBand is not decimal lower)
-			return;
-
-		if (adxValue.MovingAverage is not decimal adxVal)
-			return;
-
-		if (Position == 0)
+		// Exit management
+		if (Position > 0)
 		{
-			if (candle.ClosePrice < lower && adxVal < AdxLevel && (_lastDealType == 0 || _lastDealType == 2))
+			var profit = close - _entryPrice;
+			if (close >= upper || (TakeProfit > 0 && profit >= TakeProfit) || (StopLoss > 0 && -profit >= StopLoss))
 			{
-				BuyMarket(Volume);
-				_entryPrice = candle.ClosePrice;
-			}
-			else if (candle.ClosePrice > upper && adxVal < AdxLevel && (_lastDealType == 0 || _lastDealType == 1))
-			{
-				SellMarket(Volume);
-				_entryPrice = candle.ClosePrice;
-			}
-		}
-		else if (Position > 0)
-		{
-			var profit = candle.ClosePrice - _entryPrice;
-
-			if (candle.ClosePrice >= upper || (TakeProfit > 0 && profit >= TakeProfit) || (StopLoss > 0 && -profit >= StopLoss))
-			{
-				SellMarket(Position);
-				_lastDealType = 2;
+				SellMarket();
+				return;
 			}
 		}
 		else if (Position < 0)
 		{
-			var profit = _entryPrice - candle.ClosePrice;
-
-			if (candle.ClosePrice <= lower || (TakeProfit > 0 && profit >= TakeProfit) || (StopLoss > 0 && -profit >= StopLoss))
+			var profit = _entryPrice - close;
+			if (close <= lower || (TakeProfit > 0 && profit >= TakeProfit) || (StopLoss > 0 && -profit >= StopLoss))
 			{
-				BuyMarket(Math.Abs(Position));
-				_lastDealType = 1;
+				BuyMarket();
+				return;
 			}
+		}
+
+		if (Position != 0)
+			return;
+
+		// Mean reversion: buy at lower band, sell at upper band
+		if (close < lower)
+		{
+			BuyMarket();
+			_entryPrice = close;
+		}
+		else if (close > upper)
+		{
+			SellMarket();
+			_entryPrice = close;
 		}
 	}
 }

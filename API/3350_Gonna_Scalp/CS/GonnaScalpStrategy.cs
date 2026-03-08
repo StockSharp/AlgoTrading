@@ -46,14 +46,14 @@ public class GonnaScalpStrategy : Strategy
 
 	public GonnaScalpStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 
-		_fastPeriod = Param(nameof(FastPeriod), 5)
+		_fastPeriod = Param(nameof(FastPeriod), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast WMA", "Fast WMA period", "Indicators");
 
-		_slowPeriod = Param(nameof(SlowPeriod), 20)
+		_slowPeriod = Param(nameof(SlowPeriod), 30)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow WMA", "Slow WMA period", "Indicators");
 
@@ -62,7 +62,6 @@ public class GonnaScalpStrategy : Strategy
 			.SetDisplay("CCI Period", "CCI period", "Indicators");
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
@@ -71,9 +70,33 @@ public class GonnaScalpStrategy : Strategy
 		var slow = new WeightedMovingAverage { Length = SlowPeriod };
 		var cci = new CommodityChannelIndex { Length = CciPeriod };
 
+		decimal? prevFast = null;
+		decimal? prevSlow = null;
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(fast, slow, cci, ProcessCandle)
+			.Bind(fast, slow, cci, (candle, fastVal, slowVal, cciVal) =>
+			{
+				if (candle.State != CandleStates.Finished)
+					return;
+
+				if (!IsFormedAndOnlineAndAllowTrading())
+					return;
+
+				if (prevFast.HasValue && prevSlow.HasValue)
+				{
+					var crossUp = prevFast.Value <= prevSlow.Value && fastVal > slowVal;
+					var crossDown = prevFast.Value >= prevSlow.Value && fastVal < slowVal;
+
+					if (crossUp && cciVal > -100m && Position <= 0)
+						BuyMarket();
+					else if (crossDown && cciVal < 100m && Position >= 0)
+						SellMarket();
+				}
+
+				prevFast = fastVal;
+				prevSlow = slowVal;
+			})
 			.Start();
 
 		var area = CreateChartArea();
@@ -84,16 +107,5 @@ public class GonnaScalpStrategy : Strategy
 			DrawIndicator(area, slow);
 			DrawOwnTrades(area);
 		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow, decimal cci)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (fast > slow && cci > -100m && Position <= 0)
-			BuyMarket();
-		else if (fast < slow && cci < 100m && Position >= 0)
-			SellMarket();
 	}
 }

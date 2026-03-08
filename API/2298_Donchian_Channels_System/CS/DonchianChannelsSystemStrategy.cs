@@ -51,7 +51,7 @@ public class DonchianChannelsSystemStrategy : Strategy
 		_shift = Param(nameof(Shift), 2)
 			.SetDisplay("Shift", "Bars offset for breakout evaluation", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe for analysis", "General");
 	}
 
@@ -59,6 +59,15 @@ public class DonchianChannelsSystemStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_upperBuffer.Clear();
+		_lowerBuffer.Clear();
+		_prevClose = default;
 	}
 
 	/// <inheritdoc />

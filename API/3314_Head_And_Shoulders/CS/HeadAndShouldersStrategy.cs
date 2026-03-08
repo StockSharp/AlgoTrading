@@ -11,8 +11,8 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Head and Shoulders strategy: EMA crossover + RSI confirmation.
-/// Buys when fast EMA crosses above slow EMA and RSI < 55.
-/// Sells when fast EMA crosses below slow EMA and RSI > 45.
+/// Buys when fast EMA crosses above slow EMA and RSI &lt; 55.
+/// Sells when fast EMA crosses below slow EMA and RSI &gt; 45.
 /// </summary>
 public class HeadAndShouldersStrategy : Strategy
 {
@@ -20,9 +20,6 @@ public class HeadAndShouldersStrategy : Strategy
 	private readonly StrategyParam<int> _fastPeriod;
 	private readonly StrategyParam<int> _slowPeriod;
 	private readonly StrategyParam<int> _rsiPeriod;
-
-	private decimal? _prevFast;
-	private decimal? _prevSlow;
 
 	public DataType CandleType
 	{
@@ -70,16 +67,37 @@ public class HeadAndShouldersStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_prevFast = null;
-		_prevSlow = null;
-
 		var fast = new ExponentialMovingAverage { Length = FastPeriod };
 		var slow = new ExponentialMovingAverage { Length = SlowPeriod };
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 
+		decimal? prevFast = null;
+		decimal? prevSlow = null;
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(fast, slow, rsi, ProcessCandle)
+			.Bind(fast, slow, rsi, (candle, fastVal, slowVal, rsiVal) =>
+			{
+				if (candle.State != CandleStates.Finished)
+					return;
+
+				if (!IsFormedAndOnlineAndAllowTrading())
+					return;
+
+				if (prevFast.HasValue && prevSlow.HasValue)
+				{
+					var crossUp = prevFast.Value <= prevSlow.Value && fastVal > slowVal;
+					var crossDown = prevFast.Value >= prevSlow.Value && fastVal < slowVal;
+
+					if (crossUp && rsiVal < 55m && Position <= 0)
+						BuyMarket();
+					else if (crossDown && rsiVal > 45m && Position >= 0)
+						SellMarket();
+				}
+
+				prevFast = fastVal;
+				prevSlow = slowVal;
+			})
 			.Start();
 
 		var area = CreateChartArea();
@@ -90,28 +108,5 @@ public class HeadAndShouldersStrategy : Strategy
 			DrawIndicator(area, slow);
 			DrawOwnTrades(area);
 		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow, decimal rsi)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (_prevFast.HasValue && _prevSlow.HasValue)
-		{
-			var crossUp = _prevFast.Value <= _prevSlow.Value && fast > slow;
-			var crossDown = _prevFast.Value >= _prevSlow.Value && fast < slow;
-
-			if (crossUp && rsi < 55m && Position <= 0)
-				BuyMarket();
-			else if (crossDown && rsi > 45m && Position >= 0)
-				SellMarket();
-		}
-
-		_prevFast = fast;
-		_prevSlow = slow;
 	}
 }

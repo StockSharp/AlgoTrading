@@ -359,8 +359,8 @@ public class StarterV6ModStrategy : Strategy
 		var multiplier = decimals is 3 or 5 ? 10m : 1m;
 		_pipSize = priceStep * multiplier;
 
-		_longEma = new EMA { Length = LongEmaPeriod };
-		_shortEma = new EMA { Length = ShortEmaPeriod };
+		_longEma = new ExponentialMovingAverage { Length = LongEmaPeriod };
+		_shortEma = new ExponentialMovingAverage { Length = ShortEmaPeriod };
 		_cci = new CommodityChannelIndex { Length = CciPeriod };
 		_laguerreProxy = new RelativeStrengthIndex { Length = 14 };
 
@@ -412,7 +412,7 @@ public class StarterV6ModStrategy : Strategy
 		var equityAllowed = EquityCutoff <= 0 || equity == null || equity >= EquityCutoff;
 		var lossLimitReached = MaxLossesPerDay > 0 && _lossesToday >= MaxLossesPerDay;
 
-		if (!IsFormedAndOnlineAndAllowTrading() || !equityAllowed || lossLimitReached || forceExit)
+		if (!equityAllowed || lossLimitReached || forceExit)
 		{
 			_prevLongEma = longEmaValue;
 			_prevShortEma = shortEmaValue;

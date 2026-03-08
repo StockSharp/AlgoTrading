@@ -53,6 +53,7 @@ public class MomoTradesStrategy : Strategy
 	private decimal? _trailingDistance;
 	private decimal? _trailingStep;
 	private bool _isLongPosition;
+	private int _cooldownCounter;
 	// Position management state persists between candles.
 
 	public int SmaPeriod
@@ -154,7 +155,7 @@ public class MomoTradesStrategy : Strategy
 		_breakevenPips = Param(nameof(BreakevenPips), 10m).SetNotNegative().SetDisplay("Breakeven", "Distance to move stop to breakeven", "Risk");
 		_priceShiftPips = Param(nameof(PriceShiftPips), 5m).SetNotNegative().SetDisplay("Price Shift", "Required price distance from SMA", "Filters");
 		_closeEndDay = Param(nameof(CloseEndDay), true).SetDisplay("Close End Of Day", "Close positions near session end", "Risk");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame()).SetDisplay("Candle Type", "Source candles for calculations", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame()).SetDisplay("Candle Type", "Source candles for calculations", "General");
 
 		Volume = 1m;
 	}
@@ -185,6 +186,7 @@ public class MomoTradesStrategy : Strategy
 		_trailingDistance = null;
 		_trailingStep = null;
 		_isLongPosition = false;
+		_cooldownCounter = 0;
 	}
 
 	/// <inheritdoc />
@@ -219,6 +221,12 @@ public class MomoTradesStrategy : Strategy
 
 		ManageActivePosition(candle);
 
+		if (_cooldownCounter > 0)
+		{
+			_cooldownCounter--;
+			return;
+		}
+
 		if (Position != 0)
 			return;
 
@@ -242,10 +250,12 @@ public class MomoTradesStrategy : Strategy
 		if (macdBuy && emaBuy)
 		{
 			EnterLong(candle.ClosePrice);
+			_cooldownCounter = 5;
 		}
 		else if (macdSell && emaSell)
 		{
 			EnterShort(candle.ClosePrice);
+			_cooldownCounter = 5;
 		}
 	}
 

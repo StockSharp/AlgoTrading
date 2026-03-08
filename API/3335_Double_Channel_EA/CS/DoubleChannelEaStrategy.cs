@@ -39,7 +39,7 @@ public class DoubleChannelEaStrategy : Strategy
 
 	public DoubleChannelEaStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 
 		_bbPeriod = Param(nameof(BbPeriod), 20)
@@ -58,9 +58,43 @@ public class DoubleChannelEaStrategy : Strategy
 		var bb = new BollingerBands { Length = BbPeriod };
 		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
 
+		decimal? prevClose = null;
+		decimal? prevEma = null;
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(bb, ema, ProcessCandle)
+			.BindEx(bb, ema, (candle, bbVal, emaVal) =>
+			{
+				if (candle.State != CandleStates.Finished)
+					return;
+
+				if (!IsFormedAndOnlineAndAllowTrading())
+					return;
+
+				var bbv = (BollingerBandsValue)bbVal;
+				if (bbv.UpBand is not decimal upper || bbv.LowBand is not decimal lower)
+					return;
+
+				if (emaVal.IsEmpty)
+					return;
+
+				var emaDecimal = emaVal.GetValue<decimal>();
+				var close = candle.ClosePrice;
+
+				if (prevClose.HasValue && prevEma.HasValue)
+				{
+					var crossAboveEma = prevClose.Value <= prevEma.Value && close > emaDecimal;
+					var crossBelowEma = prevClose.Value >= prevEma.Value && close < emaDecimal;
+
+					if (crossAboveEma && Position <= 0)
+						BuyMarket();
+					else if (crossBelowEma && Position >= 0)
+						SellMarket();
+				}
+
+				prevClose = close;
+				prevEma = emaDecimal;
+			})
 			.Start();
 
 		var area = CreateChartArea();
@@ -71,30 +105,5 @@ public class DoubleChannelEaStrategy : Strategy
 			DrawIndicator(area, ema);
 			DrawOwnTrades(area);
 		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bbVal, IIndicatorValue emaVal)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!bbVal.IsFinal || !emaVal.IsFinal)
-			return;
-
-		var bb = (BollingerBandsValue)bbVal;
-		if (bb.UpBand is not decimal upper || bb.LowBand is not decimal lower)
-			return;
-
-		if (emaVal.IsEmpty)
-			return;
-
-		var ema = emaVal.GetValue<decimal>();
-		var close = candle.ClosePrice;
-
-		// Buy near lower BB in uptrend (close > EMA), sell near upper BB in downtrend (close < EMA)
-		if (close <= lower && Position <= 0)
-			BuyMarket();
-		else if (close >= upper && Position >= 0)
-			SellMarket();
 	}
 }

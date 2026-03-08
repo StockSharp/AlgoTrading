@@ -42,7 +42,7 @@ public class VolumeWeightedMaCandleStrategy : Strategy
 			.SetDisplay("VWMA Period", "Period for volume weighted moving average", "Parameters")
 			.SetOptimize(5, 30, 5);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for calculations", "Parameters");
 	}
 
@@ -50,6 +50,14 @@ public class VolumeWeightedMaCandleStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevVwma = null;
+		_prevColor = null;
 	}
 
 	/// <inheritdoc />
@@ -64,7 +72,7 @@ public class VolumeWeightedMaCandleStrategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(vwma, ProcessCandle)
+			.Bind(vwma, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -76,15 +84,13 @@ public class VolumeWeightedMaCandleStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue vwmaVal)
+	private void ProcessCandle(ICandleMessage candle, decimal vwmaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
-
-		var vwmaValue = vwmaVal.GetValue<decimal>();
 
 		// Color: 2 = bullish (price above VWMA rising), 0 = bearish, 1 = neutral
 		var priceAbove = candle.ClosePrice > vwmaValue;

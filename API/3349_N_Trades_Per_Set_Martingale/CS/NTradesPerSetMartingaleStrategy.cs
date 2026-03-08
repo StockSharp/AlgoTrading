@@ -31,7 +31,7 @@ public class NTradesPerSetMartingaleStrategy : Strategy
 
 	public NTradesPerSetMartingaleStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
@@ -39,16 +39,37 @@ public class NTradesPerSetMartingaleStrategy : Strategy
 			.SetDisplay("RSI Period", "RSI calculation period", "Indicators");
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 
+		decimal? prevRsi = null;
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(rsi, ProcessCandle)
+			.Bind(rsi, (candle, rsiVal) =>
+			{
+				if (candle.State != CandleStates.Finished)
+					return;
+
+				if (!IsFormedAndOnlineAndAllowTrading())
+					return;
+
+				if (prevRsi.HasValue)
+				{
+					var crossBelowOversold = prevRsi.Value >= 30m && rsiVal < 30m;
+					var crossAboveOverbought = prevRsi.Value <= 70m && rsiVal > 70m;
+
+					if (crossBelowOversold && Position <= 0)
+						BuyMarket();
+					else if (crossAboveOverbought && Position >= 0)
+						SellMarket();
+				}
+
+				prevRsi = rsiVal;
+			})
 			.Start();
 
 		var area = CreateChartArea();
@@ -58,16 +79,5 @@ public class NTradesPerSetMartingaleStrategy : Strategy
 			DrawIndicator(area, rsi);
 			DrawOwnTrades(area);
 		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal rsi)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (rsi < 30m && Position <= 0)
-			BuyMarket();
-		else if (rsi > 70m && Position >= 0)
-			SellMarket();
 	}
 }

@@ -31,10 +31,17 @@ public class CaiChannelSystemDigitStrategy : Strategy
 	{
 		_length = Param(nameof(Length), 12).SetGreaterThanZero();
 		_width = Param(nameof(Width), 2m).SetGreaterThanZero();
-		_candle = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
+		_candle = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame());
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities() => [(Security, CandleType)];
+
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevUp = false;
+		_prevDown = false;
+	}
 
 	protected override void OnStarted2(DateTime time)
 	{

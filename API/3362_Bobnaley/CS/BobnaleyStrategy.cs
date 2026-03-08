@@ -21,7 +21,7 @@ public class BobnaleyStrategy : Strategy
 
 	public BobnaleyStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 		_emaPeriod = Param(nameof(EmaPeriod), 14)
 			.SetGreaterThanZero()
@@ -34,17 +34,47 @@ public class BobnaleyStrategy : Strategy
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+
 		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
 		var atr = new AverageTrueRange { Length = AtrPeriod };
-		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ema, atr, ProcessCandle).Start();
-	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal ema, decimal atr)
-	{
-		if (candle.State != CandleStates.Finished) return;
-		var close = candle.ClosePrice;
-		if (close > ema + atr * 0.5m && Position <= 0) BuyMarket();
-		else if (close < ema - atr * 0.5m && Position >= 0) SellMarket();
+		decimal? prevClose = null;
+		decimal? prevEma = null;
+
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(ema, atr, (candle, emaVal, atrVal) =>
+			{
+				if (candle.State != CandleStates.Finished)
+					return;
+
+				if (!IsFormedAndOnlineAndAllowTrading())
+					return;
+
+				var close = candle.ClosePrice;
+
+				if (prevClose.HasValue && prevEma.HasValue)
+				{
+					var crossUp = prevClose.Value <= prevEma.Value && close > emaVal;
+					var crossDown = prevClose.Value >= prevEma.Value && close < emaVal;
+
+					if (crossUp && Position <= 0)
+						BuyMarket();
+					else if (crossDown && Position >= 0)
+						SellMarket();
+				}
+
+				prevClose = close;
+				prevEma = emaVal;
+			})
+			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, ema);
+			DrawOwnTrades(area);
+		}
 	}
 }

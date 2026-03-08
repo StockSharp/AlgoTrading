@@ -41,7 +41,7 @@ public class VolumeWeightedMaDigitSystemStrategy : Strategy
 			.SetDisplay("VWMA Period", "Length of the VWMA indicator", "Parameters")
 			.SetOptimize(5, 30, 5);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe for analysis", "Parameters");
 	}
 
@@ -49,6 +49,14 @@ public class VolumeWeightedMaDigitSystemStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevVwma = null;
+		_prevSlope = null;
 	}
 
 	/// <inheritdoc />
@@ -63,7 +71,7 @@ public class VolumeWeightedMaDigitSystemStrategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(vwma, ProcessCandle)
+			.Bind(vwma, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -75,15 +83,13 @@ public class VolumeWeightedMaDigitSystemStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue vwmaVal)
+	private void ProcessCandle(ICandleMessage candle, decimal vwmaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
-
-		var vwmaValue = vwmaVal.GetValue<decimal>();
 
 		if (_prevVwma is decimal prev)
 		{

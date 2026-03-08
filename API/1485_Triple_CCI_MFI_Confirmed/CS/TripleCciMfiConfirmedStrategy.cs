@@ -1,9 +1,8 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -12,9 +11,8 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 
-
 /// <summary>
-/// Strategy using triple CCI confirmed by MFI and EMA with ATR based trailing exit.
+/// Strategy using triple CCI confirmed by MFI and ExponentialMovingAverage with ATR based trailing exit.
 /// </summary>
 public class TripleCciMfiConfirmedStrategy : Strategy
 {
@@ -36,6 +34,7 @@ public class TripleCciMfiConfirmedStrategy : Strategy
 	private decimal _activationLevel;
 	private decimal _takeProfitLevel;
 	private bool _trailingActivated;
+	private DateTimeOffset _lastSignal;
 
 	/// <summary>
 	/// ATR multiplier for stop loss.
@@ -92,7 +91,7 @@ public class TripleCciMfiConfirmedStrategy : Strategy
 	}
 
 	/// <summary>
-	/// EMA length.
+	/// ExponentialMovingAverage length.
 	/// </summary>
 	public int EmaLength
 	{
@@ -101,7 +100,7 @@ public class TripleCciMfiConfirmedStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Trailing EMA length.
+	/// Trailing ExponentialMovingAverage length.
 	/// </summary>
 	public int TrailingEmaLength
 	{
@@ -182,12 +181,12 @@ public class TripleCciMfiConfirmedStrategy : Strategy
 
 		_emaLength = Param(nameof(EmaLength), 50)
 			.SetRange(10, 200)
-			.SetDisplay("EMA Length", "EMA filter length", "Indicators")
+			.SetDisplay("ExponentialMovingAverage Length", "ExponentialMovingAverage filter length", "Indicators")
 			;
 
 		_trailingEmaLength = Param(nameof(TrailingEmaLength), 20)
 			.SetRange(10, 100)
-			.SetDisplay("Trailing EMA Length", "EMA length for trailing profit", "Indicators")
+			.SetDisplay("Trailing ExponentialMovingAverage Length", "ExponentialMovingAverage length for trailing profit", "Indicators")
 			;
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
@@ -221,6 +220,7 @@ public class TripleCciMfiConfirmedStrategy : Strategy
 		_activationLevel = default;
 		_takeProfitLevel = default;
 		_trailingActivated = default;
+		_lastSignal = default;
 	}
 
 	/// <inheritdoc />
@@ -232,8 +232,8 @@ public class TripleCciMfiConfirmedStrategy : Strategy
 		var middleCci = new CommodityChannelIndex { Length = MiddleCciPeriod };
 		var slowCci = new CommodityChannelIndex { Length = SlowCciPeriod };
 		var mfi = new MoneyFlowIndex { Length = MfiLength };
-		var ema = new EMA { Length = EmaLength };
-		var trailingEma = new EMA { Length = TrailingEmaLength };
+		var ema = new ExponentialMovingAverage { Length = EmaLength };
+		var trailingEma = new ExponentialMovingAverage { Length = TrailingEmaLength };
 		var atr = new AverageTrueRange { Length = AtrPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
@@ -263,16 +263,14 @@ public class TripleCciMfiConfirmedStrategy : Strategy
 		if (candle.OpenTime < TradeStart || candle.OpenTime > TradeStop)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		var crossedUp = _prevFastCci <= 0m && fastCci > 0m;
 		_prevFastCci = fastCci;
 
-		if (crossedUp && candle.ClosePrice > ema && middleCci > 0m && slowCci > 0m && mfi > 50m && Position <= 0)
+		var cooldown = TimeSpan.FromMinutes(1440);
+		if (crossedUp && candle.ClosePrice > ema && middleCci > 0m && slowCci > 0m && mfi > 65m && Position <= 0 && candle.OpenTime - _lastSignal >= cooldown)
 		{
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
+			BuyMarket();
+			_lastSignal = candle.OpenTime;
 
 			_stopLossLevel = candle.ClosePrice - StopLossAtrMultiplier * atr;
 			_activationLevel = candle.ClosePrice + TrailingActivationMultiplier * atr;
@@ -292,11 +290,15 @@ public class TripleCciMfiConfirmedStrategy : Strategy
 
 		if (_takeProfitLevel != default && candle.ClosePrice < _takeProfitLevel)
 		{
-			SellMarket(Position);
+			SellMarket();
+			_lastSignal = candle.OpenTime;
 			return;
 		}
 
 		if (candle.LowPrice <= _stopLossLevel)
-			SellMarket(Position);
+		{
+			SellMarket();
+			_lastSignal = candle.OpenTime;
+		}
 	}
 }

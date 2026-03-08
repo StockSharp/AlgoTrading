@@ -1,7 +1,11 @@
 using System;
+using System.Collections.Generic;
+
+using Ecng.Common;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
+using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
@@ -26,74 +30,54 @@ public class ParallelStrategiesStrategy : Strategy
 	private decimal _haClose;
 	private bool _haInitialized;
 
-	/// <summary>
-	/// Donchian channel period for breakout detection.
-	/// </summary>
-	public int DonchianPeriod
-	{
-		get => _donchianPeriod.Value;
-		set => _donchianPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Fast EMA period for MACD.
-	/// </summary>
-	public int MacdFast
-	{
-		get => _macdFast.Value;
-		set => _macdFast.Value = value;
-	}
-
-	/// <summary>
-	/// Slow EMA period for MACD.
-	/// </summary>
-	public int MacdSlow
-	{
-		get => _macdSlow.Value;
-		set => _macdSlow.Value = value;
-	}
-
-	/// <summary>
-	/// Signal line period for MACD.
-	/// </summary>
-	public int MacdSignal
-	{
-		get => _macdSignal.Value;
-		set => _macdSignal.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type for subscriptions.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
+	public int DonchianPeriod { get => _donchianPeriod.Value; set => _donchianPeriod.Value = value; }
+	public int MacdFast { get => _macdFast.Value; set => _macdFast.Value = value; }
+	public int MacdSlow { get => _macdSlow.Value; set => _macdSlow.Value = value; }
+	public int MacdSignal { get => _macdSignal.Value; set => _macdSignal.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public ParallelStrategiesStrategy()
 	{
-		_donchianPeriod = Param("DonchianPeriod", 5)
+		_donchianPeriod = Param(nameof(DonchianPeriod), 5)
+			.SetGreaterThanZero()
 			.SetDisplay("Donchian Period", "Lookback for breakout calculation", "Indicators");
-		_macdFast = Param("MacdFast", 12)
+
+		_macdFast = Param(nameof(MacdFast), 12)
+			.SetGreaterThanZero()
 			.SetDisplay("MACD Fast", "Fast EMA period", "Indicators");
-		_macdSlow = Param("MacdSlow", 26)
+
+		_macdSlow = Param(nameof(MacdSlow), 26)
+			.SetGreaterThanZero()
 			.SetDisplay("MACD Slow", "Slow EMA period", "Indicators");
-		_macdSignal = Param("MacdSignal", 9)
+
+		_macdSignal = Param(nameof(MacdSignal), 9)
+			.SetGreaterThanZero()
 			.SetDisplay("MACD Signal", "Signal line period", "Indicators");
-		_candleType = Param("CandleType", TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Time frame for candles", "Common");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+			.SetDisplay("Candle Type", "Time frame for candles", "General");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevUpper = null;
+		_prevLower = null;
+		_prevTrend = null;
+		_haOpen = 0;
+		_haClose = 0;
+		_haInitialized = false;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_prevUpper = null;
-		_prevLower = null;
-		_prevTrend = null;
-		_haInitialized = false;
 
 		var donchian = new DonchianChannels { Length = DonchianPeriod };
 		var macd = new MovingAverageConvergenceDivergenceSignal(
@@ -102,19 +86,9 @@ public class ParallelStrategiesStrategy : Strategy
 				new ExponentialMovingAverage { Length = MacdFast }),
 			new ExponentialMovingAverage { Length = MacdSignal });
 
-		var subscription = SubscribeCandles(CandleType);
-		subscription
+		SubscribeCandles(CandleType)
 			.BindEx(donchian, macd, ProcessCandle)
 			.Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, donchian);
-			DrawIndicator(area, macd);
-			DrawOwnTrades(area);
-		}
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue donchianValue, IIndicatorValue macdValue)
@@ -149,12 +123,18 @@ public class ParallelStrategiesStrategy : Strategy
 
 		var trend = haOpenNew < haCloseNew ? 1 : -1;
 
-		if (_prevUpper is decimal prevHigh && _prevLower is decimal prevLow && _prevTrend is int prevTrend)
+		if (_prevTrend is int prevTrend)
 		{
-			if (trend > 0 && prevTrend < 0 && candle.ClosePrice > prevHigh && macdLine > signalLine && Position <= 0)
+			if (trend > 0 && prevTrend < 0 && macdLine > signalLine && Position <= 0)
+			{
+				if (Position < 0) BuyMarket();
 				BuyMarket();
-			else if (trend < 0 && prevTrend > 0 && candle.ClosePrice < prevLow && macdLine < signalLine && Position >= 0)
+			}
+			else if (trend < 0 && prevTrend > 0 && macdLine < signalLine && Position >= 0)
+			{
+				if (Position > 0) SellMarket();
 				SellMarket();
+			}
 		}
 
 		_prevUpper = upper;

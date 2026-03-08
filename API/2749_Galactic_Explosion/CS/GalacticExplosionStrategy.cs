@@ -153,7 +153,7 @@ public class GalacticExplosionStrategy : Strategy
 		_minimalProfit = Param(nameof(MinimalProfit), 1m)
 		.SetDisplay("Minimal Profit", "Target profit to close the grid", "Risk");
 
-		_indentAfterEighth = Param(nameof(IndentAfterEighth), 10m)
+		_indentAfterEighth = Param(nameof(IndentAfterEighth), 500m)
 		.SetDisplay("Indent After 8th", "Distance from last entry after eight trades (price steps)", "Grid");
 
 		_skipThreeCandlesMin = Param(nameof(SkipThreeCandlesMin), 500m)
@@ -165,11 +165,11 @@ public class GalacticExplosionStrategy : Strategy
 		_skipSixCandlesMax = Param(nameof(SkipSixCandlesMax), 2000m)
 		.SetDisplay("Skip 6 Max", "Upper distance to keep skipping six candles", "Grid");
 
-		_maLength = Param(nameof(MaLength), 200)
+		_maLength = Param(nameof(MaLength), 10)
 		.SetGreaterThanZero()
 		.SetDisplay("MA Length", "Length of the moving average", "Filter");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Primary candle series", "General");
 	}
 

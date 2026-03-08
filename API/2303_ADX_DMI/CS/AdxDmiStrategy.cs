@@ -36,7 +36,7 @@ public class AdxDmiStrategy : Strategy
 
 	public AdxDmiStrategy()
 	{
-		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for strategy calculation", "General");
 
 		_dmiPeriod = Param(nameof(DmiPeriod), 14)
@@ -47,6 +47,14 @@ public class AdxDmiStrategy : Strategy
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		=> [(Security, CandleType)];
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevPlus = null;
+		_prevMinus = null;
+	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)

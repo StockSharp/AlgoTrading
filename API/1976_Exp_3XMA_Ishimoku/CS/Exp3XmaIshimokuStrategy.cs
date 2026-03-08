@@ -1,118 +1,64 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
-using StockSharp.Algo;
+
 namespace StockSharp.Samples.Strategies;
 
-
-
 /// <summary>
-/// Contrarian strategy based on Ichimoku cloud and Kijun line.
-/// Buys when the Kijun line crosses down into the cloud and sells on the opposite cross.
+/// Ichimoku cloud strategy.
+/// Buys when Kijun crosses down into cloud, sells on opposite.
 /// </summary>
 public class Exp3XmaIshimokuStrategy : Strategy
 {
 	private readonly StrategyParam<int> _tenkanPeriod;
 	private readonly StrategyParam<int> _kijunPeriod;
 	private readonly StrategyParam<int> _senkouSpanPeriod;
-	private readonly StrategyParam<bool> _allowBuy;
-	private readonly StrategyParam<bool> _allowSell;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private Ichimoku _ichimoku;
 	private decimal? _prevKijun;
 	private decimal? _prevUpper;
 	private decimal? _prevLower;
 
-	/// <summary>
-	/// Tenkan-sen period.
-	/// </summary>
-	public int TenkanPeriod
-	{
-		get => _tenkanPeriod.Value;
-		set => _tenkanPeriod.Value = value;
-	}
+	public int TenkanPeriod { get => _tenkanPeriod.Value; set => _tenkanPeriod.Value = value; }
+	public int KijunPeriod { get => _kijunPeriod.Value; set => _kijunPeriod.Value = value; }
+	public int SenkouSpanPeriod { get => _senkouSpanPeriod.Value; set => _senkouSpanPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Kijun-sen period.
-	/// </summary>
-	public int KijunPeriod
-	{
-		get => _kijunPeriod.Value;
-		set => _kijunPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Senkou Span B period.
-	/// </summary>
-	public int SenkouSpanPeriod
-	{
-		get => _senkouSpanPeriod.Value;
-		set => _senkouSpanPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Allow long trades.
-	/// </summary>
-	public bool AllowBuy
-	{
-		get => _allowBuy.Value;
-		set => _allowBuy.Value = value;
-	}
-
-	/// <summary>
-	/// Allow short trades.
-	/// </summary>
-	public bool AllowSell
-	{
-		get => _allowSell.Value;
-		set => _allowSell.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes strategy parameters.
-	/// </summary>
 	public Exp3XmaIshimokuStrategy()
 	{
 		_tenkanPeriod = Param(nameof(TenkanPeriod), 3)
+			.SetGreaterThanZero()
 			.SetDisplay("Tenkan Period", "Tenkan-sen period", "Ichimoku");
 
 		_kijunPeriod = Param(nameof(KijunPeriod), 6)
+			.SetGreaterThanZero()
 			.SetDisplay("Kijun Period", "Kijun-sen period", "Ichimoku");
 
 		_senkouSpanPeriod = Param(nameof(SenkouSpanPeriod), 9)
-			.SetDisplay("Senkou Span B Period", "Senkou Span B period", "Ichimoku");
+			.SetGreaterThanZero()
+			.SetDisplay("Senkou B Period", "Senkou Span B period", "Ichimoku");
 
-		_allowBuy = Param(nameof(AllowBuy), true)
-			.SetDisplay("Allow Buy", "Enable long trades", "General");
-
-		_allowSell = Param(nameof(AllowSell), true)
-			.SetDisplay("Allow Sell", "Enable short trades", "General");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	/// <inheritdoc />
+	protected override void OnReseted()
 	{
-		return [(Security, CandleType)];
+		base.OnReseted();
+		_prevKijun = null;
+		_prevUpper = null;
+		_prevLower = null;
 	}
 
 	/// <inheritdoc />
@@ -120,23 +66,14 @@ public class Exp3XmaIshimokuStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_ichimoku = new Ichimoku();
-		_ichimoku.Tenkan.Length = TenkanPeriod;
-		_ichimoku.Kijun.Length = KijunPeriod;
-		_ichimoku.SenkouB.Length = SenkouSpanPeriod;
+		var ichimoku = new Ichimoku();
+		ichimoku.Tenkan.Length = TenkanPeriod;
+		ichimoku.Kijun.Length = KijunPeriod;
+		ichimoku.SenkouB.Length = SenkouSpanPeriod;
 
-		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.BindEx(_ichimoku, ProcessCandle)
+		SubscribeCandles(CandleType)
+			.BindEx(ichimoku, ProcessCandle)
 			.Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, _ichimoku);
-			DrawOwnTrades(area);
-		}
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue ichimokuValue)
@@ -144,10 +81,7 @@ public class Exp3XmaIshimokuStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var ich = (IchimokuValue)ichimokuValue;
+		var ich = (IIchimokuValue)ichimokuValue;
 
 		if (ich.Kijun is not decimal kijun ||
 			ich.SenkouA is not decimal senkouA ||
@@ -165,32 +99,20 @@ public class Exp3XmaIshimokuStrategy : Strategy
 			return;
 		}
 
+		// Buy when Kijun crosses down into cloud
 		var crossDown = _prevKijun > _prevUpper && kijun <= upper;
+		// Sell when Kijun crosses up out of cloud
 		var crossUp = _prevKijun < _prevLower && kijun >= lower;
 
-		if (crossDown)
+		if (crossDown && Position <= 0)
 		{
-			if (AllowBuy)
-			{
-				var volume = Volume + Math.Max(0m, -Position);
-				BuyMarket(volume);
-			}
-			else if (Position < 0)
-			{
-				BuyMarket(-Position);
-			}
+			if (Position < 0) BuyMarket();
+			BuyMarket();
 		}
-		else if (crossUp)
+		else if (crossUp && Position >= 0)
 		{
-			if (AllowSell)
-			{
-				var volume = Volume + Math.Max(0m, Position);
-				SellMarket(volume);
-			}
-			else if (Position > 0)
-			{
-				SellMarket(Position);
-			}
+			if (Position > 0) SellMarket();
+			SellMarket();
 		}
 
 		_prevKijun = kijun;

@@ -1,9 +1,8 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -104,7 +103,7 @@ public class ColorStochNrStrategy : Strategy
 			
 			.SetOptimize(1m, 5m, 1m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -160,10 +159,6 @@ public class ColorStochNrStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Ensure we are allowed to trade
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		var stoch = (IStochasticOscillatorValue)stochValue;
 		if (stoch.K is not decimal k || stoch.D is not decimal d)
 			return;
@@ -209,9 +204,15 @@ public class ColorStochNrStrategy : Strategy
 		}
 
 		if (buy && Position <= 0)
-			BuyMarket(Volume + Math.Abs(Position));
+		{
+			if (Position < 0) BuyMarket();
+			BuyMarket();
+		}
 		else if (sell && Position >= 0)
-			SellMarket(Volume + Math.Abs(Position));
+		{
+			if (Position > 0) SellMarket();
+			SellMarket();
+		}
 
 		_prevKDelta = deltaK;
 		_prevDDelta = deltaD;

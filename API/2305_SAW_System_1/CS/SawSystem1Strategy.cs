@@ -53,7 +53,7 @@ public class SawSystem1Strategy : Strategy
 		_breakoutMultiplier = Param(nameof(BreakoutMultiplier), 0.5m)
 			.SetDisplay("Breakout Multiplier", "Fraction of ATR for breakout offset", "Parameters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 	}
 
@@ -61,6 +61,16 @@ public class SawSystem1Strategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevAtr = null;
+		_sessionOpen = 0;
+		_traded = false;
+		_currentDate = default;
 	}
 
 	/// <inheritdoc />

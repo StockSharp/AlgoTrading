@@ -42,13 +42,23 @@ public class ZZFiboTraderStrategy : Strategy
 			.SetDisplay("ZigZag Depth", "Number of bars to search for pivots", "ZigZag")
 			.SetGreaterThanZero();
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		=> [(Security, CandleType)];
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevPivot = 0m;
+		_currPivot = 0m;
+		_direction = 0;
+		_level50 = 0m;
+	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)

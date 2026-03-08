@@ -43,7 +43,7 @@ public class DarvasBoxesSystemStrategy : Strategy
 			.SetDisplay("Box Period", "Period for box calculation", "Indicators")
 			.SetOptimize(10, 40, 5);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -51,6 +51,15 @@ public class DarvasBoxesSystemStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevUpper = 0m;
+		_prevLower = 0m;
+		_prevClose = 0m;
 	}
 
 	/// <inheritdoc />

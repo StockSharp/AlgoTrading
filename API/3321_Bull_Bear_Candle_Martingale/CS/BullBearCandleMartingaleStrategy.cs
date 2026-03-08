@@ -11,8 +11,8 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Bull/Bear Candle Martingale strategy: Bullish/bearish candle direction + EMA filter.
-/// Buys after strong bullish candle when close > EMA.
-/// Sells after strong bearish candle when close < EMA.
+/// Buys after strong bullish candle when close crosses above EMA.
+/// Sells after strong bearish candle when close crosses below EMA.
 /// </summary>
 public class BullBearCandleMartingaleStrategy : Strategy
 {
@@ -33,10 +33,10 @@ public class BullBearCandleMartingaleStrategy : Strategy
 
 	public BullBearCandleMartingaleStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 
-		_emaPeriod = Param(nameof(EmaPeriod), 20)
+		_emaPeriod = Param(nameof(EmaPeriod), 30)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Period", "EMA period", "Indicators");
 	}
@@ -47,9 +47,42 @@ public class BullBearCandleMartingaleStrategy : Strategy
 
 		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
 
+		decimal? prevClose = null;
+		decimal? prevEma = null;
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ema, ProcessCandle)
+			.Bind(ema, (candle, emaVal) =>
+			{
+				if (candle.State != CandleStates.Finished)
+					return;
+
+				if (!IsFormedAndOnlineAndAllowTrading())
+					return;
+
+				var close = candle.ClosePrice;
+				var bullish = close > candle.OpenPrice;
+				var bearish = close < candle.OpenPrice;
+				var bodySize = Math.Abs(close - candle.OpenPrice);
+				var range = candle.HighPrice - candle.LowPrice;
+
+				// Require strong candle body (>50% of range)
+				var strongCandle = range > 0 && bodySize / range > 0.5m;
+
+				if (prevClose.HasValue && prevEma.HasValue && strongCandle)
+				{
+					var crossUp = prevClose.Value <= prevEma.Value && close > emaVal;
+					var crossDown = prevClose.Value >= prevEma.Value && close < emaVal;
+
+					if (bullish && crossUp && Position <= 0)
+						BuyMarket();
+					else if (bearish && crossDown && Position >= 0)
+						SellMarket();
+				}
+
+				prevClose = close;
+				prevEma = emaVal;
+			})
 			.Start();
 
 		var area = CreateChartArea();
@@ -58,27 +91,6 @@ public class BullBearCandleMartingaleStrategy : Strategy
 			DrawCandles(area, subscription);
 			DrawIndicator(area, ema);
 			DrawOwnTrades(area);
-		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal ema)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var bullish = candle.ClosePrice > candle.OpenPrice;
-		var bearish = candle.ClosePrice < candle.OpenPrice;
-
-		if (bullish && candle.ClosePrice > ema && Position <= 0)
-		{
-			BuyMarket();
-		}
-		else if (bearish && candle.ClosePrice < ema && Position >= 0)
-		{
-			SellMarket();
 		}
 	}
 }

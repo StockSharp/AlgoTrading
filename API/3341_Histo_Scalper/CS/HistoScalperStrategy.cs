@@ -18,9 +18,6 @@ public class HistoScalperStrategy : Strategy
 	private readonly StrategyParam<int> _rsiPeriod;
 	private readonly StrategyParam<int> _cciPeriod;
 
-	private decimal _prevMacd;
-	private bool _hasPrev;
-
 	public DataType CandleType
 	{
 		get => _candleType.Value;
@@ -41,7 +38,7 @@ public class HistoScalperStrategy : Strategy
 
 	public HistoScalperStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
@@ -53,20 +50,36 @@ public class HistoScalperStrategy : Strategy
 			.SetDisplay("CCI Period", "CCI period", "Indicators");
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_hasPrev = false;
 
 		var macd = new MovingAverageConvergenceDivergence();
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 		var cci = new CommodityChannelIndex { Length = CciPeriod };
 
+		decimal? prevMacd = null;
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(macd, rsi, cci, ProcessCandle)
+			.Bind(macd, rsi, cci, (candle, macdLine, rsiVal, cciVal) =>
+			{
+				if (candle.State != CandleStates.Finished)
+					return;
+
+				if (!IsFormedAndOnlineAndAllowTrading())
+					return;
+
+				if (prevMacd.HasValue)
+				{
+					if (prevMacd.Value <= 0 && macdLine > 0 && rsiVal < 70m && cciVal > -100m && Position <= 0)
+						BuyMarket();
+					else if (prevMacd.Value >= 0 && macdLine < 0 && rsiVal > 30m && cciVal < 100m && Position >= 0)
+						SellMarket();
+				}
+
+				prevMacd = macdLine;
+			})
 			.Start();
 
 		var area = CreateChartArea();
@@ -75,27 +88,5 @@ public class HistoScalperStrategy : Strategy
 			DrawCandles(area, subscription);
 			DrawOwnTrades(area);
 		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal macdLine, decimal rsi, decimal cci)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!_hasPrev)
-		{
-			_prevMacd = macdLine;
-			_hasPrev = true;
-			return;
-		}
-
-		// Buy: MACD crosses above zero, RSI < 70, CCI > -100
-		if (_prevMacd <= 0 && macdLine > 0 && rsi < 70m && cci > -100m && Position <= 0)
-			BuyMarket();
-		// Sell: MACD crosses below zero, RSI > 30, CCI < 100
-		else if (_prevMacd >= 0 && macdLine < 0 && rsi > 30m && cci < 100m && Position >= 0)
-			SellMarket();
-
-		_prevMacd = macdLine;
 	}
 }

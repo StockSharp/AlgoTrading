@@ -195,7 +195,7 @@ public class ExpertZzlwaStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Maximum Volume", "Upper cap for order size", "Trading");
 
-		_mode = Param(nameof(Mode), StrategyModes.Original)
+		_mode = Param(nameof(Mode), StrategyModes.MovingAverageTest)
 		.SetDisplay("Mode", "Operating mode", "General");
 
 		_termLevel = Param(nameof(ZigZagTerm), TermLevels.LongTerm)
@@ -209,7 +209,7 @@ public class ExpertZzlwaStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Fast MA Period", "Simple MA length", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 		.SetDisplay("Candle Type", "Time frame to analyse", "General");
 	}
 
@@ -275,7 +275,7 @@ public class ExpertZzlwaStrategy : Strategy
 
 			case StrategyModes.MovingAverageTest:
 				_slowMa = new SmoothedMovingAverage { Length = SlowMaPeriod };
-				_fastMa = new SMA { Length = FastMaPeriod };
+				_fastMa = new SimpleMovingAverage { Length = FastMaPeriod };
 				subscription.Bind(_slowMa, _fastMa, ProcessMovingAverageCandle).Start();
 				break;
 
@@ -307,9 +307,6 @@ public class ExpertZzlwaStrategy : Strategy
 		private void ProcessOriginalCandle(ICandleMessage candle)
 		{
 			if (candle.State != CandleStates.Finished)
-			return;
-
-			if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
 			if (Position == 0)
@@ -385,9 +382,6 @@ public class ExpertZzlwaStrategy : Strategy
 
 		private void DispatchSignals()
 		{
-			if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 			if (_pendingBuySignal)
 			{
 				ExecuteTrade(Sides.Buy);

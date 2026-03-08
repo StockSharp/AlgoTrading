@@ -19,9 +19,6 @@ public class FiveMinutesScalpingEaV11Strategy : Strategy
 	private readonly StrategyParam<int> _fastPeriod;
 	private readonly StrategyParam<int> _slowPeriod;
 
-	private decimal? _prevFast;
-	private decimal? _prevSlow;
-
 	public DataType CandleType
 	{
 		get => _candleType.Value;
@@ -42,7 +39,7 @@ public class FiveMinutesScalpingEaV11Strategy : Strategy
 
 	public FiveMinutesScalpingEaV11Strategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 
 		_fastPeriod = Param(nameof(FastPeriod), 6)
@@ -58,15 +55,33 @@ public class FiveMinutesScalpingEaV11Strategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_prevFast = null;
-		_prevSlow = null;
-
 		var fast = new WeightedMovingAverage { Length = FastPeriod };
 		var slow = new WeightedMovingAverage { Length = SlowPeriod };
 
+		decimal? prevFast = null;
+		decimal? prevSlow = null;
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(fast, slow, ProcessCandle)
+			.Bind(fast, slow, (candle, fastVal, slowVal) =>
+			{
+				if (candle.State != CandleStates.Finished)
+					return;
+
+				if (!IsFormedAndOnlineAndAllowTrading())
+					return;
+
+				if (prevFast.HasValue && prevSlow.HasValue)
+				{
+					if (prevFast.Value <= prevSlow.Value && fastVal > slowVal && Position <= 0)
+						BuyMarket();
+					else if (prevFast.Value >= prevSlow.Value && fastVal < slowVal && Position >= 0)
+						SellMarket();
+				}
+
+				prevFast = fastVal;
+				prevSlow = slowVal;
+			})
 			.Start();
 
 		var area = CreateChartArea();
@@ -77,25 +92,5 @@ public class FiveMinutesScalpingEaV11Strategy : Strategy
 			DrawIndicator(area, slow);
 			DrawOwnTrades(area);
 		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (_prevFast.HasValue && _prevSlow.HasValue)
-		{
-			if (_prevFast.Value <= _prevSlow.Value && fast > slow && Position <= 0)
-				BuyMarket();
-			else if (_prevFast.Value >= _prevSlow.Value && fast < slow && Position >= 0)
-				SellMarket();
-		}
-
-		_prevFast = fast;
-		_prevSlow = slow;
 	}
 }

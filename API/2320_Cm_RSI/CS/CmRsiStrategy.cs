@@ -98,7 +98,7 @@ public class CmRsiStrategy : Strategy
 			
 			.SetOptimize(0.1m, 1m, 0.1m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -106,6 +106,14 @@ public class CmRsiStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevRsi = 0;
+		_isFirst = true;
 	}
 
 	/// <inheritdoc />
@@ -136,6 +144,13 @@ public class CmRsiStrategy : Strategy
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+		{
+			_prevRsi = rsiValue;
+			_isFirst = false;
+			return;
+		}
 
 		if (_isFirst)
 		{

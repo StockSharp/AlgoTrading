@@ -32,7 +32,7 @@ public class VirtualRobotStrategy : Strategy
 
 	public VirtualRobotStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
@@ -67,11 +67,11 @@ public class VirtualRobotStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		if (rsi < 40m && Position <= 0)
+		if (rsi < 25m && Position <= 0)
 		{
 			BuyMarket();
 		}
-		else if (rsi > 60m && Position >= 0)
+		else if (rsi > 75m && Position >= 0)
 		{
 			SellMarket();
 		}

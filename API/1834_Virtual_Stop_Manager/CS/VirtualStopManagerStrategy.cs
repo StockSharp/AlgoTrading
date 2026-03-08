@@ -1,9 +1,8 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -11,178 +10,85 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-
 /// <summary>
-/// Strategy managing virtual stop loss, take profit, trailing stop and breakeven levels.
-/// Converted from MetaTrader script "VR---STEALS-3-EN".
+/// EMA crossover strategy with virtual stop management.
 /// </summary>
 public class VirtualStopManagerStrategy : Strategy
 {
-	private readonly StrategyParam<int> _takeProfit;
-	private readonly StrategyParam<int> _stopLoss;
-	private readonly StrategyParam<int> _trailingStop;
-	private readonly StrategyParam<int> _breakeven;
+	private readonly StrategyParam<int> _fastPeriod;
+	private readonly StrategyParam<int> _slowPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private bool _hasPrev;
 
-	/// <summary>
-	/// Virtual take profit in points.
-	/// </summary>
-	public int TakeProfit
-	{
-		get => _takeProfit.Value;
-		set => _takeProfit.Value = value;
-	}
+	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
+	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Virtual stop loss in points.
-	/// </summary>
-	public int StopLoss
-	{
-		get => _stopLoss.Value;
-		set => _stopLoss.Value = value;
-	}
-
-	/// <summary>
-	/// Trailing stop distance in points.
-	/// </summary>
-	public int TrailingStop
-	{
-		get => _trailingStop.Value;
-		set => _trailingStop.Value = value;
-	}
-
-	/// <summary>
-	/// Profit in points to move stop to breakeven.
-	/// </summary>
-	public int Breakeven
-	{
-		get => _breakeven.Value;
-		set => _breakeven.Value = value;
-	}
-
-	/// <summary>
-	/// Type of candles to process.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	private decimal _entryPrice;
-	private decimal _stopPrice;
-	private decimal _targetPrice;
-	private decimal _bestPrice;
-	private bool _breakevenMoved;
-
-	/// <summary>
-	/// Initializes parameters.
-	/// </summary>
 	public VirtualStopManagerStrategy()
 	{
-
-		_takeProfit = Param(nameof(TakeProfit), 500)
+		_fastPeriod = Param(nameof(FastPeriod), 12)
 			.SetGreaterThanZero()
-			.SetDisplay("Take Profit (points)", "Virtual take profit in points", "Risk");
-
-		_stopLoss = Param(nameof(StopLoss), 500)
+			.SetDisplay("Fast Period", "Fast EMA period", "Risk");
+		_slowPeriod = Param(nameof(SlowPeriod), 26)
 			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss (points)", "Virtual stop loss in points", "Risk");
-
-		_trailingStop = Param(nameof(TrailingStop), 300)
-			.SetGreaterThanZero()
-			.SetDisplay("Trailing Stop (points)", "Trailing stop distance in points", "Risk");
-
-		_breakeven = Param(nameof(Breakeven), 300)
-			.SetGreaterThanZero()
-			.SetDisplay("Breakeven (points)", "Profit in points to move stop to breakeven", "Risk");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to track", "General");
+			.SetDisplay("Slow Period", "Slow EMA period", "Risk");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	protected override void OnReseted()
 	{
-		return new[] { (Security, CandleType) };
+		base.OnReseted();
+		_prevFast = 0;
+		_prevSlow = 0;
+		_hasPrev = false;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
+		var fast = new ExponentialMovingAverage { Length = FastPeriod };
+		var slow = new ExponentialMovingAverage { Length = SlowPeriod };
 
-		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
+		SubscribeCandles(CandleType)
+			.Bind(fast, slow, ProcessCandle)
+			.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal fastVal, decimal slowVal)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
+		if (candle.State != CandleStates.Finished) return;
 
-		var step = Security.PriceStep ?? 1m;
-		var close = candle.ClosePrice;
-
-		// Open long position if none exists.
-		if (Position == 0)
+		if (!_hasPrev)
 		{
+			_prevFast = fastVal;
+			_prevSlow = slowVal;
+			_hasPrev = true;
+			return;
+		}
+
+		var crossUp = _prevFast <= _prevSlow && fastVal > slowVal;
+		var crossDown = _prevFast >= _prevSlow && fastVal < slowVal;
+
+		if (crossUp && Position <= 0)
+		{
+			if (Position < 0) BuyMarket();
 			BuyMarket();
-			return;
 		}
-
-		if (_entryPrice == 0m)
-			return; // Wait for trade price information.
-
-		// Move stop to breakeven when profit exceeds threshold.
-		if (!_breakevenMoved && close - _entryPrice >= Breakeven * step)
+		else if (crossDown && Position >= 0)
 		{
-			_stopPrice = _entryPrice;
-			_breakevenMoved = true;
-		}
-
-		// Update trailing stop when new high reached.
-		if (close > _bestPrice)
-		{
-			_bestPrice = close;
-
-			if (close - TrailingStop * step > _stopPrice)
-				_stopPrice = close - TrailingStop * step;
-		}
-
-		// Exit on stop loss or take profit levels.
-		if (close <= _stopPrice || close >= _targetPrice)
-		{
+			if (Position > 0) SellMarket();
 			SellMarket();
-			ResetState();
 		}
-	}
 
-	/// <inheritdoc />
-	protected override void OnOwnTradeReceived(MyTrade trade)
-	{
-		base.OnOwnTradeReceived(trade);
-
-		if (Position == 0 || _entryPrice != 0m)
-			return;
-
-		_entryPrice = trade.Trade.Price;
-		var step = Security.PriceStep ?? 1m;
-		_targetPrice = _entryPrice + TakeProfit * step;
-		_stopPrice = _entryPrice - StopLoss * step;
-		_bestPrice = _entryPrice;
-		_breakevenMoved = false;
-	}
-
-	private void ResetState()
-	{
-		_entryPrice = 0m;
-		_stopPrice = 0m;
-		_targetPrice = 0m;
-		_bestPrice = 0m;
-		_breakevenMoved = false;
+		_prevFast = fastVal;
+		_prevSlow = slowVal;
 	}
 }

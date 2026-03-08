@@ -40,7 +40,7 @@ public class FollowLineTrendStrategy : Strategy
 
 	public FollowLineTrendStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 
 		_emaPeriod = Param(nameof(EmaPeriod), 14)
@@ -59,9 +59,35 @@ public class FollowLineTrendStrategy : Strategy
 		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
 		var mom = new Momentum { Length = MomPeriod };
 
+		decimal? prevClose = null;
+		decimal? prevEma = null;
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ema, mom, ProcessCandle)
+			.Bind(ema, mom, (candle, emaVal, momVal) =>
+			{
+				if (candle.State != CandleStates.Finished)
+					return;
+
+				if (!IsFormedAndOnlineAndAllowTrading())
+					return;
+
+				var close = candle.ClosePrice;
+
+				if (prevClose.HasValue && prevEma.HasValue)
+				{
+					var crossUp = prevClose.Value <= prevEma.Value && close > emaVal;
+					var crossDown = prevClose.Value >= prevEma.Value && close < emaVal;
+
+					if (crossUp && momVal > 100m && Position <= 0)
+						BuyMarket();
+					else if (crossDown && momVal < 100m && Position >= 0)
+						SellMarket();
+				}
+
+				prevClose = close;
+				prevEma = emaVal;
+			})
 			.Start();
 
 		var area = CreateChartArea();
@@ -71,19 +97,5 @@ public class FollowLineTrendStrategy : Strategy
 			DrawIndicator(area, ema);
 			DrawOwnTrades(area);
 		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal ema, decimal mom)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (candle.ClosePrice > ema && mom > 100m && Position <= 0)
-			BuyMarket();
-		else if (candle.ClosePrice < ema && mom < 100m && Position >= 0)
-			SellMarket();
 	}
 }

@@ -18,8 +18,6 @@ public class TestMacdStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal? _prevHistogram;
-
 	public DataType CandleType
 	{
 		get => _candleType.Value;
@@ -28,7 +26,7 @@ public class TestMacdStrategy : Strategy
 
 	public TestMacdStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 	}
 
@@ -36,17 +34,43 @@ public class TestMacdStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_prevHistogram = null;
-
 		var macd = new MovingAverageConvergenceDivergenceSignal
 		{
 			Macd = { ShortMa = { Length = 12 }, LongMa = { Length = 26 } },
 			SignalMa = { Length = 9 }
 		};
 
+		decimal? prevHistogram = null;
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(macd, ProcessCandle)
+			.BindEx(macd, (candle, macdVal) =>
+			{
+				if (candle.State != CandleStates.Finished)
+					return;
+
+				if (!IsFormedAndOnlineAndAllowTrading())
+					return;
+
+				if (macdVal.IsEmpty)
+					return;
+
+				var v = (MovingAverageConvergenceDivergenceSignalValue)macdVal;
+				if (v.Macd is not decimal macdDec || v.Signal is not decimal signalDec)
+					return;
+
+				var histogram = macdDec - signalDec;
+
+				if (prevHistogram.HasValue)
+				{
+					if (prevHistogram.Value <= 0m && histogram > 0m && Position <= 0)
+						BuyMarket();
+					else if (prevHistogram.Value >= 0m && histogram < 0m && Position >= 0)
+						SellMarket();
+				}
+
+				prevHistogram = histogram;
+			})
 			.Start();
 
 		var area = CreateChartArea();
@@ -56,34 +80,5 @@ public class TestMacdStrategy : Strategy
 			DrawIndicator(area, macd);
 			DrawOwnTrades(area);
 		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdVal)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (macdVal.IsEmpty)
-			return;
-
-		var v = (MovingAverageConvergenceDivergenceSignalValue)macdVal;
-		var histogram = v.Macd - v.Signal;
-
-		if (_prevHistogram.HasValue)
-		{
-			if (_prevHistogram.Value <= 0m && histogram > 0m && Position <= 0)
-			{
-				BuyMarket();
-			}
-			else if (_prevHistogram.Value >= 0m && histogram < 0m && Position >= 0)
-			{
-				SellMarket();
-			}
-		}
-
-		_prevHistogram = histogram;
 	}
 }

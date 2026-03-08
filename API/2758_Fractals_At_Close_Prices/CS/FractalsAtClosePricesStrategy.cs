@@ -29,7 +29,7 @@ public class FractalsAtClosePricesStrategy : Strategy
 	private readonly StrategyParam<int> _trailingStepPips;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private readonly Queue<decimal> _closeWindow = new(5);
+	private readonly List<decimal> _closeWindow = new(6);
 
 	private decimal? _lastUpperFractal;
 	private decimal? _previousUpperFractal;
@@ -134,16 +134,16 @@ public class FractalsAtClosePricesStrategy : Strategy
 		.SetRange(0, 23)
 		.SetDisplay("Start Hour", "Hour when trading can start (0-23)", "Trading Hours");
 
-		_endHour = Param(nameof(EndHour), 22)
+		_endHour = Param(nameof(EndHour), 0)
 		.SetRange(0, 23)
 		.SetDisplay("End Hour", "Hour when trading stops (0-23)", "Trading Hours");
 
-		_stopLossPips = Param(nameof(StopLossPips), 30)
+		_stopLossPips = Param(nameof(StopLossPips), 200)
 		.SetRange(0, 1000)
 		.SetDisplay("Stop Loss (pips)", "Stop-loss distance in pips", "Risk Management")
 		;
 
-		_takeProfitPips = Param(nameof(TakeProfitPips), 50)
+		_takeProfitPips = Param(nameof(TakeProfitPips), 400)
 		.SetRange(0, 1000)
 		.SetDisplay("Take Profit (pips)", "Take-profit distance in pips", "Risk Management")
 		;
@@ -158,7 +158,7 @@ public class FractalsAtClosePricesStrategy : Strategy
 		.SetDisplay("Trailing Step (pips)", "Additional move required before trailing", "Risk Management")
 		;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles processed by the strategy", "General");
 	}
 
@@ -247,18 +247,16 @@ public class FractalsAtClosePricesStrategy : Strategy
 	private void UpdateFractals(ICandleMessage candle)
 	{
 		// Maintain a rolling window of the five most recent closes.
-		_closeWindow.Enqueue(candle.ClosePrice);
-		if (_closeWindow.Count > 5)
-		{
-			_closeWindow.Dequeue();
-		}
+		_closeWindow.Add(candle.ClosePrice);
+		while (_closeWindow.Count > 5)
+			_closeWindow.RemoveAt(0);
 
 		if (_closeWindow.Count < 5)
 		{
 			return;
 		}
 
-		var window = _closeWindow.ToArray();
+		var window = _closeWindow;
 		var center = window[2];
 
 		var isUpper = center > window[0]
@@ -394,42 +392,37 @@ public class FractalsAtClosePricesStrategy : Strategy
 
 	private void ExecuteEntries(ICandleMessage candle)
 	{
+		// Only trade when flat to avoid too frequent reversals.
+		if (Position != 0)
+			return;
+
 		var bullishTrend = _lastLowerFractal is decimal lastLow
 		&& _previousLowerFractal is decimal prevLow
 		&& prevLow < lastLow;
 
-		if (bullishTrend)
+		if (bullishTrend && OrderVolume > 0m)
 		{
-			CloseShortPosition();
-
-			if (Position <= 0 && OrderVolume > 0m)
-			{
-				BuyMarket(OrderVolume);
-				_entryPrice = candle.ClosePrice;
-				_longStop = _stopLossDistance > 0m ? candle.ClosePrice - _stopLossDistance : null;
-				_longTake = _takeProfitDistance > 0m ? candle.ClosePrice + _takeProfitDistance : null;
-				_shortStop = null;
-				_shortTake = null;
-			}
+			BuyMarket(OrderVolume);
+			_entryPrice = candle.ClosePrice;
+			_longStop = _stopLossDistance > 0m ? candle.ClosePrice - _stopLossDistance : null;
+			_longTake = _takeProfitDistance > 0m ? candle.ClosePrice + _takeProfitDistance : null;
+			_shortStop = null;
+			_shortTake = null;
+			return;
 		}
 
 		var bearishTrend = _lastUpperFractal is decimal lastUp
 		&& _previousUpperFractal is decimal prevUp
 		&& prevUp > lastUp;
 
-		if (bearishTrend)
+		if (bearishTrend && OrderVolume > 0m)
 		{
-			CloseLongPosition();
-
-			if (Position >= 0 && OrderVolume > 0m)
-			{
-				SellMarket(OrderVolume);
-				_entryPrice = candle.ClosePrice;
-				_shortStop = _stopLossDistance > 0m ? candle.ClosePrice + _stopLossDistance : null;
-				_shortTake = _takeProfitDistance > 0m ? candle.ClosePrice - _takeProfitDistance : null;
-				_longStop = null;
-				_longTake = null;
-			}
+			SellMarket(OrderVolume);
+			_entryPrice = candle.ClosePrice;
+			_shortStop = _stopLossDistance > 0m ? candle.ClosePrice + _stopLossDistance : null;
+			_shortTake = _takeProfitDistance > 0m ? candle.ClosePrice - _takeProfitDistance : null;
+			_longStop = null;
+			_longTake = null;
 		}
 	}
 

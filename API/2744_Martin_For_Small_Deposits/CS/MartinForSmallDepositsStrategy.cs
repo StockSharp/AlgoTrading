@@ -52,15 +52,15 @@ public class MartinForSmallDepositsStrategy : Strategy
 			.SetDisplay("Initial Volume", "Base lot size for the first order", "Position Sizing")
 			;
 
-		_takeProfitPips = Param(nameof(TakeProfitPips), 65)
+		_takeProfitPips = Param(nameof(TakeProfitPips), 200)
 			.SetDisplay("Take Profit (pips)", "Take profit distance from the latest entry", "Risk")
 			;
 
-		_stepPips = Param(nameof(StepPips), 15)
+		_stepPips = Param(nameof(StepPips), 100)
 			.SetDisplay("Step (pips)", "Adverse price move required to add a new trade", "Position Sizing")
 			;
 
-		_barsToSkip = Param(nameof(BarsToSkip), 45)
+		_barsToSkip = Param(nameof(BarsToSkip), 100)
 			.SetDisplay("Bars To Skip", "Number of finished candles to wait before averaging", "Timing")
 			;
 
@@ -76,7 +76,7 @@ public class MartinForSmallDepositsStrategy : Strategy
 			.SetDisplay("Min Profit", "Net profit threshold to close all positions", "Risk")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for signal generation", "General");
 	}
 
@@ -462,7 +462,18 @@ public class MartinForSmallDepositsStrategy : Strategy
 			return 0m;
 
 		var depth = _currentDirection == direction ? _currentTradeCount : 0;
-		var factor = IncreaseFactor <= 0m ? 1m : (decimal)Math.Pow((double)IncreaseFactor, depth);
+		decimal factor;
+		if (IncreaseFactor <= 0m || depth == 0)
+		{
+			factor = 1m;
+		}
+		else
+		{
+			var raw = Math.Pow((double)IncreaseFactor, depth);
+			if (double.IsInfinity(raw) || double.IsNaN(raw) || raw > (double)decimal.MaxValue)
+				return 0m;
+			factor = (decimal)raw;
+		}
 		var volume = baseVolume * factor;
 
 		if (MaxVolume > 0m && volume > MaxVolume)

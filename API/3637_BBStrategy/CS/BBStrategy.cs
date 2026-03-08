@@ -1,5 +1,7 @@
 using System;
 
+using Ecng.Common;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -18,10 +20,6 @@ public class BBStrategy : Strategy
 	private readonly StrategyParam<decimal> _innerDeviation;
 	private readonly StrategyParam<decimal> _outerDeviation;
 	private readonly StrategyParam<DataType> _candleType;
-
-	private BollingerBands _innerBand;
-	private BollingerBands _outerBand;
-	private int _waitDirection;
 
 	public int BollingerPeriod
 	{
@@ -62,96 +60,90 @@ public class BBStrategy : Strategy
 			.SetDisplay("Candle Type", "Candle series", "General");
 	}
 
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_waitDirection = 0;
-
-		_innerBand = new BollingerBands
+		var innerBand = new BollingerBands
 		{
 			Length = BollingerPeriod,
 			Width = InnerDeviation
 		};
 
-		_outerBand = new BollingerBands
+		var outerBand = new BollingerBands
 		{
 			Length = BollingerPeriod,
 			Width = OuterDeviation
 		};
 
+		var waitDirection = 0;
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(_innerBand, _outerBand, ProcessCandle)
+			.BindEx(innerBand, outerBand, (candle, innerVal, outerVal) =>
+			{
+				if (candle.State != CandleStates.Finished)
+					return;
+
+				if (!innerBand.IsFormed || !outerBand.IsFormed)
+					return;
+
+				if (innerVal.IsEmpty || outerVal.IsEmpty)
+					return;
+
+				var innerBb = innerVal as IBollingerBandsValue;
+				var outerBb = outerVal as IBollingerBandsValue;
+
+				if (innerBb == null || outerBb == null)
+					return;
+
+				var innerUpper = innerBb.UpBand ?? 0;
+				var innerLower = innerBb.LowBand ?? 0;
+				var outerUpper = outerBb.UpBand ?? 0;
+				var outerLower = outerBb.LowBand ?? 0;
+
+				if (innerUpper == 0 || innerLower == 0 || outerUpper == 0 || outerLower == 0)
+					return;
+
+				if (!IsFormedAndOnlineAndAllowTrading())
+					return;
+
+				var price = candle.ClosePrice;
+				var signal = 0;
+
+				// Detect outer band breakout
+				if (price > outerUpper)
+					waitDirection = 1;
+				else if (price < outerLower)
+					waitDirection = -1;
+
+				// Check re-entry into inner band
+				if (waitDirection > 0 && price < innerUpper && price > innerLower)
+				{
+					signal = 1;
+					waitDirection = 0;
+				}
+				else if (waitDirection < 0 && price > innerLower && price < innerUpper)
+				{
+					signal = -1;
+					waitDirection = 0;
+				}
+
+				if (signal == 1 && Position <= 0)
+					BuyMarket();
+				else if (signal == -1 && Position >= 0)
+					SellMarket();
+			})
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _innerBand);
-			DrawIndicator(area, _outerBand);
+			DrawIndicator(area, innerBand);
+			DrawIndicator(area, outerBand);
 			DrawOwnTrades(area);
-		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue innerVal, IIndicatorValue outerVal)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!_innerBand.IsFormed || !_outerBand.IsFormed)
-			return;
-
-		if (innerVal.IsEmpty || outerVal.IsEmpty)
-			return;
-
-		var innerBb = innerVal as IBollingerBandsValue;
-		var outerBb = outerVal as IBollingerBandsValue;
-
-		if (innerBb == null || outerBb == null)
-			return;
-
-		var innerUpper = innerBb.UpBand ?? 0;
-		var innerLower = innerBb.LowBand ?? 0;
-		var outerUpper = outerBb.UpBand ?? 0;
-		var outerLower = outerBb.LowBand ?? 0;
-
-		if (innerUpper == 0 || innerLower == 0 || outerUpper == 0 || outerLower == 0)
-			return;
-
-		var price = candle.ClosePrice;
-		var signal = 0;
-
-		// Detect outer band breakout
-		if (price > outerUpper)
-		{
-			_waitDirection = 1; // Wait for re-entry to go long (momentum)
-		}
-		else if (price < outerLower)
-		{
-			_waitDirection = -1; // Wait for re-entry to go short (momentum)
-		}
-
-		// Check re-entry into inner band
-		if (_waitDirection > 0 && price < innerUpper && price > innerLower)
-		{
-			signal = 1;
-			_waitDirection = 0;
-		}
-		else if (_waitDirection < 0 && price > innerLower && price < innerUpper)
-		{
-			signal = -1;
-			_waitDirection = 0;
-		}
-
-		if (signal == 1 && Position <= 0)
-		{
-			BuyMarket();
-		}
-		else if (signal == -1 && Position >= 0)
-		{
-			SellMarket();
 		}
 	}
 }

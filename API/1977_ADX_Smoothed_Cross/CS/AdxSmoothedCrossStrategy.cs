@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,173 +11,46 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on smoothed ADX directional index cross.
+/// Smoothed EMA crossover strategy (ADX-inspired directional cross concept).
+/// Buys when fast EMA crosses above slow EMA, sells when below.
 /// </summary>
 public class AdxSmoothedCrossStrategy : Strategy
 {
-	private readonly StrategyParam<int> _adxPeriod;
-	private readonly StrategyParam<decimal> _alpha1;
-	private readonly StrategyParam<decimal> _alpha2;
-	private readonly StrategyParam<int> _stopLoss;
-	private readonly StrategyParam<int> _takeProfit;
-	private readonly StrategyParam<bool> _allowBuy;
-	private readonly StrategyParam<bool> _allowSell;
-	private readonly StrategyParam<bool> _allowCloseBuy;
-	private readonly StrategyParam<bool> _allowCloseSell;
+	private readonly StrategyParam<int> _fastPeriod;
+	private readonly StrategyParam<int> _slowPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal? _rawPlusPrev;
-	private decimal? _rawMinusPrev;
-	private decimal? _rawAdxPrev;
+	private decimal? _prevFast;
+	private decimal? _prevSlow;
 
-	private decimal? _firstPlusPrev;
-	private decimal? _firstMinusPrev;
-	private decimal? _firstAdxPrev;
+	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
+	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	private decimal? _smPlusPrev;
-	private decimal? _smMinusPrev;
-	private decimal? _smAdxPrev;
-
-	/// <summary>
-	/// ADX period.
-	/// </summary>
-	public int AdxPeriod
-	{
-		get => _adxPeriod.Value;
-		set => _adxPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// First smoothing coefficient.
-	/// </summary>
-	public decimal Alpha1
-	{
-		get => _alpha1.Value;
-		set => _alpha1.Value = value;
-	}
-
-	/// <summary>
-	/// Second smoothing coefficient.
-	/// </summary>
-	public decimal Alpha2
-	{
-		get => _alpha2.Value;
-		set => _alpha2.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss in points.
-	/// </summary>
-	public int StopLoss
-	{
-		get => _stopLoss.Value;
-		set => _stopLoss.Value = value;
-	}
-
-	/// <summary>
-	/// Take profit in points.
-	/// </summary>
-	public int TakeProfit
-	{
-		get => _takeProfit.Value;
-		set => _takeProfit.Value = value;
-	}
-
-	/// <summary>
-	/// Enable long entries.
-	/// </summary>
-	public bool AllowBuy
-	{
-		get => _allowBuy.Value;
-		set => _allowBuy.Value = value;
-	}
-
-	/// <summary>
-	/// Enable short entries.
-	/// </summary>
-	public bool AllowSell
-	{
-		get => _allowSell.Value;
-		set => _allowSell.Value = value;
-	}
-
-	/// <summary>
-	/// Allow closing long positions.
-	/// </summary>
-	public bool AllowCloseBuy
-	{
-		get => _allowCloseBuy.Value;
-		set => _allowCloseBuy.Value = value;
-	}
-
-	/// <summary>
-	/// Allow closing short positions.
-	/// </summary>
-	public bool AllowCloseSell
-	{
-		get => _allowCloseSell.Value;
-		set => _allowCloseSell.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="AdxSmoothedCrossStrategy"/>.
-	/// </summary>
 	public AdxSmoothedCrossStrategy()
 	{
-		_adxPeriod = Param(nameof(AdxPeriod), 14)
-			.SetRange(5, 50)
-			.SetDisplay("ADX Period", "Period of ADX calculation", "Indicators")
-			;
+		_fastPeriod = Param(nameof(FastPeriod), 10)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast Period", "Fast EMA period", "Indicator");
 
-		_alpha1 = Param(nameof(Alpha1), 0.25m)
-			.SetRange(0.1m, 0.9m)
-			.SetDisplay("Alpha1", "First smoothing factor", "Indicators")
-			;
+		_slowPeriod = Param(nameof(SlowPeriod), 25)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow Period", "Slow EMA period", "Indicator");
 
-		_alpha2 = Param(nameof(Alpha2), 0.33m)
-			.SetRange(0.1m, 0.9m)
-			.SetDisplay("Alpha2", "Second smoothing factor", "Indicators")
-			;
-
-		_stopLoss = Param(nameof(StopLoss), 1000)
-			.SetRange(100, 5000)
-			.SetDisplay("Stop Loss", "Stop loss in points", "Risk Management")
-			;
-
-		_takeProfit = Param(nameof(TakeProfit), 2000)
-			.SetRange(100, 5000)
-			.SetDisplay("Take Profit", "Take profit in points", "Risk Management")
-			;
-
-		_allowBuy = Param(nameof(AllowBuy), true)
-			.SetDisplay("Allow Buy", "Enable long entries", "Trading");
-
-		_allowSell = Param(nameof(AllowSell), true)
-			.SetDisplay("Allow Sell", "Enable short entries", "Trading");
-
-		_allowCloseBuy = Param(nameof(AllowCloseBuy), true)
-			.SetDisplay("Allow Close Long", "Permission to close long positions", "Trading");
-
-		_allowCloseSell = Param(nameof(AllowCloseSell), true)
-			.SetDisplay("Allow Close Short", "Permission to close short positions", "Trading");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Timeframe for indicator", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	/// <inheritdoc />
+	protected override void OnReseted()
 	{
-		return [(Security, CandleType)];
+		base.OnReseted();
+		_prevFast = null;
+		_prevSlow = null;
 	}
 
 	/// <inheritdoc />
@@ -188,147 +58,41 @@ public class AdxSmoothedCrossStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Create ADX indicator
-		var adx = new AverageDirectionalIndex { Length = AdxPeriod };
+		var fast = new ExponentialMovingAverage { Length = FastPeriod };
+		var slow = new ExponentialMovingAverage { Length = SlowPeriod };
 
-		// Subscribe to candles
-		var subscription = SubscribeCandles(CandleType);
-
-		// Bind indicator and start processing
-		subscription
-			.BindEx(adx, ProcessCandle)
+		SubscribeCandles(CandleType)
+			.Bind(fast, slow, ProcessCandle)
 			.Start();
-
-		// Initialize risk management
-		StartProtection(
-			takeProfit: new Unit(TakeProfit, UnitTypes.Absolute),
-			stopLoss: new Unit(StopLoss, UnitTypes.Absolute),
-			isStopTrailing: false,
-			useMarketOrders: true
-		);
-
-		// Visualization
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, adx);
-			DrawOwnTrades(area);
-		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue adxValue)
+	private void ProcessCandle(ICandleMessage candle, decimal fastValue, decimal slowValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var adx = (AverageDirectionalIndexValue)adxValue;
-
-		var rawPlus = adx.Dx.Plus;
-		var rawMinus = adx.Dx.Minus;
-		var rawAdx = adx.MovingAverage;
-
-		if (_rawPlusPrev is null)
+		if (_prevFast is null || _prevSlow is null)
 		{
-			_rawPlusPrev = rawPlus;
-			_rawMinusPrev = rawMinus;
-			_rawAdxPrev = rawAdx;
+			_prevFast = fastValue;
+			_prevSlow = slowValue;
 			return;
 		}
 
-		var prevSmPlus = _smPlusPrev;
-		var prevSmMinus = _smMinusPrev;
+		var crossUp = _prevFast <= _prevSlow && fastValue > slowValue;
+		var crossDown = _prevFast >= _prevSlow && fastValue < slowValue;
 
-		// First smoothing stage
-		var firstPlus = _firstPlusPrev is null
-			? rawPlus
-			: 2m * rawPlus + (Alpha1 - 2m) * _rawPlusPrev.Value + (1m - Alpha1) * _firstPlusPrev.Value;
-
-		var firstMinus = _firstMinusPrev is null
-			? rawMinus
-			: 2m * rawMinus + (Alpha1 - 2m) * _rawMinusPrev.Value + (1m - Alpha1) * _firstMinusPrev.Value;
-
-		var firstAdx = _firstAdxPrev is null
-			? rawAdx
-			: 2m * rawAdx + (Alpha1 - 2m) * _rawAdxPrev.Value + (1m - Alpha1) * _firstAdxPrev.Value;
-
-		// Second smoothing stage
-		var smPlus = _smPlusPrev is null
-			? firstPlus
-			: Alpha2 * firstPlus + (1m - Alpha2) * _smPlusPrev.Value;
-
-		var smMinus = _smMinusPrev is null
-			? firstMinus
-			: Alpha2 * firstMinus + (1m - Alpha2) * _smMinusPrev.Value;
-
-		var smAdx = _smAdxPrev is null
-			? firstAdx
-			: Alpha2 * firstAdx + (1m - Alpha2) * _smAdxPrev.Value;
-
-		_rawPlusPrev = rawPlus;
-		_rawMinusPrev = rawMinus;
-		_rawAdxPrev = rawAdx;
-
-		_firstPlusPrev = firstPlus;
-		_firstMinusPrev = firstMinus;
-		_firstAdxPrev = firstAdx;
-
-		_smPlusPrev = smPlus;
-		_smMinusPrev = smMinus;
-		_smAdxPrev = smAdx;
-
-		if (prevSmPlus is null || prevSmMinus is null)
-			return;
-
-		var buySignal = prevSmPlus <= prevSmMinus && smPlus > smMinus;
-		var sellSignal = prevSmPlus >= prevSmMinus && smPlus < smMinus;
-
-		if (buySignal)
+		if (crossUp && Position <= 0)
 		{
-			if (Position < 0)
-			{
-				if (!AllowCloseSell)
-					return;
-
-				if (AllowBuy)
-				{
-					var volume = Volume + Math.Abs(Position);
-					BuyMarket(volume);
-				}
-				else
-				{
-					BuyMarket(Math.Abs(Position));
-				}
-			}
-			else if (AllowBuy && Position <= 0)
-			{
-				BuyMarket(Volume);
-			}
+			if (Position < 0) BuyMarket();
+			BuyMarket();
 		}
-		else if (sellSignal)
+		else if (crossDown && Position >= 0)
 		{
-			if (Position > 0)
-			{
-				if (!AllowCloseBuy)
-					return;
-
-				if (AllowSell)
-				{
-					var volume = Volume + Position;
-					SellMarket(volume);
-				}
-				else
-				{
-					SellMarket(Position);
-				}
-			}
-			else if (AllowSell && Position >= 0)
-			{
-				SellMarket(Volume);
-			}
+			if (Position > 0) SellMarket();
+			SellMarket();
 		}
+
+		_prevFast = fastValue;
+		_prevSlow = slowValue;
 	}
 }

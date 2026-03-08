@@ -137,7 +137,7 @@ public class ZigZagEvgeTrofiStrategy : Strategy
 		_signalReverse = Param(nameof(SignalReverse), false)
 			.SetDisplay("Signal Reverse", "Flip long and short entries", "Trading");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for analysis", "General");
 
 		_volume = Param(nameof(VolumePerTrade), 0.1m)
@@ -219,10 +219,6 @@ public class ZigZagEvgeTrofiStrategy : Strategy
 		}
 
 		if (_pivotType == PivotTypes.None)
-			return;
-
-		// Ensure trading conditions are satisfied (connection, data, permissions).
-		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		var isBuySignal = _pivotType == PivotTypes.High ? !SignalReverse : SignalReverse;

@@ -42,13 +42,20 @@ public class PfeExtremesStrategy : Strategy
 		_downLevel = Param(nameof(DownLevel), -20m)
 			.SetDisplay("Lower Level", "PFE value to trigger short entries", "Signal");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for indicator calculation", "General");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_closes.Clear();
+		_prevPfe = null;
 	}
 
 	protected override void OnStarted2(DateTime time)

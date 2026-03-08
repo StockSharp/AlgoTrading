@@ -165,13 +165,6 @@ public class DojiTraderStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Ensure the strategy is ready to trade.
-		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			ShiftHistory(candle);
-			return;
-		}
-
 		// Skip trading outside the configured session window.
 		var nextHour = candle.CloseTime.Hour;
 		if (nextHour < StartHour || nextHour >= EndHour)

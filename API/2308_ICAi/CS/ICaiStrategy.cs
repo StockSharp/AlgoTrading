@@ -42,7 +42,7 @@ public class ICaiStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Length", "Indicator smoothing length", "Indicator");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for strategy", "General");
 	}
 
@@ -50,6 +50,16 @@ public class ICaiStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_ma = null;
+		_std = null;
+		_prevIcai = null;
+		_prevSlope = null;
 	}
 
 	/// <inheritdoc />
@@ -62,6 +72,9 @@ public class ICaiStrategy : Strategy
 
 		_ma = new SimpleMovingAverage { Length = Length };
 		_std = new StandardDeviation { Length = Length };
+
+		Indicators.Add(_ma);
+		Indicators.Add(_std);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

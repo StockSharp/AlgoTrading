@@ -38,19 +38,18 @@ public class MartingaleSmartStrategy : Strategy
 
 	public MartingaleSmartStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 
-		_fastPeriod = Param(nameof(FastPeriod), 5)
+		_fastPeriod = Param(nameof(FastPeriod), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast MA", "Fast SMA period", "Indicators");
 
-		_slowPeriod = Param(nameof(SlowPeriod), 20)
+		_slowPeriod = Param(nameof(SlowPeriod), 30)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow MA", "Slow SMA period", "Indicators");
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
@@ -58,9 +57,30 @@ public class MartingaleSmartStrategy : Strategy
 		var fast = new SimpleMovingAverage { Length = FastPeriod };
 		var slow = new SimpleMovingAverage { Length = SlowPeriod };
 
+		decimal? prevFast = null;
+		decimal? prevSlow = null;
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(fast, slow, ProcessCandle)
+			.Bind(fast, slow, (candle, fastVal, slowVal) =>
+			{
+				if (candle.State != CandleStates.Finished)
+					return;
+
+				if (!IsFormedAndOnlineAndAllowTrading())
+					return;
+
+				if (prevFast.HasValue && prevSlow.HasValue)
+				{
+					if (prevFast.Value <= prevSlow.Value && fastVal > slowVal && Position <= 0)
+						BuyMarket();
+					else if (prevFast.Value >= prevSlow.Value && fastVal < slowVal && Position >= 0)
+						SellMarket();
+				}
+
+				prevFast = fastVal;
+				prevSlow = slowVal;
+			})
 			.Start();
 
 		var area = CreateChartArea();
@@ -71,17 +91,5 @@ public class MartingaleSmartStrategy : Strategy
 			DrawIndicator(area, slow);
 			DrawOwnTrades(area);
 		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		// Buy when fast MA > slow MA, sell when fast MA < slow MA
-		if (fast > slow && Position <= 0)
-			BuyMarket();
-		else if (fast < slow && Position >= 0)
-			SellMarket();
 	}
 }

@@ -18,6 +18,7 @@ public class CorrTimeStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _bbPeriod;
+	private readonly StrategyParam<decimal> _bbWidth;
 
 	public DataType CandleType
 	{
@@ -31,6 +32,12 @@ public class CorrTimeStrategy : Strategy
 		set => _bbPeriod.Value = value;
 	}
 
+	public decimal BbWidth
+	{
+		get => _bbWidth.Value;
+		set => _bbWidth.Value = value;
+	}
+
 	public CorrTimeStrategy()
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -39,13 +46,16 @@ public class CorrTimeStrategy : Strategy
 		_bbPeriod = Param(nameof(BbPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("BB Period", "Bollinger Bands period", "Indicators");
+
+		_bbWidth = Param(nameof(BbWidth), 2m)
+			.SetDisplay("BB Width", "Bollinger Bands width", "Indicators");
 	}
 
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		var bb = new BollingerBands { Length = BbPeriod };
+		var bb = new BollingerBands { Length = BbPeriod, Width = BbWidth };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -69,19 +79,16 @@ public class CorrTimeStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var bbv = bbVal.IsEmpty ? null : (BollingerBandsValue)bbVal;
-		if (bbv == null)
+		var bbv = (BollingerBandsValue)bbVal;
+		if (bbv.UpBand is not decimal upper ||
+			bbv.LowBand is not decimal lower)
 			return;
 
 		var close = candle.ClosePrice;
 
-		if (close < bbv.LowBand && Position <= 0)
-		{
+		if (close < lower && Position <= 0)
 			BuyMarket();
-		}
-		else if (close > bbv.UpBand && Position >= 0)
-		{
+		else if (close > upper && Position >= 0)
 			SellMarket();
-		}
 	}
 }

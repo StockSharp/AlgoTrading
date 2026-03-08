@@ -25,8 +25,8 @@ public class Ema612CrossoverStrategy : Strategy
 	private readonly StrategyParam<decimal> _trailingStopOffset;
 	private readonly StrategyParam<decimal> _trailingStepOffset;
 
-	private SimpleMovingAverage _fastSma;
-	private SimpleMovingAverage _slowSma;
+	private ExponentialMovingAverage _fastSma;
+	private ExponentialMovingAverage _slowSma;
 
 	private decimal? _prevFast;
 	private decimal? _prevSlow;
@@ -134,8 +134,8 @@ public class Ema612CrossoverStrategy : Strategy
 		if (SlowPeriod <= FastPeriod)
 			throw new InvalidOperationException("Slow period must be greater than fast period.");
 
-		_fastSma = new SMA { Length = FastPeriod };
-		_slowSma = new SMA { Length = SlowPeriod };
+		_fastSma = new ExponentialMovingAverage { Length = FastPeriod };
+		_slowSma = new ExponentialMovingAverage { Length = SlowPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -171,13 +171,6 @@ public class Ema612CrossoverStrategy : Strategy
 		}
 
 		HandleExistingPosition(candle, bullishCross, bearishCross);
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			_prevFast = fast;
-			_prevSlow = slow;
-			return;
-		}
 
 		if (Position == 0)
 		{

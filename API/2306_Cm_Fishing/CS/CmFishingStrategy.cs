@@ -51,7 +51,7 @@ public class CmFishingStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Profit Target", "Price profit to close position", "Parameters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 	}
 
@@ -59,6 +59,14 @@ public class CmFishingStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_referencePrice = 0;
+		_entryPrice = 0;
 	}
 
 	/// <inheritdoc />

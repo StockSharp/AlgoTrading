@@ -58,7 +58,7 @@ public class AscTrendNdStrategy : Strategy
 	/// </summary>
 	public AscTrendNdStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of source candles", "General");
 
 		_smaPeriod = Param(nameof(SmaPeriod), 50)
@@ -81,6 +81,16 @@ public class AscTrendNdStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_sma = null;
+		_rsi = null;
+		_atr = null;
+		_stopPrice = null;
 	}
 
 	/// <inheritdoc />
@@ -112,6 +122,9 @@ public class AscTrendNdStrategy : Strategy
 	private void ProcessCandle(ICandleMessage candle, decimal smaValue, decimal rsiValue, decimal atrValue)
 	{
 		if (candle.State != CandleStates.Finished)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		var price = candle.ClosePrice;

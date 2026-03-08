@@ -54,7 +54,7 @@ public class PChannelSystemStrategy : Strategy
 			.SetDisplay("Shift", "Bars shift for channel", "Indicator")
 			.SetOptimize(0, 5, 1);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for strategy", "General");
 	}
 
@@ -62,6 +62,14 @@ public class PChannelSystemStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevAbove = false;
+		_prevBelow = false;
 	}
 
 	/// <inheritdoc />

@@ -31,7 +31,7 @@ public class VrSmartGridLiteAveragingStrategy : Strategy
 
 	public VrSmartGridLiteAveragingStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 
 		_bbPeriod = Param(nameof(BbPeriod), 20)
@@ -45,8 +45,41 @@ public class VrSmartGridLiteAveragingStrategy : Strategy
 
 		var bb = new BollingerBands { Length = BbPeriod };
 
+		decimal? prevClose = null;
+		decimal? prevMid = null;
+
 		var subscription = SubscribeCandles(CandleType);
-		subscription.BindEx(bb, ProcessCandle).Start();
+		subscription
+			.BindEx(bb, (candle, bbVal) =>
+			{
+				if (candle.State != CandleStates.Finished)
+					return;
+
+				if (!IsFormedAndOnlineAndAllowTrading())
+					return;
+
+				var bbv = (BollingerBandsValue)bbVal;
+				if (bbv.UpBand is not decimal upper || bbv.LowBand is not decimal lower)
+					return;
+
+				var close = candle.ClosePrice;
+				var mid = (upper + lower) / 2m;
+
+				if (prevClose.HasValue && prevMid.HasValue)
+				{
+					var crossBelow = prevClose.Value >= prevMid.Value && close < mid;
+					var crossAbove = prevClose.Value <= prevMid.Value && close > mid;
+
+					if (crossBelow && Position <= 0)
+						BuyMarket();
+					else if (crossAbove && Position >= 0)
+						SellMarket();
+				}
+
+				prevClose = close;
+				prevMid = mid;
+			})
+			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -55,26 +88,5 @@ public class VrSmartGridLiteAveragingStrategy : Strategy
 			DrawIndicator(area, bb);
 			DrawOwnTrades(area);
 		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bbVal)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!bbVal.IsFinal || bbVal.IsEmpty)
-			return;
-
-		var bb = (BollingerBandsValue)bbVal;
-		if (bb.UpBand is not decimal upper || bb.LowBand is not decimal lower)
-			return;
-
-		var close = candle.ClosePrice;
-		var mid = (upper + lower) / 2m;
-
-		if (close < mid && Position <= 0)
-			BuyMarket();
-		else if (close > mid && Position >= 0)
-			SellMarket();
 	}
 }

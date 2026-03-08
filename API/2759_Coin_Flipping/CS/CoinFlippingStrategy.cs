@@ -79,19 +79,19 @@ public class CoinFlippingStrategy : Strategy
 			
 			.SetOptimize(1m, 10m, 1m);
 
-		_takeProfitPips = Param(nameof(TakeProfitPips), 20)
+		_takeProfitPips = Param(nameof(TakeProfitPips), 5000)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit (pips)", "Target distance expressed in pips", "Risk Management")
-			
+
 			.SetOptimize(10, 50, 5);
 
-		_stopLossPips = Param(nameof(StopLossPips), 10)
+		_stopLossPips = Param(nameof(StopLossPips), 3000)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss (pips)", "Protective stop distance expressed in pips", "Risk Management")
-			
+
 			.SetOptimize(5, 30, 5);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type used for trade timing", "Data");
 	}
 

@@ -154,7 +154,7 @@ public class ColorJjrsxTimePlusStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Indicator Timeframe", "Timeframe used for the JJRSX oscillator", "General");
 
-		_rsiLength = Param(nameof(RsiLength), 8)
+		_rsiLength = Param(nameof(RsiLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "Period for the RSI calculation", "Indicator")
 			
@@ -184,7 +184,7 @@ public class ColorJjrsxTimePlusStrategy : Strategy
 		_enableTimeExit = Param(nameof(EnableTimeExit), true)
 			.SetDisplay("Enable Time Exit", "Close positions after the holding period expires", "Risk");
 
-		_holdingMinutes = Param(nameof(HoldingMinutes), 240)
+		_holdingMinutes = Param(nameof(HoldingMinutes), 480)
 			.SetGreaterThanZero()
 			.SetDisplay("Holding Minutes", "Maximum time in minutes to keep a position", "Risk")
 			

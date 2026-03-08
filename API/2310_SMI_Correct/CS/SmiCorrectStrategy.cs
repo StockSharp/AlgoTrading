@@ -45,7 +45,7 @@ public class SmiCorrectStrategy : Strategy
 
 	public SmiCorrectStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
 		_smiLength = Param(nameof(SmiLength), 13)
@@ -64,6 +64,15 @@ public class SmiCorrectStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_signal = null;
+		_prevSmi = null;
+		_prevSignal = null;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
@@ -78,6 +87,8 @@ public class SmiCorrectStrategy : Strategy
 		};
 
 		_signal = new SimpleMovingAverage { Length = SignalLength };
+
+		Indicators.Add(_signal);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

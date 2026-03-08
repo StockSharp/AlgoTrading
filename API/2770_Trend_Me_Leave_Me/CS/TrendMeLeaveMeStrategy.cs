@@ -162,7 +162,7 @@ public class TrendMeLeaveMeStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("SAR Max", "Maximum acceleration for Parabolic SAR", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe", "General");
 	}
 
@@ -205,10 +205,10 @@ public class TrendMeLeaveMeStrategy : Strategy
 			AccelerationMax = SarMax
 		};
 
-		// Subscribe to candle stream and bind indicators.
+		// Subscribe to candle stream and process indicators manually.
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(_adx, _sar, ProcessCandle)
+			.Bind(ProcessCandleManual)
 			.Start();
 
 		// Draw everything on a chart if UI is attached.
@@ -222,16 +222,19 @@ public class TrendMeLeaveMeStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue adxValue, IIndicatorValue sarValue)
+	private void ProcessCandleManual(ICandleMessage candle)
 	{
 		// Process only completed candles to stay close to bar-close logic from the EA.
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		// Process indicators manually to avoid BindEx crash.
+		var adxValue = _adx.Process(candle);
+		var sarValue = _sar.Process(candle);
+
+		if (!_adx.IsFormed || !_sar.IsFormed)
 			return;
 
-		// Wait for both indicators to provide final values.
 		if (!adxValue.IsFinal || !sarValue.IsFinal)
 			return;
 
@@ -273,7 +276,8 @@ public class TrendMeLeaveMeStrategy : Strategy
 			_breakevenActivated = false;
 		}
 
-		var adxData = (AverageDirectionalIndexValue)adxValue;
+		if (adxValue is not AverageDirectionalIndexValue adxData)
+			return;
 		if (adxData.MovingAverage is not decimal adx)
 			return;
 

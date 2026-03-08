@@ -30,7 +30,7 @@ public class PolarizedFractalEfficiencyStrategy : Strategy
 
 	public PolarizedFractalEfficiencyStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 
 		_pfePeriod = Param(nameof(PfePeriod), 9)
@@ -41,6 +41,15 @@ public class PolarizedFractalEfficiencyStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_closes.Clear();
+		_prevPfe = 0;
+		_prevPrevPfe = 0;
+		_formed = 0;
 	}
 
 	protected override void OnStarted2(DateTime time)

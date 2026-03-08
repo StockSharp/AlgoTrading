@@ -43,11 +43,11 @@ public class VrZverV2Strategy : Strategy
 	private readonly StrategyParam<decimal> _rsiUpperLevel;
 	private readonly StrategyParam<decimal> _rsiLowerLevel;
 
-	private ExponentialMovingAverage _fastMa = null!;
-	private ExponentialMovingAverage _slowMa = null!;
-	private ExponentialMovingAverage _verySlowMa = null!;
-	private StochasticOscillator _stochastic = null!;
-	private RelativeStrengthIndex _rsi = null!;
+	private ExponentialMovingAverage _fastMa;
+	private ExponentialMovingAverage _slowMa;
+	private ExponentialMovingAverage _verySlowMa;
+	private StochasticOscillator _stochastic;
+	private RelativeStrengthIndex _rsi;
 
 	private decimal _pipSize;
 	private decimal _entryPrice;
@@ -58,7 +58,7 @@ public class VrZverV2Strategy : Strategy
 
 	public VrZverV2Strategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Time frame for signal generation", "General");
 
 		_fixedVolume = Param(nameof(FixedVolume), 0.1m)
@@ -287,6 +287,19 @@ public class VrZverV2Strategy : Strategy
 		return [(Security, CandleType)];
 	}
 
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_pipSize = 0m;
+		_fastMa = null;
+		_slowMa = null;
+		_verySlowMa = null;
+		_stochastic = null;
+		_rsi = null;
+		ResetTradeState();
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
@@ -300,10 +313,18 @@ public class VrZverV2Strategy : Strategy
 		_fastMa = new ExponentialMovingAverage { Length = FastMaPeriod };
 		_slowMa = new ExponentialMovingAverage { Length = SlowMaPeriod };
 		_verySlowMa = new ExponentialMovingAverage { Length = VerySlowMaPeriod };
-		_stochastic = new StochasticOscillator();
-		_stochastic.K.Length = StochasticKPeriod;
-		_stochastic.D.Length = StochasticDPeriod;
-		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
+
+		if (UseStochastic)
+		{
+			_stochastic = new StochasticOscillator();
+			_stochastic.K.Length = StochasticKPeriod;
+			_stochastic.D.Length = StochasticDPeriod;
+		}
+
+		if (UseRsi)
+		{
+			_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
+		}
 
 		// Subscribe to candle updates and bind the three EMAs.
 		var subscription = SubscribeCandles(CandleType);
@@ -319,8 +340,10 @@ public class VrZverV2Strategy : Strategy
 			DrawIndicator(area, _fastMa);
 			DrawIndicator(area, _slowMa);
 			DrawIndicator(area, _verySlowMa);
-			DrawIndicator(area, _stochastic);
-			DrawIndicator(area, _rsi);
+			if (_stochastic != null)
+				DrawIndicator(area, _stochastic);
+			if (_rsi != null)
+				DrawIndicator(area, _rsi);
 			DrawOwnTrades(area);
 		}
 	}
@@ -330,10 +353,17 @@ public class VrZverV2Strategy : Strategy
 		if (candle.State != CandleStates.Finished)
 		return;
 
-		// Process stochastic and RSI manually
-		var stochasticValue = _stochastic.Process(candle);
-		var rsiResult = _rsi.Process(new DecimalIndicatorValue(_rsi, candle.ClosePrice, candle.CloseTime) { IsFinal = true });
-		var rsiValue = rsiResult.IsFormed ? rsiResult.ToDecimal() : 50m;
+		// Process stochastic and RSI manually only when enabled.
+		IIndicatorValue stochasticValue = null;
+		if (UseStochastic && _stochastic != null)
+			stochasticValue = _stochastic.Process(candle);
+
+		decimal rsiValue = 50m;
+		if (UseRsi && _rsi != null)
+		{
+			var rsiResult = _rsi.Process(new DecimalIndicatorValue(_rsi, candle.ClosePrice, candle.CloseTime) { IsFinal = true });
+			rsiValue = rsiResult.IsFormed ? rsiResult.ToDecimal() : 50m;
+		}
 
 		if (UseMovingAverageFilter && (!_fastMa.IsFormed || !_slowMa.IsFormed || !_verySlowMa.IsFormed))
 		return;
@@ -362,7 +392,7 @@ public class VrZverV2Strategy : Strategy
 			downVotes++;
 		}
 
-		if (UseStochastic)
+		if (UseStochastic && stochasticValue != null)
 		{
 			if (stochasticValue is not IStochasticOscillatorValue stoch)
 			return;

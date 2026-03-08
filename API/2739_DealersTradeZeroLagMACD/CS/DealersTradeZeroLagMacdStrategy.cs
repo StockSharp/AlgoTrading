@@ -82,7 +82,7 @@ public class DealersTradeZeroLagMacdStrategy : Strategy
 
 	private ZeroLagExponentialMovingAverage _fastZlema = null!;
 	private ZeroLagExponentialMovingAverage _slowZlema = null!;
-	private ZeroLagExponentialMovingAverage _signalZlema = null!;
+	private ExponentialMovingAverage _signalEma = null!;
 
 	private PendingEntry _pendingBuyEntry;
 	private PendingEntry _pendingSellEntry;
@@ -295,12 +295,12 @@ public class DealersTradeZeroLagMacdStrategy : Strategy
 		.SetDisplay("Risk Percent", "Risk per trade when base volume is zero", "Trading")
 		;
 
-		_maxPositions = Param(nameof(MaxPositions), 5)
+		_maxPositions = Param(nameof(MaxPositions), 2)
 		.SetDisplay("Max Positions", "Maximum simultaneous entries", "Risk")
 		.SetGreaterThanZero()
 		;
 
-		_intervalPips = Param(nameof(IntervalPips), 15)
+		_intervalPips = Param(nameof(IntervalPips), 50)
 		.SetDisplay("Interval (pips)", "Base spacing between entries", "Grid")
 		.SetNotNegative()
 		;
@@ -374,7 +374,7 @@ public class DealersTradeZeroLagMacdStrategy : Strategy
 		.SetDisplay("Minimum Balance", "Stop trading below this balance", "Risk")
 		.SetNotNegative();
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe for calculations", "General");
 	}
 
@@ -397,14 +397,17 @@ public class DealersTradeZeroLagMacdStrategy : Strategy
 		_lastShortEntryPrice = 0m;
 		_previousMacd = 0m;
 		_hasPreviousMacd = false;
+		_pipSize = 0m;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
+		base.OnStarted2(time);
+
 		_fastZlema = new ZeroLagExponentialMovingAverage { Length = FastLength };
 		_slowZlema = new ZeroLagExponentialMovingAverage { Length = SlowLength };
-		_signalZlema = new ZeroLagExponentialMovingAverage { Length = SignalLength };
+		_signalEma = new ExponentialMovingAverage { Length = SignalLength };
 
 		var decimals = Security?.Decimals ?? 0;
 		var step = Security?.PriceStep ?? 0.0001m;
@@ -425,7 +428,6 @@ public class DealersTradeZeroLagMacdStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		base.OnStarted2(time);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow)
@@ -441,9 +443,9 @@ public class DealersTradeZeroLagMacdStrategy : Strategy
 		}
 
 		var macd = fast - slow;
-		_signalZlema.Process(new DecimalIndicatorValue(_signalZlema, macd, candle.CloseTime) { IsFinal = true });
+		_signalEma.Process(new DecimalIndicatorValue(_signalEma, macd, candle.CloseTime) { IsFinal = true });
 
-		if (!_fastZlema.IsFormed || !_slowZlema.IsFormed || !_signalZlema.IsFormed)
+		if (!_fastZlema.IsFormed || !_slowZlema.IsFormed || !_signalEma.IsFormed)
 			{
 			_previousMacd = macd;
 			_hasPreviousMacd = true;
@@ -596,7 +598,7 @@ public class DealersTradeZeroLagMacdStrategy : Strategy
 	{
 		var closed = false;
 
-		foreach (var entry in entries)
+		foreach (var entry in entries.ToList())
 			{
 			if (entry.PendingCloseVolume > 0m)
 				continue;

@@ -31,24 +31,50 @@ public class RouletteGameStrategy : Strategy
 
 	public RouletteGameStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 
-		_smaPeriod = Param(nameof(SmaPeriod), 10)
+		_smaPeriod = Param(nameof(SmaPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("SMA Period", "SMA period", "Indicators");
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
 		var sma = new SimpleMovingAverage { Length = SmaPeriod };
 
+		decimal? prevClose = null;
+		decimal? prevSma = null;
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(sma, ProcessCandle)
+			.Bind(sma, (candle, smaVal) =>
+			{
+				if (candle.State != CandleStates.Finished)
+					return;
+
+				if (!IsFormedAndOnlineAndAllowTrading())
+					return;
+
+				var close = candle.ClosePrice;
+				var isBullish = close > candle.OpenPrice;
+
+				if (prevClose.HasValue && prevSma.HasValue)
+				{
+					var crossUp = prevClose.Value <= prevSma.Value && close > smaVal;
+					var crossDown = prevClose.Value >= prevSma.Value && close < smaVal;
+
+					if (isBullish && crossUp && Position <= 0)
+						BuyMarket();
+					else if (!isBullish && crossDown && Position >= 0)
+						SellMarket();
+				}
+
+				prevClose = close;
+				prevSma = smaVal;
+			})
 			.Start();
 
 		var area = CreateChartArea();
@@ -58,18 +84,5 @@ public class RouletteGameStrategy : Strategy
 			DrawIndicator(area, sma);
 			DrawOwnTrades(area);
 		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal sma)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		var isBullish = candle.ClosePrice > candle.OpenPrice;
-
-		if (isBullish && candle.ClosePrice > sma && Position <= 0)
-			BuyMarket();
-		else if (!isBullish && candle.ClosePrice < sma && Position >= 0)
-			SellMarket();
 	}
 }

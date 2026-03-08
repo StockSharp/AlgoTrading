@@ -10,9 +10,9 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Sail System EA strategy: Momentum + SMA trend.
-/// Buys when momentum > 100 and close > SMA.
-/// Sells when momentum < 100 and close < SMA.
+/// Sail System EA strategy: Momentum + SMA crossover trend.
+/// Buys when close crosses above SMA and momentum confirms.
+/// Sells when close crosses below SMA and momentum confirms.
 /// </summary>
 public class SailSystemEaStrategy : Strategy
 {
@@ -40,14 +40,14 @@ public class SailSystemEaStrategy : Strategy
 
 	public SailSystemEaStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 
-		_smaPeriod = Param(nameof(SmaPeriod), 20)
+		_smaPeriod = Param(nameof(SmaPeriod), 30)
 			.SetGreaterThanZero()
 			.SetDisplay("SMA Period", "SMA period", "Indicators");
 
-		_momPeriod = Param(nameof(MomPeriod), 12)
+		_momPeriod = Param(nameof(MomPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Momentum", "Momentum period", "Indicators");
 	}
@@ -59,9 +59,35 @@ public class SailSystemEaStrategy : Strategy
 		var sma = new SimpleMovingAverage { Length = SmaPeriod };
 		var mom = new Momentum { Length = MomPeriod };
 
+		decimal? prevClose = null;
+		decimal? prevSma = null;
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(sma, mom, ProcessCandle)
+			.Bind(sma, mom, (candle, smaVal, momVal) =>
+			{
+				if (candle.State != CandleStates.Finished)
+					return;
+
+				if (!IsFormedAndOnlineAndAllowTrading())
+					return;
+
+				var close = candle.ClosePrice;
+
+				if (prevClose.HasValue && prevSma.HasValue)
+				{
+					var crossUp = prevClose.Value <= prevSma.Value && close > smaVal;
+					var crossDown = prevClose.Value >= prevSma.Value && close < smaVal;
+
+					if (crossUp && momVal > 100m && Position <= 0)
+						BuyMarket();
+					else if (crossDown && momVal < 100m && Position >= 0)
+						SellMarket();
+				}
+
+				prevClose = close;
+				prevSma = smaVal;
+			})
 			.Start();
 
 		var area = CreateChartArea();
@@ -70,24 +96,6 @@ public class SailSystemEaStrategy : Strategy
 			DrawCandles(area, subscription);
 			DrawIndicator(area, sma);
 			DrawOwnTrades(area);
-		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal sma, decimal mom)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (mom > 100m && candle.ClosePrice > sma && Position <= 0)
-		{
-			BuyMarket();
-		}
-		else if (mom < 100m && candle.ClosePrice < sma && Position >= 0)
-		{
-			SellMarket();
 		}
 	}
 }

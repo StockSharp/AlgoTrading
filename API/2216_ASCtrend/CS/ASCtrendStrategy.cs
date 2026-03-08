@@ -51,8 +51,16 @@ public class ASCtrendStrategy : Strategy
 			.SetRange(1, 50)
 			.SetDisplay("Risk", "Risk parameter", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_wasOversold = false;
+		_wasOverbought = false;
 	}
 
 	/// <inheritdoc />

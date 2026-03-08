@@ -38,13 +38,20 @@ public class CmManualGridStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Grid Step", "Price distance between grid levels", "Grid");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_lastBuyPrice = 0;
+		_lastSellPrice = 0;
 	}
 
 	protected override void OnStarted2(DateTime time)

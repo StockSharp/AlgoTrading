@@ -10,8 +10,9 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Fly System Scalp strategy: EMA + RSI scalper.
-/// Buys when close > EMA and RSI < 45. Sells when close < EMA and RSI > 55.
+/// Fly System Scalp strategy: EMA crossover + RSI confirmation.
+/// Buys when close crosses above EMA and RSI confirms.
+/// Sells when close crosses below EMA and RSI confirms.
 /// </summary>
 public class FlySystemScalpStrategy : Strategy
 {
@@ -39,14 +40,14 @@ public class FlySystemScalpStrategy : Strategy
 
 	public FlySystemScalpStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 
-		_emaPeriod = Param(nameof(EmaPeriod), 14)
+		_emaPeriod = Param(nameof(EmaPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Period", "EMA period", "Indicators");
 
-		_rsiPeriod = Param(nameof(RsiPeriod), 10)
+		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "RSI period", "Indicators");
 	}
@@ -58,9 +59,35 @@ public class FlySystemScalpStrategy : Strategy
 		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 
+		decimal? prevClose = null;
+		decimal? prevEma = null;
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ema, rsi, ProcessCandle)
+			.Bind(ema, rsi, (candle, emaVal, rsiVal) =>
+			{
+				if (candle.State != CandleStates.Finished)
+					return;
+
+				if (!IsFormedAndOnlineAndAllowTrading())
+					return;
+
+				var close = candle.ClosePrice;
+
+				if (prevClose.HasValue && prevEma.HasValue)
+				{
+					var crossUp = prevClose.Value <= prevEma.Value && close > emaVal;
+					var crossDown = prevClose.Value >= prevEma.Value && close < emaVal;
+
+					if (crossUp && rsiVal < 55m && Position <= 0)
+						BuyMarket();
+					else if (crossDown && rsiVal > 45m && Position >= 0)
+						SellMarket();
+				}
+
+				prevClose = close;
+				prevEma = emaVal;
+			})
 			.Start();
 
 		var area = CreateChartArea();
@@ -69,24 +96,6 @@ public class FlySystemScalpStrategy : Strategy
 			DrawCandles(area, subscription);
 			DrawIndicator(area, ema);
 			DrawOwnTrades(area);
-		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal ema, decimal rsi)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (candle.ClosePrice > ema && rsi < 45m && Position <= 0)
-		{
-			BuyMarket();
-		}
-		else if (candle.ClosePrice < ema && rsi > 55m && Position >= 0)
-		{
-			SellMarket();
 		}
 	}
 }

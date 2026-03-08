@@ -10,8 +10,9 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Auto Trading Publish strategy: SMA level + RSI confirmation.
-/// Buys when close > SMA and RSI < 55. Sells when close < SMA and RSI > 45.
+/// Auto Trading Publish strategy: SMA crossover + RSI confirmation.
+/// Buys when close crosses above SMA and RSI is below 40.
+/// Sells when close crosses below SMA and RSI is above 60.
 /// </summary>
 public class AutoTradingPublishStrategy : Strategy
 {
@@ -39,10 +40,10 @@ public class AutoTradingPublishStrategy : Strategy
 
 	public AutoTradingPublishStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 
-		_smaPeriod = Param(nameof(SmaPeriod), 15)
+		_smaPeriod = Param(nameof(SmaPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("SMA Period", "SMA period", "Indicators");
 
@@ -58,9 +59,35 @@ public class AutoTradingPublishStrategy : Strategy
 		var sma = new SimpleMovingAverage { Length = SmaPeriod };
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 
+		decimal? prevClose = null;
+		decimal? prevSma = null;
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(sma, rsi, ProcessCandle)
+			.Bind(sma, rsi, (candle, smaVal, rsiVal) =>
+			{
+				if (candle.State != CandleStates.Finished)
+					return;
+
+				if (!IsFormedAndOnlineAndAllowTrading())
+					return;
+
+				var close = candle.ClosePrice;
+
+				if (prevClose.HasValue && prevSma.HasValue)
+				{
+					var crossUp = prevClose.Value <= prevSma.Value && close > smaVal;
+					var crossDown = prevClose.Value >= prevSma.Value && close < smaVal;
+
+					if (crossUp && rsiVal < 55m && Position <= 0)
+						BuyMarket();
+					else if (crossDown && rsiVal > 45m && Position >= 0)
+						SellMarket();
+				}
+
+				prevClose = close;
+				prevSma = smaVal;
+			})
 			.Start();
 
 		var area = CreateChartArea();
@@ -69,24 +96,6 @@ public class AutoTradingPublishStrategy : Strategy
 			DrawCandles(area, subscription);
 			DrawIndicator(area, sma);
 			DrawOwnTrades(area);
-		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal sma, decimal rsi)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (candle.ClosePrice > sma && rsi < 55m && Position <= 0)
-		{
-			BuyMarket();
-		}
-		else if (candle.ClosePrice < sma && rsi > 45m && Position >= 0)
-		{
-			SellMarket();
 		}
 	}
 }

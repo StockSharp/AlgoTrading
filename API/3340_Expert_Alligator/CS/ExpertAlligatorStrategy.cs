@@ -26,7 +26,7 @@ public class ExpertAlligatorStrategy : Strategy
 
 	public ExpertAlligatorStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 	}
 
@@ -39,9 +39,33 @@ public class ExpertAlligatorStrategy : Strategy
 		var teeth = new SimpleMovingAverage { Length = 8 };
 		var jaw = new SimpleMovingAverage { Length = 13 };
 
+		decimal? prevLips = null;
+		decimal? prevTeeth = null;
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(lips, teeth, jaw, ProcessCandle)
+			.Bind(lips, teeth, jaw, (candle, lipsVal, teethVal, jawVal) =>
+			{
+				if (candle.State != CandleStates.Finished)
+					return;
+
+				if (!IsFormedAndOnlineAndAllowTrading())
+					return;
+
+				if (prevLips.HasValue && prevTeeth.HasValue)
+				{
+					var lipsCrossUp = prevLips.Value <= prevTeeth.Value && lipsVal > teethVal;
+					var lipsCrossDown = prevLips.Value >= prevTeeth.Value && lipsVal < teethVal;
+
+					if (lipsCrossUp && teethVal > jawVal && Position <= 0)
+						BuyMarket();
+					else if (lipsCrossDown && teethVal < jawVal && Position >= 0)
+						SellMarket();
+				}
+
+				prevLips = lipsVal;
+				prevTeeth = teethVal;
+			})
 			.Start();
 
 		var area = CreateChartArea();
@@ -53,19 +77,5 @@ public class ExpertAlligatorStrategy : Strategy
 			DrawIndicator(area, jaw);
 			DrawOwnTrades(area);
 		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal lips, decimal teeth, decimal jaw)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (lips > teeth && teeth > jaw && Position <= 0)
-			BuyMarket();
-		else if (lips < teeth && teeth < jaw && Position >= 0)
-			SellMarket();
 	}
 }

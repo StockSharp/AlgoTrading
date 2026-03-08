@@ -10,23 +10,43 @@ namespace StockSharp.Samples.Strategies;
 public class Ichimoku2005Strategy : Strategy
 {
 	private readonly StrategyParam<int> _channelPeriod;
+	private readonly StrategyParam<int> _cooldownCandles;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevClose; private decimal _prevMid; private bool _hasPrev;
+	private decimal _prevClose;
+	private decimal _prevMid;
+	private bool _hasPrev;
+	private int _cooldownRemaining;
 
 	public int ChannelPeriod { get => _channelPeriod.Value; set => _channelPeriod.Value = value; }
+	public int CooldownCandles { get => _cooldownCandles.Value; set => _cooldownCandles.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public Ichimoku2005Strategy()
 	{
-		_channelPeriod = Param(nameof(ChannelPeriod), 26).SetDisplay("Channel Period", "Channel lookback", "Indicators");
+		_channelPeriod = Param(nameof(ChannelPeriod), 52).SetDisplay("Channel Period", "Channel lookback", "Indicators");
+		_cooldownCandles = Param(nameof(CooldownCandles), 150).SetDisplay("Cooldown", "Candles between signals", "General");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Candle timeframe", "General");
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevClose = default;
+		_prevMid = default;
+		_hasPrev = default;
+		_cooldownRemaining = default;
 	}
 
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+		_prevClose = 0;
+		_prevMid = 0;
 		_hasPrev = false;
+		_cooldownRemaining = 0;
+
 		var highest = new Highest { Length = ChannelPeriod };
 		var lowest = new Lowest { Length = ChannelPeriod };
 		var subscription = SubscribeCandles(CandleType);
@@ -40,10 +60,27 @@ public class Ichimoku2005Strategy : Strategy
 		var mid = (highest + lowest) / 2;
 		if (!_hasPrev) { _prevClose = close; _prevMid = mid; _hasPrev = true; return; }
 
+		if (_cooldownRemaining > 0)
+		{
+			_cooldownRemaining--;
+			_prevClose = close;
+			_prevMid = mid;
+			return;
+		}
+
 		if (_prevClose <= _prevMid && close > mid && Position <= 0)
-		{ if (Position < 0) BuyMarket(); BuyMarket(); }
+		{
+			if (Position < 0) BuyMarket();
+			BuyMarket();
+			_cooldownRemaining = CooldownCandles;
+		}
 		else if (_prevClose >= _prevMid && close < mid && Position >= 0)
-		{ if (Position > 0) SellMarket(); SellMarket(); }
-		_prevClose = close; _prevMid = mid;
+		{
+			if (Position > 0) SellMarket();
+			SellMarket();
+			_cooldownRemaining = CooldownCandles;
+		}
+		_prevClose = close;
+		_prevMid = mid;
 	}
 }

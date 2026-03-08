@@ -24,7 +24,7 @@ public class ColorXMacdCandleStrategy : Strategy
 	private readonly StrategyParam<int> _signalPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private SimpleMovingAverage _signalMa;
+	private ExponentialMovingAverage _signalMa;
 	private decimal? _prevHist;
 	private decimal? _prevPrevHist;
 
@@ -47,7 +47,7 @@ public class ColorXMacdCandleStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Signal Period", "Signal line period", "MACD");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type for calculations", "Common");
 	}
 
@@ -70,7 +70,8 @@ public class ColorXMacdCandleStrategy : Strategy
 		macd.ShortMa.Length = FastPeriod;
 		macd.LongMa.Length = SlowPeriod;
 
-		_signalMa = new SimpleMovingAverage { Length = SignalPeriod };
+		_signalMa = new ExponentialMovingAverage { Length = SignalPeriod };
+		Indicators.Add(_signalMa);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

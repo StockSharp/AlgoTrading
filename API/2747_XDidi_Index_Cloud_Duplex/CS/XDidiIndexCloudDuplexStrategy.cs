@@ -64,7 +64,7 @@ public class XDidiIndexCloudDuplexStrategy : Strategy
 	/// </summary>
 	public XDidiIndexCloudDuplexStrategy()
 	{
-		_longCandleType = Param(nameof(LongCandleType), TimeSpan.FromHours(4).TimeFrame())
+		_longCandleType = Param(nameof(LongCandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Long Candle Type", "Timeframe used for the long XDidi calculation", "General");
 
 		_longFastMethod = Param(nameof(LongFastMethod), SmoothingMethods.Sma)
@@ -100,11 +100,11 @@ public class XDidiIndexCloudDuplexStrategy : Strategy
 		_longReverse = Param(nameof(LongReverse), false)
 			.SetDisplay("Reverse Long Ratios", "Invert long XDidi ratios (matches original indicator option)", "Indicators");
 
-		_longSignalBar = Param(nameof(LongSignalBar), 1)
+		_longSignalBar = Param(nameof(LongSignalBar), 0)
 			.SetDisplay("Long Signal Bar", "Bar shift used for long signals", "Trading")
 			.SetNotNegative();
 
-		_shortCandleType = Param(nameof(ShortCandleType), TimeSpan.FromHours(4).TimeFrame())
+		_shortCandleType = Param(nameof(ShortCandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Short Candle Type", "Timeframe used for the short XDidi calculation", "General");
 
 		_shortFastMethod = Param(nameof(ShortFastMethod), SmoothingMethods.Sma)
@@ -140,7 +140,7 @@ public class XDidiIndexCloudDuplexStrategy : Strategy
 		_shortReverse = Param(nameof(ShortReverse), false)
 			.SetDisplay("Reverse Short Ratios", "Invert short XDidi ratios (matches original indicator option)", "Indicators");
 
-		_shortSignalBar = Param(nameof(ShortSignalBar), 1)
+		_shortSignalBar = Param(nameof(ShortSignalBar), 0)
 			.SetDisplay("Short Signal Bar", "Bar shift used for short signals", "Trading")
 			.SetNotNegative();
 
@@ -430,20 +430,22 @@ public class XDidiIndexCloudDuplexStrategy : Strategy
 		_shortSlowHistory = new decimal?[Math.Max(ShortSignalBar + 2, 2)];
 
 		var longSubscription = SubscribeCandles(LongCandleType);
-		longSubscription.Bind(ProcessLongCandle);
 
-		ISubscriptionHandler<ICandleMessage> shortSubscription = null;
+		ISubscriptionHandler<ICandleMessage> shortSubscriptionObj = null;
 
 		if (ShortCandleType == LongCandleType)
 		{
-			longSubscription.Bind(ProcessShortCandle);
-			longSubscription.Start();
+			longSubscription.Bind((ICandleMessage c) =>
+			{
+				ProcessLongCandle(c);
+				ProcessShortCandle(c);
+			}).Start();
 		}
 		else
 		{
-			longSubscription.Start();
-			shortSubscription = SubscribeCandles(ShortCandleType);
-			shortSubscription.Bind(ProcessShortCandle).Start();
+			longSubscription.Bind(ProcessLongCandle).Start();
+			shortSubscriptionObj = SubscribeCandles(ShortCandleType);
+			shortSubscriptionObj.Bind(ProcessShortCandle).Start();
 		}
 
 		var primaryArea = CreateChartArea();
@@ -464,12 +466,12 @@ public class XDidiIndexCloudDuplexStrategy : Strategy
 			DrawOwnTrades(primaryArea);
 		}
 
-		if (shortSubscription != null)
+		if (shortSubscriptionObj != null)
 		{
 			var secondaryArea = CreateChartArea();
 			if (secondaryArea != null)
 			{
-				DrawCandles(secondaryArea, shortSubscription);
+				DrawCandles(secondaryArea, shortSubscriptionObj);
 				DrawIndicator(secondaryArea, _shortFastMa);
 				DrawIndicator(secondaryArea, _shortMediumMa);
 				DrawIndicator(secondaryArea, _shortSlowMa);

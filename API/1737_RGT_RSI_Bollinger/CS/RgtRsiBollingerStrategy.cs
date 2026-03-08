@@ -58,8 +58,19 @@ public class RgtRsiBollingerStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Min Profit", "Minimum profit before trailing", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
+	}
+
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_entryPrice = 0;
+		_stopPrice = 0;
+		_isLong = false;
 	}
 
 	/// <inheritdoc />
@@ -67,7 +78,7 @@ public class RgtRsiBollingerStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var rsi = new RSI { Length = RsiPeriod };
+		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 		var bb = new BollingerBands { Length = 20, Width = 2m };
 
 		var subscription = SubscribeCandles(CandleType);

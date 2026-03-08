@@ -17,9 +17,6 @@ public class VrSmartGridLiteStrategy : Strategy
 	private readonly StrategyParam<decimal> _gridPercent;
 	private readonly StrategyParam<int> _smaPeriod;
 
-	private decimal _lastTradePrice;
-	private bool _initialized;
-
 	public DataType CandleType
 	{
 		get => _candleType.Value;
@@ -40,10 +37,10 @@ public class VrSmartGridLiteStrategy : Strategy
 
 	public VrSmartGridLiteStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 
-		_gridPercent = Param(nameof(GridPercent), 0.3m)
+		_gridPercent = Param(nameof(GridPercent), 3.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Grid %", "Grid step percentage", "Grid");
 
@@ -55,38 +52,50 @@ public class VrSmartGridLiteStrategy : Strategy
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		_initialized = false;
 
 		var sma = new SimpleMovingAverage { Length = SmaPeriod };
+
+		decimal? lastTradePrice = null;
+
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(sma, ProcessCandle).Start();
-	}
+		subscription
+			.Bind(sma, (candle, smaVal) =>
+			{
+				if (candle.State != CandleStates.Finished)
+					return;
 
-	private void ProcessCandle(ICandleMessage candle, decimal sma)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
+				if (!IsFormedAndOnlineAndAllowTrading())
+					return;
 
-		var close = candle.ClosePrice;
+				var close = candle.ClosePrice;
 
-		if (!_initialized)
+				if (!lastTradePrice.HasValue)
+				{
+					lastTradePrice = close;
+					return;
+				}
+
+				var step = lastTradePrice.Value * GridPercent / 100m;
+
+				if (close <= lastTradePrice.Value - step)
+				{
+					BuyMarket();
+					lastTradePrice = close;
+				}
+				else if (close >= lastTradePrice.Value + step)
+				{
+					SellMarket();
+					lastTradePrice = close;
+				}
+			})
+			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
 		{
-			_lastTradePrice = close;
-			_initialized = true;
-			return;
-		}
-
-		var step = _lastTradePrice * GridPercent / 100m;
-
-		if (close <= _lastTradePrice - step)
-		{
-			BuyMarket();
-			_lastTradePrice = close;
-		}
-		else if (close >= _lastTradePrice + step)
-		{
-			SellMarket();
-			_lastTradePrice = close;
+			DrawCandles(area, subscription);
+			DrawIndicator(area, sma);
+			DrawOwnTrades(area);
 		}
 	}
 }

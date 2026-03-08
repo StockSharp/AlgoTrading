@@ -40,7 +40,7 @@ public class TrendContinuationStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Fast EMA Length", "Period for the fast EMA", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -48,6 +48,14 @@ public class TrendContinuationStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFast = null;
+		_prevSlow = null;
 	}
 
 	/// <inheritdoc />

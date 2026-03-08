@@ -84,19 +84,19 @@ public class YtgAdxLevelCrossStrategy : Strategy
 
 	public YtgAdxLevelCrossStrategy()
 	{
-		_adxPeriod = Param(nameof(AdxPeriod), 28)
+		_adxPeriod = Param(nameof(AdxPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ADX Period", "Period for the Average Directional Index", "Indicators")
 			
 			.SetOptimize(10, 40, 2);
 
-		_levelPlus = Param(nameof(LevelPlus), 5)
+		_levelPlus = Param(nameof(LevelPlus), 15)
 			.SetNotNegative()
 			.SetDisplay("+DI Level", "Threshold that the +DI line must break", "Signals")
 			
 			.SetOptimize(5, 40, 5);
 
-		_levelMinus = Param(nameof(LevelMinus), 5)
+		_levelMinus = Param(nameof(LevelMinus), 15)
 			.SetNotNegative()
 			.SetDisplay("-DI Level", "Threshold that the -DI line must break", "Signals")
 			
@@ -120,7 +120,7 @@ public class YtgAdxLevelCrossStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Trade Volume", "Base volume for market orders", "Orders");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe for the strategy", "General");
 	}
 
@@ -150,7 +150,7 @@ public class YtgAdxLevelCrossStrategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(_adx, ProcessAdx)
+			.Bind(ProcessCandle)
 			.Start();
 
 		var step = Security.PriceStep ?? 1m;
@@ -169,12 +169,14 @@ public class YtgAdxLevelCrossStrategy : Strategy
 		}
 	}
 
-	private void ProcessAdx(ICandleMessage candle, IIndicatorValue adxValue)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!adxValue.IsFinal)
+		var adxValue = _adx.Process(candle);
+
+		if (!_adx.IsFormed || !adxValue.IsFinal)
 			return;
 
 		if (adxValue is not AverageDirectionalIndexValue typed)
@@ -205,9 +207,6 @@ public class YtgAdxLevelCrossStrategy : Strategy
 
 		var longSignal = shiftedPlus > LevelPlus && shiftedPlusPrev < LevelPlus;
 		var shortSignal = shiftedMinus > LevelMinus && shiftedMinusPrev < LevelMinus;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
 
 		if (Position == 0)
 		{
