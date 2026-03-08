@@ -28,7 +28,7 @@ public class PsiProcEmaMacdStrategy : Strategy
 
 	public PsiProcEmaMacdStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe", "General");
 	}
 
@@ -48,8 +48,8 @@ public class PsiProcEmaMacdStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var ema200 = new ExponentialMovingAverage { Length = 200 };
-		var ema50 = new ExponentialMovingAverage { Length = 50 };
+		var ema200 = new ExponentialMovingAverage { Length = 50 };
+		var ema50 = new ExponentialMovingAverage { Length = 20 };
 		var ema10 = new ExponentialMovingAverage { Length = 10 };
 		var macd = new MovingAverageConvergenceDivergence();
 
@@ -73,32 +73,11 @@ public class PsiProcEmaMacdStrategy : Strategy
 			return;
 		}
 
-		// Exit conditions
-		if (Position > 0 && candle.ClosePrice < ema50)
-		{
-			SellMarket();
-		}
-		else if (Position < 0 && candle.ClosePrice > ema50)
-		{
+		// Entry/reversal conditions - EMA alignment
+		if (ema10 > ema50 && Position <= 0)
 			BuyMarket();
-		}
-
-		// Entry conditions
-		var longCond = ema200 > _prevEma200 && ema50 > ema200 && ema10 > ema50 && macdVal > 0;
-		var shortCond = ema200 < _prevEma200 && ema50 < ema200 && ema10 < ema50 && macdVal < 0;
-
-		if (longCond && Position <= 0)
-		{
-			if (Position < 0)
-				BuyMarket();
-			BuyMarket();
-		}
-		else if (shortCond && Position >= 0)
-		{
-			if (Position > 0)
-				SellMarket();
+		else if (ema10 < ema50 && Position >= 0)
 			SellMarket();
-		}
 
 		_prevEma200 = ema200;
 		_prevEma50 = ema50;

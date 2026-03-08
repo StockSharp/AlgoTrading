@@ -28,7 +28,7 @@ public class AiGridStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("MA Length", "SMA period", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -40,7 +40,7 @@ public class AiGridStrategy : Strategy
 		base.OnStarted2(time);
 
 		var sma = new SimpleMovingAverage { Length = MaLength };
-		var atr = new AverageTrueRange { Length = 14 };
+		var atr = new StandardDeviation { Length = 14 };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

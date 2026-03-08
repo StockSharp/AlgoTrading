@@ -37,7 +37,7 @@ public class FiboAvg001aStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "Base moving average period", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
