@@ -100,7 +100,7 @@ public class MacdWaterlineCrossExpectatorStrategy : Strategy
 		_rrMultiplier = Param(nameof(RRMultiplier), 2m)
 			.SetDisplay("RR Multiplier", "Risk reward multiplier", "Risk")
 			.SetGreaterThanZero();
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle", "Candle time frame", "General");
 	}
 
@@ -116,6 +116,7 @@ public class MacdWaterlineCrossExpectatorStrategy : Strategy
 		base.OnReseted();
 		_shouldBuy = true;
 		_hasPrev = false;
+		_prevSignal = 0;
 	}
 
 	/// <inheritdoc />

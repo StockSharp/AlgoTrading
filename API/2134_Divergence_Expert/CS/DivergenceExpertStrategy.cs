@@ -71,7 +71,7 @@ public class DivergenceExpertStrategy : Strategy
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 			.SetDisplay("Stop Loss (%)", "Max risk per trade in percent", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 
 		_startDate = Param(nameof(StartDate), new DateTimeOffset(new DateTime(2017, 1, 1), TimeSpan.Zero))

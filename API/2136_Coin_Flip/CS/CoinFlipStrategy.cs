@@ -30,7 +30,7 @@ public class CoinFlipStrategy : Strategy
 	private readonly StrategyParam<int> _trailingStop;
 	private readonly StrategyParam<DataType> _candleType;
 	
-	private readonly Random _random = new();
+	private static readonly Random _random = new();
 	
 	private decimal _entryPrice;
 	private decimal _currentVolume;
@@ -132,7 +132,7 @@ public class CoinFlipStrategy : Strategy
 		.SetNotNegative()
 		.SetDisplay("Trailing Stop", "Trailing distance in steps", "Risk");
 		
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Time frame for analysis", "General");
 	}
 	
@@ -147,7 +147,7 @@ public class CoinFlipStrategy : Strategy
 	{
 		base.OnReseted();
 		_entryPrice = 0m;
-		_currentVolume = Volume;
+		_currentVolume = 0;
 		_trailingLevel = 0m;
 		_isLong = false;
 		_lastTradeLoss = false;
@@ -174,10 +174,16 @@ public class CoinFlipStrategy : Strategy
 	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
-		
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
 		if (Position != 0)
 		{
+			if (_entryPrice == 0)
+				return;
+
 			// Manage open position using percent of entry
 			var profitPct = _isLong
 				? (candle.ClosePrice - _entryPrice) / _entryPrice * 100m

@@ -80,7 +80,7 @@ public class SessionOrderSentimentStrategy : Strategy
 			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk")
 			.SetGreaterThanZero();
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for analysis", "General");
 	}
 
