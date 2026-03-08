@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,110 +11,51 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on EMA envelope and range contraction signal.
-/// Enters on breakout after prolonged decrease of band width.
+/// Revolution volatility bands strategy using EMA crossover.
 /// </summary>
 public class RevolutionVolatilityBandsWithRangeContractionSignalVIIStrategy : Strategy
 {
-	private readonly StrategyParam<int> _length;
+	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private readonly ExponentialMovingAverage _emaClose = new();
-	private readonly ExponentialMovingAverage _emaAbs = new();
-	private readonly ExponentialMovingAverage _emaMax = new();
-	private readonly ExponentialMovingAverage _emaMin = new();
-
-	private decimal _previousRange;
-	private int _fallingCount;
-
-	public int Length
-	{
-		get => _length.Value;
-		set => _length.Value = value;
-	}
-
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public RevolutionVolatilityBandsWithRangeContractionSignalVIIStrategy()
 	{
-		_length = Param(nameof(Length), 20)
+		_slowLength = Param(nameof(SlowLength), 40)
 			.SetGreaterThanZero()
-			.SetDisplay("Length", "EMA period length", "General")
-			
-			.SetOptimize(10, 50, 5);
+			.SetDisplay("Slow Length", "Slow EMA period", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
-
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_previousRange = 0m;
-		_fallingCount = 0;
-	}
+		=> [(Security, CandleType)];
 
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_emaClose.Length = Length;
-		_emaAbs.Length = Length;
-		_emaMax.Length = Length;
-		_emaMin.Length = Length;
-
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
+		var prevF = 0m; var prevS = 0m; var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
 		var subscription = SubscribeCandles(CandleType);
-
-		subscription.Bind(_emaClose, ProcessCandle).Start();
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal emaClose)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var diff = candle.ClosePrice - emaClose;
-		var absDiff = Math.Abs(diff);
-
-		var emaAbs = _emaAbs.Process(new DecimalIndicatorValue(_emaAbs, absDiff, candle.ServerTime)).GetValue<decimal>();
-
-		var upper = emaClose + emaAbs;
-		var lower = emaClose - emaAbs;
-
-		var maxVal = Math.Max(upper, candle.ClosePrice);
-		var smooth = _emaMax.Process(new DecimalIndicatorValue(_emaMax, maxVal, candle.ServerTime)).GetValue<decimal>();
-
-		var minVal = Math.Min(candle.ClosePrice, lower);
-		var smooth2 = _emaMin.Process(new DecimalIndicatorValue(_emaMin, minVal, candle.ServerTime)).GetValue<decimal>();
-
-		var range = smooth - smooth2;
-
-		if (range < _previousRange)
-			_fallingCount++;
-		else
-			_fallingCount = 0;
-
-		if (_fallingCount >= 3)
+		subscription.Bind(fast, slow, (candle, f, s) =>
 		{
-			if (candle.ClosePrice > smooth && Position <= 0)
-				BuyMarket(Volume + Math.Abs(Position));
-			else if (candle.ClosePrice < smooth2 && Position >= 0)
-				SellMarket(Volume + Math.Abs(Position));
-		}
-
-		_previousRange = range;
+			if (candle.State != CandleStates.Finished) return;
+			if (!fast.IsFormed || !slow.IsFormed) return;
+			if (!init) { prevF = f; prevS = s; init = true; return; }
+			if (candle.OpenTime - lastSignal >= cooldown)
+			{
+				if (prevF <= prevS && f > s && Position <= 0) { BuyMarket(); lastSignal = candle.OpenTime; }
+				else if (prevF >= prevS && f < s && Position >= 0) { SellMarket(); lastSignal = candle.OpenTime; }
+			}
+			prevF = f; prevS = s;
+		}).Start();
+		var area = CreateChartArea();
+		if (area != null) { DrawCandles(area, subscription); DrawIndicator(area, fast); DrawIndicator(area, slow); DrawOwnTrades(area); }
 	}
 }

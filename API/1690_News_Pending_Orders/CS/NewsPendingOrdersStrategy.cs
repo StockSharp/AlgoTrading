@@ -39,7 +39,7 @@ public class NewsPendingOrdersStrategy : Strategy
 			.SetDisplay("ATR Period", "ATR period", "Indicators");
 		_atrMult = Param(nameof(AtrMult), 1.5m)
 			.SetDisplay("ATR Mult", "ATR expansion multiplier", "Indicators");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -58,7 +58,7 @@ public class NewsPendingOrdersStrategy : Strategy
 		base.OnStarted2(time);
 
 		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
-		var atr = new AverageTrueRange { Length = AtrPeriod };
+		var atr = new StandardDeviation { Length = AtrPeriod };
 
 		SubscribeCandles(CandleType).Bind(ema, atr, ProcessCandle).Start();
 	}
@@ -72,8 +72,8 @@ public class NewsPendingOrdersStrategy : Strategy
 		var close = candle.ClosePrice;
 		var bodySize = Math.Abs(candle.ClosePrice - candle.OpenPrice);
 
-		// Volatility expansion: current ATR > previous ATR * mult and big body candle
-		var expansion = atr > _prevAtr * AtrMult && bodySize > atr * 0.5m;
+		// Volatility expansion: big body candle relative to stddev
+		var expansion = bodySize > atr * 0.5m;
 
 		if (expansion && close > ema && Position <= 0)
 		{

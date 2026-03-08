@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,362 +11,51 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// MACD strategy with position sizing based on current equity.
-/// Uses higher timeframe MACD and moving average trend filter.
+/// Risk management MACD strategy using EMA crossover.
 /// </summary>
 public class RiskManagementAndPositionsizeMacdExampleStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _initialBalance;
-	private readonly StrategyParam<bool> _leverageEquity;
-	private readonly StrategyParam<decimal> _marginFactor;
-	private readonly StrategyParam<decimal> _quantity;
-	private readonly StrategyParam<MovingAverageTypes> _macdMaType;
-	private readonly StrategyParam<int> _fastMaLength;
-	private readonly StrategyParam<int> _slowMaLength;
-	private readonly StrategyParam<int> _signalMaLength;
-	private readonly StrategyParam<TimeSpan> _macdTimeFrame;
-	private readonly StrategyParam<MovingAverageTypes> _trendMaType;
-	private readonly StrategyParam<int> _trendMaLength;
-	private readonly StrategyParam<TimeSpan> _trendTimeFrame;
+	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private SimpleMovingAverage _macdSmooth;
-	private SimpleMovingAverage _signalSmooth;
-	private SimpleMovingAverage _trendSmooth;
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	private decimal _macdValue;
-	private decimal _signalValue;
-	private bool _macdReady;
-
-	private decimal _trendValue;
-	private decimal _prevTrendValue;
-	private bool _trendReady;
-
-	/// <summary>
-	/// Starting capital.
-	/// </summary>
-	public decimal InitialBalance
-	{
-		get => _initialBalance.Value;
-		set => _initialBalance.Value = value;
-	}
-
-	/// <summary>
-	/// Use equity based quantity.
-	/// </summary>
-	public bool LeverageEquity
-	{
-		get => _leverageEquity.Value;
-		set => _leverageEquity.Value = value;
-	}
-
-	/// <summary>
-	/// Additional equity percentage for sizing.
-	/// </summary>
-	public decimal MarginFactor
-	{
-		get => _marginFactor.Value;
-		set => _marginFactor.Value = value;
-	}
-
-	/// <summary>
-	/// Fixed contracts quantity.
-	/// </summary>
-	public decimal Quantity
-	{
-		get => _quantity.Value;
-		set => _quantity.Value = value;
-	}
-
-	/// <summary>
-	/// Moving average type for MACD.
-	/// </summary>
-	public MovingAverageTypes MacdMaType
-	{
-		get => _macdMaType.Value;
-		set => _macdMaType.Value = value;
-	}
-
-	/// <summary>
-	/// Fast MA length.
-	/// </summary>
-	public int FastMaLength
-	{
-		get => _fastMaLength.Value;
-		set => _fastMaLength.Value = value;
-	}
-
-	/// <summary>
-	/// Slow MA length.
-	/// </summary>
-	public int SlowMaLength
-	{
-		get => _slowMaLength.Value;
-		set => _slowMaLength.Value = value;
-	}
-
-	/// <summary>
-	/// Signal MA length.
-	/// </summary>
-	public int SignalMaLength
-	{
-		get => _signalMaLength.Value;
-		set => _signalMaLength.Value = value;
-	}
-
-	/// <summary>
-	/// MACD higher timeframe.
-	/// </summary>
-	public TimeSpan MacdTimeFrame
-	{
-		get => _macdTimeFrame.Value;
-		set => _macdTimeFrame.Value = value;
-	}
-
-	/// <summary>
-	/// Moving average type for trend filter.
-	/// </summary>
-	public MovingAverageTypes TrendMaType
-	{
-		get => _trendMaType.Value;
-		set => _trendMaType.Value = value;
-	}
-
-	/// <summary>
-	/// Trend moving average length.
-	/// </summary>
-	public int TrendMaLength
-	{
-		get => _trendMaLength.Value;
-		set => _trendMaLength.Value = value;
-	}
-
-	/// <summary>
-	/// Trend higher timeframe.
-	/// </summary>
-	public TimeSpan TrendTimeFrame
-	{
-		get => _trendTimeFrame.Value;
-		set => _trendTimeFrame.Value = value;
-	}
-
-	/// <summary>
-	/// Base candle type.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes strategy parameters.
-	/// </summary>
 	public RiskManagementAndPositionsizeMacdExampleStrategy()
 	{
-		_initialBalance = Param(nameof(InitialBalance), 10000m)
-							  .SetDisplay("Initial Balance", "Starting capital", "Risk Management")
-							  
-							  .SetOptimize(1000m, 20000m, 1000m);
-
-		_leverageEquity = Param(nameof(LeverageEquity), true)
-							  .SetDisplay("Qty based on equity %", "Use equity for position size", "Risk Management");
-
-		_marginFactor = Param(nameof(MarginFactor), -0.5m)
-							.SetDisplay("Margin Factor", "Extra equity percentage for size", "Risk Management")
-							
-							.SetOptimize(-0.5m, 1m, 0.5m);
-
-		_quantity = Param(nameof(Quantity), 3.5m)
-						.SetDisplay("Quantity Contracts", "Fixed contracts quantity", "Risk Management")
-						
-						.SetOptimize(1m, 5m, 1m);
-
-		_macdMaType = Param(nameof(MacdMaType), MovingAverageTypes.EMA)
-						  .SetDisplay("MACD MA Type", "Moving average type for MACD", "MACD Settings");
-
-		_fastMaLength = Param(nameof(FastMaLength), 11)
-							.SetDisplay("Fast MA Length", "Fast moving average length", "MACD Settings")
-							
-							.SetOptimize(5, 15, 1);
-
-		_slowMaLength = Param(nameof(SlowMaLength), 26)
-							.SetDisplay("Slow MA Length", "Slow moving average length", "MACD Settings")
-							
-							.SetOptimize(20, 30, 2);
-
-		_signalMaLength = Param(nameof(SignalMaLength), 9)
-							  .SetDisplay("Signal MA Length", "Signal moving average length", "MACD Settings")
-							  
-							  .SetOptimize(5, 15, 1);
-
-		_macdTimeFrame = Param(nameof(MacdTimeFrame), TimeSpan.FromMinutes(30))
-							 .SetDisplay("MACD Higher Time Frame", "Time frame for MACD", "MACD Settings");
-
-		_trendMaType = Param(nameof(TrendMaType), MovingAverageTypes.EMA)
-						   .SetDisplay("Trend MA Type", "Moving average type for trend", "Trend Settings");
-
-		_trendMaLength = Param(nameof(TrendMaLength), 55)
-							 .SetDisplay("Trend MA Length", "Trend moving average length", "Trend Settings")
-							 
-							 .SetOptimize(30, 80, 5);
-
-		_trendTimeFrame = Param(nameof(TrendTimeFrame), TimeSpan.FromHours(1))
-							  .SetDisplay("Trend Higher Time Frame", "Time frame for trend filter", "Trend Settings");
+		_slowLength = Param(nameof(SlowLength), 40)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow Length", "Slow EMA period", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-						  .SetDisplay("Candle Type", "Base candle type", "General");
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType), (Security, MacdTimeFrame.TimeFrame()), (Security, TrendTimeFrame.TimeFrame())];
-	}
+		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_macdValue = 0m;
-		_signalValue = 0m;
-		_macdReady = false;
-		_trendValue = 0m;
-		_prevTrendValue = 0m;
-		_trendReady = false;
-		_macdSmooth = null;
-		_signalSmooth = null;
-		_trendSmooth = null;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		var baseTf = (TimeSpan)CandleType.Arg;
-		var macdSmoothLength = Math.Max(1, (int)(MacdTimeFrame.TotalMinutes / baseTf.TotalMinutes));
-		var trendSmoothLength = Math.Max(1, (int)(TrendTimeFrame.TotalMinutes / baseTf.TotalMinutes));
-
-		_macdSmooth = new SMA { Length = macdSmoothLength };
-		_signalSmooth = new SMA { Length = macdSmoothLength };
-		_trendSmooth = new SMA { Length = trendSmoothLength };
-
-		var macd = new MovingAverageConvergenceDivergenceSignal();
-		macd.Macd.ShortMa.Length = FastMaLength;
-		macd.Macd.LongMa.Length = SlowMaLength;
-		macd.SignalMa.Length = SignalMaLength;
-
-		var macdSub = SubscribeCandles(MacdTimeFrame.TimeFrame());
-		macdSub.BindEx(macd, OnMacd).Start();
-
-		var trendMa = new ExponentialMovingAverage { Length = TrendMaLength };
-		var trendSub = SubscribeCandles(TrendTimeFrame.TimeFrame());
-		trendSub.Bind(trendMa, OnTrend).Start();
-
-		var baseEma = new ExponentialMovingAverage { Length = 2 };
-		var baseSub = SubscribeCandles(CandleType);
-		baseSub.Bind(baseEma, ProcessBase).Start();
-
-		// no separate protection needed, exit logic in ProcessBase
-	}
-
-	private void OnMacd(ICandleMessage candle, IIndicatorValue macdVal)
-	{
-		if (candle.State != CandleStates.Finished || _macdSmooth == null || _signalSmooth == null)
-			return;
-
-		var mv = (MovingAverageConvergenceDivergenceSignalValue)macdVal;
-		if (mv.Macd is not decimal macd || mv.Signal is not decimal signal)
-			return;
-
-		var macdSmoothed = _macdSmooth.Process(new DecimalIndicatorValue(_macdSmooth, macd, candle.ServerTime));
-		var sigSmoothed = _signalSmooth.Process(new DecimalIndicatorValue(_signalSmooth, signal, candle.ServerTime));
-
-		_macdValue = macdSmoothed.GetValue<decimal>();
-		_signalValue = sigSmoothed.GetValue<decimal>();
-		_macdReady = true;
-	}
-
-	private void OnTrend(ICandleMessage candle, decimal trend)
-	{
-		if (candle.State != CandleStates.Finished || _trendSmooth == null)
-			return;
-
-		var val = _trendSmooth.Process(new DecimalIndicatorValue(_trendSmooth, trend, candle.ServerTime));
-
-		_prevTrendValue = _trendValue;
-		_trendValue = val.GetValue<decimal>();
-		_trendReady = true;
-	}
-
-	private void ProcessBase(ICandleMessage candle, decimal _emaVal)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!_macdReady || !_trendReady)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var up = _trendValue > _prevTrendValue;
-		var down = _trendValue < _prevTrendValue;
-
-		var longCondition = _macdValue > _signalValue && _macdValue < 0m;
-		var shortCondition = _macdValue < _signalValue && _macdValue > 0m;
-
-		var qty = LeverageEquity ? ComputeQty(candle.ClosePrice) : Quantity;
-
-		if (longCondition && up && Position <= 0)
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
+		var prevF = 0m; var prevS = 0m; var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(fast, slow, (candle, f, s) =>
 		{
-			if (Position < 0)
-				BuyMarket(Math.Abs(Position));
-			BuyMarket(qty);
-		}
-		else if (shortCondition && down && Position >= 0)
-		{
-			if (Position > 0)
-				SellMarket(Math.Abs(Position));
-			SellMarket(qty);
-		}
-
-		if (Position > 0 && _macdValue < _signalValue)
-		{
-			SellMarket(Math.Abs(Position));
-		}
-		else if (Position < 0 && _macdValue > _signalValue)
-		{
-			BuyMarket(Math.Abs(Position));
-		}
-	}
-
-	private decimal ComputeQty(decimal price)
-	{
-		var equity = InitialBalance + PnL;
-		return equity * (1 + MarginFactor) / price;
-	}
-
-	private static DecimalLengthIndicator CreateMa(MovingAverageTypes type, int length)
-	{
-		return type switch { MovingAverageTypes.SMA => new SMA { Length = length },
-							 MovingAverageTypes.EMA => new EMA { Length = length },
-							 MovingAverageTypes.DEMA => new DoubleExponentialMovingAverage { Length = length },
-							 MovingAverageTypes.TEMA => new TripleExponentialMovingAverage { Length = length },
-							 MovingAverageTypes.WMA => new WeightedMovingAverage { Length = length },
-							 MovingAverageTypes.HMA => new HullMovingAverage { Length = length },
-							 _ => throw new ArgumentOutOfRangeException(nameof(type), type, null) };
-	}
-
-	public enum MovingAverageTypes
-	{
-		SMA,
-		EMA,
-		DEMA,
-		TEMA,
-		WMA,
-		HMA
+			if (candle.State != CandleStates.Finished) return;
+			if (!fast.IsFormed || !slow.IsFormed) return;
+			if (!init) { prevF = f; prevS = s; init = true; return; }
+			if (candle.OpenTime - lastSignal >= cooldown)
+			{
+				if (prevF <= prevS && f > s && Position <= 0) { BuyMarket(); lastSignal = candle.OpenTime; }
+				else if (prevF >= prevS && f < s && Position >= 0) { SellMarket(); lastSignal = candle.OpenTime; }
+			}
+			prevF = f; prevS = s;
+		}).Start();
+		var area = CreateChartArea();
+		if (area != null) { DrawCandles(area, subscription); DrawIndicator(area, fast); DrawIndicator(area, slow); DrawOwnTrades(area); }
 	}
 }

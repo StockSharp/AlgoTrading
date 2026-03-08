@@ -96,9 +96,6 @@ public class ColorBearsGapStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		var candleTime = candle.OpenTime;
 
 		var smoothClose = _smaClose.Process(candle.ClosePrice, candleTime, true).GetValue<decimal>();
@@ -109,6 +106,9 @@ public class ColorBearsGapStrategy : Strategy
 
 		var xbullsC = _smaBullsC.Process(bullsC, candleTime, true).GetValue<decimal>();
 		var xbullsO = _smaBullsO.Process(bullsO, candleTime, true).GetValue<decimal>();
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
 
 		if (_isFirst)
 		{

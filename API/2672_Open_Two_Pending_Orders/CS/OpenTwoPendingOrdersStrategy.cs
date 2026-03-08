@@ -82,19 +82,19 @@ public class OpenTwoPendingOrdersStrategy : Strategy
 	/// </summary>
 	public OpenTwoPendingOrdersStrategy()
 	{
-		_stopLossPoints = Param(nameof(StopLossPoints), 5m)
+		_stopLossPoints = Param(nameof(StopLossPoints), 2000m)
 			.SetDisplay("Stop Loss (steps)", "Stop loss distance in price steps", "Risk")
 			.SetOptimize(20m, 300m, 20m);
 
-		_takeProfitPoints = Param(nameof(TakeProfitPoints), 10m)
+		_takeProfitPoints = Param(nameof(TakeProfitPoints), 3000m)
 			.SetDisplay("Take Profit (steps)", "Take profit distance in price steps", "Risk")
 			.SetOptimize(50m, 600m, 50m);
 
-		_trailingStopPoints = Param(nameof(TrailingStopPoints), 3m)
+		_trailingStopPoints = Param(nameof(TrailingStopPoints), 1000m)
 			.SetDisplay("Trailing Stop (steps)", "Trailing stop distance in price steps", "Risk")
 			.SetOptimize(10m, 200m, 10m);
 
-		_entryOffsetPoints = Param(nameof(EntryOffsetPoints), 2m)
+		_entryOffsetPoints = Param(nameof(EntryOffsetPoints), 700m)
 			.SetDisplay("Entry Offset (steps)", "Offset from close for pending entries", "Execution")
 			.SetOptimize(10m, 150m, 10m);
 
@@ -155,25 +155,26 @@ public class OpenTwoPendingOrdersStrategy : Strategy
 		// Check pending entries
 		if (_pendingBuyPrice.HasValue && _pendingSellPrice.HasValue)
 		{
+			var buyLevel = _pendingBuyPrice.Value;
+			var sellLevel = _pendingSellPrice.Value;
+
 			// Buy stop triggered: price went up to pending buy level
-			if (candle.HighPrice >= _pendingBuyPrice.Value)
+			if (candle.HighPrice >= buyLevel)
 			{
-				BuyMarket();
-				var entryPrice = _pendingBuyPrice.Value;
 				_pendingBuyPrice = null;
 				_pendingSellPrice = null;
-				InitializePositionLevels(true, entryPrice, step);
+				BuyMarket();
+				InitializePositionLevels(true, buyLevel, step);
 				return;
 			}
 
 			// Sell stop triggered: price went down to pending sell level
-			if (candle.LowPrice <= _pendingSellPrice.Value)
+			if (candle.LowPrice <= sellLevel)
 			{
-				SellMarket();
-				var entryPrice = _pendingSellPrice.Value;
 				_pendingBuyPrice = null;
 				_pendingSellPrice = null;
-				InitializePositionLevels(false, entryPrice, step);
+				SellMarket();
+				InitializePositionLevels(false, sellLevel, step);
 				return;
 			}
 		}

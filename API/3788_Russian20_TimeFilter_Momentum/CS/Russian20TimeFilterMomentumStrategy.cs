@@ -28,8 +28,8 @@ public class Russian20TimeFilterMomentumStrategy : Strategy
 	private readonly StrategyParam<int> _startHour;
 	private readonly StrategyParam<int> _endHour;
 
-	private SimpleMovingAverage _movingAverage;
-	private Momentum _momentum;
+	private SimpleMovingAverage? _movingAverage;
+	private Momentum? _momentum;
 	private decimal? _previousClose;
 	private decimal? _entryPrice;
 	private decimal _pipSize;
@@ -113,7 +113,7 @@ public class Russian20TimeFilterMomentumStrategy : Strategy
 	/// </summary>
 	public Russian20TimeFilterMomentumStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type used for analysis", "General");
 
 		_movingAverageLength = Param(nameof(MovingAverageLength), 20)
@@ -149,10 +149,18 @@ public class Russian20TimeFilterMomentumStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
 
+		_movingAverage = null;
+		_momentum = null;
 		_previousClose = null;
 		_entryPrice = null;
 		_pipSize = 0m;

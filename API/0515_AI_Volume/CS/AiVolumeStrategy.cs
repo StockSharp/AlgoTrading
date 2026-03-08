@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,92 +12,63 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// AI Volume Strategy - trades volume spikes in trend direction.
+/// Uses EMA for trend and volume EMA for spike detection.
 /// </summary>
 public class AiVolumeStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _priceEmaLength;
 	private readonly StrategyParam<int> _volumeEmaLength;
 	private readonly StrategyParam<decimal> _volumeMultiplier;
 	private readonly StrategyParam<int> _exitBars;
+	private readonly StrategyParam<int> _cooldownBars;
 
-	private ExponentialMovingAverage _priceEma;
-	private ExponentialMovingAverage _volumeEma;
+	private SimpleMovingAverage _volumeSma;
 	private int _barsInPosition;
+	private int _cooldownRemaining;
 
-	/// <summary>
-	/// Candle type for strategy calculation.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int PriceEmaLength { get => _priceEmaLength.Value; set => _priceEmaLength.Value = value; }
+	public int VolumeEmaLength { get => _volumeEmaLength.Value; set => _volumeEmaLength.Value = value; }
+	public decimal VolumeMultiplier { get => _volumeMultiplier.Value; set => _volumeMultiplier.Value = value; }
+	public int ExitBars { get => _exitBars.Value; set => _exitBars.Value = value; }
+	public int CooldownBars { get => _cooldownBars.Value; set => _cooldownBars.Value = value; }
 
-	/// <summary>
-	/// Volume EMA length.
-	/// </summary>
-	public int VolumeEmaLength
-	{
-		get => _volumeEmaLength.Value;
-		set => _volumeEmaLength.Value = value;
-	}
-
-	/// <summary>
-	/// Multiplier for volume spike detection.
-	/// </summary>
-	public decimal VolumeMultiplier
-	{
-		get => _volumeMultiplier.Value;
-		set => _volumeMultiplier.Value = value;
-	}
-
-	/// <summary>
-	/// Bars to hold position before exit.
-	/// </summary>
-	public int ExitBars
-	{
-		get => _exitBars.Value;
-		set => _exitBars.Value = value;
-	}
-
-	/// <summary>
-	/// Constructor.
-	/// </summary>
 	public AiVolumeStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
+
+		_priceEmaLength = Param(nameof(PriceEmaLength), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("Price EMA Length", "Length for price EMA", "Parameters");
 
 		_volumeEmaLength = Param(nameof(VolumeEmaLength), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("Volume EMA Length", "Length for volume EMA", "Parameters")
-			
-			.SetOptimize(10, 40, 5);
+			.SetDisplay("Volume EMA Length", "Length for volume EMA", "Parameters");
 
-		_volumeMultiplier = Param(nameof(VolumeMultiplier), 2.0m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume Multiplier", "Multiplier for volume spike detection", "Parameters")
-			
-			.SetOptimize(1.0m, 5.0m, 0.5m);
+		_volumeMultiplier = Param(nameof(VolumeMultiplier), 1.0m)
+			.SetDisplay("Volume Multiplier", "Multiplier for volume spike detection", "Parameters");
 
-		_exitBars = Param(nameof(ExitBars), 5)
+		_exitBars = Param(nameof(ExitBars), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("Exit Bars", "Exit position after this many bars", "Risk Management")
-			
-			.SetOptimize(2, 10, 1);
+			.SetDisplay("Exit Bars", "Exit position after this many bars", "Risk");
+
+		_cooldownBars = Param(nameof(CooldownBars), 15)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "Risk");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
+		_volumeSma = null;
 		_barsInPosition = 0;
+		_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
@@ -108,19 +76,19 @@ public class AiVolumeStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_priceEma = new EMA { Length = 50 };
-		_volumeEma = new EMA { Length = VolumeEmaLength };
+		var priceEma = new ExponentialMovingAverage { Length = PriceEmaLength };
+		_volumeSma = new SimpleMovingAverage { Length = VolumeEmaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_priceEma, ProcessCandle)
+			.Bind(priceEma, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _priceEma);
+			DrawIndicator(area, priceEma);
 			DrawOwnTrades(area);
 		}
 	}
@@ -130,31 +98,12 @@ public class AiVolumeStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var volumeEmaValue = _volumeEma.Process(new DecimalIndicatorValue(_volumeEma, candle.TotalVolume, candle.ServerTime)).ToDecimal();
+		var volumeResult = _volumeSma.Process(new DecimalIndicatorValue(_volumeSma, candle.TotalVolume, candle.ServerTime));
 
-		if (!_priceEma.IsFormed || !_volumeEma.IsFormed || !IsFormedAndOnlineAndAllowTrading())
+		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var volumeSpike = candle.TotalVolume > volumeEmaValue * VolumeMultiplier;
-		var trendUp = candle.ClosePrice > priceEmaValue;
-		var trendDown = candle.ClosePrice < priceEmaValue;
-		var isBullish = candle.ClosePrice > candle.OpenPrice;
-		var isBearish = candle.ClosePrice < candle.OpenPrice;
-
-		if (volumeSpike)
-		{
-			if (trendUp && isBullish && Position <= 0)
-			{
-				BuyMarket(Volume + Math.Abs(Position));
-				_barsInPosition = 0;
-			}
-			else if (trendDown && isBearish && Position >= 0)
-			{
-				SellMarket(Volume + Math.Abs(Position));
-				_barsInPosition = 0;
-			}
-		}
-
+		// Time-based exit
 		if (Position != 0)
 		{
 			_barsInPosition++;
@@ -164,10 +113,46 @@ public class AiVolumeStrategy : Strategy
 					SellMarket(Math.Abs(Position));
 				else
 					BuyMarket(Math.Abs(Position));
-
 				_barsInPosition = 0;
+				_cooldownRemaining = CooldownBars;
+				return;
 			}
+		}
+
+		if (_cooldownRemaining > 0)
+		{
+			_cooldownRemaining--;
+			return;
+		}
+
+		var avgVolume = _volumeSma.IsFormed ? volumeResult.ToDecimal() : 0m;
+		var volumeSpike = avgVolume > 0 && candle.TotalVolume > avgVolume * VolumeMultiplier;
+		// If no volume data, use price action only
+		var useVolumeFilter = avgVolume > 0;
+
+		var trendUp = candle.ClosePrice > priceEmaValue;
+		var trendDown = candle.ClosePrice < priceEmaValue;
+		var isBullish = candle.ClosePrice > candle.OpenPrice;
+		var isBearish = candle.ClosePrice < candle.OpenPrice;
+
+		var longOk = trendUp && isBullish && (!useVolumeFilter || volumeSpike);
+		var shortOk = trendDown && isBearish && (!useVolumeFilter || volumeSpike);
+
+		if (longOk && Position <= 0)
+		{
+			if (Position < 0)
+				BuyMarket(Math.Abs(Position));
+			BuyMarket(Volume);
+			_barsInPosition = 0;
+			_cooldownRemaining = CooldownBars;
+		}
+		else if (shortOk && Position >= 0)
+		{
+			if (Position > 0)
+				SellMarket(Math.Abs(Position));
+			SellMarket(Volume);
+			_barsInPosition = 0;
+			_cooldownRemaining = CooldownBars;
 		}
 	}
 }
-
