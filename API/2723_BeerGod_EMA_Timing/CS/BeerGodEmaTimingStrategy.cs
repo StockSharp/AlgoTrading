@@ -75,7 +75,7 @@ public class BeerGodEmaTimingStrategy : Strategy
 			
 			.SetOptimize(1, 10, 1);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Primary candle type", "General");
 	}
 
@@ -112,7 +112,7 @@ public class BeerGodEmaTimingStrategy : Strategy
 			.Bind(_ema, ProcessCandle)
 			.Start();
 
-		StartProtection(null, null);
+		// no fixed protection needed
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal emaValue)
@@ -142,21 +142,11 @@ public class BeerGodEmaTimingStrategy : Strategy
 
 		if (newBuy && Position <= 0)
 		{
-			var volume = Volume;
-
-			if (Position < 0)
-				volume += Math.Abs(Position);
-
-			BuyMarket(volume);
+			BuyMarket();
 		}
 		else if (newSell && Position >= 0)
 		{
-			var volume = Volume;
-
-			if (Position > 0)
-				volume += Position;
-
-			SellMarket(volume);
+			SellMarket();
 		}
 	}
 }

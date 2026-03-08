@@ -84,7 +84,7 @@ public class NCandlesV5Strategy : Strategy
 		.SetDisplay("Max Net Volume", "Maximum absolute net position", "Risk")
 		.SetGreaterThanZero();
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles to analyze", "General");
 
 		Volume = _volumeParam.Value;
@@ -279,7 +279,7 @@ public class NCandlesV5Strategy : Strategy
 			var orderVolume = volume + Math.Max(0m, -Position);
 			if (orderVolume > 0m && Math.Abs(Position + orderVolume) <= MaxNetVolume)
 			{
-				BuyMarket(orderVolume);
+				BuyMarket();
 				SetupLongState(candle, step);
 			}
 
@@ -291,7 +291,7 @@ public class NCandlesV5Strategy : Strategy
 			var orderVolume = volume + Math.Max(0m, Position);
 			if (orderVolume > 0m && Math.Abs(Position - orderVolume) <= MaxNetVolume)
 			{
-				SellMarket(orderVolume);
+				SellMarket();
 				SetupShortState(candle, step);
 			}
 
@@ -362,21 +362,21 @@ public class NCandlesV5Strategy : Strategy
 		if (!closed && _longTakeProfit is decimal takeProfit && high >= takeProfit)
 		{
 			if (exitVolume > 0m)
-			SellMarket(exitVolume);
+			SellMarket();
 			closed = true;
 		}
 
 		if (!closed && _longStopLoss is decimal stopLoss && low <= stopLoss)
 		{
 			if (exitVolume > 0m)
-			SellMarket(exitVolume);
+			SellMarket();
 			closed = true;
 		}
 
 		if (!closed && _longTrailingStop is decimal trailingStop && low <= trailingStop)
 		{
 			if (exitVolume > 0m)
-			SellMarket(exitVolume);
+			SellMarket();
 			closed = true;
 		}
 
@@ -426,21 +426,21 @@ public class NCandlesV5Strategy : Strategy
 		if (!closed && _shortTakeProfit is decimal takeProfit && low <= takeProfit)
 		{
 			if (exitVolume > 0m)
-			BuyMarket(exitVolume);
+			BuyMarket();
 			closed = true;
 		}
 
 		if (!closed && _shortStopLoss is decimal stopLoss && high >= stopLoss)
 		{
 			if (exitVolume > 0m)
-			BuyMarket(exitVolume);
+			BuyMarket();
 			closed = true;
 		}
 
 		if (!closed && _shortTrailingStop is decimal trailingStop && high >= trailingStop)
 		{
 			if (exitVolume > 0m)
-			BuyMarket(exitVolume);
+			BuyMarket();
 			closed = true;
 		}
 

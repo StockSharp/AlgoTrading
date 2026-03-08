@@ -152,7 +152,7 @@ public class LarryConnersRsi2Strategy : Strategy
 			.SetDisplay("Fast SMA Period", "Fast SMA length", "Indicators")
 			;
 
-		_slowSmaPeriod = Param(nameof(SlowSmaPeriod), 200)
+		_slowSmaPeriod = Param(nameof(SlowSmaPeriod), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow SMA Period", "Slow SMA length", "Indicators")
 			;
@@ -186,7 +186,7 @@ public class LarryConnersRsi2Strategy : Strategy
 			.SetDisplay("Take Profit (pips)", "Take-profit distance in pips", "Risk")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for candles", "General");
 	}
 
@@ -260,7 +260,7 @@ public class LarryConnersRsi2Strategy : Strategy
 				var stopPrice = _longEntryPrice.Value - StopLossPips * _pipSize;
 				if (candle.LowPrice <= stopPrice)
 				{
-					SellMarket(Math.Abs(Position));
+					SellMarket();
 					ResetLongState();
 					return;
 				}
@@ -271,7 +271,7 @@ public class LarryConnersRsi2Strategy : Strategy
 				var targetPrice = _longEntryPrice.Value + TakeProfitPips * _pipSize;
 				if (candle.HighPrice >= targetPrice)
 				{
-					SellMarket(Math.Abs(Position));
+					SellMarket();
 					ResetLongState();
 					return;
 				}
@@ -279,7 +279,7 @@ public class LarryConnersRsi2Strategy : Strategy
 
 			if (candle.ClosePrice > fastSma)
 			{
-				SellMarket(Math.Abs(Position));
+				SellMarket();
 				ResetLongState();
 				return;
 			}
@@ -291,7 +291,7 @@ public class LarryConnersRsi2Strategy : Strategy
 				var stopPrice = _shortEntryPrice.Value + StopLossPips * _pipSize;
 				if (candle.HighPrice >= stopPrice)
 				{
-					BuyMarket(Math.Abs(Position));
+					BuyMarket();
 					ResetShortState();
 					return;
 				}
@@ -302,7 +302,7 @@ public class LarryConnersRsi2Strategy : Strategy
 				var targetPrice = _shortEntryPrice.Value - TakeProfitPips * _pipSize;
 				if (candle.LowPrice <= targetPrice)
 				{
-					BuyMarket(Math.Abs(Position));
+					BuyMarket();
 					ResetShortState();
 					return;
 				}
@@ -310,7 +310,7 @@ public class LarryConnersRsi2Strategy : Strategy
 
 			if (candle.ClosePrice < fastSma)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				ResetShortState();
 				return;
 			}
@@ -325,7 +325,7 @@ public class LarryConnersRsi2Strategy : Strategy
 			var canGoLong = rsi < RsiLongEntry && candle.ClosePrice > slowSma;
 			if (canGoLong)
 			{
-				BuyMarket(TradeVolume);
+				BuyMarket();
 				_longEntryPrice = candle.ClosePrice;
 				_shortEntryPrice = null;
 				return;
@@ -334,7 +334,7 @@ public class LarryConnersRsi2Strategy : Strategy
 			var canGoShort = rsi > RsiShortEntry && candle.ClosePrice < slowSma;
 			if (canGoShort)
 			{
-				SellMarket(TradeVolume);
+				SellMarket();
 				_shortEntryPrice = candle.ClosePrice;
 				_longEntryPrice = null;
 			}
