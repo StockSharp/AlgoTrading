@@ -1,9 +1,8 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -11,104 +10,55 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
 /// <summary>
-/// Breakout strategy based on EMA channel from binario_31 script.
-/// Places stop orders around the channel and manages trailing stop.
+/// EMA channel breakout strategy.
+/// Buys when price breaks above EMA + offset, sells when below EMA - offset.
+/// Uses trailing stop and take profit for exits.
 /// </summary>
 public class Binario31Strategy : Strategy
 {
 	private readonly StrategyParam<int> _emaLength;
-	private readonly StrategyParam<decimal> _pipDifference;
+	private readonly StrategyParam<decimal> _channelOffset;
 	private readonly StrategyParam<decimal> _takeProfit;
-	private readonly StrategyParam<decimal> _trailingStop;
+	private readonly StrategyParam<decimal> _stopLoss;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private ExponentialMovingAverage _emaHigh;
-	private ExponentialMovingAverage _emaLow;
+	private decimal _entryPrice;
 
-	private decimal _buyLevel;
-	private decimal _sellLevel;
-	private decimal _buyStop;
-	private decimal _sellStop;
-	private decimal _buyTarget;
-	private decimal _sellTarget;
-
-	private decimal _stopPrice;
-	private decimal _targetPrice;
-
-	/// <summary>
-	/// EMA period.
-	/// </summary>
 	public int EmaLength { get => _emaLength.Value; set => _emaLength.Value = value; }
-
-	/// <summary>
-	/// Distance from EMA to entry in price steps.
-	/// </summary>
-	public decimal PipDifference { get => _pipDifference.Value; set => _pipDifference.Value = value; }
-
-	/// <summary>
-	/// Take profit distance in price steps.
-	/// </summary>
+	public decimal ChannelOffset { get => _channelOffset.Value; set => _channelOffset.Value = value; }
 	public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
-
-	/// <summary>
-	/// Trailing stop distance in price steps.
-	/// </summary>
-	public decimal TrailingStop { get => _trailingStop.Value; set => _trailingStop.Value = value; }
-
-
-	/// <summary>
-	/// Type of candles to process.
-	/// </summary>
+	public decimal StopLossVal { get => _stopLoss.Value; set => _stopLoss.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Initializes a new instance of the strategy.
-	/// </summary>
 	public Binario31Strategy()
 	{
-		_emaLength = Param(nameof(EmaLength), 144)
+		_emaLength = Param(nameof(EmaLength), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("EMA Length", "EMA period for high and low bands", "General")
-			
-			.SetOptimize(50, 200, 10);
+			.SetDisplay("EMA Length", "EMA period", "Indicator");
 
-		_pipDifference = Param(nameof(PipDifference), 25m)
-			.SetGreaterThanZero()
-			.SetDisplay("Pip Difference", "Distance from EMA to entry", "General")
-			
-			.SetOptimize(10m, 50m, 5m);
+		_channelOffset = Param(nameof(ChannelOffset), 50m)
+			.SetDisplay("Channel Offset", "Distance from EMA for channel", "Indicator");
 
-		_takeProfit = Param(nameof(TakeProfit), 850m)
-			.SetGreaterThanZero()
-			.SetDisplay("Take Profit", "Take profit in price steps", "Risk")
-			
-			.SetOptimize(100m, 1000m, 100m);
+		_takeProfit = Param(nameof(TakeProfit), 2000m)
+			.SetDisplay("Take Profit", "Take profit distance", "Risk");
 
-		_trailingStop = Param(nameof(TrailingStop), 850m)
-			.SetGreaterThanZero()
-			.SetDisplay("Trailing Stop", "Trailing stop in price steps", "Risk")
-			
-			.SetOptimize(100m, 1000m, 100m);
+		_stopLoss = Param(nameof(StopLossVal), 1500m)
+			.SetDisplay("Stop Loss", "Stop loss distance", "Risk");
 
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		ResetLevels();
+		_entryPrice = 0;
 	}
 
 	/// <inheritdoc />
@@ -116,113 +66,55 @@ public class Binario31Strategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_emaHigh = new ExponentialMovingAverage { Length = EmaLength };
-		_emaLow = new ExponentialMovingAverage { Length = EmaLength };
+		var ema = new ExponentialMovingAverage { Length = EmaLength };
 
-		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawOwnTrades(area);
-		}
+		SubscribeCandles(CandleType)
+			.Bind(ema, ProcessCandle)
+			.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal emaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var step = Security.PriceStep ?? 1m;
-
-		var emaHigh = _emaHigh.Process(new DecimalIndicatorValue(_emaHigh, candle.HighPrice, candle.OpenTime) { IsFinal = true }).ToDecimal();
-		var emaLow = _emaLow.Process(new DecimalIndicatorValue(_emaLow, candle.LowPrice, candle.OpenTime) { IsFinal = true }).ToDecimal();
-
-		if (!IsOnline || !_emaHigh.IsFormed || !_emaLow.IsFormed)
-			return;
-
 		var close = candle.ClosePrice;
+		var upperBand = emaValue + ChannelOffset;
+		var lowerBand = emaValue - ChannelOffset;
 
-		// When price is inside the channel calculate entry levels.
-		if (Position == 0 && close < emaHigh && close > emaLow)
+		// Exit management
+		if (Position > 0)
 		{
-			_buyLevel = emaHigh + PipDifference * step;
-			_buyStop = emaLow - step;
-			_buyTarget = _buyLevel + TakeProfit * step;
-
-			_sellLevel = emaLow - PipDifference * step;
-			_sellStop = emaHigh + step;
-			_sellTarget = _sellLevel - TakeProfit * step;
-		}
-
-		if (Position == 0)
-		{
-			if (_buyLevel != 0m && candle.HighPrice >= _buyLevel)
+			var profit = close - _entryPrice;
+			if ((TakeProfit > 0 && profit >= TakeProfit) || (StopLossVal > 0 && -profit >= StopLossVal))
 			{
-				BuyMarket(Volume);
-				_stopPrice = _buyStop;
-				_targetPrice = _buyTarget;
-				_buyLevel = _sellLevel = 0m;
-			}
-			else if (_sellLevel != 0m && candle.LowPrice <= _sellLevel)
-			{
-				SellMarket(Volume);
-				_stopPrice = _sellStop;
-				_targetPrice = _sellTarget;
-				_buyLevel = _sellLevel = 0m;
-			}
-		}
-		else if (Position > 0)
-		{
-			if (candle.LowPrice <= _stopPrice || close <= _stopPrice)
-			{
-				SellMarket(Math.Abs(Position));
-				ResetLevels();
-			}
-			else if (candle.HighPrice >= _targetPrice || close >= _targetPrice)
-			{
-				SellMarket(Math.Abs(Position));
-				ResetLevels();
-			}
-			else if (TrailingStop > 0m)
-			{
-				var trail = close - TrailingStop * step;
-				if (trail > _stopPrice)
-					_stopPrice = trail;
+				SellMarket();
+				return;
 			}
 		}
 		else if (Position < 0)
 		{
-			if (candle.HighPrice >= _stopPrice || close >= _stopPrice)
+			var profit = _entryPrice - close;
+			if ((TakeProfit > 0 && profit >= TakeProfit) || (StopLossVal > 0 && -profit >= StopLossVal))
 			{
-				BuyMarket(Math.Abs(Position));
-				ResetLevels();
-			}
-			else if (candle.LowPrice <= _targetPrice || close <= _targetPrice)
-			{
-				BuyMarket(Math.Abs(Position));
-				ResetLevels();
-			}
-			else if (TrailingStop > 0m)
-			{
-				var trail = close + TrailingStop * step;
-				if (_stopPrice == 0m || trail < _stopPrice)
-					_stopPrice = trail;
+				BuyMarket();
+				return;
 			}
 		}
-	}
 
-	private void ResetLevels()
-	{
-		_buyLevel = 0m;
-		_sellLevel = 0m;
-		_buyStop = 0m;
-		_sellStop = 0m;
-		_buyTarget = 0m;
-		_sellTarget = 0m;
-		_stopPrice = 0m;
-		_targetPrice = 0m;
+		// Entry: channel breakout
+		if (Position == 0)
+		{
+			if (close > upperBand)
+			{
+				BuyMarket();
+				_entryPrice = close;
+			}
+			else if (close < lowerBand)
+			{
+				SellMarket();
+				_entryPrice = close;
+			}
+		}
 	}
 }

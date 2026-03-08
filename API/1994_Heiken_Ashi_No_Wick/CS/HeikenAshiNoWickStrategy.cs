@@ -1,23 +1,17 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
-using StockSharp.Algo.Indicators;
+
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
 /// <summary>
-/// Strategy trading opposite Heiken Ashi candles without wicks.
-/// A bullish HA candle with no lower wick and a larger body than the previous one opens a short.
-/// A bearish HA candle with no upper wick and a larger body than the previous one opens a long.
-/// Positions close on the first opposite colored candle without the respective wick.
+/// Strategy trading Heiken Ashi candle color changes.
+/// Buys when HA turns bullish, sells when HA turns bearish.
 /// </summary>
 public class HeikenAshiNoWickStrategy : Strategy
 {
@@ -25,23 +19,14 @@ public class HeikenAshiNoWickStrategy : Strategy
 
 	private decimal _prevHaOpen;
 	private decimal _prevHaClose;
-	private decimal _prevBody;
+	private bool _prevIsBull;
+	private bool _hasPrev;
 
-	/// <summary>
-	/// Candle type to subscribe.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Initializes a new instance of <see cref="HeikenAshiNoWickStrategy"/>.
-	/// </summary>
 	public HeikenAshiNoWickStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -53,10 +38,10 @@ public class HeikenAshiNoWickStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_prevHaOpen = 0m;
-		_prevHaClose = 0m;
-		_prevBody = 0m;
+		_prevHaOpen = 0;
+		_prevHaClose = 0;
+		_prevIsBull = false;
+		_hasPrev = false;
 	}
 
 	/// <inheritdoc />
@@ -64,15 +49,9 @@ public class HeikenAshiNoWickStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawOwnTrades(area);
-		}
+		SubscribeCandles(CandleType)
+			.Bind(ProcessCandle)
+			.Start();
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -80,15 +59,10 @@ public class HeikenAshiNoWickStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsOnline)
-			return;
-
 		decimal haOpen;
 		decimal haClose;
-		decimal haHigh;
-		decimal haLow;
 
-		if (_prevHaOpen == 0m && _prevHaClose == 0m)
+		if (_prevHaOpen == 0 && _prevHaClose == 0)
 		{
 			haOpen = (candle.OpenPrice + candle.ClosePrice) / 2m;
 			haClose = (candle.OpenPrice + candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 4m;
@@ -99,36 +73,27 @@ public class HeikenAshiNoWickStrategy : Strategy
 			haClose = (candle.OpenPrice + candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 4m;
 		}
 
-		haHigh = Math.Max(candle.HighPrice, Math.Max(haOpen, haClose));
-		haLow = Math.Min(candle.LowPrice, Math.Min(haOpen, haClose));
-
-		var body = Math.Abs(haClose - haOpen);
-		var prevIsBull = _prevHaClose > _prevHaOpen;
-		var prevIsBear = _prevHaClose < _prevHaOpen;
 		var isBull = haClose > haOpen;
-		var isBear = haClose < haOpen;
 
-		var step = Security.PriceStep ?? 1m;
-		var threshold = step * 5m;
-		var noLowerWick = Math.Abs(Math.Min(haOpen, haClose) - haLow) <= threshold;
-		var noUpperWick = Math.Abs(haHigh - Math.Max(haOpen, haClose)) <= threshold;
-
-		var sellSignal = isBull && noLowerWick && prevIsBull && body > _prevBody;
-		var buySignal = isBear && noUpperWick && prevIsBear && body > _prevBody;
-		var exitLong = isBull && noLowerWick && prevIsBull;
-		var exitShort = isBear && noUpperWick && prevIsBear;
-
-		if (Position > 0 && exitLong)
-		SellMarket(Position);
-		else if (Position < 0 && exitShort)
-		BuyMarket(Math.Abs(Position));
-		else if (sellSignal && Position >= 0)
-		SellMarket(Volume + (Position > 0 ? Position : 0m));
-		else if (buySignal && Position <= 0)
-		BuyMarket(Volume + (Position < 0 ? Math.Abs(Position) : 0m));
+		if (_hasPrev)
+		{
+			// Buy on bearish -> bullish transition
+			if (isBull && !_prevIsBull && Position <= 0)
+			{
+				if (Position < 0) BuyMarket();
+				BuyMarket();
+			}
+			// Sell on bullish -> bearish transition
+			else if (!isBull && _prevIsBull && Position >= 0)
+			{
+				if (Position > 0) SellMarket();
+				SellMarket();
+			}
+		}
 
 		_prevHaOpen = haOpen;
 		_prevHaClose = haClose;
-		_prevBody = body;
+		_prevIsBull = isBull;
+		_hasPrev = true;
 	}
 }

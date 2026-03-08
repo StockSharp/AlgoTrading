@@ -1,12 +1,8 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -15,6 +11,7 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Trade management strategy with break-even and trailing stop logic.
+/// Enters on candle direction, manages with SL/TP/trailing/breakeven.
 /// </summary>
 public class LacustStopAndBeStrategy : Strategy
 {
@@ -30,102 +27,43 @@ public class LacustStopAndBeStrategy : Strategy
 	private decimal _stopPrice;
 	private decimal _takePrice;
 
-
-	/// <summary>
-	/// Candle type for processing.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initial stop loss distance.
-	/// </summary>
-	public decimal StopLoss
-	{
-		get => _stopLoss.Value;
-		set => _stopLoss.Value = value;
-	}
-
-	/// <summary>
-	/// Initial take profit distance.
-	/// </summary>
-	public decimal TakeProfit
-	{
-		get => _takeProfit.Value;
-		set => _takeProfit.Value = value;
-	}
-
-	/// <summary>
-	/// Profit required to activate trailing stop.
-	/// </summary>
-	public decimal TrailingStart
-	{
-		get => _trailingStart.Value;
-		set => _trailingStart.Value = value;
-	}
-
-	/// <summary>
-	/// Trailing stop distance from current price.
-	/// </summary>
-	public decimal TrailingStop
-	{
-		get => _trailingStop.Value;
-		set => _trailingStop.Value = value;
-	}
-
-	/// <summary>
-	/// Profit required before moving stop to break-even.
-	/// </summary>
-	public decimal BreakevenGain
-	{
-		get => _breakevenGain.Value;
-		set => _breakevenGain.Value = value;
-	}
-
-	/// <summary>
-	/// Profit locked after moving stop to break-even.
-	/// </summary>
-	public decimal Breakeven
-	{
-		get => _breakeven.Value;
-		set => _breakeven.Value = value;
-	}
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
+	public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
+	public decimal TrailingStart { get => _trailingStart.Value; set => _trailingStart.Value = value; }
+	public decimal TrailingStop { get => _trailingStop.Value; set => _trailingStop.Value = value; }
+	public decimal BreakevenGain { get => _breakevenGain.Value; set => _breakevenGain.Value = value; }
+	public decimal Breakeven { get => _breakeven.Value; set => _breakeven.Value = value; }
 
 	public LacustStopAndBeStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle type", "Candle type", "General");
-		_stopLoss = Param(nameof(StopLoss), 40m)
-			.SetDisplay("Stop loss", "Stop loss", "General");
-		_takeProfit = Param(nameof(TakeProfit), 200m)
-			.SetDisplay("Take profit", "Take profit", "General");
-		_trailingStart = Param(nameof(TrailingStart), 30m)
-			.SetDisplay("Trailing start", "Trailing start", "General");
-		_trailingStop = Param(nameof(TrailingStop), 20m)
-			.SetDisplay("Trailing stop", "Trailing stop", "General");
-		_breakevenGain = Param(nameof(BreakevenGain), 25m)
-			.SetDisplay("Breakeven gain", "Breakeven gain", "General");
-		_breakeven = Param(nameof(Breakeven), 10m)
-			.SetDisplay("Breakeven", "Breakeven", "General");
+		_stopLoss = Param(nameof(StopLoss), 400m)
+			.SetDisplay("Stop loss", "Stop loss distance", "Risk");
+		_takeProfit = Param(nameof(TakeProfit), 2000m)
+			.SetDisplay("Take profit", "Take profit distance", "Risk");
+		_trailingStart = Param(nameof(TrailingStart), 300m)
+			.SetDisplay("Trailing start", "Profit to activate trailing", "Risk");
+		_trailingStop = Param(nameof(TrailingStop), 200m)
+			.SetDisplay("Trailing stop", "Trailing stop distance", "Risk");
+		_breakevenGain = Param(nameof(BreakevenGain), 250m)
+			.SetDisplay("Breakeven gain", "Profit for breakeven move", "Risk");
+		_breakeven = Param(nameof(Breakeven), 100m)
+			.SetDisplay("Breakeven", "Profit locked at breakeven", "Risk");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_entryPrice = default;
-		_stopPrice = default;
-		_takePrice = default;
+		_entryPrice = 0;
+		_stopPrice = 0;
+		_takePrice = 0;
 	}
 
 	/// <inheritdoc />
@@ -133,8 +71,7 @@ public class LacustStopAndBeStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var subscription = SubscribeCandles(CandleType);
-		subscription
+		SubscribeCandles(CandleType)
 			.Bind(ProcessCandle)
 			.Start();
 	}
@@ -142,9 +79,6 @@ public class LacustStopAndBeStrategy : Strategy
 	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsOnline)
 			return;
 
 		if (Position == 0)
@@ -156,7 +90,7 @@ public class LacustStopAndBeStrategy : Strategy
 				_stopPrice = _entryPrice - StopLoss;
 				_takePrice = _entryPrice + TakeProfit;
 			}
-			else
+			else if (candle.ClosePrice < candle.OpenPrice)
 			{
 				SellMarket();
 				_entryPrice = candle.ClosePrice;
@@ -175,14 +109,11 @@ public class LacustStopAndBeStrategy : Strategy
 				_stopPrice = candle.ClosePrice - TrailingStop;
 
 			if (candle.LowPrice <= _stopPrice || candle.HighPrice >= _takePrice)
-				{
-				if (Position > 0)
-					SellMarket(Position);
-				else if (Position < 0)
-					BuyMarket(Math.Abs(Position));
+			{
+				SellMarket();
 			}
 		}
-		else
+		else if (Position < 0)
 		{
 			if (_entryPrice - candle.ClosePrice >= BreakevenGain && _stopPrice > _entryPrice - Breakeven)
 				_stopPrice = _entryPrice - Breakeven;
@@ -191,11 +122,8 @@ public class LacustStopAndBeStrategy : Strategy
 				_stopPrice = candle.ClosePrice + TrailingStop;
 
 			if (candle.HighPrice >= _stopPrice || candle.LowPrice <= _takePrice)
-				{
-				if (Position > 0)
-					SellMarket(Position);
-				else if (Position < 0)
-					BuyMarket(Math.Abs(Position));
+			{
+				BuyMarket();
 			}
 		}
 	}

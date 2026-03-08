@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,103 +11,45 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Four Screens strategy using Heikin-Ashi candles on 5, 15, 30 and 60 minute timeframes.
+/// Strategy using Heikin-Ashi color with EMA filter.
+/// Buys when HA turns bullish and price above EMA.
+/// Sells when HA turns bearish and price below EMA.
 /// </summary>
 public class FourScreensStrategy : Strategy
 {
+	private readonly StrategyParam<int> _emaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<decimal> _stopLossPoints;
-	private readonly StrategyParam<decimal> _takeProfitPoints;
-	private readonly StrategyParam<bool> _useTrailing;
 
-	private decimal _prevHaOpen5;
-	private decimal _prevHaClose5;
-	private decimal _prevHaOpen15;
-	private decimal _prevHaClose15;
-	private decimal _prevHaOpen30;
-	private decimal _prevHaClose30;
-	private decimal _prevHaOpen60;
-	private decimal _prevHaClose60;
+	private decimal _prevHaOpen;
+	private decimal _prevHaClose;
+	private bool _prevIsBull;
+	private bool _hasPrev;
 
-	private bool? _bull5;
-	private bool? _bull15;
-	private bool? _bull30;
-	private bool? _bull60;
+	public int EmaPeriod { get => _emaPeriod.Value; set => _emaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Base candle type (5 minute).
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss distance in points.
-	/// </summary>
-	public decimal StopLossPoints
-	{
-		get => _stopLossPoints.Value;
-		set => _stopLossPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Take profit distance in points.
-	/// </summary>
-	public decimal TakeProfitPoints
-	{
-		get => _takeProfitPoints.Value;
-		set => _takeProfitPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Enable trailing stop.
-	/// </summary>
-	public bool UseTrailing
-	{
-		get => _useTrailing.Value;
-		set => _useTrailing.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="FourScreensStrategy"/>.
-	/// </summary>
 	public FourScreensStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Base timeframe for 5m candles", "General");
+		_emaPeriod = Param(nameof(EmaPeriod), 50)
+			.SetGreaterThanZero()
+			.SetDisplay("EMA Period", "EMA trend filter period", "Indicator");
 
-		_stopLossPoints = Param(nameof(StopLossPoints), 20m)
-			.SetDisplay("Stop Loss Points", "Stop-loss distance in points", "Risk");
-
-		_takeProfitPoints = Param(nameof(TakeProfitPoints), 20m)
-			.SetDisplay("Take Profit Points", "Take-profit distance in points", "Risk");
-
-		_useTrailing = Param(nameof(UseTrailing), true)
-			.SetDisplay("Use Trailing", "Enable trailing stop", "Risk");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		yield return (Security, CandleType);
-		yield return (Security, TimeSpan.FromMinutes(15).TimeFrame());
-		yield return (Security, TimeSpan.FromMinutes(30).TimeFrame());
-		yield return (Security, TimeSpan.FromMinutes(60).TimeFrame());
-	}
+		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_prevHaOpen5 = _prevHaClose5 = 0m;
-		_prevHaOpen15 = _prevHaClose15 = 0m;
-		_prevHaOpen30 = _prevHaClose30 = 0m;
-		_prevHaOpen60 = _prevHaClose60 = 0m;
-
-		_bull5 = _bull15 = _bull30 = _bull60 = null;
+		_prevHaOpen = 0;
+		_prevHaClose = 0;
+		_prevIsBull = false;
+		_hasPrev = false;
 	}
 
 	/// <inheritdoc />
@@ -118,98 +57,55 @@ public class FourScreensStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		StartProtection(
-			takeProfit: new Unit(TakeProfitPoints, UnitTypes.Absolute),
-			stopLoss: new Unit(StopLossPoints, UnitTypes.Absolute),
-			isStopTrailing: UseTrailing);
+		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
 
-		var sub5 = SubscribeCandles(CandleType);
-		sub5.Bind(ProcessCandle5).Start();
+		SubscribeCandles(CandleType)
+			.Bind(ema, ProcessCandle)
+			.Start();
+	}
 
-		var sub15 = SubscribeCandles(TimeSpan.FromMinutes(15).TimeFrame());
-		sub15.Bind(ProcessCandle15).Start();
+	private void ProcessCandle(ICandleMessage candle, decimal emaValue)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
 
-		var sub30 = SubscribeCandles(TimeSpan.FromMinutes(30).TimeFrame());
-		sub30.Bind(ProcessCandle30).Start();
+		// Calculate Heikin-Ashi
+		decimal haOpen;
+		decimal haClose;
 
-		var sub60 = SubscribeCandles(TimeSpan.FromMinutes(60).TimeFrame());
-		sub60.Bind(ProcessCandle60).Start();
-
-		var area = CreateChartArea();
-		if (area != null)
+		if (_prevHaOpen == 0 && _prevHaClose == 0)
 		{
-			DrawCandles(area, sub5);
-			DrawOwnTrades(area);
+			haOpen = (candle.OpenPrice + candle.ClosePrice) / 2m;
+			haClose = (candle.OpenPrice + candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 4m;
 		}
-	}
-
-	private void ProcessCandle5(ICandleMessage candle)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		var (haOpen, haClose) = CalcHeikinAshi(candle, ref _prevHaOpen5, ref _prevHaClose5);
-		_bull5 = haClose > haOpen;
-		CheckSignal();
-	}
-
-	private void ProcessCandle15(ICandleMessage candle)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		var (haOpen, haClose) = CalcHeikinAshi(candle, ref _prevHaOpen15, ref _prevHaClose15);
-		_bull15 = haClose > haOpen;
-		CheckSignal();
-	}
-
-	private void ProcessCandle30(ICandleMessage candle)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		var (haOpen, haClose) = CalcHeikinAshi(candle, ref _prevHaOpen30, ref _prevHaClose30);
-		_bull30 = haClose > haOpen;
-		CheckSignal();
-	}
-
-	private void ProcessCandle60(ICandleMessage candle)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		var (haOpen, haClose) = CalcHeikinAshi(candle, ref _prevHaOpen60, ref _prevHaClose60);
-		_bull60 = haClose > haOpen;
-		CheckSignal();
-	}
-
-	private static (decimal haOpen, decimal haClose) CalcHeikinAshi(ICandleMessage candle, ref decimal prevOpen, ref decimal prevClose)
-	{
-		var haClose = (candle.OpenPrice + candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 4m;
-		var haOpen = prevOpen == 0m ? (candle.OpenPrice + candle.ClosePrice) / 2m : (prevOpen + prevClose) / 2m;
-		prevOpen = haOpen;
-		prevClose = haClose;
-		return (haOpen, haClose);
-	}
-
-	private void CheckSignal()
-	{
-		if (!IsFormedAndOnline())
-			return;
-
-		if (_bull5 is null || _bull15 is null || _bull30 is null || _bull60 is null)
-			return;
-
-		var allBull = _bull5.Value && _bull15.Value && _bull30.Value && _bull60.Value;
-		var allBear = !_bull5.Value && !_bull15.Value && !_bull30.Value && !_bull60.Value;
-
-		if (allBull && Position <= 0)
+		else
 		{
-			BuyMarket(Volume + Math.Abs(Position));
+			haOpen = (_prevHaOpen + _prevHaClose) / 2m;
+			haClose = (candle.OpenPrice + candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 4m;
 		}
-		else if (allBear && Position >= 0)
+
+		var isBull = haClose > haOpen;
+		var close = candle.ClosePrice;
+
+		if (_hasPrev)
 		{
-			SellMarket(Volume + Math.Abs(Position));
+			// Buy: HA turns bullish + price above EMA
+			if (isBull && !_prevIsBull && close > emaValue && Position <= 0)
+			{
+				if (Position < 0) BuyMarket();
+				BuyMarket();
+			}
+			// Sell: HA turns bearish + price below EMA
+			else if (!isBull && _prevIsBull && close < emaValue && Position >= 0)
+			{
+				if (Position > 0) SellMarket();
+				SellMarket();
+			}
 		}
+
+		_prevHaOpen = haOpen;
+		_prevHaClose = haClose;
+		_prevIsBull = isBull;
+		_hasPrev = true;
 	}
 }

@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,98 +11,42 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Exponential moving average slope reversal strategy.
-/// Enters long when the EMA turns up after falling.
-/// Enters short when the EMA turns down after rising.
-/// Supports optional stop-loss and take-profit in price units.
+/// EMA slope reversal strategy.
+/// Enters long when EMA turns up, short when EMA turns down.
 /// </summary>
 public class ExpMovingAverageFnStrategy : Strategy
 {
 	private readonly StrategyParam<int> _length;
-	private readonly StrategyParam<decimal> _stopLoss;
-	private readonly StrategyParam<decimal> _takeProfit;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevValue;
-	private decimal _prevPrevValue;
-	private decimal _entryPrice;
-	private bool _isInitialized;
+	private decimal _prevEma;
+	private decimal _prevPrevEma;
+	private int _count;
 
-	/// <summary>
-	/// EMA period length.
-	/// </summary>
-	public int Length
-	{
-		get => _length.Value;
-		set => _length.Value = value;
-	}
+	public int Length { get => _length.Value; set => _length.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Absolute stop-loss value.
-	/// </summary>
-	public decimal StopLoss
-	{
-		get => _stopLoss.Value;
-		set => _stopLoss.Value = value;
-	}
-
-	/// <summary>
-	/// Absolute take-profit value.
-	/// </summary>
-	public decimal TakeProfit
-	{
-		get => _takeProfit.Value;
-		set => _takeProfit.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type for EMA calculation.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Constructor.
-	/// </summary>
 	public ExpMovingAverageFnStrategy()
 	{
 		_length = Param(nameof(Length), 12)
 			.SetGreaterThanZero()
-			.SetDisplay("EMA Length", "Period of the exponential moving average", "Indicator")
-			
-			.SetOptimize(5, 50, 5);
+			.SetDisplay("EMA Length", "EMA period", "Indicator");
 
-		_stopLoss = Param(nameof(StopLoss), 1000m)
-			.SetDisplay("Stop Loss", "Absolute stop-loss in price units", "Risk Management")
-			
-			.SetOptimize(500m, 2000m, 500m);
-
-		_takeProfit = Param(nameof(TakeProfit), 2000m)
-			.SetDisplay("Take Profit", "Absolute take-profit in price units", "Risk Management")
-			
-			.SetOptimize(1000m, 4000m, 500m);
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Time frame for EMA calculation", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+			.SetDisplay("Candle Type", "Candle timeframe", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevValue = 0m;
-		_prevPrevValue = 0m;
-		_entryPrice = 0m;
-		_isInitialized = false;
+		_prevEma = 0;
+		_prevPrevEma = 0;
+		_count = 0;
 	}
 
 	/// <inheritdoc />
@@ -114,84 +55,43 @@ public class ExpMovingAverageFnStrategy : Strategy
 		base.OnStarted2(time);
 
 		var ema = new ExponentialMovingAverage { Length = Length };
-		var subscription = SubscribeCandles(CandleType);
 
-		subscription
+		SubscribeCandles(CandleType)
 			.Bind(ema, ProcessCandle)
 			.Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, ema);
-			DrawOwnTrades(area);
-		}
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal emaValue)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
+		_count++;
 
-		if (!_isInitialized)
+		if (_count < 3)
 		{
-		_prevPrevValue = _prevValue;
-		_prevValue = emaValue;
-		if (_prevPrevValue != 0m)
-		_isInitialized = true;
-		return;
+			_prevPrevEma = _prevEma;
+			_prevEma = emaValue;
+			return;
 		}
 
-		var wasFalling = _prevValue < _prevPrevValue;
-		var isRising = emaValue > _prevValue;
+		// Buy when EMA turns up
+		var turnUp = _prevEma < _prevPrevEma && emaValue > _prevEma;
+		// Sell when EMA turns down
+		var turnDown = _prevEma > _prevPrevEma && emaValue < _prevEma;
 
-		if (wasFalling && isRising)
+		if (turnUp && Position <= 0)
 		{
-		BuyMarket(Volume + Math.Abs(Position));
-		_entryPrice = candle.ClosePrice;
+			if (Position < 0) BuyMarket();
+			BuyMarket();
 		}
-		else if (!wasFalling && !isRising)
+		else if (turnDown && Position >= 0)
 		{
-		SellMarket(Volume + Math.Abs(Position));
-		_entryPrice = candle.ClosePrice;
+			if (Position > 0) SellMarket();
+			SellMarket();
 		}
 
-		CheckRisk(candle);
-
-		_prevPrevValue = _prevValue;
-		_prevValue = emaValue;
-	}
-
-	private void CheckRisk(ICandleMessage candle)
-	{
-		if (_entryPrice == 0m)
-		return;
-
-		if (Position > 0)
-		{
-		if (StopLoss > 0m && candle.ClosePrice <= _entryPrice - StopLoss)
-		{
-		SellMarket(Math.Abs(Position));
-		}
-		else if (TakeProfit > 0m && candle.ClosePrice >= _entryPrice + TakeProfit)
-		{
-		SellMarket(Math.Abs(Position));
-		}
-		}
-		else if (Position < 0)
-		{
-		if (StopLoss > 0m && candle.ClosePrice >= _entryPrice + StopLoss)
-		{
-		BuyMarket(Math.Abs(Position));
-		}
-		else if (TakeProfit > 0m && candle.ClosePrice <= _entryPrice - TakeProfit)
-		{
-		BuyMarket(Math.Abs(Position));
-		}
-		}
+		_prevPrevEma = _prevEma;
+		_prevEma = emaValue;
 	}
 }

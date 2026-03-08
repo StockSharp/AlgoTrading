@@ -1,12 +1,8 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -14,9 +10,9 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Alternating buy/sell strategy with martingale-based take profit.
-/// Opens trades in opposite direction after each close and enlarges
-/// take profit after losses.
+/// Alternating buy/sell strategy with martingale take profit.
+/// Opens trades in opposite direction after each close,
+/// enlarges take profit after losses.
 /// </summary>
 public class SuperTakeStrategy : Strategy
 {
@@ -32,82 +28,40 @@ public class SuperTakeStrategy : Strategy
 	private bool _lastTradeWasLoss;
 	private bool? _lastClosedWasBuy;
 
-	/// <summary>
-	/// Base take profit distance in price units.
-	/// </summary>
-	public decimal TakeProfit
-	{
-		get => _takeProfit.Value;
-		set => _takeProfit.Value = value;
-	}
+	public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
+	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
+	public decimal MartinFactor { get => _martinFactor.Value; set => _martinFactor.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Stop loss distance in price units.
-	/// </summary>
-	public decimal StopLoss
-	{
-		get => _stopLoss.Value;
-		set => _stopLoss.Value = value;
-	}
-
-	/// <summary>
-	/// Multiplier for take profit after a losing trade.
-	/// </summary>
-	public decimal MartinFactor
-	{
-		get => _martinFactor.Value;
-		set => _martinFactor.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used to drive strategy logic.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initialize <see cref="SuperTakeStrategy"/>.
-	/// </summary>
 	public SuperTakeStrategy()
 	{
-		_takeProfit = Param(nameof(TakeProfit), 10m)
-		.SetGreaterThanZero()
-		.SetDisplay("Base Take Profit", "Base take profit distance in price units", "Parameters")
-		
-		.SetOptimize(5m, 20m, 5m);
+		_takeProfit = Param(nameof(TakeProfit), 3000m)
+			.SetGreaterThanZero()
+			.SetDisplay("Take Profit", "Base take profit distance", "Risk");
 
-		_stopLoss = Param(nameof(StopLoss), 15m)
-		.SetGreaterThanZero()
-		.SetDisplay("Stop Loss", "Stop loss distance in price units", "Parameters")
-		
-		.SetOptimize(5m, 30m, 5m);
+		_stopLoss = Param(nameof(StopLoss), 5000m)
+			.SetGreaterThanZero()
+			.SetDisplay("Stop Loss", "Stop loss distance", "Risk");
 
-		_martinFactor = Param(nameof(MartinFactor), 1.8m)
-		.SetGreaterThanZero()
-		.SetDisplay("Martingale Factor", "Multiplier for take profit after a losing trade", "Parameters")
-		
-		.SetOptimize(1m, 3m, 0.2m);
+		_martinFactor = Param(nameof(MartinFactor), 1.5m)
+			.SetGreaterThanZero()
+			.SetDisplay("Martingale Factor", "Multiplier after losing trade", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-		.SetDisplay("Candle Type", "Type of candles to drive the logic", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
+
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_entryPrice = 0m;
-		_currentTakeProfit = 0m;
-		_lastTakeProfitDistance = 0m;
+		_entryPrice = 0;
+		_currentTakeProfit = 0;
+		_lastTakeProfitDistance = 0;
 		_isLong = false;
 		_lastTradeWasLoss = false;
 		_lastClosedWasBuy = null;
@@ -120,18 +74,15 @@ public class SuperTakeStrategy : Strategy
 
 		_lastTakeProfitDistance = TakeProfit;
 
-		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
-
-		// Protection handled internally by the strategy
+		SubscribeCandles(CandleType)
+			.Bind(ProcessCandle)
+			.Start();
 	}
+
 	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
-
-		if (!IsOnline)
-		return;
+			return;
 
 		if (Position != 0)
 		{
@@ -141,19 +92,19 @@ public class SuperTakeStrategy : Strategy
 
 				if (profit >= _currentTakeProfit)
 				{
-					SellMarket(Position);
+					SellMarket();
 					_lastTradeWasLoss = false;
 					_lastTakeProfitDistance = _currentTakeProfit;
 					_lastClosedWasBuy = true;
-					_entryPrice = 0m;
+					_entryPrice = 0;
 				}
 				else if (profit <= -StopLoss)
 				{
-					SellMarket(Position);
+					SellMarket();
 					_lastTradeWasLoss = true;
 					_lastTakeProfitDistance = _currentTakeProfit;
 					_lastClosedWasBuy = true;
-					_entryPrice = 0m;
+					_entryPrice = 0;
 				}
 			}
 			else
@@ -162,19 +113,19 @@ public class SuperTakeStrategy : Strategy
 
 				if (profit >= _currentTakeProfit)
 				{
-					BuyMarket(Math.Abs(Position));
+					BuyMarket();
 					_lastTradeWasLoss = false;
 					_lastTakeProfitDistance = _currentTakeProfit;
 					_lastClosedWasBuy = false;
-					_entryPrice = 0m;
+					_entryPrice = 0;
 				}
 				else if (profit <= -StopLoss)
 				{
-					BuyMarket(Math.Abs(Position));
+					BuyMarket();
 					_lastTradeWasLoss = true;
 					_lastTakeProfitDistance = _currentTakeProfit;
 					_lastClosedWasBuy = false;
-					_entryPrice = 0m;
+					_entryPrice = 0;
 				}
 			}
 
@@ -184,18 +135,18 @@ public class SuperTakeStrategy : Strategy
 		var openBuy = _lastClosedWasBuy is not true;
 
 		_currentTakeProfit = _lastTradeWasLoss
-		? _lastTakeProfitDistance * MartinFactor
-		: TakeProfit;
+			? _lastTakeProfitDistance * MartinFactor
+			: TakeProfit;
 
 		if (openBuy)
 		{
-			BuyMarket(Volume);
+			BuyMarket();
 			_entryPrice = candle.ClosePrice;
 			_isLong = true;
 		}
 		else
 		{
-			SellMarket(Volume);
+			SellMarket();
 			_entryPrice = candle.ClosePrice;
 			_isLong = false;
 		}
