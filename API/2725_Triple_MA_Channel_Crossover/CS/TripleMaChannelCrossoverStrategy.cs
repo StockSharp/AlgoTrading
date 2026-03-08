@@ -281,7 +281,7 @@ public class TripleMaChannelCrossoverStrategy : Strategy
 		_useAutoTargets = Param(nameof(UseAutoTargets), false)
 			.SetDisplay("Auto SL/TP", "Use channel for stop & take", "Risk");
 
-		_tradeOnClose = Param(nameof(TradeOnClose), true)
+		_tradeOnClose = Param(nameof(TradeOnClose), false)
 			.SetDisplay("Trade On Close", "Confirm cross on closed bar", "Signals");
 
 		_maxPositionCount = Param(nameof(MaxPositionCount), 5)
@@ -322,7 +322,7 @@ public class TripleMaChannelCrossoverStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Channel Period", "Price channel lookback", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe", "General");
 	}
 
@@ -348,6 +348,7 @@ public class TripleMaChannelCrossoverStrategy : Strategy
 		_shortTake = null;
 		_shortEntryPrice = 0m;
 		_shortBreakEvenActivated = false;
+		_tickSize = 0m;
 	}
 
 	/// <inheritdoc />
@@ -462,12 +463,11 @@ public class TripleMaChannelCrossoverStrategy : Strategy
 			if (targetVolume <= 0m)
 				return;
 
-			BuyMarket(targetVolume);
+			BuyMarket();
 		}
 		else
 		{
-			var requiredVolume = Volume + Math.Abs(Position);
-			BuyMarket(requiredVolume);
+			BuyMarket();
 			ResetShortState();
 		}
 
@@ -489,12 +489,11 @@ public class TripleMaChannelCrossoverStrategy : Strategy
 			if (targetVolume <= 0m)
 				return;
 
-			SellMarket(targetVolume);
+			SellMarket();
 		}
 		else
 		{
-			var requiredVolume = Volume + Position;
-			SellMarket(requiredVolume);
+			SellMarket();
 			ResetLongState();
 		}
 
@@ -699,12 +698,12 @@ public class TripleMaChannelCrossoverStrategy : Strategy
 		{
 			if (_longTake is decimal take && candle.HighPrice >= take)
 			{
-				SellMarket(Position);
+				SellMarket();
 				ResetLongState();
 			}
 			else if (_longStop is decimal stop && candle.LowPrice <= stop)
 			{
-				SellMarket(Position);
+				SellMarket();
 				ResetLongState();
 			}
 		}
@@ -712,12 +711,12 @@ public class TripleMaChannelCrossoverStrategy : Strategy
 		{
 			if (_shortTake is decimal take && candle.LowPrice <= take)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				ResetShortState();
 			}
 			else if (_shortStop is decimal stop && candle.HighPrice >= stop)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				ResetShortState();
 			}
 		}

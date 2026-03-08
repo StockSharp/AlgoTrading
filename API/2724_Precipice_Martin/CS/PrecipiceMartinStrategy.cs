@@ -95,7 +95,7 @@ public class PrecipiceMartinStrategy : Strategy
 		_martingaleCoefficient = Param(nameof(MartingaleCoefficient), 1.6m)
 			.SetDisplay("Martingale Coefficient", "Multiplier applied after losses", "Position sizing")
 			.SetGreaterThanZero();
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used to generate trading bars", "General");
 	}
 
@@ -224,7 +224,8 @@ public class PrecipiceMartinStrategy : Strategy
 
 		var entryPrice = candle.ClosePrice;
 
-		BuyMarket(volume);
+		Volume = volume;
+		BuyMarket();
 
 		_longEntryPrice = entryPrice;
 		_lastLongVolume = volume;
@@ -260,7 +261,8 @@ public class PrecipiceMartinStrategy : Strategy
 
 		var entryPrice = candle.ClosePrice;
 
-		SellMarket(volume);
+		Volume = volume;
+		SellMarket();
 
 		_shortEntryPrice = entryPrice;
 		_lastShortVolume = volume;
@@ -300,7 +302,7 @@ public class PrecipiceMartinStrategy : Strategy
 
 		var exitPrice = stopHit ? _longStopPrice!.Value : _longTakePrice!.Value;
 
-		SellMarket(volume);
+		SellMarket();
 
 		var pnl = (exitPrice - _longEntryPrice.Value) * volume;
 		UpdateMartingale(pnl);
@@ -329,7 +331,7 @@ public class PrecipiceMartinStrategy : Strategy
 
 		var exitPrice = stopHit ? _shortStopPrice!.Value : _shortTakePrice!.Value;
 
-		BuyMarket(volume);
+		BuyMarket();
 
 		var pnl = (_shortEntryPrice.Value - exitPrice) * volume;
 		UpdateMartingale(pnl);
