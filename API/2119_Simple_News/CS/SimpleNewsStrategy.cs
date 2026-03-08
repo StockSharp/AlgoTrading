@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -44,7 +45,7 @@ public class SimpleNewsStrategy : Strategy
 
 	public SimpleNewsStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
@@ -52,6 +53,23 @@ public class SimpleNewsStrategy : Strategy
 
 		_atrMultiplier = Param(nameof(AtrMultiplier), 1.0m)
 			.SetDisplay("ATR Multiplier", "Multiplier for breakout distance", "Parameters");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevAtr = 0;
+		_prevHigh = 0;
+		_prevLow = 0;
+		_entryPrice = 0;
+		_hasPrev = false;
 	}
 
 	/// <inheritdoc />
@@ -69,7 +87,7 @@ public class SimpleNewsStrategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(atr, ProcessCandle)
+			.BindEx(atr, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -81,11 +99,15 @@ public class SimpleNewsStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal atrValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue atrInd)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		if (!atrInd.IsFormed)
+			return;
+
+		var atrValue = atrInd.ToDecimal();
 		var price = candle.ClosePrice;
 
 		// Exit logic

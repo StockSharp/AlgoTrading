@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -49,7 +50,7 @@ public class LevelsWithRevolveStrategy : Strategy
 
 	public LevelsWithRevolveStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type", "General");
 
 		_maPeriod = Param(nameof(MaPeriod), 50)
@@ -63,6 +64,22 @@ public class LevelsWithRevolveStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevPrice = 0;
+		_prevMa = 0;
+		_hasPrev = false;
+		_entryPrice = 0;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
@@ -72,7 +89,7 @@ public class LevelsWithRevolveStrategy : Strategy
 		_hasPrev = false;
 		_entryPrice = 0;
 
-		var ma = new SimpleMovingAverage { Length = MaPeriod };
+		var ma = new ExponentialMovingAverage { Length = MaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

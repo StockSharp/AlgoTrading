@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -52,7 +53,7 @@ public class AutoTradeWithBollingerBandsStrategy : Strategy
 
 	public AutoTradeWithBollingerBandsStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 
 		_bbPeriod = Param(nameof(BbPeriod), 20)
@@ -66,6 +67,12 @@ public class AutoTradeWithBollingerBandsStrategy : Strategy
 
 		_rsiOversold = Param(nameof(RsiOversold), 30m)
 			.SetDisplay("RSI Oversold", "RSI oversold level", "Indicators");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />

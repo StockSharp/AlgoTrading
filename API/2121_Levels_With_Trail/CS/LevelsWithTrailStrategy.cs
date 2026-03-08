@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -43,7 +44,7 @@ public class LevelsWithTrailStrategy : Strategy
 
 	public LevelsWithTrailStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type", "General");
 
 		_maPeriod = Param(nameof(MaPeriod), 50)
@@ -51,6 +52,23 @@ public class LevelsWithTrailStrategy : Strategy
 
 		_trailPct = Param(nameof(TrailPct), 1m)
 			.SetDisplay("Trail %", "Trailing stop percent", "Risk");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_entryPrice = 0;
+		_bestPrice = 0;
+		_prevPrice = 0;
+		_prevMa = 0;
+		_hasPrev = false;
 	}
 
 	/// <inheritdoc />
@@ -64,7 +82,7 @@ public class LevelsWithTrailStrategy : Strategy
 		_prevMa = 0;
 		_hasPrev = false;
 
-		var ma = new SimpleMovingAverage { Length = MaPeriod };
+		var ma = new ExponentialMovingAverage { Length = MaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
