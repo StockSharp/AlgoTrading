@@ -1,6 +1,7 @@
 namespace StockSharp.Samples.Strategies;
 
 using System;
+using System.Collections.Generic;
 
 using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
@@ -30,8 +31,20 @@ public class PedroModStrategy : Strategy
 		_bollingerWidth = Param(nameof(BollingerWidth), 1.5m)
 			.SetDisplay("Bollinger Width", "Standard deviation multiplier", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
 	}
 
 	/// <inheritdoc />
