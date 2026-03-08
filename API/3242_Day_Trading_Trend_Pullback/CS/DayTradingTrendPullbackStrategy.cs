@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 using Ecng.Common;
 
@@ -9,106 +10,81 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-/// <summary>
-/// Day Trading Trend Pullback strategy: uses EMA20/EMA100 for trend and
-/// enters on pullbacks to EMA20 in the direction of EMA100 trend.
-/// </summary>
 public class DayTradingTrendPullbackStrategy : Strategy
 {
-	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _shortEmaPeriod;
-	private readonly StrategyParam<int> _longEmaPeriod;
+	private readonly StrategyParam<int> _fastPeriod;
+	private readonly StrategyParam<int> _slowPeriod;
+	private readonly StrategyParam<int> _stopLossPoints;
+	private readonly StrategyParam<int> _takeProfitPoints;
 
-	private decimal _prevClose;
-	private bool _hasPrev;
+	private ExponentialMovingAverage _fast;
+	private ExponentialMovingAverage _slow;
 
-	/// <summary>
-	/// Constructor.
-	/// </summary>
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private decimal _entryPrice;
+	private int _cooldown;
+
+	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
+	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
+	public int StopLossPoints { get => _stopLossPoints.Value; set => _stopLossPoints.Value = value; }
+	public int TakeProfitPoints { get => _takeProfitPoints.Value; set => _takeProfitPoints.Value = value; }
+
 	public DayTradingTrendPullbackStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Candle timeframe", "General");
-
-		_shortEmaPeriod = Param(nameof(ShortEmaPeriod), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("Short EMA", "Short EMA for pullback detection", "Indicators");
-
-		_longEmaPeriod = Param(nameof(LongEmaPeriod), 100)
-			.SetGreaterThanZero()
-			.SetDisplay("Long EMA", "Long EMA for trend direction", "Indicators");
+		_fastPeriod = Param(nameof(FastPeriod), 14).SetGreaterThanZero().SetDisplay("Fast Period", "Fast EMA period", "Indicator");
+		_slowPeriod = Param(nameof(SlowPeriod), 50).SetGreaterThanZero().SetDisplay("Slow Period", "Slow EMA period", "Indicator");
+		_stopLossPoints = Param(nameof(StopLossPoints), 200).SetNotNegative().SetDisplay("Stop Loss", "Stop-loss in price steps", "Risk");
+		_takeProfitPoints = Param(nameof(TakeProfitPoints), 400).SetNotNegative().SetDisplay("Take Profit", "Take-profit in price steps", "Risk");
 	}
 
-	public DataType CandleType
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
+		yield return (Security, TimeSpan.FromMinutes(5).TimeFrame());
 	}
 
-	public int ShortEmaPeriod
+	protected override void OnReseted()
 	{
-		get => _shortEmaPeriod.Value;
-		set => _shortEmaPeriod.Value = value;
+		base.OnReseted();
+		_fast = null; _slow = null;
+		_prevFast = 0; _prevSlow = 0; _entryPrice = 0; _cooldown = 0;
 	}
 
-	public int LongEmaPeriod
-	{
-		get => _longEmaPeriod.Value;
-		set => _longEmaPeriod.Value = value;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_hasPrev = false;
-
-		var ema20 = new EMA { Length = ShortEmaPeriod };
-		var ema100 = new EMA { Length = LongEmaPeriod };
-
-		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(ema20, ema100, ProcessCandle)
-			.Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, ema20);
-			DrawIndicator(area, ema100);
-			DrawOwnTrades(area);
-		}
+		_fast = new ExponentialMovingAverage { Length = FastPeriod };
+		_slow = new ExponentialMovingAverage { Length = SlowPeriod };
+		var subscription = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
+		subscription.Bind(_fast, _slow, ProcessCandle);
+		subscription.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal ema20, decimal ema100)
+	private void ProcessCandle(ICandleMessage candle, decimal fastValue, decimal slowValue)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		if (candle.State != CandleStates.Finished) return;
+		if (!_fast.IsFormed || !_slow.IsFormed) { _prevFast = fastValue; _prevSlow = slowValue; return; }
+		if (_cooldown > 0) { _cooldown--; _prevFast = fastValue; _prevSlow = slowValue; return; }
 
 		var close = candle.ClosePrice;
-		var bullishTrend = ema20 > ema100;
-		var bearishTrend = ema20 < ema100;
+		var step = Security?.PriceStep ?? 1m;
 
-		if (_hasPrev)
+		if (Position > 0 && _entryPrice > 0)
 		{
-			// Pullback buy: bullish trend, previous close was below ema20, now above
-			if (bullishTrend && _prevClose < ema20 && close > ema20 && Position <= 0)
-			{
-				BuyMarket();
-			}
-			// Pullback sell: bearish trend, previous close was above ema20, now below
-			else if (bearishTrend && _prevClose > ema20 && close < ema20 && Position >= 0)
-			{
-				SellMarket();
-			}
+			if (StopLossPoints > 0 && close <= _entryPrice - StopLossPoints * step) { SellMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
+			if (TakeProfitPoints > 0 && close >= _entryPrice + TakeProfitPoints * step) { SellMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
+		}
+		else if (Position < 0 && _entryPrice > 0)
+		{
+			if (StopLossPoints > 0 && close >= _entryPrice + StopLossPoints * step) { BuyMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
+			if (TakeProfitPoints > 0 && close <= _entryPrice - TakeProfitPoints * step) { BuyMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
 		}
 
-		_prevClose = close;
-		_hasPrev = true;
+		if (_prevFast <= _prevSlow && fastValue > slowValue && Position <= 0)
+		{ if (Position < 0) BuyMarket(); BuyMarket(); _entryPrice = close; _cooldown = 100; }
+		else if (_prevFast >= _prevSlow && fastValue < slowValue && Position >= 0)
+		{ if (Position > 0) SellMarket(); SellMarket(); _entryPrice = close; _cooldown = 100; }
+
+		_prevFast = fastValue; _prevSlow = slowValue;
 	}
 }

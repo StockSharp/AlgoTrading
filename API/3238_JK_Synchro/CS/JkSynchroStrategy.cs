@@ -10,107 +10,81 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-/// <summary>
-/// JK Synchro strategy: counts bearish vs bullish candles in a rolling window
-/// and trades when one side dominates.
-/// </summary>
 public class JkSynchroStrategy : Strategy
 {
-	private readonly StrategyParam<int> _analysisPeriod;
-	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _fastPeriod;
+	private readonly StrategyParam<int> _slowPeriod;
+	private readonly StrategyParam<int> _stopLossPoints;
+	private readonly StrategyParam<int> _takeProfitPoints;
 
-	private readonly Queue<int> _directionWindow = new();
-	private int _bearishCount;
-	private int _bullishCount;
+	private ExponentialMovingAverage _fast;
+	private ExponentialMovingAverage _slow;
 
-	/// <summary>
-	/// Constructor.
-	/// </summary>
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private decimal _entryPrice;
+	private int _cooldown;
+
+	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
+	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
+	public int StopLossPoints { get => _stopLossPoints.Value; set => _stopLossPoints.Value = value; }
+	public int TakeProfitPoints { get => _takeProfitPoints.Value; set => _takeProfitPoints.Value = value; }
+
 	public JkSynchroStrategy()
 	{
-		_analysisPeriod = Param(nameof(AnalysisPeriod), 18)
-			.SetGreaterThanZero()
-			.SetDisplay("Analysis Period", "Number of candles in the vote window", "Signals");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Candle timeframe", "General");
+		_fastPeriod = Param(nameof(FastPeriod), 14).SetGreaterThanZero().SetDisplay("Fast Period", "Fast EMA period", "Indicator");
+		_slowPeriod = Param(nameof(SlowPeriod), 50).SetGreaterThanZero().SetDisplay("Slow Period", "Slow EMA period", "Indicator");
+		_stopLossPoints = Param(nameof(StopLossPoints), 200).SetNotNegative().SetDisplay("Stop Loss", "Stop-loss in price steps", "Risk");
+		_takeProfitPoints = Param(nameof(TakeProfitPoints), 400).SetNotNegative().SetDisplay("Take Profit", "Take-profit in price steps", "Risk");
 	}
 
-	public int AnalysisPeriod
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		get => _analysisPeriod.Value;
-		set => _analysisPeriod.Value = value;
+		yield return (Security, TimeSpan.FromMinutes(5).TimeFrame());
 	}
 
-	public DataType CandleType
+	protected override void OnReseted()
 	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
+		base.OnReseted();
+		_fast = null; _slow = null;
+		_prevFast = 0; _prevSlow = 0; _entryPrice = 0; _cooldown = 0;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_directionWindow.Clear();
-		_bearishCount = 0;
-		_bullishCount = 0;
-
-		var sma = new SMA { Length = AnalysisPeriod };
-
-		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(sma, ProcessCandle)
-			.Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, sma);
-			DrawOwnTrades(area);
-		}
+		_fast = new ExponentialMovingAverage { Length = FastPeriod };
+		_slow = new ExponentialMovingAverage { Length = SlowPeriod };
+		var subscription = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
+		subscription.Bind(_fast, _slow, ProcessCandle);
+		subscription.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
+	private void ProcessCandle(ICandleMessage candle, decimal fastValue, decimal slowValue)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
+		if (candle.State != CandleStates.Finished) return;
+		if (!_fast.IsFormed || !_slow.IsFormed) { _prevFast = fastValue; _prevSlow = slowValue; return; }
+		if (_cooldown > 0) { _cooldown--; _prevFast = fastValue; _prevSlow = slowValue; return; }
 
-		// Track candle direction in rolling window
-		var direction = 0;
-		if (candle.OpenPrice > candle.ClosePrice)
-			direction = 1; // bearish
-		else if (candle.OpenPrice < candle.ClosePrice)
-			direction = -1; // bullish
+		var close = candle.ClosePrice;
+		var step = Security?.PriceStep ?? 1m;
 
-		_directionWindow.Enqueue(direction);
-		if (direction > 0) _bearishCount++;
-		else if (direction < 0) _bullishCount++;
-
-		while (_directionWindow.Count > AnalysisPeriod)
+		if (Position > 0 && _entryPrice > 0)
 		{
-			var removed = _directionWindow.Dequeue();
-			if (removed > 0) _bearishCount--;
-			else if (removed < 0) _bullishCount--;
+			if (StopLossPoints > 0 && close <= _entryPrice - StopLossPoints * step) { SellMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
+			if (TakeProfitPoints > 0 && close >= _entryPrice + TakeProfitPoints * step) { SellMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
+		}
+		else if (Position < 0 && _entryPrice > 0)
+		{
+			if (StopLossPoints > 0 && close >= _entryPrice + StopLossPoints * step) { BuyMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
+			if (TakeProfitPoints > 0 && close <= _entryPrice - TakeProfitPoints * step) { BuyMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
 		}
 
-		if (_directionWindow.Count < AnalysisPeriod)
-			return;
+		if (_prevFast <= _prevSlow && fastValue > slowValue && Position <= 0)
+		{ if (Position < 0) BuyMarket(); BuyMarket(); _entryPrice = close; _cooldown = 100; }
+		else if (_prevFast >= _prevSlow && fastValue < slowValue && Position >= 0)
+		{ if (Position > 0) SellMarket(); SellMarket(); _entryPrice = close; _cooldown = 100; }
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		// When bearish candles dominate, expect reversal -> buy
-		if (_bearishCount > _bullishCount && Position <= 0)
-		{
-			BuyMarket();
-		}
-		// When bullish candles dominate, expect reversal -> sell
-		else if (_bullishCount > _bearishCount && Position >= 0)
-		{
-			SellMarket();
-		}
+		_prevFast = fastValue; _prevSlow = slowValue;
 	}
 }

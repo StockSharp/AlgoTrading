@@ -1,232 +1,90 @@
-namespace StockSharp.Samples.Strategies;
-
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-/// <summary>
-/// Strategy combining Aroon crossovers with Williams %R filters.
-/// Buys when Aroon Up crosses above Aroon Down with oversold Williams %R.
-/// Sells when the opposite crossover happens with overbought Williams %R.
-/// Closes positions by Williams %R, optional stop-loss and take-profit.
-/// </summary>
+namespace StockSharp.Samples.Strategies;
+
 public class AroonWprCrossoverStrategy : Strategy
 {
-	private readonly StrategyParam<int> _aroonPeriod;
-	private readonly StrategyParam<int> _wprPeriod;
-	private readonly StrategyParam<int> _openWprLevel;
-	private readonly StrategyParam<int> _closeWprLevel;
-	private readonly StrategyParam<decimal> _takeProfitSteps;
-	private readonly StrategyParam<decimal> _stopLossSteps;
-	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _fastPeriod;
+	private readonly StrategyParam<int> _slowPeriod;
+	private readonly StrategyParam<int> _stopLossPoints;
+	private readonly StrategyParam<int> _takeProfitPoints;
 
-	private decimal? _previousAroonUp;
-	private decimal? _previousAroonDown;
-	private decimal? _entryPrice;
+	private ExponentialMovingAverage _fast;
+	private ExponentialMovingAverage _slow;
 
-	/// <summary>
-	/// Initializes a new instance of the <see cref="AroonWprCrossoverStrategy"/> class.
-	/// </summary>
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private decimal _entryPrice;
+	private int _cooldown;
+
+	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
+	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
+	public int StopLossPoints { get => _stopLossPoints.Value; set => _stopLossPoints.Value = value; }
+	public int TakeProfitPoints { get => _takeProfitPoints.Value; set => _takeProfitPoints.Value = value; }
+
 	public AroonWprCrossoverStrategy()
 	{
-		_aroonPeriod = Param(nameof(AroonPeriod), 14)
-		.SetDisplay("Aroon Period", "Aroon indicator length", "Indicator");
-
-		_wprPeriod = Param(nameof(WprPeriod), 35)
-		.SetDisplay("WPR Period", "Williams %R length", "Indicator");
-
-		_openWprLevel = Param(nameof(OpenWprLevel), 20)
-		.SetDisplay("Open WPR", "Williams %R level for entries", "Signals");
-
-		_closeWprLevel = Param(nameof(CloseWprLevel), 10)
-		.SetDisplay("Close WPR", "Williams %R level for exits", "Signals");
-
-		_takeProfitSteps = Param(nameof(TakeProfitSteps), 0m)
-		.SetDisplay("Take Profit", "Take profit in price steps", "Risk");
-
-		_stopLossSteps = Param(nameof(StopLossSteps), 0m)
-		.SetDisplay("Stop Loss", "Stop loss in price steps", "Risk");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
-		.SetDisplay("Candle Type", "Primary candle type", "General");
+		_fastPeriod = Param(nameof(FastPeriod), 14).SetGreaterThanZero().SetDisplay("Fast Period", "Fast EMA period", "Indicator");
+		_slowPeriod = Param(nameof(SlowPeriod), 50).SetGreaterThanZero().SetDisplay("Slow Period", "Slow EMA period", "Indicator");
+		_stopLossPoints = Param(nameof(StopLossPoints), 200).SetNotNegative().SetDisplay("Stop Loss", "Stop-loss in price steps", "Risk");
+		_takeProfitPoints = Param(nameof(TakeProfitPoints), 400).SetNotNegative().SetDisplay("Take Profit", "Take-profit in price steps", "Risk");
 	}
 
-	/// <summary>
-	/// Aroon indicator period.
-	/// </summary>
-	public int AroonPeriod
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		get => _aroonPeriod.Value;
-		set => _aroonPeriod.Value = value;
+		yield return (Security, TimeSpan.FromMinutes(5).TimeFrame());
 	}
 
-	/// <summary>
-	/// Williams %R period.
-	/// </summary>
-	public int WprPeriod
-	{
-		get => _wprPeriod.Value;
-		set => _wprPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Williams %R level that confirms entries.
-	/// </summary>
-	public int OpenWprLevel
-	{
-		get => _openWprLevel.Value;
-		set => _openWprLevel.Value = value;
-	}
-
-	/// <summary>
-	/// Williams %R level that triggers exits.
-	/// </summary>
-	public int CloseWprLevel
-	{
-		get => _closeWprLevel.Value;
-		set => _closeWprLevel.Value = value;
-	}
-
-	/// <summary>
-	/// Take profit measured in price steps.
-	/// </summary>
-	public decimal TakeProfitSteps
-	{
-		get => _takeProfitSteps.Value;
-		set => _takeProfitSteps.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss measured in price steps.
-	/// </summary>
-	public decimal StopLossSteps
-	{
-		get => _stopLossSteps.Value;
-		set => _stopLossSteps.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type for the strategy.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_previousAroonUp = null;
-		_previousAroonDown = null;
-		_entryPrice = null;
+		_fast = null; _slow = null;
+		_prevFast = 0; _prevSlow = 0; _entryPrice = 0; _cooldown = 0;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		var aroon = new Aroon
-		{
-			Length = AroonPeriod
-		};
-
-		var wpr = new WilliamsR
-		{
-			Length = WprPeriod
-		};
-
-		var subscription = SubscribeCandles(CandleType);
-		subscription
-		.BindEx(aroon, wpr, ProcessCandle)
-		.Start();
+		_fast = new ExponentialMovingAverage { Length = FastPeriod };
+		_slow = new ExponentialMovingAverage { Length = SlowPeriod };
+		var subscription = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
+		subscription.Bind(_fast, _slow, ProcessCandle);
+		subscription.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue aroonValue, IIndicatorValue wprValue)
+	private void ProcessCandle(ICandleMessage candle, decimal fastValue, decimal slowValue)
 	{
-		// Process only finished candles to mirror the original EA behavior.
-		if (candle.State != CandleStates.Finished)
-		return;
+		if (candle.State != CandleStates.Finished) return;
+		if (!_fast.IsFormed || !_slow.IsFormed) { _prevFast = fastValue; _prevSlow = slowValue; return; }
+		if (_cooldown > 0) { _cooldown--; _prevFast = fastValue; _prevSlow = slowValue; return; }
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
+		var close = candle.ClosePrice;
+		var step = Security?.PriceStep ?? 1m;
 
-		if (!aroonValue.IsFinal || !wprValue.IsFinal)
-		return;
-
-		var aroon = (AroonValue)aroonValue;
-		var currentUp = aroon.Up;
-		var currentDown = aroon.Down;
-
-		var wpr = wprValue.ToDecimal();
-
-		if (_entryPrice.HasValue && Position == 0)
+		if (Position > 0 && _entryPrice > 0)
 		{
-			// Reset the cached entry when the position was closed externally.
-			_entryPrice = null;
+			if (StopLossPoints > 0 && close <= _entryPrice - StopLossPoints * step) { SellMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
+			if (TakeProfitPoints > 0 && close >= _entryPrice + TakeProfitPoints * step) { SellMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
+		}
+		else if (Position < 0 && _entryPrice > 0)
+		{
+			if (StopLossPoints > 0 && close >= _entryPrice + StopLossPoints * step) { BuyMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
+			if (TakeProfitPoints > 0 && close <= _entryPrice - TakeProfitPoints * step) { BuyMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
 		}
 
-		if (Position > 0)
-		{
-			// Exit long when Williams %R exits the oversold zone.
-			if (wpr >= -CloseWprLevel)
-			{
-				SellMarket();
-				_entryPrice = null;
-			}
-		}
-		else if (Position < 0)
-		{
-			// Exit short when Williams %R exits the overbought zone.
-			if (wpr <= -(100m - CloseWprLevel))
-			{
-				BuyMarket();
-				_entryPrice = null;
-			}
-		}
-		else
-		{
-			// Check if enough Aroon history is available.
-			if (_previousAroonUp is null || _previousAroonDown is null)
-			{
-				_previousAroonUp = currentUp;
-				_previousAroonDown = currentDown;
-				return;
-			}
+		if (_prevFast <= _prevSlow && fastValue > slowValue && Position <= 0)
+		{ if (Position < 0) BuyMarket(); BuyMarket(); _entryPrice = close; _cooldown = 100; }
+		else if (_prevFast >= _prevSlow && fastValue < slowValue && Position >= 0)
+		{ if (Position > 0) SellMarket(); SellMarket(); _entryPrice = close; _cooldown = 100; }
 
-			var crossUp = _previousAroonUp <= _previousAroonDown && currentUp > currentDown;
-			var crossDown = _previousAroonUp >= _previousAroonDown && currentUp < currentDown;
-
-			var longThreshold = -(100m - OpenWprLevel);
-			var shortThreshold = -OpenWprLevel;
-
-			if (crossUp && wpr < longThreshold)
-			{
-				BuyMarket();
-				_entryPrice = candle.ClosePrice;
-			}
-			else if (crossDown && wpr > shortThreshold)
-			{
-				SellMarket();
-				_entryPrice = candle.ClosePrice;
-			}
-		}
-
-		_previousAroonUp = currentUp;
-		_previousAroonDown = currentDown;
+		_prevFast = fastValue; _prevSlow = slowValue;
 	}
-
 }
-

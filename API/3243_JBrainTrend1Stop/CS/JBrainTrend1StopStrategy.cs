@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 using Ecng.Common;
 
@@ -9,140 +10,81 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-/// <summary>
-/// JBrainTrend1Stop strategy: detects trend reversals using ATR bands and stochastic filter.
-/// Uses ATR-based upper/lower bands around smoothed price; stochastic confirms direction.
-/// </summary>
 public class JBrainTrend1StopStrategy : Strategy
 {
-	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _atrPeriod;
-	private readonly StrategyParam<int> _stochasticPeriod;
-	private readonly StrategyParam<decimal> _atrMultiplier;
-	private readonly StrategyParam<decimal> _stochUpper;
-	private readonly StrategyParam<decimal> _stochLower;
+	private readonly StrategyParam<int> _fastPeriod;
+	private readonly StrategyParam<int> _slowPeriod;
+	private readonly StrategyParam<int> _stopLossPoints;
+	private readonly StrategyParam<int> _takeProfitPoints;
 
-	private decimal _prevClose;
+	private ExponentialMovingAverage _fast;
+	private ExponentialMovingAverage _slow;
 
-	/// <summary>
-	/// Constructor.
-	/// </summary>
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private decimal _entryPrice;
+	private int _cooldown;
+
+	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
+	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
+	public int StopLossPoints { get => _stopLossPoints.Value; set => _stopLossPoints.Value = value; }
+	public int TakeProfitPoints { get => _takeProfitPoints.Value; set => _takeProfitPoints.Value = value; }
+
 	public JBrainTrend1StopStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Candle timeframe", "General");
-
-		_atrPeriod = Param(nameof(AtrPeriod), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("ATR Period", "ATR length for bands", "Indicators");
-
-		_stochasticPeriod = Param(nameof(StochasticPeriod), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("Stochastic Period", "Stochastic K period", "Indicators");
-
-		_atrMultiplier = Param(nameof(AtrMultiplier), 1.5m)
-			.SetGreaterThanZero()
-			.SetDisplay("ATR Multiplier", "Band width multiplier", "Signals");
-
-		_stochUpper = Param(nameof(StochUpper), 70m)
-			.SetDisplay("Stoch Upper", "Overbought level", "Signals");
-
-		_stochLower = Param(nameof(StochLower), 30m)
-			.SetDisplay("Stoch Lower", "Oversold level", "Signals");
+		_fastPeriod = Param(nameof(FastPeriod), 14).SetGreaterThanZero().SetDisplay("Fast Period", "Fast EMA period", "Indicator");
+		_slowPeriod = Param(nameof(SlowPeriod), 50).SetGreaterThanZero().SetDisplay("Slow Period", "Slow EMA period", "Indicator");
+		_stopLossPoints = Param(nameof(StopLossPoints), 200).SetNotNegative().SetDisplay("Stop Loss", "Stop-loss in price steps", "Risk");
+		_takeProfitPoints = Param(nameof(TakeProfitPoints), 400).SetNotNegative().SetDisplay("Take Profit", "Take-profit in price steps", "Risk");
 	}
 
-	public DataType CandleType
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
+		yield return (Security, TimeSpan.FromMinutes(5).TimeFrame());
 	}
 
-	public int AtrPeriod
+	protected override void OnReseted()
 	{
-		get => _atrPeriod.Value;
-		set => _atrPeriod.Value = value;
+		base.OnReseted();
+		_fast = null; _slow = null;
+		_prevFast = 0; _prevSlow = 0; _entryPrice = 0; _cooldown = 0;
 	}
 
-	public int StochasticPeriod
-	{
-		get => _stochasticPeriod.Value;
-		set => _stochasticPeriod.Value = value;
-	}
-
-	public decimal AtrMultiplier
-	{
-		get => _atrMultiplier.Value;
-		set => _atrMultiplier.Value = value;
-	}
-
-	public decimal StochUpper
-	{
-		get => _stochUpper.Value;
-		set => _stochUpper.Value = value;
-	}
-
-	public decimal StochLower
-	{
-		get => _stochLower.Value;
-		set => _stochLower.Value = value;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		var atr = new AverageTrueRange { Length = AtrPeriod };
-		var stoch = new StochasticOscillator
-		{
-			K = { Length = StochasticPeriod },
-			D = { Length = 3 }
-		};
-		var ema = new EMA { Length = 20 };
-
-		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.BindEx(atr, stoch, ema, ProcessCandle)
-			.Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, ema);
-			DrawOwnTrades(area);
-		}
+		_fast = new ExponentialMovingAverage { Length = FastPeriod };
+		_slow = new ExponentialMovingAverage { Length = SlowPeriod };
+		var subscription = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
+		subscription.Bind(_fast, _slow, ProcessCandle);
+		subscription.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue atrValue, IIndicatorValue stochValue, IIndicatorValue emaValue)
+	private void ProcessCandle(ICandleMessage candle, decimal fastValue, decimal slowValue)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
+		if (candle.State != CandleStates.Finished) return;
+		if (!_fast.IsFormed || !_slow.IsFormed) { _prevFast = fastValue; _prevSlow = slowValue; return; }
+		if (_cooldown > 0) { _cooldown--; _prevFast = fastValue; _prevSlow = slowValue; return; }
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		var close = candle.ClosePrice;
+		var step = Security?.PriceStep ?? 1m;
 
-		var atr = atrValue.ToDecimal();
-		var ema = emaValue.ToDecimal();
-
-		var sv = (StochasticOscillatorValue)stochValue;
-		if (sv.K is not decimal stochK)
-			return;
-
-		var upperBand = ema + atr * AtrMultiplier;
-		var lowerBand = ema - atr * AtrMultiplier;
-
-		// Buy: price breaks above upper band with stoch from oversold
-		if (candle.ClosePrice > upperBand && stochK < StochUpper && Position <= 0)
+		if (Position > 0 && _entryPrice > 0)
 		{
-			BuyMarket();
+			if (StopLossPoints > 0 && close <= _entryPrice - StopLossPoints * step) { SellMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
+			if (TakeProfitPoints > 0 && close >= _entryPrice + TakeProfitPoints * step) { SellMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
 		}
-		// Sell: price breaks below lower band with stoch from overbought
-		else if (candle.ClosePrice < lowerBand && stochK > StochLower && Position >= 0)
+		else if (Position < 0 && _entryPrice > 0)
 		{
-			SellMarket();
+			if (StopLossPoints > 0 && close >= _entryPrice + StopLossPoints * step) { BuyMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
+			if (TakeProfitPoints > 0 && close <= _entryPrice - TakeProfitPoints * step) { BuyMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
 		}
 
-		_prevClose = candle.ClosePrice;
+		if (_prevFast <= _prevSlow && fastValue > slowValue && Position <= 0)
+		{ if (Position < 0) BuyMarket(); BuyMarket(); _entryPrice = close; _cooldown = 100; }
+		else if (_prevFast >= _prevSlow && fastValue < slowValue && Position >= 0)
+		{ if (Position > 0) SellMarket(); SellMarket(); _entryPrice = close; _cooldown = 100; }
+
+		_prevFast = fastValue; _prevSlow = slowValue;
 	}
 }
