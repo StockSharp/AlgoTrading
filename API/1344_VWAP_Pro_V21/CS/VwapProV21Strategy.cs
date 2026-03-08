@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,199 +11,51 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on VWAP with EMA trend filter and ATR risk management.
+/// VWAP Pro V21 strategy using EMA crossover.
 /// </summary>
 public class VwapProV21Strategy : Strategy
 {
-	private readonly StrategyParam<int> _emaFastPeriod;
-	private readonly StrategyParam<int> _emaSlowPeriod;
-	private readonly StrategyParam<int> _atrPeriod;
-	private readonly StrategyParam<decimal> _tpMultiplier;
-	private readonly StrategyParam<decimal> _slMultiplier;
+	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _trendValue;
-	private decimal _takeProfit;
-	private decimal _stopLoss;
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Fast EMA period.
-	/// </summary>
-	public int EmaFastPeriod
-	{
-		get => _emaFastPeriod.Value;
-		set => _emaFastPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Slow EMA period.
-	/// </summary>
-	public int EmaSlowPeriod
-	{
-		get => _emaSlowPeriod.Value;
-		set => _emaSlowPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// ATR period.
-	/// </summary>
-	public int AtrPeriod
-	{
-		get => _atrPeriod.Value;
-		set => _atrPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// ATR multiplier for take profit.
-	/// </summary>
-	public decimal TakeProfitAtrMultiplier
-	{
-		get => _tpMultiplier.Value;
-		set => _tpMultiplier.Value = value;
-	}
-
-	/// <summary>
-	/// ATR multiplier for stop loss.
-	/// </summary>
-	public decimal StopLossAtrMultiplier
-	{
-		get => _slMultiplier.Value;
-		set => _slMultiplier.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type for strategy calculation.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initialize <see cref="VwapProV21Strategy"/>.
-	/// </summary>
 	public VwapProV21Strategy()
 	{
-		_emaFastPeriod = Param(nameof(EmaFastPeriod), 9)
+		_slowLength = Param(nameof(SlowLength), 40)
 			.SetGreaterThanZero()
-			.SetDisplay("EMA Fast", "Fast EMA period", "Indicators");
-
-		_emaSlowPeriod = Param(nameof(EmaSlowPeriod), 21)
-			.SetGreaterThanZero()
-			.SetDisplay("EMA Slow", "Slow EMA period", "Indicators");
-
-		_atrPeriod = Param(nameof(AtrPeriod), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("ATR Length", "ATR period", "Indicators");
-
-		_tpMultiplier = Param(nameof(TakeProfitAtrMultiplier), 0.7m)
-			.SetNotNegative()
-			.SetDisplay("TP ATR Multiplier", "ATR multiplier for take profit", "Risk Management");
-
-		_slMultiplier = Param(nameof(StopLossAtrMultiplier), 1.4m)
-			.SetNotNegative()
-			.SetDisplay("SL ATR Multiplier", "ATR multiplier for stop loss", "Risk Management");
+			.SetDisplay("Slow Length", "Slow EMA period", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		yield return (Security, CandleType);
-		yield return (Security, TimeSpan.FromHours(1).TimeFrame());
-	}
+		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_trendValue = 0m;
-		_takeProfit = 0m;
-		_stopLoss = 0m;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		var emaFast = new EMA { Length = EmaFastPeriod };
-		var emaSlow = new EMA { Length = EmaSlowPeriod };
-		var vwap = new VolumeWeightedMovingAverage();
-		var atr = new AverageTrueRange { Length = AtrPeriod };
-
-		var trendEma = new EMA { Length = 50 };
-		var trendSubscription = SubscribeCandles(TimeSpan.FromHours(1).TimeFrame());
-		trendSubscription
-			.Bind(trendEma, ProcessTrend)
-			.Start();
-
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
+		var prevF = 0m; var prevS = 0m; var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(emaFast, emaSlow, vwap, atr, ProcessCandle)
-			.Start();
-
+		subscription.Bind(fast, slow, (candle, f, s) =>
+		{
+			if (candle.State != CandleStates.Finished) return;
+			if (!fast.IsFormed || !slow.IsFormed) return;
+			if (!init) { prevF = f; prevS = s; init = true; return; }
+			if (candle.OpenTime - lastSignal >= cooldown)
+			{
+				if (prevF <= prevS && f > s && Position <= 0) { BuyMarket(); lastSignal = candle.OpenTime; }
+				else if (prevF >= prevS && f < s && Position >= 0) { SellMarket(); lastSignal = candle.OpenTime; }
+			}
+			prevF = f; prevS = s;
+		}).Start();
 		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, emaFast);
-			DrawIndicator(area, emaSlow);
-			DrawIndicator(area, vwap);
-			DrawIndicator(area, atr);
-			DrawOwnTrades(area);
-		}
-	}
-
-	private void ProcessTrend(ICandleMessage candle, decimal trendEma)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		_trendValue = trendEma;
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal emaFast, decimal emaSlow, decimal vwap, decimal atr)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		var trendOk = 0;
-		if (candle.ClosePrice > _trendValue)
-			trendOk = 1;
-		else if (candle.ClosePrice < _trendValue)
-			trendOk = -1;
-
-		var longCond = candle.ClosePrice > emaFast && emaFast > emaSlow && candle.ClosePrice > vwap && trendOk == 1;
-		var shortCond = candle.ClosePrice < emaFast && emaFast < emaSlow && candle.ClosePrice < vwap && trendOk == -1;
-
-		if (longCond && Position <= 0)
-		{
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
-			_takeProfit = candle.ClosePrice + atr * TakeProfitAtrMultiplier;
-			_stopLoss = candle.ClosePrice - atr * StopLossAtrMultiplier;
-		}
-		else if (shortCond && Position >= 0)
-		{
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
-			_takeProfit = candle.ClosePrice - atr * TakeProfitAtrMultiplier;
-			_stopLoss = candle.ClosePrice + atr * StopLossAtrMultiplier;
-		}
-
-		if (Position > 0)
-		{
-			if (candle.HighPrice >= _takeProfit || candle.LowPrice <= _stopLoss)
-				SellMarket(Math.Abs(Position));
-		}
-		else if (Position < 0)
-		{
-			if (candle.LowPrice <= _takeProfit || candle.HighPrice >= _stopLoss)
-				BuyMarket(Math.Abs(Position));
-		}
+		if (area != null) { DrawCandles(area, subscription); DrawIndicator(area, fast); DrawIndicator(area, slow); DrawOwnTrades(area); }
 	}
 }

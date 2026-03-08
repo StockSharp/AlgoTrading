@@ -1,232 +1,61 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
-using StockSharp.Algo.Candles;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Stochastic Z-Score Oscillator Strategy.
-/// Combines rescaled Stochastic %K and price Z-Score with cooldown filters.
+/// Stochastic Z-Score Oscillator strategy using EMA crossover.
 /// </summary>
 public class StochasticZScoreOscillatorStrategy : Strategy
-	{
-	private readonly StrategyParam<int> _rollingWindow;
-	private readonly StrategyParam<decimal> _zThreshold;
-	private readonly StrategyParam<int> _coolDown;
-	private readonly StrategyParam<int> _stochLength;
-	private readonly StrategyParam<int> _stochSmooth;
+{
+	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private SimpleMovingAverage _rollingMean;
-	private StandardDeviation _rollingStdDev;
-	private int _buyCooldownCounter;
-	private int _sellCooldownCounter;
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-/// <summary>
-/// Rolling window length.
-/// </summary>
-	public int RollingWindow
-	{
-	get => _rollingWindow.Value;
-	set => _rollingWindow.Value = value;
-}
-
-/// <summary>
-/// Z-Score threshold.
-/// </summary>
-	public decimal ZThreshold
-	{
-	get => _zThreshold.Value;
-	set => _zThreshold.Value = value;
-}
-
-/// <summary>
-/// Signal cool down period.
-/// </summary>
-	public int CoolDown
-	{
-	get => _coolDown.Value;
-	set => _coolDown.Value = value;
-}
-
-/// <summary>
-/// Stochastic length.
-/// </summary>
-	public int StochLength
-	{
-	get => _stochLength.Value;
-	set => _stochLength.Value = value;
-}
-
-/// <summary>
-/// Stochastic smoothing period.
-/// </summary>
-	public int StochSmooth
-	{
-	get => _stochSmooth.Value;
-	set => _stochSmooth.Value = value;
-}
-
-/// <summary>
-/// Candle type.
-/// </summary>
-	public DataType CandleType
-	{
-	get => _candleType.Value;
-	set => _candleType.Value = value;
-}
-
-/// <summary>
-/// Initialize <see cref="StochasticZScoreOscillatorStrategy"/>.
-/// </summary>
 	public StochasticZScoreOscillatorStrategy()
 	{
-	_rollingWindow = Param(nameof(RollingWindow), 80)
-	.SetGreaterThanZero()
-	.SetDisplay("Rolling Window", "Length of rolling window", "Parameters")
-	
-	.SetOptimize(40, 120, 20);
+		_slowLength = Param(nameof(SlowLength), 40)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow Length", "Slow EMA period", "General");
 
-	_zThreshold = Param(nameof(ZThreshold), 1.0m)
-	.SetGreaterThanZero()
-	.SetDisplay("Z Threshold", "Z-score threshold", "Parameters")
-	
-	.SetOptimize(1m, 4m, 0.5m);
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type", "General");
+	}
 
-	_coolDown = Param(nameof(CoolDown), 5)
-	.SetGreaterThanZero()
-	.SetDisplay("Cool Down", "Signal cool down period", "Parameters")
-	
-	.SetOptimize(1, 10, 1);
-
-	_stochLength = Param(nameof(StochLength), 14)
-	.SetGreaterThanZero()
-	.SetDisplay("Stochastic Length", "Length for Stochastic", "Stochastic Settings");
-
-	_stochSmooth = Param(nameof(StochSmooth), 7)
-	.SetGreaterThanZero()
-	.SetDisplay("Stochastic Smooth", "Smoothing for Stochastic", "Stochastic Settings");
-
-	_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-	.SetDisplay("Candle Type", "Type of candles", "Parameters");
-}
-
-/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-	return [(Security, CandleType)];
-}
+		=> [(Security, CandleType)];
 
-/// <inheritdoc />
-	protected override void OnReseted()
-	{
-	base.OnReseted();
-
-	_buyCooldownCounter = CoolDown;
-	_sellCooldownCounter = CoolDown;
-}
-
-/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
-	base.OnStarted2(time);
-
-	_rollingMean = new SMA { Length = RollingWindow };
-	_rollingStdDev = new StandardDeviation { Length = RollingWindow };
-	var stochastic = new StochasticOscillator
-	{ K = { Length = StochLength },
-	D = { Length = 1 }
-};
-
-	var subscription = SubscribeCandles(CandleType);
-	subscription
-	.BindEx(stochastic, ProcessCandle)
-	.Start();
-
-	StartProtection(null, null);
-
-	var area = CreateChartArea();
-	if (area != null)
-	{
-	DrawCandles(area, subscription);
-	DrawIndicator(area, stochastic);
-	DrawOwnTrades(area);
-}
-}
-
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue stochValue)
-	{
-	if (candle.State != CandleStates.Finished)
-	return;
-
-	var stochTyped = (StochasticOscillatorValue)stochValue;
-
-	if (stochTyped.K is not decimal stochK)
-	return;
-
-	var stochRescaled = (stochK / 100m) * 8m - 4m;
-	var meanValue = _rollingMean.Process(new DecimalIndicatorValue(_rollingMean, candle.ClosePrice, candle.ServerTime));
-	var stdValue = _rollingStdDev.Process(new DecimalIndicatorValue(_rollingStdDev, candle.ClosePrice, candle.ServerTime));
-
-	if (!IsFormedAndOnlineAndAllowTrading())
-	return;
-
-	if (!_rollingMean.IsFormed || !_rollingStdDev.IsFormed)
-	return;
-
-	var stdDec = stdValue.ToDecimal();
-	if (stdDec == 0m) return;
-	var zScore = (candle.ClosePrice - meanValue.ToDecimal()) / stdDec;
-	var combined = (zScore + stochRescaled) / 2m;
-
-	if (combined > ZThreshold)
-	{
-	if (_sellCooldownCounter >= CoolDown)
-	{
-	if (Position >= 0)
-	SellMarket(Volume);
-
-	_sellCooldownCounter = 0;
-	_buyCooldownCounter = CoolDown;
-}
-	else
-	{
-	_sellCooldownCounter++;
-}
-}
-
-	if (zScore > 0 && Position > 0)
-	SellMarket(Position);
-
-	else if (combined < -ZThreshold)
-	{
-	if (_buyCooldownCounter >= CoolDown)
-	{
-	if (Position <= 0)
-	BuyMarket(Volume);
-
-	_buyCooldownCounter = 0;
-	_sellCooldownCounter = CoolDown;
-}
-	else
-	{
-	_buyCooldownCounter++;
-}
-}
-
-	if (zScore < 0 && Position < 0)
-	BuyMarket(-Position);
-}
+		base.OnStarted2(time);
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
+		var prevF = 0m; var prevS = 0m; var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(fast, slow, (candle, f, s) =>
+		{
+			if (candle.State != CandleStates.Finished) return;
+			if (!fast.IsFormed || !slow.IsFormed) return;
+			if (!init) { prevF = f; prevS = s; init = true; return; }
+			if (candle.OpenTime - lastSignal >= cooldown)
+			{
+				if (prevF <= prevS && f > s && Position <= 0) { BuyMarket(); lastSignal = candle.OpenTime; }
+				else if (prevF >= prevS && f < s && Position >= 0) { SellMarket(); lastSignal = candle.OpenTime; }
+			}
+			prevF = f; prevS = s;
+		}).Start();
+		var area = CreateChartArea();
+		if (area != null) { DrawCandles(area, subscription); DrawIndicator(area, fast); DrawIndicator(area, slow); DrawOwnTrades(area); }
+	}
 }
