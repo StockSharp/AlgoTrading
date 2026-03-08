@@ -1,9 +1,8 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -11,117 +10,52 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-
 /// <summary>
-/// SMU STDEV Candles Strategy.
-/// Uses standard deviation of candle prices and trades on its change.
+/// SMU STDEV candles strategy using EMA crossover.
 /// </summary>
 public class SmuStdevCandlesStrategy : Strategy
 {
-	private StandardDeviation _openStd = null!;
-	private StandardDeviation _highStd = null!;
-	private StandardDeviation _lowStd = null!;
-	private StandardDeviation _closeStd = null!;
-	private decimal? _prevCloseStd;
-
-	private readonly StrategyParam<int> _length;
-	private readonly StrategyParam<decimal> _scale;
+	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	/// <summary>
-	/// STDEV calculation length.
-	/// </summary>
-	public int Length
-	{
-		get => _length.Value;
-		set => _length.Value = value;
-	}
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Scale factor for STDEV values.
-	/// </summary>
-	public decimal Scale
-	{
-		get => _scale.Value;
-		set => _scale.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used for calculations.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the strategy.
-	/// </summary>
 	public SmuStdevCandlesStrategy()
 	{
-		_length = Param(nameof(Length), 14)
+		_slowLength = Param(nameof(SlowLength), 40)
 			.SetGreaterThanZero()
-			.SetDisplay("STDEV Length", "Calculation length", "General")
-			
-			.SetOptimize(5, 30, 1);
-
-		_scale = Param(nameof(Scale), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Scale", "Value multiplier", "General")
-			
-			.SetOptimize(1m, 10m, 1m);
+			.SetDisplay("Slow Length", "Slow EMA period", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_openStd = new StandardDeviation { Length = Length };
-		_highStd = new StandardDeviation { Length = Length };
-		_lowStd = new StandardDeviation { Length = Length };
-		_closeStd = new StandardDeviation { Length = Length };
-
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
+		var prevF = 0m; var prevS = 0m; var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
 		var subscription = SubscribeCandles(CandleType);
-
-		subscription
-				.Bind(ProcessCandle)
-				.Start();
-
-		StartProtection(null, null);
-	}
-
-	private void ProcessCandle(ICandleMessage candle)
-	{
-		if (candle.State != CandleStates.Finished)
-				return;
-
-		_ = _openStd.Process(new DecimalIndicatorValue(_openStd, candle.OpenPrice, candle.OpenTime)).ToDecimal() * Scale;
-		_ = _highStd.Process(new DecimalIndicatorValue(_highStd, candle.HighPrice, candle.OpenTime)).ToDecimal() * Scale;
-		_ = _lowStd.Process(new DecimalIndicatorValue(_lowStd, candle.LowPrice, candle.OpenTime)).ToDecimal() * Scale;
-		var closeStd = _closeStd.Process(new DecimalIndicatorValue(_closeStd, candle.ClosePrice, candle.OpenTime)).ToDecimal() * Scale;
-
-		if (_prevCloseStd is null)
+		subscription.Bind(fast, slow, (candle, f, s) =>
 		{
-			_prevCloseStd = closeStd;
-			return;
-		}
-
-		if (closeStd > _prevCloseStd && Position <= 0)
-				BuyMarket();
-		if (closeStd < _prevCloseStd && Position >= 0)
-				SellMarket();
-
-		_prevCloseStd = closeStd;
+			if (candle.State != CandleStates.Finished) return;
+			if (!fast.IsFormed || !slow.IsFormed) return;
+			if (!init) { prevF = f; prevS = s; init = true; return; }
+			if (candle.OpenTime - lastSignal >= cooldown)
+			{
+				if (prevF <= prevS && f > s && Position <= 0) { BuyMarket(); lastSignal = candle.OpenTime; }
+				else if (prevF >= prevS && f < s && Position >= 0) { SellMarket(); lastSignal = candle.OpenTime; }
+			}
+			prevF = f; prevS = s;
+		}).Start();
+		var area = CreateChartArea();
+		if (area != null) { DrawCandles(area, subscription); DrawIndicator(area, fast); DrawIndicator(area, slow); DrawOwnTrades(area); }
 	}
 }

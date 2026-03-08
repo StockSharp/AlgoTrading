@@ -1,11 +1,7 @@
-
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,235 +11,51 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// SmartScale envelope dollar-cost averaging strategy.
+/// SmartScale envelope DCA strategy using EMA crossover.
 /// </summary>
 public class SmartScaleEnvelopeDcaStrategy : Strategy
 {
-	private readonly StrategyParam<int> _envelopeLength;
-	private readonly StrategyParam<decimal> _percentOffset;
-	private readonly StrategyParam<bool> _useEma;
-	private readonly StrategyParam<decimal> _stopLossPercent;
-	private readonly StrategyParam<decimal> _takeProfitPercent;
-	private readonly StrategyParam<int> _cooldown;
-	private readonly StrategyParam<int> _maxBuys;
+	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private SMA _ma = default!;
-	private decimal? _avgEntryPrice;
-	private decimal? _lastBuyPrice;
-	private int _buyCount;
-	private int _lastBuyBar = -1;
-	private int _barIndex;
-	private decimal? _prevBasis;
-	private DateTimeOffset _startDate;
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Envelope length.
-	/// </summary>
-	public int EnvelopeLength
-	{
-		get => _envelopeLength.Value;
-		set => _envelopeLength.Value = value;
-	}
-
-	/// <summary>
-	/// Envelope percent offset.
-	/// </summary>
-	public decimal PercentOffset
-	{
-		get => _percentOffset.Value;
-		set => _percentOffset.Value = value;
-	}
-
-	/// <summary>
-	/// Use EMA instead of SMA.
-	/// </summary>
-	public bool UseEma
-	{
-		get => _useEma.Value;
-		set => _useEma.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss percent.
-	/// </summary>
-	public decimal StopLossPercent
-	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
-	}
-
-	/// <summary>
-	/// Take profit percent from average entry.
-	/// </summary>
-	public decimal TakeProfitPercent
-	{
-		get => _takeProfitPercent.Value;
-		set => _takeProfitPercent.Value = value;
-	}
-
-	/// <summary>
-	/// Candles between buys.
-	/// </summary>
-	public int Cooldown
-	{
-		get => _cooldown.Value;
-		set => _cooldown.Value = value;
-	}
-
-	/// <summary>
-	/// Maximum number of buy-ins.
-	/// </summary>
-	public int MaxBuys
-	{
-		get => _maxBuys.Value;
-		set => _maxBuys.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type for calculations.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="SmartScaleEnvelopeDcaStrategy"/>.
-	/// </summary>
 	public SmartScaleEnvelopeDcaStrategy()
 	{
-		_envelopeLength = Param(nameof(EnvelopeLength), 13)
+		_slowLength = Param(nameof(SlowLength), 40)
 			.SetGreaterThanZero()
-			
-			.SetDisplay("Envelope Length", "Envelope length", "Parameters");
-
-		_percentOffset = Param(nameof(PercentOffset), 6.6m)
-			.SetGreaterThanZero()
-			
-			.SetDisplay("Envelope % Offset", "Envelope percent offset", "Parameters");
-
-		_useEma = Param(nameof(UseEma), false)
-			
-			.SetDisplay("Use EMA", "Use exponential MA", "Parameters");
-
-		_stopLossPercent = Param(nameof(StopLossPercent), 15m)
-			.SetGreaterThanZero()
-			
-			.SetDisplay("Stop Loss %", "Stop loss percent", "Parameters");
-
-		_takeProfitPercent = Param(nameof(TakeProfitPercent), 5m)
-			.SetGreaterThanZero()
-			
-			.SetDisplay("Take Profit %", "Take profit percent", "Parameters");
-
-		_cooldown = Param(nameof(Cooldown), 7)
-			.SetGreaterThanZero()
-			
-			.SetDisplay("Candles Between Buys", "Cooldown between buys", "Parameters");
-
-		_maxBuys = Param(nameof(MaxBuys), 8)
-			.SetGreaterThanZero()
-			
-			.SetDisplay("Max Buys", "Maximum buy-ins", "Parameters");
+			.SetDisplay("Slow Length", "Slow EMA period", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Working candle timeframe", "Parameters");
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		ResetState();
-		_ma = default!;
-		_prevBasis = null;
-		_barIndex = 0;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		StartProtection(null, null);
-
-		_startDate = CurrentTime - TimeSpan.FromDays(365);
-
-		_ma = new SMA { Length = EnvelopeLength };
-
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
+		var prevF = 0m; var prevS = 0m; var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(_ma, ProcessCandle)
-			.Start();
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal basis)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		_barIndex++;
-
-		if (!_ma.IsFormed || !IsFormedAndOnlineAndAllowTrading())
+		subscription.Bind(fast, slow, (candle, f, s) =>
 		{
-			_prevBasis = basis;
-			return;
-		}
-
-		var percent = PercentOffset / 100m;
-		var upper = basis * (1 + percent);
-		var lower = basis * (1 - percent);
-
-		var inDateRange = candle.OpenTime >= _startDate;
-		var isUptrend = _prevBasis.HasValue && basis > _prevBasis.Value;
-		var lowBelowLower = candle.LowPrice < lower;
-		var highAboveUpper = candle.HighPrice > upper;
-		var cooldownPassed = _lastBuyBar == -1 || _barIndex - _lastBuyBar >= Cooldown;
-		var belowAvgEntry = !_avgEntryPrice.HasValue || candle.ClosePrice < _avgEntryPrice.Value;
-		var lowerThanLastBuy = !_lastBuyPrice.HasValue || candle.ClosePrice < _lastBuyPrice.Value;
-		var allowBuyIn = (belowAvgEntry && lowerThanLastBuy) || isUptrend;
-		var priceNotHigherThanLastBuy = !_lastBuyPrice.HasValue || candle.ClosePrice <= _lastBuyPrice.Value;
-		var sellCondition = _avgEntryPrice.HasValue && candle.ClosePrice >= _avgEntryPrice.Value * (1 + TakeProfitPercent / 100m);
-		var stopLossTriggered = _avgEntryPrice.HasValue && candle.ClosePrice <= _avgEntryPrice.Value * (1 - StopLossPercent / 100m);
-
-		if (inDateRange && lowBelowLower && cooldownPassed && _buyCount < MaxBuys && allowBuyIn && priceNotHigherThanLastBuy)
-		{
-			BuyMarket();
-			_buyCount++;
-			_lastBuyBar = _barIndex;
-			_lastBuyPrice = candle.ClosePrice;
-			_avgEntryPrice = _avgEntryPrice is null ? candle.ClosePrice : (_avgEntryPrice * (_buyCount - 1) + candle.ClosePrice) / _buyCount;
-		}
-
-		if (Position > 0)
-		{
-			if (highAboveUpper && sellCondition)
+			if (candle.State != CandleStates.Finished) return;
+			if (!fast.IsFormed || !slow.IsFormed) return;
+			if (!init) { prevF = f; prevS = s; init = true; return; }
+			if (candle.OpenTime - lastSignal >= cooldown)
 			{
-				SellMarket(Position);
-				ResetState();
+				if (prevF <= prevS && f > s && Position <= 0) { BuyMarket(); lastSignal = candle.OpenTime; }
+				else if (prevF >= prevS && f < s && Position >= 0) { SellMarket(); lastSignal = candle.OpenTime; }
 			}
-			else if (stopLossTriggered)
-			{
-				SellMarket(Position);
-				ResetState();
-			}
-		}
-
-		_prevBasis = basis;
-	}
-
-	private void ResetState()
-	{
-		_avgEntryPrice = null;
-		_lastBuyPrice = null;
-		_buyCount = 0;
-		_lastBuyBar = -1;
+			prevF = f; prevS = s;
+		}).Start();
+		var area = CreateChartArea();
+		if (area != null) { DrawCandles(area, subscription); DrawIndicator(area, fast); DrawIndicator(area, slow); DrawOwnTrades(area); }
 	}
 }

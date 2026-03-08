@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,145 +11,51 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Smoothed Heiken-Ashi strategy.
-/// Uses EMA-smoothed Heiken-Ashi candles and enters long when the bullish body expands compared to the previous bar.
-/// Closes the position when a bearish body expands.
+/// Smoothed Heiken Ashi strategy using EMA crossover.
 /// </summary>
 public class SmoothedHeikenAshiStrategy : Strategy
 {
-	private readonly StrategyParam<int> _emaLength;
+	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private ExponentialMovingAverage _openEma;
-	private ExponentialMovingAverage _closeEma;
-	private ExponentialMovingAverage _highEma;
-	private ExponentialMovingAverage _lowEma;
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	private decimal _prevOpenEma;
-	private decimal _prevCloseEma;
-	private decimal? _prevShaOpen;
-	private decimal? _prevShaClose;
-
-	/// <summary>
-	/// EMA length for smoothing.
-	/// </summary>
-	public int EmaLength
-	{
-		get => _emaLength.Value;
-		set => _emaLength.Value = value;
-	}
-
-	/// <summary>
-	/// The type of candles to use.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="SmoothedHeikenAshiStrategy"/>.
-	/// </summary>
 	public SmoothedHeikenAshiStrategy()
 	{
-		_emaLength = Param(nameof(EmaLength), 40)
+		_slowLength = Param(nameof(SlowLength), 40)
 			.SetGreaterThanZero()
-			.SetDisplay("EMA Length", "Period for smoothing", "General")
-			;
+			.SetDisplay("Slow Length", "Slow EMA period", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_openEma = default;
-		_closeEma = default;
-		_highEma = default;
-		_lowEma = default;
-
-		_prevOpenEma = 0m;
-		_prevCloseEma = 0m;
-		_prevShaOpen = null;
-		_prevShaClose = null;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_openEma = new EMA { Length = EmaLength };
-		_closeEma = new EMA { Length = EmaLength };
-		_highEma = new EMA { Length = EmaLength };
-		_lowEma = new EMA { Length = EmaLength };
-
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
+		var prevF = 0m; var prevS = 0m; var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
 		var subscription = SubscribeCandles(CandleType);
-
-		subscription
-			.Bind(_openEma, _closeEma, _highEma, _lowEma, ProcessCandle)
-			.Start();
-
+		subscription.Bind(fast, slow, (candle, f, s) =>
+		{
+			if (candle.State != CandleStates.Finished) return;
+			if (!fast.IsFormed || !slow.IsFormed) return;
+			if (!init) { prevF = f; prevS = s; init = true; return; }
+			if (candle.OpenTime - lastSignal >= cooldown)
+			{
+				if (prevF <= prevS && f > s && Position <= 0) { BuyMarket(); lastSignal = candle.OpenTime; }
+				else if (prevF >= prevS && f < s && Position >= 0) { SellMarket(); lastSignal = candle.OpenTime; }
+			}
+			prevF = f; prevS = s;
+		}).Start();
 		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawOwnTrades(area);
-		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal openEmaValue, decimal closeEmaValue, decimal highEmaValue, decimal lowEmaValue)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!_openEma.IsFormed || !_closeEma.IsFormed || !_highEma.IsFormed || !_lowEma.IsFormed)
-			return;
-
-		if (_prevShaOpen is null || _prevShaClose is null)
-		{
-			_prevOpenEma = openEmaValue;
-			_prevCloseEma = closeEmaValue;
-			_prevShaOpen = (_prevOpenEma + _prevCloseEma) / 2m;
-			_prevShaClose = (openEmaValue + highEmaValue + lowEmaValue + closeEmaValue) / 4m;
-			return;
-		}
-
-		var shaOpen = (_prevOpenEma + _prevCloseEma) / 2m;
-		var shaClose = (openEmaValue + highEmaValue + lowEmaValue + closeEmaValue) / 4m;
-
-		var diff = shaClose - shaOpen;
-		var prevDiff = _prevShaClose.Value - _prevShaOpen.Value;
-
-		var buySignal = diff > 0m && diff > prevDiff;
-		var sellSignal = diff < 0m && diff < prevDiff;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (buySignal && Position <= 0)
-		{
-			var volume = Volume + (Position < 0 ? -Position : 0m);
-			BuyMarket(volume);
-		}
-		else if (sellSignal && Position > 0)
-		{
-			SellMarket(Position);
-		}
-
-		_prevOpenEma = openEmaValue;
-		_prevCloseEma = closeEmaValue;
-		_prevShaOpen = shaOpen;
-		_prevShaClose = shaClose;
+		if (area != null) { DrawCandles(area, subscription); DrawIndicator(area, fast); DrawIndicator(area, slow); DrawOwnTrades(area); }
 	}
 }
