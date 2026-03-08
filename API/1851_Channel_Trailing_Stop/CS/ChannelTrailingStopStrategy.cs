@@ -1,12 +1,8 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -14,7 +10,7 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy using channel based trailing stops with optional "noose" adjustment.
+/// Strategy using manually calculated channel based trailing stops with optional "noose" adjustment.
 /// </summary>
 public class ChannelTrailingStopStrategy : Strategy
 {
@@ -24,10 +20,14 @@ public class ChannelTrailingStopStrategy : Strategy
 	private readonly StrategyParam<bool> _useChannelTrailing;
 	private readonly StrategyParam<bool> _deletePendingOrders;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _cooldownBars;
 
+	private readonly Queue<decimal> _highs = new();
+	private readonly Queue<decimal> _lows = new();
 	private decimal _longStop;
 	private decimal _shortStop;
 	private decimal? _takeProfitPrice;
+	private int _cooldownRemaining;
 
 	/// <summary>
 	/// Period to calculate channel boundaries.
@@ -84,16 +84,24 @@ public class ChannelTrailingStopStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Number of completed candles to wait after a position change.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Initializes a new instance of the <see cref="ChannelTrailingStopStrategy"/> class.
 	/// </summary>
 	public ChannelTrailingStopStrategy()
 	{
-		_trailPeriod = Param(nameof(TrailPeriod), 3)
+		_trailPeriod = Param(nameof(TrailPeriod), 10)
 			.SetDisplay("Channel Period", "Lookback for channel calculation", "Parameters")
-			
 			.SetOptimize(5, 50, 5);
 
-		_trailStop = Param(nameof(TrailStop), 50m)
+		_trailStop = Param(nameof(TrailStop), 100m)
 			.SetDisplay("Trail Stop", "Offset from channel boundaries", "Parameters");
 
 		_useNooseTrailing = Param(nameof(UseNooseTrailing), true)
@@ -105,8 +113,11 @@ public class ChannelTrailingStopStrategy : Strategy
 		_deletePendingOrders = Param(nameof(DeletePendingOrders), true)
 			.SetDisplay("Delete Pending Orders", "Cancel pending orders after fill", "Parameters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for candles", "General");
+
+		_cooldownBars = Param(nameof(CooldownBars), 4)
+			.SetDisplay("Cooldown Bars", "Completed candles to wait after a position change", "Trading");
 	}
 
 	/// <inheritdoc />
@@ -119,17 +130,18 @@ public class ChannelTrailingStopStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_longStop = 0;
-		_shortStop = 0;
+		_highs.Clear();
+		_lows.Clear();
+		_longStop = 0m;
+		_shortStop = 0m;
 		_takeProfitPrice = null;
+		_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
 	protected override void OnOwnTradeReceived(MyTrade trade)
 	{
 		base.OnOwnTradeReceived(trade);
-
-		// no-op in backtest
 	}
 
 	/// <inheritdoc />
@@ -137,56 +149,68 @@ public class ChannelTrailingStopStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var donchian = new DonchianChannels { Length = TrailPeriod };
-
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.BindEx(donchian, ProcessCandle)
-			.Start();
+		subscription.Bind(ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, donchian);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue value)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var dc = (IDonchianChannelsValue)value;
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
 
-		if (dc.UpperBand is not decimal upper || dc.LowerBand is not decimal lower)
+		_highs.Enqueue(candle.HighPrice);
+		_lows.Enqueue(candle.LowPrice);
+
+		while (_highs.Count > TrailPeriod)
+			_highs.Dequeue();
+
+		while (_lows.Count > TrailPeriod)
+			_lows.Dequeue();
+
+		if (_highs.Count < TrailPeriod || _lows.Count < TrailPeriod)
 			return;
 
-		// Entry logic: breakouts of channel boundaries (close near upper or lower band)
+		var upper = GetHighest();
+		var lower = GetLowest();
 		var range = upper - lower;
-		if (range <= 0)
+		if (range <= 0m)
 			return;
 
-		var threshold = range * 0.1m;
-		if (candle.ClosePrice >= upper - threshold && Position <= 0)
+		var threshold = range * 0.05m;
+		if (_cooldownRemaining == 0)
 		{
-			if (Position < 0)
+			if (candle.ClosePrice >= upper - threshold && Position <= 0)
+			{
+				if (Position < 0)
+					BuyMarket();
+
 				BuyMarket();
-			BuyMarket();
-			_longStop = candle.ClosePrice - TrailStop;
-			_takeProfitPrice = candle.ClosePrice + TrailStop;
-		}
-		else if (candle.ClosePrice <= lower + threshold && Position >= 0)
-		{
-			if (Position > 0)
+				_longStop = candle.ClosePrice - TrailStop;
+				_takeProfitPrice = candle.ClosePrice + TrailStop;
+				_cooldownRemaining = CooldownBars;
+			}
+			else if (candle.ClosePrice <= lower + threshold && Position >= 0)
+			{
+				if (Position > 0)
+					SellMarket();
+
 				SellMarket();
-			SellMarket();
-			_shortStop = candle.ClosePrice + TrailStop;
-			_takeProfitPrice = candle.ClosePrice - TrailStop;
+				_shortStop = candle.ClosePrice + TrailStop;
+				_takeProfitPrice = candle.ClosePrice - TrailStop;
+				_cooldownRemaining = CooldownBars;
+			}
 		}
 
-		// Update trailing stops based on channel
 		if (UseChannelTrailing)
 		{
 			if (Position > 0)
@@ -198,40 +222,64 @@ public class ChannelTrailingStopStrategy : Strategy
 			else if (Position < 0)
 			{
 				var level = upper + TrailStop;
-				if (_shortStop == 0 || level < _shortStop)
+				if (_shortStop == 0m || level < _shortStop)
 					_shortStop = level;
 			}
 		}
 
-		// Noose trailing adjusts stop symmetrically to take profit
-		if (UseNooseTrailing && _takeProfitPrice != null)
+		if (UseNooseTrailing && _takeProfitPrice is decimal takeProfitPrice)
 		{
 			if (Position > 0)
 			{
-				var noose = candle.ClosePrice - (_takeProfitPrice.Value - candle.ClosePrice);
+				var noose = candle.ClosePrice - (takeProfitPrice - candle.ClosePrice);
 				if (noose > _longStop)
 					_longStop = noose;
 			}
 			else if (Position < 0)
 			{
-				var noose = candle.ClosePrice + (candle.ClosePrice - _takeProfitPrice.Value);
-				if (_shortStop == 0 || noose < _shortStop)
+				var noose = candle.ClosePrice + (candle.ClosePrice - takeProfitPrice);
+				if (_shortStop == 0m || noose < _shortStop)
 					_shortStop = noose;
 			}
 		}
 
-		// Exit conditions when price crosses trailing levels
-		if (Position > 0 && candle.LowPrice <= _longStop)
+		if (Position > 0 && _longStop > 0m && candle.LowPrice <= _longStop)
 		{
 			SellMarket();
-			_longStop = 0;
+			_longStop = 0m;
 			_takeProfitPrice = null;
+			_cooldownRemaining = CooldownBars;
 		}
-		else if (Position < 0 && candle.HighPrice >= _shortStop)
+		else if (Position < 0 && _shortStop > 0m && candle.HighPrice >= _shortStop)
 		{
 			BuyMarket();
-			_shortStop = 0;
+			_shortStop = 0m;
 			_takeProfitPrice = null;
+			_cooldownRemaining = CooldownBars;
 		}
+	}
+
+	private decimal GetHighest()
+	{
+		var highest = decimal.MinValue;
+		foreach (var value in _highs)
+		{
+			if (value > highest)
+				highest = value;
+		}
+
+		return highest;
+	}
+
+	private decimal GetLowest()
+	{
+		var lowest = decimal.MaxValue;
+		foreach (var value in _lows)
+		{
+			if (value < lowest)
+				lowest = value;
+		}
+
+		return lowest;
 	}
 }

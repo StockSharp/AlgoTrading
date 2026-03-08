@@ -1,12 +1,8 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -14,46 +10,48 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on SimpleBars indicator.
-/// Opens position when the indicator changes trend.
-/// Signal is executed on the next bar.
+/// Strategy based on simple bar trend reversals.
 /// </summary>
 public class SimpleBarsStrategy : Strategy
 {
 	private readonly StrategyParam<int> _period;
 	private readonly StrategyParam<bool> _useClose;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _cooldownBars;
 
-	/// <summary>
-	/// Number of bars used to evaluate trend.
-	/// </summary>
+	private readonly Queue<decimal> _lows = new();
+	private readonly Queue<decimal> _highs = new();
+	private decimal _prevMinLow;
+	private decimal _prevMaxHigh;
+	private int _prevTrend;
+	private int? _pendingSignal;
+	private bool _isInitialized;
+	private int _cooldownRemaining;
+
 	public int Period
 	{
 		get => _period.Value;
 		set => _period.Value = value;
 	}
 
-	/// <summary>
-	/// Use closing price instead of high/low.
-	/// </summary>
 	public bool UseClose
 	{
 		get => _useClose.Value;
 		set => _useClose.Value = value;
 	}
 
-	/// <summary>
-	/// Candle type for calculations.
-	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Initializes parameters.
-	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
 	public SimpleBarsStrategy()
 	{
 		_period = Param(nameof(Period), 6)
@@ -63,8 +61,11 @@ public class SimpleBarsStrategy : Strategy
 		_useClose = Param(nameof(UseClose), true)
 			.SetDisplay("Use Close", "Use close price instead of extremes", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
+
+		_cooldownBars = Param(nameof(CooldownBars), 4)
+			.SetDisplay("Cooldown Bars", "Completed candles to wait after a position change", "Trading");
 	}
 
 	/// <inheritdoc />
@@ -74,86 +75,120 @@ public class SimpleBarsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_lows.Clear();
+		_highs.Clear();
+		_prevMinLow = 0m;
+		_prevMaxHigh = 0m;
+		_prevTrend = 0;
+		_pendingSignal = null;
+		_isInitialized = false;
+		_cooldownRemaining = 0;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		var lowest = new Lowest { Length = Period };
-		var highest = new Highest { Length = Period };
-
 		var subscription = SubscribeCandles(CandleType);
-
-		decimal prevMinLow = 0m;
-		decimal prevMaxHigh = 0m;
-		int prevTrend = 0; // 1 buy, -1 sell
-		int? pendingSignal = null;
-		bool isInitialized = false;
-
-		subscription
-			.Bind(lowest, highest, (candle, minLow, maxHigh) =>
-			{
-				if (candle.State != CandleStates.Finished)
-					return;
-
-				if (pendingSignal.HasValue)
-				{
-					// Execute signal from previous bar
-					if (pendingSignal.Value == 1 && Position <= 0)
-					{
-						if (Position < 0) BuyMarket();
-						BuyMarket();
-					}
-					else if (pendingSignal.Value == -1 && Position >= 0)
-					{
-						if (Position > 0) SellMarket();
-						SellMarket();
-					}
-
-					pendingSignal = null;
-				}
-
-				if (!lowest.IsFormed || !highest.IsFormed)
-				{
-					prevMinLow = minLow;
-					prevMaxHigh = maxHigh;
-					return;
-				}
-
-				// Determine price points depending on mode
-				var buyPrice = UseClose ? candle.ClosePrice : candle.LowPrice;
-				var sellPrice = UseClose ? candle.ClosePrice : candle.HighPrice;
-
-				int trend;
-
-				if (!isInitialized)
-				{
-					trend = candle.ClosePrice > candle.OpenPrice ? 1 : -1;
-					isInitialized = true;
-				}
-				else if (prevTrend == 1)
-				{
-					trend = buyPrice > prevMinLow ? 1 : -1;
-				}
-				else
-				{
-					trend = sellPrice < prevMaxHigh ? -1 : 1;
-				}
-
-				// Store signal for next bar
-				pendingSignal = trend;
-				prevTrend = trend;
-				prevMinLow = minLow;
-				prevMaxHigh = maxHigh;
-			})
-			.Start();
+		subscription.Bind(ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, lowest);
-			DrawIndicator(area, highest);
 			DrawOwnTrades(area);
 		}
+	}
+
+	private void ProcessCandle(ICandleMessage candle)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
+
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
+
+		if (_pendingSignal is int pending && _cooldownRemaining == 0)
+		{
+			if (pending == 1 && Position <= 0)
+			{
+				if (Position < 0)
+					BuyMarket();
+
+				BuyMarket();
+				_cooldownRemaining = CooldownBars;
+			}
+			else if (pending == -1 && Position >= 0)
+			{
+				if (Position > 0)
+					SellMarket();
+
+				SellMarket();
+				_cooldownRemaining = CooldownBars;
+			}
+		}
+
+		_pendingSignal = null;
+		_highs.Enqueue(candle.HighPrice);
+		_lows.Enqueue(candle.LowPrice);
+		while (_highs.Count > Period)
+			_highs.Dequeue();
+		while (_lows.Count > Period)
+			_lows.Dequeue();
+
+		if (_highs.Count < Period || _lows.Count < Period)
+			return;
+
+		var minLow = GetLowest();
+		var maxHigh = GetHighest();
+		var buyPrice = UseClose ? candle.ClosePrice : candle.LowPrice;
+		var sellPrice = UseClose ? candle.ClosePrice : candle.HighPrice;
+		var trend = 0;
+		if (!_isInitialized)
+		{
+			trend = candle.ClosePrice > candle.OpenPrice ? 1 : -1;
+			_isInitialized = true;
+		}
+		else if (_prevTrend >= 0)
+		{
+			trend = buyPrice > _prevMinLow ? 1 : -1;
+		}
+		else
+		{
+			trend = sellPrice < _prevMaxHigh ? -1 : 1;
+		}
+
+		_pendingSignal = trend;
+		_prevTrend = trend;
+		_prevMinLow = minLow;
+		_prevMaxHigh = maxHigh;
+	}
+
+	private decimal GetLowest()
+	{
+		var lowest = decimal.MaxValue;
+		foreach (var low in _lows)
+		{
+			if (low < lowest)
+				lowest = low;
+		}
+
+		return lowest;
+	}
+
+	private decimal GetHighest()
+	{
+		var highest = decimal.MinValue;
+		foreach (var high in _highs)
+		{
+			if (high > highest)
+				highest = high;
+		}
+
+		return highest;
 	}
 }

@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -45,17 +42,42 @@ public class ComboRightStrategy : Strategy
 	private readonly StrategyParam<int> _shift;
 	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<decimal> _minCciSignal;
+	private readonly StrategyParam<int> _cooldownBars;
 
-	private decimal[] _closeBuffer = Array.Empty<decimal>();
+	private decimal[] _closeBuffer = [];
 	private int _barIndex;
+	private int _cooldownRemaining;
 
-	private decimal _w11, _w12, _w13, _w14;
-	private decimal _w21, _w22, _w23, _w24;
-	private decimal _w31, _w32, _w33, _w34;
+	private decimal _w11;
+	private decimal _w12;
+	private decimal _w13;
+	private decimal _w14;
+	private decimal _w21;
+	private decimal _w22;
+	private decimal _w23;
+	private decimal _w24;
+	private decimal _w31;
+	private decimal _w32;
+	private decimal _w33;
+	private decimal _w34;
 
-	private int _sh11, _sh12, _sh13, _sh14, _sh15;
-	private int _sh21, _sh22, _sh23, _sh24, _sh25;
-	private int _sh31, _sh32, _sh33, _sh34, _sh35;
+	private int _sh11;
+	private int _sh12;
+	private int _sh13;
+	private int _sh14;
+	private int _sh15;
+	private int _sh21;
+	private int _sh22;
+	private int _sh23;
+	private int _sh24;
+	private int _sh25;
+	private int _sh31;
+	private int _sh32;
+	private int _sh33;
+	private int _sh34;
+	private int _sh35;
+	private int _previousSignal;
 
 	public decimal TakeProfit1 { get => _tp1.Value; set => _tp1.Value = value; }
 	public decimal StopLoss1 { get => _sl1.Value; set => _sl1.Value = value; }
@@ -83,6 +105,8 @@ public class ComboRightStrategy : Strategy
 	public int Shift { get => _shift.Value; set => _shift.Value = value; }
 	public decimal TradeVolume { get => _volume.Value; set => _volume.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public decimal MinCciSignal { get => _minCciSignal.Value; set => _minCciSignal.Value = value; }
+	public int CooldownBars { get => _cooldownBars.Value; set => _cooldownBars.Value = value; }
 
 	public ComboRightStrategy()
 	{
@@ -111,7 +135,9 @@ public class ComboRightStrategy : Strategy
 		_pass = Param(nameof(Pass), 1).SetDisplay("Pass", "Mode of operation", "General");
 		_shift = Param(nameof(Shift), 1).SetDisplay("Shift", "Bar shift", "General");
 		_volume = Param(nameof(TradeVolume), 0.1m).SetDisplay("Volume", "Trading volume", "General");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Type of candles", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame()).SetDisplay("Candle Type", "Type of candles", "General");
+		_minCciSignal = Param(nameof(MinCciSignal), 50m).SetDisplay("Minimum CCI", "Minimum absolute CCI value for entries", "Filters");
+		_cooldownBars = Param(nameof(CooldownBars), 4).SetDisplay("Cooldown Bars", "Completed candles to wait after a position change", "Trading");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
@@ -123,8 +149,10 @@ public class ComboRightStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_closeBuffer = Array.Empty<decimal>();
+		_closeBuffer = [];
 		_barIndex = 0;
+		_cooldownRemaining = 0;
+		_previousSignal = 0;
 	}
 
 	/// <inheritdoc />
@@ -170,15 +198,15 @@ public class ComboRightStrategy : Strategy
 		_barIndex = 0;
 
 		var cci = new CommodityChannelIndex { Length = CciPeriod };
-		var sub = SubscribeCandles(CandleType);
-		sub.Bind(cci, ProcessCandle).Start();
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(cci, ProcessCandle).Start();
 
 		StartProtection(new Unit(TakeProfit1, UnitTypes.Absolute), new Unit(StopLoss1, UnitTypes.Absolute));
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
-			DrawCandles(area, sub);
+			DrawCandles(area, subscription);
 			DrawIndicator(area, cci);
 			DrawOwnTrades(area);
 		}
@@ -187,89 +215,95 @@ public class ComboRightStrategy : Strategy
 	private void ProcessCandle(ICandleMessage candle, decimal cciValue)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
+
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
 
 		var len = _closeBuffer.Length;
 		_closeBuffer[_barIndex % len] = candle.ClosePrice;
 		_barIndex++;
 
 		if (_barIndex <= len)
-		return;
+			return;
 
-		var signal = Supervisor(cciValue);
+		var rawSignal = Supervisor(cciValue);
+		var signal = 0;
+		if (rawSignal > 0m && cciValue >= MinCciSignal)
+			signal = 1;
+		else if (rawSignal < 0m && cciValue <= -MinCciSignal)
+			signal = -1;
 
-		if (signal > 0 && Position <= 0)
+		if (_cooldownRemaining == 0)
 		{
-			if (Position < 0)
+			if (signal > 0 && _previousSignal <= 0 && Position <= 0)
+			{
+				if (Position < 0)
+					BuyMarket();
+
 				BuyMarket();
-			BuyMarket();
-		}
-		else if (signal < 0 && Position >= 0)
-		{
-			if (Position > 0)
+				_cooldownRemaining = CooldownBars;
+			}
+			else if (signal < 0 && _previousSignal >= 0 && Position >= 0)
+			{
+				if (Position > 0)
+					SellMarket();
+
 				SellMarket();
-			SellMarket();
+				_cooldownRemaining = CooldownBars;
+			}
 		}
+
+		if (signal != 0)
+			_previousSignal = signal;
 	}
 
-	private decimal Supervisor(decimal basicSig)
+	private decimal Supervisor(decimal basicSignal)
 	{
-		decimal signal = 0;
-
 		if (Pass == 4)
 		{
-		if (!Perceptron(out var output1, _sh11, _sh12, _sh13, _sh14, _sh15, _w11, _w12, _w13, _w14) ||
-		!Perceptron(out var output2, _sh21, _sh22, _sh23, _sh24, _sh25, _w21, _w22, _w23, _w24) ||
-		!Perceptron(out var output3, _sh31, _sh32, _sh33, _sh34, _sh35, _w31, _w32, _w33, _w34))
-		return 0;
+			if (!Perceptron(out var output1, _sh11, _sh12, _sh13, _sh14, _sh15, _w11, _w12, _w13, _w14) ||
+				!Perceptron(out var output2, _sh21, _sh22, _sh23, _sh24, _sh25, _w21, _w22, _w23, _w24) ||
+				!Perceptron(out var output3, _sh31, _sh32, _sh33, _sh34, _sh35, _w31, _w32, _w33, _w34))
+				return 0m;
 
-		if (output3 > 0)
-		{
-		if (output2 > 0)
-		signal = 1;
-		}
-		else
-		{
-		if (output1 < 0)
-		signal = -1;
-		}
+			if (output3 > 0m)
+				return output2 > 0m ? 1m : basicSignal;
 
-		if (signal == 0)
-		signal = basicSig;
-
-		return signal;
+			return output1 < 0m ? -1m : basicSignal;
 		}
 
 		if (Pass == 3)
 		{
-		if (!Perceptron(out var output2, _sh21, _sh22, _sh23, _sh24, _sh25, _w21, _w22, _w23, _w24))
-		return 0;
-		return output2 > 0 ? 1 : basicSig;
+			if (!Perceptron(out var output2, _sh21, _sh22, _sh23, _sh24, _sh25, _w21, _w22, _w23, _w24))
+				return 0m;
+
+			return output2 > 0m ? 1m : basicSignal;
 		}
 
 		if (Pass == 2)
 		{
-		if (!Perceptron(out var output1, _sh11, _sh12, _sh13, _sh14, _sh15, _w11, _w12, _w13, _w14))
-		return 0;
-		return output1 < 0 ? -1 : basicSig;
+			if (!Perceptron(out var output1, _sh11, _sh12, _sh13, _sh14, _sh15, _w11, _w12, _w13, _w14))
+				return 0m;
+
+			return output1 < 0m ? -1m : basicSignal;
 		}
 
-		return basicSig;
+		return basicSignal;
 	}
 
 	private bool Perceptron(out decimal output, int sh1, int sh2, int sh3, int sh4, int sh5,
 		decimal w1, decimal w2, decimal w3, decimal w4)
 	{
 		output = 0m;
-		var len = _closeBuffer.Length;
 		if (_barIndex <= sh5)
-		return false;
+			return false;
 
-		var csh1 = GetClose(sh1, len);
-		var osh2 = GetClose(sh2, len);
-		var osh3 = GetClose(sh3, len);
-		var osh4 = GetClose(sh4, len);
-		var osh5 = GetClose(sh5, len);
+		var csh1 = GetClose(sh1);
+		var osh2 = GetClose(sh2);
+		var osh3 = GetClose(sh3);
+		var osh4 = GetClose(sh4);
+		var osh5 = GetClose(sh5);
 
 		var a1 = csh1 - osh2;
 		var a2 = osh2 - osh3;
@@ -280,11 +314,14 @@ public class ComboRightStrategy : Strategy
 		return true;
 	}
 
-	private decimal GetClose(int shift, int len)
+	private decimal GetClose(int shift)
 	{
+		var len = _closeBuffer.Length;
 		var index = (_barIndex - 1 - shift) % len;
 		if (index < 0)
-		index += len;
+			index += len;
+
 		return _closeBuffer[index];
 	}
 }
+

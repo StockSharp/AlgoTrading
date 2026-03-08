@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -26,9 +23,12 @@ public class LiquidexStrategy : Strategy
 	private readonly StrategyParam<decimal> _moveToBeOffset;
 	private readonly StrategyParam<decimal> _trailingDistance;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<decimal> _breakoutPercent;
+	private readonly StrategyParam<int> _cooldownBars;
 
 	private decimal _entryPrice;
 	private decimal _stopPrice;
+	private int _cooldownRemaining;
 
 	/// <summary>
 	/// Keltner Channels period.
@@ -103,6 +103,24 @@ public class LiquidexStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Minimum breakout percentage beyond the Keltner boundary.
+	/// </summary>
+	public decimal BreakoutPercent
+	{
+		get => _breakoutPercent.Value;
+		set => _breakoutPercent.Value = value;
+	}
+
+	/// <summary>
+	/// Number of completed candles to wait after a position change.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Initialize Liquidex strategy.
 	/// </summary>
 	public LiquidexStrategy()
@@ -111,24 +129,37 @@ public class LiquidexStrategy : Strategy
 			.SetDisplay("KC Period", "Keltner Channels period", "Parameters");
 		_useKcFilter = Param(nameof(UseKcFilter), true)
 			.SetDisplay("Use KC Filter", "Enable Keltner Channels breakout filter", "Parameters");
-		_stopLoss = Param(nameof(StopLoss), 30m)
+		_stopLoss = Param(nameof(StopLoss), 60m)
 			.SetDisplay("Stop Loss", "Stop loss in price units", "Risk");
-		_takeProfit = Param(nameof(TakeProfit), 0m)
+		_takeProfit = Param(nameof(TakeProfit), 120m)
 			.SetDisplay("Take Profit", "Take profit in price units, 0 disables", "Risk");
-		_moveToBe = Param(nameof(MoveToBe), 15m)
+		_moveToBe = Param(nameof(MoveToBe), 30m)
 			.SetDisplay("Move To BE", "Profit to move stop to break-even, 0 disables", "Risk");
-		_moveToBeOffset = Param(nameof(MoveToBeOffset), 2m)
+		_moveToBeOffset = Param(nameof(MoveToBeOffset), 4m)
 			.SetDisplay("BE Offset", "Offset when moving stop to break-even", "Risk");
-		_trailingDistance = Param(nameof(TrailingDistance), 5m)
+		_trailingDistance = Param(nameof(TrailingDistance), 15m)
 			.SetDisplay("Trailing", "Trailing stop distance, 0 disables", "Risk");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle", "Candle type", "General");
+		_breakoutPercent = Param(nameof(BreakoutPercent), 0.0025m)
+			.SetDisplay("Breakout %", "Minimum breakout beyond Keltner boundary", "Filters");
+		_cooldownBars = Param(nameof(CooldownBars), 6)
+			.SetDisplay("Cooldown Bars", "Completed candles to wait after a position change", "Trading");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_entryPrice = 0m;
+		_stopPrice = 0m;
+		_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
@@ -153,28 +184,35 @@ public class LiquidexStrategy : Strategy
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue keltnerValue)
 	{
-		if (candle.State != CandleStates.Finished)
+		if (candle.State != CandleStates.Finished || !keltnerValue.IsFinal)
 			return;
+
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
 
 		var kc = (KeltnerChannelsValue)keltnerValue;
 		if (kc.Upper is not decimal upper || kc.Lower is not decimal lower || kc.Middle is not decimal middle)
 			return;
 
 		var price = candle.ClosePrice;
+		var longBreakout = price > upper && price >= upper * (1m + BreakoutPercent);
+		var shortBreakout = price < lower && price <= lower * (1m - BreakoutPercent);
 
-		if (Position == 0)
+		if (Position == 0 && _cooldownRemaining == 0)
 		{
-			if (!UseKcFilter || price > upper)
+			if (!UseKcFilter || longBreakout)
 			{
 				BuyMarket();
 				_entryPrice = price;
 				_stopPrice = price - StopLoss;
+				_cooldownRemaining = CooldownBars;
 			}
-			else if (!UseKcFilter || price < lower)
+			else if (!UseKcFilter || shortBreakout)
 			{
 				SellMarket();
 				_entryPrice = price;
 				_stopPrice = price + StopLoss;
+				_cooldownRemaining = CooldownBars;
 			}
 		}
 		else if (Position > 0)
@@ -182,10 +220,12 @@ public class LiquidexStrategy : Strategy
 			if (TakeProfit > 0m && price >= _entryPrice + TakeProfit)
 			{
 				SellMarket();
+				_cooldownRemaining = CooldownBars;
 			}
 			else if (price <= _stopPrice)
 			{
 				SellMarket();
+				_cooldownRemaining = CooldownBars;
 			}
 			else
 			{
@@ -200,10 +240,12 @@ public class LiquidexStrategy : Strategy
 			if (TakeProfit > 0m && price <= _entryPrice - TakeProfit)
 			{
 				BuyMarket();
+				_cooldownRemaining = CooldownBars;
 			}
 			else if (price >= _stopPrice)
 			{
 				BuyMarket();
+				_cooldownRemaining = CooldownBars;
 			}
 			else
 			{

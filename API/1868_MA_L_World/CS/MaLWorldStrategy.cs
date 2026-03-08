@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -24,72 +21,65 @@ public class MaLWorldStrategy : Strategy
 	private readonly StrategyParam<decimal> _stopLoss;
 	private readonly StrategyParam<decimal> _takeProfit;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<decimal> _minSpreadPercent;
+	private readonly StrategyParam<int> _cooldownBars;
 
-	private WeightedMovingAverage _fastMa;
-	private WeightedMovingAverage _slowMa;
-	private ExponentialMovingAverage _trailingMa;
-
+	private WeightedMovingAverage _fastMa = null!;
+	private WeightedMovingAverage _slowMa = null!;
+	private ExponentialMovingAverage _trailingMa = null!;
 	private bool _initialized;
 	private decimal _prevFast;
 	private decimal _prevSlow;
+	private int _cooldownRemaining;
 
-	/// <summary>
-	/// Fast moving average period.
-	/// </summary>
 	public int FastMaLength
 	{
 		get => _fastMaLength.Value;
 		set => _fastMaLength.Value = value;
 	}
 
-	/// <summary>
-	/// Slow moving average period.
-	/// </summary>
 	public int SlowMaLength
 	{
 		get => _slowMaLength.Value;
 		set => _slowMaLength.Value = value;
 	}
 
-	/// <summary>
-	/// Trailing EMA period.
-	/// </summary>
 	public int TrailingMaPeriod
 	{
 		get => _trailingMaPeriod.Value;
 		set => _trailingMaPeriod.Value = value;
 	}
 
-	/// <summary>
-	/// Stop loss distance in price units.
-	/// </summary>
 	public decimal StopLoss
 	{
 		get => _stopLoss.Value;
 		set => _stopLoss.Value = value;
 	}
 
-	/// <summary>
-	/// Take profit distance in price units.
-	/// </summary>
 	public decimal TakeProfit
 	{
 		get => _takeProfit.Value;
 		set => _takeProfit.Value = value;
 	}
 
-	/// <summary>
-	/// Candle type used for calculations.
-	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Initializes a new instance of <see cref="MaLWorldStrategy"/>.
-	/// </summary>
+	public decimal MinSpreadPercent
+	{
+		get => _minSpreadPercent.Value;
+		set => _minSpreadPercent.Value = value;
+	}
+
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
 	public MaLWorldStrategy()
 	{
 		_fastMaLength = Param(nameof(FastMaLength), 12)
@@ -112,8 +102,14 @@ public class MaLWorldStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit", "Fixed take profit distance", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
+
+		_minSpreadPercent = Param(nameof(MinSpreadPercent), 0.0008m)
+			.SetDisplay("Minimum Spread %", "Minimum normalized spread between fast and slow MA", "Filters");
+
+		_cooldownBars = Param(nameof(CooldownBars), 3)
+			.SetDisplay("Cooldown Bars", "Completed candles to wait after a position change", "Trading");
 	}
 
 	/// <inheritdoc />
@@ -126,10 +122,13 @@ public class MaLWorldStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_fastMa = null;
-		_slowMa = null;
-		_trailingMa = null;
+		_fastMa = null!;
+		_slowMa = null!;
+		_trailingMa = null!;
 		_initialized = false;
+		_prevFast = 0m;
+		_prevSlow = 0m;
+		_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
@@ -161,11 +160,11 @@ public class MaLWorldStrategy : Strategy
 
 	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow, decimal trail)
 	{
-		if (candle.State != CandleStates.Finished)
+		if (candle.State != CandleStates.Finished || !_fastMa.IsFormed || !_slowMa.IsFormed || !_trailingMa.IsFormed)
 			return;
 
-		if (!_fastMa.IsFormed || !_slowMa.IsFormed || !_trailingMa.IsFormed)
-			return;
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
 
 		if (!_initialized)
 		{
@@ -175,26 +174,43 @@ public class MaLWorldStrategy : Strategy
 			return;
 		}
 
-		var crossUp = _prevFast <= _prevSlow && fast > slow;
-		var crossDown = _prevFast >= _prevSlow && fast < slow;
+		var spreadPercent = candle.ClosePrice != 0m ? Math.Abs(fast - slow) / candle.ClosePrice : 0m;
+		var crossUp = _prevFast <= _prevSlow && fast > slow && spreadPercent >= MinSpreadPercent;
+		var crossDown = _prevFast >= _prevSlow && fast < slow && spreadPercent >= MinSpreadPercent;
 
-		if (crossUp && Position <= 0)
+		if (_cooldownRemaining == 0)
 		{
-			if (Position < 0) BuyMarket();
-			BuyMarket();
-		}
-		else if (crossDown && Position >= 0)
-		{
-			if (Position > 0) SellMarket();
-			SellMarket();
+			if (crossUp && Position <= 0)
+			{
+				if (Position < 0)
+					BuyMarket();
+
+				BuyMarket();
+				_cooldownRemaining = CooldownBars;
+			}
+			else if (crossDown && Position >= 0)
+			{
+				if (Position > 0)
+					SellMarket();
+
+				SellMarket();
+				_cooldownRemaining = CooldownBars;
+			}
 		}
 
 		_prevFast = fast;
 		_prevSlow = slow;
 
 		if (Position > 0 && candle.LowPrice <= trail)
+		{
 			SellMarket();
+			_cooldownRemaining = CooldownBars;
+		}
 		else if (Position < 0 && candle.HighPrice >= trail)
+		{
 			BuyMarket();
+			_cooldownRemaining = CooldownBars;
+		}
 	}
 }
+

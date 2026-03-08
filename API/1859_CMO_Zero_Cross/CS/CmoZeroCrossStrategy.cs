@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,8 +12,6 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Strategy that enters on Chande Momentum Oscillator zero cross.
-/// Buys when CMO crosses below zero and sells when it crosses above.
-/// Optional stop loss and take profit are applied in points.
 /// </summary>
 public class CmoZeroCrossStrategy : Strategy
 {
@@ -28,89 +23,75 @@ public class CmoZeroCrossStrategy : Strategy
 	private readonly StrategyParam<bool> _allowLongExit;
 	private readonly StrategyParam<bool> _allowShortExit;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<decimal> _minAbsCmo;
+	private readonly StrategyParam<int> _cooldownBars;
 
-	private ChandeMomentumOscillator _cmo;
+	private ChandeMomentumOscillator _cmo = null!;
 	private decimal? _prevCmo;
+	private int _cooldownRemaining;
 
-
-	/// <summary>
-	/// Period for the Chande Momentum Oscillator.
-	/// </summary>
 	public int CmoPeriod
 	{
 		get => _cmoPeriod.Value;
 		set => _cmoPeriod.Value = value;
 	}
 
-	/// <summary>
-	/// Stop loss in points.
-	/// </summary>
 	public decimal StopLoss
 	{
 		get => _stopLoss.Value;
 		set => _stopLoss.Value = value;
 	}
 
-	/// <summary>
-	/// Take profit in points.
-	/// </summary>
 	public decimal TakeProfit
 	{
 		get => _takeProfit.Value;
 		set => _takeProfit.Value = value;
 	}
 
-	/// <summary>
-	/// Enable opening long positions.
-	/// </summary>
 	public bool AllowLongEntry
 	{
 		get => _allowLongEntry.Value;
 		set => _allowLongEntry.Value = value;
 	}
 
-	/// <summary>
-	/// Enable opening short positions.
-	/// </summary>
 	public bool AllowShortEntry
 	{
 		get => _allowShortEntry.Value;
 		set => _allowShortEntry.Value = value;
 	}
 
-	/// <summary>
-	/// Enable closing long positions.
-	/// </summary>
 	public bool AllowLongExit
 	{
 		get => _allowLongExit.Value;
 		set => _allowLongExit.Value = value;
 	}
 
-	/// <summary>
-	/// Enable closing short positions.
-	/// </summary>
 	public bool AllowShortExit
 	{
 		get => _allowShortExit.Value;
 		set => _allowShortExit.Value = value;
 	}
 
-	/// <summary>
-	/// Candle type used for calculations.
-	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Initializes a new instance of <see cref="CmoZeroCrossStrategy"/>.
-	/// </summary>
+	public decimal MinAbsCmo
+	{
+		get => _minAbsCmo.Value;
+		set => _minAbsCmo.Value = value;
+	}
+
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
 	public CmoZeroCrossStrategy()
 	{
-
 		_cmoPeriod = Param(nameof(CmoPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("CMO Period", "Period for Chande Momentum Oscillator", "Indicators");
@@ -135,8 +116,14 @@ public class CmoZeroCrossStrategy : Strategy
 		_allowShortExit = Param(nameof(AllowShortExit), true)
 			.SetDisplay("Allow Short Exit", "Permission to close short positions", "Strategy");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for calculations", "General");
+
+		_minAbsCmo = Param(nameof(MinAbsCmo), 5m)
+			.SetDisplay("Minimum CMO", "Minimum absolute CMO value required after a zero cross", "Filters");
+
+		_cooldownBars = Param(nameof(CooldownBars), 4)
+			.SetDisplay("Cooldown Bars", "Completed candles to wait after a position change", "Trading");
 	}
 
 	/// <inheritdoc />
@@ -149,8 +136,9 @@ public class CmoZeroCrossStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_cmo = null;
+		_cmo = null!;
 		_prevCmo = null;
+		_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
@@ -159,9 +147,8 @@ public class CmoZeroCrossStrategy : Strategy
 		base.OnStarted2(time);
 
 		_cmo = new ChandeMomentumOscillator { Length = CmoPeriod };
-
-		var sub = SubscribeCandles(CandleType);
-		sub.Bind(_cmo, ProcessCandle).Start();
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(_cmo, ProcessCandle).Start();
 
 		StartProtection(
 			takeProfit: new Unit(TakeProfit, UnitTypes.Absolute),
@@ -170,7 +157,7 @@ public class CmoZeroCrossStrategy : Strategy
 		var area = CreateChartArea();
 		if (area != null)
 		{
-			DrawCandles(area, sub);
+			DrawCandles(area, subscription);
 			DrawIndicator(area, _cmo);
 			DrawOwnTrades(area);
 		}
@@ -178,41 +165,42 @@ public class CmoZeroCrossStrategy : Strategy
 
 	private void ProcessCandle(ICandleMessage candle, decimal cmoValue)
 	{
-		if (candle.State != CandleStates.Finished)
+		if (candle.State != CandleStates.Finished || _cmo == null || !_cmo.IsFormed)
 			return;
 
-		if (_cmo == null || !_cmo.IsFormed)
-			return;
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
 
 		var prev = _prevCmo;
 		_prevCmo = cmoValue;
-		if (prev == null)
+		if (prev == null || _cooldownRemaining > 0)
 			return;
 
-		var crossDown = prev > 0m && cmoValue < 0m;
-		var crossUp = prev < 0m && cmoValue > 0m;
+		var crossUp = prev < 0m && cmoValue > 0m && Math.Abs(cmoValue) >= MinAbsCmo;
+		var crossDown = prev > 0m && cmoValue < 0m && Math.Abs(cmoValue) >= MinAbsCmo;
 
-		if (crossDown)
+		if (crossUp)
 		{
+			if (AllowShortExit && Position < 0)
+				BuyMarket();
+
 			if (AllowLongEntry && Position <= 0)
 			{
-				if (Position < 0)
-					BuyMarket();
 				BuyMarket();
+				_cooldownRemaining = CooldownBars;
 			}
-			else if (AllowShortExit && Position < 0)
-				BuyMarket();
 		}
-		else if (crossUp)
+		else if (crossDown)
 		{
+			if (AllowLongExit && Position > 0)
+				SellMarket();
+
 			if (AllowShortEntry && Position >= 0)
 			{
-				if (Position > 0)
-					SellMarket();
 				SellMarket();
+				_cooldownRemaining = CooldownBars;
 			}
-			else if (AllowLongExit && Position > 0)
-				SellMarket();
 		}
 	}
 }
+

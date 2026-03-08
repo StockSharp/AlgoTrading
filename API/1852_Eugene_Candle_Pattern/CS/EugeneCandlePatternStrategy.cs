@@ -1,137 +1,197 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
-using StockSharp.Algo.Indicators;
+
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-
+/// <summary>
+/// Candle pattern strategy with breakout confirmation.
+/// </summary>
 public class EugeneCandlePatternStrategy : Strategy
 {
 	private readonly StrategyParam<int> _sl;
 	private readonly StrategyParam<int> _tp;
 	private readonly StrategyParam<bool> _inv;
 	private readonly StrategyParam<DataType> _cType;
+	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _minBodyPercent;
 
-	private readonly ICandleMessage[] _r = new ICandleMessage[4];
-	private decimal _stop, _take;
+	private readonly ICandleMessage[] _recent = new ICandleMessage[4];
+	private decimal _stop;
+	private decimal _take;
+	private int _cooldownRemaining;
 
 	public int StopLossPoints { get => _sl.Value; set => _sl.Value = value; }
 	public int TakeProfitPoints { get => _tp.Value; set => _tp.Value = value; }
 	public bool InvertSignals { get => _inv.Value; set => _inv.Value = value; }
 	public DataType CandleType { get => _cType.Value; set => _cType.Value = value; }
+	public int CooldownBars { get => _cooldownBars.Value; set => _cooldownBars.Value = value; }
+	public decimal MinBodyPercent { get => _minBodyPercent.Value; set => _minBodyPercent.Value = value; }
 
 	public EugeneCandlePatternStrategy()
 	{
-		_sl = Param(nameof(StopLossPoints), 0).SetDisplay("Stop Loss (points)", "Stop loss in price steps, 0 - disabled", "Risk");
-		_tp = Param(nameof(TakeProfitPoints), 0).SetDisplay("Take Profit (points)", "Take profit in price steps, 0 - disabled", "Risk");
+		_sl = Param(nameof(StopLossPoints), 500).SetDisplay("Stop Loss (points)", "Stop loss in price steps, 0 - disabled", "Risk");
+		_tp = Param(nameof(TakeProfitPoints), 800).SetDisplay("Take Profit (points)", "Take profit in price steps, 0 - disabled", "Risk");
 		_inv = Param(nameof(InvertSignals), false).SetDisplay("Invert Signals", "Swap buy and sell signals", "General");
-		_cType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Type of candles", "General");
+		_cType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame()).SetDisplay("Candle Type", "Type of candles", "General");
+		_cooldownBars = Param(nameof(CooldownBars), 4).SetDisplay("Cooldown Bars", "Completed candles to wait after a position change", "Trading");
+		_minBodyPercent = Param(nameof(MinBodyPercent), 0.0015m).SetDisplay("Minimum Body %", "Minimum candle body size relative to close price", "Filters");
 	}
 
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities() => [(Security, CandleType)];
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
 
+	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		Array.Clear(_r);
-		_stop = _take = 0m;
+		Array.Clear(_recent, 0, _recent.Length);
+		_stop = 0m;
+		_take = 0m;
+		_cooldownRemaining = 0;
 	}
 
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		var s = SubscribeCandles(CandleType);
-		s.Bind(Process).Start();
-		var a = CreateChartArea();
-		if (a != null)
-		{ DrawCandles(a, s); DrawOwnTrades(a); }
+
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(Process).Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawOwnTrades(area);
+		}
+
 		StartProtection(null, null);
 	}
 
-	private void Process(ICandleMessage c)
+	private void Process(ICandleMessage candle)
 	{
-		if (c.State != CandleStates.Finished)
+		if (candle.State != CandleStates.Finished)
 			return;
-		CheckStops(c);
-		_r[3] = _r[2];
-		_r[2] = _r[1];
-		_r[1] = _r[0];
-		_r[0] = c;
-		if (_r[3] is null)
+
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
+
+		CheckStops(candle);
+		_recent[3] = _recent[2];
+		_recent[2] = _recent[1];
+		_recent[1] = _recent[0];
+		_recent[0] = candle;
+
+		if (_recent[3] is null)
 			return;
-		Compute(out var ob, out var os, out var cb, out var cs);
+
+		ComputeSignals(out var openBuy, out var openSell, out var closeBuy, out var closeSell);
 		if (InvertSignals)
-		{ (ob, os) = (os, ob); (cb, cs) = (cs, cb); }
-		if (Position > 0 && cb)
-			ClosePos();
-		else if (Position < 0 && cs)
-			ClosePos();
-		if (Position <= 0 && ob && !os && !cb)
-		{ if (Position < 0) BuyMarket(); BuyMarket(); SetStops(c.ClosePrice, true); }
-		else if (Position >= 0 && os && !ob && !cs)
-		{ if (Position > 0) SellMarket(); SellMarket(); SetStops(c.ClosePrice, false); }
+		{
+			(openBuy, openSell) = (openSell, openBuy);
+			(closeBuy, closeSell) = (closeSell, closeBuy);
+		}
+
+		if (Position > 0 && closeBuy)
+			ClosePosition();
+		else if (Position < 0 && closeSell)
+			ClosePosition();
+
+		if (_cooldownRemaining > 0)
+			return;
+
+		if (Position <= 0 && openBuy && !openSell)
+		{
+			if (Position < 0)
+				BuyMarket();
+
+			BuyMarket();
+			SetStops(candle.ClosePrice, true);
+			_cooldownRemaining = CooldownBars;
+		}
+		else if (Position >= 0 && openSell && !openBuy)
+		{
+			if (Position > 0)
+				SellMarket();
+
+			SellMarket();
+			SetStops(candle.ClosePrice, false);
+			_cooldownRemaining = CooldownBars;
+		}
 	}
 
-	private void Compute(out bool ob, out bool os, out bool cb, out bool cs)
+	private void ComputeSignals(out bool openBuy, out bool openSell, out bool closeBuy, out bool closeSell)
 	{
-		var r0 = _r[0];
-		var r1 = _r[1];
-		var r2 = _r[2];
-		ob = os = cb = cs = false;
-		var bi = r1.HighPrice <= r2.HighPrice && r1.LowPrice >= r2.LowPrice && r1.ClosePrice <= r1.OpenPrice;
-		var wi = r1.HighPrice <= r2.HighPrice && r1.LowPrice >= r2.LowPrice && r1.ClosePrice > r1.OpenPrice;
-		var wb = wi && r2.ClosePrice > r2.OpenPrice;
-		var bb = bi && r2.ClosePrice < r2.OpenPrice;
-		var zb = r1.OpenPrice < r1.ClosePrice ? r1.ClosePrice - (r1.ClosePrice - r1.OpenPrice) / 3m : r1.ClosePrice - (r1.ClosePrice - r1.LowPrice) / 3m;
-		var zs = r1.OpenPrice > r1.ClosePrice ? r1.ClosePrice + (r1.OpenPrice - r1.ClosePrice) / 3m : r1.ClosePrice + (r1.HighPrice - r1.ClosePrice) / 3m;
-		var h = r0.OpenTime.Hour;
-		var cB = (r0.LowPrice <= zb || h >= 8) && !bb && !wi;
-		var cS = (r0.HighPrice >= zs || h >= 8) && !wb && !bi;
-		var bSig = r0.HighPrice > r1.HighPrice;
-		var sSig = r0.LowPrice < r1.LowPrice;
-		if (bSig && cB && r0.LowPrice > r1.LowPrice && r1.LowPrice < r2.HighPrice)
-			ob = true;
-		if (sSig && cS && r0.HighPrice < r1.HighPrice && r1.HighPrice > r2.LowPrice)
-			os = true;
-		if (sSig && cS && r0.HighPrice < r1.HighPrice)
-			cb = true;
-		if (bSig && cB && r0.LowPrice > r1.LowPrice)
-			cs = true;
+		var current = _recent[0];
+		var prev = _recent[1];
+		var prev2 = _recent[2];
+		openBuy = false;
+		openSell = false;
+		closeBuy = false;
+		closeSell = false;
+
+		var prevBody = Math.Abs(prev.ClosePrice - prev.OpenPrice);
+		var currentBody = Math.Abs(current.ClosePrice - current.OpenPrice);
+		var prevBodyPercent = prev.ClosePrice != 0m ? prevBody / prev.ClosePrice : 0m;
+		var currentBodyPercent = current.ClosePrice != 0m ? currentBody / current.ClosePrice : 0m;
+		var bullishSetup = prev.ClosePrice < prev.OpenPrice && prev.LowPrice > prev2.LowPrice;
+		var bearishSetup = prev.ClosePrice > prev.OpenPrice && prev.HighPrice < prev2.HighPrice;
+		var bullishBreakout = current.ClosePrice > prev.HighPrice && current.ClosePrice > current.OpenPrice;
+		var bearishBreakout = current.ClosePrice < prev.LowPrice && current.ClosePrice < current.OpenPrice;
+
+		openBuy = bullishSetup && bullishBreakout && prevBodyPercent >= MinBodyPercent && currentBodyPercent >= MinBodyPercent;
+		openSell = bearishSetup && bearishBreakout && prevBodyPercent >= MinBodyPercent && currentBodyPercent >= MinBodyPercent;
+		closeBuy = current.ClosePrice < prev.LowPrice;
+		closeSell = current.ClosePrice > prev.HighPrice;
 	}
 
 	private void SetStops(decimal price, bool longPos)
 	{
 		var step = Security.PriceStep ?? 1m;
 		if (longPos)
-		{ _stop = StopLossPoints > 0 ? price - step * StopLossPoints : 0m; _take = TakeProfitPoints > 0 ? price + step * TakeProfitPoints : 0m; }
+		{
+			_stop = StopLossPoints > 0 ? price - step * StopLossPoints : 0m;
+			_take = TakeProfitPoints > 0 ? price + step * TakeProfitPoints : 0m;
+		}
 		else
-		{ _stop = StopLossPoints > 0 ? price + step * StopLossPoints : 0m; _take = TakeProfitPoints > 0 ? price - step * TakeProfitPoints : 0m; }
+		{
+			_stop = StopLossPoints > 0 ? price + step * StopLossPoints : 0m;
+			_take = TakeProfitPoints > 0 ? price - step * TakeProfitPoints : 0m;
+		}
 	}
 
-	private void ClosePos()
+	private void ClosePosition()
 	{
-		if (Position > 0) SellMarket();
-		else if (Position < 0) BuyMarket();
+		if (Position > 0)
+			SellMarket();
+		else if (Position < 0)
+			BuyMarket();
+
+		_stop = 0m;
+		_take = 0m;
+		_cooldownRemaining = CooldownBars;
 	}
 
-	private void CheckStops(ICandleMessage c)
+	private void CheckStops(ICandleMessage candle)
 	{
 		if (Position > 0)
 		{
-			if ((_stop != 0m && c.LowPrice <= _stop) || (_take != 0m && c.HighPrice >= _take))
-				ClosePos();
+			if ((_stop != 0m && candle.LowPrice <= _stop) || (_take != 0m && candle.HighPrice >= _take))
+				ClosePosition();
 		}
 		else if (Position < 0)
 		{
-			if ((_stop != 0m && c.HighPrice >= _stop) || (_take != 0m && c.LowPrice <= _take))
-				ClosePos();
+			if ((_stop != 0m && candle.HighPrice >= _stop) || (_take != 0m && candle.LowPrice <= _take))
+				ClosePosition();
 		}
 	}
 }
+

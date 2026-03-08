@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,7 +12,6 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Strategy based on moving averages and RelativeStrengthIndex crossover.
-/// Goes long when both fast EMA and RelativeStrengthIndex exceed their slow counterparts, and short in the opposite case.
 /// </summary>
 public class MaRsiTriggerStrategy : Strategy
 {
@@ -28,8 +24,12 @@ public class MaRsiTriggerStrategy : Strategy
 	private readonly StrategyParam<bool> _allowLongExit;
 	private readonly StrategyParam<bool> _allowShortExit;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<decimal> _minRsiSpread;
+	private readonly StrategyParam<decimal> _minMaSpreadPercent;
+	private readonly StrategyParam<int> _cooldownBars;
 
 	private int _previousTrend;
+	private int _cooldownRemaining;
 
 	/// <summary>
 	/// Fast RelativeStrengthIndex period.
@@ -77,32 +77,43 @@ public class MaRsiTriggerStrategy : Strategy
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	/// <summary>
-	/// Constructor.
+	/// Minimum spread between fast and slow RelativeStrengthIndex values.
+	/// </summary>
+	public decimal MinRsiSpread { get => _minRsiSpread.Value; set => _minRsiSpread.Value = value; }
+
+	/// <summary>
+	/// Minimum normalized EMA spread.
+	/// </summary>
+	public decimal MinMaSpreadPercent { get => _minMaSpreadPercent.Value; set => _minMaSpreadPercent.Value = value; }
+
+	/// <summary>
+	/// Number of completed candles to wait after a position change.
+	/// </summary>
+	public int CooldownBars { get => _cooldownBars.Value; set => _cooldownBars.Value = value; }
+
+	/// <summary>
+	/// Initializes a new instance of the <see cref="MaRsiTriggerStrategy"/> class.
 	/// </summary>
 	public MaRsiTriggerStrategy()
 	{
 		_fastRsiPeriod = Param(nameof(FastRsiPeriod), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast RelativeStrengthIndex Period", "Period of the fast RelativeStrengthIndex", "RelativeStrengthIndex")
-			
 			.SetOptimize(2, 10, 1);
 
 		_slowRsiPeriod = Param(nameof(SlowRsiPeriod), 13)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow RelativeStrengthIndex Period", "Period of the slow RelativeStrengthIndex", "RelativeStrengthIndex")
-			
 			.SetOptimize(10, 30, 1);
 
 		_fastMaPeriod = Param(nameof(FastMaPeriod), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast EMA Period", "Period of the fast EMA", "MA")
-			
 			.SetOptimize(3, 15, 1);
 
 		_slowMaPeriod = Param(nameof(SlowMaPeriod), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow EMA Period", "Period of the slow EMA", "MA")
-			
 			.SetOptimize(5, 30, 1);
 
 		_allowBuyEntry = Param(nameof(AllowBuyEntry), true)
@@ -117,8 +128,17 @@ public class MaRsiTriggerStrategy : Strategy
 		_allowShortExit = Param(nameof(AllowShortExit), true)
 			.SetDisplay("Allow Short Exit", "Enable exiting short positions", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
+
+		_minRsiSpread = Param(nameof(MinRsiSpread), 6m)
+			.SetDisplay("Minimum RelativeStrengthIndex Spread", "Minimum spread between fast and slow RelativeStrengthIndex values", "Filters");
+
+		_minMaSpreadPercent = Param(nameof(MinMaSpreadPercent), 0.0025m)
+			.SetDisplay("Minimum EMA Spread %", "Minimum normalized spread between fast and slow EMA values", "Filters");
+
+		_cooldownBars = Param(nameof(CooldownBars), 6)
+			.SetDisplay("Cooldown Bars", "Completed candles to wait after a position change", "Trading");
 	}
 
 	/// <inheritdoc />
@@ -132,6 +152,7 @@ public class MaRsiTriggerStrategy : Strategy
 	{
 		base.OnReseted();
 		_previousTrend = 0;
+		_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
@@ -164,41 +185,53 @@ public class MaRsiTriggerStrategy : Strategy
 
 	private void ProcessCandle(ICandleMessage candle, decimal fastRsiValue, decimal slowRsiValue, decimal fastMaValue, decimal slowMaValue)
 	{
-		// Process only finished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
+
+		var normalizedMaSpread = slowMaValue != 0m ? Math.Abs(fastMaValue - slowMaValue) / slowMaValue : 0m;
+		var rsiSpread = Math.Abs(fastRsiValue - slowRsiValue);
 		var trend = 0;
 
-		if (fastMaValue > slowMaValue)
+		if (fastMaValue > slowMaValue && normalizedMaSpread >= MinMaSpreadPercent)
 			trend++;
-		else if (fastMaValue < slowMaValue)
+		else if (fastMaValue < slowMaValue && normalizedMaSpread >= MinMaSpreadPercent)
 			trend--;
 
-		if (fastRsiValue > slowRsiValue)
+		if (fastRsiValue > slowRsiValue && rsiSpread >= MinRsiSpread)
 			trend++;
-		else if (fastRsiValue < slowRsiValue)
+		else if (fastRsiValue < slowRsiValue && rsiSpread >= MinRsiSpread)
 			trend--;
 
-		if (_previousTrend < 0 && trend > 0)
+		if (_cooldownRemaining == 0)
 		{
-			// Trend turned bullish
-			if (AllowShortExit && Position < 0)
-				BuyMarket();
+			if (_previousTrend < 0 && trend > 0)
+			{
+				if (AllowShortExit && Position < 0)
+					BuyMarket();
 
-			if (AllowBuyEntry && Position <= 0)
-				BuyMarket();
+				if (AllowBuyEntry && Position <= 0)
+				{
+					BuyMarket();
+					_cooldownRemaining = CooldownBars;
+				}
+			}
+			else if (_previousTrend > 0 && trend < 0)
+			{
+				if (AllowLongExit && Position > 0)
+					SellMarket();
+
+				if (AllowSellEntry && Position >= 0)
+				{
+					SellMarket();
+					_cooldownRemaining = CooldownBars;
+				}
+			}
 		}
-		else if (_previousTrend > 0 && trend < 0)
-		{
-			// Trend turned bearish
-			if (AllowLongExit && Position > 0)
-				SellMarket();
 
-			if (AllowSellEntry && Position >= 0)
-				SellMarket();
-		}
-
-		_previousTrend = trend;
+		if (trend != 0)
+			_previousTrend = trend;
 	}
 }

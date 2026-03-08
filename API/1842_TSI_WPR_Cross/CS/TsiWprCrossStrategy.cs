@@ -21,11 +21,13 @@ namespace StockSharp.Samples.Strategies;
 public class TsiWprCrossStrategy : Strategy
 {
 	private readonly StrategyParam<int> _wprPeriod;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _prevTsi;
 	private decimal _prevSignal;
 	private bool _initialized;
+	private int _cooldownRemaining;
 
 	/// <summary>
 	/// Williams %R period.
@@ -34,6 +36,15 @@ public class TsiWprCrossStrategy : Strategy
 	{
 		get => _wprPeriod.Value;
 		set => _wprPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Number of completed candles to wait after a position change.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	/// <summary>
@@ -51,6 +62,9 @@ public class TsiWprCrossStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Williams %R Period", "Period for Williams %R", "Indicators");
 
+		_cooldownBars = Param(nameof(CooldownBars), 4)
+			.SetDisplay("Cooldown Bars", "Completed candles to wait after a signal", "Signal");
+
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type for strategy", "General");
 	}
@@ -59,6 +73,17 @@ public class TsiWprCrossStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_prevTsi = 0m;
+		_prevSignal = 0m;
+		_initialized = false;
+		_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
@@ -95,7 +120,7 @@ public class TsiWprCrossStrategy : Strategy
 		if (tv.Tsi is not decimal tsi || tv.Signal is not decimal signal)
 			return;
 
-		var wpr = wprValue.GetValue<decimal>();
+		var wpr = wprValue.ToDecimal();
 
 		if (!_initialized)
 		{
@@ -108,18 +133,23 @@ public class TsiWprCrossStrategy : Strategy
 		var crossedUp = _prevTsi <= _prevSignal && tsi > signal;
 		var crossedDown = _prevTsi >= _prevSignal && tsi < signal;
 
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
+
 		// WPR range: -100 to 0. Oversold < -80, Overbought > -20
-		if (crossedUp && wpr < -50 && Position <= 0)
+		if (crossedUp && wpr < -55 && _cooldownRemaining == 0 && Position <= 0)
 		{
 			if (Position < 0)
 				BuyMarket();
 			BuyMarket();
+			_cooldownRemaining = CooldownBars;
 		}
-		else if (crossedDown && wpr > -50 && Position >= 0)
+		else if (crossedDown && wpr > -45 && _cooldownRemaining == 0 && Position >= 0)
 		{
 			if (Position > 0)
 				SellMarket();
 			SellMarket();
+			_cooldownRemaining = CooldownBars;
 		}
 
 		_prevTsi = tsi;

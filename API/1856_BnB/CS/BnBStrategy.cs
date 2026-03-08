@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -20,33 +17,56 @@ public class BnBStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _length;
+	private readonly StrategyParam<decimal> _minNetPower;
+	private readonly StrategyParam<int> _cooldownBars;
 
 	private decimal _prevBull;
 	private decimal _prevBear;
 	private bool _initialized;
-
-	// Manual EMA for bull/bear
 	private decimal _bullEma;
 	private decimal _bearEma;
 	private decimal _k;
 	private int _count;
+	private int _cooldownRemaining;
 
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 	public int Length { get => _length.Value; set => _length.Value = value; }
+	public decimal MinNetPower { get => _minNetPower.Value; set => _minNetPower.Value = value; }
+	public int CooldownBars { get => _cooldownBars.Value; set => _cooldownBars.Value = value; }
 
 	public BnBStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candles used for calculations", "General");
 
 		_length = Param(nameof(Length), 14)
 			.SetDisplay("EMA Length", "Length of smoothing for bulls and bears", "Parameters");
+
+		_minNetPower = Param(nameof(MinNetPower), 20m)
+			.SetDisplay("Minimum Net Power", "Minimum absolute net bull/bear power for entries", "Filters");
+
+		_cooldownBars = Param(nameof(CooldownBars), 4)
+			.SetDisplay("Cooldown Bars", "Completed candles to wait after a position change", "Trading");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevBull = 0m;
+		_prevBear = 0m;
+		_initialized = false;
+		_bullEma = 0m;
+		_bearEma = 0m;
+		_k = 0m;
+		_count = 0;
+		_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
@@ -57,9 +77,7 @@ public class BnBStrategy : Strategy
 		_k = 2m / (Length + 1m);
 		_count = 0;
 
-		// Use a dummy SMA for Bind pattern
 		var sma = new SimpleMovingAverage { Length = Length };
-
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(sma, ProcessCandle).Start();
 
@@ -77,11 +95,11 @@ public class BnBStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Calculate bull/bear power
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
+
 		var bullPower = candle.HighPrice - smaValue;
 		var bearPower = candle.LowPrice - smaValue;
-
-		// Manual EMA smoothing
 		_count++;
 		if (_count == 1)
 		{
@@ -105,27 +123,33 @@ public class BnBStrategy : Strategy
 			return;
 		}
 
-		// Net power = bull + bear (bear is negative)
 		var netPower = _bullEma + _bearEma;
 		var prevNet = _prevBull + _prevBear;
+		var crossUp = prevNet <= 0m && netPower > 0m && Math.Abs(netPower) >= MinNetPower;
+		var crossDown = prevNet >= 0m && netPower < 0m && Math.Abs(netPower) >= MinNetPower;
 
-		var crossUp = prevNet <= 0 && netPower > 0;
-		var crossDown = prevNet >= 0 && netPower < 0;
-
-		if (crossUp && Position <= 0)
+		if (_cooldownRemaining == 0)
 		{
-			if (Position < 0)
+			if (crossUp && Position <= 0)
+			{
+				if (Position < 0)
+					BuyMarket();
+
 				BuyMarket();
-			BuyMarket();
-		}
-		else if (crossDown && Position >= 0)
-		{
-			if (Position > 0)
+				_cooldownRemaining = CooldownBars;
+			}
+			else if (crossDown && Position >= 0)
+			{
+				if (Position > 0)
+					SellMarket();
+
 				SellMarket();
-			SellMarket();
+				_cooldownRemaining = CooldownBars;
+			}
 		}
 
 		_prevBull = _bullEma;
 		_prevBear = _bearEma;
 	}
 }
+

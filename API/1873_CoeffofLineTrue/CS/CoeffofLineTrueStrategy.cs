@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,7 +11,7 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on zero crossing of the linear regression slope.
+/// Strategy based on zero crossing of a smoothed slope proxy.
 /// </summary>
 public class CoeffofLineTrueStrategy : Strategy
 {
@@ -25,56 +22,30 @@ public class CoeffofLineTrueStrategy : Strategy
 	private readonly StrategyParam<bool> _sellOpen;
 	private readonly StrategyParam<bool> _buyClose;
 	private readonly StrategyParam<bool> _sellClose;
+	private readonly StrategyParam<int> _cooldownBars;
 
 	private readonly List<decimal> _slopes = [];
-	private LinearRegSlope _slope = null!;
+	private ExponentialMovingAverage _slopeProxy = null!;
+	private decimal? _prevValue;
+	private int _cooldownRemaining;
 
-	/// <summary>
-	/// Timeframe for candle subscription.
-	/// </summary>
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
-
-	/// <summary>
-	/// Period for linear regression slope.
-	/// </summary>
 	public int SlopePeriod { get => _slopePeriod.Value; set => _slopePeriod.Value = value; }
-
-	/// <summary>
-	/// Bar index used for signal evaluation.
-	/// </summary>
 	public int SignalBar { get => _signalBar.Value; set => _signalBar.Value = value; }
-
-	/// <summary>
-	/// Permission to open long positions.
-	/// </summary>
 	public bool BuyPosOpen { get => _buyOpen.Value; set => _buyOpen.Value = value; }
-
-	/// <summary>
-	/// Permission to open short positions.
-	/// </summary>
 	public bool SellPosOpen { get => _sellOpen.Value; set => _sellOpen.Value = value; }
-
-	/// <summary>
-	/// Permission to close long positions.
-	/// </summary>
 	public bool BuyPosClose { get => _buyClose.Value; set => _buyClose.Value = value; }
-
-	/// <summary>
-	/// Permission to close short positions.
-	/// </summary>
 	public bool SellPosClose { get => _sellClose.Value; set => _sellClose.Value = value; }
+	public int CooldownBars { get => _cooldownBars.Value; set => _cooldownBars.Value = value; }
 
-	/// <summary>
-	/// Initializes a new instance of <see cref="CoeffofLineTrueStrategy"/>.
-	/// </summary>
 	public CoeffofLineTrueStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for candles", "General");
 
 		_slopePeriod = Param(nameof(SlopePeriod), 5)
 			.SetGreaterThanZero()
-			.SetDisplay("Slope Period", "Linear regression length", "Parameters");
+			.SetDisplay("Slope Period", "Slope proxy length", "Parameters");
 
 		_signalBar = Param(nameof(SignalBar), 1)
 			.SetNotNegative()
@@ -91,6 +62,9 @@ public class CoeffofLineTrueStrategy : Strategy
 
 		_sellClose = Param(nameof(SellPosClose), true)
 			.SetDisplay("Sell Close", "Allow closing short positions", "Trading");
+
+		_cooldownBars = Param(nameof(CooldownBars), 4)
+			.SetDisplay("Cooldown Bars", "Completed candles to wait after a position change", "Trading");
 	}
 
 	/// <inheritdoc />
@@ -100,59 +74,84 @@ public class CoeffofLineTrueStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_slopes.Clear();
+		_slopeProxy = null!;
+		_prevValue = null;
+		_cooldownRemaining = 0;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
 		StartProtection(null, null);
-
-		_slope = new LinearRegSlope { Length = SlopePeriod };
+		_slopeProxy = new ExponentialMovingAverage { Length = SlopePeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_slope, ProcessCandle)
+			.Bind(_slopeProxy, ProcessCandle)
 			.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal slope)
+	private void ProcessCandle(ICandleMessage candle, decimal proxyValue)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
+
+		if (_prevValue is not decimal prevValue)
+		{
+			_prevValue = proxyValue;
+			return;
+		}
+
+		var slope = proxyValue - prevValue;
+		_prevValue = proxyValue;
 		_slopes.Add(slope);
-
 		if (_slopes.Count > SignalBar + 2)
-		_slopes.RemoveAt(0);
-
+			_slopes.RemoveAt(0);
 		if (_slopes.Count <= SignalBar + 1)
-		return;
+			return;
 
 		var prev = _slopes[^ (SignalBar + 1)];
 		var prev2 = _slopes[^ (SignalBar + 2)];
-
 		var buyOpen = BuyPosOpen && prev2 <= 0m && prev > 0m;
 		var sellOpen = SellPosOpen && prev2 >= 0m && prev < 0m;
 		var buyClose = BuyPosClose && prev2 >= 0m && prev < 0m;
 		var sellClose = SellPosClose && prev2 <= 0m && prev > 0m;
 
 		if (buyClose && Position > 0)
+		{
 			SellMarket();
+			_cooldownRemaining = CooldownBars;
+		}
 
 		if (sellClose && Position < 0)
+		{
 			BuyMarket();
+			_cooldownRemaining = CooldownBars;
+		}
 
-		if (buyOpen)
+		if (_cooldownRemaining == 0 && buyOpen)
 		{
 			if (Position < 0)
 				BuyMarket();
 			BuyMarket();
+			_cooldownRemaining = CooldownBars;
 		}
 
-		if (sellOpen)
+		if (_cooldownRemaining == 0 && sellOpen)
 		{
 			if (Position > 0)
 				SellMarket();
 			SellMarket();
+			_cooldownRemaining = CooldownBars;
 		}
 	}
 }

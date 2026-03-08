@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,7 +11,7 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Trend following strategy using EMA crossover with ADX and RSI filters.
+/// Trend following strategy using EMA crossover with momentum and RSI filters.
 /// </summary>
 public class TigerEmaAdxRsiStrategy : Strategy
 {
@@ -28,9 +25,13 @@ public class TigerEmaAdxRsiStrategy : Strategy
 	private readonly StrategyParam<decimal> _takeProfit;
 	private readonly StrategyParam<decimal> _stopLoss;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _cooldownBars;
 
 	private decimal _takePrice;
 	private decimal _stopPrice;
+	private decimal? _prevFast;
+	private decimal? _prevSlow;
+	private int _cooldownRemaining;
 
 	public int FastMaPeriod { get => _fastMaPeriod.Value; set => _fastMaPeriod.Value = value; }
 	public int SlowMaPeriod { get => _slowMaPeriod.Value; set => _slowMaPeriod.Value = value; }
@@ -42,6 +43,7 @@ public class TigerEmaAdxRsiStrategy : Strategy
 	public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
 	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int CooldownBars { get => _cooldownBars.Value; set => _cooldownBars.Value = value; }
 
 	public TigerEmaAdxRsiStrategy()
 	{
@@ -54,12 +56,12 @@ public class TigerEmaAdxRsiStrategy : Strategy
 			.SetOptimize(50, 200, 10);
 
 		_adxPeriod = Param(nameof(AdxPeriod), 14)
-			.SetDisplay("ADX Period", "ADX calculation period", "Parameters")
+			.SetDisplay("Momentum Period", "Momentum confirmation period", "Parameters")
 			.SetOptimize(7, 28, 7);
 
-		_adxThreshold = Param(nameof(AdxThreshold), 27m)
-			.SetDisplay("ADX Threshold", "Minimum ADX value", "Parameters")
-			.SetOptimize(20m, 40m, 5m);
+		_adxThreshold = Param(nameof(AdxThreshold), 52m)
+			.SetDisplay("Momentum Threshold", "Minimum RSI momentum value", "Parameters")
+			.SetOptimize(50m, 70m, 5m);
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetDisplay("RSI Period", "RSI calculation period", "Parameters")
@@ -81,14 +83,28 @@ public class TigerEmaAdxRsiStrategy : Strategy
 			.SetDisplay("Stop Loss", "Stop loss distance", "Risk")
 			.SetOptimize(50m, 500m, 50m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "Parameters");
+
+		_cooldownBars = Param(nameof(CooldownBars), 3)
+			.SetDisplay("Cooldown Bars", "Completed candles to wait after a position change", "Trading");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_takePrice = 0m;
+		_stopPrice = 0m;
+		_prevFast = null;
+		_prevSlow = null;
+		_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
@@ -100,12 +116,12 @@ public class TigerEmaAdxRsiStrategy : Strategy
 
 		var fastEma = new ExponentialMovingAverage { Length = FastMaPeriod };
 		var slowEma = new ExponentialMovingAverage { Length = SlowMaPeriod };
-		var adx = new AverageDirectionalIndex { Length = AdxPeriod };
+		var momentum = new RelativeStrengthIndex { Length = AdxPeriod };
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(fastEma, slowEma, adx, rsi, ProcessCandle)
+			.Bind(fastEma, slowEma, momentum, rsi, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -118,53 +134,62 @@ public class TigerEmaAdxRsiStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue fastValue, IIndicatorValue slowValue, IIndicatorValue adxValue, IIndicatorValue rsiValue)
+	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow, decimal momentumValue, decimal rsi)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!fastValue.IsFinal || !slowValue.IsFinal || !adxValue.IsFinal || !rsiValue.IsFinal)
-			return;
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
 
-		var fast = fastValue.ToDecimal();
-		var slow = slowValue.ToDecimal();
-		var rsi = rsiValue.ToDecimal();
-
-		var adxTyped = (AverageDirectionalIndexValue)adxValue;
-		if (adxTyped.MovingAverage is not decimal adxVal)
-			return;
-
-		var trendUp = fast > slow;
-		var trendDown = fast < slow;
-		var canTrade = adxVal > AdxThreshold && rsi > RsiLower && rsi < RsiUpper;
-
-		if (Position == 0)
+		if (_prevFast is not decimal prevFast || _prevSlow is not decimal prevSlow)
 		{
-			if (canTrade)
+			_prevFast = fast;
+			_prevSlow = slow;
+			return;
+		}
+
+		var crossUp = prevFast <= prevSlow && fast > slow;
+		var crossDown = prevFast >= prevSlow && fast < slow;
+		var canLong = momentumValue >= AdxThreshold && rsi > RsiLower && rsi < RsiUpper;
+		var canShort = momentumValue <= 100m - AdxThreshold && rsi > RsiLower && rsi < RsiUpper;
+
+		if (Position == 0 && _cooldownRemaining == 0)
+		{
+			if (crossUp && canLong)
 			{
-				if (trendUp)
-				{
-					BuyMarket();
-					_takePrice = candle.ClosePrice + TakeProfit;
-					_stopPrice = candle.ClosePrice - StopLoss;
-				}
-				else if (trendDown)
-				{
-					SellMarket();
-					_takePrice = candle.ClosePrice - TakeProfit;
-					_stopPrice = candle.ClosePrice + StopLoss;
-				}
+				BuyMarket();
+				_takePrice = candle.ClosePrice + TakeProfit;
+				_stopPrice = candle.ClosePrice - StopLoss;
+				_cooldownRemaining = CooldownBars;
+			}
+			else if (crossDown && canShort)
+			{
+				SellMarket();
+				_takePrice = candle.ClosePrice - TakeProfit;
+				_stopPrice = candle.ClosePrice + StopLoss;
+				_cooldownRemaining = CooldownBars;
 			}
 		}
 		else if (Position > 0)
 		{
-			if (candle.ClosePrice >= _takePrice || candle.ClosePrice <= _stopPrice)
+			if (candle.ClosePrice >= _takePrice || candle.ClosePrice <= _stopPrice || crossDown)
+			{
 				SellMarket();
+				_cooldownRemaining = CooldownBars;
+			}
 		}
 		else if (Position < 0)
 		{
-			if (candle.ClosePrice <= _takePrice || candle.ClosePrice >= _stopPrice)
+			if (candle.ClosePrice <= _takePrice || candle.ClosePrice >= _stopPrice || crossUp)
+			{
 				BuyMarket();
+				_cooldownRemaining = CooldownBars;
+			}
 		}
+
+		_prevFast = fast;
+		_prevSlow = slow;
 	}
 }
+

@@ -20,11 +20,14 @@ namespace StockSharp.Samples.Strategies;
 public class ExpHullTrendStrategy : Strategy
 {
 	private readonly StrategyParam<int> _length;
+	private readonly StrategyParam<decimal> _minSpreadPercent;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _prevFast;
 	private decimal _prevSlow;
 	private bool _initialized;
+	private int _cooldownRemaining;
 
 	// Manual WMA for final smoothing
 	private readonly List<decimal> _finalBuffer = new();
@@ -37,6 +40,24 @@ public class ExpHullTrendStrategy : Strategy
 	{
 		get => _length.Value;
 		set => _length.Value = value;
+	}
+
+	/// <summary>
+	/// Minimum normalized spread between the fast and slow lines required for a valid signal.
+	/// </summary>
+	public decimal MinSpreadPercent
+	{
+		get => _minSpreadPercent.Value;
+		set => _minSpreadPercent.Value = value;
+	}
+
+	/// <summary>
+	/// Number of completed candles to wait after a position change.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	/// <summary>
@@ -56,7 +77,13 @@ public class ExpHullTrendStrategy : Strategy
 		_length = Param(nameof(Length), 20)
 			.SetDisplay("Hull Length", "Base period for Hull calculation", "Indicator");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_minSpreadPercent = Param(nameof(MinSpreadPercent), 0.0015m)
+			.SetDisplay("Min Spread %", "Minimum normalized spread between Hull lines", "Signal");
+
+		_cooldownBars = Param(nameof(CooldownBars), 12)
+			.SetDisplay("Cooldown Bars", "Completed candles to wait after a position change", "Signal");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for processing", "General");
 	}
 
@@ -85,6 +112,19 @@ public class ExpHullTrendStrategy : Strategy
 			DrawCandles(area, subscription);
 			DrawOwnTrades(area);
 		}
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_prevFast = 0m;
+		_prevSlow = 0m;
+		_initialized = false;
+		_cooldownRemaining = 0;
+		_finalBuffer.Clear();
+		_finalLength = 0;
 	}
 
 	private decimal CalcWma(decimal newVal)
@@ -125,18 +165,24 @@ public class ExpHullTrendStrategy : Strategy
 
 		var crossUp = _prevFast <= _prevSlow && fast > slow;
 		var crossDown = _prevFast >= _prevSlow && fast < slow;
+		var spread = Math.Abs(fast - slow) / Math.Max(Math.Abs(slow), 1m);
 
-		if (crossUp && Position <= 0)
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
+
+		if (crossUp && spread >= MinSpreadPercent && _cooldownRemaining == 0 && Position <= 0)
 		{
 			if (Position < 0)
 				BuyMarket();
 			BuyMarket();
+			_cooldownRemaining = CooldownBars;
 		}
-		else if (crossDown && Position >= 0)
+		else if (crossDown && spread >= MinSpreadPercent && _cooldownRemaining == 0 && Position >= 0)
 		{
 			if (Position > 0)
 				SellMarket();
 			SellMarket();
+			_cooldownRemaining = CooldownBars;
 		}
 
 		_prevFast = fast;

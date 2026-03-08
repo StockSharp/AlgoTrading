@@ -21,16 +21,23 @@ namespace StockSharp.Samples.Strategies;
 public class KarpenkoChannelStrategy : Strategy
 {
 	private readonly StrategyParam<int> _basicMa;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _prevClose;
 	private decimal _prevMa;
 	private bool _initialized;
+	private int _cooldownRemaining;
 
 	/// <summary>
 	/// Period for base moving average.
 	/// </summary>
 	public int BasicMa { get => _basicMa.Value; set => _basicMa.Value = value; }
+
+	/// <summary>
+	/// Number of completed candles to wait after a position change.
+	/// </summary>
+	public int CooldownBars { get => _cooldownBars.Value; set => _cooldownBars.Value = value; }
 
 	/// <summary>
 	/// Candle type used by the strategy.
@@ -43,7 +50,10 @@ public class KarpenkoChannelStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Base MA", "Length of base moving average", "Parameters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_cooldownBars = Param(nameof(CooldownBars), 8)
+			.SetDisplay("Cooldown Bars", "Completed candles to wait after a signal", "Signal");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -74,6 +84,17 @@ public class KarpenkoChannelStrategy : Strategy
 		}
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_prevClose = 0m;
+		_prevMa = 0m;
+		_initialized = false;
+		_cooldownRemaining = 0;
+	}
+
 	private void ProcessCandle(ICandleMessage candle, decimal maValue)
 	{
 		if (candle.State != CandleStates.Finished)
@@ -92,17 +113,22 @@ public class KarpenkoChannelStrategy : Strategy
 		// Cross below MA -> sell signal
 		var crossDown = _prevClose >= _prevMa && candle.ClosePrice < maValue;
 
-		if (crossUp && Position <= 0)
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
+
+		if (crossUp && _cooldownRemaining == 0 && Position <= 0)
 		{
 			if (Position < 0)
 				BuyMarket();
 			BuyMarket();
+			_cooldownRemaining = CooldownBars;
 		}
-		else if (crossDown && Position >= 0)
+		else if (crossDown && _cooldownRemaining == 0 && Position >= 0)
 		{
 			if (Position > 0)
 				SellMarket();
 			SellMarket();
+			_cooldownRemaining = CooldownBars;
 		}
 
 		_prevClose = candle.ClosePrice;

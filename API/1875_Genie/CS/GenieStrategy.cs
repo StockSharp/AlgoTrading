@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,7 +11,7 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Parabolic SAR expert advisor with ADX confirmation and trailing stop.
+/// Parabolic SAR strategy with momentum confirmation and trailing protection.
 /// </summary>
 public class GenieStrategy : Strategy
 {
@@ -23,55 +20,62 @@ public class GenieStrategy : Strategy
 	private readonly StrategyParam<decimal> _sarStep;
 	private readonly StrategyParam<int> _adxPeriod;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _rsiLongLevel;
+	private readonly StrategyParam<decimal> _rsiShortLevel;
 
-	/// <summary>
-	/// Take profit distance in price units.
-	/// </summary>
+	private decimal _prevSar;
+	private ICandleMessage _prevCandle = null!;
+	private int _cooldownRemaining;
+
 	public decimal TakeProfit
 	{
 		get => _takeProfit.Value;
 		set => _takeProfit.Value = value;
 	}
 
-	/// <summary>
-	/// Trailing stop distance in price units.
-	/// </summary>
 	public decimal TrailingStop
 	{
 		get => _trailingStop.Value;
 		set => _trailingStop.Value = value;
 	}
 
-	/// <summary>
-	/// Parabolic SAR acceleration factor.
-	/// </summary>
 	public decimal SarStep
 	{
 		get => _sarStep.Value;
 		set => _sarStep.Value = value;
 	}
 
-	/// <summary>
-	/// ADX calculation period.
-	/// </summary>
 	public int AdxPeriod
 	{
 		get => _adxPeriod.Value;
 		set => _adxPeriod.Value = value;
 	}
 
-	/// <summary>
-	/// Type of candles used by the strategy.
-	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Initializes a new instance of the <see cref="GenieStrategy"/>.
-	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	public decimal RsiLongLevel
+	{
+		get => _rsiLongLevel.Value;
+		set => _rsiLongLevel.Value = value;
+	}
+
+	public decimal RsiShortLevel
+	{
+		get => _rsiShortLevel.Value;
+		set => _rsiShortLevel.Value = value;
+	}
+
 	public GenieStrategy()
 	{
 		_takeProfit = Param(nameof(TakeProfit), 500m)
@@ -84,10 +88,19 @@ public class GenieStrategy : Strategy
 			.SetDisplay("SAR Step", "Acceleration factor", "Indicator");
 
 		_adxPeriod = Param(nameof(AdxPeriod), 14)
-			.SetDisplay("ADX Period", "Period for ADX", "Indicator");
+			.SetDisplay("Momentum Period", "Period for momentum confirmation", "Indicator");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
+
+		_cooldownBars = Param(nameof(CooldownBars), 4)
+			.SetDisplay("Cooldown Bars", "Completed candles to wait after a position change", "Trading");
+
+		_rsiLongLevel = Param(nameof(RsiLongLevel), 55m)
+			.SetDisplay("RSI Long", "Minimum RSI level for long entries", "Filters");
+
+		_rsiShortLevel = Param(nameof(RsiShortLevel), 45m)
+			.SetDisplay("RSI Short", "Maximum RSI level for short entries", "Filters");
 	}
 
 	/// <inheritdoc />
@@ -97,95 +110,24 @@ public class GenieStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevSar = 0m;
+		_prevCandle = null;
+		_cooldownRemaining = 0;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		var adx = new AverageDirectionalIndex { Length = AdxPeriod };
 		var sar = new ParabolicSar { AccelerationStep = SarStep, AccelerationMax = 0.2m };
-
+		var rsi = new RelativeStrengthIndex { Length = AdxPeriod };
 		var subscription = SubscribeCandles(CandleType);
 
-		var prevSar = 0m;
-		var prevPdi = 0m;
-		var prevMdi = 0m;
-		ICandleMessage prevCandle = null;
-		var isFirst = true;
-
-		subscription.BindEx(adx, sar, (candle, adxValue, sarValue) =>
-		{
-			if (candle.State != CandleStates.Finished)
-				return;
-
-
-			var adxTyped = (AverageDirectionalIndexValue)adxValue;
-
-			if (adxTyped.MovingAverage is not decimal adxMain ||
-				adxTyped.Dx.Plus is not decimal pdi ||
-				adxTyped.Dx.Minus is not decimal mdi)
-				return;
-
-			var sarCurrent = sarValue.ToDecimal();
-
-			if (isFirst)
-			{
-				prevSar = sarCurrent;
-				prevPdi = pdi;
-				prevMdi = mdi;
-				prevCandle = candle;
-				isFirst = false;
-				return;
-			}
-
-			if (Position == 0)
-			{
-				var sellCondition = prevCandle != null &&
-					prevSar < prevCandle.ClosePrice &&
-					sarCurrent > candle.ClosePrice &&
-					prevPdi > prevMdi &&
-					pdi < mdi &&
-					adxMain > pdi &&
-					adxMain > mdi;
-
-				var buyCondition = prevCandle != null &&
-					prevSar > prevCandle.ClosePrice &&
-					sarCurrent < candle.ClosePrice &&
-					prevPdi < prevMdi &&
-					pdi > mdi &&
-					adxMain > pdi &&
-					adxMain > mdi;
-
-				if (sellCondition)
-				{
-					if (Position > 0) SellMarket();
-					SellMarket();
-				}
-				else if (buyCondition)
-				{
-					if (Position < 0) BuyMarket();
-					BuyMarket();
-				}
-			}
-			else
-			{
-				if (prevCandle != null)
-				{
-					if (Position > 0 && prevCandle.OpenPrice > prevCandle.ClosePrice)
-					{
-						SellMarket();
-					}
-					else if (Position < 0 && prevCandle.OpenPrice < prevCandle.ClosePrice)
-					{
-						BuyMarket();
-					}
-				}
-			}
-
-			prevSar = sarCurrent;
-			prevPdi = pdi;
-			prevMdi = mdi;
-			prevCandle = candle;
-		}).Start();
+		subscription.BindEx(sar, rsi, ProcessCandle).Start();
 
 		StartProtection(
 			takeProfit: new Unit(TakeProfit, UnitTypes.Absolute),
@@ -197,9 +139,64 @@ public class GenieStrategy : Strategy
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, adx);
 			DrawIndicator(area, sar);
 			DrawOwnTrades(area);
 		}
 	}
+
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue sarValue, IIndicatorValue rsiValue)
+	{
+		if (candle.State != CandleStates.Finished || !sarValue.IsFinal || !rsiValue.IsFinal)
+			return;
+
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
+
+		var sarCurrent = sarValue.ToDecimal();
+		var rsi = rsiValue.ToDecimal();
+		if (_prevCandle == null)
+		{
+			_prevSar = sarCurrent;
+			_prevCandle = candle;
+			return;
+		}
+
+		var sellCondition = _cooldownRemaining == 0 &&
+			_prevSar < _prevCandle.ClosePrice &&
+			sarCurrent > candle.ClosePrice &&
+			rsi <= RsiShortLevel;
+
+		var buyCondition = _cooldownRemaining == 0 &&
+			_prevSar > _prevCandle.ClosePrice &&
+			sarCurrent < candle.ClosePrice &&
+			rsi >= RsiLongLevel;
+
+		if (Position == 0)
+		{
+			if (sellCondition)
+			{
+				SellMarket();
+				_cooldownRemaining = CooldownBars;
+			}
+			else if (buyCondition)
+			{
+				BuyMarket();
+				_cooldownRemaining = CooldownBars;
+			}
+		}
+		else if (Position > 0 && _prevCandle.OpenPrice > _prevCandle.ClosePrice)
+		{
+			SellMarket();
+			_cooldownRemaining = CooldownBars;
+		}
+		else if (Position < 0 && _prevCandle.OpenPrice < _prevCandle.ClosePrice)
+		{
+			BuyMarket();
+			_cooldownRemaining = CooldownBars;
+		}
+
+		_prevSar = sarCurrent;
+		_prevCandle = candle;
+	}
 }
+

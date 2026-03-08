@@ -1,17 +1,14 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
-
-
 
 /// <summary>
 /// Trades when Kaufman Adaptive Moving Average crosses Weighted Moving Average.
@@ -27,10 +24,13 @@ public class KaufWmaCrossStrategy : Strategy
 	private readonly StrategyParam<bool> _buyClose;
 	private readonly StrategyParam<bool> _sellClose;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<decimal> _minSpreadPercent;
+	private readonly StrategyParam<int> _cooldownBars;
 
 	private decimal _prevKama;
 	private decimal _prevWma;
 	private bool _isFirst = true;
+	private int _cooldownRemaining;
 
 	public int AmaPeriod { get => _amaPeriod.Value; set => _amaPeriod.Value = value; }
 	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
@@ -41,10 +41,12 @@ public class KaufWmaCrossStrategy : Strategy
 	public bool BuyClose { get => _buyClose.Value; set => _buyClose.Value = value; }
 	public bool SellClose { get => _sellClose.Value; set => _sellClose.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public decimal MinSpreadPercent { get => _minSpreadPercent.Value; set => _minSpreadPercent.Value = value; }
+	public int CooldownBars { get => _cooldownBars.Value; set => _cooldownBars.Value = value; }
 
 	public KaufWmaCrossStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle type", "Type of candles", "General");
 
 		_amaPeriod = Param(nameof(AmaPeriod), 9)
@@ -74,6 +76,12 @@ public class KaufWmaCrossStrategy : Strategy
 
 		_sellClose = Param(nameof(SellClose), true)
 			.SetDisplay("Close short", "Allow closing short on buy signal", "Signals");
+
+		_minSpreadPercent = Param(nameof(MinSpreadPercent), 0.0008m)
+			.SetDisplay("Minimum Spread %", "Minimum normalized spread between AMA and WMA", "Filters");
+
+		_cooldownBars = Param(nameof(CooldownBars), 4)
+			.SetDisplay("Cooldown Bars", "Completed candles to wait after a position change", "Trading");
 	}
 
 	/// <inheritdoc />
@@ -86,10 +94,10 @@ public class KaufWmaCrossStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_prevKama = default;
-		_prevWma = default;
+		_prevKama = 0m;
+		_prevWma = 0m;
 		_isFirst = true;
+		_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
@@ -105,11 +113,8 @@ public class KaufWmaCrossStrategy : Strategy
 		};
 
 		var wma = new WeightedMovingAverage { Length = WmaPeriod };
-
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(kama, wma, ProcessCandle)
-			.Start();
+		subscription.Bind(kama, wma, ProcessCandle).Start();
 
 		StartProtection(null, null);
 
@@ -128,6 +133,9 @@ public class KaufWmaCrossStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
+
 		if (_isFirst)
 		{
 			_prevKama = kamaValue;
@@ -136,27 +144,38 @@ public class KaufWmaCrossStrategy : Strategy
 			return;
 		}
 
-		var crossUp = _prevKama <= _prevWma && kamaValue > wmaValue;
-		var crossDown = _prevKama >= _prevWma && kamaValue < wmaValue;
+		var spreadPercent = candle.ClosePrice != 0m ? Math.Abs(kamaValue - wmaValue) / candle.ClosePrice : 0m;
+		var crossUp = _prevKama <= _prevWma && kamaValue > wmaValue && spreadPercent >= MinSpreadPercent;
+		var crossDown = _prevKama >= _prevWma && kamaValue < wmaValue && spreadPercent >= MinSpreadPercent;
 
-		if (crossUp)
+		if (_cooldownRemaining == 0)
 		{
-			if (SellClose && Position < 0)
-				BuyMarket();
+			if (crossUp)
+			{
+				if (SellClose && Position < 0)
+					BuyMarket();
 
-			if (BuyOpen && Position <= 0)
-				BuyMarket();
-		}
-		else if (crossDown)
-		{
-			if (BuyClose && Position > 0)
-				SellMarket();
+				if (BuyOpen && Position <= 0)
+				{
+					BuyMarket();
+					_cooldownRemaining = CooldownBars;
+				}
+			}
+			else if (crossDown)
+			{
+				if (BuyClose && Position > 0)
+					SellMarket();
 
-			if (SellOpen && Position >= 0)
-				SellMarket();
+				if (SellOpen && Position >= 0)
+				{
+					SellMarket();
+					_cooldownRemaining = CooldownBars;
+				}
+			}
 		}
 
 		_prevKama = kamaValue;
 		_prevWma = wmaValue;
 	}
 }
+

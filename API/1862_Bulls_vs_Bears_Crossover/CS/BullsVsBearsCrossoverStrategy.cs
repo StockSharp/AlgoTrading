@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -19,33 +16,33 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class BullsVsBearsCrossoverStrategy : Strategy
 {
-        /// <summary>
-        /// Moving average types.
-        /// </summary>
-        public enum MovingAverageTypes
-        {
-                /// <summary>
-                /// Simple moving average.
-                /// </summary>
-                SMA,
+	/// <summary>
+	/// Moving average types.
+	/// </summary>
+	public enum MovingAverageTypes
+	{
+		/// <summary>
+		/// Simple moving average.
+		/// </summary>
+		SMA,
 
-                /// <summary>
-                /// Exponential moving average.
-                /// </summary>
-                EMA,
+		/// <summary>
+		/// Exponential moving average.
+		/// </summary>
+		EMA,
 
-                /// <summary>
-                /// Smoothed moving average.
-                /// </summary>
-                SMMA,
+		/// <summary>
+		/// Smoothed moving average.
+		/// </summary>
+		SMMA,
 
-                /// <summary>
-                /// Weighted moving average.
-                /// </summary>
-                WMA
-        }
+		/// <summary>
+		/// Weighted moving average.
+		/// </summary>
+		WMA
+	}
 
-        private readonly StrategyParam<MovingAverageTypes> _maType;
+	private readonly StrategyParam<MovingAverageTypes> _maType;
 	private readonly StrategyParam<int> _maLength;
 	private readonly StrategyParam<decimal> _stopLoss;
 	private readonly StrategyParam<decimal> _takeProfit;
@@ -54,114 +51,95 @@ public class BullsVsBearsCrossoverStrategy : Strategy
 	private readonly StrategyParam<bool> _closeLong;
 	private readonly StrategyParam<bool> _closeShort;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<decimal> _minSpreadSteps;
+	private readonly StrategyParam<int> _cooldownBars;
 
 	private IIndicator _ma = null!;
 	private decimal _prevBull;
 	private decimal _prevBear;
 	private decimal _entryPrice;
+	private int _cooldownRemaining;
 
-	/// <summary>
-	/// Moving average calculation method.
-	/// </summary>
 	public MovingAverageTypes MaType
 	{
 		get => _maType.Value;
 		set => _maType.Value = value;
 	}
 
-	/// <summary>
-	/// Moving average length.
-	/// </summary>
 	public int MaLength
 	{
 		get => _maLength.Value;
 		set => _maLength.Value = value;
 	}
 
-	/// <summary>
-	/// Stop loss in price steps.
-	/// </summary>
 	public decimal StopLoss
 	{
 		get => _stopLoss.Value;
 		set => _stopLoss.Value = value;
 	}
 
-	/// <summary>
-	/// Take profit in price steps.
-	/// </summary>
 	public decimal TakeProfit
 	{
 		get => _takeProfit.Value;
 		set => _takeProfit.Value = value;
 	}
 
-	/// <summary>
-	/// Allow opening long positions.
-	/// </summary>
 	public bool OpenLong
 	{
 		get => _openLong.Value;
 		set => _openLong.Value = value;
 	}
 
-	/// <summary>
-	/// Allow opening short positions.
-	/// </summary>
 	public bool OpenShort
 	{
 		get => _openShort.Value;
 		set => _openShort.Value = value;
 	}
 
-	/// <summary>
-	/// Allow closing long positions.
-	/// </summary>
 	public bool CloseLong
 	{
 		get => _closeLong.Value;
 		set => _closeLong.Value = value;
 	}
 
-	/// <summary>
-	/// Allow closing short positions.
-	/// </summary>
 	public bool CloseShort
 	{
 		get => _closeShort.Value;
 		set => _closeShort.Value = value;
 	}
 
-	/// <summary>
-	/// Candle type to process.
-	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Initializes a new instance of <see cref="BullsVsBearsCrossoverStrategy"/>.
-	/// </summary>
+	public decimal MinSpreadSteps
+	{
+		get => _minSpreadSteps.Value;
+		set => _minSpreadSteps.Value = value;
+	}
+
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
 	public BullsVsBearsCrossoverStrategy()
 	{
 		_maType = Param(nameof(MaType), MovingAverageTypes.SMA)
-			.SetDisplay("MA Type", "Moving average type", "General")
-			;
+			.SetDisplay("MA Type", "Moving average type", "General");
 
 		_maLength = Param(nameof(MaLength), 12)
 			.SetGreaterThanZero()
-			.SetDisplay("MA Length", "Moving average period", "General")
-			;
+			.SetDisplay("MA Length", "Moving average period", "General");
 
 		_stopLoss = Param(nameof(StopLoss), 1000m)
-			.SetDisplay("Stop Loss", "Loss in price steps", "Risk")
-			;
+			.SetDisplay("Stop Loss", "Loss in price steps", "Risk");
 
 		_takeProfit = Param(nameof(TakeProfit), 2000m)
-			.SetDisplay("Take Profit", "Profit in price steps", "Risk")
-			;
+			.SetDisplay("Take Profit", "Profit in price steps", "Risk");
 
 		_openLong = Param(nameof(OpenLong), true)
 			.SetDisplay("Open Long", "Allow long entries", "General");
@@ -175,8 +153,14 @@ public class BullsVsBearsCrossoverStrategy : Strategy
 		_closeShort = Param(nameof(CloseShort), true)
 			.SetDisplay("Close Short", "Allow closing short positions", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe to process", "General");
+
+		_minSpreadSteps = Param(nameof(MinSpreadSteps), 60m)
+			.SetDisplay("Minimum Spread", "Minimum spread between bull and bear power in price steps", "Filters");
+
+		_cooldownBars = Param(nameof(CooldownBars), 6)
+			.SetDisplay("Cooldown Bars", "Completed candles to wait after a position change", "Trading");
 	}
 
 	/// <inheritdoc />
@@ -189,9 +173,11 @@ public class BullsVsBearsCrossoverStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
+		_ma = null!;
 		_prevBull = 0m;
 		_prevBear = 0m;
 		_entryPrice = 0m;
+		_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
@@ -200,7 +186,6 @@ public class BullsVsBearsCrossoverStrategy : Strategy
 		base.OnStarted2(time);
 
 		_ma = CreateMovingAverage(MaType, MaLength);
-
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(_ma, ProcessCandle).Start();
 
@@ -220,7 +205,6 @@ public class BullsVsBearsCrossoverStrategy : Strategy
 		var step = Security.PriceStep ?? 1m;
 		var bull = (candle.HighPrice - maValue) / step;
 		var bear = (maValue - candle.LowPrice) / step;
-
 		if (candle.State != CandleStates.Finished || !_ma.IsFormed)
 		{
 			_prevBull = bull;
@@ -228,44 +212,60 @@ public class BullsVsBearsCrossoverStrategy : Strategy
 			return;
 		}
 
-		var crossDown = _prevBull > _prevBear && bull <= bear;
-		var crossUp = _prevBull < _prevBear && bull >= bear;
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
 
-		if (crossDown)
+		var spread = Math.Abs(bull - bear);
+		var crossDown = _prevBull > _prevBear && bull <= bear && spread >= MinSpreadSteps;
+		var crossUp = _prevBull < _prevBear && bull >= bear && spread >= MinSpreadSteps;
+
+		if (_cooldownRemaining == 0)
 		{
-			if (CloseShort && Position < 0)
-				BuyMarket();
-
-			if (OpenLong && Position <= 0)
+			if (crossDown)
 			{
-				BuyMarket();
-				_entryPrice = candle.ClosePrice;
+				if (CloseShort && Position < 0)
+					BuyMarket();
+
+				if (OpenLong && Position <= 0)
+				{
+					BuyMarket();
+					_entryPrice = candle.ClosePrice;
+					_cooldownRemaining = CooldownBars;
+				}
+			}
+			else if (crossUp)
+			{
+				if (CloseLong && Position > 0)
+					SellMarket();
+
+				if (OpenShort && Position >= 0)
+				{
+					SellMarket();
+					_entryPrice = candle.ClosePrice;
+					_cooldownRemaining = CooldownBars;
+				}
 			}
 		}
-		else if (crossUp)
-		{
-			if (CloseLong && Position > 0)
-				SellMarket();
 
-			if (OpenShort && Position >= 0)
-			{
-				SellMarket();
-				_entryPrice = candle.ClosePrice;
-			}
-		}
-		else if (Position > 0)
+		if (Position > 0)
 		{
 			var tp = _entryPrice + TakeProfit * step;
 			var sl = _entryPrice - StopLoss * step;
 			if (candle.ClosePrice >= tp || candle.ClosePrice <= sl)
+			{
 				SellMarket();
+				_cooldownRemaining = CooldownBars;
+			}
 		}
 		else if (Position < 0)
 		{
 			var tp = _entryPrice - TakeProfit * step;
 			var sl = _entryPrice + StopLoss * step;
 			if (candle.ClosePrice <= tp || candle.ClosePrice >= sl)
+			{
 				BuyMarket();
+				_cooldownRemaining = CooldownBars;
+			}
 		}
 
 		_prevBull = bull;

@@ -22,10 +22,14 @@ public class ExpTsiCciStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _cciPeriod;
+	private readonly StrategyParam<decimal> _minTsiSpread;
+	private readonly StrategyParam<decimal> _minCciMagnitude;
+	private readonly StrategyParam<int> _cooldownBars;
 
 	private decimal _prevTsi;
 	private decimal _prevSignal;
 	private bool _initialized;
+	private int _cooldownRemaining;
 
 	/// <summary>
 	/// Candle type for strategy calculation.
@@ -45,14 +49,50 @@ public class ExpTsiCciStrategy : Strategy
 		set => _cciPeriod.Value = value;
 	}
 
+	/// <summary>
+	/// Minimum absolute spread between TSI and signal required for a valid crossover.
+	/// </summary>
+	public decimal MinTsiSpread
+	{
+		get => _minTsiSpread.Value;
+		set => _minTsiSpread.Value = value;
+	}
+
+	/// <summary>
+	/// Minimum absolute CCI value required for confirmation.
+	/// </summary>
+	public decimal MinCciMagnitude
+	{
+		get => _minCciMagnitude.Value;
+		set => _minCciMagnitude.Value = value;
+	}
+
+	/// <summary>
+	/// Number of completed candles to wait after a position change.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
 	public ExpTsiCciStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
 		_cciPeriod = Param(nameof(CciPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("CCI Period", "CCI calculation period", "CCI");
+
+		_minTsiSpread = Param(nameof(MinTsiSpread), 2m)
+			.SetDisplay("Min TSI Spread", "Minimum TSI-signal spread", "Signal");
+
+		_minCciMagnitude = Param(nameof(MinCciMagnitude), 50m)
+			.SetDisplay("Min CCI", "Minimum absolute CCI confirmation", "Signal");
+
+		_cooldownBars = Param(nameof(CooldownBars), 10)
+			.SetDisplay("Cooldown Bars", "Completed candles to wait after a signal", "Signal");
 	}
 
 	/// <inheritdoc />
@@ -83,6 +123,17 @@ public class ExpTsiCciStrategy : Strategy
 		}
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_prevTsi = 0m;
+		_prevSignal = 0m;
+		_initialized = false;
+		_cooldownRemaining = 0;
+	}
+
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue tsiValue, IIndicatorValue cciValue)
 	{
 		if (candle.State != CandleStates.Finished)
@@ -95,7 +146,7 @@ public class ExpTsiCciStrategy : Strategy
 		if (tv.Tsi is not decimal tsi || tv.Signal is not decimal signal)
 			return;
 
-		var cci = cciValue.GetValue<decimal>();
+		var cci = cciValue.ToDecimal();
 
 		if (!_initialized)
 		{
@@ -107,18 +158,24 @@ public class ExpTsiCciStrategy : Strategy
 
 		var crossUp = _prevTsi <= _prevSignal && tsi > signal;
 		var crossDown = _prevTsi >= _prevSignal && tsi < signal;
+		var spread = Math.Abs(tsi - signal);
 
-		if (crossUp && cci > 0 && Position <= 0)
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
+
+		if (crossUp && spread >= MinTsiSpread && cci >= MinCciMagnitude && _cooldownRemaining == 0 && Position <= 0)
 		{
 			if (Position < 0)
 				BuyMarket();
 			BuyMarket();
+			_cooldownRemaining = CooldownBars;
 		}
-		else if (crossDown && cci < 0 && Position >= 0)
+		else if (crossDown && spread >= MinTsiSpread && cci <= -MinCciMagnitude && _cooldownRemaining == 0 && Position >= 0)
 		{
 			if (Position > 0)
 				SellMarket();
 			SellMarket();
+			_cooldownRemaining = CooldownBars;
 		}
 
 		_prevTsi = tsi;

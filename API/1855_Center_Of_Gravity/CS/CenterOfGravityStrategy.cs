@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -16,7 +13,7 @@ namespace StockSharp.Samples.Strategies;
 /// <summary>
 /// Center of Gravity Strategy.
 /// Uses SMA and WMA crossover.
-/// Opens long when SMA crosses above WMA and short on opposite cross.
+/// Opens long when SMA crosses above WMA and short on the opposite cross.
 /// </summary>
 public class CenterOfGravityStrategy : Strategy
 {
@@ -32,7 +29,7 @@ public class CenterOfGravityStrategy : Strategy
 
 	public CenterOfGravityStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for calculation", "General");
 
 		_period = Param(nameof(Period), 10)
@@ -43,6 +40,15 @@ public class CenterOfGravityStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevSma = 0m;
+		_prevWma = 0m;
+		_initialized = false;
 	}
 
 	/// <inheritdoc />
@@ -84,12 +90,16 @@ public class CenterOfGravityStrategy : Strategy
 
 		if (crossUp && Position <= 0)
 		{
-			if (Position < 0) BuyMarket();
+			if (Position < 0)
+				BuyMarket();
+
 			BuyMarket();
 		}
 		else if (crossDown && Position >= 0)
 		{
-			if (Position > 0) SellMarket();
+			if (Position > 0)
+				SellMarket();
+
 			SellMarket();
 		}
 
