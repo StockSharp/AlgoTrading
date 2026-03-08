@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -35,9 +36,12 @@ public class DojiTraderBreakoutStrategy : Strategy
 		_dojiRatio = Param(nameof(DojiRatio), 0.25m)
 			.SetDisplay("Doji Ratio", "Max body/range ratio for doji detection", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 	}
+
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities() => [(Security, CandleType)];
+	protected override void OnReseted() { base.OnReseted(); _prevHigh = 0m; _prevLow = 0m; _prevWasDoji = false; _hasPrev = false; }
 
 	protected override void OnStarted2(DateTime time)
 	{
