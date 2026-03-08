@@ -50,7 +50,7 @@ public class ZigDanZagUltimateInvestmentLongTermStrategy : Strategy
 	{
 		_zigzagDepth = Param(nameof(ZigzagDepth), 12)
 			.SetDisplay("ZigZag Depth", "Pivot search depth", "ZigZag");
-		_smaLength = Param(nameof(SmaLength), 200)
+		_smaLength = Param(nameof(SmaLength), 50)
 			.SetDisplay("SMA Length", "Long-term trend filter", "Trend");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");

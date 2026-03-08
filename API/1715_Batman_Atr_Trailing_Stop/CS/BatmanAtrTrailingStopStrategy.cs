@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -22,115 +19,58 @@ public class BatmanAtrTrailingStopStrategy : Strategy
 {
 	private readonly StrategyParam<int> _atrPeriod;
 	private readonly StrategyParam<decimal> _factor;
-	private readonly StrategyParam<bool> _useTypicalPrice;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal? _levelUp;
-	private decimal? _levelDown;
+	private decimal _levelUp;
+	private decimal _levelDown;
 	private int _direction;
 	private bool _isInitialized;
 
-	/// <summary>
-	/// ATR period length.
-	/// </summary>
-	public int AtrPeriod
-	{
-		get => _atrPeriod.Value;
-		set => _atrPeriod.Value = value;
-	}
+	public int AtrPeriod { get => _atrPeriod.Value; set => _atrPeriod.Value = value; }
+	public decimal Factor { get => _factor.Value; set => _factor.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Multiplier for ATR distance.
-	/// </summary>
-	public decimal Factor
-	{
-		get => _factor.Value;
-		set => _factor.Value = value;
-	}
-
-	/// <summary>
-	/// Use typical price (H+L+C)/3 instead of close price.
-	/// </summary>
-	public bool UseTypicalPrice
-	{
-		get => _useTypicalPrice.Value;
-		set => _useTypicalPrice.Value = value;
-	}
-
-	/// <summary>
-	/// The candle type used for calculations.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Constructor.
-	/// </summary>
 	public BatmanAtrTrailingStopStrategy()
 	{
-		_atrPeriod = Param(nameof(AtrPeriod), 7)
+		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("ATR Period", "ATR indicator period", "General")
-			
-			.SetOptimize(3, 14, 1);
+			.SetDisplay("ATR Period", "ATR indicator period", "General");
 
-		_factor = Param(nameof(Factor), 1.1m)
+		_factor = Param(nameof(Factor), 1.5m)
 			.SetGreaterThanZero()
-			.SetDisplay("ATR Factor", "Multiplier for ATR distance", "General")
-			
-			.SetOptimize(0.5m, 3m, 0.1m);
+			.SetDisplay("ATR Factor", "Multiplier for ATR distance", "General");
 
-		_useTypicalPrice = Param(nameof(UseTypicalPrice), false)
-			.SetDisplay("Use Typical Price", "Use (H+L+C)/3 instead of close price", "General");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_levelUp = null;
-		_levelDown = null;
+		_levelUp = 0;
+		_levelDown = 0;
 		_direction = 1;
 		_isInitialized = false;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		var atr = new AverageTrueRange { Length = AtrPeriod };
-
-		var subscription = SubscribeCandles(CandleType);
-
-		subscription
-			.Bind(atr, ProcessCandle)
-			.Start();
+		var stdev = new StandardDeviation { Length = AtrPeriod };
+		SubscribeCandles(CandleType).Bind(stdev, ProcessCandle).Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal atrValue)
+	private void ProcessCandle(ICandleMessage candle, decimal stdevValue)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
+		if (candle.State != CandleStates.Finished) return;
 
-		var priceLevel = UseTypicalPrice
-			? (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m
-			: candle.ClosePrice;
-
-		var currUp = priceLevel - atrValue * Factor;
-		var currDown = priceLevel + atrValue * Factor;
+		var close = candle.ClosePrice;
+		var currUp = close - stdevValue * Factor;
+		var currDown = close + stdevValue * Factor;
 
 		if (!_isInitialized)
 		{
@@ -149,6 +89,7 @@ public class BatmanAtrTrailingStopStrategy : Strategy
 			{
 				_direction = -1;
 				_levelDown = currDown;
+				if (Position > 0) SellMarket();
 				SellMarket();
 			}
 		}
@@ -161,6 +102,7 @@ public class BatmanAtrTrailingStopStrategy : Strategy
 			{
 				_direction = 1;
 				_levelUp = currUp;
+				if (Position < 0) BuyMarket();
 				BuyMarket();
 			}
 		}
