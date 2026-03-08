@@ -67,7 +67,7 @@ public class ForceTrendStrategy : Strategy
 			.SetDisplay("Enable Short Exit", "Allow closing short positions", "Trading")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for ForceTrend calculations", "General");
 	}
 
@@ -132,6 +132,18 @@ public class ForceTrendStrategy : Strategy
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_previousForceValue = 0m;
+		_previousIndicatorValue = 0m;
+		_directionHistory = Array.Empty<int?>();
+		_historyCount = 0;
+		_lastKnownDirection = null;
 	}
 
 	/// <inheritdoc />
@@ -230,7 +242,7 @@ public class ForceTrendStrategy : Strategy
 				volumeToBuy += Volume;
 
 			if (volumeToBuy > 0m)
-				BuyMarket(volumeToBuy);
+				BuyMarket();
 		}
 		else if (bearish)
 		{
@@ -240,10 +252,10 @@ public class ForceTrendStrategy : Strategy
 				volumeToSell += Math.Abs(Position);
 
 			if (EnableShortEntry && bearishFlip && Position >= 0m)
-				volumeToSell += Volume;
+				volumeToSell += 1m;
 
 			if (volumeToSell > 0m)
-				SellMarket(volumeToSell);
+				SellMarket();
 		}
 	}
 

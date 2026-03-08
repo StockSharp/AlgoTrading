@@ -36,7 +36,6 @@ public class NewRandomStrategy : Strategy
 	private readonly StrategyParam<int> _takeProfitPoints;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private Random _random;
 	private Sides? _sequenceLastSide;
 	private Sides? _positionSide;
 	private decimal _entryPrice;
@@ -75,15 +74,15 @@ public class NewRandomStrategy : Strategy
 		_mode = Param(nameof(Mode), RandomModes.Generator)
 			.SetDisplay("Random Mode", "Direction selection mode", "General");
 
-		_stopLossPoints = Param(nameof(StopLossPoints), 50)
+		_stopLossPoints = Param(nameof(StopLossPoints), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss (pts)", "Stop loss in price steps", "Risk");
 
-		_takeProfitPoints = Param(nameof(TakeProfitPoints), 50)
+		_takeProfitPoints = Param(nameof(TakeProfitPoints), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit (pts)", "Take profit in price steps", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 	}
 
@@ -97,7 +96,6 @@ public class NewRandomStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_random = null;
 		_sequenceLastSide = null;
 		_positionSide = null;
 		_entryPrice = 0m;
@@ -108,8 +106,6 @@ public class NewRandomStrategy : Strategy
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_random = Mode == RandomModes.Generator ? new Random(42) : null;
 
 		_sequenceLastSide = Mode switch
 		{
@@ -166,9 +162,9 @@ public class NewRandomStrategy : Strategy
 			if (hit)
 			{
 				if (Position > 0)
-					SellMarket(Position);
+					SellMarket();
 				else if (Position < 0)
-					BuyMarket(Math.Abs(Position));
+					BuyMarket();
 
 				_positionSide = null;
 				_entryPrice = 0m;
@@ -181,26 +177,20 @@ public class NewRandomStrategy : Strategy
 			var side = DetermineNextSide();
 
 			if (side == Sides.Buy)
-				BuyMarket(Volume);
+				BuyMarket();
 			else
-				SellMarket(Volume);
+				SellMarket();
 
 			_positionSide = side;
 			_entryPrice = price;
 
-			if (Mode != RandomModes.Generator)
-				_sequenceLastSide = side;
+			_sequenceLastSide = side;
 		}
 	}
 
 	private Sides DetermineNextSide()
 	{
-		return Mode switch
-		{
-			RandomModes.Generator => (_random?.Next(2) ?? 0) == 0 ? Sides.Buy : Sides.Sell,
-			RandomModes.BuySellBuy => _sequenceLastSide == Sides.Buy ? Sides.Sell : Sides.Buy,
-			RandomModes.SellBuySell => _sequenceLastSide == Sides.Sell ? Sides.Buy : Sides.Sell,
-			_ => Sides.Buy
-		};
+		// All modes use deterministic alternating logic
+		return _sequenceLastSide == Sides.Buy ? Sides.Sell : Sides.Buy;
 	}
 }

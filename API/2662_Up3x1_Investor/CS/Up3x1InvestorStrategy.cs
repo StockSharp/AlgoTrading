@@ -26,7 +26,11 @@ public class Up3x1InvestorStrategy : Strategy
 	private readonly StrategyParam<decimal> _trailingStepPips;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private ICandleMessage _previousCandle;
+	private decimal _prevOpen;
+	private decimal _prevClose;
+	private decimal _prevHigh;
+	private decimal _prevLow;
+	private bool _hasPreviousCandle;
 	private decimal? _entryPrice;
 	private decimal _highestPrice;
 	private decimal _lowestPrice;
@@ -42,25 +46,25 @@ public class Up3x1InvestorStrategy : Strategy
 
 	public Up3x1InvestorStrategy()
 	{
-		_rangeThresholdPips = Param(nameof(RangeThresholdPips), 50m)
+		_rangeThresholdPips = Param(nameof(RangeThresholdPips), 2m)
 			.SetDisplay("Range Threshold (pips)", "Minimum previous candle range in pips", "Signals");
 
-		_bodyThresholdPips = Param(nameof(BodyThresholdPips), 20m)
+		_bodyThresholdPips = Param(nameof(BodyThresholdPips), 1m)
 			.SetDisplay("Body Threshold (pips)", "Minimum previous candle body in pips", "Signals");
 
-		_stopLossPips = Param(nameof(StopLossPips), 50m)
+		_stopLossPips = Param(nameof(StopLossPips), 5m)
 			.SetDisplay("Stop Loss (pips)", "Distance of protective stop in pips", "Risk");
 
-		_takeProfitPips = Param(nameof(TakeProfitPips), 20m)
+		_takeProfitPips = Param(nameof(TakeProfitPips), 5m)
 			.SetDisplay("Take Profit (pips)", "Distance of profit target in pips", "Risk");
 
-		_trailingStopPips = Param(nameof(TrailingStopPips), 30m)
+		_trailingStopPips = Param(nameof(TrailingStopPips), 3m)
 			.SetDisplay("Trailing Stop (pips)", "Distance kept behind price when trailing", "Risk");
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5m)
 			.SetDisplay("Trailing Step (pips)", "Increment required to move trailing stop", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe for signals", "General");
 	}
 
@@ -75,7 +79,11 @@ public class Up3x1InvestorStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_previousCandle = null;
+		_prevOpen = 0m;
+		_prevClose = 0m;
+		_prevHigh = 0m;
+		_prevLow = 0m;
+		_hasPreviousCandle = false;
 		ResetPositionTracking();
 	}
 
@@ -112,7 +120,11 @@ public class Up3x1InvestorStrategy : Strategy
 		{
 			if (ManageOpenPosition(candle, stopLossDistance, takeProfitDistance, trailingStopDistance, trailingStepDistance))
 			{
-				_previousCandle = candle;
+				_prevOpen = candle.OpenPrice;
+				_prevClose = candle.ClosePrice;
+				_prevHigh = candle.HighPrice;
+				_prevLow = candle.LowPrice;
+				_hasPreviousCandle = true;
 				return;
 			}
 		}
@@ -121,30 +133,42 @@ public class Up3x1InvestorStrategy : Strategy
 
 		if (Position != 0)
 		{
-			_previousCandle = candle;
+			_prevOpen = candle.OpenPrice;
+			_prevClose = candle.ClosePrice;
+			_prevHigh = candle.HighPrice;
+			_prevLow = candle.LowPrice;
+			_hasPreviousCandle = true;
 			return;
 		}
 
-		var referenceCandle = _previousCandle ?? candle;
-		var range = referenceCandle.HighPrice - referenceCandle.LowPrice;
-		var body = Math.Abs(referenceCandle.ClosePrice - referenceCandle.OpenPrice);
+		var refOpen = _hasPreviousCandle ? _prevOpen : candle.OpenPrice;
+		var refClose = _hasPreviousCandle ? _prevClose : candle.ClosePrice;
+		var refHigh = _hasPreviousCandle ? _prevHigh : candle.HighPrice;
+		var refLow = _hasPreviousCandle ? _prevLow : candle.LowPrice;
+
+		var range = refHigh - refLow;
+		var body = Math.Abs(refClose - refOpen);
 		var rangeThreshold = RangeThresholdPips * pipSize;
 		var bodyThreshold = BodyThresholdPips * pipSize;
 
 		// Bullish setup: strong bullish candle with large range and body.
-		if (range > rangeThreshold && body > bodyThreshold && referenceCandle.ClosePrice > referenceCandle.OpenPrice)
+		if (range > rangeThreshold && body > bodyThreshold && refClose > refOpen)
 		{
-			BuyMarket(Volume);
+			BuyMarket();
 			InitializePositionTracking(candle.ClosePrice);
 		}
 		// Bearish setup: strong bearish candle with large range and body.
-		else if (range > rangeThreshold && body > bodyThreshold && referenceCandle.ClosePrice < referenceCandle.OpenPrice)
+		else if (range > rangeThreshold && body > bodyThreshold && refClose < refOpen)
 		{
-			SellMarket(Volume);
+			SellMarket();
 			InitializePositionTracking(candle.ClosePrice);
 		}
 
-		_previousCandle = candle;
+		_prevOpen = candle.OpenPrice;
+		_prevClose = candle.ClosePrice;
+		_prevHigh = candle.HighPrice;
+		_prevLow = candle.LowPrice;
+		_hasPreviousCandle = true;
 	}
 
 	private bool ManageOpenPosition(ICandleMessage candle, decimal stopLossDistance, decimal takeProfitDistance, decimal trailingStopDistance, decimal trailingStepDistance)
@@ -160,7 +184,7 @@ public class Up3x1InvestorStrategy : Strategy
 			// Check stop loss.
 			if (stopLossDistance > 0m && candle.LowPrice <= _entryPrice.Value - stopLossDistance)
 			{
-				SellMarket(Position);
+				SellMarket();
 				ResetPositionTracking();
 				return true;
 			}
@@ -168,7 +192,7 @@ public class Up3x1InvestorStrategy : Strategy
 			// Check take profit.
 			if (takeProfitDistance > 0m && candle.HighPrice >= _entryPrice.Value + takeProfitDistance)
 			{
-				SellMarket(Position);
+				SellMarket();
 				ResetPositionTracking();
 				return true;
 			}
@@ -184,7 +208,7 @@ public class Up3x1InvestorStrategy : Strategy
 			// Exit if price returned to the trailing stop.
 			if (_trailingStopPrice != null && candle.LowPrice <= _trailingStopPrice.Value)
 			{
-				SellMarket(Position);
+				SellMarket();
 				ResetPositionTracking();
 				return true;
 			}
@@ -197,7 +221,7 @@ public class Up3x1InvestorStrategy : Strategy
 			// Check stop loss for short trades.
 			if (stopLossDistance > 0m && candle.HighPrice >= _entryPrice.Value + stopLossDistance)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				ResetPositionTracking();
 				return true;
 			}
@@ -205,7 +229,7 @@ public class Up3x1InvestorStrategy : Strategy
 			// Check take profit for short trades.
 			if (takeProfitDistance > 0m && candle.LowPrice <= _entryPrice.Value - takeProfitDistance)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				ResetPositionTracking();
 				return true;
 			}
@@ -221,7 +245,7 @@ public class Up3x1InvestorStrategy : Strategy
 			// Exit once the trailing stop is touched.
 			if (_trailingStopPrice != null && candle.HighPrice >= _trailingStopPrice.Value)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				ResetPositionTracking();
 				return true;
 			}

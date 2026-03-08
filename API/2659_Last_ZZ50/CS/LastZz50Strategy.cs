@@ -24,7 +24,7 @@ public class LastZz50Strategy : Strategy
 	private readonly StrategyParam<int> _takeProfitPoints;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private ZigZag _zigZag;
+	private ZigZag _zigZag = null!;
 	private readonly List<decimal> _pivots = new();
 	private decimal _entryPrice;
 
@@ -70,15 +70,15 @@ public class LastZz50Strategy : Strategy
 			.SetDisplay("ZigZag Deviation", "Percentage change threshold (0..1)", "ZigZag")
 			.SetRange(0.000001m, 0.999999m);
 
-		_stopLossPoints = Param(nameof(StopLossPoints), 500)
+		_stopLossPoints = Param(nameof(StopLossPoints), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss (pts)", "Protective stop distance in price steps", "Risk");
 
-		_takeProfitPoints = Param(nameof(TakeProfitPoints), 500)
+		_takeProfitPoints = Param(nameof(TakeProfitPoints), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit (pts)", "Target distance in price steps", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candles used to evaluate the ZigZag", "General");
 	}
 
@@ -113,7 +113,7 @@ public class LastZz50Strategy : Strategy
 		var takeProfit = TakeProfitPoints > 0 ? new Unit(step * TakeProfitPoints, UnitTypes.Absolute) : (Unit)null;
 
 		if (stopLoss != null || takeProfit != null)
-			StartProtection(stopLoss: stopLoss, takeProfit: takeProfit);
+			StartProtection(takeProfit, stopLoss);
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -176,8 +176,7 @@ public class LastZz50Strategy : Strategy
 			// Buy if price pulls back to midpoint
 			if (price <= midBC && Position <= 0)
 			{
-				var volume = Volume + Math.Abs(Position);
-				BuyMarket(volume);
+					BuyMarket();
 				_entryPrice = price;
 			}
 		}
@@ -187,8 +186,7 @@ public class LastZz50Strategy : Strategy
 			// Sell if price rallies to midpoint
 			if (price >= midBC && Position >= 0)
 			{
-				var volume = Volume + Math.Abs(Position);
-				SellMarket(volume);
+					SellMarket();
 				_entryPrice = price;
 			}
 		}

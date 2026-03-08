@@ -59,15 +59,15 @@ public class NevalyashkaFlipStrategy : Strategy
 	/// </summary>
 	public NevalyashkaFlipStrategy()
 	{
-		_stopLossPoints = Param(nameof(StopLossPoints), 50)
+		_stopLossPoints = Param(nameof(StopLossPoints), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss (pts)", "Stop loss distance in price steps", "Risk");
 
-		_takeProfitPoints = Param(nameof(TakeProfitPoints), 50)
+		_takeProfitPoints = Param(nameof(TakeProfitPoints), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit (pts)", "Take profit distance in price steps", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 	}
 
@@ -136,9 +136,9 @@ public class NevalyashkaFlipStrategy : Strategy
 			{
 				// Close position
 				if (Position > 0)
-					SellMarket(Position);
+					SellMarket();
 				else if (Position < 0)
-					BuyMarket(Math.Abs(Position));
+					BuyMarket();
 
 				_lastCompletedSide = _currentSide;
 				_currentSide = null;
@@ -158,9 +158,9 @@ public class NevalyashkaFlipStrategy : Strategy
 			};
 
 			if (sideToOpen == Sides.Buy)
-				BuyMarket(Volume);
+				BuyMarket();
 			else
-				SellMarket(Volume);
+				SellMarket();
 
 			_currentSide = sideToOpen;
 			_entryPrice = price;

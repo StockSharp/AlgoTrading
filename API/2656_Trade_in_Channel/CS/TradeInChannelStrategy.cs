@@ -97,7 +97,7 @@ public class TradeInChannelStrategy : Strategy
 			
 			.SetNotNegative();
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for signals", "General");
 	}
 
@@ -121,6 +121,7 @@ public class TradeInChannelStrategy : Strategy
 
 		ResetLongState();
 		ResetShortState();
+		_priceStep = 1m;
 	}
 
 	/// <inheritdoc />
@@ -155,7 +156,7 @@ public class TradeInChannelStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection(null, null);
+		// no protection needed
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue donchianValue, IIndicatorValue atrValue)
@@ -164,7 +165,7 @@ public class TradeInChannelStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 		return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!_donchian.IsFormed || !_atr.IsFormed)
 		return;
 
 		var donchian = (DonchianChannelsValue)donchianValue;
@@ -213,7 +214,7 @@ public class TradeInChannelStrategy : Strategy
 		// Hard stop based on ATR.
 		if (_longStop is decimal stop && candle.LowPrice <= stop)
 		{
-			SellMarket(Position);
+			SellMarket();
 			ResetLongState();
 			return true;
 		}
@@ -221,7 +222,7 @@ public class TradeInChannelStrategy : Strategy
 		// Exit when price breaks above a flat resistance level.
 		if (upper == previousUpper && candle.HighPrice >= upper)
 		{
-			SellMarket(Position);
+			SellMarket();
 			ResetLongState();
 			return true;
 		}
@@ -237,7 +238,7 @@ public class TradeInChannelStrategy : Strategy
 		// Hard stop based on ATR.
 		if (_shortStop is decimal stop && candle.HighPrice >= stop)
 		{
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
 			ResetShortState();
 			return true;
 		}
@@ -245,7 +246,7 @@ public class TradeInChannelStrategy : Strategy
 		// Exit when price breaks below a flat support level.
 		if (lower == previousLower && candle.LowPrice <= lower)
 		{
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
 			ResetShortState();
 			return true;
 		}
@@ -278,7 +279,7 @@ public class TradeInChannelStrategy : Strategy
 
 			if (_longTrailingLevel is decimal level && candle.LowPrice <= level)
 			{
-				SellMarket(Position);
+				SellMarket();
 				ResetLongState();
 				return true;
 			}
@@ -312,7 +313,7 @@ public class TradeInChannelStrategy : Strategy
 
 			if (_shortTrailingLevel is decimal level && candle.HighPrice >= level)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				ResetShortState();
 				return true;
 			}
@@ -355,7 +356,7 @@ public class TradeInChannelStrategy : Strategy
 		if (Volume <= 0m)
 		return;
 
-		BuyMarket(Volume);
+		BuyMarket();
 
 		_longEntryPrice = candle.ClosePrice;
 		_longBestPrice = candle.ClosePrice;
@@ -370,7 +371,7 @@ public class TradeInChannelStrategy : Strategy
 		if (Volume <= 0m)
 		return;
 
-		SellMarket(Volume);
+		SellMarket();
 
 		_shortEntryPrice = candle.ClosePrice;
 		_shortBestPrice = candle.ClosePrice;

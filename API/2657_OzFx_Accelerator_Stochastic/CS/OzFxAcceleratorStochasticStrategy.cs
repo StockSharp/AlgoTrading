@@ -172,7 +172,7 @@ public class OzFxAcceleratorStochasticStrategy : Strategy
 	/// </summary>
 	public OzFxAcceleratorStochasticStrategy()
 	{
-		_maxLayers = Param(nameof(MaxLayers), 5)
+		_maxLayers = Param(nameof(MaxLayers), 1)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Layers", "Maximum number of layered positions", "Risk");
 
@@ -180,13 +180,13 @@ public class OzFxAcceleratorStochasticStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Volume", "Order volume for each layer", "Trading");
 
-		_stopLossPips = Param(nameof(StopLossPips), 100m)
+		_stopLossPips = Param(nameof(StopLossPips), 10m)
 			.SetDisplay("Stop Loss (pips)", "Protective stop distance in pips", "Risk");
 
-		_takeProfitPips = Param(nameof(TakeProfitPips), 50m)
+		_takeProfitPips = Param(nameof(TakeProfitPips), 5m)
 			.SetDisplay("Take Profit (pips)", "Base take profit increment in pips", "Risk");
 
-		_trailingStopPips = Param(nameof(TrailingStopPips), 50m)
+		_trailingStopPips = Param(nameof(TrailingStopPips), 5m)
 			.SetDisplay("Trailing Stop (pips)", "Trailing stop distance in pips", "Risk");
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5m)
@@ -207,7 +207,7 @@ public class OzFxAcceleratorStochasticStrategy : Strategy
 		_stochasticLevel = Param(nameof(StochasticLevel), 50m)
 			.SetDisplay("Stochastic Level", "Threshold used to trigger signals", "Stochastic");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Primary candle series", "General");
 	}
 
@@ -336,7 +336,7 @@ public class OzFxAcceleratorStochasticStrategy : Strategy
 		var entryPrice = candle.ClosePrice;
 
 		// First layer mirrors the expert advisor: no stop or target until trailing engages.
-		BuyMarket(volume);
+		BuyMarket();
 		_longEntries.Add(new EntryInfo
 		{
 			Volume = volume,
@@ -348,7 +348,7 @@ public class OzFxAcceleratorStochasticStrategy : Strategy
 
 		for (var i = 1; i < MaxLayers; i++)
 		{
-			BuyMarket(volume);
+			BuyMarket();
 
 			var stopPrice = stopDistance > 0m ? entryPrice - stopDistance : (decimal?)null;
 			var takePrice = takeDistance > 0m ? entryPrice + takeDistance * i : (decimal?)null;
@@ -381,7 +381,7 @@ public class OzFxAcceleratorStochasticStrategy : Strategy
 
 		var entryPrice = candle.ClosePrice;
 
-		SellMarket(volume);
+		SellMarket();
 		_shortEntries.Add(new EntryInfo
 		{
 			Volume = volume,
@@ -393,7 +393,7 @@ public class OzFxAcceleratorStochasticStrategy : Strategy
 
 		for (var i = 1; i < MaxLayers; i++)
 		{
-			SellMarket(volume);
+			SellMarket();
 
 			var stopPrice = stopDistance > 0m ? entryPrice + stopDistance : (decimal?)null;
 			var takePrice = takeDistance > 0m ? entryPrice - takeDistance * i : (decimal?)null;
@@ -484,7 +484,7 @@ public class OzFxAcceleratorStochasticStrategy : Strategy
 			var entry = _longEntries[i];
 			if (entry.TakeProfitPrice is decimal takePrice && highPrice >= takePrice)
 			{
-				SellMarket(entry.Volume);
+				SellMarket();
 				_longEntries.RemoveAt(i);
 				anyTakeProfit = true;
 			}
@@ -569,7 +569,7 @@ public class OzFxAcceleratorStochasticStrategy : Strategy
 			var entry = _shortEntries[i];
 			if (entry.TakeProfitPrice is decimal takePrice && lowPrice <= takePrice)
 			{
-				BuyMarket(entry.Volume);
+				BuyMarket();
 				_shortEntries.RemoveAt(i);
 				anyTakeProfit = true;
 			}
@@ -589,7 +589,7 @@ public class OzFxAcceleratorStochasticStrategy : Strategy
 			volume += _longEntries[i].Volume;
 
 		if (volume > 0m && Position > 0m)
-			SellMarket(volume);
+			SellMarket();
 
 		_longEntries.Clear();
 
@@ -609,7 +609,7 @@ public class OzFxAcceleratorStochasticStrategy : Strategy
 			volume += _shortEntries[i].Volume;
 
 		if (volume > 0m && Position < 0m)
-			BuyMarket(volume);
+			BuyMarket();
 
 		_shortEntries.Clear();
 

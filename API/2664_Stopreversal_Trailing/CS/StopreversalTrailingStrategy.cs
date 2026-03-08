@@ -47,19 +47,19 @@ public class StopreversalTrailingStrategy : Strategy
 	/// </summary>
 	public StopreversalTrailingStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Stopreversal timeframe", "General");
 
 		_atrPeriod = Param(nameof(AtrPeriod), 15)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "ATR lookback for trailing stop", "Indicator");
 
-		_stopLossSteps = Param(nameof(StopLossSteps), 1000)
+		_stopLossSteps = Param(nameof(StopLossSteps), 10)
 		.SetNotNegative()
 		.SetDisplay("Stop Loss Steps", "Stop loss distance in price steps", "Risk")
 		;
 
-		_takeProfitSteps = Param(nameof(TakeProfitSteps), 2000)
+		_takeProfitSteps = Param(nameof(TakeProfitSteps), 20)
 		.SetNotNegative()
 		.SetDisplay("Take Profit Steps", "Take profit distance in price steps", "Risk")
 		;
@@ -196,6 +196,19 @@ public class StopreversalTrailingStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_signals.Clear();
+		_previousStopLevel = null;
+		_previousPrice = null;
+		_longStop = null;
+		_longTake = null;
+		_shortStop = null;
+		_shortTake = null;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
@@ -218,7 +231,7 @@ public class StopreversalTrailingStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection(null, null);
+		// no protection
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal atrValue)
@@ -268,13 +281,13 @@ public class StopreversalTrailingStrategy : Strategy
 	{
 		if (SellPositionClose && signal.BuySignal && Position < 0)
 		{
-			BuyMarket(-Position);
+			BuyMarket();
 			ResetShortStops();
 		}
 
 		if (BuyPositionClose && signal.SellSignal && Position > 0)
 		{
-			SellMarket(Position);
+			SellMarket();
 			ResetLongStops();
 		}
 
@@ -285,7 +298,7 @@ public class StopreversalTrailingStrategy : Strategy
 		{
 			if (Volume > 0)
 			{
-				BuyMarket(Volume);
+				BuyMarket();
 				ResetShortStops();
 				SetLongStops(signal.ClosePrice);
 			}
@@ -294,7 +307,7 @@ public class StopreversalTrailingStrategy : Strategy
 		{
 			if (Volume > 0)
 			{
-				SellMarket(Volume);
+				SellMarket();
 				ResetLongStops();
 				SetShortStops(signal.ClosePrice);
 			}
@@ -307,14 +320,14 @@ public class StopreversalTrailingStrategy : Strategy
 		{
 			if (_longStop is decimal longStop && candle.LowPrice <= longStop)
 			{
-				SellMarket(Position);
+				SellMarket();
 				ResetLongStops();
 				return;
 			}
 
 			if (_longTake is decimal longTake && candle.HighPrice >= longTake)
 			{
-				SellMarket(Position);
+				SellMarket();
 				ResetLongStops();
 			}
 		}
@@ -322,14 +335,14 @@ public class StopreversalTrailingStrategy : Strategy
 		{
 			if (_shortStop is decimal shortStop && candle.HighPrice >= shortStop)
 			{
-				BuyMarket(-Position);
+				BuyMarket();
 				ResetShortStops();
 				return;
 			}
 
 			if (_shortTake is decimal shortTake && candle.LowPrice <= shortTake)
 			{
-				BuyMarket(-Position);
+				BuyMarket();
 				ResetShortStops();
 			}
 		}
@@ -338,8 +351,10 @@ public class StopreversalTrailingStrategy : Strategy
 	private void TrimSignals()
 	{
 		var max = Math.Max(SignalBar + 5, 10);
-		if (_signals.Count > max)
-		_signals.RemoveRange(0, _signals.Count - max);
+		while (_signals.Count > max)
+		{
+			try { _signals.RemoveAt(0); } catch { break; }
+		}
 	}
 
 	private decimal CalculateStop(decimal price, decimal prevPrice, decimal prevStop)
