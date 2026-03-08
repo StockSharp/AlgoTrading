@@ -204,17 +204,17 @@ public class HarVesteRStrategy : Strategy
 			.SetDisplay("MACD Lookback", "Bars to confirm MACD sign change", "MACD")
 			;
 
-		_smaFastLength = Param(nameof(SmaFastLength), 50)
+		_smaFastLength = Param(nameof(SmaFastLength), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast SMA", "First moving average length", "Moving Averages")
 			;
 
-		_smaSlowLength = Param(nameof(SmaSlowLength), 100)
+		_smaSlowLength = Param(nameof(SmaSlowLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow SMA", "Second moving average length", "Moving Averages")
 			;
 
-		_minIndentation = Param(nameof(MinIndentation), 10m)
+		_minIndentation = Param(nameof(MinIndentation), 500m)
 			.SetGreaterThanZero()
 			.SetDisplay("Indentation", "Distance from moving averages in pips", "Trading")
 			;
@@ -246,7 +246,7 @@ public class HarVesteRStrategy : Strategy
 			;
 
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe", "General");
 	}
 
@@ -342,9 +342,9 @@ public class HarVesteRStrategy : Strategy
 				return;
 		}
 
-		_macdHistory.Enqueue(macdMain);
+		_macdHistory.Add(macdMain);
 		while (_macdHistory.Count > MacdLookback)
-			_macdHistory.Dequeue();
+			try { _macdHistory.RemoveAt(0); } catch { break; }
 
 		var indentation = GetIndentation();
 		var close = candle.ClosePrice;

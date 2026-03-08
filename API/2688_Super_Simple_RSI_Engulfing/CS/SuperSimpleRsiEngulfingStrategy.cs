@@ -135,7 +135,7 @@ public class SuperSimpleRsiEngulfingStrategy : Strategy
 		_oversoldLevel = Param(nameof(OversoldLevel), 37m)
 			.SetDisplay("Oversold Level", "RSI threshold for bearish reversals", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle series to process", "General");
 	}
 
@@ -184,13 +184,15 @@ public class SuperSimpleRsiEngulfingStrategy : Strategy
 			return;
 
 		var price = GetPrice(candle, RsiPrice);
-		var rsiValue = _rsi.Process(new DecimalIndicatorValue(_rsi, price, candle.OpenTime) { IsFinal = true }).ToDecimal();
+		var rsiResult = _rsi.Process(new DecimalIndicatorValue(_rsi, price, candle.OpenTime) { IsFinal = true });
 
 		if (!_rsi.IsFormed)
 		{
 			UpdateHistory(candle);
 			return;
 		}
+
+		var rsiValue = rsiResult.ToDecimal();
 
 		if (_prevOpen is decimal prevOpen &&
 			_prevClose is decimal prevClose &&
@@ -214,13 +216,11 @@ public class SuperSimpleRsiEngulfingStrategy : Strategy
 
 			if (longSignal)
 			{
-				var volume = Volume + (Position < 0m ? Math.Abs(Position) : 0m);
-				BuyMarket(volume);
+				BuyMarket();
 			}
 			else if (shortSignal)
 			{
-				var volume = Volume + (Position > 0m ? Math.Abs(Position) : 0m);
-				SellMarket(volume);
+				SellMarket();
 			}
 		}
 
@@ -239,9 +239,9 @@ public class SuperSimpleRsiEngulfingStrategy : Strategy
 	private void ClosePosition()
 	{
 		if (Position > 0m)
-			SellMarket(Math.Abs(Position));
+			SellMarket();
 		else if (Position < 0m)
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
 	}
 
 	private void UpdateHistory(ICandleMessage candle)

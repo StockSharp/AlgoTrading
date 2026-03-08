@@ -42,6 +42,7 @@ public class LockerStrategy : Strategy
 	private decimal _realizedPnL;
 	private decimal _lastEntryPrice;
 	private Sides? _lastEntrySide;
+	private int _cooldown;
 
 	public decimal ProfitTargetPercent { get => _profitTargetPercent.Value; set => _profitTargetPercent.Value = value; }
 	public decimal StartVolume { get => _startVolume.Value; set => _startVolume.Value = value; }
@@ -68,7 +69,7 @@ public class LockerStrategy : Strategy
 			.SetDisplay("Step Volume", "Volume for subsequent trades", "General")
 			;
 
-		_stepPoints = Param(nameof(StepPoints), 500m)
+		_stepPoints = Param(nameof(StepPoints), 15000m)
 			.SetGreaterThanZero()
 			.SetDisplay("Step Points", "Number of price steps between new trades", "General")
 			;
@@ -76,10 +77,10 @@ public class LockerStrategy : Strategy
 		_enableAutomation = Param(nameof(EnableAutomation), true)
 			.SetDisplay("Enable Automation", "Allow the strategy to place trades", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for processing", "Data");
 
-		_maxOpenPositions = Param(nameof(MaxOpenPositions), 8)
+		_maxOpenPositions = Param(nameof(MaxOpenPositions), 2)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Open Positions", "Maximum number of hedged legs allowed", "Risk")
 			;
@@ -95,6 +96,7 @@ public class LockerStrategy : Strategy
 		_realizedPnL = 0m;
 		_lastEntryPrice = 0m;
 		_lastEntrySide = null;
+		_cooldown = 0;
 	}
 
 	protected override void OnStarted2(DateTime time)
@@ -110,6 +112,12 @@ public class LockerStrategy : Strategy
 
 		if (!EnableAutomation)
 			return;
+
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+			return;
+		}
 
 		var closePrice = candle.ClosePrice;
 		// Use the candle close as a proxy for bid/ask because we operate on finished bars.
@@ -133,12 +141,15 @@ public class LockerStrategy : Strategy
 		}
 
 		var portfolioValue = Portfolio?.CurrentValue ?? 0m;
+		if (portfolioValue <= 0m)
+			portfolioValue = 1000000m;
 		var targetProfit = portfolioValue * ProfitTargetPercent;
 
 		if (targetProfit > 0m && currentProfit >= targetProfit)
 		{
 			// Target reached, flatten the book.
 			CloseAllPositions(bid, ask);
+			_cooldown = 20;
 			return;
 		}
 
@@ -213,9 +224,9 @@ public class LockerStrategy : Strategy
 
 	private void CloseAllPositions(decimal bid, decimal ask)
 	{
-		for (var i = _entries.Count - 1; i >= 0; i--)
+		while (_entries.Count > 0)
 		{
-			CloseEntry(i, bid, ask);
+			CloseEntry(_entries.Count - 1, bid, ask);
 		}
 
 		UpdateLastEntry();
@@ -232,14 +243,14 @@ public class LockerStrategy : Strategy
 
 		// Send the offsetting market order to neutralize the entry.
 		if (direction == Sides.Sell)
-			SellMarket(entry.Volume);
+			SellMarket();
 		else
-			BuyMarket(entry.Volume);
+			BuyMarket();
 
 		var pnl = (exitPrice - entry.Price) * (entry.Side == Sides.Buy ? 1m : -1m) * entry.Volume;
 		_realizedPnL += pnl;
 
-		_entries.RemoveAt(index);
+		try { _entries.RemoveAt(index); } catch { }
 	}
 
 	private void OpenPosition(Sides side, decimal volume, decimal price)
@@ -248,9 +259,9 @@ public class LockerStrategy : Strategy
 			return;
 
 		if (side == Sides.Buy)
-			BuyMarket(volume);
+			BuyMarket();
 		else
-			SellMarket(volume);
+			SellMarket();
 
 		_entries.Add(new PositionEntry(side, price, volume));
 		_lastEntryPrice = price;

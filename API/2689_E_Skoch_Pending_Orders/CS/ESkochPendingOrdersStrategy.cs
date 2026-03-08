@@ -97,30 +97,30 @@ public class ESkochPendingOrdersStrategy : Strategy
 
 	public ESkochPendingOrdersStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe", "General");
 
-		_takeProfitBuyPips = Param(nameof(TakeProfitBuyPips), 60m)
+		_takeProfitBuyPips = Param(nameof(TakeProfitBuyPips), 2000m)
 			.SetGreaterThanZero()
 			.SetDisplay("Buy TP (pips)", "Long take profit distance", "Trading");
 
-		_stopLossBuyPips = Param(nameof(StopLossBuyPips), 10m)
+		_stopLossBuyPips = Param(nameof(StopLossBuyPips), 500m)
 			.SetGreaterThanZero()
 			.SetDisplay("Buy SL (pips)", "Long stop loss distance", "Trading");
 
-		_takeProfitSellPips = Param(nameof(TakeProfitSellPips), 60m)
+		_takeProfitSellPips = Param(nameof(TakeProfitSellPips), 2000m)
 			.SetGreaterThanZero()
 			.SetDisplay("Sell TP (pips)", "Short take profit distance", "Trading");
 
-		_stopLossSellPips = Param(nameof(StopLossSellPips), 30m)
+		_stopLossSellPips = Param(nameof(StopLossSellPips), 500m)
 			.SetGreaterThanZero()
 			.SetDisplay("Sell SL (pips)", "Short stop loss distance", "Trading");
 
-		_indentHighPips = Param(nameof(IndentHighPips), 70m)
+		_indentHighPips = Param(nameof(IndentHighPips), 500m)
 			.SetGreaterThanZero()
 			.SetDisplay("High Indent", "Buy stop offset", "Trading");
 
-		_indentLowPips = Param(nameof(IndentLowPips), 70m)
+		_indentLowPips = Param(nameof(IndentLowPips), 500m)
 			.SetGreaterThanZero()
 			.SetDisplay("Low Indent", "Sell stop offset", "Trading");
 
@@ -238,7 +238,7 @@ public class ESkochPendingOrdersStrategy : Strategy
 
 		if (_pendingBuyPrice is decimal buyPrice && candle.HighPrice >= buyPrice)
 		{
-			BuyMarket(Volume);
+			BuyMarket();
 			_entryPrice = buyPrice;
 			_pendingBuyPrice = null;
 			_pendingSellPrice = null;
@@ -247,7 +247,7 @@ public class ESkochPendingOrdersStrategy : Strategy
 
 		if (_pendingSellPrice is decimal sellPrice && candle.LowPrice <= sellPrice)
 		{
-			SellMarket(Volume);
+			SellMarket();
 			_entryPrice = sellPrice;
 			_pendingBuyPrice = null;
 			_pendingSellPrice = null;
@@ -260,13 +260,13 @@ public class ESkochPendingOrdersStrategy : Strategy
 		{
 			if (_longStop > 0m && candle.LowPrice <= _longStop)
 			{
-				SellMarket(Math.Abs(Position));
+				SellMarket();
 				ResetPositionState();
 				return;
 			}
 			if (_longTake > 0m && candle.HighPrice >= _longTake)
 			{
-				SellMarket(Math.Abs(Position));
+				SellMarket();
 				ResetPositionState();
 			}
 		}
@@ -274,13 +274,13 @@ public class ESkochPendingOrdersStrategy : Strategy
 		{
 			if (_shortStop > 0m && candle.HighPrice >= _shortStop)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				ResetPositionState();
 				return;
 			}
 			if (_shortTake > 0m && candle.LowPrice <= _shortTake)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				ResetPositionState();
 			}
 		}

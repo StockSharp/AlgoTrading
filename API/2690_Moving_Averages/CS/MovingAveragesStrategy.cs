@@ -24,7 +24,7 @@ public class MovingAveragesStrategy : Strategy
 	private readonly StrategyParam<int> _movingShift;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private SimpleMovingAverage _sma = new();
+	private SimpleMovingAverage _sma = null!;
 	private decimal[] _shiftBuffer = Array.Empty<decimal>();
 	private int _shiftIndex;
 	private int _shiftFillCount;
@@ -102,8 +102,19 @@ public class MovingAveragesStrategy : Strategy
 			.SetDisplay("Moving Shift", "Bars to shift the moving average", "Indicator");
 
 		// Configure candle source for the strategy.
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for signals", "Data");
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_shiftBuffer = Array.Empty<decimal>();
+		_shiftIndex = 0;
+		_shiftFillCount = 0;
+		_consecutiveLosses = 0;
+		ResetEntryState();
 	}
 
 	/// <inheritdoc />
@@ -201,8 +212,8 @@ public class MovingAveragesStrategy : Strategy
 		if (volume <= 0m)
 			return;
 
-		BuyMarket(volume);
-		LogInfo($"Enter long on bullish cross. Price={candle.ClosePrice}, SMA={shiftedMa}, Volume={volume}");
+		BuyMarket();
+		LogInfo($"Enter long on bullish cross. Price={candle.ClosePrice}, SMA={shiftedMa}");
 	}
 
 	private void OpenShortPosition(ICandleMessage candle, decimal shiftedMa)
@@ -211,8 +222,8 @@ public class MovingAveragesStrategy : Strategy
 		if (volume <= 0m)
 			return;
 
-		SellMarket(volume);
-		LogInfo($"Enter short on bearish cross. Price={candle.ClosePrice}, SMA={shiftedMa}, Volume={volume}");
+		SellMarket();
+		LogInfo($"Enter short on bearish cross. Price={candle.ClosePrice}, SMA={shiftedMa}");
 	}
 
 	private void CloseLongPosition(ICandleMessage candle, decimal shiftedMa)
@@ -221,8 +232,8 @@ public class MovingAveragesStrategy : Strategy
 		if (volume <= 0m)
 			return;
 
-		SellMarket(volume);
-		LogInfo($"Exit long due to bearish cross. Price={candle.ClosePrice}, SMA={shiftedMa}, Volume={volume}");
+		SellMarket();
+		LogInfo($"Exit long due to bearish cross. Price={candle.ClosePrice}, SMA={shiftedMa}");
 	}
 
 	private void CloseShortPosition(ICandleMessage candle, decimal shiftedMa)
@@ -231,8 +242,8 @@ public class MovingAveragesStrategy : Strategy
 		if (volume <= 0m)
 			return;
 
-		BuyMarket(volume);
-		LogInfo($"Exit short due to bullish cross. Price={candle.ClosePrice}, SMA={shiftedMa}, Volume={volume}");
+		BuyMarket();
+		LogInfo($"Exit short due to bullish cross. Price={candle.ClosePrice}, SMA={shiftedMa}");
 	}
 
 	private decimal CalculateOrderVolume(decimal price)

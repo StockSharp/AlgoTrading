@@ -39,9 +39,9 @@ public class AlligatorTrendStrategy : Strategy
 	private readonly StrategyParam<decimal> _trailingStopPips;
 	private readonly StrategyParam<decimal> _trailingStepPips;
 
-	private readonly Queue<decimal> _jawBuffer = new();
-	private readonly Queue<decimal> _teethBuffer = new();
-	private readonly Queue<decimal> _lipsBuffer = new();
+	private readonly List<decimal> _jawBuffer = new();
+	private readonly List<decimal> _teethBuffer = new();
+	private readonly List<decimal> _lipsBuffer = new();
 
 	private decimal _entryPrice;
 
@@ -186,7 +186,7 @@ public class AlligatorTrendStrategy : Strategy
 	/// </summary>
 	public AlligatorTrendStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles used for calculations", "General");
 
 		_jawLength = Param(nameof(JawLength), 13)
@@ -222,25 +222,38 @@ public class AlligatorTrendStrategy : Strategy
 		_enableShort = Param(nameof(EnableShort), true)
 			.SetDisplay("Enable Short", "Allow short entries", "Trading");
 
-		_stopLossPips = Param(nameof(StopLossPips), 45m)
+		_stopLossPips = Param(nameof(StopLossPips), 500m)
 			.SetDisplay("Stop Loss", "Stop-loss distance in pips", "Risk")
 			;
 
-		_takeProfitPips = Param(nameof(TakeProfitPips), 145m)
+		_takeProfitPips = Param(nameof(TakeProfitPips), 2000m)
 			.SetDisplay("Take Profit", "Take-profit distance in pips", "Risk")
 			;
 
-		_zeroLevelPips = Param(nameof(ZeroLevelPips), 30m)
+		_zeroLevelPips = Param(nameof(ZeroLevelPips), 300m)
 			.SetDisplay("Zero Level", "Distance to move stop to break-even", "Risk")
 			;
 
-		_trailingStopPips = Param(nameof(TrailingStopPips), 50m)
+		_trailingStopPips = Param(nameof(TrailingStopPips), 500m)
 			.SetDisplay("Trailing Stop", "Trailing stop distance in pips", "Risk")
 			;
 
-		_trailingStepPips = Param(nameof(TrailingStepPips), 10m)
+		_trailingStepPips = Param(nameof(TrailingStepPips), 100m)
 			.SetDisplay("Trailing Step", "Minimum trailing stop increment in pips", "Risk")
 			;
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_jawBuffer.Clear();
+		_teethBuffer.Clear();
+		_lipsBuffer.Clear();
+		_entryPrice = 0m;
+		ResetLong();
+		ResetShort();
 	}
 
 	/// <inheritdoc />
@@ -271,8 +284,6 @@ public class AlligatorTrendStrategy : Strategy
 			DrawIndicator(area, lips);
 			DrawOwnTrades(area);
 		}
-
-		StartProtection(null, null);
 
 		void ProcessCandle(ICandleMessage candle)
 		{
@@ -383,14 +394,14 @@ public class AlligatorTrendStrategy : Strategy
 
 			if (_longTake.HasValue && candle.HighPrice >= _longTake.Value)
 			{
-				SellMarket(Position);
+				SellMarket();
 				ResetLong();
 				return true;
 			}
 
 			if (_longStop.HasValue && candle.LowPrice <= _longStop.Value)
 			{
-				SellMarket(Position);
+				SellMarket();
 				ResetLong();
 				return true;
 			}
@@ -425,14 +436,14 @@ public class AlligatorTrendStrategy : Strategy
 
 			if (_shortTake.HasValue && candle.LowPrice <= _shortTake.Value)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				ResetShort();
 				return true;
 			}
 
 			if (_shortStop.HasValue && candle.HighPrice >= _shortStop.Value)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				ResetShort();
 				return true;
 			}
@@ -466,17 +477,19 @@ public class AlligatorTrendStrategy : Strategy
 		return false;
 	}
 
-	private static decimal? GetShiftedValue(Queue<decimal> buffer, decimal value, int shift)
+	private static decimal? GetShiftedValue(List<decimal> buffer, decimal value, int shift)
 	{
 		if (shift <= 0)
 			return value;
 
-		buffer.Enqueue(value);
+		buffer.Add(value);
 
 		if (buffer.Count <= shift)
 			return null;
 
-		return buffer.Dequeue();
+		var result = buffer[0];
+		try { buffer.RemoveAt(0); } catch { }
+		return result;
 	}
 
 	private decimal GetPriceByPips(decimal pips)
