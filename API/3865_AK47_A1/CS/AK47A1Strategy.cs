@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -39,9 +40,12 @@ public class AK47A1Strategy : Strategy
 		_slowPeriod = Param(nameof(SlowPeriod), 13)
 			.SetDisplay("Slow SMA", "Jaw period", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 	}
+
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities() => [(Security, CandleType)];
+	protected override void OnReseted() { base.OnReseted(); _prevFast = 0m; _prevMed = 0m; _hasPrev = false; }
 
 	protected override void OnStarted2(DateTime time)
 	{
