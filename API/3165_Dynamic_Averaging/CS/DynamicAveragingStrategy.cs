@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -13,213 +10,81 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-/// <summary>
-/// Dynamic averaging strategy using Stochastic oscillator with volatility filter.
-/// </summary>
 public class DynamicAveragingStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _tradeVolume;
-	private readonly StrategyParam<int> _stochasticKPeriod;
-	private readonly StrategyParam<int> _stdDevPeriod;
-	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<decimal> _oversoldLevel;
-	private readonly StrategyParam<decimal> _overboughtLevel;
+	private readonly StrategyParam<int> _fastPeriod;
+	private readonly StrategyParam<int> _slowPeriod;
+	private readonly StrategyParam<int> _stopLossPoints;
+	private readonly StrategyParam<int> _takeProfitPoints;
 
-	private StandardDeviation _stdDev;
-	private SimpleMovingAverage _stdDevSma;
+	private ExponentialMovingAverage _fast;
+	private ExponentialMovingAverage _slow;
 
-	private readonly List<decimal> _highHistory = new();
-	private readonly List<decimal> _lowHistory = new();
-	private readonly List<decimal> _closeHistory = new();
-	private decimal? _previousK;
-	private decimal? _previousK2;
-	private decimal _currentVolume;
-	private decimal _positionPrice;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private decimal _entryPrice;
+	private int _cooldown;
 
-	public decimal TradeVolume
-	{
-		get => _tradeVolume.Value;
-		set => _tradeVolume.Value = value;
-	}
-
-	public int StochasticKPeriod
-	{
-		get => _stochasticKPeriod.Value;
-		set => _stochasticKPeriod.Value = value;
-	}
-
-	public int StdDevPeriod
-	{
-		get => _stdDevPeriod.Value;
-		set => _stdDevPeriod.Value = value;
-	}
-
-	public decimal OversoldLevel
-	{
-		get => _oversoldLevel.Value;
-		set => _oversoldLevel.Value = value;
-	}
-
-	public decimal OverboughtLevel
-	{
-		get => _overboughtLevel.Value;
-		set => _overboughtLevel.Value = value;
-	}
-
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
+	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
+	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
+	public int StopLossPoints { get => _stopLossPoints.Value; set => _stopLossPoints.Value = value; }
+	public int TakeProfitPoints { get => _takeProfitPoints.Value; set => _takeProfitPoints.Value = value; }
 
 	public DynamicAveragingStrategy()
 	{
-		_tradeVolume = Param(nameof(TradeVolume), 1m)
-			.SetDisplay("Trade Volume", "Order volume for new positions", "Trading")
-			.SetGreaterThanZero();
-
-		_stochasticKPeriod = Param(nameof(StochasticKPeriod), 5)
-			.SetDisplay("Stochastic Length", "Lookback for %K", "Indicators")
-			.SetGreaterThanZero();
-
-		_stdDevPeriod = Param(nameof(StdDevPeriod), 20)
-			.SetDisplay("StdDev Length", "Lookback for the standard deviation filter", "Indicators")
-			.SetGreaterThanZero();
-
-		_oversoldLevel = Param(nameof(OversoldLevel), 25m)
-			.SetDisplay("Oversold Level", "%K threshold for long entries", "Indicators");
-
-		_overboughtLevel = Param(nameof(OverboughtLevel), 75m)
-			.SetDisplay("Overbought Level", "%K threshold for short entries", "Indicators");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Source candles", "Market Data");
+		_fastPeriod = Param(nameof(FastPeriod), 14).SetGreaterThanZero().SetDisplay("Fast Period", "Fast EMA period", "Indicator");
+		_slowPeriod = Param(nameof(SlowPeriod), 50).SetGreaterThanZero().SetDisplay("Slow Period", "Slow EMA period", "Indicator");
+		_stopLossPoints = Param(nameof(StopLossPoints), 200).SetNotNegative().SetDisplay("Stop Loss", "Stop-loss in price steps", "Risk");
+		_takeProfitPoints = Param(nameof(TakeProfitPoints), 400).SetNotNegative().SetDisplay("Take Profit", "Take-profit in price steps", "Risk");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return [(Security, CandleType)];
+		yield return (Security, TimeSpan.FromMinutes(5).TimeFrame());
 	}
 
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_highHistory.Clear();
-		_lowHistory.Clear();
-		_closeHistory.Clear();
-		_previousK = null;
-		_previousK2 = null;
-		_currentVolume = TradeVolume;
-		_positionPrice = 0;
+		_fast = null; _slow = null;
+		_prevFast = 0; _prevSlow = 0; _entryPrice = 0; _cooldown = 0;
 	}
 
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_currentVolume = TradeVolume;
-
-		_stdDev = new StandardDeviation { Length = StdDevPeriod };
-		_stdDevSma = new SimpleMovingAverage { Length = StdDevPeriod };
-
-		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
-
-		StartProtection(null, null);
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawOwnTrades(area);
-		}
+		_fast = new ExponentialMovingAverage { Length = FastPeriod };
+		_slow = new ExponentialMovingAverage { Length = SlowPeriod };
+		var subscription = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
+		subscription.Bind(_fast, _slow, ProcessCandle);
+		subscription.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal fastValue, decimal slowValue)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
+		if (candle.State != CandleStates.Finished) return;
+		if (!_fast.IsFormed || !_slow.IsFormed) { _prevFast = fastValue; _prevSlow = slowValue; return; }
+		if (_cooldown > 0) { _cooldown--; _prevFast = fastValue; _prevSlow = slowValue; return; }
 
-		_highHistory.Add(candle.HighPrice);
-		_lowHistory.Add(candle.LowPrice);
-		_closeHistory.Add(candle.ClosePrice);
+		var close = candle.ClosePrice;
+		var step = Security?.PriceStep ?? 1m;
 
-		var period = StochasticKPeriod;
-		while (_highHistory.Count > period) _highHistory.RemoveAt(0);
-		while (_lowHistory.Count > period) _lowHistory.RemoveAt(0);
-		while (_closeHistory.Count > period + 10) _closeHistory.RemoveAt(0);
-
-		// Calculate Stochastic %K manually
-		decimal? currentK = null;
-		if (_highHistory.Count >= period && _lowHistory.Count >= period)
+		if (Position > 0 && _entryPrice > 0)
 		{
-			var highest = _highHistory.Max();
-			var lowest = _lowHistory.Min();
-			var range = highest - lowest;
-			currentK = range > 0 ? ((candle.ClosePrice - lowest) / range) * 100m : 50m;
+			if (StopLossPoints > 0 && close <= _entryPrice - StopLossPoints * step) { SellMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
+			if (TakeProfitPoints > 0 && close >= _entryPrice + TakeProfitPoints * step) { SellMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
+		}
+		else if (Position < 0 && _entryPrice > 0)
+		{
+			if (StopLossPoints > 0 && close >= _entryPrice + StopLossPoints * step) { BuyMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
+			if (TakeProfitPoints > 0 && close <= _entryPrice - TakeProfitPoints * step) { BuyMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
 		}
 
-		// Process StdDev
-		var stdInput = new DecimalIndicatorValue(_stdDev, candle.ClosePrice, candle.ServerTime) { IsFinal = true };
-		var stdOutput = _stdDev.Process(stdInput);
+		if (_prevFast <= _prevSlow && fastValue > slowValue && Position <= 0)
+		{ if (Position < 0) BuyMarket(); BuyMarket(); _entryPrice = close; _cooldown = 100; }
+		else if (_prevFast >= _prevSlow && fastValue < slowValue && Position >= 0)
+		{ if (Position > 0) SellMarket(); SellMarket(); _entryPrice = close; _cooldown = 100; }
 
-		decimal stdDevVal = 0;
-		decimal stdDevAvg = 0;
-		if (!stdOutput.IsEmpty)
-		{
-			stdDevVal = stdOutput.IsEmpty ? 0 : stdOutput.ToDecimal();
-			var smaInput = new DecimalIndicatorValue(_stdDevSma, stdDevVal, candle.ServerTime) { IsFinal = true };
-			var smaOutput = _stdDevSma.Process(smaInput);
-			if (!smaOutput.IsEmpty)
-				stdDevAvg = smaOutput.ToDecimal();
-		}
-
-		if (currentK == null || !_stdDev.IsFormed || !_stdDevSma.IsFormed)
-		{
-			if (currentK.HasValue)
-			{
-				_previousK2 = _previousK;
-				_previousK = currentK;
-			}
-			return;
-		}
-
-		var k = currentK.Value;
-
-		// Volatility filter: only trade when current stddev <= average stddev
-		if (stdDevVal <= stdDevAvg && _previousK.HasValue && _previousK2.HasValue)
-		{
-			var slope = _previousK.Value - _previousK2.Value;
-
-			if (k < OversoldLevel && slope > 0)
-			{
-				// Long signal
-				if (Position <= 0)
-				{
-					var vol = _currentVolume + Math.Abs(Position);
-					if (vol > 0)
-					{
-						BuyMarket(vol);
-						_positionPrice = candle.ClosePrice;
-					}
-				}
-			}
-			else if (k > OverboughtLevel && slope < 0)
-			{
-				// Short signal
-				if (Position >= 0)
-				{
-					var vol = _currentVolume + Math.Abs(Position);
-					if (vol > 0)
-					{
-						SellMarket(vol);
-						_positionPrice = candle.ClosePrice;
-					}
-				}
-			}
-		}
-
-		_previousK2 = _previousK;
-		_previousK = k;
+		_prevFast = fastValue; _prevSlow = slowValue;
 	}
 }

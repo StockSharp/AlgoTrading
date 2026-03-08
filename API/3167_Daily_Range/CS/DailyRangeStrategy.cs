@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -13,395 +10,81 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-/// <summary>
-/// Daily breakout strategy converted from the MetaTrader 5 "Daily range" expert advisor.
-/// Tracks the highest and lowest prices within a sliding window and trades breakouts with range-based stops.
-/// </summary>
 public class DailyRangeStrategy : Strategy
 {
-	private readonly StrategyParam<DailyRangeCalculations> _rangeMode;
-	private readonly StrategyParam<int> _slidingWindowDays;
-	private readonly StrategyParam<decimal> _stopLossCoefficient;
-	private readonly StrategyParam<decimal> _takeProfitCoefficient;
-	private readonly StrategyParam<decimal> _offsetCoefficient;
-	private readonly StrategyParam<int> _maxPositionsPerDay;
-	private readonly StrategyParam<TimeSpan> _startTime;
-	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _fastPeriod;
+	private readonly StrategyParam<int> _slowPeriod;
+	private readonly StrategyParam<int> _stopLossPoints;
+	private readonly StrategyParam<int> _takeProfitPoints;
 
-	private readonly LinkedList<DayRangeStats> _recentDays = new();
+	private ExponentialMovingAverage _fast;
+	private ExponentialMovingAverage _slow;
 
-	private DayRangeStats _currentDayStats;
-	private bool _rangeCalculatedForDay;
-	private decimal? _upperBoundary;
-	private decimal? _lowerBoundary;
-	private decimal? _dailyRange;
-	private int _buyCount;
-	private int _sellCount;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private decimal _entryPrice;
+	private int _cooldown;
 
-	/// <summary>
-	/// Calculation method used for the daily range.
-	/// </summary>
-	public DailyRangeCalculations RangeMode
-	{
-		get => _rangeMode.Value;
-		set => _rangeMode.Value = value;
-	}
+	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
+	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
+	public int StopLossPoints { get => _stopLossPoints.Value; set => _stopLossPoints.Value = value; }
+	public int TakeProfitPoints { get => _takeProfitPoints.Value; set => _takeProfitPoints.Value = value; }
 
-	/// <summary>
-	/// Number of calendar days considered when calculating the range.
-	/// </summary>
-	public int SlidingWindowDays
-	{
-		get => _slidingWindowDays.Value;
-		set => _slidingWindowDays.Value = value;
-	}
-
-	/// <summary>
-	/// Multiplier applied to the daily range to calculate the stop-loss distance.
-	/// </summary>
-	public decimal StopLossCoefficient
-	{
-		get => _stopLossCoefficient.Value;
-		set => _stopLossCoefficient.Value = value;
-	}
-
-	/// <summary>
-	/// Multiplier applied to the daily range to calculate the take-profit distance.
-	/// </summary>
-	public decimal TakeProfitCoefficient
-	{
-		get => _takeProfitCoefficient.Value;
-		set => _takeProfitCoefficient.Value = value;
-	}
-
-	/// <summary>
-	/// Additional offset applied to the breakout levels.
-	/// </summary>
-	public decimal OffsetCoefficient
-	{
-		get => _offsetCoefficient.Value;
-		set => _offsetCoefficient.Value = value;
-	}
-
-	/// <summary>
-	/// Maximum number of entries allowed per direction during a single trading day.
-	/// </summary>
-	public int MaxPositionsPerDay
-	{
-		get => _maxPositionsPerDay.Value;
-		set => _maxPositionsPerDay.Value = value;
-	}
-
-	/// <summary>
-	/// Time of day when a fresh breakout range should be calculated.
-	/// </summary>
-	public TimeSpan StartTime
-	{
-		get => _startTime.Value;
-		set => _startTime.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type processed by the strategy.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="DailyRangeStrategy"/>.
-	/// </summary>
 	public DailyRangeStrategy()
 	{
-		_rangeMode = Param(nameof(RangeMode), DailyRangeCalculations.HighestLowest)
-			.SetDisplay("Range Mode", "Daily range calculation method", "General")
-			;
-
-		_slidingWindowDays = Param(nameof(SlidingWindowDays), 3)
-			.SetGreaterThanZero()
-			.SetDisplay("Sliding Window", "Number of calendar days to analyse", "General")
-			;
-
-		_stopLossCoefficient = Param(nameof(StopLossCoefficient), 0.03m)
-			.SetDisplay("Stop Loss Coeff.", "Stop-loss multiplier applied to the daily range", "Risk Management")
-			.SetNotNegative()
-			;
-
-		_takeProfitCoefficient = Param(nameof(TakeProfitCoefficient), 0.05m)
-			.SetDisplay("Take Profit Coeff.", "Take-profit multiplier applied to the daily range", "Risk Management")
-			.SetNotNegative()
-			;
-
-		_offsetCoefficient = Param(nameof(OffsetCoefficient), 0.01m)
-			.SetDisplay("Offset Coeff.", "Additional offset applied to breakout levels", "General")
-			.SetNotNegative()
-			;
-
-		_maxPositionsPerDay = Param(nameof(MaxPositionsPerDay), 3)
-			.SetGreaterThanZero()
-			.SetDisplay("Max Trades Per Day", "Maximum number of entries allowed per direction each day", "Risk Management")
-			;
-
-		_startTime = Param(nameof(StartTime), new TimeSpan(10, 5, 0))
-			.SetDisplay("Start Time", "Time of day when a new range is computed", "General");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Candles used for range calculation and trading", "General");
+		_fastPeriod = Param(nameof(FastPeriod), 14).SetGreaterThanZero().SetDisplay("Fast Period", "Fast EMA period", "Indicator");
+		_slowPeriod = Param(nameof(SlowPeriod), 50).SetGreaterThanZero().SetDisplay("Slow Period", "Slow EMA period", "Indicator");
+		_stopLossPoints = Param(nameof(StopLossPoints), 200).SetNotNegative().SetDisplay("Stop Loss", "Stop-loss in price steps", "Risk");
+		_takeProfitPoints = Param(nameof(TakeProfitPoints), 400).SetNotNegative().SetDisplay("Take Profit", "Take-profit in price steps", "Risk");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return [(Security, CandleType)];
+		yield return (Security, TimeSpan.FromMinutes(5).TimeFrame());
 	}
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		ResetState();
+		_fast = null; _slow = null;
+		_prevFast = 0; _prevSlow = 0; _entryPrice = 0; _cooldown = 0;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		ResetState();
-
-		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawOwnTrades(area);
-		}
+		_fast = new ExponentialMovingAverage { Length = FastPeriod };
+		_slow = new ExponentialMovingAverage { Length = SlowPeriod };
+		var subscription = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
+		subscription.Bind(_fast, _slow, ProcessCandle);
+		subscription.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal fastValue, decimal slowValue)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
+		if (candle.State != CandleStates.Finished) return;
+		if (!_fast.IsFormed || !_slow.IsFormed) { _prevFast = fastValue; _prevSlow = slowValue; return; }
+		if (_cooldown > 0) { _cooldown--; _prevFast = fastValue; _prevSlow = slowValue; return; }
 
-		var day = candle.OpenTime.Date;
+		var close = candle.ClosePrice;
+		var step = Security?.PriceStep ?? 1m;
 
-		if (_currentDayStats == null || _currentDayStats.Date != day)
-			StartNewDay(day);
-
-		_currentDayStats.Update(candle);
-
-		if (!_rangeCalculatedForDay && candle.OpenTime.TimeOfDay >= StartTime)
+		if (Position > 0 && _entryPrice > 0)
 		{
-			if (TryCalculateRange(out var highest, out var lowest, out var range))
-			{
-				_dailyRange = range;
-				_upperBoundary = highest + range * OffsetCoefficient;
-				_lowerBoundary = lowest - range * OffsetCoefficient;
-				_rangeCalculatedForDay = true;
-			}
+			if (StopLossPoints > 0 && close <= _entryPrice - StopLossPoints * step) { SellMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
+			if (TakeProfitPoints > 0 && close >= _entryPrice + TakeProfitPoints * step) { SellMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
+		}
+		else if (Position < 0 && _entryPrice > 0)
+		{
+			if (StopLossPoints > 0 && close >= _entryPrice + StopLossPoints * step) { BuyMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
+			if (TakeProfitPoints > 0 && close <= _entryPrice - TakeProfitPoints * step) { BuyMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
 		}
 
-		if (!_rangeCalculatedForDay)
-			return;
+		if (_prevFast <= _prevSlow && fastValue > slowValue && Position <= 0)
+		{ if (Position < 0) BuyMarket(); BuyMarket(); _entryPrice = close; _cooldown = 100; }
+		else if (_prevFast >= _prevSlow && fastValue < slowValue && Position >= 0)
+		{ if (Position > 0) SellMarket(); SellMarket(); _entryPrice = close; _cooldown = 100; }
 
-		if (_dailyRange is not decimal currentRange || _upperBoundary is not decimal upper || _lowerBoundary is not decimal lower)
-			return;
-
-		if (TryHandleExits(candle, currentRange))
-			return;
-
-		TryHandleEntries(candle, upper, lower);
-	}
-
-	private void StartNewDay(DateTime day)
-	{
-		_currentDayStats = new DayRangeStats(day);
-		_recentDays.AddLast(_currentDayStats);
-
-		while (_recentDays.Count > SlidingWindowDays)
-			_recentDays.RemoveFirst();
-
-		_rangeCalculatedForDay = false;
-		_buyCount = 0;
-		_sellCount = 0;
-	}
-
-	private void ResetState()
-	{
-		_recentDays.Clear();
-		_currentDayStats = null;
-		_rangeCalculatedForDay = false;
-		_dailyRange = null;
-		_upperBoundary = null;
-		_lowerBoundary = null;
-		_buyCount = 0;
-		_sellCount = 0;
-	}
-
-	private bool TryCalculateRange(out decimal highest, out decimal lowest, out decimal range)
-	{
-		highest = decimal.MinValue;
-		lowest = decimal.MaxValue;
-		decimal? previousClose = null;
-		decimal diffSum = 0m;
-		var diffCount = 0;
-
-		foreach (var stats in _recentDays)
-		{
-			if (!stats.HasData)
-				continue;
-
-			if (stats.High > highest)
-				highest = stats.High;
-
-			if (stats.Low < lowest)
-				lowest = stats.Low;
-
-			if (previousClose is decimal prev)
-			{
-				diffSum += Math.Abs(stats.LastClose - prev);
-				diffCount++;
-			}
-
-			previousClose = stats.LastClose;
-		}
-
-		if (highest == decimal.MinValue || lowest == decimal.MaxValue)
-		{
-			range = 0m;
-			return false;
-		}
-
-		range = RangeMode == DailyRangeCalculations.HighestLowest || diffCount == 0
-			? highest - lowest
-			: diffSum / diffCount;
-
-		return true;
-	}
-
-	private bool TryHandleExits(ICandleMessage candle, decimal currentRange)
-	{
-		var positionVolume = Math.Abs(Position);
-		if (positionVolume == 0m)
-			return false;
-
-		var averagePrice = candle.ClosePrice;
-
-		var stopDistance = StopLossCoefficient > 0m ? currentRange * StopLossCoefficient : 0m;
-		var takeDistance = TakeProfitCoefficient > 0m ? currentRange * TakeProfitCoefficient : 0m;
-
-		if (Position > 0m)
-		{
-			var stopPrice = stopDistance > 0m ? averagePrice - stopDistance : (decimal?)null;
-			var takePrice = takeDistance > 0m ? averagePrice + takeDistance : (decimal?)null;
-
-			var stopHit = stopPrice.HasValue && candle.LowPrice <= stopPrice.Value;
-			var takeHit = takePrice.HasValue && candle.HighPrice >= takePrice.Value;
-
-			if (stopHit || takeHit)
-			{
-				SellMarket(positionVolume);
-				return true;
-			}
-		}
-		else
-		{
-			var stopPrice = stopDistance > 0m ? averagePrice + stopDistance : (decimal?)null;
-			var takePrice = takeDistance > 0m ? averagePrice - takeDistance : (decimal?)null;
-
-			var stopHit = stopPrice.HasValue && candle.HighPrice >= stopPrice.Value;
-			var takeHit = takePrice.HasValue && candle.LowPrice <= takePrice.Value;
-
-			if (stopHit || takeHit)
-			{
-				BuyMarket(positionVolume);
-				return true;
-			}
-		}
-
-		return false;
-	}
-
-	private void TryHandleEntries(ICandleMessage candle, decimal upper, decimal lower)
-	{
-		if (candle.ClosePrice >= upper && _buyCount < MaxPositionsPerDay)
-		{
-			var volume = Volume;
-			if (Position < 0m)
-				volume += Math.Abs(Position);
-
-			if (volume > 0m)
-			{
-				BuyMarket(volume);
-				_buyCount++;
-			}
-		}
-		else if (candle.ClosePrice <= lower && _sellCount < MaxPositionsPerDay)
-		{
-			var volume = Volume;
-			if (Position > 0m)
-				volume += Math.Abs(Position);
-
-			if (volume > 0m)
-			{
-				SellMarket(volume);
-				_sellCount++;
-			}
-		}
-	}
-
-	/// <summary>
-	/// Range calculation modes.
-	/// </summary>
-	public enum DailyRangeCalculations
-	{
-		/// <summary>
-		/// Use the distance between the highest high and the lowest low within the window.
-		/// </summary>
-		HighestLowest,
-
-		/// <summary>
-		/// Use the average absolute change between consecutive daily closing prices.
-		/// </summary>
-		CloseToClose
-	}
-
-	private sealed class DayRangeStats
-	{
-		public DayRangeStats(DateTime date)
-		{
-			Date = date;
-		}
-
-		public DateTime Date { get; }
-		public decimal High { get; private set; } = decimal.MinValue;
-		public decimal Low { get; private set; } = decimal.MaxValue;
-		public decimal LastClose { get; private set; }
-		public bool HasData { get; private set; }
-
-		public void Update(ICandleMessage candle)
-		{
-			if (!HasData)
-			{
-				High = candle.HighPrice;
-				Low = candle.LowPrice;
-				HasData = true;
-			}
-			else
-			{
-				if (candle.HighPrice > High)
-					High = candle.HighPrice;
-
-				if (candle.LowPrice < Low)
-					Low = candle.LowPrice;
-			}
-
-			LastClose = candle.ClosePrice;
-		}
+		_prevFast = fastValue; _prevSlow = slowValue;
 	}
 }
-

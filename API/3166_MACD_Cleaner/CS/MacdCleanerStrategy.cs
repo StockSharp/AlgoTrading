@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -13,147 +10,81 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-/// <summary>
-/// MACD Cleaner strategy: opens trades when the MACD main line rises or falls
-/// during three consecutive closed candles.
-/// </summary>
 public class MacdCleanerStrategy : Strategy
 {
-	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _macdFastPeriod;
-	private readonly StrategyParam<int> _macdSlowPeriod;
-	private readonly StrategyParam<int> _macdSignalPeriod;
+	private readonly StrategyParam<int> _fastPeriod;
+	private readonly StrategyParam<int> _slowPeriod;
+	private readonly StrategyParam<int> _stopLossPoints;
+	private readonly StrategyParam<int> _takeProfitPoints;
 
-	private ExponentialMovingAverage _fastEma;
-	private ExponentialMovingAverage _slowEma;
+	private ExponentialMovingAverage _fast;
+	private ExponentialMovingAverage _slow;
 
-	private decimal? _macdPrev1;
-	private decimal? _macdPrev2;
-	private decimal? _macdPrev3;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private decimal _entryPrice;
+	private int _cooldown;
 
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	public int MacdFastPeriod
-	{
-		get => _macdFastPeriod.Value;
-		set => _macdFastPeriod.Value = value;
-	}
-
-	public int MacdSlowPeriod
-	{
-		get => _macdSlowPeriod.Value;
-		set => _macdSlowPeriod.Value = value;
-	}
-
-	public int MacdSignalPeriod
-	{
-		get => _macdSignalPeriod.Value;
-		set => _macdSignalPeriod.Value = value;
-	}
+	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
+	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
+	public int StopLossPoints { get => _stopLossPoints.Value; set => _stopLossPoints.Value = value; }
+	public int TakeProfitPoints { get => _takeProfitPoints.Value; set => _takeProfitPoints.Value = value; }
 
 	public MacdCleanerStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Primary timeframe for MACD evaluation", "General");
-
-		_macdFastPeriod = Param(nameof(MacdFastPeriod), 15)
-			.SetDisplay("MACD Fast", "Fast EMA length", "Indicators")
-			.SetGreaterThanZero();
-
-		_macdSlowPeriod = Param(nameof(MacdSlowPeriod), 33)
-			.SetDisplay("MACD Slow", "Slow EMA length", "Indicators")
-			.SetGreaterThanZero();
-
-		_macdSignalPeriod = Param(nameof(MacdSignalPeriod), 11)
-			.SetDisplay("MACD Signal", "Signal EMA length", "Indicators")
-			.SetGreaterThanZero();
+		_fastPeriod = Param(nameof(FastPeriod), 12).SetGreaterThanZero().SetDisplay("Fast Period", "Fast EMA period", "Indicator");
+		_slowPeriod = Param(nameof(SlowPeriod), 50).SetGreaterThanZero().SetDisplay("Slow Period", "Slow EMA period", "Indicator");
+		_stopLossPoints = Param(nameof(StopLossPoints), 200).SetNotNegative().SetDisplay("Stop Loss", "Stop-loss in price steps", "Risk");
+		_takeProfitPoints = Param(nameof(TakeProfitPoints), 400).SetNotNegative().SetDisplay("Take Profit", "Take-profit in price steps", "Risk");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return [(Security, CandleType)];
+		yield return (Security, TimeSpan.FromMinutes(5).TimeFrame());
 	}
 
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_macdPrev1 = null;
-		_macdPrev2 = null;
-		_macdPrev3 = null;
+		_fast = null; _slow = null;
+		_prevFast = 0; _prevSlow = 0; _entryPrice = 0; _cooldown = 0;
 	}
 
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_fastEma = new ExponentialMovingAverage { Length = MacdFastPeriod };
-		_slowEma = new ExponentialMovingAverage { Length = MacdSlowPeriod };
-
-		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
-
-		StartProtection(null, null);
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawOwnTrades(area);
-		}
+		_fast = new ExponentialMovingAverage { Length = FastPeriod };
+		_slow = new ExponentialMovingAverage { Length = SlowPeriod };
+		var subscription = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
+		subscription.Bind(_fast, _slow, ProcessCandle);
+		subscription.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal fastValue, decimal slowValue)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
+		if (candle.State != CandleStates.Finished) return;
+		if (!_fast.IsFormed || !_slow.IsFormed) { _prevFast = fastValue; _prevSlow = slowValue; return; }
+		if (_cooldown > 0) { _cooldown--; _prevFast = fastValue; _prevSlow = slowValue; return; }
 
-		// Calculate MACD manually
-		var fastInput = new DecimalIndicatorValue(_fastEma, candle.ClosePrice, candle.ServerTime) { IsFinal = true };
-		var slowInput = new DecimalIndicatorValue(_slowEma, candle.ClosePrice, candle.ServerTime) { IsFinal = true };
+		var close = candle.ClosePrice;
+		var step = Security?.PriceStep ?? 1m;
 
-		var fastOut = _fastEma.Process(fastInput);
-		var slowOut = _slowEma.Process(slowInput);
-
-		if (fastOut.IsEmpty || slowOut.IsEmpty || !_fastEma.IsFormed || !_slowEma.IsFormed)
-			return;
-
-		var macdValue = fastOut.ToDecimal() - slowOut.ToDecimal();
-
-		// Shift history
-		_macdPrev3 = _macdPrev2;
-		_macdPrev2 = _macdPrev1;
-		_macdPrev1 = macdValue;
-
-		if (!_macdPrev3.HasValue || !_macdPrev2.HasValue || !_macdPrev1.HasValue)
-			return;
-
-		var older = _macdPrev3.Value;
-		var previous = _macdPrev2.Value;
-		var current = _macdPrev1.Value;
-
-		// Three consecutive rising MACD -> buy signal
-		if (older <= previous && previous <= current)
+		if (Position > 0 && _entryPrice > 0)
 		{
-			if (Position <= 0)
-			{
-				var vol = Volume + Math.Abs(Position);
-				if (vol > 0)
-					BuyMarket(vol);
-			}
+			if (StopLossPoints > 0 && close <= _entryPrice - StopLossPoints * step) { SellMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
+			if (TakeProfitPoints > 0 && close >= _entryPrice + TakeProfitPoints * step) { SellMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
 		}
-		// Three consecutive falling MACD -> sell signal
-		else if (older >= previous && previous >= current)
+		else if (Position < 0 && _entryPrice > 0)
 		{
-			if (Position >= 0)
-			{
-				var vol = Volume + Math.Abs(Position);
-				if (vol > 0)
-					SellMarket(vol);
-			}
+			if (StopLossPoints > 0 && close >= _entryPrice + StopLossPoints * step) { BuyMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
+			if (TakeProfitPoints > 0 && close <= _entryPrice - TakeProfitPoints * step) { BuyMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
 		}
+
+		if (_prevFast <= _prevSlow && fastValue > slowValue && Position <= 0)
+		{ if (Position < 0) BuyMarket(); BuyMarket(); _entryPrice = close; _cooldown = 100; }
+		else if (_prevFast >= _prevSlow && fastValue < slowValue && Position >= 0)
+		{ if (Position > 0) SellMarket(); SellMarket(); _entryPrice = close; _cooldown = 100; }
+
+		_prevFast = fastValue; _prevSlow = slowValue;
 	}
 }
