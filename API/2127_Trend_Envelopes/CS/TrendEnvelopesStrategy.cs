@@ -189,16 +189,31 @@ public class TrendEnvelopesStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_ma = default;
+		_atr = default;
+		_prevSmax = 0;
+		_prevSmin = 0;
+		_prevTrend = 0;
+		_initialized = false;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_ma = new EMA { Length = MaPeriod };
+		_ma = new ExponentialMovingAverage { Length = MaPeriod };
 		_atr = new AverageTrueRange { Length = AtrPeriod };
+
+		Indicators.Add(_ma);
+		Indicators.Add(_atr);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-		.Bind(_ma, _atr, ProcessCandle)
+		.Bind(ProcessCandle)
 		.Start();
 
 		var step = Security.PriceStep ?? 1m;
@@ -215,10 +230,22 @@ public class TrendEnvelopesStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal maValue, decimal atrValue)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
+
+		var maResult = _ma.Process(candle.ClosePrice, candle.OpenTime, true);
+		var atrResult = _atr.Process(candle);
+
+		if (!maResult.IsFormed || !atrResult.IsFormed)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		var maValue = maResult.ToDecimal();
+		var atrValue = atrResult.ToDecimal();
 
 		var smax = (1m + Deviation / 100m) * maValue;
 		var smin = (1m - Deviation / 100m) * maValue;

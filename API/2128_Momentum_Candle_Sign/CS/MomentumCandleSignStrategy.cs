@@ -56,7 +56,7 @@ public class MomentumCandleSignStrategy : Strategy
 			.SetDisplay("Momentum Period", "Indicator period", "General")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame of candles", "General");
 	}
 
@@ -67,6 +67,17 @@ public class MomentumCandleSignStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_openMomentum = default;
+		_closeMomentum = default;
+		_prevOpenMomentum = 0;
+		_prevCloseMomentum = 0;
+		_isFormed = false;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
@@ -74,6 +85,9 @@ public class MomentumCandleSignStrategy : Strategy
 		_openMomentum = new Momentum { Length = MomentumPeriod };
 		_closeMomentum = new Momentum { Length = MomentumPeriod };
 		_isFormed = false;
+
+		Indicators.Add(_openMomentum);
+		Indicators.Add(_closeMomentum);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
@@ -97,6 +111,9 @@ public class MomentumCandleSignStrategy : Strategy
 
 		var openMom = _openMomentum.Process(new DecimalIndicatorValue(_openMomentum, candle.OpenPrice, candle.OpenTime) { IsFinal = true }).ToDecimal();
 		var closeMom = _closeMomentum.Process(new DecimalIndicatorValue(_closeMomentum, candle.ClosePrice, candle.OpenTime) { IsFinal = true }).ToDecimal();
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
 
 		if (!_isFormed)
 		{

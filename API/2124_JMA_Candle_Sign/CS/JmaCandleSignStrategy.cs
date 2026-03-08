@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -40,8 +41,25 @@ public class JmaCandleSignStrategy : Strategy
 		_jmaLength = Param(nameof(JmaLength), 7)
 			.SetDisplay("JMA Length", "Period for Jurik moving averages", "Parameters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for strategy", "Parameters");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_jmaOpen = default;
+		_jmaClose = default;
+		_prevOpenJma = 0;
+		_prevCloseJma = 0;
+		_hasPrev = false;
 	}
 
 	/// <inheritdoc />
@@ -54,6 +72,9 @@ public class JmaCandleSignStrategy : Strategy
 		_prevOpenJma = 0;
 		_prevCloseJma = 0;
 		_hasPrev = false;
+
+		Indicators.Add(_jmaOpen);
+		Indicators.Add(_jmaClose);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -77,6 +98,9 @@ public class JmaCandleSignStrategy : Strategy
 		var closeResult = _jmaClose.Process(new DecimalIndicatorValue(_jmaClose, candle.ClosePrice, candle.OpenTime) { IsFinal = true });
 
 		if (!openResult.IsFormed || !closeResult.IsFormed)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		var openJma = openResult.ToDecimal();

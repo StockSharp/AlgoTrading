@@ -21,8 +21,8 @@ public class XmaRangeChannelStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _length;
 
-	private SimpleMovingAverage _highMa = null!;
-	private SimpleMovingAverage _lowMa = null!;
+	private ExponentialMovingAverage _highMa = null!;
+	private ExponentialMovingAverage _lowMa = null!;
 
 	/// <summary>
 	/// Candle type for calculations.
@@ -63,22 +63,30 @@ public class XmaRangeChannelStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_highMa = default;
+		_lowMa = default;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		// Prepare moving averages for high and low prices.
-		_highMa = new SMA { Length = Length };
-		_lowMa = new SMA { Length = Length };
+		_highMa = new ExponentialMovingAverage { Length = Length };
+		_lowMa = new ExponentialMovingAverage { Length = Length };
 
-		// Subscribe to candles and process each one.
+		Indicators.Add(_highMa);
+		Indicators.Add(_lowMa);
+
 		var subscription = SubscribeCandles(CandleType);
 
 		subscription
 			.Bind(ProcessCandle)
 			.Start();
 
-		// Enable built-in position protection.
 		StartProtection(null, null);
 	}
 
@@ -92,8 +100,10 @@ public class XmaRangeChannelStrategy : Strategy
 		var upper = _highMa.Process(new DecimalIndicatorValue(_highMa, candle.HighPrice, candle.OpenTime) { IsFinal = true }).ToDecimal();
 		var lower = _lowMa.Process(new DecimalIndicatorValue(_lowMa, candle.LowPrice, candle.OpenTime) { IsFinal = true }).ToDecimal();
 
-		// Wait until both indicators have enough data.
 		if (!_highMa.IsFormed || !_lowMa.IsFormed)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		// Breakout above the upper band - go long.

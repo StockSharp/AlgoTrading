@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -39,7 +40,7 @@ public class LastPriceStrategy : Strategy
 
 	public LastPriceStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 
 		_maPeriod = Param(nameof(MaPeriod), 20)
@@ -50,13 +51,26 @@ public class LastPriceStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_entryPrice = 0;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
 		_entryPrice = 0;
 
-		var ma = new SimpleMovingAverage { Length = MaPeriod };
+		var ma = new ExponentialMovingAverage { Length = MaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
