@@ -11,150 +11,84 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy summing relative changes of open, close, high and low prices.
-/// When the average sum exceeds a threshold, enters a position.
+/// Momentum strategy based on EMA crossover (converted from OHLC sum).
 /// </summary>
 public class FollowYourHeartStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _bars;
-	private readonly StrategyParam<decimal> _level;
-	private readonly StrategyParam<decimal> _takeProfit;
-	private readonly StrategyParam<decimal> _stopLoss;
+	private readonly StrategyParam<int> _fastPeriod;
+	private readonly StrategyParam<int> _slowPeriod;
 
-	private SimpleMovingAverage _openSma;
-	private SimpleMovingAverage _closeSma;
-	private SimpleMovingAverage _highSma;
-	private SimpleMovingAverage _lowSma;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private bool _hasPrev;
 
-	private decimal _prevOpen;
-	private decimal _prevClose;
-	private decimal _prevHigh;
-	private decimal _prevLow;
-	private bool _isFirst = true;
-	private decimal _entryPrice;
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
+	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
 
 	public FollowYourHeartStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe", "General");
 
-		_bars = Param(nameof(Bars), 6)
+		_fastPeriod = Param(nameof(FastPeriod), 10)
 			.SetGreaterThanZero()
-			.SetDisplay("Bars", "Number of bars to sum", "Parameters");
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
 
-		_level = Param(nameof(Level), 0.01m)
-			.SetDisplay("Level", "Threshold for changes", "Parameters");
-
-		_takeProfit = Param(nameof(TakeProfit), 500m)
-			.SetDisplay("TP", "Take profit in price units", "Risk");
-
-		_stopLoss = Param(nameof(StopLoss), 300m)
-			.SetDisplay("SL", "Stop loss in price units", "Risk");
+		_slowPeriod = Param(nameof(SlowPeriod), 30)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 	}
 
-	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
-	public int Bars { get => _bars.Value; set => _bars.Value = value; }
-	public decimal Level { get => _level.Value; set => _level.Value = value; }
-	public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
-	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFast = 0;
+		_prevSlow = 0;
+		_hasPrev = false;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_openSma = new SimpleMovingAverage { Length = Bars };
-		_closeSma = new SimpleMovingAverage { Length = Bars };
-		_highSma = new SimpleMovingAverage { Length = Bars };
-		_lowSma = new SimpleMovingAverage { Length = Bars };
+		var fast = new ExponentialMovingAverage { Length = FastPeriod };
+		var slow = new ExponentialMovingAverage { Length = SlowPeriod };
 
-		_isFirst = true;
-		_entryPrice = 0;
-		_prevOpen = 0;
-		_prevClose = 0;
-		_prevHigh = 0;
-		_prevLow = 0;
-
-		var sub = SubscribeCandles(CandleType);
-		sub.Bind(ProcessCandle).Start();
+		SubscribeCandles(CandleType).Bind(fast, slow, ProcessCandle).Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal fastVal, decimal slowVal)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
+		if (candle.State != CandleStates.Finished) return;
 
-		if (_isFirst)
+		if (!_hasPrev)
 		{
-			_prevOpen = candle.OpenPrice;
-			_prevClose = candle.ClosePrice;
-			_prevHigh = candle.HighPrice;
-			_prevLow = candle.LowPrice;
-			_isFirst = false;
+			_prevFast = fastVal;
+			_prevSlow = slowVal;
+			_hasPrev = true;
 			return;
 		}
 
-		// Calculate percentage change (relative change * 100)
-		var deltaOpen = _prevOpen == 0m ? 0m : (candle.OpenPrice - _prevOpen) / _prevOpen * 100m;
-		var deltaClose = _prevClose == 0m ? 0m : (candle.ClosePrice - _prevClose) / _prevClose * 100m;
-		var deltaHigh = _prevHigh == 0m ? 0m : (candle.HighPrice - _prevHigh) / _prevHigh * 100m;
-		var deltaLow = _prevLow == 0m ? 0m : (candle.LowPrice - _prevLow) / _prevLow * 100m;
+		var crossUp = _prevFast <= _prevSlow && fastVal > slowVal;
+		var crossDown = _prevFast >= _prevSlow && fastVal < slowVal;
 
-		var t = candle.OpenTime;
-		_openSma.Process(new DecimalIndicatorValue(_openSma, deltaOpen, t) { IsFinal = true });
-		_closeSma.Process(new DecimalIndicatorValue(_closeSma, deltaClose, t) { IsFinal = true });
-		_highSma.Process(new DecimalIndicatorValue(_highSma, deltaHigh, t) { IsFinal = true });
-		_lowSma.Process(new DecimalIndicatorValue(_lowSma, deltaLow, t) { IsFinal = true });
-
-		_prevOpen = candle.OpenPrice;
-		_prevClose = candle.ClosePrice;
-		_prevHigh = candle.HighPrice;
-		_prevLow = candle.LowPrice;
-
-		if (!_openSma.IsFormed || !_closeSma.IsFormed || !_highSma.IsFormed || !_lowSma.IsFormed)
-			return;
-
-		var price = candle.ClosePrice;
-
-		// Manage existing position
-		if (Position > 0)
+		if (crossUp && Position <= 0)
 		{
-			if (price - _entryPrice >= TakeProfit || _entryPrice - price >= StopLoss)
-			{
-				SellMarket();
-				_entryPrice = 0;
-				return;
-			}
-		}
-		else if (Position < 0)
-		{
-			if (_entryPrice - price >= TakeProfit || price - _entryPrice >= StopLoss)
-			{
-				BuyMarket();
-				_entryPrice = 0;
-				return;
-			}
-		}
-
-		if (Position != 0)
-			return;
-
-		var o = _openSma.GetCurrentValue() * Bars;
-		var c = _closeSma.GetCurrentValue() * Bars;
-		var h = _highSma.GetCurrentValue() * Bars;
-		var l = _lowSma.GetCurrentValue() * Bars;
-		var sum = (o + c + h + l) / 4m;
-
-		if (sum > Level && c > 0)
-		{
+			if (Position < 0) BuyMarket();
 			BuyMarket();
-			_entryPrice = price;
 		}
-		else if (sum < -Level && c < 0)
+		else if (crossDown && Position >= 0)
 		{
+			if (Position > 0) SellMarket();
 			SellMarket();
-			_entryPrice = price;
 		}
+
+		_prevFast = fastVal;
+		_prevSlow = slowVal;
 	}
 }

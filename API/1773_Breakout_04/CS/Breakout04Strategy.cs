@@ -11,135 +11,76 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Breakout strategy trading previous session high/low with trailing stop.
+/// Breakout strategy using Highest/Lowest channels.
 /// </summary>
 public class Breakout04Strategy : Strategy
 {
-	private readonly StrategyParam<decimal> _takeProfit;
-	private readonly StrategyParam<decimal> _stopLoss;
-	private readonly StrategyParam<decimal> _trailingDist;
+	private readonly StrategyParam<int> _lookback;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _prevHigh;
 	private decimal _prevLow;
-	private decimal _sessionHigh;
-	private decimal _sessionLow;
-	private DateTime _currentDate;
-	private decimal _entryPrice;
-	private decimal _trailingStop;
+	private bool _hasPrev;
 
-	public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
-	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
-	public decimal TrailingDist { get => _trailingDist.Value; set => _trailingDist.Value = value; }
+	public int Lookback { get => _lookback.Value; set => _lookback.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public Breakout04Strategy()
 	{
-		_takeProfit = Param(nameof(TakeProfit), 500m)
-			.SetDisplay("Take Profit", "Take profit in price units", "Risk");
+		_lookback = Param(nameof(Lookback), 30)
+			.SetDisplay("Lookback", "Channel lookback period", "General");
 
-		_stopLoss = Param(nameof(StopLoss), 300m)
-			.SetDisplay("Stop Loss", "Stop loss in price units", "Risk");
-
-		_trailingDist = Param(nameof(TrailingDist), 200m)
-			.SetDisplay("Trailing Dist", "Trailing stop distance", "Risk");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevHigh = 0;
+		_prevLow = 0;
+		_hasPrev = false;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_prevHigh = 0;
-		_prevLow = 0;
-		_sessionHigh = 0;
-		_sessionLow = decimal.MaxValue;
-		_currentDate = default;
-		_entryPrice = 0;
-		_trailingStop = 0;
+		var highest = new Highest { Length = Lookback };
+		var lowest = new Lowest { Length = Lookback };
 
-		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
+		SubscribeCandles(CandleType).Bind(highest, lowest, ProcessCandle).Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal highest, decimal lowest)
 	{
-		if (candle.State != CandleStates.Finished)
+		if (candle.State != CandleStates.Finished) return;
+
+		if (!_hasPrev)
+		{
+			_prevHigh = highest;
+			_prevLow = lowest;
+			_hasPrev = true;
 			return;
-
-		var price = candle.ClosePrice;
-		var date = candle.OpenTime.Date;
-
-		// Track daily high/low for previous day reference
-		if (date != _currentDate)
-		{
-			if (_currentDate != default)
-			{
-				_prevHigh = _sessionHigh;
-				_prevLow = _sessionLow;
-			}
-			_currentDate = date;
-			_sessionHigh = candle.HighPrice;
-			_sessionLow = candle.LowPrice;
-		}
-		else
-		{
-			if (candle.HighPrice > _sessionHigh)
-				_sessionHigh = candle.HighPrice;
-			if (candle.LowPrice < _sessionLow)
-				_sessionLow = candle.LowPrice;
 		}
 
-		if (_prevHigh == 0)
-			return;
+		var close = candle.ClosePrice;
 
-		// Manage exits with trailing stop
-		if (Position > 0)
+		if (close > _prevHigh && Position <= 0)
 		{
-			// Update trailing stop
-			var newTrail = price - TrailingDist;
-			if (newTrail > _trailingStop)
-				_trailingStop = newTrail;
-
-			if (price - _entryPrice >= TakeProfit || price <= _trailingStop || _entryPrice - price >= StopLoss)
-			{
-				SellMarket();
-				_entryPrice = 0;
-				return;
-			}
+			if (Position < 0) BuyMarket();
+			BuyMarket();
 		}
-		else if (Position < 0)
+		else if (close < _prevLow && Position >= 0)
 		{
-			var newTrail = price + TrailingDist;
-			if (newTrail < _trailingStop || _trailingStop == 0)
-				_trailingStop = newTrail;
-
-			if (_entryPrice - price >= TakeProfit || price >= _trailingStop || price - _entryPrice >= StopLoss)
-			{
-				BuyMarket();
-				_entryPrice = 0;
-				return;
-			}
+			if (Position > 0) SellMarket();
+			SellMarket();
 		}
 
-		// Entry on breakout
-		if (Position == 0)
-		{
-			if (price > _prevHigh)
-			{
-				BuyMarket();
-				_entryPrice = price;
-				_trailingStop = price - TrailingDist;
-			}
-			else if (price < _prevLow)
-			{
-				SellMarket();
-				_entryPrice = price;
-				_trailingStop = price + TrailingDist;
-			}
-		}
+		_prevHigh = highest;
+		_prevLow = lowest;
 	}
 }

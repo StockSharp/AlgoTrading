@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,67 +11,41 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on breakouts of the highest high and lowest low over a lookback period.
-/// When the closing price exceeds the previous highest high, the strategy enters a long position.
-/// When the closing price falls below the previous lowest low, it enters a short position.
+/// Breakout strategy using Highest/Lowest channels.
 /// </summary>
 public class PzReversalTrendFollowingStrategy : Strategy
 {
 	private readonly StrategyParam<int> _period;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal? _prevHighest;
-	private decimal? _prevLowest;
+	private decimal _prevHighest;
+	private decimal _prevLowest;
+	private bool _hasPrev;
 
-	/// <summary>
-	/// Lookback period for calculating highest high and lowest low.
-	/// </summary>
-	public int Period
-	{
-		get => _period.Value;
-		set => _period.Value = value;
-	}
+	public int Period { get => _period.Value; set => _period.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-
-	/// <summary>
-	/// Candle type used for analysis.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initialize the strategy.
-	/// </summary>
 	public PzReversalTrendFollowingStrategy()
 	{
-		_period = Param(nameof(Period), 100)
-			.SetDisplay("Period", "Lookback period for breakout calculation", "General")
-			
-			.SetOptimize(50, 150, 10);
+		_period = Param(nameof(Period), 30)
+			.SetGreaterThanZero()
+			.SetDisplay("Period", "Lookback period for breakout", "General");
 
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevHighest = null;
-		_prevLowest = null;
+		_prevHighest = 0;
+		_prevLowest = 0;
+		_hasPrev = false;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
@@ -82,43 +53,32 @@ public class PzReversalTrendFollowingStrategy : Strategy
 		var highest = new Highest { Length = Period };
 		var lowest = new Lowest { Length = Period };
 
-		var subscription = SubscribeCandles(CandleType);
-		subscription
+		SubscribeCandles(CandleType)
 			.Bind(highest, lowest, ProcessCandle)
 			.Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawOwnTrades(area);
-		}
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal highestValue, decimal lowestValue)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
+		if (candle.State != CandleStates.Finished) return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (_prevHighest is null || _prevLowest is null)
+		if (!_hasPrev)
 		{
 			_prevHighest = highestValue;
 			_prevLowest = lowestValue;
+			_hasPrev = true;
 			return;
 		}
 
 		if (candle.ClosePrice > _prevHighest && Position <= 0)
 		{
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
+			if (Position < 0) BuyMarket();
+			BuyMarket();
 		}
 		else if (candle.ClosePrice < _prevLowest && Position >= 0)
 		{
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
+			if (Position > 0) SellMarket();
+			SellMarket();
 		}
 
 		_prevHighest = highestValue;

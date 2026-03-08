@@ -11,119 +11,76 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Grid strategy that opens trades when price crosses dynamic levels.
+/// Breakout strategy using Highest/Lowest channels (converted from grid).
 /// </summary>
 public class CollectorV10Strategy : Strategy
 {
-	private readonly StrategyParam<decimal> _distance;
-	private readonly StrategyParam<int> _maxTrades;
-	private readonly StrategyParam<decimal> _takeProfit;
-	private readonly StrategyParam<decimal> _stopLoss;
+	private readonly StrategyParam<int> _lookback;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _buyLevel;
-	private decimal _sellLevel;
-	private decimal _entryPrice;
-	private int _tradeCount;
+	private decimal _prevHigh;
+	private decimal _prevLow;
+	private bool _hasPrev;
 
-	public decimal Distance { get => _distance.Value; set => _distance.Value = value; }
-	public int MaxTrades { get => _maxTrades.Value; set => _maxTrades.Value = value; }
-	public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
-	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
+	public int Lookback { get => _lookback.Value; set => _lookback.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public CollectorV10Strategy()
 	{
-		_distance = Param(nameof(Distance), 200m)
-			.SetDisplay("Distance", "Grid distance", "Grid");
+		_lookback = Param(nameof(Lookback), 20)
+			.SetDisplay("Lookback", "Channel lookback period", "General");
 
-		_maxTrades = Param(nameof(MaxTrades), 200)
-			.SetDisplay("Max Trades", "Maximum trades", "Grid");
-
-		_takeProfit = Param(nameof(TakeProfit), 500m)
-			.SetDisplay("TP", "Take profit", "Risk");
-
-		_stopLoss = Param(nameof(StopLoss), 300m)
-			.SetDisplay("SL", "Stop loss", "Risk");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevHigh = 0;
+		_prevLow = 0;
+		_hasPrev = false;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_buyLevel = 0;
-		_sellLevel = 0;
-		_entryPrice = 0;
-		_tradeCount = 0;
+		var highest = new Highest { Length = Lookback };
+		var lowest = new Lowest { Length = Lookback };
 
-		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
+		SubscribeCandles(CandleType).Bind(highest, lowest, ProcessCandle).Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal highest, decimal lowest)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
+		if (candle.State != CandleStates.Finished) return;
 
-		var price = candle.ClosePrice;
-
-		// Initialize levels on first candle
-		if (_buyLevel == 0 && _sellLevel == 0)
+		if (!_hasPrev)
 		{
-			SetLevels(price);
+			_prevHigh = highest;
+			_prevLow = lowest;
+			_hasPrev = true;
 			return;
 		}
 
-		// Manage exits
-		if (Position > 0)
+		var close = candle.ClosePrice;
+
+		if (close > _prevHigh && Position <= 0)
 		{
-			if (price - _entryPrice >= TakeProfit || _entryPrice - price >= StopLoss)
-			{
-				SellMarket();
-				_entryPrice = 0;
-				SetLevels(price);
-				return;
-			}
+			if (Position < 0) BuyMarket();
+			BuyMarket();
 		}
-		else if (Position < 0)
+		else if (close < _prevLow && Position >= 0)
 		{
-			if (_entryPrice - price >= TakeProfit || price - _entryPrice >= StopLoss)
-			{
-				BuyMarket();
-				_entryPrice = 0;
-				SetLevels(price);
-				return;
-			}
+			if (Position > 0) SellMarket();
+			SellMarket();
 		}
 
-		// Grid entries when flat
-		if (Position == 0 && _tradeCount < MaxTrades)
-		{
-			if (price >= _buyLevel)
-			{
-				BuyMarket();
-				_entryPrice = price;
-				_tradeCount++;
-				SetLevels(price);
-			}
-			else if (price <= _sellLevel)
-			{
-				SellMarket();
-				_entryPrice = price;
-				_tradeCount++;
-				SetLevels(price);
-			}
-		}
-	}
-
-	private void SetLevels(decimal price)
-	{
-		var half = Distance / 2m;
-		_buyLevel = price + half;
-		_sellLevel = price - half;
+		_prevHigh = highest;
+		_prevLow = lowest;
 	}
 }

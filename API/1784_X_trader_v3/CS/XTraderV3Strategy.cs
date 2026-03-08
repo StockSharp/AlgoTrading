@@ -11,104 +11,86 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// X Trader V3 strategy based on two moving averages crossover.
-/// Uses SMA crossover for entries with SL/TP protection.
+/// X Trader V3 strategy based on EMA crossover.
 /// </summary>
 public class XTraderV3Strategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _fastPeriod;
 	private readonly StrategyParam<int> _slowPeriod;
-	private readonly StrategyParam<decimal> _takeProfit;
-	private readonly StrategyParam<decimal> _stopLoss;
 
 	private decimal _prevFast;
 	private decimal _prevSlow;
-	private decimal _entryPrice;
+	private bool _hasPrev;
 
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
 	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
-	public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
-	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
 
 	public XTraderV3Strategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe", "General");
 
-		_fastPeriod = Param(nameof(FastPeriod), 5)
+		_fastPeriod = Param(nameof(FastPeriod), 12)
 			.SetGreaterThanZero()
-			.SetDisplay("Fast Period", "Fast SMA period", "Indicators");
+			.SetDisplay("Fast Period", "Fast EMA period", "Indicators");
 
-		_slowPeriod = Param(nameof(SlowPeriod), 20)
+		_slowPeriod = Param(nameof(SlowPeriod), 26)
 			.SetGreaterThanZero()
-			.SetDisplay("Slow Period", "Slow SMA period", "Indicators");
-
-		_takeProfit = Param(nameof(TakeProfit), 500m)
-			.SetDisplay("Take Profit", "Take profit in price units", "Risk");
-
-		_stopLoss = Param(nameof(StopLoss), 300m)
-			.SetDisplay("Stop Loss", "Stop loss in price units", "Risk");
+			.SetDisplay("Slow Period", "Slow EMA period", "Indicators");
 	}
 
-	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFast = 0;
+		_prevSlow = 0;
+		_hasPrev = false;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_prevFast = 0;
-		_prevSlow = 0;
-		_entryPrice = 0;
+		var fast = new ExponentialMovingAverage { Length = FastPeriod };
+		var slow = new ExponentialMovingAverage { Length = SlowPeriod };
 
-		var fastSma = new ExponentialMovingAverage { Length = FastPeriod };
-		var slowSma = new ExponentialMovingAverage { Length = SlowPeriod };
-
-		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(fastSma, slowSma, ProcessCandle).Start();
+		SubscribeCandles(CandleType)
+			.Bind(fast, slow, ProcessCandle)
+			.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow)
+	private void ProcessCandle(ICandleMessage candle, decimal fastVal, decimal slowVal)
 	{
-		if (candle.State != CandleStates.Finished)
+		if (candle.State != CandleStates.Finished) return;
+
+		if (!_hasPrev)
+		{
+			_prevFast = fastVal;
+			_prevSlow = slowVal;
+			_hasPrev = true;
 			return;
-
-		var price = candle.ClosePrice;
-
-		// Exit management
-		if (Position > 0)
-		{
-			if (price - _entryPrice >= TakeProfit || _entryPrice - price >= StopLoss)
-			{
-				SellMarket();
-				_entryPrice = 0;
-			}
-		}
-		else if (Position < 0)
-		{
-			if (_entryPrice - price >= TakeProfit || price - _entryPrice >= StopLoss)
-			{
-				BuyMarket();
-				_entryPrice = 0;
-			}
 		}
 
-		// Entry on crossover
-		if (Position == 0 && _prevFast != 0 && _prevSlow != 0)
+		var crossUp = _prevFast <= _prevSlow && fastVal > slowVal;
+		var crossDown = _prevFast >= _prevSlow && fastVal < slowVal;
+
+		if (crossUp && Position <= 0)
 		{
-			if (fast > slow && _prevFast <= _prevSlow)
-			{
-				BuyMarket();
-				_entryPrice = price;
-			}
-			else if (fast < slow && _prevFast >= _prevSlow)
-			{
-				SellMarket();
-				_entryPrice = price;
-			}
+			if (Position < 0) BuyMarket();
+			BuyMarket();
+		}
+		else if (crossDown && Position >= 0)
+		{
+			if (Position > 0) SellMarket();
+			SellMarket();
 		}
 
-		_prevFast = fast;
-		_prevSlow = slow;
+		_prevFast = fastVal;
+		_prevSlow = slowVal;
 	}
 }

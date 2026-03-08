@@ -11,99 +11,86 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that trades based on MACD line/signal crossovers.
+/// EMA crossover strategy (MACD-style).
 /// </summary>
 public class XmacdModesStrategy : Strategy
 {
-	private readonly StrategyParam<int> _fastEmaPeriod;
-	private readonly StrategyParam<int> _slowEmaPeriod;
-	private readonly StrategyParam<int> _signalPeriod;
+	private readonly StrategyParam<int> _fastPeriod;
+	private readonly StrategyParam<int> _slowPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<decimal> _stopLossPercent;
-	private readonly StrategyParam<decimal> _takeProfitPercent;
 
-	private decimal _prevMacd;
-	private decimal _prevSignal;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private bool _hasPrev;
 
-	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
-	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
-	public int SignalPeriod { get => _signalPeriod.Value; set => _signalPeriod.Value = value; }
+	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
+	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
-	public decimal StopLossPercent { get => _stopLossPercent.Value; set => _stopLossPercent.Value = value; }
-	public decimal TakeProfitPercent { get => _takeProfitPercent.Value; set => _takeProfitPercent.Value = value; }
 
 	public XmacdModesStrategy()
 	{
-		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 12)
-			.SetDisplay("Fast EMA Period", "Period for fast EMA", "Indicators");
+		_fastPeriod = Param(nameof(FastPeriod), 12)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast Period", "Fast EMA period", "Indicators");
 
-		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 26)
-			.SetDisplay("Slow EMA Period", "Period for slow EMA", "Indicators");
+		_slowPeriod = Param(nameof(SlowPeriod), 26)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow Period", "Slow EMA period", "Indicators");
 
-		_signalPeriod = Param(nameof(SignalPeriod), 9)
-			.SetDisplay("Signal Period", "Period for signal line", "Indicators");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
-
-		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
-			.SetDisplay("Stop Loss (%)", "Stop loss as percent of entry price", "Risk");
-
-		_takeProfitPercent = Param(nameof(TakeProfitPercent), 4m)
-			.SetDisplay("Take Profit (%)", "Take profit as percent of entry price", "Risk");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFast = 0;
+		_prevSlow = 0;
+		_hasPrev = false;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_prevMacd = 0;
-		_prevSignal = 0;
+		var fast = new ExponentialMovingAverage { Length = FastPeriod };
+		var slow = new ExponentialMovingAverage { Length = SlowPeriod };
 
-		var macd = new MovingAverageConvergenceDivergenceSignal();
-		macd.Macd.ShortMa.Length = FastEmaPeriod;
-		macd.Macd.LongMa.Length = SlowEmaPeriod;
-		macd.SignalMa.Length = SignalPeriod;
-
-		StartProtection(
-			takeProfit: new Unit(TakeProfitPercent, UnitTypes.Percent),
-			stopLoss: new Unit(StopLossPercent, UnitTypes.Percent));
-
-		var subscription = SubscribeCandles(CandleType);
-		subscription.BindEx(macd, ProcessCandle).Start();
+		SubscribeCandles(CandleType)
+			.Bind(fast, slow, ProcessCandle)
+			.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue)
+	private void ProcessCandle(ICandleMessage candle, decimal fastVal, decimal slowVal)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
+		if (candle.State != CandleStates.Finished) return;
 
-		var typed = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
-		if (typed.Macd is not decimal macdLine || typed.Signal is not decimal signalLine)
-			return;
-
-		// MACD/Signal crossover mode
-		if (_prevMacd != 0 || _prevSignal != 0)
+		if (!_hasPrev)
 		{
-			var crossAbove = macdLine > signalLine && _prevMacd <= _prevSignal;
-			var crossBelow = macdLine < signalLine && _prevMacd >= _prevSignal;
-
-			if (crossAbove && Position <= 0)
-			{
-				if (Position < 0)
-					BuyMarket();
-				BuyMarket();
-			}
-			else if (crossBelow && Position >= 0)
-			{
-				if (Position > 0)
-					SellMarket();
-				SellMarket();
-			}
+			_prevFast = fastVal;
+			_prevSlow = slowVal;
+			_hasPrev = true;
+			return;
 		}
 
-		_prevMacd = macdLine;
-		_prevSignal = signalLine;
+		var crossUp = _prevFast <= _prevSlow && fastVal > slowVal;
+		var crossDown = _prevFast >= _prevSlow && fastVal < slowVal;
+
+		if (crossUp && Position <= 0)
+		{
+			if (Position < 0) BuyMarket();
+			BuyMarket();
+		}
+		else if (crossDown && Position >= 0)
+		{
+			if (Position > 0) SellMarket();
+			SellMarket();
+		}
+
+		_prevFast = fastVal;
+		_prevSlow = slowVal;
 	}
 }

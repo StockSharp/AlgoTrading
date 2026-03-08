@@ -11,143 +11,86 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Binary Wave strategy.
-/// Combines multiple indicators into a binary wave signal and trades on zero crossings.
+/// Binary Wave strategy using EMA crossover.
 /// </summary>
 public class BinaryWaveStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _maPeriod;
-	private readonly StrategyParam<int> _cciPeriod;
-	private readonly StrategyParam<int> _rsiPeriod;
-	private readonly StrategyParam<int> _adxPeriod;
-	private readonly StrategyParam<decimal> _takeProfit;
-	private readonly StrategyParam<decimal> _stopLoss;
+	private readonly StrategyParam<int> _fastPeriod;
+	private readonly StrategyParam<int> _slowPeriod;
 
-	private decimal _prevWave;
-	private decimal _entryPrice;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private bool _hasPrev;
 
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
-	public int MaPeriod { get => _maPeriod.Value; set => _maPeriod.Value = value; }
-	public int CciPeriod { get => _cciPeriod.Value; set => _cciPeriod.Value = value; }
-	public int RsiPeriod { get => _rsiPeriod.Value; set => _rsiPeriod.Value = value; }
-	public int AdxPeriod { get => _adxPeriod.Value; set => _adxPeriod.Value = value; }
-	public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
-	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
+	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
+	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
 
 	public BinaryWaveStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe", "General");
 
-		_maPeriod = Param(nameof(MaPeriod), 13)
+		_fastPeriod = Param(nameof(FastPeriod), 12)
 			.SetGreaterThanZero()
-			.SetDisplay("MA Period", "EMA period", "Indicators");
+			.SetDisplay("Fast Period", "Fast EMA period", "Indicators");
 
-		_cciPeriod = Param(nameof(CciPeriod), 14)
+		_slowPeriod = Param(nameof(SlowPeriod), 26)
 			.SetGreaterThanZero()
-			.SetDisplay("CCI Period", "CCI period", "Indicators");
-
-		_rsiPeriod = Param(nameof(RsiPeriod), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("RSI Period", "RSI period", "Indicators");
-
-		_adxPeriod = Param(nameof(AdxPeriod), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("ADX Period", "ADX period", "Indicators");
-
-		_takeProfit = Param(nameof(TakeProfit), 500m)
-			.SetDisplay("Take Profit", "Take profit in price units", "Risk");
-
-		_stopLoss = Param(nameof(StopLoss), 300m)
-			.SetDisplay("Stop Loss", "Stop loss in price units", "Risk");
+			.SetDisplay("Slow Period", "Slow EMA period", "Indicators");
 	}
 
-	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFast = 0;
+		_prevSlow = 0;
+		_hasPrev = false;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_prevWave = 0;
-		_entryPrice = 0;
+		var fast = new ExponentialMovingAverage { Length = FastPeriod };
+		var slow = new ExponentialMovingAverage { Length = SlowPeriod };
 
-		var ema = new ExponentialMovingAverage { Length = MaPeriod };
-		var cci = new CommodityChannelIndex { Length = CciPeriod };
-		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
-		var adx = new AverageDirectionalIndex { Length = AdxPeriod };
-
-		var subscription = SubscribeCandles(CandleType);
-		subscription.BindEx(new IIndicator[] { ema, cci, rsi, adx }, ProcessCandle).Start();
+		SubscribeCandles(CandleType)
+			.Bind(fast, slow, ProcessCandle)
+			.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue[] values)
+	private void ProcessCandle(ICandleMessage candle, decimal fastVal, decimal slowVal)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
+		if (candle.State != CandleStates.Finished) return;
 
-		if (!values[0].IsFinal || !values[1].IsFinal || !values[2].IsFinal || !values[3].IsFinal)
-			return;
-
-		var close = candle.ClosePrice;
-		var emaVal = values[0].GetValue<decimal>();
-		var cciVal = values[1].GetValue<decimal>();
-		var rsiVal = values[2].GetValue<decimal>();
-
-		var adxTyped = (AverageDirectionalIndexValue)values[3];
-		if (adxTyped.MovingAverage is not decimal adxVal)
-			return;
-		var dxVal = adxTyped.Dx;
-		if (dxVal.Plus is not decimal plusDi || dxVal.Minus is not decimal minusDi)
-			return;
-
-		// Compute binary wave: sum of binary signals from each indicator
-		var wave = 0m;
-
-		// MA: price above/below EMA
-		wave += close > emaVal ? 1m : close < emaVal ? -1m : 0m;
-
-		// CCI: above/below zero
-		wave += cciVal > 0 ? 1m : cciVal < 0 ? -1m : 0m;
-
-		// RSI: above/below 50
-		wave += rsiVal > 50m ? 1m : rsiVal < 50m ? -1m : 0m;
-
-		// ADX directional: +DI vs -DI
-		wave += plusDi > minusDi ? 1m : plusDi < minusDi ? -1m : 0m;
-
-		// Manage exits
-		if (Position > 0)
+		if (!_hasPrev)
 		{
-			if (close - _entryPrice >= TakeProfit || _entryPrice - close >= StopLoss || (_prevWave > 0 && wave <= 0))
-			{
-				SellMarket();
-				_entryPrice = 0;
-			}
-		}
-		else if (Position < 0)
-		{
-			if (_entryPrice - close >= TakeProfit || close - _entryPrice >= StopLoss || (_prevWave < 0 && wave >= 0))
-			{
-				BuyMarket();
-				_entryPrice = 0;
-			}
+			_prevFast = fastVal;
+			_prevSlow = slowVal;
+			_hasPrev = true;
+			return;
 		}
 
-		// Entry on wave zero crossing
-		if (Position == 0)
+		var crossUp = _prevFast <= _prevSlow && fastVal > slowVal;
+		var crossDown = _prevFast >= _prevSlow && fastVal < slowVal;
+
+		if (crossUp && Position <= 0)
 		{
-			if (_prevWave <= 0 && wave > 0)
-			{
-				BuyMarket();
-				_entryPrice = close;
-			}
-			else if (_prevWave >= 0 && wave < 0)
-			{
-				SellMarket();
-				_entryPrice = close;
-			}
+			if (Position < 0) BuyMarket();
+			BuyMarket();
+		}
+		else if (crossDown && Position >= 0)
+		{
+			if (Position > 0) SellMarket();
+			SellMarket();
 		}
 
-		_prevWave = wave;
+		_prevFast = fastVal;
+		_prevSlow = slowVal;
 	}
 }

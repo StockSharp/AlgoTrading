@@ -1,159 +1,81 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
-using StockSharp.Algo.Candles;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Contrarian moving average crossover strategy based on "X trader v2".
-/// Sells when the fast MA crosses above the slow MA and buys on the opposite signal.
+/// Contrarian moving average crossover strategy (X trader v2).
 /// </summary>
 public class XTraderV2Strategy : Strategy
 {
 	private readonly StrategyParam<int> _ma1Period;
 	private readonly StrategyParam<int> _ma2Period;
-	private readonly StrategyParam<int> _takeProfitTicks;
-	private readonly StrategyParam<int> _stopLossTicks;
 	private readonly StrategyParam<DataType> _candleType;
-
-	private SimpleMovingAverage _ma1 = null!;
-	private SimpleMovingAverage _ma2 = null!;
 
 	private decimal _ma1Prev;
 	private decimal _ma1Prev2;
 	private decimal _ma2Prev;
 	private decimal _ma2Prev2;
-
-	private bool _hasPrev1;
 	private bool _hasPrev2;
-	private int _lastSignal; // 1 buy, -1 sell, 0 none
 
-	/// <summary>
-	/// First MA period.
-	/// </summary>
-	public int Ma1Period
-	{
-		get => _ma1Period.Value;
-		set => _ma1Period.Value = value;
-	}
+	public int Ma1Period { get => _ma1Period.Value; set => _ma1Period.Value = value; }
+	public int Ma2Period { get => _ma2Period.Value; set => _ma2Period.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Second MA period.
-	/// </summary>
-	public int Ma2Period
-	{
-		get => _ma2Period.Value;
-		set => _ma2Period.Value = value;
-	}
-
-	/// <summary>
-	/// Take profit in ticks.
-	/// </summary>
-	public int TakeProfitTicks
-	{
-		get => _takeProfitTicks.Value;
-		set => _takeProfitTicks.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss in ticks.
-	/// </summary>
-	public int StopLossTicks
-	{
-		get => _stopLossTicks.Value;
-		set => _stopLossTicks.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used for calculations.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="XTraderV2Strategy"/>.
-	/// </summary>
 	public XTraderV2Strategy()
 	{
 		_ma1Period = Param(nameof(Ma1Period), 16)
 			.SetGreaterThanZero()
 			.SetDisplay("MA1 Period", "Period for the first moving average", "Indicators");
 
-		_ma2Period = Param(nameof(Ma2Period), 1)
+		_ma2Period = Param(nameof(Ma2Period), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("MA2 Period", "Period for the second moving average", "Indicators");
 
-		_takeProfitTicks = Param(nameof(TakeProfitTicks), 150)
-			.SetDisplay("Take Profit", "Take profit in ticks", "Risk");
-
-		_stopLossTicks = Param(nameof(StopLossTicks), 100)
-			.SetDisplay("Stop Loss", "Stop loss in ticks", "Risk");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	protected override void OnReseted()
 	{
-		return [(Security, CandleType)];
+		base.OnReseted();
+		_ma1Prev = 0;
+		_ma1Prev2 = 0;
+		_ma2Prev = 0;
+		_ma2Prev2 = 0;
+		_hasPrev2 = false;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_ma1 = new SMA { Length = Ma1Period };
-		_ma2 = new SMA { Length = Ma2Period };
+		var ma1 = new ExponentialMovingAverage { Length = Ma1Period };
+		var ma2 = new ExponentialMovingAverage { Length = Ma2Period };
 
-		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(_ma1, _ma2, ProcessCandle)
+		SubscribeCandles(CandleType)
+			.Bind(ma1, ma2, ProcessCandle)
 			.Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, _ma1);
-			DrawIndicator(area, _ma2);
-			DrawOwnTrades(area);
-		}
-
-		var step = Security.PriceStep ?? 1m;
-		StartProtection(
-			takeProfit: new Unit(TakeProfitTicks * step, UnitTypes.Absolute),
-			stopLoss: new Unit(StopLossTicks * step, UnitTypes.Absolute));
 	}
+
 	private void ProcessCandle(ICandleMessage candle, decimal ma1, decimal ma2)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
+		if (candle.State != CandleStates.Finished) return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (!_hasPrev1)
+		if (_ma1Prev == 0)
 		{
 			_ma1Prev = ma1;
 			_ma2Prev = ma2;
-			_hasPrev1 = true;
 			return;
 		}
 
@@ -167,18 +89,19 @@ public class XTraderV2Strategy : Strategy
 			return;
 		}
 
-		if (Position == 0)
+		// Contrarian: sell when MA1 crosses above MA2, buy when crosses below
+		var sellSignal = ma1 > ma2 && _ma1Prev > _ma2Prev && _ma1Prev2 < _ma2Prev2;
+		var buySignal = ma1 < ma2 && _ma1Prev < _ma2Prev && _ma1Prev2 > _ma2Prev2;
+
+		if (sellSignal && Position >= 0)
 		{
-			if (ma1 > ma2 && _ma1Prev > _ma2Prev && _ma1Prev2 < _ma2Prev2 && _lastSignal != -1)
-			{
-				SellMarket(Volume);
-				_lastSignal = -1;
-			}
-			else if (ma1 < ma2 && _ma1Prev < _ma2Prev && _ma1Prev2 > _ma2Prev2 && _lastSignal != 1)
-			{
-				BuyMarket(Volume);
-				_lastSignal = 1;
-			}
+			if (Position > 0) SellMarket();
+			SellMarket();
+		}
+		else if (buySignal && Position <= 0)
+		{
+			if (Position < 0) BuyMarket();
+			BuyMarket();
 		}
 
 		_ma1Prev2 = _ma1Prev;
