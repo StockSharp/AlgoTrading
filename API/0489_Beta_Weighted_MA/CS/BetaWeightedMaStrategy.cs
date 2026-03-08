@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -23,12 +20,14 @@ public class BetaWeightedMaStrategy : Strategy
 	private readonly StrategyParam<decimal> _alpha;
 	private readonly StrategyParam<decimal> _beta;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _cooldownBars;
 
 	private readonly List<decimal> _prices = [];
 	private readonly List<decimal> _weights = [];
 	private decimal _denominator;
 	private decimal _prevMa;
 	private decimal _prevPrice;
+	private int _cooldownRemaining;
 
 	/// <summary>
 	/// Period for BWMA calculation.
@@ -66,6 +65,12 @@ public class BetaWeightedMaStrategy : Strategy
 		set => _candleType.Value = value;
 	}
 
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
 	/// <summary>
 	/// Initialize <see cref="BetaWeightedMaStrategy"/>.
 	/// </summary>
@@ -86,8 +91,11 @@ public class BetaWeightedMaStrategy : Strategy
 			
 			.SetOptimize(1m, 10m, 1m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
+
+		_cooldownBars = Param(nameof(CooldownBars), 10)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "Risk");
 	}
 
 	/// <inheritdoc />
@@ -105,6 +113,7 @@ public class BetaWeightedMaStrategy : Strategy
 		_denominator = default;
 		_prevMa = default;
 		_prevPrice = default;
+		_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
@@ -131,7 +140,7 @@ public class BetaWeightedMaStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
 
-		StartProtection(null, null);
+		// cooldown init
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -164,18 +173,30 @@ public class BetaWeightedMaStrategy : Strategy
 			return;
 		}
 
+		if (_cooldownRemaining > 0)
+		{
+			_cooldownRemaining--;
+			_prevPrice = candle.ClosePrice;
+			_prevMa = ma;
+			return;
+		}
+
 		var crossedAbove = candle.ClosePrice > ma && _prevPrice <= _prevMa;
 		var crossedBelow = candle.ClosePrice < ma && _prevPrice >= _prevMa;
 
 		if (crossedAbove && Position <= 0)
 		{
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
+			if (Position < 0)
+				BuyMarket(Math.Abs(Position));
+			BuyMarket(Volume);
+			_cooldownRemaining = CooldownBars;
 		}
 		else if (crossedBelow && Position >= 0)
 		{
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
+			if (Position > 0)
+				SellMarket(Math.Abs(Position));
+			SellMarket(Volume);
+			_cooldownRemaining = CooldownBars;
 		}
 
 		_prevPrice = candle.ClosePrice;
