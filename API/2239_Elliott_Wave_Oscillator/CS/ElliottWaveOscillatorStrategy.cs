@@ -100,7 +100,7 @@ public class ElliottWaveOscillatorStrategy : Strategy
 			.SetDisplay("Stop Loss %", "Percentage stop loss", "Risk")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -124,8 +124,8 @@ public class ElliottWaveOscillatorStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var fastMa = new SMA { Length = FastLength };
-		var slowMa = new SMA { Length = SlowLength };
+		var fastMa = new ExponentialMovingAverage { Length = FastLength };
+		var slowMa = new ExponentialMovingAverage { Length = SlowLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

@@ -34,7 +34,7 @@ public class XdpoHistogramStrategy : Strategy
 		_secondMaLength = Param(nameof(SecondMaLength), 5)
 			.SetDisplay("Second MA Length", "Length of the moving average applied to the difference.", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for strategy calculations.", "General");
 	}
 
@@ -73,8 +73,8 @@ public class XdpoHistogramStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var ma1 = new SimpleMovingAverage { Length = FirstMaLength };
-		var ma2 = new SimpleMovingAverage { Length = SecondMaLength };
+		var ma1 = new ExponentialMovingAverage { Length = FirstMaLength };
+		var ma2 = new ExponentialMovingAverage { Length = SecondMaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

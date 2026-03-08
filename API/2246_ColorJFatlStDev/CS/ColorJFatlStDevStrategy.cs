@@ -77,8 +77,16 @@ public class ColorJFatlStDevStrategy : Strategy
 		_sellCloseMode = Param(nameof(SellCloseMode), SignalModes.Point)
 			.SetDisplay("Sell Close", "Mode for closing short", "Signals");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe", "General");
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevJma = null;
+		_prevPrevJma = null;
 	}
 
 	/// <inheritdoc />

@@ -36,7 +36,7 @@ public class NrtrExtrStrategy : Strategy
 			.SetDisplay("Period", "ATR period for NRTR", "Indicator")
 			.SetOptimize(5, 20, 5);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame", "General");
 	}
 

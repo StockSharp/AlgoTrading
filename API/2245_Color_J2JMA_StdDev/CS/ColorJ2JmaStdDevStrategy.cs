@@ -75,7 +75,7 @@ public class ColorJ2JmaStdDevStrategy : Strategy
 			.SetDisplay("K2", "Second threshold multiplier (entry)", "Parameters")
 			.SetOptimize(0.5m, 3m, 0.5m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe", "Parameters");
 	}
 
@@ -83,6 +83,14 @@ public class ColorJ2JmaStdDevStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevJma = null;
+		_stdDev = null;
 	}
 
 	/// <inheritdoc />
@@ -94,6 +102,7 @@ public class ColorJ2JmaStdDevStrategy : Strategy
 
 		var jma = new JurikMovingAverage { Length = JmaLength };
 		_stdDev = new StandardDeviation { Length = StdDevPeriod };
+		Indicators.Add(_stdDev);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -124,7 +133,7 @@ public class ColorJ2JmaStdDevStrategy : Strategy
 		_prevJma = jmaValue;
 
 		// Process diff through StdDev manually with IsFinal = true
-		var stdResult = _stdDev.Process(diff, candle.ServerTime, true);
+		var stdResult = _stdDev.Process(new DecimalIndicatorValue(_stdDev, diff, candle.ServerTime) { IsFinal = true });
 
 		if (!_stdDev.IsFormed)
 			return;

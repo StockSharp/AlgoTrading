@@ -30,13 +30,20 @@ public class AroonHornSignStrategy : Strategy
 		_aroonPeriod = Param(nameof(AroonPeriod), 9)
 			.SetDisplay("Aroon Period", "Aroon indicator period", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for processing", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		=> [(Security, CandleType)];
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevTrend = 0;
+	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)

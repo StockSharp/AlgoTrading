@@ -26,7 +26,7 @@ public class ColorXdinMAStDevStrategy : Strategy
 
 	public ColorXdinMAStDevStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle type", "Type of candles", "General");
 
 		_mainLength = Param(nameof(MainLength), 10)
@@ -79,15 +79,24 @@ public class ColorXdinMAStDevStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevXdin = null;
+		_stdDev = null;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
 		_prevXdin = null;
 		_stdDev = new StandardDeviation { Length = StdPeriod };
+		Indicators.Add(_stdDev);
 
-		var mainMa = new SimpleMovingAverage { Length = MainLength };
-		var plusMa = new SimpleMovingAverage { Length = PlusLength };
+		var mainMa = new ExponentialMovingAverage { Length = MainLength };
+		var plusMa = new ExponentialMovingAverage { Length = PlusLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
