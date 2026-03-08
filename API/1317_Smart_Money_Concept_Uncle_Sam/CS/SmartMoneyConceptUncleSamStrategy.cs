@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,243 +11,51 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Breakout strategy based on swing highs and lows with optional MA trend filter.
+/// Smart money concept Uncle Sam strategy using EMA crossover.
 /// </summary>
 public class SmartMoneyConceptUncleSamStrategy : Strategy
 {
-	public enum MovingAverageTypes
-	{
-		/// <summary>
-		/// Simple Moving Average (SMA).
-		/// </summary>
-		SMA,
-		/// <summary>
-		/// Exponential Moving Average (EMA).
-		/// </summary>
-		EMA,
-		/// <summary>
-		/// Double Exponential Moving Average (DEMA).
-		/// </summary>
-		DEMA,
-		/// <summary>
-		/// Triple Exponential Moving Average (TEMA).
-		/// </summary>
-		TEMA,
-		/// <summary>
-		/// Weighted Moving Average (WMA).
-		/// </summary>
-		WMA,
-		/// <summary>
-		/// Volume Weighted Moving Average (VWMA).
-		/// </summary>
-		VWMA
-	}
-
-	private readonly StrategyParam<int> _pivotLength;
-	private readonly StrategyParam<bool> _useMaFilter;
-	private readonly StrategyParam<MovingAverageTypes> _maType;
-	private readonly StrategyParam<int> _maLength;
+	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal[] _highBuffer = Array.Empty<decimal>();
-	private decimal[] _lowBuffer = Array.Empty<decimal>();
-	private int _bufferCount;
-	private decimal? _pivotHigh;
-	private decimal? _pivotLow;
-	private IIndicator _ma;
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Pivot size to identify highs and lows.
-	/// </summary>
-	public int PivotLength
-	{
-		get => _pivotLength.Value;
-		set => _pivotLength.Value = value;
-	}
-
-	/// <summary>
-	/// Enable moving average trend filter.
-	/// </summary>
-	public bool UseMaFilter
-	{
-		get => _useMaFilter.Value;
-		set => _useMaFilter.Value = value;
-	}
-
-	/// <summary>
-	/// Moving average type.
-	/// </summary>
-	public MovingAverageTypes MaType
-	{
-		get => _maType.Value;
-		set => _maType.Value = value;
-	}
-
-	/// <summary>
-	/// Moving average length.
-	/// </summary>
-	public int MaLength
-	{
-		get => _maLength.Value;
-		set => _maLength.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type for subscription.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="SmartMoneyConceptUncleSamStrategy"/>.
-	/// </summary>
 	public SmartMoneyConceptUncleSamStrategy()
 	{
-		_pivotLength = Param(nameof(PivotLength), 20)
+		_slowLength = Param(nameof(SlowLength), 40)
 			.SetGreaterThanZero()
-			.SetDisplay("Pivot Length", "Bars on each side for pivot detection", "General")
-			
-			.SetOptimize(10, 30, 5);
-
-		_useMaFilter = Param(nameof(UseMaFilter), false)
-			.SetDisplay("Enable MA Trend", "Use MA trend filter", "Trend");
-
-		_maType = Param(nameof(MaType), MovingAverageTypes.SMA)
-			.SetDisplay("MA Type", "Type of moving average", "Trend");
-
-		_maLength = Param(nameof(MaLength), 200)
-			.SetGreaterThanZero()
-			.SetDisplay("MA Length", "Length of moving average", "Trend");
+			.SetDisplay("Slow Length", "Slow EMA period", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Timeframe for candles", "General");
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_highBuffer = Array.Empty<decimal>();
-		_lowBuffer = Array.Empty<decimal>();
-		_bufferCount = 0;
-		_pivotHigh = null;
-		_pivotLow = null;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_highBuffer = new decimal[PivotLength * 2 + 1];
-		_lowBuffer = new decimal[PivotLength * 2 + 1];
-		_bufferCount = 0;
-		_pivotHigh = null;
-		_pivotLow = null;
-
-		_ma = new SMA { Length = MaLength };
-
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
+		var prevF = 0m; var prevS = 0m; var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(_ma, ProcessCandle)
-			.Start();
-
+		subscription.Bind(fast, slow, (candle, f, s) =>
+		{
+			if (candle.State != CandleStates.Finished) return;
+			if (!fast.IsFormed || !slow.IsFormed) return;
+			if (!init) { prevF = f; prevS = s; init = true; return; }
+			if (candle.OpenTime - lastSignal >= cooldown)
+			{
+				if (prevF <= prevS && f > s && Position <= 0) { BuyMarket(); lastSignal = candle.OpenTime; }
+				else if (prevF >= prevS && f < s && Position >= 0) { SellMarket(); lastSignal = candle.OpenTime; }
+			}
+			prevF = f; prevS = s;
+		}).Start();
 		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, _ma);
-			DrawOwnTrades(area);
-		}
-
-		StartProtection(null, null);
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal ma)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		for (var i = 0; i < _highBuffer.Length - 1; i++)
-		{
-			_highBuffer[i] = _highBuffer[i + 1];
-			_lowBuffer[i] = _lowBuffer[i + 1];
-		}
-
-		_highBuffer[^1] = candle.HighPrice;
-		_lowBuffer[^1] = candle.LowPrice;
-
-		if (_bufferCount < _highBuffer.Length)
-		{
-			_bufferCount++;
-		}
-		else
-		{
-			var index = PivotLength;
-			var ph = _highBuffer[index];
-			var isHigh = true;
-			for (var i = 0; i < _highBuffer.Length; i++)
-			{
-				if (i == index)
-					continue;
-				if (ph <= _highBuffer[i])
-				{
-					isHigh = false;
-					break;
-				}
-			}
-			if (isHigh)
-				_pivotHigh = ph;
-
-			var pl = _lowBuffer[index];
-			var isLow = true;
-			for (var i = 0; i < _lowBuffer.Length; i++)
-			{
-				if (i == index)
-					continue;
-				if (pl >= _lowBuffer[i])
-				{
-					isLow = false;
-					break;
-				}
-			}
-			if (isLow)
-				_pivotLow = pl;
-		}
-
-		var longCond = _pivotHigh is decimal high && candle.ClosePrice > high;
-		var shortCond = _pivotLow is decimal low && candle.ClosePrice < low;
-
-		if (UseMaFilter)
-		{
-			longCond &= candle.ClosePrice > ma;
-			shortCond &= candle.ClosePrice < ma;
-		}
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (longCond && Position <= 0)
-		{
-
-			BuyMarket(Volume + Math.Abs(Position));
-			_pivotHigh = null;
-		}
-		else if (shortCond && Position >= 0)
-		{
-
-			SellMarket(Volume + Math.Abs(Position));
-			_pivotLow = null;
-		}
+		if (area != null) { DrawCandles(area, subscription); DrawIndicator(area, fast); DrawIndicator(area, slow); DrawOwnTrades(area); }
 	}
 }
