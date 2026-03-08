@@ -25,7 +25,7 @@ public class AutoTradeWithRsiStrategy : Strategy
 	private readonly StrategyParam<decimal> _sellThreshold;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private SimpleMovingAverage _rsiAvg;
+	private ExponentialMovingAverage _rsiAvg;
 
 	public int RsiPeriod { get => _rsiPeriod.Value; set => _rsiPeriod.Value = value; }
 	public int AveragePeriod { get => _averagePeriod.Value; set => _averagePeriod.Value = value; }
@@ -49,7 +49,7 @@ public class AutoTradeWithRsiStrategy : Strategy
 		_sellThreshold = Param(nameof(SellThreshold), 45m)
 			.SetDisplay("Sell Threshold", "Averaged RSI below which to sell", "Rules");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle data type", "General");
 	}
 
@@ -67,7 +67,8 @@ public class AutoTradeWithRsiStrategy : Strategy
 		base.OnStarted2(time);
 
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
-		_rsiAvg = new SimpleMovingAverage { Length = AveragePeriod };
+		_rsiAvg = new ExponentialMovingAverage { Length = AveragePeriod };
+		Indicators.Add(_rsiAvg);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

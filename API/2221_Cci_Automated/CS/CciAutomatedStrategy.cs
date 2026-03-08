@@ -114,8 +114,16 @@ public class CciAutomatedStrategy : Strategy
 			.SetDisplay("Trailing Stop", "Trailing stop in price units", "Risk")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevCci = null;
+		_trailPrice = null;
 	}
 
 	/// <inheritdoc />
@@ -159,12 +167,12 @@ public class CciAutomatedStrategy : Strategy
 		{
 			if (prev < -90m && cciValue > -80m && Position + Volume <= maxVolume)
 			{
-				BuyMarket(Volume);
+				BuyMarket();
 				_trailPrice = candle.ClosePrice - TrailingStop;
 			}
 			else if (prev > 90m && cciValue < 80m && Position - Volume >= -maxVolume)
 			{
-				SellMarket(Volume);
+				SellMarket();
 				_trailPrice = candle.ClosePrice + TrailingStop;
 			}
 		}
@@ -176,7 +184,7 @@ public class CciAutomatedStrategy : Strategy
 				_trailPrice = candidate;
 			if (_trailPrice is decimal tp && candle.ClosePrice <= tp)
 			{
-				SellMarket(Position);
+				SellMarket();
 				_trailPrice = null;
 			}
 		}
@@ -187,7 +195,7 @@ public class CciAutomatedStrategy : Strategy
 				_trailPrice = candidate;
 			if (_trailPrice is decimal tp && candle.ClosePrice >= tp)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				_trailPrice = null;
 			}
 		}

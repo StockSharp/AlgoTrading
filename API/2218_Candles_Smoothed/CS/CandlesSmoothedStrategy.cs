@@ -30,7 +30,7 @@ public class CandlesSmoothedStrategy : Strategy
 
 	public CandlesSmoothedStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame", "General");
 
 		_maLength = Param(nameof(MaLength), 30)
@@ -53,9 +53,10 @@ public class CandlesSmoothedStrategy : Strategy
 		base.OnStarted2(time);
 
 		_ma = new WeightedMovingAverage { Length = MaLength };
+		Indicators.Add(_ma);
 
-		// Use a dummy SMA for warmup binding
-		var warmup = new SimpleMovingAverage { Length = MaLength };
+		// Use a dummy EMA for warmup binding
+		var warmup = new ExponentialMovingAverage { Length = MaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

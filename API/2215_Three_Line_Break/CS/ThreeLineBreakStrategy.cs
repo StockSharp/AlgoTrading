@@ -36,7 +36,7 @@ public class ThreeLineBreakStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Lines Break", "Number of lines for trend detection", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for analysis", "General");
 	}
 
@@ -58,6 +58,7 @@ public class ThreeLineBreakStrategy : Strategy
 
 		var highest = new Highest { Length = LinesBreak };
 		_lowest = new Lowest { Length = LinesBreak };
+		Indicators.Add(_lowest);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

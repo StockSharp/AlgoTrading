@@ -160,8 +160,15 @@ public class ColorLaguerreStrategy : Strategy
 			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevSignal = null;
 	}
 
 	/// <inheritdoc />
@@ -227,8 +234,8 @@ public class ColorLaguerreStrategy : Strategy
 		_prevSignal = signal;
 
 		if (Position > 0 && value <= LowLevel && SellClose)
-			SellMarket(Math.Abs(Position));
+			SellMarket();
 		else if (Position < 0 && value >= HighLevel && BuyClose)
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
 	}
 }

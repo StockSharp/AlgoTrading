@@ -69,8 +69,15 @@ public class BykovTrendStrategy : Strategy
 			
 			.SetOptimize(5, 20, 1);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for indicator", "General");
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_previousUptrend = false;
 	}
 
 	/// <inheritdoc />
@@ -126,12 +133,12 @@ public class BykovTrendStrategy : Strategy
 		if (buySignal)
 		{
 			// Close short positions and enter long
-			BuyMarket(Volume + Math.Abs(Position));
+			BuyMarket();
 		}
 		else if (sellSignal)
 		{
 			// Close long positions and enter short
-			SellMarket(Volume + Math.Abs(Position));
+			SellMarket();
 		}
 	}
 }

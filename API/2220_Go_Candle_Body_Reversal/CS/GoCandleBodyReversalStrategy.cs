@@ -22,7 +22,7 @@ public class GoCandleBodyReversalStrategy : Strategy
 	private readonly StrategyParam<int> _period;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private SimpleMovingAverage _bodySma;
+	private ExponentialMovingAverage _bodySma;
 	private int _prevSign;
 
 	public int Period { get => _period.Value; set => _period.Value = value; }
@@ -34,7 +34,7 @@ public class GoCandleBodyReversalStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Period", "SMA period for candle body", "Parameters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "Parameters");
 	}
 
@@ -52,10 +52,11 @@ public class GoCandleBodyReversalStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_bodySma = new SimpleMovingAverage { Length = Period };
+		_bodySma = new ExponentialMovingAverage { Length = Period };
+		Indicators.Add(_bodySma);
 
-		// Use a warmup SMA bound to close price
-		var warmup = new SimpleMovingAverage { Length = Period };
+		// Use a warmup EMA bound to close price
+		var warmup = new ExponentialMovingAverage { Length = Period };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

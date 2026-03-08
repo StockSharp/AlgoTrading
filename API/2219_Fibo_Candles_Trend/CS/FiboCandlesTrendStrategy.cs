@@ -92,7 +92,7 @@ public class FiboCandlesTrendStrategy : Strategy
 	/// </summary>
 	public FiboCandlesTrendStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type and timeframe of candles", "General");
 
 		_period = Param(nameof(Period), 10)
@@ -193,13 +193,11 @@ public class FiboCandlesTrendStrategy : Strategy
 		{
 			if (color == 1 && _previousColor.Value == 0)
 			{
-				var volume = Volume + Math.Abs(Position);
-				BuyMarket(volume);
+				BuyMarket();
 			}
 			else if (color == 0 && _previousColor.Value == 1)
 			{
-				var volume = Volume + Math.Abs(Position);
-				SellMarket(volume);
+				SellMarket();
 			}
 		}
 
