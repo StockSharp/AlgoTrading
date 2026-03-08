@@ -56,7 +56,7 @@ public class HeikenAshiSmoothedTrendStrategy : Strategy
 			.SetDisplay("EMA Length", "Length for smoothing", "General")
 			.SetGreaterThanZero();
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -89,8 +89,13 @@ public class HeikenAshiSmoothedTrendStrategy : Strategy
 		_highEma = new ExponentialMovingAverage { Length = EmaLength };
 		_lowEma = new ExponentialMovingAverage { Length = EmaLength };
 
-		// Use a dummy SMA for warmup/binding, do manual EMA processing inside
-		var warmup = new SimpleMovingAverage { Length = EmaLength };
+		Indicators.Add(_openEma);
+		Indicators.Add(_closeEma);
+		Indicators.Add(_highEma);
+		Indicators.Add(_lowEma);
+
+		// Use a dummy EMA for warmup/binding, do manual EMA processing inside
+		var warmup = new ExponentialMovingAverage { Length = EmaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

@@ -54,7 +54,7 @@ public class PanelJokeStrategy : Strategy
 		_enableAutopilot = Param(nameof(EnableAutopilot), true)
 			.SetDisplay("Enable Autopilot", "Automatically trade based on signals", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for incoming candles", "General");
 	}
 
@@ -81,7 +81,7 @@ public class PanelJokeStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var warmup = new SimpleMovingAverage { Length = 5 };
+		var warmup = new ExponentialMovingAverage { Length = 5 };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

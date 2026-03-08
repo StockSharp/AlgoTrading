@@ -102,7 +102,7 @@ public class NrtrTrailingStopStrategy : Strategy
 			
 			.SetOptimize(500m, 3000m, 500m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for processing", "General");
 	}
 

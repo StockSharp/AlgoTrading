@@ -26,7 +26,7 @@ public class NonLagDotStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<decimal> _stopLossPercent;
 
-	private SimpleMovingAverage _sma;
+	private ExponentialMovingAverage _sma;
 	private decimal? _prevSma;
 	private int _prevTrend;
 
@@ -66,7 +66,7 @@ public class NonLagDotStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Length", "Moving average period", "Indicator");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for calculations", "General");
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 1m)
@@ -81,11 +81,20 @@ public class NonLagDotStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_sma = null;
+		_prevSma = null;
+		_prevTrend = 0;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_sma = new SimpleMovingAverage { Length = Length };
+		_sma = new ExponentialMovingAverage { Length = Length };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

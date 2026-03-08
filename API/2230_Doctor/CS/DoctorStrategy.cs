@@ -90,7 +90,7 @@ public class DoctorStrategy : Strategy
 		_trailingStop = Param(nameof(TrailingStop), true)
 		.SetDisplay("Trailing Stop", "Use trailing stop", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe for candles", "General");
 	}
 
@@ -119,8 +119,8 @@ public class DoctorStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_wmaSlope = new WeightedMovingAverage { Length = 40 };
-		_wmaTrend = new WeightedMovingAverage { Length = 400 };
+		_wmaSlope = new WeightedMovingAverage { Length = 10 };
+		_wmaTrend = new WeightedMovingAverage { Length = 50 };
 		_rsi14 = new RelativeStrengthIndex { Length = 14 };
 		_rsi5 = new RelativeStrengthIndex { Length = 5 };
 		_psar = new ParabolicSar();
@@ -188,11 +188,11 @@ public class DoctorStrategy : Strategy
 		// Close positions on opposite signals
 		if (Position > 0 && slope == 1 && (maLinear == 1 || rsiState == 1 || psarState == 2))
 		{
-			SellMarket(Position);
+			SellMarket();
 		}
 		else if (Position < 0 && slope == 2 && (maLinear == 2 || rsiState == 2 || psarState == 1))
 		{
-			BuyMarket(-Position);
+			BuyMarket();
 		}
 
 		// Trailing and protective exits
@@ -202,7 +202,7 @@ public class DoctorStrategy : Strategy
 			_stopPrice = Math.Max(_stopPrice, candle.ClosePrice - stopDistance);
 
 			if (candle.LowPrice <= _stopPrice || candle.HighPrice >= _takePrice)
-			SellMarket(Position);
+			SellMarket();
 		}
 		else if (Position < 0)
 		{
@@ -210,18 +210,18 @@ public class DoctorStrategy : Strategy
 			_stopPrice = Math.Min(_stopPrice, candle.ClosePrice + stopDistance);
 
 			if (candle.HighPrice >= _stopPrice || candle.LowPrice <= _takePrice)
-			BuyMarket(-Position);
+			BuyMarket();
 		}
 
 		// Entry conditions
-		if (slope == 2 && maLinear == 2 && rsiState == 2 && Position <= 0)
+		if (slope == 2 && (maLinear == 2 || rsiState == 2) && Position <= 0)
 		{
 			_entryPrice = candle.ClosePrice;
 			_stopPrice = _entryPrice - stopDistance;
 			_takePrice = _entryPrice + takeDistance;
 			BuyMarket();
 		}
-		else if (slope == 1 && maLinear == 1 && rsiState == 1 && Position >= 0)
+		else if (slope == 1 && (maLinear == 1 || rsiState == 1) && Position >= 0)
 		{
 			_entryPrice = candle.ClosePrice;
 			_stopPrice = _entryPrice + stopDistance;

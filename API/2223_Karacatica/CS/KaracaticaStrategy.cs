@@ -56,7 +56,7 @@ public class KaracaticaStrategy : Strategy
 			.SetDisplay("Period", "ADX period and lookback for close comparison", "Indicators")
 			.SetOptimize(20, 50, 10);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 

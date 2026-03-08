@@ -110,7 +110,7 @@ public class PriceChannelStopStrategy : Strategy
 			
 			.SetOptimize(0.05m, 0.3m, 0.05m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
 		_buyPosOpen = Param(nameof(BuyPosOpen), true)

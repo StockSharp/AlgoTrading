@@ -71,7 +71,7 @@ public class LeManSignalStrategy : Strategy
 			
 			.SetOptimize(0, 2, 1);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -94,7 +94,7 @@ public class LeManSignalStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var warmup = new SimpleMovingAverage { Length = 2 * Period + 3 };
+		var warmup = new ExponentialMovingAverage { Length = 2 * Period + 3 };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -133,15 +133,9 @@ public class LeManSignalStrategy : Strategy
 			return;
 
 		if (signal > 0 && Position <= 0)
-		{
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
-		}
+			BuyMarket();
 		else if (signal < 0 && Position >= 0)
-		{
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
-		}
+			SellMarket();
 	}
 
 	private int GetSignal(int bar)

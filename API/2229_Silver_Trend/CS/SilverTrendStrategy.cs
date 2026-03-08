@@ -42,7 +42,7 @@ public class SilverTrendStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Risk", "Risk factor used to tighten the channel", "Indicator");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for indicator", "General");
 	}
 

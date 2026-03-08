@@ -86,7 +86,7 @@ public class WprsiSignalStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Filter Down", "Bars to confirm sell", "Parameters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for candles", "Parameters");
 	}
 

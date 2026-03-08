@@ -79,7 +79,7 @@ public class JmaSlopeStrategy : Strategy
 		_mode = Param(nameof(Mode), JmaSlopeModes.Breakdown)
 			.SetDisplay("Mode", "Entry algorithm", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe", "General");
 	}
 

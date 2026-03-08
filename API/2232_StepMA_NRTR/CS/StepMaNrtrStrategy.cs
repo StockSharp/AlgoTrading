@@ -51,7 +51,7 @@ public class StepMaNrtrStrategy : Strategy
 		_useHighLow = Param(nameof(UseHighLow), true)
 			.SetDisplay("Use High/Low", "Use high/low range", "Indicator");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type for processing", "General");
 	}
 
@@ -72,7 +72,7 @@ public class StepMaNrtrStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var warmup = new SimpleMovingAverage { Length = Length };
+		var warmup = new ExponentialMovingAverage { Length = Length };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
