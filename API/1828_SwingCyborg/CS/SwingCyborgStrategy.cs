@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,56 +12,72 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// SwingCyborg strategy using RSI overbought/oversold levels.
-/// Buys on oversold and sells on overbought.
 /// </summary>
 public class SwingCyborgStrategy : Strategy
 {
+	private readonly StrategyParam<int> _rsiPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
+	private decimal _prevRsi;
+	private bool _hasPrev;
+
+	public int RsiPeriod { get => _rsiPeriod.Value; set => _rsiPeriod.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public SwingCyborgStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_rsiPeriod = Param(nameof(RsiPeriod), 14)
+			.SetGreaterThanZero()
+			.SetDisplay("RSI Period", "RSI period", "Parameters");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	protected override void OnReseted()
 	{
-		return [(Security, CandleType)];
+		base.OnReseted();
+		_prevRsi = 0;
+		_hasPrev = false;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		var rsi = new RelativeStrengthIndex { Length = 14 };
+		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 
-		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(rsi, ProcessCandle).Start();
+		SubscribeCandles(CandleType)
+			.Bind(rsi, ProcessCandle)
+			.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal rsiValue)
+	private void ProcessCandle(ICandleMessage candle, decimal rsiVal)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
+		if (candle.State != CandleStates.Finished) return;
 
-		if (Position > 0 && rsiValue >= 70m)
+		if (!_hasPrev)
 		{
-			SellMarket();
+			_prevRsi = rsiVal;
+			_hasPrev = true;
+			return;
 		}
-		else if (Position < 0 && rsiValue <= 30m)
+
+		// Buy when RSI exits oversold
+		if (_prevRsi <= 30m && rsiVal > 30m && Position <= 0)
 		{
+			if (Position < 0) BuyMarket();
 			BuyMarket();
 		}
-		else if (Position == 0)
+		// Sell when RSI exits overbought
+		else if (_prevRsi >= 70m && rsiVal < 70m && Position >= 0)
 		{
-			if (rsiValue <= 30m)
-				BuyMarket();
-			else if (rsiValue >= 70m)
-				SellMarket();
+			if (Position > 0) SellMarket();
+			SellMarket();
 		}
+
+		_prevRsi = rsiVal;
 	}
 }

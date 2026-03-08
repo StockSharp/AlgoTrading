@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,158 +11,84 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Simple price action strategy that alternates between long and short trades.
-/// Uses fixed stop loss and take profit distances with optional trailing stop.
+/// Price action strategy using EMA crossover.
 /// </summary>
 public class PriceActionStrategy : Strategy
 {
-        /// <summary>
-        /// Trade direction options.
-        /// </summary>
-        public enum TradeDirections
-        {
-                /// <summary>
-                /// Start with long trades.
-                /// </summary>
-                Buy,
-
-                /// <summary>
-                /// Start with short trades.
-                /// </summary>
-                Sell
-        }
-
-        private readonly StrategyParam<decimal> _tp;
-	private readonly StrategyParam<decimal> _leverage;
-	private readonly StrategyParam<decimal> _trailingStop;
-	private readonly StrategyParam<decimal> _trailingStep;
-	private readonly StrategyParam<TradeDirections> _initialDirection;
+	private readonly StrategyParam<int> _fastPeriod;
+	private readonly StrategyParam<int> _slowPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private TradeDirections _nextDirection;
-	private decimal _stopPrice;
-	private decimal _takeProfitPrice;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private bool _hasPrev;
 
-
-	/// <summary>
-	/// Stop loss distance in price units.
-	/// </summary>
-	public decimal TP { get => _tp.Value; set => _tp.Value = value; }
-
-	/// <summary>
-	/// Take profit multiplier relative to stop distance.
-	/// </summary>
-	public decimal Leverage { get => _leverage.Value; set => _leverage.Value = value; }
-
-	/// <summary>
-	/// Trailing stop distance.
-	/// </summary>
-	public decimal TrailingStop { get => _trailingStop.Value; set => _trailingStop.Value = value; }
-
-	/// <summary>
-	/// Minimal move required to update trailing stop.
-	/// </summary>
-	public decimal TrailingStep { get => _trailingStep.Value; set => _trailingStep.Value = value; }
-
-	/// <summary>
-	/// Direction of the first trade.
-	/// </summary>
-	public TradeDirections InitialDirection { get => _initialDirection.Value; set => _initialDirection.Value = value; }
-
-	/// <summary>
-	/// Candle type for processing.
-	/// </summary>
+	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
+	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public PriceActionStrategy()
 	{
-
-		_tp = Param(nameof(TP), 100m)
-			.SetDisplay("Stop Distance", "Initial stop distance", "Risk");
-
-		_leverage = Param(nameof(Leverage), 5m)
-			.SetDisplay("Leverage", "Take profit multiplier", "Risk");
-
-		_trailingStop = Param(nameof(TrailingStop), 0m)
-			.SetDisplay("Trailing Stop", "Trailing stop distance", "Risk");
-
-		_trailingStep = Param(nameof(TrailingStep), 0m)
-			.SetDisplay("Trailing Step", "Minimal move to trail", "Risk");
-
-		_initialDirection = Param(nameof(InitialDirection), TradeDirections.Buy)
-			.SetDisplay("Initial Direction", "First trade side", "General");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Candles for logic", "General");
+		_fastPeriod = Param(nameof(FastPeriod), 12)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast Period", "Fast EMA period", "Risk");
+		_slowPeriod = Param(nameof(SlowPeriod), 26)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow Period", "Slow EMA period", "Risk");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_nextDirection = InitialDirection;
-		_stopPrice = 0m;
-		_takeProfitPrice = 0m;
+		_prevFast = 0;
+		_prevSlow = 0;
+		_hasPrev = false;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_nextDirection = InitialDirection;
+		var fast = new ExponentialMovingAverage { Length = FastPeriod };
+		var slow = new ExponentialMovingAverage { Length = SlowPeriod };
 
-		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(ProcessCandle)
+		SubscribeCandles(CandleType)
+			.Bind(fast, slow, ProcessCandle)
 			.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal fastVal, decimal slowVal)
 	{
-		if (candle.State != CandleStates.Finished)
+		if (candle.State != CandleStates.Finished) return;
+
+		if (!_hasPrev)
+		{
+			_prevFast = fastVal;
+			_prevSlow = slowVal;
+			_hasPrev = true;
 			return;
-
-		if (Position == 0)
-		{
-			if (_nextDirection == TradeDirections.Buy)
-			{
-				BuyMarket();
-				_stopPrice = candle.ClosePrice - TP;
-				_takeProfitPrice = candle.ClosePrice + Leverage * TP;
-				_nextDirection = TradeDirections.Sell;
-			}
-			else
-			{
-				SellMarket();
-				_stopPrice = candle.ClosePrice + TP;
-				_takeProfitPrice = candle.ClosePrice - Leverage * TP;
-				_nextDirection = TradeDirections.Buy;
-			}
 		}
-		else if (Position > 0)
-		{
-			if (TrailingStop > 0)
-			{
-				var newStop = candle.ClosePrice - TrailingStop;
-				if (_stopPrice == 0m || newStop - _stopPrice >= TrailingStep)
-					_stopPrice = newStop;
-			}
 
-			if (candle.LowPrice <= _stopPrice || candle.HighPrice >= _takeProfitPrice)
-				SellMarket();
-		}
-		else if (Position < 0)
-		{
-			if (TrailingStop > 0)
-			{
-				var newStop = candle.ClosePrice + TrailingStop;
-				if (_stopPrice == 0m || _stopPrice - newStop >= TrailingStep)
-					_stopPrice = newStop;
-			}
+		var crossUp = _prevFast <= _prevSlow && fastVal > slowVal;
+		var crossDown = _prevFast >= _prevSlow && fastVal < slowVal;
 
-			if (candle.HighPrice >= _stopPrice || candle.LowPrice <= _takeProfitPrice)
-				BuyMarket();
+		if (crossUp && Position <= 0)
+		{
+			if (Position < 0) BuyMarket();
+			BuyMarket();
 		}
+		else if (crossDown && Position >= 0)
+		{
+			if (Position > 0) SellMarket();
+			SellMarket();
+		}
+
+		_prevFast = fastVal;
+		_prevSlow = slowVal;
 	}
 }

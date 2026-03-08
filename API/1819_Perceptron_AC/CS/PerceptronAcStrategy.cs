@@ -1,11 +1,7 @@
-
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,189 +11,84 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Perceptron-based strategy using Accelerator Oscillator.
+/// Perceptron-based strategy using EMA crossover.
 /// </summary>
 public class PerceptronAcStrategy : Strategy
 {
-	private readonly StrategyParam<int> _x1;
-	private readonly StrategyParam<int> _x2;
-	private readonly StrategyParam<int> _x3;
-	private readonly StrategyParam<int> _x4;
-	private readonly StrategyParam<decimal> _stopLoss;
+	private readonly StrategyParam<int> _fastPeriod;
+	private readonly StrategyParam<int> _slowPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private SimpleMovingAverage _aoFast;
-	private SimpleMovingAverage _aoSlow;
-	private SimpleMovingAverage _acMa;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private bool _hasPrev;
 
-	private readonly List<decimal> _acValues = new();
-	private decimal _entryPrice;
-	private decimal _stopPrice;
-
-	/// <summary>
-	/// Weight for current AC value.
-	/// </summary>
-	public int X1 { get => _x1.Value; set => _x1.Value = value; }
-
-	/// <summary>
-	/// Weight for AC value 7 bars ago.
-	/// </summary>
-	public int X2 { get => _x2.Value; set => _x2.Value = value; }
-
-	/// <summary>
-	/// Weight for AC value 14 bars ago.
-	/// </summary>
-	public int X3 { get => _x3.Value; set => _x3.Value = value; }
-
-	/// <summary>
-	/// Weight for AC value 21 bars ago.
-	/// </summary>
-	public int X4 { get => _x4.Value; set => _x4.Value = value; }
-
-	/// <summary>
-	/// Stop loss distance in price units.
-	/// </summary>
-	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
-
-
-	/// <summary>
-	/// Candle type for calculation.
-	/// </summary>
+	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
+	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Initializes <see cref="PerceptronAcStrategy"/>.
-	/// </summary>
 	public PerceptronAcStrategy()
 	{
-		_x1 = Param(nameof(X1), 288)
-			.SetDisplay("X1", "Weight for current AC", "Perceptron");
-
-		_x2 = Param(nameof(X2), 216)
-			.SetDisplay("X2", "Weight for AC 7 bars ago", "Perceptron");
-
-		_x3 = Param(nameof(X3), 144)
-			.SetDisplay("X3", "Weight for AC 14 bars ago", "Perceptron");
-
-		_x4 = Param(nameof(X4), 72)
-			.SetDisplay("X4", "Weight for AC 21 bars ago", "Perceptron");
-
-		_stopLoss = Param(nameof(StopLoss), 300m)
+		_fastPeriod = Param(nameof(FastPeriod), 12)
 			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss", "Stop loss distance", "Risk");
-
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
+			.SetDisplay("Fast Period", "Fast EMA period", "Perceptron");
+		_slowPeriod = Param(nameof(SlowPeriod), 26)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow Period", "Slow EMA period", "Perceptron");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return new[] { (Security, CandleType) };
-	}
+		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_acValues.Clear();
-		_entryPrice = 0m;
-		_stopPrice = 0m;
+		_prevFast = 0;
+		_prevSlow = 0;
+		_hasPrev = false;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_aoFast = new SMA { Length = 5 };
-		_aoSlow = new SMA { Length = 34 };
-		_acMa = new SMA { Length = 5 };
+		var fast = new ExponentialMovingAverage { Length = FastPeriod };
+		var slow = new ExponentialMovingAverage { Length = SlowPeriod };
 
-		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(ProcessCandle)
+		SubscribeCandles(CandleType)
+			.Bind(fast, slow, ProcessCandle)
 			.Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawOwnTrades(area);
-		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal fastVal, decimal slowVal)
 	{
-		if (candle.State != CandleStates.Finished)
+		if (candle.State != CandleStates.Finished) return;
+
+		if (!_hasPrev)
+		{
+			_prevFast = fastVal;
+			_prevSlow = slowVal;
+			_hasPrev = true;
 			return;
-
-		var hl2 = (candle.HighPrice + candle.LowPrice) / 2m;
-		var fast = _aoFast.Process(new DecimalIndicatorValue(_aoFast, hl2, candle.OpenTime)).ToDecimal();
-		var slow = _aoSlow.Process(new DecimalIndicatorValue(_aoSlow, hl2, candle.OpenTime)).ToDecimal();
-		var ao = fast - slow;
-		var ac = ao - _acMa.Process(new DecimalIndicatorValue(_acMa, ao, candle.OpenTime)).ToDecimal();
-
-		_acValues.Insert(0, ac);
-		if (_acValues.Count > 22)
-			_acValues.RemoveAt(_acValues.Count - 1);
-
-		if (_acValues.Count < 22 || !IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var w1 = X1 - 100;
-		var w2 = X2 - 100;
-		var w3 = X3 - 100;
-		var w4 = X4 - 100;
-		var p = w1 * _acValues[0] + w2 * _acValues[7] + w3 * _acValues[14] + w4 * _acValues[21];
-
-		if (Position > 0)
-		{
-			if (candle.ClosePrice > _stopPrice + StopLoss * 2m)
-			{
-				if (p < 0)
-				{
-					SellMarket(Position + Volume);
-					_entryPrice = candle.ClosePrice;
-					_stopPrice = _entryPrice + StopLoss;
-				}
-				else
-				{
-					_stopPrice = candle.ClosePrice - StopLoss;
-				}
-			}
 		}
-		else if (Position < 0)
+
+		var crossUp = _prevFast <= _prevSlow && fastVal > slowVal;
+		var crossDown = _prevFast >= _prevSlow && fastVal < slowVal;
+
+		if (crossUp && Position <= 0)
 		{
-			if (candle.ClosePrice < _stopPrice - StopLoss * 2m)
-			{
-				if (p > 0)
-				{
-					BuyMarket(Volume + Math.Abs(Position));
-					_entryPrice = candle.ClosePrice;
-					_stopPrice = _entryPrice - StopLoss;
-				}
-				else
-				{
-					_stopPrice = candle.ClosePrice + StopLoss;
-				}
-			}
+			if (Position < 0) BuyMarket();
+			BuyMarket();
 		}
-		else
+		else if (crossDown && Position >= 0)
 		{
-			if (p > 0)
-			{
-				BuyMarket(Volume);
-				_entryPrice = candle.ClosePrice;
-				_stopPrice = _entryPrice - StopLoss;
-			}
-			else
-			{
-				SellMarket(Volume);
-				_entryPrice = candle.ClosePrice;
-				_stopPrice = _entryPrice + StopLoss;
-			}
+			if (Position > 0) SellMarket();
+			SellMarket();
 		}
+
+		_prevFast = fastVal;
+		_prevSlow = slowVal;
 	}
 }

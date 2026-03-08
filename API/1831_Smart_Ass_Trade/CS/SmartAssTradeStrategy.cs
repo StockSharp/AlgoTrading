@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,86 +11,84 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Smart Ass Trade strategy using MACD histogram direction and moving average trend filter.
+/// Smart trade strategy using EMA crossover.
 /// </summary>
 public class SmartAssTradeStrategy : Strategy
 {
+	private readonly StrategyParam<int> _fastPeriod;
+	private readonly StrategyParam<int> _slowPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevMacd;
-	private decimal _prevSignal;
-	private decimal _prevMa;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private bool _hasPrev;
 
+	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
+	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public SmartAssTradeStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Base timeframe", "General");
+		_fastPeriod = Param(nameof(FastPeriod), 12)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast Period", "Fast EMA period", "Parameters");
+		_slowPeriod = Param(nameof(SlowPeriod), 26)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow Period", "Slow EMA period", "Parameters");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	protected override void OnReseted()
 	{
-		return [(Security, CandleType)];
+		base.OnReseted();
+		_prevFast = 0;
+		_prevSlow = 0;
+		_hasPrev = false;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		var macd = new MovingAverageConvergenceDivergenceSignal();
-		var sma = new SimpleMovingAverage { Length = 20 };
+		var fast = new ExponentialMovingAverage { Length = FastPeriod };
+		var slow = new ExponentialMovingAverage { Length = SlowPeriod };
 
-		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.BindEx(macd, sma, ProcessCandle)
+		SubscribeCandles(CandleType)
+			.Bind(fast, slow, ProcessCandle)
 			.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue, IIndicatorValue smaValue)
+	private void ProcessCandle(ICandleMessage candle, decimal fastVal, decimal slowVal)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
+		if (candle.State != CandleStates.Finished) return;
 
-		var mv = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
-		if (mv.Macd is not decimal macd || mv.Signal is not decimal signal)
-			return;
-
-		if (!smaValue.IsFinal)
-			return;
-
-		var ma = smaValue.GetValue<decimal>();
-		var hist = macd - signal;
-
-		if (_prevMa == 0)
+		if (!_hasPrev)
 		{
-			_prevMacd = macd;
-			_prevSignal = signal;
-			_prevMa = ma;
+			_prevFast = fastVal;
+			_prevSlow = slowVal;
+			_hasPrev = true;
 			return;
 		}
 
-		var prevHist = _prevMacd - _prevSignal;
-		var osmaUp = hist > prevHist;
-		var maUp = ma > _prevMa;
+		var crossUp = _prevFast <= _prevSlow && fastVal > slowVal;
+		var crossDown = _prevFast >= _prevSlow && fastVal < slowVal;
 
-		if (osmaUp && maUp && Position <= 0)
+		if (crossUp && Position <= 0)
 		{
-			if (Position < 0)
-				BuyMarket();
+			if (Position < 0) BuyMarket();
 			BuyMarket();
 		}
-		else if (!osmaUp && !maUp && Position >= 0)
+		else if (crossDown && Position >= 0)
 		{
-			if (Position > 0)
-				SellMarket();
+			if (Position > 0) SellMarket();
 			SellMarket();
 		}
 
-		_prevMacd = macd;
-		_prevSignal = signal;
-		_prevMa = ma;
+		_prevFast = fastVal;
+		_prevSlow = slowVal;
 	}
 }

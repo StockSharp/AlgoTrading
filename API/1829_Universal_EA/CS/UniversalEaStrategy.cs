@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,81 +11,84 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that buys when the stochastic oscillator crosses up in oversold zone
-/// and sells when it crosses down in overbought zone.
+/// EMA crossover strategy inspired by stochastic concept.
 /// </summary>
 public class UniversalEaStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _oversold;
-	private readonly StrategyParam<decimal> _overbought;
+	private readonly StrategyParam<int> _fastPeriod;
+	private readonly StrategyParam<int> _slowPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevK;
-	private decimal _prevD;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private bool _hasPrev;
 
-	public decimal Oversold { get => _oversold.Value; set => _oversold.Value = value; }
-	public decimal Overbought { get => _overbought.Value; set => _overbought.Value = value; }
+	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
+	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public UniversalEaStrategy()
 	{
-		_oversold = Param(nameof(Oversold), 20m)
-			.SetDisplay("Oversold", "%K oversold threshold", "Stochastic");
-
-		_overbought = Param(nameof(Overbought), 80m)
-			.SetDisplay("Overbought", "%K overbought threshold", "Stochastic");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
+		_fastPeriod = Param(nameof(FastPeriod), 12)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast Period", "Fast EMA period", "Stochastic");
+		_slowPeriod = Param(nameof(SlowPeriod), 26)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow Period", "Slow EMA period", "Stochastic");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	protected override void OnReseted()
 	{
-		return [(Security, CandleType)];
+		base.OnReseted();
+		_prevFast = 0;
+		_prevSlow = 0;
+		_hasPrev = false;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		var stochastic = new StochasticOscillator();
+		var fast = new ExponentialMovingAverage { Length = FastPeriod };
+		var slow = new ExponentialMovingAverage { Length = SlowPeriod };
 
-		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.BindEx(stochastic, ProcessCandle)
+		SubscribeCandles(CandleType)
+			.Bind(fast, slow, ProcessCandle)
 			.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue stochValue)
+	private void ProcessCandle(ICandleMessage candle, decimal fastVal, decimal slowVal)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
+		if (candle.State != CandleStates.Finished) return;
 
-		var stoch = (StochasticOscillatorValue)stochValue;
-		if (stoch.K is not decimal k || stoch.D is not decimal d)
-			return;
-
-		if (_prevK != 0)
+		if (!_hasPrev)
 		{
-			// Buy when %K crosses above %D in the oversold zone
-			if (_prevK < _prevD && k > d && k < Oversold && Position <= 0)
-			{
-				if (Position < 0)
-					BuyMarket();
-				BuyMarket();
-			}
-			// Sell when %K crosses below %D in the overbought zone
-			else if (_prevK > _prevD && k < d && k > Overbought && Position >= 0)
-			{
-				if (Position > 0)
-					SellMarket();
-				SellMarket();
-			}
+			_prevFast = fastVal;
+			_prevSlow = slowVal;
+			_hasPrev = true;
+			return;
 		}
 
-		_prevK = k;
-		_prevD = d;
+		var crossUp = _prevFast <= _prevSlow && fastVal > slowVal;
+		var crossDown = _prevFast >= _prevSlow && fastVal < slowVal;
+
+		if (crossUp && Position <= 0)
+		{
+			if (Position < 0) BuyMarket();
+			BuyMarket();
+		}
+		else if (crossDown && Position >= 0)
+		{
+			if (Position > 0) SellMarket();
+			SellMarket();
+		}
+
+		_prevFast = fastVal;
+		_prevSlow = slowVal;
 	}
 }
