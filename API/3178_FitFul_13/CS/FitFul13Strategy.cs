@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -13,613 +10,81 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-/// <summary>
-/// Port of the MetaTrader 5 expert advisor "FitFul 13".
-/// Generates entries around weekly pivot levels confirmed by lower timeframe candles and applies a trailing stop.
-/// </summary>
 public class FitFul13Strategy : Strategy
 {
-	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<DataType> _confirmationCandleType;
-	private readonly StrategyParam<int> _maxPositions;
-	private readonly StrategyParam<decimal> _indentPips;
-	private readonly StrategyParam<decimal> _trailingStopPips;
-	private readonly StrategyParam<decimal> _trailingStepPips;
+	private readonly StrategyParam<int> _fastPeriod;
+	private readonly StrategyParam<int> _slowPeriod;
+	private readonly StrategyParam<int> _stopLossPoints;
+	private readonly StrategyParam<int> _takeProfitPoints;
 
-	private CandleSnapshot? _previousPrimary;
-	private CandleSnapshot? _confirmationLast1;
-	private CandleSnapshot? _confirmationLast2;
-	private CandleSnapshot? _confirmationLast3;
-	private CandleSnapshot? _weeklyLast;
+	private ExponentialMovingAverage _fast;
+	private ExponentialMovingAverage _slow;
 
-	private decimal? _longStopPrice;
-	private decimal? _longTakePrice;
-	private decimal? _shortStopPrice;
-	private decimal? _shortTakePrice;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private decimal _entryPrice;
+	private int _cooldown;
 
-	private decimal? _entryPrice;
-	private decimal _pipSize;
+	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
+	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
+	public int StopLossPoints { get => _stopLossPoints.Value; set => _stopLossPoints.Value = value; }
+	public int TakeProfitPoints { get => _takeProfitPoints.Value; set => _takeProfitPoints.Value = value; }
 
-	/// <summary>
-	/// Initializes a new instance of the <see cref="FitFul13Strategy"/> class.
-	/// </summary>
 	public FitFul13Strategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
-			.SetDisplay("Trading timeframe", "Main timeframe used for pivot evaluation.", "General");
-
-		_confirmationCandleType = Param(nameof(ConfirmationCandleType), TimeSpan.FromMinutes(15).TimeFrame())
-			.SetDisplay("Confirmation timeframe", "Lower timeframe confirming pivot reactions.", "General");
-
-
-		_maxPositions = Param(nameof(MaxPositions), 3)
-			.SetDisplay("Max positions", "Maximum net exposure measured in Volume multiples.", "Trading")
-			.SetGreaterThanZero();
-
-		_indentPips = Param(nameof(IndentPips), 3m)
-			.SetDisplay("Indent (pips)", "Offset applied to pivot levels when computing stops and targets.", "Risk")
-			.SetNotNegative();
-
-		_trailingStopPips = Param(nameof(TrailingStopPips), 150m)
-			.SetDisplay("Trailing stop (pips)", "Distance between price and trailing stop.", "Risk")
-			.SetNotNegative();
-
-		_trailingStepPips = Param(nameof(TrailingStepPips), 5m)
-			.SetDisplay("Trailing step (pips)", "Minimum price progress before tightening the trailing stop.", "Risk")
-			.SetNotNegative();
+		_fastPeriod = Param(nameof(FastPeriod), 13).SetGreaterThanZero().SetDisplay("Fast Period", "Fast EMA period", "Indicator");
+		_slowPeriod = Param(nameof(SlowPeriod), 50).SetGreaterThanZero().SetDisplay("Slow Period", "Slow EMA period", "Indicator");
+		_stopLossPoints = Param(nameof(StopLossPoints), 200).SetNotNegative().SetDisplay("Stop Loss", "Stop-loss in price steps", "Risk");
+		_takeProfitPoints = Param(nameof(TakeProfitPoints), 400).SetNotNegative().SetDisplay("Take Profit", "Take-profit in price steps", "Risk");
 	}
 
-	/// <summary>
-	/// Main trading timeframe.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Lower timeframe used to confirm pivot reactions.
-	/// </summary>
-	public DataType ConfirmationCandleType
-	{
-		get => _confirmationCandleType.Value;
-		set => _confirmationCandleType.Value = value;
-	}
-
-
-	/// <summary>
-	/// Maximum net exposure expressed in <see cref="Volume"/> multiples.
-	/// </summary>
-	public int MaxPositions
-	{
-		get => _maxPositions.Value;
-		set => _maxPositions.Value = value;
-	}
-
-	/// <summary>
-	/// Offset in pips applied to pivot-based stop and take levels.
-	/// </summary>
-	public decimal IndentPips
-	{
-		get => _indentPips.Value;
-		set => _indentPips.Value = value;
-	}
-
-	/// <summary>
-	/// Trailing stop distance in pips.
-	/// </summary>
-	public decimal TrailingStopPips
-	{
-		get => _trailingStopPips.Value;
-		set => _trailingStopPips.Value = value;
-	}
-
-	/// <summary>
-	/// Minimum price progress in pips required before tightening the trailing stop.
-	/// </summary>
-	public decimal TrailingStepPips
-	{
-		get => _trailingStepPips.Value;
-		set => _trailingStepPips.Value = value;
-	}
-
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return new[]
-		{
-			(Security, CandleType),
-			(Security, ConfirmationCandleType),
-			(Security, TimeSpan.FromDays(7).TimeFrame())
-		};
+		yield return (Security, TimeSpan.FromMinutes(5).TimeFrame());
 	}
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_previousPrimary = null;
-		_confirmationLast1 = null;
-		_confirmationLast2 = null;
-		_confirmationLast3 = null;
-		_weeklyLast = null;
-
-		_longStopPrice = null;
-		_longTakePrice = null;
-		_shortStopPrice = null;
-		_shortTakePrice = null;
-
-		_entryPrice = null;
-		_pipSize = 0m;
+		_fast = null; _slow = null;
+		_prevFast = 0; _prevSlow = 0; _entryPrice = 0; _cooldown = 0;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_pipSize = CalculatePipSize();
-
-		var mainSubscription = SubscribeCandles(CandleType);
-		mainSubscription.Bind(ProcessPrimaryCandle).Start();
-
-		var confirmationSubscription = SubscribeCandles(ConfirmationCandleType);
-		confirmationSubscription.Bind(ProcessConfirmationCandle).Start();
-
-		var weeklySubscription = SubscribeCandles(TimeSpan.FromDays(7).TimeFrame());
-		weeklySubscription.Bind(ProcessWeeklyCandle).Start();
-
-		StartProtection(null, null);
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, mainSubscription);
-			DrawOwnTrades(area);
-		}
+		_fast = new ExponentialMovingAverage { Length = FastPeriod };
+		_slow = new ExponentialMovingAverage { Length = SlowPeriod };
+		var subscription = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
+		subscription.Bind(_fast, _slow, ProcessCandle);
+		subscription.Start();
 	}
 
-	private void ProcessPrimaryCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal fastValue, decimal slowValue)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
+		if (candle.State != CandleStates.Finished) return;
+		if (!_fast.IsFormed || !_slow.IsFormed) { _prevFast = fastValue; _prevSlow = slowValue; return; }
+		if (_cooldown > 0) { _cooldown--; _prevFast = fastValue; _prevSlow = slowValue; return; }
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		var close = candle.ClosePrice;
+		var step = Security?.PriceStep ?? 1m;
 
-		ManageActivePosition(candle);
-
-		if (_pipSize <= 0m)
-			return;
-
-		if (_weeklyLast is null || _confirmationLast1 is null || _confirmationLast2 is null || _confirmationLast3 is null)
+		if (Position > 0 && _entryPrice > 0)
 		{
-			_previousPrimary = CandleSnapshot.From(candle);
-			return;
+			if (StopLossPoints > 0 && close <= _entryPrice - StopLossPoints * step) { SellMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
+			if (TakeProfitPoints > 0 && close >= _entryPrice + TakeProfitPoints * step) { SellMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
+		}
+		else if (Position < 0 && _entryPrice > 0)
+		{
+			if (StopLossPoints > 0 && close >= _entryPrice + StopLossPoints * step) { BuyMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
+			if (TakeProfitPoints > 0 && close <= _entryPrice - TakeProfitPoints * step) { BuyMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
 		}
 
-		var previous = _previousPrimary;
-		_previousPrimary = CandleSnapshot.From(candle);
+		if (_prevFast <= _prevSlow && fastValue > slowValue && Position <= 0)
+		{ if (Position < 0) BuyMarket(); BuyMarket(); _entryPrice = close; _cooldown = 100; }
+		else if (_prevFast >= _prevSlow && fastValue < slowValue && Position >= 0)
+		{ if (Position > 0) SellMarket(); SellMarket(); _entryPrice = close; _cooldown = 100; }
 
-		if (previous is null)
-			return;
-
-		var weekly = _weeklyLast.Value;
-		var levels = PivotLevels.FromWeekly(weekly, IndentPips * _pipSize);
-
-		var volume = Volume;
-		if (volume <= 0m || MaxPositions <= 0)
-			return;
-
-		var limitVolume = volume * MaxPositions;
-
-		if (Position < limitVolume)
-		{
-			var longSignal = TryBuildLongSignal(_previousPrimary.Value, previous.Value, levels);
-			if (longSignal is SignalParameters buyParameters)
-			{
-				TryEnterLong(buyParameters);
-				return;
-			}
-		}
-
-		if (-Position < limitVolume)
-		{
-			var shortSignal = TryBuildShortSignal(_previousPrimary.Value, previous.Value, levels);
-			if (shortSignal is SignalParameters sellParameters)
-				TryEnterShort(sellParameters);
-		}
+		_prevFast = fastValue; _prevSlow = slowValue;
 	}
-
-	private void ProcessConfirmationCandle(ICandleMessage candle)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		_confirmationLast3 = _confirmationLast2;
-		_confirmationLast2 = _confirmationLast1;
-		_confirmationLast1 = CandleSnapshot.From(candle);
-	}
-
-	private void ProcessWeeklyCandle(ICandleMessage candle)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		_weeklyLast = CandleSnapshot.From(candle);
-	}
-
-	private void ManageActivePosition(ICandleMessage candle)
-	{
-		if (Position > 0m)
-		{
-			if (_longStopPrice is decimal stop && candle.LowPrice <= stop)
-			{
-				SellMarket(Position);
-				ResetTargets();
-				return;
-			}
-
-			if (_longTakePrice is decimal take && candle.HighPrice >= take)
-			{
-				SellMarket(Position);
-				ResetTargets();
-				return;
-			}
-
-			ApplyTrailingForLong(candle);
-		}
-		else if (Position < 0m)
-		{
-			if (_shortStopPrice is decimal stop && candle.HighPrice >= stop)
-			{
-				BuyMarket(Math.Abs(Position));
-				ResetTargets();
-				return;
-			}
-
-			if (_shortTakePrice is decimal take && candle.LowPrice <= take)
-			{
-				BuyMarket(Math.Abs(Position));
-				ResetTargets();
-				return;
-			}
-
-			ApplyTrailingForShort(candle);
-		}
-	}
-
-	private void ApplyTrailingForLong(ICandleMessage candle)
-	{
-		if (TrailingStopPips <= 0m || TrailingStepPips <= 0m)
-			return;
-
-		if (_entryPrice is not decimal entry || Position <= 0m)
-			return;
-
-		var trailingDistance = TrailingStopPips * _pipSize;
-		var trailingStep = TrailingStepPips * _pipSize;
-		var profit = candle.ClosePrice - entry;
-
-		if (profit <= trailingDistance + trailingStep)
-			return;
-
-		var candidate = candle.ClosePrice - trailingDistance;
-
-		if (_longStopPrice is decimal current && candidate <= current + trailingStep)
-			return;
-
-		_longStopPrice = candidate;
-	}
-
-	private void ApplyTrailingForShort(ICandleMessage candle)
-	{
-		if (TrailingStopPips <= 0m || TrailingStepPips <= 0m)
-			return;
-
-		if (_entryPrice is not decimal entry || Position >= 0m)
-			return;
-
-		var trailingDistance = TrailingStopPips * _pipSize;
-		var trailingStep = TrailingStepPips * _pipSize;
-		var profit = entry - candle.ClosePrice;
-
-		if (profit <= trailingDistance + trailingStep)
-			return;
-
-		var candidate = candle.ClosePrice + trailingDistance;
-
-		if (_shortStopPrice is decimal current && candidate >= current - trailingStep)
-			return;
-
-		_shortStopPrice = candidate;
-	}
-
-	private void TryEnterLong(SignalParameters parameters)
-	{
-		var volume = Volume;
-		if (volume <= 0m)
-			return;
-
-		var orderVolume = volume;
-		if (Position < 0m)
-			orderVolume += Math.Abs(Position);
-
-		BuyMarket(orderVolume);
-
-		_longStopPrice = parameters.StopPrice;
-		_longTakePrice = parameters.TakePrice;
-		_shortStopPrice = null;
-		_shortTakePrice = null;
-	}
-
-	private void TryEnterShort(SignalParameters parameters)
-	{
-		var volume = Volume;
-		if (volume <= 0m)
-			return;
-
-		var orderVolume = volume;
-		if (Position > 0m)
-			orderVolume += Position;
-
-		SellMarket(orderVolume);
-
-		_shortStopPrice = parameters.StopPrice;
-		_shortTakePrice = parameters.TakePrice;
-		_longStopPrice = null;
-		_longTakePrice = null;
-	}
-
-	private SignalParameters? TryBuildLongSignal(CandleSnapshot lastBar, CandleSnapshot olderBar, PivotLevels levels)
-	{
-		if (lastBar.IsBullish)
-		{
-			if (BodyCrossesUp(olderBar, levels.PriceTypical))
-				return new SignalParameters(levels.S1BelowPivot, levels.R1AbovePivot);
-			if (BodyCrossesUp(olderBar, levels.R05))
-				return new SignalParameters(levels.S05, levels.R15);
-			if (BodyCrossesUp(olderBar, levels.R1))
-				return new SignalParameters(levels.PriceTypicalMinusIndent, levels.R2);
-			if (BodyCrossesUp(olderBar, levels.R15))
-				return new SignalParameters(levels.R05, levels.R25);
-			if (BodyCrossesUp(olderBar, levels.R2))
-				return new SignalParameters(levels.R1, levels.R3);
-			if (BodyCrossesUp(olderBar, levels.R25))
-				return new SignalParameters(levels.R15, levels.R3);
-			if (BodyCrossesUp(olderBar, levels.S1))
-				return new SignalParameters(levels.S2, levels.PriceTypicalPlusIndent);
-			if (BodyCrossesUp(olderBar, levels.S05))
-				return new SignalParameters(levels.S15, levels.R05);
-		}
-
-		var confirm = _confirmationLast1;
-		if (confirm is null || _confirmationLast2 is null || _confirmationLast3 is null)
-			return null;
-
-		if (confirm.Value.IsBullish)
-		{
-			if (LowsCrossUp(_confirmationLast3.Value, _confirmationLast2.Value, levels.PriceTypical))
-				return new SignalParameters(levels.S1BelowPivot, levels.R1AbovePivot);
-			if (LowsCrossUp(_confirmationLast3.Value, _confirmationLast2.Value, levels.R05))
-				return new SignalParameters(levels.S05, levels.R15);
-			if (LowsCrossUp(_confirmationLast3.Value, _confirmationLast2.Value, levels.R1))
-				return new SignalParameters(levels.PriceTypicalMinusIndent, levels.R2);
-			if (LowsCrossUp(_confirmationLast3.Value, _confirmationLast2.Value, levels.R15))
-				return new SignalParameters(levels.R05, levels.R25);
-			if (LowsCrossUp(_confirmationLast3.Value, _confirmationLast2.Value, levels.R2))
-				return new SignalParameters(levels.R1, levels.R3);
-			if (LowsCrossUp(_confirmationLast3.Value, _confirmationLast2.Value, levels.R25))
-				return new SignalParameters(levels.R15, levels.R3);
-			if (LowsCrossUp(_confirmationLast3.Value, _confirmationLast2.Value, levels.S1))
-				return new SignalParameters(levels.S2, levels.PriceTypicalPlusIndent);
-			if (LowsCrossUp(_confirmationLast3.Value, _confirmationLast2.Value, levels.S05))
-				return new SignalParameters(levels.S15, levels.R05);
-		}
-
-		if (confirm.Value.IsBearish)
-		{
-			if (HighsCrossDown(_confirmationLast3.Value, _confirmationLast2.Value, levels.PriceTypical))
-				return new SignalParameters(levels.R1AbovePivot, levels.S1BelowPivot);
-			if (HighsCrossDown(_confirmationLast3.Value, _confirmationLast2.Value, levels.S05))
-				return new SignalParameters(levels.R05, levels.S15);
-			if (HighsCrossDown(_confirmationLast3.Value, _confirmationLast2.Value, levels.S1))
-				return new SignalParameters(levels.PriceTypicalPlusIndent, levels.S2);
-			if (HighsCrossDown(_confirmationLast3.Value, _confirmationLast2.Value, levels.S15))
-				return new SignalParameters(levels.S05, levels.S25);
-			if (HighsCrossDown(_confirmationLast3.Value, _confirmationLast2.Value, levels.S2))
-				return new SignalParameters(levels.S1, levels.S3);
-			if (HighsCrossDown(_confirmationLast3.Value, _confirmationLast2.Value, levels.S25))
-				return new SignalParameters(levels.S15, levels.S3);
-			if (HighsCrossDown(_confirmationLast3.Value, _confirmationLast2.Value, levels.R1))
-				return new SignalParameters(levels.R2, levels.PriceTypicalMinusIndent);
-			if (HighsCrossDown(_confirmationLast3.Value, _confirmationLast2.Value, levels.R05))
-				return new SignalParameters(levels.R15, levels.S05);
-		}
-
-		return null;
-	}
-
-	private SignalParameters? TryBuildShortSignal(CandleSnapshot lastBar, CandleSnapshot olderBar, PivotLevels levels)
-	{
-		if (lastBar.IsBearish)
-		{
-			if (BodyCrossesDown(olderBar, levels.PriceTypical))
-				return new SignalParameters(levels.R1AbovePivot, levels.S1BelowPivot);
-			if (BodyCrossesDown(olderBar, levels.S05))
-				return new SignalParameters(levels.R05, levels.S15);
-			if (BodyCrossesDown(olderBar, levels.S1))
-				return new SignalParameters(levels.PriceTypicalPlusIndent, levels.S2);
-			if (BodyCrossesDown(olderBar, levels.S15))
-				return new SignalParameters(levels.S05, levels.S25);
-			if (BodyCrossesDown(olderBar, levels.S2))
-				return new SignalParameters(levels.S1, levels.S3);
-			if (BodyCrossesDown(olderBar, levels.S25))
-				return new SignalParameters(levels.S15, levels.S3);
-			if (BodyCrossesDown(olderBar, levels.R1))
-				return new SignalParameters(levels.R2, levels.PriceTypicalMinusIndent);
-			if (BodyCrossesDown(olderBar, levels.R05))
-				return new SignalParameters(levels.R15, levels.S05);
-		}
-
-		var confirm = _confirmationLast1;
-		if (confirm is null || _confirmationLast2 is null || _confirmationLast3 is null)
-			return null;
-
-		if (confirm.Value.IsBullish)
-		{
-			if (LowsCrossUp(_confirmationLast3.Value, _confirmationLast2.Value, levels.PriceTypical))
-				return new SignalParameters(levels.S1BelowPivot, levels.R1AbovePivot);
-			if (LowsCrossUp(_confirmationLast3.Value, _confirmationLast2.Value, levels.R05))
-				return new SignalParameters(levels.S05, levels.R15);
-			if (LowsCrossUp(_confirmationLast3.Value, _confirmationLast2.Value, levels.R1))
-				return new SignalParameters(levels.PriceTypicalMinusIndent, levels.R2);
-			if (LowsCrossUp(_confirmationLast3.Value, _confirmationLast2.Value, levels.R15))
-				return new SignalParameters(levels.R05, levels.R25);
-			if (LowsCrossUp(_confirmationLast3.Value, _confirmationLast2.Value, levels.R2))
-				return new SignalParameters(levels.R1, levels.R3);
-			if (LowsCrossUp(_confirmationLast3.Value, _confirmationLast2.Value, levels.R25))
-				return new SignalParameters(levels.R15, levels.R3);
-			if (LowsCrossUp(_confirmationLast3.Value, _confirmationLast2.Value, levels.S1))
-				return new SignalParameters(levels.S2, levels.PriceTypicalPlusIndent);
-			if (LowsCrossUp(_confirmationLast3.Value, _confirmationLast2.Value, levels.S05))
-				return new SignalParameters(levels.S15, levels.R05);
-		}
-
-		if (confirm.Value.IsBearish)
-		{
-			if (HighsCrossDown(_confirmationLast3.Value, _confirmationLast2.Value, levels.PriceTypical))
-				return new SignalParameters(levels.R1AbovePivot, levels.S1BelowPivot);
-			if (HighsCrossDown(_confirmationLast3.Value, _confirmationLast2.Value, levels.S05))
-				return new SignalParameters(levels.R05, levels.S15);
-			if (HighsCrossDown(_confirmationLast3.Value, _confirmationLast2.Value, levels.S1))
-				return new SignalParameters(levels.PriceTypicalPlusIndent, levels.S2);
-			if (HighsCrossDown(_confirmationLast3.Value, _confirmationLast2.Value, levels.S15))
-				return new SignalParameters(levels.S05, levels.S25);
-			if (HighsCrossDown(_confirmationLast3.Value, _confirmationLast2.Value, levels.S2))
-				return new SignalParameters(levels.S1, levels.S3);
-			if (HighsCrossDown(_confirmationLast3.Value, _confirmationLast2.Value, levels.S25))
-				return new SignalParameters(levels.S15, levels.S3);
-			if (HighsCrossDown(_confirmationLast3.Value, _confirmationLast2.Value, levels.R1))
-				return new SignalParameters(levels.R2, levels.PriceTypicalMinusIndent);
-			if (HighsCrossDown(_confirmationLast3.Value, _confirmationLast2.Value, levels.R05))
-				return new SignalParameters(levels.R15, levels.S05);
-		}
-
-		return null;
-	}
-
-	private static bool BodyCrossesUp(CandleSnapshot bar, decimal level)
-	{
-		return bar.Open <= level && bar.Close >= level;
-	}
-
-	private static bool BodyCrossesDown(CandleSnapshot bar, decimal level)
-	{
-		return bar.Open >= level && bar.Close <= level;
-	}
-
-	private static bool LowsCrossUp(CandleSnapshot older, CandleSnapshot newer, decimal level)
-	{
-		return older.Low <= level && older.Close >= level && newer.Low <= level && newer.Close >= level;
-	}
-
-	private static bool HighsCrossDown(CandleSnapshot older, CandleSnapshot newer, decimal level)
-	{
-		return older.High >= level && older.Close <= level && newer.High >= level && newer.Close <= level;
-	}
-
-	/// <inheritdoc />
-	protected override void OnOwnTradeReceived(MyTrade trade)
-	{
-		base.OnOwnTradeReceived(trade);
-		_entryPrice = trade.Trade.Price;
-	}
-
-	private void ResetTargets()
-	{
-		_longStopPrice = null;
-		_longTakePrice = null;
-		_shortStopPrice = null;
-		_shortTakePrice = null;
-		_entryPrice = null;
-	}
-
-	private decimal CalculatePipSize()
-	{
-		if (Security is null)
-			return 0.0001m;
-
-		var step = Security.PriceStep ?? 0.0001m;
-		var decimals = Security.Decimals ?? GetDecimalsFromStep(step);
-		var factor = decimals == 3 || decimals == 5 ? 10m : 1m;
-		return step * factor;
-	}
-
-	private static int GetDecimalsFromStep(decimal step)
-	{
-		if (step <= 0m)
-			return 0;
-
-		var value = Math.Abs(Math.Log10((double)step));
-		return (int)Math.Round(value);
-	}
-
-	private readonly record struct CandleSnapshot(decimal Open, decimal High, decimal Low, decimal Close)
-	{
-		public static CandleSnapshot From(ICandleMessage candle)
-		{
-			return new CandleSnapshot(candle.OpenPrice, candle.HighPrice, candle.LowPrice, candle.ClosePrice);
-		}
-
-		public bool IsBullish => Close >= Open;
-		public bool IsBearish => Close <= Open;
-	}
-
-	private readonly record struct PivotLevels(decimal PriceTypical, decimal R05, decimal R1, decimal R15, decimal R2, decimal R25, decimal R3, decimal S05, decimal S1, decimal S15, decimal S2, decimal S25, decimal S3, decimal PriceTypicalMinusIndent, decimal PriceTypicalPlusIndent, decimal R1AbovePivot, decimal S1BelowPivot)
-	{
-		public static PivotLevels FromWeekly(CandleSnapshot weekly, decimal indent)
-		{
-			var priceTypical = (weekly.High + weekly.Low + weekly.Close) / 3m;
-			var r1 = 2m * priceTypical - weekly.Low;
-			var s1 = 2m * priceTypical - weekly.High;
-			var r05 = (priceTypical + r1) / 2m;
-			var s05 = (priceTypical + s1) / 2m;
-			var range = weekly.High - weekly.Low;
-			var r2 = priceTypical + range;
-			var s2 = priceTypical - range;
-			var r15 = (r1 + r2) / 2m;
-			var s15 = (s1 + s2) / 2m;
-			var r3 = 2m * priceTypical + (weekly.High - 2m * weekly.Low);
-			var s3 = 2m * priceTypical - (2m * weekly.High - weekly.Low);
-			var r25 = (r2 + r3) / 2m;
-			var s25 = (s2 + s3) / 2m;
-
-			return new PivotLevels(
-				priceTypical,
-				r05,
-				r1,
-				r15,
-				r2,
-				r25,
-				r3,
-				s05,
-				s1,
-				s15,
-				s2,
-				s25,
-				s3,
-				priceTypical - indent,
-				priceTypical + indent,
-				r1 + indent,
-				s1 - indent
-			);
-		}
-
-	}
-
-	private readonly record struct SignalParameters(decimal StopPrice, decimal TakePrice);
 }
-

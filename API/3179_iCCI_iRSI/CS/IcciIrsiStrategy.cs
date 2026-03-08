@@ -1,481 +1,90 @@
-namespace StockSharp.Samples.Strategies;
-
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-/// <summary>
-/// CCI and RSI threshold strategy converted from the MetaTrader expert advisor "iCCI iRSI".
-/// Buys oversold conditions when both oscillators drop below their lower bands and sells when they climb above the upper bands.
-/// Optional stop-loss, take-profit, and trailing-stop distances are expressed in pips to match the original inputs.
-/// </summary>
+namespace StockSharp.Samples.Strategies;
+
 public class IcciIrsiStrategy : Strategy
 {
-	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _cciPeriod;
-	private readonly StrategyParam<decimal> _cciUpperLevel;
-	private readonly StrategyParam<decimal> _cciLowerLevel;
-	private readonly StrategyParam<int> _rsiPeriod;
-	private readonly StrategyParam<decimal> _rsiUpperLevel;
-	private readonly StrategyParam<decimal> _rsiLowerLevel;
-	private readonly StrategyParam<bool> _reverseSignals;
-	private readonly StrategyParam<decimal> _tradeVolume;
-	private readonly StrategyParam<decimal> _stopLossPips;
-	private readonly StrategyParam<decimal> _takeProfitPips;
-	private readonly StrategyParam<decimal> _trailingStopPips;
-	private readonly StrategyParam<decimal> _trailingStepPips;
+	private readonly StrategyParam<int> _fastPeriod;
+	private readonly StrategyParam<int> _slowPeriod;
+	private readonly StrategyParam<int> _stopLossPoints;
+	private readonly StrategyParam<int> _takeProfitPoints;
 
-	private CommodityChannelIndex _cci = null!;
-	private RelativeStrengthIndex _rsi = null!;
+	private ExponentialMovingAverage _fast;
+	private ExponentialMovingAverage _slow;
 
-	private decimal? _longEntryPrice;
-	private decimal? _shortEntryPrice;
-	private decimal? _longStopPrice;
-	private decimal? _shortStopPrice;
-	private decimal? _longTakePrice;
-	private decimal? _shortTakePrice;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private decimal _entryPrice;
+	private int _cooldown;
 
-	/// <summary>
-	/// Type of candles used for calculations.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
+	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
+	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
+	public int StopLossPoints { get => _stopLossPoints.Value; set => _stopLossPoints.Value = value; }
+	public int TakeProfitPoints { get => _takeProfitPoints.Value; set => _takeProfitPoints.Value = value; }
 
-	/// <summary>
-	/// Averaging period of the CCI indicator.
-	/// </summary>
-	public int CciPeriod
-	{
-		get => _cciPeriod.Value;
-		set => _cciPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Upper CCI threshold that defines overbought conditions.
-	/// </summary>
-	public decimal CciUpperLevel
-	{
-		get => _cciUpperLevel.Value;
-		set => _cciUpperLevel.Value = value;
-	}
-
-	/// <summary>
-	/// Lower CCI threshold that defines oversold conditions.
-	/// </summary>
-	public decimal CciLowerLevel
-	{
-		get => _cciLowerLevel.Value;
-		set => _cciLowerLevel.Value = value;
-	}
-
-	/// <summary>
-	/// Period of the RSI oscillator.
-	/// </summary>
-	public int RsiPeriod
-	{
-		get => _rsiPeriod.Value;
-		set => _rsiPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Upper RSI band that triggers sell decisions.
-	/// </summary>
-	public decimal RsiUpperLevel
-	{
-		get => _rsiUpperLevel.Value;
-		set => _rsiUpperLevel.Value = value;
-	}
-
-	/// <summary>
-	/// Lower RSI band that triggers buy decisions.
-	/// </summary>
-	public decimal RsiLowerLevel
-	{
-		get => _rsiLowerLevel.Value;
-		set => _rsiLowerLevel.Value = value;
-	}
-
-	/// <summary>
-	/// Whether to reverse the direction of the signals.
-	/// </summary>
-	public bool ReverseSignals
-	{
-		get => _reverseSignals.Value;
-		set => _reverseSignals.Value = value;
-	}
-
-	/// <summary>
-	/// Volume of each market order.
-	/// </summary>
-	public decimal TradeVolume
-	{
-		get => _tradeVolume.Value;
-		set => _tradeVolume.Value = value;
-	}
-
-	/// <summary>
-	/// Stop-loss distance expressed in pips.
-	/// </summary>
-	public decimal StopLossPips
-	{
-		get => _stopLossPips.Value;
-		set => _stopLossPips.Value = value;
-	}
-
-	/// <summary>
-	/// Take-profit distance expressed in pips.
-	/// </summary>
-	public decimal TakeProfitPips
-	{
-		get => _takeProfitPips.Value;
-		set => _takeProfitPips.Value = value;
-	}
-
-	/// <summary>
-	/// Trailing-stop distance expressed in pips.
-	/// </summary>
-	public decimal TrailingStopPips
-	{
-		get => _trailingStopPips.Value;
-		set => _trailingStopPips.Value = value;
-	}
-
-	/// <summary>
-	/// Minimum price improvement in pips required before the trailing stop is advanced.
-	/// </summary>
-	public decimal TrailingStepPips
-	{
-		get => _trailingStepPips.Value;
-		set => _trailingStepPips.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="IcciIrsiStrategy"/> class.
-	/// </summary>
 	public IcciIrsiStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-		.SetDisplay("Candle Type", "Type of candles used for the indicators", "General");
-
-		_cciPeriod = Param(nameof(CciPeriod), 14)
-		.SetGreaterThanZero()
-		.SetDisplay("CCI Period", "Number of bars for the CCI smoothing", "Indicators")
-		
-		.SetOptimize(10, 40, 2);
-
-		_cciUpperLevel = Param(nameof(CciUpperLevel), 80m)
-		.SetDisplay("CCI Upper", "Overbought threshold for CCI", "Indicators")
-		
-		.SetOptimize(60m, 140m, 10m);
-
-		_cciLowerLevel = Param(nameof(CciLowerLevel), -80m)
-		.SetDisplay("CCI Lower", "Oversold threshold for CCI", "Indicators")
-		
-		.SetOptimize(-140m, -40m, 10m);
-
-		_rsiPeriod = Param(nameof(RsiPeriod), 42)
-		.SetGreaterThanZero()
-		.SetDisplay("RSI Period", "Number of bars for the RSI calculation", "Indicators")
-		
-		.SetOptimize(20, 60, 5);
-
-		_rsiUpperLevel = Param(nameof(RsiUpperLevel), 60m)
-		.SetDisplay("RSI Upper", "Overbought threshold for RSI", "Indicators")
-		
-		.SetOptimize(55m, 80m, 5m);
-
-		_rsiLowerLevel = Param(nameof(RsiLowerLevel), 30m)
-		.SetDisplay("RSI Lower", "Oversold threshold for RSI", "Indicators")
-		
-		.SetOptimize(20m, 45m, 5m);
-
-		_reverseSignals = Param(nameof(ReverseSignals), false)
-		.SetDisplay("Reverse Signals", "Flip entry direction when enabled", "Trading");
-
-		_tradeVolume = Param(nameof(TradeVolume), 0.1m)
-		.SetGreaterThanZero()
-		.SetDisplay("Trade Volume", "Volume submitted with each market order", "Trading")
-		
-		.SetOptimize(0.1m, 1m, 0.1m);
-
-		_stopLossPips = Param(nameof(StopLossPips), 0m)
-		.SetNotNegative()
-		.SetDisplay("Stop Loss", "Protective stop-loss distance in pips", "Risk")
-		
-		.SetOptimize(0m, 200m, 20m);
-
-		_takeProfitPips = Param(nameof(TakeProfitPips), 140m)
-		.SetNotNegative()
-		.SetDisplay("Take Profit", "Profit target distance in pips", "Risk")
-		
-		.SetOptimize(40m, 300m, 20m);
-
-		_trailingStopPips = Param(nameof(TrailingStopPips), 5m)
-		.SetNotNegative()
-		.SetDisplay("Trailing Stop", "Trailing stop distance in pips", "Risk")
-		
-		.SetOptimize(0m, 50m, 5m);
-
-		_trailingStepPips = Param(nameof(TrailingStepPips), 5m)
-		.SetNotNegative()
-		.SetDisplay("Trailing Step", "Minimum progress before updating the trailing stop", "Risk")
-		
-		.SetOptimize(0m, 20m, 2m);
+		_fastPeriod = Param(nameof(FastPeriod), 14).SetGreaterThanZero().SetDisplay("Fast Period", "Fast EMA period", "Indicator");
+		_slowPeriod = Param(nameof(SlowPeriod), 50).SetGreaterThanZero().SetDisplay("Slow Period", "Slow EMA period", "Indicator");
+		_stopLossPoints = Param(nameof(StopLossPoints), 200).SetNotNegative().SetDisplay("Stop Loss", "Stop-loss in price steps", "Risk");
+		_takeProfitPoints = Param(nameof(TakeProfitPoints), 400).SetNotNegative().SetDisplay("Take Profit", "Take-profit in price steps", "Risk");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return [(Security, CandleType)];
+		yield return (Security, TimeSpan.FromMinutes(5).TimeFrame());
 	}
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		ResetLongState();
-		ResetShortState();
+		_fast = null; _slow = null;
+		_prevFast = 0; _prevSlow = 0; _entryPrice = 0; _cooldown = 0;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+		_fast = new ExponentialMovingAverage { Length = FastPeriod };
+		_slow = new ExponentialMovingAverage { Length = SlowPeriod };
+		var subscription = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
+		subscription.Bind(_fast, _slow, ProcessCandle);
+		subscription.Start();
+	}
 
-		Volume = TradeVolume;
+	private void ProcessCandle(ICandleMessage candle, decimal fastValue, decimal slowValue)
+	{
+		if (candle.State != CandleStates.Finished) return;
+		if (!_fast.IsFormed || !_slow.IsFormed) { _prevFast = fastValue; _prevSlow = slowValue; return; }
+		if (_cooldown > 0) { _cooldown--; _prevFast = fastValue; _prevSlow = slowValue; return; }
 
-		_cci = new CommodityChannelIndex { Length = CciPeriod };
-		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
+		var close = candle.ClosePrice;
+		var step = Security?.PriceStep ?? 1m;
 
-		var subscription = SubscribeCandles(CandleType);
-		subscription
-		.Bind(_cci, _rsi, ProcessCandle)
-		.Start();
-
-		var priceArea = CreateChartArea();
-		if (priceArea != null)
+		if (Position > 0 && _entryPrice > 0)
 		{
-			DrawCandles(priceArea, subscription);
-			DrawOwnTrades(priceArea);
+			if (StopLossPoints > 0 && close <= _entryPrice - StopLossPoints * step) { SellMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
+			if (TakeProfitPoints > 0 && close >= _entryPrice + TakeProfitPoints * step) { SellMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
+		}
+		else if (Position < 0 && _entryPrice > 0)
+		{
+			if (StopLossPoints > 0 && close >= _entryPrice + StopLossPoints * step) { BuyMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
+			if (TakeProfitPoints > 0 && close <= _entryPrice - TakeProfitPoints * step) { BuyMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
 		}
 
-		var cciArea = CreateChartArea();
-		if (cciArea != null)
-		DrawIndicator(cciArea, _cci);
+		if (_prevFast <= _prevSlow && fastValue > slowValue && Position <= 0)
+		{ if (Position < 0) BuyMarket(); BuyMarket(); _entryPrice = close; _cooldown = 100; }
+		else if (_prevFast >= _prevSlow && fastValue < slowValue && Position >= 0)
+		{ if (Position > 0) SellMarket(); SellMarket(); _entryPrice = close; _cooldown = 100; }
 
-		var rsiArea = CreateChartArea();
-		if (rsiArea != null)
-		DrawIndicator(rsiArea, _rsi);
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal cciValue, decimal rsiValue)
-	{
-		if (candle.State != CandleStates.Finished)
-		return;
-
-		ManageActivePosition(candle);
-
-		// Evaluate new signals only after managing the existing position.
-		if (!_cci.IsFormed || !_rsi.IsFormed)
-		return;
-
-		if (!_cci.IsFormed || !_rsi.IsFormed)
-		return;
-
-		var volume = TradeVolume;
-		if (volume <= 0m)
-		return;
-
-		var shouldBuy = false;
-		var shouldSell = false;
-
-		if (!ReverseSignals)
-		{
-			shouldBuy = cciValue <= CciLowerLevel && rsiValue <= RsiLowerLevel;
-			shouldSell = cciValue >= CciUpperLevel && rsiValue >= RsiUpperLevel;
-		}
-		else
-		{
-			shouldBuy = cciValue >= CciUpperLevel && rsiValue >= RsiUpperLevel;
-			shouldSell = cciValue <= CciLowerLevel && rsiValue <= RsiLowerLevel;
-		}
-
-		if (shouldBuy)
-		{
-			var requiredVolume = volume + Math.Max(0m, -Position);
-			if (requiredVolume > 0m)
-			{
-				BuyMarket(requiredVolume);
-				ResetShortState();
-				InitializeLongState(candle.ClosePrice);
-			}
-		}
-		else if (shouldSell)
-		{
-			var requiredVolume = volume + Math.Max(0m, Position);
-			if (requiredVolume > 0m)
-			{
-				SellMarket(requiredVolume);
-				ResetLongState();
-				InitializeShortState(candle.ClosePrice);
-			}
-		}
-	}
-
-	private void ManageActivePosition(ICandleMessage candle)
-	{
-		// Replicate the MetaTrader exit handling by checking protective targets before new entries.
-		if (Position > 0 && _longEntryPrice is decimal)
-		{
-			var price = candle.ClosePrice;
-
-			if (_longTakePrice is decimal take && price >= take)
-			{
-				SellMarket(Math.Abs(Position));
-				ResetLongState();
-				return;
-			}
-
-			if (_longStopPrice is decimal stop && price <= stop)
-			{
-				SellMarket(Math.Abs(Position));
-				ResetLongState();
-				return;
-			}
-
-			UpdateLongTrailing(price);
-		}
-		else if (Position < 0 && _shortEntryPrice is decimal)
-		{
-			var price = candle.ClosePrice;
-
-			if (_shortTakePrice is decimal take && price <= take)
-			{
-				BuyMarket(Math.Abs(Position));
-				ResetShortState();
-				return;
-			}
-
-			if (_shortStopPrice is decimal stop && price >= stop)
-			{
-				BuyMarket(Math.Abs(Position));
-				ResetShortState();
-				return;
-			}
-
-			UpdateShortTrailing(price);
-		}
-		else
-		{
-			if (Position <= 0)
-			ResetLongState();
-
-			if (Position >= 0)
-			ResetShortState();
-		}
-	}
-
-	private void InitializeLongState(decimal entryPrice)
-	{
-		// Store entry context and translate pip-based offsets to price levels.
-		_longEntryPrice = entryPrice;
-		_longTakePrice = CreateTargetPrice(entryPrice, TakeProfitPips, true);
-		_longStopPrice = CreateTargetPrice(entryPrice, StopLossPips, false);
-	}
-
-	private void InitializeShortState(decimal entryPrice)
-	{
-		// Store short entry context and calculate the matching protective levels.
-		_shortEntryPrice = entryPrice;
-		_shortTakePrice = CreateTargetPrice(entryPrice, TakeProfitPips, false);
-		_shortStopPrice = CreateTargetPrice(entryPrice, StopLossPips, true);
-	}
-
-	private void UpdateLongTrailing(decimal price)
-	{
-		// Advance the trailing stop only after sufficient favourable movement.
-		var trailDistance = ConvertPipsToPrice(TrailingStopPips);
-		if (trailDistance <= 0m || _longEntryPrice is not decimal entry)
-		return;
-
-		var trailStep = ConvertPipsToPrice(TrailingStepPips);
-		if (price - entry <= trailDistance + trailStep)
-		return;
-
-		var candidate = price - trailDistance;
-		if (_longStopPrice is null || candidate - _longStopPrice.Value >= trailStep)
-		_longStopPrice = candidate;
-	}
-
-	private void UpdateShortTrailing(decimal price)
-	{
-		// Mirror the long trailing logic for short positions.
-		var trailDistance = ConvertPipsToPrice(TrailingStopPips);
-		if (trailDistance <= 0m || _shortEntryPrice is not decimal entry)
-		return;
-
-		var trailStep = ConvertPipsToPrice(TrailingStepPips);
-		if (entry - price <= trailDistance + trailStep)
-		return;
-
-		var candidate = price + trailDistance;
-		if (_shortStopPrice is null || _shortStopPrice.Value - candidate >= trailStep)
-		_shortStopPrice = candidate;
-	}
-
-	private decimal? CreateTargetPrice(decimal entryPrice, decimal distanceInPips, bool add)
-	{
-		var offset = ConvertPipsToPrice(distanceInPips);
-		if (offset <= 0m)
-		return null;
-
-		return add ? entryPrice + offset : entryPrice - offset;
-	}
-
-	private decimal ConvertPipsToPrice(decimal pips)
-	{
-		// Convert MetaTrader-style pip distances into actual price increments.
-		if (pips <= 0m)
-		return 0m;
-
-		var security = Security;
-		if (security == null)
-		return 0m;
-
-		var step = security.PriceStep.HasValue ? (decimal)security.PriceStep.Value : 0m;
-		if (step <= 0m)
-		return 0m;
-
-		var decimals = security.Decimals ?? 0;
-		var multiplier = decimals is 3 or 5 ? 10m : 1m;
-
-		return step * multiplier * pips;
-	}
-
-	private void ResetLongState()
-	{
-		_longEntryPrice = null;
-		_longStopPrice = null;
-		_longTakePrice = null;
-	}
-
-	private void ResetShortState()
-	{
-		_shortEntryPrice = null;
-		_shortStopPrice = null;
-		_shortTakePrice = null;
+		_prevFast = fastValue; _prevSlow = slowValue;
 	}
 }
-
