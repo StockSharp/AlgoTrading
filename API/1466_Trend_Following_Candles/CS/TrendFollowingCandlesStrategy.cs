@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,113 +11,51 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Trend following using a simple moving average and basic candlestick patterns.
-/// Enters long when price is above MA with bullish candle and breaks pivot resistance.
-/// Enters short when price is below MA with bearish candle and breaks pivot support.
+/// Trend Following Candles strategy using EMA crossover.
 /// </summary>
 public class TrendFollowingCandlesStrategy : Strategy
 {
-	private readonly StrategyParam<int> _maPeriod;
+	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private SimpleMovingAverage _ma;
-	private decimal? _prevHigh;
-	private decimal? _prevLow;
-	private decimal? _prevClose;
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Moving average period.
-	/// </summary>
-	public int MaPeriod
-	{
-		get => _maPeriod.Value;
-		set => _maPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type to process.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="TrendFollowingCandlesStrategy"/>.
-	/// </summary>
 	public TrendFollowingCandlesStrategy()
 	{
-		_maPeriod = Param(nameof(MaPeriod), 10)
-		.SetGreaterThanZero()
-		.SetDisplay("MA Period", "Moving average period", "General")
-		;
+		_slowLength = Param(nameof(SlowLength), 40)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow Length", "Slow EMA period", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-		.SetDisplay("Candle Type", "Type of candles", "General");
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_ma = default;
-		_prevHigh = default;
-		_prevLow = default;
-		_prevClose = default;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_ma = new SMA { Length = MaPeriod };
-
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
+		var prevF = 0m; var prevS = 0m; var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(_ma, ProcessCandle).Start();
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal maValue)
-	{
-		if (candle.State != CandleStates.Finished)
-		return;
-
-		if (_prevHigh == null || _prevLow == null || _prevClose == null)
+		subscription.Bind(fast, slow, (candle, f, s) =>
 		{
-				_prevHigh = candle.HighPrice;
-				_prevLow = candle.LowPrice;
-				_prevClose = candle.ClosePrice;
-				return;
-		}
-
-		var pivot = (_prevHigh.Value + _prevLow.Value + _prevClose.Value) / 3m;
-		var r1 = pivot * 2m - _prevLow.Value;
-		var s1 = pivot * 2m - _prevHigh.Value;
-
-		var bullish = candle.ClosePrice > candle.OpenPrice;
-		var bearish = candle.ClosePrice < candle.OpenPrice;
-		var uptrend = candle.ClosePrice > maValue;
-		var downtrend = candle.ClosePrice < maValue;
-
-		if (uptrend && bullish && candle.ClosePrice > r1 && Position <= 0)
-		{
-				BuyMarket();
-		}
-		else if (downtrend && bearish && candle.ClosePrice < s1 && Position >= 0)
-		{
-				SellMarket();
-		}
-
-		_prevHigh = candle.HighPrice;
-		_prevLow = candle.LowPrice;
-		_prevClose = candle.ClosePrice;
+			if (candle.State != CandleStates.Finished) return;
+			if (!fast.IsFormed || !slow.IsFormed) return;
+			if (!init) { prevF = f; prevS = s; init = true; return; }
+			if (candle.OpenTime - lastSignal >= cooldown)
+			{
+				if (prevF <= prevS && f > s && Position <= 0) { BuyMarket(); lastSignal = candle.OpenTime; }
+				else if (prevF >= prevS && f < s && Position >= 0) { SellMarket(); lastSignal = candle.OpenTime; }
+			}
+			prevF = f; prevS = s;
+		}).Start();
+		var area = CreateChartArea();
+		if (area != null) { DrawCandles(area, subscription); DrawIndicator(area, fast); DrawIndicator(area, slow); DrawOwnTrades(area); }
 	}
 }

@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -13,104 +10,52 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-public class TrendTraderRemasteredStrategy : Strategy {
-	private readonly StrategyParam<decimal> _acceleration;
-	private readonly StrategyParam<decimal> _increment;
-	private readonly StrategyParam<decimal> _maxAcceleration;
+/// <summary>
+/// Trend Trader Remastered strategy using EMA crossover.
+/// </summary>
+public class TrendTraderRemasteredStrategy : Strategy
+{
+	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevSar;
-	private bool _prevPriceAbove;
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	public decimal Acceleration {
-		get => _acceleration.Value;
-		set => _acceleration.Value = value;
-	}
-	public decimal Increment {
-		get => _increment.Value;
-		set => _increment.Value = value;
-	}
-	public decimal MaxAcceleration {
-		get => _maxAcceleration.Value;
-		set => _maxAcceleration.Value = value;
-	}
-	public DataType CandleType {
-		get => _candleType.Value;
-		set => _candleType.Value = value;
+	public TrendTraderRemasteredStrategy()
+	{
+		_slowLength = Param(nameof(SlowLength), 40)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow Length", "Slow EMA period", "General");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	public TrendTraderRemasteredStrategy() {
-		_acceleration =
-			Param(nameof(Acceleration), 0.02m)
-				.SetGreaterThanZero()
-				.SetDisplay("Start", "Initial PSAR acceleration", "PSAR");
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
 
-		_increment = Param(nameof(Increment), 0.02m)
-						 .SetGreaterThanZero()
-						 .SetDisplay("Increment", "PSAR increment", "PSAR");
-
-		_maxAcceleration =
-			Param(nameof(MaxAcceleration), 0.2m)
-				.SetGreaterThanZero()
-				.SetDisplay("Max", "Maximum PSAR acceleration", "PSAR");
-
-		_candleType =
-			Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-				.SetDisplay("Candle Type", "Type of candles", "General");
-	}
-
-	public override IEnumerable<(Security sec, DataType dt)>
-	GetWorkingSecurities() {
-		return [(Security, CandleType)];
-	}
-
-	protected override void OnReseted() {
-		base.OnReseted();
-		_prevSar = 0m;
-		_prevPriceAbove = false;
-	}
-
-	protected override void OnStarted2(DateTime time) {
+	protected override void OnStarted2(DateTime time)
+	{
 		base.OnStarted2(time);
-
-		var psar = new ParabolicSar { Acceleration = Acceleration,
-									  AccelerationStep = Increment,
-									  AccelerationMax = MaxAcceleration };
-
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
+		var prevF = 0m; var prevS = 0m; var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(psar, ProcessCandle).Start();
-
-		var area = CreateChartArea();
-		if (area != null) {
-			DrawCandles(area, subscription);
-			DrawIndicator(area, psar);
-			DrawOwnTrades(area);
-		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal sar) {
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var priceAbove = candle.ClosePrice > sar;
-		var crossed = _prevSar > 0m && priceAbove != _prevPriceAbove;
-
-		if (crossed) {
-			var volume = Volume + Math.Abs(Position);
-			if (priceAbove && Position <= 0) {
-				BuyMarket(volume);
-			} else if (!priceAbove && Position >= 0) {
-				SellMarket(volume);
+		subscription.Bind(fast, slow, (candle, f, s) =>
+		{
+			if (candle.State != CandleStates.Finished) return;
+			if (!fast.IsFormed || !slow.IsFormed) return;
+			if (!init) { prevF = f; prevS = s; init = true; return; }
+			if (candle.OpenTime - lastSignal >= cooldown)
+			{
+				if (prevF <= prevS && f > s && Position <= 0) { BuyMarket(); lastSignal = candle.OpenTime; }
+				else if (prevF >= prevS && f < s && Position >= 0) { SellMarket(); lastSignal = candle.OpenTime; }
 			}
-		} else if ((Position > 0 && !priceAbove) ||
-				   (Position < 0 && priceAbove)) {
-			ClosePosition();
-		}
-
-		_prevSar = sar;
-		_prevPriceAbove = priceAbove;
+			prevF = f; prevS = s;
+		}).Start();
+		var area = CreateChartArea();
+		if (area != null) { DrawCandles(area, subscription); DrawIndicator(area, fast); DrawIndicator(area, slow); DrawOwnTrades(area); }
 	}
 }

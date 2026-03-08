@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,133 +11,51 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Evaluates the trend of a moving average relative to a price channel.
-/// Goes long on positive trend score and short on negative score.
+/// Trend Following Moving Averages strategy using EMA crossover.
 /// </summary>
 public class TrendFollowingMovingAveragesStrategy : Strategy
 {
-	private readonly StrategyParam<int> _maLength;
-	private readonly StrategyParam<int> _trendPeriod;
-	private readonly StrategyParam<decimal> _trendRate;
+	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	/// <summary>
-	/// Moving average length.
-	/// </summary>
-	public int MaLength
-	{
-		get => _maLength.Value;
-		set => _maLength.Value = value;
-	}
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Period to evaluate trend strength.
-	/// </summary>
-	public int TrendPeriod
-	{
-		get => _trendPeriod.Value;
-		set => _trendPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Channel width rate in percent.
-	/// </summary>
-	public decimal TrendRate
-	{
-		get => _trendRate.Value;
-		set => _trendRate.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type for processing.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Constructor.
-	/// </summary>
 	public TrendFollowingMovingAveragesStrategy()
 	{
-		_maLength = Param(nameof(MaLength), 20)
+		_slowLength = Param(nameof(SlowLength), 40)
 			.SetGreaterThanZero()
-			.SetDisplay("MA Length", "Moving average period", "Parameters");
+			.SetDisplay("Slow Length", "Slow EMA period", "General");
 
-		_trendPeriod = Param(nameof(TrendPeriod), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("Trend Period", "Bars to check trend", "Parameters");
-
-		_trendRate = Param(nameof(TrendRate), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Trend Rate %", "Channel width rate", "Parameters");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Candles for strategy", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		var ma = new SMA { Length = MaLength };
-		var highestMa = new Highest { Length = TrendPeriod };
-		var lowestMa = new Lowest { Length = TrendPeriod };
-		var highestClose = new Highest { Length = 280 };
-		var lowestClose = new Lowest { Length = 280 };
-
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
+		var prevF = 0m; var prevS = 0m; var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
 		var subscription = SubscribeCandles(CandleType);
-
-		subscription
-			.Bind(ma, (candle, maValue) =>
-			{
-				if (candle.State != CandleStates.Finished)
-					return;
-
-				if (!IsFormedAndOnlineAndAllowTrading())
-					return;
-
-				var hh = highestMa.Process(new DecimalIndicatorValue(highestMa, maValue, candle.OpenTime)).ToDecimal();
-				var ll = lowestMa.Process(new DecimalIndicatorValue(lowestMa, maValue, candle.OpenTime)).ToDecimal();
-				var hc = highestClose.Process(new DecimalIndicatorValue(highestClose, candle.ClosePrice, candle.OpenTime)).ToDecimal();
-				var lc = lowestClose.Process(new DecimalIndicatorValue(lowestClose, candle.ClosePrice, candle.OpenTime)).ToDecimal();
-
-				var diff = Math.Abs(hh - ll);
-				var chan = (hc - lc) * (TrendRate / 100m);
-
-				decimal trend = 0m;
-				if (diff > chan)
-				{
-					if (maValue > ll + chan)
-						trend = 1m;
-					else if (maValue < hh - chan)
-						trend = -1m;
-				}
-
-				var score = chan == 0 ? 0 : trend * diff / chan;
-
-				if (score > 0 && Position <= 0)
-					BuyMarket(Volume + Math.Abs(Position));
-				else if (score < 0 && Position >= 0)
-					SellMarket(Volume + Math.Abs(Position));
-			})
-			.Start();
-
-		var area = CreateChartArea();
-		if (area != null)
+		subscription.Bind(fast, slow, (candle, f, s) =>
 		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, ma);
-			DrawOwnTrades(area);
-		}
+			if (candle.State != CandleStates.Finished) return;
+			if (!fast.IsFormed || !slow.IsFormed) return;
+			if (!init) { prevF = f; prevS = s; init = true; return; }
+			if (candle.OpenTime - lastSignal >= cooldown)
+			{
+				if (prevF <= prevS && f > s && Position <= 0) { BuyMarket(); lastSignal = candle.OpenTime; }
+				else if (prevF >= prevS && f < s && Position >= 0) { SellMarket(); lastSignal = candle.OpenTime; }
+			}
+			prevF = f; prevS = s;
+		}).Start();
+		var area = CreateChartArea();
+		if (area != null) { DrawCandles(area, subscription); DrawIndicator(area, fast); DrawIndicator(area, slow); DrawOwnTrades(area); }
 	}
 }
