@@ -1,9 +1,8 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -11,176 +10,89 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
 /// <summary>
-/// Pure price action strategy using Break of Structure (BOS) and Market Structure Shift (MSS).
+/// Pure price action strategy using EMA crossover.
 /// </summary>
 public class PurePriceActionStrategy : Strategy
 {
-	private readonly StrategyParam<bool> _enableBos;
-	private readonly StrategyParam<bool> _enableMss;
-	private readonly StrategyParam<decimal> _slPercent;
-	private readonly StrategyParam<decimal> _tpPercent;
-	private readonly StrategyParam<int> _length;
+	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private Highest _highest = null!;
-	private Lowest _lowest = null!;
-	private decimal _prevHighest;
-	private decimal _prevLowest;
-	private decimal _stopLoss;
-	private decimal _takeProfit;
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Enable Break of Structure entries.
-	/// </summary>
-	public bool EnableBos
-	{
-		get => _enableBos.Value;
-		set => _enableBos.Value = value;
-	}
-
-	/// <summary>
-	/// Enable Market Structure Shift entries.
-	/// </summary>
-	public bool EnableMss
-	{
-		get => _enableMss.Value;
-		set => _enableMss.Value = value;
-	}
-
-	/// <summary>
-	/// Stop-loss percent.
-	/// </summary>
-	public decimal SlPercent
-	{
-		get => _slPercent.Value;
-		set => _slPercent.Value = value;
-	}
-
-	/// <summary>
-	/// Take-profit percent.
-	/// </summary>
-	public decimal TpPercent
-	{
-		get => _tpPercent.Value;
-		set => _tpPercent.Value = value;
-	}
-
-	/// <summary>
-	/// Lookback period for highest and lowest calculations.
-	/// </summary>
-	public int Length
-	{
-		get => _length.Value;
-		set => _length.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type for calculations.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="PurePriceActionStrategy"/>.
-	/// </summary>
 	public PurePriceActionStrategy()
 	{
-		_enableBos = Param(nameof(EnableBos), true)
-			.SetDisplay("Enable BOS", "Use Break of Structure entries", "Parameters");
+		_slowLength = Param(nameof(SlowLength), 40)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow Length", "Slow EMA period", "General");
 
-		_enableMss = Param(nameof(EnableMss), true)
-			.SetDisplay("Enable MSS", "Use Market Structure Shift entries", "Parameters");
-
-		_slPercent = Param(nameof(SlPercent), 1m)
-			.SetDisplay("Stop-Loss %", "Stop-loss percent", "Risk");
-
-		_tpPercent = Param(nameof(TpPercent), 2m)
-			.SetDisplay("Take-Profit %", "Take-profit percent", "Risk");
-
-		_length = Param(nameof(Length), 5)
-			.SetDisplay("Length", "Lookback length", "Parameters");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle type", "Candle type", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_highest = null!;
-		_lowest = null!;
-		_prevHighest = _prevLowest = 0m;
-		_stopLoss = _takeProfit = 0m;
-	}
+		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_highest = new Highest { Length = Length };
-		_lowest = new Lowest { Length = Length };
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
+
+		var prevF = 0m;
+		var prevS = 0m;
+		var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_highest, _lowest, ProcessCandle)
+			.Bind(fast, slow, (candle, f, s) =>
+			{
+				if (candle.State != CandleStates.Finished)
+					return;
+
+				if (!fast.IsFormed || !slow.IsFormed)
+					return;
+
+				if (!init)
+				{
+					prevF = f;
+					prevS = s;
+					init = true;
+					return;
+				}
+
+				if (candle.OpenTime - lastSignal >= cooldown)
+				{
+					if (prevF <= prevS && f > s && Position <= 0)
+					{
+						BuyMarket();
+						lastSignal = candle.OpenTime;
+					}
+					else if (prevF >= prevS && f < s && Position >= 0)
+					{
+						SellMarket();
+						lastSignal = candle.OpenTime;
+					}
+				}
+
+				prevF = f;
+				prevS = s;
+			})
 			.Start();
-	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal highest, decimal lowest)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!_highest.IsFormed || !_lowest.IsFormed)
+		var area = CreateChartArea();
+		if (area != null)
 		{
-			_prevHighest = highest;
-			_prevLowest = lowest;
-			return;
+			DrawCandles(area, subscription);
+			DrawIndicator(area, fast);
+			DrawIndicator(area, slow);
+			DrawOwnTrades(area);
 		}
-
-		var bosSignal = EnableBos && _prevHighest <= _prevLowest && highest > lowest;
-		var mssSignal = EnableMss && _prevLowest >= _prevHighest && lowest < highest;
-
-		if (Position <= 0 && bosSignal)
-		{
-			var entry = candle.ClosePrice;
-			_stopLoss = entry * (1m - SlPercent / 100m);
-			_takeProfit = entry * (1m + TpPercent / 100m);
-			BuyMarket(Volume + Math.Abs(Position));
-		}
-		else if (Position >= 0 && mssSignal)
-		{
-			var entry = candle.ClosePrice;
-			_stopLoss = entry * (1m + SlPercent / 100m);
-			_takeProfit = entry * (1m - TpPercent / 100m);
-			SellMarket(Volume + Math.Abs(Position));
-		}
-
-		if (Position > 0 && (candle.LowPrice <= _stopLoss || candle.ClosePrice >= _takeProfit))
-		{
-			ClosePosition();
-		}
-		else if (Position < 0 && (candle.HighPrice >= _stopLoss || candle.ClosePrice <= _takeProfit))
-		{
-			ClosePosition();
-		}
-
-		_prevHighest = highest;
-		_prevLowest = lowest;
 	}
 }
