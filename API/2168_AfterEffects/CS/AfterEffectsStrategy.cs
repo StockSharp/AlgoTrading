@@ -36,12 +36,27 @@ public class AfterEffectsStrategy : Strategy
 	{
 		_stopLoss = Param(nameof(StopLoss), 500m)
 			.SetDisplay("Stop Loss", "Stop Loss distance", "General");
-		_period = Param(nameof(Period), 3)
+		_period = Param(nameof(Period), 8)
 			.SetDisplay("Bar Period", "Period of bars for signal", "General");
 		_random = Param(nameof(Random), false)
 			.SetDisplay("Random Range", "Invert signal", "General");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle Type", "General");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_pQueue.Clear();
+		_twoPQueue.Clear();
+		_openP = 0m;
+		_open2P = 0m;
+		_stopPrice = 0m;
 	}
 
 	/// <inheritdoc />
@@ -69,9 +84,6 @@ public class AfterEffectsStrategy : Strategy
 	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		_pQueue.Enqueue(candle.OpenPrice);

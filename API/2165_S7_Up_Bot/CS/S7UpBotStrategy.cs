@@ -52,8 +52,25 @@ public class S7UpBotStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Span Price", "Distance from extreme to price", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for analysis", "General");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevLow = 0m;
+		_prevHigh = 0m;
+		_entryPrice = 0m;
+		_stopPrice = 0m;
+		_takeProfitPrice = 0m;
+		_isLong = false;
+		_inPosition = false;
 	}
 
 	/// <inheritdoc />
@@ -81,9 +98,6 @@ public class S7UpBotStrategy : Strategy
 	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		var price = candle.ClosePrice;

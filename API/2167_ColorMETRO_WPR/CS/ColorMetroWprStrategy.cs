@@ -128,7 +128,7 @@ public class ColorMetroWprStrategy : Strategy
 			
 			.SetOptimize(1m, 4m, 1m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -154,6 +154,7 @@ public class ColorMetroWprStrategy : Strategy
 		_currMPlus = 0m;
 		_currMMinus = 0m;
 		_isFirstValue = true;
+		_wpr = default;
 	}
 
 	/// <inheritdoc />
@@ -247,32 +248,18 @@ public class ColorMetroWprStrategy : Strategy
 		if (prevFastAboveSlow)
 		{
 			if (Position < 0)
-			{
-				BuyMarket(Math.Abs(Position));
-				LogInfo("Exit short: fast line above slow line.");
-			}
+				BuyMarket();
 
 			if (_currMPlus <= _currMMinus && Position <= 0)
-			{
-				var volume = Volume + Math.Abs(Position);
-				BuyMarket(volume);
-				LogInfo($"Buy signal: fast line crossed below slow line. MPlus: {_prevMPlus:F5}->{_currMPlus:F5}, MMinus: {_prevMMinus:F5}->{_currMMinus:F5}");
-			}
+				BuyMarket();
 		}
 		else if (prevFastBelowSlow)
 		{
 			if (Position > 0)
-			{
-				SellMarket(Position);
-				LogInfo("Exit long: fast line below slow line.");
-			}
+				SellMarket();
 
 			if (_currMPlus >= _currMMinus && Position >= 0)
-			{
-				var volume = Volume + Math.Abs(Position);
-				SellMarket(volume);
-				LogInfo($"Sell signal: fast line crossed above slow line. MPlus: {_prevMPlus:F5}->{_currMPlus:F5}, MMinus: {_prevMMinus:F5}->{_currMMinus:F5}");
-			}
+				SellMarket();
 		}
 	}
 }

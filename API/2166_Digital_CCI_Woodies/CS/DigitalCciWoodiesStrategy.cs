@@ -98,7 +98,7 @@ public class DigitalCciWoodiesStrategy : Strategy
 	/// </summary>
 	public DigitalCciWoodiesStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe for candles", "General");
 		
 		_fastLength = Param(nameof(FastLength), 14)
@@ -194,33 +194,23 @@ public class DigitalCciWoodiesStrategy : Strategy
 		if (crossUp)
 		{
 			if (Position < 0 && SellClose)
-			{
-				var volume = BuyOpen ? Volume + Math.Abs(Position) : Math.Abs(Position);
-				BuyMarket(volume);
-			}
-			else if (BuyOpen && Position <= 0)
-			{
-				BuyMarket(Volume);
-			}
+				BuyMarket();
+			if (BuyOpen && Position <= 0)
+				BuyMarket();
 		}
 		else if (crossDown)
 		{
 			if (Position > 0 && BuyClose)
-			{
-				var volume = SellOpen ? Volume + Position : Position;
-				SellMarket(volume);
-			}
-			else if (SellOpen && Position >= 0)
-			{
-				SellMarket(Volume);
-			}
+				SellMarket();
+			if (SellOpen && Position >= 0)
+				SellMarket();
 		}
 		else
 		{
 			if (fast > slow && SellClose && Position < 0)
-			BuyMarket(Math.Abs(Position));
+				BuyMarket();
 			if (fast < slow && BuyClose && Position > 0)
-			SellMarket(Position);
+				SellMarket();
 		}
 		
 		_prevFast = fast;

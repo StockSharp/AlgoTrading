@@ -95,7 +95,7 @@ public class SuperWoodiesCciStrategy : Strategy
 			
 			.SetOptimize(20, 100, 10);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 
 		_allowLongEntry = Param(nameof(AllowLongEntry), true)
@@ -123,6 +123,7 @@ public class SuperWoodiesCciStrategy : Strategy
 		base.OnReseted();
 		_hasPrev = false;
 		_wasPositive = false;
+		_cci = null!;
 	}
 
 	/// <inheritdoc />
@@ -161,12 +162,20 @@ public class SuperWoodiesCciStrategy : Strategy
 			if (isPositive)
 			{
 				if (AllowLongEntry && Position <= 0)
-					BuyMarket(Volume + Math.Abs(Position));
+				{
+					if (Position < 0)
+						BuyMarket();
+					BuyMarket();
+				}
 			}
 			else
 			{
 				if (AllowShortEntry && Position >= 0)
-					SellMarket(Volume + Math.Abs(Position));
+				{
+					if (Position > 0)
+						SellMarket();
+					SellMarket();
+				}
 			}
 		}
 		else
@@ -174,12 +183,12 @@ public class SuperWoodiesCciStrategy : Strategy
 			if (isPositive)
 			{
 				if (AllowShortExit && Position < 0)
-					BuyMarket(Math.Abs(Position));
+					BuyMarket();
 			}
 			else
 			{
 				if (AllowLongExit && Position > 0)
-					SellMarket(Math.Abs(Position));
+					SellMarket();
 			}
 		}
 
