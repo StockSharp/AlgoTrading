@@ -53,7 +53,7 @@ public class MaDeltaStrategy : Strategy
 			.SetDisplay("Slow MA Period", "Period for slow moving average", "Indicators")
 			.SetOptimize(10, 100, 1);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -61,6 +61,18 @@ public class MaDeltaStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_hi = 0m;
+		_lo = 0m;
+		_isInit = false;
+		_trade = 0;
+		_deltaStep = 0m;
+		_multiplierFactor = 0m;
 	}
 
 	/// <inheritdoc />
@@ -76,7 +88,7 @@ public class MaDeltaStrategy : Strategy
 		_deltaStep = Delta * 0.00001m;
 		_multiplierFactor = Multiplier * 0.1m;
 
-		var fastMa = new SimpleMovingAverage { Length = FastMaPeriod };
+		var fastMa = new ExponentialMovingAverage { Length = FastMaPeriod };
 		var slowMa = new ExponentialMovingAverage { Length = SlowMaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);

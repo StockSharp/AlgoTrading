@@ -50,7 +50,7 @@ public class ForexFrausPortfolioStrategy : Strategy
 		_stopHour = Param(nameof(StopHour), 24)
 			.SetDisplay("Stop Hour", "Trading stop hour", "Time");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -58,6 +58,14 @@ public class ForexFrausPortfolioStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_okBuy = false;
+		_okSell = false;
 	}
 
 	/// <inheritdoc />

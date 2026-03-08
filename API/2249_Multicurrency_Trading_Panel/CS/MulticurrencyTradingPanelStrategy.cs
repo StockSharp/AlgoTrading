@@ -36,7 +36,7 @@ public class MulticurrencyTradingPanelStrategy : Strategy
 	/// </summary>
 	public MulticurrencyTradingPanelStrategy()
 	{
-		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for analysis", "General");
 	}
 
@@ -52,8 +52,9 @@ public class MulticurrencyTradingPanelStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
+		var warmup = new ExponentialMovingAverage { Length = 5 };
 		SubscribeCandles(CandleType)
-			.Bind(ProcessCandle)
+			.Bind(warmup, ProcessCandle)
 			.Start();
 	}
 
@@ -64,12 +65,12 @@ public class MulticurrencyTradingPanelStrategy : Strategy
 		_prev = null;
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal _warmupVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormed)
+		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		if (_prev == null)

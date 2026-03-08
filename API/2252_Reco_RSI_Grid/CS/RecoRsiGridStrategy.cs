@@ -54,7 +54,7 @@ public class RecoRsiGridStrategy : Strategy
 		_maxOrders = Param(nameof(MaxOrders), 5)
 			.SetDisplay("Max Orders", "Maximum number of grid orders", "Grid");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -62,6 +62,16 @@ public class RecoRsiGridStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_lastOrderPrice = 0;
+		_lastOrderIsBuy = false;
+		_ordersTotal = 0;
+		_entryPrice = 0;
 	}
 
 	/// <inheritdoc />

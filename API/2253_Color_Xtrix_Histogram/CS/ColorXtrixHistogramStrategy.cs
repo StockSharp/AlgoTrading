@@ -44,13 +44,24 @@ public class ColorXtrixHistogramStrategy : Strategy
 		_momentumPeriod = Param(nameof(MomentumPeriod), 1)
 			.SetDisplay("Momentum Period", "Period for rate of change", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		=> [(Security, CandleType)];
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_tripleEma = null;
+		_roc = null;
+		_smoother = null;
+		_prev1 = null;
+		_prev2 = null;
+	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
@@ -63,10 +74,14 @@ public class ColorXtrixHistogramStrategy : Strategy
 		_tripleEma = new TripleExponentialMovingAverage { Length = TrixLength };
 		_roc = new RateOfChange { Length = MomentumPeriod };
 		_smoother = new ExponentialMovingAverage { Length = SmoothLength };
+		Indicators.Add(_tripleEma);
+		Indicators.Add(_roc);
+		Indicators.Add(_smoother);
 
+		var warmup = new ExponentialMovingAverage { Length = TrixLength };
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(warmup, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -77,7 +92,7 @@ public class ColorXtrixHistogramStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal _warmupVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
@@ -85,21 +100,28 @@ public class ColorXtrixHistogramStrategy : Strategy
 		var t = candle.ServerTime;
 		var logClose = (decimal)Math.Log((double)candle.ClosePrice);
 
-		var emaResult = _tripleEma.Process(logClose, t, true);
+		var emaResult = _tripleEma.Process(new DecimalIndicatorValue(_tripleEma, logClose, t) { IsFinal = true });
 		if (!_tripleEma.IsFormed)
 			return;
 
 		var emaVal = emaResult.GetValue<decimal>();
-		var rocResult = _roc.Process(emaVal, t, true);
+		var rocResult = _roc.Process(new DecimalIndicatorValue(_roc, emaVal, t) { IsFinal = true });
 		if (!_roc.IsFormed)
 			return;
 
 		var rocVal = rocResult.GetValue<decimal>();
-		var smoothResult = _smoother.Process(rocVal, t, true);
+		var smoothResult = _smoother.Process(new DecimalIndicatorValue(_smoother, rocVal, t) { IsFinal = true });
 		if (!_smoother.IsFormed)
 			return;
 
 		var trix = smoothResult.GetValue<decimal>();
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+		{
+			_prev2 = _prev1;
+			_prev1 = trix;
+			return;
+		}
 
 		if (_prev1 is null || _prev2 is null)
 		{

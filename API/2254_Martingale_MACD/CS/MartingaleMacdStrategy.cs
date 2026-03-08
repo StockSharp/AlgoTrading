@@ -47,7 +47,7 @@ public class MartingaleMacdStrategy : Strategy
 		_macd2Slow = Param(nameof(Macd2Slow), 15)
 			.SetDisplay("MACD2 Slow", "Slow EMA for second MACD", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for candles", "General");
 	}
 
@@ -55,6 +55,15 @@ public class MartingaleMacdStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_macd1Prev1 = null;
+		_macd1Prev2 = null;
+		_macd2Prev = null;
 	}
 
 	/// <inheritdoc />

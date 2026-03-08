@@ -89,22 +89,22 @@ public class SarAutomatedStrategy : Strategy
 	/// </summary>
 	public SarAutomatedStrategy()
 	{
-		_sarStep = Param(nameof(SarStep), 0.02m)
+		_sarStep = Param(nameof(SarStep), 0.002m)
 			.SetDisplay("SAR Step", "Acceleration factor for SAR", "Indicators");
 
-		_sarMax = Param(nameof(SarMax), 0.2m)
+		_sarMax = Param(nameof(SarMax), 0.02m)
 			.SetDisplay("SAR Max", "Maximum acceleration for SAR", "Indicators");
 
-		_stopLoss = Param(nameof(StopLoss), 350m)
+		_stopLoss = Param(nameof(StopLoss), 3500m)
 			.SetDisplay("Stop Loss", "Stop loss in price units", "Risk Management");
 
-		_takeProfit = Param(nameof(TakeProfit), 650m)
+		_takeProfit = Param(nameof(TakeProfit), 6500m)
 			.SetDisplay("Take Profit", "Take profit in price units", "Risk Management");
 
-		_trailingStop = Param(nameof(TrailingStop), 80m)
+		_trailingStop = Param(nameof(TrailingStop), 800m)
 			.SetDisplay("Trailing Stop", "Trailing stop in price units", "Risk Management");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -128,8 +128,6 @@ public class SarAutomatedStrategy : Strategy
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		StartProtection(null, null);
 
 		var sar = new ParabolicSar
 		{

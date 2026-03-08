@@ -68,7 +68,7 @@ public class XdpoCandleStrategy : Strategy
 			.SetDisplay("Slow Length", "Length of the second EMA", "Parameters")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -92,17 +92,18 @@ public class XdpoCandleStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
+		var warmup = new StockSharp.Algo.Indicators.ExponentialMovingAverage { Length = FastLength };
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(warmup, ProcessCandle)
 			.Start();
 
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal _warmupVal)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
 		var open1 = CalcEma(candle.OpenPrice, ref _emaOpen1, FastLength);
 		var open2 = CalcEma(open1, ref _emaOpen2, SlowLength);
@@ -113,10 +114,13 @@ public class XdpoCandleStrategy : Strategy
 		var goLong = color == 2 && _previousColor != 2;
 		var goShort = color == 0 && _previousColor != 0;
 
-		if (goLong && Position <= 0)
-			BuyMarket();
-		else if (goShort && Position >= 0)
-			SellMarket();
+		if (IsFormedAndOnlineAndAllowTrading())
+		{
+			if (goLong && Position <= 0)
+				BuyMarket();
+			else if (goShort && Position >= 0)
+				SellMarket();
+		}
 
 		_previousColor = color;
 	}
