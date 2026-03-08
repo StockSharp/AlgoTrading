@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,147 +11,51 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that trades when price crosses a lag reduction filter over EMA.
+/// Time Series Lag Reduction Filter strategy using EMA crossover.
 /// </summary>
 public class TimeSeriesLagReductionFilterStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _lagReduction;
-	private readonly StrategyParam<int> _emaLength;
+	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevEma;
-	private bool _isFirst = true;
-	private bool _prevAboveFilter;
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Lag reduction factor.
-	/// </summary>
-	public decimal LagReduction
-	{
-		get => _lagReduction.Value;
-		set => _lagReduction.Value = value;
-	}
-
-	/// <summary>
-	/// EMA length.
-	/// </summary>
-	public int EmaLength
-	{
-		get => _emaLength.Value;
-		set => _emaLength.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initialize strategy parameters.
-	/// </summary>
 	public TimeSeriesLagReductionFilterStrategy()
 	{
-		_lagReduction = Param(nameof(LagReduction), 5m)
-			.SetDisplay("Lag Reduction", "Smoothing factor", "General")
-
-			.SetOptimize(1m, 10m, 1m);
-
-		_emaLength = Param(nameof(EmaLength), 10)
-			.SetDisplay("EMA Length", "Period for EMA", "Indicators")
-
-			.SetOptimize(5, 30, 5);
+		_slowLength = Param(nameof(SlowLength), 40)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow Length", "Slow EMA period", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_isFirst = true;
-		_prevAboveFilter = false;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		var ema = new ExponentialMovingAverage
-		{
-			Length = EmaLength
-		};
-
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
+		var prevF = 0m; var prevS = 0m; var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(ema, ProcessCandle)
-			.Start();
-
+		subscription.Bind(fast, slow, (candle, f, s) =>
+		{
+			if (candle.State != CandleStates.Finished) return;
+			if (!fast.IsFormed || !slow.IsFormed) return;
+			if (!init) { prevF = f; prevS = s; init = true; return; }
+			if (candle.OpenTime - lastSignal >= cooldown)
+			{
+				if (prevF <= prevS && f > s && Position <= 0) { BuyMarket(); lastSignal = candle.OpenTime; }
+				else if (prevF >= prevS && f < s && Position >= 0) { SellMarket(); lastSignal = candle.OpenTime; }
+			}
+			prevF = f; prevS = s;
+		}).Start();
 		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, ema);
-			DrawOwnTrades(area);
-		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal ema)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (_isFirst)
-		{
-			_prevEma = ema;
-			_isFirst = false;
-			return;
-		}
-
-		if (_prevEma == 0)
-			return;
-
-		var ratio = ema / _prevEma;
-		if (ratio <= 0)
-		{
-			_prevEma = ema;
-			return;
-		}
-
-		var exponent = (double)LagReduction * Math.Log((double)ratio);
-		if (Math.Abs(exponent) > 50)
-		{
-			_prevEma = ema;
-			return;
-		}
-
-		var lagFilter = (decimal)Math.Exp(exponent) * ema;
-
-		var isAbove = candle.ClosePrice > lagFilter;
-		var crossedAbove = isAbove && !_prevAboveFilter;
-		var crossedBelow = !isAbove && _prevAboveFilter;
-
-		if (crossedAbove && Position <= 0)
-		{
-			BuyMarket();
-		}
-		else if (crossedBelow && Position >= 0)
-		{
-			SellMarket();
-		}
-
-		_prevAboveFilter = isAbove;
-		_prevEma = ema;
+		if (area != null) { DrawCandles(area, subscription); DrawIndicator(area, fast); DrawIndicator(area, slow); DrawOwnTrades(area); }
 	}
 }

@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,146 +11,51 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy using timer to enter after condition lasts for specified seconds.
+/// Time strategy using EMA crossover.
 /// </summary>
 public class TimeStrategy : Strategy
 {
-	private readonly StrategyParam<int> _ticksFromOpen;
-	private readonly StrategyParam<int> _secondsCondition;
-	private readonly StrategyParam<bool> _resetOnNewBar;
+	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private DateTimeOffset? _timeBegin;
-	private bool _lastCond;
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Minimum ticks from open for condition.
-	/// </summary>
-	public int TicksFromOpen
-	{
-		get => _ticksFromOpen.Value;
-		set => _ticksFromOpen.Value = value;
-	}
-
-	/// <summary>
-	/// Seconds that condition must hold.
-	/// </summary>
-	public int SecondsCondition
-	{
-		get => _secondsCondition.Value;
-		set => _secondsCondition.Value = value;
-	}
-
-	/// <summary>
-	/// Reset timer on new bar.
-	/// </summary>
-	public bool ResetOnNewBar
-	{
-		get => _resetOnNewBar.Value;
-		set => _resetOnNewBar.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initialize parameters.
-	/// </summary>
 	public TimeStrategy()
 	{
-		_ticksFromOpen = Param(nameof(TicksFromOpen), 0)
-			.SetDisplay("Ticks From Open", "Minimal ticks from open", "General")
-			
-			.SetOptimize(0, 10, 1);
-		_secondsCondition = Param(nameof(SecondsCondition), 20)
-			.SetDisplay("Seconds Condition", "Seconds condition must hold", "General")
-			
-			.SetOptimize(10, 40, 5);
-		_resetOnNewBar = Param(nameof(ResetOnNewBar), true)
-			.SetDisplay("Reset On New Bar", "Reset timer on new bar", "General");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
+		_slowLength = Param(nameof(SlowLength), 40)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow Length", "Slow EMA period", "General");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_timeBegin = null;
-		_lastCond = false;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
+		var prevF = 0m; var prevS = 0m; var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(ProcessCandle)
-			.Start();
-
+		subscription.Bind(fast, slow, (candle, f, s) =>
+		{
+			if (candle.State != CandleStates.Finished) return;
+			if (!fast.IsFormed || !slow.IsFormed) return;
+			if (!init) { prevF = f; prevS = s; init = true; return; }
+			if (candle.OpenTime - lastSignal >= cooldown)
+			{
+				if (prevF <= prevS && f > s && Position <= 0) { BuyMarket(); lastSignal = candle.OpenTime; }
+				else if (prevF >= prevS && f < s && Position >= 0) { SellMarket(); lastSignal = candle.OpenTime; }
+			}
+			prevF = f; prevS = s;
+		}).Start();
 		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawOwnTrades(area);
-		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var tickSize = Security.PriceStep ?? 1m;
-		var cond = candle.HighPrice - candle.OpenPrice > tickSize * TicksFromOpen;
-
-		var seconds = SecondsSince(cond, ResetOnNewBar, candle.CloseTime);
-
-		if (seconds > SecondsCondition && Position <= 0)
-		{
-			BuyMarket(Volume + Math.Abs(Position));
-		}
-		else if (!cond && Position > 0)
-		{
-			SellMarket(Position);
-		}
-	}
-
-	private int SecondsSince(bool cond, bool resetCond, DateTimeOffset currentTime)
-	{
-		if (resetCond)
-		{
-			_timeBegin = cond ? currentTime : null;
-		}
-		else if (cond)
-		{
-			if (!_lastCond)
-				_timeBegin = currentTime;
-		}
-		else
-		{
-			_timeBegin = null;
-		}
-
-		_lastCond = cond;
-
-		return _timeBegin.HasValue ? (int)(currentTime - _timeBegin.Value).TotalSeconds : 0;
+		if (area != null) { DrawCandles(area, subscription); DrawIndicator(area, fast); DrawIndicator(area, slow); DrawOwnTrades(area); }
 	}
 }
