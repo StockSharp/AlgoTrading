@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -40,8 +41,26 @@ public class SessionBreakoutStrategy : Strategy
 		_tradeEndHour = Param(nameof(TradeEndHour), 20)
 			.SetDisplay("Trade End", "Hour to stop trading", "Sessions");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_currentDate = default;
+		_rangeHigh = null;
+		_rangeLow = null;
+		_rangeComplete = false;
+		_tradedToday = false;
 	}
 
 	/// <inheritdoc />

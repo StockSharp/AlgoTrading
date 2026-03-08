@@ -56,7 +56,7 @@ public class SimplePivotFlipStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Order Volume", "Market order volume used for entries.", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles used for pivot calculation.", "Data");
 	}
 
