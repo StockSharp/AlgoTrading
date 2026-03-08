@@ -219,7 +219,7 @@ public class MultiStochasticStrategy : Strategy
 	/// </summary>
 	public MultiStochasticStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame applied to every symbol", "Data");
 
 		_stochasticLength = Param(nameof(StochasticLength), 5)
@@ -347,7 +347,7 @@ public class MultiStochasticStrategy : Strategy
 		if (pipValue <= 0m)
 			LogWarning($"Unable to detect pip size for {security.Id}. Protective levels will be disabled.");
 
-		var subscription = SubscribeCandles(CandleType, security: security);
+		var subscription = SubscribeCandles(CandleType);
 		subscription
 			.BindEx(indicator, handler)
 			.Start();
@@ -435,14 +435,14 @@ public class MultiStochasticStrategy : Strategy
 			if (longSignal && volume > 0m)
 			{
 				// Enter long position after bullish crossover in oversold zone.
-				BuyMarket(volume, security);
+				BuyMarket();
 				stopPrice = StopLossPips > 0m && pipValue > 0m ? candle.ClosePrice - StopLossPips * pipValue : null;
 				takePrice = TakeProfitPips > 0m && pipValue > 0m ? candle.ClosePrice + TakeProfitPips * pipValue : null;
 			}
 			else if (shortSignal && volume > 0m)
 			{
 				// Enter short position after bearish crossover in overbought zone.
-				SellMarket(volume, security);
+				SellMarket();
 				stopPrice = StopLossPips > 0m && pipValue > 0m ? candle.ClosePrice + StopLossPips * pipValue : null;
 				takePrice = TakeProfitPips > 0m && pipValue > 0m ? candle.ClosePrice - TakeProfitPips * pipValue : null;
 			}
@@ -459,14 +459,14 @@ public class MultiStochasticStrategy : Strategy
 			// Close long positions on protective levels.
 			if (stopPrice.HasValue && candle.LowPrice <= stopPrice.Value)
 			{
-				SellMarket(position, security);
+				SellMarket();
 				stopPrice = takePrice = null;
 				return true;
 			}
 
 			if (takePrice.HasValue && candle.HighPrice >= takePrice.Value)
 			{
-				SellMarket(position, security);
+				SellMarket();
 				stopPrice = takePrice = null;
 				return true;
 			}
@@ -478,14 +478,14 @@ public class MultiStochasticStrategy : Strategy
 
 			if (stopPrice.HasValue && candle.HighPrice >= stopPrice.Value)
 			{
-				BuyMarket(volume, security);
+				BuyMarket();
 				stopPrice = takePrice = null;
 				return true;
 			}
 
 			if (takePrice.HasValue && candle.LowPrice <= takePrice.Value)
 			{
-				BuyMarket(volume, security);
+				BuyMarket();
 				stopPrice = takePrice = null;
 				return true;
 			}
@@ -501,7 +501,7 @@ public class MultiStochasticStrategy : Strategy
 
 	private decimal GetPositionVolume(Security security)
 	{
-		return GetPositionValue(security, Portfolio) ?? 0m;
+		return Position;
 	}
 
 	private decimal CalculatePipValue(Security security)

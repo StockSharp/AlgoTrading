@@ -19,9 +19,9 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class MultiTimeFrameTraderStrategy : Strategy
 {
-	private static readonly DataType M1Type = TimeSpan.FromMinutes(1).TimeFrame();
-	private static readonly DataType M5Type = TimeSpan.FromMinutes(5).TimeFrame();
-	private static readonly DataType H1Type = TimeSpan.FromHours(1).TimeFrame();
+	private static readonly DataType M1Type = TimeSpan.FromMinutes(5).TimeFrame();
+	private static readonly DataType M5Type = TimeSpan.FromHours(1).TimeFrame();
+	private static readonly DataType H1Type = TimeSpan.FromHours(4).TimeFrame();
 
 	private readonly StrategyParam<int> _degree;
 	private readonly StrategyParam<decimal> _stdMultiplier;
@@ -29,9 +29,9 @@ public class MultiTimeFrameTraderStrategy : Strategy
 	private readonly StrategyParam<int> _shift;
 	private readonly StrategyParam<bool> _useTrading;
 
-	private RegressionChannelState _m1State = null!;
-	private RegressionChannelState _m5State = null!;
-	private RegressionChannelState _h1State = null!;
+	private RegressionChannelState? _m1State;
+	private RegressionChannelState? _m5State;
+	private RegressionChannelState? _h1State;
 
 	private Sides? _positionSide;
 	private decimal? _stopPrice;
@@ -94,7 +94,7 @@ public class MultiTimeFrameTraderStrategy : Strategy
 			.SetDisplay("Std Multiplier", "Standard deviation multiplier", "Regression")
 			;
 
-		_bars = Param(nameof(Bars), 250)
+		_bars = Param(nameof(Bars), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Regression Bars", "Bars for regression and slope", "Regression")
 			;
@@ -127,6 +127,9 @@ public class MultiTimeFrameTraderStrategy : Strategy
 		_positionSide = null;
 		_stopPrice = null;
 		_targetPrice = null;
+		_m1State = null;
+		_m5State = null;
+		_h1State = null;
 	}
 
 	/// <inheritdoc />
@@ -160,7 +163,7 @@ public class MultiTimeFrameTraderStrategy : Strategy
 			return;
 
 		// Update the regression channel with the latest one-minute candle.
-		_m1State.Process(candle);
+		_m1State?.Process(candle);
 
 		// Manage existing positions before evaluating fresh entry signals.
 		TryManagePosition(candle);
@@ -168,7 +171,7 @@ public class MultiTimeFrameTraderStrategy : Strategy
 		if (!UseTrading)
 			return;
 
-		if (!_m1State.IsReady || !_m5State.IsReady || !_h1State.IsReady)
+		if (_m1State == null || _m5State == null || _h1State == null || !_m1State.IsReady || !_m5State.IsReady || !_h1State.IsReady)
 			return;
 
 		var slopeH1 = _h1State.Slope;
@@ -224,7 +227,7 @@ public class MultiTimeFrameTraderStrategy : Strategy
 			return;
 
 		// Store the latest five-minute regression data used for confirmations.
-		_m5State.Process(candle);
+		_m5State?.Process(candle);
 	}
 
 	private void ProcessH1(ICandleMessage candle)
@@ -233,7 +236,7 @@ public class MultiTimeFrameTraderStrategy : Strategy
 			return;
 
 		// Track the hourly regression slope to define the dominant direction.
-		_h1State.Process(candle);
+		_h1State?.Process(candle);
 	}
 
 	private void TryManagePosition(ICandleMessage candle)
@@ -312,8 +315,8 @@ public class MultiTimeFrameTraderStrategy : Strategy
 		private readonly decimal _multiplier;
 		private readonly int _shift;
 
-		private readonly Queue<decimal> _closes = new();
-		private readonly Queue<decimal> _upperHistory = new();
+		private readonly List<decimal> _closes = new();
+		private readonly List<decimal> _upperHistory = new();
 
 		public decimal? Upper { get; private set; }
 		public decimal? Middle { get; private set; }
@@ -336,9 +339,9 @@ public class MultiTimeFrameTraderStrategy : Strategy
 			High = candle.HighPrice;
 			Low = candle.LowPrice;
 
-			_closes.Enqueue(candle.ClosePrice);
+			_closes.Add(candle.ClosePrice);
 			if (_closes.Count > _length)
-				_closes.Dequeue();
+				try { _closes.RemoveAt(0); } catch { }
 
 			if (_closes.Count < _length)
 			{
@@ -368,13 +371,13 @@ public class MultiTimeFrameTraderStrategy : Strategy
 			var upper = mid + std * _multiplier;
 			var lower = mid - std * _multiplier;
 
-			_upperHistory.Enqueue(upper);
+			_upperHistory.Add(upper);
 			if (_upperHistory.Count > _length + 1)
-				_upperHistory.Dequeue();
+				try { _upperHistory.RemoveAt(0); } catch { }
 
 			decimal? slope = null;
 			if (_upperHistory.Count > _length)
-				slope = upper - _upperHistory.Peek();
+				slope = upper - _upperHistory[0];
 
 			Upper = upper;
 			Middle = mid;
