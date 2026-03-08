@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -29,8 +30,23 @@ public class L3H3PivotStrategy : Strategy
 		_channelPeriod = Param(nameof(ChannelPeriod), 48)
 			.SetDisplay("Channel Period", "Lookback for pivot channel", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevClose = 0m;
+		_prevMid = 0m;
+		_hasPrev = false;
 	}
 
 	protected override void OnStarted2(DateTime time)
