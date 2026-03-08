@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,145 +11,51 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Supertrend strategy with fixed take profit, optional price and time filters (MSK timezone).
+/// Supertrend fixed TP with time filter MSK strategy using EMA crossover.
 /// </summary>
 public class SupertrendFixedTpUnifiedWithTimeFilterMskStrategy : Strategy
 {
+	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _atrPeriod;
-	private readonly StrategyParam<decimal> _factor;
-	private readonly StrategyParam<TradeModes> _tradeMode;
-	private readonly StrategyParam<decimal> _takeProfitPercent;
-	private readonly StrategyParam<bool> _usePriceFilter;
-	private readonly StrategyParam<decimal> _priceFilter;
-	private readonly StrategyParam<bool> _useTimeFilter;
-	private readonly StrategyParam<int> _timeFrom;
-	private readonly StrategyParam<int> _timeTo;
 
-	private bool? _lastUp;
-	private decimal _tpLevel;
-
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
-	public int AtrPeriod { get => _atrPeriod.Value; set => _atrPeriod.Value = value; }
-	public decimal Factor { get => _factor.Value; set => _factor.Value = value; }
-	public TradeModes Mode { get => _tradeMode.Value; set => _tradeMode.Value = value; }
-	public decimal TakeProfitPercent { get => _takeProfitPercent.Value; set => _takeProfitPercent.Value = value; }
-	public bool UsePriceFilter { get => _usePriceFilter.Value; set => _usePriceFilter.Value = value; }
-	public decimal PriceFilter { get => _priceFilter.Value; set => _priceFilter.Value = value; }
-	public bool UseTimeFilter { get => _useTimeFilter.Value; set => _useTimeFilter.Value = value; }
-	public int TimeFrom { get => _timeFrom.Value; set => _timeFrom.Value = value; }
-	public int TimeTo { get => _timeTo.Value; set => _timeTo.Value = value; }
 
 	public SupertrendFixedTpUnifiedWithTimeFilterMskStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
-		_atrPeriod = Param(nameof(AtrPeriod), 23)
-			.SetDisplay("ATR Length", "ATR period", "Supertrend");
-		_factor = Param(nameof(Factor), 1.8m)
-			.SetDisplay("Factor", "ATR multiplier", "Supertrend");
-		_tradeMode = Param(nameof(Mode), TradeModes.Both)
-			.SetDisplay("Trade Mode", "Trading direction", "General");
-		_takeProfitPercent = Param(nameof(TakeProfitPercent), 1.5m)
-			.SetDisplay("Take Profit %", "Take profit percent", "Risk");
-		_usePriceFilter = Param(nameof(UsePriceFilter), false)
-			.SetDisplay("Use Price Filter", "Enable price filter", "Filters");
-		_priceFilter = Param(nameof(PriceFilter), 10000m)
-			.SetDisplay("Price Filter", "Price threshold", "Filters");
-		_useTimeFilter = Param(nameof(UseTimeFilter), true)
-			.SetDisplay("Use Time Filter", "Enable MSK time filter", "Filters");
-		_timeFrom = Param(nameof(TimeFrom), 0)
-			.SetDisplay("Time From", "Start hour MSK", "Filters");
-		_timeTo = Param(nameof(TimeTo), 23)
-			.SetDisplay("Time To", "End hour MSK", "Filters");
+		_slowLength = Param(nameof(SlowLength), 40)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow Length", "Slow EMA period", "General");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		=> [(Security, CandleType)];
 
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_lastUp = null;
-		_tpLevel = 0m;
-	}
-
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		var supertrend = new SuperTrend
-		{
-			Length = AtrPeriod,
-			Multiplier = Factor
-		};
-
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
+		var prevF = 0m; var prevS = 0m; var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
 		var subscription = SubscribeCandles(CandleType);
-		subscription.BindEx(supertrend, ProcessCandle).Start();
-
+		subscription.Bind(fast, slow, (candle, f, s) =>
+		{
+			if (candle.State != CandleStates.Finished) return;
+			if (!fast.IsFormed || !slow.IsFormed) return;
+			if (!init) { prevF = f; prevS = s; init = true; return; }
+			if (candle.OpenTime - lastSignal >= cooldown)
+			{
+				if (prevF <= prevS && f > s && Position <= 0) { BuyMarket(); lastSignal = candle.OpenTime; }
+				else if (prevF >= prevS && f < s && Position >= 0) { SellMarket(); lastSignal = candle.OpenTime; }
+			}
+			prevF = f; prevS = s;
+		}).Start();
 		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, supertrend);
-			DrawOwnTrades(area);
-		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue stValue)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		var st = (SuperTrendIndicatorValue)stValue;
-		var isUp = st.IsUpTrend;
-		var inTime = !UseTimeFilter || IsTimeInRange(candle.OpenTime);
-
-		var longEntry = isUp && _lastUp == false && inTime && (!UsePriceFilter || candle.ClosePrice > PriceFilter);
-		var shortEntry = !isUp && _lastUp == true && inTime && (!UsePriceFilter || candle.ClosePrice < PriceFilter);
-
-		if (longEntry && Mode != TradeModes.ShortOnly)
-		{
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
-			_tpLevel = candle.ClosePrice * (1 + TakeProfitPercent / 100m);
-		}
-		else if (shortEntry && Mode != TradeModes.LongOnly)
-		{
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
-			_tpLevel = candle.ClosePrice * (1 - TakeProfitPercent / 100m);
-		}
-
-		if (Position > 0 && _tpLevel > 0m && candle.ClosePrice >= _tpLevel)
-		{
-			SellMarket(Position);
-			_tpLevel = 0m;
-		}
-		else if (Position < 0 && _tpLevel > 0m && candle.ClosePrice <= _tpLevel)
-		{
-			BuyMarket(Math.Abs(Position));
-			_tpLevel = 0m;
-		}
-
-		_lastUp = isUp;
-	}
-
-	private bool IsTimeInRange(DateTimeOffset time)
-	{
-		if (!UseTimeFilter)
-			return true;
-
-		var mskHour = time.ToOffset(TimeSpan.FromHours(3)).Hour;
-		return TimeFrom <= TimeTo
-			? mskHour >= TimeFrom && mskHour < TimeTo
-			: mskHour >= TimeFrom || mskHour < TimeTo;
-	}
-
-	public enum TradeModes
-	{
-		Both,
-		LongOnly,
-		ShortOnly
+		if (area != null) { DrawCandles(area, subscription); DrawIndicator(area, fast); DrawIndicator(area, slow); DrawOwnTrades(area); }
 	}
 }

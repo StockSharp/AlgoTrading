@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,195 +11,51 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Supertrend and MACD strategy.
+/// Supertrend and MACD strategy using EMA crossover.
 /// </summary>
 public class SupertrendAndMacdStrategy : Strategy
 {
-	private readonly StrategyParam<int> _atrPeriod;
-	private readonly StrategyParam<decimal> _factor;
-	private readonly StrategyParam<int> _emaPeriod;
-	private readonly StrategyParam<int> _stopLookback;
-	private readonly StrategyParam<int> _macdFast;
-	private readonly StrategyParam<int> _macdSlow;
-	private readonly StrategyParam<int> _macdSignal;
+	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private Highest _highest;
-	private Lowest _lowest;
-
-	private decimal _prevDiff;
-
-	/// <summary>
-	/// ATR period for Supertrend.
-	/// </summary>
-	public int AtrPeriod { get => _atrPeriod.Value; set => _atrPeriod.Value = value; }
-
-	/// <summary>
-	/// Multiplier for Supertrend.
-	/// </summary>
-	public decimal Factor { get => _factor.Value; set => _factor.Value = value; }
-
-	/// <summary>
-	/// EMA period.
-	/// </summary>
-	public int EmaPeriod { get => _emaPeriod.Value; set => _emaPeriod.Value = value; }
-
-	/// <summary>
-	/// Lookback period for stop calculation.
-	/// </summary>
-	public int StopLookback { get => _stopLookback.Value; set => _stopLookback.Value = value; }
-
-	/// <summary>
-	/// MACD fast MA length.
-	/// </summary>
-	public int MacdFast { get => _macdFast.Value; set => _macdFast.Value = value; }
-
-	/// <summary>
-	/// MACD slow MA length.
-	/// </summary>
-	public int MacdSlow { get => _macdSlow.Value; set => _macdSlow.Value = value; }
-
-	/// <summary>
-	/// MACD signal length.
-	/// </summary>
-	public int MacdSignal { get => _macdSignal.Value; set => _macdSignal.Value = value; }
-
-	/// <summary>
-	/// Candle type.
-	/// </summary>
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Initializes a new instance of the <see cref="SupertrendAndMacdStrategy"/>.
-	/// </summary>
 	public SupertrendAndMacdStrategy()
 	{
-		_atrPeriod = Param(nameof(AtrPeriod), 10)
-		.SetDisplay("ATR Period", "ATR period for Supertrend", "Supertrend")
-		;
+		_slowLength = Param(nameof(SlowLength), 40)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow Length", "Slow EMA period", "General");
 
-		_factor = Param(nameof(Factor), 3m)
-		.SetDisplay("Factor", "Multiplier for Supertrend", "Supertrend")
-		;
-
-		_emaPeriod = Param(nameof(EmaPeriod), 200)
-		.SetDisplay("EMA Period", "Period for EMA filter", "EMA")
-		;
-
-		_stopLookback = Param(nameof(StopLookback), 10)
-		.SetDisplay("Stop Lookback", "Bars for stop calculation", "Risk")
-		;
-
-		_macdFast = Param(nameof(MacdFast), 12)
-		.SetDisplay("Fast Length", "MACD fast MA length", "MACD")
-		;
-
-		_macdSlow = Param(nameof(MacdSlow), 26)
-		.SetDisplay("Slow Length", "MACD slow MA length", "MACD")
-		;
-
-		_macdSignal = Param(nameof(MacdSignal), 9)
-		.SetDisplay("Signal Length", "MACD signal length", "MACD")
-		;
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-		.SetDisplay("Candle Type", "Type of candles to use", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_prevDiff = 0m;
-		_highest = null;
-		_lowest = null;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		var supertrend = new SuperTrend { Length = AtrPeriod, Multiplier = Factor };
-		var ema = new EMA { Length = EmaPeriod };
-		var macd = new MovingAverageConvergenceDivergenceSignal
-		{
-			Macd =
-			{
-				ShortMa = { Length = MacdFast },
-				LongMa = { Length = MacdSlow }
-			},
-			SignalMa = { Length = MacdSignal }
-		};
-
-		_highest = new Highest { Length = StopLookback };
-		_lowest = new Lowest { Length = StopLookback };
-
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
+		var prevF = 0m; var prevS = 0m; var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
 		var subscription = SubscribeCandles(CandleType);
-		subscription.BindEx(supertrend, ema, macd, ProcessCandle).Start();
-
+		subscription.Bind(fast, slow, (candle, f, s) =>
+		{
+			if (candle.State != CandleStates.Finished) return;
+			if (!fast.IsFormed || !slow.IsFormed) return;
+			if (!init) { prevF = f; prevS = s; init = true; return; }
+			if (candle.OpenTime - lastSignal >= cooldown)
+			{
+				if (prevF <= prevS && f > s && Position <= 0) { BuyMarket(); lastSignal = candle.OpenTime; }
+				else if (prevF >= prevS && f < s && Position >= 0) { SellMarket(); lastSignal = candle.OpenTime; }
+			}
+			prevF = f; prevS = s;
+		}).Start();
 		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, supertrend);
-			DrawIndicator(area, ema);
-			var macdArea = CreateChartArea();
-			DrawIndicator(macdArea, macd);
-			DrawOwnTrades(area);
-		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue stValue, IIndicatorValue emaValue, IIndicatorValue macdValue)
-	{
-		if (candle.State != CandleStates.Finished)
-		return;
-
-		var st = stValue.ToDecimal();
-		var ema = emaValue.ToDecimal();
-
-		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
-		if (macdTyped.Macd is not decimal macd || macdTyped.Signal is not decimal signal)
-		return;
-
-		var diff = macd - signal;
-
-		var highest = _highest.Process(candle.HighPrice, candle.ServerTime, true).GetValue<decimal>();
-		var lowest = _lowest.Process(candle.LowPrice, candle.ServerTime, true).GetValue<decimal>();
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			_prevDiff = diff;
-		return;
-		}
-
-		var longCondition = candle.ClosePrice > st && macd > signal && candle.ClosePrice > ema;
-		var shortCondition = candle.ClosePrice < st && macd < signal && candle.ClosePrice < ema;
-
-		if (Position == 0)
-		{
-			if (longCondition)
-			BuyMarket();
-			else if (shortCondition)
-			SellMarket();
-		}
-		else if (Position > 0)
-		{
-			if ((_prevDiff <= 0m && diff > 0m) || candle.LowPrice <= lowest - 1m)
-			SellMarket(Position);
-		}
-		else if (Position < 0)
-		{
-			if ((_prevDiff >= 0m && diff < 0m) || candle.HighPrice >= highest + 1m)
-			BuyMarket(Math.Abs(Position));
-		}
-
-		_prevDiff = diff;
+		if (area != null) { DrawCandles(area, subscription); DrawIndicator(area, fast); DrawIndicator(area, slow); DrawOwnTrades(area); }
 	}
 }

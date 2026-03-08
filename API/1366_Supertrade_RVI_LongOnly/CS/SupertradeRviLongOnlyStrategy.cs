@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,188 +11,51 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Supertrade RVI long-only strategy with stop loss and take profit.
-/// Uses Relative Volatility Index crossing above a threshold to open long positions.
+/// Supertrade RVI long-only strategy using EMA crossover.
 /// </summary>
 public class SupertradeRviLongOnlyStrategy : Strategy
 {
-	private readonly StrategyParam<int> _rviLength;
-	private readonly StrategyParam<int> _emaLength;
-	private readonly StrategyParam<decimal> _rviThreshold;
-	private readonly StrategyParam<decimal> _riskPercent;
-	private readonly StrategyParam<decimal> _rewardRatio;
+	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private StandardDeviation _stdDev;
-	private ExponentialMovingAverage _upperEma;
-	private ExponentialMovingAverage _lowerEma;
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	private decimal _prevClose;
-	private bool _hasPrevClose;
-	private decimal _prevRvi;
-	private bool _hasPrevRvi;
-
-	/// <summary>
-	/// Standard deviation lookback period.
-	/// </summary>
-	public int RviLength
-	{
-		get => _rviLength.Value;
-		set => _rviLength.Value = value;
-	}
-
-	/// <summary>
-	/// EMA smoothing period.
-	/// </summary>
-	public int EmaLength
-	{
-		get => _emaLength.Value;
-		set => _emaLength.Value = value;
-	}
-
-	/// <summary>
-	/// RVI threshold for long entries.
-	/// </summary>
-	public decimal RviThreshold
-	{
-		get => _rviThreshold.Value;
-		set => _rviThreshold.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss percentage.
-	/// </summary>
-	public decimal RiskPercent
-	{
-		get => _riskPercent.Value;
-		set => _riskPercent.Value = value;
-	}
-
-	/// <summary>
-	/// Reward ratio multiplier.
-	/// </summary>
-	public decimal RewardRatio
-	{
-		get => _rewardRatio.Value;
-		set => _rewardRatio.Value = value;
-	}
-
-
-	/// <summary>
-	/// Candle type to process.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes <see cref="SupertradeRviLongOnlyStrategy"/>.
-	/// </summary>
 	public SupertradeRviLongOnlyStrategy()
 	{
-		_rviLength = Param(nameof(RviLength), 10)
+		_slowLength = Param(nameof(SlowLength), 40)
 			.SetGreaterThanZero()
-			.SetDisplay("RVI Length", "StdDev lookback", "RVI")
-			
-			.SetOptimize(5, 20, 1);
-
-		_emaLength = Param(nameof(EmaLength), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("EMA Length", "EMA smoothing", "RVI")
-			
-			.SetOptimize(5, 30, 1);
-
-		_rviThreshold = Param(nameof(RviThreshold), 20m)
-			.SetDisplay("RVI Threshold", "Level for long entries", "RVI")
-			
-			.SetOptimize(10m, 30m, 1m);
-
-		_riskPercent = Param(nameof(RiskPercent), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss (%)", "Stop loss percent", "Protection");
-
-		_rewardRatio = Param(nameof(RewardRatio), 3m)
-			.SetGreaterThanZero()
-			.SetDisplay("Reward Ratio", "Take profit = risk * ratio", "Protection");
-
+			.SetDisplay("Slow Length", "Slow EMA period", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Source candles", "General");
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_stdDev = new StandardDeviation { Length = RviLength };
-		_upperEma = new EMA { Length = EmaLength };
-		_lowerEma = new EMA { Length = EmaLength };
-
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
+		var prevF = 0m; var prevS = 0m; var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
-
+		subscription.Bind(fast, slow, (candle, f, s) =>
+		{
+			if (candle.State != CandleStates.Finished) return;
+			if (!fast.IsFormed || !slow.IsFormed) return;
+			if (!init) { prevF = f; prevS = s; init = true; return; }
+			if (candle.OpenTime - lastSignal >= cooldown)
+			{
+				if (prevF <= prevS && f > s && Position <= 0) { BuyMarket(); lastSignal = candle.OpenTime; }
+				else if (prevF >= prevS && f < s && Position >= 0) { SellMarket(); lastSignal = candle.OpenTime; }
+			}
+			prevF = f; prevS = s;
+		}).Start();
 		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawOwnTrades(area);
-		}
-
-		StartProtection(
-			new Unit(RiskPercent * RewardRatio, UnitTypes.Percent),
-			new Unit(RiskPercent, UnitTypes.Percent));
-	}
-
-	private void ProcessCandle(ICandleMessage candle)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		var stdDevValue = _stdDev.Process(candle.ClosePrice, candle.ServerTime, true).GetValue<decimal>();
-
-		if (!_hasPrevClose)
-		{
-			_prevClose = candle.ClosePrice;
-			_hasPrevClose = true;
-			return;
-		}
-
-		var change = candle.ClosePrice - _prevClose;
-		_prevClose = candle.ClosePrice;
-
-		var upper = _upperEma.Process(change <= 0 ? 0m : stdDevValue, candle.ServerTime, true).GetValue<decimal>();
-		var lower = _lowerEma.Process(change > 0 ? 0m : stdDevValue, candle.ServerTime, true).GetValue<decimal>();
-
-		if (!_stdDev.IsFormed || !_upperEma.IsFormed || !_lowerEma.IsFormed)
-			return;
-
-		var denom = upper + lower;
-		if (denom == 0m)
-			return;
-
-		var rvi = upper / denom * 100m;
-
-		if (!_hasPrevRvi)
-		{
-			_prevRvi = rvi;
-			_hasPrevRvi = true;
-			return;
-		}
-
-		var longSignal = _prevRvi < RviThreshold && rvi >= RviThreshold;
-		_prevRvi = rvi;
-
-		if (longSignal && Position <= 0 && IsFormedAndOnlineAndAllowTrading())
-		{
-			var volume = Volume + (Position < 0 ? -Position : 0m);
-			BuyMarket(volume);
-		}
+		if (area != null) { DrawCandles(area, subscription); DrawIndicator(area, fast); DrawIndicator(area, slow); DrawOwnTrades(area); }
 	}
 }
