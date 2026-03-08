@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,191 +11,78 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// ZigZag breakout strategy with trailing stop.
-/// Adapted from the MetaTrader "HardcoreFX" expert.
+/// Channel breakout strategy using Highest/Lowest.
 /// </summary>
 public class HardcoreFxStrategy : Strategy
 {
-	private readonly StrategyParam<int> _zigzagLength;
-	private readonly StrategyParam<int> _stopLoss;
-	private readonly StrategyParam<int> _takeProfit;
-	private readonly StrategyParam<int> _trailingStop;
+	private readonly StrategyParam<int> _channelPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _lastHigh;
-	private decimal _lastLow;
-	private decimal _entryPrice;
-	private decimal _highestSinceEntry;
-	private decimal _lowestSinceEntry;
-	private int _direction;
+	private decimal _prevHigh;
+	private decimal _prevLow;
+	private bool _hasPrev;
 
-	/// <summary>
-	/// ZigZag depth used to search pivots.
-	/// </summary>
-	public int ZigzagLength
-	{
-		get => _zigzagLength.Value;
-		set => _zigzagLength.Value = value;
-	}
+	public int ChannelPeriod { get => _channelPeriod.Value; set => _channelPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Stop loss value in points.
-	/// </summary>
-	public int StopLoss
-	{
-		get => _stopLoss.Value;
-		set => _stopLoss.Value = value;
-	}
-
-	/// <summary>
-	/// Take profit value in points.
-	/// </summary>
-	public int TakeProfit
-	{
-		get => _takeProfit.Value;
-		set => _takeProfit.Value = value;
-	}
-
-	/// <summary>
-	/// Trailing stop distance in points.
-	/// </summary>
-	public int TrailingStop
-	{
-		get => _trailingStop.Value;
-		set => _trailingStop.Value = value;
-	}
-
-	/// <summary>
-	/// Type of candles to use for calculations.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes parameters with default values.
-	/// </summary>
 	public HardcoreFxStrategy()
 	{
-		_zigzagLength = Param(nameof(ZigzagLength), 17)
-			.SetDisplay("ZigZag Length", "Lookback for pivot search", "Indicators");
-
-		_stopLoss = Param(nameof(StopLoss), 1400)
-			.SetDisplay("Stop Loss", "Protective stop in points", "Risk");
-
-		_takeProfit = Param(nameof(TakeProfit), 5400)
-			.SetDisplay("Take Profit", "Target profit in points", "Risk");
-
-		_trailingStop = Param(nameof(TrailingStop), 500)
-			.SetDisplay("Trailing Stop", "Trailing distance in points", "Risk");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
+		_channelPeriod = Param(nameof(ChannelPeriod), 12)
+			.SetGreaterThanZero()
+			.SetDisplay("Channel Period", "Highest/Lowest lookback", "Parameters");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_lastHigh = 0m;
-		_lastLow = 0m;
-		_entryPrice = 0m;
-		_highestSinceEntry = 0m;
-		_lowestSinceEntry = 0m;
-		_direction = 0;
+		_prevHigh = 0;
+		_prevLow = 0;
+		_hasPrev = false;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
+		var highest = new Highest { Length = ChannelPeriod };
+		var lowest = new Lowest { Length = ChannelPeriod };
 
-		var highest = new Highest { Length = ZigzagLength };
-		var lowest = new Lowest { Length = ZigzagLength };
-
-		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(highest, lowest, ProcessCandle).Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawOwnTrades(area);
-		}
+		SubscribeCandles(CandleType)
+			.Bind(highest, lowest, ProcessCandle)
+			.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal highest, decimal lowest)
+	private void ProcessCandle(ICandleMessage candle, decimal highVal, decimal lowVal)
 	{
-		if (candle.State != CandleStates.Finished)
+		if (candle.State != CandleStates.Finished) return;
+
+		if (!_hasPrev)
+		{
+			_prevHigh = highVal;
+			_prevLow = lowVal;
+			_hasPrev = true;
 			return;
-
-		// Update ZigZag pivots.
-		if (candle.HighPrice >= highest && _direction != 1)
-		{
-			_lastHigh = candle.HighPrice;
-			_direction = 1;
-		}
-		else if (candle.LowPrice <= lowest && _direction != -1)
-		{
-			_lastLow = candle.LowPrice;
-			_direction = -1;
 		}
 
-		var step = Security.PriceStep ?? 1m;
-
-		// Manage open position first.
-		if (Position > 0)
+		// Buy when close breaks above previous channel high
+		if (candle.ClosePrice > _prevHigh && Position <= 0)
 		{
-			_highestSinceEntry = Math.Max(_highestSinceEntry, candle.HighPrice);
-
-			var stopPrice = _entryPrice - StopLoss * step;
-			var takePrice = _entryPrice + TakeProfit * step;
-			var trailPrice = _highestSinceEntry - TrailingStop * step;
-
-			if (candle.LowPrice <= stopPrice || candle.HighPrice >= takePrice || candle.LowPrice <= trailPrice)
-			{
-				SellMarket();
-				return;
-			}
+			if (Position < 0) BuyMarket();
+			BuyMarket();
 		}
-		else if (Position < 0)
+		// Sell when close breaks below previous channel low
+		else if (candle.ClosePrice < _prevLow && Position >= 0)
 		{
-			_lowestSinceEntry = Math.Min(_lowestSinceEntry, candle.LowPrice);
-
-			var stopPrice = _entryPrice + StopLoss * step;
-			var takePrice = _entryPrice - TakeProfit * step;
-			var trailPrice = _lowestSinceEntry + TrailingStop * step;
-
-			if (candle.HighPrice >= stopPrice || candle.LowPrice <= takePrice || candle.HighPrice >= trailPrice)
-			{
-				BuyMarket();
-				return;
-			}
+			if (Position > 0) SellMarket();
+			SellMarket();
 		}
 
-		// Entry signals.
-		if (Position == 0)
-		{
-			if (_lastHigh != 0m && candle.ClosePrice > _lastHigh)
-			{
-				_entryPrice = candle.ClosePrice;
-				_highestSinceEntry = _entryPrice;
-				BuyMarket();
-			}
-			else if (_lastLow != 0m && candle.ClosePrice < _lastLow)
-			{
-				_entryPrice = candle.ClosePrice;
-				_lowestSinceEntry = _entryPrice;
-				SellMarket();
-			}
-		}
+		_prevHigh = highVal;
+		_prevLow = lowVal;
 	}
 }

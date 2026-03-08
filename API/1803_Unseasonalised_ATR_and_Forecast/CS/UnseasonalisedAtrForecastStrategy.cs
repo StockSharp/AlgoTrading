@@ -1,11 +1,7 @@
-
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,174 +11,84 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Calculates average trading range and forecasts the next range using linear regression.
-/// Does not place trades; outputs statistics only.
+/// EMA crossover strategy with volatility awareness.
 /// </summary>
 public class UnseasonalisedAtrForecastStrategy : Strategy
-{	private readonly StrategyParam<int> _sampleSizeParam;
-	private readonly StrategyParam<decimal> _desiredRangeParam;
-	private readonly StrategyParam<DataType> _candleTypeParam;
+{
+	private readonly StrategyParam<int> _fastPeriod;
+	private readonly StrategyParam<int> _slowPeriod;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private readonly Queue<decimal> _ranges = new();
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private bool _hasPrev;
 
-	private decimal _atr;
-	private decimal _std;
-	private decimal _forecast;
-	private decimal _mape;
+	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
+	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Number of recent candles used for calculations.
-	/// </summary>
-	public int SampleSize
-	{
-		get => _sampleSizeParam.Value;
-		set => _sampleSizeParam.Value = value;
-	}
-
-	/// <summary>
-	/// Desired range for confidence interval calculation.
-	/// </summary>
-	public decimal DesiredRange
-	{
-		get => _desiredRangeParam.Value;
-		set => _desiredRangeParam.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type for analysis.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleTypeParam.Value;
-		set => _candleTypeParam.Value = value;
-	}
-
-	/// <summary>
-	/// Constructor.
-	/// </summary>
 	public UnseasonalisedAtrForecastStrategy()
 	{
-		_sampleSizeParam = Param(nameof(SampleSize), 36)
+		_fastPeriod = Param(nameof(FastPeriod), 12)
 			.SetGreaterThanZero()
-			.SetDisplay("Sample Size", "Number of candles for calculations", "Parameters");
-
-		_desiredRangeParam = Param(nameof(DesiredRange), 0.01m)
+			.SetDisplay("Fast Period", "Fast EMA period", "Parameters");
+		_slowPeriod = Param(nameof(SlowPeriod), 36)
 			.SetGreaterThanZero()
-			.SetDisplay("Desired Range", "Target range for confidence interval", "Parameters");
-
-		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Candle series for analysis", "Common");
+			.SetDisplay("Slow Period", "Slow EMA period", "Parameters");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_ranges.Clear();
-		_atr = 0m;
-		_std = 0m;
-		_forecast = 0m;
-		_mape = 0m;
+		_prevFast = 0;
+		_prevSlow = 0;
+		_hasPrev = false;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		// Subscribe to candles of selected type
-		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(ProcessCandle)
+		var fast = new ExponentialMovingAverage { Length = FastPeriod };
+		var slow = new ExponentialMovingAverage { Length = SlowPeriod };
+
+		SubscribeCandles(CandleType)
+			.Bind(fast, slow, ProcessCandle)
 			.Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-		}
-
-		// Enable position protection in case of manual trading
-		StartProtection(null, null);
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal fastVal, decimal slowVal)
 	{
-		if (candle.State != CandleStates.Finished)
+		if (candle.State != CandleStates.Finished) return;
+
+		if (!_hasPrev)
+		{
+			_prevFast = fastVal;
+			_prevSlow = slowVal;
+			_hasPrev = true;
 			return;
-
-		var range = candle.HighPrice - candle.LowPrice;
-		_ranges.Enqueue(range);
-		if (_ranges.Count > SampleSize)
-			_ranges.Dequeue();
-
-		if (_ranges.Count < SampleSize)
-			return;
-
-		// Calculate average range and standard deviation
-		decimal sum = 0m;
-		foreach (var r in _ranges)
-			sum += r;
-		_atr = sum / SampleSize;
-
-		decimal diffSum = 0m;
-		foreach (var r in _ranges)
-		{
-			var diff = r - _atr;
-			diffSum += diff * diff;
-		}
-		_std = (decimal)Math.Sqrt((double)(diffSum / SampleSize));
-
-		// Linear regression for forecast
-		int n = SampleSize;
-		decimal sumX = 0m;
-		decimal sumY = 0m;
-		decimal sumXY = 0m;
-		decimal sumX2 = 0m;
-		int i = 1;
-		foreach (var r in _ranges)
-		{
-			sumX += i;
-			sumY += r;
-			sumXY += i * r;
-			sumX2 += i * i;
-			i++;
 		}
 
-		var meanX = sumX / n;
-		var m = (sumXY - n * meanX * _atr) / (sumX2 - n * meanX * meanX);
-		var c = _atr - m * meanX;
-		_forecast = m * (n + 1) + c;
+		var crossUp = _prevFast <= _prevSlow && fastVal > slowVal;
+		var crossDown = _prevFast >= _prevSlow && fastVal < slowVal;
 
-		// MAPE calculation
-		decimal apeSum = 0m;
-		i = 1;
-		foreach (var r in _ranges)
+		if (crossUp && Position <= 0)
 		{
-			var fitted = m * i + c;
-			var ape = r != 0m ? Math.Abs((r - fitted) / r) : 0m;
-			apeSum += ape;
-			i++;
+			if (Position < 0) BuyMarket();
+			BuyMarket();
 		}
-		_mape = (apeSum / n) * 100m;
+		else if (crossDown && Position >= 0)
+		{
+			if (Position > 0) SellMarket();
+			SellMarket();
+		}
 
-		// Confidence interval estimation
-		var ci = (_atr - DesiredRange) / _std;
-		decimal ciPercent;
-		if (ci >= -1m && ci <= 1m)
-			ciPercent = 68.26m;
-		else if (ci >= -2m && ci <= 2m)
-			ciPercent = 95.44m;
-		else
-			ciPercent = 99.74m;
-
-		LogInfo($"ATR: {_atr:F5}, StdDev: {_std:F5}, CI: {ciPercent}%, Forecast: {_forecast:F5}, MAPE: {_mape:F2}%");
+		_prevFast = fastVal;
+		_prevSlow = slowVal;
 	}
 }

@@ -1,141 +1,88 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
-using StockSharp.Algo.Candles;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Liquidex V1 strategy based on weighted moving average and range filter.
-/// Enters when price crosses the WMA after wide candles and uses stop loss for protection.
+/// WMA crossover strategy with range filter.
 /// </summary>
 public class LiquidexV1Strategy : Strategy
 {
-	private readonly StrategyParam<decimal> _rangeFilter;
 	private readonly StrategyParam<int> _maPeriod;
-	private readonly StrategyParam<Unit> _stopLoss;
 	private readonly StrategyParam<DataType> _candleType;
 
-	/// <summary>
-	/// Minimum candle range to allow trading.
-	/// </summary>
-	public decimal RangeFilter
-	{
-		get => _rangeFilter.Value;
-		set => _rangeFilter.Value = value;
-	}
+	private decimal _prevClose;
+	private decimal _prevWma;
+	private bool _hasPrev;
 
-	/// <summary>
-	/// Weighted moving average period.
-	/// </summary>
-	public int MaPeriod
-	{
-		get => _maPeriod.Value;
-		set => _maPeriod.Value = value;
-	}
+	public int MaPeriod { get => _maPeriod.Value; set => _maPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Stop-loss value.
-	/// </summary>
-	public Unit StopLoss
-	{
-		get => _stopLoss.Value;
-		set => _stopLoss.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initialize <see cref="LiquidexV1Strategy"/>.
-	/// </summary>
 	public LiquidexV1Strategy()
 	{
-		_rangeFilter = Param(nameof(RangeFilter), 20m)
-			.SetDisplay("Range Filter", "Minimum candle range to enable trading", "General")
-			.SetGreaterThanZero();
-
-		_maPeriod = Param(nameof(MaPeriod), 3)
-			.SetDisplay("MA Period", "Period of weighted moving average", "Indicators")
-			.SetGreaterThanZero();
-
-		_stopLoss = Param(nameof(StopLoss), new Unit(30, UnitTypes.Absolute))
-			.SetDisplay("Stop Loss", "Stop loss size in points", "Risk Management");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to process", "General");
+		_maPeriod = Param(nameof(MaPeriod), 10)
+			.SetGreaterThanZero()
+			.SetDisplay("MA Period", "WMA period", "Indicators");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	protected override void OnReseted()
 	{
-		return [(Security, CandleType)];
+		base.OnReseted();
+		_prevClose = 0;
+		_prevWma = 0;
+		_hasPrev = false;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		StartProtection(new(), StopLoss);
-
 		var wma = new WeightedMovingAverage { Length = MaPeriod };
 
-		var subscription = SubscribeCandles(CandleType);
-		subscription
+		SubscribeCandles(CandleType)
 			.Bind(wma, ProcessCandle)
 			.Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, wma);
-			DrawOwnTrades(area);
-		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal wmaValue)
+	private void ProcessCandle(ICandleMessage candle, decimal wmaVal)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
+		if (candle.State != CandleStates.Finished) return;
 
-		var range = candle.HighPrice - candle.LowPrice;
-
-		if (range < RangeFilter)
-			return;
-
-		var crossAbove = candle.OpenPrice < wmaValue && candle.ClosePrice > wmaValue;
-		var crossBelow = candle.OpenPrice > wmaValue && candle.ClosePrice < wmaValue;
-
-		if (crossAbove && Position <= 0)
+		if (!_hasPrev)
 		{
-			if (Position < 0)
-				BuyMarket();
+			_prevClose = candle.ClosePrice;
+			_prevWma = wmaVal;
+			_hasPrev = true;
+			return;
+		}
+
+		var crossUp = _prevClose <= _prevWma && candle.ClosePrice > wmaVal;
+		var crossDown = _prevClose >= _prevWma && candle.ClosePrice < wmaVal;
+
+		if (crossUp && Position <= 0)
+		{
+			if (Position < 0) BuyMarket();
 			BuyMarket();
 		}
-		else if (crossBelow && Position >= 0)
+		else if (crossDown && Position >= 0)
 		{
-			if (Position > 0)
-				SellMarket();
+			if (Position > 0) SellMarket();
 			SellMarket();
 		}
+
+		_prevClose = candle.ClosePrice;
+		_prevWma = wmaVal;
 	}
 }

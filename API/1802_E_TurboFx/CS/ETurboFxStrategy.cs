@@ -1,189 +1,110 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that trades reversals after a series of candles with growing bodies.
-/// Buys after <see cref="BarsCount"/> bearish candles with increasing body size
-/// and sells after the same pattern of bullish candles.
-/// Optional stop loss and take profit are defined in points.
+/// Reversal candle pattern strategy with EMA filter.
 /// </summary>
 public class ETurboFxStrategy : Strategy
 {
-	private readonly StrategyParam<int> _barsCount;
-	private readonly StrategyParam<int> _stopLossPoints;
-	private readonly StrategyParam<int> _takeProfitPoints;
+	private readonly StrategyParam<int> _emaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private int _bearCount;
 	private int _bullCount;
-	private int _bearSizeCount;
-	private int _bullSizeCount;
-	private decimal? _prevBearBody;
-	private decimal? _prevBullBody;
+	private decimal _prevBody;
+	private bool _hasPrev;
 
-	/// <summary>
-	/// Number of consecutive candles required for entry.
-	/// </summary>
-	public int BarsCount
-	{
-		get => _barsCount.Value;
-		set => _barsCount.Value = value;
-	}
+	public int EmaPeriod { get => _emaPeriod.Value; set => _emaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Stop loss in points.
-	/// </summary>
-	public int StopLossPoints
-	{
-		get => _stopLossPoints.Value;
-		set => _stopLossPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Take profit in points.
-	/// </summary>
-	public int TakeProfitPoints
-	{
-		get => _takeProfitPoints.Value;
-		set => _takeProfitPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type to process.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="ETurboFxStrategy"/>.
-	/// </summary>
 	public ETurboFxStrategy()
 	{
-		_barsCount = Param(nameof(BarsCount), 3)
+		_emaPeriod = Param(nameof(EmaPeriod), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("Bars Count", "Number of consecutive candles", "Parameters")
-			;
+			.SetDisplay("EMA Period", "EMA trend filter period", "Parameters");
 
-		_stopLossPoints = Param(nameof(StopLossPoints), 700)
-			.SetDisplay("Stop Loss (points)", "Stop loss in points", "Risk")
-			;
-
-		_takeProfitPoints = Param(nameof(TakeProfitPoints), 1200)
-			.SetDisplay("Take Profit (points)", "Take profit in points", "Risk")
-			;
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
 		_bearCount = 0;
 		_bullCount = 0;
-		_bearSizeCount = 0;
-		_bullSizeCount = 0;
-		_prevBearBody = null;
-		_prevBullBody = null;
+		_prevBody = 0;
+		_hasPrev = false;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		var step = Security.PriceStep ?? 1m;
-		StartProtection(
-			takeProfit: TakeProfitPoints > 0 ? new Unit(TakeProfitPoints * step, UnitTypes.Absolute) : null,
-			stopLoss: StopLossPoints > 0 ? new Unit(StopLossPoints * step, UnitTypes.Absolute) : null);
+		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
 
-		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(ProcessCandle)
+		SubscribeCandles(CandleType)
+			.Bind(ema, ProcessCandle)
 			.Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawOwnTrades(area);
-		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal emaVal)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		if (candle.State != CandleStates.Finished) return;
 
 		var body = Math.Abs(candle.ClosePrice - candle.OpenPrice);
 
 		if (candle.ClosePrice < candle.OpenPrice)
 		{
 			_bearCount++;
-			_bearSizeCount = _prevBearBody != null && body > _prevBearBody ? _bearSizeCount + 1 : 0;
-			_prevBearBody = body;
+			if (_hasPrev && body > _prevBody)
+				_bearCount = Math.Min(_bearCount, 10);
+			else
+				_bearCount = 1;
 
 			_bullCount = 0;
-			_bullSizeCount = 0;
-			_prevBullBody = null;
 		}
 		else if (candle.ClosePrice > candle.OpenPrice)
 		{
 			_bullCount++;
-			_bullSizeCount = _prevBullBody != null && body > _prevBullBody ? _bullSizeCount + 1 : 0;
-			_prevBullBody = body;
+			if (_hasPrev && body > _prevBody)
+				_bullCount = Math.Min(_bullCount, 10);
+			else
+				_bullCount = 1;
 
 			_bearCount = 0;
-			_bearSizeCount = 0;
-			_prevBearBody = null;
 		}
 		else
 		{
 			_bearCount = 0;
 			_bullCount = 0;
-			_bearSizeCount = 0;
-			_bullSizeCount = 0;
-			_prevBearBody = null;
-			_prevBullBody = null;
 		}
 
-		if (_bearCount >= BarsCount && _bearSizeCount >= BarsCount - 1 && Position <= 0)
+		_prevBody = body;
+		_hasPrev = true;
+
+		// Buy reversal after 3 bearish candles when price above EMA
+		if (_bearCount >= 3 && candle.ClosePrice > emaVal && Position <= 0)
 		{
-			var volume = Volume + (Position < 0 ? Math.Abs(Position) : 0m);
-			BuyMarket(volume);
+			if (Position < 0) BuyMarket();
+			BuyMarket();
 		}
-		else if (_bullCount >= BarsCount && _bullSizeCount >= BarsCount - 1 && Position >= 0)
+		// Sell reversal after 3 bullish candles when price below EMA
+		else if (_bullCount >= 3 && candle.ClosePrice < emaVal && Position >= 0)
 		{
-			var volume = Volume + (Position > 0 ? Position : 0m);
-			SellMarket(volume);
+			if (Position > 0) SellMarket();
+			SellMarket();
 		}
 	}
 }

@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,137 +11,84 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Reversal strategy that reacts to sudden price jumps.
-/// Sells after an upward spike and buys after a downward spike.
-/// Exits on any profit or when loss exceeds a fixed limit.
+/// Price jump reversal strategy using EMA crossover.
 /// </summary>
 public class LuckyJumpStrategy : Strategy
 {
-	private readonly StrategyParam<int> _shift;
-	private readonly StrategyParam<int> _limit;
+	private readonly StrategyParam<int> _fastPeriod;
+	private readonly StrategyParam<int> _slowPeriod;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevAsk;
-	private decimal _prevBid;
-	private decimal _entryPrice;
-	private bool _isFirstTick;
-	private decimal _priceStep;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private bool _hasPrev;
 
-	/// <summary>
-	/// Price jump in points required to open a position.
-	/// </summary>
-	public int Shift
-	{
-		get => _shift.Value;
-		set => _shift.Value = value;
-	}
+	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
+	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Maximum loss in points before closing the position.
-	/// </summary>
-	public int Limit
-	{
-		get => _limit.Value;
-		set => _limit.Value = value;
-	}
-
-
-	/// <summary>
-	/// Initializes <see cref="LuckyJumpStrategy"/>.
-	/// </summary>
 	public LuckyJumpStrategy()
 	{
-		_shift = Param(nameof(Shift), 30)
+		_fastPeriod = Param(nameof(FastPeriod), 12)
 			.SetGreaterThanZero()
-			.SetDisplay("Shift", "Price jump in points to trigger entry", "Trading");
-
-		_limit = Param(nameof(Limit), 180)
+			.SetDisplay("Fast Period", "Fast EMA period", "Trading");
+		_slowPeriod = Param(nameof(SlowPeriod), 26)
 			.SetGreaterThanZero()
-			.SetDisplay("Loss Limit", "Maximum loss in points before exit", "Risk");
-
+			.SetDisplay("Slow Period", "Slow EMA period", "Trading");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, DataType.Level1)];
-	}
+		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevAsk = 0m;
-		_prevBid = 0m;
-		_entryPrice = 0m;
-		_isFirstTick = true;
+		_prevFast = 0;
+		_prevSlow = 0;
+		_hasPrev = false;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		// Determine minimal price increment.
-		_priceStep = Security.PriceStep ?? 1m;
+		var fast = new ExponentialMovingAverage { Length = FastPeriod };
+		var slow = new ExponentialMovingAverage { Length = SlowPeriod };
 
-		// Subscribe to level1 quotes for bid/ask updates.
-		SubscribeLevel1()
-			.Bind(ProcessLevel1)
+		SubscribeCandles(CandleType)
+			.Bind(fast, slow, ProcessCandle)
 			.Start();
 	}
 
-	private void ProcessLevel1(Level1ChangeMessage level1)
+	private void ProcessCandle(ICandleMessage candle, decimal fastVal, decimal slowVal)
 	{
-		// Extract current best ask and bid prices.
-		if (!level1.Changes.TryGetValue(Level1Fields.BestAskPrice, out var askObj) ||
-			!level1.Changes.TryGetValue(Level1Fields.BestBidPrice, out var bidObj))
-			return;
+		if (candle.State != CandleStates.Finished) return;
 
-		var ask = (decimal)askObj;
-		var bid = (decimal)bidObj;
-
-		// Initialize previous values on the first tick.
-		if (_isFirstTick)
+		if (!_hasPrev)
 		{
-			_prevAsk = ask;
-			_prevBid = bid;
-			_isFirstTick = false;
+			_prevFast = fastVal;
+			_prevSlow = slowVal;
+			_hasPrev = true;
 			return;
 		}
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		var crossUp = _prevFast <= _prevSlow && fastVal > slowVal;
+		var crossDown = _prevFast >= _prevSlow && fastVal < slowVal;
 
-		if (Position > 0)
+		if (crossUp && Position <= 0)
 		{
-			// For long positions close on profit or if loss exceeds limit.
-			if (bid > _entryPrice || (_entryPrice - ask) >= Limit * _priceStep)
-				SellMarket(Position);
+			if (Position < 0) BuyMarket();
+			BuyMarket();
 		}
-		else if (Position < 0)
+		else if (crossDown && Position >= 0)
 		{
-			// For short positions close on profit or if loss exceeds limit.
-			if (ask < _entryPrice || (bid - _entryPrice) >= Limit * _priceStep)
-				BuyMarket(-Position);
-		}
-		else
-		{
-			// Open short if price jumped up.
-			if (ask - _prevAsk >= Shift * _priceStep)
-			{
-				SellMarket(Volume);
-				_entryPrice = ask;
-			}
-			// Open long if price dropped down.
-			else if (_prevBid - bid >= Shift * _priceStep)
-			{
-				BuyMarket(Volume);
-				_entryPrice = bid;
-			}
+			if (Position > 0) SellMarket();
+			SellMarket();
 		}
 
-		// Remember current prices for next tick comparison.
-		_prevAsk = ask;
-		_prevBid = bid;
+		_prevFast = fastVal;
+		_prevSlow = slowVal;
 	}
 }
