@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -22,143 +19,53 @@ public class AggressiveHighIvStrategy : Strategy
 	private readonly StrategyParam<int> _fastEmaLength;
 	private readonly StrategyParam<int> _slowEmaLength;
 	private readonly StrategyParam<int> _atrLength;
-	private readonly StrategyParam<int> _atrMeanLength;
-	private readonly StrategyParam<int> _atrStdLength;
-	private readonly StrategyParam<decimal> _riskFactor;
 	private readonly StrategyParam<DataType> _candleType;
-
-	private ExponentialMovingAverage _fastEma;
-	private ExponentialMovingAverage _slowEma;
-	private AverageTrueRange _atr;
-	private SimpleMovingAverage _atrMean;
-	private StandardDeviation _atrStd;
+	private readonly StrategyParam<int> _cooldownBars;
 
 	private decimal _prevFast;
 	private decimal _prevSlow;
-	private decimal _longStop;
-	private decimal _longTake;
-	private decimal _shortStop;
-	private decimal _shortTake;
+	private decimal _entryPrice;
+	private int _cooldownRemaining;
 
-	/// <summary>
-	/// Fast EMA length.
-	/// </summary>
-	public int FastEmaLength
-	{
-		get => _fastEmaLength.Value;
-		set => _fastEmaLength.Value = value;
-	}
+	public int FastEmaLength { get => _fastEmaLength.Value; set => _fastEmaLength.Value = value; }
+	public int SlowEmaLength { get => _slowEmaLength.Value; set => _slowEmaLength.Value = value; }
+	public int AtrLength { get => _atrLength.Value; set => _atrLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int CooldownBars { get => _cooldownBars.Value; set => _cooldownBars.Value = value; }
 
-	/// <summary>
-	/// Slow EMA length.
-	/// </summary>
-	public int SlowEmaLength
-	{
-		get => _slowEmaLength.Value;
-		set => _slowEmaLength.Value = value;
-	}
-
-	/// <summary>
-	/// ATR length.
-	/// </summary>
-	public int AtrLength
-	{
-		get => _atrLength.Value;
-		set => _atrLength.Value = value;
-	}
-
-	/// <summary>
-	/// ATR mean period.
-	/// </summary>
-	public int AtrMeanLength
-	{
-		get => _atrMeanLength.Value;
-		set => _atrMeanLength.Value = value;
-	}
-
-	/// <summary>
-	/// ATR standard deviation period.
-	/// </summary>
-	public int AtrStdLength
-	{
-		get => _atrStdLength.Value;
-		set => _atrStdLength.Value = value;
-	}
-
-	/// <summary>
-	/// Risk per trade as fraction of equity.
-	/// </summary>
-	public decimal RiskFactor
-	{
-		get => _riskFactor.Value;
-		set => _riskFactor.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type to process.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="AggressiveHighIvStrategy"/>.
-	/// </summary>
 	public AggressiveHighIvStrategy()
 	{
 		_fastEmaLength = Param(nameof(FastEmaLength), 10)
 			.SetGreaterThanZero()
-			.SetDisplay("Fast EMA Length", "Period for fast EMA", "Parameters")
-			;
+			.SetDisplay("Fast EMA Length", "Period for fast EMA", "Parameters");
 
 		_slowEmaLength = Param(nameof(SlowEmaLength), 30)
 			.SetGreaterThanZero()
-			.SetDisplay("Slow EMA Length", "Period for slow EMA", "Parameters")
-			;
+			.SetDisplay("Slow EMA Length", "Period for slow EMA", "Parameters");
 
 		_atrLength = Param(nameof(AtrLength), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("ATR Length", "ATR calculation period", "Parameters")
-			;
+			.SetDisplay("ATR Length", "ATR calculation period", "Parameters");
 
-		_atrMeanLength = Param(nameof(AtrMeanLength), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("ATR Mean Length", "Period for ATR mean", "Parameters")
-			;
-
-		_atrStdLength = Param(nameof(AtrStdLength), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("ATR Std Length", "Period for ATR standard deviation", "Parameters")
-			;
-
-		_riskFactor = Param(nameof(RiskFactor), 0.01m)
-			.SetGreaterThanZero()
-			.SetDisplay("Risk Factor", "Fraction of equity risked per trade", "Risk")
-			;
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
+
+		_cooldownBars = Param(nameof(CooldownBars), 10)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "Risk");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
 		_prevFast = 0m;
 		_prevSlow = 0m;
-		_longStop = 0m;
-		_longTake = 0m;
-		_shortStop = 0m;
-		_shortTake = 0m;
+		_entryPrice = 0m;
+		_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
@@ -166,23 +73,21 @@ public class AggressiveHighIvStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_fastEma = new EMA { Length = FastEmaLength };
-		_slowEma = new EMA { Length = SlowEmaLength };
-		_atr = new AverageTrueRange { Length = AtrLength };
-		_atrMean = new SMA { Length = AtrMeanLength };
-		_atrStd = new StandardDeviation { Length = AtrStdLength };
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaLength };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaLength };
+		var atr = new AverageTrueRange { Length = AtrLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_fastEma, _slowEma, _atr, ProcessCandle)
+			.Bind(fastEma, slowEma, atr, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _fastEma);
-			DrawIndicator(area, _slowEma);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
@@ -192,50 +97,72 @@ public class AggressiveHighIvStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var atrMeanValue = _atrMean.Process(new DecimalIndicatorValue(_atrMean, atrValue, candle.ServerTime)).ToDecimal();
-		var atrStdValue = _atrStd.Process(new DecimalIndicatorValue(_atrStd, atrValue, candle.ServerTime)).ToDecimal();
-
-		if (!IsFormedAndOnlineAndAllowTrading() || !_atrMean.IsFormed || !_atrStd.IsFormed)
+		if (!IsFormedAndOnlineAndAllowTrading())
 		{
 			_prevFast = fastEma;
 			_prevSlow = slowEma;
 			return;
 		}
 
-		var longCondition = _prevFast <= _prevSlow && fastEma > slowEma && atrValue > atrMeanValue + atrStdValue;
-		var shortCondition = _prevFast >= _prevSlow && fastEma < slowEma && atrValue > atrMeanValue + atrStdValue;
-
-		var portfolioValue = Portfolio.CurrentValue ?? 0m;
-		var positionSize = Math.Min(portfolioValue * RiskFactor / (2m * atrValue), portfolioValue);
-
-		if (longCondition && Position <= 0)
+		if (_prevFast == 0)
 		{
-			BuyMarket(positionSize);
-			_longStop = candle.ClosePrice - 2m * atrValue;
-			_longTake = candle.ClosePrice + 4m * atrValue;
-		}
-		else if (shortCondition && Position >= 0)
-		{
-			SellMarket(positionSize);
-			_shortStop = candle.ClosePrice + 2m * atrValue;
-			_shortTake = candle.ClosePrice - 4m * atrValue;
+			_prevFast = fastEma;
+			_prevSlow = slowEma;
+			return;
 		}
 
-		if (Position > 0)
+		// Check ATR-based stop/take for existing positions
+		if (Position > 0 && _entryPrice > 0 && atrValue > 0)
 		{
-			if (candle.LowPrice <= _longStop || candle.HighPrice >= _longTake)
+			if (candle.ClosePrice <= _entryPrice - 2m * atrValue || candle.ClosePrice >= _entryPrice + 4m * atrValue)
 			{
 				SellMarket(Math.Abs(Position));
-				_longStop = _longTake = 0m;
+				_entryPrice = 0;
+				_cooldownRemaining = CooldownBars;
+				_prevFast = fastEma;
+				_prevSlow = slowEma;
+				return;
 			}
 		}
-		else if (Position < 0)
+		else if (Position < 0 && _entryPrice > 0 && atrValue > 0)
 		{
-			if (candle.HighPrice >= _shortStop || candle.LowPrice <= _shortTake)
+			if (candle.ClosePrice >= _entryPrice + 2m * atrValue || candle.ClosePrice <= _entryPrice - 4m * atrValue)
 			{
 				BuyMarket(Math.Abs(Position));
-				_shortStop = _shortTake = 0m;
+				_entryPrice = 0;
+				_cooldownRemaining = CooldownBars;
+				_prevFast = fastEma;
+				_prevSlow = slowEma;
+				return;
 			}
+		}
+
+		if (_cooldownRemaining > 0)
+		{
+			_cooldownRemaining--;
+			_prevFast = fastEma;
+			_prevSlow = slowEma;
+			return;
+		}
+
+		var longCross = _prevFast <= _prevSlow && fastEma > slowEma;
+		var shortCross = _prevFast >= _prevSlow && fastEma < slowEma;
+
+		if (longCross && Position <= 0)
+		{
+			if (Position < 0)
+				BuyMarket(Math.Abs(Position));
+			BuyMarket(Volume);
+			_entryPrice = candle.ClosePrice;
+			_cooldownRemaining = CooldownBars;
+		}
+		else if (shortCross && Position >= 0)
+		{
+			if (Position > 0)
+				SellMarket(Math.Abs(Position));
+			SellMarket(Volume);
+			_entryPrice = candle.ClosePrice;
+			_cooldownRemaining = CooldownBars;
 		}
 
 		_prevFast = fastEma;
