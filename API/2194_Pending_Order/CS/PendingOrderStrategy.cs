@@ -33,7 +33,7 @@ public class PendingOrderStrategy : Strategy
 		_distance = Param(nameof(Distance), 50m)
 			.SetDisplay("Distance", "Offset from prev candle range for entry", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
@@ -50,7 +50,7 @@ public class PendingOrderStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var sma = new SMA { Length = 5 };
+		var sma = new ExponentialMovingAverage { Length = 5 };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(sma, ProcessCandle).Start();

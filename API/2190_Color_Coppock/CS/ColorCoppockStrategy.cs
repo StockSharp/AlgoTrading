@@ -40,7 +40,7 @@ public class ColorCoppockStrategy : Strategy
 			.SetDisplay("ROC2 Period", "Second ROC calculation period", "Parameters");
 		_smoothingPeriod = Param(nameof(SmoothingPeriod), 10)
 			.SetDisplay("Smoothing Period", "SMA period for ROC sum", "Parameters");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for processing", "General");
 	}
 
@@ -59,7 +59,7 @@ public class ColorCoppockStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var sma = new SMA { Length = Roc1Period };
+		var sma = new ExponentialMovingAverage { Length = Roc1Period };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

@@ -105,7 +105,7 @@ public class RsiAutomatedStrategy : Strategy
 		.SetNotNegative()
 		.SetDisplay("Trailing", "Trailing stop distance in points", "Risk");
 
-	_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+	_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -167,14 +167,14 @@ public class RsiAutomatedStrategy : Strategy
 	{
 		if (rsiValue < Oversold)
 		{
-		BuyMarket(Volume);
+		BuyMarket();
 		_entryPrice = candle.ClosePrice;
 		_stopPrice = _entryPrice - StopLossPoints;
 		_takeProfitPrice = _entryPrice + TakeProfitPoints;
 		}
 		else if (rsiValue > Overbought)
 		{
-		SellMarket(Volume);
+		SellMarket();
 		_entryPrice = candle.ClosePrice;
 		_stopPrice = _entryPrice + StopLossPoints;
 		_takeProfitPrice = _entryPrice - TakeProfitPoints;
@@ -187,14 +187,14 @@ public class RsiAutomatedStrategy : Strategy
 	{
 		if (rsiValue > ExitLevel)
 		{
-		SellMarket(Position);
+		SellMarket();
 		ResetState();
 		return;
 		}
 
 		if (candle.LowPrice <= _stopPrice || candle.HighPrice >= _takeProfitPrice)
 		{
-		SellMarket(Position);
+		SellMarket();
 		ResetState();
 		return;
 		}
@@ -210,14 +210,14 @@ public class RsiAutomatedStrategy : Strategy
 	{
 		if (rsiValue < ExitLevel)
 		{
-		BuyMarket(Math.Abs(Position));
+		BuyMarket();
 		ResetState();
 		return;
 		}
 
 		if (candle.HighPrice >= _stopPrice || candle.LowPrice <= _takeProfitPrice)
 		{
-		BuyMarket(Math.Abs(Position));
+		BuyMarket();
 		ResetState();
 		return;
 		}

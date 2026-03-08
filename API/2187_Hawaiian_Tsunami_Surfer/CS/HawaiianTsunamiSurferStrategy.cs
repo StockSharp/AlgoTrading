@@ -95,7 +95,7 @@ public class HawaiianTsunamiSurferStrategy : Strategy
 		.SetDisplay("Stop Loss Points", "Stop loss distance in price steps", "Risk Management")
 		.SetGreaterThanZero();
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 

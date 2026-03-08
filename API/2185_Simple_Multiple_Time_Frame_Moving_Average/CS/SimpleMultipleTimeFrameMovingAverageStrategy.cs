@@ -36,7 +36,7 @@ public class SimpleMultipleTimeFrameMovingAverageStrategy : Strategy
 		_slowLength = Param(nameof(SlowLength), 20)
 			.SetDisplay("Slow MA", "Slow moving average period", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for candles", "General");
 	}
 
@@ -53,8 +53,8 @@ public class SimpleMultipleTimeFrameMovingAverageStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var fastSma = new SMA { Length = FastLength };
-		var slowSma = new SMA { Length = SlowLength };
+		var fastSma = new ExponentialMovingAverage { Length = FastLength };
+		var slowSma = new ExponentialMovingAverage { Length = SlowLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

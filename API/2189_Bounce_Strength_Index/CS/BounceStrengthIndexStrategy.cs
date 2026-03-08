@@ -34,7 +34,7 @@ public class BounceStrengthIndexStrategy : Strategy
 
 	public BounceStrengthIndexStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 		_rangePeriod = Param(nameof(RangePeriod), 10)
 			.SetDisplay("Range Period", "Period for highest and lowest search", "Indicator");
@@ -58,7 +58,7 @@ public class BounceStrengthIndexStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var sma = new SMA { Length = SmaPeriod };
+		var sma = new ExponentialMovingAverage { Length = SmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

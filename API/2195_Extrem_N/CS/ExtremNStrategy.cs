@@ -97,7 +97,7 @@ public class ExtremNStrategy : Strategy
 			
 			.SetOptimize(5, 30, 1);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe", "General");
 
 		_buyPosOpen = Param(nameof(BuyPosOpen), true)
@@ -184,14 +184,14 @@ public class ExtremNStrategy : Strategy
 		if (_upPrev2 && !_dnPrev2)
 		{
 			if (SellPosClose && Position < 0)
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 			if (BuyPosOpen && dn && Position <= 0)
 				BuyMarket();
 		}
 		else if (!_upPrev2 && _dnPrev2)
 		{
 			if (BuyPosClose && Position > 0)
-				SellMarket(Position);
+				SellMarket();
 			if (SellPosOpen && up && Position >= 0)
 				SellMarket();
 		}
