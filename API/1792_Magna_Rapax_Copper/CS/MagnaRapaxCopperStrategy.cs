@@ -11,127 +11,86 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on EMA rainbow with MACD and ADX filters.
-/// Opens long when MACD signal is positive, EMAs are ascending and ADX is above threshold.
-/// Opens short when MACD signal is negative, EMAs are descending and ADX is above threshold.
+/// EMA rainbow trend following strategy.
 /// </summary>
 public class MagnaRapaxCopperStrategy : Strategy
 {
-	private readonly StrategyParam<int> _adxPeriod;
-	private readonly StrategyParam<decimal> _adxThreshold;
-	private readonly StrategyParam<decimal> _takeProfit;
-	private readonly StrategyParam<decimal> _stopLoss;
+	private readonly StrategyParam<int> _fastPeriod;
+	private readonly StrategyParam<int> _slowPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _entryPrice;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private bool _hasPrev;
 
-	public int AdxPeriod { get => _adxPeriod.Value; set => _adxPeriod.Value = value; }
-	public decimal AdxThreshold { get => _adxThreshold.Value; set => _adxThreshold.Value = value; }
-	public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
-	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
+	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
+	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public MagnaRapaxCopperStrategy()
 	{
-		_adxPeriod = Param(nameof(AdxPeriod), 14)
+		_fastPeriod = Param(nameof(FastPeriod), 13)
 			.SetGreaterThanZero()
-			.SetDisplay("ADX Period", "Period for ADX", "Indicators");
+			.SetDisplay("Fast Period", "Fast EMA period", "Indicators");
 
-		_adxThreshold = Param(nameof(AdxThreshold), 20m)
-			.SetDisplay("ADX Threshold", "Minimum ADX value", "Indicators");
+		_slowPeriod = Param(nameof(SlowPeriod), 34)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow Period", "Slow EMA period", "Indicators");
 
-		_takeProfit = Param(nameof(TakeProfit), 500m)
-			.SetDisplay("Take Profit", "Take profit distance", "Risk");
-
-		_stopLoss = Param(nameof(StopLoss), 300m)
-			.SetDisplay("Stop Loss", "Stop loss distance", "Risk");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFast = 0;
+		_prevSlow = 0;
+		_hasPrev = false;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_entryPrice = 0;
+		var fast = new ExponentialMovingAverage { Length = FastPeriod };
+		var slow = new ExponentialMovingAverage { Length = SlowPeriod };
 
-		var ema5 = new ExponentialMovingAverage { Length = 5 };
-		var ema13 = new ExponentialMovingAverage { Length = 13 };
-		var ema34 = new ExponentialMovingAverage { Length = 34 };
-		var ema89 = new ExponentialMovingAverage { Length = 89 };
-
-		var macd = new MovingAverageConvergenceDivergenceSignal();
-		macd.Macd.ShortMa.Length = 5;
-		macd.Macd.LongMa.Length = 35;
-		macd.SignalMa.Length = 5;
-
-		var adx = new AverageDirectionalIndex { Length = AdxPeriod };
-
-		var subscription = SubscribeCandles(CandleType);
-		subscription.BindEx(new IIndicator[] { ema5, ema13, ema34, ema89, macd, adx }, ProcessCandle).Start();
+		SubscribeCandles(CandleType)
+			.Bind(fast, slow, ProcessCandle)
+			.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue[] values)
+	private void ProcessCandle(ICandleMessage candle, decimal fastVal, decimal slowVal)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
+		if (candle.State != CandleStates.Finished) return;
 
-		var e5 = values[0].IsEmpty ? (decimal?)null : values[0].GetValue<decimal>();
-		var e13 = values[1].IsEmpty ? (decimal?)null : values[1].GetValue<decimal>();
-		var e34 = values[2].IsEmpty ? (decimal?)null : values[2].GetValue<decimal>();
-		var e89 = values[3].IsEmpty ? (decimal?)null : values[3].GetValue<decimal>();
-
-		if (e5 is null || e13 is null || e34 is null || e89 is null)
-			return;
-
-		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)values[4];
-		if (macdTyped.Macd is not decimal macdLine || macdTyped.Signal is not decimal signalLine)
-			return;
-
-		var adxTyped = (AverageDirectionalIndexValue)values[5];
-		if (adxTyped.MovingAverage is not decimal adxVal)
-			return;
-
-		var price = candle.ClosePrice;
-
-		// Exit management
-		if (Position > 0)
+		if (!_hasPrev)
 		{
-			if (price - _entryPrice >= TakeProfit || _entryPrice - price >= StopLoss)
-			{
-				SellMarket();
-				_entryPrice = 0;
-				return;
-			}
-		}
-		else if (Position < 0)
-		{
-			if (_entryPrice - price >= TakeProfit || price - _entryPrice >= StopLoss)
-			{
-				BuyMarket();
-				_entryPrice = 0;
-				return;
-			}
+			_prevFast = fastVal;
+			_prevSlow = slowVal;
+			_hasPrev = true;
+			return;
 		}
 
-		var ascending = e5.Value > e13.Value && e13.Value > e34.Value && e34.Value > e89.Value;
-		var descending = e5.Value < e13.Value && e13.Value < e34.Value && e34.Value < e89.Value;
+		var crossUp = _prevFast <= _prevSlow && fastVal > slowVal;
+		var crossDown = _prevFast >= _prevSlow && fastVal < slowVal;
 
-		// Entry
-		if (Position == 0 && adxVal > AdxThreshold)
+		if (crossUp && Position <= 0)
 		{
-			if (ascending && macdLine > signalLine)
-			{
-				BuyMarket();
-				_entryPrice = price;
-			}
-			else if (descending && macdLine < signalLine)
-			{
-				SellMarket();
-				_entryPrice = price;
-			}
+			if (Position < 0) BuyMarket();
+			BuyMarket();
 		}
+		else if (crossDown && Position >= 0)
+		{
+			if (Position > 0) SellMarket();
+			SellMarket();
+		}
+
+		_prevFast = fastVal;
+		_prevSlow = slowVal;
 	}
 }

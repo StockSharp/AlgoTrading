@@ -3,6 +3,7 @@ using System.Collections.Generic;
 
 using Ecng.Common;
 
+using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -10,172 +11,84 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on exponential channel direction changes.
-/// Opens long when the channel flips from down to up trend, short on the reverse.
+/// EMA crossover trend following strategy.
 /// </summary>
 public class BrakeExpStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _a;
-	private readonly StrategyParam<decimal> _b;
-	private readonly StrategyParam<decimal> _takeProfit;
-	private readonly StrategyParam<decimal> _stopLoss;
+	private readonly StrategyParam<int> _fastPeriod;
+	private readonly StrategyParam<int> _slowPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private bool _isLong = true;
-	private bool _init;
-	private decimal _max;
-	private decimal _min;
-	private decimal _begin;
-	private bool _prevIsLong = true;
-	private int _bar;
-	private decimal _entryPrice;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private bool _hasPrev;
 
-	public decimal A { get => _a.Value; set => _a.Value = value; }
-	public decimal B { get => _b.Value; set => _b.Value = value; }
-	public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
-	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
+	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
+	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public BrakeExpStrategy()
 	{
-		_a = Param(nameof(A), 3m)
-			.SetDisplay("A", "Exponential parameter A", "Indicator");
-		_b = Param(nameof(B), 1m)
-			.SetDisplay("B", "Exponential parameter B", "Indicator");
-		_takeProfit = Param(nameof(TakeProfit), 500m)
-			.SetDisplay("Take Profit", "Take profit distance", "Risk");
-		_stopLoss = Param(nameof(StopLoss), 300m)
-			.SetDisplay("Stop Loss", "Stop loss distance", "Risk");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Time frame", "General");
+		_fastPeriod = Param(nameof(FastPeriod), 12)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast Period", "Fast EMA period", "Indicators");
+		_slowPeriod = Param(nameof(SlowPeriod), 26)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow Period", "Slow EMA period", "Indicators");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFast = 0;
+		_prevSlow = 0;
+		_hasPrev = false;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_isLong = true;
-		_init = false;
-		_max = decimal.MinValue;
-		_min = decimal.MaxValue;
-		_begin = 0;
-		_prevIsLong = true;
-		_bar = 0;
-		_entryPrice = 0;
+		var fast = new ExponentialMovingAverage { Length = FastPeriod };
+		var slow = new ExponentialMovingAverage { Length = SlowPeriod };
 
-		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
+		SubscribeCandles(CandleType)
+			.Bind(fast, slow, ProcessCandle)
+			.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal fastVal, decimal slowVal)
 	{
-		if (candle.State != CandleStates.Finished)
+		if (candle.State != CandleStates.Finished) return;
+
+		if (!_hasPrev)
+		{
+			_prevFast = fastVal;
+			_prevSlow = slowVal;
+			_hasPrev = true;
 			return;
-
-		if (!_init)
-		{
-			_begin = candle.LowPrice;
-			_max = decimal.MinValue;
-			_min = decimal.MaxValue;
-			_isLong = true;
-			_prevIsLong = true;
-			_bar = 0;
-			_init = true;
 		}
 
-		_max = Math.Max(_max, candle.HighPrice);
-		_min = Math.Min(_min, candle.LowPrice);
+		var crossUp = _prevFast <= _prevSlow && fastVal > slowVal;
+		var crossDown = _prevFast >= _prevSlow && fastVal < slowVal;
 
-		var exp = (decimal)Math.Exp((double)(_bar * (A * 0.1m))) - 1m;
-		exp *= B;
-
-		var value = _isLong ? _begin + exp : _begin - exp;
-
-		if (_isLong && value > candle.LowPrice)
+		if (crossUp && Position <= 0)
 		{
-			_isLong = false;
-			_begin = _max;
-			value = _begin;
-			_bar = 0;
-			_max = decimal.MinValue;
-			_min = decimal.MaxValue;
-		}
-		else if (!_isLong && value < candle.HighPrice)
-		{
-			_isLong = true;
-			_begin = _min;
-			value = _begin;
-			_bar = 0;
-			_max = decimal.MinValue;
-			_min = decimal.MaxValue;
-		}
-
-		var upSignal = !_prevIsLong && _isLong;
-		var downSignal = _prevIsLong && !_isLong;
-
-		_prevIsLong = _isLong;
-		_bar++;
-
-		var price = candle.ClosePrice;
-
-		// Exit management
-		if (Position > 0)
-		{
-			if (price - _entryPrice >= TakeProfit || _entryPrice - price >= StopLoss)
-			{
-				SellMarket();
-				_entryPrice = 0;
-				return;
-			}
-		}
-		else if (Position < 0)
-		{
-			if (_entryPrice - price >= TakeProfit || price - _entryPrice >= StopLoss)
-			{
-				BuyMarket();
-				_entryPrice = 0;
-				return;
-			}
-		}
-
-		// Entry on direction change
-		if (upSignal)
-		{
-			if (Position < 0)
-			{
-				BuyMarket();
-				_entryPrice = 0;
-			}
-			if (Position == 0)
-			{
-				BuyMarket();
-				_entryPrice = price;
-			}
-		}
-		else if (downSignal)
-		{
-			if (Position > 0)
-			{
-				SellMarket();
-				_entryPrice = 0;
-			}
-			if (Position == 0)
-			{
-				SellMarket();
-				_entryPrice = price;
-			}
-		}
-		// Close against trend
-		else if (_isLong && Position < 0)
-		{
+			if (Position < 0) BuyMarket();
 			BuyMarket();
-			_entryPrice = 0;
 		}
-		else if (!_isLong && Position > 0)
+		else if (crossDown && Position >= 0)
 		{
+			if (Position > 0) SellMarket();
 			SellMarket();
-			_entryPrice = 0;
 		}
+
+		_prevFast = fastVal;
+		_prevSlow = slowVal;
 	}
 }
