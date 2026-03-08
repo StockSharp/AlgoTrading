@@ -103,7 +103,7 @@ public class MartinMartingaleStrategy : Strategy
 			.SetDisplay("Max Level", "Maximum martingale levels", "Risk")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candles for price monitoring", "Data");
 	}
 
@@ -120,6 +120,8 @@ public class MartinMartingaleStrategy : Strategy
 		ResetCycle();
 		_isClosing = false;
 		_initialPrice = null;
+		_stepSize = 0;
+		_entryOffset = 0;
 	}
 
 	/// <inheritdoc />
@@ -174,9 +176,9 @@ public class MartinMartingaleStrategy : Strategy
 		{
 			_isClosing = true;
 			if (Position > 0)
-				SellMarket(Position);
+				SellMarket();
 			else if (Position < 0)
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 			return;
 		}
 
@@ -185,9 +187,9 @@ public class MartinMartingaleStrategy : Strategy
 		{
 			_isClosing = true;
 			if (Position > 0)
-				SellMarket(Position);
+				SellMarket();
 			else if (Position < 0)
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 			return;
 		}
 
@@ -205,7 +207,7 @@ public class MartinMartingaleStrategy : Strategy
 
 			if (price >= _initialPrice.Value + _entryOffset)
 			{
-				BuyMarket(Volume);
+				BuyMarket();
 				_lastTradePrice = price;
 				_lastTradeVolume = Volume;
 				_lastTradeSide = Sides.Buy;
@@ -214,7 +216,7 @@ public class MartinMartingaleStrategy : Strategy
 			}
 			else if (price <= _initialPrice.Value - _entryOffset)
 			{
-				SellMarket(Volume);
+				SellMarket();
 				_lastTradePrice = price;
 				_lastTradeVolume = Volume;
 				_lastTradeSide = Sides.Sell;
@@ -236,7 +238,7 @@ public class MartinMartingaleStrategy : Strategy
 			{
 				var nextVolume = _lastTradeVolume * 2m;
 				var totalVolume = nextVolume + Math.Abs(Position);
-				SellMarket(totalVolume);
+				SellMarket();
 				_lastTradePrice = price;
 				_lastTradeVolume = nextVolume;
 				_lastTradeSide = Sides.Sell;
@@ -249,7 +251,7 @@ public class MartinMartingaleStrategy : Strategy
 			{
 				var nextVolume = _lastTradeVolume * 2m;
 				var totalVolume = nextVolume + Math.Abs(Position);
-				BuyMarket(totalVolume);
+				BuyMarket();
 				_lastTradePrice = price;
 				_lastTradeVolume = nextVolume;
 				_lastTradeSide = Sides.Buy;

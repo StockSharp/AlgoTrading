@@ -86,7 +86,7 @@ public class IcciImaStrategy : Strategy
 		
 		.SetOptimize(0.01m, 1m, 0.01m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Data series used for calculations", "General");
 	}
 
@@ -213,7 +213,7 @@ public class IcciImaStrategy : Strategy
 		.Bind(_cci, _cciClose, ProcessCandle)
 		.Start();
 
-		StartProtection(null, null);
+		// protection not needed
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal cciValue, decimal cciCloseValue)
@@ -253,12 +253,12 @@ public class IcciImaStrategy : Strategy
 
 		if (Position > 0 && shouldCloseLong)
 		{
-			SellMarket(Position);
+			SellMarket();
 			_entryPrice = null;
 		}
 		else if (Position < 0 && shouldCloseShort)
 		{
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
 			_entryPrice = null;
 		}
 
@@ -272,7 +272,7 @@ public class IcciImaStrategy : Strategy
 				var totalVolume = volume + Math.Abs(Position);
 				if (totalVolume > 0m)
 				{
-					BuyMarket(totalVolume);
+					BuyMarket();
 					_entryPrice = candle.ClosePrice;
 				}
 			}
@@ -281,7 +281,7 @@ public class IcciImaStrategy : Strategy
 				var totalVolume = volume + Math.Abs(Position);
 				if (totalVolume > 0m)
 				{
-					SellMarket(totalVolume);
+					SellMarket();
 					_entryPrice = candle.ClosePrice;
 				}
 			}
@@ -312,14 +312,14 @@ public class IcciImaStrategy : Strategy
 
 			if (stopLossDistance > 0m && candle.LowPrice <= entry - stopLossDistance)
 			{
-				SellMarket(Position);
+				SellMarket();
 				_entryPrice = null;
 				return;
 			}
 
 			if (takeProfitDistance > 0m && candle.HighPrice >= entry + takeProfitDistance)
 			{
-				SellMarket(Position);
+				SellMarket();
 				_entryPrice = null;
 			}
 		}
@@ -330,14 +330,14 @@ public class IcciImaStrategy : Strategy
 
 			if (stopLossDistance > 0m && candle.HighPrice >= entry + stopLossDistance)
 			{
-				BuyMarket(absPosition);
+				BuyMarket();
 				_entryPrice = null;
 				return;
 			}
 
 			if (takeProfitDistance > 0m && candle.LowPrice <= entry - takeProfitDistance)
 			{
-				BuyMarket(absPosition);
+				BuyMarket();
 				_entryPrice = null;
 			}
 		}

@@ -283,7 +283,7 @@ public class TipuEaStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("ADX Length", "ADX period for range detection", "Signals");
 
-		_adxThreshold = Param(nameof(AdxThreshold), 20m)
+		_adxThreshold = Param(nameof(AdxThreshold), 5m)
 			.SetGreaterThanZero()
 			.SetDisplay("ADX Threshold", "Below this ADX value the market is treated as ranging", "Signals");
 
@@ -295,14 +295,14 @@ public class TipuEaStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Multiplier", "Multiplier applied to ATR for the initial stop", "Risk");
 
-		_higherSignalWindowMinutes = Param(nameof(HigherSignalWindowMinutes), 720)
+		_higherSignalWindowMinutes = Param(nameof(HigherSignalWindowMinutes), 14400)
 			.SetGreaterThanZero()
 			.SetDisplay("Higher Signal Window", "Minutes within which the higher timeframe signal must be recent", "Signals");
 
-		_higherCandleType = Param(nameof(HigherCandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_higherCandleType = Param(nameof(HigherCandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Higher Timeframe", "Higher timeframe candles used for context", "General");
 
-		_lowerCandleType = Param(nameof(LowerCandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_lowerCandleType = Param(nameof(LowerCandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Signal Timeframe", "Primary timeframe used for entries", "General");
 
 		// Volume is set externally or defaults to TradeVolume
@@ -481,7 +481,7 @@ public class TipuEaStrategy : Strategy
 			{
 				if (CloseOnReverseSignal)
 				{
-					BuyMarket(Math.Abs(Position));
+					BuyMarket();
 					ResetPositionState();
 				}
 				else
@@ -491,7 +491,7 @@ public class TipuEaStrategy : Strategy
 			}
 			else if (CloseOnReverseSignal)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				ResetPositionState();
 			}
 		}
@@ -516,7 +516,7 @@ public class TipuEaStrategy : Strategy
 		if (volume <= 0m)
 		return;
 
-		BuyMarket(volume);
+		BuyMarket();
 
 		var previousVolume = Math.Abs(_positionVolume);
 		var newVolume = previousVolume + volume;
@@ -544,7 +544,7 @@ public class TipuEaStrategy : Strategy
 			{
 				if (CloseOnReverseSignal)
 				{
-					SellMarket(Math.Abs(Position));
+					SellMarket();
 					ResetPositionState();
 				}
 				else
@@ -554,7 +554,7 @@ public class TipuEaStrategy : Strategy
 			}
 			else if (CloseOnReverseSignal)
 			{
-				SellMarket(Math.Abs(Position));
+				SellMarket();
 				ResetPositionState();
 			}
 		}
@@ -576,7 +576,7 @@ public class TipuEaStrategy : Strategy
 		if (volume <= 0m)
 		return;
 
-		SellMarket(volume);
+		SellMarket();
 
 		var previousVolume = Math.Abs(_positionVolume);
 		var newVolume = previousVolume + volume;
@@ -725,7 +725,7 @@ public class TipuEaStrategy : Strategy
 		if (increment <= 0m)
 		return;
 
-		BuyMarket(increment);
+		BuyMarket();
 
 		var newVolume = currentVolume + increment;
 		_averageEntryPrice = (currentVolume * _averageEntryPrice + price * increment) / newVolume;
@@ -777,7 +777,7 @@ public class TipuEaStrategy : Strategy
 		if (increment <= 0m)
 		return;
 
-		SellMarket(increment);
+		SellMarket();
 
 		var newVolume = currentVolume + increment;
 		_averageEntryPrice = (currentVolume * _averageEntryPrice + price * increment) / newVolume;
@@ -791,7 +791,7 @@ public class TipuEaStrategy : Strategy
 		if (Position <= 0)
 		return;
 
-		SellMarket(Math.Abs(Position));
+		SellMarket();
 		ResetPositionState();
 	}
 
@@ -800,7 +800,7 @@ public class TipuEaStrategy : Strategy
 		if (Position >= 0)
 		return;
 
-		BuyMarket(Math.Abs(Position));
+		BuyMarket();
 		ResetPositionState();
 	}
 

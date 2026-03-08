@@ -204,7 +204,7 @@ public class ColorFisherM11Strategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Take Profit (pts)", "Target distance in price steps", "Protection");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for indicator calculation", "General");
 	}
 
@@ -281,12 +281,12 @@ public class ColorFisherM11Strategy : Strategy
 
 		if (EnableSellExit && signalColor < 2 && Position < 0)
 		{
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
 		}
 
 		if (EnableBuyExit && signalColor > 2 && Position > 0)
 		{
-			SellMarket(Position);
+			SellMarket();
 		}
 
 		var allowLong = !_nextLongTime.HasValue || candle.CloseTime >= _nextLongTime.Value;
@@ -295,13 +295,13 @@ public class ColorFisherM11Strategy : Strategy
 		if (EnableBuyEntry && allowLong && signalColor <= 1 && previousColor > 1 && Position <= 0)
 		{
 			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
+			BuyMarket();
 			_nextLongTime = candle.CloseTime;
 		}
 		else if (EnableSellEntry && allowShort && signalColor >= 3 && previousColor < 3 && Position >= 0)
 		{
 			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
+			SellMarket();
 			_nextShortTime = candle.CloseTime;
 		}
 	}
@@ -310,8 +310,10 @@ public class ColorFisherM11Strategy : Strategy
 	{
 		_colorHistory.Insert(0, color);
 		var max = Math.Max(SignalBar + 2, 5);
-		if (_colorHistory.Count > max)
-			_colorHistory.RemoveRange(max, _colorHistory.Count - max);
+		while (_colorHistory.Count > max)
+		{
+			try { _colorHistory.RemoveAt(_colorHistory.Count - 1); } catch { break; }
+		}
 	}
 
 	private int? GetColor(int index)

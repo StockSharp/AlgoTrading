@@ -45,8 +45,8 @@ public class AfStarStrategy : Strategy
 
 	private readonly List<ICandleMessage> _candles = new();
 	private readonly List<decimal> _value2History = new();
-	private readonly Queue<AfStarSignal> _signalQueue = new();
-	private readonly Dictionary<int, decimal> _prevWpr = new();
+	private readonly List<AfStarSignal> _signalQueue = new();
+	private decimal _lastWpr;
 
 	private bool _prevBuy1;
 	private bool _prevSell1;
@@ -67,7 +67,7 @@ public class AfStarStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Order Volume", "Volume used for market orders", "Trading");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 		.SetDisplay("Candle Type", "Time frame for candles", "General");
 
 		_startFast = Param(nameof(StartFast), 3m)
@@ -324,7 +324,7 @@ public class AfStarStrategy : Strategy
 		_candles.Clear();
 		_value2History.Clear();
 		_signalQueue.Clear();
-		_prevWpr.Clear();
+		_lastWpr = -50m;
 		_prevBuy1 = false;
 		_prevSell1 = false;
 		_prevBuy2 = false;
@@ -378,11 +378,12 @@ public class AfStarStrategy : Strategy
 
 		if (signal.HasValue)
 		{
-			_signalQueue.Enqueue(signal.Value);
+			_signalQueue.Add(signal.Value);
 
-			if (_signalQueue.Count > SignalBar)
+			while (_signalQueue.Count > SignalBar)
 			{
-				var activeSignal = _signalQueue.Dequeue();
+				var activeSignal = _signalQueue[0];
+				try { _signalQueue.RemoveAt(0); } catch { break; }
 				ExecuteSignal(activeSignal, candle);
 			}
 		}
@@ -511,7 +512,7 @@ public class AfStarStrategy : Strategy
 
 			if (BuyEntriesEnabled && Position == 0)
 			{
-				BuyMarket(Volume);
+				BuyMarket();
 				InitializeLongTargets(candle.ClosePrice);
 			}
 		}
@@ -523,7 +524,7 @@ public class AfStarStrategy : Strategy
 
 			if (SellEntriesEnabled && Position == 0)
 			{
-				SellMarket(Volume);
+				SellMarket();
 				InitializeShortTargets(candle.ClosePrice);
 			}
 		}
@@ -565,7 +566,7 @@ public class AfStarStrategy : Strategy
 		var position = Position;
 		if (position > 0)
 		{
-			SellMarket(Math.Abs(position));
+			SellMarket();
 			ResetLongTargets();
 		}
 	}
@@ -575,7 +576,7 @@ public class AfStarStrategy : Strategy
 		var position = Position;
 		if (position < 0)
 		{
-			BuyMarket(Math.Abs(position));
+			BuyMarket();
 			ResetShortTargets();
 		}
 	}
@@ -692,14 +693,11 @@ public class AfStarStrategy : Strategy
 
 		if (range == 0m)
 		{
-			if (_prevWpr.TryGetValue(period, out var prev))
-			return prev;
-
-			return -50m;
+			return _lastWpr;
 		}
 
 		var wpr = -(maxHigh - close) * 100m / range;
-		_prevWpr[period] = wpr;
+		_lastWpr = wpr;
 		return wpr;
 	}
 

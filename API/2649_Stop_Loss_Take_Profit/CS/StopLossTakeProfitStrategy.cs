@@ -19,10 +19,9 @@ public class StopLossTakeProfitStrategy : Strategy
 	private readonly StrategyParam<decimal> _takeProfitDistance;
 	private readonly StrategyParam<decimal> _initialVolume;
 
-	private readonly Random _random = new(System.Environment.TickCount);
-
 	private decimal _currentVolume;
 	private decimal _entryPrice;
+	private int _tradeCount;
 
 	public DataType CandleType
 	{
@@ -50,18 +49,33 @@ public class StopLossTakeProfitStrategy : Strategy
 
 	public StopLossTakeProfitStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for evaluating entries", "General");
 
-		_stopLossDistance = Param(nameof(StopLossDistance), 200m)
+		_stopLossDistance = Param(nameof(StopLossDistance), 5m)
 			.SetDisplay("Stop Loss Distance", "Stop loss distance in price units", "Risk");
 
-		_takeProfitDistance = Param(nameof(TakeProfitDistance), 200m)
+		_takeProfitDistance = Param(nameof(TakeProfitDistance), 5m)
 			.SetDisplay("Take Profit Distance", "Take profit distance in price units", "Risk");
 
 		_initialVolume = Param(nameof(InitialVolume), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Initial Volume", "Starting order volume", "Risk");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_currentVolume = 0;
+		_entryPrice = 0;
+		_tradeCount = 0;
 	}
 
 	protected override void OnStarted2(DateTime time)
@@ -133,9 +147,10 @@ public class StopLossTakeProfitStrategy : Strategy
 		// Enter new position when flat
 		if (Position == 0)
 		{
-			var goShort = _random.Next(0, 2) == 0;
+			_tradeCount++;
 
-			if (goShort)
+			// Use candle direction as a deterministic signal
+			if (candle.ClosePrice < candle.OpenPrice)
 			{
 				SellMarket();
 			}
