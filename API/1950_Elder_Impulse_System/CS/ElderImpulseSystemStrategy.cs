@@ -22,12 +22,13 @@ public class ElderImpulseSystemStrategy : Strategy
 	private readonly StrategyParam<int> _macdFastPeriod;
 	private readonly StrategyParam<int> _macdSlowPeriod;
 	private readonly StrategyParam<int> _macdSignalPeriod;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 	
 	private decimal? _previousEma;
 	private decimal? _previousMacdHist;
 	private int? _previousColor;
-	private int? _previousPreviousColor;
+	private int _barsSinceTrade;
 	
 	/// <summary>
 	/// EMA period.
@@ -64,6 +65,15 @@ public class ElderImpulseSystemStrategy : Strategy
 		get => _macdSignalPeriod.Value;
 		set => _macdSignalPeriod.Value = value;
 	}
+
+	/// <summary>
+	/// Bars to wait after a completed trade.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
 	
 	/// <summary>
 	/// Candle type used by the strategy.
@@ -99,7 +109,10 @@ public class ElderImpulseSystemStrategy : Strategy
 		
 		.SetOptimize(5, 15, 1);
 		
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_cooldownBars = Param(nameof(CooldownBars), 1)
+		.SetDisplay("Cooldown Bars", "Bars to wait after a completed trade", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 	
@@ -117,7 +130,7 @@ public class ElderImpulseSystemStrategy : Strategy
 		_previousEma = null;
 		_previousMacdHist = null;
 		_previousColor = null;
-		_previousPreviousColor = null;
+		_barsSinceTrade = CooldownBars;
 	}
 	
 	/// <inheritdoc />
@@ -161,6 +174,9 @@ public class ElderImpulseSystemStrategy : Strategy
 		
 		if (!IsFormedAndOnlineAndAllowTrading())
 		return;
+
+		if (_barsSinceTrade < CooldownBars)
+			_barsSinceTrade++;
 		
 		var ema = emaValue.ToDecimal();
 		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
@@ -185,31 +201,32 @@ public class ElderImpulseSystemStrategy : Strategy
 		else if (emaDelta < 0 && macdHist < 0 && macdDelta < 0)
 		color = 1;
 		
-		if (_previousPreviousColor.HasValue)
+		if (_previousColor.HasValue && _barsSinceTrade >= CooldownBars)
 		{
-			if (_previousPreviousColor.Value == 2)
+			if (_previousColor.Value == 2 && color != 2)
 			{
-				// Close short positions on bullish impulse
 				if (Position < 0)
-				BuyMarket(Math.Abs(Position));
+					BuyMarket(Math.Abs(Position));
 				
-				// Open long position when impulse weakens
-				if ((_previousColor == 1 || _previousColor == 0) && Position <= 0)
-				BuyMarket(Volume + Math.Abs(Position));
+				if (Position <= 0)
+				{
+					BuyMarket(Volume + Math.Abs(Position));
+					_barsSinceTrade = 0;
+				}
 			}
-			else if (_previousPreviousColor.Value == 1)
+			else if (_previousColor.Value == 1 && color != 1)
 			{
-				// Close long positions on bearish impulse
 				if (Position > 0)
-				SellMarket(Math.Abs(Position));
+					SellMarket(Math.Abs(Position));
 				
-				// Open short position when impulse weakens
-				if ((_previousColor == 0 || _previousColor == 2) && Position >= 0)
-				SellMarket(Volume + Math.Abs(Position));
+				if (Position >= 0)
+				{
+					SellMarket(Volume + Math.Abs(Position));
+					_barsSinceTrade = 0;
+				}
 			}
 		}
 		
-		_previousPreviousColor = _previousColor;
 		_previousColor = color;
 		_previousEma = ema;
 		_previousMacdHist = macdHist;

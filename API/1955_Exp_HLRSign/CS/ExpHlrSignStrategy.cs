@@ -28,6 +28,7 @@ public class ExpHlrSignStrategy : Strategy
 	private readonly StrategyParam<int> _range;
 	private readonly StrategyParam<decimal> _upLevel;
 	private readonly StrategyParam<decimal> _dnLevel;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<bool> _buyOpen;
 	private readonly StrategyParam<bool> _sellOpen;
@@ -36,6 +37,7 @@ public class ExpHlrSignStrategy : Strategy
 
 	private decimal _previousHlr;
 	private bool _isFirst = true;
+	private int _barsSinceTrade;
 
 	/// <summary>
 	/// Indicator mode.
@@ -71,6 +73,15 @@ public class ExpHlrSignStrategy : Strategy
 	{
 		get => _dnLevel.Value;
 		set => _dnLevel.Value = value;
+	}
+
+	/// <summary>
+	/// Bars to wait after a completed trade.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	/// <summary>
@@ -123,7 +134,7 @@ public class ExpHlrSignStrategy : Strategy
 	/// </summary>
 	public ExpHlrSignStrategy()
 	{
-		_mode = Param(nameof(Mode), AlgMethods.ModeOut)
+		_mode = Param(nameof(Mode), AlgMethods.ModeIn)
 			.SetDisplay("Mode", "Indicator operation mode", "General");
 
 		_range = Param(nameof(Range), 40)
@@ -141,7 +152,10 @@ public class ExpHlrSignStrategy : Strategy
 			.SetOptimize(10m, 40m, 5m)
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_cooldownBars = Param(nameof(CooldownBars), 1)
+			.SetDisplay("Cooldown Bars", "Bars to wait after a completed trade", "Trading");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for analysis", "General");
 
 		_buyOpen = Param(nameof(BuyOpen), true)
@@ -169,6 +183,7 @@ public class ExpHlrSignStrategy : Strategy
 		base.OnReseted();
 		_previousHlr = 0;
 		_isFirst = true;
+		_barsSinceTrade = CooldownBars;
 	}
 
 	/// <inheritdoc />
@@ -199,6 +214,9 @@ public class ExpHlrSignStrategy : Strategy
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
+
+		if (_barsSinceTrade < CooldownBars)
+			_barsSinceTrade++;
 
 		var donchian = (DonchianChannelsValue)value;
 		var upper = donchian.UpperBand;
@@ -236,20 +254,22 @@ public class ExpHlrSignStrategy : Strategy
 				buySignal = true;
 		}
 
-		if (buySignal)
+		if (_barsSinceTrade >= CooldownBars && buySignal)
 		{
-			if (SellClose && Position < 0)
-				BuyMarket(Math.Abs(Position));
 			if (BuyOpen && Position <= 0)
+			{
 				BuyMarket(Volume + Math.Abs(Position));
+				_barsSinceTrade = 0;
+			}
 		}
 
-		if (sellSignal)
+		if (_barsSinceTrade >= CooldownBars && sellSignal)
 		{
-			if (BuyClose && Position > 0)
-				SellMarket(Position);
 			if (SellOpen && Position >= 0)
-				SellMarket(Volume + Position);
+			{
+				SellMarket(Volume + Math.Abs(Position));
+				_barsSinceTrade = 0;
+			}
 		}
 
 		_previousHlr = hlr;

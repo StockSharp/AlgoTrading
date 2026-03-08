@@ -23,9 +23,13 @@ public class DssBressertStrategy : Strategy
 	private readonly StrategyParam<int> _stoPeriod;
 	private readonly StrategyParam<decimal> _takeProfitPercent;
 	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
+	private DssBressertIndicator _dss = null!;
 	private decimal _prevDss;
+	private decimal _prevMit;
+	private int _barsSinceTrade;
 
 	/// <summary>
 	/// EMA period used for smoothing.
@@ -61,6 +65,15 @@ public class DssBressertStrategy : Strategy
 	{
 		get => _stopLossPercent.Value;
 		set => _stopLossPercent.Value = value;
+	}
+
+	/// <summary>
+	/// Bars to wait after a completed trade.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	/// <summary>
@@ -101,7 +114,10 @@ public class DssBressertStrategy : Strategy
 
 		.SetOptimize(0.5m, 5m, 0.5m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_cooldownBars = Param(nameof(CooldownBars), 1)
+		.SetDisplay("Cooldown Bars", "Bars to wait after a completed trade", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -116,6 +132,8 @@ public class DssBressertStrategy : Strategy
 	{
 		base.OnReseted();
 		_prevDss = 0m;
+		_prevMit = 0m;
+		_barsSinceTrade = CooldownBars;
 	}
 
 	/// <inheritdoc />
@@ -123,7 +141,7 @@ public class DssBressertStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var dss = new DssBressertIndicator
+		_dss = new DssBressertIndicator
 		{
 			EmaPeriod = EmaPeriod,
 			StoPeriod = StoPeriod
@@ -131,7 +149,7 @@ public class DssBressertStrategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-		.Bind(dss, ProcessCandle)
+		.Bind(_dss, ProcessCandle)
 		.Start();
 
 		StartProtection(
@@ -142,7 +160,7 @@ public class DssBressertStrategy : Strategy
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, dss);
+			DrawIndicator(area, _dss);
 			DrawOwnTrades(area);
 		}
 	}
@@ -155,17 +173,24 @@ public class DssBressertStrategy : Strategy
 		if (!IsFormedAndOnline())
 			return;
 
-		// Buy when DSS crosses above 50 from below, sell when crosses below 50 from above
-		if (_prevDss < 50m && dssValue >= 50m && Position <= 0)
+		if (_barsSinceTrade < CooldownBars)
+			_barsSinceTrade++;
+
+		var currentMit = _dss.LastMit;
+
+		if (_barsSinceTrade >= CooldownBars && _prevDss <= _prevMit && dssValue > currentMit && Position <= 0)
 		{
 			BuyMarket(Volume + Math.Abs(Position));
+			_barsSinceTrade = 0;
 		}
-		else if (_prevDss > 50m && dssValue <= 50m && Position >= 0)
+		else if (_barsSinceTrade >= CooldownBars && _prevDss >= _prevMit && dssValue < currentMit && Position >= 0)
 		{
 			SellMarket(Volume + Math.Abs(Position));
+			_barsSinceTrade = 0;
 		}
 
 		_prevDss = dssValue;
+		_prevMit = currentMit;
 	}
 }
 
@@ -175,6 +200,8 @@ public class DssBressertStrategy : Strategy
 /// </summary>
 public class DssBressertIndicator : BaseIndicator
 {
+	private static readonly object _sync = new();
+
 	/// <summary>
 	/// EMA smoothing period.
 	/// </summary>
@@ -214,49 +241,55 @@ public class DssBressertIndicator : BaseIndicator
 	/// <inheritdoc />
 	protected override IIndicatorValue OnProcess(IIndicatorValue input)
 	{
-		var candle = input.GetValue<ICandleMessage>();
-
-		_high.Enqueue(candle.HighPrice);
-		_low.Enqueue(candle.LowPrice);
-		_close.Enqueue(candle.ClosePrice);
-
-		if (_high.Count > StoPeriod)
+		lock (_sync)
 		{
-			_high.Dequeue();
-			_low.Dequeue();
-			_close.Dequeue();
+			var candle = input.GetValue<ICandleMessage>();
+
+			if (candle == null)
+				return new DecimalIndicatorValue(this, _prevDss, input.Time);
+
+			_high.Enqueue(candle.HighPrice);
+			_low.Enqueue(candle.LowPrice);
+			_close.Enqueue(candle.ClosePrice);
+
+			if (_high.Count > StoPeriod)
+			{
+				_high.Dequeue();
+				_low.Dequeue();
+				_close.Dequeue();
+			}
+
+			if (_high.Count >= StoPeriod)
+				IsFormed = true;
+
+			var highRange = GetMax(_high);
+			var lowRange = GetMin(_low);
+			if (highRange == lowRange)
+				return new DecimalIndicatorValue(this, _prevDss, input.Time);
+
+			var delta = candle.ClosePrice - lowRange;
+			var mitRaw = delta / (highRange - lowRange) * 100m;
+			var coeff = 2m / (1m + EmaPeriod);
+			var mitValue = _prevMit + coeff * (mitRaw - _prevMit);
+			_prevMit = mitValue;
+			LastMit = mitValue;
+
+			_mit.Enqueue(mitValue);
+			if (_mit.Count > StoPeriod)
+				_mit.Dequeue();
+
+			var highMit = GetMax(_mit);
+			var lowMit = GetMin(_mit);
+			if (highMit == lowMit)
+				return new DecimalIndicatorValue(this, _prevDss, input.Time);
+
+			var deltaMit = mitValue - lowMit;
+			var dssRaw = deltaMit / (highMit - lowMit) * 100m;
+			var dssValue = _prevDss + coeff * (dssRaw - _prevDss);
+			_prevDss = dssValue;
+
+			return new DecimalIndicatorValue(this, dssValue, input.Time);
 		}
-
-		if (_high.Count >= StoPeriod)
-			IsFormed = true;
-
-		var highRange = GetMax(_high);
-		var lowRange = GetMin(_low);
-		if (highRange == lowRange)
-			return new DecimalIndicatorValue(this, _prevDss, input.Time);
-
-		var delta = candle.ClosePrice - lowRange;
-		var mitRaw = delta / (highRange - lowRange) * 100m;
-		var coeff = 2m / (1m + EmaPeriod);
-		var mitValue = _prevMit + coeff * (mitRaw - _prevMit);
-		_prevMit = mitValue;
-		LastMit = mitValue;
-
-		_mit.Enqueue(mitValue);
-		if (_mit.Count > StoPeriod)
-			_mit.Dequeue();
-
-		var highMit = GetMax(_mit);
-		var lowMit = GetMin(_mit);
-		if (highMit == lowMit)
-			return new DecimalIndicatorValue(this, _prevDss, input.Time);
-
-		var deltaMit = mitValue - lowMit;
-		var dssRaw = deltaMit / (highMit - lowMit) * 100m;
-		var dssValue = _prevDss + coeff * (dssRaw - _prevDss);
-		_prevDss = dssValue;
-
-		return new DecimalIndicatorValue(this, dssValue, input.Time);
 	}
 
 	private static decimal GetMax(IEnumerable<decimal> values)

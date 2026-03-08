@@ -22,10 +22,12 @@ public class BackToTheFutureStrategy : Strategy
 	private readonly StrategyParam<int> _historyMinutes;
 	private readonly StrategyParam<decimal> _takeProfit;
 	private readonly StrategyParam<decimal> _stopLoss;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private readonly Queue<(DateTimeOffset time, decimal price)> _history = new();
 	private decimal _entryPrice;
+	private int _barsSinceTrade;
 
 	/// <summary>
 	/// Price difference threshold.
@@ -64,6 +66,15 @@ public class BackToTheFutureStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Bars to wait after a completed trade.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Type of candles to process.
 	/// </summary>
 	public DataType CandleType
@@ -77,27 +88,30 @@ public class BackToTheFutureStrategy : Strategy
 	/// </summary>
 	public BackToTheFutureStrategy()
 	{
-		_barSize = Param(nameof(BarSize), 100m)
+		_barSize = Param(nameof(BarSize), 1500m)
 			.SetGreaterThanZero()
 			.SetDisplay("Price Difference", "Threshold to trigger trades", "General")
 			;
 
-		_historyMinutes = Param(nameof(HistoryMinutes), 60)
+		_historyMinutes = Param(nameof(HistoryMinutes), 240)
 			.SetGreaterThanZero()
 			.SetDisplay("History Minutes", "Minutes back for price comparison", "General")
 			;
 
-		_takeProfit = Param(nameof(TakeProfit), 10m)
+		_takeProfit = Param(nameof(TakeProfit), 1500m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit", "Distance from entry", "Risk")
 			;
 
-		_stopLoss = Param(nameof(StopLoss), 5000m)
+		_stopLoss = Param(nameof(StopLoss), 2000m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss", "Distance from entry", "Risk")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_cooldownBars = Param(nameof(CooldownBars), 2)
+			.SetDisplay("Cooldown Bars", "Bars to wait after a completed trade", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -114,6 +128,7 @@ public class BackToTheFutureStrategy : Strategy
 
 		_history.Clear();
 		_entryPrice = 0m;
+		_barsSinceTrade = CooldownBars;
 	}
 
 	/// <inheritdoc />
@@ -146,32 +161,43 @@ public class BackToTheFutureStrategy : Strategy
 		if (_history.Count == 0)
 			return;
 
+		if (_barsSinceTrade < CooldownBars)
+			_barsSinceTrade++;
+
 		var oldest = _history.Peek().price;
 		var diff = candle.ClosePrice - oldest;
 
 		if (Position > 0)
 		{
 			if (candle.ClosePrice >= _entryPrice + TakeProfit || candle.ClosePrice <= _entryPrice - StopLoss)
+			{
 				SellMarket(Position);
+				_barsSinceTrade = 0;
+			}
 		}
 		else if (Position < 0)
 		{
 			if (candle.ClosePrice <= _entryPrice - TakeProfit || candle.ClosePrice >= _entryPrice + StopLoss)
+			{
 				BuyMarket(-Position);
+				_barsSinceTrade = 0;
+			}
 		}
-		else
+		else if (_barsSinceTrade >= CooldownBars)
 		{
 			if (diff > BarSize)
 			{
 				var volume = Volume + (Position < 0 ? -Position : 0m);
 				BuyMarket(volume);
 				_entryPrice = candle.ClosePrice;
+				_barsSinceTrade = 0;
 			}
 			else if (diff < -BarSize)
 			{
 				var volume = Volume + (Position > 0 ? Position : 0m);
 				SellMarket(volume);
 				_entryPrice = candle.ClosePrice;
+				_barsSinceTrade = 0;
 			}
 		}
 	}

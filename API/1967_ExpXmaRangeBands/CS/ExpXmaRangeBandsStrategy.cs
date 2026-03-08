@@ -19,6 +19,8 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class ExpXmaRangeBandsStrategy : Strategy
 {
+	private static readonly TimeSpan _signalCooldown = TimeSpan.FromHours(8);
+
 	private readonly StrategyParam<int> _maLength;
 	private readonly StrategyParam<int> _rangeLength;
 	private readonly StrategyParam<decimal> _deviation;
@@ -31,6 +33,7 @@ public class ExpXmaRangeBandsStrategy : Strategy
 	private decimal _prevClose;
 	private decimal _entryPrice;
 	private bool _isFirst = true;
+	private DateTime _lastSignalTime;
 
 	/// <summary>
 	/// EMA period for the channel center.
@@ -121,7 +124,7 @@ public class ExpXmaRangeBandsStrategy : Strategy
 			
 			.SetOptimize(1000m, 4000m, 500m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -140,6 +143,7 @@ public class ExpXmaRangeBandsStrategy : Strategy
 		_prevClose = 0;
 		_entryPrice = 0;
 		_isFirst = true;
+		_lastSignalTime = default;
 	}
 
 	/// <inheritdoc />
@@ -147,42 +151,42 @@ public class ExpXmaRangeBandsStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Create indicators
-		var ema = new ExponentialMovingAverage { Length = MaLength };
-		var atr = new AverageTrueRange { Length = RangeLength };
+		var keltner = new KeltnerChannels(
+			new KeltnerChannelMiddle { Length = MaLength },
+			new AverageTrueRange { Length = RangeLength },
+			new KeltnerChannelBand { Length = MaLength },
+			new KeltnerChannelBand { Length = MaLength })
+		{
+			Multiplier = Deviation,
+		};
 
-		// Subscribe to candles and bind indicators
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ema, atr, ProcessCandle)
+			.BindEx(keltner, ProcessCandle)
 			.Start();
 
-		// Setup chart visualization if available
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, ema);
-			DrawIndicator(area, atr);
+			DrawIndicator(area, keltner);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal emaValue, decimal atrValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue keltnerValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Ensure strategy is ready to trade
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// Calculate channel borders
-		var upper = emaValue + atrValue * Deviation;
-		var lower = emaValue - atrValue * Deviation;
+		if (keltnerValue is not IKeltnerChannelsValue keltnerTyped ||
+			keltnerTyped.Upper is not decimal upper ||
+			keltnerTyped.Lower is not decimal lower)
+			return;
 
-		// Initialize previous values on first run
 		if (_isFirst)
 		{
 			_prevUpper = upper;
@@ -192,37 +196,27 @@ public class ExpXmaRangeBandsStrategy : Strategy
 			return;
 		}
 
-		// Check signals based on previous candle crossing bands
 		if (_prevClose > _prevUpper)
 		{
-			// Close existing short position
-			if (Position < 0)
-				BuyMarket(Math.Abs(Position));
-
-			// Open long when price returns inside the channel
-			if (candle.ClosePrice <= upper && Position <= 0)
+			if (candle.ClosePrice <= upper && Position <= 0 && CanTrade(candle))
 			{
-				var volume = Volume + Math.Abs(Position);
+				var volume = Position < 0 ? Volume + Math.Abs(Position) : Volume;
 				BuyMarket(volume);
 				_entryPrice = candle.ClosePrice;
+				_lastSignalTime = candle.CloseTime;
 			}
 		}
 		else if (_prevClose < _prevLower)
 		{
-			// Close existing long position
-			if (Position > 0)
-				SellMarket(Position);
-
-			// Open short when price returns inside the channel
-			if (candle.ClosePrice >= lower && Position >= 0)
+			if (candle.ClosePrice >= lower && Position >= 0 && CanTrade(candle))
 			{
-				var volume = Volume + Math.Abs(Position);
+				var volume = Position > 0 ? Volume + Position : Volume;
 				SellMarket(volume);
 				_entryPrice = candle.ClosePrice;
+				_lastSignalTime = candle.CloseTime;
 			}
 		}
 
-		// Check stop-loss and take-profit
 		var step = Security.PriceStep ?? 1m;
 		var sl = step * StopLoss;
 		var tp = step * TakeProfit;
@@ -244,9 +238,11 @@ public class ExpXmaRangeBandsStrategy : Strategy
 			}
 		}
 
-		// Update previous values
 		_prevUpper = upper;
 		_prevLower = lower;
 		_prevClose = candle.ClosePrice;
 	}
+
+	private bool CanTrade(ICandleMessage candle)
+		=> _lastSignalTime == default || candle.CloseTime >= _lastSignalTime + _signalCooldown;
 }

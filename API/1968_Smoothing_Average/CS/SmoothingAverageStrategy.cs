@@ -21,6 +21,9 @@ public class SmoothingAverageStrategy : Strategy
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<decimal> _smoothing;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _cooldownBars;
+
+	private int _cooldown;
 
 	public int MaPeriod
 	{
@@ -40,6 +43,12 @@ public class SmoothingAverageStrategy : Strategy
 		set => _candleType.Value = value;
 	}
 
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
 	public SmoothingAverageStrategy()
 	{
 		_maPeriod = Param(nameof(MaPeriod), 200)
@@ -50,11 +59,21 @@ public class SmoothingAverageStrategy : Strategy
 			;
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
+		_cooldownBars = Param(nameof(CooldownBars), 36)
+			.SetDisplay("Cooldown Bars", "Bars to wait between new signals", "General")
+			;
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		=> [(Security, CandleType)];
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_cooldown = 0;
+	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
@@ -83,20 +102,41 @@ public class SmoothingAverageStrategy : Strategy
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
-		var price = candle.ClosePrice;
 
-		// open new position if flat
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+			return;
+		}
+
+		var price = candle.ClosePrice;
+		var offset = (Security.PriceStep ?? 1m) * Smoothing;
+
 		if (Position == 0)
 		{
-			if (price < maValue + Smoothing)
+			if (price >= maValue + offset)
+			{
 				SellMarket();
-			else if (price > maValue - Smoothing)
+				_cooldown = CooldownBars;
+			}
+			else if (price <= maValue - offset)
+			{
 				BuyMarket();
+				_cooldown = CooldownBars;
+			}
 		}
-		// close position when price crosses offset
-		else if (Position < 0 && price > maValue + Smoothing)
+		else if (Position < 0 && price <= maValue)
+		{
 			BuyMarket();
-		else if (Position > 0 && price < maValue - Smoothing)
+			_cooldown = CooldownBars;
+		}
+		else if (Position > 0 && price >= maValue)
+		{
 			SellMarket();
+			_cooldown = CooldownBars;
+		}
 	}
 }

@@ -151,24 +151,24 @@ public class RangeEaStrategy : Strategy
 			
 			.SetOptimize(10, 50, 5);
 
-		_range = Param(nameof(Range), 250m)
+		_range = Param(nameof(Range), 2500m)
 			.SetDisplay("Range", "Price range from MA", "Parameters")
 			
 			.SetOptimize(50m, 500m, 50m);
 
-		_takeProfit = Param(nameof(TakeProfit), 500m)
+		_takeProfit = Param(nameof(TakeProfit), 3000m)
 			.SetDisplay("Take Profit", "Fixed take profit", "Parameters");
 
-		_stopLoss = Param(nameof(StopLoss), 250m)
+		_stopLoss = Param(nameof(StopLoss), 1500m)
 			.SetDisplay("Stop Loss", "Fixed stop loss", "Parameters");
 
-		_useTrailingStop = Param(nameof(UseTrailingStop), true)
+		_useTrailingStop = Param(nameof(UseTrailingStop), false)
 			.SetDisplay("Use Trailing", "Enable trailing stop", "Parameters");
 
 		_trailingStop = Param(nameof(TrailingStop), 250m)
 			.SetDisplay("Trailing", "Trailing stop distance", "Parameters");
 
-		_useTurn = Param(nameof(UseTurn), true)
+		_useTurn = Param(nameof(UseTurn), false)
 			.SetDisplay("Use Turn", "Enable reversal module", "Parameters");
 
 		_turn = Param(nameof(Turn), 250m)
@@ -198,7 +198,7 @@ public class RangeEaStrategy : Strategy
 		_orderVolume = Param(nameof(OrderVolume), 0.1m)
 			.SetDisplay("Volume", "Order volume", "Parameters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe", "Parameters");
 	}
 

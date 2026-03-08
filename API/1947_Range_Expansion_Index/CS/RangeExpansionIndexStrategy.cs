@@ -23,10 +23,12 @@ public class RangeExpansionIndexStrategy : Strategy
 	private readonly StrategyParam<int> _reiPeriod;
 	private readonly StrategyParam<decimal> _upLevel;
 	private readonly StrategyParam<decimal> _downLevel;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private RangeExpansionIndex _rei;
 	private decimal? _prevRei;
+	private int _barsSinceTrade;
 
 	/// <summary>
 	/// REI calculation period.
@@ -56,6 +58,15 @@ public class RangeExpansionIndexStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Bars to wait after a completed trade.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Candle type used for analysis.
 	/// </summary>
 	public DataType CandleType
@@ -74,15 +85,18 @@ public class RangeExpansionIndexStrategy : Strategy
 			.SetDisplay("REI Period", "Length of REI indicator", "Parameters")
 			;
 
-		_upLevel = Param(nameof(UpLevel), 60m)
+		_upLevel = Param(nameof(UpLevel), 70m)
 			.SetDisplay("Up Level", "Upper threshold", "Parameters")
 			;
 
-		_downLevel = Param(nameof(DownLevel), -60m)
+		_downLevel = Param(nameof(DownLevel), -70m)
 			.SetDisplay("Down Level", "Lower threshold", "Parameters")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_cooldownBars = Param(nameof(CooldownBars), 1)
+			.SetDisplay("Cooldown Bars", "Bars to wait after a completed trade", "Parameters");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 	}
 
@@ -98,6 +112,7 @@ public class RangeExpansionIndexStrategy : Strategy
 		base.OnReseted();
 		_rei?.Reset();
 		_prevRei = null;
+		_barsSinceTrade = CooldownBars;
 	}
 
 	/// <inheritdoc />
@@ -132,12 +147,24 @@ public class RangeExpansionIndexStrategy : Strategy
 			return;
 		}
 
+		if (_barsSinceTrade < CooldownBars)
+			_barsSinceTrade++;
+
 		if (_prevRei is decimal prev)
 		{
-			if (prev < DownLevel && reiValue >= DownLevel && Position <= 0)
-				BuyMarket();
-			else if (prev > UpLevel && reiValue <= UpLevel && Position >= 0)
-				SellMarket();
+			if (_barsSinceTrade >= CooldownBars)
+			{
+				if (prev < DownLevel && reiValue >= DownLevel && Position <= 0)
+				{
+					BuyMarket(Volume + Math.Abs(Position));
+					_barsSinceTrade = 0;
+				}
+				else if (prev > UpLevel && reiValue <= UpLevel && Position >= 0)
+				{
+					SellMarket(Volume + Math.Abs(Position));
+					_barsSinceTrade = 0;
+				}
+			}
 		}
 
 		_prevRei = reiValue;
@@ -152,6 +179,13 @@ public class RangeExpansionIndexStrategy : Strategy
 		protected override IIndicatorValue OnProcess(IIndicatorValue input)
 		{
 			var candle = input.GetValue<ICandleMessage>();
+
+			if (candle == null)
+			{
+				IsFormed = false;
+				return new DecimalIndicatorValue(this, 0m, input.Time);
+			}
+
 			_buffer.Add(candle);
 
 			var need = Length + 8;
@@ -170,6 +204,12 @@ public class RangeExpansionIndexStrategy : Strategy
 
 			for (var i = last; i > last - Length; i--)
 			{
+				if (_buffer[i] == null || _buffer[i - 2] == null || _buffer[i - 5] == null || _buffer[i - 6] == null || _buffer[i - 7] == null || _buffer[i - 8] == null)
+				{
+					IsFormed = false;
+					return new DecimalIndicatorValue(this, 0m, input.Time);
+				}
+
 				var hi = _buffer[i].HighPrice;
 				var hi2 = _buffer[i - 2].HighPrice;
 				var lo = _buffer[i].LowPrice;

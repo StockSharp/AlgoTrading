@@ -1,9 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
 using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
@@ -24,13 +22,14 @@ public class UltraWprCrossStrategy : Strategy
 	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<decimal> _takeProfit;
 	private readonly StrategyParam<decimal> _stopLoss;
+	private readonly StrategyParam<int> _cooldownBars;
 
 	private readonly SimpleMovingAverage _fastMa = new();
 	private readonly SimpleMovingAverage _slowMa = new();
-
 	private decimal _prevFast;
 	private decimal _prevSlow;
-	private bool _isFirst = true;
+	private bool _isInitialized;
+	private int _barsSinceTrade;
 
 	/// <summary>
 	/// Candle type for strategy calculation.
@@ -87,48 +86,70 @@ public class UltraWprCrossStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Bars to wait after a completed trade.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Initializes a new instance of the strategy.
 	/// </summary>
 	public UltraWprCrossStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 
 		_wprPeriod = Param(nameof(WprPeriod), 13)
 			.SetGreaterThanZero()
 			.SetDisplay("WPR Period", "Williams %R period", "Indicators")
-			
 			.SetOptimize(5, 40, 1);
 
 		_fastLength = Param(nameof(FastLength), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast Length", "Fast smoothing length", "Indicators")
-			
 			.SetOptimize(1, 20, 1);
 
 		_slowLength = Param(nameof(SlowLength), 53)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow Length", "Slow smoothing length", "Indicators")
-			
 			.SetOptimize(10, 100, 5);
 
-		_takeProfit = Param(nameof(TakeProfit), 0.2m)
+		_takeProfit = Param(nameof(TakeProfit), 900m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit", "Take profit in price", "Risk")
-			
-			.SetOptimize(0.05m, 0.5m, 0.05m);
+			.SetOptimize(300m, 1500m, 100m);
 
-		_stopLoss = Param(nameof(StopLoss), 0.1m)
+		_stopLoss = Param(nameof(StopLoss), 450m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss", "Stop loss in price", "Risk")
-			
-			.SetOptimize(0.05m, 0.5m, 0.05m);
+			.SetOptimize(200m, 900m, 50m);
+
+		_cooldownBars = Param(nameof(CooldownBars), 1)
+			.SetDisplay("Cooldown Bars", "Bars to wait after a completed trade", "Risk");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_fastMa.Length = FastLength;
+		_slowMa.Length = SlowLength;
+		_fastMa.Reset();
+		_slowMa.Reset();
+		_prevFast = 0m;
+		_prevSlow = 0m;
+		_isInitialized = false;
+		_barsSinceTrade = CooldownBars;
 	}
 
 	/// <inheritdoc />
@@ -140,7 +161,6 @@ public class UltraWprCrossStrategy : Strategy
 		_slowMa.Length = SlowLength;
 
 		var wpr = new WilliamsR { Length = WprPeriod };
-
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(wpr, ProcessCandle).Start();
 
@@ -161,33 +181,41 @@ public class UltraWprCrossStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var fastValue = _fastMa.Process(new DecimalIndicatorValue(_fastMa, wprValue, candle.OpenTime) { IsFinal = true });
-		var slowValue = _slowMa.Process(new DecimalIndicatorValue(_slowMa, wprValue, candle.OpenTime) { IsFinal = true });
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		var fast = _fastMa.Process(new DecimalIndicatorValue(_fastMa, wprValue, candle.OpenTime) { IsFinal = true }).ToDecimal();
+		var slow = _slowMa.Process(new DecimalIndicatorValue(_slowMa, wprValue, candle.OpenTime) { IsFinal = true }).ToDecimal();
 
 		if (!_fastMa.IsFormed || !_slowMa.IsFormed)
 			return;
 
-		var fast = fastValue.ToDecimal();
-		var slow = slowValue.ToDecimal();
+		if (_barsSinceTrade < CooldownBars)
+			_barsSinceTrade++;
 
-		if (_isFirst)
+		if (!_isInitialized)
 		{
 			_prevFast = fast;
 			_prevSlow = slow;
-			_isFirst = false;
+			_isInitialized = true;
 			return;
 		}
 
-		var crossUp = _prevFast <= _prevSlow && fast > slow;
-		var crossDown = _prevFast >= _prevSlow && fast < slow;
+		var crossUp = _prevFast <= _prevSlow && fast > slow && fast < -55m;
+		var crossDown = _prevFast >= _prevSlow && fast < slow && fast > -45m;
 
-		if (crossUp && Position <= 0)
+		if (_barsSinceTrade >= CooldownBars)
 		{
-			BuyMarket();
-		}
-		else if (crossDown && Position >= 0)
-		{
-			SellMarket();
+			if (crossUp && Position <= 0)
+			{
+				BuyMarket(Volume + Math.Abs(Position));
+				_barsSinceTrade = 0;
+			}
+			else if (crossDown && Position >= 0)
+			{
+				SellMarket(Volume + Math.Abs(Position));
+				_barsSinceTrade = 0;
+			}
 		}
 
 		_prevFast = fast;

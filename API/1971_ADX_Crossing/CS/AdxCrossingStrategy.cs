@@ -27,6 +27,7 @@ public class AdxCrossingStrategy : Strategy
 	private readonly StrategyParam<bool> _allowSellClose;
 	private readonly StrategyParam<decimal> _stopLoss;
 	private readonly StrategyParam<decimal> _takeProfit;
+	private readonly StrategyParam<decimal> _trendThreshold;
 
 	private decimal _prevPlusDi;
 	private decimal _prevMinusDi;
@@ -105,6 +106,15 @@ public class AdxCrossingStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Minimal ADX strength required to trade.
+	/// </summary>
+	public decimal TrendThreshold
+	{
+		get => _trendThreshold.Value;
+		set => _trendThreshold.Value = value;
+	}
+
+	/// <summary>
 	/// Initialize strategy parameters.
 	/// </summary>
 	public AdxCrossingStrategy()
@@ -114,7 +124,7 @@ public class AdxCrossingStrategy : Strategy
 			
 			.SetOptimize(10, 100, 5);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for calculations", "General");
 
 		_allowBuyOpen = Param(nameof(AllowBuyOpen), true)
@@ -134,6 +144,9 @@ public class AdxCrossingStrategy : Strategy
 
 		_takeProfit = Param(nameof(TakeProfit), 2000m)
 			.SetDisplay("Take Profit", "Absolute take-profit in price units", "Risk");
+
+		_trendThreshold = Param(nameof(TrendThreshold), 15m)
+			.SetDisplay("Trend Threshold", "Minimal ADX strength required to trade", "Indicators");
 	}
 
 	/// <inheritdoc />
@@ -197,25 +210,30 @@ public class AdxCrossingStrategy : Strategy
 			return;
 		}
 
+		if (adx.MovingAverage is not decimal adxStrength || adxStrength < TrendThreshold)
+		{
+			_prevPlusDi = plusDi;
+			_prevMinusDi = minusDi;
+			return;
+		}
+
 		var buySignal = plusDi > minusDi && _prevPlusDi <= _prevMinusDi;
 		var sellSignal = plusDi < minusDi && _prevPlusDi >= _prevMinusDi;
 
 		if (buySignal)
 		{
-			if (AllowSellClose && Position < 0)
-				BuyMarket(Math.Abs(Position));
-
 			if (AllowBuyOpen && Position <= 0)
-				BuyMarket();
+				BuyMarket(Position < 0 ? Volume + Math.Abs(Position) : Volume);
+			else if (AllowSellClose && Position < 0)
+				BuyMarket(Math.Abs(Position));
 		}
 
 		if (sellSignal)
 		{
-			if (AllowBuyClose && Position > 0)
-				SellMarket(Math.Abs(Position));
-
 			if (AllowSellOpen && Position >= 0)
-				SellMarket();
+				SellMarket(Position > 0 ? Volume + Position : Volume);
+			else if (AllowBuyClose && Position > 0)
+				SellMarket(Math.Abs(Position));
 		}
 
 		_prevPlusDi = plusDi;

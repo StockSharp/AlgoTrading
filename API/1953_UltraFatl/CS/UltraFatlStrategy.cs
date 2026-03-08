@@ -1,9 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
 using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
@@ -14,9 +12,7 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on UltraFATL indicator signals.
-/// It opens long or short positions when the indicator changes its state
-/// around the threshold between levels 4 and 5.
+/// Strategy based on UltraFATL-style threshold signals.
 /// </summary>
 public class UltraFatlStrategy : Strategy
 {
@@ -37,7 +33,7 @@ public class UltraFatlStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initial smoothing period for UltraFATL.
+	/// Smoothing period.
 	/// </summary>
 	public int Length
 	{
@@ -62,10 +58,9 @@ public class UltraFatlStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 
-		_length = Param(nameof(Length), 3)
-			.SetDisplay("Length", "Initial smoothing period", "UltraFATL")
-			
-			.SetOptimize(2, 10, 1);
+		_length = Param(nameof(Length), 8)
+			.SetDisplay("Length", "Smoothing period", "UltraFATL")
+			.SetOptimize(4, 20, 1);
 
 		_signalBar = Param(nameof(SignalBar), 1)
 			.SetDisplay("Signal Bar", "Bar index for signal calculation", "UltraFATL");
@@ -81,7 +76,7 @@ public class UltraFatlStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevValue = default;
+		_prevValue = 0m;
 		_isInitialized = false;
 	}
 
@@ -90,28 +85,21 @@ public class UltraFatlStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
-
-		var ultraFatl = new ExponentialMovingAverage
-		{
-			Length = Length
-		};
-
+		var rsi = new RelativeStrengthIndex { Length = Length };
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(ultraFatl, ProcessCandle)
-			.Start();
+		subscription.Bind(rsi, ProcessCandle).Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal ultraFatlValue)
+	private void ProcessCandle(ICandleMessage candle, decimal rsiValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormed)
+		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var current = ultraFatlValue;
+		// Map RSI to the 0..8 discrete UltraFATL-style scale.
+		var current = Math.Max(0m, Math.Min(8m, rsiValue / 12.5m));
 
 		if (!_isInitialized)
 		{
@@ -123,12 +111,12 @@ public class UltraFatlStrategy : Strategy
 		var previous = _prevValue;
 		_prevValue = current;
 
-		var isBuySignal = previous > 4m && current < 5m && current != 0m;
-		var isSellSignal = previous < 5m && previous != 0m && current > 4m;
+		var isBuySignal = previous >= 5m && current < 5m && current > 0m;
+		var isSellSignal = previous <= 4m && current > 4m;
 
 		if (isBuySignal && Position <= 0)
-			BuyMarket();
+			BuyMarket(Volume + Math.Abs(Position));
 		else if (isSellSignal && Position >= 0)
-			SellMarket();
+			SellMarket(Volume + Math.Abs(Position));
 	}
 }

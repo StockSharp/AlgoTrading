@@ -85,19 +85,19 @@ public class MpmStrategy : Strategy
 	{
 		_progressiveCandles = Param(nameof(ProgressiveCandles), 3)
 			.SetDisplay("Progressive Candles", "Number of consecutive candles", "Signal");
-		_progressiveSize = Param(nameof(ProgressiveSize), 0.6m)
+		_progressiveSize = Param(nameof(ProgressiveSize), 0.9m)
 			.SetDisplay("Progressive Size", "Minimal body size relative to ATR", "Signal");
-		_stopRatio = Param(nameof(StopRatio), 0.05m)
+		_stopRatio = Param(nameof(StopRatio), 1.5m)
 			.SetDisplay("Stop Ratio", "Trailing stop ratio", "Risk");
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetDisplay("ATR Period", "Average True Range period", "Indicator");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
-		_profitPerLot = Param(nameof(ProfitPerLot), 300m)
+		_profitPerLot = Param(nameof(ProfitPerLot), 2000m)
 			.SetDisplay("Profit Per Lot", "Profit target per lot", "Risk");
-		_breakEvenPerLot = Param(nameof(BreakEvenPerLot), 1m)
+		_breakEvenPerLot = Param(nameof(BreakEvenPerLot), 800m)
 			.SetDisplay("BreakEven Per Lot", "Break even profit per lot", "Risk");
-		_lossPerLot = Param(nameof(LossPerLot), 150m)
+		_lossPerLot = Param(nameof(LossPerLot), 1200m)
 			.SetDisplay("Loss Per Lot", "Maximum loss per lot", "Risk");
 	}
 

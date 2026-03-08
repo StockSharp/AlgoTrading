@@ -85,7 +85,7 @@ public class AutoKdStrategy : Strategy
 		
 		.SetOptimize(1, 10, 1);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe for analysis", "General");
 	}
 
@@ -140,10 +140,10 @@ public class AutoKdStrategy : Strategy
 
 		if (_prevK is decimal prevK && _prevD is decimal prevD)
 		{
-			if (prevK < prevD && k > d && Position <= 0)
-				BuyMarket();
-			else if (prevK > prevD && k < d && Position >= 0)
-				SellMarket();
+			if (prevK < prevD && k > d && Math.Min(prevK, k) < 30m && Position <= 0)
+				BuyMarket(Volume + Math.Abs(Position));
+			else if (prevK > prevD && k < d && Math.Max(prevK, k) > 70m && Position >= 0)
+				SellMarket(Volume + Math.Abs(Position));
 		}
 
 		_prevK = k;

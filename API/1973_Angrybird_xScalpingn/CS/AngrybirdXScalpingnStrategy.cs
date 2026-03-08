@@ -57,7 +57,7 @@ public class AngrybirdXScalpingnStrategy : Strategy
 		.SetDisplay("Lot Exponent", "Volume multiplier for additional trades", "General")
 		.SetGreaterThanZero();
 
-		_dynamicPips = Param(nameof(DynamicPips), true)
+		_dynamicPips = Param(nameof(DynamicPips), false)
 		.SetDisplay("Dynamic Pips", "Use dynamic grid step", "Parameters");
 
 		_defaultPips = Param(nameof(DefaultPips), 12)
@@ -92,11 +92,11 @@ public class AngrybirdXScalpingnStrategy : Strategy
 		.SetDisplay("RSI Maximum", "Maximum RSI to allow long", "Parameters")
 		.SetNotNegative();
 
-		_maxTrades = Param(nameof(MaxTrades), 10)
+		_maxTrades = Param(nameof(MaxTrades), 2)
 		.SetDisplay("Max Trades", "Maximum number of open trades", "Risk")
 		.SetGreaterThanZero();
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles", "Parameters");
 	}
 
@@ -164,8 +164,10 @@ public class AngrybirdXScalpingnStrategy : Strategy
 
 			if (_highs.Count == Depth)
 			{
-				var highest = _highs.Max();
-				var lowest = _lows.Min();
+				var highs = _highs.ToArray();
+				var lows = _lows.ToArray();
+				var highest = highs.Max();
+				var lowest = lows.Min();
 				var step = (highest - lowest) / Del;
 				var stepSize = Security?.PriceStep ?? 1m;
 				var minStep = (DefaultPips / (decimal)Del) * stepSize;

@@ -1,9 +1,9 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+
 using Ecng.Common;
-using Ecng.Collections;
 using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -11,12 +11,8 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
 /// <summary>
 /// Strategy based on the XMA Ichimoku channel concept.
-/// Calculates upper and lower bands from recent highs and lows,
-/// smoothed by a moving average, and trades on band breakouts.
 /// </summary>
 public class XmaIchimokuChannelStrategy : Strategy
 {
@@ -27,10 +23,9 @@ public class XmaIchimokuChannelStrategy : Strategy
 	private readonly StrategyParam<decimal> _downPercent;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private Highest _highest = null!;
-	private Lowest _lowest = null!;
-	private SimpleMovingAverage _sma = null!;
-
+	private readonly Queue<decimal> _highs = new();
+	private readonly Queue<decimal> _lows = new();
+	private readonly SimpleMovingAverage _sma = new();
 	private bool _isInitialized;
 	private decimal _prevUpper;
 	private decimal _prevLower;
@@ -95,43 +90,47 @@ public class XmaIchimokuChannelStrategy : Strategy
 	/// </summary>
 	public XmaIchimokuChannelStrategy()
 	{
-		_upPeriod =
-			Param(nameof(UpPeriod), 3)
-				.SetGreaterThanZero()
-				.SetDisplay("Up Period", "Lookback for high prices", "Channel")
-				;
+		_upPeriod = Param(nameof(UpPeriod), 3)
+			.SetGreaterThanZero()
+			.SetDisplay("Up Period", "Lookback for high prices", "Channel");
 
-		_downPeriod =
-			Param(nameof(DownPeriod), 3)
-				.SetGreaterThanZero()
-				.SetDisplay("Down Period", "Lookback for low prices", "Channel")
-				;
+		_downPeriod = Param(nameof(DownPeriod), 3)
+			.SetGreaterThanZero()
+			.SetDisplay("Down Period", "Lookback for low prices", "Channel");
 
 		_maLength = Param(nameof(MaLength), 100)
-						.SetGreaterThanZero()
-						.SetDisplay("MA Length", "Smoothing length", "Channel")
-						;
+			.SetGreaterThanZero()
+			.SetDisplay("MA Length", "Smoothing length", "Channel");
 
-		_upPercent =
-			Param(nameof(UpPercent), 1m)
-				.SetDisplay("Up Percent", "Upper band offset in %", "Channel")
-				;
+		_upPercent = Param(nameof(UpPercent), 1m)
+			.SetDisplay("Up Percent", "Upper band offset in %", "Channel");
 
-		_downPercent =
-			Param(nameof(DownPercent), 1m)
-				.SetDisplay("Down Percent", "Lower band offset in %", "Channel")
-				;
+		_downPercent = Param(nameof(DownPercent), 1m)
+			.SetDisplay("Down Percent", "Lower band offset in %", "Channel");
 
-		_candleType =
-			Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-				.SetDisplay("Candle Type", "Type of candles", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
 	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)>
-	GetWorkingSecurities()
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_highs.Clear();
+		_lows.Clear();
+		_sma.Length = MaLength;
+		_sma.Reset();
+		_isInitialized = false;
+		_prevUpper = 0m;
+		_prevLower = 0m;
+		_prevClose = 0m;
 	}
 
 	/// <inheritdoc />
@@ -139,29 +138,39 @@ public class XmaIchimokuChannelStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_highest = new Highest { Length = UpPeriod };
-		_lowest = new Lowest { Length = DownPeriod };
-		_sma = new SimpleMovingAverage { Length = MaLength };
-
+		_sma.Length = MaLength;
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(_highest, _lowest, ProcessCandle).Start();
+		subscription.Bind(ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _highest);
-			DrawIndicator(area, _lowest);
 			DrawIndicator(area, _sma);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal highestValue,
-							   decimal lowestValue)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		_highs.Enqueue(candle.HighPrice);
+		if (_highs.Count > UpPeriod)
+			_highs.Dequeue();
+
+		_lows.Enqueue(candle.LowPrice);
+		if (_lows.Count > DownPeriod)
+			_lows.Dequeue();
+
+		if (_highs.Count < UpPeriod || _lows.Count < DownPeriod)
+			return;
+
+		var highestValue = GetMax(_highs);
+		var lowestValue = GetMin(_lows);
 		var midValue = (highestValue + lowestValue) / 2m;
 		var middle = _sma.Process(new DecimalIndicatorValue(_sma, midValue, candle.OpenTime) { IsFinal = true }).ToDecimal();
 
@@ -180,25 +189,39 @@ public class XmaIchimokuChannelStrategy : Strategy
 			return;
 		}
 
-		if (_prevClose > _prevUpper)
-		{
-			if (Position < 0)
-				BuyMarket(Math.Abs(Position));
-
-			if (candle.ClosePrice <= upper && Position <= 0)
-				BuyMarket(Volume + Math.Abs(Position));
-		}
-		else if (_prevClose < _prevLower)
-		{
-			if (Position > 0)
-				SellMarket(Math.Abs(Position));
-
-			if (candle.ClosePrice >= lower && Position >= 0)
-				SellMarket(Volume + Math.Abs(Position));
-		}
+		if (_prevClose > _prevUpper && candle.ClosePrice <= upper && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (_prevClose < _prevLower && candle.ClosePrice >= lower && Position >= 0)
+			SellMarket(Volume + Math.Abs(Position));
 
 		_prevUpper = upper;
 		_prevLower = lower;
 		_prevClose = candle.ClosePrice;
+	}
+
+	private static decimal GetMax(IEnumerable<decimal> values)
+	{
+		var result = decimal.MinValue;
+
+		foreach (var value in values)
+		{
+			if (value > result)
+				result = value;
+		}
+
+		return result;
+	}
+
+	private static decimal GetMin(IEnumerable<decimal> values)
+	{
+		var result = decimal.MaxValue;
+
+		foreach (var value in values)
+		{
+			if (value < result)
+				result = value;
+		}
+
+		return result;
 	}
 }

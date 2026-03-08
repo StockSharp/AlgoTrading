@@ -21,6 +21,8 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class ForexProfitBoostStrategy : Strategy
 {
+	private static readonly TimeSpan _signalCooldown = TimeSpan.FromHours(18);
+
 	private readonly StrategyParam<int> _fastPeriod;
 	private readonly StrategyParam<int> _slowPeriod;
 	private readonly StrategyParam<decimal> _stopLoss;
@@ -30,6 +32,7 @@ public class ForexProfitBoostStrategy : Strategy
 	private bool? _wasFastAboveSlow;
 	private decimal _entryPrice;
 	private bool _isLongPosition;
+	private DateTime _lastSignalTime;
 
 	/// <summary>
 	/// Fast EMA period.
@@ -121,6 +124,7 @@ public class ForexProfitBoostStrategy : Strategy
 		_wasFastAboveSlow = null;
 		_entryPrice = 0m;
 		_isLongPosition = false;
+		_lastSignalTime = default;
 	}
 
 	/// <inheritdoc />
@@ -163,31 +167,41 @@ public class ForexProfitBoostStrategy : Strategy
 			return;
 		}
 
+		var isBullishSignal = _wasFastAboveSlow == true && !isFastAboveSlow;
+		var isBearishSignal = _wasFastAboveSlow == false && isFastAboveSlow;
+
+		if ((isBullishSignal || isBearishSignal) && _lastSignalTime != default && candle.CloseTime < _lastSignalTime + _signalCooldown)
+		{
+			_wasFastAboveSlow = isFastAboveSlow;
+			CheckRisk(candle.ClosePrice);
+			return;
+		}
+
 		// Detect crossover and trade against the direction (reversal)
-		if (_wasFastAboveSlow == true && !isFastAboveSlow)
+		if (isBullishSignal)
 		{
 			// Fast EMA crossed below slow SMA -> open long
-			if (Position < 0)
-				BuyMarket(Math.Abs(Position));
-
 			if (Position <= 0)
 			{
-				BuyMarket(Volume);
+				var volume = Position < 0 ? Math.Abs(Position) + Volume : Volume;
+
+				BuyMarket(volume);
 				_entryPrice = candle.ClosePrice;
 				_isLongPosition = true;
+				_lastSignalTime = candle.CloseTime;
 			}
 		}
-		else if (_wasFastAboveSlow == false && isFastAboveSlow)
+		else if (isBearishSignal)
 		{
 			// Fast EMA crossed above slow SMA -> open short
-			if (Position > 0)
-				SellMarket(Position);
-
 			if (Position >= 0)
 			{
-				SellMarket(Volume);
+				var volume = Position > 0 ? Position + Volume : Volume;
+
+				SellMarket(volume);
 				_entryPrice = candle.ClosePrice;
 				_isLongPosition = false;
+				_lastSignalTime = candle.CloseTime;
 			}
 		}
 
@@ -208,22 +222,30 @@ public class ForexProfitBoostStrategy : Strategy
 			if (_stopLoss.Value > 0m && currentPrice <= _entryPrice - _stopLoss.Value)
 			{
 				SellMarket(Position);
+				_entryPrice = 0m;
 				return;
 			}
 
 			if (_takeProfit.Value > 0m && currentPrice >= _entryPrice + _takeProfit.Value)
+			{
 				SellMarket(Position);
+				_entryPrice = 0m;
+			}
 		}
 		else
 		{
 			if (_stopLoss.Value > 0m && currentPrice >= _entryPrice + _stopLoss.Value)
 			{
 				BuyMarket(Math.Abs(Position));
+				_entryPrice = 0m;
 				return;
 			}
 
 			if (_takeProfit.Value > 0m && currentPrice <= _entryPrice - _takeProfit.Value)
+			{
 				BuyMarket(Math.Abs(Position));
+				_entryPrice = 0m;
+			}
 		}
 	}
 }

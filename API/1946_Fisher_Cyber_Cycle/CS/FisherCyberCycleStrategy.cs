@@ -14,6 +14,7 @@ public class FisherCyberCycleStrategy : Strategy
 {
 	private readonly StrategyParam<decimal> _alpha;
 	private readonly StrategyParam<int> _length;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _prevFisher;
@@ -26,6 +27,7 @@ public class FisherCyberCycleStrategy : Strategy
 	private readonly decimal[] _cycle = new decimal[3];
 	private decimal _prevFish;
 	private int _count;
+	private int _barsSinceTrade;
 
 	/// <summary>
 	/// Smoothing factor for cycle calculation.
@@ -43,6 +45,15 @@ public class FisherCyberCycleStrategy : Strategy
 	{
 		get => _length.Value;
 		set => _length.Value = value;
+	}
+
+	/// <summary>
+	/// Bars to wait after a completed trade.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	/// <summary>
@@ -68,8 +79,27 @@ public class FisherCyberCycleStrategy : Strategy
 			.SetDisplay("Length", "Normalization window", "Indicators")
 			.SetOptimize(5, 20, 1);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_cooldownBars = Param(nameof(CooldownBars), 1)
+			.SetDisplay("Cooldown Bars", "Bars to wait after a completed trade", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_prevFisher = 0m;
+		_prevTrigger = 0m;
+		_initialized = false;
+		_prevFish = 0m;
+		_count = 0;
+		_barsSinceTrade = CooldownBars;
+		Array.Clear(_price, 0, _price.Length);
+		Array.Clear(_smooth, 0, _smooth.Length);
+		Array.Clear(_cycle, 0, _cycle.Length);
 	}
 
 	/// <inheritdoc />
@@ -77,14 +107,7 @@ public class FisherCyberCycleStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_prevFisher = 0;
-		_prevTrigger = 0;
-		_initialized = false;
-		_prevFish = 0;
-		_count = 0;
-		Array.Clear(_price, 0, _price.Length);
-		Array.Clear(_smooth, 0, _smooth.Length);
-		Array.Clear(_cycle, 0, _cycle.Length);
+		OnReseted();
 
 		var highest = new Highest { Length = Length };
 		var lowest = new Lowest { Length = Length };
@@ -103,6 +126,12 @@ public class FisherCyberCycleStrategy : Strategy
 		{
 			if (candle.State != CandleStates.Finished)
 				return;
+
+			if (!IsFormedAndOnlineAndAllowTrading())
+				return;
+
+			if (_barsSinceTrade < CooldownBars)
+				_barsSinceTrade++;
 
 			var price = (candle.HighPrice + candle.LowPrice) / 2m;
 			var t = candle.OpenTime;
@@ -165,10 +194,19 @@ public class FisherCyberCycleStrategy : Strategy
 			var crossUp = _prevFisher <= _prevTrigger && fish > trigger;
 			var crossDown = _prevFisher >= _prevTrigger && fish < trigger;
 
-			if (crossUp && Position <= 0)
-				BuyMarket();
-			else if (crossDown && Position >= 0)
-				SellMarket();
+			if (_barsSinceTrade >= CooldownBars)
+			{
+				if (crossUp && Position <= 0)
+				{
+					BuyMarket(Volume + Math.Abs(Position));
+					_barsSinceTrade = 0;
+				}
+				else if (crossDown && Position >= 0)
+				{
+					SellMarket(Volume + Math.Abs(Position));
+					_barsSinceTrade = 0;
+				}
+			}
 
 			_prevFisher = fish;
 			_prevTrigger = trigger;

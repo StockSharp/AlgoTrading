@@ -48,18 +48,18 @@ public class GgRsiCciStrategy : Strategy
 
 	public GgRsiCciStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for indicator calculation.", "General");
 
 		_length = Param(nameof(Length), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("Length", "RSI and CCI period.", "Indicators");
 
-		_fastPeriod = Param(nameof(FastPeriod), 14)
+		_fastPeriod = Param(nameof(FastPeriod), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast Period", "Fast smoothing period.", "Indicators");
 
-		_slowPeriod = Param(nameof(SlowPeriod), 20)
+		_slowPeriod = Param(nameof(SlowPeriod), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow Period", "Slow smoothing period.", "Indicators");
 
@@ -76,7 +76,7 @@ public class GgRsiCciStrategy : Strategy
 		_allowSellClose = Param(nameof(AllowSellClose), true)
 			.SetDisplay("Close Long", "Permit closing long positions.", "Permissions");
 
-		_mode = Param(nameof(Mode), SignalModes.Flat)
+		_mode = Param(nameof(Mode), SignalModes.Trend)
 			.SetDisplay("Mode", "Closing style.", "Trading");
 	}
 
@@ -142,6 +142,18 @@ public class GgRsiCciStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_rsiFast?.Reset();
+		_rsiSlow?.Reset();
+		_cciFast?.Reset();
+		_cciSlow?.Reset();
+		_prevSignal = -1;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
@@ -165,15 +177,18 @@ public class GgRsiCciStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
 		var rsiFast = _rsiFast.Process(new DecimalIndicatorValue(_rsiFast, rsiValue, candle.OpenTime)).ToDecimal();
 		var rsiSlow = _rsiSlow.Process(new DecimalIndicatorValue(_rsiSlow, rsiValue, candle.OpenTime)).ToDecimal();
 		var cciFast = _cciFast.Process(new DecimalIndicatorValue(_cciFast, cciValue, candle.OpenTime)).ToDecimal();
 		var cciSlow = _cciSlow.Process(new DecimalIndicatorValue(_cciSlow, cciValue, candle.OpenTime)).ToDecimal();
 
 		int signal;
-		if (rsiFast > rsiSlow && cciFast > cciSlow)
+		if (rsiFast > rsiSlow && cciFast > cciSlow && cciValue > 0m)
 			signal = 2;
-		else if (rsiFast < rsiSlow && cciFast < cciSlow)
+		else if (rsiFast < rsiSlow && cciFast < cciSlow && cciValue < 0m)
 			signal = 0;
 		else
 			signal = 1;

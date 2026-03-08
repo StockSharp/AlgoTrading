@@ -87,11 +87,13 @@ public class SimpleTradingSystemStrategy : Strategy
 	private readonly StrategyParam<bool> _sellClose;
 	private readonly StrategyParam<decimal> _takeProfit;
 	private readonly StrategyParam<decimal> _stopLoss;
+	private readonly StrategyParam<int> _cooldownBars;
 
 	private IIndicator _ma;
 	private decimal[] _maBuffer = Array.Empty<decimal>();
 	private decimal[] _closeBuffer = Array.Empty<decimal>();
 	private int _sign;
+	private int _barsSinceTrade;
 
 	/// <summary>
 	/// Moving average type.
@@ -192,6 +194,15 @@ public class SimpleTradingSystemStrategy : Strategy
 		set => _stopLoss.Value = value;
 	}
 
+	/// <summary>
+	/// Bars to wait after a completed trade.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
 
 	/// <summary>
 	/// Initializes <see cref="SimpleTradingSystemStrategy"/>.
@@ -201,7 +212,7 @@ public class SimpleTradingSystemStrategy : Strategy
 		_maType = Param(nameof(MaType), MovingAverageTypes.EMA)
 			.SetDisplay("MA Type", "Moving average type", "Parameters");
 
-		_maPeriod = Param(nameof(MaPeriod), 2)
+		_maPeriod = Param(nameof(MaPeriod), 4)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "Moving average period", "Parameters")
 			;
@@ -214,7 +225,10 @@ public class SimpleTradingSystemStrategy : Strategy
 		_priceType = Param(nameof(PriceType), PriceTypes.Close)
 			.SetDisplay("Price Type", "Source price for MA", "Parameters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_cooldownBars = Param(nameof(CooldownBars), 1)
+			.SetDisplay("Cooldown Bars", "Bars to wait after a completed trade", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(6).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 
 		_buyOpen = Param(nameof(BuyPositionOpen), true)
@@ -252,6 +266,7 @@ public class SimpleTradingSystemStrategy : Strategy
 		_maBuffer = Array.Empty<decimal>();
 		_closeBuffer = Array.Empty<decimal>();
 		_sign = 0;
+		_barsSinceTrade = CooldownBars;
 	}
 
 	/// <inheritdoc />
@@ -288,6 +303,9 @@ public class SimpleTradingSystemStrategy : Strategy
 		var price = GetPrice(candle);
 		var maValue = _ma!.Process(new DecimalIndicatorValue(_ma, price, candle.OpenTime) { IsFinal = true }).ToDecimal();
 
+		if (_barsSinceTrade < CooldownBars)
+			_barsSinceTrade++;
+
 		Shift(_maBuffer, maValue);
 		Shift(_closeBuffer, candle.ClosePrice);
 
@@ -305,21 +323,23 @@ public class SimpleTradingSystemStrategy : Strategy
 		var buySignal = _sign < 1 && ma0 <= ma1 && close >= closeShift && close <= closeSum && close < open;
 		var sellSignal = _sign > -1 && ma0 >= ma1 && close <= closeShift && close >= closeSum && close > open;
 
-		if (buySignal)
+		if (_barsSinceTrade >= CooldownBars && buySignal)
 		{
-			if (SellPositionClose && Position < 0)
+			if (BuyPositionOpen && IsFormedAndOnlineAndAllowTrading() && Position <= 0)
+				BuyMarket(Volume + Math.Abs(Position));
+			else if (SellPositionClose && Position < 0)
 				BuyMarket(Math.Abs(Position));
-			if (BuyPositionOpen && IsFormedAndOnlineAndAllowTrading())
-				BuyMarket(Volume);
 			_sign = 1;
+			_barsSinceTrade = 0;
 		}
-		else if (sellSignal)
+		else if (_barsSinceTrade >= CooldownBars && sellSignal)
 		{
-			if (BuyPositionClose && Position > 0)
+			if (SellPositionOpen && IsFormedAndOnlineAndAllowTrading() && Position >= 0)
+				SellMarket(Volume + Math.Abs(Position));
+			else if (BuyPositionClose && Position > 0)
 				SellMarket(Math.Abs(Position));
-			if (SellPositionOpen && IsFormedAndOnlineAndAllowTrading())
-				SellMarket(Volume);
 			_sign = -1;
+			_barsSinceTrade = 0;
 		}
 	}
 

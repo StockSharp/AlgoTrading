@@ -86,7 +86,7 @@ public class AsimmetricStochNrStrategy : Strategy
 		_sellClose = Param(nameof(SellClose), true)
 			.SetDisplay("Close Short", "Allow closing short positions", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for indicator calculation", "General");
 	}
 
@@ -272,21 +272,21 @@ public class AsimmetricStochNrStrategy : Strategy
 
 		var crossUp = _prevK < _prevD && k > d;
 		var crossDown = _prevK > _prevD && k < d;
+		var isOversold = k <= Oversold || d <= Oversold;
+		var isOverbought = k >= Overbought || d >= Overbought;
 
-		if (crossUp)
+		if (crossUp && isOversold)
 		{
 			if (BuyOpen && Position <= 0)
-				BuyMarket(Volume + Math.Abs(Position));
-
-			if (SellClose && Position < 0)
+				BuyMarket(Position < 0 ? Volume + Math.Abs(Position) : Volume);
+			else if (SellClose && Position < 0)
 				BuyMarket(Math.Abs(Position));
 		}
-		else if (crossDown)
+		else if (crossDown && isOverbought)
 		{
 			if (SellOpen && Position >= 0)
-				SellMarket(Volume + Math.Abs(Position));
-
-			if (BuyClose && Position > 0)
+				SellMarket(Position > 0 ? Volume + Position : Volume);
+			else if (BuyClose && Position > 0)
 				SellMarket(Math.Abs(Position));
 		}
 

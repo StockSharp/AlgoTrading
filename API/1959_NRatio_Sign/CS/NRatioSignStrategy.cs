@@ -36,7 +36,7 @@ public class NRatioSignStrategy : Strategy
 	private decimal _nratioPrev;
 	private int _trend;
 	private bool _isInitialized;
-	private ExponentialMovingAverage _ema;
+	private ExponentialMovingAverage _ema = new();
 
 	/// <summary>
 	/// NRatio calculation mode.
@@ -142,7 +142,7 @@ public class NRatioSignStrategy : Strategy
 	/// </summary>
 	public NRatioSignStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Time frame for indicator calculation", "General");
 
 		_kf = Param(nameof(Kf), 1m)
@@ -156,14 +156,14 @@ public class NRatioSignStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Fast", "Fast parameter", "Indicator");
 
-		_sharp = Param(nameof(Sharp), 1m)
+		_sharp = Param(nameof(Sharp), 2m)
 		.SetGreaterThanZero()
 		.SetDisplay("Sharp", "Exponent for oscillator", "Indicator");
 
-		_upLevel = Param(nameof(UpLevel), 60m)
+		_upLevel = Param(nameof(UpLevel), 80m)
 		.SetDisplay("Up Level", "Upper NRatio threshold", "Indicator");
 
-		_downLevel = Param(nameof(DownLevel), 40m)
+		_downLevel = Param(nameof(DownLevel), 20m)
 		.SetDisplay("Down Level", "Lower NRatio threshold", "Indicator");
 
 		_mode = Param(nameof(Mode), StrategyModes.ModeIn)
@@ -197,13 +197,17 @@ public class NRatioSignStrategy : Strategy
 	_nrtr = 0m;
 	_nratioPrev = 50m;
 	_trend = 1;
-	_ema = new ExponentialMovingAverage { Length = Length };
+	_ema.Length = Length;
+	_ema.Reset();
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 	base.OnStarted2(time);
+
+	_ema.Length = Length;
+	_ema.Reset();
 
 	var subscription = SubscribeCandles(CandleType);
 	subscription

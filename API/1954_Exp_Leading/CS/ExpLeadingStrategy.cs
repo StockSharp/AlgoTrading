@@ -26,6 +26,7 @@ public class ExpLeadingStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<decimal> _stopLoss;
 	private readonly StrategyParam<decimal> _takeProfit;
+	private readonly StrategyParam<int> _cooldownBars;
 
 	private bool _isInitialized;
 	private bool _hasPrev2;
@@ -37,6 +38,7 @@ public class ExpLeadingStrategy : Strategy
 	private decimal _prevEma;
 	private decimal _prev2NetLead;
 	private decimal _prev2Ema;
+	private int _barsSinceTrade;
 
 	/// <summary>
 	/// Alpha1 coefficient for Leading indicator.
@@ -64,6 +66,11 @@ public class ExpLeadingStrategy : Strategy
 	public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
 
 	/// <summary>
+	/// Bars to wait after a completed trade.
+	/// </summary>
+	public int CooldownBars { get => _cooldownBars.Value; set => _cooldownBars.Value = value; }
+
+	/// <summary>
 	/// Initialize strategy parameters.
 	/// </summary>
 	public ExpLeadingStrategy()
@@ -74,7 +81,10 @@ public class ExpLeadingStrategy : Strategy
 		_alpha2 = Param(nameof(Alpha2), 0.33m)
 			.SetDisplay("Alpha2", "Alpha2 coefficient", "Indicator");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_cooldownBars = Param(nameof(CooldownBars), 1)
+			.SetDisplay("Cooldown Bars", "Bars to wait after a completed trade", "Protection");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle data type", "General");
 
 		_stopLoss = Param(nameof(StopLoss), 1000m)
@@ -82,6 +92,24 @@ public class ExpLeadingStrategy : Strategy
 
 		_takeProfit = Param(nameof(TakeProfit), 2000m)
 			.SetDisplay("Take Profit", "Take profit in price", "Protection");
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_isInitialized = false;
+		_hasPrev2 = false;
+		_pricePrev = 0m;
+		_leadPrev = 0m;
+		_netLeadPrev = 0m;
+		_emaPrev = 0m;
+		_prevNetLead = 0m;
+		_prevEma = 0m;
+		_prev2NetLead = 0m;
+		_prev2Ema = 0m;
+		_barsSinceTrade = CooldownBars;
 	}
 
 	/// <inheritdoc />
@@ -101,6 +129,12 @@ public class ExpLeadingStrategy : Strategy
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		if (_barsSinceTrade < CooldownBars)
+			_barsSinceTrade++;
 
 		var price = (candle.HighPrice + candle.LowPrice) / 2m;
 
@@ -125,10 +159,19 @@ public class ExpLeadingStrategy : Strategy
 			var buySignal = _prev2NetLead > _prev2Ema && _prevNetLead < _prevEma;
 			var sellSignal = _prev2NetLead < _prev2Ema && _prevNetLead > _prevEma;
 
-			if (buySignal && Position <= 0)
-				BuyMarket();
-			else if (sellSignal && Position >= 0)
-				SellMarket();
+			if (_barsSinceTrade >= CooldownBars)
+			{
+				if (buySignal && Position <= 0)
+				{
+					BuyMarket(Volume + Math.Abs(Position));
+					_barsSinceTrade = 0;
+				}
+				else if (sellSignal && Position >= 0)
+				{
+					SellMarket(Volume + Math.Abs(Position));
+					_barsSinceTrade = 0;
+				}
+			}
 		}
 		else
 		{

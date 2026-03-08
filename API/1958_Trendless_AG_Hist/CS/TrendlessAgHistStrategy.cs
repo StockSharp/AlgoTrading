@@ -25,6 +25,7 @@ public class TrendlessAgHistStrategy : Strategy
 	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<decimal> _stopLoss;
 	private readonly StrategyParam<decimal> _takeProfit;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private TrendlessAgHist _indicator;
@@ -33,6 +34,7 @@ public class TrendlessAgHistStrategy : Strategy
 	private bool _initialized;
 	private decimal _entryPrice;
 	private bool _isLong;
+	private int _barsSinceTrade;
 
 	/// <summary>
 	/// Fast smoothing period.
@@ -53,6 +55,11 @@ public class TrendlessAgHistStrategy : Strategy
 	/// Take profit in price units.
 	/// </summary>
 	public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
+
+	/// <summary>
+	/// Bars to wait after a completed trade.
+	/// </summary>
+	public int CooldownBars { get => _cooldownBars.Value; set => _cooldownBars.Value = value; }
 
 	/// <summary>
 	/// Candle type for calculations.
@@ -80,7 +87,10 @@ public class TrendlessAgHistStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit", "Profit target in price units", "Risk Management");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_cooldownBars = Param(nameof(CooldownBars), 1)
+			.SetDisplay("Cooldown Bars", "Bars to wait after a completed trade", "Risk Management");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(12).TimeFrame())
 			.SetDisplay("Candle Type", "Working candle timeframe", "General");
 	}
 
@@ -100,6 +110,7 @@ public class TrendlessAgHistStrategy : Strategy
 		_initialized = false;
 		_entryPrice = 0m;
 		_isLong = false;
+		_barsSinceTrade = CooldownBars;
 	}
 
 	/// <inheritdoc />
@@ -140,22 +151,27 @@ public class TrendlessAgHistStrategy : Strategy
 			return;
 		}
 
-		if (_prev1 < _prev2 && value > _prev1)
+		if (_barsSinceTrade < CooldownBars)
+			_barsSinceTrade++;
+
+		if (_barsSinceTrade >= CooldownBars && _prev1 < _prev2 && value > _prev1 && _prev1 < 0m)
 		{
 			if (Position <= 0)
 			{
 				_entryPrice = candle.ClosePrice;
 				_isLong = true;
 				BuyMarket(Volume + Math.Abs(Position));
+				_barsSinceTrade = 0;
 			}
 		}
-		else if (_prev1 > _prev2 && value < _prev1)
+		else if (_barsSinceTrade >= CooldownBars && _prev1 > _prev2 && value < _prev1 && _prev1 > 0m)
 		{
 			if (Position >= 0)
 			{
 				_entryPrice = candle.ClosePrice;
 				_isLong = false;
 				SellMarket(Volume + Math.Abs(Position));
+				_barsSinceTrade = 0;
 			}
 		}
 
