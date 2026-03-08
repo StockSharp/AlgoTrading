@@ -343,7 +343,7 @@ public class MacdStochasticStrategy : Strategy
 		_session3End = Param(nameof(Session3End), new TimeSpan(0, 0, 0))
 			.SetDisplay("Session 3 End", "End time of third window", "Sessions");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candles used for analysis", "General");
 
 		ResetState();
@@ -454,7 +454,7 @@ public class MacdStochasticStrategy : Strategy
 	private void EnterLong(ICandleMessage candle)
 	{
 		// Open long position using close price of finished candle.
-		BuyMarket(Volume);
+		BuyMarket();
 		_entryPrice = candle.ClosePrice;
 		_stopPrice = StopLossPips > 0 && _pipSize > 0m ? _entryPrice - StopLossPips * _pipSize : 0m;
 		_takePrice = TakeProfitPips > 0 && _pipSize > 0m ? _entryPrice + TakeProfitPips * _pipSize : 0m;
@@ -464,7 +464,7 @@ public class MacdStochasticStrategy : Strategy
 	private void EnterShort(ICandleMessage candle)
 	{
 		// Open short position using close price of finished candle.
-		SellMarket(Volume);
+		SellMarket();
 		_entryPrice = candle.ClosePrice;
 		_stopPrice = StopLossPips > 0 && _pipSize > 0m ? _entryPrice + StopLossPips * _pipSize : 0m;
 		_takePrice = TakeProfitPips > 0 && _pipSize > 0m ? _entryPrice - TakeProfitPips * _pipSize : 0m;
@@ -490,14 +490,14 @@ public class MacdStochasticStrategy : Strategy
 		// Close long position if stop or take profit levels are reached.
 		if (_stopPrice > 0m && candle.LowPrice <= _stopPrice)
 		{
-			SellMarket(Position);
+			SellMarket();
 			ResetPositionState();
 			return;
 		}
 
 		if (_takePrice > 0m && candle.HighPrice >= _takePrice)
 		{
-			SellMarket(Position);
+			SellMarket();
 			ResetPositionState();
 		}
 	}
@@ -507,14 +507,14 @@ public class MacdStochasticStrategy : Strategy
 		// Close short position if stop or take profit levels are reached.
 		if (_stopPrice > 0m && candle.HighPrice >= _stopPrice)
 		{
-			BuyMarket(-Position);
+			BuyMarket();
 			ResetPositionState();
 			return;
 		}
 
 		if (_takePrice > 0m && candle.LowPrice <= _takePrice)
 		{
-			BuyMarket(-Position);
+			BuyMarket();
 			ResetPositionState();
 		}
 	}

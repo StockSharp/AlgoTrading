@@ -34,17 +34,12 @@ public class PerceptronAdaptiveStrategy : Strategy
 	private readonly StrategyParam<int> _aoLongLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private readonly decimal[] _baseWeights = new decimal[5];
-	private readonly Dictionary<int, decimal>[] _indicatorWeights =
-	{
-		new(),
-		new(),
-		new(),
-		new(),
-		new(),
-	};
+	private decimal[] _baseWeights = new decimal[5];
+	// Use a flat 5x6 array instead of Dictionary[] to avoid clone validation issues.
+	// Index: [neuronIndex, indicatorIndex] where indicatorIndex is 1-5 (index 0 unused).
+	private decimal[,] _indicatorWeights = new decimal[5, 6];
 
-	private readonly int[][] _neuronIndicators =
+	private static readonly int[][] _neuronIndicators =
 	{
 		new[] { 2, 3, 4, 5 },
 		new[] { 1, 3, 4, 5 },
@@ -53,8 +48,8 @@ public class PerceptronAdaptiveStrategy : Strategy
 		new[] { 1, 2, 3, 4 },
 	};
 
-	private readonly int[] _lastIndicatorSignals = new int[5];
-	private readonly decimal[] _lastNeuronOutputs = new decimal[5];
+	private int[] _lastIndicatorSignals = new int[5];
+	private decimal[] _lastNeuronOutputs = new decimal[5];
 
 	private SimpleMovingAverage _fastMa = null!;
 	private SimpleMovingAverage _slowMa = null!;
@@ -289,10 +284,8 @@ public class PerceptronAdaptiveStrategy : Strategy
 			
 			.SetOptimize(20, 60, 1);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for calculations", "General");
-
-		ResetState();
 	}
 
 	/// <inheritdoc />
@@ -312,6 +305,8 @@ public class PerceptronAdaptiveStrategy : Strategy
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+
+		ResetState();
 
 		_fastMa = new SMA { Length = FastMaLength };
 		_slowMa = new SMA { Length = SlowMaLength };
@@ -379,12 +374,12 @@ public class PerceptronAdaptiveStrategy : Strategy
 
 		if (isLong)
 		{
-			BuyMarket(volume + (Position < 0 ? -Position : 0m));
+			BuyMarket();
 			_lastTradeDirection = 2;
 		}
 		else
 		{
-			SellMarket(volume + (Position > 0 ? Position : 0m));
+			SellMarket();
 			_lastTradeDirection = 1;
 		}
 
@@ -459,9 +454,9 @@ public class PerceptronAdaptiveStrategy : Strategy
 			return;
 
 		if (Position > 0)
-			SellMarket(Math.Abs(Position));
+			SellMarket();
 		else if (Position < 0)
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
 
 		var profit = _isLongPosition ? exitPrice - _entryPrice : _entryPrice - exitPrice;
 
@@ -518,7 +513,6 @@ public class PerceptronAdaptiveStrategy : Strategy
 				}
 			}
 
-			var weights = _indicatorWeights[neuronIndex];
 			foreach (var indicatorIndex in _neuronIndicators[neuronIndex])
 			{
 				var indicatorSignal = _lastIndicatorSignals[indicatorIndex - 1];
@@ -529,11 +523,11 @@ public class PerceptronAdaptiveStrategy : Strategy
 
 				if (product > 0)
 				{
-					weights[indicatorIndex] += outcomeSign > 0 ? sinPlus : -sinMinus;
+					_indicatorWeights[neuronIndex, indicatorIndex] += outcomeSign > 0 ? sinPlus : -sinMinus;
 				}
 				else if (product < 0)
 				{
-					weights[indicatorIndex] += outcomeSign > 0 ? -sinMinus : sinPlus;
+					_indicatorWeights[neuronIndex, indicatorIndex] += outcomeSign > 0 ? -sinMinus : sinPlus;
 				}
 			}
 		}
@@ -546,7 +540,6 @@ public class PerceptronAdaptiveStrategy : Strategy
 		for (var neuronIndex = 0; neuronIndex < outputs.Length; neuronIndex++)
 		{
 			var sum = 0m;
-			var weights = _indicatorWeights[neuronIndex];
 
 			foreach (var indicatorIndex in _neuronIndicators[neuronIndex])
 			{
@@ -554,9 +547,7 @@ public class PerceptronAdaptiveStrategy : Strategy
 				if (signal == 0)
 					continue;
 
-				if (!weights.TryGetValue(indicatorIndex, out var weight))
-					continue;
-
+				var weight = _indicatorWeights[neuronIndex, indicatorIndex];
 				sum += weight * signal;
 			}
 
@@ -736,19 +727,19 @@ public class PerceptronAdaptiveStrategy : Strategy
 
 	private void ResetState()
 	{
+		_baseWeights = new decimal[5];
+		_lastIndicatorSignals = new int[5];
+		_lastNeuronOutputs = new decimal[5];
+		_indicatorWeights = new decimal[5, 6];
+
 		for (var i = 0; i < _baseWeights.Length; ++i)
 			_baseWeights[i] = 1m;
 
-		for (var i = 0; i < _indicatorWeights.Length; ++i)
+		for (var i = 0; i < 5; ++i)
 		{
-			var weights = _indicatorWeights[i];
-			weights.Clear();
 			foreach (var indicatorIndex in _neuronIndicators[i])
-				weights[indicatorIndex] = 1m;
+				_indicatorWeights[i, indicatorIndex] = 1m;
 		}
-
-		Array.Clear(_lastIndicatorSignals, 0, _lastIndicatorSignals.Length);
-		Array.Clear(_lastNeuronOutputs, 0, _lastNeuronOutputs.Length);
 
 		_prevFastMa = null;
 		_prevPrevFastMa = null;
@@ -780,7 +771,7 @@ public class PerceptronAdaptiveStrategy : Strategy
 		_lastTradeDirection = 0;
 		_hasLastSignals = false;
 
-		Array.Clear(_lastIndicatorSignals, 0, _lastIndicatorSignals.Length);
-		Array.Clear(_lastNeuronOutputs, 0, _lastNeuronOutputs.Length);
+		_lastIndicatorSignals = new int[5];
+		_lastNeuronOutputs = new decimal[5];
 	}
 }

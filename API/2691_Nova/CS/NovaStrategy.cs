@@ -42,7 +42,9 @@ public class NovaStrategy : Strategy
 	private decimal _previousPnL;
 	private decimal? _currentAsk;
 	private decimal? _currentBid;
-	private ICandleMessage _previousCandle;
+	private bool _hasPreviousCandle;
+	private decimal _prevCandleOpen;
+	private decimal _prevCandleClose;
 
 	/// <summary>
 	/// Seconds to look back for the price comparison.
@@ -146,7 +148,7 @@ public class NovaStrategy : Strategy
 		
 		.SetOptimize(1m, 2.5m, 0.1m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle type", "Candles used for signal calculations", "General");
 	}
 
@@ -172,7 +174,9 @@ public class NovaStrategy : Strategy
 		_previousPnL = 0m;
 		_currentAsk = null;
 		_currentBid = null;
-		_previousCandle = null;
+		_hasPreviousCandle = false;
+		_prevCandleOpen = 0m;
+		_prevCandleClose = 0m;
 	}
 
 	/// <inheritdoc />
@@ -198,8 +202,8 @@ public class NovaStrategy : Strategy
 		if (StopLossPips > 0 || TakeProfitPips > 0)
 		{
 			StartProtection(
-			stopLoss: StopLossPips > 0 ? new Unit(_stopLossOffset, UnitTypes.Absolute) : default,
-			takeProfit: TakeProfitPips > 0 ? new Unit(_takeProfitOffset, UnitTypes.Absolute) : default);
+			TakeProfitPips > 0 ? new Unit(_takeProfitOffset, UnitTypes.Absolute) : default,
+			StopLossPips > 0 ? new Unit(_stopLossOffset, UnitTypes.Absolute) : default);
 		}
 
 		var area = CreateChartArea();
@@ -226,12 +230,13 @@ public class NovaStrategy : Strategy
 
 		UpdateVolumeFromPnL();
 
-
-		var previous = _previousCandle;
-		_previousCandle = candle;
-
-		if (previous is null)
-		return;
+		if (!_hasPreviousCandle)
+		{
+			_hasPreviousCandle = true;
+			_prevCandleOpen = candle.OpenPrice;
+			_prevCandleClose = candle.ClosePrice;
+			return;
+		}
 
 		if (Position != 0)
 		return;
@@ -261,8 +266,8 @@ public class NovaStrategy : Strategy
 			return;
 		}
 
-		var bullishPrevious = previous.ClosePrice > previous.OpenPrice;
-		var bearishPrevious = previous.ClosePrice < previous.OpenPrice;
+		var bullishPrevious = _prevCandleClose > _prevCandleOpen;
+		var bearishPrevious = _prevCandleClose < _prevCandleOpen;
 		var referenceAsk = _referenceAsk.Value;
 
 		if (bullishPrevious && currentAsk - _stepOffset > referenceAsk)
@@ -277,6 +282,8 @@ public class NovaStrategy : Strategy
 		_referenceAsk = currentAsk;
 		_referenceBid = currentBid;
 		_lastCheckTime = now;
+		_prevCandleOpen = candle.OpenPrice;
+		_prevCandleClose = candle.ClosePrice;
 	}
 
 	private void TryEnterLong(decimal price)
@@ -284,7 +291,7 @@ public class NovaStrategy : Strategy
 		if (_currentVolume <= 0m)
 		return;
 
-		BuyMarket(_currentVolume);
+		BuyMarket();
 		_lastTradeVolume = _currentVolume;
 		LogInfo($"Open long at {price:F5} with volume {_currentVolume:F2}");
 	}
@@ -294,7 +301,7 @@ public class NovaStrategy : Strategy
 		if (_currentVolume <= 0m)
 		return;
 
-		SellMarket(_currentVolume);
+		SellMarket();
 		_lastTradeVolume = _currentVolume;
 		LogInfo($"Open short at {price:F5} with volume {_currentVolume:F2}");
 	}

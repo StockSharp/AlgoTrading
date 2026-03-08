@@ -74,7 +74,7 @@ public class ExpBlauCmiStrategy : Strategy
 	private DecimalLengthIndicator _absStage2 = null!;
 	private DecimalLengthIndicator _absStage3 = null!;
 
-	private readonly Queue<decimal> _priceBuffer = new();
+	private readonly List<decimal> _priceBuffer = new();
 	private readonly List<decimal> _indicatorHistory = new();
 
 	private decimal _priceStep;
@@ -86,7 +86,7 @@ public class ExpBlauCmiStrategy : Strategy
 	/// </summary>
 	public ExpBlauCmiStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for BlauCMI calculations", "General");
 
 		_smoothingMethod = Param(nameof(MomentumSmoothing), SmoothingMethods.Exponential)
@@ -299,6 +299,9 @@ public class ExpBlauCmiStrategy : Strategy
 		base.OnReseted();
 		_priceBuffer.Clear();
 		_indicatorHistory.Clear();
+		_priceStep = 0m;
+		_stopLossDistance = 0m;
+		_takeProfitDistance = 0m;
 	}
 
 	/// <inheritdoc />
@@ -311,8 +314,8 @@ public class ExpBlauCmiStrategy : Strategy
 		_takeProfitDistance = TakeProfitPoints > 0 ? TakeProfitPoints * _priceStep : 0m;
 
 		StartProtection(
-			takeProfit: TakeProfitPoints > 0 ? new Unit(_takeProfitDistance, UnitTypes.Absolute) : null,
-			stopLoss: StopLossPoints > 0 ? new Unit(_stopLossDistance, UnitTypes.Absolute) : null);
+			TakeProfitPoints > 0 ? new Unit(_takeProfitDistance, UnitTypes.Absolute) : null,
+			StopLossPoints > 0 ? new Unit(_stopLossDistance, UnitTypes.Absolute) : null);
 
 		Volume = Math.Abs(OrderVolume);
 
@@ -358,14 +361,14 @@ public class ExpBlauCmiStrategy : Strategy
 		var referencePrice = GetAppliedPrice(candle, PriceForOpen);
 
 		var momentumDepth = Math.Max(1, MomentumLength);
-		_priceBuffer.Enqueue(referencePrice);
+		_priceBuffer.Add(referencePrice);
 		while (_priceBuffer.Count > momentumDepth)
-			_priceBuffer.Dequeue();
+			try { _priceBuffer.RemoveAt(0); } catch { break; }
 
 		if (_priceBuffer.Count < momentumDepth)
 			return;
 
-		var delayedPrice = _priceBuffer.Peek();
+		var delayedPrice = _priceBuffer[0];
 		var momentum = frontPrice - delayedPrice;
 		var absMomentum = Math.Abs(momentum);
 		var time = candle.ServerTime;
@@ -407,12 +410,12 @@ public class ExpBlauCmiStrategy : Strategy
 
 		if (Position > 0 && AllowLongExit && sellSignal)
 		{
-			SellMarket(Position);
+			SellMarket();
 		}
 
 		if (Position < 0 && AllowShortExit && buySignal)
 		{
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
 		}
 
 		if (Position != 0)
@@ -420,11 +423,11 @@ public class ExpBlauCmiStrategy : Strategy
 
 		if (buySignal && AllowLongEntry)
 		{
-			BuyMarket(Volume);
+			BuyMarket();
 		}
 		else if (sellSignal && AllowShortEntry)
 		{
-			SellMarket(Volume);
+			SellMarket();
 		}
 	}
 
