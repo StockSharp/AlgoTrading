@@ -11,33 +11,21 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Breakout strategy that waits for three SMAs to stay within a small range
-/// and trades when price leaves this range.
+/// Breakout strategy that waits for converging SMAs and trades on breakout.
 /// </summary>
 public class BreakTheRangeBoundStrategy : Strategy
 {
 	private readonly StrategyParam<int> _fastSma;
-	private readonly StrategyParam<int> _midSma;
 	private readonly StrategyParam<int> _slowSma;
-	private readonly StrategyParam<decimal> _shakeThreshold;
-	private readonly StrategyParam<int> _rangeLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private Highest _rangeHigh;
-	private Lowest _rangeLow;
-
-	private readonly List<decimal> _diffBuffer = new();
-	private decimal _entryPrice;
-	private decimal _rangeHighAtEntry;
-	private decimal _rangeLowAtEntry;
-	private decimal _prevHighest;
-	private decimal _prevLowest;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private decimal _prevClose;
+	private bool _hasPrev;
 
 	public int FastSma { get => _fastSma.Value; set => _fastSma.Value = value; }
-	public int MidSma { get => _midSma.Value; set => _midSma.Value = value; }
 	public int SlowSma { get => _slowSma.Value; set => _slowSma.Value = value; }
-	public decimal ShakeThreshold { get => _shakeThreshold.Value; set => _shakeThreshold.Value = value; }
-	public int RangeLength { get => _rangeLength.Value; set => _rangeLength.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public BreakTheRangeBoundStrategy()
@@ -46,123 +34,66 @@ public class BreakTheRangeBoundStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Fast SMA", "Fast moving average period", "Parameters");
 
-		_midSma = Param(nameof(MidSma), 30)
-			.SetGreaterThanZero()
-			.SetDisplay("Mid SMA", "Middle moving average period", "Parameters");
-
 		_slowSma = Param(nameof(SlowSma), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow SMA", "Slow moving average period", "Parameters");
 
-		_shakeThreshold = Param(nameof(ShakeThreshold), 5000m)
-			.SetGreaterThanZero()
-			.SetDisplay("Shake Threshold", "Max SMA spread to treat as range", "Range");
-
-		_rangeLength = Param(nameof(RangeLength), 50)
-			.SetGreaterThanZero()
-			.SetDisplay("Range Length", "Number of candles in range", "Range");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
-	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFast = 0;
+		_prevSlow = 0;
+		_prevClose = 0;
+		_hasPrev = false;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		var fastMa = new SMA { Length = FastSma };
-		var midMa = new SMA { Length = MidSma };
-		var slowMa = new SMA { Length = SlowSma };
+		var fast = new ExponentialMovingAverage { Length = FastSma };
+		var slow = new ExponentialMovingAverage { Length = SlowSma };
 
-		_rangeHigh = new Highest { Length = RangeLength };
-		_rangeLow = new Lowest { Length = RangeLength };
-		_diffBuffer.Clear();
-
-		var subscription = SubscribeCandles(CandleType);
-		subscription.BindEx(new IIndicator[] { fastMa, midMa, slowMa }, ProcessCandle).Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, fastMa);
-			DrawOwnTrades(area);
-		}
+		SubscribeCandles(CandleType).Bind(fast, slow, ProcessCandle).Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue[] values)
+	private void ProcessCandle(ICandleMessage candle, decimal fastValue, decimal slowValue)
 	{
-		if (candle.State != CandleStates.Finished)
+		if (candle.State != CandleStates.Finished) return;
+
+		var close = candle.ClosePrice;
+
+		if (!_hasPrev)
+		{
+			_prevFast = fastValue;
+			_prevSlow = slowValue;
+			_prevClose = close;
+			_hasPrev = true;
 			return;
-
-		var fast = values[0].IsEmpty ? (decimal?)null : values[0].GetValue<decimal>();
-		var mid = values[1].IsEmpty ? (decimal?)null : values[1].GetValue<decimal>();
-		var slow = values[2].IsEmpty ? (decimal?)null : values[2].GetValue<decimal>();
-
-		if (fast is null || mid is null || slow is null)
-			return;
-
-		var maxSma = Math.Max(fast.Value, Math.Max(mid.Value, slow.Value));
-		var minSma = Math.Min(fast.Value, Math.Min(mid.Value, slow.Value));
-		var diff = maxSma - minSma;
-
-		// Track max diff over RangeLength candles
-		_diffBuffer.Add(diff);
-		if (_diffBuffer.Count > RangeLength)
-			_diffBuffer.RemoveAt(0);
-
-		var highestVal = _rangeHigh.Process(candle);
-		var lowestVal = _rangeLow.Process(candle);
-
-		if (!_rangeHigh.IsFormed || !_rangeLow.IsFormed || _diffBuffer.Count < RangeLength)
-			return;
-
-		// Find max diff in buffer
-		var maxDiff = decimal.MinValue;
-		for (var i = 0; i < _diffBuffer.Count; i++)
-		{
-			if (_diffBuffer[i] > maxDiff)
-				maxDiff = _diffBuffer[i];
 		}
 
-		var highest = highestVal.ToDecimal();
-		var lowest = lowestVal.ToDecimal();
-
-		if (Position == 0)
+		// Cross above slow SMA => buy breakout
+		if (_prevClose <= _prevSlow && close > slowValue && fastValue > slowValue && Position <= 0)
 		{
-			if (maxDiff < ShakeThreshold && _prevHighest > 0)
-			{
-				if (candle.ClosePrice > _prevHighest)
-				{
-					BuyMarket();
-					_entryPrice = candle.ClosePrice;
-					_rangeHighAtEntry = highest;
-					_rangeLowAtEntry = lowest;
-				}
-				else if (candle.ClosePrice < _prevLowest)
-				{
-					SellMarket();
-					_entryPrice = candle.ClosePrice;
-					_rangeHighAtEntry = highest;
-					_rangeLowAtEntry = lowest;
-				}
-			}
+			if (Position < 0) BuyMarket();
+			BuyMarket();
 		}
-		else if (Position > 0)
+		// Cross below slow SMA => sell breakout
+		else if (_prevClose >= _prevSlow && close < slowValue && fastValue < slowValue && Position >= 0)
 		{
-			if (candle.ClosePrice < _rangeLowAtEntry ||
-				candle.ClosePrice - _entryPrice > 4m * (_rangeHighAtEntry - _rangeLowAtEntry))
-				SellMarket(Position);
-		}
-		else if (Position < 0)
-		{
-			if (candle.ClosePrice > _rangeHighAtEntry ||
-				_entryPrice - candle.ClosePrice > 4m * (_rangeHighAtEntry - _rangeLowAtEntry))
-				BuyMarket(Math.Abs(Position));
+			if (Position > 0) SellMarket();
+			SellMarket();
 		}
 
-		_prevHighest = highest;
-		_prevLowest = lowest;
+		_prevFast = fastValue;
+		_prevSlow = slowValue;
+		_prevClose = close;
 	}
 }

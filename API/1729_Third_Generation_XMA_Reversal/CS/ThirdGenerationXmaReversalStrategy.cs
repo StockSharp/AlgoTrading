@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,93 +11,71 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// 3rd Generation XMA reversal strategy.
+/// 3rd Generation XMA reversal strategy using double-smoothed EMA turning points.
 /// </summary>
 public class ThirdGenerationXmaReversalStrategy : Strategy
 {
 	private readonly StrategyParam<int> _maLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private ExponentialMovingAverage _ema1 = null!;
-	private ExponentialMovingAverage _ema2 = null!;
-	private decimal _alpha;
-	private decimal? _prev1;
-	private decimal? _prev2;
+	private decimal _prev1;
+	private decimal _prev2;
+	private int _barCount;
 
-	public int MaLength
-	{
-		get => _maLength.Value;
-		set => _maLength.Value = value;
-	}
-
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
+	public int MaLength { get => _maLength.Value; set => _maLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public ThirdGenerationXmaReversalStrategy()
 	{
 		_maLength = Param(nameof(MaLength), 50)
 			.SetDisplay("MA Length", "Base length for the moving average", "General");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prev1 = null;
-		_prev2 = null;
+		_prev1 = 0;
+		_prev2 = 0;
+		_barCount = 0;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_ema1 = new ExponentialMovingAverage { Length = MaLength * 2 };
-		_ema2 = new ExponentialMovingAverage { Length = MaLength };
-		_alpha = 2m * (2m * MaLength - 1m) / (2m * MaLength - 2m);
+		var ema1 = new ExponentialMovingAverage { Length = MaLength };
+		var ema2 = new ExponentialMovingAverage { Length = MaLength / 2 > 0 ? MaLength / 2 : 10 };
 
-		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(ProcessCandle)
-			.Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-		}
+		SubscribeCandles(CandleType).Bind(ema1, ema2, ProcessCandle).Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal ema1Value, decimal ema2Value)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
+		if (candle.State != CandleStates.Finished) return;
 
-		var ema1Value = _ema1.Process(candle);
-		if (!ema1Value.IsFinal)
-			return;
+		// XMA = 2*ema1 - ema2 (third generation concept)
+		var xma = 2m * ema1Value - ema2Value;
+		_barCount++;
 
-		var ema2Value = _ema2.Process(ema1Value);
-		if (!ema2Value.IsFinal)
-			return;
-
-		var xma = (_alpha + 1m) * ema1Value.GetValue<decimal>() - _alpha * ema2Value.GetValue<decimal>();
-
-		if (_prev1.HasValue && _prev2.HasValue)
+		if (_barCount >= 3)
 		{
+			// Local minimum => buy
 			if (_prev1 < _prev2 && xma > _prev1 && Position <= 0)
+			{
+				if (Position < 0) BuyMarket();
 				BuyMarket();
+			}
+			// Local maximum => sell
 			else if (_prev1 > _prev2 && xma < _prev1 && Position >= 0)
+			{
+				if (Position > 0) SellMarket();
 				SellMarket();
+			}
 		}
 
 		_prev2 = _prev1;

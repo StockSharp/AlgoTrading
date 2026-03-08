@@ -32,8 +32,19 @@ public class LineOrderSingleEntryStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("SMA Length", "Moving average period", "Parameters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
+	}
+
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevClose = 0;
+		_prevSma = 0;
+		_hasPrev = false;
 	}
 
 	/// <inheritdoc />
@@ -41,7 +52,7 @@ public class LineOrderSingleEntryStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var sma = new SMA { Length = SmaLength };
+		var sma = new SimpleMovingAverage { Length = SmaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(sma, ProcessCandle).Start();

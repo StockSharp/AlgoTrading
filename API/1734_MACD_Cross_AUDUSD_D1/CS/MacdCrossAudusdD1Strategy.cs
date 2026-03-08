@@ -28,8 +28,18 @@ public class MacdCrossAudusdD1Strategy : Strategy
 
 	public MacdCrossAudusdD1Strategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for candles", "General");
+	}
+
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevIsMacdAboveSignal = false;
+		_hasPrev = false;
 	}
 
 	/// <inheritdoc />

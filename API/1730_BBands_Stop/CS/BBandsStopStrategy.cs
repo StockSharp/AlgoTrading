@@ -46,7 +46,7 @@ public class BBandsStopStrategy : Strategy
 		.SetDisplay("Candle Type", "Type of candles", "General");
 		_length = Param(nameof(Length), 20)
 		.SetDisplay("Length", "Bollinger period", "Indicator");
-		_deviation = Param(nameof(Deviation), 2m)
+		_deviation = Param(nameof(Deviation), 1.5m)
 		.SetDisplay("Deviation", "Bollinger deviation", "Indicator");
 		_moneyRisk = Param(nameof(MoneyRisk), 1m)
 		.SetDisplay("Money Risk", "Offset factor", "Indicator");
@@ -63,6 +63,18 @@ public class BBandsStopStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_trend = 0;
+		_smax1 = 0;
+		_smin1 = 0;
+		_bsmax1 = 0;
+		_bsmin1 = 0;
+		_initialized = false;
 	}
 
 	/// <inheritdoc />
