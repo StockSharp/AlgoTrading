@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,149 +11,51 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// RSI cross strategy with fixed take profit.
+/// RSI ProPlus bear market strategy using EMA crossover.
 /// </summary>
 public class RsiProPlusBearMarketStrategy : Strategy
 {
-	private readonly StrategyParam<int> _rsiPeriod;
-	private readonly StrategyParam<decimal> _rsiLevel;
-	private readonly StrategyParam<decimal> _takeProfitPercent;
+	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private RelativeStrengthIndex _rsi;
-	private decimal _entryPrice;
-	private decimal _takeProfitLevel;
-	private decimal _previousRsi;
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// RSI period.
-	/// </summary>
-	public int RsiPeriod
-	{
-		get => _rsiPeriod.Value;
-		set => _rsiPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// RSI level to trigger long entry.
-	/// </summary>
-	public decimal RsiLevel
-	{
-		get => _rsiLevel.Value;
-		set => _rsiLevel.Value = value;
-	}
-
-	/// <summary>
-	/// Take profit percentage from entry price.
-	/// </summary>
-	public decimal TakeProfitPercent
-	{
-		get => _takeProfitPercent.Value;
-		set => _takeProfitPercent.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="RsiProPlusBearMarketStrategy"/>.
-	/// </summary>
 	public RsiProPlusBearMarketStrategy()
 	{
-		_rsiPeriod = Param(nameof(RsiPeriod), 11)
+		_slowLength = Param(nameof(SlowLength), 40)
 			.SetGreaterThanZero()
-			.SetDisplay("RSI Period", "RSI calculation period", "RSI Settings")
-			
-			.SetOptimize(2, 30, 1);
-
-		_rsiLevel = Param(nameof(RsiLevel), 8m)
-			.SetRange(0m, 100m)
-			.SetDisplay("RSI Level", "RSI level to trigger long entry", "RSI Settings")
-			
-			.SetOptimize(0m, 50m, 1m);
-
-		_takeProfitPercent = Param(nameof(TakeProfitPercent), 0.11m)
-			.SetRange(0m, 100m)
-			.SetDisplay("Take Profit %", "Percentage of entry price for take profit", "Exit Settings")
-			
-			.SetOptimize(0.01m, 5m, 0.01m);
+			.SetDisplay("Slow Length", "Slow EMA period", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_entryPrice = 0m;
-		_takeProfitLevel = 0m;
-		_previousRsi = 0m;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_rsi = new RelativeStrengthIndex
-		{
-			Length = RsiPeriod
-		};
-
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
+		var prevF = 0m; var prevS = 0m; var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(_rsi, ProcessCandle).Start();
-
-		// no separate protection
-
-		var area = CreateChartArea();
-		if (area != null)
+		subscription.Bind(fast, slow, (candle, f, s) =>
 		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, _rsi);
-			DrawOwnTrades(area);
-		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal rsiValue)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!_rsi.IsFormed)
-		{
-			_previousRsi = rsiValue;
-			return;
-		}
-
-		if (Position > 0)
-		{
-			if (candle.ClosePrice >= _takeProfitLevel)
+			if (candle.State != CandleStates.Finished) return;
+			if (!fast.IsFormed || !slow.IsFormed) return;
+			if (!init) { prevF = f; prevS = s; init = true; return; }
+			if (candle.OpenTime - lastSignal >= cooldown)
 			{
-				SellMarket(Position);
-				_entryPrice = 0m;
-				_takeProfitLevel = 0m;
+				if (prevF <= prevS && f > s && Position <= 0) { BuyMarket(); lastSignal = candle.OpenTime; }
+				else if (prevF >= prevS && f < s && Position >= 0) { SellMarket(); lastSignal = candle.OpenTime; }
 			}
-		}
-		else if (_previousRsi < RsiLevel && rsiValue >= RsiLevel && IsFormedAndOnlineAndAllowTrading())
-		{
-			BuyMarket(Volume);
-			_entryPrice = candle.ClosePrice;
-			_takeProfitLevel = _entryPrice * (1m + TakeProfitPercent / 100m);
-		}
-
-		_previousRsi = rsiValue;
+			prevF = f; prevS = s;
+		}).Start();
+		var area = CreateChartArea();
+		if (area != null) { DrawCandles(area, subscription); DrawIndicator(area, fast); DrawIndicator(area, slow); DrawOwnTrades(area); }
 	}
 }

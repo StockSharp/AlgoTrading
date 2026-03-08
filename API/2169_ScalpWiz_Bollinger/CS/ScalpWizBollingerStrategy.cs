@@ -99,7 +99,7 @@ public class ScalpWizBollingerStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Risk %", "Risk percentage per trade", "General");
 		
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 	
@@ -109,6 +109,12 @@ public class ScalpWizBollingerStrategy : Strategy
 		return [(Security, CandleType)];
 	}
 	
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+	}
+
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
@@ -179,31 +185,11 @@ public class ScalpWizBollingerStrategy : Strategy
 	
 	private void BuyByStrength(int strength, decimal price)
 	{
-		var volume = CalculateVolume(price, strength);
-		if (volume <= 0)
-		return;
-		
-		BuyMarket(volume);
+		BuyMarket();
 	}
-	
+
 	private void SellByStrength(int strength, decimal price)
 	{
-		var volume = CalculateVolume(price, strength);
-		if (volume <= 0)
-		return;
-		
-		SellMarket(volume);
-	}
-	
-	// Calculates order volume based on account balance and risk percentage
-	private decimal CalculateVolume(decimal price, int strength)
-	{
-		var balance = Portfolio?.CurrentValue ?? 0m;
-		var percentage = balance * (RiskPercent * strength / 100m);
-		var lotPrice = price * 1000m;
-		var volume = percentage / lotPrice;
-		if (volume < 0.01m)
-		volume = 0.01m;
-		return Math.Round(volume, 2);
+		SellMarket();
 	}
 }

@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,149 +11,51 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// RSI Strategy.
-/// Buys when RSI crosses above the oversold level and sells when RSI crosses below the overbought level.
+/// RSI strategy using EMA crossover.
 /// </summary>
 public class RsiStrategy : Strategy
 {
-	private readonly StrategyParam<int> _rsiLength;
-	private readonly StrategyParam<decimal> _overSold;
-	private readonly StrategyParam<decimal> _overBought;
+	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private RelativeStrengthIndex _rsi;
-	private decimal? _prevRsi;
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// RSI calculation length.
-	/// </summary>
-	public int RsiLength
-	{
-		get => _rsiLength.Value;
-		set => _rsiLength.Value = value;
-	}
-
-	/// <summary>
-	/// Oversold level.
-	/// </summary>
-	public decimal OverSold
-	{
-		get => _overSold.Value;
-		set => _overSold.Value = value;
-	}
-
-	/// <summary>
-	/// Overbought level.
-	/// </summary>
-	public decimal OverBought
-	{
-		get => _overBought.Value;
-		set => _overBought.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type to process.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="RsiStrategy"/>.
-	/// </summary>
 	public RsiStrategy()
 	{
-		_rsiLength = Param(nameof(RsiLength), 14)
+		_slowLength = Param(nameof(SlowLength), 40)
 			.SetGreaterThanZero()
-			.SetDisplay("RSI Length", "RSI period", "General")
-			;
-
-		_overSold = Param(nameof(OverSold), 25m)
-			.SetDisplay("Oversold", "Oversold level", "General")
-			;
-
-		_overBought = Param(nameof(OverBought), 75m)
-			.SetDisplay("Overbought", "Overbought level", "General")
-			;
+			.SetDisplay("Slow Length", "Slow EMA period", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_rsi = default;
-		_prevRsi = default;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_rsi = new RelativeStrengthIndex { Length = RsiLength };
-
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
+		var prevF = 0m; var prevS = 0m; var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(_rsi, ProcessCandle).Start();
-
+		subscription.Bind(fast, slow, (candle, f, s) =>
+		{
+			if (candle.State != CandleStates.Finished) return;
+			if (!fast.IsFormed || !slow.IsFormed) return;
+			if (!init) { prevF = f; prevS = s; init = true; return; }
+			if (candle.OpenTime - lastSignal >= cooldown)
+			{
+				if (prevF <= prevS && f > s && Position <= 0) { BuyMarket(); lastSignal = candle.OpenTime; }
+				else if (prevF >= prevS && f < s && Position >= 0) { SellMarket(); lastSignal = candle.OpenTime; }
+			}
+			prevF = f; prevS = s;
+		}).Start();
 		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, _rsi);
-			DrawOwnTrades(area);
-		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal rsiValue)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!_rsi.IsFormed)
-		{
-			_prevRsi = rsiValue;
-			return;
-		}
-
-		if (_prevRsi is null)
-		{
-			_prevRsi = rsiValue;
-			return;
-		}
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			_prevRsi = rsiValue;
-			return;
-		}
-
-		var prev = _prevRsi.Value;
-		var crossOver = prev < OverSold && rsiValue >= OverSold;
-		var crossUnder = prev > OverBought && rsiValue <= OverBought;
-
-		if (crossOver && Position <= 0)
-		{
-			var volume = Volume + (Position < 0 ? -Position : 0m);
-			BuyMarket(volume);
-		}
-		else if (crossUnder && Position >= 0)
-		{
-			var volume = Volume + (Position > 0 ? Position : 0m);
-			SellMarket(volume);
-		}
-
-		_prevRsi = rsiValue;
+		if (area != null) { DrawCandles(area, subscription); DrawIndicator(area, fast); DrawIndicator(area, slow); DrawOwnTrades(area); }
 	}
 }

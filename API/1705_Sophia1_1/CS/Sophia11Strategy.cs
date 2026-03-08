@@ -33,7 +33,7 @@ public class Sophia11Strategy : Strategy
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "ATR for stops", "Indicators");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
@@ -51,7 +51,7 @@ public class Sophia11Strategy : Strategy
 		base.OnStarted2(time);
 
 		var sma = new SimpleMovingAverage { Length = SmaPeriod };
-		var atr = new AverageTrueRange { Length = AtrPeriod };
+		var atr = new StandardDeviation { Length = AtrPeriod };
 
 		SubscribeCandles(CandleType).Bind(sma, atr, ProcessCandle).Start();
 	}

@@ -113,7 +113,7 @@ public class MT45Strategy : Strategy
 		_maxVolume = Param(nameof(MaxVolume), 10m)
 			.SetDisplay("Max Volume", "Upper limit for martingale scaling", "Trading");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle series used to trigger new trades", "General");
 
 		_nextSide = Sides.Buy;
@@ -187,11 +187,11 @@ public class MT45Strategy : Strategy
 		// Alternate between long and short trades every finished bar.
 		if (side == Sides.Buy)
 		{
-			BuyMarket(volume);
+			BuyMarket();
 		}
 		else
 		{
-			SellMarket(volume);
+			SellMarket();
 		}
 
 		_entryPending = true;

@@ -58,7 +58,7 @@ public class IiOutbreakStrategy : Strategy
 	private readonly decimal[] _typicalPrices = new decimal[120];
 	private int _typicalCount;
 
-	private ICandleMessage _previousCandle;
+	private bool _hasPreviousCandle;
 	private decimal _entryPrice;
 	private readonly StrategyParam<decimal> _commission;
 
@@ -204,7 +204,7 @@ public class IiOutbreakStrategy : Strategy
 		_warningAlerts = Param(nameof(WarningAlerts), true)
 			.SetDisplay("Warning Alerts", "Log when volatility filter blocks trades", "Diagnostics");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe for calculations", "General");
 	}
 
@@ -244,7 +244,7 @@ public class IiOutbreakStrategy : Strategy
 		Array.Clear(_typicalPrices, 0, _typicalPrices.Length);
 		_typicalCount = 0;
 
-		_previousCandle = null;
+		_hasPreviousCandle = false;
 		_entryPrice = 0m;
 	}
 
@@ -289,18 +289,18 @@ public class IiOutbreakStrategy : Strategy
 
 		var canTrade = _stdDev.IsFormed;
 
-		if (_previousCandle is not null && !_staticStopEnabled && IsEquityRiskExceeded(candle))
+		if (_hasPreviousCandle && !_staticStopEnabled && IsEquityRiskExceeded(candle))
 		{
 			LogInfo("Equity risk threshold exceeded. Closing all positions.");
 			CloseAll();
 			ResetAfterClose();
-			_previousCandle = candle;
+			_hasPreviousCandle = true;
 			return;
 		}
 
 		if (!canTrade)
 		{
-			_previousCandle = candle;
+			_hasPreviousCandle = true;
 			return;
 		}
 
@@ -310,7 +310,7 @@ public class IiOutbreakStrategy : Strategy
 
 			if (IsTradingBlockedByCalendar(candle.OpenTime))
 			{
-				_previousCandle = candle;
+				_hasPreviousCandle = true;
 				return;
 			}
 
@@ -323,7 +323,7 @@ public class IiOutbreakStrategy : Strategy
 			ManageOpenPosition(candle, spreadPoints);
 		}
 
-		_previousCandle = candle;
+		_hasPreviousCandle = true;
 	}
 
 	private void ResetStateBeforeEntry()
@@ -342,9 +342,9 @@ public class IiOutbreakStrategy : Strategy
 	private void CloseAll()
 	{
 		if (Position > 0)
-			SellMarket(Math.Abs(Position));
+			SellMarket();
 		else if (Position < 0)
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
 	}
 
 	private void ResetAfterClose()
@@ -379,14 +379,14 @@ public class IiOutbreakStrategy : Strategy
 
 		if (_buySignal)
 		{
-			BuyMarket(volume);
+			BuyMarket();
 			_entryPrice = candle.ClosePrice;
 			_longInitialStop = candle.ClosePrice - _initialStopDistance;
 			LogInfo($"Opened long at {candle.ClosePrice} with volume {volume}.");
 		}
 		else if (_sellSignal)
 		{
-			SellMarket(volume);
+			SellMarket();
 			_entryPrice = candle.ClosePrice;
 			_shortInitialStop = candle.ClosePrice + _initialStopDistance;
 			LogInfo($"Opened short at {candle.ClosePrice} with volume {volume}.");
@@ -409,7 +409,7 @@ public class IiOutbreakStrategy : Strategy
 		{
 			if (Position > 0 && _longInitialStop.HasValue && candle.LowPrice <= _longInitialStop.Value)
 			{
-				SellMarket(volume);
+				SellMarket();
 				LogInfo("Initial long stop triggered.");
 				ResetAfterClose();
 				return;
@@ -417,7 +417,7 @@ public class IiOutbreakStrategy : Strategy
 
 			if (Position < 0 && _shortInitialStop.HasValue && candle.HighPrice >= _shortInitialStop.Value)
 			{
-				BuyMarket(volume);
+				BuyMarket();
 				LogInfo("Initial short stop triggered.");
 				ResetAfterClose();
 				return;
@@ -439,7 +439,7 @@ public class IiOutbreakStrategy : Strategy
 
 			if (_longTrailingStop.HasValue && candle.LowPrice <= _longTrailingStop.Value)
 			{
-				SellMarket(volume);
+				SellMarket();
 				LogInfo($"Trailing stop hit for long at {_longTrailingStop.Value}.");
 				ResetAfterClose();
 				return;
@@ -456,7 +456,7 @@ public class IiOutbreakStrategy : Strategy
 
 			if (_shortTrailingStop.HasValue && candle.HighPrice >= _shortTrailingStop.Value)
 			{
-				BuyMarket(volume);
+				BuyMarket();
 				LogInfo($"Trailing stop hit for short at {_shortTrailingStop.Value}.");
 				ResetAfterClose();
 				return;
@@ -484,7 +484,7 @@ public class IiOutbreakStrategy : Strategy
 			if (volume <= 0m || !HasSufficientMargin(candle.ClosePrice, volume))
 				return;
 
-			BuyMarket(volume);
+			BuyMarket();
 			_buyPyramidLevel = profitPoints;
 			_staticStopEnabled = false;
 			_longInitialStop = null;
@@ -502,7 +502,7 @@ public class IiOutbreakStrategy : Strategy
 			if (volume <= 0m || !HasSufficientMargin(candle.ClosePrice, volume))
 				return;
 
-			SellMarket(volume);
+			SellMarket();
 			_sellPyramidLevel = profitPoints;
 			_staticStopEnabled = false;
 			_shortInitialStop = null;
@@ -547,7 +547,7 @@ public class IiOutbreakStrategy : Strategy
 	private void UpdateVolatility(ICandleMessage candle)
 	{
 		// Simplified volatility check for backtesting compatibility.
-		_volatilitySignal = _previousCandle is not null;
+		_volatilitySignal = _hasPreviousCandle;
 	}
 
 	private void UpdateTiming(ICandleMessage candle)

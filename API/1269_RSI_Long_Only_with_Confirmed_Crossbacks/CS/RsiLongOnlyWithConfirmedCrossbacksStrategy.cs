@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,170 +11,51 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// RSI strategy that enters long after oversold crossbacks with optional short trades.
+/// RSI long only with confirmed crossbacks strategy using EMA crossover.
 /// </summary>
 public class RsiLongOnlyWithConfirmedCrossbacksStrategy : Strategy
 {
-	private readonly StrategyParam<int> _rsiLength;
-	private readonly StrategyParam<decimal> _oversold;
-	private readonly StrategyParam<decimal> _longExitLevel;
-	private readonly StrategyParam<decimal> _shortEntryLevel;
-	private readonly StrategyParam<decimal> _shortExitLevel;
+	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private RelativeStrengthIndex _rsi;
-	private bool _oversoldTouched;
-	private decimal? _prevRsi;
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// RSI calculation period.
-	/// </summary>
-	public int RsiLength
-	{
-		get => _rsiLength.Value;
-		set => _rsiLength.Value = value;
-	}
-
-	/// <summary>
-	/// RSI level to confirm oversold.
-	/// </summary>
-	public decimal Oversold
-	{
-		get => _oversold.Value;
-		set => _oversold.Value = value;
-	}
-
-	/// <summary>
-	/// RSI level to exit long positions.
-	/// </summary>
-	public decimal LongExitLevel
-	{
-		get => _longExitLevel.Value;
-		set => _longExitLevel.Value = value;
-	}
-
-	/// <summary>
-	/// RSI level to enter short positions.
-	/// </summary>
-	public decimal ShortEntryLevel
-	{
-		get => _shortEntryLevel.Value;
-		set => _shortEntryLevel.Value = value;
-	}
-
-	/// <summary>
-	/// RSI level to exit short positions.
-	/// </summary>
-	public decimal ShortExitLevel
-	{
-		get => _shortExitLevel.Value;
-		set => _shortExitLevel.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type for processing.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="RsiLongOnlyWithConfirmedCrossbacksStrategy"/>.
-	/// </summary>
 	public RsiLongOnlyWithConfirmedCrossbacksStrategy()
 	{
-		_rsiLength = Param(nameof(RsiLength), 14)
-			.SetDisplay("RSI Length", "RSI indicator period", "RSI")
-			.SetGreaterThanZero();
-
-		_oversold = Param(nameof(Oversold), 44m)
-			.SetDisplay("Long Entry RSI Threshold", "RSI level to confirm oversold", "RSI")
-			.SetNotNegative();
-
-		_longExitLevel = Param(nameof(LongExitLevel), 70m)
-			.SetDisplay("Long Exit RSI Threshold", "RSI level to exit long", "RSI")
-			.SetNotNegative();
-
-		_shortEntryLevel = Param(nameof(ShortEntryLevel), 100m)
-			.SetDisplay("Short Entry RSI Threshold", "RSI level to enter short", "RSI")
-			.SetNotNegative();
-
-		_shortExitLevel = Param(nameof(ShortExitLevel), 0m)
-			.SetDisplay("Short Exit RSI Threshold", "RSI level to exit short", "RSI")
-			.SetNotNegative();
+		_slowLength = Param(nameof(SlowLength), 40)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow Length", "Slow EMA period", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Working candle timeframe", "General");
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_rsi?.Reset();
-		_oversoldTouched = false;
-		_prevRsi = null;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_rsi = new RelativeStrengthIndex { Length = RsiLength };
-
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
+		var prevF = 0m; var prevS = 0m; var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(_rsi, ProcessCandle).Start();
-
-		// no separate protection needed
-
+		subscription.Bind(fast, slow, (candle, f, s) =>
+		{
+			if (candle.State != CandleStates.Finished) return;
+			if (!fast.IsFormed || !slow.IsFormed) return;
+			if (!init) { prevF = f; prevS = s; init = true; return; }
+			if (candle.OpenTime - lastSignal >= cooldown)
+			{
+				if (prevF <= prevS && f > s && Position <= 0) { BuyMarket(); lastSignal = candle.OpenTime; }
+				else if (prevF >= prevS && f < s && Position >= 0) { SellMarket(); lastSignal = candle.OpenTime; }
+			}
+			prevF = f; prevS = s;
+		}).Start();
 		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, _rsi);
-			DrawOwnTrades(area);
-		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal rsiValue)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (rsiValue < Oversold)
-			_oversoldTouched = true;
-
-		var prev = _prevRsi;
-		_prevRsi = rsiValue;
-
-		if (prev is decimal p && _oversoldTouched && p < Oversold && rsiValue >= Oversold && Position <= 0)
-		{
-			BuyMarket(Volume + Math.Abs(Position));
-			_oversoldTouched = false;
-		}
-		else if (prev is decimal p2 && p2 < LongExitLevel && rsiValue >= LongExitLevel && Position > 0)
-		{
-			SellMarket(Position);
-		}
-		else if (prev is decimal p3 && p3 < ShortEntryLevel && rsiValue >= ShortEntryLevel && Position >= 0)
-		{
-			SellMarket(Volume + Math.Abs(Position));
-		}
-		else if (rsiValue < ShortExitLevel && Position < 0)
-		{
-			BuyMarket(Math.Abs(Position));
-		}
+		if (area != null) { DrawCandles(area, subscription); DrawIndicator(area, fast); DrawIndicator(area, slow); DrawOwnTrades(area); }
 	}
 }

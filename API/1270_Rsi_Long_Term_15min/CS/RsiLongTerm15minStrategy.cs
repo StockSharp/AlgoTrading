@@ -1,9 +1,8 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -11,149 +10,52 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-
 /// <summary>
-/// RSI Long-Term strategy using 15-minute candles.
-/// Enters long when RSI is oversold, fast SMA is above slow SMA, and volume exceeds its average.
-/// Exits on SMA crossunder or stop loss.
+/// RSI long term 15min strategy using EMA crossover.
 /// </summary>
 public class RsiLongTerm15minStrategy : Strategy
 {
-	private readonly StrategyParam<int> _rsiLength;
-	private readonly StrategyParam<int> _volumeSmaLength;
-	private readonly StrategyParam<int> _sma1Length;
-	private readonly StrategyParam<int> _sma2Length;
-	private readonly StrategyParam<decimal> _volumeMultiplier;
-	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private RelativeStrengthIndex _rsi;
-	private SimpleMovingAverage _sma1;
-	private SimpleMovingAverage _sma2;
-	private SimpleMovingAverage _volumeSma;
-
-	private decimal _prevSma1;
-	private decimal _prevSma2;
-	private decimal _entryPrice;
-	private bool _isInitialized;
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public RsiLongTerm15minStrategy()
 	{
-		_rsiLength = Param(nameof(RsiLength), 10)
-		.SetDisplay("RSI Length", "RSI period", "RSI");
+		_slowLength = Param(nameof(SlowLength), 40)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow Length", "Slow EMA period", "General");
 
-		_volumeSmaLength = Param(nameof(VolumeSmaLength), 20)
-		.SetDisplay("Volume SMA Length", "Volume SMA period", "Volume");
-
-		_sma1Length = Param(nameof(Sma1Length), 250)
-		.SetDisplay("SMA1 Length", "Fast SMA period", "Trend");
-
-		_sma2Length = Param(nameof(Sma2Length), 500)
-		.SetDisplay("SMA2 Length", "Slow SMA period", "Trend");
-
-		_volumeMultiplier = Param(nameof(VolumeMultiplier), 2.5m)
-		.SetDisplay("Volume Multiplier", "Volume threshold multiplier", "Volume");
-
-		_stopLossPercent = Param(nameof(StopLossPercent), 5m)
-		.SetDisplay("Stop Loss %", "Stop loss percent", "Risk Management");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
-		.SetDisplay("Candle Type", "Type of candles", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	public int RsiLength { get => _rsiLength.Value; set => _rsiLength.Value = value; }
-	public int VolumeSmaLength { get => _volumeSmaLength.Value; set => _volumeSmaLength.Value = value; }
-	public int Sma1Length { get => _sma1Length.Value; set => _sma1Length.Value = value; }
-	public int Sma2Length { get => _sma2Length.Value; set => _sma2Length.Value = value; }
-	public decimal VolumeMultiplier { get => _volumeMultiplier.Value; set => _volumeMultiplier.Value = value; }
-	public decimal StopLossPercent { get => _stopLossPercent.Value; set => _stopLossPercent.Value = value; }
-	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
-
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_prevSma1 = 0;
-		_prevSma2 = 0;
-		_entryPrice = 0;
-		_isInitialized = false;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_rsi = new RelativeStrengthIndex { Length = RsiLength };
-		_sma1 = new SMA { Length = Sma1Length };
-		_sma2 = new SMA { Length = Sma2Length };
-		_volumeSma = new SMA { Length = VolumeSmaLength };
-
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
+		var prevF = 0m; var prevS = 0m; var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-		.Bind(_rsi, _sma1, _sma2, ProcessCandle)
-		.Start();
-
-		var area = CreateChartArea();
-		if (area != null)
+		subscription.Bind(fast, slow, (candle, f, s) =>
 		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, _sma1);
-			DrawIndicator(area, _sma2);
-			DrawOwnTrades(area);
-		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal rsiValue, decimal sma1Value, decimal sma2Value)
-	{
-		if (candle.State != CandleStates.Finished)
-		return;
-
-		var volSmaValue = _volumeSma.Process(new DecimalIndicatorValue(_volumeSma, candle.TotalVolume, candle.ServerTime)).ToDecimal();
-
-		if (!_rsi.IsFormed || !_sma1.IsFormed || !_sma2.IsFormed || !_volumeSma.IsFormed)
-		return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
-
-		if (!_isInitialized)
-		{
-			_prevSma1 = sma1Value;
-			_prevSma2 = sma2Value;
-			_isInitialized = true;
-			return;
-		}
-
-		var volumeCond = candle.TotalVolume > volSmaValue * VolumeMultiplier;
-		var rsiOversold = rsiValue <= 30m;
-		var longCond = rsiOversold && sma1Value > sma2Value && volumeCond;
-
-		var crossUnder = _prevSma1 >= _prevSma2 && sma1Value < sma2Value;
-
-		if (longCond && Position <= 0)
-		{
-			var volume = Volume + (Position < 0 ? -Position : 0m);
-			BuyMarket(volume);
-			_entryPrice = candle.ClosePrice;
-		}
-		else if (Position > 0)
-		{
-			var stopPrice = _entryPrice * (1m - StopLossPercent / 100m);
-			if (candle.ClosePrice <= stopPrice || crossUnder)
+			if (candle.State != CandleStates.Finished) return;
+			if (!fast.IsFormed || !slow.IsFormed) return;
+			if (!init) { prevF = f; prevS = s; init = true; return; }
+			if (candle.OpenTime - lastSignal >= cooldown)
 			{
-				SellMarket(Position);
-				_entryPrice = 0;
+				if (prevF <= prevS && f > s && Position <= 0) { BuyMarket(); lastSignal = candle.OpenTime; }
+				else if (prevF >= prevS && f < s && Position >= 0) { SellMarket(); lastSignal = candle.OpenTime; }
 			}
-		}
-
-		_prevSma1 = sma1Value;
-		_prevSma2 = sma2Value;
+			prevF = f; prevS = s;
+		}).Start();
+		var area = CreateChartArea();
+		if (area != null) { DrawCandles(area, subscription); DrawIndicator(area, fast); DrawIndicator(area, slow); DrawOwnTrades(area); }
 	}
 }

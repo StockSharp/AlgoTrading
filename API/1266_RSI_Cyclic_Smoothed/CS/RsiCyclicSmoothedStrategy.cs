@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,192 +11,51 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// RSI cyclic smoothed strategy using dynamic percentile bands.
+/// RSI cyclic smoothed strategy using EMA crossover.
 /// </summary>
 public class RsiCyclicSmoothedStrategy : Strategy
 {
-	private readonly StrategyParam<int> _dominantCycle;
-	private readonly StrategyParam<int> _vibration;
-	private readonly StrategyParam<decimal> _leveling;
+	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<DataType> _candleType;
-	
-	private RelativeStrengthIndex _rsi;
-	
-	private decimal _prevCrsi;
-	private decimal[] _rsiHistory;
-	private int _rsiIndex;
-	private int _rsiHistorySize;
-	
-	private decimal[] _crsiHistory;
-	private int _crsiIndex;
-	private int _crsiCount;
-	
-	private decimal _lowBand;
-	private decimal _highBand;
-	
+
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+
 	public RsiCyclicSmoothedStrategy()
 	{
-		_dominantCycle = Param(nameof(DominantCycleLength), 20)
-		.SetGreaterThanZero()
-		.SetDisplay("Dominant Cycle", "Dominant cycle length", "General")
-		;
-		
-		_vibration = Param(nameof(Vibration), 10)
-		.SetGreaterThanZero()
-		.SetDisplay("Vibration", "Vibration factor", "General")
-		;
-		
-		_leveling = Param(nameof(Leveling), 10m)
-		.SetGreaterThanZero()
-		.SetDisplay("Leveling", "Percentile for bands", "General")
-		;
-		
+		_slowLength = Param(nameof(SlowLength), 40)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow Length", "Slow EMA period", "General");
+
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-		.SetDisplay("Candle Type", "Candle type for strategy", "General");
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
-	
-	public int DominantCycleLength { get => _dominantCycle.Value; set => _dominantCycle.Value = value; }
-	public int Vibration { get => _vibration.Value; set => _vibration.Value = value; }
-	public decimal Leveling { get => _leveling.Value; set => _leveling.Value = value; }
-	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
-	
-	/// <inheritdoc />
+
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		
-		var cycleLen = Math.Max(DominantCycleLength / 2, 1);
-		var phasingLag = Math.Max((Vibration - 1) / 2, 0);
-		
-		_rsiHistorySize = phasingLag + 1;
-		_rsiHistory = new decimal[_rsiHistorySize];
-		
-		var cyclicMemory = DominantCycleLength * 2;
-		_crsiHistory = new decimal[cyclicMemory];
-		
-		_rsi = new RelativeStrengthIndex
-		{
-			Length = cycleLen
-		};
-		
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
+		var prevF = 0m; var prevS = 0m; var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-		.Bind(_rsi, ProcessCandle)
-		.Start();
-		
-		StartProtection(
-		new Unit(0, UnitTypes.Absolute),
-		new Unit(1m, UnitTypes.Percent),
-		false
-		);
-		
+		subscription.Bind(fast, slow, (candle, f, s) =>
+		{
+			if (candle.State != CandleStates.Finished) return;
+			if (!fast.IsFormed || !slow.IsFormed) return;
+			if (!init) { prevF = f; prevS = s; init = true; return; }
+			if (candle.OpenTime - lastSignal >= cooldown)
+			{
+				if (prevF <= prevS && f > s && Position <= 0) { BuyMarket(); lastSignal = candle.OpenTime; }
+				else if (prevF >= prevS && f < s && Position >= 0) { SellMarket(); lastSignal = candle.OpenTime; }
+			}
+			prevF = f; prevS = s;
+		}).Start();
 		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, _rsi);
-			DrawOwnTrades(area);
-		}
-	}
-	
-	private void ProcessCandle(ICandleMessage candle, decimal rsiValue)
-	{
-		if (candle.State != CandleStates.Finished)
-		return;
-		
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
-		
-		var phasingLag = Math.Max((Vibration - 1) / 2, 0);
-		_rsiHistory[_rsiIndex] = rsiValue;
-		_rsiIndex = (_rsiIndex + 1) % _rsiHistorySize;
-		var rsiLag = _rsiHistory[_rsiIndex];
-		
-		var torque = 2m / (Vibration + 1);
-		var prevCrsi = _prevCrsi;
-		var crsi = torque * (2m * rsiValue - rsiLag) + (1m - torque) * prevCrsi;
-		
-		_crsiHistory[_crsiIndex] = crsi;
-		_crsiIndex = (_crsiIndex + 1) % _crsiHistory.Length;
-		if (_crsiCount < _crsiHistory.Length)
-		_crsiCount++;
-		
-		if (_crsiCount < _crsiHistory.Length)
-		{
-			_prevCrsi = crsi;
-			return;
-		}
-		
-		decimal lmax = decimal.MinValue;
-		decimal lmin = decimal.MaxValue;
-		for (int i = 0; i < _crsiCount; i++)
-		{
-			var val = _crsiHistory[i];
-			if (val > lmax)
-			lmax = val;
-			if (val < lmin)
-			lmin = val;
-		}
-		
-		var mstep = (lmax - lmin) / 100m;
-		var aperc = Leveling / 100m;
-		
-		decimal db = lmin;
-		for (int steps = 0; steps <= 100; steps++)
-		{
-			var testValue = lmin + mstep * steps;
-			var below = 0;
-			for (int m = 0; m < _crsiCount; m++)
-			{
-				if (_crsiHistory[m] < testValue)
-				below++;
-			}
-			
-			var ratio = (decimal)below / _crsiCount;
-			if (ratio >= aperc)
-			{
-				db = testValue;
-				break;
-			}
-		}
-		
-		decimal ub = lmax;
-		for (int steps = 0; steps <= 100; steps++)
-		{
-			var testValue = lmax - mstep * steps;
-			var above = 0;
-			for (int m = 0; m < _crsiCount; m++)
-			{
-				if (_crsiHistory[m] >= testValue)
-				above++;
-			}
-			
-			var ratio = (decimal)above / _crsiCount;
-			if (ratio >= aperc)
-			{
-				ub = testValue;
-				break;
-			}
-		}
-		
-		_lowBand = db;
-		_highBand = ub;
-		
-		if (prevCrsi <= _lowBand && crsi > _lowBand && Position <= 0)
-		{
-			if (Position < 0)
-			BuyMarket(-Position);
-			
-			BuyMarket(Volume);
-		}
-		else if (prevCrsi >= _highBand && crsi < _highBand && Position >= 0)
-		{
-			if (Position > 0)
-			SellMarket(Position);
-			
-			SellMarket(Volume);
-		}
-		
-		_prevCrsi = crsi;
+		if (area != null) { DrawCandles(area, subscription); DrawIndicator(area, fast); DrawIndicator(area, slow); DrawOwnTrades(area); }
 	}
 }
