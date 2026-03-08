@@ -180,11 +180,11 @@ public class BurgExtrapolatorStrategy : Strategy
 		.SetDisplay("Max Positions", "Maximum simultaneous trades", "Risk")
 		.SetGreaterThanZero();
 
-		_minProfitPips = Param(nameof(MinProfitPips), 160m)
+		_minProfitPips = Param(nameof(MinProfitPips), 2m)
 		.SetDisplay("Min Profit", "Minimum predicted profit (pips)", "Signals")
 		.SetNotNegative();
 
-		_maxLossPips = Param(nameof(MaxLossPips), 130m)
+		_maxLossPips = Param(nameof(MaxLossPips), 5m)
 		.SetDisplay("Max Loss", "Maximum tolerated loss (pips)", "Risk")
 		.SetNotNegative();
 
@@ -192,7 +192,7 @@ public class BurgExtrapolatorStrategy : Strategy
 		.SetDisplay("Take Profit", "Take profit distance (pips)", "Risk")
 		.SetNotNegative();
 
-		_stopLossPips = Param(nameof(StopLossPips), 180m)
+		_stopLossPips = Param(nameof(StopLossPips), 5m)
 		.SetDisplay("Stop Loss", "Stop loss distance (pips)", "Risk")
 		.SetNotNegative();
 
@@ -200,7 +200,7 @@ public class BurgExtrapolatorStrategy : Strategy
 		.SetDisplay("Trailing Stop", "Trailing stop distance (pips)", "Risk")
 		.SetNotNegative();
 
-		_pastBars = Param(nameof(PastBars), 200)
+		_pastBars = Param(nameof(PastBars), 50)
 		.SetDisplay("Past Bars", "Bars used for Burg model", "Model")
 		.SetGreaterThanZero();
 
@@ -218,7 +218,7 @@ public class BurgExtrapolatorStrategy : Strategy
 		.SetDisplay("Order Volume", "Fallback order volume", "Money")
 		.SetGreaterThanZero();
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -283,13 +283,13 @@ public class BurgExtrapolatorStrategy : Strategy
 		{
 			if (Position > 0m && (closeSignal == -1 || openSignal == -1))
 			{
-				SellMarket(Math.Abs(Position));
+				SellMarket();
 				return;
 			}
 
 			if (Position < 0m && (closeSignal == 1 || openSignal == 1))
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				return;
 			}
 		}
@@ -310,7 +310,7 @@ public class BurgExtrapolatorStrategy : Strategy
 				var remaining = maxExposure - Math.Max(Position, 0m);
 				var tradeVolume = Math.Min(volume, remaining);
 				if (tradeVolume > 0m)
-				BuyMarket(tradeVolume);
+				BuyMarket();
 			}
 		}
 		else if (openSignal < 0)
@@ -321,7 +321,7 @@ public class BurgExtrapolatorStrategy : Strategy
 				var remaining = maxExposure - shortExposure;
 				var tradeVolume = Math.Min(volume, remaining);
 				if (tradeVolume > 0m)
-				SellMarket(tradeVolume);
+				SellMarket();
 			}
 		}
 	}
@@ -336,6 +336,7 @@ public class BurgExtrapolatorStrategy : Strategy
 		_forwardErrors = Array.Empty<double>();
 		_backwardErrors = Array.Empty<double>();
 		_priceForecast = Array.Empty<decimal>();
+		_pipSize = 0m;
 		_historyCapacity = 0;
 		_openCount = 0;
 		_modelOrder = 1;

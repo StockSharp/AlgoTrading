@@ -91,7 +91,7 @@ public class IGapStrategy : Strategy
 			.SetDisplay("Gap Size", "Gap in price steps required to trigger signal", "General")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for gap detection", "General");
 
 		_buyPosOpen = Param(nameof(BuyPosOpen), true)

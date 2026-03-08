@@ -65,7 +65,7 @@ public class BuySellGridStrategy : Strategy
 			.SetDisplay("EMA Period", "EMA period for grid center", "Indicators")
 			.SetGreaterThanZero();
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type for processing", "General");
 	}
 

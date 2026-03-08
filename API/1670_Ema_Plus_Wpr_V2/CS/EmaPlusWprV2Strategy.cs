@@ -20,9 +20,6 @@ public class EmaPlusWprV2Strategy : Strategy
 	private readonly StrategyParam<int> _wprLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevEma;
-	private bool _hasPrev;
-
 	public int EmaLength { get => _emaLength.Value; set => _emaLength.Value = value; }
 	public int WprLength { get => _wprLength.Value; set => _wprLength.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
@@ -37,19 +34,12 @@ public class EmaPlusWprV2Strategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("WPR Length", "Williams %R period", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		=> [(Security, CandleType)];
-
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_prevEma = 0;
-		_hasPrev = false;
-	}
 
 	protected override void OnStarted2(DateTime time)
 	{
@@ -69,38 +59,22 @@ public class EmaPlusWprV2Strategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_hasPrev)
-		{
-			_prevEma = emaVal;
-			_hasPrev = true;
-			return;
-		}
-
 		var close = candle.ClosePrice;
-		var uptrend = emaVal > _prevEma && close > emaVal;
-		var downtrend = emaVal < _prevEma && close < emaVal;
 
 		// WPR range is -100 to 0
-		// Oversold: WPR < -80, Overbought: WPR > -20
-		if (uptrend && wprVal < -80 && Position <= 0)
+		// Buy on oversold
+		if (wprVal < -80 && Position <= 0)
 		{
 			if (Position < 0)
 				BuyMarket();
 			BuyMarket();
 		}
-		else if (downtrend && wprVal > -20 && Position >= 0)
+		// Sell on overbought
+		else if (wprVal > -20 && Position >= 0)
 		{
 			if (Position > 0)
 				SellMarket();
 			SellMarket();
 		}
-
-		// Exit on WPR reversal
-		if (Position > 0 && wprVal > -20)
-			SellMarket();
-		else if (Position < 0 && wprVal < -80)
-			BuyMarket();
-
-		_prevEma = emaVal;
 	}
 }

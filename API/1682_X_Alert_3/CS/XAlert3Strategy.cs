@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,217 +11,85 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Alert strategy based on crossover of two moving averages.
-/// Generates log messages when MA1 crosses MA2 up or down.
+/// Strategy based on crossover of two moving averages.
+/// Buys when fast MA crosses above slow MA, sells when crosses below.
 /// </summary>
 public class XAlert3Strategy : Strategy
 {
-        public enum MovingAverageTypes
-        {
-                /// <summary>Simple Moving Average.</summary>
-                Simple,
-                /// <summary>Exponential Moving Average.</summary>
-                Exponential,
-                /// <summary>Smoothed Moving Average.</summary>
-                Smoothed,
-                /// <summary>Weighted Moving Average.</summary>
-                Weighted
-        }
-
-        public enum PriceTypes
-        {
-                /// <summary>Close price.</summary>
-                Close,
-                /// <summary>Open price.</summary>
-                Open,
-                /// <summary>High price.</summary>
-                High,
-                /// <summary>Low price.</summary>
-                Low,
-                /// <summary>Median price (high+low)/2.</summary>
-                Median,
-                /// <summary>Typical price (high+low+close)/3.</summary>
-                Typical,
-                /// <summary>Weighted close price (high+low+close*2)/4.</summary>
-                Weighted
-        }
-
-        private readonly StrategyParam<int> _ma1Period;
-	private readonly StrategyParam<MovingAverageTypes> _ma1Type;
+	private readonly StrategyParam<int> _ma1Period;
 	private readonly StrategyParam<int> _ma2Period;
-	private readonly StrategyParam<MovingAverageTypes> _ma2Type;
-	private readonly StrategyParam<PriceTypes> _priceType;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private IIndicator _ma1;
-	private IIndicator _ma2;
-	private decimal? _prevDiff1;
-	private decimal? _prevDiff2;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private bool _hasPrev;
 
-	/// <summary>
-	/// Period of the first moving average.
-	/// </summary>
-	public int Ma1Period
-	{
-		get => _ma1Period.Value;
-		set => _ma1Period.Value = value;
-	}
+	public int Ma1Period { get => _ma1Period.Value; set => _ma1Period.Value = value; }
+	public int Ma2Period { get => _ma2Period.Value; set => _ma2Period.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Type of the first moving average.
-	/// </summary>
-	public MovingAverageTypes Ma1Type
-	{
-		get => _ma1Type.Value;
-		set => _ma1Type.Value = value;
-	}
-
-	/// <summary>
-	/// Period of the second moving average.
-	/// </summary>
-	public int Ma2Period
-	{
-		get => _ma2Period.Value;
-		set => _ma2Period.Value = value;
-	}
-
-	/// <summary>
-	/// Type of the second moving average.
-	/// </summary>
-	public MovingAverageTypes Ma2Type
-	{
-		get => _ma2Type.Value;
-		set => _ma2Type.Value = value;
-	}
-
-	/// <summary>
-	/// Source price used for calculations.
-	/// </summary>
-	public PriceTypes PriceType
-	{
-		get => _priceType.Value;
-		set => _priceType.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type for subscription.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="XAlert3Strategy"/>.
-	/// </summary>
 	public XAlert3Strategy()
 	{
-		_ma1Period = Param(nameof(Ma1Period), 1)
+		_ma1Period = Param(nameof(Ma1Period), 10)
 			.SetGreaterThanZero()
-			.SetDisplay("MA1 Period", "Length of the first moving average", "MA1")
-			;
+			.SetDisplay("MA1 Period", "Fast moving average period", "Indicators");
 
-		_ma1Type = Param(nameof(Ma1Type), MovingAverageTypes.Simple)
-			.SetDisplay("MA1 Type", "Type of the first moving average", "MA1");
-
-		_ma2Period = Param(nameof(Ma2Period), 14)
+		_ma2Period = Param(nameof(Ma2Period), 30)
 			.SetGreaterThanZero()
-			.SetDisplay("MA2 Period", "Length of the second moving average", "MA2")
-			;
+			.SetDisplay("MA2 Period", "Slow moving average period", "Indicators");
 
-		_ma2Type = Param(nameof(Ma2Type), MovingAverageTypes.Simple)
-			.SetDisplay("MA2 Type", "Type of the second moving average", "MA2");
-
-		_priceType = Param(nameof(PriceType), PriceTypes.Median)
-			.SetDisplay("Price Type", "Source price for calculations", "General");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_ma1 = null;
-		_ma2 = null;
-		_prevDiff1 = null;
-		_prevDiff2 = null;
+		_prevFast = 0;
+		_prevSlow = 0;
+		_hasPrev = false;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_ma1 = CreateMovingAverage(Ma1Type, Ma1Period);
-		_ma2 = CreateMovingAverage(Ma2Type, Ma2Period);
+		var fast = new ExponentialMovingAverage { Length = Ma1Period };
+		var slow = new ExponentialMovingAverage { Length = Ma2Period };
 
-		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, _ma1);
-			DrawIndicator(area, _ma2);
-		}
+		SubscribeCandles(CandleType)
+			.Bind(fast, slow, ProcessCandle)
+			.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var price = GetPrice(candle, PriceType);
-		var ma1 = _ma1!.Process(new DecimalIndicatorValue(_ma1, price, candle.OpenTime)).ToDecimal();
-		var ma2 = _ma2!.Process(new DecimalIndicatorValue(_ma2, price, candle.OpenTime)).ToDecimal();
-
-		var diff = ma1 - ma2;
-
-		if (_prevDiff1 is not null && _prevDiff2 is not null)
+		if (!_hasPrev)
 		{
-			if (diff > 0 && _prevDiff1 > 0 && _prevDiff2 < 0)
-				LogInfo("MA1 crossed above MA2");
-			else if (diff < 0 && _prevDiff1 < 0 && _prevDiff2 > 0)
-				LogInfo("MA1 crossed below MA2");
+			_prevFast = fast;
+			_prevSlow = slow;
+			_hasPrev = true;
+			return;
 		}
 
-		_prevDiff2 = _prevDiff1;
-		_prevDiff1 = diff;
-	}
-
-	private static IIndicator CreateMovingAverage(MovingAverageTypes type, int length)
-	{
-		return type switch
+		if (_prevFast <= _prevSlow && fast > slow)
 		{
-			MovingAverageTypes.Exponential => new EMA { Length = length },
-			MovingAverageTypes.Smoothed => new SmoothedMovingAverage { Length = length },
-			MovingAverageTypes.Weighted => new WeightedMovingAverage { Length = length },
-			_ => new SMA { Length = length }
-		};
-	}
-
-	private static decimal GetPrice(ICandleMessage candle, PriceTypes type)
-	{
-		return type switch
+			if (Position < 0) BuyMarket();
+			if (Position <= 0) BuyMarket();
+		}
+		else if (_prevFast >= _prevSlow && fast < slow)
 		{
-			PriceTypes.Open => candle.OpenPrice,
-			PriceTypes.High => candle.HighPrice,
-			PriceTypes.Low => candle.LowPrice,
-			PriceTypes.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			PriceTypes.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			PriceTypes.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
-			_ => candle.ClosePrice
-		};
+			if (Position > 0) SellMarket();
+			if (Position >= 0) SellMarket();
+		}
+
+		_prevFast = fast;
+		_prevSlow = slow;
 	}
 }

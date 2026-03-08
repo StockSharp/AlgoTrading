@@ -25,10 +25,10 @@ public class SlimeMoldRsiStrategy : Strategy
 	private readonly StrategyParam<decimal> _weight4;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private RelativeStrengthIndex _rsi12;
-	private RelativeStrengthIndex _rsi36;
-	private RelativeStrengthIndex _rsi108;
-	private RelativeStrengthIndex _rsi324;
+	private RelativeStrengthIndex _rsi12 = null!;
+	private RelativeStrengthIndex _rsi36 = null!;
+	private RelativeStrengthIndex _rsi108 = null!;
+	private RelativeStrengthIndex _rsi324 = null!;
 
 	private decimal? _previousPerceptron;
 
@@ -102,7 +102,7 @@ public class SlimeMoldRsiStrategy : Strategy
 			
 			.SetOptimize(-200m, 200m, 10m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for candles used in calculations", "General");
 	}
 
@@ -118,10 +118,10 @@ public class SlimeMoldRsiStrategy : Strategy
 		base.OnReseted();
 
 		// Drop cached indicator instances and perceptron history.
-		_rsi12 = null;
-		_rsi36 = null;
-		_rsi108 = null;
-		_rsi324 = null;
+		_rsi12 = null!;
+		_rsi36 = null!;
+		_rsi108 = null!;
+		_rsi324 = null!;
 		_previousPerceptron = null;
 	}
 
@@ -153,14 +153,20 @@ public class SlimeMoldRsiStrategy : Strategy
 		// Median price replicates PRICE_MEDIAN used in the original script.
 		var medianPrice = (candle.HighPrice + candle.LowPrice) / 2m;
 
-		var rsi12Value = _rsi12.Process(new DecimalIndicatorValue(_rsi12, medianPrice, candle.ServerTime) { IsFinal = true }).ToDecimal();
-		var rsi36Value = _rsi36.Process(new DecimalIndicatorValue(_rsi36, medianPrice, candle.ServerTime) { IsFinal = true }).ToDecimal();
-		var rsi108Value = _rsi108.Process(new DecimalIndicatorValue(_rsi108, medianPrice, candle.ServerTime) { IsFinal = true }).ToDecimal();
-		var rsi324Value = _rsi324.Process(new DecimalIndicatorValue(_rsi324, medianPrice, candle.ServerTime) { IsFinal = true }).ToDecimal();
+		var input = new DecimalIndicatorValue(_rsi12, medianPrice, candle.ServerTime) { IsFinal = true };
+		_rsi12.Process(input);
+		_rsi36.Process(new DecimalIndicatorValue(_rsi36, medianPrice, candle.ServerTime) { IsFinal = true });
+		_rsi108.Process(new DecimalIndicatorValue(_rsi108, medianPrice, candle.ServerTime) { IsFinal = true });
+		_rsi324.Process(new DecimalIndicatorValue(_rsi324, medianPrice, candle.ServerTime) { IsFinal = true });
 
 		// Wait until every RSI is fully formed before evaluating signals.
 		if (!_rsi12.IsFormed || !_rsi36.IsFormed || !_rsi108.IsFormed || !_rsi324.IsFormed)
 			return;
+
+		var rsi12Value = _rsi12.GetCurrentValue();
+		var rsi36Value = _rsi36.GetCurrentValue();
+		var rsi108Value = _rsi108.GetCurrentValue();
+		var rsi324Value = _rsi324.GetCurrentValue();
 
 		var currentPerceptron =
 			(Weight1 * NormalizeRsi(rsi12Value)) +
@@ -183,22 +189,14 @@ public class SlimeMoldRsiStrategy : Strategy
 		// Zero-crossing from negative to positive triggers a long entry.
 		if (previousPerceptron < 0m && currentPerceptron > 0m && Position <= 0m)
 		{
-			var volume = Volume + Math.Abs(Position);
-			if (volume > 0m)
-			{
-				BuyMarket(volume);
+				BuyMarket();
 				LogInfo($"Long entry. Previous perceptron: {previousPerceptron:F2}, current: {currentPerceptron:F2}");
-			}
 		}
 		// Zero-crossing from positive to negative triggers a short entry.
 		else if (previousPerceptron > 0m && currentPerceptron < 0m && Position >= 0m)
 		{
-			var volume = Volume + Math.Abs(Position);
-			if (volume > 0m)
-			{
-				SellMarket(volume);
+				SellMarket();
 				LogInfo($"Short entry. Previous perceptron: {previousPerceptron:F2}, current: {currentPerceptron:F2}");
-			}
 		}
 
 		// Store the latest perceptron value for the next signal evaluation.

@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -13,126 +10,52 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
+/// <summary>
+/// RedK compound ratio MA strategy using EMA crossover.
+/// </summary>
 public class RedkCompoundRatioMaStrategy : Strategy
 {
-	private readonly StrategyParam<int> _length;
-	private readonly StrategyParam<decimal> _ratioMultiplier;
-	private readonly StrategyParam<bool> _autoSmoothing;
-	private readonly StrategyParam<int> _manualSmoothing;
+	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private readonly List<decimal> _prices = new();
-	private WeightedMovingAverage _coraWma;
-	private decimal? _prevCoraWave;
-
-	public int Length { get => _length.Value; set => _length.Value = value; }
-	public decimal RatioMultiplier { get => _ratioMultiplier.Value; set => _ratioMultiplier.Value = value; }
-	public bool AutoSmoothing { get => _autoSmoothing.Value; set => _autoSmoothing.Value = value; }
-	public int ManualSmoothing { get => _manualSmoothing.Value; set => _manualSmoothing.Value = value; }
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public RedkCompoundRatioMaStrategy()
 	{
-		_length = Param(nameof(Length), 20)
-		.SetGreaterThanZero()
-		.SetDisplay("Length", "Period for CoRa Wave", "Parameters")
-		
-		.SetOptimize(5, 60, 1);
-
-		_ratioMultiplier = Param(nameof(RatioMultiplier), 2m)
-		.SetNotNegative()
-		.SetDisplay("Comp Ratio Mult", "Multiplier for compound ratio", "Parameters")
-		
-		.SetOptimize(0m, 5m, 0.1m);
-
-		_autoSmoothing = Param(nameof(AutoSmoothing), true)
-		.SetDisplay("Auto Smoothing", "Use auto smoothing", "Smoothing");
-
-		_manualSmoothing = Param(nameof(ManualSmoothing), 1)
-		.SetGreaterThanZero()
-		.SetDisplay("Manual Smoothing", "Manual smoothing length", "Smoothing")
-		
-		.SetOptimize(1, 10, 1);
+		_slowLength = Param(nameof(SlowLength), 40)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow Length", "Slow EMA period", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-		.SetDisplay("Candle Type", "Type of candles", "General");
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_prices.Clear();
-		_prevCoraWave = null;
-		_coraWma?.Reset();
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		var smoothing = AutoSmoothing ? Math.Max((int)Math.Round(Math.Sqrt(Length)), 1) : ManualSmoothing;
-		_coraWma = new WeightedMovingAverage { Length = smoothing };
-
-		var ema = new ExponentialMovingAverage { Length = 2 };
-
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
+		var prevF = 0m; var prevS = 0m; var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-		.Bind(ema, ProcessCandle)
-		.Start();
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal emaVal)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var price = (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m;
-		_prices.Add(price);
-		if (_prices.Count > Length)
-			_prices.RemoveAt(0);
-
-		if (_prices.Count < Length || _coraWma == null)
-			return;
-
-		const decimal startWt = 0.01m;
-		var endWt = Length;
-		var r = (decimal)Math.Pow((double)(endWt / startWt), 1.0 / (Length - 1)) - 1m;
-		var baseVal = 1m + r * RatioMultiplier;
-
-		decimal numerator = 0m;
-		decimal denom = 0m;
-		for (var i = 0; i < Length; i++)
+		subscription.Bind(fast, slow, (candle, f, s) =>
 		{
-			var cWeight = startWt * (decimal)Math.Pow((double)baseVal, Length - i);
-			numerator += _prices[i] * cWeight;
-			denom += cWeight;
-		}
-
-		var coraRaw = numerator / denom;
-		var coraInput = new DecimalIndicatorValue(_coraWma, coraRaw, candle.ServerTime);
-		var coraValue = _coraWma.Process(coraInput);
-
-		var coraWave = coraValue.GetValue<decimal>();
-
-		if (_prevCoraWave is decimal prev)
-		{
-			if (coraWave > prev && Position <= 0)
-				BuyMarket();
-			else if (coraWave < prev && Position >= 0)
-				SellMarket();
-		}
-
-		_prevCoraWave = coraWave;
+			if (candle.State != CandleStates.Finished) return;
+			if (!fast.IsFormed || !slow.IsFormed) return;
+			if (!init) { prevF = f; prevS = s; init = true; return; }
+			if (candle.OpenTime - lastSignal >= cooldown)
+			{
+				if (prevF <= prevS && f > s && Position <= 0) { BuyMarket(); lastSignal = candle.OpenTime; }
+				else if (prevF >= prevS && f < s && Position >= 0) { SellMarket(); lastSignal = candle.OpenTime; }
+			}
+			prevF = f; prevS = s;
+		}).Start();
+		var area = CreateChartArea();
+		if (area != null) { DrawCandles(area, subscription); DrawIndicator(area, fast); DrawIndicator(area, slow); DrawOwnTrades(area); }
 	}
 }

@@ -27,11 +27,11 @@ public class CloseOrdersStrategy : Strategy
 
 	public CloseOrdersStrategy()
 	{
-		_emaLength = Param(nameof(EmaLength), 20)
+		_emaLength = Param(nameof(EmaLength), 40)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Length", "EMA period", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 

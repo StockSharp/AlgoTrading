@@ -38,7 +38,7 @@ public class LegoV3Strategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Slow MA", "Slow EMA period", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -60,7 +60,7 @@ public class LegoV3Strategy : Strategy
 
 		var fast = new ExponentialMovingAverage { Length = FastMa };
 		var slow = new ExponentialMovingAverage { Length = SlowMa };
-		var atr = new AverageTrueRange { Length = 14 };
+		var atr = new StandardDeviation { Length = 14 };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

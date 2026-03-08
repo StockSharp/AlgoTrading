@@ -31,7 +31,7 @@ public class AveragedStochWprStrategy : Strategy
 		_wprPeriod = Param(nameof(WprPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("WPR Period", "Williams %R period", "Indicators");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 

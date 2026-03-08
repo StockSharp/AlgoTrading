@@ -33,7 +33,7 @@ public class ShurikenLiteStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("RSI", "RSI period", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -60,19 +60,17 @@ public class ShurikenLiteStrategy : Strategy
 
 		var close = candle.ClosePrice;
 
-		if (close > emaVal && rsi < 40 && Position <= 0)
+		// Buy when RSI oversold
+		if (rsi < 30 && Position <= 0)
 		{
 			if (Position < 0) BuyMarket();
 			BuyMarket();
 		}
-		else if (close < emaVal && rsi > 60 && Position >= 0)
+		// Sell when RSI overbought
+		else if (rsi > 70 && Position >= 0)
 		{
 			if (Position > 0) SellMarket();
 			SellMarket();
 		}
-		else if (Position > 0 && rsi > 75)
-			SellMarket();
-		else if (Position < 0 && rsi < 25)
-			BuyMarket();
 	}
 }

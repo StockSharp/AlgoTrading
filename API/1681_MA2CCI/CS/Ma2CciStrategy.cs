@@ -36,7 +36,7 @@ public class Ma2CciStrategy : Strategy
 
 	public Ma2CciStrategy()
 	{
-		_fastMaPeriod = Param(nameof(FastMaPeriod), 5)
+		_fastMaPeriod = Param(nameof(FastMaPeriod), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast MA Period", "Period of the fast moving average", "Indicators");
 		_slowMaPeriod = Param(nameof(SlowMaPeriod), 15)
@@ -48,7 +48,7 @@ public class Ma2CciStrategy : Strategy
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "Period for ATR stop-loss", "Indicators");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -71,7 +71,7 @@ public class Ma2CciStrategy : Strategy
 		var fastMa = new ExponentialMovingAverage { Length = FastMaPeriod };
 		var slowMa = new ExponentialMovingAverage { Length = SlowMaPeriod };
 		var cci = new CommodityChannelIndex { Length = CciPeriod };
-		var atr = new AverageTrueRange { Length = AtrPeriod };
+		var atr = new StandardDeviation { Length = AtrPeriod };
 
 		SubscribeCandles(CandleType)
 			.Bind(fastMa, slowMa, cci, atr, ProcessCandle)

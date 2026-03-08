@@ -29,7 +29,7 @@ public class TradePadStrategy : Strategy
 
 	public TradePadStrategy()
 	{
-		_fastLength = Param(nameof(FastLength), 5)
+		_fastLength = Param(nameof(FastLength), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast SMA", "Fast SMA period", "Indicators");
 
@@ -37,7 +37,7 @@ public class TradePadStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Slow SMA", "Slow SMA period", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 

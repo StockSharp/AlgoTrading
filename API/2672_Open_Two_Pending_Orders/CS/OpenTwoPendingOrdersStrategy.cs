@@ -82,23 +82,23 @@ public class OpenTwoPendingOrdersStrategy : Strategy
 	/// </summary>
 	public OpenTwoPendingOrdersStrategy()
 	{
-		_stopLossPoints = Param(nameof(StopLossPoints), 100m)
+		_stopLossPoints = Param(nameof(StopLossPoints), 5m)
 			.SetDisplay("Stop Loss (steps)", "Stop loss distance in price steps", "Risk")
 			.SetOptimize(20m, 300m, 20m);
 
-		_takeProfitPoints = Param(nameof(TakeProfitPoints), 300m)
+		_takeProfitPoints = Param(nameof(TakeProfitPoints), 10m)
 			.SetDisplay("Take Profit (steps)", "Take profit distance in price steps", "Risk")
 			.SetOptimize(50m, 600m, 50m);
 
-		_trailingStopPoints = Param(nameof(TrailingStopPoints), 50m)
+		_trailingStopPoints = Param(nameof(TrailingStopPoints), 3m)
 			.SetDisplay("Trailing Stop (steps)", "Trailing stop distance in price steps", "Risk")
 			.SetOptimize(10m, 200m, 10m);
 
-		_entryOffsetPoints = Param(nameof(EntryOffsetPoints), 50m)
+		_entryOffsetPoints = Param(nameof(EntryOffsetPoints), 2m)
 			.SetDisplay("Entry Offset (steps)", "Offset from close for pending entries", "Execution")
 			.SetOptimize(10m, 150m, 10m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -158,7 +158,7 @@ public class OpenTwoPendingOrdersStrategy : Strategy
 			// Buy stop triggered: price went up to pending buy level
 			if (candle.HighPrice >= _pendingBuyPrice.Value)
 			{
-				BuyMarket(Volume);
+				BuyMarket();
 				var entryPrice = _pendingBuyPrice.Value;
 				_pendingBuyPrice = null;
 				_pendingSellPrice = null;
@@ -169,7 +169,7 @@ public class OpenTwoPendingOrdersStrategy : Strategy
 			// Sell stop triggered: price went down to pending sell level
 			if (candle.LowPrice <= _pendingSellPrice.Value)
 			{
-				SellMarket(Volume);
+				SellMarket();
 				var entryPrice = _pendingSellPrice.Value;
 				_pendingBuyPrice = null;
 				_pendingSellPrice = null;
@@ -214,13 +214,13 @@ public class OpenTwoPendingOrdersStrategy : Strategy
 
 			if (_stopLevel.HasValue && candle.LowPrice <= _stopLevel.Value)
 			{
-				SellMarket(Position);
+				SellMarket();
 				return;
 			}
 
 			if (_takeLevel.HasValue && candle.HighPrice >= _takeLevel.Value)
 			{
-				SellMarket(Position);
+				SellMarket();
 				return;
 			}
 
@@ -232,13 +232,13 @@ public class OpenTwoPendingOrdersStrategy : Strategy
 
 			if (_stopLevel.HasValue && candle.HighPrice >= _stopLevel.Value)
 			{
-				BuyMarket(-Position);
+				BuyMarket();
 				return;
 			}
 
 			if (_takeLevel.HasValue && candle.LowPrice <= _takeLevel.Value)
 			{
-				BuyMarket(-Position);
+				BuyMarket();
 				return;
 			}
 

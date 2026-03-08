@@ -92,17 +92,17 @@ public class CarbophosGridStrategy : Strategy
 	/// </summary>
 	public CarbophosGridStrategy()
 	{
-		_profitTarget = Param(nameof(ProfitTarget), 50000m)
+		_profitTarget = Param(nameof(ProfitTarget), 5m)
 			.SetGreaterThanZero()
 			.SetDisplay("Profit Target", "Floating profit target in money", "Risk")
 			.SetOptimize(100m, 1000m, 50m);
 
-		_maxLoss = Param(nameof(MaxLoss), 100000m)
+		_maxLoss = Param(nameof(MaxLoss), 10m)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Loss", "Maximum floating loss before closing", "Risk")
 			.SetOptimize(50m, 500m, 25m);
 
-		_stepPips = Param(nameof(StepPips), 50000)
+		_stepPips = Param(nameof(StepPips), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Step (pips)", "Distance between grid levels in pips", "Grid")
 			.SetOptimize(10, 150, 10);
@@ -116,7 +116,7 @@ public class CarbophosGridStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Order Volume", "Volume for each pending order", "Trading");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -219,22 +219,26 @@ public class CarbophosGridStrategy : Strategy
 		// Check buy levels (price goes down to the level)
 		for (var i = _buyLevels.Count - 1; i >= 0; i--)
 		{
+			if (i >= _buyLevels.Count) continue;
 			if (candle.LowPrice <= _buyLevels[i])
 			{
-				BuyMarket(OrderVolume);
-				UpdateEntryPrice(_buyLevels[i], OrderVolume, true);
-				_buyLevels.RemoveAt(i);
+				var level = _buyLevels[i];
+				BuyMarket();
+				UpdateEntryPrice(level, OrderVolume, true);
+				try { _buyLevels.RemoveAt(i); } catch { }
 			}
 		}
 
 		// Check sell levels (price goes up to the level)
 		for (var i = _sellLevels.Count - 1; i >= 0; i--)
 		{
+			if (i >= _sellLevels.Count) continue;
 			if (candle.HighPrice >= _sellLevels[i])
 			{
-				SellMarket(OrderVolume);
-				UpdateEntryPrice(_sellLevels[i], OrderVolume, false);
-				_sellLevels.RemoveAt(i);
+				var level = _sellLevels[i];
+				SellMarket();
+				UpdateEntryPrice(level, OrderVolume, false);
+				try { _sellLevels.RemoveAt(i); } catch { }
 			}
 		}
 	}
@@ -276,9 +280,9 @@ public class CarbophosGridStrategy : Strategy
 	private void CloseAll(string reason)
 	{
 		if (Position > 0)
-			SellMarket(Math.Abs(Position));
+			SellMarket();
 		else if (Position < 0)
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
 
 		_buyLevels.Clear();
 		_sellLevels.Clear();

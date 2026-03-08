@@ -20,8 +20,9 @@ public class ParabolicSarAlertStrategy : Strategy
 	private readonly StrategyParam<decimal> _maxAcceleration;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal? _prevSar;
-	private decimal? _prevClose;
+	private decimal _prevSar;
+	private decimal _prevClose;
+	private bool _initialized;
 
 	public decimal InitialAcceleration { get => _initialAcceleration.Value; set => _initialAcceleration.Value = value; }
 	public decimal MaxAcceleration { get => _maxAcceleration.Value; set => _maxAcceleration.Value = value; }
@@ -33,7 +34,7 @@ public class ParabolicSarAlertStrategy : Strategy
 			.SetDisplay("Initial Acceleration", "Initial acceleration factor for Parabolic SAR", "SAR Settings");
 		_maxAcceleration = Param(nameof(MaxAcceleration), 0.2m)
 			.SetDisplay("Max Acceleration", "Maximum acceleration factor for Parabolic SAR", "SAR Settings");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -43,8 +44,9 @@ public class ParabolicSarAlertStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevSar = null;
-		_prevClose = null;
+		_prevSar = 0;
+		_prevClose = 0;
+		_initialized = false;
 	}
 
 	protected override void OnStarted2(DateTime time)
@@ -66,21 +68,26 @@ public class ParabolicSarAlertStrategy : Strategy
 	{
 		if (candle.State != CandleStates.Finished) return;
 
-		if (_prevSar is not null && _prevClose is not null)
+		if (!_initialized)
 		{
-			var crossUp = _prevSar > _prevClose && sarValue < candle.ClosePrice;
-			var crossDown = _prevSar < _prevClose && sarValue > candle.ClosePrice;
+			_prevSar = sarValue;
+			_prevClose = candle.ClosePrice;
+			_initialized = true;
+			return;
+		}
 
-			if (crossUp && Position <= 0)
-			{
-				if (Position < 0) BuyMarket();
-				BuyMarket();
-			}
-			else if (crossDown && Position >= 0)
-			{
-				if (Position > 0) SellMarket();
-				SellMarket();
-			}
+		var crossUp = _prevSar > _prevClose && sarValue < candle.ClosePrice;
+		var crossDown = _prevSar < _prevClose && sarValue > candle.ClosePrice;
+
+		if (crossUp && Position <= 0)
+		{
+			if (Position < 0) BuyMarket();
+			BuyMarket();
+		}
+		else if (crossDown && Position >= 0)
+		{
+			if (Position > 0) SellMarket();
+			SellMarket();
 		}
 
 		_prevSar = sarValue;

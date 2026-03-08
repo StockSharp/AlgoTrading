@@ -26,7 +26,7 @@ public class XbugFreeStrategy : Strategy
 		_maPeriod = Param(nameof(MaPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "SMA period", "Indicators");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -37,7 +37,7 @@ public class XbugFreeStrategy : Strategy
 	{
 		base.OnStarted2(time);
 		var sma = new SimpleMovingAverage { Length = MaPeriod };
-		var atr = new AverageTrueRange { Length = 14 };
+		var atr = new StandardDeviation { Length = 14 };
 		SubscribeCandles(CandleType).Bind(sma, atr, ProcessCandle).Start();
 	}
 

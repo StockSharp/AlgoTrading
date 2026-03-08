@@ -178,7 +178,7 @@ public class EaTrixStrategy : Strategy
 			.SetDisplay("Signal EMA", "Signal EMA length", "Indicators")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for calculations", "General");
 	}
 
@@ -207,7 +207,7 @@ public class EaTrixStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
+		// no protection
 
 		_trixEma1 = new ExponentialMovingAverage { Length = EmaPeriod };
 		_trixEma2 = new ExponentialMovingAverage { Length = EmaPeriod };
@@ -302,7 +302,7 @@ public class EaTrixStrategy : Strategy
 					volume += Math.Abs(Position);
 
 				if (volume > 0m)
-					BuyMarket(volume);
+					BuyMarket();
 
 				_entryPrice = fillPrice;
 				_stopPrice = StopLoss > 0m ? fillPrice - StopLoss : null;
@@ -314,7 +314,7 @@ public class EaTrixStrategy : Strategy
 					volume += Position;
 
 				if (volume > 0m)
-					SellMarket(volume);
+					SellMarket();
 
 				_entryPrice = fillPrice;
 				_stopPrice = StopLoss > 0m ? fillPrice + StopLoss : null;
@@ -343,14 +343,14 @@ public class EaTrixStrategy : Strategy
 
 			if (_takePrice is decimal tp && candle.HighPrice >= tp)
 			{
-				SellMarket(Position);
+				SellMarket();
 				ClearPositionState();
 				return;
 			}
 
 			if (_stopPrice is decimal sl && candle.LowPrice <= sl)
 			{
-				SellMarket(Position);
+				SellMarket();
 				ClearPositionState();
 			}
 		}
@@ -372,14 +372,14 @@ public class EaTrixStrategy : Strategy
 
 			if (_takePrice is decimal tp && candle.LowPrice <= tp)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				ClearPositionState();
 				return;
 			}
 
 			if (_stopPrice is decimal sl && candle.HighPrice >= sl)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				ClearPositionState();
 			}
 		}

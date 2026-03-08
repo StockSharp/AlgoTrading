@@ -87,7 +87,7 @@ public class LeManTrendStrategy : Strategy
 			.SetDisplay("EMA Period", "Smoothing period for bulls/bears", "Indicator")
 			.SetOptimize(2, 10, 1);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for calculations", "General");
 	}
 
@@ -99,6 +99,14 @@ public class LeManTrendStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
+		_highMin = default;
+		_highMidle = default;
+		_highMax = default;
+		_lowMin = default;
+		_lowMidle = default;
+		_lowMax = default;
+		_bullsEma = default;
+		_bearsEma = default;
 		_prevBulls = default;
 		_prevBears = default;
 	}
@@ -115,6 +123,15 @@ public class LeManTrendStrategy : Strategy
 		_lowMax = new Lowest { Length = Max };
 		_bullsEma = new ExponentialMovingAverage { Length = PeriodEma };
 		_bearsEma = new ExponentialMovingAverage { Length = PeriodEma };
+
+		Indicators.Add(_highMin);
+		Indicators.Add(_highMidle);
+		Indicators.Add(_highMax);
+		Indicators.Add(_lowMin);
+		Indicators.Add(_lowMidle);
+		Indicators.Add(_lowMax);
+		Indicators.Add(_bullsEma);
+		Indicators.Add(_bearsEma);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
@@ -144,6 +161,9 @@ public class LeManTrendStrategy : Strategy
 		var bearsVal = _bearsEma.Process(new DecimalIndicatorValue(_bearsEma, ll, candle.OpenTime) { IsFinal = true }).ToDecimal();
 
 		if (!_bullsEma.IsFormed || !_bearsEma.IsFormed)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		if (_prevBulls <= _prevBears && bullsVal > bearsVal && Position <= 0)

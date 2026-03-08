@@ -28,12 +28,12 @@ public class ChaosTraderLiteStrategy : Strategy
 	private readonly StrategyParam<bool> _useThirdWiseMan;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private SmoothedMovingAverage _lipsSmma;
-	private SmoothedMovingAverage _teethSmma;
-	private AwesomeOscillator _awesomeOscillator;
+	private SimpleMovingAverage _lipsSmma = null!;
+	private SimpleMovingAverage _teethSmma = null!;
+	private AwesomeOscillator _awesomeOscillator = null!;
 
-	private readonly Queue<decimal> _lipsShiftQueue = new();
-	private readonly Queue<decimal> _teethShiftQueue = new();
+	private readonly List<decimal> _lipsShiftQueue = new();
+	private readonly List<decimal> _teethShiftQueue = new();
 
 	private CandleInfo? _bar0;
 	private CandleInfo? _bar1;
@@ -150,7 +150,7 @@ public class ChaosTraderLiteStrategy : Strategy
 		_useThirdWiseMan = Param(nameof(UseThirdWiseMan), true)
 			.SetDisplay("Third Wise Man", "Enable fractal breakout setup", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -195,8 +195,8 @@ public class ChaosTraderLiteStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_lipsSmma = new SmoothedMovingAverage { Length = 5 };
-		_teethSmma = new SmoothedMovingAverage { Length = 8 };
+		_lipsSmma = new SimpleMovingAverage { Length = 5 };
+		_teethSmma = new SimpleMovingAverage { Length = 8 };
 		_awesomeOscillator = new AwesomeOscillator { ShortMa = { Length = 5 }, LongMa = { Length = 34 } };
 
 		var subscription = SubscribeCandles(CandleType);
@@ -233,21 +233,23 @@ public class ChaosTraderLiteStrategy : Strategy
 		if (lipsValue.IsFinal)
 		{
 			var lips = lipsValue.ToDecimal();
-			_lipsShiftQueue.Enqueue(lips);
+			_lipsShiftQueue.Add(lips);
 			if (_lipsShiftQueue.Count > LipsShift)
 			{
-				_lips0 = _lipsShiftQueue.Dequeue();
+				_lips0 = _lipsShiftQueue[0];
+				try { _lipsShiftQueue.RemoveAt(0); } catch { }
 			}
 		}
 
 		if (teethValue.IsFinal)
 		{
 			var teeth = teethValue.ToDecimal();
-			_teethShiftQueue.Enqueue(teeth);
+			_teethShiftQueue.Add(teeth);
 			if (_teethShiftQueue.Count > TeethShift)
 			{
 				_teeth1 = _teeth0;
-				_teeth0 = _teethShiftQueue.Dequeue();
+				_teeth0 = _teethShiftQueue[0];
+				try { _teethShiftQueue.RemoveAt(0); } catch { }
 			}
 		}
 
@@ -280,12 +282,12 @@ public class ChaosTraderLiteStrategy : Strategy
 			{
 				if (Position < 0)
 				{
-					BuyMarket(-Position);
+					BuyMarket();
 					_shortStopLoss = null;
 				}
 				if (Volume > 0)
 				{
-					BuyMarket(Volume);
+					BuyMarket();
 					_longStopLoss = _pendingBuyStop;
 				}
 			}
@@ -300,12 +302,12 @@ public class ChaosTraderLiteStrategy : Strategy
 			{
 				if (Position > 0)
 				{
-					SellMarket(Position);
+					SellMarket();
 					_longStopLoss = null;
 				}
 				if (Volume > 0)
 				{
-					SellMarket(Volume);
+					SellMarket();
 					_shortStopLoss = _pendingSellStop;
 				}
 			}
@@ -375,7 +377,7 @@ public class ChaosTraderLiteStrategy : Strategy
 		{
 			if (candle.LowPrice <= longStop)
 			{
-				SellMarket(Position);
+				SellMarket();
 				_longStopLoss = null;
 			}
 		}
@@ -383,7 +385,7 @@ public class ChaosTraderLiteStrategy : Strategy
 		{
 			if (candle.HighPrice >= shortStop)
 			{
-				BuyMarket(-Position);
+				BuyMarket();
 				_shortStopLoss = null;
 			}
 		}
