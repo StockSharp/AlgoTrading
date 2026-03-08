@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,129 +11,51 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// SPY/TLT strategy based on TLT SMA crossover.
-/// Buys when TLT closes above its SMA and exits on opposite cross.
+/// SPY TLT strategy using EMA crossover.
 /// </summary>
 public class SpyTltStrategy : Strategy
 {
-	private readonly StrategyParam<DateTimeOffset> _startTime;
-	private readonly StrategyParam<DateTimeOffset> _endTime;
-	private readonly StrategyParam<string> _tltSymbol;
-	private readonly StrategyParam<int> _smaLength;
+	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private Security _tltSecurity;
-
-	public DateTimeOffset StartTime
-	{
-		get => _startTime.Value;
-		set => _startTime.Value = value;
-	}
-
-	public DateTimeOffset EndTime
-	{
-		get => _endTime.Value;
-		set => _endTime.Value = value;
-	}
-
-	public string TltSymbol
-	{
-		get => _tltSymbol.Value;
-		set => _tltSymbol.Value = value;
-	}
-
-	public int SmaLength
-	{
-		get => _smaLength.Value;
-		set => _smaLength.Value = value;
-	}
-
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public SpyTltStrategy()
 	{
-		_startTime = Param(nameof(StartTime), new DateTimeOffset(2014, 1, 1, 0, 0, 0, TimeSpan.Zero))
-			.SetDisplay("Start Time", "Beginning of trading window", "Time");
-
-		_endTime = Param(nameof(EndTime), new DateTimeOffset(2099, 1, 1, 0, 0, 0, TimeSpan.Zero))
-			.SetDisplay("End Time", "End of trading window", "Time");
-
-		_tltSymbol = Param(nameof(TltSymbol), "TLT")
-			.SetDisplay("TLT Symbol", "Ticker for TLT instrument", "Security");
-
-		_smaLength = Param(nameof(SmaLength), 20)
+		_slowLength = Param(nameof(SlowLength), 40)
 			.SetGreaterThanZero()
-			.SetDisplay("SMA Length", "Period for SMA indicator", "Indicator");
+			.SetDisplay("Slow Length", "Slow EMA period", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		yield return (Security, null);
-		if (_tltSecurity != null)
-			yield return (_tltSecurity, CandleType);
-	}
+		=> [(Security, CandleType)];
 
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_tltSecurity = this.LookupById(TltSymbol);
-		if (_tltSecurity == null)
-			throw new InvalidOperationException($"Security '{TltSymbol}' not found.");
-
-		var sma = new SimpleMovingAverage { Length = SmaLength };
-
-		var subscription = SubscribeCandles(CandleType, true, _tltSecurity);
-
-		var wasAbove = false;
-		var initialized = false;
-
-		subscription.Bind(sma, (candle, smaValue) =>
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
+		var prevF = 0m; var prevS = 0m; var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(fast, slow, (candle, f, s) =>
 		{
-			if (candle.State != CandleStates.Finished)
-				return;
-
-			if (!sma.IsFormed)
-				return;
-
-			var candleTime = candle.OpenTime;
-			var inWindow = candleTime >= StartTime && candleTime <= EndTime;
-
-			var close = candle.ClosePrice;
-			var isAbove = close > smaValue;
-			var crossOver = !wasAbove && isAbove;
-			var crossUnder = wasAbove && !isAbove;
-
-			if (!initialized)
+			if (candle.State != CandleStates.Finished) return;
+			if (!fast.IsFormed || !slow.IsFormed) return;
+			if (!init) { prevF = f; prevS = s; init = true; return; }
+			if (candle.OpenTime - lastSignal >= cooldown)
 			{
-				wasAbove = isAbove;
-				initialized = true;
-				return;
+				if (prevF <= prevS && f > s && Position <= 0) { BuyMarket(); lastSignal = candle.OpenTime; }
+				else if (prevF >= prevS && f < s && Position >= 0) { SellMarket(); lastSignal = candle.OpenTime; }
 			}
-
-			if (crossOver && inWindow && Position <= 0)
-				BuyMarket(Volume + Math.Abs(Position));
-
-			if (crossUnder && Position > 0)
-				SellMarket(Math.Abs(Position));
-
-			wasAbove = isAbove;
-		})
-		.Start();
-
+			prevF = f; prevS = s;
+		}).Start();
 		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, sma);
-			DrawOwnTrades(area);
-		}
+		if (area != null) { DrawCandles(area, subscription); DrawIndicator(area, fast); DrawIndicator(area, slow); DrawOwnTrades(area); }
 	}
 }
