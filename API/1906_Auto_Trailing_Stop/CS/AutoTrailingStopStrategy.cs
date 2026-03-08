@@ -35,11 +35,11 @@ public class AutoTrailingStopStrategy : Strategy
 
 	public AutoTrailingStopStrategy()
 	{
-		_fastMaPeriod = Param(nameof(FastMaPeriod), 10)
+		_fastMaPeriod = Param(nameof(FastMaPeriod), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast MA", "Fast moving average period", "Indicators");
 
-		_slowMaPeriod = Param(nameof(SlowMaPeriod), 30)
+		_slowMaPeriod = Param(nameof(SlowMaPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow MA", "Slow moving average period", "Indicators");
 
@@ -49,7 +49,7 @@ public class AutoTrailingStopStrategy : Strategy
 		_stopLossPct = Param(nameof(StopLossPct), 3m)
 			.SetDisplay("Stop Loss %", "Initial stop loss percentage", "Protection");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type for price updates", "General");
 	}
 

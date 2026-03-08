@@ -28,6 +28,7 @@ public class StuficStochStrategy : Strategy
 
 	private SimpleMovingAverage _fastMa;
 	private SimpleMovingAverage _slowMa;
+	private StochasticOscillator _stochastic;
 
 	private decimal _prevK;
 	private decimal _prevD;
@@ -70,7 +71,7 @@ public class StuficStochStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -84,6 +85,9 @@ public class StuficStochStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
+		_fastMa = default;
+		_slowMa = default;
+		_stochastic = default;
 		_prevK = 0;
 		_prevD = 0;
 		_isFirst = true;
@@ -97,11 +101,15 @@ public class StuficStochStrategy : Strategy
 		_fastMa = new SimpleMovingAverage { Length = FastMaPeriod };
 		_slowMa = new SimpleMovingAverage { Length = SlowMaPeriod };
 
-		var stochastic = new StochasticOscillator();
+		_stochastic = new StochasticOscillator
+		{
+			K = { Length = StochKPeriod },
+			D = { Length = StochDPeriod },
+		};
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(stochastic, ProcessCandle)
+			.BindEx(_stochastic, ProcessCandle)
 			.Start();
 
 		StartProtection(
@@ -115,7 +123,7 @@ public class StuficStochStrategy : Strategy
 			DrawCandles(area, subscription);
 			DrawIndicator(area, _fastMa);
 			DrawIndicator(area, _slowMa);
-			DrawIndicator(area, stochastic);
+			DrawIndicator(area, _stochastic);
 			DrawOwnTrades(area);
 		}
 	}

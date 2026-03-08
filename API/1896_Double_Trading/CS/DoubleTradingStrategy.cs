@@ -59,6 +59,17 @@ public class DoubleTradingStrategy : Strategy
 		return [(Security, CandleType), (SecondSecurity, CandleType)];
 	}
 
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_side1 = Direction1 == TradeDirections.Sell ? Sides.Sell : Sides.Buy;
+		_side2 = Direction2 == TradeDirections.Buy ? Sides.Buy : Sides.Sell;
+		_entry1 = null;
+		_entry2 = null;
+		_last1 = 0m;
+		_last2 = 0m;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);

@@ -20,6 +20,7 @@ public class SmaTrendFilterStrategy : Strategy
 {
 	private readonly StrategyParam<int> _openLevel;
 	private readonly StrategyParam<int> _closeLevel;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType1;
 	private readonly StrategyParam<DataType> _candleType2;
 	private readonly StrategyParam<DataType> _candleType3;
@@ -29,7 +30,9 @@ public class SmaTrendFilterStrategy : Strategy
 	private readonly decimal[][] _previous = new decimal[3][];
 	private readonly decimal[] _uitog = new decimal[3];
 	private readonly decimal[] _ditog = new decimal[3];
+	private readonly bool[] _isReady = new bool[3];
 	private int _signal;
+	private int _barsSinceTrade;
 	
 	/// <summary>
 	/// Signal threshold to open position.
@@ -47,6 +50,15 @@ public int CloseLevel
 {
 	get => _closeLevel.Value;
 	set => _closeLevel.Value = value;
+}
+
+/// <summary>
+/// Minimum number of primary timeframe bars between orders.
+/// </summary>
+public int CooldownBars
+{
+	get => _cooldownBars.Value;
+	set => _cooldownBars.Value = value;
 }
 
 /// <summary>
@@ -81,15 +93,17 @@ public DataType CandleType3
 /// </summary>
 public SmaTrendFilterStrategy()
 {
-	_openLevel = Param(nameof(OpenLevel), 0)
+	_openLevel = Param(nameof(OpenLevel), 1)
 	.SetDisplay("Open Level", "Signal threshold to open position", "Trading");
 	_closeLevel = Param(nameof(CloseLevel), 0)
 	.SetDisplay("Close Level", "Signal threshold to close position", "Trading");
-	_candleType1 = Param(nameof(CandleType1), TimeSpan.FromMinutes(15).TimeFrame())
+	_cooldownBars = Param(nameof(CooldownBars), 12)
+	.SetDisplay("Cooldown Bars", "Minimum number of primary timeframe bars between orders", "Trading");
+	_candleType1 = Param(nameof(CandleType1), TimeSpan.FromHours(1).TimeFrame())
 	.SetDisplay("Candle Type 1", "Primary timeframe", "General");
-	_candleType2 = Param(nameof(CandleType2), TimeSpan.FromHours(1).TimeFrame())
+	_candleType2 = Param(nameof(CandleType2), TimeSpan.FromHours(4).TimeFrame())
 	.SetDisplay("Candle Type 2", "Secondary timeframe", "General");
-	_candleType3 = Param(nameof(CandleType3), TimeSpan.FromHours(4).TimeFrame())
+	_candleType3 = Param(nameof(CandleType3), TimeSpan.FromDays(1).TimeFrame())
 	.SetDisplay("Candle Type 3", "Tertiary timeframe", "General");
 	
 	for (var i = 0; i < 3; i++)
@@ -98,7 +112,29 @@ public SmaTrendFilterStrategy()
 		_previous[i] = new decimal[_periods.Length];
 		for (var j = 0; j < _periods.Length; j++)
 		_smas[i][j] = new SimpleMovingAverage { Length = _periods[j] };
+	}
 }
+
+/// <inheritdoc />
+protected override void OnReseted()
+{
+	base.OnReseted();
+
+	_signal = 0;
+	_barsSinceTrade = 0;
+
+	for (var i = 0; i < 3; i++)
+	{
+		_uitog[i] = 0m;
+		_ditog[i] = 0m;
+		_isReady[i] = false;
+
+		for (var j = 0; j < _periods.Length; j++)
+		{
+			_previous[i][j] = 0m;
+			_smas[i][j].Reset();
+		}
+	}
 }
 
 /// <inheritdoc />
@@ -134,69 +170,97 @@ private void ProcessTf3(ICandleMessage candle, decimal sma5, decimal sma8, decim
 private void ProcessTf(int index, ICandleMessage candle, decimal[] values)
 {
 	if (candle.State != CandleStates.Finished)
-	return;
+		return;
 	
 	var up = 0;
 	var down = 0;
+	var isReady = true;
 	
 	for (var i = 0; i < _periods.Length; i++)
 	{
 		var val = values[i];
 		
 		if (val == 0m)
-		return;
+			return;
 		
 		var prev = _previous[index][i];
 		
 		if (prev == 0m)
 		{
 			_previous[index][i] = val;
-			return;
+			isReady = false;
+			continue;
+		}
+	
+		if (val > prev)
+			up++;
+		else if (val < prev)
+			down++;
+	
+		_previous[index][i] = val;
 	}
-	
-	if (val > prev)
-	up++;
-	else if (val < prev)
-	down++;
-	
-	_previous[index][i] = val;
-}
 
-_uitog[index] = up / (decimal)_periods.Length * 100m;
-_ditog[index] = down / (decimal)_periods.Length * 100m;
+	if (!isReady)
+		return;
 
-EvaluateSignal();
+	_isReady[index] = true;
+	_uitog[index] = up / (decimal)_periods.Length * 100m;
+	_ditog[index] = down / (decimal)_periods.Length * 100m;
+
+	if (index == 0)
+	{
+		_barsSinceTrade++;
+		EvaluateSignal();
+	}
 }
 
 private void EvaluateSignal()
 {
+	if (!_isReady[0] || !_isReady[1] || !_isReady[2])
+		return;
+
 	_signal = 0;
 	
-	if (_uitog[0] >= 75m && _uitog[1] >= 75m && _uitog[2] >= 75m)
-	_signal = 2;
-	else if (_ditog[0] >= 75m && _ditog[1] >= 75m && _ditog[2] >= 75m)
-	_signal = -2;
-	else if (_uitog[0] > 50m && _uitog[1] > 50m && _uitog[2] > 50m)
-	_signal = 1;
-	else if (_ditog[0] > 50m && _ditog[1] > 50m && _ditog[2] > 50m)
-	_signal = -1;
+	if (_uitog[0] >= 100m && _uitog[1] >= 100m && _uitog[2] >= 100m)
+		_signal = 2;
+	else if (_ditog[0] >= 100m && _ditog[1] >= 100m && _ditog[2] >= 100m)
+		_signal = -2;
+	else if (_uitog[0] >= 80m && _uitog[1] >= 80m && _uitog[2] >= 80m)
+		_signal = 1;
+	else if (_ditog[0] >= 80m && _ditog[1] >= 80m && _ditog[2] >= 80m)
+		_signal = -1;
 	
 	
 	var openBuy = _signal > OpenLevel;
 	var openSell = _signal < -OpenLevel;
-	var closeBuy = _signal < -CloseLevel;
-	var closeSell = _signal > CloseLevel;
+	var closeBuy = _signal <= -CloseLevel;
+	var closeSell = _signal >= CloseLevel;
 	
 	if (Position > 0 && closeBuy)
-	SellMarket();
+	{
+		SellMarket();
+		_barsSinceTrade = 0;
+	}
 	
 	if (Position < 0 && closeSell)
-	BuyMarket();
+	{
+		BuyMarket();
+		_barsSinceTrade = 0;
+	}
+
+	if (_barsSinceTrade < CooldownBars)
+		return;
 	
 	if (openBuy && Position <= 0 && !closeBuy)
-	BuyMarket();
+	{
+		BuyMarket();
+		_barsSinceTrade = 0;
+	}
 	
 	if (openSell && Position >= 0 && !closeSell)
-	SellMarket();
+	{
+		SellMarket();
+		_barsSinceTrade = 0;
+	}
 }
 }

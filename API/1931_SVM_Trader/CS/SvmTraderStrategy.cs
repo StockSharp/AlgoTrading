@@ -1,9 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
 using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
@@ -22,53 +20,108 @@ public class SvmTraderStrategy : Strategy
 	private readonly StrategyParam<decimal> _takeProfit;
 	private readonly StrategyParam<decimal> _stopLoss;
 	private readonly StrategyParam<decimal> _riskExposure;
+	private readonly StrategyParam<int> _buyThreshold;
+	private readonly StrategyParam<int> _sellThreshold;
+	private readonly StrategyParam<int> _cooldownBars;
 
 	private BearPower _bears;
 	private BullPower _bulls;
-	private AverageTrueRange _atr;
 	private Momentum _momentum;
 	private MovingAverageConvergenceDivergenceSignal _macd;
 	private StochasticOscillator _stochastic;
 	private ForceIndex _force;
+	private int _previousScore;
+	private bool _hasPreviousScore;
+	private int _barsSinceTrade;
 
 	/// <summary>
 	/// Candle type for processing.
 	/// </summary>
-	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
-
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
 
 	/// <summary>
 	/// Take profit in price units.
 	/// </summary>
-	public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
+	public decimal TakeProfit
+	{
+		get => _takeProfit.Value;
+		set => _takeProfit.Value = value;
+	}
 
 	/// <summary>
 	/// Stop loss in price units.
 	/// </summary>
-	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
+	public decimal StopLoss
+	{
+		get => _stopLoss.Value;
+		set => _stopLoss.Value = value;
+	}
 
 	/// <summary>
 	/// Maximum allowed cumulative position volume.
 	/// </summary>
-	public decimal RiskExposure { get => _riskExposure.Value; set => _riskExposure.Value = value; }
+	public decimal RiskExposure
+	{
+		get => _riskExposure.Value;
+		set => _riskExposure.Value = value;
+	}
+
+	/// <summary>
+	/// Minimum score required for a long signal.
+	/// </summary>
+	public int BuyThreshold
+	{
+		get => _buyThreshold.Value;
+		set => _buyThreshold.Value = value;
+	}
+
+	/// <summary>
+	/// Maximum score allowed for a short signal.
+	/// </summary>
+	public int SellThreshold
+	{
+		get => _sellThreshold.Value;
+		set => _sellThreshold.Value = value;
+	}
+
+	/// <summary>
+	/// Bars to wait after a position is closed.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="SvmTraderStrategy"/> class.
 	/// </summary>
 	public SvmTraderStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 
-
-		_takeProfit = Param(nameof(TakeProfit), 100m)
+		_takeProfit = Param(nameof(TakeProfit), 1400m)
 			.SetDisplay("Take Profit", "Take profit in price units", "Risk");
 
-		_stopLoss = Param(nameof(StopLoss), 150m)
+		_stopLoss = Param(nameof(StopLoss), 900m)
 			.SetDisplay("Stop Loss", "Stop loss in price units", "Risk");
 
-		_riskExposure = Param(nameof(RiskExposure), 5m)
+		_riskExposure = Param(nameof(RiskExposure), 1m)
 			.SetDisplay("Risk Exposure", "Max cumulative position", "Risk");
+
+		_buyThreshold = Param(nameof(BuyThreshold), 4)
+			.SetDisplay("Buy Threshold", "Score required for a long signal", "Signal");
+
+		_sellThreshold = Param(nameof(SellThreshold), 1)
+			.SetDisplay("Sell Threshold", "Score required for a short signal", "Signal");
+
+		_cooldownBars = Param(nameof(CooldownBars), 2)
+			.SetDisplay("Cooldown Bars", "Bars to wait after a completed trade", "Risk");
 	}
 
 	/// <inheritdoc />
@@ -78,14 +131,22 @@ public class SvmTraderStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_previousScore = 0;
+		_hasPreviousScore = false;
+		_barsSinceTrade = CooldownBars;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		// Initialize indicators with constants similar to original strategy
 		_bears = new BearPower { Length = 13 };
 		_bulls = new BullPower { Length = 13 };
-		_atr = new AverageTrueRange { Length = 13 };
 		_momentum = new Momentum { Length = 13 };
 		_macd = new MovingAverageConvergenceDivergenceSignal();
 		_stochastic = new StochasticOscillator();
@@ -93,10 +154,9 @@ public class SvmTraderStrategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(_bears, _bulls, _atr, _momentum, _macd, _stochastic, _force, ProcessIndicators)
+			.BindEx(_bears, _bulls, _momentum, _macd, _stochastic, _force, ProcessIndicators)
 			.Start();
 
-		// Setup position protection using stop loss and take profit
 		StartProtection(
 			new Unit(TakeProfit, UnitTypes.Absolute),
 			new Unit(StopLoss, UnitTypes.Absolute));
@@ -110,60 +170,69 @@ public class SvmTraderStrategy : Strategy
 	}
 
 	private void ProcessIndicators(
-	ICandleMessage candle,
-	IIndicatorValue bearsValue,
-	IIndicatorValue bullsValue,
-	IIndicatorValue atrValue,
-	IIndicatorValue momentumValue,
-	IIndicatorValue macdValue,
-	IIndicatorValue stochasticValue,
-	IIndicatorValue forceValue)
+		ICandleMessage candle,
+		IIndicatorValue bearsValue,
+		IIndicatorValue bullsValue,
+		IIndicatorValue momentumValue,
+		IIndicatorValue macdValue,
+		IIndicatorValue stochasticValue,
+		IIndicatorValue forceValue)
 	{
-		// Ensure all indicator values are final and candle is completed
 		if (candle.State != CandleStates.Finished ||
-			!bearsValue.IsFinal || !bullsValue.IsFinal || !atrValue.IsFinal ||
-			!momentumValue.IsFinal || !macdValue.IsFinal ||
-			!stochasticValue.IsFinal || !forceValue.IsFinal)
+			!bearsValue.IsFinal || !bullsValue.IsFinal || !momentumValue.IsFinal ||
+			!macdValue.IsFinal || !stochasticValue.IsFinal || !forceValue.IsFinal)
 			return;
-
-		var bears = bearsValue.ToDecimal();
-		var bulls = bullsValue.ToDecimal();
-		var momentum = momentumValue.ToDecimal();
-		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
-		var macdLine = macdTyped.Macd;
-		var macdSignal = macdTyped.Signal;
-		var stochTyped = (StochasticOscillatorValue)stochasticValue;
-		var stochK = stochTyped.K;
-		var stochD = stochTyped.D;
-		var force = forceValue.ToDecimal();
-
-		// Simple scoring mechanism to approximate SVM output
-		var score = 0;
-		if (bulls > bears)
-			score++;
-		if (momentum > 0)
-			score++;
-		if (macdLine > macdSignal)
-			score++;
-		if (stochK > stochD)
-			score++;
-		if (force > 0)
-			score++;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
+		if (_barsSinceTrade < CooldownBars)
+			_barsSinceTrade++;
+
+		var score = 0;
+		var bears = bearsValue.ToDecimal();
+		var bulls = bullsValue.ToDecimal();
+		var momentum = momentumValue.ToDecimal();
+		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
+		var stochasticTyped = (StochasticOscillatorValue)stochasticValue;
+		var force = forceValue.ToDecimal();
+
+		if (bulls > bears)
+			score++;
+		if (momentum > 100m)
+			score++;
+		if (macdTyped.Macd > macdTyped.Signal)
+			score++;
+		if (stochasticTyped.K > stochasticTyped.D && stochasticTyped.K > 55m)
+			score++;
+		if (force > 0m)
+			score++;
+
+		if (!_hasPreviousScore)
+		{
+			_previousScore = score;
+			_hasPreviousScore = true;
+			return;
+		}
+
+		var longSignal = _previousScore < BuyThreshold && score >= BuyThreshold;
+		var shortSignal = _previousScore > SellThreshold && score <= SellThreshold;
 		var openVolume = Math.Abs(Position);
 
-		if (score >= 3 && Position <= 0 && openVolume + Volume <= RiskExposure)
+		if (_barsSinceTrade >= CooldownBars && openVolume + Volume <= RiskExposure)
 		{
-			var qty = Volume + openVolume;
-			BuyMarket(qty);
+			if (longSignal && Position <= 0)
+			{
+				BuyMarket(Volume + (Position < 0 ? -Position : 0m));
+				_barsSinceTrade = 0;
+			}
+			else if (shortSignal && Position >= 0)
+			{
+				SellMarket(Volume + (Position > 0 ? Position : 0m));
+				_barsSinceTrade = 0;
+			}
 		}
-		else if (score <= 2 && Position >= 0 && openVolume + Volume <= RiskExposure)
-		{
-			var qty = Volume + openVolume;
-			SellMarket(qty);
-		}
+
+		_previousScore = score;
 	}
 }

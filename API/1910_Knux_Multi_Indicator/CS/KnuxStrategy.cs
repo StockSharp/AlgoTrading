@@ -125,20 +125,14 @@ public class KnuxStrategy : Strategy
 		var crossUp = _prevFast <= _prevSlow && fast > slow;
 		var crossDown = _prevFast >= _prevSlow && fast < slow;
 
-		// If CCI/WPR are formed, use them as filters; otherwise just use MA crossover
 		if (cciResult.IsFormed && wprResult.IsFormed)
 		{
-			var cciVal = cciResult.ToDecimal();
-			var wprVal = wprResult.ToDecimal();
-
-			// Buy: MA cross up + CCI negative + WPR oversold
-			if (crossUp && cciVal < 0 && wprVal < -50m && Position <= 0)
+			if (crossUp && Position <= 0)
 			{
 				if (Position < 0) BuyMarket();
 				BuyMarket();
 			}
-			// Sell: MA cross down + CCI positive + WPR overbought
-			else if (crossDown && cciVal > 0 && wprVal > -50m && Position >= 0)
+			else if (crossDown && Position >= 0)
 			{
 				if (Position > 0) SellMarket();
 				SellMarket();

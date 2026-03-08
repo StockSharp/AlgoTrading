@@ -18,13 +18,16 @@ namespace StockSharp.Samples.Strategies;
 public class ZpfStrategy : Strategy
 {
 	private readonly StrategyParam<int> _length;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
+	private SimpleMovingAverage _fastMa;
+	private SimpleMovingAverage _slowMa;
 	private SimpleMovingAverage _volumeMa;
-	private decimal _prevZpf;
-	private bool _isFirst = true;
+	private int _barsSinceTrade;
 
 	public int Length { get => _length.Value; set => _length.Value = value; }
+	public int CooldownBars { get => _cooldownBars.Value; set => _cooldownBars.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public ZpfStrategy()
@@ -33,7 +36,11 @@ public class ZpfStrategy : Strategy
 			.SetRange(5, 50)
 			.SetDisplay("Length", "Base moving average length", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_cooldownBars = Param(nameof(CooldownBars), 6)
+			.SetGreaterThanZero()
+			.SetDisplay("Cooldown Bars", "Bars between trades", "Trading");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -44,28 +51,36 @@ public class ZpfStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_fastMa = default;
+		_slowMa = default;
+		_volumeMa = default;
+		_barsSinceTrade = CooldownBars;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+		_barsSinceTrade = CooldownBars;
 
-		_isFirst = true;
-		_prevZpf = 0;
-
-		var fastMa = new SimpleMovingAverage { Length = Length };
-		var slowMa = new SimpleMovingAverage { Length = Length * 2 };
+		_fastMa = new SimpleMovingAverage { Length = Length };
+		_slowMa = new SimpleMovingAverage { Length = Length * 2 };
 		_volumeMa = new SimpleMovingAverage { Length = Length };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(fastMa, slowMa, ProcessCandle)
+			.Bind(_fastMa, _slowMa, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, fastMa);
-			DrawIndicator(area, slowMa);
+			DrawIndicator(area, _fastMa);
+			DrawIndicator(area, _slowMa);
 			DrawOwnTrades(area);
 		}
 	}
@@ -74,6 +89,8 @@ public class ZpfStrategy : Strategy
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
+
+		_barsSinceTrade++;
 
 		var volResult = _volumeMa.Process(candle.TotalVolume, candle.OpenTime, true);
 		if (!volResult.IsFormed)
@@ -84,25 +101,18 @@ public class ZpfStrategy : Strategy
 		// Calculate ZPF value
 		var zpf = volumeAvg * (fast - slow) / 2m;
 
-		if (_isFirst)
-		{
-			_prevZpf = zpf;
-			_isFirst = false;
-			return;
-		}
-
 		// Detect zero line cross
-		if (_prevZpf <= 0 && zpf > 0 && Position <= 0)
+		if (zpf > 0 && Position <= 0 && _barsSinceTrade >= CooldownBars)
 		{
 			if (Position < 0) BuyMarket();
 			BuyMarket();
+			_barsSinceTrade = 0;
 		}
-		else if (_prevZpf >= 0 && zpf < 0 && Position >= 0)
+		else if (zpf < 0 && Position >= 0 && _barsSinceTrade >= CooldownBars)
 		{
 			if (Position > 0) SellMarket();
 			SellMarket();
+			_barsSinceTrade = 0;
 		}
-
-		_prevZpf = zpf;
 	}
 }

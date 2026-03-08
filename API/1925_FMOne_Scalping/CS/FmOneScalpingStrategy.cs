@@ -24,11 +24,16 @@ public class FmOneScalpingStrategy : Strategy
 	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<decimal> _takeProfitPercent;
 	private readonly StrategyParam<bool> _enableTrailingStop;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private ExponentialMovingAverage _fastMa;
 	private ExponentialMovingAverage _slowMa;
 	private MovingAverageConvergenceDivergence _macd;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private int _barsSinceTrade;
+	private bool _isInitialized;
 
 	/// <summary>
 	/// Fast EMA period.
@@ -85,6 +90,15 @@ public class FmOneScalpingStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Minimum number of bars between trades.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Candle type for processing.
 	/// </summary>
 	public DataType CandleType
@@ -126,79 +140,102 @@ public class FmOneScalpingStrategy : Strategy
 		_enableTrailingStop = Param(nameof(EnableTrailingStop), true)
 			.SetDisplay("Trailing Stop", "Enable trailing stop", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_cooldownBars = Param(nameof(CooldownBars), 6)
+			.SetGreaterThanZero()
+			.SetDisplay("Cooldown Bars", "Bars between trades", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for analysis", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-	return [(Security, CandleType)];
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
-	base.OnReseted();
+		base.OnReseted();
 
-	_fastMa = null;
-	_slowMa = null;
-	_macd = null;
+		_fastMa = default;
+		_slowMa = default;
+		_macd = default;
+		_prevFast = 0m;
+		_prevSlow = 0m;
+		_barsSinceTrade = CooldownBars;
+		_isInitialized = false;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
-	base.OnStarted2(time);
+		base.OnStarted2(time);
 
-	// Initialize indicators with current parameters.
-	_fastMa = new ExponentialMovingAverage { Length = FastMaPeriod };
-	_slowMa = new ExponentialMovingAverage { Length = SlowMaPeriod };
-	_macd = new MovingAverageConvergenceDivergence(
-		new ExponentialMovingAverage { Length = SlowMaPeriod },
-		new ExponentialMovingAverage { Length = FastMaPeriod });
+		_fastMa = new ExponentialMovingAverage { Length = FastMaPeriod };
+		_slowMa = new ExponentialMovingAverage { Length = SlowMaPeriod };
+		_macd = new MovingAverageConvergenceDivergence(
+			new ExponentialMovingAverage { Length = SlowMaPeriod },
+			new ExponentialMovingAverage { Length = FastMaPeriod });
+		_barsSinceTrade = CooldownBars;
+		_isInitialized = false;
 
-	// Subscribe to candles and bind indicators.
-	var subscription = SubscribeCandles(CandleType);
-	subscription
-	.Bind(_fastMa, _slowMa, _macd, ProcessCandle)
-	.Start();
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(_fastMa, _slowMa, _macd, ProcessCandle)
+			.Start();
 
-	// Configure basic risk management.
-	StartProtection(
-	takeProfit: new Unit(TakeProfitPercent, UnitTypes.Percent),
-	stopLoss: new Unit(StopLossPercent, UnitTypes.Percent),
-	isStopTrailing: EnableTrailingStop
-	);
+		StartProtection(
+			takeProfit: new Unit(TakeProfitPercent, UnitTypes.Percent),
+			stopLoss: new Unit(StopLossPercent, UnitTypes.Percent),
+			isStopTrailing: EnableTrailingStop
+		);
 
-	// Draw candles and indicators if charting is available.
-	var area = CreateChartArea();
-	if (area != null)
-	{
-	DrawCandles(area, subscription);
-	DrawIndicator(area, _fastMa);
-	DrawIndicator(area, _slowMa);
-	DrawOwnTrades(area);
-	}
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, _fastMa);
+			DrawIndicator(area, _slowMa);
+			DrawOwnTrades(area);
+		}
 
-	var macdArea = CreateChartArea();
-	if (macdArea != null)
-	DrawIndicator(macdArea, _macd);
+		var macdArea = CreateChartArea();
+		if (macdArea != null)
+			DrawIndicator(macdArea, _macd);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal fastMa, decimal slowMa, decimal macdValue)
 	{
-	if (candle.State != CandleStates.Finished)
-	return;
+		if (candle.State != CandleStates.Finished)
+			return;
 
-	// Determine trend direction using EMA crossover and MACD value.
-	var isLongSignal = fastMa > slowMa && macdValue > 0;
-	var isShortSignal = fastMa < slowMa && macdValue < 0;
+		_barsSinceTrade++;
 
-	// Open or reverse positions based on signal.
-	if (isLongSignal && Position <= 0)
-	BuyMarket(Volume + Math.Abs(Position));
-	else if (isShortSignal && Position >= 0)
-	SellMarket(Volume + Math.Abs(Position));
+		if (!_isInitialized)
+		{
+			_prevFast = fastMa;
+			_prevSlow = slowMa;
+			_isInitialized = true;
+			return;
+		}
+
+		var longSignal = _prevFast <= _prevSlow && fastMa > slowMa && macdValue > 0m;
+		var shortSignal = _prevFast >= _prevSlow && fastMa < slowMa && macdValue < 0m;
+
+		if (longSignal && Position <= 0 && _barsSinceTrade >= CooldownBars)
+		{
+			BuyMarket(Volume + Math.Abs(Position));
+			_barsSinceTrade = 0;
+		}
+		else if (shortSignal && Position >= 0 && _barsSinceTrade >= CooldownBars)
+		{
+			SellMarket(Volume + Math.Abs(Position));
+			_barsSinceTrade = 0;
+		}
+
+		_prevFast = fastMa;
+		_prevSlow = slowMa;
 	}
 }

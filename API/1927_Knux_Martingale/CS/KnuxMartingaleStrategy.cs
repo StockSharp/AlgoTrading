@@ -1,9 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
 using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
@@ -22,9 +20,14 @@ public class KnuxMartingaleStrategy : Strategy
 	private readonly StrategyParam<decimal> _lotsMultiplier;
 	private readonly StrategyParam<decimal> _stopLoss;
 	private readonly StrategyParam<decimal> _takeProfit;
+	private readonly StrategyParam<decimal> _trendThreshold;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _currentVolume;
+	private decimal _prevSma;
+	private bool _hasPrevSma;
+	private int _barsSinceExit;
 
 	/// <summary>
 	/// ADX period used for trend strength.
@@ -63,6 +66,24 @@ public class KnuxMartingaleStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Minimum normalized distance between price and trend average.
+	/// </summary>
+	public decimal TrendThreshold
+	{
+		get => _trendThreshold.Value;
+		set => _trendThreshold.Value = value;
+	}
+
+	/// <summary>
+	/// Cooldown after a flat position before a new entry.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Candle type for calculations.
 	/// </summary>
 	public DataType CandleType
@@ -85,10 +106,16 @@ public class KnuxMartingaleStrategy : Strategy
 		_stopLoss = Param(nameof(StopLoss), 150m)
 			.SetDisplay("Stop Loss", "Absolute stop loss in price units", "Risk");
 
-		_takeProfit = Param(nameof(TakeProfit), 50m)
+		_takeProfit = Param(nameof(TakeProfit), 300m)
 			.SetDisplay("Take Profit", "Absolute take profit in price units", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_trendThreshold = Param(nameof(TrendThreshold), 0.008m)
+			.SetDisplay("Trend Threshold", "Minimum distance from trend average", "Indicators");
+
+		_cooldownBars = Param(nameof(CooldownBars), 3)
+			.SetDisplay("Cooldown Bars", "Bars to wait after a completed position", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for strategy", "General");
 	}
 
@@ -103,6 +130,9 @@ public class KnuxMartingaleStrategy : Strategy
 	{
 		base.OnReseted();
 		_currentVolume = Volume;
+		_prevSma = 0m;
+		_hasPrevSma = false;
+		_barsSinceExit = CooldownBars;
 	}
 
 	/// <inheritdoc />
@@ -112,18 +142,18 @@ public class KnuxMartingaleStrategy : Strategy
 
 		_currentVolume = Volume;
 
-		var adx = new AverageDirectionalIndex { Length = AdxPeriod };
+		var sma = new SimpleMovingAverage { Length = AdxPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(adx, ProcessCandle)
+			.Bind(sma, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, adx);
+			DrawIndicator(area, sma);
 			DrawOwnTrades(area);
 		}
 
@@ -132,7 +162,7 @@ public class KnuxMartingaleStrategy : Strategy
 			stopLoss: new Unit(StopLoss, UnitTypes.Absolute));
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue adxValue)
+	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
@@ -140,25 +170,44 @@ public class KnuxMartingaleStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var adxTyped = (AverageDirectionalIndexValue)adxValue;
+		if (_barsSinceExit < CooldownBars)
+			_barsSinceExit++;
 
-		if (adxTyped.MovingAverage is not decimal adxMa)
+		if (!_hasPrevSma)
+		{
+			_prevSma = smaValue;
+			_hasPrevSma = true;
 			return;
+		}
 
-		// Trade only in trending markets
-		if (adxMa < 25)
+		var distance = smaValue == 0m ? 0m : Math.Abs(candle.ClosePrice - smaValue) / smaValue;
+		var isTrendUp = candle.ClosePrice > smaValue && smaValue > _prevSma;
+		var isTrendDown = candle.ClosePrice < smaValue && smaValue < _prevSma;
+
+		if (distance < TrendThreshold)
+		{
+			_prevSma = smaValue;
 			return;
+		}
 
-		var volume = _currentVolume + Math.Abs(Position);
+		if (_barsSinceExit < CooldownBars && Position == 0)
+		{
+			_prevSma = smaValue;
+			return;
+		}
 
-		if (candle.ClosePrice > candle.OpenPrice && Position <= 0)
+		var volume = Math.Max(Volume, _currentVolume);
+
+		if (isTrendUp && candle.ClosePrice > candle.OpenPrice && Position <= 0)
 		{
 			BuyMarket(volume);
 		}
-		else if (candle.ClosePrice < candle.OpenPrice && Position >= 0)
+		else if (isTrendDown && candle.ClosePrice < candle.OpenPrice && Position >= 0)
 		{
 			SellMarket(volume);
 		}
+
+		_prevSma = smaValue;
 	}
 
 	/// <inheritdoc />
@@ -177,5 +226,7 @@ public class KnuxMartingaleStrategy : Strategy
 		{
 			_currentVolume = Volume;
 		}
+
+		_barsSinceExit = 0;
 	}
 }

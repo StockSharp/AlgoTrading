@@ -84,6 +84,16 @@ public class AdaptiveRenkoStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_atr.Length = VolatilityPeriod;
+		_atr.Reset();
+		_lastBrickPrice = 0m;
+		_hasBrick = false;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);

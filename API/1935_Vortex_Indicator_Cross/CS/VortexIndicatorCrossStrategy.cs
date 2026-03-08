@@ -1,9 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
 using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
@@ -23,6 +21,13 @@ public class VortexIndicatorCrossStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _stopLoss;
 	private readonly StrategyParam<int> _takeProfit;
+	private readonly StrategyParam<decimal> _minSpread;
+	private readonly StrategyParam<int> _cooldownBars;
+
+	private decimal _prevPlus;
+	private decimal _prevMinus;
+	private bool _isInitialized;
+	private int _barsSinceTrade;
 
 	/// <summary>
 	/// Vortex indicator period length.
@@ -61,6 +66,24 @@ public class VortexIndicatorCrossStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Minimum VI spread required for a signal.
+	/// </summary>
+	public decimal MinSpread
+	{
+		get => _minSpread.Value;
+		set => _minSpread.Value = value;
+	}
+
+	/// <summary>
+	/// Bars to wait after a completed trade.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Initializes parameters.
 	/// </summary>
 	public VortexIndicatorCrossStrategy()
@@ -68,23 +91,39 @@ public class VortexIndicatorCrossStrategy : Strategy
 		_length = Param(nameof(Length), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Vortex Length", "Period for Vortex indicator", "General")
-			
 			.SetOptimize(7, 28, 7);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for Vortex calculation", "General");
 
-		_stopLoss = Param(nameof(StopLoss), 1000)
+		_stopLoss = Param(nameof(StopLoss), 1200)
 			.SetDisplay("Stop Loss", "Protective stop in price steps", "General");
 
-		_takeProfit = Param(nameof(TakeProfit), 2000)
+		_takeProfit = Param(nameof(TakeProfit), 2500)
 			.SetDisplay("Take Profit", "Target profit in price steps", "General");
+
+		_minSpread = Param(nameof(MinSpread), 0.08m)
+			.SetDisplay("Min Spread", "Minimum VI spread required for entry", "General");
+
+		_cooldownBars = Param(nameof(CooldownBars), 2)
+			.SetDisplay("Cooldown Bars", "Bars to wait after a completed trade", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_prevPlus = 0m;
+		_prevMinus = 0m;
+		_isInitialized = false;
+		_barsSinceTrade = CooldownBars;
 	}
 
 	/// <inheritdoc />
@@ -97,46 +136,56 @@ public class VortexIndicatorCrossStrategy : Strategy
 			takeProfit: new Unit(TakeProfit, UnitTypes.Absolute));
 
 		var vortex = new VortexIndicator { Length = Length };
-
 		var subscription = SubscribeCandles(CandleType);
 
-		var prevPlus = 0m;
-		var prevMinus = 0m;
-		var isInitialized = false;
-
 		subscription
-			.BindEx(vortex, (candle, vortexValue) =>
-			{
-				if (candle.State != CandleStates.Finished)
-					return;
-
-				if (!IsFormedAndOnlineAndAllowTrading())
-					return;
-
-				var typed = (VortexIndicatorValue)vortexValue;
-				if (typed.PlusVi is not decimal viPlus || typed.MinusVi is not decimal viMinus)
-					return;
-
-				if (!isInitialized)
-				{
-					prevPlus = viPlus;
-					prevMinus = viMinus;
-					isInitialized = true;
-					return;
-				}
-
-				if (prevPlus <= prevMinus && viPlus > viMinus && Position <= 0)
-				{
-					BuyMarket(Volume + Math.Abs(Position));
-				}
-				else if (prevPlus >= prevMinus && viPlus < viMinus && Position >= 0)
-				{
-					SellMarket(Volume + Math.Abs(Position));
-				}
-
-				prevPlus = viPlus;
-				prevMinus = viMinus;
-			})
+			.BindEx(vortex, ProcessCandle)
 			.Start();
+	}
+
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue vortexValue)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		var typed = (VortexIndicatorValue)vortexValue;
+
+		if (typed.PlusVi is not decimal viPlus || typed.MinusVi is not decimal viMinus)
+			return;
+
+		if (_barsSinceTrade < CooldownBars)
+			_barsSinceTrade++;
+
+		if (!_isInitialized)
+		{
+			_prevPlus = viPlus;
+			_prevMinus = viMinus;
+			_isInitialized = true;
+			return;
+		}
+
+		var spread = Math.Abs(viPlus - viMinus);
+		var longSignal = _prevPlus <= _prevMinus && viPlus > viMinus && spread >= MinSpread;
+		var shortSignal = _prevPlus >= _prevMinus && viPlus < viMinus && spread >= MinSpread;
+
+		if (_barsSinceTrade >= CooldownBars)
+		{
+			if (longSignal && Position <= 0)
+			{
+				BuyMarket(Volume + Math.Abs(Position));
+				_barsSinceTrade = 0;
+			}
+			else if (shortSignal && Position >= 0)
+			{
+				SellMarket(Volume + Math.Abs(Position));
+				_barsSinceTrade = 0;
+			}
+		}
+
+		_prevPlus = viPlus;
+		_prevMinus = viMinus;
 	}
 }

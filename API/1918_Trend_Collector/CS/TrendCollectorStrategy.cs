@@ -25,6 +25,7 @@ public class TrendCollectorStrategy : Strategy
 
 	private ExponentialMovingAverage _fastMa;
 	private ExponentialMovingAverage _slowMa;
+	private StochasticOscillator _stochastic;
 
 	public int FastMaLength { get => _fastMaLength.Value; set => _fastMaLength.Value = value; }
 	public int SlowMaLength { get => _slowMaLength.Value; set => _slowMaLength.Value = value; }
@@ -42,13 +43,13 @@ public class TrendCollectorStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Slow EMA Length", "Slow EMA length", "Parameters");
 
-		_stochasticUpper = Param(nameof(StochasticUpper), 80m)
+		_stochasticUpper = Param(nameof(StochasticUpper), 60m)
 			.SetDisplay("Stochastic Upper", "Upper stochastic level", "Parameters");
 
-		_stochasticLower = Param(nameof(StochasticLower), 20m)
+		_stochasticLower = Param(nameof(StochasticLower), 40m)
 			.SetDisplay("Stochastic Lower", "Lower stochastic level", "Parameters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -59,17 +60,30 @@ public class TrendCollectorStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_fastMa = default;
+		_slowMa = default;
+		_stochastic = default;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
 		_fastMa = new ExponentialMovingAverage { Length = FastMaLength };
 		_slowMa = new ExponentialMovingAverage { Length = SlowMaLength };
-		var stochastic = new StochasticOscillator();
+		_stochastic = new StochasticOscillator
+		{
+			K = { Length = 14 },
+			D = { Length = 3 },
+		};
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(stochastic, ProcessCandle)
+			.BindEx(_stochastic, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();

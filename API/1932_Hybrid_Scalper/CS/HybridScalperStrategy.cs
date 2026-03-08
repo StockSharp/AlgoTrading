@@ -1,9 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
 using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
@@ -23,12 +21,18 @@ public class HybridScalperStrategy : Strategy
 	private readonly StrategyParam<int> _emaSlowPeriod;
 	private readonly StrategyParam<int> _bbPeriod;
 	private readonly StrategyParam<decimal> _bbDeviation;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<bool> _tradeMonday;
 	private readonly StrategyParam<bool> _tradeTuesday;
 	private readonly StrategyParam<bool> _tradeWednesday;
 	private readonly StrategyParam<bool> _tradeThursday;
 	private readonly StrategyParam<bool> _tradeFriday;
 	private readonly StrategyParam<DataType> _candleType;
+
+	private decimal _prevStochK;
+	private decimal _prevStochD;
+	private bool _isInitialized;
+	private int _barsSinceTrade;
 
 	/// <summary>
 	/// RSI calculation period.
@@ -73,6 +77,15 @@ public class HybridScalperStrategy : Strategy
 	{
 		get => _bbDeviation.Value;
 		set => _bbDeviation.Value = value;
+	}
+
+	/// <summary>
+	/// Bars to wait after a completed position.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	/// <summary>
@@ -135,24 +148,22 @@ public class HybridScalperStrategy : Strategy
 	public HybridScalperStrategy()
 	{
 		_rsiPeriod = Param(nameof(RsiPeriod), 7)
-			.SetDisplay("RSI Period", "RSI calculation period", "Indicators")
-			;
+			.SetDisplay("RSI Period", "RSI calculation period", "Indicators");
 
 		_emaFastPeriod = Param(nameof(EmaFastPeriod), 21)
-			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators")
-			;
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
 
 		_emaSlowPeriod = Param(nameof(EmaSlowPeriod), 89)
-			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators")
-			;
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 
 		_bbPeriod = Param(nameof(BbPeriod), 50)
-			.SetDisplay("BB Period", "Bollinger Bands period", "Indicators")
-			;
+			.SetDisplay("BB Period", "Bollinger Bands period", "Indicators");
 
 		_bbDeviation = Param(nameof(BbDeviation), 4m)
-			.SetDisplay("BB Deviation", "Bollinger Bands deviation", "Indicators")
-			;
+			.SetDisplay("BB Deviation", "Bollinger Bands deviation", "Indicators");
+
+		_cooldownBars = Param(nameof(CooldownBars), 2)
+			.SetDisplay("Cooldown Bars", "Bars to wait after a completed trade", "Risk");
 
 		_tradeMonday = Param(nameof(TradeMonday), true)
 			.SetDisplay("Trade Monday", "Allow trading on Monday", "Schedule");
@@ -169,7 +180,7 @@ public class HybridScalperStrategy : Strategy
 		_tradeFriday = Param(nameof(TradeFriday), true)
 			.SetDisplay("Trade Friday", "Allow trading on Friday", "Schedule");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type for the strategy", "General");
 	}
 
@@ -177,6 +188,17 @@ public class HybridScalperStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_prevStochK = 0m;
+		_prevStochD = 0m;
+		_isInitialized = false;
+		_barsSinceTrade = CooldownBars;
 	}
 
 	/// <inheritdoc />
@@ -199,7 +221,6 @@ public class HybridScalperStrategy : Strategy
 			.BindEx(rsi, stochastic, emaFast, emaSlow, bollinger, ProcessIndicators)
 			.Start();
 
-
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -211,32 +232,81 @@ public class HybridScalperStrategy : Strategy
 		}
 	}
 
-	private void ProcessIndicators(ICandleMessage candle, IIndicatorValue rsiValue, IIndicatorValue stochValue, IIndicatorValue emaFastValue, IIndicatorValue emaSlowValue, IIndicatorValue bollingerValue)
+	private void ProcessIndicators(
+		ICandleMessage candle,
+		IIndicatorValue rsiValue,
+		IIndicatorValue stochValue,
+		IIndicatorValue emaFastValue,
+		IIndicatorValue emaSlowValue,
+		IIndicatorValue bollingerValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsTradingDay(candle.OpenTime.DayOfWeek))
+		if (!IsFormedAndOnlineAndAllowTrading() || !IsTradingDay(candle.OpenTime.DayOfWeek))
 			return;
 
 		var rsi = rsiValue.ToDecimal();
-		var stoch = (StochasticOscillatorValue)stochValue;
-		if (stoch.K is not decimal stochK || stoch.D is not decimal stochD)
+		var stochastic = (StochasticOscillatorValue)stochValue;
+
+		if (stochastic.K is not decimal stochK || stochastic.D is not decimal stochD)
 			return;
 
 		var emaFast = emaFastValue.ToDecimal();
 		var emaSlow = emaSlowValue.ToDecimal();
+		var bands = (BollingerBandsValue)bollingerValue;
 
-		if (stochK < 30 && rsi < 35 && emaFast > emaSlow && Position <= 0)
+		if (bands.UpBand is not decimal upperBand ||
+			bands.LowBand is not decimal lowerBand ||
+			bands.MovingAverage is not decimal middleBand ||
+			middleBand == 0m)
+			return;
+
+		if (_barsSinceTrade < CooldownBars)
+			_barsSinceTrade++;
+
+		var relativeWidth = (upperBand - lowerBand) / middleBand;
+
+		if (!_isInitialized)
 		{
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
+			_prevStochK = stochK;
+			_prevStochD = stochD;
+			_isInitialized = true;
+			return;
 		}
-		else if (stochK > 70 && rsi > 65 && emaFast < emaSlow && Position >= 0)
+
+		var longSignal =
+			_prevStochK <= _prevStochD &&
+			stochK > stochD &&
+			stochK < 30m &&
+			rsi < 40m &&
+			emaFast > emaSlow &&
+			relativeWidth is >= 0.005m and <= 0.12m;
+
+		var shortSignal =
+			_prevStochK >= _prevStochD &&
+			stochK < stochD &&
+			stochK > 70m &&
+			rsi > 60m &&
+			emaFast < emaSlow &&
+			relativeWidth is >= 0.005m and <= 0.12m;
+
+		if (_barsSinceTrade >= CooldownBars)
 		{
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
+			if (longSignal && Position <= 0)
+			{
+				BuyMarket(Volume + Math.Abs(Position));
+				_barsSinceTrade = 0;
+			}
+			else if (shortSignal && Position >= 0)
+			{
+				SellMarket(Volume + Math.Abs(Position));
+				_barsSinceTrade = 0;
+			}
 		}
+
+		_prevStochK = stochK;
+		_prevStochD = stochD;
 	}
 
 	private bool IsTradingDay(DayOfWeek day)

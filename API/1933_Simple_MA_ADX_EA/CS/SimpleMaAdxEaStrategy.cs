@@ -1,9 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
 using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
@@ -14,7 +12,7 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy combining EMA and ADX for trend confirmation.
+/// Strategy combining EMA direction with a slower trend filter.
 /// </summary>
 public class SimpleMaAdxEaStrategy : Strategy
 {
@@ -23,15 +21,21 @@ public class SimpleMaAdxEaStrategy : Strategy
 	private readonly StrategyParam<decimal> _adxThreshold;
 	private readonly StrategyParam<decimal> _stopLoss;
 	private readonly StrategyParam<decimal> _takeProfit;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
+
+	private readonly ExponentialMovingAverage _ema = new();
+	private readonly ExponentialMovingAverage _trendMa = new();
 
 	private decimal _emaPrev1;
 	private decimal _emaPrev2;
+	private decimal _trendPrev;
 	private decimal _prevClose;
 	private bool _isInitialized;
+	private int _barsSinceTrade;
 
 	/// <summary>
-	/// ADX period.
+	/// Trend filter period.
 	/// </summary>
 	public int AdxPeriod
 	{
@@ -49,7 +53,7 @@ public class SimpleMaAdxEaStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Minimum ADX value to allow trading.
+	/// Minimum percentage distance between the fast and slow averages.
 	/// </summary>
 	public decimal AdxThreshold
 	{
@@ -75,6 +79,14 @@ public class SimpleMaAdxEaStrategy : Strategy
 		set => _takeProfit.Value = value;
 	}
 
+	/// <summary>
+	/// Bars to wait after a completed trade.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
 
 	/// <summary>
 	/// Candle type.
@@ -90,28 +102,25 @@ public class SimpleMaAdxEaStrategy : Strategy
 	/// </summary>
 	public SimpleMaAdxEaStrategy()
 	{
-		_adxPeriod = Param(nameof(AdxPeriod), 8)
-			.SetDisplay("ADX Period", "Period for ADX calculation", "Indicators")
-			;
+		_adxPeriod = Param(nameof(AdxPeriod), 21)
+			.SetDisplay("Trend Period", "Period for trend confirmation", "Indicators");
 
 		_maPeriod = Param(nameof(MaPeriod), 8)
-			.SetDisplay("MA Period", "EMA calculation period", "Indicators")
-			;
+			.SetDisplay("MA Period", "EMA calculation period", "Indicators");
 
-		_adxThreshold = Param(nameof(AdxThreshold), 22m)
-			.SetDisplay("ADX Threshold", "Minimum ADX level", "Indicators")
-			;
+		_adxThreshold = Param(nameof(AdxThreshold), 0.05m)
+			.SetDisplay("Trend Threshold", "Minimum average distance in percent", "Indicators");
 
-		_stopLoss = Param(nameof(StopLoss), 30m)
-			.SetDisplay("Stop Loss", "Stop loss in price units", "Risk Management")
-			;
+		_stopLoss = Param(nameof(StopLoss), 400m)
+			.SetDisplay("Stop Loss", "Stop loss in price units", "Risk Management");
 
-		_takeProfit = Param(nameof(TakeProfit), 100m)
-			.SetDisplay("Take Profit", "Take profit in price units", "Risk Management")
-			;
+		_takeProfit = Param(nameof(TakeProfit), 1200m)
+			.SetDisplay("Take Profit", "Take profit in price units", "Risk Management");
 
+		_cooldownBars = Param(nameof(CooldownBars), 2)
+			.SetDisplay("Cooldown Bars", "Bars to wait after a completed trade", "Risk Management");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -122,80 +131,89 @@ public class SimpleMaAdxEaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_ema.Reset();
+		_trendMa.Reset();
+		_emaPrev1 = 0m;
+		_emaPrev2 = 0m;
+		_trendPrev = 0m;
+		_prevClose = 0m;
+		_isInitialized = false;
+		_barsSinceTrade = CooldownBars;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		var ema = new ExponentialMovingAverage { Length = MaPeriod };
-		var adx = new AverageDirectionalIndex { Length = AdxPeriod };
+		_ema.Length = MaPeriod;
+		_trendMa.Length = AdxPeriod;
 
 		var subscription = SubscribeCandles(CandleType);
-
-		subscription
-			.BindEx(adx, ema, ProcessCandle)
-			.Start();
+		subscription.Bind(ProcessCandle).Start();
 
 		StartProtection(
 			stopLoss: new Unit(StopLoss, UnitTypes.Absolute),
 			takeProfit: new Unit(TakeProfit, UnitTypes.Absolute),
-			useMarketOrders: true
-		);
+			useMarketOrders: true);
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue adxValue, IIndicatorValue emaValue)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!adxValue.IsFinal || !emaValue.IsFinal)
 			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var adx = (AverageDirectionalIndexValue)adxValue;
-		var adxMain = adx.MovingAverage;
-		var plusDi = adx.Dx.Plus;
-		var minusDi = adx.Dx.Minus;
+		var ema = _ema.Process(new DecimalIndicatorValue(_ema, candle.ClosePrice, candle.OpenTime)).ToDecimal();
+		var trendMa = _trendMa.Process(new DecimalIndicatorValue(_trendMa, candle.ClosePrice, candle.OpenTime)).ToDecimal();
 
-		var ema = emaValue.GetValue<decimal>();
+		if (!_ema.IsFormed || !_trendMa.IsFormed || trendMa == 0m)
+			return;
+
+		if (_barsSinceTrade < CooldownBars)
+			_barsSinceTrade++;
 
 		if (!_isInitialized)
 		{
+			_emaPrev2 = ema;
 			_emaPrev1 = ema;
+			_trendPrev = trendMa;
 			_prevClose = candle.ClosePrice;
 			_isInitialized = true;
 			return;
 		}
 
-		var emaPrev1 = _emaPrev1;
-		var emaPrev2 = _emaPrev2;
-		var prevClose = _prevClose;
+		var distancePercent = Math.Abs(ema - trendMa) / trendMa * 100m;
+		var buyCond1 = ema > _emaPrev1 && _emaPrev1 >= _emaPrev2;
+		var buyCond2 = _prevClose > _emaPrev1 && candle.ClosePrice > trendMa;
+		var buyCond3 = trendMa >= _trendPrev && distancePercent >= AdxThreshold;
+		var sellCond1 = ema < _emaPrev1 && _emaPrev1 <= _emaPrev2;
+		var sellCond2 = _prevClose < _emaPrev1 && candle.ClosePrice < trendMa;
+		var sellCond3 = trendMa <= _trendPrev && distancePercent >= AdxThreshold;
 
-		_emaPrev2 = emaPrev1;
+		if (_barsSinceTrade >= CooldownBars)
+		{
+			if (buyCond1 && buyCond2 && buyCond3 && Position <= 0)
+			{
+				BuyMarket(Volume + Math.Abs(Position));
+				_barsSinceTrade = 0;
+			}
+			else if (sellCond1 && sellCond2 && sellCond3 && Position >= 0)
+			{
+				SellMarket(Volume + Math.Abs(Position));
+				_barsSinceTrade = 0;
+			}
+		}
+
+		_emaPrev2 = _emaPrev1;
 		_emaPrev1 = ema;
+		_trendPrev = trendMa;
 		_prevClose = candle.ClosePrice;
-
-		var buyCond1 = ema > emaPrev1 && emaPrev1 > emaPrev2;
-		var buyCond2 = prevClose > emaPrev1;
-		var buyCond3 = adxMain > AdxThreshold;
-		var buyCond4 = plusDi > minusDi;
-
-		if (buyCond1 && buyCond2 && buyCond3 && buyCond4 && Position <= 0)
-		{
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
-		}
-
-		var sellCond1 = ema < emaPrev1 && emaPrev1 < emaPrev2;
-		var sellCond2 = prevClose < emaPrev1;
-		var sellCond3 = adxMain > AdxThreshold;
-		var sellCond4 = plusDi < minusDi;
-
-		if (sellCond1 && sellCond2 && sellCond3 && sellCond4 && Position >= 0)
-		{
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
-		}
 	}
 }

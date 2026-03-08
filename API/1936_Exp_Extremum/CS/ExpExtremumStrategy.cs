@@ -1,9 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
 using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
@@ -14,25 +12,25 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Extremum reversal strategy using highest/lowest comparison.
-/// Opens trades when the sign of price extremes changes.
+/// Extremum reversal strategy using highest and lowest comparisons.
 /// </summary>
 public class ExpExtremumStrategy : Strategy
 {
 	private readonly StrategyParam<int> _length;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<bool> _buyPosOpen;
 	private readonly StrategyParam<bool> _sellPosOpen;
 	private readonly StrategyParam<bool> _buyPosClose;
 	private readonly StrategyParam<bool> _sellPosClose;
 
-	private Lowest _minHigh = null!;
-	private Highest _maxLow = null!;
-
+	private readonly Lowest _minHigh = new();
+	private readonly Highest _maxLow = new();
 	private bool _upPrev1;
 	private bool _dnPrev1;
 	private bool _upPrev2;
 	private bool _dnPrev2;
+	private int _barsSinceTrade;
 
 	/// <summary>
 	/// Indicator period.
@@ -50,6 +48,15 @@ public class ExpExtremumStrategy : Strategy
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Bars to wait after a completed trade.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	/// <summary>
@@ -93,25 +100,27 @@ public class ExpExtremumStrategy : Strategy
 	/// </summary>
 	public ExpExtremumStrategy()
 	{
-		_length = Param(nameof(Length), 20)
-		.SetGreaterThanZero()
-		.SetDisplay("Period", "Indicator period", "General")
-		;
+		_length = Param(nameof(Length), 40)
+			.SetGreaterThanZero()
+			.SetDisplay("Period", "Indicator period", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-		.SetDisplay("Candle Type", "Time frame of the Extremum indicator", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+			.SetDisplay("Candle Type", "Time frame of the Extremum indicator", "General");
+
+		_cooldownBars = Param(nameof(CooldownBars), 2)
+			.SetDisplay("Cooldown Bars", "Bars to wait after a completed trade", "Signals");
 
 		_buyPosOpen = Param(nameof(BuyPosOpen), true)
-		.SetDisplay("Buy Entry", "Permission to buy", "Signals");
+			.SetDisplay("Buy Entry", "Permission to buy", "Signals");
 
 		_sellPosOpen = Param(nameof(SellPosOpen), true)
-		.SetDisplay("Sell Entry", "Permission to sell", "Signals");
+			.SetDisplay("Sell Entry", "Permission to sell", "Signals");
 
 		_buyPosClose = Param(nameof(BuyPosClose), true)
-		.SetDisplay("Close Long", "Permission to exit long positions", "Signals");
+			.SetDisplay("Close Long", "Permission to exit long positions", "Signals");
 
 		_sellPosClose = Param(nameof(SellPosClose), true)
-		.SetDisplay("Close Short", "Permission to exit short positions", "Signals");
+			.SetDisplay("Close Short", "Permission to exit short positions", "Signals");
 	}
 
 	/// <inheritdoc />
@@ -121,55 +130,86 @@ public class ExpExtremumStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_minHigh.Length = Length;
+		_maxLow.Length = Length;
+		_minHigh.Reset();
+		_maxLow.Reset();
+		_upPrev1 = false;
+		_dnPrev1 = false;
+		_upPrev2 = false;
+		_dnPrev2 = false;
+		_barsSinceTrade = CooldownBars;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_minHigh = new Lowest { Length = Length };
-		_maxLow = new Highest { Length = Length };
+		_minHigh.Length = Length;
+		_maxLow.Length = Length;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
-		{
 			DrawCandles(area, subscription);
-		}
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
-		var minHighVal = _minHigh.Process(new DecimalIndicatorValue(_minHigh, candle.HighPrice, candle.OpenTime) { IsFinal = true });
-		var maxLowVal = _maxLow.Process(new DecimalIndicatorValue(_maxLow, candle.LowPrice, candle.OpenTime) { IsFinal = true });
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		var minHighValue = _minHigh.Process(new DecimalIndicatorValue(_minHigh, candle.HighPrice, candle.OpenTime) { IsFinal = true }).ToDecimal();
+		var maxLowValue = _maxLow.Process(new DecimalIndicatorValue(_maxLow, candle.LowPrice, candle.OpenTime) { IsFinal = true }).ToDecimal();
 
 		if (!_minHigh.IsFormed || !_maxLow.IsFormed)
-		return;
+			return;
 
-		var minHigh = ((DecimalIndicatorValue)minHighVal).Value;
-		var maxLow = ((DecimalIndicatorValue)maxLowVal).Value;
+		if (_barsSinceTrade < CooldownBars)
+			_barsSinceTrade++;
 
-		var n = candle.HighPrice - minHigh;
-		var m = candle.LowPrice - maxLow;
-		var sum = n + m;
+		var pressure = (candle.HighPrice - minHighValue) + (candle.LowPrice - maxLowValue);
+		var up = pressure > 0m;
+		var dn = pressure < 0m;
+		var bullishReversal = _dnPrev2 && _upPrev1 && up && candle.ClosePrice > candle.OpenPrice;
+		var bearishReversal = _upPrev2 && _dnPrev1 && dn && candle.ClosePrice < candle.OpenPrice;
 
-		var up = sum > 0m;
-		var dn = sum < 0m;
+		if (BuyPosClose && bearishReversal && Position > 0)
+		{
+			SellMarket(Position);
+			_barsSinceTrade = 0;
+		}
 
-		if (BuyPosClose && _dnPrev2 && Position > 0)
-		SellMarket(Position);
+		if (SellPosClose && bullishReversal && Position < 0)
+		{
+			BuyMarket(-Position);
+			_barsSinceTrade = 0;
+		}
 
-		if (SellPosClose && _upPrev2 && Position < 0)
-		BuyMarket(-Position);
+		if (_barsSinceTrade >= CooldownBars)
+		{
+			if (BuyPosOpen && bullishReversal && Position <= 0)
+			{
+				BuyMarket(Volume + Math.Abs(Position));
+				_barsSinceTrade = 0;
+			}
 
-		if (BuyPosOpen && _upPrev2 && _dnPrev1 && Position <= 0)
-		BuyMarket();
-
-		if (SellPosOpen && _dnPrev2 && _upPrev1 && Position >= 0)
-		SellMarket();
+			if (SellPosOpen && bearishReversal && Position >= 0)
+			{
+				SellMarket(Volume + Math.Abs(Position));
+				_barsSinceTrade = 0;
+			}
+		}
 
 		_upPrev2 = _upPrev1;
 		_dnPrev2 = _dnPrev1;

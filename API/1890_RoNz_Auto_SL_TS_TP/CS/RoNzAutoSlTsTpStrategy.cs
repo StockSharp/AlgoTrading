@@ -27,6 +27,7 @@ public class RoNzAutoSlTsTpStrategy : Strategy
 	private readonly StrategyParam<decimal> _profitLock;
 	private readonly StrategyParam<decimal> _trailingStop;
 	private readonly StrategyParam<decimal> _trailingStep;
+	private readonly StrategyParam<int> _cooldownBars;
 
 	/// <summary>
 	/// Candle type for calculations.
@@ -91,18 +92,31 @@ public class RoNzAutoSlTsTpStrategy : Strategy
 		set => _trailingStep.Value = value;
 	}
 
+	/// <summary>
+	/// Minimum number of bars between entries.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
 	private decimal _entryPrice;
 	private decimal _stopPrice;
 	private decimal _takePrice;
 	private decimal _trailAnchor;
+	private decimal _prevEma10;
+	private decimal _prevEma20;
 	private bool _profitLocked;
+	private bool _isInitialized;
+	private int _barsSinceExit;
 
 	/// <summary>
 	/// Initializes a new instance of the strategy.
 	/// </summary>
 	public RoNzAutoSlTsTpStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe for calculations", "General");
 
 		_takeProfit = Param(nameof(TakeProfit), 500m)
@@ -122,12 +136,26 @@ public class RoNzAutoSlTsTpStrategy : Strategy
 
 		_trailingStep = Param(nameof(TrailingStep), 10m)
 		.SetDisplay("Trailing Step", "Step for trailing stop", "Risk");
+
+		_cooldownBars = Param(nameof(CooldownBars), 6)
+		.SetDisplay("Cooldown Bars", "Minimum number of bars between entries", "Risk");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		ResetProtection();
+		_prevEma10 = 0m;
+		_prevEma20 = 0m;
+		_isInitialized = false;
+		_barsSinceExit = CooldownBars;
 	}
 
 	/// <inheritdoc />
@@ -149,16 +177,29 @@ public class RoNzAutoSlTsTpStrategy : Strategy
 	private void ProcessCandle(ICandleMessage candle, decimal ema10, decimal ema20, decimal ema100)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
+
+		if (!_isInitialized)
+		{
+			_prevEma10 = ema10;
+			_prevEma20 = ema20;
+			_isInitialized = true;
+			return;
+		}
+
+		_barsSinceExit++;
+
+		var bullishCross = _prevEma10 <= _prevEma20 && ema10 > ema20 && ema10 > ema100 && ema20 > ema100;
+		var bearishCross = _prevEma10 >= _prevEma20 && ema10 < ema20 && ema10 < ema100 && ema20 < ema100;
 
 		if (Position == 0)
 		{
-			if (ema10 < ema20 && ema10 > ema100)
+			if (_barsSinceExit >= CooldownBars && bullishCross)
 			{
 				BuyMarket();
 				SetInitialProtection(candle.ClosePrice);
 			}
-			else if (ema10 > ema20 && ema10 < ema100)
+			else if (_barsSinceExit >= CooldownBars && bearishCross)
 			{
 				SellMarket();
 				SetInitialProtection(candle.ClosePrice);
@@ -168,6 +209,9 @@ public class RoNzAutoSlTsTpStrategy : Strategy
 		{
 			ManageProtection(candle.ClosePrice);
 		}
+
+		_prevEma10 = ema10;
+		_prevEma20 = ema20;
 	}
 
 	private void SetInitialProtection(decimal price)
@@ -257,5 +301,6 @@ public class RoNzAutoSlTsTpStrategy : Strategy
 		_takePrice = 0m;
 		_trailAnchor = 0m;
 		_profitLocked = false;
+		_barsSinceExit = 0;
 	}
 }

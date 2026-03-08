@@ -22,10 +22,11 @@ public class TwoPbIdealXosmaStrategy : Strategy
 	private readonly StrategyParam<int> _fastPeriod;
 	private readonly StrategyParam<int> _slowPeriod;
 	private readonly StrategyParam<int> _signalPeriod;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal? _prevHist;
-	private decimal? _prevPrevHist;
+	private int _barsSinceTrade;
 
 	/// <summary>Fast MA period for MACD calculation.</summary>
 	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
@@ -33,6 +34,8 @@ public class TwoPbIdealXosmaStrategy : Strategy
 	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
 	/// <summary>Signal line period for MACD.</summary>
 	public int SignalPeriod { get => _signalPeriod.Value; set => _signalPeriod.Value = value; }
+	/// <summary>Minimum number of bars between entries.</summary>
+	public int CooldownBars { get => _cooldownBars.Value; set => _cooldownBars.Value = value; }
 	/// <summary>Candle type used for calculations.</summary>
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
@@ -56,7 +59,10 @@ public class TwoPbIdealXosmaStrategy : Strategy
 			.SetDisplay("Signal", "Signal line period", "Indicator")
 			.SetOptimize(5, 20, 1);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_cooldownBars = Param(nameof(CooldownBars), 6)
+			.SetDisplay("Cooldown Bars", "Minimum number of bars between entries", "General");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for calculations", "General");
 	}
 
@@ -71,7 +77,7 @@ public class TwoPbIdealXosmaStrategy : Strategy
 	{
 		base.OnReseted();
 		_prevHist = null;
-		_prevPrevHist = null;
+		_barsSinceTrade = CooldownBars;
 	}
 
 	/// <inheritdoc />
@@ -110,25 +116,31 @@ public class TwoPbIdealXosmaStrategy : Strategy
 			return;
 
 		var histogram = macdLine - signal;
+		_barsSinceTrade++;
 
-		if (_prevHist is not null && _prevPrevHist is not null)
+		if (_prevHist is not null)
 		{
-			var buySignal = _prevHist < _prevPrevHist && histogram > _prevHist;
-			var sellSignal = _prevHist > _prevPrevHist && histogram < _prevHist;
+			var buySignal = _prevHist <= 0m && histogram > 0m && macdLine > 0m;
+			var sellSignal = _prevHist >= 0m && histogram < 0m && macdLine < 0m;
 
-			if (buySignal && Position <= 0)
+			if (buySignal && Position <= 0 && _barsSinceTrade >= CooldownBars)
 			{
-				if (Position < 0) BuyMarket();
+				if (Position < 0)
+					BuyMarket();
+
 				BuyMarket();
+				_barsSinceTrade = 0;
 			}
-			else if (sellSignal && Position >= 0)
+			else if (sellSignal && Position >= 0 && _barsSinceTrade >= CooldownBars)
 			{
-				if (Position > 0) SellMarket();
+				if (Position > 0)
+					SellMarket();
+
 				SellMarket();
+				_barsSinceTrade = 0;
 			}
 		}
 
-		_prevPrevHist = _prevHist;
 		_prevHist = histogram;
 	}
 }

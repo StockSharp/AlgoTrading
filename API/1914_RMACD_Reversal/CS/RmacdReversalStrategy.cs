@@ -16,6 +16,7 @@ namespace StockSharp.Samples.Strategies;
 public class RmacdReversalStrategy : Strategy
 {
 	private readonly StrategyParam<int> _signalLength;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<AlgModes> _mode;
 
@@ -24,8 +25,10 @@ public class RmacdReversalStrategy : Strategy
 	private decimal _prevSignal;
 	private decimal _prevSignal2;
 	private int _initialized;
+	private int _barsSinceTrade;
 
 	public int SignalLength { get => _signalLength.Value; set => _signalLength.Value = value; }
+	public int CooldownBars { get => _cooldownBars.Value; set => _cooldownBars.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 	public AlgModes Mode { get => _mode.Value; set => _mode.Value = value; }
 
@@ -35,10 +38,14 @@ public class RmacdReversalStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Signal Length", "Signal smoothing period", "Indicator");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_cooldownBars = Param(nameof(CooldownBars), 6)
+			.SetGreaterThanZero()
+			.SetDisplay("Cooldown Bars", "Bars between trades", "Trading");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for analysis", "General");
 
-		_mode = Param(nameof(Mode), AlgModes.MacdDisposition)
+		_mode = Param(nameof(Mode), AlgModes.Breakdown)
 			.SetDisplay("Mode", "Entry algorithm", "Trading");
 	}
 
@@ -57,6 +64,7 @@ public class RmacdReversalStrategy : Strategy
 		_prevSignal = 0;
 		_prevSignal2 = 0;
 		_initialized = 0;
+		_barsSinceTrade = CooldownBars;
 	}
 
 	/// <inheritdoc />
@@ -89,6 +97,8 @@ public class RmacdReversalStrategy : Strategy
 
 		if (!macdValue.IsFormed)
 			return;
+
+		_barsSinceTrade++;
 
 		var typed = (IMovingAverageConvergenceDivergenceSignalValue)macdValue;
 		if (typed.Macd is not decimal macd || typed.Signal is not decimal signal)
@@ -137,15 +147,17 @@ public class RmacdReversalStrategy : Strategy
 				break;
 		}
 
-		if (buy && Position <= 0)
+		if (buy && Position <= 0 && _barsSinceTrade >= CooldownBars)
 		{
 			if (Position < 0) BuyMarket();
 			BuyMarket();
+			_barsSinceTrade = 0;
 		}
-		else if (sell && Position >= 0)
+		else if (sell && Position >= 0 && _barsSinceTrade >= CooldownBars)
 		{
 			if (Position > 0) SellMarket();
 			SellMarket();
+			_barsSinceTrade = 0;
 		}
 
 		_prevMacd2 = _prevMacd;

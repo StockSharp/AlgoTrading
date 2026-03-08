@@ -28,9 +28,13 @@ public class EaTemplateStrategy : Strategy
 	private readonly StrategyParam<int> _stopLoss;
 	private readonly StrategyParam<int> _takeProfit;
 	private readonly StrategyParam<int> _spreadLimit;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _entryPrice;
+	private decimal _prevClose;
+	private decimal _prevSma;
+	private int _barsSinceTrade;
 
 	/// <summary>
 	/// Invert entry and exit signals.
@@ -96,6 +100,15 @@ public class EaTemplateStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Minimum number of bars between entries.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Candle type for calculations.
 	/// </summary>
 	public DataType CandleType
@@ -132,7 +145,10 @@ public class EaTemplateStrategy : Strategy
 		_spreadLimit = Param(nameof(SpreadLimit), 10)
 				.SetDisplay("Spread Limit", "Maximum spread in points", "Trading");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_cooldownBars = Param(nameof(CooldownBars), 8)
+				.SetDisplay("Cooldown Bars", "Minimum number of bars between entries", "Trading");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 				.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -147,6 +163,9 @@ public class EaTemplateStrategy : Strategy
 	{
 		base.OnReseted();
 		_entryPrice = 0m;
+		_prevClose = 0m;
+		_prevSma = 0m;
+		_barsSinceTrade = CooldownBars;
 	}
 
 	/// <inheritdoc />
@@ -156,8 +175,9 @@ public class EaTemplateStrategy : Strategy
 
 		StartProtection(null, null);
 
+		var sma = new SimpleMovingAverage { Length = 50 };
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
+		subscription.Bind(sma, ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -167,43 +187,59 @@ public class EaTemplateStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal sma)
 	{
 		if (candle.State != CandleStates.Finished)
-				return;
+			return;
 
 		var isBullish = candle.ClosePrice > candle.OpenPrice;
 		var isBearish = candle.ClosePrice < candle.OpenPrice;
+		_barsSinceTrade++;
+
+		if (sma == 0m)
+			return;
 
 		if (Position == 0)
 		{
-				if ((isBullish && !ReverseTrade) || (isBearish && ReverseTrade))
-				{
-					BuyMarket();
-					_entryPrice = candle.ClosePrice;
-				}
-				else if ((isBearish && !ReverseTrade) || (isBullish && ReverseTrade))
-				{
-					SellMarket();
-					_entryPrice = candle.ClosePrice;
-				}
+			var crossAbove = _prevClose != 0m && _prevSma != 0m && _prevClose <= _prevSma && candle.ClosePrice > sma;
+			var crossBelow = _prevClose != 0m && _prevSma != 0m && _prevClose >= _prevSma && candle.ClosePrice < sma;
+			var buySignal = _barsSinceTrade >= CooldownBars && ((isBullish && crossAbove && !ReverseTrade) || (isBearish && crossBelow && ReverseTrade));
+			var sellSignal = _barsSinceTrade >= CooldownBars && ((isBearish && crossBelow && !ReverseTrade) || (isBullish && crossAbove && ReverseTrade));
 
-				return;
+			if (buySignal)
+			{
+				BuyMarket();
+				_entryPrice = candle.ClosePrice;
+				_barsSinceTrade = 0;
+			}
+			else if (sellSignal)
+			{
+				SellMarket();
+				_entryPrice = candle.ClosePrice;
+				_barsSinceTrade = 0;
+			}
+
+			_prevClose = candle.ClosePrice;
+			_prevSma = sma;
+			return;
 		}
 
 		var exitLong = (isBearish && !ReverseTrade) || (isBullish && ReverseTrade);
 		var exitShort = (isBullish && !ReverseTrade) || (isBearish && ReverseTrade);
 
 		if (Position > 0 && exitLong)
-				SellMarket();
+			SellMarket();
 
 		if (Position < 0 && exitShort)
-				BuyMarket();
+			BuyMarket();
 
 		if (Position > 0)
 				CheckStopsForLong(candle.ClosePrice);
 		else if (Position < 0)
-				CheckStopsForShort(candle.ClosePrice);
+			CheckStopsForShort(candle.ClosePrice);
+
+		_prevClose = candle.ClosePrice;
+		_prevSma = sma;
 	}
 
 	private decimal GetOrderVolume(decimal price)

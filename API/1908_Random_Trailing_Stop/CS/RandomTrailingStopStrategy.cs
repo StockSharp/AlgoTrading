@@ -22,7 +22,6 @@ public class RandomTrailingStopStrategy : Strategy
 	private readonly StrategyParam<int> _smaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private readonly Random _random = new();
 	private int _barsSinceLastTrade;
 	private decimal? _stopPrice;
 
@@ -42,7 +41,7 @@ public class RandomTrailingStopStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Trailing Step %", "Trailing stop adjustment step percent", "Trading");
 
-		_sleepBars = Param(nameof(SleepBars), 5)
+		_sleepBars = Param(nameof(SleepBars), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Sleep Bars", "Pause before next trade in bars", "General");
 
@@ -50,7 +49,7 @@ public class RandomTrailingStopStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("SMA Period", "Simple moving average period", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
@@ -101,7 +100,7 @@ public class RandomTrailingStopStrategy : Strategy
 
 			_stopPrice = null;
 
-			var side = GetRandomSide(candle.ClosePrice, smaValue);
+			var side = GetRandomSide(candle, smaValue);
 
 			if (side == Sides.Buy)
 				BuyMarket();
@@ -151,10 +150,10 @@ public class RandomTrailingStopStrategy : Strategy
 		}
 	}
 
-	private Sides GetRandomSide(decimal price, decimal smaValue)
+	private Sides GetRandomSide(ICandleMessage candle, decimal smaValue)
 	{
-		var rnd = _random.Next(5);
-		if (price > smaValue)
+		var rnd = (int)(Math.Abs(candle.OpenTime.Ticks) % 5);
+		if (candle.ClosePrice > smaValue)
 			return rnd == 0 ? Sides.Sell : Sides.Buy;
 		else
 			return rnd == 1 ? Sides.Buy : Sides.Sell;

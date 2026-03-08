@@ -24,10 +24,12 @@ public class GeniePivotFixedStrategy : Strategy
 	private readonly StrategyParam<decimal> _takeProfit;
 	private readonly StrategyParam<decimal> _trailingStop;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _cooldownBars;
 
 	private readonly decimal[] _lows = new decimal[8];
 	private readonly decimal[] _highs = new decimal[8];
 	private int _stored;
+	private int _cooldownRemaining;
 
 	/// <summary>
 	/// Take-profit distance in price units.
@@ -57,6 +59,15 @@ public class GeniePivotFixedStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Number of completed candles to wait after a position change.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Initializes parameters.
 	/// </summary>
 	public GeniePivotFixedStrategy()
@@ -73,8 +84,11 @@ public class GeniePivotFixedStrategy : Strategy
 			
 			.SetOptimize(50m, 500m, 50m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for candles", "General");
+
+		_cooldownBars = Param(nameof(CooldownBars), 4)
+			.SetDisplay("Cooldown Bars", "Completed candles to wait after a position change", "Risk Management");
 	}
 
 	/// <inheritdoc />
@@ -88,6 +102,7 @@ public class GeniePivotFixedStrategy : Strategy
 	{
 		base.OnReseted();
 		_stored = 0;
+		_cooldownRemaining = 0;
 		Array.Clear(_lows);
 		Array.Clear(_highs);
 	}
@@ -118,6 +133,9 @@ public class GeniePivotFixedStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
+
 		for (var i = 7; i > 0; i--)
 		{
 			_lows[i] = _lows[i - 1];
@@ -132,25 +150,30 @@ public class GeniePivotFixedStrategy : Strategy
 		if (_stored < 5)
 			return;
 
+		if (_cooldownRemaining > 0)
+			return;
+
 		var buySeq = _lows[4] > _lows[3] && _lows[3] > _lows[2] && _lows[2] > _lows[1];
 
-		if (buySeq && _lows[1] < _lows[0] && _highs[1] < candle.ClosePrice)
+		if (buySeq && _lows[1] < _lows[0] && _highs[1] < candle.ClosePrice && candle.ClosePrice > candle.OpenPrice)
 		{
 			if (Position < 0)
 				BuyMarket();
 			if (Position <= 0)
 				BuyMarket();
+			_cooldownRemaining = CooldownBars;
 			return;
 		}
 
 		var sellSeq = _highs[4] < _highs[3] && _highs[3] < _highs[2] && _highs[2] < _highs[1];
 
-		if (sellSeq && _highs[1] > _highs[0] && _lows[1] > candle.ClosePrice)
+		if (sellSeq && _highs[1] > _highs[0] && _lows[1] > candle.ClosePrice && candle.ClosePrice < candle.OpenPrice)
 		{
 			if (Position > 0)
 				SellMarket();
 			if (Position >= 0)
 				SellMarket();
+			_cooldownRemaining = CooldownBars;
 		}
 	}
 }

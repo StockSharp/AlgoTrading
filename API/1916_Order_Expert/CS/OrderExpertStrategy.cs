@@ -20,17 +20,20 @@ public class OrderExpertStrategy : Strategy
 	private readonly StrategyParam<decimal> _stopLossPct;
 	private readonly StrategyParam<int> _fastEmaPeriod;
 	private readonly StrategyParam<int> _slowEmaPeriod;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private ExponentialMovingAverage _slowEma;
 	private decimal _prevFast;
 	private decimal _prevSlow;
+	private int _barsSinceTrade;
 	private bool _isFirst = true;
 
 	public decimal TakeProfitPct { get => _takeProfitPct.Value; set => _takeProfitPct.Value = value; }
 	public decimal StopLossPct { get => _stopLossPct.Value; set => _stopLossPct.Value = value; }
 	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
 	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public int CooldownBars { get => _cooldownBars.Value; set => _cooldownBars.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public OrderExpertStrategy()
@@ -49,7 +52,11 @@ public class OrderExpertStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_cooldownBars = Param(nameof(CooldownBars), 6)
+			.SetGreaterThanZero()
+			.SetDisplay("Cooldown Bars", "Bars between trades", "Trading");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -65,6 +72,7 @@ public class OrderExpertStrategy : Strategy
 		base.OnReseted();
 		_prevFast = 0;
 		_prevSlow = 0;
+		_barsSinceTrade = CooldownBars;
 		_isFirst = true;
 	}
 
@@ -101,6 +109,8 @@ public class OrderExpertStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		_barsSinceTrade++;
+
 		var slowResult = _slowEma.Process(candle.ClosePrice, candle.OpenTime, true);
 		if (!slowResult.IsFormed)
 			return;
@@ -116,16 +126,18 @@ public class OrderExpertStrategy : Strategy
 		}
 
 		// EMA cross up -> buy
-		if (_prevFast <= _prevSlow && fast > slow && Position <= 0)
+		if (_prevFast <= _prevSlow && fast > slow && Position <= 0 && _barsSinceTrade >= CooldownBars)
 		{
 			if (Position < 0) BuyMarket();
 			BuyMarket();
+			_barsSinceTrade = 0;
 		}
 		// EMA cross down -> sell
-		else if (_prevFast >= _prevSlow && fast < slow && Position >= 0)
+		else if (_prevFast >= _prevSlow && fast < slow && Position >= 0 && _barsSinceTrade >= CooldownBars)
 		{
 			if (Position > 0) SellMarket();
 			SellMarket();
+			_barsSinceTrade = 0;
 		}
 
 		_prevFast = fast;

@@ -44,13 +44,13 @@ public class ExpMaRoundingChannelStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "ATR period for channel width", "Indicator");
 
-		_atrFactor = Param(nameof(AtrFactor), 1m)
+		_atrFactor = Param(nameof(AtrFactor), 2m)
 			.SetDisplay("ATR Factor", "Multiplier for ATR channel", "Indicator");
 
-		_roundStep = Param(nameof(RoundStep), 500m)
+		_roundStep = Param(nameof(RoundStep), 2000m)
 			.SetDisplay("Round Step", "Rounding step for the moving average", "Indicator");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for calculation", "General");
 	}
 
@@ -109,14 +109,15 @@ public class ExpMaRoundingChannelStrategy : Strategy
 
 		if (_prevClose != 0m)
 		{
-			// Price broke above upper channel -> buy
-			if (_prevClose > _prevUpper && Position <= 0)
+			var breakUp = _prevClose <= _prevUpper && candle.ClosePrice > upper;
+			var breakDown = _prevClose >= _prevLower && candle.ClosePrice < lower;
+
+			if (breakUp && Position <= 0)
 			{
 				if (Position < 0) BuyMarket();
 				BuyMarket();
 			}
-			// Price broke below lower channel -> sell
-			else if (_prevClose < _prevLower && Position >= 0)
+			else if (breakDown && Position >= 0)
 			{
 				if (Position > 0) SellMarket();
 				SellMarket();

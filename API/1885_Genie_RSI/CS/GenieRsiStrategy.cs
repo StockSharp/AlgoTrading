@@ -24,10 +24,13 @@ public class GenieRsiStrategy : Strategy
 	private readonly StrategyParam<decimal> _trailingStop;
 	private readonly StrategyParam<int> _rsiPeriod;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _cooldownBars;
 
 	private decimal _entryPrice;
 	private decimal _trailingLevel;
 	private bool _isLong;
+	private decimal? _prevRsi;
+	private int _cooldownRemaining;
 
 	/// <summary>
 	/// Take profit distance in price units.
@@ -66,6 +69,15 @@ public class GenieRsiStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Number of completed candles to wait after a position change.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Initializes strategy parameters.
 	/// </summary>
 	public GenieRsiStrategy()
@@ -85,8 +97,11 @@ public class GenieRsiStrategy : Strategy
 			
 			.SetOptimize(5, 30, 5);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
+
+		_cooldownBars = Param(nameof(CooldownBars), 4)
+			.SetDisplay("Cooldown Bars", "Completed candles to wait after a position change", "Risk Management");
 	}
 
 	/// <inheritdoc />
@@ -102,6 +117,8 @@ public class GenieRsiStrategy : Strategy
 		_entryPrice = 0m;
 		_trailingLevel = 0m;
 		_isLong = false;
+		_prevRsi = null;
+		_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
@@ -133,24 +150,32 @@ public class GenieRsiStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
+
 		var price = candle.ClosePrice;
+		var crossedDown = _prevRsi is decimal prevRsi1 && prevRsi1 >= 20m && rsi < 20m;
+		var crossedUp = _prevRsi is decimal prevRsi2 && prevRsi2 <= 80m && rsi > 80m;
+		_prevRsi = rsi;
 
 		// Entry logic when flat
-		if (Position == 0)
+		if (Position == 0 && _cooldownRemaining == 0)
 		{
-			if (rsi > 80)
+			if (crossedUp)
 			{
 				SellMarket();
 				_entryPrice = price;
 				_trailingLevel = price + TrailingStop;
 				_isLong = false;
+				_cooldownRemaining = CooldownBars;
 			}
-			else if (rsi < 20)
+			else if (crossedDown)
 			{
 				BuyMarket();
 				_entryPrice = price;
 				_trailingLevel = price - TrailingStop;
 				_isLong = true;
+				_cooldownRemaining = CooldownBars;
 			}
 			return;
 		}
@@ -168,6 +193,7 @@ public class GenieRsiStrategy : Strategy
 				{
 					SellMarket();
 					_entryPrice = 0m;
+					_cooldownRemaining = CooldownBars;
 					return;
 				}
 			}
@@ -177,14 +203,16 @@ public class GenieRsiStrategy : Strategy
 			{
 				SellMarket();
 				_entryPrice = 0m;
+				_cooldownRemaining = CooldownBars;
 				return;
 			}
 
 			// Exit if RSI indicates overbought
-			if (rsi > 80)
+			if (crossedUp)
 			{
 				SellMarket();
 				_entryPrice = 0m;
+				_cooldownRemaining = CooldownBars;
 			}
 		}
 		else
@@ -199,6 +227,7 @@ public class GenieRsiStrategy : Strategy
 				{
 					BuyMarket();
 					_entryPrice = 0m;
+					_cooldownRemaining = CooldownBars;
 					return;
 				}
 			}
@@ -208,14 +237,16 @@ public class GenieRsiStrategy : Strategy
 			{
 				BuyMarket();
 				_entryPrice = 0m;
+				_cooldownRemaining = CooldownBars;
 				return;
 			}
 
 			// Exit if RSI indicates oversold
-			if (rsi < 20)
+			if (crossedDown)
 			{
 				BuyMarket();
 				_entryPrice = 0m;
+				_cooldownRemaining = CooldownBars;
 			}
 		}
 	}

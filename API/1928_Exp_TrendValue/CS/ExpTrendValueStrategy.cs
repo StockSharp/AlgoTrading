@@ -1,9 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
 using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
@@ -32,6 +30,7 @@ public class ExpTrendValueStrategy : Strategy
 
 	private readonly WeightedMovingAverage _wmaHigh = new();
 	private readonly WeightedMovingAverage _wmaLow = new();
+	private readonly SimpleMovingAverage _rangeAverage = new();
 	private decimal _prevHighBand;
 	private decimal _prevLowBand;
 	private int _prevTrend;
@@ -108,10 +107,10 @@ public class ExpTrendValueStrategy : Strategy
 		_stopLossPips = Param(nameof(StopLossPips), 1000).SetGreaterThanZero().SetDisplay("Stop Loss", "Stop loss in points", "Risk");
 		_takeProfitPips = Param(nameof(TakeProfitPips), 2000).SetGreaterThanZero().SetDisplay("Take Profit", "Take profit in points", "Risk");
 		_maPeriod = Param(nameof(MaPeriod), 13).SetGreaterThanZero().SetDisplay("MA Period", "Weighted moving average period", "Indicator");
-		_shiftPercent = Param(nameof(ShiftPercent), 0m).SetDisplay("Shift Percent", "Percentage offset for bands", "Indicator");
-		_atrPeriod = Param(nameof(AtrPeriod), 15).SetGreaterThanZero().SetDisplay("ATR Period", "ATR calculation period", "Indicator");
-		_atrSensitivity = Param(nameof(AtrSensitivity), 1.5m).SetGreaterThanZero().SetDisplay("ATR Sensitivity", "Multiplier for ATR shift", "Indicator");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Timeframe for calculations", "General");
+		_shiftPercent = Param(nameof(ShiftPercent), 0.05m).SetDisplay("Shift Percent", "Percentage offset for bands", "Indicator");
+		_atrPeriod = Param(nameof(AtrPeriod), 15).SetGreaterThanZero().SetDisplay("ATR Period", "Range average period", "Indicator");
+		_atrSensitivity = Param(nameof(AtrSensitivity), 0.6m).SetGreaterThanZero().SetDisplay("ATR Sensitivity", "Multiplier for range shift", "Indicator");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame()).SetDisplay("Candle Type", "Timeframe for calculations", "General");
 	}
 
 	/// <inheritdoc />
@@ -127,6 +126,7 @@ public class ExpTrendValueStrategy : Strategy
 
 		_wmaHigh.Reset();
 		_wmaLow.Reset();
+		_rangeAverage.Reset();
 		_prevHighBand = _prevLowBand = 0m;
 		_prevTrend = 0;
 		_initialized = false;
@@ -140,11 +140,11 @@ public class ExpTrendValueStrategy : Strategy
 
 		_wmaHigh.Length = MaPeriod;
 		_wmaLow.Length = MaPeriod;
-
-		var atr = new AverageTrueRange { Length = AtrPeriod };
+		_rangeAverage.Length = AtrPeriod;
+		var closeTrigger = new SimpleMovingAverage { Length = 1 };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(atr, ProcessCandle).Start();
+		subscription.Bind(closeTrigger, ProcessCandle).Start();
 
 		// protection handled manually
 
@@ -156,7 +156,7 @@ public class ExpTrendValueStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal atrValue)
+	private void ProcessCandle(ICandleMessage candle, decimal closeValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
@@ -170,8 +170,15 @@ public class ExpTrendValueStrategy : Strategy
 		if (!_wmaHigh.IsFormed || !_wmaLow.IsFormed)
 			return;
 
-		var highBand = highMa * (1 + ShiftPercent / 100m) + atrValue * AtrSensitivity;
-		var lowBand = lowMa * (1 - ShiftPercent / 100m) - atrValue * AtrSensitivity;
+		var rangeValue = _rangeAverage.Process(new DecimalIndicatorValue(_rangeAverage, candle.HighPrice - candle.LowPrice, candle.OpenTime)).ToDecimal();
+
+		if (!_rangeAverage.IsFormed)
+			return;
+
+		var percentOffset = closeValue * ShiftPercent / 100m;
+		var rangeOffset = rangeValue * AtrSensitivity * 0.25m;
+		var highBand = highMa - rangeOffset + percentOffset;
+		var lowBand = lowMa + rangeOffset - percentOffset;
 
 		if (!_initialized)
 		{
@@ -181,32 +188,12 @@ public class ExpTrendValueStrategy : Strategy
 			return;
 		}
 
-		var trend = _prevTrend;
-
-		if (candle.ClosePrice > _prevHighBand)
-			trend = 1;
-		else if (candle.ClosePrice < _prevLowBand)
-			trend = -1;
-
-		var upSignal = false;
-		var downSignal = false;
-		var haveUpTrend = false;
-		var haveDownTrend = false;
-
-		if (trend > 0)
-		{
-			lowBand = Math.Max(lowBand, _prevLowBand);
-			haveUpTrend = true;
-			if (_prevTrend <= 0)
-				upSignal = true;
-		}
-		else if (trend < 0)
-		{
-			highBand = Math.Min(highBand, _prevHighBand);
-			haveDownTrend = true;
-			if (_prevTrend >= 0)
-				downSignal = true;
-		}
+		var centerLine = (highBand + lowBand) / 2m;
+		var trend = candle.ClosePrice >= centerLine ? 1 : -1;
+		var upSignal = trend > 0 && _prevTrend <= 0;
+		var downSignal = trend < 0 && _prevTrend >= 0;
+		var haveUpTrend = trend > 0;
+		var haveDownTrend = trend < 0;
 
 		_prevHighBand = highBand;
 		_prevLowBand = lowBand;

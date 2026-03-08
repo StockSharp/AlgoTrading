@@ -113,12 +113,12 @@ public class Twenty200ExpertStrategy : Strategy
 			.SetDisplay("Shift 2", "Shift of second bar", "Signals")
 			;
 
-		_deltaLong = Param(nameof(DeltaLong), 6)
+		_deltaLong = Param(nameof(DeltaLong), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Delta Long", "Price difference for long in points", "Signals")
 			;
 
-		_deltaShort = Param(nameof(DeltaShort), 21)
+		_deltaShort = Param(nameof(DeltaShort), 40)
 			.SetGreaterThanZero()
 			.SetDisplay("Delta Short", "Price difference for short in points", "Signals")
 			;
@@ -139,7 +139,7 @@ public class Twenty200ExpertStrategy : Strategy
 			.SetDisplay("Stop Loss Short", "Stop loss for short in points", "Risk")
 			;
 
-		_tradeHour = Param(nameof(TradeHour), 14)
+		_tradeHour = Param(nameof(TradeHour), 12)
 			.SetRange(0, 23)
 			.SetDisplay("Trade Hour", "Hour to open positions", "Signals")
 			;
@@ -153,7 +153,7 @@ public class Twenty200ExpertStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Volume", "Order volume", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 

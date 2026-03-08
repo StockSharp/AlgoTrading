@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,8 +12,6 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Strategy that combines Weighted Moving Average, CCI and Stochastic oscillator.
-/// Generates buy signals when CCI is below negative level, stochastic is oversold,
-/// and price is above the MA. Opposite conditions for sell.
 /// </summary>
 public class KlossStrategy : Strategy
 {
@@ -27,10 +22,10 @@ public class KlossStrategy : Strategy
 	private readonly StrategyParam<decimal> _stopLoss;
 	private readonly StrategyParam<decimal> _takeProfit;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _cooldownBars;
 
-	private WeightedMovingAverage _ma = null!;
-	private CommodityChannelIndex _cci = null!;
-	private StochasticOscillator _stoch = null!;
+	private int _previousSignal;
+	private int _cooldownRemaining;
 
 	/// <summary>Moving Average period.</summary>
 	public int MaPeriod { get => _maPeriod.Value; set => _maPeriod.Value = value; }
@@ -46,6 +41,8 @@ public class KlossStrategy : Strategy
 	public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
 	/// <summary>Candle type used for calculations.</summary>
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	/// <summary>Completed candles to wait after a position change.</summary>
+	public int CooldownBars { get => _cooldownBars.Value; set => _cooldownBars.Value = value; }
 
 	/// <summary>
 	/// Initialize <see cref="KlossStrategy"/>.
@@ -62,12 +59,12 @@ public class KlossStrategy : Strategy
 			.SetDisplay("CCI Period", "Length of CCI", "Indicators")
 			.SetOptimize(5, 30, 5);
 
-		_cciLevel = Param(nameof(CciLevel), 120m)
+		_cciLevel = Param(nameof(CciLevel), 100m)
 			.SetGreaterThanZero()
 			.SetDisplay("CCI Level", "Distance from zero to trigger signal", "Indicators")
 			.SetOptimize(50m, 200m, 10m);
 
-		_stochLevel = Param(nameof(StochLevel), 20m)
+		_stochLevel = Param(nameof(StochLevel), 15m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic Level", "Distance from 50 to trigger", "Indicators")
 			.SetOptimize(5m, 40m, 5m);
@@ -80,8 +77,11 @@ public class KlossStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Take Profit", "Take profit in price steps", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candles for calculations", "General");
+
+		_cooldownBars = Param(nameof(CooldownBars), 3)
+			.SetDisplay("Cooldown Bars", "Completed candles to wait after a position change", "Trading");
 	}
 
 	/// <inheritdoc />
@@ -91,68 +91,76 @@ public class KlossStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_previousSignal = 0;
+		_cooldownRemaining = 0;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_ma = new WeightedMovingAverage { Length = MaPeriod };
-		_cci = new CommodityChannelIndex { Length = CciPeriod };
-		_stoch = new StochasticOscillator();
-
+		var ma = new WeightedMovingAverage { Length = MaPeriod };
+		var cci = new CommodityChannelIndex { Length = CciPeriod };
+		var stoch = new StochasticOscillator();
 		var subscription = SubscribeCandles(CandleType);
-		subscription.BindEx(_stoch, ProcessCandle).Start();
+		subscription.BindEx(ma, cci, stoch, ProcessCandle).Start();
 
 		var step = Security?.PriceStep ?? 1m;
 		StartProtection(
 			stopLoss: new Unit(StopLoss * step, UnitTypes.Absolute),
-			takeProfit: new Unit(TakeProfit * step, UnitTypes.Absolute)
-		);
+			takeProfit: new Unit(TakeProfit * step, UnitTypes.Absolute));
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _ma);
+			DrawIndicator(area, ma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue stochValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue maValue, IIndicatorValue cciValue, IIndicatorValue stochValue)
 	{
-		if (candle.State != CandleStates.Finished)
+		if (candle.State != CandleStates.Finished || !maValue.IsFinal || !cciValue.IsFinal || !stochValue.IsFinal)
 			return;
 
-		// Process WMA and CCI manually
-		var maResult = _ma.Process(candle.ClosePrice, candle.OpenTime, candle.State == CandleStates.Finished);
-		var cciResult = _cci.Process(candle);
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
 
-		if (!_ma.IsFormed || !_cci.IsFormed || !_stoch.IsFormed)
-			return;
-
-		var maVal = maResult.ToDecimal();
-		var cciVal = cciResult.ToDecimal();
-
-		var stochTyped = (StochasticOscillatorValue)stochValue;
-		if (stochTyped.K is not decimal stochK)
+		var ma = maValue.ToDecimal();
+		var cci = cciValue.ToDecimal();
+		var stoch = (StochasticOscillatorValue)stochValue;
+		if (stoch.K is not decimal stochK || stoch.D is not decimal stochD)
 			return;
 
 		var price = candle.ClosePrice;
+		var buySignal = cci < -CciLevel && stochK < 50m - StochLevel && stochD < 50m - StochLevel && price > ma;
+		var sellSignal = cci > CciLevel && stochK > 50m + StochLevel && stochD > 50m + StochLevel && price < ma;
+		var currentSignal = buySignal ? 1 : sellSignal ? -1 : 0;
 
-		// Buy when CCI is below negative level and stochastic is oversold
-		var buySignal = cciVal < -CciLevel && stochK < 50m - StochLevel;
-
-		// Sell when CCI is above positive level and stochastic is overbought
-		var sellSignal = cciVal > CciLevel && stochK > 50m + StochLevel;
-
-		if (buySignal && Position <= 0)
+		if (_cooldownRemaining == 0)
 		{
-			if (Position < 0) BuyMarket();
-			BuyMarket();
+			if (currentSignal > 0 && _previousSignal <= 0 && Position <= 0)
+			{
+				if (Position < 0)
+					BuyMarket();
+				BuyMarket();
+				_cooldownRemaining = CooldownBars;
+			}
+			else if (currentSignal < 0 && _previousSignal >= 0 && Position >= 0)
+			{
+				if (Position > 0)
+					SellMarket();
+				SellMarket();
+				_cooldownRemaining = CooldownBars;
+			}
 		}
-		else if (sellSignal && Position >= 0)
-		{
-			if (Position > 0) SellMarket();
-			SellMarket();
-		}
+
+		if (currentSignal != 0)
+			_previousSignal = currentSignal;
 	}
 }

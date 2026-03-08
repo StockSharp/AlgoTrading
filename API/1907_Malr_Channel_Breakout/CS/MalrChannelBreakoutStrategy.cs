@@ -62,6 +62,18 @@ public class MalrChannelBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_sma = default;
+		_lwma = default;
+		_stdDev = default;
+		_prevUpper = null;
+		_prevLower = null;
+		_prevClose = null;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);

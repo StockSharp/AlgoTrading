@@ -21,8 +21,12 @@ public class RobotiAdxProfitStrategy : Strategy
 	private readonly StrategyParam<int> _dmiPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<decimal> _trailingStopPercent;
+	private readonly StrategyParam<int> _cooldownBars;
 
 	private DirectionalIndex _dmi = null!;
+	private decimal _prevPlus;
+	private decimal _prevMinus;
+	private int _barsSinceTrade;
 
 	/// <summary>
 	/// DMI calculation period.
@@ -52,6 +56,15 @@ public class RobotiAdxProfitStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Minimum number of bars between entries.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Initialize <see cref="RobotiAdxProfitStrategy"/>.
 	/// </summary>
 	public RobotiAdxProfitStrategy()
@@ -61,7 +74,7 @@ public class RobotiAdxProfitStrategy : Strategy
 			
 			.SetOptimize(10, 30, 2);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type and timeframe of candles", "General");
 
 		_trailingStopPercent = Param(nameof(TrailingStopPercent), 1m)
@@ -69,12 +82,25 @@ public class RobotiAdxProfitStrategy : Strategy
 			.SetGreaterThanZero()
 			
 			.SetOptimize(0.5m, 5m, 0.5m);
+
+		_cooldownBars = Param(nameof(CooldownBars), 3)
+			.SetGreaterThanZero()
+			.SetDisplay("Cooldown Bars", "Minimum number of bars between entries", "Risk Management");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevPlus = 0m;
+		_prevMinus = 0m;
+		_barsSinceTrade = CooldownBars;
 	}
 
 	/// <inheritdoc />
@@ -114,15 +140,29 @@ public class RobotiAdxProfitStrategy : Strategy
 		if (dmi.Plus is not decimal plus || dmi.Minus is not decimal minus)
 			return;
 
-		if (plus > minus && Position <= 0)
+		_barsSinceTrade++;
+
+		var buySignal = _prevPlus <= _prevMinus && plus > minus;
+		var sellSignal = _prevPlus >= _prevMinus && minus > plus;
+
+		if (buySignal && Position <= 0 && _barsSinceTrade >= CooldownBars)
 		{
-			if (Position < 0) BuyMarket();
+			if (Position < 0)
+				BuyMarket();
+
 			BuyMarket();
+			_barsSinceTrade = 0;
 		}
-		else if (minus > plus && Position >= 0)
+		else if (sellSignal && Position >= 0 && _barsSinceTrade >= CooldownBars)
 		{
-			if (Position > 0) SellMarket();
+			if (Position > 0)
+				SellMarket();
+
 			SellMarket();
+			_barsSinceTrade = 0;
 		}
+
+		_prevPlus = plus;
+		_prevMinus = minus;
 	}
 }

@@ -49,7 +49,7 @@ public class ExpMamaStrategy : Strategy
 		_slowLimit = Param(nameof(SlowLimit), 0.05m)
 			.SetDisplay("Slow Limit", "Slow alpha limit", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe", "General");
 	}
 

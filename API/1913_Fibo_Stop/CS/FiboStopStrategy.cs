@@ -19,22 +19,25 @@ public class FiboStopStrategy : Strategy
 	private readonly StrategyParam<int> _lookbackPeriod;
 	private readonly StrategyParam<decimal> _entryFiboLevel;
 	private readonly StrategyParam<decimal> _stopLossPct;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _highestHigh;
 	private decimal _lowestLow;
 	private int _barCount;
+	private int _barsSinceTrade;
 	private bool _rangeSet;
 	private decimal _entryPrice;
 
 	public int LookbackPeriod { get => _lookbackPeriod.Value; set => _lookbackPeriod.Value = value; }
 	public decimal EntryFiboLevel { get => _entryFiboLevel.Value; set => _entryFiboLevel.Value = value; }
 	public decimal StopLossPct { get => _stopLossPct.Value; set => _stopLossPct.Value = value; }
+	public int CooldownBars { get => _cooldownBars.Value; set => _cooldownBars.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public FiboStopStrategy()
 	{
-		_lookbackPeriod = Param(nameof(LookbackPeriod), 50)
+		_lookbackPeriod = Param(nameof(LookbackPeriod), 120)
 			.SetGreaterThanZero()
 			.SetDisplay("Lookback", "Bars to calculate high/low range", "General");
 
@@ -44,7 +47,11 @@ public class FiboStopStrategy : Strategy
 		_stopLossPct = Param(nameof(StopLossPct), 2m)
 			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_cooldownBars = Param(nameof(CooldownBars), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("Cooldown Bars", "Bars between new entries", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -61,6 +68,7 @@ public class FiboStopStrategy : Strategy
 		_highestHigh = decimal.MinValue;
 		_lowestLow = decimal.MaxValue;
 		_barCount = 0;
+		_barsSinceTrade = CooldownBars;
 		_rangeSet = false;
 		_entryPrice = 0;
 	}
@@ -97,6 +105,7 @@ public class FiboStopStrategy : Strategy
 			return;
 
 		_barCount++;
+		_barsSinceTrade++;
 
 		if (candle.HighPrice > _highestHigh)
 			_highestHigh = candle.HighPrice;
@@ -122,17 +131,20 @@ public class FiboStopStrategy : Strategy
 
 		if (Position == 0)
 		{
-			// Buy when price pulls back to Fibonacci level from above
+			if (_barsSinceTrade < CooldownBars)
+				return;
+
 			if (candle.ClosePrice <= fiboLevel && candle.ClosePrice > fibo618)
 			{
 				BuyMarket();
 				_entryPrice = candle.ClosePrice;
+				_barsSinceTrade = 0;
 			}
-			// Sell when price rises to Fibonacci level from below
 			else if (candle.ClosePrice >= _lowestLow + range * (1m - EntryFiboLevel) && candle.ClosePrice < _lowestLow + range * 0.382m)
 			{
 				SellMarket();
 				_entryPrice = candle.ClosePrice;
+				_barsSinceTrade = 0;
 			}
 		}
 		else if (Position > 0)

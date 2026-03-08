@@ -47,7 +47,7 @@ public class IlanDynamicHtStrategy : Strategy
 		_lotExponent = Param(nameof(LotExponent), 1.4m)
 			.SetDisplay("Lot Exponent", "Multiplier for next position volume", "General");
 
-		_maxTrades = Param(nameof(MaxTrades), 10)
+		_maxTrades = Param(nameof(MaxTrades), 4)
 			.SetDisplay("Max Trades", "Maximum simultaneous trades", "General");
 
 		_dynamicPips = Param(nameof(DynamicPips), true)
@@ -68,10 +68,10 @@ public class IlanDynamicHtStrategy : Strategy
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetDisplay("RSI Period", "Period for RSI indicator", "Signals");
 
-		_rsiMin = Param(nameof(RsiMinimum), 30m)
+		_rsiMin = Param(nameof(RsiMinimum), 20m)
 			.SetDisplay("RSI Minimum", "Lower RSI bound", "Signals");
 
-		_rsiMax = Param(nameof(RsiMaximum), 70m)
+		_rsiMax = Param(nameof(RsiMaximum), 80m)
 			.SetDisplay("RSI Maximum", "Upper RSI bound", "Signals");
 
 		_takeProfit = Param(nameof(TakeProfit), 100m)
@@ -80,7 +80,7 @@ public class IlanDynamicHtStrategy : Strategy
 		_stopLoss = Param(nameof(StopLoss), 500m)
 			.SetDisplay("Stop Loss", "Stop loss in points", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for processing", "General");
 	}
 	public decimal LotExponent { get => _lotExponent.Value; set => _lotExponent.Value = value; }

@@ -31,14 +31,17 @@ public class RoNzRapidFireStrategy : Strategy
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<decimal> _psarStep;
 	private readonly StrategyParam<decimal> _psarMax;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<CloseTypes> _closeType;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _entryPrice;
 	private decimal _stopPrice;
 	private decimal _takePrice;
-	private decimal? _prevSar;
+	private decimal _prevClose;
+	private decimal _prevSma;
 	private decimal _tick;
+	private int _barsSinceTrade;
 
 
 	/// <summary>
@@ -105,6 +108,15 @@ public class RoNzRapidFireStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Minimum number of bars between entries.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Close mode.
 	/// </summary>
 	public CloseTypes CloseType
@@ -140,7 +152,7 @@ public class RoNzRapidFireStrategy : Strategy
 		_averaging = Param(nameof(Averaging), false)
 			.SetDisplay("Averaging", "Add to position on continuing trend", "General");
 
-		_maPeriod = Param(nameof(MaPeriod), 60)
+		_maPeriod = Param(nameof(MaPeriod), 30)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "Moving average period", "Indicator");
 
@@ -152,10 +164,14 @@ public class RoNzRapidFireStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("PSAR Max", "Parabolic SAR maximum", "Indicator");
 
+		_cooldownBars = Param(nameof(CooldownBars), 6)
+			.SetGreaterThanZero()
+			.SetDisplay("Cooldown Bars", "Bars between entries", "General");
+
 		_closeType = Param(nameof(CloseType), CloseTypes.SlClose)
 			.SetDisplay("Close Type", "Use stops or trend reversals", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candles for calculations", "General");
 	}
 
@@ -166,45 +182,63 @@ public class RoNzRapidFireStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_entryPrice = 0m;
+		_stopPrice = 0m;
+		_takePrice = 0m;
+		_prevClose = 0m;
+		_prevSma = 0m;
+		_tick = 0m;
+		_barsSinceTrade = CooldownBars;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
 		_tick = Security?.PriceStep ?? 1m;
+		_barsSinceTrade = CooldownBars;
 
 		var sma = new SimpleMovingAverage { Length = MaPeriod };
-		var psar = new ParabolicSar
-		{
-			Acceleration = PsarStep,
-			AccelerationStep = PsarStep,
-			AccelerationMax = PsarMax
-		};
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(sma, psar, ProcessCandle)
+			.Bind(sma, ProcessCandle)
 			.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal smaValue, decimal psarValue)
+	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var prevSar = _prevSar;
-		bool upSignal = prevSar.HasValue && candle.ClosePrice > smaValue && psarValue < candle.ClosePrice && prevSar.Value > candle.ClosePrice;
-		bool downSignal = prevSar.HasValue && candle.ClosePrice < smaValue && psarValue > candle.ClosePrice && prevSar.Value < candle.ClosePrice;
+		_barsSinceTrade++;
+
+		var upSignal = _prevClose != 0m && _prevSma != 0m && _prevClose <= _prevSma && candle.ClosePrice > smaValue;
+		var downSignal = _prevClose != 0m && _prevSma != 0m && _prevClose >= _prevSma && candle.ClosePrice < smaValue;
 
 		if (Position > 0)
 		{
 			if (CloseType == CloseTypes.TrendClose && downSignal)
+			{
 				SellMarket(Position);
+				_barsSinceTrade = 0;
+			}
 
 			if (TakeProfit > 0 && candle.HighPrice >= _takePrice)
+			{
 				SellMarket(Position);
+				_barsSinceTrade = 0;
+			}
 
 			if (StopLoss > 0 && candle.LowPrice <= _stopPrice)
+			{
 				SellMarket(Position);
+				_barsSinceTrade = 0;
+			}
 
 			if (TrailingStop > 0)
 			{
@@ -213,19 +247,28 @@ public class RoNzRapidFireStrategy : Strategy
 					_stopPrice = trail;
 			}
 
-			if (Averaging && upSignal)
+			if (Averaging && upSignal && _barsSinceTrade >= CooldownBars)
 				EnterLong(candle);
 		}
 		else if (Position < 0)
 		{
 			if (CloseType == CloseTypes.TrendClose && upSignal)
+			{
 				BuyMarket(Math.Abs(Position));
+				_barsSinceTrade = 0;
+			}
 
 			if (TakeProfit > 0 && candle.LowPrice <= _takePrice)
+			{
 				BuyMarket(Math.Abs(Position));
+				_barsSinceTrade = 0;
+			}
 
 			if (StopLoss > 0 && candle.HighPrice >= _stopPrice)
+			{
 				BuyMarket(Math.Abs(Position));
+				_barsSinceTrade = 0;
+			}
 
 			if (TrailingStop > 0)
 			{
@@ -234,18 +277,19 @@ public class RoNzRapidFireStrategy : Strategy
 					_stopPrice = trail;
 			}
 
-			if (Averaging && downSignal)
+			if (Averaging && downSignal && _barsSinceTrade >= CooldownBars)
 				EnterShort(candle);
 		}
 		else
 		{
-			if (upSignal)
+			if (upSignal && _barsSinceTrade >= CooldownBars)
 				EnterLong(candle);
-			else if (downSignal)
+			else if (downSignal && _barsSinceTrade >= CooldownBars)
 				EnterShort(candle);
 		}
 
-		_prevSar = psarValue;
+		_prevClose = candle.ClosePrice;
+		_prevSma = smaValue;
 	}
 
 	private void EnterLong(ICandleMessage candle)
@@ -254,6 +298,7 @@ public class RoNzRapidFireStrategy : Strategy
 		_entryPrice = candle.ClosePrice;
 		_stopPrice = StopLoss > 0 ? _entryPrice - StopLoss * _tick : 0m;
 		_takePrice = TakeProfit > 0 ? _entryPrice + TakeProfit * _tick : 0m;
+		_barsSinceTrade = 0;
 	}
 
 	private void EnterShort(ICandleMessage candle)
@@ -262,5 +307,6 @@ public class RoNzRapidFireStrategy : Strategy
 		_entryPrice = candle.ClosePrice;
 		_stopPrice = StopLoss > 0 ? _entryPrice + StopLoss * _tick : 0m;
 		_takePrice = TakeProfit > 0 ? _entryPrice - TakeProfit * _tick : 0m;
+		_barsSinceTrade = 0;
 	}
 }

@@ -1,23 +1,18 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+
 using Ecng.Common;
-using Ecng.Collections;
 using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
-using StockSharp.Algo;
 
 namespace StockSharp.Samples.Strategies;
 
-
 /// <summary>
-/// Strategy based on linear regression slope and trigger line.
-/// A long position opens when the trigger crosses above the slope.
-/// A short position opens when the trigger crosses below the slope.
-/// Positions close when an opposite relation appears.
+/// Strategy based on a smoothed slope line and trigger line.
 /// </summary>
 public class LinearRegressionSlopeTriggerStrategy : Strategy
 {
@@ -27,15 +22,19 @@ public class LinearRegressionSlopeTriggerStrategy : Strategy
 	private readonly StrategyParam<bool> _enableShort;
 	private readonly StrategyParam<decimal> _takeProfitPercent;
 	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private LinearRegression _slopeIndicator;
-	private readonly List<decimal> _slopeHistory = new();
+	private readonly ExponentialMovingAverage _trendLine = new();
+	private readonly SimpleMovingAverage _triggerLine = new();
+	private decimal _previousTrendValue;
 	private decimal _previousSlope;
 	private decimal _previousTrigger;
+	private bool _isInitialized;
+	private int _barsSinceTrade;
 
 	/// <summary>
-	/// Period for calculating linear regression slope.
+	/// Period for calculating the smoothed trend line.
 	/// </summary>
 	public int SlopeLength
 	{
@@ -44,7 +43,7 @@ public class LinearRegressionSlopeTriggerStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Number of bars used for trigger calculation.
+	/// Number of bars used for trigger smoothing.
 	/// </summary>
 	public int TriggerShift
 	{
@@ -70,6 +69,7 @@ public class LinearRegressionSlopeTriggerStrategy : Strategy
 		set => _enableShort.Value = value;
 	}
 
+	/// <summary>
 	/// Take-profit percentage from entry price.
 	/// </summary>
 	public decimal TakeProfitPercent
@@ -88,6 +88,15 @@ public class LinearRegressionSlopeTriggerStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Bars to wait after a completed trade.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Type of candles used by the strategy.
 	/// </summary>
 	public DataType CandleType
@@ -102,38 +111,38 @@ public class LinearRegressionSlopeTriggerStrategy : Strategy
 	public LinearRegressionSlopeTriggerStrategy()
 	{
 		_slopeLength = Param(nameof(SlopeLength), 12)
-		.SetGreaterThanZero()
-		.SetDisplay("Slope Length", "Period for linear regression slope", "Indicator")
-		
-		.SetOptimize(5, 30, 1);
+			.SetGreaterThanZero()
+			.SetDisplay("Slope Length", "Period for the smoothed trend line", "Indicator")
+			.SetOptimize(5, 30, 1);
 
-		_triggerShift = Param(nameof(TriggerShift), 1)
-		.SetGreaterThanZero()
-		.SetDisplay("Trigger Shift", "Bars to shift for trigger line", "Indicator")
-		
-		.SetOptimize(1, 5, 1);
+		_triggerShift = Param(nameof(TriggerShift), 2)
+			.SetGreaterThanZero()
+			.SetDisplay("Trigger Shift", "Bars used for trigger smoothing", "Indicator")
+			.SetOptimize(1, 5, 1);
 
 		_enableLong = Param(nameof(EnableLong), true)
-		.SetDisplay("Enable Long", "Allow long trades", "Trading");
+			.SetDisplay("Enable Long", "Allow long trades", "Trading");
 
 		_enableShort = Param(nameof(EnableShort), true)
-		.SetDisplay("Enable Short", "Allow short trades", "Trading");
+			.SetDisplay("Enable Short", "Allow short trades", "Trading");
 
-		_takeProfitPercent = Param(nameof(TakeProfitPercent), 4m)
-		.SetGreaterThanZero()
-		.SetDisplay("Take Profit %", "Take-profit percentage", "Risk Management")
-		
-		.SetOptimize(2m, 10m, 1m);
+		_takeProfitPercent = Param(nameof(TakeProfitPercent), 5m)
+			.SetGreaterThanZero()
+			.SetDisplay("Take Profit %", "Take-profit percentage", "Risk Management")
+			.SetOptimize(2m, 10m, 1m);
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
-		.SetGreaterThanZero()
-		.SetDisplay("Stop Loss %", "Stop-loss percentage", "Risk Management")
-		
-		.SetOptimize(1m, 5m, 1m);
+			.SetGreaterThanZero()
+			.SetDisplay("Stop Loss %", "Stop-loss percentage", "Risk Management")
+			.SetOptimize(1m, 5m, 1m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-		.SetDisplay("Candle Type", "Timeframe for candles", "General");
+		_cooldownBars = Param(nameof(CooldownBars), 1)
+			.SetDisplay("Cooldown Bars", "Bars to wait after a completed trade", "Risk Management");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+			.SetDisplay("Candle Type", "Timeframe for candles", "General");
 	}
+
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
@@ -144,9 +153,14 @@ public class LinearRegressionSlopeTriggerStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_slopeHistory.Clear();
+
+		_trendLine.Reset();
+		_triggerLine.Reset();
+		_previousTrendValue = 0m;
 		_previousSlope = 0m;
 		_previousTrigger = 0m;
+		_isInitialized = false;
+		_barsSinceTrade = CooldownBars;
 	}
 
 	/// <inheritdoc />
@@ -154,68 +168,91 @@ public class LinearRegressionSlopeTriggerStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_slopeIndicator = new LinearRegression { Length = SlopeLength };
+		_trendLine.Length = SlopeLength;
+		_triggerLine.Length = TriggerShift;
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-		.Bind(ProcessCandle)
-		.Start();
+		subscription.Bind(ProcessCandle).Start();
 
-		StartProtection(new Unit(TakeProfitPercent, UnitTypes.Percent), new Unit(StopLossPercent, UnitTypes.Percent));
+		StartProtection(
+			new Unit(TakeProfitPercent, UnitTypes.Percent),
+			new Unit(StopLossPercent, UnitTypes.Percent));
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _slopeIndicator);
 			DrawOwnTrades(area);
 		}
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
 	{
-		// Only finished candles are processed
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var input = new DecimalIndicatorValue(_slopeIndicator, candle.ClosePrice, candle.ServerTime) { IsFinal = true };
-		var typed = (LinearRegressionValue)_slopeIndicator.Process(input);
-		if (typed.LinearReg is not decimal slope)
+		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// Store slope history for trigger calculation
-		_slopeHistory.Add(slope);
+		var trendValue = _trendLine.Process(new DecimalIndicatorValue(_trendLine, candle.ClosePrice, candle.ServerTime)).ToDecimal();
 
-		if (_slopeHistory.Count <= TriggerShift)
+		if (!_trendLine.IsFormed)
+			return;
+
+		if (!_isInitialized)
 		{
+			_previousTrendValue = trendValue;
+			_isInitialized = true;
+			return;
+		}
+
+		var slope = trendValue - _previousTrendValue;
+		var trigger = _triggerLine.Process(new DecimalIndicatorValue(_triggerLine, slope, candle.ServerTime)).ToDecimal();
+
+		if (!_triggerLine.IsFormed)
+		{
+			_previousTrendValue = trendValue;
 			_previousSlope = slope;
 			_previousTrigger = slope;
 			return;
 		}
 
-		var delayedSlope = _slopeHistory[_slopeHistory.Count - 1 - TriggerShift];
-		var trigger = 2m * slope - delayedSlope;
+		if (_barsSinceTrade < CooldownBars)
+			_barsSinceTrade++;
 
-		if (_slopeHistory.Count > TriggerShift + 1)
-			_slopeHistory.RemoveAt(0);
-
-		var buySignal = _previousTrigger <= _previousSlope && trigger > slope;
-		var sellSignal = _previousTrigger >= _previousSlope && trigger < slope;
-		var closeLong = slope > trigger;
-		var closeShort = trigger > slope;
+		var buySignal = _previousTrigger <= _previousSlope && trigger > slope && slope > 0m;
+		var sellSignal = _previousTrigger >= _previousSlope && trigger < slope && slope < 0m;
+		var closeLong = slope >= 0m && trigger < slope;
+		var closeShort = slope <= 0m && trigger > slope;
 
 		if (closeLong && Position > 0)
+		{
 			SellMarket(Position);
+			_barsSinceTrade = 0;
+		}
 
 		if (closeShort && Position < 0)
+		{
 			BuyMarket(-Position);
+			_barsSinceTrade = 0;
+		}
 
-		if (buySignal && Position <= 0 && EnableLong)
-			BuyMarket(Volume + Math.Abs(Position));
+		if (_barsSinceTrade >= CooldownBars)
+		{
+			if (buySignal && Position <= 0 && EnableLong)
+			{
+				BuyMarket(Volume + Math.Abs(Position));
+				_barsSinceTrade = 0;
+			}
 
-		if (sellSignal && Position >= 0 && EnableShort)
-			SellMarket(Volume + Math.Abs(Position));
+			if (sellSignal && Position >= 0 && EnableShort)
+			{
+				SellMarket(Volume + Math.Abs(Position));
+				_barsSinceTrade = 0;
+			}
+		}
 
+		_previousTrendValue = trendValue;
 		_previousSlope = slope;
 		_previousTrigger = trigger;
 	}

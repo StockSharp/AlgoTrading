@@ -24,6 +24,7 @@ public class GeniePivotStrategy : Strategy
 	private readonly StrategyParam<decimal> _decreaseFactor;
 	private readonly StrategyParam<decimal> _baseVolume;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _cooldownBars;
 
 	private readonly decimal[] _lows = new decimal[8];
 	private readonly decimal[] _highs = new decimal[8];
@@ -33,6 +34,7 @@ public class GeniePivotStrategy : Strategy
 	private decimal _stopPrice;
 	private decimal _targetPrice;
 	private int _lossCount;
+	private int _cooldownRemaining;
 
 	/// <summary>
 	/// Take profit distance in price steps.
@@ -89,6 +91,15 @@ public class GeniePivotStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Number of completed candles to wait after closing a position.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <summary>
 	/// Initializes a new instance of <see cref="GeniePivotStrategy"/>.
 	/// </summary>
 	public GeniePivotStrategy()
@@ -105,8 +116,11 @@ public class GeniePivotStrategy : Strategy
 
 		_baseVolume = Param(nameof(BaseVolume), 0.1m).SetDisplay("Base Volume", "Fallback volume", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 						  .SetDisplay("Candle Type", "Type of candles", "General");
+
+		_cooldownBars = Param(nameof(CooldownBars), 4)
+			.SetDisplay("Cooldown Bars", "Completed candles to wait after closing a position", "Risk");
 	}
 
 	/// <inheritdoc />
@@ -125,6 +139,7 @@ public class GeniePivotStrategy : Strategy
 		_stopPrice = default;
 		_targetPrice = default;
 		_lossCount = 0;
+		_cooldownRemaining = 0;
 
 		Array.Clear(_lows);
 		Array.Clear(_highs);
@@ -164,6 +179,9 @@ public class GeniePivotStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
+
 		var step = Security.PriceStep ?? 1m;
 		var close = candle.ClosePrice;
 		var open = candle.OpenPrice;
@@ -187,13 +205,16 @@ public class GeniePivotStrategy : Strategy
 
 		if (Position == 0)
 		{
+			if (_cooldownRemaining > 0)
+				return;
+
 			// Buy when 3 consecutive declining lows followed by a higher low (reversal)
 			var buyCond = _lows[4] > _lows[3] && _lows[3] > _lows[2] && _lows[2] > _lows[1] &&
-						  _lows[1] < _lows[0] && close > _highs[1];
+						  _lows[1] < _lows[0] && close > _highs[1] && close > open;
 
 			// Sell when 3 consecutive rising highs followed by a lower high (reversal)
 			var sellCond = _highs[4] < _highs[3] && _highs[3] < _highs[2] && _highs[2] < _highs[1] &&
-						   _highs[1] > _highs[0] && close < _lows[1];
+						   _highs[1] > _highs[0] && close < _lows[1] && close < open;
 
 			if (buyCond)
 			{
@@ -216,6 +237,7 @@ public class GeniePivotStrategy : Strategy
 			{
 				SellMarket();
 				_lossCount = 0;
+				_cooldownRemaining = CooldownBars;
 			}
 			else
 			{
@@ -230,6 +252,7 @@ public class GeniePivotStrategy : Strategy
 				{
 					SellMarket();
 					_lossCount++;
+					_cooldownRemaining = CooldownBars;
 				}
 			}
 		}
@@ -239,6 +262,7 @@ public class GeniePivotStrategy : Strategy
 			{
 				BuyMarket();
 				_lossCount = 0;
+				_cooldownRemaining = CooldownBars;
 			}
 			else
 			{
@@ -253,6 +277,7 @@ public class GeniePivotStrategy : Strategy
 				{
 					BuyMarket();
 					_lossCount++;
+					_cooldownRemaining = CooldownBars;
 				}
 			}
 		}

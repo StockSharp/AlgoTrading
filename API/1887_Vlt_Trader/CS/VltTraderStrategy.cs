@@ -21,6 +21,7 @@ public class VltTraderStrategy : Strategy
 	private readonly StrategyParam<decimal> _stopLoss;
 	private readonly StrategyParam<decimal> _takeProfit;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _signalLifeBars;
 
 	private Lowest _lowest = null!;
 	private decimal _prevRange;
@@ -28,6 +29,7 @@ public class VltTraderStrategy : Strategy
 	private decimal _signalHigh;
 	private decimal _signalLow;
 	private bool _pendingBreakout;
+	private int _remainingSignalBars;
 
 	/// <summary>
 	/// Indicator period for lowest range.
@@ -50,11 +52,16 @@ public class VltTraderStrategy : Strategy
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	/// <summary>
+	/// Number of bars to keep a pending breakout signal alive.
+	/// </summary>
+	public int SignalLifeBars { get => _signalLifeBars.Value; set => _signalLifeBars.Value = value; }
+
+	/// <summary>
 	/// Initializes a new instance of the <see cref="VltTraderStrategy"/> class.
 	/// </summary>
 	public VltTraderStrategy()
 	{
-		_period = Param(nameof(Period), 9)
+		_period = Param(nameof(Period), 6)
 			.SetDisplay("Period", "Indicator period", "General")
 			.SetOptimize(5, 30, 5);
 
@@ -66,8 +73,11 @@ public class VltTraderStrategy : Strategy
 			.SetDisplay("Take profit", "Take profit in price steps", "Risk")
 			.SetOptimize(100m, 2000m, 100m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle type", "Candles for calculation", "General");
+
+		_signalLifeBars = Param(nameof(SignalLifeBars), 3)
+			.SetDisplay("Signal Life Bars", "Number of bars to keep pending breakout signal", "General");
 	}
 
 	/// <inheritdoc />
@@ -82,7 +92,10 @@ public class VltTraderStrategy : Strategy
 		base.OnReseted();
 		_prevRange = 0m;
 		_prevMinRange = decimal.MaxValue;
+		_signalHigh = 0m;
+		_signalLow = 0m;
 		_pendingBreakout = false;
+		_remainingSignalBars = 0;
 	}
 
 	/// <inheritdoc />
@@ -93,7 +106,10 @@ public class VltTraderStrategy : Strategy
 		_lowest = new Lowest { Length = Period };
 		_prevRange = 0m;
 		_prevMinRange = decimal.MaxValue;
+		_signalHigh = 0m;
+		_signalLow = 0m;
 		_pendingBreakout = false;
+		_remainingSignalBars = 0;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
@@ -127,20 +143,27 @@ public class VltTraderStrategy : Strategy
 		// Check for pending breakout entry
 		if (_pendingBreakout && Position == 0)
 		{
-			if (candle.ClosePrice > _signalHigh)
+			if (candle.HighPrice >= _signalHigh && candle.ClosePrice > _signalHigh)
 			{
 				BuyMarket();
 				_pendingBreakout = false;
+				_remainingSignalBars = 0;
 			}
-			else if (candle.ClosePrice < _signalLow)
+			else if (candle.LowPrice <= _signalLow && candle.ClosePrice < _signalLow)
 			{
 				SellMarket();
 				_pendingBreakout = false;
+				_remainingSignalBars = 0;
 			}
+			else if (--_remainingSignalBars <= 0)
+				_pendingBreakout = false;
 		}
 
 		// Detect low-volatility signal: range drops below minimum
-		var isSignal = range <= minRange && _prevRange > _prevMinRange;
+		var hasPreviousRange = _prevMinRange != decimal.MaxValue;
+		var isSignal = hasPreviousRange &&
+			range <= minRange * 1.08m &&
+			_prevRange > _prevMinRange * 1.05m;
 
 		_prevRange = range;
 		_prevMinRange = minRange;
@@ -150,6 +173,7 @@ public class VltTraderStrategy : Strategy
 			_signalHigh = candle.HighPrice;
 			_signalLow = candle.LowPrice;
 			_pendingBreakout = true;
+			_remainingSignalBars = SignalLifeBars;
 		}
 	}
 }

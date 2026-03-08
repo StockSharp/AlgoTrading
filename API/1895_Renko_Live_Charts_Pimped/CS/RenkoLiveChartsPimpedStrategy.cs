@@ -65,7 +65,7 @@ public class RenkoLiveChartsPimpedStrategy : Strategy
 	/// </summary>
 	public RenkoLiveChartsPimpedStrategy()
 	{
-		_boxSize = Param(nameof(BoxSize), 500m)
+		_boxSize = Param(nameof(BoxSize), 1000m)
 			.SetGreaterThanZero()
 			.SetDisplay("Box Size", "Renko brick size", "Renko");
 
@@ -83,7 +83,7 @@ public class RenkoLiveChartsPimpedStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("ATR MA Period", "Moving average length for ATR", "Renko");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 

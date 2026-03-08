@@ -32,7 +32,7 @@ public class CoensioSwingTraderV06Strategy : Strategy
 
 	public CoensioSwingTraderV06Strategy()
 	{
-		_channelPeriod = Param(nameof(ChannelPeriod), 10)
+		_channelPeriod = Param(nameof(ChannelPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Channel Period", "Period for Donchian Channel", "Indicators");
 
@@ -42,7 +42,7 @@ public class CoensioSwingTraderV06Strategy : Strategy
 		_takeProfitPercent = Param(nameof(TakeProfitPercent), 4m)
 			.SetDisplay("Take Profit %", "Take profit percent", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 

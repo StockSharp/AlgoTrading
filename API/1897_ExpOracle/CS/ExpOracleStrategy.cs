@@ -41,6 +41,7 @@ public class ExpOracleStrategy : Strategy
 	private readonly StrategyParam<int> _oraclePeriod;
 	private readonly StrategyParam<int> _smooth;
 	private readonly StrategyParam<AlgorithmModes> _mode;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<bool> _allowBuy;
 	private readonly StrategyParam<bool> _allowSell;
@@ -55,6 +56,7 @@ public class ExpOracleStrategy : Strategy
 	private decimal _prevSignal;
 	private decimal _prevPrevSignal;
 	private decimal _prevOracle;
+	private int _barsSinceTrade;
 
 	/// <summary>
 	/// Oracle calculation period.
@@ -81,6 +83,15 @@ public class ExpOracleStrategy : Strategy
 	{
 		get => _mode.Value;
 		set => _mode.Value = value;
+	}
+
+	/// <summary>
+	/// Minimum number of bars between entries.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	/// <summary>
@@ -123,10 +134,14 @@ public class ExpOracleStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Smooth", "Smoothing length", "Parameters");
 
-		_mode = Param(nameof(Mode), AlgorithmModes.Twist)
+		_mode = Param(nameof(Mode), AlgorithmModes.Breakdown)
 			.SetDisplay("Mode", "Signal algorithm", "Parameters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_cooldownBars = Param(nameof(CooldownBars), 4)
+			.SetGreaterThanZero()
+			.SetDisplay("Cooldown Bars", "Minimum number of bars between entries", "Parameters");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type", "Parameters");
 
 		_allowBuy = Param(nameof(AllowBuy), true)
@@ -149,6 +164,7 @@ public class ExpOracleStrategy : Strategy
 		_prevSignal = 0;
 		_prevPrevSignal = 0;
 		_prevOracle = 0;
+		_barsSinceTrade = CooldownBars;
 		Array.Clear(_rsiBuf, 0, _rsiBuf.Length);
 		Array.Clear(_cciBuf, 0, _cciBuf.Length);
 	}
@@ -220,45 +236,64 @@ public class ExpOracleStrategy : Strategy
 			return;
 
 		var signal = signalResult.ToDecimal();
+		_barsSinceTrade++;
 
 		switch (Mode)
 		{
 			case AlgorithmModes.Breakdown:
-				if (AllowBuy && _prevSignal <= 0m && signal > 0m && Position <= 0)
+				if (AllowBuy && _barsSinceTrade >= CooldownBars && _prevSignal <= 0m && signal > 0m && Position <= 0)
 				{
-					if (Position < 0) BuyMarket();
+					if (Position < 0)
+						BuyMarket();
+
 					BuyMarket();
+					_barsSinceTrade = 0;
 				}
-				else if (AllowSell && _prevSignal >= 0m && signal < 0m && Position >= 0)
+				else if (AllowSell && _barsSinceTrade >= CooldownBars && _prevSignal >= 0m && signal < 0m && Position >= 0)
 				{
-					if (Position > 0) SellMarket();
+					if (Position > 0)
+						SellMarket();
+
 					SellMarket();
+					_barsSinceTrade = 0;
 				}
 				break;
 
 			case AlgorithmModes.Twist:
-				if (AllowBuy && _prevPrevSignal > _prevSignal && signal >= _prevSignal && Position <= 0)
+				if (AllowBuy && _barsSinceTrade >= CooldownBars && _prevPrevSignal > _prevSignal && signal >= _prevSignal && Position <= 0)
 				{
-					if (Position < 0) BuyMarket();
+					if (Position < 0)
+						BuyMarket();
+
 					BuyMarket();
+					_barsSinceTrade = 0;
 				}
-				else if (AllowSell && _prevPrevSignal < _prevSignal && signal <= _prevSignal && Position >= 0)
+				else if (AllowSell && _barsSinceTrade >= CooldownBars && _prevPrevSignal < _prevSignal && signal <= _prevSignal && Position >= 0)
 				{
-					if (Position > 0) SellMarket();
+					if (Position > 0)
+						SellMarket();
+
 					SellMarket();
+					_barsSinceTrade = 0;
 				}
 				break;
 
 			case AlgorithmModes.Disposition:
-				if (AllowBuy && _prevSignal < _prevOracle && signal >= oracle && Position <= 0)
+				if (AllowBuy && _barsSinceTrade >= CooldownBars && _prevSignal < _prevOracle && signal >= oracle && Position <= 0)
 				{
-					if (Position < 0) BuyMarket();
+					if (Position < 0)
+						BuyMarket();
+
 					BuyMarket();
+					_barsSinceTrade = 0;
 				}
-				else if (AllowSell && _prevSignal > _prevOracle && signal <= oracle && Position >= 0)
+				else if (AllowSell && _barsSinceTrade >= CooldownBars && _prevSignal > _prevOracle && signal <= oracle && Position >= 0)
 				{
-					if (Position > 0) SellMarket();
+					if (Position > 0)
+						SellMarket();
+
 					SellMarket();
+					_barsSinceTrade = 0;
 				}
 				break;
 		}
