@@ -1,13 +1,14 @@
-namespace StockSharp.Samples.Strategies;
-
 using System;
 using System.Collections.Generic;
 
-using StockSharp.Algo;
+using Ecng.Common;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
+
+namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Alligator + MA Trend Catcher strategy.
@@ -20,50 +21,52 @@ public class AlligatorMaTrendCatcherStrategy : Strategy
 	private readonly StrategyParam<int> _teethLength;
 	private readonly StrategyParam<int> _lipsLength;
 	private readonly StrategyParam<int> _trendlineLength;
-	private readonly StrategyParam<bool> _enableLong;
-	private readonly StrategyParam<bool> _enableShort;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _cooldownBars;
+
+	private int _cooldownRemaining;
 
 	public int JawLength { get => _jawLength.Value; set => _jawLength.Value = value; }
 	public int TeethLength { get => _teethLength.Value; set => _teethLength.Value = value; }
 	public int LipsLength { get => _lipsLength.Value; set => _lipsLength.Value = value; }
 	public int TrendlineLength { get => _trendlineLength.Value; set => _trendlineLength.Value = value; }
-	public bool EnableLong { get => _enableLong.Value; set => _enableLong.Value = value; }
-	public bool EnableShort { get => _enableShort.Value; set => _enableShort.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int CooldownBars { get => _cooldownBars.Value; set => _cooldownBars.Value = value; }
 
 	public AlligatorMaTrendCatcherStrategy()
 	{
-		_jawLength = Param(nameof(JawLength), 8)
+		_jawLength = Param(nameof(JawLength), 13)
 			.SetGreaterThanZero()
-			.SetDisplay("Jaw Length", "Length of the jaw smoothed moving average", "Alligator");
+			.SetDisplay("Jaw Length", "Length of jaw SMA", "Alligator");
 
-		_teethLength = Param(nameof(TeethLength), 5)
+		_teethLength = Param(nameof(TeethLength), 8)
 			.SetGreaterThanZero()
-			.SetDisplay("Teeth Length", "Length of the teeth smoothed moving average", "Alligator");
+			.SetDisplay("Teeth Length", "Length of teeth SMA", "Alligator");
 
-		_lipsLength = Param(nameof(LipsLength), 3)
+		_lipsLength = Param(nameof(LipsLength), 5)
 			.SetGreaterThanZero()
-			.SetDisplay("Lips Length", "Length of the lips smoothed moving average", "Alligator");
+			.SetDisplay("Lips Length", "Length of lips SMA", "Alligator");
 
-		_trendlineLength = Param(nameof(TrendlineLength), 200)
+		_trendlineLength = Param(nameof(TrendlineLength), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Length", "Length of the EMA trendline", "Trendline");
 
-		_enableLong = Param(nameof(EnableLong), true)
-			.SetDisplay("Enable Long", "Allow long trades", "Trading");
-
-		_enableShort = Param(nameof(EnableShort), true)
-			.SetDisplay("Enable Short", "Allow short trades", "Trading");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
+
+		_cooldownBars = Param(nameof(CooldownBars), 30)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "Risk");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	/// <inheritdoc />
+	protected override void OnReseted()
 	{
-		return [(Security, CandleType)];
+		base.OnReseted();
+		_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
@@ -87,8 +90,6 @@ public class AlligatorMaTrendCatcherStrategy : Strategy
 			DrawCandles(area, subscription);
 			DrawIndicator(area, trend);
 			DrawIndicator(area, jaw);
-			DrawIndicator(area, teeth);
-			DrawIndicator(area, lips);
 			DrawOwnTrades(area);
 		}
 	}
@@ -98,21 +99,31 @@ public class AlligatorMaTrendCatcherStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (Position > 0 && candle.ClosePrice < trendline && lipsMa < teethMa && teethMa < jawMa)
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		if (_cooldownRemaining > 0)
 		{
-			SellMarket();
+			_cooldownRemaining--;
+			return;
 		}
-		else if (Position < 0 && candle.ClosePrice > trendline && lipsMa > teethMa && teethMa > jawMa)
+
+		var alligatorUp = lipsMa > teethMa && teethMa > jawMa;
+		var alligatorDown = lipsMa < teethMa && teethMa < jawMa;
+
+		if (alligatorUp && candle.ClosePrice > trendline && Position <= 0)
 		{
-			BuyMarket();
+			if (Position < 0)
+				BuyMarket(Math.Abs(Position));
+			BuyMarket(Volume);
+			_cooldownRemaining = CooldownBars;
 		}
-		else if (EnableLong && Position == 0 && candle.ClosePrice > trendline && lipsMa > teethMa && teethMa > jawMa)
+		else if (alligatorDown && candle.ClosePrice < trendline && Position >= 0)
 		{
-			BuyMarket();
-		}
-		else if (EnableShort && Position == 0 && candle.ClosePrice < trendline && lipsMa < teethMa && teethMa < jawMa)
-		{
-			SellMarket();
+			if (Position > 0)
+				SellMarket(Math.Abs(Position));
+			SellMarket(Volume);
+			_cooldownRemaining = CooldownBars;
 		}
 	}
 }
