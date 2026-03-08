@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -30,8 +31,20 @@ public class BollTradeBollingerReversionStrategy : Strategy
 		_bollingerWidth = Param(nameof(BollingerWidth), 0.5m)
 			.SetDisplay("BB Width", "Bollinger Bands width", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
 	}
 
 	protected override void OnStarted2(DateTime time)

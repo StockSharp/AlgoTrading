@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -33,8 +34,23 @@ public class ThreeMaBunnyCrossStrategy : Strategy
 		_slowPeriod = Param(nameof(SlowPeriod), 20)
 			.SetDisplay("Slow WMA", "Slow weighted MA period", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFast = 0m;
+		_prevSlow = 0m;
+		_hasPrev = false;
 	}
 
 	protected override void OnStarted2(DateTime time)
