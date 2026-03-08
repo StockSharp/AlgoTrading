@@ -11,133 +11,101 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy looking for several bullish reversal candlestick patterns.
+/// Strategy looking for bullish/bearish reversal candlestick patterns with MA filter.
 /// </summary>
 public class BullishReversalStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _maPeriod;
-	private readonly StrategyParam<decimal> _trailingStop;
 
-	private ICandleMessage _prev1;
-	private ICandleMessage _prev2;
-	private ICandleMessage _prev3;
-	private decimal _stopPrice;
+	private decimal _prevOpen1, _prevClose1, _prevLow1;
+	private decimal _prevOpen2, _prevClose2, _prevLow2;
+	private decimal _prevOpen3, _prevClose3, _prevLow3;
+	private int _candleCount;
 
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 	public int MaPeriod { get => _maPeriod.Value; set => _maPeriod.Value = value; }
-	public decimal TrailingStop { get => _trailingStop.Value; set => _trailingStop.Value = value; }
 
 	public BullishReversalStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 
 		_maPeriod = Param(nameof(MaPeriod), 50)
-			.SetDisplay("MA Period", "SMA length", "Parameters")
-			.SetGreaterThanZero();
-
-		_trailingStop = Param(nameof(TrailingStop), 300m)
-			.SetDisplay("Trailing Stop", "Trailing stop distance", "Risk")
+			.SetDisplay("MA Period", "EMA length", "Parameters")
 			.SetGreaterThanZero();
 	}
 
-	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevOpen1 = 0; _prevClose1 = 0; _prevLow1 = 0;
+		_prevOpen2 = 0; _prevClose2 = 0; _prevLow2 = 0;
+		_prevOpen3 = 0; _prevClose3 = 0; _prevLow3 = 0;
+		_candleCount = 0;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		var sma = new SMA { Length = MaPeriod };
+		var ema = new ExponentialMovingAverage { Length = MaPeriod };
 
-		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(sma, ProcessCandle).Start();
+		SubscribeCandles(CandleType).Bind(ema, ProcessCandle).Start();
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal ma)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
+		if (candle.State != CandleStates.Finished) return;
 
-		if (_prev1 is null || _prev2 is null || _prev3 is null)
+		_candleCount++;
+
+		if (_candleCount < 4)
 		{
-			_prev3 = _prev2;
-			_prev2 = _prev1;
-			_prev1 = candle;
+			ShiftCandles(candle);
 			return;
 		}
 
-		var open1 = _prev1.OpenPrice;
-		var close1 = _prev1.ClosePrice;
-		var low1 = _prev1.LowPrice;
-		var open2 = _prev2.OpenPrice;
-		var close2 = _prev2.ClosePrice;
-		var low2 = _prev2.LowPrice;
-		var open3 = _prev3.OpenPrice;
-		var close3 = _prev3.ClosePrice;
-		var low3 = _prev3.LowPrice;
+		// Bullish patterns using stored values
+		var threeWhiteSoldiers = _prevOpen3 < _prevClose3 && _prevOpen2 < _prevClose2 && _prevOpen1 < _prevClose1 &&
+			_prevClose3 < _prevClose2 && _prevClose2 < _prevClose1;
 
-		// Bullish patterns
-		var abandonedBaby = open3 > close3 && open2 > close2 && low2 < low3 &&
-			open1 < close1 && low1 >= low2 && close1 > open3;
+		var threeInsideUp = _prevOpen3 > _prevClose3 &&
+			Math.Abs(_prevClose2 - _prevOpen2) <= 0.6m * Math.Abs(_prevOpen3 - _prevClose3) &&
+			_prevClose2 > _prevOpen2 && _prevClose1 > _prevOpen1 && _prevClose1 > _prevOpen3;
 
-		var morningDojiStar = open3 > close3 && open2 <= close2 &&
-			open1 < close3 && close1 < open3;
+		// Bearish patterns
+		var threeBlackCrows = _prevOpen3 > _prevClose3 && _prevOpen2 > _prevClose2 && _prevOpen1 > _prevClose1 &&
+			_prevClose3 > _prevClose2 && _prevClose2 > _prevClose1;
 
-		var threeInsideUp = open3 > close3 &&
-			Math.Abs(close2 - open2) <= 0.6m * Math.Abs(open3 - close3) &&
-			close2 > open2 && close1 > open1 && close1 > open3;
+		var threeInsideDown = _prevOpen3 < _prevClose3 &&
+			Math.Abs(_prevClose2 - _prevOpen2) <= 0.6m * Math.Abs(_prevOpen3 - _prevClose3) &&
+			_prevClose2 < _prevOpen2 && _prevClose1 < _prevOpen1 && _prevClose1 < _prevOpen3;
 
-		var threeOutsideUp = open3 > close3 &&
-			1.1m * Math.Abs(open3 - close3) < Math.Abs(open2 - close2) &&
-			open2 < close2 && open1 < close1;
-
-		var threeWhiteSoldiers = open3 < close3 && open2 < close2 && open1 < close1 &&
-			close3 < close2 && close2 < close1;
-
-		// Bearish counterparts for short entries
-		var threeBlackCrows = open3 > close3 && open2 > close2 && open1 > close1 &&
-			close3 > close2 && close2 > close1;
-
-		var threeInsideDown = open3 < close3 &&
-			Math.Abs(close2 - open2) <= 0.6m * Math.Abs(open3 - close3) &&
-			close2 < open2 && close1 < open1 && close1 < open3;
-
-		var bullSignal = abandonedBaby || morningDojiStar || threeInsideUp || threeOutsideUp || threeWhiteSoldiers;
+		var bullSignal = threeWhiteSoldiers || threeInsideUp;
 		var bearSignal = threeBlackCrows || threeInsideDown;
 
-		if (bullSignal && candle.ClosePrice < ma && Position <= 0)
+		if (bullSignal && candle.ClosePrice > ma && Position <= 0)
 		{
+			if (Position < 0) BuyMarket();
 			BuyMarket();
-			_stopPrice = candle.ClosePrice - TrailingStop;
 		}
-		else if (bearSignal && candle.ClosePrice > ma && Position >= 0)
+		else if (bearSignal && candle.ClosePrice < ma && Position >= 0)
 		{
+			if (Position > 0) SellMarket();
 			SellMarket();
-			_stopPrice = candle.ClosePrice + TrailingStop;
 		}
 
-		// Trailing stop management
-		if (Position > 0)
-		{
-			var newStop = candle.ClosePrice - TrailingStop;
-			if (newStop > _stopPrice)
-				_stopPrice = newStop;
+		ShiftCandles(candle);
+	}
 
-			if (candle.ClosePrice <= _stopPrice)
-				SellMarket();
-		}
-		else if (Position < 0)
-		{
-			var newStop = candle.ClosePrice + TrailingStop;
-			if (newStop < _stopPrice)
-				_stopPrice = newStop;
-
-			if (candle.ClosePrice >= _stopPrice)
-				BuyMarket();
-		}
-
-		_prev3 = _prev2;
-		_prev2 = _prev1;
-		_prev1 = candle;
+	private void ShiftCandles(ICandleMessage candle)
+	{
+		_prevOpen3 = _prevOpen2; _prevClose3 = _prevClose2; _prevLow3 = _prevLow2;
+		_prevOpen2 = _prevOpen1; _prevClose2 = _prevClose1; _prevLow2 = _prevLow1;
+		_prevOpen1 = candle.OpenPrice; _prevClose1 = candle.ClosePrice; _prevLow1 = candle.LowPrice;
 	}
 }
