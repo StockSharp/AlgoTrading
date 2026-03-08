@@ -95,8 +95,6 @@ public class ColorBullsGapStrategy : Strategy
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
 
 		var t = candle.OpenTime;
 		var smaClose = _smaClose.Process(candle.ClosePrice, t, true).GetValue<decimal>();
@@ -105,6 +103,9 @@ public class ColorBullsGapStrategy : Strategy
 		var bullsO = candle.HighPrice - smaOpen;
 		var xbullsC = _smaBullsC.Process(bullsC, t, true).GetValue<decimal>();
 		var xbullsO = _smaBullsO.Process(bullsO, t, true).GetValue<decimal>();
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
 
 		if (_isFirst)
 		{
