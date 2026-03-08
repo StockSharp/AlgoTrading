@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -34,8 +35,24 @@ public class Rpm5BullsBearsEyesStrategy : Strategy
 		_powerPeriod = Param(nameof(PowerPeriod), 13)
 			.SetDisplay("Power Period", "Bulls/Bears power period", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_prevBull = 0m;
+		_prevBear = 0m;
+		_hasPrev = false;
 	}
 
 	/// <inheritdoc />
