@@ -20,7 +20,8 @@ public class PsarTraderStrategy : Strategy
 	private readonly StrategyParam<decimal> _sarMaxStep;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private bool? _prevPriceAboveSar;
+	private bool _prevPriceAboveSar;
+	private bool _hasPrev;
 
 	public decimal SarStep { get => _sarStep.Value; set => _sarStep.Value = value; }
 	public decimal SarMaxStep { get => _sarMaxStep.Value; set => _sarMaxStep.Value = value; }
@@ -36,11 +37,20 @@ public class PsarTraderStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("SAR Max Step", "Maximum acceleration factor", "Parabolic SAR");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
-	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevPriceAboveSar = false;
+		_hasPrev = false;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
@@ -51,23 +61,34 @@ public class PsarTraderStrategy : Strategy
 			AccelerationMax = SarMaxStep
 		};
 
-		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(parabolicSar, ProcessCandle).Start();
+		SubscribeCandles(CandleType).Bind(parabolicSar, ProcessCandle).Start();
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal sarValue)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
+		if (candle.State != CandleStates.Finished) return;
 
 		var isPriceAboveSar = candle.ClosePrice > sarValue;
 
-		if (_prevPriceAboveSar.HasValue && _prevPriceAboveSar.Value != isPriceAboveSar)
+		if (!_hasPrev)
+		{
+			_prevPriceAboveSar = isPriceAboveSar;
+			_hasPrev = true;
+			return;
+		}
+
+		if (_prevPriceAboveSar != isPriceAboveSar)
 		{
 			if (isPriceAboveSar && Position <= 0)
+			{
+				if (Position < 0) BuyMarket();
 				BuyMarket();
+			}
 			else if (!isPriceAboveSar && Position >= 0)
+			{
+				if (Position > 0) SellMarket();
 				SellMarket();
+			}
 		}
 
 		_prevPriceAboveSar = isPriceAboveSar;

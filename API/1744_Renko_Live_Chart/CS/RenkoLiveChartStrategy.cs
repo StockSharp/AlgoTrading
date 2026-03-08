@@ -3,7 +3,6 @@ using System.Collections.Generic;
 
 using Ecng.Common;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -25,27 +24,33 @@ public class RenkoLiveChartStrategy : Strategy
 
 	public RenkoLiveChartStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Working candle timeframe", "General");
 
-		_brickSize = Param(nameof(BrickSize), 100m)
+		_brickSize = Param(nameof(BrickSize), 500m)
 			.SetGreaterThanZero()
 			.SetDisplay("Brick Size", "Renko brick size", "General");
 	}
 
-	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_renkoPrice = 0;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
+		SubscribeCandles(CandleType).Bind(ProcessCandle).Start();
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
+		if (candle.State != CandleStates.Finished) return;
 
 		var close = candle.ClosePrice;
 		var size = BrickSize;
@@ -64,8 +69,14 @@ public class RenkoLiveChartStrategy : Strategy
 		_renkoPrice += direction * size;
 
 		if (direction > 0 && Position <= 0)
+		{
+			if (Position < 0) BuyMarket();
 			BuyMarket();
+		}
 		else if (direction < 0 && Position >= 0)
+		{
+			if (Position > 0) SellMarket();
 			SellMarket();
+		}
 	}
 }

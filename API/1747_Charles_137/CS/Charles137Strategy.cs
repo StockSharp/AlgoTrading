@@ -3,7 +3,6 @@ using System.Collections.Generic;
 
 using Ecng.Common;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -11,8 +10,7 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Charles 1.3.7 breakout strategy using symmetric price levels and trailing exits.
-/// Places virtual buy/sell stop levels around the close and enters on breakout.
+/// Charles 1.3.7 breakout strategy using symmetric price levels.
 /// </summary>
 public class Charles137Strategy : Strategy
 {
@@ -45,25 +43,34 @@ public class Charles137Strategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss", "Stop loss distance", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Working timeframe", "General");
 	}
 
-	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_entryPrice = 0;
+		_buyLevel = 0;
+		_sellLevel = 0;
+		_levelsSet = false;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		var subscription = SubscribeCandles(CandleType);
-		subscription
+		SubscribeCandles(CandleType)
 			.Bind(ProcessCandle)
 			.Start();
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
+		if (candle.State != CandleStates.Finished) return;
 
 		var price = candle.ClosePrice;
 
@@ -91,7 +98,6 @@ public class Charles137Strategy : Strategy
 			}
 			else
 			{
-				// Update levels each bar
 				_buyLevel = price + Anchor;
 				_sellLevel = price - Anchor;
 			}

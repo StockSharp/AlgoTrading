@@ -11,8 +11,7 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that uses SMA crossover for entries and automatically
-/// attaches stop-loss and take-profit protection at fixed distances.
+/// Strategy that uses EMA crossover for entries with stop-loss and take-profit.
 /// </summary>
 public class DragSlTpStrategy : Strategy
 {
@@ -45,34 +44,43 @@ public class DragSlTpStrategy : Strategy
 
 		_fastPeriod = Param(nameof(FastPeriod), 10)
 			.SetGreaterThanZero()
-			.SetDisplay("Fast Period", "Fast SMA period", "Indicators");
+			.SetDisplay("Fast Period", "Fast EMA period", "Indicators");
 
 		_slowPeriod = Param(nameof(SlowPeriod), 30)
 			.SetGreaterThanZero()
-			.SetDisplay("Slow Period", "Slow SMA period", "Indicators");
+			.SetDisplay("Slow Period", "Slow EMA period", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
-	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFast = 0;
+		_prevSlow = 0;
+		_isInitialized = false;
+		_entryPrice = 0;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		var fastSma = new SMA { Length = FastPeriod };
-		var slowSma = new SMA { Length = SlowPeriod };
+		var fastEma = new ExponentialMovingAverage { Length = FastPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowPeriod };
 
-		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(fastSma, slowSma, ProcessCandle)
+		SubscribeCandles(CandleType)
+			.Bind(fastEma, slowEma, ProcessCandle)
 			.Start();
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
+		if (candle.State != CandleStates.Finished) return;
 
 		if (!_isInitialized)
 		{

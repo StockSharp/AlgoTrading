@@ -1,9 +1,8 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -11,16 +10,13 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
 /// <summary>
-/// ATR based channel breakout scalping strategy.
-/// Builds dynamic upper and lower bands around candle midpoints and enters when the close crosses the bands.
+/// StdDev based channel breakout scalping strategy.
 /// </summary>
 public class ChannelScalperStrategy : Strategy
 {
-	private readonly StrategyParam<int> _atrPeriod;
-	private readonly StrategyParam<decimal> _atrMultiplier;
+	private readonly StrategyParam<int> _stdevPeriod;
+	private readonly StrategyParam<decimal> _multiplier;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _up;
@@ -28,57 +24,48 @@ public class ChannelScalperStrategy : Strategy
 	private int _direction;
 	private bool _isInitialized;
 
-	/// <summary>
-	/// ATR period length.
-	/// </summary>
-	public int AtrPeriod { get => _atrPeriod.Value; set => _atrPeriod.Value = value; }
-
-	/// <summary>
-	/// Multiplier applied to ATR to form channel width.
-	/// </summary>
-	public decimal AtrMultiplier { get => _atrMultiplier.Value; set => _atrMultiplier.Value = value; }
-
-	/// <summary>
-	/// Type of candles to process.
-	/// </summary>
+	public int StdevPeriod { get => _stdevPeriod.Value; set => _stdevPeriod.Value = value; }
+	public decimal Multiplier { get => _multiplier.Value; set => _multiplier.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Initializes a new instance of the <see cref="ChannelScalperStrategy"/> class.
-	/// </summary>
 	public ChannelScalperStrategy()
 	{
-		_atrPeriod = Param(nameof(AtrPeriod), 11).SetDisplay("ATR Period", "ATR Period", "General");
-		_atrMultiplier = Param(nameof(AtrMultiplier), 1.28m).SetDisplay("ATR Multiplier", "ATR Multiplier", "General");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame()).SetDisplay("Candle Type", "Candle Type", "General");
+		_stdevPeriod = Param(nameof(StdevPeriod), 14)
+			.SetGreaterThanZero()
+			.SetDisplay("StdDev Period", "Standard deviation period", "General");
+		_multiplier = Param(nameof(Multiplier), 1.5m)
+			.SetDisplay("Multiplier", "Channel width multiplier", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+			.SetDisplay("Candle Type", "Candle Type", "General");
 	}
 
-	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_up = 0;
+		_down = 0;
+		_direction = 0;
+		_isInitialized = false;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
-
-		var atr = new AverageTrueRange
-		{
-			Length = AtrPeriod
-		};
-
-		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(atr, ProcessCandle)
-			.Start();
+		var stdev = new StandardDeviation { Length = StdevPeriod };
+		SubscribeCandles(CandleType).Bind(stdev, ProcessCandle).Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal atr)
+	private void ProcessCandle(ICandleMessage candle, decimal stdevValue)
 	{
-		if (candle.State != CandleStates.Finished || atr <= 0)
-			return;
+		if (candle.State != CandleStates.Finished || stdevValue <= 0) return;
 
 		var middle = (candle.HighPrice + candle.LowPrice) / 2;
-		var currentUp = middle + AtrMultiplier * atr;
-		var currentDown = middle - AtrMultiplier * atr;
+		var currentUp = middle + Multiplier * stdevValue;
+		var currentDown = middle - Multiplier * stdevValue;
 
 		if (!_isInitialized)
 		{
@@ -88,21 +75,19 @@ public class ChannelScalperStrategy : Strategy
 			return;
 		}
 
-		// Check for breakout using previous channel values.
 		if (_direction <= 0 && candle.ClosePrice > _up)
 		{
-			if (Position <= 0)
-				BuyMarket();
+			if (Position < 0) BuyMarket();
+			BuyMarket();
 			_direction = 1;
 		}
 		else if (_direction >= 0 && candle.ClosePrice < _down)
 		{
-			if (Position >= 0)
-				SellMarket();
+			if (Position > 0) SellMarket();
+			SellMarket();
 			_direction = -1;
 		}
 
-		// Update trailing channel according to current direction.
 		if (_direction > 0)
 			currentDown = Math.Max(currentDown, _down);
 		else if (_direction < 0)
