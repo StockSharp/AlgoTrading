@@ -171,6 +171,12 @@ public class TunnelMethodEmaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
@@ -179,6 +185,11 @@ public class TunnelMethodEmaStrategy : Strategy
 		_previousFast = 0m;
 		_previousMedium = 0m;
 		_previousSlow = 0m;
+		_pointValue = 0m;
+		_stopLossDistance = 0m;
+		_takeProfitDistance = 0m;
+		_trailingStopDistance = 0m;
+		_trailingTriggerDistance = 0m;
 
 		_entryPrice = null;
 		_highestSinceEntry = 0m;
@@ -213,10 +224,6 @@ public class TunnelMethodEmaStrategy : Strategy
 	{
 		if (candle.State != CandleStates.Finished)
 			// Ignore unfinished candles to work on closed data.
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			// Do nothing when the strategy is not ready or trading is disabled.
 			return;
 
 		if (!_hasPreviousValues)
@@ -403,7 +410,9 @@ public class TunnelMethodEmaStrategy : Strategy
 
 	private decimal ShrinkPrice(decimal price)
 	{
-		return Security?.ShrinkPrice(price) ?? price;
+		if (_pointValue > 0m)
+			return Math.Round(price / _pointValue) * _pointValue;
+		return price;
 	}
 }
 
