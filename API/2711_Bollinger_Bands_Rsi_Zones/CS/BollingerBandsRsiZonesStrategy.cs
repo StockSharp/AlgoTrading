@@ -111,15 +111,15 @@ public class BollingerBandsRsiZonesStrategy : Strategy
 	private RelativeStrengthIndex _rsi = null!;
 	private StochasticOscillator _stochastic = null!;
 
-	private readonly Queue<decimal> _teethMiddleHistory = new();
-	private readonly Queue<decimal> _teethUpperHistory = new();
-	private readonly Queue<decimal> _teethLowerHistory = new();
-	private readonly Queue<decimal> _jawsUpperHistory = new();
-	private readonly Queue<decimal> _jawsLowerHistory = new();
-	private readonly Queue<decimal> _lipsUpperHistory = new();
-	private readonly Queue<decimal> _lipsLowerHistory = new();
-	private readonly Queue<decimal> _rsiHistory = new();
-	private readonly Queue<decimal> _stochasticHistory = new();
+	private readonly List<decimal> _teethMiddleHistory = new();
+	private readonly List<decimal> _teethUpperHistory = new();
+	private readonly List<decimal> _teethLowerHistory = new();
+	private readonly List<decimal> _jawsUpperHistory = new();
+	private readonly List<decimal> _jawsLowerHistory = new();
+	private readonly List<decimal> _lipsUpperHistory = new();
+	private readonly List<decimal> _lipsLowerHistory = new();
+	private readonly List<decimal> _rsiHistory = new();
+	private readonly List<decimal> _stochasticHistory = new();
 
 	private bool _longLocked;
 	private bool _shortLocked;
@@ -288,7 +288,7 @@ public class BollingerBandsRsiZonesStrategy : Strategy
 		_closureMode = Param(nameof(ClosureMode), BollingerBandsRsiClosureModes.BetweenBlueAndRed)
 			.SetDisplay("Closure Mode", "Bollinger zone used for exits", "Trading");
 
-		_bandsPeriod = Param(nameof(BandsPeriod), 140)
+		_bandsPeriod = Param(nameof(BandsPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Bands Period", "Length of all Bollinger bands", "Indicators")
 			;
@@ -345,7 +345,7 @@ public class BollingerBandsRsiZonesStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Take Profit", "Take profit distance in pips", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for analysis", "General");
 	}
 
@@ -523,7 +523,7 @@ public class BollingerBandsRsiZonesStrategy : Strategy
 			if (OnlyOnePosition || !_shortLocked)
 			{
 				// Sell when price reaches the selected upper band zone and filters confirm overbought state.
-				SellMarket(Volume);
+				SellMarket();
 				_shortLocked = !OnlyOnePosition;
 			}
 		}
@@ -533,7 +533,7 @@ public class BollingerBandsRsiZonesStrategy : Strategy
 			if (OnlyOnePosition || !_longLocked)
 			{
 				// Buy when price reaches the selected lower band zone and filters confirm oversold state.
-				BuyMarket(Volume);
+				BuyMarket();
 				_longLocked = !OnlyOnePosition;
 			}
 		}
@@ -543,43 +543,43 @@ public class BollingerBandsRsiZonesStrategy : Strategy
 		{
 			case BollingerBandsRsiClosureModes.MiddleLine:
 				if (Position > 0m && candle.HighPrice >= baseTeeth)
-					SellMarket(Position);
+					SellMarket();
 
 				if (Position < 0m && candle.LowPrice <= baseTeeth)
-					BuyMarket(Math.Abs(Position));
+					BuyMarket();
 				break;
 
 			case BollingerBandsRsiClosureModes.BetweenYellowAndBlue:
 			case BollingerBandsRsiClosureModes.BetweenBlueAndRed:
 				if (Position > 0m && candle.HighPrice >= exitLong)
-					SellMarket(Position);
+					SellMarket();
 
 				if (Position < 0m && candle.LowPrice <= exitShort)
-					BuyMarket(Math.Abs(Position));
+					BuyMarket();
 				break;
 
 			case BollingerBandsRsiClosureModes.YellowLine:
 				if (Position > 0m && candle.HighPrice >= upperTeeth)
-					SellMarket(Position);
+					SellMarket();
 
 				if (Position < 0m && candle.LowPrice <= lowerTeeth)
-					BuyMarket(Math.Abs(Position));
+					BuyMarket();
 				break;
 
 			case BollingerBandsRsiClosureModes.BlueLine:
 				if (Position > 0m && candle.HighPrice >= upperJaws)
-					SellMarket(Position);
+					SellMarket();
 
 				if (Position < 0m && candle.LowPrice <= lowerJaws)
-					BuyMarket(Math.Abs(Position));
+					BuyMarket();
 				break;
 
 			case BollingerBandsRsiClosureModes.RedLine:
 				if (Position > 0m && candle.HighPrice >= upperLips)
-					SellMarket(Position);
+					SellMarket();
 
 				if (Position < 0m && candle.LowPrice <= lowerLips)
-					BuyMarket(Math.Abs(Position));
+					BuyMarket();
 				break;
 		}
 
@@ -625,7 +625,7 @@ public class BollingerBandsRsiZonesStrategy : Strategy
 		return (defaultLong, defaultShort);
 	}
 
-	private bool TryGetShifted(Queue<decimal> history, out decimal value)
+	private bool TryGetShifted(List<decimal> history, out decimal value)
 	{
 		if (BarShift <= 0)
 		{
@@ -639,7 +639,7 @@ public class BollingerBandsRsiZonesStrategy : Strategy
 			return false;
 		}
 
-		value = history.Peek();
+		value = history[0];
 		return true;
 	}
 
@@ -672,11 +672,11 @@ public class BollingerBandsRsiZonesStrategy : Strategy
 			Enqueue(_stochasticHistory, stochasticK);
 	}
 
-	private void Enqueue(Queue<decimal> history, decimal value)
+	private void Enqueue(List<decimal> history, decimal value)
 	{
-		history.Enqueue(value);
+		history.Add(value);
 
 		while (history.Count > BarShift)
-			history.Dequeue();
+			try { history.RemoveAt(0); } catch { }
 	}
 }

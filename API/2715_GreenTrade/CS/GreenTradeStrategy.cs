@@ -35,8 +35,8 @@ public class GreenTradeStrategy : Strategy
 	private readonly StrategyParam<int> _maxPositions;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private SmoothedMovingAverage _smma;
-	private RelativeStrengthIndex _rsi;
+	private SmoothedMovingAverage? _smma;
+	private RelativeStrengthIndex? _rsi;
 
 	private readonly List<decimal> _maHistory = new();
 	private readonly List<decimal> _rsiHistory = new();
@@ -240,7 +240,7 @@ public class GreenTradeStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Max Positions", "Maximum number of volume units allowed", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Primary candle subscription", "Data");
 	}
 
@@ -255,6 +255,8 @@ public class GreenTradeStrategy : Strategy
 	{
 		base.OnReseted();
 
+		_smma = null;
+		_rsi = null;
 		_maHistory.Clear();
 		_rsiHistory.Clear();
 		_entryPrice = 0m;
@@ -292,16 +294,27 @@ public class GreenTradeStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		if (_smma == null || _rsi == null)
+			return;
+
 		var medianPrice = (candle.HighPrice + candle.LowPrice) / 2m;
-		var maValue = _smma.Process(new DecimalIndicatorValue(_smma, medianPrice, candle.OpenTime) { IsFinal = true }).ToDecimal();
-		var rsiValue = _rsi.Process(new DecimalIndicatorValue(_rsi, candle.ClosePrice, candle.OpenTime) { IsFinal = true }).ToDecimal();
+		var maResult = _smma.Process(new DecimalIndicatorValue(_smma, medianPrice, candle.OpenTime) { IsFinal = true });
+		var rsiResult = _rsi.Process(new DecimalIndicatorValue(_rsi, candle.ClosePrice, candle.OpenTime) { IsFinal = true });
+
+		if (!_smma.IsFormed || !_rsi.IsFormed)
+		{
+			_maHistory.Add(0m);
+			_rsiHistory.Add(0m);
+			TrimHistory();
+			return;
+		}
+
+		var maValue = maResult.ToDecimal();
+		var rsiValue = rsiResult.ToDecimal();
 
 		_maHistory.Add(maValue);
 		_rsiHistory.Add(rsiValue);
 		TrimHistory();
-
-		if (!_smma.IsFormed || !_rsi.IsFormed)
-			return;
 
 		// Indicators checked above.
 
@@ -345,9 +358,9 @@ public class GreenTradeStrategy : Strategy
 			return;
 
 		if (isLong)
-			BuyMarket(additionalVolume);
+			BuyMarket();
 		else
-			SellMarket(additionalVolume);
+			SellMarket();
 
 		if (isLong)
 		{
@@ -417,32 +430,30 @@ public class GreenTradeStrategy : Strategy
 		{
 			if (_takePrice.HasValue && candle.HighPrice >= _takePrice.Value)
 			{
-				SellMarket(Position);
+				SellMarket();
 				ResetPositionState();
 				return;
 			}
 
 			if (_stopPrice.HasValue && candle.LowPrice <= _stopPrice.Value)
 			{
-				SellMarket(Position);
+				SellMarket();
 				ResetPositionState();
 				return;
 			}
 		}
 		else if (Position < 0)
 		{
-			var volume = Math.Abs(Position);
-
 			if (_takePrice.HasValue && candle.LowPrice <= _takePrice.Value)
 			{
-				BuyMarket(volume);
+				BuyMarket();
 				ResetPositionState();
 				return;
 			}
 
 			if (_stopPrice.HasValue && candle.HighPrice >= _stopPrice.Value)
 			{
-				BuyMarket(volume);
+				BuyMarket();
 				ResetPositionState();
 				return;
 			}

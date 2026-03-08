@@ -147,7 +147,7 @@ public class Martin1Strategy : Strategy
 	/// </summary>
 	public Martin1Strategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used to evaluate conditions", "General");
 
 		_useTradingHours = Param(nameof(UseTradingHours), false)
@@ -358,10 +358,12 @@ public class Martin1Strategy : Strategy
 		if (volume <= 0m)
 			return;
 
+		Volume = volume;
+
 		if (side == Sides.Buy)
-			BuyMarket(volume);
+			BuyMarket();
 		else
-			SellMarket(volume);
+			SellMarket();
 
 		UpdatePositions(side, volume, price);
 	}

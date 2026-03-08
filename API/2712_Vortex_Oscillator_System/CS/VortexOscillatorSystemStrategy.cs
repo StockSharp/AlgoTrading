@@ -47,7 +47,7 @@ public class VortexOscillatorSystemStrategy : Strategy
 			
 			.SetOptimize(7, 28, 7);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used to build candles for calculations.", "General");
 
 		_useBuyStopLoss = Param(nameof(UseBuyStopLoss), false)
@@ -62,7 +62,7 @@ public class VortexOscillatorSystemStrategy : Strategy
 		_useSellTakeProfit = Param(nameof(UseSellTakeProfit), false)
 			.SetDisplay("Use Sell Take Profit", "Enable oscillator-based take profit for short positions.", "Risk Management");
 
-		_buyThreshold = Param(nameof(BuyThreshold), -0.75m)
+		_buyThreshold = Param(nameof(BuyThreshold), -0.1m)
 			.SetDisplay("Buy Threshold", "Oscillator value that triggers a long setup.", "Signals")
 			
 			.SetOptimize(-1.5m, -0.25m, 0.25m);
@@ -73,7 +73,7 @@ public class VortexOscillatorSystemStrategy : Strategy
 		_buyTakeProfitLevel = Param(nameof(BuyTakeProfitLevel), 0m)
 			.SetDisplay("Buy Take Profit Level", "Oscillator value that closes long trades when take profit is enabled.", "Signals");
 
-		_sellThreshold = Param(nameof(SellThreshold), 0.75m)
+		_sellThreshold = Param(nameof(SellThreshold), 0.1m)
 			.SetDisplay("Sell Threshold", "Oscillator value that triggers a short setup.", "Signals")
 			
 			.SetOptimize(0.25m, 1.5m, 0.25m);
@@ -278,15 +278,13 @@ public class VortexOscillatorSystemStrategy : Strategy
 
 		if (longSetupExists && currentPosition <= 0)
 		{
-			var volumeToBuy = Volume + Math.Abs(currentPosition);
 			// Close existing shorts and open a long position when a valid long setup appears.
-			BuyMarket(volumeToBuy);
+			BuyMarket();
 		}
 		else if (shortSetupExists && currentPosition >= 0)
 		{
-			var volumeToSell = Volume + Math.Abs(currentPosition);
 			// Close existing longs and open a short position when a valid short setup appears.
-			SellMarket(volumeToSell);
+			SellMarket();
 		}
 
 		currentPosition = Position;
@@ -296,29 +294,28 @@ public class VortexOscillatorSystemStrategy : Strategy
 			// Manage long positions with oscillator-based stops and targets.
 			if (UseBuyStopLoss && oscillator <= BuyStopLossLevel)
 			{
-				SellMarket(currentPosition);
+				SellMarket();
 				return;
 			}
 
 			if (UseBuyTakeProfit && oscillator >= BuyTakeProfitLevel)
 			{
-				SellMarket(currentPosition);
+				SellMarket();
 				return;
 			}
 		}
 		else if (currentPosition < 0)
 		{
-			var absPosition = Math.Abs(currentPosition);
 			// Manage short positions with oscillator-based stops and targets.
 			if (UseSellStopLoss && oscillator >= SellStopLossLevel)
 			{
-				BuyMarket(absPosition);
+				BuyMarket();
 				return;
 			}
 
 			if (UseSellTakeProfit && oscillator <= SellTakeProfitLevel)
 			{
-				BuyMarket(absPosition);
+				BuyMarket();
 			}
 		}
 	}

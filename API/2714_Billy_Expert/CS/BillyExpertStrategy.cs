@@ -157,13 +157,13 @@ public class BillyExpertStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Max Positions", "Maximum number of open trades", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 		.SetDisplay("Signal Candle", "Primary timeframe used for price filters", "General");
 
-		_stochasticTimeFrame1 = Param(nameof(StochasticTimeFrame1), TimeSpan.FromMinutes(5))
+		_stochasticTimeFrame1 = Param(nameof(StochasticTimeFrame1), TimeSpan.FromHours(1))
 		.SetDisplay("Fast Stochastic TF", "Timeframe for the fast Stochastic", "Indicators");
 
-		_stochasticTimeFrame2 = Param(nameof(StochasticTimeFrame2), TimeSpan.FromMinutes(6))
+		_stochasticTimeFrame2 = Param(nameof(StochasticTimeFrame2), TimeSpan.FromHours(4))
 		.SetDisplay("Slow Stochastic TF", "Timeframe for the slow Stochastic", "Indicators");
 	}
 
@@ -316,7 +316,7 @@ public class BillyExpertStrategy : Strategy
 
 			if (decreasingHighs && decreasingOpens && fastBullish && slowBullish && projectedVolume <= maxLongVolume + VolumeTolerance)
 			{
-					BuyMarket(TradeVolume);
+					BuyMarket();
 			}
 		}
 
