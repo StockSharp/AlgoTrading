@@ -1,106 +1,61 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using Ecng.ComponentModel;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on crossover of three simple moving averages.
+/// Three Moving Averages strategy using EMA crossover.
 /// </summary>
 public class ThreeMovingAveragesStrategy : Strategy
 {
-	private readonly StrategyParam<int> _shortMa;
-	private readonly StrategyParam<int> _mediumMa;
-	private readonly StrategyParam<int> _longMa;
+	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevShort;
-	private decimal _prevMedium;
-
-	public int ShortMa { get => _shortMa.Value; set => _shortMa.Value = value; }
-	public int MediumMa { get => _mediumMa.Value; set => _mediumMa.Value = value; }
-	public int LongMa { get => _longMa.Value; set => _longMa.Value = value; }
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public ThreeMovingAveragesStrategy()
 	{
-		_shortMa = Param(nameof(ShortMa), 20)
-		.SetDisplay("Short MA", "Short moving average length", "Indicators")
-		
-		.SetOptimize(5, 50, 5);
-
-		_mediumMa = Param(nameof(MediumMa), 50)
-		.SetDisplay("Medium MA", "Medium moving average length", "Indicators")
-		
-		.SetOptimize(20, 100, 10);
-
-		_longMa = Param(nameof(LongMa), 200)
-		.SetDisplay("Long MA", "Long moving average length", "Indicators")
-		
-		.SetOptimize(100, 300, 20);
+		_slowLength = Param(nameof(SlowLength), 40)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow Length", "Slow EMA period", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-		.SetDisplay("Candle Type", "Timeframe of working candles", "Data");
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_prevShort = 0;
-		_prevMedium = 0;
-	}
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		var shortMa = new SMA { Length = ShortMa };
-		var mediumMa = new SMA { Length = MediumMa };
-		var longMa = new SMA { Length = LongMa };
-
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
+		var prevF = 0m; var prevS = 0m; var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(shortMa, mediumMa, longMa, ProcessCandle)
-			.Start();
-
-		var area = CreateChartArea();
-		if (area != null)
+		subscription.Bind(fast, slow, (candle, f, s) =>
 		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, shortMa);
-			DrawIndicator(area, mediumMa);
-			DrawIndicator(area, longMa);
-			DrawOwnTrades(area);
-		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal shortValue, decimal mediumValue, decimal longValue)
-	{
-		if (candle.State != CandleStates.Finished)
-		return;
-
-		var crossover = _prevShort <= _prevMedium && shortValue > mediumValue;
-		var crossunder = _prevShort >= _prevMedium && shortValue < mediumValue;
-
-		if (crossover && mediumValue > longValue && Position <= 0)
-		BuyMarket();
-		else if (crossunder && mediumValue < longValue && Position >= 0)
-		SellMarket();
-
-		_prevShort = shortValue;
-		_prevMedium = mediumValue;
+			if (candle.State != CandleStates.Finished) return;
+			if (!fast.IsFormed || !slow.IsFormed) return;
+			if (!init) { prevF = f; prevS = s; init = true; return; }
+			if (candle.OpenTime - lastSignal >= cooldown)
+			{
+				if (prevF <= prevS && f > s && Position <= 0) { BuyMarket(); lastSignal = candle.OpenTime; }
+				else if (prevF >= prevS && f < s && Position >= 0) { SellMarket(); lastSignal = candle.OpenTime; }
+			}
+			prevF = f; prevS = s;
+		}).Start();
+		var area = CreateChartArea();
+		if (area != null) { DrawCandles(area, subscription); DrawIndicator(area, fast); DrawIndicator(area, slow); DrawOwnTrades(area); }
 	}
 }

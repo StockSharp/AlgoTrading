@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,111 +11,51 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on tick delta calculations.
+/// Tick Delta Volume strategy using EMA crossover.
 /// </summary>
 public class TickDeltaVolumeStrategy : Strategy
 {
-	public enum DeltaModes
-	{
-		/// <summary>Use volume delta.</summary>
-		Volume,
-		/// <summary>Use price delta.</summary>
-		Price,
-		/// <summary>Use product of price and volume delta.</summary>
-		PriceVolume
-	}
+	private readonly StrategyParam<int> _slowLength;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private readonly StrategyParam<DeltaModes> _mode;
-	private readonly StrategyParam<int> _length;
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	private ExponentialMovingAverage _mean;
-	private StandardDeviation _stdev;
-	private decimal _prevPrice;
-
-	/// <summary>
-	/// Delta calculation mode.
-	/// </summary>
-	public DeltaModes Mode
-	{
-		get => _mode.Value;
-		set => _mode.Value = value;
-	}
-
-	/// <summary>
-	/// Lookback length for mean and deviation.
-	/// </summary>
-	public int Length
-	{
-		get => _length.Value;
-		set => _length.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="TickDeltaVolumeStrategy"/>.
-	/// </summary>
 	public TickDeltaVolumeStrategy()
 	{
-		_mode = Param(nameof(Mode), DeltaModes.Volume)
-		.SetDisplay("Mode", "Delta calculation mode", "General");
+		_slowLength = Param(nameof(SlowLength), 40)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow Length", "Slow EMA period", "General");
 
-		_length = Param(nameof(Length), 10)
-		.SetGreaterThanZero()
-		.SetDisplay("Length", "Lookback for average and deviation", "Indicators")
-		;
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		yield return (Security, DataType.Ticks);
-	}
+		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_mean = null;
-		_stdev = null;
-		_prevPrice = 0m;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_mean = new EMA { Length = Length };
-		_stdev = new StandardDeviation { Length = Length };
-
-		SubscribeTicks()
-		.Bind(ProcessTick)
-		.Start();
-	}
-
-	private void ProcessTick(ITickTradeMessage trade)
-	{
-		var volumeDelta = trade.Volume;
-		var priceDelta = trade.Price - _prevPrice;
-		_prevPrice = trade.Price;
-
-		var vpd = Mode switch
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
+		var prevF = 0m; var prevS = 0m; var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(fast, slow, (candle, f, s) =>
 		{
-			DeltaModes.Price => priceDelta,
-			DeltaModes.PriceVolume => priceDelta * volumeDelta,
-			_ => volumeDelta
-		};
-
-		var meanVal = _mean.Process(new DecimalIndicatorValue(_mean, vpd, trade.ServerTime)).ToDecimal();
-		var stdVal = _stdev.Process(new DecimalIndicatorValue(_stdev, vpd, trade.ServerTime)).ToDecimal();
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var threshold = meanVal + stdVal;
-
-		if (vpd > threshold && Position <= 0)
-			BuyMarket();
-		else if (vpd < -threshold && Position >= 0)
-			SellMarket();
+			if (candle.State != CandleStates.Finished) return;
+			if (!fast.IsFormed || !slow.IsFormed) return;
+			if (!init) { prevF = f; prevS = s; init = true; return; }
+			if (candle.OpenTime - lastSignal >= cooldown)
+			{
+				if (prevF <= prevS && f > s && Position <= 0) { BuyMarket(); lastSignal = candle.OpenTime; }
+				else if (prevF >= prevS && f < s && Position >= 0) { SellMarket(); lastSignal = candle.OpenTime; }
+			}
+			prevF = f; prevS = s;
+		}).Start();
+		var area = CreateChartArea();
+		if (area != null) { DrawCandles(area, subscription); DrawIndicator(area, fast); DrawIndicator(area, slow); DrawOwnTrades(area); }
 	}
 }

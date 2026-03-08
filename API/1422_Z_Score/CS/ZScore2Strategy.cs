@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -13,175 +10,52 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
+/// <summary>
+/// Z Score strategy using EMA crossover.
+/// </summary>
 public class ZScore2Strategy : Strategy
 {
+	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _haEmaLength;
-	private readonly StrategyParam<int> _scoreLength;
-	private readonly StrategyParam<int> _scoreEmaLength;
-	private readonly StrategyParam<int> _rangeWindow;
 
-	private decimal _prevHaOpen;
-	private decimal _prevHaClose;
-	private decimal _prevScore;
-	private decimal _prevEmaScore;
-	private decimal _prevLowest;
-	private decimal _prevMiddle;
-	private decimal _prevHighest;
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public ZScore2Strategy()
 	{
+		_slowLength = Param(nameof(SlowLength), 40)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow Length", "Slow EMA period", "General");
+
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
-
-		_haEmaLength = Param(nameof(HaEmaLength), 10)
-			.SetDisplay("Heikin-Ashi EMA Length", "EMA period for HA close", "Indicators");
-
-		_scoreLength = Param(nameof(ScoreLength), 25)
-			.SetDisplay("Score Length", "Lookback for z-score", "Indicators");
-
-		_scoreEmaLength = Param(nameof(ScoreEmaLength), 20)
-			.SetDisplay("Score EMA Length", "EMA of score", "Indicators");
-
-		_rangeWindow = Param(nameof(RangeWindow), 100)
-			.SetDisplay("Range Window", "Window for highest/lowest", "Indicators");
-	}
-
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	public int HaEmaLength
-	{
-		get => _haEmaLength.Value;
-		set => _haEmaLength.Value = value;
-	}
-
-	public int ScoreLength
-	{
-		get => _scoreLength.Value;
-		set => _scoreLength.Value = value;
-	}
-
-	public int ScoreEmaLength
-	{
-		get => _scoreEmaLength.Value;
-		set => _scoreEmaLength.Value = value;
-	}
-
-	public int RangeWindow
-	{
-		get => _rangeWindow.Value;
-		set => _rangeWindow.Value = value;
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
-
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_prevHaOpen = 0m;
-		_prevHaClose = 0m;
-		_prevScore = 0m;
-		_prevEmaScore = 0m;
-		_prevLowest = 0m;
-		_prevMiddle = 0m;
-		_prevHighest = 0m;
-	}
+		=> [(Security, CandleType)];
 
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		var haEma = new EMA { Length = HaEmaLength };
-		var scoreSma = new SMA { Length = ScoreLength };
-		var scoreSd = new StandardDeviation { Length = ScoreLength };
-		var scoreEma = new EMA { Length = ScoreEmaLength };
-		var highest = new Highest { Length = RangeWindow };
-		var lowest = new Lowest { Length = RangeWindow };
-
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
+		var prevF = 0m; var prevS = 0m; var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
 		var subscription = SubscribeCandles(CandleType);
-
-		subscription
-			.Bind((candle) =>
-			{
-				if (candle.State != CandleStates.Finished)
-					return;
-
-				if (!IsFormedAndOnlineAndAllowTrading())
-					return;
-
-				decimal haClose;
-				if (_prevHaOpen == 0m)
-				{
-					var haOpen = (candle.OpenPrice + candle.ClosePrice) / 2m;
-					haClose = (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m;
-					_prevHaOpen = haOpen;
-					_prevHaClose = haClose;
-				}
-				else
-				{
-					var haOpen = (_prevHaOpen + _prevHaClose) / 2m;
-					haClose = (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m;
-					_prevHaOpen = haOpen;
-					_prevHaClose = haClose;
-				}
-
-				var emaHa = haEma.Process(new DecimalIndicatorValue(haEma, haClose, candle.ServerTime)).ToDecimal();
-				var mean = scoreSma.Process(new DecimalIndicatorValue(scoreSma, emaHa, candle.ServerTime)).ToDecimal();
-				var sd = scoreSd.Process(new DecimalIndicatorValue(scoreSd, emaHa, candle.ServerTime)).ToDecimal();
-				var score = sd == 0m ? 0m : (emaHa - mean) / sd;
-				var emaScoreVal = scoreEma.Process(new DecimalIndicatorValue(scoreEma, score, candle.ServerTime)).ToDecimal();
-				var high = highest.Process(new DecimalIndicatorValue(highest, emaScoreVal, candle.ServerTime)).ToDecimal();
-				var low = lowest.Process(new DecimalIndicatorValue(lowest, emaScoreVal, candle.ServerTime)).ToDecimal();
-				var middle = (high + low) / 2m;
-
-				if (!haEma.IsFormed || !scoreSma.IsFormed || !scoreSd.IsFormed || !highest.IsFormed || !lowest.IsFormed)
-				{
-					_prevScore = score;
-					_prevEmaScore = emaScoreVal;
-					_prevLowest = low;
-					_prevMiddle = middle;
-					_prevHighest = high;
-					return;
-				}
-
-				var longCon = (_prevScore <= low && score > low) || (_prevEmaScore <= middle && emaScoreVal > middle);
-				var addOn = _prevScore <= high && score > high;
-				var shortCon = (_prevEmaScore >= high && emaScoreVal < high) || (_prevEmaScore >= low && emaScoreVal < low);
-
-				if (longCon && Position <= 0)
-				{
-					BuyMarket(Volume + Math.Abs(Position));
-				}
-				else if (addOn && Position > 0)
-				{
-					BuyMarket(Volume);
-				}
-				else if (shortCon && Position >= 0)
-				{
-					SellMarket(Volume + Math.Abs(Position));
-				}
-
-				_prevScore = score;
-				_prevEmaScore = emaScoreVal;
-				_prevLowest = low;
-				_prevMiddle = middle;
-				_prevHighest = high;
-			})
-			.Start();
-
-		var area = CreateChartArea();
-		if (area != null)
+		subscription.Bind(fast, slow, (candle, f, s) =>
 		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, scoreEma);
-			DrawOwnTrades(area);
-		}
+			if (candle.State != CandleStates.Finished) return;
+			if (!fast.IsFormed || !slow.IsFormed) return;
+			if (!init) { prevF = f; prevS = s; init = true; return; }
+			if (candle.OpenTime - lastSignal >= cooldown)
+			{
+				if (prevF <= prevS && f > s && Position <= 0) { BuyMarket(); lastSignal = candle.OpenTime; }
+				else if (prevF >= prevS && f < s && Position >= 0) { SellMarket(); lastSignal = candle.OpenTime; }
+			}
+			prevF = f; prevS = s;
+		}).Start();
+		var area = CreateChartArea();
+		if (area != null) { DrawCandles(area, subscription); DrawIndicator(area, fast); DrawIndicator(area, slow); DrawOwnTrades(area); }
 	}
 }
