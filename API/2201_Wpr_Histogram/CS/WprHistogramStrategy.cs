@@ -85,7 +85,7 @@ public class WprHistogramStrategy : Strategy
 		
 		.SetOptimize(-80m, -60m, 10m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -150,12 +150,12 @@ public class WprHistogramStrategy : Strategy
 		// Leaving overbought zone - open long
 		if (_previousZone == 0 && currentZone != 0 && Position <= 0)
 		{
-			BuyMarket(Volume + Math.Abs(Position));
+			BuyMarket();
 		}
 		// Leaving oversold zone - open short
 		else if (_previousZone == 2 && currentZone != 2 && Position >= 0)
 		{
-			SellMarket(Volume + Math.Abs(Position));
+			SellMarket();
 		}
 
 		_previousZone = currentZone;

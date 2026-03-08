@@ -119,7 +119,7 @@ public class MaOscillatorHistogramStrategy : Strategy
 		_enableSellClose = Param(nameof(EnableSellClose), true)
 			.SetDisplay("Enable Sell Close", "Allow closing short positions", "Signals");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -144,8 +144,8 @@ public class MaOscillatorHistogramStrategy : Strategy
 		base.OnStarted2(time);
 
 		// Create moving averages
-		var fastMa = new SMA { Length = FastPeriod };
-		var slowMa = new SMA { Length = SlowPeriod };
+		var fastMa = new ExponentialMovingAverage { Length = FastPeriod };
+		var slowMa = new ExponentialMovingAverage { Length = SlowPeriod };
 
 		// Subscribe to candles and bind indicators
 		var subscription = SubscribeCandles(CandleType);
@@ -190,7 +190,7 @@ public class MaOscillatorHistogramStrategy : Strategy
 		if (buySignal)
 		{
 			if (EnableSellClose && Position < 0)
-				BuyMarket(-Position);
+				BuyMarket();
 
 			if (EnableBuyOpen && Position <= 0)
 				BuyMarket();
@@ -198,7 +198,7 @@ public class MaOscillatorHistogramStrategy : Strategy
 		else if (sellSignal)
 		{
 			if (EnableBuyClose && Position > 0)
-				SellMarket(Position);
+				SellMarket();
 
 			if (EnableSellOpen && Position >= 0)
 				SellMarket();

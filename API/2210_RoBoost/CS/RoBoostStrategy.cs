@@ -157,7 +157,7 @@ public class RoBoostStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Trail Step", "Distance between price and trailing stop", "Risk Management");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles used", "General");
 	}
 
@@ -184,7 +184,7 @@ public class RoBoostStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var rsi = new RSI { Length = RsiPeriod };
+		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(rsi, ProcessCandle).Start();
@@ -250,7 +250,7 @@ public class RoBoostStrategy : Strategy
 			var profit = currentPrice - _entryPrice;
 			if (profit >= TakeProfit || -profit >= StopLoss)
 			{
-				SellMarket(Math.Abs(Position));
+				SellMarket();
 				return;
 			}
 
@@ -264,7 +264,7 @@ public class RoBoostStrategy : Strategy
 				}
 
 				if (_trailingStopPrice != 0m && currentPrice <= _trailingStopPrice)
-					SellMarket(Math.Abs(Position));
+					SellMarket();
 			}
 		}
 		else
@@ -272,7 +272,7 @@ public class RoBoostStrategy : Strategy
 			var profit = _entryPrice - currentPrice;
 			if (profit >= TakeProfit || -profit >= StopLoss)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				return;
 			}
 
@@ -286,7 +286,7 @@ public class RoBoostStrategy : Strategy
 				}
 
 				if (_trailingStopPrice != 0m && currentPrice >= _trailingStopPrice)
-					BuyMarket(Math.Abs(Position));
+					BuyMarket();
 			}
 		}
 	}

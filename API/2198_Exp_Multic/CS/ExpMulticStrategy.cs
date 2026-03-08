@@ -34,7 +34,7 @@ public class ExpMulticStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Period", "Momentum lookback period", "Parameters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe", "General");
 	}
 

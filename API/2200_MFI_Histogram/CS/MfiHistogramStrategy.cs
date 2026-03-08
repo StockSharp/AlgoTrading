@@ -104,7 +104,7 @@ public class MfiHistogramStrategy : Strategy
 		_takeProfit = Param(nameof(TakeProfit), new Unit(2000, UnitTypes.Absolute))
 		.SetDisplay("Take Profit", "Take-profit in ticks", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe of candles", "General");
 	}
 

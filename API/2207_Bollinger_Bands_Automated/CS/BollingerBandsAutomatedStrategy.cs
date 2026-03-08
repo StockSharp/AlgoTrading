@@ -38,7 +38,7 @@ public class BollingerBandsAutomatedStrategy : Strategy
 			.SetDisplay("BB Deviation", "Bollinger Bands deviation", "Indicators")
 			.SetGreaterThanZero();
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -86,10 +86,10 @@ public class BollingerBandsAutomatedStrategy : Strategy
 
 		// Close long at middle band
 		if (Position > 0 && close >= middle)
-			SellMarket(Position);
+			SellMarket();
 		// Close short at middle band
 		else if (Position < 0 && close <= middle)
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
 
 		// Open new positions at band extremes
 		if (close <= lower && Position <= 0)

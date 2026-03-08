@@ -140,7 +140,7 @@ public class CciHistogramStrategy : Strategy
 		_useTakeProfit = Param(nameof(UseTakeProfit), false)
 							 .SetDisplay("Enable Take Profit", "Use take profit protection", "Risk Management");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 						  .SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 

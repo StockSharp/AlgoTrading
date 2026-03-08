@@ -62,7 +62,7 @@ public class AdamAndEveStrategy : Strategy
 	/// </summary>
 	public AdamAndEveStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
@@ -99,13 +99,13 @@ public class AdamAndEveStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var sma5 = new SMA { Length = 5 };
-		var sma7 = new SMA { Length = 7 };
-		var sma9 = new SMA { Length = 9 };
-		var sma10 = new SMA { Length = 10 };
-		var sma12 = new SMA { Length = 12 };
-		var sma14 = new SMA { Length = 14 };
-		var sma20 = new SMA { Length = 20 };
+		var sma5 = new ExponentialMovingAverage { Length = 5 };
+		var sma7 = new ExponentialMovingAverage { Length = 7 };
+		var sma9 = new ExponentialMovingAverage { Length = 9 };
+		var sma10 = new ExponentialMovingAverage { Length = 10 };
+		var sma12 = new ExponentialMovingAverage { Length = 12 };
+		var sma14 = new ExponentialMovingAverage { Length = 14 };
+		var sma20 = new ExponentialMovingAverage { Length = 20 };
 		var atr = new AverageTrueRange { Length = AtrPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
@@ -180,23 +180,23 @@ public class AdamAndEveStrategy : Strategy
 		{
 			if (bearishPrev && noUpperWickPrev && smasDown)
 			{
-				SellMarket(Volume);
+				SellMarket();
 				_targetPrice = candle.ClosePrice - atr;
 			}
 			else if (bullishPrev && noLowerWickPrev && smasUp)
 			{
-				BuyMarket(Volume);
+				BuyMarket();
 				_targetPrice = candle.ClosePrice + atr;
 			}
 		}
 		else if (Position > 0 && _targetPrice.HasValue && candle.HighPrice >= _targetPrice.Value)
 		{
-			SellMarket(Position);
+			SellMarket();
 			_targetPrice = null;
 		}
 		else if (Position < 0 && _targetPrice.HasValue && candle.LowPrice <= _targetPrice.Value)
 		{
-			BuyMarket(-Position);
+			BuyMarket();
 			_targetPrice = null;
 		}
 

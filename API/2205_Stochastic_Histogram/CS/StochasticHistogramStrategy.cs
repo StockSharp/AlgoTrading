@@ -50,7 +50,7 @@ public class StochasticHistogramStrategy : Strategy
 		_lowLevel = Param(nameof(LowLevel), 20m)
 			.SetDisplay("Low Level", "Lower threshold", "Stochastic");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for calculation", "General");
 	}
 

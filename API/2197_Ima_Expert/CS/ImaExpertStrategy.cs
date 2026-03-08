@@ -51,7 +51,7 @@ public class ImaExpertStrategy : Strategy
 		_signalLevel = Param(nameof(SignalLevel), 0.5m)
 			.SetDisplay("Signal Level", "IMA change threshold", "Parameters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for calculations", "General");
 	}
 
@@ -73,7 +73,7 @@ public class ImaExpertStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var sma = new SimpleMovingAverage { Length = SmaPeriod };
+		var sma = new ExponentialMovingAverage { Length = SmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -121,11 +121,11 @@ public class ImaExpertStrategy : Strategy
 		}
 		else if (Position > 0 && k1 <= -SignalLevel)
 		{
-			SellMarket(Position + Volume);
+			SellMarket();
 		}
 		else if (Position < 0 && k1 >= SignalLevel)
 		{
-			BuyMarket(Math.Abs(Position) + Volume);
+			BuyMarket();
 		}
 	}
 }

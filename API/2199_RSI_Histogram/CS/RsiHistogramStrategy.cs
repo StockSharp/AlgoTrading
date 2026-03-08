@@ -137,7 +137,7 @@ public class RsiHistogramStrategy : Strategy
 		_sellPosClose = Param(nameof(SellPosClose), true)
 			.SetDisplay("Close Sell Positions", "Allow closing shorts on opposite signal", "Trading");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for RSI calculation", "General");
 	}
 
@@ -160,7 +160,7 @@ public class RsiHistogramStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var rsi = new RSI { Length = RsiPeriod };
+		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 
@@ -181,7 +181,7 @@ public class RsiHistogramStrategy : Strategy
 			if (_prevPrevClass == 0 && _prevClass > 0)
 			{
 				if (SellPosClose && Position < 0)
-					BuyMarket(Math.Abs(Position));
+					BuyMarket();
 
 				if (BuyPosOpen && Position <= 0)
 					BuyMarket();
@@ -189,7 +189,7 @@ public class RsiHistogramStrategy : Strategy
 			else if (_prevPrevClass == 2 && _prevClass < 2)
 			{
 				if (BuyPosClose && Position > 0)
-					SellMarket(Math.Abs(Position));
+					SellMarket();
 
 				if (SellPosOpen && Position >= 0)
 					SellMarket();
