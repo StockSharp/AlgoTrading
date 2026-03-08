@@ -59,7 +59,7 @@ public class VortexIndicatorSystemStrategy : Strategy
 			
 			.SetOptimize(7, 28, 7);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for analysis", "General");
 	}
 
@@ -116,7 +116,7 @@ public class VortexIndicatorSystemStrategy : Strategy
 			if (Position <= 0)
 			{
 				// Reverse existing short if present and open a new long position when price breaks the trigger.
-				BuyMarket(Volume + Math.Abs(Position));
+				BuyMarket();
 			}
 
 			_pendingBuyTrigger = null;
@@ -126,7 +126,7 @@ public class VortexIndicatorSystemStrategy : Strategy
 			if (Position >= 0)
 			{
 				// Reverse existing long if present and open a new short position when price breaks the trigger.
-				SellMarket(Volume + Math.Abs(Position));
+				SellMarket();
 			}
 
 			_pendingSellTrigger = null;
@@ -148,7 +148,7 @@ public class VortexIndicatorSystemStrategy : Strategy
 			if (Position < 0)
 			{
 				// Flatten existing short positions when a bullish crossover appears.
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 			}
 
 			_pendingBuyTrigger = candle.HighPrice;
@@ -159,7 +159,7 @@ public class VortexIndicatorSystemStrategy : Strategy
 			if (Position > 0)
 			{
 				// Flatten existing long positions when a bearish crossover appears.
-				SellMarket(Math.Abs(Position));
+				SellMarket();
 			}
 
 			_pendingSellTrigger = candle.LowPrice;

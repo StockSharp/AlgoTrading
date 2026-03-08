@@ -104,7 +104,7 @@ public class FlatChannelStrategy : Strategy
 			.SetDisplay("Channel Max Pips", "Maximum channel width in pips", "Indicators")
 			.SetGreaterThanZero();
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Primary candle type", "General");
 	}
 
@@ -253,7 +253,7 @@ public class FlatChannelStrategy : Strategy
 
 		if (_pendingBuyPrice is decimal buyPrice && candle.HighPrice >= buyPrice)
 		{
-			BuyMarket(Volume);
+			BuyMarket();
 			_entryPrice = buyPrice;
 			_pendingBuyPrice = null;
 			_pendingSellPrice = null;
@@ -262,7 +262,7 @@ public class FlatChannelStrategy : Strategy
 
 		if (_pendingSellPrice is decimal sellPrice && candle.LowPrice <= sellPrice)
 		{
-			SellMarket(Volume);
+			SellMarket();
 			_entryPrice = sellPrice;
 			_pendingBuyPrice = null;
 			_pendingSellPrice = null;
@@ -275,13 +275,13 @@ public class FlatChannelStrategy : Strategy
 		{
 			if (_longStop > 0m && candle.LowPrice <= _longStop)
 			{
-				SellMarket(Math.Abs(Position));
+				SellMarket();
 				ResetPositionState();
 				return;
 			}
 			if (_longTake > 0m && candle.HighPrice >= _longTake)
 			{
-				SellMarket(Math.Abs(Position));
+				SellMarket();
 				ResetPositionState();
 			}
 		}
@@ -289,13 +289,13 @@ public class FlatChannelStrategy : Strategy
 		{
 			if (_shortStop > 0m && candle.HighPrice >= _shortStop)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				ResetPositionState();
 				return;
 			}
 			if (_shortTake > 0m && candle.LowPrice <= _shortTake)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				ResetPositionState();
 			}
 		}

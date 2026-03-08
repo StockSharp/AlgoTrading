@@ -48,7 +48,7 @@ public class TradeEaTemplateForNewsStrategy : Strategy
 
 	public TradeEaTemplateForNewsStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame());
 		_useLowNews = Param(nameof(UseLowNews), true);
 		_lowMinutesBefore = Param(nameof(LowMinutesBefore), 15);
 		_lowMinutesAfter = Param(nameof(LowMinutesAfter), 15);
@@ -237,7 +237,6 @@ public class TradeEaTemplateForNewsStrategy : Strategy
 		// Abort any signals while a news blackout is active.
 		if (_newsBlocking)
 		{
-			CancelActiveOrders();
 			return;
 		}
 
@@ -262,12 +261,12 @@ public class TradeEaTemplateForNewsStrategy : Strategy
 
 		if (candle.ClosePrice > previousOpen)
 		{
-			BuyMarket(Volume);
+			BuyMarket();
 			LogInfo($"Long entry after bullish close at {candle.ClosePrice} compared to prior open {previousOpen}.");
 		}
 		else if (candle.ClosePrice < previousOpen)
 		{
-			SellMarket(Volume);
+			SellMarket();
 			LogInfo($"Short entry after bearish close at {candle.ClosePrice} compared to prior open {previousOpen}.");
 		}
 	}

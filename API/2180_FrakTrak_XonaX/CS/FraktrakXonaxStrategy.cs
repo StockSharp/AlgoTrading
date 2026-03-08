@@ -52,7 +52,7 @@ public class FraktrakXonaxStrategy : Strategy
 		_fractalOffset = Param(nameof(FractalOffset), 50m)
 			.SetDisplay("Fractal Offset", "Price offset beyond fractal for entry", "Signals");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Source candles", "General");
 	}
 
@@ -104,9 +104,6 @@ public class FraktrakXonaxStrategy : Strategy
 			_upFractal = _h3;
 		if (_l3 < _l1 && _l3 < _l2 && _l3 < _l4 && _l3 < _l5)
 			_downFractal = _l3;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
 
 		// Buy signal: close above up fractal + offset
 		if (_upFractal is decimal up && _lastUpFractal != up)

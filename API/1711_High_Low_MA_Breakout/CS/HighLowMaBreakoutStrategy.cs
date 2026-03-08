@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -16,176 +13,84 @@ namespace StockSharp.Samples.Strategies;
 /// <summary>
 /// Strategy based on price crossing moving averages of highs and lows.
 /// Buys when price closes above the high-based moving average and sells when closing below the low-based moving average.
-/// Optional take profit and stop loss manage open positions.
 /// </summary>
 public class HighLowMaBreakoutStrategy : Strategy
 {
 	private readonly StrategyParam<int> _maHighPeriod;
 	private readonly StrategyParam<int> _maLowPeriod;
-	private readonly StrategyParam<decimal> _takeProfit;
-	private readonly StrategyParam<decimal> _stopLoss;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private SimpleMovingAverage _maHigh = null!;
-	private SimpleMovingAverage _maLow = null!;
-	private decimal? _prevMaHigh;
-	private decimal? _prevMaLow;
-	private decimal? _prevClose;
-	private decimal _entryPrice;
-	private decimal _takePrice;
-	private decimal _stopPrice;
+	private decimal _prevMaHigh;
+	private decimal _prevMaLow;
+	private decimal _prevClose;
+	private bool _hasPrev;
 
-	/// <summary>
-	/// High moving average period.
-	/// </summary>
-	public int MaHighPeriod
-	{
-		get => _maHighPeriod.Value;
-		set => _maHighPeriod.Value = value;
-	}
+	public int MaHighPeriod { get => _maHighPeriod.Value; set => _maHighPeriod.Value = value; }
+	public int MaLowPeriod { get => _maLowPeriod.Value; set => _maLowPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Low moving average period.
-	/// </summary>
-	public int MaLowPeriod
-	{
-		get => _maLowPeriod.Value;
-		set => _maLowPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Take profit distance from entry.
-	/// </summary>
-	public decimal TakeProfit
-	{
-		get => _takeProfit.Value;
-		set => _takeProfit.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss distance from entry.
-	/// </summary>
-	public decimal StopLoss
-	{
-		get => _stopLoss.Value;
-		set => _stopLoss.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes <see cref="HighLowMaBreakoutStrategy"/>.
-	/// </summary>
 	public HighLowMaBreakoutStrategy()
 	{
-		_maHighPeriod = Param(nameof(MaHighPeriod), 7)
+		_maHighPeriod = Param(nameof(MaHighPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("High MA Period", "Period of high price MA", "Parameters");
 
-		_maLowPeriod = Param(nameof(MaLowPeriod), 5)
+		_maLowPeriod = Param(nameof(MaLowPeriod), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Low MA Period", "Period of low price MA", "Parameters");
 
-		_takeProfit = Param(nameof(TakeProfit), 0m)
-			.SetDisplay("Take Profit", "Distance from entry for take profit", "Risk");
-
-		_stopLoss = Param(nameof(StopLoss), 0m)
-			.SetDisplay("Stop Loss", "Distance from entry for stop loss", "Risk");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_prevMaHigh = null;
-		_prevMaLow = null;
-		_prevClose = null;
-		_entryPrice = 0m;
-		_takePrice = 0m;
-		_stopPrice = 0m;
+		_prevMaHigh = 0;
+		_prevMaLow = 0;
+		_prevClose = 0;
+		_hasPrev = false;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_maHigh = new SimpleMovingAverage { Length = MaHighPeriod };
-		_maLow = new SimpleMovingAverage { Length = MaLowPeriod };
+		var maHigh = new SimpleMovingAverage { Length = MaHighPeriod };
+		var maLow = new SimpleMovingAverage { Length = MaLowPeriod };
 
-		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(_maHigh, _maLow, ProcessCandle)
-			.Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, _maHigh);
-			DrawIndicator(area, _maLow);
-			DrawOwnTrades(area);
-		}
+		SubscribeCandles(CandleType).Bind(maHigh, maLow, ProcessCandle).Start();
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal maHigh, decimal maLow)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
+		if (candle.State != CandleStates.Finished) return;
 
 		var close = candle.ClosePrice;
 
-		if (Position > 0)
+		if (!_hasPrev)
 		{
-			if ((StopLoss > 0m && close <= _stopPrice) || (TakeProfit > 0m && close >= _takePrice))
-				SellMarket();
+			_prevClose = close;
+			_prevMaHigh = maHigh;
+			_prevMaLow = maLow;
+			_hasPrev = true;
+			return;
 		}
-		else if (Position < 0)
-		{
-			if ((StopLoss > 0m && close >= _stopPrice) || (TakeProfit > 0m && close <= _takePrice))
-				BuyMarket();
-		}
-		else
-		{
-			if (_prevClose is null || _prevMaHigh is null || _prevMaLow is null)
-			{
-				_prevClose = close;
-				_prevMaHigh = maHigh;
-				_prevMaLow = maLow;
-				return;
-			}
 
-			if (_prevClose > _prevMaHigh && close > maHigh)
-			{
-				BuyMarket();
-				_entryPrice = close;
-				_takePrice = TakeProfit > 0m ? _entryPrice + TakeProfit : 0m;
-				_stopPrice = StopLoss > 0m ? _entryPrice - StopLoss : 0m;
-			}
-			else if (_prevClose < _prevMaLow && close < maLow)
-			{
-				SellMarket();
-				_entryPrice = close;
-				_takePrice = TakeProfit > 0m ? _entryPrice - TakeProfit : 0m;
-				_stopPrice = StopLoss > 0m ? _entryPrice + StopLoss : 0m;
-			}
+		// Cross above high MA => buy
+		if (_prevClose <= _prevMaHigh && close > maHigh && Position <= 0)
+		{
+			if (Position < 0) BuyMarket();
+			BuyMarket();
+		}
+		// Cross below low MA => sell
+		else if (_prevClose >= _prevMaLow && close < maLow && Position >= 0)
+		{
+			if (Position > 0) SellMarket();
+			SellMarket();
 		}
 
 		_prevClose = close;

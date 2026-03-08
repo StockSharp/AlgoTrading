@@ -40,7 +40,7 @@ public class ExpAdxCrossHullStyleStrategy : Strategy
 			.SetDisplay("Fast Hull Length", "Period of the fast Hull MA", "Indicators");
 		_slowHullLength = Param(nameof(SlowHullLength), 50)
 			.SetDisplay("Slow Hull Length", "Period of the slow Hull MA", "Indicators");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles used by the strategy", "General");
 	}
 

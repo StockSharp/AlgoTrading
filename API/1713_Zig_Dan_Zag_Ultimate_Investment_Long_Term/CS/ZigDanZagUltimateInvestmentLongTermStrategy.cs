@@ -52,7 +52,7 @@ public class ZigDanZagUltimateInvestmentLongTermStrategy : Strategy
 			.SetDisplay("ZigZag Depth", "Pivot search depth", "ZigZag");
 		_smaLength = Param(nameof(SmaLength), 200)
 			.SetDisplay("SMA Length", "Long-term trend filter", "Trend");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -79,7 +79,7 @@ public class ZigDanZagUltimateInvestmentLongTermStrategy : Strategy
 
 		var highest = new Highest { Length = ZigzagDepth };
 		var lowest = new Lowest { Length = ZigzagDepth };
-		var sma = new SMA { Length = SmaLength };
+		var sma = new SimpleMovingAverage { Length = SmaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

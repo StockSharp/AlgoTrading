@@ -40,7 +40,7 @@ public class HarVesteRStrategy : Strategy
 	private Lowest _lowest = null!;
 	private Highest _highest = null!;
 
-	private readonly Queue<decimal> _macdHistory = new();
+	private readonly List<decimal> _macdHistory = new();
 	private decimal? _lastLowest;
 	private decimal? _lastHighest;
 
@@ -380,7 +380,7 @@ public class HarVesteRStrategy : Strategy
 			var volume = Volume + Math.Abs(Position);
 			if (volume > 0m)
 			{
-				BuyMarket(volume);
+				BuyMarket();
 				_longEntry = close;
 				_longStop = longStop;
 				_longStopMoved = false;
@@ -392,7 +392,7 @@ public class HarVesteRStrategy : Strategy
 			var volume = Volume + Math.Abs(Position);
 			if (volume > 0m)
 			{
-				SellMarket(volume);
+				SellMarket();
 				_shortEntry = close;
 				_shortStop = shortStop;
 				_shortStopMoved = false;
@@ -414,14 +414,14 @@ public class HarVesteRStrategy : Strategy
 					var half = Position / 2m;
 					if (half > 0m)
 					{
-						SellMarket(half);
+						SellMarket();
 						_longStop = entry;
 						_longStopMoved = true;
 					}
 				}
 				else if (_longStopMoved && smaFast > close - indentation)
 				{
-					SellMarket(Position);
+					SellMarket();
 					ResetLongState();
 				}
 			}
@@ -442,14 +442,14 @@ public class HarVesteRStrategy : Strategy
 					var half = -Position / 2m;
 					if (half > 0m)
 					{
-						BuyMarket(half);
+						BuyMarket();
 						_shortStop = entryShort;
 						_shortStopMoved = true;
 					}
 				}
 				else if (_shortStopMoved && smaFast < close - indentation)
 				{
-					BuyMarket(-Position);
+					BuyMarket();
 					ResetShortState();
 				}
 			}

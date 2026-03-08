@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -13,171 +10,52 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
+/// <summary>
+/// Scale in scale out strategy using EMA crossover.
+/// </summary>
 public class ScaleInScaleOutStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _buyScalingSize;
-	private readonly StrategyParam<decimal> _takeProfitLevel;
-	private readonly StrategyParam<decimal> _takeProfitSize;
-	private readonly StrategyParam<decimal> _retainProfitPortion;
-	private readonly StrategyParam<decimal> _minPositionValue;
-	private readonly StrategyParam<decimal> _minBuyValue;
+	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _deployableCash;
-	private decimal _retainedCash;
-	private decimal _totalCost;
-
-	public decimal BuyScalingSize
-	{
-		get => _buyScalingSize.Value;
-		set => _buyScalingSize.Value = value;
-	}
-
-	public decimal TakeProfitLevel
-	{
-		get => _takeProfitLevel.Value;
-		set => _takeProfitLevel.Value = value;
-	}
-
-	public decimal TakeProfitSize
-	{
-		get => _takeProfitSize.Value;
-		set => _takeProfitSize.Value = value;
-	}
-
-	public decimal RetainProfitPortion
-	{
-		get => _retainProfitPortion.Value;
-		set => _retainProfitPortion.Value = value;
-	}
-
-	public decimal MinPositionValue
-	{
-		get => _minPositionValue.Value;
-		set => _minPositionValue.Value = value;
-	}
-
-	public decimal MinBuyValue
-	{
-		get => _minBuyValue.Value;
-		set => _minBuyValue.Value = value;
-	}
-
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public ScaleInScaleOutStrategy()
 	{
-		_buyScalingSize = Param(nameof(BuyScalingSize), 2m)
+		_slowLength = Param(nameof(SlowLength), 40)
 			.SetGreaterThanZero()
-			.SetDisplay("Buy Scaling Size %", "Percentage of cash used for each scale-in", "General");
-
-		_takeProfitLevel = Param(nameof(TakeProfitLevel), 50m)
-			.SetGreaterThanZero()
-			.SetDisplay("Take Profit Level %", "Profit percentage to start scaling out", "General");
-
-		_takeProfitSize = Param(nameof(TakeProfitSize), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Take Profit Size %", "Portion of position to sell when taking profit", "General");
-
-		_retainProfitPortion = Param(nameof(RetainProfitPortion), 50m)
-			.SetDisplay("Retain Profit Portion %", "Fraction of profit kept outside trading cash", "General");
-
-		_minPositionValue = Param(nameof(MinPositionValue), 200000m)
-			.SetGreaterThanZero()
-			.SetDisplay("Minimum Position Value", "Minimum position value before profit taking", "General");
-
-		_minBuyValue = Param(nameof(MinBuyValue), 100m)
-			.SetGreaterThanZero()
-			.SetDisplay("Minimum Buy Value", "Minimum cash value per buy", "General");
+			.SetDisplay("Slow Length", "Slow EMA period", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
-
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_deployableCash = 1_000_000m;
-		_retainedCash = 0m;
-		_totalCost = 0m;
-	}
+		=> [(Security, CandleType)];
 
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_deployableCash = 1_000_000m;
-
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
+		var prevF = 0m; var prevS = 0m; var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(ProcessCandle)
-			.Start();
-
+		subscription.Bind(fast, slow, (candle, f, s) =>
+		{
+			if (candle.State != CandleStates.Finished) return;
+			if (!fast.IsFormed || !slow.IsFormed) return;
+			if (!init) { prevF = f; prevS = s; init = true; return; }
+			if (candle.OpenTime - lastSignal >= cooldown)
+			{
+				if (prevF <= prevS && f > s && Position <= 0) { BuyMarket(); lastSignal = candle.OpenTime; }
+				else if (prevF >= prevS && f < s && Position >= 0) { SellMarket(); lastSignal = candle.OpenTime; }
+			}
+			prevF = f; prevS = s;
+		}).Start();
 		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawOwnTrades(area);
-		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var price = candle.ClosePrice;
-		var position = Position;
-
-		if (position > 0)
-		{
-			var positionValue = position * price;
-			if (positionValue >= MinPositionValue)
-			{
-				var avgPrice = _totalCost / position;
-				var profitPercent = (price - avgPrice) / avgPrice * 100m;
-				if (profitPercent >= TakeProfitLevel)
-				{
-					var sellQty = position * (TakeProfitSize / 100m);
-					SellMarket(sellQty);
-
-					var costPortion = avgPrice * sellQty;
-					var saleProceeds = price * sellQty;
-					var profit = saleProceeds - costPortion;
-
-					_totalCost -= costPortion;
-
-					var retain = profit * (RetainProfitPortion / 100m);
-					_retainedCash += retain;
-					_deployableCash += costPortion + (profit - retain);
-				}
-			}
-		}
-
-		if (_deployableCash > MinBuyValue)
-		{
-			var buyValue = Math.Max(_deployableCash * (BuyScalingSize / 100m), MinBuyValue);
-			buyValue = Math.Min(buyValue, _deployableCash);
-
-			var qty = buyValue / price;
-			if (qty > 0)
-			{
-				BuyMarket(qty);
-				_deployableCash -= buyValue;
-				_totalCost += buyValue;
-			}
-		}
+		if (area != null) { DrawCandles(area, subscription); DrawIndicator(area, fast); DrawIndicator(area, slow); DrawOwnTrades(area); }
 	}
 }

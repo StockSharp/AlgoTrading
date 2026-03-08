@@ -38,7 +38,7 @@ public class IntradayBetaStrategy : Strategy
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "ATR period for trailing", "Indicators");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -58,7 +58,7 @@ public class IntradayBetaStrategy : Strategy
 
 		var ma10 = new SimpleMovingAverage { Length = 10 };
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
-		var atr = new AverageTrueRange { Length = AtrPeriod };
+		var atr = new StandardDeviation { Length = AtrPeriod };
 
 		SubscribeCandles(CandleType).Bind(ma10, rsi, atr, ProcessCandle).Start();
 	}

@@ -39,7 +39,7 @@ public class OrderExampleStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("SMA Period", "Trend filter SMA period", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for candles", "General");
 	}
 
@@ -57,7 +57,7 @@ public class OrderExampleStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var sma = new SMA { Length = SmaPeriod };
+		var sma = new ExponentialMovingAverage { Length = SmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

@@ -78,7 +78,7 @@ public class RobotDanuStrategy : Strategy
 			
 			.SetOptimize(20, 120, 10);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 

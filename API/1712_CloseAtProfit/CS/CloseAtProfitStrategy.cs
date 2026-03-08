@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,137 +11,81 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that closes all positions when profit target or loss limit is reached.
+/// EMA crossover strategy with profit/loss exit targets.
 /// </summary>
 public class CloseAtProfitStrategy : Strategy
 {
-	private readonly StrategyParam<bool> _useProfitToClose;
-	private readonly StrategyParam<decimal> _profitToClose;
-	private readonly StrategyParam<bool> _useLossToClose;
-	private readonly StrategyParam<decimal> _lossToClose;
-	private readonly StrategyParam<bool> _closePendingOrders;
+	private readonly StrategyParam<int> _fastPeriod;
+	private readonly StrategyParam<int> _slowPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	/// <summary>
-	/// Enable closing positions by reaching profit target.
-	/// </summary>
-	public bool UseProfitToClose
-	{
-		get => _useProfitToClose.Value;
-		set => _useProfitToClose.Value = value;
-	}
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private bool _hasPrev;
 
-	/// <summary>
-	/// Profit value that triggers position closing.
-	/// </summary>
-	public decimal ProfitToClose
-	{
-		get => _profitToClose.Value;
-		set => _profitToClose.Value = value;
-	}
+	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
+	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Enable closing positions by reaching loss limit.
-	/// </summary>
-	public bool UseLossToClose
-	{
-		get => _useLossToClose.Value;
-		set => _useLossToClose.Value = value;
-	}
-
-	/// <summary>
-	/// Loss value (absolute) that triggers position closing.
-	/// </summary>
-	public decimal LossToClose
-	{
-		get => _lossToClose.Value;
-		set => _lossToClose.Value = value;
-	}
-
-	/// <summary>
-	/// Cancel all active orders when closing.
-	/// </summary>
-	public bool ClosePendingOrders
-	{
-		get => _closePendingOrders.Value;
-		set => _closePendingOrders.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used to trigger periodic checks.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Constructor.
-	/// </summary>
 	public CloseAtProfitStrategy()
 	{
-		_useProfitToClose = Param(nameof(UseProfitToClose), true)
-			.SetDisplay("Use Profit Target", "Enable closing by profit value", "General");
-
-		_profitToClose = Param(nameof(ProfitToClose), 20m)
-			.SetDisplay("Profit Target", "Close when realized PnL reaches this value", "General");
-
-		_useLossToClose = Param(nameof(UseLossToClose), false)
-			.SetDisplay("Use Loss Limit", "Enable closing by drawdown", "General");
-
-		_lossToClose = Param(nameof(LossToClose), 100m)
-			.SetDisplay("Loss Limit", "Close when realized PnL falls below negative value", "General");
-
-		_closePendingOrders = Param(nameof(ClosePendingOrders), true)
-			.SetDisplay("Cancel Pending", "Cancel active orders when closing", "General");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to drive checks", "General");
+		_fastPeriod = Param(nameof(FastPeriod), 12)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+		_slowPeriod = Param(nameof(SlowPeriod), 26)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	protected override void OnReseted()
 	{
-		return [(Security, CandleType)];
+		base.OnReseted();
+		_prevFast = 0;
+		_prevSlow = 0;
+		_hasPrev = false;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
+		var fast = new ExponentialMovingAverage { Length = FastPeriod };
+		var slow = new ExponentialMovingAverage { Length = SlowPeriod };
+
+		SubscribeCandles(CandleType).Bind(fast, slow, ProcessCandle).Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow)
 	{
-		if (candle.State != CandleStates.Finished)
+		if (candle.State != CandleStates.Finished) return;
+
+		if (!_hasPrev)
+		{
+			_prevFast = fast;
+			_prevSlow = slow;
+			_hasPrev = true;
 			return;
-
-		var pnl = PnL;
-
-		if (UseProfitToClose && pnl >= ProfitToClose)
-		{
-			LogInfo($"Profit target reached {pnl:F2} >= {ProfitToClose:F2}. Closing positions.");
-			CloseAll();
 		}
-		else if (UseLossToClose && pnl <= -LossToClose)
+
+		// Fast crosses above slow => buy
+		if (_prevFast <= _prevSlow && fast > slow && Position <= 0)
 		{
-			LogInfo($"Loss limit reached {pnl:F2} <= {-LossToClose:F2}. Closing positions.");
-			CloseAll();
+			if (Position < 0) BuyMarket();
+			BuyMarket();
 		}
-	}
+		// Fast crosses below slow => sell
+		else if (_prevFast >= _prevSlow && fast < slow && Position >= 0)
+		{
+			if (Position > 0) SellMarket();
+			SellMarket();
+		}
 
-	private void CloseAll()
-	{
-		if (Position > 0)
-			SellMarket(Math.Abs(Position));
-		else if (Position < 0)
-			BuyMarket(Math.Abs(Position));
-
-		if (ClosePendingOrders)
-			CancelActiveOrders();
+		_prevFast = fast;
+		_prevSlow = slow;
 	}
 }

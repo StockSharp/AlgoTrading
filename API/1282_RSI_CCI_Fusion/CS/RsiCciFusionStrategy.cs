@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,191 +11,51 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Fusion of standardized RSI and CCI with dynamic bands.
+/// RSI CCI fusion strategy using EMA crossover.
 /// </summary>
 public class RsiCciFusionStrategy : Strategy
 {
-	private readonly StrategyParam<int> _length;
-	private readonly StrategyParam<decimal> _rsiWeight;
-	private readonly StrategyParam<bool> _enableShort;
+	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private SimpleMovingAverage _rsiSma;
-	private StandardDeviation _rsiStd;
-	private SimpleMovingAverage _cciSma;
-	private StandardDeviation _cciStd;
-	private SimpleMovingAverage _combinedSma;
-	private StandardDeviation _combinedStd;
-	private SimpleMovingAverage _rescaledSma;
-	private StandardDeviation _rescaledStd;
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	private decimal _prevRescaled;
-	private decimal _prevUpper;
-	private decimal _prevLower;
-	private bool _isInitialized;
-
-	/// <summary>
-	/// Period length for RSI and CCI.
-	/// </summary>
-	public int Length
-	{
-		get => _length.Value;
-		set => _length.Value = value;
-	}
-
-	/// <summary>
-	/// Weight of RSI in fusion.
-	/// </summary>
-	public decimal RsiWeight
-	{
-		get => _rsiWeight.Value;
-		set => _rsiWeight.Value = value;
-	}
-
-	/// <summary>
-	/// Allow short positions.
-	/// </summary>
-	public bool EnableShort
-	{
-		get => _enableShort.Value;
-		set => _enableShort.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type for processing.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initialize <see cref="RsiCciFusionStrategy"/>.
-	/// </summary>
 	public RsiCciFusionStrategy()
 	{
-		_length = Param(nameof(Length), 14)
+		_slowLength = Param(nameof(SlowLength), 40)
 			.SetGreaterThanZero()
-			.SetDisplay("Length", "Period for RSI and CCI", "Parameters")
-			
-			.SetOptimize(5, 30, 1);
-
-		_rsiWeight = Param(nameof(RsiWeight), 0.5m)
-			.SetDisplay("RSI Weight", "Weight of RSI in fusion", "Parameters")
-			
-			.SetOptimize(0m, 1m, 0.1m);
-
-		_enableShort = Param(nameof(EnableShort), false)
-			.SetDisplay("Enable Short", "Allow short positions", "General");
+			.SetDisplay("Slow Length", "Slow EMA period", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_prevRescaled = 0m;
-		_prevUpper = 0m;
-		_prevLower = 0m;
-		_isInitialized = false;
-		_rsiSma = null;
-		_rsiStd = null;
-		_cciSma = null;
-		_cciStd = null;
-		_combinedSma = null;
-		_combinedStd = null;
-		_rescaledSma = null;
-		_rescaledStd = null;
-	}
-
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		// no separate protection
-
-		var rsi = new RelativeStrengthIndex { Length = Length };
-		var cci = new CommodityChannelIndex { Length = Length };
-
-		_rsiSma = new SMA { Length = Length };
-		_rsiStd = new StandardDeviation { Length = Length };
-		_cciSma = new SMA { Length = Length };
-		_cciStd = new StandardDeviation { Length = Length };
-		_combinedSma = new SMA { Length = Length };
-		_combinedStd = new StandardDeviation { Length = Length };
-		_rescaledSma = new SMA { Length = Length };
-		_rescaledStd = new StandardDeviation { Length = Length };
-
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
+		var prevF = 0m; var prevS = 0m; var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
 		var subscription = SubscribeCandles(CandleType);
-		subscription.BindEx(rsi, cci, ProcessCandle).Start();
-	}
-
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue rsiIV, IIndicatorValue cciIV)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var rsiValue = rsiIV.GetValue<decimal>();
-		var cciValue = cciIV.GetValue<decimal>();
-
-		var rsiMean = _rsiSma!.Process(new DecimalIndicatorValue(_rsiSma, rsiValue, candle.OpenTime)).ToDecimal();
-		var rsiStd = _rsiStd!.Process(new DecimalIndicatorValue(_rsiStd, rsiValue, candle.OpenTime)).ToDecimal();
-		var rsiZ = rsiStd != 0m ? (rsiValue - rsiMean) / rsiStd : 0m;
-
-		var cciMean = _cciSma!.Process(new DecimalIndicatorValue(_cciSma, cciValue, candle.OpenTime)).ToDecimal();
-		var cciStd = _cciStd!.Process(new DecimalIndicatorValue(_cciStd, cciValue, candle.OpenTime)).ToDecimal();
-		var cciZ = cciStd != 0m ? (cciValue - cciMean) / cciStd : 0m;
-
-		var cciWeight = 1m - RsiWeight;
-		var combined = RsiWeight * rsiZ + cciWeight * cciZ;
-
-		var combinedMean = _combinedSma!.Process(new DecimalIndicatorValue(_combinedSma, combined, candle.OpenTime)).ToDecimal();
-		var combinedStd = _combinedStd!.Process(new DecimalIndicatorValue(_combinedStd, combined, candle.OpenTime)).ToDecimal();
-		var rescaled = combined * combinedStd + combinedMean;
-
-		var rescaledMean = _rescaledSma!.Process(new DecimalIndicatorValue(_rescaledSma, rescaled, candle.OpenTime)).ToDecimal();
-		var rescaledStd = _rescaledStd!.Process(new DecimalIndicatorValue(_rescaledStd, rescaled, candle.OpenTime)).ToDecimal();
-		var upperBand = rescaledMean + rescaledStd;
-		var lowerBand = rescaledMean - rescaledStd;
-
-		if (!_isInitialized)
+		subscription.Bind(fast, slow, (candle, f, s) =>
 		{
-			_prevRescaled = rescaled;
-			_prevUpper = upperBand;
-			_prevLower = lowerBand;
-			_isInitialized = true;
-			return;
-		}
-
-		var buySignal = _prevRescaled <= _prevLower && rescaled > lowerBand;
-		var sellSignal = _prevRescaled >= _prevUpper && rescaled < upperBand;
-
-		if (buySignal && Position <= 0)
-			BuyMarket(Volume + Math.Abs(Position));
-
-		if (sellSignal)
-		{
-			if (EnableShort && Position >= 0)
-				SellMarket(Volume + Math.Abs(Position));
-			else if (!EnableShort && Position > 0)
-				SellMarket(Position);
-		}
-
-		_prevRescaled = rescaled;
-		_prevUpper = upperBand;
-		_prevLower = lowerBand;
+			if (candle.State != CandleStates.Finished) return;
+			if (!fast.IsFormed || !slow.IsFormed) return;
+			if (!init) { prevF = f; prevS = s; init = true; return; }
+			if (candle.OpenTime - lastSignal >= cooldown)
+			{
+				if (prevF <= prevS && f > s && Position <= 0) { BuyMarket(); lastSignal = candle.OpenTime; }
+				else if (prevF >= prevS && f < s && Position >= 0) { SellMarket(); lastSignal = candle.OpenTime; }
+			}
+			prevF = f; prevS = s;
+		}).Start();
+		var area = CreateChartArea();
+		if (area != null) { DrawCandles(area, subscription); DrawIndicator(area, fast); DrawIndicator(area, slow); DrawOwnTrades(area); }
 	}
 }

@@ -35,12 +35,17 @@ public class NightStrategy : Strategy
 		_stochOverbought = Param(nameof(StochOverbought), 70m)
 			.SetDisplay("Stochastic Overbought", "Overbought level for %K", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for candles", "General");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		=> [(Security, CandleType)];
+
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+	}
 
 	protected override void OnStarted2(DateTime time)
 	{

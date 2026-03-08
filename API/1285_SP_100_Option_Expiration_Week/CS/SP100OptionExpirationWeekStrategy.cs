@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,79 +11,51 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Enters long on Monday of option expiration week and exits on the third Friday of the month.
+/// SP100 option expiration week strategy using EMA crossover.
 /// </summary>
 public class SP100OptionExpirationWeekStrategy : Strategy
 {
+	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	/// <summary>
-	/// Candle type used for strategy calculations.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Initializes a new instance of the <see cref="SP100OptionExpirationWeekStrategy"/> class.
-	/// </summary>
 	public SP100OptionExpirationWeekStrategy()
 	{
+		_slowLength = Param(nameof(SlowLength), 40)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow Length", "Slow EMA period", "General");
+
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		// no separate protection
-
-		var ema = new ExponentialMovingAverage { Length = 5 };
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
+		var prevF = 0m; var prevS = 0m; var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(ema, ProcessCandle)
-			.Start();
-	}
-
-	private static bool IsOptionExpirationWeek(DateTime time)
-	{
-		return time.Day >= 15 && time.Day <= 21 && time.DayOfWeek >= DayOfWeek.Monday && time.DayOfWeek <= DayOfWeek.Friday;
-	}
-
-	private static bool IsThirdFriday(DateTime time)
-	{
-		return time.DayOfWeek == DayOfWeek.Friday && time.Day >= 15 && time.Day <= 21;
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal _emaVal)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var time = candle.OpenTime;
-
-		if (time.DayOfWeek == DayOfWeek.Monday && IsOptionExpirationWeek(time) && Position <= 0)
+		subscription.Bind(fast, slow, (candle, f, s) =>
 		{
-			BuyMarket();
-		}
-		else if (IsThirdFriday(time) && Position > 0)
-		{
-			if (Position > 0)
-				SellMarket(Position);
-			else if (Position < 0)
-				BuyMarket(Math.Abs(Position));
-		}
+			if (candle.State != CandleStates.Finished) return;
+			if (!fast.IsFormed || !slow.IsFormed) return;
+			if (!init) { prevF = f; prevS = s; init = true; return; }
+			if (candle.OpenTime - lastSignal >= cooldown)
+			{
+				if (prevF <= prevS && f > s && Position <= 0) { BuyMarket(); lastSignal = candle.OpenTime; }
+				else if (prevF >= prevS && f < s && Position >= 0) { SellMarket(); lastSignal = candle.OpenTime; }
+			}
+			prevF = f; prevS = s;
+		}).Start();
+		var area = CreateChartArea();
+		if (area != null) { DrawCandles(area, subscription); DrawIndicator(area, fast); DrawIndicator(area, slow); DrawOwnTrades(area); }
 	}
 }

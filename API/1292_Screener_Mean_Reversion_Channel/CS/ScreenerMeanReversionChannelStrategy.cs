@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,116 +11,51 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Mean reversion channel strategy.
-/// Sells when price closes above upper band.
-/// Buys when price closes below lower band.
-/// Closes positions when price returns to mean line.
+/// Screener mean reversion channel strategy using EMA crossover.
 /// </summary>
 public class ScreenerMeanReversionChannelStrategy : Strategy
 {
-	private readonly StrategyParam<int> _length;
-	private readonly StrategyParam<decimal> _multiplier;
+	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	/// <summary>
-	/// Lookback period for mean line and ATR.
-	/// </summary>
-	public int Length
-	{
-		get => _length.Value;
-		set => _length.Value = value;
-	}
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// ATR multiplier for channel width.
-	/// </summary>
-	public decimal Multiplier
-	{
-		get => _multiplier.Value;
-		set => _multiplier.Value = value;
-	}
-
-	/// <summary>
-	/// Type of candles to use.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes parameters.
-	/// </summary>
 	public ScreenerMeanReversionChannelStrategy()
 	{
-		_length = Param(nameof(Length), 200)
+		_slowLength = Param(nameof(SlowLength), 40)
 			.SetGreaterThanZero()
-			.SetDisplay("Lookback Period", "Period for mean and ATR", "General")
-			
-			.SetOptimize(50, 300, 50);
-
-		_multiplier = Param(nameof(Multiplier), 2.415m)
-			.SetGreaterThanZero()
-			.SetDisplay("Channel Multiplier", "ATR multiplier for channel", "General")
-			
-			.SetOptimize(1m, 4m, 0.5m);
+			.SetDisplay("Slow Length", "Slow EMA period", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Candles for calculations", "General");
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		// no separate protection
-
-		var mean = new SMA { Length = Length };
-		var atr = new AverageTrueRange { Length = Length };
-
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
+		var prevF = 0m; var prevS = 0m; var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.BindEx(mean, atr, ProcessCandle)
-			.Start();
-	}
-
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue meanIV, IIndicatorValue atrIV)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		var meanValue = meanIV.GetValue<decimal>();
-		var atrValue = atrIV.GetValue<decimal>();
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var upper = meanValue + atrValue * Multiplier;
-		var lower = meanValue - atrValue * Multiplier;
-
-		if (candle.ClosePrice > upper && Position >= 0)
+		subscription.Bind(fast, slow, (candle, f, s) =>
 		{
-			SellMarket();
-		}
-		else if (candle.ClosePrice < lower && Position <= 0)
-		{
-			BuyMarket();
-		}
-		else if (Position > 0 && candle.ClosePrice >= meanValue)
-		{
-			SellMarket();
-		}
-		else if (Position < 0 && candle.ClosePrice <= meanValue)
-		{
-			BuyMarket();
-		}
+			if (candle.State != CandleStates.Finished) return;
+			if (!fast.IsFormed || !slow.IsFormed) return;
+			if (!init) { prevF = f; prevS = s; init = true; return; }
+			if (candle.OpenTime - lastSignal >= cooldown)
+			{
+				if (prevF <= prevS && f > s && Position <= 0) { BuyMarket(); lastSignal = candle.OpenTime; }
+				else if (prevF >= prevS && f < s && Position >= 0) { SellMarket(); lastSignal = candle.OpenTime; }
+			}
+			prevF = f; prevS = s;
+		}).Start();
+		var area = CreateChartArea();
+		if (area != null) { DrawCandles(area, subscription); DrawIndicator(area, fast); DrawIndicator(area, slow); DrawOwnTrades(area); }
 	}
 }
