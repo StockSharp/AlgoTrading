@@ -161,7 +161,7 @@ public class ExpBlauCsiStrategy : Strategy
 	/// </summary>
 	public ExpBlauCsiStrategy()
 	{
-		_entryMode = Param(nameof(EntryMode), BlauCsiEntryModes.Twist)
+		_entryMode = Param(nameof(EntryMode), BlauCsiEntryModes.Breakdown)
 			.SetDisplay("Entry Mode", "Zero cross or direction change logic", "Parameters");
 
 		_smoothMethod = Param(nameof(SmoothingMethod), BlauCsiSmoothMethods.Exponential)
@@ -173,22 +173,22 @@ public class ExpBlauCsiStrategy : Strategy
 			
 			.SetOptimize(1, 20, 1);
 
-		_firstSmoothLength = Param(nameof(FirstSmoothingLength), 20)
+		_firstSmoothLength = Param(nameof(FirstSmoothingLength), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("First Smoothing", "Depth of first smoothing stage", "Indicator")
-			
+
 			.SetOptimize(5, 60, 5);
 
-		_secondSmoothLength = Param(nameof(SecondSmoothingLength), 5)
+		_secondSmoothLength = Param(nameof(SecondSmoothingLength), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Second Smoothing", "Depth of second smoothing stage", "Indicator")
-			
+
 			.SetOptimize(2, 30, 1);
 
-		_thirdSmoothLength = Param(nameof(ThirdSmoothingLength), 3)
+		_thirdSmoothLength = Param(nameof(ThirdSmoothingLength), 2)
 			.SetGreaterThanZero()
 			.SetDisplay("Third Smoothing", "Depth of third smoothing stage", "Indicator")
-			
+
 			.SetOptimize(2, 20, 1);
 
 		_smoothingPhase = Param(nameof(SmoothingPhase), 15)
@@ -224,7 +224,7 @@ public class ExpBlauCsiStrategy : Strategy
 		_allowShortExits = Param(nameof(AllowShortExits), true)
 			.SetDisplay("Allow Short Exits", "Enable closing short positions", "Trading");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame used for indicator calculations", "General");
 
 		_startDate = Param(nameof(StartDate), new DateTimeOffset(2018, 1, 1, 0, 0, 0, TimeSpan.Zero))
@@ -443,8 +443,6 @@ public class ExpBlauCsiStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
 
-		StartProtection(null, null);
-
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -471,57 +469,43 @@ public class ExpBlauCsiStrategy : Strategy
 		{
 			if (Position > 0)
 			{
-				SellMarket(Position);
+				SellMarket();
 				ResetTargets();
 			}
 			else if (Position < 0)
 			{
-				BuyMarket(-Position);
+				BuyMarket();
 				ResetTargets();
 			}
 
 			return;
 		}
 
-		if (!_blauCsi.IsFormed)
-			return;
-
 		StoreIndicatorValue(indicatorValue);
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
 
 		var (openLong, openShort, closeLong, closeShort) = EvaluateSignals();
 
 		if (closeLong && AllowLongExits && Position > 0)
 		{
-			SellMarket(Position);
+			SellMarket();
 			ResetTargets();
 		}
 
 		if (closeShort && AllowShortExits && Position < 0)
 		{
-			BuyMarket(-Position);
+			BuyMarket();
 			ResetTargets();
 		}
 
 		if (openLong && AllowLongEntries && Position <= 0)
 		{
-			var volume = Volume + (Position < 0 ? -Position : 0m);
-			if (volume > 0)
-			{
-				BuyMarket(volume);
-				SetTargets(candle.ClosePrice, true);
-			}
+			BuyMarket();
+			SetTargets(candle.ClosePrice, true);
 		}
 		else if (openShort && AllowShortEntries && Position >= 0)
 		{
-			var volume = Volume + (Position > 0 ? Position : 0m);
-			if (volume > 0)
-			{
-				SellMarket(volume);
-				SetTargets(candle.ClosePrice, false);
-			}
+			SellMarket();
+			SetTargets(candle.ClosePrice, false);
 		}
 	}
 
@@ -597,12 +581,12 @@ public class ExpBlauCsiStrategy : Strategy
 		{
 			if (_stopPrice != null && candle.LowPrice <= _stopPrice)
 			{
-				SellMarket(Position);
+				SellMarket();
 				triggered = true;
 			}
 			else if (_takePrice != null && candle.HighPrice >= _takePrice)
 			{
-				SellMarket(Position);
+				SellMarket();
 				triggered = true;
 			}
 		}
@@ -610,12 +594,12 @@ public class ExpBlauCsiStrategy : Strategy
 		{
 			if (_stopPrice != null && candle.HighPrice >= _stopPrice)
 			{
-				BuyMarket(-Position);
+				BuyMarket();
 				triggered = true;
 			}
 			else if (_takePrice != null && candle.LowPrice <= _takePrice)
 			{
-				BuyMarket(-Position);
+				BuyMarket();
 				triggered = true;
 			}
 		}
@@ -670,7 +654,7 @@ public class ExpBlauCsiStrategy : Strategy
 /// </summary>
 public class BlauCsiIndicator : BaseIndicator
 {
-	private readonly Queue<ICandleMessage> _window = new();
+	private readonly List<ICandleMessage> _window = new();
 	private IIndicator _momentumStage1;
 	private IIndicator _momentumStage2;
 	private IIndicator _momentumStage3;
@@ -730,9 +714,9 @@ public class BlauCsiIndicator : BaseIndicator
 		if (_momentumStage1 == null)
 			Initialize();
 
-		_window.Enqueue(candle);
+		_window.Add(candle);
 		while (_window.Count > Math.Max(MomentumLength, 1))
-			_window.Dequeue();
+			_window.RemoveAt(0);
 
 		if (_window.Count < Math.Max(MomentumLength, 1))
 		{
@@ -741,7 +725,7 @@ public class BlauCsiIndicator : BaseIndicator
 		}
 
 		var currentPrice = GetPrice(candle, FirstPrice);
-		var pastCandle = _window.Peek();
+		var pastCandle = _window[0];
 		var pastPrice = GetPrice(pastCandle, SecondPrice);
 
 		var min = decimal.MaxValue;

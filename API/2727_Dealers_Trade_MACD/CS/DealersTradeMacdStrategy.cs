@@ -40,6 +40,7 @@ public class DealersTradeMacdStrategy : Strategy
 	private MovingAverageConvergenceDivergence _macd = null!;
 	private decimal? _previousMacd;
 	private decimal _lastEntryPrice;
+	private int _cooldown;
 	private readonly List<PositionState> _longPositions = new();
 	private readonly List<PositionState> _shortPositions = new();
 
@@ -71,10 +72,10 @@ public class DealersTradeMacdStrategy : Strategy
 		_trailingStepPoints = Param(nameof(TrailingStepPoints), 5m)
 			.SetDisplay("Trailing Step pts", "Additional distance before trailing updates", "Risk");
 
-		_maxPositions = Param(nameof(MaxPositions), 5)
+		_maxPositions = Param(nameof(MaxPositions), 2)
 			.SetDisplay("Max Positions", "Maximum concurrent entries", "Money Management");
 
-		_intervalPoints = Param(nameof(IntervalPoints), 15m)
+		_intervalPoints = Param(nameof(IntervalPoints), 50m)
 			.SetDisplay("Interval pts", "Minimum distance between new entries", "Money Management");
 
 		_secureProfit = Param(nameof(SecureProfit), 50m)
@@ -282,6 +283,7 @@ public class DealersTradeMacdStrategy : Strategy
 		_macd?.Reset();
 		_previousMacd = null;
 		_lastEntryPrice = 0m;
+		_cooldown = 0;
 		_longPositions.Clear();
 		_shortPositions.Clear();
 	}
@@ -311,6 +313,13 @@ public class DealersTradeMacdStrategy : Strategy
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 		{
+			_previousMacd = macdValue;
+			return;
+		}
+
+		if (_cooldown > 0)
+		{
+			_cooldown--;
 			_previousMacd = macdValue;
 			return;
 		}
@@ -359,23 +368,20 @@ public class DealersTradeMacdStrategy : Strategy
 		var trailingDistance = TrailingStopPoints * step;
 		var trailingActivation = (TrailingStopPoints + TrailingStepPoints) * step;
 
-		for (var i = _longPositions.Count - 1; i >= 0; i--)
+		// Collect exits first, then execute to avoid collection modification during enumeration
+		var longExits = new List<PositionState>();
+		var longSnapshot = _longPositions.ToList();
+		foreach (var state in longSnapshot)
 		{
-			var state = _longPositions[i];
-
 			if (state.TakeProfitPrice > 0 && candle.HighPrice >= state.TakeProfitPrice)
 			{
-				SellMarket(state.Volume);
-				_longPositions.RemoveAt(i);
-				_lastEntryPrice = 0m;
+				longExits.Add(state);
 				continue;
 			}
 
 			if (state.StopPrice > 0 && candle.LowPrice <= state.StopPrice)
 			{
-				SellMarket(state.Volume);
-				_longPositions.RemoveAt(i);
-				_lastEntryPrice = 0m;
+				longExits.Add(state);
 				continue;
 			}
 
@@ -386,24 +392,27 @@ public class DealersTradeMacdStrategy : Strategy
 					state.StopPrice = candidateStop;
 			}
 		}
-
-		for (var i = _shortPositions.Count - 1; i >= 0; i--)
+		foreach (var state in longExits)
 		{
-			var state = _shortPositions[i];
+			Volume = state.Volume;
+			SellMarket();
+			_longPositions.Remove(state);
+			_lastEntryPrice = 0m;
+		}
 
+		var shortExits = new List<PositionState>();
+		var shortSnapshot = _shortPositions.ToList();
+		foreach (var state in shortSnapshot)
+		{
 			if (state.TakeProfitPrice > 0 && candle.LowPrice <= state.TakeProfitPrice)
 			{
-				BuyMarket(state.Volume);
-				_shortPositions.RemoveAt(i);
-				_lastEntryPrice = 0m;
+				shortExits.Add(state);
 				continue;
 			}
 
 			if (state.StopPrice > 0 && candle.HighPrice >= state.StopPrice)
 			{
-				BuyMarket(state.Volume);
-				_shortPositions.RemoveAt(i);
-				_lastEntryPrice = 0m;
+				shortExits.Add(state);
 				continue;
 			}
 
@@ -413,6 +422,13 @@ public class DealersTradeMacdStrategy : Strategy
 				if (state.StopPrice == 0m || state.StopPrice > candle.ClosePrice + trailingActivation)
 					state.StopPrice = candidateStop;
 			}
+		}
+		foreach (var state in shortExits)
+		{
+			Volume = state.Volume;
+			BuyMarket();
+			_shortPositions.Remove(state);
+			_lastEntryPrice = 0m;
 		}
 	}
 
@@ -437,7 +453,8 @@ public class DealersTradeMacdStrategy : Strategy
 		var stopDistance = StopLossPoints * step;
 		var takeDistance = TakeProfitPoints * step;
 
-		BuyMarket(volume);
+		Volume = volume;
+		BuyMarket();
 
 		_longPositions.Add(new PositionState
 		{
@@ -448,6 +465,7 @@ public class DealersTradeMacdStrategy : Strategy
 		});
 
 		_lastEntryPrice = candle.ClosePrice;
+		_cooldown = 3;
 	}
 
 	private void TryOpenShort(ICandleMessage candle)
@@ -471,7 +489,8 @@ public class DealersTradeMacdStrategy : Strategy
 		var stopDistance = StopLossPoints * step;
 		var takeDistance = TakeProfitPoints * step;
 
-		SellMarket(volume);
+		Volume = volume;
+		SellMarket();
 
 		_shortPositions.Add(new PositionState
 		{
@@ -482,6 +501,7 @@ public class DealersTradeMacdStrategy : Strategy
 		});
 
 		_lastEntryPrice = candle.ClosePrice;
+		_cooldown = 3;
 	}
 
 	private decimal CalculateRiskVolume(decimal priceStep)
@@ -550,12 +570,12 @@ public class DealersTradeMacdStrategy : Strategy
 
 		if (bestIsLong)
 		{
-			SellMarket(best.Volume);
+			SellMarket();
 			_longPositions.Remove(best);
 		}
 		else
 		{
-			BuyMarket(best.Volume);
+			BuyMarket();
 			_shortPositions.Remove(best);
 		}
 

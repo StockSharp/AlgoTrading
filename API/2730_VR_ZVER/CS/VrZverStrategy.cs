@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -223,7 +220,7 @@ public class VrZverStrategy : Strategy
 	/// </summary>
 	public VrZverStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles", "General");
 
 		_useMovingAverage = Param(nameof(UseMovingAverage), true)
@@ -256,10 +253,10 @@ public class VrZverStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Stoch Smoothing", "Stochastic %K smoothing", "Signals");
 
-		_stochasticUpperLevel = Param(nameof(StochasticUpperLevel), 60)
+		_stochasticUpperLevel = Param(nameof(StochasticUpperLevel), 55)
 		.SetDisplay("Stoch Upper", "Upper stochastic threshold", "Signals");
 
-		_stochasticLowerLevel = Param(nameof(StochasticLowerLevel), 40)
+		_stochasticLowerLevel = Param(nameof(StochasticLowerLevel), 50)
 		.SetDisplay("Stoch Lower", "Lower stochastic threshold", "Signals");
 
 		_useRsi = Param(nameof(UseRsi), true)
@@ -269,10 +266,10 @@ public class VrZverStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("RSI Period", "RSI averaging period", "Signals");
 
-		_rsiUpperLevel = Param(nameof(RsiUpperLevel), 60)
+		_rsiUpperLevel = Param(nameof(RsiUpperLevel), 55)
 		.SetDisplay("RSI Upper", "Upper RSI threshold", "Signals");
 
-		_rsiLowerLevel = Param(nameof(RsiLowerLevel), 40)
+		_rsiLowerLevel = Param(nameof(RsiLowerLevel), 50)
 		.SetDisplay("RSI Lower", "Lower RSI threshold", "Signals");
 
 		_stopLossPips = Param(nameof(StopLossPips), 50)
@@ -300,6 +297,7 @@ public class VrZverStrategy : Strategy
 	{
 		base.OnReseted();
 
+		_pipSize = 0m;
 		ResetPositionState();
 	}
 
@@ -382,8 +380,6 @@ public class VrZverStrategy : Strategy
 		if (Position != 0)
 		return;
 
-		CancelActiveOrders();
-
 		if (!UseMovingAverage && !UseStochastic && !UseRsi)
 		return;
 
@@ -408,7 +404,7 @@ public class VrZverStrategy : Strategy
 
 	private void EnterLong(decimal price)
 	{
-		BuyMarket(Volume);
+		BuyMarket();
 
 		_longEntryPrice = price;
 		_longStopPrice = StopLossPips > 0 ? price - StopLossPips * _pipSize : null;
@@ -419,7 +415,7 @@ public class VrZverStrategy : Strategy
 
 	private void EnterShort(decimal price)
 	{
-		SellMarket(Volume);
+		SellMarket();
 
 		_shortEntryPrice = price;
 		_shortStopPrice = StopLossPips > 0 ? price + StopLossPips * _pipSize : null;
@@ -433,12 +429,10 @@ public class VrZverStrategy : Strategy
 		if (Position <= 0 || _longEntryPrice is null)
 		return false;
 
-		var positionVolume = Position;
-
 		// Exit the long trade if the protective stop is touched within the candle range.
 		if (_longStopPrice is decimal stop && candle.LowPrice <= stop)
 		{
-			SellMarket(positionVolume);
+			SellMarket();
 			ResetPositionState();
 			return true;
 		}
@@ -446,7 +440,7 @@ public class VrZverStrategy : Strategy
 		// Take profit when the upper target is reached.
 		if (_longTakePrice is decimal take && candle.HighPrice >= take)
 		{
-			SellMarket(positionVolume);
+			SellMarket();
 			ResetPositionState();
 			return true;
 		}
@@ -457,7 +451,7 @@ public class VrZverStrategy : Strategy
 		// Once breakeven is armed, protect the entry price if momentum fades.
 		if (_longBreakevenArmed && candle.LowPrice <= _longEntryPrice.Value)
 		{
-			SellMarket(positionVolume);
+			SellMarket();
 			ResetPositionState();
 			return true;
 		}
@@ -470,12 +464,10 @@ public class VrZverStrategy : Strategy
 		if (Position >= 0 || _shortEntryPrice is null)
 		return false;
 
-		var positionVolume = Math.Abs(Position);
-
 		// Cover the short trade if the stop level is breached.
 		if (_shortStopPrice is decimal stop && candle.HighPrice >= stop)
 		{
-			BuyMarket(positionVolume);
+			BuyMarket();
 			ResetPositionState();
 			return true;
 		}
@@ -483,7 +475,7 @@ public class VrZverStrategy : Strategy
 		// Lock in profits if the target is met on the downside move.
 		if (_shortTakePrice is decimal take && candle.LowPrice <= take)
 		{
-			BuyMarket(positionVolume);
+			BuyMarket();
 			ResetPositionState();
 			return true;
 		}
@@ -494,7 +486,7 @@ public class VrZverStrategy : Strategy
 		// Breakeven logic mirrors the long side to guard against reversals.
 		if (_shortBreakevenArmed && candle.HighPrice >= _shortEntryPrice.Value)
 		{
-			BuyMarket(positionVolume);
+			BuyMarket();
 			ResetPositionState();
 			return true;
 		}
