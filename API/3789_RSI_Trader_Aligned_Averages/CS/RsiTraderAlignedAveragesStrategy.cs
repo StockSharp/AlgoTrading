@@ -40,7 +40,7 @@ public class RsiTraderAlignedAveragesStrategy : Strategy
 		_longMaPeriod = Param(nameof(LongMaPeriod), 26)
 			.SetDisplay("Long MA", "Long moving average period", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 	}
 
