@@ -47,7 +47,7 @@ public class TerminatorStrategy : Strategy
 	private readonly StrategyParam<int> _macdSlowLength;
 	private readonly StrategyParam<int> _macdSignalLength;
 
-	private MovingAverageConvergenceDivergenceSignal _macd = null!;
+	private MovingAverageConvergenceDivergenceSignal? _macd;
 	private decimal? _previousMacd;
 	private decimal? _previousPreviousMacd;
 	private decimal _openVolume;
@@ -85,7 +85,7 @@ public class TerminatorStrategy : Strategy
 			.SetDisplay("Trailing Stop (pips)", "Trailing stop distance that activates after the threshold", "Risk")
 			;
 
-		_maxTrades = Param(nameof(MaxTrades), 10)
+		_maxTrades = Param(nameof(MaxTrades), 1)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Trades", "Maximum number of simultaneously open martingale trades", "General")
 			;
@@ -163,7 +163,7 @@ public class TerminatorStrategy : Strategy
 			.SetDisplay("End Month", "Last month when new trades are allowed", "Schedule")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for signal generation", "General");
 
 		_macdFastLength = Param(nameof(MacdFastLength), 14)
@@ -435,10 +435,17 @@ public class TerminatorStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
 
+		_macd = null;
 		_previousMacd = null;
 		_previousPreviousMacd = null;
 		_openVolume = 0m;
@@ -451,7 +458,7 @@ public class TerminatorStrategy : Strategy
 		_takeProfitPrice = null;
 		_pipSize = 0m;
 		_pipValue = 0m;
-		_continueOpening = true;
+		_continueOpening = false;
 		_currentDirection = null;
 		_martingaleBaseVolume = 0m;
 	}
@@ -548,12 +555,12 @@ public class TerminatorStrategy : Strategy
 		{
 			if (_isLongPosition && currentPrice <= _stopLossPrice.Value)
 			{
-				SellMarket(_openVolume);
+				SellMarket();
 				return;
 			}
 			if (!_isLongPosition && currentPrice >= _stopLossPrice.Value)
 			{
-				BuyMarket(_openVolume);
+				BuyMarket();
 				return;
 			}
 		}
@@ -563,12 +570,12 @@ public class TerminatorStrategy : Strategy
 		{
 			if (_isLongPosition && currentPrice >= _takeProfitPrice.Value)
 			{
-				SellMarket(_openVolume);
+				SellMarket();
 				return;
 			}
 			if (!_isLongPosition && currentPrice <= _takeProfitPrice.Value)
 			{
-				BuyMarket(_openVolume);
+				BuyMarket();
 				return;
 			}
 		}
@@ -583,9 +590,9 @@ public class TerminatorStrategy : Strategy
 			if (profit >= threshold && _lastEntryVolume > 0m)
 			{
 				if (_isLongPosition)
-					SellMarket(_lastEntryVolume);
+					SellMarket();
 				else
-					BuyMarket(_lastEntryVolume);
+					BuyMarket();
 				_continueOpening = false;
 			}
 		}

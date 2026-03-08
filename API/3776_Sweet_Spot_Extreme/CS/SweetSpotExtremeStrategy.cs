@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -63,14 +64,30 @@ public class SweetSpotExtremeStrategy : Strategy
 		_cciPeriod = Param(nameof(CciPeriod), 14)
 			.SetDisplay("CCI Period", "CCI lookback", "Indicators");
 
-		_buyCciLevel = Param(nameof(BuyCciLevel), -100m)
+		_buyCciLevel = Param(nameof(BuyCciLevel), -50m)
 			.SetDisplay("Buy CCI", "Oversold CCI level for buy", "Indicators");
 
-		_sellCciLevel = Param(nameof(SellCciLevel), 100m)
+		_sellCciLevel = Param(nameof(SellCciLevel), 50m)
 			.SetDisplay("Sell CCI", "Overbought CCI level for sell", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle series", "General");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_prevEma = 0m;
+		_prevPrevEma = 0m;
+		_hasPrevEma = false;
 	}
 
 	protected override void OnStarted2(DateTime time)

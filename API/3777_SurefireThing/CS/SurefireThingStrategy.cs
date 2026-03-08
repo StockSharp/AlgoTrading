@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -47,8 +48,33 @@ public class SurefireThingStrategy : Strategy
 		_rangeMultiplier = Param(nameof(RangeMultiplier), 0.5m)
 			.SetDisplay("Range Mult", "Multiplier for range-based levels", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candle series", "General");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_currentDay = null;
+		_buyLevel = 0m;
+		_sellLevel = 0m;
+		_levelsReady = false;
+		_prevDayClose = 0m;
+		_prevDayHigh = 0m;
+		_prevDayLow = 0m;
+		_dayHigh = 0m;
+		_dayLow = 0m;
+		_dayClose = 0m;
+		_hasPrevDay = false;
+		_tradedToday = false;
 	}
 
 	protected override void OnStarted2(DateTime time)

@@ -32,8 +32,8 @@ public class TimeBasedRangeBreakoutStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _lastOpenHour;
 
-	private readonly Queue<decimal> _rangeHistory = new();
-	private readonly Queue<decimal> _closeDiffHistory = new();
+	private Queue<decimal>? _rangeHistory;
+	private Queue<decimal>? _closeDiffHistory;
 
 	private DateTime? _currentDay;
 	private DateTime? _levelsDay;
@@ -198,7 +198,7 @@ public class TimeBasedRangeBreakoutStrategy : Strategy
 		
 		.SetOptimize(1, 3, 1);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Primary candle series used by the strategy", "Data");
 		_lastOpenHour = Param(nameof(LastOpenHour), 23)
 			.SetDisplay("Last Open Hour", "Hour after which new trades are not opened", "Schedule")
@@ -216,8 +216,8 @@ public class TimeBasedRangeBreakoutStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_rangeHistory.Clear();
-		_closeDiffHistory.Clear();
+		_rangeHistory = null;
+		_closeDiffHistory = null;
 		_currentDay = null;
 		_levelsDay = null;
 		_dayHigh = 0m;
@@ -230,12 +230,16 @@ public class TimeBasedRangeBreakoutStrategy : Strategy
 		_currentCheckClose = null;
 		_tradesOpenedToday = 0;
 		_levelsReady = false;
+		_entryPrice = 0m;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+
+		_rangeHistory = new();
+		_closeDiffHistory = new();
 
 		StartProtection(null, null);
 
@@ -300,6 +304,7 @@ public class TimeBasedRangeBreakoutStrategy : Strategy
 	{
 		var dayRange = _dayHigh - _dayLow;
 		if (dayRange > 0m)
+		if (_rangeHistory != null)
 		EnqueueWithLimit(_rangeHistory, dayRange, DaysToCheck);
 
 		if (_currentCheckClose is decimal checkClose)
@@ -308,6 +313,7 @@ public class TimeBasedRangeBreakoutStrategy : Strategy
 			{
 				var difference = Math.Abs(checkClose - previousClose);
 				if (difference > 0m)
+				if (_closeDiffHistory != null)
 				EnqueueWithLimit(_closeDiffHistory, difference, DaysToCheck);
 			}
 
@@ -408,6 +414,8 @@ public class TimeBasedRangeBreakoutStrategy : Strategy
 	{
 		average = 0m;
 		var source = CheckMode == 2 ? _closeDiffHistory : _rangeHistory;
+		if (source == null)
+		return false;
 
 		var sum = 0m;
 		var count = 0;
