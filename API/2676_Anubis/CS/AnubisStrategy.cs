@@ -37,7 +37,7 @@ public class AnubisStrategy : Strategy
 	private readonly StrategyParam<int> _stdSlowLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private readonly DataType _higherTimeFrame = TimeSpan.FromDays(1).TimeFrame();
+	private readonly DataType _higherTimeFrame = TimeSpan.FromHours(4).TimeFrame();
 
 	private AverageTrueRange _atrIndicator = null!;
 	private CommodityChannelIndex _cciIndicator = null!;
@@ -263,13 +263,13 @@ public class AnubisStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("CCI Period", "CCI lookback on the higher timeframe", "Indicators");
 
-		_stopLossPips = Param(nameof(StopLossPips), 100m)
+		_stopLossPips = Param(nameof(StopLossPips), 500m)
 			.SetDisplay("Stop Loss (pips)", "Stop-loss distance measured in pips", "Risk");
 
-		_breakevenPips = Param(nameof(BreakevenPips), 65m)
+		_breakevenPips = Param(nameof(BreakevenPips), 300m)
 			.SetDisplay("Breakeven (pips)", "Distance to move stop to entry", "Risk");
 
-		_thresholdPips = Param(nameof(ThresholdPips), 28m)
+		_thresholdPips = Param(nameof(ThresholdPips), 200m)
 			.SetDisplay("MACD Exit Threshold (pips)", "Extra profit required before MACD exit", "Risk");
 
 		_takeStdMultiplier = Param(nameof(TakeStdMultiplier), 2.9m)
