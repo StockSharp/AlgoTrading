@@ -94,7 +94,7 @@ public class Kositbablo10Strategy : Strategy
 		_stopLossPct = Param(nameof(StopLossPct), 1m)
 			.SetDisplay("Stop Loss %", "Stop loss percent", "Risk")
 			.SetGreaterThanZero();
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 

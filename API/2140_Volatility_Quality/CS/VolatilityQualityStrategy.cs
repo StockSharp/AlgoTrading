@@ -21,7 +21,7 @@ public class VolatilityQualityStrategy : Strategy
 	private readonly StrategyParam<int> _lengthParam;
 	private readonly StrategyParam<DataType> _candleTypeParam;
 
-	private SimpleMovingAverage _sma;
+	private ExponentialMovingAverage _sma;
 	private decimal _prevSma;
 	private int _prevColor;
 
@@ -54,7 +54,7 @@ public class VolatilityQualityStrategy : Strategy
 			
 			.SetOptimize(5, 30, 5);
 
-		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for strategy", "Common");
 	}
 
@@ -80,7 +80,7 @@ public class VolatilityQualityStrategy : Strategy
 		base.OnStarted2(time);
 
 		// Create indicator for smoothed median price
-		_sma = new SimpleMovingAverage { Length = Length };
+		_sma = new ExponentialMovingAverage { Length = Length };
 
 		// Subscribe to candle series and bind indicator
 		var subscription = SubscribeCandles(CandleType);

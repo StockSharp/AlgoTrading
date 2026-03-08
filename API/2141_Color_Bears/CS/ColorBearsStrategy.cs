@@ -69,7 +69,7 @@ public class ColorBearsStrategy : Strategy
 			.SetDisplay("MA2", "Second MA length", "Parameters")
 			.SetOptimize(2, 20, 1);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle", "Candle type", "Parameters");
 	}
 
@@ -86,6 +86,9 @@ public class ColorBearsStrategy : Strategy
 
 		_ma1 = new ExponentialMovingAverage { Length = Ma1Period };
 		_ma2 = new ExponentialMovingAverage { Length = Ma2Period };
+
+		Indicators.Add(_ma1);
+		Indicators.Add(_ma2);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
@@ -112,6 +115,9 @@ public class ColorBearsStrategy : Strategy
 		var ma2Input = new DecimalIndicatorValue(_ma2, bears, candle.OpenTime) { IsFinal = true };
 		var ma2Value = _ma2.Process(ma2Input);
 		if (!_ma2.IsFormed)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		var current = ma2Value.ToDecimal();
@@ -147,6 +153,8 @@ public class ColorBearsStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
+		_ma1 = default;
+		_ma2 = default;
 		_prevValue = null;
 		_prevColor = null;
 	}

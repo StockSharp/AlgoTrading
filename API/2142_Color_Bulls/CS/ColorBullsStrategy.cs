@@ -69,7 +69,7 @@ public class ColorBullsStrategy : Strategy
 			.SetDisplay("Smooth Length", "Period of smoothing moving average", "Indicator")
 			.SetOptimize(3, 15, 1);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -92,8 +92,11 @@ public class ColorBullsStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var highMa = new SimpleMovingAverage { Length = FastLength };
-		var bullsMa = new SimpleMovingAverage { Length = SmoothLength };
+		var highMa = new ExponentialMovingAverage { Length = FastLength };
+		var bullsMa = new ExponentialMovingAverage { Length = SmoothLength };
+
+		Indicators.Add(highMa);
+		Indicators.Add(bullsMa);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -114,6 +117,9 @@ public class ColorBullsStrategy : Strategy
 			var bullsInput = new DecimalIndicatorValue(bullsMa, bulls, candle.OpenTime) { IsFinal = true };
 			var smooth = bullsMa.Process(bullsInput).ToDecimal();
 			if (!bullsMa.IsFormed)
+				return;
+
+			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
 
 			var color = smooth > _prevValue ? 0 : smooth < _prevValue ? 2 : 1;
