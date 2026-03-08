@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,167 +11,88 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Moving average crossover strategy based on the ProfitView template.
+/// ProfitView Template strategy using EMA crossover.
 /// </summary>
 public class ProfitViewTemplateStrategy : Strategy
 {
-	private readonly StrategyParam<MaTypes> _ma1Type;
-	private readonly StrategyParam<int> _ma1Length;
-	private readonly StrategyParam<MaTypes> _ma2Type;
-	private readonly StrategyParam<int> _ma2Length;
+	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevMa1;
-	private decimal _prevMa2;
-	private bool _isInitialized;
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Moving average type.
-	/// </summary>
-	public enum MaTypes
-	{
-		SMA,
-		EMA,
-		RMA
-	}
-
-	/// <summary>
-	/// Type of MA1.
-	/// </summary>
-	public MaTypes Ma1Type
-	{
-		get => _ma1Type.Value;
-		set => _ma1Type.Value = value;
-	}
-
-	/// <summary>
-	/// Length of MA1.
-	/// </summary>
-	public int Ma1Length
-	{
-		get => _ma1Length.Value;
-		set => _ma1Length.Value = value;
-	}
-
-	/// <summary>
-	/// Type of MA2.
-	/// </summary>
-	public MaTypes Ma2Type
-	{
-		get => _ma2Type.Value;
-		set => _ma2Type.Value = value;
-	}
-
-	/// <summary>
-	/// Length of MA2.
-	/// </summary>
-	public int Ma2Length
-	{
-		get => _ma2Length.Value;
-		set => _ma2Length.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Constructor.
-	/// </summary>
 	public ProfitViewTemplateStrategy()
 	{
-		_ma1Type = Param(nameof(Ma1Type), MaTypes.SMA)
-			.SetDisplay("MA1 Type", "Type of first moving average", "Moving Averages");
-		_ma1Length = Param(nameof(Ma1Length), 10)
+		_slowLength = Param(nameof(SlowLength), 40)
 			.SetGreaterThanZero()
-			.SetDisplay("MA1 Length", "Length of first moving average", "Moving Averages")
-			
-			.SetOptimize(5, 50, 5);
-		_ma2Type = Param(nameof(Ma2Type), MaTypes.SMA)
-			.SetDisplay("MA2 Type", "Type of second moving average", "Moving Averages");
-		_ma2Length = Param(nameof(Ma2Length), 100)
-			.SetGreaterThanZero()
-			.SetDisplay("MA2 Length", "Length of second moving average", "Moving Averages")
-			
-			.SetOptimize(20, 200, 10);
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
+			.SetDisplay("Slow Length", "Slow EMA period", "General");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		var ma1 = CreateMa(Ma1Type, Ma1Length);
-		var ma2 = CreateMa(Ma2Type, Ma2Length);
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
+
+		var prevF = 0m;
+		var prevS = 0m;
+		var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ma1, ma2, Process)
+			.Bind(fast, slow, (candle, f, s) =>
+			{
+				if (candle.State != CandleStates.Finished)
+					return;
+
+				if (!fast.IsFormed || !slow.IsFormed)
+					return;
+
+				if (!init)
+				{
+					prevF = f;
+					prevS = s;
+					init = true;
+					return;
+				}
+
+				if (candle.OpenTime - lastSignal >= cooldown)
+				{
+					if (prevF <= prevS && f > s && Position <= 0)
+					{
+						BuyMarket();
+						lastSignal = candle.OpenTime;
+					}
+					else if (prevF >= prevS && f < s && Position >= 0)
+					{
+						SellMarket();
+						lastSignal = candle.OpenTime;
+					}
+				}
+
+				prevF = f;
+				prevS = s;
+			})
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, ma1);
-			DrawIndicator(area, ma2);
+			DrawIndicator(area, fast);
+			DrawIndicator(area, slow);
 			DrawOwnTrades(area);
 		}
-	}
-
-	private IIndicator CreateMa(MaTypes type, int length)
-	{
-		return type switch
-		{
-			MaTypes.SMA => new SMA { Length = length },
-			MaTypes.EMA => new EMA { Length = length },
-			MaTypes.RMA => new SmoothedMovingAverage { Length = length },
-			_ => throw new ArgumentOutOfRangeException(nameof(type))
-		};
-	}
-
-	private void Process(ICandleMessage candle, decimal ma1Value, decimal ma2Value)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (!_isInitialized)
-		{
-			_prevMa1 = ma1Value;
-			_prevMa2 = ma2Value;
-			_isInitialized = true;
-			return;
-		}
-
-		var crossedUp = _prevMa1 <= _prevMa2 && ma1Value > ma2Value;
-		var crossedDown = _prevMa1 >= _prevMa2 && ma1Value < ma2Value;
-
-		if (crossedUp && Position <= 0)
-		{
-			BuyMarket(Volume + Math.Abs(Position));
-		}
-		else if (crossedDown && Position >= 0)
-		{
-			SellMarket(Volume + Math.Abs(Position));
-		}
-
-		_prevMa1 = ma1Value;
-		_prevMa2 = ma2Value;
 	}
 }
