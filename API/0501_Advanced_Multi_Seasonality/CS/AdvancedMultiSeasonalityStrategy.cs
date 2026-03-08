@@ -45,13 +45,13 @@ public class AdvancedMultiSeasonalityStrategy : Strategy
 	/// </summary>
 	public AdvancedMultiSeasonalityStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles", "General");
 		
 		for (var i = 0; i < 4; i++)
 		{
 			var group = $"Period {i + 1}";
-			_enabled[i] = Param($"Period{i + 1}Enabled", i == 0)
+			_enabled[i] = Param($"Period{i + 1}Enabled", true)
 			.SetDisplay("Activate", $"Use period {i + 1}", group);
 			_entryMonth[i] = Param($"EntryMonth{i + 1}", new[] {12,1,6,9}[i])
 			.SetDisplay("Entry Month", "Entry month", group);
@@ -100,8 +100,7 @@ public class AdvancedMultiSeasonalityStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 		return;
 		
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
+		// No indicator-based formation check needed for calendar strategy
 		
 		for (var i = 0; i < 4; i++)
 		{
