@@ -31,7 +31,7 @@ public class TcpPivotLimitStrategy : Strategy
 
 	public TcpPivotLimitStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
@@ -42,6 +42,9 @@ public class TcpPivotLimitStrategy : Strategy
 	{
 		base.OnReseted();
 		_currentDay = default;
+		_dayHigh = 0;
+		_dayLow = 0;
+		_dayClose = 0;
 		_pivot = _r1 = _s1 = 0;
 		_entryPrice = 0;
 	}

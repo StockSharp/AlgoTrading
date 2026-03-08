@@ -30,7 +30,7 @@ public class TcpPivotStopStrategy : Strategy
 
 	public TcpPivotStopStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame", "General");
 	}
 
@@ -57,7 +57,7 @@ public class TcpPivotStopStrategy : Strategy
 
 		_barCount++;
 
-		// Recalculate pivot every 12 bars (~1 hour for 5min candles)
+		// Recalculate pivot every 12 bars (~2 days for 4h candles)
 		if (_barCount % 12 == 0 && _prevHigh > 0)
 		{
 			_pivot = (_prevHigh + _prevLow + _prevClose) / 3m;
