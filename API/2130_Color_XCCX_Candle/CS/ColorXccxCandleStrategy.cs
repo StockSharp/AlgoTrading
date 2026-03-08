@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -19,8 +20,8 @@ public class ColorXccxCandleStrategy : Strategy
 	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<decimal> _takeProfitPercent;
 
-	private SimpleMovingAverage _openSma;
-	private SimpleMovingAverage _closeSma;
+	private ExponentialMovingAverage _openEma;
+	private ExponentialMovingAverage _closeEma;
 	private decimal _prevDiff;
 	private bool _hasPrev;
 
@@ -53,7 +54,7 @@ public class ColorXccxCandleStrategy : Strategy
 		_smaLength = Param(nameof(SmaLength), 5)
 			.SetDisplay("SMA Length", "Length of the moving averages", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for the strategy", "General");
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
@@ -64,14 +65,33 @@ public class ColorXccxCandleStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_openEma = default;
+		_closeEma = default;
+		_prevDiff = 0;
+		_hasPrev = false;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_openSma = new SimpleMovingAverage { Length = SmaLength };
-		_closeSma = new SimpleMovingAverage { Length = SmaLength };
+		_openEma = new ExponentialMovingAverage { Length = SmaLength };
+		_closeEma = new ExponentialMovingAverage { Length = SmaLength };
 		_prevDiff = 0;
 		_hasPrev = false;
+
+		Indicators.Add(_openEma);
+		Indicators.Add(_closeEma);
 
 		StartProtection(
 			takeProfit: new Unit(TakeProfitPercent, UnitTypes.Percent),
@@ -95,10 +115,13 @@ public class ColorXccxCandleStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var openResult = _openSma.Process(new DecimalIndicatorValue(_openSma, candle.OpenPrice, candle.OpenTime) { IsFinal = true });
-		var closeResult = _closeSma.Process(new DecimalIndicatorValue(_closeSma, candle.ClosePrice, candle.OpenTime) { IsFinal = true });
+		var openResult = _openEma.Process(candle.OpenPrice, candle.OpenTime, true);
+		var closeResult = _closeEma.Process(candle.ClosePrice, candle.OpenTime, true);
 
 		if (!openResult.IsFormed || !closeResult.IsFormed)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		var openVal = openResult.ToDecimal();

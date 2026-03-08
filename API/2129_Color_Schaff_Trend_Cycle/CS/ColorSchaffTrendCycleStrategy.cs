@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -69,8 +70,24 @@ public class ColorSchaffTrendCycleStrategy : Strategy
 		_lowLevel = Param(nameof(LowLevel), 40m)
 			.SetDisplay("Low Level", "Oversold level", "Indicator");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for analysis", "General");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_fastEma = default;
+		_slowEma = default;
+		_prevStc = 50;
+		_hasPrev = false;
 	}
 
 	/// <inheritdoc />
@@ -82,6 +99,9 @@ public class ColorSchaffTrendCycleStrategy : Strategy
 		_slowEma = new ExponentialMovingAverage { Length = SlowPeriod };
 		_prevStc = 50;
 		_hasPrev = false;
+
+		Indicators.Add(_fastEma);
+		Indicators.Add(_slowEma);
 
 		var rsi = new RelativeStrengthIndex { Length = 10 };
 
@@ -109,6 +129,9 @@ public class ColorSchaffTrendCycleStrategy : Strategy
 		var slowResult = _slowEma.Process(new DecimalIndicatorValue(_slowEma, candle.ClosePrice, candle.OpenTime) { IsFinal = true });
 
 		if (!fastResult.IsFormed || !slowResult.IsFormed)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		var macd = fastResult.ToDecimal() - slowResult.ToDecimal();

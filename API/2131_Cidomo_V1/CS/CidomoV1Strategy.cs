@@ -150,7 +150,7 @@ public class CidomoV1Strategy : Strategy
 		_tradeTime = Param(nameof(TradeTime), new TimeSpan(9, 0, 0))
 			.SetDisplay("Trade Time", "Time to calculate breakout", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type for analysis", "General");
 	}
 
@@ -163,11 +163,14 @@ public class CidomoV1Strategy : Strategy
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
-		_longLevel = _shortLevel = 0m;
-		_lastTradeDay = default;
-		_entryPrice = 0m;
-		_stopPrice = 0m;
 		base.OnReseted();
+		_longLevel = 0;
+		_shortLevel = 0;
+		_lastTradeDay = default;
+		_entryPrice = 0;
+		_stopPrice = 0;
+		_highest = default;
+		_lowest = default;
 	}
 
 	/// <inheritdoc />
