@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -36,9 +37,12 @@ public class Ma2CciClassicStrategy : Strategy
 			.SetDisplay("Slow SMA", "Slow SMA period", "Indicators");
 		_cciPeriod = Param(nameof(CciPeriod), 14)
 			.SetDisplay("CCI Period", "CCI lookback", "Indicators");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 	}
+
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities() => [(Security, CandleType)];
+	protected override void OnReseted() { base.OnReseted(); _prevFast = 0m; _prevSlow = 0m; _hasPrev = false; }
 
 	protected override void OnStarted2(DateTime time)
 	{
