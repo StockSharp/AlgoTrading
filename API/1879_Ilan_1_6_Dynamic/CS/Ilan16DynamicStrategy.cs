@@ -72,7 +72,7 @@ public class Ilan16DynamicStrategy : Strategy
 			.SetDisplay("Take Profit", "Profit target from average price in price steps", "Trading")
 			.SetOptimize(10000m, 100000m, 10000m);
 
-		_maxTrades = Param(nameof(MaxTrades), 5)
+		_maxTrades = Param(nameof(MaxTrades), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Trades", "Maximum number of averaging entries", "Trading")
 			.SetOptimize(2, 10, 1);
@@ -80,7 +80,7 @@ public class Ilan16DynamicStrategy : Strategy
 		_startLong = Param(nameof(StartLong), true)
 			.SetDisplay("Start Long", "Open first trade as long", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -194,3 +194,4 @@ public class Ilan16DynamicStrategy : Strategy
 		_isLong = StartLong;
 	}
 }
+
