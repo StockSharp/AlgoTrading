@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,127 +11,51 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Template strategy reacting to RSI levels with stop loss and take profit.
+/// TradingView Template With Dynamic Alerts strategy using EMA crossover.
 /// </summary>
 public class TradingViewToTemplateWithDynamicAlertsStrategy : Strategy
 {
-	private readonly StrategyParam<int> _rsiLength;
-	private readonly StrategyParam<int> _upperLevel;
-	private readonly StrategyParam<int> _lowerLevel;
-	private readonly StrategyParam<decimal> _stopLossPct;
-	private readonly StrategyParam<decimal> _takeProfitPct;
+	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _entryPrice;
-	private decimal _stopPrice;
-	private decimal _takePrice;
-
-	public int RsiLength { get => _rsiLength.Value; set => _rsiLength.Value = value; }
-	public int UpperLevel { get => _upperLevel.Value; set => _upperLevel.Value = value; }
-	public int LowerLevel { get => _lowerLevel.Value; set => _lowerLevel.Value = value; }
-	public decimal StopLossPct { get => _stopLossPct.Value; set => _stopLossPct.Value = value; }
-	public decimal TakeProfitPct { get => _takeProfitPct.Value; set => _takeProfitPct.Value = value; }
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public TradingViewToTemplateWithDynamicAlertsStrategy()
 	{
-		_rsiLength = Param(nameof(RsiLength), 14)
+		_slowLength = Param(nameof(SlowLength), 40)
 			.SetGreaterThanZero()
-			.SetDisplay("RSI length", "RSI lookback", "Indicators");
-
-		_upperLevel = Param(nameof(UpperLevel), 60)
-			.SetDisplay("Upper level", "RSI overbought level", "Strategy");
-
-		_lowerLevel = Param(nameof(LowerLevel), 40)
-			.SetDisplay("Lower level", "RSI oversold level", "Strategy");
-
-		_stopLossPct = Param(nameof(StopLossPct), 2m)
-			.SetGreaterThanZero()
-			.SetDisplay("Stop loss %", "Percent stop loss", "Risk");
-
-		_takeProfitPct = Param(nameof(TakeProfitPct), 4m)
-			.SetGreaterThanZero()
-			.SetDisplay("Take profit %", "Percent take profit", "Risk");
+			.SetDisplay("Slow Length", "Slow EMA period", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle type", "Type of candles", "General");
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_entryPrice = 0;
-		_stopPrice = 0;
-		_takePrice = 0;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		var rsi = new RelativeStrengthIndex { Length = RsiLength };
-
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
+		var prevF = 0m; var prevS = 0m; var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(rsi, ProcessCandle).Start();
-
+		subscription.Bind(fast, slow, (candle, f, s) =>
+		{
+			if (candle.State != CandleStates.Finished) return;
+			if (!fast.IsFormed || !slow.IsFormed) return;
+			if (!init) { prevF = f; prevS = s; init = true; return; }
+			if (candle.OpenTime - lastSignal >= cooldown)
+			{
+				if (prevF <= prevS && f > s && Position <= 0) { BuyMarket(); lastSignal = candle.OpenTime; }
+				else if (prevF >= prevS && f < s && Position >= 0) { SellMarket(); lastSignal = candle.OpenTime; }
+			}
+			prevF = f; prevS = s;
+		}).Start();
 		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, rsi);
-			DrawOwnTrades(area);
-		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal rsiValue)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		// Check TP/SL exits first
-		if (Position > 0 && _stopPrice > 0)
-		{
-			if (candle.LowPrice <= _stopPrice || candle.HighPrice >= _takePrice)
-			{
-				SellMarket();
-				_stopPrice = 0;
-				_takePrice = 0;
-				return;
-			}
-		}
-		else if (Position < 0 && _stopPrice > 0)
-		{
-			if (candle.HighPrice >= _stopPrice || candle.LowPrice <= _takePrice)
-			{
-				BuyMarket();
-				_stopPrice = 0;
-				_takePrice = 0;
-				return;
-			}
-		}
-
-		// Entry signals
-		if (rsiValue > UpperLevel && Position <= 0)
-		{
-			BuyMarket();
-			_entryPrice = candle.ClosePrice;
-			_stopPrice = _entryPrice * (1 - StopLossPct / 100m);
-			_takePrice = _entryPrice * (1 + TakeProfitPct / 100m);
-		}
-		else if (rsiValue < LowerLevel && Position >= 0)
-		{
-			SellMarket();
-			_entryPrice = candle.ClosePrice;
-			_stopPrice = _entryPrice * (1 + StopLossPct / 100m);
-			_takePrice = _entryPrice * (1 - TakeProfitPct / 100m);
-		}
+		if (area != null) { DrawCandles(area, subscription); DrawIndicator(area, fast); DrawIndicator(area, slow); DrawOwnTrades(area); }
 	}
 }
