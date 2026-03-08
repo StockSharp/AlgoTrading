@@ -3,7 +3,8 @@ namespace StockSharp.Samples.Strategies;
 using System;
 using System.Collections.Generic;
 
-using StockSharp.Algo;
+using Ecng.Common;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -11,12 +12,11 @@ using StockSharp.Messages;
 
 /// <summary>
 /// Advanced Adaptive Grid Trading Strategy.
-/// Uses RSI and MA trend to determine grid direction, enters on grid levels.
+/// Uses RSI extremes and MA trend to enter, with percentage-based stop/TP.
 /// </summary>
 public class AdvancedAdaptiveGridStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<decimal> _baseGridSize;
 	private readonly StrategyParam<int> _rsiLength;
 	private readonly StrategyParam<int> _rsiOverbought;
 	private readonly StrategyParam<int> _rsiOversold;
@@ -24,12 +24,12 @@ public class AdvancedAdaptiveGridStrategy : Strategy
 	private readonly StrategyParam<int> _longMaLength;
 	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<decimal> _takeProfitPercent;
+	private readonly StrategyParam<int> _cooldownBars;
 
-	private decimal _lastEntryPrice;
 	private decimal _entryPrice;
+	private int _cooldownRemaining;
 
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
-	public decimal BaseGridSize { get => _baseGridSize.Value; set => _baseGridSize.Value = value; }
 	public int RsiLength { get => _rsiLength.Value; set => _rsiLength.Value = value; }
 	public int RsiOverbought { get => _rsiOverbought.Value; set => _rsiOverbought.Value = value; }
 	public int RsiOversold { get => _rsiOversold.Value; set => _rsiOversold.Value = value; }
@@ -37,16 +37,12 @@ public class AdvancedAdaptiveGridStrategy : Strategy
 	public int LongMaLength { get => _longMaLength.Value; set => _longMaLength.Value = value; }
 	public decimal StopLossPercent { get => _stopLossPercent.Value; set => _stopLossPercent.Value = value; }
 	public decimal TakeProfitPercent { get => _takeProfitPercent.Value; set => _takeProfitPercent.Value = value; }
+	public int CooldownBars { get => _cooldownBars.Value; set => _cooldownBars.Value = value; }
 
 	public AdvancedAdaptiveGridStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
-
-		_baseGridSize = Param(nameof(BaseGridSize), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Base Grid Size %", "Base grid step as percentage", "Grid")
-			.SetOptimize(0.5m, 5m, 0.5m);
 
 		_rsiLength = Param(nameof(RsiLength), 14)
 			.SetGreaterThanZero()
@@ -68,26 +64,32 @@ public class AdvancedAdaptiveGridStrategy : Strategy
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management");
+			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
 
 		_takeProfitPercent = Param(nameof(TakeProfitPercent), 3m)
 			.SetGreaterThanZero()
-			.SetDisplay("Take Profit %", "Take profit percentage", "Risk Management");
+			.SetDisplay("Take Profit %", "Take profit percentage", "Risk");
+
+		_cooldownBars = Param(nameof(CooldownBars), 10)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "Risk");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	/// <inheritdoc />
+	protected override void OnReseted()
 	{
-		return [(Security, CandleType)];
+		base.OnReseted();
+		_entryPrice = 0;
+		_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_lastEntryPrice = 0;
-		_entryPrice = 0;
 
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };
 		var shortMa = new SimpleMovingAverage { Length = ShortMaLength };
@@ -113,19 +115,23 @@ public class AdvancedAdaptiveGridStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
 		var currentPrice = candle.ClosePrice;
 		var bullish = shortMaValue > longMaValue;
 		var bearish = shortMaValue < longMaValue;
 
-		// Check stop loss / take profit
+		// Check stop/TP for existing positions
 		if (Position > 0 && _entryPrice > 0)
 		{
 			var stopPrice = _entryPrice * (1 - StopLossPercent / 100m);
 			var tpPrice = _entryPrice * (1 + TakeProfitPercent / 100m);
 			if (currentPrice <= stopPrice || currentPrice >= tpPrice)
 			{
-				SellMarket();
+				SellMarket(Math.Abs(Position));
 				_entryPrice = 0;
+				_cooldownRemaining = CooldownBars;
 				return;
 			}
 		}
@@ -135,59 +141,48 @@ public class AdvancedAdaptiveGridStrategy : Strategy
 			var tpPrice = _entryPrice * (1 - TakeProfitPercent / 100m);
 			if (currentPrice >= stopPrice || currentPrice <= tpPrice)
 			{
-				BuyMarket();
+				BuyMarket(Math.Abs(Position));
 				_entryPrice = 0;
+				_cooldownRemaining = CooldownBars;
 				return;
 			}
 		}
 
-		// Grid entry logic
-		var gridStep = currentPrice * BaseGridSize / 100m;
-		var priceMovedDown = _lastEntryPrice > 0 && currentPrice <= _lastEntryPrice - gridStep;
-		var priceMovedUp = _lastEntryPrice > 0 && currentPrice >= _lastEntryPrice + gridStep;
+		if (_cooldownRemaining > 0)
+		{
+			_cooldownRemaining--;
+			return;
+		}
 
-		if (Position == 0)
+		// Entry logic
+		if (bullish && rsiValue < RsiOversold && Position <= 0)
 		{
-			// Initial entry
-			if (bullish && rsiValue < RsiOversold)
-			{
-				BuyMarket();
-				_entryPrice = currentPrice;
-				_lastEntryPrice = currentPrice;
-			}
-			else if (bearish && rsiValue > RsiOverbought)
-			{
-				SellMarket();
-				_entryPrice = currentPrice;
-				_lastEntryPrice = currentPrice;
-			}
-		}
-		else if (Position > 0 && priceMovedDown && bullish)
-		{
-			// Grid: add to long on dip
-			BuyMarket();
+			if (Position < 0)
+				BuyMarket(Math.Abs(Position));
+			BuyMarket(Volume);
 			_entryPrice = currentPrice;
-			_lastEntryPrice = currentPrice;
+			_cooldownRemaining = CooldownBars;
 		}
-		else if (Position < 0 && priceMovedUp && bearish)
+		else if (bearish && rsiValue > RsiOverbought && Position >= 0)
 		{
-			// Grid: add to short on rally
-			SellMarket();
+			if (Position > 0)
+				SellMarket(Math.Abs(Position));
+			SellMarket(Volume);
 			_entryPrice = currentPrice;
-			_lastEntryPrice = currentPrice;
+			_cooldownRemaining = CooldownBars;
 		}
 		// Trend reversal exit
 		else if (Position > 0 && bearish && rsiValue > RsiOverbought)
 		{
-			SellMarket();
+			SellMarket(Math.Abs(Position));
 			_entryPrice = 0;
-			_lastEntryPrice = 0;
+			_cooldownRemaining = CooldownBars;
 		}
 		else if (Position < 0 && bullish && rsiValue < RsiOversold)
 		{
-			BuyMarket();
+			BuyMarket(Math.Abs(Position));
 			_entryPrice = 0;
-			_lastEntryPrice = 0;
+			_cooldownRemaining = CooldownBars;
 		}
 	}
 }

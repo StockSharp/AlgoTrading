@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,8 +11,8 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Gold RSI Divergence strategy.
-/// Looks for price/RSI divergence to scalp gold.
+/// RSI Divergence strategy.
+/// Looks for price/RSI divergence for entries.
 /// </summary>
 public class GoldRsiDivergenceStrategy : Strategy
 {
@@ -23,20 +20,15 @@ public class GoldRsiDivergenceStrategy : Strategy
 	private readonly StrategyParam<int> _lookbackRight;
 	private readonly StrategyParam<int> _rangeLower;
 	private readonly StrategyParam<int> _rangeUpper;
-	private readonly StrategyParam<decimal> _pipValue;
-
 	private readonly StrategyParam<int> _rsiLength;
-	private readonly StrategyParam<decimal> _stopLossPips;
-	private readonly StrategyParam<decimal> _takeProfitPips;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _cooldownBars;
 
 	private decimal[] _rsiBuffer = Array.Empty<decimal>();
 	private decimal[] _lowBuffer = Array.Empty<decimal>();
 	private decimal[] _highBuffer = Array.Empty<decimal>();
 	private int _bufferCount;
 	private int _barIndex;
-
-	private RelativeStrengthIndex _rsi;
 
 	private decimal? _lastRsiLow;
 	private decimal? _lastPriceLow;
@@ -45,154 +37,53 @@ public class GoldRsiDivergenceStrategy : Strategy
 	private decimal? _lastRsiHigh;
 	private decimal? _lastPriceHigh;
 	private int _lastPivotHighIndex = -1;
+	private int _cooldownRemaining;
 
-	/// <summary>
-	/// RSI calculation length.
-	/// </summary>
-	public int RsiLength
-	{
-		get => _rsiLength.Value;
-		set => _rsiLength.Value = value;
-	}
+	public int RsiLength { get => _rsiLength.Value; set => _rsiLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int LookbackLeft { get => _lookbackLeft.Value; set => _lookbackLeft.Value = value; }
+	public int LookbackRight { get => _lookbackRight.Value; set => _lookbackRight.Value = value; }
+	public int RangeLower { get => _rangeLower.Value; set => _rangeLower.Value = value; }
+	public int RangeUpper { get => _rangeUpper.Value; set => _rangeUpper.Value = value; }
+	public int CooldownBars { get => _cooldownBars.Value; set => _cooldownBars.Value = value; }
 
-	/// <summary>
-	/// Stop loss in pips (1 pip = 0.1 for gold).
-	/// </summary>
-	public decimal StopLossPips
-	{
-		get => _stopLossPips.Value;
-		set => _stopLossPips.Value = value;
-	}
-
-	/// <summary>
-	/// Take profit in pips (1 pip = 0.1 for gold).
-	/// </summary>
-	public decimal TakeProfitPips
-	{
-		get => _takeProfitPips.Value;
-		set => _takeProfitPips.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type for strategy calculations.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Pivot lookback bars to the left.
-	/// </summary>
-	public int LookbackLeft
-	{
-		get => _lookbackLeft.Value;
-		set => _lookbackLeft.Value = value;
-	}
-
-	/// <summary>
-	/// Pivot lookback bars to the right.
-	/// </summary>
-	public int LookbackRight
-	{
-		get => _lookbackRight.Value;
-		set => _lookbackRight.Value = value;
-	}
-
-	/// <summary>
-	/// Minimum number of bars between pivots.
-	/// </summary>
-	public int RangeLower
-	{
-		get => _rangeLower.Value;
-		set => _rangeLower.Value = value;
-	}
-
-	/// <summary>
-	/// Maximum number of bars between pivots.
-	/// </summary>
-	public int RangeUpper
-	{
-		get => _rangeUpper.Value;
-		set => _rangeUpper.Value = value;
-	}
-
-	/// <summary>
-	/// Pip value for converting pip-based risk to price.
-	/// </summary>
-	public decimal PipValue
-	{
-		get => _pipValue.Value;
-		set => _pipValue.Value = value;
-	}
-
-	/// <summary>
-	/// Constructor.
-	/// </summary>
 	public GoldRsiDivergenceStrategy()
 	{
-		_rsiLength = Param(nameof(RsiLength), 60)
+		_rsiLength = Param(nameof(RsiLength), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("RSI Length", "RSI calculation length", "RSI")
-			
-			.SetOptimize(30, 100, 5);
-
-		_stopLossPips = Param(nameof(StopLossPips), 11m)
-			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss (pips)", "Stop loss in pips", "Risk")
-
-			.SetOptimize(5m, 20m, 1m);
-
-		_takeProfitPips = Param(nameof(TakeProfitPips), 22m)
-			.SetGreaterThanZero()
-			.SetDisplay("Take Profit (pips)", "Take profit in pips", "Risk")
-
-			.SetOptimize(10m, 40m, 2m);
+			.SetDisplay("RSI Length", "RSI calculation length", "RSI");
 
 		_lookbackLeft = Param(nameof(LookbackLeft), 5)
 			.SetGreaterThanZero()
-			.SetDisplay("Lookback Left", "Bars to the left of pivot", "Divergence")
-			
-			.SetOptimize(3, 10, 1);
+			.SetDisplay("Lookback Left", "Bars to the left of pivot", "Divergence");
 
 		_lookbackRight = Param(nameof(LookbackRight), 5)
 			.SetGreaterThanZero()
-			.SetDisplay("Lookback Right", "Bars to the right of pivot", "Divergence")
-			
-			.SetOptimize(3, 10, 1);
+			.SetDisplay("Lookback Right", "Bars to the right of pivot", "Divergence");
 
 		_rangeLower = Param(nameof(RangeLower), 5)
 			.SetGreaterThanZero()
-			.SetDisplay("Range Lower", "Minimum bars between pivots", "Divergence")
-			
-			.SetOptimize(3, 15, 1);
+			.SetDisplay("Range Lower", "Minimum bars between pivots", "Divergence");
 
 		_rangeUpper = Param(nameof(RangeUpper), 60)
 			.SetGreaterThanZero()
-			.SetDisplay("Range Upper", "Maximum bars between pivots", "Divergence")
-			
-			.SetOptimize(30, 120, 5);
+			.SetDisplay("Range Upper", "Maximum bars between pivots", "Divergence");
 
-		_pipValue = Param(nameof(PipValue), 0.1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Pip Value", "Pip value in price units", "Risk");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
+
+		_cooldownBars = Param(nameof(CooldownBars), 10)
+			.SetDisplay("Cooldown Bars", "Bars between trades", "Risk");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
 		InitializeBuffers();
 		_barIndex = 0;
 		_lastRsiLow = null;
@@ -201,6 +92,7 @@ public class GoldRsiDivergenceStrategy : Strategy
 		_lastRsiHigh = null;
 		_lastPriceHigh = null;
 		_lastPivotHighIndex = -1;
+		_cooldownRemaining = 0;
 	}
 
 	/// <inheritdoc />
@@ -209,29 +101,32 @@ public class GoldRsiDivergenceStrategy : Strategy
 		base.OnStarted2(time);
 
 		InitializeBuffers();
-		_rsi = new RelativeStrengthIndex { Length = RsiLength };
+
+		var rsi = new RelativeStrengthIndex { Length = RsiLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(rsi, ProcessCandle)
 			.Start();
 
-		StartProtection(
-			new Unit(StopLossPips * PipValue, UnitTypes.Absolute),
-			new Unit(TakeProfitPips * PipValue, UnitTypes.Absolute));
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawOwnTrades(area);
+		}
 	}
 
 	private void InitializeBuffers()
 	{
 		var length = Math.Max(1, LookbackLeft + LookbackRight + 1);
-
 		_rsiBuffer = new decimal[length];
 		_lowBuffer = new decimal[length];
 		_highBuffer = new decimal[length];
 		_bufferCount = 0;
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal rsiValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
@@ -241,12 +136,17 @@ public class GoldRsiDivergenceStrategy : Strategy
 
 		_barIndex++;
 
-		var rsiValue = _rsi.Process(candle).ToDecimal();
-
 		AddToBuffer(rsiValue, candle.LowPrice, candle.HighPrice);
 
 		if (_bufferCount < _rsiBuffer.Length)
 			return;
+
+		if (_cooldownRemaining > 0)
+		{
+			_cooldownRemaining--;
+			CheckPivots(rsiValue, candle);
+			return;
+		}
 
 		var pivotIndex = LookbackRight;
 		var candidateRsi = _rsiBuffer[pivotIndex];
@@ -270,7 +170,12 @@ public class GoldRsiDivergenceStrategy : Strategy
 				candidateLow < prevPriceLow;
 
 			if (bullishDiv && rsiValue < 40m && Position <= 0)
-				BuyMarket(Volume + Math.Abs(Position));
+			{
+				if (Position < 0)
+					BuyMarket(Math.Abs(Position));
+				BuyMarket(Volume);
+				_cooldownRemaining = CooldownBars;
+			}
 
 			_lastRsiLow = candidateRsi;
 			_lastPriceLow = candidateLow;
@@ -290,10 +195,37 @@ public class GoldRsiDivergenceStrategy : Strategy
 				candidateHigh > prevPriceHigh;
 
 			if (bearishDiv && rsiValue > 60m && Position >= 0)
-				SellMarket(Volume + Math.Abs(Position));
+			{
+				if (Position > 0)
+					SellMarket(Math.Abs(Position));
+				SellMarket(Volume);
+				_cooldownRemaining = CooldownBars;
+			}
 
 			_lastRsiHigh = candidateRsi;
 			_lastPriceHigh = candidateHigh;
+			_lastPivotHighIndex = candidateBar;
+		}
+	}
+
+	private void CheckPivots(decimal rsiValue, ICandleMessage candle)
+	{
+		// Still track pivots during cooldown
+		var pivotIndex = LookbackRight;
+		var candidateRsi = _rsiBuffer[pivotIndex];
+		var candidateBar = _barIndex - LookbackRight;
+
+		if (IsPivotLow(candidateRsi))
+		{
+			_lastRsiLow = candidateRsi;
+			_lastPriceLow = _lowBuffer[pivotIndex];
+			_lastPivotLowIndex = candidateBar;
+		}
+
+		if (IsPivotHigh(candidateRsi))
+		{
+			_lastRsiHigh = candidateRsi;
+			_lastPriceHigh = _highBuffer[pivotIndex];
 			_lastPivotHighIndex = candidateBar;
 		}
 	}
@@ -324,11 +256,9 @@ public class GoldRsiDivergenceStrategy : Strategy
 		{
 			if (i == LookbackRight)
 				continue;
-
 			if (_rsiBuffer[i] <= value)
 				return false;
 		}
-
 		return true;
 	}
 
@@ -338,11 +268,9 @@ public class GoldRsiDivergenceStrategy : Strategy
 		{
 			if (i == LookbackRight)
 				continue;
-
 			if (_rsiBuffer[i] >= value)
 				return false;
 		}
-
 		return true;
 	}
 }
