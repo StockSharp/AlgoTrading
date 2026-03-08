@@ -50,8 +50,24 @@ public class DigitalFilterT01Strategy : Strategy
 		_halfChannel = Param(nameof(HalfChannel), 50m)
 			.SetDisplay("Half Channel", "Half channel distance for trigger", "Parameters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type used for the strategy", "General");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prices.Clear();
+		_prevDigital = 0;
+		_prevTrigger = 0;
+		_hasPrev = false;
 	}
 
 	/// <inheritdoc />
@@ -87,6 +103,9 @@ public class DigitalFilterT01Strategy : Strategy
 			_prices.Dequeue();
 
 		if (_prices.Count < _coeffs.Length)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		var arr = new decimal[_coeffs.Length];

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -50,7 +51,7 @@ public class UniversalTrailingStopStrategy : Strategy
 
 	public UniversalTrailingStopStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 
 		_fastPeriod = Param(nameof(FastPeriod), 10)
@@ -61,6 +62,23 @@ public class UniversalTrailingStopStrategy : Strategy
 
 		_trailPercent = Param(nameof(TrailPercent), 1.5m)
 			.SetDisplay("Trail %", "Trailing stop distance in percent", "Trailing");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFast = 0;
+		_prevSlow = 0;
+		_isInitialized = false;
+		_entryPrice = 0;
+		_bestPrice = 0;
 	}
 
 	/// <inheritdoc />

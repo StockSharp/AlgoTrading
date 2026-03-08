@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -42,7 +43,7 @@ public class StepStochasticCrossStrategy : Strategy
 
 	public StepStochasticCrossStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame", "General");
 
 		_kPeriod = Param(nameof(KPeriod), 14)
@@ -50,6 +51,21 @@ public class StepStochasticCrossStrategy : Strategy
 
 		_dPeriod = Param(nameof(DPeriod), 3)
 			.SetDisplay("D Period", "Stochastic D period", "Parameters");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevK = 0;
+		_prevD = 0;
+		_hasPrev = false;
 	}
 
 	/// <inheritdoc />

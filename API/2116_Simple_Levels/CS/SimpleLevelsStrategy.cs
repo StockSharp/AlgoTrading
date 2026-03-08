@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -42,7 +43,7 @@ public class SimpleLevelsStrategy : Strategy
 
 	public SimpleLevelsStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Source candle timeframe", "General");
 
 		_lookbackPeriod = Param(nameof(LookbackPeriod), 20)
@@ -50,6 +51,21 @@ public class SimpleLevelsStrategy : Strategy
 
 		_emaPeriod = Param(nameof(EmaPeriod), 50)
 			.SetDisplay("EMA Period", "EMA period for trend filter", "Parameters");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_highestHigh = decimal.MinValue;
+		_lowestLow = decimal.MaxValue;
+		_barCount = 0;
 	}
 
 	/// <inheritdoc />
