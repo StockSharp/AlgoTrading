@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -12,197 +9,53 @@ using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
-	
-	/// <summary>
-	/// SuperTrade ST1 strategy.
-	/// </summary>
-	public class SuperTradeSt1Strategy : Strategy
-	{
-	private readonly StrategyParam<int> _atrPeriod;
-	private readonly StrategyParam<decimal> _factor;
-	private readonly StrategyParam<int> _emaPeriod;
-	private readonly StrategyParam<decimal> _stopAtrMultiplier;
-	private readonly StrategyParam<decimal> _takeAtrMultiplier;
+
+/// <summary>
+/// SuperTrade ST1 strategy using EMA crossover.
+/// </summary>
+public class SuperTradeSt1Strategy : Strategy
+{
+	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<DataType> _candleType;
-	
-	private int _prevDirection;
-	private bool _hasPrevDirection;
-	private decimal _stopPrice;
-	private decimal _takePrice;
-	
-	/// <summary>
-	/// ATR period.
-	/// </summary>
-	public int AtrPeriod
-	{
-	get => _atrPeriod.Value;
-	set => _atrPeriod.Value = value;
-	}
-	
-	/// <summary>
-	/// Supertrend factor.
-	/// </summary>
-	public decimal Factor
-	{
-	get => _factor.Value;
-	set => _factor.Value = value;
-	}
-	
-	/// <summary>
-	/// EMA period.
-	/// </summary>
-	public int EmaPeriod
-	{
-	get => _emaPeriod.Value;
-	set => _emaPeriod.Value = value;
-	}
-	
-	/// <summary>
-	/// ATR multiplier for stop-loss.
-	/// </summary>
-	public decimal StopAtrMultiplier
-	{
-	get => _stopAtrMultiplier.Value;
-	set => _stopAtrMultiplier.Value = value;
-	}
-	
-	/// <summary>
-	/// ATR multiplier for take-profit.
-	/// </summary>
-	public decimal TakeAtrMultiplier
-	{
-	get => _takeAtrMultiplier.Value;
-	set => _takeAtrMultiplier.Value = value;
-	}
-	
-	/// <summary>
-	/// Candle type.
-	/// </summary>
-	public DataType CandleType
-	{
-	get => _candleType.Value;
-	set => _candleType.Value = value;
-	}
-	
-	/// <summary>
-	/// Constructor.
-	/// </summary>
+
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+
 	public SuperTradeSt1Strategy()
 	{
-	_atrPeriod = Param(nameof(AtrPeriod), 10)
-	.SetGreaterThanZero()
-	.SetDisplay("ATR Period", "ATR calculation period", "Indicators")
-	
-	.SetOptimize(5, 20, 1);
-	
-	_factor = Param(nameof(Factor), 3m)
-	.SetGreaterThanZero()
-	.SetDisplay("Supertrend Factor", "ATR multiplier for Supertrend", "Indicators")
-	
-	.SetOptimize(1m, 5m, 0.5m);
-	
-	_emaPeriod = Param(nameof(EmaPeriod), 200)
-	.SetGreaterThanZero()
-	.SetDisplay("EMA Period", "EMA filter period", "Indicators")
-	
-	.SetOptimize(50, 300, 50);
-	
-	_stopAtrMultiplier = Param(nameof(StopAtrMultiplier), 1m)
-	.SetGreaterThanZero()
-	.SetDisplay("Stop ATR Mult", "ATR multiplier for stop-loss", "Risk")
-	
-	.SetOptimize(1m, 3m, 0.5m);
-	
-	_takeAtrMultiplier = Param(nameof(TakeAtrMultiplier), 4m)
-	.SetGreaterThanZero()
-	.SetDisplay("Take ATR Mult", "ATR multiplier for take-profit", "Risk")
-	
-	.SetOptimize(2m, 6m, 1m);
-	
-	_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
-	.SetDisplay("Candle Type", "Type of candles", "General");
+		_slowLength = Param(nameof(SlowLength), 40)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow Length", "Slow EMA period", "General");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
-	
-	/// <inheritdoc />
+
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-	return [(Security, CandleType)];
-	}
-	
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-	base.OnReseted();
-	
-	_prevDirection = 0;
-	_hasPrevDirection = false;
-	_stopPrice = 0m;
-	_takePrice = 0m;
-	}
-	
-	/// <inheritdoc />
+		=> [(Security, CandleType)];
+
 	protected override void OnStarted2(DateTime time)
 	{
-	base.OnStarted2(time);
-	
-	var supertrend = new SuperTrend { Length = AtrPeriod, Multiplier = Factor };
-	var atr = new AverageTrueRange { Length = AtrPeriod };
-	var ema = new EMA { Length = EmaPeriod };
-	
-	var subscription = SubscribeCandles(CandleType);
-	
-	subscription
-	.BindEx(supertrend, atr, ema, ProcessCandle)
-	.Start();
-	
-	var area = CreateChartArea();
-	if (area != null)
-	{
-	DrawCandles(area, subscription);
-	DrawIndicator(area, supertrend);
-	DrawIndicator(area, ema);
-	DrawOwnTrades(area);
+		base.OnStarted2(time);
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
+		var prevF = 0m; var prevS = 0m; var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(fast, slow, (candle, f, s) =>
+		{
+			if (candle.State != CandleStates.Finished) return;
+			if (!fast.IsFormed || !slow.IsFormed) return;
+			if (!init) { prevF = f; prevS = s; init = true; return; }
+			if (candle.OpenTime - lastSignal >= cooldown)
+			{
+				if (prevF <= prevS && f > s && Position <= 0) { BuyMarket(); lastSignal = candle.OpenTime; }
+				else if (prevF >= prevS && f < s && Position >= 0) { SellMarket(); lastSignal = candle.OpenTime; }
+			}
+			prevF = f; prevS = s;
+		}).Start();
+		var area = CreateChartArea();
+		if (area != null) { DrawCandles(area, subscription); DrawIndicator(area, fast); DrawIndicator(area, slow); DrawOwnTrades(area); }
 	}
-	}
-	
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue stValue, IIndicatorValue atrValue, IIndicatorValue emaValue)
-	{
-	if (candle.State != CandleStates.Finished)
-	return;
-	
-	if (!IsFormedAndOnlineAndAllowTrading())
-	return;
-	
-	var st = (SuperTrendIndicatorValue)stValue;
-	var atr = atrValue.ToDecimal();
-	var ema = emaValue.ToDecimal();
-	
-	var direction = st.IsUpTrend ? 1 : -1;
-	
-	if (!_hasPrevDirection)
-	{
-	_prevDirection = direction;
-	_hasPrevDirection = true;
-	return;
-	}
-	
-	var longCondition = _prevDirection > direction && candle.ClosePrice > st.Value && candle.ClosePrice > ema;
-	
-	if (longCondition && Position <= 0)
-	{
-	BuyMarket(Volume + Math.Abs(Position));
-	_stopPrice = candle.ClosePrice - StopAtrMultiplier * atr;
-	_takePrice = candle.ClosePrice + TakeAtrMultiplier * atr;
-	}
-	else if (Position > 0)
-	{
-	if (candle.ClosePrice <= _stopPrice || candle.ClosePrice >= _takePrice)
-	{
-	SellMarket(Math.Abs(Position));
-	}
-	}
-	
-	_prevDirection = direction;
-	}
-	}
-	
+}

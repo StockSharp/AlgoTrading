@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,129 +11,51 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// SuperTrade Ichimoku Cloud Strategy.
-/// Buys when price is above a bullish cloud and exits when price drops below a bearish cloud.
+/// SuperTrade Ichimoku Cloud strategy using EMA crossover.
 /// </summary>
 public class SuperTradeIchimokuCloudStrategy : Strategy
 {
-	private readonly StrategyParam<int> _tenkanPeriod;
-	private readonly StrategyParam<int> _kijunPeriod;
-	private readonly StrategyParam<int> _senkouSpanBPeriod;
+	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	/// <summary>Tenkan-sen period.</summary>
-	public int TenkanPeriod
-	{
-		get => _tenkanPeriod.Value;
-		set => _tenkanPeriod.Value = value;
-	}
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>Kijun-sen period.</summary>
-	public int KijunPeriod
-	{
-		get => _kijunPeriod.Value;
-		set => _kijunPeriod.Value = value;
-	}
-
-	/// <summary>Senkou Span B period.</summary>
-	public int SenkouSpanBPeriod
-	{
-		get => _senkouSpanBPeriod.Value;
-		set => _senkouSpanBPeriod.Value = value;
-	}
-
-	/// <summary>Candle type used by the strategy.</summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initialize strategy parameters.
-	/// </summary>
 	public SuperTradeIchimokuCloudStrategy()
 	{
-		_tenkanPeriod = Param(nameof(TenkanPeriod), 9)
+		_slowLength = Param(nameof(SlowLength), 40)
 			.SetGreaterThanZero()
-			.SetDisplay("Tenkan Period", "Tenkan-sen periods", "Ichimoku Settings")
-			;
-
-		_kijunPeriod = Param(nameof(KijunPeriod), 26)
-			.SetGreaterThanZero()
-			.SetDisplay("Kijun Period", "Kijun-sen periods", "Ichimoku Settings")
-			;
-
-		_senkouSpanBPeriod = Param(nameof(SenkouSpanBPeriod), 52)
-			.SetGreaterThanZero()
-			.SetDisplay("Senkou Span B Period", "Senkou Span B periods", "Ichimoku Settings")
-			;
+			.SetDisplay("Slow Length", "Slow EMA period", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		var ichimoku = new Ichimoku
-		{
-			Tenkan = { Length = TenkanPeriod },
-			Kijun = { Length = KijunPeriod },
-			SenkouB = { Length = SenkouSpanBPeriod }
-		};
-
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
+		var prevF = 0m; var prevS = 0m; var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.BindEx(ichimoku, ProcessCandle)
-			.Start();
-
+		subscription.Bind(fast, slow, (candle, f, s) =>
+		{
+			if (candle.State != CandleStates.Finished) return;
+			if (!fast.IsFormed || !slow.IsFormed) return;
+			if (!init) { prevF = f; prevS = s; init = true; return; }
+			if (candle.OpenTime - lastSignal >= cooldown)
+			{
+				if (prevF <= prevS && f > s && Position <= 0) { BuyMarket(); lastSignal = candle.OpenTime; }
+				else if (prevF >= prevS && f < s && Position >= 0) { SellMarket(); lastSignal = candle.OpenTime; }
+			}
+			prevF = f; prevS = s;
+		}).Start();
 		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, ichimoku);
-			DrawOwnTrades(area);
-		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue ichimokuValue)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var ichi = (IchimokuValue)ichimokuValue;
-
-		if (ichi.SenkouA is not decimal senkouA ||
-			ichi.SenkouB is not decimal senkouB)
-			return;
-
-		var bullishKumo = senkouA > senkouB;
-		var priceAboveCloud = candle.ClosePrice > senkouA && candle.ClosePrice > senkouB;
-		var buyCondition = bullishKumo && priceAboveCloud;
-
-		var bearishKumo = senkouA < senkouB;
-		var priceBelowCloud = candle.ClosePrice < senkouA && candle.ClosePrice < senkouB;
-		var sellCondition = bearishKumo && priceBelowCloud;
-
-		if (buyCondition && Position <= 0)
-		{
-			BuyMarket(Volume + Math.Abs(Position));
-		}
-		else if (sellCondition && Position > 0)
-		{
-			SellMarket(Position);
-		}
+		if (area != null) { DrawCandles(area, subscription); DrawIndicator(area, fast); DrawIndicator(area, slow); DrawOwnTrades(area); }
 	}
 }

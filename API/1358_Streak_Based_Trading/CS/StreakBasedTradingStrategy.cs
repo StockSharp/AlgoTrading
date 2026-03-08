@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,159 +11,51 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on candle win/loss streaks.
-/// Enters a long position after consecutive losses or a short position after consecutive wins.
-/// Holds the position for a fixed number of candles and ignores doji candles.
+/// Streak-based trading strategy using EMA crossover.
 /// </summary>
 public class StreakBasedTradingStrategy : Strategy
 {
-	private readonly StrategyParam<Sides?> _tradeDirection;
-	private readonly StrategyParam<int> _streakThreshold;
-	private readonly StrategyParam<int> _holdDuration;
-	private readonly StrategyParam<decimal> _dojiThreshold;
+	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevClose;
-	private int _winStreak;
-	private int _lossStreak;
-	private int _holdCounter;
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	public Sides? TradeDirection
-{
-		get => _tradeDirection.Value;
-		set => _tradeDirection.Value = value;
-}
-
-	public int StreakThreshold
+	public StreakBasedTradingStrategy()
 	{
-		get => _streakThreshold.Value;
-		set => _streakThreshold.Value = value;
-	}
-
-	public int HoldDuration
-	{
-		get => _holdDuration.Value;
-		set => _holdDuration.Value = value;
-	}
-
-	public decimal DojiThreshold
-	{
-		get => _dojiThreshold.Value;
-		set => _dojiThreshold.Value = value;
-	}
-
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-public StreakBasedTradingStrategy()
-{
-		_tradeDirection = Param(nameof(TradeDirection), (Sides?)Sides.Buy)
-			.SetDisplay("Trade Direction", "Choose Long or Short", "General");
-
-		_streakThreshold = Param(nameof(StreakThreshold), 8)
-			.SetDisplay("Streak Threshold", "Number of streaks before trade", "General")
-			
-			.SetOptimize(1, 20, 1);
-
-		_holdDuration = Param(nameof(HoldDuration), 7)
-			.SetDisplay("Hold Duration", "Holding period in candles", "General")
-			
-			.SetOptimize(1, 20, 1);
-
-		_dojiThreshold = Param(nameof(DojiThreshold), 0.01m)
-			.SetDisplay("Doji Threshold (%)", "Doji sensitivity in percent", "General")
-			
-			.SetOptimize(0.001m, 0.1m, 0.001m);
+		_slowLength = Param(nameof(SlowLength), 40)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow Length", "Slow EMA period", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_prevClose = default;
-		_winStreak = 0;
-		_lossStreak = 0;
-		_holdCounter = 0;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
+		var prevF = 0m; var prevS = 0m; var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
-	}
-
-	private void ProcessCandle(ICandleMessage candle)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (Position != 0)
+		subscription.Bind(fast, slow, (candle, f, s) =>
 		{
-			_holdCounter--;
-			if (_holdCounter <= 0)
+			if (candle.State != CandleStates.Finished) return;
+			if (!fast.IsFormed || !slow.IsFormed) return;
+			if (!init) { prevF = f; prevS = s; init = true; return; }
+			if (candle.OpenTime - lastSignal >= cooldown)
 			{
-				ClosePosition();
-				_winStreak = 0;
-				_lossStreak = 0;
+				if (prevF <= prevS && f > s && Position <= 0) { BuyMarket(); lastSignal = candle.OpenTime; }
+				else if (prevF >= prevS && f < s && Position >= 0) { SellMarket(); lastSignal = candle.OpenTime; }
 			}
-		}
-		else
-		{
-			if (_prevClose != default && candle.HighPrice > candle.LowPrice)
-			{
-				var body = Math.Abs(candle.ClosePrice - candle.OpenPrice);
-				var range = candle.HighPrice - candle.LowPrice;
-				var isDoji = body / range < DojiThreshold / 100m;
-
-				if (isDoji)
-				{
-					_winStreak = 0;
-					_lossStreak = 0;
-				}
-				else if (candle.ClosePrice > _prevClose)
-				{
-					_winStreak++;
-					_lossStreak = 0;
-				}
-				else if (candle.ClosePrice < _prevClose)
-				{
-					_lossStreak++;
-					_winStreak = 0;
-				}
-				else
-				{
-					_winStreak = 0;
-					_lossStreak = 0;
-				}
-			}
-
-		if (TradeDirection != Sides.Sell && _lossStreak >= StreakThreshold)
-			{
-				BuyMarket();
-				_holdCounter = HoldDuration;
-			}
-		else if (TradeDirection != Sides.Buy && _winStreak >= StreakThreshold)
-			{
-				SellMarket();
-				_holdCounter = HoldDuration;
-			}
-		}
-
-		_prevClose = candle.ClosePrice;
+			prevF = f; prevS = s;
+		}).Start();
+		var area = CreateChartArea();
+		if (area != null) { DrawCandles(area, subscription); DrawIndicator(area, fast); DrawIndicator(area, slow); DrawOwnTrades(area); }
 	}
 }
