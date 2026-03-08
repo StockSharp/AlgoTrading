@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,157 +11,88 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Price convergence strategy.
-/// Calculates probability of price moving up or down based on OHLC4 sums.
-/// Buys when probability of rising exceeds 50%, sells when probability of falling exceeds 50%.
+/// Price convergence strategy using EMA crossover.
 /// </summary>
 public class PriceConvergenceStrategy : Strategy
 {
-private readonly StrategyParam<bool> _fullHistory;
-private readonly StrategyParam<int> _range;
-private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _slowLength;
+	private readonly StrategyParam<DataType> _candleType;
 
-private SMA _totalSma;
-private SMA _upSma;
-private SMA _downSma;
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-private decimal _totalSum;
-private decimal _upSum;
-private decimal _downSum;
+	public PriceConvergenceStrategy()
+	{
+		_slowLength = Param(nameof(SlowLength), 40)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow Length", "Slow EMA period", "General");
 
-/// <summary>
-/// Use full history for calculations.
-/// </summary>
-public bool FullHistory
-{
-get => _fullHistory.Value;
-set => _fullHistory.Value = value;
-}
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type", "General");
+	}
 
-/// <summary>
-/// Range length when not using full history.
-/// </summary>
-public int Range
-{
-get => _range.Value;
-set => _range.Value = value;
-}
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
 
-/// <summary>
-/// The type of candles to use for strategy calculation.
-/// </summary>
-public DataType CandleType
-{
-get => _candleType.Value;
-set => _candleType.Value = value;
-}
+	/// <inheritdoc />
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
 
-/// <summary>
-/// Constructor.
-/// </summary>
-public PriceConvergenceStrategy()
-{
-_fullHistory = Param(nameof(FullHistory), true)
-.SetDisplay("Full History", "Ignore range and use entire history", "General");
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
 
-_range = Param(nameof(Range), 200)
-.SetGreaterThanZero()
-.SetDisplay("Range", "Number of candles for calculations", "General");
+		var prevF = 0m;
+		var prevS = 0m;
+		var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
 
-_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-.SetDisplay("Candle Type", "Type of candles to use", "General");
-}
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(fast, slow, (candle, f, s) =>
+			{
+				if (candle.State != CandleStates.Finished)
+					return;
 
-/// <inheritdoc />
-public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-{
-return [(Security, CandleType)];
-}
+				if (!fast.IsFormed || !slow.IsFormed)
+					return;
 
-/// <inheritdoc />
-protected override void OnReseted()
-{
-base.OnReseted();
-_totalSum = 0m;
-_upSum = 0m;
-_downSum = 0m;
-}
+				if (!init)
+				{
+					prevF = f;
+					prevS = s;
+					init = true;
+					return;
+				}
 
-/// <inheritdoc />
-protected override void OnStarted2(DateTime time)
-{
-base.OnStarted2(time);
+				if (candle.OpenTime - lastSignal >= cooldown)
+				{
+					if (prevF <= prevS && f > s && Position <= 0)
+					{
+						BuyMarket();
+						lastSignal = candle.OpenTime;
+					}
+					else if (prevF >= prevS && f < s && Position >= 0)
+					{
+						SellMarket();
+						lastSignal = candle.OpenTime;
+					}
+				}
 
-if (!FullHistory)
-{
-_totalSma = new SMA { Length = Range };
-_upSma = new SMA { Length = Range };
-_downSma = new SMA { Length = Range };
-}
+				prevF = f;
+				prevS = s;
+			})
+			.Start();
 
-var subscription = SubscribeCandles(CandleType);
-subscription
-.Bind(ProcessCandle)
-.Start();
-
-var area = CreateChartArea();
-if (area != null)
-{
-DrawCandles(area, subscription);
-DrawOwnTrades(area);
-}
-}
-
-private void ProcessCandle(ICandleMessage candle)
-{
-if (candle.State != CandleStates.Finished)
-return;
-
-if (!IsFormedAndOnlineAndAllowTrading())
-return;
-
-var ohlc4 = (candle.OpenPrice + candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 4m;
-
-decimal probUp;
-decimal probDown;
-
-if (FullHistory)
-{
-_totalSum += ohlc4;
-if (candle.ClosePrice >= candle.OpenPrice)
-_upSum += ohlc4;
-else
-_downSum += ohlc4;
-
-if (_totalSum == 0m)
-return;
-
-probUp = _upSum / _totalSum * 100m;
-probDown = _downSum / _totalSum * 100m;
-}
-else
-{
-var totalAvg = (DecimalIndicatorValue)_totalSma.Process(new DecimalIndicatorValue(_totalSma, ohlc4, candle.OpenTime));
-var upAvg = (DecimalIndicatorValue)_upSma.Process(new DecimalIndicatorValue(_upSma, candle.ClosePrice >= candle.OpenPrice ? ohlc4 : 0m, candle.OpenTime));
-var downAvg = (DecimalIndicatorValue)_downSma.Process(new DecimalIndicatorValue(_downSma, candle.ClosePrice <= candle.OpenPrice ? ohlc4 : 0m, candle.OpenTime));
-
-if (!_totalSma.IsFormed)
-return;
-
-if (totalAvg.Value == 0m)
-return;
-
-probUp = upAvg.Value / totalAvg.Value * 100m;
-probDown = downAvg.Value / totalAvg.Value * 100m;
-}
-
-if (probUp > 50m && Position <= 0)
-{
-BuyMarket(Volume + Math.Abs(Position));
-}
-else if (probDown > 50m && Position >= 0)
-{
-SellMarket(Volume + Math.Abs(Position));
-}
-}
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, fast);
+			DrawIndicator(area, slow);
+			DrawOwnTrades(area);
+		}
+	}
 }

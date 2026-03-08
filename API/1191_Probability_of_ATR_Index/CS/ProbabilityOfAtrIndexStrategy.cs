@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,150 +11,88 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on Probability of ATR Index indicator.
-/// It trades when probability crosses its long-term average.
+/// Probability of ATR Index strategy using EMA crossover.
 /// </summary>
 public class ProbabilityOfAtrIndexStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _atrDistance;
-	private readonly StrategyParam<int> _bars;
+	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private AverageTrueRange _atr;
-	private SimpleMovingAverage _smaHigh;
-	private SimpleMovingAverage _smaLow;
-	private StandardDeviation _sdHigh;
-	private StandardDeviation _sdLow;
-	private SimpleMovingAverage _probSma;
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	private bool _prevIsAbove;
-
-	/// <summary>
-	/// ATR distance multiplier.
-	/// </summary>
-	public decimal AtrDistance
-	{
-		get => _atrDistance.Value;
-		set => _atrDistance.Value = value;
-	}
-
-	/// <summary>
-	/// Number of bars for calculations.
-	/// </summary>
-	public int Bars
-	{
-		get => _bars.Value;
-		set => _bars.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initialize the Probability of ATR Index strategy.
-	/// </summary>
 	public ProbabilityOfAtrIndexStrategy()
 	{
-		_atrDistance = Param(nameof(AtrDistance), 1.5m)
-			.SetDisplay("ATR Distance", "ATR distance multiplier", "General")
-			
-			.SetOptimize(1m, 3m, 0.5m);
-
-		_bars = Param(nameof(Bars), 8)
-			.SetDisplay("Bars", "Number of bars for calculations", "General")
-			
-			.SetOptimize(5, 15, 1);
+		_slowLength = Param(nameof(SlowLength), 40)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow Length", "Slow EMA period", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		var length = Math.Max(8, Bars);
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
 
-		_atr = new AverageTrueRange { Length = length };
-		_smaHigh = new SMA { Length = length };
-		_smaLow = new SMA { Length = length };
-		_sdHigh = new StandardDeviation { Length = length };
-		_sdLow = new StandardDeviation { Length = length };
-		_probSma = new SMA { Length = 1000 };
+		var prevF = 0m;
+		var prevS = 0m;
+		var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
+		subscription
+			.Bind(fast, slow, (candle, f, s) =>
+			{
+				if (candle.State != CandleStates.Finished)
+					return;
 
-		StartProtection(null, null);
-	}
+				if (!fast.IsFormed || !slow.IsFormed)
+					return;
 
-	private void ProcessCandle(ICandleMessage candle)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
+				if (!init)
+				{
+					prevF = f;
+					prevS = s;
+					init = true;
+					return;
+				}
 
-		var atrValue = _atr!.Process(candle).GetValue<decimal>();
+				if (candle.OpenTime - lastSignal >= cooldown)
+				{
+					if (prevF <= prevS && f > s && Position <= 0)
+					{
+						BuyMarket();
+						lastSignal = candle.OpenTime;
+					}
+					else if (prevF >= prevS && f < s && Position >= 0)
+					{
+						SellMarket();
+						lastSignal = candle.OpenTime;
+					}
+				}
 
-		var highMean = _smaHigh!.Process(new DecimalIndicatorValue(_smaHigh, candle.HighPrice, candle.ServerTime)).GetValue<decimal>();
-		var lowMean = _smaLow!.Process(new DecimalIndicatorValue(_smaLow, candle.LowPrice, candle.ServerTime)).GetValue<decimal>();
-		var highStd = _sdHigh!.Process(new DecimalIndicatorValue(_sdHigh, candle.HighPrice, candle.ServerTime)).GetValue<decimal>();
-		var lowStd = _sdLow!.Process(new DecimalIndicatorValue(_sdLow, candle.LowPrice, candle.ServerTime)).GetValue<decimal>();
+				prevF = f;
+				prevS = s;
+			})
+			.Start();
 
-		var meanDiff = highMean - lowMean;
-		var variance = (highStd * highStd + lowStd * lowStd) / 2m + (meanDiff * meanDiff) / 4m;
-		if (variance <= 0m)
-			return;
-
-		var a = (decimal)Math.Sqrt((double)variance);
-		if (a == 0m || Bars == 0)
-			return;
-
-		var d = (AtrDistance * atrValue) / (Bars * a);
-
-		const decimal a1 = 0.278393m;
-		const decimal a2 = 0.230389m;
-		const decimal a3 = 0.000972m;
-		const decimal a4 = 0.078108m;
-
-		var z = d / (decimal)Math.Sqrt(2);
-		var z2 = z * z;
-		var z3 = z2 * z;
-		var z4 = z2 * z2;
-
-		var de = 1m + a1 * z + a2 * z2 + a3 * z3 + a4 * z4;
-		var den = de * de * de * de;
-		var fx = 0.5m * (1m - 1m / den);
-
-		var probability = 100m * (0.5m - fx);
-
-		var avg = _probSma!.Process(new DecimalIndicatorValue(_probSma, probability, candle.ServerTime)).GetValue<decimal>();
-
-		var isAbove = probability > avg;
-
-		if (isAbove && !_prevIsAbove && Position <= 0)
+		var area = CreateChartArea();
+		if (area != null)
 		{
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
+			DrawCandles(area, subscription);
+			DrawIndicator(area, fast);
+			DrawIndicator(area, slow);
+			DrawOwnTrades(area);
 		}
-		else if (!isAbove && _prevIsAbove && Position >= 0)
-		{
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
-		}
-
-		_prevIsAbove = isAbove;
 	}
 }

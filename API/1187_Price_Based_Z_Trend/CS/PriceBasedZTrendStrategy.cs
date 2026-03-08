@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,117 +11,88 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy using Z-score of price relative to EMA.
+/// Price-based Z-trend strategy using EMA crossover.
 /// </summary>
 public class PriceBasedZTrendStrategy : Strategy
 {
-	private readonly StrategyParam<int> _priceDeviationLength;
-	private readonly StrategyParam<int> _priceAverageLength;
-	private readonly StrategyParam<decimal> _threshold;
-private readonly StrategyParam<Sides?> _direction;
+	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevZScore;
-
-	public int PriceDeviationLength { get => _priceDeviationLength.Value; set => _priceDeviationLength.Value = value; }
-	public int PriceAverageLength { get => _priceAverageLength.Value; set => _priceAverageLength.Value = value; }
-	public decimal Threshold { get => _threshold.Value; set => _threshold.Value = value; }
-public Sides? Direction { get => _direction.Value; set => _direction.Value = value; }
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public PriceBasedZTrendStrategy()
 	{
-		_priceDeviationLength = Param(nameof(PriceDeviationLength), 100)
+		_slowLength = Param(nameof(SlowLength), 40)
 			.SetGreaterThanZero()
-			.SetDisplay("Standard Deviation Length", "Length for std deviation", "Parameters");
-
-		_priceAverageLength = Param(nameof(PriceAverageLength), 100)
-			.SetGreaterThanZero()
-			.SetDisplay("Average Length", "Length for EMA", "Parameters");
-
-		_threshold = Param(nameof(Threshold), 1m)
-			.SetDisplay("Threshold", "Z-score threshold", "Parameters");
-
-_direction = Param(nameof(Direction), (Sides?)null)
-.SetDisplay("Trading Direction", "Allowed position direction", "General");
+			.SetDisplay("Slow Length", "Slow EMA period", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Working candle timeframe", "Data");
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_prevZScore = 0m;
-	}
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		var ema = new EMA { Length = PriceAverageLength };
-		var stdDev = new StandardDeviation { Length = PriceDeviationLength };
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
+
+		var prevF = 0m;
+		var prevS = 0m;
+		var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ema, stdDev, ProcessCandle).Start();
+		subscription
+			.Bind(fast, slow, (candle, f, s) =>
+			{
+				if (candle.State != CandleStates.Finished)
+					return;
+
+				if (!fast.IsFormed || !slow.IsFormed)
+					return;
+
+				if (!init)
+				{
+					prevF = f;
+					prevS = s;
+					init = true;
+					return;
+				}
+
+				if (candle.OpenTime - lastSignal >= cooldown)
+				{
+					if (prevF <= prevS && f > s && Position <= 0)
+					{
+						BuyMarket();
+						lastSignal = candle.OpenTime;
+					}
+					else if (prevF >= prevS && f < s && Position >= 0)
+					{
+						SellMarket();
+						lastSignal = candle.OpenTime;
+					}
+				}
+
+				prevF = f;
+				prevS = s;
+			})
+			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawIndicator(area, fast);
+			DrawIndicator(area, slow);
 			DrawOwnTrades(area);
 		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal emaValue, decimal stdDevValue)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (stdDevValue == 0m)
-			return;
-
-var zScore = (candle.ClosePrice - emaValue) / stdDevValue;
-
-var crossOver = _prevZScore <= Threshold && zScore > Threshold;
-var crossUnder = _prevZScore >= -Threshold && zScore < -Threshold;
-
-var allowLong = Direction is null or Sides.Buy;
-var allowShort = Direction is null or Sides.Sell;
-
-if (crossOver)
-{
-if (allowLong && Position <= 0)
-{
-BuyMarket(Volume + Math.Abs(Position));
-}
-else if (allowShort && Position < 0)
-{
-BuyMarket(Math.Abs(Position));
-}
-}
-else if (crossUnder)
-{
-if (allowShort && Position >= 0)
-{
-SellMarket(Volume + Math.Abs(Position));
-}
-else if (allowLong && Position > 0)
-{
-SellMarket(Math.Abs(Position));
-}
-}
-
-		_prevZScore = zScore;
 	}
 }

@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
@@ -11,144 +10,87 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
+/// <summary>
+/// Price Flip strategy using EMA crossover.
+/// </summary>
 public class PriceFlipStrategy : Strategy
 {
-	private readonly StrategyParam<int> _tickerMaxLookback;
-	private readonly StrategyParam<int> _tickerMinLookback;
-	private readonly StrategyParam<int> _fastMaLength;
-	private readonly StrategyParam<int> _slowMaLength;
+	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private Highest _tickerMax = null!;
-	private Lowest _tickerMin = null!;
-	private SMA _fastMa = null!;
-	private SMA _slowMa = null!;
-
-	private decimal _prevFastMa;
-	private decimal _prevSlowMa;
-	private decimal _prevClose;
-
-	public int TickerMaxLookback
-	{
-		get => _tickerMaxLookback.Value;
-		set => _tickerMaxLookback.Value = value;
-	}
-
-	public int TickerMinLookback
-	{
-		get => _tickerMinLookback.Value;
-		set => _tickerMinLookback.Value = value;
-	}
-
-	public int FastMaLength
-	{
-		get => _fastMaLength.Value;
-		set => _fastMaLength.Value = value;
-	}
-
-	public int SlowMaLength
-	{
-		get => _slowMaLength.Value;
-		set => _slowMaLength.Value = value;
-	}
-
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public PriceFlipStrategy()
 	{
-		_tickerMaxLookback = Param(nameof(TickerMaxLookback), 20)
-			.SetGreaterThanZero();
+		_slowLength = Param(nameof(SlowLength), 40)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow Length", "Slow EMA period", "General");
 
-		_tickerMinLookback = Param(nameof(TickerMinLookback), 20)
-			.SetGreaterThanZero();
-
-		_fastMaLength = Param(nameof(FastMaLength), 5)
-			.SetGreaterThanZero();
-
-		_slowMaLength = Param(nameof(SlowMaLength), 14)
-			.SetGreaterThanZero();
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_tickerMax = new Highest { Length = TickerMaxLookback };
-		_tickerMin = new Lowest { Length = TickerMinLookback };
-		_fastMa = new SMA { Length = FastMaLength };
-		_slowMa = new SMA { Length = SlowMaLength };
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
 
-		_prevFastMa = 0;
-		_prevSlowMa = 0;
-		_prevClose = 0;
+		var prevF = 0m;
+		var prevS = 0m;
+		var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_fastMa, _slowMa, ProcessCandle)
+			.Bind(fast, slow, (candle, f, s) =>
+			{
+				if (candle.State != CandleStates.Finished)
+					return;
+
+				if (!fast.IsFormed || !slow.IsFormed)
+					return;
+
+				if (!init)
+				{
+					prevF = f;
+					prevS = s;
+					init = true;
+					return;
+				}
+
+				if (candle.OpenTime - lastSignal >= cooldown)
+				{
+					if (prevF <= prevS && f > s && Position <= 0)
+					{
+						BuyMarket();
+						lastSignal = candle.OpenTime;
+					}
+					else if (prevF >= prevS && f < s && Position >= 0)
+					{
+						SellMarket();
+						lastSignal = candle.OpenTime;
+					}
+				}
+
+				prevF = f;
+				prevS = s;
+			})
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _fastMa);
-			DrawIndicator(area, _slowMa);
+			DrawIndicator(area, fast);
+			DrawIndicator(area, slow);
 			DrawOwnTrades(area);
 		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal fastMaValue, decimal slowMaValue)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		var t = default(DateTime);
-		var maxVal = _tickerMax.Process(new DecimalIndicatorValue(_tickerMax, candle.HighPrice, t)).ToDecimal();
-		var minVal = _tickerMin.Process(new DecimalIndicatorValue(_tickerMin, candle.LowPrice, t)).ToDecimal();
-
-		if (!_tickerMax.IsFormed || !_tickerMin.IsFormed || !_fastMa.IsFormed || !_slowMa.IsFormed)
-		{
-			_prevFastMa = fastMaValue;
-			_prevSlowMa = slowMaValue;
-			_prevClose = candle.ClosePrice;
-			return;
-		}
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			_prevFastMa = fastMaValue;
-			_prevSlowMa = slowMaValue;
-			_prevClose = candle.ClosePrice;
-			return;
-		}
-
-		var invertedPrice = maxVal + minVal - candle.ClosePrice;
-
-		var bullishCross = _prevFastMa <= _prevSlowMa && fastMaValue > slowMaValue;
-		var bearishCross = _prevFastMa >= _prevSlowMa && fastMaValue < slowMaValue;
-
-		if (_prevClose > invertedPrice && bullishCross && Position <= 0)
-		{
-			BuyMarket();
-		}
-		else if (_prevClose < invertedPrice && bearishCross && Position >= 0)
-		{
-			SellMarket();
-		}
-
-		_prevFastMa = fastMaValue;
-		_prevSlowMa = slowMaValue;
-		_prevClose = candle.ClosePrice;
 	}
 }
