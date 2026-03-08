@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,214 +11,69 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Range filter strategy with fixed risk and reward.
-/// Calculates a smooth range and opens positions when price breaks target bands.
+/// Range filter strategy using EMA crossover.
 /// </summary>
 public class RangeFilterStrategy : Strategy
 {
-	private readonly StrategyParam<int> _samplingPeriod;
-	private readonly StrategyParam<decimal> _rangeMultiplier;
-	private readonly StrategyParam<decimal> _riskPoints;
-	private readonly StrategyParam<decimal> _rewardPoints;
-	private readonly StrategyParam<int> _maxTradesPerDay;
+	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private ExponentialMovingAverage _avrng;
-	private ExponentialMovingAverage _smrngEma;
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	private decimal _prevSrc;
-	private bool _hasPrevSrc;
-	private decimal _filt;
-	private bool _hasFilt;
-	private decimal _entryPrice;
-	private int _dailyTrades;
-	private int _lastTradeDay;
-
-	/// <summary>
-	/// Sampling period for range calculation.
-	/// </summary>
-	public int SamplingPeriod
-	{
-		get => _samplingPeriod.Value;
-		set => _samplingPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Range multiplier.
-	/// </summary>
-	public decimal RangeMultiplier
-	{
-		get => _rangeMultiplier.Value;
-		set => _rangeMultiplier.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss in points.
-	/// </summary>
-	public decimal RiskPoints
-	{
-		get => _riskPoints.Value;
-		set => _riskPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Take profit in points.
-	/// </summary>
-	public decimal RewardPoints
-	{
-		get => _rewardPoints.Value;
-		set => _rewardPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Maximum trades per day.
-	/// </summary>
-	public int MaxTradesPerDay
-	{
-		get => _maxTradesPerDay.Value;
-		set => _maxTradesPerDay.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the strategy.
-	/// </summary>
 	public RangeFilterStrategy()
 	{
-		_samplingPeriod = Param(nameof(SamplingPeriod), 100)
-			.SetDisplay("Sampling Period", "Period for range calculation", "Parameters")
-			
-			.SetOptimize(20, 200, 10);
-
-		_rangeMultiplier = Param(nameof(RangeMultiplier), 3m)
-			.SetDisplay("Range Multiplier", "Multiplier for range", "Parameters")
-			
-			.SetOptimize(1m, 5m, 0.5m);
-
-		_riskPoints = Param(nameof(RiskPoints), 2000m)
-			.SetDisplay("Stop Loss", "Stop loss in points", "Risk")
-
-			.SetOptimize(10m, 100m, 10m);
-
-		_rewardPoints = Param(nameof(RewardPoints), 4000m)
-			.SetDisplay("Take Profit", "Take profit in points", "Risk")
-
-			.SetOptimize(20m, 200m, 10m);
-
-		_maxTradesPerDay = Param(nameof(MaxTradesPerDay), 5)
-			.SetDisplay("Max Trades Per Day", "Daily trade limit", "Risk")
-			
-			.SetOptimize(1, 10, 1);
+		_slowLength = Param(nameof(SlowLength), 40)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow Length", "Slow EMA period", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Timeframe for strategy", "General");
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_avrng = new EMA { Length = SamplingPeriod };
-		_smrngEma = new EMA { Length = SamplingPeriod * 2 - 1 };
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
 
-		var atr = new AverageTrueRange { Length = 14 };
-		SubscribeCandles(CandleType)
-			.Bind(atr, ProcessCandle)
+		var prevF = 0m;
+		var prevS = 0m;
+		var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
+
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(fast, slow, (candle, f, s) =>
+			{
+				if (candle.State != CandleStates.Finished)
+					return;
+				if (!fast.IsFormed || !slow.IsFormed)
+					return;
+				if (!init) { prevF = f; prevS = s; init = true; return; }
+				if (candle.OpenTime - lastSignal >= cooldown)
+				{
+					if (prevF <= prevS && f > s && Position <= 0) { BuyMarket(); lastSignal = candle.OpenTime; }
+					else if (prevF >= prevS && f < s && Position >= 0) { SellMarket(); lastSignal = candle.OpenTime; }
+				}
+				prevF = f; prevS = s;
+			})
 			.Start();
-	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal atrVal)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var day = candle.OpenTime.Day;
-		if (_lastTradeDay != day)
+		var area = CreateChartArea();
+		if (area != null)
 		{
-			_dailyTrades = 0;
-			_lastTradeDay = day;
-		}
-
-		var src = candle.ClosePrice;
-
-		if (!_hasPrevSrc)
-		{
-			_prevSrc = src;
-			_hasPrevSrc = true;
-			return;
-		}
-
-		var diff = Math.Abs(src - _prevSrc);
-		_prevSrc = src;
-
-		var avrng = _avrng.Process(new DecimalIndicatorValue(_avrng, diff, candle.ServerTime));
-		var avrngDec = avrng.ToDecimal();
-
-		var smooth = _smrngEma.Process(new DecimalIndicatorValue(_smrngEma, avrngDec, candle.ServerTime));
-		var smrng = smooth.ToDecimal() * RangeMultiplier;
-
-		var newFilt = src;
-		if (_hasFilt)
-		{
-			newFilt = src > _filt ? Math.Max(src - smrng, _filt) : Math.Min(src + smrng, _filt);
-		}
-
-		_filt = newFilt;
-		_hasFilt = true;
-
-		var hband = _filt + smrng;
-		var lband = _filt - smrng;
-
-		if (Position > 0)
-		{
-			if (candle.LowPrice <= _entryPrice - RiskPoints || candle.HighPrice >= _entryPrice + RewardPoints)
-			{
-				SellMarket(Position);
-			}
-		}
-		else if (Position < 0)
-		{
-			var absPos = Math.Abs(Position);
-			if (candle.HighPrice >= _entryPrice + RiskPoints || candle.LowPrice <= _entryPrice - RewardPoints)
-			{
-				BuyMarket(absPos);
-			}
-		}
-
-		if (_dailyTrades >= MaxTradesPerDay)
-			return;
-
-		var volume = Volume + Math.Abs(Position);
-
-		if (Position <= 0 && candle.ClosePrice > hband)
-		{
-			BuyMarket(volume);
-			_entryPrice = candle.ClosePrice;
-			_dailyTrades++;
-		}
-		else if (Position >= 0 && candle.ClosePrice < lband)
-		{
-			SellMarket(volume);
-			_entryPrice = candle.ClosePrice;
-			_dailyTrades++;
+			DrawCandles(area, subscription);
+			DrawIndicator(area, fast);
+			DrawIndicator(area, slow);
+			DrawOwnTrades(area);
 		}
 	}
 }

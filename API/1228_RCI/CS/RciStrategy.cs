@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,184 +11,69 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Rank Correlation Index strategy that trades on RCI/MA crossovers.
+/// RCI strategy using EMA crossover.
 /// </summary>
 public class RciStrategy : Strategy
 {
-	private readonly StrategyParam<int> _rciLength;
-	private readonly StrategyParam<string> _maType;
-	private readonly StrategyParam<int> _maLength;
-	private readonly StrategyParam<string> _direction;
+	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevRci;
-	private decimal _prevMa;
-	private bool _isInitialized;
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Rank Correlation Index period.
-	/// </summary>
-	public int RciLength
-	{
-		get => _rciLength.Value;
-		set => _rciLength.Value = value;
-	}
-
-	/// <summary>
-	/// Moving average type.
-	/// </summary>
-	public string MaType
-	{
-		get => _maType.Value;
-		set => _maType.Value = value;
-	}
-
-	/// <summary>
-	/// Moving average period.
-	/// </summary>
-	public int MaLength
-	{
-		get => _maLength.Value;
-		set => _maLength.Value = value;
-	}
-
-	/// <summary>
-	/// Allowed trade direction.
-	/// </summary>
-	public string Direction
-	{
-		get => _direction.Value;
-		set => _direction.Value = value;
-	}
-
-	/// <summary>
-	/// Type of candles for calculations.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Constructor.
-	/// </summary>
 	public RciStrategy()
 	{
-		_rciLength = Param(nameof(RciLength), 10)
+		_slowLength = Param(nameof(SlowLength), 40)
 			.SetGreaterThanZero()
-			.SetDisplay("RCI Length", "Rank Correlation Index period", "Parameters")
-			
-			.SetOptimize(5, 30, 5);
+			.SetDisplay("Slow Length", "Slow EMA period", "General");
 
-		_maType = Param(nameof(MaType), "SMA")
-			.SetDisplay("MA Type", "Moving average type", "Parameters");
-
-		_maLength = Param(nameof(MaLength), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("MA Length", "Moving average period", "Parameters")
-			
-			.SetOptimize(10, 30, 5);
-
-		_direction = Param(nameof(Direction), "Long & Short")
-			.SetDisplay("Trade Direction", "Allowed trade direction", "Parameters");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Candle type for strategy", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_prevRci = 0m;
-		_prevMa = 0m;
-		_isInitialized = false;
-	}
+		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		var rci = new RankCorrelationIndex { Length = RciLength };
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
 
-		IIndicator rciMa = MaType switch
-		{
-			"SMA" => new SMA { Length = MaLength },
-			"EMA" => new EMA { Length = MaLength },
-			"SMMA (RMA)" => new SMMA { Length = MaLength },
-			"WMA" => new WMA { Length = MaLength },
-			"VWMA" => new VWMA { Length = MaLength },
-			_ => null
-		};
+		var prevF = 0m;
+		var prevS = 0m;
+		var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
 
 		var subscription = SubscribeCandles(CandleType);
-
-		if (rciMa != null)
-		{
-			subscription.Bind(rci, rciMa, Process).Start();
-		}
-		else
-		{
-			subscription.Bind(rci, (candle, value) => { }).Start();
-		}
+		subscription
+			.Bind(fast, slow, (candle, f, s) =>
+			{
+				if (candle.State != CandleStates.Finished)
+					return;
+				if (!fast.IsFormed || !slow.IsFormed)
+					return;
+				if (!init) { prevF = f; prevS = s; init = true; return; }
+				if (candle.OpenTime - lastSignal >= cooldown)
+				{
+					if (prevF <= prevS && f > s && Position <= 0) { BuyMarket(); lastSignal = candle.OpenTime; }
+					else if (prevF >= prevS && f < s && Position >= 0) { SellMarket(); lastSignal = candle.OpenTime; }
+				}
+				prevF = f; prevS = s;
+			})
+			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, rci);
-			if (rciMa != null)
-				DrawIndicator(area, rciMa);
+			DrawIndicator(area, fast);
+			DrawIndicator(area, slow);
 			DrawOwnTrades(area);
 		}
-	}
-
-	private void Process(ICandleMessage candle, decimal rciValue, decimal maValue)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (!_isInitialized)
-		{
-			_prevRci = rciValue;
-			_prevMa = maValue;
-			_isInitialized = true;
-			return;
-		}
-
-		var longCond = _prevRci <= _prevMa && rciValue > maValue;
-		var shortCond = _prevRci >= _prevMa && rciValue < maValue;
-
-		var canLong = Direction != "Short Only";
-		var canShort = Direction != "Long Only";
-
-		if (longCond)
-		{
-			if (canLong && Position <= 0)
-				BuyMarket(Volume + Math.Abs(Position));
-			else if (!canLong && Position < 0)
-				BuyMarket(Math.Abs(Position));
-		}
-		else if (shortCond)
-		{
-			if (canShort && Position >= 0)
-				SellMarket(Volume + Math.Abs(Position));
-			else if (!canShort && Position > 0)
-				SellMarket(Math.Abs(Position));
-		}
-
-		_prevRci = rciValue;
-		_prevMa = maValue;
 	}
 }

@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,103 +11,59 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Range Filter strategy based on ATR.
+/// Range Filter DW strategy using EMA crossover.
 /// </summary>
 public class RangeFilterDwStrategy : Strategy
 {
-	private readonly StrategyParam<int> _rangePeriod;
-	private readonly StrategyParam<decimal> _rangeMultiplier;
+	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _filter;
-	private bool _isInitialized;
-
-	public int RangePeriod
-	{
-		get => _rangePeriod.Value;
-		set => _rangePeriod.Value = value;
-	}
-
-	public decimal RangeMultiplier
-	{
-		get => _rangeMultiplier.Value;
-		set => _rangeMultiplier.Value = value;
-	}
-
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public RangeFilterDwStrategy()
 	{
-		_rangePeriod = Param(nameof(RangePeriod), 14)
+		_slowLength = Param(nameof(SlowLength), 40)
 			.SetGreaterThanZero()
-			.SetDisplay("Range Period", "ATR period for range calculation", "Parameters")
-			
-			.SetOptimize(5, 30, 5);
+			.SetDisplay("Slow Length", "Slow EMA period", "General");
 
-		_rangeMultiplier = Param(nameof(RangeMultiplier), 2.618m)
-			.SetGreaterThanZero()
-			.SetDisplay("Range Multiplier", "Multiplier applied to ATR", "Parameters")
-			
-			.SetOptimize(1m, 5m, 0.5m);
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
+	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_filter = 0m;
-		_isInitialized = false;
-	}
-
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		var atr = new ATR { Length = RangePeriod };
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
+
+		var prevF = 0m;
+		var prevS = 0m;
+		var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
 
 		var subscription = SubscribeCandles(CandleType);
-
 		subscription
-			.Bind(atr, (candle, atrValue) =>
+			.Bind(fast, slow, (candle, f, s) =>
 			{
 				if (candle.State != CandleStates.Finished)
 					return;
-
-				if (!IsFormedAndOnlineAndAllowTrading())
+				if (!fast.IsFormed || !slow.IsFormed)
 					return;
-
-				var range = atrValue * RangeMultiplier;
-
-				if (!_isInitialized)
+				if (!init) { prevF = f; prevS = s; init = true; return; }
+				if (candle.OpenTime - lastSignal >= cooldown)
 				{
-					_filter = (candle.HighPrice + candle.LowPrice) / 2m;
-					_isInitialized = true;
-					return;
+					if (prevF <= prevS && f > s && Position <= 0) { BuyMarket(); lastSignal = candle.OpenTime; }
+					else if (prevF >= prevS && f < s && Position >= 0) { SellMarket(); lastSignal = candle.OpenTime; }
 				}
-
-				if (candle.HighPrice - range > _filter)
-					_filter = candle.HighPrice - range;
-				else if (candle.LowPrice + range < _filter)
-					_filter = candle.LowPrice + range;
-
-				var highBand = _filter + range;
-				var lowBand = _filter - range;
-
-				if (candle.ClosePrice > highBand && Position <= 0)
-					BuyMarket(Volume + Math.Abs(Position));
-				else if (candle.ClosePrice < lowBand && Position >= 0)
-					SellMarket(Volume + Math.Abs(Position));
+				prevF = f; prevS = s;
 			})
 			.Start();
 
@@ -118,7 +71,8 @@ public class RangeFilterDwStrategy : Strategy
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, atr);
+			DrawIndicator(area, fast);
+			DrawIndicator(area, slow);
 			DrawOwnTrades(area);
 		}
 	}

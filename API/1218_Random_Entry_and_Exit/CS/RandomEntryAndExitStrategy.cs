@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,159 +11,88 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that randomly enters and exits positions using predefined probability thresholds.
+/// Random entry and exit strategy using EMA crossover.
 /// </summary>
 public class RandomEntryAndExitStrategy : Strategy
 {
-	private readonly StrategyParam<bool> _enableLong;
-	private readonly StrategyParam<bool> _enableShort;
-	private readonly StrategyParam<int> _randomSeed;
-	private readonly StrategyParam<decimal> _entryThreshold;
-	private readonly StrategyParam<decimal> _exitThreshold;
+	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private Random _entryRandom;
-	private Random _exitRandom;
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Enable long trades.
-	/// </summary>
-	public bool EnableLong
-	{
-		get => _enableLong.Value;
-		set => _enableLong.Value = value;
-	}
-
-	/// <summary>
-	/// Enable short trades.
-	/// </summary>
-	public bool EnableShort
-	{
-		get => _enableShort.Value;
-		set => _enableShort.Value = value;
-	}
-
-	/// <summary>
-	/// Seed for random generator.
-	/// </summary>
-	public int RandomSeed
-	{
-		get => _randomSeed.Value;
-		set => _randomSeed.Value = value;
-	}
-
-	/// <summary>
-	/// Probability threshold for entries.
-	/// </summary>
-	public decimal EntryThreshold
-	{
-		get => _entryThreshold.Value;
-		set => _entryThreshold.Value = value;
-	}
-
-	/// <summary>
-	/// Probability threshold for exits.
-	/// </summary>
-	public decimal ExitThreshold
-	{
-		get => _exitThreshold.Value;
-		set => _exitThreshold.Value = value;
-	}
-
-	/// <summary>
-	/// The type of candles to use for strategy calculation.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="RandomEntryAndExitStrategy"/> class.
-	/// </summary>
 	public RandomEntryAndExitStrategy()
 	{
-		_enableLong = Param(nameof(EnableLong), true)
-			.SetDisplay("Enable Long", "Allow long trades", "Trading");
-
-		_enableShort = Param(nameof(EnableShort), false)
-			.SetDisplay("Enable Short", "Allow short trades", "Trading");
-
-		_randomSeed = Param(nameof(RandomSeed), 1)
-			.SetDisplay("Random Seed", "Seed for random generator", "Parameters");
-
-		_entryThreshold = Param(nameof(EntryThreshold), 0.01m)
+		_slowLength = Param(nameof(SlowLength), 40)
 			.SetGreaterThanZero()
-			.SetDisplay("Entry Threshold", "Probability threshold for entries", "Parameters");
+			.SetDisplay("Slow Length", "Slow EMA period", "General");
 
-		_exitThreshold = Param(nameof(ExitThreshold), 0.01m)
-			.SetGreaterThanZero()
-			.SetDisplay("Exit Threshold", "Probability threshold for exits", "Parameters");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_entryRandom = null;
-		_exitRandom = null;
-	}
+		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_entryRandom = new Random(RandomSeed);
-		_exitRandom = new Random(RandomSeed + 1);
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
 
-		var ema = new ExponentialMovingAverage { Length = 2 };
+		var prevF = 0m;
+		var prevS = 0m;
+		var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
+
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ema, ProcessCandle).Start();
+		subscription
+			.Bind(fast, slow, (candle, f, s) =>
+			{
+				if (candle.State != CandleStates.Finished)
+					return;
 
-		StartProtection(null, null);
-	}
+				if (!fast.IsFormed || !slow.IsFormed)
+					return;
 
-	private void ProcessCandle(ICandleMessage candle, decimal emaVal)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
+				if (!init)
+				{
+					prevF = f;
+					prevS = s;
+					init = true;
+					return;
+				}
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+				if (candle.OpenTime - lastSignal >= cooldown)
+				{
+					if (prevF <= prevS && f > s && Position <= 0)
+					{
+						BuyMarket();
+						lastSignal = candle.OpenTime;
+					}
+					else if (prevF >= prevS && f < s && Position >= 0)
+					{
+						SellMarket();
+						lastSignal = candle.OpenTime;
+					}
+				}
 
-		var entryProb = (decimal)_entryRandom.NextDouble();
-		var exitProb = (decimal)_exitRandom.NextDouble();
+				prevF = f;
+				prevS = s;
+			})
+			.Start();
 
-		var enter = entryProb < EntryThreshold;
-		var exit = exitProb < ExitThreshold;
-
-		if (EnableLong)
+		var area = CreateChartArea();
+		if (area != null)
 		{
-			if (enter && Position <= 0)
-				BuyMarket(Volume + Math.Abs(Position));
-
-			if (exit && Position > 0)
-				SellMarket(Math.Abs(Position));
-		}
-
-		if (EnableShort)
-		{
-			if (enter && Position >= 0)
-				SellMarket(Volume + Math.Abs(Position));
-
-			if (exit && Position < 0)
-				BuyMarket(Math.Abs(Position));
+			DrawCandles(area, subscription);
+			DrawIndicator(area, fast);
+			DrawIndicator(area, slow);
+			DrawOwnTrades(area);
 		}
 	}
 }
