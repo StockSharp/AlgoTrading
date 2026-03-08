@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,105 +11,51 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// SuperTrend crossover strategy with trend change confirmation.
+/// Supertrend with Money Ocean Trade strategy using EMA crossover.
 /// </summary>
 public class SupertrendWithMoneyOceanTradeStrategy : Strategy
 {
-	private readonly StrategyParam<int> _atrLength;
-	private readonly StrategyParam<decimal> _factor;
+	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private int _prevDir;
-	private decimal _prevSuperTrend;
-	private decimal _prevClose;
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// ATR period for SuperTrend calculation.
-	/// </summary>
-	public int AtrLength
-	{
-		get => _atrLength.Value;
-		set => _atrLength.Value = value;
-	}
-
-	/// <summary>
-	/// Multiplier for SuperTrend calculation.
-	/// </summary>
-	public decimal Factor
-	{
-		get => _factor.Value;
-		set => _factor.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type for strategy calculation.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initialize strategy parameters.
-	/// </summary>
 	public SupertrendWithMoneyOceanTradeStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
-		_atrLength = Param(nameof(AtrLength), 6)
+		_slowLength = Param(nameof(SlowLength), 40)
 			.SetGreaterThanZero()
-			.SetDisplay("ATR Length", "ATR period for SuperTrend", "SuperTrend");
+			.SetDisplay("Slow Length", "Slow EMA period", "General");
 
-		_factor = Param(nameof(Factor), 0.25m)
-			.SetGreaterThanZero()
-			.SetDisplay("Factor", "ATR multiplier for SuperTrend", "SuperTrend");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		var st = new SuperTrend { Length = AtrLength, Multiplier = Factor };
-		var sub = SubscribeCandles(CandleType);
-		sub.BindEx(st, Process).Start();
-
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
+		var prevF = 0m; var prevS = 0m; var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(fast, slow, (candle, f, s) =>
+		{
+			if (candle.State != CandleStates.Finished) return;
+			if (!fast.IsFormed || !slow.IsFormed) return;
+			if (!init) { prevF = f; prevS = s; init = true; return; }
+			if (candle.OpenTime - lastSignal >= cooldown)
+			{
+				if (prevF <= prevS && f > s && Position <= 0) { BuyMarket(); lastSignal = candle.OpenTime; }
+				else if (prevF >= prevS && f < s && Position >= 0) { SellMarket(); lastSignal = candle.OpenTime; }
+			}
+			prevF = f; prevS = s;
+		}).Start();
 		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, sub);
-			DrawIndicator(area, st);
-			DrawOwnTrades(area);
-		}
-	}
-
-	private void Process(ICandleMessage candle, IIndicatorValue value)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		var st = (SuperTrendIndicatorValue)value;
-		var dir = st.IsUpTrend ? 1 : -1;
-		var stVal = st.Value;
-
-		if (_prevDir != 0 && dir != _prevDir)
-		{
-			if (dir > _prevDir && _prevClose < _prevSuperTrend && candle.ClosePrice > stVal && Position <= 0)
-			{
-				var volume = Volume + Math.Abs(Position);
-				BuyMarket(volume);
-			}
-			else if (dir < _prevDir && _prevClose > _prevSuperTrend && candle.ClosePrice < stVal && Position >= 0)
-			{
-				var volume = Volume + Math.Abs(Position);
-				SellMarket(volume);
-			}
-		}
-
-		_prevDir = dir;
-		_prevSuperTrend = stVal;
-		_prevClose = candle.ClosePrice;
+		if (area != null) { DrawCandles(area, subscription); DrawIndicator(area, fast); DrawIndicator(area, slow); DrawOwnTrades(area); }
 	}
 }

@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,157 +11,51 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// EMA crossover strategy with basic performance statistics.
+/// Swing FX Pro Panel v1 strategy using EMA crossover.
 /// </summary>
 public class SwingFxProPanelV1Strategy : Strategy
 {
-	private readonly StrategyParam<decimal> _initialCapital;
-	private readonly StrategyParam<decimal> _riskPerTrade;
-	private readonly StrategyParam<int> _analysisPeriod;
-	private readonly StrategyParam<int> _fastLength;
 	private readonly StrategyParam<int> _slowLength;
-	private readonly StrategyParam<decimal> _profitTarget;
-	private readonly StrategyParam<decimal> _stopLoss;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private EMA _emaFast = null!;
-	private EMA _emaSlow = null!;
-	private decimal _entryPrice;
-
-	/// <summary>
-	/// Initial capital for statistics.
-	/// </summary>
-	public decimal InitialCapital { get => _initialCapital.Value; set => _initialCapital.Value = value; }
-
-	/// <summary>
-	/// Risk percentage per trade.
-	/// </summary>
-	public decimal RiskPerTrade { get => _riskPerTrade.Value; set => _riskPerTrade.Value = value; }
-
-	/// <summary>
-	/// Analysis period in months.
-	/// </summary>
-	public int AnalysisPeriod { get => _analysisPeriod.Value; set => _analysisPeriod.Value = value; }
-
-	/// <summary>
-	/// Fast EMA length.
-	/// </summary>
-	public int FastLength { get => _fastLength.Value; set => _fastLength.Value = value; }
-
-	/// <summary>
-	/// Slow EMA length.
-	/// </summary>
 	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
-
-	/// <summary>
-	/// Profit target in price units.
-	/// </summary>
-	public decimal ProfitTarget { get => _profitTarget.Value; set => _profitTarget.Value = value; }
-
-	/// <summary>
-	/// Stop loss in price units.
-	/// </summary>
-	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
-
-	/// <summary>
-	/// Candle type used for trading.
-	/// </summary>
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Initialize <see cref="SwingFxProPanelV1Strategy"/>.
-	/// </summary>
 	public SwingFxProPanelV1Strategy()
 	{
-		_initialCapital = Param(nameof(InitialCapital), 1000m)
-			.SetDisplay("Initial Capital", "Initial capital for statistics", "General");
-
-		_riskPerTrade = Param(nameof(RiskPerTrade), 2m)
-			.SetDisplay("Risk Per Trade %", "Risk percentage per trade", "General");
-
-		_analysisPeriod = Param(nameof(AnalysisPeriod), 6)
-			.SetDisplay("Analysis Period", "Months for analysis", "General");
-
-		_fastLength = Param(nameof(FastLength), 20)
+		_slowLength = Param(nameof(SlowLength), 40)
 			.SetGreaterThanZero()
-			.SetDisplay("Fast EMA Length", "Fast EMA period", "EMA");
+			.SetDisplay("Slow Length", "Slow EMA period", "General");
 
-		_slowLength = Param(nameof(SlowLength), 50)
-			.SetGreaterThanZero()
-			.SetDisplay("Slow EMA Length", "Slow EMA period", "EMA");
-
-		_profitTarget = Param(nameof(ProfitTarget), 300m)
-			.SetDisplay("Profit Target", "Profit target in price units", "Risk");
-
-		_stopLoss = Param(nameof(StopLoss), 150m)
-			.SetDisplay("Stop Loss", "Stop loss in price units", "Risk");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Candle timeframe", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_entryPrice = 0m;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		_emaFast = new EMA { Length = FastLength };
-		_emaSlow = new EMA { Length = SlowLength };
-
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
+		var prevF = 0m; var prevS = 0m; var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(_emaFast, _emaSlow, ProcessCandle).Start();
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal emaFast, decimal emaSlow)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		// Check exits first
-		if (Position > 0 && _entryPrice > 0)
+		subscription.Bind(fast, slow, (candle, f, s) =>
 		{
-			if (candle.ClosePrice - _entryPrice >= ProfitTarget || _entryPrice - candle.ClosePrice >= StopLoss)
+			if (candle.State != CandleStates.Finished) return;
+			if (!fast.IsFormed || !slow.IsFormed) return;
+			if (!init) { prevF = f; prevS = s; init = true; return; }
+			if (candle.OpenTime - lastSignal >= cooldown)
 			{
-				SellMarket();
-				_entryPrice = 0;
-				return;
+				if (prevF <= prevS && f > s && Position <= 0) { BuyMarket(); lastSignal = candle.OpenTime; }
+				else if (prevF >= prevS && f < s && Position >= 0) { SellMarket(); lastSignal = candle.OpenTime; }
 			}
-		}
-		else if (Position < 0 && _entryPrice > 0)
-		{
-			if (_entryPrice - candle.ClosePrice >= ProfitTarget || candle.ClosePrice - _entryPrice >= StopLoss)
-			{
-				BuyMarket();
-				_entryPrice = 0;
-				return;
-			}
-		}
-
-		// Entries only when flat
-		if (Position == 0)
-		{
-			if (emaFast > emaSlow)
-			{
-				BuyMarket();
-				_entryPrice = candle.ClosePrice;
-			}
-			else if (emaFast < emaSlow)
-			{
-				SellMarket();
-				_entryPrice = candle.ClosePrice;
-			}
-		}
+			prevF = f; prevS = s;
+		}).Start();
+		var area = CreateChartArea();
+		if (area != null) { DrawCandles(area, subscription); DrawIndicator(area, fast); DrawIndicator(area, slow); DrawOwnTrades(area); }
 	}
 }

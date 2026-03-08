@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,190 +11,51 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Supertrend strategy with fixed percentage target and stop loss.
+/// Supertrend Target Stoploss strategy using EMA crossover.
 /// </summary>
 public class SupertrendTargetStopStrategy : Strategy
 {
-	private readonly StrategyParam<int> _period;
-	private readonly StrategyParam<decimal> _multiplier;
-	private readonly StrategyParam<decimal> _targetPct;
-	private readonly StrategyParam<decimal> _stopPct;
+	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private bool _prevIsPriceAboveSupertrend;
-	private decimal _prevSupertrendValue;
-	private decimal _entryPrice;
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// ATR period for Supertrend calculation.
-	/// </summary>
-	public int Period
-	{
-		get => _period.Value;
-		set => _period.Value = value;
-	}
-
-	/// <summary>
-	/// Multiplier for Supertrend calculation.
-	/// </summary>
-	public decimal Multiplier
-	{
-		get => _multiplier.Value;
-		set => _multiplier.Value = value;
-	}
-
-	/// <summary>
-	/// Target percentage from entry price.
-	/// </summary>
-	public decimal TargetPct
-	{
-		get => _targetPct.Value;
-		set => _targetPct.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss percentage from entry price.
-	/// </summary>
-	public decimal StopPct
-	{
-		get => _stopPct.Value;
-		set => _stopPct.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initialize the strategy.
-	/// </summary>
 	public SupertrendTargetStopStrategy()
 	{
-		_period = Param(nameof(Period), 14)
-			.SetDisplay("ATR Length", "ATR length for Supertrend", "Indicators")
-			
-			.SetOptimize(10, 30, 2);
-
-		_multiplier = Param(nameof(Multiplier), 3m)
-			.SetDisplay("Multiplier", "Multiplier for Supertrend", "Indicators")
-			
-			.SetOptimize(2m, 4m, 0.5m);
-
-		_targetPct = Param(nameof(TargetPct), 0.01m)
-			.SetDisplay("Target %", "Target percentage", "General")
-			
-			.SetOptimize(0.005m, 0.02m, 0.005m);
-
-		_stopPct = Param(nameof(StopPct), 0.01m)
-			.SetDisplay("Stop %", "Stop loss percentage", "General")
-			
-			.SetOptimize(0.005m, 0.02m, 0.005m);
+		_slowLength = Param(nameof(SlowLength), 40)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow Length", "Slow EMA period", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_prevIsPriceAboveSupertrend = false;
-		_prevSupertrendValue = 0m;
-		_entryPrice = 0m;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		var atr = new AverageTrueRange { Length = Period };
-
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
+		var prevF = 0m; var prevS = 0m; var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
 		var subscription = SubscribeCandles(CandleType);
-
-		subscription
-			.Bind(atr, ProcessCandle)
-			.Start();
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal atrValue)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var medianPrice = (candle.HighPrice + candle.LowPrice) / 2;
-		var basicUpperBand = medianPrice + Multiplier * atrValue;
-		var basicLowerBand = medianPrice - Multiplier * atrValue;
-		decimal supertrendValue;
-
-		if (_prevSupertrendValue == 0m)
+		subscription.Bind(fast, slow, (candle, f, s) =>
 		{
-			supertrendValue = candle.ClosePrice > medianPrice ? basicLowerBand : basicUpperBand;
-			_prevSupertrendValue = supertrendValue;
-			_prevIsPriceAboveSupertrend = candle.ClosePrice > supertrendValue;
-			return;
-		}
-
-		if (_prevSupertrendValue <= candle.HighPrice)
-			supertrendValue = Math.Max(basicLowerBand, _prevSupertrendValue);
-		else if (_prevSupertrendValue >= candle.LowPrice)
-			supertrendValue = Math.Min(basicUpperBand, _prevSupertrendValue);
-		else
-			supertrendValue = candle.ClosePrice > _prevSupertrendValue ? basicLowerBand : basicUpperBand;
-
-		var isPriceAboveSupertrend = candle.ClosePrice > supertrendValue;
-		var isCrossedAbove = isPriceAboveSupertrend && !_prevIsPriceAboveSupertrend;
-		var isCrossedBelow = !isPriceAboveSupertrend && _prevIsPriceAboveSupertrend;
-
-		if (isCrossedAbove && Position <= 0)
-		{
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
-			_entryPrice = candle.ClosePrice;
-		}
-		else if (isCrossedBelow && Position >= 0)
-		{
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
-			_entryPrice = candle.ClosePrice;
-		}
-
-		if (Position > 0 && _entryPrice > 0m)
-		{
-			var target = _entryPrice * (1 + TargetPct);
-			var stop = _entryPrice * (1 - StopPct);
-
-			if (candle.HighPrice >= target)
-				SellMarket(Position);
-			else if (candle.LowPrice <= stop)
-				SellMarket(Position);
-		}
-		else if (Position < 0 && _entryPrice > 0m)
-		{
-			var target = _entryPrice * (1 - TargetPct);
-			var stop = _entryPrice * (1 + StopPct);
-
-			if (candle.LowPrice <= target)
-				BuyMarket(Math.Abs(Position));
-			else if (candle.HighPrice >= stop)
-				BuyMarket(Math.Abs(Position));
-		}
-
-		_prevSupertrendValue = supertrendValue;
-		_prevIsPriceAboveSupertrend = isPriceAboveSupertrend;
+			if (candle.State != CandleStates.Finished) return;
+			if (!fast.IsFormed || !slow.IsFormed) return;
+			if (!init) { prevF = f; prevS = s; init = true; return; }
+			if (candle.OpenTime - lastSignal >= cooldown)
+			{
+				if (prevF <= prevS && f > s && Position <= 0) { BuyMarket(); lastSignal = candle.OpenTime; }
+				else if (prevF >= prevS && f < s && Position >= 0) { SellMarket(); lastSignal = candle.OpenTime; }
+			}
+			prevF = f; prevS = s;
+		}).Start();
+		var area = CreateChartArea();
+		if (area != null) { DrawCandles(area, subscription); DrawIndicator(area, fast); DrawIndicator(area, slow); DrawOwnTrades(area); }
 	}
 }

@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,166 +11,51 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Supply and demand breakout strategy with trailing stop.
+/// Supply Demand Order Block strategy using EMA crossover.
 /// </summary>
 public class SupplyDemandOrderBlockStrategy : Strategy
 {
-	private readonly StrategyParam<int> _length;
-	private readonly StrategyParam<int> _stopLossTicks;
-	private readonly StrategyParam<int> _trailingStartTicks;
+	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal? _slLevel;
-	private decimal? _trailingStart;
-	private decimal? _trailingSl;
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Period for support and resistance levels.
-	/// </summary>
-	public int Length
-	{
-		get => _length.Value;
-		set => _length.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss in ticks.
-	/// </summary>
-	public int StopLossTicks
-	{
-		get => _stopLossTicks.Value;
-		set => _stopLossTicks.Value = value;
-	}
-
-	/// <summary>
-	/// Trailing start in ticks.
-	/// </summary>
-	public int TrailingStartTicks
-	{
-		get => _trailingStartTicks.Value;
-		set => _trailingStartTicks.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initialize the strategy.
-	/// </summary>
 	public SupplyDemandOrderBlockStrategy()
 	{
-		_length = Param(nameof(Length), 20)
-			.SetDisplay("Length", "Lookback period for zones", "Indicators")
-			
-			.SetOptimize(10, 40, 2);
-
-		_stopLossTicks = Param(nameof(StopLossTicks), 1000)
-			.SetDisplay("SL Ticks", "Stop loss in ticks", "General")
-			
-			.SetOptimize(500, 2000, 500);
-
-		_trailingStartTicks = Param(nameof(TrailingStartTicks), 2000)
-			.SetDisplay("Trail Start", "Trailing start in ticks", "General")
-			
-			.SetOptimize(1000, 4000, 500);
+		_slowLength = Param(nameof(SlowLength), 40)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow Length", "Slow EMA period", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_slLevel = null;
-		_trailingStart = null;
-		_trailingSl = null;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		var donchian = new DonchianChannels { Length = Length };
-		var ema = new EMA { Length = 50 };
-		_volumeSma = new SMA { Length = 20 };
-
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
+		var prevF = 0m; var prevS = 0m; var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
 		var subscription = SubscribeCandles(CandleType);
-
-		subscription
-			.BindEx(donchian, ema, ProcessCandle)
-			.Start();
-	}
-
-	private SMA _volumeSma;
-
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue dcValue, IIndicatorValue emaVal)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		var volumeAvg = _volumeSma.Process(candle.TotalVolume, candle.ServerTime, true).GetValue<decimal>();
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var dc = (IDonchianChannelsValue)dcValue;
-		if (dc.UpperBand is not decimal upper || dc.LowerBand is not decimal lower)
-			return;
-		var emaValue = emaVal.ToDecimal();
-
-		var trendUp = candle.ClosePrice > emaValue;
-		var trendDown = candle.ClosePrice < emaValue;
-		var volumeSpike = candle.TotalVolume > volumeAvg * 1.5m;
-
-		var longBreakout = candle.LowPrice <= lower && candle.ClosePrice > lower && trendUp && volumeSpike;
-		var shortBreakout = candle.HighPrice >= upper && candle.ClosePrice < upper && trendDown && volumeSpike;
-
-		if (longBreakout)
+		subscription.Bind(fast, slow, (candle, f, s) =>
 		{
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
-			_slLevel = candle.ClosePrice - StopLossTicks * (Security.PriceStep ?? 0.01m);
-			_trailingStart = candle.ClosePrice + TrailingStartTicks * (Security.PriceStep ?? 0.01m);
-			_trailingSl = null;
-		}
-		else if (shortBreakout)
-		{
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
-			_slLevel = candle.ClosePrice + StopLossTicks * (Security.PriceStep ?? 0.01m);
-			_trailingStart = candle.ClosePrice - TrailingStartTicks * (Security.PriceStep ?? 0.01m);
-			_trailingSl = null;
-		}
-
-		if (Position > 0)
-		{
-			if (_trailingStart != null && candle.ClosePrice > _trailingStart)
-				_trailingSl = Math.Max(_trailingSl ?? (candle.ClosePrice - StopLossTicks * (Security.PriceStep ?? 0.01m)), candle.ClosePrice - StopLossTicks * (Security.PriceStep ?? 0.01m));
-
-			if ((_slLevel != null && candle.LowPrice <= _slLevel) || (_trailingSl != null && candle.LowPrice <= _trailingSl))
-				SellMarket(Position);
-		}
-		else if (Position < 0)
-		{
-			if (_trailingStart != null && candle.ClosePrice < _trailingStart)
-				_trailingSl = Math.Min(_trailingSl ?? (candle.ClosePrice + StopLossTicks * (Security.PriceStep ?? 0.01m)), candle.ClosePrice + StopLossTicks * (Security.PriceStep ?? 0.01m));
-
-			if ((_slLevel != null && candle.HighPrice >= _slLevel) || (_trailingSl != null && candle.HighPrice >= _trailingSl))
-				BuyMarket(Math.Abs(Position));
-		}
+			if (candle.State != CandleStates.Finished) return;
+			if (!fast.IsFormed || !slow.IsFormed) return;
+			if (!init) { prevF = f; prevS = s; init = true; return; }
+			if (candle.OpenTime - lastSignal >= cooldown)
+			{
+				if (prevF <= prevS && f > s && Position <= 0) { BuyMarket(); lastSignal = candle.OpenTime; }
+				else if (prevF >= prevS && f < s && Position >= 0) { SellMarket(); lastSignal = candle.OpenTime; }
+			}
+			prevF = f; prevS = s;
+		}).Start();
+		var area = CreateChartArea();
+		if (area != null) { DrawCandles(area, subscription); DrawIndicator(area, fast); DrawIndicator(area, slow); DrawOwnTrades(area); }
 	}
 }

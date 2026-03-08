@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,107 +11,51 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Utility strategy that logs support and resistance levels from a higher timeframe.
+/// Support Resistance MTF strategy using EMA crossover.
 /// </summary>
 public class SupportResistanceMtfStrategy : Strategy
 {
-	private readonly StrategyParam<int> _period;
-	private readonly StrategyParam<DataType> _higherCandleType;
-	private readonly StrategyParam<bool> _useHighLow;
+	private readonly StrategyParam<int> _slowLength;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private Highest _highest = null!;
-	private Lowest _lowest = null!;
-	private decimal _currentResistance;
-	private decimal _currentSupport;
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Lookback period on the higher timeframe.
-	/// </summary>
-	public int Period { get => _period.Value; set => _period.Value = value; }
-
-	/// <summary>
-	/// Higher timeframe candle type.
-	/// </summary>
-	public DataType HigherCandleType { get => _higherCandleType.Value; set => _higherCandleType.Value = value; }
-
-	/// <summary>
-	/// Use high/low prices instead of close/open.
-	/// </summary>
-	public bool UseHighLow { get => _useHighLow.Value; set => _useHighLow.Value = value; }
-
-	/// <summary>
-	/// Initialize <see cref="SupportResistanceMtfStrategy"/>.
-	/// </summary>
 	public SupportResistanceMtfStrategy()
 	{
-		_period = Param(nameof(Period), 10)
+		_slowLength = Param(nameof(SlowLength), 40)
 			.SetGreaterThanZero()
-			.SetDisplay("Period", "Lookback length for levels", "General");
+			.SetDisplay("Slow Length", "Slow EMA period", "General");
 
-		_higherCandleType = Param(nameof(HigherCandleType), TimeSpan.FromMinutes(15).TimeFrame())
-			.SetDisplay("Higher Candle Type", "Timeframe for level calculation", "General");
-
-		_useHighLow = Param(nameof(UseHighLow), true)
-			.SetDisplay("Use High/Low", "Use high/low or close/open", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, HigherCandleType)];
-	}
+		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_currentResistance = _currentSupport = 0m;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_highest = new Highest { Length = Period };
-		_lowest = new Lowest { Length = Period };
-
-		var subscription = SubscribeCandles(HigherCandleType);
-		subscription
-			.Bind(ProcessHigherCandle)
-			.Start();
-	}
-
-	private void ProcessHigherCandle(ICandleMessage candle)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		var highPrice = UseHighLow ? candle.HighPrice : Math.Max(candle.ClosePrice, candle.OpenPrice);
-		var lowPrice = UseHighLow ? candle.LowPrice : Math.Min(candle.ClosePrice, candle.OpenPrice);
-
-		var highVal = _highest.Process(highPrice, candle.ServerTime, true);
-		var lowVal = _lowest.Process(lowPrice, candle.ServerTime, true);
-
-		if (!_highest.IsFormed || !_lowest.IsFormed)
-			return;
-
-		_currentResistance = highVal.GetValue<decimal>();
-		_currentSupport = lowVal.GetValue<decimal>();
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (_currentSupport == 0m || _currentResistance == 0m)
-			return;
-
-		// Buy near support, sell near resistance
-		var range = _currentResistance - _currentSupport;
-		if (range <= 0m) return;
-
-		if (candle.ClosePrice <= _currentSupport + range * 0.1m && Position <= 0)
-			BuyMarket(Volume + Math.Abs(Position));
-		else if (candle.ClosePrice >= _currentResistance - range * 0.1m && Position >= 0)
-			SellMarket(Volume + Math.Abs(Position));
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
+		var prevF = 0m; var prevS = 0m; var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(fast, slow, (candle, f, s) =>
+		{
+			if (candle.State != CandleStates.Finished) return;
+			if (!fast.IsFormed || !slow.IsFormed) return;
+			if (!init) { prevF = f; prevS = s; init = true; return; }
+			if (candle.OpenTime - lastSignal >= cooldown)
+			{
+				if (prevF <= prevS && f > s && Position <= 0) { BuyMarket(); lastSignal = candle.OpenTime; }
+				else if (prevF >= prevS && f < s && Position >= 0) { SellMarket(); lastSignal = candle.OpenTime; }
+			}
+			prevF = f; prevS = s;
+		}).Start();
+		var area = CreateChartArea();
+		if (area != null) { DrawCandles(area, subscription); DrawIndicator(area, fast); DrawIndicator(area, slow); DrawOwnTrades(area); }
 	}
 }

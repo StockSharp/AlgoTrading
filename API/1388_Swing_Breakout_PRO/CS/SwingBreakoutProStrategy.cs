@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,214 +11,51 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Swing breakout strategy based on recent swing highs and lows.
+/// Swing Breakout PRO strategy using EMA crossover.
 /// </summary>
 public class SwingBreakoutProStrategy : Strategy
 {
-	private readonly StrategyParam<int> _leftBars;
-	private readonly StrategyParam<int> _rightBars;
-	private readonly StrategyParam<bool> _showLines;
+	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private readonly List<decimal> _highBuffer = new();
-	private readonly List<decimal> _lowBuffer = new();
-	private decimal _lastSwingHigh;
-	private decimal _lastSwingLow;
-	private decimal _prevHigh;
-	private decimal _prevLow;
-	private decimal _prevClose;
-	private decimal _longSL;
-	private decimal _longTP;
-	private decimal _shortSL;
-	private decimal _shortTP;
-	private bool _waitingExit;
-
-	/// <summary>
-	/// Left bars for pivot calculation.
-	/// </summary>
-	public int LeftBars { get => _leftBars.Value; set => _leftBars.Value = value; }
-
-	/// <summary>
-	/// Right bars for pivot calculation.
-	/// </summary>
-	public int RightBars { get => _rightBars.Value; set => _rightBars.Value = value; }
-
-	/// <summary>
-	/// Show stop-loss and target lines on chart.
-	/// </summary>
-	public bool ShowLines { get => _showLines.Value; set => _showLines.Value = value; }
-
-	/// <summary>
-	/// Candle type used for trading.
-	/// </summary>
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Initialize <see cref="SwingBreakoutProStrategy"/>.
-	/// </summary>
 	public SwingBreakoutProStrategy()
 	{
-		_leftBars = Param(nameof(LeftBars), 5)
+		_slowLength = Param(nameof(SlowLength), 40)
 			.SetGreaterThanZero()
-			.SetDisplay("Left Bars", "Bars to the left of pivot", "General");
+			.SetDisplay("Slow Length", "Slow EMA period", "General");
 
-		_rightBars = Param(nameof(RightBars), 5)
-			.SetGreaterThanZero()
-			.SetDisplay("Right Bars", "Bars to the right of pivot", "General");
-
-		_showLines = Param(nameof(ShowLines), true)
-			.SetDisplay("Show Lines", "Draw stop-loss and target lines", "Visual");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Timeframe for trading", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_highBuffer.Clear();
-		_lowBuffer.Clear();
-		_lastSwingHigh = _lastSwingLow = 0m;
-		_prevHigh = _prevLow = _prevClose = 0m;
-		_longSL = _longTP = _shortSL = _shortTP = 0m;
-		_waitingExit = false;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
+		var prevF = 0m; var prevS = 0m; var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
-	}
-
-	private void ProcessCandle(ICandleMessage candle)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		var size = LeftBars + RightBars + 1;
-		_highBuffer.Add(candle.HighPrice);
-		_lowBuffer.Add(candle.LowPrice);
-		if (_highBuffer.Count > size)
-			_highBuffer.RemoveAt(0);
-		if (_lowBuffer.Count > size)
-			_lowBuffer.RemoveAt(0);
-
-		if (_highBuffer.Count == size)
+		subscription.Bind(fast, slow, (candle, f, s) =>
 		{
-			var pivotIndex = size - RightBars - 1;
-			var candidate = _highBuffer[pivotIndex];
-			var isPivot = true;
-			for (var i = 0; i < size; i++)
+			if (candle.State != CandleStates.Finished) return;
+			if (!fast.IsFormed || !slow.IsFormed) return;
+			if (!init) { prevF = f; prevS = s; init = true; return; }
+			if (candle.OpenTime - lastSignal >= cooldown)
 			{
-				if (i == pivotIndex)
-					continue;
-				if (_highBuffer[i] >= candidate)
-				{
-					isPivot = false;
-					break;
-				}
+				if (prevF <= prevS && f > s && Position <= 0) { BuyMarket(); lastSignal = candle.OpenTime; }
+				else if (prevF >= prevS && f < s && Position >= 0) { SellMarket(); lastSignal = candle.OpenTime; }
 			}
-			if (isPivot)
-				_lastSwingHigh = candidate;
-		}
-
-		if (_lowBuffer.Count == size)
-		{
-			var pivotIndex = size - RightBars - 1;
-			var candidate = _lowBuffer[pivotIndex];
-			var isPivot = true;
-			for (var i = 0; i < size; i++)
-			{
-				if (i == pivotIndex)
-					continue;
-				if (_lowBuffer[i] <= candidate)
-				{
-					isPivot = false;
-					break;
-				}
-			}
-			if (isPivot)
-				_lastSwingLow = candidate;
-		}
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			_prevHigh = candle.HighPrice;
-			_prevLow = candle.LowPrice;
-			_prevClose = candle.ClosePrice;
-			return;
-		}
-
-		// If waiting for exit to complete, check if position is flat
-		if (_waitingExit)
-		{
-			if (Position == 0)
-				_waitingExit = false;
-			else
-			{
-				_prevHigh = candle.HighPrice;
-				_prevLow = candle.LowPrice;
-				_prevClose = candle.ClosePrice;
-				return;
-			}
-		}
-
-		var longCondition = _prevClose > _lastSwingHigh && candle.HighPrice > _prevHigh && _lastSwingHigh != 0m && _lastSwingLow != 0m;
-		var shortCondition = _prevClose < _lastSwingLow && candle.LowPrice < _prevLow && _lastSwingHigh != 0m && _lastSwingLow != 0m;
-
-		// Check exits first
-		if (Position > 0)
-		{
-			if (candle.LowPrice <= _longSL || candle.HighPrice >= _longTP)
-			{
-				SellMarket();
-				_waitingExit = true;
-				_prevHigh = candle.HighPrice;
-				_prevLow = candle.LowPrice;
-				_prevClose = candle.ClosePrice;
-				return;
-			}
-		}
-		else if (Position < 0)
-		{
-			if (candle.HighPrice >= _shortSL || candle.LowPrice <= _shortTP)
-			{
-				BuyMarket();
-				_waitingExit = true;
-				_prevHigh = candle.HighPrice;
-				_prevLow = candle.LowPrice;
-				_prevClose = candle.ClosePrice;
-				return;
-			}
-		}
-
-		// Check entries only when flat
-		if (longCondition && Position == 0)
-		{
-			var rangeGap = Math.Abs(_lastSwingHigh - _lastSwingLow);
-			_longSL = _lastSwingLow;
-			_longTP = _lastSwingHigh + rangeGap;
-			BuyMarket();
-		}
-		else if (shortCondition && Position == 0)
-		{
-			var rangeGap = Math.Abs(_lastSwingHigh - _lastSwingLow);
-			_shortSL = _lastSwingHigh;
-			_shortTP = _lastSwingLow - rangeGap;
-			SellMarket();
-		}
-
-		_prevHigh = candle.HighPrice;
-		_prevLow = candle.LowPrice;
-		_prevClose = candle.ClosePrice;
+			prevF = f; prevS = s;
+		}).Start();
+		var area = CreateChartArea();
+		if (area != null) { DrawCandles(area, subscription); DrawIndicator(area, fast); DrawIndicator(area, slow); DrawOwnTrades(area); }
 	}
 }

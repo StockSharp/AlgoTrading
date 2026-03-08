@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,112 +11,51 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Supply and demand zones with engulfing pattern entries.
+/// Supply Demand Engulfment strategy using EMA crossover.
 /// </summary>
 public class SupplyDemandEngulfmentStrategy : Strategy
 {
-	private readonly StrategyParam<int> _zonePeriod;
+	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private ICandleMessage _prevCandle;
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Period for zone detection.
-	/// </summary>
-	public int ZonePeriod
-	{
-		get => _zonePeriod.Value;
-		set => _zonePeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initialize the strategy.
-	/// </summary>
 	public SupplyDemandEngulfmentStrategy()
 	{
-		_zonePeriod = Param(nameof(ZonePeriod), 20)
-			.SetDisplay("Zone Period", "Lookback for zones", "Indicators")
-			
-			.SetOptimize(10, 40, 2);
+		_slowLength = Param(nameof(SlowLength), 40)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow Length", "Slow EMA period", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_prevCandle = null;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		var donchian = new DonchianChannels { Length = ZonePeriod };
-
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
+		var prevF = 0m; var prevS = 0m; var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
 		var subscription = SubscribeCandles(CandleType);
-
-		subscription
-			.BindEx(donchian, ProcessCandle)
-			.Start();
-	}
-
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue dcValue)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (_prevCandle == null)
+		subscription.Bind(fast, slow, (candle, f, s) =>
 		{
-			_prevCandle = candle;
-			return;
-		}
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			_prevCandle = candle;
-			return;
-		}
-
-		var dc = (IDonchianChannelsValue)dcValue;
-		if (dc.UpperBand is not decimal upper || dc.LowerBand is not decimal lower)
-		{
-			_prevCandle = candle;
-			return;
-		}
-
-		var bullishEngulf = candle.OpenPrice < _prevCandle.ClosePrice && candle.ClosePrice > _prevCandle.OpenPrice && _prevCandle.ClosePrice < _prevCandle.OpenPrice;
-		var bearishEngulf = candle.OpenPrice > _prevCandle.ClosePrice && candle.ClosePrice < _prevCandle.OpenPrice && _prevCandle.ClosePrice > _prevCandle.OpenPrice;
-
-		if (bullishEngulf && candle.LowPrice <= lower && Position <= 0)
-		{
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
-		}
-		else if (bearishEngulf && candle.HighPrice >= upper && Position >= 0)
-		{
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
-		}
-
-		_prevCandle = candle;
+			if (candle.State != CandleStates.Finished) return;
+			if (!fast.IsFormed || !slow.IsFormed) return;
+			if (!init) { prevF = f; prevS = s; init = true; return; }
+			if (candle.OpenTime - lastSignal >= cooldown)
+			{
+				if (prevF <= prevS && f > s && Position <= 0) { BuyMarket(); lastSignal = candle.OpenTime; }
+				else if (prevF >= prevS && f < s && Position >= 0) { SellMarket(); lastSignal = candle.OpenTime; }
+			}
+			prevF = f; prevS = s;
+		}).Start();
+		var area = CreateChartArea();
+		if (area != null) { DrawCandles(area, subscription); DrawIndicator(area, fast); DrawIndicator(area, slow); DrawOwnTrades(area); }
 	}
 }
