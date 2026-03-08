@@ -11,84 +11,87 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that trades based on previous candle direction.
-/// Buys when the prior candle was bearish (open > close), sells when bullish.
-/// Applies fixed take profit and stop loss.
+/// Strategy that trades based on consecutive same-direction candles with EMA filter.
 /// </summary>
 public class SheKanskigorStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _takeProfit;
-	private readonly StrategyParam<decimal> _stopLoss;
+	private readonly StrategyParam<int> _emaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private ICandleMessage _prevCandle;
-	private decimal _entryPrice;
+	private decimal _prevOpen;
+	private decimal _prevClose;
+	private decimal _prevPrevOpen;
+	private decimal _prevPrevClose;
+	private int _candleCount;
 
-	public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
-	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
+	public int EmaPeriod { get => _emaPeriod.Value; set => _emaPeriod.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public SheKanskigorStrategy()
 	{
-		_takeProfit = Param(nameof(TakeProfit), 500m)
-			.SetDisplay("Take Profit", "Profit target", "Risk");
+		_emaPeriod = Param(nameof(EmaPeriod), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("EMA Period", "EMA period", "Indicators");
 
-		_stopLoss = Param(nameof(StopLoss), 300m)
-			.SetDisplay("Stop Loss", "Loss limit", "Risk");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevOpen = 0;
+		_prevClose = 0;
+		_prevPrevOpen = 0;
+		_prevPrevClose = 0;
+		_candleCount = 0;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
+		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
+		SubscribeCandles(CandleType).Bind(ema, ProcessCandle).Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal emaValue)
 	{
-		if (candle.State != CandleStates.Finished)
+		if (candle.State != CandleStates.Finished) return;
+
+		_candleCount++;
+
+		if (_candleCount < 3)
+		{
+			_prevPrevOpen = _prevOpen;
+			_prevPrevClose = _prevClose;
+			_prevOpen = candle.OpenPrice;
+			_prevClose = candle.ClosePrice;
 			return;
-
-		// Manage existing position
-		if (Position > 0)
-		{
-			if (candle.ClosePrice - _entryPrice >= TakeProfit ||
-				_entryPrice - candle.ClosePrice >= StopLoss)
-			{
-				SellMarket();
-			}
-		}
-		else if (Position < 0)
-		{
-			if (_entryPrice - candle.ClosePrice >= TakeProfit ||
-				candle.ClosePrice - _entryPrice >= StopLoss)
-			{
-				BuyMarket();
-			}
 		}
 
-		// Entry based on previous candle direction
-		if (Position == 0 && _prevCandle != null)
+		// Two consecutive bearish candles -> buy reversal (with EMA confirmation)
+		var twoBearish = _prevPrevOpen > _prevPrevClose && _prevOpen > _prevClose;
+		// Two consecutive bullish candles -> sell reversal
+		var twoBullish = _prevPrevOpen < _prevPrevClose && _prevOpen < _prevClose;
+
+		if (twoBearish && candle.ClosePrice > emaValue && Position <= 0)
 		{
-			if (_prevCandle.OpenPrice > _prevCandle.ClosePrice)
-			{
-				// Previous candle bearish -> buy reversal
-				BuyMarket();
-				_entryPrice = candle.ClosePrice;
-			}
-			else if (_prevCandle.OpenPrice < _prevCandle.ClosePrice)
-			{
-				// Previous candle bullish -> sell reversal
-				SellMarket();
-				_entryPrice = candle.ClosePrice;
-			}
+			if (Position < 0) BuyMarket();
+			BuyMarket();
+		}
+		else if (twoBullish && candle.ClosePrice < emaValue && Position >= 0)
+		{
+			if (Position > 0) SellMarket();
+			SellMarket();
 		}
 
-		_prevCandle = candle;
+		_prevPrevOpen = _prevOpen;
+		_prevPrevClose = _prevClose;
+		_prevOpen = candle.OpenPrice;
+		_prevClose = candle.ClosePrice;
 	}
 }
