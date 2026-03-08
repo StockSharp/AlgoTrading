@@ -220,7 +220,7 @@ public class CmoDuplexStrategy : Strategy
 			shortSubscription.Bind(_shortCmo, ProcessShortCandle).Start();
 		}
 
-		StartProtection(null, null);
+		// no fixed protection needed
 	}
 
 	private void ProcessLongCandle(ICandleMessage candle, decimal cmoValue)
@@ -260,7 +260,7 @@ public class CmoDuplexStrategy : Strategy
 				(stopPrice.HasValue && candle.LowPrice <= stopPrice.Value) ||
 				exitBySignal)
 			{
-				SellMarket(Position);
+				SellMarket();
 				_entryPrice = null;
 			}
 		}
@@ -268,10 +268,9 @@ public class CmoDuplexStrategy : Strategy
 		var crossDown = previous > 0m && current <= 0m;
 		if (EnableLongEntries && crossDown && Position <= 0)
 		{
-			var volume = Volume + (Position < 0 ? -Position : 0m);
-			if (volume > 0)
+			if (true)
 			{
-				BuyMarket(volume);
+				BuyMarket();
 				_entryPrice = candle.ClosePrice;
 			}
 		}
@@ -314,7 +313,7 @@ public class CmoDuplexStrategy : Strategy
 				(stopPrice.HasValue && candle.HighPrice >= stopPrice.Value) ||
 				exitBySignal)
 			{
-				BuyMarket(-Position);
+				BuyMarket();
 				_entryPrice = null;
 			}
 		}
@@ -322,10 +321,9 @@ public class CmoDuplexStrategy : Strategy
 		var crossUp = previous < 0m && current >= 0m;
 		if (EnableShortEntries && crossUp && Position >= 0)
 		{
-			var volume = Volume + (Position > 0 ? Position : 0m);
-			if (volume > 0)
+			if (true)
 			{
-				SellMarket(volume);
+				SellMarket();
 				_entryPrice = candle.ClosePrice;
 			}
 		}

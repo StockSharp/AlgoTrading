@@ -122,11 +122,11 @@ public class TwentyPipsOppositeLastNHourTrendStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit (pips)", "Take profit distance in pips", "Trading");
 
-		_tradingHour = Param(nameof(TradingHour), 7)
+		_tradingHour = Param(nameof(TradingHour), 8)
 			.SetRange(0, 23)
 			.SetDisplay("Trading Hour", "Hour (0-23) when entries are allowed", "Timing");
 
-		_hoursToCheckTrend = Param(nameof(HoursToCheckTrend), 24)
+		_hoursToCheckTrend = Param(nameof(HoursToCheckTrend), 6)
 			.SetRange(2, 240)
 			.SetDisplay("Hours To Check", "Lookback hours for trend calculation", "Signals");
 
@@ -150,7 +150,7 @@ public class TwentyPipsOppositeLastNHourTrendStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Fifth Multiplier", "Multiplier after fifth loss", "Money Management");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe to process", "Market Data");
 	}
 
@@ -180,7 +180,7 @@ public class TwentyPipsOppositeLastNHourTrendStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
 
-		StartProtection(null, null);
+		// no fixed protection needed
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -262,12 +262,14 @@ public class TwentyPipsOppositeLastNHourTrendStrategy : Strategy
 
 		if (goLong)
 		{
-			BuyMarket(orderVolume);
+			Volume = orderVolume;
+			BuyMarket();
 			_positionDirection = 1;
 		}
 		else
 		{
-			SellMarket(orderVolume);
+			Volume = orderVolume;
+			SellMarket();
 			_positionDirection = -1;
 		}
 
@@ -314,11 +316,11 @@ public class TwentyPipsOppositeLastNHourTrendStrategy : Strategy
 
 		if (direction > 0)
 		{
-			SellMarket(volume);
+			SellMarket();
 		}
 		else if (direction < 0)
 		{
-			BuyMarket(volume);
+			BuyMarket();
 		}
 
 		if (entryPrice is decimal price)

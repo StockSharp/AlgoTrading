@@ -133,7 +133,7 @@ public class KdjExpertAdvisorStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Order Volume", "Quantity used for entries", "Trading");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for KDJ calculation", "Data");
 	}
 
@@ -150,6 +150,7 @@ public class KdjExpertAdvisorStrategy : Strategy
 
 		_previousK = null;
 		_previousKdc = null;
+		_pipSize = 0m;
 	}
 
 	/// <inheritdoc />
@@ -220,12 +221,12 @@ public class KdjExpertAdvisorStrategy : Strategy
 				if (buySignal)
 				{
 					LogInfo($"Buy signal at {candle.ClosePrice}: K={k:F2}, D={d:F2}, K-D={kdc:F2}");
-					BuyMarket(OrderVolume);
+					BuyMarket();
 				}
 				else if (sellSignal)
 				{
 					LogInfo($"Sell signal at {candle.ClosePrice}: K={k:F2}, D={d:F2}, K-D={kdc:F2}");
-					SellMarket(OrderVolume);
+					SellMarket();
 				}
 			}
 		}

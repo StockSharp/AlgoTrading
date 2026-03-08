@@ -141,7 +141,7 @@ public class DailyBreakPointStrategy : Strategy
 		_closeBySignal = Param(nameof(CloseBySignal), true)
 		.SetDisplay("Close By Signal", "Reverse existing position on opposite signal", "General");
 
-		_breakPointPips = Param(nameof(BreakPointPips), 10m)
+		_breakPointPips = Param(nameof(BreakPointPips), 5m)
 		.SetGreaterThanZero()
 		.SetDisplay("Break Point (pips)", "Distance from the daily open", "Signals");
 
@@ -165,7 +165,7 @@ public class DailyBreakPointStrategy : Strategy
 		_takeProfitPips = Param(nameof(TakeProfitPips), 30m)
 		.SetDisplay("Take Profit (pips)", "Fixed take profit distance", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Intraday candle series", "Data");
 	}
 
@@ -332,14 +332,14 @@ public class DailyBreakPointStrategy : Strategy
 			var volume = Math.Abs(Position);
 			if (volume > 0m && _longStopPrice.HasValue && candle.LowPrice <= _longStopPrice.Value)
 			{
-				SellMarket(volume);
+				SellMarket();
 				ResetLongState();
 				return;
 			}
 
 			if (volume > 0m && _longTakePrice.HasValue && candle.HighPrice >= _longTakePrice.Value)
 			{
-				SellMarket(volume);
+				SellMarket();
 				ResetLongState();
 			}
 		}
@@ -348,14 +348,14 @@ public class DailyBreakPointStrategy : Strategy
 			var volume = Math.Abs(Position);
 			if (volume > 0m && _shortStopPrice.HasValue && candle.HighPrice >= _shortStopPrice.Value)
 			{
-				BuyMarket(volume);
+				BuyMarket();
 				ResetShortState();
 				return;
 			}
 
 			if (volume > 0m && _shortTakePrice.HasValue && candle.LowPrice <= _shortTakePrice.Value)
 			{
-				BuyMarket(volume);
+				BuyMarket();
 				ResetShortState();
 			}
 		}
@@ -373,12 +373,12 @@ public class DailyBreakPointStrategy : Strategy
 			if (Position > 0)
 			{
 				var volume = Math.Abs(Position);
-				SellMarket(volume);
+				SellMarket();
 			}
 
 			ResetLongState();
 
-			SellMarket(OrderVolume);
+			SellMarket();
 
 			_shortEntryPrice = entryPrice;
 			_shortStopPrice = stopLossOffset > 0m ? NormalizePrice(entryPrice + stopLossOffset) : null;
@@ -386,7 +386,7 @@ public class DailyBreakPointStrategy : Strategy
 		}
 		else
 		{
-			BuyMarket(OrderVolume);
+			BuyMarket();
 
 			_longEntryPrice = entryPrice;
 			_longStopPrice = stopLossOffset > 0m ? NormalizePrice(entryPrice - stopLossOffset) : null;
@@ -402,12 +402,12 @@ public class DailyBreakPointStrategy : Strategy
 			if (Position < 0)
 			{
 				var volume = Math.Abs(Position);
-				BuyMarket(volume);
+				BuyMarket();
 			}
 
 			ResetShortState();
 
-			BuyMarket(OrderVolume);
+			BuyMarket();
 
 			_longEntryPrice = entryPrice;
 			_longStopPrice = stopLossOffset > 0m ? NormalizePrice(entryPrice - stopLossOffset) : null;
@@ -415,7 +415,7 @@ public class DailyBreakPointStrategy : Strategy
 		}
 		else
 		{
-			SellMarket(OrderVolume);
+			SellMarket();
 
 			_shortEntryPrice = entryPrice;
 			_shortStopPrice = stopLossOffset > 0m ? NormalizePrice(entryPrice + stopLossOffset) : null;
