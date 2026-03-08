@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,174 +11,77 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Grid based strategy converted from the original MQL4 VR---SETKAp2 expert.
+/// Grid based strategy using candle direction and EMA trend.
 /// </summary>
 public class VrSetkaP2Strategy : Strategy
 {
-	private readonly StrategyParam<int> _takeProfit;
-	private readonly StrategyParam<decimal> _lot;
-	private readonly StrategyParam<decimal> _percent;
-	private readonly StrategyParam<bool> _useMartingale;
-	private readonly StrategyParam<int> _correlation;
+	private readonly StrategyParam<int> _emaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _entryPrice;
 	private decimal _prevOpen;
 	private decimal _prevClose;
+	private bool _hasPrev;
 
-	/// <summary>
-	/// Initializes a new instance of the strategy.
-	/// </summary>
+	public int EmaPeriod { get => _emaPeriod.Value; set => _emaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+
 	public VrSetkaP2Strategy()
 	{
-		_takeProfit = Param(nameof(TakeProfit), 300)
+		_emaPeriod = Param(nameof(EmaPeriod), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("Take Profit", "Profit in price steps", "General")
-			
-			.SetOptimize(100, 500, 100);
+			.SetDisplay("EMA Period", "EMA trend period", "Indicators");
 
-		_lot = Param(nameof(Lot), 0.1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Lot", "Order volume", "General");
-
-		_percent = Param(nameof(Percent), 1.3m)
-			.SetGreaterThanZero()
-			.SetDisplay("Percent", "Threshold percentage", "General");
-
-		_useMartingale = Param(nameof(UseMartingale), true)
-			.SetDisplay("Use Martingale", "Increase volume after loss", "General");
-
-		_correlation = Param(nameof(Correlation), 50)
-			.SetDisplay("Correlation", "Offset for grid levels", "General");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for analysis", "General");
 	}
 
-	/// <summary>
-	/// Distance to the profit target in price steps.
-	/// </summary>
-	public int TakeProfit
-	{
-		get => _takeProfit.Value;
-		set => _takeProfit.Value = value;
-	}
-
-	/// <summary>
-	/// Base volume for orders.
-	/// </summary>
-	public decimal Lot
-	{
-		get => _lot.Value;
-		set => _lot.Value = value;
-	}
-
-	/// <summary>
-	/// Percentage threshold derived from the daily range.
-	/// </summary>
-	public decimal Percent
-	{
-		get => _percent.Value;
-		set => _percent.Value = value;
-	}
-
-	/// <summary>
-	/// Enable simple martingale position sizing.
-	/// </summary>
-	public bool UseMartingale
-	{
-		get => _useMartingale.Value;
-		set => _useMartingale.Value = value;
-	}
-
-	/// <summary>
-	/// Offset used for grid levels.
-	/// </summary>
-	public int Correlation
-	{
-		get => _correlation.Value;
-		set => _correlation.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used for calculations.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_entryPrice = 0m;
-		_prevOpen = 0m;
-		_prevClose = 0m;
+		_prevOpen = 0;
+		_prevClose = 0;
+		_hasPrev = false;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
+		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
+		SubscribeCandles(CandleType).Bind(ema, ProcessCandle).Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal emaValue)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
+		if (candle.State != CandleStates.Finished) return;
 
-		var max = candle.HighPrice;
-		var min = candle.LowPrice;
-		var open = candle.OpenPrice;
 		var close = candle.ClosePrice;
 
-		var x = close > min ? Math.Round(close * 100m / min - 100m, 2) : 0m;
-		var y = close < max ? Math.Round(close * 100m / max - 100m, 2) : 0m;
-
-		var step = Security?.PriceStep ?? 1m;
-		var targetDistance = TakeProfit * step;
-
-		if (Position <= 0 && -Percent <= y && _prevClose > _prevOpen)
+		if (!_hasPrev)
 		{
-			var volume = Lot;
-
-			if (UseMartingale && Position < 0)
-				volume *= Math.Abs(Position) + 1;
-
-			BuyMarket(volume);
-			_entryPrice = close;
-		}
-		else if (Position >= 0 && Percent <= x && _prevClose < _prevOpen)
-		{
-			var volume = Lot;
-
-			if (UseMartingale && Position > 0)
-				volume *= Math.Abs(Position) + 1;
-
-			SellMarket(volume);
-			_entryPrice = close;
-		}
-		else if (Position > 0 && close >= _entryPrice + targetDistance)
-		{
-			SellMarket(Position);
-		}
-		else if (Position < 0 && close <= _entryPrice - targetDistance)
-		{
-			BuyMarket(-Position);
+			_prevOpen = candle.OpenPrice;
+			_prevClose = close;
+			_hasPrev = true;
+			return;
 		}
 
-		_prevOpen = open;
+		// Previous candle bullish + close above EMA => buy
+		if (_prevClose > _prevOpen && close > emaValue && Position <= 0)
+		{
+			if (Position < 0) BuyMarket();
+			BuyMarket();
+		}
+		// Previous candle bearish + close below EMA => sell
+		else if (_prevClose < _prevOpen && close < emaValue && Position >= 0)
+		{
+			if (Position > 0) SellMarket();
+			SellMarket();
+		}
+
+		_prevOpen = candle.OpenPrice;
 		_prevClose = close;
 	}
 }

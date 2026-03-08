@@ -108,7 +108,7 @@ public class CandleTraderStrategy : Strategy
 		_reverseClose = Param(nameof(ReverseClose), true)
 			.SetDisplay("Reverse Close", "Close opposite position on signal", "Trading Logic");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 

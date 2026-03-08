@@ -121,7 +121,7 @@ public class VolumeEaStrategy : Strategy
 		_cciLevel4 = Param(nameof(CciLevel4), -190m)
 			.SetDisplay("CCI Level4", "Lower CCI for sells", "Trading");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe", "General");
 	}
 
@@ -129,6 +129,18 @@ public class VolumeEaStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevVolume = 0;
+		_prevPrevVolume = 0;
+		_prevOpen = 0;
+		_prevClose = 0;
+		_longStop = 0;
+		_shortStop = 0;
 	}
 
 	/// <inheritdoc />

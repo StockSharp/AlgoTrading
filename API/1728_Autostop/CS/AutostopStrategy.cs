@@ -54,7 +54,7 @@ public class AutostopStrategy : Strategy
 		_slMultiplier = Param(nameof(SlMultiplier), 1.5m)
 			.SetGreaterThanZero()
 			.SetDisplay("SL Multiplier", "ATR multiplier for stop loss", "Risk");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -78,7 +78,7 @@ public class AutostopStrategy : Strategy
 
 		var fastEma = new ExponentialMovingAverage { Length = FastLength };
 		var slowEma = new ExponentialMovingAverage { Length = SlowLength };
-		var atr = new AverageTrueRange { Length = AtrLength };
+		var atr = new StandardDeviation { Length = AtrLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(fastEma, slowEma, atr, ProcessCandle).Start();

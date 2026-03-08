@@ -1,162 +1,82 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
-using StockSharp.Algo.Candles;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Random-entry martingale strategy with adjustable volume and distance.
+/// Momentum strategy with EMA trend filter.
 /// </summary>
 public class PureMartingaleStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _slTp;
-	private readonly StrategyParam<decimal> _lotsMultiplier;
-	private readonly StrategyParam<decimal> _distanceMultiplier;
+	private readonly StrategyParam<int> _emaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private readonly Random _random = new();
+	private decimal _prevClose;
+	private decimal _prevPrevClose;
+	private int _barCount;
 
-	private decimal _currentVolume;
-	private decimal _currentDistance;
-	private decimal _entryPrice;
-
-	public decimal StopLossTakeProfit { get => _slTp.Value; set => _slTp.Value = value; }
-	public decimal LotsMultiplier { get => _lotsMultiplier.Value; set => _lotsMultiplier.Value = value; }
-	public decimal DistanceMultiplier { get => _distanceMultiplier.Value; set => _distanceMultiplier.Value = value; }
+	public int EmaPeriod { get => _emaPeriod.Value; set => _emaPeriod.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public PureMartingaleStrategy()
 	{
-		_slTp = Param(nameof(StopLossTakeProfit), 20m)
+		_emaPeriod = Param(nameof(EmaPeriod), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("SL/TP Distance", "Initial stop loss and take profit distance", "Risk");
-
-		_lotsMultiplier = Param(nameof(LotsMultiplier), 1.5m)
-			.SetGreaterThanZero()
-			.SetDisplay("Lots Multiplier", "Volume multiplier after loss", "Risk");
-
-		_distanceMultiplier = Param(nameof(DistanceMultiplier), 1.5m)
-			.SetGreaterThanZero()
-			.SetDisplay("Distance Multiplier", "SL/TP distance multiplier after loss", "Risk");
-
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Candles used for trade timing", "General");
+			.SetDisplay("EMA Period", "EMA trend period", "Indicators");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+			.SetDisplay("Candle Type", "Candles for trade timing", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_currentVolume = Volume;
-		_currentDistance = StopLossTakeProfit;
-		_entryPrice = 0m;
+		_prevClose = 0;
+		_prevPrevClose = 0;
+		_barCount = 0;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_currentVolume = Volume;
-		_currentDistance = StopLossTakeProfit;
-
-		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawOwnTrades(area);
-		}
+		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
+		SubscribeCandles(CandleType).Bind(ema, ProcessCandle).Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal emaValue)
 	{
-		// Process only finished candles.
-		if (candle.State != CandleStates.Finished)
-			return;
+		if (candle.State != CandleStates.Finished) return;
 
-		// Ensure the strategy is ready to trade.
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		var close = candle.ClosePrice;
+		_barCount++;
 
-		if (Position == 0)
+		if (_barCount >= 3)
 		{
-			// Choose a random direction for the next trade.
-			_entryPrice = candle.ClosePrice;
-
-			if (_random.Next(2) == 0)
-				BuyMarket(_currentVolume);
-			else
-				SellMarket(_currentVolume);
-
-			return;
-		}
-
-		if (Position > 0)
-		{
-			// Check target or stop for long position.
-			if (candle.ClosePrice >= _entryPrice + _currentDistance)
+			// Two consecutive rising closes above EMA => buy
+			if (close > _prevClose && _prevClose > _prevPrevClose && close > emaValue && Position <= 0)
 			{
-				SellMarket(Position);
-				AdjustAfterTrade(true);
+				if (Position < 0) BuyMarket();
+				BuyMarket();
 			}
-			else if (candle.ClosePrice <= _entryPrice - _currentDistance)
+			// Two consecutive falling closes below EMA => sell
+			else if (close < _prevClose && _prevClose < _prevPrevClose && close < emaValue && Position >= 0)
 			{
-				SellMarket(Position);
-				AdjustAfterTrade(false);
+				if (Position > 0) SellMarket();
+				SellMarket();
 			}
 		}
-		else
-		{
-			// Position < 0, check target or stop for short position.
-			if (candle.ClosePrice <= _entryPrice - _currentDistance)
-			{
-				BuyMarket(-Position);
-				AdjustAfterTrade(true);
-			}
-			else if (candle.ClosePrice >= _entryPrice + _currentDistance)
-			{
-				BuyMarket(-Position);
-				AdjustAfterTrade(false);
-			}
-		}
-	}
 
-	private void AdjustAfterTrade(bool wasProfit)
-	{
-		if (wasProfit)
-		{
-			// Reset parameters after a winning trade.
-			_currentVolume = Volume;
-			_currentDistance = StopLossTakeProfit;
-		}
-		else
-		{
-			// Increase volume and distance after a losing trade.
-			_currentVolume *= LotsMultiplier;
-			_currentDistance *= DistanceMultiplier;
-		}
+		_prevPrevClose = _prevClose;
+		_prevClose = close;
 	}
 }

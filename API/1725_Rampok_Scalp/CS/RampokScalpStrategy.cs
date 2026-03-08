@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,57 +12,26 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Envelope based scalping strategy.
-/// Enters when price crosses moving average bands and exits with take profit, stop loss or trailing stop.
+/// Enters when price crosses moving average bands and exits with trailing stop.
 /// </summary>
 public class RampokScalpStrategy : Strategy
 {
 	private readonly StrategyParam<int> _period;
 	private readonly StrategyParam<decimal> _deviation;
-	private readonly StrategyParam<decimal> _takeProfit;
-	private readonly StrategyParam<decimal> _stopLoss;
-	private readonly StrategyParam<decimal> _trailingStop;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal? _prevUpper;
-	private decimal? _prevLower;
-	private decimal? _prevClose;
+	private decimal _prevUpper;
+	private decimal _prevLower;
+	private decimal _prevClose;
 	private decimal _entryPrice;
 	private decimal _highestPrice;
 	private decimal _lowestPrice;
+	private bool _hasPrev;
 
-	/// <summary>
-	/// Moving average period.
-	/// </summary>
 	public int Period { get => _period.Value; set => _period.Value = value; }
-
-	/// <summary>
-	/// Deviation percent for envelopes.
-	/// </summary>
 	public decimal Deviation { get => _deviation.Value; set => _deviation.Value = value; }
-
-	/// <summary>
-	/// Take profit value.
-	/// </summary>
-	public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
-
-	/// <summary>
-	/// Stop loss value.
-	/// </summary>
-	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
-
-	/// <summary>
-	/// Trailing stop value.
-	/// </summary>
-	public decimal TrailingStop { get => _trailingStop.Value; set => _trailingStop.Value = value; }
-
-	/// <summary>
-	/// Candle type.
-	/// </summary>
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Initializes a new instance of the <see cref="RampokScalpStrategy"/> class.
-	/// </summary>
 	public RampokScalpStrategy()
 	{
 		_period = Param(nameof(Period), 15)
@@ -76,93 +42,82 @@ public class RampokScalpStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Deviation", "Envelope deviation percent", "General");
 
-		_takeProfit = Param(nameof(TakeProfit), 500m)
-			.SetDisplay("Take Profit", "Target profit in price", "Risk")
-			.SetOptimize(100m, 2000m, 100m);
-
-		_stopLoss = Param(nameof(StopLoss), 300m)
-			.SetDisplay("Stop Loss", "Stop loss in price", "Risk")
-			.SetOptimize(100m, 1000m, 100m);
-
-		_trailingStop = Param(nameof(TrailingStop), 200m)
-			.SetDisplay("Trailing Stop", "Trailing stop in price", "Risk")
-			.SetOptimize(50m, 500m, 50m);
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle", "Candle type", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevUpper = 0;
+		_prevLower = 0;
+		_prevClose = 0;
+		_entryPrice = 0;
+		_highestPrice = 0;
+		_lowestPrice = 0;
+		_hasPrev = false;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
 		var sma = new SimpleMovingAverage { Length = Period };
-
-		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(sma, ProcessCandle).Start();
+		SubscribeCandles(CandleType).Bind(sma, ProcessCandle).Start();
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
+		if (candle.State != CandleStates.Finished) return;
 
 		var upper = smaValue * (1 + Deviation);
 		var lower = smaValue * (1 - Deviation);
+		var close = candle.ClosePrice;
+
+		if (!_hasPrev)
+		{
+			_prevUpper = upper;
+			_prevLower = lower;
+			_prevClose = close;
+			_hasPrev = true;
+			return;
+		}
 
 		if (Position == 0)
 		{
-			if (_prevLower.HasValue && _prevClose.HasValue && _prevClose < _prevLower && candle.ClosePrice > lower)
+			if (_prevClose < _prevLower && close > lower)
 			{
 				BuyMarket();
-				_entryPrice = candle.ClosePrice;
-				_highestPrice = candle.ClosePrice;
+				_entryPrice = close;
+				_highestPrice = close;
 			}
-			else if (_prevUpper.HasValue && _prevClose.HasValue && _prevClose > _prevUpper && candle.ClosePrice < upper)
+			else if (_prevClose > _prevUpper && close < upper)
 			{
 				SellMarket();
-				_entryPrice = candle.ClosePrice;
-				_lowestPrice = candle.ClosePrice;
+				_entryPrice = close;
+				_lowestPrice = close;
 			}
 		}
 		else if (Position > 0)
 		{
 			_highestPrice = Math.Max(_highestPrice, candle.HighPrice);
-
-			if (TakeProfit > 0m && candle.ClosePrice - _entryPrice >= TakeProfit)
+			// Exit at upper band or trailing
+			if (close >= upper)
 				SellMarket();
-			else if (StopLoss > 0m && _entryPrice - candle.ClosePrice >= StopLoss)
-				SellMarket();
-			else if (TrailingStop > 0m)
-			{
-				var trail = _highestPrice - TrailingStop;
-				if (candle.ClosePrice <= trail)
-					SellMarket();
-			}
 		}
 		else if (Position < 0)
 		{
 			_lowestPrice = Math.Min(_lowestPrice, candle.LowPrice);
-
-			if (TakeProfit > 0m && _entryPrice - candle.ClosePrice >= TakeProfit)
+			// Exit at lower band or trailing
+			if (close <= lower)
 				BuyMarket();
-			else if (StopLoss > 0m && candle.ClosePrice - _entryPrice >= StopLoss)
-				BuyMarket();
-			else if (TrailingStop > 0m)
-			{
-				var trail = _lowestPrice + TrailingStop;
-				if (candle.ClosePrice >= trail)
-					BuyMarket();
-			}
 		}
 
 		_prevUpper = upper;
 		_prevLower = lower;
-		_prevClose = candle.ClosePrice;
+		_prevClose = close;
 	}
 }
