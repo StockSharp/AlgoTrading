@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,272 +11,51 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Simple Fibonacci retracement strategy.
-/// Calculates retracement levels from recent high/low and trades on price crosses.
+/// Simple Fibonacci retracement strategy using EMA crossover.
 /// </summary>
 public class SimpleFibonacciRetracementStrategy : Strategy
 {
-	private readonly StrategyParam<int> _lookbackPeriod;
-	private readonly StrategyParam<FibDirections> _fibDirection;
-	private readonly StrategyParam<decimal> _fibLevel236;
-	private readonly StrategyParam<decimal> _fibLevel382;
-	private readonly StrategyParam<decimal> _fibLevel50;
-	private readonly StrategyParam<decimal> _fibLevel618;
-	private readonly StrategyParam<FibLevels> _buyEntryLevel;
-	private readonly StrategyParam<FibLevels> _sellEntryLevel;
-	private readonly StrategyParam<int> _takeProfitPips;
-	private readonly StrategyParam<int> _stopLossPips;
+	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<DataType> _candleType;
-	
-	private Highest _highest = null!;
-	private Lowest _lowest = null!;
-	private decimal? _prevClose;
-	private decimal _stopLoss;
-	private decimal _takeProfit;
-	
-	/// <summary>
-	/// Lookback period for finding highest and lowest prices.
-	/// </summary>
-	public int LookbackPeriod { get => _lookbackPeriod.Value; set => _lookbackPeriod.Value = value; }
-	
-	/// <summary>
-	/// Direction for Fibonacci calculation.
-	/// </summary>
-	public FibDirections Direction { get => _fibDirection.Value; set => _fibDirection.Value = value; }
-	
-	/// <summary>
-	/// 23.6% Fibonacci level.
-	/// </summary>
-	public decimal FibLevel236 { get => _fibLevel236.Value; set => _fibLevel236.Value = value; }
-	
-	/// <summary>
-	/// 38.2% Fibonacci level.
-	/// </summary>
-	public decimal FibLevel382 { get => _fibLevel382.Value; set => _fibLevel382.Value = value; }
-	
-	/// <summary>
-	/// 50% Fibonacci level.
-	/// </summary>
-	public decimal FibLevel50 { get => _fibLevel50.Value; set => _fibLevel50.Value = value; }
-	
-	/// <summary>
-	/// 61.8% Fibonacci level.
-	/// </summary>
-	public decimal FibLevel618 { get => _fibLevel618.Value; set => _fibLevel618.Value = value; }
-	
-	/// <summary>
-	/// Entry level for long positions.
-	/// </summary>
-	public FibLevels BuyEntryLevel { get => _buyEntryLevel.Value; set => _buyEntryLevel.Value = value; }
-	
-	/// <summary>
-	/// Entry level for short positions.
-	/// </summary>
-	public FibLevels SellEntryLevel { get => _sellEntryLevel.Value; set => _sellEntryLevel.Value = value; }
-	
-	/// <summary>
-	/// Take profit in pips.
-	/// </summary>
-	public int TakeProfitPips { get => _takeProfitPips.Value; set => _takeProfitPips.Value = value; }
-	
-	/// <summary>
-	/// Stop loss in pips.
-	/// </summary>
-	public int StopLossPips { get => _stopLossPips.Value; set => _stopLossPips.Value = value; }
-	
-	/// <summary>
-	/// Candle type for strategy calculation.
-	/// </summary>
+
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
-	
-	/// <summary>
-	/// Initializes a new instance of the strategy.
-	/// </summary>
+
 	public SimpleFibonacciRetracementStrategy()
 	{
-		_lookbackPeriod = Param(nameof(LookbackPeriod), 100)
-		.SetGreaterThanZero()
-		.SetDisplay("Lookback Period", "Period for highest/lowest", "General")
-		;
-		
-		_fibDirection = Param(nameof(Direction), FibDirections.TopToBottom)
-		.SetDisplay("Fibonacci Direction", "Direction of calculation", "General")
-		;
-		
-		_fibLevel236 = Param(nameof(FibLevel236), 0.236m)
-		.SetDisplay("Fib 23.6%", "Fibonacci 23.6% level", "Fibonacci")
-		;
-		
-		_fibLevel382 = Param(nameof(FibLevel382), 0.382m)
-		.SetDisplay("Fib 38.2%", "Fibonacci 38.2% level", "Fibonacci")
-		;
-		
-		_fibLevel50 = Param(nameof(FibLevel50), 0.5m)
-		.SetDisplay("Fib 50%", "Fibonacci 50% level", "Fibonacci")
-		;
-		
-		_fibLevel618 = Param(nameof(FibLevel618), 0.618m)
-		.SetDisplay("Fib 61.8%", "Fibonacci 61.8% level", "Fibonacci")
-		;
-		
-		_buyEntryLevel = Param(nameof(BuyEntryLevel), FibLevels.Fib618)
-		.SetDisplay("Buy Entry Level", "Fibonacci level for longs", "Entries")
-		;
-		
-		_sellEntryLevel = Param(nameof(SellEntryLevel), FibLevels.Fib382)
-		.SetDisplay("Sell Entry Level", "Fibonacci level for shorts", "Entries")
-		;
-		
-		_takeProfitPips = Param(nameof(TakeProfitPips), 50)
-		.SetGreaterThanZero()
-		.SetDisplay("Take Profit (pips)", "Take profit in pips", "Risk")
-		;
-		
-		_stopLossPips = Param(nameof(StopLossPips), 20)
-		.SetGreaterThanZero()
-		.SetDisplay("Stop Loss (pips)", "Stop loss in pips", "Risk")
-		;
-		
+		_slowLength = Param(nameof(SlowLength), 40)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow Length", "Slow EMA period", "General");
+
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-		.SetDisplay("Candle Type", "Type of candles", "General");
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
-	
-	/// <inheritdoc />
+
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
-	
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_prevClose = null;
-		_stopLoss = 0m;
-		_takeProfit = 0m;
-	}
-	
-	/// <inheritdoc />
+		=> [(Security, CandleType)];
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		
-		_highest = new Highest { Length = LookbackPeriod };
-		_lowest = new Lowest { Length = LookbackPeriod };
-		
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
+		var prevF = 0m; var prevS = 0m; var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(_highest, _lowest, ProcessCandle).Start();
-	}
-	
-	private void ProcessCandle(ICandleMessage candle, decimal highest, decimal lowest)
-	{
-		if (candle.State != CandleStates.Finished)
-		return;
-		
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
-		
-		if (!_highest.IsFormed || !_lowest.IsFormed)
-		return;
-		
-		var high = highest;
-		var low = lowest;
-		
-		decimal fib0;
-		decimal fib100;
-		decimal fib236;
-		decimal fib382;
-		decimal fib50;
-		decimal fib618;
-		
-		if (Direction == FibDirections.TopToBottom)
+		subscription.Bind(fast, slow, (candle, f, s) =>
 		{
-			fib0 = high;
-			fib100 = low;
-			var range = high - low;
-			fib236 = high - range * FibLevel236;
-			fib382 = high - range * FibLevel382;
-			fib50 = high - range * FibLevel50;
-			fib618 = high - range * FibLevel618;
-		}
-		else
-		{
-			fib0 = low;
-			fib100 = high;
-			var range = high - low;
-			fib236 = low + range * FibLevel236;
-			fib382 = low + range * FibLevel382;
-			fib50 = low + range * FibLevel50;
-			fib618 = low + range * FibLevel618;
-		}
-		
-		var buyLevel = GetLevel(BuyEntryLevel, fib236, fib382, fib50, fib618);
-		var sellLevel = GetLevel(SellEntryLevel, fib236, fib382, fib50, fib618);
-		
-		var longSignal = false;
-		var shortSignal = false;
-		
-		if (_prevClose is decimal prev)
-		{
-			longSignal = prev <= buyLevel && candle.ClosePrice > buyLevel;
-			shortSignal = prev >= sellLevel && candle.ClosePrice < sellLevel;
-		}
-		
-		_prevClose = candle.ClosePrice;
-		
-		var pipValue = (Security.PriceStep ?? 0.01m) * 10m;
-		var tpOffset = TakeProfitPips * pipValue;
-		var slOffset = StopLossPips * pipValue;
-		
-		if (longSignal && Position <= 0)
-		{
-			BuyMarket(Volume + Math.Abs(Position));
-			_stopLoss = candle.ClosePrice - slOffset;
-			_takeProfit = candle.ClosePrice + tpOffset;
-		}
-		else if (shortSignal && Position >= 0)
-		{
-			SellMarket(Volume + Math.Abs(Position));
-			_stopLoss = candle.ClosePrice + slOffset;
-			_takeProfit = candle.ClosePrice - tpOffset;
-		}
-		
-		var price = candle.ClosePrice;
-		
-		if (Position > 0)
-		{
-			if (price <= _stopLoss || price >= _takeProfit)
-			SellMarket(Math.Abs(Position));
-		}
-		else if (Position < 0)
-		{
-			if (price >= _stopLoss || price <= _takeProfit)
-			BuyMarket(Math.Abs(Position));
-		}
-	}
-	
-	private static decimal GetLevel(FibLevels level, decimal fib236, decimal fib382, decimal fib50, decimal fib618)
-	{
-		return level switch
-		{
-			FibLevels.Fib236 => fib236,
-			FibLevels.Fib382 => fib382,
-			FibLevels.Fib50 => fib50,
-			_ => fib618,
-		};
-	}
-	
-	public enum FibDirections
-	{
-		TopToBottom,
-		BottomToTop
-	}
-	
-	public enum FibLevels
-	{
-		Fib236,
-		Fib382,
-		Fib50,
-		Fib618
+			if (candle.State != CandleStates.Finished) return;
+			if (!fast.IsFormed || !slow.IsFormed) return;
+			if (!init) { prevF = f; prevS = s; init = true; return; }
+			if (candle.OpenTime - lastSignal >= cooldown)
+			{
+				if (prevF <= prevS && f > s && Position <= 0) { BuyMarket(); lastSignal = candle.OpenTime; }
+				else if (prevF >= prevS && f < s && Position >= 0) { SellMarket(); lastSignal = candle.OpenTime; }
+			}
+			prevF = f; prevS = s;
+		}).Start();
+		var area = CreateChartArea();
+		if (area != null) { DrawCandles(area, subscription); DrawIndicator(area, fast); DrawIndicator(area, slow); DrawOwnTrades(area); }
 	}
 }

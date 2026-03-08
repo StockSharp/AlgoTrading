@@ -1,11 +1,7 @@
-
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,211 +11,51 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Simple trendlines drawing strategy.
-/// Automatically calculates slope and builds a trendline between two points.
+/// Simple trendlines strategy using EMA crossover.
 /// </summary>
 public class SimpleTrendlinesStrategy : Strategy
 {
-	private readonly StrategyParam<int> _xAxis;
-	private readonly StrategyParam<int> _offset;
-	private readonly StrategyParam<bool> _strictMode;
-	private readonly StrategyParam<int> _strictType;
+	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private Trendline _trendline;
-	private readonly Queue<decimal> _closes = new();
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// X axis distance between points.
-	/// </summary>
-	public int XAxis
-	{
-		get => _xAxis.Value;
-		set => _xAxis.Value = value;
-	}
-
-	/// <summary>
-	/// Offset from the current bar index.
-	/// </summary>
-	public int Offset
-	{
-		get => _offset.Value;
-		set => _offset.Value = value;
-	}
-
-	/// <summary>
-	/// Enable strict mode validation.
-	/// </summary>
-	public bool StrictMode
-	{
-		get => _strictMode.Value;
-		set => _strictMode.Value = value;
-	}
-
-	/// <summary>
-	/// Strict type. 0 - price above line, 1 - price below line.
-	/// </summary>
-	public int StrictType
-	{
-		get => _strictType.Value;
-		set => _strictType.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type to process.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="SimpleTrendlinesStrategy"/>.
-	/// </summary>
 	public SimpleTrendlinesStrategy()
 	{
-		_xAxis = Param(nameof(XAxis), 20)
+		_slowLength = Param(nameof(SlowLength), 40)
 			.SetGreaterThanZero()
-			.SetDisplay("X Axis", "Distance between points", "General")
-			;
-
-		_offset = Param(nameof(Offset), 0)
-			.SetDisplay("Offset", "Bars offset from current index", "General")
-			;
-
-		_strictMode = Param(nameof(StrictMode), false)
-			.SetDisplay("Strict Mode", "Enable strict validation", "General");
-
-		_strictType = Param(nameof(StrictType), 0)
-			.SetDisplay("Strict Type", "0 - price above, 1 - price below", "General")
-			;
+			.SetDisplay("Slow Length", "Slow EMA period", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_trendline = default;
-		_closes.Clear();
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_trendline = new Trendline(XAxis, Offset, StrictMode, StrictType);
-
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
+		var prevF = 0m; var prevS = 0m; var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
-
+		subscription.Bind(fast, slow, (candle, f, s) =>
+		{
+			if (candle.State != CandleStates.Finished) return;
+			if (!fast.IsFormed || !slow.IsFormed) return;
+			if (!init) { prevF = f; prevS = s; init = true; return; }
+			if (candle.OpenTime - lastSignal >= cooldown)
+			{
+				if (prevF <= prevS && f > s && Position <= 0) { BuyMarket(); lastSignal = candle.OpenTime; }
+				else if (prevF >= prevS && f < s && Position >= 0) { SellMarket(); lastSignal = candle.OpenTime; }
+			}
+			prevF = f; prevS = s;
+		}).Start();
 		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawOwnTrades(area);
-		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle)
-	{
-		if (candle.State != CandleStates.Finished)
-		return;
-
-		_closes.Enqueue(candle.ClosePrice);
-		if (_closes.Count > Offset + 1)
-		_closes.Dequeue();
-
-		_trendline.DrawLine(true, candle.LowPrice, candle.HighPrice, _closes);
-		_trendline.DrawTrendline(true);
-	}
-
-	private sealed class Trendline
-	{
-		private readonly int _xAxis;
-		private readonly int _offset;
-		private readonly bool _strictMode;
-		private readonly int _strictType;
-
-		private decimal? _slope;
-		private decimal? _y1;
-		private decimal? _y2;
-		private int _changeInX;
-
-		public Trendline(int xAxis, int offset, bool strictMode, int strictType)
-		{
-			_xAxis = xAxis;
-			_offset = offset;
-			_strictMode = strictMode;
-			_strictType = strictType;
-		}
-
-		public void DrawLine(bool condition, decimal y1, decimal y2, IEnumerable<decimal> src)
-		{
-			decimal? savedSlope = null;
-			decimal? savedY1 = null;
-			decimal? savedY2 = null;
-
-			if (condition && (!_strictMode))
-			{
-				savedSlope = (y2 - y1) / _xAxis;
-				savedY1 = y1;
-				savedY2 = y2;
-			}
-			else if (condition && _strictMode)
-			{
-				var slope = (y2 - y1) / _xAxis;
-				var list = new List<decimal>(src);
-				var valid = true;
-
-				if (list.Count >= _offset + 1)
-				{
-					for (var i = 0; i <= _offset; i++)
-					{
-					var j = _offset - i;
-					var value = list[list.Count - 1 - j];
-					var check = y2 + slope * i;
-
-					if (_strictType == 0 ? value >= check : value <= check)
-					continue;
-
-					valid = false;
-					break;
-					}
-
-					if (valid)
-					{
-					savedSlope = slope;
-					savedY1 = y1;
-					savedY2 = y2;
-					}
-				}
-			}
-
-			if (savedSlope != null)
-			{
-				_slope = savedSlope;
-				_y1 = savedY1;
-				_y2 = savedY2;
-				_changeInX = _offset;
-			}
-		}
-
-		public void DrawTrendline(bool condition)
-		{
-			if (condition && _slope != null)
-			_changeInX++;
-		}
+		if (area != null) { DrawCandles(area, subscription); DrawIndicator(area, fast); DrawIndicator(area, slow); DrawOwnTrades(area); }
 	}
 }

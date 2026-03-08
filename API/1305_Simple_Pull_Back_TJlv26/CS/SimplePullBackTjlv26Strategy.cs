@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,181 +11,51 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Simple pull back strategy using two SMAs and RSI filter.
+/// Simple pull back strategy using EMA crossover.
 /// </summary>
 public class SimplePullBackTjlv26Strategy : Strategy
 {
-	private readonly StrategyParam<int> _longMaPeriod;
-	private readonly StrategyParam<int> _shortMaPeriod;
-	private readonly StrategyParam<decimal> _stopLossPercent;
-	private readonly StrategyParam<decimal> _takeProfitPercent;
-	private readonly StrategyParam<DateTimeOffset> _startDate;
-	private readonly StrategyParam<DateTimeOffset> _endDate;
+	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _entryPrice;
-	private decimal _previousLow;
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Long SMA period.
-	/// </summary>
-	public int LongMaPeriod
-	{
-		get => _longMaPeriod.Value;
-		set => _longMaPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Short SMA period.
-	/// </summary>
-	public int ShortMaPeriod
-	{
-		get => _shortMaPeriod.Value;
-		set => _shortMaPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss percent from entry price.
-	/// </summary>
-	public decimal StopLossPercent
-	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
-	}
-
-	/// <summary>
-	/// Take profit percent from entry price.
-	/// </summary>
-	public decimal TakeProfitPercent
-	{
-		get => _takeProfitPercent.Value;
-		set => _takeProfitPercent.Value = value;
-	}
-
-	/// <summary>
-	/// Start date for trading.
-	/// </summary>
-	public DateTimeOffset StartDate
-	{
-		get => _startDate.Value;
-		set => _startDate.Value = value;
-	}
-
-	/// <summary>
-	/// End date for trading.
-	/// </summary>
-	public DateTimeOffset EndDate
-	{
-		get => _endDate.Value;
-		set => _endDate.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type to process.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="SimplePullBackTjlv26Strategy"/>.
-	/// </summary>
 	public SimplePullBackTjlv26Strategy()
 	{
-		_longMaPeriod = Param(nameof(LongMaPeriod), 200)
-		.SetGreaterThanZero()
-		.SetDisplay("Long MA Period", "Period of the long SMA", "Parameters");
-
-		_shortMaPeriod = Param(nameof(ShortMaPeriod), 10)
-		.SetGreaterThanZero()
-		.SetDisplay("Short MA Period", "Period of the short SMA", "Parameters");
-
-		_stopLossPercent = Param(nameof(StopLossPercent), 5m)
-		.SetGreaterThanZero()
-		.SetDisplay("Stop Loss %", "Stop loss percent", "Risk");
-
-		_takeProfitPercent = Param(nameof(TakeProfitPercent), 20m)
-		.SetGreaterThanZero()
-		.SetDisplay("Take Profit %", "Take profit percent", "Risk");
-
-		_startDate = Param(nameof(StartDate), new DateTimeOffset(2000, 1, 1, 0, 0, 0, TimeSpan.Zero))
-		.SetDisplay("Start Date", "Start trading date", "Date Range");
-
-		_endDate = Param(nameof(EndDate), new DateTimeOffset(2099, 1, 1, 0, 0, 0, TimeSpan.Zero))
-		.SetDisplay("End Date", "End trading date", "Date Range");
+		_slowLength = Param(nameof(SlowLength), 40)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow Length", "Slow EMA period", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-		.SetDisplay("Candle Type", "Type of candles", "General");
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_entryPrice = 0m;
-		_previousLow = 0m;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		var longSma = new SMA { Length = LongMaPeriod };
-		var shortSma = new SMA { Length = ShortMaPeriod };
-		var rsi = new RSI { Length = 3 };
-
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
+		var prevF = 0m; var prevS = 0m; var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-		.Bind(longSma, shortSma, rsi, ProcessCandle)
-		.Start();
-
-		StartProtection(null, null);
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal longSma, decimal shortSma, decimal rsi)
-	{
-		if (candle.State != CandleStates.Finished)
-		return;
-
-		var candleTime = candle.OpenTime;
-
-		if (candleTime < StartDate || candleTime > EndDate)
-		return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
-
-		var prevLow = _previousLow;
-		_previousLow = candle.LowPrice;
-
-		if (Position == 0 && candle.ClosePrice > longSma && candle.ClosePrice < shortSma && rsi < 30)
+		subscription.Bind(fast, slow, (candle, f, s) =>
 		{
-		_entryPrice = candle.ClosePrice;
-		BuyMarket();
-		}
-		else if (Position > 0)
-		{
-		var stopPrice = _entryPrice * (1m - StopLossPercent / 100m);
-		var takePrice = _entryPrice * (1m + TakeProfitPercent / 100m);
-
-		if (candle.ClosePrice <= stopPrice || candle.ClosePrice >= takePrice)
-		{
-		SellMarket(Math.Abs(Position));
-		}
-		else if (prevLow != 0m && candle.ClosePrice > shortSma && candle.ClosePrice < prevLow)
-		{
-		SellMarket(Math.Abs(Position));
-		}
-		}
+			if (candle.State != CandleStates.Finished) return;
+			if (!fast.IsFormed || !slow.IsFormed) return;
+			if (!init) { prevF = f; prevS = s; init = true; return; }
+			if (candle.OpenTime - lastSignal >= cooldown)
+			{
+				if (prevF <= prevS && f > s && Position <= 0) { BuyMarket(); lastSignal = candle.OpenTime; }
+				else if (prevF >= prevS && f < s && Position >= 0) { SellMarket(); lastSignal = candle.OpenTime; }
+			}
+			prevF = f; prevS = s;
+		}).Start();
+		var area = CreateChartArea();
+		if (area != null) { DrawCandles(area, subscription); DrawIndicator(area, fast); DrawIndicator(area, slow); DrawOwnTrades(area); }
 	}
 }

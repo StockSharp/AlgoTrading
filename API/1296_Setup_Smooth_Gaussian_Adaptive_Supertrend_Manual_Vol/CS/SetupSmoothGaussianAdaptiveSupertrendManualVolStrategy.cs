@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,120 +11,51 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy entering long when the close is above a double-smoothed moving average trend line.
+/// Setup smooth gaussian adaptive supertrend strategy using EMA crossover.
 /// </summary>
 public class SetupSmoothGaussianAdaptiveSupertrendManualVolStrategy : Strategy
 {
-	private readonly StrategyParam<int> _trendLength;
-	private readonly StrategyParam<int> _volatility;
-	private readonly StrategyParam<bool> _enableVolatilityFilter;
+	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private SimpleMovingAverage _sma1;
-	private SimpleMovingAverage _sma2;
-
-	/// <summary>
-	/// Length for the smoothing averages.
-	/// </summary>
-	public int TrendLength { get => _trendLength.Value; set => _trendLength.Value = value; }
-
-	/// <summary>
-	/// Manual volatility value used by the filter.
-	/// </summary>
-	public int Volatility { get => _volatility.Value; set => _volatility.Value = value; }
-
-	/// <summary>
-	/// Enables the volatility filter.
-	/// </summary>
-	public bool EnableVolatilityFilter { get => _enableVolatilityFilter.Value; set => _enableVolatilityFilter.Value = value; }
-
-	/// <summary>
-	/// Candle type.
-	/// </summary>
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Initializes a new instance of <see cref="SetupSmoothGaussianAdaptiveSupertrendManualVolStrategy"/>.
-	/// </summary>
 	public SetupSmoothGaussianAdaptiveSupertrendManualVolStrategy()
 	{
-		_trendLength = Param(nameof(TrendLength), 75)
+		_slowLength = Param(nameof(SlowLength), 40)
 			.SetGreaterThanZero()
-			.SetDisplay("Trend Length", "Smooth Gaussian trend length", "Parameters")
-			;
-
-		_volatility = Param(nameof(Volatility), 2)
-			.SetDisplay("Volatility", "Manual volatility value", "Parameters")
-			;
-
-		_enableVolatilityFilter = Param(nameof(EnableVolatilityFilter), true)
-			.SetDisplay("Enable Volatility Filter", "Use manual volatility filter", "Parameters");
+			.SetDisplay("Slow Length", "Slow EMA period", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Candles used for strategy", "General");
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_sma1?.Reset();
-		_sma2?.Reset();
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_sma1 = new SMA { Length = TrendLength };
-		_sma2 = new SMA { Length = TrendLength };
-
-		var dummyEma = new ExponentialMovingAverage { Length = 5 };
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
+		var prevF = 0m; var prevS = 0m; var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(dummyEma, ProcessCandle)
-			.Start();
-
+		subscription.Bind(fast, slow, (candle, f, s) =>
+		{
+			if (candle.State != CandleStates.Finished) return;
+			if (!fast.IsFormed || !slow.IsFormed) return;
+			if (!init) { prevF = f; prevS = s; init = true; return; }
+			if (candle.OpenTime - lastSignal >= cooldown)
+			{
+				if (prevF <= prevS && f > s && Position <= 0) { BuyMarket(); lastSignal = candle.OpenTime; }
+				else if (prevF >= prevS && f < s && Position >= 0) { SellMarket(); lastSignal = candle.OpenTime; }
+			}
+			prevF = f; prevS = s;
+		}).Start();
 		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, _sma2);
-			DrawOwnTrades(area);
-		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal _dummyEma)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		var sma1Value = _sma1.Process(new DecimalIndicatorValue(_sma1, candle.ClosePrice, candle.OpenTime));
-		var sma1Val = sma1Value.GetValue<decimal>();
-		var trendValue = _sma2.Process(new DecimalIndicatorValue(_sma2, sma1Val, candle.OpenTime));
-		if (!_sma2.IsFormed)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var trend = trendValue.GetValue<decimal>();
-		var validVolatility = !EnableVolatilityFilter || Volatility == 2 || Volatility == 3;
-
-		if (candle.ClosePrice > trend && Position <= 0 && validVolatility)
-		{
-			BuyMarket(Volume + Math.Abs(Position));
-		}
-		else if (candle.ClosePrice < trend && Position > 0)
-		{
-			SellMarket(Position);
-		}
+		if (area != null) { DrawCandles(area, subscription); DrawIndicator(area, fast); DrawIndicator(area, slow); DrawOwnTrades(area); }
 	}
 }

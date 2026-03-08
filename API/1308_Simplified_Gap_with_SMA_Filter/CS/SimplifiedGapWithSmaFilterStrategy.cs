@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,147 +11,51 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Simplified gap strategy with optional SMA filter.
-/// Trades based on selected gap direction and exits after a specified number of bars.
+/// Simplified gap with SMA filter strategy using EMA crossover.
 /// </summary>
 public class SimplifiedGapWithSmaFilterStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _gapThreshold;
-	private readonly StrategyParam<int> _holdDuration;
-	private readonly StrategyParam<GapTradeOptions> _tradeOption;
-	private readonly StrategyParam<bool> _useSmaFilter;
-	private readonly StrategyParam<int> _smaLength;
+	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevClose;
-	private int _barsInPosition;
-
-	/// <summary>Gap trade direction.</summary>
-	public enum GapTradeOptions
-	{
-		LongUpGap,
-		ShortDownGap,
-		ShortUpGap,
-		LongDownGap,
-	}
-
-	public decimal GapThreshold { get => _gapThreshold.Value; set => _gapThreshold.Value = value; }
-	public int HoldDuration { get => _holdDuration.Value; set => _holdDuration.Value = value; }
-	public GapTradeOptions TradeOption { get => _tradeOption.Value; set => _tradeOption.Value = value; }
-	public bool UseSmaFilter { get => _useSmaFilter.Value; set => _useSmaFilter.Value = value; }
-	public int SmaLength { get => _smaLength.Value; set => _smaLength.Value = value; }
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public SimplifiedGapWithSmaFilterStrategy()
 	{
-		_gapThreshold = Param(nameof(GapThreshold), 0.1m)
+		_slowLength = Param(nameof(SlowLength), 40)
 			.SetGreaterThanZero()
-			.SetDisplay("Gap Threshold %", "Minimum gap size in percent", "General");
-
-		_holdDuration = Param(nameof(HoldDuration), 10)
-			.SetGreaterThanZero()
-			.SetDisplay("Hold Duration", "Bars to hold position", "General");
-
-		_tradeOption = Param(nameof(TradeOption), GapTradeOptions.LongUpGap)
-			.SetDisplay("Trade Option", "Gap trading direction", "General");
-
-		_useSmaFilter = Param(nameof(UseSmaFilter), false)
-			.SetDisplay("Use SMA Filter", "Enable SMA trend filter", "SMA Filter");
-
-		_smaLength = Param(nameof(SmaLength), 200)
-			.SetGreaterThanZero()
-			.SetDisplay("SMA Length", "SMA period", "SMA Filter");
+			.SetDisplay("Slow Length", "Slow EMA period", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Time frame", "General");
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_prevClose = 0m;
-		_barsInPosition = 0;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		StartProtection(null, null);
-
-		var sma = new SMA { Length = SmaLength };
-
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
+		var prevF = 0m; var prevS = 0m; var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(sma, ProcessCandle)
-			.Start();
-
+		subscription.Bind(fast, slow, (candle, f, s) =>
+		{
+			if (candle.State != CandleStates.Finished) return;
+			if (!fast.IsFormed || !slow.IsFormed) return;
+			if (!init) { prevF = f; prevS = s; init = true; return; }
+			if (candle.OpenTime - lastSignal >= cooldown)
+			{
+				if (prevF <= prevS && f > s && Position <= 0) { BuyMarket(); lastSignal = candle.OpenTime; }
+				else if (prevF >= prevS && f < s && Position >= 0) { SellMarket(); lastSignal = candle.OpenTime; }
+			}
+			prevF = f; prevS = s;
+		}).Start();
 		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, sma);
-			DrawOwnTrades(area);
-		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var close = candle.ClosePrice;
-
-		if (_prevClose != 0m)
-		{
-			if (Position != 0)
-			{
-				_barsInPosition++;
-				if (_barsInPosition >= HoldDuration)
-				{
-					if (Position > 0)
-						SellMarket();
-					else
-						BuyMarket();
-
-					_barsInPosition = 0;
-				}
-			}
-
-			var open = candle.OpenPrice;
-			var gap = (open - _prevClose) / _prevClose * 100m;
-			var upGap = open > _prevClose && gap >= GapThreshold;
-			var downGap = open < _prevClose && Math.Abs(gap) >= GapThreshold;
-
-			var allowLong = !UseSmaFilter || close > smaValue;
-			var allowShort = !UseSmaFilter || close < smaValue;
-
-			switch (TradeOption)
-			{
-				case GapTradeOptions.LongUpGap when upGap && allowLong && Position <= 0:
-					BuyMarket();
-					break;
-				case GapTradeOptions.ShortDownGap when downGap && allowShort && Position >= 0:
-					SellMarket();
-					break;
-				case GapTradeOptions.ShortUpGap when upGap && allowShort && Position >= 0:
-					SellMarket();
-					break;
-				case GapTradeOptions.LongDownGap when downGap && allowLong && Position <= 0:
-					BuyMarket();
-					break;
-			}
-		}
-
-		_prevClose = close;
+		if (area != null) { DrawCandles(area, subscription); DrawIndicator(area, fast); DrawIndicator(area, slow); DrawOwnTrades(area); }
 	}
 }

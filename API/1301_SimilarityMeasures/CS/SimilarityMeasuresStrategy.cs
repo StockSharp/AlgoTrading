@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,154 +11,51 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that trades based on Euclidean distance between price and its SMA.
-/// Buys when distance is below the threshold and sells when above.
+/// Similarity measures strategy using EMA crossover.
 /// </summary>
 public class SimilarityMeasuresStrategy : Strategy
 {
-	private readonly StrategyParam<int> _length;
-	private readonly StrategyParam<decimal> _threshold;
+	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private readonly List<decimal> _prices = [];
-	private readonly List<decimal> _smaValues = [];
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Number of bars to calculate distance.
-	/// </summary>
-	public int Length
-	{
-		get => _length.Value;
-		set => _length.Value = value;
-	}
-
-	/// <summary>
-	/// Distance threshold.
-	/// </summary>
-	public decimal Threshold
-	{
-		get => _threshold.Value;
-		set => _threshold.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type to use for calculation.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="SimilarityMeasuresStrategy"/> class.
-	/// </summary>
 	public SimilarityMeasuresStrategy()
 	{
-		_length = Param(nameof(Length), 10)
+		_slowLength = Param(nameof(SlowLength), 40)
 			.SetGreaterThanZero()
-			.SetDisplay("Length", "Number of bars for distance", "General")
-			
-			.SetOptimize(5, 20, 5);
+			.SetDisplay("Slow Length", "Slow EMA period", "General");
 
-		_threshold = Param(nameof(Threshold), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Threshold", "Euclidean distance threshold", "General")
-			
-			.SetOptimize(0.5m, 5m, 0.5m);
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		StartProtection(null, null);
-
-		var sma = new SMA { Length = Length };
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
+		var prevF = 0m; var prevS = 0m; var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
 		var subscription = SubscribeCandles(CandleType);
-
-		subscription
-			.Bind(sma, ProcessCandle)
-			.Start();
-
+		subscription.Bind(fast, slow, (candle, f, s) =>
+		{
+			if (candle.State != CandleStates.Finished) return;
+			if (!fast.IsFormed || !slow.IsFormed) return;
+			if (!init) { prevF = f; prevS = s; init = true; return; }
+			if (candle.OpenTime - lastSignal >= cooldown)
+			{
+				if (prevF <= prevS && f > s && Position <= 0) { BuyMarket(); lastSignal = candle.OpenTime; }
+				else if (prevF >= prevS && f < s && Position >= 0) { SellMarket(); lastSignal = candle.OpenTime; }
+			}
+			prevF = f; prevS = s;
+		}).Start();
 		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, sma);
-			DrawOwnTrades(area);
-		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		_prices.Add(candle.ClosePrice);
-		_smaValues.Add(smaValue);
-
-		if (_prices.Count > Length)
-		{
-			_prices.RemoveAt(0);
-			_smaValues.RemoveAt(0);
-		}
-
-		if (_prices.Count < Length)
-			return;
-
-		var distance = Euclidean(_prices, _smaValues);
-
-		if (distance < Threshold && Position <= 0)
-		{
-			BuyMarket();
-		}
-		else if (distance > Threshold && Position >= 0)
-		{
-			SellMarket();
-		}
-	}
-
-	private static decimal Ssd(IList<decimal> p, IList<decimal> q)
-	{
-		if (p.Count != q.Count || p.Count < 1)
-			throw new ArgumentException("Invalid array size.");
-
-		var dist = 0m;
-		for (var i = 0; i < p.Count; i++)
-		{
-			var diff = p[i] - q[i];
-			dist += diff * diff;
-		}
-
-		return dist;
-	}
-
-	private static decimal Euclidean(IList<decimal> p, IList<decimal> q)
-		=> (decimal)Math.Sqrt((double)Ssd(p, q));
-
-	private static decimal Manhattan(IList<decimal> p, IList<decimal> q)
-	{
-		if (p.Count != q.Count || p.Count < 1)
-			throw new ArgumentException("Invalid array size.");
-
-		var dist = 0m;
-		for (var i = 0; i < p.Count; i++)
-		{
-			dist += Math.Abs(p[i] - q[i]);
-		}
-
-		return dist;
+		if (area != null) { DrawCandles(area, subscription); DrawIndicator(area, fast); DrawIndicator(area, slow); DrawOwnTrades(area); }
 	}
 }

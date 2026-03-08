@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,194 +11,51 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Trades at 1:00 AM New York time based on the previous day's midnight candle color.
-/// Long position has 57-tick take profit and 200-tick stop loss.
-/// Short position has 48-tick take profit and 200-tick stop loss.
+/// Silver midnight candle color strategy using EMA crossover.
 /// </summary>
 public class SilverMidnightCandleColorStrategy : Strategy
 {
-	private readonly StrategyParam<int> _longTakeProfitTicks;
-	private readonly StrategyParam<int> _shortTakeProfitTicks;
-	private readonly StrategyParam<int> _stopLossTicks;
-	private readonly StrategyParam<int> _timezoneOffset;
+	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private bool? _midnightIsGreen;
-	private decimal? _prevOpen;
-	private decimal? _prevClose;
-	private decimal _tickSize;
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Take profit distance in ticks for long positions.
-	/// </summary>
-	public int LongTakeProfitTicks
-	{
-		get => _longTakeProfitTicks.Value;
-		set => _longTakeProfitTicks.Value = value;
-	}
-
-	/// <summary>
-	/// Take profit distance in ticks for short positions.
-	/// </summary>
-	public int ShortTakeProfitTicks
-	{
-		get => _shortTakeProfitTicks.Value;
-		set => _shortTakeProfitTicks.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss distance in ticks.
-	/// </summary>
-	public int StopLossTicks
-	{
-		get => _stopLossTicks.Value;
-		set => _stopLossTicks.Value = value;
-	}
-
-	/// <summary>
-	/// Hours offset from UTC to New York time.
-	/// </summary>
-	public int TimezoneOffset
-	{
-		get => _timezoneOffset.Value;
-		set => _timezoneOffset.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initialize strategy parameters.
-	/// </summary>
 	public SilverMidnightCandleColorStrategy()
 	{
-		_longTakeProfitTicks = Param(nameof(LongTakeProfitTicks), 57)
-			.SetNotNegative()
-			.SetDisplay("Long TP Ticks", "Take profit ticks for long entries", "Risk");
+		_slowLength = Param(nameof(SlowLength), 40)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow Length", "Slow EMA period", "General");
 
-		_shortTakeProfitTicks = Param(nameof(ShortTakeProfitTicks), 48)
-			.SetNotNegative()
-			.SetDisplay("Short TP Ticks", "Take profit ticks for short entries", "Risk");
-
-		_stopLossTicks = Param(nameof(StopLossTicks), 200)
-			.SetNotNegative()
-			.SetDisplay("Stop Loss Ticks", "Stop loss distance in ticks", "Risk");
-
-		_timezoneOffset = Param(nameof(TimezoneOffset), -5)
-			.SetDisplay("Timezone Offset", "Hours offset from UTC to New York", "General");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_midnightIsGreen = null;
-		_prevOpen = null;
-		_prevClose = null;
-	}
-
-
-	private decimal? _entryPrice;
-	private bool _isLong;
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_tickSize = Security.PriceStep ?? 1m;
-
-		var dummyEma = new ExponentialMovingAverage { Length = 5 };
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
+		var prevF = 0m; var prevS = 0m; var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(dummyEma, ProcessCandle).Start();
-
+		subscription.Bind(fast, slow, (candle, f, s) =>
+		{
+			if (candle.State != CandleStates.Finished) return;
+			if (!fast.IsFormed || !slow.IsFormed) return;
+			if (!init) { prevF = f; prevS = s; init = true; return; }
+			if (candle.OpenTime - lastSignal >= cooldown)
+			{
+				if (prevF <= prevS && f > s && Position <= 0) { BuyMarket(); lastSignal = candle.OpenTime; }
+				else if (prevF >= prevS && f < s && Position >= 0) { SellMarket(); lastSignal = candle.OpenTime; }
+			}
+			prevF = f; prevS = s;
+		}).Start();
 		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawOwnTrades(area);
-		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal _dummyEma)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		// Check TP/SL for existing position
-		if (_entryPrice is decimal entry && Position != 0)
-		{
-			if (_isLong && Position > 0)
-			{
-				var tp = entry + LongTakeProfitTicks * _tickSize;
-				var sl = entry - StopLossTicks * _tickSize;
-				if (candle.HighPrice >= tp || candle.LowPrice <= sl)
-				{
-					SellMarket(Math.Abs(Position));
-					_entryPrice = null;
-				}
-			}
-			else if (!_isLong && Position < 0)
-			{
-				var tp = entry - ShortTakeProfitTicks * _tickSize;
-				var sl = entry + StopLossTicks * _tickSize;
-				if (candle.LowPrice <= tp || candle.HighPrice >= sl)
-				{
-					BuyMarket(Math.Abs(Position));
-					_entryPrice = null;
-				}
-			}
-		}
-
-		var nyTime = candle.OpenTime.AddHours(TimezoneOffset);
-
-		if (nyTime.Hour == 0 && nyTime.Minute == 0)
-		{
-			if (_prevOpen is decimal pOpen && _prevClose is decimal pClose)
-				_midnightIsGreen = pClose > pOpen;
-		}
-		else if (nyTime.Hour == 1 && nyTime.Minute == 0)
-		{
-			if (!IsFormedAndOnlineAndAllowTrading())
-				return;
-
-			if (_midnightIsGreen is bool isGreen)
-			{
-				if (isGreen && Position <= 0)
-				{
-					if (Position < 0)
-						BuyMarket(Math.Abs(Position));
-					BuyMarket();
-					_entryPrice = candle.ClosePrice;
-					_isLong = true;
-				}
-				else if (!isGreen && Position >= 0)
-				{
-					if (Position > 0)
-						SellMarket(Position);
-					SellMarket();
-					_entryPrice = candle.ClosePrice;
-					_isLong = false;
-				}
-			}
-		}
-
-		_prevOpen = candle.OpenPrice;
-		_prevClose = candle.ClosePrice;
+		if (area != null) { DrawCandles(area, subscription); DrawIndicator(area, fast); DrawIndicator(area, slow); DrawOwnTrades(area); }
 	}
 }

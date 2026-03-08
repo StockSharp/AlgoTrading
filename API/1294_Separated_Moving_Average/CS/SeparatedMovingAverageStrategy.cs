@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -13,132 +10,52 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
+/// <summary>
+/// Separated moving average strategy using EMA crossover.
+/// </summary>
 public class SeparatedMovingAverageStrategy : Strategy
 {
-	public enum MaTypes
-	{
-		SMA,
-		EMA,
-		HMA,
-	}
-
-	private readonly StrategyParam<MaTypes> _maType;
-	private readonly StrategyParam<int> _length;
-	private readonly StrategyParam<bool> _useHeikinAshi;
+	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private DecimalLengthIndicator _maUp = null!;
-	private DecimalLengthIndicator _maDown = null!;
-	private decimal _upValue;
-	private decimal _downValue;
-	private decimal _prevHaOpen;
-	private decimal _prevHaClose;
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public SeparatedMovingAverageStrategy()
 	{
-		_maType = Param(nameof(MaType), MaTypes.SMA)
-			.SetDisplay("Type", "Moving average type", "General");
-		_length = Param(nameof(Length), 20)
+		_slowLength = Param(nameof(SlowLength), 40)
 			.SetGreaterThanZero()
-			.SetDisplay("Length", "Average period", "General");
-		_useHeikinAshi = Param(nameof(UseHeikinAshi), true)
-			.SetDisplay("Heikin Ashi", "Use Heikin Ashi prices", "General");
+			.SetDisplay("Slow Length", "Slow EMA period", "General");
+
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	public MaTypes MaType
-	{
-		get => _maType.Value;
-		set => _maType.Value = value;
-	}
-
-	public int Length
-	{
-		get => _length.Value;
-		set => _length.Value = value;
-	}
-
-	public bool UseHeikinAshi
-	{
-		get => _useHeikinAshi.Value;
-		set => _useHeikinAshi.Value = value;
-	}
-
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		// no separate protection
-
-		_maUp = CreateMa();
-		_maDown = CreateMa();
-		_upValue = 0m;
-		_downValue = 0m;
-		_prevHaOpen = 0m;
-		_prevHaClose = 0m;
-
-		var dummyEma = new ExponentialMovingAverage { Length = 5 };
-		SubscribeCandles(CandleType)
-			.Bind(dummyEma, ProcessCandle)
-			.Start();
-	}
-
-	private DecimalLengthIndicator CreateMa()
-		=> MaType switch
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
+		var prevF = 0m; var prevS = 0m; var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(fast, slow, (candle, f, s) =>
 		{
-			MaTypes.EMA => new EMA { Length = Length },
-			MaTypes.HMA => new HullMovingAverage { Length = Length },
-			_ => new SMA { Length = Length },
-		};
-
-	private void ProcessCandle(ICandleMessage candle, decimal _dummyEma)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		var open = candle.OpenPrice;
-		var close = candle.ClosePrice;
-
-		if (UseHeikinAshi)
-		{
-			var haClose = (candle.OpenPrice + candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 4m;
-			var haOpen = _prevHaOpen == 0m
-				? (candle.OpenPrice + candle.ClosePrice) / 2m
-				: (_prevHaOpen + _prevHaClose) / 2m;
-			open = haOpen;
-			close = haClose;
-			_prevHaOpen = haOpen;
-			_prevHaClose = haClose;
-		}
-
-		if (close > open)
-			_upValue = close;
-		if (close < open)
-			_downValue = close;
-
-		var maUp = _maUp.Process(new DecimalIndicatorValue(_maUp, _upValue, candle.OpenTime)).ToDecimal();
-		var maDown = _maDown.Process(new DecimalIndicatorValue(_maDown, _downValue, candle.OpenTime)).ToDecimal();
-
-		if (!_maUp.IsFormed || !_maDown.IsFormed)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (maUp > maDown && Position <= 0)
-			BuyMarket();
-		else if (maUp < maDown && Position >= 0)
-			SellMarket();
+			if (candle.State != CandleStates.Finished) return;
+			if (!fast.IsFormed || !slow.IsFormed) return;
+			if (!init) { prevF = f; prevS = s; init = true; return; }
+			if (candle.OpenTime - lastSignal >= cooldown)
+			{
+				if (prevF <= prevS && f > s && Position <= 0) { BuyMarket(); lastSignal = candle.OpenTime; }
+				else if (prevF >= prevS && f < s && Position >= 0) { SellMarket(); lastSignal = candle.OpenTime; }
+			}
+			prevF = f; prevS = s;
+		}).Start();
+		var area = CreateChartArea();
+		if (area != null) { DrawCandles(area, subscription); DrawIndicator(area, fast); DrawIndicator(area, slow); DrawOwnTrades(area); }
 	}
 }
