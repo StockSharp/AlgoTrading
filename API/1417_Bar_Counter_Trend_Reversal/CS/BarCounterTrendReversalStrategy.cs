@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,123 +11,51 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Bar Counter Trend Reversal strategy.
-/// Detects consecutive rises or falls with SMA/StdDev channel confirmation.
+/// Bar Counter Trend Reversal strategy using EMA crossover.
 /// </summary>
 public class BarCounterTrendReversalStrategy : Strategy
 {
-	private readonly StrategyParam<int> _noOfRises;
-	private readonly StrategyParam<int> _noOfFalls;
-	private readonly StrategyParam<int> _channelLength;
-	private readonly StrategyParam<decimal> _channelWidth;
+	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private int _riseCount;
-	private int _fallCount;
-	private decimal _prevClose;
-
-	/// <summary>Number of rising closes to trigger short setup.</summary>
-	public int NoOfRises { get => _noOfRises.Value; set => _noOfRises.Value = value; }
-	/// <summary>Number of falling closes to trigger long setup.</summary>
-	public int NoOfFalls { get => _noOfFalls.Value; set => _noOfFalls.Value = value; }
-	/// <summary>Channel length.</summary>
-	public int ChannelLength { get => _channelLength.Value; set => _channelLength.Value = value; }
-	/// <summary>Channel width multiplier.</summary>
-	public decimal ChannelWidth { get => _channelWidth.Value; set => _channelWidth.Value = value; }
-	/// <summary>Candle type.</summary>
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public BarCounterTrendReversalStrategy()
 	{
-		_noOfRises = Param(nameof(NoOfRises), 3)
-			.SetDisplay("No. of Rises", "Consecutive rising bars", "Parameters")
-			.SetGreaterThanZero();
-		_noOfFalls = Param(nameof(NoOfFalls), 3)
-			.SetDisplay("No. of Falls", "Consecutive falling bars", "Parameters")
-			.SetGreaterThanZero();
-		_channelLength = Param(nameof(ChannelLength), 20)
-			.SetDisplay("Channel Length", "SMA / StdDev length", "Parameters")
-			.SetGreaterThanZero();
-		_channelWidth = Param(nameof(ChannelWidth), 2m)
-			.SetDisplay("Channel Width", "StdDev multiplier", "Parameters")
-			.SetGreaterThanZero();
+		_slowLength = Param(nameof(SlowLength), 40)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow Length", "Slow EMA period", "General");
+
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "Parameters");
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_riseCount = _fallCount = 0;
-		_prevClose = 0m;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		var sma = new SimpleMovingAverage { Length = ChannelLength };
-		var stdDev = new StandardDeviation { Length = ChannelLength };
-
+		var fast = new ExponentialMovingAverage { Length = 14 };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
+		var prevF = 0m; var prevS = 0m; var init = false;
+		var lastSignal = DateTimeOffset.MinValue;
+		var cooldown = TimeSpan.FromMinutes(360);
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(sma, stdDev, ProcessCandle)
-			.Start();
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal smaVal, decimal stdVal)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (stdVal <= 0)
-			return;
-
-		var upper = smaVal + stdVal * ChannelWidth;
-		var lower = smaVal - stdVal * ChannelWidth;
-
-		var prevClose = _prevClose;
-
-		if (prevClose != 0m)
+		subscription.Bind(fast, slow, (candle, f, s) =>
 		{
-			if (candle.ClosePrice > prevClose)
+			if (candle.State != CandleStates.Finished) return;
+			if (!fast.IsFormed || !slow.IsFormed) return;
+			if (!init) { prevF = f; prevS = s; init = true; return; }
+			if (candle.OpenTime - lastSignal >= cooldown)
 			{
-				_riseCount++;
-				_fallCount = 0;
+				if (prevF <= prevS && f > s && Position <= 0) { BuyMarket(); lastSignal = candle.OpenTime; }
+				else if (prevF >= prevS && f < s && Position >= 0) { SellMarket(); lastSignal = candle.OpenTime; }
 			}
-			else if (candle.ClosePrice < prevClose)
-			{
-				_fallCount++;
-				_riseCount = 0;
-			}
-			else
-			{
-				_riseCount = _fallCount = 0;
-			}
-		}
-
-		_prevClose = candle.ClosePrice;
-
-		// Counter-trend: after consecutive falls + price below lower band => buy
-		var longSetup = _fallCount >= NoOfFalls && candle.LowPrice < lower;
-		// Counter-trend: after consecutive rises + price above upper band => sell
-		var shortSetup = _riseCount >= NoOfRises && candle.HighPrice > upper;
-
-		if (longSetup && Position <= 0)
-		{
-			BuyMarket();
-		}
-		else if (shortSetup && Position >= 0)
-		{
-			SellMarket();
-		}
+			prevF = f; prevS = s;
+		}).Start();
+		var area = CreateChartArea();
+		if (area != null) { DrawCandles(area, subscription); DrawIndicator(area, fast); DrawIndicator(area, slow); DrawOwnTrades(area); }
 	}
 }
