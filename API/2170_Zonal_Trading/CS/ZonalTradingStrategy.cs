@@ -32,6 +32,18 @@ public class ZonalTradingStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_aoPrev1 = _aoPrev2 = _acPrev1 = _acPrev2 = 0m;
+		_historyCount = 0;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
@@ -40,7 +52,7 @@ public class ZonalTradingStrategy : Strategy
 		_historyCount = 0;
 
 		var ao = new AwesomeOscillator();
-		var aoSma = new SimpleMovingAverage { Length = 5 };
+		var aoEma = new ExponentialMovingAverage { Length = 5 };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -50,8 +62,8 @@ public class ZonalTradingStrategy : Strategy
 					return;
 
 				// Calculate AC = AO - SMA(AO, 5)
-				var smaResult = aoSma.Process(aoValue, candle.OpenTime, true);
-				if (!aoSma.IsFormed)
+				var smaResult = aoEma.Process(aoValue, candle.OpenTime, true);
+				if (!aoEma.IsFormed)
 				{
 					_aoPrev2 = _aoPrev1;
 					_aoPrev1 = aoValue;

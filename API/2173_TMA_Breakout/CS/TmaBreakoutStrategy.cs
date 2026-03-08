@@ -82,7 +82,7 @@ public class TmaBreakoutStrategy : Strategy
 			
 			.SetOptimize(100m, 500m, 100m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -104,7 +104,7 @@ public class TmaBreakoutStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var tma = new SimpleMovingAverage { Length = Length };
+		var tma = new ExponentialMovingAverage { Length = Length };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -141,12 +141,18 @@ public class TmaBreakoutStrategy : Strategy
 		var signalUp = prevClose > prevTma + UpLevel;
 		var signalDn = prevClose < prevTma - DownLevel;
 
-		var volume = Volume + Math.Abs(Position);
-
 		if (signalUp && Position <= 0)
-			BuyMarket(volume);
+		{
+			if (Position < 0)
+				BuyMarket();
+			BuyMarket();
+		}
 		else if (signalDn && Position >= 0)
-			SellMarket(volume);
+		{
+			if (Position > 0)
+				SellMarket();
+			SellMarket();
+		}
 
 		_prevTma = tmaValue;
 		_prevClose = candle.ClosePrice;

@@ -69,7 +69,7 @@ public class ColorMetroXrsxStrategy : Strategy
 			.SetDisplay("Slow Period", "Slow moving average length", "Parameters")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to process", "General");
 	}
 
@@ -91,8 +91,8 @@ public class ColorMetroXrsxStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var fast = new SMA { Length = FastPeriod };
-		var slow = new SMA { Length = SlowPeriod };
+		var fast = new ExponentialMovingAverage { Length = FastPeriod };
+		var slow = new ExponentialMovingAverage { Length = SlowPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
