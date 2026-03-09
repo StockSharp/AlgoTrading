@@ -49,14 +49,14 @@ public class TenKijunCrossStrategy : Strategy
 
 	public TenKijunCrossStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for Ichimoku calculations", "General");
 
-		_tenkanPeriod = Param(nameof(TenkanPeriod), 9)
+		_tenkanPeriod = Param(nameof(TenkanPeriod), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("Tenkan Period", "Tenkan-sen conversion line period", "Indicators");
 
-		_kijunPeriod = Param(nameof(KijunPeriod), 26)
+		_kijunPeriod = Param(nameof(KijunPeriod), 34)
 			.SetGreaterThanZero()
 			.SetDisplay("Kijun Period", "Kijun-sen base line period", "Indicators");
 	}
@@ -111,8 +111,12 @@ public class TenKijunCrossStrategy : Strategy
 		if (_highsTenkan.Count < TenkanPeriod || _highsKijun.Count < KijunPeriod)
 			return;
 
-		var tenkan = (Max(_highsTenkan) + Min(_lowsTenkan)) / 2;
-		var kijun = (Max(_highsKijun) + Min(_lowsKijun)) / 2;
+		var highsTenkan = _highsTenkan.ToArray();
+		var lowsTenkan = _lowsTenkan.ToArray();
+		var highsKijun = _highsKijun.ToArray();
+		var lowsKijun = _lowsKijun.ToArray();
+		var tenkan = (Max(highsTenkan) + Min(lowsTenkan)) / 2;
+		var kijun = (Max(highsKijun) + Min(lowsKijun)) / 2;
 
 		if (_prevTenkan is null || _prevKijun is null)
 		{
@@ -130,38 +134,49 @@ public class TenKijunCrossStrategy : Strategy
 
 		if (crossUp)
 		{
-			if (Position < 0)
-				BuyMarket(Math.Abs(Position));
-
 			if (Position <= 0)
-				BuyMarket(volume);
+				BuyMarket(Position < 0 ? Math.Abs(Position) + volume : volume);
 		}
 		else if (crossDown)
 		{
-			if (Position > 0)
-				SellMarket(Position);
-
 			if (Position >= 0)
-				SellMarket(volume);
+				SellMarket(Position > 0 ? Math.Abs(Position) + volume : volume);
 		}
 
 		_prevTenkan = tenkan;
 		_prevKijun = kijun;
 	}
 
-	private static decimal Max(Queue<decimal> queue)
+	private static decimal Max(IEnumerable<decimal> values)
 	{
 		decimal max = decimal.MinValue;
-		foreach (var v in queue)
+
+		foreach (var v in values)
 			if (v > max) max = v;
+
 		return max;
 	}
 
-	private static decimal Min(Queue<decimal> queue)
+	private static decimal Min(IEnumerable<decimal> values)
 	{
 		decimal min = decimal.MaxValue;
-		foreach (var v in queue)
+
+		foreach (var v in values)
 			if (v < min) min = v;
+
 		return min;
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		_prevTenkan = null;
+		_prevKijun = null;
+		_highsTenkan.Clear();
+		_lowsTenkan.Clear();
+		_highsKijun.Clear();
+		_lowsKijun.Clear();
+
+		base.OnReseted();
 	}
 }

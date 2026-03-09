@@ -28,7 +28,7 @@ public class ProbeStrategy : Strategy
 
 	public ProbeStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe used for indicator calculations", "General");
 
 		_cciLength = Param(nameof(CciLength), 60)
@@ -51,6 +51,8 @@ public class ProbeStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Trailing Step (pips)", "Additional profit required before the stop is moved again", "Risk");
 	}
+
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities() => [(Security, CandleType)];
 
 	public DataType CandleType
 	{
@@ -86,6 +88,16 @@ public class ProbeStrategy : Strategy
 	{
 		get => _trailingStepPips.Value;
 		set => _trailingStepPips.Value = value;
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_previousCci = null;
+		_entryPrice = null;
+		_stopPrice = null;
+		_pipSize = 0m;
 	}
 
 	/// <inheritdoc />

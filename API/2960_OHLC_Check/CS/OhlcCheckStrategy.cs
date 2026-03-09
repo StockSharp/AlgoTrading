@@ -33,10 +33,10 @@ public class OhlcCheckStrategy : Strategy
 
 	public OhlcCheckStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe", "General");
 
-		_confirmBars = Param(nameof(ConfirmBars), 2)
+		_confirmBars = Param(nameof(ConfirmBars), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Confirm Bars", "Consecutive candles to confirm direction", "Trading");
 	}
@@ -44,6 +44,14 @@ public class OhlcCheckStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_bullCount = 0;
+		_bearCount = 0;
 	}
 
 	protected override void OnStarted2(DateTime time)
@@ -69,6 +77,9 @@ public class OhlcCheckStrategy : Strategy
 	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		if (candle.ClosePrice > candle.OpenPrice)

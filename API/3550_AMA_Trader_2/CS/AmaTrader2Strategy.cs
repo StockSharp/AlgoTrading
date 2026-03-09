@@ -73,21 +73,21 @@ public class AmaTrader2Strategy : Strategy
 
 	public AmaTrader2Strategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for calculations", "General");
 
 		_rsiLength = Param(nameof(RsiLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "RSI period", "Indicators");
 
-		_emaLength = Param(nameof(EmaLength), 20)
+		_emaLength = Param(nameof(EmaLength), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Length", "Adaptive MA period", "Indicators");
 
-		_rsiLevelUp = Param(nameof(RsiLevelUp), 55m)
+		_rsiLevelUp = Param(nameof(RsiLevelUp), 60m)
 			.SetDisplay("RSI Up", "RSI bullish confirmation threshold", "Signals");
 
-		_rsiLevelDown = Param(nameof(RsiLevelDown), 45m)
+		_rsiLevelDown = Param(nameof(RsiLevelDown), 40m)
 			.SetDisplay("RSI Down", "RSI bearish confirmation threshold", "Signals");
 	}
 
@@ -145,23 +145,28 @@ public class AmaTrader2Strategy : Strategy
 
 		if (priceAboveEma && prevBelowEma && rsiValue > RsiLevelUp)
 		{
-			if (Position < 0)
-				BuyMarket(Math.Abs(Position));
-
 			if (Position <= 0)
-				BuyMarket(volume);
+				BuyMarket(Position < 0 ? Math.Abs(Position) + volume : volume);
 		}
 		// Price crosses below EMA + RSI confirms bearish
 		else if (!priceAboveEma && !prevBelowEma && rsiValue < RsiLevelDown)
 		{
-			if (Position > 0)
-				SellMarket(Math.Abs(Position));
-
 			if (Position >= 0)
-				SellMarket(volume);
+				SellMarket(Position > 0 ? Math.Abs(Position) + volume : volume);
 		}
 
 		_prevPrice = candle.ClosePrice;
 		_prevEma = emaValue;
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		_rsi = null;
+		_ema = null;
+		_prevPrice = null;
+		_prevEma = null;
+
+		base.OnReseted();
 	}
 }

@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 
 using Ecng.Common;
 
@@ -22,7 +21,7 @@ public class TrickerlessRhmpStrategy : Strategy
 	private readonly StrategyParam<int> _slowMaPeriod;
 
 	private ExponentialMovingAverage _fastMa;
-	private readonly Queue<decimal> _slowHistory = new();
+	private ExponentialMovingAverage _slowMa;
 	private decimal? _prevFast;
 	private decimal? _prevSlow;
 
@@ -46,14 +45,14 @@ public class TrickerlessRhmpStrategy : Strategy
 
 	public TrickerlessRhmpStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe", "General");
 
-		_fastMaPeriod = Param(nameof(FastMaPeriod), 10)
+		_fastMaPeriod = Param(nameof(FastMaPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast MA", "Fast EMA period", "Indicators");
 
-		_slowMaPeriod = Param(nameof(SlowMaPeriod), 30)
+		_slowMaPeriod = Param(nameof(SlowMaPeriod), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow MA", "Slow SMA period (computed manually)", "Indicators");
 	}
@@ -64,13 +63,13 @@ public class TrickerlessRhmpStrategy : Strategy
 
 		_prevFast = null;
 		_prevSlow = null;
-		_slowHistory.Clear();
 
 		_fastMa = new ExponentialMovingAverage { Length = FastMaPeriod };
+		_slowMa = new ExponentialMovingAverage { Length = SlowMaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_fastMa, ProcessCandle)
+			.Bind(_fastMa, _slowMa, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -78,30 +77,22 @@ public class TrickerlessRhmpStrategy : Strategy
 		{
 			DrawCandles(area, subscription);
 			DrawIndicator(area, _fastMa);
+			DrawIndicator(area, _slowMa);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal fastValue)
+	private void ProcessCandle(ICandleMessage candle, decimal fastValue, decimal slowValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Compute slow SMA manually
-		_slowHistory.Enqueue(candle.ClosePrice);
-		if (_slowHistory.Count > SlowMaPeriod)
-			_slowHistory.Dequeue();
-
-		if (!_fastMa.IsFormed || _slowHistory.Count < SlowMaPeriod)
+		if (!_fastMa.IsFormed || !_slowMa.IsFormed)
 		{
 			_prevFast = fastValue;
+			_prevSlow = slowValue;
 			return;
 		}
-
-		decimal sum = 0;
-		foreach (var v in _slowHistory)
-			sum += v;
-		var slowValue = sum / SlowMaPeriod;
 
 		if (_prevFast is null || _prevSlow is null)
 		{
@@ -119,22 +110,27 @@ public class TrickerlessRhmpStrategy : Strategy
 
 		if (crossUp)
 		{
-			if (Position < 0)
-				BuyMarket(Math.Abs(Position));
-
 			if (Position <= 0)
-				BuyMarket(volume);
+				BuyMarket(Position < 0 ? Math.Abs(Position) + volume : volume);
 		}
 		else if (crossDown)
 		{
-			if (Position > 0)
-				SellMarket(Position);
-
 			if (Position >= 0)
-				SellMarket(volume);
+				SellMarket(Position > 0 ? Math.Abs(Position) + volume : volume);
 		}
 
 		_prevFast = fastValue;
 		_prevSlow = slowValue;
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		_fastMa = null;
+		_slowMa = null;
+		_prevFast = null;
+		_prevSlow = null;
+
+		base.OnReseted();
 	}
 }

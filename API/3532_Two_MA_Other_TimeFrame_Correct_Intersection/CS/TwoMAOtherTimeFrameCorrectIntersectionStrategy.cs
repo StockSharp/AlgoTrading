@@ -20,8 +20,8 @@ public class TwoMAOtherTimeFrameCorrectIntersectionStrategy : Strategy
 	private readonly StrategyParam<int> _fastLength;
 	private readonly StrategyParam<int> _slowLength;
 
-	private SimpleMovingAverage _fastMa;
-	private SimpleMovingAverage _slowMa;
+	private ExponentialMovingAverage _fastMa;
+	private ExponentialMovingAverage _slowMa;
 	private decimal? _prevFast;
 	private decimal? _prevSlow;
 
@@ -30,14 +30,14 @@ public class TwoMAOtherTimeFrameCorrectIntersectionStrategy : Strategy
 	/// </summary>
 	public TwoMAOtherTimeFrameCorrectIntersectionStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
 		.SetDisplay("Candle Type", "Primary timeframe used for signal evaluation", "General");
 
-		_fastLength = Param(nameof(FastLength), 10)
+		_fastLength = Param(nameof(FastLength), 20)
 		.SetDisplay("Fast MA Length", "Number of bars for the fast moving average", "Indicators")
 		.SetGreaterThanZero();
 
-		_slowLength = Param(nameof(SlowLength), 30)
+		_slowLength = Param(nameof(SlowLength), 50)
 		.SetDisplay("Slow MA Length", "Number of bars for the slow moving average", "Indicators")
 		.SetGreaterThanZero();
 	}
@@ -77,8 +77,8 @@ public class TwoMAOtherTimeFrameCorrectIntersectionStrategy : Strategy
 		_prevFast = null;
 		_prevSlow = null;
 
-		_fastMa = new SimpleMovingAverage { Length = FastLength };
-		_slowMa = new SimpleMovingAverage { Length = SlowLength };
+		_fastMa = new ExponentialMovingAverage { Length = FastLength };
+		_slowMa = new ExponentialMovingAverage { Length = SlowLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -121,23 +121,28 @@ public class TwoMAOtherTimeFrameCorrectIntersectionStrategy : Strategy
 		// Fast crosses above slow => buy
 		if (_prevFast < _prevSlow && fastValue > slowValue)
 		{
-			if (Position < 0)
-				BuyMarket(Math.Abs(Position));
-
 			if (Position <= 0)
-				BuyMarket(volume);
+				BuyMarket(Position < 0 ? Math.Abs(Position) + volume : volume);
 		}
 		// Fast crosses below slow => sell
 		else if (_prevFast > _prevSlow && fastValue < slowValue)
 		{
-			if (Position > 0)
-				SellMarket(Math.Abs(Position));
-
 			if (Position >= 0)
-				SellMarket(volume);
+				SellMarket(Position > 0 ? Math.Abs(Position) + volume : volume);
 		}
 
 		_prevFast = fastValue;
 		_prevSlow = slowValue;
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		_prevFast = null;
+		_prevSlow = null;
+		_fastMa = null;
+		_slowMa = null;
+
+		base.OnReseted();
 	}
 }

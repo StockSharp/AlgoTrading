@@ -61,7 +61,7 @@ public class FreemanStrategy : Strategy
 
 	public FreemanStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe", "General");
 
 		_fastPeriod = Param(nameof(FastPeriod), 10)
@@ -86,6 +86,14 @@ public class FreemanStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFast = null;
+		_prevSlow = null;
 	}
 
 	protected override void OnStarted2(DateTime time)
@@ -118,6 +126,13 @@ public class FreemanStrategy : Strategy
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+		{
+			_prevFast = fast;
+			_prevSlow = slow;
+			return;
+		}
 
 		if (_prevFast == null || _prevSlow == null)
 		{

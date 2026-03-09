@@ -93,12 +93,12 @@ public class MnistPatternClassifierStrategy : Strategy
 		.SetRange(0, 9)
 		.SetDisplay("Target Class", "Pattern class that should be traded", "Pattern");
 
-		_confidenceThreshold = Param(nameof(ConfidenceThreshold), 0.1m)
+		_confidenceThreshold = Param(nameof(ConfidenceThreshold), 0.4m)
 		.SetRange(0m, 1m)
 		.SetDisplay("Confidence", "Minimum classification confidence", "Pattern");
 
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 		.SetDisplay("Candle Type", "Primary timeframe used for the pattern", "General");
 	}
 
@@ -301,10 +301,11 @@ public class MnistPatternClassifierStrategy : Strategy
 
 	private PatternStatistics CalculateStatistics(decimal currentClose, decimal rsiValue, decimal atrValue)
 	{
+		var window = _closeWindow.ToArray();
 		decimal min = decimal.MaxValue;
 		decimal max = decimal.MinValue;
 
-		foreach (var value in _closeWindow)
+		foreach (var value in window)
 		{
 			if (value < min)
 			min = value;

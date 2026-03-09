@@ -39,13 +39,13 @@ public class MovingAverageCrossoverSpreadStrategy : Strategy
 
 	public MovingAverageCrossoverSpreadStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type", "General");
 
-		_fastPeriod = Param(nameof(FastPeriod), 10)
+		_fastPeriod = Param(nameof(FastPeriod), 20)
 			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
 
-		_slowPeriod = Param(nameof(SlowPeriod), 30)
+		_slowPeriod = Param(nameof(SlowPeriod), 50)
 			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 	}
 

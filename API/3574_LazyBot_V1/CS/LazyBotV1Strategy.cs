@@ -36,10 +36,10 @@ public class LazyBotV1Strategy : Strategy
 
 	public LazyBotV1Strategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for breakout detection", "General");
 
-		_lookback = Param(nameof(Lookback), 20)
+		_lookback = Param(nameof(Lookback), 30)
 			.SetGreaterThanZero()
 			.SetDisplay("Lookback", "Number of bars for high/low range", "Indicators");
 	}
@@ -72,33 +72,30 @@ public class LazyBotV1Strategy : Strategy
 		// Build range from previous bars (not including current)
 		if (_highs.Count >= Lookback)
 		{
+			var highs = _highs.ToArray();
+			var lows = _lows.ToArray();
 			decimal highest = decimal.MinValue;
 			decimal lowest = decimal.MaxValue;
-			foreach (var h in _highs)
+			foreach (var h in highs)
 				if (h > highest) highest = h;
-			foreach (var l in _lows)
+			foreach (var l in lows)
 				if (l < lowest) lowest = l;
 
 			var close = candle.ClosePrice;
 			var volume = Volume;
 			if (volume <= 0)
 				volume = 1;
+			var padding = (highest - lowest) * 0.05m;
 
-			if (close > highest)
+			if (close > highest + padding)
 			{
-				if (Position < 0)
-					BuyMarket(Math.Abs(Position));
-
 				if (Position <= 0)
-					BuyMarket(volume);
+					BuyMarket(Position < 0 ? Math.Abs(Position) + volume : volume);
 			}
-			else if (close < lowest)
+			else if (close < lowest - padding)
 			{
-				if (Position > 0)
-					SellMarket(Position);
-
 				if (Position >= 0)
-					SellMarket(volume);
+					SellMarket(Position > 0 ? Math.Abs(Position) + volume : volume);
 			}
 		}
 
@@ -110,5 +107,14 @@ public class LazyBotV1Strategy : Strategy
 			_highs.Dequeue();
 			_lows.Dequeue();
 		}
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		_highs.Clear();
+		_lows.Clear();
+
+		base.OnReseted();
 	}
 }

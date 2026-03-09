@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 
 using Ecng.Common;
 
@@ -22,11 +21,8 @@ public class CryptosStrategy : Strategy
 	private readonly StrategyParam<int> _bollingerPeriod;
 	private readonly StrategyParam<decimal> _bollingerWidth;
 
-	private BollingerBands _bollinger;
-
-	// Manual WMA
-	private readonly Queue<decimal> _wmaQueue = new();
-	private int _wmaLength;
+	private ExponentialMovingAverage _bandEma;
+	private ExponentialMovingAverage _trendEma;
 
 	public DataType CandleType
 	{
@@ -54,7 +50,7 @@ public class CryptosStrategy : Strategy
 
 	public CryptosStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for signals", "General");
 
 		_wmaPeriod = Param(nameof(WmaPeriod), 55)
@@ -74,88 +70,52 @@ public class CryptosStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_bollinger = new BollingerBands { Length = BollingerPeriod, Width = BollingerWidth };
-		_wmaQueue.Clear();
-		_wmaLength = WmaPeriod;
+		_bandEma = new ExponentialMovingAverage { Length = BollingerPeriod };
+		_trendEma = new ExponentialMovingAverage { Length = WmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(_bollinger, ProcessCandle)
+			.Bind(_bandEma, _trendEma, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _bollinger);
+			DrawIndicator(area, _bandEma);
+			DrawIndicator(area, _trendEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private decimal ComputeWma()
-	{
-		var arr = _wmaQueue.ToArray();
-		var len = arr.Length;
-		decimal weightedSum = 0;
-		decimal weightTotal = 0;
-		for (int i = 0; i < len; i++)
-		{
-			var weight = i + 1;
-			weightedSum += arr[i] * weight;
-			weightTotal += weight;
-		}
-		return weightTotal > 0 ? weightedSum / weightTotal : 0;
-	}
-
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bbValue)
+	private void ProcessCandle(ICandleMessage candle, decimal bandValue, decimal trendValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!bbValue.IsFinal)
-			return;
-
-		if (bbValue is not BollingerBandsValue bbVal)
-			return;
-
-		if (bbVal.UpBand is not decimal upperBand || bbVal.LowBand is not decimal lowerBand)
+		if (!_bandEma.IsFormed || !_trendEma.IsFormed)
 			return;
 
 		var close = candle.ClosePrice;
-
-		// Manual WMA
-		_wmaQueue.Enqueue(close);
-		while (_wmaQueue.Count > _wmaLength)
-			_wmaQueue.Dequeue();
-
-		if (!_bollinger.IsFormed || _wmaQueue.Count < _wmaLength)
-			return;
-
-		var wma = ComputeWma();
-		if (wma <= 0)
-			return;
+		var bandOffset = bandValue * (BollingerWidth / 100m);
+		var upperBand = bandValue + bandOffset;
+		var lowerBand = bandValue - bandOffset;
 
 		var volume = Volume;
 		if (volume <= 0)
 			volume = 1;
 
 		// Buy: price below WMA, touches lower band
-		if (close < wma && close <= lowerBand)
+		if (close < trendValue && close <= lowerBand)
 		{
-			if (Position < 0)
-				BuyMarket(Math.Abs(Position));
-
 			if (Position <= 0)
-				BuyMarket(volume);
+				BuyMarket(Position < 0 ? Math.Abs(Position) + volume : volume);
 		}
 		// Sell: price above WMA, touches upper band
-		else if (close > wma && close >= upperBand)
+		else if (close > trendValue && close >= upperBand)
 		{
-			if (Position > 0)
-				SellMarket(Position);
-
 			if (Position >= 0)
-				SellMarket(volume);
+				SellMarket(Position > 0 ? Math.Abs(Position) + volume : volume);
 		}
 
 		// Exit at WMA cross
@@ -163,5 +123,14 @@ public class CryptosStrategy : Strategy
 			SellMarket(Position);
 		else if (Position < 0 && close <= lowerBand)
 			BuyMarket(Math.Abs(Position));
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		_bandEma = null;
+		_trendEma = null;
+
+		base.OnReseted();
 	}
 }

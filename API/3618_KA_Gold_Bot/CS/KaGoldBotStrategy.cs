@@ -161,4 +161,18 @@ public class KaGoldBotStrategy : Strategy
 		_prevEmaShort = emaShortValue;
 		_prevEmaLong = emaLongValue;
 	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		_emaShort = null;
+		_emaLong = null;
+		_emaKeltner = null;
+		_rangeQueue.Clear();
+		_rangeSum = 0;
+		_prevEmaShort = null;
+		_prevEmaLong = null;
+
+		base.OnReseted();
+	}
 }

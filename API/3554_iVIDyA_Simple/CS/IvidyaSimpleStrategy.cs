@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 
 using Ecng.Common;
 
@@ -22,7 +21,8 @@ public class IvidyaSimpleStrategy : Strategy
 	private readonly StrategyParam<int> _emaPeriod;
 
 	private ChandeMomentumOscillator _cmo;
-	private readonly List<decimal> _vidyaHistory = new();
+	private decimal? _prevVidya;
+	private decimal? _prevClose;
 
 	public DataType CandleType
 	{
@@ -44,14 +44,14 @@ public class IvidyaSimpleStrategy : Strategy
 
 	public IvidyaSimpleStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
 			.SetDisplay("Candle Type", "Primary candle series", "General");
 
-		_cmoPeriod = Param(nameof(CmoPeriod), 15)
+		_cmoPeriod = Param(nameof(CmoPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("CMO Period", "Chande Momentum Oscillator length", "Indicator");
 
-		_emaPeriod = Param(nameof(EmaPeriod), 12)
+		_emaPeriod = Param(nameof(EmaPeriod), 30)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Period", "Base EMA length used by VIDYA", "Indicator");
 	}
@@ -61,7 +61,8 @@ public class IvidyaSimpleStrategy : Strategy
 		base.OnStarted2(time);
 
 		_cmo = new ChandeMomentumOscillator { Length = CmoPeriod };
-		_vidyaHistory.Clear();
+		_prevVidya = null;
+		_prevClose = null;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -91,43 +92,48 @@ public class IvidyaSimpleStrategy : Strategy
 		var momentumFactor = Math.Abs(cmoValue) / 100m;
 		var sf = alpha * momentumFactor;
 
-		var prevVidya = _vidyaHistory.Count == 0 ? close : _vidyaHistory[^1];
+		var prevVidya = _prevVidya ?? close;
 		var currentVidya = sf * close + (1m - sf) * prevVidya;
 
-		_vidyaHistory.Add(currentVidya);
-		if (_vidyaHistory.Count > 5)
-			_vidyaHistory.RemoveAt(0);
-
-		if (_vidyaHistory.Count < 2)
+		if (_prevVidya is null || _prevClose is null)
+		{
+			_prevVidya = currentVidya;
+			_prevClose = close;
 			return;
-
-		var vidya = currentVidya;
-		var open = candle.OpenPrice;
+		}
 
 		// Price crosses above VIDYA -> buy
-		var crossUp = open < vidya && close > vidya;
+		var crossUp = _prevClose <= _prevVidya && close > currentVidya;
 		// Price crosses below VIDYA -> sell
-		var crossDown = open > vidya && close < vidya;
+		var crossDown = _prevClose >= _prevVidya && close < currentVidya;
+		var minDistance = close * 0.001m;
 
 		var volume = Volume;
 		if (volume <= 0)
 			volume = 1;
 
-		if (crossUp)
+		if (crossUp && Math.Abs(close - currentVidya) >= minDistance)
 		{
-			if (Position < 0)
-				BuyMarket(Math.Abs(Position));
-
 			if (Position <= 0)
-				BuyMarket(volume);
+				BuyMarket(Position < 0 ? Math.Abs(Position) + volume : volume);
 		}
-		else if (crossDown)
+		else if (crossDown && Math.Abs(close - currentVidya) >= minDistance)
 		{
-			if (Position > 0)
-				SellMarket(Position);
-
 			if (Position >= 0)
-				SellMarket(volume);
+				SellMarket(Position > 0 ? Math.Abs(Position) + volume : volume);
 		}
+
+		_prevVidya = currentVidya;
+		_prevClose = close;
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		_cmo = null;
+		_prevVidya = null;
+		_prevClose = null;
+
+		base.OnReseted();
 	}
 }

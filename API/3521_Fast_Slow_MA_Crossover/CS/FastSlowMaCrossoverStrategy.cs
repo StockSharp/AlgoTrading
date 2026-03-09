@@ -42,33 +42,33 @@ public class FastSlowMaCrossoverStrategy : Strategy
 	/// </summary>
 	public FastSlowMaCrossoverStrategy()
 	{
-		_fastMaPeriod = Param(nameof(FastMaPeriod), 14)
+		_fastMaPeriod = Param(nameof(FastMaPeriod), 30)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast MA Period", "Length of the fast moving average", "Parameters")
 			;
 
-		_slowMaPeriod = Param(nameof(SlowMaPeriod), 21)
+		_slowMaPeriod = Param(nameof(SlowMaPeriod), 80)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow MA Period", "Length of the slow moving average", "Parameters")
 			;
 
-		_takeProfitPips = Param(nameof(TakeProfitPips), 10)
+		_takeProfitPips = Param(nameof(TakeProfitPips), 80)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit (pips)", "Distance in pips for profit taking", "Risk Management")
 			;
 
-		_stopLossPips = Param(nameof(StopLossPips), 10)
+		_stopLossPips = Param(nameof(StopLossPips), 80)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss (pips)", "Distance in pips for protective stop", "Risk Management")
 			;
 
-		_startTime = Param(nameof(StartTime), new TimeSpan(0, 0, 0))
+		_startTime = Param(nameof(StartTime), new TimeSpan(8, 0, 0))
 			.SetDisplay("Start Time", "Start of the allowed trading window", "Schedule");
 
-		_stopTime = Param(nameof(StopTime), new TimeSpan(23, 59, 0))
+		_stopTime = Param(nameof(StopTime), new TimeSpan(18, 0, 0))
 			.SetDisplay("Stop Time", "End of the allowed trading window", "Schedule");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(120).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles used for calculations", "General");
 
 		_tradeVolume = Param(nameof(TradeVolume), 1m)
@@ -164,6 +164,7 @@ public class FastSlowMaCrossoverStrategy : Strategy
 	{
 		base.OnReseted();
 
+		_pipSize = 0m;
 		_previousFast = null;
 		_previousSlow = null;
 		_lastSignalTime = null;

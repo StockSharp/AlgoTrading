@@ -1,16 +1,9 @@
 namespace StockSharp.Samples.Strategies;
 
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
-
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
-using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 public class HansIndicatorCloudSystemStrategy : Strategy
@@ -24,6 +17,7 @@ public class HansIndicatorCloudSystemStrategy : Strategy
 	private readonly StrategyParam<int> _localTimeZone;
 	private readonly StrategyParam<int> _destinationTimeZone;
 	private readonly StrategyParam<decimal> _pipsForEntry;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<bool> _buyPosOpen;
 	private readonly StrategyParam<bool> _sellPosOpen;
 	private readonly StrategyParam<bool> _buyPosClose;
@@ -33,10 +27,11 @@ public class HansIndicatorCloudSystemStrategy : Strategy
 	private readonly List<int> _colorHistory = new();
 	private DayState _currentDay;
 	private TimeSpan _timeShift;
+	private int _cooldownLeft;
 
 	public HansIndicatorCloudSystemStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle type", "Primary timeframe analysed by the strategy.", "General");
 
 		_signalBar = Param(nameof(SignalBar), 1)
@@ -49,9 +44,13 @@ public class HansIndicatorCloudSystemStrategy : Strategy
 		_destinationTimeZone = Param(nameof(DestinationTimeZone), 4)
 			.SetDisplay("Destination timezone", "Target timezone for Hans ranges (hours).", "Time zones");
 
-		_pipsForEntry = Param(nameof(PipsForEntry), 100m)
+		_pipsForEntry = Param(nameof(PipsForEntry), 300m)
 			.SetNotNegative()
 			.SetDisplay("Breakout buffer", "Extra price steps added above/below the session ranges.", "Indicator");
+
+		_cooldownBars = Param(nameof(CooldownBars), 48)
+			.SetNotNegative()
+			.SetDisplay("Cooldown bars", "Bars to wait after a close or entry before another entry.", "Trading");
 
 		_buyPosOpen = Param(nameof(BuyPosOpen), true)
 			.SetDisplay("Enable long entries", "Allow opening new long positions when an upper breakout appears.", "Trading");
@@ -130,6 +129,22 @@ public class HansIndicatorCloudSystemStrategy : Strategy
 		set => _tradeVolume.Value = value;
 	}
 
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_timeShift = default;
+		_currentDay = null;
+		_colorHistory.Clear();
+		_cooldownLeft = 0;
+	}
+
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
@@ -140,6 +155,7 @@ public class HansIndicatorCloudSystemStrategy : Strategy
 		_timeShift = TimeSpan.FromHours(DestinationTimeZone - LocalTimeZone);
 		_currentDay = null;
 		_colorHistory.Clear();
+		_cooldownLeft = 0;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
@@ -159,6 +175,8 @@ public class HansIndicatorCloudSystemStrategy : Strategy
 
 		var color = CalculateColor(candle);
 		_colorHistory.Add(color); // Store Hans indicator colour codes for historical lookups.
+		if (_cooldownLeft > 0)
+			_cooldownLeft--;
 
 		var maxHistory = Math.Max(5, SignalBar + 3);
 		if (_colorHistory.Count > maxHistory)
@@ -191,6 +209,9 @@ public class HansIndicatorCloudSystemStrategy : Strategy
 			var volume = Position;
 			if (volume > 0)
 				SellMarket(volume);
+
+			_cooldownLeft = CooldownBars;
+			return;
 		}
 
 		// Close existing short positions before handling new entries.
@@ -199,10 +220,13 @@ public class HansIndicatorCloudSystemStrategy : Strategy
 			var volume = Math.Abs(Position);
 			if (volume > 0)
 				BuyMarket(volume);
+
+			_cooldownLeft = CooldownBars;
+			return;
 		}
 
 		// Flatten any opposite exposure before opening a fresh long trade.
-		if (shouldOpenLong && Position <= 0 && TradeVolume > 0)
+		if (_cooldownLeft == 0 && shouldOpenLong && Position <= 0 && TradeVolume > 0)
 		{
 			if (Position < 0)
 			{
@@ -212,10 +236,11 @@ public class HansIndicatorCloudSystemStrategy : Strategy
 			}
 
 			BuyMarket(TradeVolume);
+			_cooldownLeft = CooldownBars;
 		}
 
 		// Flatten any opposite exposure before opening a fresh short trade.
-		if (shouldOpenShort && Position >= 0 && TradeVolume > 0)
+		else if (_cooldownLeft == 0 && shouldOpenShort && Position >= 0 && TradeVolume > 0)
 		{
 			if (Position > 0)
 			{
@@ -225,6 +250,7 @@ public class HansIndicatorCloudSystemStrategy : Strategy
 			}
 
 			SellMarket(TradeVolume);
+			_cooldownLeft = CooldownBars;
 		}
 	}
 
@@ -351,4 +377,3 @@ public class HansIndicatorCloudSystemStrategy : Strategy
 		public bool Period2Closed { get; set; }
 	}
 }
-

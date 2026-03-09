@@ -32,7 +32,7 @@ public class ExpXrsiHistogramVolStrategy : Strategy
 
 	public ExpXrsiHistogramVolStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe", "General");
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
@@ -43,6 +43,13 @@ public class ExpXrsiHistogramVolStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevRsi = null;
 	}
 
 	protected override void OnStarted2(DateTime time)
@@ -59,9 +66,10 @@ public class ExpXrsiHistogramVolStrategy : Strategy
 	private void ProcessCandle(ICandleMessage candle, decimal rsiVal)
 	{
 		if (candle.State != CandleStates.Finished) return;
+		if (!IsFormedAndOnlineAndAllowTrading()) { _prevRsi = rsiVal; return; }
 		if (_prevRsi == null) { _prevRsi = rsiVal; return; }
-		if (_prevRsi.Value < 50m && rsiVal >= 50m && Position <= 0) { if (Position < 0) BuyMarket(); BuyMarket(); }
-		else if (_prevRsi.Value > 50m && rsiVal <= 50m && Position >= 0) { if (Position > 0) SellMarket(); SellMarket(); }
+		if (_prevRsi.Value < 45m && rsiVal >= 55m && Position <= 0) { if (Position < 0) BuyMarket(); BuyMarket(); }
+		else if (_prevRsi.Value > 55m && rsiVal <= 45m && Position >= 0) { if (Position > 0) SellMarket(); SellMarket(); }
 		_prevRsi = rsiVal;
 	}
 }

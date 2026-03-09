@@ -40,7 +40,7 @@ public class ExpDigitalMacdStrategy : Strategy
 
 	public ExpDigitalMacdStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe", "General");
 
 		_fastPeriod = Param(nameof(FastPeriod), 12)
@@ -55,6 +55,13 @@ public class ExpDigitalMacdStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevMacd = null;
 	}
 
 	protected override void OnStarted2(DateTime time)
@@ -85,6 +92,12 @@ public class ExpDigitalMacdStrategy : Strategy
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+		{
+			_prevMacd = fast - slow;
+			return;
+		}
 
 		var macd = fast - slow;
 

@@ -52,18 +52,18 @@ public class OsMaFourColorsArrowStrategy : Strategy
 
 	public OsMaFourColorsArrowStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for signal generation", "General");
 
-		_fastPeriod = Param(nameof(FastPeriod), 12)
+		_fastPeriod = Param(nameof(FastPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast EMA", "Fast EMA length for MACD", "Indicators");
 
-		_slowPeriod = Param(nameof(SlowPeriod), 26)
+		_slowPeriod = Param(nameof(SlowPeriod), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow EMA", "Slow EMA length for MACD", "Indicators");
 
-		_signalPeriod = Param(nameof(SignalPeriod), 9)
+		_signalPeriod = Param(nameof(SignalPeriod), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("Signal Period", "Signal line smoothing period", "Indicators");
 	}
@@ -115,9 +115,10 @@ public class OsMaFourColorsArrowStrategy : Strategy
 		}
 
 		decimal sum = 0;
-		foreach (var v in _macdHistory)
+		var history = _macdHistory.ToArray();
+		foreach (var v in history)
 			sum += v;
-		var signal = sum / SignalPeriod;
+		var signal = sum / history.Length;
 
 		// OsMA = MACD - Signal (histogram)
 		var histogram = macdValue - signal;
@@ -137,21 +138,25 @@ public class OsMaFourColorsArrowStrategy : Strategy
 
 		if (crossUp)
 		{
-			if (Position < 0)
-				BuyMarket(Math.Abs(Position));
-
 			if (Position <= 0)
-				BuyMarket(volume);
+				BuyMarket(Position < 0 ? Math.Abs(Position) + volume : volume);
 		}
 		else if (crossDown)
 		{
-			if (Position > 0)
-				SellMarket(Position);
-
 			if (Position >= 0)
-				SellMarket(volume);
+				SellMarket(Position > 0 ? Math.Abs(Position) + volume : volume);
 		}
 
 		_prevHistogram = histogram;
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		_macd = null;
+		_prevHistogram = null;
+		_macdHistory.Clear();
+
+		base.OnReseted();
 	}
 }

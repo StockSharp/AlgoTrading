@@ -39,7 +39,7 @@ public class OneHourEurUsdStrategy : Strategy
 
 	public OneHourEurUsdStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe", "General");
 
 		_emaPeriod = Param(nameof(EmaPeriod), 20)
@@ -54,6 +54,13 @@ public class OneHourEurUsdStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevRsi = null;
 	}
 
 	protected override void OnStarted2(DateTime time)
@@ -83,6 +90,12 @@ public class OneHourEurUsdStrategy : Strategy
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+		{
+			_prevRsi = rsiVal;
+			return;
+		}
 
 		if (_prevRsi == null)
 		{

@@ -47,7 +47,7 @@ public class CCIAndMartinStrategy : Strategy
 
 	public CCIAndMartinStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe", "General");
 
 		_cciPeriod = Param(nameof(CciPeriod), 27)
@@ -64,6 +64,13 @@ public class CCIAndMartinStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevCci = null;
 	}
 
 	protected override void OnStarted2(DateTime time)
@@ -92,6 +99,12 @@ public class CCIAndMartinStrategy : Strategy
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+		{
+			_prevCci = cciValue;
+			return;
+		}
 
 		if (_prevCci == null)
 		{

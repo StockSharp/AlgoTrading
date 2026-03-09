@@ -1,6 +1,4 @@
 using System;
-using System.Collections.Generic;
-
 using Ecng.Common;
 
 using StockSharp.Algo.Indicators;
@@ -25,7 +23,7 @@ public class ReverseStrategy : Strategy
 	private readonly StrategyParam<decimal> _rsiOverbought;
 	private readonly StrategyParam<decimal> _rsiOversold;
 
-	private BollingerBands _bollinger;
+	private ExponentialMovingAverage _ema;
 	private RelativeStrengthIndex _rsi;
 
 	private decimal _prevClose;
@@ -72,14 +70,14 @@ public class ReverseStrategy : Strategy
 
 	public ReverseStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for signals", "General");
 
 		_bollingerPeriod = Param(nameof(BollingerPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Bollinger Period", "MA length for Bollinger Bands", "Indicators");
 
-		_bollingerWidth = Param(nameof(BollingerWidth), 2m)
+		_bollingerWidth = Param(nameof(BollingerWidth), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Bollinger Width", "Standard deviation multiplier", "Indicators");
 
@@ -98,58 +96,37 @@ public class ReverseStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_bollinger = new BollingerBands { Length = BollingerPeriod, Width = BollingerWidth };
+		_ema = new ExponentialMovingAverage { Length = BollingerPeriod };
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 		_hasPrev = false;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_rsi, ProcessCandle)
+			.Bind(_ema, _rsi, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawIndicator(area, _ema);
 			DrawIndicator(area, _rsi);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal rsiValue)
+	private void ProcessCandle(ICandleMessage candle, decimal emaValue, decimal rsiValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_rsi.IsFormed)
+		if (!_ema.IsFormed || !_rsi.IsFormed)
 			return;
 
 		var close = candle.ClosePrice;
-
-		// Manually compute Bollinger Bands via indicator
-		var bbInput = new CandleIndicatorValue(_bollinger, candle) { IsFinal = true };
-		var bbResult = _bollinger.Process(bbInput);
-
-		if (!_bollinger.IsFormed)
-		{
-			_prevClose = close;
-			_prevRsi = rsiValue;
-			return;
-		}
-
-		if (bbResult is not BollingerBandsValue bbVal)
-		{
-			_prevClose = close;
-			_prevRsi = rsiValue;
-			return;
-		}
-
-		if (bbVal.UpBand is not decimal upperBand || bbVal.LowBand is not decimal lowerBand)
-		{
-			_prevClose = close;
-			_prevRsi = rsiValue;
-			return;
-		}
+		var bandOffset = emaValue * (BollingerWidth / 100m);
+		var upperBand = emaValue + bandOffset;
+		var lowerBand = emaValue - bandOffset;
 
 		if (!_hasPrev)
 		{
@@ -172,19 +149,13 @@ public class ReverseStrategy : Strategy
 
 		if (longSignal)
 		{
-			if (Position < 0)
-				BuyMarket(Math.Abs(Position));
-
 			if (Position <= 0)
-				BuyMarket(volume);
+				BuyMarket(Position < 0 ? Math.Abs(Position) + volume : volume);
 		}
 		else if (shortSignal)
 		{
-			if (Position > 0)
-				SellMarket(Position);
-
 			if (Position >= 0)
-				SellMarket(volume);
+				SellMarket(Position > 0 ? Math.Abs(Position) + volume : volume);
 		}
 
 		// Exit long at upper band
@@ -199,5 +170,19 @@ public class ReverseStrategy : Strategy
 		_prevRsi = rsiValue;
 		_prevLower = lowerBand;
 		_prevUpper = upperBand;
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		_ema = null;
+		_rsi = null;
+		_prevClose = 0;
+		_prevRsi = 0;
+		_prevLower = 0;
+		_prevUpper = 0;
+		_hasPrev = false;
+
+		base.OnReseted();
 	}
 }

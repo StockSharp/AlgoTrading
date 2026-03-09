@@ -26,13 +26,20 @@ public class Breadandbutter2AdxAmaStrategy : Strategy
 
 	public Breadandbutter2AdxAmaStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General");
 		_kamaPeriod = Param(nameof(KamaPeriod), 10).SetGreaterThanZero().SetDisplay("KAMA Period", "KAMA lookback", "Indicators");
 		_fastPeriod = Param(nameof(FastPeriod), 8).SetGreaterThanZero().SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
 		_slowPeriod = Param(nameof(SlowPeriod), 21).SetGreaterThanZero().SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities() => [(Security, CandleType)];
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevKama = null;
+	}
 
 	protected override void OnStarted2(DateTime time)
 	{
@@ -49,6 +56,7 @@ public class Breadandbutter2AdxAmaStrategy : Strategy
 	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow)
 	{
 		if (candle.State != CandleStates.Finished) return;
+		if (!IsFormedAndOnlineAndAllowTrading()) { _prevKama = fast; return; }
 		if (_prevKama == null) { _prevKama = fast; return; }
 		var prevAbove = _prevKama.Value > slow;
 		var currAbove = fast > slow;

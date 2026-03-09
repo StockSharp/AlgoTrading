@@ -47,7 +47,7 @@ public class Ssb5123Strategy : Strategy
 
 	public Ssb5123Strategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe", "General");
 
 		_fastPeriod = Param(nameof(FastPeriod), 5)
@@ -66,6 +66,14 @@ public class Ssb5123Strategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFast = null;
+		_prevMid = null;
 	}
 
 	protected override void OnStarted2(DateTime time)
@@ -99,6 +107,13 @@ public class Ssb5123Strategy : Strategy
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+		{
+			_prevFast = fastVal;
+			_prevMid = midVal;
+			return;
+		}
 
 		if (_prevFast == null || _prevMid == null)
 		{

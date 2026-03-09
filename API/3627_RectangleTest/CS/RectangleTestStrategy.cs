@@ -139,4 +139,13 @@ public class RectangleTestStrategy : Strategy
 			SellMarket();
 		}
 	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		_highs.Clear();
+		_lows.Clear();
+
+		base.OnReseted();
+	}
 }

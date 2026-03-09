@@ -46,23 +46,30 @@ public class RsiExpertBreakoutStrategy : Strategy
 
 	public RsiExpertBreakoutStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe", "General");
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "RSI lookback period", "Indicators");
 
-		_rsiUpper = Param(nameof(RsiUpper), 65m)
+		_rsiUpper = Param(nameof(RsiUpper), 70m)
 			.SetDisplay("RSI Upper", "Overbought threshold", "Indicators");
 
-		_rsiLower = Param(nameof(RsiLower), 35m)
+		_rsiLower = Param(nameof(RsiLower), 30m)
 			.SetDisplay("RSI Lower", "Oversold threshold", "Indicators");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevRsi = null;
 	}
 
 	protected override void OnStarted2(DateTime time)
@@ -93,6 +100,12 @@ public class RsiExpertBreakoutStrategy : Strategy
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+		{
+			_prevRsi = rsiVal;
+			return;
+		}
 
 		if (_prevRsi == null)
 		{

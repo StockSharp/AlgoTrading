@@ -43,14 +43,14 @@ public class LayeredRiskProtectorStrategy : Strategy
 
 	public LayeredRiskProtectorStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
 			.SetDisplay("Candle Type", "Primary candle series", "General");
 
-		_cciLength = Param(nameof(CciLength), 75)
+		_cciLength = Param(nameof(CciLength), 100)
 			.SetGreaterThanZero()
 			.SetDisplay("CCI Length", "CCI indicator period", "Indicators");
 
-		_cciLevel = Param(nameof(CciLevel), 100m)
+		_cciLevel = Param(nameof(CciLevel), 150m)
 			.SetGreaterThanZero()
 			.SetDisplay("CCI Level", "CCI threshold for entries", "Indicators");
 	}
@@ -104,21 +104,24 @@ public class LayeredRiskProtectorStrategy : Strategy
 
 		if (buyCross)
 		{
-			if (Position < 0)
-				BuyMarket(Math.Abs(Position));
-
 			if (Position <= 0)
-				BuyMarket(volume);
+				BuyMarket(Position < 0 ? Math.Abs(Position) + volume : volume);
 		}
 		else if (sellCross)
 		{
-			if (Position > 0)
-				SellMarket(Position);
-
 			if (Position >= 0)
-				SellMarket(volume);
+				SellMarket(Position > 0 ? Math.Abs(Position) + volume : volume);
 		}
 
 		_prevCci = cciValue;
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		_cci = null;
+		_prevCci = null;
+
+		base.OnReseted();
 	}
 }

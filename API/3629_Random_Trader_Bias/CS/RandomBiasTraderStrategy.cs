@@ -49,13 +49,13 @@ public class RandomBiasTraderStrategy : Strategy
 
 	public RandomBiasTraderStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type", "Data");
 
-		_rewardRiskRatio = Param(nameof(RewardRiskRatio), 2m)
+		_rewardRiskRatio = Param(nameof(RewardRiskRatio), 3m)
 			.SetDisplay("Reward/Risk", "Reward to risk ratio", "Risk");
 
-		_atrMultiplier = Param(nameof(AtrMultiplier), 2m)
+		_atrMultiplier = Param(nameof(AtrMultiplier), 3m)
 			.SetDisplay("ATR Multiplier", "ATR multiplier for stop distance", "Risk");
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
@@ -117,6 +117,9 @@ public class RandomBiasTraderStrategy : Strategy
 		}
 
 		// Open new random position
+		if (_random.Next(4) != 0)
+			return;
+
 		if (_random.Next(2) == 0)
 		{
 			BuyMarket();
@@ -129,5 +132,15 @@ public class RandomBiasTraderStrategy : Strategy
 			_entryPrice = close;
 			_direction = -1;
 		}
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		_random = null;
+		_entryPrice = 0;
+		_direction = 0;
+
+		base.OnReseted();
 	}
 }

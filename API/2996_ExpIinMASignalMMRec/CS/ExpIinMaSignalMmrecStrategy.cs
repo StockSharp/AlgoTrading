@@ -25,19 +25,27 @@ public class ExpIinMaSignalMmrecStrategy : Strategy
 
 	public ExpIinMaSignalMmrecStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General");
 		_fastPeriod = Param(nameof(FastPeriod), 8).SetGreaterThanZero().SetDisplay("Fast SMA", "Fast SMA period", "Indicators");
 		_slowPeriod = Param(nameof(SlowPeriod), 21).SetGreaterThanZero().SetDisplay("Slow SMA", "Slow SMA period", "Indicators");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities() => [(Security, CandleType)];
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFast = null;
+		_prevSlow = null;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 		_prevFast = null; _prevSlow = null;
-		var fast = new SimpleMovingAverage { Length = FastPeriod };
-		var slow = new SimpleMovingAverage { Length = SlowPeriod };
+		var fast = new ExponentialMovingAverage { Length = FastPeriod };
+		var slow = new ExponentialMovingAverage { Length = SlowPeriod };
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(fast, slow, ProcessCandle).Start();
 		var area = CreateChartArea();

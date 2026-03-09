@@ -55,18 +55,18 @@ public class VidyaNBarsBordersMartingaleStrategy : Strategy
 
 	public VidyaNBarsBordersMartingaleStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
 			.SetDisplay("Candle Type", "Trading candle type", "General");
 
-		_emaPeriod = Param(nameof(EmaPeriod), 12)
+		_emaPeriod = Param(nameof(EmaPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Period", "Smoothing period for adaptive MA proxy", "Indicators");
 
-		_rangePeriod = Param(nameof(RangePeriod), 6)
+		_rangePeriod = Param(nameof(RangePeriod), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Range Period", "Number of bars for high/low range channel", "Indicators");
 
-		_martingaleMultiplier = Param(nameof(MartingaleMultiplier), 1.5m)
+		_martingaleMultiplier = Param(nameof(MartingaleMultiplier), 1.25m)
 			.SetDisplay("Martingale Multiplier", "Volume multiplier after losing trade", "Risk");
 	}
 
@@ -115,20 +115,23 @@ public class VidyaNBarsBordersMartingaleStrategy : Strategy
 		// Compute range from recent bars
 		decimal highest = decimal.MinValue;
 		decimal lowest = decimal.MaxValue;
-		foreach (var h in _highHistory)
+		var highs = _highHistory.ToArray();
+		var lows = _lowHistory.ToArray();
+		foreach (var h in highs)
 			if (h > highest) highest = h;
-		foreach (var l in _lowHistory)
+		foreach (var l in lows)
 			if (l < lowest) lowest = l;
 
-		var range = (highest - lowest) * 0.5m;
+		var range = (highest - lowest) * 0.75m;
 		if (range <= 0)
 			return;
 
 		var upper = emaValue + range;
 		var lower = emaValue - range;
 		var close = candle.ClosePrice;
-
-		var vol = _currentVolume;
+		var baseVolume = Volume > 0 ? Volume : 1;
+		var maxVolume = baseVolume * 8;
+		var nextVolume = _currentVolume;
 
 		if (close < lower)
 		{
@@ -136,16 +139,15 @@ public class VidyaNBarsBordersMartingaleStrategy : Strategy
 			if (Position < 0)
 			{
 				var wasLoss = close > _entryPrice;
-				BuyMarket(Math.Abs(Position));
-				if (wasLoss)
-					_currentVolume = Math.Min(_currentVolume * MartingaleMultiplier, 100);
-				else
-					_currentVolume = Volume > 0 ? Volume : 1;
+				nextVolume = wasLoss
+					? Math.Min(_currentVolume * MartingaleMultiplier, maxVolume)
+					: baseVolume;
 			}
 
 			if (Position <= 0)
 			{
-				BuyMarket(vol);
+				BuyMarket(Position < 0 ? Math.Abs(Position) + nextVolume : nextVolume);
+				_currentVolume = nextVolume;
 				_entryPrice = close;
 			}
 		}
@@ -155,18 +157,29 @@ public class VidyaNBarsBordersMartingaleStrategy : Strategy
 			if (Position > 0)
 			{
 				var wasLoss = close < _entryPrice;
-				SellMarket(Position);
-				if (wasLoss)
-					_currentVolume = Math.Min(_currentVolume * MartingaleMultiplier, 100);
-				else
-					_currentVolume = Volume > 0 ? Volume : 1;
+				nextVolume = wasLoss
+					? Math.Min(_currentVolume * MartingaleMultiplier, maxVolume)
+					: baseVolume;
 			}
 
 			if (Position >= 0)
 			{
-				SellMarket(vol);
+				SellMarket(Position > 0 ? Math.Abs(Position) + nextVolume : nextVolume);
+				_currentVolume = nextVolume;
 				_entryPrice = close;
 			}
 		}
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		_ema = null;
+		_highHistory.Clear();
+		_lowHistory.Clear();
+		_currentVolume = 0;
+		_entryPrice = 0;
+
+		base.OnReseted();
 	}
 }

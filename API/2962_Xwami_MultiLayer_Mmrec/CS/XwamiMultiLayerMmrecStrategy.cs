@@ -47,7 +47,7 @@ public class XwamiMultiLayerMmrecStrategy : Strategy
 
 	public XwamiMultiLayerMmrecStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe", "General");
 
 		_fastPeriod = Param(nameof(FastPeriod), 8)
@@ -68,6 +68,14 @@ public class XwamiMultiLayerMmrecStrategy : Strategy
 		return [(Security, CandleType)];
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFast = null;
+		_prevMid = null;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
@@ -75,9 +83,9 @@ public class XwamiMultiLayerMmrecStrategy : Strategy
 		_prevFast = null;
 		_prevMid = null;
 
-		var fast = new WeightedMovingAverage { Length = FastPeriod };
-		var mid = new WeightedMovingAverage { Length = MidPeriod };
-		var slow = new WeightedMovingAverage { Length = SlowPeriod };
+		var fast = new ExponentialMovingAverage { Length = FastPeriod };
+		var mid = new ExponentialMovingAverage { Length = MidPeriod };
+		var slow = new ExponentialMovingAverage { Length = SlowPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -99,6 +107,13 @@ public class XwamiMultiLayerMmrecStrategy : Strategy
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+		{
+			_prevFast = fastVal;
+			_prevMid = midVal;
+			return;
+		}
 
 		if (_prevFast == null || _prevMid == null)
 		{

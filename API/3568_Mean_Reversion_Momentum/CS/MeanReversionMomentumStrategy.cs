@@ -151,4 +151,13 @@ public class MeanReversionMomentumStrategy : Strategy
 				SellMarket(volume);
 		}
 	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		_closeHistory.Clear();
+		_rsi = null;
+
+		base.OnReseted();
+	}
 }

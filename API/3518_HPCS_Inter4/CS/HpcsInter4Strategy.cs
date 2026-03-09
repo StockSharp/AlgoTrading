@@ -40,25 +40,37 @@ public class HpcsInter4Strategy : Strategy
 
 	public HpcsInter4Strategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for calculation", "General");
 
-		_fastPeriod = Param(nameof(FastPeriod), 10)
+		_fastPeriod = Param(nameof(FastPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast SMA", "Fast SMA period", "Indicators");
 
-		_slowPeriod = Param(nameof(SlowPeriod), 30)
+		_slowPeriod = Param(nameof(SlowPeriod), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow SMA", "Slow SMA period", "Indicators");
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFast = 0;
+		_prevSlow = 0;
+		_isFirstValue = true;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+		_prevFast = 0;
+		_prevSlow = 0;
+		_isFirstValue = true;
 
-		var fastSma = new SimpleMovingAverage { Length = FastPeriod };
-		var slowSma = new SimpleMovingAverage { Length = SlowPeriod };
+		var fastSma = new ExponentialMovingAverage { Length = FastPeriod };
+		var slowSma = new ExponentialMovingAverage { Length = SlowPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

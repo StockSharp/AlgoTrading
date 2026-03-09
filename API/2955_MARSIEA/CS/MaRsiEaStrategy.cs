@@ -76,6 +76,13 @@ public class MaRsiEaStrategy : Strategy
 		return [(Security, CandleType)];
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevRsi = null;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
@@ -103,6 +110,12 @@ public class MaRsiEaStrategy : Strategy
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+		{
+			_prevRsi = rsiValue;
+			return;
+		}
 
 		var close = candle.ClosePrice;
 

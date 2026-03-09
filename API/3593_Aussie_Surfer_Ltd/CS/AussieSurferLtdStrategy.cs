@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 
 using Ecng.Common;
 
@@ -21,9 +20,8 @@ public class AussieSurferLtdStrategy : Strategy
 	private readonly StrategyParam<decimal> _bollingerWidth;
 	private readonly StrategyParam<int> _smaPeriod;
 
-	private BollingerBands _bollinger;
-	private readonly Queue<decimal> _smaQueue = new();
-	private decimal _smaSum;
+	private ExponentialMovingAverage _bandEma;
+	private ExponentialMovingAverage _slopeEma;
 	private decimal? _prevSma;
 	private decimal? _prevClose;
 
@@ -53,10 +51,10 @@ public class AussieSurferLtdStrategy : Strategy
 
 	public AussieSurferLtdStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(120).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe", "General");
 
-		_bollingerPeriod = Param(nameof(BollingerPeriod), 5)
+		_bollingerPeriod = Param(nameof(BollingerPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Bollinger Period", "Bollinger Bands window", "Indicators");
 
@@ -73,56 +71,42 @@ public class AussieSurferLtdStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_bollinger = new BollingerBands { Length = BollingerPeriod, Width = BollingerWidth };
-		_smaQueue.Clear();
-		_smaSum = 0;
+		_bandEma = new ExponentialMovingAverage { Length = BollingerPeriod };
+		_slopeEma = new ExponentialMovingAverage { Length = SmaPeriod };
 		_prevSma = null;
 		_prevClose = null;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(_bollinger, ProcessCandle)
+			.Bind(_bandEma, _slopeEma, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _bollinger);
+			DrawIndicator(area, _bandEma);
+			DrawIndicator(area, _slopeEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bbValue)
+	private void ProcessCandle(ICandleMessage candle, decimal bandValue, decimal smaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!bbValue.IsFinal)
-			return;
-
-		if (bbValue is not BollingerBandsValue bbVal)
-			return;
-
-		if (bbVal.UpBand is not decimal upperBand || bbVal.LowBand is not decimal lowerBand)
-			return;
-
-		var close = candle.ClosePrice;
-		var median = (candle.HighPrice + candle.LowPrice) / 2m;
-
-		// Manual SMA for slope filter
-		_smaQueue.Enqueue(median);
-		_smaSum += median;
-		while (_smaQueue.Count > SmaPeriod)
-			_smaSum -= _smaQueue.Dequeue();
-
-		if (!_bollinger.IsFormed || _smaQueue.Count < SmaPeriod)
+		if (!_bandEma.IsFormed || !_slopeEma.IsFormed)
 		{
-			_prevClose = close;
+			_prevClose = candle.ClosePrice;
+			_prevSma = smaValue;
 			return;
 		}
 
-		var smaValue = _smaSum / _smaQueue.Count;
+		var close = candle.ClosePrice;
+		var bandOffset = bandValue * (BollingerWidth / 100m);
+		var upperBand = bandValue + bandOffset;
+		var lowerBand = bandValue - bandOffset;
 
 		if (_prevSma is null || _prevClose is null)
 		{
@@ -140,25 +124,19 @@ public class AussieSurferLtdStrategy : Strategy
 		var smaFalling = smaValue < _prevSma.Value;
 
 		// Long: price was below lower band and crosses back above, SMA falling (reversal)
-		var longSignal = _prevClose.Value < lowerBand && close >= lowerBand;
+		var longSignal = _prevClose.Value < lowerBand && close >= lowerBand && smaFalling;
 		// Short: price was above upper band and crosses back below, SMA rising (reversal)
-		var shortSignal = _prevClose.Value > upperBand && close <= upperBand;
+		var shortSignal = _prevClose.Value > upperBand && close <= upperBand && smaRising;
 
 		if (longSignal)
 		{
-			if (Position < 0)
-				BuyMarket(Math.Abs(Position));
-
 			if (Position <= 0)
-				BuyMarket(volume);
+				BuyMarket(Position < 0 ? Math.Abs(Position) + volume : volume);
 		}
 		else if (shortSignal)
 		{
-			if (Position > 0)
-				SellMarket(Position);
-
 			if (Position >= 0)
-				SellMarket(volume);
+				SellMarket(Position > 0 ? Math.Abs(Position) + volume : volume);
 		}
 
 		// Exit at opposite band or SMA reversal
@@ -173,5 +151,16 @@ public class AussieSurferLtdStrategy : Strategy
 
 		_prevSma = smaValue;
 		_prevClose = close;
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		_bandEma = null;
+		_slopeEma = null;
+		_prevSma = null;
+		_prevClose = null;
+
+		base.OnReseted();
 	}
 }

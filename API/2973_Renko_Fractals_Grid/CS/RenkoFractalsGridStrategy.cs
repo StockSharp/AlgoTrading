@@ -40,7 +40,7 @@ public class RenkoFractalsGridStrategy : Strategy
 
 	public RenkoFractalsGridStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe", "General");
 
 		_fastPeriod = Param(nameof(FastPeriod), 6)
@@ -57,6 +57,14 @@ public class RenkoFractalsGridStrategy : Strategy
 		return [(Security, CandleType)];
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFast = null;
+		_prevSlow = null;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
@@ -64,8 +72,8 @@ public class RenkoFractalsGridStrategy : Strategy
 		_prevFast = null;
 		_prevSlow = null;
 
-		var fast = new WeightedMovingAverage { Length = FastPeriod };
-		var slow = new WeightedMovingAverage { Length = SlowPeriod };
+		var fast = new ExponentialMovingAverage { Length = FastPeriod };
+		var slow = new ExponentialMovingAverage { Length = SlowPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -86,6 +94,13 @@ public class RenkoFractalsGridStrategy : Strategy
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+		{
+			_prevFast = fastVal;
+			_prevSlow = slowVal;
+			return;
+		}
 
 		if (_prevFast == null || _prevSlow == null)
 		{

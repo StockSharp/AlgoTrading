@@ -48,7 +48,7 @@ public class MacdSampleTrendFilterStrategy : Strategy
 
 	public MacdSampleTrendFilterStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe", "General");
 
 		_fastPeriod = Param(nameof(FastPeriod), 12)
@@ -67,6 +67,13 @@ public class MacdSampleTrendFilterStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevSignal = 0;
 	}
 
 	protected override void OnStarted2(DateTime time)
@@ -98,6 +105,9 @@ public class MacdSampleTrendFilterStrategy : Strategy
 	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow, decimal trend)
 	{
 		if (candle.State != CandleStates.Finished)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		var close = candle.ClosePrice;

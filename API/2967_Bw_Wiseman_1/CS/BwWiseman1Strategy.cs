@@ -47,7 +47,7 @@ public class BwWiseman1Strategy : Strategy
 
 	public BwWiseman1Strategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe", "General");
 
 		_jawPeriod = Param(nameof(JawPeriod), 34)
@@ -66,6 +66,14 @@ public class BwWiseman1Strategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevLips = null;
+		_prevTeeth = null;
 	}
 
 	protected override void OnStarted2(DateTime time)
@@ -99,6 +107,13 @@ public class BwWiseman1Strategy : Strategy
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+		{
+			_prevLips = lipsVal;
+			_prevTeeth = teethVal;
+			return;
+		}
 
 		if (_prevLips == null || _prevTeeth == null)
 		{

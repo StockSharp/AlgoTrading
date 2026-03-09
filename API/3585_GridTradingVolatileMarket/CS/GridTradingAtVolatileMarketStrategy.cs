@@ -188,4 +188,17 @@ public class GridTradingAtVolatileMarketStrategy : Strategy
 			}
 		}
 	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		_rsi = null;
+		_smaQueue.Clear();
+		_smaSum = 0;
+		_gridDirection = null;
+		_gridLevel = 0;
+		_lastEntryPrice = 0;
+
+		base.OnReseted();
+	}
 }

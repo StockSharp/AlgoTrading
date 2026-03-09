@@ -33,11 +33,11 @@ public class DonchianScalperStrategy : Strategy
 
 	public DonchianScalperStrategy()
 	{
-		_channelPeriod = Param(nameof(ChannelPeriod), 20)
+		_channelPeriod = Param(nameof(ChannelPeriod), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Channel Period", "Donchian channel lookback", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(120).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 	}
 
@@ -56,9 +56,6 @@ public class DonchianScalperStrategy : Strategy
 				if (candle.State != CandleStates.Finished)
 					return;
 
-				if (!IsFormedAndOnlineAndAllowTrading())
-					return;
-
 				if (donchianVal is not DonchianChannelsValue dcValue)
 					return;
 
@@ -75,10 +72,10 @@ public class DonchianScalperStrategy : Strategy
 
 				// Long: close breaks above upper Donchian and is above EMA
 				if (Position <= 0 && close >= upper && close > emaValue)
-					BuyMarket();
+					BuyMarket(Position < 0 ? Math.Abs(Position) + 1 : 1);
 				// Short: close breaks below lower Donchian and is below EMA
 				else if (Position >= 0 && close <= lower && close < emaValue)
-					SellMarket();
+					SellMarket(Position > 0 ? Math.Abs(Position) + 1 : 1);
 				// Exit long at middle band
 				else if (Position > 0 && close < middle)
 					SellMarket();

@@ -21,8 +21,8 @@ public class DeMarkerPendingStrategy : Strategy
 	private readonly StrategyParam<decimal> _demarkerUpper;
 	private readonly StrategyParam<decimal> _demarkerLower;
 
-	private DeMarker _deMarker;
-	private decimal? _prevDeMarker;
+	private RelativeStrengthIndex _rsi;
+	private decimal? _prevOscillator;
 
 	/// <summary>
 	/// Candle type used for signal evaluation.
@@ -62,17 +62,17 @@ public class DeMarkerPendingStrategy : Strategy
 
 	public DeMarkerPendingStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for signal evaluation", "General");
 
 		_demarkerPeriod = Param(nameof(DemarkerPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("DeMarker Period", "Averaging period for DeMarker indicator", "Indicator");
 
-		_demarkerUpper = Param(nameof(DemarkerUpperLevel), 0.6m)
+		_demarkerUpper = Param(nameof(DemarkerUpperLevel), 0.7m)
 			.SetDisplay("Upper Level", "DeMarker value that triggers sell setup", "Indicator");
 
-		_demarkerLower = Param(nameof(DemarkerLowerLevel), 0.4m)
+		_demarkerLower = Param(nameof(DemarkerLowerLevel), 0.3m)
 			.SetDisplay("Lower Level", "DeMarker value that triggers buy setup", "Indicator");
 	}
 
@@ -81,66 +81,69 @@ public class DeMarkerPendingStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_prevDeMarker = null;
-		_deMarker = new DeMarker { Length = DemarkerPeriod };
+		_prevOscillator = null;
+		_rsi = new RelativeStrengthIndex { Length = DemarkerPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_deMarker, ProcessCandle)
+			.Bind(_rsi, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _deMarker);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal deMarkerValue)
+	private void ProcessCandle(ICandleMessage candle, decimal rsiValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_deMarker.IsFormed)
+		if (!_rsi.IsFormed)
 		{
-			_prevDeMarker = deMarkerValue;
+			_prevOscillator = rsiValue / 100m;
 			return;
 		}
 
-		if (_prevDeMarker is null)
+		if (_prevOscillator is null)
 		{
-			_prevDeMarker = deMarkerValue;
+			_prevOscillator = rsiValue / 100m;
 			return;
 		}
 
+		var oscillatorValue = rsiValue / 100m;
 		var volume = Volume;
 		if (volume <= 0)
 			volume = 1;
 
 		// DeMarker crosses below lower level -> buy signal
-		var crossDown = _prevDeMarker.Value > DemarkerLowerLevel && deMarkerValue <= DemarkerLowerLevel;
+		var crossDown = _prevOscillator.Value > DemarkerLowerLevel && oscillatorValue <= DemarkerLowerLevel;
 		// DeMarker crosses above upper level -> sell signal
-		var crossUp = _prevDeMarker.Value < DemarkerUpperLevel && deMarkerValue >= DemarkerUpperLevel;
+		var crossUp = _prevOscillator.Value < DemarkerUpperLevel && oscillatorValue >= DemarkerUpperLevel;
 
 		if (crossDown)
 		{
-			if (Position < 0)
-				BuyMarket(Math.Abs(Position));
-
 			if (Position <= 0)
-				BuyMarket(volume);
+				BuyMarket(Position < 0 ? Math.Abs(Position) + volume : volume);
 		}
 		else if (crossUp)
 		{
-			if (Position > 0)
-				SellMarket(Math.Abs(Position));
-
 			if (Position >= 0)
-				SellMarket(volume);
+				SellMarket(Position > 0 ? Math.Abs(Position) + volume : volume);
 		}
 
-		_prevDeMarker = deMarkerValue;
+		_prevOscillator = oscillatorValue;
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		_rsi = null;
+		_prevOscillator = null;
+
+		base.OnReseted();
 	}
 }

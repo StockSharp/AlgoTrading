@@ -34,7 +34,7 @@ public class MultiCurrencyTemplateMt5Strategy : Strategy
 
 	public MultiCurrencyTemplateMt5Strategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for signal generation", "General");
 
 		_lookback = Param(nameof(Lookback), 1)
@@ -78,27 +78,30 @@ public class MultiCurrencyTemplateMt5Strategy : Strategy
 
 		// Buy signal: previous candle was bullish (close > open), current closes below previous open
 		// This is a reversal pattern - bearish candle after bullish suggests exhaustion, buy the dip
-		var buySignal = candle.ClosePrice < _prevCandle.OpenPrice && _prevCandle.ClosePrice > _prevCandle.OpenPrice;
+		var minBody = _prevCandle.OpenPrice * 0.001m;
+		var buySignal = candle.ClosePrice < _prevCandle.OpenPrice - minBody && _prevCandle.ClosePrice > _prevCandle.OpenPrice + minBody;
 		// Sell signal: previous candle was bearish (close < open), current closes above previous open
-		var sellSignal = candle.ClosePrice > _prevCandle.OpenPrice && _prevCandle.ClosePrice < _prevCandle.OpenPrice;
+		var sellSignal = candle.ClosePrice > _prevCandle.OpenPrice + minBody && _prevCandle.ClosePrice < _prevCandle.OpenPrice - minBody;
 
 		if (buySignal)
 		{
-			if (Position < 0)
-				BuyMarket(Math.Abs(Position));
-
 			if (Position <= 0)
-				BuyMarket(volume);
+				BuyMarket(Position < 0 ? Math.Abs(Position) + volume : volume);
 		}
 		else if (sellSignal)
 		{
-			if (Position > 0)
-				SellMarket(Position);
-
 			if (Position >= 0)
-				SellMarket(volume);
+				SellMarket(Position > 0 ? Math.Abs(Position) + volume : volume);
 		}
 
 		_prevCandle = candle;
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		_prevCandle = null;
+
+		base.OnReseted();
 	}
 }

@@ -18,11 +18,13 @@ public class OpenPendingorderAfterPositionGetStopLossStrategy : Strategy
 	private readonly StrategyParam<int> _slowing;
 	private readonly StrategyParam<decimal> _stopLossPct;
 	private readonly StrategyParam<decimal> _takeProfitPct;
+	private readonly StrategyParam<int> _signalCooldownCandles;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal? _lastK;
 	private decimal? _prevK;
 	private decimal _entryPrice;
+	private int _candlesSinceTrade;
 
 	public int KPeriod
 	{
@@ -54,6 +56,12 @@ public class OpenPendingorderAfterPositionGetStopLossStrategy : Strategy
 		set => _takeProfitPct.Value = value;
 	}
 
+	public int SignalCooldownCandles
+	{
+		get => _signalCooldownCandles.Value;
+		set => _signalCooldownCandles.Value = value;
+	}
+
 	public DataType CandleType
 	{
 		get => _candleType.Value;
@@ -77,48 +85,58 @@ public class OpenPendingorderAfterPositionGetStopLossStrategy : Strategy
 		_takeProfitPct = Param(nameof(TakeProfitPct), 3m)
 			.SetDisplay("Take Profit %", "Take-profit as percentage of entry price", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_signalCooldownCandles = Param(nameof(SignalCooldownCandles), 4)
+			.SetGreaterThanZero()
+			.SetDisplay("Signal Cooldown", "Bars to wait between entries", "Trading");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for indicator", "General");
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_lastK = null;
+		_prevK = null;
+		_entryPrice = 0;
+		_candlesSinceTrade = SignalCooldownCandles;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+		_lastK = null;
+		_prevK = null;
+		_entryPrice = 0;
+		_candlesSinceTrade = SignalCooldownCandles;
 
-		var stochastic = new StochasticOscillator
-		{
-			K = { Length = KPeriod },
-			D = { Length = DPeriod },
-		};
+		var rsi = new RelativeStrengthIndex { Length = KPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(stochastic, ProcessCandle)
+			.Bind(rsi, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, stochastic);
+			DrawIndicator(area, rsi);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue stochasticValue)
+	private void ProcessCandle(ICandleMessage candle, decimal currentK)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!stochasticValue.IsFinal)
-			return;
-
-		var stoch = (StochasticOscillatorValue)stochasticValue;
-		if (stoch.K is not decimal currentK)
-			return;
-
 		var close = candle.ClosePrice;
+
+		if (_candlesSinceTrade < SignalCooldownCandles)
+			_candlesSinceTrade++;
 
 		// Check stop-loss / take-profit on existing position
 		if (Position != 0 && _entryPrice > 0)
@@ -149,7 +167,7 @@ public class OpenPendingorderAfterPositionGetStopLossStrategy : Strategy
 			}
 		}
 
-		// Need at least 2 values to determine slope
+		// Need at least 2 values to determine signal transition.
 		if (_lastK is not decimal prevK)
 		{
 			_lastK = currentK;
@@ -159,23 +177,20 @@ public class OpenPendingorderAfterPositionGetStopLossStrategy : Strategy
 		_prevK = _lastK;
 		_lastK = currentK;
 
-		// Rising %K -> go long
-		if (currentK > prevK && Position <= 0)
-		{
-			if (Position < 0)
-				BuyMarket(); // close short
+		var crossedUp = prevK <= 45m && currentK > 45m;
+		var crossedDown = prevK >= 55m && currentK < 55m;
 
+		if (crossedUp && Position <= 0 && _candlesSinceTrade >= SignalCooldownCandles)
+		{
 			BuyMarket();
 			_entryPrice = close;
+			_candlesSinceTrade = 0;
 		}
-		// Falling %K -> go short
-		else if (currentK < prevK && Position >= 0)
+		else if (crossedDown && Position >= 0 && _candlesSinceTrade >= SignalCooldownCandles)
 		{
-			if (Position > 0)
-				SellMarket(); // close long
-
 			SellMarket();
 			_entryPrice = close;
+			_candlesSinceTrade = 0;
 		}
 	}
 }

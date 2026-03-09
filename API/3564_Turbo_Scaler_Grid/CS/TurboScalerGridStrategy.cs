@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 
 using Ecng.Common;
 
@@ -24,8 +23,8 @@ public class TurboScalerGridStrategy : Strategy
 	private readonly StrategyParam<decimal> _rsiLower;
 
 	private ExponentialMovingAverage _fastEma;
+	private ExponentialMovingAverage _slowEma;
 	private RelativeStrengthIndex _rsi;
-	private readonly Queue<decimal> _closeHistory = new();
 	private decimal? _prevFast;
 	private decimal? _prevSlow;
 
@@ -67,14 +66,14 @@ public class TurboScalerGridStrategy : Strategy
 
 	public TurboScalerGridStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for scalping", "General");
 
-		_fastPeriod = Param(nameof(FastPeriod), 8)
+		_fastPeriod = Param(nameof(FastPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
 
-		_slowPeriod = Param(nameof(SlowPeriod), 21)
+		_slowPeriod = Param(nameof(SlowPeriod), 34)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow SMA", "Slow SMA period (computed manually)", "Indicators");
 
@@ -82,10 +81,10 @@ public class TurboScalerGridStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "RSI period for confirmation", "Indicators");
 
-		_rsiUpper = Param(nameof(RsiUpper), 55m)
+		_rsiUpper = Param(nameof(RsiUpper), 60m)
 			.SetDisplay("RSI Upper", "RSI level for buy confirmation", "Signals");
 
-		_rsiLower = Param(nameof(RsiLower), 45m)
+		_rsiLower = Param(nameof(RsiLower), 40m)
 			.SetDisplay("RSI Lower", "RSI level for sell confirmation", "Signals");
 	}
 
@@ -95,14 +94,14 @@ public class TurboScalerGridStrategy : Strategy
 
 		_prevFast = null;
 		_prevSlow = null;
-		_closeHistory.Clear();
 
 		_fastEma = new ExponentialMovingAverage { Length = FastPeriod };
+		_slowEma = new ExponentialMovingAverage { Length = SlowPeriod };
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_fastEma, _rsi, ProcessCandle)
+			.Bind(_fastEma, _slowEma, _rsi, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -110,30 +109,22 @@ public class TurboScalerGridStrategy : Strategy
 		{
 			DrawCandles(area, subscription);
 			DrawIndicator(area, _fastEma);
+			DrawIndicator(area, _slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal fastValue, decimal rsiValue)
+	private void ProcessCandle(ICandleMessage candle, decimal fastValue, decimal slowValue, decimal rsiValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Compute slow SMA manually
-		_closeHistory.Enqueue(candle.ClosePrice);
-		if (_closeHistory.Count > SlowPeriod)
-			_closeHistory.Dequeue();
-
-		if (!_fastEma.IsFormed || !_rsi.IsFormed || _closeHistory.Count < SlowPeriod)
+		if (!_fastEma.IsFormed || !_slowEma.IsFormed || !_rsi.IsFormed)
 		{
 			_prevFast = fastValue;
+			_prevSlow = slowValue;
 			return;
 		}
-
-		decimal sum = 0;
-		foreach (var v in _closeHistory)
-			sum += v;
-		var slowValue = sum / SlowPeriod;
 
 		if (_prevFast is null || _prevSlow is null)
 		{
@@ -151,22 +142,28 @@ public class TurboScalerGridStrategy : Strategy
 
 		if (crossUp && rsiValue > RsiUpper)
 		{
-			if (Position < 0)
-				BuyMarket(Math.Abs(Position));
-
 			if (Position <= 0)
-				BuyMarket(volume);
+				BuyMarket(Position < 0 ? Math.Abs(Position) + volume : volume);
 		}
 		else if (crossDown && rsiValue < RsiLower)
 		{
-			if (Position > 0)
-				SellMarket(Position);
-
 			if (Position >= 0)
-				SellMarket(volume);
+				SellMarket(Position > 0 ? Math.Abs(Position) + volume : volume);
 		}
 
 		_prevFast = fastValue;
 		_prevSlow = slowValue;
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		_fastEma = null;
+		_slowEma = null;
+		_rsi = null;
+		_prevFast = null;
+		_prevSlow = null;
+
+		base.OnReseted();
 	}
 }

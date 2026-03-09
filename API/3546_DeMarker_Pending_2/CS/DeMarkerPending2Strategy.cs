@@ -20,8 +20,8 @@ public class DeMarkerPending2Strategy : Strategy
 	private readonly StrategyParam<decimal> _demarkerUpperLevel;
 	private readonly StrategyParam<decimal> _demarkerLowerLevel;
 
-	private DeMarker _deMarker;
-	private decimal? _prevDeMarker;
+	private RelativeStrengthIndex _rsi;
+	private decimal? _prevOscillator;
 
 	/// <summary>
 	/// Candle type for calculations.
@@ -61,7 +61,7 @@ public class DeMarkerPending2Strategy : Strategy
 
 	public DeMarkerPending2Strategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for calculations", "General");
 
 		_demarkerPeriod = Param(nameof(DemarkerPeriod), 14)
@@ -80,12 +80,12 @@ public class DeMarkerPending2Strategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_prevDeMarker = null;
-		_deMarker = new DeMarker { Length = DemarkerPeriod };
+		_prevOscillator = null;
+		_rsi = new RelativeStrengthIndex { Length = DemarkerPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_deMarker, ProcessCandle)
+			.Bind(_rsi, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -96,46 +96,50 @@ public class DeMarkerPending2Strategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal deMarkerValue)
+	private void ProcessCandle(ICandleMessage candle, decimal rsiValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_deMarker.IsFormed)
+		if (!_rsi.IsFormed)
 		{
-			_prevDeMarker = deMarkerValue;
+			_prevOscillator = rsiValue / 100m;
 			return;
 		}
 
-		if (_prevDeMarker is not decimal prev)
+		if (_prevOscillator is not decimal prev)
 		{
-			_prevDeMarker = deMarkerValue;
+			_prevOscillator = rsiValue / 100m;
 			return;
 		}
 
+		var oscillatorValue = rsiValue / 100m;
 		var volume = Volume;
 		if (volume <= 0)
 			volume = 1;
 
 		// Cross above lower level from below => buy
-		if (prev < DemarkerLowerLevel && deMarkerValue >= DemarkerLowerLevel)
+		if (prev < DemarkerLowerLevel && oscillatorValue >= DemarkerLowerLevel)
 		{
-			if (Position < 0)
-				BuyMarket(Math.Abs(Position));
-
 			if (Position <= 0)
-				BuyMarket(volume);
+				BuyMarket(Position < 0 ? Math.Abs(Position) + volume : volume);
 		}
 		// Cross below upper level from above => sell
-		else if (prev > DemarkerUpperLevel && deMarkerValue <= DemarkerUpperLevel)
+		else if (prev > DemarkerUpperLevel && oscillatorValue <= DemarkerUpperLevel)
 		{
-			if (Position > 0)
-				SellMarket(Math.Abs(Position));
-
 			if (Position >= 0)
-				SellMarket(volume);
+				SellMarket(Position > 0 ? Math.Abs(Position) + volume : volume);
 		}
 
-		_prevDeMarker = deMarkerValue;
+		_prevOscillator = oscillatorValue;
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		_rsi = null;
+		_prevOscillator = null;
+
+		base.OnReseted();
 	}
 }

@@ -40,7 +40,7 @@ public class ExpertIchimokuStrategy : Strategy
 
 	public ExpertIchimokuStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe", "General");
 
 		_tenkanPeriod = Param(nameof(TenkanPeriod), 9)
@@ -55,6 +55,14 @@ public class ExpertIchimokuStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevTenkan = null;
+		_prevKijun = null;
 	}
 
 	protected override void OnStarted2(DateTime time)
@@ -88,6 +96,9 @@ public class ExpertIchimokuStrategy : Strategy
 	private void ProcessCandle(ICandleMessage candle, decimal tHigh, decimal tLow, decimal kHigh, decimal kLow)
 	{
 		if (candle.State != CandleStates.Finished)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		var tenkan = (tHigh + tLow) / 2;

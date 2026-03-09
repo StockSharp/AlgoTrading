@@ -34,7 +34,7 @@ public class Gbp9AmBreakoutStrategy : Strategy
 
 	public Gbp9AmBreakoutStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe", "General");
 
 		_period = Param(nameof(Period), 12)
@@ -45,6 +45,14 @@ public class Gbp9AmBreakoutStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevHigh = null;
+		_prevLow = null;
 	}
 
 	protected override void OnStarted2(DateTime time)
@@ -76,6 +84,13 @@ public class Gbp9AmBreakoutStrategy : Strategy
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+		{
+			_prevHigh = high;
+			_prevLow = low;
+			return;
+		}
 
 		var close = candle.ClosePrice;
 

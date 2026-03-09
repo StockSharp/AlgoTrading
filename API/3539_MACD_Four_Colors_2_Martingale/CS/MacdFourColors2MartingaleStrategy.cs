@@ -88,18 +88,18 @@ public class MacdFourColors2MartingaleStrategy : Strategy
 	/// </summary>
 	public MacdFourColors2MartingaleStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for MACD analysis", "General");
 
-		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 12)
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 20)
 			.SetDisplay("Fast EMA", "Fast EMA period for MACD", "Indicators")
 			.SetGreaterThanZero();
 
-		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 26)
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 50)
 			.SetDisplay("Slow EMA", "Slow EMA period for MACD", "Indicators")
 			.SetGreaterThanZero();
 
-		_signalPeriod = Param(nameof(SignalPeriod), 9)
+		_signalPeriod = Param(nameof(SignalPeriod), 12)
 			.SetDisplay("Signal Period", "Signal line smoothing period", "Indicators")
 			.SetGreaterThanZero();
 
@@ -153,15 +153,16 @@ public class MacdFourColors2MartingaleStrategy : Strategy
 
 		if (!_macd.IsFormed || _macdHistory.Count < SignalPeriod)
 		{
-			_prevHistogram = 0;
+			_prevHistogram = null;
 			return;
 		}
 
 		// Calculate signal line (SMA of MACD)
 		var sum = 0m;
-		foreach (var v in _macdHistory)
+		var history = _macdHistory.ToArray();
+		foreach (var v in history)
 			sum += v;
-		var signalValue = sum / SignalPeriod;
+		var signalValue = sum / history.Length;
 
 		var histogram = macdValue - signalValue;
 
@@ -192,10 +193,10 @@ public class MacdFourColors2MartingaleStrategy : Strategy
 					_currentVolume = Volume > 0 ? Volume : 1;
 				}
 
-				BuyMarket(Math.Abs(Position));
+				BuyMarket(Math.Abs(Position) + _currentVolume);
+				_entryPrice = candle.ClosePrice;
 			}
-
-			if (Position <= 0)
+			else if (Position == 0)
 			{
 				BuyMarket(_currentVolume);
 				_entryPrice = candle.ClosePrice;
@@ -219,10 +220,10 @@ public class MacdFourColors2MartingaleStrategy : Strategy
 					_currentVolume = Volume > 0 ? Volume : 1;
 				}
 
-				SellMarket(Math.Abs(Position));
+				SellMarket(Math.Abs(Position) + _currentVolume);
+				_entryPrice = candle.ClosePrice;
 			}
-
-			if (Position >= 0)
+			else if (Position == 0)
 			{
 				SellMarket(_currentVolume);
 				_entryPrice = candle.ClosePrice;
@@ -230,5 +231,18 @@ public class MacdFourColors2MartingaleStrategy : Strategy
 		}
 
 		_prevHistogram = histogram;
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		_macd = null;
+		_prevHistogram = null;
+		_currentVolume = 0;
+		_consecutiveLosses = 0;
+		_entryPrice = 0;
+		_macdHistory.Clear();
+
+		base.OnReseted();
 	}
 }

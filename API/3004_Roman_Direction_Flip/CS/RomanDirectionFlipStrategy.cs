@@ -23,11 +23,18 @@ public class RomanDirectionFlipStrategy : Strategy
 
 	public RomanDirectionFlipStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General");
 		_momPeriod = Param(nameof(MomPeriod), 12).SetGreaterThanZero().SetDisplay("Momentum Period", "Momentum lookback", "Indicators");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities() => [(Security, CandleType)];
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevMom = null;
+	}
 
 	protected override void OnStarted2(DateTime time)
 	{
@@ -43,9 +50,10 @@ public class RomanDirectionFlipStrategy : Strategy
 	private void ProcessCandle(ICandleMessage candle, decimal momVal)
 	{
 		if (candle.State != CandleStates.Finished) return;
+		if (!IsFormedAndOnlineAndAllowTrading()) { _prevMom = momVal; return; }
 		if (_prevMom == null) { _prevMom = momVal; return; }
-		if (_prevMom.Value < 0m && momVal >= 0m && Position <= 0) { if (Position < 0) BuyMarket(); BuyMarket(); }
-		else if (_prevMom.Value > 0m && momVal <= 0m && Position >= 0) { if (Position > 0) SellMarket(); SellMarket(); }
+		if (_prevMom.Value < 100m && momVal >= 100m && Position <= 0) { if (Position < 0) BuyMarket(); BuyMarket(); }
+		else if (_prevMom.Value > 100m && momVal <= 100m && Position >= 0) { if (Position > 0) SellMarket(); SellMarket(); }
 		_prevMom = momVal;
 	}
 }

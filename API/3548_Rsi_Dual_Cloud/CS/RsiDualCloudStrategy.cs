@@ -53,14 +53,14 @@ public class RsiDualCloudStrategy : Strategy
 
 	public RsiDualCloudStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for RSI calculations", "General");
 
-		_fastLength = Param(nameof(FastLength), 7)
+		_fastLength = Param(nameof(FastLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast RSI", "Fast RSI period", "Indicators");
 
-		_slowLength = Param(nameof(SlowLength), 21)
+		_slowLength = Param(nameof(SlowLength), 42)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow RSI", "Slow RSI period", "Indicators");
 	}
@@ -115,24 +115,31 @@ public class RsiDualCloudStrategy : Strategy
 		if (volume <= 0)
 			volume = 1;
 
-		if (crossUp)
-		{
-			if (Position < 0)
-				BuyMarket(Math.Abs(Position));
+		var minSpread = 5m;
 
+		if (crossUp && Math.Abs(fastValue - slowValue) >= minSpread)
+		{
 			if (Position <= 0)
-				BuyMarket(volume);
+				BuyMarket(Position < 0 ? Math.Abs(Position) + volume : volume);
 		}
-		else if (crossDown)
+		else if (crossDown && Math.Abs(fastValue - slowValue) >= minSpread)
 		{
-			if (Position > 0)
-				SellMarket(Math.Abs(Position));
-
 			if (Position >= 0)
-				SellMarket(volume);
+				SellMarket(Position > 0 ? Math.Abs(Position) + volume : volume);
 		}
 
 		_prevFast = fastValue;
 		_prevSlow = slowValue;
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		_fastRsi = null;
+		_slowRsi = null;
+		_prevFast = null;
+		_prevSlow = null;
+
+		base.OnReseted();
 	}
 }

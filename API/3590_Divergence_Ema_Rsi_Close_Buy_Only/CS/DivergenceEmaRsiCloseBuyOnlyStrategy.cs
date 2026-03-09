@@ -58,7 +58,7 @@ public class DivergenceEmaRsiCloseBuyOnlyStrategy : Strategy
 
 	public DivergenceEmaRsiCloseBuyOnlyStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for signals", "General");
 
 		_emaPeriod = Param(nameof(EmaPeriod), 20)
@@ -69,10 +69,10 @@ public class DivergenceEmaRsiCloseBuyOnlyStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "RSI period for entry/exit", "Indicators");
 
-		_rsiEntry = Param(nameof(RsiEntry), 30m)
+		_rsiEntry = Param(nameof(RsiEntry), 35m)
 			.SetDisplay("RSI Entry", "RSI level to enter long", "Signals");
 
-		_rsiExit = Param(nameof(RsiExit), 77m)
+		_rsiExit = Param(nameof(RsiExit), 65m)
 			.SetDisplay("RSI Exit", "RSI level to exit long", "Signals");
 	}
 
@@ -86,7 +86,7 @@ public class DivergenceEmaRsiCloseBuyOnlyStrategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_ema, ProcessCandle)
+			.Bind(_ema, _rsi, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -98,26 +98,16 @@ public class DivergenceEmaRsiCloseBuyOnlyStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal emaValue)
+	private void ProcessCandle(ICandleMessage candle, decimal emaValue, decimal rsiValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_ema.IsFormed)
-			return;
-
-		// Manually compute RSI value
-		var close = candle.ClosePrice;
-		var rsiInput = new DecimalIndicatorValue(_rsi, close, candle.OpenTime) { IsFinal = true };
-		var rsiResult = _rsi.Process(rsiInput);
-
-		if (!_rsi.IsFormed)
+		if (!_ema.IsFormed || !_rsi.IsFormed)
 		{
-			_prevRsi = rsiResult.GetValue<decimal>();
+			_prevRsi = rsiValue;
 			return;
 		}
-
-		var rsiValue = rsiResult.GetValue<decimal>();
 
 		if (_prevRsi is null)
 		{
@@ -128,6 +118,7 @@ public class DivergenceEmaRsiCloseBuyOnlyStrategy : Strategy
 		var volume = Volume;
 		if (volume <= 0)
 			volume = 1;
+		var close = candle.ClosePrice;
 
 		// Exit: RSI crosses above exit level
 		if (Position > 0 && _prevRsi.Value < RsiExit && rsiValue >= RsiExit)
@@ -145,5 +136,15 @@ public class DivergenceEmaRsiCloseBuyOnlyStrategy : Strategy
 		}
 
 		_prevRsi = rsiValue;
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		_ema = null;
+		_rsi = null;
+		_prevRsi = null;
+
+		base.OnReseted();
 	}
 }

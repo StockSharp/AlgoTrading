@@ -1,6 +1,4 @@
 using System;
-using System.Collections.Generic;
-
 using Ecng.Common;
 
 using StockSharp.Algo.Indicators;
@@ -44,14 +42,14 @@ public class CciMacdScalperStrategy : Strategy
 
 	public CciMacdScalperStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for scalping", "General");
 
-		_emaPeriod = Param(nameof(EmaPeriod), 34)
+		_emaPeriod = Param(nameof(EmaPeriod), 21)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Period", "EMA trend filter period", "Indicators");
 
-		_cciPeriod = Param(nameof(CciPeriod), 20)
+		_cciPeriod = Param(nameof(CciPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("CCI Period", "CCI period for zero-line crosses", "Indicators");
 	}
@@ -101,28 +99,32 @@ public class CciMacdScalperStrategy : Strategy
 
 		var close = candle.ClosePrice;
 
-		// CCI crosses above zero + price above EMA -> buy
-		var cciCrossUp = _prevCci.Value <= 0 && cciValue > 0;
-		// CCI crosses below zero + price below EMA -> sell
-		var cciCrossDown = _prevCci.Value >= 0 && cciValue < 0;
+		// CCI crosses back above the oversold zone with trend confirmation -> buy
+		var cciCrossUp = _prevCci.Value <= -50m && cciValue > -50m;
+		// CCI crosses back below the overbought zone with trend confirmation -> sell
+		var cciCrossDown = _prevCci.Value >= 50m && cciValue < 50m;
 
 		if (cciCrossUp && close > emaValue)
 		{
-			if (Position < 0)
-				BuyMarket(Math.Abs(Position));
-
 			if (Position <= 0)
-				BuyMarket(volume);
+				BuyMarket(Position < 0 ? Math.Abs(Position) + volume : volume);
 		}
 		else if (cciCrossDown && close < emaValue)
 		{
-			if (Position > 0)
-				SellMarket(Position);
-
 			if (Position >= 0)
-				SellMarket(volume);
+				SellMarket(Position > 0 ? Math.Abs(Position) + volume : volume);
 		}
 
 		_prevCci = cciValue;
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		_ema = null;
+		_cci = null;
+		_prevCci = null;
+
+		base.OnReseted();
 	}
 }

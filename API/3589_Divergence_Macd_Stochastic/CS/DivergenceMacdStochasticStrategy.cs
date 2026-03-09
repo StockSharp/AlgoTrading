@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 
 using Ecng.Common;
 
@@ -22,8 +21,6 @@ public class DivergenceMacdStochasticStrategy : Strategy
 	private readonly StrategyParam<int> _macdSlow;
 	private readonly StrategyParam<int> _rsiPeriod;
 
-	private RelativeStrengthIndex _rsi;
-
 	// Manual EMA for MACD
 	private decimal _fastEma;
 	private decimal _slowEma;
@@ -32,8 +29,10 @@ public class DivergenceMacdStochasticStrategy : Strategy
 	private decimal _fastMultiplier;
 	private decimal _slowMultiplier;
 
-	private readonly Queue<decimal> _macdHistory = new();
-	private readonly Queue<decimal> _priceHistory = new();
+	private readonly decimal[] _macdWindow = new decimal[DivergenceLookback];
+	private readonly decimal[] _priceWindow = new decimal[DivergenceLookback];
+	private int _windowCount;
+	private int _windowIndex;
 	private const int DivergenceLookback = 10;
 
 	public DataType CandleType
@@ -62,14 +61,14 @@ public class DivergenceMacdStochasticStrategy : Strategy
 
 	public DivergenceMacdStochasticStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for divergence detection", "General");
 
-		_macdFast = Param(nameof(MacdFast), 12)
+		_macdFast = Param(nameof(MacdFast), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Fast", "Fast EMA length", "Indicators");
 
-		_macdSlow = Param(nameof(MacdSlow), 26)
+		_macdSlow = Param(nameof(MacdSlow), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Slow", "Slow EMA length", "Indicators");
 
@@ -82,9 +81,8 @@ public class DivergenceMacdStochasticStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
-		_macdHistory.Clear();
-		_priceHistory.Clear();
+		_windowCount = 0;
+		_windowIndex = 0;
 		_emaInitialized = false;
 		_barCount = 0;
 		_fastMultiplier = 2m / (MacdFast + 1);
@@ -92,19 +90,18 @@ public class DivergenceMacdStochasticStrategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_rsi, ProcessCandle)
+			.Bind(ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _rsi);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal rsiValue)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
@@ -125,53 +122,61 @@ public class DivergenceMacdStochasticStrategy : Strategy
 			_slowEma = close * _slowMultiplier + _slowEma * (1 - _slowMultiplier);
 		}
 
-		if (_barCount < MacdSlow || !_rsi.IsFormed)
+		if (_barCount < MacdSlow)
 			return;
 
 		var macdLine = _fastEma - _slowEma;
 
-		_macdHistory.Enqueue(macdLine);
-		_priceHistory.Enqueue(close);
-		while (_macdHistory.Count > DivergenceLookback)
-		{
-			_macdHistory.Dequeue();
-			_priceHistory.Dequeue();
-		}
+		_macdWindow[_windowIndex] = macdLine;
+		_priceWindow[_windowIndex] = close;
+		_windowIndex = (_windowIndex + 1) % DivergenceLookback;
+		if (_windowCount < DivergenceLookback)
+			_windowCount++;
 
-		if (_macdHistory.Count < DivergenceLookback)
+		if (_windowCount < DivergenceLookback)
 			return;
 
 		var volume = Volume;
 		if (volume <= 0)
 			volume = 1;
 
-		var macdArr = _macdHistory.ToArray();
-		var priceArr = _priceHistory.ToArray();
-		var oldMacd = macdArr[0];
-		var newMacd = macdArr[macdArr.Length - 1];
-		var oldPrice = priceArr[0];
-		var newPrice = priceArr[priceArr.Length - 1];
+		var oldestIndex = _windowIndex;
+		var newestIndex = (_windowIndex + DivergenceLookback - 1) % DivergenceLookback;
+		var oldMacd = _macdWindow[oldestIndex];
+		var newMacd = _macdWindow[newestIndex];
+		var oldPrice = _priceWindow[oldestIndex];
+		var newPrice = _priceWindow[newestIndex];
 
-		// Bullish divergence: price makes lower low but MACD makes higher low + RSI oversold
-		var bullishDiv = newPrice < oldPrice && newMacd > oldMacd && rsiValue < 40;
-		// Bearish divergence: price makes higher high but MACD makes lower high + RSI overbought
-		var bearishDiv = newPrice > oldPrice && newMacd < oldMacd && rsiValue > 60;
+		var minPriceMove = oldPrice * 0.005m;
+		// Bullish divergence: price makes lower low but MACD makes higher low.
+		var bullishDiv = newPrice < oldPrice - minPriceMove && newMacd > oldMacd;
+		// Bearish divergence: price makes higher high but MACD makes lower high.
+		var bearishDiv = newPrice > oldPrice + minPriceMove && newMacd < oldMacd;
 
 		if (bullishDiv)
 		{
-			if (Position < 0)
-				BuyMarket(Math.Abs(Position));
-
 			if (Position <= 0)
-				BuyMarket(volume);
+				BuyMarket(Position < 0 ? Math.Abs(Position) + volume : volume);
 		}
 		else if (bearishDiv)
 		{
-			if (Position > 0)
-				SellMarket(Position);
-
 			if (Position >= 0)
-				SellMarket(volume);
+				SellMarket(Position > 0 ? Math.Abs(Position) + volume : volume);
 		}
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		_fastEma = 0;
+		_slowEma = 0;
+		_emaInitialized = false;
+		_barCount = 0;
+		_fastMultiplier = 0;
+		_slowMultiplier = 0;
+		_windowCount = 0;
+		_windowIndex = 0;
+
+		base.OnReseted();
 	}
 }

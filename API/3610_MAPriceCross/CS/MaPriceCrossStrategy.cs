@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 
 using Ecng.Common;
 
@@ -19,8 +18,9 @@ public class MaPriceCrossStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _maPeriod;
 
-	private SimpleMovingAverage _sma;
+	private ExponentialMovingAverage _sma;
 	private decimal? _prevAverage;
+	private decimal? _prevClose;
 
 	public DataType CandleType
 	{
@@ -36,10 +36,10 @@ public class MaPriceCrossStrategy : Strategy
 
 	public MaPriceCrossStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for MA cross detection", "General");
 
-		_maPeriod = Param(nameof(MaPeriod), 160)
+		_maPeriod = Param(nameof(MaPeriod), 100)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "SMA period", "Indicators");
 	}
@@ -48,8 +48,9 @@ public class MaPriceCrossStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_sma = new SimpleMovingAverage { Length = MaPeriod };
+		_sma = new ExponentialMovingAverage { Length = MaPeriod };
 		_prevAverage = null;
+		_prevClose = null;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -73,12 +74,14 @@ public class MaPriceCrossStrategy : Strategy
 		if (!_sma.IsFormed)
 		{
 			_prevAverage = smaValue;
+			_prevClose = candle.ClosePrice;
 			return;
 		}
 
-		if (_prevAverage is null)
+		if (_prevAverage is null || _prevClose is null)
 		{
 			_prevAverage = smaValue;
+			_prevClose = candle.ClosePrice;
 			return;
 		}
 
@@ -88,27 +91,32 @@ public class MaPriceCrossStrategy : Strategy
 			volume = 1;
 
 		// MA was below price, now crosses above -> sell signal (price goes under MA)
-		var sellSignal = _prevAverage.Value < close && smaValue > close;
+		var sellSignal = _prevClose.Value >= _prevAverage.Value && close < smaValue;
 		// MA was above price, now crosses below -> buy signal (price goes above MA)
-		var buySignal = _prevAverage.Value > close && smaValue < close;
+		var buySignal = _prevClose.Value <= _prevAverage.Value && close > smaValue;
 
 		if (buySignal)
 		{
-			if (Position < 0)
-				BuyMarket(Math.Abs(Position));
-
 			if (Position <= 0)
-				BuyMarket(volume);
+				BuyMarket(Position < 0 ? Math.Abs(Position) + volume : volume);
 		}
 		else if (sellSignal)
 		{
-			if (Position > 0)
-				SellMarket(Position);
-
 			if (Position >= 0)
-				SellMarket(volume);
+				SellMarket(Position > 0 ? Math.Abs(Position) + volume : volume);
 		}
 
 		_prevAverage = smaValue;
+		_prevClose = close;
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		_sma = null;
+		_prevAverage = null;
+		_prevClose = null;
+
+		base.OnReseted();
 	}
 }

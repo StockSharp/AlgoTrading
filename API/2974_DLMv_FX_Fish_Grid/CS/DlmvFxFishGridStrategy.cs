@@ -33,10 +33,10 @@ public class DlmvFxFishGridStrategy : Strategy
 
 	public DlmvFxFishGridStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe", "General");
 
-		_period = Param(nameof(Period), 10)
+		_period = Param(nameof(Period), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Period", "Lookback period for high/low range", "Indicators");
 	}
@@ -44,6 +44,14 @@ public class DlmvFxFishGridStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFish = null;
+		_prevValue = 0m;
 	}
 
 	protected override void OnStarted2(DateTime time)
@@ -73,6 +81,9 @@ public class DlmvFxFishGridStrategy : Strategy
 	private void ProcessCandle(ICandleMessage candle, decimal high, decimal low)
 	{
 		if (candle.State != CandleStates.Finished)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		var range = high - low;

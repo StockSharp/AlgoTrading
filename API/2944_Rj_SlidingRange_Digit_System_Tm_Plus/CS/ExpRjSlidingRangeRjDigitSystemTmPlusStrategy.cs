@@ -34,7 +34,7 @@ public class ExpRjSlidingRangeRjDigitSystemTmPlusStrategy : Strategy
 
 	public ExpRjSlidingRangeRjDigitSystemTmPlusStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe", "General");
 
 		_period = Param(nameof(Period), 10)
@@ -45,6 +45,14 @@ public class ExpRjSlidingRangeRjDigitSystemTmPlusStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevUpper = null;
+		_prevLower = null;
 	}
 
 	protected override void OnStarted2(DateTime time)
@@ -76,6 +84,13 @@ public class ExpRjSlidingRangeRjDigitSystemTmPlusStrategy : Strategy
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+		{
+			_prevUpper = upper;
+			_prevLower = lower;
+			return;
+		}
 
 		var close = candle.ClosePrice;
 

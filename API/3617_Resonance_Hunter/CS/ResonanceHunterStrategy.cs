@@ -65,14 +65,14 @@ public class ResonanceHunterStrategy : Strategy
 
 	public ResonanceHunterStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe", "General");
 
-		_fastKPeriod = Param(nameof(FastKPeriod), 5)
+		_fastKPeriod = Param(nameof(FastKPeriod), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast K Period", "Fast stochastic K period", "Indicators");
 
-		_slowKPeriod = Param(nameof(SlowKPeriod), 14)
+		_slowKPeriod = Param(nameof(SlowKPeriod), 21)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow K Period", "Slow stochastic K period", "Indicators");
 
@@ -149,12 +149,12 @@ public class ResonanceHunterStrategy : Strategy
 		// Resonance buy: both stochastics cross above their D lines
 		var fastBullCross = _prevFastK.Value < _prevFastD.Value && fastK.Value > fastD.Value;
 		var slowBullCross = _prevSlowK.Value < _prevSlowD.Value && slowK.Value > slowD.Value;
-		var bothOversold = fastK.Value < 50 && slowK.Value < 50;
+		var bothOversold = fastK.Value < 30 && slowK.Value < 30;
 
 		// Resonance sell: both stochastics cross below their D lines
 		var fastBearCross = _prevFastK.Value > _prevFastD.Value && fastK.Value < fastD.Value;
 		var slowBearCross = _prevSlowK.Value > _prevSlowD.Value && slowK.Value < slowD.Value;
-		var bothOverbought = fastK.Value > 50 && slowK.Value > 50;
+		var bothOverbought = fastK.Value > 70 && slowK.Value > 70;
 
 		// Buy when both signals confirm or fast crosses with slow already bullish
 		var buySignal = (fastBullCross && (slowBullCross || slowK.Value > slowD.Value)) && bothOversold;
@@ -163,17 +163,13 @@ public class ResonanceHunterStrategy : Strategy
 
 		if (buySignal)
 		{
-			if (Position < 0)
-				BuyMarket(Math.Abs(Position));
 			if (Position <= 0)
-				BuyMarket(volume);
+				BuyMarket(Position < 0 ? Math.Abs(Position) + volume : volume);
 		}
 		else if (sellSignal)
 		{
-			if (Position > 0)
-				SellMarket(Position);
 			if (Position >= 0)
-				SellMarket(volume);
+				SellMarket(Position > 0 ? Math.Abs(Position) + volume : volume);
 		}
 
 		_prevFastK = fastK;
@@ -224,5 +220,25 @@ public class ResonanceHunterStrategy : Strategy
 		}
 
 		return sum / n;
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		Array.Clear(_highs1);
+		Array.Clear(_lows1);
+		Array.Clear(_highs2);
+		Array.Clear(_lows2);
+		Array.Clear(_fastKHistory);
+		Array.Clear(_slowKHistory);
+		_barCount = 0;
+		_prevFastK = null;
+		_prevSlowK = null;
+		_prevFastD = null;
+		_prevSlowD = null;
+		_fastKCount = 0;
+		_slowKCount = 0;
+
+		base.OnReseted();
 	}
 }

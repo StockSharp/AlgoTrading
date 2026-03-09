@@ -3,221 +3,101 @@ namespace StockSharp.Samples.Strategies;
 using System;
 using System.Collections.Generic;
 
-using Ecng.Common;
-
+using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
+using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo.Candles;
-
-/// <summary>
-/// Simplified Skyscraper Fix + Color AML strategy using ATR-based channel and fractal dimension smoothing.
-/// </summary>
 public class ExpSkyscraperFixColorAmlMmrecStrategy : Strategy
 {
-	// Skyscraper Fix channel
-	private readonly List<decimal> _trueRanges = new();
-	private decimal _upperBand;
-	private decimal _lowerBand;
-	private int _trend;
-	private int _prevTrend;
+	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _trendPeriod;
+	private readonly StrategyParam<int> _filterPeriod;
+	private readonly StrategyParam<decimal> _upperLevel;
+	private readonly StrategyParam<decimal> _lowerLevel;
 
-	// Color AML
-	private readonly List<ICandleMessage> _candles = new();
-	private readonly List<decimal> _smoothHistory = new();
-	private decimal? _previousAml;
-	private int? _previousColor;
-	private int _amlColor;
+	private decimal? _previousTrend;
+	private decimal? _previousClose;
 
-	private decimal? _entryPrice;
-	private int _barCount;
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int TrendPeriod { get => _trendPeriod.Value; set => _trendPeriod.Value = value; }
+	public int FilterPeriod { get => _filterPeriod.Value; set => _filterPeriod.Value = value; }
+	public decimal UpperLevel { get => _upperLevel.Value; set => _upperLevel.Value = value; }
+	public decimal LowerLevel { get => _lowerLevel.Value; set => _lowerLevel.Value = value; }
+
+	public ExpSkyscraperFixColorAmlMmrecStrategy()
+	{
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General");
+		_trendPeriod = Param(nameof(TrendPeriod), 18).SetGreaterThanZero().SetDisplay("Trend Period", "Trend WMA period", "Indicators");
+		_filterPeriod = Param(nameof(FilterPeriod), 12).SetGreaterThanZero().SetDisplay("Filter Period", "DeMarker period", "Indicators");
+		_upperLevel = Param(nameof(UpperLevel), 0.55m).SetDisplay("Upper Level", "Buy filter level", "Signals");
+		_lowerLevel = Param(nameof(LowerLevel), 0.45m).SetDisplay("Lower Level", "Sell filter level", "Signals");
+	}
+
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities() => [(Security, CandleType)];
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_previousTrend = null;
+		_previousClose = null;
+	}
 
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+		_previousTrend = null;
+		_previousClose = null;
 
-		var subscription = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
-		subscription
-			.Bind(ProcessCandle)
-			.Start();
+		var trend = new WeightedMovingAverage { Length = TrendPeriod };
+		var filter = new DeMarker { Length = FilterPeriod };
+		var subscription = SubscribeCandles(CandleType);
+
+		subscription.Bind(trend, filter, ProcessCandle).Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal trendValue, decimal filterValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		_barCount++;
+		var previousClose = _previousClose;
+		var previousTrend = _previousTrend;
 
-		// ---- Skyscraper Fix (ATR channel) ----
-		var tr = candle.HighPrice - candle.LowPrice;
-		_trueRanges.Add(tr);
-		while (_trueRanges.Count > 10)
-			_trueRanges.RemoveAt(0);
+		_previousClose = candle.ClosePrice;
+		_previousTrend = trendValue;
 
-		if (_trueRanges.Count >= 10)
-		{
-			decimal atrSum = 0;
-			foreach (var r in _trueRanges) atrSum += r;
-			var atr = atrSum / _trueRanges.Count;
-			var step = atr * 0.9m;
-
-			var mid = (candle.HighPrice + candle.LowPrice) / 2m;
-			var newUpper = mid + step;
-			var newLower = mid - step;
-
-			if (_barCount > 10)
-			{
-				if (newUpper < _upperBand || candle.ClosePrice > _upperBand)
-					_upperBand = newUpper;
-				if (newLower > _lowerBand || candle.ClosePrice < _lowerBand)
-					_lowerBand = newLower;
-			}
-			else
-			{
-				_upperBand = newUpper;
-				_lowerBand = newLower;
-			}
-
-			_prevTrend = _trend;
-			if (candle.ClosePrice > _upperBand)
-				_trend = 1;
-			else if (candle.ClosePrice < _lowerBand)
-				_trend = -1;
-		}
-
-		// ---- Color AML (fractal dimension adaptive MA) ----
-		_candles.Add(candle);
-		while (_candles.Count > 64)
-			_candles.RemoveAt(0);
-
-		if (_candles.Count >= 12)
-		{
-			var fractal = 6;
-			var lag = 7;
-			var count = _candles.Count;
-
-			var range1 = GetRange(count - fractal, fractal);
-			var range2 = GetRange(count - 2 * fractal, fractal);
-			var range3 = GetRange(count - 2 * fractal, 2 * fractal);
-
-			var dim = 0d;
-			if (range1 + range2 > 0m && range3 > 0m)
-				dim = (Math.Log((double)(range1 + range2)) - Math.Log((double)range3)) * 1.44269504088896d;
-
-			var alpha = Math.Exp(-lag * (dim - 1d));
-			if (alpha > 1d) alpha = 1d;
-			if (alpha < 0.01d) alpha = 0.01d;
-
-			var price = (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m;
-			var prevSmooth = _smoothHistory.Count > 0 ? _smoothHistory[^1] : price;
-			var smooth = (decimal)alpha * price + (1m - (decimal)alpha) * prevSmooth;
-
-			_smoothHistory.Add(smooth);
-			while (_smoothHistory.Count > lag + 2)
-				_smoothHistory.RemoveAt(0);
-
-			if (_smoothHistory.Count > lag)
-			{
-				var lagIdx = _smoothHistory.Count - 1 - lag;
-				var smoothLag = _smoothHistory[lagIdx];
-				var pStep = Security?.PriceStep ?? 1m;
-				var threshold = lag * lag * pStep;
-
-				var aml = Math.Abs(smooth - smoothLag) >= threshold
-					? smooth
-					: _previousAml ?? smooth;
-
-				if (_previousAml.HasValue)
-				{
-					if (aml > _previousAml) _amlColor = 2;
-					else if (aml < _previousAml) _amlColor = 0;
-				}
-
-				_previousAml = aml;
-				_previousColor = _amlColor;
-			}
-		}
-
-		// ---- Risk management ----
-		if (_entryPrice.HasValue && Position != 0)
-		{
-			var pStep = Security?.PriceStep ?? 1m;
-			if (pStep <= 0) pStep = 1m;
-			var stopDist = 1000 * pStep;
-			var takeDist = 2000 * pStep;
-
-			if (Position > 0)
-			{
-				if (candle.ClosePrice <= _entryPrice.Value - stopDist || candle.ClosePrice >= _entryPrice.Value + takeDist)
-				{
-					SellMarket();
-					_entryPrice = null;
-					return;
-				}
-			}
-			else if (Position < 0)
-			{
-				if (candle.ClosePrice >= _entryPrice.Value + stopDist || candle.ClosePrice <= _entryPrice.Value - takeDist)
-				{
-					BuyMarket();
-					_entryPrice = null;
-					return;
-				}
-			}
-		}
-
-		if (_barCount < 15)
+		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// ---- Combined signals ----
-		var skyBuy = _trend > 0 && _prevTrend <= 0;
-		var skySell = _trend < 0 && _prevTrend >= 0;
-		var amlBuy = _amlColor == 2;
-		var amlSell = _amlColor == 0;
+		if (previousClose is null || previousTrend is null)
+			return;
 
-		// Exit
-		if (Position > 0 && (skySell || amlSell))
-		{
-			SellMarket();
-			_entryPrice = null;
-		}
-		else if (Position < 0 && (skyBuy || amlBuy))
-		{
-			BuyMarket();
-			_entryPrice = null;
-		}
+		var crossedUp = previousClose.Value <= previousTrend.Value && candle.ClosePrice > trendValue;
+		var crossedDown = previousClose.Value >= previousTrend.Value && candle.ClosePrice < trendValue;
+		var buySignal = crossedUp && filterValue >= UpperLevel;
+		var sellSignal = crossedDown && filterValue <= LowerLevel;
 
-		// Entry
-		if (Position == 0)
+		if (buySignal && Position <= 0)
 		{
-			if (skyBuy || amlBuy)
+			if (Position < 0)
 			{
 				BuyMarket();
-				_entryPrice = candle.ClosePrice;
+				return;
 			}
-			else if (skySell || amlSell)
+
+			BuyMarket();
+		}
+		else if (sellSignal && Position >= 0)
+		{
+			if (Position > 0)
 			{
 				SellMarket();
-				_entryPrice = candle.ClosePrice;
+				return;
 			}
+
+			SellMarket();
 		}
-	}
-
-	private decimal GetRange(int start, int length)
-	{
-		if (start < 0) start = 0;
-		var end = Math.Min(start + length, _candles.Count);
-		var max = decimal.MinValue;
-		var min = decimal.MaxValue;
-
-		for (var i = start; i < end; i++)
-		{
-			if (_candles[i].HighPrice > max) max = _candles[i].HighPrice;
-			if (_candles[i].LowPrice < min) min = _candles[i].LowPrice;
-		}
-
-		if (max == decimal.MinValue || min == decimal.MaxValue) return 0m;
-		return max - min;
 	}
 }

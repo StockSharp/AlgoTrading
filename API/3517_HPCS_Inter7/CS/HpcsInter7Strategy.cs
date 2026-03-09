@@ -15,6 +15,7 @@ public class HpcsInter7Strategy : Strategy
 	private readonly StrategyParam<int> _bollingerLength;
 	private readonly StrategyParam<decimal> _bollingerDeviation;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<decimal> _bandPercent;
 
 	private decimal? _prevClose;
 	private decimal? _prevLower;
@@ -33,8 +34,12 @@ public class HpcsInter7Strategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Bollinger Deviation", "Standard deviation multiplier for the Bollinger Bands", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame used for Bollinger Bands", "General");
+
+		_bandPercent = Param(nameof(BandPercent), 0.01m)
+			.SetGreaterThanZero()
+			.SetDisplay("Band Percent", "MA percentage band width", "Indicators");
 	}
 
 	/// <summary>
@@ -64,20 +69,34 @@ public class HpcsInter7Strategy : Strategy
 		set => _candleType.Value = value;
 	}
 
+	public decimal BandPercent
+	{
+		get => _bandPercent.Value;
+		set => _bandPercent.Value = value;
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevClose = null;
+		_prevLower = null;
+		_prevUpper = null;
+	}
+
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+		_prevClose = null;
+		_prevLower = null;
+		_prevUpper = null;
 
-		var bollinger = new BollingerBands
-		{
-			Length = BollingerLength,
-			Width = BollingerDeviation
-		};
+		var bollinger = new ExponentialMovingAverage { Length = BollingerLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(bollinger, ProcessCandle)
+			.Bind(bollinger, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -89,7 +108,7 @@ public class HpcsInter7Strategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue value)
+	private void ProcessCandle(ICandleMessage candle, decimal middle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
@@ -97,11 +116,8 @@ public class HpcsInter7Strategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var bb = (BollingerBandsValue)value;
-		if (bb.UpBand is not decimal upper ||
-			bb.LowBand is not decimal lower ||
-			bb.MovingAverage is not decimal middle)
-			return;
+		var upper = middle * (1 + BandPercent);
+		var lower = middle * (1 - BandPercent);
 
 		if (_prevClose.HasValue && _prevLower.HasValue && _prevUpper.HasValue)
 		{

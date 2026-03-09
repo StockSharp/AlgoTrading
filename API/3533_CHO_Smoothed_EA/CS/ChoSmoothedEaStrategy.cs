@@ -30,14 +30,14 @@ public class ChoSmoothedEaStrategy : Strategy
 	/// </summary>
 	public ChoSmoothedEaStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for signal calculations", "General");
 
-		_cciPeriod = Param(nameof(CciPeriod), 14)
+		_cciPeriod = Param(nameof(CciPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("CCI Period", "Period for CCI oscillator", "Indicator");
 
-		_maPeriod = Param(nameof(MaPeriod), 5)
+		_maPeriod = Param(nameof(MaPeriod), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("Signal MA Period", "Period of smoothing moving average on CCI", "Indicator");
 	}
@@ -113,9 +113,10 @@ public class ChoSmoothedEaStrategy : Strategy
 
 		// Calculate signal line (SMA of CCI)
 		var sum = 0m;
-		foreach (var v in _cciHistory)
+		var history = _cciHistory.ToArray();
+		foreach (var v in history)
 			sum += v;
-		var signalValue = sum / MaPeriod;
+		var signalValue = sum / history.Length;
 
 		if (_prevCci is null || _prevSignal is null)
 		{
@@ -131,24 +132,31 @@ public class ChoSmoothedEaStrategy : Strategy
 		if (volume <= 0)
 			volume = 1;
 
-		if (crossUp)
-		{
-			if (Position < 0)
-				BuyMarket(Math.Abs(Position));
+		var minSpread = 25m;
 
+		if (crossUp && Math.Abs(cciValue - signalValue) >= minSpread)
+		{
 			if (Position <= 0)
-				BuyMarket(volume);
+				BuyMarket(Position < 0 ? Math.Abs(Position) + volume : volume);
 		}
-		else if (crossDown)
+		else if (crossDown && Math.Abs(cciValue - signalValue) >= minSpread)
 		{
-			if (Position > 0)
-				SellMarket(Math.Abs(Position));
-
 			if (Position >= 0)
-				SellMarket(volume);
+				SellMarket(Position > 0 ? Math.Abs(Position) + volume : volume);
 		}
 
 		_prevCci = cciValue;
 		_prevSignal = signalValue;
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		_prevCci = null;
+		_prevSignal = null;
+		_cci = null;
+		_cciHistory.Clear();
+
+		base.OnReseted();
 	}
 }

@@ -25,12 +25,20 @@ public class TrendManagerTmPlusStrategy : Strategy
 
 	public TrendManagerTmPlusStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General");
 		_fastLength = Param(nameof(FastLength), 10).SetGreaterThanZero().SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
 		_slowLength = Param(nameof(SlowLength), 30).SetGreaterThanZero().SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities() => [(Security, CandleType)];
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFast = null;
+		_prevSlow = null;
+	}
 
 	protected override void OnStarted2(DateTime time)
 	{
@@ -47,6 +55,7 @@ public class TrendManagerTmPlusStrategy : Strategy
 	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow)
 	{
 		if (candle.State != CandleStates.Finished) return;
+		if (!IsFormedAndOnlineAndAllowTrading()) { _prevFast = fast; _prevSlow = slow; return; }
 		if (_prevFast == null || _prevSlow == null) { _prevFast = fast; _prevSlow = slow; return; }
 		var prevAbove = _prevFast.Value > _prevSlow.Value;
 		var currAbove = fast > slow;

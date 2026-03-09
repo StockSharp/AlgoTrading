@@ -142,7 +142,7 @@ public class MatrixMachineLearningStrategy : Strategy
 			
 			.SetOptimize(5, 20, 1);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles requested from the market data source.", "Data");
 
 		_enableDebugLog = Param(nameof(EnableDebugLog), false)
@@ -197,33 +197,35 @@ public class MatrixMachineLearningStrategy : Strategy
 		if (_closes.Count < ForwardDepth + 2)
 			return;
 
-		TrainNetwork();
+		var closes = _closes.ToArray();
 
-		var forecast = Forecast();
+		TrainNetwork(closes);
+
+		var forecast = Forecast(closes);
 		if (forecast == null || forecast.Length == 0)
 			return;
 
-		var direction = forecast[0];
+		var direction = forecast.Sum();
 		if (direction > 0 && Position <= 0m)
 		{
-			BuyMarket();
+			BuyMarket(Position < 0m ? Math.Abs(Position) + 1 : 1);
 		}
 		else if (direction < 0 && Position >= 0m)
 		{
-			SellMarket();
+			SellMarket(Position > 0m ? Math.Abs(Position) + 1 : 1);
 		}
 	}
 
-	private void TrainNetwork()
+	private void TrainNetwork(IReadOnlyList<decimal> closes)
 	{
-		var historyCount = _closes.Count;
+		var historyCount = closes.Count;
 		var forwardCount = Math.Min(ForwardDepth, historyCount - 1);
 		var trainingCount = historyCount - forwardCount;
 
 		if (trainingCount <= PredictorLength + ForecastLength)
 			return;
 
-		var trainingData = BuildBinaryDiff(0, trainingCount);
+		var trainingData = BuildBinaryDiff(closes, 0, trainingCount);
 		if (trainingData.Length < PredictorLength + ForecastLength)
 			return;
 
@@ -235,18 +237,18 @@ public class MatrixMachineLearningStrategy : Strategy
 
 		EvaluateWeights(trainingData, "Backtest evaluation");
 
-		var forwardData = BuildBinaryDiff(trainingCount - 1, forwardCount + 1);
+		var forwardData = BuildBinaryDiff(closes, trainingCount - 1, forwardCount + 1);
 		if (forwardData.Length >= PredictorLength + ForecastLength)
 			EvaluateWeights(forwardData, "Forward evaluation");
 	}
 
-	private double[] Forecast()
+	private double[] Forecast(IReadOnlyList<decimal> closes)
 	{
 		var weights = _weights;
 		if (weights == null)
 			return null;
 
-		var pattern = BuildCurrentPattern();
+		var pattern = BuildCurrentPattern(closes);
 		if (pattern == null)
 			return null;
 
@@ -261,13 +263,13 @@ public class MatrixMachineLearningStrategy : Strategy
 		return forecast;
 	}
 
-	private double[] BuildBinaryDiff(int startIndex, int length)
+	private static double[] BuildBinaryDiff(IReadOnlyList<decimal> closes, int startIndex, int length)
 	{
 		if (length <= 1 || startIndex < 0)
 			return Array.Empty<double>();
 
-		if (startIndex + length > _closes.Count)
-			length = _closes.Count - startIndex;
+		if (startIndex + length > closes.Count)
+			length = closes.Count - startIndex;
 
 		var resultLength = length - 1;
 		if (resultLength <= 0)
@@ -276,8 +278,8 @@ public class MatrixMachineLearningStrategy : Strategy
 		var result = new double[resultLength];
 		for (var i = 0; i < resultLength; i++)
 		{
-			var first = _closes[startIndex + i];
-			var second = _closes[startIndex + i + 1];
+			var first = closes[startIndex + i];
+			var second = closes[startIndex + i + 1];
 			var diff = (double)(second - first);
 			result[i] = diff >= 0 ? 1d : -1d;
 		}
@@ -285,18 +287,18 @@ public class MatrixMachineLearningStrategy : Strategy
 		return result;
 	}
 
-	private double[] BuildCurrentPattern()
+	private double[] BuildCurrentPattern(IReadOnlyList<decimal> closes)
 	{
 		var required = PredictorLength + 1;
-		if (_closes.Count < required)
+		if (closes.Count < required)
 			return null;
 
-		var startIndex = _closes.Count - required;
+		var startIndex = closes.Count - required;
 		var pattern = new double[PredictorLength];
 		for (var i = 0; i < PredictorLength; i++)
 		{
-			var first = _closes[startIndex + i];
-			var second = _closes[startIndex + i + 1];
+			var first = closes[startIndex + i];
+			var second = closes[startIndex + i + 1];
 			var diff = (double)(second - first);
 			pattern[i] = diff >= 0 ? 1d : -1d;
 		}

@@ -23,11 +23,19 @@ public class TpSlTrailingStrategy : Strategy
 
 	public TpSlTrailingStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General");
 		_emaPeriod = Param(nameof(EmaPeriod), 20).SetGreaterThanZero().SetDisplay("EMA Period", "EMA lookback", "Indicators");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities() => [(Security, CandleType)];
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevClose = null;
+		_prevEma = null;
+	}
 
 	protected override void OnStarted2(DateTime time)
 	{
@@ -44,6 +52,7 @@ public class TpSlTrailingStrategy : Strategy
 	{
 		if (candle.State != CandleStates.Finished) return;
 		var close = candle.ClosePrice;
+		if (!IsFormedAndOnlineAndAllowTrading()) { _prevClose = close; _prevEma = emaVal; return; }
 		if (_prevClose == null || _prevEma == null) { _prevClose = close; _prevEma = emaVal; return; }
 		if (_prevClose.Value < _prevEma.Value && close >= emaVal && Position <= 0) { if (Position < 0) BuyMarket(); BuyMarket(); }
 		else if (_prevClose.Value > _prevEma.Value && close <= emaVal && Position >= 0) { if (Position > 0) SellMarket(); SellMarket(); }

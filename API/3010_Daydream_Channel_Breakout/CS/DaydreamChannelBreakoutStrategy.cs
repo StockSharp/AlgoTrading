@@ -23,11 +23,19 @@ public class DaydreamChannelBreakoutStrategy : Strategy
 
 	public DaydreamChannelBreakoutStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General");
 		_channelPeriod = Param(nameof(ChannelPeriod), 25).SetGreaterThanZero().SetDisplay("Channel Period", "Donchian lookback", "Indicators");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities() => [(Security, CandleType)];
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevHigh = null;
+		_prevLow = null;
+	}
 
 	protected override void OnStarted2(DateTime time)
 	{
@@ -44,6 +52,7 @@ public class DaydreamChannelBreakoutStrategy : Strategy
 	private void ProcessCandle(ICandleMessage candle, decimal high, decimal low)
 	{
 		if (candle.State != CandleStates.Finished) return;
+		if (!IsFormedAndOnlineAndAllowTrading()) { _prevHigh = high; _prevLow = low; return; }
 		if (_prevHigh == null || _prevLow == null) { _prevHigh = high; _prevLow = low; return; }
 		var close = candle.ClosePrice;
 		if (close > _prevHigh.Value && Position <= 0) { if (Position < 0) BuyMarket(); BuyMarket(); }

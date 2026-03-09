@@ -30,14 +30,14 @@ public class RsiMaOnRsiFillingStepStrategy : Strategy
 	/// </summary>
 	public RsiMaOnRsiFillingStepStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe used for RSI calculations.", "General");
 
-		_rsiPeriod = Param(nameof(RsiPeriod), 7)
+		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("RSI Period", "Number of bars for the RSI smoothing window.", "Indicators");
 
-		_maPeriod = Param(nameof(MaPeriod), 10)
+		_maPeriod = Param(nameof(MaPeriod), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("MA Period", "Length of the moving average applied to the RSI.", "Indicators");
 	}
@@ -67,6 +67,16 @@ public class RsiMaOnRsiFillingStepStrategy : Strategy
 	{
 		get => _maPeriod.Value;
 		set => _maPeriod.Value = value;
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_previousRsi = null;
+		_previousSignal = null;
+		_rsiHistory.Clear();
+		_rsi = null!;
 	}
 
 	/// <inheritdoc />
@@ -115,7 +125,8 @@ public class RsiMaOnRsiFillingStepStrategy : Strategy
 
 		// Calculate simple moving average of RSI
 		var sum = 0m;
-		foreach (var v in _rsiHistory)
+		var history = _rsiHistory.ToArray();
+		foreach (var v in history)
 			sum += v;
 		var signalValue = sum / MaPeriod;
 
@@ -135,17 +146,11 @@ public class RsiMaOnRsiFillingStepStrategy : Strategy
 
 		if (crossUp)
 		{
-			if (Position < 0)
-				BuyMarket(Math.Abs(Position));
-
 			if (Position <= 0)
 				BuyMarket(volume);
 		}
 		else if (crossDown)
 		{
-			if (Position > 0)
-				SellMarket(Math.Abs(Position));
-
 			if (Position >= 0)
 				SellMarket(volume);
 		}

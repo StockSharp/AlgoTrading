@@ -1,8 +1,8 @@
 using System;
+using System.Collections.Generic;
 
 using Ecng.Common;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -18,9 +18,8 @@ public class SrBreakoutStrategy : Strategy
 	private readonly StrategyParam<int> _lookbackLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private DonchianChannels _donchian;
-	private decimal? _prevUpper;
-	private decimal? _prevLower;
+	private readonly Queue<decimal> _highHistory = new();
+	private readonly Queue<decimal> _lowHistory = new();
 
 	public int LookbackLength
 	{
@@ -40,7 +39,7 @@ public class SrBreakoutStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Lookback", "Number of candles for Donchian channel", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for analysis", "General");
 	}
 
@@ -48,71 +47,105 @@ public class SrBreakoutStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_prevUpper = null;
-		_prevLower = null;
-
-		_donchian = new DonchianChannels { Length = LookbackLength };
+		_highHistory.Clear();
+		_lowHistory.Clear();
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(_donchian, ProcessCandle)
+			.Bind(ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _donchian);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue donchianValue)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_donchian.IsFormed)
-			return;
-
-		if (donchianValue is not IDonchianChannelsValue dcv)
-			return;
-
-		var upper = dcv.UpperBand;
-		var lower = dcv.LowerBand;
-		var close = candle.ClosePrice;
-
-		if (_prevUpper is null || _prevLower is null)
+		if (_highHistory.Count < LookbackLength)
 		{
-			_prevUpper = upper;
-			_prevLower = lower;
+			EnqueueCandle(candle);
 			return;
 		}
+
+		var highs = _highHistory.ToArray();
+		var lows = _lowHistory.ToArray();
+		var upper = GetMax(highs);
+		var lower = GetMin(lows);
+		var close = candle.ClosePrice;
+		var range = upper - lower;
 
 		var volume = Volume;
 		if (volume <= 0)
 			volume = 1;
+		var breakoutPadding = range * 0.05m;
 
 		// Break above resistance
-		if (close > _prevUpper.Value)
+		if (close > upper + breakoutPadding)
 		{
-			if (Position < 0)
-				BuyMarket(Math.Abs(Position));
-
 			if (Position <= 0)
-				BuyMarket(volume);
+				BuyMarket(Position < 0 ? Math.Abs(Position) + volume : volume);
 		}
 		// Break below support
-		else if (close < _prevLower.Value)
+		else if (close < lower - breakoutPadding)
 		{
-			if (Position > 0)
-				SellMarket(Position);
-
 			if (Position >= 0)
-				SellMarket(volume);
+				SellMarket(Position > 0 ? Math.Abs(Position) + volume : volume);
 		}
 
-		_prevUpper = upper;
-		_prevLower = lower;
+		EnqueueCandle(candle);
+	}
+
+	private void EnqueueCandle(ICandleMessage candle)
+	{
+		_highHistory.Enqueue(candle.HighPrice);
+		_lowHistory.Enqueue(candle.LowPrice);
+
+		if (_highHistory.Count > LookbackLength)
+		{
+			_highHistory.Dequeue();
+			_lowHistory.Dequeue();
+		}
+	}
+
+	private static decimal GetMax(IEnumerable<decimal> values)
+	{
+		var max = decimal.MinValue;
+
+		foreach (var value in values)
+		{
+			if (value > max)
+				max = value;
+		}
+
+		return max;
+	}
+
+	private static decimal GetMin(IEnumerable<decimal> values)
+	{
+		var min = decimal.MaxValue;
+
+		foreach (var value in values)
+		{
+			if (value < min)
+				min = value;
+		}
+
+		return min;
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		_highHistory.Clear();
+		_lowHistory.Clear();
+
+		base.OnReseted();
 	}
 }

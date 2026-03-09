@@ -49,17 +49,17 @@ public class XpTradeManagerGridStrategy : Strategy
 
 	public XpTradeManagerGridStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for signal generation", "General");
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "RSI period", "Indicators");
 
-		_rsiUpper = Param(nameof(RsiUpper), 65m)
+		_rsiUpper = Param(nameof(RsiUpper), 70m)
 			.SetDisplay("RSI Upper", "RSI threshold for sell", "Signals");
 
-		_rsiLower = Param(nameof(RsiLower), 35m)
+		_rsiLower = Param(nameof(RsiLower), 30m)
 			.SetDisplay("RSI Lower", "RSI threshold for buy", "Signals");
 	}
 
@@ -112,21 +112,24 @@ public class XpTradeManagerGridStrategy : Strategy
 
 		if (crossDown)
 		{
-			if (Position < 0)
-				BuyMarket(Math.Abs(Position));
-
 			if (Position <= 0)
-				BuyMarket(volume);
+				BuyMarket(Position < 0 ? Math.Abs(Position) + volume : volume);
 		}
 		else if (crossUp)
 		{
-			if (Position > 0)
-				SellMarket(Position);
-
 			if (Position >= 0)
-				SellMarket(volume);
+				SellMarket(Position > 0 ? Math.Abs(Position) + volume : volume);
 		}
 
 		_prevRsi = rsiValue;
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		_rsi = null;
+		_prevRsi = null;
+
+		base.OnReseted();
 	}
 }

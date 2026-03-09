@@ -23,11 +23,19 @@ public class AmaTraderStrategy : Strategy
 
 	public AmaTraderStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General");
 		_amaPeriod = Param(nameof(AmaPeriod), 10).SetGreaterThanZero().SetDisplay("AMA Period", "Kaufman AMA period", "Indicators");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities() => [(Security, CandleType)];
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevClose = null;
+		_prevAma = null;
+	}
 
 	protected override void OnStarted2(DateTime time)
 	{
@@ -44,6 +52,7 @@ public class AmaTraderStrategy : Strategy
 	{
 		if (candle.State != CandleStates.Finished) return;
 		var close = candle.ClosePrice;
+		if (!IsFormedAndOnlineAndAllowTrading()) { _prevClose = close; _prevAma = amaVal; return; }
 		if (_prevClose == null || _prevAma == null) { _prevClose = close; _prevAma = amaVal; return; }
 		if (_prevClose.Value <= _prevAma.Value && close > amaVal && Position <= 0) { if (Position < 0) BuyMarket(); BuyMarket(); }
 		else if (_prevClose.Value >= _prevAma.Value && close < amaVal && Position >= 0) { if (Position > 0) SellMarket(); SellMarket(); }

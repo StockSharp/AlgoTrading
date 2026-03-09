@@ -34,7 +34,7 @@ public class WajdyssIchimokuCandleMmrecStrategy : Strategy
 
 	public WajdyssIchimokuCandleMmrecStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe", "General");
 
 		_period = Param(nameof(Period), 26)
@@ -47,6 +47,14 @@ public class WajdyssIchimokuCandleMmrecStrategy : Strategy
 		return [(Security, CandleType)];
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevMid = null;
+		_prevClose = null;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
@@ -54,30 +62,34 @@ public class WajdyssIchimokuCandleMmrecStrategy : Strategy
 		_prevMid = null;
 		_prevClose = null;
 
-		var highest = new Highest { Length = Period };
-		var lowest = new Lowest { Length = Period };
+		var middle = new SimpleMovingAverage { Length = Period };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(highest, lowest, ProcessCandle)
+			.Bind(middle, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, highest);
-			DrawIndicator(area, lowest);
+			DrawIndicator(area, middle);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal high, decimal low)
+	private void ProcessCandle(ICandleMessage candle, decimal mid)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var mid = (high + low) / 2;
+		if (!IsFormedAndOnlineAndAllowTrading())
+		{
+			_prevMid = mid;
+			_prevClose = candle.ClosePrice;
+			return;
+		}
+
 		var close = candle.ClosePrice;
 
 		if (_prevMid == null || _prevClose == null)

@@ -25,12 +25,20 @@ public class ParaRetraceStrategy : Strategy
 
 	public ParaRetraceStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General");
 		_fastPeriod = Param(nameof(FastPeriod), 7).SetGreaterThanZero().SetDisplay("Fast WMA", "Fast WMA period", "Indicators");
 		_slowPeriod = Param(nameof(SlowPeriod), 21).SetGreaterThanZero().SetDisplay("Slow WMA", "Slow WMA period", "Indicators");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities() => [(Security, CandleType)];
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFast = null;
+		_prevSlow = null;
+	}
 
 	protected override void OnStarted2(DateTime time)
 	{
@@ -47,6 +55,7 @@ public class ParaRetraceStrategy : Strategy
 	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow)
 	{
 		if (candle.State != CandleStates.Finished) return;
+		if (!IsFormedAndOnlineAndAllowTrading()) { _prevFast = fast; _prevSlow = slow; return; }
 		if (_prevFast == null || _prevSlow == null) { _prevFast = fast; _prevSlow = slow; return; }
 		var prevAbove = _prevFast.Value > _prevSlow.Value;
 		var currAbove = fast > slow;

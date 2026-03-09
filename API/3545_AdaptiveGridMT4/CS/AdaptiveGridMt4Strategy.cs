@@ -54,15 +54,15 @@ public class AdaptiveGridMt4Strategy : Strategy
 
 	public AdaptiveGridMt4Strategy()
 	{
-		_atrPeriod = Param(nameof(AtrPeriod), 14)
+		_atrPeriod = Param(nameof(AtrPeriod), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("ATR Period", "Number of candles used for ATR smoothing", "Indicators");
 
-		_breakoutMultiplier = Param(nameof(BreakoutMultiplier), 1.0m)
+		_breakoutMultiplier = Param(nameof(BreakoutMultiplier), 2.5m)
 		.SetGreaterThanZero()
 		.SetDisplay("Breakout Multiplier", "ATR multiplier for breakout threshold", "Grid");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
 		.SetDisplay("Candle Type", "Candle type used to trigger grid recalculation", "General");
 	}
 
@@ -150,25 +150,31 @@ public class AdaptiveGridMt4Strategy : Strategy
 		// Breakout up
 		if (candle.ClosePrice > prevClose + threshold && Position <= 0)
 		{
-			if (Position < 0)
-				BuyMarket(Math.Abs(Position));
-
-			BuyMarket(volume);
-			_stopPrice = candle.ClosePrice - atrValue * 2;
-			_takeProfitPrice = candle.ClosePrice + atrValue * 2.5m;
+			BuyMarket(Position < 0 ? Math.Abs(Position) + volume : volume);
+			_stopPrice = candle.ClosePrice - atrValue * 3;
+			_takeProfitPrice = candle.ClosePrice + atrValue * 4;
 		}
 		// Breakout down
 		else if (candle.ClosePrice < prevClose - threshold && Position >= 0)
 		{
-			if (Position > 0)
-				SellMarket(Math.Abs(Position));
-
-			SellMarket(volume);
-			_stopPrice = candle.ClosePrice + atrValue * 2;
-			_takeProfitPrice = candle.ClosePrice - atrValue * 2.5m;
+			SellMarket(Position > 0 ? Math.Abs(Position) + volume : volume);
+			_stopPrice = candle.ClosePrice + atrValue * 3;
+			_takeProfitPrice = candle.ClosePrice - atrValue * 4;
 		}
 
 		_prevClose = candle.ClosePrice;
 		_prevAtr = atrValue;
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		_atr = null;
+		_prevClose = null;
+		_prevAtr = null;
+		_stopPrice = 0;
+		_takeProfitPrice = 0;
+
+		base.OnReseted();
 	}
 }

@@ -22,11 +22,18 @@ public class BullsBearsPowerAverageStrategy : Strategy
 
 	public BullsBearsPowerAverageStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General");
 		_emaPeriod = Param(nameof(EmaPeriod), 13).SetGreaterThanZero().SetDisplay("EMA Period", "EMA lookback for power calc", "Indicators");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities() => [(Security, CandleType)];
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevPower = null;
+	}
 
 	protected override void OnStarted2(DateTime time)
 	{
@@ -45,6 +52,7 @@ public class BullsBearsPowerAverageStrategy : Strategy
 		var bullsPower = candle.HighPrice - emaVal;
 		var bearsPower = candle.LowPrice - emaVal;
 		var avgPower = (bullsPower + bearsPower) / 2m;
+		if (!IsFormedAndOnlineAndAllowTrading()) { _prevPower = avgPower; return; }
 		if (_prevPower == null) { _prevPower = avgPower; return; }
 		if (_prevPower.Value < 0m && avgPower >= 0m && Position <= 0) { if (Position < 0) BuyMarket(); BuyMarket(); }
 		else if (_prevPower.Value > 0m && avgPower <= 0m && Position >= 0) { if (Position > 0) SellMarket(); SellMarket(); }

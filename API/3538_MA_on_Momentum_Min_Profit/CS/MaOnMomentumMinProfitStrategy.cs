@@ -57,14 +57,14 @@ public class MaOnMomentumMinProfitStrategy : Strategy
 	/// </summary>
 	public MaOnMomentumMinProfitStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles used for the momentum calculation", "General");
 
-		_momentumPeriod = Param(nameof(MomentumPeriod), 14)
+		_momentumPeriod = Param(nameof(MomentumPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Momentum Period", "Lookback for the momentum indicator", "Momentum");
 
-		_maPeriod = Param(nameof(MaPeriod), 6)
+		_maPeriod = Param(nameof(MaPeriod), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "Period of the moving average applied to momentum", "Momentum");
 	}
@@ -113,9 +113,10 @@ public class MaOnMomentumMinProfitStrategy : Strategy
 
 		// Calculate SMA of momentum
 		var sum = 0m;
-		foreach (var v in _momentumHistory)
+		var history = _momentumHistory.ToArray();
+		foreach (var v in history)
 			sum += v;
-		var signalValue = sum / MaPeriod;
+		var signalValue = sum / history.Length;
 
 		if (_prevMomentum is null || _prevSignal is null)
 		{
@@ -131,24 +132,31 @@ public class MaOnMomentumMinProfitStrategy : Strategy
 		if (volume <= 0)
 			volume = 1;
 
-		if (crossUp)
-		{
-			if (Position < 0)
-				BuyMarket(Math.Abs(Position));
+		var minSpread = 0.5m;
 
+		if (crossUp && Math.Abs(momentumValue - signalValue) >= minSpread)
+		{
 			if (Position <= 0)
-				BuyMarket(volume);
+				BuyMarket(Position < 0 ? Math.Abs(Position) + volume : volume);
 		}
-		else if (crossDown)
+		else if (crossDown && Math.Abs(momentumValue - signalValue) >= minSpread)
 		{
-			if (Position > 0)
-				SellMarket(Math.Abs(Position));
-
 			if (Position >= 0)
-				SellMarket(volume);
+				SellMarket(Position > 0 ? Math.Abs(Position) + volume : volume);
 		}
 
 		_prevMomentum = momentumValue;
 		_prevSignal = signalValue;
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		_prevMomentum = null;
+		_prevSignal = null;
+		_momentum = null;
+		_momentumHistory.Clear();
+
+		base.OnReseted();
 	}
 }

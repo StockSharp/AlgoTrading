@@ -51,17 +51,17 @@ public class WprCustomCloudSimpleStrategy : Strategy
 
 	public WprCustomCloudSimpleStrategy()
 	{
-		_wprPeriod = Param(nameof(WprPeriod), 14)
+		_wprPeriod = Param(nameof(WprPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("WPR Period", "Williams %R lookback length", "Williams %R");
 
-		_overboughtLevel = Param(nameof(OverboughtLevel), -20m)
+		_overboughtLevel = Param(nameof(OverboughtLevel), -10m)
 			.SetDisplay("Overbought Level", "%R level that marks overbought conditions", "Williams %R");
 
-		_oversoldLevel = Param(nameof(OversoldLevel), -80m)
+		_oversoldLevel = Param(nameof(OversoldLevel), -90m)
 			.SetDisplay("Oversold Level", "%R level that marks oversold conditions", "Williams %R");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for Williams %R", "Data");
 	}
 
@@ -113,23 +113,27 @@ public class WprCustomCloudSimpleStrategy : Strategy
 
 			if (crossedAboveOversold)
 			{
-				if (Position < 0)
-					BuyMarket(Math.Abs(Position));
-
 				if (Position <= 0)
-					BuyMarket(volume);
+					BuyMarket(Position < 0 ? Math.Abs(Position) + volume : volume);
 			}
 			else if (crossedBelowOverbought)
 			{
-				if (Position > 0)
-					SellMarket(Position);
-
 				if (Position >= 0)
-					SellMarket(volume);
+					SellMarket(Position > 0 ? Math.Abs(Position) + volume : volume);
 			}
 		}
 
 		_olderWpr = _previousWpr;
 		_previousWpr = wprValue;
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		_williamsR = null;
+		_previousWpr = null;
+		_olderWpr = null;
+
+		base.OnReseted();
 	}
 }

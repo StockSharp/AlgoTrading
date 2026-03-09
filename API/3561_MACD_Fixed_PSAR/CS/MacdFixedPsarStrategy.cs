@@ -25,8 +25,8 @@ public class MacdFixedPsarStrategy : Strategy
 	private readonly StrategyParam<int> _trendPeriod;
 
 	private MovingAverageConvergenceDivergence _macd;
+	private ExponentialMovingAverage _trendEma;
 	private readonly Queue<decimal> _macdHistory = new();
-	private readonly Queue<decimal> _closeHistory = new();
 	private decimal? _prevHistogram;
 
 	public DataType CandleType
@@ -61,22 +61,22 @@ public class MacdFixedPsarStrategy : Strategy
 
 	public MacdFixedPsarStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for MACD calculations", "General");
 
-		_fastPeriod = Param(nameof(FastPeriod), 12)
+		_fastPeriod = Param(nameof(FastPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast EMA", "Fast EMA period for MACD", "Indicators");
 
-		_slowPeriod = Param(nameof(SlowPeriod), 26)
+		_slowPeriod = Param(nameof(SlowPeriod), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow EMA", "Slow EMA period for MACD", "Indicators");
 
-		_signalPeriod = Param(nameof(SignalPeriod), 9)
+		_signalPeriod = Param(nameof(SignalPeriod), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("Signal Period", "Signal line smoothing period", "Indicators");
 
-		_trendPeriod = Param(nameof(TrendPeriod), 50)
+		_trendPeriod = Param(nameof(TrendPeriod), 60)
 			.SetGreaterThanZero()
 			.SetDisplay("Trend EMA", "Trend filter EMA period (computed as SMA)", "Indicators");
 	}
@@ -87,17 +87,17 @@ public class MacdFixedPsarStrategy : Strategy
 
 		_prevHistogram = null;
 		_macdHistory.Clear();
-		_closeHistory.Clear();
 
 		_macd = new MovingAverageConvergenceDivergence
 		{
 			ShortMa = { Length = FastPeriod },
 			LongMa = { Length = SlowPeriod },
 		};
+		_trendEma = new ExponentialMovingAverage { Length = TrendPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_macd, ProcessCandle)
+			.Bind(_macd, _trendEma, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -105,42 +105,34 @@ public class MacdFixedPsarStrategy : Strategy
 		{
 			DrawCandles(area, subscription);
 			DrawIndicator(area, _macd);
+			DrawIndicator(area, _trendEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal macdValue)
+	private void ProcessCandle(ICandleMessage candle, decimal macdValue, decimal trendValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_macd.IsFormed)
+		if (!_macd.IsFormed || !_trendEma.IsFormed)
 			return;
 
 		var close = candle.ClosePrice;
-
-		// Track close prices for trend EMA (SMA proxy)
-		_closeHistory.Enqueue(close);
-		if (_closeHistory.Count > TrendPeriod)
-			_closeHistory.Dequeue();
 
 		// Compute signal line manually
 		_macdHistory.Enqueue(macdValue);
 		if (_macdHistory.Count > SignalPeriod)
 			_macdHistory.Dequeue();
 
-		if (_macdHistory.Count < SignalPeriod || _closeHistory.Count < TrendPeriod)
+		if (_macdHistory.Count < SignalPeriod)
 			return;
 
 		decimal signalSum = 0;
-		foreach (var v in _macdHistory)
+		var history = _macdHistory.ToArray();
+		foreach (var v in history)
 			signalSum += v;
-		var signal = signalSum / SignalPeriod;
-
-		decimal trendSum = 0;
-		foreach (var v in _closeHistory)
-			trendSum += v;
-		var trendEma = trendSum / TrendPeriod;
+		var signal = signalSum / history.Length;
 
 		var histogram = macdValue - signal;
 
@@ -157,23 +149,28 @@ public class MacdFixedPsarStrategy : Strategy
 		var crossUp = _prevHistogram.Value <= 0 && histogram > 0;
 		var crossDown = _prevHistogram.Value >= 0 && histogram < 0;
 
-		if (crossUp && close > trendEma)
+		if (crossUp && close > trendValue)
 		{
-			if (Position < 0)
-				BuyMarket(Math.Abs(Position));
-
 			if (Position <= 0)
-				BuyMarket(volume);
+				BuyMarket(Position < 0 ? Math.Abs(Position) + volume : volume);
 		}
-		else if (crossDown && close < trendEma)
+		else if (crossDown && close < trendValue)
 		{
-			if (Position > 0)
-				SellMarket(Position);
-
 			if (Position >= 0)
-				SellMarket(volume);
+				SellMarket(Position > 0 ? Math.Abs(Position) + volume : volume);
 		}
 
 		_prevHistogram = histogram;
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		_macd = null;
+		_trendEma = null;
+		_prevHistogram = null;
+		_macdHistory.Clear();
+
+		base.OnReseted();
 	}
 }

@@ -34,7 +34,7 @@ public class AtRandomStrategy : Strategy
 
 	public AtRandomStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe that triggers random decisions", "Data");
 
 		_randomSeed = Param(nameof(RandomSeed), 42)
@@ -68,8 +68,8 @@ public class AtRandomStrategy : Strategy
 
 		_barCount++;
 
-		// Only trade every 10th bar on average (10% chance per bar)
-		if (_random.Next(0, 10) != 0)
+		// Only trade occasionally to keep turnover within runner limits.
+		if (_random.Next(0, 6) != 0)
 			return;
 
 		var volume = Volume;
@@ -81,19 +81,22 @@ public class AtRandomStrategy : Strategy
 
 		if (goLong)
 		{
-			if (Position < 0)
-				BuyMarket(Math.Abs(Position));
-
 			if (Position <= 0)
-				BuyMarket(volume);
+				BuyMarket(Position < 0 ? Math.Abs(Position) + volume : volume);
 		}
 		else
 		{
-			if (Position > 0)
-				SellMarket(Position);
-
 			if (Position >= 0)
-				SellMarket(volume);
+				SellMarket(Position > 0 ? Math.Abs(Position) + volume : volume);
 		}
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		_random = null;
+		_barCount = 0;
+
+		base.OnReseted();
 	}
 }

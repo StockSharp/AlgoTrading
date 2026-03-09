@@ -65,16 +65,16 @@ public class BandOsMaStrategy : Strategy
 
 	public BandOsMaStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe", "General");
 
-		_macdFastPeriod = Param(nameof(MacdFastPeriod), 12)
+		_macdFastPeriod = Param(nameof(MacdFastPeriod), 20)
 			.SetDisplay("MACD Fast", "Fast EMA length", "Indicators");
 
-		_macdSlowPeriod = Param(nameof(MacdSlowPeriod), 26)
+		_macdSlowPeriod = Param(nameof(MacdSlowPeriod), 50)
 			.SetDisplay("MACD Slow", "Slow EMA length", "Indicators");
 
-		_macdSignalPeriod = Param(nameof(MacdSignalPeriod), 9)
+		_macdSignalPeriod = Param(nameof(MacdSignalPeriod), 12)
 			.SetDisplay("MACD Signal", "Signal EMA length", "Indicators");
 
 		_bollingerPeriod = Param(nameof(BollingerPeriod), 14)
@@ -143,12 +143,12 @@ public class BandOsMaStrategy : Strategy
 			// Buy: OsMA crosses below lower band (reversal up expected)
 			if (_prevOsma > _prevLower && osma <= lower && Position <= 0)
 			{
-				BuyMarket();
+				BuyMarket(Position < 0 ? Math.Abs(Position) + 1 : 1);
 			}
 			// Sell: OsMA crosses above upper band (reversal down expected)
 			else if (_prevOsma < _prevUpper && osma >= upper && Position >= 0)
 			{
-				SellMarket();
+				SellMarket(Position > 0 ? Math.Abs(Position) + 1 : 1);
 			}
 		}
 
@@ -156,5 +156,17 @@ public class BandOsMaStrategy : Strategy
 		_prevUpper = upper;
 		_prevLower = lower;
 		_hasPrev = true;
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		_prevOsma = 0;
+		_prevUpper = 0;
+		_prevLower = 0;
+		_hasPrev = false;
+		_bollinger = null;
+
+		base.OnReseted();
 	}
 }

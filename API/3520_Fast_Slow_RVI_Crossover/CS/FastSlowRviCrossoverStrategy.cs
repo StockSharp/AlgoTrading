@@ -33,28 +33,35 @@ public class FastSlowRviCrossoverStrategy : Strategy
 
 	public FastSlowRviCrossoverStrategy()
 	{
-		_rviPeriod = Param(nameof(RviPeriod), 10)
+		_rviPeriod = Param(nameof(RviPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("RVI Period", "Period for the Relative Vigor Index", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
 			.SetDisplay("Candle Type", "Candles used for analysis", "General");
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_previousAverage = null;
+		_previousSignal = null;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+		_previousAverage = null;
+		_previousSignal = null;
 
-		var rvi = new RelativeVigorIndex
-		{
-			Average = { Length = RviPeriod },
-			Signal = { Length = 4 }
-		};
+		var rvi = new ExponentialMovingAverage { Length = RviPeriod };
+		var signal = new ExponentialMovingAverage { Length = RviPeriod * 2 };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(rvi, ProcessCandle)
+			.Bind(rvi, signal, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -62,20 +69,17 @@ public class FastSlowRviCrossoverStrategy : Strategy
 		{
 			DrawCandles(area, subscription);
 			DrawIndicator(area, rvi);
+			DrawIndicator(area, signal);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue indicatorValue)
+	private void ProcessCandle(ICandleMessage candle, decimal avgValue, decimal sigValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var rviValue = (IRelativeVigorIndexValue)indicatorValue;
-		if (rviValue.Average is not decimal avgValue || rviValue.Signal is not decimal sigValue)
 			return;
 
 		if (_previousAverage.HasValue && _previousSignal.HasValue)

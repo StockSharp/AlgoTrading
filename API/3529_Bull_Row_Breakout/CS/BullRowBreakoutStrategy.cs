@@ -50,7 +50,7 @@ public class BullRowBreakoutStrategy : Strategy
 	/// </summary>
 	public BullRowBreakoutStrategy()
 	{
-		_candleTimeFrame = Param(nameof(CandleTimeFrame), TimeSpan.FromMinutes(5))
+		_candleTimeFrame = Param(nameof(CandleTimeFrame), TimeSpan.FromMinutes(30))
 		.SetDisplay("Timeframe", "Primary candle timeframe", "Market")
 		;
 
@@ -286,9 +286,23 @@ public class BullRowBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_candles.Clear();
+		_stochasticHistory.Clear();
+		_stopPrice = null;
+		_takeProfitPrice = null;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+		_candles.Clear();
+		_stochasticHistory.Clear();
+		_stopPrice = null;
+		_takeProfitPrice = null;
 
 		_stochastic = new StochasticOscillator
 		{
@@ -488,7 +502,8 @@ public class BullRowBreakoutStrategy : Strategy
 		if (_stochasticHistory.Count < StochasticRangePeriod)
 		return false;
 
-		return _stochasticHistory.All(v => v <= StochasticUpperLevel && v >= StochasticLowerLevel);
+		var history = _stochasticHistory.ToArray();
+		return history.All(v => v <= StochasticUpperLevel && v >= StochasticLowerLevel);
 	}
 
 	private decimal? CalculateStopPrice()

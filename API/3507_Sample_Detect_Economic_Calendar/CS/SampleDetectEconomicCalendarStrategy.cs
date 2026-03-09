@@ -25,18 +25,32 @@ public class SampleDetectEconomicCalendarStrategy : Strategy
 
 	public SampleDetectEconomicCalendarStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
-		_emaPeriod = Param(nameof(EmaPeriod), 20)
+		_emaPeriod = Param(nameof(EmaPeriod), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Period", "EMA filter period", "Indicators");
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevClose = 0;
+		_prevSar = 0;
+		_prevEma = 0;
+		_hasPrev = false;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+		_prevClose = 0;
+		_prevSar = 0;
+		_prevEma = 0;
 		_hasPrev = false;
-		var sar = new ParabolicSar();
+		var sar = new ParabolicSar { Acceleration = 0.01m, AccelerationMax = 0.1m };
 		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(sar, ema, ProcessCandle).Start();

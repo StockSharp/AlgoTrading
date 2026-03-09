@@ -1,11 +1,4 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
-
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -27,6 +20,7 @@ public class VolatilityHftEaStrategy : Strategy
 	private readonly StrategyParam<int> _fastMaLength;
 	private readonly StrategyParam<decimal> _stopLossPips;
 	private readonly StrategyParam<decimal> _maDifferencePips;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private SimpleMovingAverage _fastMa = null!;
@@ -35,6 +29,7 @@ public class VolatilityHftEaStrategy : Strategy
 	private decimal? _previousSma;
 	private decimal? _smaTwoBarsAgo;
 	private int _processedCandles;
+	private int _cooldownLeft;
 
 	private decimal _entryPrice;
 	private decimal? _stopLossPrice;
@@ -62,7 +57,11 @@ public class VolatilityHftEaStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("MA Difference (pips)", "Minimum distance between price and the moving average", "Signal");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_cooldownBars = Param(nameof(CooldownBars), 8)
+			.SetNotNegative()
+			.SetDisplay("Cooldown Bars", "Bars to wait after entry or exit", "Signal");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe used for signal detection", "General");
 	}
 
@@ -96,6 +95,12 @@ public class VolatilityHftEaStrategy : Strategy
 		set => _minimumBars.Value = value;
 	}
 
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
 	public DataType CandleType
 	{
 		get => _candleType.Value;
@@ -105,6 +110,18 @@ public class VolatilityHftEaStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_fastMa = null!;
+		_previousSma = null;
+		_smaTwoBarsAgo = null;
+		_processedCandles = 0;
+		_cooldownLeft = 0;
+		ResetPositionState();
 	}
 
 	/// <inheritdoc />
@@ -123,6 +140,7 @@ public class VolatilityHftEaStrategy : Strategy
 		_previousSma = null;
 		_smaTwoBarsAgo = null;
 		_processedCandles = 0;
+		_cooldownLeft = 0;
 		ResetPositionState();
 
 		var subscription = SubscribeCandles(CandleType);
@@ -138,6 +156,9 @@ public class VolatilityHftEaStrategy : Strategy
 
 		ManageActivePosition(candle);
 
+		if (_cooldownLeft > 0)
+			_cooldownLeft--;
+
 		if (!_fastMa.IsFormed)
 		{
 			UpdateSmaHistory(smaValue);
@@ -152,15 +173,16 @@ public class VolatilityHftEaStrategy : Strategy
 			return;
 		}
 
-		var threshold = MaDifferencePips * _pipSize;
+		var threshold = Math.Max(MaDifferencePips, 120m) * _pipSize;
 
-		if (_smaTwoBarsAgo.HasValue)
+		if (_smaTwoBarsAgo.HasValue && _cooldownLeft == 0)
 		{
 			var distance = candle.ClosePrice - smaValue;
 			var isBreakout = distance >= threshold;
-			var isSlopePositive = smaValue > _smaTwoBarsAgo.Value;
+			var isSlopePositive = _previousSma.HasValue && _previousSma.Value > _smaTwoBarsAgo.Value && smaValue > _previousSma.Value;
+			var isBullishBar = candle.ClosePrice > candle.OpenPrice && (candle.ClosePrice - candle.OpenPrice) >= threshold / 3m;
 
-			if (isBreakout && isSlopePositive && Position == 0)
+			if (isBreakout && isSlopePositive && isBullishBar && Position == 0)
 			{
 				EnterLong(candle, smaValue);
 			}
@@ -178,6 +200,7 @@ public class VolatilityHftEaStrategy : Strategy
 
 		Volume = OrderVolume;
 		BuyMarket();
+		_cooldownLeft = CooldownBars;
 
 		_entryPrice = candle.ClosePrice;
 
@@ -201,6 +224,7 @@ public class VolatilityHftEaStrategy : Strategy
 			if (_takeProfitPrice.HasValue && candle.LowPrice <= _takeProfitPrice.Value)
 			{
 				SellMarket(exitVolume);
+				_cooldownLeft = CooldownBars;
 				ResetPositionState();
 				return;
 			}
@@ -208,6 +232,7 @@ public class VolatilityHftEaStrategy : Strategy
 			if (_stopLossPrice.HasValue && candle.LowPrice <= _stopLossPrice.Value)
 			{
 				SellMarket(exitVolume);
+				_cooldownLeft = CooldownBars;
 				ResetPositionState();
 			}
 		}
@@ -216,6 +241,7 @@ public class VolatilityHftEaStrategy : Strategy
 			if (_takeProfitPrice.HasValue && candle.HighPrice >= _takeProfitPrice.Value)
 			{
 				BuyMarket(exitVolume);
+				_cooldownLeft = CooldownBars;
 				ResetPositionState();
 				return;
 			}
@@ -223,6 +249,7 @@ public class VolatilityHftEaStrategy : Strategy
 			if (_stopLossPrice.HasValue && candle.HighPrice >= _stopLossPrice.Value)
 			{
 				BuyMarket(exitVolume);
+				_cooldownLeft = CooldownBars;
 				ResetPositionState();
 			}
 		}

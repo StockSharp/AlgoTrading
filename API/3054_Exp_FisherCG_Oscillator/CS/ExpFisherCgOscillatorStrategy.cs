@@ -16,6 +16,7 @@ using StockSharp.Algo.Candles;
 /// </summary>
 public class ExpFisherCgOscillatorStrategy : Strategy
 {
+	private readonly StrategyParam<DataType> _candleType;
 	private readonly List<decimal> _medianPrices = new();
 	private readonly List<decimal> _cgValues = new();
 	private readonly decimal[] _valueBuffer = new decimal[4];
@@ -26,12 +27,35 @@ public class ExpFisherCgOscillatorStrategy : Strategy
 	private decimal? _entryPrice;
 	private int _length = 10;
 
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+
+	public ExpFisherCgOscillatorStrategy()
+	{
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General");
+	}
+
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities() => [(Security, CandleType)];
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_medianPrices.Clear();
+		_cgValues.Clear();
+		Array.Clear(_valueBuffer);
+		_valueCount = 0;
+		_previousFisher = null;
+		_oscillatorHistory.Clear();
+		_entryPrice = null;
+	}
+
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+		OnReseted();
 
-		var subscription = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
+		var subscription = SubscribeCandles(CandleType);
 		subscription
 			.Bind(ProcessCandle)
 			.Start();
@@ -129,6 +153,9 @@ public class ExpFisherCgOscillatorStrategy : Strategy
 
 		// Handle risk management
 		HandleRiskManagement(candle.ClosePrice);
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
 
 		var current = _oscillatorHistory[^1];
 		var previous = _oscillatorHistory[^2];

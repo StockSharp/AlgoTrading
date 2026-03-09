@@ -32,7 +32,7 @@ public class XcciHistogramVolStrategy : Strategy
 
 	public XcciHistogramVolStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe", "General");
 
 		_cciPeriod = Param(nameof(CciPeriod), 14)
@@ -43,6 +43,13 @@ public class XcciHistogramVolStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevCci = null;
 	}
 
 	protected override void OnStarted2(DateTime time)
@@ -59,6 +66,7 @@ public class XcciHistogramVolStrategy : Strategy
 	private void ProcessCandle(ICandleMessage candle, decimal cciVal)
 	{
 		if (candle.State != CandleStates.Finished) return;
+		if (!IsFormedAndOnlineAndAllowTrading()) { _prevCci = cciVal; return; }
 		if (_prevCci == null) { _prevCci = cciVal; return; }
 		if (_prevCci.Value < 0m && cciVal >= 0m && Position <= 0) { if (Position < 0) BuyMarket(); BuyMarket(); }
 		else if (_prevCci.Value > 0m && cciVal <= 0m && Position >= 0) { if (Position > 0) SellMarket(); SellMarket(); }

@@ -62,16 +62,16 @@ public class MartingaleBreakoutStrategy : Strategy
 		_lookback = Param(nameof(Lookback), 10)
 			.SetDisplay("Lookback", "Number of candles for average range", "General");
 
-		_breakoutMultiplier = Param(nameof(BreakoutMultiplier), 2m)
+		_breakoutMultiplier = Param(nameof(BreakoutMultiplier), 3m)
 			.SetDisplay("Breakout Mult", "Multiplier above avg range for breakout", "General");
 
-		_takeProfitPct = Param(nameof(TakeProfitPct), 0.5m)
+		_takeProfitPct = Param(nameof(TakeProfitPct), 1m)
 			.SetDisplay("Take Profit %", "Take profit as percentage of entry price", "Trading");
 
-		_stopLossPct = Param(nameof(StopLossPct), 0.3m)
+		_stopLossPct = Param(nameof(StopLossPct), 0.5m)
 			.SetDisplay("Stop Loss %", "Stop loss as percentage of entry price", "Trading");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
@@ -191,5 +191,19 @@ public class MartingaleBreakoutStrategy : Strategy
 		_rangeBuffer[_rangeBufferIndex] = range;
 		_rangeBufferSum += range;
 		_rangeBufferIndex = (_rangeBufferIndex + 1) % _rangeBuffer.Length;
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		Array.Clear(_rangeBuffer);
+		_rangeBufferCount = 0;
+		_rangeBufferIndex = 0;
+		_rangeBufferSum = 0m;
+		_entryPrice = 0m;
+		_entrySide = null;
+		_lastWasLoss = false;
+
+		base.OnReseted();
 	}
 }

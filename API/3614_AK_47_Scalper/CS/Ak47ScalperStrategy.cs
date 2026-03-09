@@ -196,4 +196,18 @@ public class Ak47ScalperStrategy : Strategy
 		else
 			_lowestLow = _lowestLow * 0.999m + candle.LowPrice * 0.001m; // slow decay
 	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		_atr = null;
+		_highestHigh = 0;
+		_lowestLow = decimal.MaxValue;
+		_barsCollected = 0;
+		_entryPrice = null;
+		_entrySide = null;
+		_stopDistance = 0;
+
+		base.OnReseted();
+	}
 }

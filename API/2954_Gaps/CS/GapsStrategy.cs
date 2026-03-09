@@ -32,16 +32,23 @@ public class GapsStrategy : Strategy
 
 	public GapsStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe", "General");
 
-		_gapPercent = Param(nameof(GapPercent), 0.1m)
+		_gapPercent = Param(nameof(GapPercent), 0.5m)
 			.SetDisplay("Gap Percent", "Minimum gap size as percentage", "Trading");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevClose = null;
 	}
 
 	protected override void OnStarted2(DateTime time)

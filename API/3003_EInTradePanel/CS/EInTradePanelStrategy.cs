@@ -25,12 +25,20 @@ public class EInTradePanelStrategy : Strategy
 
 	public EInTradePanelStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General");
 		_atrPeriod = Param(nameof(AtrPeriod), 14).SetGreaterThanZero().SetDisplay("ATR Period", "ATR lookback", "Indicators");
 		_multiplier = Param(nameof(Multiplier), 1.5m).SetDisplay("Multiplier", "ATR multiplier for breakout", "Indicators");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities() => [(Security, CandleType)];
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevClose = null;
+		_prevAtr = null;
+	}
 
 	protected override void OnStarted2(DateTime time)
 	{
@@ -46,6 +54,7 @@ public class EInTradePanelStrategy : Strategy
 	private void ProcessCandle(ICandleMessage candle, decimal atrVal)
 	{
 		if (candle.State != CandleStates.Finished) return;
+		if (!IsFormedAndOnlineAndAllowTrading()) { _prevClose = candle.ClosePrice; _prevAtr = atrVal; return; }
 		if (_prevClose == null || _prevAtr == null) { _prevClose = candle.ClosePrice; _prevAtr = atrVal; return; }
 		var threshold = _prevAtr.Value * Multiplier;
 		var diff = candle.ClosePrice - _prevClose.Value;

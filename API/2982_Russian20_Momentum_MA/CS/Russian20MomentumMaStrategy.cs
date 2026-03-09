@@ -39,7 +39,7 @@ public class Russian20MomentumMaStrategy : Strategy
 
 	public Russian20MomentumMaStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe", "General");
 
 		_maPeriod = Param(nameof(MaPeriod), 20)
@@ -54,6 +54,13 @@ public class Russian20MomentumMaStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevMom = null;
 	}
 
 	protected override void OnStarted2(DateTime time)
@@ -84,6 +91,12 @@ public class Russian20MomentumMaStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		if (!IsFormedAndOnlineAndAllowTrading())
+		{
+			_prevMom = momVal;
+			return;
+		}
+
 		if (_prevMom == null)
 		{
 			_prevMom = momVal;
@@ -93,14 +106,14 @@ public class Russian20MomentumMaStrategy : Strategy
 		var close = candle.ClosePrice;
 
 		// Price above MA + momentum crosses above zero → buy
-		if (close > maVal && _prevMom.Value <= 0m && momVal > 0m && Position <= 0)
+		if (close > maVal && _prevMom.Value <= 100m && momVal > 100m && Position <= 0)
 		{
 			if (Position < 0)
 				BuyMarket();
 			BuyMarket();
 		}
 		// Price below MA + momentum crosses below zero → sell
-		else if (close < maVal && _prevMom.Value >= 0m && momVal < 0m && Position >= 0)
+		else if (close < maVal && _prevMom.Value >= 100m && momVal < 100m && Position >= 0)
 		{
 			if (Position > 0)
 				SellMarket();

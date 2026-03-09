@@ -54,19 +54,19 @@ public class ScalperEmaSimpleStrategy : Strategy
 
 	public ScalperEmaSimpleStrategy()
 	{
-		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 10)
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 20)
 			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
 
-		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 30)
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 50)
 			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 
-		_stochOversold = Param(nameof(StochOversold), 20m)
+		_stochOversold = Param(nameof(StochOversold), 10m)
 			.SetDisplay("Stochastic Oversold", "Oversold level", "Indicators");
 
-		_stochOverbought = Param(nameof(StochOverbought), 80m)
+		_stochOverbought = Param(nameof(StochOverbought), 90m)
 			.SetDisplay("Stochastic Overbought", "Overbought level", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
 			.SetDisplay("Candle Type", "Primary candle series", "General");
 	}
 
@@ -99,18 +99,15 @@ public class ScalperEmaSimpleStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		// Buy: uptrend (fast > slow) + stochastic oversold
 		if (fastValue > slowValue && stochK < StochOversold && Position <= 0)
 		{
-			BuyMarket();
+			BuyMarket(Position < 0 ? Math.Abs(Position) + 1 : 1);
 		}
 		// Sell: downtrend (fast < slow) + stochastic overbought
 		else if (fastValue < slowValue && stochK > StochOverbought && Position >= 0)
 		{
-			SellMarket();
+			SellMarket(Position > 0 ? Math.Abs(Position) + 1 : 1);
 		}
 	}
 }

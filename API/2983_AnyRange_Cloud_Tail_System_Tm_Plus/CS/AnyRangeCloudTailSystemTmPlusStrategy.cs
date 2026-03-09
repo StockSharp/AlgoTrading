@@ -32,7 +32,7 @@ public class AnyRangeCloudTailSystemTmPlusStrategy : Strategy
 
 	public AnyRangeCloudTailSystemTmPlusStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe", "General");
 
 		_period = Param(nameof(Period), 20)
@@ -43,6 +43,13 @@ public class AnyRangeCloudTailSystemTmPlusStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevMid = null;
 	}
 
 	protected override void OnStarted2(DateTime time)
@@ -72,6 +79,9 @@ public class AnyRangeCloudTailSystemTmPlusStrategy : Strategy
 	private void ProcessCandle(ICandleMessage candle, decimal high, decimal low)
 	{
 		if (candle.State != CandleStates.Finished)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		var mid = (high + low) / 2m;

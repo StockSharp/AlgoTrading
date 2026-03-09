@@ -38,7 +38,7 @@ public class OneMaChannelBreakoutStrategy : Strategy
 
 	public OneMaChannelBreakoutStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe", "General");
 
 		_maPeriod = Param(nameof(MaPeriod), 44)
@@ -78,6 +78,9 @@ public class OneMaChannelBreakoutStrategy : Strategy
 	private void ProcessCandle(ICandleMessage candle, decimal maValue)
 	{
 		if (candle.State != CandleStates.Finished)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		var upper = maValue * (1 + ChannelOffset);

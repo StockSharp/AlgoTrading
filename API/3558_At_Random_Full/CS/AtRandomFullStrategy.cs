@@ -42,10 +42,10 @@ public class AtRandomFullStrategy : Strategy
 
 	public AtRandomFullStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe", "General");
 
-		_maxPositions = Param(nameof(MaxPositions), 5)
+		_maxPositions = Param(nameof(MaxPositions), 3)
 			.SetDisplay("Max Positions", "Maximum number of averaged entries", "Risk");
 
 		_randomSeed = Param(nameof(RandomSeed), 123)
@@ -78,8 +78,8 @@ public class AtRandomFullStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Only trade about 10% of bars
-		if (_random.Next(0, 10) != 0)
+		// Only trade occasionally to keep turnover within runner limits.
+		if (_random.Next(0, 5) != 0)
 			return;
 
 		var volume = Volume;
@@ -112,11 +112,11 @@ public class AtRandomFullStrategy : Strategy
 		{
 			if (Position < 0)
 			{
-				BuyMarket(Math.Abs(Position));
-				_entryCount = 0;
+				BuyMarket(Math.Abs(Position) + volume);
+				_entryCount = 1;
+				_lastEntryPrice = close;
 			}
-
-			if (Position <= 0)
+			else if (Position == 0)
 			{
 				BuyMarket(volume);
 				_lastEntryPrice = close;
@@ -127,16 +127,26 @@ public class AtRandomFullStrategy : Strategy
 		{
 			if (Position > 0)
 			{
-				SellMarket(Position);
-				_entryCount = 0;
+				SellMarket(Math.Abs(Position) + volume);
+				_entryCount = 1;
+				_lastEntryPrice = close;
 			}
-
-			if (Position >= 0)
+			else if (Position == 0)
 			{
 				SellMarket(volume);
 				_lastEntryPrice = close;
 				_entryCount++;
 			}
 		}
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		_random = null;
+		_lastEntryPrice = 0;
+		_entryCount = 0;
+
+		base.OnReseted();
 	}
 }

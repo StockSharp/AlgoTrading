@@ -21,12 +21,20 @@ public class RsiCciDivergenceStrategy : Strategy
 
 	public RsiCciDivergenceStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General");
 		_rsiPeriod = Param(nameof(RsiPeriod), 14).SetGreaterThanZero().SetDisplay("RSI Period", "RSI lookback", "Indicators");
 		_cciPeriod = Param(nameof(CciPeriod), 14).SetGreaterThanZero().SetDisplay("CCI Period", "CCI lookback", "Indicators");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities() => [(Security, CandleType)];
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevRsi = null;
+		_prevCci = null;
+	}
 
 	protected override void OnStarted2(DateTime time)
 	{
@@ -43,6 +51,7 @@ public class RsiCciDivergenceStrategy : Strategy
 	private void ProcessCandle(ICandleMessage candle, decimal rsiVal, decimal cciVal)
 	{
 		if (candle.State != CandleStates.Finished) return;
+		if (!IsFormedAndOnlineAndAllowTrading()) { _prevRsi = rsiVal; _prevCci = cciVal; return; }
 		if (_prevRsi == null || _prevCci == null) { _prevRsi = rsiVal; _prevCci = cciVal; return; }
 		var buySignal = (_prevRsi.Value < 30m && rsiVal >= 30m) || (_prevCci.Value < -100m && cciVal >= -100m);
 		var sellSignal = (_prevRsi.Value > 70m && rsiVal <= 70m) || (_prevCci.Value > 100m && cciVal <= 100m);

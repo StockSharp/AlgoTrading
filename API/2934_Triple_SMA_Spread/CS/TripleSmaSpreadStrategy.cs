@@ -47,7 +47,7 @@ public class TripleSmaSpreadStrategy : Strategy
 
 	public TripleSmaSpreadStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe", "General");
 
 		_fastPeriod = Param(nameof(FastPeriod), 9)
@@ -68,19 +68,25 @@ public class TripleSmaSpreadStrategy : Strategy
 		return [(Security, CandleType)];
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevSignal = 0;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
 		_prevSignal = 0;
 
-		var fastSma = new SimpleMovingAverage { Length = FastPeriod };
-		var middleSma = new SimpleMovingAverage { Length = MiddlePeriod };
-		var slowSma = new SimpleMovingAverage { Length = SlowPeriod };
+		var fastSma = new ExponentialMovingAverage { Length = FastPeriod };
+		var slowSma = new ExponentialMovingAverage { Length = SlowPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(fastSma, middleSma, slowSma, ProcessCandle)
+			.Bind(fastSma, slowSma, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -88,22 +94,24 @@ public class TripleSmaSpreadStrategy : Strategy
 		{
 			DrawCandles(area, subscription);
 			DrawIndicator(area, fastSma);
-			DrawIndicator(area, middleSma);
 			DrawIndicator(area, slowSma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal middle, decimal slow)
+	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Determine alignment: bullish when fast > middle > slow, bearish when fast < middle < slow
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		var close = candle.ClosePrice;
 		var signal = 0;
-		if (fast > middle && middle > slow)
+		if (fast > slow && close > fast)
 			signal = 1;
-		else if (fast < middle && middle < slow)
+		else if (fast < slow && close < fast)
 			signal = -1;
 
 		if (signal == _prevSignal)

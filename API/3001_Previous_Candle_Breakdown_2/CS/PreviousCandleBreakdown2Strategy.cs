@@ -28,12 +28,22 @@ public class PreviousCandleBreakdown2Strategy : Strategy
 
 	public PreviousCandleBreakdown2Strategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General");
 		_fastPeriod = Param(nameof(FastPeriod), 10).SetGreaterThanZero().SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
 		_slowPeriod = Param(nameof(SlowPeriod), 30).SetGreaterThanZero().SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities() => [(Security, CandleType)];
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevHigh = null;
+		_prevLow = null;
+		_prevFast = null;
+		_prevSlow = null;
+	}
 
 	protected override void OnStarted2(DateTime time)
 	{
@@ -50,6 +60,14 @@ public class PreviousCandleBreakdown2Strategy : Strategy
 	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow)
 	{
 		if (candle.State != CandleStates.Finished) return;
+		if (!IsFormedAndOnlineAndAllowTrading())
+		{
+			_prevHigh = candle.HighPrice;
+			_prevLow = candle.LowPrice;
+			_prevFast = fast;
+			_prevSlow = slow;
+			return;
+		}
 		if (_prevHigh == null || _prevLow == null || _prevFast == null || _prevSlow == null)
 		{
 			_prevHigh = candle.HighPrice; _prevLow = candle.LowPrice; _prevFast = fast; _prevSlow = slow;

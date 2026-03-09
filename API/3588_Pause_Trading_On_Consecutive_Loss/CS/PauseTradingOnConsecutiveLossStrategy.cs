@@ -1,6 +1,4 @@
 using System;
-using System.Collections.Generic;
-
 using Ecng.Common;
 
 using StockSharp.Algo.Strategies;
@@ -46,14 +44,14 @@ public class PauseTradingOnConsecutiveLossStrategy : Strategy
 
 	public PauseTradingOnConsecutiveLossStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for momentum entries", "General");
 
 		_consecutiveLosses = Param(nameof(ConsecutiveLosses), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Consecutive Losses", "Losses before pausing", "Risk");
 
-		_pauseBars = Param(nameof(PauseBars), 4)
+		_pauseBars = Param(nameof(PauseBars), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("Pause Bars", "Number of bars to pause after loss streak", "Risk");
 	}
@@ -97,6 +95,7 @@ public class PauseTradingOnConsecutiveLossStrategy : Strategy
 		var volume = Volume;
 		if (volume <= 0)
 			volume = 1;
+		var momentumThreshold = _previousClose.Value * 0.003m;
 
 		// Check if we should pause
 		if (_pauseCountdown > 0)
@@ -111,9 +110,9 @@ public class PauseTradingOnConsecutiveLossStrategy : Strategy
 		{
 			var shouldExit = false;
 
-			if (Position > 0 && close < candle.OpenPrice)
+			if (Position > 0 && close < _previousClose.Value - momentumThreshold)
 				shouldExit = true;
-			else if (Position < 0 && close > candle.OpenPrice)
+			else if (Position < 0 && close > _previousClose.Value + momentumThreshold)
 				shouldExit = true;
 
 			if (shouldExit)
@@ -152,13 +151,13 @@ public class PauseTradingOnConsecutiveLossStrategy : Strategy
 		// New entry: momentum - close > prev close -> buy, close < prev close -> sell
 		if (Position == 0 && _entryDirection is null)
 		{
-			if (close > _previousClose.Value)
+			if (close > _previousClose.Value + momentumThreshold)
 			{
 				BuyMarket(volume);
 				_entryPrice = close;
 				_entryDirection = Sides.Buy;
 			}
-			else if (close < _previousClose.Value)
+			else if (close < _previousClose.Value - momentumThreshold)
 			{
 				SellMarket(volume);
 				_entryPrice = close;
@@ -167,5 +166,17 @@ public class PauseTradingOnConsecutiveLossStrategy : Strategy
 		}
 
 		_previousClose = close;
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		_previousClose = null;
+		_lossStreak = 0;
+		_pauseCountdown = 0;
+		_entryPrice = 0;
+		_entryDirection = null;
+
+		base.OnReseted();
 	}
 }

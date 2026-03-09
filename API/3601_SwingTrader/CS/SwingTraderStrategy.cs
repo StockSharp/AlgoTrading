@@ -156,4 +156,16 @@ public class SwingTraderStrategy : Strategy
 		_prevClose = close;
 		_prevMiddle = middle;
 	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		_bollinger = null;
+		_upTouch = false;
+		_downTouch = false;
+		_prevClose = null;
+		_prevMiddle = null;
+
+		base.OnReseted();
+	}
 }

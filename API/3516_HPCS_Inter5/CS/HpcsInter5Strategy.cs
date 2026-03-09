@@ -28,6 +28,8 @@ public class HpcsInter5Strategy : Strategy
 
 	private readonly decimal?[] _recentCloses = new decimal?[6];
 	private decimal _pipSize;
+	private bool _wasLongSignal;
+	private bool _hasSignal;
 
 	/// <summary>
 	/// Candle type used to evaluate the closing prices.
@@ -70,13 +72,13 @@ public class HpcsInter5Strategy : Strategy
 	/// </summary>
 	public HpcsInter5Strategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(120).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type used for the close comparison", "General");
 
-		_stopLossPips = Param(nameof(StopLossPips), 10)
+		_stopLossPips = Param(nameof(StopLossPips), 20)
 			.SetDisplay("Stop Loss (pips)", "Stop-loss distance expressed in pips", "Risk Management");
 
-		_takeProfitPips = Param(nameof(TakeProfitPips), 10)
+		_takeProfitPips = Param(nameof(TakeProfitPips), 20)
 			.SetDisplay("Take Profit (pips)", "Take-profit distance expressed in pips", "Risk Management");
 
 		_tradeVolume = Param(nameof(TradeVolume), 1m)
@@ -91,6 +93,8 @@ public class HpcsInter5Strategy : Strategy
 
 		Array.Clear(_recentCloses, 0, _recentCloses.Length);
 		_pipSize = 0m;
+		_wasLongSignal = false;
+		_hasSignal = false;
 	}
 
 	/// <inheritdoc />
@@ -103,6 +107,8 @@ public class HpcsInter5Strategy : Strategy
 
 		InitializePipSize();
 		Volume = TradeVolume;
+		_wasLongSignal = false;
+		_hasSignal = false;
 
 		var stopLoss = StopLossPips > 0 && _pipSize > 0m
 			? new Unit(StopLossPips * _pipSize, UnitTypes.Absolute)
@@ -134,15 +140,25 @@ public class HpcsInter5Strategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// Enter long when the five-bars-ago close beats the latest close (momentum pullback)
-		if (olderClose > lastClose && Position <= 0)
+		var threshold = lastClose * 0.005m;
+		var longSignal = olderClose - lastClose > threshold;
+		var shortSignal = lastClose - olderClose > threshold;
+		var crossedLong = longSignal && (!_hasSignal || !_wasLongSignal);
+		var crossedShort = shortSignal && (!_hasSignal || _wasLongSignal);
+
+		if (crossedLong && Position <= 0)
 		{
 			BuyMarket();
 		}
-		// Enter short when the latest close beats five-bars-ago close (momentum reversal)
-		else if (olderClose < lastClose && Position >= 0)
+		else if (crossedShort && Position >= 0)
 		{
 			SellMarket();
+		}
+
+		if (longSignal || shortSignal)
+		{
+			_wasLongSignal = longSignal;
+			_hasSignal = true;
 		}
 	}
 
@@ -164,4 +180,3 @@ public class HpcsInter5Strategy : Strategy
 		_pipSize = step * pipFactor;
 	}
 }
-

@@ -22,11 +22,18 @@ public class XDeMarkerHistogramVolStrategy : Strategy
 
 	public XDeMarkerHistogramVolStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General");
 		_demarkerPeriod = Param(nameof(DemarkerPeriod), 14).SetGreaterThanZero().SetDisplay("DeMarker Period", "DeMarker lookback", "Indicators");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities() => [(Security, CandleType)];
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevDm = null;
+	}
 
 	protected override void OnStarted2(DateTime time)
 	{
@@ -42,9 +49,10 @@ public class XDeMarkerHistogramVolStrategy : Strategy
 	private void ProcessCandle(ICandleMessage candle, decimal dmVal)
 	{
 		if (candle.State != CandleStates.Finished) return;
+		if (!IsFormedAndOnlineAndAllowTrading()) { _prevDm = dmVal; return; }
 		if (_prevDm == null) { _prevDm = dmVal; return; }
-		if (_prevDm.Value < 0.5m && dmVal >= 0.5m && Position <= 0) { if (Position < 0) BuyMarket(); BuyMarket(); }
-		else if (_prevDm.Value > 0.5m && dmVal <= 0.5m && Position >= 0) { if (Position > 0) SellMarket(); SellMarket(); }
+		if (_prevDm.Value < 0.45m && dmVal >= 0.55m && Position <= 0) { if (Position < 0) BuyMarket(); BuyMarket(); }
+		else if (_prevDm.Value > 0.55m && dmVal <= 0.45m && Position >= 0) { if (Position > 0) SellMarket(); SellMarket(); }
 		_prevDm = dmVal;
 	}
 }

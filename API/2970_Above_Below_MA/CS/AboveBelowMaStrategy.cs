@@ -46,6 +46,14 @@ public class AboveBelowMaStrategy : Strategy
 		return [(Security, CandleType)];
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevClose = null;
+		_prevMa = null;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
@@ -75,6 +83,13 @@ public class AboveBelowMaStrategy : Strategy
 			return;
 
 		var close = candle.ClosePrice;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+		{
+			_prevClose = close;
+			_prevMa = maVal;
+			return;
+		}
 
 		if (_prevClose == null || _prevMa == null)
 		{

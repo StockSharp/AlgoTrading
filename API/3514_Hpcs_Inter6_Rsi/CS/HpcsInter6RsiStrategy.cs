@@ -18,6 +18,7 @@ public class HpcsInter6RsiStrategy : Strategy
 	private readonly StrategyParam<decimal> _lowerLevel;
 	private readonly StrategyParam<decimal> _tradeVolume;
 	private readonly StrategyParam<decimal> _offsetInPips;
+	private readonly StrategyParam<int> _signalCooldownCandles;
 
 	private RelativeStrengthIndex _rsi;
 	private decimal? _previousRsi;
@@ -25,6 +26,7 @@ public class HpcsInter6RsiStrategy : Strategy
 	private decimal? _targetPrice;
 	private decimal? _stopPrice;
 	private bool _isLongPosition;
+	private int _candlesSinceTrade;
 
 	/// <summary>
 	/// Candle type used for the RSI evaluation.
@@ -80,12 +82,18 @@ public class HpcsInter6RsiStrategy : Strategy
 		set => _offsetInPips.Value = value;
 	}
 
+	public int SignalCooldownCandles
+	{
+		get => _signalCooldownCandles.Value;
+		set => _signalCooldownCandles.Value = value;
+	}
+
 	/// <summary>
 	/// Initializes a new instance of the <see cref="HpcsInter6RsiStrategy"/> class.
 	/// </summary>
 	public HpcsInter6RsiStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for RSI evaluation", "General");
 
 		_rsiLength = Param(nameof(RsiLength), 7)
@@ -94,12 +102,12 @@ public class HpcsInter6RsiStrategy : Strategy
 
 			.SetOptimize(5, 40, 1);
 
-		_upperLevel = Param(nameof(UpperLevel), 55m)
+		_upperLevel = Param(nameof(UpperLevel), 65m)
 			.SetDisplay("Upper RSI", "Upper RSI level for shorts", "Parameters")
 
 			.SetOptimize(60m, 90m, 5m);
 
-		_lowerLevel = Param(nameof(LowerLevel), 45m)
+		_lowerLevel = Param(nameof(LowerLevel), 35m)
 			.SetDisplay("Lower RSI", "Lower RSI level for longs", "Parameters")
 
 			.SetOptimize(10m, 40m, 5m);
@@ -110,17 +118,40 @@ public class HpcsInter6RsiStrategy : Strategy
 			
 			.SetOptimize(0.1m, 5m, 0.1m);
 
-		_offsetInPips = Param(nameof(OffsetInPips), 10m)
+		_offsetInPips = Param(nameof(OffsetInPips), 30m)
 			.SetGreaterThanZero()
 			.SetDisplay("Offset (pips)", "Target and stop distance in pips", "Risk")
 			
 			.SetOptimize(5m, 30m, 5m);
+
+		_signalCooldownCandles = Param(nameof(SignalCooldownCandles), 4)
+			.SetGreaterThanZero()
+			.SetDisplay("Signal Cooldown", "Bars to wait between entries", "Trading");
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_rsi = null;
+		_previousRsi = null;
+		_lastSignalTime = null;
+		_targetPrice = null;
+		_stopPrice = null;
+		_isLongPosition = false;
+		_candlesSinceTrade = SignalCooldownCandles;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+		_previousRsi = null;
+		_lastSignalTime = null;
+		_targetPrice = null;
+		_stopPrice = null;
+		_isLongPosition = false;
+		_candlesSinceTrade = SignalCooldownCandles;
 
 		_rsi = new RelativeStrengthIndex
 		{
@@ -149,6 +180,9 @@ public class HpcsInter6RsiStrategy : Strategy
 		if (!_rsi.IsFormed)
 			return;
 
+		if (_candlesSinceTrade < SignalCooldownCandles)
+			_candlesSinceTrade++;
+
 		UpdateActivePositionTargets(candle);
 
 		var previousRsi = _previousRsi;
@@ -162,15 +196,17 @@ public class HpcsInter6RsiStrategy : Strategy
 		if (_lastSignalTime.HasValue && _lastSignalTime.Value == candleTime)
 			return;
 
-		if (TryEnterShort(candle, rsiValue, previousRsi.Value))
+		if (_candlesSinceTrade >= SignalCooldownCandles && TryEnterShort(candle, rsiValue, previousRsi.Value))
 		{
 			_lastSignalTime = candleTime;
+			_candlesSinceTrade = 0;
 			return;
 		}
 
-		if (TryEnterLong(candle, rsiValue, previousRsi.Value))
+		if (_candlesSinceTrade >= SignalCooldownCandles && TryEnterLong(candle, rsiValue, previousRsi.Value))
 		{
 			_lastSignalTime = candleTime;
+			_candlesSinceTrade = 0;
 		}
 	}
 

@@ -22,11 +22,18 @@ public class SprutPendingOrderGridStrategy : Strategy
 
 	public SprutPendingOrderGridStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General");
 		_period = Param(nameof(Period), 14).SetGreaterThanZero().SetDisplay("Channel Period", "Highest/Lowest lookback", "Indicators");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities() => [(Security, CandleType)];
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevMid = null;
+	}
 
 	protected override void OnStarted2(DateTime time)
 	{
@@ -45,6 +52,7 @@ public class SprutPendingOrderGridStrategy : Strategy
 		if (candle.State != CandleStates.Finished) return;
 		var mid = (high + low) / 2m;
 		var close = candle.ClosePrice;
+		if (!IsFormedAndOnlineAndAllowTrading()) { _prevMid = mid; return; }
 		if (_prevMid == null) { _prevMid = mid; return; }
 		if (close > mid && close > _prevMid.Value && Position <= 0) { if (Position < 0) BuyMarket(); BuyMarket(); }
 		else if (close < mid && close < _prevMid.Value && Position >= 0) { if (Position > 0) SellMarket(); SellMarket(); }

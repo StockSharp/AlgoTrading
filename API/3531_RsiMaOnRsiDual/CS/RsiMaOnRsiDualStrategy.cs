@@ -31,18 +31,18 @@ public class RsiMaOnRsiDualStrategy : Strategy
 
 	public RsiMaOnRsiDualStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
 			.SetDisplay("Candle type", "Candles processed by the strategy.", "General");
 
-		_fastRsiPeriod = Param(nameof(FastRsiPeriod), 5)
+		_fastRsiPeriod = Param(nameof(FastRsiPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast RSI period", "Length of the fast RSI smoothing window.", "Indicators");
 
-		_slowRsiPeriod = Param(nameof(SlowRsiPeriod), 15)
+		_slowRsiPeriod = Param(nameof(SlowRsiPeriod), 28)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow RSI period", "Length of the slow RSI smoothing window.", "Indicators");
 
-		_maPeriod = Param(nameof(MaPeriod), 6)
+		_maPeriod = Param(nameof(MaPeriod), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("MA period", "Number of RSI values averaged by the smoothing moving average.", "Indicators");
 	}
@@ -69,6 +69,18 @@ public class RsiMaOnRsiDualStrategy : Strategy
 	{
 		get => _maPeriod.Value;
 		set => _maPeriod.Value = value;
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_previousFastMa = null;
+		_previousSlowMa = null;
+		_fastRsiHistory.Clear();
+		_slowRsiHistory.Clear();
+		_fastRsi = null!;
+		_slowRsi = null!;
 	}
 
 	/// <inheritdoc />
@@ -117,12 +129,14 @@ public class RsiMaOnRsiDualStrategy : Strategy
 
 		// Calculate SMA of each RSI
 		var fastSum = 0m;
-		foreach (var v in _fastRsiHistory)
+		var fastHistory = _fastRsiHistory.ToArray();
+		foreach (var v in fastHistory)
 			fastSum += v;
 		var fastMa = fastSum / MaPeriod;
 
 		var slowSum = 0m;
-		foreach (var v in _slowRsiHistory)
+		var slowHistory = _slowRsiHistory.ToArray();
+		foreach (var v in slowHistory)
 			slowSum += v;
 		var slowMa = slowSum / MaPeriod;
 
@@ -142,17 +156,11 @@ public class RsiMaOnRsiDualStrategy : Strategy
 
 		if (crossUp)
 		{
-			if (Position < 0)
-				BuyMarket(Math.Abs(Position));
-
 			if (Position <= 0)
 				BuyMarket(volume);
 		}
 		else if (crossDown)
 		{
-			if (Position > 0)
-				SellMarket(Math.Abs(Position));
-
 			if (Position >= 0)
 				SellMarket(volume);
 		}

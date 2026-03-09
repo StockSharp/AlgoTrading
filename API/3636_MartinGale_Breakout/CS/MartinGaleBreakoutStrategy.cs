@@ -184,4 +184,15 @@ public class MartinGaleBreakoutStrategy : Strategy
 		while (_ranges.Count > RequiredHistory)
 			_ranges.RemoveAt(0);
 	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		_ranges.Clear();
+		_entryPrice = 0;
+		_entrySide = null;
+		_recovering = false;
+
+		base.OnReseted();
+	}
 }

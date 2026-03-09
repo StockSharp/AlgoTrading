@@ -36,10 +36,10 @@ public class ConditionalPositionOpenerStrategy : Strategy
 
 	public ConditionalPositionOpenerStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for signal generation", "General");
 
-		_momentumPeriod = Param(nameof(MomentumPeriod), 14)
+		_momentumPeriod = Param(nameof(MomentumPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Momentum Period", "Momentum indicator period", "Indicators");
 	}
@@ -85,28 +85,31 @@ public class ConditionalPositionOpenerStrategy : Strategy
 		if (volume <= 0)
 			volume = 1;
 
-		// Cross above 100 (positive momentum)
-		var crossUp = _prevMomentum.Value <= 100 && momentumValue > 100;
-		// Cross below 100 (negative momentum)
-		var crossDown = _prevMomentum.Value >= 100 && momentumValue < 100;
+		// Cross above 101 (positive momentum)
+		var crossUp = _prevMomentum.Value <= 101m && momentumValue > 101m;
+		// Cross below 99 (negative momentum)
+		var crossDown = _prevMomentum.Value >= 99m && momentumValue < 99m;
 
 		if (crossUp)
 		{
-			if (Position < 0)
-				BuyMarket(Math.Abs(Position));
-
 			if (Position <= 0)
-				BuyMarket(volume);
+				BuyMarket(Position < 0 ? Math.Abs(Position) + volume : volume);
 		}
 		else if (crossDown)
 		{
-			if (Position > 0)
-				SellMarket(Position);
-
 			if (Position >= 0)
-				SellMarket(volume);
+				SellMarket(Position > 0 ? Math.Abs(Position) + volume : volume);
 		}
 
 		_prevMomentum = momentumValue;
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		_momentum = null;
+		_prevMomentum = null;
+
+		base.OnReseted();
 	}
 }

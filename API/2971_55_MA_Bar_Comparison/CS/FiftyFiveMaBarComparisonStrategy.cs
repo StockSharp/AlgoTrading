@@ -32,7 +32,7 @@ public class FiftyFiveMaBarComparisonStrategy : Strategy
 
 	public FiftyFiveMaBarComparisonStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe", "General");
 
 		_maPeriod = Param(nameof(MaPeriod), 55)
@@ -43,6 +43,13 @@ public class FiftyFiveMaBarComparisonStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevMa = null;
 	}
 
 	protected override void OnStarted2(DateTime time)
@@ -71,6 +78,12 @@ public class FiftyFiveMaBarComparisonStrategy : Strategy
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+		{
+			_prevMa = maVal;
+			return;
+		}
 
 		if (_prevMa == null)
 		{

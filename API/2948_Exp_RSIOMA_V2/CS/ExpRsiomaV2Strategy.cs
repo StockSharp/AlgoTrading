@@ -47,7 +47,7 @@ public class ExpRsiomaV2Strategy : Strategy
 
 	public ExpRsiomaV2Strategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe", "General");
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
@@ -64,6 +64,13 @@ public class ExpRsiomaV2Strategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevRsi = null;
 	}
 
 	protected override void OnStarted2(DateTime time)
@@ -97,6 +104,12 @@ public class ExpRsiomaV2Strategy : Strategy
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+		{
+			_prevRsi = rsiValue;
+			return;
+		}
 
 		if (_prevRsi == null)
 		{

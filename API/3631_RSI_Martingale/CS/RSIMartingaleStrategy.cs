@@ -146,4 +146,14 @@ public class RSIMartingaleStrategy : Strategy
 		}
 		return true;
 	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		_recentRsi.Clear();
+		_entryPrice = 0;
+		_direction = 0;
+
+		base.OnReseted();
+	}
 }

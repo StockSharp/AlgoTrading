@@ -3,7 +3,6 @@ using System.Collections.Generic;
 
 using Ecng.Common;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -37,7 +36,7 @@ public class TwoPendingOrders2Strategy : Strategy
 
 	public TwoPendingOrders2Strategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for breakout detection", "General");
 
 		_lookback = Param(nameof(Lookback), 10)
@@ -70,6 +69,46 @@ public class TwoPendingOrders2Strategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		if (_highs.Count < Lookback)
+		{
+			EnqueueCandle(candle);
+			return;
+		}
+
+		decimal highest = decimal.MinValue;
+		decimal lowest = decimal.MaxValue;
+		var highs = _highs.ToArray();
+		var lows = _lows.ToArray();
+		foreach (var h in highs)
+			if (h > highest) highest = h;
+		foreach (var l in lows)
+			if (l < lowest) lowest = l;
+
+		var close = candle.ClosePrice;
+		var volume = Volume;
+		if (volume <= 0)
+			volume = 1;
+		var range = highest - lowest;
+		var breakoutPadding = range * 0.05m;
+
+		// Breakout above range
+		if (close > highest + breakoutPadding)
+		{
+			if (Position <= 0)
+				BuyMarket(Position < 0 ? Math.Abs(Position) + volume : volume);
+		}
+		// Breakout below range
+		else if (close < lowest - breakoutPadding)
+		{
+			if (Position >= 0)
+				SellMarket(Position > 0 ? Math.Abs(Position) + volume : volume);
+		}
+
+		EnqueueCandle(candle);
+	}
+
+	private void EnqueueCandle(ICandleMessage candle)
+	{
 		_highs.Enqueue(candle.HighPrice);
 		_lows.Enqueue(candle.LowPrice);
 
@@ -78,39 +117,14 @@ public class TwoPendingOrders2Strategy : Strategy
 			_highs.Dequeue();
 			_lows.Dequeue();
 		}
+	}
 
-		if (_highs.Count < Lookback)
-			return;
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		_highs.Clear();
+		_lows.Clear();
 
-		decimal highest = decimal.MinValue;
-		decimal lowest = decimal.MaxValue;
-		foreach (var h in _highs)
-			if (h > highest) highest = h;
-		foreach (var l in _lows)
-			if (l < lowest) lowest = l;
-
-		var close = candle.ClosePrice;
-		var volume = Volume;
-		if (volume <= 0)
-			volume = 1;
-
-		// Breakout above range
-		if (close > highest)
-		{
-			if (Position < 0)
-				BuyMarket(Math.Abs(Position));
-
-			if (Position <= 0)
-				BuyMarket(volume);
-		}
-		// Breakout below range
-		else if (close < lowest)
-		{
-			if (Position > 0)
-				SellMarket(Position);
-
-			if (Position >= 0)
-				SellMarket(volume);
-		}
+		base.OnReseted();
 	}
 }

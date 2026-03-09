@@ -32,7 +32,7 @@ public class NextBarMomentumStrategy : Strategy
 
 	public NextBarMomentumStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe", "General");
 
 		_momentumPeriod = Param(nameof(MomentumPeriod), 10)
@@ -43,6 +43,13 @@ public class NextBarMomentumStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevMom = null;
 	}
 
 	protected override void OnStarted2(DateTime time)
@@ -74,6 +81,12 @@ public class NextBarMomentumStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		if (!IsFormedAndOnlineAndAllowTrading())
+		{
+			_prevMom = momVal;
+			return;
+		}
+
 		if (_prevMom == null)
 		{
 			_prevMom = momVal;
@@ -81,14 +94,14 @@ public class NextBarMomentumStrategy : Strategy
 		}
 
 		// Momentum crosses above zero → buy
-		if (_prevMom.Value <= 0m && momVal > 0m && Position <= 0)
+		if (_prevMom.Value <= 100m && momVal > 100m && Position <= 0)
 		{
 			if (Position < 0)
 				BuyMarket();
 			BuyMarket();
 		}
 		// Momentum crosses below zero → sell
-		else if (_prevMom.Value >= 0m && momVal < 0m && Position >= 0)
+		else if (_prevMom.Value >= 100m && momVal < 100m && Position >= 0)
 		{
 			if (Position > 0)
 				SellMarket();
