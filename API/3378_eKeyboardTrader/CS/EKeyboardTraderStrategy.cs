@@ -30,6 +30,15 @@ public class EKeyboardTraderStrategy : Strategy
 			.SetDisplay("CCI Period", "CCI period", "Indicators");
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevCci = 0m;
+		_hasPrev = false;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);

@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -101,9 +98,27 @@ public class ColorJsatlDigitStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_prevJma = null;
+		_prevPrevJma = null;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+
+		_prevJma = null;
+		_prevPrevJma = null;
 
 		var jma = new JurikMovingAverage { Length = JmaLength };
 
@@ -119,6 +134,13 @@ public class ColorJsatlDigitStrategy : Strategy
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+		{
+			_prevPrevJma = _prevJma;
+			_prevJma = jmaValue;
+			return;
+		}
 
 		if (_prevJma is decimal prev && _prevPrevJma is decimal prev2)
 		{

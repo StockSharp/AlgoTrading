@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -49,14 +46,35 @@ public class JsAtlDigitSystemStrategy : Strategy
 	/// </summary>
 	public JsAtlDigitSystemStrategy()
 	{
-		_jmaLength = Param(nameof(JmaLength), 14);
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame());
+		_jmaLength = Param(nameof(JmaLength), 14)
+			.SetGreaterThanZero()
+			.SetDisplay("JMA Length", "Period of Jurik moving average", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles", "General");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_isFirstValue = true;
+		_prevJma = 0m;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+
+		_isFirstValue = true;
+		_prevJma = 0m;
 
 		var jma = new JurikMovingAverage { Length = JmaLength };
 

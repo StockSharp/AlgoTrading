@@ -70,8 +70,25 @@ public class RockTraderNeuroStrategy : Strategy
 		_lot = Param(nameof(Lot), 1m)
 			.SetDisplay("Lot", "Lots to trade", "Trading");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_band1 = _band2 = _band3 = _band4 = _band5 = _band6 = _band7 = 0m;
+		_entryPrice = 0m;
+		_stopPrice = 0m;
+		_takePrice = 0m;
 	}
 
 	/// <inheritdoc />
@@ -80,6 +97,10 @@ public class RockTraderNeuroStrategy : Strategy
 		base.OnStarted2(time);
 
 		Volume = Lot;
+		_band1 = _band2 = _band3 = _band4 = _band5 = _band6 = _band7 = 0m;
+		_entryPrice = 0m;
+		_stopPrice = 0m;
+		_takePrice = 0m;
 
 		var bb = new BollingerBands
 		{
@@ -164,14 +185,14 @@ public class RockTraderNeuroStrategy : Strategy
 		}
 		else
 		{
-			if (output < 0m)
+			if (output < -0.5m)
 			{
 				BuyMarket();
 				_entryPrice = candle.ClosePrice;
 				_stopPrice = _entryPrice - StopLoss;
 				_takePrice = _entryPrice + TakeProfit;
 			}
-			else if (output > 0m)
+			else if (output > 0.5m)
 			{
 				SellMarket();
 				_entryPrice = candle.ClosePrice;
@@ -183,7 +204,7 @@ public class RockTraderNeuroStrategy : Strategy
 
 	private static decimal Tanh(decimal x)
 	{
-		var d = (double)x;
+		var d = Math.Clamp((double)x, -20d, 20d);
 		var ePos = Math.Exp(d);
 		var eNeg = Math.Exp(-d);
 		return (decimal)((ePos - eNeg) / (ePos + eNeg));

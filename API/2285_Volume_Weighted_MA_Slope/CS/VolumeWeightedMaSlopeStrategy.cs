@@ -61,7 +61,7 @@ public class VolumeWeightedMaSlopeStrategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(vwma, ProcessCandle)
+			.Bind(vwma, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -73,15 +73,13 @@ public class VolumeWeightedMaSlopeStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue vwmaValue)
+	private void ProcessCandle(ICandleMessage candle, decimal currentVwma)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
-
-		var currentVwma = vwmaValue.GetValue<decimal>();
 
 		if (_prevVwma1 is null)
 		{

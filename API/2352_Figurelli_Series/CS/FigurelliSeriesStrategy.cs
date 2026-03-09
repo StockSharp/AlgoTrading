@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -29,6 +26,8 @@ public class FigurelliSeriesStrategy : Strategy
 	private readonly StrategyParam<int> _stopMinute;
 	private readonly StrategyParam<DataType> _candleType;
 
+	private int _lastSign;
+
 	/// <summary>Initial period for moving averages.</summary>
 	public int StartPeriod { get => _startPeriod.Value; set => _startPeriod.Value = value; }
 	/// <summary>Step between moving average periods.</summary>
@@ -49,19 +48,19 @@ public class FigurelliSeriesStrategy : Strategy
 	/// <summary>Constructor.</summary>
 	public FigurelliSeriesStrategy()
 	{
-		_startPeriod = Param(nameof(StartPeriod), 6)
+		_startPeriod = Param(nameof(StartPeriod), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Start Period", "Initial period for moving averages", "Indicator")
 			
 			.SetOptimize(6, 18, 6);
 
-		_step = Param(nameof(Step), 6)
+		_step = Param(nameof(Step), 2)
 			.SetGreaterThanZero()
 			.SetDisplay("Step", "Step between moving average periods", "Indicator")
 			
 			.SetOptimize(6, 12, 2);
 
-		_total = Param(nameof(Total), 36)
+		_total = Param(nameof(Total), 6)
 			.SetGreaterThanZero()
 			.SetDisplay("Total", "Number of moving averages", "Indicator")
 			
@@ -87,7 +86,7 @@ public class FigurelliSeriesStrategy : Strategy
 			
 			.SetOptimize(0, 59, 1);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for calculations", "General");
 	}
 
@@ -101,6 +100,8 @@ public class FigurelliSeriesStrategy : Strategy
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+
+		_lastSign = 0;
 
 		var figurelli = new FigurelliSeriesIndicator
 		{
@@ -123,16 +124,32 @@ public class FigurelliSeriesStrategy : Strategy
 		}
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_lastSign = 0;
+	}
+
 	private void ProcessCandle(ICandleMessage candle, decimal value)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Open positions based on indicator sign
-		if (value > 0 && Position <= 0)
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		var sign = Math.Sign(value);
+		if (sign == 0 || sign == _lastSign)
+			return;
+
+		if (sign > 0 && Position <= 0)
 			BuyMarket();
-		else if (value < 0 && Position >= 0)
+		else if (sign < 0 && Position >= 0)
 			SellMarket();
+
+		_lastSign = sign;
 	}
 
 	private class FigurelliSeriesIndicator : BaseIndicator
@@ -141,7 +158,7 @@ public class FigurelliSeriesStrategy : Strategy
 		public int Step { get; set; }
 		public int Total { get; set; }
 
-		private readonly List<ExponentialMovingAverage> _averages = new();
+		private ExponentialMovingAverage[] _averages = [];
 
 		public override void Reset()
 		{
@@ -152,22 +169,30 @@ public class FigurelliSeriesStrategy : Strategy
 
 		protected override IIndicatorValue OnProcess(IIndicatorValue input)
 		{
-			var price = input.GetValue<decimal>();
+			var candle = input.ToCandle();
+			var price = candle.ClosePrice;
 
-			if (_averages.Count == 0)
+			if (_averages.Length == 0)
 			{
+				_averages = new ExponentialMovingAverage[Total];
+
 				for (var i = 0; i < Total; i++)
-					_averages.Add(new ExponentialMovingAverage { Length = StartPeriod + Step * i });
+					_averages[i] = new ExponentialMovingAverage { Length = StartPeriod + (Step * i) };
 			}
 
 			var bids = 0;
 			var asks = 0;
+			var allFormed = true;
 
 			foreach (var ma in _averages)
 			{
-				var maValue = ma.Process(input).GetValue<decimal>();
+				var maValue = ma.Process(price, input.Time, input.IsFinal).GetValue<decimal>();
+
 				if (!ma.IsFormed)
+				{
+					allFormed = false;
 					continue;
+				}
 
 				if (price > maValue)
 					bids++;
@@ -175,7 +200,6 @@ public class FigurelliSeriesStrategy : Strategy
 					asks++;
 			}
 
-			var allFormed = _averages.Count > 0 && _averages.All(m => m.IsFormed);
 			if (allFormed)
 				IsFormed = true;
 

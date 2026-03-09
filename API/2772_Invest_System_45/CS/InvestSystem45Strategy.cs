@@ -134,7 +134,7 @@ public class InvestSystem45Strategy : Strategy
 		_signalCandleType = Param(nameof(SignalCandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Signal Candles", "Candles used to time entries", "Timing");
 
-		_trendCandleType = Param(nameof(TrendCandleType), TimeSpan.FromHours(1).TimeFrame())
+		_trendCandleType = Param(nameof(TrendCandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Trend Candles", "Higher timeframe candles for direction", "Timing");
 
 		_baseLot = Param(nameof(BaseLot), 0.1m)

@@ -17,15 +17,18 @@ public class FxfSafeTrendScalpV1Strategy : Strategy
 	private readonly StrategyParam<int> _fastPeriod;
 	private readonly StrategyParam<int> _slowPeriod;
 	private readonly StrategyParam<int> _atrPeriod;
+	private readonly StrategyParam<int> _signalCooldownCandles;
 
 	private decimal _prevFast;
 	private decimal _prevSlow;
 	private bool _hasPrev;
+	private int _candlesSinceTrade;
 
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
 	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
 	public int AtrPeriod { get => _atrPeriod.Value; set => _atrPeriod.Value = value; }
+	public int SignalCooldownCandles { get => _signalCooldownCandles.Value; set => _signalCooldownCandles.Value = value; }
 
 	public FxfSafeTrendScalpV1Strategy()
 	{
@@ -40,12 +43,27 @@ public class FxfSafeTrendScalpV1Strategy : Strategy
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "ATR period", "Indicators");
+		_signalCooldownCandles = Param(nameof(SignalCooldownCandles), 3)
+			.SetGreaterThanZero()
+			.SetDisplay("Signal Cooldown", "Bars to wait between entries", "Trading");
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFast = 0m;
+		_prevSlow = 0m;
+		_hasPrev = false;
+		_candlesSinceTrade = SignalCooldownCandles;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 		_hasPrev = false;
+		_candlesSinceTrade = SignalCooldownCandles;
 		var fast = new SimpleMovingAverage { Length = FastPeriod };
 		var slow = new SimpleMovingAverage { Length = SlowPeriod };
 		var atr = new AverageTrueRange { Length = AtrPeriod };
@@ -57,13 +75,28 @@ public class FxfSafeTrendScalpV1Strategy : Strategy
 	{
 		if (candle.State != CandleStates.Finished) return;
 
+		if (_candlesSinceTrade < SignalCooldownCandles)
+			_candlesSinceTrade++;
+
 		if (_hasPrev)
 		{
 			var close = candle.ClosePrice;
-			if (_prevFast <= _prevSlow && fast > slow && close > slow && Position <= 0)
-				BuyMarket();
-			else if (_prevFast >= _prevSlow && fast < slow && close < slow && Position >= 0)
-				SellMarket();
+			var longSignal = _prevFast <= _prevSlow && fast > slow && close > slow + atr * 0.25m;
+			var shortSignal = _prevFast >= _prevSlow && fast < slow && close < slow - atr * 0.25m;
+
+			if (_candlesSinceTrade >= SignalCooldownCandles)
+			{
+				if (longSignal && Position <= 0)
+				{
+					BuyMarket();
+					_candlesSinceTrade = 0;
+				}
+				else if (shortSignal && Position >= 0)
+				{
+					SellMarket();
+					_candlesSinceTrade = 0;
+				}
+			}
 		}
 
 		_prevFast = fast;

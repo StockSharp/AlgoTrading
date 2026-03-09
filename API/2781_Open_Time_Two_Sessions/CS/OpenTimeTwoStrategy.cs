@@ -331,10 +331,10 @@ public class OpenTimeTwoStrategy : Strategy
 		_intervalOneOpenEnd = Param(nameof(IntervalOneOpenEnd), new TimeSpan(14, 0, 0))
 			.SetDisplay("Open End #1", "Opening window end for interval #1", "Opening");
 
-		_intervalTwoOpenStart = Param(nameof(IntervalTwoOpenStart), new TimeSpan(14, 30, 0))
+		_intervalTwoOpenStart = Param(nameof(IntervalTwoOpenStart), TimeSpan.Zero)
 			.SetDisplay("Open Start #2", "Opening window start for interval #2", "Opening");
 
-		_intervalTwoOpenEnd = Param(nameof(IntervalTwoOpenEnd), new TimeSpan(19, 0, 0))
+		_intervalTwoOpenEnd = Param(nameof(IntervalTwoOpenEnd), TimeSpan.Zero)
 			.SetDisplay("Open End #2", "Opening window end for interval #2", "Opening");
 
 		_duration = Param(nameof(Duration), TimeSpan.FromSeconds(30))
@@ -378,7 +378,7 @@ public class OpenTimeTwoStrategy : Strategy
 			.SetRange(0m, 2000m)
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(2).TimeFrame())
 			.SetDisplay("Candle Type", "Base candle type driving decisions", "General");
 	}
 
@@ -393,6 +393,7 @@ public class OpenTimeTwoStrategy : Strategy
 	{
 		base.OnReseted();
 
+		_pipSize = 0m;
 		ResetInterval(_intervalOne);
 		ResetInterval(_intervalTwo);
 	}

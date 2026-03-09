@@ -16,34 +16,56 @@ public class MyTs15Strategy : Strategy
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<int> _atrPeriod;
 	private readonly StrategyParam<decimal> _trailMultiplier;
+	private readonly StrategyParam<int> _signalCooldownCandles;
 
 	private decimal _entryPrice;
 	private decimal _bestPrice;
+	private bool _wasBullish;
+	private bool _hasPrevSignal;
+	private int _candlesSinceTrade;
 
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 	public int MaPeriod { get => _maPeriod.Value; set => _maPeriod.Value = value; }
 	public int AtrPeriod { get => _atrPeriod.Value; set => _atrPeriod.Value = value; }
 	public decimal TrailMultiplier { get => _trailMultiplier.Value; set => _trailMultiplier.Value = value; }
+	public int SignalCooldownCandles { get => _signalCooldownCandles.Value; set => _signalCooldownCandles.Value = value; }
 
 	public MyTs15Strategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(120).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
-		_maPeriod = Param(nameof(MaPeriod), 50)
+		_maPeriod = Param(nameof(MaPeriod), 100)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "WMA period", "Indicators");
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "ATR period for trailing", "Indicators");
-		_trailMultiplier = Param(nameof(TrailMultiplier), 2m)
+		_trailMultiplier = Param(nameof(TrailMultiplier), 3m)
 			.SetDisplay("Trail Multiplier", "ATR multiplier for trailing stop", "Risk");
+		_signalCooldownCandles = Param(nameof(SignalCooldownCandles), 12)
+			.SetGreaterThanZero()
+			.SetDisplay("Signal Cooldown", "Bars to wait between trades", "Trading");
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_entryPrice = 0m;
+		_bestPrice = 0m;
+		_wasBullish = false;
+		_hasPrevSignal = false;
+		_candlesSinceTrade = SignalCooldownCandles;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 		_entryPrice = 0;
 		_bestPrice = 0;
+		_hasPrevSignal = false;
+		_candlesSinceTrade = SignalCooldownCandles;
 		var wma = new WeightedMovingAverage { Length = MaPeriod };
 		var atr = new AverageTrueRange { Length = AtrPeriod };
 		var subscription = SubscribeCandles(CandleType);
@@ -56,6 +78,10 @@ public class MyTs15Strategy : Strategy
 
 		var close = candle.ClosePrice;
 		var trailDist = atrValue * TrailMultiplier;
+		var isBullish = close > wmaValue;
+
+		if (_candlesSinceTrade < SignalCooldownCandles)
+			_candlesSinceTrade++;
 
 		// Trailing stop check
 		if (Position > 0)
@@ -66,6 +92,7 @@ public class MyTs15Strategy : Strategy
 				SellMarket();
 				_entryPrice = 0;
 				_bestPrice = 0;
+				_candlesSinceTrade = 0;
 				return;
 			}
 		}
@@ -77,22 +104,31 @@ public class MyTs15Strategy : Strategy
 				BuyMarket();
 				_entryPrice = 0;
 				_bestPrice = 0;
+				_candlesSinceTrade = 0;
 				return;
 			}
 		}
 
 		// Entry signals
-		if (close > wmaValue && Position <= 0)
+		if (_hasPrevSignal && isBullish != _wasBullish && _candlesSinceTrade >= SignalCooldownCandles)
 		{
-			BuyMarket();
-			_entryPrice = close;
-			_bestPrice = close;
+			if (isBullish && Position <= 0)
+			{
+				BuyMarket();
+				_entryPrice = close;
+				_bestPrice = close;
+				_candlesSinceTrade = 0;
+			}
+			else if (!isBullish && Position >= 0)
+			{
+				SellMarket();
+				_entryPrice = close;
+				_bestPrice = close;
+				_candlesSinceTrade = 0;
+			}
 		}
-		else if (close < wmaValue && Position >= 0)
-		{
-			SellMarket();
-			_entryPrice = close;
-			_bestPrice = close;
-		}
+
+		_wasBullish = isBullish;
+		_hasPrevSignal = true;
 	}
 }

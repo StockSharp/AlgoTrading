@@ -23,6 +23,7 @@ public class LimitsBotStrategy : Strategy
 	private readonly StrategyParam<decimal> _trailingStart;
 	private readonly StrategyParam<decimal> _trailingDistance;
 	private readonly StrategyParam<decimal> _trailingStep;
+	private readonly StrategyParam<int> _cooldownCandles;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private Order _buyOrder;
@@ -30,6 +31,7 @@ public class LimitsBotStrategy : Strategy
 	private decimal? _entryPrice;
 	private decimal? _longStop, _longTake, _shortStop, _shortTake;
 	private decimal _lastPosition;
+	private int _barsSinceExit;
 
 	public bool BuyAllow { get => _buyAllow.Value; set => _buyAllow.Value = value; }
 	public bool SellAllow { get => _sellAllow.Value; set => _sellAllow.Value = value; }
@@ -39,6 +41,7 @@ public class LimitsBotStrategy : Strategy
 	public decimal TrailingStart { get => _trailingStart.Value; set => _trailingStart.Value = value; }
 	public decimal TrailingDistance { get => _trailingDistance.Value; set => _trailingDistance.Value = value; }
 	public decimal TrailingStep { get => _trailingStep.Value; set => _trailingStep.Value = value; }
+	public int CooldownCandles { get => _cooldownCandles.Value; set => _cooldownCandles.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public LimitsBotStrategy()
@@ -59,15 +62,33 @@ public class LimitsBotStrategy : Strategy
 			.SetDisplay("Trailing Distance", "Trailing stop distance", "Risk");
 		_trailingStep = Param(nameof(TrailingStep), 1m)
 			.SetDisplay("Trailing Step", "Minimal move to shift trailing", "Risk");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_cooldownCandles = Param(nameof(CooldownCandles), 2)
+			.SetGreaterThanZero()
+			.SetDisplay("Cooldown Candles", "Bars to wait after an exit", "Trading");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for strategy", "General");
 	}
 
+	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_buyOrder = null;
+		_sellOrder = null;
+		_entryPrice = null;
+		_longStop = _longTake = _shortStop = _shortTake = null;
+		_lastPosition = 0;
+		_barsSinceExit = CooldownCandles;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
@@ -77,11 +98,10 @@ public class LimitsBotStrategy : Strategy
 		_entryPrice = null;
 		_longStop = _longTake = _shortStop = _shortTake = null;
 		_lastPosition = 0;
-
-		var sma = new SimpleMovingAverage { Length = 1 };
+		_barsSinceExit = CooldownCandles;
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(sma, ProcessCandle).Start();
+		subscription.Bind(ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -91,7 +111,7 @@ public class LimitsBotStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal _unused)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
@@ -100,6 +120,7 @@ public class LimitsBotStrategy : Strategy
 			return;
 
 		var priceStep = 0.01m;
+		_barsSinceExit++;
 
 		if (Position > 0 && _lastPosition <= 0)
 		{
@@ -137,6 +158,7 @@ public class LimitsBotStrategy : Strategy
 			{
 				SellMarket();
 				_entryPrice = _longStop = _longTake = null;
+				_barsSinceExit = 0;
 			}
 		}
 		else if (Position < 0 && _entryPrice is decimal entryShort)
@@ -152,9 +174,10 @@ public class LimitsBotStrategy : Strategy
 			{
 				BuyMarket();
 				_entryPrice = _shortStop = _shortTake = null;
+				_barsSinceExit = 0;
 			}
 		}
-		else if (Position == 0)
+		else if (Position == 0 && _barsSinceExit >= CooldownCandles)
 		{
 			_entryPrice = null;
 			_longStop = _longTake = _shortStop = _shortTake = null;
@@ -170,9 +193,9 @@ public class LimitsBotStrategy : Strategy
 				_sellOrder = null;
 			}
 
-			if (BuyAllow)
+			if (BuyAllow && candle.ClosePrice >= candle.OpenPrice)
 				_buyOrder = BuyLimit(candle.OpenPrice - StopOrderDistance * priceStep, Volume);
-			if (SellAllow)
+			if (SellAllow && candle.ClosePrice <= candle.OpenPrice)
 				_sellOrder = SellLimit(candle.OpenPrice + StopOrderDistance * priceStep, Volume);
 		}
 

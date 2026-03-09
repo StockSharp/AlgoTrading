@@ -16,19 +16,22 @@ public class MelBarTake325Strategy : Strategy
 	private readonly StrategyParam<int> _smaPeriod;
 	private readonly StrategyParam<int> _rsiPeriod;
 	private readonly StrategyParam<decimal> _rsiExitLevel;
+	private readonly StrategyParam<int> _signalCooldownCandles;
 
 	private decimal _prevSma;
 	private decimal _prevPrevSma;
 	private bool _hasPrev2;
+	private int _candlesSinceTrade;
 
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 	public int SmaPeriod { get => _smaPeriod.Value; set => _smaPeriod.Value = value; }
 	public int RsiPeriod { get => _rsiPeriod.Value; set => _rsiPeriod.Value = value; }
 	public decimal RsiExitLevel { get => _rsiExitLevel.Value; set => _rsiExitLevel.Value = value; }
+	public int SignalCooldownCandles { get => _signalCooldownCandles.Value; set => _signalCooldownCandles.Value = value; }
 
 	public MelBarTake325Strategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 		_smaPeriod = Param(nameof(SmaPeriod), 12)
 			.SetGreaterThanZero()
@@ -38,12 +41,27 @@ public class MelBarTake325Strategy : Strategy
 			.SetDisplay("RSI Period", "RSI period", "Indicators");
 		_rsiExitLevel = Param(nameof(RsiExitLevel), 75m)
 			.SetDisplay("RSI Exit Level", "RSI level to close long; 100-level closes short", "Signals");
+		_signalCooldownCandles = Param(nameof(SignalCooldownCandles), 8)
+			.SetGreaterThanZero()
+			.SetDisplay("Signal Cooldown", "Bars to wait between trades", "Trading");
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevSma = 0m;
+		_prevPrevSma = 0m;
+		_hasPrev2 = false;
+		_candlesSinceTrade = SignalCooldownCandles;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 		_hasPrev2 = false;
+		_candlesSinceTrade = SignalCooldownCandles;
 		var sma = new SimpleMovingAverage { Length = SmaPeriod };
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 		var subscription = SubscribeCandles(CandleType);
@@ -54,19 +72,34 @@ public class MelBarTake325Strategy : Strategy
 	{
 		if (candle.State != CandleStates.Finished) return;
 
+		if (_candlesSinceTrade < SignalCooldownCandles)
+			_candlesSinceTrade++;
+
 		if (_hasPrev2)
 		{
 			// Exit on RSI extremes
 			if (Position > 0 && rsi > RsiExitLevel)
+			{
 				SellMarket();
+				_candlesSinceTrade = 0;
+			}
 			else if (Position < 0 && rsi < (100 - RsiExitLevel))
+			{
 				BuyMarket();
+				_candlesSinceTrade = 0;
+			}
 
 			// Entry on SMA reversal (peak/trough)
-			if (Position <= 0 && _prevPrevSma < _prevSma && _prevSma > sma)
+			if (Position == 0 && _candlesSinceTrade >= SignalCooldownCandles && _prevPrevSma > _prevSma && _prevSma < sma)
+			{
 				BuyMarket();
-			else if (Position >= 0 && _prevPrevSma > _prevSma && _prevSma < sma)
+				_candlesSinceTrade = 0;
+			}
+			else if (Position == 0 && _candlesSinceTrade >= SignalCooldownCandles && _prevPrevSma < _prevSma && _prevSma > sma)
+			{
 				SellMarket();
+				_candlesSinceTrade = 0;
+			}
 		}
 
 		_prevPrevSma = _prevSma;

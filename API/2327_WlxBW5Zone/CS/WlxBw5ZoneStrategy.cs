@@ -24,7 +24,7 @@ public class WlxBw5ZoneStrategy : Strategy
 	private readonly StrategyParam<int> _signalBar;
 
 	private AwesomeOscillator _ao;
-	private Acceleration _ac;
+	private SimpleMovingAverage _aoSma;
 
 	private decimal? _ao0, _ao1, _ao2, _ao3, _ao4;
 	private decimal? _ac0, _ac1, _ac2, _ac3, _ac4;
@@ -51,7 +51,7 @@ public class WlxBw5ZoneStrategy : Strategy
 	/// </summary>
 	public WlxBw5ZoneStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 
 		_direct = Param(nameof(Direct), true)
@@ -73,6 +73,8 @@ public class WlxBw5ZoneStrategy : Strategy
 	{
 		base.OnReseted();
 
+		_ao = null;
+		_aoSma = null;
 		_ao0 = _ao1 = _ao2 = _ao3 = _ao4 = null;
 		_ac0 = _ac1 = _ac2 = _ac3 = _ac4 = null;
 		_flagUp = false;
@@ -84,16 +86,15 @@ public class WlxBw5ZoneStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
+		_ao = new AwesomeOscillator();
+		_aoSma = new SimpleMovingAverage { Length = 5 };
 		_ao0 = _ao1 = _ao2 = _ao3 = _ao4 = null;
 		_ac0 = _ac1 = _ac2 = _ac3 = _ac4 = null;
 		_flagUp = false;
 		_flagDown = false;
 
-		_ao = new AwesomeOscillator();
-		_ac = new Acceleration();
-
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(_ao, _ac, ProcessCandle).Start();
+		subscription.Bind(_ao, ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -104,14 +105,23 @@ public class WlxBw5ZoneStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal ao, decimal ac)
+	private void ProcessCandle(ICandleMessage candle, decimal ao)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// shift previous values
-		_ao4 = _ao3; _ao3 = _ao2; _ao2 = _ao1; _ao1 = _ao0; _ao0 = ao;
-		_ac4 = _ac3; _ac3 = _ac2; _ac2 = _ac1; _ac1 = _ac0; _ac0 = ac;
+		var ac = ao - _aoSma.Process(new DecimalIndicatorValue(_aoSma, ao, candle.CloseTime) { IsFinal = true }).ToDecimal();
+
+		_ao4 = _ao3;
+		_ao3 = _ao2;
+		_ao2 = _ao1;
+		_ao1 = _ao0;
+		_ao0 = ao;
+		_ac4 = _ac3;
+		_ac3 = _ac2;
+		_ac2 = _ac1;
+		_ac1 = _ac0;
+		_ac0 = ac;
 
 		if (_ao4 is null || _ac4 is null)
 			return;
@@ -130,12 +140,12 @@ public class WlxBw5ZoneStrategy : Strategy
 			if (Direct)
 			{
 				if (Position <= 0)
-					BuyMarket();
+					BuyMarket(Position < 0 ? Volume + Math.Abs(Position) : Volume);
 			}
 			else
 			{
 				if (Position >= 0)
-					SellMarket();
+					SellMarket(Position > 0 ? Volume + Position : Volume);
 			}
 
 			_flagUp = true;
@@ -146,12 +156,12 @@ public class WlxBw5ZoneStrategy : Strategy
 			if (Direct)
 			{
 				if (Position >= 0)
-					SellMarket();
+					SellMarket(Position > 0 ? Volume + Position : Volume);
 			}
 			else
 			{
 				if (Position <= 0)
-					BuyMarket();
+					BuyMarket(Position < 0 ? Volume + Math.Abs(Position) : Volume);
 			}
 
 			_flagDown = true;

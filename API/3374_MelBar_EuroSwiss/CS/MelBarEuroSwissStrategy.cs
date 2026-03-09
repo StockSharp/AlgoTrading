@@ -16,14 +16,17 @@ public class MelBarEuroSwissStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _bbPeriod;
 	private readonly StrategyParam<int> _rsiPeriod;
+	private readonly StrategyParam<int> _signalCooldownCandles;
+	private int _candlesSinceTrade;
 
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 	public int BbPeriod { get => _bbPeriod.Value; set => _bbPeriod.Value = value; }
 	public int RsiPeriod { get => _rsiPeriod.Value; set => _rsiPeriod.Value = value; }
+	public int SignalCooldownCandles { get => _signalCooldownCandles.Value; set => _signalCooldownCandles.Value = value; }
 
 	public MelBarEuroSwissStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 		_bbPeriod = Param(nameof(BbPeriod), 18)
 			.SetGreaterThanZero()
@@ -31,29 +34,50 @@ public class MelBarEuroSwissStrategy : Strategy
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "RSI period", "Indicators");
+		_signalCooldownCandles = Param(nameof(SignalCooldownCandles), 12)
+			.SetGreaterThanZero()
+			.SetDisplay("Signal Cooldown", "Bars to wait between trades", "Trading");
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_candlesSinceTrade = SignalCooldownCandles;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		var bb = new BollingerBands { Length = BbPeriod, Width = 2.75m };
+		_candlesSinceTrade = SignalCooldownCandles;
+		var sma = new SimpleMovingAverage { Length = BbPeriod };
+		var atr = new AverageTrueRange { Length = BbPeriod };
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 		var subscription = SubscribeCandles(CandleType);
-		subscription.BindEx(bb, rsi, ProcessCandle).Start();
+		subscription.Bind(sma, atr, rsi, ProcessCandle).Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bbVal, IIndicatorValue rsiVal)
+	private void ProcessCandle(ICandleMessage candle, decimal sma, decimal atr, decimal rsi)
 	{
-		if (candle.State != CandleStates.Finished) return;
-		if (!bbVal.IsFinal || !rsiVal.IsFinal) return;
+		if (candle.State != CandleStates.Finished)
+			return;
 
-		var bbv = (BollingerBandsValue)bbVal;
-		if (bbv.UpBand is not decimal upper || bbv.LowBand is not decimal lower) return;
+		if (_candlesSinceTrade < SignalCooldownCandles)
+			_candlesSinceTrade++;
 
-		var rsi = rsiVal.GetValue<decimal>();
 		var close = candle.ClosePrice;
+		var bandDistance = atr * 4m;
 
-		if (close <= lower && Position <= 0) BuyMarket();
-		else if (close >= upper && Position >= 0) SellMarket();
+		if (_candlesSinceTrade >= SignalCooldownCandles && close <= sma - bandDistance && rsi < 25 && Position <= 0)
+		{
+			BuyMarket();
+			_candlesSinceTrade = 0;
+		}
+		else if (_candlesSinceTrade >= SignalCooldownCandles && close >= sma + bandDistance && rsi > 75 && Position >= 0)
+		{
+			SellMarket();
+			_candlesSinceTrade = 0;
+		}
 	}
 }

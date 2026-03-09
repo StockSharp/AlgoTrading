@@ -84,7 +84,7 @@ public class SpectrAnalysisWprStrategy : Strategy
 	/// </summary>
 	public SpectrAnalysisWprStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for indicator", "General");
 		_wprPeriod = Param(nameof(WprPeriod), 13)
 			.SetGreaterThanZero()
@@ -103,6 +103,14 @@ public class SpectrAnalysisWprStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		yield return (Security, CandleType);
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prev = null;
+		_prev2 = null;
 	}
 
 	/// <inheritdoc />
@@ -139,11 +147,21 @@ public class SpectrAnalysisWprStrategy : Strategy
 		}
 
 		// Upward direction detected (WPR was falling, now turning up)
-		if (_prev < _prev2 && wprValue >= _prev && Position <= 0)
-			BuyMarket();
+		if (_prev < _prev2 && wprValue >= _prev)
+		{
+			if (BuyPosOpen && Position <= 0)
+				BuyMarket(Position < 0 ? Volume + Math.Abs(Position) : Volume);
+			else if (SellPosClose && Position < 0)
+				BuyMarket(Math.Abs(Position));
+		}
 		// Downward direction detected (WPR was rising, now turning down)
-		else if (_prev > _prev2 && wprValue <= _prev && Position >= 0)
-			SellMarket();
+		else if (_prev > _prev2 && wprValue <= _prev)
+		{
+			if (SellPosOpen && Position >= 0)
+				SellMarket(Position > 0 ? Volume + Position : Volume);
+			else if (BuyPosClose && Position > 0)
+				SellMarket(Position);
+		}
 
 		_prev2 = _prev;
 		_prev = wprValue;

@@ -110,7 +110,7 @@ public class AmbushStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Equity Stop Loss", "Flatten positions after this loss", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(6).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for breakout detection", "General");
 
 		Volume = 1;

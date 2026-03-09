@@ -214,7 +214,7 @@ public class PipsoverChaikinHedgeStrategy : Strategy
 		_chaikinMaType = Param(nameof(ChaikinMaType), MovingAverageTypeOptions.Exponential)
 		.SetDisplay("Chaikin MA Type", "Chaikin moving average type", "Chaikin");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe for analysis", "Data");
 	}
 
@@ -358,14 +358,11 @@ public class PipsoverChaikinHedgeStrategy : Strategy
 		while (_maValues.Count > shift + 1)
 		_maValues.Dequeue();
 
-		if (_maValues.Count < shift + 1)
+		var values = _maValues.ToArray();
+		if (values.Length < shift + 1)
 		return null;
 
-		using var enumerator = _maValues.GetEnumerator();
-		for (var i = 0; i <= _maValues.Count - shift - 1; i++)
-		enumerator.MoveNext();
-
-		return enumerator.Current;
+		return values[0];
 	}
 
 	private void StorePreviousCandle(ICandleMessage candle)

@@ -1,50 +1,77 @@
-using System;
-
-using StockSharp.Algo.Indicators;
-using StockSharp.Algo.Strategies;
-using StockSharp.BusinessEntities;
-using StockSharp.Messages;
-
-namespace StockSharp.Samples.Strategies;
-
-public class ForexProfitSystemStrategy : Strategy
-{
-	private readonly StrategyParam<int> _fastPeriod;
-	private readonly StrategyParam<int> _slowPeriod;
-	private readonly StrategyParam<DataType> _candleType;
-
-	private decimal _prevFast; private decimal _prevSlow; private bool _hasPrev;
-
-	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
-	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
-	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
-
-	public ForexProfitSystemStrategy()
-	{
-		_fastPeriod = Param(nameof(FastPeriod), 10).SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
-		_slowPeriod = Param(nameof(SlowPeriod), 25).SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Candle timeframe", "General");
-	}
-
-	protected override void OnStarted2(DateTime time)
-	{
-		base.OnStarted2(time);
-		_hasPrev = false;
-		var fast = new ExponentialMovingAverage { Length = FastPeriod };
-		var slow = new ExponentialMovingAverage { Length = SlowPeriod };
-		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(fast, slow, ProcessCandle).Start();
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow)
-	{
-		if (candle.State != CandleStates.Finished) return;
-		if (!_hasPrev) { _prevFast = fast; _prevSlow = slow; _hasPrev = true; return; }
-
-		if (_prevFast <= _prevSlow && fast > slow && Position <= 0)
-		{ if (Position < 0) BuyMarket(); BuyMarket(); }
-		else if (_prevFast >= _prevSlow && fast < slow && Position >= 0)
-		{ if (Position > 0) SellMarket(); SellMarket(); }
-		_prevFast = fast; _prevSlow = slow;
-	}
-}
+using System;
+
+using StockSharp.Algo.Indicators;
+using StockSharp.Algo.Strategies;
+using StockSharp.BusinessEntities;
+using StockSharp.Messages;
+
+namespace StockSharp.Samples.Strategies;
+
+public class ForexProfitSystemStrategy : Strategy
+{
+	private readonly StrategyParam<int> _fastPeriod;
+	private readonly StrategyParam<int> _slowPeriod;
+	private readonly StrategyParam<DataType> _candleType;
+
+	private decimal _prevFast; private decimal _prevSlow; private bool _hasPrev;
+	private int _cooldown;
+
+	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
+	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+
+	public ForexProfitSystemStrategy()
+	{
+		_fastPeriod = Param(nameof(FastPeriod), 10).SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+		_slowPeriod = Param(nameof(SlowPeriod), 25).SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame()).SetDisplay("Candle Type", "Candle timeframe", "General");
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFast = default;
+		_prevSlow = default;
+		_hasPrev = default;
+		_cooldown = default;
+	}
+
+	/// <inheritdoc />
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
+		_hasPrev = false;
+		var fast = new ExponentialMovingAverage { Length = FastPeriod };
+		var slow = new ExponentialMovingAverage { Length = SlowPeriod };
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(fast, slow, ProcessCandle).Start();
+	}
+
+	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow)
+	{
+		if (candle.State != CandleStates.Finished) return;
+		if (!IsFormedAndOnlineAndAllowTrading()) return;
+		if (!_hasPrev) { _prevFast = fast; _prevSlow = slow; _hasPrev = true; return; }
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+			_prevFast = fast; _prevSlow = slow;
+			return;
+		}
+
+		if (_prevFast <= _prevSlow && fast > slow && Position <= 0)
+		{
+			var volume = Volume + Math.Abs(Position);
+			BuyMarket(volume);
+			_cooldown = 2;
+		}
+		else if (_prevFast >= _prevSlow && fast < slow && Position >= 0)
+		{
+			var volume = Volume + Math.Abs(Position);
+			SellMarket(volume);
+			_cooldown = 2;
+		}
+		_prevFast = fast; _prevSlow = slow;
+	}
+}

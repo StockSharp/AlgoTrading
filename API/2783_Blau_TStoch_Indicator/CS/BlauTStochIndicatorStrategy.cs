@@ -296,13 +296,13 @@ public class BlauTStochIndicatorStrategy : Strategy
 	/// </summary>
 	public BlauTStochIndicatorStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe for indicator calculation", "General");
 
 		_smoothingMethod = Param(nameof(Smoothing), SmoothingMethods.Ema)
 		.SetDisplay("Smoothing", "Moving average type for smoothing", "Indicator");
 
-		_momentumLength = Param(nameof(MomentumLength), 20)
+		_momentumLength = Param(nameof(MomentumLength), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("Momentum Length", "Lookback for highest and lowest prices", "Indicator");
 

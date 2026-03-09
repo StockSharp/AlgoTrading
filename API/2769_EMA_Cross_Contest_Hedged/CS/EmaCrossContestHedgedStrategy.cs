@@ -211,7 +211,7 @@ public class EmaCrossContestHedgedStrategy : Strategy
 		_useMacdFilter = Param(nameof(UseMacdFilter), false)
 			.SetDisplay("Use MACD", "Require MACD confirmation", "Filters");
 
-		_pendingOrderCount = Param(nameof(PendingOrderCount), 4)
+		_pendingOrderCount = Param(nameof(PendingOrderCount), 1)
 			.SetGreaterThanZero()
 			.SetDisplay("Pending Orders", "Pending stop orders per side", "Orders");
 
@@ -241,7 +241,7 @@ public class EmaCrossContestHedgedStrategy : Strategy
 		_tradeBar = Param(nameof(TradeBar), TradeBarOptions.Previous)
 			.SetDisplay("Trade Bar", "Use current or previous bar for signals", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for calculations", "General");
 	}
 
@@ -404,14 +404,16 @@ public class EmaCrossContestHedgedStrategy : Strategy
 			return;
 
 		var now = candle.CloseTime;
+		var orders = _pendingOrders.ToArray();
 
-		for (var i = _pendingOrders.Count - 1; i >= 0; i--)
+		foreach (var order in orders)
 		{
-			var order = _pendingOrders[i];
+			if (order == null)
+				continue;
 
 			if (order.ExpireTime <= now)
 			{
-				_pendingOrders.RemoveAt(i);
+				_pendingOrders.Remove(order);
 				continue;
 			}
 
@@ -422,7 +424,8 @@ public class EmaCrossContestHedgedStrategy : Strategy
 			if (!triggered)
 				continue;
 
-			_pendingOrders.RemoveAt(i);
+			if (!_pendingOrders.Remove(order))
+				continue;
 
 			if (order.Side == Sides.Buy)
 			{

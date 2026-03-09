@@ -30,6 +30,15 @@ public class BasicMaTemplateStrategy : Strategy
 			.SetDisplay("MA Period", "Moving average period", "Indicators");
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevOpen = null;
+		_prevClose = null;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);

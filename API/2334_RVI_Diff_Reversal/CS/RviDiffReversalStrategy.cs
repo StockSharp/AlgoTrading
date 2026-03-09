@@ -20,7 +20,6 @@ public class RviDiffReversalStrategy : Strategy
 	private readonly StrategyParam<int> _smoothingLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private ExponentialMovingAverage _smoother;
 	private decimal? _prevDiff;
 	private decimal? _prevPrevDiff;
 
@@ -38,7 +37,7 @@ public class RviDiffReversalStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Smoothing Length", "Length of EMA smoothing", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -47,16 +46,26 @@ public class RviDiffReversalStrategy : Strategy
 		return [(Security, CandleType)];
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_prevDiff = null;
+		_prevPrevDiff = null;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
 		_prevDiff = null;
 		_prevPrevDiff = null;
-		_smoother = new ExponentialMovingAverage { Length = SmoothingLength };
 
 		var rvi = new RelativeVigorIndex();
 		rvi.Average.Length = RviLength;
+		rvi.Signal.Length = SmoothingLength;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.BindEx(rvi, ProcessCandle).Start();
@@ -81,13 +90,7 @@ public class RviDiffReversalStrategy : Strategy
 		if (rviTyped.Average is not decimal avg || rviTyped.Signal is not decimal sig)
 			return;
 
-		var diff = avg - sig;
-		var smoothResult = _smoother.Process(diff, candle.CloseTime, true);
-
-		if (!_smoother.IsFormed)
-			return;
-
-		var current = smoothResult.GetValue<decimal>();
+		var current = avg - sig;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 		{

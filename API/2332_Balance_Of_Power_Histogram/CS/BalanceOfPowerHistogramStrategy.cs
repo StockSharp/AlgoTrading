@@ -11,15 +11,16 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Balance of Power Histogram strategy that reacts on direction changes
-/// of the Balance of Power indicator.
+/// Balance of Power histogram strategy that trades confirmed zero-line reversals.
 /// </summary>
 public class BalanceOfPowerHistogramStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<decimal> _signalLevel;
+	private readonly StrategyParam<int> _cooldownCandles;
 
-	private decimal? _prev;
-	private decimal? _prevPrev;
+	private int _barsSinceSignal;
+	private decimal? _prevBop;
 
 	/// <summary>
 	/// Candle type for strategy calculation.
@@ -31,12 +32,34 @@ public class BalanceOfPowerHistogramStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Minimum Balance of Power value required for a signal.
+	/// </summary>
+	public decimal SignalLevel
+	{
+		get => _signalLevel.Value;
+		set => _signalLevel.Value = value;
+	}
+
+	/// <summary>
+	/// Minimum number of finished candles between entries.
+	/// </summary>
+	public int CooldownCandles
+	{
+		get => _cooldownCandles.Value;
+		set => _cooldownCandles.Value = value;
+	}
+
+	/// <summary>
 	/// Initializes a new instance of the <see cref="BalanceOfPowerHistogramStrategy"/>.
 	/// </summary>
 	public BalanceOfPowerHistogramStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
+		_signalLevel = Param(nameof(SignalLevel), 0.30m)
+			.SetDisplay("Signal Level", "Minimum BOP value for confirmed reversals", "Signal");
+		_cooldownCandles = Param(nameof(CooldownCandles), 3)
+			.SetDisplay("Cooldown Candles", "Minimum finished candles between entries", "Signal");
 	}
 
 	/// <inheritdoc />
@@ -50,7 +73,8 @@ public class BalanceOfPowerHistogramStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_prev = _prevPrev = null;
+		_barsSinceSignal = CooldownCandles;
+		_prevBop = null;
 	}
 
 	/// <inheritdoc />
@@ -58,14 +82,14 @@ public class BalanceOfPowerHistogramStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_prev = null;
-		_prevPrev = null;
+		_barsSinceSignal = CooldownCandles;
+		_prevBop = null;
 
-		var sma = new SimpleMovingAverage { Length = 1 };
-
+		var bop = new BalanceOfPower();
 		var subscription = SubscribeCandles(CandleType);
+
 		subscription
-			.Bind(sma, ProcessCandle)
+			.Bind(bop, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -76,35 +100,33 @@ public class BalanceOfPowerHistogramStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal _unused)
+	private void ProcessCandle(ICandleMessage candle, decimal bop)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (candle.HighPrice == candle.LowPrice)
+		var prevBop = _prevBop;
+		_prevBop = bop;
+		_barsSinceSignal++;
+
+		if (!IsFormedAndOnlineAndAllowTrading() || prevBop is null)
 			return;
 
-		var bop = (candle.ClosePrice - candle.OpenPrice) / (candle.HighPrice - candle.LowPrice);
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			_prevPrev = _prev;
-			_prev = bop;
+		if (_barsSinceSignal < CooldownCandles)
 			return;
-		}
 
-		if (_prev is decimal prev && _prevPrev is decimal prevPrev)
+		var turnedUp = prevBop <= -SignalLevel && bop >= SignalLevel;
+		var turnedDown = prevBop >= SignalLevel && bop <= -SignalLevel;
+
+		if (turnedUp && Position <= 0)
 		{
-			var turnedUp = prev < prevPrev && bop > prev;
-			var turnedDown = prev > prevPrev && bop < prev;
-
-			if (turnedUp && Position <= 0)
-				BuyMarket();
-			else if (turnedDown && Position >= 0)
-				SellMarket();
+			BuyMarket();
+			_barsSinceSignal = 0;
 		}
-
-		_prevPrev = _prev;
-		_prev = bop;
+		else if (turnedDown && Position >= 0)
+		{
+			SellMarket();
+			_barsSinceSignal = 0;
+		}
 	}
 }

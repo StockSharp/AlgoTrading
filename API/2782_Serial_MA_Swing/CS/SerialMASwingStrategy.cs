@@ -131,7 +131,7 @@ public class SerialMASwingStrategy : Strategy
 	/// </summary>
 	public SerialMASwingStrategy()
 	{
-		_openedMode = Param(nameof(OpenedMode), SerialMaOpenedModes.AllSwing)
+		_openedMode = Param(nameof(OpenedMode), SerialMaOpenedModes.SingleSwing)
 			.SetDisplay("Opened Mode", "How many swing positions may coexist", "Trading");
 
 		_enableBuy = Param(nameof(EnableBuy), true)
@@ -155,7 +155,7 @@ public class SerialMASwingStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Take Profit (points)", "Target distance in points", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Data series used for calculations", "General");
 	}
 
@@ -178,6 +178,7 @@ public class SerialMASwingStrategy : Strategy
 		_serialMaCount = 0;
 		_serialMaPrevDiff = null;
 		_serialMaHistory = 0;
+		_entryPrice = 0m;
 	}
 
 	/// <inheritdoc />
@@ -224,10 +225,12 @@ public class SerialMASwingStrategy : Strategy
 		var movingAverage = _serialMaSum / _serialMaCount;
 		var diff = movingAverage - close;
 		var isCross = false;
+		var signalFromCross = 0;
 
 		if (_serialMaPrevDiff.HasValue && diff * _serialMaPrevDiff.Value < 0m)
 		{
 			isCross = true;
+			signalFromCross = diff < 0m ? 1 : -1;
 			movingAverage = close;
 			diff = 0m;
 			_serialMaSum = close;
@@ -247,7 +250,7 @@ public class SerialMASwingStrategy : Strategy
 
 		HandleProtectiveLevels(candle);
 
-		var signal = GetPendingSignal();
+		var signal = signalFromCross != 0 ? signalFromCross : GetPendingSignal();
 		if (signal != 0)
 		{
 			var openLong = signal > 0;

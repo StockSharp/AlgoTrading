@@ -17,19 +17,22 @@ public class AbeBeStochStrategy : Strategy
 	private readonly StrategyParam<int> _stochPeriod;
 	private readonly StrategyParam<decimal> _oversold;
 	private readonly StrategyParam<decimal> _overbought;
+	private readonly StrategyParam<int> _signalCooldownCandles;
 
 	private readonly List<ICandleMessage> _candles = new();
 	private decimal _prevK;
 	private bool _hasPrevK;
+	private int _candlesSinceTrade;
 
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 	public int StochPeriod { get => _stochPeriod.Value; set => _stochPeriod.Value = value; }
 	public decimal Oversold { get => _oversold.Value; set => _oversold.Value = value; }
 	public decimal Overbought { get => _overbought.Value; set => _overbought.Value = value; }
+	public int SignalCooldownCandles { get => _signalCooldownCandles.Value; set => _signalCooldownCandles.Value = value; }
 
 	public AbeBeStochStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 		_stochPeriod = Param(nameof(StochPeriod), 14)
 			.SetGreaterThanZero()
@@ -38,13 +41,28 @@ public class AbeBeStochStrategy : Strategy
 			.SetDisplay("Oversold", "Stochastic oversold level", "Signals");
 		_overbought = Param(nameof(Overbought), 70m)
 			.SetDisplay("Overbought", "Stochastic overbought level", "Signals");
+		_signalCooldownCandles = Param(nameof(SignalCooldownCandles), 6)
+			.SetGreaterThanZero()
+			.SetDisplay("Signal Cooldown", "Bars to wait between trades", "Trading");
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_candles.Clear();
+		_prevK = 0m;
+		_hasPrevK = false;
+		_candlesSinceTrade = SignalCooldownCandles;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 		_candles.Clear();
 		_hasPrevK = false;
+		_candlesSinceTrade = SignalCooldownCandles;
 		var stoch = new StochasticOscillator { K = { Length = StochPeriod }, D = { Length = 3 } };
 		var subscription = SubscribeCandles(CandleType);
 		subscription.BindEx(stoch, ProcessCandle).Start();
@@ -53,6 +71,9 @@ public class AbeBeStochStrategy : Strategy
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue stochValue)
 	{
 		if (candle.State != CandleStates.Finished) return;
+
+		if (_candlesSinceTrade < SignalCooldownCandles)
+			_candlesSinceTrade++;
 
 		var stochTyped = stochValue as StochasticOscillatorValue;
 		if (stochTyped?.K is not decimal kValue) return;
@@ -78,19 +99,31 @@ public class AbeBeStochStrategy : Strategy
 				&& curr.OpenPrice >= prev.ClosePrice
 				&& curr.ClosePrice <= prev.OpenPrice;
 
-			if (bullishEngulfing && kValue < Oversold && Position <= 0)
+			if (bullishEngulfing && kValue < Oversold && Position <= 0 && _candlesSinceTrade >= SignalCooldownCandles)
+			{
 				BuyMarket();
-			else if (bearishEngulfing && kValue > Overbought && Position >= 0)
+				_candlesSinceTrade = 0;
+			}
+			else if (bearishEngulfing && kValue > Overbought && Position >= 0 && _candlesSinceTrade >= SignalCooldownCandles)
+			{
 				SellMarket();
+				_candlesSinceTrade = 0;
+			}
 		}
 
 		// Exit on stochastic cross
 		if (_hasPrevK)
 		{
-			if (Position > 0 && _prevK >= Overbought && kValue < Overbought)
+			if (Position > 0 && _prevK >= Overbought && kValue < Overbought && _candlesSinceTrade >= SignalCooldownCandles)
+			{
 				SellMarket();
-			else if (Position < 0 && _prevK <= Oversold && kValue > Oversold)
+				_candlesSinceTrade = 0;
+			}
+			else if (Position < 0 && _prevK <= Oversold && kValue > Oversold && _candlesSinceTrade >= SignalCooldownCandles)
+			{
 				BuyMarket();
+				_candlesSinceTrade = 0;
+			}
 		}
 
 		_prevK = kValue;

@@ -13,7 +13,9 @@ public class Et4MtcV1Strategy : Strategy
 	private readonly StrategyParam<int> _momentumPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevMom; private bool _hasPrev;
+	private decimal _prevMom;
+	private bool _hasPrev;
+	private int _cooldown;
 
 	public int EmaPeriod { get => _emaPeriod.Value; set => _emaPeriod.Value = value; }
 	public int MomentumPeriod { get => _momentumPeriod.Value; set => _momentumPeriod.Value = value; }
@@ -23,9 +25,19 @@ public class Et4MtcV1Strategy : Strategy
 	{
 		_emaPeriod = Param(nameof(EmaPeriod), 20).SetDisplay("EMA Period", "EMA trend filter", "Indicators");
 		_momentumPeriod = Param(nameof(MomentumPeriod), 14).SetDisplay("Momentum", "Momentum period", "Indicators");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Candle timeframe", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame()).SetDisplay("Candle Type", "Candle timeframe", "General");
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevMom = default;
+		_hasPrev = default;
+		_cooldown = default;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
@@ -39,13 +51,30 @@ public class Et4MtcV1Strategy : Strategy
 	private void ProcessCandle(ICandleMessage candle, decimal ema, decimal mom)
 	{
 		if (candle.State != CandleStates.Finished) return;
+		if (!IsFormedAndOnlineAndAllowTrading()) return;
+
 		var close = candle.ClosePrice;
 		if (!_hasPrev) { _prevMom = mom; _hasPrev = true; return; }
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+			_prevMom = mom;
+			return;
+		}
 
 		if (close > ema && _prevMom <= 0 && mom > 0 && Position <= 0)
-		{ if (Position < 0) BuyMarket(); BuyMarket(); }
+		{
+			var volume = Volume + Math.Abs(Position);
+			BuyMarket(volume);
+			_cooldown = 2;
+		}
 		else if (close < ema && _prevMom >= 0 && mom < 0 && Position >= 0)
-		{ if (Position > 0) SellMarket(); SellMarket(); }
+		{
+			var volume = Volume + Math.Abs(Position);
+			SellMarket(volume);
+			_cooldown = 2;
+		}
+
 		_prevMom = mom;
 	}
 }

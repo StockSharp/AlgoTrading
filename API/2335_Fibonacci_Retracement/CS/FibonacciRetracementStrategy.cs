@@ -3,7 +3,6 @@ using System.Collections.Generic;
 
 using Ecng.Common;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -17,6 +16,8 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class FibonacciRetracementStrategy : Strategy
 {
+	private const int BufferSize = 256;
+
 	private readonly StrategyParam<int> _zigzagDepth;
 	private readonly StrategyParam<int> _safetyBuffer;
 	private readonly StrategyParam<int> _trendPrecision;
@@ -25,21 +26,18 @@ public class FibonacciRetracementStrategy : Strategy
 	private readonly StrategyParam<int> _stopLossPoints;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private readonly decimal[] _hl = new decimal[4];
-	private int _direction;
-	private int _trendDirection;
-	private decimal _fibo00;
-	private decimal _fibo23;
-	private decimal _fibo38;
-	private decimal _fibo61;
-	private decimal _fibo76;
-	private decimal _fibo100;
-	private decimal _fiboBase;
+	private readonly decimal[] _highBuffer = new decimal[BufferSize];
+	private readonly decimal[] _lowBuffer = new decimal[BufferSize];
+
+	private bool _longSetupArmed;
+	private bool _shortSetupArmed;
 	private decimal _prevClose;
 	private decimal _entryPrice;
 	private decimal _stopPrice;
 	private decimal _takePrice;
 	private int _barsSinceExit;
+	private int _bufferIndex;
+	private int _bufferCount;
 
 	/// <summary>
 	/// Depth parameter for ZigZag pivot detection.
@@ -124,7 +122,7 @@ public class FibonacciRetracementStrategy : Strategy
 		_stopLossPoints = Param(nameof(StopLossPoints), 15)
 			.SetDisplay("Stop Loss Points", "Distance to stop from entry", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candles timeframe", "General");
 	}
 
@@ -138,15 +136,18 @@ public class FibonacciRetracementStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		Array.Clear(_hl);
-		_direction = 0;
-		_trendDirection = 0;
-		_fibo00 = _fibo23 = _fibo38 = _fibo61 = _fibo76 = _fibo100 = _fiboBase = 0m;
+
+		Array.Clear(_highBuffer);
+		Array.Clear(_lowBuffer);
+		_longSetupArmed = false;
+		_shortSetupArmed = false;
 		_prevClose = 0m;
 		_entryPrice = 0m;
 		_stopPrice = 0m;
 		_takePrice = 0m;
 		_barsSinceExit = CloseBarPause;
+		_bufferIndex = 0;
+		_bufferCount = 0;
 	}
 
 	/// <inheritdoc />
@@ -154,23 +155,20 @@ public class FibonacciRetracementStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		Array.Clear(_hl);
-		_direction = 0;
-		_trendDirection = 0;
-		_fibo00 = _fibo23 = _fibo38 = _fibo61 = _fibo76 = _fibo100 = _fiboBase = 0m;
+		Array.Clear(_highBuffer);
+		Array.Clear(_lowBuffer);
+		_longSetupArmed = false;
+		_shortSetupArmed = false;
 		_prevClose = 0m;
 		_entryPrice = 0m;
 		_stopPrice = 0m;
 		_takePrice = 0m;
 		_barsSinceExit = CloseBarPause;
-
-		var highest = new Highest { Length = ZigzagDepth };
-		var lowest = new Lowest { Length = ZigzagDepth };
+		_bufferIndex = 0;
+		_bufferCount = 0;
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(highest, lowest, ProcessCandle)
-			.Start();
+		subscription.Bind(ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -180,134 +178,147 @@ public class FibonacciRetracementStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal highest, decimal lowest)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
-		// detect new pivot using zigzag logic
-		if (candle.HighPrice >= highest && _direction != 1)
+		PushBar(candle.HighPrice, candle.LowPrice);
+		_barsSinceExit++;
+
+		if (_bufferCount < Math.Min(ZigzagDepth, BufferSize))
 		{
-		ShiftPivots(candle.HighPrice);
-		_direction = 1;
-		}
-		else if (candle.LowPrice <= lowest && _direction != -1)
-		{
-		ShiftPivots(candle.LowPrice);
-		_direction = -1;
+			_prevClose = candle.ClosePrice;
+			return;
 		}
 
-		// update trend and fibonacci levels when we have enough pivots
-		if (_hl[3] != 0m)
-		{
-		_trendDirection = CheckTrend(_hl[0], _hl[1], _hl[2], _hl[3]);
+		var highest = GetHighest(Math.Min(ZigzagDepth, BufferSize));
+		var lowest = GetLowest(Math.Min(ZigzagDepth, BufferSize));
+		var range = highest - lowest;
+		var precision = 0.01m * TrendPrecision;
 
-		_fibo00 = _hl[0];
-		_fibo100 = _hl[1];
-		_fiboBase = Math.Abs(_fibo00 - _fibo100);
-
-		if (_trendDirection == 1)
-		{
-		_fibo23 = _fibo00 - 0.236m * _fiboBase;
-		_fibo38 = _fibo00 - 0.382m * _fiboBase;
-		_fibo61 = _fibo00 - 0.618m * _fiboBase;
-		_fibo76 = _fibo00 - 0.764m * _fiboBase;
-		}
-		else if (_trendDirection == -1)
-		{
-		_fibo23 = _fibo00 + 0.236m * _fiboBase;
-		_fibo38 = _fibo00 + 0.382m * _fiboBase;
-		_fibo61 = _fibo00 + 0.618m * _fiboBase;
-		_fibo76 = _fibo00 + 0.764m * _fiboBase;
-		}
-		}
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-		_prevClose = candle.ClosePrice;
-		return;
-		}
-
-		// manage open positions
 		if (Position > 0)
 		{
-		if (candle.LowPrice <= _stopPrice || candle.HighPrice >= _takePrice)
-		{
-		SellMarket();
-		_entryPrice = 0m;
-		_barsSinceExit = 0;
-		}
+			if (candle.LowPrice <= _stopPrice || candle.HighPrice >= _takePrice)
+			{
+				SellMarket();
+				_entryPrice = 0m;
+				_longSetupArmed = false;
+				_barsSinceExit = 0;
+			}
 		}
 		else if (Position < 0)
 		{
-		if (candle.HighPrice >= _stopPrice || candle.LowPrice <= _takePrice)
-		{
-		BuyMarket();
-		_entryPrice = 0m;
-		_barsSinceExit = 0;
+			if (candle.HighPrice >= _stopPrice || candle.LowPrice <= _takePrice)
+			{
+				BuyMarket();
+				_entryPrice = 0m;
+				_shortSetupArmed = false;
+				_barsSinceExit = 0;
+			}
 		}
+
+		if (range <= precision || !IsFormedAndOnlineAndAllowTrading())
+		{
+			_prevClose = candle.ClosePrice;
+			return;
 		}
-		else
-		{
-		if (_barsSinceExit >= CloseBarPause)
-		{
+
+		var midpoint = lowest + (range / 2m);
+		var longTrigger = midpoint;
+		var longRetracement = highest - 0.618m * range;
+		var shortTrigger = midpoint;
+		var shortRetracement = lowest + 0.618m * range;
 		var buffer = 0.01m * SafetyBuffer;
 
-		if (_trendDirection == 1 &&
-		(CrossAbove(_prevClose, candle.ClosePrice, _fibo76, buffer) ||
-		CrossAbove(_prevClose, candle.ClosePrice, _fibo61, buffer) ||
-		CrossAbove(_prevClose, candle.ClosePrice, _fibo38, buffer) ||
-		CrossAbove(_prevClose, candle.ClosePrice, _fibo23, buffer)))
+		if (Position == 0 && _barsSinceExit >= CloseBarPause)
 		{
-		BuyMarket();
-		_entryPrice = candle.ClosePrice;
-		_stopPrice = _entryPrice - 0.01m * StopLossPoints;
-		_takePrice = _fibo00 + TakeProfitFactor * _fiboBase;
-		}
-		else if (_trendDirection == -1 &&
-		(CrossBelow(_prevClose, candle.ClosePrice, _fibo76, buffer) ||
-		CrossBelow(_prevClose, candle.ClosePrice, _fibo61, buffer) ||
-		CrossBelow(_prevClose, candle.ClosePrice, _fibo38, buffer) ||
-		CrossBelow(_prevClose, candle.ClosePrice, _fibo23, buffer)))
-		{
-		SellMarket();
-		_entryPrice = candle.ClosePrice;
-		_stopPrice = _entryPrice + 0.01m * StopLossPoints;
-		_takePrice = _fibo00 - TakeProfitFactor * _fiboBase;
-		}
-		}
+			if (candle.ClosePrice > midpoint)
+			{
+				_shortSetupArmed = false;
+
+				if (candle.LowPrice <= longRetracement + buffer)
+					_longSetupArmed = true;
+
+				if (_longSetupArmed && CrossAbove(_prevClose, candle.ClosePrice, longTrigger, buffer))
+				{
+					BuyMarket();
+					_entryPrice = candle.ClosePrice;
+					_stopPrice = _entryPrice - 0.01m * StopLossPoints;
+					_takePrice = highest + TakeProfitFactor * range;
+					_longSetupArmed = false;
+					_barsSinceExit = 0;
+				}
+			}
+			else if (candle.ClosePrice < midpoint)
+			{
+				_longSetupArmed = false;
+
+				if (candle.HighPrice >= shortRetracement - buffer)
+					_shortSetupArmed = true;
+
+				if (_shortSetupArmed && CrossBelow(_prevClose, candle.ClosePrice, shortTrigger, buffer))
+				{
+					SellMarket();
+					_entryPrice = candle.ClosePrice;
+					_stopPrice = _entryPrice + 0.01m * StopLossPoints;
+					_takePrice = lowest - TakeProfitFactor * range;
+					_shortSetupArmed = false;
+					_barsSinceExit = 0;
+				}
+			}
 		}
 
 		_prevClose = candle.ClosePrice;
-		_barsSinceExit++;
 	}
 
-	private void ShiftPivots(decimal newValue)
+	private void PushBar(decimal high, decimal low)
 	{
-		_hl[3] = _hl[2];
-		_hl[2] = _hl[1];
-		_hl[1] = _hl[0];
-		_hl[0] = newValue;
+		_highBuffer[_bufferIndex] = high;
+		_lowBuffer[_bufferIndex] = low;
+		_bufferIndex = (_bufferIndex + 1) % BufferSize;
+
+		if (_bufferCount < BufferSize)
+			_bufferCount++;
 	}
 
-	private int CheckTrend(decimal hl0, decimal hl1, decimal hl2, decimal hl3)
+	private decimal GetHighest(int depth)
 	{
-	var precision = 0.01m * TrendPrecision;
+		var highest = decimal.MinValue;
+		var count = Math.Min(depth, _bufferCount);
 
-	if ((hl2 - hl0) > precision && (hl3 - hl1) > precision)
-	return -1;
-	if ((hl0 - hl2) > precision && (hl1 - hl3) > precision)
-	return 1;
-	return 0;
+		for (var i = 0; i < count; i++)
+		{
+			var idx = (_bufferIndex - 1 - i + BufferSize) % BufferSize;
+			if (_highBuffer[idx] > highest)
+				highest = _highBuffer[idx];
+		}
+
+		return highest;
 	}
 
-	private static bool CrossAbove(decimal prev, decimal current, decimal level, decimal buffer)
+	private decimal GetLowest(int depth)
 	{
-	return current - level > buffer && level - prev > buffer;
+		var lowest = decimal.MaxValue;
+		var count = Math.Min(depth, _bufferCount);
+
+		for (var i = 0; i < count; i++)
+		{
+			var idx = (_bufferIndex - 1 - i + BufferSize) % BufferSize;
+			if (_lowBuffer[idx] < lowest)
+				lowest = _lowBuffer[idx];
+		}
+
+		return lowest;
 	}
 
 	private static bool CrossBelow(decimal prev, decimal current, decimal level, decimal buffer)
 	{
-	return prev - level > buffer && level - current > buffer;
+		return prev - level > buffer && level - current > buffer;
+	}
+
+	private static bool CrossAbove(decimal prev, decimal current, decimal level, decimal buffer)
+	{
+		return current - level > buffer && level - prev > buffer;
 	}
 }

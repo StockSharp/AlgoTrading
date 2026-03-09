@@ -40,13 +40,23 @@ public class SpectralRviStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Smooth Length", "Smoothing length", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_smoothRvi = null;
+		_smoothSig = null;
+		_prevSmRvi = null;
+		_prevSmSig = null;
 	}
 
 	protected override void OnStarted2(DateTime time)
@@ -59,7 +69,6 @@ public class SpectralRviStrategy : Strategy
 		_smoothSig = new SimpleMovingAverage { Length = SmoothLength };
 
 		var rvi = new RelativeVigorIndex();
-		rvi.Average.Length = RviLength;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.BindEx(rvi, ProcessCandle).Start();
@@ -91,8 +100,8 @@ public class SpectralRviStrategy : Strategy
 		if (!_smoothRvi.IsFormed || !_smoothSig.IsFormed)
 			return;
 
-		var smRvi = smRviResult.GetValue<decimal>();
-		var smSig = smSigResult.GetValue<decimal>();
+		var smRvi = smRviResult.ToDecimal();
+		var smSig = smSigResult.ToDecimal();
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 		{

@@ -70,11 +70,9 @@ public class VolumeWeightedMaStDevStrategy : Strategy
 		_vwma = new VolumeWeightedMovingAverage { Length = VwmaLength };
 		_stdDev = new StandardDeviation { Length = StdPeriod };
 
-		Indicators.Add(_stdDev);
-
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(_vwma, ProcessCandle)
+			.Bind(_vwma, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -86,15 +84,13 @@ public class VolumeWeightedMaStDevStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue vwmaInd)
+	private void ProcessCandle(ICandleMessage candle, decimal vwmaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
 		if (!_vwma.IsFormed)
 			return;
-
-		var vwmaValue = vwmaInd.GetValue<decimal>();
 		var t = candle.ServerTime;
 
 		if (_prevVwma is null)
@@ -113,7 +109,7 @@ public class VolumeWeightedMaStDevStrategy : Strategy
 			return;
 		}
 
-		var stdValue = stdResult.GetValue<decimal>();
+		var stdValue = stdResult.ToDecimal();
 		var filter = K1 * stdValue;
 
 		if (diff > filter && Position <= 0)

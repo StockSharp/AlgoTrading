@@ -78,7 +78,7 @@ public class NCandlesV6Strategy : Strategy
 
 	public NCandlesV6Strategy()
 	{
-		_candlesCount = Param(nameof(CandlesCount), 3)
+		_candlesCount = Param(nameof(CandlesCount), 4)
 		.SetGreaterThanZero()
 		.SetDisplay("Candles", "Number of identical candles", "Pattern");
 
@@ -114,7 +114,7 @@ public class NCandlesV6Strategy : Strategy
 		_blackSheepMode = Param(nameof(ClosingMode), BlackSheepCloseModes.All)
 		.SetDisplay("Closing Mode", "Reaction to a black sheep candle", "Pattern");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Primary timeframe", "Pattern");
 	}
 

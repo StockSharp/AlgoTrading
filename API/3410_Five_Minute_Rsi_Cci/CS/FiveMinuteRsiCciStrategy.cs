@@ -17,6 +17,8 @@ public class FiveMinuteRsiCciStrategy : Strategy
 	private readonly StrategyParam<int> _cciPeriod;
 	private readonly StrategyParam<decimal> _bullishLevel;
 	private readonly StrategyParam<decimal> _bearishLevel;
+	private bool _wasBullish;
+	private bool _hasPrevSignal;
 
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 	public int RsiPeriod { get => _rsiPeriod.Value; set => _rsiPeriod.Value = value; }
@@ -26,7 +28,7 @@ public class FiveMinuteRsiCciStrategy : Strategy
 
 	public FiveMinuteRsiCciStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetGreaterThanZero()
@@ -40,9 +42,19 @@ public class FiveMinuteRsiCciStrategy : Strategy
 			.SetDisplay("Bearish RSI Level", "RSI below this for sell", "Signals");
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_wasBullish = false;
+		_hasPrevSignal = false;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+		_hasPrevSignal = false;
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 		var cci = new CommodityChannelIndex { Length = CciPeriod };
 		var subscription = SubscribeCandles(CandleType);
@@ -53,9 +65,17 @@ public class FiveMinuteRsiCciStrategy : Strategy
 	{
 		if (candle.State != CandleStates.Finished) return;
 
-		if (rsiValue > BullishLevel && cciValue > 0 && Position <= 0)
-			BuyMarket();
-		else if (rsiValue < BearishLevel && cciValue < 0 && Position >= 0)
-			SellMarket();
+		var isBullish = rsiValue > BullishLevel && cciValue > 0;
+
+		if (_hasPrevSignal && isBullish != _wasBullish)
+		{
+			if (isBullish && Position <= 0)
+				BuyMarket();
+			else if (!isBullish && rsiValue < BearishLevel && cciValue < 0 && Position >= 0)
+				SellMarket();
+		}
+
+		_wasBullish = isBullish;
+		_hasPrevSignal = true;
 	}
 }

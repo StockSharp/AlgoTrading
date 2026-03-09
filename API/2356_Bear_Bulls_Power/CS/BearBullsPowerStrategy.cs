@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -62,16 +59,16 @@ public class BearBullsPowerStrategy : Strategy
 	/// </summary>
 	public BearBullsPowerStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe of processed candles", "General");
 
-		_firstLength = Param(nameof(FirstLength), 12)
+		_firstLength = Param(nameof(FirstLength), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Price MA Length", "Length of the first smoothing", "Indicator")
 			
 			.SetOptimize(5, 30, 1);
 
-		_secondLength = Param(nameof(SecondLength), 5)
+		_secondLength = Param(nameof(SecondLength), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Signal MA Length", "Length of the second smoothing", "Indicator")
 			
@@ -85,12 +82,25 @@ public class BearBullsPowerStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_priceMa = null;
+		_signalMa = null;
+		_prevValue = null;
+		_prevColor = null;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
 		_priceMa = new SimpleMovingAverage { Length = FirstLength };
 		_signalMa = new SimpleMovingAverage { Length = SecondLength };
+		_prevValue = null;
+		_prevColor = null;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
@@ -116,21 +126,20 @@ public class BearBullsPowerStrategy : Strategy
 
 		var signal = _signalMa.Process(new DecimalIndicatorValue(_signalMa, diff, candle.OpenTime)).ToDecimal();
 
-		int color;
-		if (_prevValue is null)
-			color = 1;
-		else if (_prevValue < signal)
-			color = 0;
-		else if (_prevValue > signal)
-			color = 2;
-		else
-			color = 1;
-
-		if (_prevColor != color)
+		if (!_priceMa.IsFormed || !_signalMa.IsFormed || !IsFormedAndOnlineAndAllowTrading())
 		{
-			if (color == 0 && signal > 0 && Position <= 0)
+			_prevColor = _prevValue is null ? null : _prevValue < signal ? 0 : _prevValue > signal ? 2 : 1;
+			_prevValue = signal;
+			return;
+		}
+
+		var color = signal > 0 ? 0 : signal < 0 ? 2 : 1;
+
+		if (_prevValue is decimal prevSignal)
+		{
+			if (prevSignal <= 0 && signal > 0 && Position <= 0)
 				BuyMarket();
-			else if (color == 2 && signal < 0 && Position >= 0)
+			else if (prevSignal >= 0 && signal < 0 && Position >= 0)
 				SellMarket();
 		}
 

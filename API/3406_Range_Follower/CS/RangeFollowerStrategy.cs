@@ -26,7 +26,7 @@ public class RangeFollowerStrategy : Strategy
 
 	public RangeFollowerStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetGreaterThanZero()
@@ -36,6 +36,16 @@ public class RangeFollowerStrategy : Strategy
 			.SetDisplay("Range Period", "Bars for range calculation", "Indicators");
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_rangeHigh = 0m;
+		_rangeLow = decimal.MaxValue;
+		_barCount = 0;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);

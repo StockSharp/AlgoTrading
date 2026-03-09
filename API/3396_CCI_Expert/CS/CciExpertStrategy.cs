@@ -23,13 +23,22 @@ public class CciExpertStrategy : Strategy
 
 	public CciExpertStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 		_cciPeriod = Param(nameof(CciPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("CCI Period", "CCI period", "Indicators");
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevCci = null;
+		_prevPrevCci = null;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
@@ -46,10 +55,10 @@ public class CciExpertStrategy : Strategy
 
 		if (_prevCci is decimal prev && _prevPrevCci is decimal prev2)
 		{
-			// Long: CCI stayed above +1 for 2 bars while prior bar was below
-			var longSignal = cciValue > 1m && prev > 1m && prev2 < 1m;
-			// Short: CCI stayed below -1 for 2 bars while prior bar was above
-			var shortSignal = cciValue < -1m && prev < -1m && prev2 > -1m;
+			// Long: CCI stayed above +100 for 2 bars while prior bar was below
+			var longSignal = cciValue > 100m && prev > 100m && prev2 < 100m;
+			// Short: CCI stayed below -100 for 2 bars while prior bar was above
+			var shortSignal = cciValue < -100m && prev < -100m && prev2 > -100m;
 
 			if (longSignal && Position <= 0)
 				BuyMarket();

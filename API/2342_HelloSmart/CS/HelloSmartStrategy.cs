@@ -40,31 +40,40 @@ public class HelloSmartStrategy : Strategy
 	{
 		_tradeMode = Param(nameof(Mode), TradeModes.Sell)
 			.SetDisplay("Trade Direction", "Buy or Sell direction", "General");
-		_stepTicks = Param(nameof(StepTicks), 50m)
+		_stepTicks = Param(nameof(StepTicks), 300m)
 			.SetGreaterThanZero()
 			.SetDisplay("Step", "Price movement to add position", "Risk");
 		_profitTarget = Param(nameof(ProfitTarget), 60m)
 			.SetDisplay("Profit Target", "Close all positions on this profit", "Risk");
 		_lossLimit = Param(nameof(LossLimit), 5100m)
 			.SetDisplay("Loss Limit", "Close all positions on this loss", "Risk");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
+	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_lastPrice = 0m;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
 		_lastPrice = 0m;
 
-		var sma = new SimpleMovingAverage { Length = 1 };
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(sma, ProcessCandle).Start();
+		subscription.Bind(ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -74,7 +83,7 @@ public class HelloSmartStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal _unused)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;

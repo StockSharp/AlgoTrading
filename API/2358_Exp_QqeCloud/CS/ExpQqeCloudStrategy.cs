@@ -31,7 +31,7 @@ public class ExpQqeCloudStrategy : Strategy
 
 	public ExpQqeCloudStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle type", "Candle type for strategy calculation.", "General");
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
@@ -42,6 +42,20 @@ public class ExpQqeCloudStrategy : Strategy
 
 		_qqeFactor = Param(nameof(QqeFactor), 4.236m)
 			.SetDisplay("QQE Factor", "QQE volatility factor", "QQE");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_barCount = 0;
 	}
 
 	/// <inheritdoc />
@@ -84,9 +98,12 @@ public class ExpQqeCloudStrategy : Strategy
 
 		var price = candle.ClosePrice;
 
-		if (rsiValue > 60 && price > emaValue && Position <= 0)
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		if (rsiValue > 65 && price > emaValue && Position <= 0)
 			BuyMarket();
-		else if (rsiValue < 40 && price < emaValue && Position >= 0)
+		else if (rsiValue < 35 && price < emaValue && Position >= 0)
 			SellMarket();
 	}
 }
