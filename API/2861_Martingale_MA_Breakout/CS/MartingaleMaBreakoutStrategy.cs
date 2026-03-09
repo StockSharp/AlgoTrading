@@ -37,7 +37,7 @@ public class MartingaleMaBreakoutStrategy : Strategy
 
 	public MartingaleMaBreakoutStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Source candles", "General");
 
 		_maPeriod = Param(nameof(MaPeriod), 12)
@@ -70,12 +70,12 @@ public class MartingaleMaBreakoutStrategy : Strategy
 				var distance = Math.Abs(candle.ClosePrice - emaValue);
 
 				// Buy when price breaks above MA by at least half ATR
-				if (candle.ClosePrice > emaValue && distance > atrValue * 0.5m && Position <= 0)
+				if (candle.ClosePrice > emaValue && distance > atrValue && Position <= 0)
 				{
 					BuyMarket();
 				}
 				// Sell when price breaks below MA by at least half ATR
-				else if (candle.ClosePrice < emaValue && distance > atrValue * 0.5m && Position >= 0)
+				else if (candle.ClosePrice < emaValue && distance > atrValue && Position >= 0)
 				{
 					SellMarket();
 				}

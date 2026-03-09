@@ -25,19 +25,29 @@ public class TopsBottomsTrendRsiStrategy : Strategy
 
 	public TopsBottomsTrendRsiStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
-		_rsiPeriod = Param(nameof(RsiPeriod), 14)
+		_rsiPeriod = Param(nameof(RsiPeriod), 21)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "RSI period", "Indicators");
-		_emaPeriod = Param(nameof(EmaPeriod), 20)
+		_emaPeriod = Param(nameof(EmaPeriod), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Period", "EMA trend filter period", "Indicators");
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevRsi = 0;
+		_hasPrev = false;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+		_prevRsi = 0;
 		_hasPrev = false;
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
@@ -51,9 +61,9 @@ public class TopsBottomsTrendRsiStrategy : Strategy
 
 		if (_hasPrev)
 		{
-			if (_prevRsi <= 50 && rsiValue > 50 && candle.ClosePrice > emaValue && Position <= 0)
+			if (_prevRsi <= 45 && rsiValue > 45 && candle.ClosePrice > emaValue && Position <= 0)
 				BuyMarket();
-			else if (_prevRsi >= 50 && rsiValue < 50 && candle.ClosePrice < emaValue && Position >= 0)
+			else if (_prevRsi >= 55 && rsiValue < 55 && candle.ClosePrice < emaValue && Position >= 0)
 				SellMarket();
 		}
 

@@ -24,9 +24,7 @@ public class CrossMAStrategy : Strategy
 	private readonly StrategyParam<int> _slowPeriod;
 	private readonly StrategyParam<int> _atrPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-
-	private bool _isFastBelowSlow;
-	private bool _isInitialized;
+	private int _lastSignal;
 
 	/// <summary>
 	/// Fast SMA period.
@@ -70,11 +68,11 @@ public class CrossMAStrategy : Strategy
 	/// </summary>
 	public CrossMAStrategy()
 	{
-		_fastPeriod = Param(nameof(FastPeriod), 4)
+		_fastPeriod = Param(nameof(FastPeriod), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("Fast SMA Period", "Period of the fast SMA", "Parameters");
 
-		_slowPeriod = Param(nameof(SlowPeriod), 12)
+		_slowPeriod = Param(nameof(SlowPeriod), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("Slow SMA Period", "Period of the slow SMA", "Parameters");
 
@@ -83,7 +81,7 @@ public class CrossMAStrategy : Strategy
 		.SetDisplay("ATR Period", "Period of ATR for stop calculation", "Risk");
 
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles for calculations", "General");
 	}
 
@@ -97,8 +95,7 @@ public class CrossMAStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_isInitialized = false;
+		_lastSignal = 0;
 	}
 
 	/// <inheritdoc />
@@ -144,17 +141,15 @@ public class CrossMAStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var fastBelowSlow = fast <= slow;
-
-		if (_isInitialized)
+		if (fast > slow && candle.ClosePrice > slow && _lastSignal != 1 && Position <= 0)
 		{
-			if (_isFastBelowSlow && !fastBelowSlow && Position <= 0)
-				BuyMarket();
-			else if (!_isFastBelowSlow && fastBelowSlow && Position >= 0)
-				SellMarket();
+			BuyMarket();
+			_lastSignal = 1;
 		}
-
-		_isFastBelowSlow = fastBelowSlow;
-		_isInitialized = true;
+		else if (fast < slow && candle.ClosePrice < slow && _lastSignal != -1 && Position >= 0)
+		{
+			SellMarket();
+			_lastSignal = -1;
+		}
 	}
 }

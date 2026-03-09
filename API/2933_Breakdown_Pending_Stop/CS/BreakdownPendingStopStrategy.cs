@@ -34,7 +34,7 @@ public class BreakdownPendingStopStrategy : Strategy
 
 	public BreakdownPendingStopStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe", "General");
 
 		_period = Param(nameof(Period), 20)
@@ -45,6 +45,14 @@ public class BreakdownPendingStopStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevHigh = null;
+		_prevLow = null;
 	}
 
 	protected override void OnStarted2(DateTime time)
@@ -76,6 +84,13 @@ public class BreakdownPendingStopStrategy : Strategy
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+		{
+			_prevHigh = high;
+			_prevLow = low;
+			return;
+		}
 
 		if (_prevHigh == null || _prevLow == null)
 		{

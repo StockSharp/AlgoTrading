@@ -97,7 +97,7 @@ public class SimpleFxStrategy : Strategy
 		_takeProfit = Param(nameof(TakeProfit), 50)
 			.SetDisplay("Take Profit", "Take profit in price steps", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for candles", "General");
 	}
 

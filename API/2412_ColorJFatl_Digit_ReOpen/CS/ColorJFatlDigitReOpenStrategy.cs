@@ -81,7 +81,7 @@ public class ColorJFatlDigitReOpenStrategy : Strategy
 	/// </summary>
 	public ColorJFatlDigitReOpenStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe for calculations", "General");
 
 		_jmaLength = Param(nameof(JmaLength), 5)
@@ -94,7 +94,7 @@ public class ColorJFatlDigitReOpenStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Price Step", "Price step in points for re-entry", "Risk Management");
 
-		_maxPositions = Param(nameof(MaxPositions), 10)
+		_maxPositions = Param(nameof(MaxPositions), 1)
 		.SetGreaterThanZero()
 		.SetDisplay("Max Positions", "Maximum number of positions", "Risk Management");
 

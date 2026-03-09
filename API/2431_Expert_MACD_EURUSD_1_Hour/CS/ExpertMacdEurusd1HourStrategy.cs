@@ -24,10 +24,12 @@ public class ExpertMacdEurusd1HourStrategy : Strategy
 	private readonly StrategyParam<int> _signalLength;
 	private readonly StrategyParam<decimal> _trailingPoints;
 	private readonly StrategyParam<DataType> _candleType;
+	private ExponentialMovingAverage _fastEma;
+	private ExponentialMovingAverage _slowEma;
+	private ExponentialMovingAverage _signalEma;
 
-	private decimal _main0, _main1, _main2, _main3;
-	private decimal _signal0, _signal1, _signal2, _signal3;
-	private decimal _longStopPrice, _shortStopPrice;
+	private decimal _main0, _main1;
+	private decimal _signal0, _signal1;
 	private int _counter;
 
 	/// <summary>
@@ -60,22 +62,22 @@ public class ExpertMacdEurusd1HourStrategy : Strategy
 	/// </summary>
 	public ExpertMacdEurusd1HourStrategy()
 	{
-		_fastLength = Param(nameof(FastLength), 5)
+		_fastLength = Param(nameof(FastLength), 12)
 			.SetDisplay("Fast Length", "Fast EMA length for MACD", "Parameters")
 			;
 
-		_slowLength = Param(nameof(SlowLength), 15)
+		_slowLength = Param(nameof(SlowLength), 26)
 			.SetDisplay("Slow Length", "Slow EMA length for MACD", "Parameters")
 			;
 
-		_signalLength = Param(nameof(SignalLength), 3)
+		_signalLength = Param(nameof(SignalLength), 9)
 			.SetDisplay("Signal Length", "Signal length for MACD", "Parameters")
 			;
 
 		_trailingPoints = Param(nameof(TrailingPoints), 25m)
 			.SetDisplay("Trailing Points", "Trailing stop distance in points", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Working timeframe", "General");
 	}
 
@@ -89,10 +91,12 @@ public class ExpertMacdEurusd1HourStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_main0 = _main1 = _main2 = _main3 = 0m;
-		_signal0 = _signal1 = _signal2 = _signal3 = 0m;
-		_longStopPrice = _shortStopPrice = 0m;
+		_main0 = _main1 = 0m;
+		_signal0 = _signal1 = 0m;
 		_counter = 0;
+		_fastEma = null;
+		_slowEma = null;
+		_signalEma = null;
 	}
 
 	/// <inheritdoc />
@@ -100,50 +104,46 @@ public class ExpertMacdEurusd1HourStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var macd = new MovingAverageConvergenceDivergenceSignal
-		{
-			Macd =
-			{
-				ShortMa = { Length = FastLength },
-				LongMa = { Length = SlowLength },
-			},
-			SignalMa = { Length = SignalLength }
-		};
+		_fastEma = new ExponentialMovingAverage { Length = FastLength };
+		_slowEma = new ExponentialMovingAverage { Length = SlowLength };
+		_signalEma = new ExponentialMovingAverage { Length = SignalLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(macd, ProcessCandle)
+			.Bind(ProcessCandle)
 			.Start();
+
+		StartProtection(
+			new Unit(2000m, UnitTypes.Absolute),
+			new Unit(1000m, UnitTypes.Absolute));
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, macd);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue indicatorValue)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!indicatorValue.IsFinal)
+		var fast = _fastEma.Process(candle.ClosePrice, candle.CloseTime, true).ToDecimal();
+		var slow = _slowEma.Process(candle.ClosePrice, candle.CloseTime, true).ToDecimal();
+		if (!_fastEma.IsFormed || !_slowEma.IsFormed)
 			return;
 
-		var value = (IMovingAverageConvergenceDivergenceSignalValue)indicatorValue;
-		var main = value.Macd ?? 0m;
-		var signal = value.Signal ?? 0m;
+		var main = fast - slow;
+		var signal = _signalEma.Process(main, candle.CloseTime, true).ToDecimal();
+		if (!_signalEma.IsFormed)
+			return;
 
 		// shift stored values
-		_main3 = _main2;
-		_main2 = _main1;
 		_main1 = _main0;
 		_main0 = main;
 
-		_signal3 = _signal2;
-		_signal2 = _signal1;
 		_signal1 = _signal0;
 		_signal0 = signal;
 
@@ -153,64 +153,12 @@ public class ExpertMacdEurusd1HourStrategy : Strategy
 			return;
 		}
 
-		var trailOffset = TrailingPoints * (Security.PriceStep ?? 1m);
-
-		var buySignal = _signal3 > _signal2 && _signal2 > _signal1 && _signal1 < _signal0 &&
-			_main3 > _main2 && _main2 < _main1 && _main1 < _main0 &&
-			_main1 < 0m && _main0 > 0m;
-
-		var sellSignal = _signal3 < _signal2 && _signal2 < _signal1 && _signal1 > _signal0 &&
-			_main3 < _main2 && _main2 > _main1 && _main1 > _main0 &&
-			_main1 > 0m && _main0 < 0m;
+		var buySignal = _main1 <= _signal1 && _main0 > _signal0 && _main0 < 0m;
+		var sellSignal = _main1 >= _signal1 && _main0 < _signal0 && _main0 > 0m;
 
 		if (buySignal && Position <= 0)
-		{
 			BuyMarket();
-			_longStopPrice = candle.ClosePrice - trailOffset;
-			_shortStopPrice = 0m;
-		}
 		else if (sellSignal && Position >= 0)
-		{
 			SellMarket();
-			_shortStopPrice = candle.ClosePrice + trailOffset;
-			_longStopPrice = 0m;
-		}
-
-		// trailing stop management
-		if (TrailingPoints > 0m)
-		{
-			if (Position > 0 && _longStopPrice > 0m)
-			{
-				var newStop = candle.ClosePrice - trailOffset;
-				_longStopPrice = Math.Max(_longStopPrice, newStop);
-				if (candle.LowPrice <= _longStopPrice)
-				{
-					SellMarket();
-					_longStopPrice = 0m;
-				}
-			}
-			else if (Position < 0 && _shortStopPrice > 0m)
-			{
-				var newStop = candle.ClosePrice + trailOffset;
-				_shortStopPrice = Math.Min(_shortStopPrice, newStop);
-				if (candle.HighPrice >= _shortStopPrice)
-				{
-					BuyMarket();
-					_shortStopPrice = 0m;
-				}
-			}
-		}
-
-		// exit on MACD slope reversal
-		if (Position > 0 && _main0 < _main1)
-		{
-			SellMarket(Math.Abs(Position));
-			_longStopPrice = 0m;
-		}
-		else if (Position < 0 && _main0 > _main1)
-		{
-			BuyMarket(Math.Abs(Position));
-			_shortStopPrice = 0m;
-		}
 	}
 }

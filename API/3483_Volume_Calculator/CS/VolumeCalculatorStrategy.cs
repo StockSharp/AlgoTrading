@@ -16,6 +16,7 @@ public class VolumeCalculatorStrategy : Strategy
 	private readonly StrategyParam<int> _emaPeriod;
 
 	private decimal _prevVolume;
+	private bool _wasBullishSignal;
 	private bool _hasPrev;
 
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
@@ -23,16 +24,28 @@ public class VolumeCalculatorStrategy : Strategy
 
 	public VolumeCalculatorStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
-		_emaPeriod = Param(nameof(EmaPeriod), 20)
+		_emaPeriod = Param(nameof(EmaPeriod), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Period", "EMA trend filter period", "Indicators");
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevVolume = 0;
+		_wasBullishSignal = false;
+		_hasPrev = false;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+		_prevVolume = 0;
+		_wasBullishSignal = false;
 		_hasPrev = false;
 		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
 		var subscription = SubscribeCandles(CandleType);
@@ -46,11 +59,18 @@ public class VolumeCalculatorStrategy : Strategy
 		if (_hasPrev)
 		{
 			var volumeUp = candle.TotalVolume > _prevVolume;
+			var bullishSignal = candle.ClosePrice > emaValue && volumeUp;
+			var bearishSignal = candle.ClosePrice < emaValue && volumeUp;
+			var crossedUp = bullishSignal && !_wasBullishSignal;
+			var crossedDown = bearishSignal && _wasBullishSignal;
 
-			if (candle.ClosePrice > emaValue && volumeUp && Position <= 0)
+			if (crossedUp && Position <= 0)
 				BuyMarket();
-			else if (candle.ClosePrice < emaValue && volumeUp && Position >= 0)
+			else if (crossedDown && Position >= 0)
 				SellMarket();
+
+			if (bullishSignal || bearishSignal)
+				_wasBullishSignal = bullishSignal;
 		}
 
 		_prevVolume = candle.TotalVolume;

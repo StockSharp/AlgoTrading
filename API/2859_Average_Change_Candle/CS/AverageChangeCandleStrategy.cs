@@ -34,12 +34,21 @@ public class AverageChangeCandleStrategy : Strategy
 
 	public AverageChangeCandleStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Source candles", "General");
 
 		_emaPeriod = Param(nameof(EmaPeriod), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Period", "EMA smoothing period", "Indicators");
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevSmoothedOpen = 0m;
+		_prevSmoothedClose = 0m;
+		_initialized = false;
 	}
 
 	/// <inheritdoc />
@@ -85,12 +94,12 @@ public class AverageChangeCandleStrategy : Strategy
 				}
 
 				// Buy on transition to bullish smoothed candle
-				if (currBullish && !prevBullish && Position <= 0)
+				if (currBullish && !prevBullish && candle.ClosePrice > emaValue && Position <= 0)
 				{
 					BuyMarket();
 				}
 				// Sell on transition to bearish smoothed candle
-				else if (!currBullish && prevBullish && Position >= 0)
+				else if (!currBullish && prevBullish && candle.ClosePrice < emaValue && Position >= 0)
 				{
 					SellMarket();
 				}

@@ -21,7 +21,7 @@ public class BollingerBandsDistanceStrategy : Strategy
 	private readonly StrategyParam<decimal> _bandDistance;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _entryPrice;
+	private readonly List<decimal> _closes = new();
 
 	public int BollingerPeriod
 	{
@@ -49,16 +49,16 @@ public class BollingerBandsDistanceStrategy : Strategy
 
 	public BollingerBandsDistanceStrategy()
 	{
-		_bbPeriod = Param(nameof(BollingerPeriod), 4)
+		_bbPeriod = Param(nameof(BollingerPeriod), 20)
 			.SetDisplay("BB Period", "Bollinger Bands length", "Parameters");
 
 		_bbDeviation = Param(nameof(BollingerDeviation), 2m)
 			.SetDisplay("Deviation", "Bollinger Bands deviation", "Parameters");
 
-		_bandDistance = Param(nameof(BandDistance), 3m)
+		_bandDistance = Param(nameof(BandDistance), 1m)
 			.SetDisplay("Band Distance", "Extra distance from bands in price steps", "Parameters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -72,7 +72,7 @@ public class BollingerBandsDistanceStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_entryPrice = default;
+		_closes.Clear();
 	}
 
 	/// <inheritdoc />
@@ -80,58 +80,56 @@ public class BollingerBandsDistanceStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var bb = new BollingerBands
-		{
-			Length = BollingerPeriod,
-			Width = BollingerDeviation
-		};
-
-		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.BindEx(bb, (candle, bbValue) =>
-			{
-				if (candle.State != CandleStates.Finished)
-					return;
-
-				var val = (IBollingerBandsValue)bbValue;
-				if (val.UpBand is not decimal upper || val.LowBand is not decimal lower || val.MovingAverage is not decimal middle)
-					return;
-
-				var close = candle.ClosePrice;
-				var step = Security?.PriceStep ?? 1m;
-				var distance = BandDistance * step;
-
-				// Exit logic: close at middle band
-				if (Position > 0 && close >= middle)
-				{
-					SellMarket();
-					_entryPrice = 0m;
-				}
-				else if (Position < 0 && close <= middle)
-				{
-					BuyMarket();
-					_entryPrice = 0m;
-				}
-
-				// Entry logic: buy below lower band, sell above upper band
-				if (Position == 0)
-				{
-					if (close > upper + distance)
-					{
-						SellMarket();
-						_entryPrice = close;
-					}
-					else if (close < lower - distance)
-					{
-						BuyMarket();
-						_entryPrice = close;
-					}
-				}
-			})
+		SubscribeCandles(CandleType)
+			.Bind(ProcessCandle)
 			.Start();
 
 		StartProtection(
 			new Unit(2000m, UnitTypes.Absolute),
 			new Unit(1000m, UnitTypes.Absolute));
+	}
+
+	private void ProcessCandle(ICandleMessage candle)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
+
+		_closes.Add(candle.ClosePrice);
+		if (_closes.Count > BollingerPeriod)
+			_closes.RemoveAt(0);
+
+		if (_closes.Count < BollingerPeriod)
+			return;
+
+		var sum = 0m;
+		foreach (var close in _closes)
+			sum += close;
+
+		var middle = sum / _closes.Count;
+		var variance = 0m;
+		foreach (var close in _closes)
+		{
+			var delta = close - middle;
+			variance += delta * delta;
+		}
+
+		var stdDev = (decimal)Math.Sqrt((double)(variance / _closes.Count));
+		var upper = middle + BollingerDeviation * stdDev;
+		var lower = middle - BollingerDeviation * stdDev;
+		var closePrice = candle.ClosePrice;
+		var distance = BandDistance * (Security?.PriceStep ?? 1m);
+
+		if (Position > 0 && closePrice >= middle)
+			SellMarket();
+		else if (Position < 0 && closePrice <= middle)
+			BuyMarket();
+
+		if (Position == 0)
+		{
+			if (closePrice > upper + distance)
+				SellMarket();
+			else if (closePrice < lower - distance)
+				BuyMarket();
+		}
 	}
 }

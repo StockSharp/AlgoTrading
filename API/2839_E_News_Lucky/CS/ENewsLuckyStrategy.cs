@@ -121,6 +121,7 @@ public class ENewsLuckyStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
+		_pipSize = 0m;
 		_buyLevel = null;
 		_sellLevel = null;
 		_entryPrice = 0m;
@@ -186,8 +187,9 @@ public class ENewsLuckyStrategy : Strategy
 		{
 			if (_buyLevel.HasValue && candle.HighPrice >= _buyLevel.Value)
 			{
+				var buyLevel = _buyLevel.Value;
 				BuyMarket(Volume);
-				_entryPrice = _buyLevel.Value;
+				_entryPrice = buyLevel;
 				_stopPrice = StopLossPips > 0 ? _entryPrice - StopLossPips * _pipSize : null;
 				_takePrice = TakeProfitPips > 0 ? _entryPrice + TakeProfitPips * _pipSize : null;
 				_pendingActive = false;
@@ -196,8 +198,9 @@ public class ENewsLuckyStrategy : Strategy
 			}
 			else if (_sellLevel.HasValue && candle.LowPrice <= _sellLevel.Value)
 			{
+				var sellLevel = _sellLevel.Value;
 				SellMarket(Volume);
-				_entryPrice = _sellLevel.Value;
+				_entryPrice = sellLevel;
 				_stopPrice = StopLossPips > 0 ? _entryPrice + StopLossPips * _pipSize : null;
 				_takePrice = TakeProfitPips > 0 ? _entryPrice - TakeProfitPips * _pipSize : null;
 				_pendingActive = false;

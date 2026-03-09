@@ -60,7 +60,7 @@ public class JBrainTrendReopenStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("D Period", "Smoothing for %D line", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Timeframe", "Timeframe for calculations", "General");
 
 		_stopLoss = Param(nameof(StopLoss), 1000m)
@@ -75,7 +75,7 @@ public class JBrainTrendReopenStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Re-entry Step", "Price move to add position", "Risk");
 
-		_maxPositions = Param(nameof(MaxPositions), 10)
+		_maxPositions = Param(nameof(MaxPositions), 1)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Positions", "Maximum entries in one direction", "Risk");
 
@@ -104,13 +104,11 @@ public class JBrainTrendReopenStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var stochastic = new StochasticOscillator();
-		stochastic.K.Length = StochPeriod;
-		stochastic.D.Length = DPeriod;
+		var rsi = new RelativeStrengthIndex { Length = StochPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(stochastic, ProcessCandle)
+			.Bind(rsi, ProcessCandle)
 			.Start();
 
 		StartProtection(
@@ -121,25 +119,23 @@ public class JBrainTrendReopenStrategy : Strategy
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, stochastic);
+			DrawIndicator(area, rsi);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue stochValue)
+	private void ProcessCandle(ICandleMessage candle, decimal rsiValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var stoch = (StochasticOscillatorValue)stochValue;
-		var k = stoch.K;
 		var price = candle.ClosePrice;
 
 		if (Position == 0)
 			_entriesCount = 0;
 
 		// Buy signal: oversold
-		if (k < 20 && Position <= 0 && BuyEnabled)
+		if (rsiValue < 30m && Position <= 0 && BuyEnabled)
 		{
 			BuyMarket();
 			_isLong = true;
@@ -149,7 +145,7 @@ public class JBrainTrendReopenStrategy : Strategy
 		}
 
 		// Sell signal: overbought
-		if (k > 80 && Position >= 0 && SellEnabled)
+		if (rsiValue > 70m && Position >= 0 && SellEnabled)
 		{
 			SellMarket();
 			_isLong = false;
@@ -159,14 +155,14 @@ public class JBrainTrendReopenStrategy : Strategy
 		}
 
 		// Exit long on overbought
-		if (Position > 0 && k > 80)
+		if (Position > 0 && rsiValue > 70m)
 		{
 			SellMarket();
 			return;
 		}
 
 		// Exit short on oversold
-		if (Position < 0 && k < 20)
+		if (Position < 0 && rsiValue < 30m)
 		{
 			BuyMarket();
 			return;

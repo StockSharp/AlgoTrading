@@ -15,10 +15,10 @@ public class SpasmStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<decimal> _volatilityMultiplier;
-	private readonly StrategyParam<int> _atrPeriod;
 
 	private decimal _highestPrice;
 	private decimal _lowestPrice;
+	private decimal _prevRange;
 	private bool _initialized;
 
 	public DataType CandleType
@@ -33,24 +33,24 @@ public class SpasmStrategy : Strategy
 		set => _volatilityMultiplier.Value = value;
 	}
 
-	public int AtrPeriod
-	{
-		get => _atrPeriod.Value;
-		set => _atrPeriod.Value = value;
-	}
-
 	public SpasmStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for analysis", "General");
 
 		_volatilityMultiplier = Param(nameof(VolatilityMultiplier), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Volatility Multiplier", "Multiplier applied to ATR for breakout bands", "Trading");
+	}
 
-		_atrPeriod = Param(nameof(AtrPeriod), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("ATR Period", "Average True Range period", "Indicators");
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_highestPrice = 0m;
+		_lowestPrice = decimal.MaxValue;
+		_prevRange = 0m;
+		_initialized = false;
 	}
 
 	/// <inheritdoc />
@@ -58,28 +58,26 @@ public class SpasmStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_highestPrice = 0;
+		_highestPrice = 0m;
 		_lowestPrice = decimal.MaxValue;
+		_prevRange = 0m;
 		_initialized = false;
-
-		var atr = new AverageTrueRange { Length = AtrPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 
 		subscription
-			.Bind(atr, OnProcess)
+			.Bind(OnProcess)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, atr);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void OnProcess(ICandleMessage candle, decimal atrValue)
+	private void OnProcess(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
@@ -91,6 +89,7 @@ public class SpasmStrategy : Strategy
 		{
 			_highestPrice = candle.HighPrice;
 			_lowestPrice = candle.LowPrice;
+			_prevRange = candle.HighPrice - candle.LowPrice;
 			_initialized = true;
 			return;
 		}
@@ -101,7 +100,7 @@ public class SpasmStrategy : Strategy
 		if (candle.LowPrice < _lowestPrice)
 			_lowestPrice = candle.LowPrice;
 
-		var threshold = atrValue * VolatilityMultiplier;
+		var threshold = _prevRange * VolatilityMultiplier;
 
 		if (threshold <= 0)
 			return;
@@ -122,5 +121,7 @@ public class SpasmStrategy : Strategy
 			_highestPrice = candle.HighPrice;
 			_lowestPrice = candle.LowPrice;
 		}
+
+		_prevRange = candle.HighPrice - candle.LowPrice;
 	}
 }

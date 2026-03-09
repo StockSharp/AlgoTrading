@@ -40,7 +40,7 @@ public class GlobalStopLossTimeStrategy : Strategy
 
 	public GlobalStopLossTimeStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candles", "General");
 
 		_emaFastLength = Param(nameof(EmaFastLength), 8)

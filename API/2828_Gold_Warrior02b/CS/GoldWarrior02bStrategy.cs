@@ -222,7 +222,7 @@ public class GoldWarrior02bStrategy : Strategy
 		_impulseBuyThreshold = Param(nameof(ImpulseBuyThreshold), 30m)
 		.SetDisplay("Impulse Buy", "Impulse threshold for longs", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 		.SetDisplay("Candle Type", "Working timeframe", "General");
 	}
 

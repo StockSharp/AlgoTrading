@@ -21,12 +21,13 @@ public class ZonalTradingOscillatorStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 
-	private AwesomeOscillator _ao;
-	private SimpleMovingAverage _acMa;
+	private readonly List<decimal> _medians = new();
+	private readonly List<decimal> _aoValues = new();
 	private decimal? _prevAo;
 	private decimal? _prevAc;
 	private int _aoTrend;
 	private int _acTrend;
+	private int _lastSignal;
 
 	/// <summary>
 	/// Candle type for analysis.
@@ -35,7 +36,7 @@ public class ZonalTradingOscillatorStrategy : Strategy
 
 	public ZonalTradingOscillatorStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type for oscillators", "General");
 	}
 
@@ -46,74 +47,85 @@ public class ZonalTradingOscillatorStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted2(DateTime time)
+	protected override void OnReseted()
 	{
-		base.OnStarted2(time);
-
-		_ao = new AwesomeOscillator
-		{
-			ShortMa = { Length = 5 },
-			LongMa = { Length = 34 }
-		};
-		_acMa = new SimpleMovingAverage { Length = 5 };
-
+		base.OnReseted();
+		_medians.Clear();
+		_aoValues.Clear();
 		_prevAo = null;
 		_prevAc = null;
 		_aoTrend = 0;
 		_acTrend = 0;
+		_lastSignal = 0;
+	}
 
-		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.BindEx(_ao, (candle, aoValue) =>
-			{
-				if (candle.State != CandleStates.Finished || !aoValue.IsFinal)
-					return;
+	/// <inheritdoc />
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
 
-				var ao = aoValue.ToDecimal();
-
-				// Compute AC = AO - SMA(AO, 5)
-				var aoSma = _acMa.Process(ao, candle.CloseTime, true);
-				if (!_acMa.IsFormed)
-				{
-					_prevAo = ao;
-					return;
-				}
-
-				var ac = ao - aoSma.ToDecimal();
-
-				if (_prevAo is not null && _prevAc is not null)
-				{
-					_aoTrend = ao > _prevAo ? 1 : ao < _prevAo ? -1 : _aoTrend;
-					_acTrend = ac > _prevAc ? 1 : ac < _prevAc ? -1 : _acTrend;
-
-					// Close positions on opposite signal
-					if (Position > 0 && (_aoTrend < 0 || _acTrend < 0))
-					{
-						SellMarket();
-					}
-					else if (Position < 0 && (_aoTrend > 0 || _acTrend > 0))
-					{
-						BuyMarket();
-					}
-
-					// Open new positions when both agree
-					if (Position <= 0 && _aoTrend > 0 && _acTrend > 0)
-					{
-						BuyMarket();
-					}
-					else if (Position >= 0 && _aoTrend < 0 && _acTrend < 0)
-					{
-						SellMarket();
-					}
-				}
-
-				_prevAo = ao;
-				_prevAc = ac;
-			})
+		SubscribeCandles(CandleType)
+			.Bind(ProcessCandle)
 			.Start();
 
 		StartProtection(
 			new Unit(2000m, UnitTypes.Absolute),
 			new Unit(1000m, UnitTypes.Absolute));
+	}
+
+	private void ProcessCandle(ICandleMessage candle)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
+
+		_medians.Add((candle.HighPrice + candle.LowPrice) / 2m);
+		if (_medians.Count > 34)
+			_medians.RemoveAt(0);
+
+		if (_medians.Count < 34)
+			return;
+
+		var ao = GetAverage(_medians, 5) - GetAverage(_medians, 34);
+		_aoValues.Add(ao);
+		if (_aoValues.Count > 5)
+			_aoValues.RemoveAt(0);
+
+		if (_aoValues.Count < 5)
+		{
+			_prevAo = ao;
+			return;
+		}
+
+		var ac = ao - GetAverage(_aoValues, 5);
+		if (_prevAo is not null && _prevAc is not null)
+		{
+			_aoTrend = ao > _prevAo ? 1 : ao < _prevAo ? -1 : _aoTrend;
+			_acTrend = ac > _prevAc ? 1 : ac < _prevAc ? -1 : _acTrend;
+
+			if (_aoTrend > 0 && _acTrend > 0 && _lastSignal != 1 && Position <= 0)
+			{
+				BuyMarket();
+				_lastSignal = 1;
+			}
+			else if (_aoTrend < 0 && _acTrend < 0 && _lastSignal != -1 && Position >= 0)
+			{
+				SellMarket();
+				_lastSignal = -1;
+			}
+		}
+
+		_prevAo = ao;
+		_prevAc = ac;
+	}
+
+	private static decimal GetAverage(List<decimal> values, int length)
+	{
+		var start = values.Count - length;
+		var sum = 0m;
+
+		for (var i = start; i < values.Count; i++)
+			sum += values[i];
+
+		return sum / length;
 	}
 }

@@ -26,7 +26,7 @@ public class DvdLevelStrategy : Strategy
 
 	public DvdLevelStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -35,9 +35,20 @@ public class DvdLevelStrategy : Strategy
 		return [(Security, CandleType)];
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevRavi = 0m;
+		_hasPrev = false;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+
+		_prevRavi = 0m;
+		_hasPrev = false;
 
 		var sub = SubscribeCandles(CandleType);
 		sub.Bind(_emaFast, _emaSlow, ProcessCandle).Start();

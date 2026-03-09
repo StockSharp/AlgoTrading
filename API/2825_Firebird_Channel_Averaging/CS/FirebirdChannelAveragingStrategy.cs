@@ -229,7 +229,7 @@ public class FirebirdChannelAveragingStrategy : Strategy
 			
 			.SetOptimize(0m, 2m, 0.5m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Working timeframe", "Data");
 	}
 
@@ -325,10 +325,11 @@ public class FirebirdChannelAveragingStrategy : Strategy
 
 		var canOpenByTime = true;
 		var timeFrame = GetTimeFrame();
-		if (entriesCount > 0 && _lastEntryTime.HasValue && timeFrame != null)
+		var lastEntryTime = _lastEntryTime;
+		if (entriesCount > 0 && lastEntryTime.HasValue && timeFrame != null)
 		{
 			var minDelay = timeFrame.Value + timeFrame.Value;
-			canOpenByTime = candle.CloseTime - _lastEntryTime.Value >= minDelay;
+			canOpenByTime = candle.CloseTime - lastEntryTime.Value >= minDelay;
 		}
 
 		if (allowEntry)
@@ -420,7 +421,8 @@ public class FirebirdChannelAveragingStrategy : Strategy
 
 	private void ManageOpenPositions(ICandleMessage candle, decimal price, decimal pipSize)
 	{
-		if (_entries.Count == 0)
+		var entriesCount = _entries.Count;
+		if (entriesCount == 0)
 		{
 			return;
 		}
@@ -438,12 +440,17 @@ public class FirebirdChannelAveragingStrategy : Strategy
 		{
 			averagePrice += _entries[i].Price;
 		}
-		averagePrice /= _entries.Count;
+		if (entriesCount == 0)
+		{
+			return;
+		}
+
+		averagePrice /= entriesCount;
 
 		if (_isLong == true)
 		{
 			var stopPrice = stopDistance > 0
-			? averagePrice - (_entries.Count > 1 ? stopDistance / _entries.Count : stopDistance)
+			? averagePrice - (entriesCount > 1 ? stopDistance / entriesCount : stopDistance)
 			: averagePrice;
 			var takePrice = takeDistance > 0 ? averagePrice + takeDistance : decimal.MaxValue;
 
@@ -461,7 +468,7 @@ public class FirebirdChannelAveragingStrategy : Strategy
 		else if (_isLong == false)
 		{
 			var stopPrice = stopDistance > 0
-			? averagePrice + (_entries.Count > 1 ? stopDistance / _entries.Count : stopDistance)
+			? averagePrice + (entriesCount > 1 ? stopDistance / entriesCount : stopDistance)
 			: averagePrice;
 			var takePrice = takeDistance > 0 ? averagePrice - takeDistance : decimal.MinValue;
 

@@ -178,7 +178,7 @@ public class CloudsTrade2Strategy : Strategy
 		_useFractals = Param(nameof(UseFractals), true)
 		.SetDisplay("Use Fractals", "Enable fractal based signals", "Signals");
 
-		_useStochastic = Param(nameof(UseStochastic), true)
+		_useStochastic = Param(nameof(UseStochastic), false)
 		.SetDisplay("Use Stochastic", "Enable stochastic based signals", "Signals");
 
 		_oneTradePerDay = Param(nameof(OneTradePerDay), true)
@@ -196,7 +196,7 @@ public class CloudsTrade2Strategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Slowing", "Smoothing length for %K line", "Stochastic");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe for signal evaluation", "General");
 	}
 
@@ -234,25 +234,38 @@ public class CloudsTrade2Strategy : Strategy
 
 		Volume = OrderVolume;
 
-		_stochastic = new StochasticOscillator
-		{
-			K = { Length = KPeriod },
-			D = { Length = DPeriod }
-		};
-
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-		.BindEx(_stochastic, ProcessCandle)
-		.Start();
+		if (UseStochastic)
+		{
+			_stochastic = new StochasticOscillator
+			{
+				K = { Length = KPeriod },
+				D = { Length = DPeriod }
+			};
+
+			subscription
+				.BindEx(_stochastic, ProcessCandle)
+				.Start();
+		}
+		else
+		{
+			subscription
+				.Bind(ProcessCandleWithoutStochastic)
+				.Start();
+		}
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _stochastic);
+			if (_stochastic != null)
+				DrawIndicator(area, _stochastic);
 			DrawOwnTrades(area);
 		}
 	}
+
+	private void ProcessCandleWithoutStochastic(ICandleMessage candle)
+		=> ProcessCandle(candle, null);
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue stochValue)
 	{

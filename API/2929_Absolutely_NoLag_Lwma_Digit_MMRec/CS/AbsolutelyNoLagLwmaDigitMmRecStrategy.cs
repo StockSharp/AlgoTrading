@@ -40,7 +40,7 @@ public class AbsolutelyNoLagLwmaDigitMmRecStrategy : Strategy
 
 	public AbsolutelyNoLagLwmaDigitMmRecStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe", "General");
 
 		_fastLength = Param(nameof(FastLength), 5)
@@ -55,6 +55,13 @@ public class AbsolutelyNoLagLwmaDigitMmRecStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevSignal = 0;
 	}
 
 	protected override void OnStarted2(DateTime time)
@@ -84,6 +91,9 @@ public class AbsolutelyNoLagLwmaDigitMmRecStrategy : Strategy
 	private void ProcessCandle(ICandleMessage candle, decimal fastVal, decimal slowVal)
 	{
 		if (candle.State != CandleStates.Finished)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		var signal = fastVal > slowVal ? 1 : fastVal < slowVal ? -1 : _prevSignal;

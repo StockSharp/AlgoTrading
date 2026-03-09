@@ -63,6 +63,27 @@ public class CenterOfGravityCandleStrategy : Strategy
 		return [(Security, CandleType)];
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_prevColor = 0;
+		_hasPrev = false;
+		_openSma = null;
+		_highSma = null;
+		_lowSma = null;
+		_closeSma = null;
+		_openLwma = null;
+		_highLwma = null;
+		_lowLwma = null;
+		_closeLwma = null;
+		_openSmooth = null;
+		_highSmooth = null;
+		_lowSmooth = null;
+		_closeSmooth = null;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);

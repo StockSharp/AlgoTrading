@@ -17,7 +17,7 @@ namespace StockSharp.Samples.Strategies;
 /// Strategy based on fast and slow Parabolic SAR combined with Fibonacci levels.
 /// It places pending limit orders at 50% retracement and exits at predefined stop or target.
 /// </summary>
-public class FiboIsarStrategy : Strategy
+public class FiboISarStrategy : Strategy
 {
 	// parameters
 	private readonly StrategyParam<decimal> _stepFast;
@@ -105,7 +105,7 @@ public class FiboIsarStrategy : Strategy
 	/// <summary>
 	/// Initializes a new instance of the strategy.
 	/// </summary>
-	public FiboIsarStrategy()
+	public FiboISarStrategy()
 	{
 		_stepFast = Param(nameof(StepFast), 0.02m)
 			.SetDisplay("Fast SAR Step", "Acceleration step for fast SAR", "Indicators")
@@ -140,7 +140,7 @@ public class FiboIsarStrategy : Strategy
 			.SetDisplay("Fibo Profit", "Fibonacci profit level percentage", "Fibonacci")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 
 		_useTimeFilter = Param(nameof(UseTimeFilter), false)

@@ -18,7 +18,6 @@ public class SampleTrailingstopMt5Strategy : Strategy
 
 	private decimal _prevClose;
 	private decimal _prevEma;
-	private decimal _prevRsi;
 	private bool _hasPrev;
 
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
@@ -27,19 +26,31 @@ public class SampleTrailingstopMt5Strategy : Strategy
 
 	public SampleTrailingstopMt5Strategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
-		_emaPeriod = Param(nameof(EmaPeriod), 20)
+		_emaPeriod = Param(nameof(EmaPeriod), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Period", "EMA period", "Indicators");
-		_rsiPeriod = Param(nameof(RsiPeriod), 14)
+		_rsiPeriod = Param(nameof(RsiPeriod), 21)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "RSI period", "Indicators");
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevClose = 0;
+		_prevEma = 0;
+		_hasPrev = false;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+		_prevClose = 0;
+		_prevEma = 0;
 		_hasPrev = false;
 		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
@@ -53,15 +64,14 @@ public class SampleTrailingstopMt5Strategy : Strategy
 
 		if (_hasPrev)
 		{
-			if (_prevClose <= _prevEma && candle.ClosePrice > emaValue && rsiValue > 50 && Position <= 0)
+			if (_prevClose <= _prevEma && candle.ClosePrice > emaValue && rsiValue > 55 && Position <= 0)
 				BuyMarket();
-			else if (_prevClose >= _prevEma && candle.ClosePrice < emaValue && rsiValue < 50 && Position >= 0)
+			else if (_prevClose >= _prevEma && candle.ClosePrice < emaValue && rsiValue < 45 && Position >= 0)
 				SellMarket();
 		}
 
 		_prevClose = candle.ClosePrice;
 		_prevEma = emaValue;
-		_prevRsi = rsiValue;
 		_hasPrev = true;
 	}
 }

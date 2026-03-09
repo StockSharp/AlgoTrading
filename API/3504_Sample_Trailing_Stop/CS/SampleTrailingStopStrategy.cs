@@ -24,18 +24,30 @@ public class SampleTrailingStopStrategy : Strategy
 
 	public SampleTrailingStopStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
-		_period = Param(nameof(Period), 25)
+		_period = Param(nameof(Period), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Period", "Smoothed MA period", "Indicators");
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevClose = 0;
+		_prevSma = 0;
+		_hasPrev = false;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+		_prevClose = 0;
+		_prevSma = 0;
 		_hasPrev = false;
-		var smma = new SmoothedMovingAverage { Length = Period };
+		var smma = new ExponentialMovingAverage { Length = Period };
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(smma, ProcessCandle).Start();
 	}

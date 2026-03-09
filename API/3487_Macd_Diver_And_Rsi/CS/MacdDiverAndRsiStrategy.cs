@@ -32,6 +32,16 @@ public class MacdDiverAndRsiStrategy : Strategy
 			.SetDisplay("RSI Period", "RSI period", "Indicators");
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevHistogram = 0;
+		_prevRsi = 0;
+		_hasPrev = false;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);

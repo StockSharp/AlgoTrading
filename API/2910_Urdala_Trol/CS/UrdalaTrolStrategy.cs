@@ -40,7 +40,7 @@ public class UrdalaTrolStrategy : Strategy
 
 	public UrdalaTrolStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candles", "General");
 
 		_emaLength = Param(nameof(EmaLength), 14)
@@ -60,6 +60,9 @@ public class UrdalaTrolStrategy : Strategy
 
 		decimal highSinceEntry = 0;
 		decimal lowSinceEntry = decimal.MaxValue;
+		decimal prevClose = 0;
+		decimal prevEma = 0;
+		var hasPrev = false;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -68,8 +71,20 @@ public class UrdalaTrolStrategy : Strategy
 				if (candle.State != CandleStates.Finished)
 					return;
 
-				if (!IsFormedAndOnlineAndAllowTrading())
+				if (!hasPrev)
+				{
+					prevClose = candle.ClosePrice;
+					prevEma = emaVal;
+					hasPrev = true;
 					return;
+				}
+
+				if (!IsFormedAndOnlineAndAllowTrading())
+				{
+					prevClose = candle.ClosePrice;
+					prevEma = emaVal;
+					return;
+				}
 
 				var close = candle.ClosePrice;
 				var high = candle.HighPrice;
@@ -106,18 +121,24 @@ public class UrdalaTrolStrategy : Strategy
 				}
 
 				// Entry signals based on EMA
-				if (close > emaVal && Position <= 0)
+				var bullishCross = prevClose <= prevEma && close > emaVal;
+				var bearishCross = prevClose >= prevEma && close < emaVal;
+
+				if (bullishCross && Position <= 0)
 				{
 					BuyMarket();
 					highSinceEntry = high;
 					lowSinceEntry = decimal.MaxValue;
 				}
-				else if (close < emaVal && Position >= 0)
+				else if (bearishCross && Position >= 0)
 				{
 					SellMarket();
 					lowSinceEntry = low;
 					highSinceEntry = 0;
 				}
+
+				prevClose = close;
+				prevEma = emaVal;
 			})
 			.Start();
 

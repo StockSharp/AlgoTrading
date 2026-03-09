@@ -74,18 +74,18 @@ public class MfiLevelCrossStrategy : Strategy
 	/// </summary>
 	public MfiLevelCrossStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe of candles used", "General");
 
 		_mfiPeriod = Param(nameof(MfiPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("MFI Period", "Period of the Money Flow Index indicator", "Indicator");
 
-		_lowLevel = Param(nameof(LowLevel), 40m)
+		_lowLevel = Param(nameof(LowLevel), 30m)
 			.SetRange(0m, 100m)
 			.SetDisplay("Low Level", "Oversold threshold for MFI", "Signal");
 
-		_highLevel = Param(nameof(HighLevel), 60m)
+		_highLevel = Param(nameof(HighLevel), 70m)
 			.SetRange(0m, 100m)
 			.SetDisplay("High Level", "Overbought threshold for MFI", "Signal");
 

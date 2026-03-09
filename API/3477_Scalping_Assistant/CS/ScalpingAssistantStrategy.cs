@@ -35,6 +35,15 @@ public class ScalpingAssistantStrategy : Strategy
 			.SetDisplay("EMA Period", "EMA trend filter period", "Indicators");
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevRsi = 0;
+		_hasPrev = false;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);

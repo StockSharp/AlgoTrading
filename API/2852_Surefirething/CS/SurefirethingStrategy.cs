@@ -34,12 +34,21 @@ public class SurefirethingStrategy : Strategy
 
 	public SurefirethingStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame used for signals", "General");
 
 		_emaPeriod = Param(nameof(EmaPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Period", "Trend filter EMA period", "Indicators");
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevHigh = 0m;
+		_prevLow = 0m;
+		_initialized = false;
 	}
 
 	/// <inheritdoc />

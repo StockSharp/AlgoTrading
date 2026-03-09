@@ -54,7 +54,7 @@ public class AutoAdxStrategy : Strategy
 
 	public AutoAdxStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candles", "General");
 
 		_rsiLength = Param(nameof(RsiLength), 14)
@@ -65,10 +65,10 @@ public class AutoAdxStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Length", "EMA period for direction", "Indicators");
 
-		_rsiHigh = Param(nameof(RsiHigh), 55m)
+		_rsiHigh = Param(nameof(RsiHigh), 60m)
 			.SetDisplay("RSI High", "RSI threshold for bullish strength", "Logic");
 
-		_rsiLow = Param(nameof(RsiLow), 45m)
+		_rsiLow = Param(nameof(RsiLow), 40m)
 			.SetDisplay("RSI Low", "RSI threshold for bearish weakness", "Logic");
 	}
 

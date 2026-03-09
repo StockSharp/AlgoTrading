@@ -40,7 +40,7 @@ public class CloseProfitV2Strategy : Strategy
 
 	public CloseProfitV2Strategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candles", "General");
 
 		_fastLength = Param(nameof(FastLength), 8)
@@ -58,6 +58,9 @@ public class CloseProfitV2Strategy : Strategy
 
 		var fastEma = new ExponentialMovingAverage { Length = FastLength };
 		var slowEma = new ExponentialMovingAverage { Length = SlowLength };
+		decimal prevFast = 0m;
+		decimal prevSlow = 0m;
+		var hasPrev = false;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -66,15 +69,28 @@ public class CloseProfitV2Strategy : Strategy
 				if (candle.State != CandleStates.Finished)
 					return;
 
-				if (!IsFormedAndOnlineAndAllowTrading())
+				if (!hasPrev)
+				{
+					prevFast = fastVal;
+					prevSlow = slowVal;
+					hasPrev = true;
 					return;
+				}
 
-				// Buy when fast EMA crosses above slow EMA
-				if (fastVal > slowVal && Position <= 0)
+				if (!IsFormedAndOnlineAndAllowTrading())
+				{
+					prevFast = fastVal;
+					prevSlow = slowVal;
+					return;
+				}
+
+				if (prevFast <= prevSlow && fastVal > slowVal && Position <= 0)
 					BuyMarket();
-				// Sell when fast EMA crosses below slow EMA
-				else if (fastVal < slowVal && Position >= 0)
+				else if (prevFast >= prevSlow && fastVal < slowVal && Position >= 0)
 					SellMarket();
+
+				prevFast = fastVal;
+				prevSlow = slowVal;
 			})
 			.Start();
 

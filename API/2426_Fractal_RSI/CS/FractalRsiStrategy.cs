@@ -28,6 +28,7 @@ public class FractalRsiStrategy : Strategy
 
 	private readonly List<decimal> _prices = new();
 	private decimal? _previousValue;
+	private int _lastSignal;
 
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 	public int FractalPeriod { get => _fractalPeriod.Value; set => _fractalPeriod.Value = value; }
@@ -39,21 +40,21 @@ public class FractalRsiStrategy : Strategy
 
 	public FractalRsiStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for indicator", "General");
 
-		_fractalPeriod = Param(nameof(FractalPeriod), 30)
+		_fractalPeriod = Param(nameof(FractalPeriod), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Fractal Period", "Period for fractal dimension", "Indicator");
 
-		_normalSpeed = Param(nameof(NormalSpeed), 30)
+		_normalSpeed = Param(nameof(NormalSpeed), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Normal Speed", "Base period for RSI", "Indicator");
 
-		_highLevel = Param(nameof(HighLevel), 60m)
+		_highLevel = Param(nameof(HighLevel), 70m)
 			.SetDisplay("High Level", "Upper threshold", "Indicator");
 
-		_lowLevel = Param(nameof(LowLevel), 40m)
+		_lowLevel = Param(nameof(LowLevel), 30m)
 			.SetDisplay("Low Level", "Lower threshold", "Indicator");
 
 		_stopLoss = Param(nameof(StopLoss), 1000m)
@@ -75,6 +76,7 @@ public class FractalRsiStrategy : Strategy
 		base.OnReseted();
 		_prices.Clear();
 		_previousValue = null;
+		_lastSignal = 0;
 	}
 
 	/// <inheritdoc />
@@ -167,9 +169,17 @@ public class FractalRsiStrategy : Strategy
 			return;
 
 		// Direct mode: buy on oversold cross down, sell on overbought cross up
-		if (prev > LowLevel && value <= LowLevel && Position <= 0)
+		if (prev > LowLevel && value <= LowLevel && _lastSignal != 1 && Position <= 0)
+		{
 			BuyMarket();
-		else if (prev < HighLevel && value >= HighLevel && Position >= 0)
+			_lastSignal = 1;
+		}
+		else if (prev < HighLevel && value >= HighLevel && _lastSignal != -1 && Position >= 0)
+		{
 			SellMarket();
+			_lastSignal = -1;
+		}
+		else if (value > LowLevel && value < HighLevel)
+			_lastSignal = 0;
 	}
 }

@@ -40,14 +40,14 @@ public class CandleShadowsV1Strategy : Strategy
 
 	public CandleShadowsV1Strategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candles", "General");
 
 		_emaLength = Param(nameof(EmaLength), 30)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Length", "Trend EMA period", "Indicators");
 
-		_shadowRatio = Param(nameof(ShadowRatio), 2m)
+		_shadowRatio = Param(nameof(ShadowRatio), 3m)
 			.SetDisplay("Shadow Ratio", "Min shadow/body ratio", "Logic");
 	}
 

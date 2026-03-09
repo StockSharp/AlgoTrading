@@ -80,7 +80,7 @@ public class RenkoLevelEaStrategy : Strategy
 	/// </summary>
 	public RenkoLevelEaStrategy()
 	{
-		_brickSize = Param(nameof(BrickSize), 30)
+		_brickSize = Param(nameof(BrickSize), 3000)
 			.SetGreaterThanZero()
 			.SetDisplay("Brick Size", "Renko block size in price steps", "Renko Levels")
 			
@@ -96,7 +96,7 @@ public class RenkoLevelEaStrategy : Strategy
 		_allowIncrease = Param(nameof(AllowIncrease), false)
 			.SetDisplay("Allow Increase", "Allow adding to existing positions", "Trading");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for calculations", "Data");
 	}
 

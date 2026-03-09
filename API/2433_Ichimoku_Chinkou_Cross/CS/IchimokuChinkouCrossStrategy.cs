@@ -29,9 +29,9 @@ public class IchimokuChinkouCrossStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 
 	private RelativeStrengthIndex _rsi;
-	private decimal _prevChinkou;
-	private decimal _prevPrice;
-	private bool _isFirst;
+	private readonly List<decimal> _closes = new();
+	private readonly List<decimal> _highs = new();
+	private readonly List<decimal> _lows = new();
 
 	/// <summary>
 	/// Tenkan-sen period.
@@ -89,13 +89,13 @@ public class IchimokuChinkouCrossStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "RSI calculation period", "RSI");
 
-		_rsiBuyLevel = Param(nameof(RsiBuyLevel), 50m)
+		_rsiBuyLevel = Param(nameof(RsiBuyLevel), 55m)
 			.SetDisplay("RSI Buy Level", "Minimum RSI for long", "RSI");
 
-		_rsiSellLevel = Param(nameof(RsiSellLevel), 50m)
+		_rsiSellLevel = Param(nameof(RsiSellLevel), 45m)
 			.SetDisplay("RSI Sell Level", "Maximum RSI for short", "RSI");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -109,9 +109,9 @@ public class IchimokuChinkouCrossStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevChinkou = 0m;
-		_prevPrice = 0m;
-		_isFirst = true;
+		_closes.Clear();
+		_highs.Clear();
+		_lows.Clear();
 	}
 
 	/// <inheritdoc />
@@ -119,61 +119,75 @@ public class IchimokuChinkouCrossStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_isFirst = true;
-
-		var ichimoku = new Ichimoku
-		{
-			Tenkan = { Length = TenkanPeriod },
-			Kijun = { Length = KijunPeriod },
-			SenkouB = { Length = SenkouSpanPeriod }
-		};
-
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(ichimoku, (candle, ichValue) =>
-			{
-				if (candle.State != CandleStates.Finished)
-					return;
-
-				var ich = (IIchimokuValue)ichValue;
-
-				if (ich.Tenkan is not decimal tenkan ||
-					ich.Kijun is not decimal kijun ||
-					ich.Chinkou is not decimal chinkou)
-					return;
-
-				if (_isFirst)
-				{
-					_prevChinkou = chinkou;
-					_prevPrice = candle.ClosePrice;
-					_isFirst = false;
-					return;
-				}
-
-				// Chinkou cross + Tenkan/Kijun confirmation
-				var chinkouCrossUp = chinkou > candle.ClosePrice && _prevChinkou <= _prevPrice;
-				var chinkouCrossDown = chinkou < candle.ClosePrice && _prevChinkou >= _prevPrice;
-				var tenkanAboveKijun = tenkan > kijun;
-				var tenkanBelowKijun = tenkan < kijun;
-
-				_prevChinkou = chinkou;
-				_prevPrice = candle.ClosePrice;
-
-				if ((chinkouCrossUp || tenkanAboveKijun) && Position <= 0)
-				{
-					BuyMarket();
-				}
-				else if ((chinkouCrossDown || tenkanBelowKijun) && Position >= 0)
-				{
-					SellMarket();
-				}
-			})
+			.Bind(_rsi, ProcessCandle)
 			.Start();
 
 		StartProtection(
 			new Unit(2000m, UnitTypes.Absolute),
 			new Unit(1000m, UnitTypes.Absolute));
+	}
+
+	private void ProcessCandle(ICandleMessage candle, decimal rsiValue)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
+
+		_closes.Add(candle.ClosePrice);
+		_highs.Add(candle.HighPrice);
+		_lows.Add(candle.LowPrice);
+
+		var maxCount = Math.Max(SenkouSpanPeriod, KijunPeriod) + KijunPeriod + 2;
+		if (_closes.Count > maxCount)
+		{
+			_closes.RemoveAt(0);
+			_highs.RemoveAt(0);
+			_lows.RemoveAt(0);
+		}
+
+		if (_closes.Count <= KijunPeriod || _closes.Count < Math.Max(TenkanPeriod, KijunPeriod))
+			return;
+
+		var tenkan = GetMidpoint(TenkanPeriod);
+		var kijun = GetMidpoint(KijunPeriod);
+		var lastIndex = _closes.Count - 1;
+		var prevIndex = lastIndex - 1;
+		var lagIndex = lastIndex - KijunPeriod;
+		var prevLagIndex = prevIndex - KijunPeriod;
+		if (prevLagIndex < 0)
+			return;
+
+		var close = _closes[lastIndex];
+		var prevClose = _closes[prevIndex];
+		var lagClose = _closes[lagIndex];
+		var prevLagClose = _closes[prevLagIndex];
+
+		var chinkouCrossUp = close > lagClose && prevClose <= prevLagClose;
+		var chinkouCrossDown = close < lagClose && prevClose >= prevLagClose;
+
+		if (chinkouCrossUp && tenkan > kijun && rsiValue >= RsiBuyLevel && Position <= 0)
+			BuyMarket();
+		else if (chinkouCrossDown && tenkan < kijun && rsiValue <= RsiSellLevel && Position >= 0)
+			SellMarket();
+	}
+
+	private decimal GetMidpoint(int period)
+	{
+		var start = _highs.Count - period;
+		var highest = _highs[start];
+		var lowest = _lows[start];
+
+		for (var i = start + 1; i < _highs.Count; i++)
+		{
+			if (_highs[i] > highest)
+				highest = _highs[i];
+			if (_lows[i] < lowest)
+				lowest = _lows[i];
+		}
+
+		return (highest + lowest) / 2m;
 	}
 }

@@ -33,7 +33,7 @@ public class ExpXPeriodCandleX2Strategy : Strategy
 
 	public ExpXPeriodCandleX2Strategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candles", "General");
 
 		_emaLength = Param(nameof(EmaLength), 20)

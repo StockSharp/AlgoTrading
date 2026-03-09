@@ -40,7 +40,7 @@ public class FullDumpBbRsiStrategy : Strategy
 
 	public FullDumpBbRsiStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candles", "General");
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
@@ -72,15 +72,15 @@ public class FullDumpBbRsiStrategy : Strategy
 				var close = candle.ClosePrice;
 
 				// RSI oversold => buy
-				if (rsiValue < 30 && Position <= 0)
+				if (rsiValue < 25m && Position <= 0)
 					BuyMarket();
 				// RSI overbought => sell
-				else if (rsiValue > 70 && Position >= 0)
+				else if (rsiValue > 75m && Position >= 0)
 					SellMarket();
 				// Trend following on EMA cross
-				else if (close > emaValue && rsiValue > 50 && rsiValue < 65 && Position <= 0)
+				else if (close > emaValue && rsiValue > 60m && rsiValue < 70m && Position <= 0)
 					BuyMarket();
-				else if (close < emaValue && rsiValue < 50 && rsiValue > 35 && Position >= 0)
+				else if (close < emaValue && rsiValue < 40m && rsiValue > 30m && Position >= 0)
 					SellMarket();
 			})
 			.Start();

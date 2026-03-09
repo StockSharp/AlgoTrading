@@ -24,18 +24,30 @@ public class AlligatorCandleCrossStrategy : Strategy
 
 	public AlligatorCandleCrossStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
-		_period = Param(nameof(Period), 21)
+		_period = Param(nameof(Period), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Period", "DEMA period", "Indicators");
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevClose = 0;
+		_prevDema = 0;
+		_hasPrev = false;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+		_prevClose = 0;
+		_prevDema = 0;
 		_hasPrev = false;
-		var dema = new DoubleExponentialMovingAverage { Length = Period };
+		var dema = new ExponentialMovingAverage { Length = Period };
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(dema, ProcessCandle).Start();
 	}

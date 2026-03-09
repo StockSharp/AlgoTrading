@@ -68,12 +68,12 @@ public class RsiThresholdStrategy : Strategy
 		
 		.SetOptimize(10, 30, 2);
 		
-		_highLevel = Param(nameof(HighLevel), 60m)
+		_highLevel = Param(nameof(HighLevel), 70m)
 		.SetDisplay("RSI High Level", "Overbought level", "Signal")
 		
 		.SetOptimize(50m, 80m, 5m);
 		
-		_lowLevel = Param(nameof(LowLevel), 40m)
+		_lowLevel = Param(nameof(LowLevel), 30m)
 		.SetDisplay("RSI Low Level", "Oversold level", "Signal")
 		
 		.SetOptimize(20m, 50m, 5m);
@@ -101,7 +101,7 @@ public class RsiThresholdStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Take Profit", "Take profit in price units", "Risk Management");
 		
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 	
@@ -110,11 +110,20 @@ public class RsiThresholdStrategy : Strategy
 	{
 		return [(Security, CandleType)];
 	}
-	
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevRsi = null;
+	}
+
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+
+		_prevRsi = null;
 		
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 		

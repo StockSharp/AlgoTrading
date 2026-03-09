@@ -40,13 +40,24 @@ public class TurtleTraderSarStrategy : Strategy
 		_stopMultiplier = Param(nameof(StopMultiplier), 2m)
 			.SetDisplay("Stop Multiplier", "ATR multiplier for stop", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_highs.Clear();
+		_lows.Clear();
+		_closes.Clear();
+		_stopPrice = 0m;
 	}
 
 	protected override void OnStarted2(DateTime time)

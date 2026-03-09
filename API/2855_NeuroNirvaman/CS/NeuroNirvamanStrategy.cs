@@ -51,7 +51,7 @@ public class NeuroNirvamanStrategy : Strategy
 
 	public NeuroNirvamanStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Source candles", "General");
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
@@ -62,10 +62,10 @@ public class NeuroNirvamanStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Period", "EMA trend filter period", "Indicators");
 
-		_rsiOversold = Param(nameof(RsiOversold), 45m)
+		_rsiOversold = Param(nameof(RsiOversold), 40m)
 			.SetDisplay("RSI Oversold", "RSI oversold level", "Signals");
 
-		_rsiOverbought = Param(nameof(RsiOverbought), 55m)
+		_rsiOverbought = Param(nameof(RsiOverbought), 60m)
 			.SetDisplay("RSI Overbought", "RSI overbought level", "Signals");
 	}
 
@@ -87,13 +87,13 @@ public class NeuroNirvamanStrategy : Strategy
 				if (!IsFormedAndOnlineAndAllowTrading())
 					return;
 
-				// Buy when RSI is oversold
-				if (rsiValue < RsiOversold && Position <= 0)
+				// Buy when RSI is oversold and price confirms the bullish regime above EMA.
+				if (rsiValue < RsiOversold && candle.ClosePrice > emaValue && Position <= 0)
 				{
 					BuyMarket();
 				}
-				// Sell when RSI is overbought
-				else if (rsiValue > RsiOverbought && Position >= 0)
+				// Sell when RSI is overbought and price confirms the bearish regime below EMA.
+				else if (rsiValue > RsiOverbought && candle.ClosePrice < emaValue && Position >= 0)
 				{
 					SellMarket();
 				}

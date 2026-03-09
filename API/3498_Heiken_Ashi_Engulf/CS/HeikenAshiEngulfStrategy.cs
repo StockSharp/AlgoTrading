@@ -24,18 +24,30 @@ public class HeikenAshiEngulfStrategy : Strategy
 
 	public HeikenAshiEngulfStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
-		_period = Param(nameof(Period), 20)
+		_period = Param(nameof(Period), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Period", "WMA period", "Indicators");
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevClose = 0;
+		_prevWma = 0;
+		_hasPrev = false;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+		_prevClose = 0;
+		_prevWma = 0;
 		_hasPrev = false;
-		var wma = new WeightedMovingAverage { Length = Period };
+		var wma = new ExponentialMovingAverage { Length = Period };
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(wma, ProcessCandle).Start();
 	}

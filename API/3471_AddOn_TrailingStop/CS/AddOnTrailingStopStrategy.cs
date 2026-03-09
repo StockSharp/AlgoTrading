@@ -26,19 +26,31 @@ public class AddOnTrailingStopStrategy : Strategy
 
 	public AddOnTrailingStopStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
-		_fastPeriod = Param(nameof(FastPeriod), 5)
+		_fastPeriod = Param(nameof(FastPeriod), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
-		_slowPeriod = Param(nameof(SlowPeriod), 20)
+		_slowPeriod = Param(nameof(SlowPeriod), 30)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFast = 0;
+		_prevSlow = 0;
+		_hasPrev = false;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+		_prevFast = 0;
+		_prevSlow = 0;
 		_hasPrev = false;
 		var fast = new ExponentialMovingAverage { Length = FastPeriod };
 		var slow = new ExponentialMovingAverage { Length = SlowPeriod };
@@ -55,6 +67,13 @@ public class AddOnTrailingStopStrategy : Strategy
 			if (_prevFast <= _prevSlow && fastValue > slowValue && Position <= 0)
 				BuyMarket();
 			else if (_prevFast >= _prevSlow && fastValue < slowValue && Position >= 0)
+				SellMarket();
+		}
+		else
+		{
+			if (fastValue > slowValue && Position <= 0)
+				BuyMarket();
+			else if (fastValue < slowValue && Position >= 0)
 				SellMarket();
 		}
 

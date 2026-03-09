@@ -26,6 +26,7 @@ public class AdaptiveCgOscillatorX2Strategy : Strategy
 	private decimal _prevCg;
 	private decimal _prevPrevCg;
 	private int _count;
+	private int _barsSinceSignal;
 
 	public int Period { get => _period.Value; set => _period.Value = value; }
 	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
@@ -34,7 +35,7 @@ public class AdaptiveCgOscillatorX2Strategy : Strategy
 
 	public AdaptiveCgOscillatorX2Strategy()
 	{
-		_period = Param(nameof(Period), 10)
+		_period = Param(nameof(Period), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Period", "Lookback period for CG oscillator", "Parameters")
 			.SetOptimize(5, 20, 1);
@@ -47,7 +48,7 @@ public class AdaptiveCgOscillatorX2Strategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit", "Take profit in price units", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 	}
 
@@ -63,6 +64,7 @@ public class AdaptiveCgOscillatorX2Strategy : Strategy
 		_prevCg = 0m;
 		_prevPrevCg = 0m;
 		_count = 0;
+		_barsSinceSignal = int.MaxValue;
 	}
 
 	/// <inheritdoc />
@@ -85,6 +87,7 @@ public class AdaptiveCgOscillatorX2Strategy : Strategy
 			return;
 
 		var price = candle.ClosePrice;
+		_barsSinceSignal++;
 		_prices.Add(price);
 
 		if (_prices.Count > Period)
@@ -112,15 +115,19 @@ public class AdaptiveCgOscillatorX2Strategy : Strategy
 			return;
 		}
 
-		// Signal is just the previous CG value
-		var signal = _prevCg;
+		var longSignal = cg > 0m && cg > _prevCg && _prevCg <= _prevPrevCg;
+		var shortSignal = cg < 0m && cg < _prevCg && _prevCg >= _prevPrevCg;
 
-		// Buy: CG crosses above signal (previous CG)
-		if (cg > signal && _prevCg <= _prevPrevCg && Position <= 0)
+		if (longSignal && _barsSinceSignal >= 12 && Position <= 0)
+		{
 			BuyMarket();
-		// Sell: CG crosses below signal
-		else if (cg < signal && _prevCg >= _prevPrevCg && Position >= 0)
+			_barsSinceSignal = 0;
+		}
+		else if (shortSignal && _barsSinceSignal >= 12 && Position >= 0)
+		{
 			SellMarket();
+			_barsSinceSignal = 0;
+		}
 
 		_prevPrevCg = _prevCg;
 		_prevCg = cg;

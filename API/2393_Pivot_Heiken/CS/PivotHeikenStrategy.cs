@@ -81,7 +81,7 @@ public class PivotHeikenStrategy : Strategy
 	/// </summary>
 	public PivotHeikenStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Working candle type", "General");
 
 		_stopLossPips = Param(nameof(StopLossPips), 50)
@@ -136,7 +136,7 @@ public class PivotHeikenStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
 
-		var dailySubscription = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
+		var dailySubscription = SubscribeCandles(TimeSpan.FromDays(1).TimeFrame());
 		dailySubscription.Bind(ProcessDailyCandle).Start();
 
 		var area = CreateChartArea();

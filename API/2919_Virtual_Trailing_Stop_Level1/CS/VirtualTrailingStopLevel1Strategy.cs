@@ -40,7 +40,7 @@ public class VirtualTrailingStopLevel1Strategy : Strategy
 
 	public VirtualTrailingStopLevel1Strategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candles", "General");
 
 		_emaLength = Param(nameof(EmaLength), 15)
@@ -59,6 +59,9 @@ public class VirtualTrailingStopLevel1Strategy : Strategy
 		var ema = new ExponentialMovingAverage { Length = EmaLength };
 		decimal highSinceEntry = 0;
 		decimal lowSinceEntry = decimal.MaxValue;
+		decimal prevClose = 0;
+		decimal prevEma = 0;
+		var hasPrev = false;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -67,8 +70,20 @@ public class VirtualTrailingStopLevel1Strategy : Strategy
 				if (candle.State != CandleStates.Finished)
 					return;
 
-				if (!IsFormedAndOnlineAndAllowTrading())
+				if (!hasPrev)
+				{
+					prevClose = candle.ClosePrice;
+					prevEma = emaVal;
+					hasPrev = true;
 					return;
+				}
+
+				if (!IsFormedAndOnlineAndAllowTrading())
+				{
+					prevClose = candle.ClosePrice;
+					prevEma = emaVal;
+					return;
+				}
 
 				var close = candle.ClosePrice;
 
@@ -97,18 +112,24 @@ public class VirtualTrailingStopLevel1Strategy : Strategy
 				}
 
 				// Entry based on EMA
-				if (close > emaVal && Position <= 0)
+				var bullishCross = prevClose <= prevEma && close > emaVal;
+				var bearishCross = prevClose >= prevEma && close < emaVal;
+
+				if (bullishCross && Position <= 0)
 				{
 					BuyMarket();
 					highSinceEntry = candle.HighPrice;
 					lowSinceEntry = decimal.MaxValue;
 				}
-				else if (close < emaVal && Position >= 0)
+				else if (bearishCross && Position >= 0)
 				{
 					SellMarket();
 					lowSinceEntry = candle.LowPrice;
 					highSinceEntry = 0;
 				}
+
+				prevClose = close;
+				prevEma = emaVal;
 			})
 			.Start();
 

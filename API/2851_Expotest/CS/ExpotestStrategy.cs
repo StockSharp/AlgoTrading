@@ -39,7 +39,7 @@ public class ExpotestStrategy : Strategy
 
 	public ExpotestStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type for signal generation", "General");
 
 		_sarStep = Param(nameof(SarStep), 0.02m)
@@ -47,6 +47,14 @@ public class ExpotestStrategy : Strategy
 
 		_sarMaximum = Param(nameof(SarMaximum), 0.2m)
 			.SetDisplay("SAR Maximum", "Maximum acceleration factor for Parabolic SAR", "Indicators");
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevSarBelow = false;
+		_initialized = false;
 	}
 
 	/// <inheritdoc />

@@ -22,6 +22,9 @@ public class JsMaDayStrategy : Strategy
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<bool> _reverse;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly List<decimal> _prices = new();
+	private decimal? _prevMa;
+	private decimal? _prevOpen;
 
 	/// <summary>
 	/// Moving average period.
@@ -55,7 +58,7 @@ public class JsMaDayStrategy : Strategy
 	/// </summary>
 	public JsMaDayStrategy()
 	{
-		_maPeriod = Param(nameof(MaPeriod), 3)
+		_maPeriod = Param(nameof(MaPeriod), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "SMA period on daily candles", "Parameters")
 			
@@ -64,7 +67,7 @@ public class JsMaDayStrategy : Strategy
 		_reverse = Param(nameof(Reverse), false)
 			.SetDisplay("Reverse Signals", "Reverse entry direction", "Parameters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for moving average", "General");
 	}
 
@@ -75,72 +78,69 @@ public class JsMaDayStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prices.Clear();
+		_prevMa = null;
+		_prevOpen = null;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		var sma = new SimpleMovingAverage
-		{
-			Length = MaPeriod
-		};
-
-		var subscription = SubscribeCandles(CandleType);
-
-		decimal? prevMa = null;
-		decimal? prevPrevMa = null;
-		decimal? prevOpen = null;
-		decimal? prevPrevOpen = null;
-
-		subscription
-			.Bind(sma, (candle, ma) =>
-			{
-				if (candle.State != CandleStates.Finished)
-					return;
-
-				var open = candle.OpenPrice;
-
-				if (prevMa is decimal pMa && prevPrevMa is decimal ppMa && prevOpen is decimal pOpen && prevPrevOpen is decimal ppOpen)
-				{
-					var buyCondition = ma < pMa && ma > open && pMa < ppMa && pMa > pOpen;
-					var sellCondition = ma > pMa && ma < open && pMa > ppMa && pMa < pOpen;
-
-					if (buyCondition)
-					{
-						if (!Reverse)
-						{
-							if (Position <= 0)
-								BuyMarket();
-						}
-						else
-						{
-							if (Position >= 0)
-								SellMarket();
-						}
-					}
-					else if (sellCondition)
-					{
-						if (!Reverse)
-						{
-							if (Position >= 0)
-								SellMarket();
-						}
-						else
-						{
-							if (Position <= 0)
-								BuyMarket();
-						}
-					}
-				}
-
-				prevPrevMa = prevMa;
-				prevMa = ma;
-				prevPrevOpen = prevOpen;
-				prevOpen = open;
-			})
+		SubscribeCandles(CandleType)
+			.Bind(ProcessCandle)
 			.Start();
 
 		StartProtection(
 			new Unit(2000m, UnitTypes.Absolute),
 			new Unit(1000m, UnitTypes.Absolute));
+	}
+
+	private void ProcessCandle(ICandleMessage candle)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
+
+		_prices.Add(candle.ClosePrice);
+		if (_prices.Count > MaPeriod)
+			_prices.RemoveAt(0);
+
+		if (_prices.Count < MaPeriod)
+			return;
+
+		var sum = 0m;
+		foreach (var price in _prices)
+			sum += price;
+
+		var ma = sum / _prices.Count;
+		var open = candle.OpenPrice;
+
+		if (_prevMa is decimal prevMa && _prevOpen is decimal prevOpen)
+		{
+			var buyCondition = ma > open && prevMa <= prevOpen;
+			var sellCondition = ma < open && prevMa >= prevOpen;
+
+			if (buyCondition)
+			{
+				if (!Reverse && Position <= 0)
+					BuyMarket();
+				else if (Reverse && Position >= 0)
+					SellMarket();
+			}
+			else if (sellCondition)
+			{
+				if (!Reverse && Position >= 0)
+					SellMarket();
+				else if (Reverse && Position <= 0)
+					BuyMarket();
+			}
+		}
+
+		_prevMa = ma;
+		_prevOpen = open;
 	}
 }

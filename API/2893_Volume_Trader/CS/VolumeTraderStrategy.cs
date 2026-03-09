@@ -125,7 +125,7 @@ public class VolumeTraderStrategy : Strategy
 				var prevPrevVolume = _previousPreviousVolume.Value;
 
 				// Rising volume suggests upward pressure -> go long.
-				if (prevVolume > prevPrevVolume && Position <= 0)
+				if (prevVolume > prevPrevVolume * 1.1m && Position <= 0)
 				{
 					var volumeToTrade = Volume + (Position < 0 ? Math.Abs(Position) : 0m);
 
@@ -136,7 +136,7 @@ public class VolumeTraderStrategy : Strategy
 					}
 				}
 				// Falling volume suggests weakening demand -> go short.
-				else if (prevVolume < prevPrevVolume && Position >= 0)
+				else if (prevVolume < prevPrevVolume * 0.9m && Position >= 0)
 				{
 					var volumeToTrade = Volume + (Position > 0 ? Math.Abs(Position) : 0m);
 

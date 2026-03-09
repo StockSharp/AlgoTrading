@@ -40,7 +40,7 @@ public class MostasHar15PivotStrategy : Strategy
 
 	public MostasHar15PivotStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Trading candles", "General");
 
 		_dailyCandleType = Param(nameof(DailyCandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -94,10 +94,10 @@ public class MostasHar15PivotStrategy : Strategy
 				var close = candle.ClosePrice;
 
 				// Long: price above pivot, RSI momentum confirms
-				if (close > pivotMid && rsiVal > 50 && Position <= 0)
+				if (close > pivotMid && rsiVal > 55 && Position <= 0)
 					BuyMarket();
 				// Short: price below pivot, RSI confirms weakness
-				else if (close < pivotMid && rsiVal < 50 && Position >= 0)
+				else if (close < pivotMid && rsiVal < 45 && Position >= 0)
 					SellMarket();
 			})
 			.Start();

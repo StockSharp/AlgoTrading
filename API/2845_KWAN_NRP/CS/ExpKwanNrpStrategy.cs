@@ -41,7 +41,7 @@ public class ExpKwanNrpStrategy : Strategy
 
 	public ExpKwanNrpStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for calculations", "General");
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
@@ -51,6 +51,15 @@ public class ExpKwanNrpStrategy : Strategy
 		_momentumPeriod = Param(nameof(MomentumPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Momentum Period", "Momentum length", "Indicators");
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevRsi = 0m;
+		_prevMom = 0m;
+		_initialized = false;
 	}
 
 	/// <inheritdoc />

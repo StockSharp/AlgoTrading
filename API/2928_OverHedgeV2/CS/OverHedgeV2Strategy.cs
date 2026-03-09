@@ -40,7 +40,7 @@ public class OverHedgeV2Strategy : Strategy
 
 	public OverHedgeV2Strategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 
 		_shortEmaPeriod = Param(nameof(ShortEmaPeriod), 8)
@@ -55,6 +55,13 @@ public class OverHedgeV2Strategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevSignal = 0;
 	}
 
 	protected override void OnStarted2(DateTime time)
@@ -84,6 +91,9 @@ public class OverHedgeV2Strategy : Strategy
 	private void ProcessCandle(ICandleMessage candle, decimal shortEma, decimal longEma)
 	{
 		if (candle.State != CandleStates.Finished)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		var signal = shortEma > longEma ? 1 : shortEma < longEma ? -1 : _prevSignal;

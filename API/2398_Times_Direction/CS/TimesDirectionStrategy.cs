@@ -56,6 +56,13 @@ public class TimesDirectionStrategy : Strategy
 		return [(Security, CandleType)];
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_entryPrice = 0m;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
@@ -82,7 +89,7 @@ public class TimesDirectionStrategy : Strategy
 
 		if (Position == 0)
 		{
-			if (hour == OpenHour)
+			if (hour == OpenHour && candle.OpenTime.DayOfWeek == DayOfWeek.Monday)
 			{
 				_entryPrice = candle.ClosePrice;
 				BuyMarket();
@@ -91,7 +98,7 @@ public class TimesDirectionStrategy : Strategy
 		else
 		{
 			// Close at specified hour
-			if (hour == CloseHour)
+			if (hour == CloseHour && candle.OpenTime.DayOfWeek == DayOfWeek.Friday)
 			{
 				SellMarket();
 				_entryPrice = 0m;

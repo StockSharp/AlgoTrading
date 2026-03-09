@@ -188,7 +188,7 @@ public class BlauErgodicStrategy : Strategy
 	/// </summary>
 	public BlauErgodicStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe for calculations", "General");
 
 		_mode = Param(nameof(Mode), BlauErgodicModes.Twist)

@@ -40,7 +40,7 @@ public class WamiCloudX2Strategy : Strategy
 
 	public WamiCloudX2Strategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candles", "General");
 
 		_rsiLength = Param(nameof(RsiLength), 14)
@@ -72,10 +72,10 @@ public class WamiCloudX2Strategy : Strategy
 				var close = candle.ClosePrice;
 
 				// Price above EMA with RSI not overbought => buy
-				if (close > emaValue && rsiValue < 60 && Position <= 0)
+				if (close > emaValue && rsiValue > 55m && Position <= 0)
 					BuyMarket();
 				// Price below EMA with RSI not oversold => sell
-				else if (close < emaValue && rsiValue > 40 && Position >= 0)
+				else if (close < emaValue && rsiValue < 45m && Position >= 0)
 					SellMarket();
 			})
 			.Start();

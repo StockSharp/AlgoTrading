@@ -42,7 +42,7 @@ public class ColorX2MaDigitNn3MmrecStrategy : Strategy
 
 	public ColorX2MaDigitNn3MmrecStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe", "General");
 
 		_fastLength = Param(nameof(FastLength), 8)
@@ -59,16 +59,22 @@ public class ColorX2MaDigitNn3MmrecStrategy : Strategy
 		return [(Security, CandleType)];
 	}
 
-	protected override void OnStarted2(DateTime time)
+	/// <inheritdoc />
+	protected override void OnReseted()
 	{
-		base.OnStarted2(time);
+		base.OnReseted();
 
 		_prevFast = null;
 		_prevSlow = null;
 		_prevSignal = 0;
+	}
 
-		var fastSma = new SimpleMovingAverage { Length = FastLength };
-		var slowSma = new SimpleMovingAverage { Length = SlowLength };
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
+
+		var fastSma = new ExponentialMovingAverage { Length = FastLength };
+		var slowSma = new ExponentialMovingAverage { Length = SlowLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -91,6 +97,13 @@ public class ColorX2MaDigitNn3MmrecStrategy : Strategy
 			return;
 
 		if (_prevFast == null || _prevSlow == null)
+		{
+			_prevFast = fastVal;
+			_prevSlow = slowVal;
+			return;
+		}
+
+		if (!IsFormedAndOnlineAndAllowTrading())
 		{
 			_prevFast = fastVal;
 			_prevSlow = slowVal;

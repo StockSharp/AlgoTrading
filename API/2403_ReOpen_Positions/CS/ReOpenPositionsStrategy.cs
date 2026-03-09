@@ -64,7 +64,7 @@ public class ReOpenPositionsStrategy : Strategy
 		_profitThreshold = Param(nameof(ProfitThreshold), 300m)
 			.SetDisplay("Profit Threshold", "Points to reopen a position", "Parameters");
 
-		_maxPositions = Param(nameof(MaxPositions), 10)
+		_maxPositions = Param(nameof(MaxPositions), 1)
 			.SetDisplay("Max Positions", "Maximum number of positions", "Parameters");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000m)
@@ -73,7 +73,7 @@ public class ReOpenPositionsStrategy : Strategy
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000m)
 			.SetDisplay("Take Profit (pts)", "Take profit distance in points", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 

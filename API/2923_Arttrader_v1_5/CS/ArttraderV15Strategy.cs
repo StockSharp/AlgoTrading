@@ -41,10 +41,10 @@ public class ArttraderV15Strategy : Strategy
 
 	public ArttraderV15Strategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Trading candles", "General");
 
-		_trendCandleType = Param(nameof(TrendCandleType), TimeSpan.FromHours(1).TimeFrame())
+		_trendCandleType = Param(nameof(TrendCandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Trend Candle Type", "Trend candles for EMA", "General");
 
 		_emaPeriod = Param(nameof(EmaPeriod), 11)

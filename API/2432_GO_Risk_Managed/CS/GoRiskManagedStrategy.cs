@@ -24,8 +24,8 @@ public class GoRiskManagedStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 
 	private SimpleMovingAverage _openMa;
-	private SimpleMovingAverage _highMa;
-	private SimpleMovingAverage _lowMa;
+	private SimpleMovingAverage _closeMa;
+	private decimal? _prevGo;
 
 	/// <summary>
 	/// Moving average period.
@@ -50,11 +50,11 @@ public class GoRiskManagedStrategy : Strategy
 	/// </summary>
 	public GoRiskManagedStrategy()
 	{
-		_maPeriod = Param(nameof(MaPeriod), 20)
+		_maPeriod = Param(nameof(MaPeriod), 10)
 			.SetDisplay("MA Period", "Moving average period", "Indicator")
 			.SetGreaterThanZero();
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -65,43 +65,46 @@ public class GoRiskManagedStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevGo = null;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
 		_openMa = new SimpleMovingAverage { Length = MaPeriod };
-		_highMa = new SimpleMovingAverage { Length = MaPeriod };
-		_lowMa = new SimpleMovingAverage { Length = MaPeriod };
-		var closeMa = new SimpleMovingAverage { Length = MaPeriod };
+		_closeMa = new SimpleMovingAverage { Length = MaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(closeMa, (candle, close) =>
+			.Bind(_closeMa, (candle, close) =>
 			{
 				if (candle.State != CandleStates.Finished)
 					return;
 
 				var openResult = _openMa.Process(candle.OpenPrice, candle.CloseTime, true);
-				var highResult = _highMa.Process(candle.HighPrice, candle.CloseTime, true);
-				var lowResult = _lowMa.Process(candle.LowPrice, candle.CloseTime, true);
-
-				if (!_openMa.IsFormed || !_highMa.IsFormed || !_lowMa.IsFormed || !closeMa.IsFormed)
+				if (!_openMa.IsFormed || !_closeMa.IsFormed)
 					return;
 
 				var open = openResult.ToDecimal();
-				var high = highResult.ToDecimal();
-				var low = lowResult.ToDecimal();
+				var go = close - open;
 
-				var go = ((close - open) + (high - open) + (low - open) + (close - low) + (close - high)) * candle.TotalVolume;
-
-				if (go > 0 && Position <= 0)
+				if (_prevGo is not decimal prevGo)
 				{
+					_prevGo = go;
+					return;
+				}
+
+				if (prevGo <= 0m && go > 0m && Position <= 0)
 					BuyMarket();
-				}
-				else if (go < 0 && Position >= 0)
-				{
+				else if (prevGo >= 0m && go < 0m && Position >= 0)
 					SellMarket();
-				}
+
+				_prevGo = go;
 			})
 			.Start();
 

@@ -61,7 +61,7 @@ public class AlexavD1ProfitGbpUsdStrategy : Strategy
 
 	public AlexavD1ProfitGbpUsdStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candles", "General");
 
 		_emaFastLength = Param(nameof(EmaFastLength), 6)
@@ -122,13 +122,9 @@ public class AlexavD1ProfitGbpUsdStrategy : Strategy
 				// EMA fast crosses below slow - sell signal
 				var bearishCross = prevFast >= prevSlow && fastVal < slowVal;
 
-				// Also allow trend-following: fast well above slow
-				var strongUptrend = fastVal > slowVal && close > fastVal;
-				var strongDowntrend = fastVal < slowVal && close < fastVal;
-
-				if ((bullishCross || strongUptrend) && Position <= 0)
+				if (bullishCross && Position <= 0)
 					BuyMarket();
-				else if ((bearishCross || strongDowntrend) && Position >= 0)
+				else if (bearishCross && Position >= 0)
 					SellMarket();
 
 				prevFast = fastVal;

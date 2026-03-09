@@ -23,9 +23,9 @@ public class StochasticThreePeriodsStrategy : Strategy
 	private readonly StrategyParam<int> _slowPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private StochasticOscillator _slowStoch;
-	private decimal _prevSlowK;
-	private decimal _prevSlowD;
+	private RelativeStrengthIndex _slowRsi;
+	private decimal _prevSlow;
+	private int _lastSignal;
 
 	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
 	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
@@ -41,7 +41,7 @@ public class StochasticThreePeriodsStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Slow K", "Slow stochastic K period", "Parameters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Working timeframe", "General");
 	}
 
@@ -50,54 +50,46 @@ public class StochasticThreePeriodsStrategy : Strategy
 		return [(Security, CandleType)];
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevSlow = 0m;
+		_lastSignal = 0;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		var fastStoch = new StochasticOscillator { K = { Length = FastPeriod } };
-		_slowStoch = new StochasticOscillator { K = { Length = SlowPeriod } };
-		_prevSlowK = 0m;
-		_prevSlowD = 0m;
+		var fastRsi = new RelativeStrengthIndex { Length = FastPeriod };
+		_slowRsi = new RelativeStrengthIndex { Length = SlowPeriod };
+		_prevSlow = 0m;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(fastStoch, (candle, fastValue) =>
+			.Bind(fastRsi, (candle, fastValue) =>
 			{
 				if (candle.State != CandleStates.Finished)
 					return;
 
-				// Process slow stochastic manually
-				var slowResult = _slowStoch.Process(candle);
-				if (!_slowStoch.IsFormed)
+				var slowResult = _slowRsi.Process(candle.ClosePrice, candle.CloseTime, true);
+				if (!_slowRsi.IsFormed || slowResult.IsEmpty)
 					return;
+				var slowValue = slowResult.ToDecimal();
 
-				var fast = (IStochasticOscillatorValue)fastValue;
-				var slow = (IStochasticOscillatorValue)slowResult;
-
-				if (fast.K is not decimal fk || fast.D is not decimal fd)
-					return;
-				if (slow.K is not decimal sk || slow.D is not decimal sd)
-					return;
-
-				// Buy: fast K crosses above D, and slow K > D (trend up)
-				var fastCrossUp = fk > fd;
-				var slowBullish = sk > sd && _prevSlowK <= _prevSlowD;
-
-				// Sell: fast K crosses below D, and slow K < D (trend down)
-				var fastCrossDown = fk < fd;
-				var slowBearish = sk < sd && _prevSlowK >= _prevSlowD;
-
-				if ((fastCrossUp && sk > sd) && Position <= 0)
+				if (fastValue > slowValue && fastValue > 55m && slowValue > 50m && slowValue > _prevSlow && _lastSignal != 1 && Position <= 0)
 				{
 					BuyMarket();
+					_lastSignal = 1;
 				}
-				else if ((fastCrossDown && sk < sd) && Position >= 0)
+				else if (fastValue < slowValue && fastValue < 45m && slowValue < 50m && slowValue < _prevSlow && _lastSignal != -1 && Position >= 0)
 				{
 					SellMarket();
+					_lastSignal = -1;
 				}
 
-				_prevSlowK = sk;
-				_prevSlowD = sd;
+				_prevSlow = slowValue;
 			})
 			.Start();
 

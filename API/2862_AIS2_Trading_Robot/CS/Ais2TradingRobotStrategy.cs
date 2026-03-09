@@ -38,14 +38,14 @@ public class Ais2TradingRobotStrategy : Strategy
 
 	public Ais2TradingRobotStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Source candles", "General");
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "ATR period for volatility", "Indicators");
 
-		_breakoutThreshold = Param(nameof(BreakoutThreshold), 0.7m)
+		_breakoutThreshold = Param(nameof(BreakoutThreshold), 0.85m)
 			.SetDisplay("Breakout Threshold", "Candle body ratio threshold (0-1)", "Signals");
 	}
 
@@ -54,11 +54,9 @@ public class Ais2TradingRobotStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var atr = new AverageTrueRange { Length = AtrPeriod };
-
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(atr, (ICandleMessage candle, decimal atrValue) =>
+			.Bind((ICandleMessage candle) =>
 			{
 				if (candle.State != CandleStates.Finished)
 					return;
@@ -67,7 +65,7 @@ public class Ais2TradingRobotStrategy : Strategy
 					return;
 
 				var range = candle.HighPrice - candle.LowPrice;
-				if (range <= 0 || atrValue <= 0)
+				if (range <= 0)
 					return;
 
 				var bodyRatio = (candle.ClosePrice - candle.LowPrice) / range;
@@ -89,7 +87,6 @@ public class Ais2TradingRobotStrategy : Strategy
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, atr);
 			DrawOwnTrades(area);
 		}
 	}

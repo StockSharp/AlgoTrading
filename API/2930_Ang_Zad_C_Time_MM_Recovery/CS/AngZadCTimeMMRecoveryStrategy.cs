@@ -37,7 +37,7 @@ public class AngZadCTimeMMRecoveryStrategy : Strategy
 
 	public AngZadCTimeMMRecoveryStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe", "General");
 
 		_ki = Param(nameof(Ki), 4.000001m)
@@ -48,6 +48,19 @@ public class AngZadCTimeMMRecoveryStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_hasState = false;
+		_upperLine = 0m;
+		_lowerLine = 0m;
+		_previousPrice = 0m;
+		_prevUp = null;
+		_prevDn = null;
 	}
 
 	protected override void OnStarted2(DateTime time)
@@ -74,6 +87,9 @@ public class AngZadCTimeMMRecoveryStrategy : Strategy
 	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		var price = candle.ClosePrice;

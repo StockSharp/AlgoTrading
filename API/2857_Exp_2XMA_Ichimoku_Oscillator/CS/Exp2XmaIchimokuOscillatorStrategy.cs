@@ -37,14 +37,14 @@ public class Exp2XmaIchimokuOscillatorStrategy : Strategy
 
 	public Exp2XmaIchimokuOscillatorStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Source candles", "General");
 
-		_fastPeriod = Param(nameof(FastPeriod), 25)
+		_fastPeriod = Param(nameof(FastPeriod), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast Period", "Fast moving average length", "Indicators");
 
-		_slowPeriod = Param(nameof(SlowPeriod), 80)
+		_slowPeriod = Param(nameof(SlowPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow Period", "Slow moving average length", "Indicators");
 	}
@@ -54,8 +54,8 @@ public class Exp2XmaIchimokuOscillatorStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var fastMa = new SimpleMovingAverage { Length = FastPeriod };
-		var slowMa = new SimpleMovingAverage { Length = SlowPeriod };
+		var fastMa = new ExponentialMovingAverage { Length = FastPeriod };
+		var slowMa = new ExponentialMovingAverage { Length = SlowPeriod };
 
 		decimal prevFast = 0, prevSlow = 0;
 		bool prevInitialized = false;

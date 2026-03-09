@@ -40,7 +40,7 @@ public class MartingaleViHybridStrategy : Strategy
 
 	public MartingaleViHybridStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candles", "General");
 
 		_fastPeriod = Param(nameof(FastPeriod), 8)
@@ -56,8 +56,8 @@ public class MartingaleViHybridStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var fast = new SimpleMovingAverage { Length = FastPeriod };
-		var slow = new SimpleMovingAverage { Length = SlowPeriod };
+		var fast = new ExponentialMovingAverage { Length = FastPeriod };
+		var slow = new ExponentialMovingAverage { Length = SlowPeriod };
 
 		decimal prevFast = 0, prevSlow = 0;
 		bool hasPrev = false;

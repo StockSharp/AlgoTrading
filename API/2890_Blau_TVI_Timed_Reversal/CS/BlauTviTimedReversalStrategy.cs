@@ -33,7 +33,7 @@ public class BlauTviTimedReversalStrategy : Strategy
 
 	public BlauTviTimedReversalStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candles", "General");
 
 		_momentumLength = Param(nameof(MomentumLength), 12)

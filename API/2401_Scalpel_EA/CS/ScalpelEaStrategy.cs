@@ -87,7 +87,7 @@ public class ScalpelEaStrategy : Strategy
 			
 			.SetOptimize(5, 40, 5);
 
-		_cciLimit = Param(nameof(CciLimit), 3m)
+		_cciLimit = Param(nameof(CciLimit), 100m)
 			.SetDisplay("CCI Limit", "CCI threshold for entries", "Indicators")
 			
 			.SetOptimize(1m, 10m, 1m);
@@ -102,7 +102,7 @@ public class ScalpelEaStrategy : Strategy
 			
 			.SetOptimize(10m, 100m, 10m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe", "General");
 	}
 

@@ -41,7 +41,7 @@ public class XrsidDeMarkerHistogramStrategy : Strategy
 
 	public XrsidDeMarkerHistogramStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Source candles", "General");
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
@@ -51,6 +51,15 @@ public class XrsidDeMarkerHistogramStrategy : Strategy
 		_smaPeriod = Param(nameof(SmaPeriod), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("SMA Period", "Smoothing period", "Indicators");
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevRsi = 0m;
+		_prevPrevRsi = 0m;
+		_initialized = false;
 	}
 
 	/// <inheritdoc />
@@ -88,9 +97,9 @@ public class XrsidDeMarkerHistogramStrategy : Strategy
 				}
 
 				// Buy on RSI reversal from oversold (V-bottom)
-				var buySignal = _prevPrevRsi > _prevRsi && rsiValue >= _prevRsi && _prevRsi < 45m;
+				var buySignal = _prevPrevRsi > _prevRsi && rsiValue >= _prevRsi && _prevRsi < 35m;
 				// Sell on RSI reversal from overbought (inverse V)
-				var sellSignal = _prevPrevRsi < _prevRsi && rsiValue <= _prevRsi && _prevRsi > 55m;
+				var sellSignal = _prevPrevRsi < _prevRsi && rsiValue <= _prevRsi && _prevRsi > 65m;
 
 				if (buySignal && Position <= 0)
 				{

@@ -20,6 +20,10 @@ namespace StockSharp.Samples.Strategies;
 public class H4L4BreakoutStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
+	private decimal _prevHigh;
+	private decimal _prevLow;
+	private int _lastSignal;
+	private bool _hasPrev;
 
 	/// <summary>
 	/// Candle type for calculations.
@@ -35,7 +39,7 @@ public class H4L4BreakoutStrategy : Strategy
 	/// </summary>
 	public H4L4BreakoutStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Working candle timeframe", "General");
 	}
 
@@ -43,6 +47,16 @@ public class H4L4BreakoutStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevHigh = 0m;
+		_prevLow = 0m;
+		_lastSignal = 0;
+		_hasPrev = false;
 	}
 
 	/// <inheritdoc />
@@ -59,20 +73,27 @@ public class H4L4BreakoutStrategy : Strategy
 				if (candle.State != CandleStates.Finished)
 					return;
 
-				var range = (candle.HighPrice - candle.LowPrice) * 1.1m / 2m;
-				var h4 = candle.ClosePrice + range;
-				var l4 = candle.ClosePrice - range;
+				if (!_hasPrev)
+				{
+					_prevHigh = candle.HighPrice;
+					_prevLow = candle.LowPrice;
+					_hasPrev = true;
+					return;
+				}
 
-				// Buy when price is below MA and near L4 level (mean reversion from below)
-				// Sell when price is above MA and near H4 level (mean reversion from above)
-				if (candle.ClosePrice < ma && candle.LowPrice <= l4 && Position <= 0)
+				if (candle.ClosePrice > _prevHigh && candle.ClosePrice > ma && _lastSignal != 1 && Position <= 0)
 				{
 					BuyMarket();
+					_lastSignal = 1;
 				}
-				else if (candle.ClosePrice > ma && candle.HighPrice >= h4 && Position >= 0)
+				else if (candle.ClosePrice < _prevLow && candle.ClosePrice < ma && _lastSignal != -1 && Position >= 0)
 				{
 					SellMarket();
+					_lastSignal = -1;
 				}
+
+				_prevHigh = candle.HighPrice;
+				_prevLow = candle.LowPrice;
 			})
 			.Start();
 

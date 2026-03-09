@@ -241,7 +241,7 @@ public class ExpSarTmPlusStrategy : Strategy
 			.SetOptimize(60, 720, 60)
 			.SetNotNegative();
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for Parabolic SAR", "Data");
 
 		_sarStep = Param(nameof(SarStep), 0.02m)
@@ -445,7 +445,8 @@ public class ExpSarTmPlusStrategy : Strategy
 
 	private bool ShouldExitByTime(ICandleMessage candle)
 	{
-		if (!UseTimeExit || !_positionEntryTime.HasValue)
+		var positionEntryTime = _positionEntryTime;
+		if (!UseTimeExit || !positionEntryTime.HasValue)
 			return false;
 
 		var holdingPeriod = TimeSpan.FromMinutes(Math.Max(0, HoldingMinutes));
@@ -453,7 +454,7 @@ public class ExpSarTmPlusStrategy : Strategy
 			return false;
 
 		var closeTime = candle.CloseTime != default ? candle.CloseTime : candle.OpenTime;
-		return closeTime - _positionEntryTime.Value >= holdingPeriod;
+		return closeTime - positionEntryTime.Value >= holdingPeriod;
 	}
 
 	private void EnterLong(ICandleMessage candle)

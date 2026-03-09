@@ -42,7 +42,7 @@ public class PlcStrategy : Strategy
 
 	public PlcStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for calculations", "General");
 
 		_shiftPips = Param(nameof(ShiftPips), 15)
@@ -52,6 +52,15 @@ public class PlcStrategy : Strategy
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "ATR period for volatility measurement", "Indicators");
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevHigh = 0m;
+		_prevLow = 0m;
+		_initialized = false;
 	}
 
 	/// <inheritdoc />

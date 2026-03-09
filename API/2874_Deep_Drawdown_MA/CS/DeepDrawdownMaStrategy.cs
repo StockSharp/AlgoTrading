@@ -40,7 +40,7 @@ public class DeepDrawdownMaStrategy : Strategy
 
 	public DeepDrawdownMaStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candles", "General");
 
 		_fastPeriod = Param(nameof(FastPeriod), 10)

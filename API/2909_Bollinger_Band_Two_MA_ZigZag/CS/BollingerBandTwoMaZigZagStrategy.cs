@@ -47,7 +47,7 @@ public class BollingerBandTwoMaZigZagStrategy : Strategy
 
 	public BollingerBandTwoMaZigZagStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candles", "General");
 
 		_emaFastLength = Param(nameof(EmaFastLength), 10)
@@ -101,13 +101,9 @@ public class BollingerBandTwoMaZigZagStrategy : Strategy
 				var bullishCross = prevFast <= prevSlow && fastVal > slowVal;
 				var bearishCross = prevFast >= prevSlow && fastVal < slowVal;
 
-				// Also allow entry on strong trend continuation
-				var trendUp = fastVal > slowVal && close > fastVal;
-				var trendDown = fastVal < slowVal && close < fastVal;
-
-				if ((bullishCross || (trendUp && Position == 0)) && Position <= 0)
+				if (bullishCross && Position <= 0 && close > fastVal)
 					BuyMarket();
-				else if ((bearishCross || (trendDown && Position == 0)) && Position >= 0)
+				else if (bearishCross && Position >= 0 && close < fastVal)
 					SellMarket();
 
 				prevFast = fastVal;

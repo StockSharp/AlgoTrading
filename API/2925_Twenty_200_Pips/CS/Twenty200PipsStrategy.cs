@@ -89,7 +89,7 @@ public class Twenty200PipsStrategy : Strategy
 			.SetDisplay("Delta (points)", "Minimum difference between opens", "Signal")
 			.SetOptimize(10, 200, 10);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe", "General");
 	}
 

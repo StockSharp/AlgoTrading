@@ -135,7 +135,7 @@ public class VrMovingDistanceStrategy : Strategy
 	/// </summary>
 	public VrMovingDistanceStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for calculations", "General");
 
 		_maLength = Param(nameof(MaLength), 60)
@@ -177,6 +177,20 @@ public class VrMovingDistanceStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_longEntries = 0;
+		_shortEntries = 0;
+		_longHighestEntry = 0m;
+		_shortLowestEntry = 0m;
+		_longEntryPrice = null;
+		_shortEntryPrice = null;
+		_pipSize = 0m;
 	}
 
 	/// <inheritdoc />

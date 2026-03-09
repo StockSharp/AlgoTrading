@@ -47,7 +47,7 @@ public class TakeProfitTimeGuardStrategy : Strategy
 
 	public TakeProfitTimeGuardStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candles", "General");
 
 		_cciLength = Param(nameof(CciLength), 14)

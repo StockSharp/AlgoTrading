@@ -39,7 +39,7 @@ public class SilverTrendDuplexStrategy : Strategy
 
 	public SilverTrendDuplexStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candles", "General");
 
 		_atrLength = Param(nameof(AtrLength), 10)
@@ -55,12 +55,11 @@ public class SilverTrendDuplexStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var atr = new AverageTrueRange { Length = AtrLength };
 		var ema = new ExponentialMovingAverage { Length = EmaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(atr, ema, (ICandleMessage candle, decimal atrValue, decimal emaValue) =>
+			.Bind(ema, (ICandleMessage candle, decimal emaValue) =>
 			{
 				if (candle.State != CandleStates.Finished)
 					return;
@@ -69,10 +68,13 @@ public class SilverTrendDuplexStrategy : Strategy
 					return;
 
 				var close = candle.ClosePrice;
+				var range = candle.HighPrice - candle.LowPrice;
+				if (range <= 0m)
+					return;
 
-				if (close > emaValue + atrValue && Position <= 0)
+				if (close > emaValue + range * 1.5m && Position <= 0)
 					BuyMarket();
-				else if (close < emaValue - atrValue && Position >= 0)
+				else if (close < emaValue - range * 1.5m && Position >= 0)
 					SellMarket();
 			})
 			.Start();

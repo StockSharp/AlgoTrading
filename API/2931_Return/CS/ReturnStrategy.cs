@@ -38,7 +38,7 @@ public class ReturnStrategy : Strategy
 
 	public ReturnStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe", "General");
 
 		_period = Param(nameof(Period), 20)
@@ -59,33 +59,33 @@ public class ReturnStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var bb = new BollingerBands { Length = Period, Width = Width };
+		var ma = new SimpleMovingAverage { Length = Period };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(bb, ProcessCandle)
+			.Bind(ma, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, bb);
+			DrawIndicator(area, ma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue value)
+	private void ProcessCandle(ICandleMessage candle, decimal middle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var bb = (BollingerBandsValue)value;
-		if (bb.UpBand is not decimal upper ||
-			bb.LowBand is not decimal lower ||
-			bb.MovingAverage is not decimal middle)
+		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
+		var bandWidth = Width / 100m;
+		var upper = middle * (1m + bandWidth);
+		var lower = middle * (1m - bandWidth);
 		var close = candle.ClosePrice;
 
 		// Buy when price drops below lower band (mean reversion)

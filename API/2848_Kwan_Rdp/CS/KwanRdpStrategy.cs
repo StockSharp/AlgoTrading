@@ -41,7 +41,7 @@ public class KwanRdpStrategy : Strategy
 
 	public KwanRdpStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Primary candle series", "General");
 
 		_deMarkerPeriod = Param(nameof(DeMarkerPeriod), 14)
@@ -51,6 +51,15 @@ public class KwanRdpStrategy : Strategy
 		_momentumPeriod = Param(nameof(MomentumPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Momentum Period", "Momentum indicator length", "Indicators");
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevDem = 0m;
+		_prevMom = 0m;
+		_initialized = false;
 	}
 
 	/// <inheritdoc />

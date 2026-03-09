@@ -141,10 +141,10 @@ public class WprLevelCrossStrategy : Strategy
 			
 			.SetOptimize(10, 20, 2);
 
-		_highLevel = Param(nameof(HighLevel), -40m)
+		_highLevel = Param(nameof(HighLevel), -20m)
 			.SetDisplay("High Level", "Overbought threshold", "Indicators");
 
-		_lowLevel = Param(nameof(LowLevel), -60m)
+		_lowLevel = Param(nameof(LowLevel), -80m)
 			.SetDisplay("Low Level", "Oversold threshold", "Indicators");
 
 		_trend = Param(nameof(Trend), TrendModes.Direct)
@@ -168,7 +168,7 @@ public class WprLevelCrossStrategy : Strategy
 		_takeProfit = Param(nameof(TakeProfit), 2000m)
 			.SetDisplay("Take Profit", "Take profit in price units", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for candles", "General");
 	}
 

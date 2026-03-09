@@ -39,7 +39,7 @@ public class InterceptorStrategy : Strategy
 
 	public InterceptorStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candles", "General");
 
 		_emaLength = Param(nameof(EmaLength), 50)
@@ -70,9 +70,9 @@ public class InterceptorStrategy : Strategy
 
 				var close = candle.ClosePrice;
 
-				if (close > emaValue && rsiValue < 55 && Position <= 0)
+				if (close > emaValue && rsiValue > 60m && Position <= 0)
 					BuyMarket();
-				else if (close < emaValue && rsiValue > 45 && Position >= 0)
+				else if (close < emaValue && rsiValue < 40m && Position >= 0)
 					SellMarket();
 			})
 			.Start();

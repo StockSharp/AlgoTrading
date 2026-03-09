@@ -17,6 +17,7 @@ public class IsConnectedStrategy : Strategy
 	private readonly StrategyParam<decimal> _accelerationMax;
 
 	private decimal _prevSar;
+	private decimal _prevClose;
 	private bool _hasPrev;
 
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
@@ -25,17 +26,29 @@ public class IsConnectedStrategy : Strategy
 
 	public IsConnectedStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
-		_acceleration = Param(nameof(Acceleration), 0.02m)
+		_acceleration = Param(nameof(Acceleration), 0.01m)
 			.SetDisplay("Acceleration", "SAR acceleration factor", "Indicators");
-		_accelerationMax = Param(nameof(AccelerationMax), 0.2m)
+		_accelerationMax = Param(nameof(AccelerationMax), 0.1m)
 			.SetDisplay("Acceleration Max", "SAR max acceleration", "Indicators");
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevSar = 0;
+		_prevClose = 0;
+		_hasPrev = false;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+		_prevSar = 0;
+		_prevClose = 0;
 		_hasPrev = false;
 		var sar = new ParabolicSar { Acceleration = Acceleration, AccelerationMax = AccelerationMax };
 		var subscription = SubscribeCandles(CandleType);
@@ -48,12 +61,13 @@ public class IsConnectedStrategy : Strategy
 
 		if (_hasPrev)
 		{
-			if (candle.ClosePrice > sarValue && _prevSar >= candle.ClosePrice && Position <= 0)
+			if (_prevClose <= _prevSar && candle.ClosePrice > sarValue && Position <= 0)
 				BuyMarket();
-			else if (candle.ClosePrice < sarValue && _prevSar <= candle.ClosePrice && Position >= 0)
+			else if (_prevClose >= _prevSar && candle.ClosePrice < sarValue && Position >= 0)
 				SellMarket();
 		}
 
+		_prevClose = candle.ClosePrice;
 		_prevSar = sarValue;
 		_hasPrev = true;
 	}

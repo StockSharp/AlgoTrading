@@ -40,7 +40,7 @@ public class UltraAbsolutelyNoLagLwmaStrategy : Strategy
 
 	public UltraAbsolutelyNoLagLwmaStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candles", "General");
 
 		_fastLength = Param(nameof(FastLength), 7)

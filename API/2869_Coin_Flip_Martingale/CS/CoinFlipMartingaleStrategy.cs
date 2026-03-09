@@ -33,7 +33,7 @@ public class CoinFlipMartingaleStrategy : Strategy
 
 	public CoinFlipMartingaleStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candles", "General");
 
 		_rsiLength = Param(nameof(RsiLength), 14)

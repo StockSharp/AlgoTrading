@@ -67,11 +67,11 @@ public class DoubleUp2Strategy : Strategy
 			.SetDisplay("MACD Slow", "Slow EMA period for MACD", "Indicators")
 			.SetOptimize(20, 50, 1);
 
-		_threshold = Param(nameof(Threshold), 230m)
-			.SetDisplay("Threshold", "CCI and MACD extreme level", "Strategy")
-			.SetOptimize(50m, 300m, 10m);
+		_threshold = Param(nameof(Threshold), 70m)
+			.SetDisplay("Threshold", "RSI extreme level", "Strategy")
+			.SetOptimize(55m, 85m, 5m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles used for calculations", "General");
 	}
 
@@ -92,33 +92,34 @@ public class DoubleUp2Strategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var cci = new CommodityChannelIndex { Length = CciPeriod };
+		var rsi = new RelativeStrengthIndex { Length = CciPeriod };
 		var macd = new MovingAverageConvergenceDivergence(
 			new ExponentialMovingAverage { Length = MacdSlowPeriod },
 			new ExponentialMovingAverage { Length = MacdFastPeriod });
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(cci, macd, ProcessCandle).Start();
+		subscription.Bind(rsi, macd, ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, cci);
+			DrawIndicator(area, rsi);
 			DrawIndicator(area, macd);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal cciValue, decimal macdValue)
+	private void ProcessCandle(ICandleMessage candle, decimal rsiValue, decimal macdValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
 		var step = Security?.PriceStep ?? 1m;
+		var lowThreshold = 100m - Threshold;
 
 		// Short entry condition
-		if (cciValue > Threshold && macdValue > Threshold)
+		if (rsiValue > Threshold && macdValue > 0m)
 		{
 			if (Position > 0)
 			{
@@ -132,7 +133,7 @@ public class DoubleUp2Strategy : Strategy
 		}
 
 		// Long entry condition
-		if (cciValue < -Threshold && macdValue < -Threshold)
+		if (rsiValue < lowThreshold && macdValue < 0m)
 		{
 			if (Position < 0)
 			{

@@ -89,10 +89,10 @@ public class EmaCrossStrategy : Strategy
 		_trailingStop = Param(nameof(TrailingStop), 20m)
 		.SetDisplay("Trailing Stop", "Trailing stop distance", "Risk");
 		
-		_reverse = Param(nameof(Reverse), true)
+		_reverse = Param(nameof(Reverse), false)
 		.SetDisplay("Reverse", "Swap EMA lines", "General");
 		
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 	

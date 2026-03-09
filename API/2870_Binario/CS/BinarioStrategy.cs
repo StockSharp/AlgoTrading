@@ -32,7 +32,7 @@ public class BinarioStrategy : Strategy
 
 	public BinarioStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candles", "General");
 
 		_maPeriod = Param(nameof(MaPeriod), 20)
@@ -59,14 +59,15 @@ public class BinarioStrategy : Strategy
 
 				var close = candle.ClosePrice;
 				var mid = (highValue + lowValue) / 2m;
+				var channelPadding = (highValue - lowValue) * 0.1m;
 
 				// Buy on breakout above channel midpoint
-				if (close > mid && Position <= 0)
+				if (close > mid + channelPadding && Position <= 0)
 				{
 					BuyMarket();
 				}
 				// Sell on breakout below channel midpoint
-				else if (close < mid && Position >= 0)
+				else if (close < mid - channelPadding && Position >= 0)
 				{
 					SellMarket();
 				}

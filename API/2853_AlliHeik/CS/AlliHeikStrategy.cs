@@ -34,12 +34,21 @@ public class AlliHeikStrategy : Strategy
 
 	public AlliHeikStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Source candles for the strategy", "General");
 
 		_emaPeriod = Param(nameof(EmaPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Period", "Trend filter EMA period", "Indicators");
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevHaOpen = 0m;
+		_prevHaClose = 0m;
+		_initialized = false;
 	}
 
 	/// <inheritdoc />
@@ -91,14 +100,16 @@ public class AlliHeikStrategy : Strategy
 
 		var haBullish = haClose > haOpen;
 		var haBearish = haClose < haOpen;
+		var prevHaBullish = _prevHaClose > _prevHaOpen;
+		var prevHaBearish = _prevHaClose < _prevHaOpen;
 
-		// Buy on bullish HA candle above EMA
-		if (haBullish && candle.ClosePrice > emaValue && Position <= 0)
+		// Buy only on a bearish-to-bullish HA flip confirmed by the EMA filter.
+		if (haBullish && prevHaBearish && candle.ClosePrice > emaValue && Position <= 0)
 		{
 			BuyMarket();
 		}
-		// Sell on bearish HA candle below EMA
-		else if (haBearish && candle.ClosePrice < emaValue && Position >= 0)
+		// Sell only on a bullish-to-bearish HA flip confirmed by the EMA filter.
+		else if (haBearish && prevHaBullish && candle.ClosePrice < emaValue && Position >= 0)
 		{
 			SellMarket();
 		}

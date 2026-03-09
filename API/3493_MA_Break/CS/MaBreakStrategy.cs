@@ -27,18 +27,30 @@ public class MaBreakStrategy : Strategy
 
 	public MaBreakStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
-		_emaPeriod = Param(nameof(EmaPeriod), 30)
+		_emaPeriod = Param(nameof(EmaPeriod), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Period", "EMA period for breakout", "Indicators");
-		_bodyRatio = Param(nameof(BodyRatio), 0.5m)
+		_bodyRatio = Param(nameof(BodyRatio), 0.7m)
 			.SetDisplay("Body Ratio", "Min body/range ratio for impulse", "Pattern");
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevClose = 0;
+		_prevEma = 0;
+		_hasPrev = false;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+		_prevClose = 0;
+		_prevEma = 0;
 		_hasPrev = false;
 		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
 		var subscription = SubscribeCandles(CandleType);

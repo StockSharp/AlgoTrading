@@ -40,7 +40,7 @@ public class ExpColorX2MaX2Strategy : Strategy
 
 	public ExpColorX2MaX2Strategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candles", "General");
 
 		_fastLength = Param(nameof(FastLength), 12)

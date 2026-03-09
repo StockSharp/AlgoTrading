@@ -98,7 +98,7 @@ public class DojiArrowsStrategy : Strategy
 			.SetDisplay("Doji Body Points", "Maximum difference between open and close to treat the candle as a doji.", "Pattern")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame used for signal generation.", "General");
 	}
 
@@ -106,6 +106,19 @@ public class DojiArrowsStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_hasPreviousCandle = false;
+		_prevOpen = 0m;
+		_prevClose = 0m;
+		_prevHigh = 0m;
+		_prevLow = 0m;
+		ResetProtection();
 	}
 
 	/// <inheritdoc />

@@ -40,7 +40,7 @@ public class AtrNormalizeHistogramStrategy : Strategy
 
 	public AtrNormalizeHistogramStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe", "General");
 
 		_atrLength = Param(nameof(AtrLength), 14)
@@ -85,12 +85,12 @@ public class AtrNormalizeHistogramStrategy : Strategy
 				var price = candle.ClosePrice;
 
 				// ATR expanding + price above EMA = bullish breakout
-				if (atrValue > prevAtr && price > emaValue && Position <= 0)
+				if (atrValue > prevAtr * 1.1m && price > emaValue && Position <= 0)
 				{
 					BuyMarket();
 				}
 				// ATR expanding + price below EMA = bearish breakout
-				else if (atrValue > prevAtr && price < emaValue && Position >= 0)
+				else if (atrValue > prevAtr * 1.1m && price < emaValue && Position >= 0)
 				{
 					SellMarket();
 				}

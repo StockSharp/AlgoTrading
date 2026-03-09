@@ -37,12 +37,21 @@ public class RenkoLevelStrategy : Strategy
 
 	public RenkoLevelStrategy()
 	{
-		_blockSize = Param(nameof(BlockSize), 500)
+		_blockSize = Param(nameof(BlockSize), 5000)
 			.SetGreaterThanZero()
 			.SetDisplay("Block Size", "Renko block size in price steps", "Renko");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candles", "General");
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_upperLevel = 0m;
+		_lowerLevel = 0m;
+		_hasLevels = false;
 	}
 
 	protected override void OnStarted2(DateTime time)

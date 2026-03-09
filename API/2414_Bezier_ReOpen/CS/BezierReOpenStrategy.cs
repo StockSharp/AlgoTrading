@@ -142,7 +142,7 @@ public class BezierReOpenStrategy : Strategy
 	/// </summary>
 	public BezierReOpenStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
 		_bPeriod = Param(nameof(BPeriod), 8)
@@ -156,7 +156,7 @@ public class BezierReOpenStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Price Step", "Price distance for additional entries", "Trading");
 
-		_posTotal = Param(nameof(PosTotal), 10)
+		_posTotal = Param(nameof(PosTotal), 1)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Positions", "Maximum number of positions", "Trading");
 

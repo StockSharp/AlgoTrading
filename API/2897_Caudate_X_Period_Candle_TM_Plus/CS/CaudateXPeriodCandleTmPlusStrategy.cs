@@ -40,7 +40,7 @@ public class CaudateXPeriodCandleTmPlusStrategy : Strategy
 
 	public CaudateXPeriodCandleTmPlusStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candles", "General");
 
 		_atrLength = Param(nameof(AtrLength), 14)
@@ -75,8 +75,8 @@ public class CaudateXPeriodCandleTmPlusStrategy : Strategy
 				var close = candle.ClosePrice;
 				var body = Math.Abs(close - candle.OpenPrice);
 
-				// Strong body candle (body > 0.5 * ATR) in trend direction
-				if (body > atrValue * 0.5m)
+				// Strong body candle in the trend direction.
+				if (body > atrValue * 0.75m)
 				{
 					if (close > candle.OpenPrice && close > emaValue && Position <= 0)
 						BuyMarket();

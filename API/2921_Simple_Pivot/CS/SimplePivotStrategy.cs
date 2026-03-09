@@ -37,7 +37,7 @@ public class SimplePivotStrategy : Strategy
 	public SimplePivotStrategy()
 	{
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "Data");
 	}
 

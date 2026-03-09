@@ -165,7 +165,7 @@ public class BssTripleEmaSeparationStrategy : Strategy
 		_thirdMaMethod = Param(nameof(ThirdMaMethod), MaMethods.Exponential)
 			.SetDisplay("Third MA Method", "Smoothing method for the slowest moving average", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for calculations", "General");
 	}
 
@@ -237,7 +237,10 @@ public class BssTripleEmaSeparationStrategy : Strategy
 				return;
 
 			if (CanEnterPosition(time, true))
+			{
 				BuyMarket(OrderVolume);
+				_lastEntryTime = time;
+			}
 
 			return;
 		}
@@ -248,7 +251,10 @@ public class BssTripleEmaSeparationStrategy : Strategy
 				return;
 
 			if (CanEnterPosition(time, false))
+			{
 				SellMarket(OrderVolume);
+				_lastEntryTime = time;
+			}
 		}
 	}
 

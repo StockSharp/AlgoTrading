@@ -47,7 +47,7 @@ public class AreaMacdStrategy : Strategy
 
 	public AreaMacdStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candles", "General");
 
 		_fastLength = Param(nameof(FastLength), 12)
@@ -100,10 +100,10 @@ public class AreaMacdStrategy : Strategy
 					return;
 
 				// Bullish area dominates
-				if (posArea > negArea && Position <= 0)
+				if (posArea > negArea * 1.25m && Position <= 0)
 					BuyMarket();
 				// Bearish area dominates
-				else if (negArea > posArea && Position >= 0)
+				else if (negArea > posArea * 1.25m && Position >= 0)
 					SellMarket();
 			})
 			.Start();

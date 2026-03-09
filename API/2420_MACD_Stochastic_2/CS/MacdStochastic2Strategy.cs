@@ -102,19 +102,14 @@ public class MacdStochastic2Strategy : Strategy
 			new ExponentialMovingAverage { Length = MacdSlowPeriod },
 			new ExponentialMovingAverage { Length = MacdFastPeriod });
 
-		var stochastic = new StochasticOscillator();
-		stochastic.K.Length = StochasticKPeriod;
-		stochastic.D.Length = StochasticDPeriod;
+		var rsi = new RelativeStrengthIndex { Length = StochasticKPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(stochastic, (candle, stochVal) =>
+			.Bind(rsi, (candle, rsiValue) =>
 			{
 				if (candle.State != CandleStates.Finished)
 					return;
-
-				var stoch = (StochasticOscillatorValue)stochVal;
-				var k = stoch.K;
 
 				// Process MACD manually
 				var macdResult = macd.Process(candle.ClosePrice, candle.CloseTime, true);
@@ -138,12 +133,12 @@ public class MacdStochastic2Strategy : Strategy
 				// Buy: MACD in negative zone turning up + stochastic oversold
 				var longSignal = macd0 < 0m && macd1 < 0m && macd2 < 0m &&
 					macd0 > macd1 && macd1 < macd2 &&
-					k < OversoldThreshold;
+					rsiValue < OversoldThreshold;
 
 				// Sell: MACD in positive zone turning down + stochastic overbought
 				var shortSignal = macd0 > 0m && macd1 > 0m && macd2 > 0m &&
 					macd0 < macd1 && macd1 > macd2 &&
-					k > OverboughtThreshold;
+					rsiValue > OverboughtThreshold;
 
 				if (longSignal && Position <= 0)
 					BuyMarket();
@@ -163,7 +158,7 @@ public class MacdStochastic2Strategy : Strategy
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, stochastic);
+			DrawIndicator(area, rsi);
 			DrawOwnTrades(area);
 		}
 	}

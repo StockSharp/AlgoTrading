@@ -47,7 +47,7 @@ public class BrainTrend2V2DuplexStrategy : Strategy
 
 	public BrainTrend2V2DuplexStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candles", "General");
 
 		_atrPeriod = Param(nameof(AtrPeriod), 7)
@@ -58,7 +58,7 @@ public class BrainTrend2V2DuplexStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Period", "EMA length for trend", "Indicators");
 
-		_channelMult = Param(nameof(ChannelMult), 1.5m)
+		_channelMult = Param(nameof(ChannelMult), 2.5m)
 			.SetGreaterThanZero()
 			.SetDisplay("Channel Mult", "ATR multiplier for channel width", "Indicators");
 	}

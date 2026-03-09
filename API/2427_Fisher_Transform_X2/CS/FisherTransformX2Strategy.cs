@@ -43,12 +43,12 @@ public class FisherTransformX2Strategy : Strategy
 
 	public FisherTransformX2Strategy()
 	{
-		_trendLength = Param(nameof(TrendLength), 20)
+		_trendLength = Param(nameof(TrendLength), 40)
 			.SetGreaterThanZero()
 			.SetDisplay("Trend Length", "Fisher length for trend", "Parameters")
 			.SetOptimize(10, 30, 2);
 
-		_signalLength = Param(nameof(SignalLength), 10)
+		_signalLength = Param(nameof(SignalLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Signal Length", "Fisher length for signal", "Parameters")
 			.SetOptimize(5, 20, 1);
@@ -61,7 +61,7 @@ public class FisherTransformX2Strategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss", "Stop loss in price units", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 	}
 
@@ -135,17 +135,13 @@ public class FisherTransformX2Strategy : Strategy
 			_trendDirection = -1;
 
 		// Signal crossover
-		var signalCrossUp = signalVal > _prevSignal && _prevSignal <= _prevPrevSignal;
-		var signalCrossDown = signalVal < _prevSignal && _prevSignal >= _prevPrevSignal;
+		var signalCrossUp = signalVal > _prevSignal && _prevSignal <= _prevPrevSignal && signalVal < 0m;
+		var signalCrossDown = signalVal < _prevSignal && _prevSignal >= _prevPrevSignal && signalVal > 0m;
 
 		if (_trendDirection > 0 && signalCrossUp && Position <= 0)
 			BuyMarket();
 		else if (_trendDirection < 0 && signalCrossDown && Position >= 0)
 			SellMarket();
-		else if (_trendDirection < 0 && Position > 0)
-			SellMarket();
-		else if (_trendDirection > 0 && Position < 0)
-			BuyMarket();
 
 		_prevTrend = trendVal;
 		_prevPrevSignal = _prevSignal;

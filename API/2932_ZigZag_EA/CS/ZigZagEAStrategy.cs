@@ -34,10 +34,10 @@ public class ZigZagEAStrategy : Strategy
 
 	public ZigZagEAStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe", "General");
 
-		_depth = Param(nameof(Depth), 12)
+		_depth = Param(nameof(Depth), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Depth", "Channel lookback period", "Indicators");
 	}
@@ -45,6 +45,14 @@ public class ZigZagEAStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevHigh = null;
+		_prevLow = null;
 	}
 
 	protected override void OnStarted2(DateTime time)
@@ -76,6 +84,13 @@ public class ZigZagEAStrategy : Strategy
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+		{
+			_prevHigh = high;
+			_prevLow = low;
+			return;
+		}
 
 		if (_prevHigh == null || _prevLow == null)
 		{

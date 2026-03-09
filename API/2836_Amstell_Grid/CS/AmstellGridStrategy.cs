@@ -91,7 +91,7 @@ public class AmstellGridStrategy : Strategy
 			
 			.SetOptimize(5, 60, 5);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for signal candles", "General");
 	}
 

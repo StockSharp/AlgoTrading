@@ -111,7 +111,7 @@ public class RollbackReboundStrategy : Strategy
 	/// </summary>
 	public RollbackReboundStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame())
 			.SetDisplay("Candle Type", "Candle series used for calculations.", "General");
 
 		_stopLossPips = Param(nameof(StopLossPips), 30m)
@@ -122,7 +122,7 @@ public class RollbackReboundStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Distance of the take profit in pips.", "Risk");
 
-		_trailingStopPips = Param(nameof(TrailingStopPips), 1m)
+		_trailingStopPips = Param(nameof(TrailingStopPips), 20m)
 			.SetNotNegative()
 			.SetDisplay("Trailing Stop (pips)", "Trailing stop offset in pips.", "Risk");
 
@@ -130,7 +130,7 @@ public class RollbackReboundStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Trailing Step (pips)", "Additional profit required before trailing adjusts.", "Risk");
 
-		_rollbackRatePips = Param(nameof(RollbackRatePips), 15m)
+		_rollbackRatePips = Param(nameof(RollbackRatePips), 40m)
 			.SetNotNegative()
 			.SetDisplay("Rollback Threshold (pips)", "Minimum pullback from the bar extreme to trigger entries.", "Signal");
 

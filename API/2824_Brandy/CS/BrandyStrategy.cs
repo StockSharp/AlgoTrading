@@ -105,8 +105,8 @@ public class BrandyStrategy : Strategy
 	private DecimalLengthIndicator _maOpenIndicator;
 	private DecimalLengthIndicator _maCloseIndicator;
 	private decimal _pipSize;
-	private readonly Queue<decimal> _maOpenValues = new();
-	private readonly Queue<decimal> _maCloseValues = new();
+	private readonly List<decimal> _maOpenValues = [];
+	private readonly List<decimal> _maCloseValues = [];
 	private int _maxOpenQueueSize;
 	private int _maxCloseQueueSize;
 	private decimal? _entryPrice;
@@ -322,7 +322,7 @@ public class BrandyStrategy : Strategy
 		.SetNotNegative()
 		.SetDisplay("MA Open Signal Bar", "Reference bar index for open MA", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Time frame of input candles", "General");
 
 		Volume = _tradeVolume.Value;
@@ -343,6 +343,9 @@ public class BrandyStrategy : Strategy
 		_maCloseIndicator = null;
 		_maOpenValues.Clear();
 		_maCloseValues.Clear();
+		_pipSize = 0m;
+		_maxOpenQueueSize = 0;
+		_maxCloseQueueSize = 0;
 		_entryPrice = null;
 		_stopPrice = null;
 		_takePrice = null;
@@ -403,7 +406,7 @@ public class BrandyStrategy : Strategy
 		var maOpenPrev = GetQueueValue(_maOpenValues, 1 + MaOpenShift);
 		var maOpenSignal = GetQueueValue(_maOpenValues, MaOpenSignalBar + MaOpenShift);
 		var maClosePrev = GetQueueValue(_maCloseValues, 1 + MaCloseShift);
-		var maCloseSignal = GetQueueValue(_maOpenValues, MaCloseSignalBar + MaOpenShift);
+		var maCloseSignal = GetQueueValue(_maCloseValues, MaCloseSignalBar + MaCloseShift);
 
 		if (maOpenPrev is null || maOpenSignal is null || maClosePrev is null || maCloseSignal is null)
 		return;
@@ -590,35 +593,27 @@ public class BrandyStrategy : Strategy
 		_maxCloseQueueSize = Math.Max(2, closeDepth + 2);
 	}
 
-	private static void EnqueueValue(Queue<decimal> queue, decimal value, int maxSize)
+	private static void EnqueueValue(List<decimal> queue, decimal value, int maxSize)
 	{
-		queue.Enqueue(value);
+		queue.Add(value);
 
 		while (queue.Count > maxSize)
-		queue.Dequeue();
+			queue.RemoveAt(0);
 	}
 
-	private static decimal? GetQueueValue(Queue<decimal> queue, int indexFromCurrent)
+	private static decimal? GetQueueValue(List<decimal> queue, int indexFromCurrent)
 	{
 		if (indexFromCurrent < 0)
-		return null;
+			return null;
 
 		if (queue.Count <= indexFromCurrent)
-		return null;
+			return null;
 
 		var targetIndex = queue.Count - 1 - indexFromCurrent;
-		var enumerator = queue.GetEnumerator();
-		var currentIndex = 0;
 
-		while (enumerator.MoveNext())
-		{
-			if (currentIndex == targetIndex)
-			return enumerator.Current;
-
-			currentIndex++;
-		}
-
-		return null;
+		return targetIndex >= 0 && targetIndex < queue.Count
+			? queue[targetIndex]
+			: null;
 	}
 
 	private static DecimalLengthIndicator CreateMovingAverage(MovingAverageMethods method, int length)

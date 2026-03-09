@@ -40,7 +40,7 @@ public class GlobalStopTimerStrategy : Strategy
 
 	public GlobalStopTimerStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candles", "General");
 
 		_momentumLength = Param(nameof(MomentumLength), 10)
@@ -58,6 +58,8 @@ public class GlobalStopTimerStrategy : Strategy
 
 		var momentum = new Momentum { Length = MomentumLength };
 		var ema = new ExponentialMovingAverage { Length = EmaLength };
+		decimal prevMomentum = 100m;
+		var hasPrev = false;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -66,17 +68,29 @@ public class GlobalStopTimerStrategy : Strategy
 				if (candle.State != CandleStates.Finished)
 					return;
 
-				if (!IsFormedAndOnlineAndAllowTrading())
+				if (!hasPrev)
+				{
+					prevMomentum = momVal;
+					hasPrev = true;
 					return;
+				}
+
+				if (!IsFormedAndOnlineAndAllowTrading())
+				{
+					prevMomentum = momVal;
+					return;
+				}
 
 				var close = candle.ClosePrice;
+				var bullishCross = prevMomentum <= 100m && momVal > 100m;
+				var bearishCross = prevMomentum >= 100m && momVal < 100m;
 
-				// Positive momentum + above EMA = buy
-				if (momVal > 0 && close > emaVal && Position <= 0)
+				if (bullishCross && close > emaVal && Position <= 0)
 					BuyMarket();
-				// Negative momentum + below EMA = sell
-				else if (momVal < 0 && close < emaVal && Position >= 0)
+				else if (bearishCross && close < emaVal && Position >= 0)
 					SellMarket();
+
+				prevMomentum = momVal;
 			})
 			.Start();
 

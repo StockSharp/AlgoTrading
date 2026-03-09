@@ -203,6 +203,8 @@ public class ExecutorCandlesStrategy : Strategy
 		_stopLevel = null;
 		_takeLevel = null;
 		_trendDown = null;
+		_priceStep = 0m;
+		_tolerance = 0m;
 	}
 
 	/// <inheritdoc />

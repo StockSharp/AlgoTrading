@@ -43,7 +43,7 @@ public class BandsPendingBreakoutStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var bb = new BollingerBands { Length = BbPeriod, Width = 2m };
+		var bb = new BollingerBands { Length = BbPeriod, Width = 1m };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -56,8 +56,8 @@ public class BandsPendingBreakoutStrategy : Strategy
 					return;
 
 				var bbTyped = (BollingerBandsValue)bbValue;
-				var upper = bbTyped.UpBand;
-				var lower = bbTyped.LowBand;
+				if (bbTyped.UpBand is not decimal upper || bbTyped.LowBand is not decimal lower)
+					return;
 
 				// Buy on breakout above upper band
 				if (candle.ClosePrice > upper && Position <= 0)

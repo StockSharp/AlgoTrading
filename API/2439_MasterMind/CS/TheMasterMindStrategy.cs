@@ -22,6 +22,8 @@ public class TheMasterMindStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 
 	private WilliamsR _wpr;
+	private decimal? _prevD;
+	private int _lastSignal;
 
 	/// <summary>
 	/// Stochastic base length.
@@ -49,7 +51,7 @@ public class TheMasterMindStrategy : Strategy
 		_stochLength = Param(nameof(StochasticLength), 14)
 			.SetDisplay("Stochastic Length", "Base length for Stochastic", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type for calculations", "Common");
 	}
 
@@ -57,6 +59,14 @@ public class TheMasterMindStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevD = null;
+		_lastSignal = 0;
 	}
 
 	/// <inheritdoc />
@@ -90,18 +100,21 @@ public class TheMasterMindStrategy : Strategy
 
 				var wpr = wprResult.ToDecimal();
 
-				// Relaxed thresholds for crypto
-				var buySignal = d < 20m && wpr < -80m;
-				var sellSignal = d > 80m && wpr > -20m;
+				var buySignal = _prevD >= 20m && d < 20m && wpr < -85m;
+				var sellSignal = _prevD <= 80m && d > 80m && wpr > -15m;
 
-				if (buySignal && Position <= 0)
+				if (buySignal && _lastSignal != 1 && Position <= 0)
 				{
 					BuyMarket();
+					_lastSignal = 1;
 				}
-				else if (sellSignal && Position >= 0)
+				else if (sellSignal && _lastSignal != -1 && Position >= 0)
 				{
 					SellMarket();
+					_lastSignal = -1;
 				}
+
+				_prevD = d;
 			})
 			.Start();
 

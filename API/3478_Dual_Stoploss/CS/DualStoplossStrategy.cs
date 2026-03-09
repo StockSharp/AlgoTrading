@@ -41,6 +41,16 @@ public class DualStoplossStrategy : Strategy
 			.SetDisplay("Slow SMA", "Slow SMA period", "Indicators");
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFast = 0;
+		_prevMid = 0;
+		_hasPrev = false;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
@@ -61,6 +71,13 @@ public class DualStoplossStrategy : Strategy
 			if (_prevFast <= _prevMid && fastValue > midValue && midValue > slowValue && Position <= 0)
 				BuyMarket();
 			else if (_prevFast >= _prevMid && fastValue < midValue && midValue < slowValue && Position >= 0)
+				SellMarket();
+		}
+		else
+		{
+			if (fastValue > midValue && midValue > slowValue && Position <= 0)
+				BuyMarket();
+			else if (fastValue < midValue && midValue < slowValue && Position >= 0)
 				SellMarket();
 		}
 

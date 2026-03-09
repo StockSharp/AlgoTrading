@@ -48,8 +48,16 @@ public class AoLightningStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("AO Slow", "Long SMA period for Awesome Oscillator", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Source candles", "General");
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevAo = 0m;
+		_initialized = false;
 	}
 
 	/// <inheritdoc />

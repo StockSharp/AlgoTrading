@@ -29,6 +29,7 @@ public class ExpertNewsStrategy : Strategy
 	private readonly List<decimal> _highs = new();
 	private readonly List<decimal> _lows = new();
 	private decimal _entryPrice;
+	private int _lastSignal;
 
 	/// <summary>
 	/// Entry offset from the high/low range.
@@ -80,7 +81,7 @@ public class ExpertNewsStrategy : Strategy
 	/// </summary>
 	public ExpertNewsStrategy()
 	{
-		_entryOffset = Param(nameof(EntryOffset), 50m)
+		_entryOffset = Param(nameof(EntryOffset), 200m)
 			.SetGreaterThanZero()
 			.SetDisplay("Entry Offset", "Offset from range high/low for entry", "Parameters");
 
@@ -92,11 +93,11 @@ public class ExpertNewsStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit", "Take profit in price units", "Risk");
 
-		_lookbackPeriod = Param(nameof(LookbackPeriod), 10)
+		_lookbackPeriod = Param(nameof(LookbackPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Lookback Period", "Bars for range calculation", "Parameters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -111,6 +112,7 @@ public class ExpertNewsStrategy : Strategy
 		_highs.Clear();
 		_lows.Clear();
 		_entryPrice = 0m;
+		_lastSignal = 0;
 	}
 
 	/// <inheritdoc />
@@ -156,15 +158,19 @@ public class ExpertNewsStrategy : Strategy
 		var breakoutUp = close > rangeHigh + EntryOffset;
 		var breakoutDown = close < rangeLow - EntryOffset;
 
-		if (breakoutUp && Position <= 0)
+		if (breakoutUp && _lastSignal != 1 && Position <= 0)
 		{
 			BuyMarket();
 			_entryPrice = close;
+			_lastSignal = 1;
 		}
-		else if (breakoutDown && Position >= 0)
+		else if (breakoutDown && _lastSignal != -1 && Position >= 0)
 		{
 			SellMarket();
 			_entryPrice = close;
+			_lastSignal = -1;
 		}
+		else if (!breakoutUp && !breakoutDown)
+			_lastSignal = 0;
 	}
 }
