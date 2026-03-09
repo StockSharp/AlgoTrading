@@ -182,13 +182,13 @@ public class Exp3StoStrategy : Strategy
 	/// </summary>
 	public Exp3StoStrategy()
 	{
-		_candleType1 = Param(nameof(CandleType1), TimeSpan.FromMinutes(30).TimeFrame())
+		_candleType1 = Param(nameof(CandleType1), TimeSpan.FromDays(1).TimeFrame())
 						   .SetDisplay("Timeframe 1", "Higher timeframe", "General");
 
-		_candleType2 = Param(nameof(CandleType2), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType2 = Param(nameof(CandleType2), TimeSpan.FromHours(4).TimeFrame())
 						   .SetDisplay("Timeframe 2", "Middle timeframe", "General");
 
-		_candleType3 = Param(nameof(CandleType3), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType3 = Param(nameof(CandleType3), TimeSpan.FromHours(1).TimeFrame())
 						   .SetDisplay("Timeframe 3", "Lower timeframe", "General");
 
 		_kPeriod = Param(nameof(KPeriod), 5).SetGreaterThanZero().SetDisplay("%K Period", "Length of %K", "Stochastic");
@@ -204,19 +204,19 @@ public class Exp3StoStrategy : Strategy
 			Param(nameof(SellPosOpen), true).SetDisplay("Enable Short", "Allow opening short positions", "Signals");
 
 		_buyPosClose1 =
-			Param(nameof(BuyPosClose1), true).SetDisplay("Close Long TF1", "Close longs if TF1 down", "Signals");
+			Param(nameof(BuyPosClose1), false).SetDisplay("Close Long TF1", "Close longs if TF1 down", "Signals");
 		_sellPosClose1 =
-			Param(nameof(SellPosClose1), true).SetDisplay("Close Short TF1", "Close shorts if TF1 up", "Signals");
+			Param(nameof(SellPosClose1), false).SetDisplay("Close Short TF1", "Close shorts if TF1 up", "Signals");
 
 		_buyPosClose2 =
-			Param(nameof(BuyPosClose2), true).SetDisplay("Close Long TF2", "Close longs if TF2 down", "Signals");
+			Param(nameof(BuyPosClose2), false).SetDisplay("Close Long TF2", "Close longs if TF2 down", "Signals");
 		_sellPosClose2 =
-			Param(nameof(SellPosClose2), true).SetDisplay("Close Short TF2", "Close shorts if TF2 up", "Signals");
+			Param(nameof(SellPosClose2), false).SetDisplay("Close Short TF2", "Close shorts if TF2 up", "Signals");
 
 		_buyPosClose3 =
-			Param(nameof(BuyPosClose3), true).SetDisplay("Close Long TF3", "Close longs if TF3 down", "Signals");
+			Param(nameof(BuyPosClose3), false).SetDisplay("Close Long TF3", "Close longs if TF3 down", "Signals");
 		_sellPosClose3 =
-			Param(nameof(SellPosClose3), true).SetDisplay("Close Short TF3", "Close shorts if TF3 up", "Signals");
+			Param(nameof(SellPosClose3), false).SetDisplay("Close Short TF3", "Close shorts if TF3 up", "Signals");
 	}
 
 	/// <inheritdoc />

@@ -27,7 +27,7 @@ public class TemplateEAbyMarketStrategy : Strategy
 
 	public TemplateEAbyMarketStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 		_fastPeriod = Param(nameof(FastPeriod), 12)
 			.SetGreaterThanZero()
@@ -40,6 +40,16 @@ public class TemplateEAbyMarketStrategy : Strategy
 			.SetDisplay("Signal Period", "MACD signal period", "Indicators");
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevMacd = 0m;
+		_prevSignal = 0m;
+		_hasPrev = false;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);

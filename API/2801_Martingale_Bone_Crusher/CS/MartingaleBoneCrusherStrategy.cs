@@ -126,7 +126,7 @@ public class MartingaleBoneCrusherStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Take Profit Steps", "Take-profit distance in steps", "Price Targets");
 
-		_fastPeriod = Param(nameof(FastPeriod), 1)
+		_fastPeriod = Param(nameof(FastPeriod), 2)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast MA", "Fast moving average length", "Signals");
 
@@ -134,7 +134,7 @@ public class MartingaleBoneCrusherStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Slow MA", "Slow moving average length", "Signals");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Primary candle series", "General");
 	}
 

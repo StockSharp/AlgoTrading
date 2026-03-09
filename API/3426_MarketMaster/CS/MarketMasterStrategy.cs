@@ -18,6 +18,7 @@ public class MarketMasterStrategy : Strategy
 
 	private decimal _prevRsi;
 	private bool _hasPrevRsi;
+	private bool _wasBullish;
 
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 	public int EmaPeriod { get => _emaPeriod.Value; set => _emaPeriod.Value = value; }
@@ -25,9 +26,9 @@ public class MarketMasterStrategy : Strategy
 
 	public MarketMasterStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
-		_emaPeriod = Param(nameof(EmaPeriod), 20)
+		_emaPeriod = Param(nameof(EmaPeriod), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Period", "EMA period", "Indicators");
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
@@ -35,6 +36,16 @@ public class MarketMasterStrategy : Strategy
 			.SetDisplay("RSI Period", "RSI period", "Indicators");
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevRsi = 0m;
+		_hasPrevRsi = false;
+		_wasBullish = false;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
@@ -50,16 +61,18 @@ public class MarketMasterStrategy : Strategy
 		if (candle.State != CandleStates.Finished) return;
 
 		var close = candle.ClosePrice;
+		var isBullish = close > emaValue && rsiValue > _prevRsi;
 
 		if (_hasPrevRsi)
 		{
-			if (close > emaValue && rsiValue > _prevRsi && Position <= 0)
+			if (isBullish && !_wasBullish && Position <= 0)
 				BuyMarket();
-			else if (close < emaValue && rsiValue < _prevRsi && Position >= 0)
+			else if (!isBullish && close < emaValue && rsiValue < _prevRsi && _wasBullish && Position >= 0)
 				SellMarket();
 		}
 
 		_prevRsi = rsiValue;
 		_hasPrevRsi = true;
+		_wasBullish = isBullish;
 	}
 }

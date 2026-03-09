@@ -95,7 +95,7 @@ public class RobotPowerM5Strategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss", "Stop loss distance", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 	}
 
@@ -117,6 +117,9 @@ public class RobotPowerM5Strategy : Strategy
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+
+		_stopPrice = 0m;
+		_takePrice = 0m;
 
 		var bulls = new BullPower { Length = BullBearPeriod };
 		var bears = new BearPower { Length = BullBearPeriod };

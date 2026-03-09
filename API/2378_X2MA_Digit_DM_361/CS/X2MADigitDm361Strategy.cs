@@ -18,7 +18,7 @@ namespace StockSharp.Samples.Strategies;
 /// Long when fast MA is above slow MA and +DI exceeds -DI.
 /// Short when fast MA is below slow MA and -DI exceeds +DI.
 /// </summary>
-public class X2MADigitDm361Strategy : Strategy
+public class X2MaDigitDm361Strategy : Strategy
 {
 	private readonly StrategyParam<int> _fastMaLength;
 	private readonly StrategyParam<int> _slowMaLength;
@@ -82,17 +82,17 @@ public class X2MADigitDm361Strategy : Strategy
 	}
 
 	/// <summary>
-	/// Initializes a new instance of <see cref="X2MADigitDm361Strategy"/>.
+	/// Initializes a new instance of <see cref="X2MaDigitDm361Strategy"/>.
 	/// </summary>
-	public X2MADigitDm361Strategy()
+	public X2MaDigitDm361Strategy()
 	{
-		_fastMaLength = Param(nameof(FastMaLength), 12)
+		_fastMaLength = Param(nameof(FastMaLength), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast MA Length", "Length of fast moving average", "Moving Averages")
 			
 			.SetOptimize(5, 25, 1);
 
-		_slowMaLength = Param(nameof(SlowMaLength), 5)
+		_slowMaLength = Param(nameof(SlowMaLength), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow MA Length", "Length of slow moving average", "Moving Averages")
 			

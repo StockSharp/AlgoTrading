@@ -65,8 +65,20 @@ public class Twenty200ExpertAutoLotStrategy : Strategy
 			.SetDisplay("Delta Long", "Min rise in pips", "Logic");
 		_deltaShort = Param(nameof(DeltaShort), 1)
 			.SetDisplay("Delta Short", "Min fall in pips", "Logic");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame", "General");
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_opens.Clear();
+		_stopPrice = 0m;
+		_takePrice = 0m;
+		_entryTime = default;
+		_isLong = false;
 	}
 
 	/// <inheritdoc />
@@ -75,6 +87,10 @@ public class Twenty200ExpertAutoLotStrategy : Strategy
 		base.OnStarted2(time);
 
 		_opens.Clear();
+		_stopPrice = 0m;
+		_takePrice = 0m;
+		_entryTime = default;
+		_isLong = false;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();

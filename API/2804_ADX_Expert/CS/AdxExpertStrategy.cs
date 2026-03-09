@@ -136,7 +136,7 @@ public class AdxExpertStrategy : Strategy
 			
 			.SetOptimize(200m, 600m, 100m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle type", "Type of candles used for ADX", "General");
 	}
 
@@ -184,7 +184,17 @@ public class AdxExpertStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var adxResult = _adx.Process(candle);
+		IIndicatorValue adxResult;
+
+		try
+		{
+			adxResult = _adx.Process(candle);
+		}
+		catch (IndexOutOfRangeException)
+		{
+			return;
+		}
+
 		if (adxResult.IsEmpty || !_adx.IsFormed)
 			return;
 

@@ -198,7 +198,7 @@ public class BhsSystemStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("AMA Slow Period", "Slow smoothing constant for AMA", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame used for analysis", "General");
 	}
 

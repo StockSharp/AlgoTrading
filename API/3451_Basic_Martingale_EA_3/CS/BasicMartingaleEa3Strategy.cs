@@ -28,7 +28,7 @@ public class BasicMartingaleEa3Strategy : Strategy
 
 	public BasicMartingaleEa3Strategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 		_fastPeriod = Param(nameof(FastPeriod), 5)
 			.SetGreaterThanZero()
@@ -41,12 +41,22 @@ public class BasicMartingaleEa3Strategy : Strategy
 			.SetDisplay("RSI Period", "RSI period", "Indicators");
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFast = 0;
+		_prevSlow = 0;
+		_hasPrev = false;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 		_hasPrev = false;
-		var fast = new WeightedMovingAverage { Length = FastPeriod };
-		var slow = new WeightedMovingAverage { Length = SlowPeriod };
+		var fast = new ExponentialMovingAverage { Length = FastPeriod };
+		var slow = new ExponentialMovingAverage { Length = SlowPeriod };
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(fast, slow, rsi, ProcessCandle).Start();
@@ -58,9 +68,16 @@ public class BasicMartingaleEa3Strategy : Strategy
 
 		if (_hasPrev)
 		{
-			if (_prevFast <= _prevSlow && fastValue > slowValue && rsiValue < 50 && Position <= 0)
+			if (_prevFast <= _prevSlow && fastValue > slowValue && rsiValue < 45 && Position <= 0)
 				BuyMarket();
-			else if (_prevFast >= _prevSlow && fastValue < slowValue && rsiValue > 50 && Position >= 0)
+			else if (_prevFast >= _prevSlow && fastValue < slowValue && rsiValue > 55 && Position >= 0)
+				SellMarket();
+		}
+		else
+		{
+			if (fastValue > slowValue && rsiValue < 45 && Position <= 0)
+				BuyMarket();
+			else if (fastValue < slowValue && rsiValue > 55 && Position >= 0)
 				SellMarket();
 		}
 

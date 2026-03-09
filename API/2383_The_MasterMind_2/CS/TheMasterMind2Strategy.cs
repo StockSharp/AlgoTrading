@@ -36,6 +36,8 @@ public class TheMasterMind2Strategy : Strategy
 	private decimal _entryPrice;
 	private decimal _stopPrice;
 	private decimal _takeProfitPrice;
+	private decimal _prevSignal = decimal.MinValue;
+	private decimal _prevWpr = decimal.MinValue;
 
 	/// <summary>
 	/// Trade volume in contracts.
@@ -179,7 +181,7 @@ public class TheMasterMind2Strategy : Strategy
 							   .SetDisplay("Break Even", "Move stop to entry after profit", "Risk")
 							   ;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 						  .SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -194,12 +196,18 @@ public class TheMasterMind2Strategy : Strategy
 	{
 		base.OnReseted();
 		ResetStops();
+		_prevSignal = decimal.MinValue;
+		_prevWpr = decimal.MinValue;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+
+		ResetStops();
+		_prevSignal = decimal.MinValue;
+		_prevWpr = decimal.MinValue;
 
 		var stochastic = new StochasticOscillator();
 		stochastic.K.Length = StochasticPeriod;
@@ -241,6 +249,13 @@ public class TheMasterMind2Strategy : Strategy
 
 		var wpr = wprValue.ToDecimal();
 		var step = Security?.PriceStep ?? 1m;
+
+		if (_prevSignal == decimal.MinValue)
+		{
+			_prevSignal = signal;
+			_prevWpr = wpr;
+			return;
+		}
 
 		// Manage existing position
 		if (Position > 0)
@@ -286,19 +301,22 @@ public class TheMasterMind2Strategy : Strategy
 		}
 
 		// Generate trade signals
-		if (signal < 20m && wpr < -80m && Position <= 0)
+		if (_prevSignal >= 20m && signal < 20m && _prevWpr >= -80m && wpr < -80m && Position <= 0)
 		{
 			BuyMarket();
 			_entryPrice = candle.ClosePrice;
 			_stopPrice = _entryPrice - StopLossPoints * step;
 			_takeProfitPrice = _entryPrice + TakeProfitPoints * step;
 		}
-		else if (signal > 80m && wpr > -20m && Position >= 0)
+		else if (_prevSignal <= 80m && signal > 80m && _prevWpr <= -20m && wpr > -20m && Position >= 0)
 		{
 			SellMarket();
 			_entryPrice = candle.ClosePrice;
 			_stopPrice = _entryPrice + StopLossPoints * step;
 			_takeProfitPrice = _entryPrice - TakeProfitPoints * step;
 		}
+
+		_prevSignal = signal;
+		_prevWpr = wpr;
 	}
 }

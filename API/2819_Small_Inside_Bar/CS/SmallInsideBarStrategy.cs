@@ -113,7 +113,7 @@ public class SmallInsideBarStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame used for pattern detection", "General");
 
-		_rangeRatioThreshold = Param(nameof(RangeRatioThreshold), 2m)
+		_rangeRatioThreshold = Param(nameof(RangeRatioThreshold), 2.25m)
 			.SetGreaterThanZero()
 			.SetDisplay("Range Ratio", "Minimum mother-to-inside bar range ratio", "Pattern")
 			

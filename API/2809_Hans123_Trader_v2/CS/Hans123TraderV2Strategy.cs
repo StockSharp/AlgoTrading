@@ -144,7 +144,7 @@ public class Hans123TraderV2Strategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Breakout Period", "High/low lookback", "Trading");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Processed candles", "General");
 	}
 

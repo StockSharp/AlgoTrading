@@ -115,11 +115,9 @@ public class DayTradingIndicatorFusionStrategy : Strategy
 			AccelerationMax = 0.2m
 		};
 
-		var momentum = new Momentum { Length = 14 };
-
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(macd, stochastic, parabolicSar, momentum, ProcessCandle)
+			.BindEx(macd, stochastic, parabolicSar, ProcessCandle)
 			.Start();
 
 		var pip = Security?.PriceStep ?? 1m;
@@ -138,7 +136,7 @@ public class DayTradingIndicatorFusionStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue, IIndicatorValue stochValue, IIndicatorValue sarValue, IIndicatorValue momValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue, IIndicatorValue stochValue, IIndicatorValue sarValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
@@ -155,10 +153,9 @@ public class DayTradingIndicatorFusionStrategy : Strategy
 			return;
 
 		var sar = sarValue.ToDecimal();
-		var momentum = momValue.ToDecimal();
 
-		var isBuying = sar <= candle.ClosePrice && _prevSar > sar && momentum < 100m && macd < macdSignal && stochK < 35m;
-		var isSelling = sar >= candle.ClosePrice && _prevSar < sar && momentum > 100m && macd > macdSignal && stochK > 60m;
+		var isBuying = sar <= candle.ClosePrice && _prevSar > sar && macd < macdSignal && stochK < 35m;
+		var isSelling = sar >= candle.ClosePrice && _prevSar < sar && macd > macdSignal && stochK > 60m;
 
 		_prevSar = sar;
 

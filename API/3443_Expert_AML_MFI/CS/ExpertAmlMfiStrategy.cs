@@ -37,6 +37,14 @@ public class ExpertAmlMfiStrategy : Strategy
 			.SetDisplay("MFI High", "MFI level for bearish entry", "Signals");
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevCandle = null;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);

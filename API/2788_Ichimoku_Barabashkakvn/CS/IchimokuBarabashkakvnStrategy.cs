@@ -195,7 +195,7 @@ public class IchimokuBarabashkakvnStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Senkou Span B Period", "Senkou Span B periods", "Ichimoku");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Source candles for processing", "General");
 
 		_orderVolume = Param(nameof(OrderVolume), 1m)
@@ -253,6 +253,7 @@ public class IchimokuBarabashkakvnStrategy : Strategy
 	{
 		base.OnReseted();
 		_prevTenkan = null;
+		_pipValue = 0m;
 		ResetPositionState();
 	}
 

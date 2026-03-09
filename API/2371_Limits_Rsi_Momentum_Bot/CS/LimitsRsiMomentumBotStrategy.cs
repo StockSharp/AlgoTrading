@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
@@ -197,7 +196,7 @@ public class LimitsRsiMomentumBotStrategy : Strategy
 		_endTime = Param(nameof(EndTime), new TimeSpan(23, 59, 0))
 			.SetDisplay("End Time", "Trading end time", "Trading");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for strategy", "Trading");
 	}
 
@@ -235,6 +234,15 @@ public class LimitsRsiMomentumBotStrategy : Strategy
 		}
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_buyOrder = null;
+		_sellOrder = null;
+	}
+
 	private void ProcessCandle(ICandleMessage candle, decimal rsiValue, decimal momentumValue)
 	{
 		if (candle.State != CandleStates.Finished)
@@ -246,30 +254,48 @@ public class LimitsRsiMomentumBotStrategy : Strategy
 		if (!IsTradingTime(candle.OpenTime))
 			return;
 
-		if (_buyOrder != null && _buyOrder.State == OrderStates.Active)
+		var step = Security.PriceStep ?? 1m;
+		var buySignal = rsiValue < RsiBuyRestrict && momentumValue < MomentumBuyRestrict && Position <= 0;
+		var sellSignal = rsiValue > RsiSellRestrict && momentumValue > MomentumSellRestrict && Position >= 0;
+
+		if (buySignal)
+		{
+			if (_sellOrder != null && _sellOrder.State == OrderStates.Active)
+			{
+				CancelOrder(_sellOrder);
+				_sellOrder = null;
+			}
+
+			if (_buyOrder != null && _buyOrder.State == OrderStates.Active)
+				return;
+
+			var price = candle.OpenPrice - LimitOrderDistance * step;
+			_buyOrder = BuyLimit(price);
+		}
+		else if (_buyOrder != null && _buyOrder.State == OrderStates.Active)
 		{
 			CancelOrder(_buyOrder);
 			_buyOrder = null;
 		}
 
-		if (_sellOrder != null && _sellOrder.State == OrderStates.Active)
+		if (sellSignal)
+		{
+			if (_buyOrder != null && _buyOrder.State == OrderStates.Active)
+			{
+				CancelOrder(_buyOrder);
+				_buyOrder = null;
+			}
+
+			if (_sellOrder != null && _sellOrder.State == OrderStates.Active)
+				return;
+
+			var price = candle.OpenPrice + LimitOrderDistance * step;
+			_sellOrder = SellLimit(price);
+		}
+		else if (_sellOrder != null && _sellOrder.State == OrderStates.Active)
 		{
 			CancelOrder(_sellOrder);
 			_sellOrder = null;
-		}
-
-		var step = Security.PriceStep ?? 1m;
-
-		if (rsiValue < RsiBuyRestrict && momentumValue < MomentumBuyRestrict && Position <= 0)
-		{
-			var price = candle.OpenPrice - LimitOrderDistance * step;
-			_buyOrder = BuyLimit(price);
-		}
-
-		if (rsiValue > RsiSellRestrict && momentumValue > MomentumSellRestrict && Position >= 0)
-		{
-			var price = candle.OpenPrice + LimitOrderDistance * step;
-			_sellOrder = SellLimit(price);
 		}
 	}
 

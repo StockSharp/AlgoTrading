@@ -131,7 +131,7 @@ public class FarhadCrab1Strategy : Strategy
 	/// </summary>
 	public FarhadCrab1Strategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Execution timeframe", "General");
 
 		_maLength = Param(nameof(MaLength), 15)

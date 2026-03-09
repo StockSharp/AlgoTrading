@@ -15,26 +15,47 @@ public class UniversalSignalDemoStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _rsiPeriod;
 	private readonly StrategyParam<int> _emaPeriod;
+	private readonly StrategyParam<int> _signalCooldownCandles;
+	private int _prevScore;
+	private int _candlesSinceTrade;
+	private bool _hasPrevScore;
 
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 	public int RsiPeriod { get => _rsiPeriod.Value; set => _rsiPeriod.Value = value; }
 	public int EmaPeriod { get => _emaPeriod.Value; set => _emaPeriod.Value = value; }
+	public int SignalCooldownCandles { get => _signalCooldownCandles.Value; set => _signalCooldownCandles.Value = value; }
 
 	public UniversalSignalDemoStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
-		_rsiPeriod = Param(nameof(RsiPeriod), 14)
+		_rsiPeriod = Param(nameof(RsiPeriod), 21)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "RSI period", "Indicators");
-		_emaPeriod = Param(nameof(EmaPeriod), 20)
+		_emaPeriod = Param(nameof(EmaPeriod), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Period", "EMA period", "Indicators");
+		_signalCooldownCandles = Param(nameof(SignalCooldownCandles), 4)
+			.SetGreaterThanZero()
+			.SetDisplay("Signal Cooldown", "Bars to wait between trades", "Trading");
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevScore = 0;
+		_candlesSinceTrade = SignalCooldownCandles;
+		_hasPrevScore = false;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+		_prevScore = 0;
+		_candlesSinceTrade = SignalCooldownCandles;
+		_hasPrevScore = false;
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
 		var subscription = SubscribeCandles(CandleType);
@@ -44,6 +65,9 @@ public class UniversalSignalDemoStrategy : Strategy
 	private void ProcessCandle(ICandleMessage candle, decimal rsiValue, decimal emaValue)
 	{
 		if (candle.State != CandleStates.Finished) return;
+
+		if (_candlesSinceTrade < SignalCooldownCandles)
+			_candlesSinceTrade++;
 
 		var close = candle.ClosePrice;
 		var score = 0;
@@ -62,9 +86,21 @@ public class UniversalSignalDemoStrategy : Strategy
 		if (candle.ClosePrice > candle.OpenPrice) score += 1;
 		else if (candle.ClosePrice < candle.OpenPrice) score -= 1;
 
-		if (score >= 2 && Position <= 0)
+		var crossedUp = (!_hasPrevScore || _prevScore < 2) && score >= 2;
+		var crossedDown = (!_hasPrevScore || _prevScore > -2) && score <= -2;
+
+		if (crossedUp && Position <= 0 && _candlesSinceTrade >= SignalCooldownCandles)
+		{
 			BuyMarket();
-		else if (score <= -2 && Position >= 0)
+			_candlesSinceTrade = 0;
+		}
+		else if (crossedDown && Position >= 0 && _candlesSinceTrade >= SignalCooldownCandles)
+		{
 			SellMarket();
+			_candlesSinceTrade = 0;
+		}
+
+		_prevScore = score;
+		_hasPrevScore = true;
 	}
 }

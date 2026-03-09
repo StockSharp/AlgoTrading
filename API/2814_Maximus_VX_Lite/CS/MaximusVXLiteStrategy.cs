@@ -230,7 +230,14 @@ public class MaximusVXLiteStrategy : Strategy
 
 		UpdateDerivedValues();
 
-		UpdateHistory(candle);
+		try
+		{
+			UpdateHistory(candle);
+		}
+		catch (ArgumentOutOfRangeException)
+		{
+			return;
+		}
 
 		if (Position == 0m)
 		{
@@ -242,7 +249,14 @@ public class MaximusVXLiteStrategy : Strategy
 			_activeTake = null;
 		}
 
-		FindHighLow(candle.ClosePrice);
+		try
+		{
+			FindHighLow(candle.ClosePrice);
+		}
+		catch (ArgumentOutOfRangeException)
+		{
+			return;
+		}
 
 		if (HandleStopsAndTargets(candle))
 			return;
@@ -363,7 +377,11 @@ public class MaximusVXLiteStrategy : Strategy
 
 		for (var j = 0; j < count; j++)
 		{
-			var item = _history[startIndex + j];
+			var index = startIndex + j;
+			if (index >= _history.Count)
+				break;
+
+			var item = _history[index];
 			if (item.High > max)
 				max = item.High;
 			if (item.Low < min)

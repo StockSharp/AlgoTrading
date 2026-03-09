@@ -75,7 +75,7 @@ public class CoensioTrader1V06Strategy : Strategy
 		_closeOnSignal = Param(nameof(CloseOnSignal), false)
 			.SetDisplay("Close On Opposite Signal", "Close current trades when opposite setup appears", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(10).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for signal calculations", "General");
 
 		Volume = 0.01m;

@@ -91,7 +91,7 @@ public class MultiPairCloserStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Min Age (s)", "Minimum holding time before exit is allowed", "Execution");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Candle series for monitoring", "General");
 
 		_smaPeriod = Param(nameof(SmaPeriod), 20)

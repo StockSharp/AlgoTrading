@@ -25,9 +25,9 @@ public class ArtificialIntelligenceAcceleratorStrategy : Strategy
 	private readonly StrategyParam<decimal> _stopLoss;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private readonly SimpleMovingAverage _aoFast = new() { Length = 5 };
-	private readonly SimpleMovingAverage _aoSlow = new() { Length = 34 };
-	private readonly SimpleMovingAverage _acMa = new() { Length = 5 };
+	private SimpleMovingAverage _aoFast;
+	private SimpleMovingAverage _aoSlow;
+	private SimpleMovingAverage _acMa;
 
 	private readonly decimal[] _acBuffer = new decimal[22];
 	private int _bufferCount;
@@ -80,7 +80,7 @@ public class ArtificialIntelligenceAcceleratorStrategy : Strategy
 		_stopLoss = Param(nameof(StopLoss), 8355m)
 			.SetDisplay("Stop Loss", "Stop loss in price units", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -98,12 +98,22 @@ public class ArtificialIntelligenceAcceleratorStrategy : Strategy
 		Array.Clear(_acBuffer);
 		_bufferCount = 0;
 		_entryPrice = 0m;
+		_aoFast = null;
+		_aoSlow = null;
+		_acMa = null;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+
+		Array.Clear(_acBuffer);
+		_bufferCount = 0;
+		_entryPrice = 0m;
+		_aoFast = new SimpleMovingAverage { Length = 5 };
+		_aoSlow = new SimpleMovingAverage { Length = 34 };
+		_acMa = new SimpleMovingAverage { Length = 5 };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
@@ -123,13 +133,13 @@ public class ArtificialIntelligenceAcceleratorStrategy : Strategy
 		if (!_aoFast.IsFormed || !_aoSlow.IsFormed)
 			return;
 
-		var ao = aoFastResult.GetValue<decimal>() - aoSlowResult.GetValue<decimal>();
+		var ao = aoFastResult.ToDecimal() - aoSlowResult.ToDecimal();
 
 		var acMaResult = _acMa.Process(ao, t, true);
 		if (!_acMa.IsFormed)
 			return;
 
-		var ac = ao - acMaResult.GetValue<decimal>();
+		var ac = ao - acMaResult.ToDecimal();
 
 		for (var i = 21; i > 0; i--)
 			_acBuffer[i] = _acBuffer[i - 1];

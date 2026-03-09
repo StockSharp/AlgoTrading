@@ -16,7 +16,7 @@ namespace StockSharp.Samples.Strategies;
 /// <summary>
 /// Strategy that combines dual moving average trend filter with RSI entries.
 /// </summary>
-public class X2maJjrsxStrategy : Strategy
+public class X2MaJjrsxStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _trendCandleType;
 	private readonly StrategyParam<DataType> _signalCandleType;
@@ -28,9 +28,9 @@ public class X2maJjrsxStrategy : Strategy
 	private readonly StrategyParam<bool> _useLong;
 	private readonly StrategyParam<bool> _useShort;
 
-	private readonly SimpleMovingAverage _fastMa = new();
-	private readonly SimpleMovingAverage _slowMa = new();
-	private readonly RelativeStrengthIndex _rsi = new();
+	private SimpleMovingAverage _fastMa;
+	private SimpleMovingAverage _slowMa;
+	private RelativeStrengthIndex _rsi;
 
 	private int _trend;
 	private decimal _prevRsi;
@@ -38,30 +38,30 @@ public class X2maJjrsxStrategy : Strategy
 	/// <summary>
 	/// Constructor.
 	/// </summary>
-	public X2maJjrsxStrategy()
+	public X2MaJjrsxStrategy()
 	{
 		_trendCandleType = Param(nameof(TrendCandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Trend Candle Type", "Timeframe for trend moving averages", "General");
 
-		_signalCandleType = Param(nameof(SignalCandleType), TimeSpan.FromMinutes(30).TimeFrame())
+		_signalCandleType = Param(nameof(SignalCandleType), TimeSpan.FromHours(1).TimeFrame())
 		.SetDisplay("Signal Candle Type", "Timeframe for entry signals", "General");
 
-		_fastMaPeriod = Param(nameof(FastMaPeriod), 12)
+		_fastMaPeriod = Param(nameof(FastMaPeriod), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("Fast MA Period", "Length of fast moving average", "Indicators");
 
-		_slowMaPeriod = Param(nameof(SlowMaPeriod), 5)
+		_slowMaPeriod = Param(nameof(SlowMaPeriod), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("Slow MA Period", "Length of slow moving average", "Indicators");
 
-		_rsiPeriod = Param(nameof(RsiPeriod), 8)
+		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("RSI Period", "Length of RSI filter", "Indicators");
 
-		_overbought = Param(nameof(Overbought), 70m)
+		_overbought = Param(nameof(Overbought), 75m)
 		.SetDisplay("Overbought", "RSI overbought threshold", "Risk");
 
-		_oversold = Param(nameof(Oversold), 30m)
+		_oversold = Param(nameof(Oversold), 25m)
 		.SetDisplay("Oversold", "RSI oversold threshold", "Risk");
 
 		_useLong = Param(nameof(UseLong), true)
@@ -159,13 +159,25 @@ public class X2maJjrsxStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_trend = 0;
+		_prevRsi = 50m;
+		_fastMa = null;
+		_slowMa = null;
+		_rsi = null;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_fastMa.Length = FastMaPeriod;
-		_slowMa.Length = SlowMaPeriod;
-		_rsi.Length = RsiPeriod;
+		_fastMa = new SimpleMovingAverage { Length = FastMaPeriod };
+		_slowMa = new SimpleMovingAverage { Length = SlowMaPeriod };
+		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 		_prevRsi = 50m;
 
 		var trendSub = SubscribeCandles(TrendCandleType);
@@ -197,6 +209,12 @@ public class X2maJjrsxStrategy : Strategy
 	{
 		if (candle.State != CandleStates.Finished)
 		return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+		{
+			_prevRsi = rsi;
+			return;
+		}
 
 		if (UseLong && _trend > 0 && Position <= 0 && _prevRsi < Oversold && rsi >= Oversold)
 		BuyMarket();

@@ -102,8 +102,8 @@ public class FxChaosScalpStrategy : Strategy
 			.SetRange(3, 20)
 			.SetDisplay("ZigZag Window", "Candle count for ZigZag detection", "Indicators");
 
-		_hourlyTracker = new FractalZigZagTracker(ZigZagWindowSize);
-		_dailyTracker = new FractalZigZagTracker(ZigZagWindowSize);
+		_hourlyTracker = null;
+		_dailyTracker = null;
 	}
 
 	/// <inheritdoc />
@@ -122,8 +122,8 @@ public class FxChaosScalpStrategy : Strategy
 		base.OnReseted();
 
 		Volume = OrderVolume;
-		_hourlyTracker = new FractalZigZagTracker(ZigZagWindowSize);
-		_dailyTracker = new FractalZigZagTracker(ZigZagWindowSize);
+		_hourlyTracker = null;
+		_dailyTracker = null;
 		_previousHigh = 0m;
 		_previousLow = 0m;
 		_hasPrevious = false;
@@ -143,6 +143,8 @@ public class FxChaosScalpStrategy : Strategy
 			ShortMa = { Length = 5 },
 			LongMa = { Length = 34 }
 		};
+		_hourlyTracker = new FractalZigZagTracker(ZigZagWindowSize);
+		_dailyTracker = new FractalZigZagTracker(ZigZagWindowSize);
 
 		var dailySubscription = SubscribeCandles(DailyCandleType);
 		dailySubscription.Bind(ProcessDailyCandle).Start();

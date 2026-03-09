@@ -37,6 +37,7 @@ public class CyberiaTraderStrategy : Strategy
 	private SimpleMovingAverage _ma;
 	private CommodityChannelIndex _cci;
 	private AverageDirectionalIndex _adx;
+	private int _lastDirection;
 	
 	/// <summary>
 	/// MACD fast EMA period.
@@ -134,7 +135,7 @@ public class CyberiaTraderStrategy : Strategy
 		_enableAdx = Param(nameof(EnableAdx), true)
 		.SetDisplay("Enable ADX", "Use ADX directional filter", "Logic");
 		
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe for strategy", "General");
 		
 		Volume = 1;
@@ -145,11 +146,21 @@ public class CyberiaTraderStrategy : Strategy
 	{
 		return [(Security, CandleType)];
 	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_lastDirection = 0;
+	}
 	
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+
+		_lastDirection = 0;
 		
 		_macd = new MovingAverageConvergenceDivergenceSignal
 		{
@@ -241,13 +252,17 @@ public class CyberiaTraderStrategy : Strategy
 			disableBuy = true;
 		}
 
-		if (!disableBuy && disableSell && Position <= 0)
+		var direction = !disableBuy && disableSell ? 1 : !disableSell && disableBuy ? -1 : 0;
+
+		if (direction == 1 && _lastDirection != 1 && Position <= 0)
 		{
 			BuyMarket();
 		}
-		else if (!disableSell && disableBuy && Position >= 0)
+		else if (direction == -1 && _lastDirection != -1 && Position >= 0)
 		{
 			SellMarket();
 		}
+
+		_lastDirection = direction;
 	}
 }

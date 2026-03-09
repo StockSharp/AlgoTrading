@@ -145,7 +145,7 @@ public class AeronJjnScalperEaStrategy : Strategy
 		_dojiDiff2Pips = Param(nameof(DojiDiff2Pips), 4m)
 		.SetDisplay("Doji Diff 2 (pips)", "Doji Diff 2 (pips)", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 		.SetDisplay("Candle Type", "Candle Type", "General");
 
 		_atrLength = Param(nameof(AtrLength), 8)
@@ -338,11 +338,13 @@ public class AeronJjnScalperEaStrategy : Strategy
 	{
 		if (_pendingLongLevel.HasValue && candle.HighPrice >= _pendingLongLevel.Value)
 		{
+			var pendingLongLevel = _pendingLongLevel.Value;
+			var pendingLongAtr = _pendingLongAtr;
 			var volume = Volume + (Position < 0 ? Math.Abs(Position) : 0m);
 			if (volume > 0m)
 			{
 				BuyMarket(volume);
-				SetupLongPosition(_pendingLongLevel.Value, _pendingLongAtr);
+				SetupLongPosition(pendingLongLevel, pendingLongAtr);
 			}
 
 			_pendingLongLevel = null;
@@ -352,11 +354,13 @@ public class AeronJjnScalperEaStrategy : Strategy
 
 		if (_pendingShortLevel.HasValue && candle.LowPrice <= _pendingShortLevel.Value)
 		{
+			var pendingShortLevel = _pendingShortLevel.Value;
+			var pendingShortAtr = _pendingShortAtr;
 			var volume = Volume + (Position > 0 ? Math.Abs(Position) : 0m);
 			if (volume > 0m)
 			{
 				SellMarket(volume);
-				SetupShortPosition(_pendingShortLevel.Value, _pendingShortAtr);
+				SetupShortPosition(pendingShortLevel, pendingShortAtr);
 			}
 
 			_pendingShortLevel = null;

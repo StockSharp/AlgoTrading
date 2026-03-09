@@ -16,42 +16,58 @@ public class CandlestickStochasticStrategy : Strategy
 	private readonly StrategyParam<int> _stochPeriod;
 	private readonly StrategyParam<decimal> _stochLow;
 	private readonly StrategyParam<decimal> _stochHigh;
+	private readonly StrategyParam<int> _signalCooldownCandles;
 
 	private ICandleMessage _prevCandle;
+	private int _candlesSinceTrade;
 
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 	public int StochPeriod { get => _stochPeriod.Value; set => _stochPeriod.Value = value; }
 	public decimal StochLow { get => _stochLow.Value; set => _stochLow.Value = value; }
 	public decimal StochHigh { get => _stochHigh.Value; set => _stochHigh.Value = value; }
+	public int SignalCooldownCandles { get => _signalCooldownCandles.Value; set => _signalCooldownCandles.Value = value; }
 
 	public CandlestickStochasticStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 		_stochPeriod = Param(nameof(StochPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Stoch Period", "Stochastic K period", "Indicators");
-		_stochLow = Param(nameof(StochLow), 30m)
+		_stochLow = Param(nameof(StochLow), 40m)
 			.SetDisplay("Stoch Low", "Stochastic oversold level", "Signals");
-		_stochHigh = Param(nameof(StochHigh), 70m)
+		_stochHigh = Param(nameof(StochHigh), 60m)
 			.SetDisplay("Stoch High", "Stochastic overbought level", "Signals");
+		_signalCooldownCandles = Param(nameof(SignalCooldownCandles), 4)
+			.SetGreaterThanZero()
+			.SetDisplay("Signal Cooldown", "Bars to wait between trades", "Trading");
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevCandle = null;
+		_candlesSinceTrade = SignalCooldownCandles;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 		_prevCandle = null;
-		var stoch = new StochasticOscillator { K = { Length = StochPeriod }, D = { Length = 3 } };
+		_candlesSinceTrade = SignalCooldownCandles;
+		var rsi = new RelativeStrengthIndex { Length = StochPeriod };
 		var subscription = SubscribeCandles(CandleType);
-		subscription.BindEx(stoch, ProcessCandle).Start();
+		subscription.Bind(rsi, ProcessCandle).Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue stochValue)
+	private void ProcessCandle(ICandleMessage candle, decimal stochValue)
 	{
 		if (candle.State != CandleStates.Finished) return;
 
-		var stochTyped = stochValue as StochasticOscillatorValue;
-		if (stochTyped?.K is not decimal kValue) { _prevCandle = candle; return; }
+		if (_candlesSinceTrade < SignalCooldownCandles)
+			_candlesSinceTrade++;
 
 		if (_prevCandle != null)
 		{
@@ -65,10 +81,16 @@ public class CandlestickStochasticStrategy : Strategy
 								candle.OpenPrice > _prevCandle.ClosePrice &&
 								candle.ClosePrice < _prevCandle.OpenPrice;
 
-			if (bullishEngulf && kValue < StochLow && Position <= 0)
+			if (bullishEngulf && stochValue < StochLow && Position <= 0 && _candlesSinceTrade >= SignalCooldownCandles)
+			{
 				BuyMarket();
-			else if (bearishEngulf && kValue > StochHigh && Position >= 0)
+				_candlesSinceTrade = 0;
+			}
+			else if (bearishEngulf && stochValue > StochHigh && Position >= 0 && _candlesSinceTrade >= SignalCooldownCandles)
+			{
 				SellMarket();
+				_candlesSinceTrade = 0;
+			}
 		}
 
 		_prevCandle = candle;

@@ -37,7 +37,7 @@ public class TriggerLineStrategy : Strategy
 		_lsmaPeriod = Param(nameof(LsmaPeriod), 6)
 			.SetDisplay("LSMA Period", "Period for least squares moving average", "Trigger Line");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type used for the strategy", "General");
 	}
 
@@ -78,6 +78,10 @@ public class TriggerLineStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
+		_initialized = false;
+		_prevLine = 0m;
+		_prevSignal = 0m;
+
 		_wma = new WeightedMovingAverage { Length = WmaPeriod };
 		_lsma = new LinearReg { Length = LsmaPeriod };
 
@@ -104,6 +108,13 @@ public class TriggerLineStrategy : Strategy
 			_prevLine = wmaValue;
 			_prevSignal = lsmaValue;
 			_initialized = true;
+			return;
+		}
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+		{
+			_prevLine = wmaValue;
+			_prevSignal = lsmaValue;
 			return;
 		}
 

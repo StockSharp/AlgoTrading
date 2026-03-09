@@ -91,7 +91,7 @@ public class MomentumM15Strategy : Strategy
 			
 			.SetOptimize(0.05m, 0.5m, 0.05m);
 
-		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe for calculations", "Common");
 
 		_maPeriodParam = Param(nameof(MaPeriod), 26)

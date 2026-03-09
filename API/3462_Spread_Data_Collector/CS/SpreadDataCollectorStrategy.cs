@@ -38,6 +38,15 @@ public class SpreadDataCollectorStrategy : Strategy
 			.SetDisplay("Overbought", "RSI overbought level", "Levels");
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevRsi = 0;
+		_hasPrev = false;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);

@@ -39,6 +39,7 @@ public class MacdMultiTimeframeExpertStrategy : Strategy
 	private int? _relationFifteenMinute;
 	private int? _relationHour;
 	private int? _relationFourHour;
+	private int _lastAlignedDirection;
 
 	private decimal _entryPrice;
 	private decimal? _bestBidPrice;
@@ -176,16 +177,16 @@ public class MacdMultiTimeframeExpertStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Signal", "Signal EMA period", "MACD");
 
-		_fiveMinuteType = Param(nameof(FiveMinuteCandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_fiveMinuteType = Param(nameof(FiveMinuteCandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("5 Minute", "Primary execution timeframe", "Timeframes");
 
-		_fifteenMinuteType = Param(nameof(FifteenMinuteCandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_fifteenMinuteType = Param(nameof(FifteenMinuteCandleType), TimeSpan.FromHours(2).TimeFrame())
 			.SetDisplay("15 Minute", "First confirmation timeframe", "Timeframes");
 
-		_hourType = Param(nameof(HourCandleType), TimeSpan.FromHours(1).TimeFrame())
+		_hourType = Param(nameof(HourCandleType), TimeSpan.FromHours(8).TimeFrame())
 			.SetDisplay("1 Hour", "Second confirmation timeframe", "Timeframes");
 
-		_fourHourType = Param(nameof(FourHourCandleType), TimeSpan.FromHours(4).TimeFrame())
+		_fourHourType = Param(nameof(FourHourCandleType), TimeSpan.FromDays(1).TimeFrame())
 			.SetDisplay("4 Hour", "Third confirmation timeframe", "Timeframes");
 	}
 
@@ -196,6 +197,25 @@ public class MacdMultiTimeframeExpertStrategy : Strategy
 		yield return (Security, FifteenMinuteCandleType);
 		yield return (Security, HourCandleType);
 		yield return (Security, FourHourCandleType);
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_macdFiveMinute = null;
+		_macdFifteenMinute = null;
+		_macdHour = null;
+		_macdFourHour = null;
+		_relationFiveMinute = null;
+		_relationFifteenMinute = null;
+		_relationHour = null;
+		_relationFourHour = null;
+		_lastAlignedDirection = 0;
+		_entryPrice = 0m;
+		_bestBidPrice = null;
+		_bestAskPrice = null;
 	}
 
 	/// <inheritdoc />
@@ -267,6 +287,18 @@ public class MacdMultiTimeframeExpertStrategy : Strategy
 		if (!HasAllRelations())
 			return;
 
+		var alignedDirection = 0;
+
+		if (AllRelationsEqual(1))
+			alignedDirection = 1;
+		else if (AllRelationsEqual(-1))
+			alignedDirection = -1;
+		else
+		{
+			_lastAlignedDirection = 0;
+			return;
+		}
+
 		// Manage protective exits whenever a position is open.
 		if (Position != 0)
 		{
@@ -277,12 +309,17 @@ public class MacdMultiTimeframeExpertStrategy : Strategy
 		if (OrderVolume <= 0)
 			return;
 
-		if (AllRelationsEqual(1))
+		if (_lastAlignedDirection == alignedDirection)
+			return;
+
+		_lastAlignedDirection = alignedDirection;
+
+		if (alignedDirection > 0)
 		{
 			BuyMarket(OrderVolume);
 			_entryPrice = candle.ClosePrice;
 		}
-		else if (AllRelationsEqual(-1))
+		else
 		{
 			SellMarket(OrderVolume);
 			_entryPrice = candle.ClosePrice;

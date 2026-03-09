@@ -24,12 +24,12 @@ public class ExpMuvNorDiffCloudStrategy : Strategy
 	private readonly StrategyParam<int> _kPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private readonly Momentum _smaMomentum;
-	private readonly Momentum _emaMomentum;
-	private readonly Highest _smaHigh;
-	private readonly Lowest _smaLow;
-	private readonly Highest _emaHigh;
-	private readonly Lowest _emaLow;
+	private Highest _smaHigh;
+	private Lowest _smaLow;
+	private Highest _emaHigh;
+	private Lowest _emaLow;
+	private decimal _prevSma = decimal.MinValue;
+	private decimal _prevEma = decimal.MinValue;
 
 	/// <summary>
 	/// Moving average period.
@@ -90,15 +90,8 @@ public class ExpMuvNorDiffCloudStrategy : Strategy
 	        
 	        .SetOptimize(7, 28, 7);
 
-	    _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+	    _candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 	        .SetDisplay("Candle Type", "Type of candles", "General");
-
-	    _smaMomentum = new Momentum { Length = 1 };
-	    _emaMomentum = new Momentum { Length = 1 };
-	    _smaHigh = new Highest();
-	    _smaLow = new Lowest();
-	    _emaHigh = new Highest();
-	    _emaLow = new Lowest();
 	}
 
 	/// <inheritdoc />
@@ -108,17 +101,29 @@ public class ExpMuvNorDiffCloudStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+	    base.OnReseted();
+
+	    _smaHigh = null;
+	    _smaLow = null;
+	    _emaHigh = null;
+	    _emaLow = null;
+	    _prevSma = decimal.MinValue;
+	    _prevEma = decimal.MinValue;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 	    base.OnStarted2(time);
 
-	    // configure indicator lengths
-	    _smaMomentum.Length = MomentumPeriod;
-	    _emaMomentum.Length = MomentumPeriod;
-	    _smaHigh.Length = KPeriod;
-	    _smaLow.Length = KPeriod;
-	    _emaHigh.Length = KPeriod;
-	    _emaLow.Length = KPeriod;
+	    _smaHigh = new Highest { Length = KPeriod };
+	    _smaLow = new Lowest { Length = KPeriod };
+	    _emaHigh = new Highest { Length = KPeriod };
+	    _emaLow = new Lowest { Length = KPeriod };
+	    _prevSma = decimal.MinValue;
+	    _prevEma = decimal.MinValue;
 
 	    var sma = new SMA { Length = MaPeriod };
 	    var ema = new EMA { Length = MaPeriod };
@@ -143,14 +148,15 @@ public class ExpMuvNorDiffCloudStrategy : Strategy
 
 	    var t = candle.OpenTime;
 
-	    var smaMomVal = _smaMomentum.Process(smaValue, t, true);
-	    var emaMomVal = _emaMomentum.Process(emaValue, t, true);
-
-	    if (!_smaMomentum.IsFormed || !_emaMomentum.IsFormed)
+	    if (_prevSma == decimal.MinValue || _prevEma == decimal.MinValue)
+	    {
+	        _prevSma = smaValue;
+	        _prevEma = emaValue;
 	        return;
+	    }
 
-	    var smaMom = smaMomVal.ToDecimal();
-	    var emaMom = emaMomVal.ToDecimal();
+	    var smaMom = smaValue - _prevSma;
+	    var emaMom = emaValue - _prevEma;
 
 	    var smaMaxVal = _smaHigh.Process(smaMom, t, true);
 	    var smaMinVal = _smaLow.Process(smaMom, t, true);
@@ -173,6 +179,9 @@ public class ExpMuvNorDiffCloudStrategy : Strategy
 	        if (Position >= 0)
 	            SellMarket();
 	    }
+
+	    _prevSma = smaValue;
+	    _prevEma = emaValue;
 	}
 
 	private static decimal Normalize(decimal value, decimal max, decimal min)

@@ -18,7 +18,7 @@ namespace StockSharp.Samples.Strategies;
 /// Opens a long position when smoothed candles turn bullish and
 /// opens a short position when smoothed candles turn bearish.
 /// </summary>
-public class XMACandlesStrategy : Strategy
+public class XmaCandlesStrategy : Strategy
 {
 	private readonly StrategyParam<int> _length;
 	private readonly StrategyParam<DataType> _candleType;
@@ -105,16 +105,20 @@ public class XMACandlesStrategy : Strategy
 		set => _takeProfit.Value = value;
 	}
 
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
 	/// <summary>
-	/// Initialize <see cref="XMACandlesStrategy"/>.
+	/// Initialize <see cref="XmaCandlesStrategy"/>.
 	/// </summary>
-	public XMACandlesStrategy()
+	public XmaCandlesStrategy()
 	{
 		_length = Param(nameof(Length), 12)
 			.SetDisplay("Length", "Smoothing length", "Parameters")
 			.SetGreaterThanZero();
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "Parameters");
 
 		_buyPosOpen = Param(nameof(BuyPosOpen), true)
@@ -137,9 +141,19 @@ public class XMACandlesStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_prevColor = -1;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+
+		_prevColor = -1;
 
 		_openMa = new EMA { Length = Length };
 		_closeMa = new EMA { Length = Length };

@@ -317,6 +317,7 @@ public class SvDailyBreakoutStrategy : Strategy
 		_highHistory.Clear();
 		_lowHistory.Clear();
 		_entryPrice = null;
+		_pipSize = 0m;
 		_stopPrice = null;
 		_takeProfitPrice = null;
 		_trailingStopPrice = null;

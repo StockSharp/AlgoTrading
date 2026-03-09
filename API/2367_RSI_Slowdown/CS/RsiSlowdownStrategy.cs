@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -110,9 +107,19 @@ public class RsiSlowdownStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_previousRsi = decimal.MinValue;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+
+		_previousRsi = decimal.MinValue;
 
 		var rsi = new RelativeStrengthIndex
 		{
@@ -128,13 +135,16 @@ public class RsiSlowdownStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 		return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
-
 		if (_previousRsi == decimal.MinValue)
 		{
-		_previousRsi = rsiValue;
-		return;
+			_previousRsi = rsiValue;
+			return;
+		}
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+		{
+			_previousRsi = rsiValue;
+			return;
 		}
 
 		var isSlowdown = !SeekSlowdown || Math.Abs(_previousRsi - rsiValue) < 1m;

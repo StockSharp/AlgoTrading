@@ -16,34 +16,56 @@ public class NnfxAutoTradeStrategy : Strategy
 	private readonly StrategyParam<int> _emaPeriod;
 	private readonly StrategyParam<int> _atrPeriod;
 	private readonly StrategyParam<decimal> _atrMultiplier;
+	private readonly StrategyParam<int> _signalCooldownCandles;
 
 	private decimal _entryPrice;
 	private decimal _bestPrice;
+	private bool _wasBullish;
+	private bool _hasPrevSignal;
+	private int _candlesSinceTrade;
 
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 	public int EmaPeriod { get => _emaPeriod.Value; set => _emaPeriod.Value = value; }
 	public int AtrPeriod { get => _atrPeriod.Value; set => _atrPeriod.Value = value; }
 	public decimal AtrMultiplier { get => _atrMultiplier.Value; set => _atrMultiplier.Value = value; }
+	public int SignalCooldownCandles { get => _signalCooldownCandles.Value; set => _signalCooldownCandles.Value = value; }
 
 	public NnfxAutoTradeStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(120).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
-		_emaPeriod = Param(nameof(EmaPeriod), 20)
+		_emaPeriod = Param(nameof(EmaPeriod), 100)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Period", "EMA trend filter period", "Indicators");
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "ATR period", "Indicators");
-		_atrMultiplier = Param(nameof(AtrMultiplier), 1.5m)
+		_atrMultiplier = Param(nameof(AtrMultiplier), 2.5m)
 			.SetDisplay("ATR Multiplier", "ATR multiplier for stop", "Risk");
+		_signalCooldownCandles = Param(nameof(SignalCooldownCandles), 12)
+			.SetGreaterThanZero()
+			.SetDisplay("Signal Cooldown", "Bars to wait between trades", "Trading");
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_entryPrice = 0m;
+		_bestPrice = 0m;
+		_wasBullish = false;
+		_hasPrevSignal = false;
+		_candlesSinceTrade = SignalCooldownCandles;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 		_entryPrice = 0;
 		_bestPrice = 0;
+		_hasPrevSignal = false;
+		_candlesSinceTrade = SignalCooldownCandles;
 		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
 		var atr = new AverageTrueRange { Length = AtrPeriod };
 		var subscription = SubscribeCandles(CandleType);
@@ -56,6 +78,10 @@ public class NnfxAutoTradeStrategy : Strategy
 
 		var close = candle.ClosePrice;
 		var stopDist = atrValue * AtrMultiplier;
+		var isBullish = close > emaValue;
+
+		if (_candlesSinceTrade < SignalCooldownCandles)
+			_candlesSinceTrade++;
 
 		// Trailing stop check
 		if (Position > 0)
@@ -64,6 +90,9 @@ public class NnfxAutoTradeStrategy : Strategy
 			if (_bestPrice - close > stopDist)
 			{
 				SellMarket();
+				_entryPrice = 0;
+				_bestPrice = 0;
+				_candlesSinceTrade = 0;
 				return;
 			}
 		}
@@ -73,22 +102,33 @@ public class NnfxAutoTradeStrategy : Strategy
 			if (close - _bestPrice > stopDist)
 			{
 				BuyMarket();
+				_entryPrice = 0;
+				_bestPrice = 0;
+				_candlesSinceTrade = 0;
 				return;
 			}
 		}
 
 		// Entry signals
-		if (close > emaValue && Position <= 0)
+		if (_hasPrevSignal && isBullish != _wasBullish && _candlesSinceTrade >= SignalCooldownCandles)
 		{
-			BuyMarket();
-			_entryPrice = close;
-			_bestPrice = close;
+			if (isBullish && Position <= 0)
+			{
+				BuyMarket();
+				_entryPrice = close;
+				_bestPrice = close;
+				_candlesSinceTrade = 0;
+			}
+			else if (!isBullish && Position >= 0)
+			{
+				SellMarket();
+				_entryPrice = close;
+				_bestPrice = close;
+				_candlesSinceTrade = 0;
+			}
 		}
-		else if (close < emaValue && Position >= 0)
-		{
-			SellMarket();
-			_entryPrice = close;
-			_bestPrice = close;
-		}
+
+		_wasBullish = isBullish;
+		_hasPrevSignal = true;
 	}
 }

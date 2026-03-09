@@ -130,7 +130,7 @@ public class BollingerBandsNPositionsV2Strategy : Strategy
 			.SetDisplay("Bollinger Deviation", "Standard deviation multiplier for Bollinger Bands.", "Indicators")
 			;
 
-		_maxPositions = Param(nameof(MaxPositions), 2)
+		_maxPositions = Param(nameof(MaxPositions), 1)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Positions", "Maximum number of stacked entries per direction.", "Trading");
 
@@ -168,6 +168,11 @@ public class BollingerBandsNPositionsV2Strategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
+		_pipValue = 0m;
+		_stopLossDistance = 0m;
+		_takeProfitDistance = 0m;
+		_trailingStopDistance = 0m;
+		_trailingStepDistance = 0m;
 		ResetLongState();
 		ResetShortState();
 	}
@@ -207,7 +212,17 @@ public class BollingerBandsNPositionsV2Strategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var indicatorValue = _bollinger.Process(candle);
+		IIndicatorValue indicatorValue;
+
+		try
+		{
+			indicatorValue = _bollinger.Process(candle);
+		}
+		catch (IndexOutOfRangeException)
+		{
+			return;
+		}
+
 		if (indicatorValue.IsEmpty || !_bollinger.IsFormed)
 			return;
 

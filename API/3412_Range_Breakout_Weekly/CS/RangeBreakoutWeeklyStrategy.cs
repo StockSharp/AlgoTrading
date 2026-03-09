@@ -24,13 +24,23 @@ public class RangeBreakoutWeeklyStrategy : Strategy
 
 	public RangeBreakoutWeeklyStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 		_channelPeriod = Param(nameof(ChannelPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Channel Period", "Highest/Lowest period", "Indicators");
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevHigh = 0m;
+		_prevLow = 0m;
+		_hasPrev = false;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);

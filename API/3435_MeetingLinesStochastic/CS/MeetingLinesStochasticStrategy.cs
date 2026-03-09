@@ -38,6 +38,15 @@ public class MeetingLinesStochasticStrategy : Strategy
 			.SetDisplay("Stoch High", "Stochastic overbought level", "Signals");
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevCandle = null;
+		_prevPrevCandle = null;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);

@@ -61,10 +61,10 @@ public class TwoMaRsiStrategy : Strategy
 			
 			.SetOptimize(5, 30, 1);
 
-		_rsiOverbought = Param(nameof(RsiOverbought), 55m)
+		_rsiOverbought = Param(nameof(RsiOverbought), 50m)
 			.SetDisplay("RSI Overbought", "Upper RSI threshold for short entries", "Signals");
 
-		_rsiOversold = Param(nameof(RsiOversold), 45m)
+		_rsiOversold = Param(nameof(RsiOversold), 50m)
 			.SetDisplay("RSI Oversold", "Lower RSI threshold for long entries", "Signals");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 500m)

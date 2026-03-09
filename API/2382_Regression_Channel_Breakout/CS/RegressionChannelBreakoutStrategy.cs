@@ -51,7 +51,7 @@ public class RegressionChannelBreakoutStrategy : Strategy
 			
 			.SetOptimize(1m, 4m, 0.5m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for calculations", "Common");
 
 		_useTrailing = Param(nameof(UseTrailing), false)
@@ -65,12 +65,26 @@ public class RegressionChannelBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		ResetTrailing();
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
 		_regression = new LinearReg { Length = Length };
 		_stdev = new StandardDeviation { Length = Length };
+		ResetTrailing();
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(_regression, _stdev, ProcessCandle).Start();

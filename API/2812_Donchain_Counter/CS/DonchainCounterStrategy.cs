@@ -56,7 +56,7 @@ public class DonchainCounterStrategy : Strategy
 		_tradeCooldown = Param(nameof(TradeCooldown), TimeSpan.FromMinutes(30))
 			.SetDisplay("Trade Cooldown", "Minimum waiting time between new entries", "Risk Management");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candle series used for Donchian evaluation", "General");
 	}
 

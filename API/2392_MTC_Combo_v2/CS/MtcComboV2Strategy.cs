@@ -53,7 +53,7 @@ public class MtcComboV2Strategy : Strategy
 
 	public MtcComboV2Strategy()
 	{
-		_maPeriod = Param(nameof(MaPeriod), 2).SetGreaterThanZero();
+		_maPeriod = Param(nameof(MaPeriod), 10).SetGreaterThanZero();
 		_p2 = Param(nameof(P2), 20).SetGreaterThanZero();
 		_p3 = Param(nameof(P3), 20).SetGreaterThanZero();
 		_p4 = Param(nameof(P4), 20).SetGreaterThanZero();
@@ -64,7 +64,7 @@ public class MtcComboV2Strategy : Strategy
 		_tp2 = Param(nameof(Tp2), 50m);
 		_sl3 = Param(nameof(Sl3), 50m);
 		_tp3 = Param(nameof(Tp3), 50m);
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame());
 		Volume = 1m;
 	}
 

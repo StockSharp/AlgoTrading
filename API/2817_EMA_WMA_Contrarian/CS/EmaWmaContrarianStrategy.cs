@@ -167,7 +167,7 @@ public class EmaWmaContrarianStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Base Volume", "Fallback volume when risk sizing is unavailable", "Position Sizing");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Primary candle type used for indicators", "General");
 	}
 

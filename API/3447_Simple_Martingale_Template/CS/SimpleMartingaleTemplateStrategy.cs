@@ -26,16 +26,26 @@ public class SimpleMartingaleTemplateStrategy : Strategy
 
 	public SimpleMartingaleTemplateStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
-		_fastPeriod = Param(nameof(FastPeriod), 3)
+		_fastPeriod = Param(nameof(FastPeriod), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast SMA", "Fast SMA period", "Indicators");
-		_slowPeriod = Param(nameof(SlowPeriod), 10)
+		_slowPeriod = Param(nameof(SlowPeriod), 15)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow SMA", "Slow SMA period", "Indicators");
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFast = 0;
+		_prevSlow = 0;
+		_hasPrev = false;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
@@ -55,6 +65,13 @@ public class SimpleMartingaleTemplateStrategy : Strategy
 			if (_prevFast <= _prevSlow && fastValue > slowValue && Position <= 0)
 				BuyMarket();
 			else if (_prevFast >= _prevSlow && fastValue < slowValue && Position >= 0)
+				SellMarket();
+		}
+		else
+		{
+			if (fastValue > slowValue && Position <= 0)
+				BuyMarket();
+			else if (fastValue < slowValue && Position >= 0)
 				SellMarket();
 		}
 

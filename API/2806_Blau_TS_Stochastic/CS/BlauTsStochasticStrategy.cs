@@ -196,7 +196,7 @@ public class BlauTsStochasticStrategy : Strategy
 	/// </summary>
 	public BlauTsStochasticStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame())
 		.SetDisplay("Candle Type", "Time frame for signal calculations", "General");
 
 		_mode = Param(nameof(Mode), BlauSignalModes.Twist)
@@ -276,6 +276,7 @@ public class BlauTsStochasticStrategy : Strategy
 		base.OnReseted();
 		_histHistory.Clear();
 		_signalHistory.Clear();
+		_entryPrice = 0m;
 	}
 
 	/// <inheritdoc />
@@ -491,8 +492,10 @@ public class BlauTsStochasticStrategy : Strategy
 	{
 		buffer.Insert(0, value);
 		var capacity = Math.Max(SignalBar + 3, 4);
-		if (buffer.Count > capacity)
-		buffer.RemoveAt(buffer.Count - 1);
+		while (buffer.Count > capacity)
+		{
+			buffer.RemoveAt(buffer.Count - 1);
+		}
 	}
 
 	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPriceTypes type)

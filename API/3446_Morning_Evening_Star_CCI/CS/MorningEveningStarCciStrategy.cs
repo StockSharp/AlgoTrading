@@ -34,6 +34,15 @@ public class MorningEveningStarCciStrategy : Strategy
 			.SetDisplay("CCI Level", "CCI threshold for confirmation", "Signals");
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevCandle = null;
+		_prevPrevCandle = null;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);

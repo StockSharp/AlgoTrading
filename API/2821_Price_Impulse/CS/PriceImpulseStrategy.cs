@@ -149,7 +149,7 @@ public class PriceImpulseStrategy : Strategy
 			.SetNotNegative()
 			.SetOptimize(0, 300, 20);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type for price tracking", "General");
 	}
 
@@ -208,16 +208,22 @@ public class PriceImpulseStrategy : Strategy
 		// Check SL/TP for existing positions.
 		if (Position > 0)
 		{
-			if (_stopLossPrice.HasValue && candle.LowPrice <= _stopLossPrice.Value)
+			var stopLossPrice = _stopLossPrice;
+			var takeProfitPrice = _takeProfitPrice;
+
+			if (stopLossPrice is decimal longStop && candle.LowPrice <= longStop)
 			{ SellMarket(Position); _entryPrice = null; _stopLossPrice = null; _takeProfitPrice = null; return; }
-			if (_takeProfitPrice.HasValue && candle.HighPrice >= _takeProfitPrice.Value)
+			if (takeProfitPrice is decimal longTake && candle.HighPrice >= longTake)
 			{ SellMarket(Position); _entryPrice = null; _stopLossPrice = null; _takeProfitPrice = null; return; }
 		}
 		else if (Position < 0)
 		{
-			if (_stopLossPrice.HasValue && candle.HighPrice >= _stopLossPrice.Value)
+			var stopLossPrice = _stopLossPrice;
+			var takeProfitPrice = _takeProfitPrice;
+
+			if (stopLossPrice is decimal shortStop && candle.HighPrice >= shortStop)
 			{ BuyMarket(Math.Abs(Position)); _entryPrice = null; _stopLossPrice = null; _takeProfitPrice = null; return; }
-			if (_takeProfitPrice.HasValue && candle.LowPrice <= _takeProfitPrice.Value)
+			if (takeProfitPrice is decimal shortTake && candle.LowPrice <= shortTake)
 			{ BuyMarket(Math.Abs(Position)); _entryPrice = null; _stopLossPrice = null; _takeProfitPrice = null; return; }
 		}
 

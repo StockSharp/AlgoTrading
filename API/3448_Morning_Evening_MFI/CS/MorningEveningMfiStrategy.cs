@@ -16,18 +16,21 @@ public class MorningEveningMfiStrategy : Strategy
 	private readonly StrategyParam<int> _mfiPeriod;
 	private readonly StrategyParam<decimal> _mfiLow;
 	private readonly StrategyParam<decimal> _mfiHigh;
+	private readonly StrategyParam<int> _signalCooldownCandles;
 
 	private ICandleMessage _prevCandle;
 	private ICandleMessage _prevPrevCandle;
+	private int _candlesSinceTrade;
 
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 	public int MfiPeriod { get => _mfiPeriod.Value; set => _mfiPeriod.Value = value; }
 	public decimal MfiLow { get => _mfiLow.Value; set => _mfiLow.Value = value; }
 	public decimal MfiHigh { get => _mfiHigh.Value; set => _mfiHigh.Value = value; }
+	public int SignalCooldownCandles { get => _signalCooldownCandles.Value; set => _signalCooldownCandles.Value = value; }
 
 	public MorningEveningMfiStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 		_mfiPeriod = Param(nameof(MfiPeriod), 14)
 			.SetGreaterThanZero()
@@ -36,13 +39,27 @@ public class MorningEveningMfiStrategy : Strategy
 			.SetDisplay("MFI Low", "MFI oversold threshold", "Signals");
 		_mfiHigh = Param(nameof(MfiHigh), 60m)
 			.SetDisplay("MFI High", "MFI overbought threshold", "Signals");
+		_signalCooldownCandles = Param(nameof(SignalCooldownCandles), 6)
+			.SetGreaterThanZero()
+			.SetDisplay("Signal Cooldown", "Bars to wait between trades", "Trading");
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevCandle = null;
+		_prevPrevCandle = null;
+		_candlesSinceTrade = SignalCooldownCandles;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 		_prevCandle = null;
 		_prevPrevCandle = null;
+		_candlesSinceTrade = SignalCooldownCandles;
 		var mfi = new MoneyFlowIndex { Length = MfiPeriod };
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(mfi, ProcessCandle).Start();
@@ -52,24 +69,34 @@ public class MorningEveningMfiStrategy : Strategy
 	{
 		if (candle.State != CandleStates.Finished) return;
 
+		if (_candlesSinceTrade < SignalCooldownCandles)
+			_candlesSinceTrade++;
+
 		if (_prevCandle != null && _prevPrevCandle != null)
 		{
 			var prevBody = Math.Abs(_prevCandle.ClosePrice - _prevCandle.OpenPrice);
 			var prevRange = _prevCandle.HighPrice - _prevCandle.LowPrice;
 			var isSmallBody = prevRange > 0 && prevBody < prevRange * 0.3m;
+			var firstMidpoint = (_prevPrevCandle.OpenPrice + _prevPrevCandle.ClosePrice) / 2m;
 
 			var firstBearish = _prevPrevCandle.OpenPrice > _prevPrevCandle.ClosePrice;
 			var currBullish = candle.ClosePrice > candle.OpenPrice;
-			var isMorningStar = firstBearish && isSmallBody && currBullish;
+			var isMorningStar = firstBearish && isSmallBody && currBullish && candle.ClosePrice > firstMidpoint;
 
 			var firstBullish = _prevPrevCandle.ClosePrice > _prevPrevCandle.OpenPrice;
 			var currBearish = candle.OpenPrice > candle.ClosePrice;
-			var isEveningStar = firstBullish && isSmallBody && currBearish;
+			var isEveningStar = firstBullish && isSmallBody && currBearish && candle.ClosePrice < firstMidpoint;
 
-			if (isMorningStar && mfiValue < MfiLow && Position <= 0)
+			if (isMorningStar && mfiValue < MfiLow && Position <= 0 && _candlesSinceTrade >= SignalCooldownCandles)
+			{
 				BuyMarket();
-			else if (isEveningStar && mfiValue > MfiHigh && Position >= 0)
+				_candlesSinceTrade = 0;
+			}
+			else if (isEveningStar && mfiValue > MfiHigh && Position >= 0 && _candlesSinceTrade >= SignalCooldownCandles)
+			{
 				SellMarket();
+				_candlesSinceTrade = 0;
+			}
 		}
 
 		_prevPrevCandle = _prevCandle;

@@ -22,12 +22,9 @@ public class TripleRviStrategy : Strategy
 	private readonly StrategyParam<int> _rviPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private RelativeVigorIndex _rviTrend;
-	private RelativeVigorIndex _rviMid;
 	private int _trend1;
 	private int _trend2;
-	private decimal? _prevAvg3;
-	private decimal? _prevSig3;
+	private decimal _prevSignal = decimal.MinValue;
 
 	public int RviPeriod { get => _rviPeriod.Value; set => _rviPeriod.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
@@ -38,7 +35,7 @@ public class TripleRviStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("RVI Period", "Base period of RVI", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Trading timeframe", "General");
 	}
 
@@ -49,76 +46,66 @@ public class TripleRviStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_trend1 = 0;
+		_trend2 = 0;
+		_prevSignal = decimal.MinValue;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
 		_trend1 = 0;
 		_trend2 = 0;
-		_prevAvg3 = null;
-		_prevSig3 = null;
+		_prevSignal = decimal.MinValue;
 
-		// Longer period RVI for trend
-		_rviTrend = new RelativeVigorIndex();
-		_rviTrend.Average.Length = RviPeriod * 3;
-
-		// Medium period RVI for confirmation
-		_rviMid = new RelativeVigorIndex();
-		_rviMid.Average.Length = RviPeriod * 2;
-
-		// Short period RVI for entry signals
-		var rviSignal = new RelativeVigorIndex();
-		rviSignal.Average.Length = RviPeriod;
+		var trendRsi = new RelativeStrengthIndex { Length = RviPeriod * 3 };
+		var midRsi = new RelativeStrengthIndex { Length = RviPeriod * 2 };
+		var signalRsi = new RelativeStrengthIndex { Length = RviPeriod };
 
 		var sub = SubscribeCandles(CandleType);
-		sub.BindEx(rviSignal, (candle, val) =>
-		{
-			if (candle.State != CandleStates.Finished)
-				return;
-
-			// Process trend and mid RVIs manually
-			var trendResult = _rviTrend.Process(candle);
-			var midResult = _rviMid.Process(candle);
-
-			if (!_rviTrend.IsFormed || !_rviMid.IsFormed)
-				return;
-
-			var trendVal = (IRelativeVigorIndexValue)trendResult;
-			var midVal = (IRelativeVigorIndexValue)midResult;
-			var sigVal = (IRelativeVigorIndexValue)val;
-
-			if (trendVal.Average is decimal tAvg && trendVal.Signal is decimal tSig)
-				_trend1 = tAvg > tSig ? 1 : tAvg < tSig ? -1 : 0;
-
-			if (midVal.Average is decimal mAvg && midVal.Signal is decimal mSig)
-				_trend2 = mAvg > mSig ? 1 : mAvg < mSig ? -1 : 0;
-
-			if (sigVal.Average is not decimal avg || sigVal.Signal is not decimal sig)
-				return;
-
-			if (_prevAvg3 is decimal prevAvg && _prevSig3 is decimal prevSig)
-			{
-				var crossUp = prevAvg < prevSig && avg >= sig;
-				var crossDown = prevAvg > prevSig && avg <= sig;
-
-				if (crossUp && _trend1 > 0 && _trend2 > 0 && Position <= 0)
-					BuyMarket();
-				else if (crossDown && _trend1 < 0 && _trend2 < 0 && Position >= 0)
-					SellMarket();
-
-				// Exit on trend reversal
-				if (Position > 0 && (_trend1 < 0 || _trend2 < 0))
-					SellMarket();
-				else if (Position < 0 && (_trend1 > 0 || _trend2 > 0))
-					BuyMarket();
-			}
-
-			_prevAvg3 = avg;
-			_prevSig3 = sig;
-		}).Start();
+		sub.Bind(trendRsi, midRsi, signalRsi, ProcessCandle).Start();
 
 		StartProtection(
 			new Unit(2000m, UnitTypes.Absolute),
 			new Unit(1000m, UnitTypes.Absolute));
+	}
+
+	private void ProcessCandle(ICandleMessage candle, decimal trendValue, decimal midValue, decimal signalValue)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		_trend1 = trendValue > 55m ? 1 : trendValue < 45m ? -1 : 0;
+		_trend2 = midValue > 55m ? 1 : midValue < 45m ? -1 : 0;
+
+		if (_prevSignal == decimal.MinValue)
+		{
+			_prevSignal = signalValue;
+			return;
+		}
+
+		var crossUp = _prevSignal <= 50m && signalValue > 50m;
+		var crossDown = _prevSignal >= 50m && signalValue < 50m;
+
+		if (crossUp && _trend1 > 0 && _trend2 > 0 && Position <= 0)
+			BuyMarket();
+		else if (crossDown && _trend1 < 0 && _trend2 < 0 && Position >= 0)
+			SellMarket();
+
+		if (Position > 0 && (_trend1 < 0 || _trend2 < 0))
+			SellMarket();
+		else if (Position < 0 && (_trend1 > 0 || _trend2 > 0))
+			BuyMarket();
+
+		_prevSignal = signalValue;
 	}
 }

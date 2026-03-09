@@ -17,17 +17,20 @@ public class AbeBeRsiStrategy : Strategy
 	private readonly StrategyParam<int> _rsiPeriod;
 	private readonly StrategyParam<decimal> _oversold;
 	private readonly StrategyParam<decimal> _overbought;
+	private readonly StrategyParam<int> _signalCooldownCandles;
 
 	private readonly List<ICandleMessage> _candles = new();
+	private int _candlesSinceTrade;
 
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 	public int RsiPeriod { get => _rsiPeriod.Value; set => _rsiPeriod.Value = value; }
 	public decimal Oversold { get => _oversold.Value; set => _oversold.Value = value; }
 	public decimal Overbought { get => _overbought.Value; set => _overbought.Value = value; }
+	public int SignalCooldownCandles { get => _signalCooldownCandles.Value; set => _signalCooldownCandles.Value = value; }
 
 	public AbeBeRsiStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetGreaterThanZero()
@@ -36,12 +39,25 @@ public class AbeBeRsiStrategy : Strategy
 			.SetDisplay("Oversold", "RSI oversold level", "Signals");
 		_overbought = Param(nameof(Overbought), 60m)
 			.SetDisplay("Overbought", "RSI overbought level", "Signals");
+		_signalCooldownCandles = Param(nameof(SignalCooldownCandles), 6)
+			.SetGreaterThanZero()
+			.SetDisplay("Signal Cooldown", "Bars to wait between trades", "Trading");
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_candles.Clear();
+		_candlesSinceTrade = SignalCooldownCandles;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 		_candles.Clear();
+		_candlesSinceTrade = SignalCooldownCandles;
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(rsi, ProcessCandle).Start();
@@ -50,6 +66,9 @@ public class AbeBeRsiStrategy : Strategy
 	private void ProcessCandle(ICandleMessage candle, decimal rsiValue)
 	{
 		if (candle.State != CandleStates.Finished) return;
+
+		if (_candlesSinceTrade < SignalCooldownCandles)
+			_candlesSinceTrade++;
 
 		_candles.Add(candle);
 		if (_candles.Count > 5)
@@ -70,10 +89,16 @@ public class AbeBeRsiStrategy : Strategy
 				&& curr.OpenPrice >= prev.ClosePrice
 				&& curr.ClosePrice <= prev.OpenPrice;
 
-			if (bullishEngulfing && rsiValue < Oversold && Position <= 0)
+			if (bullishEngulfing && rsiValue < Oversold && Position <= 0 && _candlesSinceTrade >= SignalCooldownCandles)
+			{
 				BuyMarket();
-			else if (bearishEngulfing && rsiValue > Overbought && Position >= 0)
+				_candlesSinceTrade = 0;
+			}
+			else if (bearishEngulfing && rsiValue > Overbought && Position >= 0 && _candlesSinceTrade >= SignalCooldownCandles)
+			{
 				SellMarket();
+				_candlesSinceTrade = 0;
+			}
 		}
 	}
 }

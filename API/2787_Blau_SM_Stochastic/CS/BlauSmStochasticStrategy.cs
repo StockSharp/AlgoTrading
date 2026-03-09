@@ -228,7 +228,7 @@ public class BlauSmStochasticStrategy : Strategy
 			
 			.SetOptimize(0, 4000, 500);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for indicator calculations", "General");
 	}
 

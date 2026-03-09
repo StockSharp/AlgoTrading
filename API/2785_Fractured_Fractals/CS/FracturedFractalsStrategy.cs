@@ -24,8 +24,8 @@ public class FracturedFractalsStrategy : Strategy
 	private readonly StrategyParam<int> _expirationHours;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private readonly Queue<decimal> _highBuffer = new();
-	private readonly Queue<decimal> _lowBuffer = new();
+	private readonly List<decimal> _highBuffer = new();
+	private readonly List<decimal> _lowBuffer = new();
 
 	private decimal? _lastUpFractal;
 	private decimal? _lastDownFractal;
@@ -101,7 +101,7 @@ public class FracturedFractalsStrategy : Strategy
 		.SetRange(0, 240)
 		.SetDisplay("Expiration", "Pending order lifetime (hours)", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(2).TimeFrame())
 		.SetDisplay("Candle Type", "Primary timeframe", "General");
 	}
 
@@ -162,13 +162,13 @@ public class FracturedFractalsStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		_highBuffer.Enqueue(candle.HighPrice);
-		_lowBuffer.Enqueue(candle.LowPrice);
+		_highBuffer.Add(candle.HighPrice);
+		_lowBuffer.Add(candle.LowPrice);
 
 		if (_highBuffer.Count > 5)
-			_highBuffer.Dequeue();
+			_highBuffer.RemoveAt(0);
 		if (_lowBuffer.Count > 5)
-			_lowBuffer.Dequeue();
+			_lowBuffer.RemoveAt(0);
 
 		if (_highBuffer.Count < 5 || _lowBuffer.Count < 5)
 			return;
@@ -319,13 +319,14 @@ public class FracturedFractalsStrategy : Strategy
 	{
 		if (_buyStopLevel.HasValue && candle.HighPrice >= _buyStopLevel.Value && Position <= 0)
 		{
+			var buyLevel = _buyStopLevel.Value;
 			var vol = _buyStopVolume > 0m ? _buyStopVolume : Volume;
 			if (vol > 0m)
 			{
 				if (Position < 0)
 					BuyMarket(Math.Abs(Position));
 				BuyMarket(vol);
-				_entryPrice = _buyStopLevel.Value;
+				_entryPrice = buyLevel;
 				_longStopLevel = _downYoungest;
 			}
 			_buyStopLevel = null;
@@ -334,13 +335,14 @@ public class FracturedFractalsStrategy : Strategy
 
 		if (_sellStopLevel.HasValue && candle.LowPrice <= _sellStopLevel.Value && Position >= 0)
 		{
+			var sellLevel = _sellStopLevel.Value;
 			var vol = _sellStopVolume > 0m ? _sellStopVolume : Volume;
 			if (vol > 0m)
 			{
 				if (Position > 0)
 					SellMarket(Math.Abs(Position));
 				SellMarket(vol);
-				_entryPrice = _sellStopLevel.Value;
+				_entryPrice = sellLevel;
 				_shortStopLevel = _upYoungest;
 			}
 			_sellStopLevel = null;

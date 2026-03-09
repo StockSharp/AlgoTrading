@@ -31,6 +31,7 @@ public class ChannelEaLimitsStrategy : Strategy
 	private DateTimeOffset? _prevCandleClose;
 	private bool _ordersPlaced;
 	private bool _needsSessionReset;
+	private bool _tradeTaken;
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="ChannelEaLimitsStrategy"/> class.
@@ -108,6 +109,7 @@ public class ChannelEaLimitsStrategy : Strategy
 		_prevCandleClose = null;
 		_ordersPlaced = false;
 		_needsSessionReset = false;
+		_tradeTaken = false;
 	}
 
 	/// <inheritdoc />
@@ -168,15 +170,21 @@ public class ChannelEaLimitsStrategy : Strategy
 		}
 
 		// After session ends, trade breakouts of the channel
-		if (_ordersPlaced && _barsInSession >= 2 && _sessionLow < _sessionHigh)
+		if (_ordersPlaced && !_tradeTaken && _barsInSession >= 2 && _sessionLow < _sessionHigh)
 		{
 			if (Position == 0)
 			{
 				// Buy when price touches session low, sell when it touches session high
 				if (candle.LowPrice <= _sessionLow)
+				{
 					BuyMarket(OrderVolume);
+					_tradeTaken = true;
+				}
 				else if (candle.HighPrice >= _sessionHigh)
+				{
 					SellMarket(OrderVolume);
+					_tradeTaken = true;
+				}
 			}
 		}
 
@@ -203,6 +211,7 @@ public class ChannelEaLimitsStrategy : Strategy
 		_barsInSession = 0;
 		_ordersPlaced = false;
 		_needsSessionReset = true;
+		_tradeTaken = false;
 	}
 
 	private DateTimeOffset CalculateSessionStart(DateTimeOffset time)

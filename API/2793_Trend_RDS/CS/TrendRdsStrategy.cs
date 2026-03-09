@@ -126,7 +126,7 @@ public class TrendRdsStrategy : Strategy
 	/// </summary>
 	public TrendRdsStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
 		_stopLossPips = Param(nameof(StopLossPips), 30)

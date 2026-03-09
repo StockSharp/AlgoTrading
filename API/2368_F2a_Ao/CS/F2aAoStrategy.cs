@@ -20,6 +20,8 @@ public class F2aAoStrategy : Strategy
 	private readonly StrategyParam<int> _fastPeriod;
 	private readonly StrategyParam<int> _slowPeriod;
 	private readonly StrategyParam<int> _filterLength;
+	private decimal _previousAo = decimal.MinValue;
+	private decimal _previousFilteredAo = decimal.MinValue;
 
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
@@ -28,7 +30,7 @@ public class F2aAoStrategy : Strategy
 
 	public F2aAoStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 
 		_fastPeriod = Param(nameof(FastPeriod), 5)
@@ -42,9 +44,21 @@ public class F2aAoStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_previousAo = decimal.MinValue;
+		_previousFilteredAo = decimal.MinValue;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+
+		_previousAo = decimal.MinValue;
+		_previousFilteredAo = decimal.MinValue;
 
 		var ao = new AwesomeOscillator();
 		ao.ShortMa.Length = FastPeriod;
@@ -71,10 +85,19 @@ public class F2aAoStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// AO positive -> buy, AO negative -> sell
-		if (aoValue > 0 && filteredAo > 0 && Position <= 0)
+		if (_previousAo == decimal.MinValue)
+		{
+			_previousAo = aoValue;
+			_previousFilteredAo = filteredAo;
+			return;
+		}
+
+		if (aoValue > 0 && filteredAo > 0 && aoValue > filteredAo && Position <= 0)
 			BuyMarket();
-		else if (aoValue < 0 && filteredAo < 0 && Position >= 0)
+		else if (aoValue < 0 && filteredAo < 0 && aoValue < filteredAo && Position >= 0)
 			SellMarket();
+
+		_previousAo = aoValue;
+		_previousFilteredAo = filteredAo;
 	}
 }
