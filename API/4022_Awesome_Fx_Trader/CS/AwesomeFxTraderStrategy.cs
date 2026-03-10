@@ -110,7 +110,7 @@ public class AwesomeFxTraderStrategy : Strategy
 			
 			.SetOptimize(3, 10, 1);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Time-frame used for calculations", "General");
 	}
 

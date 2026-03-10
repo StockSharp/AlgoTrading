@@ -52,7 +52,17 @@ public class LockerHedgingGridStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted2(DateTime time)
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_gridLevel = 0;
+		_entryPrice = 0;
+		_initialized = false;
+	}
+
+		protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 

@@ -73,6 +73,25 @@ public class DailyStpEntryFrameStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		=> [(Security, CandleType)];
 
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_pipSize = 0m;
+		_stopLossOffset = 0m;
+		_takeProfitOffset = 0m;
+		_previousDayHigh = null;
+		_previousDayLow = null;
+		_currentDayHigh = 0m;
+		_currentDayLow = 0m;
+		_currentTradingDay = null;
+		_tradedToday = false;
+		_entryPrice = 0m;
+		_longStop = null;
+		_longTake = null;
+		_shortStop = null;
+		_shortTake = null;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);

@@ -21,7 +21,7 @@ public class EnvelopeMaShortStrategy : Strategy
 
 	public EnvelopeMaShortStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe.", "General");
 		_emaLength = Param(nameof(EmaLength), 20)
 			.SetDisplay("EMA Length", "EMA period.", "Indicators");
@@ -36,7 +36,15 @@ public class EnvelopeMaShortStrategy : Strategy
 	public int AtrLength { get => _atrLength.Value; set => _atrLength.Value = value; }
 	public decimal BandPercent { get => _bandPercent.Value; set => _bandPercent.Value = value; }
 
-	protected override void OnStarted2(DateTime time)
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_entryPrice = 0;
+	}
+
+		protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 		_entryPrice = 0;

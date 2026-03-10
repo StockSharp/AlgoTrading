@@ -26,7 +26,7 @@ public class FractalZigZagStrategy : Strategy
 
 	public FractalZigZagStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe.", "General");
 
 		_level = Param(nameof(Level), 2)
@@ -55,14 +55,19 @@ public class FractalZigZagStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted2(DateTime time)
+	protected override void OnReseted()
 	{
-		base.OnStarted2(time);
-
+		base.OnReseted();
 		_window.Clear();
 		_trend = 0;
 		_prevTrend = 0;
 		_entryPrice = 0;
+	}
+
+	/// <inheritdoc />
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
 
 		var atr = new AverageTrueRange { Length = AtrLength };
 

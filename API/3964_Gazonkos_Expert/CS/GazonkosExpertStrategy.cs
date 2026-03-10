@@ -90,7 +90,7 @@ public class GazonkosExpertStrategy : Strategy
 			.SetGreaterThanZero()
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used to evaluate the momentum signal", "General");
 	}
 
@@ -192,6 +192,7 @@ public class GazonkosExpertStrategy : Strategy
 		_extremePrice = 0m;
 		_lastTradeHour = null;
 		_lastSignalHour = null;
+		_pointValue = 0m;
 	}
 
 	/// <inheritdoc />

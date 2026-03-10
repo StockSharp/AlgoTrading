@@ -65,13 +65,19 @@ public class FtBillWilliamsAoStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted2(DateTime time)
+	protected override void OnReseted()
 	{
-		base.OnStarted2(time);
+		base.OnReseted();
 
 		_prevAo = 0;
 		_prevTeeth = 0;
 		_isReady = false;
+	}
+
+	/// <inheritdoc />
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
 
 		var ao = new AwesomeOscillator();
 		var teeth = new SMA { Length = TeethPeriod };

@@ -48,7 +48,7 @@ public class TrendFollowerRainbowStrategy : Strategy
 	private MovingAverageConvergenceDivergenceSignal _macd = null!;
 	private AdaptiveLaguerreFilter _laguerre = null!;
 	private MoneyFlowIndex _mfi = null!;
-	private ExponentialMovingAverage[][] _rainbowGroups = null!;
+	private ExponentialMovingAverage[][] _rainbowGroups = [];
 
 	private decimal? _previousFastEma;
 	private decimal? _previousSlowEma;
@@ -151,7 +151,7 @@ public class TrendFollowerRainbowStrategy : Strategy
 		.SetDisplay("Rainbow Group 5", "Base length for the slowest rainbow bundle", "Rainbow")
 		;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 		.SetDisplay("Candle Type", "Primary candle series", "General");
 	}
 
@@ -376,6 +376,8 @@ public class TrendFollowerRainbowStrategy : Strategy
 		_previousFastEma = null;
 		_previousSlowEma = null;
 		_previousLaguerre = null;
+		_pointValue = 0m;
+		_rainbowGroups = [];
 	}
 
 	/// <inheritdoc />

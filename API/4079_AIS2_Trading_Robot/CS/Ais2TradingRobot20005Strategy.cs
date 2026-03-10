@@ -27,7 +27,7 @@ public class Ais2TradingRobot20005Strategy : Strategy
 
 	public Ais2TradingRobot20005Strategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe.", "General");
 
 		_atrLength = Param(nameof(AtrLength), 14)
@@ -65,7 +65,19 @@ public class Ais2TradingRobot20005Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted2(DateTime time)
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_prevHigh = 0;
+		_prevLow = 0;
+		_prevMid = 0;
+		_entryPrice = 0;
+		_stopPrice = 0;
+	}
+
+		protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 

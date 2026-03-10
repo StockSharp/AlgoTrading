@@ -24,7 +24,7 @@ public class StoM5xM15xM30Strategy : Strategy
 
 	public StoM5xM15xM30Strategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe.", "General");
 
 		_rsiLength = Param(nameof(RsiLength), 14)
@@ -71,7 +71,16 @@ public class StoM5xM15xM30Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted2(DateTime time)
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_prevRsi = 0;
+		_entryPrice = 0;
+	}
+
+		protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 

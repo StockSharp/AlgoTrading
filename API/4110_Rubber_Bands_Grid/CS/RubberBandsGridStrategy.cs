@@ -21,7 +21,7 @@ public class RubberBandsGridStrategy : Strategy
 
 	public RubberBandsGridStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe.", "General");
 
 		_smaLength = Param(nameof(SmaLength), 20)
@@ -49,7 +49,16 @@ public class RubberBandsGridStrategy : Strategy
 		set => _atrLength.Value = value;
 	}
 
-	protected override void OnStarted2(DateTime time)
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_entryPrice = 0;
+		_gridCount = 0;
+	}
+
+		protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 

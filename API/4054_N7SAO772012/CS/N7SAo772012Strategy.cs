@@ -23,7 +23,7 @@ public class N7SAo772012Strategy : Strategy
 
 	public N7SAo772012Strategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(2).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for analysis.", "General");
 
 		_aoPeriod = Param(nameof(AoPeriod), 5)
@@ -52,12 +52,18 @@ public class N7SAo772012Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted2(DateTime time)
+	protected override void OnReseted()
 	{
-		base.OnStarted2(time);
+		base.OnReseted();
 
 		_aoHistory.Clear();
 		_entryPrice = 0;
+	}
+
+	/// <inheritdoc />
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
 
 		var ao = new AwesomeOscillator();
 

@@ -23,7 +23,7 @@ public class WajdyssMaExpertStrategy : Strategy
 
 	public WajdyssMaExpertStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe.", "General");
 
 		_fastLength = Param(nameof(FastLength), 10)
@@ -61,7 +61,17 @@ public class WajdyssMaExpertStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted2(DateTime time)
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_prevFast = 0;
+		_prevSlow = 0;
+		_entryPrice = 0;
+	}
+
+		protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 

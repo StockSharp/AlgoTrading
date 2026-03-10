@@ -120,7 +120,7 @@ public class DivergenceTraderClassicStrategy : Strategy
 		_stopHour = Param(nameof(StopHour), 24)
 		.SetDisplay("Stop Hour", "Hour when trading stops accepting new entries (1-24).", "Schedule");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe used to calculate signals.", "General");
 	}
 

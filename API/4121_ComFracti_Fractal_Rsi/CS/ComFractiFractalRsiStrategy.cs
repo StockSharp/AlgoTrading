@@ -25,7 +25,7 @@ public class ComFractiFractalRsiStrategy : Strategy
 
 	public ComFractiFractalRsiStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe.", "General");
 
 		_rsiLength = Param(nameof(RsiLength), 14)
@@ -53,7 +53,20 @@ public class ComFractiFractalRsiStrategy : Strategy
 		set => _atrLength.Value = value;
 	}
 
-	protected override void OnStarted2(DateTime time)
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_entryPrice = 0;
+		_barCount = 0;
+		_prevHigh5 = 0;
+		_prevLow5 = 0;
+		_high1 = _high2 = _high3 = _high4 = _high5 = 0;
+		_low1 = _low2 = _low3 = _low4 = _low5 = 0;
+	}
+
+		protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 

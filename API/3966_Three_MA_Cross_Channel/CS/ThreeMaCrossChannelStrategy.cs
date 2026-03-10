@@ -183,7 +183,7 @@ _stopLoss = Param(nameof(StopLoss), 0m)
 _useChannelStop = Param(nameof(UseChannelStop), true)
 .SetDisplay("Channel Exit", "Use Donchian channel boundaries for exits", "Risk Management");
 
-_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 .SetDisplay("Candle Type", "Type of candles used by the strategy", "General");
 }
 

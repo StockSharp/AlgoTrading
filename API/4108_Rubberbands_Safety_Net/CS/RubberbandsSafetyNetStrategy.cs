@@ -22,7 +22,7 @@ public class RubberbandsSafetyNetStrategy : Strategy
 
 	public RubberbandsSafetyNetStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe.", "General");
 
 		_smaLength = Param(nameof(SmaLength), 20)
@@ -59,7 +59,15 @@ public class RubberbandsSafetyNetStrategy : Strategy
 		set => _bandMult.Value = value;
 	}
 
-	protected override void OnStarted2(DateTime time)
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_entryPrice = 0;
+	}
+
+		protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 

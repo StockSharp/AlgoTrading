@@ -26,7 +26,7 @@ public class NtoQfStrategy : Strategy
 
 	public NtoQfStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe.", "General");
 
 		_rsiLength = Param(nameof(RsiLength), 14)
@@ -82,13 +82,19 @@ public class NtoQfStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted2(DateTime time)
+	protected override void OnReseted()
 	{
-		base.OnStarted2(time);
+		base.OnReseted();
 
 		_prevRsi = 0;
 		_entryPrice = 0;
 		_trailStop = 0;
+	}
+
+	/// <inheritdoc />
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
 
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };
 		var ema = new ExponentialMovingAverage { Length = EmaLength };

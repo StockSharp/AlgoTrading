@@ -196,7 +196,7 @@ public class MovingAveragePositionSystemStrategy : Strategy
 		_useMoneyManagement = Param(nameof(UseMoneyManagement), true)
 		.SetDisplay("Use Money Management", "Enable martingale volume control", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Candles used for calculations", "Market Data");
 	}
 
@@ -218,6 +218,7 @@ public class MovingAveragePositionSystemStrategy : Strategy
 		_cycleStartRealizedPnL = PnLManager?.RealizedPnL ?? 0m;
 		_priceStep = 0m;
 		_stepPrice = 0m;
+		_entryPrice = 0m;
 	}
 
 	/// <inheritdoc />

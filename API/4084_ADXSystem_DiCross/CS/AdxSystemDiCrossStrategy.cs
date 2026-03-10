@@ -25,7 +25,7 @@ public class AdxSystemDiCrossStrategy : Strategy
 
 	public AdxSystemDiCrossStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe.", "General");
 
 		_fastLength = Param(nameof(FastLength), 10)
@@ -72,13 +72,19 @@ public class AdxSystemDiCrossStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted2(DateTime time)
+	protected override void OnReseted()
 	{
-		base.OnStarted2(time);
+		base.OnReseted();
 
 		_prevFast = 0;
 		_prevSlow = 0;
 		_entryPrice = 0;
+	}
+
+	/// <inheritdoc />
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
 
 		var fast = new ExponentialMovingAverage { Length = FastLength };
 		var slow = new ExponentialMovingAverage { Length = SlowLength };

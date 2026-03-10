@@ -38,7 +38,7 @@ public class PivotsStrategy : Strategy
 
 	public PivotsStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for signal generation", "General");
 	}
 

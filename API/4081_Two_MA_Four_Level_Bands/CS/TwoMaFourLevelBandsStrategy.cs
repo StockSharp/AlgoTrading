@@ -25,7 +25,7 @@ public class TwoMaFourLevelBandsStrategy : Strategy
 
 	public TwoMaFourLevelBandsStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe.", "General");
 
 		_fastPeriod = Param(nameof(FastPeriod), 14)
@@ -72,13 +72,19 @@ public class TwoMaFourLevelBandsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted2(DateTime time)
+	protected override void OnReseted()
 	{
-		base.OnStarted2(time);
+		base.OnReseted();
 
 		_prevFast = 0;
 		_prevSlow = 0;
 		_entryPrice = 0;
+	}
+
+	/// <inheritdoc />
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
 
 		var fast = new ExponentialMovingAverage { Length = FastPeriod };
 		var slow = new SimpleMovingAverage { Length = SlowPeriod };

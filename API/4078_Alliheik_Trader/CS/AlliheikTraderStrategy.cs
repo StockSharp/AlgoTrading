@@ -55,7 +55,19 @@ public class AlliheikTraderStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted2(DateTime time)
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_prevHaOpen = 0;
+		_prevHaClose = 0;
+		_prevBullish = false;
+		_hasPrev = false;
+		_entryPrice = 0;
+	}
+
+		protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 

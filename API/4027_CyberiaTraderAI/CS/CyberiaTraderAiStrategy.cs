@@ -236,7 +236,7 @@ public class CyberiaTraderAiStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Reversal Factor", "Threshold multiplier that triggers the reversal detector", "Filters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(2).TimeFrame())
 		.SetDisplay("Candle Type", "Primary timeframe processed by the model", "General");
 
 		_takeProfitPercent = Param(nameof(TakeProfitPercent), 0m)

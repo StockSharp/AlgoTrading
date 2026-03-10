@@ -24,7 +24,7 @@ public class FiftyFiveMedianSlopeStrategy : Strategy
 
 	public FiftyFiveMedianSlopeStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(2).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe.", "General");
 
 		_emaLength = Param(nameof(EmaLength), 55)
@@ -61,7 +61,18 @@ public class FiftyFiveMedianSlopeStrategy : Strategy
 		set => _slopeShift.Value = value;
 	}
 
-	protected override void OnStarted2(DateTime time)
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_entryPrice = 0;
+		_prevEma = 0;
+		_barCount = 0;
+		Array.Clear(_emaHistory, 0, _emaHistory.Length);
+	}
+
+		protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 

@@ -100,7 +100,7 @@ public class PendulumSwingStrategy : Strategy
 			
 			.SetOptimize(1m, 5m, 1m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(6).TimeFrame())
 			.SetDisplay("Trading candle", "Primary timeframe used to manage pending stops.", "Data");
 	}
 
@@ -222,7 +222,7 @@ public class PendulumSwingStrategy : Strategy
 
 		if (UseDynamicRange)
 		{
-			yield return (Security, TimeSpan.FromMinutes(5).TimeFrame());
+			yield return (Security, TimeSpan.FromHours(6).TimeFrame());
 		}
 	}
 
@@ -261,7 +261,7 @@ public class PendulumSwingStrategy : Strategy
 
 		if (UseDynamicRange)
 		{
-			var dailySub = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
+			var dailySub = SubscribeCandles(TimeSpan.FromHours(6).TimeFrame());
 			dailySub
 				.Bind(ProcessDailyCandle)
 				.Start();

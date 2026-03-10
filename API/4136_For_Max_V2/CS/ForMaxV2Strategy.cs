@@ -26,7 +26,7 @@ public class ForMaxV2Strategy : Strategy
 
 	public ForMaxV2Strategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe.", "General");
 
 		_emaLength = Param(nameof(EmaLength), 30)
@@ -63,7 +63,20 @@ public class ForMaxV2Strategy : Strategy
 		set => _lookback.Value = value;
 	}
 
-	protected override void OnStarted2(DateTime time)
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_entryPrice = 0;
+		_barCount = 0;
+		_prevHigh = 0;
+		_prevLow = 0;
+		Array.Clear(_highs, 0, _highs.Length);
+		Array.Clear(_lows, 0, _lows.Length);
+	}
+
+		protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 

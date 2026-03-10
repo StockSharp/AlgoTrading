@@ -38,7 +38,15 @@ public class MacdSignalAtrStrategy : Strategy
 	public int SlowEmaLength { get => _slowEmaLength.Value; set => _slowEmaLength.Value = value; }
 	public int AtrLength { get => _atrLength.Value; set => _atrLength.Value = value; }
 
-	protected override void OnStarted2(DateTime time)
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_prevFast = 0; _prevSlow = 0; _entryPrice = 0;
+	}
+
+		protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 		_prevFast = 0; _prevSlow = 0; _entryPrice = 0;

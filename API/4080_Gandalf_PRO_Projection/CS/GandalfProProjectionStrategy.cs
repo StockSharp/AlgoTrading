@@ -25,7 +25,7 @@ public class GandalfProProjectionStrategy : Strategy
 
 	public GandalfProProjectionStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe.", "General");
 
 		_filterLength = Param(nameof(FilterLength), 24)
@@ -72,12 +72,18 @@ public class GandalfProProjectionStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted2(DateTime time)
+	protected override void OnReseted()
 	{
-		base.OnStarted2(time);
+		base.OnReseted();
 
 		_closeBuffer.Clear();
 		_entryPrice = 0;
+	}
+
+	/// <inheritdoc />
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
 
 		var atr = new AverageTrueRange { Length = AtrLength };
 

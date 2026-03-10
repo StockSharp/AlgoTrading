@@ -19,16 +19,17 @@ public class RobotPowerM5Meta4V12Strategy : Strategy
 
 	private decimal _prevRsi;
 	private decimal _entryPrice;
+	private int _cooldown;
 
 	public RobotPowerM5Meta4V12Strategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe.", "General");
 
 		_rsiLength = Param(nameof(RsiLength), 14)
 			.SetDisplay("RSI Length", "RSI period.", "Indicators");
 
-		_emaLength = Param(nameof(EmaLength), 20)
+		_emaLength = Param(nameof(EmaLength), 50)
 			.SetDisplay("EMA Length", "Trend filter.", "Indicators");
 
 		_atrLength = Param(nameof(AtrLength), 14)
@@ -59,12 +60,23 @@ public class RobotPowerM5Meta4V12Strategy : Strategy
 		set => _atrLength.Value = value;
 	}
 
-	protected override void OnStarted2(DateTime time)
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_prevRsi = 0;
+		_entryPrice = 0;
+		_cooldown = 0;
+	}
+
+		protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
 		_prevRsi = 0;
 		_entryPrice = 0;
+		_cooldown = 0;
 
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };
 		var ema = new ExponentialMovingAverage { Length = EmaLength };
@@ -95,36 +107,42 @@ public class RobotPowerM5Meta4V12Strategy : Strategy
 			return;
 		}
 
+		if (_cooldown > 0) { _cooldown--; _prevRsi = rsiVal; return; }
+
 		var close = candle.ClosePrice;
 
 		if (Position > 0)
 		{
-			if (close >= _entryPrice + atrVal * 2.5m || close <= _entryPrice - atrVal * 1.5m || rsiVal > 75)
+			if (close >= _entryPrice + atrVal * 2.5m || close <= _entryPrice - atrVal * 1.5m || rsiVal > 80)
 			{
 				SellMarket();
 				_entryPrice = 0;
+				_cooldown = 10;
 			}
 		}
 		else if (Position < 0)
 		{
-			if (close <= _entryPrice - atrVal * 2.5m || close >= _entryPrice + atrVal * 1.5m || rsiVal < 25)
+			if (close <= _entryPrice - atrVal * 2.5m || close >= _entryPrice + atrVal * 1.5m || rsiVal < 20)
 			{
 				BuyMarket();
 				_entryPrice = 0;
+				_cooldown = 10;
 			}
 		}
 
 		if (Position == 0)
 		{
-			if (rsiVal > 55 && _prevRsi <= 55 && close > emaVal)
+			if (rsiVal > 65 && _prevRsi <= 65 && close > emaVal)
 			{
 				_entryPrice = close;
 				BuyMarket();
+				_cooldown = 10;
 			}
-			else if (rsiVal < 45 && _prevRsi >= 45 && close < emaVal)
+			else if (rsiVal < 35 && _prevRsi >= 35 && close < emaVal)
 			{
 				_entryPrice = close;
 				SellMarket();
+				_cooldown = 10;
 			}
 		}
 

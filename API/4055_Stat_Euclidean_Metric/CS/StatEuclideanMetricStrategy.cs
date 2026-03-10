@@ -23,7 +23,7 @@ public class StatEuclideanMetricStrategy : Strategy
 
 	public StatEuclideanMetricStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for analysis.", "General");
 
 		_fastLength = Param(nameof(FastLength), 12)
@@ -61,11 +61,17 @@ public class StatEuclideanMetricStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_macdHistory.Clear();
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_macdHistory.Clear();
 
 		var fastEma = new ExponentialMovingAverage { Length = FastLength };
 		var slowEma = new ExponentialMovingAverage { Length = SlowLength };

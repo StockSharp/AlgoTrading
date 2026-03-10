@@ -184,7 +184,7 @@ public class ErrorEaStrategy : Strategy
 			.SetDisplay("Take Profit Points", "Take-profit distance converted to price steps", "Protection")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe for the strategy", "General");
 	}
 

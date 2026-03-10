@@ -164,7 +164,7 @@ public class MartingailExpertV10StochasticStrategy : Strategy
 		_zoneSell = Param(nameof(ZoneSell), 50m)
 			.SetDisplay("Zone Sell", "%D upper bound to allow sells", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(10).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for processing", "General");
 
 		Volume = 1;

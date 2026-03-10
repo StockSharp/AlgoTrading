@@ -24,7 +24,7 @@ public class BillyExpertReversalStrategy : Strategy
 
 	public BillyExpertReversalStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for analysis.", "General");
 
 		_rsiLength = Param(nameof(RsiLength), 14)
@@ -41,6 +41,19 @@ public class BillyExpertReversalStrategy : Strategy
 	{
 		get => _rsiLength.Value;
 		set => _rsiLength.Value = value;
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevHigh1 = 0;
+		_prevHigh2 = 0;
+		_prevHigh3 = 0;
+		_barCount = 0;
+		_prevRsi = 50;
+		_hasPrevRsi = false;
+		_entryPrice = 0;
 	}
 
 	/// <inheritdoc />

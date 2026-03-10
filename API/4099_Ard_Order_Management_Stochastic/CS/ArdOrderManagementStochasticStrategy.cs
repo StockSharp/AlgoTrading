@@ -26,7 +26,7 @@ public class ArdOrderManagementStochasticStrategy : Strategy
 
 	public ArdOrderManagementStochasticStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(2).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe.", "General");
 
 		_rsiLength = Param(nameof(RsiLength), 14)
@@ -82,7 +82,17 @@ public class ArdOrderManagementStochasticStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted2(DateTime time)
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_prevRsi = 0;
+		_entryPrice = 0;
+		_trailStop = 0;
+	}
+
+		protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 

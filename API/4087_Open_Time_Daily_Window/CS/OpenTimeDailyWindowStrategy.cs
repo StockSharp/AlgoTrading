@@ -24,7 +24,7 @@ public class OpenTimeDailyWindowStrategy : Strategy
 
 	public OpenTimeDailyWindowStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe.", "General");
 
 		_emaLength = Param(nameof(EmaLength), 20)
@@ -71,12 +71,18 @@ public class OpenTimeDailyWindowStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted2(DateTime time)
+	protected override void OnReseted()
 	{
-		base.OnStarted2(time);
+		base.OnReseted();
 
 		_prevEma = 0;
 		_entryPrice = 0;
+	}
+
+	/// <inheritdoc />
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
 
 		var ema = new ExponentialMovingAverage { Length = EmaLength };
 

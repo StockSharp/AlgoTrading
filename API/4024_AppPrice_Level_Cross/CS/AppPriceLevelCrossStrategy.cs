@@ -71,7 +71,7 @@ public class AppPriceLevelCrossStrategy : Strategy
 		_lotPrecision = Param(nameof(LotPrecision), 1)
 			.SetDisplay("Lot Precision", "Number of decimal places to round the calculated lot size", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for signal generation", "General");
 	}
 

@@ -23,19 +23,19 @@ public class Ais1TradingRobotStrategy : Strategy
 
 	public Ais1TradingRobotStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for analysis.", "General");
 
-		_emaLength = Param(nameof(EmaLength), 20)
+		_emaLength = Param(nameof(EmaLength), 50)
 			.SetDisplay("EMA Length", "Period for trend EMA.", "Indicators");
 
-		_atrLength = Param(nameof(AtrLength), 14)
+		_atrLength = Param(nameof(AtrLength), 20)
 			.SetDisplay("ATR Length", "Period for ATR.", "Indicators");
 
-		_takeFactor = Param(nameof(TakeFactor), 2.0m)
+		_takeFactor = Param(nameof(TakeFactor), 3.0m)
 			.SetDisplay("Take Factor", "ATR multiplier for take profit.", "Risk");
 
-		_stopFactor = Param(nameof(StopFactor), 1.0m)
+		_stopFactor = Param(nameof(StopFactor), 1.5m)
 			.SetDisplay("Stop Factor", "ATR multiplier for stop loss.", "Risk");
 	}
 
@@ -70,7 +70,15 @@ public class Ais1TradingRobotStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted2(DateTime time)
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_entryPrice = 0;
+	}
+
+		protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
@@ -130,12 +138,12 @@ public class Ais1TradingRobotStrategy : Strategy
 		// Entry: breakout above/below EMA
 		if (Position == 0)
 		{
-			if (close > emaValue + atrValue * 0.5m)
+			if (close > emaValue + atrValue * 1.5m)
 			{
 				_entryPrice = close;
 				BuyMarket();
 			}
-			else if (close < emaValue - atrValue * 0.5m)
+			else if (close < emaValue - atrValue * 1.5m)
 			{
 				_entryPrice = close;
 				SellMarket();

@@ -79,7 +79,7 @@ public class WaddahAttarWinGridStrategy : Strategy
 	/// </summary>
 	public WaddahAttarWinGridStrategy()
 	{
-		_stepPoints = Param(nameof(StepPoints), 120)
+		_stepPoints = Param(nameof(StepPoints), 1500)
 			.SetGreaterThanZero()
 			.SetDisplay("Step (Points)", "Distance between grid levels in points", "Grid")
 			.SetOptimize(20, 400, 10);

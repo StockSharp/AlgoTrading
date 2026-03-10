@@ -89,7 +89,7 @@ public class RaviIaoStrategy : Strategy
 	/// </summary>
 	public RaviIaoStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(10).TimeFrame())
 			.SetDisplay("Candle Type", "Time-frame for analysis", "General");
 
 		_fastLength = Param(nameof(FastLength), 12)

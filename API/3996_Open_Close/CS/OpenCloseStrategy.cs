@@ -41,7 +41,7 @@ public class OpenCloseStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Take Profit", "Take profit in absolute points", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Time-frame used to evaluate the open/close pattern.", "Data");
 
 		Volume = 1;

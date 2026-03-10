@@ -25,6 +25,7 @@ public class SimpleTradeFlipStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 
 	private readonly List<decimal> _openHistory = new();
+	private int _cooldown;
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="SimpleTradeFlipStrategy"/> class.
@@ -39,11 +40,11 @@ public class SimpleTradeFlipStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Stop-Loss Points", "Protective stop distance expressed in instrument points", "Risk");
 
-		_lookbackBars = Param(nameof(LookbackBars), 3)
+		_lookbackBars = Param(nameof(LookbackBars), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Lookback Bars", "Number of bars used for the open price comparison", "Signals");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe used for signal calculations", "General");
 	}
 
@@ -89,6 +90,7 @@ public class SimpleTradeFlipStrategy : Strategy
 		base.OnReseted();
 
 		_openHistory.Clear();
+		_cooldown = 0;
 	}
 
 	/// <inheritdoc />
@@ -129,6 +131,12 @@ public class SimpleTradeFlipStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+			return;
+		}
+
 		var volume = TradeVolume;
 		if (volume <= 0m)
 			return;
@@ -136,19 +144,24 @@ public class SimpleTradeFlipStrategy : Strategy
 		var currentOpen = candle.OpenPrice;
 		var referenceOpen = _openHistory[^(lookback + 1)];
 
-		// Close any existing position before flipping to the new direction.
-		if (Position > 0m)
-			SellMarket(Position);
-		else if (Position < 0m)
-			BuyMarket(Math.Abs(Position));
+		// Only trade on clear directional difference
+		var diff = currentOpen - referenceOpen;
+		if (Math.Abs(diff) < currentOpen * 0.001m)
+			return;
 
-		if (currentOpen > referenceOpen)
+		if (diff > 0 && Position <= 0)
 		{
+			if (Position < 0m)
+				BuyMarket(Math.Abs(Position));
 			BuyMarket(volume);
+			_cooldown = 5;
 		}
-		else
+		else if (diff < 0 && Position >= 0)
 		{
+			if (Position > 0m)
+				SellMarket(Position);
 			SellMarket(volume);
+			_cooldown = 5;
 		}
 	}
 }

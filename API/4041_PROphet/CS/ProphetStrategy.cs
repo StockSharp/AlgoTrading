@@ -37,7 +37,7 @@ public class ProphetStrategy : Strategy
 		_x4 = Param(nameof(X4), 125)
 			.SetDisplay("X4", "Weight applied to |High[2] - Low[3]|.", "Signal");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for calculations.", "General");
 	}
 
@@ -48,14 +48,20 @@ public class ProphetStrategy : Strategy
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	/// <inheritdoc />
-	protected override void OnStarted2(DateTime time)
+	protected override void OnReseted()
 	{
-		base.OnStarted2(time);
+		base.OnReseted();
 
 		_candle1 = null;
 		_candle2 = null;
 		_candle3 = null;
 		_entryPrice = 0;
+	}
+
+	/// <inheritdoc />
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

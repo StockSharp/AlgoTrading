@@ -27,7 +27,7 @@ public class StairsStrategy : Strategy
 
 	public StairsStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe.", "General");
 
 		_atrLength = Param(nameof(AtrLength), 14)
@@ -83,14 +83,20 @@ public class StairsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted2(DateTime time)
+	protected override void OnReseted()
 	{
-		base.OnStarted2(time);
+		base.OnReseted();
 
 		_entryPrice = 0;
 		_lastGridPrice = 0;
 		_gridCount = 0;
 		_prevEma = 0;
+	}
+
+	/// <inheritdoc />
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
 
 		var atr = new AverageTrueRange { Length = AtrLength };
 		var ema = new ExponentialMovingAverage { Length = EmaLength };

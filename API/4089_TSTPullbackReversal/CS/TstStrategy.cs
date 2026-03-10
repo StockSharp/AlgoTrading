@@ -25,7 +25,7 @@ public class TstStrategy : Strategy
 
 	public TstStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe.", "General");
 
 		_atrLength = Param(nameof(AtrLength), 14)

@@ -99,7 +99,7 @@ public class TrendRdsReversalStrategy : Strategy
 		_reverseSignals = Param(nameof(ReverseSignals), false)
 			.SetDisplay("Reverse Signals", "Invert buy and sell signals", "Filters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame())
 			.SetDisplay("Candle Type", "Working timeframe", "General");
 
 		_maxPatternDepth = Param(nameof(MaxPatternDepth), 10)

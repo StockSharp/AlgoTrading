@@ -22,7 +22,7 @@ public class VivaLasVegasStrategy : Strategy
 private readonly StrategyParam<MoneyManagementModes> _moneyManagementMode;
 	private readonly StrategyParam<int> _seed;
 
-	private Random _random = new();
+	private int _activeSeed;
 	private IMoneyManagement _management;
 	private decimal _previousPosition;
 	private decimal _lastRealizedPnL;
@@ -91,10 +91,11 @@ InitializeMoneyManagement();
 	{
 		base.OnReseted();
 
+		_activeSeed = 0;
+		_management = null;
 		_previousPosition = 0m;
 		_lastRealizedPnL = 0m;
 		_orderInFlight = false;
-		InitializeMoneyManagement();
 	}
 
 	/// <inheritdoc />
@@ -106,7 +107,7 @@ InitializeMoneyManagement();
 
 		InitializeMoneyManagement();
 
-		_random = Seed == 0 ? new Random() : new Random(Seed);
+		_activeSeed = Seed == 0 ? System.Environment.TickCount : Seed;
 
 		var steps = StopTakePips * GetPipMultiplier();
 		if (StopTakePips > 0 && steps > 0m)
@@ -188,7 +189,8 @@ InitializeMoneyManagement();
 		if (volume <= 0m)
 			return;
 
-		var isBuy = _random.NextDouble() > 0.5;
+		_activeSeed = _activeSeed * 1103515245 + 12345;
+		var isBuy = ((_activeSeed >> 16) & 1) == 0;
 
 		_orderInFlight = true;
 

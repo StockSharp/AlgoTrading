@@ -87,7 +87,7 @@ public class EesHedgerAdvancedStrategy : Strategy
 		_takeProfitPips = Param(nameof(TakeProfitPips), 500)
 			.SetDisplay("Take Profit", "Take-profit distance", "Risk Management");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candles used for calculations", "Market Data");
 	}
 

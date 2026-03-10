@@ -21,14 +21,15 @@ public class UdyIvanMadumereStrategy : Strategy
 	private decimal _prevFast;
 	private decimal _prevSlow;
 	private decimal _entryPrice;
+	private int _cooldown;
 
 	public UdyIvanMadumereStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(2).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe.", "General");
-		_fastEmaLength = Param(nameof(FastEmaLength), 8)
+		_fastEmaLength = Param(nameof(FastEmaLength), 20)
 			.SetDisplay("Fast EMA Length", "Fast EMA period.", "Indicators");
-		_slowEmaLength = Param(nameof(SlowEmaLength), 21)
+		_slowEmaLength = Param(nameof(SlowEmaLength), 50)
 			.SetDisplay("Slow EMA Length", "Slow EMA period.", "Indicators");
 		_rsiLength = Param(nameof(RsiLength), 14)
 			.SetDisplay("RSI Length", "RSI period.", "Indicators");
@@ -42,10 +43,18 @@ public class UdyIvanMadumereStrategy : Strategy
 	public int RsiLength { get => _rsiLength.Value; set => _rsiLength.Value = value; }
 	public int AtrLength { get => _atrLength.Value; set => _atrLength.Value = value; }
 
-	protected override void OnStarted2(DateTime time)
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_prevFast = 0; _prevSlow = 0; _entryPrice = 0; _cooldown = 0;
+	}
+
+		protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		_prevFast = 0; _prevSlow = 0; _entryPrice = 0;
+		_prevFast = 0; _prevSlow = 0; _entryPrice = 0; _cooldown = 0;
 		var fastEma = new ExponentialMovingAverage { Length = FastEmaLength };
 		var slowEma = new ExponentialMovingAverage { Length = SlowEmaLength };
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };
@@ -60,21 +69,22 @@ public class UdyIvanMadumereStrategy : Strategy
 	{
 		if (candle.State != CandleStates.Finished) return;
 		if (_prevFast == 0 || _prevSlow == 0 || atrVal <= 0) { _prevFast = fastVal; _prevSlow = slowVal; return; }
+		if (_cooldown > 0) { _cooldown--; _prevFast = fastVal; _prevSlow = slowVal; return; }
 		var close = candle.ClosePrice;
 
 		if (Position > 0)
 		{
-			if ((fastVal < slowVal && _prevFast >= _prevSlow) || close <= _entryPrice - atrVal * 2m) { SellMarket(); _entryPrice = 0; }
+			if ((fastVal < slowVal && _prevFast >= _prevSlow) || close <= _entryPrice - atrVal * 2m) { SellMarket(); _entryPrice = 0; _cooldown = 10; }
 		}
 		else if (Position < 0)
 		{
-			if ((fastVal > slowVal && _prevFast <= _prevSlow) || close >= _entryPrice + atrVal * 2m) { BuyMarket(); _entryPrice = 0; }
+			if ((fastVal > slowVal && _prevFast <= _prevSlow) || close >= _entryPrice + atrVal * 2m) { BuyMarket(); _entryPrice = 0; _cooldown = 10; }
 		}
 
 		if (Position == 0)
 		{
-			if (fastVal > slowVal && _prevFast <= _prevSlow && rsiVal > 50) { _entryPrice = close; BuyMarket(); }
-			else if (fastVal < slowVal && _prevFast >= _prevSlow && rsiVal < 50) { _entryPrice = close; SellMarket(); }
+			if (fastVal > slowVal && _prevFast <= _prevSlow && rsiVal > 55) { _entryPrice = close; BuyMarket(); }
+			else if (fastVal < slowVal && _prevFast >= _prevSlow && rsiVal < 45) { _entryPrice = close; SellMarket(); }
 		}
 		_prevFast = fastVal; _prevSlow = slowVal;
 	}

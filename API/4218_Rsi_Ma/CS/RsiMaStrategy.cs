@@ -93,7 +93,7 @@ public class RsiMaStrategy : Strategy
 		_tradeVolume = Param(nameof(TradeVolume), 0.1m)
 		.SetDisplay("Fixed Volume", string.Empty, "Position");
 		
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(2).TimeFrame())
 		.SetDisplay("Candle TimeFrame", string.Empty, "General");
 	}
 	
@@ -239,6 +239,18 @@ public class RsiMaStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_rsi = null;
+		_ema = null;
+		_previousIndicatorValue = null;
+		_stopLossPrice = null;
+		_takeProfitPrice = null;
+		_entryPrice = 0;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);

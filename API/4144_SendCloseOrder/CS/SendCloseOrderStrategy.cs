@@ -27,7 +27,7 @@ public class SendCloseOrderStrategy : Strategy
 
 	public SendCloseOrderStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe.", "General");
 
 		_emaLength = Param(nameof(EmaLength), 50)
@@ -55,7 +55,22 @@ public class SendCloseOrderStrategy : Strategy
 		set => _atrLength.Value = value;
 	}
 
-	protected override void OnStarted2(DateTime time)
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_entryPrice = 0;
+		_fractalHigh = 0;
+		_fractalLow = 0;
+		_prev2High = 0;
+		_prev1High = 0;
+		_prev2Low = 0;
+		_prev1Low = 0;
+		_barCount = 0;
+	}
+
+		protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 

@@ -24,7 +24,7 @@ public class SpazmVolatilityBreakoutStrategy : Strategy
 
 	public SpazmVolatilityBreakoutStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for analysis.", "General");
 
 		_atrLength = Param(nameof(AtrLength), 14)
@@ -53,14 +53,20 @@ public class SpazmVolatilityBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted2(DateTime time)
+	protected override void OnReseted()
 	{
-		base.OnStarted2(time);
+		base.OnReseted();
 
 		_swingHigh = 0;
 		_swingLow = decimal.MaxValue;
 		_trendUp = true;
 		_initialized = false;
+	}
+
+	/// <inheritdoc />
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
 
 		var atr = new AverageTrueRange { Length = AtrLength };
 

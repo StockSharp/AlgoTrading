@@ -131,7 +131,7 @@ public class MacdZeroFilteredCrossStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Balance per Volume", "Required balance per volume unit before opening trades", "Risk Management");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe that drives MACD calculations", "General");
 	}
 

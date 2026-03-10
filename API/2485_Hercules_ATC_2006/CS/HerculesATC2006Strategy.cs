@@ -374,6 +374,13 @@ public class HerculesATC2006Strategy : Strategy
 	{
 		base.OnReseted();
 
+		_rsi.Reset();
+		_rsi.Length = RsiLength;
+		_dailyEnvelopeMa.Reset();
+		_dailyEnvelopeMa.Length = DailyEnvelopePeriod;
+		_h4EnvelopeMa.Reset();
+		_h4EnvelopeMa.Length = H4EnvelopePeriod;
+
 		Array.Clear(_fastHistory, 0, _fastHistory.Length);
 		Array.Clear(_slowHistory, 0, _slowHistory.Length);
 		Array.Clear(_timeHistory, 0, _timeHistory.Length);
@@ -387,6 +394,11 @@ public class HerculesATC2006Strategy : Strategy
 		_recentLows.Clear();
 		_rollingHigh = 0m;
 		_rollingLow = 0m;
+
+		_priceStep = 0m;
+		_pipSize = 0m;
+		_primaryTimeFrame = default;
+		_highLowLength = 0;
 
 		_lastRsi = 0m;
 		_rsiReady = false;

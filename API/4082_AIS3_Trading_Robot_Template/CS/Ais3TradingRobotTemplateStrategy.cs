@@ -73,7 +73,18 @@ public class Ais3TradingRobotTemplateStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted2(DateTime time)
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_prevHigh = 0;
+		_prevLow = 0;
+		_entryPrice = 0;
+		_stopPrice = 0;
+	}
+
+		protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 

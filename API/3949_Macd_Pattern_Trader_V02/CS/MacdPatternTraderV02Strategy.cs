@@ -226,15 +226,15 @@ public class MacdPatternTraderV02Strategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Offset Points", "Additional protective offset in points", "Risk");
 
-		_profitThresholdPoints = Param(nameof(ProfitThresholdPoints), 5m)
+		_profitThresholdPoints = Param(nameof(ProfitThresholdPoints), 500m)
 			.SetGreaterThanZero()
 			.SetDisplay("Profit Threshold Points", "Minimal profit in points before partial exits", "Risk");
 
-		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 5)
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast EMA", "Fast EMA period for MACD", "Indicators");
 
-		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 13)
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow EMA", "Slow EMA period for MACD", "Indicators");
 
@@ -264,7 +264,7 @@ public class MacdPatternTraderV02Strategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Trade Volume", "Market order volume", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type used for indicators", "General");
 
 		_maxHistory = Param(nameof(MaxHistory), 1024)
@@ -301,6 +301,7 @@ public class MacdPatternTraderV02Strategy : Strategy
 		_buyPatternReady = false;
 		_patternMinValue = 0m;
 		_patternMaxValue = 0m;
+		_pointSize = 0m;
 		ResetPositionState();
 	}
 

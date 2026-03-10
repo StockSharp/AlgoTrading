@@ -23,7 +23,7 @@ public class AdxSimpleStrategy : Strategy
 
 	public AdxSimpleStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(2).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe.", "General");
 
 		_fastEmaLength = Param(nameof(FastEmaLength), 10)
@@ -60,13 +60,18 @@ public class AdxSimpleStrategy : Strategy
 		set => _atrLength.Value = value;
 	}
 
-	protected override void OnStarted2(DateTime time)
+	protected override void OnReseted()
 	{
-		base.OnStarted2(time);
+		base.OnReseted();
 
 		_prevFast = 0;
 		_prevSlow = 0;
 		_entryPrice = 0;
+	}
+
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
 
 		var fastEma = new ExponentialMovingAverage { Length = FastEmaLength };
 		var slowEma = new ExponentialMovingAverage { Length = SlowEmaLength };

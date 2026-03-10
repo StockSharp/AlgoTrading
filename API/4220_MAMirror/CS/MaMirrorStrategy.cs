@@ -43,6 +43,13 @@ public class MaMirrorStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		=> [(Security, CandleType)];
 
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevDiff = null;
+		_sma = null;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);

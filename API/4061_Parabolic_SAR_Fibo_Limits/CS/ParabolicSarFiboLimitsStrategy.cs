@@ -22,7 +22,7 @@ public class ParabolicSarFiboLimitsStrategy : Strategy
 
 	public ParabolicSarFiboLimitsStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(3).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for analysis.", "General");
 
 		_lookback = Param(nameof(Lookback), 20)
@@ -42,7 +42,17 @@ public class ParabolicSarFiboLimitsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted2(DateTime time)
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_prevSar = 0;
+		_hasPrevSar = false;
+		_entryPrice = 0;
+	}
+
+		protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 

@@ -22,7 +22,7 @@ public class MovingAverageWithFramesStrategy : Strategy
 
 	public MovingAverageWithFramesStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(2).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe.", "General");
 
 		_smaLength = Param(nameof(SmaLength), 12)
@@ -50,12 +50,17 @@ public class MovingAverageWithFramesStrategy : Strategy
 		set => _atrLength.Value = value;
 	}
 
-	protected override void OnStarted2(DateTime time)
+	protected override void OnReseted()
 	{
-		base.OnStarted2(time);
+		base.OnReseted();
 
 		_entryPrice = 0;
 		_prevClose = 0;
+	}
+
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
 
 		var sma = new SimpleMovingAverage { Length = SmaLength };
 		var atr = new AverageTrueRange { Length = AtrLength };

@@ -28,7 +28,7 @@ public class EmaCrossTrailingStrategy : Strategy
 		_slowEmaLength = Param(nameof(SlowEmaLength), 60)
 			.SetDisplay("Slow EMA", "Length of the slow exponential moving average.", "Indicator");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame used to build candles and EMAs.", "General");
 	}
 
@@ -51,12 +51,18 @@ public class EmaCrossTrailingStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted2(DateTime time)
+	protected override void OnReseted()
 	{
-		base.OnStarted2(time);
+		base.OnReseted();
 
 		_currentDirection = 0;
 		_hasInitialDirection = false;
+	}
+
+	/// <inheritdoc />
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
 
 		var fastEma = new ExponentialMovingAverage { Length = FastEmaLength };
 		var slowEma = new ExponentialMovingAverage { Length = SlowEmaLength };

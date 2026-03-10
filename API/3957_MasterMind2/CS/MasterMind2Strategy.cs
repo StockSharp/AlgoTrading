@@ -176,7 +176,7 @@ _breakEvenPoints = Param(nameof(BreakEvenPoints), 0m)
 .SetDisplay("Break Even", "Distance to move stop to break-even", "Risk")
 ;
 
-_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 .SetDisplay("Candle Type", "Candle type used for calculations", "General");
 }
 
@@ -248,11 +248,11 @@ ManageLongPosition(candle, step);
 ManageShortPosition(candle, step);
 
 // Generate entries only when no opposite position exists.
-if (signal < 10m && wpr < -90m)
+if (signal < 5m && wpr < -95m)
 {
 HandleBuySignal(candle, step);
 }
-else if (signal > 90m && wpr > -10m)
+else if (signal > 95m && wpr > -5m)
 {
 HandleSellSignal(candle, step);
 }

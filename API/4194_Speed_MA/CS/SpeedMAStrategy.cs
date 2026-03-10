@@ -22,7 +22,7 @@ public class SpeedMAStrategy : Strategy
 
 	public SpeedMAStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe.", "General");
 		_emaLength = Param(nameof(EmaLength), 13)
 			.SetDisplay("EMA Length", "Moving average period.", "Indicators");
@@ -34,7 +34,15 @@ public class SpeedMAStrategy : Strategy
 	public int EmaLength { get => _emaLength.Value; set => _emaLength.Value = value; }
 	public int AtrLength { get => _atrLength.Value; set => _atrLength.Value = value; }
 
-	protected override void OnStarted2(DateTime time)
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_prevEma = 0; _prevPrevEma = 0; _entryPrice = 0;
+	}
+
+		protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 		_prevEma = 0; _prevPrevEma = 0; _entryPrice = 0;

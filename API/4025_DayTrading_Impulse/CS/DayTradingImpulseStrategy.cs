@@ -337,6 +337,7 @@ public class DayTradingImpulseStrategy : Strategy
 		_shortTakeProfit = null;
 		_longEntryPrice = null;
 		_shortEntryPrice = null;
+		_pointSize = 0m;
 	}
 
 	/// <inheritdoc />

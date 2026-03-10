@@ -23,7 +23,7 @@ public class Ntk07Strategy : Strategy
 
 	public Ntk07Strategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for analysis.", "General");
 
 		_atrLength = Param(nameof(AtrLength), 14)
@@ -52,7 +52,17 @@ public class Ntk07Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted2(DateTime time)
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_referencePrice = 0;
+		_entryPrice = 0;
+		_initialized = false;
+	}
+
+		protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 

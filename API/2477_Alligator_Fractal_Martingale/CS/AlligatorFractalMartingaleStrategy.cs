@@ -451,6 +451,7 @@ public class AlligatorFractalMartingaleStrategy : Strategy
 		_shortTake = null;
 		_finishedBarIndex = -1;
 		_historyOffset = 0;
+		_maxAlligatorBuffer = 0;
 	}
 
 	/// <inheritdoc />

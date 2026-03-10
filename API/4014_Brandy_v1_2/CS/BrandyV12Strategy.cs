@@ -68,7 +68,7 @@ public class BrandyV12Strategy : Strategy
 			.SetDisplay("Trailing Stop (points)", "Trailing stop distance in price steps. Activates when >= 100.", "Risk")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(2).TimeFrame())
 			.SetDisplay("Candle Type", "Candle series processed by the strategy.", "General");
 	}
 

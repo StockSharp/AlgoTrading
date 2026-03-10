@@ -23,7 +23,7 @@ public class TrailingStopFrCnStrategy : Strategy
 
 	public TrailingStopFrCnStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(2).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe.", "General");
 		_fastEmaLength = Param(nameof(FastEmaLength), 12)
 			.SetDisplay("Fast EMA", "Fast EMA period.", "Indicators");
@@ -38,10 +38,15 @@ public class TrailingStopFrCnStrategy : Strategy
 	public int SlowEmaLength { get => _slowEmaLength.Value; set => _slowEmaLength.Value = value; }
 	public int AtrLength { get => _atrLength.Value; set => _atrLength.Value = value; }
 
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFast = 0; _prevSlow = 0; _entryPrice = 0;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		_prevFast = 0; _prevSlow = 0; _entryPrice = 0;
 		var fastEma = new ExponentialMovingAverage { Length = FastEmaLength };
 		var slowEma = new ExponentialMovingAverage { Length = SlowEmaLength };
 		var atr = new AverageTrueRange { Length = AtrLength };

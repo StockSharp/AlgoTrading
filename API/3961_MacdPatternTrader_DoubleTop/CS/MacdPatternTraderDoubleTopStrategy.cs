@@ -80,7 +80,7 @@ public class MacdPatternTraderDoubleTopStrategy : Strategy
 		
 		.SetOptimize(0.05m, 1m, 0.05m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe used for MACD calculations", "General");
 	}
 

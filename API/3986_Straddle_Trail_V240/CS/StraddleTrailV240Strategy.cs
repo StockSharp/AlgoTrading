@@ -78,7 +78,7 @@ public class StraddleTrailV240Strategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Take Profit", "Take profit distance", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(2).TimeFrame())
 			.SetDisplay("Candle Type", "Candle subscription used", "General");
 	}
 

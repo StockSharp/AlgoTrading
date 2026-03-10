@@ -20,16 +20,17 @@ public class AmstellSlStrategy : Strategy
 	private decimal _entryPrice;
 	private decimal _prevEma;
 	private int _gridCount;
+	private int _cooldown;
 
 	public AmstellSlStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe.", "General");
 
 		_atrLength = Param(nameof(AtrLength), 14)
 			.SetDisplay("ATR Length", "ATR period.", "Indicators");
 
-		_emaLength = Param(nameof(EmaLength), 20)
+		_emaLength = Param(nameof(EmaLength), 50)
 			.SetDisplay("EMA Length", "EMA trend filter.", "Indicators");
 	}
 
@@ -52,13 +53,25 @@ public class AmstellSlStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted2(DateTime time)
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_entryPrice = 0;
+		_prevEma = 0;
+		_gridCount = 0;
+		_cooldown = 0;
+	}
+
+		protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
 		_entryPrice = 0;
 		_prevEma = 0;
 		_gridCount = 0;
+		_cooldown = 0;
 
 		var atr = new AverageTrueRange { Length = AtrLength };
 		var ema = new ExponentialMovingAverage { Length = EmaLength };
@@ -88,24 +101,33 @@ public class AmstellSlStrategy : Strategy
 			return;
 		}
 
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+			_prevEma = emaVal;
+			if (Position == 0) return;
+		}
+
 		var close = candle.ClosePrice;
 
 		// Position management with grid and stops
 		if (Position > 0)
 		{
-			if (close >= _entryPrice + atrVal * 1.5m)
+			if (close >= _entryPrice + atrVal * 2.5m)
 			{
 				SellMarket();
 				_entryPrice = 0;
 				_gridCount = 0;
+				_cooldown = 10;
 			}
-			else if (close <= _entryPrice - atrVal * 3m)
+			else if (close <= _entryPrice - atrVal * 4m)
 			{
 				SellMarket();
 				_entryPrice = 0;
 				_gridCount = 0;
+				_cooldown = 10;
 			}
-			else if (_gridCount < 2 && close <= _entryPrice - atrVal * 1.2m)
+			else if (_gridCount < 1 && close <= _entryPrice - atrVal * 2m)
 			{
 				_entryPrice = (_entryPrice + close) / 2m;
 				_gridCount++;
@@ -114,19 +136,21 @@ public class AmstellSlStrategy : Strategy
 		}
 		else if (Position < 0)
 		{
-			if (close <= _entryPrice - atrVal * 1.5m)
+			if (close <= _entryPrice - atrVal * 2.5m)
 			{
 				BuyMarket();
 				_entryPrice = 0;
 				_gridCount = 0;
+				_cooldown = 10;
 			}
-			else if (close >= _entryPrice + atrVal * 3m)
+			else if (close >= _entryPrice + atrVal * 4m)
 			{
 				BuyMarket();
 				_entryPrice = 0;
 				_gridCount = 0;
+				_cooldown = 10;
 			}
-			else if (_gridCount < 2 && close >= _entryPrice + atrVal * 1.2m)
+			else if (_gridCount < 1 && close >= _entryPrice + atrVal * 2m)
 			{
 				_entryPrice = (_entryPrice + close) / 2m;
 				_gridCount++;
@@ -135,7 +159,7 @@ public class AmstellSlStrategy : Strategy
 		}
 
 		// Entry on EMA trend
-		if (Position == 0)
+		if (Position == 0 && _cooldown == 0)
 		{
 			if (close > emaVal && emaVal > _prevEma)
 			{

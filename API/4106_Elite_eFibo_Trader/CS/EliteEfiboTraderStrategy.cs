@@ -26,7 +26,7 @@ public class EliteEfiboTraderStrategy : Strategy
 
 	public EliteEfiboTraderStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe.", "General");
 
 		_fastLength = Param(nameof(FastLength), 10)
@@ -73,7 +73,18 @@ public class EliteEfiboTraderStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted2(DateTime time)
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_prevFast = 0;
+		_prevSlow = 0;
+		_entryPrice = 0;
+		_addCount = 0;
+	}
+
+		protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 

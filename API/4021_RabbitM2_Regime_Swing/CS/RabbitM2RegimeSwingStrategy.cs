@@ -22,7 +22,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class RabbitM2RegimeSwingStrategy : Strategy
 {
-	private static readonly DataType TrendCandleType = TimeSpan.FromHours(1).TimeFrame();
+	private static readonly DataType TrendCandleType = TimeSpan.FromHours(2).TimeFrame();
 
 	private readonly StrategyParam<int> _cciSellLevel;
 	private readonly StrategyParam<int> _cciBuyLevel;
@@ -120,7 +120,7 @@ public RabbitM2RegimeSwingStrategy()
 			.SetDisplay("Initial Volume", "Starting base order size before scaling", "Money Management")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(2).TimeFrame())
 			.SetDisplay("Primary Candle Type", "Timeframe for Williams %R, CCI and Donchian calculations", "General");
 	}
 

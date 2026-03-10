@@ -106,7 +106,7 @@ public class EmaCross2Strategy : Strategy
 	/// </summary>
 	public EmaCross2Strategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 		.SetDisplay("Candle Type", "Time frame used for EMA calculations", "General");
 
 		_orderVolume = Param(nameof(OrderVolume), 2m)
@@ -165,6 +165,7 @@ public class EmaCross2Strategy : Strategy
 		_stopLossPrice = null;
 		_takeProfitPrice = null;
 		_pointSize = 0m;
+		_entryPrice = 0m;
 	}
 
 	/// <inheritdoc />

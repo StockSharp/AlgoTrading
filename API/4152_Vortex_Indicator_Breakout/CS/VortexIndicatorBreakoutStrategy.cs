@@ -23,7 +23,7 @@ public class VortexIndicatorBreakoutStrategy : Strategy
 
 	public VortexIndicatorBreakoutStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(2).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe.", "General");
 
 		_fastEmaLength = Param(nameof(FastEmaLength), 14)
@@ -60,7 +60,17 @@ public class VortexIndicatorBreakoutStrategy : Strategy
 		set => _atrLength.Value = value;
 	}
 
-	protected override void OnStarted2(DateTime time)
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_prevFast = 0;
+		_prevSlow = 0;
+		_entryPrice = 0;
+	}
+
+		protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 

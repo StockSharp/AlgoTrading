@@ -51,7 +51,7 @@ public class KlossMql8186Strategy : Strategy
                         
                         .SetOptimize(5, 40, 5);
 
-                _cciThreshold = Param(nameof(CciThreshold), 120m)
+                _cciThreshold = Param(nameof(CciThreshold), 150m)
                         .SetGreaterThanZero()
                         .SetDisplay("CCI Threshold", "Absolute CCI level that triggers entries", "Indicators")
                         
@@ -75,13 +75,13 @@ public class KlossMql8186Strategy : Strategy
                         
                         .SetOptimize(1, 10, 1);
 
-                _stochasticOversold = Param(nameof(StochasticOversold), 30m)
+                _stochasticOversold = Param(nameof(StochasticOversold), 45m)
                         .SetNotNegative()
                         .SetDisplay("Stochastic Oversold", "Threshold under which %K confirms a long signal", "Signals")
                         
                         .SetOptimize(10m, 40m, 5m);
 
-                _stochasticOverbought = Param(nameof(StochasticOverbought), 70m)
+                _stochasticOverbought = Param(nameof(StochasticOverbought), 55m)
                         .SetNotNegative()
                         .SetDisplay("Stochastic Overbought", "Threshold above which %K confirms a short signal", "Signals")
                         
@@ -197,18 +197,15 @@ public class KlossMql8186Strategy : Strategy
         {
                 base.OnStarted2(time);
 
-                // Instantiate indicators that mirror the MQL implementation.
                 _cci = new CommodityChannelIndex { Length = CciPeriod };
-                _stochastic = new StochasticOscillator
-                {
-                        K = { Length = StochasticKPeriod },
-                        D = { Length = StochasticDPeriod },
-                };
+                _stochastic = new StochasticOscillator();
+                _stochastic.K.Length = StochasticKPeriod;
+                _stochastic.D.Length = StochasticDPeriod;
 
                 var subscription = SubscribeCandles(CandleType);
 
                 subscription
-                        .BindEx(_cci, _stochastic, ProcessCandle)
+                        .Bind(ProcessCandle)
                         .Start();
 
                 // Configure automatic position protection for stop loss and take profit.
@@ -217,24 +214,30 @@ public class KlossMql8186Strategy : Strategy
                         stopLoss: CreatePriceUnit(StopLossPoints));
         }
 
-        private void ProcessCandle(ICandleMessage candle, IIndicatorValue cciValue, IIndicatorValue stochasticValue)
+        private void ProcessCandle(ICandleMessage candle)
         {
-                // Only finished candles replicate the original EA behaviour.
                 if (candle.State != CandleStates.Finished)
                         return;
 
-                // Ignore incomplete indicator values.
-                if (!cciValue.IsFinal || !stochasticValue.IsFinal)
+                var cciResult = _cci.Process(candle).ToNullableDecimal();
+                var stochResult = _stochastic.Process(candle);
+
+                UpdateHistory(candle);
+
+                if (cciResult is null)
+                        return;
+
+                if (!_stochastic.IsFormed)
+                        return;
+
+                var stochValue = (StochasticOscillatorValue)stochResult;
+                if (stochValue.K is not decimal stochMain)
                         return;
 
                 if (!IsFormedAndOnlineAndAllowTrading())
                         return;
 
-                var cci = cciValue.ToDecimal();
-                var stochastic = (StochasticOscillatorValue)stochasticValue;
-
-                if (stochastic.K is not decimal stochMain)
-                        return;
+                var cci = cciResult.Value;
 
                 if (_previousOpen is decimal prevOpen &&
                         _previousClose is decimal prevClose &&
@@ -244,28 +247,10 @@ public class KlossMql8186Strategy : Strategy
                         var sellSignal = cci >= CciThreshold && stochMain > StochasticOverbought && prevClose < shiftedTypical;
 
                         if (buySignal && Position <= 0)
-                        {
-                                var volume = CalculateOrderVolume(candle.ClosePrice);
-                                if (volume > 0)
-                                {
-                                        var totalVolume = volume + Math.Max(0m, -Position);
-                                        if (totalVolume > 0)
-                                                BuyMarket(totalVolume);
-                                }
-                        }
+                                BuyMarket();
                         else if (sellSignal && Position >= 0)
-                        {
-                                var volume = CalculateOrderVolume(candle.ClosePrice);
-                                if (volume > 0)
-                                {
-                                        var totalVolume = volume + Math.Max(0m, Position);
-                                        if (totalVolume > 0)
-                                                SellMarket(totalVolume);
-                                }
-                        }
+                                SellMarket();
                 }
-
-                UpdateHistory(candle);
         }
 
         private void UpdateHistory(ICandleMessage candle)
@@ -279,57 +264,6 @@ public class KlossMql8186Strategy : Strategy
                 // Store previous candle prices for the next iteration.
                 _previousOpen = candle.OpenPrice;
                 _previousClose = candle.ClosePrice;
-        }
-
-        private decimal CalculateOrderVolume(decimal referencePrice)
-        {
-                var volume = FixedVolume;
-
-                if (volume <= 0)
-                {
-                        volume = EstimateDynamicVolume(referencePrice);
-                }
-
-                return AlignVolume(volume);
-        }
-
-        private decimal EstimateDynamicVolume(decimal referencePrice)
-        {
-                if (referencePrice <= 0 || Portfolio?.CurrentValue == null)
-                        return Security?.MinVolume ?? Security?.VolumeStep ?? 1m;
-
-                var capital = Portfolio.CurrentValue.Value;
-                var riskCapital = capital * RiskPercent;
-
-                if (riskCapital <= 0)
-                        return Security?.MinVolume ?? Security?.VolumeStep ?? 1m;
-
-                var estimated = referencePrice > 0 ? riskCapital / referencePrice : 0m;
-
-                return estimated;
-        }
-
-        private decimal AlignVolume(decimal volume)
-        {
-                if (Security == null)
-                        return volume;
-
-                var minVolume = Security.MinVolume ?? 0m;
-                var volumeStep = Security.VolumeStep ?? 0m;
-
-                if (volumeStep > 0)
-                        volume = Math.Floor(volume / volumeStep) * volumeStep;
-
-                if (minVolume > 0 && volume < minVolume)
-                        volume = minVolume;
-
-                if (MaxVolume > 0 && volume > MaxVolume)
-                        volume = MaxVolume;
-
-                if (volume <= 0)
-                        volume = minVolume > 0 ? minVolume : (volumeStep > 0 ? volumeStep : 1m);
-
-                return volume;
         }
 
         private Unit CreatePriceUnit(decimal points)

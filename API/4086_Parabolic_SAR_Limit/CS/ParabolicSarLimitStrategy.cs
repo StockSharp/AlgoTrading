@@ -54,7 +54,19 @@ public class ParabolicSarLimitStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted2(DateTime time)
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_prevEma = 0;
+		_prevClose = 0;
+		_entryPrice = 0;
+		_wasBullish = false;
+		_hasPrev = false;
+	}
+
+		protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 

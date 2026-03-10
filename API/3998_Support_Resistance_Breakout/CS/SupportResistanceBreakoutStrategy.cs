@@ -99,7 +99,7 @@ public class SupportResistanceBreakoutStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Take Profit", "Take profit in absolute points", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Primary candle series", "General");
 
 		Volume = 1;

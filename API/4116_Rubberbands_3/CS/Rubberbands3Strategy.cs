@@ -22,7 +22,7 @@ public class Rubberbands3Strategy : Strategy
 
 	public Rubberbands3Strategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe.", "General");
 
 		_smaLength = Param(nameof(SmaLength), 20)

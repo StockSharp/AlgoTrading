@@ -61,7 +61,7 @@ public class Ilan14GridStrategy : Strategy
 
 	public Ilan14GridStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame())
 			.SetDisplay("Candle type", "Timeframe that feeds the strategy logic.", "General");
 
 		_initialVolume = Param(nameof(InitialVolume), 0.1m)
@@ -248,6 +248,18 @@ public class Ilan14GridStrategy : Strategy
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		=> [(Security, CandleType)];
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		ResetState();
+		_previousClose = null;
+		_lastClosedWasLoss = false;
+		_lastClosedOrderVolume = 0m;
+		_equityPeak = 0m;
+	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)

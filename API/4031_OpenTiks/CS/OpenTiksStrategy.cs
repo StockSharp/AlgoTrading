@@ -75,7 +75,7 @@ public class OpenTiksStrategy : Strategy
 		_usePartialClose = Param(nameof(UsePartialClose), true)
 			.SetDisplay("Use Partial Close", "Close half of the position whenever the trailing stop advances.", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe used for pattern detection.", "General");
 	}
 
@@ -148,6 +148,10 @@ public class OpenTiksStrategy : Strategy
 	{
 		base.OnReseted();
 
+		_priceStep = 0;
+		_volumeStep = 0;
+		_minVolumeLimit = 0;
+		_maxVolumeLimit = 0;
 		_high1 = null;
 		_high2 = null;
 		_high3 = null;
@@ -158,6 +162,7 @@ public class OpenTiksStrategy : Strategy
 		_shortEntryPrice = null;
 		_longTrailingStop = null;
 		_shortTrailingStop = null;
+		_dummySma = null;
 		_previousPosition = 0m;
 		_lastTradePrice = null;
 	}

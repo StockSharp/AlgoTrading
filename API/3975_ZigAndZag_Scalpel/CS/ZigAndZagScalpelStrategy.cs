@@ -144,7 +144,17 @@ public class ZigAndZagScalpelStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted2(DateTime time)
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_priceStep = Security?.PriceStep ?? 1m;
+		_deviation = Math.Max(_priceStep, Math.Abs(DeviationPoints) * _priceStep);
+		_breakoutDistance = Math.Max(0m, Math.Abs(BreakoutDistancePoints) * _priceStep);
+	}
+
+		protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 

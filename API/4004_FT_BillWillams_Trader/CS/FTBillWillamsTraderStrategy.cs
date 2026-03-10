@@ -70,7 +70,7 @@ public class FTBillWillamsTraderStrategy : Strategy
 
 	public FTBillWillamsTraderStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type for strategy", "General");
 
 		_jawPeriod = Param(nameof(JawPeriod), 13)
@@ -87,7 +87,26 @@ public class FTBillWillamsTraderStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted2(DateTime time)
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_jaw = new SMA { Length = JawPeriod };
+		_teeth = new SMA { Length = TeethPeriod };
+		_lips = new SMA { Length = LipsPeriod };
+		_highBuf = new decimal[FractalLen];
+		_lowBuf = new decimal[FractalLen];
+		_bufCount = 0;
+		_pendingBuyLevel = null;
+		_pendingSellLevel = null;
+		_prevJaw = 0;
+		_prevTeeth = 0;
+		_prevLips = 0;
+		_entryPrice = 0;
+	}
+
+		protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 

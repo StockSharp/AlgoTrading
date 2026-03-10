@@ -165,7 +165,7 @@ public class ExpertMasterEurusdStrategy : Strategy
 			.SetDisplay("Lower MACD", "Negative MACD threshold for longs", "Logic");
 		_shortCurrentThreshold = Param(nameof(ShortCurrentThreshold), -20m)
 			.SetDisplay("Short MACD", "Negative MACD threshold for shorts", "Logic");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(2).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type for MACD", "Data");
 	}
 

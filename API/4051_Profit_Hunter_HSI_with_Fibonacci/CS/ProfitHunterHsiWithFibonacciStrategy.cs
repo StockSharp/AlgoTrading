@@ -27,7 +27,7 @@ public class ProfitHunterHsiWithFibonacciStrategy : Strategy
 		_lookbackPeriod = Param(nameof(LookbackPeriod), 50)
 			.SetDisplay("Lookback Period", "Bars to look back for range high/low.", "Fibonacci");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(2).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for analysis.", "General");
 	}
 
@@ -50,7 +50,15 @@ public class ProfitHunterHsiWithFibonacciStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted2(DateTime time)
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_barCount = 0;
+	}
+
+		protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
