@@ -228,9 +228,6 @@ protected override void OnStarted2(DateTime time)
 	_pipSize = decimals is 3 or 5 ? _priceStep * 10m : _priceStep;
 	if (_pipSize == 0m)
 		_pipSize = 0.01m;
-	// Scale pip size for instruments with large prices (e.g. BTC)
-	if (_priceStep >= 0.01m && _pipSize < 1m)
-		_pipSize = 100m;
 
 	_riskThreshold = InitialDeposit * (100m - RiskPercent) / 100m;
 

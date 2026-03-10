@@ -156,6 +156,13 @@ public class Hans123TraderV2Strategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
+		_pipSize = 0m;
+		_stopLossDistance = 0m;
+		_takeProfitDistance = 0m;
+		_trailingStopDistance = 0m;
+		_trailingStepDistance = 0m;
+		_highest = null;
+		_lowest = null;
 		_entryPrice = 0m;
 		_highestStopPrice = 0m;
 		_prevBreakoutHigh = null;

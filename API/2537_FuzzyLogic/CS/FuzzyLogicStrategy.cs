@@ -142,15 +142,15 @@ public class FuzzyLogicStrategy : Strategy
 	/// </summary>
 	public FuzzyLogicStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles to analyze", "General");
 
-		_buyThreshold = Param(nameof(BuyThreshold), 0.25m)
+		_buyThreshold = Param(nameof(BuyThreshold), 0.15m)
 		.SetDisplay("Buy Threshold", "Decision level for long entries", "Trading")
 		.SetRange(0.1m, 0.5m)
 		;
 
-		_sellThreshold = Param(nameof(SellThreshold), 0.75m)
+		_sellThreshold = Param(nameof(SellThreshold), 0.85m)
 		.SetDisplay("Sell Threshold", "Decision level for short entries", "Trading")
 		.SetRange(0.5m, 0.9m)
 		;
@@ -158,7 +158,7 @@ public class FuzzyLogicStrategy : Strategy
 		_stopLossPoints = Param(nameof(StopLossPoints), 60m)
 		.SetDisplay("Stop Loss (points)", "Protective stop distance in price steps", "Risk");
 
-		_takeProfitPoints = Param(nameof(TakeProfitPoints), 20m)
+		_takeProfitPoints = Param(nameof(TakeProfitPoints), 40m)
 		.SetDisplay("Take Profit (points)", "Target distance in price steps", "Risk");
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 0m)

@@ -28,6 +28,8 @@ public class Universum30Strategy : Strategy
 	private decimal _currentVolume;
 	private int _losses;
 	private decimal _lastPnL;
+	private decimal _previousDeMarker;
+	private bool _hasPreviousDeMarker;
 
 	/// <summary>
 	/// Candle type for strategy calculation.
@@ -64,7 +66,7 @@ public class Universum30Strategy : Strategy
 	/// </summary>
 	public Universum30Strategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for analysis", "General");
 
 		_demarkerPeriod = Param(nameof(DemarkerPeriod), 10)
@@ -95,6 +97,18 @@ public class Universum30Strategy : Strategy
 	}
 
 	/// <inheritdoc />
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_currentVolume = 0m;
+		_losses = 0;
+		_lastPnL = 0m;
+		_previousDeMarker = 0m;
+		_hasPreviousDeMarker = false;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
@@ -102,6 +116,8 @@ public class Universum30Strategy : Strategy
 		_currentVolume = InitialVolume;
 		_losses = 0;
 		_lastPnL = 0m;
+		_previousDeMarker = 0m;
+		_hasPreviousDeMarker = false;
 
 		StartProtection(
 			takeProfit: new Unit(TakeProfitPoints, UnitTypes.Absolute),
@@ -129,10 +145,16 @@ public class Universum30Strategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		if (demarkerValue > 0.5m && Position <= 0)
+		var buySignal = _hasPreviousDeMarker && _previousDeMarker <= 0.3m && demarkerValue > 0.3m;
+		var sellSignal = _hasPreviousDeMarker && _previousDeMarker >= 0.7m && demarkerValue < 0.7m;
+
+		if (buySignal && Position <= 0)
 			BuyMarket(_currentVolume + Math.Abs(Position));
-		else if (demarkerValue < 0.5m && Position >= 0)
+		else if (sellSignal && Position >= 0)
 			SellMarket(_currentVolume + Math.Abs(Position));
+
+		_previousDeMarker = demarkerValue;
+		_hasPreviousDeMarker = true;
 	}
 
 	/// <inheritdoc />

@@ -25,6 +25,8 @@ public class TenPipsStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _entryPrice;
+	private decimal _previousRoc;
+	private bool _hasPreviousRoc;
 
 	/// <summary>Take profit distance.</summary>
 	public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
@@ -46,10 +48,10 @@ public class TenPipsStrategy : Strategy
 		_stopLoss = Param(nameof(StopLoss), 300m)
 			.SetDisplay("Stop Loss", "Stop loss distance", "Risk")
 			.SetGreaterThanZero();
-		_lookback = Param(nameof(Lookback), 10)
+		_lookback = Param(nameof(Lookback), 30)
 			.SetDisplay("Lookback", "Momentum lookback period", "Indicators")
 			.SetGreaterThanZero();
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -60,11 +62,23 @@ public class TenPipsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_entryPrice = 0m;
+		_previousRoc = 0m;
+		_hasPreviousRoc = false;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
 		_entryPrice = 0;
+		_previousRoc = 0m;
+		_hasPreviousRoc = false;
 
 		var roc = new RateOfChange { Length = Lookback };
 
@@ -91,15 +105,17 @@ public class TenPipsStrategy : Strategy
 			return;
 
 		var close = candle.ClosePrice;
+		var buySignal = _hasPreviousRoc && _previousRoc <= 4m && rocValue > 4m;
+		var sellSignal = _hasPreviousRoc && _previousRoc >= -4m && rocValue < -4m;
 
 		if (Position == 0)
 		{
-			if (rocValue > 0.5m)
+			if (buySignal)
 			{
 				BuyMarket();
 				_entryPrice = close;
 			}
-			else if (rocValue < -0.5m)
+			else if (sellSignal)
 			{
 				SellMarket();
 				_entryPrice = close;
@@ -119,5 +135,8 @@ public class TenPipsStrategy : Strategy
 				BuyMarket(Math.Abs(Position));
 			}
 		}
+
+		_previousRoc = rocValue;
+		_hasPreviousRoc = true;
 	}
 }

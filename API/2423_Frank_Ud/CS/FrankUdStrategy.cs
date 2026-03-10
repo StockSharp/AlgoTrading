@@ -44,7 +44,7 @@ public class FrankUdStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss", "Stop loss distance from avg price", "Risk");
 
-		_stepDistance = Param(nameof(StepDistance), 2000m)
+		_stepDistance = Param(nameof(StepDistance), 300m)
 			.SetGreaterThanZero()
 			.SetDisplay("Step Distance", "Price distance for adding martingale entries", "Grid");
 
@@ -52,7 +52,7 @@ public class FrankUdStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Max Entries", "Maximum martingale entries", "Grid");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type for calculations", "General");
 	}
 

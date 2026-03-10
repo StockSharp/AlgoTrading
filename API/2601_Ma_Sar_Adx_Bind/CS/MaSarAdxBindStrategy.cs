@@ -25,6 +25,14 @@ public class MaSarAdxBindStrategy : Strategy
 	private readonly StrategyParam<decimal> _sarMax;
 	private readonly StrategyParam<DataType> _candleType;
 
+	private decimal? _previousHigh;
+	private decimal? _previousLow;
+	private decimal? _previousClose;
+	private decimal _smoothedPlusDm;
+	private decimal _smoothedMinusDm;
+	private decimal _smoothedTrueRange;
+	private int _adxSamples;
+
 	/// <summary>
 	/// Moving average period used for the trend filter.
 	/// </summary>
@@ -76,13 +84,13 @@ public class MaSarAdxBindStrategy : Strategy
 	/// </summary>
 	public MaSarAdxBindStrategy()
 	{
-		_maPeriod = Param(nameof(MaPeriod), 100)
+		_maPeriod = Param(nameof(MaPeriod), 120)
 		.SetGreaterThanZero()
 		.SetDisplay("MA Period", "Length of the trend moving average", "Indicators")
 		
 		.SetOptimize(20, 200, 10);
 
-		_adxPeriod = Param(nameof(AdxPeriod), 14)
+		_adxPeriod = Param(nameof(AdxPeriod), 18)
 		.SetGreaterThanZero()
 		.SetDisplay("ADX Period", "Length of the Average Directional Index", "Indicators")
 		
@@ -99,7 +107,7 @@ public class MaSarAdxBindStrategy : Strategy
 		;
 
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(2).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles to request", "General");
 	}
 
@@ -107,6 +115,19 @@ public class MaSarAdxBindStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_previousHigh = null;
+		_previousLow = null;
+		_previousClose = null;
+		_smoothedPlusDm = 0m;
+		_smoothedMinusDm = 0m;
+		_smoothedTrueRange = 0m;
+		_adxSamples = 0;
 	}
 
 	/// <inheritdoc />
@@ -127,15 +148,10 @@ public class MaSarAdxBindStrategy : Strategy
 			AccelerationMax = SarMax
 		};
 
-		var adx = new AverageDirectionalIndex
-		{
-			Length = AdxPeriod
-		};
-
 		// Subscribe to candle data and bind indicator updates to a single handler.
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(adx, movingAverage, parabolicSar, ProcessCandle)
+			.Bind(movingAverage, parabolicSar, ProcessCandle)
 			.Start();
 
 		// Draw the trading context for visual debugging when charts are available.
@@ -147,31 +163,18 @@ public class MaSarAdxBindStrategy : Strategy
 			DrawIndicator(area, parabolicSar);
 			DrawOwnTrades(area);
 
-			var adxArea = CreateChartArea();
-			if (adxArea != null)
-			{
-				DrawIndicator(adxArea, adx);
-			}
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue adxValue, IIndicatorValue maValue, IIndicatorValue sarValue)
+	private void ProcessCandle(ICandleMessage candle, decimal movingAverage, decimal sar)
 	{
 		// Work only with completed candles to mirror the original first-tick logic.
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
-		if (!adxValue.IsFinal || !maValue.IsFinal || !sarValue.IsFinal)
-		return;
-
-		if (adxValue is not AverageDirectionalIndexValue adxData)
-		return;
-
-		// Convert indicator values to simple decimals for decision making.
-		var plusDi = adxData.Dx.Plus;
-		var minusDi = adxData.Dx.Minus;
-		var movingAverage = maValue.ToDecimal();
-		var sar = sarValue.ToDecimal();
+		var (plusDi, minusDi, isReady) = UpdateDirectionalMovement(candle);
+		if (!isReady)
+			return;
 
 		// Always allow risk exits even if trading is temporarily disabled.
 		if (Position > 0 && candle.ClosePrice < sar)
@@ -200,5 +203,54 @@ public class MaSarAdxBindStrategy : Strategy
 		{
 			SellMarket();
 		}
+	}
+
+	private (decimal plusDi, decimal minusDi, bool isReady) UpdateDirectionalMovement(ICandleMessage candle)
+	{
+		if (_previousHigh is not decimal previousHigh ||
+			_previousLow is not decimal previousLow ||
+			_previousClose is not decimal previousClose)
+		{
+			_previousHigh = candle.HighPrice;
+			_previousLow = candle.LowPrice;
+			_previousClose = candle.ClosePrice;
+			return (0m, 0m, false);
+		}
+
+		var upMove = candle.HighPrice - previousHigh;
+		var downMove = previousLow - candle.LowPrice;
+		var plusDm = upMove > downMove && upMove > 0m ? upMove : 0m;
+		var minusDm = downMove > upMove && downMove > 0m ? downMove : 0m;
+		var trueRange = Math.Max(
+			candle.HighPrice - candle.LowPrice,
+			Math.Max(
+				Math.Abs(candle.HighPrice - previousClose),
+				Math.Abs(candle.LowPrice - previousClose)));
+
+		if (_adxSamples < AdxPeriod)
+		{
+			_smoothedPlusDm += plusDm;
+			_smoothedMinusDm += minusDm;
+			_smoothedTrueRange += trueRange;
+			_adxSamples++;
+		}
+		else
+		{
+			_smoothedPlusDm = _smoothedPlusDm - (_smoothedPlusDm / AdxPeriod) + plusDm;
+			_smoothedMinusDm = _smoothedMinusDm - (_smoothedMinusDm / AdxPeriod) + minusDm;
+			_smoothedTrueRange = _smoothedTrueRange - (_smoothedTrueRange / AdxPeriod) + trueRange;
+		}
+
+		_previousHigh = candle.HighPrice;
+		_previousLow = candle.LowPrice;
+		_previousClose = candle.ClosePrice;
+
+		if (_adxSamples < AdxPeriod || _smoothedTrueRange <= 0m)
+			return (0m, 0m, false);
+
+		return (
+			100m * _smoothedPlusDm / _smoothedTrueRange,
+			100m * _smoothedMinusDm / _smoothedTrueRange,
+			true);
 	}
 }

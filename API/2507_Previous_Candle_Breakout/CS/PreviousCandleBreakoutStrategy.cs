@@ -33,16 +33,25 @@ public class PreviousCandleBreakoutStrategy : Strategy
 
 	public PreviousCandleBreakoutStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for candle subscription", "General");
 
-		_stopLossOffset = Param(nameof(StopLossOffset), 0m)
+		_stopLossOffset = Param(nameof(StopLossOffset), 1000m)
 			.SetDisplay("Stop Loss", "Price distance for the stop-loss. Set 0 to disable.", "Risk")
 			;
 
-		_takeProfitOffset = Param(nameof(TakeProfitOffset), 0m)
+		_takeProfitOffset = Param(nameof(TakeProfitOffset), 1500m)
 			.SetDisplay("Take Profit", "Price distance for the take-profit. Set 0 to disable.", "Risk")
 			;
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_previousHigh = null;
+		_previousLow = null;
+		_entryPrice = 0m;
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()

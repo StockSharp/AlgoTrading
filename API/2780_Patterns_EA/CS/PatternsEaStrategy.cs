@@ -25,8 +25,7 @@ public class PatternsEaStrategy : Strategy
 	private readonly StrategyParam<bool> _enableGroup2;
 	private readonly StrategyParam<bool> _enableGroup3;
 	private readonly PatternDefinition[] _patternDefinitions;
-	private readonly StrategyParam<bool>[] _patternEnabled;
-	private readonly StrategyParam<Sides>[] _patternSides;
+	private readonly PatternParameterSet _patternParams;
 
 	private CandleInfo? _current;
 	private CandleInfo? _previous;
@@ -89,8 +88,8 @@ public class PatternsEaStrategy : Strategy
 			new PatternDefinition(PatternTypes.TwoNeutralBars, "Two Neutral Bars", PatternGroups.TwoBars),
 		};
 
-		_patternEnabled = new StrategyParam<bool>[_patternDefinitions.Length];
-		_patternSides = new StrategyParam<Sides>[_patternDefinitions.Length];
+		var patternEnabled = new StrategyParam<bool>[_patternDefinitions.Length];
+		var patternSides = new StrategyParam<Sides>[_patternDefinitions.Length];
 
 		for (var i = 0; i < _patternDefinitions.Length; i++)
 		{
@@ -103,12 +102,14 @@ public class PatternsEaStrategy : Strategy
 				_ => "Patterns",
 			};
 
-			_patternEnabled[i] = Param($"Enable{definition.Type}", true)
+			patternEnabled[i] = Param($"Enable{definition.Type}", true)
 				.SetDisplay($"Enable {definition.DisplayName}", $"Use {definition.DisplayName} pattern", groupName);
 
-			_patternSides[i] = Param($"Order{definition.Type}", Sides.Buy)
+			patternSides[i] = Param($"Order{definition.Type}", Sides.Buy)
 				.SetDisplay($"{definition.DisplayName} Order", "Market order direction for the pattern", groupName);
 		}
+
+		_patternParams = new PatternParameterSet(patternEnabled, patternSides);
 	}
 
 	public DataType CandleType
@@ -335,10 +336,10 @@ public class PatternsEaStrategy : Strategy
 		if (!IsGroupEnabled(definition.Group))
 			return;
 
-		if (!_patternEnabled[index].Value)
+		if (!_patternParams.Enabled[index].Value)
 			return;
 
-		var side = _patternSides[index].Value;
+		var side = _patternParams.Sides[index].Value;
 
 		if (!CanExecute(side))
 			return;
@@ -470,5 +471,56 @@ public class PatternsEaStrategy : Strategy
 		public decimal UpperShadow { get; }
 
 		public decimal LowerShadow { get; }
+	}
+
+	private sealed class PatternParameterSet : IEquatable<PatternParameterSet>
+	{
+		public PatternParameterSet(StrategyParam<bool>[] enabled, StrategyParam<Sides>[] sides)
+		{
+			Enabled = enabled;
+			Sides = sides;
+		}
+
+		public StrategyParam<bool>[] Enabled { get; }
+
+		public StrategyParam<Sides>[] Sides { get; }
+
+		public bool Equals(PatternParameterSet other)
+		{
+			if (other is null || Enabled.Length != other.Enabled.Length || Sides.Length != other.Sides.Length)
+				return false;
+
+			for (var i = 0; i < Enabled.Length; i++)
+			{
+				if (Enabled[i].Value != other.Enabled[i].Value)
+					return false;
+			}
+
+			for (var i = 0; i < Sides.Length; i++)
+			{
+				if (Sides[i].Value != other.Sides[i].Value)
+					return false;
+			}
+
+			return true;
+		}
+
+		public override bool Equals(object obj)
+		{
+			return obj is PatternParameterSet other && Equals(other);
+		}
+
+		public override int GetHashCode()
+		{
+			var hash = new HashCode();
+
+			foreach (var enabled in Enabled)
+				hash.Add(enabled.Value);
+
+			foreach (var side in Sides)
+				hash.Add(side.Value);
+
+			return hash.ToHashCode();
+		}
 	}
 }

@@ -59,18 +59,27 @@ public class MaCrossStrategy : Strategy
 	/// </summary>
 	public MaCrossStrategy()
 	{
-		_fastPeriod = Param(nameof(FastPeriod), 3)
+		_fastPeriod = Param(nameof(FastPeriod), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast Period", "Period for the fast moving average", "Moving Averages")
 			.SetOptimize(2, 20, 1);
 
-		_slowPeriod = Param(nameof(SlowPeriod), 13)
+		_slowPeriod = Param(nameof(SlowPeriod), 21)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow Period", "Period for the slow moving average", "Moving Averages")
 			.SetOptimize(5, 60, 1);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for calculations", "Data");
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFast = 0m;
+		_prevSlow = 0m;
+		_hasPrevValues = false;
 	}
 
 	/// <inheritdoc />

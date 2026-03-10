@@ -43,12 +43,20 @@ public class WeightOscillatorStrategy : Strategy
 		_wprPeriod = Param(nameof(WprPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("WPR Period", "Williams %R length", "Indicators");
-		_highLevel = Param(nameof(HighLevel), 65m)
+		_highLevel = Param(nameof(HighLevel), 70m)
 			.SetDisplay("High Level", "Overbought level", "Signals");
-		_lowLevel = Param(nameof(LowLevel), 35m)
+		_lowLevel = Param(nameof(LowLevel), 30m)
 			.SetDisplay("Low Level", "Oversold level", "Signals");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Working candles", "General");
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevOsc = 0m;
+		_hasPrev = false;
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()

@@ -79,7 +79,7 @@ public class TwoMaFourLevelStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss (pips)", "Distance to stop loss", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for analysis", "General");
 	}
 
@@ -133,7 +133,7 @@ public class TwoMaFourLevelStrategy : Strategy
 			stopLoss: new Unit(StopLossPips * pip, UnitTypes.Absolute));
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
+		subscription.Bind(_fastMa, _slowMa, ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -145,21 +145,10 @@ public class TwoMaFourLevelStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
-
-		var median = (candle.HighPrice + candle.LowPrice) / 2m;
-
-		var fastValue = _fastMa.Process(new DecimalIndicatorValue(_fastMa, median, candle.OpenTime));
-		var slowValue = _slowMa.Process(new DecimalIndicatorValue(_slowMa, median, candle.OpenTime));
-
-		if (!fastValue.IsFormed || !slowValue.IsFormed)
-			return;
-
-		var fast = fastValue.ToDecimal();
-		var slow = slowValue.ToDecimal();
 
 		if (_prevFast is null || _prevSlow is null)
 		{

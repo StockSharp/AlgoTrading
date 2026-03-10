@@ -51,17 +51,17 @@ public class CoensioTrader1V06Strategy : Strategy
 	/// </summary>
 	public CoensioTrader1V06Strategy()
 	{
-		_bollingerPeriod = Param(nameof(BollingerPeriod), 10)
+		_bollingerPeriod = Param(nameof(BollingerPeriod), 30)
 			.SetGreaterThanZero()
 			.SetDisplay("Bollinger Period", "Length of Bollinger Bands", "Indicators")
 			;
 
-		_bollingerDeviation = Param(nameof(BollingerDeviation), 1.0m)
+		_bollingerDeviation = Param(nameof(BollingerDeviation), 1.5m)
 			.SetGreaterThanZero()
 			.SetDisplay("Bollinger Deviation", "Standard deviation multiplier", "Indicators")
 			;
 
-		_demaPeriod = Param(nameof(DemaPeriod), 5)
+		_demaPeriod = Param(nameof(DemaPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("DEMA Period", "Length of double exponential moving average", "Indicators")
 			;
@@ -75,7 +75,7 @@ public class CoensioTrader1V06Strategy : Strategy
 		_closeOnSignal = Param(nameof(CloseOnSignal), false)
 			.SetDisplay("Close On Opposite Signal", "Close current trades when opposite setup appears", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(10).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for signal calculations", "General");
 
 		Volume = 0.01m;

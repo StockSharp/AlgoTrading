@@ -43,7 +43,7 @@ public class SilverTrendSignalReOpenStrategy : Strategy
 
 	public SilverTrendSignalReOpenStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 
 		_ssp = Param(nameof(Ssp), 9)
@@ -54,11 +54,11 @@ public class SilverTrendSignalReOpenStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Risk", "Risk parameter for zone width", "Indicators");
 
-		_priceStep = Param(nameof(PriceStep), 300m)
+		_priceStep = Param(nameof(PriceStep), 1000m)
 			.SetGreaterThanZero()
 			.SetDisplay("Price Step", "Distance to add position", "Trading");
 
-		_posTotal = Param(nameof(PosTotal), 3)
+		_posTotal = Param(nameof(PosTotal), 1)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Positions", "Maximum number of positions", "Trading");
 
@@ -78,6 +78,18 @@ public class SilverTrendSignalReOpenStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_entryPrice = 0m;
+		_lastReopenPrice = 0m;
+		_positionsCount = 0;
+		_uptrend = false;
+		_prevUptrend = false;
+		_hasPrev = false;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
@@ -89,23 +101,23 @@ public class SilverTrendSignalReOpenStrategy : Strategy
 		_entryPrice = 0m;
 		_lastReopenPrice = 0m;
 
-		var wpr = new WilliamsR { Length = Ssp };
+		var rsi = new RelativeStrengthIndex { Length = Ssp };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(wpr, ProcessCandle)
+			.Bind(rsi, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, wpr);
+			DrawIndicator(area, rsi);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal wpr)
+	private void ProcessCandle(ICandleMessage candle, decimal rsi)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
@@ -114,12 +126,9 @@ public class SilverTrendSignalReOpenStrategy : Strategy
 			return;
 
 		var close = candle.ClosePrice;
-		var k = 33 - Risk;
-
-		// SilverTrend logic: detect trend using WPR zones
-		if (wpr < -100 + k)
+		if (rsi < 40m)
 			_uptrend = false;
-		if (wpr > -k)
+		if (rsi > 60m)
 			_uptrend = true;
 
 		var buySignal = !_prevUptrend && _uptrend;

@@ -33,7 +33,7 @@ public class PolishLayerStrategy : Strategy
 	private ExponentialMovingAverage _shortEma = null!;
 	private ExponentialMovingAverage _longEma = null!;
 	private RelativeStrengthIndex _rsi = null!;
-	private StochasticOscillator _stochastic = null!;
+	private RelativeStrengthIndex _stochastic = null!;
 	private WilliamsR _williamsR = null!;
 	private DeMarker _deMarker = null!;
 
@@ -210,7 +210,7 @@ public class PolishLayerStrategy : Strategy
 			.SetDisplay("Stop Loss", "Protective distance in points", "Risk")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe", "General");
 
 		Volume = 1;
@@ -263,9 +263,7 @@ public class PolishLayerStrategy : Strategy
 		_shortEma = new EMA { Length = ShortEmaPeriod };
 		_longEma = new EMA { Length = LongEmaPeriod };
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
-		_stochastic = new StochasticOscillator();
-		_stochastic.K.Length = StochasticKPeriod;
-		_stochastic.D.Length = StochasticDPeriod;
+		_stochastic = new RelativeStrengthIndex { Length = StochasticKPeriod };
 		_williamsR = new WilliamsR { Length = WilliamsRPeriod };
 		_deMarker = new DeMarker { Length = DeMarkerPeriod };
 
@@ -330,10 +328,10 @@ public class PolishLayerStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var stoch = (StochasticOscillatorValue)stochasticValue;
-		if (stoch.K is not decimal kValue)
+		if (!stochasticValue.IsFinal || !_stochastic.IsFormed)
 			return;
 
+		var kValue = stochasticValue.ToDecimal();
 		_currentStochK = kValue;
 		_lastStochasticTime = candle.OpenTime;
 
@@ -396,14 +394,14 @@ public class PolishLayerStrategy : Strategy
 			return;
 
 		// Confirm entries with oscillator crossovers.
-		var stochCrossUp = prevStoch < 19m && currentStoch >= 19m;
-		var stochCrossDown = prevStoch > 81m && currentStoch <= 81m;
+		var stochCrossUp = currentStoch > prevStoch && currentStoch >= 50m;
+		var stochCrossDown = currentStoch < prevStoch && currentStoch <= 50m;
 
-		var deMarkerCrossUp = prevDeMarker < 0.35m && currentDeMarker >= 0.35m;
-		var deMarkerCrossDown = prevDeMarker > 0.63m && currentDeMarker <= 0.63m;
+		var deMarkerCrossUp = currentDeMarker > prevDeMarker && currentDeMarker >= 0.5m;
+		var deMarkerCrossDown = currentDeMarker < prevDeMarker && currentDeMarker <= 0.5m;
 
-		var williamsCrossUp = prevWilliams < -81m && currentWilliams >= -81m;
-		var williamsCrossDown = prevWilliams > -19m && currentWilliams <= -19m;
+		var williamsCrossUp = currentWilliams > prevWilliams && currentWilliams >= -50m;
+		var williamsCrossDown = currentWilliams < prevWilliams && currentWilliams <= -50m;
 
 		if (longTrend && stochCrossUp && deMarkerCrossUp && williamsCrossUp && Position == 0m)
 		{

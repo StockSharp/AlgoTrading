@@ -9,7 +9,7 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Triple MA cross strategy. Trades when fast crosses mid, confirmed by slow trend.
+/// Triple MA alignment strategy.
 /// </summary>
 public class XitThreeMaCrossStrategy : Strategy
 {
@@ -47,7 +47,7 @@ public class XitThreeMaCrossStrategy : Strategy
 
 	public XitThreeMaCrossStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe", "General");
 
 		_fastPeriod = Param(nameof(FastPeriod), 5)
@@ -61,6 +61,8 @@ public class XitThreeMaCrossStrategy : Strategy
 		_slowPeriod = Param(nameof(SlowPeriod), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow Period", "Slow MA (trend filter)", "Indicators");
+
+		Volume = 0.1m;
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
@@ -76,6 +78,7 @@ public class XitThreeMaCrossStrategy : Strategy
 		_prevMid = null;
 	}
 
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
@@ -115,21 +118,22 @@ public class XitThreeMaCrossStrategy : Strategy
 			return;
 		}
 
-		// Fast crosses above mid → buy
-		if (_prevFast.Value <= _prevMid.Value && fastVal > midVal)
+		var buySignal = fastVal > midVal && midVal > slowVal;
+		var sellSignal = fastVal < midVal && midVal < slowVal;
+
+		if (buySignal && Position <= 0)
 		{
 			if (Position < 0)
-				BuyMarket();
-			if (Position <= 0)
-				BuyMarket();
+				BuyMarket(Math.Abs(Position));
+
+			BuyMarket(Volume);
 		}
-		// Fast crosses below mid → sell
-		else if (_prevFast.Value >= _prevMid.Value && fastVal < midVal)
+		else if (sellSignal && Position >= 0)
 		{
 			if (Position > 0)
-				SellMarket();
-			if (Position >= 0)
-				SellMarket();
+				SellMarket(Position);
+
+			SellMarket(Volume);
 		}
 
 		_prevFast = fastVal;

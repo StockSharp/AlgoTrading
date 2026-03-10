@@ -116,13 +116,13 @@ public class TradeOnQualifiedRSIStrategy : Strategy
 
 			.SetOptimize(30m, 50m, 1m);
 
-		_countBars = Param(nameof(CountBars), 3)
+		_countBars = Param(nameof(CountBars), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("Qualification Bars", "How many previous RSI bars must stay beyond the threshold.", "Signals")
 
 			.SetOptimize(1, 10, 1);
 
-		_stopLossPoints = Param(nameof(StopLossPoints), 200)
+		_stopLossPoints = Param(nameof(StopLossPoints), 1000)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss Points", "Stop loss distance expressed in price steps.", "Risk")
 
@@ -132,7 +132,7 @@ public class TradeOnQualifiedRSIStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Trade Volume", "Order volume used for entries.", "Trading");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Source timeframe for RSI calculation.", "General");
 	}
 

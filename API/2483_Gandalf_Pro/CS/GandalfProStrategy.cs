@@ -193,7 +193,7 @@ public class GandalfProStrategy : Strategy
 	/// </summary>
 	public GandalfProStrategy()
 	{
-		_entryBufferSteps = Param(nameof(EntryBufferSteps), 15m)
+		_entryBufferSteps = Param(nameof(EntryBufferSteps), 150m)
 			.SetNotNegative()
 			.SetDisplay("Entry Buffer", "Buffer distance in price steps", "General");
 
@@ -255,7 +255,7 @@ public class GandalfProStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Sell Risk Multiplier", "Volume multiplier for shorts (0 = use base volume)", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Data type used for calculations", "General");
 	}
 

@@ -123,11 +123,11 @@ public class GazonkosStrategy : Strategy
 
 	public GazonkosStrategy()
 	{
-		_takeProfit = Param(nameof(TakeProfit), 500m)
+		_takeProfit = Param(nameof(TakeProfit), 700m)
 			.SetDisplay("Take Profit", "Take profit distance in price units", "Risk Management")
 			;
 
-		_rollback = Param(nameof(Rollback), 200m)
+		_rollback = Param(nameof(Rollback), 300m)
 			.SetDisplay("Rollback", "Required pullback before entering", "Signals")
 			;
 
@@ -135,7 +135,7 @@ public class GazonkosStrategy : Strategy
 			.SetDisplay("Stop Loss", "Stop loss distance in price units", "Risk Management")
 			;
 
-		_delta = Param(nameof(Delta), 100m)
+		_delta = Param(nameof(Delta), 200m)
 			.SetDisplay("Delta", "Minimum difference between closes", "Signals")
 			;
 
@@ -155,7 +155,7 @@ public class GazonkosStrategy : Strategy
 			.SetDisplay("Active Trades", "Maximum simultaneous trades", "Risk Management")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Candle series used for signals", "General");
 	}
 

@@ -23,7 +23,9 @@ public class CurrencyStrengthV11Strategy : Strategy
 	private readonly StrategyParam<decimal> _differenceThreshold;
 
 	private decimal? _prevChange;
+	private decimal? _prevMomentum;
 	private decimal _entryPrice;
+	private DateTimeOffset? _lastTradeTime;
 
 	/// <summary>
 	/// Candle type for analysis.
@@ -48,10 +50,10 @@ public class CurrencyStrengthV11Strategy : Strategy
 	/// </summary>
 	public CurrencyStrengthV11Strategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for strength calculation", "General");
 
-		_differenceThreshold = Param(nameof(DifferenceThreshold), 0.1m)
+		_differenceThreshold = Param(nameof(DifferenceThreshold), 0.2m)
 			.SetDisplay("Threshold", "Minimum percentage change to trigger trade", "Parameters")
 			.SetOptimize(0.05m, 1m, 0.05m);
 	}
@@ -67,7 +69,9 @@ public class CurrencyStrengthV11Strategy : Strategy
 	{
 		base.OnReseted();
 		_prevChange = null;
+		_prevMomentum = null;
 		_entryPrice = 0m;
+		_lastTradeTime = null;
 	}
 
 	/// <inheritdoc />
@@ -99,22 +103,28 @@ public class CurrencyStrengthV11Strategy : Strategy
 		}
 
 		var momentum = change - _prevChange.Value;
+		var cooldownPassed = _lastTradeTime is null || candle.CloseTime - _lastTradeTime >= TimeSpan.FromHours(24);
+		var longSignal = _prevMomentum is decimal prevMomentum && prevMomentum <= DifferenceThreshold && momentum > DifferenceThreshold;
+		var shortSignal = _prevMomentum is decimal prevMomentum2 && prevMomentum2 >= -DifferenceThreshold && momentum < -DifferenceThreshold;
 
-		if (momentum > DifferenceThreshold && Position <= 0)
+		if (cooldownPassed && longSignal && Position <= 0)
 		{
 			if (Position < 0)
 				BuyMarket(Math.Abs(Position));
-			BuyMarket();
+			BuyMarket(Volume > 0m ? Volume : 1m);
 			_entryPrice = candle.ClosePrice;
+			_lastTradeTime = candle.CloseTime;
 		}
-		else if (momentum < -DifferenceThreshold && Position >= 0)
+		else if (cooldownPassed && shortSignal && Position >= 0)
 		{
 			if (Position > 0)
 				SellMarket(Position);
-			SellMarket();
+			SellMarket(Volume > 0m ? Volume : 1m);
 			_entryPrice = candle.ClosePrice;
+			_lastTradeTime = candle.CloseTime;
 		}
 
 		_prevChange = change;
+		_prevMomentum = momentum;
 	}
 }

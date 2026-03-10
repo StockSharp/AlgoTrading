@@ -1,20 +1,15 @@
+namespace StockSharp.Samples.Strategies;
+
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
-
-using StockSharp.Algo.Indicators;
+using StockSharp.Algo.Candles;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-namespace StockSharp.Samples.Strategies;
-
 /// <summary>
-/// RSI trader strategy aligning price and RSI moving average trends.
+/// RSI trader strategy aligning price and RSI moving-average trends.
 /// </summary>
 public class RsiTraderStrategy : Strategy
 {
@@ -26,111 +21,28 @@ public class RsiTraderStrategy : Strategy
 	private readonly StrategyParam<bool> _reverse;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevRsiShort;
-	private decimal _prevRsiLong;
-	private bool _hasRsiValues;
+	private readonly List<decimal> _closes = new();
+	private readonly List<decimal> _rsiValues = new();
 
-	/// <summary>
-	/// RSI calculation period.
-	/// </summary>
-	public int RsiPeriod
-	{
-		get => _rsiPeriod.Value;
-		set => _rsiPeriod.Value = value;
-	}
+	public int RsiPeriod { get => _rsiPeriod.Value; set => _rsiPeriod.Value = value; }
+	public int ShortRsiMaPeriod { get => _shortRsiMaPeriod.Value; set => _shortRsiMaPeriod.Value = value; }
+	public int LongRsiMaPeriod { get => _longRsiMaPeriod.Value; set => _longRsiMaPeriod.Value = value; }
+	public int ShortPriceMaPeriod { get => _shortPriceMaPeriod.Value; set => _shortPriceMaPeriod.Value = value; }
+	public int LongPriceMaPeriod { get => _longPriceMaPeriod.Value; set => _longPriceMaPeriod.Value = value; }
+	public bool Reverse { get => _reverse.Value; set => _reverse.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Short moving average period applied to RSI.
-	/// </summary>
-	public int ShortRsiMaPeriod
-	{
-		get => _shortRsiMaPeriod.Value;
-		set => _shortRsiMaPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Long moving average period applied to RSI.
-	/// </summary>
-	public int LongRsiMaPeriod
-	{
-		get => _longRsiMaPeriod.Value;
-		set => _longRsiMaPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Short moving average period for price trend detection.
-	/// </summary>
-	public int ShortPriceMaPeriod
-	{
-		get => _shortPriceMaPeriod.Value;
-		set => _shortPriceMaPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Long moving average period for price trend detection.
-	/// </summary>
-	public int LongPriceMaPeriod
-	{
-		get => _longPriceMaPeriod.Value;
-		set => _longPriceMaPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Executes opposite orders when enabled.
-	/// </summary>
-	public bool Reverse
-	{
-		get => _reverse.Value;
-		set => _reverse.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used for calculations.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes default parameters.
-	/// </summary>
 	public RsiTraderStrategy()
 	{
-		_rsiPeriod = Param(nameof(RsiPeriod), 14)
-			.SetDisplay("RSI Period", "RSI calculation length", "RSI")
-			
-			.SetOptimize(5, 40, 1);
-
-		_shortRsiMaPeriod = Param(nameof(ShortRsiMaPeriod), 9)
-			.SetDisplay("Short RSI MA", "Short moving average on RSI", "RSI")
-			
-			.SetOptimize(3, 20, 1);
-
-		_longRsiMaPeriod = Param(nameof(LongRsiMaPeriod), 45)
-			.SetDisplay("Long RSI MA", "Long moving average on RSI", "RSI")
-			
-			.SetOptimize(20, 100, 5);
-
-		_shortPriceMaPeriod = Param(nameof(ShortPriceMaPeriod), 9)
-			.SetDisplay("Short Price MA", "Short simple moving average", "Price")
-			
-			.SetOptimize(5, 30, 1);
-
-		_longPriceMaPeriod = Param(nameof(LongPriceMaPeriod), 45)
-			.SetDisplay("Long Price MA", "Long weighted moving average", "Price")
-			
-			.SetOptimize(20, 100, 5);
-
-		_reverse = Param(nameof(Reverse), false)
-			.SetDisplay("Reverse", "Flip buy/sell signals", "Trading");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Primary candle type", "Data");
+		_rsiPeriod = Param(nameof(RsiPeriod), 14).SetDisplay("RSI Period", "RSI calculation length", "RSI").SetGreaterThanZero();
+		_shortRsiMaPeriod = Param(nameof(ShortRsiMaPeriod), 12).SetDisplay("Short RSI MA", "Short moving average on RSI", "RSI").SetGreaterThanZero();
+		_longRsiMaPeriod = Param(nameof(LongRsiMaPeriod), 60).SetDisplay("Long RSI MA", "Long moving average on RSI", "RSI").SetGreaterThanZero();
+		_shortPriceMaPeriod = Param(nameof(ShortPriceMaPeriod), 12).SetDisplay("Short Price MA", "Short simple moving average", "Price").SetGreaterThanZero();
+		_longPriceMaPeriod = Param(nameof(LongPriceMaPeriod), 60).SetDisplay("Long Price MA", "Long weighted moving average", "Price").SetGreaterThanZero();
+		_reverse = Param(nameof(Reverse), false).SetDisplay("Reverse", "Flip buy/sell signals", "Trading");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame()).SetDisplay("Candle Type", "Primary candle type", "Data");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		yield return (Security, CandleType);
@@ -140,10 +52,8 @@ public class RsiTraderStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_prevRsiShort = 0m;
-		_prevRsiLong = 0m;
-		_hasRsiValues = false;
+		_closes.Clear();
+		_rsiValues.Clear();
 	}
 
 	/// <inheritdoc />
@@ -151,60 +61,50 @@ public class RsiTraderStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var rsi = new RSI { Length = RsiPeriod };
-		var rsiShortSma = new SMA { Length = ShortRsiMaPeriod };
-		var rsiLongSma = new SMA { Length = LongRsiMaPeriod };
-		var priceShortSma = new SMA { Length = ShortPriceMaPeriod };
-		var priceLongWma = new ExponentialMovingAverage { Length = LongPriceMaPeriod };
-
 		var subscription = SubscribeCandles(CandleType);
-
-		// Bind RSI chain: RSI -> short/long SMA on RSI
-		subscription.Bind(rsi, (candle, rsiValue) =>
-		{
-			if (candle.State != CandleStates.Finished)
-				return;
-
-			var rsiInput = new DecimalIndicatorValue(rsiShortSma, rsiValue, candle.OpenTime) { IsFinal = true };
-			var shortResult = rsiShortSma.Process(rsiInput);
-			var longResult = rsiLongSma.Process(new DecimalIndicatorValue(rsiLongSma, rsiValue, candle.OpenTime) { IsFinal = true });
-
-			if (!rsiShortSma.IsFormed || !rsiLongSma.IsFormed)
-				return;
-
-			if (shortResult is not DecimalIndicatorValue shortDec || longResult is not DecimalIndicatorValue longDec)
-				return;
-
-			_prevRsiShort = shortDec.Value;
-			_prevRsiLong = longDec.Value;
-			_hasRsiValues = true;
-		});
-
-		subscription.Bind(priceShortSma, priceLongWma, ProcessCandle);
-		subscription.Start();
+		subscription.Bind(ProcessCandle).Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal priceShort, decimal priceLong)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_hasRsiValues)
+		_closes.Add(candle.ClosePrice);
+
+		var maxCache = Math.Max(LongPriceMaPeriod, Math.Max(LongRsiMaPeriod + RsiPeriod, 300));
+		if (_closes.Count > maxCache)
+			_closes.RemoveAt(0);
+
+		var rsi = CalculateRsi();
+		if (rsi is null)
 			return;
 
-		var rsiShort = _prevRsiShort;
-		var rsiLong = _prevRsiLong;
+		_rsiValues.Add(rsi.Value);
+		if (_rsiValues.Count > maxCache)
+			_rsiValues.RemoveAt(0);
 
-		var goLong = priceShort > priceLong && rsiShort > rsiLong;
-		var goShort = priceShort < priceLong && rsiShort < rsiLong;
-		var sideways = (priceShort > priceLong && rsiShort < rsiLong) || (priceShort < priceLong && rsiShort > rsiLong);
+		if (_rsiValues.Count < LongRsiMaPeriod || _closes.Count < LongPriceMaPeriod)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		var shortRsi = AverageLast(_rsiValues, ShortRsiMaPeriod);
+		var longRsi = AverageLast(_rsiValues, LongRsiMaPeriod);
+		var shortPrice = AverageLast(_closes, ShortPriceMaPeriod);
+		var longPrice = WeightedAverageLast(_closes, LongPriceMaPeriod);
+
+		var goLong = shortPrice > longPrice && shortRsi > longRsi;
+		var goShort = shortPrice < longPrice && shortRsi < longRsi;
+		var sideways = !goLong && !goShort;
 
 		if (sideways && Position != 0)
 		{
 			if (Position > 0)
-				SellMarket();
+				SellMarket(Position);
 			else
-				BuyMarket();
+				BuyMarket(Math.Abs(Position));
 
 			return;
 		}
@@ -226,5 +126,61 @@ public class RsiTraderStrategy : Strategy
 			else
 				SellMarket();
 		}
+	}
+
+	private decimal? CalculateRsi()
+	{
+		if (_closes.Count <= RsiPeriod)
+			return null;
+
+		decimal gainSum = 0m;
+		decimal lossSum = 0m;
+		var start = _closes.Count - RsiPeriod;
+
+		for (var i = start; i < _closes.Count; i++)
+		{
+			var change = _closes[i] - _closes[i - 1];
+			if (change > 0m)
+				gainSum += change;
+			else
+				lossSum -= change;
+		}
+
+		var averageGain = gainSum / RsiPeriod;
+		var averageLoss = lossSum / RsiPeriod;
+
+		if (averageLoss == 0m)
+			return 100m;
+
+		var rs = averageGain / averageLoss;
+		return 100m - 100m / (1m + rs);
+	}
+
+	private static decimal AverageLast(IReadOnlyList<decimal> values, int length)
+	{
+		decimal sum = 0m;
+		var start = values.Count - length;
+
+		for (var i = start; i < values.Count; i++)
+			sum += values[i];
+
+		return sum / length;
+	}
+
+	private static decimal WeightedAverageLast(IReadOnlyList<decimal> values, int length)
+	{
+		decimal weightedSum = 0m;
+		decimal weightSum = 0m;
+		var start = values.Count - length;
+		var weight = 1m;
+
+		for (var i = start; i < values.Count; i++)
+		{
+			weightedSum += values[i] * weight;
+			weightSum += weight;
+			weight += 1m;
+		}
+
+		return weightSum > 0m ? weightedSum / weightSum : values[^1];
 	}
 }

@@ -109,13 +109,13 @@ public class WeightOscillatorDirectStrategy : Strategy
 	/// </summary>
 	public WeightOscillatorDirectStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe used for indicator calculations", "General");
 
 		_trendMode = Param(nameof(TrendMode), WeightOscillatorTrendModes.Direct)
 		.SetDisplay("Trend Mode", "Trade with the oscillator slope or against it", "Trading");
 
-		_signalBar = Param(nameof(SignalBar), 1)
+		_signalBar = Param(nameof(SignalBar), 2)
 		.SetDisplay("Signal Bar", "Number of closed bars to skip before evaluating signals", "Trading")
 		.SetRange(1, 5)
 		;
@@ -163,7 +163,7 @@ public class WeightOscillatorDirectStrategy : Strategy
 		_smoothingMethod = Param(nameof(SmoothingMethod), WeightOscillatorSmoothingMethods.Jurik)
 		.SetDisplay("Smoothing Method", "Moving average applied to the blended oscillator", "Oscillator");
 
-		_smoothingLength = Param(nameof(SmoothingLength), 5)
+		_smoothingLength = Param(nameof(SmoothingLength), 10)
 		.SetDisplay("Smoothing Length", "Length of the smoothing moving average", "Oscillator")
 		.SetRange(1, 200)
 		;
@@ -465,12 +465,12 @@ public class WeightOscillatorDirectStrategy : Strategy
 		{
 		if (BuyCloseEnabled && Position < 0)
 		{
-		BuyMarket();
+		BuyMarket(Math.Abs(Position));
 		}
 
 		if (BuyOpenEnabled && Position <= 0)
 		{
-		BuyMarket();
+		BuyMarket(Volume > 0m ? Volume : 1m);
 		}
 		}
 
@@ -478,12 +478,12 @@ public class WeightOscillatorDirectStrategy : Strategy
 		{
 		if (SellCloseEnabled && Position > 0)
 		{
-		SellMarket();
+		SellMarket(Math.Abs(Position));
 		}
 
 		if (SellOpenEnabled && Position >= 0)
 		{
-		SellMarket();
+		SellMarket(Volume > 0m ? Volume : 1m);
 		}
 		}
 	}

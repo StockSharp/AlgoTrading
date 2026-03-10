@@ -73,7 +73,7 @@ public class SimpleTradeStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Volume", "Order volume in lots", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Primary candle source for decisions", "General");
 	}
 

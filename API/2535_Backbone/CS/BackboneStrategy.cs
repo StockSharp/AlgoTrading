@@ -105,7 +105,7 @@ public class BackboneStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Max Risk", "Maximum risk fraction shared across trades", "Risk");
 
-		_maxTrades = Param(nameof(MaxTrades), 10)
+		_maxTrades = Param(nameof(MaxTrades), 1)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Trades", "Maximum number of layered entries", "Risk");
 
@@ -121,7 +121,7 @@ public class BackboneStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Trailing Stop", "Distance for the trailing stop activation (pips)", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles used for analysis", "General");
 	}
 
@@ -201,15 +201,15 @@ public class BackboneStrategy : Strategy
 		if (_currentDirection == -1)
 		{
 			// Close the short series before switching sides.
-			if (Position > 0) SellMarket(); else if (Position < 0) BuyMarket();
+			if (Position > 0) SellMarket(Math.Abs(Position)); else if (Position < 0) BuyMarket(Math.Abs(Position));
 			ResetShortState();
 			_currentDirection = 0;
 			openPositions = 0;
 		}
 
-		BuyMarket();
+		BuyMarket(qty);
 
-		openPositions++;
+		openPositions = Math.Max(0, openPositions) + 1;
 		_longCount = openPositions;
 		_currentDirection = 1;
 
@@ -241,15 +241,15 @@ public class BackboneStrategy : Strategy
 		if (_currentDirection == 1)
 		{
 			// Close the long series before switching sides.
-			if (Position > 0) SellMarket(); else if (Position < 0) BuyMarket();
+			if (Position > 0) SellMarket(Math.Abs(Position)); else if (Position < 0) BuyMarket(Math.Abs(Position));
 			ResetLongState();
 			_currentDirection = 0;
 			openPositions = 0;
 		}
 
-		SellMarket();
+		SellMarket(qty);
 
-		openPositions++;
+		openPositions = Math.Max(0, openPositions) + 1;
 		_shortCount = openPositions;
 		_currentDirection = -1;
 
@@ -278,13 +278,13 @@ public class BackboneStrategy : Strategy
 		if (_longTake.HasValue && candle.HighPrice >= _longTake.Value)
 		{
 			// Take-profit reached for the long series.
-			SellMarket();
+			SellMarket(Math.Abs(Position));
 			exitTriggered = true;
 		}
 		else if (_longStop.HasValue && candle.LowPrice <= _longStop.Value)
 		{
 			// Stop-loss touched for the long series.
-			SellMarket();
+			SellMarket(Math.Abs(Position));
 			exitTriggered = true;
 		}
 		else if (TrailingStopPips > 0m && StopLossPips > 0m && _longCount > 0 && _adjustedPoint > 0m)
@@ -316,13 +316,13 @@ public class BackboneStrategy : Strategy
 		if (_shortTake.HasValue && candle.LowPrice <= _shortTake.Value)
 		{
 			// Take-profit reached for the short series.
-			BuyMarket();
+			BuyMarket(Math.Abs(Position));
 			exitTriggered = true;
 		}
 		else if (_shortStop.HasValue && candle.HighPrice >= _shortStop.Value)
 		{
 			// Stop-loss touched for the short series.
-			BuyMarket();
+			BuyMarket(Math.Abs(Position));
 			exitTriggered = true;
 		}
 		else if (TrailingStopPips > 0m && StopLossPips > 0m && _shortCount > 0 && _adjustedPoint > 0m)

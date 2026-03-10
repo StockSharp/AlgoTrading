@@ -49,6 +49,7 @@ public class TdsGlobalStrategy : Strategy
 	private decimal? _entryPrice;
 	private decimal? _stopPrice;
 	private decimal? _takePrice;
+	private DateTimeOffset? _lastEntryTime;
 
 	/// <summary>
 	/// Fast EMA period used by MACD.
@@ -170,10 +171,10 @@ public class TdsGlobalStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Williams Length", "%R lookback", "Filters");
 
-		_williamsBuyLevel = Param(nameof(WilliamsBuyLevel), -75m)
+		_williamsBuyLevel = Param(nameof(WilliamsBuyLevel), 30m)
 			.SetDisplay("Williams Buy", "Oversold threshold", "Filters");
 
-		_williamsSellLevel = Param(nameof(WilliamsSellLevel), -25m)
+		_williamsSellLevel = Param(nameof(WilliamsSellLevel), 70m)
 			.SetDisplay("Williams Sell", "Overbought threshold", "Filters");
 
 		_entryBufferSteps = Param(nameof(EntryBufferSteps), 16)
@@ -189,7 +190,7 @@ public class TdsGlobalStrategy : Strategy
 		_useSymbolStagger = Param(nameof(UseSymbolStagger), false)
 			.SetDisplay("Use Time Windows", "Apply symbol specific minute windows", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 	}
 
@@ -215,6 +216,7 @@ public class TdsGlobalStrategy : Strategy
 
 		ResetPendingOrder();
 		ResetPositionState();
+		_lastEntryTime = null;
 	}
 
 	/// <inheritdoc />
@@ -232,7 +234,7 @@ public class TdsGlobalStrategy : Strategy
 			LongMa = { Length = MacdSlowLength },
 		};
 
-		var williams = new WilliamsR { Length = WilliamsLength };
+		var williams = new RelativeStrengthIndex { Length = WilliamsLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -280,13 +282,15 @@ public class TdsGlobalStrategy : Strategy
 		if (volume <= 0)
 			volume = 1m;
 
-		if (direction > 0 && oversold)
+		var cooldownPassed = _lastEntryTime is null || candle.CloseTime - _lastEntryTime >= TimeSpan.FromHours(24);
+
+		if (direction > 0 && oversold && cooldownPassed)
 		{
-			PlaceBuyStop(volume);
+			PlaceBuyStop(volume, candle.CloseTime);
 		}
-		else if (direction < 0 && overbought)
+		else if (direction < 0 && overbought && cooldownPassed)
 		{
-			PlaceSellStop(volume);
+			PlaceSellStop(volume, candle.CloseTime);
 		}
 		else if (_hasPendingOrder)
 		{
@@ -374,7 +378,7 @@ public class TdsGlobalStrategy : Strategy
 		}
 	}
 
-	private void PlaceBuyStop(decimal volume)
+	private void PlaceBuyStop(decimal volume, DateTimeOffset time)
 	{
 		if (_prevHigh is null || _prevLow is null || _prevClose is null)
 			return;
@@ -392,6 +396,7 @@ public class TdsGlobalStrategy : Strategy
 		}
 
 		BuyMarket(volume);
+		_lastEntryTime = time;
 
 		_pendingSide = Sides.Buy;
 		_pendingEntryPrice = entryPrice;
@@ -400,7 +405,7 @@ public class TdsGlobalStrategy : Strategy
 		_hasPendingOrder = true;
 	}
 
-	private void PlaceSellStop(decimal volume)
+	private void PlaceSellStop(decimal volume, DateTimeOffset time)
 	{
 		if (_prevHigh is null || _prevLow is null || _prevClose is null)
 			return;
@@ -418,6 +423,7 @@ public class TdsGlobalStrategy : Strategy
 		}
 
 		SellMarket(volume);
+		_lastEntryTime = time;
 
 		_pendingSide = Sides.Sell;
 		_pendingEntryPrice = entryPrice;

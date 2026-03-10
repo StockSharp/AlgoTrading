@@ -23,13 +23,12 @@ public class CashMachine5minStrategy : Strategy
 	private readonly StrategyParam<decimal> _slAtrMult;
 	private readonly StrategyParam<decimal> _trailAtrMult;
 	private readonly StrategyParam<int> _deMarkerLength;
-	private readonly StrategyParam<int> _stochasticLength;
-	private readonly StrategyParam<int> _stochasticD;
+	private readonly StrategyParam<int> _rsiLength;
 	private readonly StrategyParam<int> _atrLength;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal? _prevDeMarker;
-	private decimal? _prevStochK;
+	private decimal? _prevRsi;
 	private decimal _entryPrice;
 	private decimal? _stopPrice;
 
@@ -37,8 +36,7 @@ public class CashMachine5minStrategy : Strategy
 	public decimal SlAtrMult { get => _slAtrMult.Value; set => _slAtrMult.Value = value; }
 	public decimal TrailAtrMult { get => _trailAtrMult.Value; set => _trailAtrMult.Value = value; }
 	public int DeMarkerLength { get => _deMarkerLength.Value; set => _deMarkerLength.Value = value; }
-	public int StochasticLength { get => _stochasticLength.Value; set => _stochasticLength.Value = value; }
-	public int StochasticD { get => _stochasticD.Value; set => _stochasticD.Value = value; }
+	public int RsiLength { get => _rsiLength.Value; set => _rsiLength.Value = value; }
 	public int AtrLength { get => _atrLength.Value; set => _atrLength.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
@@ -60,19 +58,15 @@ public class CashMachine5minStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("DeMarker Length", "DeMarker period", "Indicators");
 
-		_stochasticLength = Param(nameof(StochasticLength), 14)
+		_rsiLength = Param(nameof(RsiLength), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("Stochastic Length", "Stochastic %K period", "Indicators");
-
-		_stochasticD = Param(nameof(StochasticD), 3)
-			.SetGreaterThanZero()
-			.SetDisplay("Stochastic %D", "%D smoothing", "Indicators");
+			.SetDisplay("RSI Length", "RSI period", "Indicators");
 
 		_atrLength = Param(nameof(AtrLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Length", "ATR calculation period", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 	}
 
@@ -85,7 +79,7 @@ public class CashMachine5minStrategy : Strategy
 	{
 		base.OnReseted();
 		_prevDeMarker = null;
-		_prevStochK = null;
+		_prevRsi = null;
 		_entryPrice = 0;
 		_stopPrice = null;
 	}
@@ -95,16 +89,12 @@ public class CashMachine5minStrategy : Strategy
 		base.OnStarted2(time);
 
 		var deMarker = new DeMarker { Length = DeMarkerLength };
-		var stochastic = new StochasticOscillator
-		{
-			K = { Length = StochasticLength },
-			D = { Length = StochasticD },
-		};
+		var rsi = new RelativeStrengthIndex { Length = RsiLength };
 		var atr = new AverageTrueRange { Length = AtrLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(deMarker, stochastic, atr, ProcessCandle)
+			.Bind(deMarker, rsi, atr, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -116,7 +106,7 @@ public class CashMachine5minStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue deMarkerVal, IIndicatorValue stochVal, IIndicatorValue atrVal)
+	private void ProcessCandle(ICandleMessage candle, decimal deMarker, decimal rsi, decimal atr)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
@@ -124,10 +114,6 @@ public class CashMachine5minStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var deMarker = deMarkerVal.ToDecimal();
-		var stoch = (IStochasticOscillatorValue)stochVal;
-		var stochK = stoch.K ?? 0m;
-		var atr = atrVal.ToDecimal();
 		var close = candle.ClosePrice;
 
 		// Manage position
@@ -165,11 +151,10 @@ public class CashMachine5minStrategy : Strategy
 		}
 
 		// Entry signals
-		if (Position == 0 && _prevDeMarker is decimal prevDe && _prevStochK is decimal prevStoch)
+		if (Position == 0 && _prevDeMarker is decimal prevDe && _prevRsi is decimal prevRsi)
 		{
-			// Relaxed: DeMarker oversold/overbought OR Stochastic oversold/overbought
-			var longSignal = (prevDe < 0.30m && deMarker >= 0.30m) || (prevStoch < 25m && stochK >= 25m);
-			var shortSignal = (prevDe > 0.70m && deMarker <= 0.70m) || (prevStoch > 75m && stochK <= 75m);
+			var longSignal = (prevDe < 0.25m && deMarker >= 0.25m) || (prevRsi < 25m && rsi >= 25m);
+			var shortSignal = (prevDe > 0.75m && deMarker <= 0.75m) || (prevRsi > 75m && rsi <= 75m);
 
 			if (longSignal)
 			{
@@ -186,6 +171,6 @@ public class CashMachine5minStrategy : Strategy
 		}
 
 		_prevDeMarker = deMarker;
-		_prevStochK = stochK;
+		_prevRsi = rsi;
 	}
 }

@@ -103,7 +103,7 @@ public class ExpBuySellSideStrategy : Strategy
 		
 		.SetOptimize(1m, 5m, 0.5m);
 		
-		_fastPeriod = Param(nameof(FastPeriod), 2)
+		_fastPeriod = Param(nameof(FastPeriod), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("Fast SMA", "Fast moving average length", "Step Up/Down")
 		
@@ -118,7 +118,7 @@ public class ExpBuySellSideStrategy : Strategy
 		_closeByOppositeSignal = Param(nameof(CloseByOppositeSignal), true)
 		.SetDisplay("Close Opposite", "Close opposite position on signal", "General");
 		
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 	

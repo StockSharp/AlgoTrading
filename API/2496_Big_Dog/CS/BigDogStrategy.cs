@@ -156,8 +156,11 @@ public class BigDogStrategy : Strategy
 		_longTakeProfitPrice = null;
 		_shortStopPrice = null;
 		_shortTakeProfitPrice = null;
+		_longEntryPrice = 0m;
+		_shortEntryPrice = 0m;
 		_bestBid = null;
 		_bestAsk = null;
+		_adjustedPointSize = 0m;
 	}
 
 	/// <inheritdoc />

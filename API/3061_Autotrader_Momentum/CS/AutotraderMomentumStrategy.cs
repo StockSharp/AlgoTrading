@@ -26,6 +26,7 @@ public class AutotraderMomentumStrategy : Strategy
 	private readonly StrategyParam<int> _takeProfitPips;
 	private readonly StrategyParam<int> _trailingStopPips;
 	private readonly StrategyParam<int> _trailingStepPips;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<int> _currentBarIndex;
 	private readonly StrategyParam<int> _comparableBarIndex;
 
@@ -41,13 +42,14 @@ public class AutotraderMomentumStrategy : Strategy
 	private decimal _takeProfitOffset;
 	private decimal _trailingStopOffset;
 	private decimal _trailingStepOffset;
+	private int _cooldownLeft;
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="AutotraderMomentumStrategy"/> class.
 	/// </summary>
 	public AutotraderMomentumStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe for price comparisons", "Data");
 
 		_tradeVolume = Param(nameof(TradeVolume), 1m)
@@ -62,7 +64,7 @@ public class AutotraderMomentumStrategy : Strategy
 			.SetDisplay("Take Profit (pips)", "Profit target distance expressed in pips", "Risk")
 			.SetNotNegative();
 
-		_trailingStopPips = Param(nameof(TrailingStopPips), 5)
+		_trailingStopPips = Param(nameof(TrailingStopPips), 0)
 			.SetDisplay("Trailing Stop (pips)", "Distance maintained by the trailing stop in pips", "Risk")
 			.SetNotNegative();
 
@@ -70,11 +72,15 @@ public class AutotraderMomentumStrategy : Strategy
 			.SetDisplay("Trailing Step (pips)", "Minimum progress before the trailing stop advances", "Risk")
 			.SetNotNegative();
 
+		_cooldownBars = Param(nameof(CooldownBars), 2)
+			.SetDisplay("Cooldown Bars", "Bars to wait after entries and exits", "Risk")
+			.SetNotNegative();
+
 		_currentBarIndex = Param(nameof(CurrentBarIndex), 0)
 			.SetDisplay("Current Bar Index", "Index of the candle used as the signal source", "Logic")
 			.SetNotNegative();
 
-		_comparableBarIndex = Param(nameof(ComparableBarIndex), 15)
+		_comparableBarIndex = Param(nameof(ComparableBarIndex), 8)
 			.SetDisplay("Comparable Bar Index", "Historical candle index used for momentum comparison", "Logic")
 			.SetNotNegative();
 	}
@@ -151,6 +157,12 @@ public class AutotraderMomentumStrategy : Strategy
 		set => _comparableBarIndex.Value = value;
 	}
 
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
@@ -164,6 +176,7 @@ public class AutotraderMomentumStrategy : Strategy
 		_takeProfitOffset = 0m;
 		_trailingStopOffset = 0m;
 		_trailingStepOffset = 0m;
+		_cooldownLeft = 0;
 	}
 
 	/// <inheritdoc />
@@ -181,6 +194,7 @@ public class AutotraderMomentumStrategy : Strategy
 		_takeProfitOffset = TakeProfitPips > 0 ? TakeProfitPips * _pipValue : 0m;
 		_trailingStopOffset = TrailingStopPips > 0 ? TrailingStopPips * _pipValue : 0m;
 		_trailingStepOffset = TrailingStepPips > 0 ? TrailingStepPips * _pipValue : 0m;
+		_cooldownLeft = 0;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -194,6 +208,9 @@ public class AutotraderMomentumStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		if (_cooldownLeft > 0)
+			_cooldownLeft--;
+
 		// Update trailing and risk management before evaluating fresh signals.
 		UpdateTrailingStop(candle);
 		var exitTriggered = ManageProtectiveExits(candle);
@@ -206,6 +223,9 @@ public class AutotraderMomentumStrategy : Strategy
 			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		if (_cooldownLeft > 0)
 			return;
 
 		var requiredHistory = Math.Max(CurrentBarIndex, ComparableBarIndex) + 1;
@@ -326,6 +346,7 @@ public class AutotraderMomentumStrategy : Strategy
 
 		_stopPrice = CalculateStopPrice(_isLongPosition, _entryPrice);
 		_takeProfitPrice = CalculateTakeProfit(_isLongPosition, _entryPrice);
+		_cooldownLeft = CooldownBars;
 	}
 
 	private decimal? CalculateStopPrice(bool isLong, decimal? entryPrice)
@@ -395,6 +416,7 @@ public class AutotraderMomentumStrategy : Strategy
 			{
 				SellMarket(Position);
 				ResetPositionState();
+				_cooldownLeft = CooldownBars;
 				return true;
 			}
 
@@ -403,6 +425,7 @@ public class AutotraderMomentumStrategy : Strategy
 			{
 				SellMarket(Position);
 				ResetPositionState();
+				_cooldownLeft = CooldownBars;
 				return true;
 			}
 		}
@@ -414,6 +437,7 @@ public class AutotraderMomentumStrategy : Strategy
 			{
 				BuyMarket(volume);
 				ResetPositionState();
+				_cooldownLeft = CooldownBars;
 				return true;
 			}
 
@@ -421,6 +445,7 @@ public class AutotraderMomentumStrategy : Strategy
 			{
 				BuyMarket(volume);
 				ResetPositionState();
+				_cooldownLeft = CooldownBars;
 				return true;
 			}
 		}
@@ -460,4 +485,3 @@ public class AutotraderMomentumStrategy : Strategy
 		return step * adjust;
 	}
 }
-

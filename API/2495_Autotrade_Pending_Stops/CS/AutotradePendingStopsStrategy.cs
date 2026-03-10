@@ -107,7 +107,7 @@ public class AutotradePendingStopsStrategy : Strategy
 	/// </summary>
 	public AutotradePendingStopsStrategy()
 	{
-		_indentTicks = Param(nameof(IndentTicks), 12)
+		_indentTicks = Param(nameof(IndentTicks), 200)
 		.SetGreaterThanZero()
 		.SetDisplay("Indent Ticks", "Distance in ticks between price and pending stop orders", "Entries");
 
@@ -131,7 +131,7 @@ public class AutotradePendingStopsStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Order Volume", "Default volume for both stop orders", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Time frame that drives order refresh", "General");
 
 		Volume = _orderVolume.Value;
@@ -152,6 +152,7 @@ public class AutotradePendingStopsStrategy : Strategy
 		_prevOpen = 0m;
 		_prevClose = 0m;
 		_hasPrevCandle = false;
+		_entryPrice = 0m;
 	}
 
 	/// <inheritdoc />

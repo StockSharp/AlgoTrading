@@ -258,6 +258,15 @@ public class BullVsMedvedStrategy : Strategy
 
 		_bestBid = 0m;
 		_bestAsk = 0m;
+		_pointValue = 0m;
+		_pipValue = 0m;
+		_bodyMinSize = 0m;
+		_pullbackSize = 0m;
+		_candleSizeThreshold = 0m;
+		_buyIndent = 0m;
+		_sellIndent = 0m;
+		_stopLossOffset = 0m;
+		_takeProfitOffset = 0m;
 		_orderPlacedInWindow = false;
 		_previousCandle1 = null;
 		_previousCandle2 = null;

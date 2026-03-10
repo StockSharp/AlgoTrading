@@ -56,7 +56,7 @@ public class ChandelExitReopenStrategy : Strategy
 	/// </summary>
 	public ChandelExitReopenStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles used for signals", "General");
 
 		_rangePeriod = Param(nameof(RangePeriod), 15)
@@ -83,12 +83,12 @@ public class ChandelExitReopenStrategy : Strategy
 			.SetDisplay("Signal Bar", "How many bars back to read signals", "Trading")
 			.SetNotNegative();
 
-		_priceStepPoints = Param(nameof(PriceStepPoints), 300m)
+		_priceStepPoints = Param(nameof(PriceStepPoints), 1000m)
 			.SetDisplay("Re-entry Distance", "Minimum favorable move in price steps before adding", "Position Management")
 			.SetNotNegative()
 			;
 
-		_maxAdditions = Param(nameof(MaxAdditions), 10)
+		_maxAdditions = Param(nameof(MaxAdditions), 1)
 			.SetDisplay("Max Additions", "Maximum number of re-entries after the initial position", "Position Management")
 			.SetNotNegative();
 
@@ -499,11 +499,17 @@ public class ChandelExitReopenStrategy : Strategy
 		for (var i = windowStart; i <= windowEnd; i++)
 		{
 			var item = history[i];
+			if (item is null)
+				continue;
+
 			if (item.High > highestHigh)
 			highestHigh = item.High;
 			if (item.Low < lowestLow)
 			lowestLow = item.Low;
 		}
+
+		if (highestHigh == decimal.MinValue || lowestLow == decimal.MaxValue)
+			return SignalInfo.Empty(current.Time);
 
 		var atr = current.Atr * AtrMultiplier;
 		var upperBand = highestHigh - atr;

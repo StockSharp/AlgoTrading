@@ -146,6 +146,16 @@ public class ExpPricePositionStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFast = null;
+		_prevSlow = null;
+		_lastCrossLevel = 0m;
+		_hasCrossLevel = false;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);

@@ -136,7 +136,7 @@ public class AdxExpertStrategy : Strategy
 			
 			.SetOptimize(200m, 600m, 100m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(2).TimeFrame())
 			.SetDisplay("Candle type", "Type of candles used for ADX", "General");
 	}
 

@@ -15,6 +15,9 @@ public class Tdi2ReOpenStrategy : Strategy
 	private readonly StrategyParam<int> _tdiPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
+	private decimal? _lastClose;
+	private decimal? _directional;
+	private decimal? _index;
 	private decimal? _prevDirectional;
 	private decimal? _prevIndex;
 
@@ -28,8 +31,20 @@ public class Tdi2ReOpenStrategy : Strategy
 			.SetDisplay("TDI Period", "Momentum lookback period", "Indicator")
 			.SetOptimize(5, 30, 5);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Data series", "General");
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_lastClose = null;
+		_directional = null;
+		_index = null;
+		_prevDirectional = null;
+		_prevIndex = null;
 	}
 
 	/// <inheritdoc />
@@ -37,13 +52,11 @@ public class Tdi2ReOpenStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
+		_lastClose = null;
+		_directional = null;
+		_index = null;
 		_prevDirectional = null;
 		_prevIndex = null;
-
-		var momentum = new Momentum { Length = TdiPeriod };
-		var momSmoother = new SimpleMovingAverage { Length = TdiPeriod };
-		var absSmoother = new SimpleMovingAverage { Length = TdiPeriod };
-		var absDoubleSmoother = new SimpleMovingAverage { Length = TdiPeriod * 2 };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
@@ -60,40 +73,37 @@ public class Tdi2ReOpenStrategy : Strategy
 			if (candle.State != CandleStates.Finished)
 				return;
 
-			var t = candle.OpenTime;
 			var close = candle.ClosePrice;
-
-			var momVal = momentum.Process(new DecimalIndicatorValue(momentum, close, t) { IsFinal = true });
-			if (!momentum.IsFormed)
-				return;
-
-			var mom = momVal.ToDecimal();
-			var absMom = Math.Abs(mom);
-
-			var momSmooth = momSmoother.Process(new DecimalIndicatorValue(momSmoother, mom, t) { IsFinal = true });
-			var absSmooth = absSmoother.Process(new DecimalIndicatorValue(absSmoother, absMom, t) { IsFinal = true });
-			var absDoubleSmooth = absDoubleSmoother.Process(new DecimalIndicatorValue(absDoubleSmoother, absMom, t) { IsFinal = true });
-
-			if (!momSmoother.IsFormed || !absSmoother.IsFormed || !absDoubleSmoother.IsFormed)
-				return;
-
-			var momSum = TdiPeriod * momSmooth.ToDecimal();
-			var momAbsSum = TdiPeriod * absSmooth.ToDecimal();
-			var momAbsSum2 = 2 * TdiPeriod * absDoubleSmooth.ToDecimal();
-
-			var directional = momSum;
-			var index = Math.Abs(momSum) - (momAbsSum2 - absMom);
-
-			if (_prevDirectional is not decimal prevDir || _prevIndex is not decimal prevIdx)
+			if (_lastClose is not decimal lastClose)
 			{
-				_prevDirectional = directional;
-				_prevIndex = index;
+				_lastClose = close;
 				return;
 			}
 
-			// Buy on cross: directional crosses above index
+			var momentum = close - lastClose;
+			_lastClose = close;
+			var alpha = 2m / (TdiPeriod + 1m);
+
+			if (_directional is not decimal prevDirectionalLine || _index is not decimal prevIndexLine)
+			{
+				_directional = momentum;
+				_index = momentum;
+				return;
+			}
+
+			var directional = prevDirectionalLine + alpha * (momentum - prevDirectionalLine);
+			var index = prevIndexLine + alpha * (directional - prevIndexLine);
+
+			if (_prevDirectional is not decimal prevDir || _prevIndex is not decimal prevIdx)
+			{
+				_directional = directional;
+				_index = index;
+				_prevDirectional = prevDirectionalLine;
+				_prevIndex = prevIndexLine;
+				return;
+			}
+
 			var crossUp = prevDir <= prevIdx && directional > index;
-			// Sell on cross: directional crosses below index
 			var crossDown = prevDir >= prevIdx && directional < index;
 
 			if (crossUp && Position <= 0)
@@ -101,6 +111,8 @@ public class Tdi2ReOpenStrategy : Strategy
 			else if (crossDown && Position >= 0)
 				SellMarket();
 
+			_directional = directional;
+			_index = index;
 			_prevDirectional = directional;
 			_prevIndex = index;
 		}

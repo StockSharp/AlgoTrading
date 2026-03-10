@@ -99,10 +99,10 @@ public class Up3x1PremiumStrategy : Strategy
 		.SetDisplay("Daily Reversal Threshold", "Minimum prior day reversal size", "Filters")
 		;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Primary working timeframe", "General");
 
-		_dailyCandleType = Param(nameof(DailyCandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_dailyCandleType = Param(nameof(DailyCandleType), TimeSpan.FromDays(1).TimeFrame())
 		.SetDisplay("Daily Candle Type", "Higher timeframe for daily context", "General");
 	}
 

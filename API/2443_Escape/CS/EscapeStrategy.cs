@@ -35,6 +35,9 @@ public class EscapeStrategy : Strategy
 	private decimal _entryPrice;
 	private decimal _stopPrice;
 	private decimal _takePrice;
+	private decimal _previousClose;
+	private decimal _previousFast;
+	private decimal _previousSlow;
 
 	/// <summary>
 	/// Length of fast SMA.
@@ -127,7 +130,7 @@ public class EscapeStrategy : Strategy
 			.SetDisplay("Stop Loss Short", "Stop loss for short trades", "Trading")
 			.SetGreaterThanZero();
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for candles", "General");
 	}
 
@@ -148,6 +151,9 @@ public class EscapeStrategy : Strategy
 		_entryPrice = 0m;
 		_stopPrice = 0m;
 		_takePrice = 0m;
+		_previousClose = 0m;
+		_previousFast = 0m;
+		_previousSlow = 0m;
 	}
 
 	/// <inheritdoc />
@@ -184,21 +190,26 @@ public class EscapeStrategy : Strategy
 		if (!_initialized)
 		{
 			_initialized = true;
+			_previousClose = candle.ClosePrice;
+			_previousFast = fast;
+			_previousSlow = slow;
 			return;
 		}
 
 		var close = candle.ClosePrice;
+		var buySignal = _previousClose >= _previousSlow && close < slow;
+		var sellSignal = _previousClose <= _previousFast && close > fast;
 
 		if (Position == 0)
 		{
-			if (close < slow)
+			if (buySignal)
 			{
 				BuyMarket();
 				_entryPrice = close;
 				_stopPrice = _entryPrice - StopLossLong;
 				_takePrice = _entryPrice + TakeProfitLong;
 			}
-			else if (close > fast)
+			else if (sellSignal)
 			{
 				SellMarket();
 				_entryPrice = close;
@@ -220,5 +231,9 @@ public class EscapeStrategy : Strategy
 			else if (close >= _stopPrice || candle.HighPrice >= _stopPrice)
 				BuyMarket(-Position);
 		}
+
+		_previousClose = close;
+		_previousFast = fast;
+		_previousSlow = slow;
 	}
 }

@@ -59,16 +59,16 @@ public class BearBullsPowerStrategy : Strategy
 	/// </summary>
 	public BearBullsPowerStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe of processed candles", "General");
 
-		_firstLength = Param(nameof(FirstLength), 5)
+		_firstLength = Param(nameof(FirstLength), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Price MA Length", "Length of the first smoothing", "Indicator")
 			
 			.SetOptimize(5, 30, 1);
 
-		_secondLength = Param(nameof(SecondLength), 3)
+		_secondLength = Param(nameof(SecondLength), 2)
 			.SetGreaterThanZero()
 			.SetDisplay("Signal MA Length", "Length of the second smoothing", "Indicator")
 			
@@ -120,11 +120,11 @@ public class BearBullsPowerStrategy : Strategy
 
 		var price = (candle.HighPrice + candle.LowPrice) / 2m;
 
-		var priceMa = _priceMa.Process(new DecimalIndicatorValue(_priceMa, price, candle.OpenTime)).ToDecimal();
+		var priceMa = _priceMa.Process(new DecimalIndicatorValue(_priceMa, price, candle.OpenTime) { IsFinal = true }).ToDecimal();
 
 		var diff = (candle.HighPrice + candle.LowPrice - 2m * priceMa) / 2m;
 
-		var signal = _signalMa.Process(new DecimalIndicatorValue(_signalMa, diff, candle.OpenTime)).ToDecimal();
+		var signal = _signalMa.Process(new DecimalIndicatorValue(_signalMa, diff, candle.OpenTime) { IsFinal = true }).ToDecimal();
 
 		if (!_priceMa.IsFormed || !_signalMa.IsFormed || !IsFormedAndOnlineAndAllowTrading())
 		{
@@ -134,12 +134,13 @@ public class BearBullsPowerStrategy : Strategy
 		}
 
 		var color = signal > 0 ? 0 : signal < 0 ? 2 : 1;
+		var threshold = (Security?.PriceStep ?? 1m) * 10m;
 
 		if (_prevValue is decimal prevSignal)
 		{
-			if (prevSignal <= 0 && signal > 0 && Position <= 0)
+			if (prevSignal <= -threshold && signal > threshold && Position <= 0)
 				BuyMarket();
-			else if (prevSignal >= 0 && signal < 0 && Position >= 0)
+			else if (prevSignal >= threshold && signal < -threshold && Position >= 0)
 				SellMarket();
 		}
 

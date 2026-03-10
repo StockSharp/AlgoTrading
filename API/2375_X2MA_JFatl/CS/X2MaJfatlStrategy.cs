@@ -27,6 +27,7 @@ public class X2MaJfatlStrategy : Strategy
 
 	private decimal _prevDiff;
 	private bool _isInitialized;
+	private int _barsSinceTrade;
 
 	/// <summary>
 	/// Fast moving average length.
@@ -69,25 +70,25 @@ public class X2MaJfatlStrategy : Strategy
 	/// </summary>
 	public X2MaJfatlStrategy()
 	{
-		_fastLength = Param(nameof(FastLength), 8)
+		_fastLength = Param(nameof(FastLength), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast MA Length", "Length of the fast moving average", "Parameters")
 			
 			.SetOptimize(5, 20, 1);
 
-		_slowLength = Param(nameof(SlowLength), 21)
+		_slowLength = Param(nameof(SlowLength), 13)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow MA Length", "Length of the slow Jurik MA", "Parameters")
 			
 			.SetOptimize(10, 40, 2);
 
-		_filterLength = Param(nameof(FilterLength), 34)
+		_filterLength = Param(nameof(FilterLength), 21)
 			.SetGreaterThanZero()
 			.SetDisplay("Filter Length", "Length of the Jurik filter", "Parameters")
 			
 			.SetOptimize(10, 60, 5);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for calculation", "General");
 	}
 
@@ -103,6 +104,7 @@ public class X2MaJfatlStrategy : Strategy
 		base.OnReseted();
 		_prevDiff = 0m;
 		_isInitialized = false;
+		_barsSinceTrade = 10;
 	}
 
 	/// <inheritdoc />
@@ -112,6 +114,7 @@ public class X2MaJfatlStrategy : Strategy
 
 		_prevDiff = 0m;
 		_isInitialized = false;
+		_barsSinceTrade = 10;
 
 		var fastMa = new SMA { Length = FastLength };
 		var slowMa = new JurikMovingAverage { Length = SlowLength };
@@ -139,6 +142,8 @@ public class X2MaJfatlStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		_barsSinceTrade++;
+
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
@@ -155,20 +160,24 @@ public class X2MaJfatlStrategy : Strategy
 		if (Position > 0 && candle.ClosePrice < filterValue)
 		{
 			SellMarket();
+			_barsSinceTrade = 0;
 		}
 		else if (Position < 0 && candle.ClosePrice > filterValue)
 		{
 			BuyMarket();
+			_barsSinceTrade = 0;
 		}
 
 		// Crossover entries
-		if (_prevDiff <= 0m && diff > 0m && candle.ClosePrice > filterValue && Position <= 0)
+		if (_barsSinceTrade >= 5 && _prevDiff <= 0m && diff > 0m && candle.ClosePrice > filterValue && Position <= 0)
 		{
 			BuyMarket();
+			_barsSinceTrade = 0;
 		}
-		else if (_prevDiff >= 0m && diff < 0m && candle.ClosePrice < filterValue && Position >= 0)
+		else if (_barsSinceTrade >= 5 && _prevDiff >= 0m && diff < 0m && candle.ClosePrice < filterValue && Position >= 0)
 		{
 			SellMarket();
+			_barsSinceTrade = 0;
 		}
 
 		_prevDiff = diff;

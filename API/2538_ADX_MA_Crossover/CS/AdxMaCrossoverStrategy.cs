@@ -120,7 +120,7 @@ public class AdxMaCrossoverStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("ADX Period", "Smoothing period for Average Directional Index", "Indicators")
 			;
-		_adxThreshold = Param(nameof(AdxThreshold), 16m)
+		_adxThreshold = Param(nameof(AdxThreshold), 25m)
 			.SetDisplay("ADX Threshold", "Minimum ADX value required to trade", "Indicators")
 			;
 		_takeProfitBuy = Param(nameof(TakeProfitBuy), 83m)
@@ -141,7 +141,7 @@ public class AdxMaCrossoverStrategy : Strategy
 		_trailingStopSell = Param(nameof(TrailingStopSell), 27m)
 			.SetDisplay("Sell Trailing Stop (pips)", "Trailing stop distance for short trades", "Risk Management")
 			.SetNotNegative();
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for calculations", "General");
 	}
 
@@ -159,6 +159,7 @@ public class AdxMaCrossoverStrategy : Strategy
 		_ma?.Reset();
 		_adx?.Reset();
 
+		_pipSize = 0m;
 		_prevClose = 0m;
 		_prevPrevClose = 0m;
 		_prevMa = 0m;

@@ -32,6 +32,7 @@ public class ReInitChartStrategy : Strategy
 	private SimpleMovingAverage _sma = null!;
 	private bool _manualRefreshArmed;
 	private DateTimeOffset? _nextAutoRefreshTime;
+	private int _previousRelation;
 
 	/// <summary>
 	/// Primary candle type used to drive the strategy.
@@ -119,7 +120,7 @@ public class ReInitChartStrategy : Strategy
 	/// </summary>
 	public ReInitChartStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame used for the primary chart subscription.", "Data");
 
 		_smaLength = Param(nameof(SmaLength), 20)
@@ -160,6 +161,7 @@ public class ReInitChartStrategy : Strategy
 		base.OnReseted();
 		_manualRefreshArmed = false;
 		_nextAutoRefreshTime = null;
+		_previousRelation = 0;
 	}
 
 	/// <inheritdoc />
@@ -220,31 +222,31 @@ public class ReInitChartStrategy : Strategy
 		if (Volume <= 0)
 			return;
 
-		// Simple SMA trend-following logic that keeps a single position open.
-		if (candle.ClosePrice > smaValue)
+		var relation = candle.ClosePrice > smaValue ? 1 : candle.ClosePrice < smaValue ? -1 : 0;
+		if (relation == 0 || relation == _previousRelation)
+		{
+			_previousRelation = relation;
+			return;
+		}
+
+		if (relation > 0)
 		{
 			if (Position < 0)
-			{
 				BuyMarket(Math.Abs(Position));
-			}
 
-			if (Position == 0)
-			{
+			if (Position <= 0)
 				BuyMarket(Volume);
-			}
 		}
-		else if (candle.ClosePrice < smaValue)
+		else if (relation < 0)
 		{
 			if (Position > 0)
-			{
 				SellMarket(Position);
-			}
 
-			if (Position == 0)
-			{
+			if (Position >= 0)
 				SellMarket(Volume);
-			}
 		}
+
+		_previousRelation = relation;
 	}
 
 	private void CheckManualRefresh(DateTimeOffset currentTime)
@@ -286,6 +288,7 @@ public class ReInitChartStrategy : Strategy
 	{
 		// Reset the moving average so that future candles rebuild the indicator state.
 		_sma.Reset();
+		_previousRelation = 0;
 
 		this.LogInfo($"[{RefreshCommandName}] {RefreshCommandText} triggered by {reason} at {time:O}. TextColor={TextColorName}, BackgroundColor={BackgroundColorName}.");
 	}

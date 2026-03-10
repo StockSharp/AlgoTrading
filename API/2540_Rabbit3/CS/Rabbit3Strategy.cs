@@ -135,7 +135,7 @@ public class Rabbit3Strategy : Strategy
 
 	public Rabbit3Strategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for signals", "General");
 
 		_cciPeriod = Param(nameof(CciPeriod), 15)
@@ -275,24 +275,24 @@ public class Rabbit3Strategy : Strategy
 
                 // Require Williams %R confirmation on two consecutive closed candles and CCI agreement.
                 var longSignal = williamsValue < WilliamsOversold
-                        && _previousWilliams < WilliamsOversold
                         && cciValue < CciBuyLevel
+                        && fastEmaValue > slowEmaValue
                         && CanEnterLong();
 
                 var shortSignal = williamsValue > WilliamsOverbought
-                        && _previousWilliams > WilliamsOverbought
                         && cciValue > CciSellLevel
+                        && fastEmaValue < slowEmaValue
                         && CanEnterShort();
 
                 if (longSignal)
                 {
                         // Stack another long position using the dynamically selected volume.
-                        BuyMarket();
+                        BuyMarket(Volume);
                 }
                 else if (shortSignal)
                 {
                         // Stack another short position using the dynamically selected volume.
-                        SellMarket();
+                        SellMarket(Volume);
                 }
 
                 _previousWilliams = williamsValue;

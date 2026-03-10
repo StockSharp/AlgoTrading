@@ -40,7 +40,7 @@ public class PriceRollbackStrategy : Strategy
 
 	public PriceRollbackStrategy()
 	{
-		_corridor = Param(nameof(Corridor), 1000m)
+		_corridor = Param(nameof(Corridor), 5000m)
 			.SetDisplay("Corridor", "Minimum gap size for entry", "General");
 		_stopLoss = Param(nameof(StopLoss), 500m)
 			.SetDisplay("Stop Loss", "Stop loss distance", "Risk");
@@ -48,8 +48,18 @@ public class PriceRollbackStrategy : Strategy
 			.SetDisplay("Take Profit", "Take profit distance", "Risk");
 		_trailingStop = Param(nameof(TrailingStop), 300m)
 			.SetDisplay("Trailing Stop", "Trailing stop distance", "Risk");
-		_type = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_type = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe", "General");
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevClose = 0m;
+		_entryPrice = 0m;
+		_trailPrice = 0m;
+		_hasPrev = false;
 	}
 
 	public override IEnumerable<(Security, DataType)> GetWorkingSecurities() => [(Security, CandleType)];

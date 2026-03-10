@@ -78,11 +78,11 @@ public class MoneyFixedMarginStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Risk Percent", "Percent of equity risked per trade", "Risk");
 
-		_checkInterval = Param(nameof(CheckInterval), 50)
+		_checkInterval = Param(nameof(CheckInterval), 150)
 			.SetGreaterThanZero()
 			.SetDisplay("Check Interval", "Completed candles between trades", "Execution");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 	}
 
@@ -97,6 +97,7 @@ public class MoneyFixedMarginStrategy : Strategy
 	{
 		base.OnReseted();
 		_barCount = 0;
+		_pipSize = 0m;
 	}
 
 	/// <inheritdoc />

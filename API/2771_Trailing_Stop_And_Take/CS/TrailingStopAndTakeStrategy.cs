@@ -52,7 +52,7 @@ public class TrailingStopAndTakeStrategy : Strategy
 	/// </summary>
 	public TrailingStopAndTakeStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candle aggregation used for trailing decisions", "General");
 
 
@@ -228,6 +228,17 @@ public class TrailingStopAndTakeStrategy : Strategy
 			DrawCandles(area, subscription);
 			DrawOwnTrades(area);
 		}
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_priceStep = 0m;
+		_previousPosition = 0m;
+		_entryPrice = 0m;
+		ResetLevels();
 	}
 
 	private void ProcessCandle(ICandleMessage candle)

@@ -20,7 +20,6 @@ namespace StockSharp.Samples.Strategies;
 public class RndTradeStrategy : Strategy
 {
 	private readonly StrategyParam<int> _intervalMinutes;
-	private readonly Random _random = new();
 
 	/// <summary>
 	/// Interval in minutes between closing the current position and opening a new random one.
@@ -36,7 +35,7 @@ public class RndTradeStrategy : Strategy
 	/// </summary>
 	public RndTradeStrategy()
 	{
-		_intervalMinutes = Param(nameof(IntervalMinutes), 60)
+		_intervalMinutes = Param(nameof(IntervalMinutes), 360)
 			.SetGreaterThanZero()
 			.SetDisplay("Interval Minutes", "Minutes between closing and opening positions", "General");
 
@@ -76,8 +75,8 @@ public class RndTradeStrategy : Strategy
 		else if (Position < 0)
 			BuyMarket(Math.Abs(Position));
 
-		// Determine the next position direction using the RNG.
-		if (_random.Next(0, 2) == 0)
+		// Derive a deterministic pseudo-random direction from the candle data.
+		if (ShouldBuy(candle))
 		{
 			// Enter long after flattening the previous position.
 			if (Position <= 0)
@@ -89,5 +88,11 @@ public class RndTradeStrategy : Strategy
 			if (Position >= 0)
 				SellMarket(Volume);
 		}
+	}
+
+	private static bool ShouldBuy(ICandleMessage candle)
+	{
+		var hash = HashCode.Combine(candle.OpenTime.Ticks, candle.ClosePrice, candle.TotalVolume);
+		return (hash & 1) == 0;
 	}
 }

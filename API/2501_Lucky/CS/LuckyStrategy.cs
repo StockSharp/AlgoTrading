@@ -65,13 +65,13 @@ public class LuckyStrategy : Strategy
 	/// </summary>
 	public LuckyStrategy()
 	{
-		_shiftPoints = Param(nameof(ShiftPoints), 3)
+		_shiftPoints = Param(nameof(ShiftPoints), 1)
 			.SetGreaterThanZero()
 			.SetDisplay("Shift points", "Minimum pip movement required to trigger a trade", "Trading")
 			
 			.SetOptimize(1, 10, 1);
 
-		_limitPoints = Param(nameof(LimitPoints), 18)
+		_limitPoints = Param(nameof(LimitPoints), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Limit points", "Maximum adverse pip movement before closing", "Risk management")
 			
@@ -79,6 +79,12 @@ public class LuckyStrategy : Strategy
 
 		_reverse = Param(nameof(Reverse), false)
 			.SetDisplay("Reverse mode", "Invert the direction of new trades", "Trading");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, DataType.Level1)];
 	}
 
 	/// <inheritdoc />
@@ -90,6 +96,7 @@ public class LuckyStrategy : Strategy
 		_previousBid = null;
 		_currentAsk = null;
 		_currentBid = null;
+		_entryPrice = 0m;
 		_shiftThreshold = 0m;
 		_limitThreshold = 0m;
 	}

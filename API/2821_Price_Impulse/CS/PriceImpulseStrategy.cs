@@ -165,6 +165,7 @@ public class PriceImpulseStrategy : Strategy
 		base.OnReseted();
 
 		_priceHistory.Clear();
+		_tickSize = 0m;
 		_lastTradeTime = null;
 		_entryPrice = null;
 		_stopLossPrice = null;

@@ -96,12 +96,12 @@ public class MacdPatternTraderAllStrategy : Strategy
 			
 			.SetOptimize(10, 60, 5);
 
-		_ratioThreshold = Param(nameof(RatioThreshold), 5m)
+		_ratioThreshold = Param(nameof(RatioThreshold), 8m)
 			.SetDisplay("MACD Ratio", "Minimal ratio of surrounding MACD values", "Signals")
 			
 			.SetOptimize(3m, 7m, 1m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -133,14 +133,9 @@ public class MacdPatternTraderAllStrategy : Strategy
 			LongMa = { Length = SlowEmaPeriod }
 		};
 
-		var highStop = new Highest { Length = StopLossBars };
-		var lowStop = new Lowest { Length = StopLossBars };
-		var highTake = new Highest { Length = TakeProfitBars };
-		var lowTake = new Lowest { Length = TakeProfitBars };
-
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(macd, highStop, lowStop, highTake, lowTake, ProcessCandle)
+			.Bind(macd, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -152,7 +147,7 @@ public class MacdPatternTraderAllStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal macdValue, decimal highStop, decimal lowStop, decimal highTake, decimal lowTake)
+	private void ProcessCandle(ICandleMessage candle, decimal macdValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
@@ -186,6 +181,8 @@ public class MacdPatternTraderAllStrategy : Strategy
 
 		var priceStep = Security?.PriceStep ?? 1m;
 		var offset = OffsetPoints * priceStep;
+		var stopDistance = offset * 2m;
+		var takeDistance = offset * 4m;
 
 		var macdCurr = macdValue;
 		var macdLast = _macdPrev;
@@ -198,8 +195,8 @@ public class MacdPatternTraderAllStrategy : Strategy
 
 			if ((macdLast3 > 0m || macdCurr < 0m) && ratio1 >= RatioThreshold && ratio2 >= RatioThreshold && Position >= 0)
 			{
-				var sl = highStop + offset;
-				var tp = lowTake;
+				var sl = candle.ClosePrice + stopDistance;
+				var tp = candle.ClosePrice - takeDistance;
 				var volume = Volume + Math.Abs(Position);
 				SellMarket(volume);
 				_stopLossPrice = sl;
@@ -207,8 +204,8 @@ public class MacdPatternTraderAllStrategy : Strategy
 			}
 			else if ((macdLast3 < 0m || macdCurr > 0m) && ratio1 >= RatioThreshold && ratio2 >= RatioThreshold && Position <= 0)
 			{
-				var sl = lowStop - offset;
-				var tp = highTake;
+				var sl = candle.ClosePrice - stopDistance;
+				var tp = candle.ClosePrice + takeDistance;
 				var volume = Volume + Math.Abs(Position);
 				BuyMarket(volume);
 				_stopLossPrice = sl;

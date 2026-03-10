@@ -23,6 +23,7 @@ public class TrendAlexcudStrategy : Strategy
 	private readonly StrategyParam<int> _ma3;
 	private readonly StrategyParam<int> _ma4;
 	private readonly StrategyParam<int> _ma5;
+	private int _previousBias;
 
 	/// <summary>
 	/// Candle type.
@@ -49,7 +50,7 @@ public class TrendAlexcudStrategy : Strategy
 	/// </summary>
 	public TrendAlexcudStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe", "General");
 
 		_ma1 = Param(nameof(MaPeriod1), 5)
@@ -73,6 +74,13 @@ public class TrendAlexcudStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_previousBias = 0;
 	}
 
 	/// <inheritdoc />
@@ -116,14 +124,17 @@ public class TrendAlexcudStrategy : Strategy
 
 		var isBull = price > v1 && price > v2 && price > v3 && price > v4 && price > v5;
 		var isBear = price < v1 && price < v2 && price < v3 && price < v4 && price < v5;
+		var bias = isBull ? 1 : isBear ? -1 : 0;
 
-		if (isBull && Position <= 0)
+		if (isBull && _previousBias != 1 && Position <= 0)
 		{
 			BuyMarket(Volume + Math.Abs(Position));
 		}
-		else if (isBear && Position >= 0)
+		else if (isBear && _previousBias != -1 && Position >= 0)
 		{
 			SellMarket(Volume + Math.Abs(Position));
 		}
+
+		_previousBias = bias;
 	}
 }

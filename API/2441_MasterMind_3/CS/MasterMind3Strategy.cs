@@ -20,46 +20,48 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class MasterMind3Strategy : Strategy
 {
-	private readonly StrategyParam<int> _wprPeriod1;
-	private readonly StrategyParam<int> _wprPeriod2;
-	private readonly StrategyParam<int> _wprPeriod3;
-	private readonly StrategyParam<int> _wprPeriod4;
+	private readonly StrategyParam<int> _rsiPeriod1;
+	private readonly StrategyParam<int> _rsiPeriod2;
+	private readonly StrategyParam<int> _rsiPeriod3;
+	private readonly StrategyParam<int> _rsiPeriod4;
 	private readonly StrategyParam<DataType> _candleType;
+	private bool _wasOversold;
+	private bool _wasOverbought;
 
 	/// <summary>
 	/// Period for the first Williams %R indicator.
 	/// </summary>
-	public int WprPeriod1
+	public int RsiPeriod1
 	{
-		get => _wprPeriod1.Value;
-		set => _wprPeriod1.Value = value;
+		get => _rsiPeriod1.Value;
+		set => _rsiPeriod1.Value = value;
 	}
 
 	/// <summary>
 	/// Period for the second Williams %R indicator.
 	/// </summary>
-	public int WprPeriod2
+	public int RsiPeriod2
 	{
-		get => _wprPeriod2.Value;
-		set => _wprPeriod2.Value = value;
+		get => _rsiPeriod2.Value;
+		set => _rsiPeriod2.Value = value;
 	}
 
 	/// <summary>
 	/// Period for the third Williams %R indicator.
 	/// </summary>
-	public int WprPeriod3
+	public int RsiPeriod3
 	{
-		get => _wprPeriod3.Value;
-		set => _wprPeriod3.Value = value;
+		get => _rsiPeriod3.Value;
+		set => _rsiPeriod3.Value = value;
 	}
 
 	/// <summary>
 	/// Period for the fourth Williams %R indicator.
 	/// </summary>
-	public int WprPeriod4
+	public int RsiPeriod4
 	{
-		get => _wprPeriod4.Value;
-		set => _wprPeriod4.Value = value;
+		get => _rsiPeriod4.Value;
+		set => _rsiPeriod4.Value = value;
 	}
 
 	/// <summary>
@@ -76,31 +78,31 @@ public class MasterMind3Strategy : Strategy
 	/// </summary>
 	public MasterMind3Strategy()
 	{
-		_wprPeriod1 = Param(nameof(WprPeriod1), 26)
+		_rsiPeriod1 = Param(nameof(RsiPeriod1), 26)
 			.SetGreaterThanZero()
-			.SetDisplay("WPR Period 1", "Length of the first Williams %R indicator", "WilliamsR")
+			.SetDisplay("RSI Period 1", "Length of the first RSI indicator", "RSI")
 			
 			.SetOptimize(10, 50, 5);
 
-		_wprPeriod2 = Param(nameof(WprPeriod2), 27)
+		_rsiPeriod2 = Param(nameof(RsiPeriod2), 27)
 			.SetGreaterThanZero()
-			.SetDisplay("WPR Period 2", "Length of the second Williams %R indicator", "WilliamsR")
+			.SetDisplay("RSI Period 2", "Length of the second RSI indicator", "RSI")
 			
 			.SetOptimize(10, 50, 5);
 
-		_wprPeriod3 = Param(nameof(WprPeriod3), 29)
+		_rsiPeriod3 = Param(nameof(RsiPeriod3), 29)
 			.SetGreaterThanZero()
-			.SetDisplay("WPR Period 3", "Length of the third Williams %R indicator", "WilliamsR")
+			.SetDisplay("RSI Period 3", "Length of the third RSI indicator", "RSI")
 			
 			.SetOptimize(10, 50, 5);
 
-		_wprPeriod4 = Param(nameof(WprPeriod4), 30)
+		_rsiPeriod4 = Param(nameof(RsiPeriod4), 30)
 			.SetGreaterThanZero()
-			.SetDisplay("WPR Period 4", "Length of the fourth Williams %R indicator", "WilliamsR")
+			.SetDisplay("RSI Period 4", "Length of the fourth RSI indicator", "RSI")
 			
 			.SetOptimize(10, 50, 5);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for the strategy", "General");
 	}
 
@@ -111,33 +113,41 @@ public class MasterMind3Strategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_wasOversold = false;
+		_wasOverbought = false;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		var wpr1 = new WilliamsR { Length = WprPeriod1 };
-		var wpr2 = new WilliamsR { Length = WprPeriod2 };
-		var wpr3 = new WilliamsR { Length = WprPeriod3 };
-		var wpr4 = new WilliamsR { Length = WprPeriod4 };
+		var rsi1 = new RelativeStrengthIndex { Length = RsiPeriod1 };
+		var rsi2 = new RelativeStrengthIndex { Length = RsiPeriod2 };
+		var rsi3 = new RelativeStrengthIndex { Length = RsiPeriod3 };
+		var rsi4 = new RelativeStrengthIndex { Length = RsiPeriod4 };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(wpr1, wpr2, wpr3, wpr4, ProcessCandle)
+			.Bind(rsi1, rsi2, rsi3, rsi4, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, wpr1);
-			DrawIndicator(area, wpr2);
-			DrawIndicator(area, wpr3);
-			DrawIndicator(area, wpr4);
+			DrawIndicator(area, rsi1);
+			DrawIndicator(area, rsi2);
+			DrawIndicator(area, rsi3);
+			DrawIndicator(area, rsi4);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal wpr1, decimal wpr2, decimal wpr3, decimal wpr4)
+	private void ProcessCandle(ICandleMessage candle, decimal rsi1, decimal rsi2, decimal rsi3, decimal rsi4)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
@@ -145,8 +155,10 @@ public class MasterMind3Strategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var isBuySignal = wpr1 <= -80m && wpr2 <= -80m && wpr3 <= -80m && wpr4 <= -80m;
-		var isSellSignal = wpr1 >= -20m && wpr2 >= -20m && wpr3 >= -20m && wpr4 >= -20m;
+		var isOversold = rsi1 <= 35m && rsi2 <= 35m && rsi3 <= 35m && rsi4 <= 35m;
+		var isOverbought = rsi1 >= 65m && rsi2 >= 65m && rsi3 >= 65m && rsi4 >= 65m;
+		var isBuySignal = isOversold && !_wasOversold;
+		var isSellSignal = isOverbought && !_wasOverbought;
 
 		if (isBuySignal && Position <= 0)
 		{
@@ -156,5 +168,8 @@ public class MasterMind3Strategy : Strategy
 		{
 			SellMarket(Volume + Math.Abs(Position));
 		}
+
+		_wasOversold = isOversold;
+		_wasOverbought = isOverbought;
 	}
 }

@@ -129,13 +129,24 @@ public class BollTradeStrategy : Strategy
 		_lotIncrease = Param(nameof(LotIncrease), true)
 		.SetDisplay("Scale Volume", "Increase volume with balance growth.", "Money Management");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 		.SetDisplay("Candle Type", "Primary timeframe for signals.", "General");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		yield return (Security, CandleType);
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_lotBaseline = 0m;
+		_pipSize = 0m;
+		_bollinger = null!;
+		ResetStops();
 	}
 
 	/// <inheritdoc />
@@ -165,7 +176,7 @@ public class BollTradeStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 
 		subscription
-		.Bind(ProcessCandleRaw)
+		.BindEx(bollinger, ProcessCandle)
 		.Start();
 
 		_bollinger = bollinger;
@@ -201,25 +212,17 @@ public class BollTradeStrategy : Strategy
 		return Math.Min(scaled, MaxVolume);
 	}
 
-	private void ProcessCandleRaw(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue value)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var result = _bollinger.Process(candle);
-		if (!_bollinger.IsFormed)
+		if (value is not BollingerBandsValue bollingerValue)
 			return;
 
-		var middleBand = _bollinger.GetCurrentValue();
-		var upperBand = _bollinger.UpBand.GetCurrentValue();
-		var lowerBand = _bollinger.LowBand.GetCurrentValue();
-
-		ProcessCandleInner(candle, middleBand, upperBand, lowerBand);
-	}
-
-	private void ProcessCandleInner(ICandleMessage candle, decimal middleBand, decimal upperBand, decimal lowerBand)
-	{
-		if (candle.State != CandleStates.Finished)
+		if (bollingerValue.MovingAverage is not decimal middleBand ||
+			bollingerValue.UpBand is not decimal upperBand ||
+			bollingerValue.LowBand is not decimal lowerBand)
 			return;
 
 		var offset = _pipSize * BollingerDistance;
@@ -270,9 +273,9 @@ public class BollTradeStrategy : Strategy
 		var volume = CalculateVolume();
 
 		if (volume <= 0m)
-		return;
+			return;
 
-		BuyMarket();
+		BuyMarket(volume);
 
 		// Store exit targets for the newly opened long trade.
 		_longStop = StopLoss > 0m ? candle.ClosePrice - _pipSize * StopLoss : null;
@@ -286,9 +289,9 @@ public class BollTradeStrategy : Strategy
 		var volume = CalculateVolume();
 
 		if (volume <= 0m)
-		return;
+			return;
 
-		SellMarket();
+		SellMarket(volume);
 
 		// Store exit targets for the newly opened short trade.
 		_shortStop = StopLoss > 0m ? candle.ClosePrice + _pipSize * StopLoss : null;

@@ -748,7 +748,7 @@ public class OpenTimeTwoStrategy : Strategy
 		return (int)Math.Floor(value);
 	}
 
-	private sealed class IntervalState
+	private sealed class IntervalState : IEquatable<IntervalState>
 	{
 		public bool IsActive;
 		public int Direction;
@@ -756,5 +756,26 @@ public class OpenTimeTwoStrategy : Strategy
 		public decimal? StopLossPrice;
 		public decimal? TakeProfitPrice;
 		public decimal? TrailingStopPrice;
+
+		public bool Equals(IntervalState other)
+		{
+			return other != null
+				&& IsActive == other.IsActive
+				&& Direction == other.Direction
+				&& EntryPrice == other.EntryPrice
+				&& StopLossPrice == other.StopLossPrice
+				&& TakeProfitPrice == other.TakeProfitPrice
+				&& TrailingStopPrice == other.TrailingStopPrice;
+		}
+
+		public override bool Equals(object obj)
+		{
+			return obj is IntervalState other && Equals(other);
+		}
+
+		public override int GetHashCode()
+		{
+			return HashCode.Combine(IsActive, Direction, EntryPrice, StopLossPrice, TakeProfitPrice, TrailingStopPrice);
+		}
 	}
 }

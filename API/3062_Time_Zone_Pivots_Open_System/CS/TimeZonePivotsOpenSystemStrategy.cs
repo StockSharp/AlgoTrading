@@ -51,7 +51,7 @@ public class TimeZonePivotsOpenSystemStrategy : Strategy
 	/// </summary>
 	public TimeZonePivotsOpenSystemStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle type", "Timeframe that feeds the Time Zone Pivots logic.", "General");
 
 		_orderVolume = Param(nameof(OrderVolume), 0.1m)
@@ -62,11 +62,11 @@ public class TimeZonePivotsOpenSystemStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Start hour", "Hour (0-23) whose opening price anchors the bands.", "Indicator");
 
-		_offsetPoints = Param(nameof(OffsetPoints), 100m)
+		_offsetPoints = Param(nameof(OffsetPoints), 250m)
 			.SetNotNegative()
 			.SetDisplay("Offset (points)", "Distance from the anchor price expressed in price steps.", "Indicator");
 
-		_signalBar = Param(nameof(SignalBar), 1)
+		_signalBar = Param(nameof(SignalBar), 2)
 			.SetNotNegative()
 			.SetDisplay("Signal bar", "Shift of the confirmation candle used to trigger trades.", "Signals");
 
@@ -203,8 +203,10 @@ public class TimeZonePivotsOpenSystemStrategy : Strategy
 
 		_anchorPrice = null;
 		_anchorDate = null;
+		_priceStep = 0m;
 		_upperZone = 0m;
 		_lowerZone = 0m;
+		_candleSpan = default;
 		_offsetDistance = 0m;
 		_signalHistory.Clear();
 		_nextLongTradeTime = null;
@@ -393,4 +395,3 @@ public class TimeZonePivotsOpenSystemStrategy : Strategy
 		public DateTimeOffset OpenTime { get; }
 	}
 }
-

@@ -40,7 +40,7 @@ public class Woc012Strategy : Strategy
 
 	public Woc012Strategy()
 	{
-		_sequenceLength = Param(nameof(SequenceLength), 4)
+		_sequenceLength = Param(nameof(SequenceLength), 6)
 			.SetGreaterThanZero()
 			.SetDisplay("Sequence Length", "Consecutive bars in same direction to trigger entry", "Signals");
 
@@ -56,7 +56,7 @@ public class Woc012Strategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "ATR calculation length", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 	}
 

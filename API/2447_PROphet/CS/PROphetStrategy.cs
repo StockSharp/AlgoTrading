@@ -82,8 +82,22 @@ public class PROphetStrategy : Strategy
 		_stopMultiplier = Param(nameof(StopMultiplier), 0.005m)
 			.SetDisplay("Stop Multiplier", "Stop loss as fraction of price", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for calculations", "General");
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_stopPrice = 0m;
+		_prevHigh1 = 0m;
+		_prevLow1 = 0m;
+		_prevHigh2 = 0m;
+		_prevLow2 = 0m;
+		_prevHigh3 = 0m;
+		_prevLow3 = 0m;
+		_historyCount = 0;
 	}
 
 	/// <inheritdoc />

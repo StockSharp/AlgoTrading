@@ -43,7 +43,7 @@ public class BreakdownLevelIntradayStrategy : Strategy
 
 	public BreakdownLevelIntradayStrategy()
 	{
-		_lookback = Param(nameof(Lookback), 20)
+		_lookback = Param(nameof(Lookback), 60)
 			.SetGreaterThanZero()
 			.SetDisplay("Lookback", "Number of bars for high/low", "Parameters");
 
@@ -53,8 +53,20 @@ public class BreakdownLevelIntradayStrategy : Strategy
 		_takeProfitPct = Param(nameof(TakeProfitPct), 1.0m)
 			.SetDisplay("Take Profit %", "Take profit as percent of price", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_entryPrice = 0m;
+		_stopPrice = 0m;
+		_takePrice = 0m;
+		_prevHigh = 0m;
+		_prevLow = 0m;
+		_hasPrev = false;
 	}
 
 	/// <inheritdoc />
@@ -103,7 +115,7 @@ public class BreakdownLevelIntradayStrategy : Strategy
 			if (Position == 0)
 			{
 				// Breakout above previous highest level
-				if (close > _prevHigh)
+				if (close > _prevHigh * 1.002m)
 				{
 					BuyMarket();
 					_entryPrice = close;
@@ -111,7 +123,7 @@ public class BreakdownLevelIntradayStrategy : Strategy
 					_takePrice = close * (1 + TakeProfitPct / 100m);
 				}
 				// Breakout below previous lowest level
-				else if (close < _prevLow)
+				else if (close < _prevLow * 0.998m)
 				{
 					SellMarket();
 					_entryPrice = close;

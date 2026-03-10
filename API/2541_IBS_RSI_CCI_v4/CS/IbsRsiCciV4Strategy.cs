@@ -41,10 +41,6 @@ public class IbsRsiCciV4Strategy : Strategy
 	private RelativeStrengthIndex _rsi = null!;
 	private CommodityChannelIndex _cci = null!;
 	private IIndicator _ibsAverage = null!;
-	private Highest _highest = null!;
-	private Lowest _lowest = null!;
-	private IIndicator _upperAverage = null!;
-	private IIndicator _lowerAverage = null!;
 
 	private bool _hasSignal;
 	private decimal _lastSignal;
@@ -59,7 +55,7 @@ public class IbsRsiCciV4Strategy : Strategy
 	/// </summary>
 	public IbsRsiCciV4Strategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe used for calculations", "General")
 		;
 
@@ -294,6 +290,17 @@ public class IbsRsiCciV4Strategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_hasSignal = false;
+		_lastSignal = 0m;
+		_signalHistory.Clear();
+		_baselineHistory.Clear();
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
@@ -303,11 +310,6 @@ public class IbsRsiCciV4Strategy : Strategy
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 		_cci = new CommodityChannelIndex { Length = CciPeriod };
 		_ibsAverage = CreateMovingAverage(IbsAverageType, Math.Max(1, IbsPeriod));
-		_highest = new Highest { Length = Math.Max(1, RangePeriod) };
-		_lowest = new Lowest { Length = Math.Max(1, RangePeriod) };
-		_upperAverage = CreateMovingAverage(RangeAverageType, Math.Max(1, SmoothPeriod));
-		_lowerAverage = CreateMovingAverage(RangeAverageType, Math.Max(1, SmoothPeriod));
-
 		var subscription = SubscribeCandles(CandleType);
 		subscription
 		.Bind(_rsi, _cci, ProcessCandle)
@@ -350,23 +352,30 @@ public class IbsRsiCciV4Strategy : Strategy
 		var compositeTarget = ((ibsSmoothed - 0.5m) * IbsWeight + cciValue * CciWeight + (rsiValue - 50m) * RsiWeight) / 3m;
 		var adjustedSignal = ApplyStepConstraint(compositeTarget);
 
-		var highestValue = _highest.Process(new DecimalIndicatorValue(_highest, adjustedSignal, candle.OpenTime) { IsFinal = true });
-		var lowestValue = _lowest.Process(new DecimalIndicatorValue(_lowest, adjustedSignal, candle.OpenTime) { IsFinal = true });
-		if (highestValue is not DecimalIndicatorValue { IsFinal: true, Value: var highest })
-		return;
-		if (lowestValue is not DecimalIndicatorValue { IsFinal: true, Value: var lowest })
-		return;
+		_signalHistory.Add(adjustedSignal);
+		var maxSignalHistory = Math.Max(2, Math.Max(RangePeriod, SignalBar + 2) + Math.Max(1, SmoothPeriod));
+		if (_signalHistory.Count > maxSignalHistory)
+			_signalHistory.RemoveAt(0);
 
-		var upperValue = _upperAverage.Process(new DecimalIndicatorValue(_upperAverage, highest, candle.OpenTime) { IsFinal = true });
-		var lowerValue = _lowerAverage.Process(new DecimalIndicatorValue(_lowerAverage, lowest, candle.OpenTime) { IsFinal = true });
-		if (upperValue is not DecimalIndicatorValue { IsFinal: true, Value: var upper })
-		return;
-		if (lowerValue is not DecimalIndicatorValue { IsFinal: true, Value: var lower })
-		return;
+		if (_signalHistory.Count < Math.Max(1, RangePeriod))
+			return;
 
-		var baseline = (upper + lower) / 2m;
+		var highest = decimal.MinValue;
+		var lowest = decimal.MaxValue;
+		var startIndex = Math.Max(0, _signalHistory.Count - RangePeriod);
 
-		UpdateHistory(adjustedSignal, baseline);
+		for (var i = startIndex; i < _signalHistory.Count; i++)
+		{
+			var value = _signalHistory[i];
+			if (value > highest)
+				highest = value;
+			if (value < lowest)
+				lowest = value;
+		}
+
+		var baseline = (highest + lowest) / 2m;
+
+		UpdateHistory(baseline);
 
 		var historyLength = Math.Min(_signalHistory.Count, _baselineHistory.Count);
 		if (historyLength <= SignalBar)
@@ -431,17 +440,12 @@ public class IbsRsiCciV4Strategy : Strategy
 		return _lastSignal;
 	}
 
-	private void UpdateHistory(decimal signal, decimal baseline)
+	private void UpdateHistory(decimal baseline)
 	{
-		var maxSize = Math.Max(2, Math.Max(SignalBar + 1, 2));
-
-		_signalHistory.Add(signal);
-		if (_signalHistory.Count > maxSize)
-		_signalHistory.RemoveAt(0);
-
+		var maxSize = Math.Max(2, Math.Max(RangePeriod, SignalBar + 2) + Math.Max(1, SmoothPeriod));
 		_baselineHistory.Add(baseline);
 		if (_baselineHistory.Count > maxSize)
-		_baselineHistory.RemoveAt(0);
+			_baselineHistory.RemoveAt(0);
 	}
 
 	private static IIndicator CreateMovingAverage(MovingAverageKinds kind, int length)

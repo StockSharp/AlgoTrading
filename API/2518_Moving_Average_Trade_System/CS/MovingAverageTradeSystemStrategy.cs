@@ -35,6 +35,7 @@ public class MovingAverageTradeSystemStrategy : Strategy
 	private SimpleMovingAverage _smaSlow;
 
 	private decimal? _previousSignal;
+	private decimal? _previousSlow;
 
 	private decimal? _longEntryPrice;
 	private decimal? _longTakeProfit;
@@ -152,7 +153,7 @@ public class MovingAverageTradeSystemStrategy : Strategy
 			
 			.SetOptimize(0m, 100m, 5m);
 
-		_slopeThresholdSteps = Param(nameof(SlopeThresholdSteps), 0m)
+		_slopeThresholdSteps = Param(nameof(SlopeThresholdSteps), 10m)
 			.SetNotNegative()
 			.SetDisplay("Slope Threshold", "Minimum SMA40 vs SMA60 distance in steps", "Signals")
 			
@@ -198,6 +199,7 @@ public class MovingAverageTradeSystemStrategy : Strategy
 		base.OnReseted();
 
 		_previousSignal = null;
+		_previousSlow = null;
 
 		ResetLongState();
 		ResetShortState();
@@ -240,24 +242,27 @@ public class MovingAverageTradeSystemStrategy : Strategy
 		if (!_smaFast.IsFormed || !_smaMedium.IsFormed || !_smaSignal.IsFormed || !_smaSlow.IsFormed)
 		{
 			_previousSignal = smaSignal;
+			_previousSlow = smaSlow;
 			return;
 		}
 
 		var previousSignal = _previousSignal;
+		var previousSlow = _previousSlow;
 		_previousSignal = smaSignal;
+		_previousSlow = smaSlow;
 
-		if (previousSignal is null)
+		if (previousSignal is null || previousSlow is null)
 			return;
 
 		var priceStep = GetPriceStep();
 		var slopeThreshold = SlopeThresholdSteps * priceStep;
 
-		var bullishStructure = smaFast > smaMedium && smaMedium > smaSignal;
-		var bearishStructure = smaFast < smaMedium && smaMedium < smaSignal;
+		var bullishStructure = smaFast > smaMedium && smaMedium > smaSlow;
+		var bearishStructure = smaFast < smaMedium && smaMedium < smaSlow;
 		var bullishSlope = (smaSignal - smaSlow) >= slopeThreshold;
 		var bearishSlope = (smaSlow - smaSignal) >= slopeThreshold;
-		var bullishCross = previousSignal.Value <= smaSlow;
-		var bearishCross = previousSignal.Value >= smaSlow;
+		var bullishCross = previousSignal.Value <= previousSlow.Value && smaSignal > smaSlow;
+		var bearishCross = previousSignal.Value >= previousSlow.Value && smaSignal < smaSlow;
 
 		var buySignal = bullishStructure && bullishSlope && bullishCross;
 		var sellSignal = bearishStructure && bearishSlope && bearishCross;

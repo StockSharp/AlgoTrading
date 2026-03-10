@@ -57,7 +57,7 @@ public class TenPipsEurusdStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "ATR calculation length", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 	}
 
@@ -145,14 +145,14 @@ public class TenPipsEurusdStrategy : Strategy
 		// Entry on breakout
 		if (_hasPrev && Position == 0)
 		{
-			if (close > _prevHigh)
+			if (close > _prevHigh + atr * 0.5m)
 			{
 				BuyMarket();
 				_entryPrice = close;
 				_stopPrice = close - StopLossMult * atr;
 				_takePrice = close + TakeProfitMult * atr;
 			}
-			else if (close < _prevLow)
+			else if (close < _prevLow - atr * 0.5m)
 			{
 				SellMarket();
 				_entryPrice = close;

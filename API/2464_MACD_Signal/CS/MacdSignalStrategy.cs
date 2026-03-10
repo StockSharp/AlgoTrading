@@ -29,7 +29,7 @@ public class MacdSignalStrategy : Strategy
 	private readonly StrategyParam<decimal> _atrLevel;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private MovingAverageConvergenceDivergenceSignal _macd;
+	private ExponentialMovingAverage _signalEma;
 	private AverageTrueRange _atr;
 	private decimal _prevDelta;
 	private bool _hasPrevDelta;
@@ -117,10 +117,10 @@ public class MacdSignalStrategy : Strategy
 		_signalPeriod = Param(nameof(SignalPeriod), 8)
 			.SetDisplay("Signal", "Signal line period for MACD", "Indicators");
 
-		_atrLevel = Param(nameof(AtrLevel), 0.004m)
+		_atrLevel = Param(nameof(AtrLevel), 0.01m)
 			.SetDisplay("ATR Level", "ATR multiplier for threshold", "Logic");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -135,7 +135,7 @@ public class MacdSignalStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_macd = null;
+		_signalEma = null;
 		_atr = null;
 		_prevDelta = 0m;
 		_hasPrevDelta = false;
@@ -146,21 +146,14 @@ public class MacdSignalStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_macd = new()
-		{
-			Macd =
-			{
-				ShortMa = { Length = FastPeriod },
-				LongMa = { Length = SlowPeriod },
-			},
-			SignalMa = { Length = SignalPeriod }
-		};
-
+		var fastEma = new ExponentialMovingAverage { Length = FastPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowPeriod };
+		_signalEma = new ExponentialMovingAverage { Length = SignalPeriod };
 		_atr = new() { Length = 14 };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(_macd, ProcessCandle)
+			.Bind(fastEma, slowEma, ProcessCandle)
 			.Start();
 
 		var step = Security?.PriceStep ?? 1m;
@@ -173,30 +166,25 @@ public class MacdSignalStrategy : Strategy
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _macd);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEma, decimal slowEma)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
 		var atrValue = _atr.Process(candle);
-		if (!atrValue.IsFinal)
-		{
-			var tmp = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
-			_prevDelta = tmp.Macd is decimal m && tmp.Signal is decimal s ? m - s : 0m;
-			_hasPrevDelta = true;
-			return;
-		}
+		var delta = fastEma - slowEma;
+		var signal = _signalEma.Process(delta, candle.CloseTime, true).ToDecimal();
 
-		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
-		if (macdTyped.Macd is not decimal macd || macdTyped.Signal is not decimal signal)
+		if (!atrValue.IsFinal || !_signalEma.IsFormed)
 			return;
 
-		var delta = macd - signal;
+		delta -= signal;
 		var rr = atrValue.ToDecimal() * AtrLevel;
 
 		if (!_hasPrevDelta)

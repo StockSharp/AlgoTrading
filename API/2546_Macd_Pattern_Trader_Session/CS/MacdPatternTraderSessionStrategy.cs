@@ -361,7 +361,7 @@ public class MacdPatternTraderSessionStrategy : Strategy
 			.SetDisplay("Session End", "Trading end time", "Trading");
 		_useMartingale = Param(nameof(UseMartingale), true)
 			.SetDisplay("Use Martingale", "Double volume after losses", "Trading");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Base candle type", "Trading");
 	}
 
@@ -1020,6 +1020,58 @@ public class MacdPatternTraderSessionStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_history.Clear();
+
+		_macd1Prev1 = null;
+		_macd1Prev2 = null;
+		_macd1Prev3 = null;
+		_macd2Prev1 = null;
+		_macd2Prev2 = null;
+		_macd2Prev3 = null;
+		_macd3Prev1 = null;
+		_macd3Prev2 = null;
+		_macd3Prev3 = null;
+		_macd4Prev1 = null;
+		_macd4Prev2 = null;
+		_macd4Prev3 = null;
+		_macd5Prev1 = null;
+		_macd5Prev2 = null;
+		_macd5Prev3 = null;
+		_macd6Prev1 = null;
+		_macd6Prev2 = null;
+		_macd6Prev3 = null;
+
+		_ema1Prev = null;
+		_ema2Prev = null;
+		_smaPrev = null;
+		_ema3Prev = null;
+
+		_pointSize = 0m;
+		_pointValue = 0m;
+		_currentVolume = 0m;
+		_entryPrice = 0m;
+		_openVolume = 0m;
+		_realizedPnL = 0m;
+		_entryDirection = 0;
+		_currentStopLoss = null;
+		_currentTakeProfit = null;
+
+		_longPartialStage = 0;
+		_shortPartialStage = 0;
+		_barsBup = 0;
+		_pattern6ShortCounter = 0;
+		_pattern6ShortBlocked = false;
+		_pattern6LongCounter = 0;
+		_pattern6LongBlocked = false;
+		_pattern6ShortReady = false;
+		_pattern6LongReady = false;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
@@ -1386,7 +1438,7 @@ public class MacdPatternTraderSessionStrategy : Strategy
 		if (totalVolume <= 0m)
 			return;
 
-		BuyMarket();
+		BuyMarket(totalVolume);
 
 		_entryDirection = 1;
 		_entryPrice = candle.ClosePrice;
@@ -1409,7 +1461,7 @@ public class MacdPatternTraderSessionStrategy : Strategy
 		if (totalVolume <= 0m)
 			return;
 
-		SellMarket();
+		SellMarket(totalVolume);
 
 		_entryDirection = -1;
 		_entryPrice = candle.ClosePrice;
@@ -1439,7 +1491,7 @@ public class MacdPatternTraderSessionStrategy : Strategy
 				var volume = NormalizeVolume(_openVolume / 3m);
 				if (volume > 0m)
 				{
-					SellMarket();
+					SellMarket(volume);
 					RegisterClose(volume, candle.ClosePrice);
 					_longPartialStage = 1;
 				}
@@ -1449,7 +1501,7 @@ public class MacdPatternTraderSessionStrategy : Strategy
 				var volume = NormalizeVolume(_openVolume / 2m);
 				if (volume > 0m)
 				{
-					SellMarket();
+					SellMarket(volume);
 					RegisterClose(volume, candle.ClosePrice);
 					_longPartialStage = 2;
 				}
@@ -1462,7 +1514,7 @@ public class MacdPatternTraderSessionStrategy : Strategy
 				var volume = NormalizeVolume(_openVolume / 3m);
 				if (volume > 0m)
 				{
-					BuyMarket();
+					BuyMarket(volume);
 					RegisterClose(volume, candle.ClosePrice);
 					_shortPartialStage = 1;
 				}
@@ -1472,7 +1524,7 @@ public class MacdPatternTraderSessionStrategy : Strategy
 				var volume = NormalizeVolume(_openVolume / 2m);
 				if (volume > 0m)
 				{
-					BuyMarket();
+					BuyMarket(volume);
 					RegisterClose(volume, candle.ClosePrice);
 					_shortPartialStage = 2;
 				}
@@ -1487,33 +1539,39 @@ public class MacdPatternTraderSessionStrategy : Strategy
 
 		if (_entryDirection > 0)
 		{
-			if (_currentStopLoss.HasValue && candle.LowPrice <= _currentStopLoss.Value)
+			var stopLoss = _currentStopLoss;
+			var takeProfit = _currentTakeProfit;
+
+			if (stopLoss.HasValue && candle.LowPrice <= stopLoss.Value)
 			{
-				SellMarket();
-				RegisterClose(_openVolume, _currentStopLoss.Value);
+				SellMarket(_openVolume);
+				RegisterClose(_openVolume, stopLoss.Value);
 				return true;
 			}
 
-			if (_currentTakeProfit.HasValue && candle.HighPrice >= _currentTakeProfit.Value)
+			if (takeProfit.HasValue && candle.HighPrice >= takeProfit.Value)
 			{
-				SellMarket();
-				RegisterClose(_openVolume, _currentTakeProfit.Value);
+				SellMarket(_openVolume);
+				RegisterClose(_openVolume, takeProfit.Value);
 				return true;
 			}
 		}
 		else if (_entryDirection < 0)
 		{
-			if (_currentStopLoss.HasValue && candle.HighPrice >= _currentStopLoss.Value)
+			var stopLoss = _currentStopLoss;
+			var takeProfit = _currentTakeProfit;
+
+			if (stopLoss.HasValue && candle.HighPrice >= stopLoss.Value)
 			{
-				BuyMarket();
-				RegisterClose(_openVolume, _currentStopLoss.Value);
+				BuyMarket(_openVolume);
+				RegisterClose(_openVolume, stopLoss.Value);
 				return true;
 			}
 
-			if (_currentTakeProfit.HasValue && candle.LowPrice <= _currentTakeProfit.Value)
+			if (takeProfit.HasValue && candle.LowPrice <= takeProfit.Value)
 			{
-				BuyMarket();
-				RegisterClose(_openVolume, _currentTakeProfit.Value);
+				BuyMarket(_openVolume);
+				RegisterClose(_openVolume, takeProfit.Value);
 				return true;
 			}
 		}
@@ -1652,6 +1710,9 @@ public class MacdPatternTraderSessionStrategy : Strategy
 		for (var i = startIndex; i >= endIndex; i--)
 		{
 			var candle = _history[i];
+			if (candle is null)
+				continue;
+
 			var value = isLong ? candle.HighPrice : candle.LowPrice;
 
 			if (isLong)
@@ -1665,6 +1726,9 @@ public class MacdPatternTraderSessionStrategy : Strategy
 					extreme = value;
 			}
 		}
+
+		if (extreme == decimal.MinValue || extreme == decimal.MaxValue)
+			return null;
 
 		var nextOffset = offset + length;
 		var nextExtreme = GetChunkExtreme(isLong, length, nextOffset);

@@ -296,7 +296,7 @@ public class CrossingOfTwoIMaV2Strategy : Strategy
 		_secondPrice = Param(nameof(SecondAppliedPrice), AppliedPriceTypes.Close)
 		.SetDisplay("Second MA Price", "Price source for the second moving average", "Second Moving Average");
 
-		_useFilter = Param(nameof(UseFilter), true)
+		_useFilter = Param(nameof(UseFilter), false)
 		.SetDisplay("Enable Filter", "Use the third moving average as a directional filter", "Filter");
 
 		_thirdPeriod = Param(nameof(ThirdPeriod), 13)
@@ -348,7 +348,7 @@ public class CrossingOfTwoIMaV2Strategy : Strategy
 		.SetNotNegative()
 		.SetDisplay("Trailing Step", "Minimum trailing stop adjustment in pips", "Protection");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 		.SetDisplay("Candle Type", "Candle type used for analysis", "General");
 
 		_barsSinceLastEntry = int.MaxValue;

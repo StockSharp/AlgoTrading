@@ -135,7 +135,7 @@ public class SilverTrendV3Strategy : Strategy
 	/// </summary>
 	public SilverTrendV3Strategy()
 	{
-		_countBars = Param(nameof(CountBars), 350)
+		_countBars = Param(nameof(CountBars), 150)
 			.SetGreaterThanZero()
 			.SetDisplay("Count Bars", "Number of candles required before trading", "Indicator");
 
@@ -147,7 +147,7 @@ public class SilverTrendV3Strategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("JTPO Length", "JTPO smoothing length", "Indicator");
 
-		_historyCapacity = Param(nameof(HistoryCapacity), 400)
+		_historyCapacity = Param(nameof(HistoryCapacity), 220)
 			.SetGreaterThanZero()
 			.SetDisplay("History Capacity", "Maximum stored candles", "Indicator");
 
@@ -171,7 +171,7 @@ public class SilverTrendV3Strategy : Strategy
 			.SetDisplay("Friday Cutoff Hour", "Disable new entries after this hour on Friday", "Sessions")
 			.SetNotNegative();
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type for signal calculations", "General");
 
 		Volume = 1m;
@@ -195,6 +195,7 @@ public class SilverTrendV3Strategy : Strategy
 		_shortTrailingStop = null;
 		_entryPrice = 0m;
 		_previousSignal = 0;
+		_pointValue = 0m;
 	}
 
 	/// <inheritdoc />
@@ -326,7 +327,7 @@ public class SilverTrendV3Strategy : Strategy
 			volume += Math.Abs(Position);
 		}
 
-		BuyMarket();
+		BuyMarket(volume);
 
 		_entryPrice = candle.ClosePrice;
 		_longTrailingStop = null;
@@ -341,7 +342,7 @@ public class SilverTrendV3Strategy : Strategy
 			volume += Position;
 		}
 
-		SellMarket();
+		SellMarket(volume);
 
 		_entryPrice = candle.ClosePrice;
 		_longTrailingStop = null;

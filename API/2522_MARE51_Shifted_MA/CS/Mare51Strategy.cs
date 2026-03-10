@@ -123,7 +123,7 @@ public class Mare51Strategy : Strategy
 			.SetDisplay("Session Close Hour", "Inclusive end hour for trading", "Session")
 			.SetRange(0, 23);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Candle data type", "Data");
 	}
 
@@ -233,15 +233,11 @@ public class Mare51Strategy : Strategy
 		if (!IsWithinSession(candle.OpenTime))
 			return;
 
-		var point = Security?.PriceStep ?? 0m;
-		if (point <= 0m)
-			point = 0.0001m;
-
 		var bearishPrevious = previousCandle.ClosePrice < previousCandle.OpenPrice;
 		var bullishPrevious = previousCandle.ClosePrice > previousCandle.OpenPrice;
 
-		var sellSignal = (s0 - f0) >= point && (f2 - s2) >= point && (f5 - s5) >= point && bearishPrevious;
-		var buySignal = (f0 - s0) >= point && (s2 - f2) >= point && (s5 - f5) >= point && bullishPrevious;
+		var sellSignal = f5 >= s5 && f2 < s2 && f0 < s0 && bearishPrevious;
+		var buySignal = f5 <= s5 && f2 > s2 && f0 > s0 && bullishPrevious;
 
 		if (Position != 0)
 			return;

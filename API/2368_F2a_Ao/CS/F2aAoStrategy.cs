@@ -22,6 +22,7 @@ public class F2aAoStrategy : Strategy
 	private readonly StrategyParam<int> _filterLength;
 	private decimal _previousAo = decimal.MinValue;
 	private decimal _previousFilteredAo = decimal.MinValue;
+	private int _barsSinceTrade;
 
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
@@ -30,7 +31,7 @@ public class F2aAoStrategy : Strategy
 
 	public F2aAoStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 
 		_fastPeriod = Param(nameof(FastPeriod), 5)
@@ -50,6 +51,7 @@ public class F2aAoStrategy : Strategy
 
 		_previousAo = decimal.MinValue;
 		_previousFilteredAo = decimal.MinValue;
+		_barsSinceTrade = 20;
 	}
 
 	/// <inheritdoc />
@@ -59,6 +61,7 @@ public class F2aAoStrategy : Strategy
 
 		_previousAo = decimal.MinValue;
 		_previousFilteredAo = decimal.MinValue;
+		_barsSinceTrade = 20;
 
 		var ao = new AwesomeOscillator();
 		ao.ShortMa.Length = FastPeriod;
@@ -85,6 +88,8 @@ public class F2aAoStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		_barsSinceTrade++;
+
 		if (_previousAo == decimal.MinValue)
 		{
 			_previousAo = aoValue;
@@ -92,10 +97,19 @@ public class F2aAoStrategy : Strategy
 			return;
 		}
 
-		if (aoValue > 0 && filteredAo > 0 && aoValue > filteredAo && Position <= 0)
+		var crossedUp = _previousAo <= 0m && aoValue > 0m;
+		var crossedDown = _previousAo >= 0m && aoValue < 0m;
+
+		if (_barsSinceTrade >= 10 && filteredAo > _previousFilteredAo && crossedUp && Position <= 0)
+		{
 			BuyMarket();
-		else if (aoValue < 0 && filteredAo < 0 && aoValue < filteredAo && Position >= 0)
+			_barsSinceTrade = 0;
+		}
+		else if (_barsSinceTrade >= 10 && filteredAo < _previousFilteredAo && crossedDown && Position >= 0)
+		{
 			SellMarket();
+			_barsSinceTrade = 0;
+		}
 
 		_previousAo = aoValue;
 		_previousFilteredAo = filteredAo;

@@ -106,12 +106,12 @@ public class BigBarSoundStrategy : Strategy
 	/// </summary>
 	public BigBarSoundStrategy()
 	{
-		_barPoint = Param(nameof(BarPoint), 100)
+		_barPoint = Param(nameof(BarPoint), 180)
 			.SetGreaterThanZero()
 			.SetDisplay("Point Threshold", "Number of price steps required to trigger entry", "General")
 			.SetOptimize(50, 500, 50);
 
-		_differenceMode = Param(nameof(DifferenceMode), BigBarDifferenceModes.HighLow)
+		_differenceMode = Param(nameof(DifferenceMode), BigBarDifferenceModes.OpenClose)
 			.SetDisplay("Difference Mode", "How the candle size is calculated", "General");
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
@@ -119,17 +119,17 @@ public class BigBarSoundStrategy : Strategy
 			.SetDisplay("ATR Period", "Period for ATR calculation", "Indicators")
 			.SetOptimize(7, 28, 7);
 
-		_atrStopMultiplier = Param(nameof(AtrStopMultiplier), 1.5m)
+		_atrStopMultiplier = Param(nameof(AtrStopMultiplier), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Stop Mult", "ATR multiplier for stop-loss", "Risk")
 			.SetOptimize(1m, 3m, 0.5m);
 
-		_atrTpMultiplier = Param(nameof(AtrTpMultiplier), 2m)
+		_atrTpMultiplier = Param(nameof(AtrTpMultiplier), 3m)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR TP Mult", "ATR multiplier for take-profit", "Risk")
 			.SetOptimize(1m, 4m, 0.5m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to monitor", "Data");
 	}
 

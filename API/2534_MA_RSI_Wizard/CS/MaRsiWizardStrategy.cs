@@ -72,10 +72,10 @@ public class MaRsiWizardStrategy : Strategy
 	/// </summary>
 	public MaRsiWizardStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for incoming candles", "General");
 
-		_thresholdOpen = Param(nameof(ThresholdOpen), 55)
+		_thresholdOpen = Param(nameof(ThresholdOpen), 75)
 			.SetRange(0, 100)
 			.SetDisplay("Open Threshold", "Weighted score required to open a position", "Signals")
 			;
@@ -97,7 +97,7 @@ public class MaRsiWizardStrategy : Strategy
 			.SetDisplay("Take Profit (points)", "Profit target distance expressed in price points", "Risk")
 			;
 
-		_expirationBars = Param(nameof(ExpirationBars), 4)
+		_expirationBars = Param(nameof(ExpirationBars), 24)
 			.SetDisplay("Signal Cooldown (bars)", "Bars to wait before allowing a new trade in the same direction", "Signals")
 			;
 
@@ -381,11 +381,11 @@ public class MaRsiWizardStrategy : Strategy
 
 		if (Position > 0 && shortScore >= ThresholdClose)
 		{
-			SellMarket();
+			SellMarket(Math.Abs(Position));
 		}
 		else if (Position < 0 && longScore >= ThresholdClose)
 		{
-			BuyMarket();
+			BuyMarket(Math.Abs(Position));
 		}
 
 		var allowLong = ExpirationBars <= 0 || _lastLongEntryBar == null || _barIndex - _lastLongEntryBar >= ExpirationBars;
@@ -396,7 +396,7 @@ public class MaRsiWizardStrategy : Strategy
 			var volume = Volume + Math.Abs(Position);
 			if (volume > 0)
 			{
-				BuyMarket();
+				BuyMarket(volume);
 				_lastLongEntryBar = _barIndex;
 			}
 			return;
@@ -407,7 +407,7 @@ public class MaRsiWizardStrategy : Strategy
 			var volume = Volume + Math.Abs(Position);
 			if (volume > 0)
 			{
-				SellMarket();
+				SellMarket(volume);
 				_lastShortEntryBar = _barIndex;
 			}
 		}

@@ -221,7 +221,7 @@ public class AltariusRsiStochasticStrategy : Strategy
 	/// </summary>
 	public AltariusRsiStochasticStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame used for calculations", "General");
 
 		_baseVolume = Param(nameof(BaseVolume), 0.1m)
@@ -264,7 +264,7 @@ public class AltariusRsiStochasticStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Secondary %D Period", "Signal period for secondary Stochastic", "Secondary Stochastic");
 
-		_differenceThreshold = Param(nameof(DifferenceThreshold), 5m)
+		_differenceThreshold = Param(nameof(DifferenceThreshold), 10m)
 			.SetGreaterThanZero()
 			.SetDisplay("Signal Gap", "Minimum gap between %K and %D on the fast Stochastic", "Entries");
 

@@ -140,7 +140,7 @@ public class MasterMmDroidStrategy : Strategy
 	/// </summary>
 	public MasterMmDroidStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe", "General");
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
@@ -148,33 +148,33 @@ public class MasterMmDroidStrategy : Strategy
 			.SetDisplay("RSI Period", "RSI calculation period", "RSI")
 			.SetOptimize(7, 21, 7);
 
-		_rsiLowerLevel = Param(nameof(RsiLowerLevel), 30m)
+		_rsiLowerLevel = Param(nameof(RsiLowerLevel), 25m)
 			.SetDisplay("RSI Oversold", "RSI oversold threshold", "RSI");
 
-		_rsiUpperLevel = Param(nameof(RsiUpperLevel), 70m)
+		_rsiUpperLevel = Param(nameof(RsiUpperLevel), 75m)
 			.SetDisplay("RSI Overbought", "RSI overbought threshold", "RSI");
 
-		_rsiMaxEntries = Param(nameof(RsiMaxEntries), 3)
+		_rsiMaxEntries = Param(nameof(RsiMaxEntries), 2)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Entries", "Maximum pyramiding steps", "RSI");
 
-		_rsiPyramidSteps = Param(nameof(RsiPyramidSteps), 150m)
+		_rsiPyramidSteps = Param(nameof(RsiPyramidSteps), 250m)
 			.SetGreaterThanZero()
 			.SetDisplay("Pyramid Steps", "Price steps between entries", "RSI");
 
-		_stopLossSteps = Param(nameof(StopLossSteps), 350m)
+		_stopLossSteps = Param(nameof(StopLossSteps), 500m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss Steps", "Stop-loss distance in price steps", "Risk");
 
-		_trailingSteps = Param(nameof(TrailingSteps), 500m)
+		_trailingSteps = Param(nameof(TrailingSteps), 700m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trailing Steps", "Trailing distance in price steps", "Risk");
 
-		_boxLookback = Param(nameof(BoxLookback), 12)
+		_boxLookback = Param(nameof(BoxLookback), 16)
 			.SetGreaterThanZero()
 			.SetDisplay("Box Lookback", "Candles for box high/low", "Box");
 
-		_boxEntrySteps = Param(nameof(BoxEntrySteps), 100m)
+		_boxEntrySteps = Param(nameof(BoxEntrySteps), 180m)
 			.SetGreaterThanZero()
 			.SetDisplay("Box Entry Steps", "Breakout distance in price steps", "Box");
 	}
@@ -228,6 +228,7 @@ public class MasterMmDroidStrategy : Strategy
 			return;
 
 		var step = Security?.PriceStep ?? 1m;
+		var enteredThisCandle = false;
 
 		// Update box tracking
 		UpdateBox(candle);
@@ -253,6 +254,7 @@ public class MasterMmDroidStrategy : Strategy
 				_entryCount = 1;
 				_activeStopPrice = candle.ClosePrice - StopLossSteps * step;
 				_bestPrice = candle.ClosePrice;
+				enteredThisCandle = true;
 			}
 			else if (candle.ClosePrice < _boxLow - boxOffset)
 			{
@@ -261,11 +263,12 @@ public class MasterMmDroidStrategy : Strategy
 				_entryCount = 1;
 				_activeStopPrice = candle.ClosePrice + StopLossSteps * step;
 				_bestPrice = candle.ClosePrice;
+				enteredThisCandle = true;
 			}
 		}
 
 		// RSI crossover signals
-		if (_hasPreviousRsi && _rsi.IsFormed)
+		if (!enteredThisCandle && _hasPreviousRsi && _rsi.IsFormed)
 		{
 			var rsiCrossUp = _previousRsi <= RsiLowerLevel && rsiValue > RsiLowerLevel;
 			var rsiCrossDown = _previousRsi >= RsiUpperLevel && rsiValue < RsiUpperLevel;

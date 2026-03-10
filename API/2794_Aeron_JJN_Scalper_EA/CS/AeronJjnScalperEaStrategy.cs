@@ -145,7 +145,7 @@ public class AeronJjnScalperEaStrategy : Strategy
 		_dojiDiff2Pips = Param(nameof(DojiDiff2Pips), 4m)
 		.SetDisplay("Doji Diff 2 (pips)", "Doji Diff 2 (pips)", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 		.SetDisplay("Candle Type", "Candle Type", "General");
 
 		_atrLength = Param(nameof(AtrLength), 8)
@@ -171,6 +171,12 @@ public class AeronJjnScalperEaStrategy : Strategy
 		base.OnReseted();
 
 		_history.Clear();
+		_atr = null;
+		_pipSize = 0m;
+		_trailingStopDistance = 0m;
+		_trailingStepDistance = 0m;
+		_dojiDiff1 = 0m;
+		_dojiDiff2 = 0m;
 		_pendingLongLevel = null;
 		_pendingShortLevel = null;
 		_pendingLongAtr = null;

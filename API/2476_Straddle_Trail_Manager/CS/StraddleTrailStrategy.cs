@@ -47,7 +47,7 @@ public class StraddleTrailStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "ATR calculation length", "ATR");
 
-		_atrMultiplier = Param(nameof(AtrMultiplier), 1.5m)
+		_atrMultiplier = Param(nameof(AtrMultiplier), 2.5m)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Multiplier", "Breakout distance multiplier", "ATR");
 
@@ -55,19 +55,19 @@ public class StraddleTrailStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("SL Multiplier", "Stop loss as ATR multiple", "Risk");
 
-		_takeProfitMult = Param(nameof(TakeProfitMult), 2.0m)
+		_takeProfitMult = Param(nameof(TakeProfitMult), 3.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("TP Multiplier", "Take profit as ATR multiple", "Risk");
 
-		_trailMult = Param(nameof(TrailMult), 0.5m)
+		_trailMult = Param(nameof(TrailMult), 1.5m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trail Multiplier", "Trailing distance as ATR multiple", "Risk");
 
-		_cooldownBars = Param(nameof(CooldownBars), 3)
+		_cooldownBars = Param(nameof(CooldownBars), 6)
 			.SetGreaterThanZero()
 			.SetDisplay("Cooldown", "Bars to wait after exit", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candle subscription", "General");
 	}
 

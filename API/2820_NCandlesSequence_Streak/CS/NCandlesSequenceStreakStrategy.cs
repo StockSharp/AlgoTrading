@@ -67,7 +67,7 @@ public class NCandlesSequenceStreakStrategy : Strategy
 	/// </summary>
 	public NCandlesSequenceStreakStrategy()
 	{
-		_consecutiveCandles = Param(nameof(ConsecutiveCandles), 3)
+		_consecutiveCandles = Param(nameof(ConsecutiveCandles), 4)
 		.SetGreaterThanZero()
 		.SetDisplay("Consecutive Candles", "Number of candles with identical direction", "Pattern")
 		

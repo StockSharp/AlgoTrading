@@ -54,11 +54,11 @@ public class RideAlligatorWilliamsStrategy : Strategy
 	/// </summary>
 	public RideAlligatorWilliamsStrategy()
 	{
-		_basePeriod = Param(nameof(BasePeriod), 5)
+		_basePeriod = Param(nameof(BasePeriod), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("Base Period", "Root period for Alligator lines", "Alligator");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for strategy", "General");
 	}
 

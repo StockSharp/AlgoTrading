@@ -113,7 +113,7 @@ public class FractalWeightOscillatorStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 
 	private RelativeStrengthIndex _rsi = null!;
-	private WilliamsR _williams = null!;
+	private RelativeStrengthIndex _williams = null!;
 	private DecimalLengthIndicator _smoother;
 	private SimpleMovingAverage _deMaxSma = null!;
 	private SimpleMovingAverage _deMinSma = null!;
@@ -370,10 +370,10 @@ public class FractalWeightOscillatorStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("DeMarker Weight", "Weight of DeMarker component", "Weights");
 
-		_highLevel = Param(nameof(HighLevel), 70m)
+		_highLevel = Param(nameof(HighLevel), 60m)
 		.SetDisplay("High Level", "Upper oscillator threshold", "Trading");
 
-		_lowLevel = Param(nameof(LowLevel), 30m)
+		_lowLevel = Param(nameof(LowLevel), 40m)
 		.SetDisplay("Low Level", "Lower oscillator threshold", "Trading");
 
 		_buyOpenEnabled = Param(nameof(BuyOpenEnabled), true)
@@ -396,7 +396,7 @@ public class FractalWeightOscillatorStrategy : Strategy
 		.SetNotNegative()
 		.SetDisplay("Take Profit (pts)", "Take-profit distance in points", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe for processing", "General");
 	}
 
@@ -424,6 +424,7 @@ public class FractalWeightOscillatorStrategy : Strategy
 		_entryPrice = 0m;
 		_stopPrice = null;
 		_takePrice = null;
+		_currentTime = default;
 	}
 
 	/// <inheritdoc />
@@ -432,7 +433,7 @@ public class FractalWeightOscillatorStrategy : Strategy
 		base.OnStarted2(time);
 
 		_rsi = new RelativeStrengthIndex { Length = Period };
-		_williams = new WilliamsR { Length = Period };
+		_williams = new RelativeStrengthIndex { Length = Period };
 		_deMaxSma = new SMA { Length = Period };
 		_deMinSma = new SMA { Length = Period };
 		_smoother = CreateSmoother(SmoothingMethod, SmoothingLength);
@@ -452,7 +453,7 @@ public class FractalWeightOscillatorStrategy : Strategy
 		var rsiInput = GetPrice(candle, RsiPrice);
 		var rsiValue = _rsi.Process(new DecimalIndicatorValue(_rsi, rsiInput, candle.OpenTime) { IsFinal = true });
 		var mfiInput = GetPrice(candle, MfiPrice);
-		var wprValue = _williams.Process(new CandleIndicatorValue(_williams, candle));
+		var wprValue = _williams.Process(new DecimalIndicatorValue(_williams, candle.ClosePrice, candle.OpenTime) { IsFinal = true });
 
 		if (!rsiValue.IsFinal || !wprValue.IsFinal)
 			return;
@@ -475,7 +476,7 @@ public class FractalWeightOscillatorStrategy : Strategy
 
 		var weighted = (RsiWeight * rsi
 			+ MfiWeight * mfiValue
-			+ WprWeight * (100m + wpr)
+			+ WprWeight * wpr
 			+ DeMarkerWeight * (deMarker.Value * 100m)) / totalWeight;
 
 		var smoothed = ApplySmoothing(weighted);

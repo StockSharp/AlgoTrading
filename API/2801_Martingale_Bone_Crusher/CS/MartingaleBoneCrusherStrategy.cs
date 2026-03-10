@@ -338,6 +338,8 @@ public class MartingaleBoneCrusherStrategy : Strategy
 	{
 		base.OnReseted();
 
+		_fastMa = null;
+		_slowMa = null;
 		_averagePrice = 0m;
 		_positionVolume = 0m;
 		_currentVolume = AlignVolume(InitialVolume);
@@ -347,6 +349,7 @@ public class MartingaleBoneCrusherStrategy : Strategy
 		_lowestPrice = 0m;
 		_breakevenPrice = null;
 		_maxFloatingProfit = 0m;
+		_initialCapital = 0m;
 		_lastPositionSide = null;
 		_lastLosingSide = null;
 	}

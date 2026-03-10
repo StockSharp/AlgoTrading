@@ -128,7 +128,7 @@ public class Hans123TraderStrategy : Strategy
 			
 			.SetOptimize(0.1m, 2m, 0.1m);
 
-		_rangeLength = Param(nameof(RangeLength), 80)
+		_rangeLength = Param(nameof(RangeLength), 40)
 			.SetGreaterThanZero()
 			.SetDisplay("Range Length", "Candles in breakout range", "General")
 			
@@ -164,7 +164,7 @@ public class Hans123TraderStrategy : Strategy
 			
 			.SetOptimize(1, 24, 1);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(3).TimeFrame())
 			.SetDisplay("Candle Type", "Working candle timeframe", "General");
 	}
 
@@ -179,7 +179,10 @@ public class Hans123TraderStrategy : Strategy
 	{
 		base.OnReseted();
 
+		_highest = null;
+		_lowest = null;
 		_entryPrice = 0m;
+		_pipSize = 0m;
 		_highestSinceEntry = 0m;
 		_lowestSinceEntry = 0m;
 	}

@@ -192,7 +192,7 @@ public class KijunSenRobotStrategy : Strategy
 		
 		.SetOptimize(10, 40, 2);
 
-		_maFilterPips = Param(nameof(MaFilterPips), 6m)
+		_maFilterPips = Param(nameof(MaFilterPips), 20m)
 		.SetNotNegative()
 		.SetDisplay("LWMA Filter (pips)", "Minimum distance between price and Kijun required by the LWMA", "Trend Filter")
 		
@@ -230,7 +230,7 @@ public class KijunSenRobotStrategy : Strategy
 		.SetRange(1, 24)
 		.SetDisplay("End Hour", "Last trading hour (exclusive)", "Scheduling");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe used for signal generation", "General");
 	}
 
@@ -518,7 +518,7 @@ public class KijunSenRobotStrategy : Strategy
 
 		if (_pendingLongLevel.HasValue && maTrendUp && Position <= 0)
 		{
-			BuyMarket();
+			BuyMarket(volume);
 			SetupPositionState(true, candle.ClosePrice);
 			_pendingLongLevel = null;
 			_pendingShortLevel = null;
@@ -527,7 +527,7 @@ public class KijunSenRobotStrategy : Strategy
 
 		if (_pendingShortLevel.HasValue && maTrendDown && Position >= 0)
 		{
-			SellMarket();
+			SellMarket(volume);
 			SetupPositionState(false, candle.ClosePrice);
 			_pendingLongLevel = null;
 			_pendingShortLevel = null;
@@ -570,7 +570,7 @@ public class KijunSenRobotStrategy : Strategy
 	private void ClosePositionAndReset()
 	{
 		if (Position != 0)
-		if (Position > 0) SellMarket(); else if (Position < 0) BuyMarket();
+			if (Position > 0) SellMarket(Math.Abs(Position)); else if (Position < 0) BuyMarket(Math.Abs(Position));
 
 		ResetPositionState();
 	}

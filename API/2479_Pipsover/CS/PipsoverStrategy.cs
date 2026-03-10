@@ -149,11 +149,11 @@ public class PipsoverStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Take-Profit Points", "Take-profit distance expressed in price steps", "Risk");
 
-		_openLevel = Param(nameof(OpenLevel), 100m)
+		_openLevel = Param(nameof(OpenLevel), 20m)
 			.SetGreaterThanZero()
 			.SetDisplay("Open Level", "Chaikin oscillator threshold for entries", "Chaikin");
 
-		_closeLevel = Param(nameof(CloseLevel), 125m)
+		_closeLevel = Param(nameof(CloseLevel), 30m)
 			.SetGreaterThanZero()
 			.SetDisplay("Close Level", "Chaikin oscillator threshold for exits", "Chaikin");
 

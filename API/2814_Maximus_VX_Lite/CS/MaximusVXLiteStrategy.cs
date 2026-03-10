@@ -166,7 +166,7 @@ public class MaximusVXLiteStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Range Lookback", "Candles used to calculate local maxima and minima", "Data");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe used by the strategy", "General");
 
 		_riskPercent = Param(nameof(RiskPercent), 5m)
@@ -194,6 +194,10 @@ public class MaximusVXLiteStrategy : Strategy
 		base.OnReseted();
 		_history.Clear();
 		_upperMax = _upperMin = _lowerMax = _lowerMin = 0m;
+		_priceStep = 0m;
+		_extDistance = 0m;
+		_extRange = 0m;
+		_extStopLoss = 0m;
 		_lastBuyTime = null;
 		_lastSellTime = null;
 		_activeStop = null;

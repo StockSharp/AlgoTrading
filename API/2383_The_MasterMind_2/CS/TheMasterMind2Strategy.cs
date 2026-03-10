@@ -145,7 +145,7 @@ public class TheMasterMind2Strategy : Strategy
 	{
 		_lotSize = Param(nameof(LotSize), 0.1m).SetDisplay("Lot Size", "Trade volume in contracts", "General");
 
-		_stochasticPeriod = Param(nameof(StochasticPeriod), 100)
+		_stochasticPeriod = Param(nameof(StochasticPeriod), 50)
 								.SetDisplay("Stochastic Period", "Period for Stochastic calculation", "Indicators")
 								;
 
@@ -157,7 +157,7 @@ public class TheMasterMind2Strategy : Strategy
 						   .SetDisplay("Stochastic %D", "Smoothing of %D line", "Indicators")
 						   ;
 
-		_wprPeriod = Param(nameof(WilliamsRPeriod), 100)
+		_wprPeriod = Param(nameof(WilliamsRPeriod), 50)
 						 .SetDisplay("Williams %R Period", "Period for Williams %R", "Indicators")
 						 ;
 

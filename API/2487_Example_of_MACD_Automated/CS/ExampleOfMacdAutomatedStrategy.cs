@@ -77,10 +77,10 @@ public class ExampleOfMacdAutomatedStrategy : Strategy
 			.SetDisplay("MACD Signal", "Signal EMA length", "Indicators")
 			;
 
-		_entryCandleType = Param(nameof(EntryCandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_entryCandleType = Param(nameof(EntryCandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Entry Timeframe", "Working timeframe for entries", "General");
 
-		_filterCandleType = Param(nameof(FilterCandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_filterCandleType = Param(nameof(FilterCandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Filter Timeframe", "Higher timeframe used as trend filter", "General");
 	}
 
@@ -240,38 +240,51 @@ public class ExampleOfMacdAutomatedStrategy : Strategy
 		return;
 
 		var macd = (IMovingAverageConvergenceDivergenceSignalValue)macdValue;
-		_lastEntryMacd = macd.Macd;
+		var currentEntryMacd = macd.Macd;
 
 		// Manage protective exits before searching for new entries.
 		if (HandleProtection(candle))
-		return;
+		{
+			_lastEntryMacd = currentEntryMacd;
+			return;
+		}
 
 		// Skip further processing if there is still an open position.
 		if (Position != 0)
-		return;
+		{
+			_lastEntryMacd = currentEntryMacd;
+			return;
+		}
 
 		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
+		{
+			_lastEntryMacd = currentEntryMacd;
+			return;
+		}
 
 		if (!_entryMacd.IsFormed || !_filterMacd.IsFormed)
-		return;
+		{
+			_lastEntryMacd = currentEntryMacd;
+			return;
+		}
 
-		if (_lastEntryMacd is null || _lastFilterMacd is null)
-		return;
+		if (_lastEntryMacd is not decimal previousEntryMacd || _lastFilterMacd is not decimal filterMacdValue)
+		{
+			_lastEntryMacd = currentEntryMacd;
+			return;
+		}
 
-		var entryMacdValue = _lastEntryMacd.Value;
-		var filterMacdValue = _lastFilterMacd.Value;
-
-		// Long signal requires both MACD values above zero.
-		if (entryMacdValue > 0m && filterMacdValue > 0m)
+		// Enter only on a zero-line crossover aligned with the higher timeframe filter.
+		if (previousEntryMacd <= 0m && currentEntryMacd > 0m && filterMacdValue > 0m)
 		{
 			EnterPosition(candle.ClosePrice, true);
 		}
-		// Short signal requires both MACD values below zero.
-		else if (entryMacdValue < 0m && filterMacdValue < 0m)
+		else if (previousEntryMacd >= 0m && currentEntryMacd < 0m && filterMacdValue < 0m)
 		{
 			EnterPosition(candle.ClosePrice, false);
 		}
+
+		_lastEntryMacd = currentEntryMacd;
 	}
 
 	private void EnterPosition(decimal price, bool isLong)

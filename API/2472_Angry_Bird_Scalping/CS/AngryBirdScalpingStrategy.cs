@@ -56,11 +56,11 @@ public class AngryBirdScalpingStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss", "Stop loss in points", "Risk");
 
-		_takeProfit = Param(nameof(TakeProfit), 20)
+		_takeProfit = Param(nameof(TakeProfit), 40)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit", "Take profit in points", "Risk");
 
-		_defaultPips = Param(nameof(DefaultPips), 12)
+		_defaultPips = Param(nameof(DefaultPips), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Default Pips", "Minimal grid step in pips", "Grid");
 
@@ -72,14 +72,14 @@ public class AngryBirdScalpingStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Lot Exponent", "Volume multiplier for averaging", "Grid");
 
-		_maxTrades = Param(nameof(MaxTrades), 5)
+		_maxTrades = Param(nameof(MaxTrades), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Trades", "Maximum number of averaging orders", "Grid");
 
-		_rsiMin = Param(nameof(RsiMin), 30m)
+		_rsiMin = Param(nameof(RsiMin), 70m)
 			.SetDisplay("RSI Min", "RSI threshold to sell", "Signals");
 
-		_rsiMax = Param(nameof(RsiMax), 70m)
+		_rsiMax = Param(nameof(RsiMax), 30m)
 			.SetDisplay("RSI Max", "RSI threshold to buy", "Signals");
 
 		_cciDrop = Param(nameof(CciDrop), 500m)
@@ -93,6 +93,21 @@ public class AngryBirdScalpingStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_lastOpenBuyPrice = 0m;
+		_lastOpenSellPrice = 0m;
+		_entryPrice = 0m;
+		_tradeCount = 0;
+		_longTrade = false;
+		_shortTrade = false;
+		_rsiValue = 0m;
+		_prevClose = null;
 	}
 
 	protected override void OnStarted2(DateTime time)
@@ -154,7 +169,7 @@ public class AngryBirdScalpingStrategy : Strategy
 			_shortTrade = false;
 			tradeNow = true;
 		}
-		else if (_tradeCount <= MaxTrades)
+		else if (_tradeCount < MaxTrades)
 		{
 			if (_longTrade && _lastOpenBuyPrice - close >= pipDistance)
 				tradeNow = true;

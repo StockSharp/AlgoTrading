@@ -192,7 +192,7 @@ public class NeuralNetworkMacdStrategy : Strategy
 		_p3 = Param(nameof(P3), 10).SetDisplay("P3", "Shift parameter for perceptron 3", "Perceptron3");
 
 		_pass = Param(nameof(Pass), 3).SetDisplay("Pass", "Number of perceptrons to use", "General");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -215,6 +215,9 @@ public class NeuralNetworkMacdStrategy : Strategy
 		_historyIndex = 0;
 		_historyFilled = false;
 
+		_currentClose = 0m;
+		_currentStopLoss = 0m;
+		_currentTakeProfit = 0m;
 		_entryPrice = 0m;
 		_isLong = false;
 	}
@@ -237,6 +240,9 @@ public class NeuralNetworkMacdStrategy : Strategy
 		_openHistory = new decimal[maxLag];
 		_historyIndex = 0;
 		_historyFilled = false;
+		_currentClose = 0m;
+		_currentStopLoss = 0m;
+		_currentTakeProfit = 0m;
 
 		var subscription = SubscribeCandles(CandleType);
 

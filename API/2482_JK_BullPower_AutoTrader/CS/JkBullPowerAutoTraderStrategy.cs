@@ -122,7 +122,7 @@ public class JkBullPowerAutoTraderStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Trailing Step (pts)", "Minimal trailing increment", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -211,8 +211,8 @@ public class JkBullPowerAutoTraderStrategy : Strategy
 			return;
 		}
 
-		var sellSignal = prevPrevBulls > prevBulls && prevBulls > 0m;
-		var buySignal = prevBulls < 0m;
+		var sellSignal = prevPrevBulls > prevBulls && prevBulls > 0m && bullsValue < prevBulls;
+		var buySignal = prevPrevBulls < prevBulls && prevBulls < 0m && bullsValue > prevBulls;
 
 		if (sellSignal && Position >= 0)
 		{

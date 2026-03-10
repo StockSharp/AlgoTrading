@@ -357,7 +357,7 @@ public class AlligatorFractalMartingaleStrategy : Strategy
 		_useAlligatorEntry = Param(nameof(UseAlligatorEntry), true)
 		.SetDisplay("Use Alligator Entry", "Trigger trades on jaw/lips widening", "Logic");
 
-		_useFractalFilter = Param(nameof(UseFractalFilter), false)
+		_useFractalFilter = Param(nameof(UseFractalFilter), true)
 		.SetDisplay("Use Fractal Filter", "Require fractal breakout confirmation", "Logic");
 
 		_useAlligatorExit = Param(nameof(UseAlligatorExit), false)
@@ -366,7 +366,7 @@ public class AlligatorFractalMartingaleStrategy : Strategy
 		_allowMultipleEntries = Param(nameof(AllowMultipleEntries), false)
 		.SetDisplay("Allow Multiple Entries", "Permit repeated market entries", "Trading");
 
-		_enableMartingale = Param(nameof(EnableMartingale), true)
+		_enableMartingale = Param(nameof(EnableMartingale), false)
 		.SetDisplay("Enable Martingale", "Build averaging ladder after entry", "Trading");
 
 		_enableTrailing = Param(nameof(EnableTrailing), true)
@@ -415,7 +415,7 @@ public class AlligatorFractalMartingaleStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Base Volume", "Base volume for entries", "Trading");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 		.SetDisplay("Candle Type", "Source candles", "General");
 	}
 
@@ -615,6 +615,8 @@ public class AlligatorFractalMartingaleStrategy : Strategy
 		if (count >= 5)
 		{
 			var center = count - 3;
+			if (center < 2 || center + 2 >= _highHistory.Count || center + 2 >= _lowHistory.Count)
+				return;
 
 			var h2 = _highHistory[center];
 			var h1 = _highHistory[center - 1];

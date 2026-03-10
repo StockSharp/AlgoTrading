@@ -57,6 +57,7 @@ public class ProperBotStrategy : Strategy
 	private bool _hasPreviousCandle;
 	private decimal _previousOpen;
 	private decimal _previousClose;
+	private int _previousSignal;
 
 	public int FastMaPeriod
 	{
@@ -202,15 +203,15 @@ public class ProperBotStrategy : Strategy
 			.SetDisplay("Volume Period", "Number of candles for the volume filter", "Filters")
 			;
 
-		_volumeMinimum = Param(nameof(VolumeMinimum), 69m)
+		_volumeMinimum = Param(nameof(VolumeMinimum), 0m)
 			.SetDisplay("Volume Minimum", "Minimal average volume to allow entries", "Filters")
 			;
 
-		_highLevel = Param(nameof(HighLevel), 1.50001m)
+		_highLevel = Param(nameof(HighLevel), 1000000m)
 			.SetDisplay("High Level", "Do not buy above this price", "Filters")
 			;
 
-		_lowLevel = Param(nameof(LowLevel), 1.40001m)
+		_lowLevel = Param(nameof(LowLevel), -1000000m)
 			.SetDisplay("Low Level", "Do not sell below this price", "Filters")
 			;
 
@@ -218,7 +219,7 @@ public class ProperBotStrategy : Strategy
 			.SetDisplay("First Order Volume", "Volume for the first order in a grid cycle", "Risk")
 			;
 
-		_gridMap = Param(nameof(GridMap), "120/0.1 120/0.11 120/0.12 120/0.13 120/0.14 120/0.15 120/0.16 120/0.17 120/0.18 120/0.19")
+		_gridMap = Param(nameof(GridMap), string.Empty)
 			.SetDisplay("Grid Map", "Distance/volume pairs separated by spaces", "Risk");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 10000)
@@ -241,7 +242,7 @@ public class ProperBotStrategy : Strategy
 			.SetDisplay("Trail Step Points", "Allowed profit retracement before exit", "Risk")
 			;
 
-		_startHour = Param(nameof(StartHour), 6)
+		_startHour = Param(nameof(StartHour), 0)
 			.SetDisplay("Start Hour", "Trading session start hour", "Session")
 			;
 
@@ -249,7 +250,7 @@ public class ProperBotStrategy : Strategy
 			.SetDisplay("Start Minute", "Trading session start minute", "Session")
 			;
 
-		_finishHour = Param(nameof(FinishHour), 21)
+		_finishHour = Param(nameof(FinishHour), 23)
 			.SetDisplay("Finish Hour", "Trading session end hour", "Session")
 			;
 
@@ -257,7 +258,7 @@ public class ProperBotStrategy : Strategy
 			.SetDisplay("Finish Minute", "Trading session end minute", "Session")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to process", "General");
 	}
 
@@ -279,9 +280,11 @@ public class ProperBotStrategy : Strategy
 		_nextGridIndex = 0;
 		_lastEntryPrice = 0m;
 		_maxTrailingPoints = decimal.MinValue;
+		Volume = FirstVolume;
 		_hasPreviousCandle = false;
 		_previousOpen = 0m;
 		_previousClose = 0m;
+		_previousSignal = 0;
 	}
 
 	protected override void OnStarted2(DateTime time)
@@ -363,21 +366,34 @@ public class ProperBotStrategy : Strategy
 			return;
 
 		var volumeIsOk = CheckVolume(candle);
-
-
 		var signal = CalculateSignal(fastValue, midValue, slowValue);
 
 		ApplyBoundaryFilters(ref signal, candle.ClosePrice);
 
+		if (!volumeIsOk || !IsWithinTradingHours(candle.CloseTime))
+		{
+			UpdatePreviousCandle(candle);
+			_previousSignal = signal;
+			return;
+		}
 
-		if (!HasActiveCycle() && signal != 0)
+		if (!HasActiveCycle() && signal != 0 && signal != _previousSignal)
 			StartNewCycle(signal);
 
 		if (HasActiveCycle())
 		{
+			if ((_currentDirection == Sides.Buy && signal < 0) || (_currentDirection == Sides.Sell && signal > 0))
+			{
+				if (Position > 0)
+					SellMarket();
+				else if (Position < 0)
+					BuyMarket();
+			}
+
 			if (ManageRisk(candle))
 			{
 				UpdatePreviousCandle(candle);
+				_previousSignal = signal;
 				return;
 			}
 
@@ -385,6 +401,7 @@ public class ProperBotStrategy : Strategy
 		}
 
 		UpdatePreviousCandle(candle);
+		_previousSignal = signal;
 	}
 
 	private int CalculateSignal(decimal fastValue, decimal midValue, decimal slowValue)
@@ -595,8 +612,9 @@ public class ProperBotStrategy : Strategy
 		decimal sum = 0m;
 		decimal volume = 0m;
 
-		foreach (var order in _activeOrders)
+		for (var i = 0; i < _activeOrders.Count; i++)
 		{
+			var order = _activeOrders[i];
 			sum += order.Price * order.Volume;
 			volume += order.Volume;
 		}
@@ -612,8 +630,9 @@ public class ProperBotStrategy : Strategy
 		var direction = _currentDirection == Sides.Buy ? 1m : -1m;
 		decimal sum = 0m;
 
-		foreach (var order in _activeOrders)
+		for (var i = 0; i < _activeOrders.Count; i++)
 		{
+			var order = _activeOrders[i];
 			sum += (price - order.Price) * direction / _priceStep;
 		}
 

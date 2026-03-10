@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -57,11 +58,11 @@ public class VolatilityHftEaStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("MA Difference (pips)", "Minimum distance between price and the moving average", "Signal");
 
-		_cooldownBars = Param(nameof(CooldownBars), 8)
+		_cooldownBars = Param(nameof(CooldownBars), 24)
 			.SetNotNegative()
 			.SetDisplay("Cooldown Bars", "Bars to wait after entry or exit", "Signal");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe used for signal detection", "General");
 	}
 
@@ -173,14 +174,14 @@ public class VolatilityHftEaStrategy : Strategy
 			return;
 		}
 
-		var threshold = Math.Max(MaDifferencePips, 120m) * _pipSize;
+		var threshold = Math.Max(MaDifferencePips, 10m) * _pipSize;
 
 		if (_smaTwoBarsAgo.HasValue && _cooldownLeft == 0)
 		{
 			var distance = candle.ClosePrice - smaValue;
 			var isBreakout = distance >= threshold;
 			var isSlopePositive = _previousSma.HasValue && _previousSma.Value > _smaTwoBarsAgo.Value && smaValue > _previousSma.Value;
-			var isBullishBar = candle.ClosePrice > candle.OpenPrice && (candle.ClosePrice - candle.OpenPrice) >= threshold / 3m;
+			var isBullishBar = candle.ClosePrice > candle.OpenPrice;
 
 			if (isBreakout && isSlopePositive && isBullishBar && Position == 0)
 			{

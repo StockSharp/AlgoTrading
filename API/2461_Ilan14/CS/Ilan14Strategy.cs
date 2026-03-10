@@ -71,13 +71,13 @@ public class Ilan14Strategy : Strategy {
 				"Volume multiplier for each additional order",
 				"General")
 		;
-	_maxTrades = Param(nameof(MaxTrades), 10)
+	_maxTrades = Param(nameof(MaxTrades), 1)
 			 .SetGreaterThanZero()
 			 .SetDisplay("Max Trades",
 					 "Maximum number of trades per direction",
 					 "General");
 	_takeProfit =
-		Param(nameof(TakeProfit), 96m)
+		Param(nameof(TakeProfit), 300m)
 		.SetGreaterThanZero()
 		.SetDisplay("Take Profit",
 				"Target profit in pips from average price",
@@ -89,7 +89,7 @@ public class Ilan14Strategy : Strategy {
 					 "Volume of first order", "General")
 				 ;
 	_candleType =
-		Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 

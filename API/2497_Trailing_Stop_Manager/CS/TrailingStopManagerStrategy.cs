@@ -83,7 +83,7 @@ public class TrailingStopManagerStrategy : Strategy
 		_startDirection = Param(nameof(StartDirection), InitialDirections.None)
 			.SetDisplay("Initial Direction", "Optional market order on start", "Trading");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "Data");
 	}
 
@@ -99,6 +99,8 @@ public class TrailingStopManagerStrategy : Strategy
 	private readonly List<decimal> _closes = new();
 	private const int FastLen = 10;
 	private const int SlowLen = 30;
+	private decimal? _prevFast;
+	private decimal? _prevSlow;
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
@@ -120,6 +122,21 @@ public class TrailingStopManagerStrategy : Strategy
 		subscription
 			.Bind(ProcessCandle)
 			.Start();
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_entryPrice = 0m;
+		_trailingStopPrice = 0m;
+		_trailingActive = false;
+		_currentDirection = InitialDirections.None;
+		_priceStep = 1m;
+		_closes.Clear();
+		_prevFast = null;
+		_prevSlow = null;
 	}
 
 	/// <inheritdoc />
@@ -176,10 +193,15 @@ public class TrailingStopManagerStrategy : Strategy
 		var fast = _closes.Skip(_closes.Count - FastLen).Take(FastLen).Average();
 		var slow = _closes.Skip(_closes.Count - SlowLen).Take(SlowLen).Average();
 
+		var prevFast = _prevFast;
+		var prevSlow = _prevSlow;
+		_prevFast = fast;
+		_prevSlow = slow;
+
 		// Entry logic: use SMA crossover when flat
 		if (Position == 0)
 		{
-			if (fast > slow)
+			if (prevFast is decimal lastFast && prevSlow is decimal lastSlow && lastFast <= lastSlow && fast > slow)
 			{
 				BuyMarket();
 				_entryPrice = candle.ClosePrice;
@@ -187,7 +209,7 @@ public class TrailingStopManagerStrategy : Strategy
 				_trailingStopPrice = 0m;
 				_currentDirection = InitialDirections.Long;
 			}
-			else if (fast < slow)
+			else if (prevFast is decimal lastFast2 && prevSlow is decimal lastSlow2 && lastFast2 >= lastSlow2 && fast < slow)
 			{
 				SellMarket();
 				_entryPrice = candle.ClosePrice;

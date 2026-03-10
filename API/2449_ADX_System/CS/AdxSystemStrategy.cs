@@ -88,19 +88,19 @@ public class AdxSystemStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("ADX Period", "Period for ADX indicator", "Indicators");
 
-		_takeProfit = Param(nameof(TakeProfit), 15m)
+		_takeProfit = Param(nameof(TakeProfit), 150m)
 		.SetGreaterThanZero()
 		.SetDisplay("Take Profit", "Distance for profit target", "Risk");
 
-		_stopLoss = Param(nameof(StopLoss), 100m)
+		_stopLoss = Param(nameof(StopLoss), 250m)
 		.SetGreaterThanZero()
 		.SetDisplay("Stop Loss", "Distance for protective stop", "Risk");
 
-		_trailingStop = Param(nameof(TrailingStop), 20m)
+		_trailingStop = Param(nameof(TrailingStop), 120m)
 		.SetGreaterThanZero()
 		.SetDisplay("Trailing Stop", "Distance for trailing stop", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -167,14 +167,14 @@ public class AdxSystemStrategy : Strategy
 		{
 			if (Position == 0)
 			{
-				if (_prevAdx < currentAdx && _prevPlusDi < _prevAdx && currentPlusDi > currentAdx)
+				if (currentAdx >= 30m && currentAdx > _prevAdx && _prevPlusDi <= _prevMinusDi && currentPlusDi > currentMinusDi)
 				{
 					BuyMarket();
 					_entryPrice = candle.ClosePrice;
 					_stopPrice = _entryPrice - StopLoss;
 					_takePrice = _entryPrice + TakeProfit;
 				}
-				else if (_prevAdx < currentAdx && _prevMinusDi < _prevAdx && currentMinusDi > currentAdx)
+				else if (currentAdx >= 30m && currentAdx > _prevAdx && _prevMinusDi <= _prevPlusDi && currentMinusDi > currentPlusDi)
 				{
 					SellMarket();
 					_entryPrice = candle.ClosePrice;
@@ -184,7 +184,7 @@ public class AdxSystemStrategy : Strategy
 			}
 			else if (Position > 0)
 			{
-				if (_prevAdx > currentAdx && _prevPlusDi > _prevAdx && currentPlusDi < currentAdx)
+				if (_prevPlusDi >= _prevMinusDi && currentPlusDi < currentMinusDi)
 				{
 					SellMarket(Position);
 					_entryPrice = null;
@@ -220,7 +220,7 @@ public class AdxSystemStrategy : Strategy
 			}
 			else if (Position < 0)
 			{
-				if (_prevAdx > currentAdx && _prevMinusDi > _prevAdx && currentMinusDi < currentAdx)
+				if (_prevMinusDi >= _prevPlusDi && currentMinusDi < currentPlusDi)
 				{
 					BuyMarket(Math.Abs(Position));
 					_entryPrice = null;

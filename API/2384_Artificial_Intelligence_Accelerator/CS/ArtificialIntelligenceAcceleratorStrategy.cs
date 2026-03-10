@@ -32,6 +32,8 @@ public class ArtificialIntelligenceAcceleratorStrategy : Strategy
 	private readonly decimal[] _acBuffer = new decimal[22];
 	private int _bufferCount;
 	private decimal _entryPrice;
+	private decimal? _prevSignal;
+	private int _barsSinceTrade;
 
 	/// <summary>
 	/// First weight of perceptron.
@@ -98,6 +100,8 @@ public class ArtificialIntelligenceAcceleratorStrategy : Strategy
 		Array.Clear(_acBuffer);
 		_bufferCount = 0;
 		_entryPrice = 0m;
+		_prevSignal = null;
+		_barsSinceTrade = 10;
 		_aoFast = null;
 		_aoSlow = null;
 		_acMa = null;
@@ -111,6 +115,8 @@ public class ArtificialIntelligenceAcceleratorStrategy : Strategy
 		Array.Clear(_acBuffer);
 		_bufferCount = 0;
 		_entryPrice = 0m;
+		_prevSignal = null;
+		_barsSinceTrade = 10;
 		_aoFast = new SimpleMovingAverage { Length = 5 };
 		_aoSlow = new SimpleMovingAverage { Length = 34 };
 		_acMa = new SimpleMovingAverage { Length = 5 };
@@ -123,6 +129,8 @@ public class ArtificialIntelligenceAcceleratorStrategy : Strategy
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
+
+		_barsSinceTrade++;
 
 		// Calculate Accelerator Oscillator value.
 		var hl2 = (candle.HighPrice + candle.LowPrice) / 2m;
@@ -151,24 +159,33 @@ public class ArtificialIntelligenceAcceleratorStrategy : Strategy
 		}
 
 		var signal = Perceptron();
+		var previousSignal = _prevSignal;
+		_prevSignal = signal;
 
-		if (signal > 0 && Position <= 0)
+		if (previousSignal is null)
+			return;
+
+		if (_barsSinceTrade >= 5 && previousSignal <= 0m && signal > 0m && Position <= 0)
 		{
 			BuyMarket();
 			_entryPrice = candle.ClosePrice;
+			_barsSinceTrade = 0;
 		}
-		else if (signal < 0 && Position >= 0)
+		else if (_barsSinceTrade >= 5 && previousSignal >= 0m && signal < 0m && Position >= 0)
 		{
 			SellMarket();
 			_entryPrice = candle.ClosePrice;
+			_barsSinceTrade = 0;
 		}
 		else if (Position > 0 && candle.ClosePrice <= _entryPrice - StopLoss)
 		{
 			SellMarket();
+			_barsSinceTrade = 0;
 		}
 		else if (Position < 0 && candle.ClosePrice >= _entryPrice + StopLoss)
 		{
 			BuyMarket();
+			_barsSinceTrade = 0;
 		}
 	}
 

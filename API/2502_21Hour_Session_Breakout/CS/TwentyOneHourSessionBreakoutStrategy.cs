@@ -64,16 +64,25 @@ public class TwentyOneHourSessionBreakoutStrategy : Strategy
 		_firstSessionStopHour = Param(nameof(FirstSessionStopHour), 20)
 			.SetDisplay("Session Stop", "Hour of the trading window stop", "Schedule");
 
-		_stepPoints = Param(nameof(StepPoints), 5m)
+		_stepPoints = Param(nameof(StepPoints), 40m)
 			.SetGreaterThanZero()
 			.SetDisplay("Step Points", "Distance from session open to breakout level", "Orders");
 
-		_takeProfitPoints = Param(nameof(TakeProfitPoints), 40m)
+		_takeProfitPoints = Param(nameof(TakeProfitPoints), 200m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit Points", "Take-profit distance", "Orders");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candles used to drive the trading schedule", "Data");
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_sessionOpen = null;
+		_entryPrice = 0m;
+		_inSession = false;
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()

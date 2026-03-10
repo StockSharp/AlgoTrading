@@ -351,6 +351,19 @@ public class TrendCatcherBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_previousClose = 0m;
+		_previousSar = null;
+		_entryPrice = null;
+		_stopLossPrice = 0m;
+		_takeProfitPrice = 0m;
+		_lastTradeWasLoss = false;
+		_lastExitTime = null;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);

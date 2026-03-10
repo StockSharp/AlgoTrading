@@ -33,6 +33,7 @@ public class Spreader2Strategy : Strategy
 	private readonly Queue<ICandleMessage> _secondPending = new();
 	private readonly List<decimal> _firstCloses = new();
 	private readonly List<decimal> _secondCloses = new();
+	private static readonly object _sync = new();
 
 	private decimal _lastFirstClose;
 	private decimal _lastSecondClose;
@@ -119,16 +120,16 @@ public class Spreader2Strategy : Strategy
 			
 			.SetOptimize(20m, 200m, 20m);
 
-		_shiftParam = Param(nameof(ShiftLength), 30)
+		_shiftParam = Param(nameof(ShiftLength), 6)
 			.SetGreaterThanZero()
 			.SetDisplay("Shift Length", "Number of bars between comparison points", "Logic")
 			
 			.SetOptimize(10, 60, 10);
 
-		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for pair analysis", "General");
 
-		_dayBarsParam = Param(nameof(DayBars), 1440)
+		_dayBarsParam = Param(nameof(DayBars), 288)
 			.SetGreaterThanZero()
 			.SetDisplay("Day Bars", "Number of intraday bars used for rolling statistics", "Data")
 			;
@@ -202,9 +203,11 @@ public class Spreader2Strategy : Strategy
 			return;
 
 		_lastFirstClose = candle.ClosePrice;
-		_firstPending.Enqueue(candle);
-
-		ProcessPendingCandles();
+		lock (_sync)
+		{
+			_firstPending.Enqueue(candle);
+			ProcessPendingCandles();
+		}
 	}
 
 	private void ProcessSecondaryCandle(ICandleMessage candle)
@@ -213,9 +216,11 @@ public class Spreader2Strategy : Strategy
 			return;
 
 		_lastSecondClose = candle.ClosePrice;
-		_secondPending.Enqueue(candle);
-
-		ProcessPendingCandles();
+		lock (_sync)
+		{
+			_secondPending.Enqueue(candle);
+			ProcessPendingCandles();
+		}
 	}
 
 	private void ProcessPendingCandles()
@@ -224,6 +229,18 @@ public class Spreader2Strategy : Strategy
 		{
 			var first = _firstPending.Peek();
 			var second = _secondPending.Peek();
+
+			if (first is null)
+			{
+				_firstPending.Dequeue();
+				continue;
+			}
+
+			if (second is null)
+			{
+				_secondPending.Dequeue();
+				continue;
+			}
 
 			if (first.CloseTime < second.CloseTime)
 			{

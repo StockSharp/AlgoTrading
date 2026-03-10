@@ -996,7 +996,7 @@ public class MacdPatternTraderAdvancedMultiPatternStrategy : Strategy
 		_initialVolume = Param(nameof(InitialVolume), 0.1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Initial Volume", "Base volume for orders", "General");
-		_useTimeFilter = Param(nameof(UseTimeFilter), true)
+		_useTimeFilter = Param(nameof(UseTimeFilter), false)
 			.SetDisplay("Time Filter", "Enable intraday trading window", "General");
 		_startTime = Param(nameof(StartTime), new TimeSpan(7, 0, 0))
 			.SetDisplay("Start Time", "Trading window start", "General");
@@ -1004,7 +1004,7 @@ public class MacdPatternTraderAdvancedMultiPatternStrategy : Strategy
 			.SetDisplay("Stop Time", "Trading window end", "General");
 		_useMartingale = Param(nameof(UseMartingale), true)
 			.SetDisplay("Martingale", "Enable martingale volume adjustment", "Risk");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles used for analysis", "General");
 	}
 

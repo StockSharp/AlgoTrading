@@ -28,6 +28,9 @@ public class VRSteals2Strategy : Strategy
 	private decimal _entryPrice;
 	private decimal _stopPrice;
 	private bool _breakevenActivated;
+	private decimal _previousFast;
+	private decimal _previousSlow;
+	private bool _maInitialized;
 
 	public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
 	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
@@ -45,7 +48,7 @@ public class VRSteals2Strategy : Strategy
 			.SetDisplay("Breakeven", "Distance to activate breakeven in steps", "General");
 		_breakevenOffset = Param(nameof(BreakevenOffset), 9m)
 			.SetDisplay("Breakeven Offset", "Offset applied when breakeven is triggered", "General");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to process", "General");
 	}
 
@@ -60,6 +63,9 @@ public class VRSteals2Strategy : Strategy
 		_entryPrice = 0m;
 		_stopPrice = 0m;
 		_breakevenActivated = false;
+		_previousFast = 0m;
+		_previousSlow = 0m;
+		_maInitialized = false;
 	}
 
 	/// <inheritdoc />
@@ -70,8 +76,8 @@ public class VRSteals2Strategy : Strategy
 		_entryPrice = 0m;
 		_breakevenActivated = false;
 
-		var fastSma = new SimpleMovingAverage { Length = 5 };
-		var slowSma = new SimpleMovingAverage { Length = 20 };
+		var fastSma = new SimpleMovingAverage { Length = 8 };
+		var slowSma = new SimpleMovingAverage { Length = 34 };
 
 		var sub = SubscribeCandles(CandleType);
 		sub.Bind(fastSma, slowSma, (candle, fast, slow) =>
@@ -144,19 +150,23 @@ public class VRSteals2Strategy : Strategy
 			// Entry signals based on SMA cross
 			if (Position == 0)
 			{
-				if (fast > slow)
+				if (_maInitialized && _previousFast <= _previousSlow && fast > slow)
 				{
 					BuyMarket();
 					_entryPrice = price;
 					_breakevenActivated = false;
 				}
-				else if (fast < slow)
+				else if (_maInitialized && _previousFast >= _previousSlow && fast < slow)
 				{
 					SellMarket();
 					_entryPrice = price;
 					_breakevenActivated = false;
 				}
 			}
+
+			_previousFast = fast;
+			_previousSlow = slow;
+			_maInitialized = true;
 		}).Start();
 
 		StartProtection(

@@ -176,12 +176,12 @@ public class PuncherStrategy : Strategy
 			
 			.SetOptimize(7, 28, 1);
 
-		_oversoldLevel = Param(nameof(OversoldLevel), 30m)
+		_oversoldLevel = Param(nameof(OversoldLevel), 20m)
 			.SetDisplay("Oversold Level", "Threshold for oversold detection", "Signals")
 			
 			.SetOptimize(10m, 40m, 5m);
 
-		_overboughtLevel = Param(nameof(OverboughtLevel), 70m)
+		_overboughtLevel = Param(nameof(OverboughtLevel), 80m)
 			.SetDisplay("Overbought Level", "Threshold for overbought detection", "Signals")
 			
 			.SetOptimize(60m, 90m, 5m);
@@ -216,7 +216,7 @@ public class PuncherStrategy : Strategy
 			
 			.SetOptimize(0, 40, 2);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for processing", "General");
 	}
 
@@ -243,48 +243,32 @@ public class PuncherStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var stochastic = new StochasticOscillator
-		{
-			K = { Length = StochasticPeriod },
-			D = { Length = StochasticSmoothingPeriod },
-		};
-
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(stochastic, rsi, ProcessCandle)
+			.Bind(rsi, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, stochastic);
 			DrawIndicator(area, rsi);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue stochasticValue, IIndicatorValue rsiValue)
+	private void ProcessCandle(ICandleMessage candle, decimal rsi)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!stochasticValue.IsFinal || !rsiValue.IsFinal)
-			return;
-
-		var stochData = (StochasticOscillatorValue)stochasticValue;
-		if (stochData.D is not decimal signalValue)
-			return;
-
-		var rsi = rsiValue.GetValue<decimal>();
-
 		if (ManagePosition(candle))
 			return;
 
-		var isBuySignal = signalValue < OversoldLevel && rsi < OversoldLevel;
-		var isSellSignal = signalValue > OverboughtLevel && rsi > OverboughtLevel;
+		var isBuySignal = rsi < OversoldLevel;
+		var isSellSignal = rsi > OverboughtLevel;
 
 		if (Position > 0 && isSellSignal)
 		{

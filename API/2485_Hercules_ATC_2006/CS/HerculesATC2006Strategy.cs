@@ -574,19 +574,29 @@ public class HerculesATC2006Strategy : Strategy
 
 	private void UpdateHighLow(ICandleMessage candle)
 	{
-		_recentHighs.Enqueue(candle.HighPrice);
-		_recentLows.Enqueue(candle.LowPrice);
-
-		TrimQueue(_recentHighs, _highLowLength);
-		TrimQueue(_recentLows, _highLowLength);
-
-		if (_recentHighs.Count < _highLowLength || _recentLows.Count < _highLowLength)
+		lock (_recentHighs)
 		{
-			return;
+			_recentHighs.Enqueue(candle.HighPrice);
+			TrimQueue(_recentHighs, _highLowLength);
+			if (_recentHighs.Count >= _highLowLength)
+			{
+				var highs = new decimal[_recentHighs.Count];
+				_recentHighs.CopyTo(highs, 0);
+				_rollingHigh = GetExtreme(highs, true);
+			}
 		}
 
-		_rollingHigh = GetExtreme(_recentHighs, true);
-		_rollingLow = GetExtreme(_recentLows, false);
+		lock (_recentLows)
+		{
+			_recentLows.Enqueue(candle.LowPrice);
+			TrimQueue(_recentLows, _highLowLength);
+			if (_recentLows.Count >= _highLowLength)
+			{
+				var lows = new decimal[_recentLows.Count];
+				_recentLows.CopyTo(lows, 0);
+				_rollingLow = GetExtreme(lows, false);
+			}
+		}
 	}
 	private void EvaluateEntry(ICandleMessage candle)
 	{

@@ -79,7 +79,7 @@ public class V1n1LonnyBreakoutStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 
 	private ExponentialMovingAverage _ema = null!;
-	private StochasticOscillator _stochastic = null!;
+	private RelativeStrengthIndex _stochastic = null!;
 
 	private decimal? _emaPrevious;
 	private decimal? _emaTwoBack;
@@ -144,7 +144,7 @@ public class V1n1LonnyBreakoutStrategy : Strategy
 		
 		.SetOptimize(0.5m, 3m, 0.5m);
 
-		_tradeRange = Param(nameof(TradeRange), 2)
+		_tradeRange = Param(nameof(TradeRange), 1)
 		.SetGreaterThanZero()
 		.SetDisplay("Range Bars", "Bars used to build the opening range", "Breakout")
 		
@@ -202,7 +202,7 @@ public class V1n1LonnyBreakoutStrategy : Strategy
 		.SetNotNegative()
 		.SetDisplay("Slippage", "Reference slippage (points)", "Risk Management");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 		.SetDisplay("Candle Type", "Candle type and timeframe", "General");
 	}
 
@@ -446,11 +446,7 @@ public class V1n1LonnyBreakoutStrategy : Strategy
 		// Create indicators that mirror the MQL implementation.
 		_ema = new EMA { Length = TrendPeriod };
 
-		// MQL version uses smoothed %K/%D with 60% of the main length rounded to the nearest integer.
-		var smoothing = Math.Max(1, (int)Math.Round(OverPeriod * 0.6m, MidpointRounding.AwayFromZero));
-		_stochastic = new StochasticOscillator();
-		_stochastic.K.Length = OverPeriod;
-		_stochastic.D.Length = smoothing;
+		_stochastic = new RelativeStrengthIndex { Length = OverPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -480,19 +476,14 @@ public class V1n1LonnyBreakoutStrategy : Strategy
 		UpdateDistances();
 
 		// Process the finished candle through the stochastic oscillator to replicate shift(1) behaviour.
-		var stochValue = _stochastic.Process(new CandleIndicatorValue(_stochastic, candle) { IsFinal = true });
-		if (!stochValue.IsFinal)
+		var stochValue = _stochastic.Process(new DecimalIndicatorValue(_stochastic, candle.ClosePrice, candle.OpenTime) { IsFinal = true });
+		if (!stochValue.IsFinal || !_stochastic.IsFormed)
 		{
 			UpdateIndicatorHistory(emaValue, null);
 			return;
 		}
 
-		var stochTyped = (StochasticOscillatorValue)stochValue;
-		if (stochTyped.K is not decimal stochCurrent)
-		{
-			UpdateIndicatorHistory(emaValue, null);
-			return;
-		}
+		var stochCurrent = stochValue.ToDecimal();
 
 		var emaPrev = _emaPrevious;
 		var emaPrevPrev = _emaTwoBack;
@@ -763,7 +754,7 @@ public class V1n1LonnyBreakoutStrategy : Strategy
 		if (volume <= 0m)
 		return false;
 
-		BuyMarket();
+		BuyMarket(volume);
 
 		_longEntryPrice = entryPrice;
 		_longStop = stopPrice;
@@ -811,7 +802,7 @@ public class V1n1LonnyBreakoutStrategy : Strategy
 		if (volume <= 0m)
 		return false;
 
-		SellMarket();
+		SellMarket(volume);
 
 		_shortEntryPrice = entryPrice;
 		_shortStop = stopPrice;

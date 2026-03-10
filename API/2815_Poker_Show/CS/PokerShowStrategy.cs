@@ -148,7 +148,6 @@ public class PokerShowStrategy : Strategy
 
 	private IIndicator _ma;
 	private readonly List<decimal> _maHistory = [];
-	private readonly Random _random = new();
 
 	private decimal? _stopLossPrice;
 	private decimal? _takeProfitPrice;
@@ -314,7 +313,7 @@ public class PokerShowStrategy : Strategy
 		_reverseSignal = Param(nameof(ReverseSignal), false)
 		.SetDisplay("Reverse Signals", "Invert MA and price relationship", "Signals");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 		.SetDisplay("Candle Type", "Time frame used for market data", "General");
 	}
 
@@ -424,8 +423,7 @@ public class PokerShowStrategy : Strategy
 
 		if (allowBuy)
 		{
-			var randomValue = _random.Next(0, 32768);
-			if (randomValue < threshold)
+			if (PassesProbabilityGate(candle, true, threshold))
 			{
 				// Close opposite short if needed and open a new long position.
 				var volume = orderVolume + Math.Abs(Position);
@@ -441,8 +439,7 @@ public class PokerShowStrategy : Strategy
 
 		if (!executed && allowSell)
 		{
-			var randomValue = _random.Next(0, 32768);
-			if (randomValue < threshold)
+			if (PassesProbabilityGate(candle, false, threshold))
 			{
 				// Close opposite long if needed and open a new short position.
 				var volume = orderVolume + Math.Abs(Position);
@@ -453,6 +450,12 @@ public class PokerShowStrategy : Strategy
 				_takeProfitPrice = takePoints > 0 ? entryPrice - takePoints * _priceStep : null;
 			}
 		}
+	}
+
+	private static bool PassesProbabilityGate(ICandleMessage candle, bool isBuy, int threshold)
+	{
+		var randomValue = HashCode.Combine(candle.OpenTime.Ticks, candle.ClosePrice, candle.TotalVolume, isBuy) & 0x7FFF;
+		return randomValue < threshold;
 	}
 
 	private bool TryCloseLong(ICandleMessage candle)

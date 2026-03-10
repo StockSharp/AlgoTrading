@@ -97,7 +97,7 @@ public class VeryBlondeSystemStrategy : Strategy
 		
 		.SetOptimize(5, 30, 5);
 		
-		_limit = Param(nameof(Limit), 240m)
+		_limit = Param(nameof(Limit), 500m)
 		.SetDisplay("Limit", "Minimum distance from extreme in ticks", "Trading")
 		.SetGreaterThanZero();
 		
@@ -112,7 +112,7 @@ public class VeryBlondeSystemStrategy : Strategy
 		_lockDown = Param(nameof(LockDown), 0m)
 		.SetDisplay("Lock Down", "Breakeven activation distance in ticks", "Risk");
 		
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles for calculations", "General");
 	}
 	
@@ -206,19 +206,6 @@ public class VeryBlondeSystemStrategy : Strategy
 		_lockActivated = false;
 		_lockPrice = 0m;
 		
-		for (var i = 1; i < 5; i++)
-		{
-			var gridPrice = isBuy
-			? price - Grid * step * i
-			: price + Grid * step * i;
-			
-			var gridVolume = volume * (decimal)Math.Pow(2, i);
-			
-			if (isBuy)
-			BuyLimit(gridPrice, gridVolume);
-			else
-			SellLimit(gridPrice, gridVolume);
-		}
 	}
 	
 	private void CheckForClose(ICandleMessage candle, decimal step)

@@ -29,8 +29,8 @@ public class ZeroLagMacdCrossoverStrategy : Strategy
 	private readonly StrategyParam<int> _killHour;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private ZeroLagExponentialMovingAverage _fastZlema = null!;
-	private ZeroLagExponentialMovingAverage _slowZlema = null!;
+	private ExponentialMovingAverage _fastZlema = null!;
+	private ExponentialMovingAverage _slowZlema = null!;
 
 	private decimal _prevMacd;
 	private decimal _prevPrevMacd;
@@ -83,13 +83,13 @@ public class ZeroLagMacdCrossoverStrategy : Strategy
 	/// </summary>
 	public ZeroLagMacdCrossoverStrategy()
 	{
-		_fastLength = Param(nameof(FastLength), 2)
+		_fastLength = Param(nameof(FastLength), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("Fast EMA", "Fast EMA period", "MACD")
 		
 		.SetOptimize(2, 10, 1);
 
-		_slowLength = Param(nameof(SlowLength), 34)
+		_slowLength = Param(nameof(SlowLength), 55)
 		.SetGreaterThanZero()
 		.SetDisplay("Slow EMA", "Slow EMA period", "MACD")
 		
@@ -118,7 +118,7 @@ public class ZeroLagMacdCrossoverStrategy : Strategy
 		
 		.SetOptimize(0, 23, 1);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -143,8 +143,8 @@ public class ZeroLagMacdCrossoverStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_fastZlema = new ZeroLagExponentialMovingAverage { Length = FastLength };
-		_slowZlema = new ZeroLagExponentialMovingAverage { Length = SlowLength };
+		_fastZlema = new ExponentialMovingAverage { Length = FastLength };
+		_slowZlema = new ExponentialMovingAverage { Length = SlowLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

@@ -95,7 +95,7 @@ public class BillWilliamsTraderStrategy : Strategy
 			
 			.SetOptimize(3, 10, 1);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -175,12 +175,12 @@ public class BillWilliamsTraderStrategy : Strategy
 		var lips = lipsVal.ToDecimal();
 
 		// entry conditions: fractal breakout with Alligator trend filter
-		if (_upFractal is decimal up && candle.ClosePrice > up && lips > teeth && Position <= 0)
+		if (_upFractal is decimal up && candle.ClosePrice > up && lips > teeth && teeth > jaw && Position <= 0)
 		{
 			BuyMarket(Volume + Math.Abs(Position));
 			_upFractal = null;
 		}
-		else if (_downFractal is decimal down && candle.ClosePrice < down && lips < teeth && Position >= 0)
+		else if (_downFractal is decimal down && candle.ClosePrice < down && lips < teeth && teeth < jaw && Position >= 0)
 		{
 			SellMarket(Volume + Math.Abs(Position));
 			_downFractal = null;

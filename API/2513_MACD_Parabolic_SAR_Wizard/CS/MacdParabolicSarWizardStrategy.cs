@@ -170,11 +170,11 @@ public class MacdParabolicSarWizardStrategy : Strategy
 		.SetDisplay("SAR Weight", "Relative weight of SAR in scoring", "Scoring")
 		;
 
-		_openThreshold = Param(nameof(OpenThreshold), 20m)
+		_openThreshold = Param(nameof(OpenThreshold), 90m)
 		.SetDisplay("Open Threshold", "Score required to open trades", "Scoring")
 		;
 
-		_closeThreshold = Param(nameof(CloseThreshold), 100m)
+		_closeThreshold = Param(nameof(CloseThreshold), 90m)
 		.SetDisplay("Close Threshold", "Score required to exit trades", "Scoring")
 		;
 
@@ -194,7 +194,7 @@ public class MacdParabolicSarWizardStrategy : Strategy
 		.SetDisplay("Take Profit (pts)", "Take-profit distance in points", "Risk")
 		;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Primary candle source", "General");
 	}
 

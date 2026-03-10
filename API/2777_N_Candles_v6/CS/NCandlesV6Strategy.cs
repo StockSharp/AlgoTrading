@@ -142,6 +142,17 @@ public class NCandlesV6Strategy : Strategy
 		subscription.Bind(ProcessCandle).Start();
 	}
 
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_pipSize = 0m;
+		ResetCounters();
+		ResetPositionState();
+		_blackSheepTriggered = false;
+	}
+
 	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)

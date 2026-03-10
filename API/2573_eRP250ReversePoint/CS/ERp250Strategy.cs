@@ -80,12 +80,12 @@ public class ERp250Strategy : Strategy
 			.SetDisplay("Trailing Stop Points", "Trailing stop distance in price points", "Risk")
 			;
 
-		_reversePoint = Param(nameof(ReversePoint), 250)
+		_reversePoint = Param(nameof(ReversePoint), 400)
 			.SetDisplay("Reverse Point Length", "Candles used to confirm reversal points", "Signals")
 			.SetGreaterThanZero()
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to analyse", "General");
 	}
 

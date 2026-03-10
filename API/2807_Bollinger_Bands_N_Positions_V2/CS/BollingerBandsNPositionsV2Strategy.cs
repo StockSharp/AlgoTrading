@@ -125,7 +125,7 @@ public class BollingerBandsNPositionsV2Strategy : Strategy
 			.SetDisplay("Bollinger Period", "Period used for Bollinger Bands.", "Indicators")
 			;
 
-		_bollingerDeviation = Param(nameof(BollingerDeviation), 2m)
+		_bollingerDeviation = Param(nameof(BollingerDeviation), 1.5m)
 			.SetGreaterThanZero()
 			.SetDisplay("Bollinger Deviation", "Standard deviation multiplier for Bollinger Bands.", "Indicators")
 			;
@@ -154,7 +154,7 @@ public class BollingerBandsNPositionsV2Strategy : Strategy
 			.SetDisplay("Trailing Step (pips)", "Extra profit in pips before trailing stop is adjusted.", "Risk")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for Bollinger analysis.", "General");
 	}
 

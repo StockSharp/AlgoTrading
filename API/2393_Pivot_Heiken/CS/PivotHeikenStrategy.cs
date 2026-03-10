@@ -39,6 +39,7 @@ public class PivotHeikenStrategy : Strategy
 	private decimal _trailingStop;
 	private decimal _step;
 	private decimal _trailingDistance;
+	private int _previousDirection;
 
 	/// <summary>
 	/// Candle type used for trading logic.
@@ -123,6 +124,7 @@ public class PivotHeikenStrategy : Strategy
 		_trailingStop = 0m;
 		_step = 0m;
 		_trailingDistance = 0m;
+		_previousDirection = 0;
 	}
 
 	/// <inheritdoc />
@@ -187,8 +189,9 @@ public class PivotHeikenStrategy : Strategy
 
 		var isBullish = haClose > haOpen;
 		var isBearish = haClose < haOpen;
+		var direction = isBullish ? 1 : isBearish ? -1 : 0;
 
-		if (isBullish && candle.ClosePrice > _pivot && Position <= 0)
+		if (isBullish && _previousDirection != 1 && candle.ClosePrice > _pivot && Position <= 0)
 		{
 			BuyMarket();
 			_entryPrice = candle.ClosePrice;
@@ -196,7 +199,7 @@ public class PivotHeikenStrategy : Strategy
 			_takePrice = _entryPrice + TakeProfitPips * _step;
 			_trailingStop = _stopPrice;
 		}
-		else if (isBearish && candle.ClosePrice < _pivot && Position >= 0)
+		else if (isBearish && _previousDirection != -1 && candle.ClosePrice < _pivot && Position >= 0)
 		{
 			SellMarket();
 			_entryPrice = candle.ClosePrice;
@@ -231,5 +234,7 @@ public class PivotHeikenStrategy : Strategy
 					_trailingStop = newStop;
 			}
 		}
+
+		_previousDirection = direction;
 	}
 }

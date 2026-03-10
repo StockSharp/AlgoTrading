@@ -38,16 +38,25 @@ public class ExpRsiomaStrategy : Strategy
 
 	public ExpRsiomaStrategy()
 	{
-		_rsiPeriod = Param(nameof(RsiPeriod), 14)
+		_rsiPeriod = Param(nameof(RsiPeriod), 21)
 			.SetDisplay("RSI Period", "RSI calculation length", "Parameters")
 			.SetGreaterThanZero();
 
-		_emaPeriod = Param(nameof(EmaPeriod), 9)
+		_emaPeriod = Param(nameof(EmaPeriod), 14)
 			.SetDisplay("EMA Period", "EMA smoothing period", "Parameters")
 			.SetGreaterThanZero();
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for candles", "General");
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevRsi = 0m;
+		_prevEma = 0m;
+		_hasPrev = false;
 	}
 
 	/// <inheritdoc />
@@ -91,13 +100,14 @@ public class ExpRsiomaStrategy : Strategy
 
 		if (_hasPrev)
 		{
-			// Buy when RSI crosses above 50 and EMA is rising
-			if (rsiValue > 50 && _prevRsi <= 50 && emaValue > _prevEma && Position <= 0)
+			var crossUp = _prevRsi <= _prevEma && rsiValue > emaValue;
+			var crossDown = _prevRsi >= _prevEma && rsiValue < emaValue;
+
+			if (crossUp && rsiValue > 52m && emaValue > 50m && Position <= 0)
 			{
 				BuyMarket(Volume + Math.Abs(Position));
 			}
-			// Sell when RSI crosses below 50 and EMA is falling
-			else if (rsiValue < 50 && _prevRsi >= 50 && emaValue < _prevEma && Position >= 0)
+			else if (crossDown && rsiValue < 48m && emaValue < 50m && Position >= 0)
 			{
 				SellMarket(Volume + Math.Abs(Position));
 			}

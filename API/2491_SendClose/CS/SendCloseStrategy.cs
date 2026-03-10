@@ -205,11 +205,11 @@ public class SendCloseStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Volume", "Order volume per signal", "Risk");
 
-		_lineOffsetSteps = Param(nameof(LineOffsetSteps), 15)
+		_lineOffsetSteps = Param(nameof(LineOffsetSteps), 60)
 			.SetGreaterThanZero()
 			.SetDisplay("Offset Steps", "Offset in price steps for close levels", "Execution");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles used for calculations", "General");
 	}
 

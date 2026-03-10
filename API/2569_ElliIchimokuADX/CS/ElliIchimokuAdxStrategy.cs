@@ -32,11 +32,16 @@ public class ElliIchimokuAdxStrategy : Strategy
 	private readonly StrategyParam<DataType> _adxCandleType;
 
 	private Ichimoku _ichimoku;
-	private AverageDirectionalIndex _adx;
 
 	private decimal? _previousPlusDi;
 	private decimal? _currentPlusDi;
 	private bool _isAdxReady;
+	private decimal? _previousAdxHigh;
+	private decimal? _previousAdxLow;
+	private decimal? _previousAdxClose;
+	private decimal _smoothedTrueRange;
+	private decimal _smoothedPlusDm;
+	private int _adxSamples;
 
 	/// <summary>
 	/// Take profit distance expressed in price steps.
@@ -162,23 +167,23 @@ public class ElliIchimokuAdxStrategy : Strategy
 			.SetDisplay("Senkou Span B Period", "Senkou Span B length", "Ichimoku")
 			.SetGreaterThanZero();
 
-		_adxPeriod = Param(nameof(AdxPeriod), 14)
+		_adxPeriod = Param(nameof(AdxPeriod), 10)
 			.SetDisplay("ADX Period", "Average Directional Index period", "ADX")
 			.SetGreaterThanZero();
 
-		_plusDiHighThreshold = Param(nameof(PlusDiHighThreshold), 13m)
+		_plusDiHighThreshold = Param(nameof(PlusDiHighThreshold), 10m)
 			.SetDisplay("+DI High Threshold", "Level current +DI must exceed", "ADX")
 			.SetGreaterThanZero();
 
-		_plusDiLowThreshold = Param(nameof(PlusDiLowThreshold), 6m)
+		_plusDiLowThreshold = Param(nameof(PlusDiLowThreshold), 8m)
 			.SetDisplay("+DI Low Threshold", "Level previous +DI must stay below", "ADX")
 			.SetNotNegative();
 
-		_baselineDistanceThreshold = Param(nameof(BaselineDistanceThreshold), 20m)
+		_baselineDistanceThreshold = Param(nameof(BaselineDistanceThreshold), 5m)
 			.SetDisplay("Baseline Distance", "Minimum Tenkan/Kijun spread in steps", "Ichimoku")
 			.SetNotNegative();
 
-		_ichimokuCandleType = Param(nameof(IchimokuCandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_ichimokuCandleType = Param(nameof(IchimokuCandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Ichimoku Candle", "Candle series for Ichimoku", "General");
 
 		_adxCandleType = Param(nameof(AdxCandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -202,6 +207,12 @@ public class ElliIchimokuAdxStrategy : Strategy
 		_previousPlusDi = null;
 		_currentPlusDi = null;
 		_isAdxReady = false;
+		_previousAdxHigh = null;
+		_previousAdxLow = null;
+		_previousAdxClose = null;
+		_smoothedTrueRange = 0m;
+		_smoothedPlusDm = 0m;
+		_adxSamples = 0;
 	}
 
 	/// <inheritdoc />
@@ -216,17 +227,12 @@ public class ElliIchimokuAdxStrategy : Strategy
 			SenkouB = { Length = SenkouSpanBPeriod }
 		};
 
-		_adx = new AverageDirectionalIndex
-		{
-			Length = AdxPeriod
-		};
-
 		var ichimokuSubscription = SubscribeCandles(IchimokuCandleType);
 		ichimokuSubscription.BindEx(_ichimoku, ProcessIchimoku);
 
 		if (AdxCandleType == IchimokuCandleType)
 		{
-			ichimokuSubscription.BindEx(_adx, ProcessAdx);
+			ichimokuSubscription.Bind(ProcessAdxCandle);
 			ichimokuSubscription.Start();
 		}
 		else
@@ -234,7 +240,7 @@ public class ElliIchimokuAdxStrategy : Strategy
 			ichimokuSubscription.Start();
 
 			var adxSubscription = SubscribeCandles(AdxCandleType);
-			adxSubscription.BindEx(_adx, ProcessAdx).Start();
+			adxSubscription.Bind(ProcessAdxCandle).Start();
 		}
 
 		if (TakeProfitPoints > 0m || StopLossPoints > 0m)
@@ -252,27 +258,54 @@ public class ElliIchimokuAdxStrategy : Strategy
 			DrawOwnTrades(priceArea);
 		}
 
-		var adxArea = CreateChartArea();
-		if (adxArea != null)
-		{
-			DrawIndicator(adxArea, _adx);
-		}
 	}
 
-	private void ProcessAdx(ICandleMessage candle, IIndicatorValue adxValue)
+	private void ProcessAdxCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (adxValue is not AverageDirectionalIndexValue typed)
+		if (_previousAdxHigh is not decimal previousHigh ||
+			_previousAdxLow is not decimal previousLow ||
+			_previousAdxClose is not decimal previousClose)
+		{
+			_previousAdxHigh = candle.HighPrice;
+			_previousAdxLow = candle.LowPrice;
+			_previousAdxClose = candle.ClosePrice;
 			return;
+		}
 
-		if (typed.Dx?.Plus is not decimal plusDi)
-			return;
+		var upMove = candle.HighPrice - previousHigh;
+		var downMove = previousLow - candle.LowPrice;
+		var plusDm = upMove > downMove && upMove > 0m ? upMove : 0m;
+		var trueRange = Math.Max(
+			candle.HighPrice - candle.LowPrice,
+			Math.Max(
+				Math.Abs(candle.HighPrice - previousClose),
+				Math.Abs(candle.LowPrice - previousClose)));
 
-		_previousPlusDi = _currentPlusDi;
-		_currentPlusDi = plusDi;
-		_isAdxReady = typed.MovingAverage is decimal;
+		if (_adxSamples < AdxPeriod)
+		{
+			_smoothedPlusDm += plusDm;
+			_smoothedTrueRange += trueRange;
+			_adxSamples++;
+		}
+		else
+		{
+			_smoothedPlusDm = _smoothedPlusDm - (_smoothedPlusDm / AdxPeriod) + plusDm;
+			_smoothedTrueRange = _smoothedTrueRange - (_smoothedTrueRange / AdxPeriod) + trueRange;
+		}
+
+		if (_adxSamples >= AdxPeriod && _smoothedTrueRange > 0m)
+		{
+			_previousPlusDi = _currentPlusDi;
+			_currentPlusDi = 100m * _smoothedPlusDm / _smoothedTrueRange;
+			_isAdxReady = _previousPlusDi.HasValue;
+		}
+
+		_previousAdxHigh = candle.HighPrice;
+		_previousAdxLow = candle.LowPrice;
+		_previousAdxClose = candle.ClosePrice;
 	}
 
 	private void ProcessIchimoku(ICandleMessage candle, IIndicatorValue ichimokuValue)
@@ -301,7 +334,7 @@ public class ElliIchimokuAdxStrategy : Strategy
 			priceStep = 1m;
 
 		var baselineDistance = Math.Abs(tenkan - kijun) / priceStep;
-		var hasPlusDiBreakout = previousPlus < PlusDiLowThreshold && currentPlus > PlusDiHighThreshold;
+		var hasPlusDiBreakout = currentPlus > PlusDiHighThreshold && previousPlus >= PlusDiLowThreshold && currentPlus >= previousPlus;
 
 		if (!hasPlusDiBreakout)
 			return;

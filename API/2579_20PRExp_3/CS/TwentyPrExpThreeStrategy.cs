@@ -144,17 +144,17 @@ public class TwentyPrExpThreeStrategy : Strategy
 			.SetDisplay("Risk %", "Portfolio percentage to risk per trade", "Position Sizing")
 			;
 
-		_gapPoints = Param(nameof(GapPoints), 200m)
+		_gapPoints = Param(nameof(GapPoints), 500m)
 			.SetDisplay("Range Filter (pts)", "Minimum daily range in points", "Filters")
 			;
 
-		_sessionStartHour = Param(nameof(SessionStartHour), 7)
+		_sessionStartHour = Param(nameof(SessionStartHour), 12)
 			.SetDisplay("Session Start Hour", "Hour after which breakout trades are enabled", "Filters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe for the strategy", "General");
 
-		_volumeCandleType = Param(nameof(VolumeCandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_volumeCandleType = Param(nameof(VolumeCandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Volume Candle Type", "Higher timeframe for tick volume filter", "General");
 	}
 

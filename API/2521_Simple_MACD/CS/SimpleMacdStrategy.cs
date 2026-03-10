@@ -28,6 +28,7 @@ public class SimpleMacdStrategy : Strategy
 	private MovingAverageConvergenceDivergence _macd = null!;
 	private decimal? _previousMacdValue;
 	private decimal? _prePreviousMacdValue;
+	private int? _previousSlope;
 
 	/// <summary>
 	/// Fast EMA period used for the MACD main line.
@@ -99,7 +100,7 @@ public class SimpleMacdStrategy : Strategy
 			
 			.SetOptimize(0.1m, 1m, 0.1m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for MACD calculations", "General");
 	}
 
@@ -116,6 +117,7 @@ public class SimpleMacdStrategy : Strategy
 
 		_previousMacdValue = null;
 		_prePreviousMacdValue = null;
+		_previousSlope = null;
 	}
 
 	/// <inheritdoc />
@@ -178,31 +180,45 @@ public class SimpleMacdStrategy : Strategy
 		var macdPrev = _previousMacdValue.Value;
 		var macdPrevPrev = _prePreviousMacdValue.Value;
 
-		var slopeUp = macdPrev > macdPrevPrev;
-		var slopeDown = macdPrev < macdPrevPrev;
+		var currentSlope = macdPrev > macdPrevPrev ? 1 : macdPrev < macdPrevPrev ? -1 : 0;
 
-		if (slopeUp)
+		if (currentSlope == 0)
+		{
+			_prePreviousMacdValue = _previousMacdValue;
+			_previousMacdValue = macdLine;
+			return;
+		}
+
+		if (_previousSlope == currentSlope)
+		{
+			_prePreviousMacdValue = _previousMacdValue;
+			_previousMacdValue = macdLine;
+			return;
+		}
+
+		if (currentSlope > 0)
 		{
 			// Close shorts and open (or add to) longs when the MACD slope turns positive.
 			var volumeToBuy = TradeVolume + Math.Max(0m, -Position);
 			if (volumeToBuy > 0m)
 			{
-				BuyMarket();
+				BuyMarket(volumeToBuy);
 				LogInfo($"Bullish slope detected. MACD(1)={macdPrev:F5}, MACD(2)={macdPrevPrev:F5}. Buying {volumeToBuy}.");
 			}
 		}
-		else if (slopeDown)
+		else
 		{
 			// Close longs and open (or add to) shorts when the MACD slope turns negative.
 			var volumeToSell = TradeVolume + Math.Max(0m, Position);
 			if (volumeToSell > 0m)
 			{
-				SellMarket();
+				SellMarket(volumeToSell);
 				LogInfo($"Bearish slope detected. MACD(1)={macdPrev:F5}, MACD(2)={macdPrevPrev:F5}. Selling {volumeToSell}.");
 			}
 		}
 
 		// Update stored values so the next candle compares the two previous MACD readings.
+		_previousSlope = currentSlope;
 		_prePreviousMacdValue = _previousMacdValue;
 		_previousMacdValue = macdLine;
 	}

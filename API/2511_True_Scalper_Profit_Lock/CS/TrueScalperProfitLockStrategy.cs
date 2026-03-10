@@ -280,10 +280,10 @@ public class TrueScalperProfitLockStrategy : Strategy
 		
 		.SetOptimize(40m, 60m, 5m);
 
-		_useRsiMethodA = Param(nameof(UseRsiMethodA), false)
+		_useRsiMethodA = Param(nameof(UseRsiMethodA), true)
 		.SetDisplay("RSI Method A", "Use RSI crossing logic", "Signals");
 
-		_useRsiMethodB = Param(nameof(UseRsiMethodB), true)
+		_useRsiMethodB = Param(nameof(UseRsiMethodB), false)
 		.SetDisplay("RSI Method B", "Use RSI polarity logic", "Signals");
 
 		_useAbandonMethodA = Param(nameof(UseAbandonMethodA), true)
@@ -324,8 +324,25 @@ public class TrueScalperProfitLockStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Max Positions", "Maximum simultaneous trades", "Management");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 		.SetDisplay("Candle Type", "Candle type for processing", "General");
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_entryPrice = null;
+		_stopLossPrice = null;
+		_takeProfitPrice = null;
+		_previousRsi = null;
+		_currentVolume = 0m;
+		_isLongPosition = false;
+		_pendingReverseToBuy = false;
+		_pendingReverseToSell = false;
+		_barsSinceEntry = 0;
+		_lastCandleTime = null;
+		_breakEvenApplied = false;
 	}
 
 	/// <inheritdoc />

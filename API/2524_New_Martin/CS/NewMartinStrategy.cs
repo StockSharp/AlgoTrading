@@ -148,7 +148,7 @@ public class NewMartinStrategy : Strategy
 		
 		.SetOptimize(1.1m, 3m, 0.1m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 		.SetDisplay("Candle Type", "Time frame for calculations", "General");
 	}
 
@@ -304,6 +304,9 @@ public class NewMartinStrategy : Strategy
 
 		foreach (var entry in _longPositions.ToArray())
 		{
+			if (entry is null)
+				continue;
+
 			if (candle.HighPrice >= entry.TakeProfit)
 			{
 				CloseEntry(entry);
@@ -313,6 +316,9 @@ public class NewMartinStrategy : Strategy
 
 		foreach (var entry in _shortPositions.ToArray())
 		{
+			if (entry is null)
+				continue;
+
 			if (candle.LowPrice <= entry.TakeProfit)
 			{
 				CloseEntry(entry);
@@ -392,12 +398,12 @@ public class NewMartinStrategy : Strategy
 		if (side == Sides.Buy)
 		{
 			_longPositions.Add(entry);
-			BuyMarket();
+			BuyMarket(volume);
 		}
 		else
 		{
 			_shortPositions.Add(entry);
-			SellMarket();
+			SellMarket(volume);
 		}
 	}
 
@@ -414,13 +420,29 @@ public class NewMartinStrategy : Strategy
 	{
 		if (entry.Side == Sides.Buy)
 		{
-			SellMarket();
-			_longPositions.Remove(entry);
+			SellMarket(entry.Volume);
+
+			for (var i = _longPositions.Count - 1; i >= 0; i--)
+			{
+				if (_longPositions[i] == entry)
+				{
+					_longPositions.RemoveAt(i);
+					break;
+				}
+			}
 		}
 		else
 		{
-			BuyMarket();
-			_shortPositions.Remove(entry);
+			BuyMarket(entry.Volume);
+
+			for (var i = _shortPositions.Count - 1; i >= 0; i--)
+			{
+				if (_shortPositions[i] == entry)
+				{
+					_shortPositions.RemoveAt(i);
+					break;
+				}
+			}
 		}
 	}
 
