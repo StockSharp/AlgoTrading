@@ -133,8 +133,10 @@ public class MonthlyBreakoutStrategy : Strategy
 	{
 		base.OnStarted2(time);
 		
+		var dummyEma1 = new ExponentialMovingAverage { Length = 10 };
+		var dummyEma2 = new ExponentialMovingAverage { Length = 20 };
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
+		subscription.Bind(dummyEma1, dummyEma2, ProcessCandle).Start();
 		
 		var area = CreateChartArea();
 		if (area != null)
@@ -144,13 +146,10 @@ public class MonthlyBreakoutStrategy : Strategy
 		}
 	}
 	
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal d1, decimal d2)
 	{
 	if (candle.State != CandleStates.Finished)
 	return;
-		
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
 		
 		_barIndex++;
 		
@@ -191,9 +190,9 @@ public class MonthlyBreakoutStrategy : Strategy
 		if (Position != 0 && _entryBar.HasValue && _barIndex >= _entryBar.Value + HoldingPeriod)
 		{
 			if (Position > 0)
-			SellMarket(Math.Abs(Position));
+			SellMarket();
 			else
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
 			_entryBar = null;
 		}
 		
@@ -202,19 +201,19 @@ public class MonthlyBreakoutStrategy : Strategy
 			switch (EntryOption)
 			{
 				case EntryOptions.LongAtHigh when crossAboveHigh && Position <= 0:
-				BuyMarket(Volume + Math.Abs(Position));
+				BuyMarket();
 				_entryBar = _barIndex;
 				break;
 				case EntryOptions.ShortAtHigh when crossBelowHigh && Position >= 0:
-				SellMarket(Volume + Math.Abs(Position));
+				SellMarket();
 				_entryBar = _barIndex;
 				break;
 				case EntryOptions.LongAtLow when crossAboveLow && Position <= 0:
-				BuyMarket(Volume + Math.Abs(Position));
+				BuyMarket();
 				_entryBar = _barIndex;
 				break;
 				case EntryOptions.ShortAtLow when crossBelowLow && Position >= 0:
-				SellMarket(Volume + Math.Abs(Position));
+				SellMarket();
 				_entryBar = _barIndex;
 				break;
 			}

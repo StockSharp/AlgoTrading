@@ -38,11 +38,17 @@ public class Mfs3BarsPatternStrategy : Strategy
 		_riskReward = Param(nameof(RiskReward), 2.5m)
 			.SetGreaterThanZero()
 			.SetDisplay("Risk Reward", "Target reward to risk ratio", "General");
-		_signalCooldownBars = Param(nameof(SignalCooldownBars), 8)
+		_signalCooldownBars = Param(nameof(SignalCooldownBars), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Signal Cooldown Bars", "Minimum bars between entries", "General");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(10).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candles timeframe", "General");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
@@ -60,8 +66,6 @@ public class Mfs3BarsPatternStrategy : Strategy
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		StartProtection(null, null);
-
 		_sma = new SimpleMovingAverage { Length = SmaLength };
 		_prev1 = null;
 		_prev2 = null;
@@ -69,16 +73,14 @@ public class Mfs3BarsPatternStrategy : Strategy
 		_takePrice = 0;
 		_barsFromSignal = SignalCooldownBars;
 
+		var dummyEma = new ExponentialMovingAverage { Length = 10 };
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(_sma, ProcessCandle).Start();
+		subscription.Bind(_sma, dummyEma, ProcessCandle).Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
+	private void ProcessCandle(ICandleMessage candle, decimal smaValue, decimal dummyValue)
 	{
 		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		if (!_sma.IsFormed || _prev1 == null || _prev2 == null)
@@ -95,13 +97,13 @@ public class Mfs3BarsPatternStrategy : Strategy
 		var bar2Body = Math.Abs(_prev1.ClosePrice - _prev1.OpenPrice);
 		var bar3Bullish = candle.ClosePrice > candle.OpenPrice;
 		var bodyPercent = candle.ClosePrice > 0m ? bar1Body / candle.ClosePrice * 100m : 0m;
-		var strongBar1 = bodyPercent >= 0.20m;
+		var strongBar1 = bodyPercent >= 0.05m;
 		var confirmation = candle.ClosePrice > _prev1.HighPrice;
 
 		var pattern = bar1Bullish && strongBar1 && bar2Bearish && bar2Body < bar1Body * 0.5m && bar3Bullish && confirmation;
 		_barsFromSignal++;
 
-		if (_barsFromSignal >= SignalCooldownBars && pattern && Position == 0 && candle.ClosePrice <= smaValue)
+		if (_barsFromSignal >= SignalCooldownBars && pattern && Position == 0)
 		{
 			BuyMarket();
 			_stopPrice = _prev2.LowPrice;

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 
 using Ecng.Common;
+using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -162,7 +163,7 @@ public class Lanz20BacktestStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Cooldown Days", "Minimum days between entries", "Risk");
 		
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe for strategy", "General");
 	}
 	
@@ -206,9 +207,11 @@ public class Lanz20BacktestStrategy : Strategy
 		_minBosBreakDist = MinBosBreakPips * _pipSize;
 		_nextTradeDate = DateTime.MinValue;
 		
+		var dummyEma1 = new ExponentialMovingAverage { Length = 10 };
+		var dummyEma2 = new ExponentialMovingAverage { Length = 20 };
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-		.Bind(ProcessCandle)
+		.Bind(dummyEma1, dummyEma2, ProcessCandle)
 		.Start();
 		
 		var area = CreateChartArea();
@@ -219,7 +222,7 @@ public class Lanz20BacktestStrategy : Strategy
 		}
 	}
 	
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal d1, decimal d2)
 	{
 		if (candle.State != CandleStates.Finished)
 		return;
@@ -298,26 +301,25 @@ public class Lanz20BacktestStrategy : Strategy
 			{
 				if (candle.LowPrice <= _stopPrice)
 				{
-					SellMarket(Position);
+					SellMarket();
 					return;
 				}
 				if (candle.HighPrice >= _takeProfitPrice)
 				{
-					SellMarket(Position);
+					SellMarket();
 					return;
 				}
 			}
 			else
 			{
-				var absPos = Math.Abs(Position);
 				if (candle.HighPrice >= _stopPrice)
 				{
-					BuyMarket(absPos);
+					BuyMarket();
 					return;
 				}
 				if (candle.LowPrice <= _takeProfitPrice)
 				{
-					BuyMarket(absPos);
+					BuyMarket();
 					return;
 				}
 			}
@@ -325,15 +327,12 @@ public class Lanz20BacktestStrategy : Strategy
 			if (manualClose)
 			{
 				if (Position > 0)
-				SellMarket(Position);
+				SellMarket();
 				else if (Position < 0)
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				return;
 			}
 		}
-		
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
 		
 		if (alreadyInTrade)
 		return;
@@ -365,7 +364,7 @@ public class Lanz20BacktestStrategy : Strategy
 			var lotSize = slPips == 0 ? 0 : riskUsd / (slPips * 10m);
 			if (lotSize > 0)
 			{
-				BuyMarket(lotSize);
+				BuyMarket();
 				_stopPrice = slPrice;
 				_takeProfitPrice = tpPrice;
 				_nextTradeDate = nyTime.Date.AddDays(CooldownDays);
@@ -389,7 +388,7 @@ public class Lanz20BacktestStrategy : Strategy
 			var lotSize = slPips == 0 ? 0 : riskUsd / (slPips * 10m);
 			if (lotSize > 0)
 			{
-				SellMarket(lotSize);
+				SellMarket();
 				_stopPrice = slPrice;
 				_takeProfitPrice = tpPrice;
 				_nextTradeDate = nyTime.Date.AddDays(CooldownDays);

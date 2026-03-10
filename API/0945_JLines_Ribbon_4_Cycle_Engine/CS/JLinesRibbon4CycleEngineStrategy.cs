@@ -68,7 +68,7 @@ public class JLinesRibbon4CycleEngineStrategy : Strategy
 	/// </summary>
 	public JLinesRibbon4CycleEngineStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
 		_fastLength = Param(nameof(FastLength), 72)
@@ -79,7 +79,7 @@ public class JLinesRibbon4CycleEngineStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Slow Length", "Slow EMA length", "Indicators");
 
-		_cooldownBars = Param(nameof(CooldownBars), 120)
+		_cooldownBars = Param(nameof(CooldownBars), 200)
 			.SetGreaterThanZero()
 			.SetDisplay("Cooldown Bars", "Minimum bars between signals", "Risk");
 	}

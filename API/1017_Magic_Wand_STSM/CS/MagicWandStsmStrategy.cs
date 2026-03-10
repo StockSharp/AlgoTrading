@@ -44,8 +44,14 @@ public class MagicWandStsmStrategy : Strategy
 		_supertrendMultiplier = Param(nameof(SupertrendMultiplier), 3m);
 		_maLength = Param(nameof(MaLength), 50);
 		_riskReward = Param(nameof(RiskReward), 3m);
-		_cooldownBars = Param(nameof(CooldownBars), 24);
+		_cooldownBars = Param(nameof(CooldownBars), 80);
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame());
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />

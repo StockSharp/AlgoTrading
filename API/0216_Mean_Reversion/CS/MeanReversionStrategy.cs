@@ -89,13 +89,13 @@ public class MeanReversionStrategy : Strategy
 			
 			.SetOptimize(10, 50, 5);
 
-		_deviationMultiplier = Param(nameof(DeviationMultiplier), 1.5m)
+		_deviationMultiplier = Param(nameof(DeviationMultiplier), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Deviation Multiplier", "Standard deviation multiplier for entry signals", "Indicators")
 			
 			.SetOptimize(1.5m, 3.0m, 0.5m);
 
-		_cooldownBars = Param(nameof(CooldownBars), 20)
+		_cooldownBars = Param(nameof(CooldownBars), 50)
 			.SetRange(1, 200)
 			.SetDisplay("Cooldown Bars", "Bars between trades", "General");
 
@@ -105,7 +105,7 @@ public class MeanReversionStrategy : Strategy
 			
 			.SetOptimize(1m, 3m, 0.5m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -161,9 +161,6 @@ public class MeanReversionStrategy : Strategy
 			return;
 
 		// Skip if strategy is not ready to trade
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		// Calculate upper and lower bands based on mean and standard deviation
 		decimal upperBand = maValue + (stdDevValue * DeviationMultiplier);
 		decimal lowerBand = maValue - (stdDevValue * DeviationMultiplier);
@@ -182,7 +179,7 @@ public class MeanReversionStrategy : Strategy
 			// Long signal: Price below lower band (mean - k*stdDev)
 			if (Position <= 0)
 			{
-				BuyMarket(Volume + Math.Abs(Position));
+				BuyMarket();
 				_cooldown = CooldownBars;
 			}
 		}
@@ -191,7 +188,7 @@ public class MeanReversionStrategy : Strategy
 			// Short signal: Price above upper band (mean + k*stdDev)
 			if (Position >= 0)
 			{
-				SellMarket(Volume + Math.Abs(Position));
+				SellMarket();
 				_cooldown = CooldownBars;
 			}
 		}
@@ -201,12 +198,12 @@ public class MeanReversionStrategy : Strategy
 			// Exit signals: Price returned to the mean
 			if (Position > 0)
 			{
-				SellMarket(Math.Abs(Position));
+				SellMarket();
 				_cooldown = CooldownBars;
 			}
 			else if (Position < 0)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				_cooldown = CooldownBars;
 			}
 		}

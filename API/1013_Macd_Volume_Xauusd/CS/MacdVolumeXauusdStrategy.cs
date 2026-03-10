@@ -64,13 +64,16 @@ public class MacdVolumeXauusdStrategy : Strategy
 		_prevMacdSet = false;
 		_barsFromSignal = int.MaxValue;
 
+		var dummyEma1 = new ExponentialMovingAverage { Length = 10 };
+		var dummyEma2 = new ExponentialMovingAverage { Length = 20 };
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_macd, ProcessCandle)
+			.Bind(dummyEma1, dummyEma2, ProcessCandle)
 			.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal macd)
+	private void ProcessCandle(ICandleMessage candle, decimal d1, decimal d2)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
@@ -80,12 +83,11 @@ public class MacdVolumeXauusdStrategy : Strategy
 		_shortVolumeEma.Process(new DecimalIndicatorValue(_shortVolumeEma, candle.TotalVolume, t));
 		_longVolumeEma.Process(new DecimalIndicatorValue(_longVolumeEma, candle.TotalVolume, t));
 
+		var macdResult = _macd.Process(new CandleIndicatorValue(_macd, candle, candle.ServerTime));
 		if (!_macd.IsFormed)
-		{
-			_prevMacd = macd;
-			_prevMacdSet = true;
 			return;
-		}
+
+		var macd = macdResult.IsEmpty ? 0m : macdResult.GetValue<decimal>();
 
 		if (!_prevMacdSet)
 		{

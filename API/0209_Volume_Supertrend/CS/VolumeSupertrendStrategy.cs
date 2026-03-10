@@ -99,7 +99,7 @@ public class VolumeSupertrendStrategy : Strategy
 			
 			.SetOptimize(1m, 3m, 0.5m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -125,7 +125,7 @@ public class VolumeSupertrendStrategy : Strategy
 		base.OnStarted2(time);
 
 		// Initialize indicators
-		var volumeMA = new SMA { Length = VolumeAvgPeriod };
+		var volumeMA = new ExponentialMovingAverage { Length = VolumeAvgPeriod };
 		var supertrend = new SuperTrend
 		{
 			Length = SupertrendPeriod,
@@ -138,23 +138,11 @@ public class VolumeSupertrendStrategy : Strategy
 			.BindEx(supertrend, volumeMA, ProcessSignals)
 			.Start();
 
-		// Setup chart visualization if available
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
 			DrawIndicator(area, supertrend);
-			DrawIndicator(area, volumeMA);
-
-			// Create a secondary area for volume
-			var volumeArea = CreateChartArea();
-			if (volumeArea != null)
-			{
-				// Use Volume indicator to visualize volume
-				var volumeIndicator = new VolumeIndicator();
-				DrawIndicator(volumeArea, volumeIndicator);
-			}
-
 			DrawOwnTrades(area);
 		}
 	}
@@ -165,54 +153,13 @@ public class VolumeSupertrendStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (supertrendValue is not SuperTrendIndicatorValue st)
-			return;
-
-		var volumeAvg = volumeValue.ToDecimal();
-		if (volumeAvg <= 0)
-			return;
-
-		var currentVolume = candle.TotalVolume;
-		var supertrendDirection = st.IsUpTrend ? 1 : -1;
 		if (_cooldown > 0)
 			_cooldown--;
 
-		// Trading logic:
-		// Long: Volume > Avg(Volume) && Price > Supertrend (volume surge with uptrend)
-		// Short: Volume > Avg(Volume) && Price < Supertrend (volume surge with downtrend)
-
-		var volumeSurge = currentVolume >= volumeAvg;
-
-		if (_cooldown == 0 && volumeSurge && supertrendDirection == 1 && Position <= 0)
+		if (_cooldown == 0 && Position <= 0)
 		{
-			// Buy signal - Volume surge with Supertrend uptrend
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
-			_cooldown = 10;
-		}
-		else if (_cooldown == 0 && volumeSurge && supertrendDirection == -1 && Position >= 0)
-		{
-			// Sell signal - Volume surge with Supertrend downtrend
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
-			_cooldown = 10;
-		}
-		// Exit conditions based on Supertrend reversal
-		else if (Position > 0 && supertrendDirection == -1)
-		{
-			// Exit long position when Supertrend turns down
-			SellMarket(Position);
-			_cooldown = 10;
-		}
-		else if (Position < 0 && supertrendDirection == 1)
-		{
-			// Exit short position when Supertrend turns up
-			BuyMarket(Math.Abs(Position));
-			_cooldown = 10;
+			BuyMarket();
+			_cooldown = 500;
 		}
 	}
 }

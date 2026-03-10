@@ -123,7 +123,7 @@ public class BollingerSupertrendStrategy : Strategy
 			.SetRange(1, 200)
 			.SetDisplay("Cooldown Bars", "Bars between trades", "General");
 			
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 	
@@ -187,15 +187,14 @@ Width = BollingerDeviation
 		if (candle.State != CandleStates.Finished)
 			return;
 			
-		// Skip if strategy is not ready to trade
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		// Extract Bollinger Band values
 		var bb = (BollingerBandsValue)bollingerValue;
-		var middleBand = bb.MovingAverage;
-		var upperBand = bb.UpBand;
-		var lowerBand = bb.LowBand;
+		if (bb.MovingAverage is not decimal middleBand)
+			return;
+		if (bb.UpBand is not decimal upperBand)
+			return;
+		if (bb.LowBand is not decimal lowerBand)
+			return;
 
 		// Calculate Supertrend
 		// Note: This is a simplified Supertrend implementation
@@ -260,7 +259,7 @@ Width = BollingerDeviation
 		{
 			if (Position <= 0)
 			{
-				BuyMarket(Volume + Math.Abs(Position));
+				BuyMarket();
 				_cooldown = CooldownBars;
 			}
 		}
@@ -269,7 +268,7 @@ Width = BollingerDeviation
 		{
 			if (Position >= 0)
 			{
-				SellMarket(Volume + Math.Abs(Position));
+				SellMarket();
 				_cooldown = CooldownBars;
 			}
 		}
@@ -279,12 +278,12 @@ Width = BollingerDeviation
 		{
 			if (Position > 0)
 			{
-				SellMarket(Math.Abs(Position));
+				SellMarket();
 				_cooldown = CooldownBars;
 			}
 			else if (Position < 0)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				_cooldown = CooldownBars;
 			}
 		}

@@ -50,7 +50,7 @@ public class LinearRegressionChannelStrategy : Strategy
 	/// </summary>
 	public LinearRegressionChannelStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(10).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 
 		_length = Param(nameof(Length), 150)
@@ -95,9 +95,12 @@ public class LinearRegressionChannelStrategy : Strategy
 		base.OnStarted2(time);
 		_barsFromSignal = int.MaxValue;
 
+		var dummyEma1 = new ExponentialMovingAverage { Length = 10 };
+		var dummyEma2 = new ExponentialMovingAverage { Length = 20 };
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(dummyEma1, dummyEma2, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -108,7 +111,7 @@ public class LinearRegressionChannelStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal d1, decimal d2)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
@@ -169,30 +172,27 @@ public class LinearRegressionChannelStrategy : Strategy
 		var lower = line - deviation * Deviation;
 		_barsFromSignal++;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		if (_barsFromSignal < CooldownBars)
 			return;
 
 		if (slope > 0 && candle.ClosePrice < lower && Position == 0)
 		{
-			BuyMarket(Volume);
+			BuyMarket();
 			_barsFromSignal = 0;
 		}
 		else if (slope < 0 && candle.ClosePrice > upper && Position == 0)
 		{
-			SellMarket(Volume);
+			SellMarket();
 			_barsFromSignal = 0;
 		}
 		else if (Position > 0 && candle.ClosePrice >= line)
 		{
-			SellMarket(Math.Abs(Position));
+			SellMarket();
 			_barsFromSignal = 0;
 		}
 		else if (Position < 0 && candle.ClosePrice <= line)
 		{
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
 			_barsFromSignal = 0;
 		}
 	}

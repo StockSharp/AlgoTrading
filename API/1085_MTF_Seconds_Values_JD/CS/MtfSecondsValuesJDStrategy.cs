@@ -21,7 +21,7 @@ public class MtfSecondsValuesJDStrategy : Strategy
 	private bool _prevAbove;
 	private bool _hasPrev;
 	private int _barIndex;
-	private int _lastTradeBar = int.MinValue;
+	private int _lastTradeBar = -1000000;
 
 	public int AverageLength { get => _averageLength.Value; set => _averageLength.Value = value; }
 	public int CooldownBars { get => _cooldownBars.Value; set => _cooldownBars.Value = value; }
@@ -40,25 +40,23 @@ public class MtfSecondsValuesJDStrategy : Strategy
 		_hasPrev = false;
 		_prevAbove = false;
 		_barIndex = 0;
-		_lastTradeBar = int.MinValue;
+		_lastTradeBar = -1000000;
 
-		var sma = new SMA { Length = AverageLength };
+		var sma = new SimpleMovingAverage { Length = AverageLength };
+		var dummyEma = new ExponentialMovingAverage { Length = 20 };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(sma, ProcessCandle)
+			.Bind(sma, dummyEma, ProcessCandle)
 			.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
+	private void ProcessCandle(ICandleMessage candle, decimal smaValue, decimal d2)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
 		_barIndex++;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
 
 		var above = candle.ClosePrice > smaValue;
 		if (!_hasPrev)
@@ -74,12 +72,12 @@ public class MtfSecondsValuesJDStrategy : Strategy
 
 		if (canTrade && crossUp && Position <= 0)
 		{
-			BuyMarket(Volume + Math.Abs(Position));
+			BuyMarket();
 			_lastTradeBar = _barIndex;
 		}
 		else if (canTrade && crossDown && Position >= 0)
 		{
-			SellMarket(Volume + Math.Abs(Position));
+			SellMarket();
 			_lastTradeBar = _barIndex;
 		}
 
@@ -94,6 +92,6 @@ public class MtfSecondsValuesJDStrategy : Strategy
 		_prevAbove = false;
 		_hasPrev = false;
 		_barIndex = 0;
-		_lastTradeBar = int.MinValue;
+		_lastTradeBar = -1000000;
 	}
 }

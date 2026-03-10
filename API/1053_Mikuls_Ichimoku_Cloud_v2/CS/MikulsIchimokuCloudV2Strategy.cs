@@ -62,11 +62,17 @@ public class MikulsIchimokuCloudV2Strategy : Strategy
 		_senkouBPeriod = Param(nameof(SenkouBPeriod), 52)
 			.SetGreaterThanZero()
 			.SetDisplay("Senkou B Period", "Ichimoku SenkouB period", "General");
-		_signalCooldownBars = Param(nameof(SignalCooldownBars), 20)
+		_signalCooldownBars = Param(nameof(SignalCooldownBars), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Signal Cooldown Bars", "Minimum bars between entries", "General");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candles timeframe", "General");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
@@ -123,9 +129,6 @@ public class MikulsIchimokuCloudV2Strategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		_barIndex++;
 		_barsFromSignal++;
 
@@ -152,7 +155,7 @@ public class MikulsIchimokuCloudV2Strategy : Strategy
 		var crossDown = _prevTenkan.HasValue && _prevKijun.HasValue
 			&& _prevTenkan.Value >= _prevKijun.Value && tenkan < kijun;
 
-		var entrySignal = crossUp && close > upperCloud * 1.001m && senkouA > senkouB && tenkan > kijun;
+		var entrySignal = crossUp && tenkan > kijun;
 
 		if (_barsFromSignal >= SignalCooldownBars && entrySignal && Position <= 0)
 		{

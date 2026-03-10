@@ -27,7 +27,7 @@ public class MovingAverageShiftWaveTrendStrategy : Strategy
 	private decimal _prevSlow;
 	private bool _hasPrev;
 	private int _barIndex;
-	private int _lastTradeBar = int.MinValue;
+	private int _lastTradeBar = -1000000;
 
 	public int FastLength { get => _fastLength.Value; set => _fastLength.Value = value; }
 	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
@@ -50,10 +50,10 @@ public class MovingAverageShiftWaveTrendStrategy : Strategy
 
 		_hasPrev = false;
 		_barIndex = 0;
-		_lastTradeBar = int.MinValue;
+		_lastTradeBar = -1000000;
 
-		var fast = new EMA { Length = FastLength };
-		var slow = new EMA { Length = SlowLength };
+		var fast = new ExponentialMovingAverage { Length = FastLength };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -67,9 +67,6 @@ public class MovingAverageShiftWaveTrendStrategy : Strategy
 			return;
 
 		_barIndex++;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
 
 		if (!_hasPrev)
 		{
@@ -88,12 +85,12 @@ public class MovingAverageShiftWaveTrendStrategy : Strategy
 
 		if (canTrade && crossUp && Position <= 0)
 		{
-			BuyMarket(Volume + Math.Abs(Position));
+			BuyMarket();
 			_lastTradeBar = _barIndex;
 		}
 		else if (canTrade && crossDown && Position >= 0)
 		{
-			SellMarket(Volume + Math.Abs(Position));
+			SellMarket();
 			_lastTradeBar = _barIndex;
 		}
 
@@ -110,6 +107,6 @@ public class MovingAverageShiftWaveTrendStrategy : Strategy
 		_prevSlow = 0m;
 		_hasPrev = false;
 		_barIndex = 0;
-		_lastTradeBar = int.MinValue;
+		_lastTradeBar = -1000000;
 	}
 }

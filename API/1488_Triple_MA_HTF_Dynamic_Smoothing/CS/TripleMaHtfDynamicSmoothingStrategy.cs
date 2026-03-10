@@ -145,12 +145,12 @@ public class TripleMaHtfDynamicSmoothingStrategy : Strategy
 		if (Position > 0 && crossDown)
 		{
 			SellMarket();
-			_cooldown = 70;
+			_cooldown = 30;
 		}
 		else if (Position < 0 && crossUp)
 		{
 			BuyMarket();
-			_cooldown = 70;
+			_cooldown = 30;
 		}
 
 		// Entry: EMA crossover + RSI filter
@@ -159,23 +159,23 @@ public class TripleMaHtfDynamicSmoothingStrategy : Strategy
 			if (crossUp && rsiVal > 45m && rsiVal < 75m)
 			{
 				BuyMarket();
-				_cooldown = 70;
+				_cooldown = 30;
 			}
 			else if (crossDown && rsiVal > 25m && rsiVal < 55m)
 			{
 				SellMarket();
-				_cooldown = 70;
+				_cooldown = 30;
 			}
 			// Re-entry: RSI cross 50 in trend direction when flat
 			else if (trendUp && _prevRsi <= 50m && rsiVal > 50m)
 			{
 				BuyMarket();
-				_cooldown = 70;
+				_cooldown = 30;
 			}
 			else if (trendDown && _prevRsi >= 50m && rsiVal < 50m)
 			{
 				SellMarket();
-				_cooldown = 70;
+				_cooldown = 30;
 			}
 		}
 

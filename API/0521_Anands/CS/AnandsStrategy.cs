@@ -57,13 +57,13 @@ public class AnandsStrategy : Strategy
 	/// </summary>
 	public AnandsStrategy()
 	{
-		_emaLength = Param(nameof(EmaLength), 20)
+		_emaLength = Param(nameof(EmaLength), 5)
 			.SetDisplay("EMA Length", "EMA trend filter period", "Indicator");
 
-		_cooldownBars = Param(nameof(CooldownBars), 15)
+		_cooldownBars = Param(nameof(CooldownBars), 10)
 			.SetDisplay("Cooldown Bars", "Bars between trades", "Trading");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Trading timeframe", "General");
 	}
 
@@ -80,7 +80,7 @@ public class AnandsStrategy : Strategy
 		_prevHigh = 0;
 		_prevLow = 0;
 		_barIndex = 0;
-		_lastTradeBar = 0;
+		_lastTradeBar = -100;
 	}
 
 	/// <inheritdoc />

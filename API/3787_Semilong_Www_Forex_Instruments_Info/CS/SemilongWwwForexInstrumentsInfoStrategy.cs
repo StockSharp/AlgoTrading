@@ -52,7 +52,7 @@ public class SemilongWwwForexInstrumentsInfoStrategy : Strategy
 		_lossPoints = Param(nameof(LossPoints), 60)
 		.SetDisplay("Stop Loss (points)", "Distance in points for the protective stop", "Risk");
 
-		_shiftOne = Param(nameof(ShiftOne), 20)
+		_shiftOne = Param(nameof(ShiftOne), 5)
 		.SetNotNegative()
 		.SetDisplay("Primary Shift", "Number of bars between the current close and the comparison close", "Signals");
 
@@ -86,7 +86,7 @@ public class SemilongWwwForexInstrumentsInfoStrategy : Strategy
 		.SetRange(1, int.MaxValue)
 		.SetDisplay("Auto Margin Divider", "Divisor used to convert free margin into the lot size", "Money Management");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Time frame used for signal calculations", "General");
 	}
 
@@ -230,11 +230,12 @@ public class SemilongWwwForexInstrumentsInfoStrategy : Strategy
 		if (_pipSize <= 0m)
 			_pipSize = 1m;
 
+		var dummyEma = new ExponentialMovingAverage { Length = 10 };
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
+		subscription.Bind(dummyEma, ProcessCandle).Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal dummyValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;

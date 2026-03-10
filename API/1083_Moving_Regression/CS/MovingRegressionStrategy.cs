@@ -3,6 +3,7 @@ using System.Collections.Generic;
 
 using Ecng.Common;
 
+using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -22,7 +23,7 @@ public class MovingRegressionStrategy : Strategy
 
 	private readonly List<decimal> _prices = new();
 	private int _barIndex;
-	private int _lastSignalBar = int.MinValue;
+	private int _lastSignalBar = -1000000;
 
 	/// <summary>
 	/// Degree-like sensitivity multiplier.
@@ -106,7 +107,7 @@ public class MovingRegressionStrategy : Strategy
 		base.OnReseted();
 		_prices.Clear();
 		_barIndex = 0;
-		_lastSignalBar = int.MinValue;
+		_lastSignalBar = -1000000;
 	}
 
 	/// <inheritdoc />
@@ -114,13 +115,15 @@ public class MovingRegressionStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
+		var dummyEma1 = new ExponentialMovingAverage { Length = 10 };
+		var dummyEma2 = new ExponentialMovingAverage { Length = 20 };
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(dummyEma1, dummyEma2, ProcessCandle)
 			.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal d1, decimal d2)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
@@ -134,9 +137,6 @@ public class MovingRegressionStrategy : Strategy
 		if (_prices.Count < Window)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		var slope = CalculateSlope(_prices);
 		var slopePercent = candle.ClosePrice != 0m
 			? slope / candle.ClosePrice * 100m
@@ -146,12 +146,12 @@ public class MovingRegressionStrategy : Strategy
 
 		if (canSignal && slopePercent > threshold && Position <= 0)
 		{
-			BuyMarket(Volume + Math.Abs(Position));
+			BuyMarket();
 			_lastSignalBar = _barIndex;
 		}
 		else if (canSignal && slopePercent < -threshold && Position >= 0)
 		{
-			SellMarket(Volume + Math.Abs(Position));
+			SellMarket();
 			_lastSignalBar = _barIndex;
 		}
 	}

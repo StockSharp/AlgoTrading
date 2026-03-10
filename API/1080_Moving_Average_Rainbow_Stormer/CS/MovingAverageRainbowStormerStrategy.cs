@@ -23,15 +23,11 @@ public class MovingAverageRainbowStormerStrategy : Strategy
 	private readonly StrategyParam<decimal> _minTrendSpreadPercent;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private EMA _ma3;
-	private EMA _ma8;
-	private EMA _ma20;
-	private EMA _ma50;
 	private decimal _entryPrice;
 	private bool _prevBullish;
 	private bool _prevBearish;
 	private int _barIndex;
-	private int _lastSignalBar = int.MinValue;
+	private int _lastSignalBar = -1000000;
 
 	public decimal TargetFactor { get => _targetFactor.Value; set => _targetFactor.Value = value; }
 	public int CooldownBars { get => _cooldownBars.Value; set => _cooldownBars.Value = value; }
@@ -54,16 +50,16 @@ public class MovingAverageRainbowStormerStrategy : Strategy
 		_prevBullish = false;
 		_prevBearish = false;
 		_barIndex = 0;
-		_lastSignalBar = int.MinValue;
+		_lastSignalBar = -1000000;
 
-		_ma3 = new EMA { Length = 3 };
-		_ma8 = new EMA { Length = 8 };
-		_ma20 = new EMA { Length = 20 };
-		_ma50 = new EMA { Length = 50 };
+		var ma3 = new ExponentialMovingAverage { Length = 3 };
+		var ma8 = new ExponentialMovingAverage { Length = 8 };
+		var ma20 = new ExponentialMovingAverage { Length = 20 };
+		var ma50 = new ExponentialMovingAverage { Length = 50 };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_ma3, _ma8, _ma20, _ma50, ProcessCandle)
+			.Bind(ma3, ma8, ma20, ma50, ProcessCandle)
 			.Start();
 	}
 
@@ -73,9 +69,6 @@ public class MovingAverageRainbowStormerStrategy : Strategy
 			return;
 
 		_barIndex++;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
 
 		var close = candle.ClosePrice;
 
@@ -88,13 +81,13 @@ public class MovingAverageRainbowStormerStrategy : Strategy
 
 		if (canSignal && bullishSignal && close > ma3 && Position <= 0)
 		{
-			BuyMarket(Volume + Math.Abs(Position));
+			BuyMarket();
 			_entryPrice = close;
 			_lastSignalBar = _barIndex;
 		}
 		else if (canSignal && bearishSignal && close < ma3 && Position >= 0)
 		{
-			SellMarket(Volume + Math.Abs(Position));
+			SellMarket();
 			_entryPrice = close;
 			_lastSignalBar = _barIndex;
 		}
@@ -149,6 +142,6 @@ public class MovingAverageRainbowStormerStrategy : Strategy
 		_prevBullish = false;
 		_prevBearish = false;
 		_barIndex = 0;
-		_lastSignalBar = int.MinValue;
+		_lastSignalBar = -1000000;
 	}
 }

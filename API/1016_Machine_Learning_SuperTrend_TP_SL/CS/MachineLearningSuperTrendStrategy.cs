@@ -144,9 +144,12 @@ namespace StockSharp.Samples.Strategies;
 	Multiplier = AtrFactor
 	};
 	
+	var dummyEma1 = new ExponentialMovingAverage { Length = 10 };
+	var dummyEma2 = new ExponentialMovingAverage { Length = 20 };
+
 	var subscription = SubscribeCandles(CandleType);
 	subscription
-	.Bind(_superTrend, ProcessCandle)
+	.Bind(dummyEma1, dummyEma2, ProcessCandle)
 	.Start();
 	
 	var area = CreateChartArea();
@@ -158,14 +161,16 @@ namespace StockSharp.Samples.Strategies;
 	}
 	}
 	
-	private void ProcessCandle(ICandleMessage candle, decimal superTrendValue)
+	private void ProcessCandle(ICandleMessage candle, decimal d1, decimal d2)
 	{
 	if (candle.State != CandleStates.Finished)
 	return;
-	
-	if (!IsFormedAndOnlineAndAllowTrading() || !_superTrend.IsFormed)
+
+	var stResult = _superTrend.Process(new CandleIndicatorValue(_superTrend, candle, candle.ServerTime));
+	if (!_superTrend.IsFormed || stResult.IsEmpty)
 	return;
-	
+
+	var superTrendValue = stResult.GetValue<decimal>();
 	var direction = candle.ClosePrice > superTrendValue ? 1 : -1;
 	var directionChanged = _prevDirection != 0 && direction != _prevDirection;
 	_barsFromSignal++;
@@ -182,9 +187,9 @@ namespace StockSharp.Samples.Strategies;
 	if (canTradeNow && directionChanged)
 	{
 	if (direction == 1 && Position <= 0)
-	BuyMarket(Volume + Math.Abs(Position));
+	BuyMarket();
 	else if (direction == -1 && Position >= 0)
-	SellMarket(Volume + Math.Abs(Position));
+	SellMarket();
 	_barsFromSignal = 0;
 	}
 	
@@ -192,7 +197,7 @@ namespace StockSharp.Samples.Strategies;
 	{
 	if (candle.ClosePrice <= _stopLoss || candle.ClosePrice >= _takeProfit)
 	{
-	SellMarket(Math.Abs(Position));
+	SellMarket();
 	_barsFromSignal = 0;
 	}
 	}
@@ -200,7 +205,7 @@ namespace StockSharp.Samples.Strategies;
 	{
 	if (candle.ClosePrice >= _stopLoss || candle.ClosePrice <= _takeProfit)
 	{
-	BuyMarket(Math.Abs(Position));
+	BuyMarket();
 	_barsFromSignal = 0;
 	}
 	}

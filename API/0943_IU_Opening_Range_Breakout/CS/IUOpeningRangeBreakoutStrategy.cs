@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 
 using Ecng.Common;
+using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -28,7 +29,8 @@ public class IUOpeningRangeBreakoutStrategy : Strategy
 	private int _tradesToday;
 	private DateTime _currentDay;
 	private DateTime _nextTradeDate;
-	private ICandleMessage _prevCandle;
+	private decimal _prevHigh;
+	private decimal _prevLow;
 
 	/// <summary>
 	/// Candle type for processing.
@@ -80,7 +82,7 @@ public class IUOpeningRangeBreakoutStrategy : Strategy
 	/// </summary>
 	public IUOpeningRangeBreakoutStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 
 		_riskReward = Param(nameof(RiskReward), 2m)
@@ -118,7 +120,8 @@ public class IUOpeningRangeBreakoutStrategy : Strategy
 		_tradesToday = 0;
 		_currentDay = default;
 		_nextTradeDate = DateTime.MinValue;
-		_prevCandle = null;
+		_prevHigh = 0m;
+		_prevLow = 0m;
 	}
 
 	/// <inheritdoc />
@@ -129,11 +132,13 @@ public class IUOpeningRangeBreakoutStrategy : Strategy
 		_currentDay = time.Date;
 		_nextTradeDate = DateTime.MinValue;
 
+		var dummyEma1 = new ExponentialMovingAverage { Length = 10 };
+		var dummyEma2 = new ExponentialMovingAverage { Length = 20 };
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
+		subscription.Bind(dummyEma1, dummyEma2, ProcessCandle).Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal d1, decimal d2)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
@@ -153,7 +158,8 @@ public class IUOpeningRangeBreakoutStrategy : Strategy
 			_orHigh = candle.HighPrice;
 			_orLow = candle.LowPrice;
 			_rangeSet = true;
-			_prevCandle = candle;
+			_prevHigh = candle.HighPrice;
+			_prevLow = candle.LowPrice;
 			return;
 		}
 
@@ -161,9 +167,9 @@ public class IUOpeningRangeBreakoutStrategy : Strategy
 		if (openTime.TimeOfDay >= EndTime && Position != 0)
 		{
 			if (Position > 0)
-				SellMarket(Math.Abs(Position));
+				SellMarket();
 			else if (Position < 0)
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 		}
 
 		if (Position == 0 && _tradesToday < MaxTrades && openTime.Date >= _nextTradeDate)
@@ -173,7 +179,7 @@ public class IUOpeningRangeBreakoutStrategy : Strategy
 				BuyMarket();
 				_tradesToday++;
 				_nextTradeDate = openTime.Date.AddDays(CooldownDays);
-				_stopPrice = _prevCandle.LowPrice;
+				_stopPrice = _prevLow;
 				_targetPrice = candle.ClosePrice + (candle.ClosePrice - _stopPrice) * RiskReward;
 			}
 			else if (candle.LowPrice < _orLow)
@@ -181,21 +187,22 @@ public class IUOpeningRangeBreakoutStrategy : Strategy
 				SellMarket();
 				_tradesToday++;
 				_nextTradeDate = openTime.Date.AddDays(CooldownDays);
-				_stopPrice = _prevCandle.HighPrice;
+				_stopPrice = _prevHigh;
 				_targetPrice = candle.ClosePrice - (_stopPrice - candle.ClosePrice) * RiskReward;
 			}
 		}
 		else if (Position > 0)
 		{
 			if (candle.LowPrice <= _stopPrice || candle.HighPrice >= _targetPrice)
-				SellMarket(Math.Abs(Position));
+				SellMarket();
 		}
 		else if (Position < 0)
 		{
 			if (candle.HighPrice >= _stopPrice || candle.LowPrice <= _targetPrice)
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 		}
 
-		_prevCandle = candle;
+		_prevHigh = candle.HighPrice;
+		_prevLow = candle.LowPrice;
 	}
 }

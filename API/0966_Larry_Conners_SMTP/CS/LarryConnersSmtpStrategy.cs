@@ -108,14 +108,15 @@ public class LarryConnersSmtpStrategy : Strategy
 
 		var lowest = new Lowest { Length = 10 };
 		_rangeHighest = new Highest { Length = 10 };
+		var dummyEma = new ExponentialMovingAverage { Length = 10 };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(lowest, ProcessCandle)
+			.Bind(lowest, dummyEma, ProcessCandle)
 			.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal low10)
+	private void ProcessCandle(ICandleMessage candle, decimal low10, decimal dummyValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
@@ -123,10 +124,7 @@ public class LarryConnersSmtpStrategy : Strategy
 		_barsSinceSignal++;
 
 		var range = candle.HighPrice - candle.LowPrice;
-		var maxRangeValue = _rangeHighest.Process(new DecimalIndicatorValue(_rangeHighest, range, candle.OpenTime)); var maxRange = maxRangeValue.ToDecimal();
-
-		if (!_rangeHighest.IsFormed || !IsFormedAndOnlineAndAllowTrading())
-			return;
+		_rangeHighest.Process(new DecimalIndicatorValue(_rangeHighest, range, candle.OpenTime) { IsFinal = true });
 
 		var is10PeriodLow = candle.LowPrice <= low10 + TickSize;
 		var buyCondition = is10PeriodLow && candle.ClosePrice > candle.OpenPrice;
@@ -144,7 +142,7 @@ public class LarryConnersSmtpStrategy : Strategy
 			_stopLoss = Math.Max(_stopLoss, candle.LowPrice);
 			if (candle.ClosePrice <= _stopLoss)
 			{
-				SellMarket(Math.Abs(Position));
+				SellMarket();
 				_barsSinceSignal = 0;
 			}
 		}

@@ -110,7 +110,7 @@ public class RsiDonchianStrategy : Strategy
 			
 			.SetOptimize(1m, 3m, 0.5m);
 			
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 	
@@ -202,17 +202,13 @@ Length = RsiPeriod
 
 	private void ProcessTradingLogic(ICandleMessage candle)
 	{
-		// Skip if strategy is not ready to trade
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-		
 		// Skip if not all indicators are initialized
 		if (_donchianHigh == 0 || _donchianLow == 0 || _currentRsi == 0)
 			return;
 		
 		// Trading signals
-		bool isRsiOversold = _currentRsi < 20;
-		bool isRsiOverbought = _currentRsi > 80;
+		bool isRsiOversold = _currentRsi < 30;
+		bool isRsiOverbought = _currentRsi > 70;
 		bool isAtLowerBand = candle.ClosePrice <= _donchianLow * 1.001m;
 		bool isAtUpperBand = candle.ClosePrice >= _donchianHigh * 0.999m;
 		if (_cooldown > 0)
@@ -223,7 +219,7 @@ Length = RsiPeriod
 		{
 			if (Position <= 0)
 			{
-				BuyMarket(Volume + Math.Abs(Position));
+				BuyMarket();
 				_cooldown = CooldownBars;
 			}
 		}
@@ -232,7 +228,7 @@ Length = RsiPeriod
 		{
 			if (Position >= 0)
 			{
-				SellMarket(Volume + Math.Abs(Position));
+				SellMarket();
 				_cooldown = CooldownBars;
 			}
 		}
@@ -242,12 +238,12 @@ Length = RsiPeriod
 		{
 			if (Position > 0)
 			{
-				SellMarket(Math.Abs(Position));
+				SellMarket();
 				_cooldown = CooldownBars;
 			}
 			else if (Position < 0)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				_cooldown = CooldownBars;
 			}
 		}

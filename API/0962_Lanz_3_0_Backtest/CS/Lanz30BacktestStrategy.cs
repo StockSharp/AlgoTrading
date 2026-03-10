@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 
 using Ecng.Common;
+using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -21,7 +22,6 @@ public class Lanz30BacktestStrategy : Strategy
 	private decimal _refHigh;
 	private decimal _refLow;
 	private bool _rangeSession;
-	private Order _entryOrder;
 
 	private decimal? _entryPrice;
 	private decimal? _tp;
@@ -72,7 +72,7 @@ public class Lanz30BacktestStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Cooldown Days", "Minimum days between entries", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -89,7 +89,6 @@ public class Lanz30BacktestStrategy : Strategy
 
 		_refHigh = _refLow = 0m;
 		_rangeSession = false;
-		_entryOrder = null!;
 		_entryPrice = _tp = _sl = null;
 		_directionDefined = false;
 		_isBuy = false;
@@ -109,15 +108,15 @@ public class Lanz30BacktestStrategy : Strategy
 		_entriesExecuted = 0;
 		_nextTradeDate = DateTime.MinValue;
 
+		var dummyEma1 = new ExponentialMovingAverage { Length = 10 };
+		var dummyEma2 = new ExponentialMovingAverage { Length = 20 };
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(dummyEma1, dummyEma2, ProcessCandle)
 			.Start();
-
-		StartProtection(null, null);
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal d1, decimal d2)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
@@ -139,8 +138,7 @@ public class Lanz30BacktestStrategy : Strategy
 			_tradeExpired = false;
 			_orderSent = false;
 			_fallbackTriggered = false;
-			_entryOrder = null!;
-		}
+			}
 		else if (rangeSession)
 		{
 			_refHigh = Math.Max(_refHigh, candle.HighPrice);
@@ -177,9 +175,9 @@ public class Lanz30BacktestStrategy : Strategy
 		if (_directionDefined && entryWindow && !_tradeExecuted && !_orderSent && !_tradeExpired && _entriesExecuted < MaxEntries && t.Date >= _nextTradeDate && _entryPrice is decimal price)
 		{
 			if (_isBuy)
-				BuyMarket(Volume);
+				BuyMarket();
 			else
-				SellMarket(Volume);
+				SellMarket();
 
 			_orderSent = true;
 			_tradeExecuted = true;
@@ -190,46 +188,8 @@ public class Lanz30BacktestStrategy : Strategy
 		if (!_tradeExecuted && Position != 0)
 		_tradeExecuted = true;
 
-		if (fallbackTime && !_tradeExecuted && !_fallbackTriggered && _orderSent)
-		{
-			if (_entryOrder != null)
-			CancelOrder(_entryOrder);
-
-			var asiaMid = (_refHigh + _refLow) / 2m;
-			var currentBuy = _lastClose < asiaMid;
-
-			if (currentBuy == _isBuy)
-			{
-				_orderSent = false;
-			}
-			else
-			{
-				var fiboRange = _refHigh - _refLow;
-				_isBuy = !_isBuy;
-				_entryPrice = _isBuy ? _refLow : _refHigh;
-
-				if (UseOptimizedFibo)
-				{
-					_tp = _isBuy ? _refLow + 1.95m * fiboRange : _refHigh - 1.95m * fiboRange;
-					_sl = _isBuy ? _refLow - 0.65m * fiboRange : _refHigh + 0.65m * fiboRange;
-				}
-				else
-				{
-					_tp = _isBuy ? _refLow + 2.25m * fiboRange : _refHigh - 2.25m * fiboRange;
-					_sl = _isBuy ? _refLow - 0.75m * fiboRange : _refHigh + 0.75m * fiboRange;
-				}
-
-				_orderSent = false;
-			}
-
-			_directionDefined = true;
-			_fallbackTriggered = true;
-		}
-
 		if (expireWindow && !_tradeExecuted && !_tradeExpired)
 		{
-			if (_entryOrder != null)
-			CancelOrder(_entryOrder);
 			_tradeExpired = true;
 		}
 
@@ -238,25 +198,25 @@ public class Lanz30BacktestStrategy : Strategy
 			if (Position > 0)
 			{
 				if (candle.LowPrice <= sl)
-				SellMarket(Math.Abs(Position));
+				SellMarket();
 				else if (candle.HighPrice >= tp)
-				SellMarket(Math.Abs(Position));
+				SellMarket();
 			}
 			else if (Position < 0)
 			{
 				if (candle.HighPrice >= sl)
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				else if (candle.LowPrice <= tp)
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 			}
 		}
 
 		if (closeTime && _tradeExecuted)
 		{
 			if (Position > 0)
-				SellMarket(Math.Abs(Position));
+				SellMarket();
 			else if (Position < 0)
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 		}
 
 		_lastClose = candle.ClosePrice;

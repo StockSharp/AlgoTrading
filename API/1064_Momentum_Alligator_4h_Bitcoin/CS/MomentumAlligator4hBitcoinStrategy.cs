@@ -49,7 +49,6 @@ public class MomentumAlligator4hBitcoinStrategy : Strategy
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		StartProtection(null, null);
 
 		_prevAo = 0;
 		_hasPrev = false;
@@ -72,9 +71,6 @@ public class MomentumAlligator4hBitcoinStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		var close = candle.ClosePrice;
 		_barsFromSignal++;
 
@@ -87,16 +83,14 @@ public class MomentumAlligator4hBitcoinStrategy : Strategy
 
 			if (_barsFromSignal >= SignalCooldownBars && aoCrossUp && alligatorBull && close > lips && Position <= 0)
 			{
-				var volume = Volume + Math.Abs(Position);
-				BuyMarket(volume);
+				BuyMarket();
 				_entryPrice = close;
 				_barsFromSignal = 0;
 			}
 
 			if (_barsFromSignal >= SignalCooldownBars && aoCrossDown && alligatorBear && close < lips && Position >= 0)
 			{
-				var volume = Volume + Math.Abs(Position);
-				SellMarket(volume);
+				SellMarket();
 				_entryPrice = close;
 				_barsFromSignal = 0;
 			}

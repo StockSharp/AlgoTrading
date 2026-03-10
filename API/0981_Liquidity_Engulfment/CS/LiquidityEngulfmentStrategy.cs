@@ -63,7 +63,7 @@ public class LiquidityEngulfmentStrategy : Strategy
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50).SetGreaterThanZero().SetDisplay("Take Profit", "Target in pips", "Risk");
 		_enableTakeProfit = Param(nameof(EnableTakeProfit), true).SetDisplay("Enable TP", "Use take profit", "Risk");
 		_cooldownBars = Param(nameof(CooldownBars), 12).SetGreaterThanZero().SetDisplay("Cooldown Bars", "Bars between trade actions", "Risk");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(10).TimeFrame()).SetDisplay("Candle Type", "Type of candles", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
 	/// <inheritdoc />
@@ -113,8 +113,11 @@ public class LiquidityEngulfmentStrategy : Strategy
 		_index = 0;
 		_barsFromTrade = int.MaxValue;
 
+		var dummyEma1 = new ExponentialMovingAverage { Length = 10 };
+		var dummyEma2 = new ExponentialMovingAverage { Length = 20 };
+
 		var sub = SubscribeCandles(CandleType);
-		sub.Bind(Process).Start();
+		sub.Bind(dummyEma1, dummyEma2, Process).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -124,7 +127,7 @@ public class LiquidityEngulfmentStrategy : Strategy
 		}
 	}
 
-	private void Process(ICandleMessage candle)
+	private void Process(ICandleMessage candle, decimal d1, decimal d2)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
@@ -201,14 +204,14 @@ public class LiquidityEngulfmentStrategy : Strategy
 
 		if (canTradeNow && canShort && bearSignal && Position == 0)
 		{
-			SellMarket(Volume);
+			SellMarket();
 			_entryPrice = candle.ClosePrice;
 			_entryTime = candle.OpenTime;
 			_barsFromTrade = 0;
 		}
 		else if (canTradeNow && canLong && bullSignal && Position == 0)
 		{
-			BuyMarket(Volume);
+			BuyMarket();
 			_entryPrice = candle.ClosePrice;
 			_entryTime = candle.OpenTime;
 			_barsFromTrade = 0;
@@ -217,12 +220,12 @@ public class LiquidityEngulfmentStrategy : Strategy
 		{
 			if (Position < 0 && bullSignal && candle.OpenTime > _entryTime)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				_barsFromTrade = 0;
 			}
 			else if (Position > 0 && bearSignal && candle.OpenTime > _entryTime)
 			{
-				SellMarket(Position);
+				SellMarket();
 				_barsFromTrade = 0;
 			}
 		}
@@ -233,7 +236,7 @@ public class LiquidityEngulfmentStrategy : Strategy
 			var tp = _entryPrice + TakeProfitPips * step;
 			if (candle.ClosePrice <= stop || (EnableTakeProfit && candle.ClosePrice >= tp))
 			{
-				SellMarket(Position);
+				SellMarket();
 				_barsFromTrade = 0;
 			}
 		}
@@ -243,7 +246,7 @@ public class LiquidityEngulfmentStrategy : Strategy
 			var tp = _entryPrice - TakeProfitPips * step;
 			if (candle.ClosePrice >= stop || (EnableTakeProfit && candle.ClosePrice <= tp))
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				_barsFromTrade = 0;
 			}
 		}

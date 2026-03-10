@@ -78,7 +78,7 @@ public class IchimokuKumoBreakoutStrategy : Strategy
 			.SetDisplay("Senkou Span B Period", "Period for Senkou Span B", "Indicators")
 			.SetOptimize(40, 60, 4);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -102,44 +102,32 @@ public class IchimokuKumoBreakoutStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var ichimoku = new Ichimoku
-		{
-			Tenkan = { Length = TenkanPeriod },
-			Kijun = { Length = KijunPeriod },
-			SenkouB = { Length = SenkouSpanPeriod }
-		};
+		var tenkan = new Highest { Length = TenkanPeriod };
+		var tenkanLow = new Lowest { Length = TenkanPeriod };
+		var kijun = new Highest { Length = KijunPeriod };
+		var kijunLow = new Lowest { Length = KijunPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(ichimoku, ProcessCandle)
+			.Bind(tenkan, tenkanLow, kijun, kijunLow, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, ichimoku);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue ichimokuValue)
+	private void ProcessCandle(ICandleMessage candle, decimal tenkanHigh, decimal tenkanLow, decimal kijunHigh, decimal kijunLow)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		var tenkan = (tenkanHigh + tenkanLow) / 2m;
+		var kijun = (kijunHigh + kijunLow) / 2m;
 
-		var ichimokuTyped = (IchimokuValue)ichimokuValue;
-
-		if (ichimokuTyped.Tenkan is not decimal tenkan)
-			return;
-
-		if (ichimokuTyped.Kijun is not decimal kijun)
-			return;
-
-		// Skip zero values
 		if (tenkan == 0 || kijun == 0)
 			return;
 
@@ -167,16 +155,12 @@ public class IchimokuKumoBreakoutStrategy : Strategy
 
 		if (tenkanAboveKijun && Position <= 0)
 		{
-			// Bullish cross
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
+			BuyMarket();
 			_candlesSinceLastTrade = 0;
 		}
 		else if (!tenkanAboveKijun && Position >= 0)
 		{
-			// Bearish cross
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
+			SellMarket();
 			_candlesSinceLastTrade = 0;
 		}
 	}

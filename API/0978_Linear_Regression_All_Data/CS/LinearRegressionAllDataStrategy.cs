@@ -80,9 +80,12 @@ public class LinearRegressionAllDataStrategy : Strategy
 		_sumXY = 0m;
 		_barsFromSignal = int.MaxValue;
 
+		var dummyEma1 = new ExponentialMovingAverage { Length = 10 };
+		var dummyEma2 = new ExponentialMovingAverage { Length = 20 };
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(dummyEma1, dummyEma2, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -93,7 +96,7 @@ public class LinearRegressionAllDataStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal d1, decimal d2)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
@@ -129,9 +132,6 @@ public class LinearRegressionAllDataStrategy : Strategy
 		var deviation = (candle.ClosePrice - predicted) / predicted;
 		_barsFromSignal++;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		if (_barsFromSignal < CooldownBars)
 			return;
 
@@ -139,12 +139,12 @@ public class LinearRegressionAllDataStrategy : Strategy
 		{
 			if (deviation <= -DeviationThreshold)
 			{
-				BuyMarket(Volume);
+				BuyMarket();
 				_barsFromSignal = 0;
 			}
 			else if (deviation >= DeviationThreshold)
 			{
-				SellMarket(Volume);
+				SellMarket();
 				_barsFromSignal = 0;
 			}
 
@@ -153,12 +153,12 @@ public class LinearRegressionAllDataStrategy : Strategy
 
 		if (Position > 0 && deviation >= -ExitThreshold)
 		{
-			SellMarket(Math.Abs(Position));
+			SellMarket();
 			_barsFromSignal = 0;
 		}
 		else if (Position < 0 && deviation <= ExitThreshold)
 		{
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
 			_barsFromSignal = 0;
 		}
 	}

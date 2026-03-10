@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Ecng.Common;
+using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -107,8 +108,10 @@ public class IUGapFillStrategy : Strategy
 		_entryDay = default;
 		_nextEntryDate = DateTime.MinValue;
 
+		var dummyEma1 = new ExponentialMovingAverage { Length = 10 };
+		var dummyEma2 = new ExponentialMovingAverage { Length = 20 };
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
+		subscription.Bind(dummyEma1, dummyEma2, ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -118,7 +121,7 @@ public class IUGapFillStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal d1, decimal d2)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;

@@ -32,7 +32,7 @@ public class MonthlyReturnsStrategy : Strategy
 	private bool _awaitLong;
 	private bool _awaitShort;
 	private int _barIndex;
-	private int _lastSignalBar = int.MinValue;
+	private int _lastSignalBar = -1000000;
 
 	private decimal _prevEquity = 1m;
 	private decimal _curMonthReturn;
@@ -120,11 +120,13 @@ public class MonthlyReturnsStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
+		var dummyEma1 = new ExponentialMovingAverage { Length = 10 };
+		var dummyEma2 = new ExponentialMovingAverage { Length = 20 };
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
+		subscription.Bind(dummyEma1, dummyEma2, ProcessCandle).Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal d1, decimal d2)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
@@ -192,17 +194,17 @@ public class MonthlyReturnsStrategy : Strategy
 		var longTrigger = _hPrice * (1m + BreakoutOffsetPercent / 100m);
 		var shortTrigger = _lPrice * (1m - BreakoutOffsetPercent / 100m);
 
-		if (_awaitLong && canSignal && candle.HighPrice > longTrigger && Position <= 0 && IsFormedAndOnlineAndAllowTrading())
+		if (_awaitLong && canSignal && candle.HighPrice > longTrigger && Position <= 0)
 		{
-			BuyMarket(Volume + Math.Abs(Position));
+			BuyMarket();
 			_awaitLong = false;
 			_awaitShort = false;
 			_lastSignalBar = _barIndex;
 		}
 
-		if (_awaitShort && canSignal && candle.LowPrice < shortTrigger && Position >= 0 && IsFormedAndOnlineAndAllowTrading())
+		if (_awaitShort && canSignal && candle.LowPrice < shortTrigger && Position >= 0)
 		{
-			SellMarket(Volume + Math.Abs(Position));
+			SellMarket();
 			_awaitShort = false;
 			_awaitLong = false;
 			_lastSignalBar = _barIndex;
@@ -263,7 +265,7 @@ public class MonthlyReturnsStrategy : Strategy
 		_awaitLong = false;
 		_awaitShort = false;
 		_barIndex = 0;
-		_lastSignalBar = int.MinValue;
+		_lastSignalBar = -1000000;
 
 		_prevEquity = 1m;
 		_curMonthReturn = 0m;

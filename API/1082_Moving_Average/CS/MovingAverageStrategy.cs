@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Collections.Generic;
 
 using Ecng.Common;
 
@@ -24,7 +25,7 @@ public class MovingAverageStrategy : Strategy
 	private decimal _prevSlow;
 	private bool _initialized;
 	private int _barIndex;
-	private int _lastTradeBar = int.MinValue;
+	private int _lastTradeBar = -1000000;
 
 	public int ShortLength { get => _shortLength.Value; set => _shortLength.Value = value; }
 	public int LongLength { get => _longLength.Value; set => _longLength.Value = value; }
@@ -35,8 +36,13 @@ public class MovingAverageStrategy : Strategy
 	{
 		_shortLength = Param(nameof(ShortLength), 6).SetGreaterThanZero();
 		_longLength = Param(nameof(LongLength), 21).SetGreaterThanZero();
-		_cooldownBars = Param(nameof(CooldownBars), 4).SetGreaterThanZero();
+		_cooldownBars = Param(nameof(CooldownBars), 50).SetGreaterThanZero();
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
+	}
+
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
 	}
 
 	protected override void OnStarted2(DateTime time)
@@ -44,7 +50,7 @@ public class MovingAverageStrategy : Strategy
 		base.OnStarted2(time);
 		_initialized = false;
 		_barIndex = 0;
-		_lastTradeBar = int.MinValue;
+		_lastTradeBar = -1000000;
 
 		var fastMa = new EMA { Length = ShortLength };
 		var slowMa = new EMA { Length = LongLength };
@@ -59,9 +65,6 @@ public class MovingAverageStrategy : Strategy
 			return;
 
 		_barIndex++;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
 
 		if (!_initialized)
 		{
@@ -97,6 +100,6 @@ public class MovingAverageStrategy : Strategy
 		_prevSlow = 0m;
 		_initialized = false;
 		_barIndex = 0;
-		_lastTradeBar = int.MinValue;
+		_lastTradeBar = -1000000;
 	}
 }

@@ -145,12 +145,12 @@ public class TugaSupertrendStrategy : Strategy
 		if (Position > 0 && rsiCrossDown)
 		{
 			SellMarket();
-			_cooldown = 80;
+			_cooldown = 30;
 		}
 		else if (Position < 0 && rsiCrossUp)
 		{
 			BuyMarket();
-			_cooldown = 80;
+			_cooldown = 30;
 		}
 
 		// Entry
@@ -159,12 +159,12 @@ public class TugaSupertrendStrategy : Strategy
 			if (rsiCrossUp && histUp)
 			{
 				BuyMarket();
-				_cooldown = 80;
+				_cooldown = 30;
 			}
 			else if (rsiCrossDown && histDown)
 			{
 				SellMarket();
-				_cooldown = 80;
+				_cooldown = 30;
 			}
 		}
 

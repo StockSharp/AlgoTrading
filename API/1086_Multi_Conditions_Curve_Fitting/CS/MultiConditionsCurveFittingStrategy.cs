@@ -27,7 +27,7 @@ public class MultiConditionsCurveFittingStrategy : Strategy
 	private decimal _prevSlow;
 	private bool _hasPrev;
 	private int _barIndex;
-	private int _lastSignalBar = int.MinValue;
+	private int _lastSignalBar = -1000000;
 
 	public int FastEmaLength { get => _fastEmaLength.Value; set => _fastEmaLength.Value = value; }
 	public int SlowEmaLength { get => _slowEmaLength.Value; set => _slowEmaLength.Value = value; }
@@ -55,10 +55,10 @@ public class MultiConditionsCurveFittingStrategy : Strategy
 		_prevSlow = 0m;
 		_hasPrev = false;
 		_barIndex = 0;
-		_lastSignalBar = int.MinValue;
+		_lastSignalBar = -1000000;
 
-		var fastEma = new EMA { Length = FastEmaLength };
-		var slowEma = new EMA { Length = SlowEmaLength };
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaLength };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaLength };
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };
 
 		var subscription = SubscribeCandles(CandleType);
@@ -74,9 +74,6 @@ public class MultiConditionsCurveFittingStrategy : Strategy
 
 		_barIndex++;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		if (!_hasPrev)
 		{
 			_prevFast = fastEma;
@@ -91,12 +88,12 @@ public class MultiConditionsCurveFittingStrategy : Strategy
 
 		if (canSignal && longSignal && Position <= 0)
 		{
-			BuyMarket(Volume + Math.Abs(Position));
+			BuyMarket();
 			_lastSignalBar = _barIndex;
 		}
 		else if (canSignal && shortSignal && Position >= 0)
 		{
-			SellMarket(Volume + Math.Abs(Position));
+			SellMarket();
 			_lastSignalBar = _barIndex;
 		}
 
@@ -113,6 +110,6 @@ public class MultiConditionsCurveFittingStrategy : Strategy
 		_prevSlow = 0m;
 		_hasPrev = false;
 		_barIndex = 0;
-		_lastSignalBar = int.MinValue;
+		_lastSignalBar = -1000000;
 	}
 }

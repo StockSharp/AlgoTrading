@@ -56,16 +56,22 @@ public class LinearCrossTradingStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Regression Length", "Number of bars for linear regression", "Indicator");
 
-		_slopeThresholdPercent = Param(nameof(SlopeThresholdPercent), 0.10m)
+		_slopeThresholdPercent = Param(nameof(SlopeThresholdPercent), 0.02m)
 			.SetGreaterThanZero()
 			.SetDisplay("Slope Threshold %", "Minimum normalized slope for signals", "Indicator");
 
-		_cooldownBars = Param(nameof(CooldownBars), 16)
+		_cooldownBars = Param(nameof(CooldownBars), 60)
 			.SetGreaterThanZero()
 			.SetDisplay("Cooldown Bars", "Minimum bars between entries", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(10).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for strategy", "General");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
@@ -117,16 +123,16 @@ public class LinearCrossTradingStrategy : Strategy
 
 		_barsFromSignal++;
 
-		if (IsFormedAndOnlineAndAllowTrading() && _barsFromSignal >= CooldownBars)
+		if (_barsFromSignal >= CooldownBars)
 		{
 			if (_prevSlope <= SlopeThresholdPercent && slope > SlopeThresholdPercent && Position <= 0)
 			{
-				BuyMarket(Volume + Math.Abs(Position));
+				BuyMarket();
 				_barsFromSignal = 0;
 			}
 			else if (_prevSlope >= -SlopeThresholdPercent && slope < -SlopeThresholdPercent && Position >= 0)
 			{
-				SellMarket(Volume + Math.Abs(Position));
+				SellMarket();
 				_barsFromSignal = 0;
 			}
 		}

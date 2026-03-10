@@ -158,12 +158,12 @@ public class TripleEmaCrossoverStrategy : Strategy
 		if (Position > 0 && crossDown)
 		{
 			SellMarket();
-			_cooldown = 50;
+			_cooldown = 20;
 		}
 		else if (Position < 0 && crossUp)
 		{
 			BuyMarket();
-			_cooldown = 50;
+			_cooldown = 20;
 		}
 
 		// Entry on SMA1/SMA2 cross
@@ -172,12 +172,12 @@ public class TripleEmaCrossoverStrategy : Strategy
 			if (crossUp)
 			{
 				BuyMarket();
-				_cooldown = 50;
+				_cooldown = 20;
 			}
 			else if (crossDown)
 			{
 				SellMarket();
-				_cooldown = 50;
+				_cooldown = 20;
 			}
 		}
 

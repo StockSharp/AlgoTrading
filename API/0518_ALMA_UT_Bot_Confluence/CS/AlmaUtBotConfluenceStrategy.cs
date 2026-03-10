@@ -121,7 +121,7 @@ public class AlmaUtBotConfluenceStrategy : Strategy
 	/// </summary>
 	public AlmaUtBotConfluenceStrategy()
 	{
-		_emaLength = Param(nameof(EmaLength), 20)
+		_emaLength = Param(nameof(EmaLength), 50)
 			.SetDisplay("EMA Length", "Length for long-term EMA", "Main");
 
 		_atrLength = Param(nameof(AtrLength), 14)
@@ -133,20 +133,32 @@ public class AlmaUtBotConfluenceStrategy : Strategy
 		_takeProfitAtrMultiplier = Param(nameof(TakeProfitAtrMultiplier), 4m)
 			.SetDisplay("Take Profit ATR Mult", "ATR multiplier for take profit", "Risk");
 
-		_utKeyValue = Param(nameof(UtKeyValue), 2)
+		_utKeyValue = Param(nameof(UtKeyValue), 1)
 			.SetDisplay("UT Key", "UT Bot key value", "UT Bot");
 
 		_utAtrPeriod = Param(nameof(UtAtrPeriod), 10)
 			.SetDisplay("UT ATR Period", "ATR period for UT Bot", "UT Bot");
 
-		_baseCooldownBars = Param(nameof(BaseCooldownBars), 10)
+		_baseCooldownBars = Param(nameof(BaseCooldownBars), 30)
 			.SetDisplay("Base Cooldown", "Cooldown in bars between trades", "Filters");
 
 		_useUtExit = Param(nameof(UseUtExit), true)
 			.SetDisplay("Use UT Exit", "Use UT Bot trailing stop for exits", "Exit");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "Main");
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_xAtrTrailingStop = default;
+		_prevSrc = default;
+		_prevStop = default;
+		_barIndex = default;
+		_lastTradeIndex = default;
+		_entryPrice = default;
 	}
 
 	/// <inheritdoc />

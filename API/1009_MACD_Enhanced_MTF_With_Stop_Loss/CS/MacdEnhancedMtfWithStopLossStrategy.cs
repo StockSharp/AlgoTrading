@@ -22,8 +22,8 @@ public class MacdEnhancedMtfWithStopLossStrategy : Strategy
 	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private EMA _emaFast;
-	private EMA _emaSlow;
+	private ExponentialMovingAverage _emaFast;
+	private ExponentialMovingAverage _emaSlow;
 	private AverageTrueRange _atr;
 	private decimal _prevMacd;
 	private bool _initialized;
@@ -73,8 +73,8 @@ public class MacdEnhancedMtfWithStopLossStrategy : Strategy
 		_stopPrice = 0;
 		_barsFromSignal = int.MaxValue;
 
-		_emaFast = new EMA { Length = FastLength };
-		_emaSlow = new EMA { Length = SlowLength };
+		_emaFast = new ExponentialMovingAverage { Length = FastLength };
+		_emaSlow = new ExponentialMovingAverage { Length = SlowLength };
 		_atr = new AverageTrueRange { Length = AtrLength };
 
 		var subscription = SubscribeCandles(CandleType);
@@ -97,9 +97,6 @@ public class MacdEnhancedMtfWithStopLossStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		if (!_emaFast.IsFormed || !_emaSlow.IsFormed || !_atr.IsFormed)
 			return;
 
@@ -120,14 +117,14 @@ public class MacdEnhancedMtfWithStopLossStrategy : Strategy
 		// Stop loss check
 		if (Position > 0 && candle.ClosePrice <= _stopPrice)
 		{
-			SellMarket(Math.Abs(Position));
+			SellMarket();
 			_barsFromSignal = 0;
 			_prevMacd = macd;
 			return;
 		}
 		if (Position < 0 && candle.ClosePrice >= _stopPrice)
 		{
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
 			_barsFromSignal = 0;
 			_prevMacd = macd;
 			return;
@@ -135,13 +132,13 @@ public class MacdEnhancedMtfWithStopLossStrategy : Strategy
 
 		if (canSignal && crossUp && Position <= 0)
 		{
-			BuyMarket(Volume + Math.Abs(Position));
+			BuyMarket();
 			_stopPrice = candle.ClosePrice - atr * StopAtrMult;
 			_barsFromSignal = 0;
 		}
 		else if (canSignal && crossDown && Position >= 0)
 		{
-			SellMarket(Volume + Math.Abs(Position));
+			SellMarket();
 			_stopPrice = candle.ClosePrice + atr * StopAtrMult;
 			_barsFromSignal = 0;
 		}

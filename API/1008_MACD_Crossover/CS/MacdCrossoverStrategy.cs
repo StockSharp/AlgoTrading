@@ -180,14 +180,11 @@ public class MacdCrossoverStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		if (macdValue is not IMovingAverageConvergenceDivergenceSignalValue macdTyped)
 			return;
 
-		if (macdTyped.Macd is not decimal macd || macdTyped.Signal is not decimal signal)
-			return;
+		var macd = macdTyped.Macd ?? 0m;
+		var signal = macdTyped.Signal ?? 0m;
 
 		var isMacdAboveSignal = macd > signal;
 		var crossUp = isMacdAboveSignal && !_prevIsMacdAboveSignal;
@@ -201,12 +198,12 @@ public class MacdCrossoverStrategy : Strategy
 			{
 				if (Position < 0)
 				{
-					BuyMarket(Volume + Math.Abs(Position));
+					BuyMarket();
 					_barsFromSignal = 0;
 				}
 				else if (inZone && Position == 0)
 				{
-					BuyMarket(Volume);
+					BuyMarket();
 					_barsFromSignal = 0;
 				}
 			}
@@ -214,12 +211,12 @@ public class MacdCrossoverStrategy : Strategy
 			{
 				if (Position > 0)
 				{
-					SellMarket(Volume + Math.Abs(Position));
+					SellMarket();
 					_barsFromSignal = 0;
 				}
 				else if (inZone && Position == 0)
 				{
-					SellMarket(Volume);
+					SellMarket();
 					_barsFromSignal = 0;
 				}
 			}

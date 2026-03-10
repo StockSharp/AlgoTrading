@@ -20,8 +20,8 @@ public class MacdOfRelativeStrenghtStrategy : Strategy
 	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private EMA _emaFast;
-	private EMA _emaSlow;
+	private ExponentialMovingAverage _emaFast;
+	private ExponentialMovingAverage _emaSlow;
 	private RelativeStrengthIndex _rsi;
 	private decimal _prevMacd;
 	private bool _initialized;
@@ -64,8 +64,8 @@ public class MacdOfRelativeStrenghtStrategy : Strategy
 		_initialized = false;
 		_barsFromSignal = int.MaxValue;
 
-		_emaFast = new EMA { Length = FastLength };
-		_emaSlow = new EMA { Length = SlowLength };
+		_emaFast = new ExponentialMovingAverage { Length = FastLength };
+		_emaSlow = new ExponentialMovingAverage { Length = SlowLength };
 		_rsi = new RelativeStrengthIndex { Length = RsiLength };
 
 		var subscription = SubscribeCandles(CandleType);
@@ -86,9 +86,6 @@ public class MacdOfRelativeStrenghtStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		if (!_emaFast.IsFormed || !_emaSlow.IsFormed || !_rsi.IsFormed)
 			return;
 
@@ -104,12 +101,12 @@ public class MacdOfRelativeStrenghtStrategy : Strategy
 		// RSI filter: buy when not overbought, sell when not oversold
 		if (canSignal && crossUp && rsi < 68 && Position <= 0)
 		{
-			BuyMarket(Volume + Math.Abs(Position));
+			BuyMarket();
 			_barsFromSignal = 0;
 		}
 		else if (canSignal && crossDown && rsi > 32 && Position >= 0)
 		{
-			SellMarket(Volume + Math.Abs(Position));
+			SellMarket();
 			_barsFromSignal = 0;
 		}
 

@@ -145,22 +145,22 @@ public class BbRsiTrailingStopStrategy : Strategy
 
 			.SetOptimize(20m, 40m, 5m);
 
-		_stopLossPoints = Param(nameof(StopLossPoints), 200m)
+		_stopLossPoints = Param(nameof(StopLossPoints), 3000m)
 			.SetDisplay("Stop Loss Points", "Initial stop loss in points", "Risk Management")
 
 			.SetOptimize(20m, 100m, 10m);
 
-		_trailOffsetPoints = Param(nameof(TrailOffsetPoints), 150m)
+		_trailOffsetPoints = Param(nameof(TrailOffsetPoints), 2000m)
 			.SetDisplay("Trail Offset Points", "Profit to activate trailing stop", "Risk Management")
 
 			.SetOptimize(50m, 150m, 10m);
 
-		_trailStopPoints = Param(nameof(TrailStopPoints), 100m)
+		_trailStopPoints = Param(nameof(TrailStopPoints), 1500m)
 			.SetDisplay("Trail Stop Points", "Trailing stop distance", "Risk Management")
 
 			.SetOptimize(20m, 80m, 10m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 

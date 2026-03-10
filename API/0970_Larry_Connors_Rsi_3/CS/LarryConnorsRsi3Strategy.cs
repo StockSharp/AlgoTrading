@@ -196,14 +196,13 @@ public class LarryConnorsRsi3Strategy : Strategy
 
 		if (condition1 && condition2 && condition3 && Position <= 0 && _entriesExecuted < MaxEntries && _barsSinceSignal >= CooldownBars)
 		{
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
+			BuyMarket();
 			_entriesExecuted++;
 			_barsSinceSignal = 0;
 		}
 		else if (rsiValue > OverboughtLevel && Position > 0)
 		{
-			SellMarket(Math.Abs(Position));
+			SellMarket();
 			_barsSinceSignal = 0;
 		}
 

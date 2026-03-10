@@ -91,13 +91,15 @@ public class IuOpenEqualToHighLowStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
+		var dummyEma1 = new StockSharp.Algo.Indicators.ExponentialMovingAverage { Length = 10 };
+		var dummyEma2 = new StockSharp.Algo.Indicators.ExponentialMovingAverage { Length = 20 };
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(dummyEma1, dummyEma2, ProcessCandle)
 			.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal d1, decimal d2)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
@@ -136,7 +138,7 @@ public class IuOpenEqualToHighLowStrategy : Strategy
 		{
 			if (candle.LowPrice <= _stopPrice || candle.HighPrice >= _takePrice)
 			{
-				SellMarket(Math.Abs(Position));
+				SellMarket();
 				_stopPrice = 0m;
 				_takePrice = 0m;
 			}
@@ -145,7 +147,7 @@ public class IuOpenEqualToHighLowStrategy : Strategy
 		{
 			if (candle.HighPrice >= _stopPrice || candle.LowPrice <= _takePrice)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				_stopPrice = 0m;
 				_takePrice = 0m;
 			}

@@ -78,7 +78,7 @@ public class KeltnerChannelByKevinDaveyStrategy : Strategy
 		_maxEntries = Param(nameof(MaxEntries), 45)
 			.SetDisplay("Max Entries", "Maximum entries per run", "Risk");
 
-		_cooldownBars = Param(nameof(CooldownBars), 12000)
+		_cooldownBars = Param(nameof(CooldownBars), 100)
 			.SetDisplay("Cooldown Bars", "Minimum bars between entries", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -106,7 +106,7 @@ public class KeltnerChannelByKevinDaveyStrategy : Strategy
 		_entriesExecuted = 0;
 		_barsSinceSignal = CooldownBars;
 
-		var ema = new EMA { Length = EmaPeriod };
+		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
 		var atr = new AverageTrueRange { Length = AtrPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
@@ -130,9 +130,6 @@ public class KeltnerChannelByKevinDaveyStrategy : Strategy
 
 		_barsSinceSignal++;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		var upperBand = emaValue + AtrMultiplier * atrValue;
 		var lowerBand = emaValue - AtrMultiplier * atrValue;
 
@@ -141,12 +138,12 @@ public class KeltnerChannelByKevinDaveyStrategy : Strategy
 
 		if (Position > 0 && candle.ClosePrice >= emaValue)
 		{
-			SellMarket(Math.Abs(Position));
+			SellMarket();
 			_barsSinceSignal = 0;
 		}
 		else if (Position < 0 && candle.ClosePrice <= emaValue)
 		{
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
 			_barsSinceSignal = 0;
 		}
 		else if (Position == 0 && _entriesExecuted < MaxEntries && _barsSinceSignal >= CooldownBars)

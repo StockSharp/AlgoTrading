@@ -79,7 +79,7 @@ public class DonchianCciStrategy : Strategy
 			.SetDisplay("Stop-Loss %", "Stop-loss percentage from entry price", "Risk Management")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -88,10 +88,13 @@ public class DonchianCciStrategy : Strategy
 	{
 		return [(Security, CandleType)];
 	}
+	private int _cooldown;
+
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
+		_cooldown = 0;
 	}
 
 
@@ -110,9 +113,6 @@ public class DonchianCciStrategy : Strategy
 			.BindEx(donchian, cci, ProcessIndicators)
 			.Start();
 
-		// Enable stop-loss protection
-		StartProtection(new Unit(StopLossPercent, UnitTypes.Percent), default);
-
 		// Setup chart visualization if available
 		var area = CreateChartArea();
 		if (area != null)
@@ -130,45 +130,39 @@ public class DonchianCciStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		var donchianTyped = (DonchianChannelsValue)donchianValue;
-		var upperBand = donchianTyped.UpperBand;
-		var lowerBand = donchianTyped.LowerBand;
-		var middleBand = donchianTyped.Middle;
+		var upperBand = donchianTyped.UpperBand ?? 0m;
+		var lowerBand = donchianTyped.LowerBand ?? 0m;
+		var middleBand = donchianTyped.Middle ?? 0m;
+		if (upperBand == 0m || lowerBand == 0m)
+			return;
 
 		var cciDec = cciValue.ToDecimal();
 
 		var price = candle.ClosePrice;
 
-		// Trading logic:
-		// Long: Price > Donchian Upper && CCI < -100 (breakout up with oversold conditions)
-		// Short: Price < Donchian Lower && CCI > 100 (breakout down with overbought conditions)
-		
-		if (price >= upperBand && cciDec > 0 && Position <= 0)
+		if (_cooldown > 0)
+			_cooldown--;
+
+		if (_cooldown == 0 && price >= upperBand && cciDec > 0 && Position <= 0)
 		{
-			// Buy signal - breakout up with oversold conditions
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
+			BuyMarket();
+			_cooldown = 50;
 		}
-		else if (price <= lowerBand && cciDec < 0 && Position >= 0)
+		else if (_cooldown == 0 && price <= lowerBand && cciDec < 0 && Position >= 0)
 		{
-			// Sell signal - breakout down with overbought conditions
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
+			SellMarket();
+			_cooldown = 50;
 		}
-		// Exit conditions
 		else if (Position > 0 && price < middleBand)
 		{
-			// Exit long position when price falls below middle band
-			SellMarket(Position);
+			SellMarket();
+			_cooldown = 50;
 		}
 		else if (Position < 0 && price > middleBand)
 		{
-			// Exit short position when price rises above middle band
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
+			_cooldown = 50;
 		}
 	}
 }

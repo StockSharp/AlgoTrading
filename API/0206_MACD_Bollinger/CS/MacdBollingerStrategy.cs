@@ -150,11 +150,11 @@ public class MacdBollingerStrategy : Strategy
 			.SetDisplay("ATR Multiplier", "Multiplier for ATR-based stop-loss", "Risk Management")
 			;
 
-		_cooldownBars = Param(nameof(CooldownBars), 30)
+		_cooldownBars = Param(nameof(CooldownBars), 100)
 			.SetRange(1, 200)
 			.SetDisplay("Cooldown Bars", "Bars between entries", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -218,10 +218,6 @@ public class MacdBollingerStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		var bollingerTyped = (BollingerBandsValue)bollingerValue;
 		var upperBand = bollingerTyped.UpBand;
 		var lowerBand = bollingerTyped.LowBand;
@@ -243,25 +239,23 @@ public class MacdBollingerStrategy : Strategy
 
 		if (_cooldown == 0 && macdCrossOver && price < middleBand * 0.999m && Position <= 0)
 		{
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
+			BuyMarket();
 			_cooldown = CooldownBars;
 		}
 		else if (_cooldown == 0 && !macdCrossOver && price > middleBand * 1.001m && Position >= 0)
 		{
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
+			SellMarket();
 			_cooldown = CooldownBars;
 		}
 		// Exit conditions
 		else if (Position > 0 && !macdCrossOver)
 		{
-			SellMarket(Position);
+			SellMarket();
 			_cooldown = CooldownBars;
 		}
 		else if (Position < 0 && macdCrossOver)
 		{
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
 			_cooldown = CooldownBars;
 		}
 	}

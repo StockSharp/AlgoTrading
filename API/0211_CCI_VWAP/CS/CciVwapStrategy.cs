@@ -88,7 +88,7 @@ public class CciVwapStrategy : Strategy
 			
 			.SetOptimize(1m, 3m, 0.5m);
 			
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle type", "Type of candles to use", "General");
 	}
 	
@@ -121,9 +121,11 @@ public class CciVwapStrategy : Strategy
 			Length = CciPeriod
 		};
 
+		var dummyEma = new ExponentialMovingAverage { Length = 10 };
+
 		// Bind CCI to candle subscription
 		var candlesSubscription = SubscribeCandles(CandleType)
-			.Bind(_cci, ProcessCandle)
+			.Bind(_cci, dummyEma, ProcessCandle)
 			.Start();
 		
 		// Setup chart if available
@@ -136,14 +138,10 @@ public class CciVwapStrategy : Strategy
 		}
 	}
 	
-	private void ProcessCandle(ICandleMessage candle, decimal cci)
+	private void ProcessCandle(ICandleMessage candle, decimal cci, decimal dummyValue)
 	{
 		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
-			return;
-			
-		// Skip if strategy is not ready to trade
-		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 			
 		var date = candle.ServerTime.Date;
@@ -167,27 +165,24 @@ public class CciVwapStrategy : Strategy
 			_cooldown--;
 			
 		// Long signal: CCI below -100 and price below VWAP
-		if (_cooldown == 0 && cci < -150 && candle.ClosePrice < currentVwap * 0.998m && Position <= 0)
+		if (_cooldown == 0 && cci < -100 && candle.ClosePrice < currentVwap && Position <= 0)
 		{
-			BuyMarket(Volume);
+			BuyMarket();
 			_cooldown = CooldownBars;
 		}
-		// Short signal: CCI above 100 and price above VWAP
-		else if (_cooldown == 0 && cci > 150 && candle.ClosePrice > currentVwap * 1.002m && Position >= 0)
+		else if (_cooldown == 0 && cci > 100 && candle.ClosePrice > currentVwap && Position >= 0)
 		{
-			SellMarket(Volume);
+			SellMarket();
 			_cooldown = CooldownBars;
 		}
-		// Exit long position: Price crosses above VWAP
 		else if (Position > 0 && candle.ClosePrice > currentVwap)
 		{
-			SellMarket(Math.Abs(Position));
+			SellMarket();
 			_cooldown = CooldownBars;
 		}
-		// Exit short position: Price crosses below VWAP
 		else if (Position < 0 && candle.ClosePrice < currentVwap)
 		{
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
 			_cooldown = CooldownBars;
 		}
 	}

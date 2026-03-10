@@ -163,23 +163,23 @@ public class LiquidityBreakoutStrategy : Strategy
 			{
 				if (longEntry)
 				{
-					BuyMarket(Volume);
+					BuyMarket();
 					_barsFromTrade = 0;
 				}
 				else if (shortEntry)
 				{
-					SellMarket(Volume);
+					SellMarket();
 					_barsFromTrade = 0;
 				}
 			}
 			else if (Position > 0 && exitLong)
 			{
-				SellMarket(Math.Abs(Position));
+				SellMarket();
 				_barsFromTrade = 0;
 			}
 			else if (Position < 0 && exitShort)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				_barsFromTrade = 0;
 			}
 		}

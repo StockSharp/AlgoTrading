@@ -30,7 +30,7 @@ public class MovingAverageCrossoverSwingStrategy : Strategy
 	private decimal _entryAtr;
 	private bool _hasPrev;
 	private int _barIndex;
-	private int _lastSignalBar = int.MinValue;
+	private int _lastSignalBar = -1000000;
 
 	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
 	public int MediumPeriod { get => _mediumPeriod.Value; set => _mediumPeriod.Value = value; }
@@ -59,7 +59,7 @@ public class MovingAverageCrossoverSwingStrategy : Strategy
 
 		_hasPrev = false;
 		_barIndex = 0;
-		_lastSignalBar = int.MinValue;
+		_lastSignalBar = -1000000;
 		_entryAtr = 0;
 
 		var fastEma = new ExponentialMovingAverage { Length = FastPeriod };
@@ -79,9 +79,6 @@ public class MovingAverageCrossoverSwingStrategy : Strategy
 
 		_barIndex++;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		if (!_hasPrev)
 		{
 			_prevFast = fast;
@@ -99,14 +96,14 @@ public class MovingAverageCrossoverSwingStrategy : Strategy
 
 		if (canSignal && longCross && Position <= 0)
 		{
-			BuyMarket(Volume + Math.Abs(Position));
+			BuyMarket();
 			_entryPrice = candle.ClosePrice;
 			_entryAtr = atr;
 			_lastSignalBar = _barIndex;
 		}
 		else if (canSignal && shortCross && Position >= 0)
 		{
-			SellMarket(Volume + Math.Abs(Position));
+			SellMarket();
 			_entryPrice = candle.ClosePrice;
 			_entryAtr = atr;
 			_lastSignalBar = _barIndex;
@@ -148,6 +145,6 @@ public class MovingAverageCrossoverSwingStrategy : Strategy
 		_entryAtr = 0m;
 		_hasPrev = false;
 		_barIndex = 0;
-		_lastSignalBar = int.MinValue;
+		_lastSignalBar = -1000000;
 	}
 }

@@ -36,17 +36,23 @@ public class MeanReversionVFStrategy : Strategy
 		_maLength = Param(nameof(MaLength), 24)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Length", "WMA length", "General");
-		_deviation1 = Param(nameof(Deviation1), 3.2m)
+		_deviation1 = Param(nameof(Deviation1), 0.5m)
 			.SetGreaterThanZero()
 			.SetDisplay("Deviation %", "Lower deviation from WMA", "General");
 		_takeProfitPercent = Param(nameof(TakeProfitPercent), 4m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit %", "Target profit percent", "General");
-		_signalCooldownBars = Param(nameof(SignalCooldownBars), 24)
+		_signalCooldownBars = Param(nameof(SignalCooldownBars), 80)
 			.SetGreaterThanZero()
 			.SetDisplay("Signal Cooldown Bars", "Minimum bars between entries", "General");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candles timeframe", "General");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
@@ -63,8 +69,6 @@ public class MeanReversionVFStrategy : Strategy
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		StartProtection(null, null);
-
 		_ma = new WeightedMovingAverage { Length = MaLength };
 		_entryPrice = 0;
 		_prevClose = 0m;
@@ -82,10 +86,7 @@ public class MeanReversionVFStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (!_ma.IsFormed)
+		if (maValue == 0)
 			return;
 
 		var l1 = maValue * (1 - Deviation1 / 100m);

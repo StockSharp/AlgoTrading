@@ -84,10 +84,10 @@ public class KaufmanTrendStrategy : Strategy
 
 	public KaufmanTrendStrategy()
 	{
-		_trendStrengthEntry = Param(nameof(TrendStrengthEntry), 60)
+		_trendStrengthEntry = Param(nameof(TrendStrengthEntry), 80)
 			.SetDisplay("Trend Strength Entry", "Entry threshold.", "Trend");
 
-		_trendStrengthExit = Param(nameof(TrendStrengthExit), 40)
+		_trendStrengthExit = Param(nameof(TrendStrengthExit), 20)
 			.SetDisplay("Trend Strength Exit", "Exit threshold.", "Trend");
 
 		_processNoise = Param(nameof(ProcessNoise), 0.01m)
@@ -102,11 +102,33 @@ public class KaufmanTrendStrategy : Strategy
 		_maxEntries = Param(nameof(MaxEntries), 45)
 			.SetDisplay("Max Entries", "Maximum entries per run.", "Risk");
 
-		_cooldownBars = Param(nameof(CooldownBars), 120)
+		_cooldownBars = Param(nameof(CooldownBars), 300)
 			.SetDisplay("Cooldown Bars", "Minimum bars between entries.", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles.", "General");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_filteredSrc = 0m;
+		_oscillator = 0m;
+		_p00 = 1m;
+		_p01 = 0m;
+		_p10 = 0m;
+		_p11 = 1m;
+		_oscAbsAverage = 0m;
+		_warmupCount = 0;
+		_entriesExecuted = 0;
+		_barsSinceSignal = 0;
 	}
 
 	/// <inheritdoc />

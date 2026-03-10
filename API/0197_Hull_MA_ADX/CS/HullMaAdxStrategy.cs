@@ -117,7 +117,7 @@ public class HullMaAdxStrategy : Strategy
 		_atrMultiplier = Param(nameof(AtrMultiplier), 2m)
 			.SetDisplay("ATR Multiplier", "ATR multiplier for stop loss calculation", "Risk Management");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe of data for strategy", "General");
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 1.0m)
@@ -207,15 +207,6 @@ public class HullMaAdxStrategy : Strategy
 			_prevSlopeUp = hmaIncreasing;
 		}
 
-		// Check if strategy is ready for trading
-		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			// Store current values for next candle
-			_prevHmaValue = hma;
-			_prevAdxValue = adx;
-			return;
-		}
-
 		if (_cooldown > 0)
 			_cooldown--;
 
@@ -223,22 +214,22 @@ public class HullMaAdxStrategy : Strategy
 		var slopeTurnedDown = _prevSlopeUp && hmaDecreasing;
 
 		// Trading logic
-		if (_cooldown == 0 && adx > 30)
+		if (_cooldown == 0 && slopeTurnedUp && Position <= 0)
 		{
-			if (slopeTurnedUp && Position <= 0)
-			{
-				BuyMarket(Volume + Math.Abs(Position));
-				_cooldown = CooldownBars;
-			}
-			else if (slopeTurnedDown && Position >= 0)
-			{
-				SellMarket(Volume + Math.Abs(Position));
-				_cooldown = CooldownBars;
-			}
+			BuyMarket();
+			_cooldown = CooldownBars;
 		}
-		else if (adx < 18 && Position != 0)
+		else if (_cooldown == 0 && slopeTurnedDown && Position >= 0)
 		{
-			ClosePosition();
+			SellMarket();
+			_cooldown = CooldownBars;
+		}
+		else if (Position != 0 && (slopeTurnedUp || slopeTurnedDown))
+		{
+			if (Position > 0)
+				SellMarket();
+			else
+				BuyMarket();
 			_cooldown = CooldownBars;
 		}
 

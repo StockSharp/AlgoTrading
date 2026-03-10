@@ -33,8 +33,14 @@ public class MartingaleWithMacdKdjOpeningConditionsStrategy : Strategy
 	{
 		_takeProfitPercent = Param(nameof(TakeProfitPercent), 4m);
 		_stopLossPercent = Param(nameof(StopLossPercent), 8m);
-		_cooldownBars = Param(nameof(CooldownBars), 40);
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame());
+		_cooldownBars = Param(nameof(CooldownBars), 30);
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame());
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
@@ -68,13 +74,6 @@ public class MartingaleWithMacdKdjOpeningConditionsStrategy : Strategy
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
-
-		if (!_macd.IsFormed)
-		{
-			_prevMacd = macd;
-			_hasPrev = true;
-			return;
-		}
 
 		if (!_hasPrev)
 		{

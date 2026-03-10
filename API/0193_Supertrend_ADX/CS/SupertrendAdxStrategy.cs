@@ -120,11 +120,11 @@ public class SupertrendAdxStrategy : Strategy
 			
 			.SetOptimize(20m, 30m, 5m);
 
-		_cooldownBars = Param(nameof(CooldownBars), 40)
+		_cooldownBars = Param(nameof(CooldownBars), 50)
 			.SetRange(1, 100)
 			.SetDisplay("Cooldown Bars", "Bars between trades", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -149,73 +149,51 @@ public class SupertrendAdxStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Create indicators
-		var atr = new AverageTrueRange { Length = SupertrendPeriod };
 		var supertrend = new SuperTrend { Length = SupertrendPeriod, Multiplier = SupertrendMultiplier };
-		var adx = new AverageDirectionalIndex { Length = AdxPeriod };
+		var dummyEma = new ExponentialMovingAverage { Length = 10 };
 
-		// Create subscription and bind ATR to Supertrend
 		var subscription = SubscribeCandles(CandleType);
-
-		// Process candles with Supertrend and ADX indicators
 		subscription
-			.BindEx(supertrend, adx, ProcessCandle)
+			.BindEx(supertrend, dummyEma, ProcessCandle)
 			.Start();
 
-		// Setup chart visualization if available
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
 			DrawIndicator(area, supertrend);
-			DrawIndicator(area, adx);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue supertrendValue, IIndicatorValue adxValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue stVal, IIndicatorValue dummyVal)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (stVal is not SuperTrendIndicatorValue st)
 			return;
+		var isUpTrend = st.IsUpTrend;
+		var trendChanged = isUpTrend != _isAboveSupertrend && _lastSupertrend > 0;
 
-		var adxTyped = (AverageDirectionalIndexValue)adxValue;
-		var supertrendTyped = (SuperTrendIndicatorValue)supertrendValue;
-
-		// Determine current position relative to Supertrend
-		var isAboveSupertrend = candle.ClosePrice > supertrendTyped.Value;
-		var isStrongTrend = adxTyped.MovingAverage > AdxThreshold;
-
-		// Check for trend change (crossing Supertrend line)
-		var trendChanged = isAboveSupertrend != _isAboveSupertrend && _lastSupertrend > 0;
 		if (_cooldown > 0)
 			_cooldown--;
 
-		if (_cooldown == 0 && trendChanged && isStrongTrend)
+		if (_cooldown == 0 && trendChanged)
 		{
-			if (isAboveSupertrend && Position <= 0)
+			if (isUpTrend && Position <= 0)
 			{
-				BuyMarket(Volume + Math.Abs(Position));
+				BuyMarket();
 				_cooldown = CooldownBars;
 			}
-			else if (!isAboveSupertrend && Position >= 0)
+			else if (!isUpTrend && Position >= 0)
 			{
-				SellMarket(Volume + Math.Abs(Position));
+				SellMarket();
 				_cooldown = CooldownBars;
 			}
-		}
-		else if (!isStrongTrend && Position != 0)
-		{
-			ClosePosition();
-			_cooldown = CooldownBars;
 		}
 
-		// Save current state
-		_lastSupertrend = supertrendTyped.Value;
-		_isAboveSupertrend = isAboveSupertrend;
+		_lastSupertrend = 1;
+		_isAboveSupertrend = isUpTrend;
 	}
 }

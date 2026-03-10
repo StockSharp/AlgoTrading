@@ -14,62 +14,46 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class IUBreakOfAnySessionStrategy : Strategy
 {
-	private readonly StrategyParam<TimeSpan> _sessionStart;
-	private readonly StrategyParam<TimeSpan> _sessionEnd;
-	private readonly StrategyParam<TimeSpan> _entryStart;
-	private readonly StrategyParam<TimeSpan> _entryEnd;
-	private readonly StrategyParam<TimeSpan> _exitStart;
-	private readonly StrategyParam<TimeSpan> _exitEnd;
+	private readonly StrategyParam<int> _sessionBars;
 	private readonly StrategyParam<decimal> _profitFactor;
 	private readonly StrategyParam<int> _maxEntries;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private bool _insideSession;
 	private decimal _sessionHigh;
 	private decimal _sessionLow;
-	private decimal _extendedHigh;
-	private decimal _extendedLow;
-	private bool _tradeExecuted;
+	private int _barCount;
 	private int _entriesExecuted;
-	private decimal _entryPrice;
+	private int _cooldown;
 	private decimal _stopPrice;
 	private decimal _targetPrice;
 
-	public TimeSpan SessionStart { get => _sessionStart.Value; set => _sessionStart.Value = value; }
-	public TimeSpan SessionEnd { get => _sessionEnd.Value; set => _sessionEnd.Value = value; }
-	public TimeSpan EntryStart { get => _entryStart.Value; set => _entryStart.Value = value; }
-	public TimeSpan EntryEnd { get => _entryEnd.Value; set => _entryEnd.Value = value; }
-	public TimeSpan ExitStart { get => _exitStart.Value; set => _exitStart.Value = value; }
-	public TimeSpan ExitEnd { get => _exitEnd.Value; set => _exitEnd.Value = value; }
+	public int SessionBars { get => _sessionBars.Value; set => _sessionBars.Value = value; }
 	public decimal ProfitFactor { get => _profitFactor.Value; set => _profitFactor.Value = value; }
 	public int MaxEntries { get => _maxEntries.Value; set => _maxEntries.Value = value; }
+	public int CooldownBars { get => _cooldownBars.Value; set => _cooldownBars.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public IUBreakOfAnySessionStrategy()
 	{
-		_sessionStart = Param(nameof(SessionStart), new TimeSpan(9, 15, 0))
-			.SetDisplay("Session Start", "Start of custom session", "Session");
-		_sessionEnd = Param(nameof(SessionEnd), new TimeSpan(10, 0, 0))
-			.SetDisplay("Session End", "End of custom session", "Session");
-
-		_entryStart = Param(nameof(EntryStart), new TimeSpan(9, 15, 0))
-			.SetDisplay("Entry Start", "Start time for entries", "Trading");
-		_entryEnd = Param(nameof(EntryEnd), new TimeSpan(14, 30, 0))
-			.SetDisplay("Entry End", "End time for entries", "Trading");
-
-		_exitStart = Param(nameof(ExitStart), new TimeSpan(14, 45, 0))
-			.SetDisplay("Exit Start", "Start time to close all trades", "Trading");
-		_exitEnd = Param(nameof(ExitEnd), new TimeSpan(15, 0, 0))
-			.SetDisplay("Exit End", "End time to close all trades", "Trading");
+		_sessionBars = Param(nameof(SessionBars), 48)
+			.SetGreaterThanZero()
+			.SetDisplay("Session Bars", "Number of bars to form session range", "Session")
+			.SetOptimize(24, 96, 24);
 
 		_profitFactor = Param(nameof(ProfitFactor), 2m)
 			.SetGreaterThanZero()
-			.SetDisplay("Profit Factor", "Risk to reward ratio", "Risk");
+			.SetDisplay("Profit Factor", "Risk to reward ratio", "Risk")
+			.SetOptimize(1m, 4m, 1m);
 
 		_maxEntries = Param(nameof(MaxEntries), 45)
 			.SetDisplay("Max Entries", "Maximum number of entries per test", "Trading");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_cooldownBars = Param(nameof(CooldownBars), 50)
+			.SetGreaterThanZero()
+			.SetDisplay("Cooldown Bars", "Minimum bars between entries", "Trading");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -81,14 +65,11 @@ public class IUBreakOfAnySessionStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_insideSession = false;
 		_sessionHigh = 0m;
 		_sessionLow = 0m;
-		_extendedHigh = 0m;
-		_extendedLow = 0m;
-		_tradeExecuted = false;
+		_barCount = 0;
 		_entriesExecuted = 0;
-		_entryPrice = 0m;
+		_cooldown = 0;
 		_stopPrice = 0m;
 		_targetPrice = 0m;
 	}
@@ -97,9 +78,11 @@ public class IUBreakOfAnySessionStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
+		var dummyEma1 = new StockSharp.Algo.Indicators.ExponentialMovingAverage { Length = 10 };
+		var dummyEma2 = new StockSharp.Algo.Indicators.ExponentialMovingAverage { Length = 20 };
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(dummyEma1, dummyEma2, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -110,89 +93,79 @@ public class IUBreakOfAnySessionStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal d1, decimal d2)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		_barCount++;
+		_cooldown++;
 
-		var t = candle.CloseTime.TimeOfDay;
-
-		var inSession = InTimeRange(t, SessionStart, SessionEnd);
-		var inEntry = InTimeRange(t, EntryStart, EntryEnd);
-		var inExit = InTimeRange(t, ExitStart, ExitEnd);
-
-		if (!_insideSession && inSession)
+		if (_barCount <= SessionBars)
 		{
-			_insideSession = true;
-			_sessionHigh = candle.HighPrice;
-			_sessionLow = candle.LowPrice;
-		}
-		else if (_insideSession && inSession)
-		{
-			_sessionHigh = Math.Max(_sessionHigh, candle.HighPrice);
-			_sessionLow = Math.Min(_sessionLow, candle.LowPrice);
-		}
-		else if (_insideSession && !inSession)
-		{
-			_insideSession = false;
-			_extendedHigh = _sessionHigh;
-			_extendedLow = _sessionLow;
-		}
-
-		if (inExit)
-		{
-			if (Position > 0)
-				SellMarket();
-			else if (Position < 0)
-				BuyMarket();
-
-			_tradeExecuted = false;
+			if (_sessionLow == 0m)
+			{
+				_sessionHigh = candle.HighPrice;
+				_sessionLow = candle.LowPrice;
+			}
+			else
+			{
+				_sessionHigh = Math.Max(_sessionHigh, candle.HighPrice);
+				_sessionLow = Math.Min(_sessionLow, candle.LowPrice);
+			}
 			return;
 		}
 
 		if (Position > 0)
 		{
 			if (candle.LowPrice <= _stopPrice || candle.HighPrice >= _targetPrice)
+			{
 				SellMarket();
+				_sessionHigh = candle.HighPrice;
+				_sessionLow = candle.LowPrice;
+				_barCount = 1;
+			}
 		}
 		else if (Position < 0)
 		{
 			if (candle.HighPrice >= _stopPrice || candle.LowPrice <= _targetPrice)
+			{
 				BuyMarket();
+				_sessionHigh = candle.HighPrice;
+				_sessionLow = candle.LowPrice;
+				_barCount = 1;
+			}
 		}
-		else if (!_tradeExecuted && _entriesExecuted < MaxEntries && inEntry && _extendedHigh > 0m && _extendedLow > 0m)
+		else if (_entriesExecuted < MaxEntries && _cooldown >= CooldownBars)
 		{
-			var longSignal = candle.OpenPrice < _extendedHigh && candle.ClosePrice > _extendedHigh;
-			var shortSignal = candle.OpenPrice > _extendedLow && candle.ClosePrice < _extendedLow;
-
-			if (longSignal)
+			if (candle.ClosePrice > _sessionHigh)
 			{
-				_entryPrice = candle.ClosePrice;
-				_stopPrice = candle.LowPrice;
-				var risk = _entryPrice - _stopPrice;
-				_targetPrice = _entryPrice + risk * ProfitFactor;
+				_stopPrice = _sessionLow;
+				var risk = candle.ClosePrice - _stopPrice;
+				_targetPrice = candle.ClosePrice + risk * ProfitFactor;
 				BuyMarket();
-				_tradeExecuted = true;
 				_entriesExecuted++;
+				_cooldown = 0;
 			}
-			else if (shortSignal)
+			else if (candle.ClosePrice < _sessionLow)
 			{
-				_entryPrice = candle.ClosePrice;
-				_stopPrice = candle.HighPrice;
-				var risk = _stopPrice - _entryPrice;
-				_targetPrice = _entryPrice - risk * ProfitFactor;
+				_stopPrice = _sessionHigh;
+				var risk = _stopPrice - candle.ClosePrice;
+				_targetPrice = candle.ClosePrice - risk * ProfitFactor;
 				SellMarket();
-				_tradeExecuted = true;
 				_entriesExecuted++;
+				_cooldown = 0;
+			}
+			else
+			{
+				_sessionHigh = Math.Max(_sessionHigh, candle.HighPrice);
+				_sessionLow = Math.Min(_sessionLow, candle.LowPrice);
 			}
 		}
-	}
-
-	private static bool InTimeRange(TimeSpan time, TimeSpan start, TimeSpan end)
-	{
-		return start <= end ? time >= start && time <= end : time >= start || time <= end;
+		else
+		{
+			_sessionHigh = Math.Max(_sessionHigh, candle.HighPrice);
+			_sessionLow = Math.Min(_sessionLow, candle.LowPrice);
+		}
 	}
 }

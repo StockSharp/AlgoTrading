@@ -46,8 +46,8 @@ private SimpleMovingAverage _smaDownSma;
 
 private decimal _prevAo;
 private decimal _prevAc;
-private decimal _prevSigmaProbsUp = 1m;
-private decimal _prevSigmaProbsDown = 1m;
+private decimal _prevSigmaProbsUp;
+private decimal _prevSigmaProbsDown;
 private decimal _prevProbPrime;
 
 /// <summary>
@@ -144,7 +144,7 @@ _bayesPeriod = Param(nameof(BayesPeriod), 20)
 .SetGreaterThanZero()
 .SetDisplay("Bayes Period", "Lookback period for probability calculation", "Bayesian");
 
-_lowerThreshold = Param(nameof(LowerThreshold), 5m)
+_lowerThreshold = Param(nameof(LowerThreshold), 49m)
 .SetDisplay("Lower Threshold", "Probability threshold (%)", "Bayesian");
 
 _useBwConfirmation = Param(nameof(UseBwConfirmation), false)
@@ -153,6 +153,29 @@ _useBwConfirmation = Param(nameof(UseBwConfirmation), false)
 _jawLength = Param(nameof(JawLength), 13)
 .SetGreaterThanZero()
 .SetDisplay("Jaw Length", "Alligator jaw SMA length", "Filters");
+}
+
+/// <inheritdoc />
+protected override void OnReseted()
+{
+	base.OnReseted();
+	_bollingerBands = default;
+	_smaClose = default;
+	_aoFastSma = default;
+	_aoSlowSma = default;
+	_acSma = default;
+	_jawSma = default;
+	_bbUpperUpSma = default;
+	_bbUpperDownSma = default;
+	_bbBasisUpSma = default;
+	_bbBasisDownSma = default;
+	_smaUpSma = default;
+	_smaDownSma = default;
+	_prevAo = default;
+	_prevAc = default;
+	_prevSigmaProbsUp = default;
+	_prevSigmaProbsDown = default;
+	_prevProbPrime = default;
 }
 
 /// <inheritdoc />

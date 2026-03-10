@@ -196,10 +196,6 @@ public class MaParabolicSarStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 			
-		// Skip if strategy is not ready to trade
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-			
 		// Store current SAR value for stop-loss
 		_lastSarValue = sarValue;
 		
@@ -226,7 +222,7 @@ public class MaParabolicSarStrategy : Strategy
 		{
 			if (Position <= 0)
 			{
-				BuyMarket(Volume + Math.Abs(Position));
+				BuyMarket();
 				_cooldown = CooldownBars;
 			}
 		}
@@ -235,20 +231,19 @@ public class MaParabolicSarStrategy : Strategy
 		{
 			if (Position >= 0)
 			{
-				SellMarket(Volume + Math.Abs(Position));
+				SellMarket();
 				_cooldown = CooldownBars;
 			}
 		}
 		// Exit long position: Price falls below SAR
 		else if (Position > 0 && sarFlipDown)
 		{
-			SellMarket(Math.Abs(Position));
+			SellMarket();
 			_cooldown = CooldownBars;
 		}
-		// Exit short position: Price rises above SAR
 		else if (Position < 0 && sarFlipUp)
 		{
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
 			_cooldown = CooldownBars;
 		}
 

@@ -55,11 +55,11 @@ public class AnomalousHolonomyFieldTheoryStrategy : Strategy
 	/// </summary>
 	public AnomalousHolonomyFieldTheoryStrategy()
 	{
-		_signalThreshold = Param(nameof(SignalThreshold), 2m)
+		_signalThreshold = Param(nameof(SignalThreshold), 0.1m)
 			.SetDisplay("Signal Threshold", "Absolute signal level required for trades", "Parameters")
-			.SetRange(0.5m, 10m);
+			.SetRange(0.1m, 10m);
 
-		_cooldownBars = Param(nameof(CooldownBars), 100)
+		_cooldownBars = Param(nameof(CooldownBars), 50)
 			.SetDisplay("Cooldown Bars", "Bars between trades", "Trading");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -77,7 +77,7 @@ public class AnomalousHolonomyFieldTheoryStrategy : Strategy
 	{
 		base.OnReseted();
 		_barIndex = 0;
-		_lastTradeBar = 0;
+		_lastTradeBar = -200;
 	}
 
 	/// <inheritdoc />

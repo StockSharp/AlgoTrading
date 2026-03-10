@@ -38,14 +38,20 @@ public class McotsIntuitionStrategy : Strategy
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "RSI calculation period", "General");
-		_momentumThreshold = Param(nameof(MomentumThreshold), 3m)
+		_momentumThreshold = Param(nameof(MomentumThreshold), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Momentum Threshold", "Minimum RSI momentum", "General");
 		_signalCooldownBars = Param(nameof(SignalCooldownBars), 30)
 			.SetGreaterThanZero()
 			.SetDisplay("Signal Cooldown Bars", "Minimum bars between entries", "General");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candles timeframe", "General");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
@@ -66,8 +72,6 @@ public class McotsIntuitionStrategy : Strategy
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		StartProtection(null, null);
-
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 		_prevRsi = 0;
 		_prevMomentum = 0;
@@ -87,9 +91,6 @@ public class McotsIntuitionStrategy : Strategy
 	private void ProcessCandle(ICandleMessage candle, decimal rsiValue)
 	{
 		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		if (!_rsi.IsFormed)
@@ -113,8 +114,8 @@ public class McotsIntuitionStrategy : Strategy
 
 		if (Position == 0)
 		{
-			var threshold = Math.Max(MomentumThreshold, 8m);
-			var longSignal = _prevMomentum <= threshold && momentum > threshold && rsiValue >= 58m;
+			var threshold = MomentumThreshold;
+			var longSignal = _prevMomentum <= threshold && momentum > threshold && rsiValue >= 50m;
 
 			if (_barsFromSignal >= SignalCooldownBars && longSignal)
 			{

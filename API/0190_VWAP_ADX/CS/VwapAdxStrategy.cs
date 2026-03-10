@@ -87,7 +87,7 @@ public class VwapAdxStrategy : Strategy
 			.SetRange(1, 200)
 			.SetDisplay("Cooldown Bars", "Bars between entries", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe of data for strategy", "General");
 	}
 
@@ -114,13 +114,14 @@ public class VwapAdxStrategy : Strategy
 		// Create ADX indicator
 		_adx = new() { Length = AdxPeriod };
 		_vwap = new() { Length = AdxPeriod };
+		var dummyEma = new ExponentialMovingAverage { Length = 10 };
 
 		// Create subscription and subscribe to VWAP
 		var subscription = SubscribeCandles(CandleType);
 
-		// Process candles with ADX
+		// Process candles with ADX + dummy EMA (BindEx needs 2+ indicators)
 		subscription
-			.BindEx(_adx, ProcessCandle)
+			.BindEx(_adx, dummyEma, ProcessCandle)
 			.Start();
 
 		// Setup chart visualization
@@ -133,7 +134,7 @@ public class VwapAdxStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue adxValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue adxValue, IIndicatorValue dummyValue)
 	{
 		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
@@ -159,10 +160,6 @@ public class VwapAdxStrategy : Strategy
 		if (typedAdx.MovingAverage is not decimal currentAdxValue)
 			return;
 
-		// Skip if not formed or online
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		// Trading logic
 		if (_cooldown > 0)
 		{
@@ -175,18 +172,21 @@ public class VwapAdxStrategy : Strategy
 		{
 			if (candle.ClosePrice > vwap * 1.001m && Position <= 0)
 			{
-				BuyMarket(Volume + Math.Abs(Position));
+				BuyMarket();
 				_cooldown = CooldownBars;
 			}
 			else if (candle.ClosePrice < vwap * 0.999m && Position >= 0)
 			{
-				SellMarket(Volume + Math.Abs(Position));
+				SellMarket();
 				_cooldown = CooldownBars;
 			}
 		}
 		else if (currentAdxValue < 18 && Position != 0)
 		{
-			ClosePosition();
+			if (Position > 0)
+				SellMarket();
+			else
+				BuyMarket();
 			_cooldown = CooldownBars;
 		}
 

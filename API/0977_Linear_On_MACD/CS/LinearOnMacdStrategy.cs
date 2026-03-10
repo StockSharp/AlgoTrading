@@ -66,9 +66,11 @@ public class LinearOnMacdStrategy : Strategy
 		};
 		_priceReg = new LinearRegression { Length = Lookback };
 
+		var dummyEma = new ExponentialMovingAverage { Length = 10 };
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_obv, ProcessCandle)
+			.Bind(_obv, dummyEma, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -86,7 +88,7 @@ public class LinearOnMacdStrategy : Strategy
 		return v;
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal obvValue)
+	private void ProcessCandle(ICandleMessage candle, decimal obvValue, decimal dummyValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
@@ -115,12 +117,9 @@ public class LinearOnMacdStrategy : Strategy
 		var longCondition = priceMacd > priceSignal && obvMacd > obvSignal && candle.ClosePrice > predicted;
 		var shortCondition = obvMacd < obvSignal && priceMacd < priceSignal && candle.ClosePrice < predicted;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		if (longCondition && Position <= 0)
-			BuyMarket(Volume + Math.Abs(Position));
+			BuyMarket();
 		else if (shortCondition && Position >= 0)
-			SellMarket(Volume + Math.Abs(Position));
+			SellMarket();
 	}
 }

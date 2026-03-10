@@ -25,7 +25,7 @@ public class MtfOscillatorFrameworkStrategy : Strategy
 	private decimal _prevRsi;
 	private bool _hasPrev;
 	private int _barIndex;
-	private int _lastSignalBar = int.MinValue;
+	private int _lastSignalBar = -1000000;
 
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 	public int RsiLength { get => _rsiLength.Value; set => _rsiLength.Value = value; }
@@ -48,10 +48,10 @@ public class MtfOscillatorFrameworkStrategy : Strategy
 		_prevRsi = 0m;
 		_hasPrev = false;
 		_barIndex = 0;
-		_lastSignalBar = int.MinValue;
+		_lastSignalBar = -1000000;
 
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };
-		var ema = new EMA { Length = 20 };
+		var ema = new ExponentialMovingAverage { Length = 20 };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -66,9 +66,6 @@ public class MtfOscillatorFrameworkStrategy : Strategy
 
 		_barIndex++;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		if (!_hasPrev)
 		{
 			_prevRsi = rsi;
@@ -82,12 +79,12 @@ public class MtfOscillatorFrameworkStrategy : Strategy
 
 		if (canSignal && longSignal && Position <= 0)
 		{
-			BuyMarket(Volume + Math.Abs(Position));
+			BuyMarket();
 			_lastSignalBar = _barIndex;
 		}
 		else if (canSignal && shortSignal && Position >= 0)
 		{
-			SellMarket(Volume + Math.Abs(Position));
+			SellMarket();
 			_lastSignalBar = _barIndex;
 		}
 
@@ -107,6 +104,6 @@ public class MtfOscillatorFrameworkStrategy : Strategy
 		_prevRsi = 0m;
 		_hasPrev = false;
 		_barIndex = 0;
-		_lastSignalBar = int.MinValue;
+		_lastSignalBar = -1000000;
 	}
 }

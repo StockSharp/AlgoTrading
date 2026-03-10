@@ -95,13 +95,16 @@ public class LiquidityInternalMarketShiftStrategy : Strategy
 		_hasEntry = false; _entryPrice = 0m; _isLong = false;
 		_barsFromTrade = int.MaxValue;
 
+		var dummyEma1 = new ExponentialMovingAverage { Length = 10 };
+		var dummyEma2 = new ExponentialMovingAverage { Length = 20 };
+
 		var sub = SubscribeCandles(CandleType);
-		sub.Bind(ProcessCandle).Start();
+		sub.Bind(dummyEma1, dummyEma2, ProcessCandle).Start();
 		var area = CreateChartArea();
 		if (area != null) { DrawCandles(area, sub); DrawOwnTrades(area); }
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal d1, decimal d2)
 	{
 		if (candle.State != CandleStates.Finished) return;
 
@@ -151,16 +154,16 @@ public class LiquidityInternalMarketShiftStrategy : Strategy
 
 		if (_hasEntry && canTradeNow)
 		{
-			if (_isLong && bearSig && candle.OpenTime > _entryTime) { SellMarket(Math.Abs(Position)); _hasEntry = false; _barsFromTrade = 0; }
-			else if (!_isLong && bullSig && candle.OpenTime > _entryTime) { BuyMarket(Math.Abs(Position)); _hasEntry = false; _barsFromTrade = 0; }
+			if (_isLong && bearSig && candle.OpenTime > _entryTime) { SellMarket(); _hasEntry = false; _barsFromTrade = 0; }
+			else if (!_isLong && bullSig && candle.OpenTime > _entryTime) { BuyMarket(); _hasEntry = false; _barsFromTrade = 0; }
 
 			if (_hasEntry)
 			{
 				var pip = Security.PriceStep ?? 0.01m;
 				if (_isLong && (candle.ClosePrice <= _entryPrice - StopLossPips * pip || (EnableTakeProfit && candle.ClosePrice >= _entryPrice + TakeProfitPips * pip)))
-				{ SellMarket(Math.Abs(Position)); _hasEntry = false; _barsFromTrade = 0; }
+				{ SellMarket(); _hasEntry = false; _barsFromTrade = 0; }
 				else if (!_isLong && (candle.ClosePrice >= _entryPrice + StopLossPips * pip || (EnableTakeProfit && candle.ClosePrice <= _entryPrice - TakeProfitPips * pip)))
-				{ BuyMarket(Math.Abs(Position)); _hasEntry = false; _barsFromTrade = 0; }
+				{ BuyMarket(); _hasEntry = false; _barsFromTrade = 0; }
 			}
 		}
 	}

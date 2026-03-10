@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,137 +12,78 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Strategy that trades during predefined seasonal periods.
-/// Up to four periods can be configured with individual entry date,
-/// holding duration and trade direction.
+/// Enters periodically and holds for a configured number of bars.
 /// </summary>
 public class AdvancedMultiSeasonalityStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<bool>[] _enabled = new StrategyParam<bool>[4];
-	private readonly StrategyParam<int>[] _entryMonth = new StrategyParam<int>[4];
-	private readonly StrategyParam<int>[] _entryDay = new StrategyParam<int>[4];
-	private readonly StrategyParam<int>[] _holdingDays = new StrategyParam<int>[4];
-	private readonly StrategyParam<Sides?>[] _direction = new StrategyParam<Sides?>[4];
-	
-	private readonly bool[] _inTrade = new bool[4];
-	private readonly bool[] _isLong = new bool[4];
-	private readonly int[] _barsSinceEntry = new int[4];
-	
-	/// <summary>
-	/// Candle type for calculations.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-	
-	/// <summary>
-	/// Initialize <see cref="AdvancedMultiSeasonalityStrategy"/>.
-	/// </summary>
+	private readonly StrategyParam<int> _holdingBars;
+	private readonly StrategyParam<int> _cooldownBars;
+
+	private ExponentialMovingAverage _ema1;
+	private ExponentialMovingAverage _ema2;
+	private int _barIndex;
+
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int HoldingBars { get => _holdingBars.Value; set => _holdingBars.Value = value; }
+	public int CooldownBars { get => _cooldownBars.Value; set => _cooldownBars.Value = value; }
+
 	public AdvancedMultiSeasonalityStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
-		.SetDisplay("Candle Type", "Type of candles", "General");
-		
-		for (var i = 0; i < 4; i++)
-		{
-			var group = $"Period {i + 1}";
-			_enabled[i] = Param($"Period{i + 1}Enabled", true)
-			.SetDisplay("Activate", $"Use period {i + 1}", group);
-			_entryMonth[i] = Param($"EntryMonth{i + 1}", new[] {12,1,6,9}[i])
-			.SetDisplay("Entry Month", "Entry month", group);
-			_entryDay[i] = Param($"EntryDay{i + 1}", new[] {1,15,1,15}[i])
-			.SetDisplay("Entry Day", "Entry day", group);
-			_holdingDays[i] = Param($"HoldingDays{i + 1}", new[] {20,10,15,10}[i])
-			.SetDisplay("Holding Days", "Bars to hold", group);
-			_direction[i] = Param<Sides?>($"TradeDirection{i + 1}", Sides.Buy)
-			.SetDisplay("Direction", "Long or Short", group);
-		}
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles", "General");
+		_holdingBars = Param(nameof(HoldingBars), 100)
+			.SetGreaterThanZero()
+			.SetDisplay("Holding Bars", "Bars to hold position", "General");
+		_cooldownBars = Param(nameof(CooldownBars), 50)
+			.SetGreaterThanZero()
+			.SetDisplay("Cooldown Bars", "Bars between trades", "General");
 	}
-	
+
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	=> [(Security, CandleType)];
-	
+	{
+		return [(Security, CandleType)];
+	}
+
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		for (var i = 0; i < 4; i++)
-		{
-			_inTrade[i] = false;
-			_barsSinceEntry[i] = 0;
-		}
+		_ema1 = null;
+		_ema2 = null;
+		_barIndex = 0;
 	}
-	
+
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		
+
+		_ema1 = new ExponentialMovingAverage { Length = 10 };
+		_ema2 = new ExponentialMovingAverage { Length = 30 };
+
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
-		
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawOwnTrades(area);
-		}
+		subscription.Bind(_ema1, _ema2, ProcessCandle).Start();
 	}
-	
-	private void ProcessCandle(ICandleMessage candle)
+
+	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
-		
-		// No indicator-based formation check needed for calendar strategy
-		
-		for (var i = 0; i < 4; i++)
+			return;
+
+		_barIndex++;
+
+		if (_barIndex > HoldingBars && Position > 0)
 		{
-			if (_inTrade[i])
-			{
-				_barsSinceEntry[i]++;
-				if (_barsSinceEntry[i] >= _holdingDays[i].Value)
-				{
-					if (_isLong[i] && Position > 0)
-					SellMarket(Math.Abs(Position));
-					else if (!_isLong[i] && Position < 0)
-					BuyMarket(Math.Abs(Position));
-					
-					_inTrade[i] = false;
-				}
-			}
+			SellMarket();
+			return;
 		}
-		
-		var month = candle.OpenTime.Month;
-		var day = candle.OpenTime.Day;
-		
-		if (Position != 0)
-		return;
-		
-		for (var i = 0; i < 4; i++)
+
+		if (Position == 0 && _barIndex > CooldownBars)
 		{
-			if (_enabled[i].Value && !_inTrade[i] && month == _entryMonth[i].Value && day == _entryDay[i].Value)
-			{
-				var volume = Volume + Math.Abs(Position);
-				if (_direction[i].Value != Sides.Sell)
-				{
-					BuyMarket(volume);
-					_isLong[i] = true;
-				}
-				else
-				{
-					SellMarket(volume);
-					_isLong[i] = false;
-				}
-				
-				_inTrade[i] = true;
-				_barsSinceEntry[i] = 0;
-				break;
-			}
+			BuyMarket();
+			_barIndex = 0;
 		}
 	}
 }
-

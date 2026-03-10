@@ -51,7 +51,7 @@ public class WilliamsPercentRStrategy : Strategy
 			.SetDisplay("Period", "Period for Williams %R calculation", "Indicators")
 			.SetOptimize(10, 20, 2);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -75,29 +75,34 @@ public class WilliamsPercentRStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var williamsR = new WilliamsR { Length = Period };
+		var highest = new Highest { Length = Period };
+		var lowest = new Lowest { Length = Period };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(williamsR, ProcessCandle)
+			.Bind(highest, lowest, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, williamsR);
+			DrawIndicator(area, highest);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal wrValue)
+	private void ProcessCandle(ICandleMessage candle, decimal highest, decimal lowest)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		var range = highest - lowest;
+		if (range == 0)
 			return;
+
+		// Williams %R = (Highest - Close) / (Highest - Lowest) * -100
+		var wrValue = (highest - candle.ClosePrice) / range * -100m;
 
 		if (!_hasPrevValues)
 		{
@@ -114,18 +119,16 @@ public class WilliamsPercentRStrategy : Strategy
 		}
 
 		// Williams %R crosses from oversold (-80) upward - buy signal
-		if (_prevWR < -80 && wrValue >= -80 && Position <= 0)
+		if (_prevWR < -80m && wrValue >= -80m && Position <= 0)
 		{
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
-			_cooldown = 3;
+			BuyMarket();
+			_cooldown = 50;
 		}
 		// Williams %R crosses from overbought (-20) downward - sell signal
-		else if (_prevWR > -20 && wrValue <= -20 && Position >= 0)
+		else if (_prevWR > -20m && wrValue <= -20m && Position >= 0)
 		{
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
-			_cooldown = 3;
+			SellMarket();
+			_cooldown = 50;
 		}
 
 		_prevWR = wrValue;

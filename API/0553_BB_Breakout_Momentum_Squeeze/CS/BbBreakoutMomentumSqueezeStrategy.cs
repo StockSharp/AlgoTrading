@@ -54,7 +54,7 @@ public class BbBreakoutMomentumSqueezeStrategy : Strategy
 	/// </summary>
 	public BbBreakoutMomentumSqueezeStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles to use", "General");
 		
 		_bbLength = Param(nameof(BbLength), 14)
@@ -66,7 +66,7 @@ public class BbBreakoutMomentumSqueezeStrategy : Strategy
 		_bbMultiplier = Param(nameof(BbMultiplier), 1.0m)
 		.SetDisplay("BB Breakout Mult", "Bollinger breakout multiplier", "BB Breakout");
 		
-		_threshold = Param(nameof(Threshold), 10m)
+		_threshold = Param(nameof(Threshold), 0m)
 		.SetRange(0m, 100m)
 		.SetDisplay("Threshold", "Middle line threshold", "BB Breakout");
 		

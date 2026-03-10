@@ -109,12 +109,13 @@ public class LinearCorrelationOscillatorStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
+		var dummyEma1 = new ExponentialMovingAverage { Length = 10 };
+		var dummyEma2 = new ExponentialMovingAverage { Length = 20 };
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(dummyEma1, dummyEma2, ProcessCandle)
 			.Start();
-
-		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -124,7 +125,7 @@ public class LinearCorrelationOscillatorStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal d1, decimal d2)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
@@ -141,20 +142,17 @@ public class LinearCorrelationOscillatorStrategy : Strategy
 		var correlation = CalculateCorrelation();
 		_barsFromSignal++;
 
-		if (IsFormedAndOnlineAndAllowTrading())
+		if (_barsFromSignal >= CooldownBars)
 		{
-			if (_barsFromSignal >= CooldownBars)
+			if (_prevCorrelation <= EntryLevel && correlation > EntryLevel && Position <= 0)
 			{
-				if (_prevCorrelation <= EntryLevel && correlation > EntryLevel && Position <= 0)
-				{
-					BuyMarket(Volume + Math.Abs(Position));
-					_barsFromSignal = 0;
-				}
-				else if (_prevCorrelation >= -EntryLevel && correlation < -EntryLevel && Position >= 0)
-				{
-					SellMarket(Volume + Math.Abs(Position));
-					_barsFromSignal = 0;
-				}
+				BuyMarket();
+				_barsFromSignal = 0;
+			}
+			else if (_prevCorrelation >= -EntryLevel && correlation < -EntryLevel && Position >= 0)
+			{
+				SellMarket();
+				_barsFromSignal = 0;
 			}
 		}
 

@@ -121,7 +121,7 @@ public class LarryConnorsPercentBStrategy : Strategy
 	/// </summary>
 	public LarryConnorsPercentBStrategy()
 	{
-		_smaPeriod = Param(nameof(SmaPeriod), 200)
+		_smaPeriod = Param(nameof(SmaPeriod), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("SMA Period", "Period for long-term trend filter", "General")
 			
@@ -159,7 +159,7 @@ public class LarryConnorsPercentBStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Max Entries", "Maximum entries per run", "Risk");
 
-		_cooldownBars = Param(nameof(CooldownBars), 240)
+		_cooldownBars = Param(nameof(CooldownBars), 100)
 			.SetGreaterThanZero()
 			.SetDisplay("Cooldown Bars", "Minimum bars between entries", "Risk");
 
@@ -189,47 +189,42 @@ public class LarryConnorsPercentBStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var sma = new SimpleMovingAverage { Length = SmaPeriod };
 		var bollinger = new BollingerBands
 		{
 			Length = BollingerPeriod,
 			Width = BollingerDeviation
 		};
+		var dummyEma = new ExponentialMovingAverage { Length = 10 };
 
 		var subscription = SubscribeCandles(CandleType);
 		_entriesExecuted = 0;
 		_barsSinceSignal = CooldownBars;
 		subscription
-			.BindEx(sma, bollinger, ProcessCandle)
+			.BindEx(bollinger, dummyEma, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, sma);
+			DrawIndicator(area, dummyEma);
 			DrawIndicator(area, bollinger);
 			DrawOwnTrades(area);
 		}
 
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue smaInd, IIndicatorValue bollingerInd)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bollingerInd, IIndicatorValue dummyInd)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
 		_barsSinceSignal++;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var smaValue = smaInd.ToDecimal();
 		var bb = (BollingerBandsValue)bollingerInd;
-		if (bb.UpBand is not decimal upper || bb.LowBand is not decimal lower)
-			return;
-
-		if (upper == lower)
+		var upper = bb.UpBand ?? 0m;
+		var lower = bb.LowBand ?? 0m;
+		if (upper == 0m || lower == 0m || upper == lower)
 			return;
 
 		var percentB = (candle.ClosePrice - lower) / (upper - lower);
@@ -245,13 +240,13 @@ public class LarryConnorsPercentBStrategy : Strategy
 
 		if (Position <= 0 && _entriesExecuted < MaxEntries && _barsSinceSignal >= CooldownBars && condition2)
 		{
-			BuyMarket(Volume + Math.Abs(Position));
+			BuyMarket();
 			_entriesExecuted++;
 			_barsSinceSignal = 0;
 		}
 		else if (Position > 0 && percentB > HighPercentB)
 		{
-			SellMarket(Position);
+			SellMarket();
 			_barsSinceSignal = 0;
 		}
 
