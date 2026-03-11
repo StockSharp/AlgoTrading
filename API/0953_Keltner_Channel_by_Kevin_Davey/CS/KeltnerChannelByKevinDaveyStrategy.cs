@@ -78,7 +78,7 @@ public class KeltnerChannelByKevinDaveyStrategy : Strategy
 		_maxEntries = Param(nameof(MaxEntries), 45)
 			.SetDisplay("Max Entries", "Maximum entries per run", "Risk");
 
-		_cooldownBars = Param(nameof(CooldownBars), 100)
+		_cooldownBars = Param(nameof(CooldownBars), 20)
 			.SetDisplay("Cooldown Bars", "Minimum bars between entries", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())

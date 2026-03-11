@@ -60,7 +60,7 @@ public class MateosTimeOfDayAnalysisLeStrategy : Strategy
 
 		if (hour >= StartHour && hour < EndHour)
 		{
-			if (date.DayOfWeek == DayOfWeek.Monday && Position <= 0 && _entryDate != date)
+			if (Position <= 0 && _entryDate != date)
 			{
 				BuyMarket();
 				_entryDate = date;

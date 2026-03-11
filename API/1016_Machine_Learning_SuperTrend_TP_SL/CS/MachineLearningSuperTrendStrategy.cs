@@ -166,7 +166,7 @@ namespace StockSharp.Samples.Strategies;
 	if (candle.State != CandleStates.Finished)
 	return;
 
-	var stResult = _superTrend.Process(new CandleIndicatorValue(_superTrend, candle, candle.ServerTime));
+	var stResult = _superTrend.Process(new CandleIndicatorValue(_superTrend, candle));
 	if (!_superTrend.IsFormed || stResult.IsEmpty)
 	return;
 

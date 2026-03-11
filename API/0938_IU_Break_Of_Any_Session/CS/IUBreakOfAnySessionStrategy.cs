@@ -36,7 +36,7 @@ public class IUBreakOfAnySessionStrategy : Strategy
 
 	public IUBreakOfAnySessionStrategy()
 	{
-		_sessionBars = Param(nameof(SessionBars), 48)
+		_sessionBars = Param(nameof(SessionBars), 24)
 			.SetGreaterThanZero()
 			.SetDisplay("Session Bars", "Number of bars to form session range", "Session")
 			.SetOptimize(24, 96, 24);
@@ -49,7 +49,7 @@ public class IUBreakOfAnySessionStrategy : Strategy
 		_maxEntries = Param(nameof(MaxEntries), 45)
 			.SetDisplay("Max Entries", "Maximum number of entries per test", "Trading");
 
-		_cooldownBars = Param(nameof(CooldownBars), 50)
+		_cooldownBars = Param(nameof(CooldownBars), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Cooldown Bars", "Minimum bars between entries", "Trading");
 
@@ -156,16 +156,6 @@ public class IUBreakOfAnySessionStrategy : Strategy
 				_entriesExecuted++;
 				_cooldown = 0;
 			}
-			else
-			{
-				_sessionHigh = Math.Max(_sessionHigh, candle.HighPrice);
-				_sessionLow = Math.Min(_sessionLow, candle.LowPrice);
-			}
-		}
-		else
-		{
-			_sessionHigh = Math.Max(_sessionHigh, candle.HighPrice);
-			_sessionLow = Math.Min(_sessionLow, candle.LowPrice);
 		}
 	}
 }

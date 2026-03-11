@@ -32,7 +32,7 @@ public class MomentumAlligator4hBitcoinStrategy : Strategy
 	public MomentumAlligator4hBitcoinStrategy()
 	{
 		_stopLossPercent = Param(nameof(StopLossPercent), 0.02m).SetGreaterThanZero();
-		_signalCooldownBars = Param(nameof(SignalCooldownBars), 8).SetGreaterThanZero();
+		_signalCooldownBars = Param(nameof(SignalCooldownBars), 2).SetGreaterThanZero();
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame());
 	}
 
@@ -81,14 +81,14 @@ public class MomentumAlligator4hBitcoinStrategy : Strategy
 			var alligatorBull = lips > teeth && close > jaw;
 			var alligatorBear = lips < teeth && close < jaw;
 
-			if (_barsFromSignal >= SignalCooldownBars && aoCrossUp && alligatorBull && close > lips && Position <= 0)
+			if (_barsFromSignal >= SignalCooldownBars && aoCrossUp && alligatorBull && Position <= 0)
 			{
 				BuyMarket();
 				_entryPrice = close;
 				_barsFromSignal = 0;
 			}
 
-			if (_barsFromSignal >= SignalCooldownBars && aoCrossDown && alligatorBear && close < lips && Position >= 0)
+			if (_barsFromSignal >= SignalCooldownBars && aoCrossDown && alligatorBear && Position >= 0)
 			{
 				SellMarket();
 				_entryPrice = close;

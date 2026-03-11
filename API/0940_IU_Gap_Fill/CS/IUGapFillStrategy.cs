@@ -21,6 +21,7 @@ public class IUGapFillStrategy : Strategy
 
 	private DateTime _currentDay;
 	private decimal _lastSessionClose;
+	private decimal _prevDayClose;
 	private bool _gapUp;
 	private bool _gapDown;
 	private bool _validGap;
@@ -78,7 +79,7 @@ public class IUGapFillStrategy : Strategy
 	/// </summary>
 	public IUGapFillStrategy()
 	{
-		_gapPercent = Param(nameof(GapPercent), 0.1m)
+		_gapPercent = Param(nameof(GapPercent), 0.01m)
 			.SetDisplay("Gap %", "Minimum percentage gap.", "General");
 
 		_atrLength = Param(nameof(AtrLength), 14)
@@ -87,11 +88,26 @@ public class IUGapFillStrategy : Strategy
 		_atrFactor = Param(nameof(AtrFactor), 2m)
 			.SetDisplay("ATR Factor", "ATR multiplier.", "ATR");
 
-		_cooldownDays = Param(nameof(CooldownDays), 5)
+		_cooldownDays = Param(nameof(CooldownDays), 1)
 			.SetDisplay("Cooldown Days", "Minimum days between entries.", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use.", "General");
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_currentDay = default;
+		_lastSessionClose = 0m;
+		_prevDayClose = 0m;
+		_gapUp = false;
+		_gapDown = false;
+		_validGap = false;
+		_isFirstBar = false;
+		_entryDay = default;
+		_nextEntryDate = DateTime.MinValue;
 	}
 
 	/// <inheritdoc />
@@ -101,6 +117,7 @@ public class IUGapFillStrategy : Strategy
 
 		_currentDay = default;
 		_lastSessionClose = 0m;
+		_prevDayClose = 0m;
 		_gapUp = false;
 		_gapDown = false;
 		_validGap = false;
@@ -130,6 +147,7 @@ public class IUGapFillStrategy : Strategy
 
 		if (_currentDay != day)
 		{
+			_prevDayClose = _lastSessionClose;
 			_currentDay = day;
 
 			if (Position > 0)
@@ -137,14 +155,16 @@ public class IUGapFillStrategy : Strategy
 			else if (Position < 0)
 				BuyMarket();
 
-			if (_lastSessionClose > 0)
+			if (_prevDayClose > 0)
 			{
-				_gapUp = candle.OpenPrice > _lastSessionClose;
-				_gapDown = candle.OpenPrice < _lastSessionClose;
-				_validGap = Math.Abs(_lastSessionClose - candle.OpenPrice) >= candle.OpenPrice * GapPercent / 100m;
+				_gapUp = candle.OpenPrice > _prevDayClose;
+				_gapDown = candle.OpenPrice < _prevDayClose;
+				_validGap = Math.Abs(_prevDayClose - candle.OpenPrice) >= candle.OpenPrice * GapPercent / 100m;
 			}
 			_isFirstBar = true;
 		}
+
+		_lastSessionClose = candle.ClosePrice;
 
 		if (_isFirstBar)
 		{
@@ -153,20 +173,18 @@ public class IUGapFillStrategy : Strategy
 		else if (_validGap && Position == 0 && day >= _nextEntryDate)
 		{
 			// Gap fill logic: price returns to previous close level
-			if (_gapUp && candle.LowPrice < _lastSessionClose && candle.ClosePrice > _lastSessionClose)
+			if (_gapUp && candle.ClosePrice <= _prevDayClose)
 			{
 				BuyMarket();
 				_entryDay = day;
 				_nextEntryDate = day.AddDays(CooldownDays);
 			}
-			else if (_gapDown && candle.HighPrice > _lastSessionClose && candle.ClosePrice < _lastSessionClose)
+			else if (_gapDown && candle.ClosePrice >= _prevDayClose)
 			{
 				SellMarket();
 				_entryDay = day;
 				_nextEntryDate = day.AddDays(CooldownDays);
 			}
 		}
-
-		_lastSessionClose = candle.ClosePrice;
 	}
 }

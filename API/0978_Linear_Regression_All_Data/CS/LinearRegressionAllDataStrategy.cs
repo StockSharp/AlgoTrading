@@ -56,6 +56,12 @@ public class LinearRegressionAllDataStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
@@ -65,7 +71,7 @@ public class LinearRegressionAllDataStrategy : Strategy
 		_sumY = 0m;
 		_sumX2 = 0m;
 		_sumXY = 0m;
-		_barsFromSignal = int.MaxValue;
+		_barsFromSignal = CooldownBars;
 	}
 
 	/// <inheritdoc />
@@ -78,7 +84,7 @@ public class LinearRegressionAllDataStrategy : Strategy
 		_sumY = 0m;
 		_sumX2 = 0m;
 		_sumXY = 0m;
-		_barsFromSignal = int.MaxValue;
+		_barsFromSignal = CooldownBars;
 
 		var dummyEma1 = new ExponentialMovingAverage { Length = 10 };
 		var dummyEma2 = new ExponentialMovingAverage { Length = 20 };

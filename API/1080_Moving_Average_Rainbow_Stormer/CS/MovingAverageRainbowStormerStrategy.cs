@@ -37,8 +37,8 @@ public class MovingAverageRainbowStormerStrategy : Strategy
 	public MovingAverageRainbowStormerStrategy()
 	{
 		_targetFactor = Param(nameof(TargetFactor), 2m);
-		_cooldownBars = Param(nameof(CooldownBars), 12).SetGreaterThanZero();
-		_minTrendSpreadPercent = Param(nameof(MinTrendSpreadPercent), 0.03m).SetGreaterThanZero();
+		_cooldownBars = Param(nameof(CooldownBars), 40).SetGreaterThanZero();
+		_minTrendSpreadPercent = Param(nameof(MinTrendSpreadPercent), 0.05m).SetGreaterThanZero();
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(10).TimeFrame());
 	}
 
@@ -92,7 +92,7 @@ public class MovingAverageRainbowStormerStrategy : Strategy
 			_lastSignalBar = _barIndex;
 		}
 
-		if (Position > 0 && _entryPrice > 0)
+		if (canSignal && Position > 0 && _entryPrice > 0)
 		{
 			var risk = _entryPrice - ma20;
 			if (risk > 0)
@@ -110,7 +110,7 @@ public class MovingAverageRainbowStormerStrategy : Strategy
 				_lastSignalBar = _barIndex;
 			}
 		}
-		else if (Position < 0 && _entryPrice > 0)
+		else if (canSignal && Position < 0 && _entryPrice > 0)
 		{
 			var risk = ma20 - _entryPrice;
 			if (risk > 0)

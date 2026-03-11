@@ -21,8 +21,7 @@ public class LinearRegressionChannelStrategy : Strategy
 	private readonly StrategyParam<decimal> _deviation;
 	private readonly StrategyParam<int> _cooldownBars;
 
-	private readonly object _sync = new();
-	private readonly Queue<decimal> _closes = new();
+	private Queue<decimal> _closes = new();
 	private int _barsFromSignal;
 
 	/// <summary>
@@ -53,16 +52,16 @@ public class LinearRegressionChannelStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 
-		_length = Param(nameof(Length), 150)
+		_length = Param(nameof(Length), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Length", "Bars for regression", "Parameters")
-			
+
 			.SetOptimize(80, 240, 40);
 
-		_deviation = Param(nameof(Deviation), 3m)
+		_deviation = Param(nameof(Deviation), 1.5m)
 			.SetGreaterThanZero()
 			.SetDisplay("Deviation", "Channel width multiplier", "Parameters")
-			
+
 			.SetOptimize(2m, 4m, 0.5m);
 
 		_cooldownBars = Param(nameof(CooldownBars), 20)
@@ -82,18 +81,15 @@ public class LinearRegressionChannelStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		lock (_sync)
-		{
-			_closes.Clear();
-		}
-		_barsFromSignal = int.MaxValue;
+		_closes = new Queue<decimal>();
+		_barsFromSignal = CooldownBars;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		_barsFromSignal = int.MaxValue;
+		_barsFromSignal = CooldownBars;
 
 		var dummyEma1 = new ExponentialMovingAverage { Length = 10 };
 		var dummyEma2 = new ExponentialMovingAverage { Length = 20 };
@@ -116,18 +112,14 @@ public class LinearRegressionChannelStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		decimal[] closesSnapshot;
-		lock (_sync)
-		{
-			_closes.Enqueue(candle.ClosePrice);
-			if (_closes.Count > Length)
-				_closes.Dequeue();
+		_closes.Enqueue(candle.ClosePrice);
+		if (_closes.Count > Length)
+			_closes.Dequeue();
 
-			if (_closes.Count < Length)
-				return;
+		if (_closes.Count < Length)
+			return;
 
-			closesSnapshot = _closes.ToArray();
-		}
+		var closesSnapshot = _closes.ToArray();
 
 		var n = closesSnapshot.Length;
 		decimal sumX = 0;

@@ -13,7 +13,6 @@ public class MacdLiquidityTrackerStrategy : Strategy
 {
 	private readonly StrategyParam<int> _fastLength;
 	private readonly StrategyParam<int> _slowLength;
-	private readonly StrategyParam<decimal> _minMacdPercent;
 	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
@@ -25,7 +24,6 @@ public class MacdLiquidityTrackerStrategy : Strategy
 
 	public int FastLength { get => _fastLength.Value; set => _fastLength.Value = value; }
 	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
-	public decimal MinMacdPercent { get => _minMacdPercent.Value; set => _minMacdPercent.Value = value; }
 	public int CooldownBars { get => _cooldownBars.Value; set => _cooldownBars.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
@@ -33,8 +31,7 @@ public class MacdLiquidityTrackerStrategy : Strategy
 	{
 		_fastLength = Param(nameof(FastLength), 12).SetDisplay("Fast", "Fast EMA", "MACD");
 		_slowLength = Param(nameof(SlowLength), 26).SetDisplay("Slow", "Slow EMA", "MACD");
-		_minMacdPercent = Param(nameof(MinMacdPercent), 0.005m).SetDisplay("Min MACD %", "Minimum MACD magnitude in percent", "MACD");
-		_cooldownBars = Param(nameof(CooldownBars), 6).SetDisplay("Cooldown", "Bars between signals", "Risk");
+		_cooldownBars = Param(nameof(CooldownBars), 10).SetDisplay("Cooldown", "Bars between signals", "Risk");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candles", "General");
 	}
@@ -80,22 +77,18 @@ public class MacdLiquidityTrackerStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_emaFast.IsFormed || !_emaSlow.IsFormed)
+		if (fast == 0 || slow == 0)
 			return;
 
-		var macd = fast - slow;
-		var closePrice = candle.ClosePrice;
-		if (closePrice <= 0)
-			return;
+		var isFastAbove = fast > slow;
 
-		if (!_initialized) { _prevMacd = macd; _initialized = true; return; }
-		_barsFromSignal++;
+		if (!_initialized) { _prevMacd = isFastAbove ? 1m : -1m; _initialized = true; _barsFromSignal = 0; return; }
+		if (_barsFromSignal < 10000) _barsFromSignal++;
 
-		// MACD zero-line crossover
-		var crossUp = _prevMacd <= 0 && macd > 0;
-		var crossDown = _prevMacd >= 0 && macd < 0;
-		var macdPercent = Math.Abs(macd) / closePrice * 100m;
-		var canSignal = _barsFromSignal >= CooldownBars && macdPercent >= MinMacdPercent;
+		var prevAbove = _prevMacd > 0;
+		var crossUp = isFastAbove && !prevAbove;
+		var crossDown = !isFastAbove && prevAbove;
+		var canSignal = _barsFromSignal >= CooldownBars;
 
 		if (canSignal && crossUp && Position <= 0)
 		{
@@ -108,6 +101,6 @@ public class MacdLiquidityTrackerStrategy : Strategy
 			_barsFromSignal = 0;
 		}
 
-		_prevMacd = macd;
+		_prevMacd = isFastAbove ? 1m : -1m;
 	}
 }

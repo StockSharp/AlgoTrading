@@ -43,14 +43,14 @@ public class MovingAverageCrossoverSwingStrategy : Strategy
 
 	public MovingAverageCrossoverSwingStrategy()
 	{
-		_fastPeriod = Param(nameof(FastPeriod), 8);
-		_mediumPeriod = Param(nameof(MediumPeriod), 21);
+		_fastPeriod = Param(nameof(FastPeriod), 10);
+		_mediumPeriod = Param(nameof(MediumPeriod), 30);
 		_atrPeriod = Param(nameof(AtrPeriod), 20);
-		_atrStopMult = Param(nameof(AtrStopMult), 1.4m);
-		_atrTakeMult = Param(nameof(AtrTakeMult), 3.2m);
-		_cooldownBars = Param(nameof(CooldownBars), 10).SetGreaterThanZero();
-		_minSpreadPercent = Param(nameof(MinSpreadPercent), 0.03m).SetGreaterThanZero();
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(10).TimeFrame());
+		_atrStopMult = Param(nameof(AtrStopMult), 5.0m);
+		_atrTakeMult = Param(nameof(AtrTakeMult), 10.0m);
+		_cooldownBars = Param(nameof(CooldownBars), 30).SetGreaterThanZero();
+		_minSpreadPercent = Param(nameof(MinSpreadPercent), 0.01m).SetGreaterThanZero();
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
 	}
 
 	protected override void OnStarted2(DateTime time)
@@ -91,8 +91,8 @@ public class MovingAverageCrossoverSwingStrategy : Strategy
 			? Math.Abs(fast - medium) / candle.ClosePrice * 100m
 			: 0m;
 		var canSignal = _barIndex - _lastSignalBar >= CooldownBars;
-		var longCross = _prevFast <= _prevMedium && fast > medium && spreadPercent >= MinSpreadPercent;
-		var shortCross = _prevFast >= _prevMedium && fast < medium && spreadPercent >= MinSpreadPercent;
+		var longCross = _prevFast <= _prevMedium && fast > medium;
+		var shortCross = _prevFast >= _prevMedium && fast < medium;
 
 		if (canSignal && longCross && Position <= 0)
 		{
@@ -109,7 +109,7 @@ public class MovingAverageCrossoverSwingStrategy : Strategy
 			_lastSignalBar = _barIndex;
 		}
 
-		if (Position > 0 && _entryAtr > 0)
+		if (canSignal && Position > 0 && _entryAtr > 0)
 		{
 			var stop = _entryPrice - _entryAtr * AtrStopMult;
 			var take = _entryPrice + _entryAtr * AtrTakeMult;
@@ -119,7 +119,7 @@ public class MovingAverageCrossoverSwingStrategy : Strategy
 				_lastSignalBar = _barIndex;
 			}
 		}
-		else if (Position < 0 && _entryAtr > 0)
+		else if (canSignal && Position < 0 && _entryAtr > 0)
 		{
 			var stop = _entryPrice + _entryAtr * AtrStopMult;
 			var take = _entryPrice - _entryAtr * AtrTakeMult;

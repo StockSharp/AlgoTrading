@@ -62,10 +62,10 @@ public class IuOpenEqualToHighLowStrategy : Strategy
 			
 			.SetOptimize(1m, 5m, 1m);
 
-		_cooldownDays = Param(nameof(CooldownDays), 45)
+		_cooldownDays = Param(nameof(CooldownDays), 1)
 			.SetDisplay("Cooldown Days", "Minimum number of days between new entries", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -113,7 +113,7 @@ public class IuOpenEqualToHighLowStrategy : Strategy
 			if (Position == 0 && _prevCandle != null && day >= _nextEntryDate)
 			{
 				var entryPrice = candle.OpenPrice;
-				var tolerance = candle.OpenPrice * 0.0002m;
+				var tolerance = candle.OpenPrice * 0.005m;
 				var isOpenNearLow = candle.OpenPrice - candle.LowPrice <= tolerance;
 				var isOpenNearHigh = candle.HighPrice - candle.OpenPrice <= tolerance;
 

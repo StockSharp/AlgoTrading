@@ -64,11 +64,11 @@ public class Lanz30BacktestStrategy : Strategy
 		_useOptimizedFibo = Param(nameof(UseOptimizedFibo), true)
 			.SetDisplay("Use Optimized Fibo", "Use optimized Fibonacci coefficients", "General");
 
-		_maxEntries = Param(nameof(MaxEntries), 45)
+		_maxEntries = Param(nameof(MaxEntries), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Entries", "Maximum entries per run", "Risk");
 
-		_cooldownDays = Param(nameof(CooldownDays), 90)
+		_cooldownDays = Param(nameof(CooldownDays), 2)
 			.SetGreaterThanZero()
 			.SetDisplay("Cooldown Days", "Minimum days between entries", "Risk");
 
@@ -123,7 +123,7 @@ public class Lanz30BacktestStrategy : Strategy
 
 		var t = candle.OpenTime;
 
-		var rangeSession = t.TimeOfDay >= new TimeSpan(18, 0, 0) || t.TimeOfDay < new TimeSpan(1, 15, 0);
+		var rangeSession = t.TimeOfDay >= new TimeSpan(9, 30, 0) && t.TimeOfDay < new TimeSpan(11, 0, 0);
 		var newSession = rangeSession && !_rangeSession;
 		_rangeSession = rangeSession;
 
@@ -138,17 +138,17 @@ public class Lanz30BacktestStrategy : Strategy
 			_tradeExpired = false;
 			_orderSent = false;
 			_fallbackTriggered = false;
-			}
+		}
 		else if (rangeSession)
 		{
 			_refHigh = Math.Max(_refHigh, candle.HighPrice);
 			_refLow = Math.Min(_refLow, candle.LowPrice);
 		}
 
-		var decisionWindow = t.TimeOfDay >= new TimeSpan(1, 15, 0) && t.TimeOfDay < new TimeSpan(2, 15, 0);
-		var entryWindow = t.TimeOfDay >= new TimeSpan(1, 15, 0) && t.TimeOfDay < new TimeSpan(8, 0, 0);
-		var expireWindow = t.TimeOfDay >= new TimeSpan(8, 0, 0) && t.TimeOfDay < new TimeSpan(8, 1, 0);
-		var fallbackTime = t.Hour == 2 && t.Minute == 15;
+		var decisionWindow = t.TimeOfDay >= new TimeSpan(11, 0, 0) && t.TimeOfDay < new TimeSpan(12, 0, 0);
+		var entryWindow = t.TimeOfDay >= new TimeSpan(11, 0, 0) && t.TimeOfDay < new TimeSpan(15, 0, 0);
+		var expireWindow = t.TimeOfDay >= new TimeSpan(15, 0, 0) && t.TimeOfDay < new TimeSpan(15, 5, 0);
+		var fallbackTime = t.Hour == 12 && t.Minute == 0;
 		var closeTime = t.Hour == 15 && t.Minute == 45;
 
 		if (decisionWindow && !_directionDefined)

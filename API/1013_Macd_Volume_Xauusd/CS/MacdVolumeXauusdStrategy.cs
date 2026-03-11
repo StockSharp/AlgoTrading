@@ -48,7 +48,7 @@ public class MacdVolumeXauusdStrategy : Strategy
 		_macd = null;
 		_prevMacd = 0m;
 		_prevMacdSet = false;
-		_barsFromSignal = int.MaxValue;
+		_barsFromSignal = 0;
 	}
 
 	/// <inheritdoc />
@@ -62,7 +62,7 @@ public class MacdVolumeXauusdStrategy : Strategy
 
 		_prevMacd = 0;
 		_prevMacdSet = false;
-		_barsFromSignal = int.MaxValue;
+		_barsFromSignal = 0;
 
 		var dummyEma1 = new ExponentialMovingAverage { Length = 10 };
 		var dummyEma2 = new ExponentialMovingAverage { Length = 20 };
@@ -83,7 +83,7 @@ public class MacdVolumeXauusdStrategy : Strategy
 		_shortVolumeEma.Process(new DecimalIndicatorValue(_shortVolumeEma, candle.TotalVolume, t));
 		_longVolumeEma.Process(new DecimalIndicatorValue(_longVolumeEma, candle.TotalVolume, t));
 
-		var macdResult = _macd.Process(new CandleIndicatorValue(_macd, candle, candle.ServerTime));
+		var macdResult = _macd.Process(new CandleIndicatorValue(_macd, candle));
 		if (!_macd.IsFormed)
 			return;
 
@@ -100,7 +100,7 @@ public class MacdVolumeXauusdStrategy : Strategy
 		var longSignal = _prevMacd <= 0 && macd > 0;
 		// MACD cross below zero = sell
 		var shortSignal = _prevMacd >= 0 && macd < 0;
-		_barsFromSignal++;
+		if (_barsFromSignal < 10000) _barsFromSignal++;
 		var canSignal = _barsFromSignal >= CooldownBars;
 
 		if (canSignal && longSignal && Position <= 0)

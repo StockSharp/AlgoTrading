@@ -114,17 +114,17 @@ public class MacdCrossoverStrategy : Strategy
 			
 			.SetOptimize(5, 13, 2);
 
-		_lowerThreshold = Param(nameof(LowerThreshold), -0.3m)
+		_lowerThreshold = Param(nameof(LowerThreshold), -100m)
 			.SetDisplay("Lower Threshold", "Lower bound for MACD zone", "MACD Zone")
-			
+
 			.SetOptimize(-1m, 0m, 0.1m);
 
-		_upperThreshold = Param(nameof(UpperThreshold), 0.3m)
+		_upperThreshold = Param(nameof(UpperThreshold), 100m)
 			.SetDisplay("Upper Threshold", "Upper bound for MACD zone", "MACD Zone")
-			
+
 			.SetOptimize(0m, 1m, 0.1m);
 
-		_signalCooldownBars = Param(nameof(SignalCooldownBars), 10)
+		_signalCooldownBars = Param(nameof(SignalCooldownBars), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Cooldown Bars", "Minimum bars between trade signals", "Risk");
 

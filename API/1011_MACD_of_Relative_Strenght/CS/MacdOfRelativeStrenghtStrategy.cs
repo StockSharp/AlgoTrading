@@ -23,7 +23,7 @@ public class MacdOfRelativeStrenghtStrategy : Strategy
 	private ExponentialMovingAverage _emaFast;
 	private ExponentialMovingAverage _emaSlow;
 	private RelativeStrengthIndex _rsi;
-	private decimal _prevMacd;
+	private bool _prevFastAbove;
 	private bool _initialized;
 	private int _barsFromSignal;
 
@@ -38,7 +38,7 @@ public class MacdOfRelativeStrenghtStrategy : Strategy
 		_fastLength = Param(nameof(FastLength), 12).SetDisplay("Fast", "Fast EMA", "MACD");
 		_slowLength = Param(nameof(SlowLength), 26).SetDisplay("Slow", "Slow EMA", "MACD");
 		_rsiLength = Param(nameof(RsiLength), 14).SetDisplay("RSI", "RSI period", "Indicators");
-		_cooldownBars = Param(nameof(CooldownBars), 3).SetDisplay("Cooldown", "Bars between signals", "Risk");
+		_cooldownBars = Param(nameof(CooldownBars), 10).SetDisplay("Cooldown", "Bars between signals", "Risk");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candles", "General");
 	}
@@ -51,18 +51,18 @@ public class MacdOfRelativeStrenghtStrategy : Strategy
 		_emaFast = null;
 		_emaSlow = null;
 		_rsi = null;
-		_prevMacd = 0m;
+		_prevFastAbove = false;
 		_initialized = false;
-		_barsFromSignal = int.MaxValue;
+		_barsFromSignal = 0;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		_prevMacd = 0;
+		_prevFastAbove = false;
 		_initialized = false;
-		_barsFromSignal = int.MaxValue;
+		_barsFromSignal = 0;
 
 		_emaFast = new ExponentialMovingAverage { Length = FastLength };
 		_emaSlow = new ExponentialMovingAverage { Length = SlowLength };
@@ -86,16 +86,16 @@ public class MacdOfRelativeStrenghtStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_emaFast.IsFormed || !_emaSlow.IsFormed || !_rsi.IsFormed)
+		if (fast == 0 || slow == 0)
 			return;
 
-		var macd = fast - slow;
+		var isFastAbove = fast > slow;
 
-		if (!_initialized) { _prevMacd = macd; _initialized = true; return; }
-		_barsFromSignal++;
+		if (!_initialized) { _prevFastAbove = isFastAbove; _initialized = true; return; }
+		if (_barsFromSignal < 10000) _barsFromSignal++;
 
-		var crossUp = _prevMacd <= 0 && macd > 0;
-		var crossDown = _prevMacd >= 0 && macd < 0;
+		var crossUp = isFastAbove && !_prevFastAbove;
+		var crossDown = !isFastAbove && _prevFastAbove;
 		var canSignal = _barsFromSignal >= CooldownBars;
 
 		// RSI filter: buy when not overbought, sell when not oversold
@@ -110,6 +110,6 @@ public class MacdOfRelativeStrenghtStrategy : Strategy
 			_barsFromSignal = 0;
 		}
 
-		_prevMacd = macd;
+		_prevFastAbove = isFastAbove;
 	}
 }

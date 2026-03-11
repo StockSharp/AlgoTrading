@@ -31,6 +31,7 @@ public class IUOpeningRangeBreakoutStrategy : Strategy
 	private DateTime _nextTradeDate;
 	private decimal _prevHigh;
 	private decimal _prevLow;
+	private int _orBarCount;
 
 	/// <summary>
 	/// Candle type for processing.
@@ -91,11 +92,11 @@ public class IUOpeningRangeBreakoutStrategy : Strategy
 			
 			.SetOptimize(1m, 3m, 0.5m);
 
-		_maxTrades = Param(nameof(MaxTrades), 1)
+		_maxTrades = Param(nameof(MaxTrades), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Trades", "Maximum trades per day", "General");
 
-		_cooldownDays = Param(nameof(CooldownDays), 60)
+		_cooldownDays = Param(nameof(CooldownDays), 3)
 			.SetDisplay("Cooldown Days", "Minimum days between entries", "General");
 
 		_endTime = Param(nameof(EndTime), new TimeSpan(15, 0, 0))
@@ -122,6 +123,7 @@ public class IUOpeningRangeBreakoutStrategy : Strategy
 		_nextTradeDate = DateTime.MinValue;
 		_prevHigh = 0m;
 		_prevLow = 0m;
+		_orBarCount = 0;
 	}
 
 	/// <inheritdoc />
@@ -151,13 +153,18 @@ public class IUOpeningRangeBreakoutStrategy : Strategy
 			_currentDay = openTime.Date;
 			_rangeSet = false;
 			_tradesToday = 0;
+			_orBarCount = 0;
+			_orHigh = 0m;
+			_orLow = decimal.MaxValue;
 		}
 
+		_orBarCount++;
 		if (!_rangeSet)
 		{
-			_orHigh = candle.HighPrice;
-			_orLow = candle.LowPrice;
-			_rangeSet = true;
+			_orHigh = Math.Max(_orHigh, candle.HighPrice);
+			_orLow = Math.Min(_orLow, candle.LowPrice);
+			if (_orBarCount >= 2)
+				_rangeSet = true;
 			_prevHigh = candle.HighPrice;
 			_prevLow = candle.LowPrice;
 			return;

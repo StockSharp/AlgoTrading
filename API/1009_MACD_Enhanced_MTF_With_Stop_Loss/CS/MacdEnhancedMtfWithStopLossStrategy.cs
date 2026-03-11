@@ -18,14 +18,13 @@ public class MacdEnhancedMtfWithStopLossStrategy : Strategy
 	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<int> _atrLength;
 	private readonly StrategyParam<decimal> _stopAtrMult;
-	private readonly StrategyParam<decimal> _minMacdPercent;
 	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private ExponentialMovingAverage _emaFast;
 	private ExponentialMovingAverage _emaSlow;
 	private AverageTrueRange _atr;
-	private decimal _prevMacd;
+	private bool _prevFastAbove;
 	private bool _initialized;
 	private decimal _stopPrice;
 	private int _barsFromSignal;
@@ -34,19 +33,17 @@ public class MacdEnhancedMtfWithStopLossStrategy : Strategy
 	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
 	public int AtrLength { get => _atrLength.Value; set => _atrLength.Value = value; }
 	public decimal StopAtrMult { get => _stopAtrMult.Value; set => _stopAtrMult.Value = value; }
-	public decimal MinMacdPercent { get => _minMacdPercent.Value; set => _minMacdPercent.Value = value; }
 	public int CooldownBars { get => _cooldownBars.Value; set => _cooldownBars.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public MacdEnhancedMtfWithStopLossStrategy()
 	{
-		_fastLength = Param(nameof(FastLength), 12).SetDisplay("Fast", "Fast EMA", "MACD");
-		_slowLength = Param(nameof(SlowLength), 26).SetDisplay("Slow", "Slow EMA", "MACD");
+		_fastLength = Param(nameof(FastLength), 8).SetDisplay("Fast", "Fast EMA", "MACD");
+		_slowLength = Param(nameof(SlowLength), 17).SetDisplay("Slow", "Slow EMA", "MACD");
 		_atrLength = Param(nameof(AtrLength), 14).SetDisplay("ATR", "ATR period", "Risk");
-		_stopAtrMult = Param(nameof(StopAtrMult), 2m).SetDisplay("SL Mult", "ATR stop mult", "Risk");
-		_minMacdPercent = Param(nameof(MinMacdPercent), 0.015m).SetDisplay("Min MACD %", "Minimum MACD magnitude in percent", "MACD");
-		_cooldownBars = Param(nameof(CooldownBars), 8).SetDisplay("Cooldown", "Bars between signals", "Risk");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(10).TimeFrame())
+		_stopAtrMult = Param(nameof(StopAtrMult), 3m).SetDisplay("SL Mult", "ATR stop mult", "Risk");
+		_cooldownBars = Param(nameof(CooldownBars), 10).SetDisplay("Cooldown", "Bars between signals", "Risk");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candles", "General");
 	}
 
@@ -58,20 +55,20 @@ public class MacdEnhancedMtfWithStopLossStrategy : Strategy
 		_emaFast = null;
 		_emaSlow = null;
 		_atr = null;
-		_prevMacd = 0m;
+		_prevFastAbove = false;
 		_initialized = false;
 		_stopPrice = 0m;
-		_barsFromSignal = int.MaxValue;
+		_barsFromSignal = 0;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		_prevMacd = 0;
+		_prevFastAbove = false;
 		_initialized = false;
 		_stopPrice = 0;
-		_barsFromSignal = int.MaxValue;
+		_barsFromSignal = 0;
 
 		_emaFast = new ExponentialMovingAverage { Length = FastLength };
 		_emaSlow = new ExponentialMovingAverage { Length = SlowLength };
@@ -97,52 +94,49 @@ public class MacdEnhancedMtfWithStopLossStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_emaFast.IsFormed || !_emaSlow.IsFormed || !_atr.IsFormed)
+		if (fast == 0 || slow == 0)
 			return;
 
-		var macd = fast - slow;
-		var closePrice = candle.ClosePrice;
-		if (closePrice <= 0)
-			return;
+		var isFastAbove = fast > slow;
 
-		_barsFromSignal++;
+		if (!_initialized) { _prevFastAbove = isFastAbove; _initialized = true; return; }
+		if (_barsFromSignal < 10000) _barsFromSignal++;
 
-		if (!_initialized) { _prevMacd = macd; _initialized = true; return; }
-
-		var crossUp = _prevMacd <= 0 && macd > 0;
-		var crossDown = _prevMacd >= 0 && macd < 0;
-		var macdPercent = Math.Abs(macd) / closePrice * 100m;
-		var canSignal = _barsFromSignal >= CooldownBars && macdPercent >= MinMacdPercent;
+		var crossUp = isFastAbove && !_prevFastAbove;
+		var crossDown = !isFastAbove && _prevFastAbove;
+		var canSignal = _barsFromSignal >= CooldownBars;
 
 		// Stop loss check
-		if (Position > 0 && candle.ClosePrice <= _stopPrice)
+		if (Position > 0 && _stopPrice > 0 && candle.ClosePrice <= _stopPrice)
 		{
 			SellMarket();
+			_stopPrice = 0;
 			_barsFromSignal = 0;
-			_prevMacd = macd;
+			_prevFastAbove = isFastAbove;
 			return;
 		}
-		if (Position < 0 && candle.ClosePrice >= _stopPrice)
+		if (Position < 0 && _stopPrice > 0 && candle.ClosePrice >= _stopPrice)
 		{
 			BuyMarket();
+			_stopPrice = 0;
 			_barsFromSignal = 0;
-			_prevMacd = macd;
+			_prevFastAbove = isFastAbove;
 			return;
 		}
 
 		if (canSignal && crossUp && Position <= 0)
 		{
 			BuyMarket();
-			_stopPrice = candle.ClosePrice - atr * StopAtrMult;
+			_stopPrice = atr > 0 ? candle.ClosePrice - atr * StopAtrMult : 0;
 			_barsFromSignal = 0;
 		}
 		else if (canSignal && crossDown && Position >= 0)
 		{
 			SellMarket();
-			_stopPrice = candle.ClosePrice + atr * StopAtrMult;
+			_stopPrice = atr > 0 ? candle.ClosePrice + atr * StopAtrMult : 0;
 			_barsFromSignal = 0;
 		}
 
-		_prevMacd = macd;
+		_prevFastAbove = isFastAbove;
 	}
 }

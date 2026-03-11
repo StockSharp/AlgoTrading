@@ -84,7 +84,7 @@ public class MonthlyBreakoutStrategy : Strategy
 	
 	public MonthlyBreakoutStrategy()
 	{
-		_entryOption = Param(nameof(EntryOption), EntryOptions.LongAtHigh)
+		_entryOption = Param(nameof(EntryOption), EntryOptions.LongAtLow)
 		.SetDisplay("Entry Option", "Breakout direction", "General");
 		
 		_holdingPeriod = Param(nameof(HoldingPeriod), 5)
@@ -156,9 +156,11 @@ public class MonthlyBreakoutStrategy : Strategy
 	var close = candle.ClosePrice;
 	var high = candle.HighPrice;
 	var low = candle.LowPrice;
+	var week = System.Globalization.CultureInfo.InvariantCulture.Calendar
+		.GetWeekOfYear(candle.OpenTime, System.Globalization.CalendarWeekRule.FirstDay, DayOfWeek.Monday);
 	var month = candle.OpenTime.Month;
-	
-	if (month != _currentMonth)
+
+	if (week != _currentMonth)
 	{
 		if (_currentMonth != 0)
 		{
@@ -168,7 +170,7 @@ public class MonthlyBreakoutStrategy : Strategy
 
 		_monthlyHigh = high;
 		_monthlyLow = low;
-		_currentMonth = month;
+		_currentMonth = week;
 	}
 	else
 	{

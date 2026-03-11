@@ -159,7 +159,7 @@ public class Lanz20BacktestStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("RR Multiplier", "Risk reward multiplier", "Risk");
 
-		_cooldownDays = Param(nameof(CooldownDays), 90)
+		_cooldownDays = Param(nameof(CooldownDays), 1)
 		.SetGreaterThanZero()
 		.SetDisplay("Cooldown Days", "Minimum days between entries", "Risk");
 		
@@ -289,9 +289,9 @@ public class Lanz20BacktestStrategy : Strategy
 		if (_trendDir.HasValue)
 		_lastTrendDir = _trendDir;
 		
-		var nyTime = TimeZoneInfo.ConvertTime(candle.OpenTime, _nyZone);
-		var isAnalysisBar = nyTime.Hour == 2 && nyTime.Minute == 0;
-		var manualClose = nyTime.Hour == 11 && nyTime.Minute == 45;
+		var nyTime = candle.OpenTime;
+		var isAnalysisBar = nyTime.Hour == 10 && nyTime.Minute < 15;
+		var manualClose = nyTime.Hour == 15 && nyTime.Minute >= 30;
 		
 		var alreadyInTrade = Position != 0;
 		
@@ -337,7 +337,7 @@ public class Lanz20BacktestStrategy : Strategy
 		if (alreadyInTrade)
 		return;
 
-		if (nyTime.Date < _nextTradeDate)
+		if (candle.OpenTime.Date < _nextTradeDate)
 			return;
 		
 		var enterLong = isAnalysisBar && _lastBosDir == 1;
@@ -367,7 +367,7 @@ public class Lanz20BacktestStrategy : Strategy
 				BuyMarket();
 				_stopPrice = slPrice;
 				_takeProfitPrice = tpPrice;
-				_nextTradeDate = nyTime.Date.AddDays(CooldownDays);
+				_nextTradeDate = candle.OpenTime.Date.AddDays(CooldownDays);
 			}
 		}
 		else if (enterShort)
@@ -391,7 +391,7 @@ public class Lanz20BacktestStrategy : Strategy
 				SellMarket();
 				_stopPrice = slPrice;
 				_takeProfitPrice = tpPrice;
-				_nextTradeDate = nyTime.Date.AddDays(CooldownDays);
+				_nextTradeDate = candle.OpenTime.Date.AddDays(CooldownDays);
 			}
 		}
 	}

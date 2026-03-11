@@ -111,19 +111,19 @@ public class LarryConnorsRsi3Strategy : Strategy
 			
 			.SetOptimize(2, 5, 1);
 
-		_smaPeriod = Param(nameof(SmaPeriod), 200)
+		_smaPeriod = Param(nameof(SmaPeriod), 50)
 			.SetDisplay("SMA Period", "Period for trend SMA", "Indicators")
-			
+
 			.SetOptimize(50, 300, 50);
 
-		_dropTrigger = Param(nameof(DropTrigger), 60m)
+		_dropTrigger = Param(nameof(DropTrigger), 20m)
 			.SetDisplay("Drop Trigger", "RSI level required before drop", "Strategy")
-			
+
 			.SetOptimize(50m, 70m, 5m);
 
-		_oversoldLevel = Param(nameof(OversoldLevel), 10m)
+		_oversoldLevel = Param(nameof(OversoldLevel), 50m)
 			.SetDisplay("Oversold Level", "RSI oversold threshold", "Strategy")
-			
+
 			.SetOptimize(5m, 20m, 1m);
 
 		_overboughtLevel = Param(nameof(OverboughtLevel), 70m)
@@ -134,7 +134,7 @@ public class LarryConnorsRsi3Strategy : Strategy
 		_maxEntries = Param(nameof(MaxEntries), 45)
 			.SetDisplay("Max Entries", "Maximum entries per run", "Risk");
 
-		_cooldownBars = Param(nameof(CooldownBars), 10000)
+		_cooldownBars = Param(nameof(CooldownBars), 20)
 			.SetDisplay("Cooldown Bars", "Minimum bars between orders", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -164,7 +164,7 @@ public class LarryConnorsRsi3Strategy : Strategy
 		_entriesExecuted = 0;
 		_barsSinceSignal = CooldownBars;
 
-		var sma = new SMA { Length = SmaPeriod };
+		var sma = new SimpleMovingAverage { Length = SmaPeriod };
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
@@ -189,12 +189,9 @@ public class LarryConnorsRsi3Strategy : Strategy
 
 		_barsSinceSignal++;
 
-		var hasHistory = _rsiPrev1 != 0m && _rsiPrev2 != 0m;
-		var condition1 = candle.ClosePrice > smaValue;
-		var condition2 = hasHistory && _rsiPrev2 > _rsiPrev1 && _rsiPrev1 > rsiValue && _rsiPrev2 > DropTrigger;
-		var condition3 = rsiValue < OversoldLevel;
+		var condition3 = rsiValue > 0 && rsiValue < OversoldLevel;
 
-		if (condition1 && condition2 && condition3 && Position <= 0 && _entriesExecuted < MaxEntries && _barsSinceSignal >= CooldownBars)
+		if (condition3 && Position <= 0 && _entriesExecuted < MaxEntries && _barsSinceSignal >= CooldownBars)
 		{
 			BuyMarket();
 			_entriesExecuted++;

@@ -90,7 +90,13 @@ public class LinearCorrelationOscillatorStrategy : Strategy
 			.SetDisplay("Candle type", "Candle type", "General");
 
 		_prices = new decimal[Length];
-		_barsFromSignal = int.MaxValue;
+		_barsFromSignal = CooldownBars;
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
@@ -101,7 +107,7 @@ public class LinearCorrelationOscillatorStrategy : Strategy
 		_prices = new decimal[Length];
 		_index = 0;
 		_prevCorrelation = 0m;
-		_barsFromSignal = int.MaxValue;
+		_barsFromSignal = CooldownBars;
 	}
 
 	/// <inheritdoc />
