@@ -28,8 +28,8 @@ public class Russian20TimeFilterMomentumStrategy : Strategy
 	private readonly StrategyParam<int> _startHour;
 	private readonly StrategyParam<int> _endHour;
 
-	private SimpleMovingAverage? _movingAverage;
-	private Momentum? _momentum;
+	private SimpleMovingAverage _movingAverage;
+	private Momentum _momentum;
 	private decimal? _previousClose;
 	private decimal? _entryPrice;
 	private decimal _pipSize;

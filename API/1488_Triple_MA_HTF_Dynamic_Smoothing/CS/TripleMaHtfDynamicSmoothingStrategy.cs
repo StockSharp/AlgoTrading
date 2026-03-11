@@ -26,7 +26,6 @@ public class TripleMaHtfDynamicSmoothingStrategy : Strategy
 	private decimal _prevMa1;
 	private decimal _prevMa2;
 	private decimal _prevRsi;
-	private decimal _entryPrice;
 	private int _cooldown;
 
 	public TripleMaHtfDynamicSmoothingStrategy()
@@ -81,7 +80,6 @@ public class TripleMaHtfDynamicSmoothingStrategy : Strategy
 		_prevMa1 = 0;
 		_prevMa2 = 0;
 		_prevRsi = 0;
-		_entryPrice = 0;
 		_cooldown = 0;
 	}
 

@@ -43,7 +43,7 @@ public class BlauCMomentumStrategy : Strategy
 	private readonly StrategyParam<AppliedPrices> _priceForOpen;
 	private readonly StrategyParam<int> _signalBar;
 
-	private BlauMomentumCalculator? _momentum;
+	private BlauMomentumCalculator _momentum;
 	private readonly List<decimal> _indicatorHistory = new();
 	private TimeSpan _candleSpan;
 	private DateTimeOffset? _longTradeBlockUntil;

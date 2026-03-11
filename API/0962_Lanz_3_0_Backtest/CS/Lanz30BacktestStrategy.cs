@@ -31,7 +31,6 @@ public class Lanz30BacktestStrategy : Strategy
 	private bool _tradeExecuted;
 	private bool _tradeExpired;
 	private bool _orderSent;
-	private bool _fallbackTriggered;
 	private decimal _lastClose;
 	private int _entriesExecuted;
 	private DateTime _nextTradeDate;
@@ -95,7 +94,6 @@ public class Lanz30BacktestStrategy : Strategy
 		_tradeExecuted = false;
 		_tradeExpired = false;
 		_orderSent = false;
-		_fallbackTriggered = false;
 		_lastClose = 0m;
 		_entriesExecuted = 0;
 		_nextTradeDate = DateTime.MinValue;
@@ -137,7 +135,6 @@ public class Lanz30BacktestStrategy : Strategy
 			_tradeExecuted = false;
 			_tradeExpired = false;
 			_orderSent = false;
-			_fallbackTriggered = false;
 		}
 		else if (rangeSession)
 		{

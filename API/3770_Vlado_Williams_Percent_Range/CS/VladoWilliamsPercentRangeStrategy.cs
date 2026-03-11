@@ -28,7 +28,7 @@ public class VladoWilliamsPercentRangeStrategy : Strategy
 	private bool _sellSignal;
 	private int _lastSignal;
 
-	private WilliamsR? _williamsR;
+	private WilliamsR _williamsR;
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="VladoWilliamsPercentRangeStrategy"/> class.

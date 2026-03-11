@@ -48,8 +48,8 @@ public class SelfOptimizingRsiOrMfiTraderV3Strategy : Strategy
 	private decimal? _stopPrice;
 	private decimal? _takeProfitPrice;
 
-	private IIndicator? _indicator;
-	private AverageTrueRange? _atr;
+	private IIndicator _indicator;
+	private AverageTrueRange _atr;
 
 	/// <summary>
 	/// Indicator source used for optimization.

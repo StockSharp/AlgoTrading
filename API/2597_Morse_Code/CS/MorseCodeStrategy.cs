@@ -21,7 +21,6 @@ public class MorseCodeStrategy : Strategy
 	/// <summary>
 	/// Available Morse code style patterns where '1' is bullish and '0' is bearish.
 	/// </summary>
-	[System.CLSCompliant(false)]
 	public enum MorsePatternMasks
 	{
 		_0 = 0,
@@ -205,7 +204,6 @@ public class MorseCodeStrategy : Strategy
 	/// <summary>
 	/// Selected Morse code pattern.
 	/// </summary>
-	[System.CLSCompliant(false)]
 	public MorsePatternMasks Pattern
 	{
 		get => _patternMask.Value;

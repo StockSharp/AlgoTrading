@@ -24,8 +24,6 @@ public class VolumeSupertrendStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<decimal> _stopLossPercent;
 
-	private decimal _supertrendValue;
-	private int _supertrendDirection;
 	private int _cooldown;
 
 	/// <summary>
@@ -114,8 +112,6 @@ public class VolumeSupertrendStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_supertrendValue = default;
-		_supertrendDirection = default;
 		_cooldown = 0;
 	}
 

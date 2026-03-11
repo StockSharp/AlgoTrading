@@ -38,9 +38,9 @@ public class StochasticMartingaleGridStrategy : Strategy
 	private readonly StrategyParam<decimal> _zoneBuy;
 	private readonly StrategyParam<decimal> _zoneSell;
 
-	private List<Entry>? _entries;
+	private List<Entry> _entries;
 
-	private StochasticOscillator? _stochastic;
+	private StochasticOscillator _stochastic;
 	private decimal? _previousMain;
 	private decimal? _previousSignal;
 	private decimal _pipSize;

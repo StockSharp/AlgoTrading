@@ -47,7 +47,7 @@ public class TerminatorStrategy : Strategy
 	private readonly StrategyParam<int> _macdSlowLength;
 	private readonly StrategyParam<int> _macdSignalLength;
 
-	private MovingAverageConvergenceDivergenceSignal? _macd;
+	private MovingAverageConvergenceDivergenceSignal _macd;
 	private decimal? _previousMacd;
 	private decimal? _previousPreviousMacd;
 	private decimal _openVolume;

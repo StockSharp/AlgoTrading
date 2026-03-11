@@ -35,8 +35,8 @@ public class GreenTradeStrategy : Strategy
 	private readonly StrategyParam<int> _maxPositions;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private SmoothedMovingAverage? _smma;
-	private RelativeStrengthIndex? _rsi;
+	private SmoothedMovingAverage _smma;
+	private RelativeStrengthIndex _rsi;
 
 	private readonly List<decimal> _maHistory = new();
 	private readonly List<decimal> _rsiHistory = new();

@@ -29,9 +29,9 @@ public class MultiTimeFrameTraderStrategy : Strategy
 	private readonly StrategyParam<int> _shift;
 	private readonly StrategyParam<bool> _useTrading;
 
-	private RegressionChannelState? _m1State;
-	private RegressionChannelState? _m5State;
-	private RegressionChannelState? _h1State;
+	private RegressionChannelState _m1State;
+	private RegressionChannelState _m5State;
+	private RegressionChannelState _h1State;
 
 	private Sides? _positionSide;
 	private decimal? _stopPrice;

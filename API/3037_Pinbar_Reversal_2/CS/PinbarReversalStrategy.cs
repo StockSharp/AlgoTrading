@@ -7,7 +7,7 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-public class PinbarReversalStrategy : Strategy
+public class PinbarReversal2Strategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _fastPeriod;
@@ -18,7 +18,7 @@ public class PinbarReversalStrategy : Strategy
 	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
 	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
 
-	public PinbarReversalStrategy()
+	public PinbarReversal2Strategy()
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General");
 		_fastPeriod = Param(nameof(FastPeriod), 6).SetGreaterThanZero().SetDisplay("Fast EMA", "Fast EMA period", "Indicators");

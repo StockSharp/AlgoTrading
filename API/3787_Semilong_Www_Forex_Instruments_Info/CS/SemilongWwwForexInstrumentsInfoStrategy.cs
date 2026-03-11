@@ -33,8 +33,8 @@ public class SemilongWwwForexInstrumentsInfoStrategy : Strategy
 	private readonly StrategyParam<int> _autoMarginDivider;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private Shift? _shiftCloseOne;
-	private Shift? _shiftCloseTwo;
+	private Shift _shiftCloseOne;
+	private Shift _shiftCloseTwo;
 	private decimal _pipSize;
 	private int _positionDirection;
 	private decimal _entryPrice;

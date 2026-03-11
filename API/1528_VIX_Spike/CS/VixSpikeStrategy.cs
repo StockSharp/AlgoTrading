@@ -19,7 +19,6 @@ public class VixSpikeStrategy : Strategy
 	private readonly StrategyParam<int> _exitPeriods;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private int _barsSinceEntry;
 	private int _cooldown;
 
 	public int BbLength { get => _bbLength.Value; set => _bbLength.Value = value; }
@@ -55,7 +54,6 @@ public class VixSpikeStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_barsSinceEntry = 0;
 		_cooldown = 0;
 	}
 
@@ -70,7 +68,6 @@ public class VixSpikeStrategy : Strategy
 			Width = BbWidth
 		};
 
-		_barsSinceEntry = 0;
 		_cooldown = 0;
 
 		var subscription = SubscribeCandles(CandleType);

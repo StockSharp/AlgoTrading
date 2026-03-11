@@ -32,8 +32,8 @@ public class TimeBasedRangeBreakoutStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _lastOpenHour;
 
-	private Queue<decimal>? _rangeHistory;
-	private Queue<decimal>? _closeDiffHistory;
+	private Queue<decimal> _rangeHistory;
+	private Queue<decimal> _closeDiffHistory;
 
 	private DateTime? _currentDay;
 	private DateTime? _levelsDay;

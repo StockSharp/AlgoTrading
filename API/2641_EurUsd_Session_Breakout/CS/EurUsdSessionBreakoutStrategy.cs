@@ -30,12 +30,6 @@ public class EurUsdSessionBreakoutStrategy : Strategy
 	private Lowest _lowest = null!;
 	private decimal _currentHighest;
 	private decimal _currentLowest;
-	private decimal _rangeSessionHigh;
-	private decimal _rangeSessionLow;
-	private bool _sessionFound;
-	private bool _smallSession;
-	private bool _longOpened;
-	private bool _shortOpened;
 	private decimal _entryPrice;
 	private decimal _stopPrice;
 	private decimal _takePrice;
@@ -140,12 +134,6 @@ public class EurUsdSessionBreakoutStrategy : Strategy
 		_lowest = null!;
 		_currentHighest = 0;
 		_currentLowest = 0;
-		_rangeSessionHigh = 0;
-		_rangeSessionLow = 0;
-		_sessionFound = false;
-		_smallSession = false;
-		_longOpened = false;
-		_shortOpened = false;
 		_entryPrice = 0;
 		_stopPrice = 0;
 		_takePrice = 0;
@@ -160,10 +148,6 @@ public class EurUsdSessionBreakoutStrategy : Strategy
 		_lowest = new Lowest { Length = EuSessionLengthBars };
 
 		_currentDate = time.Date;
-		_sessionFound = false;
-		_smallSession = false;
-		_longOpened = false;
-		_shortOpened = false;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
@@ -267,12 +251,6 @@ public class EurUsdSessionBreakoutStrategy : Strategy
 	private void ResetDailyState(DateTime date)
 	{
 		_currentDate = date;
-		_sessionFound = false;
-		_smallSession = false;
-		_longOpened = false;
-		_shortOpened = false;
-		_rangeSessionHigh = 0m;
-		_rangeSessionLow = 0m;
 
 		if (Position == 0)
 			ClearTargets();

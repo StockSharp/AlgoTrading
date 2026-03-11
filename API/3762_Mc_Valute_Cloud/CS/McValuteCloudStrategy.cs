@@ -32,11 +32,11 @@ public class McValuteCloudStrategy : Strategy
 	private readonly StrategyParam<int> _takeProfit;
 	private readonly StrategyParam<int> _stopLoss;
 
-	private ExponentialMovingAverage? _filterMa;
-	private SmoothedMovingAverage? _blueMa;
-	private SmoothedMovingAverage? _limeMa;
-	private MovingAverageConvergenceDivergenceSignal? _macd;
-	private Ichimoku? _ichimoku;
+	private ExponentialMovingAverage _filterMa;
+	private SmoothedMovingAverage _blueMa;
+	private SmoothedMovingAverage _limeMa;
+	private MovingAverageConvergenceDivergenceSignal _macd;
+	private Ichimoku _ichimoku;
 
 	private decimal? _filterValue;
 	private decimal? _blueValue;

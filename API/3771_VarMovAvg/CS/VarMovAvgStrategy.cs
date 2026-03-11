@@ -1,4 +1,3 @@
-
 using System;
 using System.Linq;
 using System.Collections.Generic;
@@ -45,13 +44,13 @@ public class VarMovAvgStrategy : Strategy
 	private readonly StrategyParam<MovingAverageMethods> _stopMaMethod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private VariableMovingAverage? _vma;
-	private IIndicator? _stopLowMa;
-	private IIndicator? _stopHighMa;
-	private Queue<decimal>? _lowMaValues;
-	private Queue<decimal>? _highMaValues;
-	private SignalTracker? _longSignal;
-	private SignalTracker? _shortSignal;
+	private VariableMovingAverage _vma;
+	private IIndicator _stopLowMa;
+	private IIndicator _stopHighMa;
+	private Queue<decimal> _lowMaValues;
+	private Queue<decimal> _highMaValues;
+	private SignalTracker _longSignal;
+	private SignalTracker _shortSignal;
 
 	/// <summary>
 	/// VMA adaptive window length.

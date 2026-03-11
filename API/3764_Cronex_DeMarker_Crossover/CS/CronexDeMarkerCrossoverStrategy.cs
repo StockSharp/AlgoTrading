@@ -23,9 +23,9 @@ public class CronexDeMarkerCrossoverStrategy : Strategy
 	private readonly StrategyParam<int> _slowMaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private DeMarker? _deMarker;
-	private WeightedMovingAverage? _fastMa;
-	private WeightedMovingAverage? _slowMa;
+	private DeMarker _deMarker;
+	private WeightedMovingAverage _fastMa;
+	private WeightedMovingAverage _slowMa;
 
 	private decimal? _previousFast;
 	private decimal? _previousSlow;
