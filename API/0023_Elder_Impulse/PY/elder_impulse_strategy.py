@@ -4,222 +4,119 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan, Math
-from StockSharp.Messages import DataType, UnitTypes, Unit, CandleStates
+from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import ExponentialMovingAverage, MovingAverageConvergenceDivergenceSignal
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 class elder_impulse_strategy(Strategy):
     """
     Strategy based on Elder's Impulse System.
-    It combines EMA direction with MACD histogram to identify bullish and bearish impulses.
-    Green bar: EMA rising and MACD histogram positive
-    Red bar: EMA falling and MACD histogram negative
-    
+    Uses EMA direction and MACD histogram to determine impulse.
+    Green (bullish): EMA rising + MACD histogram rising -> buy
+    Red (bearish): EMA falling + MACD histogram falling -> sell
     """
-    
+
     def __init__(self):
         super(elder_impulse_strategy, self).__init__()
-        
-        # Initialize strategy parameters
         self._ema_period = self.Param("EmaPeriod", 13) \
             .SetDisplay("EMA Period", "Period for EMA calculation", "Indicators")
-        
-        self._macd_fast_period = self.Param("MacdFastPeriod", 12) \
-            .SetDisplay("MACD Fast Period", "Fast period for MACD", "Indicators")
-        
-        self._macd_slow_period = self.Param("MacdSlowPeriod", 26) \
-            .SetDisplay("MACD Slow Period", "Slow period for MACD", "Indicators")
-        
-        self._macd_signal_period = self.Param("MacdSignalPeriod", 9) \
-            .SetDisplay("MACD Signal Period", "Signal period for MACD", "Indicators")
-        
-        self._stop_loss_percent = self.Param("StopLossPercent", 2.0) \
-            .SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management")
-        
-        self._candle_type = self.Param("CandleType", tf(5)) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
-        
-        # Cache for EMA direction
-        self._previous_ema = 0.0
-        self._is_first_candle = True
 
-    @property
-    def ema_period(self):
-        """EMA period."""
-        return self._ema_period.Value
-
-    @ema_period.setter
-    def ema_period(self, value):
-        self._ema_period.Value = value
-
-    @property
-    def macd_fast_period(self):
-        """MACD fast period."""
-        return self._macd_fast_period.Value
-
-    @macd_fast_period.setter
-    def macd_fast_period(self, value):
-        self._macd_fast_period.Value = value
-
-    @property
-    def macd_slow_period(self):
-        """MACD slow period."""
-        return self._macd_slow_period.Value
-
-    @macd_slow_period.setter
-    def macd_slow_period(self, value):
-        self._macd_slow_period.Value = value
-
-    @property
-    def macd_signal_period(self):
-        """MACD signal period."""
-        return self._macd_signal_period.Value
-
-    @macd_signal_period.setter
-    def macd_signal_period(self, value):
-        self._macd_signal_period.Value = value
-
-    @property
-    def stop_loss_percent(self):
-        """Stop loss percentage."""
-        return self._stop_loss_percent.Value
-
-    @stop_loss_percent.setter
-    def stop_loss_percent(self, value):
-        self._stop_loss_percent.Value = value
+        self._prev_ema = 0.0
+        self._prev_histogram = 0.0
+        self._has_prev_values = False
+        self._prev_impulse = 0
+        self._cooldown = 0
 
     @property
     def candle_type(self):
-        """Candle type."""
         return self._candle_type.Value
 
-    @candle_type.setter
-    def candle_type(self, value):
-        self._candle_type.Value = value
-
     def OnReseted(self):
-        """
-        Resets internal state when strategy is reset.
-        """
         super(elder_impulse_strategy, self).OnReseted()
-        self._previous_ema = 0.0
-        self._is_first_candle = True
+        self._prev_ema = 0.0
+        self._prev_histogram = 0.0
+        self._has_prev_values = False
+        self._prev_impulse = 0
+        self._cooldown = 0
 
     def OnStarted(self, time):
-        """
-        Called when the strategy starts. Sets up indicators, subscriptions, and charting.
-        
-        :param time: The time when the strategy started.
-        """
         super(elder_impulse_strategy, self).OnStarted(time)
 
-        # Create indicators
         ema = ExponentialMovingAverage()
-        ema.Length = self.ema_period
-        
-        macd = MovingAverageConvergenceDivergenceSignal()
-        macd.Macd.ShortMa.Length = self.macd_fast_period
-        macd.Macd.LongMa.Length = self.macd_slow_period
-        macd.SignalMa.Length = self.macd_signal_period
+        ema.Length = self._ema_period.Value
+        macd_signal = MovingAverageConvergenceDivergenceSignal()
 
-        # Subscribe to candles
         subscription = self.SubscribeCandles(self.candle_type)
-        
-        # Process candles with both indicators
-        subscription.BindEx(ema, macd, self.ProcessCandle).Start()
+        subscription.BindEx(ema, macd_signal, self._process_candle).Start()
 
-        # Enable position protection
-        self.StartProtection(
-            takeProfit=None,
-            stopLoss=Unit(self.stop_loss_percent, UnitTypes.Percent)
-        )
-        # Setup chart visualization
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
             self.DrawIndicator(area, ema)
-            self.DrawIndicator(area, macd)
+            self.DrawIndicator(area, macd_signal)
             self.DrawOwnTrades(area)
 
-    def ProcessCandle(self, candle, ema_value, macd_value):
-        """
-        Processes each finished candle and executes Elder's Impulse System logic.
-        
-        :param candle: The processed candle message.
-        :param ema_value: The current value of the EMA indicator.
-        :param macd_value: The current value of the MACD indicator.
-        """
-        # Skip unfinished candles
+    def _process_candle(self, candle, ema_value, macd_value):
         if candle.State != CandleStates.Finished:
             return
-
-        # Check if strategy is ready to trade
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        ema_decimal = float(ema_value)
-
-        if self._is_first_candle:
-            self._previous_ema = ema_decimal
-            self._is_first_candle = False
+        if ema_value.IsEmpty:
             return
 
-        # Determine EMA direction
-        is_ema_rising = ema_decimal > self._previous_ema
-
-        # Extract MACD values
-        if macd_value.Macd is None:
+        ema_dec = float(ema_value.GetValue[float]())
+        if ema_dec == 0.0:
             return
-        macd_line = float(macd_value.Macd)
 
-        if macd_value.Signal is None:
+        macd_line = macd_value.Macd
+        signal_line = macd_value.Signal
+        if macd_line is None or signal_line is None:
             return
-        signal = float(macd_value.Signal)
 
-        # Get MACD histogram value (MACD - Signal)
-        macd_histogram = macd_line - signal
+        macd_f = float(macd_line)
+        signal_f = float(signal_line)
+        histogram = macd_f - signal_f
 
-        # Elder Impulse System:
-        # 1. Green bar: EMA rising and MACD histogram rising
-        # 2. Red bar: EMA falling and MACD histogram falling
-        # 3. Blue bar: EMA and MACD histogram in opposite directions
+        if not self._has_prev_values:
+            self._has_prev_values = True
+            self._prev_ema = ema_dec
+            self._prev_histogram = histogram
+            return
 
-        is_bullish = is_ema_rising and macd_histogram > 0
-        is_bearish = not is_ema_rising and macd_histogram < 0
+        ema_rising = ema_dec > self._prev_ema
+        histogram_rising = histogram > self._prev_histogram
 
-        # Entry logic
-        if is_bullish and self.Position <= 0:
-            # Buy signal: EMA rising and MACD histogram positive
-            volume = self.Volume + Math.Abs(self.Position)
-            self.BuyMarket(volume)
-            self.LogInfo("Buy signal: EMA rising, MACD histogram positive. EMA = {0:F2}, MACD Histogram = {1:F4}".format(
-                ema_decimal, macd_histogram))
-        elif is_bearish and self.Position >= 0:
-            # Sell signal: EMA falling and MACD histogram negative
-            volume = self.Volume + Math.Abs(self.Position)
-            self.SellMarket(volume)
-            self.LogInfo("Sell signal: EMA falling, MACD histogram negative. EMA = {0:F2}, MACD Histogram = {1:F4}".format(
-                ema_decimal, macd_histogram))
+        if ema_rising and histogram_rising:
+            impulse = 1
+        elif not ema_rising and not histogram_rising and ema_dec != self._prev_ema:
+            impulse = -1
+        else:
+            impulse = 0
 
-        # Exit logic
-        if self.Position > 0 and macd_histogram < 0:
-            # Exit long position when MACD histogram turns negative
-            self.SellMarket(Math.Abs(self.Position))
-            self.LogInfo("Exiting long position: MACD histogram turned negative. MACD Histogram = {0:F4}".format(
-                macd_histogram))
-        elif self.Position < 0 and macd_histogram > 0:
-            # Exit short position when MACD histogram turns positive
-            self.BuyMarket(Math.Abs(self.Position))
-            self.LogInfo("Exiting short position: MACD histogram turned positive. MACD Histogram = {0:F4}".format(
-                macd_histogram))
+        if self._cooldown > 0:
+            self._cooldown -= 1
+            self._prev_ema = ema_dec
+            self._prev_histogram = histogram
+            self._prev_impulse = impulse
+            return
 
-        # Store current EMA value for next comparison
-        self._previous_ema = ema_decimal
+        if impulse == 1 and self._prev_impulse != 1 and self.Position <= 0:
+            if self.Position < 0:
+                self.BuyMarket()
+            self.BuyMarket()
+            self._cooldown = 65
+        elif impulse == -1 and self._prev_impulse != -1 and self.Position >= 0:
+            if self.Position > 0:
+                self.SellMarket()
+            self.SellMarket()
+            self._cooldown = 65
+
+        self._prev_ema = ema_dec
+        self._prev_histogram = histogram
+        self._prev_impulse = impulse
 
     def CreateClone(self):
-        """
-        !! REQUIRED!! Creates a new instance of the strategy.
-        """
         return elder_impulse_strategy()

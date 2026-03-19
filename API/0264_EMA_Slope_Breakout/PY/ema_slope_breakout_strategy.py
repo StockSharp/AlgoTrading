@@ -3,49 +3,32 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
+import math
+from System import TimeSpan
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
 
 class ema_slope_breakout_strategy(Strategy):
     """
-    Strategy based on Exponential Moving Average Slope breakout
-    Enters positions when the slope of EMA exceeds average slope plus a multiple of standard deviation
+    Strategy based on EMA slope breakout.
+    Enters when slope of EMA exceeds average slope plus a multiple of standard deviation.
+    Exits when slope returns to average.
     """
 
     def __init__(self):
         super(ema_slope_breakout_strategy, self).__init__()
-
-        # Initialize strategy parameters
         self._ema_length = self.Param("EmaLength", 20) \
-            .SetGreaterThanZero() \
-            .SetDisplay("EMA Length", "Period for Exponential Moving Average", "Indicator Parameters") \
-            .SetCanOptimize(True) \
-            .SetOptimize(10, 50, 5)
-
+            .SetDisplay("EMA Length", "Period for EMA", "Indicator Parameters")
         self._lookback_period = self.Param("LookbackPeriod", 20) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Lookback Period", "Period for slope statistics calculation", "Strategy Parameters") \
-            .SetCanOptimize(True) \
-            .SetOptimize(10, 50, 5)
-
+            .SetDisplay("Lookback Period", "Period for slope statistics", "Strategy Parameters")
         self._deviation_multiplier = self.Param("DeviationMultiplier", 2.0) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Deviation Multiplier", "Standard deviation multiplier for breakout detection", "Strategy Parameters") \
-            .SetCanOptimize(True) \
-            .SetOptimize(1.0, 3.0, 0.5)
-
+            .SetDisplay("Deviation Multiplier", "Std dev multiplier for breakout", "Strategy Parameters")
         self._stop_loss_percent = self.Param("StopLossPercent", 2.0) \
-            .SetGreaterThanZero() \
             .SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management")
-
-        self._candle_type = self.Param("CandleType", tf(5)) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
-        # Internal state variables
-        self._ema = None
         self._prev_ema_value = 0.0
         self._current_slope = 0.0
         self._avg_slope = 0.0
@@ -55,179 +38,104 @@ class ema_slope_breakout_strategy(Strategy):
         self._is_initialized = False
 
     @property
-    def ema_length(self):
-        """Exponential Moving Average length"""
-        return self._ema_length.Value
-
-    @ema_length.setter
-    def ema_length(self, value):
-        self._ema_length.Value = value
-
-    @property
-    def lookback_period(self):
-        """Lookback period for slope statistics calculation"""
-        return self._lookback_period.Value
-
-    @lookback_period.setter
-    def lookback_period(self, value):
-        self._lookback_period.Value = value
-
-    @property
-    def deviation_multiplier(self):
-        """Standard deviation multiplier for breakout detection"""
-        return self._deviation_multiplier.Value
-
-    @deviation_multiplier.setter
-    def deviation_multiplier(self, value):
-        self._deviation_multiplier.Value = value
-
-    @property
     def candle_type(self):
-        """Candle type"""
         return self._candle_type.Value
 
-    @candle_type.setter
-    def candle_type(self, value):
-        self._candle_type.Value = value
-
-    @property
-    def stop_loss_percent(self):
-        """Stop loss percentage"""
-        return self._stop_loss_percent.Value
-
-    @stop_loss_percent.setter
-    def stop_loss_percent(self, value):
-        self._stop_loss_percent.Value = value
-
-    def GetWorkingSecurities(self):
-        return [(self.Security, self.candle_type)]
-
-
     def OnReseted(self):
-        """
-        Resets internal state when strategy is reset.
-        """
         super(ema_slope_breakout_strategy, self).OnReseted()
         self._prev_ema_value = 0.0
         self._current_slope = 0.0
         self._avg_slope = 0.0
         self._std_dev_slope = 0.0
-        self._slopes = [0.0] * self.lookback_period
+        lookback = self._lookback_period.Value
+        self._slopes = [0.0] * lookback
         self._current_index = 0
         self._is_initialized = False
 
     def OnStarted(self, time):
         super(ema_slope_breakout_strategy, self).OnStarted(time)
 
-        self._slopes = [0.0] * self.lookback_period
+        lookback = self._lookback_period.Value
+        self._slopes = [0.0] * lookback
 
-        self._ema = ExponentialMovingAverage()
-        self._ema.Length = self.ema_length
-
+        ema = ExponentialMovingAverage()
+        ema.Length = self._ema_length.Value
 
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(self._ema, self.ProcessCandle).Start()
+        subscription.Bind(ema, self._process_candle).Start()
 
-        # Setup chart visualization if available
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, self._ema)
+            self.DrawIndicator(area, ema)
             self.DrawOwnTrades(area)
 
-        # Set up position protection
+        sl = self._stop_loss_percent.Value
         self.StartProtection(
-            takeProfit=None,
-            stopLoss=Unit(self.stop_loss_percent, UnitTypes.Percent)
+            Unit(0.0, UnitTypes.Absolute),
+            Unit(float(sl), UnitTypes.Percent)
         )
-    def ProcessCandle(self, candle, ema_value):
-        # Skip unfinished candles
+
+    def _process_candle(self, candle, ema_val):
         if candle.State != CandleStates.Finished:
             return
 
-        # Check if indicator is formed
-        if not self._ema.IsFormed:
-            return
+        ema_val = float(ema_val)
 
-        # Calculate the slope
         if not self._is_initialized:
-            self._prev_ema_value = ema_value
+            self._prev_ema_value = ema_val
             self._is_initialized = True
             return
 
-        # Calculate current slope (simple difference for now)
-        self._current_slope = ema_value - self._prev_ema_value
+        self._current_slope = ema_val - self._prev_ema_value
 
-        # Store slope in array and update index
+        lookback = self._lookback_period.Value
         self._slopes[self._current_index] = self._current_slope
-        self._current_index = (self._current_index + 1) % self.lookback_period
+        self._current_index = (self._current_index + 1) % lookback
 
-        # Calculate statistics once we have enough data
         if not self.IsFormedAndOnlineAndAllowTrading():
-            self._prev_ema_value = ema_value
+            self._prev_ema_value = ema_val
             return
 
-        self.CalculateStatistics()
+        self._calculate_statistics()
 
-        # Trading logic
-        if Math.Abs(self._avg_slope) > 0:  # Avoid division by zero
-            # Long signal: slope exceeds average + k*stddev (slope is positive and we don't have a long position)
+        if abs(self._avg_slope) > 0:
+            dev_mult = self._deviation_multiplier.Value
+
             if (self._current_slope > 0 and
-                self._current_slope > self._avg_slope + self.deviation_multiplier * self._std_dev_slope and
-                self.Position <= 0):
-                # Cancel existing orders
-                self.CancelActiveOrders()
-
-                # Enter long position
-                volume = self.Volume + Math.Abs(self.Position)
-                self.BuyMarket(volume)
-
-                self.LogInfo("Long signal: Slope {0} > Avg {1} + {2}*StdDev {3}".format(
-                    self._current_slope, self._avg_slope, self.deviation_multiplier, self._std_dev_slope))
-            # Short signal: slope exceeds average + k*stddev in negative direction (slope is negative and we don't have a short position)
+                    self._current_slope > self._avg_slope + dev_mult * self._std_dev_slope and
+                    self.Position <= 0):
+                if self.Position < 0:
+                    self.BuyMarket()
+                self.BuyMarket()
             elif (self._current_slope < 0 and
-                  self._current_slope < self._avg_slope - self.deviation_multiplier * self._std_dev_slope and
-                  self.Position >= 0):
-                # Cancel existing orders
-                self.CancelActiveOrders()
+                    self._current_slope < self._avg_slope - dev_mult * self._std_dev_slope and
+                    self.Position >= 0):
+                if self.Position > 0:
+                    self.SellMarket()
+                self.SellMarket()
 
-                # Enter short position
-                volume = self.Volume + Math.Abs(self.Position)
-                self.SellMarket(volume)
-
-                self.LogInfo("Short signal: Slope {0} < Avg {1} - {2}*StdDev {3}".format(
-                    self._current_slope, self._avg_slope, self.deviation_multiplier, self._std_dev_slope))
-
-            # Exit conditions - when slope returns to average
             if self.Position > 0 and self._current_slope < self._avg_slope:
-                # Exit long position
-                self.SellMarket(Math.Abs(self.Position))
-                self.LogInfo("Exit long: Slope {0} < Avg {1}".format(self._current_slope, self._avg_slope))
+                self.SellMarket()
             elif self.Position < 0 and self._current_slope > self._avg_slope:
-                # Exit short position
-                self.BuyMarket(Math.Abs(self.Position))
-                self.LogInfo("Exit short: Slope {0} > Avg {1}".format(self._current_slope, self._avg_slope))
+                self.BuyMarket()
 
-        # Store current EMA value for next slope calculation
-        self._prev_ema_value = ema_value
+        self._prev_ema_value = ema_val
 
-    def CalculateStatistics(self):
-        # Reset statistics
+    def _calculate_statistics(self):
+        lookback = self._lookback_period.Value
         self._avg_slope = 0.0
-        sum_squared_diffs = 0.0
+        sum_sq = 0.0
 
-        # Calculate average
-        for i in range(self.lookback_period):
+        for i in range(lookback):
             self._avg_slope += self._slopes[i]
-        self._avg_slope /= float(self.lookback_period)
+        self._avg_slope /= float(lookback)
 
-        # Calculate standard deviation
-        for i in range(self.lookback_period):
+        for i in range(lookback):
             diff = self._slopes[i] - self._avg_slope
-            sum_squared_diffs += diff * diff
+            sum_sq += diff * diff
 
-        self._std_dev_slope = Math.Sqrt(sum_squared_diffs / float(self.lookback_period))
+        self._std_dev_slope = math.sqrt(sum_sq / float(lookback))
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return ema_slope_breakout_strategy()
