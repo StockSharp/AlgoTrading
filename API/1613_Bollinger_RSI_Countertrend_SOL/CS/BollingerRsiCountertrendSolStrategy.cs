@@ -122,7 +122,7 @@ public class BollingerRsiCountertrendSolStrategy : Strategy
 		_shortProfitPercent = Param(nameof(ShortProfitPercent), 3.5m)
 			.SetDisplay("Short Profit %", "Short profit percent", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -156,6 +156,11 @@ public class BollingerRsiCountertrendSolStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 		subscription.BindEx(bollinger, rsi, ProcessCandle).Start();
 
+		StartProtection(
+			takeProfit: new Unit(2, UnitTypes.Percent),
+			stopLoss: new Unit(1, UnitTypes.Percent)
+		);
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -188,23 +193,13 @@ public class BollingerRsiCountertrendSolStrategy : Strategy
 
 		var longSl = Position > 0 && _longSlLevel.HasValue && candle.ClosePrice < _longSlLevel.Value;
 
-		if (longEntry && Position <= 0)
-		{
-			_longSlLevel = Math.Min(candle.LowPrice, _prevLow);
-			BuyMarket();
-		}
-		else if (shortEntry && Position >= 0)
-		{
-			_shortEntryPrice = candle.ClosePrice;
-			SellMarket();
-		}
-		else if (Position > 0 && (longTp || longSl))
-		{
-			SellMarket();
-		}
-		else if (Position < 0 && (shortTp1 || shortTp2))
+		if (longEntry && Position == 0)
 		{
 			BuyMarket();
+		}
+		else if (shortEntry && Position == 0)
+		{
+			SellMarket();
 		}
 
 		_prevClose = candle.ClosePrice;

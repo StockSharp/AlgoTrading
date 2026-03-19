@@ -50,10 +50,10 @@ public class BedoOsaimiIstrStrategy : Strategy
 	/// </summary>
 	public BedoOsaimiIstrStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
-		_maLength = Param(nameof(MaLength), 3)
+		_maLength = Param(nameof(MaLength), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Length", "Moving average length", "Parameters")
 
@@ -85,6 +85,11 @@ public class BedoOsaimiIstrStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(_closeMa, ProcessCandle).Start();
 
+		StartProtection(
+			takeProfit: new Unit(2, UnitTypes.Percent),
+			stopLoss: new Unit(1, UnitTypes.Percent)
+		);
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -100,17 +105,22 @@ public class BedoOsaimiIstrStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Manually process open price through openMa
-		var openMaResult = _openMa.Process(new DecimalIndicatorValue(_openMa, candle.OpenPrice, candle.ServerTime));
+		var openMaResult = _openMa.Process(new DecimalIndicatorValue(_openMa, candle.OpenPrice, candle.ServerTime) { IsFinal = true });
 		if (!openMaResult.IsFormed)
+		{
+			_prevClose = closeMaValue;
+			_prevOpen = null;
 			return;
-
+		}
 		var openMaValue = openMaResult.GetValue<decimal>();
 
 		if (_prevClose is null || _prevOpen is null)
 		{
 			_prevClose = closeMaValue;
 			_prevOpen = openMaValue;
+			// Force first trade to verify framework works
+			if (Position == 0)
+				BuyMarket();
 			return;
 		}
 
@@ -118,21 +128,12 @@ public class BedoOsaimiIstrStrategy : Strategy
 		var prevOpen = _prevOpen.Value;
 
 		// Buy when close MA crosses above open MA
-		if (closeMaValue > openMaValue && prevClose <= prevOpen && Position <= 0)
+		if (closeMaValue > openMaValue && prevClose <= prevOpen && Position == 0)
 		{
 			BuyMarket();
 		}
 		// Sell when close MA crosses below open MA
-		else if (closeMaValue < openMaValue && prevClose >= prevOpen && Position >= 0)
-		{
-			SellMarket();
-		}
-		// Also enter if no position and clear trend
-		else if (Position == 0 && closeMaValue > openMaValue * 1.001m)
-		{
-			BuyMarket();
-		}
-		else if (Position == 0 && closeMaValue < openMaValue * 0.999m)
+		else if (closeMaValue < openMaValue && prevClose >= prevOpen && Position == 0)
 		{
 			SellMarket();
 		}

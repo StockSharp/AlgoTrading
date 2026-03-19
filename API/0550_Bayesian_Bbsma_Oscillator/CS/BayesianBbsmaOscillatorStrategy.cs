@@ -110,7 +110,7 @@ public int JawLength { get => _jawLength.Value; set => _jawLength.Value = value;
 /// </summary>
 public BayesianBbsmaOscillatorStrategy()
 {
-_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 .SetDisplay("Candle Type", "Type of candles to use", "General");
 
 _bbSmaPeriod = Param(nameof(BbSmaPeriod), 20)
@@ -140,11 +140,11 @@ _smaPeriod = Param(nameof(SmaPeriod), 20)
 .SetGreaterThanZero()
 .SetDisplay("SMA Period", "Simple moving average period", "General");
 
-_bayesPeriod = Param(nameof(BayesPeriod), 20)
+_bayesPeriod = Param(nameof(BayesPeriod), 10)
 .SetGreaterThanZero()
 .SetDisplay("Bayes Period", "Lookback period for probability calculation", "Bayesian");
 
-_lowerThreshold = Param(nameof(LowerThreshold), 49m)
+_lowerThreshold = Param(nameof(LowerThreshold), 30m)
 .SetDisplay("Lower Threshold", "Probability threshold (%)", "Bayesian");
 
 _useBwConfirmation = Param(nameof(UseBwConfirmation), false)
@@ -205,8 +205,13 @@ _smaDownSma = new SMA { Length = BayesPeriod };
 
 var subscription = SubscribeCandles(CandleType);
 subscription
-.BindEx(_bollingerBands, _smaClose, _aoFastSma, _aoSlowSma, _jawSma, ProcessCandle)
+.BindEx(_bollingerBands, ProcessCandle)
 .Start();
+
+StartProtection(
+	takeProfit: new Unit(2, UnitTypes.Percent),
+	stopLoss: new Unit(1, UnitTypes.Percent)
+);
 
 var area = CreateChartArea();
 if (area != null)
@@ -217,8 +222,7 @@ DrawOwnTrades(area);
 }
 }
 
-private void ProcessCandle(ICandleMessage candle, IIndicatorValue bbValue, IIndicatorValue smaValue,
-IIndicatorValue aoFastValue, IIndicatorValue aoSlowValue, IIndicatorValue jawValue)
+private void ProcessCandle(ICandleMessage candle, IIndicatorValue bbValue)
 {
 if (candle.State != CandleStates.Finished)
 return;
@@ -229,16 +233,25 @@ bb.LowBand is not decimal bbLower ||
 bb.MovingAverage is not decimal bbBasis)
 return;
 
-if (!smaValue.IsFormed || !aoFastValue.IsFormed || !aoSlowValue.IsFormed || !jawValue.IsFormed)
+var t = candle.ServerTime;
+var close = candle.ClosePrice;
+var median = (candle.HighPrice + candle.LowPrice) / 2m;
+
+var smaVal = _smaClose.Process(new DecimalIndicatorValue(_smaClose, close, t) { IsFinal = true });
+var aoFastVal = _aoFastSma.Process(new DecimalIndicatorValue(_aoFastSma, median, t) { IsFinal = true });
+var aoSlowVal = _aoSlowSma.Process(new DecimalIndicatorValue(_aoSlowSma, median, t) { IsFinal = true });
+var jawVal = _jawSma.Process(new DecimalIndicatorValue(_jawSma, close, t) { IsFinal = true });
+
+if (!aoSlowVal.IsFormed || !smaVal.IsFormed)
 return;
 
-var smaClose = smaValue.GetValue<decimal>();
-var aoFast = aoFastValue.GetValue<decimal>();
-var aoSlow = aoSlowValue.GetValue<decimal>();
-var jaw = jawValue.GetValue<decimal>();
+var smaClose = smaVal.GetValue<decimal>();
+var aoFast = aoFastVal.GetValue<decimal>();
+var aoSlow = aoSlowVal.GetValue<decimal>();
+var jaw = jawVal.GetValue<decimal>();
 
 var ao = aoFast - aoSlow;
-var aoSmaValue = _acSma.Process(new DecimalIndicatorValue(_acSma, ao, candle.ServerTime));
+var aoSmaValue = _acSma.Process(new DecimalIndicatorValue(_acSma, ao, candle.ServerTime) { IsFinal = true });
 if (!aoSmaValue.IsFormed)
 return;
 
@@ -253,29 +266,31 @@ var acAoColorIndex = acAoIsBullish ? 1 : acAoIsBearish ? -1 : 0;
 var pricesAreMovingAwayUpFromAlligator = candle.ClosePrice > jaw && candle.OpenPrice > jaw;
 var pricesAreMovingAwayDownFromAlligator = candle.ClosePrice < jaw && candle.OpenPrice < jaw;
 
-var probBbUpperUp = _bbUpperUpSma.Process(new DecimalIndicatorValue(_bbUpperUpSma, candle.ClosePrice > bbUpper ? 1m : 0m, candle.ServerTime)).GetValue<decimal>();
-var probBbUpperDown = _bbUpperDownSma.Process(new DecimalIndicatorValue(_bbUpperDownSma, candle.ClosePrice < bbUpper ? 1m : 0m, candle.ServerTime)).GetValue<decimal>();
-var probBbBasisUp = _bbBasisUpSma.Process(new DecimalIndicatorValue(_bbBasisUpSma, candle.ClosePrice > bbBasis ? 1m : 0m, candle.ServerTime)).GetValue<decimal>();
-var probBbBasisDown = _bbBasisDownSma.Process(new DecimalIndicatorValue(_bbBasisDownSma, candle.ClosePrice < bbBasis ? 1m : 0m, candle.ServerTime)).GetValue<decimal>();
-var probSmaUp = _smaUpSma.Process(new DecimalIndicatorValue(_smaUpSma, candle.ClosePrice > smaClose ? 1m : 0m, candle.ServerTime)).GetValue<decimal>();
-var probSmaDown = _smaDownSma.Process(new DecimalIndicatorValue(_smaDownSma, candle.ClosePrice < smaClose ? 1m : 0m, candle.ServerTime)).GetValue<decimal>();
+var probBbUpperUp = _bbUpperUpSma.Process(new DecimalIndicatorValue(_bbUpperUpSma, candle.ClosePrice > bbUpper ? 1m : 0m, candle.ServerTime) { IsFinal = true }).GetValue<decimal>();
+var probBbUpperDown = _bbUpperDownSma.Process(new DecimalIndicatorValue(_bbUpperDownSma, candle.ClosePrice < bbUpper ? 1m : 0m, candle.ServerTime) { IsFinal = true }).GetValue<decimal>();
+var probBbBasisUp = _bbBasisUpSma.Process(new DecimalIndicatorValue(_bbBasisUpSma, candle.ClosePrice > bbBasis ? 1m : 0m, candle.ServerTime) { IsFinal = true }).GetValue<decimal>();
+var probBbBasisDown = _bbBasisDownSma.Process(new DecimalIndicatorValue(_bbBasisDownSma, candle.ClosePrice < bbBasis ? 1m : 0m, candle.ServerTime) { IsFinal = true }).GetValue<decimal>();
+var probSmaUp = _smaUpSma.Process(new DecimalIndicatorValue(_smaUpSma, candle.ClosePrice > smaClose ? 1m : 0m, candle.ServerTime) { IsFinal = true }).GetValue<decimal>();
+var probSmaDown = _smaDownSma.Process(new DecimalIndicatorValue(_smaDownSma, candle.ClosePrice < smaClose ? 1m : 0m, candle.ServerTime) { IsFinal = true }).GetValue<decimal>();
 
-if (!_bbUpperUpSma.IsFormed || !_bbUpperDownSma.IsFormed ||
-!_bbBasisUpSma.IsFormed || !_bbBasisDownSma.IsFormed ||
-!_smaUpSma.IsFormed || !_smaDownSma.IsFormed)
+if (!_bbUpperUpSma.IsFormed)
 return;
 
-var probUpBbUpper = probBbUpperUp / (probBbUpperUp + probBbUpperDown);
-var probUpBbBasis = probBbBasisUp / (probBbBasisUp + probBbBasisDown);
-var probUpSma = probSmaUp / (probSmaUp + probSmaDown);
+var sumBbUpper = probBbUpperUp + probBbUpperDown;
+var sumBbBasis = probBbBasisUp + probBbBasisDown;
+var sumSma = probSmaUp + probSmaDown;
+if (sumBbUpper == 0 || sumBbBasis == 0 || sumSma == 0) { _prevAo = ao; _prevAc = ac; return; }
+var probUpBbUpper = probBbUpperUp / sumBbUpper;
+var probUpBbBasis = probBbBasisUp / sumBbBasis;
+var probUpSma = probSmaUp / sumSma;
 
 var numDown = probUpBbUpper * probUpBbBasis * probUpSma;
 var denDown = numDown + (1m - probUpBbUpper) * (1m - probUpBbBasis) * (1m - probUpSma);
 var sigmaProbsDown = denDown == 0m ? 0m : numDown / denDown;
 
-var probDownBbUpper = probBbUpperDown / (probBbUpperDown + probBbUpperUp);
-var probDownBbBasis = probBbBasisDown / (probBbBasisDown + probBbBasisUp);
-var probDownSma = probSmaDown / (probSmaDown + probSmaUp);
+var probDownBbUpper = probBbUpperDown / sumBbUpper;
+var probDownBbBasis = probBbBasisDown / sumBbBasis;
+var probDownSma = probSmaDown / sumSma;
 
 var numUp = probDownBbUpper * probDownBbBasis * probDownSma;
 var denUp = numUp + (1m - probDownBbUpper) * (1m - probDownBbBasis) * (1m - probDownSma);
@@ -287,16 +302,16 @@ var probPrime = denPrime == 0m ? 0m : numPrime / denPrime;
 
 var threshold = LowerThreshold / 100m;
 
-// Signal: use Bayesian probability level crossovers with relaxed thresholds
+// Signal: use Bayesian probability crossovers
 var upperThreshold = 1m - threshold;
 var longSignal = (sigmaProbsUp > upperThreshold && _prevSigmaProbsUp <= upperThreshold) ||
 	(probPrime > upperThreshold && _prevProbPrime <= upperThreshold);
 var shortSignal = (sigmaProbsDown > upperThreshold && _prevSigmaProbsDown <= upperThreshold) ||
 	(probPrime < threshold && _prevProbPrime >= threshold);
 
-if (longSignal && Position <= 0)
+if (longSignal && Position == 0)
 BuyMarket();
-else if (shortSignal && Position >= 0)
+else if (shortSignal && Position == 0)
 SellMarket();
 
 _prevAo = ao;

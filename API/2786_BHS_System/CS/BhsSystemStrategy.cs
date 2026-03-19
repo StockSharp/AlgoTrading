@@ -178,7 +178,7 @@ public class BhsSystemStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Trailing Step (points)", "Minimum step in points between trailing updates", "Risk");
 
-		_roundStepPoints = Param(nameof(RoundStepPoints), 500)
+		_roundStepPoints = Param(nameof(RoundStepPoints), 2000)
 			.SetGreaterThanZero()
 			.SetDisplay("Round Step (points)", "Number of points used to build round price levels", "Execution");
 
@@ -198,7 +198,7 @@ public class BhsSystemStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("AMA Slow Period", "Slow smoothing constant for AMA", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame used for analysis", "General");
 	}
 

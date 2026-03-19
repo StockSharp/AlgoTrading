@@ -108,10 +108,10 @@ public class BollingerWidthBreakoutStrategy : Strategy
 			
 			.SetOptimize(10, 50, 5);
 		
-		_multiplier = Param(nameof(Multiplier), 2.0m)
+		_multiplier = Param(nameof(Multiplier), 1.5m)
 			.SetGreaterThanZero()
 			.SetDisplay("Multiplier", "Standard deviation multiplier for breakout detection", "Indicators")
-			
+
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 		
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -160,6 +160,11 @@ public class BollingerWidthBreakoutStrategy : Strategy
 			.BindEx(_bollinger, _atr, ProcessBollinger)
 			.Start();
 
+		StartProtection(
+			takeProfit: new Unit(2, UnitTypes.Percent),
+			stopLoss: new Unit(1, UnitTypes.Percent)
+		);
+
 		// Create chart area for visualization
 		var area = CreateChartArea();
 		if (area != null)
@@ -191,60 +196,31 @@ public class BollingerWidthBreakoutStrategy : Strategy
 		var lastWidth = upperBand - lowerBand;
 
 		// Process width through average
-		var widthAvgValue = _widthAverage.Process(new DecimalIndicatorValue(_widthAverage, lastWidth, candle.ServerTime));
+		var widthAvgValue = _widthAverage.Process(new DecimalIndicatorValue(_widthAverage, lastWidth, candle.ServerTime) { IsFinal = true });
 		var avgWidth = widthAvgValue.ToDecimal();
 		
-		// Calculate width standard deviation (simplified approach)
-		var stdDev = Math.Abs(lastWidth - avgWidth) * 1.5m; // Simplified approximation
-		
 		// Skip if indicators are not formed yet
-		if (!_bollinger.IsFormed || !_widthAverage.IsFormed || !_atr.IsFormed)
+		if (!_widthAverage.IsFormed)
 		{
 			return;
 		}
-		
-		// Check if trading is allowed
-		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			return;
-		}
-		
+
 		// Bollinger width breakout detection
-		if (lastWidth > avgWidth + Multiplier * stdDev)
+		if (lastWidth > avgWidth * (1m + Multiplier / 10m))
 		{
 			// Determine direction based on price and bands
-			var priceDirection = false;
-			
-			// If price is closer to upper band, go long. If closer to lower band, go short.
-			var upperDistance = Math.Abs(candle.ClosePrice - upperBand);
-			var lowerDistance = Math.Abs(candle.ClosePrice - lowerBand);
-			
-			if (upperDistance < lowerDistance)
+			var upperDistance = (candle.ClosePrice - upperBand).Abs();
+			var lowerDistance = (candle.ClosePrice - lowerBand).Abs();
+			var priceDirection = upperDistance < lowerDistance;
+
+			if (priceDirection && Position == 0)
 			{
-				// Price is closer to upper band, likely bullish
-				priceDirection = true;
+				BuyMarket();
 			}
-			
-			// Cancel active orders before placing new ones
-			CancelActiveOrders();
-			
-			// Trade in the determined direction
-			if (priceDirection && Position <= 0)
+			else if (!priceDirection && Position == 0)
 			{
-				// Bullish direction - Buy
-				BuyMarket(Volume + Math.Abs(Position));
+				SellMarket();
 			}
-			else if (!priceDirection && Position >= 0)
-			{
-				// Bearish direction - Sell
-				SellMarket(Volume + Math.Abs(Position));
-			}
-		}
-		// Check for exit condition - width returns to average
-		else if ((Position > 0 || Position < 0) && lastWidth < avgWidth)
-		{
-			// Exit position
-			ClosePosition();
 		}
 	}
 }
