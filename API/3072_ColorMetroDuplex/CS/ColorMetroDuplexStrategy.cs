@@ -37,7 +37,7 @@ public class ColorMetroDuplexStrategy : Strategy
 
 	public ColorMetroDuplexStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe", "General");
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 7)
@@ -87,6 +87,11 @@ public class ColorMetroDuplexStrategy : Strategy
 			.Bind(rsi, ProcessCandle)
 			.Start();
 
+		StartProtection(
+			takeProfit: new Unit(2, UnitTypes.Percent),
+			stopLoss: new Unit(1, UnitTypes.Percent)
+		);
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -99,9 +104,6 @@ public class ColorMetroDuplexStrategy : Strategy
 	private void ProcessCandle(ICandleMessage candle, decimal rsiVal)
 	{
 		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		if (_cooldownRemaining > 0)
@@ -184,14 +186,14 @@ public class ColorMetroDuplexStrategy : Strategy
 		// Short signal: fast crosses above slow (up crosses down upward)
 		var shortOpen = prevUp < prevDown && up >= down;
 
-		if (_cooldownRemaining == 0 && longOpen && Position <= 0)
+		if (_cooldownRemaining == 0 && longOpen && Position == 0)
 		{
-			BuyMarket(Volume + Math.Abs(Position));
+			BuyMarket();
 			_cooldownRemaining = SignalCooldownBars;
 		}
-		else if (_cooldownRemaining == 0 && shortOpen && Position >= 0)
+		else if (_cooldownRemaining == 0 && shortOpen && Position == 0)
 		{
-			SellMarket(Volume + Math.Abs(Position));
+			SellMarket();
 			_cooldownRemaining = SignalCooldownBars;
 		}
 	}

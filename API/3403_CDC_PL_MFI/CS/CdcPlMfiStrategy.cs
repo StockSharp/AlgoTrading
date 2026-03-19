@@ -32,7 +32,7 @@ public class CdcPlMfiStrategy : Strategy
 
 	public CdcPlMfiStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 		_mfiPeriod = Param(nameof(MfiPeriod), 14)
 			.SetGreaterThanZero()
@@ -66,6 +66,11 @@ public class CdcPlMfiStrategy : Strategy
 		var mfi = new MoneyFlowIndex { Length = MfiPeriod };
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(mfi, ProcessCandle).Start();
+
+		StartProtection(
+			takeProfit: new Unit(2, UnitTypes.Percent),
+			stopLoss: new Unit(1, UnitTypes.Percent)
+		);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal mfiValue)
@@ -96,26 +101,14 @@ public class CdcPlMfiStrategy : Strategy
 				&& curr.OpenPrice > prev.HighPrice
 				&& curr.ClosePrice < (prev.OpenPrice + prev.ClosePrice) / 2m;
 
-			if (isPiercing && mfiValue < LongLevel && Position <= 0 && _candlesSinceTrade >= SignalCooldownCandles)
+			if (isPiercing && mfiValue < LongLevel && Position == 0 && _candlesSinceTrade >= SignalCooldownCandles)
 			{
 				BuyMarket();
 				_candlesSinceTrade = 0;
 			}
-			else if (isDarkCloud && mfiValue > ShortLevel && Position >= 0 && _candlesSinceTrade >= SignalCooldownCandles)
+			else if (isDarkCloud && mfiValue > ShortLevel && Position == 0 && _candlesSinceTrade >= SignalCooldownCandles)
 			{
 				SellMarket();
-				_candlesSinceTrade = 0;
-			}
-
-			// Exit on MFI crossing
-			if (Position > 0 && _prevMfi >= ShortLevel && mfiValue < ShortLevel && _candlesSinceTrade >= SignalCooldownCandles)
-			{
-				SellMarket();
-				_candlesSinceTrade = 0;
-			}
-			else if (Position < 0 && _prevMfi <= LongLevel && mfiValue > LongLevel && _candlesSinceTrade >= SignalCooldownCandles)
-			{
-				BuyMarket();
 				_candlesSinceTrade = 0;
 			}
 		}

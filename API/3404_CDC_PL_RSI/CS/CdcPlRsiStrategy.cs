@@ -32,7 +32,7 @@ public class CdcPlRsiStrategy : Strategy
 
 	public CdcPlRsiStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetGreaterThanZero()
@@ -66,6 +66,11 @@ public class CdcPlRsiStrategy : Strategy
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(rsi, ProcessCandle).Start();
+
+		StartProtection(
+			takeProfit: new Unit(2, UnitTypes.Percent),
+			stopLoss: new Unit(1, UnitTypes.Percent)
+		);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal rsiValue)
@@ -96,26 +101,14 @@ public class CdcPlRsiStrategy : Strategy
 				&& curr.OpenPrice > prev.HighPrice
 				&& curr.ClosePrice < (prev.OpenPrice + prev.ClosePrice) / 2m;
 
-			if (isPiercing && rsiValue < OversoldLevel && Position <= 0 && _candlesSinceTrade >= SignalCooldownCandles)
+			if (isPiercing && rsiValue < OversoldLevel && Position == 0 && _candlesSinceTrade >= SignalCooldownCandles)
 			{
 				BuyMarket();
 				_candlesSinceTrade = 0;
 			}
-			else if (isDarkCloud && rsiValue > OverboughtLevel && Position >= 0 && _candlesSinceTrade >= SignalCooldownCandles)
+			else if (isDarkCloud && rsiValue > OverboughtLevel && Position == 0 && _candlesSinceTrade >= SignalCooldownCandles)
 			{
 				SellMarket();
-				_candlesSinceTrade = 0;
-			}
-
-			// Exit on RSI crossing
-			if (Position > 0 && _prevRsi >= OverboughtLevel && rsiValue < OverboughtLevel && _candlesSinceTrade >= SignalCooldownCandles)
-			{
-				SellMarket();
-				_candlesSinceTrade = 0;
-			}
-			else if (Position < 0 && _prevRsi <= OversoldLevel && rsiValue > OversoldLevel && _candlesSinceTrade >= SignalCooldownCandles)
-			{
-				BuyMarket();
 				_candlesSinceTrade = 0;
 			}
 		}

@@ -128,15 +128,15 @@ public class ColorZerolagMomentumX2Strategy : Strategy
 	/// </summary>
 	public ColorZerolagMomentumX2Strategy()
 	{
-		_trendCandleType = Param(nameof(TrendCandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_trendCandleType = Param(nameof(TrendCandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Trend Timeframe", "Candle type for trend", "General");
 
-		_trendMomentumPeriod = Param(nameof(TrendMomentumPeriod), 34)
+		_trendMomentumPeriod = Param(nameof(TrendMomentumPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Trend Momentum Period", "Momentum length for trend", "Parameters")
 			;
 
-		_trendMaLength = Param(nameof(TrendMaLength), 15)
+		_trendMaLength = Param(nameof(TrendMaLength), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Trend Smooth Length", "Zero lag MA length for trend", "Parameters")
 			;
@@ -144,12 +144,12 @@ public class ColorZerolagMomentumX2Strategy : Strategy
 		_signalCandleType = Param(nameof(SignalCandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Signal Timeframe", "Candle type for signals", "General");
 
-		_signalMomentumPeriod = Param(nameof(SignalMomentumPeriod), 34)
+		_signalMomentumPeriod = Param(nameof(SignalMomentumPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Signal Momentum Period", "Momentum length for signals", "Parameters")
 			;
 
-		_signalMaLength = Param(nameof(SignalMaLength), 15)
+		_signalMaLength = Param(nameof(SignalMaLength), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("Signal Smooth Length", "Zero lag MA length for signals", "Parameters")
 			;
@@ -189,67 +189,58 @@ public class ColorZerolagMomentumX2Strategy : Strategy
 		base.OnStarted2(time);
 
 		StartProtection(
-			new Unit(2000m, UnitTypes.Absolute),
-			new Unit(1000m, UnitTypes.Absolute));
+			takeProfit: new Unit(2, UnitTypes.Percent),
+			stopLoss: new Unit(1, UnitTypes.Percent));
 
-		var trendMomentum = new Momentum { Length = TrendMomentumPeriod };
-		var trendMa = new ZeroLagExponentialMovingAverage { Length = TrendMaLength };
+		var trendFast = new ExponentialMovingAverage { Length = TrendMaLength };
+		var trendSlow = new ExponentialMovingAverage { Length = TrendMomentumPeriod };
 		var trendSub = SubscribeCandles(TrendCandleType);
-		trendSub.Bind(trendMomentum, trendMa, ProcessTrend).Start();
+		trendSub.Bind(trendFast, trendSlow, ProcessTrend).Start();
 
-		var signalMomentum = new Momentum { Length = SignalMomentumPeriod };
-		var signalMa = new ZeroLagExponentialMovingAverage { Length = SignalMaLength };
+		var signalFast = new ExponentialMovingAverage { Length = SignalMaLength };
+		var signalSlow = new ExponentialMovingAverage { Length = SignalMomentumPeriod };
 		var signalSub = SubscribeCandles(SignalCandleType);
-		signalSub.Bind(signalMomentum, signalMa, ProcessSignal).Start();
+		signalSub.Bind(signalFast, signalSlow, ProcessSignal).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, signalSub);
-			DrawIndicator(area, signalMomentum);
-			DrawIndicator(area, signalMa);
+			DrawIndicator(area, signalFast);
+			DrawIndicator(area, signalSlow);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessTrend(ICandleMessage candle, decimal mom, decimal ma)
+	private void ProcessTrend(ICandleMessage candle, decimal fast, decimal slow)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		_trend = mom > ma ? 1 : -1;
+		_trend = fast > slow ? 1 : -1;
 	}
 
-	private void ProcessSignal(ICandleMessage candle, decimal mom, decimal ma)
+	private void ProcessSignal(ICandleMessage candle, decimal fast, decimal slow)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
 		if (_prevSignalMomentum is null || _prevSignalMa is null)
 		{
-			_prevSignalMomentum = mom;
-			_prevSignalMa = ma;
+			_prevSignalMomentum = fast;
+			_prevSignalMa = slow;
 			return;
 		}
 
-		var buyClose = BuyPosClose && (_prevSignalMomentum >= _prevSignalMa && mom < ma || _trend < 0);
-		var sellClose = SellPosClose && (_prevSignalMomentum <= _prevSignalMa && mom > ma || _trend > 0);
-		var buyOpen = _trend > 0 && BuyPosOpen && _prevSignalMomentum <= _prevSignalMa && mom > ma;
-		var sellOpen = _trend < 0 && SellPosOpen && _prevSignalMomentum >= _prevSignalMa && mom < ma;
+		var buyOpen = BuyPosOpen && _prevSignalMomentum <= _prevSignalMa && fast > slow;
+		var sellOpen = SellPosOpen && _prevSignalMomentum >= _prevSignalMa && fast < slow;
 
-		if (buyClose && Position > 0)
+		if (buyOpen && Position == 0)
+			BuyMarket();
+		else if (sellOpen && Position == 0)
 			SellMarket();
 
-		if (sellClose && Position < 0)
-			BuyMarket();
-
-		if (buyOpen && Position <= 0)
-			BuyMarket();
-
-		if (sellOpen && Position >= 0)
-			SellMarket();
-
-		_prevSignalMomentum = mom;
-		_prevSignalMa = ma;
+		_prevSignalMomentum = fast;
+		_prevSignalMa = slow;
 	}
 }

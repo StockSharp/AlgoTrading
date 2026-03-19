@@ -50,7 +50,7 @@ public class BullRowBreakoutStrategy : Strategy
 	/// </summary>
 	public BullRowBreakoutStrategy()
 	{
-		_candleTimeFrame = Param(nameof(CandleTimeFrame), TimeSpan.FromMinutes(30))
+		_candleTimeFrame = Param(nameof(CandleTimeFrame), TimeSpan.FromMinutes(5))
 		.SetDisplay("Timeframe", "Primary candle timeframe", "Market")
 		;
 
@@ -345,9 +345,6 @@ public class BullRowBreakoutStrategy : Strategy
 		_stochasticHistory.Dequeue();
 
 		ManageProtectiveLevels(candle);
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
 
 		if (Position > 0m)
 		return;

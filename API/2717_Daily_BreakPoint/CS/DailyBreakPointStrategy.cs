@@ -165,7 +165,7 @@ public class DailyBreakPointStrategy : Strategy
 		_takeProfitPips = Param(nameof(TakeProfitPips), 30m)
 		.SetDisplay("Take Profit (pips)", "Fixed take profit distance", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Intraday candle series", "Data");
 	}
 
@@ -197,6 +197,11 @@ public class DailyBreakPointStrategy : Strategy
 
 		Volume = OrderVolume;
 		_pipSize = CalculatePipSize();
+
+		StartProtection(
+			takeProfit: new Unit(2, UnitTypes.Percent),
+			stopLoss: new Unit(1, UnitTypes.Percent)
+		);
 
 		var intradaySubscription = SubscribeCandles(CandleType);
 		intradaySubscription.Bind(ProcessCandle).Start();

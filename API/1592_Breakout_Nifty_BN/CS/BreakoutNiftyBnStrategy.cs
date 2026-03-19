@@ -43,7 +43,7 @@ public class BreakoutNiftyBnStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Channel Length", "Donchian channel period", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -73,6 +73,11 @@ public class BreakoutNiftyBnStrategy : Strategy
 			.Bind(highest, lowest, atr, ProcessCandle)
 			.Start();
 
+		StartProtection(
+			takeProfit: new Unit(2, UnitTypes.Percent),
+			stopLoss: new Unit(1, UnitTypes.Percent)
+		);
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -86,40 +91,16 @@ public class BreakoutNiftyBnStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var trailOffset = atr * AtrMultiplier;
-
 		if (Position == 0)
 		{
 			if (candle.ClosePrice >= high)
 			{
 				BuyMarket();
-				_entryPrice = candle.ClosePrice;
-				_trailSl = candle.ClosePrice - trailOffset;
 			}
 			else if (candle.ClosePrice <= low)
 			{
 				SellMarket();
-				_entryPrice = candle.ClosePrice;
-				_trailSl = candle.ClosePrice + trailOffset;
 			}
-		}
-		else if (Position > 0)
-		{
-			var newSl = candle.ClosePrice - trailOffset;
-			if (newSl > _trailSl)
-				_trailSl = newSl;
-
-			if (candle.ClosePrice < _trailSl)
-				SellMarket();
-		}
-		else if (Position < 0)
-		{
-			var newSl = candle.ClosePrice + trailOffset;
-			if (newSl < _trailSl)
-				_trailSl = newSl;
-
-			if (candle.ClosePrice > _trailSl)
-				BuyMarket();
 		}
 	}
 }

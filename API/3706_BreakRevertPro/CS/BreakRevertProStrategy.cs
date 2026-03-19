@@ -77,7 +77,7 @@ public class BreakRevertProStrategy : Strategy
 		.SetDisplay("Reversion Threshold", "Maximum probability that still allows mean-reversion trades", "Signals")
 		.SetOptimize(0.2m, 0.8m, 0.05m);
 
-		_tradeDelaySeconds = Param(nameof(TradeDelaySeconds), 600)
+		_tradeDelaySeconds = Param(nameof(TradeDelaySeconds), 86400)
 		.SetDisplay("Trade Delay", "Minimum delay between consecutive entries (seconds)", "Risk");
 
 		_maxPositions = Param(nameof(MaxPositions), 1)
@@ -89,7 +89,7 @@ public class BreakRevertProStrategy : Strategy
 		_safetyTradeIntervalSeconds = Param(nameof(SafetyTradeIntervalSeconds), 900)
 		.SetDisplay("Safety Interval", "Delay between safety trade checks (seconds)", "Safety");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Primary Candles", "Primary timeframe for signal generation", "Data");
 	}
 
@@ -242,7 +242,10 @@ public class BreakRevertProStrategy : Strategy
 		.Bind(ProcessH1Candle)
 		.Start();
 
-		StartProtection(null, null);
+		StartProtection(
+		takeProfit: new Unit(2, UnitTypes.Percent),
+		stopLoss: new Unit(1, UnitTypes.Percent)
+	);
 	}
 
 	private void ProcessPrimaryCandle(ICandleMessage candle, decimal atrValue)
@@ -258,7 +261,7 @@ public class BreakRevertProStrategy : Strategy
 
 		if (_m1TrendAverage is not null)
 		{
-			var trendValue = _m1TrendAverage.Process(new DecimalIndicatorValue(_m1TrendAverage, close, time)).ToDecimal();
+			var trendValue = _m1TrendAverage.Process(new DecimalIndicatorValue(_m1TrendAverage, close, time) { IsFinal = true }).ToDecimal();
 			if (_m1TrendAverage.IsFormed)
 			_m1Trend = close - trendValue;
 		}
@@ -269,14 +272,14 @@ public class BreakRevertProStrategy : Strategy
 			var eventValue = move >= pip * 5m ? 1m : 0m;
 			if (_eventFrequency is not null)
 			{
-				var avg = _eventFrequency.Process(new DecimalIndicatorValue(_eventFrequency, eventValue, time)).ToDecimal();
+				var avg = _eventFrequency.Process(new DecimalIndicatorValue(_eventFrequency, eventValue, time) { IsFinal = true }).ToDecimal();
 				if (_eventFrequency.IsFormed)
 				_poissonProbability = Clamp(avg, 0m, 1m);
 			}
 
 			if (_volatilityEma is not null)
 			{
-				var ema = _volatilityEma.Process(new DecimalIndicatorValue(_volatilityEma, move, time)).ToDecimal();
+				var ema = _volatilityEma.Process(new DecimalIndicatorValue(_volatilityEma, move, time) { IsFinal = true }).ToDecimal();
 				if (_volatilityEma.IsFormed)
 				{
 					var normalized = pip > 0m ? ema / (pip * 10m) : 0m;
@@ -302,7 +305,7 @@ public class BreakRevertProStrategy : Strategy
 		return;
 
 		var close = candle.ClosePrice;
-		var trend = _m15TrendAverage.Process(new DecimalIndicatorValue(_m15TrendAverage, close, candle.CloseTime)).ToDecimal();
+		var trend = _m15TrendAverage.Process(new DecimalIndicatorValue(_m15TrendAverage, close, candle.CloseTime) { IsFinal = true }).ToDecimal();
 		if (_m15TrendAverage.IsFormed)
 		_m15Trend = close - trend;
 	}
@@ -318,7 +321,7 @@ public class BreakRevertProStrategy : Strategy
 		return;
 
 		var close = candle.ClosePrice;
-		var trend = _h1TrendAverage.Process(new DecimalIndicatorValue(_h1TrendAverage, close, candle.CloseTime)).ToDecimal();
+		var trend = _h1TrendAverage.Process(new DecimalIndicatorValue(_h1TrendAverage, close, candle.CloseTime) { IsFinal = true }).ToDecimal();
 		if (_h1TrendAverage.IsFormed)
 		_h1Trend = close - trend;
 	}
@@ -335,24 +338,21 @@ public class BreakRevertProStrategy : Strategy
 		if (tradeVolume <= 0m)
 		return;
 
+		if (Position != 0)
+			return;
+
 		var breakout = IsBreakoutSignal(pip);
 		var reversion = IsMeanReversionSignal(pip);
 
-		if (breakout && !HasReachedMaxExposure(1, tradeVolume))
+		if (breakout)
 		{
-			EnterLong(tradeVolume);
+			BuyMarket();
 			_lastTradeTime = now;
-			_safetyTradeSent = false;
 		}
-		else if (reversion && !HasReachedMaxExposure(-1, tradeVolume))
+		else if (reversion)
 		{
-			EnterShort(tradeVolume);
+			SellMarket();
 			_lastTradeTime = now;
-			_safetyTradeSent = false;
-		}
-		else
-		{
-			CheckSafetyTrade(now, tradeVolume);
 		}
 	}
 

@@ -30,7 +30,7 @@ public class DarkCloudPiercingCciStrategy : Strategy
 
 	public DarkCloudPiercingCciStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 		_cciPeriod = Param(nameof(CciPeriod), 14)
 			.SetGreaterThanZero()
@@ -62,6 +62,11 @@ public class DarkCloudPiercingCciStrategy : Strategy
 		var cci = new CommodityChannelIndex { Length = CciPeriod };
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(cci, ProcessCandle).Start();
+
+		StartProtection(
+			takeProfit: new Unit(2, UnitTypes.Percent),
+			stopLoss: new Unit(1, UnitTypes.Percent)
+		);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal cciValue)
@@ -92,26 +97,14 @@ public class DarkCloudPiercingCciStrategy : Strategy
 				&& curr.OpenPrice > prev.HighPrice
 				&& curr.ClosePrice < (prev.OpenPrice + prev.ClosePrice) / 2m;
 
-			if (isPiercing && cciValue < -EntryLevel && Position <= 0 && _candlesSinceTrade >= SignalCooldownCandles)
+			if (isPiercing && cciValue < -EntryLevel && Position == 0 && _candlesSinceTrade >= SignalCooldownCandles)
 			{
 				BuyMarket();
 				_candlesSinceTrade = 0;
 			}
-			else if (isDarkCloud && cciValue > EntryLevel && Position >= 0 && _candlesSinceTrade >= SignalCooldownCandles)
+			else if (isDarkCloud && cciValue > EntryLevel && Position == 0 && _candlesSinceTrade >= SignalCooldownCandles)
 			{
 				SellMarket();
-				_candlesSinceTrade = 0;
-			}
-
-			// Exit on CCI crossing back
-			if (Position > 0 && _prevCci > EntryLevel && cciValue < EntryLevel && _candlesSinceTrade >= SignalCooldownCandles)
-			{
-				SellMarket();
-				_candlesSinceTrade = 0;
-			}
-			else if (Position < 0 && _prevCci < -EntryLevel && cciValue > -EntryLevel && _candlesSinceTrade >= SignalCooldownCandles)
-			{
-				BuyMarket();
 				_candlesSinceTrade = 0;
 			}
 		}

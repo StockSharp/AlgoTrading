@@ -42,7 +42,7 @@ public class CciWithVolatilityFilterStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "Period for ATR calculation", "Indicators");
 
-		_cciOversold = Param(nameof(CciOversold), -10m)
+		_cciOversold = Param(nameof(CciOversold), -100m)
 			.SetDisplay("CCI Oversold", "CCI oversold level", "Indicators");
 
 		_cciOverbought = Param(nameof(CciOverbought), 100m)
@@ -52,7 +52,7 @@ public class CciWithVolatilityFilterStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Signal Cooldown", "Bars to wait between entries", "Trading");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -111,11 +111,8 @@ public class CciWithVolatilityFilterStrategy : Strategy
 		if (!cciValue.IsFormed || !atrValue.IsFormed)
 			return;
 
-		var atrAverage = _atrSma.Process(new DecimalIndicatorValue(_atrSma, atrValue.ToDecimal(), candle.ServerTime));
+		var atrAverage = _atrSma.Process(new DecimalIndicatorValue(_atrSma, atrValue.ToDecimal(), candle.ServerTime) { IsFinal = true });
 		if (!atrAverage.IsFormed)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		var cci = cciValue.ToDecimal();
@@ -123,19 +120,17 @@ public class CciWithVolatilityFilterStrategy : Strategy
 		var averageAtr = atrAverage.ToDecimal();
 		var isTradableVolatility = averageAtr <= 0m || atr <= averageAtr * 10m;
 
-		if (Position > 0 && cci > 0m)
-		{
-			SellMarket(Position);
-			_cooldownRemaining = SignalCooldownBars;
-			return;
-		}
-
 		if (_cooldownRemaining > 0 || !isTradableVolatility)
 			return;
 
 		if (Position == 0 && cci <= CciOversold)
 		{
 			BuyMarket();
+			_cooldownRemaining = SignalCooldownBars;
+		}
+		else if (Position == 0 && cci >= CciOverbought)
+		{
+			SellMarket();
 			_cooldownRemaining = SignalCooldownBars;
 		}
 	}
