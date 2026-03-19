@@ -1,4 +1,7 @@
 using System;
+using System.Collections.Generic;
+
+using Ecng.Common;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -18,6 +21,8 @@ public class Hans123TraderRangeBreakoutStrategy : Strategy
 
 	private decimal _entryPrice;
 	private decimal _stopPrice;
+	private decimal _prevHighest;
+	private decimal _prevLowest;
 
 	public Hans123TraderRangeBreakoutStrategy()
 	{
@@ -41,6 +46,11 @@ public class Hans123TraderRangeBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
@@ -48,14 +58,18 @@ public class Hans123TraderRangeBreakoutStrategy : Strategy
 
 		_entryPrice = 0;
 		_stopPrice = 0;
+		_prevHighest = 0;
+		_prevLowest = 0;
 	}
 
-		protected override void OnStarted2(DateTime time)
+	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
 		_entryPrice = 0;
 		_stopPrice = 0;
+		_prevHighest = 0;
+		_prevLowest = 0;
 
 		var highest = new Highest { Length = RangeLength };
 		var lowest = new Lowest { Length = RangeLength };
@@ -64,6 +78,11 @@ public class Hans123TraderRangeBreakoutStrategy : Strategy
 		subscription
 			.Bind(highest, lowest, ProcessCandle)
 			.Start();
+
+		StartProtection(
+			takeProfit: new Unit(2, UnitTypes.Percent),
+			stopLoss: new Unit(1, UnitTypes.Percent)
+		);
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -81,59 +100,28 @@ public class Hans123TraderRangeBreakoutStrategy : Strategy
 			return;
 
 		if (highestValue <= 0 || lowestValue <= 0)
+		{
+			_prevHighest = highestValue;
+			_prevLowest = lowestValue;
 			return;
-
-		// Manage open position with simple stop
-		if (Position > 0)
-		{
-			if (_stopPrice > 0 && candle.LowPrice <= _stopPrice)
-			{
-				SellMarket();
-				_entryPrice = 0;
-				_stopPrice = 0;
-			}
-			else
-			{
-				// Trail stop to lowest
-				var newStop = lowestValue;
-				if (newStop > _stopPrice)
-					_stopPrice = newStop;
-			}
 		}
-		else if (Position < 0)
+
+		// Entry on breakout using previous levels
+		if (Position == 0 && _prevHighest > 0 && _prevLowest > 0)
 		{
-			if (_stopPrice > 0 && candle.HighPrice >= _stopPrice)
+			if (candle.ClosePrice > _prevHighest)
 			{
 				BuyMarket();
-				_entryPrice = 0;
-				_stopPrice = 0;
+				_entryPrice = candle.ClosePrice;
 			}
-			else
+			else if (candle.ClosePrice < _prevLowest)
 			{
-				// Trail stop to highest
-				var newStop = highestValue;
-				if (_stopPrice == 0 || newStop < _stopPrice)
-					_stopPrice = newStop;
+				SellMarket();
+				_entryPrice = candle.ClosePrice;
 			}
 		}
 
-		// Entry on breakout
-		if (Position == 0)
-		{
-			if (candle.ClosePrice > highestValue)
-			{
-				// Bullish breakout
-				BuyMarket();
-				_entryPrice = candle.ClosePrice;
-				_stopPrice = lowestValue;
-			}
-			else if (candle.ClosePrice < lowestValue)
-			{
-				// Bearish breakout
-				SellMarket();
-				_entryPrice = candle.ClosePrice;
-				_stopPrice = highestValue;
-			}
-		}
+		_prevHighest = highestValue;
+		_prevLowest = lowestValue;
 	}
 }

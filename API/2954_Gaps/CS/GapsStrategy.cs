@@ -1,7 +1,8 @@
 using System;
 using System.Collections.Generic;
 
-using StockSharp.Algo.Indicators;
+using Ecng.Common;
+
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -32,10 +33,10 @@ public class GapsStrategy : Strategy
 
 	public GapsStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe", "General");
 
-		_gapPercent = Param(nameof(GapPercent), 0.5m)
+		_gapPercent = Param(nameof(GapPercent), 0.05m)
 			.SetDisplay("Gap Percent", "Minimum gap size as percentage", "Trading");
 	}
 
@@ -61,6 +62,11 @@ public class GapsStrategy : Strategy
 		subscription
 			.Bind(ProcessCandle)
 			.Start();
+
+		StartProtection(
+			takeProfit: new Unit(2, UnitTypes.Percent),
+			stopLoss: new Unit(1, UnitTypes.Percent)
+		);
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -92,25 +98,12 @@ public class GapsStrategy : Strategy
 		var gapPct = (open - prevClose) / prevClose * 100;
 
 		// Gap up detected - sell expecting gap fill
-		if (gapPct > GapPercent && Position >= 0)
+		if (gapPct > GapPercent && Position == 0)
 		{
-			if (Position > 0)
-				SellMarket();
 			SellMarket();
 		}
 		// Gap down detected - buy expecting gap fill
-		else if (gapPct < -GapPercent && Position <= 0)
-		{
-			if (Position < 0)
-				BuyMarket();
-			BuyMarket();
-		}
-		// Exit at mid when gap fills
-		else if (Position > 0 && close > prevClose)
-		{
-			SellMarket();
-		}
-		else if (Position < 0 && close < prevClose)
+		else if (gapPct < -GapPercent && Position == 0)
 		{
 			BuyMarket();
 		}

@@ -37,7 +37,7 @@ public class FiboStopStrategy : Strategy
 
 	public FiboStopStrategy()
 	{
-		_lookbackPeriod = Param(nameof(LookbackPeriod), 120)
+		_lookbackPeriod = Param(nameof(LookbackPeriod), 500)
 			.SetGreaterThanZero()
 			.SetDisplay("Lookback", "Bars to calculate high/low range", "General");
 
@@ -47,11 +47,11 @@ public class FiboStopStrategy : Strategy
 		_stopLossPct = Param(nameof(StopLossPct), 2m)
 			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
 
-		_cooldownBars = Param(nameof(CooldownBars), 20)
+		_cooldownBars = Param(nameof(CooldownBars), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Cooldown Bars", "Bars between new entries", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -88,7 +88,7 @@ public class FiboStopStrategy : Strategy
 
 		StartProtection(
 			stopLoss: new Unit(StopLossPct, UnitTypes.Percent),
-			takeProfit: null
+			takeProfit: new Unit(2, UnitTypes.Percent)
 		);
 
 		var area = CreateChartArea();
@@ -147,22 +147,7 @@ public class FiboStopStrategy : Strategy
 				_barsSinceTrade = 0;
 			}
 		}
-		else if (Position > 0)
-		{
-			// Close long if price breaks below 61.8% retracement
-			if (candle.ClosePrice < fibo618)
-			{
-				SellMarket();
-			}
-		}
-		else if (Position < 0)
-		{
-			// Close short if price breaks above 38.2% retracement from bottom
-			if (candle.ClosePrice > _lowestLow + range * 0.618m)
-			{
-				BuyMarket();
-			}
-		}
+		// Exits handled by StartProtection
 
 		// Update rolling high/low
 		if (_barCount > LookbackPeriod * 2)

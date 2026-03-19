@@ -123,10 +123,10 @@ public class IchimokuWidthBreakoutStrategy : Strategy
 			
 			.SetOptimize(10, 50, 5);
 		
-		_multiplier = Param(nameof(Multiplier), 2.0m)
+		_multiplier = Param(nameof(Multiplier), 1.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Multiplier", "Standard deviation multiplier for breakout detection", "Indicators")
-			
+
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 		
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -171,7 +171,7 @@ public class IchimokuWidthBreakoutStrategy : Strategy
 			
 		// Enable stop loss protection
 		StartProtection(
-			takeProfit: new Unit(0, UnitTypes.Absolute),
+			takeProfit: new Unit(2, UnitTypes.Percent),
 			stopLoss: new Unit(StopLoss, UnitTypes.Percent)
 		);
 		
@@ -213,57 +213,33 @@ public class IchimokuWidthBreakoutStrategy : Strategy
 		var width = Math.Abs(senkouSpanA - senkouSpanB);
 		
 		// Process width through average
-		var widthAvgValue = _widthAverage.Process(new DecimalIndicatorValue(_widthAverage, width, candle.ServerTime));
+		var widthAvgValue = _widthAverage.Process(new DecimalIndicatorValue(_widthAverage, width, candle.ServerTime) { IsFinal = true });
 		var avgWidth = widthAvgValue.ToDecimal();
-		
-		// Calculate width standard deviation (simplified approach)
-		var stdDev = Math.Abs(width - avgWidth) * 1.5m; // Simplified approximation
 		
 		// Skip if indicators are not formed yet
 		if (!_ichimoku.IsFormed || !_widthAverage.IsFormed)
 		{
 			return;
 		}
-		
-		// Check if trading is allowed
-		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			return;
-		}
-		
+
 		// Cloud width breakout detection
-		if (width > avgWidth + Multiplier * stdDev)
+		if (width > avgWidth * Multiplier && Position == 0)
 		{
 			// Determine trade direction based on price relative to cloud
 			var upperCloud = Math.Max(senkouSpanA, senkouSpanB);
 			var lowerCloud = Math.Min(senkouSpanA, senkouSpanB);
-			
-			var bullish = candle.ClosePrice > upperCloud || candle.ClosePrice > kijun;
-			var bearish = candle.ClosePrice < lowerCloud || candle.ClosePrice < kijun;
-			
-			// Cancel active orders before placing new ones
-			CancelActiveOrders();
-			
-			// Only trade if price is clearly outside the cloud
-			if (bullish && Position <= 0)
+
+			var bullish = candle.ClosePrice > upperCloud;
+			var bearish = candle.ClosePrice < lowerCloud;
+
+			if (bullish)
 			{
-				// Bullish signal - Buy
-				BuyMarket(Volume + Math.Abs(Position));
+				BuyMarket();
 			}
-			else if (bearish && Position >= 0)
+			else if (bearish)
 			{
-				// Bearish signal - Sell
-				SellMarket(Volume + Math.Abs(Position));
+				SellMarket();
 			}
-		}
-		// Check for exit condition - width returns to average or price enters cloud
-		else if ((Position > 0 || Position < 0) && 
-				(width < avgWidth || 
-				 (candle.ClosePrice > Math.Min(senkouSpanA, senkouSpanB) && 
-				  candle.ClosePrice < Math.Max(senkouSpanA, senkouSpanB))))
-		{
-			// Exit position when cloud width returns to normal or price enters cloud
-			ClosePosition();
 		}
 	}
 }

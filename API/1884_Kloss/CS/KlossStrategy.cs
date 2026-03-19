@@ -59,12 +59,12 @@ public class KlossStrategy : Strategy
 			.SetDisplay("CCI Period", "Length of CCI", "Indicators")
 			.SetOptimize(5, 30, 5);
 
-		_cciLevel = Param(nameof(CciLevel), 100m)
+		_cciLevel = Param(nameof(CciLevel), 50m)
 			.SetGreaterThanZero()
 			.SetDisplay("CCI Level", "Distance from zero to trigger signal", "Indicators")
 			.SetOptimize(50m, 200m, 10m);
 
-		_stochLevel = Param(nameof(StochLevel), 15m)
+		_stochLevel = Param(nameof(StochLevel), 10m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic Level", "Distance from 50 to trigger", "Indicators")
 			.SetOptimize(5m, 40m, 5m);
@@ -77,7 +77,7 @@ public class KlossStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Take Profit", "Take profit in price steps", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candles for calculations", "General");
 
 		_cooldownBars = Param(nameof(CooldownBars), 3)
@@ -109,10 +109,9 @@ public class KlossStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 		subscription.BindEx(ma, cci, stoch, ProcessCandle).Start();
 
-		var step = Security?.PriceStep ?? 1m;
 		StartProtection(
-			stopLoss: new Unit(StopLoss * step, UnitTypes.Absolute),
-			takeProfit: new Unit(TakeProfit * step, UnitTypes.Absolute));
+			takeProfit: new Unit(2, UnitTypes.Percent),
+			stopLoss: new Unit(1, UnitTypes.Percent));
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -142,19 +141,15 @@ public class KlossStrategy : Strategy
 		var sellSignal = cci > CciLevel && stochK > 50m + StochLevel && stochD > 50m + StochLevel && price < ma;
 		var currentSignal = buySignal ? 1 : sellSignal ? -1 : 0;
 
-		if (_cooldownRemaining == 0)
+		if (_cooldownRemaining == 0 && Position == 0)
 		{
-			if (currentSignal > 0 && _previousSignal <= 0 && Position <= 0)
+			if (currentSignal > 0 && _previousSignal <= 0)
 			{
-				if (Position < 0)
-					BuyMarket();
 				BuyMarket();
 				_cooldownRemaining = CooldownBars;
 			}
-			else if (currentSignal < 0 && _previousSignal >= 0 && Position >= 0)
+			else if (currentSignal < 0 && _previousSignal >= 0)
 			{
-				if (Position > 0)
-					SellMarket();
 				SellMarket();
 				_cooldownRemaining = CooldownBars;
 			}

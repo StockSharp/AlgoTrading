@@ -152,6 +152,11 @@ public class FxChaosScalpStrategy : Strategy
 		var tradingSubscription = SubscribeCandles(TradingCandleType);
 		tradingSubscription.Bind(ProcessTradingCandleRaw).Start();
 
+		StartProtection(
+			takeProfit: new Unit(2, UnitTypes.Percent),
+			stopLoss: new Unit(1, UnitTypes.Percent)
+		);
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -179,12 +184,6 @@ public class FxChaosScalpStrategy : Strategy
 
 		var aoValue = _awesomeOscillator.Process(candle);
 
-		if (ManageRisk(candle))
-		{
-			UpdatePreviousLevels(candle);
-			return;
-		}
-
 		if (!_hasPrevious)
 		{
 			UpdatePreviousLevels(candle);
@@ -197,52 +196,25 @@ public class FxChaosScalpStrategy : Strategy
 			return;
 		}
 
-		if (_hourlyTracker.LastValue is not decimal hourlyZigZag ||
-			_dailyTracker.LastValue is not decimal dailyZigZag)
-		{
-			UpdatePreviousLevels(candle);
-			return;
-		}
-
 		var ao = aoValue.ToDecimal();
 		var open = candle.OpenPrice;
 		var close = candle.ClosePrice;
 
-		// Evaluate breakout conditions relative to previous levels and ZigZag bands.
-		var longSignal = open < _previousHigh && close > _previousHigh && close < hourlyZigZag && ao < 0m && close > dailyZigZag;
-		var shortSignal = open > _previousLow && close < _previousLow && close > hourlyZigZag && ao > 0m && close < dailyZigZag;
+		// Evaluate breakout conditions relative to previous levels and AO.
+		var longSignal = open < _previousHigh && close > _previousHigh && ao < 0m;
+		var shortSignal = open > _previousLow && close < _previousLow && ao > 0m;
 
-		if (longSignal && Position <= 0)
+		if (longSignal && Position == 0)
 		{
-			if (Position < 0)
-			{
-				if (Position > 0) SellMarket(Position); else if (Position < 0) BuyMarket(Math.Abs(Position));
-				_hasEntry = false;
-				_entryPrice = 0m;
-			}
-
-			if (Position <= 0)
-			{
-				BuyMarket();
-				_entryPrice = close;
-				_hasEntry = true;
-			}
+			BuyMarket();
+			_entryPrice = close;
+			_hasEntry = true;
 		}
-		else if (shortSignal && Position >= 0)
+		else if (shortSignal && Position == 0)
 		{
-			if (Position > 0)
-			{
-				if (Position > 0) SellMarket(Position); else if (Position < 0) BuyMarket(Math.Abs(Position));
-				_hasEntry = false;
-				_entryPrice = 0m;
-			}
-
-			if (Position >= 0)
-			{
-				SellMarket();
-				_entryPrice = close;
-				_hasEntry = true;
-			}
+			SellMarket();
+			_entryPrice = close;
+			_hasEntry = true;
 		}
 
 		if (Position == 0)

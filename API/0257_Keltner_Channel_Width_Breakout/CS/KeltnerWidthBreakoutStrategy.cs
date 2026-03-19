@@ -1,11 +1,14 @@
-namespace StockSharp.Samples.Strategies;
-
 using System;
+using System.Collections.Generic;
 
-using StockSharp.Algo;
+using Ecng.Common;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
+using StockSharp.BusinessEntities;
 using StockSharp.Messages;
+
+namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Strategy that trades on Keltner Channel width breakouts.
@@ -87,6 +90,12 @@ public class KeltnerWidthBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
@@ -94,6 +103,11 @@ public class KeltnerWidthBreakoutStrategy : Strategy
 		var ema = new ExponentialMovingAverage { Length = EMAPeriod };
 		var atr = new AverageTrueRange { Length = ATRPeriod };
 		var widthAverage = new SimpleMovingAverage { Length = Math.Max(5, EMAPeriod / 2) };
+
+		StartProtection(
+			takeProfit: new Unit(2, UnitTypes.Percent),
+			stopLoss: new Unit(1, UnitTypes.Percent)
+		);
 
 		var subscription = SubscribeCandles(CandleType);
 
@@ -105,31 +119,23 @@ public class KeltnerWidthBreakoutStrategy : Strategy
 
 				// Keltner width = (EMA + ATR*k) - (EMA - ATR*k) = 2*ATR*k
 				var width = 2m * ATRMultiplier * atrValue;
-				var avgWidthValue = widthAverage.Process(new DecimalIndicatorValue(widthAverage, width, candle.ServerTime));
+				var avgWidthValue = widthAverage.Process(new DecimalIndicatorValue(widthAverage, width, candle.ServerTime) { IsFinal = true });
 
 				if (!widthAverage.IsFormed)
 					return;
 
 				var avgWidth = avgWidthValue.ToDecimal();
-				if (avgWidth <= 0 || !IsFormedAndOnlineAndAllowTrading())
+				if (avgWidth <= 0)
 					return;
 
 				// Width breakout detection
-				if (width > avgWidth * WidthThreshold)
+				if (width > avgWidth * WidthThreshold && Position == 0)
 				{
 					// Determine direction based on price relative to EMA
-					if (candle.ClosePrice > emaValue && Position <= 0)
+					if (candle.ClosePrice > emaValue)
 						BuyMarket();
-					else if (candle.ClosePrice < emaValue && Position >= 0)
+					else if (candle.ClosePrice < emaValue)
 						SellMarket();
-				}
-				// Exit when width contracts back
-				else if (width < avgWidth * 0.8m)
-				{
-					if (Position > 0)
-						SellMarket();
-					else if (Position < 0)
-						BuyMarket();
 				}
 			})
 			.Start();

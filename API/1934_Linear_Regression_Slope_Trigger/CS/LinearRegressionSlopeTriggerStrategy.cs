@@ -139,7 +139,7 @@ public class LinearRegressionSlopeTriggerStrategy : Strategy
 		_cooldownBars = Param(nameof(CooldownBars), 1)
 			.SetDisplay("Cooldown Bars", "Bars to wait after a completed trade", "Risk Management");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for candles", "General");
 	}
 
@@ -191,10 +191,7 @@ public class LinearRegressionSlopeTriggerStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var trendValue = _trendLine.Process(new DecimalIndicatorValue(_trendLine, candle.ClosePrice, candle.ServerTime)).ToDecimal();
+		var trendValue = _trendLine.Process(new DecimalIndicatorValue(_trendLine, candle.ClosePrice, candle.ServerTime) { IsFinal = true }).ToDecimal();
 
 		if (!_trendLine.IsFormed)
 			return;
@@ -207,7 +204,7 @@ public class LinearRegressionSlopeTriggerStrategy : Strategy
 		}
 
 		var slope = trendValue - _previousTrendValue;
-		var trigger = _triggerLine.Process(new DecimalIndicatorValue(_triggerLine, slope, candle.ServerTime)).ToDecimal();
+		var trigger = _triggerLine.Process(new DecimalIndicatorValue(_triggerLine, slope, candle.ServerTime) { IsFinal = true }).ToDecimal();
 
 		if (!_triggerLine.IsFormed)
 		{
@@ -225,29 +222,16 @@ public class LinearRegressionSlopeTriggerStrategy : Strategy
 		var closeLong = slope >= 0m && trigger < slope;
 		var closeShort = slope <= 0m && trigger > slope;
 
-		if (closeLong && Position > 0)
+		if (_barsSinceTrade >= CooldownBars && Position == 0)
 		{
-			SellMarket(Position);
-			_barsSinceTrade = 0;
-		}
-
-		if (closeShort && Position < 0)
-		{
-			BuyMarket(-Position);
-			_barsSinceTrade = 0;
-		}
-
-		if (_barsSinceTrade >= CooldownBars)
-		{
-			if (buySignal && Position <= 0 && EnableLong)
+			if (buySignal && EnableLong)
 			{
-				BuyMarket(Volume + Math.Abs(Position));
+				BuyMarket();
 				_barsSinceTrade = 0;
 			}
-
-			if (sellSignal && Position >= 0 && EnableShort)
+			else if (sellSignal && EnableShort)
 			{
-				SellMarket(Volume + Math.Abs(Position));
+				SellMarket();
 				_barsSinceTrade = 0;
 			}
 		}

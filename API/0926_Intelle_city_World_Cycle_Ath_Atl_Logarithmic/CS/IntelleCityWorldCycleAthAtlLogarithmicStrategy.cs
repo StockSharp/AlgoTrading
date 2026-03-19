@@ -85,8 +85,13 @@ public class IntelleCityWorldCycleAthAtlLogarithmicStrategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(maAthLong, maAthShort, maAtlLong, maAtlShort, ProcessCandle)
+			.Bind(maAthLong, maAthShort, maAtlLong, maAtlShort, ProcessCandle)
 			.Start();
+
+		StartProtection(
+			takeProfit: new Unit(2, UnitTypes.Percent),
+			stopLoss: new Unit(1, UnitTypes.Percent)
+		);
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -96,34 +101,25 @@ public class IntelleCityWorldCycleAthAtlLogarithmicStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue athLongVal, IIndicatorValue athShortVal, IIndicatorValue atlLongVal, IIndicatorValue atlShortVal)
+	private void ProcessCandle(ICandleMessage candle, decimal athLong, decimal athShort, decimal atlLong, decimal atlShort)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (athLongVal.IsEmpty || athShortVal.IsEmpty || atlLongVal.IsEmpty || atlShortVal.IsEmpty)
-			return;
-
-		var athLong = athLongVal.ToDecimal();
-		var athShort = athShortVal.ToDecimal();
-		var atlLong = atlLongVal.ToDecimal();
-		var atlShort = atlShortVal.ToDecimal();
-
-		var scaledAthLong = athLong * 1.05m;
-		var scaledAtlLong = atlLong * 0.95m;
-
-		if (_prevAthLong != 0 && _prevAthShort != 0)
+		if (_prevAthLong != 0 && _prevAthShort != 0 && Position == 0)
 		{
-			if (_prevAthLong >= _prevAthShort && scaledAthLong < athShort && Position >= 0)
+			// ATH cross down: long MA crosses below short MA -> sell signal
+			if (_prevAthLong >= _prevAthShort && athLong < athShort)
 				SellMarket();
 
-			if (_prevAtlLong <= _prevAtlShort && scaledAtlLong > atlShort && Position <= 0)
+			// ATL cross up: long MA crosses above short MA -> buy signal
+			if (_prevAtlLong <= _prevAtlShort && atlLong > atlShort)
 				BuyMarket();
 		}
 
-		_prevAthLong = scaledAthLong;
+		_prevAthLong = athLong;
 		_prevAthShort = athShort;
-		_prevAtlLong = scaledAtlLong;
+		_prevAtlLong = atlLong;
 		_prevAtlShort = atlShort;
 	}
 }

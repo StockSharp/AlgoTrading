@@ -31,7 +31,7 @@ public class GapReversionStrategy : Strategy
 		_emaPeriod = Param(nameof(EmaPeriod), 20)
 			.SetDisplay("EMA Period", "EMA trend filter", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 	}
 
@@ -50,6 +50,11 @@ public class GapReversionStrategy : Strategy
 		subscription
 			.Bind(ema, ProcessCandle)
 			.Start();
+
+		StartProtection(
+			takeProfit: new Unit(2, UnitTypes.Percent),
+			stopLoss: new Unit(1, UnitTypes.Percent)
+		);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal ema)
@@ -69,19 +74,11 @@ public class GapReversionStrategy : Strategy
 		var close = candle.ClosePrice;
 
 		// Gap down reversion - open below previous low, expect bounce
-		if (open < _prevLow && close > ema && Position <= 0)
-		{
-			if (Position < 0)
-				BuyMarket();
+		if (open < _prevLow && close > ema && Position == 0)
 			BuyMarket();
-		}
 		// Gap up reversion - open above previous high, expect pullback
-		else if (open > _prevHigh && close < ema && Position >= 0)
-		{
-			if (Position > 0)
-				SellMarket();
+		else if (open > _prevHigh && close < ema && Position == 0)
 			SellMarket();
-		}
 
 		_prevHigh = candle.HighPrice;
 		_prevLow = candle.LowPrice;

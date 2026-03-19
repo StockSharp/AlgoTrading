@@ -125,7 +125,7 @@ public class KeltnerKalmanStrategy : Strategy
 		
 		.SetOptimize(0.01m, 1.0m, 0.05m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -158,7 +158,7 @@ public class KeltnerKalmanStrategy : Strategy
 		base.OnStarted2(time);
 
 		// Create indicators
-		_ema = new EMA
+		_ema = new ExponentialMovingAverage
 		{
 			Length = EmaPeriod
 		};
@@ -216,39 +216,19 @@ public class KeltnerKalmanStrategy : Strategy
 		// Calculate Kalman slope (trend direction)
 		decimal kalmanSlope = CalculateKalmanSlope();
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
-
 		// Trading logic
-		// Buy when price is above EMA+k*ATR (upper band) and Kalman filter shows uptrend
-		if (candle.ClosePrice > _upperBand && _kalmanEstimate > candle.ClosePrice && kalmanSlope > 0 && Position <= 0)
+		if (Position == 0)
 		{
-			BuyMarket(Volume);
-			LogInfo($"Buy Signal: Price {candle.ClosePrice:F2} > Upper Band {_upperBand:F2}, Kalman Estimate {_kalmanEstimate:F2}, Kalman Slope {kalmanSlope:F6}");
-			_isLongPosition = true;
-			_isShortPosition = false;
-		}
-		// Sell when price is below EMA-k*ATR (lower band) and Kalman filter shows downtrend
-		else if (candle.ClosePrice < _lowerBand && _kalmanEstimate < candle.ClosePrice && kalmanSlope < 0 && Position >= 0)
-		{
-			SellMarket(Volume + Math.Abs(Position));
-			LogInfo($"Sell Signal: Price {candle.ClosePrice:F2} < Lower Band {_lowerBand:F2}, Kalman Estimate {_kalmanEstimate:F2}, Kalman Slope {kalmanSlope:F6}");
-			_isLongPosition = false;
-			_isShortPosition = true;
-		}
-		// Exit long position when price falls below EMA
-		else if (_isLongPosition && candle.ClosePrice < _emaValue)
-		{
-			SellMarket(Position);
-			LogInfo($"Exit Long: Price {candle.ClosePrice:F2} fell below EMA {_emaValue:F2}");
-			_isLongPosition = false;
-		}
-		// Exit short position when price rises above EMA
-		else if (_isShortPosition && candle.ClosePrice > _emaValue)
-		{
-			BuyMarket(Math.Abs(Position));
-			LogInfo($"Exit Short: Price {candle.ClosePrice:F2} rose above EMA {_emaValue:F2}");
-			_isShortPosition = false;
+			// Buy when price breaks above upper band and Kalman slope is positive
+			if (candle.ClosePrice > _upperBand && kalmanSlope > 0)
+			{
+				BuyMarket();
+			}
+			// Sell when price breaks below lower band and Kalman slope is negative
+			else if (candle.ClosePrice < _lowerBand && kalmanSlope < 0)
+			{
+				SellMarket();
+			}
 		}
 	}
 

@@ -91,7 +91,7 @@ public class IGapStrategy : Strategy
 			.SetDisplay("Gap Size", "Gap in price steps required to trigger signal", "General")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for gap detection", "General");
 
 		_buyPosOpen = Param(nameof(BuyPosOpen), true)
@@ -129,6 +129,11 @@ public class IGapStrategy : Strategy
 		subscription
 			.Bind(ProcessCandle)
 			.Start();
+
+		StartProtection(
+			takeProfit: new Unit(2, UnitTypes.Percent),
+			stopLoss: new Unit(1, UnitTypes.Percent)
+		);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -146,20 +151,14 @@ public class IGapStrategy : Strategy
 		var threshold = _prevClose.Value * GapSize * 0.01m / 100m;
 		var gap = _prevClose.Value - candle.OpenPrice;
 
-		if (gap > threshold)
+		if (gap > threshold && Position == 0)
 		{
-			if (SellPosClose && Position < 0)
-				BuyMarket();
-
-			if (BuyPosOpen && Position <= 0)
+			if (BuyPosOpen)
 				BuyMarket();
 		}
-		else if (-gap > threshold)
+		else if (-gap > threshold && Position == 0)
 		{
-			if (BuyPosClose && Position > 0)
-				SellMarket();
-
-			if (SellPosOpen && Position >= 0)
+			if (SellPosOpen)
 				SellMarket();
 		}
 

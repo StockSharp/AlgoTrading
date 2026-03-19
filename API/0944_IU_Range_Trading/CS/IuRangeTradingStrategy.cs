@@ -100,11 +100,17 @@ public class IuRangeTradingStrategy : Strategy
 		_atrRangeFactor = Param(nameof(AtrRangeFactor), 1.75m)
 			.SetDisplay("ATR Range Factor", "ATR multiplier to validate range.", "Parameters");
 
-		_cooldownDays = Param(nameof(CooldownDays), 30)
+		_cooldownDays = Param(nameof(CooldownDays), 3)
 			.SetDisplay("Cooldown Days", "Minimum days between entries.", "Parameters");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use.", "General");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />

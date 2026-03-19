@@ -101,7 +101,7 @@ public class FracturedFractalsStrategy : Strategy
 		.SetRange(0, 240)
 		.SetDisplay("Expiration", "Pending order lifetime (hours)", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(2).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Primary timeframe", "General");
 	}
 
