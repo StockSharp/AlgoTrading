@@ -3,157 +3,76 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import UnitTypes, Unit, DataType, CandleStates
+from System import TimeSpan
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import Momentum, SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
 
 class momentum_divergence_strategy(Strategy):
     """
-    Momentum Divergence strategy.
-    Trades based on divergence between price and momentum.
-
+    Momentum Divergence: trades based on divergence between price and momentum.
     """
 
     def __init__(self):
         super(momentum_divergence_strategy, self).__init__()
+        self._momentum_period = self.Param("MomentumPeriod", 14).SetDisplay("Momentum Period", "Period for Momentum", "Parameters")
+        self._ma_period = self.Param("MaPeriod", 20).SetDisplay("MA Period", "Period for SMA", "Parameters")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Timeframe", "Common")
 
-        # Initialize strategy parameters
-        self._momentumPeriod = self.Param("MomentumPeriod", 14) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Momentum Period", "Period for Momentum indicator", "Parameters") \
-            .SetCanOptimize(True) \
-            .SetOptimize(10, 30, 5)
-
-        self._maPeriod = self.Param("MaPeriod", 20) \
-            .SetGreaterThanZero() \
-            .SetDisplay("MA Period", "Period for Moving Average", "Parameters") \
-            .SetCanOptimize(True) \
-            .SetOptimize(10, 50, 10)
-
-        self._candleType = self.Param("CandleType", tf(5)) \
-            .SetDisplay("Candle Type", "Candle type for strategy", "Common")
-
-        # Initialize internal state
-        self._momentum = None
-        self._sma = None
-        self._prevPrice = 0
-        self._prevMomentum = 0
-        self._currentPrice = 0
-        self._currentMomentum = 0
+        self._prev_price = 0.0
+        self._prev_momentum = 0.0
+        self._current_price = 0.0
+        self._current_momentum = 0.0
 
     @property
-    def MomentumPeriod(self):
-        """Momentum indicator period."""
-        return self._momentumPeriod.Value
-
-    @MomentumPeriod.setter
-    def MomentumPeriod(self, value):
-        self._momentumPeriod.Value = value
-
-    @property
-    def MaPeriod(self):
-        """Moving average period."""
-        return self._maPeriod.Value
-
-    @MaPeriod.setter
-    def MaPeriod(self, value):
-        self._maPeriod.Value = value
-
-    @property
-    def CandleType(self):
-        """Candle type for strategy."""
-        return self._candleType.Value
-
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candleType.Value = value
+    def candle_type(self):
+        return self._candle_type.Value
 
     def OnReseted(self):
         super(momentum_divergence_strategy, self).OnReseted()
-
-        self._prevPrice = 0
-        self._prevMomentum = 0
-        self._currentPrice = 0
-        self._currentMomentum = 0
+        self._prev_price = 0.0
+        self._prev_momentum = 0.0
+        self._current_price = 0.0
+        self._current_momentum = 0.0
 
     def OnStarted(self, time):
-        """
-        Called when the strategy starts. Initializes indicators and subscriptions.
-        """
         super(momentum_divergence_strategy, self).OnStarted(time)
-
-        # Create indicators
-        self._momentum = Momentum()
-        self._momentum.Length = self.MomentumPeriod
-        self._sma = SimpleMovingAverage()
-        self._sma.Length = self.MaPeriod
-
-
-        # Create subscription and bind indicators
-        subscription = self.SubscribeCandles(self.CandleType)
-        subscription.Bind(self._momentum, self._sma, self.ProcessCandle).Start()
-
-        # Setup chart visualization if available
+        mom = Momentum()
+        mom.Length = self._momentum_period.Value
+        sma = SimpleMovingAverage()
+        sma.Length = self._ma_period.Value
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.Bind(mom, sma, self._process_candle).Start()
+        self.StartProtection(None, Unit(2, UnitTypes.Percent))
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, self._momentum)
-            self.DrawIndicator(area, self._sma)
+            self.DrawIndicator(area, mom)
+            self.DrawIndicator(area, sma)
             self.DrawOwnTrades(area)
 
-        # Enable position protection
-        self.StartProtection(
-            takeProfit=Unit(0, UnitTypes.Absolute),
-            stopLoss=Unit(2, UnitTypes.Percent)
-        )
-    def ProcessCandle(self, candle, momentumValue, smaValue):
-        """
-        Process candle and execute divergence-based trading logic.
-        """
-        # Skip unfinished candles
+    def _process_candle(self, candle, mom_val, sma_val):
         if candle.State != CandleStates.Finished:
             return
-
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
-
-        # Store previous values before updating current ones
-        self._prevPrice = self._currentPrice
-        self._prevMomentum = self._currentMomentum
-
-        # Update current values
-        self._currentPrice = float(candle.ClosePrice)
-        self._currentMomentum = momentumValue
-
-        # Skip first candle after indicators become formed
-        if self._prevPrice == 0 or self._prevMomentum == 0:
+        self._prev_price = self._current_price
+        self._prev_momentum = self._current_momentum
+        self._current_price = float(candle.ClosePrice)
+        self._current_momentum = float(mom_val)
+        if self._prev_price == 0 or self._prev_momentum == 0:
             return
-
-        # Detect bullish divergence (price makes lower low but momentum makes higher low)
-        bullishDivergence = self._currentPrice < self._prevPrice and self._currentMomentum > self._prevMomentum
-
-        # Detect bearish divergence (price makes higher high but momentum makes lower high)
-        bearishDivergence = self._currentPrice > self._prevPrice and self._currentMomentum < self._prevMomentum
-
-        # Trading signals
-        if bullishDivergence and self.Position <= 0:
-            # Bullish divergence - buy signal
-            self.BuyMarket(self.Volume + Math.Abs(self.Position))
-        elif bearishDivergence and self.Position >= 0:
-            # Bearish divergence - sell signal
-            self.SellMarket(self.Volume + Math.Abs(self.Position))
-        # Exit when price crosses MA in the opposite direction
-        elif self.Position > 0 and candle.ClosePrice < smaValue:
-            # Exit long position
-            self.SellMarket(self.Position)
-        elif self.Position < 0 and candle.ClosePrice > smaValue:
-            # Exit short position
-            self.BuyMarket(Math.Abs(self.Position))
+        bullish_div = self._current_price < self._prev_price and self._current_momentum > self._prev_momentum
+        bearish_div = self._current_price > self._prev_price and self._current_momentum < self._prev_momentum
+        sma = float(sma_val)
+        if bullish_div and self.Position <= 0:
+            self.BuyMarket()
+        elif bearish_div and self.Position >= 0:
+            self.SellMarket()
+        elif self.Position > 0 and float(candle.ClosePrice) < sma:
+            self.SellMarket()
+        elif self.Position < 0 and float(candle.ClosePrice) > sma:
+            self.BuyMarket()
 
     def CreateClone(self):
-        """
-        !! REQUIRED!! Creates a new instance of the strategy.
-        """
         return momentum_divergence_strategy()
