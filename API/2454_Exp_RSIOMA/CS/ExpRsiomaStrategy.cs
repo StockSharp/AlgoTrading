@@ -46,7 +46,7 @@ public class ExpRsiomaStrategy : Strategy
 			.SetDisplay("EMA Period", "EMA smoothing period", "Parameters")
 			.SetGreaterThanZero();
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for candles", "General");
 	}
 
@@ -73,48 +73,50 @@ public class ExpRsiomaStrategy : Strategy
 		_hasPrev = false;
 
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
-		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
+		var rsiEma = new ExponentialMovingAverage { Length = EmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(rsi, ema, ProcessCandle)
+			.Bind(rsi, (candle, rsiValue) =>
+			{
+				if (candle.State != CandleStates.Finished)
+					return;
+
+				var emaResult = rsiEma.Process(new DecimalIndicatorValue(rsiEma, rsiValue, candle.ServerTime) { IsFinal = true });
+
+				if (!rsiEma.IsFormed)
+					return;
+
+				var emaValue = emaResult.ToDecimal();
+
+				if (_hasPrev)
+				{
+					var crossUp = _prevRsi <= _prevEma && rsiValue > emaValue;
+					var crossDown = _prevRsi >= _prevEma && rsiValue < emaValue;
+
+					if (crossUp && Position == 0)
+						BuyMarket();
+					else if (crossDown && Position == 0)
+						SellMarket();
+				}
+
+				_prevRsi = rsiValue;
+				_prevEma = emaValue;
+				_hasPrev = true;
+			})
 			.Start();
+
+		StartProtection(
+			takeProfit: new Unit(2, UnitTypes.Percent),
+			stopLoss: new Unit(1, UnitTypes.Percent)
+		);
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
 			DrawIndicator(area, rsi);
-			DrawIndicator(area, ema);
 			DrawOwnTrades(area);
 		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal rsiValue, decimal emaValue)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (_hasPrev)
-		{
-			var crossUp = _prevRsi <= _prevEma && rsiValue > emaValue;
-			var crossDown = _prevRsi >= _prevEma && rsiValue < emaValue;
-
-			if (crossUp && rsiValue > 52m && emaValue > 50m && Position <= 0)
-			{
-				BuyMarket(Volume + Math.Abs(Position));
-			}
-			else if (crossDown && rsiValue < 48m && emaValue < 50m && Position >= 0)
-			{
-				SellMarket(Volume + Math.Abs(Position));
-			}
-		}
-
-		_prevRsi = rsiValue;
-		_prevEma = emaValue;
-		_hasPrev = true;
 	}
 }

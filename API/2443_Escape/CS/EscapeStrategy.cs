@@ -130,7 +130,7 @@ public class EscapeStrategy : Strategy
 			.SetDisplay("Stop Loss Short", "Stop loss for short trades", "Trading")
 			.SetGreaterThanZero();
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for candles", "General");
 	}
 
@@ -176,7 +176,10 @@ public class EscapeStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection(null, null);
+		StartProtection(
+			takeProfit: new Unit(2, UnitTypes.Percent),
+			stopLoss: new Unit(1, UnitTypes.Percent)
+		);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -184,8 +187,8 @@ public class EscapeStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var fast = _fastMa!.Process(new DecimalIndicatorValue(_fastMa, candle.OpenPrice, candle.OpenTime)).ToDecimal();
-		var slow = _slowMa!.Process(new DecimalIndicatorValue(_slowMa, candle.OpenPrice, candle.OpenTime)).ToDecimal();
+		var fast = _fastMa!.Process(new DecimalIndicatorValue(_fastMa, candle.OpenPrice, candle.OpenTime) { IsFinal = true }).ToDecimal();
+		var slow = _slowMa!.Process(new DecimalIndicatorValue(_slowMa, candle.OpenPrice, candle.OpenTime) { IsFinal = true }).ToDecimal();
 
 		if (!_initialized)
 		{
@@ -203,33 +206,9 @@ public class EscapeStrategy : Strategy
 		if (Position == 0)
 		{
 			if (buySignal)
-			{
 				BuyMarket();
-				_entryPrice = close;
-				_stopPrice = _entryPrice - StopLossLong;
-				_takePrice = _entryPrice + TakeProfitLong;
-			}
 			else if (sellSignal)
-			{
 				SellMarket();
-				_entryPrice = close;
-				_stopPrice = _entryPrice + StopLossShort;
-				_takePrice = _entryPrice - TakeProfitShort;
-			}
-		}
-		else if (Position > 0)
-		{
-			if (close >= _takePrice || candle.HighPrice >= _takePrice)
-				SellMarket(Position);
-			else if (close <= _stopPrice || candle.LowPrice <= _stopPrice)
-				SellMarket(Position);
-		}
-		else if (Position < 0)
-		{
-			if (close <= _takePrice || candle.LowPrice <= _takePrice)
-				BuyMarket(-Position);
-			else if (close >= _stopPrice || candle.HighPrice >= _stopPrice)
-				BuyMarket(-Position);
 		}
 
 		_previousClose = close;

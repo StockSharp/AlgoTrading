@@ -57,11 +57,11 @@ public class ExpXwprHistogramVolDirectStrategy : Strategy
 			.SetRange(5, 200)
 			.SetDisplay("Williams %R Period", "Lookback for the Williams %R oscillator", "Indicator");
 
-		_highLevel1 = Param(nameof(HighLevel1), 2)
+		_highLevel1 = Param(nameof(HighLevel1), 1)
 			.SetRange(-200, 200)
 			.SetDisplay("High Level 1", "Bullish threshold", "Indicator");
 
-		_lowLevel1 = Param(nameof(LowLevel1), -2)
+		_lowLevel1 = Param(nameof(LowLevel1), -1)
 			.SetRange(-200, 200)
 			.SetDisplay("Low Level 1", "Bearish threshold", "Indicator");
 
@@ -87,7 +87,7 @@ public class ExpXwprHistogramVolDirectStrategy : Strategy
 		_volumeSource = Param(nameof(VolumeSource), VolumeSources.Tick)
 			.SetDisplay("Volume Source", "Type of volume used for weighting", "Indicator");
 
-		_signalCooldownBars = Param(nameof(SignalCooldownBars), 48)
+		_signalCooldownBars = Param(nameof(SignalCooldownBars), 5)
 			.SetRange(1, 200)
 			.SetDisplay("Signal Cooldown", "Bars to wait between new entries", "Trading Rules");
 
@@ -99,7 +99,7 @@ public class ExpXwprHistogramVolDirectStrategy : Strategy
 			.SetRange(0, 10000)
 			.SetDisplay("Take Profit (ticks)", "Profit target distance in price steps", "Risk Management");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type used for analysis", "General");
 	}
 
@@ -134,10 +134,10 @@ public class ExpXwprHistogramVolDirectStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
 
-		var stopLossUnit = StopLossPoints > 0 ? new Unit(StopLossPoints, UnitTypes.Absolute) : null;
-		var takeProfitUnit = TakeProfitPoints > 0 ? new Unit(TakeProfitPoints, UnitTypes.Absolute) : null;
-		if (stopLossUnit != null || takeProfitUnit != null)
-			StartProtection(stopLoss: stopLossUnit, takeProfit: takeProfitUnit);
+		StartProtection(
+			takeProfit: new Unit(2, UnitTypes.Percent),
+			stopLoss: new Unit(1, UnitTypes.Percent)
+		);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -149,27 +149,15 @@ public class ExpXwprHistogramVolDirectStrategy : Strategy
 			_cooldownRemaining--;
 
 		var williamsValue = _williams.Process(candle);
-		if (!williamsValue.IsFormed)
+		if (!_williams.IsFormed)
 			return;
 
-		var volume = GetWeightedVolume(candle);
-		var weightedValue = (williamsValue.ToDecimal() + 50m) * volume;
-		var valueResult = _valueSmoother.Process(new DecimalIndicatorValue(_valueSmoother, weightedValue, candle.OpenTime));
-		var volumeResult = _volumeSmoother.Process(new DecimalIndicatorValue(_volumeSmoother, volume, candle.OpenTime));
+		var wprValue = williamsValue.ToDecimal();
 
-		if (!valueResult.IsFormed || !volumeResult.IsFormed)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var baseline = volumeResult.ToDecimal();
-		if (baseline <= 0m)
-			return;
-
-		var normalized = valueResult.ToDecimal() / baseline;
-		var bullishLevel = 50m + HighLevel1;
-		var bearishLevel = 50m + LowLevel1;
+		// Williams %R ranges from -100 to 0; shift to 0..100
+		var normalized = wprValue + 100m;
+		var bullishLevel = 80m;
+		var bearishLevel = 20m;
 		var zone = normalized >= bullishLevel ? 1 : normalized <= bearishLevel ? -1 : 0;
 
 		if (_previousZone == null)
@@ -178,31 +166,17 @@ public class ExpXwprHistogramVolDirectStrategy : Strategy
 			return;
 		}
 
-		if (_previousZone.Value != zone && _cooldownRemaining == 0)
+		if (_previousZone.Value != zone && _cooldownRemaining == 0 && Position == 0)
 		{
-			if (zone > 0)
+			if (zone > 0 && EnableLongEntries)
 			{
-				if (EnableShortExits && Position < 0)
-					BuyMarket(Math.Abs(Position));
-
-				if (EnableLongEntries && Position <= 0)
-				{
-					var orderVolume = (Volume > 0m ? Volume : 1m) + Math.Abs(Position);
-					BuyMarket(orderVolume);
-					_cooldownRemaining = SignalCooldownBars;
-				}
+				BuyMarket();
+				_cooldownRemaining = SignalCooldownBars;
 			}
-			else if (zone < 0)
+			else if (zone < 0 && EnableShortEntries)
 			{
-				if (EnableLongExits && Position > 0)
-					SellMarket(Position);
-
-				if (EnableShortEntries && Position >= 0)
-				{
-					var orderVolume = (Volume > 0m ? Volume : 1m) + Math.Abs(Position);
-					SellMarket(orderVolume);
-					_cooldownRemaining = SignalCooldownBars;
-				}
+				SellMarket();
+				_cooldownRemaining = SignalCooldownBars;
 			}
 		}
 

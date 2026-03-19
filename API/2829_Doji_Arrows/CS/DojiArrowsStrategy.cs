@@ -98,7 +98,7 @@ public class DojiArrowsStrategy : Strategy
 			.SetDisplay("Doji Body Points", "Maximum difference between open and close to treat the candle as a doji.", "Pattern")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame used for signal generation.", "General");
 	}
 
@@ -129,6 +129,11 @@ public class DojiArrowsStrategy : Strategy
 		SubscribeCandles(CandleType)
 			.Bind(ProcessCandle)
 			.Start();
+
+		StartProtection(
+			takeProfit: new Unit(2, UnitTypes.Percent),
+			stopLoss: new Unit(1, UnitTypes.Percent)
+		);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -152,17 +157,13 @@ public class DojiArrowsStrategy : Strategy
 		var breakoutUp = isDoji && candle.ClosePrice > _prevHigh;
 		var breakoutDown = isDoji && candle.ClosePrice < _prevLow;
 
-		if (breakoutUp && Position <= 0)
+		if (breakoutUp && Position == 0)
 		{
-			ResetProtection();
-			BuyMarket(Volume);
-			InitializeProtection(candle.ClosePrice, true, step);
+			BuyMarket();
 		}
-		else if (breakoutDown && Position >= 0)
+		else if (breakoutDown && Position == 0)
 		{
-			ResetProtection();
-			SellMarket(Volume);
-			InitializeProtection(candle.ClosePrice, false, step);
+			SellMarket();
 		}
 
 		CachePreviousCandle(candle);

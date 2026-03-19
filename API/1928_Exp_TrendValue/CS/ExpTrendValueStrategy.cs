@@ -110,7 +110,7 @@ public class ExpTrendValueStrategy : Strategy
 		_shiftPercent = Param(nameof(ShiftPercent), 0.05m).SetDisplay("Shift Percent", "Percentage offset for bands", "Indicator");
 		_atrPeriod = Param(nameof(AtrPeriod), 15).SetGreaterThanZero().SetDisplay("ATR Period", "Range average period", "Indicator");
 		_atrSensitivity = Param(nameof(AtrSensitivity), 0.6m).SetGreaterThanZero().SetDisplay("ATR Sensitivity", "Multiplier for range shift", "Indicator");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame()).SetDisplay("Candle Type", "Timeframe for calculations", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Timeframe for calculations", "General");
 	}
 
 	/// <inheritdoc />
@@ -146,7 +146,10 @@ public class ExpTrendValueStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(closeTrigger, ProcessCandle).Start();
 
-		// protection handled manually
+		StartProtection(
+			takeProfit: new Unit(2, UnitTypes.Percent),
+			stopLoss: new Unit(1, UnitTypes.Percent)
+		);
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -161,16 +164,13 @@ public class ExpTrendValueStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var highMa = _wmaHigh.Process(new DecimalIndicatorValue(_wmaHigh, candle.HighPrice, candle.OpenTime)).ToDecimal();
-		var lowMa = _wmaLow.Process(new DecimalIndicatorValue(_wmaLow, candle.LowPrice, candle.OpenTime)).ToDecimal();
+		var highMa = _wmaHigh.Process(new DecimalIndicatorValue(_wmaHigh, candle.HighPrice, candle.OpenTime) { IsFinal = true }).ToDecimal();
+		var lowMa = _wmaLow.Process(new DecimalIndicatorValue(_wmaLow, candle.LowPrice, candle.OpenTime) { IsFinal = true }).ToDecimal();
 
 		if (!_wmaHigh.IsFormed || !_wmaLow.IsFormed)
 			return;
 
-		var rangeValue = _rangeAverage.Process(new DecimalIndicatorValue(_rangeAverage, candle.HighPrice - candle.LowPrice, candle.OpenTime)).ToDecimal();
+		var rangeValue = _rangeAverage.Process(new DecimalIndicatorValue(_rangeAverage, candle.HighPrice - candle.LowPrice, candle.OpenTime) { IsFinal = true }).ToDecimal();
 
 		if (!_rangeAverage.IsFormed)
 			return;
@@ -199,45 +199,9 @@ public class ExpTrendValueStrategy : Strategy
 		_prevLowBand = lowBand;
 		_prevTrend = trend;
 
-		var step = Security.PriceStep ?? 1m;
-
-		if (Position > 0)
-		{
-			if (candle.LowPrice <= _stopPrice || (TakeProfitPips > 0 && candle.HighPrice >= _takeProfitPrice))
-				SellMarket(Position);
-		}
-		else if (Position < 0)
-		{
-			if (candle.HighPrice >= _stopPrice || (TakeProfitPips > 0 && candle.LowPrice <= _takeProfitPrice))
-				BuyMarket(-Position);
-		}
-
-		var buyClose = BuyPosClose && (downSignal || haveDownTrend);
-		var sellClose = SellPosClose && (upSignal || haveUpTrend);
-		var buyOpen = BuyPosOpen && upSignal;
-		var sellOpen = SellPosOpen && downSignal;
-
-		if (buyClose && Position > 0)
-			SellMarket(Position);
-
-		if (sellClose && Position < 0)
-			BuyMarket(-Position);
-
-		if (buyOpen && Position <= 0)
-		{
-			var vol = Volume + (Position < 0 ? -Position : 0);
-			BuyMarket(vol);
-			_entryPrice = candle.ClosePrice;
-			_stopPrice = _entryPrice - StopLossPips * step;
-			_takeProfitPrice = _entryPrice + TakeProfitPips * step;
-		}
-		else if (sellOpen && Position >= 0)
-		{
-			var vol = Volume + (Position > 0 ? Position : 0);
-			SellMarket(vol);
-			_entryPrice = candle.ClosePrice;
-			_stopPrice = _entryPrice + StopLossPips * step;
-			_takeProfitPrice = _entryPrice - TakeProfitPips * step;
-		}
+		if (upSignal && Position == 0)
+			BuyMarket();
+		else if (downSignal && Position == 0)
+			SellMarket();
 	}
 }

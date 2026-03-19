@@ -44,7 +44,7 @@ public class DtRsiExp1Strategy : Strategy
 		_overbought = Param(nameof(Overbought), 70m)
 			.SetDisplay("Overbought", "RSI overbought level", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 	}
 
@@ -64,6 +64,11 @@ public class DtRsiExp1Strategy : Strategy
 		subscription
 			.Bind(rsi, ema, ProcessCandle)
 			.Start();
+
+		StartProtection(
+			takeProfit: new Unit(2, UnitTypes.Percent),
+			stopLoss: new Unit(1, UnitTypes.Percent)
+		);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal rsi, decimal ema)
@@ -81,17 +86,13 @@ public class DtRsiExp1Strategy : Strategy
 		}
 
 		// RSI crosses above oversold + bullish trend
-		if (_prevRsi <= Oversold && rsi > Oversold && close > ema && Position <= 0)
+		if (_prevRsi <= Oversold && rsi > Oversold && close > ema && Position == 0)
 		{
-			if (Position < 0)
-				BuyMarket();
 			BuyMarket();
 		}
 		// RSI crosses below overbought + bearish trend
-		else if (_prevRsi >= Overbought && rsi < Overbought && close < ema && Position >= 0)
+		else if (_prevRsi >= Overbought && rsi < Overbought && close < ema && Position == 0)
 		{
-			if (Position > 0)
-				SellMarket();
 			SellMarket();
 		}
 

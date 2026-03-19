@@ -2,9 +2,12 @@ namespace StockSharp.Samples.Strategies;
 
 using System;
 
+using Ecng.Common;
+
 using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
+using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 /// <summary>
@@ -82,35 +85,32 @@ public class DonchianWidthBreakoutStrategy : Strategy
 				if (width <= 0)
 					return;
 
-				var avgWidthValue = widthAverage.Process(new DecimalIndicatorValue(widthAverage, width, candle.ServerTime));
+				var avgWidthValue = widthAverage.Process(new DecimalIndicatorValue(widthAverage, width, candle.ServerTime) { IsFinal = true });
 
 				if (!widthAverage.IsFormed)
 					return;
 
 				var avgWidth = avgWidthValue.ToDecimal();
-				if (avgWidth <= 0 || !IsFormedAndOnlineAndAllowTrading())
+				if (avgWidth <= 0)
 					return;
 
 				var middleChannel = (highestValue + lowestValue) / 2m;
 
 				// Width breakout detection
-				if (width > avgWidth * WidthThreshold)
+				if (width > avgWidth * WidthThreshold && Position == 0)
 				{
-					if (candle.ClosePrice > middleChannel && Position <= 0)
+					if (candle.ClosePrice > middleChannel)
 						BuyMarket();
-					else if (candle.ClosePrice < middleChannel && Position >= 0)
+					else if (candle.ClosePrice < middleChannel)
 						SellMarket();
-				}
-				// Exit when width contracts
-				else if (width < avgWidth * 0.8m)
-				{
-					if (Position > 0)
-						SellMarket();
-					else if (Position < 0)
-						BuyMarket();
 				}
 			})
 			.Start();
+
+		StartProtection(
+			takeProfit: new Unit(2, UnitTypes.Percent),
+			stopLoss: new Unit(1, UnitTypes.Percent)
+		);
 
 		var area = CreateChartArea();
 		if (area != null)

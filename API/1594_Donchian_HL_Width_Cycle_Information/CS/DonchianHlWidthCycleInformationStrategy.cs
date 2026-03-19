@@ -30,7 +30,7 @@ public class DonchianHlWidthCycleInformationStrategy : Strategy
 		_length = Param(nameof(Length), 20)
 			.SetDisplay("Donchian Length", "Lookback for Donchian channel", "Donchian");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -58,6 +58,11 @@ public class DonchianHlWidthCycleInformationStrategy : Strategy
 			.Bind(highest, lowest, ProcessCandle)
 			.Start();
 
+		StartProtection(
+			takeProfit: new Unit(2, UnitTypes.Percent),
+			stopLoss: new Unit(1, UnitTypes.Percent)
+		);
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -78,13 +83,13 @@ public class DonchianHlWidthCycleInformationStrategy : Strategy
 		if (candle.ClosePrice >= upper && _cycleTrend != 1)
 		{
 			_cycleTrend = 1;
-			if (Position <= 0)
+			if (Position == 0)
 				BuyMarket();
 		}
 		else if (candle.ClosePrice <= lower && _cycleTrend != -1)
 		{
 			_cycleTrend = -1;
-			if (Position >= 0)
+			if (Position == 0)
 				SellMarket();
 		}
 	}

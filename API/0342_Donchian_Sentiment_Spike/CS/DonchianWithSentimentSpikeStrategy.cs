@@ -91,19 +91,19 @@ public class DonchianWithSentimentSpikeStrategy : Strategy
 	/// </summary>
 	public DonchianWithSentimentSpikeStrategy()
 	{
-		_donchianPeriod = Param(nameof(DonchianPeriod), 20)
+		_donchianPeriod = Param(nameof(DonchianPeriod), 10)
 		.SetGreaterThanZero()
 		.SetDisplay("Donchian Period", "Donchian channel period", "Donchian Settings")
 		
 		.SetOptimize(10, 30, 5);
 
-		_sentimentPeriod = Param(nameof(SentimentPeriod), 20)
+		_sentimentPeriod = Param(nameof(SentimentPeriod), 10)
 		.SetGreaterThanZero()
 		.SetDisplay("Sentiment Period", "Sentiment averaging period", "Sentiment Settings")
 		
 		.SetOptimize(10, 30, 5);
 
-		_sentimentMultiplier = Param(nameof(SentimentMultiplier), 2m)
+		_sentimentMultiplier = Param(nameof(SentimentMultiplier), 0.5m)
 		.SetGreaterThanZero()
 		.SetDisplay("Sentiment StdDev Multiplier", "Multiplier for sentiment standard deviation", "Sentiment Settings")
 		
@@ -115,7 +115,7 @@ public class DonchianWithSentimentSpikeStrategy : Strategy
 		
 		.SetOptimize(1m, 3m, 0.5m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -139,103 +139,46 @@ public class DonchianWithSentimentSpikeStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Create Donchian Channel indicator
-		var donchian = new DonchianChannels { Length = DonchianPeriod };
+		var highest = new Highest { Length = DonchianPeriod };
+		var lowest = new Lowest { Length = DonchianPeriod };
 
-		// Subscribe to candles and bind indicator
 		var subscription = SubscribeCandles(CandleType);
 
 		subscription
-		.BindEx(donchian, ProcessCandle)
-		.Start();
+			.Bind(highest, lowest, ProcessCandle)
+			.Start();
 
-		// Create chart visualization if available
+		StartProtection(
+			takeProfit: new Unit(2, UnitTypes.Percent),
+			stopLoss: new Unit(1, UnitTypes.Percent)
+		);
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, donchian);
 			DrawOwnTrades(area);
 		}
-
-		// Enable position protection with stop-loss
-		StartProtection(
-		new Unit(0),  // No take profit
-		new Unit(StopLoss, UnitTypes.Percent) // Stop-loss as percentage
-		);
 	}
 
-	/// <summary>
-	/// Process each candle and Donchian Channel values.
-	/// </summary>
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue donchianValue)
+	private void ProcessCandle(ICandleMessage candle, decimal upper, decimal lower)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
-		return;
-
-		// Check if strategy is ready to trade
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
-
-		// Update sentiment data (in a real system, this would come from external source)
-		UpdateSentiment(candle);
-
-		// Extract Donchian Channel values
-		var donchianTyped = (DonchianChannelsValue)donchianValue;
-
-		if (donchianTyped.UpperBand is not decimal upperBand ||
-		donchianTyped.LowerBand is not decimal lowerBand ||
-		donchianTyped.Middle is not decimal middleBand)
-		{
 			return;
-		}
 
-		// Store middle band for exit conditions
-		_midChannel = middleBand;
-
-		// Calculate sentiment thresholds
-		var bullishSentimentThreshold = _sentimentAverage + SentimentMultiplier * _sentimentStdDev;
-		var bearishSentimentThreshold = _sentimentAverage - SentimentMultiplier * _sentimentStdDev;
+		UpdateSentiment(candle);
 
 		var price = candle.ClosePrice;
 
-		// Trading logic
-
-		// Entry conditions
-
-		// Long entry: Price breaks above upper band with positive sentiment spike
-		if (price > upperBand && _currentSentiment > bullishSentimentThreshold && !_isLong && Position <= 0)
+		// Long entry: Price breaks above upper band with positive sentiment
+		if (price >= upper && _currentSentiment > 0 && Position == 0)
 		{
-			LogInfo($"Long signal: Price {price} > Upper Band {upperBand}, Sentiment {_currentSentiment} > Threshold {bullishSentimentThreshold}");
-			BuyMarket(Volume);
-			_isLong = true;
-			_isShort = false;
+			BuyMarket();
 		}
-		// Short entry: Price breaks below lower band with negative sentiment spike
-		else if (price < lowerBand && _currentSentiment < bearishSentimentThreshold && !_isShort && Position >= 0)
+		// Short entry: Price breaks below lower band with negative sentiment
+		else if (price <= lower && _currentSentiment < 0 && Position == 0)
 		{
-			LogInfo($"Short signal: Price {price} < Lower Band {lowerBand}, Sentiment {_currentSentiment} < Threshold {bearishSentimentThreshold}");
-			SellMarket(Volume);
-			_isShort = true;
-			_isLong = false;
-		}
-
-		// Exit conditions
-
-		// Exit long: Price falls below middle band
-		if (_isLong && price < _midChannel && Position > 0)
-		{
-			LogInfo($"Exit long: Price {price} < Middle Band {_midChannel}");
-			SellMarket(Math.Abs(Position));
-			_isLong = false;
-		}
-		// Exit short: Price rises above middle band
-		else if (_isShort && price > _midChannel && Position < 0)
-		{
-			LogInfo($"Exit short: Price {price} > Middle Band {_midChannel}");
-			BuyMarket(Math.Abs(Position));
-			_isShort = false;
+			SellMarket();
 		}
 	}
 
@@ -273,8 +216,7 @@ public class DonchianWithSentimentSpikeStrategy : Strategy
 				sentiment = -bodyRatio * 2; // -2 to 0 scale
 			}
 
-			// Add some randomness
-			sentiment += (decimal)((RandomGen.GetDouble() - 0.5) * 0.5);
+			// Use body ratio directly without randomness
 		}
 
 		// Ensure sentiment is within -2 to 2 range

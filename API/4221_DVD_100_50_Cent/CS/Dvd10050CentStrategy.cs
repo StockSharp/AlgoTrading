@@ -313,10 +313,10 @@ public class Dvd10050CentStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-	_h1Fast = new SMA { Length = 2 };
-	_h1Slow = new SMA { Length = 24 };
-	_d1Fast = new SMA { Length = 2 };
-	_d1Slow = new SMA { Length = 24 };
+		_h1Fast = new SimpleMovingAverage { Length = 2 };
+		_h1Slow = new SimpleMovingAverage { Length = 24 };
+		_d1Fast = new SimpleMovingAverage { Length = 2 };
+		_d1Slow = new SimpleMovingAverage { Length = 24 };
 
 		_pipSize = CalculatePipSize();
 		_pointValue = _pipSize / 10m;
@@ -333,7 +333,10 @@ public class Dvd10050CentStrategy : Strategy
 		var d1Subscription = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
 		d1Subscription.Bind(ProcessD1).Start();
 
-		StartProtection(null, null);
+		StartProtection(
+			takeProfit: new Unit(2, UnitTypes.Percent),
+			stopLoss: new Unit(1, UnitTypes.Percent)
+		);
 	}
 
 	/// <inheritdoc />
@@ -418,8 +421,8 @@ public class Dvd10050CentStrategy : Strategy
 		_h1Finished.Add(candle);
 		TrimHistory(_h1Finished, H1HistoryLength);
 
-		_h1Fast.Process(new DecimalIndicatorValue(_h1Fast, candle.OpenPrice, candle.CloseTime));
-		_h1Slow.Process(new DecimalIndicatorValue(_h1Slow, candle.OpenPrice, candle.CloseTime));
+		_h1Fast.Process(new DecimalIndicatorValue(_h1Fast, candle.OpenPrice, candle.CloseTime) { IsFinal = true });
+		_h1Slow.Process(new DecimalIndicatorValue(_h1Slow, candle.OpenPrice, candle.CloseTime) { IsFinal = true });
 
 		if (!_h1Fast.IsFormed || !_h1Slow.IsFormed)
 		return;
@@ -437,8 +440,8 @@ public class Dvd10050CentStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 		return;
 
-		_d1Fast.Process(new DecimalIndicatorValue(_d1Fast, candle.OpenPrice, candle.CloseTime));
-		_d1Slow.Process(new DecimalIndicatorValue(_d1Slow, candle.OpenPrice, candle.CloseTime));
+		_d1Fast.Process(new DecimalIndicatorValue(_d1Fast, candle.OpenPrice, candle.CloseTime) { IsFinal = true });
+		_d1Slow.Process(new DecimalIndicatorValue(_d1Slow, candle.OpenPrice, candle.CloseTime) { IsFinal = true });
 
 		if (!_d1Fast.IsFormed || !_d1Slow.IsFormed)
 		return;

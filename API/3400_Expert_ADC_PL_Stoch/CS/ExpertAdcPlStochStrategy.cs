@@ -32,7 +32,7 @@ public class ExpertAdcPlStochStrategy : Strategy
 
 	public ExpertAdcPlStochStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 		_stochPeriod = Param(nameof(StochPeriod), 14)
 			.SetGreaterThanZero()
@@ -66,6 +66,11 @@ public class ExpertAdcPlStochStrategy : Strategy
 		var stoch = new StochasticOscillator { K = { Length = StochPeriod }, D = { Length = 3 } };
 		var subscription = SubscribeCandles(CandleType);
 		subscription.BindEx(stoch, ProcessCandle).Start();
+
+		StartProtection(
+			takeProfit: new Unit(2, UnitTypes.Percent),
+			stopLoss: new Unit(1, UnitTypes.Percent)
+		);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue stochValue)
@@ -99,29 +104,14 @@ public class ExpertAdcPlStochStrategy : Strategy
 				&& curr.OpenPrice > prev.HighPrice
 				&& curr.ClosePrice < (prev.OpenPrice + prev.ClosePrice) / 2m;
 
-			if (isPiercing && kValue < LongThreshold && Position <= 0 && _candlesSinceTrade >= SignalCooldownCandles)
+			if (isPiercing && kValue < LongThreshold && Position == 0 && _candlesSinceTrade >= SignalCooldownCandles)
 			{
 				BuyMarket();
 				_candlesSinceTrade = 0;
 			}
-			else if (isDarkCloud && kValue > ShortThreshold && Position >= 0 && _candlesSinceTrade >= SignalCooldownCandles)
+			else if (isDarkCloud && kValue > ShortThreshold && Position == 0 && _candlesSinceTrade >= SignalCooldownCandles)
 			{
 				SellMarket();
-				_candlesSinceTrade = 0;
-			}
-		}
-
-		// Exit on stochastic cross
-		if (_hasPrevSignal)
-		{
-			if (Position > 0 && _prevSignal >= ShortThreshold && kValue < ShortThreshold && _candlesSinceTrade >= SignalCooldownCandles)
-			{
-				SellMarket();
-				_candlesSinceTrade = 0;
-			}
-			else if (Position < 0 && _prevSignal <= LongThreshold && kValue > LongThreshold && _candlesSinceTrade >= SignalCooldownCandles)
-			{
-				BuyMarket();
 				_candlesSinceTrade = 0;
 			}
 		}
