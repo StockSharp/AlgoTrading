@@ -4,214 +4,110 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan, Math
-from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
+from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import BollingerBands, CommodityChannelIndex
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
+
 
 class bollinger_cci_strategy(Strategy):
-    """
-    Implementation of strategy - Bollinger Bands + CCI.
-    Buy when price is below lower Bollinger Band and CCI is below -100 (oversold).
-    Sell when price is above upper Bollinger Band and CCI is above 100 (overbought).
-    """
-
     def __init__(self):
         super(bollinger_cci_strategy, self).__init__()
-
-        # Initialize strategy parameters
         self._bollinger_period = self.Param("BollingerPeriod", 20) \
-            .SetGreaterThanZero() \
             .SetDisplay("Bollinger Period", "Period for Bollinger Bands", "Bollinger Parameters")
-
         self._bollinger_deviation = self.Param("BollingerDeviation", 2.0) \
-            .SetGreaterThanZero() \
             .SetDisplay("Bollinger Deviation", "Deviation multiplier for Bollinger Bands", "Bollinger Parameters")
-
         self._cci_period = self.Param("CciPeriod", 20) \
-            .SetGreaterThanZero() \
             .SetDisplay("CCI Period", "Period for Commodity Channel Index", "CCI Parameters")
-
-        self._cci_oversold = self.Param("CciOversold", -100) \
+        self._cci_oversold = self.Param("CciOversold", -100.0) \
             .SetDisplay("CCI Oversold", "CCI level to consider market oversold", "CCI Parameters")
-
-        self._cci_overbought = self.Param("CciOverbought", 100) \
+        self._cci_overbought = self.Param("CciOverbought", 100.0) \
             .SetDisplay("CCI Overbought", "CCI level to consider market overbought", "CCI Parameters")
-
-        self._stop_loss = self.Param("StopLoss", Unit(2, UnitTypes.Absolute)) \
-            .SetDisplay("Stop Loss", "Stop loss in ATR or value", "Risk Management")
-
-        self._candle_type = self.Param("CandleType", tf(5)) \
+        self._cooldown_bars = self.Param("CooldownBars", 80) \
+            .SetDisplay("Cooldown Bars", "Bars between trades", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Candle type for strategy", "General")
+        self._cooldown = 0
 
     @property
-    def BollingerPeriod(self):
-        """Bollinger Bands period."""
+    def bollinger_period(self):
         return self._bollinger_period.Value
-
-    @BollingerPeriod.setter
-    def BollingerPeriod(self, value):
-        self._bollinger_period.Value = value
-
     @property
-    def BollingerDeviation(self):
-        """Bollinger Bands deviation multiplier."""
+    def bollinger_deviation(self):
         return self._bollinger_deviation.Value
-
-    @BollingerDeviation.setter
-    def BollingerDeviation(self, value):
-        self._bollinger_deviation.Value = value
-
     @property
-    def CciPeriod(self):
-        """CCI period."""
+    def cci_period(self):
         return self._cci_period.Value
-
-    @CciPeriod.setter
-    def CciPeriod(self, value):
-        self._cci_period.Value = value
-
     @property
-    def CciOversold(self):
-        """CCI oversold level."""
+    def cci_oversold(self):
         return self._cci_oversold.Value
-
-    @CciOversold.setter
-    def CciOversold(self, value):
-        self._cci_oversold.Value = value
-
     @property
-    def CciOverbought(self):
-        """CCI overbought level."""
+    def cci_overbought(self):
         return self._cci_overbought.Value
-
-    @CciOverbought.setter
-    def CciOverbought(self, value):
-        self._cci_overbought.Value = value
-
     @property
-    def StopLoss(self):
-        """Stop-loss value."""
-        return self._stop_loss.Value
-
-    @StopLoss.setter
-    def StopLoss(self, value):
-        self._stop_loss.Value = value
-
+    def cooldown_bars(self):
+        return self._cooldown_bars.Value
     @property
-    def CandleType(self):
-        """Candle type used for strategy."""
+    def candle_type(self):
         return self._candle_type.Value
 
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candle_type.Value = value
-
-    def GetWorkingSecurities(self):
-        return [(self.Security, self.CandleType)]
-
     def OnReseted(self):
-        """Resets internal state when strategy is reset."""
         super(bollinger_cci_strategy, self).OnReseted()
-        self.Indicators.Clear()
+        self._cooldown = 0
 
     def OnStarted(self, time):
         super(bollinger_cci_strategy, self).OnStarted(time)
-
-        # Create indicators
         bollinger = BollingerBands()
-        bollinger.Length = self.BollingerPeriod
-        bollinger.Width = self.BollingerDeviation
-
+        bollinger.Length = self.bollinger_period
+        bollinger.Width = self.bollinger_deviation
         cci = CommodityChannelIndex()
-        cci.Length = self.CciPeriod
-
-        # Setup candle subscription
-        subscription = self.SubscribeCandles(self.CandleType)
-
-        # Bind indicators to candles
-        subscription.BindEx(bollinger, cci, self.ProcessCandle).Start()
-
-        # Setup chart visualization if available
+        cci.Length = self.cci_period
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.BindEx(bollinger, cci, self.OnProcess).Start()
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
             self.DrawIndicator(area, bollinger)
-
-            # Create separate area for CCI
-            cciArea = self.CreateChartArea()
-            if cciArea is not None:
-                self.DrawIndicator(cciArea, cci)
-
+            cci_area = self.CreateChartArea()
+            if cci_area is not None:
+                self.DrawIndicator(cci_area, cci)
             self.DrawOwnTrades(area)
 
-        # Start protective orders
-        self.StartProtection(
-            takeProfit=Unit(0, UnitTypes.Absolute),
-            stopLoss=self.StopLoss
-        )
-    def ProcessCandle(self, candle, bollingerValue, cciValue):
+    def OnProcess(self, candle, bollinger_value, cci_value):
         if candle.State != CandleStates.Finished:
             return
-
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
-
-        # In this function we receive only the middle band value from the Bollinger Bands indicator
-        # We need to calculate the upper and lower bands ourselves or get them directly from the indicator
-
-        # Get Bollinger Bands values from the indicator
-        bb = bollingerValue
-
-        if bb.MovingAverage is None:
+        if not bollinger_value.IsFormed or not cci_value.IsFormed:
             return
-        middleBand = float(bb.MovingAverage)
 
-        if bb.UpBand is None:
+        bb = bollinger_value
+        if bb.UpBand is None or bb.LowBand is None or bb.MovingAverage is None:
             return
-        upperBand = float(bb.UpBand)
-
-        if bb.LowBand is None:
-            return
-        lowerBand = float(bb.LowBand)
-
-        # Current price
+        upper_band = float(bb.UpBand)
+        lower_band = float(bb.LowBand)
+        middle_band = float(bb.MovingAverage)
+        cci_val = float(cci_value)
         price = float(candle.ClosePrice)
 
-        cciValueFloat = float(cciValue)
+        if self._cooldown > 0:
+            self._cooldown -= 1
+            return
 
-        self.LogInfo(
-            "Candle: {0}, Close: {1}, Upper Band: {2}, Middle Band: {3}, Lower Band: {4}, CCI: {5}".format(
-                candle.OpenTime, price, upperBand, middleBand, lowerBand, cciValueFloat))
+        lower_touch = price <= lower_band * 1.002
+        upper_touch = price >= upper_band * 0.998
 
-        # Trading rules
-        if price < lowerBand and cciValueFloat < self.CciOversold and self.Position <= 0:
-            # Buy signal - price below lower band and CCI oversold
-            volume = self.Volume + Math.Abs(self.Position)
-            self.BuyMarket(volume)
-
-            self.LogInfo(
-                "Buy signal: Price below lower Bollinger Band and CCI oversold ({0} < {1}). Volume: {2}".format(
-                    cciValueFloat, self.CciOversold, volume))
-        elif price > upperBand and cciValueFloat > self.CciOverbought and self.Position >= 0:
-            # Sell signal - price above upper band and CCI overbought
-            volume = self.Volume + Math.Abs(self.Position)
-            self.SellMarket(volume)
-
-            self.LogInfo(
-                "Sell signal: Price above upper Bollinger Band and CCI overbought ({0} > {1}). Volume: {2}".format(
-                    cciValueFloat, self.CciOverbought, volume))
-        # Exit conditions
-        elif price > middleBand and self.Position > 0:
-            # Exit long position when price returns to the middle band
-            self.SellMarket(Math.Abs(self.Position))
-            self.LogInfo("Exit long: Price returned to middle band. Position: {0}".format(self.Position))
-        elif price < middleBand and self.Position < 0:
-            # Exit short position when price returns to the middle band
-            self.BuyMarket(Math.Abs(self.Position))
-            self.LogInfo("Exit short: Price returned to middle band. Position: {0}".format(self.Position))
+        if lower_touch and cci_val < self.cci_oversold and self.Position == 0:
+            self.BuyMarket()
+            self._cooldown = self.cooldown_bars
+        elif upper_touch and cci_val > self.cci_overbought and self.Position == 0:
+            self.SellMarket()
+            self._cooldown = self.cooldown_bars
+        elif price > middle_band and self.Position > 0:
+            self.SellMarket()
+            self._cooldown = self.cooldown_bars
+        elif price < middle_band and self.Position < 0:
+            self.BuyMarket()
+            self._cooldown = self.cooldown_bars
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return bollinger_cci_strategy()

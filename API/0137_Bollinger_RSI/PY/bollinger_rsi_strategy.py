@@ -3,197 +3,111 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import DataType, UnitTypes, Unit, ICandleMessage, CandleStates
+from System import TimeSpan
+from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import BollingerBands, RelativeStrengthIndex
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
+
 
 class bollinger_rsi_strategy(Strategy):
-    """
-    Combined strategy that uses Bollinger Bands and RSI indicators
-    for mean reversion trading.
-    """
-    # Strategy constructor.
     def __init__(self):
         super(bollinger_rsi_strategy, self).__init__()
-
-        # Initialize strategy parameters
-        self._bollingerPeriod = self.Param("BollingerPeriod", 20) \
-            .SetDisplay("Bollinger Period", "Period of the Bollinger Bands indicator", "Indicators") \
-            .SetGreaterThanZero() \
-            .SetCanOptimize(True) \
-            .SetOptimize(10, 50, 5)
-
-        self._bollingerDeviation = self.Param("BollingerDeviation", 2.0) \
-            .SetDisplay("Bollinger Deviation", "Standard deviation multiplier for Bollinger Bands", "Indicators") \
-            .SetGreaterThanZero() \
-            .SetCanOptimize(True) \
-            .SetOptimize(1.5, 3.0, 0.5)
-
-        self._rsiPeriod = self.Param("RsiPeriod", 14) \
-            .SetDisplay("RSI Period", "Period of the RSI indicator", "Indicators") \
-            .SetGreaterThanZero() \
-            .SetCanOptimize(True) \
-            .SetOptimize(7, 21, 7)
-
-        self._rsiOversold = self.Param("RsiOversold", 30) \
-            .SetDisplay("RSI Oversold", "RSI level considered oversold", "Indicators") \
-            .SetNotNegative() \
-            .SetCanOptimize(True) \
-            .SetOptimize(20, 40, 5)
-
-        self._rsiOverbought = self.Param("RsiOverbought", 70) \
-            .SetDisplay("RSI Overbought", "RSI level considered overbought", "Indicators") \
-            .SetNotNegative() \
-            .SetCanOptimize(True) \
-            .SetOptimize(60, 80, 5)
-
-        self._candleType = self.Param("CandleType", tf(5)) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
-
-        self._stopLossAtr = self.Param("StopLossAtr", 2.0) \
-            .SetDisplay("Stop Loss ATR", "Stop loss as ATR multiplier", "Risk Management") \
-            .SetGreaterThanZero() \
-            .SetCanOptimize(True) \
-            .SetOptimize(1.0, 3.0, 0.5)
-
-    @property
-    def BollingerPeriod(self):
-        """Bollinger Bands period."""
-        return self._bollingerPeriod.Value
-
-    @BollingerPeriod.setter
-    def BollingerPeriod(self, value):
-        self._bollingerPeriod.Value = value
-
-    @property
-    def BollingerDeviation(self):
-        """Bollinger Bands standard deviation multiplier."""
-        return self._bollingerDeviation.Value
-
-    @BollingerDeviation.setter
-    def BollingerDeviation(self, value):
-        self._bollingerDeviation.Value = value
+        self._bollinger_period = self.Param("BollingerPeriod", 20) \
+            .SetDisplay("Bollinger Period", "Period of the Bollinger Bands indicator", "Indicators")
+        self._bollinger_deviation = self.Param("BollingerDeviation", 2.0) \
+            .SetDisplay("Bollinger Deviation", "Standard deviation multiplier", "Indicators")
+        self._rsi_period = self.Param("RsiPeriod", 14) \
+            .SetDisplay("RSI Period", "Period of the RSI indicator", "Indicators")
+        self._rsi_oversold = self.Param("RsiOversold", 30.0) \
+            .SetDisplay("RSI Oversold", "RSI oversold level", "Indicators")
+        self._rsi_overbought = self.Param("RsiOverbought", 70.0) \
+            .SetDisplay("RSI Overbought", "RSI overbought level", "Indicators")
+        self._cooldown_bars = self.Param("CooldownBars", 100) \
+            .SetDisplay("Cooldown Bars", "Bars between trades", "General")
+        self._rsi_value = 50.0
+        self._cooldown = 0
 
     @property
-    def RsiPeriod(self):
-        """RSI period."""
-        return self._rsiPeriod.Value
-
-    @RsiPeriod.setter
-    def RsiPeriod(self, value):
-        self._rsiPeriod.Value = value
-
+    def candle_type(self):
+        return self._candle_type.Value
     @property
-    def RsiOversold(self):
-        """RSI oversold level."""
-        return self._rsiOversold.Value
-
-    @RsiOversold.setter
-    def RsiOversold(self, value):
-        self._rsiOversold.Value = value
-
+    def bollinger_period(self):
+        return self._bollinger_period.Value
     @property
-    def RsiOverbought(self):
-        """RSI overbought level."""
-        return self._rsiOverbought.Value
-
-    @RsiOverbought.setter
-    def RsiOverbought(self, value):
-        self._rsiOverbought.Value = value
-
+    def bollinger_deviation(self):
+        return self._bollinger_deviation.Value
     @property
-    def CandleType(self):
-        """Candle type for strategy calculation."""
-        return self._candleType.Value
-
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candleType.Value = value
-
+    def rsi_period(self):
+        return self._rsi_period.Value
     @property
-    def StopLossAtr(self):
-        """Stop-loss in ATR multiplier."""
-        return self._stopLossAtr.Value
+    def rsi_oversold(self):
+        return self._rsi_oversold.Value
+    @property
+    def rsi_overbought(self):
+        return self._rsi_overbought.Value
+    @property
+    def cooldown_bars(self):
+        return self._cooldown_bars.Value
 
-    @StopLossAtr.setter
-    def StopLossAtr(self, value):
-        self._stopLossAtr.Value = value
-
-    def GetWorkingSecurities(self):
-        """!! REQUIRED!! Return securities and candle types used."""
-        return [(self.Security, self.CandleType)]
+    def OnReseted(self):
+        super(bollinger_rsi_strategy, self).OnReseted()
+        self._rsi_value = 50.0
+        self._cooldown = 0
 
     def OnStarted(self, time):
-        """Called when the strategy starts."""
         super(bollinger_rsi_strategy, self).OnStarted(time)
-
-        # Create indicators
         bollinger = BollingerBands()
-        bollinger.Length = self.BollingerPeriod
-        bollinger.Width = self.BollingerDeviation
-
+        bollinger.Length = self.bollinger_period
+        bollinger.Width = self.bollinger_deviation
         rsi = RelativeStrengthIndex()
-        rsi.Length = self.RsiPeriod
-
-        # Create subscription and bind indicators
-        subscription = self.SubscribeCandles(self.CandleType)
-        subscription.BindEx(bollinger, rsi, self.ProcessCandles).Start()
-
-        # Setup position protection
-        self.StartProtection(
-            takeProfit=Unit(0, UnitTypes.Absolute),
-            stopLoss=Unit(self.StopLossAtr, UnitTypes.Absolute)
-        )
-        # Setup chart visualization if available
+        rsi.Length = self.rsi_period
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.Bind(rsi, self._on_rsi)
+        subscription.BindEx(bollinger, self.OnProcess).Start()
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
             self.DrawIndicator(area, bollinger)
-            self.DrawIndicator(area, rsi)
             self.DrawOwnTrades(area)
+            rsi_area = self.CreateChartArea()
+            if rsi_area is not None:
+                self.DrawIndicator(rsi_area, rsi)
 
-    def ProcessCandles(self, candle, bollingerValue, rsiValue):
-        """Process candles and indicator values."""
-        # Skip unfinished candles
+    def _on_rsi(self, candle, rsi_val):
+        self._rsi_value = float(rsi_val)
+
+    def OnProcess(self, candle, bollinger_value):
         if candle.State != CandleStates.Finished:
             return
-
-        # Check if strategy is ready to trade
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
-
-        if bollingerValue.UpBand is None:
+        bb = bollinger_value
+        if bb.UpBand is None or bb.LowBand is None or bb.MovingAverage is None:
             return
-        upperBand = float(bollingerValue.UpBand)
+        upper_band = float(bb.UpBand)
+        lower_band = float(bb.LowBand)
+        middle_band = float(bb.MovingAverage)
+        close = float(candle.ClosePrice)
 
-        if bollingerValue.LowBand is None:
+        if self._cooldown > 0:
+            self._cooldown -= 1
             return
-        lowerBand = float(bollingerValue.LowBand)
 
-        if bollingerValue.MovingAverage is None:
-            return
-        middleBand = float(bollingerValue.MovingAverage)
+        if close < lower_band and self._rsi_value < self.rsi_oversold and self.Position == 0:
+            self.BuyMarket()
+            self._cooldown = self.cooldown_bars
+        elif close > upper_band and self._rsi_value > self.rsi_overbought and self.Position == 0:
+            self.SellMarket()
+            self._cooldown = self.cooldown_bars
 
-        rsiValueDec = float(rsiValue)
-
-        # Long entry: price below lower Bollinger Band and RSI oversold
-        if candle.ClosePrice < lowerBand and rsiValueDec < self.RsiOversold and self.Position <= 0:
-            volume = self.Volume + Math.Abs(self.Position)
-            self.BuyMarket(volume)
-        # Short entry: price above upper Bollinger Band and RSI overbought
-        elif candle.ClosePrice > upperBand and rsiValueDec > self.RsiOverbought and self.Position >= 0:
-            volume = self.Volume + Math.Abs(self.Position)
-            self.SellMarket(volume)
-        # Long exit: price returns to middle band
-        elif self.Position > 0 and candle.ClosePrice > middleBand:
-            self.SellMarket(Math.Abs(self.Position))
-        # Short exit: price returns to middle band
-        elif self.Position < 0 and candle.ClosePrice < middleBand:
-            self.BuyMarket(Math.Abs(self.Position))
+        if self.Position > 0 and close > middle_band:
+            self.SellMarket()
+            self._cooldown = self.cooldown_bars
+        elif self.Position < 0 and close < middle_band:
+            self.BuyMarket()
+            self._cooldown = self.cooldown_bars
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return bollinger_rsi_strategy()

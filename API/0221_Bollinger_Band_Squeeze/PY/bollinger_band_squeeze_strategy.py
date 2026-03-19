@@ -5,174 +5,97 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, UnitTypes, Unit, CandleStates
-from StockSharp.Algo.Indicators import BollingerBands, AverageTrueRange, BollingerBandsValue
+from StockSharp.Algo.Indicators import BollingerBands, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
+
 
 class bollinger_band_squeeze_strategy(Strategy):
-    """
-    Bollinger Band Squeeze strategy.
-    Trades when volatility decreases (bands squeeze) followed by a breakout.
-    """
-
     def __init__(self):
         super(bollinger_band_squeeze_strategy, self).__init__()
-
-        # Bollinger Bands period.
-        self._bollingerPeriod = self.Param("BollingerPeriod", 20) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Bollinger Period", "Period for Bollinger Bands calculation", "Parameters") \
-            .SetCanOptimize(True) \
-            .SetOptimize(10, 30, 5)
-
-        # Bollinger Bands multiplier.
-        self._bollingerMultiplier = self.Param("BollingerMultiplier", 2.0) \
-            .SetRange(0.1, float('inf')) \
-            .SetDisplay("Bollinger Multiplier", "Standard deviation multiplier for Bollinger Bands", "Parameters") \
-            .SetCanOptimize(True) \
-            .SetOptimize(1.5, 3.0, 0.5)
-
-        # Period for averaging Bollinger width.
-        self._lookbackPeriod = self.Param("LookbackPeriod", 20) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Lookback Period", "Period for averaging Bollinger width", "Parameters") \
-            .SetCanOptimize(True) \
-            .SetOptimize(10, 30, 5)
-
-        # Candle type for strategy.
-        self._candleType = self.Param("CandleType", tf(5)) \
+        self._bollinger_period = self.Param("BollingerPeriod", 20) \
+            .SetDisplay("Bollinger Period", "Period for Bollinger Bands calculation", "Parameters")
+        self._bollinger_multiplier = self.Param("BollingerMultiplier", 2.0) \
+            .SetDisplay("Bollinger Multiplier", "Standard deviation multiplier for Bollinger Bands", "Parameters")
+        self._lookback_period = self.Param("LookbackPeriod", 20) \
+            .SetDisplay("Lookback Period", "Period for averaging Bollinger width", "Parameters")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Candle type for strategy", "Common")
-
-        # Internal state fields
-        self._bollinger = None
-        self._atr = None
-        self._prevBollingerWidth = 0.0
-        self._avgBollingerWidth = 0.0
-        self._bollingerWidthSum = 0.0
-        self._bollingerWidths = []
+        self._prev_bollinger_width = 0.0
+        self._avg_bollinger_width = 0.0
+        self._bollinger_width_sum = 0.0
+        self._bollinger_widths = []
 
     @property
-    def BollingerPeriod(self):
-        """Bollinger Bands period."""
-        return self._bollingerPeriod.Value
-
-    @BollingerPeriod.setter
-    def BollingerPeriod(self, value):
-        self._bollingerPeriod.Value = value
-
+    def bollinger_period(self):
+        return self._bollinger_period.Value
     @property
-    def BollingerMultiplier(self):
-        """Bollinger Bands multiplier."""
-        return self._bollingerMultiplier.Value
-
-    @BollingerMultiplier.setter
-    def BollingerMultiplier(self, value):
-        self._bollingerMultiplier.Value = value
-
+    def bollinger_multiplier(self):
+        return self._bollinger_multiplier.Value
     @property
-    def LookbackPeriod(self):
-        """Period for averaging Bollinger width."""
-        return self._lookbackPeriod.Value
-
-    @LookbackPeriod.setter
-    def LookbackPeriod(self, value):
-        self._lookbackPeriod.Value = value
-
+    def lookback_period(self):
+        return self._lookback_period.Value
     @property
-    def CandleType(self):
-        """Candle type for strategy."""
-        return self._candleType.Value
-
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candleType.Value = value
-
-    def GetWorkingSecurities(self):
-        return [(self.Security, self.CandleType)]
+    def candle_type(self):
+        return self._candle_type.Value
 
     def OnReseted(self):
         super(bollinger_band_squeeze_strategy, self).OnReseted()
-
-        self._prevBollingerWidth = 0.0
-        self._avgBollingerWidth = 0.0
-        self._bollingerWidthSum = 0.0
-        self._bollingerWidths = []
+        self._prev_bollinger_width = 0.0
+        self._avg_bollinger_width = 0.0
+        self._bollinger_width_sum = 0.0
+        self._bollinger_widths = []
 
     def OnStarted(self, time):
         super(bollinger_band_squeeze_strategy, self).OnStarted(time)
-
-        # Initialize indicator
-        self._bollinger = BollingerBands()
-        self._bollinger.Length = self.BollingerPeriod
-        self._bollinger.Width = self.BollingerMultiplier
-
-        self._atr = AverageTrueRange()
-        self._atr.Length = self.BollingerPeriod
-
-
-        # Create subscription and bind indicator
-        subscription = self.SubscribeCandles(self.CandleType)
-        subscription.BindEx(self._bollinger, self._atr, self.ProcessCandle).Start()
-
-        # Setup chart visualization if available
+        bollinger = BollingerBands()
+        bollinger.Length = self.bollinger_period
+        bollinger.Width = self.bollinger_multiplier
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.BindEx(bollinger, self.OnProcess).Start()
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, self._bollinger)
+            self.DrawIndicator(area, bollinger)
             self.DrawOwnTrades(area)
-
-        # Enable position protection
         self.StartProtection(
             takeProfit=Unit(0, UnitTypes.Absolute),
             stopLoss=Unit(2, UnitTypes.Absolute)
         )
-    def ProcessCandle(self, candle, bollingerValue, atrValue):
+
+    def OnProcess(self, candle, bollinger_value):
         if candle.State != CandleStates.Finished:
             return
-
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-
-        if bollingerValue.UpBand is None:
+        if bollinger_value.UpBand is None:
             return
-        upperBand = float(bollingerValue.UpBand)
+        upper_band = float(bollinger_value.UpBand)
 
-        if bollingerValue.LowBand is None:
+        if bollinger_value.LowBand is None:
             return
-        lowerBand = float(bollingerValue.LowBand)
+        lower_band = float(bollinger_value.LowBand)
 
-        atr = float(atrValue)
+        bollinger_width = upper_band - lower_band
 
-        # Calculate Bollinger width (upper - lower)
-        bollingerWidth = upperBand - lowerBand
+        self._bollinger_widths.append(bollinger_width)
+        self._bollinger_width_sum += bollinger_width
 
-        # Track average Bollinger width over lookback period
-        self._bollingerWidths.append(bollingerWidth)
-        self._bollingerWidthSum += bollingerWidth
+        if len(self._bollinger_widths) > self.lookback_period:
+            old_value = self._bollinger_widths.pop(0)
+            self._bollinger_width_sum -= old_value
 
-        if len(self._bollingerWidths) > self.LookbackPeriod:
-            oldValue = self._bollingerWidths.pop(0)
-            self._bollingerWidthSum -= oldValue
+        if len(self._bollinger_widths) == self.lookback_period:
+            self._avg_bollinger_width = self._bollinger_width_sum / self.lookback_period
+            is_squeeze = bollinger_width < self._avg_bollinger_width
 
-        if len(self._bollingerWidths) == self.LookbackPeriod:
-            self._avgBollingerWidth = self._bollingerWidthSum / self.LookbackPeriod
+            if is_squeeze:
+                if candle.ClosePrice > upper_band and self.Position <= 0:
+                    self.BuyMarket()
+                elif candle.ClosePrice < lower_band and self.Position >= 0:
+                    self.SellMarket()
 
-            # Detect Bollinger Band squeeze (narrowing bands)
-            isSqueeze = bollingerWidth < self._avgBollingerWidth
-
-            # Breakout after squeeze
-            if isSqueeze:
-                # Upside breakout
-                if candle.ClosePrice > upperBand and self.Position <= 0:
-                    self.BuyMarket(self.Volume + Math.Abs(self.Position))
-                # Downside breakout
-                elif candle.ClosePrice < lowerBand and self.Position >= 0:
-                    self.SellMarket(self.Volume + Math.Abs(self.Position))
-
-        self._prevBollingerWidth = bollingerWidth
+        self._prev_bollinger_width = bollinger_width
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return bollinger_band_squeeze_strategy()

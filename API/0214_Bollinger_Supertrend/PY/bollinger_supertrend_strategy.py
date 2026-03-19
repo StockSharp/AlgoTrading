@@ -7,212 +7,125 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import BollingerBands, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
+
 
 class bollinger_supertrend_strategy(Strategy):
-    """
-    Strategy based on Bollinger Bands and Supertrend indicators.
-    Enters long when price breaks above upper Bollinger Band and is above Supertrend.
-    Enters short when price breaks below lower Bollinger Band and is below Supertrend.
-    Uses Supertrend for dynamic exit.
-    """
-
     def __init__(self):
         super(bollinger_supertrend_strategy, self).__init__()
-
-        # Bollinger Bands period.
         self._bollinger_period = self.Param("BollingerPeriod", 20) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Bollinger Period", "Period for Bollinger Bands calculation", "Indicators") \
-            .SetCanOptimize(True) \
-            .SetOptimize(10, 30, 5)
-
-        # Bollinger Bands standard deviation multiplier.
+            .SetDisplay("Bollinger Period", "Period for Bollinger Bands calculation", "Indicators")
         self._bollinger_deviation = self.Param("BollingerDeviation", 2.0) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Bollinger Deviation", "Standard deviation multiplier for Bollinger Bands", "Indicators") \
-            .SetCanOptimize(True) \
-            .SetOptimize(1.5, 3.0, 0.5)
-
-        # Supertrend ATR period.
+            .SetDisplay("Bollinger Deviation", "Standard deviation multiplier for Bollinger Bands", "Indicators")
         self._supertrend_period = self.Param("SupertrendPeriod", 10) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Supertrend Period", "ATR period for Supertrend calculation", "Indicators") \
-            .SetCanOptimize(True) \
-            .SetOptimize(7, 14, 1)
-
-        # Supertrend ATR multiplier.
+            .SetDisplay("Supertrend Period", "ATR period for Supertrend calculation", "Indicators")
         self._supertrend_multiplier = self.Param("SupertrendMultiplier", 3.0) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Supertrend Multiplier", "ATR multiplier for Supertrend calculation", "Indicators") \
-            .SetCanOptimize(True) \
-            .SetOptimize(2.0, 4.0, 0.5)
-
-        # Candle type parameter.
-        self._candle_type = self.Param("CandleType", tf(15)) \
+            .SetDisplay("Supertrend Multiplier", "ATR multiplier for Supertrend calculation", "Indicators")
+        self._cooldown_bars = self.Param("CooldownBars", 60) \
+            .SetDisplay("Cooldown Bars", "Bars between trades", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
-
-        # Internal state
         self._is_long_trend = False
         self._supertrend_value = 0.0
         self._last_close = 0.0
+        self._cooldown = 0
 
     @property
-    def BollingerPeriod(self):
-        """Bollinger Bands period."""
+    def bollinger_period(self):
         return self._bollinger_period.Value
-
-    @BollingerPeriod.setter
-    def BollingerPeriod(self, value):
-        self._bollinger_period.Value = value
-
     @property
-    def BollingerDeviation(self):
-        """Bollinger Bands standard deviation multiplier."""
+    def bollinger_deviation(self):
         return self._bollinger_deviation.Value
-
-    @BollingerDeviation.setter
-    def BollingerDeviation(self, value):
-        self._bollinger_deviation.Value = value
-
     @property
-    def SupertrendPeriod(self):
-        """Supertrend ATR period."""
+    def supertrend_period(self):
         return self._supertrend_period.Value
-
-    @SupertrendPeriod.setter
-    def SupertrendPeriod(self, value):
-        self._supertrend_period.Value = value
-
     @property
-    def SupertrendMultiplier(self):
-        """Supertrend ATR multiplier."""
+    def supertrend_multiplier(self):
         return self._supertrend_multiplier.Value
-
-    @SupertrendMultiplier.setter
-    def SupertrendMultiplier(self, value):
-        self._supertrend_multiplier.Value = value
-
     @property
-    def CandleType(self):
-        """Candle type parameter."""
+    def cooldown_bars(self):
+        return self._cooldown_bars.Value
+    @property
+    def candle_type(self):
         return self._candle_type.Value
 
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candle_type.Value = value
-
     def OnReseted(self):
-        """Resets internal state when strategy is reset."""
         super(bollinger_supertrend_strategy, self).OnReseted()
         self._is_long_trend = False
         self._supertrend_value = 0.0
         self._last_close = 0.0
+        self._cooldown = 0
 
     def OnStarted(self, time):
-        """Called when the strategy starts."""
         super(bollinger_supertrend_strategy, self).OnStarted(time)
-
-        # Initialize indicators
         bollinger = BollingerBands()
-        bollinger.Length = self.BollingerPeriod
-        bollinger.Width = self.BollingerDeviation
-
+        bollinger.Length = self.bollinger_period
+        bollinger.Width = self.bollinger_deviation
         atr = AverageTrueRange()
-        atr.Length = self.SupertrendPeriod
-
-        # Create subscription and bind indicators
-        subscription = self.SubscribeCandles(self.CandleType)
-        subscription.BindEx(bollinger, atr, self.ProcessCandle).Start()
-
-        # Setup chart visualization if available
+        atr.Length = self.supertrend_period
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.BindEx(bollinger, atr, self.OnProcess).Start()
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
             self.DrawIndicator(area, bollinger)
             self.DrawOwnTrades(area)
 
-    def ProcessCandle(self, candle, bollinger_value, atr_value):
-        """Processes each finished candle and executes trading logic."""
-        # Skip unfinished candles
+    def OnProcess(self, candle, bollinger_value, atr_value):
         if candle.State != CandleStates.Finished:
             return
-
-        # Skip if strategy is not ready to trade
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
-        # Extract Bollinger Band values
         bb = bollinger_value
-
         if bb.MovingAverage is None or bb.UpBand is None or bb.LowBand is None:
             return
         middle_band = float(bb.MovingAverage)
         upper_band = float(bb.UpBand)
         lower_band = float(bb.LowBand)
 
-        # Calculate Supertrend (simplified)
-        atr_val = float(atr_value) * self.SupertrendMultiplier
-        upper_band2 = float((candle.HighPrice + candle.LowPrice) / 2 + atr_val)
-        lower_band2 = float((candle.HighPrice + candle.LowPrice) / 2 - atr_val)
+        atr_val = float(atr_value) * float(self.supertrend_multiplier)
+        hl2 = (float(candle.HighPrice) + float(candle.LowPrice)) / 2.0
+        upper_band2 = hl2 + atr_val
+        lower_band2 = hl2 - atr_val
 
-        # Determine Supertrend value and direction
         if self._last_close == 0:
-            # First candle initialization
-            median_price = float((candle.HighPrice + candle.LowPrice) / 2)
-            self._supertrend_value = lower_band2 if candle.ClosePrice > median_price else upper_band2
-            self._is_long_trend = candle.ClosePrice > self._supertrend_value
+            self._supertrend_value = lower_band2 if float(candle.ClosePrice) > hl2 else upper_band2
+            self._is_long_trend = float(candle.ClosePrice) > self._supertrend_value
         else:
             if self._is_long_trend:
-                # Previous trend was up
-                if candle.ClosePrice < self._supertrend_value:
-                    # Trend changes to down
+                if float(candle.ClosePrice) < self._supertrend_value:
                     self._is_long_trend = False
                     self._supertrend_value = upper_band2
                 else:
-                    # Trend remains up, adjust supertrend value
                     self._supertrend_value = max(lower_band2, self._supertrend_value)
             else:
-                # Previous trend was down
-                if candle.ClosePrice > self._supertrend_value:
-                    # Trend changes to up
+                if float(candle.ClosePrice) > self._supertrend_value:
                     self._is_long_trend = True
                     self._supertrend_value = lower_band2
                 else:
-                    # Trend remains down, adjust supertrend value
                     self._supertrend_value = min(upper_band2, self._supertrend_value)
 
         self._last_close = float(candle.ClosePrice)
 
-        # Trading logic
-        is_price_above_supertrend = candle.ClosePrice > self._supertrend_value
-        is_price_above_upper_band = candle.ClosePrice > upper_band
-        is_price_below_lower_band = candle.ClosePrice < lower_band
+        is_above_supertrend = float(candle.ClosePrice) > self._supertrend_value
+        is_above_upper = float(candle.ClosePrice) > upper_band
+        is_below_lower = float(candle.ClosePrice) < lower_band
 
-        # Long signal: Price breaks above upper Bollinger Band and is above Supertrend
-        if is_price_above_upper_band and is_price_above_supertrend:
+        if self._cooldown > 0:
+            self._cooldown -= 1
+
+        if self._cooldown == 0 and is_above_upper and is_above_supertrend:
             if self.Position <= 0:
-                self.BuyMarket(self.Volume + Math.Abs(self.Position))
-                self.LogInfo("Long Entry: Price({0}) > Upper BB({1}) && Price > Supertrend({2})".format(
-                    candle.ClosePrice, upper_band, self._supertrend_value))
-        # Short signal: Price breaks below lower Bollinger Band and is below Supertrend
-        elif is_price_below_lower_band and not is_price_above_supertrend:
+                self.BuyMarket()
+                self._cooldown = self.cooldown_bars
+        elif self._cooldown == 0 and is_below_lower and not is_above_supertrend:
             if self.Position >= 0:
-                self.SellMarket(self.Volume + Math.Abs(self.Position))
-                self.LogInfo("Short Entry: Price({0}) < Lower BB({1}) && Price < Supertrend({2})".format(
-                    candle.ClosePrice, lower_band, self._supertrend_value))
-        # Exit signals based on Supertrend
-        elif (self.Position > 0 and not is_price_above_supertrend) or (self.Position < 0 and is_price_above_supertrend):
+                self.SellMarket()
+                self._cooldown = self.cooldown_bars
+        elif (self.Position > 0 and not is_above_supertrend) or (self.Position < 0 and is_above_supertrend):
             if self.Position > 0:
-                self.SellMarket(Math.Abs(self.Position))
-                self.LogInfo("Exit Long: Price({0}) < Supertrend({1})".format(
-                    candle.ClosePrice, self._supertrend_value))
+                self.SellMarket()
+                self._cooldown = self.cooldown_bars
             elif self.Position < 0:
-                self.BuyMarket(Math.Abs(self.Position))
-                self.LogInfo("Exit Short: Price({0}) > Supertrend({1})".format(
-                    candle.ClosePrice, self._supertrend_value))
+                self.BuyMarket()
+                self._cooldown = self.cooldown_bars
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return bollinger_supertrend_strategy()
