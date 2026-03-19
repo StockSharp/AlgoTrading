@@ -2,146 +2,97 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
-clr.AddReference("StockSharp.BusinessEntities")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes, Level1Fields
-from StockSharp.Algo.Indicators import CommodityChannelIndex
+from System import TimeSpan
+from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Algo.Indicators import CommodityChannelIndex, ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
 
 class cci_vwap_strategy(Strategy):
     """
-    Strategy that uses CCI and VWAP indicators to identify oversold and overbought conditions.
-    Enters long when CCI is below -100 and price is below VWAP.
-    Enters short when CCI is above 100 and price is above VWAP.
-
+    CCI + VWAP strategy.
+    Enters long when CCI < -100 and price < VWAP.
+    Enters short when CCI > 100 and price > VWAP.
     """
 
     def __init__(self):
         super(cci_vwap_strategy, self).__init__()
-
-        # Strategy constructor.
         self._cci_period = self.Param("CciPeriod", 20) \
-            .SetGreaterThanZero() \
-            .SetDisplay("CCI period", "CCI indicator period", "Indicators") \
-            .SetCanOptimize(True) \
-            .SetOptimize(10, 30, 5)
-
-        self._stop_loss_percent = self.Param("StopLossPercent", 2.0) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Stop-loss %", "Stop-loss as percentage of entry price", "Risk Management") \
-            .SetCanOptimize(True) \
-            .SetOptimize(1.0, 3.0, 0.5)
-
-        self._candle_type = self.Param("CandleType", tf(5)) \
+            .SetDisplay("CCI period", "CCI indicator period", "Indicators")
+        self._cooldown_bars = self.Param("CooldownBars", 60) \
+            .SetDisplay("Cooldown Bars", "Bars between trades", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle type", "Type of candles to use", "General")
 
-        self._cci = None
-        self._current_vwap = 0.0
-
-    @property
-    def cci_period(self):
-        """CCI period parameter."""
-        return self._cci_period.Value
-
-    @cci_period.setter
-    def cci_period(self, value):
-        self._cci_period.Value = value
-
-    @property
-    def stop_loss_percent(self):
-        """Stop-loss percentage parameter."""
-        return self._stop_loss_percent.Value
-
-    @stop_loss_percent.setter
-    def stop_loss_percent(self, value):
-        self._stop_loss_percent.Value = value
+        self._cooldown = 0
+        self._vwap_date = None
+        self._vwap_cum_pv = 0.0
+        self._vwap_cum_vol = 0.0
 
     @property
     def candle_type(self):
-        """Candle type parameter."""
         return self._candle_type.Value
-
-    @candle_type.setter
-    def candle_type(self, value):
-        self._candle_type.Value = value
 
     def OnReseted(self):
         super(cci_vwap_strategy, self).OnReseted()
-        self._cci = None
-        self._current_vwap = 0.0
+        self._cooldown = 0
+        self._vwap_date = None
+        self._vwap_cum_pv = 0.0
+        self._vwap_cum_vol = 0.0
 
     def OnStarted(self, time):
-        """
-        Called when the strategy starts. Sets up indicators, subscriptions, and charting.
-
-        :param time: The time when the strategy started.
-        """
         super(cci_vwap_strategy, self).OnStarted(time)
 
-        # Initialize CCI indicator
-        self._cci = CommodityChannelIndex()
-        self._cci.Length = self.cci_period
+        cci = CommodityChannelIndex()
+        cci.Length = self._cci_period.Value
+        dummy_ema = ExponentialMovingAverage()
+        dummy_ema.Length = 10
 
-        # Create subscription for candles
-        candles_subscription = self.SubscribeCandles(self.candle_type)
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.Bind(cci, dummy_ema, self.on_process).Start()
 
-        # Create subscription for Level1 to get VWAP
-        level1_subscription = self.SubscribeLevel1()
-        level1_subscription.Bind(self.ProcessLevel1).Start()
-
-        # Bind CCI to candle subscription
-        candles_subscription.Bind(self._cci, self.ProcessCandle).Start()
-
-        # Enable position protection
-        self.StartProtection(
-            takeProfit=Unit(0, UnitTypes.Absolute),
-            stopLoss=Unit(self.stop_loss_percent, UnitTypes.Percent)
-        )
-        # Setup chart if available
         area = self.CreateChartArea()
         if area is not None:
-            self.DrawCandles(area, candles_subscription)
-            self.DrawIndicator(area, self._cci)
+            self.DrawCandles(area, subscription)
+            self.DrawIndicator(area, cci)
             self.DrawOwnTrades(area)
 
-    def ProcessLevel1(self, level1):
-        if level1.Changes.ContainsKey(Level1Fields.VWAP):
-            self._current_vwap = float(level1.Changes[Level1Fields.VWAP])
-
-    def ProcessCandle(self, candle, cci_value):
-        # Skip unfinished candles
+    def on_process(self, candle, cci_val, dummy_val):
         if candle.State != CandleStates.Finished:
             return
 
-        # Skip if strategy is not ready to trade
-        if not self.IsFormedAndOnlineAndAllowTrading():
+        date = candle.ServerTime.Date
+        if self._vwap_date != date:
+            self._vwap_date = date
+            self._vwap_cum_pv = 0.0
+            self._vwap_cum_vol = 0.0
+
+        self._vwap_cum_pv += float(candle.ClosePrice) * float(candle.TotalVolume)
+        self._vwap_cum_vol += float(candle.TotalVolume)
+        if self._vwap_cum_vol <= 0:
             return
 
-        # Skip if we don't have VWAP yet
-        if self._current_vwap == 0:
+        current_vwap = self._vwap_cum_pv / self._vwap_cum_vol
+        if current_vwap == 0:
             return
 
-        # Long signal: CCI below -100 and price below VWAP
-        if cci_value < -100 and candle.ClosePrice < self._current_vwap and self.Position <= 0:
-            self.BuyMarket(self.Volume)
-            self.LogInfo("Buy signal: CCI={0:.2f}, Price={1}, VWAP={2}".format(cci_value, candle.ClosePrice, self._current_vwap))
-        # Short signal: CCI above 100 and price above VWAP
-        elif cci_value > 100 and candle.ClosePrice > self._current_vwap and self.Position >= 0:
-            self.SellMarket(self.Volume)
-            self.LogInfo("Sell signal: CCI={0:.2f}, Price={1}, VWAP={2}".format(cci_value, candle.ClosePrice, self._current_vwap))
-        # Exit long position: Price crosses above VWAP
-        elif self.Position > 0 and candle.ClosePrice > self._current_vwap:
-            self.SellMarket(Math.Abs(self.Position))
-            self.LogInfo("Exit long: Price={0}, VWAP={1}".format(candle.ClosePrice, self._current_vwap))
-        # Exit short position: Price crosses below VWAP
-        elif self.Position < 0 and candle.ClosePrice < self._current_vwap:
-            self.BuyMarket(Math.Abs(self.Position))
-            self.LogInfo("Exit short: Price={0}, VWAP={1}".format(candle.ClosePrice, self._current_vwap))
+        if self._cooldown > 0:
+            self._cooldown -= 1
+
+        close = float(candle.ClosePrice)
+
+        if self._cooldown == 0 and cci_val < -100 and close < current_vwap and self.Position <= 0:
+            self.BuyMarket()
+            self._cooldown = self._cooldown_bars.Value
+        elif self._cooldown == 0 and cci_val > 100 and close > current_vwap and self.Position >= 0:
+            self.SellMarket()
+            self._cooldown = self._cooldown_bars.Value
+        elif self.Position > 0 and close > current_vwap:
+            self.SellMarket()
+            self._cooldown = self._cooldown_bars.Value
+        elif self.Position < 0 and close < current_vwap:
+            self.BuyMarket()
+            self._cooldown = self._cooldown_bars.Value
 
     def CreateClone(self):
-        """
-        !! REQUIRED!! Creates a new instance of the strategy.
-        """
         return cci_vwap_strategy()
