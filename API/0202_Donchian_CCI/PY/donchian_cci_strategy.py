@@ -3,102 +3,51 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import DataType, CandleStates, UnitTypes, Unit
+from System import TimeSpan
+from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import DonchianChannels, CommodityChannelIndex
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
 
 class donchian_cci_strategy(Strategy):
     """
-    Strategy based on Donchian Channels and CCI indicators
+    Strategy based on Donchian Channels and CCI indicators.
+    Buys when price touches upper Donchian band with CCI > 0.
+    Sells when price touches lower Donchian band with CCI < 0.
+    Exits when price crosses middle band.
     """
 
     def __init__(self):
         super(donchian_cci_strategy, self).__init__()
-
-        # Initialize strategy parameters
         self._donchian_period = self.Param("DonchianPeriod", 20) \
-            .SetRange(10, 50) \
-            .SetDisplay("Donchian Period", "Period for Donchian Channel", "Indicators") \
-            .SetCanOptimize(True)
-
+            .SetDisplay("Donchian Period", "Period for Donchian Channel", "Indicators")
         self._cci_period = self.Param("CciPeriod", 20) \
-            .SetRange(10, 50) \
-            .SetDisplay("CCI Period", "Period for CCI indicator", "Indicators") \
-            .SetCanOptimize(True)
-
+            .SetDisplay("CCI Period", "Period for CCI indicator", "Indicators")
         self._stop_loss_percent = self.Param("StopLossPercent", 2.0) \
-            .SetRange(0.5, 5.0) \
-            .SetDisplay("Stop-Loss %", "Stop-loss percentage from entry price", "Risk Management") \
-            .SetCanOptimize(True)
-
-        self._candle_type = self.Param("CandleType", tf(5)) \
+            .SetDisplay("Stop-Loss %", "Stop-loss percentage from entry price", "Risk Management")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
-    @property
-    def DonchianPeriod(self):
-        """Period for Donchian Channel"""
-        return self._donchian_period.Value
-
-    @DonchianPeriod.setter
-    def DonchianPeriod(self, value):
-        self._donchian_period.Value = value
+        self._cooldown = 0
 
     @property
-    def CciPeriod(self):
-        """Period for CCI indicator"""
-        return self._cci_period.Value
-
-    @CciPeriod.setter
-    def CciPeriod(self, value):
-        self._cci_period.Value = value
-
-    @property
-    def StopLossPercent(self):
-        """Stop-loss percentage"""
-        return self._stop_loss_percent.Value
-
-    @StopLossPercent.setter
-    def StopLossPercent(self, value):
-        self._stop_loss_percent.Value = value
-
-    @property
-    def CandleType(self):
-        """Candle type for strategy"""
+    def candle_type(self):
         return self._candle_type.Value
-
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candle_type.Value = value
-
-    def GetWorkingSecurities(self):
-        """Overrides base to return working securities"""
-        return [(self.Security, self.CandleType)]
 
     def OnReseted(self):
         super(donchian_cci_strategy, self).OnReseted()
+        self._cooldown = 0
 
     def OnStarted(self, time):
-        """
-        Called when the strategy starts.
-        """
         super(donchian_cci_strategy, self).OnStarted(time)
 
-        # Initialize Indicators
         donchian = DonchianChannels()
-        donchian.Length = self.DonchianPeriod
+        donchian.Length = self._donchian_period.Value
         cci = CommodityChannelIndex()
-        cci.Length = self.CciPeriod
+        cci.Length = self._cci_period.Value
 
-        # Create subscription and bind indicators
-        subscription = self.SubscribeCandles(self.CandleType)
-        subscription.BindEx(donchian, cci, self.ProcessIndicators).Start()
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.BindEx(donchian, cci, self._process_candle).Start()
 
-        # Enable stop-loss protection
-        self.StartProtection(takeProfit=None, stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent))
-
-        # Setup chart visualization if available
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
@@ -106,48 +55,37 @@ class donchian_cci_strategy(Strategy):
             self.DrawIndicator(area, cci)
             self.DrawOwnTrades(area)
 
-    def ProcessIndicators(self, candle, donchian_value, cci_value):
-        # Skip unfinished candles
+    def _process_candle(self, candle, donchian_value, cci_value):
         if candle.State != CandleStates.Finished:
             return
 
-        # Check if strategy is ready to trade
-        if not self.IsFormedAndOnlineAndAllowTrading():
+        upper = donchian_value.UpperBand
+        lower = donchian_value.LowerBand
+        middle = donchian_value.Middle
+        if upper is None or lower is None or middle is None:
             return
 
-        if (
-            donchian_value.UpperBand is None
-            or donchian_value.LowerBand is None
-            or donchian_value.Middle is None
-        ):
-            return
-        upper_band = float(donchian_value.UpperBand)
-        lower_band = float(donchian_value.LowerBand)
-        middle_band = float(donchian_value.Middle)
-
-        cci_dec = cci_value
+        upper = float(upper)
+        lower = float(lower)
+        middle = float(middle)
+        cci_dec = float(cci_value.GetValue[float]())
         price = float(candle.ClosePrice)
 
-        # Trading logic:
-        # Long: Price > Donchian Upper && CCI < -100 (breakout up with oversold conditions)
-        # Short: Price < Donchian Lower && CCI > 100 (breakout down with overbought conditions)
+        if self._cooldown > 0:
+            self._cooldown -= 1
 
-        if price > upper_band and cci_dec < -100 and self.Position <= 0:
-            # Buy signal - breakout up with oversold conditions
-            volume = self.Volume + abs(self.Position)
-            self.BuyMarket(volume)
-        elif price < lower_band and cci_dec > 100 and self.Position >= 0:
-            # Sell signal - breakout down with overbought conditions
-            volume = self.Volume + abs(self.Position)
-            self.SellMarket(volume)
-        # Exit conditions
-        elif self.Position > 0 and price < middle_band:
-            # Exit long position when price falls below middle band
-            self.SellMarket(self.Position)
-        elif self.Position < 0 and price > middle_band:
-            # Exit short position when price rises above middle band
-            self.BuyMarket(abs(self.Position))
+        if self._cooldown == 0 and price >= upper and cci_dec > 0 and self.Position <= 0:
+            self.BuyMarket()
+            self._cooldown = 50
+        elif self._cooldown == 0 and price <= lower and cci_dec < 0 and self.Position >= 0:
+            self.SellMarket()
+            self._cooldown = 50
+        elif self.Position > 0 and price < middle:
+            self.SellMarket()
+            self._cooldown = 50
+        elif self.Position < 0 and price > middle:
+            self.BuyMarket()
+            self._cooldown = 50
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return donchian_cci_strategy()

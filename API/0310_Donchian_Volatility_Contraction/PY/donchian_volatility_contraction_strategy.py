@@ -5,221 +5,139 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import (
-
-    Highest,
-    Lowest,
-    AverageTrueRange,
-    SimpleMovingAverage,
-    StandardDeviation,
-)
+from StockSharp.Algo.Indicators import Highest, Lowest, AverageTrueRange, SimpleMovingAverage, StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
-
 
 class donchian_volatility_contraction_strategy(Strategy):
-    """Strategy based on Donchian Channel breakout after volatility contraction."""
+    """
+    Breakout strategy that waits for Donchian channel contraction before trading
+    a break of the previous channel. Uses ATR for breakout confirmation.
+    """
 
     def __init__(self):
         super(donchian_volatility_contraction_strategy, self).__init__()
-
-        # Donchian channel period parameter.
-        self._donchian_period = (
-            self.Param("DonchianPeriod", 20)
-            .SetGreaterThanZero()
-            .SetDisplay("Donchian Period", "Period for Donchian Channel", "Indicators")
-            .SetCanOptimize(True)
-            .SetOptimize(10, 50, 5)
-        )
-
-        # ATR period parameter.
-        self._atr_period = (
-            self.Param("AtrPeriod", 14)
-            .SetGreaterThanZero()
-            .SetDisplay("ATR Period", "Period for ATR indicator", "Indicators")
-            .SetCanOptimize(True)
-            .SetOptimize(7, 28, 7)
-        )
-
-        # Volatility contraction factor parameter.
-        self._volatility_factor = (
-            self.Param("VolatilityFactor", 2.0)
-            .SetGreaterThanZero()
-            .SetDisplay(
-                "Volatility Factor",
-                "Standard deviation multiplier for contraction detection",
-                "Indicators",
-            )
-            .SetCanOptimize(True)
-            .SetOptimize(1.0, 3.0, 0.5)
-        )
-
-        # Candle type parameter.
-        self._candle_type = (
-            self.Param("CandleType", tf(5))
+        self._donchian_period = self.Param("DonchianPeriod", 20) \
+            .SetDisplay("Donchian Period", "Period for the Donchian channel", "Indicators")
+        self._atr_period = self.Param("AtrPeriod", 14) \
+            .SetDisplay("ATR Period", "Period for the ATR", "Indicators")
+        self._volatility_factor = self.Param("VolatilityFactor", 0.8) \
+            .SetDisplay("Volatility Factor", "Std dev multiplier for contraction detection", "Signals")
+        self._cooldown_bars = self.Param("CooldownBars", 72) \
+            .SetDisplay("Cooldown Bars", "Bars to wait after each order", "Risk")
+        self._stop_loss_percent = self.Param("StopLossPercent", 2.0) \
+            .SetDisplay("Stop Loss %", "Stop loss percentage", "Risk")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
-        )
 
-        # Indicators for maintaining the channel width
-        self._avg_dc_width = 0
-        self._std_dev_dc_width = 0
-        self._current_dc_width = 0
-
-    @property
-    def DonchianPeriod(self):
-        """Donchian channel period parameter."""
-        return self._donchian_period.Value
-
-    @DonchianPeriod.setter
-    def DonchianPeriod(self, value):
-        self._donchian_period.Value = value
+        self._previous_high = 0.0
+        self._previous_low = 0.0
+        self._previous_width = 0.0
+        self._width_average_value = 0.0
+        self._width_std_dev_value = 0.0
+        self._is_initialized = False
+        self._cooldown = 0
+        self._width_average = None
+        self._width_std_dev = None
 
     @property
-    def AtrPeriod(self):
-        """ATR period parameter."""
-        return self._atr_period.Value
-
-    @AtrPeriod.setter
-    def AtrPeriod(self, value):
-        self._atr_period.Value = value
-
-    @property
-    def VolatilityFactor(self):
-        """Volatility contraction factor parameter."""
-        return self._volatility_factor.Value
-
-    @VolatilityFactor.setter
-    def VolatilityFactor(self, value):
-        self._volatility_factor.Value = value
-
-    @property
-    def CandleType(self):
-        """Candle type parameter."""
+    def candle_type(self):
         return self._candle_type.Value
-
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candle_type.Value = value
-
-    def GetWorkingSecurities(self):
-        return [(self.Security, self.CandleType)]
 
     def OnReseted(self):
         super(donchian_volatility_contraction_strategy, self).OnReseted()
-        self._avg_dc_width = 0
-        self._std_dev_dc_width = 0
-        self._current_dc_width = 0
+        self._previous_high = 0.0
+        self._previous_low = 0.0
+        self._previous_width = 0.0
+        self._width_average_value = 0.0
+        self._width_std_dev_value = 0.0
+        self._is_initialized = False
+        self._cooldown = 0
 
     def OnStarted(self, time):
         super(donchian_volatility_contraction_strategy, self).OnStarted(time)
 
-        # Create indicators
         donchian_high = Highest()
-        donchian_high.Length = self.DonchianPeriod
+        donchian_high.Length = self._donchian_period.Value
         donchian_low = Lowest()
-        donchian_low.Length = self.DonchianPeriod
+        donchian_low.Length = self._donchian_period.Value
         atr = AverageTrueRange()
-        atr.Length = self.AtrPeriod
-        sma = SimpleMovingAverage()
-        sma.Length = self.DonchianPeriod
-        standard_deviation = StandardDeviation()
-        standard_deviation.Length = self.DonchianPeriod
+        atr.Length = self._atr_period.Value
+        self._width_average = SimpleMovingAverage()
+        self._width_average.Length = self._donchian_period.Value
+        self._width_std_dev = StandardDeviation()
+        self._width_std_dev.Length = self._donchian_period.Value
+        self._is_initialized = False
+        self._cooldown = 0
 
-        # Subscribe to candles and bind indicators
-        subscription = self.SubscribeCandles(self.CandleType)
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.Bind(donchian_high, donchian_low, atr, self._process_candle).Start()
 
-        def handler(candle, high_value):
-            high_price = float(high_value)
-
-            # Process Donchian Low separately
-            low_value = process_candle(donchian_low, candle)
-            low_price = float(low_value)
-
-            # Process ATR
-            atr_value = process_candle(atr, candle)
-
-            # Calculate Donchian Channel width
-            self._current_dc_width = high_price - low_price
-
-            # Process SMA and StdDev for the channel width
-            sma_value = process_float(
-                sma,
-                self._current_dc_width,
-                candle.ServerTime,
-                candle.State == CandleStates.Finished,
-            )
-            std_dev_value = process_float(
-                standard_deviation,
-                self._current_dc_width,
-                candle.ServerTime,
-                candle.State == CandleStates.Finished,
-            )
-
-            self._avg_dc_width = float(sma_value)
-            self._std_dev_dc_width = float(std_dev_value)
-
-            # Process the strategy logic
-            self.ProcessStrategy(candle, high_price, low_price, float(atr_value))
-
-        subscription.BindEx(donchian_high, handler).Start()
-
-        # Setup chart if available
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
+            self.DrawIndicator(area, atr)
             self.DrawOwnTrades(area)
 
-        # Setup position protection
+        sl_pct = self._stop_loss_percent.Value
         self.StartProtection(
-            takeProfit=Unit(2, UnitTypes.Percent),
-            stopLoss=Unit(1, UnitTypes.Percent)
+            Unit(0.0, UnitTypes.Absolute),
+            Unit(float(sl_pct), UnitTypes.Percent)
         )
-    def ProcessStrategy(self, candle, donchian_high, donchian_low, atr_value):
-        # Skip unfinished candles
+
+    def _process_candle(self, candle, donchian_high, donchian_low, atr_value):
         if candle.State != CandleStates.Finished:
             return
 
-        # Check if strategy is ready for trading
-        if not self.IsFormedAndOnlineAndAllowTrading():
+        dh = float(donchian_high)
+        dl = float(donchian_low)
+        atr_val = float(atr_value)
+
+        if not self._is_initialized:
+            self._previous_high = dh
+            self._previous_low = dl
+            self._previous_width = dh - dl
+            self._is_initialized = True
             return
 
-        # Calculate volatility threshold
-        volatility_threshold = self._avg_dc_width - self.VolatilityFactor * self._std_dev_dc_width
+        if self._cooldown > 0:
+            self._cooldown -= 1
+            self._update_channel(candle, dh, dl)
+            return
 
-        # Check for volatility contraction
-        is_volatility_contracted = self._current_dc_width < volatility_threshold
+        price = float(candle.ClosePrice)
+        channel_middle = (self._previous_high + self._previous_low) / 2.0
 
-        if is_volatility_contracted:
-            # Breakout after volatility contraction
-            if candle.ClosePrice > donchian_high and self.Position <= 0:
-                # Cancel any active orders before entering a new position
-                self.CancelActiveOrders()
+        step = 1.0
+        if self.Security is not None and self.Security.PriceStep is not None:
+            step = float(self.Security.PriceStep)
+        if step <= 0:
+            step = 1.0
 
-                # Calculate position size
-                volume = self.Volume + Math.Abs(self.Position)
+        vol_threshold = max(self._width_average_value - self._volatility_factor.Value * self._width_std_dev_value, step)
+        is_contracted = self._previous_width <= vol_threshold
 
-                # Enter long position
-                self.BuyMarket(volume)
-            elif candle.ClosePrice < donchian_low and self.Position >= 0:
-                # Cancel any active orders before entering a new position
-                self.CancelActiveOrders()
+        if self.Position == 0:
+            if is_contracted and price >= self._previous_high + atr_val * 0.05:
+                self.BuyMarket()
+                self._cooldown = self._cooldown_bars.Value
+            elif is_contracted and price <= self._previous_low - atr_val * 0.05:
+                self.SellMarket()
+                self._cooldown = self._cooldown_bars.Value
+        elif self.Position > 0:
+            if price <= channel_middle:
+                self.SellMarket()
+                self._cooldown = self._cooldown_bars.Value
+        elif self.Position < 0:
+            if price >= channel_middle:
+                self.BuyMarket()
+                self._cooldown = self._cooldown_bars.Value
 
-                # Calculate position size
-                volume = self.Volume + Math.Abs(self.Position)
+        self._update_channel(candle, dh, dl)
 
-                # Enter short position
-                self.SellMarket(volume)
-
-        # Exit logic - when price reverts to the middle of the channel
-        channel_middle = (donchian_high + donchian_low) / 2
-
-        if (self.Position > 0 and candle.ClosePrice < channel_middle) or (
-            self.Position < 0 and candle.ClosePrice > channel_middle
-        ):
-            # Close position
-            self.ClosePosition()
+    def _update_channel(self, candle, dh, dl):
+        self._previous_high = dh
+        self._previous_low = dl
+        self._previous_width = dh - dl
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return donchian_volatility_contraction_strategy()
