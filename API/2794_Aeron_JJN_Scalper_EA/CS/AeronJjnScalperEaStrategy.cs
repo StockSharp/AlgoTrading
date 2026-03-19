@@ -1,10 +1,5 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,512 +10,139 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Port of the Aeron JJN Scalper expert advisor.
+/// Detects reversal candle patterns (bullish candle after strong bearish, and vice versa)
+/// and enters at breakout of the prior candle's open level.
 /// </summary>
 public class AeronJjnScalperEaStrategy : Strategy
 {
 	private readonly StrategyParam<int> _atrLength;
-	private readonly StrategyParam<int> _historyDepth;
-
-	private readonly StrategyParam<decimal> _trailingStopPips;
-	private readonly StrategyParam<decimal> _trailingStepPips;
-	private readonly StrategyParam<int> _resetMinutes;
-	private readonly StrategyParam<decimal> _dojiDiff1Pips;
-	private readonly StrategyParam<decimal> _dojiDiff2Pips;
+	private readonly StrategyParam<decimal> _bodyMinAtr;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private AverageTrueRange _atr;
+	private decimal _prevOpen;
+	private decimal _prevClose;
+	private bool _hasPrev;
+	private int _cooldown;
 
-	private readonly List<CandleSnapshot> _history = new();
-
-	private decimal _pipSize;
-	private decimal _trailingStopDistance;
-	private decimal _trailingStepDistance;
-	private decimal _dojiDiff1;
-	private decimal _dojiDiff2;
-
-	private decimal? _pendingLongLevel;
-	private decimal? _pendingShortLevel;
-	private decimal? _pendingLongAtr;
-	private decimal? _pendingShortAtr;
-	private DateTimeOffset? _pendingLongExpiry;
-	private DateTimeOffset? _pendingShortExpiry;
-
-	private decimal? _entryPrice;
-	private decimal? _longStopPrice;
-	private decimal? _longTakePrice;
-	private decimal? _shortStopPrice;
-	private decimal? _shortTakePrice;
-
-	private decimal _lastAtr;
-
-	/// <summary>
-	/// Trailing stop distance in pips.
-	/// </summary>
-	public decimal TrailingStopPips
-	{
-		get => _trailingStopPips.Value;
-		set => _trailingStopPips.Value = value;
-	}
-
-	/// <summary>
-	/// Trailing step distance in pips.
-	/// </summary>
-	public decimal TrailingStepPips
-	{
-		get => _trailingStepPips.Value;
-		set => _trailingStepPips.Value = value;
-	}
-
-	/// <summary>
-	/// Expiration time for pending orders in minutes.
-	/// </summary>
-	public int ResetMinutes
-	{
-		get => _resetMinutes.Value;
-		set => _resetMinutes.Value = value;
-	}
-
-	/// <summary>
-	/// Minimum body size for the reversal candle (pips).
-	/// </summary>
-	public decimal DojiDiff1Pips
-	{
-		get => _dojiDiff1Pips.Value;
-		set => _dojiDiff1Pips.Value = value;
-	}
-
-	/// <summary>
-	/// Minimum body size for the reference candle (pips).
-	/// </summary>
-	public decimal DojiDiff2Pips
-	{
-		get => _dojiDiff2Pips.Value;
-		set => _dojiDiff2Pips.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used by the strategy.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// ATR indicator period used to evaluate volatility.
-	/// </summary>
 	public int AtrLength
 	{
 		get => _atrLength.Value;
 		set => _atrLength.Value = value;
 	}
 
-	/// <summary>
-	/// Maximum number of stored candle snapshots for pattern checks.
-	/// </summary>
-	public int HistoryDepth
+	public decimal BodyMinAtr
 	{
-		get => _historyDepth.Value;
-		set => _historyDepth.Value = value;
+		get => _bodyMinAtr.Value;
+		set => _bodyMinAtr.Value = value;
 	}
 
-	/// <summary>
-	/// Create strategy instance.
-	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
 	public AeronJjnScalperEaStrategy()
 	{
-		_trailingStopPips = Param(nameof(TrailingStopPips), 5m)
-		.SetDisplay("Trailing Stop (pips)", "Trailing Stop (pips)", "General");
-
-		_trailingStepPips = Param(nameof(TrailingStepPips), 5m)
-		.SetDisplay("Trailing Step (pips)", "Trailing Step (pips)", "General");
-
-		_resetMinutes = Param(nameof(ResetMinutes), 10)
-		.SetDisplay("Pending Expiry (minutes)", "Pending Expiry (minutes)", "General");
-
-		_dojiDiff1Pips = Param(nameof(DojiDiff1Pips), 10m)
-		.SetDisplay("Doji Diff 1 (pips)", "Doji Diff 1 (pips)", "General");
-
-		_dojiDiff2Pips = Param(nameof(DojiDiff2Pips), 4m)
-		.SetDisplay("Doji Diff 2 (pips)", "Doji Diff 2 (pips)", "General");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
-		.SetDisplay("Candle Type", "Candle Type", "General");
-
-		_atrLength = Param(nameof(AtrLength), 8)
+		_atrLength = Param(nameof(AtrLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Length", "ATR indicator period", "Indicators");
 
-		_historyDepth = Param(nameof(HistoryDepth), 120)
+		_bodyMinAtr = Param(nameof(BodyMinAtr), 1.5m)
+			.SetDisplay("Body Min ATR", "Minimum candle body size as ATR multiple", "Indicators");
+
+		_cooldownBars = Param(nameof(CooldownBars), 10)
 			.SetGreaterThanZero()
-			.SetDisplay("History Depth", "Number of candles stored for patterns", "Indicators");
+			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "Trading");
 
-		Volume = 0.1m;
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle Type", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_history.Clear();
-		_atr = null;
-		_pipSize = 0m;
-		_trailingStopDistance = 0m;
-		_trailingStepDistance = 0m;
-		_dojiDiff1 = 0m;
-		_dojiDiff2 = 0m;
-		_pendingLongLevel = null;
-		_pendingShortLevel = null;
-		_pendingLongAtr = null;
-		_pendingShortAtr = null;
-		_pendingLongExpiry = null;
-		_pendingShortExpiry = null;
-		_entryPrice = null;
-		_longStopPrice = null;
-		_longTakePrice = null;
-		_shortStopPrice = null;
-		_shortTakePrice = null;
-		_lastAtr = 0m;
+		_hasPrev = false;
+		_cooldown = 0;
+		_prevOpen = 0;
+		_prevClose = 0;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		InitializePipSettings();
-
-		_atr = new AverageTrueRange
-		{
-			Length = AtrLength
-		};
+		_atr = new AverageTrueRange { Length = AtrLength };
+		_hasPrev = false;
+		_cooldown = 0;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(_atr, ProcessCandle).Start();
+
+		StartProtection(
+			takeProfit: new Unit(2, UnitTypes.Percent),
+			stopLoss: new Unit(1, UnitTypes.Percent)
+		);
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _atr);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void InitializePipSettings()
-	{
-		_pipSize = Security?.PriceStep ?? 0m;
-		if (_pipSize <= 0m)
-		_pipSize = 1m;
-
-		var decimals = Security?.Decimals;
-		if (decimals == 3 || decimals == 5)
-		_pipSize *= 10m;
-
-		_trailingStopDistance = TrailingStopPips * _pipSize;
-		_trailingStepDistance = TrailingStepPips * _pipSize;
-		_dojiDiff1 = DojiDiff1Pips * _pipSize;
-		_dojiDiff2 = DojiDiff2Pips * _pipSize;
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal atrValue)
+	private void ProcessCandle(ICandleMessage candle, decimal atrVal)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
-		if (_pipSize <= 0m)
-		InitializePipSettings();
-
-		_lastAtr = atrValue;
-
-		var closeTime = candle.CloseTime;
-		CancelExpiredPendings(closeTime);
-
-		ManageActivePosition(candle);
-		TriggerPendings(candle);
-		EvaluateSignals(candle);
-		UpdateHistory(candle);
-	}
-
-	private void CancelExpiredPendings(DateTimeOffset closeTime)
-	{
-		if (_pendingLongExpiry.HasValue && closeTime >= _pendingLongExpiry.Value)
+		if (atrVal <= 0)
 		{
-			_pendingLongLevel = null;
-			_pendingLongAtr = null;
-			_pendingLongExpiry = null;
+			SavePrev(candle);
+			return;
 		}
 
-		if (_pendingShortExpiry.HasValue && closeTime >= _pendingShortExpiry.Value)
-		{
-			_pendingShortLevel = null;
-			_pendingShortAtr = null;
-			_pendingShortExpiry = null;
-		}
-	}
+		if (_cooldown > 0)
+			_cooldown--;
 
-	private void ManageActivePosition(ICandleMessage candle)
-	{
-		if (Position > 0)
+		if (_hasPrev && _cooldown == 0 && Position == 0)
 		{
-			ApplyTrailingForLong(candle);
+			var prevBody = Math.Abs(_prevClose - _prevOpen);
+			var minBody = atrVal * BodyMinAtr;
 
-			// Exit a long position when price reaches the trailing stop or the ATR based take profit.
-			if (_longStopPrice.HasValue && candle.LowPrice <= _longStopPrice.Value)
+			// Bullish candle after strong bearish candle => buy
+			if (candle.ClosePrice > candle.OpenPrice && _prevClose < _prevOpen && prevBody >= minBody)
 			{
-				SellMarket(Math.Abs(Position));
-				ClearPositionState();
-				return;
+				BuyMarket();
+				_cooldown = CooldownBars;
 			}
-
-			if (_longTakePrice.HasValue && candle.HighPrice >= _longTakePrice.Value)
+			// Bearish candle after strong bullish candle => sell
+			else if (candle.ClosePrice < candle.OpenPrice && _prevClose > _prevOpen && prevBody >= minBody)
 			{
-				SellMarket(Math.Abs(Position));
-				ClearPositionState();
+				SellMarket();
+				_cooldown = CooldownBars;
 			}
 		}
-		else if (Position < 0)
-		{
-			ApplyTrailingForShort(candle);
 
-			// Exit a short position when price reaches the trailing stop or the ATR based take profit.
-			if (_shortStopPrice.HasValue && candle.HighPrice >= _shortStopPrice.Value)
-			{
-				BuyMarket(Math.Abs(Position));
-				ClearPositionState();
-				return;
-			}
-
-			if (_shortTakePrice.HasValue && candle.LowPrice <= _shortTakePrice.Value)
-			{
-				BuyMarket(Math.Abs(Position));
-				ClearPositionState();
-			}
-		}
-		else if (_entryPrice.HasValue)
-		{
-			// Reset state when the position is closed externally.
-			ClearPositionState();
-		}
+		SavePrev(candle);
 	}
 
-	private void ApplyTrailingForLong(ICandleMessage candle)
+	private void SavePrev(ICandleMessage candle)
 	{
-		if (_trailingStopDistance <= 0m || !_entryPrice.HasValue)
-		return;
-
-		var move = candle.ClosePrice - _entryPrice.Value;
-		if (move <= _trailingStopDistance + _trailingStepDistance)
-		return;
-
-		var threshold = candle.ClosePrice - (_trailingStopDistance + _trailingStepDistance);
-		if (!_longStopPrice.HasValue || _longStopPrice.Value < threshold)
-		_longStopPrice = candle.ClosePrice - _trailingStopDistance;
-	}
-
-	private void ApplyTrailingForShort(ICandleMessage candle)
-	{
-		if (_trailingStopDistance <= 0m || !_entryPrice.HasValue)
-		return;
-
-		var move = _entryPrice.Value - candle.ClosePrice;
-		if (move <= _trailingStopDistance + _trailingStepDistance)
-		return;
-
-		var threshold = candle.ClosePrice + (_trailingStopDistance + _trailingStepDistance);
-		if (!_shortStopPrice.HasValue || _shortStopPrice.Value > threshold)
-		_shortStopPrice = candle.ClosePrice + _trailingStopDistance;
-	}
-
-	private void TriggerPendings(ICandleMessage candle)
-	{
-		if (_pendingLongLevel.HasValue && candle.HighPrice >= _pendingLongLevel.Value)
-		{
-			var pendingLongLevel = _pendingLongLevel.Value;
-			var pendingLongAtr = _pendingLongAtr;
-			var volume = Volume + (Position < 0 ? Math.Abs(Position) : 0m);
-			if (volume > 0m)
-			{
-				BuyMarket(volume);
-				SetupLongPosition(pendingLongLevel, pendingLongAtr);
-			}
-
-			_pendingLongLevel = null;
-			_pendingLongAtr = null;
-			_pendingLongExpiry = null;
-		}
-
-		if (_pendingShortLevel.HasValue && candle.LowPrice <= _pendingShortLevel.Value)
-		{
-			var pendingShortLevel = _pendingShortLevel.Value;
-			var pendingShortAtr = _pendingShortAtr;
-			var volume = Volume + (Position > 0 ? Math.Abs(Position) : 0m);
-			if (volume > 0m)
-			{
-				SellMarket(volume);
-				SetupShortPosition(pendingShortLevel, pendingShortAtr);
-			}
-
-			_pendingShortLevel = null;
-			_pendingShortAtr = null;
-			_pendingShortExpiry = null;
-		}
-	}
-
-	private void EvaluateSignals(ICandleMessage candle)
-	{
-		if (_history.Count == 0)
-		return;
-
-		var prev = _history[0];
-
-		// A bullish candle following a strong bearish candle creates a buy stop setup.
-		if (candle.ClosePrice > candle.OpenPrice && prev.Open - prev.Close > _dojiDiff1)
-		{
-			TryCreateLongPending(candle);
-		}
-		// A bearish candle following a strong bullish candle creates a sell stop setup.
-		else if (candle.ClosePrice < candle.OpenPrice && prev.Close - prev.Open > _dojiDiff1)
-		{
-			TryCreateShortPending(candle);
-		}
-	}
-
-	private void TryCreateLongPending(ICandleMessage candle)
-	{
-		if (_pendingLongLevel.HasValue || Position > 0 || _lastAtr <= 0m)
-		return;
-
-		var lastBearish = FindLastBearishOpen();
-		if (!lastBearish.HasValue)
-		return;
-
-		var minDistance = _pipSize;
-		if (lastBearish.Value <= candle.ClosePrice + minDistance)
-		return;
-
-		_pendingLongLevel = lastBearish.Value;
-		_pendingLongAtr = _lastAtr;
-		_pendingLongExpiry = candle.CloseTime + TimeSpan.FromMinutes(Math.Max(0, ResetMinutes));
-	}
-
-	private void TryCreateShortPending(ICandleMessage candle)
-	{
-		if (_pendingShortLevel.HasValue || Position < 0 || _lastAtr <= 0m)
-		return;
-
-		var lastBullish = FindLastBullishOpen();
-		if (!lastBullish.HasValue)
-		return;
-
-		var minDistance = _pipSize;
-		if (lastBullish.Value >= candle.ClosePrice - minDistance)
-		return;
-
-		_pendingShortLevel = lastBullish.Value;
-		_pendingShortAtr = _lastAtr;
-		_pendingShortExpiry = candle.CloseTime + TimeSpan.FromMinutes(Math.Max(0, ResetMinutes));
-	}
-
-	private decimal? FindLastBearishOpen()
-	{
-		foreach (var snapshot in _history)
-		{
-			if (snapshot.Close < snapshot.Open && snapshot.Open - snapshot.Close > _dojiDiff2)
-			return snapshot.Open;
-		}
-
-		return null;
-	}
-
-	private decimal? FindLastBullishOpen()
-	{
-		foreach (var snapshot in _history)
-		{
-			if (snapshot.Close > snapshot.Open && snapshot.Close - snapshot.Open > _dojiDiff2)
-			return snapshot.Open;
-		}
-
-		return null;
-	}
-
-	private void SetupLongPosition(decimal entryPrice, decimal? atr)
-	{
-		_entryPrice = entryPrice;
-
-		if (atr.HasValue && atr.Value > 0m)
-		{
-			_longStopPrice = entryPrice - atr.Value;
-			_longTakePrice = entryPrice + atr.Value;
-		}
-		else
-		{
-			_longStopPrice = null;
-			_longTakePrice = null;
-		}
-
-		_shortStopPrice = null;
-		_shortTakePrice = null;
-		_pendingShortLevel = null;
-		_pendingShortAtr = null;
-		_pendingShortExpiry = null;
-	}
-
-	private void SetupShortPosition(decimal entryPrice, decimal? atr)
-	{
-		_entryPrice = entryPrice;
-
-		if (atr.HasValue && atr.Value > 0m)
-		{
-			_shortStopPrice = entryPrice + atr.Value;
-			_shortTakePrice = entryPrice - atr.Value;
-		}
-		else
-		{
-			_shortStopPrice = null;
-			_shortTakePrice = null;
-		}
-
-		_longStopPrice = null;
-		_longTakePrice = null;
-		_pendingLongLevel = null;
-		_pendingLongAtr = null;
-		_pendingLongExpiry = null;
-	}
-
-	private void ClearPositionState()
-	{
-		_entryPrice = null;
-		_longStopPrice = null;
-		_longTakePrice = null;
-		_shortStopPrice = null;
-		_shortTakePrice = null;
-	}
-
-	private void UpdateHistory(ICandleMessage candle)
-	{
-		_history.Insert(0, new CandleSnapshot(candle.OpenPrice, candle.ClosePrice));
-		if (_history.Count > HistoryDepth)
-		_history.RemoveAt(_history.Count - 1);
-	}
-
-	private readonly struct CandleSnapshot
-	{
-		public CandleSnapshot(decimal open, decimal close)
-		{
-			Open = open;
-			Close = close;
-		}
-
-		public decimal Open { get; }
-		public decimal Close { get; }
+		_prevOpen = candle.OpenPrice;
+		_prevClose = candle.ClosePrice;
+		_hasPrev = true;
 	}
 }

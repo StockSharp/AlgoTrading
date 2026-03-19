@@ -64,7 +64,7 @@ public class RsiStochasticMaStrategy : Strategy
 		_takeProfitPct = Param(nameof(TakeProfitPct), 3m)
 			.SetDisplay("Take Profit %", "Take profit percentage", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
@@ -100,10 +100,7 @@ public class RsiStochasticMaStrategy : Strategy
 					return;
 
 				var stochResult = _stochastic.Process(candle);
-				if (!stochResult.IsFormed)
-					return;
-
-				if (!IsFormedAndOnlineAndAllowTrading())
+				if (!_stochastic.IsFormed)
 					return;
 
 				var stochVal = (StochasticOscillatorValue)stochResult;
@@ -114,23 +111,13 @@ public class RsiStochasticMaStrategy : Strategy
 				var isUpTrend = price > maValue;
 				var isDownTrend = price < maValue;
 
-				if (isUpTrend && rsiValue < RsiLowerLevel && k < StochLowerLevel && Position <= 0)
-				{
-					if (Position < 0) BuyMarket();
-					BuyMarket();
-				}
-				else if (isDownTrend && rsiValue > RsiUpperLevel && k > StochUpperLevel && Position >= 0)
-				{
-					if (Position > 0) SellMarket();
-					SellMarket();
-				}
-				else if (Position > 0 && (k > StochUpperLevel || rsiValue > RsiUpperLevel))
-				{
-					SellMarket();
-				}
-				else if (Position < 0 && (k < StochLowerLevel || rsiValue < RsiLowerLevel))
+				if (isUpTrend && rsiValue < RsiLowerLevel && k < StochLowerLevel && Position == 0)
 				{
 					BuyMarket();
+				}
+				else if (isDownTrend && rsiValue > RsiUpperLevel && k > StochUpperLevel && Position == 0)
+				{
+					SellMarket();
 				}
 			})
 			.Start();

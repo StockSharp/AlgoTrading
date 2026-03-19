@@ -159,14 +159,13 @@ public class RsiBreakoutStrategy : Strategy
 		_currentRsiValue = rsiValue;
 
 		// Process RSI through average and standard deviation indicators
-		var avgValue = _rsiAverage.Process(new DecimalIndicatorValue(_rsiAverage, rsiValue, candle.ServerTime));
-		var stdDevValue = _rsiStdDev.Process(new DecimalIndicatorValue(_rsiStdDev, rsiValue, candle.ServerTime));
+		var avgValue = _rsiAverage.Process(new DecimalIndicatorValue(_rsiAverage, rsiValue, candle.ServerTime) { IsFinal = true });
+		var stdDevValue = _rsiStdDev.Process(new DecimalIndicatorValue(_rsiStdDev, rsiValue, candle.ServerTime) { IsFinal = true });
 		
 		_currentRsiAvg = avgValue.ToDecimal();
 		_currentRsiStdDev = stdDevValue.ToDecimal();
 		
-		// Check if strategy is ready for trading
-		if (!IsFormedAndOnlineAndAllowTrading() || !_rsiAverage.IsFormed || !_rsiStdDev.IsFormed)
+		if (!_rsiAverage.IsFormed || !_rsiStdDev.IsFormed)
 			return;
 
 		// Calculate bands
@@ -178,31 +177,14 @@ public class RsiBreakoutStrategy : Strategy
 		// Entry logic - BREAKOUT
 		if (Position == 0)
 		{
-			// Long Entry: RSI breaks above upper band
 			if (_currentRsiValue > upperBand)
 			{
-				LogInfo($"Buy Signal - RSI ({_currentRsiValue}) > Upper Band ({upperBand})");
-				BuyMarket(Volume);
+				BuyMarket();
 			}
-			// Short Entry: RSI breaks below lower band
 			else if (_currentRsiValue < lowerBand)
 			{
-				LogInfo($"Sell Signal - RSI ({_currentRsiValue}) < Lower Band ({lowerBand})");
-				SellMarket(Volume);
+				SellMarket();
 			}
-		}
-		// Exit logic
-		else if (Position > 0 && _currentRsiValue < _currentRsiAvg)
-		{
-			// Exit Long: RSI returns below average
-			LogInfo($"Exit Long - RSI ({_currentRsiValue}) < RSI Avg ({_currentRsiAvg})");
-			SellMarket(Math.Abs(Position));
-		}
-		else if (Position < 0 && _currentRsiValue > _currentRsiAvg)
-		{
-			// Exit Short: RSI returns above average
-			LogInfo($"Exit Short - RSI ({_currentRsiValue}) > RSI Avg ({_currentRsiAvg})");
-			BuyMarket(Math.Abs(Position));
 		}
 	}
 }

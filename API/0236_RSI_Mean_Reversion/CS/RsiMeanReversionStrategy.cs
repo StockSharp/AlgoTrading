@@ -148,14 +148,13 @@ public class RsiMeanReversionStrategy : Strategy
 			return;
 
 		// Process RSI through average and standard deviation indicators
-		var rsiAvgValue = _rsiAverage.Process(new DecimalIndicatorValue(_rsiAverage, rsiValue, candle.ServerTime)).ToDecimal();
-		var rsiStdDevValue = _rsiStdDev.Process(new DecimalIndicatorValue(_rsiStdDev, rsiValue, candle.ServerTime)).ToDecimal();
+		var rsiAvgValue = _rsiAverage.Process(new DecimalIndicatorValue(_rsiAverage, rsiValue, candle.ServerTime) { IsFinal = true }).ToDecimal();
+		var rsiStdDevValue = _rsiStdDev.Process(new DecimalIndicatorValue(_rsiStdDev, rsiValue, candle.ServerTime) { IsFinal = true }).ToDecimal();
 		
 		// Store previous RSI value for changes detection
 		decimal currentRsiValue = rsiValue;
 		
-		// Check if strategy is ready for trading
-		if (!IsFormedAndOnlineAndAllowTrading() || !_rsiAverage.IsFormed || !_rsiStdDev.IsFormed)
+		if (!_rsiAverage.IsFormed || !_rsiStdDev.IsFormed)
 		{
 			_prevRsiValue = currentRsiValue;
 			return;
@@ -167,34 +166,17 @@ public class RsiMeanReversionStrategy : Strategy
 
 		LogInfo($"RSI: {currentRsiValue}, RSI Avg: {rsiAvgValue}, Upper: {upperBand}, Lower: {lowerBand}");
 
-		// Entry logic
+		// Entry logic - mean reversion
 		if (Position == 0)
 		{
-			// Long Entry: RSI is below lower band
 			if (currentRsiValue < lowerBand)
 			{
-				LogInfo($"Buy Signal - RSI ({currentRsiValue}) < Lower Band ({lowerBand})");
-				BuyMarket(Volume);
+				BuyMarket();
 			}
-			// Short Entry: RSI is above upper band
 			else if (currentRsiValue > upperBand)
 			{
-				LogInfo($"Sell Signal - RSI ({currentRsiValue}) > Upper Band ({upperBand})");
-				SellMarket(Volume);
+				SellMarket();
 			}
-		}
-		// Exit logic
-		else if (Position > 0 && currentRsiValue > rsiAvgValue)
-		{
-			// Exit Long: RSI returned to average
-			LogInfo($"Exit Long - RSI ({currentRsiValue}) > RSI Avg ({rsiAvgValue})");
-			SellMarket(Math.Abs(Position));
-		}
-		else if (Position < 0 && currentRsiValue < rsiAvgValue)
-		{
-			// Exit Short: RSI returned to average
-			LogInfo($"Exit Short - RSI ({currentRsiValue}) < RSI Avg ({rsiAvgValue})");
-			BuyMarket(Math.Abs(Position));
 		}
 		
 		_prevRsiValue = currentRsiValue;

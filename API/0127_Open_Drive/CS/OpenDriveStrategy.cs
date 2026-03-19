@@ -124,6 +124,10 @@ public class OpenDriveStrategy : Strategy
 			.Bind(sma, atr, ProcessCandle)
 			.Start();
 
+		StartProtection(
+			takeProfit: new Unit(3, UnitTypes.Percent),
+			stopLoss: new Unit(2, UnitTypes.Percent));
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -138,8 +142,7 @@ public class OpenDriveStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		// indicators checked via Bind
 
 		_atrValue = atrValue;
 
@@ -153,40 +156,27 @@ public class OpenDriveStrategy : Strategy
 			return;
 		}
 
-		// Calculate gap from previous close
+		// Detect strong momentum candle (body exceeds ATR * multiplier)
 		if (_prevClosePrice > 0 && atrValue > 0)
 		{
-			var gap = open - _prevClosePrice;
-			var gapSize = Math.Abs(gap);
+			var body = close - open;
+			var bodySize = Math.Abs(body);
 
-			// Strong gap detected
-			if (gapSize > atrValue * AtrMultiplier)
+			if (bodySize > atrValue * AtrMultiplier && Position == 0)
 			{
-				// Upward gap + above MA = Buy
-				if (gap > 0 && open > smaValue && Position == 0)
+				// Bullish momentum + above MA = Buy
+				if (body > 0 && close > smaValue)
 				{
 					BuyMarket();
 					_cooldown = CooldownBars;
 				}
-				// Downward gap + below MA = Sell short
-				else if (gap < 0 && open < smaValue && Position == 0)
+				// Bearish momentum + below MA = Sell short
+				else if (body < 0 && close < smaValue)
 				{
 					SellMarket();
 					_cooldown = CooldownBars;
 				}
 			}
-		}
-
-		// Exit on MA cross
-		if (Position > 0 && close < smaValue)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-		else if (Position < 0 && close > smaValue)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
 		}
 
 		_prevClosePrice = close;

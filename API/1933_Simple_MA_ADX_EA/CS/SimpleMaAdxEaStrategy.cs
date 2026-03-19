@@ -24,8 +24,8 @@ public class SimpleMaAdxEaStrategy : Strategy
 	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private readonly ExponentialMovingAverage _ema = new();
-	private readonly ExponentialMovingAverage _trendMa = new();
+	private ExponentialMovingAverage _ema;
+	private ExponentialMovingAverage _trendMa;
 
 	private decimal _emaPrev1;
 	private decimal _emaPrev2;
@@ -117,10 +117,10 @@ public class SimpleMaAdxEaStrategy : Strategy
 		_takeProfit = Param(nameof(TakeProfit), 1200m)
 			.SetDisplay("Take Profit", "Take profit in price units", "Risk Management");
 
-		_cooldownBars = Param(nameof(CooldownBars), 2)
+		_cooldownBars = Param(nameof(CooldownBars), 200)
 			.SetDisplay("Cooldown Bars", "Bars to wait after a completed trade", "Risk Management");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -135,8 +135,8 @@ public class SimpleMaAdxEaStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_ema.Reset();
-		_trendMa.Reset();
+		_ema = null;
+		_trendMa = null;
 		_emaPrev1 = 0m;
 		_emaPrev2 = 0m;
 		_trendPrev = 0m;
@@ -150,8 +150,8 @@ public class SimpleMaAdxEaStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_ema.Length = MaPeriod;
-		_trendMa.Length = AdxPeriod;
+		_ema = new ExponentialMovingAverage { Length = MaPeriod };
+		_trendMa = new ExponentialMovingAverage { Length = AdxPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
@@ -167,11 +167,8 @@ public class SimpleMaAdxEaStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var ema = _ema.Process(new DecimalIndicatorValue(_ema, candle.ClosePrice, candle.OpenTime)).ToDecimal();
-		var trendMa = _trendMa.Process(new DecimalIndicatorValue(_trendMa, candle.ClosePrice, candle.OpenTime)).ToDecimal();
+		var ema = _ema.Process(new DecimalIndicatorValue(_ema, candle.ClosePrice, candle.OpenTime) { IsFinal = true }).ToDecimal();
+		var trendMa = _trendMa.Process(new DecimalIndicatorValue(_trendMa, candle.ClosePrice, candle.OpenTime) { IsFinal = true }).ToDecimal();
 
 		if (!_ema.IsFormed || !_trendMa.IsFormed || trendMa == 0m)
 			return;
@@ -197,16 +194,16 @@ public class SimpleMaAdxEaStrategy : Strategy
 		var sellCond2 = _prevClose < _emaPrev1 && candle.ClosePrice < trendMa;
 		var sellCond3 = trendMa <= _trendPrev && distancePercent >= AdxThreshold;
 
-		if (_barsSinceTrade >= CooldownBars)
+		if (_barsSinceTrade >= CooldownBars && Position == 0)
 		{
-			if (buyCond1 && buyCond2 && buyCond3 && Position <= 0)
+			if (buyCond1 && buyCond2 && buyCond3)
 			{
-				BuyMarket(Volume + Math.Abs(Position));
+				BuyMarket();
 				_barsSinceTrade = 0;
 			}
-			else if (sellCond1 && sellCond2 && sellCond3 && Position >= 0)
+			else if (sellCond1 && sellCond2 && sellCond3)
 			{
-				SellMarket(Volume + Math.Abs(Position));
+				SellMarket();
 				_barsSinceTrade = 0;
 			}
 		}

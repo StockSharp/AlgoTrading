@@ -1,4 +1,7 @@
 using System;
+using System.Collections.Generic;
+
+using Ecng.Common;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -26,7 +29,7 @@ public class JmasterRsxStrategy : Strategy
 
 	public JmasterRsxStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe.", "General");
 
 		_rsiLength = Param(nameof(RsiLength), 14)
@@ -82,6 +85,11 @@ public class JmasterRsxStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
@@ -91,7 +99,7 @@ public class JmasterRsxStrategy : Strategy
 		_entryPrice = 0;
 	}
 
-		protected override void OnStarted2(DateTime time)
+	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
@@ -106,6 +114,11 @@ public class JmasterRsxStrategy : Strategy
 		subscription
 			.Bind(rsi, ema, atr, ProcessCandle)
 			.Start();
+
+		StartProtection(
+			takeProfit: new Unit(2, UnitTypes.Percent),
+			stopLoss: new Unit(1, UnitTypes.Percent)
+		);
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -128,24 +141,6 @@ public class JmasterRsxStrategy : Strategy
 		}
 
 		var close = candle.ClosePrice;
-
-		// Exit management
-		if (Position > 0)
-		{
-			if (close <= _entryPrice - atrVal * 2m || close >= _entryPrice + atrVal * 3m || rsiVal > Overbought)
-			{
-				SellMarket();
-				_entryPrice = 0;
-			}
-		}
-		else if (Position < 0)
-		{
-			if (close >= _entryPrice + atrVal * 2m || close <= _entryPrice - atrVal * 3m || rsiVal < Oversold)
-			{
-				BuyMarket();
-				_entryPrice = 0;
-			}
-		}
 
 		// Entry
 		if (Position == 0)

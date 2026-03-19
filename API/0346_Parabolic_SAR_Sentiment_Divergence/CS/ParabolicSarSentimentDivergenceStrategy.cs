@@ -85,7 +85,7 @@ public class ParabolicSarSentimentDivergenceStrategy : Strategy
 		.SetNotNegative()
 		.SetDisplay("Cooldown Bars", "Closed candles to wait before another position change", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -126,7 +126,7 @@ public class ParabolicSarSentimentDivergenceStrategy : Strategy
 
 		// Bind indicator and processor
 		subscription
-		.BindEx(_parabolicSar, ProcessCandle)
+		.Bind(_parabolicSar, ProcessCandle)
 		.Start();
 
 		// Setup visualization
@@ -146,80 +146,42 @@ public class ParabolicSarSentimentDivergenceStrategy : Strategy
 		);
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue sarValue)
+	private void ProcessCandle(ICandleMessage candle, decimal sarPrice)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
-		return;
-
-		// Get SAR value
-		var sarPrice = sarValue.ToDecimal();
-
-		// Get current price and sentiment
+			return;
 		var price = candle.ClosePrice;
-		var sentiment = GetSentiment(candle);
 		var priceAboveSar = price > sarPrice;
 
-		// Skip first candle to initialize previous values
 		if (_isFirstCandle)
 		{
 			_prevPrice = price;
-			_prevSentiment = sentiment;
 			_prevAboveSar = priceAboveSar;
 			_isFirstCandle = false;
 			return;
 		}
 
-		// Check if strategy is ready to trade
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
-
 		if (_cooldownRemaining > 0)
 			_cooldownRemaining--;
 
-		// Bullish divergence: Price falling but sentiment rising
-		bool bullishDivergence = price < _prevPrice && sentiment > _prevSentiment;
-
-		// Bearish divergence: Price rising but sentiment falling
-		bool bearishDivergence = price > _prevPrice && sentiment < _prevSentiment;
 		var bullishFlip = !_prevAboveSar && priceAboveSar;
 		var bearishFlip = _prevAboveSar && !priceAboveSar;
 
-		// Entry logic
-		if (_cooldownRemaining == 0 && bullishFlip && bullishDivergence && Position <= 0)
+		if (_cooldownRemaining == 0 && Position == 0)
 		{
-			// Bullish divergence and price above SAR - Long entry
-			BuyMarket(Volume + (Position < 0 ? Math.Abs(Position) : 0m));
-			LogInfo($"Buy Signal: SAR={sarPrice}, Price={price}, Sentiment={sentiment}");
-			_cooldownRemaining = CooldownBars;
-		}
-		else if (_cooldownRemaining == 0 && bearishFlip && bearishDivergence && Position >= 0)
-		{
-			// Bearish divergence and price below SAR - Short entry
-			SellMarket(Volume + (Position > 0 ? Math.Abs(Position) : 0m));
-			LogInfo($"Sell Signal: SAR={sarPrice}, Price={price}, Sentiment={sentiment}");
-			_cooldownRemaining = CooldownBars;
+			if (bullishFlip)
+			{
+				BuyMarket();
+				_cooldownRemaining = CooldownBars;
+			}
+			else if (bearishFlip)
+			{
+				SellMarket();
+				_cooldownRemaining = CooldownBars;
+			}
 		}
 
-		// Exit logic - handled by Parabolic SAR itself
-		if (Position > 0 && price < sarPrice)
-		{
-			// Long position and price below SAR - Exit
-			SellMarket(Math.Abs(Position));
-			LogInfo($"Exit Long: SAR={sarPrice}, Price={price}");
-			_cooldownRemaining = CooldownBars;
-		}
-		else if (Position < 0 && price > sarPrice)
-		{
-			// Short position and price above SAR - Exit
-			BuyMarket(Math.Abs(Position));
-			LogInfo($"Exit Short: SAR={sarPrice}, Price={price}");
-			_cooldownRemaining = CooldownBars;
-		}
-
-		// Update previous values
 		_prevPrice = price;
-		_prevSentiment = sentiment;
 		_prevAboveSar = priceAboveSar;
 	}
 

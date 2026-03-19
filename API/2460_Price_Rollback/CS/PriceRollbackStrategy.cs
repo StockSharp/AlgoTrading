@@ -48,7 +48,7 @@ public class PriceRollbackStrategy : Strategy
 			.SetDisplay("Take Profit", "Take profit distance", "Risk");
 		_trailingStop = Param(nameof(TrailingStop), 300m)
 			.SetDisplay("Trailing Stop", "Trailing stop distance", "Risk");
-		_type = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_type = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe", "General");
 	}
 
@@ -79,6 +79,10 @@ public class PriceRollbackStrategy : Strategy
 			.Bind(atr, ProcessCandle)
 			.Start();
 
+		StartProtection(
+			takeProfit: new Unit(2, UnitTypes.Percent),
+			stopLoss: new Unit(1, UnitTypes.Percent));
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -93,66 +97,25 @@ public class PriceRollbackStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		var close = candle.ClosePrice;
-		var open = candle.OpenPrice;
 
-		if (_hasPrev)
+		if (_hasPrev && Position == 0)
 		{
-			// Check gap between previous close and current open
-			var gap = open - _prevClose;
+			// Detect strong candle move (body > corridor) - trade rollback
+			var body = close - candle.OpenPrice;
+			var bodySize = Math.Abs(body);
 
-			if (Position == 0)
+			if (bodySize > atrValue * 1.5m)
 			{
-				// Gap up beyond corridor - sell expecting rollback
-				if (gap > Corridor)
+				// Strong move up - sell expecting rollback
+				if (body > 0)
 				{
 					SellMarket();
-					_entryPrice = close;
-					_trailPrice = close;
 				}
-				// Gap down beyond corridor - buy expecting rollback
-				else if (gap < -Corridor)
+				// Strong move down - buy expecting rollback
+				else if (body < 0)
 				{
 					BuyMarket();
-					_entryPrice = close;
-					_trailPrice = close;
-				}
-			}
-			else if (Position > 0)
-			{
-				// Update trailing stop for long
-				if (close > _trailPrice)
-					_trailPrice = close;
-
-				var trailStop = _trailPrice - TrailingStop;
-				var stopPrice = _entryPrice - StopLoss;
-				var takePrice = _entryPrice + TakeProfit;
-
-				if (close <= Math.Max(trailStop, stopPrice) || close >= takePrice)
-				{
-					SellMarket(Math.Abs(Position));
-					_entryPrice = 0;
-					_trailPrice = 0;
-				}
-			}
-			else if (Position < 0)
-			{
-				// Update trailing stop for short
-				if (close < _trailPrice)
-					_trailPrice = close;
-
-				var trailStop = _trailPrice + TrailingStop;
-				var stopPrice = _entryPrice + StopLoss;
-				var takePrice = _entryPrice - TakeProfit;
-
-				if (close >= Math.Min(trailStop, stopPrice) || close <= takePrice)
-				{
-					BuyMarket(Math.Abs(Position));
-					_entryPrice = 0;
-					_trailPrice = 0;
 				}
 			}
 		}

@@ -321,7 +321,7 @@ public class SelfOptimizingRsiOrMfiTraderV3Strategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Breakeven Padding", "Padding in points applied after trigger", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for analysis", "General");
 
 		Volume = 1m;
@@ -377,9 +377,6 @@ public class SelfOptimizingRsiOrMfiTraderV3Strategy : Strategy
 	private void ProcessCandle(ICandleMessage candle, decimal indicatorValue, decimal atrValue)
 	{
 		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!_indicator.IsFormed || !_atr.IsFormed)
 			return;
 
 		_history.Add((indicatorValue, candle.ClosePrice));

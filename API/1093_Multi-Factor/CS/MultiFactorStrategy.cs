@@ -74,11 +74,11 @@ public class MultiFactorStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Profit ATR Mult", "ATR multiplier for take profit", "Risk");
 
-		_signalCooldownBars = Param(nameof(SignalCooldownBars), 12)
+		_signalCooldownBars = Param(nameof(SignalCooldownBars), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Signal Cooldown", "Bars to wait after entries and exits", "Trading");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -129,8 +129,12 @@ public class MultiFactorStrategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(_macd, ProcessCandle)
+			.Bind(ProcessCandle)
 			.Start();
+
+		StartProtection(
+			takeProfit: new Unit(3, UnitTypes.Percent),
+			stopLoss: new Unit(2, UnitTypes.Percent));
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -140,20 +144,18 @@ public class MultiFactorStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		var macdValue = _macd.Process(candle);
 		var rsiValue = _rsi.Process(candle);
 		var atrValue = _atr.Process(candle);
-		var sma50Value = _sma50.Process(new DecimalIndicatorValue(_sma50, candle.ClosePrice, candle.ServerTime));
-		var sma200Value = _sma200.Process(new DecimalIndicatorValue(_sma200, candle.ClosePrice, candle.ServerTime));
+		var sma50Value = _sma50.Process(new DecimalIndicatorValue(_sma50, candle.ClosePrice, candle.ServerTime) { IsFinal = true });
+		var sma200Value = _sma200.Process(new DecimalIndicatorValue(_sma200, candle.ClosePrice, candle.ServerTime) { IsFinal = true });
 
-		if (!macdValue.IsFormed || !rsiValue.IsFormed || !atrValue.IsFormed || !sma50Value.IsFormed || !sma200Value.IsFormed)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!_macd.IsFormed || !_rsi.IsFormed || !_atr.IsFormed || !_sma50.IsFormed || !_sma200.IsFormed)
 			return;
 
 		if (_cooldownRemaining > 0)
@@ -176,27 +178,19 @@ public class MultiFactorStrategy : Strategy
 			return;
 		}
 
-		if (Position > 0)
-		{
-			var stop = _entryPrice - StopAtrMultiplier * atr;
-			var target = _entryPrice + ProfitAtrMultiplier * atr;
-			var bearishCross = _prevDiff >= 0m && diff < 0m;
-
-			if (candle.LowPrice <= stop || candle.HighPrice >= target || bearishCross || candle.ClosePrice < sma50 || rsi >= 70m)
-			{
-				SellMarket(Position);
-				_cooldownRemaining = SignalCooldownBars;
-			}
-		}
-		else if (_cooldownRemaining == 0)
+		if (_cooldownRemaining == 0 && Position == 0)
 		{
 			var bullishCross = _prevDiff <= 0m && diff > 0m;
-			var bullishTrend = candle.ClosePrice > sma50;
+			var bearishCross = _prevDiff >= 0m && diff < 0m;
 
-			if (bullishCross && bullishTrend && rsi <= 65m)
+			if (bullishCross && candle.ClosePrice > sma50)
 			{
 				BuyMarket();
-				_entryPrice = candle.ClosePrice;
+				_cooldownRemaining = SignalCooldownBars;
+			}
+			else if (bearishCross && candle.ClosePrice < sma50)
+			{
+				SellMarket();
 				_cooldownRemaining = SignalCooldownBars;
 			}
 		}

@@ -21,27 +21,25 @@ public class ArdOrderManagementStochasticStrategy : Strategy
 	private readonly StrategyParam<decimal> _sellThreshold;
 
 	private decimal _prevRsi;
-	private decimal _entryPrice;
-	private decimal _trailStop;
 
 	public ArdOrderManagementStochasticStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(2).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe.", "General");
 
-		_rsiLength = Param(nameof(RsiLength), 14)
+		_rsiLength = Param(nameof(RsiLength), 10)
 			.SetDisplay("RSI Length", "RSI period.", "Indicators");
 
-		_emaLength = Param(nameof(EmaLength), 20)
+		_emaLength = Param(nameof(EmaLength), 14)
 			.SetDisplay("EMA Length", "EMA trend filter period.", "Indicators");
 
-		_atrLength = Param(nameof(AtrLength), 14)
+		_atrLength = Param(nameof(AtrLength), 10)
 			.SetDisplay("ATR Length", "ATR period for stops.", "Indicators");
 
-		_buyThreshold = Param(nameof(BuyThreshold), 45m)
+		_buyThreshold = Param(nameof(BuyThreshold), 30m)
 			.SetDisplay("Buy Threshold", "RSI oversold level for buy.", "Signals");
 
-		_sellThreshold = Param(nameof(SellThreshold), 55m)
+		_sellThreshold = Param(nameof(SellThreshold), 70m)
 			.SetDisplay("Sell Threshold", "RSI overbought level for sell.", "Signals");
 	}
 
@@ -88,17 +86,13 @@ public class ArdOrderManagementStochasticStrategy : Strategy
 		base.OnReseted();
 
 		_prevRsi = 0;
-		_entryPrice = 0;
-		_trailStop = 0;
 	}
 
-		protected override void OnStarted2(DateTime time)
+	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
 		_prevRsi = 0;
-		_entryPrice = 0;
-		_trailStop = 0;
 
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };
 		var ema = new ExponentialMovingAverage { Length = EmaLength };
@@ -108,6 +102,11 @@ public class ArdOrderManagementStochasticStrategy : Strategy
 		subscription
 			.Bind(rsi, ema, atr, ProcessCandle)
 			.Start();
+
+		StartProtection(
+			takeProfit: new Unit(2, UnitTypes.Percent),
+			stopLoss: new Unit(1, UnitTypes.Percent)
+		);
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -123,55 +122,21 @@ public class ArdOrderManagementStochasticStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (_prevRsi == 0 || atrVal <= 0)
+		if (_prevRsi == 0)
 		{
 			_prevRsi = rsiVal;
 			return;
 		}
 
-		var close = candle.ClosePrice;
-
-		// Trailing stop management
-		if (Position > 0)
-		{
-			var newTrail = close - atrVal * 1.5m;
-			if (newTrail > _trailStop)
-				_trailStop = newTrail;
-
-			if (close <= _trailStop || close >= _entryPrice + atrVal * 3m)
-			{
-				SellMarket();
-				_entryPrice = 0;
-				_trailStop = 0;
-			}
-		}
-		else if (Position < 0)
-		{
-			var newTrail = close + atrVal * 1.5m;
-			if (_trailStop == 0 || newTrail < _trailStop)
-				_trailStop = newTrail;
-
-			if (close >= _trailStop || close <= _entryPrice - atrVal * 3m)
-			{
-				BuyMarket();
-				_entryPrice = 0;
-				_trailStop = 0;
-			}
-		}
-
-		// Entry: RSI crosses threshold with EMA trend confirmation
+		// Entry: RSI crosses threshold
 		if (Position == 0)
 		{
-			if (rsiVal < BuyThreshold && _prevRsi >= BuyThreshold && close > emaVal)
+			if (rsiVal < BuyThreshold && _prevRsi >= BuyThreshold)
 			{
-				_entryPrice = close;
-				_trailStop = close - atrVal * 2m;
 				BuyMarket();
 			}
-			else if (rsiVal > SellThreshold && _prevRsi <= SellThreshold && close < emaVal)
+			else if (rsiVal > SellThreshold && _prevRsi <= SellThreshold)
 			{
-				_entryPrice = close;
-				_trailStop = close + atrVal * 2m;
 				SellMarket();
 			}
 		}

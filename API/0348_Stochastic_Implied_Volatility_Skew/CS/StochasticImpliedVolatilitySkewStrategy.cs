@@ -24,8 +24,8 @@ public class StochasticImpliedVolatilitySkewStrategy : Strategy
 	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private StochasticOscillator _stochastic = null!;
-	private SimpleMovingAverage _ivSkewSma = null!;
+	private StochasticOscillator _stochastic;
+	private SimpleMovingAverage _ivSkewSma;
 	private decimal _currentIvSkew;
 	private decimal _avgIvSkew;
 	private decimal? _prevK;
@@ -125,7 +125,7 @@ public class StochasticImpliedVolatilitySkewStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Cooldown Bars", "Closed candles to wait before another position change", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -140,11 +140,8 @@ public class StochasticImpliedVolatilitySkewStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_stochastic?.Reset();
-		_ivSkewSma?.Reset();
-
-		_stochastic = null!;
-		_ivSkewSma = null!;
+		_stochastic = null;
+		_ivSkewSma = null;
 		_currentIvSkew = 0m;
 		_avgIvSkew = 0m;
 		_prevK = null;
@@ -169,9 +166,12 @@ public class StochasticImpliedVolatilitySkewStrategy : Strategy
 			Length = IvPeriod
 		};
 
+		Indicators.Add(_stochastic);
+		Indicators.Add(_ivSkewSma);
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(_stochastic, ProcessCandle)
+			.Bind(ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -188,7 +188,7 @@ public class StochasticImpliedVolatilitySkewStrategy : Strategy
 		);
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue stochValue)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
@@ -201,40 +201,29 @@ public class StochasticImpliedVolatilitySkewStrategy : Strategy
 
 		_avgIvSkew = ivSkewSmaValue.ToDecimal();
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		var stochResult = _stochastic.Process(candle);
+		if (!_stochastic.IsFormed)
 			return;
 
-		if (stochValue is not StochasticOscillatorValue stochTyped || stochTyped.K is not decimal stochK)
+		if (stochResult is not StochasticOscillatorValue stochTyped || stochTyped.K is not decimal stochK)
 			return;
 
 		if (_cooldownRemaining > 0)
 			_cooldownRemaining--;
 
-		var highSkew = _currentIvSkew > (_avgIvSkew + 0.05m);
-		var lowSkew = _currentIvSkew < (_avgIvSkew - 0.05m);
-		var highSkewTransition = !_prevHighSkew && highSkew;
-		var lowSkewTransition = !_prevLowSkew && lowSkew;
-		var oversoldCross = _prevK is decimal previousK && previousK >= 25m && stochK < 25m;
-		var overboughtCross = _prevK is decimal previousK2 && previousK2 <= 75m && stochK > 75m;
+		var highSkew = _currentIvSkew > _avgIvSkew;
+		var lowSkew = _currentIvSkew < _avgIvSkew;
+		var oversold = stochK < 25m;
+		var overbought = stochK > 75m;
 
-		if (_cooldownRemaining == 0 && oversoldCross && highSkewTransition && Position <= 0)
+		if (_cooldownRemaining == 0 && Position == 0 && oversold && highSkew)
 		{
-			BuyMarket(Volume + (Position < 0 ? Math.Abs(Position) : 0m));
+			BuyMarket();
 			_cooldownRemaining = CooldownBars;
 		}
-		else if (_cooldownRemaining == 0 && overboughtCross && lowSkewTransition && Position >= 0)
+		else if (_cooldownRemaining == 0 && Position == 0 && overbought && lowSkew)
 		{
-			SellMarket(Volume + (Position > 0 ? Math.Abs(Position) : 0m));
-			_cooldownRemaining = CooldownBars;
-		}
-		else if (Position > 0 && stochK >= 55m)
-		{
-			SellMarket(Position);
-			_cooldownRemaining = CooldownBars;
-		}
-		else if (Position < 0 && stochK <= 45m)
-		{
-			BuyMarket(Math.Abs(Position));
+			SellMarket();
 			_cooldownRemaining = CooldownBars;
 		}
 

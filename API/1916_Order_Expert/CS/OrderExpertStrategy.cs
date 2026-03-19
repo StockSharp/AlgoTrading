@@ -56,7 +56,7 @@ public class OrderExpertStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Cooldown Bars", "Bars between trades", "Trading");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -126,16 +126,14 @@ public class OrderExpertStrategy : Strategy
 		}
 
 		// EMA cross up -> buy
-		if (_prevFast <= _prevSlow && fast > slow && Position <= 0 && _barsSinceTrade >= CooldownBars)
+		if (_prevFast <= _prevSlow && fast > slow && Position == 0 && _barsSinceTrade >= CooldownBars)
 		{
-			if (Position < 0) BuyMarket();
 			BuyMarket();
 			_barsSinceTrade = 0;
 		}
 		// EMA cross down -> sell
-		else if (_prevFast >= _prevSlow && fast < slow && Position >= 0 && _barsSinceTrade >= CooldownBars)
+		else if (_prevFast >= _prevSlow && fast < slow && Position == 0 && _barsSinceTrade >= CooldownBars)
 		{
-			if (Position > 0) SellMarket();
 			SellMarket();
 			_barsSinceTrade = 0;
 		}

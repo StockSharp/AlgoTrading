@@ -126,9 +126,8 @@ public class VolumeBreakoutStrategy : Strategy
 			
 		// Enable stop loss protection
 		StartProtection(
-			takeProfit: new Unit(0, UnitTypes.Absolute),
-			stopLoss: new Unit(StopLoss, UnitTypes.Percent)
-		);
+			takeProfit: new Unit(3, UnitTypes.Percent),
+			stopLoss: new Unit(StopLoss, UnitTypes.Percent));
 		
 		// Create chart area for visualization
 		var area = CreateChartArea();
@@ -148,14 +147,14 @@ public class VolumeBreakoutStrategy : Strategy
 		var volume = candle.TotalVolume;
 		
 		// Calculate volume average
-		var avgValue = _volumeAverage.Process(new DecimalIndicatorValue(_volumeAverage, volume, candle.ServerTime));
+		var avgValue = _volumeAverage.Process(new DecimalIndicatorValue(_volumeAverage, volume, candle.ServerTime) { IsFinal = true });
 		var avgVolume = avgValue.ToDecimal();
-		
+
 		// Calculate standard deviation approximation
 		var deviation = Math.Abs(volume - avgVolume);
-		var stdDevValue = _volumeStdDev.Process(new DecimalIndicatorValue(_volumeStdDev, deviation, candle.ServerTime));
+		var stdDevValue = _volumeStdDev.Process(new DecimalIndicatorValue(_volumeStdDev, deviation, candle.ServerTime) { IsFinal = true });
 		var stdDev = stdDevValue.ToDecimal();
-		
+
 		// Skip the first N candles until we have enough data
 		if (!_volumeAverage.IsFormed || !_volumeStdDev.IsFormed)
 		{
@@ -163,44 +162,24 @@ public class VolumeBreakoutStrategy : Strategy
 			_lastStdDev = stdDev;
 			return;
 		}
-		
-		// Check if trading is allowed
-		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			_lastAvgVolume = avgVolume;
-			_lastStdDev = stdDev;
-			return;
-		}
-		
+
 		// Volume breakout detection (volume increases significantly above its average)
-		if (volume > avgVolume + Multiplier * stdDev)
+		if (volume > avgVolume + Multiplier * stdDev && Position == 0)
 		{
 			// Determine direction based on price movement
 			var bullish = candle.ClosePrice > candle.OpenPrice;
-			
-			// Cancel active orders before placing new ones
-			CancelActiveOrders();
-			
+
 			// Trade in the direction of price movement
-			if (bullish && Position <= 0)
+			if (bullish)
 			{
-				// Bullish breakout - Buy
-				BuyMarket(Volume + Math.Abs(Position));
+				BuyMarket();
 			}
-			else if (!bullish && Position >= 0)
+			else
 			{
-				// Bearish breakout - Sell
-				SellMarket(Volume + Math.Abs(Position));
+				SellMarket();
 			}
 		}
-		// Check for exit condition - volume returns to average
-		else if ((Position > 0 && volume < avgVolume) || 
-				 (Position < 0 && volume < avgVolume))
-		{
-			// Exit position
-			ClosePosition();
-		}
-		
+
 		// Update last values
 		_lastAvgVolume = avgVolume;
 		_lastStdDev = stdDev;

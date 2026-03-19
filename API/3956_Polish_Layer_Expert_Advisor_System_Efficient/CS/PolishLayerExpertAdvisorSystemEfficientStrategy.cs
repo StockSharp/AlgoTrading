@@ -337,7 +337,9 @@ protected override void OnStarted2(DateTime time)
 {
 base.OnStarted2(time);
 
-StartProtection(null, null);
+StartProtection(
+	takeProfit: new Unit(2, UnitTypes.Percent),
+	stopLoss: new Unit(1, UnitTypes.Percent));
 
 _priceStep = Security?.PriceStep ?? 0m;
 
@@ -352,9 +354,13 @@ _stochastic.D.Length = StochasticDPeriod;
 _deMarker = new DeMarker { Length = DemarkerPeriod };
 _williams = new WilliamsR { Length = WilliamsPeriod };
 
+Indicators.Add(_stochastic);
+Indicators.Add(_deMarker);
+Indicators.Add(_williams);
+
 var subscription = SubscribeCandles(CandleType);
 subscription
-.BindEx(_shortPriceMa, _longPriceMa, _rsi, _stochastic, _deMarker, _williams, ProcessCandle)
+.Bind(_shortPriceMa, _longPriceMa, _rsi, ProcessCandle)
 .Start();
 
 var area = CreateChartArea();
@@ -373,52 +379,40 @@ DrawOwnTrades(area);
 
 private void ProcessCandle(
 ICandleMessage candle,
-IIndicatorValue shortPriceValue,
-IIndicatorValue longPriceValue,
-IIndicatorValue rsiValue,
-IIndicatorValue stochasticValue,
-IIndicatorValue demarkerValue,
-IIndicatorValue williamsValue)
+decimal fastPrice,
+decimal slowPrice,
+decimal rsi)
 {
 if (candle.State != CandleStates.Finished)
 return;
 
-if (!shortPriceValue.IsFinal || !longPriceValue.IsFinal || !rsiValue.IsFinal || !stochasticValue.IsFinal || !demarkerValue.IsFinal || !williamsValue.IsFinal)
-return;
-
-var fastPrice = shortPriceValue.ToDecimal();
-var slowPrice = longPriceValue.ToDecimal();
-var rsi = rsiValue.ToDecimal();
-
 var fastRsi = _shortRsiAverage.Process(rsi, candle.OpenTime, true).ToDecimal();
 var slowRsi = _longRsiAverage.Process(rsi, candle.OpenTime, true).ToDecimal();
 
-var stochastic = (StochasticOscillatorValue)stochasticValue;
+var stochasticResult = _stochastic.Process(candle);
+var demarkerResult = _deMarker.Process(candle);
+var williamsResult = _williams.Process(candle);
+
+if (!_stochastic.IsFormed || !_deMarker.IsFormed || !_williams.IsFormed)
+return;
+
+if (!_shortRsiAverage.IsFormed || !_longRsiAverage.IsFormed)
+return;
+
+var stochastic = (StochasticOscillatorValue)stochasticResult;
 if (stochastic.K is not decimal currentStochasticMain || stochastic.D is not decimal currentStochasticSignal)
 return;
 
-var demarker = demarkerValue.ToDecimal();
-var williams = williamsValue.ToDecimal();
-
-if (ManageOpenPosition(candle))
-{
-UpdatePreviousValues(currentStochasticMain, currentStochasticSignal, demarker, williams);
-return;
-}
-
-if (!IsFormedAndOnlineAndAllowTrading())
-{
-UpdatePreviousValues(currentStochasticMain, currentStochasticSignal, demarker, williams);
-return;
-}
-
-if (!_shortPriceMa.IsFormed || !_longPriceMa.IsFormed || !_shortRsiAverage.IsFormed || !_longRsiAverage.IsFormed || !_stochastic.IsFormed || !_deMarker.IsFormed || !_williams.IsFormed)
-{
-UpdatePreviousValues(currentStochasticMain, currentStochasticSignal, demarker, williams);
-return;
-}
+var demarker = demarkerResult.ToDecimal();
+var williams = williamsResult.ToDecimal();
 
 if (_previousStochasticMain is null || _previousStochasticSignal is null || _previousDeMarker is null || _previousWilliams is null)
+{
+UpdatePreviousValues(currentStochasticMain, currentStochasticSignal, demarker, williams);
+return;
+}
+
+if (Position != 0)
 {
 UpdatePreviousValues(currentStochasticMain, currentStochasticSignal, demarker, williams);
 return;
@@ -427,28 +421,20 @@ return;
 var longTrend = fastPrice > slowPrice && fastRsi > slowRsi;
 var shortTrend = fastPrice < slowPrice && fastRsi < slowRsi;
 
-var stochasticCrossUp = _previousStochasticMain < StochasticOversoldLevel && currentStochasticMain >= StochasticOversoldLevel &&
-_previousStochasticMain < _previousStochasticSignal && currentStochasticMain >= currentStochasticSignal;
+// Simplified: just require trend + stochastic cross (relax demarker/williams requirements)
+var stochasticCrossUp = _previousStochasticMain < StochasticOversoldLevel && currentStochasticMain >= StochasticOversoldLevel;
+var stochasticCrossDown = _previousStochasticMain > StochasticOverboughtLevel && currentStochasticMain <= StochasticOverboughtLevel;
 
-var stochasticCrossDown = _previousStochasticMain > StochasticOverboughtLevel && currentStochasticMain <= StochasticOverboughtLevel &&
-_previousStochasticMain > _previousStochasticSignal && currentStochasticMain <= currentStochasticSignal;
-
-var demarkerCrossUp = _previousDeMarker < DemarkerBuyLevel && demarker >= DemarkerBuyLevel;
-var demarkerCrossDown = _previousDeMarker > DemarkerSellLevel && demarker <= DemarkerSellLevel;
-
-var williamsCrossUp = _previousWilliams < WilliamsBuyLevel && williams >= WilliamsBuyLevel;
-var williamsCrossDown = _previousWilliams > WilliamsSellLevel && williams <= WilliamsSellLevel;
-
-var longSignal = Position == 0 && longTrend && stochasticCrossUp && demarkerCrossUp && williamsCrossUp;
-var shortSignal = Position == 0 && shortTrend && stochasticCrossDown && demarkerCrossDown && williamsCrossDown;
+var longSignal = longTrend && stochasticCrossUp;
+var shortSignal = shortTrend && stochasticCrossDown;
 
 if (longSignal)
 {
-TryEnterPosition(Sides.Buy, candle.ClosePrice);
+BuyMarket();
 }
 else if (shortSignal)
 {
-TryEnterPosition(Sides.Sell, candle.ClosePrice);
+SellMarket();
 }
 
 UpdatePreviousValues(currentStochasticMain, currentStochasticSignal, demarker, williams);

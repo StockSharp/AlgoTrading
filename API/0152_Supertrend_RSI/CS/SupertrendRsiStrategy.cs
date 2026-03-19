@@ -158,6 +158,10 @@ public class SupertrendRsiStrategy : Strategy
 			.Bind(rsi, ProcessCandle)
 			.Start();
 
+		StartProtection(
+			takeProfit: new Unit(2, UnitTypes.Percent),
+			stopLoss: new Unit(1, UnitTypes.Percent));
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -175,8 +179,6 @@ public class SupertrendRsiStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
 
 		var high = candle.HighPrice;
 		var low = candle.LowPrice;
@@ -261,29 +263,19 @@ public class SupertrendRsiStrategy : Strategy
 			return;
 		}
 
-		// Buy: uptrend + RSI oversold
-		if (upTrend && rsiValue < RsiOversold && Position == 0)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-		}
-		// Sell: downtrend + RSI overbought
-		else if (!upTrend && rsiValue > RsiOverbought && Position == 0)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
+		if (Position != 0)
+			return;
 
-		// Exit long: trend turns down
-		if (Position > 0 && !upTrend)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-		// Exit short: trend turns up
-		else if (Position < 0 && upTrend)
+		// Buy: uptrend + RSI below midpoint (momentum not exhausted)
+		if (upTrend && rsiValue < 50m)
 		{
 			BuyMarket();
+			_cooldown = CooldownBars;
+		}
+		// Sell: downtrend + RSI above midpoint
+		else if (!upTrend && rsiValue > 50m)
+		{
+			SellMarket();
 			_cooldown = CooldownBars;
 		}
 	}

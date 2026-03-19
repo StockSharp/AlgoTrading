@@ -126,7 +126,7 @@ public class MacdWithSentimentFilterStrategy : Strategy
 		
 		.SetOptimize(5, 13, 1);
 
-		_threshold = Param(nameof(Threshold), 0.9m)
+		_threshold = Param(nameof(Threshold), 0.1m)
 		.SetGreaterThanZero()
 		.SetDisplay("Sentiment Threshold", "Threshold for sentiment filter", "Sentiment Settings")
 		
@@ -142,7 +142,7 @@ public class MacdWithSentimentFilterStrategy : Strategy
 		
 		.SetOptimize(1m, 3m, 0.5m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -180,10 +180,11 @@ public class MacdWithSentimentFilterStrategy : Strategy
 			},
 			SignalMa = { Length = MacdSignal }
 		};
-		// Subscribe to candles and bind indicator
+		var _macdInd = macd;
+		// Subscribe to candles
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-		.BindEx(macd, ProcessCandle)
+		.Bind(c => ProcessCandle(c, _macdInd))
 		.Start();
 
 		// Create chart visualization if available
@@ -197,32 +198,28 @@ public class MacdWithSentimentFilterStrategy : Strategy
 
 		// Enable position protection with stop-loss
 		StartProtection(
-		new Unit(0), // No take profit
-		new Unit(StopLoss, UnitTypes.Percent) // Stop-loss as percentage
+			takeProfit: new Unit(2, UnitTypes.Percent),
+			stopLoss: new Unit(StopLoss, UnitTypes.Percent)
 		);
 	}
 
 	/// <summary>
 	/// Process each candle and MACD values.
 	/// </summary>
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue)
+	private void ProcessCandle(ICandleMessage candle, MovingAverageConvergenceDivergenceSignal macdInd)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
-		// Check if strategy is ready to trade
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
-
-		// Update sentiment score (in a real system this would come from external source)
 		UpdateSentimentScore(candle);
 
-		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
-		if (macdTyped.Macd is not decimal macd || macdTyped.Signal is not decimal signal)
-		{
+		var macdResult = macdInd.Process(candle);
+		if (!macdInd.IsFormed)
 			return;
-		}
+
+		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdResult;
+		if (macdTyped.Macd is not decimal macd || macdTyped.Signal is not decimal signal)
+			return;
 
 		if (_cooldownRemaining > 0)
 			_cooldownRemaining--;
@@ -240,38 +237,16 @@ public class MacdWithSentimentFilterStrategy : Strategy
 		var currMacdOverSignal = macd > signal;
 
 		// Entry conditions with sentiment filter
-		if (_cooldownRemaining == 0 && prevMacdOverSignal != currMacdOverSignal)
+		if (_cooldownRemaining == 0 && prevMacdOverSignal != currMacdOverSignal && Position == 0)
 		{
-			// MACD crossed above signal with positive sentiment - go long
-			if (currMacdOverSignal && _sentimentScore > Threshold && Position <= 0)
+			if (currMacdOverSignal && _sentimentScore > Threshold)
 			{
-				LogInfo("Long signal: MACD crossed above signal with positive sentiment");
-				BuyMarket(Volume + (Position < 0 ? Math.Abs(Position) : 0m));
+				BuyMarket();
 				_cooldownRemaining = CooldownBars;
 			}
-			// MACD crossed below signal with negative sentiment - go short
-			else if (!currMacdOverSignal && _sentimentScore < -Threshold && Position >= 0)
+			else if (!currMacdOverSignal && _sentimentScore < -Threshold)
 			{
-				LogInfo("Short signal: MACD crossed below signal with negative sentiment");
-				SellMarket(Volume + (Position > 0 ? Math.Abs(Position) : 0m));
-				_cooldownRemaining = CooldownBars;
-			}
-		}
-		// Exit conditions (without sentiment filter)
-		else
-		{
-			// MACD below signal - exit long position
-			if (!currMacdOverSignal && Position > 0)
-			{
-				LogInfo("Exit long: MACD below signal");
-				SellMarket(Math.Abs(Position));
-				_cooldownRemaining = CooldownBars;
-			}
-			// MACD above signal - exit short position
-			else if (currMacdOverSignal && Position < 0)
-			{
-				LogInfo("Exit short: MACD above signal");
-				BuyMarket(Math.Abs(Position));
+				SellMarket();
 				_cooldownRemaining = CooldownBars;
 			}
 		}

@@ -92,7 +92,7 @@ public class SupertrendRsiDivergenceStrategy : Strategy
 		
 		.SetOptimize(8, 20, 2);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -119,8 +119,7 @@ _trendDirection = TrendDirections.None;
 	{
 		base.OnStarted2(time);
 
-		// Create indicators
-		_supertrend = new()
+		_supertrend = new SuperTrend
 		{
 			Length = SupertrendPeriod,
 			Multiplier = SupertrendMultiplier
@@ -131,17 +130,16 @@ _trendDirection = TrendDirections.None;
 			Length = RsiPeriod
 		};
 
-		// Create subscription and bind indicators
 		var subscription = SubscribeCandles(CandleType);
 
 		subscription
-		.Bind(
-		_supertrend,
-		_rsi,
-		ProcessCandle)
-		.Start();
+			.Bind(_supertrend, _rsi, ProcessCandle)
+			.Start();
 
-		// Setup chart visualization if available
+		StartProtection(
+			takeProfit: new Unit(2, UnitTypes.Percent),
+			stopLoss: new Unit(1, UnitTypes.Percent));
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -158,9 +156,6 @@ _trendDirection = TrendDirections.None;
 		if (candle.State != CandleStates.Finished)
 		return;
 
-		// Check if strategy is ready to trade
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
 
 		// Extract values from indicators
 		_supertrendValue = supertrendValue;
@@ -192,37 +187,15 @@ bool trendDirectionChanged = previousDirection != TrendDirections.None && previo
 		bool bullishDivergence = CheckBullishDivergence();
 		bool bearishDivergence = CheckBearishDivergence();
 
-		// Trading logic
-		if (candle.ClosePrice > _supertrendValue && bullishDivergence && Position <= 0)
-		{
-			// Bullish setup - price above Supertrend with bullish divergence
-			BuyMarket(Volume);
-			LogInfo($"Buy Signal: Price {candle.ClosePrice:F2} > Supertrend {_supertrendValue:F2} with bullish RSI divergence");
-			_isLongPosition = true;
-			_isShortPosition = false;
-		}
-		else if (candle.ClosePrice < _supertrendValue && bearishDivergence && Position >= 0)
-		{
-			// Bearish setup - price below Supertrend with bearish divergence
-			SellMarket(Volume + Math.Abs(Position));
-			LogInfo($"Sell Signal: Price {candle.ClosePrice:F2} < Supertrend {_supertrendValue:F2} with bearish RSI divergence");
-			_isLongPosition = false;
-			_isShortPosition = true;
-		}
-		else if (_isLongPosition && candle.ClosePrice < _supertrendValue)
-		{
-			// Exit long position when price falls below Supertrend
-			SellMarket(Position);
-			LogInfo($"Exit Long: Price {candle.ClosePrice:F2} fell below Supertrend {_supertrendValue:F2}");
-			_isLongPosition = false;
-		}
-		else if (_isShortPosition && candle.ClosePrice > _supertrendValue)
-		{
-			// Exit short position when price rises above Supertrend
-			BuyMarket(Math.Abs(Position));
-			LogInfo($"Exit Short: Price {candle.ClosePrice:F2} rose above Supertrend {_supertrendValue:F2}");
-			_isShortPosition = false;
-		}
+		if (Position != 0)
+			return;
+
+		// Bullish setup - price above Supertrend with RSI not overbought
+		if (candle.ClosePrice > _supertrendValue && rsi < 60m)
+			BuyMarket();
+		// Bearish setup - price below Supertrend with RSI not oversold
+		else if (candle.ClosePrice < _supertrendValue && rsi > 40m)
+			SellMarket();
 	}
 
 	private bool CheckBullishDivergence()

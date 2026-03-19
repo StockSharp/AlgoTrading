@@ -21,6 +21,7 @@ public class SmiCorrectStrategy : Strategy
 	private readonly StrategyParam<int> _smiLength;
 	private readonly StrategyParam<int> _signalLength;
 
+	private StochasticOscillator _stochastic;
 	private SimpleMovingAverage _signal;
 	private decimal? _prevSmi;
 	private decimal? _prevSignal;
@@ -45,7 +46,7 @@ public class SmiCorrectStrategy : Strategy
 
 	public SmiCorrectStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
 		_smiLength = Param(nameof(SmiLength), 13)
@@ -67,6 +68,7 @@ public class SmiCorrectStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
+		_stochastic = null;
 		_signal = null;
 		_prevSmi = null;
 		_prevSignal = null;
@@ -80,7 +82,7 @@ public class SmiCorrectStrategy : Strategy
 		_prevSmi = null;
 		_prevSignal = null;
 
-		var stochastic = new StochasticOscillator
+		_stochastic = new StochasticOscillator
 		{
 			K = { Length = SmiLength },
 			D = { Length = 1 }
@@ -88,41 +90,48 @@ public class SmiCorrectStrategy : Strategy
 
 		_signal = new SimpleMovingAverage { Length = SignalLength };
 
+		Indicators.Add(_stochastic);
 		Indicators.Add(_signal);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(stochastic, ProcessCandle)
+			.Bind(ProcessCandleNew)
 			.Start();
+
+		StartProtection(
+			takeProfit: new Unit(2, UnitTypes.Percent),
+			stopLoss: new Unit(1, UnitTypes.Percent));
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, stochastic);
+			DrawIndicator(area, _stochastic);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue stochValue)
+	private void ProcessCandleNew(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		var stochResult = _stochastic.Process(candle);
+		if (!_stochastic.IsFormed)
 			return;
 
-		if (stochValue is not IStochasticOscillatorValue stoch || stoch.K is not decimal k)
+		var stochTyped = (StochasticOscillatorValue)stochResult;
+		if (stochTyped.K is not decimal k)
 			return;
 
-		var signalResult = _signal.Process(k, candle.OpenTime, true);
+		var signalResult = _signal.Process(new DecimalIndicatorValue(_signal, k, candle.OpenTime) { IsFinal = true });
 		if (!_signal.IsFormed)
 		{
 			_prevSmi = k;
 			return;
 		}
 
-		var signal = signalResult.GetValue<decimal>();
+		var signal = signalResult.ToDecimal();
 
 		if (_prevSmi is null || _prevSignal is null)
 		{
@@ -134,9 +143,9 @@ public class SmiCorrectStrategy : Strategy
 		var crossUp = _prevSmi < _prevSignal && k >= signal;
 		var crossDown = _prevSmi > _prevSignal && k <= signal;
 
-		if (crossUp && Position <= 0)
+		if (crossUp && Position == 0)
 			BuyMarket();
-		else if (crossDown && Position >= 0)
+		else if (crossDown && Position == 0)
 			SellMarket();
 
 		_prevSmi = k;

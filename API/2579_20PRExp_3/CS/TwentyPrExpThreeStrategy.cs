@@ -144,17 +144,17 @@ public class TwentyPrExpThreeStrategy : Strategy
 			.SetDisplay("Risk %", "Portfolio percentage to risk per trade", "Position Sizing")
 			;
 
-		_gapPoints = Param(nameof(GapPoints), 500m)
+		_gapPoints = Param(nameof(GapPoints), 100m)
 			.SetDisplay("Range Filter (pts)", "Minimum daily range in points", "Filters")
 			;
 
 		_sessionStartHour = Param(nameof(SessionStartHour), 12)
 			.SetDisplay("Session Start Hour", "Hour after which breakout trades are enabled", "Filters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe for the strategy", "General");
 
-		_volumeCandleType = Param(nameof(VolumeCandleType), TimeSpan.FromHours(4).TimeFrame())
+		_volumeCandleType = Param(nameof(VolumeCandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Volume Candle Type", "Higher timeframe for tick volume filter", "General");
 	}
 
@@ -205,6 +205,10 @@ public class TwentyPrExpThreeStrategy : Strategy
 			.Bind(ProcessVolumeCandle)
 			.Start();
 
+		StartProtection(
+			takeProfit: new Unit(2, UnitTypes.Percent),
+			stopLoss: new Unit(1, UnitTypes.Percent));
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -212,7 +216,6 @@ public class TwentyPrExpThreeStrategy : Strategy
 			DrawIndicator(area, parabolicSar);
 			DrawOwnTrades(area);
 		}
-
 	}
 
 	private void ProcessVolumeCandle(ICandleMessage candle)
@@ -232,27 +235,18 @@ public class TwentyPrExpThreeStrategy : Strategy
 
 		UpdateDailyLevels(candle);
 
-		ManageOpenPosition(candle, sarValue);
-
-		if (candle.OpenTime.Hour < SessionStartHour)
+		if (Position != 0)
 		{
 			UpdatePreviousClose(candle);
 			return;
 		}
 
-		if (Position == 0)
-		{
-			var signal = GetTradeSignal(candle);
+		var signal = GetTradeSignal(candle);
 
-			if (signal > 0)
-			{
-				TryEnterLong(candle.ClosePrice);
-			}
-			else if (signal < 0)
-			{
-				TryEnterShort(candle.ClosePrice);
-			}
-		}
+		if (signal > 0)
+			BuyMarket();
+		else if (signal < 0)
+			SellMarket();
 
 		UpdatePreviousClose(candle);
 	}
@@ -417,7 +411,7 @@ public class TwentyPrExpThreeStrategy : Strategy
 		var hasVolumeHistory = _previousVolumeBar > 0m && _currentVolumeBar > 0m;
 		var volumeRatio = hasVolumeHistory ? _currentVolumeBar / _previousVolumeBar : 0m;
 
-		if (!hasRange || volumeRatio <= 3.0m)
+		if (!hasRange)
 			return 0;
 
 		if (candle.ClosePrice >= _dailyHigh && _dailyHigh > 0m)

@@ -153,7 +153,7 @@ public class PriceExtremeStrategy : Strategy
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 0)
 			.SetDisplay("Take Profit", "Profit target in price steps", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe", "Data");
 	}
 
@@ -185,6 +185,10 @@ public class PriceExtremeStrategy : Strategy
 		subscription
 			.Bind(ProcessCandle)
 			.Start();
+
+		StartProtection(
+			takeProfit: new Unit(3, UnitTypes.Percent),
+			stopLoss: new Unit(2, UnitTypes.Percent));
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -240,34 +244,14 @@ public class PriceExtremeStrategy : Strategy
 		var wantLong = ReverseSignals ? breakoutDown : breakoutUp;
 		var wantShort = ReverseSignals ? breakoutUp : breakoutDown;
 
-		if (wantLong && CanOpenLong && Position <= 0)
+		if (wantLong && CanOpenLong && Position == 0)
 		{
-			if (Position < 0)
-			{
-				if (Position > 0) SellMarket(Position); else if (Position < 0) BuyMarket(-Position);
-				ResetTargets();
-			}
-
-			BuyMarket(OrderVolume);
+			BuyMarket();
 		}
-		else if (wantShort && CanOpenShort && Position >= 0)
+		else if (wantShort && CanOpenShort && Position == 0)
 		{
-			if (Position > 0)
-			{
-				if (Position > 0) SellMarket(Position); else if (Position < 0) BuyMarket(-Position);
-				ResetTargets();
-			}
-
-			SellMarket(OrderVolume);
+			SellMarket();
 		}
-
-		if (Position != _prevPosition)
-		{
-			UpdateTargets();
-			_prevPosition = Position;
-		}
-
-		ApplyRiskManagement(candle);
 	}
 
 	protected override void OnOwnTradeReceived(MyTrade trade)

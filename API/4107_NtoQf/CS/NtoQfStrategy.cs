@@ -1,4 +1,7 @@
 using System;
+using System.Collections.Generic;
+
+using Ecng.Common;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -21,12 +24,10 @@ public class NtoQfStrategy : Strategy
 	private readonly StrategyParam<decimal> _rsiLower;
 
 	private decimal _prevRsi;
-	private decimal _entryPrice;
-	private decimal _trailStop;
 
 	public NtoQfStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe.", "General");
 
 		_rsiLength = Param(nameof(RsiLength), 14)
@@ -82,13 +83,15 @@ public class NtoQfStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
 
 		_prevRsi = 0;
-		_entryPrice = 0;
-		_trailStop = 0;
 	}
 
 	/// <inheritdoc />
@@ -104,6 +107,10 @@ public class NtoQfStrategy : Strategy
 		subscription
 			.Bind(rsi, ema, atr, ProcessCandle)
 			.Start();
+
+		StartProtection(
+			takeProfit: new Unit(3, UnitTypes.Percent),
+			stopLoss: new Unit(2, UnitTypes.Percent));
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -127,47 +134,15 @@ public class NtoQfStrategy : Strategy
 
 		var close = candle.ClosePrice;
 
-		// Trailing stop management
-		if (Position > 0)
-		{
-			var newTrail = close - atrVal * 1.5m;
-			if (newTrail > _trailStop)
-				_trailStop = newTrail;
-
-			if (close <= _trailStop || rsiVal > RsiUpper)
-			{
-				SellMarket();
-				_entryPrice = 0;
-				_trailStop = 0;
-			}
-		}
-		else if (Position < 0)
-		{
-			var newTrail = close + atrVal * 1.5m;
-			if (_trailStop == 0 || newTrail < _trailStop)
-				_trailStop = newTrail;
-
-			if (close >= _trailStop || rsiVal < RsiLower)
-			{
-				BuyMarket();
-				_entryPrice = 0;
-				_trailStop = 0;
-			}
-		}
-
 		// Entry: RSI exits extreme zone, confirmed by EMA trend
 		if (Position == 0)
 		{
 			if (_prevRsi < RsiLower && rsiVal >= RsiLower && close > emaVal)
 			{
-				_entryPrice = close;
-				_trailStop = close - atrVal * 2m;
 				BuyMarket();
 			}
 			else if (_prevRsi > RsiUpper && rsiVal <= RsiUpper && close < emaVal)
 			{
-				_entryPrice = close;
-				_trailStop = close + atrVal * 2m;
 				SellMarket();
 			}
 		}

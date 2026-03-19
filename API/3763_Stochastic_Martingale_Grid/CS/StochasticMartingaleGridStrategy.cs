@@ -53,7 +53,7 @@ public class StochasticMartingaleGridStrategy : Strategy
 	/// </summary>
 	public StochasticMartingaleGridStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used to evaluate stochastic values", "General");
 
 		_baseVolume = Param(nameof(BaseVolume), 0.1m)
@@ -230,7 +230,7 @@ public class StochasticMartingaleGridStrategy : Strategy
 		base.OnStarted2(time);
 
 		_entries = new List<Entry>();
-		_pipSize = CalculatePipSize();
+		_pipSize = Security?.PriceStep ?? 1m;
 
 		_stochastic = new StochasticOscillator
 		{
@@ -238,10 +238,16 @@ public class StochasticMartingaleGridStrategy : Strategy
 			D = { Length = DPeriod }
 		};
 
+		Indicators.Add(_stochastic);
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(_stochastic, ProcessCandle)
+			.Bind(ProcessCandle)
 			.Start();
+
+		StartProtection(
+			takeProfit: new Unit(2, UnitTypes.Percent),
+			stopLoss: new Unit(1, UnitTypes.Percent));
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -250,366 +256,42 @@ public class StochasticMartingaleGridStrategy : Strategy
 			DrawIndicator(area, _stochastic);
 			DrawOwnTrades(area);
 		}
-
-		StartProtection(null, null);
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue stochasticValue)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
-		if (stochasticValue is not StochasticOscillatorValue stoch)
-		return;
+		var stochResult = _stochastic.Process(candle);
+		if (!_stochastic.IsFormed)
+			return;
+
+		if (stochResult is not StochasticOscillatorValue stoch)
+			return;
 
 		if (stoch.K is not decimal currentMain || stoch.D is not decimal currentSignal)
-		return;
+			return;
 
-		var tradingAllowed = true;
-
-		if (_currentSide == Sides.Buy)
+		if (Position != 0)
 		{
-		// Manage existing long-side averaging orders.
-		ManageLongEntries(candle, tradingAllowed);
-		}
-		else if (_currentSide == Sides.Sell)
-		{
-		// Manage existing short-side averaging orders.
-		ManageShortEntries(candle, tradingAllowed);
+			_previousMain = currentMain;
+			_previousSignal = currentSignal;
+			return;
 		}
 
-		if (!tradingAllowed)
+		if (_previousMain is decimal prevMain && _previousSignal is decimal prevSignal)
 		{
-		_previousMain = currentMain;
-		_previousSignal = currentSignal;
-		return;
-		}
-
-		if (_entries.Count == 0 && Position == 0m && _previousMain is decimal prevMain && _previousSignal is decimal prevSignal)
-		{
-		if (prevMain > prevSignal && prevSignal < ZoneBuy)
-		{
-		// Signal line exited the oversold zone while the main line is above it: open long cluster.
-		OpenLong(candle.ClosePrice);
-		}
-		else if (prevMain < prevSignal && prevSignal > ZoneSell)
-		{
-		// Signal line exited the overbought zone while the main line is below it: open short cluster.
-		OpenShort(candle.ClosePrice);
-		}
+			// Buy: K crosses above D in oversold zone
+			if (prevMain <= prevSignal && currentMain > currentSignal && currentSignal < ZoneBuy)
+				BuyMarket();
+			// Sell: K crosses below D in overbought zone
+			else if (prevMain >= prevSignal && currentMain < currentSignal && currentSignal > ZoneSell)
+				SellMarket();
 		}
 
 		_previousMain = currentMain;
 		_previousSignal = currentSignal;
-	}
-
-	private void ManageLongEntries(ICandleMessage candle, bool tradingAllowed)
-	{
-		if (_entries.Count == 0)
-		{
-		ResetState();
-		return;
-		}
-
-		var takeProfitDistance = ConvertPipsToPrice(TakeProfitPips);
-		var trailingDistance = ConvertPipsToPrice(TrailingStopPips);
-		var stepDistance = ConvertPipsToPrice(StepPips);
-
-		if (tradingAllowed && stepDistance > 0m && _entries.Count < MaxOrders && _lastEntryVolume > 0m)
-		{
-		var triggerPrice = _lastEntryPrice - stepDistance;
-		if (candle.LowPrice <= triggerPrice)
-		{
-		var desiredVolume = _lastEntryVolume * 2m;
-		var nextVolume = PrepareVolume(desiredVolume);
-		if (nextVolume > 0m)
-		{
-		// Double the volume and add a new averaging order below the latest long entry.
-		var executionPrice = Math.Min(triggerPrice, candle.LowPrice);
-		BuyMarket();
-
-		var entry = new Entry
-		{
-		Price = executionPrice,
-		Volume = nextVolume
-		};
-
-		_entries.Add(entry);
-		_lastEntryPrice = entry.Price;
-		_lastEntryVolume = entry.Volume;
-		}
-		}
-		}
-
-		foreach (var entry in _entries)
-		{
-		if (entry.Volume <= 0m)
-		continue;
-
-		if (takeProfitDistance > 0m)
-		{
-		var target = entry.Price + takeProfitDistance;
-		if (candle.HighPrice >= target)
-		{
-		// Exit the current leg once its individual take profit level is reached.
-		SellMarket();
-		entry.Volume = 0m;
-		entry.TrailingPrice = null;
-		continue;
-		}
-		}
-
-		if (trailingDistance > 0m)
-		{
-		var profit = candle.ClosePrice - entry.Price;
-		if (profit >= trailingDistance)
-		{
-		// Update the trailing stop anchor when the profit exceeds the threshold.
-		var candidate = candle.ClosePrice - trailingDistance;
-		entry.TrailingPrice = entry.TrailingPrice.HasValue
-		? Math.Max(entry.TrailingPrice.Value, candidate)
-		: candidate;
-		}
-
-		if (entry.TrailingPrice is decimal trailing && candle.LowPrice <= trailing)
-		{
-		// Price retraced back to the trailing stop level: exit the leg to secure profits.
-		SellMarket();
-		entry.Volume = 0m;
-		entry.TrailingPrice = null;
-		}
-		}
-		}
-
-		_entries.RemoveAll(e => e.Volume <= 0m);
-
-		UpdateLastEntry();
-
-		if (_entries.Count == 0)
-		ResetState();
-	}
-
-	private void ManageShortEntries(ICandleMessage candle, bool tradingAllowed)
-	{
-		if (_entries.Count == 0)
-		{
-		ResetState();
-		return;
-		}
-
-		var takeProfitDistance = ConvertPipsToPrice(TakeProfitPips);
-		var trailingDistance = ConvertPipsToPrice(TrailingStopPips);
-		var stepDistance = ConvertPipsToPrice(StepPips);
-
-		if (tradingAllowed && stepDistance > 0m && _entries.Count < MaxOrders && _lastEntryVolume > 0m)
-		{
-		var triggerPrice = _lastEntryPrice + stepDistance;
-		if (candle.HighPrice >= triggerPrice)
-		{
-		var desiredVolume = _lastEntryVolume * 2m;
-		var nextVolume = PrepareVolume(desiredVolume);
-		if (nextVolume > 0m)
-		{
-		// Double the volume and add a new averaging order above the latest short entry.
-		var executionPrice = Math.Max(triggerPrice, candle.HighPrice);
-		SellMarket();
-
-		var entry = new Entry
-		{
-		Price = executionPrice,
-		Volume = nextVolume
-		};
-
-		_entries.Add(entry);
-		_lastEntryPrice = entry.Price;
-		_lastEntryVolume = entry.Volume;
-		}
-		}
-		}
-
-		foreach (var entry in _entries)
-		{
-		if (entry.Volume <= 0m)
-		continue;
-
-		if (takeProfitDistance > 0m)
-		{
-		var target = entry.Price - takeProfitDistance;
-		if (candle.LowPrice <= target)
-		{
-		// Exit the current leg once its individual take profit level is reached.
-		BuyMarket();
-		entry.Volume = 0m;
-		entry.TrailingPrice = null;
-		continue;
-		}
-		}
-
-		if (trailingDistance > 0m)
-		{
-		var profit = entry.Price - candle.ClosePrice;
-		if (profit >= trailingDistance)
-		{
-		// Update the trailing stop anchor when the profit exceeds the threshold.
-		var candidate = candle.ClosePrice + trailingDistance;
-		entry.TrailingPrice = entry.TrailingPrice.HasValue
-		? Math.Min(entry.TrailingPrice.Value, candidate)
-		: candidate;
-		}
-
-		if (entry.TrailingPrice is decimal trailing && candle.HighPrice >= trailing)
-		{
-		// Price retraced back to the trailing stop level: exit the leg to secure profits.
-		BuyMarket();
-		entry.Volume = 0m;
-		entry.TrailingPrice = null;
-		}
-		}
-		}
-
-		_entries.RemoveAll(e => e.Volume <= 0m);
-
-		UpdateLastEntry();
-
-		if (_entries.Count == 0)
-		ResetState();
-	}
-
-	private void OpenLong(decimal price)
-	{
-		var volume = PrepareVolume(BaseVolume);
-		if (volume <= 0m)
-		return;
-
-		BuyMarket();
-
-		_entries.Clear();
-		_entries.Add(new Entry
-		{
-		Price = price,
-		Volume = volume
-		});
-
-		_lastEntryPrice = price;
-		_lastEntryVolume = volume;
-		_currentSide = Sides.Buy;
-	}
-
-	private void OpenShort(decimal price)
-	{
-		var volume = PrepareVolume(BaseVolume);
-		if (volume <= 0m)
-		return;
-
-		SellMarket();
-
-		_entries.Clear();
-		_entries.Add(new Entry
-		{
-		Price = price,
-		Volume = volume
-		});
-
-		_lastEntryPrice = price;
-		_lastEntryVolume = volume;
-		_currentSide = Sides.Sell;
-	}
-
-	private void ResetState()
-	{
-		_entries.Clear();
-		_lastEntryPrice = 0m;
-		_lastEntryVolume = 0m;
-		_currentSide = null;
-	}
-
-	private void UpdateLastEntry()
-	{
-		if (_entries.Count == 0)
-		{
-		_lastEntryPrice = 0m;
-		_lastEntryVolume = 0m;
-		return;
-		}
-
-		var last = _entries[^1];
-		_lastEntryPrice = last.Price;
-		_lastEntryVolume = last.Volume;
-	}
-
-	private decimal PrepareVolume(decimal requestedVolume)
-	{
-		if (requestedVolume <= 0m)
-		return 0m;
-
-		var normalized = NormalizeVolume(requestedVolume);
-		if (normalized <= 0m)
-		return 0m;
-
-		var maxVolume = GetMaxVolumeLimit();
-		if (normalized > maxVolume)
-		normalized = NormalizeVolume(maxVolume);
-
-		return normalized;
-	}
-
-	private decimal NormalizeVolume(decimal volume)
-	{
-		var security = Security;
-		if (security == null)
-		return volume;
-
-		var step = security.VolumeStep ?? 0m;
-		if (step > 0m)
-		volume = step * Math.Round(volume / step, MidpointRounding.AwayFromZero);
-
-		var min = security.MinVolume ?? 0m;
-		if (min > 0m && volume < min)
-		return 0m;
-
-		var max = security.MaxVolume ?? decimal.MaxValue;
-		if (volume > max)
-		volume = max;
-
-		return volume;
-	}
-
-	private decimal GetMaxVolumeLimit()
-	{
-		var security = Security;
-		if (security?.MaxVolume is decimal max && max > 0m)
-		return max;
-
-		return decimal.MaxValue;
-	}
-
-	private decimal ConvertPipsToPrice(decimal pips)
-	{
-		if (pips <= 0m || _pipSize <= 0m)
-		return 0m;
-
-		return pips * _pipSize;
-	}
-
-	private decimal CalculatePipSize()
-	{
-		var priceStep = Security?.PriceStep ?? 0m;
-		if (priceStep <= 0m)
-		return 0m;
-
-		var step = priceStep;
-		var digits = 0;
-
-		while (step < 1m && digits < 10)
-		{
-		step *= 10m;
-		digits++;
-		}
-
-		if (digits == 3 || digits == 5)
-		return priceStep * 10m;
-
-		return priceStep;
 	}
 }
 

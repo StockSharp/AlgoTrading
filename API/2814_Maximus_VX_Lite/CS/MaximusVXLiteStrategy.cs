@@ -158,7 +158,7 @@ public class MaximusVXLiteStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Range", "Width of consolidation channel in points", "Trading Rules");
 
-		_historyDepth = Param(nameof(HistoryDepth), 1000)
+		_historyDepth = Param(nameof(HistoryDepth), 200)
 			.SetGreaterThanZero()
 			.SetDisplay("History Depth", "Number of candles inspected for consolidation zones", "Data");
 
@@ -166,7 +166,7 @@ public class MaximusVXLiteStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Range Lookback", "Candles used to calculate local maxima and minima", "Data");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe used by the strategy", "General");
 
 		_riskPercent = Param(nameof(RiskPercent), 5m)
@@ -218,6 +218,10 @@ public class MaximusVXLiteStrategy : Strategy
 		subscription
 			.Bind(ProcessCandle)
 			.Start();
+
+		StartProtection(
+			takeProfit: new Unit(3, UnitTypes.Percent),
+			stopLoss: new Unit(2, UnitTypes.Percent));
 
 		var area = CreateChartArea();
 		if (area != null)

@@ -155,14 +155,13 @@ public class MomentumBreakoutStrategy : Strategy
 		_currentMomentum = momentumValue;
 
 		// Process momentum through average and standard deviation indicators
-		var avgIndicatorValue = _momentumAverage.Process(new DecimalIndicatorValue(_momentumAverage, momentumValue, candle.ServerTime));
-		var stdDevIndicatorValue = _momentumStdDev.Process(new DecimalIndicatorValue(_momentumStdDev, momentumValue, candle.ServerTime));
+		var avgIndicatorValue = _momentumAverage.Process(new DecimalIndicatorValue(_momentumAverage, momentumValue, candle.ServerTime) { IsFinal = true });
+		var stdDevIndicatorValue = _momentumStdDev.Process(new DecimalIndicatorValue(_momentumStdDev, momentumValue, candle.ServerTime) { IsFinal = true });
 		
 		_momentumAvgValue = avgIndicatorValue.ToDecimal();
 		_momentumStdDevValue = stdDevIndicatorValue.ToDecimal();
 		
-		// Check if strategy is ready for trading
-		if (!IsFormedAndOnlineAndAllowTrading() || !_momentumAverage.IsFormed || !_momentumStdDev.IsFormed)
+		if (!_momentumAverage.IsFormed || !_momentumStdDev.IsFormed)
 			return;
 
 		// Ensure we have all needed values
@@ -181,28 +180,13 @@ public class MomentumBreakoutStrategy : Strategy
 			// Long Entry: Momentum breaks above upper band (strong upward momentum)
 			if (_currentMomentum.Value > upperBand)
 			{
-				LogInfo($"Buy Signal - Momentum ({_currentMomentum}) > Upper Band ({upperBand})");
-				BuyMarket(Volume);
+				BuyMarket();
 			}
 			// Short Entry: Momentum breaks below lower band (strong downward momentum)
 			else if (_currentMomentum.Value < lowerBand)
 			{
-				LogInfo($"Sell Signal - Momentum ({_currentMomentum}) < Lower Band ({lowerBand})");
-				SellMarket(Volume);
+				SellMarket();
 			}
-		}
-		// Exit logic
-		else if (Position > 0 && _currentMomentum.Value < _momentumAvgValue.Value)
-		{
-			// Exit Long: Momentum returned to average
-			LogInfo($"Exit Long - Momentum ({_currentMomentum}) < Avg ({_momentumAvgValue})");
-			SellMarket(Math.Abs(Position));
-		}
-		else if (Position < 0 && _currentMomentum.Value > _momentumAvgValue.Value)
-		{
-			// Exit Short: Momentum returned to average
-			LogInfo($"Exit Short - Momentum ({_currentMomentum}) > Avg ({_momentumAvgValue})");
-			BuyMarket(Math.Abs(Position));
 		}
 	}
 }

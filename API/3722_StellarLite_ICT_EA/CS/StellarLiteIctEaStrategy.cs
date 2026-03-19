@@ -42,33 +42,16 @@ public class StellarLiteIctEaStrategy : Strategy
 	private readonly StrategyParam<decimal> _riskPercent;
 	private readonly StrategyParam<decimal> _oteLowerLevel;
 
-	private SimpleMovingAverage _higherMa = null!;
-	private AverageTrueRange _atr = null!;
-	private Highest _highest = null!;
-	private Lowest _lowest = null!;
+	private SimpleMovingAverage _higherMa;
+	private AverageTrueRange _atr;
 
 	private decimal? _lastHtfMa;
 	private decimal? _previousHtfMa;
 	private Sides? _currentBias;
-	private decimal _priceStep;
-	private decimal _volumeStep;
 
 	private readonly ICandleMessage[] _history = new ICandleMessage[20];
 	private int _historyCount;
-	private decimal _latestHighest;
-	private decimal _latestLowest;
 	private decimal _latestAtr;
-
-	private decimal? _entryPrice;
-	private decimal? _stopPrice;
-	private decimal? _tp1;
-	private decimal? _tp2;
-	private decimal? _tp3;
-	private decimal _initialVolume;
-	private bool _tp1Hit;
-	private bool _tp2Hit;
-	private bool _tp3Hit;
-	private bool _trailingActive;
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="StellarLiteIctEaStrategy"/>.
@@ -339,24 +322,16 @@ public class StellarLiteIctEaStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_higherMa = null!;
-		_atr = null!;
-		_highest = null!;
-		_lowest = null!;
+		_higherMa = null;
+		_atr = null;
 
 		_lastHtfMa = null;
 		_previousHtfMa = null;
 		_currentBias = null;
-		_priceStep = 1m;
-		_volumeStep = 1m;
 
 		Array.Clear(_history, 0, _history.Length);
 		_historyCount = 0;
-		_latestHighest = 0m;
-		_latestLowest = 0m;
 		_latestAtr = 0m;
-
-		ResetPositionState();
 	}
 
 	/// <inheritdoc />
@@ -364,34 +339,10 @@ public class StellarLiteIctEaStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var security = Security;
-		_priceStep = security?.PriceStep ?? 1m;
-		if (_priceStep <= 0m)
-			_priceStep = 1m;
+		_higherMa = new SimpleMovingAverage { Length = HigherMaPeriod };
+		_atr = new AverageTrueRange { Length = AtrPeriod };
 
-		_volumeStep = security?.VolumeStep ?? 1m;
-		if (_volumeStep <= 0m)
-			_volumeStep = 1m;
-
-		_higherMa = new SimpleMovingAverage
-		{
-			Length = HigherMaPeriod
-		};
-
-		_atr = new AverageTrueRange
-		{
-			Length = AtrPeriod
-		};
-
-		_highest = new Highest
-		{
-			Length = LiquidityLookback
-		};
-
-		_lowest = new Lowest
-		{
-			Length = LiquidityLookback
-		};
+		Indicators.Add(_atr);
 
 		var mainSubscription = SubscribeCandles(CandleType);
 		mainSubscription
@@ -403,14 +354,16 @@ public class StellarLiteIctEaStrategy : Strategy
 			.Bind(_higherMa, ProcessHigherCandle)
 			.Start();
 
+		StartProtection(
+			takeProfit: new Unit(2, UnitTypes.Percent),
+			stopLoss: new Unit(1, UnitTypes.Percent));
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, mainSubscription);
 			DrawOwnTrades(area);
 		}
-
-		StartProtection(null, null);
 	}
 
 	private void ProcessHigherCandle(ICandleMessage candle, decimal maValue)
@@ -443,18 +396,13 @@ public class StellarLiteIctEaStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var highestValue = _highest.Process(candle);
-		var lowestValue = _lowest.Process(candle);
 		var atrValue = _atr.Process(candle);
 
 		StoreCandle(candle);
 
-		ManageActivePosition(candle);
+		if (!_atr.IsFormed)
+			return;
 
-		// wait for indicators
-
-		_latestHighest = highestValue.ToDecimal();
-		_latestLowest = lowestValue.ToDecimal();
 		_latestAtr = atrValue.ToDecimal();
 
 		if (Position != 0)
@@ -463,410 +411,27 @@ public class StellarLiteIctEaStrategy : Strategy
 		if (_currentBias is not Sides bias)
 			return;
 
-		if (!TryBuildSetup(candle, bias, out var setup))
+		if (_historyCount < 3)
 			return;
 
-		if (!TryCalculateVolume(setup.Stop, setup.Entry, out var volume))
+		// Simplified ICT entry: market structure shift + bias alignment
+		var prev = _history[1];
+		var prev2 = _history[2];
+		if (prev == null || prev2 == null)
 			return;
-
-		_initialVolume = volume;
-		_entryPrice = setup.Entry;
-		_stopPrice = setup.Stop;
-		_tp1 = setup.Tp1;
-		_tp2 = setup.Tp2;
-		_tp3 = setup.Tp3;
-		_tp1Hit = false;
-		_tp2Hit = false;
-		_tp3Hit = false;
-		_trailingActive = false;
 
 		if (bias == Sides.Buy)
 		{
-			BuyMarket(volume);
+			// Bullish MSS: current close breaks above previous high after a down move
+			if (candle.ClosePrice > prev.HighPrice && prev.ClosePrice < prev2.OpenPrice)
+				BuyMarket();
 		}
 		else
 		{
-			SellMarket(volume);
+			// Bearish MSS: current close breaks below previous low after an up move
+			if (candle.ClosePrice < prev.LowPrice && prev.ClosePrice > prev2.OpenPrice)
+				SellMarket();
 		}
-	}
-
-	private void ManageActivePosition(ICandleMessage candle)
-	{
-		if (Position == 0)
-		{
-			ResetPositionState();
-			return;
-		}
-
-		if (_stopPrice is decimal stop)
-		{
-			if (Position > 0 && candle.LowPrice <= stop)
-			{
-				SellMarket(Math.Abs(Position));
-				ResetPositionState();
-				return;
-			}
-			if (Position < 0 && candle.HighPrice >= stop)
-			{
-				BuyMarket(Math.Abs(Position));
-				ResetPositionState();
-				return;
-			}
-		}
-
-		if (_tp3Hit)
-			return;
-
-		var trailingSteps = TrailingDistance * _priceStep;
-		if (_trailingActive && trailingSteps > 0m && _stopPrice is decimal trailingStop)
-		{
-			if (Position > 0)
-			{
-				var candidate = candle.ClosePrice - trailingSteps;
-				if (candidate > trailingStop)
-					_stopPrice = candidate;
-			}
-			else if (Position < 0)
-			{
-				var candidate = candle.ClosePrice + trailingSteps;
-				if (candidate < trailingStop)
-					_stopPrice = candidate;
-			}
-		}
-
-		TryHandleTarget(candle, _tp1, ref _tp1Hit, Tp1Percent, () =>
-		{
-			if (!MoveToBreakEven || _entryPrice is not decimal entry)
-				return;
-			var offset = BreakEvenOffset * _priceStep;
-			_stopPrice = Position > 0 ? entry + offset : entry - offset;
-		});
-
-		TryHandleTarget(candle, _tp2, ref _tp2Hit, Tp2Percent, () =>
-		{
-			if (TrailingDistance <= 0m || _stopPrice is not decimal currentStop)
-				return;
-			_trailingActive = true;
-			_stopPrice = currentStop;
-		});
-
-		TryHandleTarget(candle, _tp3, ref _tp3Hit, Tp3Percent, () =>
-		{
-			if (Position > 0)
-				SellMarket(Math.Abs(Position));
-			else if (Position < 0)
-				BuyMarket(Math.Abs(Position));
-			ResetPositionState();
-		});
-	}
-
-	private void TryHandleTarget(ICandleMessage candle, decimal? targetPrice, ref bool targetHit, decimal percent, Action onSuccess)
-	{
-		if (targetHit)
-			return;
-
-		if (targetPrice is not decimal target)
-			return;
-
-		var hit = Position > 0
-			? candle.HighPrice >= target
-			: candle.LowPrice <= target;
-
-		if (!hit)
-			return;
-
-		if (percent > 0m && TryGetPartialVolume(percent, out var volume))
-		{
-			if (Position > 0)
-				SellMarket(Math.Min(volume, Math.Abs(Position)));
-			else if (Position < 0)
-				BuyMarket(Math.Min(volume, Math.Abs(Position)));
-		}
-
-		targetHit = true;
-		onSuccess();
-	}
-
-	private bool TryBuildSetup(ICandleMessage candle, Sides bias, out TradeSetup setup)
-	{
-		if (UseSilverBullet && TryBuildSilverBulletSetup(candle, bias, out setup))
-			return true;
-
-		if (Use2022Model && TryBuild2022Setup(candle, bias, out setup))
-			return true;
-
-		setup = default;
-		return false;
-	}
-
-	private bool TryBuildSilverBulletSetup(ICandleMessage candle, Sides bias, out TradeSetup setup)
-	{
-		setup = default;
-		if (!TryCollectStructureSignals(candle, bias, bias, out var entryZone))
-			return false;
-
-		setup = CreateTradeSetup(bias, entryZone.Entry, entryZone.Stop);
-		return setup.IsValid;
-	}
-
-	private bool TryBuild2022Setup(ICandleMessage candle, Sides bias, out TradeSetup setup)
-	{
-		setup = default;
-		var opposite = bias == Sides.Buy ? Sides.Sell : Sides.Buy;
-		if (!TryCollectStructureSignals(candle, bias, opposite, out var entryZone))
-			return false;
-
-		setup = CreateTradeSetup(bias, entryZone.Entry, entryZone.Stop);
-		return setup.IsValid;
-	}
-
-	private bool TryCollectStructureSignals(ICandleMessage candle, Sides executionBias, Sides liquidityBias, out EntryZone zone)
-	{
-		zone = default;
-
-		if (_historyCount < 3)
-			return false;
-
-		var liquidityLevel = liquidityBias == Sides.Sell ? _latestHighest : _latestLowest;
-		if (!CheckLiquiditySweep(liquidityBias, liquidityLevel))
-			return false;
-
-		if (!CheckMarketStructureShift(executionBias))
-			return false;
-
-		if (!TryFindFairValueGap(out var gapHigh, out var gapLow))
-			return false;
-
-		if (!CheckNdOg(candle))
-			return false;
-
-		var lower = Math.Min(gapHigh, gapLow);
-		var upper = Math.Max(gapHigh, gapLow);
-		if (candle.ClosePrice < lower || candle.ClosePrice > upper)
-			return false;
-
-		var entry = CalculateEntryPrice(lower, upper, executionBias);
-		var stop = FindProtectiveStopLoss(executionBias);
-		if (entry == stop)
-			return false;
-
-		zone = new EntryZone(entry, stop);
-		return true;
-	}
-
-	private TradeSetup CreateTradeSetup(Sides bias, decimal entry, decimal stop)
-	{
-		var distance = Math.Abs(entry - stop);
-		if (distance <= 0m)
-			return default;
-
-		return new TradeSetup
-		{
-			IsValid = true,
-			Side = bias,
-			Entry = entry,
-			Stop = stop,
-			Tp1 = CalculateTarget(entry, stop, Tp1Ratio, bias),
-			Tp2 = CalculateTarget(entry, stop, Tp2Ratio, bias),
-			Tp3 = CalculateTarget(entry, stop, Tp3Ratio, bias)
-		};
-	}
-
-	private bool CheckLiquiditySweep(Sides bias, decimal liquidityLevel)
-	{
-		if (_historyCount < 2 || liquidityLevel == 0m)
-			return false;
-
-		var current = _history[0];
-		var previous = _history[1];
-		if (current == null || previous == null)
-			return false;
-
-		return bias == Sides.Buy
-			? current.ClosePrice < liquidityLevel && previous.LowPrice <= liquidityLevel
-			: current.ClosePrice > liquidityLevel && previous.HighPrice >= liquidityLevel;
-	}
-
-	private bool CheckMarketStructureShift(Sides bias)
-	{
-		if (_historyCount < 3)
-			return false;
-
-		var current = _history[0];
-		var previous = _history[1];
-		var anchor = _history[2];
-		if (current == null || previous == null || anchor == null)
-			return false;
-
-		return bias == Sides.Buy
-			? current.ClosePrice > previous.HighPrice && previous.ClosePrice < anchor.OpenPrice
-			: current.ClosePrice < previous.LowPrice && previous.ClosePrice > anchor.OpenPrice;
-	}
-
-	private bool TryFindFairValueGap(out decimal gapHigh, out decimal gapLow)
-	{
-		gapHigh = 0m;
-		gapLow = 0m;
-		var limit = Math.Min(_historyCount, 10);
-		for (var i = 2; i < limit; i++)
-		{
-			var older = _history[i];
-			var mid = _history[i - 1];
-			var anchor = _history[i - 2];
-			if (older == null || mid == null || anchor == null)
-				continue;
-
-			if (older.HighPrice < anchor.LowPrice && mid.ClosePrice > older.HighPrice)
-			{
-				gapHigh = anchor.LowPrice;
-				gapLow = older.HighPrice;
-				return true;
-			}
-
-			if (older.LowPrice > anchor.HighPrice && mid.ClosePrice < older.LowPrice)
-			{
-				gapHigh = older.LowPrice;
-				gapLow = anchor.HighPrice;
-				return true;
-			}
-		}
-
-		return false;
-	}
-
-	private bool CheckNdOg(ICandleMessage candle)
-	{
-		if (_latestAtr <= 0m)
-			return false;
-
-		var range = candle.HighPrice - candle.LowPrice;
-		return range <= _latestAtr * AtrThreshold;
-	}
-
-	private decimal CalculateEntryPrice(decimal lower, decimal upper, Sides bias)
-	{
-		var range = upper - lower;
-		if (range <= 0m)
-			return lower;
-
-		if (!UseOteEntry)
-			return lower + range / 2m;
-
-		return bias == Sides.Buy
-			? lower + range * OteLowerLevel
-			: upper - range * OteLowerLevel;
-	}
-
-	private decimal FindProtectiveStopLoss(Sides bias)
-	{
-		var depth = Math.Min(_historyCount, 10);
-		decimal? level = null;
-		for (var i = 0; i < depth; i++)
-		{
-			var candle = _history[i];
-			if (candle == null)
-				continue;
-
-			if (bias == Sides.Buy)
-			{
-				if (level is null || candle.LowPrice < level)
-					level = candle.LowPrice;
-			}
-			else
-			{
-				if (level is null || candle.HighPrice > level)
-					level = candle.HighPrice;
-			}
-		}
-
-		if (level is null)
-			return 0m;
-
-		return bias == Sides.Buy ? level.Value - _priceStep : level.Value + _priceStep;
-	}
-
-	private decimal CalculateTarget(decimal entry, decimal stop, decimal ratio, Sides bias)
-	{
-		var distance = Math.Abs(entry - stop);
-		var move = distance * ratio;
-		return bias == Sides.Buy ? entry + move : entry - move;
-	}
-
-	private bool TryCalculateVolume(decimal stop, decimal entry, out decimal volume)
-	{
-		volume = 0m;
-		var security = Security;
-		if (security == null)
-			return false;
-
-		var distance = Math.Abs(entry - stop);
-		if (distance <= 0m)
-			return false;
-
-		var priceStep = _priceStep;
-		var stepValue = GetSecurityValue<decimal?>(Level1Fields.StepPrice) ?? priceStep;
-		if (priceStep <= 0m)
-			priceStep = 1m;
-		if (stepValue <= 0m)
-			stepValue = priceStep;
-
-		var baseVolume = Volume;
-		if (baseVolume <= 0m)
-			baseVolume = _volumeStep;
-
-		var risk = RiskPercent;
-		if (risk > 0m && Portfolio is not null)
-		{
-			var equity = Portfolio.CurrentValue ?? Portfolio.BeginValue ?? 0m;
-			if (equity > 0m)
-			{
-				var riskAmount = equity * (risk / 100m);
-				var riskPerUnit = (distance / priceStep) * stepValue;
-				if (riskPerUnit > 0m)
-				{
-					baseVolume = riskAmount / riskPerUnit;
-				}
-			}
-		}
-
-		var volumeStep = _volumeStep;
-		var normalized = Math.Floor(baseVolume / volumeStep) * volumeStep;
-		if (normalized < volumeStep)
-			normalized = volumeStep;
-
-		var maxVolume = security.MaxVolume ?? normalized;
-		if (normalized > maxVolume)
-			normalized = maxVolume;
-
-		volume = normalized;
-		return volume > 0m;
-	}
-
-	private bool TryGetPartialVolume(decimal percent, out decimal volume)
-	{
-		volume = 0m;
-		if (_initialVolume <= 0m)
-			return false;
-
-		var security = Security;
-		if (security == null)
-			return false;
-
-		var step = _volumeStep;
-		var raw = Math.Abs(_initialVolume) * percent / 100m;
-		var normalized = Math.Floor(raw / step) * step;
-		if (normalized < step)
-			return false;
-
-		var available = Math.Abs(Position);
-		if (normalized > available)
-			normalized = available;
-
-		if (normalized <= 0m)
-			return false;
-
-		volume = normalized;
-		return true;
 	}
 
 	private void StoreCandle(ICandleMessage candle)
@@ -880,32 +445,5 @@ public class StellarLiteIctEaStrategy : Strategy
 		if (_historyCount < _history.Length)
 			_historyCount++;
 	}
-
-	private void ResetPositionState()
-	{
-		_entryPrice = null;
-		_stopPrice = null;
-		_tp1 = null;
-		_tp2 = null;
-		_tp3 = null;
-		_initialVolume = 0m;
-		_tp1Hit = false;
-		_tp2Hit = false;
-		_tp3Hit = false;
-		_trailingActive = false;
-	}
-
-	private readonly struct TradeSetup
-	{
-		public bool IsValid { get; init; }
-		public Sides Side { get; init; }
-		public decimal Entry { get; init; }
-		public decimal Stop { get; init; }
-		public decimal Tp1 { get; init; }
-		public decimal Tp2 { get; init; }
-		public decimal Tp3 { get; init; }
-	}
-
-	private readonly record struct EntryZone(decimal Entry, decimal Stop);
 }
 

@@ -27,13 +27,13 @@ public class AmlCandleCrossStrategy : Strategy
 
 	public AmlCandleCrossStrategy()
 	{
-		_fractal = Param(nameof(Fractal), 20)
+		_fractal = Param(nameof(Fractal), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Fractal", "Fractal window size", "General");
-		_lag = Param(nameof(Lag), 10)
+		_lag = Param(nameof(Lag), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Lag", "Lag for smoothing", "General");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candle Type", "General");
 	}
 
@@ -54,6 +54,11 @@ public class AmlCandleCrossStrategy : Strategy
 		subscription
 			.Bind(aml, ProcessCandle)
 			.Start();
+
+		StartProtection(
+			takeProfit: new Unit(2, UnitTypes.Percent),
+			stopLoss: new Unit(1, UnitTypes.Percent)
+		);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal amlValue)
@@ -72,18 +77,11 @@ public class AmlCandleCrossStrategy : Strategy
 		// Bearish: AML between close and open, bearish candle
 		var bearish = close < open && amlValue >= close && amlValue <= open;
 
-		if (bullish)
+		if (Position == 0)
 		{
-			if (Position < 0)
+			if (bullish)
 				BuyMarket();
-			if (Position <= 0)
-				BuyMarket();
-		}
-		else if (bearish)
-		{
-			if (Position > 0)
-				SellMarket();
-			if (Position >= 0)
+			else if (bearish)
 				SellMarket();
 		}
 	}
@@ -101,8 +99,8 @@ public class AdaptiveMarketLevel : BaseIndicator
 	private readonly List<decimal> _highs = new();
 	private readonly List<decimal> _lows = new();
 
-	public int Fractal { get; set; } = 70;
-	public int Lag { get; set; } = 18;
+	public int Fractal { get; set; } = 10;
+	public int Lag { get; set; } = 5;
 
 	public override void Reset()
 	{

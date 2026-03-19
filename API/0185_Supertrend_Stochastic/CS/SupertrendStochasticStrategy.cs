@@ -191,97 +191,66 @@ public class SupertrendStochasticStrategy : Strategy
 			D = { Length = StochD },
 		};
 
-		// Subscribe to candles and bind indicators
+		Indicators.Add(_supertrend);
+		Indicators.Add(_stochastic);
+
 		var subscription = SubscribeCandles(CandleType);
-		
 		subscription
-			.BindEx(_supertrend, _stochastic, ProcessCandle)
+			.Bind(ProcessCandle)
 			.Start();
 
-		// Setup chart
+		StartProtection(
+			takeProfit: new Unit(2, UnitTypes.Percent),
+			stopLoss: new Unit(StopLossPercent, UnitTypes.Percent));
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
 			DrawIndicator(area, _supertrend);
-			
-			var secondArea = CreateChartArea();
-			if (secondArea != null)
-			{
-				DrawIndicator(secondArea, _stochastic);
-			}
-			
 			DrawOwnTrades(area);
 		}
-
 	}
 
-	private void ProcessCandle(
-		ICandleMessage candle, 
-		IIndicatorValue supertrendValue, 
-		IIndicatorValue stochasticValue)
+	private void ProcessCandle(ICandleMessage candle)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
-		if (!IsFormedAndOnlineAndAllowTrading())
+		var stResult = _supertrend.Process(candle);
+		var stochResult = _stochastic.Process(candle);
+
+		if (!_supertrend.IsFormed || !_stochastic.IsFormed)
 			return;
 
-		// Get indicator values
-		var supertrend = (SuperTrendIndicatorValue)supertrendValue;
-		decimal supertrendLine = supertrend.Value;
-		
-		// Is trend bullish or bearish
-		bool isBullish = supertrend.IsUpTrend;
-		bool isBearish = !isBullish;
-		
-		var stochTyped = (StochasticOscillatorValue)stochasticValue;
-
-		if (stochTyped.K is not decimal stochK)
+		if (stResult is not SuperTrendIndicatorValue stVal)
 			return;
 
-		if (!_hasPrevTrend)
-		{
-			_hasPrevTrend = true;
-			_prevBullish = isBullish;
+		if (stochResult is not StochasticOscillatorValue stochTyped || stochTyped.K is not decimal stochK)
 			return;
-		}
 
-		bool isAboveSupertrend = candle.ClosePrice > supertrendLine;
-		bool isBelowSupertrend = candle.ClosePrice < supertrendLine;
-		bool trendFlipUp = !_prevBullish && isBullish;
-		bool trendFlipDown = _prevBullish && isBearish;
+		var isBullish = stVal.IsUpTrend;
 
 		if (_cooldown > 0)
 		{
 			_cooldown--;
-			_prevBullish = isBullish;
 			return;
 		}
 
-		if (trendFlipUp && isAboveSupertrend && stochK < 35 && Position <= 0)
-		{
-			BuyMarket(Volume + Math.Abs(Position));
-			_cooldown = CooldownBars;
-		}
-		else if (trendFlipDown && isBelowSupertrend && stochK > 65 && Position >= 0)
-		{
-			SellMarket(Volume + Math.Abs(Position));
-			_cooldown = CooldownBars;
-		}
-		else if (Position > 0 && trendFlipDown)
-		{
-			SellMarket(Math.Abs(Position));
-			_cooldown = CooldownBars;
-		}
-		else if (Position < 0 && trendFlipUp)
-		{
-			BuyMarket(Math.Abs(Position));
-			_cooldown = CooldownBars;
-		}
+		if (Position != 0)
+			return;
 
-		_prevBullish = isBullish;
+		// Buy: bullish supertrend + stochastic oversold area
+		if (isBullish && stochK < 30)
+		{
+			BuyMarket();
+			_cooldown = CooldownBars;
+		}
+		// Sell: bearish supertrend + stochastic overbought area
+		else if (!isBullish && stochK > 70)
+		{
+			SellMarket();
+			_cooldown = CooldownBars;
+		}
 	}
 }

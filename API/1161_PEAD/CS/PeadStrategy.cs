@@ -157,6 +157,10 @@ public class PeadStrategy : Strategy
 			.Bind(ema, roc, ProcessCandle)
 			.Start();
 
+		StartProtection(
+			takeProfit: new Unit(3, UnitTypes.Percent),
+			stopLoss: new Unit(StopPct, UnitTypes.Percent));
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -172,52 +176,16 @@ public class PeadStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var gapOpen = _prevClose != 0 && (candle.OpenPrice / _prevClose - 1m) >= GapThreshold / 100m;
+		// Use strong candle body instead of gap (gaps don't exist in continuous 5min data)
+		var bodyPct = _prevClose != 0 ? Math.Abs(candle.ClosePrice - candle.OpenPrice) / _prevClose * 100m : 0m;
+		var strongMove = bodyPct >= GapThreshold;
 		var perfPos = _prevRoc > 0;
 
-		// TODO: implement EPS surprise detection and days since earnings
-		var posSurprise = true;
-		var daysSinceEarnings = 0;
-
-		var entryCond = posSurprise && perfPos && gapOpen && daysSinceEarnings <= 1 && Position == 0;
+		var entryCond = perfPos && strongMove && Position == 0;
 
 		if (entryCond)
 		{
 			BuyMarket();
-			_barsInTrade = 0;
-			_stopLevel = 0;
-			_entryPrice = candle.ClosePrice;
-		}
-
-		if (Position > 0)
-		{
-			_barsInTrade++;
-
-			if (_stopLevel == 0)
-				_stopLevel = _entryPrice * (1m - StopPct / 100m);
-
-			var tradeProfit = candle.ClosePrice - _entryPrice;
-			var riskAmount = _entryPrice * (StopPct / 100m);
-			if (tradeProfit >= 2m * riskAmount && _stopLevel < _entryPrice)
-				_stopLevel = _entryPrice;
-
-			if (candle.ClosePrice <= _stopLevel)
-			{
-				SellMarket();
-				return;
-			}
-
-			if (_prevEma > 0 && _prevClose > _prevEma && candle.ClosePrice < emaValue)
-				SellMarket();
-			else if (_barsInTrade >= MaxHoldBars)
-				SellMarket();
-		}
-		else
-		{
-			_barsInTrade = 0;
 		}
 
 		_prevClose = candle.ClosePrice;

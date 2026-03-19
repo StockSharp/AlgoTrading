@@ -3,6 +3,8 @@ namespace StockSharp.Samples.Strategies;
 using System;
 using System.Collections.Generic;
 
+using Ecng.Common;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -18,20 +20,18 @@ public class VolumeBlockOrderAnalyzerStrategy : Strategy
 	private readonly StrategyParam<decimal> _impactDecay;
 	private readonly StrategyParam<decimal> _impactNormalization;
 	private readonly StrategyParam<decimal> _signalThreshold;
-	private readonly StrategyParam<decimal> _stopPercent;
 	private readonly StrategyParam<int> _signalCooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _cumulativeImpact;
-	private decimal _entryPrice;
 	private int _cooldownRemaining;
+	private readonly List<decimal> _volumeBuffer = new();
 
 	public decimal VolumeThreshold { get => _volumeThreshold.Value; set => _volumeThreshold.Value = value; }
 	public int LookbackPeriod { get => _lookbackPeriod.Value; set => _lookbackPeriod.Value = value; }
 	public decimal ImpactDecay { get => _impactDecay.Value; set => _impactDecay.Value = value; }
 	public decimal ImpactNormalization { get => _impactNormalization.Value; set => _impactNormalization.Value = value; }
 	public decimal SignalThreshold { get => _signalThreshold.Value; set => _signalThreshold.Value = value; }
-	public decimal StopPercent { get => _stopPercent.Value; set => _stopPercent.Value = value; }
 	public int SignalCooldownBars { get => _signalCooldownBars.Value; set => _signalCooldownBars.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
@@ -55,11 +55,7 @@ public class VolumeBlockOrderAnalyzerStrategy : Strategy
 		_signalThreshold = Param(nameof(SignalThreshold), 0.3m)
 			.SetDisplay("Signal Threshold", "Absolute impact required for a new trade", "Strategy");
 
-		_stopPercent = Param(nameof(StopPercent), 2m)
-			.SetDisplay("Trailing Stop %", "Maximum adverse move after entry", "Risk")
-			.SetGreaterThanZero();
-
-		_signalCooldownBars = Param(nameof(SignalCooldownBars), 72)
+		_signalCooldownBars = Param(nameof(SignalCooldownBars), 10)
 			.SetDisplay("Signal Cooldown", "Bars to wait after entries and exits", "Strategy")
 			.SetGreaterThanZero();
 
@@ -78,8 +74,8 @@ public class VolumeBlockOrderAnalyzerStrategy : Strategy
 	{
 		base.OnReseted();
 		_cumulativeImpact = 0m;
-		_entryPrice = 0m;
 		_cooldownRemaining = 0;
+		_volumeBuffer.Clear();
 	}
 
 	/// <inheritdoc />
@@ -87,16 +83,19 @@ public class VolumeBlockOrderAnalyzerStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var avgVolume = new SMA { Length = LookbackPeriod };
+		_cumulativeImpact = 0m;
+		_cooldownRemaining = 0;
+		_volumeBuffer.Clear();
+
 		var subscription = SubscribeCandles(CandleType);
 
-		_cumulativeImpact = 0m;
-		_entryPrice = 0m;
-		_cooldownRemaining = 0;
-
 		subscription
-			.Bind(avgVolume, ProcessCandle)
+			.Bind(ProcessCandle)
 			.Start();
+
+		StartProtection(
+			takeProfit: new Unit(2, UnitTypes.Percent),
+			stopLoss: new Unit(1, UnitTypes.Percent));
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -106,7 +105,7 @@ public class VolumeBlockOrderAnalyzerStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal averageVolume)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
@@ -114,47 +113,37 @@ public class VolumeBlockOrderAnalyzerStrategy : Strategy
 		if (_cooldownRemaining > 0)
 			_cooldownRemaining--;
 
+		// Track volume for averaging
+		_volumeBuffer.Add(candle.TotalVolume);
+		if (_volumeBuffer.Count > LookbackPeriod)
+			_volumeBuffer.RemoveAt(0);
+
+		if (_volumeBuffer.Count < LookbackPeriod)
+			return;
+
+		// Calculate average volume
+		var sumVol = 0m;
+		for (var i = 0; i < _volumeBuffer.Count; i++)
+			sumVol += _volumeBuffer[i];
+		var averageVolume = sumVol / _volumeBuffer.Count;
+
 		var relativeVolume = averageVolume <= 0m ? 0m : candle.TotalVolume / averageVolume;
 		var directionalMove = candle.ClosePrice > candle.OpenPrice ? 1m : candle.ClosePrice < candle.OpenPrice ? -1m : 0m;
 		var impact = relativeVolume >= VolumeThreshold ? directionalMove * relativeVolume / ImpactNormalization : 0m;
 
 		_cumulativeImpact = _cumulativeImpact * ImpactDecay + impact;
 
-		if (Position > 0)
-		{
-			var stop = _entryPrice * (1m - StopPercent / 100m);
-			if (candle.LowPrice <= stop || _cumulativeImpact <= 0m)
-			{
-				SellMarket(Position);
-				_cooldownRemaining = SignalCooldownBars;
-			}
-			return;
-		}
-
-		if (Position < 0)
-		{
-			var stop = _entryPrice * (1m + StopPercent / 100m);
-			if (candle.HighPrice >= stop || _cumulativeImpact >= 0m)
-			{
-				BuyMarket(Math.Abs(Position));
-				_cooldownRemaining = SignalCooldownBars;
-			}
-			return;
-		}
-
-		if (_cooldownRemaining > 0 || !IsFormedAndOnlineAndAllowTrading())
+		if (Position != 0 || _cooldownRemaining > 0)
 			return;
 
 		if (_cumulativeImpact >= SignalThreshold)
 		{
 			BuyMarket();
-			_entryPrice = candle.ClosePrice;
 			_cooldownRemaining = SignalCooldownBars;
 		}
 		else if (_cumulativeImpact <= -SignalThreshold)
 		{
 			SellMarket();
-			_entryPrice = candle.ClosePrice;
 			_cooldownRemaining = SignalCooldownBars;
 		}
 	}

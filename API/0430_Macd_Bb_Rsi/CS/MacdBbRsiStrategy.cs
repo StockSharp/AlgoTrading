@@ -32,7 +32,7 @@ public class MacdBbRsiStrategy : Strategy
 
 	public MacdBbRsiStrategy()
 	{
-		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle type", "Candle type for strategy calculation.", "General");
 
 		_bbLength = Param(nameof(BBLength), 20)
@@ -46,7 +46,7 @@ public class MacdBbRsiStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "RSI period", "RSI");
 
-		_cooldownBars = Param(nameof(CooldownBars), 10)
+		_cooldownBars = Param(nameof(CooldownBars), 50)
 			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "Risk");
 	}
 
@@ -107,8 +107,13 @@ public class MacdBbRsiStrategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(_macd, _bollinger, _rsi, OnProcess)
+			.Bind(_rsi, OnProcess)
 			.Start();
+
+		StartProtection(
+			takeProfit: new Unit(2, UnitTypes.Percent),
+			stopLoss: new Unit(1, UnitTypes.Percent)
+		);
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -119,32 +124,24 @@ public class MacdBbRsiStrategy : Strategy
 		}
 	}
 
-	private void OnProcess(ICandleMessage candle, IIndicatorValue macdValue, IIndicatorValue bbValue, IIndicatorValue rsiValue)
+	private void OnProcess(ICandleMessage candle, decimal rsi)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_macd.IsFormed || !_bollinger.IsFormed || !_rsi.IsFormed)
+		// Process MACD and BB manually
+		var macdResult = _macd.Process(candle);
+		var bbResult = _bollinger.Process(candle);
+
+		if (!_macd.IsFormed || !_bollinger.IsFormed)
 			return;
 
-		if (macdValue.IsEmpty || rsiValue.IsEmpty)
-			return;
-
-		var macdVal = macdValue.ToDecimal();
-
-		var bb = (BollingerBandsValue)bbValue;
+		var macdVal = macdResult.ToDecimal();
+		var bb = (BollingerBandsValue)bbResult;
 		if (bb.UpBand is not decimal upper ||
 			bb.LowBand is not decimal lower ||
 			bb.MovingAverage is not decimal middle)
 			return;
-
-		var rsi = rsiValue.ToDecimal();
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			_prevMacd = macdVal;
-			return;
-		}
 
 		if (_cooldownRemaining > 0)
 		{
@@ -155,36 +152,16 @@ public class MacdBbRsiStrategy : Strategy
 
 		var close = candle.ClosePrice;
 
-		// MACD crossover zero
-		var macdBullish = macdVal > 0 && _prevMacd <= 0 && _prevMacd != 0;
-		var macdBearish = macdVal < 0 && _prevMacd >= 0 && _prevMacd != 0;
-
-		// Buy: MACD crosses above zero + price below middle BB + RSI < 50
-		if (macdBullish && close < middle && rsi < 50 && Position <= 0)
+		// Buy: price below lower BB + RSI oversold + MACD positive
+		if (close <= lower && rsi < 30 && Position == 0)
 		{
-			if (Position < 0)
-				BuyMarket(Math.Abs(Position));
-			BuyMarket(Volume);
+			BuyMarket();
 			_cooldownRemaining = CooldownBars;
 		}
-		// Sell: MACD crosses below zero + price above middle BB + RSI > 50
-		else if (macdBearish && close > middle && rsi > 50 && Position >= 0)
+		// Sell: price above upper BB + RSI overbought + MACD negative
+		else if (close >= upper && rsi > 70 && Position == 0)
 		{
-			if (Position > 0)
-				SellMarket(Math.Abs(Position));
-			SellMarket(Volume);
-			_cooldownRemaining = CooldownBars;
-		}
-		// Exit long: price at upper BB or RSI overbought
-		else if (Position > 0 && (close >= upper || rsi > 70))
-		{
-			SellMarket(Math.Abs(Position));
-			_cooldownRemaining = CooldownBars;
-		}
-		// Exit short: price at lower BB or RSI oversold
-		else if (Position < 0 && (close <= lower || rsi < 30))
-		{
-			BuyMarket(Math.Abs(Position));
+			SellMarket();
 			_cooldownRemaining = CooldownBars;
 		}
 

@@ -28,7 +28,7 @@ public class BasicMartingaleEa3Strategy : Strategy
 
 	public BasicMartingaleEa3Strategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 		_fastPeriod = Param(nameof(FastPeriod), 5)
 			.SetGreaterThanZero()

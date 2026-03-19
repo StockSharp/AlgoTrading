@@ -90,7 +90,7 @@ public class RsiExpertTrendFilterStrategy : Strategy
 /// </summary>
 public RsiExpertTrendFilterStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe for generating signals", "General");
 
 		_stopLossPips = Param(nameof(StopLossPips), 50)
@@ -332,6 +332,10 @@ public RsiExpertTrendFilterStrategy()
 			.Bind(_rsi, _fastMa, _slowMa, ProcessCandle)
 			.Start();
 
+		StartProtection(
+			takeProfit: new Unit(2, UnitTypes.Percent),
+			stopLoss: new Unit(1, UnitTypes.Percent));
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -348,22 +352,12 @@ public RsiExpertTrendFilterStrategy()
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		ManageActivePosition(candle);
 
 		var currentRsi = rsiValue;
 		var previousRsi = _previousRsi;
 
-		// Wait until indicators have accumulated enough history.
-		if (!_rsi.IsFormed || (MaMode != MaTradeModes.Off && (!_fastMa.IsFormed || !_slowMa.IsFormed)))
-		{
-			_previousRsi = currentRsi;
-			return;
-		}
-
-		if (Position != 0m || HasActiveOrders())
+		if (Position != 0m)
 		{
 			_previousRsi = currentRsi;
 			return;
@@ -401,25 +395,13 @@ public RsiExpertTrendFilterStrategy()
 		else if (rsiSignal == -1 && (MaMode == MaTradeModes.Off || maSignal == -1))
 			finalSignal = -1;
 
-		if (finalSignal > 0 && Position <= 0)
+		if (finalSignal > 0)
 		{
-			var volume = GetOrderVolume();
-			if (volume > 0m)
-			{
-				BuyMarket(volume);
-				_closeRequested = false;
-				_closeByStop = false;
-			}
+			BuyMarket();
 		}
-		else if (finalSignal < 0 && Position >= 0)
+		else if (finalSignal < 0)
 		{
-			var volume = GetOrderVolume();
-			if (volume > 0m)
-			{
-				SellMarket(volume);
-				_closeRequested = false;
-				_closeByStop = false;
-			}
+			SellMarket();
 		}
 
 		_previousRsi = currentRsi;

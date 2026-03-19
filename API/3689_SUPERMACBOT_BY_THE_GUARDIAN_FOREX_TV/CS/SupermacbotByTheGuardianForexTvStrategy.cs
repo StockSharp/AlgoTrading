@@ -107,7 +107,7 @@ public class SupermacbotByTheGuardianForexTvStrategy : Strategy
 	/// </summary>
 	public SupermacbotByTheGuardianForexTvStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to process", "General");
 
 		_fastMaPeriod = Param(nameof(FastMaPeriod), 12)
@@ -170,18 +170,18 @@ public class SupermacbotByTheGuardianForexTvStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var macd = new MovingAverageConvergenceDivergence();
-		macd.ShortMa.Length = MacdFastPeriod;
-		macd.LongMa.Length = MacdSlowPeriod;
-
 		var fastMa = new SimpleMovingAverage { Length = FastMaPeriod };
 		var slowMa = new SimpleMovingAverage { Length = SlowMaPeriod };
 		var trailingMa = new SimpleMovingAverage { Length = TrailingPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(macd, fastMa, slowMa, trailingMa, ProcessCandle)
+			.Bind(fastMa, slowMa, trailingMa, ProcessCandle)
 			.Start();
+
+		StartProtection(
+			takeProfit: new Unit(2, UnitTypes.Percent),
+			stopLoss: new Unit(1, UnitTypes.Percent));
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -189,74 +189,26 @@ public class SupermacbotByTheGuardianForexTvStrategy : Strategy
 			DrawCandles(area, subscription);
 			DrawIndicator(area, fastMa);
 			DrawIndicator(area, slowMa);
-
-			var macdArea = CreateChartArea();
-			DrawIndicator(macdArea, macd);
-
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue, IIndicatorValue fastMaValue, IIndicatorValue slowMaValue, IIndicatorValue trailingMaValue)
+	private void ProcessCandle(ICandleMessage candle, decimal fastMa, decimal slowMa, decimal trailingMa)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var macdLine = macdValue.ToDecimal();
-		var fastMa = fastMaValue.ToDecimal();
-		var slowMa = slowMaValue.ToDecimal();
-		var trailingMa = trailingMaValue.ToDecimal();
-
-		// Use MACD line as a proxy for histogram (MACD line itself)
-		var histogram = macdLine;
-
-		if (!_isHistogramInitialized)
-		{
-			_prevHistogram = histogram;
-			_isHistogramInitialized = true;
+		if (Position != 0)
 			return;
-		}
-
-		var threshold = HistogramThreshold;
-		var positiveBarrier = threshold <= 0m ? 0m : threshold;
-		var negativeBarrier = threshold <= 0m ? 0m : -threshold;
-
-		var bullishHistogram = threshold <= 0m ? histogram > 0m : histogram > threshold;
-		var bearishHistogram = threshold <= 0m ? histogram < 0m : histogram < -threshold;
-
-		var histogramCrossUp = _prevHistogram <= positiveBarrier && histogram > positiveBarrier;
-		var histogramCrossDown = _prevHistogram >= negativeBarrier && histogram < negativeBarrier;
 
 		var bullishTrend = fastMa > slowMa;
 		var bearishTrend = fastMa < slowMa;
-
 		var price = candle.ClosePrice;
 
-		if (Position > 0 && (!bullishHistogram || !bullishTrend || price <= trailingMa))
-		{
-			SellMarket(Position);
-		}
-		else if (Position < 0 && (!bearishHistogram || !bearishTrend || price >= trailingMa))
-		{
-			BuyMarket(-Position);
-		}
-
-		if (Position <= 0 && histogramCrossUp && bullishTrend && price > trailingMa && bullishHistogram)
-		{
-			if (Position < 0)
-				BuyMarket(-Position);
-
+		if (bullishTrend && price > trailingMa)
 			BuyMarket();
-		}
-		else if (Position >= 0 && histogramCrossDown && bearishTrend && price < trailingMa && bearishHistogram)
-		{
-			if (Position > 0)
-				SellMarket(Position);
-
+		else if (bearishTrend && price < trailingMa)
 			SellMarket();
-		}
-
-		_prevHistogram = histogram;
 	}
 }
 

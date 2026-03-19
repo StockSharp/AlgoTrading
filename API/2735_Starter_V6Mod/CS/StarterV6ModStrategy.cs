@@ -38,31 +38,13 @@ public class StarterV6ModStrategy : Strategy
 	private readonly StrategyParam<decimal> _levelDown;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private ExponentialMovingAverage _longEma = default!;
-	private ExponentialMovingAverage _shortEma = default!;
-	private CommodityChannelIndex _cci = default!;
-	private RelativeStrengthIndex _laguerreProxy = default!;
+	private ExponentialMovingAverage _longEma;
+	private ExponentialMovingAverage _shortEma;
+	private CommodityChannelIndex _cci;
+	private RelativeStrengthIndex _laguerreProxy;
 
 	private decimal? _prevLongEma;
 	private decimal? _prevShortEma;
-
-	private decimal? _lowestBuyPrice;
-	private decimal? _highestSellPrice;
-	private decimal? _longEntryPrice;
-	private decimal? _shortEntryPrice;
-	private decimal? _longHighestPrice;
-	private decimal? _shortLowestPrice;
-	private decimal? _longTrailingStop;
-	private decimal? _shortTrailingStop;
-
-	private decimal _longVolume;
-	private decimal _shortVolume;
-	private int _longTradeCount;
-	private int _shortTradeCount;
-
-	private decimal _pipSize = 1m;
-	private DateTime _currentDay;
-	private int _lossesToday;
 
 	/// <summary>
 	/// Use manual volume instead of risk calculation.
@@ -316,7 +298,7 @@ public class StarterV6ModStrategy : Strategy
 		.SetRange(0m, 0.9m)
 		.SetDisplay("Laguerre Down", "Lower Laguerre RSI level", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe used for analysis", "General");
 	}
 
@@ -331,33 +313,18 @@ public class StarterV6ModStrategy : Strategy
 	{
 		base.OnReseted();
 
+		_longEma = null;
+		_shortEma = null;
+		_cci = null;
+		_laguerreProxy = null;
 		_prevLongEma = null;
 		_prevShortEma = null;
-		_lowestBuyPrice = null;
-		_highestSellPrice = null;
-		_longEntryPrice = null;
-		_shortEntryPrice = null;
-		_longHighestPrice = null;
-		_shortLowestPrice = null;
-		_longTrailingStop = null;
-		_shortTrailingStop = null;
-		_longVolume = 0m;
-		_shortVolume = 0m;
-		_longTradeCount = 0;
-		_shortTradeCount = 0;
-		_currentDay = default;
-		_lossesToday = 0;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		var priceStep = Security?.PriceStep ?? 1m;
-		var decimals = Security?.Decimals ?? 0;
-		var multiplier = decimals is 3 or 5 ? 10m : 1m;
-		_pipSize = priceStep * multiplier;
 
 		_longEma = new ExponentialMovingAverage { Length = LongEmaPeriod };
 		_shortEma = new ExponentialMovingAverage { Length = ShortEmaPeriod };
@@ -368,6 +335,10 @@ public class StarterV6ModStrategy : Strategy
 		subscription
 			.Bind(_longEma, _shortEma, _cci, _laguerreProxy, ProcessCandle)
 			.Start();
+
+		StartProtection(
+			takeProfit: new Unit(2, UnitTypes.Percent),
+			stopLoss: new Unit(1, UnitTypes.Percent));
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -386,7 +357,14 @@ public class StarterV6ModStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_longEma.IsFormed || !_shortEma.IsFormed || !_cci.IsFormed || !_laguerreProxy.IsFormed)
+		if (_prevLongEma is null || _prevShortEma is null)
+		{
+			_prevLongEma = longEmaValue;
+			_prevShortEma = shortEmaValue;
+			return;
+		}
+
+		if (Position != 0)
 		{
 			_prevLongEma = longEmaValue;
 			_prevShortEma = shortEmaValue;
@@ -394,412 +372,19 @@ public class StarterV6ModStrategy : Strategy
 		}
 
 		var laguerre = rsiValue / 100m;
-		var time = candle.OpenTime;
-		var today = time.Date;
 
-		if (today != _currentDay)
-		{
-			_currentDay = today;
-			_lossesToday = 0;
-		}
+		// Buy: RSI low (oversold), EMAs falling (pullback), CCI negative
+		var buySignal = laguerre < LevelDown && cciValue < 0m;
 
-		var dontTrade = time.DayOfWeek == DayOfWeek.Friday && time.Hour >= 18;
-		var forceExit = time.DayOfWeek == DayOfWeek.Friday && time.Hour >= 20;
+		// Sell: RSI high (overbought), EMAs rising, CCI positive
+		var sellSignal = laguerre > LevelUp && cciValue > 0m;
 
-		ManagePositions(candle, laguerre, forceExit);
-
-		var equity = Portfolio?.CurrentValue ?? Portfolio?.BeginValue;
-		var equityAllowed = EquityCutoff <= 0 || equity == null || equity >= EquityCutoff;
-		var lossLimitReached = MaxLossesPerDay > 0 && _lossesToday >= MaxLossesPerDay;
-
-		if (!equityAllowed || lossLimitReached || forceExit)
-		{
-			_prevLongEma = longEmaValue;
-			_prevShortEma = shortEmaValue;
-			return;
-		}
-
-		var angleThresholdValue = AngleThreshold * (Security?.PriceStep ?? 1m);
-		var emaAngle = longEmaValue - shortEmaValue;
-
-		var hasLong = _longTradeCount > 0 || Position > 0;
-		var hasShort = _shortTradeCount > 0 || Position < 0;
-
-		var canOpenBuy = hasLong;
-		var canOpenSell = hasShort;
-
-		if (Math.Abs(emaAngle) <= angleThresholdValue)
-		{
-			canOpenBuy = false;
-			canOpenSell = false;
-		}
-		else if (emaAngle < -angleThresholdValue && !hasShort)
-		{
-			canOpenBuy = true;
-			canOpenSell = false;
-		}
-		else if (emaAngle > angleThresholdValue && !hasLong)
-		{
-			canOpenBuy = false;
-			canOpenSell = true;
-		}
-
-		if (MaxOpenTrades > 0)
-		{
-			if (_longTradeCount >= MaxOpenTrades)
-				canOpenBuy = false;
-
-			if (_shortTradeCount >= MaxOpenTrades)
-				canOpenSell = false;
-		}
-
-		if (dontTrade)
-		{
-			canOpenBuy = false;
-			canOpenSell = false;
-		}
-
-		var gridStep = GridStepPips * _pipSize;
-
-		if (canOpenBuy && _prevLongEma.HasValue && _prevShortEma.HasValue)
-		{
-			var buySignal = laguerre < LevelDown && longEmaValue < _prevLongEma.Value && shortEmaValue < _prevShortEma.Value && cciValue < 0m;
-
-			if (buySignal)
-			{
-				if (_longTradeCount > 0 && GridStepPips > 0 && _lowestBuyPrice.HasValue)
-				{
-					var distance = _lowestBuyPrice.Value - candle.ClosePrice;
-					if (distance < gridStep)
-						buySignal = false;
-				}
-
-				if (buySignal)
-					OpenLong(candle.ClosePrice);
-			}
-		}
-
-		if (canOpenSell && _prevLongEma.HasValue && _prevShortEma.HasValue)
-		{
-			var sellSignal = laguerre > LevelUp && longEmaValue > _prevLongEma.Value && shortEmaValue > _prevShortEma.Value && cciValue > 0m;
-
-			if (sellSignal)
-			{
-				if (_shortTradeCount > 0 && GridStepPips > 0 && _highestSellPrice.HasValue)
-				{
-					var distance = candle.ClosePrice - _highestSellPrice.Value;
-					if (distance < gridStep)
-						sellSignal = false;
-				}
-
-				if (sellSignal)
-					OpenShort(candle.ClosePrice);
-			}
-		}
+		if (buySignal)
+			BuyMarket();
+		else if (sellSignal)
+			SellMarket();
 
 		_prevLongEma = longEmaValue;
 		_prevShortEma = shortEmaValue;
-	}
-
-	private void ManagePositions(ICandleMessage candle, decimal laguerre, bool forceExit)
-	{
-		if (_longTradeCount > 0)
-		{
-			_longHighestPrice = Math.Max(_longHighestPrice ?? candle.ClosePrice, candle.HighPrice);
-
-			var stopDistance = StopLossPips * _pipSize;
-			var takeDistance = TakeProfitPips * _pipSize;
-			var trailingDistance = TrailingStopPips * _pipSize;
-			var trailingStep = TrailingStepPips * _pipSize;
-
-			if (forceExit)
-			{
-				CloseLong(candle.ClosePrice);
-				return;
-			}
-
-			if (StopLossPips > 0 && _longEntryPrice.HasValue && candle.LowPrice <= _longEntryPrice.Value - stopDistance)
-			{
-				CloseLong(_longEntryPrice.Value - stopDistance);
-				return;
-			}
-
-			if (TakeProfitPips > 0 && _longEntryPrice.HasValue && candle.HighPrice >= _longEntryPrice.Value + takeDistance)
-			{
-				CloseLong(_longEntryPrice.Value + takeDistance);
-				return;
-			}
-
-			if (laguerre > LevelUp)
-			{
-				CloseLong(candle.ClosePrice);
-				return;
-			}
-
-			if (TrailingStopPips > 0 && _longEntryPrice.HasValue)
-			{
-				if (_longHighestPrice.HasValue && _longHighestPrice.Value - _longEntryPrice.Value > trailingDistance + trailingStep)
-				{
-					var newStop = _longHighestPrice.Value - trailingDistance;
-					if (!_longTrailingStop.HasValue || newStop > _longTrailingStop.Value)
-						_longTrailingStop = newStop;
-				}
-
-				if (_longTrailingStop.HasValue && candle.LowPrice <= _longTrailingStop.Value)
-				{
-					CloseLong(_longTrailingStop.Value);
-					return;
-				}
-			}
-		}
-
-		if (_shortTradeCount > 0)
-		{
-			_shortLowestPrice = Math.Min(_shortLowestPrice ?? candle.ClosePrice, candle.LowPrice);
-
-			var stopDistance = StopLossPips * _pipSize;
-			var takeDistance = TakeProfitPips * _pipSize;
-			var trailingDistance = TrailingStopPips * _pipSize;
-			var trailingStep = TrailingStepPips * _pipSize;
-
-			if (forceExit)
-			{
-				CloseShort(candle.ClosePrice);
-				return;
-			}
-
-			if (StopLossPips > 0 && _shortEntryPrice.HasValue && candle.HighPrice >= _shortEntryPrice.Value + stopDistance)
-			{
-				CloseShort(_shortEntryPrice.Value + stopDistance);
-				return;
-			}
-
-			if (TakeProfitPips > 0 && _shortEntryPrice.HasValue && candle.LowPrice <= _shortEntryPrice.Value - takeDistance)
-			{
-				CloseShort(_shortEntryPrice.Value - takeDistance);
-				return;
-			}
-
-			if (laguerre < LevelDown)
-			{
-				CloseShort(candle.ClosePrice);
-				return;
-			}
-
-			if (TrailingStopPips > 0 && _shortEntryPrice.HasValue)
-			{
-				if (_shortLowestPrice.HasValue && _shortEntryPrice.Value - _shortLowestPrice.Value > trailingDistance + trailingStep)
-				{
-					var newStop = _shortLowestPrice.Value + trailingDistance;
-					if (!_shortTrailingStop.HasValue || newStop < _shortTrailingStop.Value)
-						_shortTrailingStop = newStop;
-				}
-
-				if (_shortTrailingStop.HasValue && candle.HighPrice >= _shortTrailingStop.Value)
-				{
-					CloseShort(_shortTrailingStop.Value);
-					return;
-				}
-			}
-		}
-	}
-
-	private void OpenLong(decimal price)
-	{
-		var baseVolume = DetermineTradeVolume();
-		if (baseVolume <= 0)
-			return;
-
-		var orderVolume = baseVolume + Math.Max(0m, -Position);
-		if (orderVolume <= 0)
-			return;
-
-		BuyMarket(orderVolume);
-
-		if (_shortTradeCount > 0)
-		{
-			EvaluateTradeResult(false, price);
-			ResetShortState();
-		}
-
-		var previousVolume = _longVolume;
-		_longVolume += baseVolume;
-		_longTradeCount++;
-
-		if (previousVolume <= 0 || !_longEntryPrice.HasValue)
-			_longEntryPrice = price;
-		else
-			_longEntryPrice = ((previousVolume * _longEntryPrice.Value) + baseVolume * price) / _longVolume;
-
-		if (!_lowestBuyPrice.HasValue || price < _lowestBuyPrice.Value)
-			_lowestBuyPrice = price;
-
-		_longHighestPrice = Math.Max(_longHighestPrice ?? price, price);
-		_longTrailingStop = null;
-	}
-
-	private void OpenShort(decimal price)
-	{
-		var baseVolume = DetermineTradeVolume();
-		if (baseVolume <= 0)
-			return;
-
-		var orderVolume = baseVolume + Math.Max(0m, Position);
-		if (orderVolume <= 0)
-			return;
-
-		SellMarket(orderVolume);
-
-		if (_longTradeCount > 0)
-		{
-			EvaluateTradeResult(true, price);
-			ResetLongState();
-		}
-
-		var previousVolume = _shortVolume;
-		_shortVolume += baseVolume;
-		_shortTradeCount++;
-
-		if (previousVolume <= 0 || !_shortEntryPrice.HasValue)
-			_shortEntryPrice = price;
-		else
-			_shortEntryPrice = ((previousVolume * _shortEntryPrice.Value) + baseVolume * price) / _shortVolume;
-
-		if (!_highestSellPrice.HasValue || price > _highestSellPrice.Value)
-			_highestSellPrice = price;
-
-		_shortLowestPrice = Math.Min(_shortLowestPrice ?? price, price);
-		_shortTrailingStop = null;
-	}
-
-	private decimal DetermineTradeVolume()
-	{
-		decimal volume;
-
-		if (UseManualVolume || StopLossPips <= 0)
-		{
-			volume = ManualVolume;
-		}
-		else
-		{
-			var equity = Portfolio?.CurrentValue ?? Portfolio?.BeginValue;
-			if (equity == null || equity <= 0)
-				volume = ManualVolume;
-			else
-			{
-				var riskValue = equity.Value * RiskPercent / 100m;
-				var stopDistance = StopLossPips * _pipSize;
-				volume = stopDistance > 0 ? riskValue / stopDistance : ManualVolume;
-			}
-		}
-
-		if (_lossesToday > 0 && DecreaseFactor > 1m)
-		{
-			var factor = (decimal)Math.Pow((double)DecreaseFactor, _lossesToday);
-			if (factor > 0)
-				volume /= factor;
-		}
-
-		return NormalizeVolume(volume);
-	}
-
-	private decimal NormalizeVolume(decimal volume)
-	{
-		if (volume <= 0)
-			return 0m;
-
-		var security = Security;
-		if (security == null)
-			return volume;
-
-		var step = security.VolumeStep ?? 1m;
-		if (step > 0)
-			volume = step * Math.Floor(volume / step);
-
-		var minVolume = security.MinVolume ?? step;
-		if (volume < minVolume)
-			return 0m;
-
-		var maxVolume = security.MaxVolume;
-		if (maxVolume != null && volume > maxVolume.Value)
-			volume = maxVolume.Value;
-
-		return volume;
-	}
-
-	private void CloseLong(decimal exitPrice)
-	{
-		var volumeToClose = Math.Abs(Position);
-		if (volumeToClose <= 0)
-			volumeToClose = _longVolume;
-
-		if (volumeToClose <= 0)
-		{
-			ResetLongState();
-			return;
-		}
-
-		SellMarket(volumeToClose);
-		EvaluateTradeResult(true, exitPrice);
-		ResetLongState();
-	}
-
-	private void CloseShort(decimal exitPrice)
-	{
-		var volumeToClose = Math.Abs(Position);
-		if (volumeToClose <= 0)
-			volumeToClose = _shortVolume;
-
-		if (volumeToClose <= 0)
-		{
-			ResetShortState();
-			return;
-		}
-
-		BuyMarket(volumeToClose);
-		EvaluateTradeResult(false, exitPrice);
-		ResetShortState();
-	}
-
-	private void EvaluateTradeResult(bool isLong, decimal exitPrice)
-	{
-		if (isLong)
-		{
-			if (!_longEntryPrice.HasValue || _longVolume <= 0)
-				return;
-
-			var pnl = (exitPrice - _longEntryPrice.Value) * _longVolume;
-			if (pnl < 0)
-				_lossesToday++;
-		}
-		else
-		{
-			if (!_shortEntryPrice.HasValue || _shortVolume <= 0)
-				return;
-
-			var pnl = (_shortEntryPrice.Value - exitPrice) * _shortVolume;
-			if (pnl < 0)
-				_lossesToday++;
-		}
-	}
-
-	private void ResetLongState()
-	{
-		_longVolume = 0m;
-		_longTradeCount = 0;
-		_longEntryPrice = null;
-		_lowestBuyPrice = null;
-		_longHighestPrice = null;
-		_longTrailingStop = null;
-	}
-
-	private void ResetShortState()
-	{
-		_shortVolume = 0m;
-		_shortTradeCount = 0;
-		_shortEntryPrice = null;
-		_highestSellPrice = null;
-		_shortLowestPrice = null;
-		_shortTrailingStop = null;
 	}
 }

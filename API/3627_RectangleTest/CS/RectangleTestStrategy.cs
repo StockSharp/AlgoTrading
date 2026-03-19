@@ -64,12 +64,16 @@ public class RectangleTestStrategy : Strategy
 		_rangeCandles = Param(nameof(RangeCandles), 10)
 			.SetDisplay("Rectangle Candles", "Number of candles for range detection", "Logic");
 
-		_rectangleSizePercent = Param(nameof(RectangleSizePercent), 5m)
+		_rectangleSizePercent = Param(nameof(RectangleSizePercent), 10m)
 			.SetDisplay("Rectangle Size (%)", "Maximum range height in percent", "Logic");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Primary candle source", "General");
 	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
@@ -83,6 +87,10 @@ public class RectangleTestStrategy : Strategy
 		subscription
 			.Bind(ema, sma, ProcessCandle)
 			.Start();
+
+		StartProtection(
+			takeProfit: new Unit(2, UnitTypes.Percent),
+			stopLoss: new Unit(1, UnitTypes.Percent));
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -99,44 +107,46 @@ public class RectangleTestStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		if (_highs.Count >= RangeCandles)
+		{
+			// Use PREVIOUS window (excluding current candle) for rectangle detection
+			var highestValue = decimal.MinValue;
+			var lowestValue = decimal.MaxValue;
+			var startIdx = _highs.Count - RangeCandles;
+			for (var i = startIdx; i < _highs.Count; i++)
+			{
+				if (_highs[i] > highestValue) highestValue = _highs[i];
+				if (_lows[i] < lowestValue) lowestValue = _lows[i];
+			}
+
+			if (highestValue > 0m && lowestValue > 0m)
+			{
+				var rangePercent = (highestValue - lowestValue) / highestValue * 100m;
+				if (rangePercent > 0 && rangePercent < RectangleSizePercent)
+				{
+					var close = candle.ClosePrice;
+
+					// Breakout above rectangle with bullish trend (EMA > SMA)
+					if (close > highestValue && emaValue > smaValue && Position == 0)
+					{
+						BuyMarket();
+					}
+					// Breakout below rectangle with bearish trend (EMA < SMA)
+					else if (close < lowestValue && emaValue < smaValue && Position == 0)
+					{
+						SellMarket();
+					}
+				}
+			}
+		}
+
 		_highs.Add(candle.HighPrice);
 		_lows.Add(candle.LowPrice);
 
-		if (_highs.Count > RangeCandles)
+		if (_highs.Count > RangeCandles + 1)
 		{
 			_highs.RemoveAt(0);
 			_lows.RemoveAt(0);
-		}
-
-		if (_highs.Count < RangeCandles)
-			return;
-
-		var highestValue = decimal.MinValue;
-		var lowestValue = decimal.MaxValue;
-		for (var i = 0; i < _highs.Count; i++)
-		{
-			if (_highs[i] > highestValue) highestValue = _highs[i];
-			if (_lows[i] < lowestValue) lowestValue = _lows[i];
-		}
-
-		if (highestValue <= 0m || lowestValue <= 0m)
-			return;
-
-		var rangePercent = (highestValue - lowestValue) / highestValue * 100m;
-		if (rangePercent <= 0 || rangePercent >= RectangleSizePercent)
-			return;
-
-		var close = candle.ClosePrice;
-
-		// Breakout above rectangle with bullish trend (EMA > SMA)
-		if (close > highestValue && emaValue > smaValue && Position <= 0)
-		{
-			BuyMarket();
-		}
-		// Breakout below rectangle with bearish trend (EMA < SMA)
-		else if (close < lowestValue && emaValue < smaValue && Position >= 0)
-		{
-			SellMarket();
 		}
 	}
 

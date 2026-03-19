@@ -1,4 +1,7 @@
 using System;
+using System.Collections.Generic;
+
+using Ecng.Common;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -51,6 +54,10 @@ public class OmzdwwiPendingManagerStrategy : Strategy
 		_hasPrev = default;
 	}
 
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
@@ -62,6 +69,10 @@ public class OmzdwwiPendingManagerStrategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(rsi, sma, ProcessCandle).Start();
+
+		StartProtection(
+			takeProfit: new Unit(2, UnitTypes.Percent),
+			stopLoss: new Unit(1, UnitTypes.Percent));
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal rsi, decimal sma)
@@ -74,14 +85,12 @@ public class OmzdwwiPendingManagerStrategy : Strategy
 		var oversold = Oversold;
 		var overbought = Overbought;
 
-		if (_prevRsi >= oversold && rsi < oversold && close > sma && Position <= 0)
+		if (_prevRsi < oversold && rsi >= oversold && close > sma && Position == 0)
 		{
-			if (Position < 0) BuyMarket();
 			BuyMarket();
 		}
-		else if (_prevRsi <= overbought && rsi > overbought && close < sma && Position >= 0)
+		else if (_prevRsi > overbought && rsi <= overbought && close < sma && Position == 0)
 		{
-			if (Position > 0) SellMarket();
 			SellMarket();
 		}
 		_prevRsi = rsi;

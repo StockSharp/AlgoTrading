@@ -34,6 +34,7 @@ public class MnistPatternClassifierStrategy : Strategy
 
 	private int _lastClass = -1;
 	private decimal _lastConfidence;
+	private int _cooldown;
 
 	private enum PatternBiases
 	{
@@ -84,21 +85,21 @@ public class MnistPatternClassifierStrategy : Strategy
 	/// </summary>
 	public MnistPatternClassifierStrategy()
 	{
-		_lookbackPeriod = Param(nameof(LookbackPeriod), 28)
+		_lookbackPeriod = Param(nameof(LookbackPeriod), 14)
 		.SetRange(10, 200)
-		
+
 		.SetDisplay("Lookback", "Number of candles converted into the pattern grid", "Pattern");
 
 		_targetClass = Param(nameof(TargetClass), 1)
 		.SetRange(0, 9)
 		.SetDisplay("Target Class", "Pattern class that should be traded", "Pattern");
 
-		_confidenceThreshold = Param(nameof(ConfidenceThreshold), 0.4m)
+		_confidenceThreshold = Param(nameof(ConfidenceThreshold), 0.2m)
 		.SetRange(0m, 1m)
 		.SetDisplay("Confidence", "Minimum classification confidence", "Pattern");
 
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Primary timeframe used for the pattern", "General");
 	}
 
@@ -118,6 +119,7 @@ public class MnistPatternClassifierStrategy : Strategy
 		_previousClose = 0m;
 		_lastClass = -1;
 		_lastConfidence = 0m;
+		_cooldown = 0;
 	}
 
 	/// <inheritdoc />
@@ -125,7 +127,9 @@ public class MnistPatternClassifierStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
+		StartProtection(
+			takeProfit: new Unit(3, UnitTypes.Percent),
+			stopLoss: new Unit(2, UnitTypes.Percent));
 
 		_rsi = new RelativeStrengthIndex
 		{
@@ -156,18 +160,21 @@ public class MnistPatternClassifierStrategy : Strategy
 			return;
 		}
 
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+			_previousClose = candle.ClosePrice;
+			return;
+		}
+
 		var pattern = ClassifyPattern(candle.ClosePrice, rsiValue, atrValue);
 
 		_lastClass = pattern.PatternClass;
 		_lastConfidence = pattern.Confidence;
 
-		if (pattern.Confidence >= ConfidenceThreshold && pattern.Bias != PatternBiases.Neutral)
+		if (pattern.Confidence >= ConfidenceThreshold && pattern.Bias != PatternBiases.Neutral && Position == 0)
 		{
 			ExecuteBias(pattern.Bias);
-		}
-		else
-		{
-			FlattenPosition();
 		}
 
 		_previousClose = candle.ClosePrice;
@@ -178,44 +185,23 @@ public class MnistPatternClassifierStrategy : Strategy
 		switch (bias)
 		{
 		case PatternBiases.Bullish:
-			if (Position < 0)
-			BuyMarket(-Position);
-
-			if (Position <= 0)
+			if (Position == 0)
 			{
-				BuyMarket(Volume);
-				LogInfo($"Pattern {TargetClass} bullish with confidence {_lastConfidence:F2}. Open long.");
+				BuyMarket();
+				_cooldown = 50;
 			}
 
 			break;
 		case PatternBiases.Bearish:
-			if (Position > 0)
-			SellMarket(Position);
-
-			if (Position >= 0)
+			if (Position == 0)
 			{
-				SellMarket(Volume);
-				LogInfo($"Pattern {TargetClass} bearish with confidence {_lastConfidence:F2}. Open short.");
+				SellMarket();
+				_cooldown = 50;
 			}
 
 			break;
 		default:
-			FlattenPosition();
 			break;
-		}
-	}
-
-	private void FlattenPosition()
-	{
-		if (Position > 0)
-		{
-			SellMarket(Position);
-			LogInfo($"Pattern {_lastClass} confidence {_lastConfidence:F2}. Exit long.");
-		}
-		else if (Position < 0)
-		{
-			BuyMarket(-Position);
-			LogInfo($"Pattern {_lastClass} confidence {_lastConfidence:F2}. Exit short.");
 		}
 	}
 
@@ -325,7 +311,7 @@ public class MnistPatternClassifierStrategy : Strategy
 
 		var rangePosition = range > 0m ? (last - min) / range : 0.5m;
 
-		const decimal baseThreshold = 0.005m;
+		const decimal baseThreshold = 0.001m;
 		var trendThreshold = baseThreshold;
 		var breakoutThreshold = baseThreshold * 1.4m;
 		var flatThreshold = baseThreshold * 0.3m;

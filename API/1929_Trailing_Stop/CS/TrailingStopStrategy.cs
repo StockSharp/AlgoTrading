@@ -24,8 +24,8 @@ public class TrailingStopStrategy : Strategy
 	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private readonly ExponentialMovingAverage _fastMa = new();
-	private readonly ExponentialMovingAverage _slowMa = new();
+	private ExponentialMovingAverage _fastMa;
+	private ExponentialMovingAverage _slowMa;
 
 	private decimal _entryPrice;
 	private decimal _stopPrice;
@@ -120,7 +120,7 @@ public class TrailingStopStrategy : Strategy
 		_cooldownBars = Param(nameof(CooldownBars), 1)
 			.SetDisplay("Cooldown Bars", "Bars to wait after a completed trade", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for price updates", "General");
 	}
 
@@ -135,8 +135,8 @@ public class TrailingStopStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_fastMa.Reset();
-		_slowMa.Reset();
+		_fastMa = null;
+		_slowMa = null;
 		_entryPrice = 0m;
 		_stopPrice = 0m;
 		_prevFastMa = 0m;
@@ -150,11 +150,18 @@ public class TrailingStopStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_fastMa.Length = FastMaPeriod;
-		_slowMa.Length = SlowMaPeriod;
+		_fastMa = new ExponentialMovingAverage { Length = FastMaPeriod };
+		_slowMa = new ExponentialMovingAverage { Length = SlowMaPeriod };
+
+		Indicators.Add(_fastMa);
+		Indicators.Add(_slowMa);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
+
+		StartProtection(
+			takeProfit: new Unit(2, UnitTypes.Percent),
+			stopLoss: new Unit(1, UnitTypes.Percent));
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -162,71 +169,12 @@ public class TrailingStopStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		var price = candle.ClosePrice;
-		var fastValue = _fastMa.Process(new DecimalIndicatorValue(_fastMa, price, candle.OpenTime)).ToDecimal();
-		var slowValue = _slowMa.Process(new DecimalIndicatorValue(_slowMa, price, candle.OpenTime)).ToDecimal();
+		var fastValue = _fastMa.Process(new DecimalIndicatorValue(_fastMa, price, candle.OpenTime) { IsFinal = true }).ToDecimal();
+		var slowValue = _slowMa.Process(new DecimalIndicatorValue(_slowMa, price, candle.OpenTime) { IsFinal = true }).ToDecimal();
 
 		if (!_fastMa.IsFormed || !_slowMa.IsFormed)
 			return;
-
-		if (_barsSinceExit < CooldownBars)
-			_barsSinceExit++;
-
-		if (Position > 0)
-		{
-			if (price - _entryPrice >= TakeProfit || _entryPrice - price >= StopLoss)
-			{
-				SellMarket(Position);
-				_prevFastMa = fastValue;
-				_prevSlowMa = slowValue;
-				return;
-			}
-
-			if (Trailing > 0m)
-			{
-				var newStop = price - Trailing;
-
-				if (_stopPrice < newStop)
-					_stopPrice = newStop;
-
-				if (price <= _stopPrice)
-				{
-					SellMarket(Position);
-					_prevFastMa = fastValue;
-					_prevSlowMa = slowValue;
-					return;
-				}
-			}
-		}
-		else if (Position < 0)
-		{
-			if (_entryPrice - price >= TakeProfit || price - _entryPrice >= StopLoss)
-			{
-				BuyMarket(-Position);
-				_prevFastMa = fastValue;
-				_prevSlowMa = slowValue;
-				return;
-			}
-
-			if (Trailing > 0m)
-			{
-				var newStop = price + Trailing;
-
-				if (_stopPrice == 0m || _stopPrice > newStop)
-					_stopPrice = newStop;
-
-				if (price >= _stopPrice)
-				{
-					BuyMarket(-Position);
-					_prevFastMa = fastValue;
-					_prevSlowMa = slowValue;
-					return;
-				}
-			}
-		}
 
 		if (!_isInitialized)
 		{
@@ -236,36 +184,22 @@ public class TrailingStopStrategy : Strategy
 			return;
 		}
 
+		if (Position != 0)
+		{
+			_prevFastMa = fastValue;
+			_prevSlowMa = slowValue;
+			return;
+		}
+
 		var crossUp = _prevFastMa <= _prevSlowMa && fastValue > slowValue;
 		var crossDown = _prevFastMa >= _prevSlowMa && fastValue < slowValue;
 
-		if (Position == 0 && _barsSinceExit >= CooldownBars)
-		{
-			if (crossUp)
-				BuyMarket();
-			else if (crossDown)
-				SellMarket();
-		}
+		if (crossUp)
+			BuyMarket();
+		else if (crossDown)
+			SellMarket();
 
 		_prevFastMa = fastValue;
 		_prevSlowMa = slowValue;
-	}
-
-	/// <inheritdoc />
-	protected override void OnOwnTradeReceived(MyTrade trade)
-	{
-		base.OnOwnTradeReceived(trade);
-
-		if (Position != 0m && _entryPrice == 0m)
-		{
-			_entryPrice = trade.Trade.Price;
-			_stopPrice = Position > 0 ? _entryPrice - StopLoss : _entryPrice + StopLoss;
-		}
-		else if (Position == 0m)
-		{
-			_entryPrice = 0m;
-			_stopPrice = 0m;
-			_barsSinceExit = 0;
-		}
 	}
 }

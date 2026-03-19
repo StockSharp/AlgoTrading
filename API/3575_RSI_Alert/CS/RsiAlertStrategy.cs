@@ -86,16 +86,16 @@ public class RsiAlertStrategy : Strategy
 			.SetDisplay("Order Volume", "Order size used for market trades", "Trading")
 			;
 
-		_rsiPeriod = Param(nameof(RsiPeriod), 30)
+		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "Number of bars for RSI calculation", "Indicator")
 			;
 
-		_overboughtLevel = Param(nameof(OverboughtLevel), 80m)
+		_overboughtLevel = Param(nameof(OverboughtLevel), 70m)
 			.SetDisplay("Overbought Level", "RSI threshold that triggers short signals", "Indicator")
 			;
 
-		_oversoldLevel = Param(nameof(OversoldLevel), 20m)
+		_oversoldLevel = Param(nameof(OversoldLevel), 30m)
 			.SetDisplay("Oversold Level", "RSI threshold that triggers long signals", "Indicator")
 			;
 
@@ -137,6 +137,10 @@ public class RsiAlertStrategy : Strategy
 			.Bind(_rsi, ProcessCandle)
 			.Start();
 
+		StartProtection(
+			takeProfit: new Unit(2, UnitTypes.Percent),
+			stopLoss: new Unit(1, UnitTypes.Percent));
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -151,30 +155,16 @@ public class RsiAlertStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var rsi = _rsi;
-		if (rsi is null || !rsi.IsFormed)
-			return;
-
-		// removed IsFormedAndOnlineAndAllowTrading check for backtest compatibility
-
 		var buySignal = rsiValue <= OversoldLevel;
 		var sellSignal = rsiValue >= OverboughtLevel;
 
-		if (buySignal && Position <= 0)
+		if (buySignal && Position == 0)
 		{
-			var volume = OrderVolume + (Position < 0 ? Math.Abs(Position) : 0m);
-
-			// Reverse any short position and enter a long trade when RSI is oversold.
-			if (volume > 0m)
-				BuyMarket(volume);
+			BuyMarket();
 		}
-		else if (sellSignal && Position >= 0)
+		else if (sellSignal && Position == 0)
 		{
-			var volume = OrderVolume + (Position > 0 ? Position : 0m);
-
-			// Reverse any long position and enter a short trade when RSI is overbought.
-			if (volume > 0m)
-				SellMarket(volume);
+			SellMarket();
 		}
 	}
 }

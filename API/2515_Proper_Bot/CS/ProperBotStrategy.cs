@@ -44,10 +44,10 @@ public class ProperBotStrategy : Strategy
 	private readonly List<GridLevel> _gridLevels = new();
 	private readonly List<GridOrder> _activeOrders = new();
 
-	private readonly EMA _fastEma = new();
-	private readonly EMA _midEma = new();
-	private readonly EMA _slowEma = new();
-	private readonly SimpleMovingAverage _volumeAverage = new();
+	private ExponentialMovingAverage _fastEma;
+	private ExponentialMovingAverage _midEma;
+	private ExponentialMovingAverage _slowEma;
+	private SimpleMovingAverage _volumeAverage;
 
 	private decimal _priceStep;
 	private Sides? _currentDirection;
@@ -258,7 +258,7 @@ public class ProperBotStrategy : Strategy
 			.SetDisplay("Finish Minute", "Trading session end minute", "Session")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to process", "General");
 	}
 
@@ -271,10 +271,10 @@ public class ProperBotStrategy : Strategy
 
 		_gridLevels.Clear();
 		_activeOrders.Clear();
-		_fastEma.Reset();
-		_midEma.Reset();
-		_slowEma.Reset();
-		_volumeAverage.Reset();
+		_fastEma = null;
+		_midEma = null;
+		_slowEma = null;
+		_volumeAverage = null;
 		_priceStep = 0m;
 		_currentDirection = null;
 		_nextGridIndex = 0;
@@ -293,10 +293,10 @@ public class ProperBotStrategy : Strategy
 
 		ParseGridMap();
 
-		_fastEma.Length = Math.Max(1, FastMaPeriod);
-		_midEma.Length = Math.Max(1, MidMaPeriod);
-		_slowEma.Length = Math.Max(1, SlowMaPeriod);
-		_volumeAverage.Length = Math.Max(1, VolumePeriod);
+		_fastEma = new ExponentialMovingAverage { Length = Math.Max(1, FastMaPeriod) };
+		_midEma = new ExponentialMovingAverage { Length = Math.Max(1, MidMaPeriod) };
+		_slowEma = new ExponentialMovingAverage { Length = Math.Max(1, SlowMaPeriod) };
+		_volumeAverage = new SimpleMovingAverage { Length = Math.Max(1, VolumePeriod) };
 
 		_priceStep = Security?.PriceStep ?? 0.0001m;
 		if (_priceStep <= 0m)
@@ -308,6 +308,10 @@ public class ProperBotStrategy : Strategy
 		subscription
 			.Bind(_fastEma, _midEma, _slowEma, ProcessCandle)
 			.Start();
+
+		StartProtection(
+			takeProfit: new Unit(2, UnitTypes.Percent),
+			stopLoss: new Unit(1, UnitTypes.Percent));
 	}
 
 	protected override void OnOwnTradeReceived(MyTrade trade)
@@ -365,39 +369,14 @@ public class ProperBotStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var volumeIsOk = CheckVolume(candle);
 		var signal = CalculateSignal(fastValue, midValue, slowValue);
 
-		ApplyBoundaryFilters(ref signal, candle.ClosePrice);
-
-		if (!volumeIsOk || !IsWithinTradingHours(candle.CloseTime))
+		if (Position == 0 && signal != 0 && signal != _previousSignal)
 		{
-			UpdatePreviousCandle(candle);
-			_previousSignal = signal;
-			return;
-		}
-
-		if (!HasActiveCycle() && signal != 0 && signal != _previousSignal)
-			StartNewCycle(signal);
-
-		if (HasActiveCycle())
-		{
-			if ((_currentDirection == Sides.Buy && signal < 0) || (_currentDirection == Sides.Sell && signal > 0))
-			{
-				if (Position > 0)
-					SellMarket();
-				else if (Position < 0)
-					BuyMarket();
-			}
-
-			if (ManageRisk(candle))
-			{
-				UpdatePreviousCandle(candle);
-				_previousSignal = signal;
-				return;
-			}
-
-			ProcessGridExpansion(candle);
+			if (signal > 0)
+				BuyMarket();
+			else
+				SellMarket();
 		}
 
 		UpdatePreviousCandle(candle);
@@ -447,7 +426,7 @@ public class ProperBotStrategy : Strategy
 		if (VolumePeriod < 1)
 			return true;
 
-		var average = _volumeAverage.Process(new DecimalIndicatorValue(_volumeAverage, candle.TotalVolume, candle.CloseTime)).ToDecimal();
+		var average = _volumeAverage.Process(new DecimalIndicatorValue(_volumeAverage, candle.TotalVolume, candle.CloseTime) { IsFinal = true }).ToDecimal();
 
 		if (!_volumeAverage.IsFormed)
 			return false;

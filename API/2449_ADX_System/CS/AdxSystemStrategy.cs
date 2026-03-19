@@ -84,7 +84,7 @@ public class AdxSystemStrategy : Strategy
 	/// </summary>
 	public AdxSystemStrategy()
 	{
-		_adxPeriod = Param(nameof(AdxPeriod), 14)
+		_adxPeriod = Param(nameof(AdxPeriod), 10)
 		.SetGreaterThanZero()
 		.SetDisplay("ADX Period", "Period for ADX indicator", "Indicators");
 
@@ -100,7 +100,7 @@ public class AdxSystemStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Trailing Stop", "Distance for trailing stop", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -167,14 +167,14 @@ public class AdxSystemStrategy : Strategy
 		{
 			if (Position == 0)
 			{
-				if (currentAdx >= 30m && currentAdx > _prevAdx && _prevPlusDi <= _prevMinusDi && currentPlusDi > currentMinusDi)
+				if (currentAdx >= 20m && currentAdx > _prevAdx && _prevPlusDi <= _prevMinusDi && currentPlusDi > currentMinusDi)
 				{
 					BuyMarket();
 					_entryPrice = candle.ClosePrice;
 					_stopPrice = _entryPrice - StopLoss;
 					_takePrice = _entryPrice + TakeProfit;
 				}
-				else if (currentAdx >= 30m && currentAdx > _prevAdx && _prevMinusDi <= _prevPlusDi && currentMinusDi > currentPlusDi)
+				else if (currentAdx >= 20m && currentAdx > _prevAdx && _prevMinusDi <= _prevPlusDi && currentMinusDi > currentPlusDi)
 				{
 					SellMarket();
 					_entryPrice = candle.ClosePrice;

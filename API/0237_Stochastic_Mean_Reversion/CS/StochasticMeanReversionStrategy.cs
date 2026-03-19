@@ -148,25 +148,29 @@ public class StochasticMeanReversionStrategy : Strategy
 		base.OnStarted2(time);
 
 
-		// Create indicators
-		_stochastic = new() 
+		_stochastic = new StochasticOscillator
 		{
 			K = { Length = KPeriod },
 			D = { Length = DPeriod }
 		};
-		
-		_stochAverage = new SMA { Length = AveragePeriod };
+
+		_stochAverage = new SimpleMovingAverage { Length = AveragePeriod };
 		_stochStdDev = new StandardDeviation { Length = AveragePeriod };
 
-		// Create candle subscription
-		var subscription = SubscribeCandles(CandleType);
+		Indicators.Add(_stochastic);
+		Indicators.Add(_stochAverage);
+		Indicators.Add(_stochStdDev);
 
-		// Bind stochastic to candles
+		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(_stochastic, ProcessStochastic)
+			.Bind(ProcessStochastic)
 			.Start();
 
-		// Setup chart visualization if available
+		StartProtection(
+			takeProfit: new Unit(2, UnitTypes.Percent),
+			stopLoss: new Unit(1, UnitTypes.Percent)
+		);
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -174,77 +178,41 @@ public class StochasticMeanReversionStrategy : Strategy
 			DrawIndicator(area, _stochastic);
 			DrawOwnTrades(area);
 		}
-
-		// Enable position protection
-		StartProtection(
-			takeProfit: new Unit(5, UnitTypes.Percent),
-			stopLoss: new Unit(2, UnitTypes.Percent)
-		);
 	}
 
-	private void ProcessStochastic(ICandleMessage candle, IIndicatorValue stochValue)
+	private void ProcessStochastic(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Extract %K value from stochastic
-		if (stochValue is not IStochasticOscillatorValue stochTyped)
+		var stochResult = _stochastic.Process(candle);
+		if (!_stochastic.IsFormed)
 			return;
 
-		if (stochTyped.K is not decimal kValue)
+		if (stochResult is not StochasticOscillatorValue stochTyped || stochTyped.K is not decimal kValue)
 			return;
 
-		// Process Stochastic %K through average and standard deviation indicators
-		var stochAvgValue = _stochAverage.Process(new DecimalIndicatorValue(_stochAverage, kValue, candle.ServerTime)).ToDecimal();
-		var stochStdDevValue = _stochStdDev.Process(new DecimalIndicatorValue(_stochStdDev, kValue, candle.ServerTime)).ToDecimal();
-		
-		// Store previous Stochastic %K value for changes detection
-		decimal currentStochKValue = kValue;
-		
-		// Check if strategy is ready for trading
-		if (!IsFormedAndOnlineAndAllowTrading() || !_stochAverage.IsFormed || !_stochStdDev.IsFormed)
+		var stochAvgValue = _stochAverage.Process(new DecimalIndicatorValue(_stochAverage, kValue, candle.OpenTime) { IsFinal = true }).ToDecimal();
+		var stochStdDevValue = _stochStdDev.Process(new DecimalIndicatorValue(_stochStdDev, kValue, candle.OpenTime) { IsFinal = true }).ToDecimal();
+
+		if (!_stochAverage.IsFormed || !_stochStdDev.IsFormed)
 		{
-			_prevStochKValue = currentStochKValue;
+			_prevStochKValue = kValue;
 			return;
 		}
 
-		// Calculate bands
-		var effectiveStdDev = decimal.Max(1m, stochStdDevValue);
+		var effectiveStdDev = Math.Max(1m, stochStdDevValue);
 		var upperBand = stochAvgValue + Multiplier * effectiveStdDev;
 		var lowerBand = stochAvgValue - Multiplier * effectiveStdDev;
 
-		LogInfo($"Stoch %K: {currentStochKValue}, Avg: {stochAvgValue}, Upper: {upperBand}, Lower: {lowerBand}");
-
-		// Entry logic
 		if (Position == 0)
 		{
-			// Long Entry: Stochastic %K is below lower band
-			if (currentStochKValue < lowerBand || currentStochKValue < 20m)
-			{
-				LogInfo($"Buy Signal - Stoch %K ({currentStochKValue}) < Lower Band ({lowerBand})");
-				BuyMarket(Volume);
-			}
-			// Short Entry: Stochastic %K is above upper band
-			else if (currentStochKValue > upperBand || currentStochKValue > 80m)
-			{
-				LogInfo($"Sell Signal - Stoch %K ({currentStochKValue}) > Upper Band ({upperBand})");
-				SellMarket(Volume);
-			}
+			if (kValue < lowerBand || kValue < 20m)
+				BuyMarket();
+			else if (kValue > upperBand || kValue > 80m)
+				SellMarket();
 		}
-		// Exit logic
-		else if (Position > 0 && currentStochKValue > stochAvgValue)
-		{
-			// Exit Long: Stochastic %K returned to average
-			LogInfo($"Exit Long - Stoch %K ({currentStochKValue}) > Avg ({stochAvgValue})");
-			SellMarket(Math.Abs(Position));
-		}
-		else if (Position < 0 && currentStochKValue < stochAvgValue)
-		{
-			// Exit Short: Stochastic %K returned to average
-			LogInfo($"Exit Short - Stoch %K ({currentStochKValue}) < Avg ({stochAvgValue})");
-			BuyMarket(Math.Abs(Position));
-		}
-		
-		_prevStochKValue = currentStochKValue;
+
+		_prevStochKValue = kValue;
 	}
 }
