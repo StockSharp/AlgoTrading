@@ -1,0 +1,151 @@
+import clr
+
+clr.AddReference("StockSharp.Messages")
+clr.AddReference("StockSharp.Algo")
+
+from System import TimeSpan
+from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Algo.Indicators import ExponentialMovingAverage
+from StockSharp.Algo.Strategies import Strategy
+
+
+class bago_ea_strategy(Strategy):
+    def __init__(self):
+        super(bago_ea_strategy, self).__init__()
+        self._fast_period = self.Param("FastPeriod", 12) \
+            .SetDisplay("Fast Period", "Fast EMA period", "Indicator")
+        self._slow_period = self.Param("SlowPeriod", 50) \
+            .SetDisplay("Slow Period", "Slow EMA period", "Indicator")
+        self._stop_loss_points = self.Param("StopLossPoints", 200) \
+            .SetDisplay("Stop Loss", "Stop-loss in price steps", "Risk")
+        self._take_profit_points = self.Param("TakeProfitPoints", 400) \
+            .SetDisplay("Take Profit", "Take-profit in price steps", "Risk")
+        self._prev_fast = 0.0
+        self._prev_slow = 0.0
+        self._entry_price = 0.0
+        self._cooldown = 0
+        self._fast = None
+        self._slow = None
+
+    @property
+    def fast_period(self):
+        return self._fast_period.Value
+    @fast_period.setter
+    def fast_period(self, value):
+        self._fast_period.Value = value
+
+    @property
+    def slow_period(self):
+        return self._slow_period.Value
+    @slow_period.setter
+    def slow_period(self, value):
+        self._slow_period.Value = value
+
+    @property
+    def stop_loss_points(self):
+        return self._stop_loss_points.Value
+    @stop_loss_points.setter
+    def stop_loss_points(self, value):
+        self._stop_loss_points.Value = value
+
+    @property
+    def take_profit_points(self):
+        return self._take_profit_points.Value
+    @take_profit_points.setter
+    def take_profit_points(self, value):
+        self._take_profit_points.Value = value
+
+    def OnReseted(self):
+        super(bago_ea_strategy, self).OnReseted()
+        self._fast = None
+        self._slow = None
+        self._prev_fast = 0.0
+        self._prev_slow = 0.0
+        self._entry_price = 0.0
+        self._cooldown = 0
+
+    def OnStarted(self, time):
+        super(bago_ea_strategy, self).OnStarted(time)
+        self._fast = ExponentialMovingAverage()
+        self._fast.Length = self.fast_period
+        self._slow = ExponentialMovingAverage()
+        self._slow.Length = self.slow_period
+        subscription = self.SubscribeCandles(DataType.TimeFrame(TimeSpan.FromMinutes(5)))
+        subscription.Bind(self._fast, self._slow, self.OnProcess).Start()
+        area = self.CreateChartArea()
+        if area is not None:
+            self.DrawCandles(area, subscription)
+            self.DrawIndicator(area, self._fast)
+            self.DrawIndicator(area, self._slow)
+            self.DrawOwnTrades(area)
+
+    def OnProcess(self, candle, fast_value, slow_value):
+        if candle.State != CandleStates.Finished:
+            return
+
+        if not self._fast.IsFormed or not self._slow.IsFormed:
+            self._prev_fast = float(fast_value)
+            self._prev_slow = float(slow_value)
+            return
+
+        if self._cooldown > 0:
+            self._cooldown -= 1
+            self._prev_fast = float(fast_value)
+            self._prev_slow = float(slow_value)
+            return
+
+        close = float(candle.ClosePrice)
+        sec = self.Security
+        step = float(sec.PriceStep) if sec is not None and sec.PriceStep is not None else 1.0
+
+        # Check SL/TP for long
+        if self.Position > 0 and self._entry_price > 0:
+            if self.stop_loss_points > 0 and close <= self._entry_price - self.stop_loss_points * step:
+                self.SellMarket()
+                self._entry_price = 0.0
+                self._cooldown = 80
+                self._prev_fast = float(fast_value)
+                self._prev_slow = float(slow_value)
+                return
+            if self.take_profit_points > 0 and close >= self._entry_price + self.take_profit_points * step:
+                self.SellMarket()
+                self._entry_price = 0.0
+                self._cooldown = 80
+                self._prev_fast = float(fast_value)
+                self._prev_slow = float(slow_value)
+                return
+        elif self.Position < 0 and self._entry_price > 0:
+            if self.stop_loss_points > 0 and close >= self._entry_price + self.stop_loss_points * step:
+                self.BuyMarket()
+                self._entry_price = 0.0
+                self._cooldown = 80
+                self._prev_fast = float(fast_value)
+                self._prev_slow = float(slow_value)
+                return
+            if self.take_profit_points > 0 and close <= self._entry_price - self.take_profit_points * step:
+                self.BuyMarket()
+                self._entry_price = 0.0
+                self._cooldown = 80
+                self._prev_fast = float(fast_value)
+                self._prev_slow = float(slow_value)
+                return
+
+        # EMA crossover
+        if self._prev_fast <= self._prev_slow and fast_value > slow_value and self.Position <= 0:
+            if self.Position < 0:
+                self.BuyMarket()
+            self.BuyMarket()
+            self._entry_price = close
+            self._cooldown = 80
+        elif self._prev_fast >= self._prev_slow and fast_value < slow_value and self.Position >= 0:
+            if self.Position > 0:
+                self.SellMarket()
+            self.SellMarket()
+            self._entry_price = close
+            self._cooldown = 80
+
+        self._prev_fast = float(fast_value)
+        self._prev_slow = float(slow_value)
+
+    def CreateClone(self):
+        return bago_ea_strategy()
