@@ -3,241 +3,115 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
+from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
 
 class gann_swing_breakout_strategy(Strategy):
     """
-    Strategy based on Gann Swing Breakout technique.
-    It detects swing highs and lows, then enters positions when price breaks out
-    after a pullback to a moving average.
-    
+    Gann Swing Breakout: Donchian channel breakout with SMA trend filter.
+    Buys when price breaks above previous channel high and is above SMA.
+    Sells when price breaks below previous channel low and is below SMA.
     """
-    
+
     def __init__(self):
         super(gann_swing_breakout_strategy, self).__init__()
-        
-        # Initialize strategy parameters
-        self._swing_lookback = self.Param("SwingLookback", 5) \
-            .SetDisplay("Swing Lookback", "Number of bars to identify swing points", "Trading parameters")
-        
-        self._ma_period = self.Param("MaPeriod", 20) \
-            .SetDisplay("MA Period", "Period for moving average calculation", "Indicators")
-        
-        self._candle_type = self.Param("CandleType", tf(15)) \
+        self._swing_lookback = self.Param("SwingLookback", 40) \
+            .SetDisplay("Swing Lookback", "Lookback period for swing high/low", "Trading parameters")
+        self._ma_period = self.Param("MaPeriod", 60) \
+            .SetDisplay("MA Period", "Period for trend filter MA", "Indicators")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
-        
-        # State tracking
-        self._last_swing_high = None
-        self._last_swing_low = None
-        self._high_bar_index = 0
-        self._low_bar_index = 0
-        self._current_bar_index = 0
-        self._recent_highs = []
-        self._recent_lows = []
-        self._recent_candles = []
-        self._prev_ma_value = 0.0
 
-    @property
-    def swing_lookback(self):
-        """Number of bars to identify swing points."""
-        return self._swing_lookback.Value
-
-    @swing_lookback.setter
-    def swing_lookback(self, value):
-        self._swing_lookback.Value = value
-
-    @property
-    def ma_period(self):
-        """Period for moving average calculation."""
-        return self._ma_period.Value
-
-    @ma_period.setter
-    def ma_period(self, value):
-        self._ma_period.Value = value
+        self._prev_channel_high = 0.0
+        self._prev_channel_low = 0.0
+        self._has_prev_values = False
+        self._candles_since_last_trade = 0
+        self._highs = []
+        self._lows = []
 
     @property
     def candle_type(self):
-        """Candle type."""
         return self._candle_type.Value
 
-    @candle_type.setter
-    def candle_type(self, value):
-        self._candle_type.Value = value
-
     def OnReseted(self):
-        """
-        Resets internal state when strategy is reset.
-        """
         super(gann_swing_breakout_strategy, self).OnReseted()
-        self._last_swing_high = None
-        self._last_swing_low = None
-        self._high_bar_index = 0
-        self._low_bar_index = 0
-        self._current_bar_index = 0
-        self._recent_highs = []
-        self._recent_lows = []
-        self._recent_candles = []
-        self._prev_ma_value = 0.0
+        self._prev_channel_high = 0.0
+        self._prev_channel_low = 0.0
+        self._has_prev_values = False
+        self._candles_since_last_trade = 0
+        self._highs = []
+        self._lows = []
 
     def OnStarted(self, time):
-        """
-        Called when the strategy starts. Sets up indicators, subscriptions, and charting.
-        
-        :param time: The time when the strategy started.
-        """
         super(gann_swing_breakout_strategy, self).OnStarted(time)
 
-        # Create indicators
         ma = SimpleMovingAverage()
-        ma.Length = self.ma_period
+        ma.Length = self._ma_period.Value
 
-        # Create subscription and bind indicators
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(ma, self.ProcessCandle).Start()
+        subscription.Bind(ma, self._process_candle).Start()
 
-        # Setup chart visualization if available
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
             self.DrawIndicator(area, ma)
             self.DrawOwnTrades(area)
 
-    def ProcessCandle(self, candle, ma_value):
-        """
-        Processes each finished candle and executes Gann swing breakout logic.
-        
-        :param candle: The processed candle message.
-        :param ma_value: The current value of the moving average.
-        """
-        # Skip unfinished candles
+    def _process_candle(self, candle, ma_value):
         if candle.State != CandleStates.Finished:
             return
 
-        # Check if strategy is ready to trade
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        # Update bar index
-        self._current_bar_index += 1
-        
-        # Store recent candles and prices for swing detection
-        self._recent_candles.append(candle)
-        self._recent_highs.append(candle.HighPrice)
-        self._recent_lows.append(candle.LowPrice)
-        
-        # Keep only necessary history for swing detection
-        max_history = max(self.swing_lookback * 2 + 1, self.ma_period)
-        if len(self._recent_candles) > max_history:
-            self._recent_candles.pop(0)
-            self._recent_highs.pop(0)
-            self._recent_lows.pop(0)
-        
-        # Skip processing until we have enough data
-        if len(self._recent_candles) < self.swing_lookback * 2 + 1:
-            self._prev_ma_value = ma_value
+        ma = float(ma_value)
+        if ma == 0:
             return
 
-        # Detect swing high and low points
-        self._detect_swing_points()
-        
-        # Check for price crossing MA
-        ma_decimal = float(ma_value)
-        is_price_above_ma = candle.ClosePrice > ma_decimal
-        is_price_below_ma = candle.ClosePrice < ma_decimal
-        
-        if len(self._recent_candles) >= 2:
-            was_price_above_ma = self._recent_candles[-2].ClosePrice > self._prev_ma_value
-        else:
-            was_price_above_ma = False
-        
-        # Detect MA pullback and breakout conditions
-        is_pullback_from_low = not is_price_below_ma and was_price_above_ma
-        is_pullback_from_high = not is_price_above_ma and not was_price_above_ma
-        
-        # Trading logic
-        if self._last_swing_high is not None and self._last_swing_low is not None:
-            # Long setup: Price breaks above last swing high after pullback to MA
-            if (candle.ClosePrice > self._last_swing_high and 
-                is_pullback_from_low and self.Position <= 0):
-                volume = self.Volume + Math.Abs(self.Position)
-                self.BuyMarket(volume)
-                self.LogInfo("Buy signal: Breakout above swing high {0} after MA pullback".format(
-                    self._last_swing_high))
-            # Short setup: Price breaks below last swing low after pullback to MA
-            elif (candle.ClosePrice < self._last_swing_low and 
-                  is_pullback_from_high and self.Position >= 0):
-                volume = self.Volume + Math.Abs(self.Position)
-                self.SellMarket(volume)
-                self.LogInfo("Sell signal: Breakout below swing low {0} after MA pullback".format(
-                    self._last_swing_low))
-            # Exit logic for long positions
-            elif self.Position > 0 and candle.ClosePrice < ma_decimal:
-                self.SellMarket(self.Position)
-                self.LogInfo("Exit long: Price {0} dropped below MA {1}".format(
-                    candle.ClosePrice, ma_decimal))
-            # Exit logic for short positions
-            elif self.Position < 0 and candle.ClosePrice > ma_decimal:
-                self.BuyMarket(Math.Abs(self.Position))
-                self.LogInfo("Exit short: Price {0} rose above MA {1}".format(
-                    candle.ClosePrice, ma_decimal))
-        
-        # Update previous MA value
-        self._prev_ma_value = ma_decimal
+        high = float(candle.HighPrice)
+        low = float(candle.LowPrice)
+        close = float(candle.ClosePrice)
 
-    def _detect_swing_points(self):
-        """
-        Detects swing high and low points in the recent price data.
-        """
-        # Check for swing high
-        mid_point = len(self._recent_highs) - self.swing_lookback - 1
-        is_swing_high = True
-        center_high = self._recent_highs[mid_point]
-        
-        # Check bars before the center point
-        for i in range(mid_point - self.swing_lookback, mid_point):
-            if i < 0 or self._recent_highs[i] > center_high:
-                is_swing_high = False
-                break
-        
-        # Check bars after the center point
-        for i in range(mid_point + 1, mid_point + self.swing_lookback + 1):
-            if i >= len(self._recent_highs) or self._recent_highs[i] > center_high:
-                is_swing_high = False
-                break
-        
-        # Check for swing low
-        is_swing_low = True
-        center_low = self._recent_lows[mid_point]
-        
-        # Check bars before the center point
-        for i in range(mid_point - self.swing_lookback, mid_point):
-            if i < 0 or self._recent_lows[i] < center_low:
-                is_swing_low = False
-                break
-        
-        # Check bars after the center point
-        for i in range(mid_point + 1, mid_point + self.swing_lookback + 1):
-            if i >= len(self._recent_lows) or self._recent_lows[i] < center_low:
-                is_swing_low = False
-                break
-        
-        # Update swing points if detected
-        if is_swing_high:
-            self._last_swing_high = center_high
-            self._high_bar_index = self._current_bar_index - self.swing_lookback - 1
-            self.LogInfo("New swing high detected: {0}".format(self._last_swing_high))
-        
-        if is_swing_low:
-            self._last_swing_low = center_low
-            self._low_bar_index = self._current_bar_index - self.swing_lookback - 1
-            self.LogInfo("New swing low detected: {0}".format(self._last_swing_low))
+        lookback = self._swing_lookback.Value
+        self._highs.append(high)
+        self._lows.append(low)
+        while len(self._highs) > lookback:
+            self._highs.pop(0)
+        while len(self._lows) > lookback:
+            self._lows.pop(0)
+
+        if len(self._highs) < lookback:
+            return
+
+        channel_high = max(self._highs)
+        channel_low = min(self._lows)
+
+        if channel_high == 0 or channel_low == 0:
+            return
+
+        if not self._has_prev_values:
+            self._has_prev_values = True
+            self._prev_channel_high = channel_high
+            self._prev_channel_low = channel_low
+            return
+
+        self._candles_since_last_trade += 1
+
+        if self._candles_since_last_trade >= 10 and close > self._prev_channel_high and close > ma and self.Position <= 0:
+            if self.Position < 0:
+                self.BuyMarket()
+            self.BuyMarket()
+            self._candles_since_last_trade = 0
+        elif self._candles_since_last_trade >= 10 and close < self._prev_channel_low and close < ma and self.Position >= 0:
+            if self.Position > 0:
+                self.SellMarket()
+            self.SellMarket()
+            self._candles_since_last_trade = 0
+
+        self._prev_channel_high = channel_high
+        self._prev_channel_low = channel_low
 
     def CreateClone(self):
-        """
-        !! REQUIRED!! Creates a new instance of the strategy.
-        """
         return gann_swing_breakout_strategy()
