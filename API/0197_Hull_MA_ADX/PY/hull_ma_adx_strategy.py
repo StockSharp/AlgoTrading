@@ -3,192 +3,84 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
+from System import TimeSpan
+from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import HullMovingAverage, AverageDirectionalIndex, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 class hull_ma_adx_strategy(Strategy):
     """
-    Strategy based on Hull Moving Average and ADX.
-    Enters long when HMA increases and ADX > 25 (strong trend).
-    Enters short when HMA decreases and ADX > 25 (strong trend).
-    Exits when ADX < 20 (weakening trend).
-
+    Hull MA + ADX trend strategy. Enters on HMA slope turn with ADX confirmation.
     """
 
     def __init__(self):
         super(hull_ma_adx_strategy, self).__init__()
+        self._hma_period = self.Param("HmaPeriod", 9).SetDisplay("HMA Period", "Hull MA period", "Indicators")
+        self._adx_period = self.Param("AdxPeriod", 14).SetDisplay("ADX Period", "ADX period", "Indicators")
+        self._cooldown_bars = self.Param("CooldownBars", 80).SetDisplay("Cooldown", "Bars between trades", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Timeframe", "General")
 
-        # Initialize strategy parameters
-        self._hma_period = self.Param("HmaPeriod", 9) \
-            .SetDisplay("HMA Period", "Period for Hull Moving Average calculation", "Indicators") \
-            .SetCanOptimize(True) \
-            .SetOptimize(5, 15, 2)
-
-        self._adx_period = self.Param("AdxPeriod", 14) \
-            .SetDisplay("ADX Period", "Period for Average Directional Movement Index", "Indicators") \
-            .SetCanOptimize(True) \
-            .SetOptimize(10, 20, 2)
-
-        self._atr_multiplier = self.Param("AtrMultiplier", 2.0) \
-            .SetDisplay("ATR Multiplier", "ATR multiplier for stop loss calculation", "Risk Management")
-
-        self._candle_type = self.Param("CandleType", tf(15)) \
-            .SetDisplay("Candle Type", "Timeframe of data for strategy", "General")
-
-        self._stop_loss_percent = self.Param("StopLossPercent", 1.0) \
-            .SetNotNegative() \
-            .SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management") \
-            .SetCanOptimize(True) \
-            .SetOptimize(0.5, 2.0, 0.5)
-
-        # Indicators
-        self._hma = None
-        self._adx = None
-        self._atr = None
-
-        # Previous indicator values
-        self._prev_hma_value = 0.0
-        self._prev_adx_value = 0.0
-
-    @property
-    def hma_period(self):
-        """Hull Moving Average period."""
-        return self._hma_period.Value
-
-    @hma_period.setter
-    def hma_period(self, value):
-        self._hma_period.Value = value
-
-    @property
-    def adx_period(self):
-        """ADX indicator period."""
-        return self._adx_period.Value
-
-    @adx_period.setter
-    def adx_period(self, value):
-        self._adx_period.Value = value
-
-    @property
-    def atr_multiplier(self):
-        """ATR multiplier for stop loss calculation."""
-        return self._atr_multiplier.Value
-
-    @atr_multiplier.setter
-    def atr_multiplier(self, value):
-        self._atr_multiplier.Value = value
+        self._prev_hma = 0.0
+        self._has_prev_slope = False
+        self._prev_slope_up = False
+        self._cooldown = 0
 
     @property
     def candle_type(self):
-        """Candle type for strategy."""
         return self._candle_type.Value
 
-    @candle_type.setter
-    def candle_type(self, value):
-        self._candle_type.Value = value
-
-    @property
-    def stop_loss_percent(self):
-        """Stop-loss percentage."""
-        return self._stop_loss_percent.Value
-
-    @stop_loss_percent.setter
-    def stop_loss_percent(self, value):
-        self._stop_loss_percent.Value = value
-
-    def GetWorkingSecurities(self):
-        """Return the security and candle type used by the strategy."""
-        return [(self.Security, self.candle_type)]
-
     def OnReseted(self):
-        """Resets internal state when strategy is reset."""
         super(hull_ma_adx_strategy, self).OnReseted()
-        if getattr(self, '_hma', None) is not None:
-            self._hma.Reset()
-        if getattr(self, '_adx', None) is not None:
-            self._adx.Reset()
-        if getattr(self, '_atr', None) is not None:
-            self._atr.Reset()
-
-        self._prev_hma_value = 0.0
-        self._prev_adx_value = 0.0
+        self._prev_hma = 0.0
+        self._has_prev_slope = False
+        self._prev_slope_up = False
+        self._cooldown = 0
 
     def OnStarted(self, time):
         super(hull_ma_adx_strategy, self).OnStarted(time)
-
-        # Create indicators
-        self._hma = HullMovingAverage()
-        self._hma.Length = self.hma_period
-        self._adx = AverageDirectionalIndex()
-        self._adx.Length = self.adx_period
-        self._atr = AverageTrueRange()
-        self._atr.Length = 14
-
-        # Create subscription
+        hma = HullMovingAverage()
+        hma.Length = self._hma_period.Value
+        adx = AverageDirectionalIndex()
+        adx.Length = self._adx_period.Value
+        atr = AverageTrueRange()
+        atr.Length = 14
         subscription = self.SubscribeCandles(self.candle_type)
-
-        # Process candles with indicators
-        subscription.BindEx(self._hma, self._adx, self._atr, self.ProcessCandle).Start()
-
-        # Setup chart visualization
+        subscription.BindEx(hma, adx, atr, self._process_candle).Start()
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, self._hma)
+            self.DrawIndicator(area, hma)
             self.DrawOwnTrades(area)
 
-            # ADX in separate area
-            adx_area = self.CreateChartArea()
-            if adx_area is not None:
-                self.DrawIndicator(adx_area, self._adx)
-
-        self.StartProtection(
-            takeProfit=Unit(0, UnitTypes.Absolute),
-            stopLoss=Unit(self.stop_loss_percent, UnitTypes.Absolute)
-        )
-    def ProcessCandle(self, candle, hma_value, adx_value, atr_value):
-        # Skip unfinished candles
+    def _process_candle(self, candle, hma_val, adx_val, atr_val):
         if candle.State != CandleStates.Finished:
             return
-
-        typed_adx = adx_value
-        if typed_adx.MovingAverage is None:
+        hma = float(hma_val.ToDecimal())
+        hma_increasing = hma > self._prev_hma
+        hma_decreasing = hma < self._prev_hma
+        if not self._has_prev_slope:
+            self._has_prev_slope = True
+            self._prev_slope_up = hma_increasing
+            self._prev_hma = hma
             return
-        adx = float(typed_adx.MovingAverage)
-
-        hma = float(hma_value)
-
-        # Detect HMA direction
-        hma_increasing = hma > self._prev_hma_value
-        hma_decreasing = hma < self._prev_hma_value
-
-        # Check if strategy is ready for trading
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            # Store current values for next candle
-            self._prev_hma_value = hma
-            self._prev_adx_value = adx
-            return
-
-        # Trading logic
-        if adx > 25:
-            # Strong trend detected
-            if hma_increasing and self.Position <= 0:
-                # HMA rising with strong trend - go long
-                self.BuyMarket(self.Volume + Math.Abs(self.Position))
-            elif hma_decreasing and self.Position >= 0:
-                # HMA falling with strong trend - go short
-                self.SellMarket(self.Volume + Math.Abs(self.Position))
-        elif adx < 20 and self._prev_adx_value >= 20:
-            # Trend weakening - close position
-            self.ClosePosition()
-
-        # Store current values for next candle
-        self._prev_hma_value = hma
-        self._prev_adx_value = adx
+        if self._cooldown > 0:
+            self._cooldown -= 1
+        slope_turned_up = not self._prev_slope_up and hma_increasing
+        slope_turned_down = self._prev_slope_up and hma_decreasing
+        if self._cooldown == 0 and slope_turned_up and self.Position <= 0:
+            self.BuyMarket()
+            self._cooldown = self._cooldown_bars.Value
+        elif self._cooldown == 0 and slope_turned_down and self.Position >= 0:
+            self.SellMarket()
+            self._cooldown = self._cooldown_bars.Value
+        elif self.Position != 0 and (slope_turned_up or slope_turned_down):
+            if self.Position > 0:
+                self.SellMarket()
+            else:
+                self.BuyMarket()
+            self._cooldown = self._cooldown_bars.Value
+        self._prev_hma = hma
+        self._prev_slope_up = hma_increasing
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return hull_ma_adx_strategy()

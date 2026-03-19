@@ -3,117 +3,56 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
+from System import TimeSpan
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import KalmanFilter, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 class kalman_filter_trend_strategy(Strategy):
     """
-    Kalman Filter Trend strategy.
-    Uses a custom Kalman Filter indicator to track price trend.
+    Kalman Filter trend: trades based on price position relative to Kalman filter.
     """
 
     def __init__(self):
         super(kalman_filter_trend_strategy, self).__init__()
-
-        # Process noise coefficient for Kalman filter.
-        self._process_noise = self.Param("ProcessNoise", 0.01) \
-            .SetRange(0.0001, 1) \
-            .SetDisplay("Process Noise", "Process noise coefficient for Kalman filter", "Parameters") \
-            .SetCanOptimize(True) \
-            .SetOptimize(0.001, 0.1, 0.005)
-
-        # Measurement noise coefficient for Kalman filter.
-        self._measurement_noise = self.Param("MeasurementNoise", 0.1) \
-            .SetRange(0.0001, 1) \
-            .SetDisplay("Measurement Noise", "Measurement noise coefficient for Kalman filter", "Parameters") \
-            .SetCanOptimize(True) \
-            .SetOptimize(0.01, 1.0, 0.1)
-
-        # Candle type for strategy.
-        self._candle_type = self.Param("CandleType", tf(5)) \
-            .SetDisplay("Candle Type", "Candle type for strategy", "Common")
+        self._process_noise = self.Param("ProcessNoise", 0.01).SetDisplay("Process Noise", "Kalman process noise", "Parameters")
+        self._measurement_noise = self.Param("MeasurementNoise", 0.1).SetDisplay("Measurement Noise", "Kalman measurement noise", "Parameters")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Timeframe", "General")
 
     @property
-    def ProcessNoise(self):
-        return self._process_noise.Value
-
-    @ProcessNoise.setter
-    def ProcessNoise(self, value):
-        self._process_noise.Value = value
-
-    @property
-    def MeasurementNoise(self):
-        return self._measurement_noise.Value
-
-    @MeasurementNoise.setter
-    def MeasurementNoise(self, value):
-        self._measurement_noise.Value = value
-
-    @property
-    def CandleType(self):
+    def candle_type(self):
         return self._candle_type.Value
-
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candle_type.Value = value
-
-    def GetWorkingSecurities(self):
-        return [(self.Security, self.CandleType)]
 
     def OnReseted(self):
         super(kalman_filter_trend_strategy, self).OnReseted()
-        self._kalman_filter = None
-        self._atr = None
 
     def OnStarted(self, time):
         super(kalman_filter_trend_strategy, self).OnStarted(time)
-
-        # Create indicators
-        self._kalman_filter = KalmanFilter()
-        self._kalman_filter.ProcessNoise = self.ProcessNoise
-        self._kalman_filter.MeasurementNoise = self.MeasurementNoise
-
-        self._atr = AverageTrueRange()
-        self._atr.Length = 14
-
-        # Create subscription and bind indicators
-        subscription = self.SubscribeCandles(self.CandleType)
-        subscription.BindEx(self._kalman_filter, self._atr, self.ProcessCandle).Start()
-
-        # Setup chart visualization if available
+        kf = KalmanFilter()
+        kf.ProcessNoise = self._process_noise.Value
+        kf.MeasurementNoise = self._measurement_noise.Value
+        atr = AverageTrueRange()
+        atr.Length = 14
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.Bind(kf, atr, self._process_candle).Start()
+        self.StartProtection(None, Unit(2, UnitTypes.Absolute))
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, self._kalman_filter)
+            self.DrawIndicator(area, kf)
             self.DrawOwnTrades(area)
 
-        # Enable position protection
-        self.StartProtection(
-            takeProfit=Unit(0, UnitTypes.Absolute),
-            stopLoss=Unit(2, UnitTypes.Absolute)
-        )
-    def ProcessCandle(self, candle, kalman_value, atr_value):
+    def _process_candle(self, candle, kf_val, atr_val):
         if candle.State != CandleStates.Finished:
             return
-
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
-
-        # Calculate trend direction
-        trend = 1 if candle.ClosePrice > float(kalman_value) else -1
-
-        # Trading logic based on price position relative to Kalman filter
-        if trend > 0 and self.Position <= 0:
-            # Buy when price is above Kalman filter (uptrend)
-            self.BuyMarket(self.Volume + Math.Abs(self.Position))
-        elif trend < 0 and self.Position >= 0:
-            # Sell when price is below Kalman filter (downtrend)
-            self.SellMarket(self.Volume + Math.Abs(self.Position))
+        close = float(candle.ClosePrice)
+        kf = float(kf_val)
+        if close > kf and self.Position <= 0:
+            self.BuyMarket()
+        elif close < kf and self.Position >= 0:
+            self.SellMarket()
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return kalman_filter_trend_strategy()

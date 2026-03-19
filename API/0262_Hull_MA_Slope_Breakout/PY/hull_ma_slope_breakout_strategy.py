@@ -1,212 +1,88 @@
 import clr
+import math
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import DataType, Unit, UnitTypes, ICandleMessage, CandleStates
+from System import TimeSpan
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import HullMovingAverage, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-
 
 class hull_ma_slope_breakout_strategy(Strategy):
-    """Strategy based on Hull Moving Average Slope breakout
-    Enters positions when the slope of Hull MA exceeds average slope plus a multiple of standard deviation
+    """
+    Hull MA slope breakout. Enters when slope exceeds avg + k*stddev.
     """
 
     def __init__(self):
         super(hull_ma_slope_breakout_strategy, self).__init__()
+        self._hull_length = self.Param("HullLength", 9).SetDisplay("Hull Length", "Hull MA period", "Indicators")
+        self._lookback = self.Param("LookbackPeriod", 20).SetDisplay("Lookback", "Slope stats period", "Strategy")
+        self._dev_mult = self.Param("DeviationMultiplier", 2.0).SetDisplay("Dev Mult", "Stddev multiplier", "Strategy")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Timeframe", "General")
 
-        # Constructor
-        self._hull_length = self.Param("HullLength", 9) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Hull MA Length", "Period for Hull Moving Average", "Indicator Parameters") \
-            .SetCanOptimize(True) \
-            .SetOptimize(5, 20, 1)
-
-        self._lookback_period = self.Param("LookbackPeriod", 20) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Lookback Period", "Period for slope statistics calculation", "Strategy Parameters") \
-            .SetCanOptimize(True) \
-            .SetOptimize(10, 50, 5)
-
-        self._deviation_multiplier = self.Param("DeviationMultiplier", 2.0) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Deviation Multiplier", "Standard deviation multiplier for breakout detection", "Strategy Parameters") \
-            .SetCanOptimize(True) \
-            .SetOptimize(1.0, 3.0, 0.5)
-
-        self._stop_loss = self.Param("StopLoss", Unit(2, UnitTypes.Absolute)) \
-            .SetDisplay("Stop Loss", "Stop loss value in ATRs", "Risk Management")
-
-        self._candle_type = self.Param("CandleType", tf(5)) \
-            .SetDisplay("Candle Type", "Type of candles to use", "General")
-
-        self._hull_ma = None
-        self._atr = None
-        self._prev_hull_value = 0.0
-        self._current_slope = 0.0
-        self._avg_slope = 0.0
-        self._std_dev_slope = 0.0
+        self._prev_hull = 0.0
         self._slopes = []
-        self._current_index = 0
-        self._is_initialized = False
+        self._is_init = False
 
     @property
-    def HullLength(self):
-        """Hull Moving Average length"""
-        return self._hull_length.Value
-
-    @HullLength.setter
-    def HullLength(self, value):
-        self._hull_length.Value = value
-
-    @property
-    def LookbackPeriod(self):
-        """Lookback period for slope statistics calculation"""
-        return self._lookback_period.Value
-
-    @LookbackPeriod.setter
-    def LookbackPeriod(self, value):
-        self._lookback_period.Value = value
-
-    @property
-    def DeviationMultiplier(self):
-        """Standard deviation multiplier for breakout detection"""
-        return self._deviation_multiplier.Value
-
-    @DeviationMultiplier.setter
-    def DeviationMultiplier(self, value):
-        self._deviation_multiplier.Value = value
-
-    @property
-    def CandleType(self):
-        """Candle type"""
+    def candle_type(self):
         return self._candle_type.Value
 
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candle_type.Value = value
-
-    @property
-    def StopLoss(self):
-        """Stop loss value"""
-        return self._stop_loss.Value
-
-    @StopLoss.setter
-    def StopLoss(self, value):
-        self._stop_loss.Value = value
-
-    def GetWorkingSecurities(self):
-        return [(self.Security, self.CandleType)]
-
-
     def OnReseted(self):
-        """
-        Resets internal state when strategy is reset.
-        """
         super(hull_ma_slope_breakout_strategy, self).OnReseted()
-        self._prev_hull_value = 0.0
-        self._current_slope = 0.0
-        self._avg_slope = 0.0
-        self._std_dev_slope = 0.0
-        self._slopes = [0.0] * self.LookbackPeriod
-        self._current_index = 0
-        self._is_initialized = False
+        self._prev_hull = 0.0
+        self._slopes = []
+        self._is_init = False
 
     def OnStarted(self, time):
-        self._hull_ma = HullMovingAverage()
-        self._hull_ma.Length = self.HullLength
-        self._atr = AverageTrueRange()
-        self._atr.Length = 14
-
-        self._slopes = [0.0] * self.LookbackPeriod
-
-        subscription = self.SubscribeCandles(self.CandleType)
-        subscription.Bind(self._hull_ma, self._atr, self.ProcessCandle).Start()
-
+        super(hull_ma_slope_breakout_strategy, self).OnStarted(time)
+        hma = HullMovingAverage()
+        hma.Length = self._hull_length.Value
+        atr = AverageTrueRange()
+        atr.Length = 14
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.Bind(hma, atr, self._process_candle).Start()
+        self.StartProtection(None, Unit(2, UnitTypes.Absolute))
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, self._hull_ma)
+            self.DrawIndicator(area, hma)
             self.DrawOwnTrades(area)
 
-        self.StartProtection(
-            takeProfit=None,
-            stopLoss=self.StopLoss,
-            isStopTrailing=False
-        )
-        super(hull_ma_slope_breakout_strategy, self).OnStarted(time)
-
-    def ProcessCandle(self, candle, hullValue, atrValue):
-        # Skip unfinished candles
+    def _process_candle(self, candle, hull_val, atr_val):
         if candle.State != CandleStates.Finished:
             return
-
-        # Check if indicator is formed
-        if not self._hull_ma.IsFormed:
+        hull = float(hull_val)
+        if not self._is_init:
+            self._prev_hull = hull
+            self._is_init = True
             return
-
-        current_hull_value = hullValue
-
-        if not self._is_initialized:
-            self._prev_hull_value = current_hull_value
-            self._is_initialized = True
-            return
-
-        self._current_slope = current_hull_value - self._prev_hull_value
-
-        self._slopes[self._current_index] = self._current_slope
-        self._current_index = (self._current_index + 1) % self.LookbackPeriod
-
+        slope = hull - self._prev_hull
+        lb = self._lookback.Value
+        self._slopes.append(slope)
+        if len(self._slopes) > lb:
+            self._slopes.pop(0)
         if not self.IsFormedAndOnlineAndAllowTrading():
-            self._prev_hull_value = current_hull_value
+            self._prev_hull = hull
             return
-
-        self.CalculateStatistics()
-
-        if Math.Abs(self._avg_slope) > 0:
-            if self._current_slope > 0 and \
-               self._current_slope > self._avg_slope + self.DeviationMultiplier * self._std_dev_slope and \
-               self.Position <= 0:
-                self.CancelActiveOrders()
-                volume = self.Volume + Math.Abs(self.Position)
-                self.BuyMarket(volume)
-                self.LogInfo("Long signal: Slope {0} > Avg {1} + {2}*StdDev {3}".format(
-                    self._current_slope, self._avg_slope, self.DeviationMultiplier, self._std_dev_slope))
-            elif self._current_slope < 0 and \
-                 self._current_slope < self._avg_slope - self.DeviationMultiplier * self._std_dev_slope and \
-                 self.Position >= 0:
-                self.CancelActiveOrders()
-                volume = self.Volume + Math.Abs(self.Position)
-                self.SellMarket(volume)
-                self.LogInfo("Short signal: Slope {0} < Avg {1} - {2}*StdDev {3}".format(
-                    self._current_slope, self._avg_slope, self.DeviationMultiplier, self._std_dev_slope))
-
-            if self.Position > 0 and self._current_slope < self._avg_slope:
-                self.SellMarket(Math.Abs(self.Position))
-                self.LogInfo("Exit long: Slope {0} < Avg {1}".format(self._current_slope, self._avg_slope))
-            elif self.Position < 0 and self._current_slope > self._avg_slope:
-                self.BuyMarket(Math.Abs(self.Position))
-                self.LogInfo("Exit short: Slope {0} > Avg {1}".format(self._current_slope, self._avg_slope))
-
-        self._prev_hull_value = current_hull_value
-
-    def CalculateStatistics(self):
-        self._avg_slope = 0.0
-        sum_squared_diffs = 0.0
-
-        for i in range(self.LookbackPeriod):
-            self._avg_slope += self._slopes[i]
-        self._avg_slope /= self.LookbackPeriod
-
-        for i in range(self.LookbackPeriod):
-            diff = self._slopes[i] - self._avg_slope
-            sum_squared_diffs += diff * diff
-
-        self._std_dev_slope = Math.Sqrt(sum_squared_diffs / self.LookbackPeriod)
+        if len(self._slopes) < lb:
+            self._prev_hull = hull
+            return
+        avg = sum(self._slopes) / lb
+        var = sum((s - avg) ** 2 for s in self._slopes) / lb
+        std = math.sqrt(var)
+        dm = self._dev_mult.Value
+        if abs(avg) > 0:
+            if slope > 0 and slope > avg + dm * std and self.Position <= 0:
+                self.BuyMarket()
+            elif slope < 0 and slope < avg - dm * std and self.Position >= 0:
+                self.SellMarket()
+            if self.Position > 0 and slope < avg:
+                self.SellMarket()
+            elif self.Position < 0 and slope > avg:
+                self.BuyMarket()
+        self._prev_hull = hull
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return hull_ma_slope_breakout_strategy()
