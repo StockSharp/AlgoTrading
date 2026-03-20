@@ -10,17 +10,21 @@ from StockSharp.Algo.Strategies import Strategy
 
 
 class myfriend_forex_instruments_strategy(Strategy):
+    """Donchian channel breakout with SMA momentum filter.
+    Buys when close breaks above upper Donchian and fast SMA > slow SMA.
+    Sells when close breaks below lower Donchian and fast SMA < slow SMA."""
+
     def __init__(self):
         super(myfriend_forex_instruments_strategy, self).__init__()
 
         self._channel_period = self.Param("ChannelPeriod", 16) \
             .SetDisplay("Channel Period", "Donchian channel period", "Indicators")
         self._fast_period = self.Param("FastPeriod", 3) \
-            .SetDisplay("Channel Period", "Donchian channel period", "Indicators")
+            .SetDisplay("Fast SMA", "Fast SMA period", "Indicators")
         self._slow_period = self.Param("SlowPeriod", 9) \
-            .SetDisplay("Channel Period", "Donchian channel period", "Indicators")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromHours(4) \
-            .SetDisplay("Channel Period", "Donchian channel period", "Indicators")
+            .SetDisplay("Slow SMA", "Slow SMA period", "Indicators")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+            .SetDisplay("Candle Type", "Candle timeframe", "General")
 
         self._prev_close = 0.0
         self._prev_upper = 0.0
@@ -28,8 +32,24 @@ class myfriend_forex_instruments_strategy(Strategy):
         self._has_prev = False
 
     @property
-    def candle_type(self):
+    def CandleType(self):
         return self._candle_type.Value
+
+    @CandleType.setter
+    def CandleType(self, value):
+        self._candle_type.Value = value
+
+    @property
+    def ChannelPeriod(self):
+        return self._channel_period.Value
+
+    @property
+    def FastPeriod(self):
+        return self._fast_period.Value
+
+    @property
+    def SlowPeriod(self):
+        return self._slow_period.Value
 
     def OnReseted(self):
         super(myfriend_forex_instruments_strategy, self).OnReseted()
@@ -41,25 +61,64 @@ class myfriend_forex_instruments_strategy(Strategy):
     def OnStarted(self, time):
         super(myfriend_forex_instruments_strategy, self).OnStarted(time)
 
-        self._highest = Highest()
-        self._highest.Length = self.channel_period
-        self._lowest = Lowest()
-        self._lowest.Length = self.channel_period
-        self._fast_sma = SimpleMovingAverage()
-        self._fast_sma.Length = self.fast_period
-        self._slow_sma = SimpleMovingAverage()
-        self._slow_sma.Length = self.slow_period
+        self._has_prev = False
 
-        subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(self._highest, self._lowest, self._fast_sma, self._slow_sma, self._process_candle).Start()
+        highest = Highest()
+        highest.Length = self.ChannelPeriod
+        lowest = Lowest()
+        lowest.Length = self.ChannelPeriod
+        fast_sma = SimpleMovingAverage()
+        fast_sma.Length = self.FastPeriod
+        slow_sma = SimpleMovingAverage()
+        slow_sma.Length = self.SlowPeriod
 
-    def _process_candle(self, candle, *args):
+        subscription = self.SubscribeCandles(self.CandleType)
+        subscription.Bind(highest, lowest, fast_sma, slow_sma, self._process_candle).Start()
+
+    def _process_candle(self, candle, high, low, fast, slow):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
+
+        high_val = float(high)
+        low_val = float(low)
+        fast_val = float(fast)
+        slow_val = float(slow)
+        close = float(candle.ClosePrice)
+
+        if not self._has_prev:
+            self._prev_close = close
+            self._prev_upper = high_val
+            self._prev_lower = low_val
+            self._has_prev = True
             return
-        # Trading logic placeholder
-        pass
+
+        # Breakout above channel with bullish momentum
+        if self._prev_close <= self._prev_upper and close > high_val and fast_val > slow_val and self.Position <= 0:
+            if self.Position < 0:
+                self.BuyMarket()
+            self.BuyMarket()
+        # Breakout below channel with bearish momentum
+        elif self._prev_close >= self._prev_lower and close < low_val and fast_val < slow_val and self.Position >= 0:
+            if self.Position > 0:
+                self.SellMarket()
+            self.SellMarket()
+        else:
+            # Mean reversion: close crosses midpoint
+            mid = (high_val + low_val) / 2.0
+            prev_mid = (self._prev_upper + self._prev_lower) / 2.0
+
+            if self._prev_close <= prev_mid and close > mid and fast_val > slow_val and self.Position <= 0:
+                if self.Position < 0:
+                    self.BuyMarket()
+                self.BuyMarket()
+            elif self._prev_close >= prev_mid and close < mid and fast_val < slow_val and self.Position >= 0:
+                if self.Position > 0:
+                    self.SellMarket()
+                self.SellMarket()
+
+        self._prev_close = close
+        self._prev_upper = high_val
+        self._prev_lower = low_val
 
     def CreateClone(self):
         return myfriend_forex_instruments_strategy()

@@ -5,44 +5,47 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import AverageTrueRange, StochasticOscillator
+from StockSharp.Algo.Indicators import StochasticOscillator, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
 
 
 class rm_stochastic_band_strategy(Strategy):
+    """Multi-timeframe stochastic oscillator strategy with ATR-based stop-loss and take-profit."""
+
     def __init__(self):
         super(rm_stochastic_band_strategy, self).__init__()
 
         self._order_volume = self.Param("OrderVolume", 0.1) \
+            .SetGreaterThanZero() \
             .SetDisplay("Order Volume", "Volume of each market order", "Trading")
         self._stochastic_length = self.Param("StochasticLength", 5) \
-            .SetDisplay("Order Volume", "Volume of each market order", "Trading")
+            .SetGreaterThanZero() \
+            .SetDisplay("Stochastic Length", "%K lookback period", "Indicators")
         self._stochastic_smoothing = self.Param("StochasticSmoothing", 3) \
-            .SetDisplay("Order Volume", "Volume of each market order", "Trading")
+            .SetGreaterThanZero() \
+            .SetDisplay("Stochastic Smoothing", "Smoothing period applied to %K", "Indicators")
         self._stochastic_signal_length = self.Param("StochasticSignalLength", 3) \
-            .SetDisplay("Order Volume", "Volume of each market order", "Trading")
+            .SetGreaterThanZero() \
+            .SetDisplay("Stochastic Signal", "%D moving average length", "Indicators")
         self._atr_period = self.Param("AtrPeriod", 14) \
-            .SetDisplay("Order Volume", "Volume of each market order", "Trading")
+            .SetGreaterThanZero() \
+            .SetDisplay("ATR Period", "Lookback for ATR volatility filter", "Indicators")
         self._stop_loss_multiplier = self.Param("StopLossMultiplier", 1.5) \
-            .SetDisplay("Order Volume", "Volume of each market order", "Trading")
-        self._take_profit_multiplier = self.Param("TakeProfitMultiplier", 3) \
-            .SetDisplay("Order Volume", "Volume of each market order", "Trading")
-        self._min_margin = self.Param("MinMargin", 100) \
-            .SetDisplay("Order Volume", "Volume of each market order", "Trading")
-        self._max_spread_standard = self.Param("MaxSpreadStandard", 3) \
-            .SetDisplay("Order Volume", "Volume of each market order", "Trading")
-        self._max_spread_cent = self.Param("MaxSpreadCent", 10) \
-            .SetDisplay("Order Volume", "Volume of each market order", "Trading")
-        self._oversold_level = self.Param("OversoldLevel", 20) \
-            .SetDisplay("Order Volume", "Volume of each market order", "Trading")
-        self._overbought_level = self.Param("OverboughtLevel", 80) \
-            .SetDisplay("Order Volume", "Volume of each market order", "Trading")
-        self._base_candle_type = self.Param("BaseCandleType", TimeSpan.FromHours(1) \
-            .SetDisplay("Order Volume", "Volume of each market order", "Trading")
-        self._mid_candle_type = self.Param("MidCandleType", TimeSpan.FromHours(4) \
-            .SetDisplay("Order Volume", "Volume of each market order", "Trading")
-        self._high_candle_type = self.Param("HighCandleType", TimeSpan.FromHours(4) \
-            .SetDisplay("Order Volume", "Volume of each market order", "Trading")
+            .SetGreaterThanZero() \
+            .SetDisplay("SL Multiplier", "ATR multiplier for stop-loss", "Risk")
+        self._take_profit_multiplier = self.Param("TakeProfitMultiplier", 3.0) \
+            .SetGreaterThanZero() \
+            .SetDisplay("TP Multiplier", "ATR multiplier for take-profit", "Risk")
+        self._oversold_level = self.Param("OversoldLevel", 20.0) \
+            .SetDisplay("Oversold Level", "Threshold that defines oversold conditions", "Signals")
+        self._overbought_level = self.Param("OverboughtLevel", 80.0) \
+            .SetDisplay("Overbought Level", "Threshold that defines overbought conditions", "Signals")
+        self._base_candle_type = self.Param("BaseCandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
+            .SetDisplay("Base Timeframe", "Primary execution timeframe", "General")
+        self._mid_candle_type = self.Param("MidCandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+            .SetDisplay("Mid Timeframe", "Secondary confirmation timeframe", "General")
+        self._high_candle_type = self.Param("HighCandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+            .SetDisplay("High Timeframe", "Higher confirmation timeframe", "General")
 
         self._stoch_m1 = None
         self._stoch_m5 = None
@@ -52,8 +55,58 @@ class rm_stochastic_band_strategy(Strategy):
         self._long_take_profit = None
         self._short_stop_price = None
         self._short_take_profit = None
-        self._best_bid = None
-        self._best_ask = None
+
+    @property
+    def CandleType(self):
+        return self._base_candle_type.Value
+
+    @CandleType.setter
+    def CandleType(self, value):
+        self._base_candle_type.Value = value
+
+    @property
+    def OrderVolume(self):
+        return self._order_volume.Value
+
+    @property
+    def StochasticLength(self):
+        return self._stochastic_length.Value
+
+    @property
+    def StochasticSignalLength(self):
+        return self._stochastic_signal_length.Value
+
+    @property
+    def AtrPeriod(self):
+        return self._atr_period.Value
+
+    @property
+    def StopLossMultiplier(self):
+        return self._stop_loss_multiplier.Value
+
+    @property
+    def TakeProfitMultiplier(self):
+        return self._take_profit_multiplier.Value
+
+    @property
+    def OversoldLevel(self):
+        return self._oversold_level.Value
+
+    @property
+    def OverboughtLevel(self):
+        return self._overbought_level.Value
+
+    @property
+    def BaseCandleType(self):
+        return self._base_candle_type.Value
+
+    @property
+    def MidCandleType(self):
+        return self._mid_candle_type.Value
+
+    @property
+    def HighCandleType(self):
+        return self._high_candle_type.Value
 
     def OnReseted(self):
         super(rm_stochastic_band_strategy, self).OnReseted()
@@ -65,31 +118,145 @@ class rm_stochastic_band_strategy(Strategy):
         self._long_take_profit = None
         self._short_stop_price = None
         self._short_take_profit = None
-        self._best_bid = None
-        self._best_ask = None
+
+    def _create_stochastic(self):
+        stoch = StochasticOscillator()
+        stoch.K.Length = self.StochasticLength
+        stoch.D.Length = self.StochasticSignalLength
+        return stoch
 
     def OnStarted(self, time):
         super(rm_stochastic_band_strategy, self).OnStarted(time)
 
-        self._atr = AverageTrueRange()
-        self._atr.Length = self.atr_period
+        base_stochastic = self._create_stochastic()
+        mid_stochastic = self._create_stochastic()
+        high_stochastic = self._create_stochastic()
+        atr = AverageTrueRange()
+        atr.Length = self.AtrPeriod
 
-        base_subscription = self.SubscribeCandles(Baseself.candle_type)
-        base_subscription.BindEx(baseStochastic, self._process_candle).Start()
+        base_subscription = self.SubscribeCandles(self.BaseCandleType)
+        base_subscription.BindEx(base_stochastic, self._process_base_candle).Start()
 
-        subscription = self.SubscribeCandles(Midself.candle_type)
-        subscription.BindEx(midStochastic, self._process_candle_1).Start()
+        self.SubscribeCandles(self.MidCandleType) \
+            .BindEx(mid_stochastic, self._process_mid_candle).Start()
 
-        subscription = self.SubscribeCandles(Highself.candle_type)
-        subscription.BindEx(highStochastic, self._atr, self._process_candle_2).Start()
+        self.SubscribeCandles(self.HighCandleType) \
+            .BindEx(high_stochastic, atr, self._process_high_candle).Start()
 
-    def _process_candle(self, candle, *args):
+    def _process_mid_candle(self, candle, stoch_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
+
+        if not stoch_value.IsFinal:
             return
-        # Trading logic placeholder
-        pass
+
+        k = stoch_value.K
+        if k is not None:
+            self._stoch_m5 = float(k)
+
+    def _process_high_candle(self, candle, stoch_value, atr_value):
+        if candle.State != CandleStates.Finished:
+            return
+
+        if not stoch_value.IsFinal or not atr_value.IsFinal:
+            return
+
+        k = stoch_value.K
+        if k is not None:
+            self._stoch_m15 = float(k)
+
+        self._atr_value = float(atr_value.ToDecimal())
+
+    def _process_base_candle(self, candle, stoch_value):
+        if candle.State != CandleStates.Finished:
+            return
+
+        if not stoch_value.IsFinal:
+            return
+
+        k = stoch_value.K
+        if k is None:
+            return
+
+        self._stoch_m1 = float(k)
+
+        self._manage_open_position(candle)
+        self._try_enter_position(candle)
+
+    def _manage_open_position(self, candle):
+        if self.Position == 0:
+            self._long_stop_price = None
+            self._long_take_profit = None
+            self._short_stop_price = None
+            self._short_take_profit = None
+            return
+
+        if self.Position > 0:
+            if self._long_stop_price is not None and float(candle.LowPrice) <= self._long_stop_price:
+                self.SellMarket(self.Position)
+                self._long_stop_price = None
+                self._long_take_profit = None
+                return
+
+            if self._long_take_profit is not None and float(candle.HighPrice) >= self._long_take_profit:
+                self.SellMarket(self.Position)
+                self._long_stop_price = None
+                self._long_take_profit = None
+
+        elif self.Position < 0:
+            short_volume = abs(self.Position)
+            if self._short_stop_price is not None and float(candle.HighPrice) >= self._short_stop_price:
+                self.BuyMarket(short_volume)
+                self._short_stop_price = None
+                self._short_take_profit = None
+                return
+
+            if self._short_take_profit is not None and float(candle.LowPrice) <= self._short_take_profit:
+                self.BuyMarket(short_volume)
+                self._short_stop_price = None
+                self._short_take_profit = None
+
+    def _try_enter_position(self, candle):
+        if self.Position != 0:
+            return
+
+        if self._stoch_m1 is None or self._stoch_m5 is None or self._stoch_m15 is None or self._atr_value is None:
+            return
+
+        stoch_fast = self._stoch_m1
+        stoch_mid = self._stoch_m5
+        stoch_slow = self._stoch_m15
+        atr = self._atr_value
+
+        oversold = float(self.OversoldLevel)
+        overbought = float(self.OverboughtLevel)
+
+        if stoch_fast < oversold and stoch_mid < oversold and stoch_slow < oversold:
+            self._enter_long(float(candle.ClosePrice), atr)
+        elif stoch_fast > overbought and stoch_mid > overbought and stoch_slow > overbought:
+            self._enter_short(float(candle.ClosePrice), atr)
+
+    def _enter_long(self, price, atr):
+        volume = float(self.OrderVolume)
+        if volume <= 0:
+            return
+
+        self.BuyMarket(volume)
+        self._long_stop_price = price - atr * float(self.StopLossMultiplier)
+        self._long_take_profit = price + atr * float(self.TakeProfitMultiplier)
+        self._short_stop_price = None
+        self._short_take_profit = None
+
+    def _enter_short(self, price, atr):
+        volume = float(self.OrderVolume)
+        if volume <= 0:
+            return
+
+        self.SellMarket(volume)
+        self._short_stop_price = price + atr * float(self.StopLossMultiplier)
+        self._short_take_profit = price - atr * float(self.TakeProfitMultiplier)
+        self._long_stop_price = None
+        self._long_take_profit = None
 
     def CreateClone(self):
         return rm_stochastic_band_strategy()

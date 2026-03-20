@@ -10,25 +10,45 @@ from StockSharp.Algo.Strategies import Strategy
 
 
 class triple_sma_crossover_strategy(Strategy):
+    """Triple SMA crossover strategy.
+    Goes long when fast > medium > slow, short when fast < medium < slow.
+    Exits when fast crosses medium in opposite direction."""
+
     def __init__(self):
         super(triple_sma_crossover_strategy, self).__init__()
 
         self._fast_period = self.Param("FastPeriod", 5) \
             .SetDisplay("Fast SMA", "Fast SMA period", "Indicators")
         self._medium_period = self.Param("MediumPeriod", 10) \
-            .SetDisplay("Fast SMA", "Fast SMA period", "Indicators")
+            .SetDisplay("Medium SMA", "Medium SMA period", "Indicators")
         self._slow_period = self.Param("SlowPeriod", 20) \
-            .SetDisplay("Fast SMA", "Fast SMA period", "Indicators")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromHours(4) \
-            .SetDisplay("Fast SMA", "Fast SMA period", "Indicators")
+            .SetDisplay("Slow SMA", "Slow SMA period", "Indicators")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+            .SetDisplay("Candle Type", "Candle timeframe", "General")
 
         self._prev_fast = 0.0
         self._prev_med = 0.0
         self._has_prev = False
 
     @property
-    def candle_type(self):
+    def CandleType(self):
         return self._candle_type.Value
+
+    @CandleType.setter
+    def CandleType(self, value):
+        self._candle_type.Value = value
+
+    @property
+    def FastPeriod(self):
+        return self._fast_period.Value
+
+    @property
+    def MediumPeriod(self):
+        return self._medium_period.Value
+
+    @property
+    def SlowPeriod(self):
+        return self._slow_period.Value
 
     def OnReseted(self):
         super(triple_sma_crossover_strategy, self).OnReseted()
@@ -39,23 +59,51 @@ class triple_sma_crossover_strategy(Strategy):
     def OnStarted(self, time):
         super(triple_sma_crossover_strategy, self).OnStarted(time)
 
-        self._fast = SimpleMovingAverage()
-        self._fast.Length = self.fast_period
-        self._medium = SimpleMovingAverage()
-        self._medium.Length = self.medium_period
-        self._slow = SimpleMovingAverage()
-        self._slow.Length = self.slow_period
+        self._has_prev = False
 
-        subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(self._fast, self._medium, self._slow, self._process_candle).Start()
+        fast = SimpleMovingAverage()
+        fast.Length = self.FastPeriod
+        medium = SimpleMovingAverage()
+        medium.Length = self.MediumPeriod
+        slow = SimpleMovingAverage()
+        slow.Length = self.SlowPeriod
 
-    def _process_candle(self, candle, *args):
+        subscription = self.SubscribeCandles(self.CandleType)
+        subscription.Bind(fast, medium, slow, self._process_candle).Start()
+
+    def _process_candle(self, candle, fast, med, slow):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
+
+        fast_val = float(fast)
+        med_val = float(med)
+        slow_val = float(slow)
+
+        if not self._has_prev:
+            self._prev_fast = fast_val
+            self._prev_med = med_val
+            self._has_prev = True
             return
-        # Trading logic placeholder
-        pass
+
+        # Bullish alignment: fast > medium > slow
+        if fast_val > med_val and med_val > slow_val and self.Position <= 0:
+            if self.Position < 0:
+                self.BuyMarket()
+            self.BuyMarket()
+        # Bearish alignment: fast < medium < slow
+        elif fast_val < med_val and med_val < slow_val and self.Position >= 0:
+            if self.Position > 0:
+                self.SellMarket()
+            self.SellMarket()
+        # Exit long when fast crosses below medium
+        elif self.Position > 0 and self._prev_fast >= self._prev_med and fast_val < med_val:
+            self.SellMarket()
+        # Exit short when fast crosses above medium
+        elif self.Position < 0 and self._prev_fast <= self._prev_med and fast_val > med_val:
+            self.BuyMarket()
+
+        self._prev_fast = fast_val
+        self._prev_med = med_val
 
     def CreateClone(self):
         return triple_sma_crossover_strategy()

@@ -5,74 +5,82 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-from StockSharp.Messages import Sides
 
 
 class triangular_arbitrage_strategy(Strategy):
+    """Triangular arbitrage strategy - uses SMA crossover as simplified single-instrument proxy."""
+
     def __init__(self):
         super(triangular_arbitrage_strategy, self).__init__()
 
-        self._first_pair_param = self.Param("FirstPair", None) \
-            .SetDisplay("First Pair", "Primary leg, e.g. EURUSD", "Instruments")
-        self._second_pair_param = self.Param("SecondPair", None) \
-            .SetDisplay("First Pair", "Primary leg, e.g. EURUSD", "Instruments")
-        self._cross_pair_param = self.Param("CrossPair", None) \
-            .SetDisplay("First Pair", "Primary leg, e.g. EURUSD", "Instruments")
-        self._lot_size_param = self.Param("LotSize", 0.01) \
-            .SetDisplay("First Pair", "Primary leg, e.g. EURUSD", "Instruments")
-        self._profit_target_param = self.Param("ProfitTarget", 10) \
-            .SetDisplay("First Pair", "Primary leg, e.g. EURUSD", "Instruments")
-        self._threshold_param = self.Param("Threshold", 0.0001) \
-            .SetDisplay("First Pair", "Primary leg, e.g. EURUSD", "Instruments")
-        self._minimum_balance_param = self.Param("MinimumBalance", 1000) \
-            .SetDisplay("First Pair", "Primary leg, e.g. EURUSD", "Instruments")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+            .SetDisplay("Candle Type", "Primary timeframe", "General")
+        self._fast_period = self.Param("FastPeriod", 10) \
+            .SetGreaterThanZero() \
+            .SetDisplay("Fast MA", "Fast MA period", "Indicators")
+        self._slow_period = self.Param("SlowPeriod", 30) \
+            .SetGreaterThanZero() \
+            .SetDisplay("Slow MA", "Slow MA period", "Indicators")
 
-        self._first_ask = None
-        self._first_bid = None
-        self._second_ask = None
-        self._second_bid = None
-        self._cross_ask = None
-        self._cross_bid = None
-        self._first_position = 0.0
-        self._second_position = 0.0
-        self._cross_position = 0.0
-        self._first_average_price = 0.0
-        self._second_average_price = 0.0
-        self._cross_average_price = 0.0
-        self._has_open_cycle = False
-        self._close_requested = False
-        self._realized_snapshot = 0.0
+        self._prev_fast = None
+        self._prev_slow = None
+
+    @property
+    def CandleType(self):
+        return self._candle_type.Value
+
+    @CandleType.setter
+    def CandleType(self, value):
+        self._candle_type.Value = value
+
+    @property
+    def FastPeriod(self):
+        return self._fast_period.Value
+
+    @property
+    def SlowPeriod(self):
+        return self._slow_period.Value
 
     def OnReseted(self):
         super(triangular_arbitrage_strategy, self).OnReseted()
-        self._first_ask = None
-        self._first_bid = None
-        self._second_ask = None
-        self._second_bid = None
-        self._cross_ask = None
-        self._cross_bid = None
-        self._first_position = 0.0
-        self._second_position = 0.0
-        self._cross_position = 0.0
-        self._first_average_price = 0.0
-        self._second_average_price = 0.0
-        self._cross_average_price = 0.0
-        self._has_open_cycle = False
-        self._close_requested = False
-        self._realized_snapshot = 0.0
+        self._prev_fast = None
+        self._prev_slow = None
 
     def OnStarted(self, time):
         super(triangular_arbitrage_strategy, self).OnStarted(time)
 
+        fast_ma = SimpleMovingAverage()
+        fast_ma.Length = self.FastPeriod
+        slow_ma = SimpleMovingAverage()
+        slow_ma.Length = self.SlowPeriod
 
-    def _process_candle(self, candle, *args):
+        subscription = self.SubscribeCandles(self.CandleType)
+        subscription.Bind(fast_ma, slow_ma, self._process_candle).Start()
+
+    def _process_candle(self, candle, fast_val, slow_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-        # Trading logic placeholder
-        pass
+
+        fv = float(fast_val)
+        sv = float(slow_val)
+
+        if self._prev_fast is not None and self._prev_slow is not None:
+            cross_up = self._prev_fast <= self._prev_slow and fv > sv
+            cross_down = self._prev_fast >= self._prev_slow and fv < sv
+
+            if cross_up and self.Position <= 0:
+                if self.Position < 0:
+                    self.BuyMarket()
+                self.BuyMarket()
+            elif cross_down and self.Position >= 0:
+                if self.Position > 0:
+                    self.SellMarket()
+                self.SellMarket()
+
+        self._prev_fast = fv
+        self._prev_slow = sv
 
     def CreateClone(self):
         return triangular_arbitrage_strategy()

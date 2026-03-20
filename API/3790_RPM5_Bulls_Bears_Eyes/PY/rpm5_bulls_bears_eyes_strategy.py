@@ -5,28 +5,44 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import ExponentialMovingAverage
+from StockSharp.Algo.Indicators import ExponentialMovingAverage, BullPower, BearPower
 from StockSharp.Algo.Strategies import Strategy
 
 
 class rpm5_bulls_bears_eyes_strategy(Strategy):
+    """RPM5 Bulls Bears Eyes strategy using Bull/Bear power with EMA filter.
+    Buy when price > EMA, bull power positive, bear power recovering.
+    Sell when price < EMA, bear power negative, bull power declining."""
+
     def __init__(self):
         super(rpm5_bulls_bears_eyes_strategy, self).__init__()
 
         self._ema_period = self.Param("EmaPeriod", 13) \
             .SetDisplay("EMA Period", "EMA trend period", "Indicators")
         self._power_period = self.Param("PowerPeriod", 13) \
-            .SetDisplay("EMA Period", "EMA trend period", "Indicators")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromHours(4) \
-            .SetDisplay("EMA Period", "EMA trend period", "Indicators")
+            .SetDisplay("Power Period", "Bulls/Bears power period", "Indicators")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+            .SetDisplay("Candle Type", "Candle timeframe", "General")
 
         self._prev_bull = 0.0
         self._prev_bear = 0.0
         self._has_prev = False
 
     @property
-    def candle_type(self):
+    def CandleType(self):
         return self._candle_type.Value
+
+    @CandleType.setter
+    def CandleType(self, value):
+        self._candle_type.Value = value
+
+    @property
+    def EmaPeriod(self):
+        return self._ema_period.Value
+
+    @property
+    def PowerPeriod(self):
+        return self._power_period.Value
 
     def OnReseted(self):
         super(rpm5_bulls_bears_eyes_strategy, self).OnReseted()
@@ -37,23 +53,49 @@ class rpm5_bulls_bears_eyes_strategy(Strategy):
     def OnStarted(self, time):
         super(rpm5_bulls_bears_eyes_strategy, self).OnStarted(time)
 
-        self._ema = ExponentialMovingAverage()
-        self._ema.Length = self.ema_period
-        self._bulls = BullPower()
-        self._bulls.Length = self.power_period
-        self._bears = BearPower()
-        self._bears.Length = self.power_period
+        self._has_prev = False
 
-        subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(self._ema, self._bulls, self._bears, self._process_candle).Start()
+        ema = ExponentialMovingAverage()
+        ema.Length = self.EmaPeriod
+        bulls = BullPower()
+        bulls.Length = self.PowerPeriod
+        bears = BearPower()
+        bears.Length = self.PowerPeriod
 
-    def _process_candle(self, candle, *args):
+        subscription = self.SubscribeCandles(self.CandleType)
+        subscription.Bind(ema, bulls, bears, self._process_candle).Start()
+
+    def _process_candle(self, candle, ema_value, bull_value, bear_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
+
+        ema_val = float(ema_value)
+        bull_val = float(bull_value)
+        bear_val = float(bear_value)
+        close = float(candle.ClosePrice)
+
+        if not self._has_prev:
+            self._prev_bull = bull_val
+            self._prev_bear = bear_val
+            self._has_prev = True
             return
-        # Trading logic placeholder
-        pass
+
+        # Long: price above EMA, bull power positive, bear power recovering from negative
+        long_signal = close > ema_val and bull_val > 0 and self._prev_bear < 0 and bear_val > self._prev_bear
+        # Short: price below EMA, bear power negative, bull power declining from positive
+        short_signal = close < ema_val and bear_val < 0 and self._prev_bull > 0 and bull_val < self._prev_bull
+
+        if self.Position <= 0 and long_signal:
+            if self.Position < 0:
+                self.BuyMarket()
+            self.BuyMarket()
+        elif self.Position >= 0 and short_signal:
+            if self.Position > 0:
+                self.SellMarket()
+            self.SellMarket()
+
+        self._prev_bull = bull_val
+        self._prev_bear = bear_val
 
     def CreateClone(self):
         return rpm5_bulls_bears_eyes_strategy()

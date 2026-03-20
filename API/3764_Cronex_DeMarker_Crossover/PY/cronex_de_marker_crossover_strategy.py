@@ -5,22 +5,25 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import DecimalIndicatorValue, WeightedMovingAverage
+from StockSharp.Algo.Indicators import DeMarker, WeightedMovingAverage, DecimalIndicatorValue, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 
 
 class cronex_de_marker_crossover_strategy(Strategy):
+    """Cronex DeMarker crossover strategy. Smooths the DeMarker oscillator with
+    fast and slow WMA and trades on their crossover."""
+
     def __init__(self):
         super(cronex_de_marker_crossover_strategy, self).__init__()
 
         self._de_marker_period = self.Param("DeMarkerPeriod", 25) \
             .SetDisplay("DeMarker Period", "Length of the DeMarker oscillator", "Indicators")
         self._fast_ma_period = self.Param("FastMaPeriod", 14) \
-            .SetDisplay("DeMarker Period", "Length of the DeMarker oscillator", "Indicators")
+            .SetDisplay("Fast LWMA Period", "Length of the fast linear weighted moving average", "Indicators")
         self._slow_ma_period = self.Param("SlowMaPeriod", 25) \
-            .SetDisplay("DeMarker Period", "Length of the DeMarker oscillator", "Indicators")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromHours(1) \
-            .SetDisplay("DeMarker Period", "Length of the DeMarker oscillator", "Indicators")
+            .SetDisplay("Slow LWMA Period", "Length of the slow linear weighted moving average", "Indicators")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
+            .SetDisplay("Candle Type", "Time frame of processed candles", "General")
 
         self._de_marker = None
         self._fast_ma = None
@@ -29,8 +32,24 @@ class cronex_de_marker_crossover_strategy(Strategy):
         self._previous_slow = None
 
     @property
-    def candle_type(self):
+    def CandleType(self):
         return self._candle_type.Value
+
+    @CandleType.setter
+    def CandleType(self, value):
+        self._candle_type.Value = value
+
+    @property
+    def DeMarkerPeriod(self):
+        return self._de_marker_period.Value
+
+    @property
+    def FastMaPeriod(self):
+        return self._fast_ma_period.Value
+
+    @property
+    def SlowMaPeriod(self):
+        return self._slow_ma_period.Value
 
     def OnReseted(self):
         super(cronex_de_marker_crossover_strategy, self).OnReseted()
@@ -42,25 +61,66 @@ class cronex_de_marker_crossover_strategy(Strategy):
 
     def OnStarted(self, time):
         super(cronex_de_marker_crossover_strategy, self).OnStarted(time)
-        self.StartProtection(None, None)
 
-        self.__de_marker = DeMarker()
-        self.__de_marker.Length = self.de_marker_period
-        self.__fast_ma = WeightedMovingAverage()
-        self.__fast_ma.Length = self.fast_ma_period
-        self.__slow_ma = WeightedMovingAverage()
-        self.__slow_ma.Length = self.slow_ma_period
+        self._de_marker = DeMarker()
+        self._de_marker.Length = self.DeMarkerPeriod
 
-        subscription = self.SubscribeCandles(self.candle_type)
+        self._fast_ma = WeightedMovingAverage()
+        self._fast_ma.Length = self.FastMaPeriod
+
+        self._slow_ma = WeightedMovingAverage()
+        self._slow_ma.Length = self.SlowMaPeriod
+
+        subscription = self.SubscribeCandles(self.CandleType)
         subscription.Bind(self._process_candle).Start()
 
-    def _process_candle(self, candle, *args):
+    def _process_candle(self, candle):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
+
+        if self._de_marker is None or self._fast_ma is None or self._slow_ma is None:
             return
-        # Trading logic placeholder
-        pass
+
+        dm_result = self._de_marker.Process(CandleIndicatorValue(self._de_marker, candle))
+        if dm_result.IsEmpty:
+            return
+        dm_value = float(dm_result.GetValue[float]())
+
+        fast_result = self._fast_ma.Process(DecimalIndicatorValue(self._fast_ma, dm_value, candle.OpenTime))
+        if fast_result.IsEmpty:
+            return
+        fast_value = float(fast_result.GetValue[float]())
+
+        slow_result = self._slow_ma.Process(DecimalIndicatorValue(self._slow_ma, dm_value, candle.OpenTime))
+        if slow_result.IsEmpty:
+            return
+        slow_value = float(slow_result.GetValue[float]())
+
+        if not self._de_marker.IsFormed or not self._fast_ma.IsFormed or not self._slow_ma.IsFormed:
+            self._previous_fast = fast_value
+            self._previous_slow = slow_value
+            return
+
+        previous_fast = self._previous_fast
+        previous_slow = self._previous_slow
+
+        self._previous_fast = fast_value
+        self._previous_slow = slow_value
+
+        if previous_fast is None or previous_slow is None:
+            return
+
+        cross_up = previous_fast <= previous_slow and fast_value > slow_value
+        cross_down = previous_fast >= previous_slow and fast_value < slow_value
+
+        if cross_up:
+            if self.Position < 0:
+                self.BuyMarket()
+            self.BuyMarket()
+        elif cross_down:
+            if self.Position > 0:
+                self.SellMarket()
+            self.SellMarket()
 
     def CreateClone(self):
         return cronex_de_marker_crossover_strategy()

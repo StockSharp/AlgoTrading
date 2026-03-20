@@ -3,53 +3,93 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
+from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import AverageTrueRange, SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-
+from StockSharp.Algo.Indicators import SimpleMovingAverage, AverageTrueRange
 
 class rubberbands_safety_net_strategy(Strategy):
     def __init__(self):
         super(rubberbands_safety_net_strategy, self).__init__()
 
-        self._candle_type = self.Param("CandleType", TimeSpan.FromHours(8) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(8))) \
             .SetDisplay("Candle Type", "Timeframe.", "General")
         self._sma_length = self.Param("SmaLength", 20) \
-            .SetDisplay("Candle Type", "Timeframe.", "General")
+            .SetDisplay("SMA Length", "SMA center band period.", "Indicators")
         self._atr_length = self.Param("AtrLength", 14) \
-            .SetDisplay("Candle Type", "Timeframe.", "General")
+            .SetDisplay("ATR Length", "ATR period for bands and stops.", "Indicators")
         self._band_mult = self.Param("BandMult", 2.0) \
-            .SetDisplay("Candle Type", "Timeframe.", "General")
+            .SetDisplay("Band Mult", "ATR multiplier for bands.", "Signals")
 
         self._entry_price = 0.0
 
     @property
-    def candle_type(self):
+    def CandleType(self):
         return self._candle_type.Value
 
-    def OnReseted(self):
-        super(rubberbands_safety_net_strategy, self).OnReseted()
-        self._entry_price = 0.0
+    @property
+    def SmaLength(self):
+        return self._sma_length.Value
+
+    @property
+    def AtrLength(self):
+        return self._atr_length.Value
+
+    @property
+    def BandMult(self):
+        return self._band_mult.Value
 
     def OnStarted(self, time):
         super(rubberbands_safety_net_strategy, self).OnStarted(time)
 
+        self._entry_price = 0.0
+
         self._sma = SimpleMovingAverage()
-        self._sma.Length = self.sma_length
+        self._sma.Length = self.SmaLength
         self._atr = AverageTrueRange()
-        self._atr.Length = self.atr_length
+        self._atr.Length = self.AtrLength
 
-        subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(self._sma, self._atr, self._process_candle).Start()
+        subscription = self.SubscribeCandles(self.CandleType)
+        subscription.Bind(self._sma, self._atr, self.ProcessCandle).Start()
 
-    def _process_candle(self, candle, *args):
+    def ProcessCandle(self, candle, sma_val, atr_val):
         if candle.State != CandleStates.Finished:
             return
+
+        sv = float(sma_val)
+        av = float(atr_val)
+
+        if av <= 0:
+            return
+
+        close = float(candle.ClosePrice)
+        bm = float(self.BandMult)
+        upper = sv + av * bm
+        lower = sv - av * bm
+
+        if self.Position > 0:
+            if close >= sv or close <= self._entry_price - av * 3.0:
+                self.SellMarket()
+                self._entry_price = 0.0
+        elif self.Position < 0:
+            if close <= sv or close >= self._entry_price + av * 3.0:
+                self.BuyMarket()
+                self._entry_price = 0.0
+
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
-        # Trading logic placeholder
-        pass
+
+        if self.Position == 0:
+            if close <= lower:
+                self._entry_price = close
+                self.BuyMarket()
+            elif close >= upper:
+                self._entry_price = close
+                self.SellMarket()
+
+    def OnReseted(self):
+        super(rubberbands_safety_net_strategy, self).OnReseted()
+        self._entry_price = 0.0
 
     def CreateClone(self):
         return rubberbands_safety_net_strategy()

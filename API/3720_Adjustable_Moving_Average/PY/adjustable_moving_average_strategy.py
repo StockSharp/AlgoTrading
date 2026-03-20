@@ -5,89 +5,128 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import ExponentialMovingAverage, SimpleMovingAverage, SmoothedMovingAverage, WeightedMovingAverage
+from StockSharp.Algo.Indicators import SimpleMovingAverage, ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 
 
 class adjustable_moving_average_strategy(Strategy):
+    """Moving average crossover with adjustable gap filter."""
+
     def __init__(self):
         super(adjustable_moving_average_strategy, self).__init__()
 
-        self._candle_type = self.Param("CandleType", TimeSpan.FromHours(4) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle timeframe", "Timeframe used to build moving averages", "General")
         self._fast_period = self.Param("FastPeriod", 10) \
-            .SetDisplay("Candle timeframe", "Timeframe used to build moving averages", "General")
+            .SetGreaterThanZero() \
+            .SetDisplay("Fast period", "Short moving average length", "Moving averages")
         self._slow_period = self.Param("SlowPeriod", 30) \
-            .SetDisplay("Candle timeframe", "Timeframe used to build moving averages", "General")
-        self._ma_method = self.Param("MaMethod", MovingAverageMethods.Exponential) \
-            .SetDisplay("Candle timeframe", "Timeframe used to build moving averages", "General")
-        self._min_gap_points = self.Param("MinGapPoints", 3) \
-            .SetDisplay("Candle timeframe", "Timeframe used to build moving averages", "General")
-        self._stop_loss_points = self.Param("StopLossPoints", 0) \
-            .SetDisplay("Candle timeframe", "Timeframe used to build moving averages", "General")
-        self._take_profit_points = self.Param("TakeProfitPoints", 0) \
-            .SetDisplay("Candle timeframe", "Timeframe used to build moving averages", "General")
-        self._trailing_points = self.Param("TrailStopPoints", 0) \
-            .SetDisplay("Candle timeframe", "Timeframe used to build moving averages", "General")
-        self._entry_mode = self.Param("Mode", EntryModes.Both) \
-            .SetDisplay("Candle timeframe", "Timeframe used to build moving averages", "General")
-        self._session_start = self.Param("SessionStart", TimeSpan.Zero) \
-            .SetDisplay("Candle timeframe", "Timeframe used to build moving averages", "General")
-        self._session_end = self.Param("SessionEnd", new TimeSpan(23, 59, 0) \
-            .SetDisplay("Candle timeframe", "Timeframe used to build moving averages", "General")
-        self._close_outside_session = self.Param("CloseOutsideSession", True) \
-            .SetDisplay("Candle timeframe", "Timeframe used to build moving averages", "General")
-        self._trail_outside_session = self.Param("TrailOutsideSession", True) \
-            .SetDisplay("Candle timeframe", "Timeframe used to build moving averages", "General")
+            .SetGreaterThanZero() \
+            .SetDisplay("Slow period", "Long moving average length", "Moving averages")
+        self._min_gap_points = self.Param("MinGapPoints", 3.0) \
+            .SetNotNegative() \
+            .SetDisplay("Minimum gap (points)", "Required distance between fast and slow MAs", "Trading")
         self._fixed_lot = self.Param("FixedLot", 0.1) \
-            .SetDisplay("Candle timeframe", "Timeframe used to build moving averages", "General")
-        self._enable_auto_lot = self.Param("EnableAutoLot", False) \
-            .SetDisplay("Candle timeframe", "Timeframe used to build moving averages", "General")
-        self._lot_per10k = self.Param("LotPer10kFreeMargin", 1) \
-            .SetDisplay("Candle timeframe", "Timeframe used to build moving averages", "General")
-        self._max_slippage = self.Param("MaxSlippage", 3) \
-            .SetDisplay("Candle timeframe", "Timeframe used to build moving averages", "General")
-        self._trade_comment = self.Param("TradeComment", "AdjustableMovingAverageEA") \
-            .SetDisplay("Candle timeframe", "Timeframe used to build moving averages", "General")
+            .SetGreaterThanZero() \
+            .SetDisplay("Fixed lot", "Volume used for orders", "Money management")
 
-        self._fast_ma = None
-        self._slow_ma = None
         self._point_value = 0.0
         self._min_gap_threshold = 0.0
-        self._previous_signal = 0.0
+        self._previous_signal = 0
         self._has_initial_signal = False
-        self._long_trailing_stop = None
-        self._short_trailing_stop = None
 
     @property
-    def candle_type(self):
+    def CandleType(self):
         return self._candle_type.Value
+
+    @CandleType.setter
+    def CandleType(self, value):
+        self._candle_type.Value = value
+
+    @property
+    def FastPeriod(self):
+        return self._fast_period.Value
+
+    @property
+    def SlowPeriod(self):
+        return self._slow_period.Value
+
+    @property
+    def MinGapPoints(self):
+        return self._min_gap_points.Value
+
+    @property
+    def FixedLot(self):
+        return self._fixed_lot.Value
 
     def OnReseted(self):
         super(adjustable_moving_average_strategy, self).OnReseted()
-        self._fast_ma = None
-        self._slow_ma = None
         self._point_value = 0.0
         self._min_gap_threshold = 0.0
-        self._previous_signal = 0.0
+        self._previous_signal = 0
         self._has_initial_signal = False
-        self._long_trailing_stop = None
-        self._short_trailing_stop = None
 
     def OnStarted(self, time):
         super(adjustable_moving_average_strategy, self).OnStarted(time)
 
+        fast_len = min(self.FastPeriod, self.SlowPeriod)
+        slow_len = max(self.FastPeriod, self.SlowPeriod)
 
-        subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(_fastMa, _slowMa, self._process_candle).Start()
+        fast_ma = ExponentialMovingAverage()
+        fast_ma.Length = fast_len
+        slow_ma = ExponentialMovingAverage()
+        slow_ma.Length = slow_len
 
-    def _process_candle(self, candle, *args):
+        self._point_value = self._calc_point_value()
+        self._min_gap_threshold = float(self.MinGapPoints) * self._point_value
+
+        subscription = self.SubscribeCandles(self.CandleType)
+        subscription.Bind(fast_ma, slow_ma, self._process_candle).Start()
+
+    def _calc_point_value(self):
+        if self.Security is not None and self.Security.PriceStep is not None:
+            step = float(self.Security.PriceStep)
+            if step > 0:
+                if step == 0.00001 or step == 0.001:
+                    return step * 10.0
+                return step
+        return 0.0
+
+    def _process_candle(self, candle, fast, slow):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
+
+        fv = float(fast)
+        sv = float(slow)
+
+        gap_up = fv - sv
+        gap_down = sv - fv
+
+        if not self._has_initial_signal:
+            if gap_up >= self._min_gap_threshold:
+                self._previous_signal = 1
+                self._has_initial_signal = True
+            elif gap_down >= self._min_gap_threshold:
+                self._previous_signal = -1
+                self._has_initial_signal = True
             return
-        # Trading logic placeholder
-        pass
+
+        if self._previous_signal > 0:
+            if gap_down >= self._min_gap_threshold:
+                self._close_position()
+                self.SellMarket(self.FixedLot)
+                self._previous_signal = -1
+        elif self._previous_signal < 0:
+            if gap_up >= self._min_gap_threshold:
+                self._close_position()
+                self.BuyMarket(self.FixedLot)
+                self._previous_signal = 1
+
+    def _close_position(self):
+        if self.Position > 0:
+            self.SellMarket(self.Position)
+        elif self.Position < 0:
+            self.BuyMarket(abs(self.Position))
 
     def CreateClone(self):
         return adjustable_moving_average_strategy()

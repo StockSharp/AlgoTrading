@@ -10,23 +10,38 @@ from StockSharp.Algo.Strategies import Strategy
 
 
 class three_ma_bunny_cross_strategy(Strategy):
+    """3MA Bunny Cross strategy using weighted moving average crossover.
+    Goes long on fast WMA crossing above slow WMA, short on opposite."""
+
     def __init__(self):
         super(three_ma_bunny_cross_strategy, self).__init__()
 
         self._fast_period = self.Param("FastPeriod", 5) \
             .SetDisplay("Fast WMA", "Fast weighted MA period", "Indicators")
         self._slow_period = self.Param("SlowPeriod", 20) \
-            .SetDisplay("Fast WMA", "Fast weighted MA period", "Indicators")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromHours(4) \
-            .SetDisplay("Fast WMA", "Fast weighted MA period", "Indicators")
+            .SetDisplay("Slow WMA", "Slow weighted MA period", "Indicators")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+            .SetDisplay("Candle Type", "Candle timeframe", "General")
 
         self._prev_fast = 0.0
         self._prev_slow = 0.0
         self._has_prev = False
 
     @property
-    def candle_type(self):
+    def CandleType(self):
         return self._candle_type.Value
+
+    @CandleType.setter
+    def CandleType(self, value):
+        self._candle_type.Value = value
+
+    @property
+    def FastPeriod(self):
+        return self._fast_period.Value
+
+    @property
+    def SlowPeriod(self):
+        return self._slow_period.Value
 
     def OnReseted(self):
         super(three_ma_bunny_cross_strategy, self).OnReseted()
@@ -37,21 +52,43 @@ class three_ma_bunny_cross_strategy(Strategy):
     def OnStarted(self, time):
         super(three_ma_bunny_cross_strategy, self).OnStarted(time)
 
-        self._fast = WeightedMovingAverage()
-        self._fast.Length = self.fast_period
-        self._slow = WeightedMovingAverage()
-        self._slow.Length = self.slow_period
+        self._has_prev = False
 
-        subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(self._fast, self._slow, self._process_candle).Start()
+        fast = WeightedMovingAverage()
+        fast.Length = self.FastPeriod
+        slow = WeightedMovingAverage()
+        slow.Length = self.SlowPeriod
 
-    def _process_candle(self, candle, *args):
+        subscription = self.SubscribeCandles(self.CandleType)
+        subscription.Bind(fast, slow, self._process_candle).Start()
+
+    def _process_candle(self, candle, fast, slow):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
+
+        fast_val = float(fast)
+        slow_val = float(slow)
+
+        if not self._has_prev:
+            self._prev_fast = fast_val
+            self._prev_slow = slow_val
+            self._has_prev = True
             return
-        # Trading logic placeholder
-        pass
+
+        cross_up = self._prev_fast <= self._prev_slow and fast_val > slow_val
+        cross_down = self._prev_fast >= self._prev_slow and fast_val < slow_val
+
+        if cross_up and self.Position <= 0:
+            if self.Position < 0:
+                self.BuyMarket()
+            self.BuyMarket()
+        elif cross_down and self.Position >= 0:
+            if self.Position > 0:
+                self.SellMarket()
+            self.SellMarket()
+
+        self._prev_fast = fast_val
+        self._prev_slow = slow_val
 
     def CreateClone(self):
         return three_ma_bunny_cross_strategy()

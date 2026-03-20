@@ -4,67 +4,135 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan, Math
-from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import SimpleMovingAverage as SMA
+from StockSharp.Messages import DataType, CandleStates, UnitTypes, Unit
 from StockSharp.Algo.Strategies import Strategy
-from StockSharp.Messages import Unit, UnitTypes
-
+from StockSharp.Algo.Indicators import SimpleMovingAverage, AwesomeOscillator
 
 class ravi_iao_strategy(Strategy):
     def __init__(self):
         super(ravi_iao_strategy, self).__init__()
 
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(10) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(10))) \
             .SetDisplay("Candle Type", "Time-frame for analysis", "General")
         self._fast_length = self.Param("FastLength", 12) \
-            .SetDisplay("Candle Type", "Time-frame for analysis", "General")
+            .SetDisplay("Fast Length", "Fast SMA period inside RAVI", "RAVI")
         self._slow_length = self.Param("SlowLength", 72) \
-            .SetDisplay("Candle Type", "Time-frame for analysis", "General")
+            .SetDisplay("Slow Length", "Slow SMA period inside RAVI", "RAVI")
         self._threshold = self.Param("Threshold", 0.3) \
-            .SetDisplay("Candle Type", "Time-frame for analysis", "General")
-        self._stop_loss_points = self.Param("StopLossPoints", 500) \
-            .SetDisplay("Candle Type", "Time-frame for analysis", "General")
-        self._take_profit_points = self.Param("TakeProfitPoints", 500) \
-            .SetDisplay("Candle Type", "Time-frame for analysis", "General")
+            .SetDisplay("RAVI Threshold", "Minimum absolute RAVI value to confirm the trend", "Signals")
+        self._stop_loss_points = self.Param("StopLossPoints", 500.0) \
+            .SetDisplay("Stop Loss", "Stop-loss distance in price units", "Risk")
+        self._take_profit_points = self.Param("TakeProfitPoints", 500.0) \
+            .SetDisplay("Take Profit", "Take-profit distance in price units", "Risk")
 
-        self._ao_average = None
         self._prev_ravi = None
         self._prev_prev_ravi = None
         self._prev_ac = None
         self._prev_prev_ac = None
+        self._ao_average = None
 
     @property
-    def candle_type(self):
+    def CandleType(self):
         return self._candle_type.Value
 
-    def OnReseted(self):
-        super(ravi_iao_strategy, self).OnReseted()
-        self._ao_average = None
-        self._prev_ravi = None
-        self._prev_prev_ravi = None
-        self._prev_ac = None
-        self._prev_prev_ac = None
+    @property
+    def FastLength(self):
+        return self._fast_length.Value
+
+    @property
+    def SlowLength(self):
+        return self._slow_length.Value
+
+    @property
+    def Threshold(self):
+        return self._threshold.Value
+
+    @property
+    def StopLossPoints(self):
+        return self._stop_loss_points.Value
+
+    @property
+    def TakeProfitPoints(self):
+        return self._take_profit_points.Value
 
     def OnStarted(self, time):
         super(ravi_iao_strategy, self).OnStarted(time)
 
-        self._fast_ma = SMA()
-        self._fast_ma.Length = self.fast_length
-        self._slow_ma = SMA()
-        self._slow_ma.Length = self.slow_length
-        self.__ao_average = SMA()
-        self.__ao_average.Length = 5
+        fast_ma = SimpleMovingAverage()
+        fast_ma.Length = self.FastLength
+        slow_ma = SimpleMovingAverage()
+        slow_ma.Length = self.SlowLength
+        ao = AwesomeOscillator()
+        self._ao_average = SimpleMovingAverage()
+        self._ao_average.Length = 5
 
-        subscription = self.SubscribeCandles(self.candle_type)
-        subscription.BindEx(new IIndicator[] { fastMa, self._slow_ma, ao }, self._process_candle).Start()
+        subscription = self.SubscribeCandles(self.CandleType)
+        subscription.BindEx([fast_ma, slow_ma, ao], self.ProcessCandle).Start()
 
-    def _process_candle(self, candle, *args):
+        tp = Unit(float(self.TakeProfitPoints), UnitTypes.Absolute) if float(self.TakeProfitPoints) > 0 else None
+        sl = Unit(float(self.StopLossPoints), UnitTypes.Absolute) if float(self.StopLossPoints) > 0 else None
+        self.StartProtection(tp, sl)
+
+    def ProcessCandle(self, candle, values):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
+
+        fast_val = values[0]
+        slow_val = values[1]
+        ao_val = values[2]
+
+        if fast_val.IsEmpty or slow_val.IsEmpty or ao_val.IsEmpty:
             return
-        # Trading logic placeholder
-        pass
+
+        fast_value = float(fast_val.GetValue[float]())
+        slow_value = float(slow_val.GetValue[float]())
+        ao_value = float(ao_val.GetValue[float]())
+
+        ao_avg_result = self._ao_average.Process(ao_val)
+        if ao_avg_result.IsEmpty:
+            return
+
+        ao_avg_value = float(ao_avg_result.GetValue[float]())
+        ac = ao_value - ao_avg_value
+
+        if slow_value == 0:
+            self._update_history(None, ac)
+            return
+
+        ravi = 100.0 * (fast_value - slow_value) / slow_value
+
+        if (self._prev_ravi is not None and
+            self._prev_prev_ravi is not None and
+            self._prev_ac is not None and
+            self._prev_prev_ac is not None and
+            self.Position == 0 and
+            self.IsFormedAndOnlineAndAllowTrading()):
+
+            threshold = float(self.Threshold)
+            bullish = (self._prev_ac > self._prev_prev_ac and self._prev_prev_ac > 0
+                       and self._prev_ravi > self._prev_prev_ravi and self._prev_ravi > threshold)
+            bearish = (self._prev_ac < self._prev_prev_ac and self._prev_prev_ac < 0
+                       and self._prev_ravi < self._prev_prev_ravi and self._prev_ravi < -threshold)
+
+            if bullish:
+                self.BuyMarket(self.Volume)
+            elif bearish:
+                self.SellMarket(self.Volume)
+
+        self._update_history(ravi, ac)
+
+    def _update_history(self, ravi, ac):
+        self._prev_prev_ravi = self._prev_ravi
+        self._prev_ravi = ravi
+        self._prev_prev_ac = self._prev_ac
+        self._prev_ac = ac
+
+    def OnReseted(self):
+        super(ravi_iao_strategy, self).OnReseted()
+        self._prev_ravi = None
+        self._prev_prev_ravi = None
+        self._prev_ac = None
+        self._prev_prev_ac = None
 
     def CreateClone(self):
         return ravi_iao_strategy()

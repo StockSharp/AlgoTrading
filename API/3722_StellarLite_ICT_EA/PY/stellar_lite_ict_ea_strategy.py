@@ -4,101 +4,144 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan, Math
-from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import AverageTrueRange, SimpleMovingAverage
+from StockSharp.Messages import DataType, CandleStates, Sides, Unit, UnitTypes
+from StockSharp.Algo.Indicators import SimpleMovingAverage, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
-from StockSharp.Messages import Sides
-from StockSharp.Messages import Unit, UnitTypes
 
 
 class stellar_lite_ict_ea_strategy(Strategy):
+    """Stellar Lite ICT strategy with higher timeframe MA bias and market structure shift entries."""
+
     def __init__(self):
         super(stellar_lite_ict_ea_strategy, self).__init__()
 
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(5) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Entry Candle", "Primary timeframe used for entries", "General")
-        self._higher_timeframe_type = self.Param("HigherTimeframeType", TimeSpan.FromMinutes(15) \
-            .SetDisplay("Entry Candle", "Primary timeframe used for entries", "General")
+        self._higher_timeframe_type = self.Param("HigherTimeframeType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
+            .SetDisplay("Higher Timeframe", "Timeframe used for directional bias", "General")
         self._higher_ma_period = self.Param("HigherMaPeriod", 20) \
-            .SetDisplay("Entry Candle", "Primary timeframe used for entries", "General")
+            .SetDisplay("Higher MA Period", "Moving average length for higher timeframe bias", "Bias")
         self._atr_period = self.Param("AtrPeriod", 14) \
-            .SetDisplay("Entry Candle", "Primary timeframe used for entries", "General")
-        self._liquidity_lookback = self.Param("LiquidityLookback", 20) \
-            .SetDisplay("Entry Candle", "Primary timeframe used for entries", "General")
-        self._atr_threshold = self.Param("AtrThreshold", 2.0) \
-            .SetDisplay("Entry Candle", "Primary timeframe used for entries", "General")
-        self._tp1_ratio = self.Param("Tp1Ratio", 1) \
-            .SetDisplay("Entry Candle", "Primary timeframe used for entries", "General")
-        self._tp2_ratio = self.Param("Tp2Ratio", 2) \
-            .SetDisplay("Entry Candle", "Primary timeframe used for entries", "General")
-        self._tp3_ratio = self.Param("Tp3Ratio", 3) \
-            .SetDisplay("Entry Candle", "Primary timeframe used for entries", "General")
-        self._tp1_percent = self.Param("Tp1Percent", 50) \
-            .SetDisplay("Entry Candle", "Primary timeframe used for entries", "General")
-        self._tp2_percent = self.Param("Tp2Percent", 25) \
-            .SetDisplay("Entry Candle", "Primary timeframe used for entries", "General")
-        self._tp3_percent = self.Param("Tp3Percent", 25) \
-            .SetDisplay("Entry Candle", "Primary timeframe used for entries", "General")
-        self._move_to_break_even = self.Param("MoveToBreakEven", True) \
-            .SetDisplay("Entry Candle", "Primary timeframe used for entries", "General")
-        self._break_even_offset = self.Param("BreakEvenOffset", 1) \
-            .SetDisplay("Entry Candle", "Primary timeframe used for entries", "General")
-        self._trailing_distance = self.Param("TrailingDistance", 10) \
-            .SetDisplay("Entry Candle", "Primary timeframe used for entries", "General")
-        self._use_silver_bullet = self.Param("UseSilverBullet", True) \
-            .SetDisplay("Entry Candle", "Primary timeframe used for entries", "General")
-        self._use2022_model = self.Param("Use2022Model", True) \
-            .SetDisplay("Entry Candle", "Primary timeframe used for entries", "General")
-        self._use_ote_entry = self.Param("UseOteEntry", True) \
-            .SetDisplay("Entry Candle", "Primary timeframe used for entries", "General")
-        self._risk_percent = self.Param("RiskPercent", 0.25) \
-            .SetDisplay("Entry Candle", "Primary timeframe used for entries", "General")
-        self._ote_lower_level = self.Param("OteLowerLevel", 0.618) \
-            .SetDisplay("Entry Candle", "Primary timeframe used for entries", "General")
+            .SetDisplay("ATR Period", "Average True Range lookback", "Volatility")
 
-        self._higher_ma = None
-        self._atr = None
         self._last_htf_ma = None
         self._previous_htf_ma = None
         self._current_bias = None
-        self._history_count = 0.0
+        self._history = [None] * 20
+        self._history_count = 0
         self._latest_atr = 0.0
 
     @property
-    def candle_type(self):
+    def CandleType(self):
         return self._candle_type.Value
+
+    @CandleType.setter
+    def CandleType(self, value):
+        self._candle_type.Value = value
+
+    @property
+    def HigherTimeframeType(self):
+        return self._higher_timeframe_type.Value
+
+    @HigherTimeframeType.setter
+    def HigherTimeframeType(self, value):
+        self._higher_timeframe_type.Value = value
+
+    @property
+    def HigherMaPeriod(self):
+        return self._higher_ma_period.Value
+
+    @property
+    def AtrPeriod(self):
+        return self._atr_period.Value
 
     def OnReseted(self):
         super(stellar_lite_ict_ea_strategy, self).OnReseted()
-        self._higher_ma = None
-        self._atr = None
         self._last_htf_ma = None
         self._previous_htf_ma = None
         self._current_bias = None
-        self._history_count = 0.0
+        self._history = [None] * 20
+        self._history_count = 0
         self._latest_atr = 0.0
 
     def OnStarted(self, time):
         super(stellar_lite_ict_ea_strategy, self).OnStarted(time)
 
-        self.__higher_ma = SimpleMovingAverage()
-        self.__higher_ma.Length = self.higher_ma_period
-        self.__atr = AverageTrueRange()
-        self.__atr.Length = self.atr_period
+        higher_ma = SimpleMovingAverage()
+        higher_ma.Length = self.HigherMaPeriod
 
-        main_subscription = self.SubscribeCandles(self.candle_type)
-        main_subscription.Bind(self._process_candle).Start()
+        atr = AverageTrueRange()
+        atr.Length = self.AtrPeriod
 
-        higher_subscription = self.SubscribeCandles(self.higher_timeframe_type)
-        higher_subscription.Bind(self.__higher_ma, self._process_candle_1).Start()
+        main_subscription = self.SubscribeCandles(self.CandleType)
+        main_subscription.Bind(atr, self._process_main_candle).Start()
 
-    def _process_candle(self, candle, *args):
+        higher_subscription = self.SubscribeCandles(self.HigherTimeframeType)
+        higher_subscription.Bind(higher_ma, self._process_higher_candle).Start()
+
+        self.StartProtection(
+            takeProfit=Unit(2, UnitTypes.Percent),
+            stopLoss=Unit(1, UnitTypes.Percent))
+
+    def _process_higher_candle(self, candle, ma_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
+
+        self._previous_htf_ma = self._last_htf_ma
+        self._last_htf_ma = float(ma_value)
+
+        if self._previous_htf_ma is None or self._last_htf_ma is None:
             return
-        # Trading logic placeholder
-        pass
+
+        prev = self._previous_htf_ma
+        current = self._last_htf_ma
+        close = float(candle.ClosePrice)
+
+        if close > current and current > prev:
+            self._current_bias = Sides.Buy
+        elif close < current and current < prev:
+            self._current_bias = Sides.Sell
+        else:
+            self._current_bias = None
+
+    def _process_main_candle(self, candle, atr_value):
+        if candle.State != CandleStates.Finished:
+            return
+
+        self._store_candle(candle)
+        self._latest_atr = float(atr_value)
+
+        if self.Position != 0:
+            return
+
+        if self._current_bias is None:
+            return
+
+        if self._history_count < 3:
+            return
+
+        prev = self._history[1]
+        prev2 = self._history[2]
+        if prev is None or prev2 is None:
+            return
+
+        bias = self._current_bias
+
+        if bias == Sides.Buy:
+            if float(candle.ClosePrice) > float(prev.HighPrice) and float(prev.ClosePrice) < float(prev2.OpenPrice):
+                self.BuyMarket()
+        else:
+            if float(candle.ClosePrice) < float(prev.LowPrice) and float(prev.ClosePrice) > float(prev2.OpenPrice):
+                self.SellMarket()
+
+    def _store_candle(self, candle):
+        i = len(self._history) - 1
+        while i > 0:
+            self._history[i] = self._history[i - 1]
+            i -= 1
+        self._history[0] = candle
+        if self._history_count < len(self._history):
+            self._history_count += 1
 
     def CreateClone(self):
         return stellar_lite_ict_ea_strategy()
