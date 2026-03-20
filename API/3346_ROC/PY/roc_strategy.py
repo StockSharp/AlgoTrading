@@ -3,7 +3,7 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
+from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import RateOfChange, WeightedMovingAverage
 from StockSharp.Algo.Strategies import Strategy
@@ -13,22 +13,36 @@ class roc_strategy(Strategy):
     def __init__(self):
         super(roc_strategy, self).__init__()
 
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(30) \
-            .SetDisplay("Candle Type", "Candle timeframe", "General")
         self._roc_period = self.Param("RocPeriod", 12) \
-            .SetDisplay("Candle Type", "Candle timeframe", "General")
+            .SetDisplay("ROC Period", "Rate of Change period", "Indicators")
         self._fast_ma_period = self.Param("FastMaPeriod", 5) \
-            .SetDisplay("Candle Type", "Candle timeframe", "General")
+            .SetDisplay("Fast WMA", "Fast WMA period", "Indicators")
         self._slow_ma_period = self.Param("SlowMaPeriod", 20) \
-            .SetDisplay("Candle Type", "Candle timeframe", "General")
+            .SetDisplay("Slow WMA", "Slow WMA period", "Indicators")
+
+        self._roc = None
+        self._fast_ma = None
+        self._slow_ma = None
+        self._prev_roc = None
 
     @property
-    def candle_type(self):
-        return self._candle_type.Value
+    def roc_period(self):
+        return self._roc_period.Value
+
+    @property
+    def fast_ma_period(self):
+        return self._fast_ma_period.Value
+
+    @property
+    def slow_ma_period(self):
+        return self._slow_ma_period.Value
 
     def OnReseted(self):
         super(roc_strategy, self).OnReseted()
-        pass
+        self._roc = None
+        self._fast_ma = None
+        self._slow_ma = None
+        self._prev_roc = None
 
     def OnStarted(self, time):
         super(roc_strategy, self).OnStarted(time)
@@ -40,16 +54,28 @@ class roc_strategy(Strategy):
         self._slow_ma = WeightedMovingAverage()
         self._slow_ma.Length = self.slow_ma_period
 
-        subscription = self.SubscribeCandles(self.candle_type)
+        subscription = self.SubscribeCandles(DataType.TimeFrame(TimeSpan.FromMinutes(30)))
+        subscription.Bind(self._roc, self._fast_ma, self._slow_ma, self._process_candle)
         subscription.Start()
 
-    def _process_candle(self, candle, *args):
+    def _process_candle(self, candle, roc_value, fast_ma_value, slow_ma_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
+
+        if not self._roc.IsFormed or not self._fast_ma.IsFormed or not self._slow_ma.IsFormed:
             return
-        # Trading logic placeholder
-        pass
+
+        roc_val = float(roc_value)
+        fast_val = float(fast_ma_value)
+        slow_val = float(slow_ma_value)
+
+        if self._prev_roc is not None:
+            if self._prev_roc <= 0.0 and roc_val > 0.0 and fast_val > slow_val and self.Position <= 0:
+                self.BuyMarket()
+            elif self._prev_roc >= 0.0 and roc_val < 0.0 and fast_val < slow_val and self.Position >= 0:
+                self.SellMarket()
+
+        self._prev_roc = roc_val
 
     def CreateClone(self):
         return roc_strategy()

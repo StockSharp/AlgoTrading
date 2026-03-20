@@ -3,57 +3,132 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
+from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
-
 
 class adaptive_grid_mt4_strategy(Strategy):
     def __init__(self):
         super(adaptive_grid_mt4_strategy, self).__init__()
 
-        self._atr_period = self.Param("AtrPeriod", 20) \
-            .SetDisplay("ATR Period", "Number of candles used for ATR smoothing", "Indicators")
-        self._breakout_multiplier = self.Param("BreakoutMultiplier", 2.5) \
-            .SetDisplay("ATR Period", "Number of candles used for ATR smoothing", "Indicators")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(60) \
-            .SetDisplay("ATR Period", "Number of candles used for ATR smoothing", "Indicators")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(60)))
+        self._atr_period = self.Param("AtrPeriod", 20)
+        self._breakout_multiplier = self.Param("BreakoutMultiplier", 2.5)
 
-        self._atr = None
-        self._prev_close = None
-        self._prev_atr = None
+        self._prev_close = 0.0
+        self._prev_atr = 0.0
+        self._has_prev = False
         self._stop_price = 0.0
         self._take_profit_price = 0.0
+        self._entry_price = 0.0
 
     @property
-    def candle_type(self):
+    def CandleType(self):
         return self._candle_type.Value
+
+    @CandleType.setter
+    def CandleType(self, value):
+        self._candle_type.Value = value
+
+    @property
+    def AtrPeriod(self):
+        return self._atr_period.Value
+
+    @AtrPeriod.setter
+    def AtrPeriod(self, value):
+        self._atr_period.Value = value
+
+    @property
+    def BreakoutMultiplier(self):
+        return self._breakout_multiplier.Value
+
+    @BreakoutMultiplier.setter
+    def BreakoutMultiplier(self, value):
+        self._breakout_multiplier.Value = value
 
     def OnReseted(self):
         super(adaptive_grid_mt4_strategy, self).OnReseted()
-        self._atr = None
-        self._prev_close = None
-        self._prev_atr = None
+        self._prev_close = 0.0
+        self._prev_atr = 0.0
+        self._has_prev = False
         self._stop_price = 0.0
         self._take_profit_price = 0.0
+        self._entry_price = 0.0
 
     def OnStarted(self, time):
         super(adaptive_grid_mt4_strategy, self).OnStarted(time)
+        self._prev_close = 0.0
+        self._prev_atr = 0.0
+        self._has_prev = False
+        self._stop_price = 0.0
+        self._take_profit_price = 0.0
+        self._entry_price = 0.0
 
-        self.__atr = AverageTrueRange()
-        self.__atr.Length = self.atr_period
+        atr = AverageTrueRange()
+        atr.Length = self.AtrPeriod
 
-        subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(self.__atr, self._process_candle).Start()
+        subscription = self.SubscribeCandles(self.CandleType)
+        subscription.Bind(atr, self._process_candle).Start()
 
-    def _process_candle(self, candle, *args):
+    def _process_candle(self, candle, atr_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
+
+        atr_val = float(atr_value)
+        close = float(candle.ClosePrice)
+        high = float(candle.HighPrice)
+        low = float(candle.LowPrice)
+
+        if atr_val <= 0:
+            self._prev_close = close
+            self._prev_atr = atr_val
+            self._has_prev = True
             return
-        # Trading logic placeholder
-        pass
+
+        # Check protective stops
+        if self.Position > 0:
+            if self._stop_price > 0 and low <= self._stop_price:
+                self.SellMarket()
+                self._stop_price = 0.0
+                self._take_profit_price = 0.0
+            elif self._take_profit_price > 0 and high >= self._take_profit_price:
+                self.SellMarket()
+                self._stop_price = 0.0
+                self._take_profit_price = 0.0
+        elif self.Position < 0:
+            if self._stop_price > 0 and high >= self._stop_price:
+                self.BuyMarket()
+                self._stop_price = 0.0
+                self._take_profit_price = 0.0
+            elif self._take_profit_price > 0 and low <= self._take_profit_price:
+                self.BuyMarket()
+                self._stop_price = 0.0
+                self._take_profit_price = 0.0
+
+        if not self._has_prev or self._prev_atr <= 0:
+            self._prev_close = close
+            self._prev_atr = atr_val
+            self._has_prev = True
+            return
+
+        threshold = self._prev_atr * float(self.BreakoutMultiplier)
+
+        # Breakout up
+        if close > self._prev_close + threshold and self.Position <= 0:
+            self.BuyMarket()
+            self._stop_price = close - atr_val * 3.0
+            self._take_profit_price = close + atr_val * 4.0
+            self._entry_price = close
+        # Breakout down
+        elif close < self._prev_close - threshold and self.Position >= 0:
+            self.SellMarket()
+            self._stop_price = close + atr_val * 3.0
+            self._take_profit_price = close - atr_val * 4.0
+            self._entry_price = close
+
+        self._prev_close = close
+        self._prev_atr = atr_val
 
     def CreateClone(self):
         return adaptive_grid_mt4_strategy()

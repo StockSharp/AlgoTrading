@@ -3,7 +3,7 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
+from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import Highest, Lowest
 from StockSharp.Algo.Strategies import Strategy
@@ -13,37 +13,48 @@ class news_release_strategy(Strategy):
     def __init__(self):
         super(news_release_strategy, self).__init__()
 
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(5) \
-            .SetDisplay("Candle Type", "Candle timeframe", "General")
         self._channel_period = self.Param("ChannelPeriod", 10) \
-            .SetDisplay("Candle Type", "Candle timeframe", "General")
+            .SetDisplay("Channel Period", "Highest/Lowest lookback", "Indicators")
+
+        self._highest = None
+        self._lowest = None
 
     @property
-    def candle_type(self):
-        return self._candle_type.Value
+    def channel_period(self):
+        return self._channel_period.Value
 
     def OnReseted(self):
         super(news_release_strategy, self).OnReseted()
-        pass
+        self._highest = None
+        self._lowest = None
 
     def OnStarted(self, time):
         super(news_release_strategy, self).OnStarted(time)
 
-        self._high = Highest()
-        self._high.Length = self.channel_period
-        self._low = Lowest()
-        self._low.Length = self.channel_period
+        self._highest = Highest()
+        self._highest.Length = self.channel_period
+        self._lowest = Lowest()
+        self._lowest.Length = self.channel_period
 
-        subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(self._high, self._low, self._process_candle).Start()
+        subscription = self.SubscribeCandles(DataType.TimeFrame(TimeSpan.FromMinutes(5)))
+        subscription.Bind(self._highest, self._lowest, self._process_candle)
+        subscription.Start()
 
-    def _process_candle(self, candle, *args):
+    def _process_candle(self, candle, high_val, low_val):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
+
+        if not self._highest.IsFormed or not self._lowest.IsFormed:
             return
-        # Trading logic placeholder
-        pass
+
+        close = float(candle.ClosePrice)
+        h = float(high_val)
+        l = float(low_val)
+
+        if close >= h and self.Position <= 0:
+            self.BuyMarket()
+        elif close <= l and self.Position >= 0:
+            self.SellMarket()
 
     def CreateClone(self):
         return news_release_strategy()

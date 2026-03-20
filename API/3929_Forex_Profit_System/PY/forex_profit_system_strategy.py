@@ -1,59 +1,52 @@
 import clr
-
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
-
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 
-
 class forex_profit_system_strategy(Strategy):
     def __init__(self):
         super(forex_profit_system_strategy, self).__init__()
-
-        self._fast_period = self.Param("FastPeriod", 10) \
-            .SetDisplay("Fast EMA", "Fast EMA period", "Indicators")
-        self._slow_period = self.Param("SlowPeriod", 25) \
-            .SetDisplay("Fast EMA", "Fast EMA period", "Indicators")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(15) \
-            .SetDisplay("Fast EMA", "Fast EMA period", "Indicators")
-
-        self._prev_fast = 0.0
-        self._prev_slow = 0.0
-        self._has_prev = False
-        self._cooldown = 0.0
+        self._fast_period = self.Param("FastPeriod", 10).SetDisplay("Fast EMA", "Fast EMA period", "Indicators")
+        self._slow_period = self.Param("SlowPeriod", 25).SetDisplay("Slow EMA", "Slow EMA period", "Indicators")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))).SetDisplay("Candle Type", "Candle timeframe", "General")
+        self._prev_fast = 0.0; self._prev_slow = 0.0; self._has_prev = False; self._cooldown = 0
 
     @property
-    def candle_type(self):
-        return self._candle_type.Value
+    def fast_period(self): return self._fast_period.Value
+    @property
+    def slow_period(self): return self._slow_period.Value
+    @property
+    def candle_type(self): return self._candle_type.Value
 
     def OnReseted(self):
         super(forex_profit_system_strategy, self).OnReseted()
-        self._prev_fast = 0.0
-        self._prev_slow = 0.0
-        self._has_prev = False
-        self._cooldown = 0.0
+        self._prev_fast = 0.0; self._prev_slow = 0.0; self._has_prev = False; self._cooldown = 0
 
     def OnStarted(self, time):
         super(forex_profit_system_strategy, self).OnStarted(time)
-
-        self._fast = ExponentialMovingAverage()
-        self._fast.Length = self.fast_period
-        self._slow = ExponentialMovingAverage()
-        self._slow.Length = self.slow_period
-
+        self._has_prev = False; self._cooldown = 0
+        fast = ExponentialMovingAverage(); fast.Length = self.fast_period
+        slow = ExponentialMovingAverage(); slow.Length = self.slow_period
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(self._fast, self._slow, self._process_candle).Start()
+        subscription.Bind(fast, slow, self.process_candle).Start()
 
-    def _process_candle(self, candle, *args):
-        if candle.State != CandleStates.Finished:
-            return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-        # Trading logic placeholder
-        pass
+    def process_candle(self, candle, fast, slow):
+        if candle.State != CandleStates.Finished: return
+        if not self.IsFormedAndOnlineAndAllowTrading(): return
+        fast_val = float(fast); slow_val = float(slow)
+        if not self._has_prev:
+            self._prev_fast = fast_val; self._prev_slow = slow_val; self._has_prev = True; return
+        if self._cooldown > 0:
+            self._cooldown -= 1; self._prev_fast = fast_val; self._prev_slow = slow_val; return
+        if self._prev_fast <= self._prev_slow and fast_val > slow_val and self.Position <= 0:
+            volume = self.Volume + abs(self.Position)
+            self.BuyMarket(volume); self._cooldown = 2
+        elif self._prev_fast >= self._prev_slow and fast_val < slow_val and self.Position >= 0:
+            volume = self.Volume + abs(self.Position)
+            self.SellMarket(volume); self._cooldown = 2
+        self._prev_fast = fast_val; self._prev_slow = slow_val
 
-    def CreateClone(self):
-        return forex_profit_system_strategy()
+    def CreateClone(self): return forex_profit_system_strategy()

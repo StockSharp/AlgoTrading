@@ -3,76 +3,68 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
+from System import TimeSpan
+
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Strategies import Strategy
-from StockSharp.Messages import Sides
 
 
 class spreader2_strategy(Strategy):
+    """Pair trading spread strategy. Requires two securities."""
+
     def __init__(self):
         super(spreader2_strategy, self).__init__()
 
-        self._second_security_param = self.Param("SecondSecurity", None) \
-            .SetDisplay("Second Symbol", "Secondary instrument for the spread trade", "General")
-        self._primary_volume_param = self.Param("PrimaryVolume", 1) \
-            .SetDisplay("Second Symbol", "Secondary instrument for the spread trade", "General")
-        self._target_profit_param = self.Param("TargetProfit", 100) \
-            .SetDisplay("Second Symbol", "Secondary instrument for the spread trade", "General")
-        self._shift_param = self.Param("ShiftLength", 6) \
-            .SetDisplay("Second Symbol", "Secondary instrument for the spread trade", "General")
-        self._candle_type_param = self.Param("CandleType", TimeSpan.FromMinutes(5) \
-            .SetDisplay("Second Symbol", "Secondary instrument for the spread trade", "General")
-        self._day_bars_param = self.Param("DayBars", 288) \
-            .SetDisplay("Second Symbol", "Secondary instrument for the spread trade", "General")
-
-        self._first_pending = new()
-        self._second_pending = new()
-        self._first_closes = new()
-        self._second_closes = new()
-        self._last_first_close = 0.0
-        self._last_second_close = 0.0
-        self._first_entry_price = 0.0
-        self._second_entry_price = 0.0
-        self._second_position = 0.0
-        self._second_portfolio = None
-        self._contracts_match = True
+        self._primary_volume_param = self.Param("PrimaryVolume", 1.0)
+        self._target_profit_param = self.Param("TargetProfit", 100.0)
+        self._shift_param = self.Param("ShiftLength", 6)
+        self._candle_type_param = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5)))
+        self._day_bars_param = self.Param("DayBars", 288)
 
     @property
-    def candle_type(self):
-        return self._candle_type.Value
+    def PrimaryVolume(self):
+        return self._primary_volume_param.Value
 
-    def OnReseted(self):
-        super(spreader2_strategy, self).OnReseted()
-        self._first_pending = new()
-        self._second_pending = new()
-        self._first_closes = new()
-        self._second_closes = new()
-        self._last_first_close = 0.0
-        self._last_second_close = 0.0
-        self._first_entry_price = 0.0
-        self._second_entry_price = 0.0
-        self._second_position = 0.0
-        self._second_portfolio = None
-        self._contracts_match = True
+    @property
+    def TargetProfit(self):
+        return self._target_profit_param.Value
+
+    @property
+    def ShiftLength(self):
+        return self._shift_param.Value
+
+    @property
+    def DayBars(self):
+        return self._day_bars_param.Value
+
+    @property
+    def CandleType(self):
+        return self._candle_type_param.Value
+
+    @CandleType.setter
+    def CandleType(self, value):
+        self._candle_type_param.Value = value
 
     def OnStarted(self, time):
         super(spreader2_strategy, self).OnStarted(time)
 
+        self.LogWarning("Spreader2 requires a second security. Running in single-security mode with no trading logic.")
 
-        primary_subscription = self.SubscribeCandles(self.candle_type)
-        primary_subscription.Bind(self._process_candle).Start()
+        subscription = self.SubscribeCandles(self.CandleType)
+        subscription.Bind(self._process_candle).Start()
 
-        secondary_subscription = self.SubscribeCandles(self.candle_type, security: SecondSecurity)
-        secondary_subscription.Bind(self._process_candle).Start()
+        area = self.CreateChartArea()
+        if area is not None:
+            self.DrawCandles(area, subscription)
+            self.DrawOwnTrades(area)
 
-    def _process_candle(self, candle, *args):
+    def _process_candle(self, candle):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-        # Trading logic placeholder
-        pass
+        # Pair trading logic requires two securities; cannot run in single-security mode.
+
+    def OnReseted(self):
+        super(spreader2_strategy, self).OnReseted()
 
     def CreateClone(self):
         return spreader2_strategy()

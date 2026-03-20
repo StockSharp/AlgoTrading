@@ -3,108 +3,126 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import DataType, CandleStates
+from System import TimeSpan
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import RelativeStrengthIndex, SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-
 
 class euro_surge_simplified_strategy(Strategy):
     def __init__(self):
         super(euro_surge_simplified_strategy, self).__init__()
 
-        self._trade_size_type = self.Param("TradeSizeType", TradeSizeTypes.FixedSize) \
-            .SetDisplay("Trade Size Mode", "How trading volume is calculated", "Money Management")
-        self._fixed_volume = self.Param("FixedVolume", 1) \
-            .SetDisplay("Trade Size Mode", "How trading volume is calculated", "Money Management")
-        self._trade_size_percent = self.Param("TradeSizePercent", 1) \
-            .SetDisplay("Trade Size Mode", "How trading volume is calculated", "Money Management")
-        self._take_profit_points = self.Param("TakeProfitPoints", 1400) \
-            .SetDisplay("Trade Size Mode", "How trading volume is calculated", "Money Management")
-        self._stop_loss_points = self.Param("StopLossPoints", 900) \
-            .SetDisplay("Trade Size Mode", "How trading volume is calculated", "Money Management")
-        self._min_trade_interval_minutes = self.Param("MinTradeIntervalMinutes", 600) \
-            .SetDisplay("Trade Size Mode", "How trading volume is calculated", "Money Management")
-        self._ma_period = self.Param("MaPeriod", 52) \
-            .SetDisplay("Trade Size Mode", "How trading volume is calculated", "Money Management")
-        self._rsi_period = self.Param("RsiPeriod", 13) \
-            .SetDisplay("Trade Size Mode", "How trading volume is calculated", "Money Management")
-        self._rsi_buy_level = self.Param("RsiBuyLevel", 50) \
-            .SetDisplay("Trade Size Mode", "How trading volume is calculated", "Money Management")
-        self._rsi_sell_level = self.Param("RsiSellLevel", 50) \
-            .SetDisplay("Trade Size Mode", "How trading volume is calculated", "Money Management")
-        self._macd_fast = self.Param("MacdFast", 8) \
-            .SetDisplay("Trade Size Mode", "How trading volume is calculated", "Money Management")
-        self._macd_slow = self.Param("MacdSlow", 24) \
-            .SetDisplay("Trade Size Mode", "How trading volume is calculated", "Money Management")
-        self._macd_signal = self.Param("MacdSignal", 13) \
-            .SetDisplay("Trade Size Mode", "How trading volume is calculated", "Money Management")
-        self._bollinger_length = self.Param("BollingerLength", 25) \
-            .SetDisplay("Trade Size Mode", "How trading volume is calculated", "Money Management")
-        self._bollinger_width = self.Param("BollingerWidth", 2.5) \
-            .SetDisplay("Trade Size Mode", "How trading volume is calculated", "Money Management")
-        self._stochastic_length = self.Param("StochasticLength", 10) \
-            .SetDisplay("Trade Size Mode", "How trading volume is calculated", "Money Management")
-        self._stochastic_k = self.Param("StochasticK", 10) \
-            .SetDisplay("Trade Size Mode", "How trading volume is calculated", "Money Management")
-        self._stochastic_d = self.Param("StochasticD", 2) \
-            .SetDisplay("Trade Size Mode", "How trading volume is calculated", "Money Management")
-        self._use_ma = self.Param("UseMa", True) \
-            .SetDisplay("Trade Size Mode", "How trading volume is calculated", "Money Management")
-        self._use_rsi = self.Param("UseRsi", True) \
-            .SetDisplay("Trade Size Mode", "How trading volume is calculated", "Money Management")
-        self._use_macd = self.Param("UseMacd", True) \
-            .SetDisplay("Trade Size Mode", "How trading volume is calculated", "Money Management")
-        self._use_bollinger = self.Param("UseBollinger", False) \
-            .SetDisplay("Trade Size Mode", "How trading volume is calculated", "Money Management")
-        self._use_stochastic = self.Param("UseStochastic", True) \
-            .SetDisplay("Trade Size Mode", "How trading volume is calculated", "Money Management")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromHours(1) \
-            .SetDisplay("Trade Size Mode", "How trading volume is calculated", "Money Management")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1)))
+        self._ma_period = self.Param("MaPeriod", 52)
+        self._rsi_period = self.Param("RsiPeriod", 13)
+        self._rsi_buy_level = self.Param("RsiBuyLevel", 50.0)
+        self._rsi_sell_level = self.Param("RsiSellLevel", 50.0)
+        self._min_trade_interval_minutes = self.Param("MinTradeIntervalMinutes", 600)
 
         self._last_trade_time = None
-        self._fast_ma = null!
-        self._slow_ma = null!
-        self._rsi = null!
-        self._fast_ma_value = 0.0
-        self._slow_ma_value = 0.0
-        self._rsi_value = 0.0
 
     @property
-    def candle_type(self):
+    def CandleType(self):
         return self._candle_type.Value
+
+    @CandleType.setter
+    def CandleType(self, value):
+        self._candle_type.Value = value
+
+    @property
+    def MaPeriod(self):
+        return self._ma_period.Value
+
+    @MaPeriod.setter
+    def MaPeriod(self, value):
+        self._ma_period.Value = value
+
+    @property
+    def RsiPeriod(self):
+        return self._rsi_period.Value
+
+    @RsiPeriod.setter
+    def RsiPeriod(self, value):
+        self._rsi_period.Value = value
+
+    @property
+    def RsiBuyLevel(self):
+        return self._rsi_buy_level.Value
+
+    @RsiBuyLevel.setter
+    def RsiBuyLevel(self, value):
+        self._rsi_buy_level.Value = value
+
+    @property
+    def RsiSellLevel(self):
+        return self._rsi_sell_level.Value
+
+    @RsiSellLevel.setter
+    def RsiSellLevel(self, value):
+        self._rsi_sell_level.Value = value
+
+    @property
+    def MinTradeIntervalMinutes(self):
+        return self._min_trade_interval_minutes.Value
+
+    @MinTradeIntervalMinutes.setter
+    def MinTradeIntervalMinutes(self, value):
+        self._min_trade_interval_minutes.Value = value
 
     def OnReseted(self):
         super(euro_surge_simplified_strategy, self).OnReseted()
         self._last_trade_time = None
-        self._fast_ma = null!
-        self._slow_ma = null!
-        self._rsi = null!
-        self._fast_ma_value = 0.0
-        self._slow_ma_value = 0.0
-        self._rsi_value = 0.0
 
     def OnStarted(self, time):
         super(euro_surge_simplified_strategy, self).OnStarted(time)
-        self.StartProtection(None, None)
+        self._last_trade_time = None
 
-        self.__fast_ma = SimpleMovingAverage()
-        self.__fast_ma.Length = 20
-        self.__slow_ma = SimpleMovingAverage()
-        self.__slow_ma.Length = self.ma_period
-        self.__rsi = RelativeStrengthIndex()
-        self.__rsi.Length = self.rsi_period
+        fast_ma = SimpleMovingAverage()
+        fast_ma.Length = 20
+        slow_ma = SimpleMovingAverage()
+        slow_ma.Length = self.MaPeriod
+        rsi = RelativeStrengthIndex()
+        rsi.Length = self.RsiPeriod
 
-        subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(self.__fast_ma, self.__slow_ma, self.__rsi, self._process_candle).Start()
+        subscription = self.SubscribeCandles(self.CandleType)
+        subscription.Bind(fast_ma, slow_ma, rsi, self._process_candle).Start()
 
-    def _process_candle(self, candle, *args):
+        self.StartProtection(
+            takeProfit=Unit(2, UnitTypes.Percent),
+            stopLoss=Unit(1, UnitTypes.Percent))
+
+    def _process_candle(self, candle, fast_value, slow_value, rsi_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
+
+        fast_val = float(fast_value)
+        slow_val = float(slow_value)
+        rsi_val = float(rsi_value)
+
+        ma_buy = fast_val > slow_val
+        ma_sell = fast_val < slow_val
+        rsi_buy = rsi_val <= float(self.RsiBuyLevel)
+        rsi_sell = rsi_val >= float(self.RsiSellLevel)
+
+        is_buy = ma_buy and rsi_buy
+        is_sell = ma_sell and rsi_sell
+
+        if not is_buy and not is_sell:
             return
-        # Trading logic placeholder
-        pass
+
+        now = candle.CloseTime
+        min_interval = self.MinTradeIntervalMinutes
+        if self._last_trade_time is not None:
+            elapsed = (now - self._last_trade_time).TotalMinutes
+            if elapsed < min_interval:
+                return
+
+        if is_buy and self.Position <= 0:
+            self.BuyMarket()
+            self._last_trade_time = now
+        elif is_sell and self.Position >= 0:
+            self.SellMarket()
+            self._last_trade_time = now
 
     def CreateClone(self):
         return euro_surge_simplified_strategy()

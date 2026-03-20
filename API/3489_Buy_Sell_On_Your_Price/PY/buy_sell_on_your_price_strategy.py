@@ -3,28 +3,37 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
+from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-
 
 class buy_sell_on_your_price_strategy(Strategy):
     def __init__(self):
         super(buy_sell_on_your_price_strategy, self).__init__()
 
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(60) \
-            .SetDisplay("Candle Type", "Candle timeframe", "General")
-        self._ema_period = self.Param("EmaPeriod", 50) \
-            .SetDisplay("Candle Type", "Candle timeframe", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(60)))
+        self._ema_period = self.Param("EmaPeriod", 50)
 
         self._prev_close = 0.0
         self._prev_ema = 0.0
         self._has_prev = False
 
     @property
-    def candle_type(self):
+    def CandleType(self):
         return self._candle_type.Value
+
+    @CandleType.setter
+    def CandleType(self, value):
+        self._candle_type.Value = value
+
+    @property
+    def EmaPeriod(self):
+        return self._ema_period.Value
+
+    @EmaPeriod.setter
+    def EmaPeriod(self, value):
+        self._ema_period.Value = value
 
     def OnReseted(self):
         super(buy_sell_on_your_price_strategy, self).OnReseted()
@@ -34,20 +43,32 @@ class buy_sell_on_your_price_strategy(Strategy):
 
     def OnStarted(self, time):
         super(buy_sell_on_your_price_strategy, self).OnStarted(time)
+        self._prev_close = 0.0
+        self._prev_ema = 0.0
+        self._has_prev = False
 
-        self._ema = ExponentialMovingAverage()
-        self._ema.Length = self.ema_period
+        ema = ExponentialMovingAverage()
+        ema.Length = self.EmaPeriod
 
-        subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(self._ema, self._process_candle).Start()
+        subscription = self.SubscribeCandles(self.CandleType)
+        subscription.Bind(ema, self._process_candle).Start()
 
-    def _process_candle(self, candle, *args):
+    def _process_candle(self, candle, ema_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-        # Trading logic placeholder
-        pass
+
+        close = float(candle.ClosePrice)
+        ema_val = float(ema_value)
+
+        if self._has_prev:
+            if self._prev_close <= self._prev_ema and close > ema_val and self.Position <= 0:
+                self.BuyMarket()
+            elif self._prev_close >= self._prev_ema and close < ema_val and self.Position >= 0:
+                self.SellMarket()
+
+        self._prev_close = close
+        self._prev_ema = ema_val
+        self._has_prev = True
 
     def CreateClone(self):
         return buy_sell_on_your_price_strategy()

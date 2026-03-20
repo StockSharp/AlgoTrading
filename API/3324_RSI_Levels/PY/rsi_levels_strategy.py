@@ -3,7 +3,7 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
+from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import RelativeStrengthIndex
 from StockSharp.Algo.Strategies import Strategy
@@ -13,18 +13,18 @@ class rsi_levels_strategy(Strategy):
     def __init__(self):
         super(rsi_levels_strategy, self).__init__()
 
-        self._candle_type = self.Param("CandleType", TimeSpan.FromHours(1) \
-            .SetDisplay("Candle Type", "Candle timeframe", "General")
         self._rsi_period = self.Param("RsiPeriod", 14) \
-            .SetDisplay("Candle Type", "Candle timeframe", "General")
+            .SetDisplay("RSI Period", "RSI period", "Indicators")
+
+        self._rsi = None
 
     @property
-    def candle_type(self):
-        return self._candle_type.Value
+    def rsi_period(self):
+        return self._rsi_period.Value
 
     def OnReseted(self):
         super(rsi_levels_strategy, self).OnReseted()
-        pass
+        self._rsi = None
 
     def OnStarted(self, time):
         super(rsi_levels_strategy, self).OnStarted(time)
@@ -32,16 +32,23 @@ class rsi_levels_strategy(Strategy):
         self._rsi = RelativeStrengthIndex()
         self._rsi.Length = self.rsi_period
 
-        subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(self._rsi, self._process_candle).Start()
+        subscription = self.SubscribeCandles(DataType.TimeFrame(TimeSpan.FromHours(1)))
+        subscription.Bind(self._rsi, self._process_candle)
+        subscription.Start()
 
-    def _process_candle(self, candle, *args):
+    def _process_candle(self, candle, rsi_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
+
+        if not self._rsi.IsFormed:
             return
-        # Trading logic placeholder
-        pass
+
+        rsi = float(rsi_value)
+
+        if rsi < 30.0 and self.Position <= 0:
+            self.BuyMarket()
+        elif rsi > 70.0 and self.Position >= 0:
+            self.SellMarket()
 
     def CreateClone(self):
         return rsi_levels_strategy()

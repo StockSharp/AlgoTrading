@@ -3,31 +3,54 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
+from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-
 
 class smart_forex_system_strategy(Strategy):
     def __init__(self):
         super(smart_forex_system_strategy, self).__init__()
 
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(60) \
-            .SetDisplay("Candle Type", "Candle timeframe", "General")
-        self._fast_period = self.Param("FastPeriod", 10) \
-            .SetDisplay("Candle Type", "Candle timeframe", "General")
-        self._mid_period = self.Param("MidPeriod", 25) \
-            .SetDisplay("Candle Type", "Candle timeframe", "General")
-        self._slow_period = self.Param("SlowPeriod", 50) \
-            .SetDisplay("Candle Type", "Candle timeframe", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(60)))
+        self._fast_period = self.Param("FastPeriod", 10)
+        self._mid_period = self.Param("MidPeriod", 25)
+        self._slow_period = self.Param("SlowPeriod", 50)
 
         self._was_bullish_alignment = False
         self._has_prev_alignment = False
 
     @property
-    def candle_type(self):
+    def CandleType(self):
         return self._candle_type.Value
+
+    @CandleType.setter
+    def CandleType(self, value):
+        self._candle_type.Value = value
+
+    @property
+    def FastPeriod(self):
+        return self._fast_period.Value
+
+    @FastPeriod.setter
+    def FastPeriod(self, value):
+        self._fast_period.Value = value
+
+    @property
+    def MidPeriod(self):
+        return self._mid_period.Value
+
+    @MidPeriod.setter
+    def MidPeriod(self, value):
+        self._mid_period.Value = value
+
+    @property
+    def SlowPeriod(self):
+        return self._slow_period.Value
+
+    @SlowPeriod.setter
+    def SlowPeriod(self, value):
+        self._slow_period.Value = value
 
     def OnReseted(self):
         super(smart_forex_system_strategy, self).OnReseted()
@@ -36,24 +59,41 @@ class smart_forex_system_strategy(Strategy):
 
     def OnStarted(self, time):
         super(smart_forex_system_strategy, self).OnStarted(time)
+        self._was_bullish_alignment = False
+        self._has_prev_alignment = False
 
-        self._fast = ExponentialMovingAverage()
-        self._fast.Length = self.fast_period
-        self._mid = ExponentialMovingAverage()
-        self._mid.Length = self.mid_period
-        self._slow = ExponentialMovingAverage()
-        self._slow.Length = self.slow_period
+        fast = ExponentialMovingAverage()
+        fast.Length = self.FastPeriod
+        mid = ExponentialMovingAverage()
+        mid.Length = self.MidPeriod
+        slow = ExponentialMovingAverage()
+        slow.Length = self.SlowPeriod
 
-        subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(self._fast, self._mid, self._slow, self._process_candle).Start()
+        subscription = self.SubscribeCandles(self.CandleType)
+        subscription.Bind(fast, mid, slow, self._process_candle).Start()
 
-    def _process_candle(self, candle, *args):
+    def _process_candle(self, candle, fast_value, mid_value, slow_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-        # Trading logic placeholder
-        pass
+
+        fast_val = float(fast_value)
+        mid_val = float(mid_value)
+        slow_val = float(slow_value)
+
+        bullish_alignment = fast_val > mid_val and mid_val > slow_val
+        bearish_alignment = fast_val < mid_val and mid_val < slow_val
+
+        crossed_up = bullish_alignment and (not self._has_prev_alignment or not self._was_bullish_alignment)
+        crossed_down = bearish_alignment and (not self._has_prev_alignment or self._was_bullish_alignment)
+
+        if crossed_up and self.Position <= 0:
+            self.BuyMarket()
+        elif crossed_down and self.Position >= 0:
+            self.SellMarket()
+
+        if bullish_alignment or bearish_alignment:
+            self._was_bullish_alignment = bullish_alignment
+            self._has_prev_alignment = True
 
     def CreateClone(self):
         return smart_forex_system_strategy()

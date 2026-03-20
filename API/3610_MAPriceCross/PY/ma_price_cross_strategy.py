@@ -3,51 +3,79 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
+from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-
 
 class ma_price_cross_strategy(Strategy):
     def __init__(self):
         super(ma_price_cross_strategy, self).__init__()
 
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(60) \
-            .SetDisplay("Candle Type", "Timeframe for MA cross detection", "General")
-        self._ma_period = self.Param("MaPeriod", 100) \
-            .SetDisplay("Candle Type", "Timeframe for MA cross detection", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(60)))
+        self._ma_period = self.Param("MaPeriod", 100)
 
-        self._sma = None
         self._prev_average = None
         self._prev_close = None
 
     @property
-    def candle_type(self):
+    def CandleType(self):
         return self._candle_type.Value
+
+    @CandleType.setter
+    def CandleType(self, value):
+        self._candle_type.Value = value
+
+    @property
+    def MaPeriod(self):
+        return self._ma_period.Value
+
+    @MaPeriod.setter
+    def MaPeriod(self, value):
+        self._ma_period.Value = value
 
     def OnReseted(self):
         super(ma_price_cross_strategy, self).OnReseted()
-        self._sma = None
         self._prev_average = None
         self._prev_close = None
 
     def OnStarted(self, time):
         super(ma_price_cross_strategy, self).OnStarted(time)
+        self._prev_average = None
+        self._prev_close = None
 
-        self.__sma = ExponentialMovingAverage()
-        self.__sma.Length = self.ma_period
+        sma = ExponentialMovingAverage()
+        sma.Length = self.MaPeriod
 
-        subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(self.__sma, self._process_candle).Start()
+        subscription = self.SubscribeCandles(self.CandleType)
+        subscription.Bind(sma, self._process_candle).Start()
 
-    def _process_candle(self, candle, *args):
+    def _process_candle(self, candle, sma_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
+
+        sma_val = float(sma_value)
+        close = float(candle.ClosePrice)
+
+        if self._prev_average is None or self._prev_close is None:
+            self._prev_average = sma_val
+            self._prev_close = close
             return
-        # Trading logic placeholder
-        pass
+
+        # Price crosses above MA -> buy
+        buy_signal = self._prev_close <= self._prev_average and close > sma_val
+        # Price crosses below MA -> sell
+        sell_signal = self._prev_close >= self._prev_average and close < sma_val
+
+        if buy_signal:
+            if self.Position <= 0:
+                self.BuyMarket()
+        elif sell_signal:
+            if self.Position >= 0:
+                self.SellMarket()
+
+        self._prev_average = sma_val
+        self._prev_close = close
 
     def CreateClone(self):
         return ma_price_cross_strategy()

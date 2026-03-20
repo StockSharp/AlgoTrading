@@ -3,92 +3,113 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
+from System import TimeSpan
+
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Strategies import Strategy
-from StockSharp.Messages import Sides
 
 
 class multicurrency_overlay_hedge_strategy(Strategy):
+    """Multi-security correlation hedge strategy. Requires multiple securities (universe)."""
+
     def __init__(self):
         super(multicurrency_overlay_hedge_strategy, self).__init__()
 
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(1) \
-            .SetDisplay("Universe", "Collection of forex symbols", "General")
-        self._range_length = self.Param("RangeLength", 400) \
-            .SetDisplay("Universe", "Collection of forex symbols", "General")
-        self._correlation_lookback = self.Param("CorrelationLookback", 500) \
-            .SetDisplay("Universe", "Collection of forex symbols", "General")
-        self._atr_lookback = self.Param("AtrLookback", 200) \
-            .SetDisplay("Universe", "Collection of forex symbols", "General")
-        self._correlation_threshold = self.Param("CorrelationThreshold", 0.9) \
-            .SetDisplay("Universe", "Collection of forex symbols", "General")
-        self._overlay_threshold = self.Param("OverlayThreshold", 100) \
-            .SetDisplay("Universe", "Collection of forex symbols", "General")
-        self._take_profit_by_points = self.Param("TakeProfitByPoints", True) \
-            .SetDisplay("Universe", "Collection of forex symbols", "General")
-        self._take_profit_points = self.Param("TakeProfitPoints", 10) \
-            .SetDisplay("Universe", "Collection of forex symbols", "General")
-        self._take_profit_by_currency = self.Param("TakeProfitByCurrency", False) \
-            .SetDisplay("Universe", "Collection of forex symbols", "General")
-        self._take_profit_currency = self.Param("TakeProfitCurrency", 10) \
-            .SetDisplay("Universe", "Collection of forex symbols", "General")
-        self._max_open_pairs = self.Param("MaxOpenPairs", 10) \
-            .SetDisplay("Universe", "Collection of forex symbols", "General")
-        self._base_volume = self.Param("BaseVolume", 1) \
-            .SetDisplay("Universe", "Collection of forex symbols", "General")
-        self._recalc_hour = self.Param("RecalculationHour", 1) \
-            .SetDisplay("Universe", "Collection of forex symbols", "General")
-        self._max_spread = self.Param("MaxSpread", 10) \
-            .SetDisplay("Universe", "Collection of forex symbols", "General")
-
-        self._contexts = new()
-        self._pairs = new()
-        self._universe_list = new()
-        self._last_recalc_day = DateTime.MinValue
-        self._closes = None
-        self._highs = None
-        self._lows = None
-        self._true_ranges = None
-        self._previous_close = 0.0
-        self._has_previous_close = False
-        self._start = 0.0
-        self._count = 0.0
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1)))
+        self._range_length = self.Param("RangeLength", 400)
+        self._correlation_lookback = self.Param("CorrelationLookback", 500)
+        self._atr_lookback = self.Param("AtrLookback", 200)
+        self._correlation_threshold = self.Param("CorrelationThreshold", 0.9)
+        self._overlay_threshold = self.Param("OverlayThreshold", 100.0)
+        self._take_profit_by_points = self.Param("TakeProfitByPoints", True)
+        self._take_profit_points = self.Param("TakeProfitPoints", 10.0)
+        self._take_profit_by_currency = self.Param("TakeProfitByCurrency", False)
+        self._take_profit_currency = self.Param("TakeProfitCurrency", 10.0)
+        self._max_open_pairs = self.Param("MaxOpenPairs", 10)
+        self._base_volume_param = self.Param("BaseVolume", 1.0)
+        self._recalc_hour = self.Param("RecalculationHour", 1)
+        self._max_spread = self.Param("MaxSpread", 10.0)
 
     @property
-    def candle_type(self):
+    def CandleType(self):
         return self._candle_type.Value
 
-    def OnReseted(self):
-        super(multicurrency_overlay_hedge_strategy, self).OnReseted()
-        self._contexts = new()
-        self._pairs = new()
-        self._universe_list = new()
-        self._last_recalc_day = DateTime.MinValue
-        self._closes = None
-        self._highs = None
-        self._lows = None
-        self._true_ranges = None
-        self._previous_close = 0.0
-        self._has_previous_close = False
-        self._start = 0.0
-        self._count = 0.0
+    @CandleType.setter
+    def CandleType(self, value):
+        self._candle_type.Value = value
+
+    @property
+    def RangeLength(self):
+        return self._range_length.Value
+
+    @property
+    def CorrelationLookback(self):
+        return self._correlation_lookback.Value
+
+    @property
+    def AtrLookback(self):
+        return self._atr_lookback.Value
+
+    @property
+    def CorrelationThreshold(self):
+        return self._correlation_threshold.Value
+
+    @property
+    def OverlayThreshold(self):
+        return self._overlay_threshold.Value
+
+    @property
+    def TakeProfitByPoints(self):
+        return self._take_profit_by_points.Value
+
+    @property
+    def TakeProfitPoints(self):
+        return self._take_profit_points.Value
+
+    @property
+    def TakeProfitByCurrency(self):
+        return self._take_profit_by_currency.Value
+
+    @property
+    def TakeProfitCurrency(self):
+        return self._take_profit_currency.Value
+
+    @property
+    def MaxOpenPairs(self):
+        return self._max_open_pairs.Value
+
+    @property
+    def BaseVolume(self):
+        return self._base_volume_param.Value
+
+    @property
+    def RecalculationHour(self):
+        return self._recalc_hour.Value
+
+    @property
+    def MaxSpread(self):
+        return self._max_spread.Value
 
     def OnStarted(self, time):
         super(multicurrency_overlay_hedge_strategy, self).OnStarted(time)
-        self.StartProtection(None, None)
 
+        self.LogWarning("MulticurrencyOverlayHedge requires multiple securities. Running in single-security mode with no trading logic.")
 
-        subscription = self.SubscribeCandles(self.candle_type, true, security)
-        subscription.Start()
+        subscription = self.SubscribeCandles(self.CandleType)
+        subscription.Bind(self._process_candle).Start()
 
-    def _process_candle(self, candle, *args):
+        area = self.CreateChartArea()
+        if area is not None:
+            self.DrawCandles(area, subscription)
+            self.DrawOwnTrades(area)
+
+    def _process_candle(self, candle):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-        # Trading logic placeholder
-        pass
+        # Multi-security logic cannot be replicated in single-security Python harness.
+
+    def OnReseted(self):
+        super(multicurrency_overlay_hedge_strategy, self).OnReseted()
 
     def CreateClone(self):
         return multicurrency_overlay_hedge_strategy()

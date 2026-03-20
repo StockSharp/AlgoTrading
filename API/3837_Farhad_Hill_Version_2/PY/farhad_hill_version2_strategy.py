@@ -3,7 +3,7 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
+from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import ExponentialMovingAverage, Momentum
 from StockSharp.Algo.Strategies import Strategy
@@ -12,19 +12,29 @@ from StockSharp.Algo.Strategies import Strategy
 class farhad_hill_version2_strategy(Strategy):
     def __init__(self):
         super(farhad_hill_version2_strategy, self).__init__()
-
         self._fast_period = self.Param("FastPeriod", 8) \
             .SetDisplay("Fast EMA", "Fast EMA period", "Indicators")
         self._slow_period = self.Param("SlowPeriod", 21) \
-            .SetDisplay("Fast EMA", "Fast EMA period", "Indicators")
+            .SetDisplay("Slow EMA", "Slow EMA period", "Indicators")
         self._momentum_period = self.Param("MomentumPeriod", 10) \
-            .SetDisplay("Fast EMA", "Fast EMA period", "Indicators")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromHours(4) \
-            .SetDisplay("Fast EMA", "Fast EMA period", "Indicators")
-
+            .SetDisplay("Momentum", "Momentum period", "Indicators")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+            .SetDisplay("Candle Type", "Candle timeframe", "General")
         self._prev_fast = 0.0
         self._prev_slow = 0.0
         self._has_prev = False
+
+    @property
+    def fast_period(self):
+        return self._fast_period.Value
+
+    @property
+    def slow_period(self):
+        return self._slow_period.Value
+
+    @property
+    def momentum_period(self):
+        return self._momentum_period.Value
 
     @property
     def candle_type(self):
@@ -38,24 +48,39 @@ class farhad_hill_version2_strategy(Strategy):
 
     def OnStarted(self, time):
         super(farhad_hill_version2_strategy, self).OnStarted(time)
-
-        self._fast = ExponentialMovingAverage()
-        self._fast.Length = self.fast_period
-        self._slow = ExponentialMovingAverage()
-        self._slow.Length = self.slow_period
-        self._momentum = Momentum()
-        self._momentum.Length = self.momentum_period
-
+        self._has_prev = False
+        fast = ExponentialMovingAverage()
+        fast.Length = self.fast_period
+        slow = ExponentialMovingAverage()
+        slow.Length = self.slow_period
+        momentum = Momentum()
+        momentum.Length = self.momentum_period
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(self._fast, self._slow, self._momentum, self._process_candle).Start()
+        subscription.Bind(fast, slow, momentum, self.process_candle).Start()
 
-    def _process_candle(self, candle, *args):
+    def process_candle(self, candle, fast, slow, momentum):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
+        fast_val = float(fast)
+        slow_val = float(slow)
+        mom_val = float(momentum)
+        if not self._has_prev:
+            self._prev_fast = fast_val
+            self._prev_slow = slow_val
+            self._has_prev = True
             return
-        # Trading logic placeholder
-        pass
+        cross_up = self._prev_fast <= self._prev_slow and fast_val > slow_val
+        cross_down = self._prev_fast >= self._prev_slow and fast_val < slow_val
+        if cross_up and mom_val > 0 and self.Position <= 0:
+            if self.Position < 0:
+                self.BuyMarket()
+            self.BuyMarket()
+        elif cross_down and mom_val < 0 and self.Position >= 0:
+            if self.Position > 0:
+                self.SellMarket()
+            self.SellMarket()
+        self._prev_fast = fast_val
+        self._prev_slow = slow_val
 
     def CreateClone(self):
         return farhad_hill_version2_strategy()

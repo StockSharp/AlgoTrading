@@ -3,59 +3,99 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
+from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-
 
 class vidya_n_bars_borders_martingale_strategy(Strategy):
     def __init__(self):
         super(vidya_n_bars_borders_martingale_strategy, self).__init__()
 
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(60) \
-            .SetDisplay("Candle Type", "Trading candle type", "General")
-        self._ema_period = self.Param("EmaPeriod", 20) \
-            .SetDisplay("Candle Type", "Trading candle type", "General")
-        self._range_period = self.Param("RangePeriod", 10) \
-            .SetDisplay("Candle Type", "Trading candle type", "General")
-        self._martingale_multiplier = self.Param("MartingaleMultiplier", 1.25) \
-            .SetDisplay("Candle Type", "Trading candle type", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(60)))
+        self._ema_period = self.Param("EmaPeriod", 20)
+        self._range_period = self.Param("RangePeriod", 10)
 
-        self._ema = None
-        self._high_history = new()
-        self._low_history = new()
-        self._current_volume = 0.0
+        self._high_history = []
+        self._low_history = []
         self._entry_price = 0.0
 
     @property
-    def candle_type(self):
+    def CandleType(self):
         return self._candle_type.Value
+
+    @CandleType.setter
+    def CandleType(self, value):
+        self._candle_type.Value = value
+
+    @property
+    def EmaPeriod(self):
+        return self._ema_period.Value
+
+    @EmaPeriod.setter
+    def EmaPeriod(self, value):
+        self._ema_period.Value = value
+
+    @property
+    def RangePeriod(self):
+        return self._range_period.Value
+
+    @RangePeriod.setter
+    def RangePeriod(self, value):
+        self._range_period.Value = value
 
     def OnReseted(self):
         super(vidya_n_bars_borders_martingale_strategy, self).OnReseted()
-        self._ema = None
-        self._high_history = new()
-        self._low_history = new()
-        self._current_volume = 0.0
+        self._high_history = []
+        self._low_history = []
         self._entry_price = 0.0
 
     def OnStarted(self, time):
         super(vidya_n_bars_borders_martingale_strategy, self).OnStarted(time)
+        self._high_history = []
+        self._low_history = []
+        self._entry_price = 0.0
 
-        self.__ema = ExponentialMovingAverage()
-        self.__ema.Length = self.ema_period
+        ema = ExponentialMovingAverage()
+        ema.Length = self.EmaPeriod
 
-        subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(self.__ema, self._process_candle).Start()
+        subscription = self.SubscribeCandles(self.CandleType)
+        subscription.Bind(ema, self._process_candle).Start()
 
-    def _process_candle(self, candle, *args):
+    def _process_candle(self, candle, ema_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
+
+        ema_val = float(ema_value)
+        close = float(candle.ClosePrice)
+        high = float(candle.HighPrice)
+        low = float(candle.LowPrice)
+        rng_period = self.RangePeriod
+
+        self._high_history.append(high)
+        self._low_history.append(low)
+        if len(self._high_history) > rng_period:
+            self._high_history.pop(0)
+            self._low_history.pop(0)
+
+        if len(self._high_history) < rng_period:
             return
-        # Trading logic placeholder
-        pass
+
+        highest = max(self._high_history)
+        lowest = min(self._low_history)
+        rng = (highest - lowest) * 0.75
+        if rng <= 0:
+            return
+
+        upper = ema_val + rng
+        lower = ema_val - rng
+
+        if close < lower and self.Position <= 0:
+            self.BuyMarket()
+            self._entry_price = close
+        elif close > upper and self.Position >= 0:
+            self.SellMarket()
+            self._entry_price = close
 
     def CreateClone(self):
         return vidya_n_bars_borders_martingale_strategy()

@@ -3,58 +3,100 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import DataType, CandleStates
+from System import TimeSpan
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import CommodityChannelIndex
 from StockSharp.Algo.Strategies import Strategy
-from StockSharp.Messages import Unit, UnitTypes
 
 
 class dark_cloud_piercing_cci_strategy(Strategy):
     def __init__(self):
         super(dark_cloud_piercing_cci_strategy, self).__init__()
 
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(5) \
-            .SetDisplay("Candle Type", "Candle timeframe", "General")
         self._cci_period = self.Param("CciPeriod", 14) \
-            .SetDisplay("Candle Type", "Candle timeframe", "General")
-        self._entry_level = self.Param("EntryLevel", 50) \
-            .SetDisplay("Candle Type", "Candle timeframe", "General")
-        self._signal_cooldown_candles = self.Param("SignalCooldownCandles", 6) \
-            .SetDisplay("Candle Type", "Candle timeframe", "General")
+            .SetDisplay("CCI Period", "CCI period", "Indicators")
+        self._entry_level = self.Param("EntryLevel", 50.0) \
+            .SetDisplay("Entry Level", "CCI level for confirmation", "Signals")
+        self._signal_cooldown = self.Param("SignalCooldownCandles", 6) \
+            .SetDisplay("Signal Cooldown", "Bars to wait between trades", "Trading")
 
-        self._candles = new()
-        self._prev_cci = 0.0
+        self._cci = None
+        self._candles = []
         self._has_prev_cci = False
-        self._candles_since_trade = 0.0
+        self._candles_since_trade = 0
 
     @property
-    def candle_type(self):
-        return self._candle_type.Value
+    def cci_period(self):
+        return self._cci_period.Value
+
+    @property
+    def entry_level(self):
+        return self._entry_level.Value
+
+    @property
+    def signal_cooldown(self):
+        return self._signal_cooldown.Value
 
     def OnReseted(self):
         super(dark_cloud_piercing_cci_strategy, self).OnReseted()
-        self._candles = new()
-        self._prev_cci = 0.0
+        self._cci = None
+        self._candles = []
         self._has_prev_cci = False
-        self._candles_since_trade = 0.0
+        self._candles_since_trade = self.signal_cooldown
 
     def OnStarted(self, time):
         super(dark_cloud_piercing_cci_strategy, self).OnStarted(time)
 
         self._cci = CommodityChannelIndex()
         self._cci.Length = self.cci_period
+        self._candles = []
+        self._has_prev_cci = False
+        self._candles_since_trade = self.signal_cooldown
 
-        subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(self._cci, self._process_candle).Start()
+        subscription = self.SubscribeCandles(DataType.TimeFrame(TimeSpan.FromMinutes(5)))
+        subscription.Bind(self._cci, self._process_candle)
+        subscription.Start()
 
-    def _process_candle(self, candle, *args):
+        self.StartProtection(takeProfit=Unit(2, UnitTypes.Percent), stopLoss=Unit(1, UnitTypes.Percent), useMarketOrders=True)
+
+    def _process_candle(self, candle, cci_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
+
+        if not self._cci.IsFormed:
             return
-        # Trading logic placeholder
-        pass
+
+        cci_val = float(cci_value)
+
+        if self._candles_since_trade < self.signal_cooldown:
+            self._candles_since_trade += 1
+
+        self._candles.append(candle)
+        if len(self._candles) > 5:
+            self._candles.pop(0)
+
+        if len(self._candles) >= 2 and self._has_prev_cci:
+            curr = self._candles[-1]
+            prev = self._candles[-2]
+
+            is_piercing = (float(prev.OpenPrice) > float(prev.ClosePrice)
+                and float(curr.ClosePrice) > float(curr.OpenPrice)
+                and float(curr.OpenPrice) < float(prev.LowPrice)
+                and float(curr.ClosePrice) > (float(prev.OpenPrice) + float(prev.ClosePrice)) / 2.0)
+
+            is_dark_cloud = (float(prev.ClosePrice) > float(prev.OpenPrice)
+                and float(curr.OpenPrice) > float(curr.ClosePrice)
+                and float(curr.OpenPrice) > float(prev.HighPrice)
+                and float(curr.ClosePrice) < (float(prev.OpenPrice) + float(prev.ClosePrice)) / 2.0)
+
+            if is_piercing and cci_val < -self.entry_level and self.Position == 0 and self._candles_since_trade >= self.signal_cooldown:
+                self.BuyMarket()
+                self._candles_since_trade = 0
+            elif is_dark_cloud and cci_val > self.entry_level and self.Position == 0 and self._candles_since_trade >= self.signal_cooldown:
+                self.SellMarket()
+                self._candles_since_trade = 0
+
+        self._has_prev_cci = True
 
     def CreateClone(self):
         return dark_cloud_piercing_cci_strategy()

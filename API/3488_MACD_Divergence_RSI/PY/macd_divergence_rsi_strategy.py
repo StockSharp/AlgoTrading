@@ -3,20 +3,17 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
+from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import MovingAverageConvergenceDivergenceSignal, RelativeStrengthIndex
 from StockSharp.Algo.Strategies import Strategy
-
 
 class macd_divergence_rsi_strategy(Strategy):
     def __init__(self):
         super(macd_divergence_rsi_strategy, self).__init__()
 
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(5) \
-            .SetDisplay("Candle Type", "Candle timeframe", "General")
-        self._rsi_period = self.Param("RsiPeriod", 14) \
-            .SetDisplay("Candle Type", "Candle timeframe", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5)))
+        self._rsi_period = self.Param("RsiPeriod", 14)
 
         self._prev_macd = 0.0
         self._prev_signal = 0.0
@@ -24,8 +21,20 @@ class macd_divergence_rsi_strategy(Strategy):
         self._has_prev = False
 
     @property
-    def candle_type(self):
+    def CandleType(self):
         return self._candle_type.Value
+
+    @CandleType.setter
+    def CandleType(self, value):
+        self._candle_type.Value = value
+
+    @property
+    def RsiPeriod(self):
+        return self._rsi_period.Value
+
+    @RsiPeriod.setter
+    def RsiPeriod(self, value):
+        self._rsi_period.Value = value
 
     def OnReseted(self):
         super(macd_divergence_rsi_strategy, self).OnReseted()
@@ -36,20 +45,39 @@ class macd_divergence_rsi_strategy(Strategy):
 
     def OnStarted(self, time):
         super(macd_divergence_rsi_strategy, self).OnStarted(time)
+        self._has_prev = False
 
-        self._rsi = RelativeStrengthIndex()
-        self._rsi.Length = self.rsi_period
+        macd = MovingAverageConvergenceDivergenceSignal()
+        macd.Macd.ShortMa.Length = 12
+        macd.Macd.LongMa.Length = 26
+        macd.SignalMa.Length = 9
 
-        subscription = self.SubscribeCandles(self.candle_type)
-        subscription.BindEx(macd, self._rsi, self._process_candle).Start()
+        rsi = RelativeStrengthIndex()
+        rsi.Length = self.RsiPeriod
 
-    def _process_candle(self, candle, *args):
+        subscription = self.SubscribeCandles(self.CandleType)
+        subscription.BindEx(macd, rsi, self._process_candle).Start()
+
+    def _process_candle(self, candle, macd_value, rsi_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
+        if not macd_value.IsFinal or not rsi_value.IsFinal:
             return
-        # Trading logic placeholder
-        pass
+
+        macd_main = float(macd_value.Macd)
+        signal = float(macd_value.Signal)
+        rsi_val = float(rsi_value.ToDecimal())
+
+        if self._has_prev:
+            if self._prev_macd <= self._prev_signal and macd_main > signal and rsi_val < 40 and self.Position <= 0:
+                self.BuyMarket()
+            elif self._prev_macd >= self._prev_signal and macd_main < signal and rsi_val > 60 and self.Position >= 0:
+                self.SellMarket()
+
+        self._prev_macd = macd_main
+        self._prev_signal = signal
+        self._prev_rsi = rsi_val
+        self._has_prev = True
 
     def CreateClone(self):
         return macd_divergence_rsi_strategy()

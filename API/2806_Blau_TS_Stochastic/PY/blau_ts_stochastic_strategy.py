@@ -3,99 +3,184 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import DecimalIndicatorValue, ExponentialMovingAverage, Highest, Lowest, SimpleMovingAverage, SmoothedMovingAverage, WeightedMovingAverage
+from StockSharp.Algo.Indicators import (SimpleMovingAverage, ExponentialMovingAverage,
+    SmoothedMovingAverage, WeightedMovingAverage, Highest, Lowest, DecimalIndicatorValue)
 from StockSharp.Algo.Strategies import Strategy
+from StockSharp.Messages import DataType, CandleStates
+from System import TimeSpan, Math
 
 
 class blau_ts_stochastic_strategy(Strategy):
     def __init__(self):
         super(blau_ts_stochastic_strategy, self).__init__()
 
-        self._candle_type = self.Param("CandleType", TimeSpan.FromHours(8) \
-            .SetDisplay("Candle Type", "Time frame for signal calculations", "General")
-        self._mode = self.Param("Mode", BlauSignalModes.Twist) \
-            .SetDisplay("Candle Type", "Time frame for signal calculations", "General")
-        self._applied_price = self.Param("AppliedPrice", AppliedPriceTypes.Close) \
-            .SetDisplay("Candle Type", "Time frame for signal calculations", "General")
-        self._smoothing = self.Param("Smoothing", BlauSmoothingTypes.Exponential) \
-            .SetDisplay("Candle Type", "Time frame for signal calculations", "General")
-        self._base_length = self.Param("BaseLength", 5) \
-            .SetDisplay("Candle Type", "Time frame for signal calculations", "General")
-        self._smooth_length1 = self.Param("SmoothLength1", 10) \
-            .SetDisplay("Candle Type", "Time frame for signal calculations", "General")
-        self._smooth_length2 = self.Param("SmoothLength2", 5) \
-            .SetDisplay("Candle Type", "Time frame for signal calculations", "General")
-        self._smooth_length3 = self.Param("SmoothLength3", 3) \
-            .SetDisplay("Candle Type", "Time frame for signal calculations", "General")
-        self._signal_length = self.Param("SignalLength", 3) \
-            .SetDisplay("Candle Type", "Time frame for signal calculations", "General")
-        self._signal_bar = self.Param("SignalBar", 1) \
-            .SetDisplay("Candle Type", "Time frame for signal calculations", "General")
-        self._stop_loss_points = self.Param("StopLossPoints", 1000) \
-            .SetDisplay("Candle Type", "Time frame for signal calculations", "General")
-        self._take_profit_points = self.Param("TakeProfitPoints", 2000) \
-            .SetDisplay("Candle Type", "Time frame for signal calculations", "General")
-        self._enable_long_entry = self.Param("EnableLongEntry", True) \
-            .SetDisplay("Candle Type", "Time frame for signal calculations", "General")
-        self._enable_short_entry = self.Param("EnableShortEntry", True) \
-            .SetDisplay("Candle Type", "Time frame for signal calculations", "General")
-        self._enable_long_exit = self.Param("EnableLongExit", True) \
-            .SetDisplay("Candle Type", "Time frame for signal calculations", "General")
-        self._enable_short_exit = self.Param("EnableShortExit", True) \
-            .SetDisplay("Candle Type", "Time frame for signal calculations", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(8)))
+        self._base_length = self.Param("BaseLength", 5)
+        self._smooth1 = self.Param("SmoothLength1", 10)
+        self._smooth2 = self.Param("SmoothLength2", 5)
+        self._smooth3 = self.Param("SmoothLength3", 3)
+        self._signal_length = self.Param("SignalLength", 3)
+        self._signal_bar = self.Param("SignalBar", 1)
+        self._stop_loss_points = self.Param("StopLossPoints", 1000)
+        self._take_profit_points = self.Param("TakeProfitPoints", 2000)
 
-        self._highest = null!
-        self._lowest = null!
-        self._stoch_smooth1 = null!
-        self._stoch_smooth2 = null!
-        self._stoch_smooth3 = null!
-        self._range_smooth1 = null!
-        self._range_smooth2 = null!
-        self._range_smooth3 = null!
-        self._signal_smooth = null!
-        self._hist_history = new()
-        self._signal_history = new()
+        self._highest = None
+        self._lowest = None
+        self._stoch_s1 = None
+        self._stoch_s2 = None
+        self._stoch_s3 = None
+        self._range_s1 = None
+        self._range_s2 = None
+        self._range_s3 = None
+        self._signal_smooth = None
+        self._hist_history = []
+        self._signal_history = []
         self._entry_price = 0.0
 
     @property
-    def candle_type(self):
+    def CandleType(self):
         return self._candle_type.Value
 
-    def OnReseted(self):
-        super(blau_ts_stochastic_strategy, self).OnReseted()
-        self._highest = null!
-        self._lowest = null!
-        self._stoch_smooth1 = null!
-        self._stoch_smooth2 = null!
-        self._stoch_smooth3 = null!
-        self._range_smooth1 = null!
-        self._range_smooth2 = null!
-        self._range_smooth3 = null!
-        self._signal_smooth = null!
-        self._hist_history = new()
-        self._signal_history = new()
-        self._entry_price = 0.0
+    def _create_ma(self, length):
+        ma = ExponentialMovingAverage()
+        ma.Length = length
+        return ma
 
     def OnStarted(self, time):
         super(blau_ts_stochastic_strategy, self).OnStarted(time)
 
-        self.__highest = Highest()
-        self.__highest.Length = self.base_length
-        self.__lowest = Lowest()
-        self.__lowest.Length = self.base_length
+        self._highest = Highest()
+        self._highest.Length = self._base_length.Value
+        self._lowest = Lowest()
+        self._lowest.Length = self._base_length.Value
+        self._stoch_s1 = self._create_ma(self._smooth1.Value)
+        self._stoch_s2 = self._create_ma(self._smooth2.Value)
+        self._stoch_s3 = self._create_ma(self._smooth3.Value)
+        self._range_s1 = self._create_ma(self._smooth1.Value)
+        self._range_s2 = self._create_ma(self._smooth2.Value)
+        self._range_s3 = self._create_ma(self._smooth3.Value)
+        self._signal_smooth = self._create_ma(self._signal_length.Value)
 
-        subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(self._process_candle).Start()
+        sub = self.SubscribeCandles(self.CandleType)
+        sub.Bind(self._process_candle).Start()
 
-    def _process_candle(self, candle, *args):
+    def _process_candle(self, candle):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
+
+        high_result = self._highest.Process(candle)
+        low_result = self._lowest.Process(candle)
+
+        if high_result.IsEmpty or low_result.IsEmpty or not self._highest.IsFormed or not self._lowest.IsFormed:
             return
-        # Trading logic placeholder
-        pass
+
+        # Manage SL/TP
+        if self.Position != 0:
+            step = float(self.Security.PriceStep) if self.Security is not None and self.Security.PriceStep is not None else 1.0
+            if self.Position > 0:
+                if self._stop_loss_points.Value > 0 and float(candle.LowPrice) <= self._entry_price - self._stop_loss_points.Value * step:
+                    self.SellMarket(self.Position)
+                    return
+                if self._take_profit_points.Value > 0 and float(candle.HighPrice) >= self._entry_price + self._take_profit_points.Value * step:
+                    self.SellMarket(self.Position)
+                    return
+            else:
+                vol = abs(self.Position)
+                if self._stop_loss_points.Value > 0 and float(candle.HighPrice) >= self._entry_price + self._stop_loss_points.Value * step:
+                    self.BuyMarket(vol)
+                    return
+                if self._take_profit_points.Value > 0 and float(candle.LowPrice) <= self._entry_price - self._take_profit_points.Value * step:
+                    self.BuyMarket(vol)
+                    return
+
+        t = candle.OpenTime
+        high = float(high_result)
+        low = float(low_result)
+        price = float(candle.ClosePrice)
+        stoch_raw = price - low
+        range_raw = high - low
+
+        s1 = self._stoch_s1.Process(DecimalIndicatorValue(self._stoch_s1, stoch_raw, t))
+        if s1.IsEmpty:
+            return
+        s2 = self._stoch_s2.Process(DecimalIndicatorValue(self._stoch_s2, float(s1), t))
+        if s2.IsEmpty:
+            return
+        s3 = self._stoch_s3.Process(DecimalIndicatorValue(self._stoch_s3, float(s2), t))
+        if s3.IsEmpty:
+            return
+
+        r1 = self._range_s1.Process(DecimalIndicatorValue(self._range_s1, range_raw, t))
+        if r1.IsEmpty:
+            return
+        r2 = self._range_s2.Process(DecimalIndicatorValue(self._range_s2, float(r1), t))
+        if r2.IsEmpty:
+            return
+        r3 = self._range_s3.Process(DecimalIndicatorValue(self._range_s3, float(r2), t))
+        if r3.IsEmpty:
+            return
+
+        denom = float(r3)
+        if denom == 0:
+            return
+
+        hist = 200.0 * float(s3) / denom - 100.0
+        sig_result = self._signal_smooth.Process(DecimalIndicatorValue(self._signal_smooth, hist, t))
+        if sig_result.IsEmpty:
+            return
+        signal = float(sig_result)
+
+        self._hist_history.insert(0, hist)
+        self._signal_history.insert(0, signal)
+        sb = self._signal_bar.Value
+        cap = max(sb + 3, 4)
+        while len(self._hist_history) > cap:
+            self._hist_history.pop()
+        while len(self._signal_history) > cap:
+            self._signal_history.pop()
+
+        required = sb + 3
+        if len(self._hist_history) < required:
+            return
+
+        hist_current = self._hist_history[sb]
+        hist_prev = self._hist_history[sb + 1]
+        hist_prev2 = self._hist_history[sb + 2]
+
+        open_long = False
+        open_short = False
+        close_long = False
+        close_short = False
+
+        # Twist mode
+        if hist_prev < hist_prev2:
+            if hist_current > hist_prev:
+                open_long = True
+            close_short = True
+        if hist_prev > hist_prev2:
+            if hist_current < hist_prev:
+                open_short = True
+            close_long = True
+
+        if close_long and self.Position > 0:
+            self.SellMarket(self.Position)
+        if close_short and self.Position < 0:
+            self.BuyMarket(abs(self.Position))
+
+        volume = float(self.Volume) + abs(self.Position)
+
+        if open_long and self.Position <= 0:
+            self.BuyMarket(volume)
+            self._entry_price = float(candle.ClosePrice)
+        elif open_short and self.Position >= 0:
+            self.SellMarket(volume)
+            self._entry_price = float(candle.ClosePrice)
+
+    def OnReseted(self):
+        super(blau_ts_stochastic_strategy, self).OnReseted()
+        self._hist_history = []
+        self._signal_history = []
+        self._entry_price = 0.0
 
     def CreateClone(self):
         return blau_ts_stochastic_strategy()

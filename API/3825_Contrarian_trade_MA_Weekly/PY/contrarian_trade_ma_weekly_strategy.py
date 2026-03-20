@@ -3,26 +3,32 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math
+from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import Highest, Lowest, SimpleMovingAverage
+from StockSharp.Algo.Indicators import SimpleMovingAverage, Highest, Lowest
 from StockSharp.Algo.Strategies import Strategy
 
 
 class contrarian_trade_ma_weekly_strategy(Strategy):
     def __init__(self):
         super(contrarian_trade_ma_weekly_strategy, self).__init__()
-
         self._ma_period = self.Param("MaPeriod", 14) \
             .SetDisplay("SMA Period", "SMA period", "Indicators")
         self._channel_period = self.Param("ChannelPeriod", 10) \
-            .SetDisplay("SMA Period", "SMA period", "Indicators")
-        self._candle_type = self.Param("CandleType", TimeSpan.FromHours(4) \
-            .SetDisplay("SMA Period", "SMA period", "Indicators")
-
+            .SetDisplay("Channel Period", "Highest/Lowest lookback", "Indicators")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+            .SetDisplay("Candle Type", "Candle timeframe", "General")
         self._prev_close = 0.0
         self._prev_sma = 0.0
         self._has_prev = False
+
+    @property
+    def ma_period(self):
+        return self._ma_period.Value
+
+    @property
+    def channel_period(self):
+        return self._channel_period.Value
 
     @property
     def candle_type(self):
@@ -36,24 +42,39 @@ class contrarian_trade_ma_weekly_strategy(Strategy):
 
     def OnStarted(self, time):
         super(contrarian_trade_ma_weekly_strategy, self).OnStarted(time)
-
-        self._sma = SimpleMovingAverage()
-        self._sma.Length = self.ma_period
-        self._highest = Highest()
-        self._highest.Length = self.channel_period
-        self._lowest = Lowest()
-        self._lowest.Length = self.channel_period
-
+        self._has_prev = False
+        sma = SimpleMovingAverage()
+        sma.Length = self.ma_period
+        highest = Highest()
+        highest.Length = self.channel_period
+        lowest = Lowest()
+        lowest.Length = self.channel_period
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(self._sma, self._highest, self._lowest, self._process_candle).Start()
+        subscription.Bind(sma, highest, lowest, self.process_candle).Start()
 
-    def _process_candle(self, candle, *args):
+    def process_candle(self, candle, sma, highest, lowest):
         if candle.State != CandleStates.Finished:
             return
-        if not self.IsFormedAndOnlineAndAllowTrading():
+        close = float(candle.ClosePrice)
+        sma_val = float(sma)
+        high_val = float(highest)
+        low_val = float(lowest)
+        if not self._has_prev:
+            self._prev_close = close
+            self._prev_sma = sma_val
+            self._has_prev = True
             return
-        # Trading logic placeholder
-        pass
+        mid = (high_val + low_val) / 2.0
+        if self._prev_close >= self._prev_sma and close < sma_val and close < mid and self.Position <= 0:
+            if self.Position < 0:
+                self.BuyMarket()
+            self.BuyMarket()
+        elif self._prev_close <= self._prev_sma and close > sma_val and close > mid and self.Position >= 0:
+            if self.Position > 0:
+                self.SellMarket()
+            self.SellMarket()
+        self._prev_close = close
+        self._prev_sma = sma_val
 
     def CreateClone(self):
         return contrarian_trade_ma_weekly_strategy()
